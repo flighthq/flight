@@ -1,5 +1,5 @@
-import { createBoxMeshGeometry, setMeshGeometrySkinBindPose } from '@flighthq/mesh';
-import type { MeshSkinBindPose } from '@flighthq/types';
+import { createBoxMeshGeometry, createMeshGeometry, setMeshGeometrySkinBindPose } from '@flighthq/mesh';
+import type { MeshSkinBindPose, VertexAttributeLayout } from '@flighthq/types';
 
 import { destroyGlMeshUpload, ensureGlMeshUpload, hasGlMeshGeometryUv1 } from './glMeshUpload';
 import type { GlMeshUpload } from './glSceneRuntime';
@@ -70,6 +70,25 @@ describe('ensureGlMeshUpload', () => {
     expect(second.vao).toBe(first.vao);
     expect(gl.calls.filter((c) => c.name === 'bufferData').length).toBeGreaterThan(bufferDataCount);
     expect(second.version).toBe(geometry.version);
+  });
+
+  it('converts packed integer storage into the float inputs declared by mesh shaders', () => {
+    const { state, gl } = makeGlSceneState();
+    const layout: VertexAttributeLayout = {
+      attributes: [
+        { byteOffset: 0, format: 'float32x3', semantic: 'position' },
+        { byteOffset: 12, format: 'uint8x4', semantic: 'joints0' },
+        { byteOffset: 16, format: 'unorm8x4', semantic: 'weights0' },
+      ],
+      stride: 20,
+    };
+    ensureGlMeshUpload(state, createMeshGeometry({ layout, vertices: new Float32Array(5) }));
+
+    const jointCall = gl.calls.find((call) => call.name === 'vertexAttribPointer' && call.args[0] === 6);
+    const weightCall = gl.calls.find((call) => call.name === 'vertexAttribPointer' && call.args[0] === 7);
+    expect(jointCall?.args.slice(1)).toEqual([4, gl.UNSIGNED_BYTE, false, 20, 12]);
+    expect(weightCall?.args.slice(1)).toEqual([4, gl.UNSIGNED_BYTE, true, 20, 16]);
+    expect(gl.calls.some((call) => call.name === 'vertexAttribIPointer')).toBe(false);
   });
 
   // The double-skinning fix: a GPU-skinned draw must upload the STATIC bind pose, not the CPU-posed

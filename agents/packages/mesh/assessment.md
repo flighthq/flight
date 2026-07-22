@@ -10,7 +10,10 @@ See [charter](./charter.md) for blessed direction.
 
 ## Depth gaps
 
-1. **Make every declared vertex channel usable end to end.** Add typed access/build/edit support for `uv1`, `color0`, `joints0`, `weights0`, any secondary influence channels, and packed/normalized formats; then consume them in scene import and GL shaders with raster proof.
+1. **Make every declared vertex channel usable end to end.** Typed read/edit support now covers `uv1`,
+   `color0`, `joints0`, and `weights0` across float, packed integer, and normalized storage. Importers
+   still need to preserve those encodings instead of eagerly expanding common data, and secondary
+   influence channels plus raster proof remain.
 2. **Complete topology-editing primitives.** Weld, deindex, indexed/non-indexed conversion, subset editing, validation, and index-width selection are the bedrock operations importers and procedural tooling otherwise reimplement.
 3. **Deepen normal/tangent/UV authoring.** Add angle-threshold smoothing/split normals, robust tangent generation across seams, and basic planar/box/spherical UV projection as independent functions.
 4. **Realize instancing and LOD instead of leaving header-only types.** `InstancedMesh` and `LodMesh` need an owned data/update contract, render consumption, culling/selection rules, and functionals. Keep a full simplifier as later tooling rather than blocking these primitives.
@@ -27,10 +30,12 @@ being re-derived from list-only offsets.
 
 ## Approved
 
-None.
+- [2026-07-21 · completed] The declared `uv1`, `color0`, `joints0`, and `weights0` semantics have
+  separately importable caller-owned-output getters and in-place setters. Packed uint8/uint16 and
+  unorm8 values decode and encode through the same byte-accurate contract, failed queries do not
+  mutate output, and successful edits advance geometry version exactly once.
 
 ## Backlog
 
-- Reserved channel accessors (uv1/color0/joints0/weights0).
 - Angle-threshold smooth normals.
 - Projection UV unwrapping.
