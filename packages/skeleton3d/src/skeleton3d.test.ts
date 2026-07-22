@@ -1,10 +1,11 @@
 import { createMatrix4, getMatrix4Element, setVector3 } from '@flighthq/geometry';
-import { invalidateNodeLocalTransform } from '@flighthq/node';
+import { addNodeChild, getNodeParent, invalidateNodeLocalTransform, setNodeTransform3D } from '@flighthq/node';
 import { createSceneNode } from '@flighthq/scene';
 import { EntityRuntimeKey } from '@flighthq/types';
 
 import {
   cloneSkeleton3D,
+  cloneSkeleton3DJointHierarchy,
   computeSkeleton3DJointMatrices,
   createSkeleton3D,
   disposeSkeleton3D,
@@ -39,6 +40,42 @@ describe('cloneSkeleton3D', () => {
   it('preserves a null names field', () => {
     const clone = cloneSkeleton3D(createSkeleton3D([createSceneNode()]));
     expect(clone.names).toBeNull();
+  });
+});
+
+describe('cloneSkeleton3DJointHierarchy', () => {
+  it('rebuilds joint parentage over fresh nodes and isolates pose updates', () => {
+    const root = createSceneNode();
+    const child = createSceneNode();
+    setVector3(root.position, 1, 0, 0);
+    setVector3(child.position, 0, 2, 0);
+    invalidateNodeLocalTransform(root);
+    invalidateNodeLocalTransform(child);
+    addNodeChild(root, child);
+    const source = createSkeleton3D([root, child], undefined, ['root', 'child']);
+
+    const clone = cloneSkeleton3DJointHierarchy(source, (joint) => {
+      const out = createSceneNode(joint.kind, joint);
+      setNodeTransform3D(out, joint);
+      return out;
+    });
+
+    expect(clone.joints[0]).not.toBe(root);
+    expect(clone.joints[1]).not.toBe(child);
+    expect(getNodeParent(clone.joints[0])).toBeNull();
+    expect(getNodeParent(clone.joints[1])).toBe(clone.joints[0]);
+    expect(getNodeParent(child)).toBe(root);
+    expect(clone.inverseBindMatrices).not.toBe(source.inverseBindMatrices);
+    expect(clone.names).toEqual(['root', 'child']);
+
+    setVector3(clone.joints[0].position, 6, 0, 0);
+    invalidateNodeLocalTransform(clone.joints[0]);
+    computeSkeleton3DJointMatrices(source);
+    computeSkeleton3DJointMatrices(clone);
+    expect(source.jointMatrices[12]).toBeCloseTo(0);
+    expect(clone.jointMatrices[12]).toBeCloseTo(5);
+    expect(source.jointMatrices[28]).toBeCloseTo(0);
+    expect(clone.jointMatrices[28]).toBeCloseTo(5);
   });
 });
 

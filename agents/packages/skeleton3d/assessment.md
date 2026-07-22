@@ -16,9 +16,11 @@ No sweep-safe items; meaningful work crosses mesh, scene preparation, animation,
    comparisons, corrective morph-plus-skin cases, animated bounds/picking, clone independence, and a
    diagnostic preventing CPU-plus-GPU double skinning.
 2. **Finish clone-safe morph-plus-skin ownership.** Repeated CPU frames and cloned geometry/morph
-   weights are now independent, including clone-after-deform restoration. Independently posed skin
-   clones still need a cloned joint hierarchy (the current `cloneSkeleton3D` shares joint nodes), and
-   the prepared GPU vertex path must make per-instance ownership equally explicit.
+   weights are now independent, including clone-after-deform restoration. Callers can now explicitly
+   pay for an independently cloned joint hierarchy through a narrow node-clone callback while the
+   ordinary `cloneSkeleton3D` retains cheap shared joints. Scene-level cloning must compose that atom
+   with mesh clone ownership, and the prepared GPU vertex path must make per-instance ownership equally
+   explicit.
 3. **Represent influences beyond the common top four.** Add a separately paid secondary/variable
    influence stream without inflating every rigid or four-influence vertex.
 4. **Compose poses with animation.** Pose buffers, joint masks, additive/override blending, sockets,
@@ -46,3 +48,7 @@ No sweep-safe items; meaningful work crosses mesh, scene preparation, animation,
 - [2026-07-21 · completed] Skin bind-pose capture consumes mesh's format-aware joint/weight accessors,
   so packed uint8/uint16 joint indices and normalized uint8 weights produce the same CPU influence
   streams as canonical float32 channels. This does not add a second skinning layout truth.
+- [2026-07-21 · completed] `cloneSkeleton3DJointHierarchy` is the explicit independently-posed clone
+  atom: a caller supplies the node-kind-aware clone callback, joint-to-joint parent links are rebuilt,
+  outside-skeleton parents stay caller-owned, and skeleton buffers/names remain detached. The cheap
+  `cloneSkeleton3D` sharing contract is unchanged.
