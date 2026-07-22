@@ -1,7 +1,12 @@
 import type { VertexAttributeLayout } from '@flighthq/types';
 
 import { createMeshGeometry } from './meshGeometry';
-import { computeMeshGeometryWireframeIndices, expandMeshGeometryIndices } from './meshGeometryIndex';
+import {
+  computeMeshGeometryWireframeIndices,
+  expandMeshGeometryIndices,
+  indexMeshGeometryVertices,
+  weldMeshGeometryVertices,
+} from './meshGeometryIndex';
 
 const CANONICAL_LAYOUT: VertexAttributeLayout = {
   attributes: [
@@ -80,5 +85,91 @@ describe('expandMeshGeometryIndices', () => {
     expect(expanded.vertices[0]).toBe(7);
     // Distinct backing array.
     expect(expanded.vertices).not.toBe(geometry.vertices);
+  });
+});
+
+describe('indexMeshGeometryVertices', () => {
+  it('adds a sequential narrow index without changing vertex identity or draw shape', () => {
+    const geometry = createMeshGeometry({
+      layout: CANONICAL_LAYOUT,
+      subsets: [
+        { indexCount: 3, indexOffset: 0 },
+        { indexCount: 3, indexOffset: 3 },
+      ],
+      vertices: new Float32Array(6 * 12),
+    });
+
+    const indexed = indexMeshGeometryVertices(geometry);
+
+    expect(indexed).not.toBe(geometry);
+    expect(indexed.vertices).not.toBe(geometry.vertices);
+    expect(indexed.indices).toBeInstanceOf(Uint16Array);
+    expect(Array.from(indexed.indices!)).toEqual([0, 1, 2, 3, 4, 5]);
+    expect(indexed.subsets).toEqual(geometry.subsets);
+    expect(indexed.subsets).not.toBe(geometry.subsets);
+  });
+
+  it('deep-clones an already indexed geometry without remapping', () => {
+    const geometry = makeQuad();
+    const indexed = indexMeshGeometryVertices(geometry);
+    expect(indexed.indices).not.toBe(geometry.indices);
+    expect(Array.from(indexed.indices!)).toEqual(Array.from(geometry.indices!));
+  });
+});
+
+describe('weldMeshGeometryVertices', () => {
+  it('deduplicates exact records and remaps a sequential element stream', () => {
+    const vertices = new Float32Array(4 * 12);
+    vertices[0] = 1;
+    vertices[12] = 2;
+    vertices[24] = 1;
+    vertices[36] = 3;
+    const geometry = createMeshGeometry({ layout: CANONICAL_LAYOUT, topology: 'line-strip', vertices });
+
+    const welded = weldMeshGeometryVertices(geometry);
+
+    expect(welded.vertices.length).toBe(3 * 12);
+    expect(Array.from(welded.indices!)).toEqual([0, 1, 0, 2]);
+    expect(welded.topology).toBe('line-strip');
+    expect(geometry.indices).toBeNull();
+    expect(geometry.vertices.length).toBe(4 * 12);
+  });
+
+  it('compares complete packed records byte-for-byte', () => {
+    const layout: VertexAttributeLayout = {
+      attributes: [{ byteOffset: 0, format: 'unorm8x4', semantic: 'color0' }],
+      stride: 4,
+    };
+    const vertices = new Float32Array(3);
+    const bytes = new Uint8Array(vertices.buffer);
+    bytes.set([255, 0, 0, 255], 0);
+    bytes.set([0, 255, 0, 255], 4);
+    bytes.set([255, 0, 0, 255], 8);
+
+    const welded = weldMeshGeometryVertices(createMeshGeometry({ layout, vertices }));
+
+    expect(welded.vertices.byteLength).toBe(8);
+    expect(Array.from(new Uint8Array(welded.vertices.buffer))).toEqual([255, 0, 0, 255, 0, 255, 0, 255]);
+    expect(Array.from(welded.indices!)).toEqual([0, 1, 0]);
+  });
+
+  it('remaps existing indices and preserves subset ranges', () => {
+    const geometry = makeQuad();
+    geometry.vertices.set(geometry.vertices.subarray(0, 12), 3 * 12);
+    const welded = weldMeshGeometryVertices(geometry);
+    expect(Array.from(welded.indices!)).toEqual([0, 1, 2, 2, 1, 0]);
+    expect(welded.subsets).toEqual(geometry.subsets);
+  });
+
+  it('returns an unchanged deep clone for invalid source indices', () => {
+    const geometry = createMeshGeometry({
+      indices: new Uint16Array([0, 4]),
+      layout: CANONICAL_LAYOUT,
+      vertices: new Float32Array(2 * 12),
+    });
+    const welded = weldMeshGeometryVertices(geometry);
+    expect(welded).not.toBe(geometry);
+    expect(Array.from(welded.indices!)).toEqual([0, 4]);
+    expect(welded.vertices).not.toBe(geometry.vertices);
   });
 });
