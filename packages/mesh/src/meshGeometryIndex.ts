@@ -1,6 +1,6 @@
 import type { MeshGeometry } from '@flighthq/types';
 
-import { createMeshGeometry } from './meshGeometry';
+import { cloneMeshGeometry, createMeshGeometry, getMeshGeometryVertexCount } from './meshGeometry';
 
 // Index-buffer pipeline over a MeshGeometry: de-index a welded stream to a flat non-indexed one,
 // and derive a wireframe line-list from a triangle index buffer. These read the existing
@@ -79,3 +79,100 @@ export function expandMeshGeometryIndices(geometry: Readonly<MeshGeometry>): Mes
 
   return createMeshGeometry({ indices: null, layout: geometry.layout, topology: geometry.topology, vertices });
 }
+
+// Converts a non-indexed vertex stream to an indexed stream without welding or changing record order:
+// index i references vertex i. Already-indexed input is deep-cloned unchanged. This deliberately keeps
+// conversion separate from deduplication so callers can establish indexed draw shape without paying for
+// hashing or changing vertex identity. Subsets, topology, bounds, and raw packed record bytes survive.
+export function indexMeshGeometryVertices(geometry: Readonly<MeshGeometry>): MeshGeometry {
+  const out = cloneMeshGeometry(geometry);
+  if (out.indices !== null) return out;
+  const vertexCount = getMeshGeometryVertexCount(out);
+  const indices = vertexCount > UINT16_INDEX_CEILING ? new Uint32Array(vertexCount) : new Uint16Array(vertexCount);
+  for (let i = 0; i < vertexCount; i++) indices[i] = i;
+  out.indices = indices;
+  return out;
+}
+
+// Exactly welds byte-identical interleaved vertex records and remaps the existing element stream (or
+// the sequential stream for non-indexed input) to the unique records. Equality covers the complete
+// record, including packed channels and padding; this never guesses a position/normal/UV tolerance.
+// A later tolerance-based authoring operation can compose above this unambiguous primitive. Invalid
+// stride alignment returns an unchanged deep clone rather than manufacturing a partial geometry.
+export function weldMeshGeometryVertices(geometry: Readonly<MeshGeometry>): MeshGeometry {
+  const stride = geometry.layout.stride;
+  const sourceByteLength = geometry.vertices.byteLength;
+  if (stride <= 0 || stride % 4 !== 0 || sourceByteLength % stride !== 0) return cloneMeshGeometry(geometry);
+
+  const vertexCount = sourceByteLength / stride;
+  const sourceBytes = new Uint8Array(
+    geometry.vertices.buffer,
+    geometry.vertices.byteOffset,
+    geometry.vertices.byteLength,
+  );
+  const uniqueBytes = new Uint8Array(sourceByteLength);
+  const sourceToUnique = new Uint32Array(vertexCount);
+  const candidatesByHash = new Map<number, number[]>();
+  let uniqueCount = 0;
+
+  for (let vertex = 0; vertex < vertexCount; vertex++) {
+    const sourceOffset = vertex * stride;
+    const hash = hashVertexRecord(sourceBytes, sourceOffset, stride);
+    const candidates = candidatesByHash.get(hash);
+    let uniqueIndex = -1;
+    if (candidates !== undefined) {
+      for (let i = 0; i < candidates.length; i++) {
+        const candidate = candidates[i];
+        if (equalVertexRecord(sourceBytes, sourceOffset, uniqueBytes, candidate * stride, stride)) {
+          uniqueIndex = candidate;
+          break;
+        }
+      }
+    }
+    if (uniqueIndex < 0) {
+      uniqueIndex = uniqueCount++;
+      uniqueBytes.set(sourceBytes.subarray(sourceOffset, sourceOffset + stride), uniqueIndex * stride);
+      if (candidates === undefined) candidatesByHash.set(hash, [uniqueIndex]);
+      else candidates.push(uniqueIndex);
+    }
+    sourceToUnique[vertex] = uniqueIndex;
+  }
+
+  const elementCount = geometry.indices?.length ?? vertexCount;
+  const indices = uniqueCount > UINT16_INDEX_CEILING ? new Uint32Array(elementCount) : new Uint16Array(elementCount);
+  for (let element = 0; element < elementCount; element++) {
+    const sourceIndex = geometry.indices?.[element] ?? element;
+    if (sourceIndex >= vertexCount) return cloneMeshGeometry(geometry);
+    indices[element] = sourceToUnique[sourceIndex];
+  }
+
+  const weldedBuffer = uniqueBytes.buffer.slice(0, uniqueCount * stride);
+  const out = cloneMeshGeometry(geometry);
+  out.vertices = new Float32Array(weldedBuffer);
+  out.indices = indices;
+  return out;
+}
+
+function equalVertexRecord(
+  a: Readonly<Uint8Array>,
+  aOffset: number,
+  b: Readonly<Uint8Array>,
+  bOffset: number,
+  byteLength: number,
+): boolean {
+  for (let i = 0; i < byteLength; i++) {
+    if (a[aOffset + i] !== b[bOffset + i]) return false;
+  }
+  return true;
+}
+
+function hashVertexRecord(bytes: Readonly<Uint8Array>, offset: number, byteLength: number): number {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < byteLength; i++) {
+    hash ^= bytes[offset + i];
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return hash >>> 0;
+}
+
+const UINT16_INDEX_CEILING = 65_535;
