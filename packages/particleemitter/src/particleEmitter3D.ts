@@ -2,6 +2,7 @@ import { reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry';
 import { createSceneNode, getSceneNodeRuntime } from '@flighthq/scene';
 import type {
   AabbLike,
+  Matrix4Like,
   ParticleEmitter3D,
   ParticleEmitter3DRuntime,
   ParticleEmitterData,
@@ -295,4 +296,78 @@ export function setParticleEmitter3DParticleVelocity(
   target.data.velocities[vt] = vx;
   target.data.velocities[vt + 1] = vy;
   target.data.velocities[vt + 2] = vz;
+}
+
+// Writes particle indices in back-to-front view-depth order without reordering simulation storage.
+// `positionToView` maps the emitter's stored XYZ positions directly into view space: pass the view
+// matrix for world-space data, or view * emitter-world for local-space data. `outViewDepths` is
+// caller-owned comparison scratch and retains each source particle's view Z at its source index.
+// Returns false without touching either output when one is too small or source storage is incomplete.
+export function sortParticleEmitter3DIndicesByViewDepth(
+  outIndices: Uint32Array,
+  outViewDepths: Float64Array,
+  source: Readonly<ParticleEmitter3D>,
+  positionToView: Readonly<Matrix4Like>,
+): boolean {
+  const count = source.data.particleCount;
+  if (
+    !Number.isInteger(count) ||
+    count < 0 ||
+    getParticleEmitter3DCapacity(source) < count ||
+    outIndices.length < count ||
+    outViewDepths.length < count
+  ) {
+    return false;
+  }
+
+  const matrix = positionToView.m;
+  const transforms = source.data.transforms;
+  const positionsZ = source.data.positionsZ;
+  for (let index = 0; index < count; index++) {
+    const transformOffset = index * PARTICLE_TRANSFORM_STRIDE;
+    const x = transforms[transformOffset];
+    const y = transforms[transformOffset + 1];
+    const z = positionsZ[index];
+    outIndices[index] = index;
+    outViewDepths[index] = matrix[2] * x + matrix[6] * y + matrix[10] * z + matrix[14];
+  }
+
+  // In-place heap sort using view Z ascending: in Flight's right-handed camera space, farther
+  // particles have more-negative Z and therefore precede nearer particles for alpha blending.
+  for (let start = (count >> 1) - 1; start >= 0; start--) {
+    siftParticleDepthMaxHeap(outIndices, outViewDepths, start, count);
+  }
+  for (let end = count - 1; end > 0; end--) {
+    const first = outIndices[0];
+    outIndices[0] = outIndices[end];
+    outIndices[end] = first;
+    siftParticleDepthMaxHeap(outIndices, outViewDepths, 0, end);
+  }
+  return true;
+}
+
+function isParticleDepthGreater(a: number, b: number, depths: Readonly<Float64Array>): boolean {
+  const aDepth = depths[a];
+  const bDepth = depths[b];
+  return aDepth > bDepth || (aDepth === bDepth && a > b);
+}
+
+function siftParticleDepthMaxHeap(
+  indices: Uint32Array,
+  depths: Readonly<Float64Array>,
+  root: number,
+  length: number,
+): void {
+  while (true) {
+    const left = root * 2 + 1;
+    if (left >= length) return;
+    const right = left + 1;
+    let greater = left;
+    if (right < length && isParticleDepthGreater(indices[right], indices[left], depths)) greater = right;
+    if (!isParticleDepthGreater(indices[greater], indices[root], depths)) return;
+    const swap = indices[root];
+    indices[root] = indices[greater];
+    indices[greater] = swap;
+    root = greater;
+  }
 }
