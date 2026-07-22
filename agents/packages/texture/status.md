@@ -1,12 +1,19 @@
 ---
 package: '@flighthq/texture'
-updated: 2026-06-24
-by: ingest:builder-67dc46d64
+updated: 2026-07-22
+by: review3
 ---
 
 # texture — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## 2026-07-22 — compressed texture shape boundary
+
+The GL container atom already has useful 2D-array upload depth, but that is not a `Texture` feature by
+itself. Its generic ImageResource binder is correctly limited to 2D; compressed cubemaps, 2D arrays,
+and volumes still need explicit subject descriptors/material binder families. The assessment now names
+this seam so later work does not mistake a low-level upload test for an end-to-end texture capability.
 
 ## 2026-06-25 — builder Phase 3 (Recommended sweep)
 

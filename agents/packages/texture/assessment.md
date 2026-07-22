@@ -20,9 +20,13 @@ See [charter](./charter.md) for blessed direction.
    priority, cancellation, and eviction order. `texture` supplies descriptors and residency operations;
    `render-gl` realizes them. Do not put a global cache, loader, or policy loop in the Texture entity.
 3. **Complete declared channel/format paths with render proof.** Compressed upload already accepts full
-   containers, but it is not integrated with progressive ImageResource residency. Texture arrays/3D
-   volumes, cube color-space behavior, all declared pixel formats, and map-specific UV0/UV1 selection
-   need backend consumers and behavioral functionals before descriptor presence counts as feature depth.
+   containers, but it is not integrated with progressive ImageResource residency. The low-level GL
+   uploader truthfully realizes caller-bound 2D, cubemap, and 2D-array containers; the universal
+   `Texture`/`ImageResource` binder remains deliberately 2D and no entity/material sampling path exists
+   for arrays, volumes, or a compressed cubemap as one container. Add those subject-level descriptors
+   and binders rather than making the 2D bridge guess a target. Cube color-space behavior, all declared
+   pixel formats, and map-specific UV0/UV1 selection likewise need behavioral functionals before
+   descriptor presence counts as feature depth.
 
 ## Recommended
 
