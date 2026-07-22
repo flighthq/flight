@@ -75,7 +75,9 @@ export interface SceneDocumentAnimationChannel {
 // index for the "rides an animated node" case; the assembler drives the camera's view from that node's world
 // matrix (e.g. `setCamera3DViewMatrix4FromMatrix4`) rather than parenting it into the graph.
 export interface SceneDocumentCamera {
+  far: number;
   name?: string;
+  near: number;
   node?: number;
   projection: Projection;
   transform: Transform3D;
@@ -86,6 +88,7 @@ export interface SceneDocumentCamera {
 // `node` index for the animated-placement case.
 export interface SceneDocumentLight {
   descriptor: Light;
+  name?: string;
   node?: number;
   transform: Transform3D;
 }

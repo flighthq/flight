@@ -36,6 +36,7 @@
     "@flighthq/color": "*",
     "@flighthq/geometry": "*",
     "@flighthq/image-codec": "*",
+    "@flighthq/lighting": "*",
     "@flighthq/materials": "*",
     "@flighthq/mesh": "*",
     "@flighthq/node": "*",

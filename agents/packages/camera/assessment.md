@@ -34,7 +34,10 @@ mapping with near/mid/far tests while the perspective path is unchanged.
 
 ## Approved
 
-None.
+- [2026-07-22 · completed] `SceneDocumentCamera` carries explicit near/far planes and glTF import
+  preserves both projection kinds. An omitted glTF perspective far plane remains infinite; the shared
+  perspective-matrix atom evaluates that limit without NaN. Authored aspect remains only the fallback,
+  with a render viewport still authoritative.
 
 ## Backlog
 

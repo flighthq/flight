@@ -18,18 +18,18 @@ extension depth, not the old "first primitive, no material" slice.
 
 1. **Make the complete import result truthful.** Every current parser now records the image identities
    referenced by its material textures in `SceneDocument.resources`; independently sampled Texture
-   entities share the reference while retaining their own sampling state. glTF cameras and punctual
-   lights must still fill their existing standalone document tables, and structured diagnostics must
-   accompany the document without hiding loading inside parsing.
+   entities share the reference while retaining their own sampling state. Placed glTF cameras and the
+   opt-in punctual-light extension now fill the existing standalone document tables. Structured
+   diagnostics must still accompany the document without hiding loading inside parsing.
 2. **Carry every common vertex channel and topology.** `TEXCOORD_1`, `COLOR_0`, secondary
    `JOINTS_1`/`WEIGHTS_1`, and their packed/normalized forms need canonical mesh-layout consumers,
    material selection, skinning, and rendered proof. Primitive topology mapping is now complete;
    raster fixtures still need to prove each direct and converted mode.
-3. **Replace inline extension knowledge with open handlers.** `KHR_texture_transform` is implemented
-   inline, yet `extensionsRequired` currently labels every named extension unsupported—including one the
-   parser can consume. Material, punctual-light, mesh-compression, and future vendor handlers should
-   register individually; unsupported required extensions return typed diagnostics/sentinels. Do not add
-   a registerAll assembly.
+3. **Replace the remaining inline extension knowledge with open handlers.** The parser now accepts
+   individually supplied handlers and `KHR_lights_punctual` ships as one tree-shakable handler;
+   `KHR_texture_transform` remains inline. Material and mesh-compression handlers should use the same
+   seam; unsupported required extensions still need typed diagnostics/sentinels. Do not add a registerAll
+   assembly.
 4. **Prove real files end to end.** Canonical fixtures must cross parse → SceneDocument → scene assembly
    → resource realization → GL rendering for maps, UV sets, sparse/packed attributes, skin+morph,
    animation, multi-primitive materials, and each classic format. Parser-only unit tests do not establish
@@ -71,3 +71,8 @@ extension depth, not the old "first primitive, no material" slice.
   instead of leaving material texture references invisible to the document resolver. Repeated external
   URIs or AWD texture-block identities share one reference while each material slot keeps a distinct
   Texture entity; embedded and external source forms are covered at the parser boundary.
+- [2026-07-22 · completed] Core glTF camera definitions now become placed `SceneDocumentCamera`
+  records with truthful perspective/orthographic projection and clip planes, including the optional
+  infinite perspective far plane. `KHR_lights_punctual` is a separately imported open extension handler
+  that emits Entity-backed directional, point, and spot descriptors into `SceneDocument.lights`; required
+  extension diagnostics recognize exactly the handlers a caller supplied.

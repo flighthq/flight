@@ -1218,6 +1218,29 @@ describe('parseGltf', () => {
     expect(document.nodes[0].transform.position.x).toBe(5);
   });
 
+  it('preserves placed perspective and orthographic cameras with clip planes', () => {
+    const document = parseGltf({
+      asset: { version: '2.0' },
+      cameras: [
+        { name: 'view', perspective: { aspectRatio: 1.5, yfov: 1, znear: 0.1 }, type: 'perspective' },
+        { orthographic: { xmag: 4, ymag: 3, zfar: 50, znear: 0 }, type: 'orthographic' },
+      ],
+      nodes: [
+        { camera: 0, children: [1], translation: [1, 2, 3] },
+        { camera: 1, translation: [4, 5, 6] },
+      ],
+      scenes: [{ nodes: [0] }],
+    });
+
+    expect(document.cameras).toHaveLength(2);
+    expect(document.cameras[0]).toMatchObject({ far: Number.POSITIVE_INFINITY, name: 'view', near: 0.1, node: 0 });
+    expect(document.cameras[0].projection).toEqual({ aspect: 1.5, fovY: 1, kind: 'perspective' });
+    expect(document.cameras[0].transform.position).toMatchObject({ x: 1, y: 2, z: 3 });
+    expect(document.cameras[1]).toMatchObject({ far: 50, near: 0, node: 1 });
+    expect(document.cameras[1].projection).toEqual({ halfHeight: 3, halfWidth: 4, kind: 'orthographic' });
+    expect(document.cameras[1].transform.position).toMatchObject({ x: 5, y: 7, z: 9 });
+  });
+
   it('expands a multi-primitive mesh into a group node with per-primitive child mesh nodes', () => {
     const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
     const uri = toDataUri(bytesOf(positions));

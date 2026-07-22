@@ -1,6 +1,12 @@
 import { createAnimationTrack } from '@flighthq/animation';
 import { packLinearToColor } from '@flighthq/color';
-import { createTransform3D, decomposeMatrix4ToTransform3D } from '@flighthq/geometry';
+import {
+  composeMatrix4FromTransform3D,
+  createMatrix4,
+  createTransform3D,
+  decomposeMatrix4ToTransform3D,
+  multiplyMatrix4,
+} from '@flighthq/geometry';
 import { detectImageMimeType } from '@flighthq/image-codec';
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh';
@@ -20,6 +26,7 @@ import type {
   SceneDocument,
   SceneDocumentAnimation,
   SceneDocumentAnimationChannel,
+  SceneDocumentCamera,
   SceneDocumentMesh,
   SceneDocumentNode,
   SceneDocumentSkin,
@@ -38,13 +45,13 @@ import {
   SceneNodeKind,
 } from '@flighthq/types';
 
+import type { GltfExtensionContext, GltfExtensionHandler, GltfImportOptions } from './gltfExtension';
 import type {
   GltfAccessor,
   GltfBuffer,
   GltfComponentType,
   GltfDocument,
   GltfImage,
-  GltfImportOptions,
   GltfMaterial,
   GltfMorphTarget,
   GltfNode,
@@ -198,7 +205,7 @@ function buildGltfDocument(
   }
   if (doc.extensionsRequired !== undefined) {
     for (const extension of doc.extensionsRequired) {
-      if (isSupportedGltfExtension(extension)) continue;
+      if (isSupportedGltfExtension(extension, options?.extensionHandlers)) continue;
       warnings?.push(`parseGltf: required extension '${extension}' is not supported and was ignored`);
     }
   }
@@ -294,10 +301,11 @@ function buildGltfDocument(
     meshes,
     warnings,
   );
-
-  return {
+  const nodeWorldTransforms = buildGltfNodeWorldTransforms(gltfNodes, warnings);
+  const cameras = buildGltfCameras(doc, gltfNodes, gltfNodeToDocNode, nodeWorldTransforms, warnings);
+  const document: SceneDocument = {
     animations,
-    cameras: [],
+    cameras,
     lights: [],
     materials,
     meshes,
@@ -307,6 +315,184 @@ function buildGltfDocument(
     scenes,
     skins,
   };
+  applyGltfExtensionHandlers(
+    document,
+    doc,
+    gltfNodeToDocNode,
+    nodeWorldTransforms,
+    options?.extensionHandlers,
+    warnings,
+  );
+  return document;
+}
+
+// Builds one placed document camera per glTF node that references a camera definition. Clip distances
+// remain explicit document facts; an omitted perspective zfar is retained as the glTF infinite-far model.
+// The projection's stored aspect is only the authored fallback—the draw-time viewport remains authoritative.
+function buildGltfCameras(
+  doc: Readonly<GltfDocument>,
+  nodes: readonly GltfNode[],
+  nodeIndices: readonly number[],
+  nodeWorldTransforms: readonly Transform3D[],
+  warnings?: string[],
+): SceneDocumentCamera[] {
+  const cameras: SceneDocumentCamera[] = [];
+  const definitions = doc.cameras ?? [];
+  for (let node = 0; node < nodes.length; node++) {
+    const cameraIndex = nodes[node].camera;
+    if (cameraIndex === undefined) continue;
+    const definition = definitions[cameraIndex];
+    if (definition === undefined) {
+      warnings?.push(`parseGltf: node ${node} references missing camera ${cameraIndex}`);
+      continue;
+    }
+    if (definition.type === 'perspective' && definition.perspective !== undefined) {
+      const perspective = definition.perspective;
+      if (
+        !(perspective.yfov > 0) ||
+        perspective.yfov >= Math.PI ||
+        !(perspective.znear > 0) ||
+        (perspective.zfar !== undefined && !(perspective.zfar > perspective.znear)) ||
+        (perspective.aspectRatio !== undefined && !(perspective.aspectRatio > 0))
+      ) {
+        warnings?.push(`parseGltf: camera ${cameraIndex} has an invalid perspective view volume`);
+        continue;
+      }
+      cameras.push({
+        far: perspective.zfar ?? Number.POSITIVE_INFINITY,
+        name: definition.name,
+        near: perspective.znear,
+        node: nodeIndices[node],
+        projection: {
+          aspect: perspective.aspectRatio ?? 1,
+          fovY: perspective.yfov,
+          kind: 'perspective',
+        },
+        transform: cloneGltfTransform(nodeWorldTransforms[node]),
+      });
+      continue;
+    }
+    if (definition.type === 'orthographic' && definition.orthographic !== undefined) {
+      const orthographic = definition.orthographic;
+      if (
+        !(orthographic.xmag > 0) ||
+        !(orthographic.ymag > 0) ||
+        !(orthographic.znear >= 0) ||
+        !(orthographic.zfar > orthographic.znear)
+      ) {
+        warnings?.push(`parseGltf: camera ${cameraIndex} has an invalid orthographic view volume`);
+        continue;
+      }
+      cameras.push({
+        far: orthographic.zfar,
+        name: definition.name,
+        near: orthographic.znear,
+        node: nodeIndices[node],
+        projection: {
+          halfHeight: orthographic.ymag,
+          halfWidth: orthographic.xmag,
+          kind: 'orthographic',
+        },
+        transform: cloneGltfTransform(nodeWorldTransforms[node]),
+      });
+      continue;
+    }
+    warnings?.push(`parseGltf: camera ${cameraIndex} is missing its '${definition.type}' descriptor`);
+  }
+  return cameras;
+}
+
+function applyGltfExtensionHandlers(
+  document: SceneDocument,
+  source: Readonly<GltfDocument>,
+  nodeIndices: readonly number[],
+  nodeWorldTransforms: readonly Transform3D[],
+  handlers: readonly GltfExtensionHandler[] | undefined,
+  warnings?: string[],
+): void {
+  if (handlers === undefined || handlers.length === 0) return;
+  const selected = new Map<string, GltfExtensionHandler>();
+  for (const handler of handlers) {
+    if (selected.has(handler.kind)) warnings?.push(`parseGltf: duplicate '${handler.kind}' handler; using the last`);
+    selected.set(handler.kind, handler);
+  }
+  const context: GltfExtensionContext = {
+    buildNodeTransform(node) {
+      return cloneGltfTransform(nodeWorldTransforms[node] ?? createIdentityTransform());
+    },
+    document,
+    nodeIndices,
+    source,
+    warnings,
+  };
+  for (const handler of selected.values()) handler.apply(context);
+}
+
+// Resolves the authored local TRS hierarchy into one world-space placement per glTF node. Camera/light
+// document tables are standalone placements, so their transform must remain useful even before a caller
+// binds the optional node index. A malformed cycle or second parent degrades deterministically with a
+// warning instead of recursing forever.
+function buildGltfNodeWorldTransforms(nodes: readonly GltfNode[], warnings?: string[]): Transform3D[] {
+  const parents = new Int32Array(nodes.length);
+  parents.fill(-1);
+  for (let parent = 0; parent < nodes.length; parent++) {
+    for (const child of nodes[parent].children ?? []) {
+      if (child < 0 || child >= nodes.length) continue;
+      if (parents[child] !== -1) {
+        warnings?.push(`parseGltf: node ${child} has multiple parents; using ${parents[child]}`);
+        continue;
+      }
+      parents[child] = parent;
+    }
+  }
+  const localMatrices = nodes.map((node) => {
+    const matrix = createMatrix4();
+    composeMatrix4FromTransform3D(matrix, gltfNodeTransform(node));
+    return matrix;
+  });
+  const worldMatrices = nodes.map(() => createMatrix4());
+  const state = new Uint8Array(nodes.length);
+  const resolve = (node: number): void => {
+    if (state[node] === 2) return;
+    if (state[node] === 1) {
+      warnings?.push(`parseGltf: node hierarchy cycle reaches node ${node}; using its local transform`);
+      worldMatrices[node].m.set(localMatrices[node].m);
+      state[node] = 2;
+      return;
+    }
+    state[node] = 1;
+    const parent = parents[node];
+    if (parent >= 0) {
+      resolve(parent);
+      multiplyMatrix4(worldMatrices[node], worldMatrices[parent], localMatrices[node]);
+    } else {
+      worldMatrices[node].m.set(localMatrices[node].m);
+    }
+    state[node] = 2;
+  };
+  const transforms: Transform3D[] = [];
+  for (let node = 0; node < nodes.length; node++) {
+    resolve(node);
+    const transform = createTransform3D();
+    decomposeMatrix4ToTransform3D(transform, worldMatrices[node]);
+    transforms.push(transform);
+  }
+  return transforms;
+}
+
+function cloneGltfTransform(source: Readonly<Transform3D>): Transform3D {
+  const transform = createTransform3D();
+  transform.position.x = source.position.x;
+  transform.position.y = source.position.y;
+  transform.position.z = source.position.z;
+  transform.rotation.x = source.rotation.x;
+  transform.rotation.y = source.rotation.y;
+  transform.rotation.z = source.rotation.z;
+  transform.rotation.w = source.rotation.w;
+  transform.scale.x = source.scale.x;
+  transform.scale.y = source.scale.y;
+  transform.scale.z = source.scale.z;
+  return transform;
 }
 
 // Builds the document's skin table: each glTF `skins[]` entry becomes a SceneDocumentSkin whose `joints` are
@@ -681,8 +867,8 @@ function isSupportedGltfVersion(version: string): boolean {
 // Names only the extensions the core parser actually consumes today. This prevents required-extension
 // diagnostics from contradicting visible behavior while the open handler registry remains a separate
 // depth step; adding a schema field alone must not count as support.
-function isSupportedGltfExtension(extension: string): boolean {
-  return extension === 'KHR_texture_transform';
+function isSupportedGltfExtension(extension: string, handlers: readonly GltfExtensionHandler[] | undefined): boolean {
+  return extension === 'KHR_texture_transform' || handlers?.some((handler) => handler.kind === extension) === true;
 }
 
 // Normalizes a raw integer component to its float range per the glTF spec: unsigned types map onto

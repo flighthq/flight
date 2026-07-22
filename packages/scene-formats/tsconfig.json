@@ -13,6 +13,7 @@
     { "path": "../color" },
     { "path": "../geometry" },
     { "path": "../image-codec" },
+    { "path": "../lighting" },
     { "path": "../materials" },
     { "path": "../mesh" },
     { "path": "../node" },
