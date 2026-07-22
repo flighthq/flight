@@ -8,6 +8,14 @@ basedOn: ./review.md
 
 See [charter](./charter.md) for blessed direction.
 
+## Directed
+
+1. **Align the SceneLights constructor with the Entity invariant.** The live `createSceneLights`
+   comment explicitly says its result is not an Entity, contradicting the approved repository rule that
+   every exported Flight `create*` product has the enforced Entity shape. Make `SceneLights` Entity-backed
+   and migrate structural call sites, or move the plain draw-argument composition to a clearly non-create
+   vocabulary; do not preserve a constructor exception hidden in prose.
+
 ## Depth gaps
 
 1. **Build the shadow primitive family.** Directional, spot, and point-light shadow views/targets, cascades, bias/filter descriptors, atlas allocation, and an explicit per-frame shadow budget should compose into scene passes; no `registerAll` path.
