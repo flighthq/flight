@@ -15,9 +15,10 @@ No sweep-safe items; meaningful work crosses mesh, scene preparation, animation,
 1. **Prove composed deformation behavior.** Add imported MD5/glTF/AWD GL captures, CPU-to-GPU
    comparisons, corrective morph-plus-skin cases, animated bounds/picking, clone independence, and a
    diagnostic preventing CPU-plus-GPU double skinning.
-2. **Define clone-safe morph-plus-skin ownership.** Repeated frames and independently posed clones must
-   not mutate shared geometry into one another; establish an explicit prepared deformation result or a
-   fully composed GPU vertex path.
+2. **Finish clone-safe morph-plus-skin ownership.** Repeated CPU frames and cloned geometry/morph
+   weights are now independent, including clone-after-deform restoration. Independently posed skin
+   clones still need a cloned joint hierarchy (the current `cloneSkeleton3D` shares joint nodes), and
+   the prepared GPU vertex path must make per-instance ownership equally explicit.
 3. **Represent influences beyond the common top four.** Add a separately paid secondary/variable
    influence stream without inflating every rigid or four-influence vertex.
 4. **Compose poses with animation.** Pose buffers, joint masks, additive/override blending, sockets,

@@ -2,6 +2,7 @@ export * from './meshGeometry';
 export * from './meshGeometryAttributes';
 export * from './meshGeometryBuilders';
 export * from './meshGeometryCompute';
+export * from './meshGeometryDeformationClone';
 export * from './meshGeometryIndex';
 export * from './meshGeometryLayout';
 export * from './meshGeometryOperations';

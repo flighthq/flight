@@ -1,3 +1,4 @@
+import { cloneMeshGeometryForDeformation } from '@flighthq/mesh';
 import {
   enableNodeSignals,
   getNodeLocalMatrix4,
@@ -14,18 +15,20 @@ import { createSceneNode, getSceneNodeRuntime } from './sceneNode';
 export type { Mesh, MeshRuntime } from '@flighthq/types';
 export { MeshKind } from '@flighthq/types';
 
-// Clones a Mesh node: a new node carrying a COPY of the source's transform (so an authored
-// orientation rides onto the clone) while sharing `geometry`, the `materials` entries, `skin`, and
-// `morph` by reference — the same share semantics as createMesh, so N clones of one model still cost
-// one geometry. Sharing `morph` means the clones share one live weight array (like a shared skeleton
-// pose); clone and reassign a fresh MeshMorph for independently-animated morph. `alpha`, `enabled`,
-// `name`, and `kind` are copied. Only the mesh node itself is cloned;
+// Clones a Mesh node: a new node carrying a COPY of the source's transform. Rigid clones share their
+// geometry; a mesh carrying morph or skin gets a restored, runtime-independent geometry because CPU
+// deformation writes vertices in place. Morph targets remain shared immutable data while the live
+// weight array is copied. Skin/skeleton pose is still shared explicitly; callers wanting an
+// independent rig clone its joint hierarchy and Skeleton3D separately. `alpha`, `enabled`, `name`,
+// and `kind` are copied. Only the mesh node itself is cloned;
 // its children are not (a Mesh is a drawable leaf — clone each node you need explicitly). There is
 // no general cloneSceneNode: not every node kind can be duplicated (some own GPU/native resources
 // or runtime bindings that cannot alias), so cloning is a per-type capability, defined here where
 // it is well-formed.
 export function cloneMesh(source: Readonly<Mesh>): Mesh {
-  const clone = createMesh(source.geometry, source.materials.slice(), source.kind, {
+  const hasDeformation = source.skin != null || source.morph != null;
+  const geometry = hasDeformation ? cloneMeshGeometryForDeformation(source.geometry) : source.geometry;
+  const clone = createMesh(geometry, source.materials.slice(), source.kind, {
     enabled: source.enabled,
     name: source.name,
   });
@@ -34,7 +37,9 @@ export function cloneMesh(source: Readonly<Mesh>): Mesh {
   setNodeTransform3D(clone, source);
   if (isNodeLocalMatrix4Detached(source)) setNodeLocalMatrix4(clone, getNodeLocalMatrix4(source));
   if (source.skin != null) clone.skin = source.skin;
-  if (source.morph != null) clone.morph = source.morph;
+  if (source.morph != null) {
+    clone.morph = { targets: source.morph.targets, weights: new Float32Array(source.morph.weights) };
+  }
   return clone;
 }
 
