@@ -452,27 +452,39 @@ function buildGltfNodeWorldTransforms(nodes: readonly GltfNode[], warnings?: str
   });
   const worldMatrices = nodes.map(() => createMatrix4());
   const state = new Uint8Array(nodes.length);
-  const resolve = (node: number): void => {
-    if (state[node] === 2) return;
-    if (state[node] === 1) {
-      warnings?.push(`parseGltf: node hierarchy cycle reaches node ${node}; using its local transform`);
-      worldMatrices[node].m.set(localMatrices[node].m);
-      state[node] = 2;
-      return;
-    }
-    state[node] = 1;
-    const parent = parents[node];
-    if (parent >= 0) {
-      resolve(parent);
-      multiplyMatrix4(worldMatrices[node], worldMatrices[parent], localMatrices[node]);
-    } else {
-      worldMatrices[node].m.set(localMatrices[node].m);
-    }
-    state[node] = 2;
-  };
+  const stack: number[] = [];
   const transforms: Transform3D[] = [];
+  for (let start = 0; start < nodes.length; start++) {
+    while (state[start] !== 2) {
+      stack.length = 0;
+      let node = start;
+      let cycle = false;
+      while (node >= 0 && state[node] !== 2) {
+        if (state[node] === 1) {
+          warnings?.push(`parseGltf: node hierarchy cycle reaches node ${node}; treating it as a root`);
+          parents[node] = -1;
+          for (let i = 0; i < stack.length; i++) state[stack[i]] = 0;
+          cycle = true;
+          break;
+        }
+        state[node] = 1;
+        stack.push(node);
+        node = parents[node];
+      }
+      if (cycle) continue;
+      while (stack.length > 0) {
+        node = stack.pop()!;
+        const parent = parents[node];
+        if (parent >= 0) {
+          multiplyMatrix4(worldMatrices[node], worldMatrices[parent], localMatrices[node]);
+        } else {
+          worldMatrices[node].m.set(localMatrices[node].m);
+        }
+        state[node] = 2;
+      }
+    }
+  }
   for (let node = 0; node < nodes.length; node++) {
-    resolve(node);
     const transform = createTransform3D();
     decomposeMatrix4ToTransform3D(transform, worldMatrices[node]);
     transforms.push(transform);

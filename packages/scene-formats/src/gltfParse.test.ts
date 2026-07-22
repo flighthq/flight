@@ -1241,6 +1241,40 @@ describe('parseGltf', () => {
     expect(document.cameras[1].transform.position).toMatchObject({ x: 5, y: 7, z: 9 });
   });
 
+  it('resolves deeply nested camera placement without using the call stack', () => {
+    const depth = 2048;
+    const nodes: NonNullable<GltfDocument['nodes']> = Array.from({ length: depth }, (_, index) => ({
+      camera: index === depth - 1 ? 0 : undefined,
+      children: index + 1 < depth ? [index + 1] : undefined,
+      translation: [1, 0, 0],
+    }));
+    const document = parseGltf({
+      asset: { version: '2.0' },
+      cameras: [{ perspective: { yfov: 1, znear: 0.1 }, type: 'perspective' }],
+      nodes,
+      scenes: [{ nodes: [0] }],
+    });
+    expect(document.cameras[0].transform.position.x).toBe(depth);
+  });
+
+  it('breaks a malformed camera-node cycle deterministically', () => {
+    const warnings: string[] = [];
+    const document = parseGltf(
+      {
+        asset: { version: '2.0' },
+        cameras: [{ perspective: { yfov: 1, znear: 0.1 }, type: 'perspective' }],
+        nodes: [
+          { camera: 0, children: [1], translation: [1, 0, 0] },
+          { children: [0], translation: [2, 0, 0] },
+        ],
+        scenes: [{ nodes: [0] }],
+      },
+      warnings,
+    );
+    expect(Number.isFinite(document.cameras[0].transform.position.x)).toBe(true);
+    expect(warnings.some((warning) => warning.includes('cycle'))).toBe(true);
+  });
+
   it('expands a multi-primitive mesh into a group node with per-primitive child mesh nodes', () => {
     const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
     const uri = toDataUri(bytesOf(positions));
