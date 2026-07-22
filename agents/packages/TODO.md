@@ -878,7 +878,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ### animation (solid 62)
 
-- Add a target-free mixer/layer kernel
+- Compose target-free samples into mixer/layer policy
 - Complete playback semantics
 - Add authoring/runtime utilities without a kitchen sink
 

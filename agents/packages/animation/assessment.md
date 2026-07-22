@@ -10,7 +10,10 @@ See [charter](./charter.md) for blessed direction. Sorted from the 2026-07-03 re
 
 ## Depth gaps
 
-1. **Add a target-free mixer/layer kernel.** Weighted clip accumulation, cross-fades, normalized quaternion blending, additive/override layers, and partial masks are the missing composition tier above sampling. Bindings remain separate consumers.
+1. **Compose target-free samples into mixer/layer policy.** The reusable weighted sample accumulator,
+   normalized quaternion blend, and additive quaternion/vector atoms have landed. Per-clip grouping,
+   cross-fade scheduling, additive/override layer ordering, and partial masks remain the missing policy
+   tier above those atoms. Bindings remain separate consumers.
 2. **Complete playback semantics.** Add clip markers/events, root-motion extraction, finite repeat and ping-pong behavior, robust seeking across markers, and deterministic transition behavior.
 3. **Add authoring/runtime utilities without a kitchen sink.** Subclip/trim, key reduction, additive rebasing, clip validation, and binary/cursor sampling remain separable primitives. A later state machine/blend tree composes them rather than entering the sampler core.
 
@@ -24,7 +27,10 @@ reduction remains a depth utility rather than a sweep correction.
 
 Parked — each with the reason it is not sweep-safe.
 
-- **Blending / mixing** (per-clip weight, weighted accumulation with quaternion renormalization, mixer state over multiple players; cross-fade/fade scheduling). _Parked — charter-in-scope (Decision 2026-07-03) but waiting on the mixer/layer Open direction: how layers compose (additive, override, blend)._
+- **Blending / mixing** (per-clip weight, mixer state over multiple players, cross-fade/fade
+  scheduling). _Parked — weighted scalar/vector/quaternion accumulation and blend atoms are now
+  available; the remaining charter-in-scope policy needs the mixer/layer Open direction: how layers
+  compose (additive, override, blend)._
 - **Additive animation** (`makeAnimationClipAdditive` rebase + additive layers). _Parked — the rebase utility is well-defined but layer composition rides the same mixer/layer design._
 - **Clip events / time markers.** _Parked — charter-in-scope, but the marker data model (markers on clips vs channels, payload shape) is undecided; the player finished/looped signals above are the sweep-safe slice._
 - **Per-channel weight / joint masking.** _Parked — charter Open direction; mask ownership is shared with `skeleton` (the joint-mask is inherently a skeleton concept per its review)._
@@ -37,6 +43,10 @@ Parked — each with the reason it is not sweep-safe.
 
 ## Approved
 
+- [2026-07-21 · completed] Target-free animation sample composition now has independent weighted
+  accumulation, normalized override blending, additive vector/quaternion composition, reusable
+  Entity-backed accumulator state, and reset/finalize atoms. These deliberately own no clips,
+  targets, bindings, fade schedules, or layer policy.
 - [2026-07-21 · completed] AnimationTrack, AnimationChannel, AnimationClip, and AnimationPlayer now
   extend Entity. Every `createAnimation*`, clone, and trim result uses `createEntity`, with runtime-key
   tests across all four product families.
