@@ -34,4 +34,7 @@ No sweep-safe items; meaningful work crosses mesh, scene preparation, animation,
 
 ## Approved
 
-None.
+- [2026-07-21 · completed] CPU morph-plus-skin has an explicit `updateMeshDeformation` composition.
+  Each deformer remains independently importable; the composition runs morph first and refreshes only
+  skin's deformable position/normal input on later frames, preserving static influences and allocated
+  scratch. A changing-weight two-frame test proves the old first-morph freeze is gone.

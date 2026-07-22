@@ -25,7 +25,8 @@ resource-policy seams.
    traversal.
 4. **Resolve shared-geometry deformation ownership.** Independent clones must not overwrite one
    another's morphed/skinned vertices; keep rigid geometry sharing cheap while making deform state
-   per-instance or GPU-resolved.
+   per-instance or GPU-resolved. CPU morph-plus-skin ordering is now one explicit composition and
+   changing morph weights correctly refresh skin input; clone ownership remains open.
 5. **Add acceleration after semantic correctness.** BVH/octree, occlusion, and other structures should
    consume the same prepared bounds/identity contract rather than create a second scene truth.
 

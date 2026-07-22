@@ -1,6 +1,6 @@
 # Package TODO Index
 
-_Generated 2026-07-21 by `node agents/packages/todo.mjs` — do not edit by hand. Sources: each cell's `review.md` (status/score), `assessment.md` (Directed, Recommended, and Depth gaps), `charter.md` (chartered-unbuilt detection), and `register.md › Build queue`. Regenerate after assessments or the register change._
+_Generated 2026-07-22 by `node agents/packages/todo.mjs` — do not edit by hand. Sources: each cell's `review.md` (status/score), `assessment.md` (Directed, Recommended, and Depth gaps), `charter.md` (chartered-unbuilt detection), and `register.md › Build queue`. Regenerate after assessments or the register change._
 
 One line per tracked item. For detail, read only the named package's cell: `agents/packages/<name>/assessment.md` (and its `charter.md` for the rules). `Directed` is user-approved program work, `Recommended` is sweep-safe but **not yet approved**, and `Depth gaps` is surveyed domain depth awaiting prioritization.
 
