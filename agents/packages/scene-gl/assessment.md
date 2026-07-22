@@ -102,4 +102,4 @@ basedOn: ./review.md
   upload-owned effective GL primitive mode instead of hard-coding triangles. Indexed and non-indexed
   list/strip/point draws share the same subset path; non-indexed uploads retain their real vertex count,
   cached uploads observe topology edits without buffer churn, and dropping indices deletes the obsolete
-  GPU buffer. glTF line-loop/triangle-fan conversion and raster captures remain importer/evidence work.
+  GPU buffer. Raster captures remain evidence work.

@@ -13,6 +13,7 @@ import type {
   MeshGeometry,
   MeshMorph,
   MorphTarget,
+  PrimitiveTopology,
   SceneAnimationPath,
   SceneDocument,
   SceneDocumentAnimation,
@@ -707,11 +708,6 @@ function primitiveToGeometry(
   primitive: Readonly<GltfPrimitive>,
   warnings?: string[],
 ): MeshGeometry {
-  if (primitive.mode !== undefined && primitive.mode !== 4) {
-    warnings?.push(
-      `primitiveToGeometry: primitive mode ${primitive.mode} is not triangles (4); geometry imported as-is`,
-    );
-  }
   const positionIndex = primitive.attributes.POSITION;
   if (positionIndex === undefined) {
     warnings?.push('primitiveToGeometry: primitive has no POSITION attribute; returning empty geometry');
@@ -787,15 +783,75 @@ function primitiveToGeometry(
 
   // glTF index accessors are ubyte/ushort/uint; normalize to Uint32Array (createMeshGeometry promotes/
   // accepts 16- or 32-bit index buffers).
-  const indices =
+  const sourceIndices =
     primitive.indices !== undefined
       ? Uint32Array.from(readAccessor(doc, buffers, primitive.indices, warnings).data)
       : undefined;
+  const primitiveElements = buildGltfPrimitiveElements(primitive.mode ?? 4, sourceIndices, vertexCount, warnings);
   return createMeshGeometry({
-    indices,
+    indices: primitiveElements.indices,
     layout: skinned ? CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT : CANONICAL_LAYOUT,
+    topology: primitiveElements.topology,
     vertices,
   });
+}
+
+function buildGltfPrimitiveElements(
+  mode: number,
+  source: Uint32Array<ArrayBuffer> | undefined,
+  vertexCount: number,
+  warnings?: string[],
+): { indices: Uint32Array<ArrayBuffer> | undefined; topology: PrimitiveTopology } {
+  switch (mode) {
+    case 0:
+      return { indices: source, topology: 'point-list' };
+    case 1:
+      return { indices: source, topology: 'line-list' };
+    case 2:
+      return { indices: buildGltfLineLoopIndices(source, vertexCount), topology: 'line-list' };
+    case 3:
+      return { indices: source, topology: 'line-strip' };
+    case 4:
+      return { indices: source, topology: 'triangle-list' };
+    case 5:
+      return { indices: source, topology: 'triangle-strip' };
+    case 6:
+      return { indices: buildGltfTriangleFanIndices(source, vertexCount), topology: 'triangle-list' };
+    default:
+      warnings?.push(`primitiveToGeometry: primitive mode ${mode} is not a glTF 2.0 mode; primitive omitted`);
+      return { indices: new Uint32Array(0), topology: 'triangle-list' };
+  }
+}
+
+function buildGltfLineLoopIndices(
+  source: Readonly<Uint32Array<ArrayBuffer>> | undefined,
+  vertexCount: number,
+): Uint32Array<ArrayBuffer> {
+  const count = source?.length ?? vertexCount;
+  if (count < 2) return new Uint32Array(0);
+  const out = new Uint32Array(count * 2);
+  for (let i = 0; i < count; i++) {
+    out[i * 2] = source?.[i] ?? i;
+    out[i * 2 + 1] = source?.[(i + 1) % count] ?? (i + 1) % count;
+  }
+  return out;
+}
+
+function buildGltfTriangleFanIndices(
+  source: Readonly<Uint32Array<ArrayBuffer>> | undefined,
+  vertexCount: number,
+): Uint32Array<ArrayBuffer> {
+  const count = source?.length ?? vertexCount;
+  if (count < 3) return new Uint32Array(0);
+  const out = new Uint32Array((count - 2) * 3);
+  const first = source?.[0] ?? 0;
+  for (let i = 1; i + 1 < count; i++) {
+    const offset = (i - 1) * 3;
+    out[offset] = first;
+    out[offset + 1] = source?.[i] ?? i;
+    out[offset + 2] = source?.[i + 1] ?? i + 1;
+  }
+  return out;
 }
 
 // Builds a MeshMorph from a primitive's `targets` (blend shapes), or null when the primitive carries

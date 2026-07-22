@@ -28,8 +28,8 @@ extension depth, not the old "first primitive, no material" slice.
    and decoded repeatedly and cannot make `resources` truthful by simple post-hoc value deduplication.
 2. **Carry every common vertex channel and topology.** `TEXCOORD_1`, `COLOR_0`, secondary
    `JOINTS_1`/`WEIGHTS_1`, and their packed/normalized forms need canonical mesh-layout consumers,
-   material selection, skinning, and rendered proof. Non-triangle primitive modes need an honest
-   topology mapping rather than warning/dropping visible data.
+   material selection, skinning, and rendered proof. Primitive topology mapping is now complete;
+   raster fixtures still need to prove each direct and converted mode.
 3. **Replace inline extension knowledge with open handlers.** `KHR_texture_transform` is implemented
    inline, yet `extensionsRequired` currently labels every named extension unsupported—including one the
    parser can consume. Material, punctual-light, mesh-compression, and future vendor handlers should
@@ -67,3 +67,7 @@ extension depth, not the old "first primitive, no material" slice.
 - [2026-07-21 · present] glTF/GLB core materials, textures/samplers, external buffer input, sparse and
   strided accessors, skins, morphs, and animations are implemented. OBJ/MTL, AWD, 3DS, MD2, and MD5 make
   the package a genuine format family rather than a one-format stub.
+- [2026-07-22 · completed] All seven glTF primitive modes now map truthfully: points, lines, line strips,
+  triangles, and triangle strips retain their direct Flight topology; line loops and triangle fans
+  expand to explicit list indices; unknown modes emit no elements with a diagnostic instead of drawing
+  the same bytes as triangles. The GL forward/shadow path consumes the resulting topology.
