@@ -1,6 +1,6 @@
 import { createEntity } from '@flighthq/entity';
 import { copyMatrix4, createMatrix4, inverseMatrix4, multiplyMatrix4 } from '@flighthq/geometry';
-import { getNodeWorldMatrix4 } from '@flighthq/node';
+import { addNodeChild, getNodeParent, getNodeWorldMatrix4 } from '@flighthq/node';
 import type { Matrix4Like, SceneNode, Skeleton3D, Skeleton3DValidationDiagnostic } from '@flighthq/types';
 
 export function cloneSkeleton3D(skeleton: Readonly<Skeleton3D>): Skeleton3D {
@@ -11,6 +11,38 @@ export function cloneSkeleton3D(skeleton: Readonly<Skeleton3D>): Skeleton3D {
     names: skeleton.names === undefined ? undefined : skeleton.names === null ? null : skeleton.names.slice(),
   });
   return clone;
+}
+
+// Clones a skeleton and its joint-to-joint hierarchy without assuming that every SceneNode kind is
+// generically cloneable. `cloneJoint` is the one narrow policy seam: it must return a fresh detached
+// node carrying the source joint's local pose/data. Parent links whose parent is another skeleton
+// joint are rebuilt over the cloned nodes; a parent outside the joint set is intentionally left to
+// the caller's surrounding scene clone. Buffers, names, joint nodes, and hierarchy are all independent.
+export function cloneSkeleton3DJointHierarchy(
+  skeleton: Readonly<Skeleton3D>,
+  cloneJoint: (joint: Readonly<SceneNode>, jointIndex: number) => SceneNode,
+): Skeleton3D {
+  const sourceJoints = skeleton.joints;
+  const joints = new Array<SceneNode>(sourceJoints.length);
+  const clonesBySource = new Map<SceneNode, SceneNode>();
+  for (let i = 0; i < sourceJoints.length; i++) {
+    const source = sourceJoints[i];
+    const clone = cloneJoint(source, i);
+    joints[i] = clone;
+    clonesBySource.set(source, clone);
+  }
+  for (let i = 0; i < sourceJoints.length; i++) {
+    const sourceParent = getNodeParent(sourceJoints[i]);
+    if (sourceParent === null) continue;
+    const parentClone = clonesBySource.get(sourceParent);
+    if (parentClone !== undefined) addNodeChild(parentClone, joints[i]);
+  }
+  return createEntity({
+    inverseBindMatrices: new Float32Array(skeleton.inverseBindMatrices),
+    jointMatrices: new Float32Array(skeleton.jointMatrices),
+    joints,
+    names: skeleton.names === undefined ? undefined : skeleton.names === null ? null : skeleton.names.slice(),
+  });
 }
 
 export function computeSkeleton3DJointMatrices(skeleton: Readonly<Skeleton3D>): void {
