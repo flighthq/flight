@@ -6,14 +6,14 @@ lastDirection: 2026-07-10
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
-absorbed: '@flighthq/camera'
+absorbed: "@flighthq/camera"
 ---
 
 # camera2d — Charter
 
 ## What it is
 
-`@flighthq/camera2d` is the **2D camera cell** — a plain-data camera over a world that produces the world↔screen transform, follows a target with a deadzone and smoothing, clamps to world bounds, computes parallax-layer offsets, and reports the visible world rectangle for culling. It is the missing piece between a 2D game's world coordinates and what the renderer draws: the thing that decides "where the view is looking and how the world maps to the screen."
+This is the historical **2D camera cell**, now absorbed into `@flighthq/camera`: plain-data camera math over a world that produces the world↔screen transform, follows a target with a deadzone and smoothing, clamps to world bounds, computes parallax-layer offsets, and reports the visible world rectangle for culling. It records the direction that the unified camera package implements and must not be treated as a package to recreate.
 
 ## North star
 

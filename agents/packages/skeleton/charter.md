@@ -3,14 +3,14 @@ package: "@flighthq/skeleton"
 draft: false
 lastDirection: 2026-07-03
 crate: "flighthq-skeleton"
-absorbed: '@flighthq/skeleton3d'
+absorbed: "@flighthq/skeleton3d"
 ---
 
 # skeleton — Charter
 
 ## What it is
 
-Skeletal animation support -- joint hierarchies, inverse-bind matrices, skin palette computation for GPU upload.
+Historical skeletal-animation direction now implemented by `@flighthq/skeleton3d`: joint hierarchies, inverse-bind matrices, and skin-palette computation for GPU upload. This cell remains as direction history and must not recreate a generic `@flighthq/skeleton` package.
 
 ## North star
 

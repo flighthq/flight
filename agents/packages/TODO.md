@@ -988,7 +988,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ### lighting (solid 88)
 
-- Build the shadow primitive family from the existing directional proof
+- Extend the proven directional shadow atom into a separately paid primitive family
 - Complete physical light realization
 - Add environment/probe lighting as a separate composition tier
 
