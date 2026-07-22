@@ -296,11 +296,7 @@ Design calls to settle before building the affected entries:
 
 ### texture-formats (solid 68)
 
-- Correct `parseBasis` to the published basisu header layout
 - Add `explain*` diagnostics for parse rejection
-- Barrel-export the level-layout helpers
-- Deepen tests on unexercised paths
-- Refresh the stale self-descriptions
 
 ### tilemap-formats (solid 68)
 
@@ -894,6 +890,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 - Complete the compressed-payload realization seam
 - Validate against real tool outputs
+- Preserve source shape and interpretation metadata
 
 ### image-codec (solid 70)
 

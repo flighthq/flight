@@ -74,6 +74,25 @@ describe('parseKtx2', () => {
     expect(container!.levels.map((l) => l.byteOffset)).toEqual([104, 168, 232, 296, 360, 424]);
   });
 
+  it('splits an uncompressed array level into one range per layer', () => {
+    const container = parseKtx2(
+      buildKtx2({
+        layerCount: 3,
+        levels: [{ byteLength: 192, byteOffset: 104 }],
+        vkFormat: 37,
+        width: 4,
+        height: 4,
+      }),
+    );
+    expect(container).not.toBeNull();
+    expect(container!.layers).toBe(3);
+    expect(container!.levels).toEqual([
+      { byteLength: 64, byteOffset: 104, height: 4, width: 4 },
+      { byteLength: 64, byteOffset: 168, height: 4, width: 4 },
+      { byteLength: 64, byteOffset: 232, height: 4, width: 4 },
+    ]);
+  });
+
   it('reports each mip of a mip chain from the level index', () => {
     const container = parseKtx2(
       buildKtx2({
@@ -110,6 +129,27 @@ describe('parseKtx2', () => {
       buildKtx2({ vkFormat: 0, width: 4, height: 4, scheme: 0, levels: [{ byteLength: 64, byteOffset: 104 }] }),
     );
     expect(container!.format).toBe('uastc');
+  });
+
+  it('preserves Zstd and ZLIB supercompressed levels as indivisible blobs', () => {
+    for (const [scheme, supercompression] of [
+      [2, 'Zstd'],
+      [3, 'ZLIB'],
+    ] as const) {
+      const container = parseKtx2(
+        buildKtx2({
+          layerCount: 2,
+          levels: [{ byteLength: 48, byteOffset: 104 }],
+          scheme,
+          vkFormat: 37,
+          width: 4,
+          height: 4,
+        }),
+      );
+      expect(container).not.toBeNull();
+      expect(container!.supercompression).toBe(supercompression);
+      expect(container!.levels).toEqual([{ byteLength: 48, byteOffset: 104, height: 4, width: 4 }]);
+    }
   });
 
   it('returns null for a non-KTX2 buffer', () => {

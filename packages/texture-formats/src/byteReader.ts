@@ -26,6 +26,14 @@ export function readByteReaderU16(reader: ByteReader): number {
   return value;
 }
 
+export function readByteReaderU24(reader: ByteReader): number {
+  const view = reader.view;
+  const offset = reader.offset;
+  const value = view.getUint8(offset) | (view.getUint8(offset + 1) << 8) | (view.getUint8(offset + 2) << 16);
+  reader.offset += 3;
+  return value;
+}
+
 export function readByteReaderU24BigEndian(reader: ByteReader): number {
   const view = reader.view;
   const offset = reader.offset;
