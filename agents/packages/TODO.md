@@ -962,6 +962,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 - Define HDR scene presentation
 - Unify transparent ordering across subject families
 - Finish scene semantic depth before acceleration
+- Turn the directional shadow proof into a composable pass
 
 ### skeleton3d (solid 75)
 
@@ -999,7 +1000,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ### lighting (solid 88)
 
-- Build the shadow primitive family
+- Build the shadow primitive family from the existing directional proof
 - Complete physical light realization
 - Add environment/probe lighting as a separate composition tier
 
