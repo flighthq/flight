@@ -341,11 +341,6 @@ Design calls to settle before building the affected entries:
 - Add `explain*` queries for the silent sentinels
 - Test the `decodeImagePremultiplied` auto-detect path
 
-### scene-resources (solid 70)
-
-- Separate the empty resolver primitive from the built-in assembly
-- Hide `SceneResourceInFlight`
-
 ### capture (solid 72)
 
 - `explain*` queries for the silent sentinels
@@ -790,7 +785,6 @@ These are explicit user directions whose implementation may span packages or req
 
 ### scene-resources (solid 70)
 
-- Make every `create*` result an Entity
 - Compose Extended PBR texture discovery through a nested extension-kind registry
 
 ### color (solid 74)
@@ -1009,7 +1003,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `updater` · `animation` · `motionpath` · `scene` · `picking` · `particleemitter` · `skeleton3d` · `camera-controls` · `debug` · `lifecycle` · `adjustments` · `mesh` · `camera` · `platform` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `shading`
+`storage` · `updater` · `animation` · `motionpath` · `scene` · `picking` · `scene-resources` · `particleemitter` · `skeleton3d` · `camera-controls` · `debug` · `lifecycle` · `adjustments` · `mesh` · `camera` · `platform` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `shading`
 
 ## Liveness — which stage each stale cell needs next
 

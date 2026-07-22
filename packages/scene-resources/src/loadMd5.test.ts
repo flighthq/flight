@@ -11,7 +11,7 @@ import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/t
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { loadMd5Mesh, loadSceneFromMd5Mesh } from './loadMd5';
-import { createSceneResourceResolver, disposeSceneResourceResolver } from './sceneResourceResolver';
+import { createBuiltInSceneResourceResolver, disposeSceneResourceResolver } from './sceneResourceResolver';
 
 vi.mock('@flighthq/scene-formats', () => ({
   createSceneFromMd5Mesh: vi.fn(),
@@ -83,7 +83,7 @@ describe('loadSceneFromMd5Mesh', () => {
   it('parses the mesh (+ optional anim) into a scene and resolves its shader textures', async () => {
     const { scene, texture } = sceneWithTexture();
     vi.mocked(createSceneFromMd5Mesh).mockReturnValue(scene);
-    const resolver = createSceneResourceResolver({ fetch: async () => fakeImage });
+    const resolver = createBuiltInSceneResourceResolver({ fetch: async () => fakeImage });
 
     const loaded = await loadSceneFromMd5Mesh('meshsrc', { resolver });
 

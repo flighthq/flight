@@ -9,9 +9,9 @@ import {
 } from '@flighthq/scene-formats';
 import type { GltfDocument } from '@flighthq/scene-formats';
 import type { SceneDocument } from '@flighthq/types';
+import type { LoadSceneOptions } from '@flighthq/types';
 
-import { createEmptySceneDocument, loadSceneDocumentBytes, loadSceneDocumentText } from './loadSceneDocumentSource';
-import type { LoadSceneOptions } from './loadSceneOptions';
+import { allocateEmptySceneDocument, loadSceneDocumentBytes, loadSceneDocumentText } from './loadSceneDocumentSource';
 import { resolveScenesWithOptions } from './loadSceneOptions';
 
 // Fetches a binary glTF (`.glb`) from a URL and parses it into a format-neutral SceneDocument. Fetches only
@@ -20,7 +20,7 @@ import { resolveScenesWithOptions } from './loadSceneOptions';
 // document is returned.
 export async function loadGlb(url: string, warnings?: string[]): Promise<SceneDocument> {
   const bytes = await loadSceneDocumentBytes(url, 'loadGlb', warnings);
-  return bytes === null ? createEmptySceneDocument() : parseGlb(bytes, warnings);
+  return bytes === null ? allocateEmptySceneDocument() : parseGlb(bytes, warnings);
 }
 
 // Fetches a glTF file from a URL and parses it into a format-neutral SceneDocument. The JSON `.gltf` form is
@@ -29,7 +29,7 @@ export async function loadGlb(url: string, warnings?: string[]): Promise<SceneDo
 // pushed and an empty document is returned.
 export async function loadGltf(url: string, warnings?: string[]): Promise<SceneDocument> {
   const source = await loadSceneDocumentText(url, 'loadGltf', warnings);
-  return source === null ? createEmptySceneDocument() : parseGltf(source, warnings);
+  return source === null ? allocateEmptySceneDocument() : parseGltf(source, warnings);
 }
 
 // Parses a binary glTF (`.glb`) into its default Scene and resolves the scene's textures. The async

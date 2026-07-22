@@ -1,8 +1,8 @@
-import type { SceneNode } from '@flighthq/types';
+import type { ResolveSceneResourcesOptions, SceneNode, SceneResourceResolver } from '@flighthq/types';
 
-import type { ResolveSceneResourcesOptions } from './resolveSceneResources';
 import { resolveSceneResources } from './resolveSceneResources';
-import type { SceneResourceResolver } from './sceneResourceResolver';
+import { SceneResourceResolverRuntimeKey } from './sceneResourceResolverRuntime';
+import type { SceneResourceResolverWithRuntime } from './sceneResourceResolverRuntime';
 
 // Eager/deterministic resolution: runs one resolveSceneResources pass, then awaits every in-flight
 // load it started so the scene is fully resolved (or each ref settled to Failed) on return. The
@@ -14,7 +14,14 @@ export async function resolveSceneResourcesAndWait(
   options?: Readonly<ResolveSceneResourcesOptions>,
 ): Promise<void> {
   resolveSceneResources(scene, resolver, options);
+  await waitForSceneResourceResolver(resolver);
+}
+
+// Waits for the loads that are pending at call time without revealing or exposing the resolver's
+// private request records. New work queued after the snapshot belongs to the caller's next bracket.
+export async function waitForSceneResourceResolver(resolver: Readonly<SceneResourceResolver>): Promise<void> {
+  const runtime = (resolver as SceneResourceResolverWithRuntime)[SceneResourceResolverRuntimeKey];
   const promises: Promise<void>[] = [];
-  for (const entry of resolver.inFlight.values()) promises.push(entry.promise);
+  for (const entry of runtime.inFlight.values()) promises.push(entry.promise);
   await Promise.allSettled(promises);
 }

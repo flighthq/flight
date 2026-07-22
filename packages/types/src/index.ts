@@ -391,6 +391,7 @@ export * from './SceneNode';
 export * from './SceneNodeVisitor';
 export * from './SceneRenderList';
 export * from './SceneRenderProxy';
+export * from './SceneResources';
 export * from './ImageResourceReference';
 export * from './Screen';
 export * from './ScreenChangeEvent';

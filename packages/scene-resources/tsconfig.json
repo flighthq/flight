@@ -10,6 +10,9 @@
   },
   "references": [
     {
+      "path": "../entity"
+    },
+    {
       "path": "../image"
     },
     {

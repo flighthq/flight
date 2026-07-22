@@ -11,7 +11,7 @@ import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/t
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { loadAwd, loadSceneFromAwd } from './loadSceneFromAwd';
-import { createSceneResourceResolver, disposeSceneResourceResolver } from './sceneResourceResolver';
+import { createBuiltInSceneResourceResolver, disposeSceneResourceResolver } from './sceneResourceResolver';
 
 vi.mock('@flighthq/scene-formats', () => ({
   createSceneFromAwd: vi.fn(),
@@ -79,7 +79,7 @@ describe('loadSceneFromAwd', () => {
   it('parses then eagerly resolves the scene resources through a supplied resolver', async () => {
     const texture = createTexture({ resource: externalRef() });
     createSceneFromAwdMock.mockReturnValue(fakeParsedScene(texture));
-    const resolver = createSceneResourceResolver({ fetch: async () => fakeImage });
+    const resolver = createBuiltInSceneResourceResolver({ fetch: async () => fakeImage });
 
     const scene = await loadSceneFromAwd(new Uint8Array([1, 2, 3]), { resolver });
 

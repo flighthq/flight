@@ -2,7 +2,7 @@ import { setNetBackend } from '@flighthq/net';
 import type { NetResponse } from '@flighthq/types';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { createEmptySceneDocument, loadSceneDocumentBytes, loadSceneDocumentText } from './loadSceneDocumentSource';
+import { allocateEmptySceneDocument, loadSceneDocumentBytes, loadSceneDocumentText } from './loadSceneDocumentSource';
 
 function okResponse(body: string | ArrayBuffer): NetResponse {
   return { body, headers: {}, ok: true, status: 200, statusText: 'OK', url: 'u' };
@@ -16,9 +16,9 @@ afterEach(() => {
   setNetBackend(null);
 });
 
-describe('createEmptySceneDocument', () => {
+describe('allocateEmptySceneDocument', () => {
   it('returns every table present and empty', () => {
-    const doc = createEmptySceneDocument();
+    const doc = allocateEmptySceneDocument();
     expect(doc.nodes).toHaveLength(0);
     expect(doc.meshes).toHaveLength(0);
     expect(doc.materials).toHaveLength(0);

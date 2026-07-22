@@ -1,14 +1,8 @@
 import type { Scene } from '@flighthq/scene';
+import type { LoadSceneOptions } from '@flighthq/types';
 
 import { resolveSceneResourcesAndWait } from './resolveSceneResourcesAndWait';
-import type { SceneResourceResolver } from './sceneResourceResolver';
-import { createSceneResourceResolver, disposeSceneResourceResolver } from './sceneResourceResolver';
-
-export interface LoadSceneOptions {
-  // Reuse a caller-owned resolver (shared registry/fetch/loader); omit it and a private resolver is
-  // created for this load and disposed when the scene is fully resolved.
-  resolver?: SceneResourceResolver;
-}
+import { createBuiltInSceneResourceResolver, disposeSceneResourceResolver } from './sceneResourceResolver';
 
 // Shared resolve-lifecycle for every `loadSceneFrom*` / `load*` in this package: eagerly resolves each
 // scene's pending texture resources through a private-or-supplied resolver, awaiting completion. A
@@ -19,7 +13,7 @@ export async function resolveScenesWithOptions(
   scenes: readonly Readonly<Scene>[],
   options?: Readonly<LoadSceneOptions>,
 ): Promise<void> {
-  const resolver = options?.resolver ?? createSceneResourceResolver();
+  const resolver = options?.resolver ?? createBuiltInSceneResourceResolver();
   try {
     for (const scene of scenes) await resolveSceneResourcesAndWait(scene.root, resolver);
   } finally {

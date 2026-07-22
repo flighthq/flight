@@ -2,9 +2,9 @@ import type { Scene } from '@flighthq/scene';
 import { createSceneFromObj, parseObj } from '@flighthq/scene-formats';
 import type { ObjMaterialLibrary } from '@flighthq/scene-formats';
 import type { SceneDocument } from '@flighthq/types';
+import type { LoadSceneOptions } from '@flighthq/types';
 
-import { createEmptySceneDocument, loadSceneDocumentText } from './loadSceneDocumentSource';
-import type { LoadSceneOptions } from './loadSceneOptions';
+import { allocateEmptySceneDocument, loadSceneDocumentText } from './loadSceneDocumentSource';
 import { resolveScenesWithOptions } from './loadSceneOptions';
 
 // Fetches a Wavefront OBJ file from a URL and parses it into a format-neutral SceneDocument, using an
@@ -18,7 +18,7 @@ export async function loadObj(
   warnings?: string[],
 ): Promise<SceneDocument> {
   const source = await loadSceneDocumentText(url, 'loadObj', warnings);
-  return source === null ? createEmptySceneDocument() : parseObj(source, materials, warnings);
+  return source === null ? allocateEmptySceneDocument() : parseObj(source, materials, warnings);
 }
 
 // Parses a Wavefront OBJ (with an optional parsed MTL library) into a Scene and resolves the material

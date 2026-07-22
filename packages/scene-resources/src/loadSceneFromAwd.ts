@@ -1,9 +1,9 @@
 import type { Scene } from '@flighthq/scene';
 import { createSceneFromAwd, parseAwd } from '@flighthq/scene-formats';
 import type { SceneDocument } from '@flighthq/types';
+import type { LoadSceneOptions } from '@flighthq/types';
 
-import { createEmptySceneDocument, loadSceneDocumentBytes } from './loadSceneDocumentSource';
-import type { LoadSceneOptions } from './loadSceneOptions';
+import { allocateEmptySceneDocument, loadSceneDocumentBytes } from './loadSceneDocumentSource';
 import { resolveScenesWithOptions } from './loadSceneOptions';
 
 // Fetches an Away3D AWD file from a URL and parses it into a format-neutral SceneDocument (geometry, skins,
@@ -12,7 +12,7 @@ import { resolveScenesWithOptions } from './loadSceneOptions';
 // failure a warning is pushed and an empty document is returned.
 export async function loadAwd(url: string, warnings?: string[]): Promise<SceneDocument> {
   const bytes = await loadSceneDocumentBytes(url, 'loadAwd', warnings);
-  return bytes === null ? createEmptySceneDocument() : parseAwd(bytes, warnings);
+  return bytes === null ? allocateEmptySceneDocument() : parseAwd(bytes, warnings);
 }
 
 // Parse-and-resolve convenience over @flighthq/scene-formats: parses AWD bytes into a Scene (geometry

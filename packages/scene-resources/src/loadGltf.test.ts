@@ -25,7 +25,7 @@ import {
   loadScenesFromGlb,
   loadScenesFromGltf,
 } from './loadGltf';
-import { createSceneResourceResolver, disposeSceneResourceResolver } from './sceneResourceResolver';
+import { createBuiltInSceneResourceResolver, disposeSceneResourceResolver } from './sceneResourceResolver';
 
 vi.mock('@flighthq/scene-formats', () => ({
   createSceneFromGlb: vi.fn(),
@@ -74,8 +74,8 @@ function sceneWithTexture(): { scene: Scene; texture: ReturnType<typeof createTe
   return { scene: scene as Scene, texture };
 }
 
-function withResolver(): ReturnType<typeof createSceneResourceResolver> {
-  return createSceneResourceResolver({ fetch: async () => fakeImage });
+function withResolver(): ReturnType<typeof createBuiltInSceneResourceResolver> {
+  return createBuiltInSceneResourceResolver({ fetch: async () => fakeImage });
 }
 
 afterEach(() => {

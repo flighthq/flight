@@ -1,6 +1,7 @@
 import { createTexture } from '@flighthq/texture';
 import {
   ResourceResolutionState,
+  EntityRuntimeKey,
   ImageResourceReferenceKind,
   StandardPbrMaterialKind,
   UnlitMaterialKind,
@@ -8,21 +9,38 @@ import {
 import { describe, expect, it } from 'vitest';
 
 import { createSceneMaterialTextureRegistry } from './sceneMaterialTextureRegistry';
-import { createSceneResourceResolver, disposeSceneResourceResolver } from './sceneResourceResolver';
-import type { SceneResourceInFlight } from './sceneResourceResolver';
+import {
+  createBuiltInSceneResourceResolver,
+  createSceneResourceResolver,
+  disposeSceneResourceResolver,
+} from './sceneResourceResolver';
+import { SceneResourceResolverRuntimeKey } from './sceneResourceResolverRuntime';
+import type { SceneResourceInFlight, SceneResourceResolverWithRuntime } from './sceneResourceResolverRuntime';
 
-describe('createSceneResourceResolver', () => {
-  it('defaults to a built-in-populated registry, a web fetch, empty in-flight, and no signals', () => {
-    const resolver = createSceneResourceResolver();
+describe('createBuiltInSceneResourceResolver', () => {
+  it('assembles Standard PBR and Unlit discovery only through the explicit built-in constructor', () => {
+    const resolver = createBuiltInSceneResourceResolver();
     expect(resolver.registry.listers.has(StandardPbrMaterialKind)).toBe(true);
     expect(resolver.registry.listers.has(UnlitMaterialKind)).toBe(true);
-    expect(typeof resolver.fetch).toBe('function');
-    expect(resolver.inFlight.size).toBe(0);
-    expect(resolver.signals).toBeNull();
-    expect(resolver.loader).toBeDefined();
     disposeSceneResourceResolver(resolver);
   });
+});
 
+describe('createSceneResourceResolver', () => {
+  it('creates an Entity with an empty registry and private runtime machinery', () => {
+    const resolver = createSceneResourceResolver();
+    const runtime = (resolver as SceneResourceResolverWithRuntime)[SceneResourceResolverRuntimeKey];
+    expect(EntityRuntimeKey in resolver).toBe(true);
+    expect(resolver.registry.listers.size).toBe(0);
+    expect(typeof resolver.fetch).toBe('function');
+    expect(runtime.inFlight.size).toBe(0);
+    expect(runtime.signals).toBeNull();
+    expect(runtime.loader).toBeDefined();
+    disposeSceneResourceResolver(resolver);
+  });
+});
+
+describe('createSceneResourceResolver options', () => {
   it('uses a caller-supplied registry and fetch wholesale', () => {
     const registry = createSceneMaterialTextureRegistry();
     const fetch = async () => null;
@@ -48,14 +66,14 @@ describe('disposeSceneResourceResolver', () => {
     });
     const entry: SceneResourceInFlight = {
       controller,
-      key: 'k',
       promise: Promise.resolve(),
       subscribers: new Set([texture]),
     };
-    resolver.inFlight.set(texture.resource!, entry);
+    const runtime = (resolver as SceneResourceResolverWithRuntime)[SceneResourceResolverRuntimeKey];
+    runtime.inFlight.set(texture.resource!, entry);
 
     disposeSceneResourceResolver(resolver);
     expect(controller.signal.aborted).toBe(true);
-    expect(resolver.inFlight.size).toBe(0);
+    expect(runtime.inFlight.size).toBe(0);
   });
 });

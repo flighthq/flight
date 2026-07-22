@@ -11,7 +11,7 @@ import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/t
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { load3ds, loadSceneFrom3ds } from './load3ds';
-import { createSceneResourceResolver, disposeSceneResourceResolver } from './sceneResourceResolver';
+import { createBuiltInSceneResourceResolver, disposeSceneResourceResolver } from './sceneResourceResolver';
 
 vi.mock('@flighthq/scene-formats', () => ({
   createSceneFrom3ds: vi.fn(),
@@ -71,7 +71,7 @@ describe('loadSceneFrom3ds', () => {
     const scene = createScene();
     addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: texture })]));
     vi.mocked(createSceneFrom3ds).mockReturnValue(scene as Scene);
-    const resolver = createSceneResourceResolver({ fetch: async () => fakeImage });
+    const resolver = createBuiltInSceneResourceResolver({ fetch: async () => fakeImage });
 
     const loaded = await loadSceneFrom3ds(new Uint8Array([1]), { resolver });
 

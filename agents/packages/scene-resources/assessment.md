@@ -10,21 +10,14 @@ See [charter](./charter.md) for blessed direction.
 
 ## Directed
 
-1. **Make every `create*` result an Entity.** Move the public resolver/registry/signal shapes to the
-   header layer where appropriate and construct them through `createEntity`; keep in-flight request
-   records private implementation data.
-2. **Compose Extended PBR texture discovery through a nested extension-kind registry.** Keep one generic
+1. **Compose Extended PBR texture discovery through a nested extension-kind registry.** Keep one generic
    Extended PBR material lister, then dispatch each descriptor to a separately imported
    PbrExtension.kind texture lister. Do not register multiple listers under the one material kind, add
    registerAll, or make the base resolver depend on every extension texture slot.
 
 ## Recommended
 
-1. **Separate the empty resolver primitive from the built-in assembly.** Stop the base constructor from
-   silently registering Standard PBR and Unlit. Give the preconfigured convenience an explicit name so
-   its bundle cost and behavior are discernible.
-2. **Hide `SceneResourceInFlight`.** It is documented as internal and should not be re-exported as public
-   API shape.
+No open Recommended items.
 
 ## Depth gaps
 
@@ -52,3 +45,12 @@ See [charter](./charter.md) for blessed direction.
   shared Texture is released together, failure explicitly counts as settled so fallback rendering is
   not hidden forever, cancellation remains pending until re-entry settles, and resources already bound
   or failed before subscription do not create an eventless hidden owner.
+- [2026-07-22 · completed] The public resolver, material-texture registry, and signal group shapes live
+  in `@flighthq/types` and every package `create*` result is an Entity. In-flight requests, the loader,
+  settled-image retention, and optional signal storage are private resolver runtime data. The remaining
+  structural allocations use truthful non-`create` vocabulary (`allocateEmptySceneDocument`), while the
+  web fetch seam is a direct `fetchWebImageResource` function.
+- [2026-07-22 · completed] `createSceneResourceResolver` is the empty primitive and
+  `createBuiltInSceneResourceResolver` is the explicit Standard PBR + Unlit assembly. A root-bundle
+  proof shows the primitive omits both built-in material listers and the named assembly includes them;
+  no `registerAll` path was introduced.

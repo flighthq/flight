@@ -11,7 +11,7 @@ import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/t
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { loadMd2, loadSceneFromMd2 } from './loadMd2';
-import { createSceneResourceResolver, disposeSceneResourceResolver } from './sceneResourceResolver';
+import { createBuiltInSceneResourceResolver, disposeSceneResourceResolver } from './sceneResourceResolver';
 
 vi.mock('@flighthq/scene-formats', () => ({
   createSceneFromMd2: vi.fn(),
@@ -71,7 +71,7 @@ describe('loadSceneFromMd2', () => {
     const scene = createScene();
     addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: texture })]));
     vi.mocked(createSceneFromMd2).mockReturnValue(scene as Scene);
-    const resolver = createSceneResourceResolver({ fetch: async () => fakeImage });
+    const resolver = createBuiltInSceneResourceResolver({ fetch: async () => fakeImage });
 
     const loaded = await loadSceneFromMd2(new Uint8Array([1]), { resolver });
 

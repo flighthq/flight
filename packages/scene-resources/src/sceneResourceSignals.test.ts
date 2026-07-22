@@ -1,6 +1,6 @@
 import { connectSignal, emitSignal } from '@flighthq/signals';
 import type { ImageResourceReference, Texture } from '@flighthq/types';
-import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
+import { EntityRuntimeKey, ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { createSceneResourceResolver, disposeSceneResourceResolver } from './sceneResourceResolver';
@@ -20,6 +20,7 @@ const ref: ImageResourceReference = {
 describe('createSceneResourceSignals', () => {
   it('creates a connectable, emittable signal group', () => {
     const signals = createSceneResourceSignals();
+    expect(EntityRuntimeKey in signals).toBe(true);
     let received = 0;
     connectSignal(signals.onResourceResolved, () => received++);
     emitSignal(signals.onResourceResolved, { ref, texture: {} as Texture });
@@ -33,7 +34,7 @@ describe('enableSceneResourceSignals', () => {
     const first = enableSceneResourceSignals(resolver);
     const second = enableSceneResourceSignals(resolver);
     expect(first).toBe(second);
-    expect(resolver.signals).toBe(first);
+    expect(getSceneResourceSignals(resolver)).toBe(first);
     disposeSceneResourceResolver(resolver);
   });
 });
