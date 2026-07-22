@@ -983,12 +983,12 @@ async function captureUrlAttempt(
     await page.evaluate(() => {
       requestAnimationFrame(() => requestAnimationFrame(() => {}));
     });
-    let earlyIntercept = await grabInterceptedGlFrame(page);
-    const earlyCoverage = earlyIntercept?.coverage ?? (await measureObservedCanvasCoverage(page));
+    let bestIntercept = await grabInterceptedGlFrame(page);
+    const earlyCoverage = bestIntercept?.coverage ?? (await measureObservedCanvasCoverage(page));
     let reachedFrame = earlyCoverage !== null && earlyCoverage > OBSERVE_BLANK_COVERAGE;
     if (!reachedFrame) {
       const observed = await waitForObservedPixels(page, OBSERVE_WARMUP_TIMEOUT_MS);
-      earlyIntercept ??= observed.intercept;
+      bestIntercept = betterObservedGlFrame(bestIntercept, observed.intercept);
       reachedFrame = observed.reached;
     }
     if (!reachedFrame) {
@@ -997,12 +997,15 @@ async function captureUrlAttempt(
         t: -1,
         level: 'warn',
         channel: 'capture',
-        data: { msg: 'render warmup reached its 15s safety bound; emitting the best available page image' },
+        data: { msg: 'render warmup reached its 5s safety bound; emitting the best available page image' },
       });
     }
     if (wait > 0) await page.waitForTimeout(wait);
 
-    const intercept = earlyIntercept ?? (await grabInterceptedGlFrame(page));
+    // Keep the best readback, not merely the first non-null readback. Under CI GPU contention the
+    // context can exist before its submitted clear has reached the software adapter, producing a valid
+    // zero-coverage sample followed shortly by the actual frame.
+    const intercept = betterObservedGlFrame(bestIntercept, await grabInterceptedGlFrame(page));
     const coverage = intercept?.coverage ?? (await measureObservedCanvasCoverage(page));
     const canvasIsBlank = coverage !== null && coverage <= OBSERVE_BLANK_COVERAGE;
     // If the render surface is blank, capture the whole page instead: an error overlay or loading UI is
@@ -1110,17 +1113,26 @@ async function waitForObservedPixels(
   intercept: { coverage: number; dataUrl: string } | null;
 }> {
   const deadline = performance.now() + timeoutMs;
+  let bestIntercept: { coverage: number; dataUrl: string } | null = null;
   while (performance.now() < deadline) {
     const intercept = await grabInterceptedGlFrame(page);
+    bestIntercept = betterObservedGlFrame(bestIntercept, intercept);
     const coverage = intercept?.coverage ?? (await measureObservedCanvasCoverage(page));
-    if (coverage !== null && coverage > OBSERVE_BLANK_COVERAGE) return { reached: true, intercept };
-    const halted = await page
-      .evaluate(() => (window as unknown as { __captureFramesReached?: boolean }).__captureFramesReached === true)
-      .catch(() => false);
-    if (halted) return { reached: true, intercept };
+    if (coverage !== null && coverage > OBSERVE_BLANK_COVERAGE) return { reached: true, intercept: bestIntercept };
+    // __captureFramesReached means the page stopped advancing, not that a usable frame was read back.
+    // Continue polling the preserved buffer: treating the halt itself as success was the CI-only race
+    // that allowed a transient all-background WebGL sample to become the final screenshot.
     await page.waitForTimeout(100);
   }
-  return { reached: false, intercept: null };
+  return { reached: false, intercept: bestIntercept };
+}
+
+function betterObservedGlFrame(
+  current: { coverage: number; dataUrl: string } | null,
+  candidate: { coverage: number; dataUrl: string } | null,
+): { coverage: number; dataUrl: string } | null {
+  if (candidate === null) return current;
+  return current === null || candidate.coverage > current.coverage ? candidate : current;
 }
 
 export interface CaptureUrlOptions {

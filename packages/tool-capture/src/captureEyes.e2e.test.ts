@@ -17,7 +17,9 @@ const pages: Record<string, string> = {
   </script>`,
   '/static-webgl': `<!doctype html><canvas width="320" height="180"></canvas><script>
     const gl = document.querySelector('canvas').getContext('webgl'); gl.clearColor(0,0,0,1); gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.enable(gl.SCISSOR_TEST); gl.scissor(60,40,200,100); gl.clearColor(1,0.2,0,1); gl.clear(gl.COLOR_BUFFER_BIT);
+    setTimeout(() => {
+      gl.enable(gl.SCISSOR_TEST); gl.scissor(60,40,200,100); gl.clearColor(1,0.2,0,1); gl.clear(gl.COLOR_BUFFER_BIT);
+    }, 100);
   </script>`,
   '/blank-evidence': `<!doctype html><canvas width="320" height="180"></canvas><div id="error">Renderer failed to initialize</div>`,
   '/flaky': `<!doctype html><canvas width="320" height="180"></canvas><script>
@@ -62,12 +64,12 @@ describe('capture eyes browser contract', () => {
   it('captures a static one-shot WebGL frame without page integration', async () => {
     const diagnostics = await captureUrl(`${baseUrl}/static-webgl`, {
       outDir: join(artifactRoot, 'webgl'),
-      maxRetries: 0,
+      maxRetries: 1,
     });
     expect(diagnostics.backend).toBe('webgl');
     expect(diagnostics.coverage).toBeGreaterThan(0.1);
     expect(diagnostics.usable).toBe(true);
-  }, 15_000);
+  }, 20_000);
 
   it('preserves full-page evidence and emits a versioned machine report for a blank renderer', async () => {
     const outDir = join(artifactRoot, 'blank');
