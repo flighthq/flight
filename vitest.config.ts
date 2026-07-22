@@ -2,10 +2,12 @@ import { defineConfig, mergeConfig } from 'vitest/config';
 
 import baseConfig from './vitest.config.base.js';
 
-// One master config for the full run: every package's tests share a single jsdom environment per
+// One master config for the fast run: unit tests share a single jsdom environment per
 // worker (isolate:false) instead of one environment per file — the full suite's cost is per-file
-// environment setup, not test logic, so reuse is a ~15× speedup. Each package keeps its own
-// vitest.config.ts for standalone runs; this config does not recurse into them.
+// environment setup, not test logic, so reuse is a ~15× speedup. Tool-capture is deliberately left
+// to the per-package CI lane: its Node environment, browser processes, and serialized e2e contracts
+// are incompatible with this shared jsdom fast path. Each package keeps its own vitest.config.ts for
+// standalone runs; this config does not recurse into them.
 //
 // Every test file is hermetic under a shared module registry: mocks are scoped per-file (vi.doMock
 // + dynamic import of the subject, unmocked in afterAll — never top-level hoisted vi.mock, which
@@ -20,7 +22,12 @@ export default mergeConfig(
       isolate: false,
       unstubGlobals: true,
       include: ['packages/**/src/**/*.test.ts'],
-      exclude: ['**/.claude/**', '**/node_modules/**', '**/surfaceWasm.test.ts'],
+      exclude: [
+        '**/.claude/**',
+        '**/node_modules/**',
+        '**/surfaceWasm.test.ts',
+        'packages/tool-capture/src/**/*.test.ts',
+      ],
       passWithNoTests: true,
     },
   }),

@@ -1,6 +1,19 @@
 export {};
 
 if (typeof window !== 'undefined' && 'document' in window) {
+  // Vitest's jsdom global can pair Node's TextEncoder with jsdom's Uint8Array constructor. The
+  // encoded bytes then fail the platform invariant `bytes instanceof Uint8Array` (and esbuild
+  // correctly refuses to run). Keep the single shared jsdom fast path, but copy encoded bytes into
+  // its realm when the constructors do not already agree.
+  if (!(new TextEncoder().encode('') instanceof Uint8Array)) {
+    const NativeTextEncoder = TextEncoder;
+    globalThis.TextEncoder = class RealmTextEncoder extends NativeTextEncoder {
+      override encode(input?: string): Uint8Array {
+        return Uint8Array.from(super.encode(input));
+      }
+    };
+  }
+
   // jsdom / browser environment
   // @ts-expect-error: quiet warning about types
   await import('@testing-library/jest-dom');

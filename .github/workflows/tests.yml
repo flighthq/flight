@@ -88,10 +88,11 @@ jobs:
 
   # Two test legs with different fidelity/speed tradeoffs. `test` is the thorough one: each package runs
   # under its own vitest config, so node packages use the `node` environment and jsdom packages use
-  # `jsdom`, each isolated in its own process — correct, but minutes long. `test-fast` is the merged run
-  # (one shared jsdom env, no isolation) that finishes in seconds over the same test files. Both gate
-  # PRs, so any environment- or isolation-specific regression is caught before code merges; edge-publish
-  # gates only on `test-fast`, so a snapshot ships in seconds without waiting on the thorough leg.
+  # `jsdom`, each isolated in its own process — correct, but minutes long. This is the one lane that
+  # runs tool-capture's serialized browser contracts. `test-fast` is the merged run (one shared jsdom
+  # env, no isolation) for ordinary unit tests; it excludes tool-capture so local pushes stay fast and
+  # don't launch browsers. Both gate PRs; edge-publish gates only on `test-fast`, so a snapshot ships
+  # without waiting on the thorough leg.
   test:
     name: TypeScript tests · isolated (per-package env)
     needs: build-check
@@ -118,8 +119,6 @@ jobs:
           node-version: 20
           cache: 'npm'
       - run: npm ci
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
       - run: npm run test
 
   quality:

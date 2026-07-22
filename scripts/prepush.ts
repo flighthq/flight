@@ -4,7 +4,8 @@
 //
 //   1. typecheck              — always; incremental, catches cross-package type breakage
 //   2. vitest run --changed   — only when package source changed; vitest walks its own module
-//                               graph from <base> and reruns just the affected test files
+//                               graph from <base> and reruns affected fast-path tests. Tool-capture's
+//                               browser contracts run once in CI through its package config.
 //
 // We let vitest derive the affected test set from its module graph (`--changed <base>`) rather than
 // computing it ourselves from the package dependency graph. The root vitest config is a single
