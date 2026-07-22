@@ -6,7 +6,7 @@ import { createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
 import { createMesh, createSceneNode, SceneNodeKind } from '@flighthq/scene';
-import type { Camera3D, SceneLights } from '@flighthq/types';
+import type { Camera3D, SceneLightsLike } from '@flighthq/types';
 
 import { drawGlScene } from './drawGlScene';
 import { areGlSceneColorSpaceGuardsEnabled, enableGlSceneColorSpaceGuards } from './enableGlSceneColorSpaceGuards';
@@ -23,7 +23,7 @@ function makeCamera(): Camera3D {
   return camera;
 }
 
-const LIGHTS: SceneLights = {
+const LIGHTS: SceneLightsLike = {
   ambient: createAmbientLight({ color: 0xffffffff, intensity: 0.2 }),
   directional: createDirectionalLight({ color: 0xffffffff, direction: createVector3(0, -1, -1), intensity: 1 }),
 };

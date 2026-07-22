@@ -27,7 +27,7 @@ import type {
   PointLight,
   RenderState,
   SceneLightBlock,
-  SceneLights,
+  SceneLightsLike,
   SceneNode,
   SceneRenderList,
   SpotLight,
@@ -58,7 +58,7 @@ import {
 // backend keyed off `version` relies on to skip re-uploading an unchanged block across frames; a
 // blind per-frame bump would defeat that skip. Packs into a scratch, compares, then commits only on
 // change so an unchanged block is never dirtied.
-export function packSceneLightBlock(out: SceneLightBlock, lights: Readonly<SceneLights>): void {
+export function packSceneLightBlock(out: SceneLightBlock, lights: Readonly<SceneLightsLike>): void {
   scratchLightData.fill(0);
 
   let directionalCount = 0;
@@ -142,7 +142,7 @@ export function prepareSceneRender(
   state: RenderState,
   scene: Readonly<SceneNode>,
   camera: Readonly<Camera3D>,
-  lights: Readonly<SceneLights>,
+  lights: Readonly<SceneLightsLike>,
 ): SceneRenderList {
   const prepared = ensurePreparedScene(state);
   const list = prepared.list;

@@ -1,5 +1,5 @@
 import { beginGlRenderPass, endGlRenderPass, presentGlRenderTarget } from '@flighthq/render-gl';
-import type { Camera3D, GlRenderState, GlRenderTarget, SceneLights, SceneNode } from '@flighthq/types';
+import type { Camera3D, GlRenderState, GlRenderTarget, SceneLightsLike, SceneNode } from '@flighthq/types';
 
 import { drawGlScene } from './drawGlScene';
 
@@ -20,7 +20,7 @@ export function presentGlScene(
   target: GlRenderTarget,
   scene: Readonly<SceneNode>,
   camera: Readonly<Camera3D>,
-  lights: Readonly<SceneLights>,
+  lights: Readonly<SceneLightsLike>,
 ): void {
   beginGlRenderPass(state, target);
   drawGlScene(state, scene, camera, lights);

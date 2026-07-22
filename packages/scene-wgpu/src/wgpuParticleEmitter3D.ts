@@ -9,7 +9,7 @@ import type {
   ParticleBlendMode,
   ParticleEmitter3D,
   ParticleEmitterData,
-  SceneLights,
+  SceneLightsLike,
   SceneNode,
   WgpuRenderState,
 } from '@flighthq/types';
@@ -419,7 +419,7 @@ export function drawWgpuSceneParticleEmitter2Ds(
   state: WgpuRenderState,
   scene: Readonly<SceneNode>,
   camera: Readonly<Camera3D>,
-  lights: Readonly<SceneLights>,
+  lights: Readonly<SceneLightsLike>,
 ): void {
   emitterScratch.length = 0;
   collectParticleEmitter3DNodes(scene, emitterScratch);

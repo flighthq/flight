@@ -13,7 +13,7 @@ import type {
   Matrix4,
   Mesh,
   MeshSubset,
-  SceneLights,
+  SceneLightsLike,
   SceneNode,
   SceneRenderProxy,
   SurfaceMaterial,
@@ -61,7 +61,7 @@ export function drawGlScene(
   state: GlRenderState,
   scene: Readonly<SceneNode>,
   camera: Readonly<Camera3D>,
-  lights: Readonly<SceneLights>,
+  lights: Readonly<SceneLightsLike>,
 ): void {
   const list = prepareSceneRender(state, scene, camera, lights);
   const lightBlock = list.lights;

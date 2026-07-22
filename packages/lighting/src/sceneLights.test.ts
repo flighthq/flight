@@ -1,3 +1,4 @@
+import { EntityRuntimeKey } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { createAmbientLight } from './ambientLight';
@@ -13,6 +14,7 @@ describe('createSceneLights', () => {
     expect(lights.point).toEqual([]);
     expect(lights.spot).toEqual([]);
     expect(lights.hemisphere).toEqual([]);
+    expect(EntityRuntimeKey in lights).toBe(true);
   });
 
   it('carries the provided lights and defaults the omitted ones (no undefined slot)', () => {
