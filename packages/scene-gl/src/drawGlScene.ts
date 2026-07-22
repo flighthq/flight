@@ -78,8 +78,8 @@ export function drawGlScene(
   // needed for the draw step so the two passes can iterate independently.
   const opaqueDrawList = runtime.opaqueDrawList;
   const blendedDrawList = runtime.blendedDrawList;
-  opaqueDrawList.length = 0;
-  blendedDrawList.length = 0;
+  recycleDrawEntries(opaqueDrawList, runtime.opaquePool);
+  recycleDrawEntries(blendedDrawList, runtime.blendedPool);
 
   // GL vertex morph (CPU-blend-then-upload): blend each visible morphed mesh's base + Σ wᵢ·targetᵢ into
   // its geometry.vertices and bump the version, so ensureGlMeshUpload below re-uploads the deformed base.
@@ -118,12 +118,11 @@ export function drawGlScene(
 
       const resolvedMaterial = material ?? DEFAULT_MATERIAL;
       const isBlended = isBlendedMaterial(resolvedMaterial) || objectAlpha < 1;
-      const entry = isBlended ? acquireBlendedEntry(runtime.blendedPool) : acquireOpaqueEntry(runtime.opaquePool);
+      const entry = acquireDrawEntry(isBlended ? runtime.blendedPool : runtime.opaquePool);
       entry.alpha = objectAlpha;
       entry.clipW = clipW;
       entry.mesh = mesh;
       entry.material = resolvedMaterial;
-      entry.normalMatrix = worldMatrix; // placeholder; filled per-draw from the mesh
       entry.renderer = renderer;
       entry.subset = subsets[s];
       entry.worldMatrix = worldMatrix;
@@ -247,21 +246,22 @@ interface DrawEntry {
   clipW: number;
   material: Readonly<Material>;
   mesh: Mesh;
-  normalMatrix: Readonly<Matrix4>;
   renderer: GlMeshMaterialRenderer;
   subset: Readonly<MeshSubset>;
   worldMatrix: Readonly<Matrix4>;
 }
 
-// Pool helpers: take from the per-runtime pool or allocate a fresh entry.
-function acquireOpaqueEntry(pool: GlSceneDrawEntry[]): GlSceneDrawEntry {
+// Takes from the per-runtime pool or allocates a fresh entry.
+function acquireDrawEntry(pool: GlSceneDrawEntry[]): GlSceneDrawEntry {
   if (pool.length > 0) return pool.pop()!;
   return createDrawEntry();
 }
 
-function acquireBlendedEntry(pool: GlSceneDrawEntry[]): GlSceneDrawEntry {
-  if (pool.length > 0) return pool.pop()!;
-  return createDrawEntry();
+// Returns last frame's entries to their per-state pool before the lists are rebuilt. A reverse move is
+// sufficient because partitioning overwrites every semantic field; stable transparency order comes
+// from the current frame's sort, not retained record position.
+function recycleDrawEntries(entries: GlSceneDrawEntry[], pool: GlSceneDrawEntry[]): void {
+  while (entries.length > 0) pool.push(entries.pop()!);
 }
 
 function createDrawEntry(): GlSceneDrawEntry {
@@ -270,7 +270,6 @@ function createDrawEntry(): GlSceneDrawEntry {
     clipW: 0,
     material: DEFAULT_MATERIAL,
     mesh: null!,
-    normalMatrix: createMatrix4(),
     renderer: null!,
     subset: { indexCount: 0, indexOffset: 0 },
     worldMatrix: createMatrix4(),

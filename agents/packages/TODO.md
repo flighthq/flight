@@ -449,8 +449,6 @@ Design calls to settle before building the affected entries:
 ### scene-gl (solid 75)
 
 - Keep UV1 as a vertex-layout fact, not a shader-registration feature
-- Recycle or remove the draw-entry pools
-- Remove the dead draw-entry normalMatrix field and collapse duplicate acquire helpers
 - Delete old IBL textures on rebake
 - Add deterministic skybox teardown
 - Fix the nonexistent invalidation contract

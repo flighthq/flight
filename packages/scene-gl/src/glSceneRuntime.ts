@@ -43,7 +43,6 @@ export interface GlSceneDrawEntry {
   clipW: number;
   material: object;
   mesh: object;
-  normalMatrix: object;
   renderer: object;
   subset: object;
   worldMatrix: object;
