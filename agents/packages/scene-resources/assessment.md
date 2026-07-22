@@ -26,6 +26,12 @@ No open Recommended items.
    should compose assets/texture-formats with the current resolution state machine.
 2. **Prove resource realization behaviorally.** Add GL captures for every supported scene format,
    multi-map reveal, shared URI dedup, cancellation/re-entry, and failure fallback.
+3. **Discover specular-glossiness textures through an opt-in lister.** A separately imported
+   `SpecularGlossinessPbrMaterial` lister must enumerate diffuse, packed specular-glossiness, normal,
+   occlusion, and emissive slots so declared resources resolve before reveal. Keep the empty resolver
+   empty and preserve the named built-in assembly's tree-shaking contract; including this legacy workflow
+   in that assembly must be an explicit policy choice rather than an accidental dependency of Standard
+   PBR.
 
 ## Backlog
 
