@@ -3,7 +3,7 @@
 import { build } from 'esbuild';
 import { describe, expect, it } from 'vitest';
 
-const resolveDir = import.meta.dirname;
+const resolveDir = getFileUrlDirectory(import.meta.url);
 
 async function bundleSceneResourceResolverExport(name: string): Promise<string> {
   const result = await build({
@@ -42,3 +42,10 @@ describe('scene resource resolver tree shaking', () => {
     expect(output).toContain('image resource resolution failed');
   });
 });
+
+function getFileUrlDirectory(url: string): string {
+  const directory = new URL('.', url);
+  const pathname = decodeURIComponent(directory.pathname);
+  if (directory.hostname !== '') return `//${directory.hostname}${pathname}`;
+  return /^\/[A-Za-z]:\//.test(pathname) ? pathname.slice(1) : pathname;
+}
