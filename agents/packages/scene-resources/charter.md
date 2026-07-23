@@ -127,6 +127,7 @@ _Append-only, dated, blessed rulings._
 - **[2026-07-17] glTF texture import DEFERRED (STOP-AND-ASK hit).** glTF has zero texture/material-texture wiring today, so it's net-new glTF material modeling, not a ref retrofit. AWD is the v1 embedded-path proof; glTF is a focused follow-up.
 - **[2026-07-17] The reveal hook is a MISSING PRIMITIVE, not a material field — reframed as "3D node opacity" and split out (being built separately).** 3D `SceneNode` has no alpha/opacity at all (only `HasTransform3D`); a reveal factor needs per-object opacity across the material shaders + blend phase. So: charter/build **3D node opacity** (alpha on the node + `prepareSceneRender` propagation + shaders honoring it) as its own primitive; reveal-fade = `tween`/`easing` driving `node.alpha` on availability, layered on top. Resolves Open direction #2. Coordinate its shader changes with the in-flight skinning track.
 - **[2026-07-22] `load` means asynchronous acquisition; result and source name the readiness boundary.** `parse*`/`create*` remain synchronous over in-hand data. URL loaders are globally identifying (`loadSceneDocumentFromGltfUrl`, `loadSceneDocumentFromGlbUrl`, and format peers), return `SceneDocument | null`, accept cancellation/per-source byte progress, fetch glTF external geometry buffers, and carry the model base path onto image refs. `loadSceneResources` is the separate eager resource operation; the streaming policy atom remains `resolveSceneResources`. Removed the parse+implicit-built-in-resolver `loadSceneFrom*` wrappers. Loading never registers renderers, compiles shaders, uploads GPU data, or touches RenderState. User-directed 2026-07-22.
+- **[2026-07-23] Direction session re-confirmed the `Url` suffix on the fetch family (`loadSceneDocumentFrom*Url`).** With the eager `loadSceneFrom*(bytes)→Scene` wrappers removed (above), the earlier "drop `Url` for symmetry" idea is moot; `Url` cleanly marks the url-fetch input against its `createSceneFrom*(bytes)` sibling. User-confirmed. The optional one-call URL→resolved-`Scene` convenience stays a deferred follow-up (Open direction #7).
 
 ## Open directions
 
@@ -147,4 +148,5 @@ _Append-only, dated, blessed rulings._
    excluded from fingerprint baselines.
 7. ~~**The `load*` verb means two opposite I/O halves.**~~ **Resolved 2026-07-22:** see the explicit
    `loadSceneDocumentFrom*Url` → synchronous `createSceneFromDocument` → optional
-   `resolveSceneResources`/`loadSceneResources` composition in Decisions.
+   `resolveSceneResources`/`loadSceneResources` composition in Decisions. `Url` suffix re-confirmed
+   2026-07-23; the optional one-call URL→resolved-`Scene` convenience remains a deferred follow-up.
