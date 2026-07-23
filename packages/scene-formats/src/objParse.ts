@@ -12,10 +12,11 @@ import type {
   SceneDocumentMesh,
   SceneDocumentNode,
   Texture,
+  ObjMaterial,
+  ObjMaterialLibrary,
 } from '@flighthq/types';
 import { MeshKind } from '@flighthq/types';
 
-import type { ObjMaterial, ObjMaterialLibrary } from './objSchema';
 import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, createExternalTextureRef } from './shared';
 
 // Parses a Wavefront OBJ text source into a Scene. Convenience over `createSceneFromDocument(parseObj

@@ -2,17 +2,17 @@ import { createTransform3D } from '@flighthq/geometry';
 import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { createMeshGeometry } from '@flighthq/mesh';
 import { createSceneFromDocument } from '@flighthq/scene';
-import type { Scene } from '@flighthq/types';
-import type { Material, MaterialLike, SceneDocument, SceneDocumentMesh, SceneDocumentNode } from '@flighthq/types';
+import type {
+  Material,
+  MaterialLike,
+  Scene,
+  SceneDocument,
+  SceneDocumentMesh,
+  SceneDocumentNode,
+  ThreeDsMaterial,
+  ThreeDsMesh,
+} from '@flighthq/types';
 import { MeshKind } from '@flighthq/types';
-
-import {
-  CANONICAL_FLOATS_PER_VERTEX,
-  CANONICAL_LAYOUT,
-  convertPositionsZUpToYUp,
-  createExternalTextureRef,
-} from './shared';
-import type { ThreeDsMaterial, ThreeDsMesh } from './threeDsSchema';
 import {
   THREE_DS_CHUNK_HEADER_BYTES,
   THREE_DS_COLOR_BYTE,
@@ -32,7 +32,14 @@ import {
   THREE_DS_TRIMESH,
   THREE_DS_UV_COORDS,
   THREE_DS_VERTICES,
-} from './threeDsSchema';
+} from '@flighthq/types';
+
+import {
+  CANONICAL_FLOATS_PER_VERTEX,
+  CANONICAL_LAYOUT,
+  convertPositionsZUpToYUp,
+  createExternalTextureRef,
+} from './shared';
 
 // Parses an Autodesk 3DS binary file into a Scene. The 3DS format is a recursive chunk tree
 // (little-endian): each chunk has a uint16 ID, a uint32 total length (including the 6-byte header),

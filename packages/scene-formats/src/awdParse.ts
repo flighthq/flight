@@ -29,6 +29,7 @@ import type {
   SceneNode,
   Texture,
   Transform3D,
+  SkinInfluence,
 } from '@flighthq/types';
 import { MeshKind, SceneAnimationPathRotation, SceneAnimationPathTranslation, SceneNodeKind } from '@flighthq/types';
 
@@ -67,7 +68,6 @@ import {
   AWD_STREAM_UVS,
   AWD_TEXTURE_TYPE_EMBEDDED,
 } from './awdSchema';
-import type { SkinInfluence } from './shared';
 import {
   CANONICAL_FLOATS_PER_VERTEX,
   CANONICAL_LAYOUT,

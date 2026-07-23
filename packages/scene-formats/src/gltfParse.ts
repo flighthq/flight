@@ -35,18 +35,9 @@ import type {
   TextureFilter,
   TextureWrap,
   Transform3D,
-} from '@flighthq/types';
-import {
-  MeshKind,
-  SceneAnimationPathRotation,
-  SceneAnimationPathScale,
-  SceneAnimationPathTranslation,
-  SceneAnimationPathWeights,
-  SceneNodeKind,
-} from '@flighthq/types';
-
-import type { GltfExtensionContext, GltfExtensionHandler, GltfImportOptions } from './gltfExtension';
-import type {
+  GltfExtensionContext,
+  GltfExtensionHandler,
+  GltfImportOptions,
   GltfAccessor,
   GltfBuffer,
   GltfComponentType,
@@ -58,7 +49,15 @@ import type {
   GltfPrimitive,
   GltfSampler,
   GltfTextureInfo,
-} from './gltfSchema';
+} from '@flighthq/types';
+import {
+  MeshKind,
+  SceneAnimationPathRotation,
+  SceneAnimationPathScale,
+  SceneAnimationPathTranslation,
+  SceneAnimationPathWeights,
+  SceneNodeKind,
+} from '@flighthq/types';
 
 // Parses a binary glTF (`.glb`) container into a Scene — the file's default scene (`doc.scene`).
 // Convenience over `createSceneFromDocument(parseGlb(bytes), defaultScene)`; malformed containers return an

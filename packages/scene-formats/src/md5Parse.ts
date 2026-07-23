@@ -21,11 +21,14 @@ import type {
   SceneDocument,
   SceneDocumentMesh,
   SceneDocumentSkin,
+  Md5Joint,
+  Md5Mesh,
+  Md5Vertex,
+  Md5Weight,
+  SkinInfluence,
 } from '@flighthq/types';
 import { MeshKind, SceneNodeKind } from '@flighthq/types';
 
-import type { Md5Joint, Md5Mesh, Md5Vertex, Md5Weight } from './md5Schema';
-import type { SkinInfluence } from './shared';
 import {
   convertPositionsZUpToYUp,
   convertQuaternionsZUpToYUp,
