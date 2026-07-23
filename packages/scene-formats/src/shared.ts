@@ -8,6 +8,7 @@ import type {
   ImageResourceReference,
   Mesh,
   SceneNode,
+  SkinInfluence,
   Texture,
   VertexAttributeLayout,
 } from '@flighthq/types';
@@ -204,11 +205,4 @@ export function reverseTriangleWinding(indices: number[]): void {
     indices[i + 1] = indices[i + 2];
     indices[i + 2] = tmp;
   }
-}
-
-// One joint influence on a vertex: the joint's index in the skeleton and its blend weight. The unit
-// packSkinInfluences reduces to the fixed 4-slot joints0/weights0 channels.
-export interface SkinInfluence {
-  jointIndex: number;
-  weight: number;
 }

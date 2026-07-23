@@ -1,6 +1,6 @@
-import type { SceneDocument, Transform3D } from '@flighthq/types';
-
-import type { GltfDocument } from './gltfSchema';
+import type { GltfDocument } from './GltfSchema';
+import type { SceneDocument } from './SceneDocument';
+import type { Transform3D } from './Transform3D';
 
 // The deliberately small context an individually imported glTF extension handler receives. Core parsing
 // has already decomposed nodes/materials/meshes before handlers run. Handlers append only the document

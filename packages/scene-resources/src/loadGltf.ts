@@ -1,6 +1,5 @@
 import { parseGlb, parseGltf } from '@flighthq/scene-formats';
-import type { GltfDocument } from '@flighthq/scene-formats';
-import type { SceneDocument, SceneDocumentLoadOptions } from '@flighthq/types';
+import type { GltfDocument, SceneDocument, SceneDocumentLoadOptions } from '@flighthq/types';
 
 import {
   getSceneDocumentBasePathFromUrl,

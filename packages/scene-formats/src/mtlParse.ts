@@ -1,4 +1,4 @@
-import type { ObjMaterial, ObjMaterialLibrary } from './objSchema';
+import type { ObjMaterial, ObjMaterialLibrary } from '@flighthq/types';
 
 // Parses a Wavefront MTL material library from its text source. Every recognized directive
 // (`newmtl`, `Ka`, `Kd`, `Ks`, `Ns`, `d`, `Tr`, `illum`, `map_Kd`, `map_Ka`, `map_Ks`,

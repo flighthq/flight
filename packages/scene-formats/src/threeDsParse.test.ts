@@ -9,8 +9,6 @@ import { getNodeChildren } from '@flighthq/node';
 import { isMesh } from '@flighthq/scene';
 import type { BlinnPhongMaterial, ExternalImageResourceReference, Mesh, SceneNode } from '@flighthq/types';
 import { BlinnPhongMaterialKind } from '@flighthq/types';
-
-import { createSceneFrom3ds, parse3ds } from './threeDsParse';
 import {
   THREE_DS_CHUNK_HEADER_BYTES,
   THREE_DS_COLOR_BYTE,
@@ -28,7 +26,9 @@ import {
   THREE_DS_TRIMESH,
   THREE_DS_UV_COORDS,
   THREE_DS_VERTICES,
-} from './threeDsSchema';
+} from '@flighthq/types';
+
+import { createSceneFrom3ds, parse3ds } from './threeDsParse';
 
 // Builds a minimal valid 3DS binary from helper functions. The 3DS format is a recursive chunk tree:
 // each chunk has a uint16 ID + uint32 length (including the 6-byte header) + payload.

@@ -1,9 +1,6 @@
 import { packLinearToColor } from '@flighthq/color';
 import { createDirectionalLight, createPointLight, createSpotLight } from '@flighthq/lighting';
-import type { Light } from '@flighthq/types';
-
-import type { GltfExtensionHandler } from './gltfExtension';
-import type { GltfPunctualLight } from './gltfSchema';
+import type { Light, GltfExtensionHandler, GltfPunctualLight } from '@flighthq/types';
 
 export const GltfPunctualLightsExtensionHandler: GltfExtensionHandler = {
   apply(context) {

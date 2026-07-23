@@ -16,6 +16,7 @@ import type {
   SceneAnimationTarget,
   SceneNode,
   StandardPbrMaterial,
+  GltfDocument,
 } from '@flighthq/types';
 import { StandardPbrMaterialKind } from '@flighthq/types';
 
@@ -27,7 +28,6 @@ import {
   parseGlb,
   parseGltf,
 } from './gltfParse';
-import type { GltfDocument } from './gltfSchema';
 
 // A base64 `data:` URI carrying `bytes` under an explicit image MIME type.
 function imageDataUri(mimeType: string, bytes: Uint8Array): string {

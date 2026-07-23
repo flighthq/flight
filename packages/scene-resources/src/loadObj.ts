@@ -1,6 +1,5 @@
 import { parseObj } from '@flighthq/scene-formats';
-import type { ObjMaterialLibrary } from '@flighthq/scene-formats';
-import type { SceneDocument, SceneDocumentLoadOptions } from '@flighthq/types';
+import type { ObjMaterialLibrary, SceneDocument, SceneDocumentLoadOptions } from '@flighthq/types';
 
 import { loadSceneDocumentTextFromUrl, setSceneDocumentResourceBasePathFromUrl } from './loadSceneDocumentSource';
 

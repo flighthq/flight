@@ -1,10 +1,9 @@
-import type { DirectionalLight, PointLight, SpotLight } from '@flighthq/types';
+import type { DirectionalLight, PointLight, SpotLight, GltfDocument } from '@flighthq/types';
 import { DirectionalLightKind, PointLightKind, SpotLightKind } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { parseGltf } from './gltfParse';
 import { GltfPunctualLightsExtensionHandler } from './gltfPunctualLights';
-import type { GltfDocument } from './gltfSchema';
 
 describe('GltfPunctualLightsExtensionHandler', () => {
   it('individually realizes placed directional, point, and spot lights', () => {
