@@ -1,5 +1,6 @@
+import type { ElectronApi } from '@flighthq/types';
+
 import { createElectronIpcBackend } from './electronIpc';
-import type { ElectronApi } from './electronModule';
 
 function fakeElectron(): {
   electron: ElectronApi;

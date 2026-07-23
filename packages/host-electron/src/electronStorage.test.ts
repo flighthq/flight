@@ -1,4 +1,5 @@
-import type { ElectronApi } from './electronModule';
+import type { ElectronApi } from '@flighthq/types';
+
 import { createElectronStorageBackend } from './electronStorage';
 
 function fakeElectron(initial?: Record<string, string>): {

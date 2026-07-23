@@ -1,6 +1,4 @@
-import type { ShortcutBackend } from '@flighthq/types';
-
-import type { ElectronApi } from './electronModule';
+import type { ShortcutBackend, ElectronApi } from '@flighthq/types';
 
 // Maps Flight's ShortcutBackend onto Electron's `globalShortcut` module. Electron's unregister returns
 // void, so it is treated as always succeeding (true) to satisfy Flight's boolean contract. Electron's

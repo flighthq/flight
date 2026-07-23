@@ -1,7 +1,7 @@
 import { createApplicationWindow } from '@flighthq/application';
 import { connectSignal } from '@flighthq/signals';
+import type { ElectronApi, ElectronBrowserWindowOptions, ElectronRectangle } from '@flighthq/types';
 
-import type { ElectronApi, ElectronBrowserWindowOptions, ElectronRectangle } from './electronModule';
 import {
   createElectronWindowBackend,
   getApplicationWindowForElectronId,

@@ -134,6 +134,8 @@ export * from './DropShadowEffect';
 export * from './EffectSourceMode';
 export * from './EasingFunction';
 export * from './EasingSegment';
+export * from './ElectronApi';
+export * from './ElectronBackendOptions';
 export * from './EmissiveMaterial';
 export * from './EmissiveModifier';
 export * from './Entity';

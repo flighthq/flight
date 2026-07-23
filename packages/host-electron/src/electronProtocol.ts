@@ -1,6 +1,4 @@
-import type { ProtocolBackend } from '@flighthq/types';
-
-import type { ElectronApi } from './electronModule';
+import type { ProtocolBackend, ElectronApi } from '@flighthq/types';
 
 // Maps Flight's ProtocolBackend onto Electron's `app` protocol-client methods. Deep links arrive via
 // the 'open-url' event (macOs); the subscribe wrapper adapts Electron's (event, url) argument shape to

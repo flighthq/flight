@@ -1,4 +1,5 @@
-import type { ElectronApi } from './electronModule';
+import type { ElectronApi } from '@flighthq/types';
+
 import { createElectronShortcutBackend } from './electronShortcut';
 
 function fakeElectron(): { electron: ElectronApi; registered: Map<string, () => void> } {

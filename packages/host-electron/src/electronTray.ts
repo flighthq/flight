@@ -1,6 +1,13 @@
-import type { MenuItemTemplate, TrayBackend, TrayEventData, TrayEventType } from '@flighthq/types';
-
-import type { ElectronApi, ElectronMenu, ElectronMenuItemOptions, ElectronTray } from './electronModule';
+import type {
+  MenuItemTemplate,
+  TrayBackend,
+  TrayEventData,
+  TrayEventType,
+  ElectronApi,
+  ElectronMenu,
+  ElectronMenuItemOptions,
+  ElectronTray,
+} from '@flighthq/types';
 
 // Maps Flight's TrayBackend onto Electron's Tray module. Flight identifies trays by an opaque numeric
 // id; the seam keeps an id→record map (the ElectronTray plus the title/tooltip/menu it cannot read

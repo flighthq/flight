@@ -1,5 +1,6 @@
+import type { ElectronApi, ElectronNativeImage } from '@flighthq/types';
+
 import { createElectronClipboardBackend } from './electronClipboard';
-import type { ElectronApi, ElectronNativeImage } from './electronModule';
 
 function fakeElectron(): ElectronApi {
   const store = { text: '', html: '', rtf: '', imageDataUrl: '', bookmarkTitle: '', bookmarkUrl: '' };

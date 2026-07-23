@@ -1,6 +1,4 @@
-import type { StorageBackend } from '@flighthq/types';
-
-import type { ElectronApi } from './electronModule';
+import type { StorageBackend, ElectronApi } from '@flighthq/types';
 
 // Maps Flight's StorageBackend onto a JSON file in the Electron userData directory. The file is
 // read and written synchronously to match the StorageBackend contract (localStorage is sync). All

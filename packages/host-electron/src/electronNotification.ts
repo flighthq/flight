@@ -1,6 +1,10 @@
-import type { NotificationBackend, NotificationCapabilities, NotificationPermission } from '@flighthq/types';
-
-import type { ElectronApi, ElectronNotification } from './electronModule';
+import type {
+  NotificationBackend,
+  NotificationCapabilities,
+  NotificationPermission,
+  ElectronApi,
+  ElectronNotification,
+} from '@flighthq/types';
 
 // Maps Flight's NotificationBackend onto Electron's Notification module. Electron needs no permission
 // prompt, so getPermission/requestPermission report 'granted' when supported and 'denied' otherwise.

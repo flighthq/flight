@@ -1,8 +1,8 @@
 import { getAppName, setAppBackend } from '@flighthq/app';
 import { readClipboardText, setClipboardBackend } from '@flighthq/clipboard';
 import { setStorageBackend } from '@flighthq/storage';
+import type { ElectronApi } from '@flighthq/types';
 
-import type { ElectronApi } from './electronModule';
 import { registerElectronBackends } from './electronRegister';
 
 // A fake Electron module broad enough that every createElectron*Backend constructs without touching

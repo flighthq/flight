@@ -1,6 +1,5 @@
-import type { PowerStatus } from '@flighthq/types';
+import type { PowerStatus, ElectronApi } from '@flighthq/types';
 
-import type { ElectronApi } from './electronModule';
 import { createElectronPowerBackend } from './electronPower';
 
 function emptyStatus(): PowerStatus {

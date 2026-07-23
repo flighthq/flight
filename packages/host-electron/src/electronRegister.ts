@@ -13,6 +13,7 @@ import { setShellBackend } from '@flighthq/shell';
 import { setShortcutBackend } from '@flighthq/shortcut';
 import { setStorageBackend } from '@flighthq/storage';
 import { setTrayBackend } from '@flighthq/tray';
+import type { ElectronApi, ElectronBackendOptions } from '@flighthq/types';
 import { setUpdaterBackend } from '@flighthq/updater';
 
 import { createElectronAppBackend } from './electronApp';
@@ -20,7 +21,6 @@ import { createElectronClipboardBackend } from './electronClipboard';
 import { createElectronDialogBackend } from './electronDialog';
 import { createElectronIpcBackend } from './electronIpc';
 import { createElectronMenuBackend } from './electronMenu';
-import type { ElectronApi } from './electronModule';
 import { createElectronNotificationBackend } from './electronNotification';
 import { createElectronPlatformBackend } from './electronPlatform';
 import { createElectronPowerBackend } from './electronPower';
@@ -32,10 +32,6 @@ import { createElectronStorageBackend } from './electronStorage';
 import { createElectronTrayBackend } from './electronTray';
 import { createElectronUpdaterBackend } from './electronUpdater';
 import { createElectronWindowBackend } from './electronWindow';
-
-export interface ElectronBackendOptions {
-  storageFileName?: string;
-}
 
 // Installs every Electron host backend into its capability package in one call. Run this once in the
 // Electron main process, passing the `electron` module plus the real node:fs module (needed for the

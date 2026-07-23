@@ -1,6 +1,4 @@
-import type { UpdateInfo, UpdaterBackend, UpdaterConfig, UpdaterError } from '@flighthq/types';
-
-import type { ElectronApi } from './electronModule';
+import type { UpdateInfo, UpdaterBackend, UpdaterConfig, UpdaterError, ElectronApi } from '@flighthq/types';
 
 // Maps Flight's UpdaterBackend onto Electron's built-in autoUpdater (Squirrel). The built-in updater
 // auto-downloads on check and emits no progress event, so downloadUpdate folds into checkForUpdates

@@ -1,6 +1,4 @@
-import type { DialogBackend, FileDialogHandle } from '@flighthq/types';
-
-import type { ElectronApi } from './electronModule';
+import type { DialogBackend, FileDialogHandle, ElectronApi } from '@flighthq/types';
 
 // Maps Flight's DialogBackend onto Electron's main-process dialog module. Open/save dialogs resolve
 // to sentinels ([] / null) on cancel rather than throwing, matching the backend contract. Native paths

@@ -1,4 +1,5 @@
-import type { ElectronApi } from './electronModule';
+import type { ElectronApi } from '@flighthq/types';
+
 import { createElectronShellBackend } from './electronShell';
 
 function fakeElectron(shell: Partial<ElectronApi['shell']>): ElectronApi {
