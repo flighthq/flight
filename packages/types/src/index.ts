@@ -475,6 +475,7 @@ export * from './SsrEffect';
 export * from './Stage';
 export * from './StageAlign';
 export * from './StageDisplayState';
+export * from './StageFitContext';
 export * from './StageQuality';
 export * from './StageScaleMode';
 export * from './StageSignals';

@@ -2,11 +2,10 @@ import { createRectangle } from '@flighthq/geometry';
 import type {
   HasBoundsRectangleRuntime,
   MatrixLike,
-  Node,
   NodeTraits,
   Rectangle,
+  StageFitContext,
   ViewportAlign,
-  ViewportScaleMode,
 } from '@flighthq/types';
 
 import { getNodeRuntime } from './node';
@@ -14,12 +13,6 @@ import { getNodeRuntime } from './node';
 // The structural fit context these functions read: a root node plus how it maps into the view. `Stage`
 // satisfies it (its `align`/`scaleMode`/`root` fields); kept structural and generic so the fit math stays in
 // `@flighthq/node` without depending on the display-object `Stage` type.
-export interface StageFitContext<Traits extends object = NodeTraits> {
-  align: ViewportAlign;
-  root: Node<Traits> | null;
-  scaleMode: ViewportScaleMode;
-}
-
 // Horizontal alignment offset of scaled content within the view, per the `align` anchor.
 export function computeStageFitAlignX(scaledContentWidth: number, viewWidth: number, align: ViewportAlign): number {
   if (align.includes('left')) return 0;
