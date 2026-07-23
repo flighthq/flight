@@ -4,7 +4,7 @@ import type { NetResponse, SceneDocument } from '@flighthq/types';
 import type { Mock } from 'vitest';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import type * as LoadAwdModule from './loadSceneFromAwd';
+import type * as LoadAwdModule from './loadAwd';
 
 let loadSceneDocumentFromAwdUrl: typeof LoadAwdModule.loadSceneDocumentFromAwdUrl;
 let parseAwd: Mock<typeof SceneFormatsModule.parseAwd>;
@@ -35,7 +35,7 @@ beforeAll(async () => {
   sendNetRequest = vi.fn<typeof NetModule.sendNetRequest>();
   vi.doMock('@flighthq/net', () => ({ sendNetRequest }));
   vi.doMock('@flighthq/scene-formats', () => ({ parseAwd }));
-  ({ loadSceneDocumentFromAwdUrl } = await import('./loadSceneFromAwd'));
+  ({ loadSceneDocumentFromAwdUrl } = await import('./loadAwd'));
 });
 
 afterAll(() => {
