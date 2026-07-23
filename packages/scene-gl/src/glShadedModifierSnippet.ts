@@ -1,5 +1,5 @@
 import { createModifierRegistry, registerModifier, resolveModifier } from '@flighthq/shading';
-import type { ModifierDefinition } from '@flighthq/shading';
+import type { ModifierDefinition } from '@flighthq/types';
 import type { GlRenderState, Modifier, ModifierKind } from '@flighthq/types';
 
 import { getGlSceneRuntime } from './glSceneRuntime';

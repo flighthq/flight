@@ -1,4 +1,4 @@
-import type { Modifier, ModifierKind, ModifierSlot } from '@flighthq/types';
+import type { ModifierDefinition, ModifierKind, ModifierRegistry } from '@flighthq/types';
 
 // The substrate-agnostic registration record for one modifier kind: where it injects (`slot`) and
 // how its descriptor's compile-time structure contributes to the define-key (`getDefineSignature`).
@@ -11,20 +11,12 @@ import type { Modifier, ModifierKind, ModifierSlot } from '@flighthq/types';
 // layer) — the things that change the emitted program, not the uniform-fed scalars (color, strength)
 // that leave the program identical. It is a pure function of descriptor structure so the define-key
 // is deterministic; omit it (or return `''`) when a kind has exactly one program shape.
-export interface ModifierDefinition {
-  kind: ModifierKind;
-  slot: ModifierSlot;
-  getDefineSignature?: (modifier: Readonly<Modifier>) => string;
-}
 
 // An open, last-write-wins registry mapping a `ModifierKind` to its substrate-agnostic definition.
 // Not a module global: callers allocate one with `createModifierRegistry`, register built-ins via
 // `registerBuiltInModifiers` and their own vendor-prefixed kinds via `registerModifier`, then feed
 // it to the composition contract. Unused modifier kinds — and this whole registry — tree-shake out
 // for anyone who does not import them, so an assembled variant never costs more than its parts.
-export interface ModifierRegistry {
-  definitions: Map<ModifierKind, ModifierDefinition>;
-}
 
 // Allocates an empty modifier registry. The only allocating registry function; register and resolve
 // read or mutate an existing registry in place.

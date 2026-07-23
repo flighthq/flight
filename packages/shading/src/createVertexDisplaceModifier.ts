@@ -1,4 +1,4 @@
-import type { Texture, Vector3Like, VertexDisplaceModifierSource } from '@flighthq/types';
+import type { Vector3Like, VertexDisplaceModifierOptions } from '@flighthq/types';
 import { ModifierSlot, VertexDisplaceModifierKind } from '@flighthq/types';
 import type { VertexDisplaceModifier } from '@flighthq/types';
 
@@ -6,15 +6,6 @@ import type { VertexDisplaceModifier } from '@flighthq/types';
 // carry documented defaults. `source`, `axis` presence, and (for HeightMap) `map` presence are
 // compile-time structural — they drive the define-key signature — while `amplitude`/`frequency`/
 // `speed` are uniform-fed.
-export interface VertexDisplaceModifierOptions {
-  source: VertexDisplaceModifierSource;
-  amplitude: number;
-  axis?: Vector3Like;
-  map?: Texture;
-  frequency?: number;
-  speed?: number;
-  direction?: Vector3Like;
-}
 
 // Builds a VertexDisplaceModifier (slot: Vertex) — the one built-in VERTEX-stage modifier, displacing
 // each vertex along its normal (or a fixed `axis`) before the model transform. `Sine` is a procedural

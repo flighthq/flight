@@ -1,20 +1,10 @@
 import { createEntity } from '@flighthq/entity';
-import type { Modifier, ShadedMaterial } from '@flighthq/types';
+import type { ShadedMaterial, ShadedMaterialOptions } from '@flighthq/types';
 import { BlendMode, ShadedMaterialKind } from '@flighthq/types';
 
 // The options for `createShadedMaterial`. Every field is optional and defaults to the classic lit
 // base at neutral values (white diffuse/specular, shininess 32, no maps, an empty modifier stack);
 // `modifiers` is the ordered augmentation stack this base carries.
-export interface ShadedMaterialOptions {
-  diffuse?: number;
-  diffuseMap?: ShadedMaterial['diffuseMap'];
-  modifiers?: readonly Modifier[];
-  normalMap?: ShadedMaterial['normalMap'];
-  normalScale?: number;
-  shininess?: number;
-  specular?: number;
-  specularMap?: ShadedMaterial['specularMap'];
-}
 
 // Builds the composable lit base material owned by @flighthq/shading — a diffuse + half-vector
 // specular surface carrying an ordered `modifiers` stack that the per-backend compile path assembles

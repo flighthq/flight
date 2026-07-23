@@ -1,5 +1,5 @@
 import { createGlSkinPaletteTexture, destroyGlRenderTarget, destroyGlSkinPaletteTexture } from '@flighthq/render-gl';
-import type { ModifierRegistry } from '@flighthq/shading';
+import type { ModifierRegistry } from '@flighthq/types';
 import type {
   GlMeshMaterialRenderer,
   GlRenderState,

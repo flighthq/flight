@@ -1,5 +1,5 @@
 import { createModifierRegistry, getModifierDefineKey, orderModifierStack, resolveModifier } from '@flighthq/shading';
-import type { ModifierRegistry } from '@flighthq/shading';
+import type { ModifierRegistry } from '@flighthq/types';
 import type { GlRenderState, Modifier } from '@flighthq/types';
 import { MAX_FORWARD_LIGHTS, ModifierSlot } from '@flighthq/types';
 
