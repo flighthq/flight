@@ -22,12 +22,14 @@ export type AssetType =
   | (string & {});
 
 // A plain-data manifest entry: the stable `id` callers acquire by, the `url` its adapter loads from,
-// the `type` selecting which registered adapter loads it, and an optional `group` for batch preload.
+// the `type` selecting which registered adapter loads it, and optional `groups` for batch preload.
+// Groups are tags rather than entities: one asset may participate in several independently loaded
+// groups without manufacturing group identity or lifecycle outside the owning AssetLibrary.
 export interface AssetDescriptor {
   id: string;
   url: string;
   type: AssetType;
-  group?: string;
+  groups?: readonly string[];
 }
 
 // A manifest is a plain array of descriptors. No file format is imposed here — parsing JSON or another
@@ -65,7 +67,7 @@ export interface AssetLibraryRuntime {
 
 // The id-keyed asset library entity. All state lives on the opaque runtime; create with
 // createAssetLibrary, register per-type loaders with registerAssetLoader, declare assets with
-// loadAssetManifest, then acquire/release by id or preload by named group.
+// registerAssetDescriptor/registerAssetManifest, then acquire/release by id or preload by named group.
 export interface AssetLibrary {
   runtime: AssetLibraryRuntime;
 }

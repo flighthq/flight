@@ -2,7 +2,7 @@
 package: '@flighthq/assets'
 crate: flighthq-assets
 draft: false
-lastDirection: 2026-07-10
+lastDirection: 2026-07-22
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -18,7 +18,7 @@ It is **type-agnostic** like the loader beneath it: it owns keying, dedup, refer
 
 ## North star
 
-The AAA asset pipeline: declare assets in a plain-data manifest (id → url/type/group), preload a group with aggregate progress, `acquireAsset`/`releaseAsset` with deterministic reference-counted freeing, synchronous `getAsset` for resident assets, and dedup so concurrent and repeat loads share one underlying decode — everything a Unity/PIXI-class asset manager offers, composed from Flight's scheduler + decoders rather than reimplementing them, with explicit ownership rather than hidden GC.
+The AAA asset pipeline: declare assets in a plain-data manifest (id → url/type/groups), preload a group with aggregate progress, `acquireAsset`/`releaseAsset` with deterministic reference-counted freeing, synchronous `getAsset` for resident assets, and dedup so concurrent and repeat loads share one underlying decode — everything a Unity/PIXI-class asset manager offers, composed from Flight's scheduler + decoders rather than reimplementing them, with explicit ownership rather than hidden GC.
 
 ## Boundaries
 
@@ -33,7 +33,8 @@ _Append-only, dated, blessed rulings._
 - **[2026-07-10] Reference-counted ownership, deterministic free (first build).** `acquireAsset(id): Promise<T>` increments a refcount and resolves the loaded value (loading + decoding on first acquire, sharing the in-flight promise on concurrent acquires — dedup); `releaseAsset(id)` decrements and, **when the count reaches zero, immediately disposes** the resource via its registered disposer and drops it. `getAsset(id): T | null` returns the resident value synchronously or a `null` sentinel. Chosen over an LRU-budget cache for the first build: explicit, deterministic, and matching the SDK's "explicit ownership over GC-reliant patterns" rule. User-directed 2026-07-10.
   **Why:** a shared asset with N holders must not be freed by one holder's release; refcount makes shared ownership correct and the free-point deterministic, without a cache heuristic.
 - **[2026-07-10] Open per-type loader registry, type-agnostic core.** `registerAssetLoader(type, adapter)` — last-write-wins, vendor-prefixed custom types — so users add asset types (and unused ones tree-shake) and `assets` never depends on a concrete resource package. Mirrors `loader`'s type-agnostic factory seam.
-- **[2026-07-10] Manifest is plain data.** `AssetManifest` is an array of `AssetDescriptor { id; url; type; group? }`; `loadAssetManifest(manifest)` registers the entries and `loadAssetGroup(name, options?)` preloads a group through the loader with progress. No manifest file format is imposed here (JSON/other parsing is a `-formats` neighbor if ever needed).
+- **[2026-07-10] Manifest is plain data.** `AssetManifest` is an array of descriptors; no manifest file format is imposed here (JSON/other parsing is a `-formats` neighbor if ever needed).
+- **[2026-07-22] Loading vocabulary and catalog registration.** `load*` means asynchronous work and `get*` is synchronous without initiating work. In-hand `AssetDescriptor { id; url; type; groups? }` data is installed through the bedrock `registerAssetDescriptor` and batch `registerAssetManifest`; one asset may tag several groups, replacement fully reconciles membership, and a live descriptor cannot change beneath its holders. A failed acquire drops its cache entry so a later acquire retries. `loadAssetGroup` rejects after the whole batch settles when any member fails, while successful members remain held for `releaseAssetGroup`. Actual manifest I/O, if added, is separately named `loadAssetManifestFromUrl` and lives above a format parser. User-directed 2026-07-22.
 
 ## Open directions
 
