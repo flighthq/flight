@@ -1,5 +1,5 @@
-import type { GlRenderTarget } from '@flighthq/render-gl';
 import { compileGlFullscreenProgram, drawGlFullscreenPass } from '@flighthq/render-gl';
+import type { GlRenderTarget } from '@flighthq/types';
 import type { GlFullscreenProgram, GlRenderState } from '@flighthq/types';
 
 // Blits a tinted texture at a UV offset. Out-of-bounds samples produce transparent output.

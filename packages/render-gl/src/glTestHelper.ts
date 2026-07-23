@@ -1,9 +1,9 @@
 import { createRenderState } from '@flighthq/render';
 import type { GlRenderState, GlRenderStateRuntime } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
+import type { GlShaderLocations } from '@flighthq/types';
 
 import { createGlRenderStateRuntime } from './glRenderState';
-import type { GlShaderLocations } from './glShaderTypes';
 
 export function createGlState(options?: { allowSmoothing?: boolean; backgroundColorRgba?: number[] }): {
   state: GlRenderState;
