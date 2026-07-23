@@ -1,3 +1,5 @@
+import type { SpritesheetData } from './SpritesheetData';
+
 // Cocos Creator / Cocos2d-x plist atlas schema — field names as they appear in the plist file.
 // Supports both old-style keys (frame, offset, sourceSize, size, rotated, trimmed) and
 // new-style sprite-prefixed keys (textureRect, spriteOffset, spriteSourceSize, spriteSize,
@@ -34,4 +36,10 @@ export interface CocosPlistDocument {
   frames: Record<string, CocosPlistFrame>;
   /** Atlas metadata. */
   metadata: CocosPlistMetadata;
+}
+
+// The result of parsing a Cocos plist atlas: the mapped SpritesheetData plus the raw parsed document.
+export interface CocosPlistParsed {
+  data: SpritesheetData;
+  document: CocosPlistDocument;
 }

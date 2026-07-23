@@ -42,3 +42,8 @@ export interface LibgdxAtlasRegion {
   /** [x, y] position of the region in the atlas. */
   xy: [number, number];
 }
+
+export interface LibgdxAtlasParseOptions {
+  /** Default duration (ms) per frame when building inferred animations. Defaults to 100. */
+  frameDuration?: number;
+}

@@ -6,14 +6,14 @@ import {
 } from '@flighthq/spritesheet';
 import { createTextureAtlas } from '@flighthq/textureatlas';
 import { parseTextureAtlasAsepriteDocument } from '@flighthq/textureatlas-formats';
-import type { TextureAtlasRegion } from '@flighthq/types';
-
-import type { AsepriteArrayFrame, AsepriteDocument, AsepriteFrameTag, AsepriteMeta } from './asepriteSchema';
-
-export interface AsepriteParsed {
-  data: SpritesheetData;
-  document: AsepriteDocument;
-}
+import type {
+  AsepriteArrayFrame,
+  AsepriteDocument,
+  AsepriteFrameTag,
+  AsepriteMeta,
+  AsepriteParsed,
+  TextureAtlasRegion,
+} from '@flighthq/types';
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
 

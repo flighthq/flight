@@ -5,8 +5,8 @@ import {
   SpritesheetFormatKindStarling,
   SpritesheetFormatKindTexturePacker,
 } from '@flighthq/types';
+import type { SpritesheetParseOptions } from '@flighthq/types';
 
-import type { SpritesheetParseOptions } from './spritesheetDetect';
 import {
   detectSpritesheetFormat,
   getSpritesheetFormat,

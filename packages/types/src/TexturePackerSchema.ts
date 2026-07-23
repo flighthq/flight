@@ -1,3 +1,5 @@
+import type { SpritesheetData } from './SpritesheetData';
+
 // Texture Packer JSON schema — field names as they appear in the exported file.
 // Reference: https://www.codeandweb.com/texturepacker/documentation/texture-settings
 // Supports both the Hash (dict-keyed frames) and Array (array of frames with filename) variants.
@@ -62,3 +64,14 @@ export interface TexturePackerArrayDocument {
 }
 
 export type TexturePackerDocument = TexturePackerArrayDocument | TexturePackerHashDocument;
+
+// The result of parsing a TexturePacker export: the mapped SpritesheetData plus the raw parsed document.
+export interface TexturePackerParsed {
+  data: SpritesheetData;
+  document: TexturePackerDocument;
+}
+
+export interface TexturePackerSerializeOptions {
+  /** Override the output format variant. Defaults to the variant of `existing`, or `'hash'`. */
+  variant?: 'array' | 'hash';
+}

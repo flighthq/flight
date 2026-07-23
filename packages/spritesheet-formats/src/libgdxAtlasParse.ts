@@ -6,12 +6,7 @@ import {
 } from '@flighthq/spritesheet';
 import { createTextureAtlas } from '@flighthq/textureatlas';
 import { parseTextureAtlasLibgdxAtlas } from '@flighthq/textureatlas-formats';
-import type { TextureAtlasRegion } from '@flighthq/types';
-
-export interface LibgdxAtlasParseOptions {
-  /** Default duration (ms) per frame when building inferred animations. Defaults to 100. */
-  frameDuration?: number;
-}
+import type { LibgdxAtlasParseOptions, TextureAtlasRegion } from '@flighthq/types';
 
 // ─── Internal types ───────────────────────────────────────────────────────────
 
