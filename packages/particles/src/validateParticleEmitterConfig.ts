@@ -2,8 +2,6 @@ import type { ParticleConfigIssue, ParticleEmitterConfig } from '@flighthq/types
 
 import { createParticleEmitterConfig } from './particleEmitterConfig';
 
-export type { ParticleConfigIssue };
-
 // Every numeric field of ParticleEmitterConfig. Kept as a typed tuple so the
 // validate/sanitize passes can iterate without missing a field as the config grows.
 const NUMERIC_FIELDS = [

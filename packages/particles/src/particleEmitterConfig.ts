@@ -1,6 +1,4 @@
-import type { ParticleBlendMode, ParticleEmitterConfig, ParticleEmitterShape } from '@flighthq/types';
-
-export type { ParticleBlendMode, ParticleEmitterConfig, ParticleEmitterShape };
+import type { ParticleEmitterConfig } from '@flighthq/types';
 
 export function createParticleEmitterConfig(config?: Partial<ParticleEmitterConfig>): ParticleEmitterConfig {
   return {

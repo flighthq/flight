@@ -1,8 +1,6 @@
 import { createSignal } from '@flighthq/signals';
 import type { ParticleEmitterSignals } from '@flighthq/types';
 
-export type { ParticleEmitterSignals };
-
 /** Create a fresh {@link ParticleEmitterSignals} group. Called by
  *  {@link enableParticleEmitterSignals} on first use; exported for unit testing. */
 export function createParticleEmitterSignals(): ParticleEmitterSignals {

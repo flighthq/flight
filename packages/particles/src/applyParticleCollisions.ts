@@ -12,8 +12,6 @@ import type {
 
 import { PARTICLE_VELOCITY_STRIDE } from './particleEmitterState';
 
-export type { CircleCollider, ParticleCollider, PlaneCollider, RectangleCollider, SphereCollider };
-
 // [px, py, pz, vx, vy, vz] scratch reused across particles to avoid per-iteration allocation.
 const s: [number, number, number, number, number, number] = [0, 0, 0, 0, 0, 0];
 

@@ -1,9 +1,9 @@
 import type { ParticleEmitter2D, ParticleEmitterData } from '@flighthq/types';
+import type { ParticleObject } from '@flighthq/types';
 
 import { applyParticleCollisions, applyParticleObjectCollisions } from './applyParticleCollisions';
 import { createParticleEmitterState, ensureParticleEmitterStateCapacity } from './particleEmitterState';
 import { createParticleObjectsState } from './particleObjectsState';
-import type { ParticleObject } from './updateParticleObjects';
 
 // Node-free SoA emitter fixture: applyParticleCollisions reads only `emitter.data`, so the display
 // node from @flighthq/particleemitter is not needed to unit-test the collision pass.
