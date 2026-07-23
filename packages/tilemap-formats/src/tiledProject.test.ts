@@ -1,7 +1,7 @@
 import { createTileset } from '@flighthq/tileset';
+import type { TiledTilesetResolver } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
-import type { TiledTilesetResolver } from './tiledOptions';
 import { buildTilemapLayersFromTiled } from './tiledProject';
 import { parseTiledTmx } from './tiledXmlParse';
 

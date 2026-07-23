@@ -1,4 +1,4 @@
-import type { TiledCompression, TiledInflate } from './tiledOptions';
+import type { TiledCompression, TiledInflate } from '@flighthq/types';
 
 // Decodes the two textual encodings Tiled uses for a tile layer's `<data>`/`data` payload into a flat
 // array of raw 32-bit GIDs (row-major, flip bits intact). The `xml`/array forms are handled inline by

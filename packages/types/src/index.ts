@@ -544,6 +544,7 @@ export * from './TiledGid';
 export * from './TiledLayer';
 export * from './TiledMap';
 export * from './TiledObject';
+export * from './TiledParseOptions';
 export * from './TiledProperty';
 export * from './TiledTileset';
 export * from './Tilemap';

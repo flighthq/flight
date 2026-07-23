@@ -1,8 +1,10 @@
 import type {
+  TiledCompression,
   TiledLayer,
   TiledMap,
   TiledObject,
   TiledOrientation,
+  TiledParseOptions,
   TiledProperty,
   TiledPropertyType,
   TiledRenderOrder,
@@ -22,7 +24,6 @@ import type { XmlElement } from '@flighthq/xml';
 
 import { parseTiledColor } from './tiledColor';
 import { decodeTiledBase64Layer, decodeTiledCsvLayer } from './tiledLayerData';
-import type { TiledCompression, TiledParseOptions } from './tiledOptions';
 
 // XML front-end of the Tiled codec: TMX maps and standalone TSX tilesets. Both are the same XML tree
 // (`@flighthq/xml`), so they share the tileset/layer/object/property builders below. Numeric byte

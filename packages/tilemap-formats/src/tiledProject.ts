@@ -1,8 +1,7 @@
 import { createTilemapData } from '@flighthq/sprite';
-import type { TiledMap, TilemapData, Tileset } from '@flighthq/types';
+import type { TiledMap, TiledTilesetResolver, TilemapData, Tileset } from '@flighthq/types';
 
 import { decodeTiledGid, getTiledTilesetRefForGid } from './tiledGid';
-import type { TiledTilesetResolver } from './tiledOptions';
 
 // Projects one Tiled tile layer into runtime `TilemapData`, split by tileset. A Flight `Tilemap`
 // batches a single tileset per draw, so a layer that draws from N tilesets becomes N single-tileset
