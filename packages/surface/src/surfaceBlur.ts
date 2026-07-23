@@ -1,12 +1,6 @@
-import type { SurfaceRegion } from '@flighthq/types';
+import type { SurfaceBoxBlurOptions, SurfaceRegion } from '@flighthq/types';
 
 import { extractSurfacePixels } from './surfaceComposite';
-
-export interface SurfaceBoxBlurOptions {
-  radiusX?: number;
-  radiusY?: number;
-  passes?: number;
-}
 
 /**
  * Single horizontal box blur pass using a sliding-window accumulator — O(n)
