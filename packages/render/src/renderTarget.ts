@@ -2,11 +2,6 @@ import { createMatrix, inverseMatrix, multiplyMatrix } from '@flighthq/geometry'
 import { getNodeLocalMatrix } from '@flighthq/node';
 import type { DisplayObject, MatrixLike, RectangleLike } from '@flighthq/types';
 
-export type RenderTargetSizeOptions = {
-  minWidth?: number;
-  minHeight?: number;
-};
-
 /**
  * Writes into outRenderTransform the transform to set as state.renderTransform2D when
  * capturing source into a render target. Maps source content into target pixel space so

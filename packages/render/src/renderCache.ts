@@ -8,7 +8,6 @@ import { registerRenderer } from './renderer';
 import { getRenderProxyAdapter, setRenderProxyAdapter } from './renderProxyAdapter';
 
 export { RenderCacheKind };
-export type { RenderCache, RenderCacheAdapter };
 
 /**
  * Creates a backend-agnostic cache handle. The handle owns no resource; a backend
