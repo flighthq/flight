@@ -3,8 +3,8 @@ import { registerRenderer } from '@flighthq/render';
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import { HtmlViewKind } from '@flighthq/types';
 
+import { defaultHtmlViewRenderer, drawDomHtmlView } from './domHtmlView';
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
-import { defaultHtmlViewRenderer, drawDomHtmlView } from './htmlView';
 
 function makeState() {
   const container = document.createElement('div');

@@ -20,4 +20,4 @@ export * from './domTextInput';
 export * from './domTextLabel';
 export * from './domTransform';
 export * from './domVideo';
-export * from './htmlView';
+export * from './domHtmlView';
