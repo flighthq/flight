@@ -439,6 +439,7 @@ export * from './ShortcutEvent';
 export * from './ShortcutModifier';
 export * from './ShortcutSignals';
 export * from './Signal';
+export * from './SignalThrottleOptions';
 export * from './SignalConnection';
 export * from './SignalConnectOptions';
 export * from './SignalScope';

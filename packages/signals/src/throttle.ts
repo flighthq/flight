@@ -1,25 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import type { Signal } from '@flighthq/types';
+import type { Signal, SignalThrottleOptions } from '@flighthq/types';
 
 import { connectSignal, disconnectSignal } from './slot';
 
 /**
  * Options for `connectSignalThrottled` and `connectSignalDebounced`.
  */
-export interface SignalThrottleOptions {
-  /**
-   * Whether to fire on the leading edge of the interval (before the delay).
-   * Default: `true`.
-   */
-  leading?: boolean;
-  /**
-   * Whether to fire on the trailing edge of the interval (after the delay).
-   * Default: `true`.
-   */
-  trailing?: boolean;
-}
-
 /**
  * Connects a frame-tick signal to a slot at a reduced frame rate. The slot
  * receives the total accumulated `deltaTime` (in ms) since the last fire, not
