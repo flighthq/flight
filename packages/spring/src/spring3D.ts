@@ -1,8 +1,6 @@
 import type { Spring3D, SpringConfig } from '@flighthq/types';
 
-import { createSpring } from './createSpring';
-import { isSpringSettled } from './isSpringSettled';
-import { updateSpring } from './updateSpring';
+import { createSpring, isSpringSettled, updateSpring } from './spring';
 
 // Allocate a 3D spring as three scalar springs, each at its `value*` (default 0) and `velocity*`
 // (default 0).

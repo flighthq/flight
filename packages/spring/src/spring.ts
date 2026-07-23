@@ -1,5 +1,40 @@
-import { TAU } from '@flighthq/math';
+import { approxEqual, approxZero, TAU } from '@flighthq/math';
 import type { Spring, SpringConfig } from '@flighthq/types';
+
+// Allocate a scalar spring at `value` (default 0) with `velocity` (default 0). This is the only
+// allocating function for scalar springs; `updateSpring`, `resetSpring`, and the settle query all
+// write into or read an existing spring.
+export function createSpring(value: number = 0, velocity: number = 0): Spring {
+  return { value, velocity };
+}
+
+// Report whether `spring` has come to rest at `target`: its `value` is within `positionEpsilon` of
+// the target AND its `velocity` is within `velocityEpsilon` of zero. Both conditions are required —
+// a spring passing through the target at speed (an underdamped overshoot) is not settled.
+//
+// Settle is a property of position and velocity alone, independent of the `SpringConfig` that drove
+// the motion, so no config is taken. Epsilons default to a UI-scale tolerance; pass tighter or
+// looser values for the value's actual units.
+export function isSpringSettled(
+  spring: Readonly<Spring>,
+  target: number,
+  positionEpsilon: number = SPRING_SETTLE_EPSILON,
+  velocityEpsilon: number = SPRING_SETTLE_EPSILON,
+): boolean {
+  return approxEqual(spring.value, target, positionEpsilon) && approxZero(spring.velocity, velocityEpsilon);
+}
+
+// Default position/velocity tolerance for settle detection: fine enough that motion has visually
+// stopped for typical pixel/normalized values, loose enough not to wait on floating-point tails.
+const SPRING_SETTLE_EPSILON = 1e-3;
+
+// Snap `spring` to `value` with `velocity` (default 0), discarding its current motion. Use this to
+// teleport a spring to a new state — e.g. initializing it at a target, or cutting a running spring
+// dead. Unlike `updateSpring`, this applies no dynamics; the spring simply becomes what is passed.
+export function resetSpring(spring: Spring, value: number, velocity: number = 0): void {
+  spring.value = value;
+  spring.velocity = velocity;
+}
 
 // Advance `spring` one step of `deltaTime` seconds toward `target` under `config`, writing the new
 // `value` and `velocity` back into `spring`. This is the scalar primitive; `updateSpring2D` and
