@@ -99,6 +99,15 @@ _Append-only, dated, blessed rulings._
 - **[2026-07-17] Phong→PBR intensity/appearance migration is a `@flighthq/materials` helper built ON
   `color` (+ `lighting` intensity), not a color primitive.** Paired follow-on deliverable; color lands
   first. This is the user's actual driver and defines the color↔materials boundary.
+- **[2026-07-23] `create*`-returns-bare-value conflict resolved via exit (a): rename to `allocate*` /
+  plain conversion (resolves Open direction #6).** The canonical SDK color is the packed int
+  `0xRRGGBBAA` (`packColor`/`unpackColorRgba`/`getColorRgb`); `HslColor`/`HsvColor`/`LinearColor` are
+  bare-array out-param scratch for color-space math that cannot live losslessly in an 8-bit int, and
+  stay bare arrays (not `{r,g,b}`) per the plain-values / out-param idiom. Entity-backing them (exit b)
+  was rejected — a value triple has no identity/runtime. So the zero-allocators rename to `allocate*`
+  (`allocateHslColor`/`allocateHsvColor`/`allocateLinearColor`, matching the `allocateEmptySceneDocument`
+  precedent) and the pure conversion `createColorFromKelvin` renames to `colorFromKelvin` — reserving
+  `create*` for Entity allocation. _Implementation pending (rename + consumer re-point)._
 
 ## Open directions
 
@@ -111,11 +120,7 @@ _Append-only, dated, blessed rulings._
 4. **Name** — confirm `@flighthq/color`.
 5. **`particles`/`surface` color reuse** — fold their HSV/pixel color math onto `color` too, or leave
    as domain-local until it demonstrably duplicates. Decide during the consumer re-point.
-6. **How to resolve the `create*`-returns-bare-value conflict (assessment `Directed` #1).**
-   `createHslColor`/`createHsvColor`/`createLinearColor`/`createColorFromKelvin` return
-   `[number,number,number]`/scalars, not Entities — colliding with the SDK-wide `create*` = "allocates
-   an Entity" reading. Two exits: **(a) Entity-back** the working color scratch types where identity is
-   intended, so `create*` stays honest; or **(b) rename** the pure value-scratch allocation to a
-   non-`create` verb (the `allocateEmptySceneDocument` precedent). _User lean (2026-07-22): unsure about
-   `allocate*`; wants to weigh whether these should simply **be Entities** instead. Pending a direction
-   session — do not pick unilaterally._
+6. ~~How to resolve the `create*`-returns-bare-value conflict~~ — **RESOLVED 2026-07-23 (direction
+   session): exit (a), rename to `allocate*` + plain conversion.** See Decisions. Implementation
+   (rename `createHslColor`/`createHsvColor`/`createLinearColor` → `allocate*`, `createColorFromKelvin`
+   → `colorFromKelvin`, re-point consumers) pending.
