@@ -1,7 +1,7 @@
 import { createTextureAtlas } from '@flighthq/textureatlas';
+import type { TextureAtlasAsepriteArrayDocument, TextureAtlasAsepriteHashDocument } from '@flighthq/types';
 
 import { parseTextureAtlasAsepriteDocument, parseTextureAtlasAsepriteJson } from './textureAtlasAsepriteParse';
-import type { TextureAtlasAsepriteArrayDocument, TextureAtlasAsepriteHashDocument } from './textureAtlasAsepriteSchema';
 
 const HASH_DOC: TextureAtlasAsepriteHashDocument = {
   frames: {
