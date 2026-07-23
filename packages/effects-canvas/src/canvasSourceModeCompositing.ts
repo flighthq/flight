@@ -1,6 +1,4 @@
-import type { CanvasRenderTarget } from '@flighthq/types';
-
-export type CanvasEffectSourceMode = 'draw' | 'hide' | 'knockout';
+import type { CanvasEffectSourceMode, CanvasRenderTarget } from '@flighthq/types';
 
 export function clearCanvasTarget(dest: Readonly<CanvasRenderTarget>): void {
   const ctx = dest.context;

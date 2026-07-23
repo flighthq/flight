@@ -65,6 +65,7 @@ export * from './CanvasRenderEffectPipeline';
 export * from './CanvasRenderEffectSupport';
 export * from './CanvasRenderOptions';
 export * from './CanvasRenderState';
+export * from './CanvasEffectSourceMode';
 export * from './CanvasRenderTarget';
 export * from './CanvasShapeDrawState';
 export * from './CanvasShapeRegistry';
