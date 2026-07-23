@@ -1,6 +1,6 @@
 import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
+import type { WgpuDualSourceEffectPipeline, WgpuEffectPipeline } from '@flighthq/types';
 
-import type { WgpuDualSourceEffectPipeline, WgpuEffectPipeline } from './wgpuEffectPass';
 import {
   createWgpuDualSourceEffectPipeline,
   createWgpuEffectPipeline,

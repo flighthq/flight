@@ -7,9 +7,9 @@ import type {
   WgpuRenderTarget,
   WgpuRenderTargetPool,
 } from '@flighthq/types';
+import type { WgpuDualSourceEffectPipeline } from '@flighthq/types';
 
 import { applyGaussianBlurToWgpu } from './wgpuBlurEffect';
-import type { WgpuDualSourceEffectPipeline } from './wgpuEffectPass';
 import { createWgpuDualSourceEffectPipeline, drawWgpuDualSourceEffectPass, drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 

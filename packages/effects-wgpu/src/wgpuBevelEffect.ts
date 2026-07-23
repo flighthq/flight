@@ -6,10 +6,10 @@ import type {
   WgpuRenderTarget,
   WgpuRenderTargetPool,
 } from '@flighthq/types';
+import type { WgpuDualSourceEffectPipeline } from '@flighthq/types';
 
 import { applyWgpuEffectBlitPass, applyWgpuEffectErasePass } from './wgpuEffectBlitShader';
 import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';
-import type { WgpuDualSourceEffectPipeline } from './wgpuEffectPass';
 import {
   clearWgpuEffectTarget,
   createWgpuDualSourceEffectPipeline,

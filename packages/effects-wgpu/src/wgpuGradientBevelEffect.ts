@@ -6,11 +6,11 @@ import type {
   WgpuRenderTarget,
   WgpuRenderTargetPool,
 } from '@flighthq/types';
+import type { WgpuEffectPipeline } from '@flighthq/types';
 
 import { applyWgpuEffectBlitPass, applyWgpuEffectErasePass } from './wgpuEffectBlitShader';
 import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';
 import { getWgpuEffectGradientRampTexture } from './wgpuEffectGradientRamp';
-import type { WgpuEffectPipeline } from './wgpuEffectPass';
 import { clearWgpuEffectTarget, EFFECT_VERTEX_WGSL, getWgpuEffectPassState } from './wgpuEffectPass';
 import { applyWgpuEffectTintPass } from './wgpuEffectTintShader';
 

@@ -1,6 +1,6 @@
 import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
+import type { WgpuEffectPipeline } from '@flighthq/types';
 
-import type { WgpuEffectPipeline } from './wgpuEffectPass';
 import { createWgpuEffectPipeline, drawWgpuEffectPass } from './wgpuEffectPass';
 
 // Blits a texture at a UV offset. Out-of-bounds samples produce transparent output.

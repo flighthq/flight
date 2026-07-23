@@ -1,6 +1,6 @@
 import type { ColorLut, WgpuColorLutTextureCache, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
+import type { WgpuEffectPipeline } from '@flighthq/types';
 
-import type { WgpuEffectPipeline } from './wgpuEffectPass';
 import { EFFECT_VERTEX_WGSL, getWgpuEffectPassState } from './wgpuEffectPass';
 
 // Generic pointwise color-LUT pass — the single fold-in realization for the whole LUT-tier Adjustment
