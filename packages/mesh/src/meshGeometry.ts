@@ -2,27 +2,14 @@ import { createEntity } from '@flighthq/entity';
 import { createAabb } from '@flighthq/geometry';
 import type {
   MeshGeometry,
+  MeshGeometryOptions,
   MeshGeometryRuntime,
   MeshMorphBindPose,
   MeshSkinBindPose,
   MeshSubset,
-  PrimitiveTopology,
   VertexAttributeLayout,
 } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
-
-// Inputs to createMeshGeometry. `vertices` is the raw interleaved record stream read through
-// `layout`; with no `layout` the canonical PBR vertex record is assumed (see
-// CANONICAL_VERTEX_LAYOUT in meshGeometryBuilders). `indices` is omitted for non-indexed
-// geometry. `subsets` defaults to a single subset spanning the whole index (or vertex) range.
-// `topology` defaults to triangle-list. `bounds` is left null until computed.
-export interface MeshGeometryOptions {
-  indices?: Readonly<Uint16Array<ArrayBuffer>> | Readonly<Uint32Array<ArrayBuffer>> | null;
-  layout: VertexAttributeLayout;
-  subsets?: readonly MeshSubset[];
-  topology?: PrimitiveTopology;
-  vertices: Float32Array<ArrayBuffer>;
-}
 
 // Deep-copies a MeshGeometry: fresh vertex/index typed arrays, a cloned bounds (or null), and a
 // fresh single subset list mirroring the source. The clone carries its own runtime, so GPU
