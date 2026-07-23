@@ -1,12 +1,7 @@
 import { createCanvasFromImageResource } from '@flighthq/image';
-import type { CanvasRenderState, ImageResource } from '@flighthq/types';
+import type { CanvasImageSourceKind, CanvasRenderState, ImageResource } from '@flighthq/types';
 
 import { getCanvasRenderStateRuntime } from './canvasRenderState';
-
-// Which representation resolveCanvasImageSource will draw for a resource: the host `element` when the
-// resource carries one (zero copy), the `data`-materialized canvas (a transcode on first resolve /
-// version bump), or `none` when the resource has neither pixels form yet.
-export type CanvasImageSourceKind = 'data' | 'element' | 'none';
 
 // Reports how a resource will resolve on the Canvas backend without drawing or materializing anything
 // — the shakeable diagnostic for the otherwise-silent data→element transcode. `element` is free;
