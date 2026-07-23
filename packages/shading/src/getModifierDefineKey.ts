@@ -1,6 +1,6 @@
 import type { Modifier } from '@flighthq/types';
+import type { ModifierRegistry } from '@flighthq/types';
 
-import type { ModifierRegistry } from './modifierRegistry';
 import { resolveModifier } from './modifierRegistry';
 import { orderModifierStack } from './orderModifierStack';
 

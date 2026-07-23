@@ -1,15 +1,9 @@
-import type { EnvReflectModifier } from '@flighthq/types';
+import type { EnvReflectModifier, EnvReflectModifierOptions } from '@flighthq/types';
 import { EnvReflectModifierKind, ModifierSlot } from '@flighthq/types';
 
 // The options for `createEnvReflectModifier`. Every field is optional and carries a documented
 // default so the returned descriptor is fully populated (all four are uniform-fed scalars, so an
 // env-reflect modifier has a single define-key signature regardless of their values).
-export interface EnvReflectModifierOptions {
-  tint?: number;
-  intensity?: number;
-  fresnelBias?: number;
-  roughness?: number;
-}
 
 // Builds an EnvReflectModifier (slot: Effect) — a view-dependent reflection of the scene's baked
 // environment cubemap added to the shaded output. It samples the SAME prefiltered environment the lit

@@ -2,7 +2,7 @@ import { unpackColorToLinear } from '@flighthq/color';
 import { hasImageResourcePixels } from '@flighthq/image';
 import { bindGlImageResourceTexture } from '@flighthq/render-gl';
 import { orderModifierStack, resolveModifier } from '@flighthq/shading';
-import type { ModifierRegistry } from '@flighthq/shading';
+import type { ModifierRegistry } from '@flighthq/types';
 import type { LinearColor } from '@flighthq/types';
 import type {
   Camera3D,

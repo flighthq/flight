@@ -1,6 +1,6 @@
 import type { Modifier, ModifierKind } from '@flighthq/types';
+import type { ModifierRegistry } from '@flighthq/types';
 
-import type { ModifierRegistry } from './modifierRegistry';
 import { resolveModifier } from './modifierRegistry';
 
 // Returns the kinds in `stack` that have no definition in `registry` — the modifiers the compile

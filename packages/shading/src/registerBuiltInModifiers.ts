@@ -19,8 +19,8 @@ import {
   VertexDisplaceModifierKind,
   VertexDisplaceModifierSource,
 } from '@flighthq/types';
+import type { ModifierDefinition, ModifierRegistry } from '@flighthq/types';
 
-import type { ModifierDefinition, ModifierRegistry } from './modifierRegistry';
 import { registerModifier } from './modifierRegistry';
 
 // The substrate-agnostic AnimatedNormal built-in definition (slot: Normal). Its signature keys the

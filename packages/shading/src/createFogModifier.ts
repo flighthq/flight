@@ -1,17 +1,10 @@
-import type { FogModifier } from '@flighthq/types';
+import type { FogModifier, FogModifierOptions } from '@flighthq/types';
 import { FogModifierKind, FogModifierMode, ModifierSlot } from '@flighthq/types';
 
 // The options for `createFogModifier`. Only `color` is required; `mode`/`near`/`far`/`density` carry
 // documented defaults. `mode` is compile-time structural (each curve emits different GLSL, so it
 // drives the define-key signature); the numeric fields are uniform-fed and leave the program shape
 // identical.
-export interface FogModifierOptions {
-  color: number;
-  mode?: FogModifierMode;
-  near?: number;
-  far?: number;
-  density?: number;
-}
 
 // Builds a FogModifier (slot: Effect) — blends the shaded output toward `color` by camera-distance
 // density. `color` is packed sRgb RGBA. `mode` defaults to Linear (using `near`/`far` as the ramp
