@@ -30,8 +30,8 @@ import {
   swapNodeChildrenAt,
 } from './hierarchy';
 import { createNode, enableNodeSignals, getNodeRuntime } from './node';
+import { getNodeWorldMatrix } from './nodeTransform2d';
 import { invalidateNodeLocalTransform } from './revision';
-import { getNodeWorldMatrix } from './transform2d';
 
 let container: Node<NodeTraits>;
 let childA: Node<NodeTraits>;

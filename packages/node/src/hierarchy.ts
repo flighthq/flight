@@ -3,8 +3,8 @@ import { emitSignal } from '@flighthq/signals';
 import type { Node, NodeOf, NodeRuntime, Transform2DNode } from '@flighthq/types';
 
 import { getNodeRuntime } from './node';
+import { ensureNodeWorldMatrix, getNodeWorldMatrix } from './nodeTransform2d';
 import { invalidateNodeLocalTransform, invalidateNodeParentReference } from './revision';
-import { ensureNodeWorldMatrix, getNodeWorldMatrix } from './transform2d';
 
 /**
  * Adds a child Node instance to this Node

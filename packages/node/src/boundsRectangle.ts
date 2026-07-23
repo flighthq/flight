@@ -20,8 +20,8 @@ import type {
 
 import { getNodeChildCount, getNodeParent } from './hierarchy';
 import { getNodeRuntime } from './node';
+import { ensureNodeWorldMatrix, getNodeLocalMatrix, getNodeWorldMatrix } from './nodeTransform2d';
 import { invalidateNodeLocalTransform } from './revision';
-import { ensureNodeWorldMatrix, getNodeLocalMatrix, getNodeWorldMatrix } from './transform2d';
 
 /**
  * Writes a rectangle which defines the area of the scene node

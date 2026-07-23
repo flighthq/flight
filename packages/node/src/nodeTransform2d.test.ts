@@ -12,7 +12,6 @@ import { addNodeChild, createNode } from '@flighthq/node';
 import type { HasTransform2D, HasTransform2DRuntime, Matrix, Node, NodeRuntime } from '@flighthq/types';
 
 import { initTransform2DRuntimeTrait, initTransform2DTrait } from './hasTransform2d';
-import { invalidateNodeLocalTransform } from './revision';
 import {
   convertNodeVector2GlobalToLocal,
   convertNodeVector2LocalToGlobal,
@@ -23,7 +22,8 @@ import {
   getNodeWorldMatrix,
   setNodeLocalMatrix,
   setNodeTransform2D,
-} from './transform2d';
+} from './nodeTransform2d';
+import { invalidateNodeLocalTransform } from './revision';
 
 function createTestNode(): TestNode {
   const node = createNode(TestKind) as TestNode;
