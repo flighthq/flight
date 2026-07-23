@@ -12,7 +12,7 @@ No `export interface`, `export type`, or `export enum` outside `@flighthq/types`
 - A type used within a **single file** and never exported stays local — it never crosses files, so it never becomes a package-level Haxe typedef.
 - `*Kind` string identifiers are **values**, not types — they are governed by the kind-identity model (defined in the owning package), not by this rule.
 
-Enforced by `packages:check`: `export (interface|type|enum)` outside `packages/types` is an error.
+Enforced by `npm run type-home:check` (in the `check` gate): any `export (interface|type|enum)` outside `packages/types` — save the two exemptions above — is an error. `npm run type-home` (or `npx tsx scripts/type-home-progress.ts`) prints the same scan as a progress meter without failing.
 
 ## 2. File names are concept nouns — verb-free
 
