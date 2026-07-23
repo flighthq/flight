@@ -1,6 +1,6 @@
 import type { RectangleLike, TextLayoutResult } from '@flighthq/types';
+import type { TextBoundsSpec } from '@flighthq/types';
 
-import type { TextBoundsSpec } from './textBounds';
 import {
   computeTextBoundsHeight,
   computeTextBoundsOffsetX,

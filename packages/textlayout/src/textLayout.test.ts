@@ -1,5 +1,6 @@
+import type { TextLayoutParams, TextLayoutResult } from '@flighthq/types';
+
 import { createTextFormatRange } from './textFormatRange';
-import type { TextLayoutParams, TextLayoutResult } from './textLayout';
 import { computeTextLayout, createTextLayoutResult, isTextLayoutTruncated, TEXT_LAYOUT_GUTTER } from './textLayout';
 
 // Fixed-width measure: every character is 10px regardless of font settings.
