@@ -3,7 +3,7 @@
 export type HsvColor = [number, number, number];
 
 // Allocates a fresh zeroed `HsvColor` for use as an `rgbToHsv` out parameter.
-export function createHsvColor(): HsvColor {
+export function allocateHsvColor(): HsvColor {
   return [0, 0, 0];
 }
 

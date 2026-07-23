@@ -1,5 +1,5 @@
 import { lerpColor, lerpLinearColor } from './lerpColor';
-import { createLinearColor } from './packColor';
+import { allocateLinearColor } from './packColor';
 
 describe('lerpColor', () => {
   it('returns start at t=0', () => {
@@ -23,14 +23,14 @@ describe('lerpColor', () => {
 
 describe('lerpLinearColor', () => {
   it('returns start at t=0', () => {
-    const out = createLinearColor();
+    const out = allocateLinearColor();
     const start: [number, number, number, number] = [1, 0, 0, 1];
     const end: [number, number, number, number] = [0, 0, 1, 1];
     lerpLinearColor(out, start, end, 0);
     expect(out).toEqual(start);
   });
   it('returns end at t=1', () => {
-    const out = createLinearColor();
+    const out = allocateLinearColor();
     const start: [number, number, number, number] = [1, 0, 0, 1];
     const end: [number, number, number, number] = [0, 0, 1, 1];
     lerpLinearColor(out, start, end, 1);
@@ -45,7 +45,7 @@ describe('lerpLinearColor', () => {
     expect(out[2]).toBeCloseTo(0.5, 8);
   });
   it('returns the out instance', () => {
-    const out = createLinearColor();
+    const out = allocateLinearColor();
     const start: [number, number, number, number] = [0, 0, 0, 0];
     const end: [number, number, number, number] = [1, 1, 1, 1];
     expect(lerpLinearColor(out, start, end, 0.5)).toBe(out);

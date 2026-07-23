@@ -1,14 +1,14 @@
-import { createColorFromKelvin } from './colorFromKelvin';
+import { colorFromKelvin } from './colorFromKelvin';
 
-describe('createColorFromKelvin', () => {
+describe('colorFromKelvin', () => {
   it('returns opaque alpha (0xff) for all temperatures', () => {
-    expect(createColorFromKelvin(3000) & 0xff).toBe(0xff);
-    expect(createColorFromKelvin(6500) & 0xff).toBe(0xff);
-    expect(createColorFromKelvin(10000) & 0xff).toBe(0xff);
+    expect(colorFromKelvin(3000) & 0xff).toBe(0xff);
+    expect(colorFromKelvin(6500) & 0xff).toBe(0xff);
+    expect(colorFromKelvin(10000) & 0xff).toBe(0xff);
   });
 
   it('returns white (0xffffffff) for D65 daylight (~6500 K)', () => {
-    const color = createColorFromKelvin(6500);
+    const color = colorFromKelvin(6500);
     const r = (color >>> 24) & 0xff;
     const g = (color >>> 16) & 0xff;
     const b = (color >>> 8) & 0xff;
@@ -19,8 +19,8 @@ describe('createColorFromKelvin', () => {
   });
 
   it('produces warmer (more red, less blue) color for lower temperatures', () => {
-    const warm = createColorFromKelvin(2000);
-    const cool = createColorFromKelvin(10000);
+    const warm = colorFromKelvin(2000);
+    const cool = colorFromKelvin(10000);
     const warmR = (warm >>> 24) & 0xff;
     const warmB = (warm >>> 8) & 0xff;
     const coolR = (cool >>> 24) & 0xff;
@@ -31,15 +31,15 @@ describe('createColorFromKelvin', () => {
   });
 
   it('clamps inputs below 1000 K to 1000 K', () => {
-    expect(createColorFromKelvin(500)).toBe(createColorFromKelvin(1000));
+    expect(colorFromKelvin(500)).toBe(colorFromKelvin(1000));
   });
 
   it('clamps inputs above 40000 K to 40000 K', () => {
-    expect(createColorFromKelvin(50000)).toBe(createColorFromKelvin(40000));
+    expect(colorFromKelvin(50000)).toBe(colorFromKelvin(40000));
   });
 
   it('returns a valid packed RGBA integer (unsigned 32-bit)', () => {
-    const color = createColorFromKelvin(5500);
+    const color = colorFromKelvin(5500);
     expect(color).toBeGreaterThanOrEqual(0);
     expect(color).toBeLessThanOrEqual(0xffffffff);
     // Must be an integer.
