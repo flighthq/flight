@@ -1,6 +1,12 @@
 import { setOrthographicMatrix4, setPerspectiveMatrix4 } from '@flighthq/geometry';
 import type { Matrix4Like } from '@flighthq/types';
-import type { OrthographicProjection, PerspectiveProjection, Projection } from '@flighthq/types';
+import type {
+  OrthographicProjection,
+  OrthographicProjectionOptions,
+  PerspectiveProjection,
+  PerspectiveProjectionOptions,
+  Projection,
+} from '@flighthq/types';
 
 // Builds an orthographic projection descriptor from explicit view-volume half-extents (in
 // view-space units). The full visible width is 2*halfWidth and height 2*halfHeight; the
@@ -58,16 +64,4 @@ export function setProjectionMatrix4(
   const halfWidth = projection.halfWidth;
   const halfHeight = projection.halfHeight;
   setOrthographicMatrix4(out, -halfWidth, halfWidth, -halfHeight, halfHeight, near, far);
-}
-
-// Structural inputs for createOrthographicProjection.
-export interface OrthographicProjectionOptions {
-  halfHeight: number;
-  halfWidth: number;
-}
-
-// Structural inputs for createPerspectiveProjection. `aspect` defaults to 1 (square viewport).
-export interface PerspectiveProjectionOptions {
-  aspect?: number;
-  fovY: number;
 }
