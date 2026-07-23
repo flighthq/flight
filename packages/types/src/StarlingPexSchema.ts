@@ -1,3 +1,5 @@
+import type { ParticleEmitterConfig } from './ParticleEmitterConfig';
+
 // Starling / Sparrow PEX particle format schema.
 // The PEX format is an XML particle descriptor popularised by the Sparrow framework
 // and used by Starling, Cocos2d-x, and various OpenFL/Starling toolchains.
@@ -60,4 +62,26 @@ export interface StarlingPexDocument {
   blendFuncSource: number;
   blendFuncDestination: number;
   textureFileName: string;
+}
+
+export interface StarlingPexParseOptions {
+  /** Side length of the particle texture in pixels, used to normalise pixel sizes
+   *  to dimensionless scale multipliers. Defaults to 1 (no normalisation). */
+  textureSize?: number;
+}
+
+export interface StarlingPexParseResult {
+  config: ParticleEmitterConfig;
+  document: StarlingPexDocument;
+  /** Features present in the source that the common-subset importer cannot
+   *  represent and silently dropped — surface these in your asset pipeline. */
+  warnings: string[];
+}
+
+export type StarlingPexParsed = StarlingPexParseResult;
+
+export interface StarlingPexSerializeOptions {
+  /** Side length of the particle texture in pixels — reverses the normalisation
+   *  applied during parsing. Defaults to 1. */
+  textureSize?: number;
 }

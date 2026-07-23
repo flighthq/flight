@@ -1,16 +1,6 @@
 import { createParticleEmitterConfig } from '@flighthq/particles';
-import type { ParticleBlendMode, ParticleEmitterConfig } from '@flighthq/types';
-
-export interface PixiParseResult {
-  config: ParticleEmitterConfig;
-  /** Features present in the source that the common-subset importer cannot
-   *  represent and silently dropped — surface these in your asset pipeline. */
-  warnings: string[];
-}
-
+import type { PixiParseResult, ParticleBlendMode, ParticleEmitterConfig } from '@flighthq/types';
 /** @deprecated Use `PixiParseResult`. */
-export type PixiParsed = PixiParseResult;
-
 /** Parse a Pixi.js / pixi-particle-emitter JSON config string directly to a ParticleEmitterConfig.
  *
  *  Supports the pixi-particle-emitter v3/v4/v5 config shape.

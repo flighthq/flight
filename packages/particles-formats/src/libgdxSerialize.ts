@@ -1,13 +1,10 @@
-import type { ParticleEmitterConfig } from '@flighthq/types';
-
-import type { LibgdxParticleDocument, LibgdxRangeValue } from './libgdxSchema';
-import type { ParticleSerializeResult } from './serializeResult';
-
-export interface LibgdxSerializeOptions {
-  /** Side length of the particle texture in pixels — reverses the normalisation
-   *  applied during parsing. Defaults to 1. */
-  textureSize?: number;
-}
+import type {
+  LibgdxSerializeOptions,
+  ParticleEmitterConfig,
+  LibgdxParticleDocument,
+  LibgdxRangeValue,
+  ParticleSerializeResult,
+} from '@flighthq/types';
 
 /** Serialise a ParticleEmitterConfig to a libGDX 2D Particle Editor `.p` file string.
  *

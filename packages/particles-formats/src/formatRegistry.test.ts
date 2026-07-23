@@ -1,6 +1,6 @@
 import { createParticleEmitterConfig } from '@flighthq/particles';
+import type { ParticleFormatCodec } from '@flighthq/types';
 
-import type { ParticleFormatCodec } from './formatRegistry';
 import {
   detectRegisteredParticleFormat,
   getParticleFormatCodec,

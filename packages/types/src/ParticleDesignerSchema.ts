@@ -1,3 +1,5 @@
+import type { ParticleEmitterConfig } from './ParticleEmitterConfig';
+
 // Particle Designer plist schema — field names as they appear in the XML file.
 // Reference: https://www.71squared.com/particledesigner (format documented in the tool's export)
 // Targets Particle Designer 3.x and cocos2d-compatible plist files.
@@ -79,3 +81,23 @@ export interface ParticleDesignerDocument {
 }
 
 export type ParticleDesignerRawDict = Record<string, string | number | boolean>;
+
+export interface ParticleDesignerParseOptions {
+  /** Side length of the particle texture in pixels, used to normalise pixel sizes
+   *  to dimensionless scale multipliers.  Defaults to 1 (no normalisation). */
+  textureSize?: number;
+}
+
+export interface ParticleDesignerParsed {
+  config: ParticleEmitterConfig;
+  document: ParticleDesignerDocument;
+  /** Features present in the source that the common-subset importer cannot
+   *  represent and silently dropped — surface these in your asset pipeline. */
+  warnings: string[];
+}
+
+export interface ParticleDesignerSerializeOptions {
+  /** Side length of the particle texture in pixels — reverses the normalisation
+   *  applied during parsing.  Defaults to 1. */
+  textureSize?: number;
+}

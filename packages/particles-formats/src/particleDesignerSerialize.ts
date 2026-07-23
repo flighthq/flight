@@ -1,13 +1,9 @@
-import type { ParticleEmitterConfig } from '@flighthq/types';
-
-import type { ParticleDesignerDocument } from './particleDesignerSchema';
-import type { ParticleSerializeResult } from './serializeResult';
-
-export interface ParticleDesignerSerializeOptions {
-  /** Side length of the particle texture in pixels — reverses the normalisation
-   *  applied during parsing.  Defaults to 1. */
-  textureSize?: number;
-}
+import type {
+  ParticleDesignerSerializeOptions,
+  ParticleEmitterConfig,
+  ParticleDesignerDocument,
+  ParticleSerializeResult,
+} from '@flighthq/types';
 
 const RAD2DEG = 180 / Math.PI;
 

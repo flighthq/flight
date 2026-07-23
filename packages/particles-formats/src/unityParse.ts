@@ -4,14 +4,13 @@ import {
   particleCurveFromKeyframes,
 } from '@flighthq/particles';
 import type {
+  UnityParseOptions,
+  UnityParsed,
   ColorKeyframe,
   CurveKeyframe,
   ParticleBlendMode,
   ParticleCurve,
   ParticleEmitterConfig,
-} from '@flighthq/types';
-
-import type {
   UnityColor,
   UnityColorOverLifetime,
   UnityEmission,
@@ -20,21 +19,7 @@ import type {
   UnityRotationOverLifetime,
   UnityShape,
   UnitySizeOverLifetime,
-} from './unitySchema';
-
-export interface UnityParseOptions {
-  /** Pixels-per-unit for the target canvas. Unity uses world-space units (metres);
-   *  multiply by this factor to convert to pixel coordinates.  Defaults to 100. */
-  pixelsPerUnit?: number;
-}
-
-export interface UnityParsed {
-  config: ParticleEmitterConfig;
-  document: UnityParticleDocument;
-  /** Features present in the source that the common-subset importer cannot
-   *  represent and silently dropped — surface these in your asset pipeline. */
-  warnings: string[];
-}
+} from '@flighthq/types';
 
 const DEG2RAD = Math.PI / 180;
 const DEFAULT_PPU = 100;

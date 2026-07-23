@@ -1,21 +1,12 @@
 import { createParticleEmitterConfig } from '@flighthq/particles';
-import type { ParticleBlendMode, ParticleEmitterConfig } from '@flighthq/types';
-
-import type { ParticleDesignerDocument, ParticleDesignerRawDict } from './particleDesignerSchema';
-
-export interface ParticleDesignerParseOptions {
-  /** Side length of the particle texture in pixels, used to normalise pixel sizes
-   *  to dimensionless scale multipliers.  Defaults to 1 (no normalisation). */
-  textureSize?: number;
-}
-
-export interface ParticleDesignerParsed {
-  config: ParticleEmitterConfig;
-  document: ParticleDesignerDocument;
-  /** Features present in the source that the common-subset importer cannot
-   *  represent and silently dropped — surface these in your asset pipeline. */
-  warnings: string[];
-}
+import type {
+  ParticleDesignerParseOptions,
+  ParticleDesignerParsed,
+  ParticleBlendMode,
+  ParticleEmitterConfig,
+  ParticleDesignerDocument,
+  ParticleDesignerRawDict,
+} from '@flighthq/types';
 
 const DEG2RAD = Math.PI / 180;
 
