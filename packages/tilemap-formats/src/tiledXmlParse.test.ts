@@ -1,8 +1,8 @@
+import type { TiledParseOptions } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { decodeTiledGid } from './tiledGid';
 import { parseTiledTilesetJson, parseTiledTmj } from './tiledJsonParse';
-import type { TiledParseOptions } from './tiledOptions';
 import { parseTiledTileset, parseTiledTmx } from './tiledXmlParse';
 
 // A 2x2 orthogonal map with a CSV tile layer drawing from two tilesets (firstgid 1 and 5), one

@@ -1,7 +1,7 @@
+import type { TiledParseOptions } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { parseTiledTilesetJson, parseTiledTmj } from './tiledJsonParse';
-import type { TiledParseOptions } from './tiledOptions';
 
 function base64Layer(gids: readonly number[]): string {
   const bytes = new Uint8Array(gids.length * 4);

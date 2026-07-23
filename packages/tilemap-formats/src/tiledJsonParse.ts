@@ -1,8 +1,10 @@
 import type {
+  TiledCompression,
   TiledLayer,
   TiledMap,
   TiledObject,
   TiledOrientation,
+  TiledParseOptions,
   TiledProperty,
   TiledPropertyType,
   TiledRenderOrder,
@@ -15,7 +17,6 @@ import type {
 
 import { parseTiledColor } from './tiledColor';
 import { decodeTiledBase64Layer, decodeTiledCsvLayer } from './tiledLayerData';
-import type { TiledCompression, TiledParseOptions } from './tiledOptions';
 
 // JSON front-end of the Tiled codec: TMJ maps and standalone TSJ tilesets. The same DTO builders as
 // the XML front-end, walking a parsed JSON tree instead of an XML one.

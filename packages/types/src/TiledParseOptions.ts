@@ -1,4 +1,5 @@
-import type { TiledTilesetRef, Tileset } from '@flighthq/types';
+import type { TiledTilesetRef } from './TiledTileset';
+import type { Tileset } from './Tileset';
 
 // Compression applied to a base64-encoded tile-layer payload. Tiled emits `gzip`/`zlib` (and,
 // recently, `zstd`); the codec never bundles a decompressor, so the caller decodes these through a
