@@ -15,4 +15,3 @@ export * from './wgpuShaderRegistry';
 export * from './wgpuSurface';
 export * from './wgpuTextureUpload';
 export { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
-export type { WgpuRenderTarget, WgpuRenderTargetPool } from '@flighthq/types';
