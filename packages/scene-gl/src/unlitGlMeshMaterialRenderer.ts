@@ -1,6 +1,6 @@
 import { unpackColorToLinear } from '@flighthq/color';
-import type { LinearColor } from '@flighthq/types';
 import type {
+  LinearColor,
   Camera3D,
   GlMeshMaterialRenderer,
   GlRenderState,
@@ -9,6 +9,7 @@ import type {
   SceneLightBlock,
   SceneRenderProxy,
   UnlitMaterial,
+  GlUnlitDefineKey,
 } from '@flighthq/types';
 import { UnlitMaterialKind } from '@flighthq/types';
 
@@ -21,7 +22,6 @@ import {
   setGlMeshViewProjection,
 } from './glMeshProgram';
 import { getGlSceneRuntime } from './glSceneRuntime';
-import type { GlUnlitDefineKey } from './glUnlitPrelude';
 import { bindGlUnlitSurface, ensureGlUnlitProgram } from './glUnlitPrelude';
 
 // The built-in Unlit forward renderer (GlMeshMaterialRenderer for UnlitMaterialKind). Lighting-

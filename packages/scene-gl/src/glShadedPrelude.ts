@@ -1,9 +1,14 @@
 import { createModifierRegistry, getModifierDefineKey, orderModifierStack, resolveModifier } from '@flighthq/shading';
-import type { ModifierRegistry } from '@flighthq/types';
-import type { GlRenderState, Modifier } from '@flighthq/types';
+import type {
+  GlShadedDefineKey,
+  GlShadedProgram,
+  ModifierRegistry,
+  GlRenderState,
+  Modifier,
+  GlModifierSnippet,
+} from '@flighthq/types';
 import { MAX_FORWARD_LIGHTS, ModifierSlot } from '@flighthq/types';
 
-import type { GlLitProgram } from './glLitProgram';
 import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram';
 import {
   GL_SKIN_VERTEX_DECLARATIONS_GLSL,
@@ -12,45 +17,6 @@ import {
   ensureGlSceneProgram,
 } from './glMeshProgram';
 import { getGlSceneRuntime } from './glSceneRuntime';
-import type { GlModifierSnippet } from './glShadedModifierSnippet';
-
-// The base-material feature flags that select a ShadedMaterial uber-shader variant, independent of
-// the modifier stack. Mirrors the classic BlinnPhong flags: which optional maps are present and
-// whether alpha-mask cutoff is active. The full program identity is this base key PLUS the modifier
-// stack's define-key (see buildGlShadedCacheKey) — the base shades the diffuse + half-vector specular
-// surface, the modifiers inject at the slot hooks.
-export interface GlShadedDefineKey {
-  alphaMaskEnabled: boolean;
-  hasDiffuseMap: boolean;
-  hasNormalMap: boolean;
-  // Set by ensureGlShadedProgram from the render-state skinned-run flag, not the material renderer —
-  // skinning keys off geometry.
-  hasSkin?: boolean;
-  hasSpecularMap: boolean;
-  // Whether the diffuse map carries a non-identity uv transform (HAS_UV_TRANSFORM); it drives the
-  // shared v_uv0 the diffuse/specular/normal maps and modifier snippets sample. Set only when
-  // hasDiffuseMap is also true.
-  hasUvTransform: boolean;
-}
-
-// A compiled ShadedMaterial program plus its resolved uniform locations. Extends GlLitProgram (the
-// shared light-block/camera/shadow uniforms + the vertex model/normal/view-projection) with the base
-// material uniforms and the per-frame `u_time`. Per-modifier uniforms are NOT resolved here — each
-// snippet's `bind` looks its own suffixed uniforms up on `program`, so the program shape stays fixed
-// while the modifier set varies. One exists per distinct (base key + modifier define-key), cached
-// under the `shaded:` program-cache namespace.
-export interface GlShadedProgram extends GlLitProgram {
-  locAlphaCutoff: WebGLUniformLocation | null;
-  locDiffuse: WebGLUniformLocation | null;
-  locDiffuseMap: WebGLUniformLocation | null;
-  locNormalMap: WebGLUniformLocation | null;
-  locNormalScale: WebGLUniformLocation | null;
-  locShininess: WebGLUniformLocation | null;
-  locSpecular: WebGLUniformLocation | null;
-  locSpecularMap: WebGLUniformLocation | null;
-  locTime: WebGLUniformLocation | null;
-}
-
 // The stable program-cache key for a ShadedMaterial variant: the base feature flags joined with the
 // modifier stack's define-key. Two materials sharing both the same base flags AND the same modifier
 // feature-set produce the same key and share one compiled program (and batch together); a different

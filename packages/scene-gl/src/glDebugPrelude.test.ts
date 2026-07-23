@@ -1,4 +1,5 @@
-import type { GlDebugDefineKey } from './glDebugPrelude';
+import type { GlDebugDefineKey } from '@flighthq/types';
+
 import {
   bindGlDebugNormalMap,
   bindGlDebugRange,

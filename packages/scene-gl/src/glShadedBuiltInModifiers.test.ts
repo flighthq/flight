@@ -8,7 +8,7 @@ import {
   createToonModifier,
   createVertexDisplaceModifier,
 } from '@flighthq/shading';
-import type { Texture } from '@flighthq/types';
+import type { Texture, GlModifierBindContext } from '@flighthq/types';
 import {
   AnimatedNormalModifierKind,
   DissolveModifierKind,
@@ -36,7 +36,6 @@ import {
   toonGlModifierSnippet,
   vertexDisplaceGlModifierSnippet,
 } from './glShadedBuiltInModifiers';
-import type { GlModifierBindContext } from './glShadedModifierSnippet';
 import { resolveGlModifierSnippet } from './glShadedModifierSnippet';
 
 // A Texture whose image is unloaded — the snippet binds the sampler unit without an upload.

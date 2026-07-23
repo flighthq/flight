@@ -1,21 +1,6 @@
-import type { GlRenderState, MeshGeometry } from '@flighthq/types';
+import type { GlWireframeUpload, GlRenderState, MeshGeometry } from '@flighthq/types';
 
 import { ensureGlMeshUpload } from './glMeshUpload';
-
-// The wireframe GPU upload of one MeshGeometry: a dedicated VAO binding the geometry's shared
-// interleaved vertex buffer (position attribute only) plus a derived LINE index buffer — three edges
-// per triangle (i0i1, i1i2, i2i0). Wireframe needs its own VAO because a VAO captures its
-// ELEMENT_ARRAY_BUFFER binding; reusing the triangle upload's VAO and swapping the element buffer
-// would corrupt the cached triangle draw for every other material. The vertex buffer itself is reused
-// from the triangle upload (no duplicate vertex memory). Cached per state + geometry, re-derived when
-// geometry.version moves.
-export interface GlWireframeUpload {
-  indexType: number;
-  lineIndexBuffer: WebGLBuffer;
-  vao: WebGLVertexArrayObject;
-  version: number;
-}
-
 // Lazily derives and uploads the wireframe line-index VAO for a geometry on this state, caching it
 // keyed by the geometry entity. Reuses the geometry's interleaved vertex buffer (ensuring the
 // triangle upload first), binds only the position attribute at location 0, and builds a line-list

@@ -1,6 +1,6 @@
 import { unpackColorToLinear } from '@flighthq/color';
-import type { LinearColor } from '@flighthq/types';
 import type {
+  LinearColor,
   Camera3D,
   GlMeshMaterialRenderer,
   GlRenderState,
@@ -9,13 +9,13 @@ import type {
   SceneLightBlock,
   SceneRenderProxy,
   VertexColorMaterial,
+  GlUnlitDefineKey,
 } from '@flighthq/types';
 import { VertexColorMaterialKind } from '@flighthq/types';
 
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshViewProjection } from './glMeshProgram';
 import { getGlSceneRuntime } from './glSceneRuntime';
-import type { GlUnlitDefineKey } from './glUnlitPrelude';
 import { bindGlUnlitSurface, ensureGlUnlitProgram } from './glUnlitPrelude';
 
 // The built-in VertexColor forward renderer (GlMeshMaterialRenderer for VertexColorMaterialKind).

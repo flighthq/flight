@@ -1,4 +1,5 @@
-import type { GlClassicDefineKey } from './glClassicPrelude';
+import type { GlClassicDefineKey } from '@flighthq/types';
+
 import {
   buildGlClassicDefineKey,
   compileGlClassicProgram,

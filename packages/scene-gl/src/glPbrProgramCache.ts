@@ -1,52 +1,9 @@
-import type { GlRenderState } from '@flighthq/types';
+import type { GlPbrProgram, GlRenderState, GlPbrDefineKey } from '@flighthq/types';
 
-import type { GlLitProgram } from './glLitProgram';
 import { resolveGlLitLocations } from './glLitProgram';
 import { compileGlProgram, ensureGlSceneProgram } from './glMeshProgram';
-import type { GlPbrDefineKey } from './glPbrPrelude';
 import { buildGlPbrDefineKey, getGlPbrFragmentSourceForKey, getGlPbrVertexSourceForKey } from './glPbrPrelude';
 import { getGlSceneRuntime } from './glSceneRuntime';
-
-// A compiled PBR uber-shader variant plus its resolved uniform locations. One of these exists per
-// distinct GlPbrDefineKey (maps-present / alpha-mask + extension-lobe combination), built once and
-// cached on the GlRenderState (see ensureGlPbrProgram). The vertex attribute locations are fixed by
-// the shader's `layout(location = …)` qualifiers (0 position, 1 normal, 2 tangent, 3 uv0), so they
-// are not stored here — the draw path binds them by constant. Extends GlLitProgram (model/normal/
-// view-projection + the standard light/camera uniforms) with the full standard-block material
-// uniforms plus the extension-lobe uniforms (each resolves to null in variants that omit its
-// define, which is harmless — its renderer only runs when the define is set).
-export interface GlPbrProgram extends GlLitProgram {
-  locAlphaCutoff: WebGLUniformLocation | null;
-  locAnisotropyRotation: WebGLUniformLocation | null;
-  locAnisotropyStrength: WebGLUniformLocation | null;
-  locAttenuationColor: WebGLUniformLocation | null;
-  locBaseColor: WebGLUniformLocation | null;
-  locBaseColorMap: WebGLUniformLocation | null;
-  locClearcoat: WebGLUniformLocation | null;
-  locClearcoatRoughness: WebGLUniformLocation | null;
-  locEmissive: WebGLUniformLocation | null;
-  locEmissiveMap: WebGLUniformLocation | null;
-  locEmissiveStrength: WebGLUniformLocation | null;
-  locIridescence: WebGLUniformLocation | null;
-  locIridescenceIor: WebGLUniformLocation | null;
-  locIridescenceThickness: WebGLUniformLocation | null;
-  locMetallic: WebGLUniformLocation | null;
-  locMetallicRoughnessMap: WebGLUniformLocation | null;
-  locNormalMap: WebGLUniformLocation | null;
-  locNormalScale: WebGLUniformLocation | null;
-  locOcclusionMap: WebGLUniformLocation | null;
-  locOcclusionStrength: WebGLUniformLocation | null;
-  locRoughness: WebGLUniformLocation | null;
-  locSheenColor: WebGLUniformLocation | null;
-  locSheenRoughness: WebGLUniformLocation | null;
-  locSpecular: WebGLUniformLocation | null;
-  locSpecularColor: WebGLUniformLocation | null;
-  locSubsurface: WebGLUniformLocation | null;
-  locSubsurfaceColor: WebGLUniformLocation | null;
-  locThickness: WebGLUniformLocation | null;
-  locTransmission: WebGLUniformLocation | null;
-}
-
 // Compiles the StandardPbr uber-shader for a define key, links it, and resolves its uniform
 // locations. Pure GL work — no caching — used by ensureGlPbrProgram. Throws on a compile/link
 // failure, which is a programmer error (a malformed prelude), not an expected runtime condition.

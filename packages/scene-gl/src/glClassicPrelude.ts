@@ -1,7 +1,6 @@
-import type { GlRenderState } from '@flighthq/types';
+import type { GlClassicDefineKey, GlClassicProgram, GlRenderState } from '@flighthq/types';
 import { MAX_FORWARD_LIGHTS } from '@flighthq/types';
 
-import type { GlLitProgram } from './glLitProgram';
 import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram';
 import {
   GL_SKIN_VERTEX_DECLARATIONS_GLSL,
@@ -10,67 +9,6 @@ import {
   ensureGlSceneProgram,
 } from './glMeshProgram';
 import { getGlSceneRuntime } from './glSceneRuntime';
-
-// The shared Gl classic prelude: the GLSL 300 es vertex + fragment uber-shader for the three classic
-// lit mesh-material families — Lambert (diffuse only), Phong (reflection-vector specular), and
-// BlinnPhong (half-vector specular). All three share ONE source string; the lighting model is a
-// compile-time define (LIGHTING_PHONG / LIGHTING_BLINNPHONG; Lambert sets neither and compiles out
-// the specular branch). One directional + one ambient light are read from the standard packed light
-// block (GL_MESH_LIGHT_BLOCK_GLSL), gated by the count uniforms, and the fragment stage outputs
-// LINEAR HDR radiance (no tonemap / gamma here), matching the rgba16f scene target. The linear->sRGB
-// encode happens at present via drawGlLinearToSrgbPass (presentGlScene, the no-effects path) — never in
-// a material shader.
-//
-// The specular models share the Lambert diffuse term and differ only in the specular geometry:
-// Phong raises max(dot(reflect(-L, N), V), 0) to the shininess exponent; BlinnPhong raises
-// max(dot(N, normalize(L + V)), 0). Both need the world-space view vector, so the camera position
-// (u_cameraPosition, declared in the light block) must be uploaded for Phong/BlinnPhong. Lambert
-// has no view-dependent term and ignores it.
-//
-// The maps-present / alpha-mask variants are #ifdef branches of this one shader, never separate
-// files. u_diffuse / u_specular arrive already decoded to linear on the CPU (unpackColorToLinear);
-// only sampled map texels are sRgb-decoded in GLSL.
-
-// One classic shading model. Lambert is diffuse-only; Phong and BlinnPhong add a specular lobe that
-// differs only in the reflection geometry (reflection vector vs. half vector). The model is encoded
-// into the program-cache key and selects the fragment shader's specular branch via a #define.
-export type GlClassicLightingModel = 'blinnphong' | 'lambert' | 'phong';
-
-// The feature flags that select a classic uber-shader variant. `lightingModel` chooses the shading
-// model (and whether a specular branch exists at all); `hasDiffuseMap` / `hasSpecularMap` /
-// `hasNormalMap` enable the textured paths; `alphaMaskEnabled` enables the alpha-cutoff discard for
-// 'mask' materials. Lambert never sets `hasSpecularMap` or `hasNormalMap` (it has no such fields).
-export interface GlClassicDefineKey {
-  alphaMaskEnabled: boolean;
-  hasDiffuseMap: boolean;
-  hasNormalMap: boolean;
-  // Whether this variant deforms the vertex by a bone palette (HAS_SKIN). Set by ensureGlClassicProgram
-  // from the render-state skinned-run flag, not by the material renderer — skinning keys off geometry.
-  hasSkin?: boolean;
-  hasSpecularMap: boolean;
-  // Whether the diffuse map carries a non-identity uv transform (HAS_UV_TRANSFORM); it drives the
-  // shared v_uv0 that the diffuse/specular/normal maps sample. Set only when hasDiffuseMap is also true.
-  hasUvTransform: boolean;
-  lightingModel: GlClassicLightingModel;
-}
-
-// A compiled classic uber-shader variant plus its resolved uniform locations. One exists per distinct
-// GlClassicDefineKey, cached on the GlRenderState under the `classic:` program-cache namespace.
-// Extends GlLitProgram (model/normal/view-projection + the standard light/camera uniforms) with the
-// classic material uniforms. Lambert leaves locSpecular / locShininess / locSpecularMap / locNormalMap
-// / locNormalScale null (those uniforms are compiled out of its variant), so the renderers guard each
-// upload on the location being non-null.
-export interface GlClassicProgram extends GlLitProgram {
-  locAlphaCutoff: WebGLUniformLocation | null;
-  locDiffuse: WebGLUniformLocation | null;
-  locDiffuseMap: WebGLUniformLocation | null;
-  locNormalMap: WebGLUniformLocation | null;
-  locNormalScale: WebGLUniformLocation | null;
-  locShininess: WebGLUniformLocation | null;
-  locSpecular: WebGLUniformLocation | null;
-  locSpecularMap: WebGLUniformLocation | null;
-}
-
 // A short, stable, order-independent string identity for a classic define key, used as the program-
 // cache key. The lighting model is encoded first (l/p/b) so the three models never collide, followed
 // by the feature flags. Two keys with the same model + flags produce the same string and so share a

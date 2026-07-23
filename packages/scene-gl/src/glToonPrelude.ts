@@ -1,7 +1,6 @@
+import type { GlToonDefineKey, GlToonProgram, GlRenderState } from '@flighthq/types';
 import { MAX_FORWARD_LIGHTS } from '@flighthq/types';
-import type { GlRenderState } from '@flighthq/types';
 
-import type { GlLitProgram } from './glLitProgram';
 import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram';
 import {
   GL_SKIN_VERTEX_DECLARATIONS_GLSL,
@@ -10,55 +9,6 @@ import {
   ensureGlSceneProgram,
 } from './glMeshProgram';
 import { getGlSceneRuntime } from './glSceneRuntime';
-
-// The shared Gl Toon (cel-shading) prelude: the GLSL 300 es vertex + fragment shader for the Toon
-// forward-lit path. One source string is specialized per material at compile time by a leading
-// define block (see GlToonDefineKey / buildGlToonDefineSource), so the base-color-map / ramp /
-// alpha-mask variants are #ifdef branches of one shader, never separate files.
-//
-// The cel model is deliberately simple: compute the diffuse N·L from the single directional light
-// (read from the std140 light block included via GL_MESH_LIGHT_BLOCK_GLSL), then QUANTIZE that term
-// into stepped bands — either by sampling a 1D `ramp` texture at vec2(nDotL, 0.5) (HAS_RAMP) or by
-// flooring nDotL into u_steps even bands. The banded term modulates the linear base color (decoded
-// to linear on the CPU at bind, optionally tinted by an sRgb-decoded base-color map) and the
-// directional radiance; the ambient term is added flat. The fragment stage writes LINEAR color to
-// fragColor (no tonemap / gamma here — the effect pipeline's resolve pass owns that), matching the
-// rgba16f scene target.
-//
-// The light block layout mirrors SceneLightBlock.data exactly (std140): a directional term
-// { direction.xyz, _pad, radiance.rgb, _pad } at offset 0 then an ambient term { radiance.rgb,
-// _pad } — radiance is already linear and premultiplied by intensity at pack time, so the shader
-// never decodes sRgb for lights. u_directionalCount / u_ambientCount (0 or 1) gate each term.
-
-// The feature flags that select a Toon uber-shader variant. Each toggles an #ifdef in the prelude
-// and is hashed into the program-cache key (buildGlToonDefineKey), so distinct flag sets compile and
-// cache as distinct programs. `hasBaseColorMap` enables the sampled albedo tint; `hasRamp` switches
-// the quantizer from stepped floor to a 1D ramp lookup; `alphaMaskEnabled` enables the alpha-cutoff
-// discard for 'mask' materials.
-export interface GlToonDefineKey {
-  alphaMaskEnabled: boolean;
-  hasBaseColorMap: boolean;
-  hasRamp: boolean;
-  // Set by ensureGlToonProgram from the render-state skinned-run flag, not the material renderer — skinning keys off geometry.
-  hasSkin?: boolean;
-  // Whether the base-color map carries a non-identity uv transform (HAS_UV_TRANSFORM). Set only when
-  // hasBaseColorMap is also true, since the transform applies to the sampled albedo tint.
-  hasUvTransform: boolean;
-}
-
-// A compiled Toon uber-shader variant plus its resolved uniform locations. One exists per distinct
-// GlToonDefineKey, cached on the GlRenderState under the `toon:` program-cache namespace. Extends
-// GlLitProgram (model/normal/view-projection + the standard light/camera uniforms) with the Toon
-// material uniforms. Vertex attribute locations are fixed by the shader's `layout(location = …)`
-// qualifiers (0 position, 1 normal, 3 uv0), so they are not stored here.
-export interface GlToonProgram extends GlLitProgram {
-  locAlphaCutoff: WebGLUniformLocation | null;
-  locBaseColor: WebGLUniformLocation | null;
-  locBaseColorMap: WebGLUniformLocation | null;
-  locRamp: WebGLUniformLocation | null;
-  locSteps: WebGLUniformLocation | null;
-}
-
 // A short, stable, order-independent string identity for a Toon define key, used as the program-
 // cache key. Two keys with the same flags produce the same string and so share a compiled program.
 export function buildGlToonDefineKey(key: Readonly<GlToonDefineKey>): string {

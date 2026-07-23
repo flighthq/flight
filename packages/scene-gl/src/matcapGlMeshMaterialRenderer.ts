@@ -1,6 +1,6 @@
 import { unpackColorToLinear } from '@flighthq/color';
-import type { LinearColor } from '@flighthq/types';
 import type {
+  LinearColor,
   Camera3D,
   GlMeshMaterialRenderer,
   GlRenderState,
@@ -9,10 +9,10 @@ import type {
   MeshGeometry,
   SceneLightBlock,
   SceneRenderProxy,
+  GlMatcapDefineKey,
 } from '@flighthq/types';
 import { MatcapMaterialKind } from '@flighthq/types';
 
-import type { GlMatcapDefineKey } from './glMatcapPrelude';
 import { bindGlMatcapSurface, ensureGlMatcapProgram } from './glMatcapPrelude';
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshViewProjection } from './glMeshProgram';

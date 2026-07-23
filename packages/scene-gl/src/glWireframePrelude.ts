@@ -1,6 +1,5 @@
-import type { GlRenderState } from '@flighthq/types';
+import type { GlWireframeProgram, GlRenderState } from '@flighthq/types';
 
-import type { GlMeshProgram } from './glMeshProgram';
 import { compileGlProgram, ensureGlSceneProgram } from './glMeshProgram';
 
 // The Gl wireframe prelude: a minimal GLSL 300 es shader that transforms the position attribute by
@@ -8,13 +7,6 @@ import { compileGlProgram, ensureGlSceneProgram } from './glMeshProgram';
 // no maps — the WireframeMaterial draws mesh edges as GL lines (see glWireframeUpload for the derived
 // line-index buffer), so the fragment stage only needs the line color (decoded to linear on the CPU).
 // There are no feature variants, so a single program is cached per state under the `wireframe:` key.
-
-// A compiled wireframe program. Extends GlMeshProgram (model + view-projection; locNormalMatrix is
-// null — wireframe has no normals) with the single line-color uniform.
-export interface GlWireframeProgram extends GlMeshProgram {
-  locColor: WebGLUniformLocation | null;
-}
-
 // Compiles the wireframe shader, links it, and resolves its uniform locations. Pure GL work — no
 // caching — used by ensureGlWireframeProgram.
 export function compileGlWireframeProgram(gl: WebGL2RenderingContext): GlWireframeProgram {

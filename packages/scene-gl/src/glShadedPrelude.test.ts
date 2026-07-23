@@ -5,14 +5,13 @@ import {
   createVertexDisplaceModifier,
   registerModifier,
 } from '@flighthq/shading';
-import type { Modifier } from '@flighthq/types';
+import type { Modifier, GlShadedDefineKey } from '@flighthq/types';
 import { VertexDisplaceModifierSource } from '@flighthq/types';
 
 import { getGlSceneRuntime } from './glSceneRuntime';
 import { makeFakeGl2, makeGlSceneState } from './glSceneTestHelper';
 import { emissiveGlModifierSnippet, envReflectGlModifierSnippet } from './glShadedBuiltInModifiers';
 import { registerBuiltInGlModifierSnippets, vertexDisplaceGlModifierSnippet } from './glShadedBuiltInModifiers';
-import type { GlShadedDefineKey } from './glShadedPrelude';
 import { buildGlShadedCacheKey, compileGlShadedProgram, ensureGlShadedProgram } from './glShadedPrelude';
 
 const BASE_KEY: GlShadedDefineKey = {

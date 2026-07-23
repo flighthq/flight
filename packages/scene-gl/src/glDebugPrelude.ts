@@ -1,45 +1,8 @@
 import { hasImageResourcePixels } from '@flighthq/image';
 import { bindGlImageResourceTexture } from '@flighthq/render-gl';
-import type { GlRenderState, Texture } from '@flighthq/types';
+import type { GlDebugProgram, GlDebugDefineKey, GlRenderState, Texture } from '@flighthq/types';
 
-import type { GlMeshProgram } from './glMeshProgram';
 import { compileGlProgram, ensureGlSceneProgram } from './glMeshProgram';
-
-// The shared Gl debug prelude: the GLSL 300 es vertex + fragment shader for the lighting-INDEPENDENT
-// debug/utility pass materials (Depth, Normal). One source string is specialized per material at
-// compile time by a define block (see GlDebugDefineKey): a `mode` discriminator selects the DEPTH_MODE
-// vs NORMAL_MODE fragment branch, and HAS_NORMAL_MAP enables the tangent-space normal-map path. Both
-// modes output LINEAR color with no lighting term, matching the rgba16f scene target.
-//
-// Depth mode linearizes the perspective-encoded window-space depth (gl_FragCoord.z) back into eye
-// space, maps it across [u_near, u_far] to [0, 1], and writes it as grayscale `vec3(d)`. Normal mode
-// transforms the geometric normal by the normal matrix (so the visualized normal is WORLD-space),
-// optionally perturbs it through a tangent-space normal map (TBN built from the world normal/tangent
-// like the PBR path), and encodes the unit normal as color `n * 0.5 + 0.5`.
-//
-// The fragment vertex stage always passes world-space position/normal/tangent and uv so the same one
-// source supports both modes and the normal-map branch without a separate vertex variant.
-
-// A compiled debug variant plus its resolved uniform locations. Extends GlMeshProgram (it carries the
-// model + normal matrix + view-projection the vertex stage needs) with the debug fragment uniforms.
-// `locNear`/`locFar` drive the depth linearization; `locNormalMap`/`locNormalScale` drive the optional
-// normal-map perturbation. A given location is null in the mode/variant that does not declare it. One
-// exists per distinct GlDebugDefineKey, cached on the GlRenderState under the `debug:` namespace.
-export interface GlDebugProgram extends GlMeshProgram {
-  locFar: WebGLUniformLocation | null;
-  locNear: WebGLUniformLocation | null;
-  locNormalMap: WebGLUniformLocation | null;
-  locNormalScale: WebGLUniformLocation | null;
-}
-
-// The feature flags that select a debug variant. `mode` picks the depth vs normal fragment branch;
-// `hasNormalMap` enables the sampled tangent-space normal-map perturbation (normal mode only — depth
-// ignores it). Distinct keys compile and cache as distinct programs.
-export interface GlDebugDefineKey {
-  hasNormalMap: boolean;
-  mode: 'depth' | 'normal';
-}
-
 // Binds the optional tangent-space normal map (on texture unit 0) and its scale for the normal-mode
 // debug material. The caller has already selected the program (beginGlMeshDraw) and set the
 // view-projection. A no-op when no map is bound; depth mode never calls this.

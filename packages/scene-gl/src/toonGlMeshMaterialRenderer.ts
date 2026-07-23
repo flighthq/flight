@@ -1,8 +1,8 @@
 import { unpackColorToLinear } from '@flighthq/color';
 import { hasImageResourcePixels } from '@flighthq/image';
 import { bindGlImageResourceTexture } from '@flighthq/render-gl';
-import type { LinearColor } from '@flighthq/types';
 import type {
+  LinearColor,
   Camera3D,
   GlMeshMaterialRenderer,
   GlRenderState,
@@ -11,6 +11,8 @@ import type {
   SceneLightBlock,
   SceneRenderProxy,
   ToonMaterial,
+  GlToonDefineKey,
+  GlToonProgram,
 } from '@flighthq/types';
 import { ToonMaterialKind } from '@flighthq/types';
 
@@ -25,7 +27,6 @@ import {
   setGlMeshViewProjection,
 } from './glMeshProgram';
 import { getGlSceneRuntime } from './glSceneRuntime';
-import type { GlToonDefineKey, GlToonProgram } from './glToonPrelude';
 import { ensureGlToonProgram } from './glToonPrelude';
 
 // The built-in Toon (cel-shading) forward-lit mesh-material renderer (GlMeshMaterialRenderer for

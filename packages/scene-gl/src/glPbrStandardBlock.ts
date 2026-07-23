@@ -2,12 +2,16 @@ import { unpackColorToLinear } from '@flighthq/color';
 import { hasImageResourcePixels } from '@flighthq/image';
 import { bindGlImageResourceTexture } from '@flighthq/render-gl';
 import { hasTextureUvTransform } from '@flighthq/texture';
-import type { LinearColor } from '@flighthq/types';
-import type { GlRenderState, StandardPbrMaterialProperties, Texture } from '@flighthq/types';
+import type {
+  LinearColor,
+  GlRenderState,
+  StandardPbrMaterialProperties,
+  Texture,
+  GlPbrDefineKey,
+  GlPbrProgram,
+} from '@flighthq/types';
 
 import { bindGlUvTransform } from './glMeshProgram';
-import type { GlPbrDefineKey } from './glPbrPrelude';
-import type { GlPbrProgram } from './glPbrProgramCache';
 
 // The texture-unit assignment for the StandardPbrMaterialProperties block. Units 0–4 are reserved
 // for the standard maps so every PBR program (StandardPbr and every extension) binds them at the

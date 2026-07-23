@@ -1,6 +1,6 @@
 import { unpackColorToLinear } from '@flighthq/color';
-import type { LinearColor } from '@flighthq/types';
 import type {
+  LinearColor,
   Camera3D,
   GlMeshMaterialRenderer,
   GlRenderState,

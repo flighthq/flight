@@ -1,6 +1,7 @@
+import type { GlToonDefineKey } from '@flighthq/types';
+
 import { getGlSceneRuntime } from './glSceneRuntime';
 import { makeFakeGl2, makeGlSceneState } from './glSceneTestHelper';
-import type { GlToonDefineKey } from './glToonPrelude';
 import {
   buildGlToonDefineKey,
   compileGlToonProgram,

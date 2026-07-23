@@ -4,9 +4,8 @@ import { hasMeshGeometrySkin } from '@flighthq/mesh';
 import { forEachNodeDescendant, getNodeWorldMatrix4 } from '@flighthq/node';
 import { createGlRenderTarget, uploadGlSkinPaletteTexture } from '@flighthq/render-gl';
 import { updateMeshMorph } from '@flighthq/scene';
-import type { Camera3D, GlRenderState, Mesh, SceneNode, SceneNodeTraits } from '@flighthq/types';
+import type { Camera3D, GlRenderState, Mesh, SceneNode, SceneNodeTraits, GlMeshProgram } from '@flighthq/types';
 
-import type { GlMeshProgram } from './glMeshProgram';
 import {
   compileGlProgram,
   ensureGlSceneProgram,
