@@ -1,16 +1,5 @@
 import { invalidateImageResource } from '@flighthq/image';
-import type { SurfaceEdgeMode, SurfaceRegion, SurfaceResizeMode } from '@flighthq/types';
-
-export interface SurfaceResizeOptions {
-  mode?: SurfaceResizeMode;
-  edgeMode?: SurfaceEdgeMode;
-  /**
-   * When true, pre-multiplies alpha before interpolation and unpremultiplies
-   * after. This prevents the dark-halo bleed that bilinear and bicubic sampling
-   * produce at semi-transparent edges when blending in straight-alpha space.
-   */
-  premultiplied?: boolean;
-}
+import type { SurfaceEdgeMode, SurfaceRegion, SurfaceResizeMode, SurfaceResizeOptions } from '@flighthq/types';
 
 /**
  * Resamples the `source` region into the `dest` region; `dest`'s dimensions

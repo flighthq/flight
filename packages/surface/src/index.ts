@@ -39,18 +39,3 @@ export * from './surfaceSharpen';
 export * from './surfaceTone';
 export * from './surfaceTransform';
 export * from './surfaceWarp';
-export type {
-  AlphaType,
-  ImageFormat,
-  PixelFormat,
-  PixelOrder,
-  RectangleLike,
-  Surface,
-  SurfaceEdgeMode,
-  SurfaceFingerprint,
-  SurfaceHistogram,
-  SurfaceMismatch,
-  SurfaceRegion,
-  SurfaceResizeMode,
-  ThresholdOperation,
-} from '@flighthq/types';
