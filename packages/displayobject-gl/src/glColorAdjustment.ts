@@ -11,8 +11,8 @@ import type {
   GlUniformColorTransformShader,
   RenderProxy2D,
 } from '@flighthq/types';
+import type { GlShapeMeshBinding } from '@flighthq/types';
 
-import type { GlShapeMeshBinding } from './glShapeMesh';
 import { drawGlShapeMeshBatch, ensureGlShapeMeshProgram } from './glShapeMesh';
 import {
   bindGlQuadBatchBaseAttributes,

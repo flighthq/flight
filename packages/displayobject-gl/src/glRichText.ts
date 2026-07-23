@@ -16,6 +16,7 @@ import {
 import type {
   DisplayObjectRenderer,
   GlRenderState,
+  GlRichTextOverlay,
   Renderable,
   RendererData,
   RenderProxy2D,
@@ -23,7 +24,6 @@ import type {
   RichTextRuntime,
   TextFormat,
   TextLabelRuntime,
-  TextLayoutResult,
 } from '@flighthq/types';
 
 import { flushGlSpriteBatch } from './glSpriteBatch';
@@ -47,15 +47,6 @@ export function destroyGlRichTextData(state: GlRenderState, data: RendererData):
   const { texture } = data as unknown as GlRichTextData;
   if (texture !== null) state.gl.deleteTexture(texture);
 }
-
-export type GlRichTextOverlay = (
-  context: CanvasRenderingContext2D,
-  source: RichText,
-  result: TextLayoutResult,
-  fieldW: number,
-  fieldH: number,
-  text: string,
-) => void;
 
 export function drawGlRichText(state: GlRenderState, renderProxy: RenderProxy2D): void {
   // The editable-input overlay rasterizes onto the offscreen field texture, so it is passed into the
