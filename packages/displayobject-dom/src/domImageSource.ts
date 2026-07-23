@@ -1,12 +1,7 @@
 import { createCanvasFromImageResource } from '@flighthq/image';
-import type { DomRenderState, ImageResource } from '@flighthq/types';
+import type { DomImageSourceKind, DomRenderState, ImageResource } from '@flighthq/types';
 
 import { getDomRenderStateRuntime } from './domRenderState';
-
-// Which representation resolveDomImageSource will draw: the host `element` (zero copy), a
-// `data`-materialized canvas (transcode on first resolve / version bump), or `none`. The shakeable
-// diagnostic for the otherwise-silent data→element transcode; see explainCanvasImageSource.
-export type DomImageSourceKind = 'data' | 'element' | 'none';
 
 // Reports how a resource resolves on the DOM backend without materializing anything.
 export function explainDomImageSource(image: Readonly<ImageResource>): DomImageSourceKind {

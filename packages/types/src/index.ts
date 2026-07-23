@@ -119,6 +119,8 @@ export * from './DitherEffect';
 export * from './DomBlendModeFidelity';
 export * from './DomRenderOptions';
 export * from './DomRenderState';
+export * from './DomImageSourceKind';
+export * from './DomTextInputOverlay';
 export * from './DomStageRectangle';
 export * from './DragForce';
 export * from './DropShadowEffect';

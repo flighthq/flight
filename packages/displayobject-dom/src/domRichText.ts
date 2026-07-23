@@ -15,6 +15,7 @@ import {
 import type {
   DisplayObjectRenderer,
   DomRenderState,
+  DomTextInputOverlay,
   Renderable,
   RendererData,
   RenderProxy2D,
@@ -55,8 +56,6 @@ export function drawDomRichText(state: DomRenderState, renderProxy: RenderProxy2
     _domTextInputOverlay(state, renderProxy);
   }
 }
-
-export type DomTextInputOverlay = (state: DomRenderState, renderProxy: RenderProxy2D) => void;
 
 export function drawDomRichTextMask(state: DomRenderState, renderProxy: RenderProxy2D): void {
   drawDomRichText(state, renderProxy);
