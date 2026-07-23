@@ -330,12 +330,6 @@ Design calls to settle before building the affected entries:
 
 - Make `SceneHit.node` type-honest
 
-### scene-resources (solid 70)
-
-- Return a distinguishable sentinel on document fetch failure
-- Fix the stale reveal comment
-- Converge the two diagnostics idioms in this layer
-
 ### assets (solid 72)
 
 - `explainAssetLoad(library, id)` diagnostic query
@@ -796,10 +790,6 @@ Design calls to settle before building the affected entries:
 
 These are explicit user directions whose implementation may span packages or require staged delivery; they are not blanket-sweep items.
 
-### scene-resources (solid 70)
-
-- Compose Extended PBR texture discovery through a nested extension-kind registry
-
 ### color (solid 74)
 
 - Enforce create-to-Entity naming and shape
@@ -827,6 +817,10 @@ These are explicit user directions whose implementation may span packages or req
 - Treat viewport aspect as authoritative at draw time
 - Keep `RenderState` as the explicit current command/destination context
 - Retire `RenderViewport2D` without inventing a false world-space replacement
+
+### scene-resources (solid 76)
+
+- Compose Extended PBR texture discovery through a nested extension-kind registry
 
 ### render-wgpu (solid 78)
 
@@ -916,12 +910,6 @@ These are observed maturity gaps, including intentionally deferred work. They re
 - Add material-aware and non-triangle selection as opt-in layers
 - Add acceleration after semantics
 
-### scene-resources (solid 70)
-
-- Add residency rather than a larger resolver
-- Prove resource realization behaviorally
-- Discover specular-glossiness textures through an opt-in lister
-
 ### assets (solid 72)
 
 - Add caller-owned residency budgets and eviction
@@ -987,6 +975,12 @@ These are observed maturity gaps, including intentionally deferred work. They re
 - Defer render-graph machinery until the attachment/pass contracts are proven
 - Replace the prepared `Mesh[]` with a truthful draw-entry contract before scale features
 
+### scene-resources (solid 76)
+
+- Add residency rather than a larger resolver
+- Prove resource realization behaviorally
+- Discover specular-glossiness textures through an opt-in lister
+
 ### mesh (solid 80)
 
 - Make the interleaved vertex stream byte-native
@@ -1022,7 +1016,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene` · `particleemitter` · `camera-controls` · `debug` · `lifecycle` · `adjustments` · `camera` · `platform` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `shading`
+`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene` · `particleemitter` · `scene-resources` · `camera-controls` · `debug` · `lifecycle` · `adjustments` · `camera` · `platform` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `shading`
 
 ## Liveness — which stage each stale cell needs next
 

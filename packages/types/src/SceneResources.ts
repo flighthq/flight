@@ -41,8 +41,28 @@ export interface SceneResourceResolverOptions {
   registry?: SceneMaterialTextureRegistry;
 }
 
-export interface LoadSceneOptions {
-  resolver?: SceneResourceResolver;
+// One byte-progress tick for a source participating in asynchronous SceneDocument acquisition. The URL
+// identifies the main file or discovered dependency; totals are per source and may be zero when the
+// transport cannot determine Content-Length.
+export interface SceneDocumentLoadProgress {
+  loaded: number;
+  phase: 'download' | 'upload';
+  total: number;
+  url: string;
+}
+
+export interface SceneDocumentLoadOptions {
+  progress?: Signal<(progress: Readonly<SceneDocumentLoadProgress>) => void>;
+  signal?: AbortSignal;
+}
+
+export interface SceneResourceLoadProgress {
+  loaded: number;
+  total: number;
+}
+
+export interface LoadSceneResourcesOptions extends ResolveSceneResourcesOptions {
+  progress?: Signal<(progress: Readonly<SceneResourceLoadProgress>) => void>;
 }
 
 export interface ResolveSceneResourcesOptions {
