@@ -17,20 +17,7 @@ import {
 } from '@flighthq/mesh';
 import { ensureNodeWorldMatrix4, getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node';
 import { getSceneNodeWorldBounds, isMesh } from '@flighthq/scene';
-import type { Camera3D, Mesh, Ray3D, SceneHit, SceneNode, Vector3 } from '@flighthq/types';
-
-// Filters applied to a scene pick query. All fields are optional; an omitted field imposes no
-// constraint. `predicate` includes a Mesh in the query only when it returns `true` (a per-mesh
-// include/exclude test; it does not prune the mesh's descendants). `maxDistance` rejects hits whose
-// parametric distance `t` exceeds it (in the pick ray's direction-length units; for a camera pick
-// the ray direction is unit-length, so `t` is world distance). `cullBackfaces` discards triangles
-// whose geometric face normal points away from the ray (a back-facing hit) — the default is
-// double-sided (both faces hit).
-export interface ScenePickOptions {
-  cullBackfaces?: boolean;
-  maxDistance?: number;
-  predicate?: (mesh: Readonly<Mesh>) => boolean;
-}
+import type { Camera3D, Mesh, Ray3D, SceneHit, SceneNode, ScenePickOptions, Vector3 } from '@flighthq/types';
 
 // Allocates a zeroed SceneHit. Handy for the `out` of `pickScene`/`pickSceneWithRay3D` and for
 // growing the `outArray` of the multi-hit queries. `node` is null until a pick fills it.

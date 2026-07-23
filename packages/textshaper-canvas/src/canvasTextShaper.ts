@@ -1,5 +1,5 @@
 import { computeTextFormatFontString } from '@flighthq/text';
-import type { FontMetrics, TextFormat, TextShaperBackend } from '@flighthq/types';
+import type { CanvasTextShaperBackend, FontMetrics, TextFormat } from '@flighthq/types';
 
 // Clears the advance cache on a backend returned by createCanvasTextShaperBackend. Call this after
 // a webfont finishes loading — document.fonts.ready resolves, FontFaceObserver fires, etc. — so
@@ -128,14 +128,6 @@ export function createCanvasTextShaperBackend(): CanvasTextShaperBackend {
   };
 
   return backend;
-}
-
-// The full type returned by createCanvasTextShaperBackend. Extends TextShaperBackend with the
-// explicit cache-clear method. Callers that only need the seam contract can hold this as
-// TextShaperBackend; callers that manage font loading hold it as CanvasTextShaperBackend to call
-// clearCanvasTextShaperBackendCache.
-export interface CanvasTextShaperBackend extends TextShaperBackend {
-  clearCache(): void;
 }
 
 // ---------------------------------------------------------------------------

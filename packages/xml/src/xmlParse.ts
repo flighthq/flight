@@ -4,14 +4,7 @@
 // (&amp; &lt; &gt; &quot; &apos; plus numeric references), XML comments (<!-- -->),
 // CDATA sections (<![CDATA[...]]>), the XML declaration, and DOCTYPE.
 
-export interface XmlElement {
-  attributes: Record<string, string>;
-  /** Direct child elements. Text content and comments are discarded as elements. */
-  children: XmlElement[];
-  name: string;
-  /** Raw text content (trimmed), concatenation of text nodes. */
-  text: string;
-}
+import type { XmlElement } from '@flighthq/types';
 
 /** Parse all attributes from an element's attribute string.
  *  Supports double-quoted and single-quoted values and XML entity escapes. */
