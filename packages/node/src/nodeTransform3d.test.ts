@@ -13,7 +13,6 @@ import { describe, expect, it } from 'vitest';
 import { initTransform3DRuntimeTrait, initTransform3DTrait } from './hasTransform3d';
 import { addNodeChild, removeNodeChild } from './hierarchy';
 import { createNode, getNodeRuntime } from './node';
-import { invalidateNodeLocalTransform } from './revision';
 import {
   convertNodeVector3GlobalToLocal,
   convertNodeVector3LocalToGlobal,
@@ -26,7 +25,8 @@ import {
   setNodeLocalMatrix4,
   setNodeTransform3D,
   syncNodeTransform3DFromMatrix4,
-} from './transform3d';
+} from './nodeTransform3d';
+import { invalidateNodeLocalTransform } from './revision';
 
 const TestNodeKind = 'TestNode';
 
