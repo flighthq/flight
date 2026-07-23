@@ -5,7 +5,6 @@ import { SceneNodeKind } from '@flighthq/types';
 import { createSceneNode } from './sceneNode';
 
 // Re-export the Scene document type so `@flighthq/scene` stays its import site.
-export type { Scene } from '@flighthq/types';
 
 // Allocates a Scene: a 3D content document Entity that owns a `root` SceneNode (allocated here), not a node in
 // the graph. Composes createEntity for the runtime slot; `animations`/`metadata` start empty and the importers

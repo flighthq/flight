@@ -12,7 +12,6 @@ import { MeshDeformerMorph, MeshDeformerNone, MeshDeformerSkeletal, MeshKind } f
 
 import { createSceneNode, getSceneNodeRuntime } from './sceneNode';
 
-export type { Mesh, MeshRuntime } from '@flighthq/types';
 export { MeshKind } from '@flighthq/types';
 
 // Clones a Mesh node: a new node carrying a COPY of the source's transform. Rigid clones share their

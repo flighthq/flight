@@ -10,9 +10,9 @@ import {
 import { detectImageMimeType } from '@flighthq/image-codec';
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh';
-import type { Scene } from '@flighthq/scene';
 import { createSceneFromDocument, createScenesFromDocument } from '@flighthq/scene';
 import { createTexture } from '@flighthq/texture';
+import type { Scene } from '@flighthq/types';
 import type {
   AnimationInterpolation,
   ImageResourceReference,

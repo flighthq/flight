@@ -12,8 +12,8 @@ import {
 import { detectImageMimeType } from '@flighthq/image-codec';
 import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, computeMeshGeometryNormals, createMeshGeometry } from '@flighthq/mesh';
-import type { Scene } from '@flighthq/scene';
 import { createSceneFromDocument } from '@flighthq/scene';
+import type { Scene } from '@flighthq/types';
 import type {
   AnimationClip,
   AnimationTrack,
