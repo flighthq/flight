@@ -1,8 +1,8 @@
 import { createRandomSource } from '@flighthq/math';
+import type { ParticleObject } from '@flighthq/types';
 
 import { createParticleEmitterConfig } from './particleEmitterConfig';
 import { createParticleObjectsState } from './particleObjectsState';
-import type { ParticleObject } from './updateParticleObjects';
 import { isParticleObjectsComplete, updateParticleObjects } from './updateParticleObjects';
 
 function makeObject(): ParticleObject {

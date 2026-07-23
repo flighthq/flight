@@ -1,20 +1,13 @@
 import type {
-  AttractorForce,
-  DragForce,
   ForceFalloff,
   ParticleEmitter2D,
   ParticleEmitterState,
   ParticleForce,
   ParticleObject,
   ParticleObjectsState,
-  TurbulenceForce,
-  VortexForce,
-  WindForce,
 } from '@flighthq/types';
 
 import { PARTICLE_VELOCITY_STRIDE } from './particleEmitterState';
-
-export type { AttractorForce, DragForce, ForceFalloff, ParticleForce, TurbulenceForce, VortexForce, WindForce };
 
 // Per-particle acceleration scratch, reused across the loop to avoid allocation.
 const accel: [number, number, number] = [0, 0, 0];

@@ -8,8 +8,6 @@ import type {
 import { sampleParticleCurve } from './curve';
 import { ensureParticleObjectsStateCapacity } from './particleObjectsState';
 
-export type { ParticleObject, ParticleObjectsUpdateOptions };
-
 const TWO_PI = Math.PI * 2;
 
 /** True once a finite, non-looping object emitter has finished emitting AND all of

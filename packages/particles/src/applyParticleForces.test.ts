@@ -1,10 +1,10 @@
 import type { ParticleEmitter2D, ParticleEmitterData } from '@flighthq/types';
+import type { ParticleObject } from '@flighthq/types';
 
 import { applyParticleForces, applyParticleObjectForces } from './applyParticleForces';
 import { createParticleEmitterConfig } from './particleEmitterConfig';
 import { createParticleEmitterState, ensureParticleEmitterStateCapacity } from './particleEmitterState';
 import { createParticleObjectsState } from './particleObjectsState';
-import type { ParticleObject } from './updateParticleObjects';
 import { updateParticleObjects } from './updateParticleObjects';
 
 // Node-free SoA emitter fixture: applyParticleForces reads only `emitter.data`, so the display
