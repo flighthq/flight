@@ -1,7 +1,7 @@
 import { createTextureAtlas } from '@flighthq/textureatlas';
+import type { TextureAtlasPackerArrayDocument, TextureAtlasPackerHashDocument } from '@flighthq/types';
 
 import { parseTextureAtlasPackerDocument, parseTextureAtlasPackerJson } from './textureAtlasPackerParse';
-import type { TextureAtlasPackerArrayDocument, TextureAtlasPackerHashDocument } from './textureAtlasPackerSchema';
 
 // Minimal TexturePacker JSON-Hash fixture
 const HASH_FIXTURE: TextureAtlasPackerHashDocument = {

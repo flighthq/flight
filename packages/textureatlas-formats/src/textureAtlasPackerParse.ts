@@ -1,16 +1,11 @@
 import { createTextureAtlasRegion } from '@flighthq/textureatlas';
-import type { TextureAtlas } from '@flighthq/types';
-
 import type {
+  TextureAtlas,
   TextureAtlasPackerArrayFrame,
   TextureAtlasPackerDocument,
   TextureAtlasPackerHashFrame,
-} from './textureAtlasPackerSchema';
-
-export interface TextureAtlasPackerParseOptions {
-  /** If true, strips a leading slash and any path components from frame names. Defaults to false. */
-  stripPathPrefix?: boolean;
-}
+  TextureAtlasPackerParseOptions,
+} from '@flighthq/types';
 
 // Convenience variant that accepts an already-parsed object (avoids a redundant JSON.parse).
 export function parseTextureAtlasPackerDocument(

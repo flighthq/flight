@@ -1,18 +1,6 @@
 import { createTextureAtlasRegion } from '@flighthq/textureatlas';
-import type { TextureAtlas } from '@flighthq/types';
+import type { TextureAtlas, TextureAtlasStarlingParseOptions } from '@flighthq/types';
 import { parseXmlDocument } from '@flighthq/xml';
-
-export interface TextureAtlasStarlingParseOptions {
-  /**
-   * Atlas image width in pixels. Starling XML omits atlas dimensions; supply to allow UV
-   * computation. When omitted, the atlas image dimensions will be used when available.
-   */
-  imageWidth?: number;
-  /**
-   * Atlas image height in pixels.
-   */
-  imageHeight?: number;
-}
 
 // Populates `atlas.regions` from a Starling / Sparrow XML string.
 // Existing regions are cleared before parsing. Returns `atlas` for convenience.
