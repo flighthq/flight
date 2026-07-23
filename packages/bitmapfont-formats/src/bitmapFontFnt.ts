@@ -1,13 +1,15 @@
 import { getBitmapFontMetrics } from '@flighthq/bitmapfont';
-import type { BitmapFont, BitmapFontParseOptions, GlyphEntry } from '@flighthq/types';
-
-import { buildBitmapFontFromRecord } from './bitmapFontRecord';
 import type {
+  BitmapFont,
   BitmapFontCharRecord,
   BitmapFontKerningRecord,
   BitmapFontPageRecord,
+  BitmapFontParseOptions,
   BitmapFontRecord,
-} from './bitmapFontRecord';
+  GlyphEntry,
+} from '@flighthq/types';
+
+import { buildBitmapFontFromRecord } from './bitmapFontRecord';
 
 // Re-emits a `BitmapFont` as the classic AngelCode/BMFont text `.fnt` (`info`/`common`/`page`/`char`/
 // `kerning` lines of `key=value` pairs). Lossless for the fields the model carries — the glyph table

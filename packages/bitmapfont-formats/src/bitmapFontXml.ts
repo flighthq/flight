@@ -1,4 +1,11 @@
-import type { BitmapFont, BitmapFontParseOptions } from '@flighthq/types';
+import type {
+  BitmapFont,
+  BitmapFontCharRecord,
+  BitmapFontKerningRecord,
+  BitmapFontPageRecord,
+  BitmapFontParseOptions,
+  BitmapFontRecord,
+} from '@flighthq/types';
 import {
   getXmlElementAttribute,
   getXmlElementAttributeNumber,
@@ -9,12 +16,6 @@ import {
 import type { XmlElement } from '@flighthq/xml';
 
 import { buildBitmapFontFromRecord } from './bitmapFontRecord';
-import type {
-  BitmapFontCharRecord,
-  BitmapFontKerningRecord,
-  BitmapFontPageRecord,
-  BitmapFontRecord,
-} from './bitmapFontRecord';
 
 // Parses the XML AngelCode/BMFont `.fnt` variant into a `BitmapFont`. The document is
 // `<font><info/><common/><pages><page/></pages><chars><char/></chars><kernings><kerning/></kernings></font>`
