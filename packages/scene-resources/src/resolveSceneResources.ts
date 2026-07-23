@@ -11,10 +11,10 @@ import type {
   Texture,
 } from '@flighthq/types';
 import { ImageResourceFailureKind, ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
+import { SceneResourceResolverRuntimeKey } from '@flighthq/types';
+import type { SceneResourceInFlight, SceneResourceResolverWithRuntime } from '@flighthq/types';
 
 import { getSceneResourceTextures } from './getSceneResourceTextures';
-import { SceneResourceResolverRuntimeKey } from './sceneResourceResolverRuntime';
-import type { SceneResourceInFlight, SceneResourceResolverWithRuntime } from './sceneResourceResolverRuntime';
 
 // Resolves one texture's ref to an ImageResource (or null for an expected failure): Embedded bytes
 // decode through @flighthq/image; External URIs go through the resolver's fetch seam. Cancellation is

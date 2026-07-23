@@ -1,9 +1,8 @@
 import { createEntity } from '@flighthq/entity';
 import { createSignal } from '@flighthq/signals';
 import type { SceneResourceResolver, SceneResourceSignals } from '@flighthq/types';
-
-import { SceneResourceResolverRuntimeKey } from './sceneResourceResolverRuntime';
-import type { SceneResourceResolverWithRuntime } from './sceneResourceResolverRuntime';
+import { SceneResourceResolverRuntimeKey } from '@flighthq/types';
+import type { SceneResourceResolverWithRuntime } from '@flighthq/types';
 
 export function createSceneResourceSignals(): SceneResourceSignals {
   return createEntity({ onResourceFailed: createSignal(), onResourceResolved: createSignal() });

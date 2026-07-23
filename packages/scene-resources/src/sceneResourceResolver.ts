@@ -1,14 +1,14 @@
 import { createEntity } from '@flighthq/entity';
 import { cancelResourceLoad, createResourceLoader, disposeResourceLoader, startResourceLoad } from '@flighthq/loader';
 import type { SceneResourceResolver, SceneResourceResolverOptions } from '@flighthq/types';
+import { SceneResourceResolverRuntimeKey } from '@flighthq/types';
+import type { SceneResourceResolverWithRuntime } from '@flighthq/types';
 
 import { fetchWebImageResource } from './imageResourceFetch';
 import {
   createSceneMaterialTextureRegistry,
   registerBuiltInSceneMaterialTextures,
 } from './sceneMaterialTextureRegistry';
-import { SceneResourceResolverRuntimeKey } from './sceneResourceResolverRuntime';
-import type { SceneResourceResolverWithRuntime } from './sceneResourceResolverRuntime';
 
 // Explicit preconfigured assembly for the common Standard PBR + Unlit path. The primitive constructor
 // above stays empty so importing/creating it cannot silently pull material families into a custom lane.

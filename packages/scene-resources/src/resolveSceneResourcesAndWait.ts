@@ -7,11 +7,11 @@ import type {
   Texture,
 } from '@flighthq/types';
 import { ResourceResolutionState } from '@flighthq/types';
+import { SceneResourceResolverRuntimeKey } from '@flighthq/types';
+import type { SceneResourceResolverWithRuntime } from '@flighthq/types';
 
 import { getSceneResourceTextures } from './getSceneResourceTextures';
 import { resolveSceneResources } from './resolveSceneResources';
-import { SceneResourceResolverRuntimeKey } from './sceneResourceResolverRuntime';
-import type { SceneResourceResolverWithRuntime } from './sceneResourceResolverRuntime';
 
 // Eager/deterministic asynchronous load: runs one resolveSceneResources pass, then awaits every in-flight
 // load it started so the scene is fully resolved (or each ref settled to Failed) on return. The

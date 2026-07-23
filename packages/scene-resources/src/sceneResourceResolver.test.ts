@@ -6,6 +6,8 @@ import {
   StandardPbrMaterialKind,
   UnlitMaterialKind,
 } from '@flighthq/types';
+import { SceneResourceResolverRuntimeKey } from '@flighthq/types';
+import type { SceneResourceInFlight, SceneResourceResolverWithRuntime } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { createSceneMaterialTextureRegistry } from './sceneMaterialTextureRegistry';
@@ -14,8 +16,6 @@ import {
   createSceneResourceResolver,
   disposeSceneResourceResolver,
 } from './sceneResourceResolver';
-import { SceneResourceResolverRuntimeKey } from './sceneResourceResolverRuntime';
-import type { SceneResourceInFlight, SceneResourceResolverWithRuntime } from './sceneResourceResolverRuntime';
 
 describe('createBuiltInSceneResourceResolver', () => {
   it('assembles Standard PBR and Unlit discovery only through the explicit built-in constructor', () => {
