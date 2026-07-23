@@ -1,5 +1,11 @@
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
+import type {
+  WgpuDualSourceEffectPipeline,
+  WgpuEffectBlendMode,
+  WgpuEffectPipeline,
+  WgpuRenderState,
+  WgpuRenderTarget,
+} from '@flighthq/types';
 
 // Shared vertex shader: full-screen quad via vertex_index, no vertex buffer needed.
 // UV convention: y=0 = texture top, y=1 = texture bottom (Wgpu top-left origin).
@@ -38,22 +44,6 @@ const ERASE_BLEND: GPUBlendState = {
   color: { srcFactor: 'zero', dstFactor: 'one-minus-src-alpha', operation: 'add' },
   alpha: { srcFactor: 'zero', dstFactor: 'one-minus-src-alpha', operation: 'add' },
 };
-
-export type WgpuEffectBlendMode = 'premul' | 'replace' | 'erase';
-
-export type WgpuEffectPipeline = {
-  // The default variant, compiled for the canvas format (state.format).
-  pipeline: GPURenderPipeline;
-  blendMode: WgpuEffectBlendMode;
-  // Compiles a variant of this pipeline targeting `format`. A render pipeline's color target format must
-  // match the attachment it draws into, so drawing into a non-canvas-format target (an HDR
-  // rgba16float effect target) needs a matching variant; the draw path resolves and caches it per format.
-  // Optional so externally-constructed WgpuEffectPipeline values (e.g. the gradient recipes) still type.
-  compileForFormat?: (format: GPUTextureFormat) => GPURenderPipeline;
-  variants?: Map<GPUTextureFormat, GPURenderPipeline>;
-};
-
-export type WgpuDualSourceEffectPipeline = WgpuEffectPipeline;
 
 // Per-render-state effect-pass infrastructure: ring buffer for uniforms, shared layouts,
 // and texture bind-group cache keyed by GPUTextureView.

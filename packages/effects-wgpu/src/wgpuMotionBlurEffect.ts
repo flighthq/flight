@@ -1,6 +1,6 @@
 import type { MotionBlurEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
+import type { WgpuDualSourceEffectPipeline } from '@flighthq/types';
 
-import type { WgpuDualSourceEffectPipeline } from './wgpuEffectPass';
 import { createWgpuDualSourceEffectPipeline, drawWgpuDualSourceEffectPass } from './wgpuEffectPass';
 
 // Motion blur (per-object): the velocity-driven analog of the depth consumers (fog/DoF), the Wgpu

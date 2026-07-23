@@ -1,6 +1,6 @@
 import type { WgpuRenderState } from '@flighthq/types';
+import type { WgpuEffectPipeline } from '@flighthq/types';
 
-import type { WgpuEffectPipeline } from './wgpuEffectPass';
 import { createWgpuEffectPipeline } from './wgpuEffectPass';
 
 // Per-state cache of compiled effect filter pipelines, keyed by a stable string. Effect recipes call
