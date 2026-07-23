@@ -126,6 +126,15 @@ function isExportedFunctionLike(node: Node): boolean {
   return initializer !== undefined && (Node.isArrowFunction(initializer) || Node.isFunctionExpression(initializer));
 }
 
+function collectApi(project: Project, packages: readonly PackageInfo[]): ApiPackage[] {
+  // Preload every package barrel before querying any of them. Each addSourceFile
+  // marks the TypeScript program dirty, so adding-then-querying per package (the
+  // old shape) rebuilt and rebound the whole growing program once per package —
+  // quadratic. Adding all barrels up front lets the program build a single time.
+  for (const pkg of packages) project.addSourceFileAtPath(pkg.indexPath);
+  return packages.map((pkg) => collectPackageApi(project, pkg));
+}
+
 function collectPackageApi(project: Project, pkg: PackageInfo): ApiPackage {
   const sourceFile = project.addSourceFileAtPathIfExists(pkg.indexPath) ?? project.addSourceFileAtPath(pkg.indexPath);
   const functions: ApiFunction[] = [];
@@ -601,13 +610,10 @@ const project = new Project({
 if (options.check) {
   // The check gates the whole tree: filters are ignored so a filtered
   // invocation can never green-light a duplicate hiding elsewhere.
-  runApiCheck(topoSort(findPackages()).map((pkg) => collectPackageApi(project, pkg)));
+  runApiCheck(collectApi(project, topoSort(findPackages())));
 }
 
-const api = filterApi(
-  topoSort(findPackages()).map((pkg) => collectPackageApi(project, pkg)),
-  options,
-);
+const api = filterApi(collectApi(project, topoSort(findPackages())), options);
 
 if (asJson) {
   console.log(JSON.stringify({ packages: api }, null, 2));
