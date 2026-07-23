@@ -48,6 +48,7 @@ export * from './Billboard';
 export * from './BinPack';
 export * from './Bitmap';
 export * from './BitmapFont';
+export * from './BitmapFontRecord';
 export * from './BitmapText';
 export * from './BlendEffect';
 export * from './BlendMode';

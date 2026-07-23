@@ -5,10 +5,10 @@ import {
   getBitmapFontPage,
 } from '@flighthq/bitmapfont';
 import { createTextureAtlas } from '@flighthq/textureatlas';
+import type { BitmapFontRecord } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { buildBitmapFontFromRecord } from './bitmapFontRecord';
-import type { BitmapFontRecord } from './bitmapFontRecord';
 
 describe('buildBitmapFontFromRecord', () => {
   it('maps chars, kernings, and common metrics onto a BitmapFont', () => {
