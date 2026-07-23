@@ -1,5 +1,11 @@
 import { createAabb } from '@flighthq/geometry';
-import type { MeshGeometry, MeshSubset, VertexAttributeLayout } from '@flighthq/types';
+import type {
+  MeshGeometry,
+  MeshGeometryFromAttributesOptions,
+  MeshSubset,
+  MeshTriangleVertexIndices,
+  VertexAttributeLayout,
+} from '@flighthq/types';
 
 import { createMeshGeometry, getMeshGeometryVertexCount } from './meshGeometry';
 import {
@@ -8,25 +14,6 @@ import {
   computeMeshGeometryTangents,
 } from './meshGeometryCompute';
 import { CANONICAL_MESH_GEOMETRY_LAYOUT } from './meshGeometryLayout';
-
-// Inputs to createMeshGeometryFromAttributes. `positions` is a flat xyz array (3 floats per
-// vertex). `normals` (flat xyz) is optional — when omitted, normals are computed from the
-// faces. `uvs` (flat uv) is optional. `indices` describes the triangle connectivity; omitted
-// for non-indexed geometry.
-export interface MeshGeometryFromAttributesOptions {
-  indices?: readonly number[] | Uint16Array | Uint32Array | null;
-  normals?: readonly number[] | null;
-  positions: readonly number[];
-  uvs?: readonly number[] | null;
-}
-
-// Caller-owned result for resolving one logical triangle into vertex indices. Keeping this flat and
-// local avoids allocating a tuple for every triangle in bounds, picking, and authoring passes.
-export interface MeshTriangleVertexIndices {
-  i0: number;
-  i1: number;
-  i2: number;
-}
 
 // Builds a MeshGeometry from separate position/normal/uv arrays using the canonical 12-float
 // PBR record (position + normal + tangent.w + uv0). Normals are computed when omitted;
