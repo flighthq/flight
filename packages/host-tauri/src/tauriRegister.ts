@@ -8,12 +8,12 @@ import { setPlatformBackend } from '@flighthq/platform';
 import { setShellBackend } from '@flighthq/shell';
 import { setShortcutBackend } from '@flighthq/shortcut';
 import { setTrayBackend } from '@flighthq/tray';
+import type { TauriApi } from '@flighthq/types';
 
 import { createTauriAppBackend } from './tauriApp';
 import { createTauriClipboardBackend } from './tauriClipboard';
 import { createTauriDialogBackend } from './tauriDialog';
 import { createTauriMenuBackend } from './tauriMenu';
-import type { TauriApi } from './tauriModule';
 import { createTauriNotificationBackend } from './tauriNotification';
 import { createTauriPlatformBackend } from './tauriPlatform';
 import { createTauriShellBackend } from './tauriShell';

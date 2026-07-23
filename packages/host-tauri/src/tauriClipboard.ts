@@ -1,6 +1,4 @@
-import type { ClipboardBackend } from '@flighthq/types';
-
-import type { TauriApi } from './tauriModule';
+import type { ClipboardBackend, TauriApi } from '@flighthq/types';
 
 // Maps Flight's ClipboardBackend onto Tauri's async `@tauri-apps/plugin-clipboard-manager`. Both sides
 // are Promise-based, so text and clear map directly. Tauri's clipboard has no HTML/RTF/bookmark read,

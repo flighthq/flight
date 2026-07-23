@@ -1,7 +1,5 @@
 import { emitSignal } from '@flighthq/signals';
-import type { ApplicationWindow, WindowBackend } from '@flighthq/types';
-
-import type { TauriApi, TauriWindow } from './tauriModule';
+import type { ApplicationWindow, WindowBackend, TauriApi, TauriWindow } from '@flighthq/types';
 
 // Maps Flight's WindowBackend onto Tauri's `@tauri-apps/api/window`. Every Tauri window call is async
 // while WindowBackend's commands are synchronous (void), so the adapter fires each call and forgets,

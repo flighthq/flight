@@ -8,8 +8,8 @@ import { getPlatformName, setPlatformBackend } from '@flighthq/platform';
 import { setShellBackend } from '@flighthq/shell';
 import { setShortcutBackend } from '@flighthq/shortcut';
 import { setTrayBackend } from '@flighthq/tray';
+import type { TauriApi } from '@flighthq/types';
 
-import type { TauriApi } from './tauriModule';
 import { registerTauriBackends } from './tauriRegister';
 
 // A fake Tauri API broad enough that every createTauri*Backend constructs without touching missing

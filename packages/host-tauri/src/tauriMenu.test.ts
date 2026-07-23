@@ -1,7 +1,6 @@
-import type { MenuItemTemplate } from '@flighthq/types';
+import type { MenuItemTemplate, TauriApi, TauriMenuItemOptions } from '@flighthq/types';
 
 import { createTauriMenuBackend } from './tauriMenu';
-import type { TauriApi, TauriMenuItemOptions } from './tauriModule';
 
 function fakeTauri() {
   const state = {

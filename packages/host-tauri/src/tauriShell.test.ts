@@ -1,4 +1,5 @@
-import type { TauriApi } from './tauriModule';
+import type { TauriApi } from '@flighthq/types';
+
 import { createTauriShellBackend } from './tauriShell';
 
 function fakeTauri(reject = false) {

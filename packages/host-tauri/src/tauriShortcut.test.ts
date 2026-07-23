@@ -1,4 +1,5 @@
-import type { TauriApi, TauriShortcutEvent } from './tauriModule';
+import type { TauriApi, TauriShortcutEvent } from '@flighthq/types';
+
 import { createTauriShortcutBackend } from './tauriShortcut';
 
 function fakeTauri() {

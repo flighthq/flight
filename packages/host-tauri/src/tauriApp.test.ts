@@ -1,5 +1,6 @@
+import type { TauriApi } from '@flighthq/types';
+
 import { createTauriAppBackend } from './tauriApp';
-import type { TauriApi } from './tauriModule';
 
 function fakeTauri() {
   const calls: string[] = [];

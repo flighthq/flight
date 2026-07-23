@@ -2,7 +2,7 @@ export * from './tauriApp';
 export * from './tauriClipboard';
 export * from './tauriDialog';
 export * from './tauriMenu';
-export * from './tauriModule';
+export * from '@flighthq/types';
 export * from './tauriNotification';
 export * from './tauriPlatform';
 export * from './tauriRegister';
