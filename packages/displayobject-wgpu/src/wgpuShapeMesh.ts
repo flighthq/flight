@@ -1,5 +1,11 @@
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { RenderProxy2D, WgpuRenderState, WgpuShapeMeshBuffers, WgpuShapeMeshPipeline } from '@flighthq/types';
+import type {
+  RenderProxy2D,
+  WgpuRenderState,
+  WgpuShapeMesh,
+  WgpuShapeMeshBuffers,
+  WgpuShapeMeshPipeline,
+} from '@flighthq/types';
 
 import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
 
@@ -19,13 +25,6 @@ import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
 // Cannot be visually captured headless (no GPU adapter); the unit test asserts the pipeline/draw/uniform
 // call shape against the mock device. Mirror this against the verified webgl result when a GPU is
 // available.
-
-export interface WgpuShapeMesh {
-  vertices: Float32Array;
-  indices: Uint16Array;
-  color: number;
-  alpha: number;
-}
 
 // Draws the shape's tessellated fill meshes. Flushes the sprite batch first (these go through a separate
 // pipeline). Uploads each mesh's geometry and premultiplied color into the shape's reusable per-shape

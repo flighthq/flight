@@ -23,22 +23,13 @@ import type {
   RichTextRuntime,
   TextFormat,
   TextLabelRuntime,
-  TextLayoutResult,
   WgpuRenderState,
+  WgpuRichTextOverlay,
   WgpuTextureEntry,
 } from '@flighthq/types';
 
 import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
 import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
-
-export type WgpuRichTextOverlay = (
-  context: CanvasRenderingContext2D,
-  source: RichText,
-  result: TextLayoutResult,
-  fieldW: number,
-  fieldH: number,
-  text: string,
-) => void;
 
 let _offscreenCanvas: HTMLCanvasElement | null = null;
 let _offscreenCtx: CanvasRenderingContext2D | null = null;
