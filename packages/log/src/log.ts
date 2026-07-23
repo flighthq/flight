@@ -1,5 +1,7 @@
 import { createSignal, emitSignal } from '@flighthq/signals';
 import type {
+  BufferedLogSink,
+  FileLogSink,
   LogContext,
   LogData,
   LogDataProvider,
@@ -10,6 +12,8 @@ import type {
   LogSpan,
   LogTimer,
   LogTransportBackend,
+  MemoryLogSink,
+  RateLimitedLogSink,
 } from '@flighthq/types';
 import { LogLevel } from '@flighthq/types';
 
@@ -604,28 +608,6 @@ export function setLogTransportBackend(backend: LogTransportBackend | null): voi
 // emit a structured Debug entry.
 export function startLogTimer(label: string, channel: string | null = null): LogTimer {
   return { label, channel, startedAt: _timestamp() };
-}
-
-// Opaque token returned by createBufferedLogSink.
-export interface BufferedLogSink {
-  readonly sink: LogSink;
-}
-
-// Opaque token returned by createFileLogSink. The sink field is the LogSink to install via
-// addLogSink / setLogSink. Call disposeFileLogSink to flush and release the backend.
-export interface FileLogSink {
-  readonly sink: LogSink;
-}
-
-// Opaque token returned by createMemoryLogSink. Carry it to read or clear the captured entries.
-// The sink field is the LogSink to install via addLogSink / setLogSink.
-export interface MemoryLogSink {
-  readonly sink: LogSink;
-}
-
-// Opaque token returned by createRateLimitedLogSink.
-export interface RateLimitedLogSink {
-  readonly sink: LogSink;
 }
 
 interface BufferedLogSinkState {

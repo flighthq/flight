@@ -6,7 +6,7 @@ import {
   getMemoryLogSinkEntries,
   setLogLevel,
 } from '@flighthq/log';
-import type { MemoryLogSink } from '@flighthq/log';
+import type { MemoryLogSink } from '@flighthq/types';
 import { LogLevel } from '@flighthq/types';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
