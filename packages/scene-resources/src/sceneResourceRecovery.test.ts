@@ -7,7 +7,7 @@ import type { ImageResource, ImageResourceReference } from '@flighthq/types';
 import { ImageResourceFailureKind, ImageResourceReferenceKind, ResourceResolutionState } from '@flighthq/types';
 import { describe, expect, it, vi } from 'vitest';
 
-import { resolveSceneResourcesAndWait } from './resolveSceneResourcesAndWait';
+import { loadSceneResources } from './resolveSceneResourcesAndWait';
 import { waitForSceneResourceResolver } from './resolveSceneResourcesAndWait';
 import {
   explainImageResourceReferenceResolution,
@@ -71,7 +71,7 @@ describe('retryFailedSceneResources', () => {
     addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: b })]));
     const resolver = createBuiltInSceneResourceResolver({ fetch });
 
-    await resolveSceneResourcesAndWait(scene.root, resolver);
+    await loadSceneResources(scene.root, resolver);
     expect(ref.state).toBe(ResourceResolutionState.Failed);
     expect(ref.failure?.kind).toBe(ImageResourceFailureKind.Unavailable);
 

@@ -2,7 +2,7 @@
 package: '@flighthq/scene-resources'
 crate: flighthq-scene-resources
 draft: false
-lastDirection: 2026-07-17
+lastDirection: 2026-07-22
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -34,7 +34,7 @@ to **all six** scene-formats (glTF, AWD, OBJ/MTL, 3DS, MD2, MD5), and retro-fits
 deferred-fill onto one shared, controllable path.
 
 ```
-createSceneFrom*(bytes) ── sync ──▶ Scene graph + unresolved SceneResourceRef on each texture slot
+parse*(source) ── sync ──▶ SceneDocument ── createSceneFromDocument ──▶ Scene + unresolved refs
                                                   │
                                     resolveSceneResources(scene, resolver, policy)  ── async, caller-driven
                                                   │
@@ -76,9 +76,9 @@ engine; only the most advanced progressive path (mip/low-res→full cross-fade) 
    visibility/culling signal; prioritized). **Cancellation** when an object leaves the working set
    before its load completes; re-request on re-entry (over `loader` cancel + `assets` refcount).
 4. **The availability + transition seam** (see below).
-5. **An eager convenience wrapper** — `loadSceneFrom*` (async) = parse + resolve-all-through-the-policy,
-   for "just give me the finished scene" and for deterministic test/visual-capture. Built *on* the
-   primitive (the screw and the lawnmower).
+5. **Explicit asynchronous boundaries** — `loadSceneDocumentFrom*Url` acquires and parses the CPU
+   document closure; `loadSceneResources` realizes selected image references. No wrapper conflates
+   in-hand parsing, resource policy, renderer registration, or GPU realization.
 
 ### The availability + transition seam
 
@@ -126,6 +126,7 @@ _Append-only, dated, blessed rulings._
 - **[2026-07-17] `@flighthq/assets` DEFERRED to the streaming phase (revises the option-B "composing assets" wording).** assets is id/manifest-centric (`acquireAsset(library, id)`); embedded byte-refs have no ids, so v1 dedups by `Texture` identity at the walk and assets' refcount/unload belongs to the progressive/streaming phase where external URIs carry natural ids. Well-justified worker call.
 - **[2026-07-17] glTF texture import DEFERRED (STOP-AND-ASK hit).** glTF has zero texture/material-texture wiring today, so it's net-new glTF material modeling, not a ref retrofit. AWD is the v1 embedded-path proof; glTF is a focused follow-up.
 - **[2026-07-17] The reveal hook is a MISSING PRIMITIVE, not a material field — reframed as "3D node opacity" and split out (being built separately).** 3D `SceneNode` has no alpha/opacity at all (only `HasTransform3D`); a reveal factor needs per-object opacity across the material shaders + blend phase. So: charter/build **3D node opacity** (alpha on the node + `prepareSceneRender` propagation + shaders honoring it) as its own primitive; reveal-fade = `tween`/`easing` driving `node.alpha` on availability, layered on top. Resolves Open direction #2. Coordinate its shader changes with the in-flight skinning track.
+- **[2026-07-22] `load` means asynchronous acquisition; result and source name the readiness boundary.** `parse*`/`create*` remain synchronous over in-hand data. URL loaders are globally identifying (`loadSceneDocumentFromGltfUrl`, `loadSceneDocumentFromGlbUrl`, and format peers), return `SceneDocument | null`, accept cancellation/per-source byte progress, fetch glTF external geometry buffers, and carry the model base path onto image refs. `loadSceneResources` is the separate eager resource operation; the streaming policy atom remains `resolveSceneResources`. Removed the parse+implicit-built-in-resolver `loadSceneFrom*` wrappers. Loading never registers renderers, compiles shaders, uploads GPU data, or touches RenderState. User-directed 2026-07-22.
 
 ## Open directions
 
@@ -138,19 +139,12 @@ _Append-only, dated, blessed rulings._
 3. **Progressive / mip streaming (phase 2)** — placeholder → low-res/mip → full with cross-fade; the
    fully mature streaming path. Depends on `texture-formats` mip parsing + a low-res source. This is
    where `@flighthq/assets` refcount/unload lands (external URIs have natural ids).
-4. **External-fetch seam** — whether the fetch side rides `@flighthq/net` or a caller-supplied resolver
-   only; native hosts replace it.
-5. **glTF as the proving ground** — glTF external `.bin` + images are the highest-value consumer; use it
-   to validate the descriptor + resolver, with AWD as the embedded-path proof.
+4. ~~**External-fetch seam**~~ — **resolved 2026-07-22:** document acquisition rides the swappable
+   `@flighthq/net` backend; image realization remains caller-resolver-driven.
+5. ~~**glTF as the proving ground**~~ — **resolved 2026-07-22:** URL document loading closes external
+   `.bin` geometry and leaves base-pathed image references for the resolver.
 6. **Determinism** — the resolve-all wrapper is the capture/test mode; confirm the streaming path is
    excluded from fingerprint baselines.
-7. **The `load*` verb means two opposite I/O halves.** `loadGltf(url)`/`loadGlb`/`loadObj`/`loadAwd`/
-   `load3ds`/`loadMd2`/`loadMd5Mesh` fetch the *file* but do **not** resolve textures and return a
-   `SceneDocument`; `loadSceneFromGltf(bytes)`/`loadSceneFromGlb`/… take in-hand bytes (no fetch),
-   **do** resolve textures, and return a `Scene`. Same verb, opposite halves — and there is no single
-   URL→resolved-`Scene` call (a caller composes `loadGltf` → `createSceneFromDocument` →
-   `resolveSceneResourcesAndWait`). The name `loadGltf` also advertises neither `Document` nor
-   "unresolved." **Proposed:** rename the fetch family to make the unresolved-document result explicit
-   and free the `load` verb (e.g. `fetchGltfDocument`/`loadGltfDocument`), reserving `loadSceneFrom*`
-   for the resolve path — and consider whether a one-call URL→`Scene` convenience should exist. Highest-
-   traffic verb in the layer; pre-release is the moment. _(Review flagged; pending direction.)_
+7. ~~**The `load*` verb means two opposite I/O halves.**~~ **Resolved 2026-07-22:** see the explicit
+   `loadSceneDocumentFrom*Url` → synchronous `createSceneFromDocument` → optional
+   `resolveSceneResources`/`loadSceneResources` composition in Decisions.

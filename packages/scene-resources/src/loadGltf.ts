@@ -1,78 +1,75 @@
-import type { Scene } from '@flighthq/scene';
-import {
-  createSceneFromGlb,
-  createSceneFromGltf,
-  createScenesFromGlb,
-  createScenesFromGltf,
-  parseGlb,
-  parseGltf,
-} from '@flighthq/scene-formats';
+import { parseGlb, parseGltf } from '@flighthq/scene-formats';
 import type { GltfDocument } from '@flighthq/scene-formats';
-import type { SceneDocument } from '@flighthq/types';
-import type { LoadSceneOptions } from '@flighthq/types';
+import type { SceneDocument, SceneDocumentLoadOptions } from '@flighthq/types';
 
-import { allocateEmptySceneDocument, loadSceneDocumentBytes, loadSceneDocumentText } from './loadSceneDocumentSource';
-import { resolveScenesWithOptions } from './loadSceneOptions';
+import {
+  getSceneDocumentBasePathFromUrl,
+  loadSceneDocumentBytesFromUrl,
+  loadSceneDocumentTextFromUrl,
+} from './loadSceneDocumentSource';
 
 // Fetches a binary glTF (`.glb`) from a URL and parses it into a format-neutral SceneDocument. Fetches only
-// the FILE — the document's texture refs stay unresolved; assemble with createSceneFromDocument and resolve
-// on your own schedule with resolveSceneResources. On a fetch failure a warning is pushed and an empty
-// document is returned.
-export async function loadGlb(url: string, warnings?: string[]): Promise<SceneDocument> {
-  const bytes = await loadSceneDocumentBytes(url, 'loadGlb', warnings);
-  return bytes === null ? allocateEmptySceneDocument() : parseGlb(bytes, warnings);
+// the FILE — the document's texture refs stay unresolved; assemble with createSceneFromDocument and load
+// resources on your own schedule. Returns null on transport failure and never touches rendering/GPU state.
+export async function loadSceneDocumentFromGlbUrl(
+  url: string,
+  options?: Readonly<SceneDocumentLoadOptions>,
+): Promise<SceneDocument | null> {
+  const bytes = await loadSceneDocumentBytesFromUrl(url, options);
+  if (bytes === null) return null;
+  return parseGlb(bytes, undefined, { basePath: getSceneDocumentBasePathFromUrl(url) });
 }
 
 // Fetches a glTF file from a URL and parses it into a format-neutral SceneDocument. The JSON `.gltf` form is
-// fetched as text (its external `.bin`/image URIs stay unresolved refs). Fetches only the FILE — no texture
-// resolution; assemble with createSceneFromDocument and resolve explicitly. On a fetch failure a warning is
-// pushed and an empty document is returned.
-export async function loadGltf(url: string, warnings?: string[]): Promise<SceneDocument> {
-  const source = await loadSceneDocumentText(url, 'loadGltf', warnings);
-  return source === null ? allocateEmptySceneDocument() : parseGltf(source, warnings);
+// fetched as text; every external `.bin` required to build inline geometry is fetched too, while image URIs
+// remain unresolved resource refs carrying the model's base path. Assemble with createSceneFromDocument and
+// load images explicitly. Returns null if the main source or required geometry closure cannot be acquired.
+export async function loadSceneDocumentFromGltfUrl(
+  url: string,
+  options?: Readonly<SceneDocumentLoadOptions>,
+): Promise<SceneDocument | null> {
+  const source = await loadSceneDocumentTextFromUrl(url, options);
+  if (source === null) return null;
+
+  let gltf: GltfDocument;
+  try {
+    gltf = JSON.parse(source) as GltfDocument;
+  } catch {
+    return null;
+  }
+  if (gltf === null || typeof gltf !== 'object') return null;
+
+  const basePath = getSceneDocumentBasePathFromUrl(url);
+  const externalBuffers = await loadGltfExternalBuffers(gltf, basePath, options);
+  if (externalBuffers === null) return null;
+  return parseGltf(gltf, undefined, { basePath, externalBuffers });
 }
 
-// Parses a binary glTF (`.glb`) into its default Scene and resolves the scene's textures. The async
-// sibling of createSceneFromGlb.
-export async function loadSceneFromGlb(
-  bytes: Readonly<Uint8Array>,
-  options?: Readonly<LoadSceneOptions>,
-): Promise<Scene> {
-  const scene = createSceneFromGlb(bytes);
-  await resolveScenesWithOptions([scene], options);
-  return scene;
+async function loadGltfExternalBuffers(
+  gltf: Readonly<GltfDocument>,
+  basePath: string | null,
+  options?: Readonly<SceneDocumentLoadOptions>,
+): Promise<Record<string, Uint8Array> | null> {
+  const uris = new Set<string>();
+  for (const buffer of gltf.buffers ?? []) {
+    const uri = buffer.uri;
+    if (uri !== undefined && !uri.startsWith('data:')) uris.add(uri);
+  }
+
+  const externalBuffers: Record<string, Uint8Array> = {};
+  const entries = [...uris];
+  const bytes = await Promise.all(
+    entries.map((uri) => loadSceneDocumentBytesFromUrl(resolveGltfBufferUrl(uri, basePath), options)),
+  );
+  for (let i = 0; i < entries.length; i++) {
+    const value = bytes[i];
+    if (value === null) return null;
+    externalBuffers[entries[i]] = value;
+  }
+  return externalBuffers;
 }
 
-// Parses a glTF document into its default Scene and resolves the scene's textures. The async sibling of
-// createSceneFromGltf.
-export async function loadSceneFromGltf(
-  source: GltfDocument | string,
-  options?: Readonly<LoadSceneOptions>,
-): Promise<Scene> {
-  const scene = createSceneFromGltf(source);
-  await resolveScenesWithOptions([scene], options);
-  return scene;
-}
-
-// Parses a binary glTF (`.glb`) into every scene it declares (each a document carrying its geometry, with
-// the file's animation clips on the default scene) and resolves their textures. The async sibling of
-// createScenesFromGlb.
-export async function loadScenesFromGlb(
-  bytes: Readonly<Uint8Array>,
-  options?: Readonly<LoadSceneOptions>,
-): Promise<Scene[]> {
-  const scenes = createScenesFromGlb(bytes);
-  await resolveScenesWithOptions(scenes, options);
-  return scenes;
-}
-
-// Parses a glTF document into every scene it declares and resolves their textures. The async sibling of
-// createScenesFromGltf.
-export async function loadScenesFromGltf(
-  source: GltfDocument | string,
-  options?: Readonly<LoadSceneOptions>,
-): Promise<Scene[]> {
-  const scenes = createScenesFromGltf(source);
-  await resolveScenesWithOptions(scenes, options);
-  return scenes;
+function resolveGltfBufferUrl(uri: string, basePath: string | null): string {
+  if (basePath === null || uri.startsWith('/') || /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(uri)) return uri;
+  return basePath.endsWith('/') ? `${basePath}${uri}` : `${basePath}/${uri}`;
 }

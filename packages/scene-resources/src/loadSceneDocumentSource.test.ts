@@ -1,8 +1,15 @@
 import { setNetBackend } from '@flighthq/net';
-import type { NetResponse } from '@flighthq/types';
+import { connectSignal, createSignal, emitSignal } from '@flighthq/signals';
+import type { NetResponse, SceneDocument, SceneDocumentLoadProgress } from '@flighthq/types';
+import { ImageResourceReferenceKind, ResourceResolutionState } from '@flighthq/types';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { allocateEmptySceneDocument, loadSceneDocumentBytes, loadSceneDocumentText } from './loadSceneDocumentSource';
+import {
+  getSceneDocumentBasePathFromUrl,
+  loadSceneDocumentBytesFromUrl,
+  loadSceneDocumentTextFromUrl,
+  setSceneDocumentResourceBasePathFromUrl,
+} from './loadSceneDocumentSource';
 
 function okResponse(body: string | ArrayBuffer): NetResponse {
   return { body, headers: {}, ok: true, status: 200, statusText: 'OK', url: 'u' };
@@ -16,50 +23,41 @@ afterEach(() => {
   setNetBackend(null);
 });
 
-describe('allocateEmptySceneDocument', () => {
-  it('returns every table present and empty', () => {
-    const doc = allocateEmptySceneDocument();
-    expect(doc.nodes).toHaveLength(0);
-    expect(doc.meshes).toHaveLength(0);
-    expect(doc.materials).toHaveLength(0);
-    expect(doc.skins).toHaveLength(0);
-    expect(doc.animations).toHaveLength(0);
-    expect(doc.cameras).toHaveLength(0);
-    expect(doc.lights).toHaveLength(0);
-    expect(doc.resources).toHaveLength(0);
-    expect(doc.scenes).toHaveLength(0);
-    expect(doc.metadata).toBeNull();
+describe('getSceneDocumentBasePathFromUrl', () => {
+  it('returns the containing path without query or fragment data', () => {
+    expect(getSceneDocumentBasePathFromUrl('models/ship.gltf?cache=1')).toBe('models');
+    expect(getSceneDocumentBasePathFromUrl('ship.gltf')).toBeNull();
   });
 });
 
-describe('loadSceneDocumentBytes', () => {
-  it('fetches the URL as arraybuffer and returns the bytes on a 2xx response', async () => {
-    let requestedType: string | undefined;
-    const buffer = new Uint8Array([1, 2, 3]).buffer;
+describe('loadSceneDocumentBytesFromUrl', () => {
+  it('forwards cancellation and identifies byte-progress events by URL', async () => {
+    const controller = new AbortController();
+    const events: SceneDocumentLoadProgress[] = [];
+    const progress = createSignal<(event: Readonly<SceneDocumentLoadProgress>) => void>();
+    connectSignal(progress, (event) => events.push({ ...event }));
     setNetBackend({
-      sendNetRequest: async (request) => {
-        requestedType = request.responseType;
-        return okResponse(buffer);
+      sendNetRequest: async (_request, options) => {
+        expect(options?.signal).toBe(controller.signal);
+        emitSignal(options!.progress!, { loaded: 2, phase: 'download', total: 3 });
+        return okResponse(new Uint8Array([1, 2, 3]).buffer);
       },
     });
-    const bytes = await loadSceneDocumentBytes('model.bin', 'loadX');
-    expect(requestedType).toBe('arraybuffer');
-    expect(bytes).not.toBeNull();
+
+    const bytes = await loadSceneDocumentBytesFromUrl('model.bin', { progress, signal: controller.signal });
+
     expect(Array.from(bytes!)).toEqual([1, 2, 3]);
+    expect(events).toEqual([{ loaded: 2, phase: 'download', total: 3, url: 'model.bin' }]);
   });
 
-  it('returns null and pushes a warning on a failed response', async () => {
+  it('returns null on an expected transport failure', async () => {
     setNetBackend({ sendNetRequest: async () => failResponse() });
-    const warnings: string[] = [];
-    const bytes = await loadSceneDocumentBytes('missing.bin', 'loadX', warnings);
-    expect(bytes).toBeNull();
-    expect(warnings.length).toBe(1);
-    expect(warnings[0]).toContain('loadX');
+    await expect(loadSceneDocumentBytesFromUrl('missing.bin')).resolves.toBeNull();
   });
 });
 
-describe('loadSceneDocumentText', () => {
-  it('fetches the URL as text and returns the string on a 2xx response', async () => {
+describe('loadSceneDocumentTextFromUrl', () => {
+  it('fetches the URL as text and returns the string', async () => {
     let requestedType: string | undefined;
     setNetBackend({
       sendNetRequest: async (request) => {
@@ -67,16 +65,52 @@ describe('loadSceneDocumentText', () => {
         return okResponse('v 0 0 0');
       },
     });
-    const text = await loadSceneDocumentText('model.obj', 'loadX');
+
+    await expect(loadSceneDocumentTextFromUrl('model.obj')).resolves.toBe('v 0 0 0');
     expect(requestedType).toBe('text');
-    expect(text).toBe('v 0 0 0');
   });
 
-  it('returns null and pushes a warning on a failed response', async () => {
+  it('returns null on an expected transport failure', async () => {
     setNetBackend({ sendNetRequest: async () => failResponse() });
-    const warnings: string[] = [];
-    const text = await loadSceneDocumentText('missing.obj', 'loadX', warnings);
-    expect(text).toBeNull();
-    expect(warnings.length).toBe(1);
+    await expect(loadSceneDocumentTextFromUrl('missing.obj')).resolves.toBeNull();
+  });
+});
+
+describe('setSceneDocumentResourceBasePathFromUrl', () => {
+  it('sets only unresolved relative resources whose parser did not already supply a base path', () => {
+    const document = {
+      animations: [],
+      cameras: [],
+      lights: [],
+      materials: [],
+      meshes: [],
+      metadata: null,
+      nodes: [],
+      scenes: [],
+      skins: [],
+      resources: [
+        {
+          basePath: null,
+          failure: null,
+          kind: ImageResourceReferenceKind.External,
+          mimeType: null,
+          state: ResourceResolutionState.Unresolved,
+          uri: 'skin.png',
+        },
+        {
+          basePath: 'authored',
+          failure: null,
+          kind: ImageResourceReferenceKind.External,
+          mimeType: null,
+          state: ResourceResolutionState.Unresolved,
+          uri: 'fixed.png',
+        },
+      ],
+    } satisfies SceneDocument;
+
+    setSceneDocumentResourceBasePathFromUrl(document, 'models/ship.obj');
+
+    expect(document.resources[0].basePath).toBe('models');
+    expect(document.resources[1].basePath).toBe('authored');
   });
 });

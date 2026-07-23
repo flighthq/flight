@@ -2,6 +2,17 @@
 
 Continuity log for `@flighthq/scene-resources`. See [charter](charter.md).
 
+## 2026-07-22 — explicit document and resource load boundaries
+
+Replaced ambiguous format-only URL names with `loadSceneDocumentFrom*Url` returning
+`SceneDocument | null`; removed in-hand parse+implicit-built-in-resolver `loadSceneFrom*` wrappers and
+renamed eager resource realization to `loadSceneResources`. URL acquisition supports abort and
+source-identified byte progress. glTF closes required external `.bin` geometry and every format carries
+the model base path onto relative image refs. `loadSceneResources` reports operation-scoped unique-ref
+progress. No loader imports or populates backend renderer/GPU state. Package tests cover URL source type,
+null failures, malformed JSON, external-buffer closure/base path, cancellation/progress, and eager resource
+completion/progress.
+
 ## 2026-07-17 — DELIVERED v1 Phases 1–3 (builder, parcel builder-2afc1234) — reviewed & approved
 
 Built on the integrated color+shading HEAD; `npm run check` green (130 pkgs), 43 tests. Types

@@ -17,23 +17,7 @@ See [charter](./charter.md) for blessed direction.
 
 ## Recommended
 
-1. **Return a distinguishable sentinel on document fetch failure.** On any transport/HTTP failure every
-   `load*` (`loadGltf`, …) returns `allocateEmptySceneDocument()` (all tables present, empty) and pushes
-   an English string into the optional `warnings?: string[]`, so a fetch failure is indistinguishable
-   from a genuinely empty scene unless the caller opts to inspect `warnings`. Per the sentinel rule, an
-   expected failure should be a first-class sentinel: return `SceneDocument | null` (null on fetch
-   failure), or at minimum document that empty-doc-plus-warning is the failure signal.
-2. **Fix the stale reveal comment.** `revealSceneResourcesOnResolve.ts` has a trailing doc line stating
-   "an object with several pending textures fades in when the first of them resolves," which contradicts
-   the head of the same comment and the implementation (reveal fires only once `owner.pending.size === 0`).
-   Leftover from the pre-`88d31985` fade-on-first behavior; correct it to say the owner reveals only after
-   all its required textures settle.
-3. **Converge the two diagnostics idioms in this layer.** The resolver's own failure path is exemplary
-   (structured `ImageResourceFailure` + `explainImageResourceReferenceResolution` +
-   `enableSceneResourceFailureGuards` through `@flighthq/log`), but the `load*`/document side reports
-   through a raw-string `warnings` out-array — two idioms for the same package. The modern
-   inversion-rule pattern already exists here; the document loaders are the place to converge on it (see
-   the sibling note added to `scene-formats`).
+_None from the loading-vocabulary review; remaining work is directed or depth-tier._
 
 ## Depth gaps
 
@@ -56,6 +40,17 @@ See [charter](./charter.md) for blessed direction.
 
 ## Approved
 
+- [2026-07-22 · completed] `load` consistently marks asynchronous work. URL acquisition names both its
+  result and source (`loadSceneDocumentFrom*Url`), returns `SceneDocument | null`, and supports abort plus
+  source-identified byte progress. In-hand parse/create remains synchronous in scene-formats;
+  `loadSceneResources` is the separate eager image-realization operation. No scene load imports a backend,
+  registers render code, touches RenderState, or realizes GPU data.
+- [2026-07-22 · completed] glTF URL acquisition closes every required external `.bin` before parsing
+  inline geometry and carries the model directory onto unresolved image refs; every format URL loader
+  likewise supplies relative resource base paths. The old ambiguous format-only and parse+resolve wrapper
+  families, their implicit built-in resolver assembly, raw warning arrays, and empty-document transport
+  fallback are removed.
+
 - [2026-07-22 · completed] Every image reference retains a serialization-safe terminal failure cause;
   abort remains cancellation rather than failure. `explainImageResourceReferenceResolution` returns a
   detached plain-data account, `resetFailedImageResourceReference` is the single-reference atom, and
@@ -74,9 +69,8 @@ See [charter](./charter.md) for blessed direction.
   or failed before subscription do not create an eventless hidden owner.
 - [2026-07-22 · completed] The public resolver, material-texture registry, and signal group shapes live
   in `@flighthq/types` and every package `create*` result is an Entity. In-flight requests, the loader,
-  settled-image retention, and optional signal storage are private resolver runtime data. The remaining
-  structural allocations use truthful non-`create` vocabulary (`allocateEmptySceneDocument`), while the
-  web fetch seam is a direct `fetchWebImageResource` function.
+  settled-image retention, and optional signal storage are private resolver runtime data. The web fetch
+  seam remains a direct `fetchWebImageResource` function.
 - [2026-07-22 · completed] `createSceneResourceResolver` is the empty primitive and
   `createBuiltInSceneResourceResolver` is the explicit Standard PBR + Unlit assembly. A root-bundle
   proof shows the primitive omits both built-in material listers and the named assembly includes them;

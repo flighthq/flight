@@ -50,6 +50,6 @@
     "@flighthq/texture": "*",
     "typescript": "^5.3.0"
   },
-  "description": "Caller-driven resolution of scene-format texture resource references into live ImageResources — discovery walk, resolution policy, cancellation, and an opt-in availability signal over @flighthq/loader + @flighthq/image",
+  "description": "Renderer-neutral scene-document URL acquisition and caller-driven resolution of scene texture references into live ImageResources",
   "sideEffects": false
 }
