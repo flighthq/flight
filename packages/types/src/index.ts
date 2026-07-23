@@ -486,6 +486,7 @@ export * from './SurfaceRegion';
 export * from './SurfaceResizeMode';
 export * from './TaaEffect';
 export * from './TextAutoSize';
+export * from './TextBoundsSpec';
 export * from './TextDirection';
 export * from './TextFeature';
 export * from './TextFieldSignals';

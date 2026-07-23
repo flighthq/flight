@@ -9,7 +9,6 @@ import type {
   TextMeasureFunction,
   TextVerticalAlign,
 } from '@flighthq/types';
-export type { TextLayoutParams, TextLayoutResult, TextMeasureFunction } from '@flighthq/types';
 
 import { getTextFormatAscent, getTextFormatDescent, getTextFormatLeading, mergeTextFormat } from './textFormat';
 import { createTextLayoutGroup } from './textLayoutGroup';
