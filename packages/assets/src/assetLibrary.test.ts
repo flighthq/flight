@@ -9,8 +9,9 @@ import {
   getAsset,
   getAssetRefCount,
   loadAssetGroup,
-  loadAssetManifest,
+  registerAssetDescriptor,
   registerAssetLoader,
+  registerAssetManifest,
   releaseAsset,
   releaseAssetGroup,
 } from './assetLibrary';
@@ -68,7 +69,7 @@ function libraryWith(id: string, type = 'image') {
   const library = createAssetLibrary();
   const mock = createMockAdapter();
   registerAssetLoader(library, type, mock.adapter);
-  loadAssetManifest(library, [{ id, url: `${id}.bin`, type }]);
+  registerAssetManifest(library, [{ id, url: `${id}.bin`, type }]);
   return { library, mock };
 }
 
@@ -78,6 +79,24 @@ function tick(): Promise<void> {
 }
 
 describe('acquireAsset', () => {
+  it('drops a rejected entry so a later acquire retries', async () => {
+    const library = createAssetLibrary();
+    let attempts = 0;
+    registerAssetLoader(library, 'image', {
+      dispose(): void {},
+      load(): Promise<{ id: string }> {
+        attempts++;
+        return attempts === 1 ? Promise.reject(new Error('temporary')) : Promise.resolve({ id: 'hero' });
+      },
+    });
+    registerAssetDescriptor(library, { id: 'hero', type: 'image', url: 'hero.bin' });
+
+    await expect(acquireAsset(library, 'hero')).rejects.toThrow('temporary');
+    await expect(acquireAsset(library, 'hero')).resolves.toEqual({ id: 'hero' });
+    expect(attempts).toBe(2);
+    expect(getAssetRefCount(library, 'hero')).toBe(1);
+  });
+
   it('resolves the adapter loaded value and calls load once', async () => {
     const { library, mock } = libraryWith('hero');
     const promise = acquireAsset<{ id: string }>(library, 'hero');
@@ -107,7 +126,7 @@ describe('acquireAsset', () => {
 
   it('rejects when no adapter is registered for the descriptor type', async () => {
     const library = createAssetLibrary();
-    loadAssetManifest(library, [{ id: 'hero', url: 'hero.bin', type: 'image' }]);
+    registerAssetManifest(library, [{ id: 'hero', url: 'hero.bin', type: 'image' }]);
     await expect(acquireAsset(library, 'hero')).rejects.toThrow(/no loader/);
   });
 });
@@ -184,30 +203,14 @@ describe('loadAssetGroup', () => {
       },
     };
     registerAssetLoader(library, 'image', adapter);
-    loadAssetManifest(library, [
-      { id: 'ok-1', url: 'ok-1.bin', type: 'image', group: 'mixed' },
-      { id: 'bad', url: 'bad.bin', type: 'image', group: 'mixed' },
-      { id: 'ok-2', url: 'ok-2.bin', type: 'image', group: 'mixed' },
+    registerAssetManifest(library, [
+      { id: 'ok-1', url: 'ok-1.bin', type: 'image', groups: ['mixed'] },
+      { id: 'bad', url: 'bad.bin', type: 'image', groups: ['mixed'] },
+      { id: 'ok-2', url: 'ok-2.bin', type: 'image', groups: ['mixed'] },
     ]);
     failNextId = 'bad';
 
-    // loadAssetGroup routes each acquire through @flighthq/loader, which rejects the per-item handle on
-    // failure. That handle is void'd by loadAssetGroup (error-policy: continue), so the rejection
-    // surfaces as an unhandled rejection. Suppress it for this test.
-    const rejections: unknown[] = [];
-    const capture = (reason: unknown) => {
-      rejections.push(reason);
-    };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (globalThis as any).process.on('unhandledRejection', capture);
-
-    await loadAssetGroup(library, 'mixed');
-    // Drain the microtask queue so the rejection fires within the listener's window.
-    await tick();
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (globalThis as any).process.removeListener('unhandledRejection', capture);
-    expect(rejections).toHaveLength(1);
+    await expect(loadAssetGroup(library, 'mixed')).rejects.toThrow('load failed: bad');
 
     expect(getAsset(library, 'ok-1')).toEqual({ id: 'ok-1' });
     expect(getAsset(library, 'ok-2')).toEqual({ id: 'ok-2' });
@@ -225,9 +228,9 @@ describe('loadAssetGroup', () => {
       id: `tile-${i}`,
       url: `tile-${i}.bin`,
       type: 'image',
-      group: 'level',
+      groups: ['level'],
     }));
-    loadAssetManifest(library, manifest);
+    registerAssetManifest(library, manifest);
 
     const ticks: AssetLoadProgress[] = [];
     const progress = createSignal<(p: Readonly<AssetLoadProgress>) => void>();
@@ -264,23 +267,42 @@ describe('loadAssetGroup', () => {
   });
 });
 
-describe('loadAssetManifest', () => {
-  it('records descriptors and group membership without loading', async () => {
+describe('registerAssetDescriptor', () => {
+  it('copies caller-owned group data into the catalog', () => {
+    const library = createAssetLibrary();
+    const groups = ['boot'];
+    registerAssetDescriptor(library, { groups, id: 'hero', type: 'image', url: 'hero.bin' });
+    groups.push('mutated');
+
+    expect(library.runtime.descriptors.get('hero')?.groups).toEqual(['boot']);
+    expect(library.runtime.groups.has('mutated')).toBe(false);
+  });
+
+  it('moves replacement group membership instead of retaining stale groups', () => {
+    const library = createAssetLibrary();
+    registerAssetDescriptor(library, { id: 'hero', url: 'hero-a.bin', type: 'image', groups: ['boot', 'shared'] });
+    registerAssetDescriptor(library, { id: 'hero', url: 'hero-b.bin', type: 'image', groups: ['level', 'shared'] });
+
+    expect(library.runtime.groups.get('boot')).toBeUndefined();
+    expect(library.runtime.groups.get('level')).toEqual(['hero']);
+    expect(library.runtime.groups.get('shared')).toEqual(['hero']);
+  });
+
+  it('rejects changing an acquired descriptor but permits equivalent registration', async () => {
     const library = createAssetLibrary();
     const mock = createMockAdapter();
     registerAssetLoader(library, 'image', mock.adapter);
-    loadAssetManifest(library, [
-      { id: 'a', url: 'a.bin', type: 'image', group: 'boot' },
-      { id: 'b', url: 'b.bin', type: 'image', group: 'boot' },
-    ]);
-    // Nothing loaded from recording alone.
-    expect(mock.loadCalls).toBe(0);
-    expect(getAsset(library, 'a')).toBeNull();
-    // The recorded descriptor makes acquire resolvable.
-    const promise = acquireAsset(library, 'a');
+    const descriptor = { id: 'hero', url: 'hero.bin', type: 'image' as const, groups: ['boot'] };
+    registerAssetDescriptor(library, descriptor);
+    const pending = acquireAsset(library, 'hero');
+
+    expect(() => registerAssetDescriptor(library, { ...descriptor, groups: ['boot'] })).not.toThrow();
+    expect(() => registerAssetDescriptor(library, { ...descriptor, url: 'replacement.bin' })).toThrow(
+      /cannot replace acquired descriptor/,
+    );
+
     mock.flush();
-    await promise;
-    expect(getAsset(library, 'a')).toEqual({ id: 'a' });
+    await pending;
   });
 });
 
@@ -291,12 +313,32 @@ describe('registerAssetLoader', () => {
     const second = createMockAdapter();
     registerAssetLoader(library, 'image', first.adapter);
     registerAssetLoader(library, 'image', second.adapter);
-    loadAssetManifest(library, [{ id: 'hero', url: 'hero.bin', type: 'image' }]);
+    registerAssetManifest(library, [{ id: 'hero', url: 'hero.bin', type: 'image' }]);
     const promise = acquireAsset(library, 'hero');
     second.flush();
     await promise;
     expect(first.loadCalls).toBe(0);
     expect(second.loadCalls).toBe(1);
+  });
+});
+
+describe('registerAssetManifest', () => {
+  it('records descriptors and group membership without loading', async () => {
+    const library = createAssetLibrary();
+    const mock = createMockAdapter();
+    registerAssetLoader(library, 'image', mock.adapter);
+    registerAssetManifest(library, [
+      { id: 'a', url: 'a.bin', type: 'image', groups: ['boot'] },
+      { id: 'b', url: 'b.bin', type: 'image', groups: ['boot'] },
+    ]);
+    // Nothing loaded from recording alone.
+    expect(mock.loadCalls).toBe(0);
+    expect(getAsset(library, 'a')).toBeNull();
+    // The recorded descriptor makes acquire resolvable.
+    const promise = acquireAsset(library, 'a');
+    mock.flush();
+    await promise;
+    expect(getAsset(library, 'a')).toEqual({ id: 'a' });
   });
 });
 
@@ -366,9 +408,9 @@ describe('releaseAssetGroup', () => {
     const library = createAssetLibrary();
     const mock = createMockAdapter();
     registerAssetLoader(library, 'image', mock.adapter);
-    loadAssetManifest(library, [
-      { id: 'a', url: 'a.bin', type: 'image', group: 'level' },
-      { id: 'b', url: 'b.bin', type: 'image', group: 'level' },
+    registerAssetManifest(library, [
+      { id: 'a', url: 'a.bin', type: 'image', groups: ['level'] },
+      { id: 'b', url: 'b.bin', type: 'image', groups: ['level'] },
     ]);
 
     const done = loadAssetGroup(library, 'level');

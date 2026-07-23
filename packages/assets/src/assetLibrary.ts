@@ -2,6 +2,7 @@ import { createResourceLoader, disposeResourceLoader, queueResourceLoad, startRe
 import { connectSignal, emitSignal } from '@flighthq/signals';
 import type {
   AssetEntry,
+  AssetDescriptor,
   AssetGroupLoadOptions,
   AssetLibrary,
   AssetLibraryRuntime,
@@ -20,7 +21,7 @@ export function acquireAsset<T = unknown>(library: Readonly<AssetLibrary>, id: s
   const runtime = library.runtime;
   const descriptor = runtime.descriptors.get(id);
   if (descriptor === undefined) {
-    return Promise.reject(new Error(`assets: no descriptor for id "${id}" (loadAssetManifest first)`));
+    return Promise.reject(new Error(`assets: no descriptor for id "${id}" (registerAssetDescriptor first)`));
   }
   const adapter = runtime.adapters.get(descriptor.type);
   if (adapter === undefined) {
@@ -37,17 +38,26 @@ export function acquireAsset<T = unknown>(library: Readonly<AssetLibrary>, id: s
 
   const entry: AssetEntry = { value: undefined, refcount: 1, loadPromise: null, resident: false };
   runtime.entries.set(id, entry);
-  const loadPromise = adapter.load(descriptor).then((value) => {
-    if (runtime.entries.get(id) !== entry || entry.refcount <= 0) {
-      // Released before the load settled — free the orphaned resource deterministically.
-      adapter.dispose(value);
+  const loadPromise = adapter.load(descriptor).then(
+    (value) => {
+      if (runtime.entries.get(id) !== entry || entry.refcount <= 0) {
+        // Released before the load settled — free the orphaned resource deterministically.
+        adapter.dispose(value);
+        return value;
+      }
+      entry.value = value;
+      entry.resident = true;
+      entry.loadPromise = null;
       return value;
-    }
-    entry.value = value;
-    entry.resident = true;
-    entry.loadPromise = null;
-    return value;
-  });
+    },
+    (error: unknown) => {
+      // A failed acquisition owns no resident value and must not poison the id with a permanently
+      // rejected promise. Every concurrent holder observes this rejection; a later acquire starts a
+      // fresh attempt from the still-registered descriptor.
+      if (runtime.entries.get(id) === entry) runtime.entries.delete(id);
+      throw error;
+    },
+  );
   entry.loadPromise = loadPromise;
   return loadPromise as Promise<T>;
 }
@@ -98,8 +108,9 @@ export function getAssetRefCount(library: Readonly<AssetLibrary>, id: string): n
 // Preloads a named group through @flighthq/loader: every member that is not already resident is
 // scheduled as a loader item (bounded concurrency, aggregate progress via options.progress), and every
 // member is acquired (reference count incremented) so the whole group stays resident until
-// releaseAssetGroup. Resolves once all scheduled loads settle. A group with no recorded members
-// resolves immediately.
+// releaseAssetGroup. Resolves when every member succeeds; rejects with the first member failure after
+// the whole batch settles, while successful members remain held and can be released as one group. A
+// group with no recorded members resolves immediately.
 export async function loadAssetGroup(
   library: Readonly<AssetLibrary>,
   name: string,
@@ -117,36 +128,55 @@ export async function loadAssetGroup(
     });
   }
 
+  const itemPromises: Promise<unknown>[] = [];
   for (const id of ids) {
     const entry = runtime.entries.get(id);
     if (entry !== undefined && entry.resident) {
       // Already loaded — hold a group reference without scheduling a redundant load.
-      void acquireAsset(library, id);
+      itemPromises.push(acquireAsset(library, id));
       continue;
     }
     // Route the actual load through the loader for bounded concurrency; acquireAsset dedups and holds
     // the group's reference.
-    queueResourceLoad(loader, () => acquireAsset(library, id));
+    itemPromises.push(queueResourceLoad(loader, () => acquireAsset(library, id)).promise);
   }
 
+  // Attach rejection handlers before starting the loader so a fast adapter failure can never surface
+  // as an unhandled rejection while the aggregate completion signal is still pending.
+  const settlements = Promise.allSettled(itemPromises);
   await new Promise<void>((resolve) => {
     connectSignal(loader.onComplete, () => resolve());
     startResourceLoad(loader);
   });
+  const results = await settlements;
   disposeResourceLoader(loader);
+  const failed = results.find((result) => result.status === 'rejected');
+  if (failed?.status === 'rejected') throw failed.reason;
 }
 
-// Records every descriptor's id → descriptor mapping and its group membership. Does not load anything —
-// acquireAsset and loadAssetGroup perform the loads. Re-recording an id overwrites its descriptor.
-export function loadAssetManifest(library: Readonly<AssetLibrary>, manifest: AssetManifest): void {
+// Registers or replaces one catalog descriptor without loading it. Replacement fully reconciles group
+// tags. Replacing an id while it is acquired/in-flight is programmer misuse: the resident value's
+// loader/disposer contract belongs to the descriptor that created it, so changing that contract under
+// live holders would make both get and disposal type-unsafe. An equivalent re-registration is a no-op.
+export function registerAssetDescriptor(library: Readonly<AssetLibrary>, descriptor: Readonly<AssetDescriptor>): void {
   const runtime = library.runtime;
-  for (const descriptor of manifest) {
-    runtime.descriptors.set(descriptor.id, descriptor);
-    if (descriptor.group === undefined) continue;
-    let members = runtime.groups.get(descriptor.group);
+  const previous = runtime.descriptors.get(descriptor.id);
+  if (previous !== undefined && runtime.entries.has(descriptor.id)) {
+    if (isEquivalentAssetDescriptor(previous, descriptor)) return;
+    throw new Error(`assets: cannot replace acquired descriptor "${descriptor.id}" (releaseAsset first)`);
+  }
+
+  if (previous !== undefined) removeAssetDescriptorGroups(runtime, previous);
+  const storedDescriptor = copyAssetDescriptor(descriptor);
+  runtime.descriptors.set(descriptor.id, storedDescriptor);
+  const groups = storedDescriptor.groups;
+  if (groups === undefined) return;
+  for (let i = 0; i < groups.length; i++) {
+    const group = groups[i];
+    let members = runtime.groups.get(group);
     if (members === undefined) {
       members = [];
-      runtime.groups.set(descriptor.group, members);
+      runtime.groups.set(group, members);
     }
     if (!members.includes(descriptor.id)) members.push(descriptor.id);
   }
@@ -161,6 +191,27 @@ export function registerAssetLoader<T>(
   adapter: Readonly<AssetLoaderAdapter<T>>,
 ): void {
   library.runtime.adapters.set(type, adapter as AssetLoaderAdapter);
+}
+
+// Registers an in-hand plain-data manifest as a batch of descriptor registrations. This is synchronous
+// catalog mutation, not I/O: loadAssetGroup/acquireAsset perform asynchronous work later. Duplicate ids
+// within one manifest use their final descriptor. The batch preflights acquired replacements before
+// mutating anything, so an invalid replacement cannot leave a partially registered manifest.
+export function registerAssetManifest(library: Readonly<AssetLibrary>, manifest: AssetManifest): void {
+  const descriptors = new Map<string, Readonly<AssetDescriptor>>();
+  for (const descriptor of manifest) descriptors.set(descriptor.id, descriptor);
+
+  for (const descriptor of descriptors.values()) {
+    const previous = library.runtime.descriptors.get(descriptor.id);
+    if (
+      previous !== undefined &&
+      library.runtime.entries.has(descriptor.id) &&
+      !isEquivalentAssetDescriptor(previous, descriptor)
+    ) {
+      throw new Error(`assets: cannot replace acquired descriptor "${descriptor.id}" (releaseAsset first)`);
+    }
+  }
+  for (const descriptor of descriptors.values()) registerAssetDescriptor(library, descriptor);
 }
 
 // Decrements the reference count for `id`. When it reaches zero the asset is immediately disposed
@@ -193,4 +244,40 @@ function disposeAssetEntry(runtime: AssetLibraryRuntime, id: string, entry: Read
   const descriptor = runtime.descriptors.get(id);
   const adapter = descriptor !== undefined ? runtime.adapters.get(descriptor.type) : undefined;
   if (adapter !== undefined) adapter.dispose(entry.value);
+}
+
+function copyAssetDescriptor(descriptor: Readonly<AssetDescriptor>): AssetDescriptor {
+  const groups = descriptor.groups;
+  return {
+    id: descriptor.id,
+    type: descriptor.type,
+    url: descriptor.url,
+    ...(groups === undefined ? {} : { groups: [...new Set(groups)] }),
+  };
+}
+
+function isEquivalentAssetDescriptor(a: Readonly<AssetDescriptor>, b: Readonly<AssetDescriptor>): boolean {
+  if (a.id !== b.id || a.type !== b.type || a.url !== b.url) return false;
+  const aGroups = a.groups ?? [];
+  const bGroups = b.groups ?? [];
+  const aUniqueGroups = new Set(aGroups);
+  const bUniqueGroups = new Set(bGroups);
+  if (aUniqueGroups.size !== bUniqueGroups.size) return false;
+  for (let i = 0; i < aGroups.length; i++) {
+    if (!bUniqueGroups.has(aGroups[i])) return false;
+  }
+  return true;
+}
+
+function removeAssetDescriptorGroups(runtime: AssetLibraryRuntime, descriptor: Readonly<AssetDescriptor>): void {
+  const groups = descriptor.groups;
+  if (groups === undefined) return;
+  for (let i = 0; i < groups.length; i++) {
+    const group = groups[i];
+    const members = runtime.groups.get(group);
+    if (members === undefined) continue;
+    const index = members.indexOf(descriptor.id);
+    if (index >= 0) members.splice(index, 1);
+    if (members.length === 0) runtime.groups.delete(group);
+  }
 }
