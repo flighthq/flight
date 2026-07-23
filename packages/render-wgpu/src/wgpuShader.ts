@@ -3,8 +3,6 @@ import { BlendMode } from '@flighthq/types';
 
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 
-export type { WgpuBitmapShader } from '@flighthq/types';
-
 // ---- WGSL source ----
 
 // Uniform buffer layout (per-draw slot in the ring, 256-byte aligned):
