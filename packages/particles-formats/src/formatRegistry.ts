@@ -1,9 +1,5 @@
 import { createParticleEmitterConfig } from '@flighthq/particles';
-import type { ParticleEmitterConfig } from '@flighthq/types';
-import type { ParticleFormatKind } from '@flighthq/types';
-
-import type { ParticleConfigParseResult } from './parseParticleConfig';
-import type { ParticleSerializeResult } from './serializeResult';
+import type { ParticleFormatCodec, ParticleFormatKind, ParticleConfigParseResult } from '@flighthq/types';
 
 /** Contract for a particle format codec registered via `registerParticleFormat`.
  *
@@ -13,22 +9,6 @@ import type { ParticleSerializeResult } from './serializeResult';
  *  `detect` should return `true` when the text is confidently recognized as this format —
  *  it must not throw. `parseToConfig` and `parseToDocument` may throw on genuinely
  *  malformed input; the dispatcher catches and wraps errors as warnings. */
-export interface ParticleFormatCodec {
-  /** Return `true` when `text` is recognisable as this format. Must not throw. */
-  detect(text: string): boolean;
-  /** Parse `text` and return a `ParticleEmitterConfig`. May throw on malformed input. */
-  parseToConfig(text: string): ParticleEmitterConfig;
-  /** Parse `text` and return `{ config, warnings }`. May throw on malformed input.
-   *  Return an empty `warnings` array when nothing is lossy. */
-  parseToDocument(text: string): {
-    config: ParticleEmitterConfig;
-    warnings: string[];
-  };
-  /** Serialize `config` to the format string.
-   *  May accept optional options via closure capture in the codec implementation. */
-  serialize(config: Readonly<ParticleEmitterConfig>): ParticleSerializeResult;
-}
-
 /** Detect the format of `text` by consulting all registered codecs in registration order.
  *
  *  Returns the first `kind` whose codec's `detect` returns `true`, or `null` when no

@@ -1,3 +1,5 @@
+import type { ParticleEmitterConfig } from './ParticleEmitterConfig';
+
 // Unity Shuriken particle system JSON schema.
 // Based on the Unity Particle System component's serialized field names as exported
 // by Unity's JsonUtility and common third-party particle-system exporters.
@@ -127,4 +129,23 @@ export interface UnityParticleDocument {
   colorOverLifetime: UnityColorOverLifetime;
   sizeOverLifetime: UnitySizeOverLifetime;
   rotationOverLifetime: UnityRotationOverLifetime;
+}
+
+export interface UnityParseOptions {
+  /** Pixels-per-unit for the target canvas. Unity uses world-space units (metres);
+   *  multiply by this factor to convert to pixel coordinates.  Defaults to 100. */
+  pixelsPerUnit?: number;
+}
+
+export interface UnityParsed {
+  config: ParticleEmitterConfig;
+  document: UnityParticleDocument;
+  /** Features present in the source that the common-subset importer cannot
+   *  represent and silently dropped — surface these in your asset pipeline. */
+  warnings: string[];
+}
+
+export interface UnitySerializeOptions {
+  /** Pixels-per-unit — reverses the conversion applied during parsing.  Defaults to 100. */
+  pixelsPerUnit?: number;
 }

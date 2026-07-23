@@ -1,5 +1,5 @@
 import { createParticleEmitterConfig } from '@flighthq/particles';
-import type { ParticleEmitterConfig } from '@flighthq/types';
+import type { ParseParticleConfigOptions, ParticleConfigParseResult, ParticleEmitterConfig } from '@flighthq/types';
 import {
   LibgdxParticleFormatKind,
   ParticleDesignerFormatKind,
@@ -10,30 +10,12 @@ import {
 } from '@flighthq/types';
 
 import { detectParticleFormat } from './detect';
-import type { LibgdxParseOptions } from './libgdxParse';
 import { parseLibgdxParticle, parseLibgdxParticleDocument } from './libgdxParse';
-import type { ParticleDesignerParseOptions } from './particleDesignerParse';
 import { parseParticleDesignerPlist, parseParticleDesignerPlistDocument } from './particleDesignerParse';
 import { parsePixiParticle, parsePixiParticleDocument } from './pixiParse';
 import { parseSpineParticle, parseSpineParticleDocument } from './spineParse';
-import type { StarlingPexParseOptions } from './starlingPexParse';
 import { parseStarlingPex, parseStarlingPexDocument } from './starlingPexParse';
-import type { UnityParseOptions } from './unityParse';
 import { parseUnityParticle, parseUnityParticleDocument } from './unityParse';
-
-export interface ParseParticleConfigOptions
-  extends ParticleDesignerParseOptions, UnityParseOptions, LibgdxParseOptions, StarlingPexParseOptions {}
-
-export interface ParticleConfigParseResult {
-  config: ParticleEmitterConfig;
-  /** The detected format kind, or `null` when no format matched. */
-  format: string | null;
-  /** Features dropped or approximated during the parse, including an
-   *  `'unknown-format'` entry when no format matched and the result is a
-   *  default config. */
-  warnings: string[];
-}
-
 /** Parse any supported particle format string to a ParticleEmitterConfig.
  *
  *  Calls `detectParticleFormat` internally and routes to the format-specific

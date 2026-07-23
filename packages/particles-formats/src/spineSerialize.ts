@@ -1,8 +1,12 @@
 import { particleColorCurveToKeyframes, particleCurveToKeyframes } from '@flighthq/particles';
-import type { ParticleBlendMode, ParticleEmitterConfig } from '@flighthq/types';
-
-import type { ParticleSerializeResult } from './serializeResult';
-import type { SpineAlphaKeyframe, SpineParticleDocument, SpineTintKeyframe } from './spineSchema';
+import type {
+  ParticleBlendMode,
+  ParticleEmitterConfig,
+  ParticleSerializeResult,
+  SpineAlphaKeyframe,
+  SpineParticleDocument,
+  SpineTintKeyframe,
+} from '@flighthq/types';
 
 const RAD2DEG = 180 / Math.PI;
 

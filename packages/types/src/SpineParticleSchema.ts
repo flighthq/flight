@@ -1,3 +1,5 @@
+import type { ParticleEmitterConfig } from './ParticleEmitterConfig';
+
 // Spine particle effect JSON schema.
 // Targets the Spine 4.x particle effect format (`.p` JSON variant) as documented by
 // Esoteric Software: https://esotericsoftware.com/spine-particle-effects
@@ -62,4 +64,12 @@ export interface SpineParticleDocument {
 
   // Images (first entry used for config mapping)
   images: string[];
+}
+
+export interface SpineParsed {
+  config: ParticleEmitterConfig;
+  document: SpineParticleDocument;
+  /** Features present in the source that the common-subset importer cannot
+   *  represent and silently dropped — surface these in your asset pipeline. */
+  warnings: string[];
 }

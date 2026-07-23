@@ -4,22 +4,16 @@ import {
   particleCurveFromKeyframes,
 } from '@flighthq/particles';
 import type {
+  SpineParsed,
   ColorKeyframe,
   CurveKeyframe,
   ParticleBlendMode,
   ParticleCurve,
   ParticleEmitterConfig,
+  SpineAlphaKeyframe,
+  SpineParticleDocument,
+  SpineTintKeyframe,
 } from '@flighthq/types';
-
-import type { SpineAlphaKeyframe, SpineParticleDocument, SpineTintKeyframe } from './spineSchema';
-
-export interface SpineParsed {
-  config: ParticleEmitterConfig;
-  document: SpineParticleDocument;
-  /** Features present in the source that the common-subset importer cannot
-   *  represent and silently dropped — surface these in your asset pipeline. */
-  warnings: string[];
-}
 
 const DEG2RAD = Math.PI / 180;
 

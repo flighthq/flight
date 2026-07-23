@@ -1,25 +1,14 @@
 import { createParticleEmitterConfig } from '@flighthq/particles';
-import type { ParticleBlendMode, ParticleEmitterConfig } from '@flighthq/types';
-
-import type { StarlingPexColor, StarlingPexDocument } from './starlingPexSchema';
-
-export interface StarlingPexParseOptions {
-  /** Side length of the particle texture in pixels, used to normalise pixel sizes
-   *  to dimensionless scale multipliers. Defaults to 1 (no normalisation). */
-  textureSize?: number;
-}
-
-export interface StarlingPexParseResult {
-  config: ParticleEmitterConfig;
-  document: StarlingPexDocument;
-  /** Features present in the source that the common-subset importer cannot
-   *  represent and silently dropped — surface these in your asset pipeline. */
-  warnings: string[];
-}
+import type {
+  StarlingPexParseOptions,
+  StarlingPexParseResult,
+  ParticleBlendMode,
+  ParticleEmitterConfig,
+  StarlingPexColor,
+  StarlingPexDocument,
+} from '@flighthq/types';
 
 /** @deprecated Use `StarlingPexParseResult`. */
-export type StarlingPexParsed = StarlingPexParseResult;
-
 /** Parse a Starling / Sparrow PEX XML string directly to a ParticleEmitterConfig.
  *
  *  Handles both attribute-style (`<attribute name="X" value="Y"/>`) and

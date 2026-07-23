@@ -1,3 +1,5 @@
+import type { ParticleEmitterConfig } from './ParticleEmitterConfig';
+
 // libGDX 2D Particle Editor (.p) format schema.
 // Targets the libGDX particle effect format as produced by the libGDX 2D Particle Editor
 // (Badlogic Games). The format is a hierarchical key-value text file where property groups
@@ -76,4 +78,26 @@ export interface LibgdxParticleDocument {
   transparency: LibgdxRangeValue;
   imageCount: number;
   imagePath: string;
+}
+
+export interface LibgdxParseOptions {
+  /** Side length of the particle texture in pixels, used to normalise pixel sizes
+   *  to dimensionless scale multipliers. Defaults to 1 (no normalisation). */
+  textureSize?: number;
+}
+
+export interface LibgdxParseResult {
+  config: ParticleEmitterConfig;
+  document: LibgdxParticleDocument;
+  /** Features present in the source that the common-subset importer cannot
+   *  represent and silently dropped — surface these in your asset pipeline. */
+  warnings: string[];
+}
+
+export type LibgdxParsed = LibgdxParseResult;
+
+export interface LibgdxSerializeOptions {
+  /** Side length of the particle texture in pixels — reverses the normalisation
+   *  applied during parsing. Defaults to 1. */
+  textureSize?: number;
 }

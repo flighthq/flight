@@ -1,13 +1,10 @@
-import type { ParticleEmitterConfig } from '@flighthq/types';
-
-import type { ParticleSerializeResult } from './serializeResult';
-import type { StarlingPexColor, StarlingPexDocument } from './starlingPexSchema';
-
-export interface StarlingPexSerializeOptions {
-  /** Side length of the particle texture in pixels — reverses the normalisation
-   *  applied during parsing. Defaults to 1. */
-  textureSize?: number;
-}
+import type {
+  StarlingPexSerializeOptions,
+  ParticleEmitterConfig,
+  ParticleSerializeResult,
+  StarlingPexColor,
+  StarlingPexDocument,
+} from '@flighthq/types';
 
 /** Serialise a ParticleEmitterConfig to a Starling / Sparrow PEX XML string
  *  (attribute style).

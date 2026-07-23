@@ -1,19 +1,14 @@
 import { particleColorCurveToKeyframes, particleCurveToKeyframes } from '@flighthq/particles';
-import type { ParticleEmitterConfig } from '@flighthq/types';
-
-import type { ParticleSerializeResult } from './serializeResult';
 import type {
+  UnitySerializeOptions,
+  ParticleEmitterConfig,
+  ParticleSerializeResult,
   UnityAnimationCurve,
   UnityColor,
   UnityGradient,
   UnityMinMaxValue,
   UnityParticleDocument,
-} from './unitySchema';
-
-export interface UnitySerializeOptions {
-  /** Pixels-per-unit — reverses the conversion applied during parsing.  Defaults to 100. */
-  pixelsPerUnit?: number;
-}
+} from '@flighthq/types';
 
 const RAD2DEG = 180 / Math.PI;
 const DEFAULT_PPU = 100;

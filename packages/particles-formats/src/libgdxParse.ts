@@ -1,25 +1,13 @@
 import { createParticleEmitterConfig } from '@flighthq/particles';
-import type { ParticleEmitterConfig } from '@flighthq/types';
-
-import type { LibgdxParticleDocument, LibgdxRangeValue } from './libgdxSchema';
-
-export interface LibgdxParseOptions {
-  /** Side length of the particle texture in pixels, used to normalise pixel sizes
-   *  to dimensionless scale multipliers. Defaults to 1 (no normalisation). */
-  textureSize?: number;
-}
-
-export interface LibgdxParseResult {
-  config: ParticleEmitterConfig;
-  document: LibgdxParticleDocument;
-  /** Features present in the source that the common-subset importer cannot
-   *  represent and silently dropped — surface these in your asset pipeline. */
-  warnings: string[];
-}
+import type {
+  LibgdxParseOptions,
+  LibgdxParseResult,
+  ParticleEmitterConfig,
+  LibgdxParticleDocument,
+  LibgdxRangeValue,
+} from '@flighthq/types';
 
 /** @deprecated Use `LibgdxParseResult`. */
-export type LibgdxParsed = LibgdxParseResult;
-
 /** Parse a libGDX 2D Particle Editor `.p` file string directly to a ParticleEmitterConfig.
  *
  *  Single-pass: no intermediate document object is allocated.
