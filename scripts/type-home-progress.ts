@@ -20,7 +20,13 @@ function sourceFiles(dir: string): string[] {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
     const p = join(dir, e.name);
     if (e.isDirectory()) out.push(...sourceFiles(p));
-    else if (e.isFile() && e.name.endsWith('.ts') && !e.name.endsWith('.test.ts') && !e.name.endsWith('.spec.ts'))
+    else if (
+      e.isFile() &&
+      e.name.endsWith('.ts') &&
+      !e.name.endsWith('.test.ts') &&
+      !e.name.endsWith('.spec.ts') &&
+      !e.name.endsWith('TestHelper.ts') // test-only mock types are exempt (see file-naming.md)
+    )
       out.push(p);
   }
   return out;
@@ -41,7 +47,7 @@ function exportedTypeNames(file: string): string[] {
 const perPackage: Array<{ pkg: string; count: number }> = [];
 let total = 0;
 for (const e of readdirSync(packagesDir, { withFileTypes: true })) {
-  if (!e.isDirectory() || e.name === 'types') continue;
+  if (!e.isDirectory() || e.name === 'types' || e.name.startsWith('tool-')) continue; // tool-* tier exempt
   let count = 0;
   for (const f of sourceFiles(join(packagesDir, e.name, 'src'))) count += exportedTypeNames(f).length;
   if (count > 0) {
