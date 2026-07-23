@@ -1,5 +1,5 @@
-import { createClock } from './createClock';
-import { enableClockSignals } from './enableClockSignals';
+import { createClock } from './clock';
+import { enableClockSignals } from './clockSignals';
 
 describe('enableClockSignals', () => {
   it('allocates the onTick signal and returns it', () => {
