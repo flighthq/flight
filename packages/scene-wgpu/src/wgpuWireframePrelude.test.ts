@@ -1,4 +1,4 @@
-import type { LinearColor } from '@flighthq/color';
+import type { LinearColor } from '@flighthq/types';
 
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 import { makeWgpuSceneState } from './wgpuSceneTestHelper';

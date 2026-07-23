@@ -1,5 +1,5 @@
-import type { LinearColor } from '@flighthq/color';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
+import type { LinearColor } from '@flighthq/types';
 import type { WgpuRenderState } from '@flighthq/types';
 
 import type { WgpuMeshPipeline } from './wgpuMeshPipeline';

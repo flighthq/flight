@@ -192,6 +192,8 @@ export * from './HasBlendMode';
 export * from './HasBoundsRectangle';
 export * from './HasClip';
 export * from './HasColorTransform';
+export * from './HslColor';
+export * from './HsvColor';
 export * from './HasMaterial';
 export * from './HasTransform2D';
 export * from './HasTransform3D';
