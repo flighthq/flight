@@ -1,8 +1,8 @@
-import type { LinearColor } from '@flighthq/color';
 import { unpackColorToLinear } from '@flighthq/color';
 import { hasImageResourcePixels } from '@flighthq/image';
 import { bindGlImageResourceTexture } from '@flighthq/render-gl';
 import { hasTextureUvTransform } from '@flighthq/texture';
+import type { LinearColor } from '@flighthq/types';
 import type { GlRenderState, StandardPbrMaterialProperties, Texture } from '@flighthq/types';
 
 import { bindGlUvTransform } from './glMeshProgram';

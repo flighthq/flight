@@ -1,6 +1,6 @@
-import type { LinearColor } from '@flighthq/color';
 import { unpackColorToLinear } from '@flighthq/color';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
+import type { LinearColor } from '@flighthq/types';
 import type {
   Camera3D,
   EmissiveMaterial,

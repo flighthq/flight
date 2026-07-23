@@ -1,7 +1,7 @@
-import type { LinearColor } from '@flighthq/color';
 import { unpackColorToLinear } from '@flighthq/color';
 import { hasImageResourcePixels } from '@flighthq/image';
 import { bindGlImageResourceTexture } from '@flighthq/render-gl';
+import type { LinearColor } from '@flighthq/types';
 import type {
   Camera3D,
   GlMeshMaterialRenderer,

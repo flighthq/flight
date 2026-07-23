@@ -1,4 +1,3 @@
-import type { LinearColor } from '@flighthq/color';
 import { unpackColorToLinear } from '@flighthq/color';
 import { hasImageResourcePixels } from '@flighthq/image';
 import { bindGlImageResourceTexture } from '@flighthq/render-gl';
@@ -12,6 +11,7 @@ import {
   toonModifierDefinition,
   vertexDisplaceModifierDefinition,
 } from '@flighthq/shading';
+import type { LinearColor } from '@flighthq/types';
 import type {
   AnimatedNormalModifier,
   DissolveModifier,

@@ -1,4 +1,3 @@
-import type { LinearColor } from '@flighthq/color';
 import { unpackColorToLinear } from '@flighthq/color';
 import {
   createAabb,
@@ -13,6 +12,7 @@ import {
 } from '@flighthq/geometry';
 import { getNodeRuntime, getNodeWorldMatrix4, invalidateNodeLocalTransform } from '@flighthq/node';
 import { computeSkeleton3DJointMatrices } from '@flighthq/skeleton3d';
+import type { LinearColor } from '@flighthq/types';
 import type {
   Aabb,
   AmbientLight,
