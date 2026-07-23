@@ -1,6 +1,6 @@
 import { createGlProgram } from '@flighthq/render-gl';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import type { GlRenderState, GlShapeMesh, RenderProxy2D } from '@flighthq/types';
+import type { GlRenderState, GlShapeMesh, GlShapeMeshBinding, RenderProxy2D } from '@flighthq/types';
 
 import { flushGlSpriteBatch } from './glSpriteBatch';
 
@@ -9,18 +9,6 @@ import { flushGlSpriteBatch } from './glSpriteBatch';
 // triangle mesh (CPU, cached by content version in webglShape) and drawn here with a flat-color program,
 // transformed by the node world transform in the vertex shader so it stays crisp at any zoom. Gradient/
 // bitmap fills and strokes still take the raster path (see getShapeFillRegions returning null).
-
-// The GL resources for one solid-fill mesh draw: the compiled program, its shared vertex/index buffers,
-// and the attribute/uniform locations drawGlShapeMeshBatch drives. The base flat-color program and the
-// opt-in color-adjustment fold's tinted program are both expressed as bindings over the one driver.
-export interface GlShapeMeshBinding {
-  program: WebGLProgram;
-  vertexBuffer: WebGLBuffer;
-  indexBuffer: WebGLBuffer;
-  positionLocation: number;
-  matrixLocation: WebGLUniformLocation | null;
-  colorLocation: WebGLUniformLocation | null;
-}
 
 // Draws the shape's tessellated fill meshes through `binding`. Flushes the sprite batch first (these go
 // through a separate program), honors the node blend mode and alpha, and is gated by any active clip
