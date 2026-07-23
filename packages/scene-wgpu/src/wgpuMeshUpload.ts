@@ -1,7 +1,6 @@
-import type { MeshGeometry, MeshGeometryRuntime, WgpuRenderState } from '@flighthq/types';
+import type { MeshGeometry, MeshGeometryRuntime, WgpuRenderState, WgpuMeshUpload } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
-import type { WgpuMeshUpload } from './wgpuSceneRuntime';
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 
 // Lazily uploads a MeshGeometry's interleaved vertex buffer + index buffer into GPU buffers for this

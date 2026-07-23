@@ -1,7 +1,7 @@
 import { unpackColorToLinear } from '@flighthq/color';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { LinearColor } from '@flighthq/types';
 import type {
+  LinearColor,
   Camera3D,
   Material,
   MeshGeometry,
@@ -12,6 +12,9 @@ import type {
   SurfaceMaterial,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
+  WgpuPbrPipeline,
+  WgpuPbrDefineKey,
+  WgpuMaterialBinding,
 } from '@flighthq/types';
 
 import {
@@ -23,10 +26,7 @@ import {
   stashWgpuUvTransform,
   writeWgpuFrameUniform,
 } from './wgpuMeshPipeline';
-import type { WgpuPbrPipeline } from './wgpuPbrPipelineCache';
 import { ensureWgpuPbrPipeline } from './wgpuPbrPipelineCache';
-import type { WgpuPbrDefineKey } from './wgpuPbrPrelude';
-import type { WgpuMaterialBinding } from './wgpuSceneRuntime';
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 
 // The Material uniform float count (MaterialBlock = 48 floats / 192 bytes). Exported so the extension

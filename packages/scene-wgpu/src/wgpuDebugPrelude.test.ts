@@ -1,4 +1,5 @@
-import type { WgpuDebugDefineKey } from './wgpuDebugPrelude';
+import type { WgpuDebugDefineKey } from '@flighthq/types';
+
 import {
   bindWgpuDebugSurface,
   buildWgpuDebugDefineKey,

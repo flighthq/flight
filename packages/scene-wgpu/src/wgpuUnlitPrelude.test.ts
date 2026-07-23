@@ -1,8 +1,7 @@
-import type { LinearColor } from '@flighthq/types';
+import type { LinearColor, WgpuUnlitDefineKey } from '@flighthq/types';
 
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 import { makeWgpuSceneState } from './wgpuSceneTestHelper';
-import type { WgpuUnlitDefineKey } from './wgpuUnlitPrelude';
 import {
   bindWgpuUnlitSurface,
   buildWgpuUnlitDefineKey,

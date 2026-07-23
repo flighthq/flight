@@ -1,18 +1,7 @@
-import type { WgpuRenderState } from '@flighthq/types';
+import type { WgpuPbrPipeline, WgpuRenderState, WgpuPbrDefineKey } from '@flighthq/types';
 
-import type { WgpuMeshPipeline } from './wgpuMeshPipeline';
 import { createWgpuMeshPipeline, ensureWgpuPbrSampleLayout, ensureWgpuScenePipeline } from './wgpuMeshPipeline';
-import type { WgpuPbrDefineKey } from './wgpuPbrPrelude';
 import { buildWgpuPbrDefineKey, getWgpuPbrModuleSourceForKey } from './wgpuPbrPrelude';
-
-// A compiled PBR uber-shader variant plus the material bind-group layout its group(2) targets — the
-// WGSL mirror of GlPbrProgram. One exists per distinct (define key + color-attachment format) pair: a
-// Wgpu render pipeline bakes both the feature flags and its color target format, so an HDR rgba16float
-// effect target and the bgra8unorm canvas need separate variants. The shared group(0)/group(1) Frame +
-// Draw layouts live on the scene runtime (see wgpuMeshPipeline), so only the material layout is carried
-// here — inherited from WgpuMeshPipeline. Built once and cached via ensureWgpuPbrPipeline.
-export interface WgpuPbrPipeline extends WgpuMeshPipeline {}
-
 // Compiles the PBR uber-shader module for a define key and builds the render pipeline for the given
 // color-attachment format. Pure GPU work — no caching — used by ensureWgpuPbrPipeline. The group(2)
 // material layout is a uniform (the MaterialBlock) + a filtering sampler + the five standard map

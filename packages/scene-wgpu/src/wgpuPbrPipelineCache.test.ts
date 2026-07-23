@@ -1,5 +1,6 @@
+import type { WgpuPbrDefineKey } from '@flighthq/types';
+
 import { compileWgpuPbrPipeline, ensureWgpuPbrPipeline } from './wgpuPbrPipelineCache';
-import type { WgpuPbrDefineKey } from './wgpuPbrPrelude';
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 import { makeWgpuSceneState } from './wgpuSceneTestHelper';
 

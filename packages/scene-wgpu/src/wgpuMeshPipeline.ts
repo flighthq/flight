@@ -4,6 +4,8 @@ import { hasImageResourcePixels } from '@flighthq/image';
 import { bindWgpuImageResourceTexture, getWgpuRenderStateRuntime, getWgpuSampler } from '@flighthq/render-wgpu';
 import { getTextureUvMatrix, hasTextureUvTransform } from '@flighthq/texture';
 import type {
+  WgpuMeshPipeline,
+  WgpuSceneLayouts,
   Camera3D,
   MeshGeometry,
   SceneLightBlock,
@@ -24,34 +26,6 @@ import {
 
 import { ensureWgpuMeshUpload } from './wgpuMeshUpload';
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
-
-// The shared scene-wgpu mesh-pipeline infrastructure — the WGSL mirror of scene-gl's glMeshProgram +
-// glLitProgram. Every mesh-material family compiles ONE render pipeline per (define key + color
-// format) whose pipeline layout is [shared Frame layout, shared Draw layout, family Material layout].
-// Frame (group 0: camera + light block) and Draw (group 1: per-draw world + normal matrix, dynamic
-// offset) are identical across families, so their bind-group layouts, the Frame uniform buffer/bind
-// group, and the dynamic-offset Draw bind group are created once per state and reused — only group 2
-// (the material uniform + its maps) is family-specific. This keeps one Frame/Draw source of truth and
-// lets one frame bind group serve every family's pipeline.
-
-// A compiled mesh-material pipeline plus the material bind-group layout its group(2) targets. Frame and
-// Draw layouts are shared on the runtime (see ensureWgpuSceneLayouts), so they are not stored here.
-// `hasShadowGroup` is set when the pipeline was laid out with the group(3) shadow-sample layout (lit
-// families that PCF-sample the directional shadow map); beginWgpuMeshDraw then also binds group(3).
-export interface WgpuMeshPipeline {
-  hasIblGroup: boolean;
-  hasPbrSampleGroup: boolean;
-  hasShadowGroup: boolean;
-  materialBindGroupLayout: GPUBindGroupLayout;
-  pipeline: GPURenderPipeline;
-}
-
-// The shared group(0)/group(1) bind-group layouts every family pipeline uses. Created once per state.
-export interface WgpuSceneLayouts {
-  drawBindGroupLayout: GPUBindGroupLayout;
-  frameBindGroupLayout: GPUBindGroupLayout;
-}
-
 // Sets the family's pipeline active for the bind→draw handoff, binds it, and binds the shared Frame
 // bind group at group(0). A family's bind() calls this after selecting its pipeline + writing the
 // Frame uniform; draw() reads scene.activeMeshPipeline back. Mirrors scene-gl's beginGlMeshDraw.

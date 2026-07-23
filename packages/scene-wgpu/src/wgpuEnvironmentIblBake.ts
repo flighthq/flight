@@ -1,7 +1,6 @@
-import type { Environment, WgpuRenderState } from '@flighthq/types';
+import type { Environment, WgpuRenderState, WgpuSceneIbl } from '@flighthq/types';
 
 import { ensureWgpuEnvironmentSourceCube } from './wgpuEnvironmentCube';
-import type { WgpuSceneIbl } from './wgpuSceneRuntime';
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 
 // Bakes an Environment's source radiance cubemap into the split-sum image-based-lighting set — a diffuse

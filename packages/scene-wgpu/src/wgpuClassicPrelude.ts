@@ -1,7 +1,12 @@
-import type { LinearColor } from '@flighthq/types';
-import type { Texture, WgpuRenderState } from '@flighthq/types';
+import type {
+  LinearColor,
+  Texture,
+  WgpuClassicDefineKey,
+  WgpuClassicPipeline,
+  WgpuMaterialBinding,
+  WgpuRenderState,
+} from '@flighthq/types';
 
-import type { WgpuMeshPipeline } from './wgpuMeshPipeline';
 import {
   createWgpuMeshPipeline,
   ensureWgpuScenePipeline,
@@ -11,51 +16,7 @@ import {
   stashWgpuUvTransform,
   WGPU_MESH_PRELUDE_WGSL,
 } from './wgpuMeshPipeline';
-import type { WgpuMaterialBinding } from './wgpuSceneRuntime';
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
-
-// The shared Wgpu classic prelude — the WGSL mirror of scene-gl's glClassicPrelude. One module source
-// serves the three classic lit mesh-material families — Lambert (diffuse only), Phong (reflection-
-// vector specular), and BlinnPhong (half-vector specular). WGSL has no preprocessor, so the lighting
-// model and feature flags are emitted as `const … : bool`/`const LIGHTING_… : bool` ahead of the body
-// and the shader branches on them (the pipeline compiler folds the dead branches away). One directional
-// + one ambient light are read from the shared Frame uniform (see WGPU_MESH_PRELUDE_WGSL), gated by the
-// presence counts, and the fragment stage outputs LINEAR HDR radiance (no tonemap / gamma here — the
-// effect pipeline's resolve pass owns that), matching the rgba16float scene target.
-//
-// The specular models share the Lambert diffuse term and differ only in the specular geometry: Phong
-// raises max(dot(reflect(-L, N), V), 0) to the shininess exponent; BlinnPhong raises
-// max(dot(N, normalize(L + V)), 0). Both need the world-space view vector, so the camera position
-// (frame.cameraPosition) is read for Phong/BlinnPhong. Lambert has no view-dependent term and ignores
-// it; its specular branch is compiled out.
-//
-// NOTE ON MAPS: the diffuse / specular / normal maps ARE sampled when bound — the `has*Map` flags drive
-// the textured shader variant and the real uploaded views bind into the map slots (an unbound slot falls
-// back to the shared placeholder). The Lambert `emissive` field follows the GL classic, which currently
-// does not add an emissive term — kept for parity, no emissive lobe here.
-
-// One classic shading model. Lambert is diffuse-only; Phong and BlinnPhong add a specular lobe that
-// differs only in the reflection geometry (reflection vector vs. half vector). The model is encoded
-// first into the pipeline-cache key and selects the fragment shader's specular branch via a const flag.
-export type WgpuClassicLightingModel = 'blinnphong' | 'lambert' | 'phong';
-
-// A compiled classic pipeline variant — a WgpuMeshPipeline (pipeline + group(2) material layout).
-export interface WgpuClassicPipeline extends WgpuMeshPipeline {}
-
-// The feature flags that select a classic uber-shader variant. `lightingModel` chooses the shading
-// model (and whether a specular branch exists at all); `hasDiffuseMap` / `hasSpecularMap` /
-// `hasNormalMap` enable the textured paths (not yet used on wgpu — see the prelude note);
-// `alphaMaskEnabled` enables the alpha-cutoff discard for 'mask' materials; `doubleSided` selects the
-// cull-none pipeline and flips the normal toward the viewer on back faces.
-export interface WgpuClassicDefineKey {
-  alphaMaskEnabled: boolean;
-  doubleSided: boolean;
-  hasDiffuseMap: boolean;
-  hasNormalMap: boolean;
-  hasSpecularMap: boolean;
-  lightingModel: WgpuClassicLightingModel;
-}
-
 // Ensures (and caches per material reference) the classic Material bind group — a uniform buffer + the
 // shared sampler + the placeholder diffuse/specular/normal textures — and rewrites its uniform with
 // this surface's linear diffuse + specular colors, shininess, and alpha cutoff. Mirrors scene-gl's

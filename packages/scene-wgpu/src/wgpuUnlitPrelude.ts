@@ -1,7 +1,12 @@
-import type { LinearColor } from '@flighthq/types';
-import type { Texture, WgpuRenderState } from '@flighthq/types';
+import type {
+  LinearColor,
+  Texture,
+  WgpuMaterialBinding,
+  WgpuRenderState,
+  WgpuUnlitDefineKey,
+  WgpuUnlitPipeline,
+} from '@flighthq/types';
 
-import type { WgpuMeshPipeline } from './wgpuMeshPipeline';
 import {
   createWgpuMeshPipeline,
   ensureWgpuScenePipeline,
@@ -10,34 +15,7 @@ import {
   stashWgpuUvTransform,
   WGPU_MESH_PRELUDE_WGSL,
 } from './wgpuMeshPipeline';
-import type { WgpuMaterialBinding } from './wgpuSceneRuntime';
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
-
-// The shared Wgpu unlit prelude — the WGSL mirror of scene-gl's glUnlitPrelude. One module for every
-// lighting-independent flat-color material (Unlit, Emissive, VertexColor): all output LINEAR color with
-// no lighting term, scaled by an intensity (1 for Unlit/VertexColor, emissiveStrength for Emissive;
-// values > 1 drive bloom over the rgba16float scene target). WGSL has no preprocessor, so each feature
-// flag is a `const … : bool` the pipeline compiler folds. The CPU passes the surface color already
-// decoded to linear (unpackColorToLinear), so the shader only sRgb-decodes a sampled color map.
-//
-// NOTE ON MAPS / color0: the color map IS sampled when bound (hasColorMap drives the textured variant
-// and the real uploaded view binds into the color slot; an unbound slot falls back to the placeholder).
-// VertexColor still renders its tint without a mesh color0 attribute — the canonical 48-byte vertex
-// layout has no color0 slot and no builder emits one, so color0 support is the one remaining gap (a
-// cross-package mesh-layout change), matching the GL path which also renders VertexColor as the tint.
-
-// The feature flags that select an unlit variant. `hasColorMap` enables the sampled color map (not yet
-// used on wgpu — see note); `alphaMaskEnabled` enables the alpha-cutoff discard for 'mask' materials;
-// `doubleSided` selects the cull-none pipeline.
-export interface WgpuUnlitDefineKey {
-  alphaMaskEnabled: boolean;
-  doubleSided: boolean;
-  hasColorMap: boolean;
-}
-
-// A compiled unlit pipeline variant — a WgpuMeshPipeline (pipeline + group(2) material layout).
-export interface WgpuUnlitPipeline extends WgpuMeshPipeline {}
-
 // Ensures (and caches per material reference) the unlit Material bind group — a uniform buffer + the
 // shared sampler + the placeholder color texture — and rewrites its uniform with this surface's linear
 // color, intensity, and alpha cutoff. Mirrors scene-gl's bindGlUnlitSurface. Returns the bind group for

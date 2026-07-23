@@ -1,7 +1,7 @@
 import { unpackColorToLinear } from '@flighthq/color';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { LinearColor } from '@flighthq/types';
 import type {
+  LinearColor,
   Camera3D,
   MatcapMaterial,
   Material,
@@ -10,10 +10,10 @@ import type {
   SceneRenderProxy,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
+  WgpuMatcapDefineKey,
 } from '@flighthq/types';
 import { MatcapMaterialKind } from '@flighthq/types';
 
-import type { WgpuMatcapDefineKey } from './wgpuMatcapPrelude';
 import { bindWgpuMatcapSurface, ensureWgpuMatcapPipeline } from './wgpuMatcapPrelude';
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { beginWgpuMeshDraw, drawWgpuMeshSubset, writeWgpuFrameUniform } from './wgpuMeshPipeline';

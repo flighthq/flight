@@ -1,4 +1,5 @@
-import type { WgpuPbrDefineKey } from './wgpuPbrPrelude';
+import type { WgpuPbrDefineKey } from '@flighthq/types';
+
 import {
   buildWgpuPbrDefineKey,
   buildWgpuPbrDefineSource,

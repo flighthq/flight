@@ -1,7 +1,6 @@
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { WgpuRenderState } from '@flighthq/types';
+import type { WgpuDebugDefineKey, WgpuDebugPipeline, WgpuRenderState, WgpuMaterialBinding } from '@flighthq/types';
 
-import type { WgpuMeshPipeline } from './wgpuMeshPipeline';
 import {
   createWgpuMeshPipeline,
   ensureWgpuPlaceholderTextureView,
@@ -9,41 +8,7 @@ import {
   stashWgpuUvTransform,
   WGPU_MESH_PRELUDE_WGSL,
 } from './wgpuMeshPipeline';
-import type { WgpuMaterialBinding } from './wgpuSceneRuntime';
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
-
-// The shared Wgpu debug prelude — the WGSL mirror of scene-gl's glDebugPrelude. One module source for
-// every lighting-INDEPENDENT debug/utility pass material (Depth, Normal). WGSL has no preprocessor, so
-// a `MODE` const discriminator (DEPTH_MODE / NORMAL_MODE) and a `HAS_NORMAL_MAP` const the pipeline
-// compiler folds select the fragment branch and the (future) normal-map path. Both modes output LINEAR
-// color with no lighting term, matching the rgba16float scene target, and ignore the Frame light block.
-//
-// Depth mode reads the perspective-encoded window-space depth from the WGSL `@builtin(position)` z (the
-// VertexOutput.clipPosition lane, which after rasterization holds window-space xyzw with z in NDC depth
-// space), linearizes it back into eye space using the camera near/far carried in the material uniform,
-// then maps that distance across [near, far] to grayscale `vec3(d)`. NOTE: WebGPU NDC depth is the
-// [0, 1] convention (unlike GL's [-1, 1]), so the eye-space reconstruction skips GL's `z * 2 - 1`
-// remap — this is the one intentional divergence from depthGlMeshMaterialRenderer's shader.
-//
-// Normal mode visualizes the WORLD-space surface normal (the geometric normal transformed by the normal
-// matrix carried into VertexOutput.worldNormal during vs_main), encoded as `n * 0.5 + 0.5`. NOTE: the
-// tangent-space normal map is NOT sampled on wgpu yet — like the StandardPbr / unlit wgpu paths, real
-// map textures are not uploaded, so `hasNormalMap` stays false, the bind group binds the shared
-// placeholder texture, and the WGSL normal-map branch is reserved for when texture upload lands. This
-// mirrors the documented map gap on the rest of the wgpu side.
-
-// The feature flags that select a debug variant. `mode` picks the depth vs normal fragment branch;
-// `hasNormalMap` enables the sampled tangent-space normal-map perturbation (normal mode only — depth
-// ignores it; not yet wired on wgpu, see the prelude note). Distinct keys compile and cache as distinct
-// pipelines.
-export interface WgpuDebugDefineKey {
-  hasNormalMap: boolean;
-  mode: 'depth' | 'normal';
-}
-
-// A compiled debug pipeline variant — a WgpuMeshPipeline (pipeline + group(2) material layout).
-export interface WgpuDebugPipeline extends WgpuMeshPipeline {}
-
 // Ensures (and caches per material reference) the debug Material bind group — a uniform buffer + the
 // shared sampler + the placeholder texture — and rewrites its uniform with this surface's params. The
 // params vec4 packs near/far (depth mode) and normalScale (normal mode) into one buffer shared by both

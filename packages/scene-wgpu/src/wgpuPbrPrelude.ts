@@ -1,3 +1,4 @@
+import type { WgpuPbrDefineKey } from '@flighthq/types';
 // The shared Wgpu PBR prelude: the WGSL vertex + fragment uber-shader for the StandardPbr forward-lit
 // path AND every PBR-extension variant — the WGSL mirror of scene-gl's glPbrPrelude. One module source
 // is specialized per material at compile time by prepending a const-flag block (see WgpuPbrDefineKey /
@@ -30,32 +31,6 @@
 //                       reads them runs only when its const flag is set.
 //   group(3) Samples  : the directional shadow resources plus image-based-lighting resources. They share
 //                       one group so PBR fits WebGPU's required maxBindGroups minimum of 4.
-
-// The feature flags that select an uber-shader variant. Each toggles a `const … : bool` in the prelude
-// and is hashed into the pipeline-cache key (buildWgpuPbrDefineKey), so distinct flag sets compile and
-// cache as distinct pipelines. The `has*Map` flags enable the textured paths of the standard block;
-// `alphaMaskEnabled` enables the alpha-cutoff discard for 'mask' materials; `doubleSided` flips the
-// normal toward the viewer on back faces (paired with the pipeline's cull-none state). The extension
-// flags (`clearcoatEnabled` … `transmissionEnabled`) each enable one extension lobe; an extension
-// renderer sets exactly one. Maps inside an extension's own textures are not part of the key today —
-// extension maps are not sampled on wgpu yet and the lobe reads a uniform fallback.
-export interface WgpuPbrDefineKey {
-  alphaMaskEnabled: boolean;
-  anisotropyEnabled: boolean;
-  clearcoatEnabled: boolean;
-  doubleSided: boolean;
-  hasBaseColorMap: boolean;
-  hasEmissiveMap: boolean;
-  hasMetallicRoughnessMap: boolean;
-  hasNormalMap: boolean;
-  hasOcclusionMap: boolean;
-  iridescenceEnabled: boolean;
-  sheenEnabled: boolean;
-  specularEnabled: boolean;
-  subsurfaceEnabled: boolean;
-  transmissionEnabled: boolean;
-}
-
 // A short, stable, order-independent string identity for a define key, used as the pipeline-cache map
 // key (combined with the color-attachment format). Two keys with the same flags produce the same
 // string and so share a compiled pipeline. Standard map/alpha/double-sided flags first, then one slot

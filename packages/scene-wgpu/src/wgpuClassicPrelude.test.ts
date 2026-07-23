@@ -1,4 +1,5 @@
-import type { WgpuClassicDefineKey, WgpuClassicLightingModel } from './wgpuClassicPrelude';
+import type { WgpuClassicDefineKey, WgpuClassicLightingModel } from '@flighthq/types';
+
 import {
   bindWgpuClassicSurface,
   buildWgpuClassicDefineKey,
