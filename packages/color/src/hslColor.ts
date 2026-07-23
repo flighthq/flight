@@ -3,7 +3,7 @@
 export type HslColor = [number, number, number];
 
 // Allocates a fresh zeroed `HslColor` for use as an `rgbToHsl` out parameter.
-export function createHslColor(): HslColor {
+export function allocateHslColor(): HslColor {
   return [0, 0, 0];
 }
 

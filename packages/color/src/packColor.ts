@@ -4,16 +4,16 @@ import { linearChannelToSrgb, srgbChannelToLinear } from './srgbTransfer';
 
 export type { LinearColor };
 
+// Allocates a fresh zeroed `LinearColor` for use as an `unpackColorToLinear` out parameter.
+export function allocateLinearColor(): LinearColor {
+  return [0, 0, 0, 0];
+}
+
 // Takes a 24-bit RGB color (`0xRRGGBB`, e.g. a TextFormat color) and returns a
 // CSS `#RRGGBB` string. Any high-byte bits are masked off, so a 32-bit RGBA
 // value would keep `GGBBAA` — pass RGB, not RGBA.
 export function computeRgbHexString(color: number): string {
   return `#${(color & 0xffffff).toString(16).padStart(6, '0')}`;
-}
-
-// Allocates a fresh zeroed `LinearColor` for use as an `unpackColorToLinear` out parameter.
-export function createLinearColor(): LinearColor {
-  return [0, 0, 0, 0];
 }
 
 // Returns the alpha channel of a packed `0xRRGGBBAA` color as a float in [0, 1] — the inverse of

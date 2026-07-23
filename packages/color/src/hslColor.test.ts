@@ -1,8 +1,8 @@
-import { createHslColor, hslToRgb, rgbToHsl } from './hslColor';
+import { allocateHslColor, hslToRgb, rgbToHsl } from './hslColor';
 
-describe('createHslColor', () => {
+describe('allocateHslColor', () => {
   it('allocates a zeroed three-component HSL color', () => {
-    expect(createHslColor()).toEqual([0, 0, 0]);
+    expect(allocateHslColor()).toEqual([0, 0, 0]);
   });
 });
 

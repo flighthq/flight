@@ -1,8 +1,8 @@
-import { createHsvColor, hsvToRgb, rgbToHsv } from './hsvColor';
+import { allocateHsvColor, hsvToRgb, rgbToHsv } from './hsvColor';
 
-describe('createHsvColor', () => {
+describe('allocateHsvColor', () => {
   it('allocates a zeroed three-component HSV color', () => {
-    expect(createHsvColor()).toEqual([0, 0, 0]);
+    expect(allocateHsvColor()).toEqual([0, 0, 0]);
   });
 });
 

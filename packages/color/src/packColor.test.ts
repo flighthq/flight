@@ -1,6 +1,6 @@
 import {
   computeRgbHexString,
-  createLinearColor,
+  allocateLinearColor,
   getColorAlpha,
   getColorRgb,
   packColor,
@@ -11,6 +11,12 @@ import {
   unpackColorToLinear,
 } from './packColor';
 
+describe('allocateLinearColor', () => {
+  it('allocates a zeroed four-component color', () => {
+    expect(allocateLinearColor()).toEqual([0, 0, 0, 0]);
+  });
+});
+
 describe('computeRgbHexString', () => {
   it('returns a 6-digit hex string of the lower 24 bits', () => {
     expect(computeRgbHexString(0x00ff0000)).toBe('#ff0000');
@@ -18,12 +24,6 @@ describe('computeRgbHexString', () => {
     expect(computeRgbHexString(0x000000ff)).toBe('#0000ff');
     expect(computeRgbHexString(0x00000000)).toBe('#000000');
     expect(computeRgbHexString(0x00ffffff)).toBe('#ffffff');
-  });
-});
-
-describe('createLinearColor', () => {
-  it('allocates a zeroed four-component color', () => {
-    expect(createLinearColor()).toEqual([0, 0, 0, 0]);
   });
 });
 
@@ -60,25 +60,25 @@ describe('packColor', () => {
 
 describe('packLinearToColor', () => {
   it('is the inverse of unpackColorToLinear for white', () => {
-    const out = createLinearColor();
+    const out = allocateLinearColor();
     unpackColorToLinear(out, 0xffffffff);
     expect(packLinearToColor(out)).toBe(0xffffffff);
   });
   it('is the inverse of unpackColorToLinear for black (opaque)', () => {
-    const out = createLinearColor();
+    const out = allocateLinearColor();
     unpackColorToLinear(out, 0x000000ff);
     expect(packLinearToColor(out)).toBe(0x000000ff);
   });
   it('passes alpha through without gamma encoding', () => {
     const color = 0x000000_80 >>> 0;
-    const out = createLinearColor();
+    const out = allocateLinearColor();
     unpackColorToLinear(out, color);
     const repacked = packLinearToColor(out);
     expect(repacked & 0xff).toBe(0x80);
   });
   it('round-trips a mid-gray color within 1 LSB', () => {
     const color = 0x808080ff >>> 0;
-    const out = createLinearColor();
+    const out = allocateLinearColor();
     unpackColorToLinear(out, color);
     const repacked = packLinearToColor(out);
     const origR = (color >>> 24) & 0xff;
@@ -133,19 +133,19 @@ describe('unpackColorRgba', () => {
 
 describe('unpackColorToLinear', () => {
   it('decodes white and black exactly at the endpoints', () => {
-    const out = createLinearColor();
+    const out = allocateLinearColor();
     expect(unpackColorToLinear(out, 0xffffffff)).toEqual([1, 1, 1, 1]);
     expect(unpackColorToLinear(out, 0x000000ff)).toEqual([0, 0, 0, 1]);
   });
 
   it('passes alpha through linearly without gamma decode', () => {
-    const out = createLinearColor();
+    const out = allocateLinearColor();
     unpackColorToLinear(out, 0x00000080);
     expect(out[3]).toBeCloseTo(0x80 / 0xff, 6);
   });
 
   it('gamma-decodes RGB so mid sRgb is below the linear midpoint', () => {
-    const out = createLinearColor();
+    const out = allocateLinearColor();
     unpackColorToLinear(out, 0x808080ff);
     expect(out[0]).toBeCloseTo(0.21586, 4);
     expect(out[0]).toBe(out[1]);
@@ -153,7 +153,7 @@ describe('unpackColorToLinear', () => {
   });
 
   it('returns the same out instance it was given', () => {
-    const out = createLinearColor();
+    const out = allocateLinearColor();
     expect(unpackColorToLinear(out, 0xff0000ff)).toBe(out);
   });
 });
