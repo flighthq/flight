@@ -14,6 +14,7 @@ import {
 import type { TextSelectionRectangle } from '@flighthq/types';
 import type {
   CanvasRenderState,
+  CanvasTextInputOverlay,
   DisplayObjectRenderer,
   RenderProxy2D,
   RichText,
@@ -35,8 +36,6 @@ export function drawCanvasRichText(state: CanvasRenderState, renderProxy: Render
     _canvasTextInputOverlay(state, renderProxy);
   }
 }
-
-export type CanvasTextInputOverlay = (state: CanvasRenderState, renderProxy: RenderProxy2D) => void;
 
 export function drawCanvasRichTextMask(state: CanvasRenderState, data: RenderProxy2D): void {
   drawCanvasDisplayObject(state, data);
