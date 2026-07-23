@@ -1,18 +1,10 @@
 import { logOnce } from '@flighthq/log';
 import { getNodeRuntime } from '@flighthq/node';
-import type { InteractionSignalName, NodeAny } from '@flighthq/types';
+import type { InteractionHitEligibility, InteractionSignalName, NodeAny } from '@flighthq/types';
 import { LogLevel } from '@flighthq/types';
 
 import { setInteractionConnectGuard } from './interactionManager';
 import { isNodeFocusable, isNodeHitTestEnabled } from './nodeInteractionState';
-
-/** Plain-data result of `explainInteractionHitEligibility`. */
-export interface InteractionHitEligibility {
-  // Whether the node itself has opted into hit testing.
-  eligible: boolean;
-  // Whether the node or any descendant is a hit candidate (so a bubbled listener on it can fire).
-  hasEligibleInSubtree: boolean;
-}
 
 /** Uninstalls the guard installed by `enableInteractionGuards`. */
 export function disableInteractionGuards(): void {

@@ -7,6 +7,7 @@ import type {
   FocusEventData,
   InputKeyboardData,
   InputPointerData,
+  InteractionConnectGuard,
   InteractionInputSource,
   InteractionManager,
   InteractionManagerOptions,
@@ -711,8 +712,6 @@ function isTransform2DNode(source: Readonly<NodeAny>): source is Transform2DNode
 type KeyboardSignalName = 'onKeyDown' | 'onKeyUp';
 type FocusSignalName = 'onFocusIn' | 'onFocusOut';
 type PointerSignalName = Exclude<InteractionSignalName, KeyboardSignalName | FocusSignalName>;
-
-export type InteractionConnectGuard = (target: NodeAny, name: InteractionSignalName) => void;
 
 type InteractionSignalPayload<Name extends InteractionSignalName> = Name extends KeyboardSignalName
   ? Readonly<KeyboardEventData>
