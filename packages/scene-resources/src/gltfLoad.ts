@@ -5,7 +5,7 @@ import {
   getSceneDocumentBasePathFromUrl,
   loadSceneDocumentBytesFromUrl,
   loadSceneDocumentTextFromUrl,
-} from './loadSceneDocumentSource';
+} from './sceneDocumentSource';
 
 // Fetches a binary glTF (`.glb`) from a URL and parses it into a format-neutral SceneDocument. Fetches only
 // the FILE — the document's texture refs stay unresolved; assemble with createSceneFromDocument and load

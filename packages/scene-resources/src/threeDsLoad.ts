@@ -1,7 +1,7 @@
 import { parse3ds } from '@flighthq/scene-formats';
 import type { SceneDocument, SceneDocumentLoadOptions } from '@flighthq/types';
 
-import { loadSceneDocumentBytesFromUrl, setSceneDocumentResourceBasePathFromUrl } from './loadSceneDocumentSource';
+import { loadSceneDocumentBytesFromUrl, setSceneDocumentResourceBasePathFromUrl } from './sceneDocumentSource';
 
 // Fetches an Autodesk 3DS binary from a URL and parses it into a format-neutral SceneDocument. Fetches only
 // the FILE — the document's texture refs stay unresolved; assemble with createSceneFromDocument and resolve

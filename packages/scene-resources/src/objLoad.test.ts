@@ -4,7 +4,7 @@ import type { NetResponse, SceneDocument } from '@flighthq/types';
 import type { Mock } from 'vitest';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import type * as LoadObjModule from './loadObj';
+import type * as LoadObjModule from './objLoad';
 
 let loadSceneDocumentFromObjUrl: typeof LoadObjModule.loadSceneDocumentFromObjUrl;
 let parseObj: Mock<typeof SceneFormatsModule.parseObj>;
@@ -35,7 +35,7 @@ beforeAll(async () => {
   sendNetRequest = vi.fn<typeof NetModule.sendNetRequest>();
   vi.doMock('@flighthq/net', () => ({ sendNetRequest }));
   vi.doMock('@flighthq/scene-formats', () => ({ parseObj }));
-  ({ loadSceneDocumentFromObjUrl } = await import('./loadObj'));
+  ({ loadSceneDocumentFromObjUrl } = await import('./objLoad'));
 });
 
 afterAll(() => {
