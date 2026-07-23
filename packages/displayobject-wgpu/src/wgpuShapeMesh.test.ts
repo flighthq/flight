@@ -2,8 +2,8 @@ import { createMatrix } from '@flighthq/geometry';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
 import type { RenderProxy2D, WgpuRenderState, WgpuShapeMeshBuffers } from '@flighthq/types';
+import type { WgpuShapeMesh } from '@flighthq/types';
 
-import type { WgpuShapeMesh } from './wgpuShapeMesh';
 import { drawWgpuShapeMeshes } from './wgpuShapeMesh';
 
 beforeAll(() => {

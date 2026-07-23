@@ -17,9 +17,9 @@ import type {
   WgpuShapeMeshBuffers,
 } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
+import type { WgpuShapeMesh } from '@flighthq/types';
 
 import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
-import type { WgpuShapeMesh } from './wgpuShapeMesh';
 import { drawWgpuShapeMeshes } from './wgpuShapeMesh';
 import {
   ensureWgpuQuadBatchResources,

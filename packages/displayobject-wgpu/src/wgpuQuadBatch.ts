@@ -5,7 +5,6 @@ import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import type { ColorTransform, QuadBatch, RenderProxy2D, SpriteRenderer, WgpuRenderState } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
-import type { WgpuQuadBatchResources } from './wgpuSpriteBatch';
 import {
   ensureWgpuQuadBatchResources,
   getWgpuQuadBatchPipeline,
@@ -15,7 +14,6 @@ import {
   SPRITE_INSTANCE_FLOATS,
 } from './wgpuSpriteBatch';
 
-export type { WgpuQuadBatchResources };
 export { ensureWgpuQuadBatchResources, getWgpuQuadBatchPipeline };
 
 // Each quad writes the 13 base instance floats; any material packs its own per-instance data into the

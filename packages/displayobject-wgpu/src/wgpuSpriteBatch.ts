@@ -6,6 +6,7 @@ import type {
   Material,
   MaterialData,
   WgpuMaterialRenderer,
+  WgpuQuadBatchResources,
   WgpuRenderState,
   WgpuSpriteBatchBufferSlot,
 } from '@flighthq/types';
@@ -109,15 +110,6 @@ export function ensureWgpuQuadBatchResources(state: WgpuRenderState): WgpuQuadBa
   };
   _quadBatchResources.set(device, resources);
   return resources;
-}
-
-export interface WgpuQuadBatchResources {
-  instanceBindGroupLayout: GPUBindGroupLayout;
-  materialBindGroupLayout: GPUBindGroupLayout;
-  basePipelineLayout: GPUPipelineLayout;
-  materialPipelineLayout: GPUPipelineLayout;
-  // Pipelines keyed first by the material's shader module, then by blend+stencil state.
-  pipelines: WeakMap<GPUShaderModule, Map<string, GPURenderPipeline>>;
 }
 
 const _quadBatchResources = new WeakMap<GPUDevice, WgpuQuadBatchResources>();
