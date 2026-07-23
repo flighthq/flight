@@ -56,6 +56,7 @@ export * from './BloomEffect';
 export * from './BlurEffect';
 export * from './BokehDepthOfFieldEffect';
 export * from './BoundingSphere';
+export * from './ByteReader';
 export * from './Camera3D';
 export * from './Camera3DOptions';
 export * from './OrthographicProjectionOptions';
