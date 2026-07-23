@@ -2,9 +2,9 @@ import { unpackColorToLinear } from '@flighthq/color';
 import { hasImageResourcePixels } from '@flighthq/image';
 import { bindGlImageResourceTexture } from '@flighthq/render-gl';
 import { orderModifierStack, resolveModifier } from '@flighthq/shading';
-import type { ModifierRegistry } from '@flighthq/types';
-import type { LinearColor } from '@flighthq/types';
 import type {
+  ModifierRegistry,
+  LinearColor,
   Camera3D,
   GlMeshMaterialRenderer,
   GlRenderState,
@@ -14,6 +14,10 @@ import type {
   SceneLightBlock,
   SceneRenderProxy,
   ShadedMaterial,
+  GlModifierBindContext,
+  GlModifierSnippet,
+  GlShadedDefineKey,
+  GlShadedProgram,
 } from '@flighthq/types';
 import { ShadedMaterialKind } from '@flighthq/types';
 
@@ -29,8 +33,6 @@ import {
 } from './glMeshProgram';
 import { getGlSceneRuntime } from './glSceneRuntime';
 import { getGlSceneTime } from './glSceneTime';
-import type { GlModifierBindContext, GlModifierSnippet } from './glShadedModifierSnippet';
-import type { GlShadedDefineKey, GlShadedProgram } from './glShadedPrelude';
 import { ensureGlShadedProgram } from './glShadedPrelude';
 
 // The built-in ShadedMaterial forward-lit mesh-material renderer — @flighthq/shading's composable

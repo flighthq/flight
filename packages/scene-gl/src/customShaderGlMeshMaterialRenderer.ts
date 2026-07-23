@@ -1,6 +1,7 @@
 import { hasImageResourcePixels } from '@flighthq/image';
 import { bindGlImageResourceTexture } from '@flighthq/render-gl';
 import type {
+  GlCustomMaterialShaderSource,
   Camera3D,
   CustomShaderMaterial,
   GlMeshMaterialRenderer,
@@ -10,6 +11,7 @@ import type {
   SceneLightBlock,
   SceneRenderProxy,
   Texture,
+  GlMeshProgram,
 } from '@flighthq/types';
 import { CustomShaderMaterialKind } from '@flighthq/types';
 
@@ -22,7 +24,6 @@ import {
   setGlMeshCameraPosition,
   setGlMeshViewProjection,
 } from './glMeshProgram';
-import type { GlMeshProgram } from './glMeshProgram';
 import { getGlSceneRuntime } from './glSceneRuntime';
 
 // A compiled custom-shader program plus its resolved built-in uniform locations. The user's
@@ -114,13 +115,6 @@ export function registerGlCustomMaterialShader(
   }
   registry.set(shaderKey, source);
 }
-
-// The vertex + fragment GLSL source pair for a custom material shader.
-export interface GlCustomMaterialShaderSource {
-  fragment: string;
-  vertex: string;
-}
-
 function ensureGlCustomShaderProgram(
   state: GlRenderState,
   shaderKey: string,

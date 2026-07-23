@@ -1,4 +1,4 @@
-import type { GlRenderState, SceneLightBlock } from '@flighthq/types';
+import type { GlLitProgram, GlRenderState, SceneLightBlock, GlMeshProgram } from '@flighthq/types';
 import {
   MAX_FORWARD_LIGHTS,
   SCENE_LIGHT_HEMISPHERE_OFFSET,
@@ -9,39 +9,7 @@ import {
   SCENE_LIGHT_SPOT_STRIDE,
 } from '@flighthq/types';
 
-import type { GlMeshProgram } from './glMeshProgram';
 import { getGlSceneRuntime } from './glSceneRuntime';
-
-// The shared base for every lit mesh-material family (classic Lambert/Phong/BlinnPhong, Toon, and the
-// PBR family). Extends GlMeshProgram with the standard forward-light uniform locations every lit
-// shader reads: one packed directional + one ambient term from the SceneLightBlock, the camera world
-// position for view-dependent terms, and the directional shadow uniforms. A family program interface
-// extends GlLitProgram and adds its own material uniforms; bindGlMeshLightBlock + resolveGlLitLocations
-// keep the CPU upload and the GL_MESH_LIGHT_BLOCK_GLSL declaration the single source of truth.
-export interface GlLitProgram extends GlMeshProgram {
-  locAmbientCount: WebGLUniformLocation | null;
-  locAmbientRadiance: WebGLUniformLocation | null;
-  locCameraPosition: WebGLUniformLocation | null;
-  locDirectional: WebGLUniformLocation | null;
-  locDirectionalCount: WebGLUniformLocation | null;
-  locDirectionalRadiance: WebGLUniformLocation | null;
-  locHemisphereCount: WebGLUniformLocation | null;
-  locHemisphereLights: WebGLUniformLocation | null;
-  locIblBrdf: WebGLUniformLocation | null;
-  locIblEnabled: WebGLUniformLocation | null;
-  locIblIntensity: WebGLUniformLocation | null;
-  locIblIrradiance: WebGLUniformLocation | null;
-  locIblMaxMip: WebGLUniformLocation | null;
-  locIblPrefiltered: WebGLUniformLocation | null;
-  locPointCount: WebGLUniformLocation | null;
-  locPointLights: WebGLUniformLocation | null;
-  locShadowEnabled: WebGLUniformLocation | null;
-  locShadowMap: WebGLUniformLocation | null;
-  locShadowMatrix: WebGLUniformLocation | null;
-  locSpotCount: WebGLUniformLocation | null;
-  locSpotLights: WebGLUniformLocation | null;
-}
-
 // The texture unit the directional shadow map binds to — above the material texture units (a material
 // uses at most baseColor/normal/metallicRoughness/occlusion/emissive ⇒ units 0–4). The IBL set sits
 // above the shadow map: irradiance/prefiltered cubemaps + the BRDF LUT on units 9/10/11.

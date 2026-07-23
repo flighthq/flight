@@ -1,8 +1,6 @@
-import type { GlRenderStateRuntime, GlRenderTarget, Matrix4 } from '@flighthq/types';
+import type { GlRenderStateRuntime, GlRenderTarget, Matrix4, GlMeshProgram, GlSceneIbl } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
-import type { GlMeshProgram } from './glMeshProgram';
-import type { GlSceneIbl } from './glSceneRuntime';
 import { destroyGlSceneRuntime, ensureGlSkinPalette, getGlSceneRuntime } from './glSceneRuntime';
 import { makeGlSceneState } from './glSceneTestHelper';
 

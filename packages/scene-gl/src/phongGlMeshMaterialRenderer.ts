@@ -1,8 +1,8 @@
 import { unpackColorToLinear } from '@flighthq/color';
 import { hasImageResourcePixels } from '@flighthq/image';
 import { bindGlImageResourceTexture } from '@flighthq/render-gl';
-import type { LinearColor } from '@flighthq/types';
 import type {
+  LinearColor,
   Camera3D,
   GlMeshMaterialRenderer,
   GlRenderState,
@@ -11,11 +11,11 @@ import type {
   PhongMaterial,
   SceneLightBlock,
   SceneRenderProxy,
+  GlClassicDefineKey,
+  GlClassicProgram,
 } from '@flighthq/types';
 import { PhongMaterialKind } from '@flighthq/types';
 
-import type { GlClassicDefineKey } from './glClassicPrelude';
-import type { GlClassicProgram } from './glClassicPrelude';
 import { ensureGlClassicProgram } from './glClassicPrelude';
 import { bindGlMeshLightBlock } from './glLitProgram';
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';

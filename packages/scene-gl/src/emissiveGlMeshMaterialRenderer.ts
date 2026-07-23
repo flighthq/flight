@@ -1,6 +1,6 @@
 import { unpackColorToLinear } from '@flighthq/color';
-import type { LinearColor } from '@flighthq/types';
 import type {
+  LinearColor,
   Camera3D,
   EmissiveMaterial,
   GlMeshMaterialRenderer,
@@ -9,6 +9,7 @@ import type {
   MeshGeometry,
   SceneLightBlock,
   SceneRenderProxy,
+  GlUnlitDefineKey,
 } from '@flighthq/types';
 import { EmissiveMaterialKind } from '@flighthq/types';
 
@@ -21,7 +22,6 @@ import {
   setGlMeshViewProjection,
 } from './glMeshProgram';
 import { getGlSceneRuntime } from './glSceneRuntime';
-import type { GlUnlitDefineKey } from './glUnlitPrelude';
 import { bindGlUnlitSurface, ensureGlUnlitProgram } from './glUnlitPrelude';
 
 // The built-in Emissive forward renderer (GlMeshMaterialRenderer for EmissiveMaterialKind). Self-

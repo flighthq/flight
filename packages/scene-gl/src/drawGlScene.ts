@@ -17,12 +17,12 @@ import type {
   SceneNode,
   SceneRenderProxy,
   SurfaceMaterial,
+  GlSceneDrawEntry,
 } from '@flighthq/types';
 import { DefaultMaterialKind } from '@flighthq/types';
 
 import { resolveGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { drawGlSceneParticleEmitter2Ds } from './glParticleEmitter3D';
-import type { GlSceneDrawEntry } from './glSceneRuntime';
 import { getGlSceneRuntime } from './glSceneRuntime';
 
 // True when a mesh should be GPU-skinned this draw: it carries a skin and its geometry has the joints0/

@@ -5,9 +5,9 @@ import type {
   MeshSkinBindPose,
   PrimitiveTopology,
   VertexAttribute,
+  GlMeshUpload,
 } from '@flighthq/types';
 
-import type { GlMeshUpload } from './glSceneRuntime';
 import { getGlSceneRuntime } from './glSceneRuntime';
 
 // Frees the GL objects owned by a mesh upload — the VAO and the vertex/index buffers. The upload

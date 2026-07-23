@@ -1,3 +1,4 @@
+import type { GlPbrDefineKey } from '@flighthq/types';
 // The shared Gl PBR prelude: the GLSL 300 es vertex + fragment uber-shader for the StandardPbr
 // forward-lit path and every PBR-extension variant. One source string is specialized per material
 // at compile time by prepending a define block (see GlPbrDefineKey / buildGlPbrDefineSource), so
@@ -27,35 +28,6 @@
 import { MAX_FORWARD_LIGHTS } from '@flighthq/types';
 
 import { GL_SKIN_VERTEX_DECLARATIONS_GLSL, GL_UV_TRANSFORM_VERTEX_GLSL } from './glMeshProgram';
-
-// The feature flags that select an uber-shader variant. Each toggles an #ifdef in the prelude and
-// is hashed into the program-cache key (buildGlPbrDefineKey), so distinct flag sets compile and
-// cache as distinct programs. The `has*Map` flags enable the textured paths of the standard block;
-// `alphaMaskEnabled` enables the alpha-cutoff discard for 'mask' materials. The extension flags
-// (`clearcoatEnabled` … `transmissionEnabled`) each enable one extension lobe; an extension
-// renderer sets exactly one. Map flags inside an extension's own textures are not part of the key
-// today — extension maps are bound when present and the lobe reads a uniform fallback otherwise.
-export interface GlPbrDefineKey {
-  alphaMaskEnabled: boolean;
-  anisotropyEnabled: boolean;
-  clearcoatEnabled: boolean;
-  hasBaseColorMap: boolean;
-  hasEmissiveMap: boolean;
-  hasMetallicRoughnessMap: boolean;
-  hasNormalMap: boolean;
-  hasOcclusionMap: boolean;
-  // Set by ensureGlPbrProgram from the render-state skinned-run flag, not the material renderer — skinning keys off geometry.
-  hasSkin?: boolean;
-  // Whether the base-color map carries a non-identity uv transform (HAS_UV_TRANSFORM); it drives the
-  // shared v_uv0 every standard map samples. Set only when hasBaseColorMap is also true.
-  hasUvTransform: boolean;
-  iridescenceEnabled: boolean;
-  sheenEnabled: boolean;
-  specularEnabled: boolean;
-  subsurfaceEnabled: boolean;
-  transmissionEnabled: boolean;
-}
-
 // A short, stable, order-independent string identity for a define key, used as the program-cache
 // map key. Two keys with the same flags produce the same string and so share a compiled program.
 // Standard map/alpha flags first, then one slot per extension lobe.

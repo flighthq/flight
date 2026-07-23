@@ -1,8 +1,8 @@
 import { ModifierSlot } from '@flighthq/types';
+import type { GlModifierSnippet } from '@flighthq/types';
 
 import { getGlSceneRuntime } from './glSceneRuntime';
 import { makeGlSceneState } from './glSceneTestHelper';
-import type { GlModifierSnippet } from './glShadedModifierSnippet';
 import { registerGlModifierSnippet, resolveGlModifierSnippet } from './glShadedModifierSnippet';
 
 function makeSnippet(overrides?: Partial<GlModifierSnippet>): GlModifierSnippet {

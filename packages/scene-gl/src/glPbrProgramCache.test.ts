@@ -1,4 +1,5 @@
-import type { GlPbrDefineKey } from './glPbrPrelude';
+import type { GlPbrDefineKey } from '@flighthq/types';
+
 import { compileGlPbrProgram, ensureGlPbrProgram } from './glPbrProgramCache';
 import { getGlSceneRuntime } from './glSceneRuntime';
 import { makeFakeGl2, makeGlSceneState } from './glSceneTestHelper';

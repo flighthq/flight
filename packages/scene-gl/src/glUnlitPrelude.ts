@@ -1,9 +1,14 @@
 import { hasImageResourcePixels } from '@flighthq/image';
 import { bindGlImageResourceTexture, bindGlVideoTexture } from '@flighthq/render-gl';
-import type { LinearColor } from '@flighthq/types';
-import type { GlRenderState, Texture, VideoTexture } from '@flighthq/types';
+import type {
+  GlUnlitDefineKey,
+  GlUnlitProgram,
+  LinearColor,
+  GlRenderState,
+  Texture,
+  VideoTexture,
+} from '@flighthq/types';
 
-import type { GlMeshProgram } from './glMeshProgram';
 import {
   GL_SKIN_VERTEX_DECLARATIONS_GLSL,
   GL_UV_TRANSFORM_VERTEX_GLSL,
@@ -11,41 +16,6 @@ import {
   ensureGlSceneProgram,
 } from './glMeshProgram';
 import { getGlSceneRuntime } from './glSceneRuntime';
-
-// The shared Gl unlit prelude: the GLSL 300 es vertex + fragment shader for every lighting-
-// independent flat-color material (Unlit, Emissive, VertexColor). All three output LINEAR color with
-// no lighting term — Unlit/VertexColor at unit intensity, Emissive scaled by emissiveStrength (values
-// > 1 drive bloom over the rgba16f scene target). One source string is specialized per material at
-// compile time by a define block (see GlUnlitDefineKey), so the color-map / alpha-mask / vertex-color
-// variants are #ifdef branches of one shader, never separate files. The CPU side passes the surface
-// color already decoded to linear (unpackColorToLinear), so the shader never decodes a packed color;
-// it only sRgb-decodes a sampled color-map texel.
-
-// The feature flags that select an unlit variant. `vertexColor` reads the mesh's color0 attribute and
-// multiplies it in (the VertexColor material); `hasColorMap` enables the sampled base/emissive map;
-// `alphaMaskEnabled` enables the alpha-cutoff discard for 'mask' materials.
-export interface GlUnlitDefineKey {
-  alphaMaskEnabled: boolean;
-  hasColorMap: boolean;
-  // Whether this variant deforms the vertex by a bone palette (HAS_SKIN). Set by ensureGlUnlitProgram
-  // from the render-state skinned-run flag, not the material renderer — skinning keys off geometry.
-  hasSkin?: boolean;
-  // Whether the color map carries a non-identity uv transform (HAS_UV_TRANSFORM). Set only when
-  // hasColorMap is also true, since the transform applies to the sampled map's coordinates.
-  hasUvTransform: boolean;
-  vertexColor: boolean;
-}
-
-// A compiled unlit variant plus its resolved uniform locations. Extends GlMeshProgram with the unlit
-// fragment uniforms; `locNormalMatrix` is null (unlit has no normals). One exists per distinct
-// GlUnlitDefineKey, cached on the GlRenderState under the `unlit:` program-cache namespace.
-export interface GlUnlitProgram extends GlMeshProgram {
-  locAlphaCutoff: WebGLUniformLocation | null;
-  locColor: WebGLUniformLocation | null;
-  locColorMap: WebGLUniformLocation | null;
-  locIntensity: WebGLUniformLocation | null;
-}
-
 // Uploads the resolved unlit surface uniforms shared by all three unlit materials: the linear color
 // (already sRgb-decoded on the CPU), the intensity scale (1 for Unlit/VertexColor, emissiveStrength
 // for Emissive), the optional color map on texture unit 0, and the alpha-mask cutoff. The caller has

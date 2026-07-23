@@ -11,8 +11,8 @@ import {
   toonModifierDefinition,
   vertexDisplaceModifierDefinition,
 } from '@flighthq/shading';
-import type { LinearColor } from '@flighthq/types';
 import type {
+  LinearColor,
   AnimatedNormalModifier,
   DissolveModifier,
   EmissiveModifier,
@@ -24,10 +24,11 @@ import type {
   Texture,
   ToonModifier,
   VertexDisplaceModifier,
+  GlModifierBindContext,
+  GlModifierSnippet,
 } from '@flighthq/types';
 import { EmissiveModifierFacing, FogModifierMode, VertexDisplaceModifierSource } from '@flighthq/types';
 
-import type { GlModifierBindContext, GlModifierSnippet } from './glShadedModifierSnippet';
 import { registerGlModifierSnippet } from './glShadedModifierSnippet';
 
 // The built-in GL modifier snippets — the backend halves of @flighthq/shading's eight built-in

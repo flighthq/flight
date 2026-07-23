@@ -1,8 +1,7 @@
 import { createBoxMeshGeometry, createMeshGeometry, setMeshGeometrySkinBindPose } from '@flighthq/mesh';
-import type { MeshSkinBindPose, VertexAttributeLayout } from '@flighthq/types';
+import type { MeshSkinBindPose, VertexAttributeLayout, GlMeshUpload } from '@flighthq/types';
 
 import { destroyGlMeshUpload, ensureGlMeshUpload } from './glMeshUpload';
-import type { GlMeshUpload } from './glSceneRuntime';
 import { getGlSceneRuntime } from './glSceneRuntime';
 import { makeGlSceneState } from './glSceneTestHelper';
 

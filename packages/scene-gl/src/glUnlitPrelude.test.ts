@@ -1,9 +1,7 @@
-import type { LinearColor } from '@flighthq/types';
-import type { VideoTexture } from '@flighthq/types';
+import type { LinearColor, VideoTexture, GlUnlitDefineKey } from '@flighthq/types';
 
 import { getGlSceneRuntime } from './glSceneRuntime';
 import { makeFakeGl2, makeGlSceneState } from './glSceneTestHelper';
-import type { GlUnlitDefineKey } from './glUnlitPrelude';
 import {
   bindGlUnlitSurface,
   bindGlUnlitVideoSurface,

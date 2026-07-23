@@ -1,43 +1,8 @@
 import { hasImageResourcePixels } from '@flighthq/image';
 import { bindGlImageResourceTexture } from '@flighthq/render-gl';
-import type { LinearColor } from '@flighthq/types';
-import type { GlRenderState, Texture } from '@flighthq/types';
+import type { GlMatcapDefineKey, GlMatcapProgram, LinearColor, GlRenderState, Texture } from '@flighthq/types';
 
-import type { GlMeshProgram } from './glMeshProgram';
 import { compileGlProgram, ensureGlSceneProgram } from './glMeshProgram';
-
-// The shared Gl matcap prelude: the GLSL 300 es vertex + fragment shader for the lighting-
-// independent Matcap (material-capture) material. A matcap is a prebaked-lit sphere texture; the
-// fragment stage samples it by the view-space normal projected to 2D (uv = viewNormal.xy * 0.5 +
-// 0.5), giving full stylized "lighting" with no scene lights. The view-space normal is built in the
-// vertex stage as `mat3(u_view) * (u_normalMatrix * a_normal)`: the normal matrix takes the object
-// normal into world space (handling model rotation/scale), and the camera view matrix rotates it
-// into view space. The output is LINEAR — the sampled matcap rgb is sRgb-decoded in the shader and
-// multiplied by the linear `tint` (already sRgb-decoded on the CPU via unpackColorToLinear, so the
-// shader never decodes the tint again). The effect pipeline owns tonemap/gamma. One source string is
-// specialized per material at compile time by a define block (see GlMatcapDefineKey): the matcap /
-// alpha-mask variants are #ifdef branches of one shader, never separate files.
-
-// The feature flags that select a matcap variant. `hasMatcap` enables the sampled matcap texture
-// (when absent the shader outputs the tint alone); `alphaMaskEnabled` enables the alpha-cutoff
-// discard for 'mask' materials.
-export interface GlMatcapDefineKey {
-  alphaMaskEnabled: boolean;
-  hasMatcap: boolean;
-}
-
-// A compiled matcap variant plus its resolved uniform locations. Extends GlMeshProgram with the
-// matcap fragment/vertex uniforms: `locView` (the camera view matrix, used to rotate the world-space
-// normal into view space) and `locNormalMatrix` (resolved from u_normalMatrix — matcap needs the
-// normal, unlike the unlit family). One exists per distinct GlMatcapDefineKey, cached on the
-// GlRenderState under the `matcap:` program-cache namespace.
-export interface GlMatcapProgram extends GlMeshProgram {
-  locAlphaCutoff: WebGLUniformLocation | null;
-  locMatcap: WebGLUniformLocation | null;
-  locTint: WebGLUniformLocation | null;
-  locView: WebGLUniformLocation | null;
-}
-
 // Uploads the resolved matcap surface uniforms: the linear tint (already sRgb-decoded on the CPU),
 // the optional matcap texture on texture unit 0, and the alpha-mask cutoff. The caller has already
 // selected the program (beginGlMeshDraw), set the view-projection, and uploaded u_view.

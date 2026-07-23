@@ -1,6 +1,5 @@
-import type { LinearColor } from '@flighthq/types';
+import type { LinearColor, GlMatcapDefineKey } from '@flighthq/types';
 
-import type { GlMatcapDefineKey } from './glMatcapPrelude';
 import {
   bindGlMatcapSurface,
   buildGlMatcapDefineKey,
