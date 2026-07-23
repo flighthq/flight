@@ -1,6 +1,11 @@
-import type { AppBackend, AppLoginItem, AppPathKind, MenuItemTemplate } from '@flighthq/types';
-
-import type { ElectronApi, ElectronMenuItemOptions } from './electronModule';
+import type {
+  AppBackend,
+  AppLoginItem,
+  AppPathKind,
+  MenuItemTemplate,
+  ElectronApi,
+  ElectronMenuItemOptions,
+} from '@flighthq/types';
 
 // Maps Flight's AppBackend onto Electron's `app` module (plus `app.dock` on macOs). Dock-only
 // operations no-op or return -1 where there is no dock. Subscribe methods wire an electron event

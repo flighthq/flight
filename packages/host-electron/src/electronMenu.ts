@@ -1,6 +1,4 @@
-import type { MenuBackend, MenuItemTemplate } from '@flighthq/types';
-
-import type { ElectronApi, ElectronMenuItemOptions } from './electronModule';
+import type { MenuBackend, MenuItemTemplate, ElectronApi, ElectronMenuItemOptions } from '@flighthq/types';
 
 // Maps Flight's MenuBackend onto Electron's Menu module. Flight menu items are plain templates with a
 // stable `id`; Electron delivers selection through per-item `click` callbacks, so the seam funnels

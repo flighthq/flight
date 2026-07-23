@@ -1,4 +1,5 @@
-import type { ElectronApi, ElectronNotificationOptions } from './electronModule';
+import type { ElectronApi, ElectronNotificationOptions } from '@flighthq/types';
+
 import { createElectronNotificationBackend } from './electronNotification';
 
 interface FakeNotification {

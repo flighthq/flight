@@ -1,6 +1,4 @@
-import type { IpcBackend } from '@flighthq/types';
-
-import type { ElectronApi } from './electronModule';
+import type { IpcBackend, ElectronApi } from '@flighthq/types';
 
 // Maps Flight's IpcBackend onto Electron's ipcMain. This is the main-process side: it can receive
 // messages from renderers (subscribe) but cannot itself send or invoke without a webContents target,

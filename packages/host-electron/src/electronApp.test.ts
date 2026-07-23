@@ -1,5 +1,6 @@
+import type { ElectronApi, ElectronMenu, ElectronMenuItemOptions } from '@flighthq/types';
+
 import { createElectronAppBackend } from './electronApp';
-import type { ElectronApi, ElectronMenu, ElectronMenuItemOptions } from './electronModule';
 
 function fakeElectron(): {
   electron: ElectronApi;

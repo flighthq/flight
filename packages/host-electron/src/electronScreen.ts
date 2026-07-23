@@ -1,6 +1,11 @@
-import type { ScreenBackend, ScreenChangeEvent, ScreenChangeKind, ScreenInfo } from '@flighthq/types';
-
-import type { ElectronApi, ElectronDisplay } from './electronModule';
+import type {
+  ScreenBackend,
+  ScreenChangeEvent,
+  ScreenChangeKind,
+  ScreenInfo,
+  ElectronApi,
+  ElectronDisplay,
+} from '@flighthq/types';
 
 // Maps Flight's ScreenBackend onto Electron's `screen` module. Enumeration writes into caller-owned
 // `out` values so hot paths allocate nothing. subscribe wires all three of Electron's display change

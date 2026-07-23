@@ -1,7 +1,5 @@
 import { emitSignal } from '@flighthq/signals';
-import type { ApplicationWindow, WindowBackend } from '@flighthq/types';
-
-import type { ElectronApi, ElectronBrowserWindow } from './electronModule';
+import type { ApplicationWindow, WindowBackend, ElectronApi, ElectronBrowserWindow } from '@flighthq/types';
 
 // Maps Flight's WindowBackend onto Electron's BrowserWindow, one BrowserWindow per ApplicationWindow.
 // open() constructs the real OS window from WindowOptions and wires BrowserWindow OS events back to

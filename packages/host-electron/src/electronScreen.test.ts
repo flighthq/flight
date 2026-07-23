@@ -1,6 +1,5 @@
-import type { ScreenInfo } from '@flighthq/types';
+import type { ScreenInfo, ElectronApi, ElectronDisplay } from '@flighthq/types';
 
-import type { ElectronApi, ElectronDisplay } from './electronModule';
 import { createElectronScreenBackend } from './electronScreen';
 
 function display(id: number, x: number): ElectronDisplay {

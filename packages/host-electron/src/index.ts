@@ -3,7 +3,7 @@ export * from './electronClipboard';
 export * from './electronDialog';
 export * from './electronIpc';
 export * from './electronMenu';
-export * from './electronModule';
+export * from '@flighthq/types';
 export * from './electronNotification';
 export * from './electronPlatform';
 export * from './electronPower';

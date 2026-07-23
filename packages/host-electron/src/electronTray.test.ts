@@ -1,6 +1,5 @@
-import type { TrayEventType } from '@flighthq/types';
+import type { TrayEventType, ElectronApi, ElectronMenu, ElectronMenuItemOptions, ElectronTray } from '@flighthq/types';
 
-import type { ElectronApi, ElectronMenu, ElectronMenuItemOptions, ElectronTray } from './electronModule';
 import { createElectronTrayBackend } from './electronTray';
 
 interface FakeTray extends ElectronTray {

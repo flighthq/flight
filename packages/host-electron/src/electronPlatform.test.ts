@@ -1,6 +1,5 @@
-import type { PlatformInfo } from '@flighthq/types';
+import type { PlatformInfo, ElectronApi } from '@flighthq/types';
 
-import type { ElectronApi } from './electronModule';
 import { createElectronPlatformBackend } from './electronPlatform';
 
 function fakeElectron(): ElectronApi {
