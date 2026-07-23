@@ -1,17 +1,7 @@
 import { createEntity } from '@flighthq/entity';
 import { cloneVector3, createVector3, setVector3 } from '@flighthq/geometry';
-import type { DirectionalLight, Vector3Like } from '@flighthq/types';
+import type { DirectionalLight, DirectionalLightOptions } from '@flighthq/types';
 import { DirectionalLightKind } from '@flighthq/types';
-
-export interface DirectionalLightOptions {
-  castsShadow?: boolean;
-  color?: number;
-  direction?: Readonly<Vector3Like>;
-  intensity?: number;
-  normalBias?: number;
-  pcfRadius?: number;
-  shadowBias?: number;
-}
 
 // Independent copy of a directional light's data, including a fresh `direction` vector.
 export function cloneDirectionalLight(source: Readonly<DirectionalLight>): DirectionalLight {

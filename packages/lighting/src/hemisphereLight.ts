@@ -1,12 +1,6 @@
 import { createEntity } from '@flighthq/entity';
-import type { HemisphereLight } from '@flighthq/types';
+import type { HemisphereLight, HemisphereLightOptions } from '@flighthq/types';
 import { HemisphereLightKind } from '@flighthq/types';
-
-export interface HemisphereLightOptions {
-  groundColor?: number;
-  intensity?: number;
-  skyColor?: number;
-}
 
 // Independent copy of a hemisphere light's data. The `kind` discriminant is carried over.
 export function cloneHemisphereLight(source: Readonly<HemisphereLight>): HemisphereLight {

@@ -1,18 +1,7 @@
 import { createEntity } from '@flighthq/entity';
 import { cloneVector3, createVector3 } from '@flighthq/geometry';
-import type { PointLight, Vector3Like } from '@flighthq/types';
+import type { PointLight, PointLightOptions } from '@flighthq/types';
 import { PointLightKind } from '@flighthq/types';
-
-export interface PointLightOptions {
-  castsShadow?: boolean;
-  color?: number;
-  intensity?: number;
-  normalBias?: number;
-  pcfRadius?: number;
-  position?: Readonly<Vector3Like>;
-  range?: number;
-  shadowBias?: number;
-}
 
 // Independent copy of a point light's data, including a fresh `position` vector.
 export function clonePointLight(source: Readonly<PointLight>): PointLight {

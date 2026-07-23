@@ -1,23 +1,7 @@
 import { createEntity } from '@flighthq/entity';
 import { cloneVector3, createVector3, normalizeVector3, setVector3 } from '@flighthq/geometry';
-import type { AreaLight, Vector3Like } from '@flighthq/types';
+import type { AreaLight, AreaLightOptions, Vector3Like } from '@flighthq/types';
 import { AreaLightKind } from '@flighthq/types';
-
-export interface AreaLightOptions {
-  castsShadow?: boolean;
-  color?: number;
-  direction?: Readonly<Vector3Like>;
-  intensity?: number;
-  normalBias?: number;
-  pcfRadius?: number;
-  position?: Readonly<Vector3Like>;
-  range?: number;
-  // Half-extent axis along the rectangle's width; its length encodes the half-width.
-  right?: Readonly<Vector3Like>;
-  shadowBias?: number;
-  // Half-extent axis along the rectangle's height; its length encodes the half-height.
-  up?: Readonly<Vector3Like>;
-}
 
 // Independent copy of an area light's data, including fresh position/direction/right/up vectors.
 export function cloneAreaLight(source: Readonly<AreaLight>): AreaLight {

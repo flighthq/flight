@@ -1,11 +1,6 @@
 import { createEntity } from '@flighthq/entity';
-import type { AmbientLight } from '@flighthq/types';
+import type { AmbientLight, AmbientLightOptions } from '@flighthq/types';
 import { AmbientLightKind } from '@flighthq/types';
-
-export interface AmbientLightOptions {
-  color?: number;
-  intensity?: number;
-}
 
 // Independent copy of an ambient light's data. The `kind` discriminant is carried over.
 export function cloneAmbientLight(source: Readonly<AmbientLight>): AmbientLight {
