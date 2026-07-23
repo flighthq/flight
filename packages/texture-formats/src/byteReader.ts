@@ -1,16 +1,13 @@
-// A minimal cursor over a byte buffer, shared by every container parser. KTX2, DDS, and the Basis
-// container are little-endian (the `read*U16`/`U32`/`U64` helpers); ATF stores its block and header
-// lengths big-endian, so `readByteReaderU24BigEndian` reads a legacy ATF's 3-byte block-length prefix
-// and `readByteReaderU32BigEndian` reads a versioned ATF's 4-byte block/header lengths. The cursor
-// is a plain `{ view, offset }` value with an advancing `offset`; read functions advance it, and every
-// parser guards a read against `hasByteReaderBytes` first so a truncated file returns a sentinel `null`
-// rather than throwing a `DataView` `RangeError`. `readByteReaderU64` returns the value as a JavaScript
-// number, exact for the sub-2^53 offsets/lengths real containers use.
+import type { ByteReader } from '@flighthq/types';
 
-export interface ByteReader {
-  readonly view: DataView;
-  offset: number;
-}
+// The container parsers here share the `ByteReader` cursor. KTX2, DDS, and the Basis container are
+// little-endian (the `read*U16`/`U32`/`U64` helpers); ATF stores its block and header lengths
+// big-endian, so `readByteReaderU24BigEndian` reads a legacy ATF's 3-byte block-length prefix and
+// `readByteReaderU32BigEndian` reads a versioned ATF's 4-byte block/header lengths. Read functions
+// advance the cursor's `offset`, and every parser guards a read against `hasByteReaderBytes` first so
+// a truncated file returns a sentinel `null` rather than throwing a `DataView` `RangeError`.
+// `readByteReaderU64` returns the value as a JavaScript number, exact for the sub-2^53
+// offsets/lengths real containers use.
 
 export function createByteReader(bytes: Readonly<Uint8Array>, offset = 0): ByteReader {
   return { view: new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength), offset };
