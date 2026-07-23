@@ -14,8 +14,6 @@ import type {
 import { initializeTween } from './internal';
 import { defaultManager } from './tweenManager';
 
-export type { NumericProps, StopTweenOptions, Tween, TweenManager, TweenOptions } from '@flighthq/types';
-
 export function applyTween<T extends object>(
   manager: TweenManager,
   target: T,
