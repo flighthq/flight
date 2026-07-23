@@ -1,5 +1,6 @@
+import type { TauriApi } from '@flighthq/types';
+
 import { createTauriClipboardBackend } from './tauriClipboard';
-import type { TauriApi } from './tauriModule';
 
 function fakeTauri() {
   const store = { text: '' };

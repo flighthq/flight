@@ -1,6 +1,13 @@
-import type { MenuItemTemplate, TrayBackend, TrayEventData, TrayEventType } from '@flighthq/types';
-
-import type { TauriApi, TauriMenuItemHandle, TauriTrayIcon, TauriTrayIconEvent } from './tauriModule';
+import type {
+  MenuItemTemplate,
+  TrayBackend,
+  TrayEventData,
+  TrayEventType,
+  TauriApi,
+  TauriMenuItemHandle,
+  TauriTrayIcon,
+  TauriTrayIconEvent,
+} from '@flighthq/types';
 
 // Maps Flight's TrayBackend onto Tauri's `@tauri-apps/api/tray`. Tauri's `TrayIcon.new` is async, while
 // TrayBackend.create is synchronous and must return a numeric id now — so create allocates the id

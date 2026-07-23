@@ -1,6 +1,4 @@
-import type { MenuBackend, MenuItemTemplate } from '@flighthq/types';
-
-import type { TauriApi, TauriMenuItemHandle } from './tauriModule';
+import type { MenuBackend, MenuItemTemplate, TauriApi, TauriMenuItemHandle } from '@flighthq/types';
 
 // Maps Flight's MenuBackend onto Tauri's `@tauri-apps/api/menu`. Tauri builds menus through async
 // static factories (`Menu.new`, `MenuItem.new`, `Submenu.new`, `PredefinedMenuItem.new`), so the sync

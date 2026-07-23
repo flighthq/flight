@@ -1,6 +1,4 @@
-import type { PlatformBackend, PlatformName } from '@flighthq/types';
-
-import type { TauriApi } from './tauriModule';
+import type { PlatformBackend, PlatformName, TauriApi } from '@flighthq/types';
 
 // Maps Flight's PlatformBackend onto Tauri's `@tauri-apps/plugin-os`. In Tauri v2 the os plugin's
 // accessors are synchronous (resolved from values injected at startup), so the sync getInfo maps

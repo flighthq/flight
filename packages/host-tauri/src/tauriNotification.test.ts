@@ -1,4 +1,5 @@
-import type { TauriApi, TauriNotificationOptions, TauriNotificationPermission } from './tauriModule';
+import type { TauriApi, TauriNotificationOptions, TauriNotificationPermission } from '@flighthq/types';
+
 import { createTauriNotificationBackend } from './tauriNotification';
 
 function fakeTauri(granted = true, permission: TauriNotificationPermission = 'granted') {

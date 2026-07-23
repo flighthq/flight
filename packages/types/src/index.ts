@@ -506,6 +506,7 @@ export * from './SurfaceMismatch';
 export * from './SurfaceRegion';
 export * from './SurfaceResizeMode';
 export * from './TaaEffect';
+export * from './TauriApi';
 export * from './TextAutoSize';
 export * from './TextBoundsSpec';
 export * from './TextDirection';

@@ -1,7 +1,7 @@
 import { createApplicationWindow } from '@flighthq/application';
 import { connectSignal } from '@flighthq/signals';
+import type { TauriApi, TauriLogicalSizeLike, TauriPhysicalPositionLike } from '@flighthq/types';
 
-import type { TauriApi, TauriLogicalSizeLike, TauriPhysicalPositionLike } from './tauriModule';
 import { createTauriWindowBackend } from './tauriWindow';
 
 interface FakeWindowState {

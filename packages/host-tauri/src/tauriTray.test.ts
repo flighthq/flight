@@ -1,4 +1,5 @@
-import type { TauriApi, TauriTrayIconEvent, TauriTrayIconOptions } from './tauriModule';
+import type { TauriApi, TauriTrayIconEvent, TauriTrayIconOptions } from '@flighthq/types';
+
 import { createTauriTrayBackend } from './tauriTray';
 
 function fakeTauri() {

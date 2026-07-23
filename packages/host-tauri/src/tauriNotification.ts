@@ -1,6 +1,4 @@
-import type { NotificationBackend, NotificationCapabilities, NotificationPermission } from '@flighthq/types';
-
-import type { TauriApi } from './tauriModule';
+import type { NotificationBackend, NotificationCapabilities, NotificationPermission, TauriApi } from '@flighthq/types';
 
 // Maps Flight's NotificationBackend onto Tauri's `@tauri-apps/plugin-notification`. `notify` shows a
 // notification via the fire-and-forget `sendNotification` and resolves the request's id (Tauri returns

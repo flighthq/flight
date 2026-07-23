@@ -1,6 +1,5 @@
-import type { PlatformInfo } from '@flighthq/types';
+import type { PlatformInfo, TauriApi } from '@flighthq/types';
 
-import type { TauriApi } from './tauriModule';
 import { createTauriPlatformBackend } from './tauriPlatform';
 
 function fakeTauri(platform: string): TauriApi {

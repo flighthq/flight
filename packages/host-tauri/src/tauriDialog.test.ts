@@ -1,5 +1,6 @@
+import type { TauriApi, TauriDialogOpenOptions } from '@flighthq/types';
+
 import { createTauriDialogBackend } from './tauriDialog';
-import type { TauriApi, TauriDialogOpenOptions } from './tauriModule';
 
 interface DialogCalls {
   open: TauriDialogOpenOptions[];
