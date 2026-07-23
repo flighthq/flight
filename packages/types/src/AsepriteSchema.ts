@@ -1,3 +1,5 @@
+import type { SpritesheetData } from './SpritesheetData';
+
 // Aseprite JSON export schema — field names as they appear in the exported file.
 // Reference: https://www.aseprite.org/docs/cli/#sheet-json
 // Aseprite exports either a Hash variant (frames is a dict keyed by name) or
@@ -76,3 +78,14 @@ export interface AsepriteArrayDocument {
 }
 
 export type AsepriteDocument = AsepriteArrayDocument | AsepriteHashDocument;
+
+// The result of parsing an Aseprite export: the mapped SpritesheetData plus the raw parsed document.
+export interface AsepriteParsed {
+  data: SpritesheetData;
+  document: AsepriteDocument;
+}
+
+export interface AsepriteSerializeOptions {
+  /** Override the output format variant. Defaults to the variant of `existing`, or `'hash'`. */
+  variant?: 'array' | 'hash';
+}

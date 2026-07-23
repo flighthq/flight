@@ -1,5 +1,4 @@
 import type { SpritesheetData } from '@flighthq/spritesheet';
-
 import type {
   AsepriteArrayDocument,
   AsepriteArrayFrame,
@@ -7,12 +6,8 @@ import type {
   AsepriteDocument,
   AsepriteHashDocument,
   AsepriteMeta,
-} from './asepriteSchema';
-
-export interface AsepriteSerializeOptions {
-  /** Override the output format variant. Defaults to the variant of `existing`, or `'hash'`. */
-  variant?: 'array' | 'hash';
-}
+  AsepriteSerializeOptions,
+} from '@flighthq/types';
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
 

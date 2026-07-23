@@ -1,6 +1,5 @@
 import type { SpritesheetData, SpritesheetFrameData } from '@flighthq/spritesheet';
-
-import type { CocosPlistDocument, CocosPlistFrame } from './cocosPlistSchema';
+import type { CocosPlistDocument, CocosPlistFrame } from '@flighthq/types';
 
 /** Serialise a SpritesheetData to a Cocos Creator / Cocos2d-x plist XML atlas string.
  *

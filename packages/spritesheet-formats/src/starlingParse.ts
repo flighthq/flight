@@ -6,19 +6,13 @@ import {
 } from '@flighthq/spritesheet';
 import { createTextureAtlas } from '@flighthq/textureatlas';
 import { parseTextureAtlasStarlingXml } from '@flighthq/textureatlas-formats';
-import type { TextureAtlasRegion } from '@flighthq/types';
-
-import type { StarlingDocument, StarlingSubTexture } from './starlingSchema';
-
-export interface StarlingParsed {
-  data: SpritesheetData;
-  document: StarlingDocument;
-}
-
-export interface StarlingParseOptions {
-  /** Default duration (ms) per frame when building inferred animations. Defaults to 100. */
-  frameDuration?: number;
-}
+import type {
+  TextureAtlasRegion,
+  StarlingDocument,
+  StarlingParseOptions,
+  StarlingParsed,
+  StarlingSubTexture,
+} from '@flighthq/types';
 
 // ─── Minimal XML attribute parser ────────────────────────────────────────────
 

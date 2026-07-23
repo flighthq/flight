@@ -1,6 +1,5 @@
 import type { SpritesheetData } from '@flighthq/spritesheet';
-
-import type { StarlingDocument, StarlingSubTexture } from './starlingSchema';
+import type { StarlingDocument, StarlingSubTexture } from '@flighthq/types';
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
 

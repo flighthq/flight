@@ -1,3 +1,5 @@
+import type { SpritesheetData } from './SpritesheetData';
+
 // Starling / Sparrow spritesheet XML schema — field names as they appear in the file.
 // Reference: https://doc.starling-framework.org/current/starling/textures/TextureAtlas.html
 // This is the same format used by OpenFL's AssetType.IMAGE texture atlas support and
@@ -34,4 +36,15 @@ export interface StarlingDocument {
   /** Relative path to the atlas image file, value of the `imagePath` attribute. */
   imagePath: string;
   subTextures: StarlingSubTexture[];
+}
+
+// The result of parsing a Starling atlas: the mapped SpritesheetData plus the raw parsed document.
+export interface StarlingParsed {
+  data: SpritesheetData;
+  document: StarlingDocument;
+}
+
+export interface StarlingParseOptions {
+  /** Default duration (ms) per frame when building inferred animations. Defaults to 100. */
+  frameDuration?: number;
 }

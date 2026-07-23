@@ -6,14 +6,13 @@ import {
 } from '@flighthq/spritesheet';
 import { createTextureAtlas } from '@flighthq/textureatlas';
 import { parseTextureAtlasPackerDocument } from '@flighthq/textureatlas-formats';
-import type { TextureAtlasRegion } from '@flighthq/types';
-
-import type { TexturePackerDocument, TexturePackerFrameTag, TexturePackerMeta } from './texturePackerSchema';
-
-export interface TexturePackerParsed {
-  data: SpritesheetData;
-  document: TexturePackerDocument;
-}
+import type {
+  TextureAtlasRegion,
+  TexturePackerDocument,
+  TexturePackerFrameTag,
+  TexturePackerMeta,
+  TexturePackerParsed,
+} from '@flighthq/types';
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
 

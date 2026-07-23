@@ -1,5 +1,4 @@
 import type { SpritesheetData } from '@flighthq/spritesheet';
-
 import type {
   TexturePackerArrayDocument,
   TexturePackerArrayFrame,
@@ -7,12 +6,8 @@ import type {
   TexturePackerHashDocument,
   TexturePackerHashFrame,
   TexturePackerMeta,
-} from './texturePackerSchema';
-
-export interface TexturePackerSerializeOptions {
-  /** Override the output format variant. Defaults to the variant of `existing`, or `'hash'`. */
-  variant?: 'array' | 'hash';
-}
+  TexturePackerSerializeOptions,
+} from '@flighthq/types';
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
 
