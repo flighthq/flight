@@ -1,6 +1,6 @@
 import { createEntity } from '@flighthq/entity';
 import { createMatrix4, createVector2, inverseMatrix4, multiplyMatrix4, setMatrix4LookAt } from '@flighthq/geometry';
-import type { Camera3D, Matrix4Like, Projection, Vector3Like } from '@flighthq/types';
+import type { Camera3D, Camera3DOptions, Matrix4Like, Vector3Like } from '@flighthq/types';
 
 import { setProjectionMatrix4 } from './projection';
 
@@ -104,13 +104,6 @@ export function updateCamera3DInverseViewProjection(camera: Camera3D, aspect: nu
     camera.inverseViewProjection.m.set(__scratchInverse.m);
   }
   return ok;
-}
-
-// Structural inputs for createCamera3D.
-export interface Camera3DOptions {
-  far: number;
-  near: number;
-  projection: Projection;
 }
 
 // Scratch matrices reused by the view-projection helpers. Single-threaded; not re-entrant.
