@@ -1,8 +1,8 @@
 import { createTransform3D } from '@flighthq/geometry';
 import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { createMeshGeometry } from '@flighthq/mesh';
-import type { Scene } from '@flighthq/scene';
 import { createSceneFromDocument } from '@flighthq/scene';
+import type { Scene } from '@flighthq/types';
 import type {
   BlinnPhongMaterial,
   Material,

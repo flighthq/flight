@@ -1,11 +1,11 @@
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
-import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene } from '@flighthq/scene';
 import { emitSignal } from '@flighthq/signals';
 import { createTexture } from '@flighthq/texture';
 import { createTweenManager, hasTweensOf, updateTweens } from '@flighthq/tween';
+import type { Scene } from '@flighthq/types';
 import type {
   EmbeddedImageResourceReference,
   ImageResource,

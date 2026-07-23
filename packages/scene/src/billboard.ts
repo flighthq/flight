@@ -13,7 +13,6 @@ import { BillboardKind } from '@flighthq/types';
 
 import { createSceneNode, getSceneNodeRuntime } from './sceneNode';
 
-export type { Billboard, BillboardMode, BillboardRuntime } from '@flighthq/types';
 export { BillboardKind } from '@flighthq/types';
 
 // Allocates a camera-facing Billboard node: a SceneNode (so it shares the scene hierarchy with mesh

@@ -14,9 +14,9 @@ import {
   setNodeLocalMatrix4,
 } from '@flighthq/node';
 import type { Matrix4, SceneNode } from '@flighthq/types';
+import type { SceneNodeRuntime } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
-import type { SceneNodeRuntime } from './sceneNode';
 import {
   createSceneNode,
   createSceneNodeRuntime,
