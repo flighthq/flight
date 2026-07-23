@@ -1,8 +1,6 @@
 import type { Spring2D, SpringConfig } from '@flighthq/types';
 
-import { createSpring } from './createSpring';
-import { isSpringSettled } from './isSpringSettled';
-import { updateSpring } from './updateSpring';
+import { createSpring, isSpringSettled, updateSpring } from './spring';
 
 // Allocate a 2D spring as a pair of scalar springs, each at its `value*` (default 0) and `velocity*`
 // (default 0).
