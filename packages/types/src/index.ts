@@ -540,6 +540,7 @@ export * from './Tween';
 export * from './TweenManager';
 export * from './TweenManagerOptions';
 export * from './TweenOptions';
+export * from './TweenStaggerOptions';
 export * from './TweenPropertyDetail';
 export * from './UnlitMaterial';
 export * from './Updater';
