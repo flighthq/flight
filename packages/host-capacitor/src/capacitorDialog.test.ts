@@ -1,5 +1,6 @@
+import type { CapacitorApi } from '@flighthq/types';
+
 import { createCapacitorDialogBackend } from './capacitorDialog';
-import type { CapacitorApi } from './capacitorModule';
 
 function fakeCapacitor(promptResult = { value: 'typed', cancelled: false }) {
   const calls: string[] = [];

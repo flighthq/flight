@@ -1,6 +1,10 @@
-import type { StatusBarBackend, StatusBarInfo, StatusBarStyle } from '@flighthq/types';
-
-import type { CapacitorApi, CapacitorStatusBarInfoResult } from './capacitorModule';
+import type {
+  StatusBarBackend,
+  StatusBarInfo,
+  StatusBarStyle,
+  CapacitorApi,
+  CapacitorStatusBarInfoResult,
+} from '@flighthq/types';
 
 // Maps Flight's StatusBarBackend onto Capacitor's `@capacitor/status-bar`. The setters are async and fire
 // fire-and-forget: setStyle, setBackgroundColor (a packed RGBA int → a `#RRGGBB` hex string, dropping

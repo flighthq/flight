@@ -10,8 +10,8 @@ import { getSoftKeyboardBackend, setSoftKeyboardBackend } from '@flighthq/keyboa
 import { getNotificationBackend, setNotificationBackend } from '@flighthq/notification';
 import { getShareBackend, setShareBackend } from '@flighthq/share';
 import { getStatusBarBackend, setStatusBarBackend } from '@flighthq/statusbar';
+import type { CapacitorApi } from '@flighthq/types';
 
-import type { CapacitorApi } from './capacitorModule';
 import { registerCapacitorBackends } from './capacitorRegister';
 
 // A fake Capacitor API broad enough that every createCapacitor*Backend constructs without touching

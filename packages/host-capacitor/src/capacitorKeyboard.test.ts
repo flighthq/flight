@@ -1,8 +1,7 @@
-import type { SoftKeyboardInfo } from '@flighthq/types';
+import type { CapacitorApi, SoftKeyboardInfo } from '@flighthq/types';
 import { SoftKeyboardResizeBodyKind } from '@flighthq/types';
 
 import { createCapacitorKeyboardBackend } from './capacitorKeyboard';
-import type { CapacitorApi } from './capacitorModule';
 
 const flush = async () => {
   await Promise.resolve();

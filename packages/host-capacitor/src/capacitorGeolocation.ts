@@ -1,6 +1,11 @@
-import type { GeolocationBackend, GeolocationPermissionState, GeoPosition, GeoPositionResult } from '@flighthq/types';
-
-import type { CapacitorApi, CapacitorPosition } from './capacitorModule';
+import type {
+  GeolocationBackend,
+  GeolocationPermissionState,
+  GeoPosition,
+  GeoPositionResult,
+  CapacitorApi,
+  CapacitorPosition,
+} from '@flighthq/types';
 
 // Maps Flight's GeolocationBackend onto Capacitor's `@capacitor/geolocation`. getCurrentPosition and the
 // permission calls are async and map directly. `watchPosition` is the one sync/async seam: the backend

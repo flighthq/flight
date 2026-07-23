@@ -1,6 +1,5 @@
-import type { StatusBarInfo } from '@flighthq/types';
+import type { StatusBarInfo, CapacitorApi } from '@flighthq/types';
 
-import type { CapacitorApi } from './capacitorModule';
 import { createCapacitorStatusBarBackend } from './capacitorStatusBar';
 
 const flush = async () => {

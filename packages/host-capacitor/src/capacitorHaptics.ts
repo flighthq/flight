@@ -1,6 +1,10 @@
-import type { HapticImpactStyle, HapticsBackend, HapticsCapabilities, HapticNotificationType } from '@flighthq/types';
-
-import type { CapacitorApi } from './capacitorModule';
+import type {
+  HapticImpactStyle,
+  HapticsBackend,
+  HapticsCapabilities,
+  HapticNotificationType,
+  CapacitorApi,
+} from '@flighthq/types';
 
 // Maps Flight's HapticsBackend onto Capacitor's `@capacitor/haptics`. Every Capacitor call is an async
 // void, whereas the HapticsBackend triggers are synchronous booleans, so each adapter method fires the

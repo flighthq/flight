@@ -1,5 +1,6 @@
+import type { CapacitorApi, CapacitorPosition } from '@flighthq/types';
+
 import { createCapacitorGeolocationBackend } from './capacitorGeolocation';
-import type { CapacitorApi, CapacitorPosition } from './capacitorModule';
 
 const flush = async () => {
   await Promise.resolve();

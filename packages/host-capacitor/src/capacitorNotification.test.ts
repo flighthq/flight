@@ -1,4 +1,5 @@
-import type { CapacitorApi } from './capacitorModule';
+import type { CapacitorApi } from '@flighthq/types';
+
 import { createCapacitorNotificationBackend } from './capacitorNotification';
 
 const flush = async () => {

@@ -76,6 +76,7 @@ export * from './CanvasEffectSourceMode';
 export * from './CanvasRenderTarget';
 export * from './CanvasShapeDrawState';
 export * from './CanvasShapeRegistry';
+export * from './CapacitorApi';
 export * from './Capsule';
 export * from './CaptureBaseline';
 export * from './CaptureCheckResult';
