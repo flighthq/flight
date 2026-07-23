@@ -3,7 +3,7 @@ import type { BitmapFontData, ImageResource } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { createBitmapFont, getBitmapFontGlyph } from './bitmapFont';
-import { createGlyphSourceFromBitmapFont } from './glyphSource';
+import { createGlyphSourceFromBitmapFont } from './bitmapFontGlyphSource';
 
 describe('createGlyphSourceFromBitmapFont', () => {
   it('exposes the font as a GlyphSource whose lookups match the font', () => {

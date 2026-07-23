@@ -1,2 +1,2 @@
 export * from './bitmapFont';
-export * from './glyphSource';
+export * from './bitmapFontGlyphSource';
