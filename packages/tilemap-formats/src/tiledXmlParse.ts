@@ -14,13 +14,13 @@ import type {
   TiledTilesetTileFrame,
   Vector2Like,
 } from '@flighthq/types';
+import type { XmlElement } from '@flighthq/types';
 import {
   getXmlElementAttribute,
   getXmlElementChildByName,
   getXmlElementChildrenByName,
   parseXmlDocument,
 } from '@flighthq/xml';
-import type { XmlElement } from '@flighthq/xml';
 
 import { parseTiledColor } from './tiledColor';
 import { decodeTiledBase64Layer, decodeTiledCsvLayer } from './tiledLayerData';

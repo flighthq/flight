@@ -1,10 +1,7 @@
 import { getTextShaperBackend, setTextShaperBackend } from '@flighthq/textshaper';
+import type { CanvasTextShaperBackend } from '@flighthq/types';
 
-import {
-  CanvasTextShaperBackend,
-  clearCanvasTextShaperBackendCache,
-  createCanvasTextShaperBackend,
-} from './canvasTextShaper';
+import { clearCanvasTextShaperBackendCache, createCanvasTextShaperBackend } from './canvasTextShaper';
 
 afterEach(() => {
   setTextShaperBackend(null);

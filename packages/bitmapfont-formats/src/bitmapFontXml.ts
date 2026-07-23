@@ -6,6 +6,7 @@ import type {
   BitmapFontParseOptions,
   BitmapFontRecord,
 } from '@flighthq/types';
+import type { XmlElement } from '@flighthq/types';
 import {
   getXmlElementAttribute,
   getXmlElementAttributeNumber,
@@ -13,7 +14,6 @@ import {
   getXmlElementChildrenByName,
   parseXmlDocument,
 } from '@flighthq/xml';
-import type { XmlElement } from '@flighthq/xml';
 
 import { buildBitmapFontFromRecord } from './bitmapFontRecord';
 

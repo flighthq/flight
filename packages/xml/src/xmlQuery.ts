@@ -2,7 +2,7 @@
 // hand-filtering `children` and `attributes` at every call site. All lookups
 // return a sentinel (null) rather than throwing when the name is absent.
 
-import type { XmlElement } from './xmlParse';
+import type { XmlElement } from '@flighthq/types';
 
 /** The attribute value for `name`, or null when the element has no such attribute. */
 export function getXmlElementAttribute(element: Readonly<XmlElement>, name: string): string | null {

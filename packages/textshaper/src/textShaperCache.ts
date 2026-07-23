@@ -1,10 +1,6 @@
-import type { ShapedRun, ShapeRunOptions, TextFormat } from '@flighthq/types';
+import type { ShapedRun, ShapeRunOptions, TextFormat, TextShaperCache } from '@flighthq/types';
 
 import { shapeTextRun } from './textShaperRun';
-
-export interface TextShaperCache {
-  readonly _entries: Map<string, ShapedRun>;
-}
 
 // Clears all cached ShapedRuns from `cache`, releasing their references. The cache remains valid
 // for continued use after clearing. Does not release the cache object itself (use
