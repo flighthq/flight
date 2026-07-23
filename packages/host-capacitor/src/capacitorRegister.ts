@@ -10,6 +10,7 @@ import { setSoftKeyboardBackend } from '@flighthq/keyboard';
 import { setNotificationBackend } from '@flighthq/notification';
 import { setShareBackend } from '@flighthq/share';
 import { setStatusBarBackend } from '@flighthq/statusbar';
+import type { CapacitorApi } from '@flighthq/types';
 
 import { createCapacitorAppBackend } from './capacitorApp';
 import { createCapacitorClipboardBackend } from './capacitorClipboard';
@@ -20,7 +21,6 @@ import { createCapacitorFileSystemBackend } from './capacitorFileSystem';
 import { createCapacitorGeolocationBackend } from './capacitorGeolocation';
 import { createCapacitorHapticsBackend } from './capacitorHaptics';
 import { createCapacitorKeyboardBackend } from './capacitorKeyboard';
-import type { CapacitorApi } from './capacitorModule';
 import { createCapacitorNotificationBackend } from './capacitorNotification';
 import { createCapacitorShareBackend } from './capacitorShare';
 import { createCapacitorStatusBarBackend } from './capacitorStatusBar';

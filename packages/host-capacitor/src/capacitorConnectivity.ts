@@ -1,6 +1,11 @@
-import type { ConnectivityBackend, ConnectivityConnectionType, ConnectivityStatus } from '@flighthq/types';
-
-import type { CapacitorApi, CapacitorConnectionStatus, CapacitorPluginListenerHandle } from './capacitorModule';
+import type {
+  ConnectivityBackend,
+  ConnectivityConnectionType,
+  ConnectivityStatus,
+  CapacitorApi,
+  CapacitorConnectionStatus,
+  CapacitorPluginListenerHandle,
+} from '@flighthq/types';
 
 // Maps Flight's ConnectivityBackend onto Capacitor's `@capacitor/network`. ConnectivityBackend.getStatus
 // is a synchronous snapshot, whereas Capacitor's getStatus is async, so the adapter keeps a local mirror:

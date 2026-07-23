@@ -1,6 +1,4 @@
-import type { AppBackend, AppLoginItem } from '@flighthq/types';
-
-import type { CapacitorApi, CapacitorPluginListenerHandle } from './capacitorModule';
+import type { AppBackend, AppLoginItem, CapacitorApi, CapacitorPluginListenerHandle } from '@flighthq/types';
 
 // Maps Flight's AppBackend onto Capacitor's `@capacitor/app` (identity + exit/minimize + lifecycle/url
 // events).

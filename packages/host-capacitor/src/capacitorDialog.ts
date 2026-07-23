@@ -1,6 +1,4 @@
-import type { DialogBackend } from '@flighthq/types';
-
-import type { CapacitorApi } from './capacitorModule';
+import type { DialogBackend, CapacitorApi } from '@flighthq/types';
 
 // Maps Flight's DialogBackend onto Capacitor's async `@capacitor/dialog`. `message` maps to `alert`, a
 // single-button acknowledgement (so it resolves buttonIndex 0 / not-cancelled / no checkbox); `confirm`

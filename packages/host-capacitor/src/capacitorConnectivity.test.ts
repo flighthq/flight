@@ -1,7 +1,6 @@
-import type { ConnectivityStatus } from '@flighthq/types';
+import type { ConnectivityStatus, CapacitorApi, CapacitorConnectionStatus } from '@flighthq/types';
 
 import { createCapacitorConnectivityBackend } from './capacitorConnectivity';
-import type { CapacitorApi, CapacitorConnectionStatus } from './capacitorModule';
 
 const flush = async () => {
   await Promise.resolve();

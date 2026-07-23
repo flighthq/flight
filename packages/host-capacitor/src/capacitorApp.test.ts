@@ -1,5 +1,6 @@
+import type { CapacitorApi } from '@flighthq/types';
+
 import { createCapacitorAppBackend } from './capacitorApp';
-import type { CapacitorApi } from './capacitorModule';
 
 const flush = async () => {
   await Promise.resolve();

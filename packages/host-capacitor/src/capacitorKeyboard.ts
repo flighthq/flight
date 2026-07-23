@@ -1,12 +1,12 @@
 import type {
+  CapacitorApi,
+  CapacitorPluginListenerHandle,
   SoftKeyboardBackend,
   SoftKeyboardInfo,
   SoftKeyboardResizeMode,
   SoftKeyboardStyleKind,
 } from '@flighthq/types';
 import { SoftKeyboardResizeBodyKind, SoftKeyboardResizeNoneKind, SoftKeyboardStyleDarkKind } from '@flighthq/types';
-
-import type { CapacitorApi, CapacitorPluginListenerHandle } from './capacitorModule';
 
 // Maps Flight's SoftKeyboardBackend onto Capacitor's `@capacitor/keyboard`. show/hide and the setters are
 // async fire-and-forget. Capacitor has no getInfo call, so the sync SoftKeyboardBackend.getInfo reads a

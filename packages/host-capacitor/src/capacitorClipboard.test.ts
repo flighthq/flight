@@ -1,5 +1,6 @@
+import type { CapacitorApi } from '@flighthq/types';
+
 import { createCapacitorClipboardBackend } from './capacitorClipboard';
-import type { CapacitorApi } from './capacitorModule';
 
 function fakeCapacitor() {
   const store = { value: '', type: 'text/plain' };

@@ -1,6 +1,4 @@
-import type { ShareBackend, ShareContent } from '@flighthq/types';
-
-import type { CapacitorApi } from './capacitorModule';
+import type { ShareBackend, ShareContent, CapacitorApi } from '@flighthq/types';
 
 // Maps Flight's ShareBackend onto Capacitor's `@capacitor/share`. `share`/`shareWithResult` are async
 // and map directly; a user cancel rejects, resolving false / a dismissed ShareResult rather than

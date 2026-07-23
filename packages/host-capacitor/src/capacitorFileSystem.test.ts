@@ -1,5 +1,6 @@
+import type { CapacitorApi } from '@flighthq/types';
+
 import { createCapacitorFileSystemBackend } from './capacitorFileSystem';
-import type { CapacitorApi } from './capacitorModule';
 
 function fakeCapacitor() {
   const files = new Map<string, { data: string; type: string }>();
