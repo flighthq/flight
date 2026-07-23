@@ -1,8 +1,12 @@
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { LinearColor } from '@flighthq/types';
-import type { WgpuRenderState } from '@flighthq/types';
+import type {
+  LinearColor,
+  WgpuMatcapDefineKey,
+  WgpuMatcapPipeline,
+  WgpuMaterialBinding,
+  WgpuRenderState,
+} from '@flighthq/types';
 
-import type { WgpuMeshPipeline } from './wgpuMeshPipeline';
 import {
   createWgpuMeshPipeline,
   ensureWgpuPlaceholderTextureView,
@@ -10,7 +14,6 @@ import {
   stashWgpuUvTransform,
   WGPU_MESH_PRELUDE_WGSL,
 } from './wgpuMeshPipeline';
-import type { WgpuMaterialBinding } from './wgpuSceneRuntime';
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 
 // The shared Wgpu matcap prelude — the WGSL mirror of scene-gl's glMatcapPrelude. One module for the
@@ -127,19 +130,6 @@ export function getWgpuMatcapModuleSourceForKey(key: Readonly<WgpuMatcapDefineKe
     MATCAP_WGSL_BODY
   );
 }
-
-// The feature flags that select a matcap variant. `hasMatcap` enables the sampled matcap texture (not
-// yet used on wgpu — see prelude note; when false the shader outputs the tint alone); `alphaMaskEnabled`
-// enables the alpha-cutoff discard for 'mask' materials; `doubleSided` selects the cull-none pipeline.
-export interface WgpuMatcapDefineKey {
-  alphaMaskEnabled: boolean;
-  doubleSided: boolean;
-  hasMatcap: boolean;
-}
-
-// A compiled matcap pipeline variant — a WgpuMeshPipeline (pipeline + group(2) material layout).
-export interface WgpuMatcapPipeline extends WgpuMeshPipeline {}
-
 // Matcap material uniform: tint vec4f (16) + params vec4f (16) = 32 bytes / 8 floats. tint is linear
 // rgba; params.x = alphaCutoff.
 const MATCAP_UNIFORM_BYTES = 32;

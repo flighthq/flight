@@ -1,7 +1,7 @@
 import { unpackColorToLinear } from '@flighthq/color';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { LinearColor } from '@flighthq/types';
 import type {
+  LinearColor,
   Camera3D,
   Material,
   MeshGeometry,

@@ -1,7 +1,7 @@
 import { unpackColorToLinear } from '@flighthq/color';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { LinearColor } from '@flighthq/types';
 import type {
+  LinearColor,
   Camera3D,
   EmissiveMaterial,
   Material,
@@ -10,12 +10,12 @@ import type {
   SceneRenderProxy,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
+  WgpuUnlitDefineKey,
 } from '@flighthq/types';
 import { EmissiveMaterialKind } from '@flighthq/types';
 
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { beginWgpuMeshDraw, drawWgpuMeshSubset, isWgpuTextureReady, writeWgpuFrameUniform } from './wgpuMeshPipeline';
-import type { WgpuUnlitDefineKey } from './wgpuUnlitPrelude';
 import { bindWgpuUnlitSurface, ensureWgpuUnlitPipeline } from './wgpuUnlitPrelude';
 
 // The built-in Emissive forward renderer (WgpuMeshMaterialRenderer for EmissiveMaterialKind) — the WGSL

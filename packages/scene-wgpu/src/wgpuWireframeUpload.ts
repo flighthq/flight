@@ -1,19 +1,6 @@
-import type { MeshGeometry, WgpuRenderState } from '@flighthq/types';
+import type { WgpuWireframeUpload, MeshGeometry, WgpuRenderState } from '@flighthq/types';
 
 import { ensureWgpuMeshUpload } from './wgpuMeshUpload';
-
-// The wireframe GPU upload of one MeshGeometry: the geometry's shared vertex buffer (reused from the
-// triangle upload) plus a derived LINE index buffer — three edges per triangle (i0i1, i1i2, i2i0). The
-// wireframe pipeline draws with line-list topology, so it needs a separate line index buffer; the
-// vertex buffer is reused (no duplicate vertex memory). Cached per state + geometry, re-derived when
-// geometry.version moves. Returns null for non-indexed geometry (this path needs triangle indices).
-export interface WgpuWireframeUpload {
-  indexFormat: GPUIndexFormat;
-  lineIndexBuffer: GPUBuffer;
-  version: number;
-  vertexBuffer: GPUBuffer;
-}
-
 // Lazily derives + uploads the wireframe line-index buffer for a geometry on this state, caching it
 // keyed by the geometry entity. Reuses the geometry's vertex buffer (ensuring the triangle upload
 // first) and builds a line-list index buffer from the triangle indices. A subset's triangle range

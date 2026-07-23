@@ -1,14 +1,11 @@
-import type { LinearColor } from '@flighthq/types';
-import type { WgpuRenderState } from '@flighthq/types';
+import type { LinearColor, WgpuMaterialBinding, WgpuRenderState, WgpuWireframePipeline } from '@flighthq/types';
 
-import type { WgpuMeshPipeline } from './wgpuMeshPipeline';
 import {
   createWgpuMeshPipeline,
   ensureWgpuScenePipeline,
   stashWgpuUvTransform,
   WGPU_MESH_PRELUDE_WGSL,
 } from './wgpuMeshPipeline';
-import type { WgpuMaterialBinding } from './wgpuSceneRuntime';
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 
 // The Wgpu wireframe prelude — the WGSL mirror of scene-gl's glWireframePrelude. A minimal module that
@@ -16,10 +13,6 @@ import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 // material draws mesh edges as GL line-list primitives (see wgpuWireframeUpload for the derived
 // line-index buffer). It has no lighting, no maps, and one variant per color format — group(2) carries
 // only the color uniform. The pipeline is built with line-list topology and cull-none.
-
-// A compiled wireframe pipeline — a WgpuMeshPipeline (pipeline + group(2) color-uniform layout).
-export interface WgpuWireframePipeline extends WgpuMeshPipeline {}
-
 // Ensures (and caches per material reference) the wireframe color bind group — a single uniform buffer
 // — and rewrites it with this material's linear line color. Mirrors scene-gl's wireframe color upload.
 export function bindWgpuWireframeColor(

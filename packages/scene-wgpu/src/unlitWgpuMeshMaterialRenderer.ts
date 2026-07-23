@@ -1,7 +1,7 @@
 import { unpackColorToLinear } from '@flighthq/color';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { LinearColor } from '@flighthq/types';
 import type {
+  LinearColor,
   Camera3D,
   Material,
   MeshGeometry,
@@ -10,12 +10,12 @@ import type {
   UnlitMaterial,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
+  WgpuUnlitDefineKey,
 } from '@flighthq/types';
 import { UnlitMaterialKind } from '@flighthq/types';
 
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { beginWgpuMeshDraw, drawWgpuMeshSubset, isWgpuTextureReady, writeWgpuFrameUniform } from './wgpuMeshPipeline';
-import type { WgpuUnlitDefineKey } from './wgpuUnlitPrelude';
 import { bindWgpuUnlitSurface, ensureWgpuUnlitPipeline } from './wgpuUnlitPrelude';
 
 // The built-in Unlit forward renderer (WgpuMeshMaterialRenderer for UnlitMaterialKind) — the WGSL

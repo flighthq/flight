@@ -1,7 +1,7 @@
 import { unpackColorToLinear } from '@flighthq/color';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { LinearColor } from '@flighthq/types';
 import type {
+  LinearColor,
   Camera3D,
   Material,
   MeshGeometry,
@@ -10,10 +10,10 @@ import type {
   SceneRenderProxy,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
+  WgpuClassicDefineKey,
 } from '@flighthq/types';
 import { PhongMaterialKind } from '@flighthq/types';
 
-import type { WgpuClassicDefineKey } from './wgpuClassicPrelude';
 import { bindWgpuClassicSurface, ensureWgpuClassicPipeline } from './wgpuClassicPrelude';
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { beginWgpuMeshDraw, drawWgpuMeshSubset, isWgpuTextureReady, writeWgpuFrameUniform } from './wgpuMeshPipeline';

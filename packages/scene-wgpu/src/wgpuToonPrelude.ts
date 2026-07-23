@@ -1,7 +1,6 @@
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { WgpuRenderState } from '@flighthq/types';
+import type { WgpuToonDefineKey, WgpuToonPipeline, WgpuRenderState, WgpuMaterialBinding } from '@flighthq/types';
 
-import type { WgpuMeshPipeline } from './wgpuMeshPipeline';
 import {
   createWgpuMeshPipeline,
   ensureWgpuPlaceholderTextureView,
@@ -10,51 +9,7 @@ import {
   stashWgpuUvTransform,
   WGPU_MESH_PRELUDE_WGSL,
 } from './wgpuMeshPipeline';
-import type { WgpuMaterialBinding } from './wgpuSceneRuntime';
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
-
-// The shared Wgpu Toon (cel-shading) prelude — the WGSL mirror of scene-gl's glToonPrelude. One module
-// source is specialized per material at compile time by a leading const-flag block (WGSL has no
-// preprocessor, so each feature flag is emitted as `const FLAG : bool = …;` and the compiler folds the
-// dead branch): the base-color-map / ramp / alpha-mask / double-sided variants are flag branches of
-// one module, never separate files.
-//
-// The cel model is deliberately simple: compute the diffuse N·L from the single directional light read
-// from the shared Frame uniform (group(0), see WGPU_MESH_PRELUDE_WGSL), then QUANTIZE that term into
-// stepped bands by flooring nDotL into `steps` even bands. The banded term modulates the linear base
-// color (decoded to linear on the CPU at bind) and the directional radiance; the ambient term is added
-// flat. The fragment stage writes LINEAR color (no tonemap / gamma here — the effect pipeline's resolve
-// pass owns that), matching the rgba16float scene target. Gate by frame.lightDirection.w (directional
-// count) / frame.ambientRadiance.w (ambient count), mirroring standardPbr.
-//
-// NOTE ON MAPS (baseColorMap, ramp): real map textures are NOT yet sampled on wgpu. The `hasBaseColorMap`
-// / `hasRamp` flags stay false on the wgpu renderer; the material bind group binds the shared 1x1
-// placeholder in every texture slot so the layout still matches, and the quantizer is always the scalar
-// `steps` stepped floor (never a ramp lookup). This mirrors the documented gap on the StandardPbr/Unlit
-// wgpu paths: GL works (samples the maps / ramp), wgpu defers until texture upload arrives. The shader's
-// HAS_BASE_COLOR_MAP / HAS_RAMP branches are carried so they light up unchanged once upload lands.
-//
-// Bind groups (must match toonWgpuMeshMaterialRenderer):
-//   group(0) Frame    : viewProjection, cameraPosition, directional + ambient light — uniform (shared).
-//   group(1) Draw     : world + normalMatrix — uniform (dynamic offset per draw, shared).
-//   group(2) Material : toon color/params uniform + sampler + base-color + ramp textures.
-
-// The feature flags that select a Toon uber-shader variant. Each toggles a `const … : bool` in the
-// prelude and is hashed into the pipeline-cache key (buildWgpuToonDefineKey), so distinct flag sets
-// compile and cache as distinct pipelines. `hasBaseColorMap` enables the sampled albedo tint and
-// `hasRamp` switches the quantizer to a 1D ramp lookup — both stay false on the wgpu renderer until
-// texture upload lands (see the maps note above); `alphaMaskEnabled` enables the alpha-cutoff discard
-// for 'mask' materials; `doubleSided` selects the cull-none pipeline and flips the back-face normal.
-export interface WgpuToonDefineKey {
-  alphaMaskEnabled: boolean;
-  doubleSided: boolean;
-  hasBaseColorMap: boolean;
-  hasRamp: boolean;
-}
-
-// A compiled Toon pipeline variant — a WgpuMeshPipeline (pipeline + group(2) material layout).
-export interface WgpuToonPipeline extends WgpuMeshPipeline {}
-
 // Ensures (and caches per material reference) the Toon Material bind group — a uniform buffer + the
 // shared sampler + the placeholder base-color and ramp textures — and rewrites its uniform with this
 // surface's linear base color, step count, and alpha cutoff. Mirrors scene-gl's bindGlToonMaterialUniforms

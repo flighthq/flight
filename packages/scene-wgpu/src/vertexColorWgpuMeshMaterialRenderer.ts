@@ -1,7 +1,7 @@
 import { unpackColorToLinear } from '@flighthq/color';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { LinearColor } from '@flighthq/types';
 import type {
+  LinearColor,
   Camera3D,
   Material,
   MeshGeometry,
@@ -10,12 +10,12 @@ import type {
   VertexColorMaterial,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
+  WgpuUnlitDefineKey,
 } from '@flighthq/types';
 import { VertexColorMaterialKind } from '@flighthq/types';
 
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { beginWgpuMeshDraw, drawWgpuMeshSubset, writeWgpuFrameUniform } from './wgpuMeshPipeline';
-import type { WgpuUnlitDefineKey } from './wgpuUnlitPrelude';
 import { bindWgpuUnlitSurface, ensureWgpuUnlitPipeline } from './wgpuUnlitPrelude';
 
 // The built-in VertexColor forward renderer (WgpuMeshMaterialRenderer for VertexColorMaterialKind) —

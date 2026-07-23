@@ -1,8 +1,7 @@
-import type { LinearColor } from '@flighthq/types';
+import type { LinearColor, WgpuToonDefineKey } from '@flighthq/types';
 
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 import { makeWgpuSceneState } from './wgpuSceneTestHelper';
-import type { WgpuToonDefineKey } from './wgpuToonPrelude';
 import {
   bindWgpuToonSurface,
   buildWgpuToonDefineKey,

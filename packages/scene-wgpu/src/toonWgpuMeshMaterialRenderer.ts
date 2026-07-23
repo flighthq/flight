@@ -1,7 +1,7 @@
 import { unpackColorToLinear } from '@flighthq/color';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { LinearColor } from '@flighthq/types';
 import type {
+  LinearColor,
   Camera3D,
   Material,
   MeshGeometry,
@@ -10,12 +10,12 @@ import type {
   ToonMaterial,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
+  WgpuToonDefineKey,
 } from '@flighthq/types';
 import { ToonMaterialKind } from '@flighthq/types';
 
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { beginWgpuMeshDraw, drawWgpuMeshSubset, writeWgpuFrameUniform } from './wgpuMeshPipeline';
-import type { WgpuToonDefineKey } from './wgpuToonPrelude';
 import { bindWgpuToonSurface, ensureWgpuToonPipeline } from './wgpuToonPrelude';
 
 // The built-in Toon (cel-shading) forward-lit mesh-material renderer (WgpuMeshMaterialRenderer for
