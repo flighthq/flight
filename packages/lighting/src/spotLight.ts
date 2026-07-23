@@ -1,28 +1,7 @@
 import { createEntity } from '@flighthq/entity';
 import { cloneVector3, createVector3, setVector3 } from '@flighthq/geometry';
-import type { SpotLight, Vector3Like } from '@flighthq/types';
+import type { SpotLight, SpotLightConeAngles, SpotLightOptions } from '@flighthq/types';
 import { SpotLightKind } from '@flighthq/types';
-
-export interface SpotLightConeAngles {
-  innerDegrees: number;
-  outerDegrees: number;
-}
-
-export interface SpotLightOptions {
-  castsShadow?: boolean;
-  color?: number;
-  direction?: Readonly<Vector3Like>;
-  // Inner cone half-angle in degrees; full intensity inside it. Defaults to 0 (a sharp center).
-  innerConeDegrees?: number;
-  intensity?: number;
-  normalBias?: number;
-  // Outer cone half-angle in degrees; intensity reaches zero at it. Defaults to 45.
-  outerConeDegrees?: number;
-  pcfRadius?: number;
-  position?: Readonly<Vector3Like>;
-  range?: number;
-  shadowBias?: number;
-}
 
 // Independent copy of a spot light's data, including fresh `position`/`direction` vectors.
 export function cloneSpotLight(source: Readonly<SpotLight>): SpotLight {

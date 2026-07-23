@@ -1,11 +1,6 @@
 import { createEntity } from '@flighthq/entity';
-import type { CubeTexture, Environment } from '@flighthq/types';
+import type { Environment, EnvironmentOptions } from '@flighthq/types';
 import { EnvironmentKind } from '@flighthq/types';
-
-export interface EnvironmentOptions {
-  environment?: CubeTexture | null;
-  intensity?: number;
-}
 
 // Independent copy of the environment's data. The `environment` cubemap reference is shared, not
 // deep-copied: a CubeTexture is a GPU-backed resource, so the copy aliases the same source.
