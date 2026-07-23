@@ -1,5 +1,5 @@
-import type { GlRenderTarget } from '@flighthq/render-gl';
 import { compileGlFullscreenProgram, drawGlFullscreenPass } from '@flighthq/render-gl';
+import type { GlRenderTarget } from '@flighthq/types';
 import type { GlFullscreenProgram, GlRenderState } from '@flighthq/types';
 
 // Extracts the source alpha, tints it with a solid color, and outputs a

@@ -1,10 +1,8 @@
 ﻿import type { GlRenderState, RenderProxy, RenderProxy2D } from '@flighthq/types';
+import type { GlBitmapShader, GlShaderLocations } from '@flighthq/types';
 
 import { createGlProgram } from './glProgram';
 import { getGlRenderStateRuntime } from './glRenderState';
-import type { GlBitmapShader, GlShaderLocations } from './glShaderTypes';
-
-export type { GlBitmapShader, GlShaderLocations } from './glShaderTypes';
 
 const VERTEX_SRC = `#version 300 es
 in vec2 a_position;

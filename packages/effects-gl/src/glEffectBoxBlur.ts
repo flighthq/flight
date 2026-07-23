@@ -1,6 +1,6 @@
 import { computeBoxBlurPassRadius } from '@flighthq/effects';
-import type { GlRenderTarget } from '@flighthq/render-gl';
 import { compileGlFullscreenProgram, drawGlFullscreenPass } from '@flighthq/render-gl';
+import type { GlRenderTarget } from '@flighthq/types';
 import type { GlFullscreenProgram, GlRenderState } from '@flighthq/types';
 
 const BOX_BLUR_FRAGMENT_SRC = `#version 300 es
