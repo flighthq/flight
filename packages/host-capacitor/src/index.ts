@@ -7,7 +7,6 @@ export * from './capacitorFileSystem';
 export * from './capacitorGeolocation';
 export * from './capacitorHaptics';
 export * from './capacitorKeyboard';
-export * from '@flighthq/types';
 export * from './capacitorNotification';
 export * from './capacitorRegister';
 export * from './capacitorShare';
