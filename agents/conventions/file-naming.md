@@ -4,7 +4,7 @@ The TS→Haxe generator maps one source file to one Haxe module (`clock.ts` → 
 
 ## 1. All exported types live in `@flighthq/types`
 
-No `export interface`, `export type`, or `export enum` outside `@flighthq/types` — **uniform**, with no exemptions (renderers, `host-*`, `*-formats` all included).
+No `export interface`, `export type`, or `export enum` outside `@flighthq/types` — renderers, `host-*`, and `*-formats` all included. **Two exemptions**, each because the types cannot enter the pure header without breaking its invariants: (1) the **`tool-*` tooling tier**, whose types structurally embed non-portable deps (`@playwright/test`, `node:*`) that must not become dependencies of the universal header — `tool-*` is already a separate tier, excluded from the SDK barrel; (2) **test-only mock types in `*TestHelper.ts`** files (test infrastructure, not shipped API). Everything shipped and portable moves.
 
 - **Why.** It makes the collision class structurally impossible: every type is `flighthq.types.*` and every function is `flighthq.<pkg>.*`, so a type can never share a package with a same-named function file. And the header layer becomes the complete, navigable type surface — the stated purpose of `@flighthq/types`.
 - Function packages become **pure-function** (like `geometry`, whose `Rectangle` type lives in `types/Rectangle.ts`). A file such as `clock.ts` holds only functions → `flighthq.clock.Clock.createClock(...)`.
