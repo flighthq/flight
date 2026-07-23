@@ -4,7 +4,7 @@ import type { NetResponse, SceneDocument } from '@flighthq/types';
 import type { Mock } from 'vitest';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import type * as LoadMd2Module from './loadMd2';
+import type * as LoadMd2Module from './md2Load';
 
 let loadSceneDocumentFromMd2Url: typeof LoadMd2Module.loadSceneDocumentFromMd2Url;
 let parseMd2: Mock<typeof SceneFormatsModule.parseMd2>;
@@ -35,7 +35,7 @@ beforeAll(async () => {
   sendNetRequest = vi.fn<typeof NetModule.sendNetRequest>();
   vi.doMock('@flighthq/net', () => ({ sendNetRequest }));
   vi.doMock('@flighthq/scene-formats', () => ({ parseMd2 }));
-  ({ loadSceneDocumentFromMd2Url } = await import('./loadMd2'));
+  ({ loadSceneDocumentFromMd2Url } = await import('./md2Load'));
 });
 
 afterAll(() => {

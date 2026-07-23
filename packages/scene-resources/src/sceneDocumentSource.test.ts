@@ -9,7 +9,7 @@ import {
   loadSceneDocumentBytesFromUrl,
   loadSceneDocumentTextFromUrl,
   setSceneDocumentResourceBasePathFromUrl,
-} from './loadSceneDocumentSource';
+} from './sceneDocumentSource';
 
 function okResponse(body: string | ArrayBuffer): NetResponse {
   return { body, headers: {}, ok: true, status: 200, statusText: 'OK', url: 'u' };

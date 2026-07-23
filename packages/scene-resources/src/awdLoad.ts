@@ -1,7 +1,7 @@
 import { parseAwd } from '@flighthq/scene-formats';
 import type { SceneDocument, SceneDocumentLoadOptions } from '@flighthq/types';
 
-import { loadSceneDocumentBytesFromUrl, setSceneDocumentResourceBasePathFromUrl } from './loadSceneDocumentSource';
+import { loadSceneDocumentBytesFromUrl, setSceneDocumentResourceBasePathFromUrl } from './sceneDocumentSource';
 
 // Fetches an Away3D AWD file from a URL and parses it into a format-neutral SceneDocument (geometry, skins,
 // and its skeleton animation). Fetches only the FILE — the document's texture refs stay unresolved; assemble

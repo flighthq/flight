@@ -1,7 +1,7 @@
 import { parseObj } from '@flighthq/scene-formats';
 import type { ObjMaterialLibrary, SceneDocument, SceneDocumentLoadOptions } from '@flighthq/types';
 
-import { loadSceneDocumentTextFromUrl, setSceneDocumentResourceBasePathFromUrl } from './loadSceneDocumentSource';
+import { loadSceneDocumentTextFromUrl, setSceneDocumentResourceBasePathFromUrl } from './sceneDocumentSource';
 
 // Fetches a Wavefront OBJ file from a URL and parses it into a format-neutral SceneDocument, using an
 // optional already-parsed MTL library for its materials. Fetches only the OBJ FILE (the `.mtl` sidecar and

@@ -4,10 +4,10 @@ import type { NetResponse, SceneDocument } from '@flighthq/types';
 import type { Mock } from 'vitest';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import type * as LoadMd5Module from './loadMd5';
+import type * as Load3dsModule from './threeDsLoad';
 
-let loadSceneDocumentFromMd5MeshUrl: typeof LoadMd5Module.loadSceneDocumentFromMd5MeshUrl;
-let parseMd5Mesh: Mock<typeof SceneFormatsModule.parseMd5Mesh>;
+let loadSceneDocumentFrom3dsUrl: typeof Load3dsModule.loadSceneDocumentFrom3dsUrl;
+let parse3ds: Mock<typeof SceneFormatsModule.parse3ds>;
 let sendNetRequest: Mock<typeof NetModule.sendNetRequest>;
 
 function emptyDocument(): SceneDocument {
@@ -25,17 +25,17 @@ function emptyDocument(): SceneDocument {
   };
 }
 
-function okResponse(body: string): NetResponse {
+function okResponse(body: ArrayBuffer): NetResponse {
   return { body, headers: {}, ok: true, status: 200, statusText: 'OK', url: 'u' };
 }
 
 beforeAll(async () => {
   vi.resetModules();
-  parseMd5Mesh = vi.fn<typeof SceneFormatsModule.parseMd5Mesh>();
+  parse3ds = vi.fn<typeof SceneFormatsModule.parse3ds>();
   sendNetRequest = vi.fn<typeof NetModule.sendNetRequest>();
   vi.doMock('@flighthq/net', () => ({ sendNetRequest }));
-  vi.doMock('@flighthq/scene-formats', () => ({ parseMd5Mesh }));
-  ({ loadSceneDocumentFromMd5MeshUrl } = await import('./loadMd5'));
+  vi.doMock('@flighthq/scene-formats', () => ({ parse3ds }));
+  ({ loadSceneDocumentFrom3dsUrl } = await import('./threeDsLoad'));
 });
 
 afterAll(() => {
@@ -45,19 +45,19 @@ afterAll(() => {
 });
 
 afterEach(() => {
-  parseMd5Mesh.mockReset();
+  parse3ds.mockReset();
   sendNetRequest.mockReset();
 });
 
-describe('loadSceneDocumentFromMd5MeshUrl', () => {
-  it('fetches text and returns the parsed CPU document without resolving resources', async () => {
+describe('loadSceneDocumentFrom3dsUrl', () => {
+  it('fetches bytes and returns the parsed CPU document without resolving resources', async () => {
     const document = emptyDocument();
-    parseMd5Mesh.mockReturnValue(document);
-    sendNetRequest.mockResolvedValue(okResponse('MD5Version 10'));
+    parse3ds.mockReturnValue(document);
+    sendNetRequest.mockResolvedValue(okResponse(new Uint8Array([9, 8]).buffer));
 
-    const loaded = await loadSceneDocumentFromMd5MeshUrl('model.md5mesh');
+    const loaded = await loadSceneDocumentFrom3dsUrl('model.3ds');
 
-    expect(parseMd5Mesh).toHaveBeenCalledWith('MD5Version 10');
+    expect(Array.from(parse3ds.mock.calls[0][0])).toEqual([9, 8]);
     expect(loaded).toBe(document);
   });
 });

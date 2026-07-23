@@ -4,7 +4,7 @@ import type { NetResponse, SceneDocument } from '@flighthq/types';
 import type { Mock } from 'vitest';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import type * as LoadGltfModule from './loadGltf';
+import type * as LoadGltfModule from './gltfLoad';
 
 let loadSceneDocumentFromGlbUrl: typeof LoadGltfModule.loadSceneDocumentFromGlbUrl;
 let loadSceneDocumentFromGltfUrl: typeof LoadGltfModule.loadSceneDocumentFromGltfUrl;
@@ -38,7 +38,7 @@ beforeAll(async () => {
   sendNetRequest = vi.fn<typeof NetModule.sendNetRequest>();
   vi.doMock('@flighthq/net', () => ({ sendNetRequest }));
   vi.doMock('@flighthq/scene-formats', () => ({ parseGlb, parseGltf }));
-  ({ loadSceneDocumentFromGlbUrl, loadSceneDocumentFromGltfUrl } = await import('./loadGltf'));
+  ({ loadSceneDocumentFromGlbUrl, loadSceneDocumentFromGltfUrl } = await import('./gltfLoad'));
 });
 
 afterAll(() => {
