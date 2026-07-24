@@ -680,6 +680,15 @@
       "label": "Materials (3D)",
       "scenes": [
         {
+          "scene": "material-alpha-map",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
           "scene": "material-anisotropy",
           "backends": {
             "canvas": false,

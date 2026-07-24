@@ -1,0 +1,159 @@
+import { createScene } from '@flighthq/scene';
+import { drawGlScene } from '@flighthq/scene-gl';
+import type { Camera3D, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import {
+  addNodeChild,
+  beginGlRenderEffectPipeline,
+  createAmbientLight,
+  createBlinnPhongMaterial,
+  createCamera3D,
+  createDirectionalLight,
+  createGlCanvasElement,
+  createGlRenderEffectPipeline,
+  createGlRenderState,
+  createImageResourceFromCanvas,
+  createMesh,
+  createPerspectiveProjection,
+  createQuadMeshGeometry,
+  createTexture,
+  createVector3,
+  endGlRenderEffectPipeline,
+  getSurfacePixelChannel,
+  ImageChannel,
+  normalizeVector3,
+  prepareSceneRender,
+  registerBlinnPhongGlMaterial,
+  renderGlBackground,
+  setCamera3DViewMatrix4FromLookAt,
+} from '@flighthq/sdk';
+
+// drawGlScene exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel —
+// import the Gl one directly from its package.
+
+// Gl column. The BlinnPhong renderer writes linear HDR into the effect pipeline's rgba16f + depth
+// scene target, then end with an empty effect list to tone-present the HDR scene to the canvas.
+const pixelRatio = window.devicePixelRatio || 1;
+const canvas = createGlCanvasElement(800, 600, pixelRatio);
+document.body.appendChild(canvas);
+
+export const state = createGlRenderState(canvas, {
+  pixelRatio,
+  backgroundColor: 0x002850ff,
+  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+});
+registerBlinnPhongGlMaterial(state);
+
+const pipeline = createGlRenderEffectPipeline(state, {
+  sampleCount: 4,
+  format: 'rgba16f',
+  depth: 'depth-stencil',
+});
+
+export const scale = pixelRatio;
+export const width = 800;
+export const height = 600;
+
+export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
+  beginGlRenderEffectPipeline(state, pipeline);
+  renderGlBackground(state);
+  const gl = state.gl;
+  gl.depthMask(true);
+  gl.clearDepth(1);
+  gl.clear(gl.DEPTH_BUFFER_BIT);
+  prepareSceneRender(state, scene, camera, lights);
+  drawGlScene(state, scene, camera, lights);
+  endGlRenderEffectPipeline(state, pipeline, []);
+}
+
+// material-alpha-map — proves a BlinnPhong material's dedicated alpha (opacity) map drives per-pixel
+// coverage on the Gl and Wgpu forward renderers (scene-gl / scene-wgpu). A camera-facing warm-orange
+// lit quad fills the view; its alpha map is opaque on the LEFT half (green = 1) and empty on the RIGHT
+// half (green = 0). With `alphaMode: 'mask'` (cutoff 0.5) the right half's fragments are discarded, so
+// the cool-blue background shows through exactly where the alpha map is zero — the signature of the
+// alpha map sampling into coverage (a material with no alpha map would render a uniform, fully-opaque
+// quad). The oracle compares the RED channel (warm quad vs cool background) so it is robust to each
+// backend's HDR tone-mapping of absolute brightness.
+//
+// The alpha map's green channel is LINEAR data (colorSpace 'linear'), read raw and multiplied into
+// alpha before the mask cutoff — the same path scene-gl and scene-wgpu take, so both backends match.
+const logicalWidth = width / scale;
+const logicalHeight = height / scale;
+
+// A camera-facing quad slightly larger than the view so both sample points land on it (the left one
+// on the opaque half, the right one on the discarded half revealing the background).
+const geometry = createQuadMeshGeometry(3.4, 2.6);
+
+const material = createBlinnPhongMaterial({
+  alphaCutoff: 0.5,
+  alphaMap: createTexture({ colorSpace: 'linear', image: createImageResourceFromCanvas(alphaSplitCanvas()) }),
+  alphaMode: 'mask',
+  diffuse: 0xcc5522ff,
+  specular: 0x000000ff,
+  shininess: 16,
+});
+
+const scene = createScene().root;
+addNodeChild(scene, createMesh(geometry, [material]));
+
+// Perspective camera dead-on the quad from +z, looking at the origin.
+const camera = createCamera3D({
+  far: 100,
+  near: 0.1,
+  projection: createPerspectiveProjection({ aspect: logicalWidth / logicalHeight, fovY: Math.PI / 4 }),
+});
+setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 3), createVector3(0, 0, 0), createVector3(0, 1, 0));
+
+// One white light travelling mostly into the screen (-z) so the +z-facing quad is evenly lit, plus a
+// dim ambient fill. Even lighting keeps the opaque half a flat bright field so the cutout reads clearly.
+const directionalDirection = createVector3(-0.15, -0.15, -1);
+normalizeVector3(directionalDirection, directionalDirection);
+const lights = {
+  ambient: createAmbientLight({ color: 0x404040ff, intensity: 0.3 }),
+  directional: createDirectionalLight({ color: 0xffffffff, direction: directionalDirection, intensity: 1 }),
+};
+
+render(scene, camera, lights);
+
+// Oracle: the opaque (left) half shows the warm quad (high red) and the cut-out (right) half shows the
+// cool background (near-zero red), proving the alpha map drove coverage rather than a uniform fill.
+export function assertRender(surface: Readonly<Surface>): void {
+  const cx = Math.floor(surface.width / 2);
+  const cy = Math.floor(surface.height / 2);
+  const offset = Math.floor(surface.width * 0.25);
+
+  const opaqueRed = getSurfacePixelChannel(surface, cx - offset, cy, ImageChannel.Red);
+  const cutoutRed = getSurfacePixelChannel(surface, cx + offset, cy, ImageChannel.Red);
+
+  if (opaqueRed <= 40) {
+    throw new Error(`[material-alpha-map] opaque half did not render the quad (red ${opaqueRed})`);
+  }
+  if (opaqueRed <= cutoutRed + 40) {
+    throw new Error(
+      `[material-alpha-map] alpha map did not cut out coverage: opaque red (${opaqueRed}) is not clearly above the cut-out red (${cutoutRed})`,
+    );
+  }
+}
+
+// An 8×8 opacity map: the left half green = 255 (opaque, kept), the right half green = 0 (below the
+// 0.5 mask cutoff, discarded). Only the green channel is read; alpha stays 255 so the map itself is a
+// fully-opaque image whose GREEN encodes coverage.
+function alphaSplitCanvas(): HTMLCanvasElement {
+  const size = 8;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  const image = ctx.createImageData(size, size);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const i = (y * size + x) * 4;
+      const opaque = x < size / 2;
+      image.data[i + 0] = 0;
+      image.data[i + 1] = opaque ? 255 : 0;
+      image.data[i + 2] = 0;
+      image.data[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(image, 0, 0);
+  return canvas;
+}
