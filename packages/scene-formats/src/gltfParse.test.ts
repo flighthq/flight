@@ -1,3 +1,4 @@
+import { sampleAnimationTrack } from '@flighthq/animation';
 import { linearChannelToSrgb } from '@flighthq/color';
 import {
   getMeshGeometryIndexCount,
@@ -91,6 +92,48 @@ function bytesOf(...arrays: readonly ArrayBufferView[]): Uint8Array {
     offset += a.byteLength;
   }
   return bytes;
+}
+
+// A one-node glTF whose single animation channel drives `path` from a sampler with the given output
+// payload and interpolation. Used to exercise the sampler paths/interpolations with SCHEMA-VALID payloads
+// (VEC3 for translation/scale, VEC4 for rotation; CUBICSPLINE supplies 3 elements — in-tangent/value/
+// out-tangent — per keyframe) so the resulting Flight track can be SAMPLED to prove correct decoding.
+function makeChannelGltf(opts: {
+  interpolation: 'CUBICSPLINE' | 'LINEAR' | 'STEP';
+  output: Float32Array;
+  outputCount: number;
+  outputType: 'VEC3' | 'VEC4';
+  path: 'rotation' | 'scale' | 'translation';
+  times: Float32Array;
+}): GltfDocument {
+  const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+  const uri = toDataUri(bytesOf(positions), bytesOf(opts.times), bytesOf(opts.output));
+  const posLen = positions.byteLength;
+  const timesLen = opts.times.byteLength;
+  return {
+    accessors: [
+      { bufferView: 0, componentType: 5126, count: 3, type: 'VEC3' },
+      { bufferView: 1, componentType: 5126, count: opts.times.length, type: 'SCALAR' },
+      { bufferView: 2, componentType: 5126, count: opts.outputCount, type: opts.outputType },
+    ],
+    animations: [
+      {
+        channels: [{ sampler: 0, target: { node: 0, path: opts.path } }],
+        samplers: [{ input: 1, interpolation: opts.interpolation, output: 2 }],
+      },
+    ],
+    asset: { version: '2.0' },
+    bufferViews: [
+      { buffer: 0, byteLength: posLen, byteOffset: 0 },
+      { buffer: 0, byteLength: timesLen, byteOffset: posLen },
+      { buffer: 0, byteLength: opts.output.byteLength, byteOffset: posLen + timesLen },
+    ],
+    buffers: [{ byteLength: posLen + timesLen + opts.output.byteLength, uri }],
+    meshes: [{ primitives: [{ attributes: { POSITION: 0 } }] }],
+    nodes: [{ mesh: 0 }],
+    scene: 0,
+    scenes: [{ nodes: [0] }],
+  };
 }
 
 // A single triangle (3 positions) with a ushort index buffer, embedded as a base64 data URI, on a node
@@ -280,6 +323,27 @@ describe('createSceneFromGlb', () => {
     expect(getNodeChildren(scene.root)).toHaveLength(0);
     expect(warnings.length).toBeGreaterThan(0);
   });
+
+  it('returns an empty scene and warns for an unsupported GLB container version', () => {
+    // A well-formed glTF-magic container whose header version is 3 (not 2) must be rejected by version.
+    const glb = buildGlb(makeTriangleGltf(), new Uint8Array(0));
+    new DataView(glb.buffer).setUint32(4, 3, true); // header version 2 → 3
+    const warnings: string[] = [];
+    const scene = createSceneFromGlb(glb, warnings);
+    expect(getNodeChildren(scene.root)).toHaveLength(0);
+    expect(warnings.some((w) => w.includes('version'))).toBe(true);
+  });
+
+  it('returns an empty scene and warns when the GLB JSON chunk is not valid JSON', () => {
+    // Corrupt the first JSON byte (the leading '{' at offset 20 = 12 header + 8 chunk header) so JSON.parse
+    // throws — the container is otherwise well-formed, exercising the malformed-JSON branch, not the magic one.
+    const glb = buildGlb(makeTriangleGltf(), new Uint8Array(0));
+    glb[20] = 0x78; // 'x'
+    const warnings: string[] = [];
+    const scene = createSceneFromGlb(glb, warnings);
+    expect(getNodeChildren(scene.root)).toHaveLength(0);
+    expect(warnings.some((w) => w.includes('JSON'))).toBe(true);
+  });
 });
 
 describe('createSceneFromGltf', () => {
@@ -435,6 +499,43 @@ describe('createSceneFromGltf', () => {
   it('leaves a primitive unmaterialed when it references no material', () => {
     const mesh = getNodeChildren(createSceneFromGltf(makeTriangleGltf()).root)[0] as Mesh;
     expect(mesh.materials).toHaveLength(0);
+  });
+
+  it('resolves pbrMetallicRoughness.metallicRoughnessTexture to a linear metallicRoughnessMap', () => {
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 1, 2, 3]);
+    const doc = makeTriangleGltf();
+    doc.materials = [{ pbrMetallicRoughness: { metallicRoughnessTexture: { index: 0 } } }];
+    doc.textures = [{ source: 0 }];
+    doc.images = [{ uri: imageDataUri('image/png', png) }];
+    doc.meshes![0].primitives[0].material = 0;
+
+    const mat = (getNodeChildren(createSceneFromGltf(doc).root)[0] as Mesh).materials[0] as StandardPbrMaterial;
+    expect(mat.metallicRoughnessMap).not.toBeNull();
+    expect(mat.metallicRoughnessMap!.colorSpace).toBe('linear'); // metallic/roughness is data, not color
+    expect((mat.metallicRoughnessMap!.resource as EmbeddedImageResourceReference).mimeType).toBe('image/png');
+  });
+
+  it('reads occlusionTexture into a linear occlusionMap and honors occlusionStrength', () => {
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 4]);
+    const doc = makeTriangleGltf();
+    doc.materials = [{ occlusionTexture: { index: 0, strength: 0.5 } }];
+    doc.textures = [{ source: 0 }];
+    doc.images = [{ uri: imageDataUri('image/png', png) }];
+    doc.meshes![0].primitives[0].material = 0;
+
+    const mat = (getNodeChildren(createSceneFromGltf(doc).root)[0] as Mesh).materials[0] as StandardPbrMaterial;
+    expect(mat.occlusionStrength).toBe(0.5);
+    expect(mat.occlusionMap).not.toBeNull();
+    expect(mat.occlusionMap!.colorSpace).toBe('linear');
+  });
+
+  it('maps alphaMode BLEND to blend coverage', () => {
+    const doc = makeTriangleGltf();
+    doc.materials = [{ alphaMode: 'BLEND', pbrMetallicRoughness: { baseColorFactor: [1, 0, 0, 0.5] } }];
+    doc.meshes![0].primitives[0].material = 0;
+
+    const mat = (getNodeChildren(createSceneFromGltf(doc).root)[0] as Mesh).materials[0] as StandardPbrMaterial;
+    expect(mat.alphaMode).toBe('blend');
   });
 
   it('maps a glTF sampler onto the texture wrap and filter state', () => {
@@ -728,6 +829,97 @@ describe('createSceneFromGltf', () => {
     getMeshGeometryVertexUv0(uv, geometry, 0);
     expect([n.x, n.y, n.z]).toEqual([1, -1, 0]);
     expect([uv.x, uv.y]).toEqual([1, 0]);
+  });
+
+  it('decodes a normalized SHORT (5122) attribute to the [-1, 1] float range', () => {
+    // normalizeComponent divides int16 by 32767: 32767 → 1, -32767 → -1, 0 → 0.
+    const positions = new Float32Array([1, 2, 3]);
+    const normals = new Int16Array([32767, -32767, 0]);
+    const uri = toDataUri(bytesOf(positions), bytesOf(normals));
+    const doc: GltfDocument = {
+      accessors: [
+        { bufferView: 0, componentType: 5126, count: 1, type: 'VEC3' },
+        { bufferView: 1, componentType: 5122, count: 1, normalized: true, type: 'VEC3' },
+      ],
+      asset: { version: '2.0' },
+      bufferViews: [
+        { buffer: 0, byteLength: 12, byteOffset: 0 },
+        { buffer: 0, byteLength: 6, byteOffset: 12 },
+      ],
+      buffers: [{ byteLength: 18, uri }],
+      meshes: [{ primitives: [{ attributes: { NORMAL: 1, POSITION: 0 } }] }],
+      nodes: [{ mesh: 0 }],
+      scene: 0,
+      scenes: [{ nodes: [0] }],
+    };
+    const geometry = (getNodeChildren(createSceneFromGltf(doc).root)[0] as Mesh).geometry;
+    const n = { x: 0, y: 0, z: 0 };
+    getMeshGeometryVertexNormal(n, geometry, 0);
+    expect(n.x).toBeCloseTo(1, 5);
+    expect(n.y).toBeCloseTo(-1, 5);
+    expect(n.z).toBeCloseTo(0, 5);
+  });
+
+  it('decodes a normalized UBYTE (5121) TEXCOORD_0 to the [0, 1] float range', () => {
+    // normalizeComponent divides uint8 by 255: 255 → 1, 128 → ~0.502. TEXCOORD_0 is a schema-valid
+    // semantic for a normalized UBYTE encoding (unlike NORMAL, which requires a signed type).
+    const positions = new Float32Array([1, 2, 3]);
+    const uvs = new Uint8Array([255, 128]); // VEC2
+    const uri = toDataUri(bytesOf(positions), bytesOf(uvs));
+    const doc: GltfDocument = {
+      accessors: [
+        { bufferView: 0, componentType: 5126, count: 1, type: 'VEC3' },
+        { bufferView: 1, componentType: 5121, count: 1, normalized: true, type: 'VEC2' },
+      ],
+      asset: { version: '2.0' },
+      bufferViews: [
+        { buffer: 0, byteLength: 12, byteOffset: 0 },
+        { buffer: 0, byteLength: 2, byteOffset: 12 },
+      ],
+      buffers: [{ byteLength: 14, uri }],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0, TEXCOORD_0: 1 } }] }],
+      nodes: [{ mesh: 0 }],
+      scene: 0,
+      scenes: [{ nodes: [0] }],
+    };
+    const geometry = (getNodeChildren(createSceneFromGltf(doc).root)[0] as Mesh).geometry;
+    const uv = { x: 0, y: 0 };
+    getMeshGeometryVertexUv0(uv, geometry, 0);
+    expect(uv.x).toBeCloseTo(1, 5);
+    expect(uv.y).toBeCloseTo(128 / 255, 5);
+  });
+
+  it('warns and yields empty geometry when an accessor runs past its backing buffer', () => {
+    // The accessor claims 10 vertices but the buffer holds only 3 — the bounds guard must reject it rather
+    // than read out of range.
+    const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]); // 3 verts, 36 bytes
+    const uri = toDataUri(bytesOf(positions));
+    const doc: GltfDocument = {
+      accessors: [{ bufferView: 0, componentType: 5126, count: 10, type: 'VEC3' }],
+      asset: { version: '2.0' },
+      bufferViews: [{ buffer: 0, byteLength: 120, byteOffset: 0 }],
+      buffers: [{ byteLength: 120, uri }],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0 } }] }],
+      nodes: [{ mesh: 0 }],
+      scene: 0,
+      scenes: [{ nodes: [0] }],
+    };
+    const warnings: string[] = [];
+    createSceneFromGltf(doc, warnings);
+    expect(warnings.some((w) => w.includes('runs past'))).toBe(true);
+  });
+
+  it('warns and yields empty geometry for a primitive with no POSITION attribute', () => {
+    // The parser keeps the mesh node but its geometry is empty (0 vertices). Assert that outcome
+    // unconditionally — a conditional check would pass even if assembly wrongly dropped the mesh.
+    const doc = makeTriangleGltf();
+    doc.meshes![0].primitives[0].attributes = {}; // drop POSITION
+    const warnings: string[] = [];
+    const scene = createSceneFromGltf(doc, warnings);
+    expect(warnings.some((w) => w.includes('POSITION'))).toBe(true);
+    const mesh = getNodeChildren(scene.root)[0] as Mesh;
+    expect(isMesh(mesh)).toBe(true);
+    expect(getMeshGeometryVertexCount(mesh.geometry)).toBe(0);
   });
 
   it('imports every primitive of a multi-primitive mesh as its own sub-mesh', () => {
@@ -1100,6 +1292,85 @@ describe('createSceneFromGltf animations', () => {
     expect(clip.channels[0].track.components).toBe(3);
   });
 
+  it('imports a scale channel as a 3-component Scale track that samples its VEC3 values', () => {
+    // A schema-valid VEC3 scale output (1,1,1) → (2,2,2); sampling the midpoint proves the track holds the
+    // scale payload (not a mislabeled quaternion), interpolating to (1.5, 1.5, 1.5).
+    const doc = makeChannelGltf({
+      interpolation: 'LINEAR',
+      output: new Float32Array([1, 1, 1, 2, 2, 2]),
+      outputCount: 2,
+      outputType: 'VEC3',
+      path: 'scale',
+      times: new Float32Array([0, 1]),
+    });
+    const clip = Object.values(createSceneFromGltf(doc).animations)[0];
+    expect((clip.channels[0].targetRef as SceneAnimationTarget).path).toBe('Scale');
+    expect(clip.channels[0].track.components).toBe(3);
+    const out = [0, 0, 0];
+    sampleAnimationTrack(out, clip.channels[0].track, 0.5);
+    expect(out[0]).toBeCloseTo(1.5, 5);
+    expect(out[1]).toBeCloseTo(1.5, 5);
+    expect(out[2]).toBeCloseTo(1.5, 5);
+  });
+
+  it('maps the STEP sampler interpolation to a Step track that holds the previous keyframe', () => {
+    // STEP holds key 0 across the whole [0,1] segment, so sampling at t=0.5 returns the first quaternion.
+    const doc = makeChannelGltf({
+      interpolation: 'STEP',
+      output: new Float32Array([0, 0, 0, 1, 0, 0.7071, 0, 0.7071]),
+      outputCount: 2,
+      outputType: 'VEC4',
+      path: 'rotation',
+      times: new Float32Array([0, 1]),
+    });
+    const track = Object.values(createSceneFromGltf(doc).animations)[0].channels[0].track;
+    expect(track.interpolation).toBe('Step');
+    const out = [0, 0, 0, 0];
+    sampleAnimationTrack(out, track, 0.5);
+    expect(out).toEqual([0, 0, 0, 1]); // frozen at keyframe 0, not interpolated toward keyframe 1
+  });
+
+  it('maps the CUBICSPLINE sampler interpolation to a Cubic Hermite track that samples correctly', () => {
+    // glTF CUBICSPLINE stores 3 elements per keyframe (in-tangent, value, out-tangent). Two keys of a VEC3
+    // translation → 6 VEC3 elements. With zero tangents and values (0,0,0)→(10,0,0), the Hermite midpoint
+    // (t=0.5) is (3t²-2t³)·10 = 5 — a value only reachable if the parser laid the cubic payload out right.
+    const output = new Float32Array([
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0, // key 0: in-tangent, value, out-tangent
+      0,
+      0,
+      0,
+      10,
+      0,
+      0,
+      0,
+      0,
+      0, // key 1: in-tangent, value (10,0,0), out-tangent
+    ]);
+    const doc = makeChannelGltf({
+      interpolation: 'CUBICSPLINE',
+      output,
+      outputCount: 6,
+      outputType: 'VEC3',
+      path: 'translation',
+      times: new Float32Array([0, 1]),
+    });
+    const track = Object.values(createSceneFromGltf(doc).animations)[0].channels[0].track;
+    expect(track.interpolation).toBe('Cubic');
+    const out = [0, 0, 0];
+    sampleAnimationTrack(out, track, 0.5);
+    expect(out[0]).toBeCloseTo(5, 5);
+    expect(out[1]).toBeCloseTo(0, 5);
+    expect(out[2]).toBeCloseTo(0, 5);
+  });
+
   it('returns an empty scene for invalid input', () => {
     const warnings: string[] = [];
     const scene = createSceneFromGltf('{ not json', warnings);
@@ -1118,6 +1389,38 @@ describe('createSceneFromGltf animations', () => {
     expect(mesh.morph!.targets[0].tangentDeltas).toBeNull();
     // mesh.weights: [0] seeds the initial weight.
     expect(Array.from(mesh.morph!.weights)).toEqual([0]);
+  });
+
+  it('reads a morph target TANGENT accessor into non-null tangentDeltas', () => {
+    // The sibling test above asserts tangentDeltas is null when no TANGENT target is present; this covers the
+    // populated branch — a VEC3 TANGENT delta accessor is read into the target's tangentDeltas.
+    const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    const posDeltas = new Float32Array([0, 1, 0, 0, 1, 0, 0, 1, 0]);
+    const tanDeltas = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+    const uri = toDataUri(bytesOf(positions), bytesOf(posDeltas), bytesOf(tanDeltas));
+    let o = 0;
+    const view = (len: number) => {
+      const bv = { buffer: 0, byteLength: len, byteOffset: o };
+      o += len;
+      return bv;
+    };
+    const doc: GltfDocument = {
+      accessors: [
+        { bufferView: 0, componentType: 5126, count: 3, type: 'VEC3' },
+        { bufferView: 1, componentType: 5126, count: 3, type: 'VEC3' },
+        { bufferView: 2, componentType: 5126, count: 3, type: 'VEC3' },
+      ],
+      asset: { version: '2.0' },
+      bufferViews: [view(positions.byteLength), view(posDeltas.byteLength), view(tanDeltas.byteLength)],
+      buffers: [{ byteLength: o, uri }],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0 }, targets: [{ POSITION: 1, TANGENT: 2 }] }], weights: [0] }],
+      nodes: [{ mesh: 0 }],
+      scene: 0,
+      scenes: [{ nodes: [0] }],
+    };
+    const mesh = getNodeChildren(createSceneFromGltf(doc).root)[0] as Mesh;
+    expect(mesh.morph!.targets[0].tangentDeltas).not.toBeNull();
+    expect(Array.from(mesh.morph!.targets[0].tangentDeltas!)).toEqual([1, 0, 0, 0, 1, 0, 0, 0, 1]);
   });
 
   it('imports a weights channel bound to the mesh morph, its width the target count', () => {
