@@ -376,6 +376,7 @@ describe('awd2 diagnostic crumb coverage', () => {
     ({ blockType, body, bytes, cut, field, kind, origin }) => {
       const diagnostics: ImportDiagnostic[] = [];
       createSceneFromAwd2(truncatedAwd(blockType, body, cut), diagnostics);
+      expect(diagnostics).toHaveLength(1);
       const crumb = expectOneCrumb(diagnostics, kind);
       expect(crumb.severity).toBe('Drop');
       expect(crumb.origin).toBe(origin);
@@ -869,6 +870,7 @@ describe('createSceneFromAwd2', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const scene = createSceneFromAwd2(awd, diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
+    expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.compression-no-decompressor');
     expect(crumb.severity).toBe('Reject');
     expect(crumb.origin).toBe('rehydrateAwdBody');
@@ -879,6 +881,7 @@ describe('createSceneFromAwd2', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const scene = createSceneFromAwd2(new Uint8Array(4), diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
+    expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.header-too-short');
     expect(crumb.detail).toBeUndefined();
     expect(crumb.severity).toBe('Reject');
@@ -891,6 +894,7 @@ describe('createSceneFromAwd2', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const scene = createSceneFromAwd2(bogus, diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
+    expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.bad-magic');
     expect(crumb.detail).toBeUndefined();
     expect(crumb.severity).toBe('Reject');
@@ -904,6 +908,7 @@ describe('createSceneFromAwd2', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const scene = createSceneFromAwd2(awd3, diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
+    expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.unsupported-version');
     expect(crumb.severity).toBe('Reject');
     expect(crumb.origin).toBe('isAwd2Version');
@@ -949,6 +954,7 @@ describe('createSceneFromAwd2', () => {
 
     const diagnostics: ImportDiagnostic[] = [];
     createSceneFromAwd2(awd, diagnostics);
+    expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.block-length-past-end');
     expect(crumb.detail).toBeUndefined();
     expect(crumb.severity).toBe('Recover');
@@ -965,6 +971,7 @@ describe('createSceneFromAwd2', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const scene = createSceneFromAwd2(awd, diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(1);
+    expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.mesh-instance-missing-geometry');
     expect(crumb.severity).toBe('Recover');
     expect(crumb.origin).toBe('parseAwd2');
@@ -1158,6 +1165,7 @@ describe('createSceneFromAwd2', () => {
     expect(material.kind).toBe(ShadedMaterialKind);
     expect(material.diffuse).toBe(0x112233ff); // base still imported despite the unmapped methods
     expect(material.modifiers).toHaveLength(0);
+    expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.material-methods-unsupported');
     expect(crumb.severity).toBe('Skip');
     expect(crumb.origin).toBe('resolveAwdMaterial');
@@ -1206,6 +1214,7 @@ describe('createSceneFromAwd2', () => {
     expect(material!.kind).toBe(ShadedMaterialKind);
     expect(material!.diffuse).toBe(0xffffffff);
     expect(material!.modifiers).toHaveLength(0);
+    expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.material-methods-unsupported');
     expect(crumb.severity).toBe('Skip');
     expect(crumb.origin).toBe('resolveAwdMaterial');
@@ -1561,9 +1570,11 @@ describe('parseAwd2', () => {
     expect(doc.meshes).toHaveLength(0);
     expect(doc.scenes).toHaveLength(1);
     expect(doc.scenes[0].rootNodes).toHaveLength(0);
+    expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.compression-no-decompressor');
     expect(crumb.severity).toBe('Reject');
     expect(crumb.origin).toBe('rehydrateAwdBody');
+    expect(crumb.detail?.compression).toBe(AWD2_COMPRESSION_DEFLATE);
   });
 });
 
@@ -1573,6 +1584,7 @@ describe('parseAwd2SkeletonAnimations', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const clips = parseAwd2SkeletonAnimations(awd3, [], diagnostics);
     expect(Object.keys(clips)).toHaveLength(0);
+    expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.unsupported-version');
     expect(crumb.severity).toBe('Reject');
     expect(crumb.origin).toBe('isAwd2Version');
@@ -1812,6 +1824,7 @@ describe('parseAwd2SkeletonAnimations', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const clip = firstAwdClip(awd, [createSceneNode()], diagnostics);
     expect(clip).toBeUndefined();
+    expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.joint-count-mismatch');
     expect(crumb.severity).toBe('Reject');
     expect(crumb.origin).toBe('parseAwd2SkeletonAnimations');
@@ -1824,6 +1837,7 @@ describe('parseAwd2SkeletonAnimations', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const clip = firstAwdClip(awd, [], diagnostics);
     expect(clip).toBeUndefined();
+    expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.no-skeleton-blocks');
     expect(crumb.detail).toBeUndefined();
     expect(crumb.severity).toBe('Reject');
@@ -1842,6 +1856,7 @@ describe('parseAwd2SkeletonAnimations', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const clip = firstAwdClip(awd, [createSceneNode()], diagnostics);
     expect(clip).toBeUndefined();
+    expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.no-skeleton-animation-blocks');
     expect(crumb.detail).toBeUndefined();
     expect(crumb.severity).toBe('Reject');
@@ -1852,6 +1867,7 @@ describe('parseAwd2SkeletonAnimations', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const clip = firstAwdClip(new Uint8Array(4), [], diagnostics);
     expect(clip).toBeUndefined();
+    expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.header-too-short');
     expect(crumb.detail).toBeUndefined();
     expect(crumb.severity).toBe('Reject');
@@ -1863,6 +1879,7 @@ describe('parseAwd2SkeletonAnimations', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const clip = firstAwdClip(bogus, [], diagnostics);
     expect(clip).toBeUndefined();
+    expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.bad-magic');
     expect(crumb.detail).toBeUndefined();
     expect(crumb.severity).toBe('Reject');
@@ -2282,9 +2299,11 @@ describe('registerAwd2Decompressor', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const scene = createSceneFromAwd2(asCompressed(SKINNED_TRIANGLE_AWD, AWD2_COMPRESSION_DEFLATE), diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
+    expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.compression-no-decompressor');
     expect(crumb.severity).toBe('Reject');
     expect(crumb.origin).toBe('rehydrateAwdBody');
+    expect(crumb.detail?.compression).toBe(AWD2_COMPRESSION_DEFLATE);
   });
 
   it('records a diagnostic and returns empty when the registered codec fails to inflate', () => {
@@ -2292,9 +2311,11 @@ describe('registerAwd2Decompressor', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const scene = createSceneFromAwd2(asCompressed(SKINNED_TRIANGLE_AWD, AWD2_COMPRESSION_DEFLATE), diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
+    expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.decompression-failed');
     expect(crumb.severity).toBe('Reject');
     expect(crumb.origin).toBe('rehydrateAwdBody');
+    expect(crumb.detail?.compression).toBe(AWD2_COMPRESSION_DEFLATE);
   });
 
   it('clears a codec when registered with null', () => {
@@ -2302,7 +2323,10 @@ describe('registerAwd2Decompressor', () => {
     registerAwd2Decompressor(AWD2_COMPRESSION_DEFLATE, null);
     const diagnostics: ImportDiagnostic[] = [];
     parseAwd2(asCompressed(SKINNED_TRIANGLE_AWD, AWD2_COMPRESSION_DEFLATE), diagnostics);
-    expect(expectOneCrumb(diagnostics, 'awd2.compression-no-decompressor').origin).toBe('rehydrateAwdBody');
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'awd2.compression-no-decompressor');
+    expect(crumb.origin).toBe('rehydrateAwdBody');
+    expect(crumb.detail?.compression).toBe(AWD2_COMPRESSION_DEFLATE);
   });
 
   // The real end-to-end (Away3D zlib-compresses the body; the vendored inflater reconstructs the identical
