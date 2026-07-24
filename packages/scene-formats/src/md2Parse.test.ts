@@ -26,6 +26,8 @@ function buildMd2(options: {
   // Optional per-frame vertex data for frames 1..N (frame 0 always uses `compressedVertices`). When
   // omitted, extra frames are zero-filled. Length should be numFrames-1 when provided.
   extraFrames?: readonly (readonly { normalIndex: number; x: number; y: number; z: number }[])[];
+  // Optional per-frame 16-byte name labels (index 0..numFrames-1). Omitted names stay all-null (empty).
+  frameNames?: readonly string[];
   magic?: number;
   numFrames?: number;
   scale?: readonly [number, number, number];
@@ -43,6 +45,7 @@ function buildMd2(options: {
   const {
     compressedVertices,
     extraFrames = [],
+    frameNames = [],
     magic = 0x32504449,
     numFrames = 1,
     scale = [1, 1, 1],
@@ -125,6 +128,11 @@ function buildMd2(options: {
     view.setFloat32(frameBase + 12, translate[0], true);
     view.setFloat32(frameBase + 16, translate[1], true);
     view.setFloat32(frameBase + 20, translate[2], true);
+    // Frame name: a 16-byte null-padded ASCII label at frameBase + 24.
+    const frameName = frameNames[f];
+    if (frameName !== undefined) {
+      for (let i = 0; i < frameName.length && i < 15; i++) bytes[frameBase + 24 + i] = frameName.charCodeAt(i);
+    }
     const frameVerts = f === 0 ? compressedVertices : (extraFrames[f - 1] ?? null);
     if (frameVerts === null) continue; // zero-filled frame
     for (let i = 0; i < numVertices; i++) {
@@ -550,6 +558,117 @@ describe('createSceneFromMd2 animations', () => {
     expect(channel.track.times).toHaveLength(2);
     expect(channel.track.times[0]).toBeCloseTo(0);
     expect(channel.track.times[1]).toBeCloseTo(0.1);
+  });
+
+  // A five-frame model whose frame names carry two action prefixes exercises the segmentation path.
+  const fiveFrameActions = () =>
+    buildMd2({
+      compressedVertices: singleTriangleFrame0,
+      extraFrames: [
+        [
+          { normalIndex: 0, x: 0, y: 0, z: 1 },
+          { normalIndex: 0, x: 1, y: 0, z: 1 },
+          { normalIndex: 0, x: 0, y: 1, z: 1 },
+        ],
+        [
+          { normalIndex: 0, x: 0, y: 0, z: 2 },
+          { normalIndex: 0, x: 1, y: 0, z: 2 },
+          { normalIndex: 0, x: 0, y: 1, z: 2 },
+        ],
+        [
+          { normalIndex: 0, x: 0, y: 0, z: 3 },
+          { normalIndex: 0, x: 1, y: 0, z: 3 },
+          { normalIndex: 0, x: 0, y: 1, z: 3 },
+        ],
+        [
+          { normalIndex: 0, x: 0, y: 0, z: 4 },
+          { normalIndex: 0, x: 1, y: 0, z: 4 },
+          { normalIndex: 0, x: 0, y: 1, z: 4 },
+        ],
+      ],
+      frameNames: ['stand01', 'stand02', 'run01', 'run02', 'run03'],
+      numFrames: 5,
+      texCoords: singleTriangleTexCoords,
+      triangles: singleTriangle,
+    });
+
+  it('segments contiguous same-prefix frame runs into named clips with per-action frame ranges', () => {
+    const document = parseMd2(fiveFrameActions());
+    expect(document.animations.map((a) => a.name)).toEqual(['stand', 'run']);
+    const stand = document.animations[0];
+    const run = document.animations[1];
+    // 'stand' spans frames 0-1 (2 keyframes); 'run' spans frames 2-4 (3 keyframes).
+    expect(stand.channels[0].track.times).toHaveLength(2);
+    expect(run.channels[0].track.times).toHaveLength(3);
+    // Every clip's weight track keeps the full morph width (4 targets for a 5-frame model).
+    expect(stand.channels[0].track.components).toBe(4);
+    expect(run.channels[0].track.components).toBe(4);
+  });
+
+  it('starts every clip at local time zero regardless of its absolute frame offset', () => {
+    const document = parseMd2(fiveFrameActions());
+    const run = document.animations[1];
+    // 'run' begins at absolute frame 2, but its own timeline starts at 0 and steps by 1/fps.
+    expect(Array.from(run.channels[0].track.times)).toEqual([0, 0.1, 0.2].map((t) => expect.closeTo(t)));
+    expect(run.duration).toBeCloseTo(0.2);
+  });
+
+  it('activates each frame’s own morph target within its clip and leaves the base frame all-zero', () => {
+    const document = parseMd2(fiveFrameActions());
+    const targetCount = 4;
+    const stand = Array.from(document.animations[0].channels[0].track.values);
+    // 'stand' keyframe 0 is base frame 0 → all weights zero; keyframe 1 is frame 1 → target 0 active.
+    expect(stand.slice(0, targetCount)).toEqual([0, 0, 0, 0]);
+    expect(stand.slice(targetCount, 2 * targetCount)).toEqual([1, 0, 0, 0]);
+    // 'run' keyframes are frames 2,3,4 → targets 1,2,3 active on the diagonal, full width each.
+    const run = Array.from(document.animations[1].channels[0].track.values);
+    expect(run.slice(0, targetCount)).toEqual([0, 1, 0, 0]);
+    expect(run.slice(targetCount, 2 * targetCount)).toEqual([0, 0, 1, 0]);
+    expect(run.slice(2 * targetCount, 3 * targetCount)).toEqual([0, 0, 0, 1]);
+  });
+
+  it('collapses unnamed frames into a single default-named clip (MD2 without frame labels)', () => {
+    const md2 = buildMd2({
+      compressedVertices: singleTriangleFrame0,
+      extraFrames: [
+        [
+          { normalIndex: 0, x: 0, y: 0, z: 5 },
+          { normalIndex: 0, x: 1, y: 0, z: 5 },
+          { normalIndex: 0, x: 0, y: 1, z: 5 },
+        ],
+      ],
+      numFrames: 2,
+      texCoords: singleTriangleTexCoords,
+      triangles: singleTriangle,
+    });
+    const document = parseMd2(md2);
+    expect(document.animations).toHaveLength(1);
+    expect(document.animations[0].name).toBe('default');
+  });
+
+  it('disambiguates duplicate action names from two non-adjacent same-prefix runs', () => {
+    const md2 = buildMd2({
+      compressedVertices: singleTriangleFrame0,
+      extraFrames: [
+        [
+          { normalIndex: 0, x: 0, y: 0, z: 1 },
+          { normalIndex: 0, x: 1, y: 0, z: 1 },
+          { normalIndex: 0, x: 0, y: 1, z: 1 },
+        ],
+        [
+          { normalIndex: 0, x: 0, y: 0, z: 2 },
+          { normalIndex: 0, x: 1, y: 0, z: 2 },
+          { normalIndex: 0, x: 0, y: 1, z: 2 },
+        ],
+      ],
+      // walk → jump → walk again: the two walk runs are not contiguous, so both clips are named 'walk'.
+      frameNames: ['walk01', 'jump01', 'walk01'],
+      numFrames: 3,
+      texCoords: singleTriangleTexCoords,
+      triangles: singleTriangle,
+    });
+    const document = parseMd2(md2);
+    expect(document.animations.map((a) => a.name)).toEqual(['walk', 'jump', 'walk.2']);
   });
 });
 

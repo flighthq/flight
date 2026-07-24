@@ -20,6 +20,7 @@ import {
   MD2_COMPRESSED_VERTEX_SIZE,
   MD2_FRAME_HEADER_SIZE,
   MD2_FRAME_FPS,
+  MD2_FRAME_NAME_SIZE,
   MD2_HEADER_SIZE,
   MD2_MAGIC,
   MD2_SKIN_SIZE,
@@ -211,19 +212,22 @@ export function parseMd2(bytes: Readonly<Uint8Array>, warnings?: string[]): Scen
   document.nodes.push({ children: [], kind: MeshKind, mesh: 0, transform: createTransform3D() });
   document.scenes[0].rootNodes.push(0);
 
-  // Realize MD2's per-frame vertex animation as one weight-track channel on the generic morph substrate:
-  // MD2's frames are semantically a two-frame lerp at each instant, so the per-frame weight track has
-  // exactly the two adjacent frames' weights non-zero (a hat function). A single-frame model has no
-  // motion and leaves `animations` empty. The channel binds the mesh node (index 0) by index.
-  const animation = buildMd2MorphAnimation(morph);
-  if (animation !== null) document.animations.push(animation);
+  // Realize MD2's per-frame vertex animation as weight-track channels on the generic morph substrate.
+  // MD2 encodes named sub-animations by frame-name prefix ("stand01".."run06".."attack01"..), so the
+  // frames are segmented into one named clip per contiguous same-prefix run rather than a single clip.
+  // Within a clip, adjacent-frame weights form the two-frame lerp (a hat function) MD2 semantics call
+  // for. A single-frame model has no motion and leaves `animations` empty. Channels bind mesh node 0.
+  document.animations.push(...buildMd2MorphAnimations(frames, morph));
 
   return document;
 }
 
 // One decompressed MD2 frame in Flight's Y-up space: `positions` and `normals` are 3 floats per source
-// MD2 vertex (indexed by the raw MD2 vertex index, before triangle re-indexing).
+// MD2 vertex (indexed by the raw MD2 vertex index, before triangle re-indexing). `name` is the frame's
+// 16-byte label, which encodes its sub-animation by an action prefix + a trailing frame number
+// ("stand01".."stand40"); contiguous same-prefix runs are segmented into named clips.
 interface Md2Frame {
+  name: string;
   normals: Float32Array;
   positions: Float32Array;
 }
@@ -254,6 +258,8 @@ function readMd2Frames(
     const translateX = view.getFloat32(frameBase + 12, true);
     const translateY = view.getFloat32(frameBase + 16, true);
     const translateZ = view.getFloat32(frameBase + 20, true);
+    // The frame name (its sub-animation label) is the 16-byte field after the scale+translate vectors.
+    const name = readMd2FrameName(bytes, frameBase + 24);
 
     const verticesBase = frameBase + MD2_FRAME_HEADER_SIZE;
     const positions = new Float32Array(numVertices * 3);
@@ -279,7 +285,7 @@ function readMd2Frames(
         outOfRangeNormals.add(ni);
       }
     }
-    frames.push({ normals, positions });
+    frames.push({ name, normals, positions });
   }
   if (outOfRangeNormals !== null && outOfRangeNormals.size > 0) {
     const indices = [...outOfRangeNormals].sort((a, b) => a - b).join(', ');
@@ -318,32 +324,76 @@ function buildMd2Morph(frames: readonly Md2Frame[], sourceVertexIndices: readonl
   return { targets, weights: new Float32Array(targets.length) };
 }
 
-// Builds the vertex-morph SceneDocumentAnimation for the MD2 mesh (document node 0), or null when the
-// model has no morph (a single-frame model). Frame 0 is the base pose; each morph target is frame i+1.
-// The animation is a single `weights` channel whose value block per keyframe is the full weight vector:
-// at keyframe for frame k it sets weight[k-1] = 1 and all others 0 (frame 0 = all-zero base). Linear
-// interpolation between adjacent keyframes then blends frame i → i+1 — the two-frame lerp MD2 semantics
-// call for, realized as a hat function over the shared generic morph sink. Times are k / MD2_FRAME_FPS.
-function buildMd2MorphAnimation(morph: MeshMorph | null): SceneDocumentAnimation | null {
-  if (morph === null) return null;
+// Segments MD2's frames into named vertex-morph clips, one per contiguous run of same-action frames.
+// MD2 stores each sub-animation as a run of frames whose names share an action prefix and end in a
+// frame number ("stand01".."stand40"); `md2FrameActionName` recovers that prefix, and contiguous
+// same-prefix frames become one `SceneDocumentAnimation`. Returns an empty array for a model with no
+// morph (single frame). A model whose frames carry no names collapses to one clip named 'default',
+// identical to MD2's implicit single animation. Each clip binds mesh node 0.
+function buildMd2MorphAnimations(frames: readonly Md2Frame[], morph: MeshMorph | null): SceneDocumentAnimation[] {
+  if (morph === null) return [];
   const targetCount = morph.targets.length;
-  if (targetCount === 0) return null;
+  if (targetCount === 0) return [];
 
-  const frameCount = targetCount + 1; // targets are frames 1..N; frame 0 is the base
-  const times = new Float32Array(frameCount);
-  const values = new Float32Array(frameCount * targetCount);
-  for (let k = 0; k < frameCount; k++) {
-    times[k] = k / MD2_FRAME_FPS;
-    // Frame k activates target index k-1 (frame 0 leaves all weights zero — the base pose).
-    if (k >= 1) values[k * targetCount + (k - 1)] = 1;
+  const animations: SceneDocumentAnimation[] = [];
+  const usedNames = new Set<string>();
+  let runStart = 0;
+  for (let k = 1; k <= frames.length; k++) {
+    const runAction = md2FrameActionName(frames[runStart].name);
+    // Close the run at the buffer end or when the next frame's action prefix differs.
+    if (k < frames.length && md2FrameActionName(frames[k].name) === runAction) continue;
+    animations.push(buildMd2ActionClip(runAction, runStart, k - 1, targetCount, usedNames));
+    runStart = k;
+  }
+  return animations;
+}
+
+// Builds one named clip for the contiguous frame run [startFrame..endFrame] (absolute frame indices).
+// Frame 0 is the morph base pose (all weights zero); frame k≥1 is morph target k-1. The clip's weight
+// track has one keyframe per frame at clip-local time (i / MD2_FRAME_FPS), each keyframe's full-width
+// value vector activating only that frame's target — linear interpolation between adjacent keyframes
+// then blends frame → frame+1, the two-frame lerp MD2 semantics call for. The track width stays the
+// mesh's full morph-target count because a `weights` channel drives the whole weight array.
+function buildMd2ActionClip(
+  action: string,
+  startFrame: number,
+  endFrame: number,
+  targetCount: number,
+  usedNames: Set<string>,
+): SceneDocumentAnimation {
+  const count = endFrame - startFrame + 1;
+  const times = new Float32Array(count);
+  const values = new Float32Array(count * targetCount);
+  for (let i = 0; i < count; i++) {
+    const frame = startFrame + i;
+    times[i] = i / MD2_FRAME_FPS;
+    if (frame >= 1) values[i * targetCount + (frame - 1)] = 1;
   }
   const track = createAnimationTrack({ components: targetCount, interpolation: 'Linear', times, values });
-  // MD2 carries a single implicit frame animation with no name in the format; key it 'default'.
   return {
     channels: [{ node: 0, path: SceneAnimationPathWeights, track }],
-    duration: times[frameCount - 1],
-    name: 'default',
+    duration: times[count - 1],
+    name: uniqueMd2ClipName(action, usedNames),
   };
+}
+
+// Recovers the sub-animation action name from a frame name by stripping the trailing frame-number run
+// ("stand01" → "stand", "run1" → "run"). Returns '' for a name that is empty or purely numeric, which
+// callers map to the 'default' clip. This is the frame-name convention id Software's MD2 exporters use
+// to pack multiple actions into one contiguous frame list.
+function md2FrameActionName(frameName: string): string {
+  return frameName.trim().replace(/\d+$/, '');
+}
+
+// Produces a clip name unique within this document. An empty action prefix becomes 'default'; a name
+// already taken (two non-adjacent runs of the same action) gets a numeric suffix so name-keyed scene
+// animation maps never collide.
+function uniqueMd2ClipName(action: string, usedNames: Set<string>): string {
+  const base = action.length > 0 ? action : 'default';
+  let name = base;
+  for (let n = 2; usedNames.has(name); n++) name = `${base}.${n}`;
+  usedNames.add(name);
+  return name;
 }
 
 // The empty SceneDocument returned when MD2 parsing fails or before assembly begins — every table present.
@@ -360,6 +410,17 @@ function emptyMd2Document(): SceneDocument {
     scenes: [{ rootNodes: [] }],
     skins: [],
   };
+}
+
+// Reads the fixed 16-byte null-padded ASCII frame-name field starting at `offset`, stopping at the
+// first null terminator. The name encodes the frame's sub-animation (an action prefix + frame number).
+function readMd2FrameName(bytes: Readonly<Uint8Array>, offset: number): string {
+  const limit = offset + MD2_FRAME_NAME_SIZE;
+  let end = offset;
+  while (end < limit && bytes[end] !== 0) end++;
+  let name = '';
+  for (let i = offset; i < end; i++) name += String.fromCharCode(bytes[i]);
+  return name;
 }
 
 // Reads a fixed 64-byte null-padded ASCII skin path record starting at `offset`, stopping at the
