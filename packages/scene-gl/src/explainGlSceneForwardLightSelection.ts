@@ -3,7 +3,7 @@ import { MAX_FORWARD_LIGHTS } from '@flighthq/types';
 
 // Explains whether drawing `lights` through the fixed forward budget needs an explicit per-object
 // selection list. This pure, separately importable query retains and mutates nothing.
-export function explainSceneForwardLightSelection(
+export function explainGlSceneForwardLightSelection(
   lights: Readonly<SceneLightsLike>,
   selection?: Readonly<GlSceneForwardLightList>,
 ): SceneForwardLightSelectionExplanation {

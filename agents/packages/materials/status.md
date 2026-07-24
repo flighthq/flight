@@ -56,10 +56,10 @@ Executed the sweep-safe items from `assessment.md` › Recommended. The package 
 
 ### Silver — alpha-mode helpers (first pass)
 
-- `getMaterialAlphaMode(source: Readonly<SurfaceMaterial>): MaterialAlphaMode` — returns the material's alpha mode.
-- `isMaterialBlended(source: Readonly<SurfaceMaterial>): boolean` — true when `alphaMode === 'blend'`.
-- `isMaterialMasked(source: Readonly<SurfaceMaterial>): boolean` — true when `alphaMode === 'mask'`.
-- `isMaterialOpaque(source: Readonly<SurfaceMaterial>): boolean` — true when `alphaMode === 'opaque'`.
+- `getSurfaceMaterialAlphaMode(source: Readonly<SurfaceMaterial>): MaterialAlphaMode` — returns the material's alpha mode.
+- `isSurfaceMaterialBlended(source: Readonly<SurfaceMaterial>): boolean` — true when `alphaMode === 'blend'`.
+- `isSurfaceMaterialMasked(source: Readonly<SurfaceMaterial>): boolean` — true when `alphaMode === 'mask'`.
+- `isSurfaceMaterialOpaque(source: Readonly<SurfaceMaterial>): boolean` — true when `alphaMode === 'opaque'`.
 
 ### Silver — HSL/HSV conversions (second pass, new)
 

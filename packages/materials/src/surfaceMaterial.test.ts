@@ -2,10 +2,10 @@ import { BlendMode } from '@flighthq/types';
 
 import {
   createSurfaceMaterial,
-  getMaterialAlphaMode,
-  isMaterialBlended,
-  isMaterialMasked,
-  isMaterialOpaque,
+  getSurfaceMaterialAlphaMode,
+  isSurfaceMaterialBlended,
+  isSurfaceMaterialMasked,
+  isSurfaceMaterialOpaque,
 } from './surfaceMaterial';
 
 const TestSurfaceMaterialKind = 'TestSurfaceMaterial';
@@ -36,45 +36,45 @@ describe('createSurfaceMaterial', () => {
   });
 });
 
-describe('getMaterialAlphaMode', () => {
+describe('getSurfaceMaterialAlphaMode', () => {
   it('returns the alphaMode of the material', () => {
     const opaque = createSurfaceMaterial(TestSurfaceMaterialKind);
-    expect(getMaterialAlphaMode(opaque)).toBe('opaque');
+    expect(getSurfaceMaterialAlphaMode(opaque)).toBe('opaque');
     const blended = createSurfaceMaterial(TestSurfaceMaterialKind);
     blended.alphaMode = 'blend';
-    expect(getMaterialAlphaMode(blended)).toBe('blend');
+    expect(getSurfaceMaterialAlphaMode(blended)).toBe('blend');
     const masked = createSurfaceMaterial(TestSurfaceMaterialKind);
     masked.alphaMode = 'mask';
-    expect(getMaterialAlphaMode(masked)).toBe('mask');
+    expect(getSurfaceMaterialAlphaMode(masked)).toBe('mask');
   });
 });
 
-describe('isMaterialBlended', () => {
+describe('isSurfaceMaterialBlended', () => {
   it('returns true only for blend mode', () => {
     const opaque = createSurfaceMaterial(TestSurfaceMaterialKind);
-    expect(isMaterialBlended(opaque)).toBe(false);
+    expect(isSurfaceMaterialBlended(opaque)).toBe(false);
     const blended = createSurfaceMaterial(TestSurfaceMaterialKind);
     blended.alphaMode = 'blend';
-    expect(isMaterialBlended(blended)).toBe(true);
+    expect(isSurfaceMaterialBlended(blended)).toBe(true);
   });
 });
 
-describe('isMaterialMasked', () => {
+describe('isSurfaceMaterialMasked', () => {
   it('returns true only for mask mode', () => {
     const opaque = createSurfaceMaterial(TestSurfaceMaterialKind);
-    expect(isMaterialMasked(opaque)).toBe(false);
+    expect(isSurfaceMaterialMasked(opaque)).toBe(false);
     const masked = createSurfaceMaterial(TestSurfaceMaterialKind);
     masked.alphaMode = 'mask';
-    expect(isMaterialMasked(masked)).toBe(true);
+    expect(isSurfaceMaterialMasked(masked)).toBe(true);
   });
 });
 
-describe('isMaterialOpaque', () => {
+describe('isSurfaceMaterialOpaque', () => {
   it('returns true only for opaque mode', () => {
     const opaque = createSurfaceMaterial(TestSurfaceMaterialKind);
-    expect(isMaterialOpaque(opaque)).toBe(true);
+    expect(isSurfaceMaterialOpaque(opaque)).toBe(true);
     const blended = createSurfaceMaterial(TestSurfaceMaterialKind);
     blended.alphaMode = 'blend';
-    expect(isMaterialOpaque(blended)).toBe(false);
+    expect(isSurfaceMaterialOpaque(blended)).toBe(false);
   });
 });

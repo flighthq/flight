@@ -351,7 +351,7 @@ export function ensureWgpuMaterialBinding(
       views: views.slice(),
     };
     scene.materialBindGroups.set(key, binding);
-  } else if (wgpuMaterialBindGroupNeedsRebuild(binding, sampler, views)) {
+  } else if (isWgpuMaterialBindGroupRebuildNeeded(binding, sampler, views)) {
     binding.bindGroup = buildWgpuMaterialBindGroup(state, layout, binding.buffer, sampler, views);
     binding.sampler = sampler;
     // Overwrite the binding-owned view array in place — never alias the reused caller scratch, which the
@@ -684,7 +684,7 @@ export function ensureWgpuShadowSampleLayout(state: WgpuRenderState): GPUBindGro
 // sampler is NOT honored on wgpu — only the primary map's. scene-gl, by contrast, binds each map with
 // its own `map.sampler` (bindGlImageResourceTexture). This keeps the wgpu bind group to one sampler; a
 // per-map-sampler wgpu path (one sampler binding per map) is a chartered later change, not a bug. The
-// invalidation cache tracks this one sampler accordingly (see wgpuMaterialBindGroupNeedsRebuild).
+// invalidation cache tracks this one sampler accordingly (see isWgpuMaterialBindGroupRebuildNeeded).
 // Because a GPUSampler is immutable and baked into the cached bind group, this reads the descriptor at
 // bind-group creation — the same lifetime as the resolved texture views.
 export function getWgpuMaterialSampler(
@@ -767,7 +767,7 @@ export function stashWgpuUvTransform(
 // sampler trips a rebuild; a non-primary map's per-Texture sampler is not bound and does not (the
 // shared-primary-sampler contract). A binding with no cached views always rebuilds. Allocation-free —
 // callers pass a reused scratch as `views`.
-export function wgpuMaterialBindGroupNeedsRebuild(
+export function isWgpuMaterialBindGroupRebuildNeeded(
   binding: Readonly<WgpuMaterialBinding>,
   sampler: GPUSampler,
   views: readonly GPUTextureView[],

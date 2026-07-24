@@ -1,7 +1,7 @@
 import { createPointLight } from '@flighthq/lighting';
 import type { GlSceneForwardLightList, SceneLightsLike } from '@flighthq/types';
 
-import { explainSceneForwardLightSelection } from './explainSceneForwardLightSelection';
+import { explainGlSceneForwardLightSelection } from './explainGlSceneForwardLightSelection';
 
 function lights(count: number): SceneLightsLike {
   return {
@@ -11,9 +11,9 @@ function lights(count: number): SceneLightsLike {
   };
 }
 
-describe('explainSceneForwardLightSelection', () => {
+describe('explainGlSceneForwardLightSelection', () => {
   it('reports a required selection when input truncation would occur', () => {
-    expect(explainSceneForwardLightSelection(lights(5))).toEqual({
+    expect(explainGlSceneForwardLightSelection(lights(5))).toEqual({
       pointLightCount: 5,
       reason: 'selection-required',
       selectionPrepared: false,
@@ -23,10 +23,10 @@ describe('explainSceneForwardLightSelection', () => {
 
   it('reports when a selection was prepared', () => {
     const prepared: GlSceneForwardLightList = { meshCount: 0, meshLightBlocks: [] };
-    expect(explainSceneForwardLightSelection(lights(5), prepared).reason).toBe('selection-prepared');
+    expect(explainGlSceneForwardLightSelection(lights(5), prepared).reason).toBe('selection-prepared');
   });
 
   it('reports when punctual inputs fit the fixed budget', () => {
-    expect(explainSceneForwardLightSelection(lights(4)).reason).toBe('within-budget');
+    expect(explainGlSceneForwardLightSelection(lights(4)).reason).toBe('within-budget');
   });
 });

@@ -4,7 +4,8 @@ import {
   setMeshGeometrySkinBindPose,
   updateMeshMorph,
 } from '@flighthq/mesh';
-import type { Mesh, MeshSkinBindPose, VertexAttributeLayout, GlMeshUpload } from '@flighthq/types';
+import { createMesh } from '@flighthq/scene';
+import type { Mesh, MeshMorph, MeshSkinBindPose, VertexAttributeLayout, GlMeshUpload } from '@flighthq/types';
 
 import { destroyGlMeshUpload, ensureGlMeshUpload } from './glMeshUpload';
 import { getGlSceneRuntime } from './glSceneRuntime';
@@ -249,6 +250,55 @@ describe('ensureGlMeshUpload', () => {
     ensureGlMeshUpload(state, geometry, true);
     expect(gl.calls.filter((c) => c.name === 'bufferData').length).toBeGreaterThan(uploadsAfterFirst);
     expect(lastFloat32BufferData(gl.calls)[0]).toBeCloseTo(9);
+  });
+
+  // The GL vertex morph path is CPU-blend-then-upload: updateMeshMorph blends base + Σ wᵢ·targetᵢ into
+  // geometry.vertices and bumps the version, and ensureGlMeshUpload (the non-skinned path) re-uploads the
+  // deformed vertices — no HAS_MORPH shader permutation. (Folded from the former glMeshMorph.test.ts,
+  // whose source lives here in glMeshUpload.ts.)
+  it('uploads the morph-blended vertices for a morphed mesh (CPU-blend-then-upload GL path)', () => {
+    const { state, gl } = makeGlSceneState();
+    const layout: VertexAttributeLayout = {
+      attributes: [{ byteOffset: 0, format: 'float32x3', semantic: 'position' }],
+      stride: 12,
+    };
+    const geometry = createMeshGeometry({ layout, vertices: new Float32Array([0, 0, 0, 1, 0, 0]) });
+    const morph: MeshMorph = {
+      targets: [{ normalDeltas: null, positionDeltas: new Float32Array([0, 5, 0, 0, 5, 0]), tangentDeltas: null }],
+      weights: new Float32Array([1]),
+    };
+    const mesh = createMesh(geometry, []);
+    mesh.morph = morph;
+
+    ensureGlMeshUpload(state, geometry, false); // first upload before morph blends
+    updateMeshMorph(mesh); // weight 1 raises both vertices by 5 in y
+    ensureGlMeshUpload(state, geometry, false);
+
+    expect(Array.from(lastFloat32BufferData(gl.calls))).toEqual([0, 5, 0, 1, 5, 0]);
+  });
+
+  it('re-uploads as the morph weights change frame to frame', () => {
+    const { state, gl } = makeGlSceneState();
+    const layout: VertexAttributeLayout = {
+      attributes: [{ byteOffset: 0, format: 'float32x3', semantic: 'position' }],
+      stride: 12,
+    };
+    const geometry = createMeshGeometry({ layout, vertices: new Float32Array([0, 0, 0]) });
+    const morph: MeshMorph = {
+      targets: [{ normalDeltas: null, positionDeltas: new Float32Array([2, 0, 0]), tangentDeltas: null }],
+      weights: new Float32Array([1]),
+    };
+    const mesh = createMesh(geometry, []);
+    mesh.morph = morph;
+
+    updateMeshMorph(mesh);
+    ensureGlMeshUpload(state, geometry, false);
+    expect(Array.from(lastFloat32BufferData(gl.calls))).toEqual([2, 0, 0]);
+
+    morph.weights[0] = 0.5;
+    updateMeshMorph(mesh);
+    ensureGlMeshUpload(state, geometry, false);
+    expect(Array.from(lastFloat32BufferData(gl.calls))).toEqual([1, 0, 0]);
   });
 });
 
