@@ -39,6 +39,7 @@ export function buildGlPbrDefineKey(key: Readonly<GlPbrDefineKey>): string {
     `${key.hasMetallicRoughnessMap ? 'r' : '-'}` +
     `${key.hasOcclusionMap ? 'o' : '-'}` +
     `${key.hasEmissiveMap ? 'e' : '-'}` +
+    `${key.hasAlphaMap ? 'a' : '-'}` +
     `${key.hasUvTransform ? 'u' : '-'}` +
     `:${key.clearcoatEnabled ? 'C' : '-'}` +
     `${key.sheenEnabled ? 'S' : '-'}` +
@@ -63,6 +64,7 @@ export function buildGlPbrDefineSource(key: Readonly<GlPbrDefineKey>): string {
   if (key.hasMetallicRoughnessMap) defines += '#define HAS_METALLIC_ROUGHNESS_MAP\n';
   if (key.hasOcclusionMap) defines += '#define HAS_OCCLUSION_MAP\n';
   if (key.hasEmissiveMap) defines += '#define HAS_EMISSIVE_MAP\n';
+  if (key.hasAlphaMap) defines += '#define HAS_ALPHA_MAP\n';
   if (key.clearcoatEnabled) defines += '#define CLEARCOAT\n';
   if (key.sheenEnabled) defines += '#define SHEEN\n';
   if (key.anisotropyEnabled) defines += '#define ANISOTROPY\n';
@@ -239,6 +241,9 @@ uniform sampler2D u_occlusionMap;
 #endif
 #ifdef HAS_EMISSIVE_MAP
 uniform sampler2D u_emissiveMap;
+#endif
+#ifdef HAS_ALPHA_MAP
+uniform sampler2D u_alphaMap;
 #endif
 
 #ifdef CLEARCOAT
@@ -422,6 +427,12 @@ void main() {
   vec4 sampled = texture(u_baseColorMap, v_uv0);
   baseColor.rgb *= srgbToLinear(sampled.rgb);
   baseColor.a *= sampled.a;
+#endif
+
+  // Dedicated coverage (opacity) map: its green channel is linear data, multiplied into alpha before
+  // the alpha-mask cutoff so 'mask' cutout and 'blend' transparency both see the combined coverage.
+#ifdef HAS_ALPHA_MAP
+  baseColor.a *= texture(u_alphaMap, v_uv0).g;
 #endif
 
 #ifdef ALPHA_MASK

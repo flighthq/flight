@@ -13,7 +13,7 @@ import type {
 
 import { bindGlUvTransform } from './glMeshProgram';
 
-// The texture-unit assignment for the StandardPbrMaterialProperties block. Units 0–4 are reserved
+// The texture-unit assignment for the StandardPbrMaterialProperties block. Units 0–5 are reserved
 // for the standard maps so every PBR program (StandardPbr and every extension) binds them at the
 // same slots; extension renderers bind their own maps at GL_PBR_EXTENSION_TEXTURE_UNIT and above.
 export const GL_PBR_BASE_COLOR_TEXTURE_UNIT = 0;
@@ -21,10 +21,11 @@ export const GL_PBR_NORMAL_TEXTURE_UNIT = 1;
 export const GL_PBR_METALLIC_ROUGHNESS_TEXTURE_UNIT = 2;
 export const GL_PBR_OCCLUSION_TEXTURE_UNIT = 3;
 export const GL_PBR_EMISSIVE_TEXTURE_UNIT = 4;
+export const GL_PBR_ALPHA_TEXTURE_UNIT = 5;
 
-// The first texture unit free for an extension's own maps (clearcoat, sheen, etc.), past the five
+// The first texture unit free for an extension's own maps (clearcoat, sheen, etc.), past the six
 // standard-block units. Extension renderers number their maps from here.
-export const GL_PBR_EXTENSION_TEXTURE_UNIT = 5;
+export const GL_PBR_EXTENSION_TEXTURE_UNIT = 6;
 
 // Uploads the full StandardPbrMaterialProperties block to a PBR program: the base-color/metallic/
 // roughness/normal/occlusion/emissive scalars and colors, plus each present map bound at its fixed
@@ -73,6 +74,7 @@ export function bindGlPbrStandardBlock(
   );
   bindGlPbrStandardTexture(state, standard.occlusionMap, program.locOcclusionMap, GL_PBR_OCCLUSION_TEXTURE_UNIT);
   bindGlPbrStandardTexture(state, standard.emissiveMap, program.locEmissiveMap, GL_PBR_EMISSIVE_TEXTURE_UNIT);
+  bindGlPbrStandardTexture(state, standard.alphaMap, program.locAlphaMap, GL_PBR_ALPHA_TEXTURE_UNIT);
   // The base-color map's uv transform drives the shared v_uv0 that every standard map samples.
   bindGlUvTransform(gl, program, standard.baseColorMap);
 }
@@ -108,6 +110,7 @@ export function buildGlPbrStandardDefineKey(
     alphaMaskEnabled,
     anisotropyEnabled: false,
     clearcoatEnabled: false,
+    hasAlphaMap: isGlTextureReady(standard?.alphaMap ?? null),
     hasBaseColorMap: isGlTextureReady(baseColorMap),
     hasEmissiveMap: isGlTextureReady(standard?.emissiveMap ?? null),
     hasMetallicRoughnessMap: isGlTextureReady(standard?.metallicRoughnessMap ?? null),

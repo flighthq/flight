@@ -10,6 +10,7 @@ import type { GlLitProgram } from './GlLitProgram';
 // define, which is harmless — its renderer only runs when the define is set).
 export interface GlPbrProgram extends GlLitProgram {
   locAlphaCutoff: WebGLUniformLocation | null;
+  locAlphaMap: WebGLUniformLocation | null;
   locAnisotropyRotation: WebGLUniformLocation | null;
   locAnisotropyStrength: WebGLUniformLocation | null;
   locAttenuationColor: WebGLUniformLocation | null;
@@ -51,6 +52,7 @@ export interface GlPbrDefineKey {
   alphaMaskEnabled: boolean;
   anisotropyEnabled: boolean;
   clearcoatEnabled: boolean;
+  hasAlphaMap: boolean;
   hasBaseColorMap: boolean;
   hasEmissiveMap: boolean;
   hasMetallicRoughnessMap: boolean;

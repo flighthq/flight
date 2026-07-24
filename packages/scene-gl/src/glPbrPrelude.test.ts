@@ -14,6 +14,7 @@ function makeKey(overrides?: Partial<GlPbrDefineKey>): GlPbrDefineKey {
     alphaMaskEnabled: false,
     anisotropyEnabled: false,
     clearcoatEnabled: false,
+    hasAlphaMap: false,
     hasBaseColorMap: false,
     hasEmissiveMap: false,
     hasMetallicRoughnessMap: false,
@@ -51,20 +52,21 @@ const ALL = makeKey({
 
 describe('buildGlPbrDefineKey', () => {
   it('produces a stable, distinct string per flag set', () => {
-    expect(buildGlPbrDefineKey(NONE)).toBe('-------:--------');
-    expect(buildGlPbrDefineKey(STANDARD_ALL)).toBe('mbnroe-:--------');
-    expect(buildGlPbrDefineKey(ALL)).toBe('mbnroe-:CSAIPUT-');
-    expect(buildGlPbrDefineKey(makeKey({ hasBaseColorMap: true }))).toBe('-b-----:--------');
-    expect(buildGlPbrDefineKey(makeKey({ clearcoatEnabled: true }))).toBe('-------:C-------');
+    expect(buildGlPbrDefineKey(NONE)).toBe('--------:--------');
+    expect(buildGlPbrDefineKey(STANDARD_ALL)).toBe('mbnroe--:--------');
+    expect(buildGlPbrDefineKey(ALL)).toBe('mbnroe--:CSAIPUT-');
+    expect(buildGlPbrDefineKey(makeKey({ hasBaseColorMap: true }))).toBe('-b------:--------');
+    expect(buildGlPbrDefineKey(makeKey({ clearcoatEnabled: true }))).toBe('--------:C-------');
+    expect(buildGlPbrDefineKey(makeKey({ hasAlphaMap: true }))).toBe('------a-:--------');
   });
 
   it('encodes the HAS_UV_TRANSFORM variant as a distinct standard-block slot', () => {
-    expect(buildGlPbrDefineKey(makeKey({ hasUvTransform: true }))).toBe('------u:--------');
+    expect(buildGlPbrDefineKey(makeKey({ hasUvTransform: true }))).toBe('-------u:--------');
     expect(buildGlPbrDefineKey(makeKey({ hasUvTransform: true }))).not.toBe(buildGlPbrDefineKey(NONE));
   });
 
   it('encodes the HAS_SKIN variant as a distinct trailing slot', () => {
-    expect(buildGlPbrDefineKey(makeKey({ hasSkin: true }))).toBe('-------:-------k');
+    expect(buildGlPbrDefineKey(makeKey({ hasSkin: true }))).toBe('--------:-------k');
     expect(buildGlPbrDefineKey(makeKey({ hasSkin: true }))).not.toBe(buildGlPbrDefineKey(NONE));
   });
 
@@ -94,6 +96,11 @@ describe('buildGlPbrDefineSource', () => {
     expect(none).not.toContain('#define ALPHA_MASK');
     expect(none).not.toContain('#define HAS_BASE_COLOR_MAP');
     expect(none).not.toContain('#define CLEARCOAT');
+    expect(none).not.toContain('#define HAS_ALPHA_MAP');
+  });
+
+  it('gates the HAS_ALPHA_MAP define off the dedicated coverage-map flag', () => {
+    expect(buildGlPbrDefineSource(makeKey({ hasAlphaMap: true }))).toContain('#define HAS_ALPHA_MAP');
   });
 
   it('opens with the GLSL 300 es version directive', () => {

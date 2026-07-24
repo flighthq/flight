@@ -15,6 +15,7 @@ export function compileGlPbrProgram(gl: WebGL2RenderingContext, key: Readonly<Gl
     ...resolveGlLitLocations(gl, program),
     program,
     locAlphaCutoff: gl.getUniformLocation(program, 'u_alphaCutoff'),
+    locAlphaMap: gl.getUniformLocation(program, 'u_alphaMap'),
     locAnisotropyRotation: gl.getUniformLocation(program, 'u_anisotropyRotation'),
     locAnisotropyStrength: gl.getUniformLocation(program, 'u_anisotropyStrength'),
     locAttenuationColor: gl.getUniformLocation(program, 'u_attenuationColor'),
