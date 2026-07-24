@@ -49,6 +49,7 @@ export function buildWgpuPbrStandardDefineKey(
     anisotropyEnabled: false,
     clearcoatEnabled: false,
     doubleSided: surface !== null && surface.doubleSided,
+    hasAlphaMap: standard !== null && isWgpuTextureReady(standard.alphaMap),
     hasBaseColorMap: standard !== null && isWgpuTextureReady(standard.baseColorMap),
     hasEmissiveMap: standard !== null && isWgpuTextureReady(standard.emissiveMap),
     hasMetallicRoughnessMap: standard !== null && isWgpuTextureReady(standard.metallicRoughnessMap),
@@ -105,6 +106,10 @@ export function ensureWgpuPbrMaterialBindGroup(
         {
           binding: 6,
           resource: resolveWgpuMaterialTextureView(state, standard !== null ? standard.emissiveMap : null),
+        },
+        {
+          binding: 7,
+          resource: resolveWgpuMaterialTextureView(state, standard !== null ? standard.alphaMap : null),
         },
       ],
     });

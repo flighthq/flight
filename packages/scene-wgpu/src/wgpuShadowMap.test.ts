@@ -157,6 +157,7 @@ describe('wgpuPbrPrelude shadow sampling', () => {
     const code = getWgpuClassicModuleSourceForKey({
       alphaMaskEnabled: false,
       doubleSided: false,
+      hasAlphaMap: false,
       hasDiffuseMap: false,
       hasNormalMap: false,
       hasSpecularMap: false,

@@ -33,6 +33,7 @@ export function bindWgpuClassicSurface(
   diffuseMap: Readonly<Texture> | null,
   specularMap: Readonly<Texture> | null,
   normalMap: Readonly<Texture> | null,
+  alphaMap: Readonly<Texture> | null,
 ): GPUBindGroup {
   const scene = getWgpuSceneRuntime(state);
   let binding: WgpuMaterialBinding | undefined = scene.materialBindGroups.get(materialKey);
@@ -49,6 +50,7 @@ export function bindWgpuClassicSurface(
         { binding: 2, resource: resolveWgpuMaterialTextureView(state, diffuseMap) },
         { binding: 3, resource: resolveWgpuMaterialTextureView(state, specularMap) },
         { binding: 4, resource: resolveWgpuMaterialTextureView(state, normalMap) },
+        { binding: 5, resource: resolveWgpuMaterialTextureView(state, alphaMap) },
       ],
     });
     binding = { bindGroup, buffer };
@@ -81,7 +83,7 @@ export function buildWgpuClassicDefineKey(key: Readonly<WgpuClassicDefineKey>): 
   const model = key.lightingModel === 'phong' ? 'p' : key.lightingModel === 'blinnphong' ? 'b' : 'l';
   return `${model}${key.alphaMaskEnabled ? 'm' : '-'}${key.doubleSided ? 'd' : '-'}${key.hasDiffuseMap ? 'd' : '-'}${
     key.hasSpecularMap ? 's' : '-'
-  }${key.hasNormalMap ? 'n' : '-'}`;
+  }${key.hasNormalMap ? 'n' : '-'}${key.hasAlphaMap ? 'a' : '-'}`;
 }
 
 // Compiles the classic module for a define key and builds the render pipeline for the given color
@@ -102,6 +104,7 @@ export function compileWgpuClassicPipeline(
       { binding: 2, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
       { binding: 3, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
       { binding: 4, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+      { binding: 5, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
     ],
   });
   // The group(3) shadow-sample layout opts this pipeline into directional shadow reception: the pipeline
@@ -141,6 +144,7 @@ export function getWgpuClassicModuleSourceForKey(key: Readonly<WgpuClassicDefine
     `const HAS_DIFFUSE_MAP : bool = ${key.hasDiffuseMap ? 'true' : 'false'};\n` +
     `const HAS_SPECULAR_MAP : bool = ${key.hasSpecularMap ? 'true' : 'false'};\n` +
     `const HAS_NORMAL_MAP : bool = ${key.hasNormalMap ? 'true' : 'false'};\n` +
+    `const HAS_ALPHA_MAP : bool = ${key.hasAlphaMap ? 'true' : 'false'};\n` +
     WGPU_MESH_PRELUDE_WGSL +
     CLASSIC_WGSL_BODY
   );
@@ -162,6 +166,7 @@ struct ClassicMaterial {
 @group(2) @binding(2) var diffuseTexture : texture_2d<f32>;
 @group(2) @binding(3) var specularTexture : texture_2d<f32>;
 @group(2) @binding(4) var normalTexture : texture_2d<f32>;
+@group(2) @binding(5) var alphaTexture : texture_2d<f32>;
 
 // The directional shadow inputs (group 3), the shared shadow-sample layout ensureWgpuShadowSampleLayout
 // builds and beginWgpuMeshDraw binds. matrix is the light view-projection (world -> shadow clip);
@@ -207,6 +212,12 @@ fn sampleDirectionalShadow(worldPos : vec3f) -> f32 {
   if (HAS_DIFFUSE_MAP) {
     let sampled = textureSample(diffuseTexture, materialSampler, in.uv);
     diffuse = vec4f(diffuse.rgb * srgbToLinear(sampled.rgb), diffuse.a * sampled.a);
+  }
+
+  // Dedicated coverage (opacity) map: its green channel is linear data, multiplied into alpha before
+  // the alpha-mask cutoff so 'mask' cutout and 'blend' transparency both see the combined coverage.
+  if (HAS_ALPHA_MAP) {
+    diffuse.a = diffuse.a * textureSample(alphaTexture, materialSampler, in.uv).g;
   }
 
   if (ALPHA_MASK && diffuse.a < material.params.y) {

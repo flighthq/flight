@@ -44,7 +44,7 @@ export const blinnPhongWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
     let group: GPUBindGroup;
     if (blinnPhong === null) {
-      group = bindWgpuClassicSurface(state, pipeline, FALLBACK_MATERIAL, WHITE, WHITE, 32, 0.5, null, null, null);
+      group = bindWgpuClassicSurface(state, pipeline, FALLBACK_MATERIAL, WHITE, WHITE, 32, 0.5, null, null, null, null);
     } else {
       unpackColorToLinear(_diffuse, blinnPhong.diffuse);
       unpackColorToLinear(_specular, blinnPhong.specular);
@@ -59,6 +59,7 @@ export const blinnPhongWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
         blinnPhong.diffuseMap,
         blinnPhong.specularMap,
         blinnPhong.normalMap,
+        blinnPhong.alphaMap,
       );
     }
 
@@ -85,6 +86,7 @@ function defineKeyForMaterial(material: Readonly<BlinnPhongMaterial> | null): Wg
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
     doubleSided: material !== null && material.doubleSided,
+    hasAlphaMap: material !== null && isWgpuTextureReady(material.alphaMap),
     hasDiffuseMap: material !== null && isWgpuTextureReady(material.diffuseMap),
     hasNormalMap: material !== null && isWgpuTextureReady(material.normalMap),
     hasSpecularMap: material !== null && isWgpuTextureReady(material.specularMap),

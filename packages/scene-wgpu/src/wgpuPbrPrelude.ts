@@ -45,6 +45,7 @@ export function buildWgpuPbrDefineKey(key: Readonly<WgpuPbrDefineKey>): string {
     `${key.hasMetallicRoughnessMap ? 'r' : '-'}` +
     `${key.hasOcclusionMap ? 'o' : '-'}` +
     `${key.hasEmissiveMap ? 'e' : '-'}` +
+    `${key.hasAlphaMap ? 'a' : '-'}` +
     `:${key.clearcoatEnabled ? 'C' : '-'}` +
     `${key.sheenEnabled ? 'S' : '-'}` +
     `${key.anisotropyEnabled ? 'A' : '-'}` +
@@ -67,6 +68,7 @@ export function buildWgpuPbrDefineSource(key: Readonly<WgpuPbrDefineKey>): strin
     `const HAS_METALLIC_ROUGHNESS_MAP : bool = ${key.hasMetallicRoughnessMap ? 'true' : 'false'};\n` +
     `const HAS_OCCLUSION_MAP : bool = ${key.hasOcclusionMap ? 'true' : 'false'};\n` +
     `const HAS_EMISSIVE_MAP : bool = ${key.hasEmissiveMap ? 'true' : 'false'};\n` +
+    `const HAS_ALPHA_MAP : bool = ${key.hasAlphaMap ? 'true' : 'false'};\n` +
     `const CLEARCOAT : bool = ${key.clearcoatEnabled ? 'true' : 'false'};\n` +
     `const SHEEN : bool = ${key.sheenEnabled ? 'true' : 'false'};\n` +
     `const ANISOTROPY : bool = ${key.anisotropyEnabled ? 'true' : 'false'};\n` +
@@ -164,6 +166,7 @@ struct Shadow {
 @group(2) @binding(4) var normalTexture : texture_2d<f32>;
 @group(2) @binding(5) var occlusionTexture : texture_2d<f32>;
 @group(2) @binding(6) var emissiveTexture : texture_2d<f32>;
+@group(2) @binding(7) var alphaTexture : texture_2d<f32>;
 
 @group(3) @binding(0) var<uniform> shadow : Shadow;
 @group(3) @binding(1) var shadowMap : texture_depth_2d;
@@ -390,6 +393,12 @@ fn shadePbrPunctual(N : vec3f, V : vec3f, tangentDir : vec3f, bitangentDir : vec
   if (HAS_BASE_COLOR_MAP) {
     let sampled = textureSample(baseColorTexture, materialSampler, in.uv);
     baseColor = vec4f(baseColor.rgb * srgbToLinear(sampled.rgb), baseColor.a * sampled.a);
+  }
+
+  // Dedicated coverage (opacity) map: its green channel is linear data, multiplied into alpha before
+  // the alpha-mask cutoff so 'mask' cutout and 'blend' transparency both see the combined coverage.
+  if (HAS_ALPHA_MAP) {
+    baseColor.a = baseColor.a * textureSample(alphaTexture, materialSampler, in.uv).g;
   }
 
   if (ALPHA_MASK && baseColor.a < material.flags.x) {

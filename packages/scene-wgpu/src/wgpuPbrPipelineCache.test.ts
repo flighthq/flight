@@ -10,6 +10,7 @@ function key(overrides?: Partial<WgpuPbrDefineKey>): WgpuPbrDefineKey {
     anisotropyEnabled: false,
     clearcoatEnabled: false,
     doubleSided: false,
+    hasAlphaMap: false,
     hasBaseColorMap: false,
     hasEmissiveMap: false,
     hasMetallicRoughnessMap: false,
