@@ -28,7 +28,14 @@ export function parseTextureAtlasAsepriteDocument(
 // Supports both the JSON-hash and JSON-array frame shapes.
 // Existing regions in `atlas` are cleared. Returns `atlas` for convenience.
 export function parseTextureAtlasAsepriteJson(json: string, atlas: TextureAtlas): TextureAtlas {
-  const doc = JSON.parse(json) as TextureAtlasAsepriteDocument;
+  let doc: TextureAtlasAsepriteDocument;
+  try {
+    doc = JSON.parse(json) as TextureAtlasAsepriteDocument;
+  } catch {
+    // Malformed JSON is an expected failure (sentinel, not a throw) — return the atlas unchanged,
+    // matching the Starling XML path and the never-throw importer policy.
+    return atlas;
+  }
   return parseTextureAtlasAsepriteDocument(doc, atlas);
 }
 

@@ -90,6 +90,11 @@ const MINIMAL_HASH_JSON = JSON.stringify({
 });
 
 describe('parseTexturePackerSpritesheet', () => {
+  it('returns an empty SpritesheetData (no throw) on malformed JSON', () => {
+    expect(() => parseTexturePackerSpritesheet('not json')).not.toThrow();
+    expect(parseTexturePackerSpritesheet('not json').frames).toHaveLength(0);
+  });
+
   it('returns a SpritesheetData (not a Parsed object)', () => {
     const result = parseTexturePackerSpritesheet(HASH_JSON);
     expect(typeof result.frames).toBe('object');

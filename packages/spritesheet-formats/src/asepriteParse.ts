@@ -101,7 +101,16 @@ function documentToData(doc: AsepriteDocument): SpritesheetData {
  *  Per-frame durations from Aseprite are preserved in `animation.frameDurations`
  *  when frames within a tag have varying durations. */
 export function parseAsepriteSpritesheet(json: string): SpritesheetData {
-  return documentToData(JSON.parse(json) as AsepriteDocument);
+  let document: AsepriteDocument;
+  try {
+    document = JSON.parse(json) as AsepriteDocument;
+  } catch {
+    // Malformed JSON is an expected failure — return an empty SpritesheetData sentinel rather than
+    // throwing an uncaught SyntaxError, matching `parseSpritesheet`'s null-on-unrecognized philosophy and
+    // the never-throw importer policy (the XML path returns a data descriptor, never throws).
+    return createSpritesheetData();
+  }
+  return documentToData(document);
 }
 
 /** Parse an Aseprite JSON string and preserve the full document for round-trip
