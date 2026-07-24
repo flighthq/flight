@@ -63,6 +63,21 @@ describe('ensureWgpuShadedPipeline', () => {
     expect(keys.some((key) => key.startsWith('shaded:') && key.endsWith('|opaque'))).toBe(true);
     expect(keys.some((key) => key.startsWith('shaded:') && key.endsWith('|blend'))).toBe(true);
   });
+
+  it('reserves alpha-map binding 5 and starts modifier textures at binding 6', () => {
+    const { fake, state } = makeWgpuSceneState();
+    registerBuiltInWgpuModifierSnippets(state);
+    const mask = createTexture();
+    const material = createShadedMaterial({
+      modifiers: [createEmissiveModifier({ color: 0xffffffff, mask, strength: 1 })],
+    });
+    ensureWgpuShadedPipeline(state, material, 'bgra8unorm');
+    const layout = fake.calls
+      .filter((call) => call.name === 'createBindGroupLayout')
+      .map((call) => call.args[0] as { entries: { binding: number }[] })
+      .find(({ entries }) => entries.some(({ binding }) => binding === 6));
+    expect(layout?.entries.map(({ binding }) => binding)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+  });
 });
 
 describe('getWgpuShadedModuleSource', () => {
@@ -89,6 +104,7 @@ describe('getWgpuShadedModuleSource', () => {
     expect(source).toContain('iblPrefiltered');
     expect(source).toContain('exp(-pow(');
     expect(source).toContain('toonQuant');
+    expect(source).toContain('@group(2) @binding(6) var modifierTexture6');
   });
 
   it('injects vertex displacement before the world transform', () => {
@@ -126,6 +142,68 @@ describe('getWgpuShadedModuleSource', () => {
     expect(resolveWgpuModifierSnippet(state, 'acme.Glow')).toBe(vendor);
     expect(resolveWgpuModifierSnippet(state, 'acme.Missing')).toBeNull();
   });
+
+  it('routes every open modifier slot and delimits vendor contributions', () => {
+    const { state } = makeWgpuSceneState();
+    const slots = [
+      ModifierSlot.Normal,
+      ModifierSlot.Diffuse,
+      ModifierSlot.Specular,
+      ModifierSlot.Emissive,
+      ModifierSlot.Effect,
+      ModifierSlot.Vertex,
+    ];
+    const statements = [
+      'normal = normal;',
+      'diffuse = diffuse;',
+      'specularColor = specularColor;',
+      'emissive = emissive;',
+      'radiance = radiance;',
+      'localPosition = localPosition;',
+    ];
+    const modifiers: Modifier[] = [];
+    for (let i = 0; i < slots.length; i++) {
+      const kind = `acme.Slot${i}`;
+      const marker = `slot_marker_${i}`;
+      registerWgpuModifierSnippet(state, {
+        contribution: () => ({ source: `// ${marker}\n${statements[i]}` }),
+        kind,
+        slot: slots[i],
+      });
+      modifiers.push({ kind, slot: slots[i] });
+    }
+    const registry = getWgpuSceneRuntime(state).modifierSnippetRegistry!;
+    const source = getWgpuShadedModuleSource(createShadedMaterial({ modifiers }), registry);
+    for (let i = 0; i < slots.length; i++) expect(source).toContain(`slot_marker_${i}`);
+    expect(source).toMatch(/\/\/ slot_marker_1\s+diffuse = diffuse;\s+if \(ALPHA_MASK/);
+    expect(source.indexOf('slot_marker_2')).toBeLessThan(source.indexOf('var radiance'));
+  });
+
+  it('deduplicates repeated helper declarations and separates arbitrary declaration blocks', () => {
+    const { state } = makeWgpuSceneState();
+    registerBuiltInWgpuModifierSnippets(state);
+    registerWgpuModifierSnippet(state, {
+      contribution: () => ({ declarations: 'fn vendorA() {}', source: '' }),
+      kind: 'acme.DeclarationA',
+      slot: ModifierSlot.Effect,
+    });
+    registerWgpuModifierSnippet(state, {
+      contribution: () => ({ declarations: 'fn vendorB() {}', source: '' }),
+      kind: 'acme.DeclarationB',
+      slot: ModifierSlot.Effect,
+    });
+    const material = createShadedMaterial({
+      modifiers: [
+        createDissolveModifier({ threshold: 0.1 }),
+        createDissolveModifier({ threshold: 0.2 }),
+        { kind: 'acme.DeclarationA', slot: ModifierSlot.Effect },
+        { kind: 'acme.DeclarationB', slot: ModifierSlot.Effect },
+      ],
+    });
+    const source = getWgpuShadedModuleSource(material, getWgpuSceneRuntime(state).modifierSnippetRegistry!);
+    expect(source.match(/fn shadedValueNoise/g)).toHaveLength(1);
+    expect(source).toContain('fn vendorA() {}\nfn vendorB() {}');
+  });
 });
 
 describe('registerBuiltInWgpuModifierSnippets', () => {
@@ -156,16 +234,18 @@ describe('shaded binding cache', () => {
     expect(fake.calls.filter((call) => call.name === 'createBindGroup').length).toBeGreaterThan(groups);
     expect(fake.calls.filter((call) => call.name === 'createBuffer')).toHaveLength(buffers);
 
-    const modifierTexture = createTexture();
+    const modifierTexture = createTexture({ image: makeImageResource() });
     const emissive = createEmissiveModifier({ color: 0xffffffff, mask: modifierTexture, strength: 1 });
     material.modifiers = [emissive];
     const modifierPipeline = ensureWgpuShadedPipeline(state, material, 'bgra8unorm');
     bindWgpuShadedSurface(state, modifierPipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
     const beforeModifierSwap = fake.calls.filter((call) => call.name === 'createBindGroup').length;
-    emissive.mask = createTexture();
+    emissive.mask = createTexture({ image: makeImageResource() });
     bindWgpuShadedSurface(state, modifierPipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
     expect(fake.calls.filter((call) => call.name === 'createBindGroup').length).toBeGreaterThan(beforeModifierSwap);
 
+    emissive.mask = createTexture();
+    bindWgpuShadedSurface(state, modifierPipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
     const beforeReady = fake.calls.filter((call) => call.name === 'createBindGroup').length;
     const readyingTexture = emissive.mask;
     expect(readyingTexture).toBeDefined();
@@ -173,4 +253,62 @@ describe('shaded binding cache', () => {
     bindWgpuShadedSurface(state, modifierPipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
     expect(fake.calls.filter((call) => call.name === 'createBindGroup').length).toBeGreaterThan(beforeReady);
   });
+
+  it('rebinds when a ready image swaps or its version changes', () => {
+    const { fake, state } = makeWgpuSceneState();
+    registerBuiltInWgpuModifierSnippets(state);
+    const firstImage = makeImageResource();
+    const texture = createTexture({ image: firstImage });
+    const material = createShadedMaterial({ diffuseMap: texture });
+    const pipeline = ensureWgpuShadedPipeline(state, material, 'bgra8unorm');
+    bindWgpuShadedSurface(state, pipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
+
+    const beforeSwap = fake.calls.filter((call) => call.name === 'createBindGroup').length;
+    texture.image = makeImageResource();
+    bindWgpuShadedSurface(state, pipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
+    expect(fake.calls.filter((call) => call.name === 'createBindGroup').length).toBeGreaterThan(beforeSwap);
+
+    const beforeVersion = fake.calls.filter((call) => call.name === 'createBindGroup').length;
+    texture.image.version++;
+    bindWgpuShadedSurface(state, pipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
+    expect(fake.calls.filter((call) => call.name === 'createBindGroup').length).toBeGreaterThan(beforeVersion);
+  });
+
+  it('reuses the compiled plan and GPU resource arrays on an unchanged draw', () => {
+    const { fake, state } = makeWgpuSceneState();
+    let contributions = 0;
+    const modifier = { kind: 'acme.Stable', slot: ModifierSlot.Effect };
+    registerWgpuModifierSnippet(state, {
+      contribution: () => {
+        contributions++;
+        return { source: 'radiance = radiance;' };
+      },
+      kind: modifier.kind,
+      slot: modifier.slot,
+    });
+    const material = createShadedMaterial({ modifiers: [modifier] });
+    const pipeline = ensureWgpuShadedPipeline(state, material, 'bgra8unorm');
+    bindWgpuShadedSurface(state, pipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
+    const buffers = fake.calls.filter((call) => call.name === 'createBuffer').length;
+    const groups = fake.calls.filter((call) => call.name === 'createBindGroup').length;
+    const compiled = contributions;
+
+    bindWgpuShadedSurface(state, pipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
+    expect(contributions).toBe(compiled);
+    expect(fake.calls.filter((call) => call.name === 'createBuffer')).toHaveLength(buffers);
+    expect(fake.calls.filter((call) => call.name === 'createBindGroup')).toHaveLength(groups);
+  });
 });
+
+function makeImageResource(): ImageResource {
+  return {
+    alphaType: 'straight',
+    compressed: null,
+    data: null,
+    format: 'rgba8unorm',
+    height: 1,
+    source: {} as CanvasImageSource,
+    version: 0,
+    width: 1,
+  } as ImageResource;
+}
