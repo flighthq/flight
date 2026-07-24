@@ -1,9 +1,9 @@
 import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flighthq/geometry';
-import { hasMeshGeometrySkin } from '@flighthq/mesh';
+import { hasMeshGeometrySkin, updateMeshMorph } from '@flighthq/mesh';
 import { getNodeWorldMatrix4 } from '@flighthq/node';
 import { prepareSceneRender } from '@flighthq/render';
 import { declareGlRenderTargetColorSpace, invalidateGlRenderStateCache } from '@flighthq/render-gl';
-import { getSceneNodeWorldAlpha, updateMeshMorph } from '@flighthq/scene';
+import { getSceneNodeWorldAlpha } from '@flighthq/scene';
 import type {
   Camera3D,
   GlMeshMaterialRenderer,

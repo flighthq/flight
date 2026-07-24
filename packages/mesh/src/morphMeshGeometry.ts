@@ -8,9 +8,9 @@ import { getVertexAttributeFloatOffset } from './meshGeometryAttributes';
 // and bumps `geometry.version` so the backends re-upload. `bindPose` is the capture the caller holds on
 // the geometry runtime; only the position/normal/tangent-xyz channels are rewritten, so uv0/color0/the
 // tangent handedness `w` stay intact. A target whose normal/tangent deltas are null contributes only to
-// position. A zero (or unset) weight contributes nothing, so a settled morph is base-cost. Scene-free by
-// design — the mesh-level glue that owns the runtime slot lives in @flighthq/scene (updateMeshMorph).
-// Sibling of skinMeshGeometry; the two compose (skin over morph) when a mesh carries both.
+// position. A zero (or unset) weight contributes nothing, so a settled morph is base-cost. The node-level
+// glue that owns the runtime slot is updateMeshMorph, beside this file. Sibling of skinMeshGeometry; the
+// two compose (skin over morph) when a mesh carries both.
 export function blendMeshGeometryMorph(
   geometry: MeshGeometry,
   morph: Readonly<MeshMorph>,

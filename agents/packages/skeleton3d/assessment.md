@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/skeleton3d'
-updated: 2026-07-22
+updated: 2026-07-24
 basedOn: ./review.md
 ---
 
@@ -8,20 +8,7 @@ basedOn: ./review.md
 
 ## Recommended
 
-1. **Resolve the morph/skin deformer layering inversion.** `updateMeshDeformation` runtime-imports
-   `updateMeshMorph` from `@flighthq/scene`, so the CPU-deformation composition drags a
-   `skeleton3d → scene` dependency — while `updateMeshSkin`'s own comment still asserts that pairing skin
-   with skeleton3d "keeps skeleton3d below scene with no cycle." That statement is now **false**:
-   `updateMeshDeformation` puts skeleton3d *above* scene. Yet `updateMeshMorph` imports only
-   `@flighthq/mesh` + `@flighthq/types` — it has zero scene-graph dependency, so the two symmetric
-   deformer-glue functions are split across packages by charter fiat, not structure. **Fix:** move
-   `updateMeshMorph` down beside `updateMeshSkin` (skeleton3d, or better both into `mesh` as pure
-   deform-over-runtime-slot glue), leaving `@flighthq/scene` to only *route* `Weights` channels into
-   `mesh.morph.weights`; then `updateMeshDeformation` composes two same-layer primitives and the "below
-   scene" comment is true again. Also **drop the redundant `@flighthq/scene` `devDependencies` entry**
-   in `packages/skeleton3d/package.json` (it is now a runtime `dependencies` entry too — packaging
-   drift). _(User-approved 2026-07-22.)_
-2. **Dirty-gate the per-frame bounds recompute.** `updateMeshMorph`/`updateMeshSkin` both call
+1. **Dirty-gate the per-frame bounds recompute.** `updateMeshMorph`/`updateMeshSkin` both call
    `refreshMeshGeometryBounds` unconditionally each frame — an O(vertices) second sweep on top of the
    deform pass — even though `MeshGeometry` already carries a `version` counter and nullable `bounds`.
    A GPU-skinned or upload-only mesh that never CPU-picks/culls pays this for nothing. Invalidate a
@@ -70,7 +57,12 @@ basedOn: ./review.md
   atom: a caller supplies the node-kind-aware clone callback, joint-to-joint parent links are rebuilt,
   outside-skeleton parents stay caller-owned, and skeleton buffers/names remain detached. The cheap
   `cloneSkeleton3D` sharing contract is unchanged.
-- [2026-07-22 · picked] Resolve the morph/skin deformer layering inversion — move `updateMeshMorph`
-  down beside `updateMeshSkin` (or both into `mesh`) so `updateMeshDeformation` composes same-layer
-  primitives and skeleton3d no longer imports `@flighthq/scene`, and drop the redundant `@flighthq/scene`
-  `devDependencies` entry — assessment.md#recommended item 1. Blessed, not yet implemented.
+- [2026-07-24 · completed] The morph/skin deformer layering inversion is resolved. `updateMeshMorph`
+  moved down into `@flighthq/mesh` (it reads only `mesh.geometry`/`mesh.morph` and the geometry runtime
+  slot, so mesh is the lowest layer that can host it); `updateMeshSkin` stays in skeleton3d, which owns
+  the palette. `updateMeshDeformation` now composes two same-layer primitives, and skeleton3d's source
+  no longer imports `@flighthq/scene` at all — the duplicate `dependencies` entry is dropped, leaving
+  `@flighthq/scene` only in `devDependencies` where the tests' `createMesh` legitimately needs it, so
+  the "below scene with no cycle" comment is true again. `@flighthq/scene` keeps the half that genuinely
+  needs the graph — routing `Weights` channels into `mesh.morph.weights`. Unify at the channel target,
+  split at the deformer.

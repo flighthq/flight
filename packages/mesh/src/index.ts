@@ -10,3 +10,4 @@ export * from './meshGeometrySubset';
 export * from './meshGeometryTransforms';
 export * from './meshGeometryUvs';
 export * from './morphMeshGeometry';
+export * from './updateMeshMorph';

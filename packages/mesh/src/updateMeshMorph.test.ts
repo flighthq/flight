@@ -1,8 +1,7 @@
-import { createMeshGeometry, getMeshGeometryMorphBindPose } from '@flighthq/mesh';
-import type { MeshMorph, VertexAttributeLayout } from '@flighthq/types';
+import type { Mesh, MeshGeometry, MeshMorph, VertexAttributeLayout } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
-import { createMesh } from './mesh';
+import { createMeshGeometry, getMeshGeometryMorphBindPose } from './meshGeometry';
 import { updateMeshMorph } from './updateMeshMorph';
 
 const POSITION_LAYOUT: VertexAttributeLayout = {
@@ -10,11 +9,16 @@ const POSITION_LAYOUT: VertexAttributeLayout = {
   stride: 12,
 };
 
-function morphedMesh(positions: readonly number[], morph: MeshMorph) {
-  const geometry = createMeshGeometry({ layout: POSITION_LAYOUT, vertices: new Float32Array(positions) });
-  const mesh = createMesh(geometry, []);
-  mesh.morph = morph;
-  return mesh;
+// updateMeshMorph reads only `geometry` and `morph` off the node and touches the geometry runtime, so
+// these tests carry the node envelope structurally rather than through @flighthq/scene's createMesh —
+// depending on scene from a mesh test would reintroduce the very scene→mesh→scene cycle that moving
+// this deformer down removed. The scene-level createMesh path is covered by scene's own mesh tests.
+function meshCarrying(geometry: MeshGeometry, morph: MeshMorph | null): Mesh {
+  return { geometry, materials: [], morph } as unknown as Mesh;
+}
+
+function morphedMesh(positions: readonly number[], morph: MeshMorph): Mesh {
+  return meshCarrying(createMeshGeometry({ layout: POSITION_LAYOUT, vertices: new Float32Array(positions) }), morph);
 }
 
 describe('updateMeshMorph', () => {
@@ -52,7 +56,7 @@ describe('updateMeshMorph', () => {
 
   it('is a no-op for a mesh with no morph', () => {
     const geometry = createMeshGeometry({ layout: POSITION_LAYOUT, vertices: new Float32Array([5, 5, 5]) });
-    const mesh = createMesh(geometry, []);
+    const mesh = meshCarrying(geometry, null);
     const version = geometry.version;
     updateMeshMorph(mesh);
     expect(geometry.version).toBe(version);

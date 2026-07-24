@@ -14,8 +14,9 @@ import {
   setVector3,
 } from '@flighthq/geometry';
 import { createBoxMeshGeometry, createMeshGeometryFromAttributes } from '@flighthq/mesh';
+import { updateMeshMorph } from '@flighthq/mesh';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
-import { createMesh, createSceneNode, SceneNodeKind, updateMeshMorph } from '@flighthq/scene';
+import { createMesh, createSceneNode, SceneNodeKind } from '@flighthq/scene';
 import type { Camera3D, Mesh, MeshMorph, Ray3D, SceneHit, SceneNode } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 

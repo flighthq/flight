@@ -1,5 +1,6 @@
 import { createMeshGeometry } from '@flighthq/mesh';
-import { createMesh, updateMeshMorph } from '@flighthq/scene';
+import { updateMeshMorph } from '@flighthq/mesh';
+import { createMesh } from '@flighthq/scene';
 import type { MeshMorph, VertexAttributeLayout } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 

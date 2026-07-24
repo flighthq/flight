@@ -1,5 +1,6 @@
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry, getMeshGeometryVertexCount } from '@flighthq/mesh';
+import { updateMeshMorph } from '@flighthq/mesh';
 import {
   addNodeChild,
   getNodeChildCount,
@@ -21,7 +22,6 @@ import {
   MeshKind,
 } from './mesh';
 import { createSceneNode } from './sceneNode';
-import { updateMeshMorph } from './updateMeshMorph';
 
 describe('cloneMesh', () => {
   it('shares the geometry by reference', () => {
