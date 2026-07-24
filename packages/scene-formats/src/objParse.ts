@@ -1,10 +1,12 @@
 import { createTransform3D } from '@flighthq/geometry';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
 import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { createMeshGeometry } from '@flighthq/mesh';
 import { createSceneFromDocument } from '@flighthq/scene';
 import type { Scene } from '@flighthq/types';
 import type {
   BlinnPhongMaterial,
+  ImportDiagnostic,
   Material,
   MaterialLike,
   MeshSubset,
@@ -15,7 +17,7 @@ import type {
   ObjMaterial,
   ObjMaterialLibrary,
 } from '@flighthq/types';
-import { MeshKind } from '@flighthq/types';
+import { ImportDiagnosticSeverity, MeshKind } from '@flighthq/types';
 
 import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, createExternalTextureRef } from './shared';
 
@@ -24,9 +26,9 @@ import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, createExternalTextureRef
 export function createSceneFromObj(
   source: string,
   materials?: Readonly<ObjMaterialLibrary>,
-  warnings?: string[],
+  diagnostics?: ImportDiagnostic[],
 ): Scene {
-  return createSceneFromDocument(parseObj(source, materials, warnings));
+  return createSceneFromDocument(parseObj(source, materials, diagnostics));
 }
 
 // Parses a Wavefront OBJ text source into a format-neutral SceneDocument. Each group (`g`) or object
@@ -43,8 +45,12 @@ export function createSceneFromObj(
 // triangles, quads, or N-gons (fan-triangulated). Face vertex references support independent
 // position/uv/normal indices (`v/vt/vn`, `v//vn`, `v/vt`) and negative (relative) indices.
 //
-// Malformed lines push a warning and are skipped; the function never throws on bad input.
-export function parseObj(source: string, materials?: Readonly<ObjMaterialLibrary>, warnings?: string[]): SceneDocument {
+// Malformed lines record a diagnostic and are skipped; the function never throws on bad input.
+export function parseObj(
+  source: string,
+  materials?: Readonly<ObjMaterialLibrary>,
+  diagnostics?: ImportDiagnostic[],
+): SceneDocument {
   const positions: number[] = [];
   const normals: number[] = [];
   const uvs: number[] = [];
@@ -89,14 +95,20 @@ export function parseObj(source: string, materials?: Readonly<ObjMaterialLibrary
       case 'v': {
         const parts = args.split(/\s+/);
         if (parts.length < 3) {
-          warnings?.push(`createSceneFromObj: v on line ${i + 1} has fewer than 3 components`);
+          reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'obj.vertex-malformed', 'parseObj', {
+            line: i + 1,
+            reason: 'too-few-components',
+          });
           break;
         }
         const x = parseFloat(parts[0]);
         const y = parseFloat(parts[1]);
         const z = parseFloat(parts[2]);
         if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) {
-          warnings?.push(`createSceneFromObj: v on line ${i + 1} has non-numeric components`);
+          reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'obj.vertex-malformed', 'parseObj', {
+            line: i + 1,
+            reason: 'non-numeric',
+          });
           break;
         }
         positions.push(x, y, z);
@@ -105,14 +117,20 @@ export function parseObj(source: string, materials?: Readonly<ObjMaterialLibrary
       case 'vn': {
         const parts = args.split(/\s+/);
         if (parts.length < 3) {
-          warnings?.push(`createSceneFromObj: vn on line ${i + 1} has fewer than 3 components`);
+          reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'obj.normal-malformed', 'parseObj', {
+            line: i + 1,
+            reason: 'too-few-components',
+          });
           break;
         }
         const x = parseFloat(parts[0]);
         const y = parseFloat(parts[1]);
         const z = parseFloat(parts[2]);
         if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) {
-          warnings?.push(`createSceneFromObj: vn on line ${i + 1} has non-numeric components`);
+          reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'obj.normal-malformed', 'parseObj', {
+            line: i + 1,
+            reason: 'non-numeric',
+          });
           break;
         }
         normals.push(x, y, z);
@@ -121,13 +139,19 @@ export function parseObj(source: string, materials?: Readonly<ObjMaterialLibrary
       case 'vt': {
         const parts = args.split(/\s+/);
         if (parts.length < 2) {
-          warnings?.push(`createSceneFromObj: vt on line ${i + 1} has fewer than 2 components`);
+          reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'obj.uv-malformed', 'parseObj', {
+            line: i + 1,
+            reason: 'too-few-components',
+          });
           break;
         }
         const u = parseFloat(parts[0]);
         const v = parseFloat(parts[1]);
         if (!Number.isFinite(u) || !Number.isFinite(v)) {
-          warnings?.push(`createSceneFromObj: vt on line ${i + 1} has non-numeric components`);
+          reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'obj.uv-malformed', 'parseObj', {
+            line: i + 1,
+            reason: 'non-numeric',
+          });
           break;
         }
         uvs.push(u, 1 - v);
@@ -136,7 +160,9 @@ export function parseObj(source: string, materials?: Readonly<ObjMaterialLibrary
       case 'f': {
         const vertexTokens = args.split(/\s+/);
         if (vertexTokens.length < 3) {
-          warnings?.push(`createSceneFromObj: f on line ${i + 1} has fewer than 3 vertices`);
+          reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'obj.face-too-few-vertices', 'parseObj', {
+            line: i + 1,
+          });
           break;
         }
 
@@ -144,7 +170,7 @@ export function parseObj(source: string, materials?: Readonly<ObjMaterialLibrary
         const faceIndices: number[] = [];
 
         for (let vi = 0; vi < vertexTokens.length; vi++) {
-          const idx = parseFaceVertex(vertexTokens[vi], positions, uvs, normals, bucket, warnings, i);
+          const idx = parseFaceVertex(vertexTokens[vi], positions, uvs, normals, bucket, diagnostics, i);
           if (idx < 0) break;
           faceIndices.push(idx);
         }
@@ -212,7 +238,7 @@ function parseFaceVertex(
   uvs: readonly number[],
   normals: readonly number[],
   bucket: MaterialBucket,
-  warnings: string[] | undefined,
+  diagnostics: ImportDiagnostic[] | undefined,
   lineIndex: number,
 ): number {
   const parts = token.split('/');
@@ -223,12 +249,24 @@ function parseFaceVertex(
   // Position index (1-based, may be negative).
   const rawPosIdx = parseInt(parts[0], 10);
   if (!Number.isFinite(rawPosIdx) || rawPosIdx === 0) {
-    warnings?.push(`createSceneFromObj: invalid face vertex index '${token}' on line ${lineIndex + 1}`);
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'obj.face-vertex-invalid', 'parseFaceVertex', {
+      line: lineIndex + 1,
+      token,
+    });
     return -1;
   }
   const posIdx = rawPosIdx > 0 ? rawPosIdx - 1 : posCount + rawPosIdx;
   if (posIdx < 0 || posIdx >= posCount) {
-    warnings?.push(`createSceneFromObj: position index ${rawPosIdx} out of range on line ${lineIndex + 1}`);
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'obj.position-index-out-of-range',
+      'parseFaceVertex',
+      {
+        index: rawPosIdx,
+        line: lineIndex + 1,
+      },
+    );
     return -1;
   }
 
@@ -238,7 +276,16 @@ function parseFaceVertex(
     if (Number.isFinite(rawUvIdx) && rawUvIdx !== 0) {
       uvIdx = rawUvIdx > 0 ? rawUvIdx - 1 : uvCount + rawUvIdx;
       if (uvIdx < 0 || uvIdx >= uvCount) {
-        warnings?.push(`createSceneFromObj: uv index ${rawUvIdx} out of range on line ${lineIndex + 1}`);
+        reportImportDiagnostic(
+          diagnostics,
+          ImportDiagnosticSeverity.Recover,
+          'obj.uv-index-out-of-range',
+          'parseFaceVertex',
+          {
+            index: rawUvIdx,
+            line: lineIndex + 1,
+          },
+        );
         uvIdx = -1;
       }
     }
@@ -250,7 +297,16 @@ function parseFaceVertex(
     if (Number.isFinite(rawNormalIdx) && rawNormalIdx !== 0) {
       normalIdx = rawNormalIdx > 0 ? rawNormalIdx - 1 : normalCount + rawNormalIdx;
       if (normalIdx < 0 || normalIdx >= normalCount) {
-        warnings?.push(`createSceneFromObj: normal index ${rawNormalIdx} out of range on line ${lineIndex + 1}`);
+        reportImportDiagnostic(
+          diagnostics,
+          ImportDiagnosticSeverity.Recover,
+          'obj.normal-index-out-of-range',
+          'parseFaceVertex',
+          {
+            index: rawNormalIdx,
+            line: lineIndex + 1,
+          },
+        );
         normalIdx = -1;
       }
     }

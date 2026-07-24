@@ -1,10 +1,12 @@
-import type { ObjMaterial, ObjMaterialLibrary } from '@flighthq/types';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
+import type { ImportDiagnostic, ObjMaterial, ObjMaterialLibrary } from '@flighthq/types';
+import { ImportDiagnosticSeverity } from '@flighthq/types';
 
 // Parses a Wavefront MTL material library from its text source. Every recognized directive
 // (`newmtl`, `Ka`, `Kd`, `Ks`, `Ns`, `d`, `Tr`, `illum`, `map_Kd`, `map_Ka`, `map_Ks`,
 // `map_Bump`/`bump`) is read; unrecognized directives are silently skipped. Malformed values
-// push a warning and fall back to defaults rather than throwing.
-export function parseObjMaterialLibrary(source: string, warnings?: string[]): ObjMaterialLibrary {
+// record a diagnostic and fall back to defaults rather than throwing.
+export function parseObjMaterialLibrary(source: string, diagnostics?: ImportDiagnostic[]): ObjMaterialLibrary {
   const materials = new Map<string, ObjMaterial>();
   let current: ObjMaterial | null = null;
   const lines = source.split('\n');
@@ -17,7 +19,15 @@ export function parseObjMaterialLibrary(source: string, warnings?: string[]): Ob
     if (spaceIndex < 0) {
       // A directive with no argument — only `newmtl` requires one.
       if (raw === 'newmtl') {
-        warnings?.push(`parseObjMaterialLibrary: newmtl on line ${i + 1} has no name; skipped`);
+        reportImportDiagnostic(
+          diagnostics,
+          ImportDiagnosticSeverity.Drop,
+          'mtl.newmtl-no-name',
+          'parseObjMaterialLibrary',
+          {
+            line: i + 1,
+          },
+        );
       }
       continue;
     }
@@ -33,74 +43,114 @@ export function parseObjMaterialLibrary(source: string, warnings?: string[]): Ob
       }
       case 'Ka': {
         if (current === null) {
-          warnNoMaterial(warnings, directive, i);
+          reportObjDirectiveBeforeMaterial(diagnostics, directive, i);
           break;
         }
-        const c = parseColor(args, warnings, directive, i);
+        const c = parseColor(args, diagnostics, directive, i);
         if (c !== null) current.ambient = c;
         break;
       }
       case 'Kd': {
         if (current === null) {
-          warnNoMaterial(warnings, directive, i);
+          reportObjDirectiveBeforeMaterial(diagnostics, directive, i);
           break;
         }
-        const c = parseColor(args, warnings, directive, i);
+        const c = parseColor(args, diagnostics, directive, i);
         if (c !== null) current.diffuse = c;
         break;
       }
       case 'Ks': {
         if (current === null) {
-          warnNoMaterial(warnings, directive, i);
+          reportObjDirectiveBeforeMaterial(diagnostics, directive, i);
           break;
         }
-        const c = parseColor(args, warnings, directive, i);
+        const c = parseColor(args, diagnostics, directive, i);
         if (c !== null) current.specular = c;
         break;
       }
       case 'Ns': {
         if (current === null) {
-          warnNoMaterial(warnings, directive, i);
+          reportObjDirectiveBeforeMaterial(diagnostics, directive, i);
           break;
         }
         const v = parseFloat(args);
         if (Number.isFinite(v)) current.specularExponent = v;
-        else warnings?.push(`parseObjMaterialLibrary: invalid Ns value on line ${i + 1}`);
+        else
+          reportImportDiagnostic(
+            diagnostics,
+            ImportDiagnosticSeverity.Recover,
+            'mtl.invalid-value',
+            'parseObjMaterialLibrary',
+            {
+              directive: 'Ns',
+              line: i + 1,
+            },
+          );
         break;
       }
       case 'd': {
         if (current === null) {
-          warnNoMaterial(warnings, directive, i);
+          reportObjDirectiveBeforeMaterial(diagnostics, directive, i);
           break;
         }
         const v = parseFloat(args);
         if (Number.isFinite(v)) current.dissolve = v;
-        else warnings?.push(`parseObjMaterialLibrary: invalid d value on line ${i + 1}`);
+        else
+          reportImportDiagnostic(
+            diagnostics,
+            ImportDiagnosticSeverity.Recover,
+            'mtl.invalid-value',
+            'parseObjMaterialLibrary',
+            {
+              directive: 'd',
+              line: i + 1,
+            },
+          );
         break;
       }
       case 'Tr': {
         if (current === null) {
-          warnNoMaterial(warnings, directive, i);
+          reportObjDirectiveBeforeMaterial(diagnostics, directive, i);
           break;
         }
         const v = parseFloat(args);
         if (Number.isFinite(v)) current.dissolve = 1 - v;
-        else warnings?.push(`parseObjMaterialLibrary: invalid Tr value on line ${i + 1}`);
+        else
+          reportImportDiagnostic(
+            diagnostics,
+            ImportDiagnosticSeverity.Recover,
+            'mtl.invalid-value',
+            'parseObjMaterialLibrary',
+            {
+              directive: 'Tr',
+              line: i + 1,
+            },
+          );
         break;
       }
       case 'illum': {
         if (current === null) {
-          warnNoMaterial(warnings, directive, i);
+          reportObjDirectiveBeforeMaterial(diagnostics, directive, i);
           break;
         }
         const v = parseInt(args, 10);
         if (Number.isFinite(v)) current.illumination = v;
-        else warnings?.push(`parseObjMaterialLibrary: invalid illum value on line ${i + 1}`);
+        else
+          reportImportDiagnostic(
+            diagnostics,
+            ImportDiagnosticSeverity.Recover,
+            'mtl.invalid-value',
+            'parseObjMaterialLibrary',
+            {
+              directive: 'illum',
+              line: i + 1,
+            },
+          );
         break;
       }
       case 'map_Kd': {
         if (current === null) {
-          warnNoMaterial(warnings, directive, i);
+          reportObjDirectiveBeforeMaterial(diagnostics, directive, i);
           break;
         }
         current.mapDiffuse = args;
@@ -108,7 +158,7 @@ export function parseObjMaterialLibrary(source: string, warnings?: string[]): Ob
       }
       case 'map_Ka': {
         if (current === null) {
-          warnNoMaterial(warnings, directive, i);
+          reportObjDirectiveBeforeMaterial(diagnostics, directive, i);
           break;
         }
         current.mapAmbient = args;
@@ -116,7 +166,7 @@ export function parseObjMaterialLibrary(source: string, warnings?: string[]): Ob
       }
       case 'map_Ks': {
         if (current === null) {
-          warnNoMaterial(warnings, directive, i);
+          reportObjDirectiveBeforeMaterial(diagnostics, directive, i);
           break;
         }
         current.mapSpecular = args;
@@ -125,7 +175,7 @@ export function parseObjMaterialLibrary(source: string, warnings?: string[]): Ob
       case 'map_Bump':
       case 'bump': {
         if (current === null) {
-          warnNoMaterial(warnings, directive, i);
+          reportObjDirectiveBeforeMaterial(diagnostics, directive, i);
           break;
         }
         current.mapBump = args;
@@ -157,25 +207,46 @@ function createDefaultObjMaterial(name: string): ObjMaterial {
 
 function parseColor(
   args: string,
-  warnings: string[] | undefined,
+  diagnostics: ImportDiagnostic[] | undefined,
   directive: string,
   lineIndex: number,
 ): readonly [number, number, number] | null {
   const parts = args.split(/\s+/);
   if (parts.length < 3) {
-    warnings?.push(`parseObjMaterialLibrary: ${directive} on line ${lineIndex + 1} has fewer than 3 components`);
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Recover, 'mtl.color-malformed', 'parseColor', {
+      directive,
+      line: lineIndex + 1,
+      reason: 'too-few-components',
+    });
     return null;
   }
   const r = parseFloat(parts[0]);
   const g = parseFloat(parts[1]);
   const b = parseFloat(parts[2]);
   if (!Number.isFinite(r) || !Number.isFinite(g) || !Number.isFinite(b)) {
-    warnings?.push(`parseObjMaterialLibrary: ${directive} on line ${lineIndex + 1} has non-numeric components`);
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Recover, 'mtl.color-malformed', 'parseColor', {
+      directive,
+      line: lineIndex + 1,
+      reason: 'non-numeric',
+    });
     return null;
   }
   return [r, g, b];
 }
 
-function warnNoMaterial(warnings: string[] | undefined, directive: string, lineIndex: number): void {
-  warnings?.push(`parseObjMaterialLibrary: ${directive} on line ${lineIndex + 1} appears before any newmtl`);
+function reportObjDirectiveBeforeMaterial(
+  diagnostics: ImportDiagnostic[] | undefined,
+  directive: string,
+  lineIndex: number,
+): void {
+  reportImportDiagnostic(
+    diagnostics,
+    ImportDiagnosticSeverity.Drop,
+    'mtl.directive-before-material',
+    'parseObjMaterialLibrary',
+    {
+      directive,
+      line: lineIndex + 1,
+    },
+  );
 }

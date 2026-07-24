@@ -1,4 +1,14 @@
+import type { ImportDiagnostic } from '@flighthq/types';
+
 import { parseObjMaterialLibrary } from './mtlParse';
+
+// Asserts EXACTLY ONE crumb of `kind` was recorded (guards the count) and returns it so a test can lock
+// the full contract — severity, true origin, and detail — for that emitted diagnostic.
+function expectOneCrumb(diagnostics: readonly ImportDiagnostic[], kind: string): ImportDiagnostic {
+  const matches = diagnostics.filter((d) => d.kind === kind);
+  expect(matches).toHaveLength(1);
+  return matches[0];
+}
 
 describe('parseObjMaterialLibrary', () => {
   it('parses a single material with all property types', () => {
@@ -64,41 +74,73 @@ describe('parseObjMaterialLibrary', () => {
     expect(lib.materials.size).toBe(0);
   });
 
-  it('skips unrecognized directives without warning', () => {
+  it('skips unrecognized directives without recording a diagnostic', () => {
     const mtl = 'newmtl M\nKd 1 1 1\nunknown_directive value\n';
-    const warnings: string[] = [];
-    const lib = parseObjMaterialLibrary(mtl, warnings);
+    const diagnostics: ImportDiagnostic[] = [];
+    const lib = parseObjMaterialLibrary(mtl, diagnostics);
     expect(lib.materials.size).toBe(1);
-    expect(warnings).toHaveLength(0);
+    expect(diagnostics).toHaveLength(0);
   });
 
-  it('warns on malformed color values', () => {
+  it('records color-malformed (Recover, parseColor) on non-numeric color components', () => {
     const mtl = 'newmtl M\nKd abc def ghi\n';
-    const warnings: string[] = [];
-    parseObjMaterialLibrary(mtl, warnings);
-    expect(warnings.length).toBeGreaterThan(0);
-    expect(warnings.some((w) => w.includes('non-numeric'))).toBe(true);
+    const diagnostics: ImportDiagnostic[] = [];
+    parseObjMaterialLibrary(mtl, diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'mtl.color-malformed');
+    expect(crumb.severity).toBe('Recover');
+    expect(crumb.origin).toBe('parseColor');
+    expect(crumb.detail?.directive).toBe('Kd');
+    expect(crumb.detail?.line).toBe(2);
+    expect(crumb.detail?.reason).toBe('non-numeric');
   });
 
-  it('warns on color with fewer than 3 components', () => {
+  it('records color-malformed (Recover, parseColor) on a color with fewer than 3 components', () => {
     const mtl = 'newmtl M\nKa 1 2\n';
-    const warnings: string[] = [];
-    parseObjMaterialLibrary(mtl, warnings);
-    expect(warnings.some((w) => w.includes('fewer than 3'))).toBe(true);
+    const diagnostics: ImportDiagnostic[] = [];
+    parseObjMaterialLibrary(mtl, diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'mtl.color-malformed');
+    expect(crumb.severity).toBe('Recover');
+    expect(crumb.origin).toBe('parseColor');
+    expect(crumb.detail?.directive).toBe('Ka');
+    expect(crumb.detail?.line).toBe(2);
+    expect(crumb.detail?.reason).toBe('too-few-components');
   });
 
-  it('warns when a directive appears before any newmtl', () => {
+  it('records invalid-value (Recover, parseObjMaterialLibrary) on a non-numeric Ns/d/Tr/illum value', () => {
+    const mtl = 'newmtl M\nNs abc\n';
+    const diagnostics: ImportDiagnostic[] = [];
+    parseObjMaterialLibrary(mtl, diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'mtl.invalid-value');
+    expect(crumb.severity).toBe('Recover');
+    expect(crumb.origin).toBe('parseObjMaterialLibrary');
+    expect(crumb.detail?.directive).toBe('Ns');
+    expect(crumb.detail?.line).toBe(2);
+  });
+
+  it('records directive-before-material (Drop, parseObjMaterialLibrary) when a directive precedes any newmtl', () => {
     const mtl = 'Kd 1 0 0\n';
-    const warnings: string[] = [];
-    parseObjMaterialLibrary(mtl, warnings);
-    expect(warnings.some((w) => w.includes('before any newmtl'))).toBe(true);
+    const diagnostics: ImportDiagnostic[] = [];
+    parseObjMaterialLibrary(mtl, diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'mtl.directive-before-material');
+    expect(crumb.severity).toBe('Drop');
+    expect(crumb.origin).toBe('parseObjMaterialLibrary');
+    expect(crumb.detail?.directive).toBe('Kd');
+    expect(crumb.detail?.line).toBe(1);
   });
 
-  it('warns on newmtl with no name', () => {
+  it('records newmtl-no-name (Drop, parseObjMaterialLibrary) on a newmtl with no name', () => {
     const mtl = 'newmtl\n';
-    const warnings: string[] = [];
-    parseObjMaterialLibrary(mtl, warnings);
-    expect(warnings.some((w) => w.includes('no name'))).toBe(true);
+    const diagnostics: ImportDiagnostic[] = [];
+    parseObjMaterialLibrary(mtl, diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'mtl.newmtl-no-name');
+    expect(crumb.severity).toBe('Drop');
+    expect(crumb.origin).toBe('parseObjMaterialLibrary');
+    expect(crumb.detail?.line).toBe(1);
   });
 
   it('provides defaults for unset properties', () => {
