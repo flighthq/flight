@@ -55,15 +55,25 @@ replaces wholesale.
 - **Seam:** `FutureBackend` — the web backend is `Promise`-backed and thenable; native/Haxe hosts
   supply their own primitive (tink `Future`, Lime, etc.). Same pattern as `net`/`LoopBackend`.
 
-## The await-ban policy
+## The await-ban policy — CONTINGENT, not default
 
-`async`/`await` is banned in **portable packages** (above the backend seam — the contract and
-orchestration that get converted). It is **allowed in the web-backend leaves** (`host-*` / web
-backend files) which are JS-only and replaced wholesale by the port, so their `await` never
-reaches the converter. Enforced by a scoped lint rule (exempting backend leaves), not convention.
+The `await`-ban is the **highest-friction** part of this charter (linear `async`/`await` becomes
+`chainFuture`/`mapFuture` combinator style in orchestration code) and it is **separable** from the
+type. So it is **not** adopted by default. See the friction budget in `agents/port-readiness.md`.
 
-Cost lands on SDK authors (combinator-style orchestration), never on consumers — because
-`Future<T>` is thenable, downstream users still `await` Flight futures in their own code.
+Gate: **commission the ban only if the downstream converter cannot map `await`→`flatMap`** (a
+standard CPS transform). Confirm with the converter team first.
+
+- **If the converter handles `await`:** skip the ban entirely. The `Future` *type* alone gives the
+  port a named async contract to map; the TS keeps idiomatic linear `async`/`await`. This removes
+  nearly all the charter's friction and is the preferred outcome.
+- **If it cannot:** apply the ban only in the **narrowest orchestration hotspots**, not SDK-wide,
+  and allow `await` in the web-backend leaves (`host-*` / web backend — JS-only, port-replaced, so
+  their `await` never reaches the converter). Enforce with a scoped lint rule, and ship the
+  `sequenceFutures`/`reduceFutures` iteration helpers so authors never hand-roll recursion.
+
+Either way, cost never lands on consumers — `Future<T>` is thenable, so downstream users keep
+`await` in their own code.
 
 ## Migration
 
