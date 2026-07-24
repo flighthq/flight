@@ -2,12 +2,10 @@ import { createAnimationChannel, createAnimationClip, createAnimationTrack } fro
 import {
   copyMatrix4,
   createMatrix4,
-  createQuaternion,
   createTransform3D,
   decomposeMatrix4ToTransform3D,
   inverseMatrix4,
   multiplyMatrix4,
-  setQuaternionFromMatrix4,
 } from '@flighthq/geometry';
 import { detectImageMimeType } from '@flighthq/image-codec';
 import { createBlinnPhongMaterial } from '@flighthq/materials';
@@ -32,7 +30,13 @@ import type {
   Transform3D,
   SkinInfluence,
 } from '@flighthq/types';
-import { MeshKind, SceneAnimationPathRotation, SceneAnimationPathTranslation, SceneNodeKind } from '@flighthq/types';
+import {
+  MeshKind,
+  SceneAnimationPathRotation,
+  SceneAnimationPathScale,
+  SceneAnimationPathTranslation,
+  SceneNodeKind,
+} from '@flighthq/types';
 
 import {
   AWD_BLOCK_CONTAINER,
@@ -499,12 +503,14 @@ function buildAwdSkeletonAnimationClip(
   // driven mostly by joint rotation; emitting only translation leaves every joint at its bind-pose
   // orientation, which compounds down the chain into a wildly deformed mesh. So decompose each pose's
   // 3×3 into a quaternion and drive both the joint's rotation and translation.
-  const rotationMatrix = createMatrix4();
-  const rotationQuat = createQuaternion();
+  const poseMatrix = createMatrix4();
+  const poseTransform = createTransform3D();
   const channels = [];
   for (let j = 0; j < jointCount; j++) {
     const translationValues: number[] = [];
     const rotationValues: number[] = [];
+    const scaleValues: number[] = [];
+    let hasScale = false;
     for (let p = 0; p < poseCount; p++) {
       const poseBlockId = parsedAnimation.poses[p].poseBlockId;
       const pose = poseBlocks.get(poseBlockId);
@@ -514,17 +520,27 @@ function buildAwdSkeletonAnimationClip(
         );
         translationValues.push(0, 0, 0);
         rotationValues.push(0, 0, 0, 1);
+        scaleValues.push(1, 1, 1);
       } else if (j < pose.jointTransforms.length && pose.jointTransforms[j] !== null) {
         const transform = pose.jointTransforms[j]!;
         translationValues.push(transform[9], transform[10], transform[11]);
-        // Read the unit quaternion from the pose's 3×3 basis (setQuaternionFromMatrix4 ignores the
-        // translation column, so the lifted matrix's translation is irrelevant).
-        awdTransformToMatrix4(rotationMatrix, transform);
-        setQuaternionFromMatrix4(rotationQuat, rotationMatrix);
-        rotationValues.push(rotationQuat.x, rotationQuat.y, rotationQuat.z, rotationQuat.w);
+        // Decompose the pose's 3×3 basis into rotation AND scale. A plain setQuaternionFromMatrix4 would
+        // read a skewed quaternion off a scaled basis and drop the scale entirely; decompose normalizes
+        // the basis first, so both come out correct. The lifted matrix's translation is unused here.
+        awdTransformToMatrix4(poseMatrix, transform);
+        decomposeMatrix4ToTransform3D(poseTransform, poseMatrix);
+        rotationValues.push(
+          poseTransform.rotation.x,
+          poseTransform.rotation.y,
+          poseTransform.rotation.z,
+          poseTransform.rotation.w,
+        );
+        scaleValues.push(poseTransform.scale.x, poseTransform.scale.y, poseTransform.scale.z);
+        if (hasNonUnitScale(poseTransform.scale.x, poseTransform.scale.y, poseTransform.scale.z)) hasScale = true;
       } else {
         translationValues.push(0, 0, 0);
         rotationValues.push(0, 0, 0, 1);
+        scaleValues.push(1, 1, 1);
       }
     }
 
@@ -542,6 +558,13 @@ function buildAwdSkeletonAnimationClip(
       values: rotationValues,
     });
     channels.push(createAnimationChannel(rotationTrack, { node: joints[j], path: SceneAnimationPathRotation }));
+
+    // Only emit a scale track when some pose actually scales the joint — AWD skeletons rarely do, and a
+    // redundant unit-scale channel would bloat every clip.
+    if (hasScale) {
+      const scaleTrack = createAnimationTrack({ components: 3, times, values: scaleValues });
+      channels.push(createAnimationChannel(scaleTrack, { node: joints[j], path: SceneAnimationPathScale }));
+    }
   }
 
   return createAnimationClip(channels, timeAccumulator);
@@ -632,13 +655,15 @@ function buildAwdDocumentAnimation(
     timeAccumulator += parsedAnimation.poses[p].duration / 1000;
   }
 
-  const rotationMatrix = createMatrix4();
-  const rotationQuat = createQuaternion();
+  const poseMatrix = createMatrix4();
+  const poseTransform = createTransform3D();
   const channels: SceneDocumentAnimationChannel[] = [];
   for (let j = 0; j < jointCount; j++) {
     if (j >= jointNodeIndices.length) break;
     const translationValues: number[] = [];
     const rotationValues: number[] = [];
+    const scaleValues: number[] = [];
+    let hasScale = false;
     for (let p = 0; p < poseCount; p++) {
       const poseBlockId = parsedAnimation.poses[p].poseBlockId;
       const pose = poseBlocks.get(poseBlockId);
@@ -648,15 +673,26 @@ function buildAwdDocumentAnimation(
         );
         translationValues.push(0, 0, 0);
         rotationValues.push(0, 0, 0, 1);
+        scaleValues.push(1, 1, 1);
       } else if (j < pose.jointTransforms.length && pose.jointTransforms[j] !== null) {
         const transform = pose.jointTransforms[j]!;
         translationValues.push(transform[9], transform[10], transform[11]);
-        awdTransformToMatrix4(rotationMatrix, transform);
-        setQuaternionFromMatrix4(rotationQuat, rotationMatrix);
-        rotationValues.push(rotationQuat.x, rotationQuat.y, rotationQuat.z, rotationQuat.w);
+        // Decompose rotation + scale from the pose basis (see the live-clip path for why decompose,
+        // not setQuaternionFromMatrix4 alone).
+        awdTransformToMatrix4(poseMatrix, transform);
+        decomposeMatrix4ToTransform3D(poseTransform, poseMatrix);
+        rotationValues.push(
+          poseTransform.rotation.x,
+          poseTransform.rotation.y,
+          poseTransform.rotation.z,
+          poseTransform.rotation.w,
+        );
+        scaleValues.push(poseTransform.scale.x, poseTransform.scale.y, poseTransform.scale.z);
+        if (hasNonUnitScale(poseTransform.scale.x, poseTransform.scale.y, poseTransform.scale.z)) hasScale = true;
       } else {
         translationValues.push(0, 0, 0);
         rotationValues.push(0, 0, 0, 1);
+        scaleValues.push(1, 1, 1);
       }
     }
 
@@ -670,6 +706,11 @@ function buildAwdDocumentAnimation(
       values: rotationValues,
     });
     channels.push({ node: jointNodeIndices[j], path: SceneAnimationPathRotation, track: rotationTrack });
+
+    if (hasScale) {
+      const scaleTrack: AnimationTrack = createAnimationTrack({ components: 3, times, values: scaleValues });
+      channels.push({ node: jointNodeIndices[j], path: SceneAnimationPathScale, track: scaleTrack });
+    }
   }
 
   return { channels, duration: timeAccumulator, name: parsedAnimation.name };
@@ -1655,6 +1696,12 @@ const AWD_TANGENT_HANDEDNESS = -1;
 // Opt-in decompressor registry keyed by the header compression byte. Empty by default so an inflate/LZMA
 // codec is only pulled into a bundle when the caller registers one (registerAwdDecompressor).
 const awdDecompressors = new Map<number, AwdDecompressor>();
+
+// Whether a decomposed pose scale departs from unit within tolerance — the gate for emitting a scale
+// animation channel (skipped for the common identity-scale skeletons so clips stay lean).
+function hasNonUnitScale(sx: number, sy: number, sz: number): boolean {
+  return Math.abs(sx - 1) > 1e-4 || Math.abs(sy - 1) > 1e-4 || Math.abs(sz - 1) > 1e-4;
+}
 
 interface ParsedJoint {
   name: string;
