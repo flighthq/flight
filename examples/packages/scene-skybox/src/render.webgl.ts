@@ -1,4 +1,4 @@
-import { bakeEnvironmentIbl, drawGlEnvironmentSkybox, drawGlScene } from '@flighthq/scene-gl';
+import { bakeGlEnvironmentIbl, drawGlEnvironmentSkybox, drawGlScene } from '@flighthq/scene-gl';
 import type { Camera3D, Environment, GlRenderEffectPipeline, SceneLightsLike, SceneNode } from '@flighthq/sdk';
 import {
   beginGlRenderEffectPipeline,
@@ -40,7 +40,7 @@ export function render(
   environment: Readonly<Environment>,
 ): void {
   if (!environmentBaked) {
-    bakeEnvironmentIbl(state, environment);
+    bakeGlEnvironmentIbl(state, environment);
     environmentBaked = true;
   }
 

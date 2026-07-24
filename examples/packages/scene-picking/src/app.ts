@@ -1,6 +1,6 @@
 import {
   createOrbitCameraController,
-  orbitCameraController,
+  rotateOrbitCameraController,
   updateOrbitCameraController,
 } from '@flighthq/camera-controls';
 import { createSceneHit, pickScene } from '@flighthq/picking';
@@ -126,7 +126,7 @@ let previousTime = performance.now();
 function enterFrame(now: number): void {
   const deltaTime = Math.min((now - previousTime) / 1000, 0.05);
   previousTime = now;
-  orbitCameraController(controller, deltaTime * 0.035, 0);
+  rotateOrbitCameraController(controller, deltaTime * 0.035, 0);
   updateOrbitCameraController(controller, camera, deltaTime);
   render(scene, camera, lights);
   requestAnimationFrame(enterFrame);
