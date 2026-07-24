@@ -47,10 +47,11 @@ export function createAnimationCrossfade(
   });
 }
 
-// Reports when the curved destination weight has reached 1. The caller owns retirement/removal of a
-// completed transition; the controller has no hidden scheduler.
+// Reports when elapsed transition time has reached duration. Completion deliberately ignores the
+// curved weight because back/elastic easing may overshoot 1 before the lifecycle duration ends. The
+// caller owns retirement/removal of a completed transition; the controller has no hidden scheduler.
 export function isAnimationCrossfadeComplete(state: Readonly<AnimationCrossfade>): boolean {
-  return state.weight >= 1;
+  return state.duration <= 0 || state.elapsed >= state.duration;
 }
 
 // Samples every target correspondence using the caller-supplied per-channel scratch and visitor,
@@ -87,6 +88,8 @@ function createAnimationCrossfadeChannels(
 ): AnimationCrossfadeChannel[] {
   const fromChannels = from.clip.channels;
   const toChannels = to.clip.channels;
+  assertUniqueAnimationCrossfadeTargets(fromChannels, 'source');
+  assertUniqueAnimationCrossfadeTargets(toChannels, 'destination');
   const toByTarget = new Map<unknown, number>();
   for (let index = 0; index < toChannels.length; index++) {
     if (!toByTarget.has(toChannels[index].targetRef)) toByTarget.set(toChannels[index].targetRef, index);
@@ -119,6 +122,19 @@ function createAnimationCrossfadeChannels(
     }
   }
   return channels;
+}
+
+function assertUniqueAnimationCrossfadeTargets(
+  channels: readonly Readonly<AnimationChannel>[],
+  clipLabel: string,
+): void {
+  const targets = new Set<unknown>();
+  for (const channel of channels) {
+    if (targets.has(channel.targetRef)) {
+      throw new TypeError(`AnimationCrossfade ${clipLabel} clip contains a duplicate targetRef.`);
+    }
+    targets.add(channel.targetRef);
+  }
 }
 
 function getLinearAnimationCrossfadeWeight(elapsed: number, duration: number): number {

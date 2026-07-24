@@ -100,14 +100,46 @@ describe('createAnimationCrossfade', () => {
     const vector4 = player(target, [0, 0, 0, 1, 0, 0, 0, 1], { components: 4 });
     expect(() => createAnimationCrossfade(quaternion, vector4, 1)).toThrow(/incompatible quaternion flags/);
   });
+
+  it('rejects duplicate target references in either clip', () => {
+    const duplicate = {};
+    const unique = {};
+    const track = createAnimationTrack({ times: [0], values: [1] });
+    const duplicateClip = createAnimationClip([
+      createAnimationChannel(track, duplicate),
+      createAnimationChannel(track, duplicate),
+    ]);
+    const uniqueClip = createAnimationClip([
+      createAnimationChannel(track, duplicate),
+      createAnimationChannel(track, unique),
+    ]);
+    expect(() =>
+      createAnimationCrossfade(createAnimationPlayer(duplicateClip), createAnimationPlayer(uniqueClip), 1),
+    ).toThrow(/source clip contains a duplicate targetRef/);
+    expect(() =>
+      createAnimationCrossfade(createAnimationPlayer(uniqueClip), createAnimationPlayer(duplicateClip), 1),
+    ).toThrow(/destination clip contains a duplicate targetRef/);
+  });
 });
 
 describe('isAnimationCrossfadeComplete', () => {
-  it('uses the curved destination weight as the retirement condition', () => {
+  it('uses elapsed duration as the retirement condition', () => {
     const target = {};
     const state = createAnimationCrossfade(player(target, [0, 1]), player(target, [1, 2]), 2);
     expect(isAnimationCrossfadeComplete(state)).toBe(false);
     advanceAnimationCrossfade(state, 2);
+    expect(isAnimationCrossfadeComplete(state)).toBe(true);
+  });
+
+  it('does not retire early when an easing curve overshoots 1', () => {
+    const target = {};
+    const state = createAnimationCrossfade(player(target, [0, 1]), player(target, [1, 2]), 1, {
+      curve: (t) => 1 + t,
+    });
+    advanceAnimationCrossfade(state, 0.7);
+    expect(state.weight).toBeGreaterThan(1);
+    expect(isAnimationCrossfadeComplete(state)).toBe(false);
+    advanceAnimationCrossfade(state, 0.31);
     expect(isAnimationCrossfadeComplete(state)).toBe(true);
   });
 });
