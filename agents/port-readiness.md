@@ -19,6 +19,43 @@ port maps them predictably instead of guessing.
 - **open** — needs a convention the port keys off; not yet pinned.
 - **port-side** — fixed in the port repo (`flighthq` Haxe/`_internal`), not this monorepo.
 
+## Friction budget: bend the converter, not the SDK
+
+The **authoritative environment is the TS SDK**. Portability work must not casually degrade it into
+a less idiomatic API to serve a downstream consumer. The default is: **make the converter/runtime
+bridge the JS-ism; reshape the TS only where the converter fundamentally can't** — which is rarer
+than it looks. Lime already mimics HTML5 typed arrays; `await`→`flatMap` is a standard CPS
+transform a converter can do; `Map`/`Set` map trivially to Haxe collections.
+
+Decision rule, per JS-ism:
+
+1. **Can the converter/runtime bridge it?** → do it there. Zero TS friction. (The default answer.)
+2. **If not** — is a TS-side seam *net-positive/neutral* (improves or barely changes the TS), or
+   *pure tax with real friction*?
+   - **net-positive/neutral + isolated at a boundary** → worth a TS seam.
+   - **pure tax + pervasive** (touches *all* async / *all* binary code) → push to the converter;
+     do **not** reshape the SDK-wide.
+
+The line that falls out: **isolated boundary seams are cheap and often net-positive; pervasive
+reshapes are expensive and belong in the converter.**
+
+Friction map of the candidates:
+
+- **Net-positive / neutral — do:** diagnostics (structured crumbs *improved* the code over prose
+  *and* shrank the bundle), `cancel` (a token is cleaner than threading `AbortSignal` by hand),
+  `Future` as a named *thenable* type (rename + boundary hygiene; consumers keep `await`).
+- **High friction, separable — reconsider:** the **`await`-ban**. Only justified if the converter
+  *cannot* do `await`→`flatMap`. Ask the converter team first; if it can, **skip the ban** and keep
+  linear async in the TS — that removes nearly all the friction. If it can't, apply it only in the
+  narrowest orchestration hotspots, never SDK-wide.
+- **Port-only, no current benefit — defer:** `bytes`. Lime already handles typed arrays, so it buys
+  the current port nothing; commission it when a Rust port makes the need concrete (Rust
+  `Index`/`IndexMut` may keep it converter-side anyway).
+
+Model to copy: the diagnostics charter — a boundary abstraction that improved the TS and shrank the
+bundle. Anti-model: a pervasive `await`-ban that turns linear async into combinator soup for no
+unique gain.
+
 ## The unified seam: `_internal.backend.*`
 
 The "abstracted" items below are **not** separate one-off wrappers — they share one mechanism.
@@ -143,12 +180,24 @@ GL buffer adapter**. On the TS side this is mostly *seam-completion* plus **two 
 (byte-buffer, cancellation-token)** — Future is already designed, and the net/image-codec/loop
 seams already exist.
 
-## Sequencing
+## Commissioning order (selective — per the friction budget)
 
-1. **Foundational, parallel:** byte-buffer (#1) and Future (with cancellation folded in, #2).
-2. **Then:** scheduler/clock consolidation (#3) — Future's continuation queue depends on it.
-3. **Then:** the WeakMap/collection audit (#4).
-4. **Then:** the utilities (#5–#7) as they surface.
+This is **not** a mandate to build the whole list into the TS. Commission only what earns its
+friction; push the rest to the converter.
+
+1. **Now — cheap / net-positive, boundary-isolated:** finish diagnostics (in flight); add `cancel`;
+   introduce `Future` as a named *thenable* type — **without** the `await`-ban.
+2. **Gate on the converter:** the `await`-ban — commission only if the converter can't do
+   `await`→`flatMap`. Confirm before touching orchestration code.
+3. **Opportunistic — low stakes:** scheduler/clock consolidation (#3), encoding (#5). Do when a
+   consumer needs them, not speculatively.
+4. **Defer — port-driven, no current benefit:** `bytes` (#1) until a Rust port makes it concrete;
+   the WeakMap/collection audit (#4) as a cleanup pass; the `number` int/float convention (#7) as a
+   documentation task.
+
+The roadmap's value is a **map of the landmines plus this decision rule**, not a build order for
+all of it. Most items belong in the converter/runtime; the TS-side subset is the small,
+boundary-isolated, net-positive slice.
 
 ## Ties
 
