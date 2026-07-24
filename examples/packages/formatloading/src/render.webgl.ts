@@ -1,0 +1,41 @@
+import type { DisplayObject } from '@flighthq/sdk';
+import {
+  ShapeKind,
+  TextLabelKind,
+  createGlCanvasElement,
+  createGlRenderState,
+  defaultGlShapeCommands,
+  defaultGlShapeRenderer,
+  defaultGlTextLabelRenderer,
+  prepareDisplayObjectRender,
+  registerDefaultGlMaterial,
+  registerGlShapeCommands,
+  registerRenderer,
+  renderGlBackground,
+  renderGlDisplayObject,
+} from '@flighthq/sdk';
+
+const pixelRatio = window.devicePixelRatio || 1;
+export const canvas = createGlCanvasElement(800, 600, pixelRatio);
+document.body.style.margin = '0';
+document.body.appendChild(canvas);
+
+export const state = createGlRenderState(canvas, {
+  backgroundColor: 0x101827ff,
+  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+  pixelRatio,
+  sceneGraphSyncPolicy: 'requiresInvalidation',
+});
+
+registerDefaultGlMaterial(state);
+registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
+registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
+registerGlShapeCommands(defaultGlShapeCommands);
+
+export const scale = pixelRatio;
+
+export function render(root: DisplayObject): void {
+  if (!prepareDisplayObjectRender(state, root)) return;
+  renderGlBackground(state);
+  renderGlDisplayObject(state, root);
+}
