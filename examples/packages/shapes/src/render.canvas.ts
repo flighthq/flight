@@ -3,6 +3,7 @@ import {
   createCanvasElement,
   createCanvasRenderState,
   defaultCanvasBeginFill,
+  defaultCanvasBeginGradientFill,
   defaultCanvasCubicCurveTo,
   defaultCanvasCurveTo,
   defaultCanvasDrawCircle,
@@ -10,6 +11,7 @@ import {
   defaultCanvasDrawRectangle,
   defaultCanvasDrawRoundRectangle,
   defaultCanvasEndFill,
+  defaultCanvasLineGradientStyle,
   defaultCanvasLineStyle,
   defaultCanvasLineTo,
   defaultCanvasMoveTo,
@@ -33,6 +35,7 @@ export const state = createCanvasRenderState(canvas, {
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands([
   defaultCanvasBeginFill,
+  defaultCanvasBeginGradientFill,
   defaultCanvasCubicCurveTo,
   defaultCanvasCurveTo,
   defaultCanvasDrawCircle,
@@ -40,6 +43,7 @@ registerCanvasShapeCommands([
   defaultCanvasDrawRectangle,
   defaultCanvasDrawRoundRectangle,
   defaultCanvasEndFill,
+  defaultCanvasLineGradientStyle,
   defaultCanvasLineStyle,
   defaultCanvasLineTo,
   defaultCanvasMoveTo,
