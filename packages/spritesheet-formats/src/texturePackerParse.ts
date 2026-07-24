@@ -96,6 +96,20 @@ export function parseTexturePackerSpritesheet(json: string): SpritesheetData {
 /** Parse a Texture Packer JSON string and preserve the full document for
  *  round-trip serialisation via `serializeTexturePackerSpritesheet`. */
 export function parseTexturePackerSpritesheetDocument(json: string): TexturePackerParsed {
-  const document = JSON.parse(json) as TexturePackerDocument;
+  let document: TexturePackerDocument;
+  try {
+    document = JSON.parse(json) as TexturePackerDocument;
+  } catch {
+    // Malformed JSON is an expected failure — return an EMPTY RESULT (empty data + empty document), never
+    // throwing; empty (not null) matches the non-Document sibling parseTexturePackerSpritesheet.
+    return { data: createSpritesheetData(), document: createEmptyTexturePackerDocument() };
+  }
   return { data: documentToData(document), document };
+}
+
+// The frame-less TexturePacker document used as the malformed-JSON sentinel — a valid array document so the
+// result round-trips through serializeTexturePackerSpritesheet.
+function createEmptyTexturePackerDocument(): TexturePackerDocument {
+  const meta: TexturePackerMeta = { app: '', format: '', image: '', scale: 1, size: { h: 0, w: 0 }, version: '' };
+  return { frames: [], meta };
 }

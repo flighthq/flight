@@ -216,6 +216,15 @@ describe('parseAsepriteSpritesheet', () => {
 });
 
 describe('parseAsepriteSpritesheetDocument', () => {
+  it('returns an empty result (no throw) on malformed JSON', () => {
+    // Malformed JSON yields an empty result — empty data AND an empty (frame-less) document — not an
+    // uncaught throw and not null, matching the non-Document sibling.
+    expect(() => parseAsepriteSpritesheetDocument('{ not valid json')).not.toThrow();
+    const { data, document } = parseAsepriteSpritesheetDocument('{ not valid json');
+    expect(data.frames).toHaveLength(0);
+    expect((document as { frames: unknown[] }).frames).toHaveLength(0);
+  });
+
   it('returns the same data as parseAsepriteSpritesheet', () => {
     const parsed = parseAsepriteSpritesheet(HASH_JSON);
     const { data } = parseAsepriteSpritesheetDocument(HASH_JSON);

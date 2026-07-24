@@ -116,6 +116,29 @@ export function parseAsepriteSpritesheet(json: string): SpritesheetData {
 /** Parse an Aseprite JSON string and preserve the full document for round-trip
  *  serialisation via `serializeAsepriteSpritesheet`. */
 export function parseAsepriteSpritesheetDocument(json: string): AsepriteParsed {
-  const document = JSON.parse(json) as AsepriteDocument;
+  let document: AsepriteDocument;
+  try {
+    document = JSON.parse(json) as AsepriteDocument;
+  } catch {
+    // Malformed JSON is an expected failure — return an EMPTY RESULT (empty data + empty document), never
+    // throwing. Empty (not null) keeps this variant's return contract identical to the non-Document sibling
+    // parseAsepriteSpritesheet, and the empty document stays serialisable for round-trip.
+    return { data: createSpritesheetData(), document: createEmptyAsepriteDocument() };
+  }
   return { data: documentToData(document), document };
+}
+
+// The frame-less Aseprite document used as the malformed-JSON sentinel — a valid array document so the
+// result round-trips through serializeAsepriteSpritesheet.
+function createEmptyAsepriteDocument(): AsepriteDocument {
+  const meta: AsepriteMeta = {
+    app: '',
+    format: '',
+    frameTags: [],
+    image: '',
+    scale: 1,
+    size: { h: 0, w: 0 },
+    version: '',
+  };
+  return { frames: [], meta };
 }
