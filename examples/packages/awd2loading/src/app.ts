@@ -31,6 +31,7 @@ import { canvas, render, scale } from './render';
 const awdBytes = createSyntheticAwd2();
 const warnings: string[] = [];
 const documentScene = createSceneFromAwd2(awdBytes, warnings);
+if (warnings.length !== 0) throw new Error(`Synthetic AWD2 fixture produced warnings: ${warnings.join('; ')}`);
 const mesh = findImportedMesh();
 const material = mesh.materials[0];
 if (material?.kind !== ShadedMaterialKind) throw new Error('AWD2 material did not import as ShadedMaterial');
@@ -138,7 +139,7 @@ details.innerHTML = [
   '<h1>AWD2 loading</h1>',
   '<p>A tiny cube is authored into an AWD2 byte stream in the browser, then loaded with <strong>createSceneFromAwd2</strong>.</p>',
   `<p><strong>${formatBytes(awdBytes.byteLength)}</strong> · 1 mesh · 24 vertices · 1 ShadedMaterial</p>`,
-  `<p class="success">✓ parsed with ${warnings.length} warning${warnings.length === 1 ? '' : 's'}<br>✓ built-in rim modifier registered</p>`,
+  '<p class="success">✓ parsed with 0 warnings<br>✓ built-in rim modifier registered</p>',
   '<p>Drag to orbit · wheel to zoom</p>',
 ].join('');
 document.body.appendChild(details);
