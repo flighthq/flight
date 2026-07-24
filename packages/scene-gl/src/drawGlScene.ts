@@ -6,6 +6,7 @@ import { declareGlRenderTargetColorSpace, invalidateGlRenderStateCache } from '@
 import { getSceneNodeWorldAlpha } from '@flighthq/scene';
 import type {
   Camera3D,
+  GlSceneForwardLightList,
   GlMeshMaterialRenderer,
   GlRenderState,
   Material,
@@ -14,12 +15,13 @@ import type {
   Mesh,
   MeshSubset,
   SceneLightsLike,
+  SceneLightBlock,
   SceneNode,
   SceneRenderProxy,
   SurfaceMaterial,
   GlSceneDrawEntry,
 } from '@flighthq/types';
-import { DefaultMaterialKind } from '@flighthq/types';
+import { DefaultMaterialKind, MAX_FORWARD_LIGHTS } from '@flighthq/types';
 
 import { resolveGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { drawGlSceneParticleEmitter2Ds } from './glParticleEmitter3D';
@@ -62,11 +64,14 @@ export function drawGlScene(
   scene: Readonly<SceneNode>,
   camera: Readonly<Camera3D>,
   lights: Readonly<SceneLightsLike>,
+  forwardLights?: Readonly<GlSceneForwardLightList>,
 ): void {
   const list = prepareSceneRender(state, scene, camera, lights);
   const lightBlock = list.lights;
   const viewProjection = list.viewProjection;
   const runtime = getGlSceneRuntime(state);
+  const hasPreparedForwardLights = forwardLights !== undefined && forwardLights.meshCount === list.meshCount;
+  if (!hasPreparedForwardLights && hasExcessForwardLights(lights)) runtime.forwardLightSelectionGuard?.(lights);
 
   // Scene materials output linear HDR radiance, so declare the target being rendered into as 'linear':
   // the present (presentGlScene, or the effect pipeline's adapting present) reads that back and applies
@@ -119,6 +124,7 @@ export function drawGlScene(
       const entry = acquireDrawEntry(isBlended ? runtime.blendedPool : runtime.opaquePool);
       entry.alpha = objectAlpha;
       entry.clipW = clipW;
+      entry.lightBlock = hasPreparedForwardLights ? forwardLights.meshLightBlocks[m] : lightBlock;
       entry.mesh = mesh;
       entry.material = resolvedMaterial;
       entry.renderer = renderer;
@@ -135,6 +141,7 @@ export function drawGlScene(
 
   // Pass 1: opaque + mask subsets in scene-graph order. No blending; depth-write on (set by bind).
   let boundMaterial: Readonly<Material> | null | undefined = undefined;
+  let boundLightBlock: Readonly<SceneLightBlock> | null = null;
   let boundRenderer: GlMeshMaterialRenderer | null = null;
   let boundSkinned: boolean | undefined = undefined;
 
@@ -146,11 +153,17 @@ export function drawGlScene(
     // A skinned run selects the HAS_SKIN program variant; split runs on it (a rigid and a skinned mesh
     // sharing a material need different programs). Set the flag before bind so ensureGl*Program folds it in.
     const skinned = isGpuSkinnedDraw(entry.mesh);
-    if (entry.renderer !== boundRenderer || entry.material !== boundMaterial || skinned !== boundSkinned) {
+    if (
+      entry.renderer !== boundRenderer ||
+      entry.material !== boundMaterial ||
+      entry.lightBlock !== boundLightBlock ||
+      skinned !== boundSkinned
+    ) {
       runtime.activeSkinnedRun = skinned;
-      entry.renderer.bind(state, entry.material, lightBlock, camera);
+      entry.renderer.bind(state, entry.material, entry.lightBlock, camera);
       boundRenderer = entry.renderer;
       boundMaterial = entry.material;
+      boundLightBlock = entry.lightBlock;
       boundSkinned = skinned;
     }
 
@@ -173,6 +186,7 @@ export function drawGlScene(
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
     boundMaterial = undefined;
+    boundLightBlock = null;
     boundRenderer = null;
     boundSkinned = undefined;
 
@@ -182,11 +196,17 @@ export function drawGlScene(
       setMatrix3NormalFromMatrix4(scratchNormalMatrix, worldMatrix);
 
       const skinned = isGpuSkinnedDraw(entry.mesh);
-      if (entry.renderer !== boundRenderer || entry.material !== boundMaterial || skinned !== boundSkinned) {
+      if (
+        entry.renderer !== boundRenderer ||
+        entry.material !== boundMaterial ||
+        entry.lightBlock !== boundLightBlock ||
+        skinned !== boundSkinned
+      ) {
         runtime.activeSkinnedRun = skinned;
-        entry.renderer.bind(state, entry.material, lightBlock, camera);
+        entry.renderer.bind(state, entry.material, entry.lightBlock, camera);
         boundRenderer = entry.renderer;
         boundMaterial = entry.material;
+        boundLightBlock = entry.lightBlock;
         boundSkinned = skinned;
       }
 
@@ -225,6 +245,10 @@ function isBlendedMaterial(material: Readonly<Material>): boolean {
   return (material as Readonly<SurfaceMaterial>).alphaMode === 'blend';
 }
 
+function hasExcessForwardLights(lights: Readonly<SceneLightsLike>): boolean {
+  return (lights.point?.length ?? 0) > MAX_FORWARD_LIGHTS || (lights.spot?.length ?? 0) > MAX_FORWARD_LIGHTS;
+}
+
 // Resolves the Material for a subset index: the positional materials[i] entry, or null when the
 // slot is absent/null (the registry then falls back to DefaultMaterialKind, or skips the subset).
 function resolveSubsetMaterial(mesh: Readonly<Mesh>, subsetIndex: number): Readonly<Material> | null {
@@ -242,6 +266,7 @@ function compareBlendedEntriesDescending(a: GlSceneDrawEntry, b: GlSceneDrawEntr
 interface DrawEntry {
   alpha: number;
   clipW: number;
+  lightBlock: Readonly<SceneLightBlock>;
   material: Readonly<Material>;
   mesh: Mesh;
   renderer: GlMeshMaterialRenderer;
@@ -266,6 +291,7 @@ function createDrawEntry(): GlSceneDrawEntry {
   return {
     alpha: 1,
     clipW: 0,
+    lightBlock: null!,
     material: DEFAULT_MATERIAL,
     mesh: null!,
     renderer: null!,

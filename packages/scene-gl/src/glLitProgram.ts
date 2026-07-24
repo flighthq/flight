@@ -28,6 +28,7 @@ const _iblPlaceholders = new WeakMap<GlRenderState, GlIblPlaceholders>();
 // The SceneLightBlock.version last uploaded into each program's light uniforms. Keyed by program
 // because default uniforms are per-program state; freed with the program when it is GC'd.
 const _uploadedLightVersion = new WeakMap<Readonly<GlLitProgram>, number>();
+const _uploadedLightBlock = new WeakMap<Readonly<GlLitProgram>, Readonly<SceneLightBlock>>();
 
 // Uploads the packed light block to a lit program's standard light uniforms, then binds the active
 // directional shadow (set by drawGlSceneShadowMap on the scene runtime) or disables shadowing. The
@@ -48,7 +49,7 @@ export function bindGlMeshLightBlock(
   // current version. Tracked per program (not per state) because each program keeps its own uniform
   // values — a version cached on one program says nothing about another. Shadow and IBL binds below are
   // NOT gated: they carry per-frame texture binds that must run every draw regardless of the light block.
-  if (_uploadedLightVersion.get(program) !== lights.version) {
+  if (_uploadedLightBlock.get(program) !== lights || _uploadedLightVersion.get(program) !== lights.version) {
     const data = lights.data;
     gl.uniform4f(program.locDirectional, data[0], data[1], data[2], 0);
     gl.uniform4f(program.locDirectionalRadiance, data[4], data[5], data[6], 0);
@@ -78,6 +79,7 @@ export function bindGlMeshLightBlock(
     gl.uniform1i(program.locPointCount, lights.pointCount);
     gl.uniform1i(program.locSpotCount, lights.spotCount);
     gl.uniform1i(program.locHemisphereCount, lights.hemisphereCount);
+    _uploadedLightBlock.set(program, lights);
     _uploadedLightVersion.set(program, lights.version);
   }
 

@@ -6,5 +6,6 @@ export * from './hemisphereLight';
 export * from './lightAnalysis';
 export * from './lightIntensity';
 export * from './pointLight';
+export * from './sceneForwardLights';
 export * from './sceneLights';
 export * from './spotLight';
