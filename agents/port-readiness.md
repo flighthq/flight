@@ -19,11 +19,26 @@ port maps them predictably instead of guessing.
 - **open** — needs a convention the port keys off; not yet pinned.
 - **port-side** — fixed in the port repo (`flighthq` Haxe/`_internal`), not this monorepo.
 
+## The unified seam: `_internal.backend.*`
+
+The "abstracted" items below are **not** separate one-off wrappers — they share one mechanism.
+The downstream port already references a `flighthq._internal.backend.*` package of "expected
+feature" classes (`WebGLRenderContext`, etc.) that the generated code targets, with the
+platform-conditional implementations kept *outside* the generated classes. Every abstracted item
+here lands as a member of that seam family: render context, **byte buffers**, net, image decode,
+scheduler, cancellation. A port implements the seam; the generated/portable code never sees the
+platform branch.
+
+The rule for what goes *in* each seam is **minimal-by-usage**: expose only the operations Flight
+actually calls, so a port (Haxe today, Rust later) implements a bounded surface instead of an
+entire browser API. Web backings are the native APIs themselves (typed arrays, `fetch`, WebGL
+externs), so JS pays nothing.
+
 ## Priorities (Lime port data)
 
 | # | JS concept | Stance | Flight target | Notes |
 |---|---|---|---|---|
-| 1 | `ArrayBuffer`, typed arrays, `DataView` | **open → new abstraction** | byte-buffer boundary type + "all binary is ArrayBuffer-backed views" rule | Highest volume: Float32Array 161, Uint8Array 56, Uint32Array 46, U8Clamped 20, DataView 13. Unlocks scene-formats, surface/image, GPU upload, Lime DataPointer interop. **Decision open** (below). |
+| 1 | `ArrayBuffer`, typed arrays, `DataView` | **abstracted — seam by usage** | a minimal byte-buffer seam (only the ops Flight uses), backed by native typed arrays on web | Highest volume: Float32Array 161, Uint8Array 56, Uint32Array 46, U8Clamped 20, DataView 13. Unlocks scene-formats, surface/image, GPU upload, Lime DataPointer interop. **Resolved: seam by usage** (below). |
 | 2 | `fetch`, `AbortController` | **abstracted (mostly done)** + new | `NetBackend` (exists) + portable `CancelToken`/`CancelSource` | scene-resources already calls `sendNetRequest`, not `fetch`. Cancellation is new and **converges with the Future charter**. |
 | 3 | `setTimeout/Interval`, `requestAnimationFrame`, `performance.now` | **abstracted — consolidate** | one scheduler/clock seam owning the Future continuation queue | `clock` + `LoopBackend` exist. Frame scheduling should come from `Application.update/render`, not simulated rAF. |
 | 4 | `Map`, `Set`, `WeakMap`, `WeakSet` | **open — audit** | portable identity collections + explicit weak policy | Map 156, **WeakMap 142**, Set 60. Runtime-slot design *should* minimize WeakMaps — audit where they leaked; move to runtime slots where possible, else document retention + strong fallback. |
@@ -45,8 +60,27 @@ DataPointer interop) instead of mapping five typed-array types onto Haxe arrays.
 has partial shims (`_internal/_Float32Array.hx`) that currently fall back to plain Haxe arrays —
 efficient enough for calculation, but not for parsing, GPU upload, or DataPointer interop.
 
-**Decision open:** thin `ByteBuffer` value type at the boundaries, vs consistency-rule-only plus a
-documented "back this with `haxe.io.Bytes`" note. This determines how invasive #1 is.
+**Resolved: a seam defined by usage, not by the full API.** Lime *can* mimic the entire HTML5
+typed-array surface, but a mechanical Rust port should not have to reimplement the whole spec to
+satisfy the SDK. So the seam exposes **only the operations Flight actually uses** — each port
+implements that bounded set (~a dozen-and-a-half ops), not the full typed-array API. This is the
+same `flighthq._internal.backend.*` "expected feature" pattern already used for host features like
+`WebGLRenderContext`: platform conditionals live outside the generated classes, which reference
+the abstract seam.
+
+Design properties:
+
+- **Seam by usage.** First task is a *usage audit*: enumerate Flight's real typed-array/`DataView`
+  surface (create buffer / create views, indexed get+set, `length`, `subarray`/`set`, and
+  offset-read/write-with-endianness for parsing) → that list *is* the seam. Nothing more.
+- **Indexable, so ergonomics survive.** The seam views keep `view[i]` (Haxe `@:arrayAccess`, Rust
+  `Index`/`IndexMut`, Lime's HTML5-compatible arrays) — no rewrite to `read(buf, i)` calls, and no
+  hot-path function-call overhead.
+- **Zero-cost on web.** The web backing *is* native typed arrays; the seam is a thin typed
+  interface they satisfy structurally, so JS pays nothing.
+- **The discipline:** portable Flight code goes through the seam **factories** (create/view) rather
+  than `new Float32Array(...)` directly, so the port controls the backing. Direct global
+  typed-array references move behind the seam or into the web-backend leaf.
 
 ## What stays host-specific (agrees with the port analysis)
 
