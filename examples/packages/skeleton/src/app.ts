@@ -151,7 +151,7 @@ const camera: Camera3D = createCamera3D({
   near: 0.1,
   projection: createPerspectiveProjection({ aspect: 800 / 600, fovY: Math.PI / 4 }),
 });
-setCamera3DViewMatrix4FromLookAt(camera, createVector3(6, 4, 10), createVector3(0, 0, 0), createVector3(0, 1, 0));
+setCamera3DViewMatrix4FromLookAt(camera, createVector3(7, 3, 18), createVector3(0, 0, 0), createVector3(0, 1, 0));
 
 const directionalDirection = createVector3(-1, -0.5, -0.7);
 normalizeVector3(directionalDirection, directionalDirection);
