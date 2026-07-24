@@ -265,7 +265,7 @@ Quick-reference for common feature keywords. All package names use the `@flighth
 | Materials (PBR) | `materials` (StandardPbrMaterial) | gl, wgpu |  |
 | Materials (unlit) | `materials` (UnlitMaterial) | gl, wgpu |  |
 | Materials (toon) | `materials` (ToonMaterial) | gl, wgpu |  |
-| Material modifiers (ShadedMaterial) | `shading` (fresnel/normalPerturb/emissive/envReflect/fog/vertexDisplace/dissolve/toon) + `scene-gl` | gl | Modifier stack composed into one program; working tangent-space normal map. **wgpu unbuilt** — [wgpu-3d-parity-spec.md](agents/wgpu-3d-parity-spec.md) §4 |
+| Material modifiers (ShadedMaterial) | `shading` (fresnel/normalPerturb/emissive/envReflect/fog/vertexDisplace/dissolve/toon) + `scene-gl` / `scene-wgpu` | gl, wgpu | Modifier stack composed into one program; working tangent-space normal map. [wgpu-3d-parity-spec.md](agents/wgpu-3d-parity-spec.md) §4 |
 | Blend modes (fixed-function) | `types` (`BlendMode`) node property | canvas, dom, gl, wgpu | Normal/Add/Subtract/Multiply/Screen/Darken/Lighten — GL fixed-function blend state, cheap node property |
 | Blend modes (advanced / non-separable) | `effects` (`createBlendEffect` + `blendModeMath`) + `effects-gl` (`glBlendEffect`) | canvas, dom, gl | Overlay/HardLight/SoftLight/Difference/Exclusion/ColorDodge/ColorBurn/Hue/Saturation/Color/Luminosity — an explicit `BlendEffect` composite recipe (offscreen source+backdrop pass), **not** a node property. canvas/dom native; **wgpu runner unbuilt** — [wgpu-3d-parity-spec.md](agents/wgpu-3d-parity-spec.md) §5 |
 | Billboards | `scene` (createBillboard + orientSceneBillboardsToCamera) | gl, wgpu | axisY/full/screenAligned; draws via mesh renderers |

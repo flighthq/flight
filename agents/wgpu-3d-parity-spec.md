@@ -1,6 +1,6 @@
 # WebGPU 3D Parity — Implementation Spec
 
-**Status: PARTIALLY IMPLEMENTED. Sections 1 and 2 are complete; sections 3–5 remain spec-only.** The
+**Status: PARTIALLY IMPLEMENTED. Sections 1, 2, and 4 are complete; sections 3 and 5 remain spec-only.** The
 2026-07 AAA workflow was scoped GL-only; several 3D features it closed on WebGL2 (`scene-gl`,
 `effects-gl`, `render-gl`, `displayobject-gl`) still have **no WebGPU counterpart**. This is the
 remaining un-postpone plan: the concrete
@@ -231,6 +231,12 @@ joints) verifies the no-cap data-texture path renders rather than falling back.
 ---
 
 ## 4. ShadedMaterial on wgpu (modifier-stack material tier)
+
+**Implemented.** `wgpuShadedPrelude` composes the ordered built-in modifier stack into `shaded:`
+pipeline variants over the shared Frame/Draw and combined shadow/IBL groups;
+`shadedWgpuMeshMaterialRenderer` uploads the base surface, modifier uniform block, and modifier maps.
+The family combines with opaque/blend pipeline variants and retains working tangent-space normal
+mapping. `shading-globe.webgpu.ts` and `shading-normal-map.webgpu.ts` provide SwiftShader raster proof.
 
 ### The gap
 

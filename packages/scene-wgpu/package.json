@@ -41,6 +41,7 @@
     "@flighthq/render": "*",
     "@flighthq/render-wgpu": "*",
     "@flighthq/scene": "*",
+    "@flighthq/shading": "*",
     "@flighthq/texture": "*",
     "@flighthq/types": "*"
   },

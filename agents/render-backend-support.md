@@ -45,7 +45,7 @@ Findings are empirical (surfaced building the per-primitive functional suite, 20
 | Transparent (blend-alphaMode / faded) meshes composite correctly | ✓ | ✓ | both backends partition opaque/blended subsets and sort the blended pass back-to-front; wgpu uses immutable `|opaque` / `|blend` pipelines |
 | GPU skeletal skinning | ✓ | ✗ | **gl** = `HAS_SKIN` across classic/pbr/toon/unlit/shaded (bone-palette RGBA32F **data texture** read via `texelFetch`; joint count bounded by MAX_TEXTURE_SIZE — no uniform-budget cap, no CPU fallback). **wgpu** = none — bind pose. [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) §3 |
 | Morph / blend-shape deformation | ✓ | ✗ | **gl** CPU-blend-then-upload (glTF/MD2 import). **wgpu** = none. [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) |
-| ShadedMaterial modifier stack (fresnel/normalPerturb/emissive/envReflect/fog/vertexDisplace/dissolve/toon) | ✓ | ✗ | **gl** `shadedGlMeshMaterialRenderer` (+ working tangent-space normal map). **wgpu** = no ShadedMaterial renderer → subset skipped (draws nothing). [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) §4 |
+| ShadedMaterial modifier stack (fresnel/normalPerturb/emissive/envReflect/fog/vertexDisplace/dissolve/toon) | ✓ | ✓ | `shadedGlMeshMaterialRenderer` / `shadedWgpuMeshMaterialRenderer`; both compose ordered modifier variants and support tangent-space normal maps. [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) §4 |
 
 ## Known gaps (renderer not at parity — scope tests, don't fight them)
 
@@ -83,7 +83,7 @@ When you close one of these, update this table and un-scope the corresponding fu
 ## Related docs
 
 - [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) — the WebGPU 3D parity plan; transparent passes and
-  orthographic projection are implemented, while GPU skinning, ShadedMaterial, and advanced-blend
+  orthographic projection and ShadedMaterial are implemented, while GPU skinning and advanced-blend
   effects remain open.
 - [render-architecture.md](render-architecture.md) — the **target** render/scene architecture (this doc is the current delta from it).
 - [`functional-test` skill](../.claude/skills/functional-test/SKILL.md) — authoring a visual test; scope backends via `"renderers": [...]` in the test's `package.json`.
