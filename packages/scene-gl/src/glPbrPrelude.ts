@@ -212,7 +212,7 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness) {
 
 // Image-based ambient via the split-sum approximation: diffuse irradiance over the albedo plus
 // prefiltered specular weighted by the BRDF LUT. Replaces the flat ambient term when an environment
-// is baked (bakeEnvironmentIbl). All three cubemap/LUT samples are already linear (baked from
+// is baked (bakeGlEnvironmentIbl). All three cubemap/LUT samples are already linear (baked from
 // sRGB-decoded sources), so no decode here.
 vec3 sampleIblAmbient(vec3 N, vec3 V, float rough, vec3 F0, vec3 diffuseColor, float occ) {
   float nv = max(dot(N, V), 1e-4);

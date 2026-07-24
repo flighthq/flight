@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   frameOrbitCameraControllerToSphere,
-  getPerspectiveFrameDistanceToSphere,
+  getPerspectiveProjectionFrameDistanceToSphere,
   setOrthographicProjectionFrameToSphere,
 } from './framing';
 import { createOrbitCameraController } from './orbitCameraController';
@@ -39,16 +39,18 @@ describe('frameOrbitCameraControllerToSphere', () => {
   });
 });
 
-describe('getPerspectiveFrameDistanceToSphere', () => {
+describe('getPerspectiveProjectionFrameDistanceToSphere', () => {
   it('uses the limiting vertical field for a wide viewport', () => {
     const projection = createPerspectiveProjection({ aspect: 2, fovY: Math.PI / 2 });
-    expect(getPerspectiveFrameDistanceToSphere(projection, 2, 2)).toBeCloseTo(2 / Math.sin(Math.PI / 4));
+    expect(getPerspectiveProjectionFrameDistanceToSphere(projection, 2, 2)).toBeCloseTo(2 / Math.sin(Math.PI / 4));
   });
 
   it('uses the limiting horizontal field for a tall viewport', () => {
     const projection = createPerspectiveProjection({ aspect: 0.5, fovY: Math.PI / 2 });
     const horizontalHalfFov = Math.atan(0.5);
-    expect(getPerspectiveFrameDistanceToSphere(projection, 2, 0.5)).toBeCloseTo(2 / Math.sin(horizontalHalfFov));
+    expect(getPerspectiveProjectionFrameDistanceToSphere(projection, 2, 0.5)).toBeCloseTo(
+      2 / Math.sin(horizontalHalfFov),
+    );
   });
 });
 

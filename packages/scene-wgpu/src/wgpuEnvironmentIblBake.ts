@@ -7,7 +7,7 @@ import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 // irradiance cubemap, a roughness-mipped prefiltered specular cubemap, and the 2D BRDF integration LUT —
 // and stores it on the scene runtime as `runtime.ibl`. The lit PBR bind reads that to light every PBR draw
 // from the environment (see wgpuPbrPrelude's sampleIblAmbient / the PBR sample bind). The WGSL mirror of
-// scene-gl's bakeEnvironmentIbl: an explicit pass the app sequences once when the environment is set (the
+// scene-gl's bakeGlEnvironmentIbl: an explicit pass the app sequences once when the environment is set (the
 // bake is the substantial cost); a no-op when the environment has no complete source cube. Re-baking
 // replaces the prior set.
 //
@@ -53,7 +53,7 @@ export function bakeWgpuEnvironmentIbl(state: WgpuRenderState, environment: Read
 // Frees the IBL set's non-GC GPU resources for `state`: the baked irradiance / prefiltered / BRDF textures,
 // the uploaded source radiance cube, the IBL uniform buffer, and the 1x1 no-IBL dummies, then clears the
 // derived slots (bake pipelines, sampler, sample layout + bind group are GC-managed and left null). The
-// WGSL mirror of the IBL branch of scene-gl's destroyGlSceneRuntime + destroyGlBakePrograms. Safe to call
+// WGSL mirror of the IBL branch of scene-gl's destroyGlSceneRuntime + destroyGlEnvironmentIblBakePrograms. Safe to call
 // more than once and when no bake ever ran — every slot is nullable and destroy is idempotent.
 export function destroyWgpuSceneIbl(state: WgpuRenderState): void {
   const scene = getWgpuSceneRuntime(state);

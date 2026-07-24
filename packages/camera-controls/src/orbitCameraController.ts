@@ -57,7 +57,7 @@ export function createOrbitCameraController(options?: Readonly<OrbitCameraContro
 
 // Moves the goal distance (dolly / zoom) by `deltaDistance`, clamped to [minDistance, maxDistance].
 // Negative moves the eye toward the target.
-export function dollyCameraController(controller: OrbitCameraController, deltaDistance: number): void {
+export function dollyOrbitCameraController(controller: OrbitCameraController, deltaDistance: number): void {
   controller.goalDistance = clamp(
     controller.goalDistance + deltaDistance,
     controller.minDistance,
@@ -65,23 +65,11 @@ export function dollyCameraController(controller: OrbitCameraController, deltaDi
   );
 }
 
-// Moves the goal orbit angles by the given radian deltas: `deltaAzimuth` rotates horizontally
-// (unbounded), `deltaPolar` vertically (clamped to [minPolar, maxPolar]). The app maps a pointer drag
-// to these; `updateOrbitCameraController` eases the current angles toward the goal.
-export function orbitCameraController(
-  controller: OrbitCameraController,
-  deltaAzimuth: number,
-  deltaPolar: number,
-): void {
-  controller.goalAzimuth += deltaAzimuth;
-  controller.goalPolar = clamp(controller.goalPolar + deltaPolar, controller.minPolar, controller.maxPolar);
-}
-
 // Slides the orbit `target` in a world-up plane: `deltaRight` along the camera's horizontal right axis
 // (at the current goal azimuth), `deltaUp` along world Y. Because the eye is derived from the target
 // each update, panning the target pans the whole view. Reads the target into locals before writing so
 // aliasing is safe.
-export function panCameraController(controller: OrbitCameraController, deltaRight: number, deltaUp: number): void {
+export function panOrbitCameraController(controller: OrbitCameraController, deltaRight: number, deltaUp: number): void {
   const cosAzimuth = Math.cos(controller.goalAzimuth);
   const sinAzimuth = Math.sin(controller.goalAzimuth);
   const target = controller.target;
@@ -90,7 +78,7 @@ export function panCameraController(controller: OrbitCameraController, deltaRigh
   target.z += -sinAzimuth * deltaRight;
 }
 
-// Slides the orbit target in the actual camera view plane. Unlike `panCameraController`, `deltaUp`
+// Slides the orbit target in the actual camera view plane. Unlike `panOrbitCameraController`, `deltaUp`
 // follows screen-up at the goal polar angle, so it can change all three target coordinates.
 export function panOrbitCameraControllerInViewPlane(
   controller: OrbitCameraController,
@@ -131,6 +119,18 @@ export function resetOrbitCameraController(
   controller.target.x = target?.x ?? 0;
   controller.target.y = target?.y ?? 0;
   controller.target.z = target?.z ?? 0;
+}
+
+// Moves the goal orbit angles by the given radian deltas: `deltaAzimuth` rotates horizontally
+// (unbounded), `deltaPolar` vertically (clamped to [minPolar, maxPolar]). The app maps a pointer drag
+// to these; `updateOrbitCameraController` eases the current angles toward the goal.
+export function rotateOrbitCameraController(
+  controller: OrbitCameraController,
+  deltaAzimuth: number,
+  deltaPolar: number,
+): void {
+  controller.goalAzimuth += deltaAzimuth;
+  controller.goalPolar = clamp(controller.goalPolar + deltaPolar, controller.minPolar, controller.maxPolar);
 }
 
 // Snaps current spherical state to the clamped goal without writing a camera.

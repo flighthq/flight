@@ -7,9 +7,9 @@ import {
   cloneOrbitCameraController,
   copyOrbitCameraController,
   createOrbitCameraController,
-  dollyCameraController,
-  orbitCameraController,
-  panCameraController,
+  dollyOrbitCameraController,
+  rotateOrbitCameraController,
+  panOrbitCameraController,
   panOrbitCameraControllerInViewPlane,
   resetOrbitCameraController,
   snapOrbitCameraController,
@@ -70,31 +70,22 @@ describe('createOrbitCameraController', () => {
   });
 });
 
-describe('dollyCameraController', () => {
+describe('dollyOrbitCameraController', () => {
   it('moves the goal distance, clamped to the range', () => {
     const c = createOrbitCameraController({ distance: 5, minDistance: 2, maxDistance: 8 });
-    dollyCameraController(c, 2);
+    dollyOrbitCameraController(c, 2);
     expect(c.goalDistance).toBe(7);
-    dollyCameraController(c, 100);
+    dollyOrbitCameraController(c, 100);
     expect(c.goalDistance).toBe(8);
-    dollyCameraController(c, -100);
+    dollyOrbitCameraController(c, -100);
     expect(c.goalDistance).toBe(2);
   });
 });
 
-describe('orbitCameraController', () => {
-  it('adds to the goal angles and clamps polar', () => {
-    const c = createOrbitCameraController({ minPolar: -1, maxPolar: 1 });
-    orbitCameraController(c, 0.5, 2);
-    expect(c.goalAzimuth).toBe(0.5);
-    expect(c.goalPolar).toBe(1); // clamped
-  });
-});
-
-describe('panCameraController', () => {
+describe('panOrbitCameraController', () => {
   it('slides the target along right (at azimuth 0) and world up', () => {
     const c = createOrbitCameraController();
-    panCameraController(c, 3, 2);
+    panOrbitCameraController(c, 3, 2);
     expect(c.target.x).toBeCloseTo(3); // right = (cos0, 0, -sin0) = (1,0,0)
     expect(c.target.y).toBeCloseTo(2);
     expect(c.target.z).toBeCloseTo(0);
@@ -127,6 +118,15 @@ describe('resetOrbitCameraController', () => {
   });
 });
 
+describe('rotateOrbitCameraController', () => {
+  it('adds to the goal angles and clamps polar', () => {
+    const c = createOrbitCameraController({ minPolar: -1, maxPolar: 1 });
+    rotateOrbitCameraController(c, 0.5, 2);
+    expect(c.goalAzimuth).toBe(0.5);
+    expect(c.goalPolar).toBe(1); // clamped
+  });
+});
+
 describe('snapOrbitCameraController', () => {
   it('snaps current values to clamped goals', () => {
     const c = createOrbitCameraController({ maxDistance: 6, maxPolar: 0.5 });
@@ -152,7 +152,7 @@ describe('updateOrbitCameraController', () => {
 
   it('eases toward the goal when smoothTime is positive', () => {
     const c = createOrbitCameraController({ smoothTime: 0.5 });
-    orbitCameraController(c, 1, 0);
+    rotateOrbitCameraController(c, 1, 0);
     updateOrbitCameraController(c, testCamera(), 0.016);
     expect(c.azimuth).toBeGreaterThan(0);
     expect(c.azimuth).toBeLessThan(1); // has not reached the goal in one small step

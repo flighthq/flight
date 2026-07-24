@@ -2,7 +2,7 @@ import { createGlSkinPaletteTexture, destroyGlRenderTarget, destroyGlSkinPalette
 import type { GlSceneRuntime, GlRenderState, GlRenderStateRuntime, GlSkinPaletteTexture } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
-import { destroyGlBakePrograms } from './glEnvironmentIblBake';
+import { destroyGlEnvironmentIblBakePrograms } from './glEnvironmentIblBake';
 // Frees every state-scoped GPU resource scene-gl created for `state`: all cached mesh-material and PBR
 // programs, the IBL set (irradiance / prefiltered / BRDF textures + the bake framebuffer), the source
 // environment cubemap, the IBL bake shader programs, and the directional shadow map (its depth texture
@@ -36,7 +36,7 @@ export function destroyGlSceneRuntime(state: GlRenderState): void {
     gl.deleteTexture(scene.environmentSourceCube);
     scene.environmentSourceCube = null;
   }
-  destroyGlBakePrograms(state);
+  destroyGlEnvironmentIblBakePrograms(state);
 
   if (scene.shadowTarget !== null) {
     destroyGlRenderTarget(state, scene.shadowTarget);

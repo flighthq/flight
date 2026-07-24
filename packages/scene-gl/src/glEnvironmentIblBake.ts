@@ -14,7 +14,7 @@ import { getGlSceneRuntime } from './glSceneRuntime';
 // Resolutions are deliberately modest (the bake runs in software under the headless capture harness);
 // they are the technique, tunable upward for production. The BRDF LUT is environment-independent, so
 // it is baked once per state and reused across re-bakes.
-export function bakeEnvironmentIbl(state: GlRenderState, environment: Readonly<Environment>): void {
+export function bakeGlEnvironmentIbl(state: GlRenderState, environment: Readonly<Environment>): void {
   const sourceCube = ensureGlEnvironmentSourceCube(state, environment);
   if (sourceCube === null) return;
 
@@ -54,7 +54,7 @@ export function bakeEnvironmentIbl(state: GlRenderState, environment: Readonly<E
 // state), so they cannot be reached from the scene runtime; destroyGlSceneRuntime calls this to fold
 // them into the one-call teardown. A no-op when no bake has run for the state. The baked result
 // textures (runtime.ibl) are freed separately by destroyGlSceneRuntime.
-export function destroyGlBakePrograms(state: GlRenderState): void {
+export function destroyGlEnvironmentIblBakePrograms(state: GlRenderState): void {
   const byState = _bakePrograms.get(state);
   if (byState === undefined) return;
   const gl = state.gl;

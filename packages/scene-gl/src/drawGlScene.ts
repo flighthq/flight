@@ -24,7 +24,7 @@ import type {
 import { DefaultMaterialKind, MAX_FORWARD_LIGHTS } from '@flighthq/types';
 
 import { resolveGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { drawGlSceneParticleEmitter2Ds } from './glParticleEmitter3D';
+import { drawGlSceneParticleEmitter3Ds } from './glParticleEmitter3D';
 import { getGlSceneRuntime } from './glSceneRuntime';
 
 // True when a mesh should be GPU-skinned this draw: it carries a skin and its geometry has the joints0/
@@ -225,10 +225,10 @@ export function drawGlScene(
   // ParticleEmitter3D nodes carry no geometry, so prepareSceneRender never lists them among the
   // visible meshes above. Draw them here as a final transparent instanced pass so the common
   // drawGlScene path renders a scene's emitters without the caller also invoking the emitter pass
-  // by hand. drawGlSceneParticleEmitter2Ds stays exported for manual ordering; it early-returns (and
+  // by hand. drawGlSceneParticleEmitter3Ds stays exported for manual ordering; it early-returns (and
   // skips its own cache invalidation) when the scene has no emitters, so the mesh-only path is
   // unaffected and the invalidate below still covers it.
-  drawGlSceneParticleEmitter2Ds(state, scene, camera, lights);
+  drawGlSceneParticleEmitter3Ds(state, scene, camera, lights);
 
   // Mesh/skybox/shadow binds above issued raw gl.useProgram/blendFunc/bindFramebuffer calls that
   // render-gl's own binding cache did not observe. Invalidate it so the next render-gl operation —
