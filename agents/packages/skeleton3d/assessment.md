@@ -8,12 +8,7 @@ basedOn: ./review.md
 
 ## Recommended
 
-1. **Dirty-gate the per-frame bounds recompute.** `updateMeshMorph`/`updateMeshSkin` both call
-   `refreshMeshGeometryBounds` unconditionally each frame — an O(vertices) second sweep on top of the
-   deform pass — even though `MeshGeometry` already carries a `version` counter and nullable `bounds`.
-   A GPU-skinned or upload-only mesh that never CPU-picks/culls pays this for nothing. Invalidate a
-   bounds-dirty flag (or reuse `version`) in the deform and recompute lazily on the first bounds query,
-   preserving the picking-agreement correctness the deform-then-bounds tests prove.
+_(All current Recommended items implemented — see Approved.)_
 
 ## Depth gaps
 
@@ -57,6 +52,17 @@ basedOn: ./review.md
   atom: a caller supplies the node-kind-aware clone callback, joint-to-joint parent links are rebuilt,
   outside-skeleton parents stay caller-owned, and skeleton buffers/names remain detached. The cheap
   `cloneSkeleton3D` sharing contract is unchanged.
+- [2026-07-24 · completed] The per-frame bounds recompute is dirty-gated. `updateMeshMorph`/
+  `updateMeshSkin` no longer call `refreshMeshGeometryBounds` each frame; the deform's `version` bump
+  marks the bounds cache stale, and a new `ensureMeshGeometryBounds` (@flighthq/mesh) recomputes only
+  when `boundsVersion !== version` — the single correct bounds read path (a raw `geometry.bounds` read
+  can now be stale). A GPU-skinned or upload-only mesh that never culls/picks computes bounds zero
+  times. `updateMeshMorph` additionally skips the blend itself while weights are unchanged. The posed
+  skinned-mesh bounds a deform pass needs are written to a `deformedLocalBounds` node-runtime slot by
+  the new caller-invoked `prepareSceneSkinning` (skeleton3d) / `prepareSceneMorph` (scene) passes;
+  render's cull and picking's broad-phase consume that slot as DATA, so @flighthq/render dropped its
+  @flighthq/skeleton3d dependency entirely. The picking-agreement correctness is preserved (the
+  deform-then-pick tests still pass through the production path).
 - [2026-07-24 · completed] The morph/skin deformer layering inversion is resolved. `updateMeshMorph`
   moved down into `@flighthq/mesh` (it reads only `mesh.geometry`/`mesh.morph` and the geometry runtime
   slot, so mesh is the lowest layer that can host it); `updateMeshSkin` stays in skeleton3d, which owns
