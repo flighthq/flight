@@ -1,6 +1,88 @@
 import type { Path, PathWinding, ShapeCommandToken, ShapeFillRegion } from '@flighthq/types';
 import { PathCommand } from '@flighthq/types';
 
+// Appends one shape geometry command (moveTo/lineTo/curveTo/cubicCurveTo and the drawCircle/Ellipse/
+// Rectangle/RoundRectangle/Path primitives) onto `path`, expanding primitives into MOVE/LINE/CURVE
+// verbs (curves kept for the renderer to flatten). Shared by the fill-region and stroke-region walkers
+// so both expand geometry identically. Non-geometry command names are ignored (a no-op). `a` is the
+// index of the command's first argument in `commands`.
+export function appendShapeGeometryCommand(
+  path: Path,
+  name: string,
+  commands: readonly ShapeCommandToken[],
+  a: number,
+): void {
+  switch (name) {
+    case 'moveTo':
+      pushVerb(path, PathCommand.MOVE_TO, commands[a] as number, commands[a + 1] as number);
+      break;
+    case 'lineTo':
+      pushVerb(path, PathCommand.LINE_TO, commands[a] as number, commands[a + 1] as number);
+      break;
+    case 'curveTo':
+      pushQuadratic(
+        path,
+        commands[a] as number,
+        commands[a + 1] as number,
+        commands[a + 2] as number,
+        commands[a + 3] as number,
+      );
+      break;
+    case 'cubicCurveTo':
+      pushCubic(
+        path,
+        commands[a] as number,
+        commands[a + 1] as number,
+        commands[a + 2] as number,
+        commands[a + 3] as number,
+        commands[a + 4] as number,
+        commands[a + 5] as number,
+      );
+      break;
+    case 'drawCircle':
+      appendEllipseToPath(
+        path,
+        commands[a] as number,
+        commands[a + 1] as number,
+        commands[a + 2] as number,
+        commands[a + 2] as number,
+      );
+      break;
+    case 'drawEllipse': {
+      const w = commands[a + 2] as number;
+      const h = commands[a + 3] as number;
+      appendEllipseToPath(path, (commands[a] as number) + w / 2, (commands[a + 1] as number) + h / 2, w / 2, h / 2);
+      break;
+    }
+    case 'drawRectangle':
+      appendRectangleToPath(
+        path,
+        commands[a] as number,
+        commands[a + 1] as number,
+        commands[a + 2] as number,
+        commands[a + 3] as number,
+      );
+      break;
+    case 'drawRoundRectangle':
+      appendRoundRectangleToPath(
+        path,
+        commands[a] as number,
+        commands[a + 1] as number,
+        commands[a + 2] as number,
+        commands[a + 3] as number,
+        (commands[a + 4] as number) / 2,
+        (commands[a + 5] as number) / 2,
+      );
+      break;
+    case 'drawPath':
+      path.winding = commands[a + 2] as PathWinding;
+      appendRawPath(path, commands[a] as readonly number[], commands[a + 1] as readonly number[]);
+      break;
+    default:
+      break;
+  }
+}
+
 // Resolves a Shape's drawing-command stream into solid-fill regions for the GPU fill path: each
 // `beginFill … endFill` (or the next fill) span becomes one `ShapeFillRegion` whose `path` carries the
 // geometry (primitives expanded to MOVE/LINE/CURVE verbs, curves kept for the renderer to flatten).
@@ -16,9 +98,7 @@ export function getShapeFillRegions(commands: readonly ShapeCommandToken[]): Sha
   let path: Path | null = null;
   let color = 0;
   let alpha = 1;
-  let winding: PathWinding = 'nonZero';
-  let startX = 0;
-  let startY = 0;
+  const winding: PathWinding = 'nonZero';
 
   let i = 0;
   while (i < commands.length) {
@@ -32,7 +112,6 @@ export function getShapeFillRegions(commands: readonly ShapeCommandToken[]): Sha
         if (path !== null && path.commands.length > 0) regions.push({ path, color, alpha });
         color = commands[a] as number;
         alpha = commands[a + 1] as number;
-        winding = 'nonZero';
         path = { commands: [], data: [], winding };
         break;
       }
@@ -41,93 +120,10 @@ export function getShapeFillRegions(commands: readonly ShapeCommandToken[]): Sha
         path = null;
         break;
       }
-      case 'moveTo': {
-        if (path === null) break;
-        startX = commands[a] as number;
-        startY = commands[a + 1] as number;
-        pushVerb(path, PathCommand.MOVE_TO, startX, startY);
-        break;
-      }
-      case 'lineTo': {
-        if (path === null) break;
-        pushVerb(path, PathCommand.LINE_TO, commands[a] as number, commands[a + 1] as number);
-        break;
-      }
-      case 'curveTo': {
-        if (path === null) break;
-        pushQuadratic(
-          path,
-          commands[a] as number,
-          commands[a + 1] as number,
-          commands[a + 2] as number,
-          commands[a + 3] as number,
-        );
-        break;
-      }
-      case 'cubicCurveTo': {
-        if (path === null) break;
-        pushCubic(
-          path,
-          commands[a] as number,
-          commands[a + 1] as number,
-          commands[a + 2] as number,
-          commands[a + 3] as number,
-          commands[a + 4] as number,
-          commands[a + 5] as number,
-        );
-        break;
-      }
-      case 'drawCircle': {
-        if (path === null) break;
-        appendEllipseToPath(
-          path,
-          commands[a] as number,
-          commands[a + 1] as number,
-          commands[a + 2] as number,
-          commands[a + 2] as number,
-        );
-        break;
-      }
-      case 'drawEllipse': {
-        if (path === null) break;
-        const w = commands[a + 2] as number;
-        const h = commands[a + 3] as number;
-        appendEllipseToPath(path, (commands[a] as number) + w / 2, (commands[a + 1] as number) + h / 2, w / 2, h / 2);
-        break;
-      }
-      case 'drawRectangle': {
-        if (path === null) break;
-        appendRectangleToPath(
-          path,
-          commands[a] as number,
-          commands[a + 1] as number,
-          commands[a + 2] as number,
-          commands[a + 3] as number,
-        );
-        break;
-      }
-      case 'drawRoundRectangle': {
-        if (path === null) break;
-        appendRoundRectangleToPath(
-          path,
-          commands[a] as number,
-          commands[a + 1] as number,
-          commands[a + 2] as number,
-          commands[a + 3] as number,
-          (commands[a + 4] as number) / 2,
-          (commands[a + 5] as number) / 2,
-        );
-        break;
-      }
-      case 'drawPath': {
-        if (path === null) break;
-        path.winding = commands[a + 2] as PathWinding;
-        appendRawPath(path, commands[a] as readonly number[], commands[a + 1] as readonly number[]);
-        break;
-      }
-      // Non-geometry styling commands (lineStyle, begin*Fill variants) are handled by the
-      // hasNonSolidShapeFill guard above or are no-ops for solid fills.
       default:
+        // Geometry verbs (moveTo/lineTo/curve/primitives) append to the active path; non-geometry
+        // styling commands (lineStyle, begin*Fill variants) are handled above / by the guard.
+        if (path !== null) appendShapeGeometryCommand(path, name, commands, a);
         break;
     }
   }

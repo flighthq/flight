@@ -12,6 +12,7 @@
     { "path": "../displayobject" },
     { "path": "../geometry" },
     { "path": "../node" },
+    { "path": "../path" },
     { "path": "../types" }
   ],
   "include": ["src"]

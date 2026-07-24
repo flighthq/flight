@@ -11,7 +11,33 @@ import {
   appendShapeMoveTo,
   appendShapeRectangle,
 } from './shapeCommands';
-import { getShapeFillRegions, hasNonSolidShapeFill } from './shapeFill';
+import { appendShapeGeometryCommand, getShapeFillRegions, hasNonSolidShapeFill } from './shapeFill';
+
+describe('appendShapeGeometryCommand', () => {
+  it('appends polyline verbs and expands primitives, ignoring non-geometry names', () => {
+    const path = { commands: [] as number[], data: [] as number[], winding: 'nonZero' as const };
+    appendShapeGeometryCommand(path, 'moveTo', ['moveTo', 2, 5, 6], 2);
+    appendShapeGeometryCommand(path, 'lineTo', ['lineTo', 2, 7, 8], 2);
+    expect(path.commands).toEqual([PathCommand.MOVE_TO, PathCommand.LINE_TO]);
+    expect(path.data).toEqual([5, 6, 7, 8]);
+
+    // A rectangle primitive expands into MOVE + 4 LINE verbs.
+    const rect = { commands: [] as number[], data: [] as number[], winding: 'nonZero' as const };
+    appendShapeGeometryCommand(rect, 'drawRectangle', ['drawRectangle', 4, 0, 0, 10, 10], 2);
+    expect(rect.commands).toEqual([
+      PathCommand.MOVE_TO,
+      PathCommand.LINE_TO,
+      PathCommand.LINE_TO,
+      PathCommand.LINE_TO,
+      PathCommand.LINE_TO,
+    ]);
+
+    // A styling command name is a no-op.
+    const noop = { commands: [] as number[], data: [] as number[], winding: 'nonZero' as const };
+    appendShapeGeometryCommand(noop, 'beginFill', ['beginFill', 2, 0xff0000, 1], 2);
+    expect(noop.commands).toEqual([]);
+  });
+});
 
 describe('getShapeFillRegions', () => {
   it('resolves a solid rectangle fill into one region with a closed outline', () => {

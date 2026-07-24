@@ -35,6 +35,7 @@
     "@flighthq/displayobject": "*",
     "@flighthq/geometry": "*",
     "@flighthq/node": "*",
+    "@flighthq/path": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
