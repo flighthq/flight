@@ -1,5 +1,6 @@
 import type { Kind } from './Entity';
 import type { Matrix4 } from './Matrix4';
+import type { ModifierRegistry } from './ModifierRegistry';
 import type { WgpuMeshMaterialRenderer } from './WgpuMeshMaterialRenderer';
 import type { WgpuMeshPipeline } from './WgpuMeshPipeline';
 
@@ -96,6 +97,7 @@ export interface WgpuSceneRuntime {
   pbrSampleLayout: GPUBindGroupLayout | null;
   pbrSampleShadowView: GPUTextureView | null;
   materialRegistry: Map<Kind, WgpuMeshMaterialRenderer>;
+  modifierSnippetRegistry: ModifierRegistry | null;
   opaqueDrawList: WgpuSceneDrawEntry[];
   opaquePool: WgpuSceneDrawEntry[];
   pendingDrawOffset: number;

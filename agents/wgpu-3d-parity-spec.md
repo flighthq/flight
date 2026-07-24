@@ -383,9 +383,9 @@ Do them in bite order (worst-first), each with its `.webgpu.ts` capture before m
    broken today. Also the prerequisite shape (pooled draw lists + pipeline-cache variant keying) that
    items 3–5 extend.
 2. **Ortho remap (item 2)** — a one-matrix fix that unblocks a whole camera mode (black screen today).
-3. **GPU skinning (item 3)** — the largest, but the pipeline-variant + capacity-gate + CPU-fallback
-   scaffolding from items 1–2 carries most of it; the CPU kernel and bounds are already shared in
-   `@flighthq/skeleton3d`.
+3. **GPU skinning (item 3)** — the largest: use the growable single-row RGBA32F data-texture palette
+   whenever skin + joints0 + weights0 are present. There is no capacity gate or CPU draw fallback;
+   the CPU kernel remains shared for bounds and picking only.
 4. **ShadedMaterial (item 4)** and **advanced-blend effects (item 5)** — independent of each other; both
    reuse the pipeline-cache variant keying and the effects/material seams the GL side already defined.
 

@@ -10,20 +10,24 @@ import {
   createVertexDisplaceModifier,
 } from '@flighthq/shading';
 import { createTexture } from '@flighthq/texture';
-import { FogModifierMode, VertexDisplaceModifierSource } from '@flighthq/types';
+import type { ImageResource, Modifier, Texture, WgpuModifierSnippet } from '@flighthq/types';
+import { FogModifierMode, ModifierSlot, VertexDisplaceModifierSource } from '@flighthq/types';
 
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 import { makeWgpuSceneState } from './wgpuSceneTestHelper';
+import { registerWgpuModifierSnippet, resolveWgpuModifierSnippet } from './wgpuShadedModifierSnippet';
 import {
   bindWgpuShadedSurface,
   buildWgpuShadedCacheKey,
   ensureWgpuShadedPipeline,
   getWgpuShadedModuleSource,
+  registerBuiltInWgpuModifierSnippets,
 } from './wgpuShadedPrelude';
 
 describe('bindWgpuShadedSurface', () => {
   it('uploads the base and modifier uniform block and binds group resources', () => {
     const { fake, state } = makeWgpuSceneState();
+    registerBuiltInWgpuModifierSnippets(state);
     const material = createShadedMaterial({ modifiers: [createRimModifier({ color: 0xffffffff })] });
     const pipeline = ensureWgpuShadedPipeline(state, material, 'bgra8unorm');
     bindWgpuShadedSurface(state, pipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
@@ -50,6 +54,7 @@ describe('buildWgpuShadedCacheKey', () => {
 describe('ensureWgpuShadedPipeline', () => {
   it('caches shaded opaque and blended variants separately', () => {
     const { state } = makeWgpuSceneState();
+    registerBuiltInWgpuModifierSnippets(state);
     const material = createShadedMaterial({ modifiers: [createRimModifier({ color: 0xffffffff })] });
     ensureWgpuShadedPipeline(state, material, 'bgra8unorm');
     getWgpuSceneRuntime(state).activeBlendedRun = true;
@@ -62,6 +67,8 @@ describe('ensureWgpuShadedPipeline', () => {
 
 describe('getWgpuShadedModuleSource', () => {
   it('composes all built-in fragment modifier families into one shader', () => {
+    const { state } = makeWgpuSceneState();
+    registerBuiltInWgpuModifierSnippets(state);
     const texture = createTexture();
     const material = createShadedMaterial({
       modifiers: [
@@ -74,7 +81,7 @@ describe('getWgpuShadedModuleSource', () => {
         createToonModifier({ steps: 3 }),
       ],
     });
-    const source = getWgpuShadedModuleSource(material);
+    const source = getWgpuShadedModuleSource(material, getWgpuSceneRuntime(state).modifierSnippetRegistry!);
     expect(source).toContain('animatedNormal');
     expect(source).toContain('emissiveTerm');
     expect(source).toContain('rimFactor');
@@ -85,6 +92,8 @@ describe('getWgpuShadedModuleSource', () => {
   });
 
   it('injects vertex displacement before the world transform', () => {
+    const { state } = makeWgpuSceneState();
+    registerBuiltInWgpuModifierSnippets(state);
     const material = createShadedMaterial({
       modifiers: [
         createVertexDisplaceModifier({
@@ -93,9 +102,75 @@ describe('getWgpuShadedModuleSource', () => {
         }),
       ],
     });
-    const source = getWgpuShadedModuleSource(material);
+    const source = getWgpuShadedModuleSource(material, getWgpuSceneRuntime(state).modifierSnippetRegistry!);
     expect(source.indexOf('localPosition = vec4f(localPosition.xyz')).toBeLessThan(
       source.indexOf('let world = draw.world * localPosition'),
     );
+  });
+
+  it('composes a registered vendor kind and treats an unregistered kind as an explicit miss', () => {
+    const { state } = makeWgpuSceneState();
+    const vendor: WgpuModifierSnippet = {
+      contribution: () => ({ source: 'radiance = radiance + vec3f(0.125);\\n' }),
+      kind: 'acme.Glow',
+      slot: ModifierSlot.Effect,
+    };
+    registerWgpuModifierSnippet(state, vendor);
+    const registered = { kind: 'acme.Glow', slot: ModifierSlot.Effect } as Modifier;
+    const missing = { kind: 'acme.Missing', slot: ModifierSlot.Effect } as Modifier;
+    const material = createShadedMaterial({ modifiers: [registered, missing] });
+    const registry = getWgpuSceneRuntime(state).modifierSnippetRegistry!;
+    const source = getWgpuShadedModuleSource(material, registry);
+    expect(source).toContain('radiance = radiance + vec3f(0.125)');
+    expect(buildWgpuShadedCacheKey(material, registry)).toContain('acme.Missing');
+    expect(resolveWgpuModifierSnippet(state, 'acme.Glow')).toBe(vendor);
+    expect(resolveWgpuModifierSnippet(state, 'acme.Missing')).toBeNull();
+  });
+});
+
+describe('registerBuiltInWgpuModifierSnippets', () => {
+  it('installs the built-in compiler records explicitly', () => {
+    const { state } = makeWgpuSceneState();
+    registerBuiltInWgpuModifierSnippets(state);
+    expect(resolveWgpuModifierSnippet(state, 'RimModifier')).not.toBeNull();
+  });
+});
+
+describe('shaded binding cache', () => {
+  it('reuses its uniform allocation while rebuilding for texture identity and readiness changes', () => {
+    const { fake, state } = makeWgpuSceneState();
+    registerBuiltInWgpuModifierSnippets(state);
+    const first = createTexture({ image: { source: {} } as ImageResource });
+    const material = createShadedMaterial({ diffuseMap: first });
+    const pipeline = ensureWgpuShadedPipeline(state, material, 'bgra8unorm');
+    bindWgpuShadedSurface(state, pipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
+    const buffers = fake.calls.filter((call) => call.name === 'createBuffer').length;
+    const groups = fake.calls.filter((call) => call.name === 'createBindGroup').length;
+
+    bindWgpuShadedSurface(state, pipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
+    expect(fake.calls.filter((call) => call.name === 'createBuffer')).toHaveLength(buffers);
+    expect(fake.calls.filter((call) => call.name === 'createBindGroup')).toHaveLength(groups);
+
+    material.diffuseMap = createTexture({ image: { source: {} } as ImageResource });
+    bindWgpuShadedSurface(state, pipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
+    expect(fake.calls.filter((call) => call.name === 'createBindGroup').length).toBeGreaterThan(groups);
+    expect(fake.calls.filter((call) => call.name === 'createBuffer')).toHaveLength(buffers);
+
+    const modifierTexture = createTexture();
+    const emissive = createEmissiveModifier({ color: 0xffffffff, mask: modifierTexture, strength: 1 });
+    material.modifiers = [emissive];
+    const modifierPipeline = ensureWgpuShadedPipeline(state, material, 'bgra8unorm');
+    bindWgpuShadedSurface(state, modifierPipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
+    const beforeModifierSwap = fake.calls.filter((call) => call.name === 'createBindGroup').length;
+    emissive.mask = createTexture();
+    bindWgpuShadedSurface(state, modifierPipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
+    expect(fake.calls.filter((call) => call.name === 'createBindGroup').length).toBeGreaterThan(beforeModifierSwap);
+
+    const beforeReady = fake.calls.filter((call) => call.name === 'createBindGroup').length;
+    const readyingTexture = emissive.mask;
+    expect(readyingTexture).toBeDefined();
+    readyingTexture!.image = { source: {} } as ImageResource;
+    bindWgpuShadedSurface(state, modifierPipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
+    expect(fake.calls.filter((call) => call.name === 'createBindGroup').length).toBeGreaterThan(beforeReady);
   });
 });

@@ -662,6 +662,7 @@ export * from './WgpuMatcapPipeline';
 export * from './WgpuMaterialRenderer';
 export * from './WgpuMeshMaterialRenderer';
 export * from './WgpuMeshPipeline';
+export * from './WgpuModifierSnippet';
 export * from './WgpuPbrPipeline';
 export * from './WgpuRenderEffectPipeline';
 export * from './WgpuRenderOptions';
