@@ -17,7 +17,9 @@ export function buildGlClassicDefineKey(key: Readonly<GlClassicDefineKey>): stri
   const model = key.lightingModel === 'phong' ? 'p' : key.lightingModel === 'blinnphong' ? 'b' : 'l';
   return `${model}${key.alphaMaskEnabled ? 'm' : '-'}${key.hasDiffuseMap ? 'd' : '-'}${
     key.hasSpecularMap ? 's' : '-'
-  }${key.hasNormalMap ? 'n' : '-'}${key.hasUvTransform ? 'u' : '-'}${key.hasSkin ? 'k' : '-'}`;
+  }${key.hasNormalMap ? 'n' : '-'}${key.hasAlphaMap ? 'a' : '-'}${key.hasUvTransform ? 'u' : '-'}${
+    key.hasSkin ? 'k' : '-'
+  }`;
 }
 
 // Compiles the classic uber-shader for a define key, links it, and resolves its uniform locations.
@@ -34,6 +36,7 @@ export function compileGlClassicProgram(
     ...resolveGlLitLocations(gl, program),
     program,
     locAlphaCutoff: gl.getUniformLocation(program, 'u_alphaCutoff'),
+    locAlphaMap: gl.getUniformLocation(program, 'u_alphaMap'),
     locJointTexture: gl.getUniformLocation(program, 'u_jointTexture'),
     locDiffuse: gl.getUniformLocation(program, 'u_diffuse'),
     locDiffuseMap: gl.getUniformLocation(program, 'u_diffuseMap'),
@@ -102,6 +105,7 @@ function buildGlClassicDefineSource(key: Readonly<GlClassicDefineKey>): string {
   if (key.hasDiffuseMap) defines += '#define HAS_DIFFUSE_MAP\n';
   if (key.hasSpecularMap) defines += '#define HAS_SPECULAR_MAP\n';
   if (key.hasNormalMap) defines += '#define HAS_NORMAL_MAP\n';
+  if (key.hasAlphaMap) defines += '#define HAS_ALPHA_MAP\n';
   if (key.hasUvTransform) defines += '#define HAS_UV_TRANSFORM\n';
   if (key.hasSkin) defines += '#define HAS_SKIN\n';
   return defines;
@@ -171,6 +175,9 @@ uniform sampler2D u_specularMap;
 #ifdef HAS_NORMAL_MAP
 uniform sampler2D u_normalMap;
 #endif
+#ifdef HAS_ALPHA_MAP
+uniform sampler2D u_alphaMap;
+#endif
 
 uniform float u_objectAlpha;
 
@@ -219,6 +226,12 @@ void main() {
   vec4 sampledDiffuse = texture(u_diffuseMap, v_uv0);
   diffuse.rgb *= srgbToLinear(sampledDiffuse.rgb);
   diffuse.a *= sampledDiffuse.a;
+#endif
+
+  // Dedicated coverage (opacity) map: its green channel is linear data, multiplied into alpha before
+  // the alpha-mask cutoff so 'mask' cutout and 'blend' transparency both see the combined coverage.
+#ifdef HAS_ALPHA_MAP
+  diffuse.a *= texture(u_alphaMap, v_uv0).g;
 #endif
 
 #ifdef ALPHA_MASK

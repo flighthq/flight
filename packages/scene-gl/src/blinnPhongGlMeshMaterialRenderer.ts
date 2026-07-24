@@ -112,6 +112,13 @@ function bindGlBlinnPhongMaterialUniforms(
     gl.uniform1i(program.locNormalMap, 2);
   }
 
+  const alphaMap = material.alphaMap;
+  if (alphaMap !== null && alphaMap.image !== null && hasImageResourcePixels(alphaMap.image)) {
+    gl.activeTexture(gl.TEXTURE3);
+    bindGlImageResourceTexture(state, alphaMap.image, alphaMap.sampler);
+    gl.uniform1i(program.locAlphaMap, 3);
+  }
+
   bindGlUvTransform(gl, program, diffuseMap);
 }
 
@@ -120,6 +127,7 @@ function bindGlBlinnPhongMaterialUniforms(
 function defineKeyForMaterial(material: Readonly<BlinnPhongMaterial> | null): GlClassicDefineKey {
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
+    hasAlphaMap: material !== null && material.alphaMap !== null && material.alphaMap.image !== null,
     hasDiffuseMap: material !== null && material.diffuseMap !== null && material.diffuseMap.image !== null,
     hasNormalMap: material !== null && material.normalMap !== null && material.normalMap.image !== null,
     hasSpecularMap: material !== null && material.specularMap !== null && material.specularMap.image !== null,

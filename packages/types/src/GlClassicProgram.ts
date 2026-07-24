@@ -7,10 +7,12 @@ export type GlClassicLightingModel = 'blinnphong' | 'lambert' | 'phong';
 
 // The feature flags that select a classic uber-shader variant. `lightingModel` chooses the shading
 // model (and whether a specular branch exists at all); `hasDiffuseMap` / `hasSpecularMap` /
-// `hasNormalMap` enable the textured paths; `alphaMaskEnabled` enables the alpha-cutoff discard for
-// 'mask' materials. Lambert never sets `hasSpecularMap` or `hasNormalMap` (it has no such fields).
+// `hasNormalMap` / `hasAlphaMap` enable the textured paths; `alphaMaskEnabled` enables the
+// alpha-cutoff discard for 'mask' materials. Lambert never sets `hasSpecularMap`, `hasNormalMap`, or
+// `hasAlphaMap` (it has no such fields).
 export interface GlClassicDefineKey {
   alphaMaskEnabled: boolean;
+  hasAlphaMap: boolean;
   hasDiffuseMap: boolean;
   hasNormalMap: boolean;
   // Whether this variant deforms the vertex by a bone palette (HAS_SKIN). Set by ensureGlClassicProgram
@@ -31,6 +33,7 @@ export interface GlClassicDefineKey {
 // upload on the location being non-null.
 export interface GlClassicProgram extends GlLitProgram {
   locAlphaCutoff: WebGLUniformLocation | null;
+  locAlphaMap: WebGLUniformLocation | null;
   locDiffuse: WebGLUniformLocation | null;
   locDiffuseMap: WebGLUniformLocation | null;
   locNormalMap: WebGLUniformLocation | null;

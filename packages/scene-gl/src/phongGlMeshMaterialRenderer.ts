@@ -118,6 +118,7 @@ function bindGlPhongMaterialUniforms(
 function defineKeyForMaterial(material: Readonly<PhongMaterial> | null): GlClassicDefineKey {
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
+    hasAlphaMap: false,
     hasDiffuseMap: material !== null && material.diffuseMap !== null && material.diffuseMap.image !== null,
     hasNormalMap: material !== null && material.normalMap !== null && material.normalMap.image !== null,
     hasSpecularMap: material !== null && material.specularMap !== null && material.specularMap.image !== null,
