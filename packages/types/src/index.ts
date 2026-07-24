@@ -25,6 +25,7 @@ export * from './AlphaType';
 export * from './AmbientLight';
 export * from './AnimationChannel';
 export * from './AnimationClip';
+export * from './AnimationCrossfade';
 export * from './AnimationInterpolation';
 export * from './AnimationLoopMode';
 export * from './AnimationPlayer';
