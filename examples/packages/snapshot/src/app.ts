@@ -11,6 +11,7 @@ import {
   createDisplayObject,
   createShape,
   createTextLabel,
+  invalidateNodeAppearance,
   invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
 import { captureSnapshot, equalsSnapshot, interpolateSnapshots, restoreSnapshot } from '@flighthq/snapshot';
@@ -44,11 +45,19 @@ interface GameState {
 }
 
 function createInitialState(): GameState {
+  const positions = [
+    [170, 120],
+    [280, 330],
+    [390, 105],
+    [505, 330],
+    [620, 130],
+    [400, 220],
+  ] as const;
   const items: ItemState[] = [];
   for (let i = 0; i < ITEM_COUNT; i += 1) {
     items.push({
-      x: 150 + Math.random() * 500,
-      y: 80 + Math.random() * 320,
+      x: positions[i][0],
+      y: positions[i][1],
       collected: false,
     });
   }
@@ -156,9 +165,11 @@ let statusTimeout = 0;
 
 function showStatus(message: string): void {
   statusLabel.data.text = message;
+  invalidateNodeAppearance(statusLabel);
   clearTimeout(statusTimeout);
   statusTimeout = window.setTimeout(() => {
     statusLabel.data.text = '';
+    invalidateNodeAppearance(statusLabel);
   }, 2000);
 }
 
@@ -186,6 +197,10 @@ window.addEventListener('keydown', (event: KeyboardEvent) => {
   }
 });
 
+// Slot 1 captures the deterministic starting state, so restore and interpolation are immediately
+// available and the smoke frame visibly proves that snapshot storage is active.
+saveSnapshot();
+
 // Drawing helpers: translate game state into shape commands each frame.
 
 function drawPlayer(shape: Shape, x: number, y: number, rotation: number): void {
@@ -211,19 +226,19 @@ function drawPlayer(shape: Shape, x: number, y: number, rotation: number): void 
   appendShapeLineTo(shape, tipX, tipY);
   appendShapeEndFill(shape);
 
-  invalidateNodeLocalTransform(shape);
+  invalidateNodeAppearance(shape);
 }
 
 function drawItem(shape: Shape, item: Readonly<ItemState>): void {
   clearShapeCommands(shape);
   if (item.collected) {
-    invalidateNodeLocalTransform(shape);
+    invalidateNodeAppearance(shape);
     return;
   }
   appendShapeBeginFill(shape, 0xffcc33);
   appendShapeCircle(shape, item.x, item.y, 10);
   appendShapeEndFill(shape);
-  invalidateNodeLocalTransform(shape);
+  invalidateNodeAppearance(shape);
 }
 
 function drawSlotIndicators(shape: Shape): void {
@@ -245,7 +260,7 @@ function drawSlotIndicators(shape: Shape): void {
     appendShapeMoveTo(shape, cx, y - 14);
     appendShapeLineTo(shape, cx, y - 18);
   }
-  invalidateNodeLocalTransform(shape);
+  invalidateNodeAppearance(shape);
 }
 
 // Simulation: player orbits the center, items get collected on proximity.
@@ -310,7 +325,11 @@ function enterFrame(): void {
   }
   drawSlotIndicators(uiOverlay);
 
-  scoreLabel.data.text = `Score: ${renderState.player.score}`;
+  const scoreText = `Score: ${renderState.player.score}`;
+  if (scoreLabel.data.text !== scoreText) {
+    scoreLabel.data.text = scoreText;
+    invalidateNodeAppearance(scoreLabel);
+  }
 
   render(root);
   requestAnimationFrame(enterFrame);
