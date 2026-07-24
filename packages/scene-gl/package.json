@@ -50,6 +50,7 @@
   "devDependencies": {
     "@flighthq/lighting": "*",
     "@flighthq/particleemitter": "*",
+    "@flighthq/skeleton3d": "*",
     "typescript": "^5.3.0"
   },
   "description": "WebGL2 3D scene renderer",
