@@ -20,8 +20,11 @@ function walk(dir: string): string[] {
     if (entry.isDirectory()) {
       const pkgJson = path.join(full, 'package.json');
 
+      // A package root is the discovery target — never descend into its source
+      // tree, so the walk stays proportional to package count, not file count.
       if (fs.existsSync(pkgJson)) {
         results.push(full);
+        continue;
       }
 
       results.push(...walk(full));
