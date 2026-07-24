@@ -85,18 +85,21 @@ describe('parseObjMaterialLibrary', () => {
   it.each([
     { directive: 'Kd', mtl: 'newmtl M\nKd abc def ghi\n', reason: 'non-numeric' },
     { directive: 'Ka', mtl: 'newmtl M\nKa 1 2\n', reason: 'too-few-components' },
-  ])('records color-malformed (Recover, parseColor) — $directive $reason', ({ directive, mtl, reason }) => {
-    const diagnostics: ImportDiagnostic[] = [];
-    parseObjMaterialLibrary(mtl, diagnostics);
-    expect(diagnostics).toHaveLength(1);
-    const crumb = expectOneCrumb(diagnostics, 'mtl.color-malformed');
-    expect(crumb.severity).toBe('Recover');
-    expect(crumb.origin).toBe('parseColor');
-    expect(crumb.detail?.firstDirective).toBe(directive);
-    expect(crumb.detail?.firstLine).toBe(2);
-    expect(crumb.detail?.reason).toBe(reason);
-    expect(crumb.detail?.count).toBe(1);
-  });
+  ])(
+    'records color-malformed (Recover, parseObjMaterialLibrary) — $directive $reason',
+    ({ directive, mtl, reason }) => {
+      const diagnostics: ImportDiagnostic[] = [];
+      parseObjMaterialLibrary(mtl, diagnostics);
+      expect(diagnostics).toHaveLength(1);
+      const crumb = expectOneCrumb(diagnostics, 'mtl.color-malformed');
+      expect(crumb.severity).toBe('Recover');
+      expect(crumb.origin).toBe('parseObjMaterialLibrary');
+      expect(crumb.detail?.firstDirective).toBe(directive);
+      expect(crumb.detail?.firstLine).toBe(2);
+      expect(crumb.detail?.reason).toBe(reason);
+      expect(crumb.detail?.count).toBe(1);
+    },
+  );
 
   it.each([{ directive: 'Ns' }, { directive: 'd' }, { directive: 'Tr' }, { directive: 'illum' }])(
     'records invalid-value (Recover, parseObjMaterialLibrary) on a non-numeric $directive value',
@@ -150,6 +153,77 @@ describe('parseObjMaterialLibrary', () => {
     const trCrumbs = diagnostics.filter((d) => d.kind === 'mtl.invalid-value' && d.detail?.directive === 'Tr');
     expect(trCrumbs).toHaveLength(1);
     expect(trCrumbs[0].detail?.count).toBe(1);
+  });
+
+  // BARE recognized directives (no value) after a material are implicit malformed no-ops the old code
+  // skipped silently. Probe every one: the announced value/filename still records a drop.
+  it.each([{ directive: 'Ka' }, { directive: 'Kd' }, { directive: 'Ks' }])(
+    'records color-malformed (Recover, parseObjMaterialLibrary) for a bare $directive after a material',
+    ({ directive }) => {
+      const diagnostics: ImportDiagnostic[] = [];
+      parseObjMaterialLibrary(`newmtl M\n${directive}\n`, diagnostics);
+      expect(diagnostics).toHaveLength(1);
+      const crumb = expectOneCrumb(diagnostics, 'mtl.color-malformed');
+      expect(crumb.severity).toBe('Recover');
+      expect(crumb.origin).toBe('parseObjMaterialLibrary');
+      expect(crumb.detail?.firstDirective).toBe(directive);
+      expect(crumb.detail?.reason).toBe('too-few-components');
+      expect(crumb.detail?.firstLine).toBe(2);
+      expect(crumb.detail?.count).toBe(1);
+    },
+  );
+
+  it.each([{ directive: 'Ns' }, { directive: 'd' }, { directive: 'Tr' }, { directive: 'illum' }])(
+    'records invalid-value (Recover, parseObjMaterialLibrary) for a bare $directive after a material',
+    ({ directive }) => {
+      const diagnostics: ImportDiagnostic[] = [];
+      parseObjMaterialLibrary(`newmtl M\n${directive}\n`, diagnostics);
+      expect(diagnostics).toHaveLength(1);
+      const crumb = expectOneCrumb(diagnostics, 'mtl.invalid-value');
+      expect(crumb.severity).toBe('Recover');
+      expect(crumb.origin).toBe('parseObjMaterialLibrary');
+      expect(crumb.detail?.directive).toBe(directive);
+      expect(crumb.detail?.firstLine).toBe(2);
+      expect(crumb.detail?.count).toBe(1);
+    },
+  );
+
+  it.each([
+    { directive: 'map_Kd' },
+    { directive: 'map_Ka' },
+    { directive: 'map_Ks' },
+    { directive: 'map_Bump' },
+    { directive: 'bump' },
+  ])(
+    'records map-no-filename (Drop, parseObjMaterialLibrary) for a bare $directive after a material',
+    ({ directive }) => {
+      const diagnostics: ImportDiagnostic[] = [];
+      parseObjMaterialLibrary(`newmtl M\n${directive}\n`, diagnostics);
+      expect(diagnostics).toHaveLength(1);
+      const crumb = expectOneCrumb(diagnostics, 'mtl.map-no-filename');
+      expect(crumb.severity).toBe('Drop');
+      expect(crumb.origin).toBe('parseObjMaterialLibrary');
+      expect(crumb.detail?.directive).toBe(directive);
+      expect(crumb.detail?.firstLine).toBe(2);
+      expect(crumb.detail?.count).toBe(1);
+    },
+  );
+
+  it('records directive-before-material (Drop) for a BARE directive before any newmtl', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    parseObjMaterialLibrary('Kd\n', diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'mtl.directive-before-material');
+    expect(crumb.severity).toBe('Drop');
+    expect(crumb.origin).toBe('parseObjMaterialLibrary');
+    expect(crumb.detail?.firstDirective).toBe('Kd');
+    expect(crumb.detail?.count).toBe(1);
+  });
+
+  it('records no diagnostics for a well-formed MTL even with a collector engaged', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    parseObjMaterialLibrary('newmtl M\nKd 1 0 0\nNs 32\nmap_Kd tex.png\n', diagnostics);
+    expect(diagnostics).toHaveLength(0);
   });
 
   it('provides defaults for unset properties', () => {
