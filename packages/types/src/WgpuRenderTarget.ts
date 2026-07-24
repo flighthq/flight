@@ -1,5 +1,10 @@
+import type { RenderTargetColorSpace } from './RenderTarget';
+
 export type WgpuRenderTarget = {
   bindGroup: GPUBindGroup;
+  // Declared color space of the target's content. A producer stamps linear 3D radiance as 'linear';
+  // the final present reads this and applies the single linear-to-sRGB encode.
+  colorSpace: RenderTargetColorSpace;
   depthStencilTexture: GPUTexture;
   depthStencilView: GPUTextureView;
   // The color texture's GPU format. Defaults to the canvas format; an HDR effect target uses

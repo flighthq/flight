@@ -5,6 +5,7 @@ import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import {
   beginWgpuRenderPass,
   createWgpuRenderTarget,
+  declareWgpuRenderTargetColorSpace,
   destroyWgpuRenderTarget,
   drawWgpuRenderTargetResult,
   endWgpuRenderPass,
@@ -62,6 +63,34 @@ describe('createWgpuRenderTarget', () => {
     const target = createWgpuRenderTarget(state, 0, 0);
     expect(target.width).toBe(1);
     expect(target.height).toBe(1);
+  });
+
+  it('defaults to sRGB and accepts a linear content declaration', async () => {
+    const state = await createWgpuRenderStateForTest();
+    expect(createWgpuRenderTarget(state, 16, 16).colorSpace).toBe('srgb');
+    expect(createWgpuRenderTarget(state, 16, 16, state.format, 'linear').colorSpace).toBe('linear');
+  });
+});
+
+describe('declareWgpuRenderTargetColorSpace', () => {
+  it('stamps the current target and restores the enclosing target on end', async () => {
+    const state = await createWgpuRenderStateForTest();
+    renderWgpuBackground(state);
+    const outer = createWgpuRenderTarget(state, 32, 32);
+    const inner = createWgpuRenderTarget(state, 16, 16);
+
+    expect(declareWgpuRenderTargetColorSpace(state, 'linear')).toBe(false);
+    beginWgpuRenderPass(state, outer);
+    expect(declareWgpuRenderTargetColorSpace(state, 'linear')).toBe(true);
+    beginWgpuRenderPass(state, inner);
+    expect(declareWgpuRenderTargetColorSpace(state, 'linear')).toBe(true);
+    endWgpuRenderPass(state);
+    expect(getWgpuRenderStateRuntime(state).currentRenderTarget).toBe(outer);
+    endWgpuRenderPass(state);
+    expect(getWgpuRenderStateRuntime(state).currentRenderTarget).toBeNull();
+    expect(outer.colorSpace).toBe('linear');
+    expect(inner.colorSpace).toBe('linear');
+    submitWgpuRenderPass(state);
   });
 });
 

@@ -57,6 +57,7 @@ beforeAll(async () => {
       createWgpuRenderTarget: vi.fn(
         (_state: unknown, width: number, height: number): WgpuRenderTarget => ({
           bindGroup: {} as GPUBindGroup,
+          colorSpace: 'srgb',
           depthStencilTexture: {} as GPUTexture,
           depthStencilView: {} as GPUTextureView,
           texture: {} as GPUTexture,

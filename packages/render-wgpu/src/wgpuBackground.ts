@@ -44,6 +44,7 @@ export function beginWgpuFrame(state: WgpuRenderState): void {
   // queued, so its slots are safe to overwrite.
   runtime.spriteBatchBufferCursor = 0;
   runtime.currentBlendMode = null;
+  runtime.currentRenderTarget = null;
   runtime.currentMaskDepth = 0;
   runtime.maskWriteMode = false;
   runtime.currentScissorRect = null;

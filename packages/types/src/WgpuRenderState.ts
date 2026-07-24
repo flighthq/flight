@@ -11,6 +11,7 @@ import type { WgpuCompressedTextureDecoder } from './WgpuCompressedTextureDecode
 import type { WgpuCompressedTextureUploader } from './WgpuCompressedTextureUploader';
 import type { WgpuMaterialRenderer } from './WgpuMaterialRenderer';
 import type { WgpuMeshMaterialRenderer } from './WgpuMeshMaterialRenderer';
+import type { WgpuRenderTarget } from './WgpuRenderTarget';
 
 export interface WgpuRenderState extends RenderState {
   applyBlendMode: ((state: WgpuRenderState, blendMode: BlendMode | null) => void) | null;
@@ -235,6 +236,9 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // target, the target's format inside one). A Wgpu render pipeline bakes its color attachment format,
   // so scene pipelines key their compiled variant on this to draw into HDR (rgba16float) effect targets.
   currentColorFormat?: GPUTextureFormat;
+  // The target currently bound through beginWgpuRenderPass. Producers stamp its content color space;
+  // null means the canvas, where no adapting target present follows the draw.
+  currentRenderTarget: WgpuRenderTarget | null;
 
   // Saved render pass state for render target push/pop
   renderTargetStack: WgpuSavedPassState[];
@@ -281,6 +285,7 @@ export interface WgpuSavedPassState {
   renderTargetViewport: { width: number; height: number } | null;
   renderTransform2D: Matrix | null;
   colorFormat: GPUTextureFormat | undefined;
+  renderTarget: WgpuRenderTarget | null;
 }
 
 // A pixel-space scissor rectangle pushed onto the WgpuRenderState runtime's scissor stack for
