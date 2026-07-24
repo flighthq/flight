@@ -81,13 +81,16 @@ export function drawGlScene(
   recycleDrawEntries(opaqueDrawList, runtime.opaquePool);
   recycleDrawEntries(blendedDrawList, runtime.blendedPool);
 
-  // Morph is NOT blended here. The app blends it in prepareSceneMorph (@flighthq/scene) before
-  // prepareSceneRender, so the cull sees the morphed bounds instead of lagging a frame and the uploaded
-  // buffer already reflects this frame's weights. A mesh that reaches this draw with an unblended morph
-  // is a missing-prepare-call bug the morph guard reports (enableSceneMorphGuards); the draw does not
-  // silently self-heal it, which would mask both the cull lag and the guard.
+  // Morph is NOT blended here, and skin palettes are NOT computed here. The app readies both before
+  // prepareSceneRender (prepareSceneMorph in @flighthq/scene, prepareSceneSkinning in @flighthq/skeleton3d)
+  // so the cull sees the posed bounds instead of lagging a frame and the uploaded buffer already reflects
+  // this frame's pose. A mesh that reaches this draw undeformed is a missing-prepare-call bug the opt-in
+  // deform guard reports (enableGlSceneDeformGuards); the draw does not silently self-heal it, which would
+  // mask both the cull lag and the guard.
+  const deformGuard = runtime.deformGuard;
   for (let m = 0; m < list.meshCount; m++) {
     const mesh = list.visibleMeshes[m];
+    if (deformGuard != null) deformGuard(mesh);
     const subsets = mesh.geometry.subsets;
     const worldMatrix = getNodeWorldMatrix4(mesh) as Matrix4;
 

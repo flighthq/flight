@@ -5,6 +5,7 @@ import type { GlRenderState } from './GlRenderState';
 import type { GlRenderTarget } from './GlRenderTarget';
 import type { GlSkinPaletteTexture } from './GlSkinPaletteTexture';
 import type { Matrix4 } from './Matrix4';
+import type { Mesh } from './Mesh';
 import type { MeshGeometry } from './MeshGeometry';
 import type { ModifierRegistry } from './ModifierRegistry';
 
@@ -75,6 +76,12 @@ export interface GlSceneRuntime {
   // and warns once per shader when one mismatches what the renderer uploads — most importantly
   // u_normalMatrix, which the renderer uploads as mat3, so a shader declaring it mat4 draws nothing.
   customShaderGuard?: ((state: GlRenderState, program: WebGLProgram, shaderKey: string) => void) | null;
+  // Opt-in deform guard, null until enableGlSceneDeformGuards installs it. drawGlScene reaches it only
+  // through this slot (so the base path references no message or @flighthq/log), calling it once per
+  // visible mesh so it can warn when a morphed or GPU-skinned mesh reaches the draw without its deform
+  // pass having run this frame (prepareSceneMorph / prepareSceneSkinning) — the mesh would draw at bind
+  // pose or collapse to the origin, a silent-black footgun the missing call is the fix for.
+  deformGuard?: ((mesh: Mesh) => void) | null;
   environmentSourceCube: WebGLTexture | null;
   ibl: GlSceneIbl | null;
   iblBakeFramebuffer: WebGLFramebuffer | null;
