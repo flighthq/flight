@@ -451,6 +451,28 @@ describe('createSceneFromMd2', () => {
     expect(getNodeChildren(scene.root)).toHaveLength(1);
     expect(warnings.some((w) => w.includes('texcoord index') && w.includes('out of range'))).toBe(true);
   });
+
+  it('warns on an out-of-range vertex normal index and leaves that normal zero', () => {
+    // normalIndex 200 is a valid uint8 but past the 162-entry Anorms table.
+    const md2 = buildMd2({
+      compressedVertices: [
+        { normalIndex: 200, x: 0, y: 0, z: 0 },
+        { normalIndex: 200, x: 10, y: 0, z: 0 },
+        { normalIndex: 200, x: 0, y: 10, z: 0 },
+      ],
+      texCoords: [{ s: 0, t: 0 }],
+      translate: [0, 0, 0],
+      triangles: [{ texIndices: [0, 0, 0], vertIndices: [0, 1, 2] }],
+    });
+
+    const warnings: string[] = [];
+    const scene = createSceneFromMd2(md2, warnings);
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
+    const n = { x: 1, y: 1, z: 1 };
+    getMeshGeometryVertexNormal(n, geometry, 0);
+    expect(n).toEqual({ x: 0, y: 0, z: 0 });
+    expect(warnings.some((w) => w.includes('200') && w.includes('Anorms table'))).toBe(true);
+  });
 });
 
 describe('createSceneFromMd2 animations', () => {
@@ -528,6 +550,23 @@ describe('createSceneFromMd2 animations', () => {
     expect(channel.track.times).toHaveLength(2);
     expect(channel.track.times[0]).toBeCloseTo(0);
     expect(channel.track.times[1]).toBeCloseTo(0.1);
+  });
+});
+
+describe('MD2_ANORMS', () => {
+  it('is the full 162-entry Quake 2 Anorms table', () => {
+    expect(MD2_ANORMS).toHaveLength(162);
+  });
+
+  it('stores only unit-length normals', () => {
+    for (const [x, y, z] of MD2_ANORMS) {
+      expect(Math.hypot(x, y, z)).toBeCloseTo(1, 4);
+    }
+  });
+
+  it('has no duplicate directions — each Anorms index is a distinct normal', () => {
+    const distinct = new Set(MD2_ANORMS.map(([x, y, z]) => `${x},${y},${z}`));
+    expect(distinct.size).toBe(162);
   });
 });
 
