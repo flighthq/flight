@@ -1,3 +1,5 @@
+import { deflateSync } from 'node:zlib';
+
 import { sampleAnimationTrack } from '@flighthq/animation';
 import {
   getMeshGeometryIndexCount,
@@ -20,6 +22,7 @@ import type {
 } from '@flighthq/types';
 import { BlinnPhongMaterialKind, ResourceResolutionState } from '@flighthq/types';
 
+import { registerAwdDeflateDecompressor } from './awdInflate';
 import { createSceneFromAwd, parseAwd, parseAwdSkeletonAnimations, registerAwdDecompressor } from './awdParse';
 import {
   AWD_BLOCK_CONTAINER,
@@ -1381,5 +1384,22 @@ describe('registerAwdDecompressor', () => {
     const warnings: string[] = [];
     parseAwd(asCompressed(SKINNED_TRIANGLE_AWD, AWD_COMPRESSION_DEFLATE), warnings);
     expect(warnings.some((w) => w.includes('no registered decompressor'))).toBe(true);
+  });
+
+  it('imports a genuinely zlib-compressed AWD via the vendored deflate decompressor', () => {
+    // The real-world path: Away3D zlib-compresses the body, and registerAwdDeflateDecompressor's vendored
+    // inflater reconstructs the identical scene the uncompressed file would yield.
+    registerAwdDeflateDecompressor();
+    const compressedBody = new Uint8Array(deflateSync(SKINNED_TRIANGLE_AWD.subarray(12)));
+    const header = SKINNED_TRIANGLE_AWD.slice(0, 12);
+    header[7] = AWD_COMPRESSION_DEFLATE;
+    new DataView(header.buffer).setUint32(8, compressedBody.length, true);
+
+    const fromCompressed = parseAwd(concatBytes(header, compressedBody));
+    const fromUncompressed = parseAwd(SKINNED_TRIANGLE_AWD);
+    expect(fromCompressed.nodes).toHaveLength(fromUncompressed.nodes.length);
+    expect(getMeshGeometryVertexCount(fromCompressed.meshes[0].geometry)).toBe(
+      getMeshGeometryVertexCount(fromUncompressed.meshes[0].geometry),
+    );
   });
 });

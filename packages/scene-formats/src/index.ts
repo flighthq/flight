@@ -1,3 +1,4 @@
+export * from './awdInflate';
 export * from './awdParse';
 export * from './gltfParse';
 export { GltfPunctualLightsExtensionHandler } from './gltfPunctualLights';
