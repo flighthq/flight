@@ -32,6 +32,8 @@ function buildMd2(options: {
   numFrames?: number;
   scale?: readonly [number, number, number];
   skin?: string;
+  // Multiple skin records (alternate textures). Takes precedence over `skin` when provided.
+  skins?: readonly string[];
   skinHeight?: number;
   skinWidth?: number;
   texCoords: readonly { s: number; t: number }[];
@@ -50,6 +52,7 @@ function buildMd2(options: {
     numFrames = 1,
     scale = [1, 1, 1],
     skin,
+    skins,
     skinHeight = 64,
     skinWidth = 64,
     texCoords,
@@ -58,10 +61,11 @@ function buildMd2(options: {
     version = 8,
   } = options;
 
+  const allSkins = skins ?? (skin !== undefined ? [skin] : []);
   const numVertices = compressedVertices.length;
   const numTexCoords = texCoords.length;
   const numTriangles = triangles.length;
-  const numSkins = skin !== undefined ? 1 : 0;
+  const numSkins = allSkins.length;
 
   // Compute offsets: header(68) + skins + texcoords + triangles + frame(s).
   const offSkins = 68;
@@ -94,9 +98,10 @@ function buildMd2(options: {
   view.setInt32(60, 0, true); // offGlCommands
   view.setInt32(64, offEnd, true);
 
-  // Skin record: a 64-byte null-padded ASCII path.
-  if (skin !== undefined) {
-    for (let i = 0; i < skin.length && i < 63; i++) bytes[offSkins + i] = skin.charCodeAt(i);
+  // Skin records: each a 64-byte null-padded ASCII path.
+  for (let s = 0; s < allSkins.length; s++) {
+    const path = allSkins[s];
+    for (let i = 0; i < path.length && i < 63; i++) bytes[offSkins + s * 64 + i] = path.charCodeAt(i);
   }
 
   // Texcoords: int16 s, int16 t.
@@ -712,6 +717,29 @@ describe('parseMd2', () => {
     expect(document.scenes[0].rootNodes).toEqual([0]);
     expect(document.resources).toHaveLength(1);
     expect(document.resources[0]).toBe((document.materials[0] as BlinnPhongMaterial).diffuseMap!.resource);
+  });
+
+  it('emits every skin as a material and binds the first to the mesh', () => {
+    const md2 = buildMd2({
+      compressedVertices: [
+        { normalIndex: 0, x: 0, y: 0, z: 0 },
+        { normalIndex: 0, x: 10, y: 0, z: 0 },
+        { normalIndex: 0, x: 0, y: 10, z: 0 },
+      ],
+      skins: ['skins/red.pcx', 'skins/blue.pcx', 'skins/green.pcx'],
+      texCoords: [{ s: 0, t: 0 }],
+      triangles: [{ texIndices: [0, 0, 0], vertIndices: [0, 1, 2] }],
+    });
+
+    const document = parseMd2(md2);
+    // All three alternate skins register as materials; the mesh's single subset binds the first.
+    expect(document.materials).toHaveLength(3);
+    expect((document.materials[0] as BlinnPhongMaterial).name).toBe('skins/red.pcx');
+    expect((document.materials[1] as BlinnPhongMaterial).name).toBe('skins/blue.pcx');
+    expect((document.materials[2] as BlinnPhongMaterial).name).toBe('skins/green.pcx');
+    expect(document.meshes[0].materials).toEqual([0]);
+    // One unresolved texture resource per skin.
+    expect(document.resources).toHaveLength(3);
   });
 
   it('carries per-frame vertex animation as a weights channel bound to the mesh node index', () => {
