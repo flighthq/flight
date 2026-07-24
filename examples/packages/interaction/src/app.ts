@@ -53,6 +53,10 @@ const manager = createInteractionManager(root, {
 // Wire DOM pointer events into the interaction manager via an InputManager. The coordScale
 // bridges CSS pixels to the backing-store pixel space used by hit testing.
 const inputManager = createInputManager();
+// attachPointerInput forwards viewport coordinates, while interaction consumes canvas-local ones.
+// Pinning the canvas to the viewport origin removes the browser's default 8px body offset before
+// coordScale maps logical pointer positions into the high-DPI scene.
+document.body.style.margin = '0';
 attachPointerInput(inputManager, canvasElement);
 connectInputToInteraction(inputManager, manager, scale);
 

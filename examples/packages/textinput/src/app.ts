@@ -174,8 +174,11 @@ function updateFocusHighlight(): void {
 // Click-to-focus: detect which field was clicked based on bounds.
 window.addEventListener('pointerdown', (e: PointerEvent) => {
   const rect = canvas.getBoundingClientRect();
-  const x = (e.clientX - rect.left) / scale;
-  const y = (e.clientY - rect.top) / scale;
+  // createCanvasElement keeps its CSS size in logical pixels; root scaling only maps those logical
+  // coordinates into the high-DPI backing store. Dividing this rect-relative value by DPR would
+  // make a visible x=30 click miss FIELD_X on DPR=2 displays.
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
 
   let hit = false;
   for (const field of fields) {
