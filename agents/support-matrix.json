@@ -689,6 +689,15 @@
           }
         },
         {
+          "scene": "material-alpha-map-pbr",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
           "scene": "material-anisotropy",
           "backends": {
             "canvas": false,
