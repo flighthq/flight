@@ -28,6 +28,10 @@ function buildMd2(options: {
   extraFrames?: readonly (readonly { normalIndex: number; x: number; y: number; z: number }[])[];
   // Optional per-frame 16-byte name labels (index 0..numFrames-1). Omitted names stay all-null (empty).
   frameNames?: readonly string[];
+  // Optional per-frame scale / translate overrides (index 0..numFrames-1); each falls back to the shared
+  // `scale` / `translate` when absent. Used to exercise MD2's per-frame position requantization.
+  frameScales?: readonly (readonly [number, number, number])[];
+  frameTranslates?: readonly (readonly [number, number, number])[];
   magic?: number;
   numFrames?: number;
   scale?: readonly [number, number, number];
@@ -48,6 +52,8 @@ function buildMd2(options: {
     compressedVertices,
     extraFrames = [],
     frameNames = [],
+    frameScales = [],
+    frameTranslates = [],
     magic = 0x32504449,
     numFrames = 1,
     scale = [1, 1, 1],
@@ -123,16 +129,18 @@ function buildMd2(options: {
   }
 
   // Each frame: scale(3 float32) + translate(3 float32) + name(16 chars) + compressed vertices. Frame 0
-  // uses `compressedVertices`; frames 1..N use `extraFrames` when supplied (zero-filled otherwise). All
-  // frames share the same scale/translate here (the fixtures exercise deltas, not per-frame requant).
+  // uses `compressedVertices`; frames 1..N use `extraFrames` when supplied (zero-filled otherwise). Each
+  // frame's scale/translate is `frameScales`/`frameTranslates` when given, else the shared scale/translate.
   for (let f = 0; f < numFrames; f++) {
     const frameBase = offFrames + f * frameSize;
-    view.setFloat32(frameBase, scale[0], true);
-    view.setFloat32(frameBase + 4, scale[1], true);
-    view.setFloat32(frameBase + 8, scale[2], true);
-    view.setFloat32(frameBase + 12, translate[0], true);
-    view.setFloat32(frameBase + 16, translate[1], true);
-    view.setFloat32(frameBase + 20, translate[2], true);
+    const fScale = frameScales[f] ?? scale;
+    const fTranslate = frameTranslates[f] ?? translate;
+    view.setFloat32(frameBase, fScale[0], true);
+    view.setFloat32(frameBase + 4, fScale[1], true);
+    view.setFloat32(frameBase + 8, fScale[2], true);
+    view.setFloat32(frameBase + 12, fTranslate[0], true);
+    view.setFloat32(frameBase + 16, fTranslate[1], true);
+    view.setFloat32(frameBase + 20, fTranslate[2], true);
     // Frame name: a 16-byte null-padded ASCII label at frameBase + 24.
     const frameName = frameNames[f];
     if (frameName !== undefined) {
@@ -486,6 +494,25 @@ describe('createSceneFromMd2', () => {
     expect(n).toEqual({ x: 0, y: 0, z: 0 });
     expect(warnings.some((w) => w.includes('200') && w.includes('Anorms table'))).toBe(true);
   });
+
+  it('warns and yields an empty scene when every triangle has out-of-range vertex indices', () => {
+    // All three vertex indices of the only triangle are past the vertex count, so no valid index survives
+    // and the model produces no geometry — the all-invalid branch, distinct from the per-triangle warning
+    // (which keeps the valid triangles alongside it).
+    const md2 = buildMd2({
+      compressedVertices: [
+        { normalIndex: 0, x: 0, y: 0, z: 0 },
+        { normalIndex: 0, x: 1, y: 0, z: 0 },
+        { normalIndex: 0, x: 0, y: 1, z: 0 },
+      ],
+      texCoords: [{ s: 0, t: 0 }],
+      triangles: [{ texIndices: [0, 0, 0], vertIndices: [99, 98, 97] }],
+    });
+    const warnings: string[] = [];
+    const scene = createSceneFromMd2(md2, warnings);
+    expect(getNodeChildren(scene.root)).toHaveLength(0);
+    expect(warnings.some((w) => w.includes('no valid triangle indices produced'))).toBe(true);
+  });
 });
 
 describe('createSceneFromMd2 animations', () => {
@@ -536,6 +563,60 @@ describe('createSceneFromMd2 animations', () => {
       (dx) => Math.abs(dx - 2) < 1e-5,
     );
     expect(hasShiftedVertex).toBe(true);
+  });
+
+  it("applies each frame's own scale and translate when decompressing vertex positions", () => {
+    // Frames 0 and 1 carry IDENTICAL compressed bytes; only frame 1's scale/translate differ. The morph
+    // position delta must reflect frame 1's OWN requantization (x-byte 1 → 1*2+5=7 vs base 1*1+0=1 → +6),
+    // proving the per-frame scale/translate is applied, not frame 0's reused for every frame (which → 0).
+    const md2 = buildMd2({
+      compressedVertices: singleTriangleFrame0,
+      extraFrames: [singleTriangleFrame0.map((v) => ({ ...v }))],
+      frameScales: [
+        [1, 1, 1],
+        [2, 1, 1],
+      ],
+      frameTranslates: [
+        [0, 0, 0],
+        [5, 0, 0],
+      ],
+      numFrames: 2,
+      texCoords: singleTriangleTexCoords,
+      triangles: singleTriangle,
+    });
+    const target = (getNodeChildren(createSceneFromMd2(md2).root)[0] as Mesh).morph!.targets[0];
+    const dxs = Array.from({ length: target.positionDeltas.length / 3 }, (_, v) => target.positionDeltas[v * 3]);
+    expect(dxs.some((dx) => Math.abs(dx - 6) < 1e-5)).toBe(true);
+  });
+
+  it('records the per-frame normal delta on the morph target (frame normal minus base, Y-up)', () => {
+    // Vertex 0 uses Anorms[0] in the base frame and Anorms[5] in frame 1; positions are unchanged, so only
+    // its normalDelta is non-zero and must equal the Y-up-transformed difference of the two Anorms entries.
+    const frame1 = [
+      { normalIndex: 5, x: 0, y: 0, z: 0 },
+      { normalIndex: 0, x: 1, y: 0, z: 0 },
+      { normalIndex: 0, x: 0, y: 1, z: 0 },
+    ];
+    const md2 = buildMd2({
+      compressedVertices: singleTriangleFrame0,
+      extraFrames: [frame1],
+      numFrames: 2,
+      texCoords: singleTriangleTexCoords,
+      triangles: singleTriangle,
+    });
+    const target = (getNodeChildren(createSceneFromMd2(md2).root)[0] as Mesh).morph!.targets[0];
+    const a0 = MD2_ANORMS[0];
+    const a5 = MD2_ANORMS[5];
+    // Y-up transform is (x, y, z) → (x, z, -y), so the per-component delta is (a5x-a0x, a5z-a0z, a0y-a5y).
+    const expected = [a5[0] - a0[0], a5[2] - a0[2], a0[1] - a5[1]];
+    const nd = target.normalDeltas!;
+    const changed = Array.from({ length: nd.length / 3 }, (_, v) => v).find(
+      (v) => Math.abs(nd[v * 3]) + Math.abs(nd[v * 3 + 1]) + Math.abs(nd[v * 3 + 2]) > 1e-6,
+    );
+    expect(changed).not.toBeUndefined();
+    expect(nd[changed! * 3]).toBeCloseTo(expected[0], 5);
+    expect(nd[changed! * 3 + 1]).toBeCloseTo(expected[1], 5);
+    expect(nd[changed! * 3 + 2]).toBeCloseTo(expected[2], 5);
   });
 
   it('builds a weights clip whose track width is the frame-target count and times step by 1/fps', () => {
@@ -630,6 +711,33 @@ describe('createSceneFromMd2 animations', () => {
     expect(run.slice(0, targetCount)).toEqual([0, 1, 0, 0]);
     expect(run.slice(targetCount, 2 * targetCount)).toEqual([0, 0, 1, 0]);
     expect(run.slice(2 * targetCount, 3 * targetCount)).toEqual([0, 0, 0, 1]);
+  });
+
+  it('keeps off-diagonal weights zero across a single >2-frame clip (identity-diagonal hat function)', () => {
+    // A 4-frame unnamed model → one 'default' clip, 3 morph targets. Each keyframe activates only its own
+    // target: base row all-zero, then the identity diagonal. Asserts the FULL matrix, so any cross-talk
+    // (a non-zero off-diagonal weight) in a >2-frame clip fails — the tighter check the 2-clip case can't make.
+    const frame = (z: number) => [
+      { normalIndex: 0, x: 0, y: 0, z },
+      { normalIndex: 0, x: 1, y: 0, z },
+      { normalIndex: 0, x: 0, y: 1, z },
+    ];
+    const md2 = buildMd2({
+      compressedVertices: frame(0),
+      extraFrames: [frame(1), frame(2), frame(3)],
+      numFrames: 4,
+      texCoords: singleTriangleTexCoords,
+      triangles: singleTriangle,
+    });
+    const document = parseMd2(md2);
+    expect(document.animations).toHaveLength(1);
+    const track = document.animations[0].channels[0].track;
+    expect(track.components).toBe(3);
+    const values = Array.from(track.values);
+    expect(values.slice(0, 3)).toEqual([0, 0, 0]);
+    expect(values.slice(3, 6)).toEqual([1, 0, 0]);
+    expect(values.slice(6, 9)).toEqual([0, 1, 0]);
+    expect(values.slice(9, 12)).toEqual([0, 0, 1]);
   });
 
   it('collapses unnamed frames into a single default-named clip (MD2 without frame labels)', () => {
