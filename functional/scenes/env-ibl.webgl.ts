@@ -1,5 +1,5 @@
 import { createScene } from '@flighthq/scene';
-import { bakeEnvironmentIbl, drawGlEnvironmentSkybox, drawGlScene } from '@flighthq/scene-gl';
+import { bakeGlEnvironmentIbl, drawGlEnvironmentSkybox, drawGlScene } from '@flighthq/scene-gl';
 import type { Camera3D, Environment, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -64,7 +64,7 @@ export function render(
 ): void {
   // The bake is the substantial, once-per-environment cost — run it before the first frame and reuse.
   if (!baked) {
-    bakeEnvironmentIbl(state, environment);
+    bakeGlEnvironmentIbl(state, environment);
     baked = true;
   }
 
@@ -83,7 +83,7 @@ export function render(
 }
 
 // env-ibl — proves the image-based-lighting bake on the Gl backend: a procedural radiance cubemap is
-// baked (bakeEnvironmentIbl) into a diffuse irradiance cubemap + prefiltered specular cubemap + BRDF
+// baked (bakeGlEnvironmentIbl) into a diffuse irradiance cubemap + prefiltered specular cubemap + BRDF
 // LUT, and two PBR spheres are lit *purely* by that environment (no punctual lights). The left sphere
 // is a smooth metal — specular IBL, so it mirrors the surrounding face colors; the right sphere is a
 // rough dielectric — diffuse IBL, so it takes on a soft tint of the environment. The oracle asserts

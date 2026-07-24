@@ -141,7 +141,7 @@ export function hasLightInfluenceOnBounds(light: Readonly<Light>, bounds: Readon
 
 // Returns true when the light is configured to cast shadows. Non-shadow-capable light types
 // (AmbientLight, HemisphereLight, Environment) always return false.
-export function isLightShadowCasting(light: Readonly<Light>): boolean {
+export function isLightCastingShadow(light: Readonly<Light>): boolean {
   const kind = light.kind;
   if (kind === AmbientLightKind || kind === HemisphereLightKind || kind === EnvironmentKind) {
     return false;

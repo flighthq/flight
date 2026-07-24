@@ -10,7 +10,7 @@ import {
   getLightInfluenceBounds,
   getLightLuminance,
   hasLightInfluenceOnBounds,
-  isLightShadowCasting,
+  isLightCastingShadow,
 } from './lightAnalysis';
 import { createPointLight } from './pointLight';
 import { createSpotLight } from './spotLight';
@@ -196,41 +196,41 @@ describe('hasLightInfluenceOnBounds', () => {
   });
 });
 
-describe('isLightShadowCasting', () => {
+describe('isLightCastingShadow', () => {
   it('returns false for ambient lights', () => {
-    expect(isLightShadowCasting(createAmbientLight())).toBe(false);
+    expect(isLightCastingShadow(createAmbientLight())).toBe(false);
   });
 
   it('returns false for hemisphere lights', () => {
-    expect(isLightShadowCasting(createHemisphereLight())).toBe(false);
+    expect(isLightCastingShadow(createHemisphereLight())).toBe(false);
   });
 
   it('returns false for environment lights', () => {
-    expect(isLightShadowCasting(createEnvironment())).toBe(false);
+    expect(isLightCastingShadow(createEnvironment())).toBe(false);
   });
 
   it('returns false for directional lights with castsShadow: false', () => {
     const light = createDirectionalLight({ castsShadow: false });
-    expect(isLightShadowCasting(light)).toBe(false);
+    expect(isLightCastingShadow(light)).toBe(false);
   });
 
   it('returns true for directional lights with castsShadow: true', () => {
     const light = createDirectionalLight({ castsShadow: true });
-    expect(isLightShadowCasting(light)).toBe(true);
+    expect(isLightCastingShadow(light)).toBe(true);
   });
 
   it('returns true for point lights with castsShadow: true', () => {
     const light = createPointLight({ castsShadow: true });
-    expect(isLightShadowCasting(light)).toBe(true);
+    expect(isLightCastingShadow(light)).toBe(true);
   });
 
   it('returns true for spot lights with castsShadow: true', () => {
     const light = createSpotLight({ castsShadow: true });
-    expect(isLightShadowCasting(light)).toBe(true);
+    expect(isLightCastingShadow(light)).toBe(true);
   });
 
   it('returns true for area lights with castsShadow: true', () => {
     const light = createAreaLight({ castsShadow: true });
-    expect(isLightShadowCasting(light)).toBe(true);
+    expect(isLightCastingShadow(light)).toBe(true);
   });
 });

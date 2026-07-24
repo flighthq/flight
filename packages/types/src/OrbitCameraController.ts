@@ -3,7 +3,7 @@ import type { Vector3 } from './Vector3';
 import type { Vector3Like } from './Vector3';
 
 // A stateful orbit (arcball) camera controller: plain data holding spherical coordinates around a
-// `target` point. Intent verbs (`orbitCameraController`/`dollyCameraController`/`panCameraController`)
+// `target` point. Intent verbs (`rotateOrbitCameraController`/`dollyOrbitCameraController`/`panOrbitCameraController`)
 // move the *goal* coordinates; `updateOrbitCameraController` eases the current coordinates toward the
 // goal each step and writes the resulting eye position into a pure `Camera3D` view matrix (look-at).
 // The controller never reads raw input — the app maps pointer/wheel to the verbs — so it stays

@@ -18,7 +18,7 @@ export interface GlSceneShadow {
   texture: WebGLTexture; // the sampleable depth shadow map
 }
 
-// The baked image-based-lighting set for this state, produced by bakeEnvironmentIbl and read by the
+// The baked image-based-lighting set for this state, produced by bakeGlEnvironmentIbl and read by the
 // PBR ambient bind so every PBR draw samples the same environment. Null = no IBL this frame (the PBR
 // ambient falls back to the flat ambient term). The three GPU textures are the split-sum approximation:
 // a diffuse irradiance cubemap, a roughness-mipped prefiltered specular cubemap, and the 2D BRDF

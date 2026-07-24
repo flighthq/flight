@@ -15,13 +15,11 @@ None. Orbit and fly controller interfaces now extend Entity and both constructor
 
 ## Recommended
 
-1. **Rename the orbit verbs onto the `OrbitCameraController` stem** (charter Decision 2026-07-22):
-   `orbitCameraController` → `rotateOrbitCameraController`, `dollyCameraController` →
-   `dollyOrbitCameraController`, `panCameraController` → `panOrbitCameraController`. Update the three
-   definitions, their colocated tests, any barrel/`describe` ordering, and the single reference example
-   consumer; run `npm run api` + `npm run order:fix`. Pre-release, so no alias/deprecation shim.
+None.
 
-Already clean: the description accurately names both the exported 2D follow primitive and 3D
+Already clean: all seven orbit verbs share the `OrbitCameraController` stem (charter Decision
+2026-07-22 executed 2026-07-24: `rotateOrbitCameraController`/`dollyOrbitCameraController`/
+`panOrbitCameraController`); the description accurately names both the exported 2D follow primitive and 3D
 controllers; world-up and true view-plane orbit pan are separate operations; angular damping takes the
 shortest arc across ±π with seam tests.
 

@@ -1,6 +1,6 @@
 # Package TODO Index
 
-_Generated 2026-07-23 by `node agents/packages/todo.mjs` — do not edit by hand. Sources: each cell's `review.md` (status/score), `assessment.md` (Directed, Recommended, and Depth gaps), `charter.md` (chartered-unbuilt detection), and `register.md › Build queue`. Regenerate after assessments or the register change._
+_Generated 2026-07-24 by `node agents/packages/todo.mjs` — do not edit by hand. Sources: each cell's `review.md` (status/score), `assessment.md` (Directed, Recommended, and Depth gaps), `charter.md` (chartered-unbuilt detection), and `register.md › Build queue`. Regenerate after assessments or the register change._
 
 One line per tracked item. For detail, read only the named package's cell: `agents/packages/<name>/assessment.md` (and its `charter.md` for the rules). `Directed` is user-approved program work, `Recommended` is sweep-safe but **not yet approved**, and `Depth gaps` is surveyed domain depth awaiting prioritization.
 
@@ -1022,7 +1022,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 Computed from cell front matter (dates are `updated:`/`lastDirection:` fields). The review loop works this list to keep everything above trustworthy; it can be ignored when simply orienting in a package.
 
-- **Needs a direction session (charter stub or never directed):** `camera-controls` · `textshaper-canvas` · `textureatlas-formats` · `xml`
+- **Needs a direction session (charter stub or never directed):** `textshaper-canvas` · `textureatlas-formats` · `xml`
 - **Needs a first review (built, no review.md):** `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `shading`
 - **Needs re-review (work landed after the survey):** `displayobject-wgpu (review 2026-06-24 < status 2026-06-25)` · `glyphatlas (review 2026-07-13 < status 2026-07-17)` · `render-gl (review 2026-07-21 < status 2026-07-22)` · `texture (review 2026-06-25 < status 2026-07-22)`
 - **Needs assess refresh (review newer than assessment):** `assets (assessment 2026-07-21 < review 2026-07-22)` · `audio (assessment 2026-07-03 < review 2026-07-13)` · `log (assessment 2026-07-02 < review 2026-07-13)` · `spritesheet (assessment 2026-07-02 < review 2026-07-13)` · `tileset (assessment 2026-07-03 < review 2026-07-09)` · `tween (assessment 2026-07-02 < review 2026-07-13)` · `video (assessment 2026-07-03 < review 2026-07-09)` · `xml (assessment 2026-07-03 < review 2026-07-09)`

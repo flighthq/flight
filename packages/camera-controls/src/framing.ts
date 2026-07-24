@@ -22,7 +22,7 @@ export function frameOrbitCameraControllerToSphere(
   if (!(sphere.radius >= 0) || !(aspect > 0) || !(padding > 0)) return false;
 
   if (projection.kind === 'perspective') {
-    const distance = getPerspectiveFrameDistanceToSphere(projection, sphere.radius, aspect, padding);
+    const distance = getPerspectiveProjectionFrameDistanceToSphere(projection, sphere.radius, aspect, padding);
     if (!Number.isFinite(distance)) return false;
     controller.goalDistance = clamp(distance, controller.minDistance, controller.maxDistance);
   } else {
@@ -38,7 +38,7 @@ export function frameOrbitCameraControllerToSphere(
 // Computes the eye-to-center distance that contains a sphere in both dimensions of a perspective
 // viewport. `padding` is a radius multiplier (1 is tangent). Clip-plane policy remains with the
 // camera owner and is intentionally not hidden here.
-export function getPerspectiveFrameDistanceToSphere(
+export function getPerspectiveProjectionFrameDistanceToSphere(
   projection: Readonly<PerspectiveProjection>,
   radius: number,
   aspect: number,
