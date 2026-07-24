@@ -4,6 +4,7 @@ import { hasImageResourcePixels } from '@flighthq/image';
 import { bindWgpuImageResourceTexture, getWgpuRenderStateRuntime, getWgpuSampler } from '@flighthq/render-wgpu';
 import { getTextureUvMatrix, hasTextureUvTransform } from '@flighthq/texture';
 import type {
+  WgpuMaterialBinding,
   WgpuMeshPipeline,
   WgpuSceneLayouts,
   Camera3D,
@@ -49,6 +50,24 @@ export function beginWgpuMeshDraw(state: WgpuRenderState, pipeline: Readonly<Wgp
   if (pipeline.hasIblGroup) {
     pass.setBindGroup(4, ensureWgpuIblSampleBindGroup(state));
   }
+}
+
+// Builds a material bind group in the shared classic/PBR entry layout: the uniform buffer at binding 0,
+// the sampler at binding 1, then each resolved map view at binding 2 + i. Both the classic and standard-
+// PBR binders share this shape, so the same builder + the same rebuild check (below) cover both.
+export function buildWgpuMaterialBindGroup(
+  state: WgpuRenderState,
+  layout: GPUBindGroupLayout,
+  buffer: GPUBuffer,
+  sampler: GPUSampler,
+  views: readonly GPUTextureView[],
+): GPUBindGroup {
+  const entries: GPUBindGroupEntry[] = [
+    { binding: 0, resource: { buffer } },
+    { binding: 1, resource: sampler },
+  ];
+  for (let i = 0; i < views.length; i++) entries.push({ binding: 2 + i, resource: views[i] });
+  return state.device.createBindGroup({ layout, entries });
 }
 
 // Builds a render pipeline for a family: compiles its WGSL module, and lays out [shared Frame, shared
@@ -602,6 +621,25 @@ export function stashWgpuUvTransform(state: WgpuRenderState, texture: Readonly<T
   getTextureUvMatrix(scratchUvMatrix, texture);
   const m = scratchUvMatrix.m;
   for (let i = 0; i < 9; i++) out[i] = m[i];
+}
+
+// Whether a cached material binding must rebuild its GPUBindGroup because a freshly-resolved view or the
+// sampler no longer matches what it was built from. `resolveWgpuMaterialTextureView` is the invalidation
+// seam: a map swap, an unready→ready transition, a ready→ready image replacement, or an ImageResource
+// version bump each yield a different view identity, so identity comparison alone catches every live
+// material-map mutation with no parallel epoch bookkeeping. A binding with no cached views always rebuilds.
+export function wgpuMaterialBindGroupNeedsRebuild(
+  binding: Readonly<WgpuMaterialBinding>,
+  sampler: GPUSampler,
+  views: readonly GPUTextureView[],
+): boolean {
+  if (binding.sampler !== sampler) return true;
+  const cached = binding.views;
+  if (cached === undefined || cached.length !== views.length) return true;
+  for (let i = 0; i < views.length; i++) {
+    if (cached[i] !== views[i]) return true;
+  }
+  return false;
 }
 
 // Allocates a draw slot from the render-state's uniform ring buffer, writes the Draw uniform (world

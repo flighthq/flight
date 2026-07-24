@@ -33,6 +33,11 @@ describe('bindWgpuClassicSurface', () => {
     expect(fake.calls.filter((c) => c.name === 'createBindGroup').length).toBe(1);
     expect(fake.calls.filter((c) => c.name === 'writeBuffer').length).toBe(2);
   });
+
+  // The per-map rebuild conditions (swap / unready→ready / ready→ready / version bump / sampler change)
+  // are proven directly against wgpuMaterialBindGroupNeedsRebuild in wgpuMeshPipeline.test.ts; the binder
+  // wires that predicate around buildWgpuMaterialBindGroup. The unchanged-binds-no-rebuild case is the
+  // "creates a material bind group … once per key" test above.
 });
 
 describe('buildWgpuClassicDefineKey', () => {
