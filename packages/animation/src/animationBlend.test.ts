@@ -46,6 +46,16 @@ describe('addAnimationSample', () => {
 });
 
 describe('blendAnimationSamples', () => {
+  it('supports output aliasing either input', () => {
+    const a = [0, 10];
+    blendAnimationSamples(a, a, [10, 20], 0.25);
+    expect(a).toEqual([2.5, 12.5]);
+
+    const b = [10, 20];
+    blendAnimationSamples(b, [0, 10], b, 0.25);
+    expect(b).toEqual([2.5, 12.5]);
+  });
+
   it('linearly blends components and clamps alpha', () => {
     const out = [0, 0];
     blendAnimationSamples(out, [0, 10], [10, 20], 0.25);
