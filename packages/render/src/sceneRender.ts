@@ -37,6 +37,7 @@ import type {
   SceneNode,
   SceneRenderList,
   SpotLight,
+  Transform3DNode,
 } from '@flighthq/types';
 import {
   MAX_FORWARD_LIGHTS,
@@ -202,7 +203,7 @@ function collectVisibleMeshes(
   // A directly-authored local matrix is already the node's authoritative transform. The refresh
   // policy exists to observe bare TRS-field mutations; invalidating a detached matrix here would
   // recompose it from the dormant TRS fields and silently erase setNodeLocalMatrix4().
-  if (refreshTransforms && !isNodeLocalMatrix4Detached(node as NodeAny)) {
+  if (refreshTransforms && !isNodeLocalMatrix4Detached(node as Transform3DNode)) {
     invalidateNodeLocalTransform(node as NodeAny);
   }
 
