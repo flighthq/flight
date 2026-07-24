@@ -14,6 +14,7 @@ import { makeFakeGl2, makeGlSceneState } from './glSceneTestHelper';
 
 const LAMBERT: GlClassicDefineKey = {
   alphaMaskEnabled: false,
+  hasAlphaMap: false,
   hasDiffuseMap: false,
   hasNormalMap: false,
   hasSpecularMap: false,
@@ -25,28 +26,29 @@ const BLINNPHONG: GlClassicDefineKey = { ...LAMBERT, lightingModel: 'blinnphong'
 
 describe('buildGlClassicDefineKey', () => {
   it('encodes the lighting model first, then the feature flags', () => {
-    expect(buildGlClassicDefineKey(LAMBERT)).toBe('l------');
-    expect(buildGlClassicDefineKey(PHONG)).toBe('p------');
-    expect(buildGlClassicDefineKey(BLINNPHONG)).toBe('b------');
+    expect(buildGlClassicDefineKey(LAMBERT)).toBe('l-------');
+    expect(buildGlClassicDefineKey(PHONG)).toBe('p-------');
+    expect(buildGlClassicDefineKey(BLINNPHONG)).toBe('b-------');
     expect(
       buildGlClassicDefineKey({
         alphaMaskEnabled: true,
+        hasAlphaMap: true,
         hasDiffuseMap: true,
         hasNormalMap: true,
         hasSpecularMap: true,
         hasUvTransform: true,
         lightingModel: 'phong',
       }),
-    ).toBe('pmdsnu-');
+    ).toBe('pmdsnau-');
   });
 
   it('encodes a non-identity uv transform in the u slot ahead of skin', () => {
-    expect(buildGlClassicDefineKey({ ...LAMBERT, hasUvTransform: true })).toBe('l----u-');
+    expect(buildGlClassicDefineKey({ ...LAMBERT, hasUvTransform: true })).toBe('l-----u-');
     expect(buildGlClassicDefineKey({ ...LAMBERT, hasUvTransform: true })).not.toBe(buildGlClassicDefineKey(LAMBERT));
   });
 
   it('sets the trailing skin flag so a skinned variant keys distinctly', () => {
-    expect(buildGlClassicDefineKey({ ...LAMBERT, hasSkin: true })).toBe('l-----k');
+    expect(buildGlClassicDefineKey({ ...LAMBERT, hasSkin: true })).toBe('l------k');
     expect(buildGlClassicDefineKey({ ...LAMBERT, hasSkin: true })).not.toBe(buildGlClassicDefineKey(LAMBERT));
   });
 
@@ -106,7 +108,7 @@ describe('ensureGlClassicProgram', () => {
     const skinned = ensureGlClassicProgram(state, LAMBERT);
 
     expect(skinned).not.toBe(rigid);
-    expect([...getGlSceneRuntime(state).programCache.keys()]).toContain('classic:l-----k');
+    expect([...getGlSceneRuntime(state).programCache.keys()]).toContain('classic:l------k');
     expect(skinned.locJointTexture).not.toBeNull();
   });
 });
@@ -128,7 +130,18 @@ describe('getGlClassicFragmentSourceForKey', () => {
     expect(getGlClassicFragmentSourceForKey({ ...PHONG, hasDiffuseMap: true })).toContain('#define HAS_DIFFUSE_MAP');
     expect(getGlClassicFragmentSourceForKey({ ...PHONG, hasSpecularMap: true })).toContain('#define HAS_SPECULAR_MAP');
     expect(getGlClassicFragmentSourceForKey({ ...PHONG, hasNormalMap: true })).toContain('#define HAS_NORMAL_MAP');
+    expect(getGlClassicFragmentSourceForKey({ ...PHONG, hasAlphaMap: true })).toContain('#define HAS_ALPHA_MAP');
     expect(getGlClassicFragmentSourceForKey({ ...PHONG, alphaMaskEnabled: true })).toContain('#define ALPHA_MASK');
+  });
+
+  it('gates the alpha-map define off the key and always carries the guarded sampler + coverage multiply', () => {
+    // The define is what varies by key; the #ifdef-guarded sampler and multiply are unconditional raw
+    // text (same as the normal/specular maps), compiled out unless HAS_ALPHA_MAP is defined.
+    expect(getGlClassicFragmentSourceForKey(BLINNPHONG)).not.toContain('#define HAS_ALPHA_MAP');
+    const withAlpha = getGlClassicFragmentSourceForKey({ ...BLINNPHONG, hasAlphaMap: true });
+    expect(withAlpha).toContain('#define HAS_ALPHA_MAP');
+    expect(withAlpha).toContain('uniform sampler2D u_alphaMap;');
+    expect(withAlpha).toContain('diffuse.a *= texture(u_alphaMap, v_uv0).g;');
   });
 
   it('includes the standard light block uniforms', () => {

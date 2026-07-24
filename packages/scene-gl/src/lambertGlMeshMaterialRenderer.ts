@@ -94,6 +94,7 @@ function bindGlLambertMaterialUniforms(
 function defineKeyForMaterial(material: Readonly<LambertMaterial> | null): GlClassicDefineKey {
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
+    hasAlphaMap: false,
     hasDiffuseMap: material !== null && material.diffuseMap !== null && material.diffuseMap.image !== null,
     hasNormalMap: false,
     hasSpecularMap: false,
