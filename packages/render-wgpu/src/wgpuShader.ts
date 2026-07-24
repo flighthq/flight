@@ -146,8 +146,6 @@ const BLEND_MODES: Record<BlendMode, GPUBlendState | null> = {
   [BlendMode.Screen]: createWgpuBlendState('one', 'one-minus-src'),
 };
 
-// ---- Pipeline creation ----
-
 export function createWgpuBindGroupLayouts(device: GPUDevice): {
   uniformBindGroupLayout: GPUBindGroupLayout;
   textureBindGroupLayout: GPUBindGroupLayout;
@@ -172,6 +170,8 @@ export function createWgpuBindGroupLayouts(device: GPUDevice): {
   return { uniformBindGroupLayout, textureBindGroupLayout };
 }
 
+// ---- Pipeline creation ----
+
 export function createWgpuPipelineLayout(
   device: GPUDevice,
   uniformBindGroupLayout: GPUBindGroupLayout,
@@ -180,6 +180,16 @@ export function createWgpuPipelineLayout(
   return device.createPipelineLayout({
     bindGroupLayouts: [uniformBindGroupLayout, textureBindGroupLayout],
   });
+}
+
+export function getActiveWgpuPipeline(state: WgpuRenderState): GPURenderPipeline {
+  const runtime = getWgpuRenderStateRuntime(state);
+  const stencilMode: StencilMode = runtime.maskWriteMode
+    ? 'maskwrite'
+    : runtime.currentMaskDepth > 0
+      ? 'masked'
+      : 'normal';
+  return getWgpuPipeline(state, runtime.currentBlendMode, stencilMode);
 }
 
 function buildStencilFaceState(stencilMode: StencilMode): GPUStencilFaceState {
@@ -192,14 +202,11 @@ function buildStencilFaceState(stencilMode: StencilMode): GPUStencilFaceState {
   return { compare: 'always', passOp: 'keep', failOp: 'keep', depthFailOp: 'keep' };
 }
 
-export function getActiveWgpuPipeline(state: WgpuRenderState): GPURenderPipeline {
-  const runtime = getWgpuRenderStateRuntime(state);
-  const stencilMode: StencilMode = runtime.maskWriteMode
-    ? 'maskwrite'
-    : runtime.currentMaskDepth > 0
-      ? 'masked'
-      : 'normal';
-  return getWgpuPipeline(state, runtime.currentBlendMode, stencilMode);
+// Shared by every immutable 2D pipeline family. WebGPU bakes blend state into the pipeline, so the
+// bitmap, sprite-batch, and tessellated-shape paths must resolve the same node BlendMode table rather
+// than each maintaining a partial copy. Unknown/shader-composited modes deliberately fall back to Normal.
+export function getWgpuBlendState(blendMode: BlendMode | null): GPUBlendState {
+  return (blendMode !== null ? BLEND_MODES[blendMode] : null) ?? NORMAL_BLEND;
 }
 
 export function getWgpuPipeline(
@@ -215,7 +222,7 @@ export function getWgpuPipeline(
   const cached = runtime.pipelineCache.get(key);
   if (cached !== undefined) return cached;
 
-  const blend = (blendMode !== null ? BLEND_MODES[blendMode] : null) ?? NORMAL_BLEND;
+  const blend = getWgpuBlendState(blendMode);
   const isMaskWrite = stencilMode === 'maskwrite';
   const stencilFace = buildStencilFaceState(stencilMode);
 

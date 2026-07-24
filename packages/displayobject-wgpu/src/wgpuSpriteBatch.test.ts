@@ -3,6 +3,7 @@ import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgp
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
 import type { ColorTransform, Material } from '@flighthq/types';
+import { BlendMode } from '@flighthq/types';
 
 import { enableWgpuColorAdjustment } from './wgpuColorAdjustment';
 import { defaultWgpuMaterialRenderer } from './wgpuDefaultMaterial';
@@ -127,6 +128,31 @@ describe('getWgpuQuadBatchPipeline', () => {
     expect(pipeline).toBeDefined();
     const pipeline2 = getWgpuQuadBatchPipeline(state, resources, module, false, null);
     expect(pipeline2).toBe(pipeline);
+  });
+
+  it('uses the shared fixed-function blend table for every batch mode', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const resources = ensureWgpuQuadBatchResources(state);
+    const module = state.device.createShaderModule({ code: '' });
+    const blendOf = (mode: BlendMode) => {
+      const pipeline = getWgpuQuadBatchPipeline(state, resources, module, false, mode) as unknown as {
+        __descriptor: GPURenderPipelineDescriptor;
+      };
+      return [...pipeline.__descriptor.fragment!.targets][0]!.blend!.color;
+    };
+
+    expect(blendOf(BlendMode.Multiply)).toEqual({
+      srcFactor: 'dst',
+      dstFactor: 'one-minus-src-alpha',
+      operation: 'add',
+    });
+    expect(blendOf(BlendMode.Screen)).toEqual({
+      srcFactor: 'one',
+      dstFactor: 'one-minus-src',
+      operation: 'add',
+    });
+    expect(blendOf(BlendMode.Darken).operation).toBe('min');
+    expect(blendOf(BlendMode.Lighten).operation).toBe('max');
   });
 });
 
