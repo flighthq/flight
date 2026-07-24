@@ -249,8 +249,16 @@ window.addEventListener('keydown', (e: KeyboardEvent) => {
   }
 });
 
-// Bootstrap: push Boot as the first state.
-pushFlowState(stack, bootState);
+// Interactive runs start at Boot. Capture runs build the representative paused stack directly so
+// smoke frames prove pause/resume layering (`renderBelow`) instead of only photographing a timer.
+const captureWindow = window as typeof window & { __flightCapture?: boolean };
+if (captureWindow.__flightCapture) {
+  pushFlowState(stack, menuState);
+  pushFlowState(stack, playState);
+  pushFlowState(stack, pauseState);
+} else {
+  pushFlowState(stack, bootState);
+}
 
 let lastTime = performance.now();
 
