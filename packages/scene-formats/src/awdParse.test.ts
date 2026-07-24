@@ -1152,6 +1152,78 @@ describe('parseAwdSkeletonAnimations', () => {
     expect(out[2]).toBeCloseTo(-15);
   });
 
+  it('emits a per-joint scale channel with the decomposed pose scale', () => {
+    const skeletonBody = buildSkeletonBody('Skeleton', [
+      { name: 'Joint0', parentIndex: 0, transform: IDENTITY_TRANSFORM },
+    ]);
+    const skeletonBlock = buildBlockHeader(1, AWD_BLOCK_SKELETON, skeletonBody.length);
+    const pose0Body = buildSkeletonPoseBody('P0', [[1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]]);
+    const pose0Block = buildBlockHeader(2, AWD_BLOCK_SKELETON_POSE, pose0Body.length);
+    // A diagonal 2/3/4 scale basis. convertTransformLhToRh (S·M·S) preserves diagonal scale, so it
+    // decomposes back to exactly (2,3,4).
+    const pose1Body = buildSkeletonPoseBody('P1', [[2, 0, 0, 0, 3, 0, 0, 0, 4, 0, 0, 0]]);
+    const pose1Block = buildBlockHeader(3, AWD_BLOCK_SKELETON_POSE, pose1Body.length);
+    const animBody = buildSkeletonAnimationBody('Anim', [
+      { duration: 1000, poseBlockId: 2 },
+      { duration: 1000, poseBlockId: 3 },
+    ]);
+    const animBlock = buildBlockHeader(4, AWD_BLOCK_SKELETON_ANIMATION, animBody.length);
+    const body = concatBytes(
+      skeletonBlock,
+      skeletonBody,
+      pose0Block,
+      pose0Body,
+      pose1Block,
+      pose1Body,
+      animBlock,
+      animBody,
+    );
+    const awd = concatBytes(buildAwdHeader(body.length), body);
+
+    const clip = firstAwdClip(awd, [createSceneNode()])!;
+    const scaleChannel = clip.channels.find((c) => (c.targetRef as SceneAnimationTarget).path === 'Scale');
+    expect(scaleChannel).toBeDefined();
+    expect(scaleChannel!.track.components).toBe(3);
+
+    const out = [0, 0, 0];
+    sampleAnimationTrack(out, scaleChannel!.track, 0);
+    expect(out.map((v) => Number(v.toFixed(3)))).toEqual([1, 1, 1]);
+    sampleAnimationTrack(out, scaleChannel!.track, 1);
+    expect(out.map((v) => Number(v.toFixed(3)))).toEqual([2, 3, 4]);
+  });
+
+  it('omits the scale channel for identity-scale skeletons', () => {
+    const skeletonBody = buildSkeletonBody('Skeleton', [
+      { name: 'Joint0', parentIndex: 0, transform: IDENTITY_TRANSFORM },
+    ]);
+    const skeletonBlock = buildBlockHeader(1, AWD_BLOCK_SKELETON, skeletonBody.length);
+    const pose0Body = buildSkeletonPoseBody('P0', [[1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]]);
+    const pose0Block = buildBlockHeader(2, AWD_BLOCK_SKELETON_POSE, pose0Body.length);
+    const pose1Body = buildSkeletonPoseBody('P1', [[1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 0]]);
+    const pose1Block = buildBlockHeader(3, AWD_BLOCK_SKELETON_POSE, pose1Body.length);
+    const animBody = buildSkeletonAnimationBody('Anim', [
+      { duration: 1000, poseBlockId: 2 },
+      { duration: 1000, poseBlockId: 3 },
+    ]);
+    const animBlock = buildBlockHeader(4, AWD_BLOCK_SKELETON_ANIMATION, animBody.length);
+    const body = concatBytes(
+      skeletonBlock,
+      skeletonBody,
+      pose0Block,
+      pose0Body,
+      pose1Block,
+      pose1Body,
+      animBlock,
+      animBody,
+    );
+    const awd = concatBytes(buildAwdHeader(body.length), body);
+
+    const clip = firstAwdClip(awd, [createSceneNode()])!;
+    expect(clip.channels.some((c) => (c.targetRef as SceneAnimationTarget).path === 'Scale')).toBe(false);
+    // Only translation + rotation for the single joint.
+    expect(clip.channels).toHaveLength(2);
+  });
+
   it('uses SceneAnimationTarget as channel targetRef', () => {
     const skeletonBody = buildSkeletonBody('Skeleton', [
       { name: 'Bone', parentIndex: 0, transform: IDENTITY_TRANSFORM },
