@@ -32,8 +32,6 @@ const pipeline: WgpuRenderEffectPipeline = createWgpuRenderEffectPipeline(state,
 
 export const scale = pixelRatio;
 
-// Headless SwiftShader does not present its WebGPU swapchain. During tool-capture only, opt into the
-// SDK readback target so the example publishes the same rendered frame a real browser presents.
 export function render(
   scene: Readonly<SceneNode>,
   camera: Readonly<Camera3D>,
