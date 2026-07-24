@@ -3,6 +3,7 @@ import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
 import type { RenderProxy2D, WgpuRenderState, WgpuShapeMeshBuffers } from '@flighthq/types';
 import type { WgpuShapeMesh } from '@flighthq/types';
+import { BlendMode } from '@flighthq/types';
 
 import { drawWgpuShapeMeshes } from './wgpuShapeMesh';
 
@@ -40,8 +41,8 @@ function makePassSpy(): GPURenderPassEncoder {
   } as unknown as GPURenderPassEncoder;
 }
 
-function makeProxy(matrix = createMatrix(), alpha = 1): RenderProxy2D {
-  return { alpha, blendMode: null, transform2D: matrix } as unknown as RenderProxy2D;
+function makeProxy(matrix = createMatrix(), alpha = 1, blendMode: BlendMode | null = null): RenderProxy2D {
+  return { alpha, blendMode, transform2D: matrix } as unknown as RenderProxy2D;
 }
 
 async function makeState(): Promise<WgpuRenderState> {
@@ -76,6 +77,21 @@ describe('drawWgpuShapeMeshes', () => {
     drawWgpuShapeMeshes(state, makeProxy(), [TRIANGLE], makeBuffers());
 
     expect(pass.setStencilReference).toHaveBeenCalledWith(2);
+  });
+
+  it('bakes the node blend mode into a distinct shape pipeline', async () => {
+    const state = await makeState();
+
+    drawWgpuShapeMeshes(state, makeProxy(createMatrix(), 1, BlendMode.Normal), [TRIANGLE], makeBuffers());
+    drawWgpuShapeMeshes(state, makeProxy(createMatrix(), 1, BlendMode.Add), [TRIANGLE], makeBuffers());
+
+    const pipelines = [...getWgpuRenderStateRuntime(state).shapeMeshPipelines!.values()].map(
+      (entry) => entry.pipeline,
+    ) as unknown as { __descriptor: GPURenderPipelineDescriptor }[];
+    expect(pipelines).toHaveLength(2);
+    const blends = pipelines.map((pipeline) => [...pipeline.__descriptor.fragment!.targets][0]!.blend!.color);
+    expect(blends).toContainEqual({ srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' });
+    expect(blends).toContainEqual({ srcFactor: 'one', dstFactor: 'one', operation: 'add' });
   });
 
   it('writes premultiplied color (color * alpha) into the uniform buffer', async () => {

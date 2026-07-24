@@ -1,4 +1,4 @@
-import { bindWgpuImageResourceTexture } from '@flighthq/render-wgpu';
+import { bindWgpuImageResourceTexture, getWgpuBlendState } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import type {
   ColorTransform,
@@ -10,7 +10,7 @@ import type {
   WgpuRenderState,
   WgpuSpriteBatchBufferSlot,
 } from '@flighthq/types';
-import { BlendMode } from '@flighthq/types';
+import type { BlendMode } from '@flighthq/types';
 
 // Base per-instance layout (13 floats = 52 bytes). This is a fixed contract material shaders read
 // from the instance storage buffer; it carries no material concern (no color transform). A material
@@ -114,16 +114,6 @@ export function ensureWgpuQuadBatchResources(state: WgpuRenderState): WgpuQuadBa
 
 const _quadBatchResources = new WeakMap<GPUDevice, WgpuQuadBatchResources>();
 
-const NORMAL_BLEND: GPUBlendState = {
-  color: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' },
-  alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' },
-};
-
-const ADD_BLEND: GPUBlendState = {
-  color: { srcFactor: 'one', dstFactor: 'one', operation: 'add' },
-  alpha: { srcFactor: 'one', dstFactor: 'one', operation: 'add' },
-};
-
 export function flushWgpuSpriteBatch(state: WgpuRenderState): void {
   const runtime = getWgpuRenderStateRuntime(state);
   const count = runtime.spriteBatchCount;
@@ -220,7 +210,7 @@ export function getWgpuQuadBatchPipeline(
   if (cached !== undefined) return cached;
 
   const { device } = state;
-  const blend = blendMode === BlendMode.Add ? ADD_BLEND : NORMAL_BLEND;
+  const blend = getWgpuBlendState(blendMode);
   const isMaskWrite = stencilMode === 'maskwrite';
 
   let stencilFace: GPUStencilFaceState;

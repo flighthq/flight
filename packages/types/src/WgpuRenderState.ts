@@ -205,7 +205,8 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // Null until the first solid-fill shape draws; shared across every shape on this device.
   // Flat-color tessellated-shape fill pipelines, one per color-attachment format (the canvas format and
   // any HDR effect-target format), since a Wgpu pipeline bakes its target format. Lazily populated.
-  shapeMeshPipelines?: Map<GPUTextureFormat, WgpuShapeMeshPipeline>;
+  // Keyed by color format + fixed-function node blend mode (both are immutable pipeline state).
+  shapeMeshPipelines?: Map<string, WgpuShapeMeshPipeline>;
 
   // Clip rectangle scissor stack
   scissorStack: WgpuScissorRect[];

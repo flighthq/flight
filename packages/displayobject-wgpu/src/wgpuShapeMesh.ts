@@ -1,4 +1,4 @@
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
+import { getWgpuBlendState, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import type {
   RenderProxy2D,
   WgpuRenderState,
@@ -18,9 +18,8 @@ import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
 //
 // The fill is gated by any active contour clip: the pipeline compares stencil 'equal' currentMaskDepth
 // (set per draw via setStencilReference) and writes nothing back, so at depth 0 the cleared stencil (0)
-// passes everywhere and inside a clip only the clip's stamped region passes. v1 is normal (premultiplied)
-// blend only; renderProxy.blendMode is not yet honored here (a follow-up, mirroring webgl's
-// applyBlendMode hook).
+// passes everywhere and inside a clip only the clip's stamped region passes. Blend state is immutable
+// in WebGPU, so the pipeline cache is keyed by the node's fixed-function BlendMode and target format.
 //
 // Cannot be visually captured headless (no GPU adapter); the unit test asserts the pipeline/draw/uniform
 // call shape against the mock device. Mirror this against the verified webgl result when a GPU is
@@ -44,7 +43,7 @@ export function drawWgpuShapeMeshes(
   const pass = runtime.renderPass;
   if (pass === null) return;
 
-  const pipelineEntry = ensureShapeMeshPipeline(state);
+  const pipelineEntry = ensureShapeMeshPipeline(state, renderProxy.blendMode);
   const device = state.device;
   const queue = device.queue;
 
@@ -140,11 +139,12 @@ function ensureShapeMeshUniform(
   return _shapeMeshUniformScratch;
 }
 
-function ensureShapeMeshPipeline(state: WgpuRenderState): WgpuShapeMeshPipeline {
+function ensureShapeMeshPipeline(state: WgpuRenderState, blendMode: RenderProxy2D['blendMode']): WgpuShapeMeshPipeline {
   const runtime = getWgpuRenderStateRuntime(state);
   const format = runtime.currentColorFormat ?? state.format;
   const cache = runtime.shapeMeshPipelines ?? (runtime.shapeMeshPipelines = new Map());
-  const existing = cache.get(format);
+  const key = `${format}|${blendMode ?? 'null'}`;
+  const existing = cache.get(key);
   if (existing !== undefined) return existing;
 
   const device = state.device;
@@ -166,11 +166,9 @@ function ensureShapeMeshPipeline(state: WgpuRenderState): WgpuShapeMeshPipeline 
       targets: [
         {
           format,
-          // Premultiplied alpha — the geometry already carries premultiplied color.
-          blend: {
-            color: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' },
-            alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' },
-          },
+          // The geometry carries premultiplied color; all supported node modes use the shared
+          // render-wgpu fixed-function table.
+          blend: getWgpuBlendState(blendMode),
         },
       ],
     },
@@ -188,7 +186,7 @@ function ensureShapeMeshPipeline(state: WgpuRenderState): WgpuShapeMeshPipeline 
   });
 
   const entry: WgpuShapeMeshPipeline = { pipeline, bindGroupLayout };
-  cache.set(format, entry);
+  cache.set(key, entry);
   return entry;
 }
 
