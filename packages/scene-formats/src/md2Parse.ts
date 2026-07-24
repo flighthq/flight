@@ -183,23 +183,29 @@ export function parseMd2(bytes: Readonly<Uint8Array>, warnings?: string[]): Scen
     return emptyMd2Document();
   }
 
-  // MD2 has no lighting-model parameters — its material is the skin: a texture path. Decode the first
-  // skin (models commonly carry exactly one) to a BlinnPhongMaterial whose diffuseMap references that
-  // path; MD2's own shading is diffuse-textured. Extra skins are alternate textures for the same mesh,
-  // not additional materials, so only the first is attached.
+  // MD2 has no lighting-model parameters — each skin is a texture path, and a model's several skins are
+  // alternate diffuse textures for the same mesh (one active at a time). Emit every skin as a
+  // BlinnPhongMaterial in the document's materials table so a caller can swap alternates in, and bind the
+  // first to the mesh's single subset. MD2's own shading is diffuse-textured.
   const document = emptyMd2Document();
   const meshMaterials: number[] = [];
-  if (numSkins >= 1 && offSkins + MD2_SKIN_SIZE <= bytes.length) {
-    const skinName = readMd2SkinName(bytes, offSkins);
-    if (skinName.length > 0) {
-      const material = createBlinnPhongMaterial({
-        diffuseMap: createExternalTextureRef(skinName, null, document.resources),
-      }) as unknown as Material;
-      // MD2's skin path is the material's authored identity — preserve it as the name.
-      material.name = skinName;
-      document.materials.push(material as unknown as MaterialLike);
-      meshMaterials.push(0);
+  for (let s = 0; s < numSkins; s++) {
+    const skinOffset = offSkins + s * MD2_SKIN_SIZE;
+    if (skinOffset + MD2_SKIN_SIZE > bytes.length) {
+      warnings?.push(`createSceneFromMd2: skin ${s} record runs past the end of the buffer`);
+      break;
     }
+    const skinName = readMd2SkinName(bytes, skinOffset);
+    if (skinName.length === 0) continue;
+    const material = createBlinnPhongMaterial({
+      diffuseMap: createExternalTextureRef(skinName, null, document.resources),
+    }) as unknown as Material;
+    // MD2's skin path is the material's authored identity — preserve it as the name.
+    material.name = skinName;
+    const index = document.materials.length;
+    document.materials.push(material as unknown as MaterialLike);
+    // Bind the first non-empty skin to the mesh; the rest stay available as alternates.
+    if (meshMaterials.length === 0) meshMaterials.push(index);
   }
 
   const vertices = new Float32Array(interleavedVertices);
