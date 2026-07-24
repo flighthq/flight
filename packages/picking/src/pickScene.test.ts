@@ -6,6 +6,7 @@ import {
 } from '@flighthq/camera';
 import {
   copyQuaternion,
+  createAabb,
   createQuaternion,
   createRay3D,
   createVector3,
@@ -15,9 +16,9 @@ import {
 } from '@flighthq/geometry';
 import { createBoxMeshGeometry, createMeshGeometryFromAttributes } from '@flighthq/mesh';
 import { ensureMeshGeometryBounds, updateMeshMorph } from '@flighthq/mesh';
-import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
+import { addNodeChild, getNodeRuntime, invalidateNodeLocalTransform } from '@flighthq/node';
 import { createMesh, createSceneNode, SceneNodeKind } from '@flighthq/scene';
-import type { Camera3D, Mesh, MeshMorph, Ray3D, SceneHit, SceneNode } from '@flighthq/types';
+import type { Camera3D, Mesh, MeshMorph, MeshRuntime, Ray3D, SceneHit, SceneNode } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
 import { createSceneHit, pickScene, pickSceneAll, pickSceneAllWithRay3D, pickSceneWithRay3D } from './pickScene';
@@ -417,6 +418,28 @@ describe('pickSceneWithRay3D', () => {
     const bounds = ensureMeshGeometryBounds(mesh.geometry);
     expect(bounds?.min.x).toBe(-1);
     expect(bounds?.max.x).toBe(1);
+    expect(pickSceneWithRay3D(scene, ray, out)?.node).toBe(mesh);
+  });
+
+  it('broad-phases against the posed deformedLocalBounds slot when a deform pass wrote one', () => {
+    // A triangle at the origin that the center ray hits head-on. Its bind-pose bounds admit the ray,
+    // so with no posed slot the pick lands.
+    const mesh = triangleMesh(true);
+    const scene = createSceneNode(SceneNodeKind);
+    addNodeChild(scene, mesh);
+    const ray = makeCenterRay();
+    const out = createSceneHit();
+
+    expect(pickSceneWithRay3D(scene, ray, out)?.node).toBe(mesh);
+
+    // Simulate a deform pass (prepareSceneSkinning) writing a posed local box far off the ray. The
+    // broad-phase must read that slot as data and reject the mesh before the triangle test — proving it
+    // no longer uses the bind-pose bounds for a posed mesh.
+    (getNodeRuntime(mesh) as MeshRuntime).deformedLocalBounds = createAabb(100, 100, 100, 102, 102, 102);
+    expect(pickSceneWithRay3D(scene, ray, out)).toBeNull();
+
+    // Clearing the slot falls back to the bind-pose world bounds, and the pick lands again.
+    (getNodeRuntime(mesh) as MeshRuntime).deformedLocalBounds = null;
     expect(pickSceneWithRay3D(scene, ray, out)?.node).toBe(mesh);
   });
 });

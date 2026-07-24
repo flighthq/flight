@@ -9,6 +9,7 @@ import {
   intersectRay3DAabb,
   intersectRay3DTriangle,
   inverseMatrix4,
+  transformAabbByMatrix4,
 } from '@flighthq/geometry';
 import {
   getMeshGeometryTriangleCount,
@@ -17,7 +18,17 @@ import {
 } from '@flighthq/mesh';
 import { ensureNodeWorldMatrix4, getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node';
 import { getSceneNodeWorldBounds, isMesh } from '@flighthq/scene';
-import type { Camera3D, Mesh, Ray3D, SceneHit, SceneNode, ScenePickOptions, Vector3 } from '@flighthq/types';
+import type {
+  Camera3D,
+  Mesh,
+  MeshRuntime,
+  NodeAny,
+  Ray3D,
+  SceneHit,
+  SceneNode,
+  ScenePickOptions,
+  Vector3,
+} from '@flighthq/types';
 
 // Allocates a zeroed SceneHit. Handy for the `out` of `pickScene`/`pickSceneWithRay3D` and for
 // growing the `outArray` of the multi-hit queries. `node` is null until a pick fills it.
@@ -204,6 +215,17 @@ function pickNode(
 
 // Broad-phase (world AABB) then brute-force ray↔triangle narrow-phase for one mesh, reporting each
 // passing triangle through `onHit`.
+//
+// The broad-phase prefers the POSED local bounds a deform pass wrote to the node runtime
+// (deformedLocalBounds), transformed to world — so a GPU-skinned mesh whose limb has swung outside its
+// bind box is not wrongly rejected before its triangles are ever tested. It reads that slot as plain
+// data (no skinning code, so picking keeps its dependency set), falling back to the bind-pose world
+// bounds for a rigid or unprepared mesh. The NARROW-phase, however, tests geometry.vertices — which
+// stay BIND POSE for a GPU-skinned mesh (the GPU deforms in-shader). So exact triangle picking of a
+// skinned mesh requires the app to CPU-skin it first (updateMeshSkin, which writes posed vertices and
+// bumps the version); without that, the posed broad-phase admits the mesh but the triangle test runs
+// against the bind pose. A morph-only mesh needs nothing extra — its blend writes real vertices, so
+// both phases are posed.
 function intersectMeshTriangles(
   mesh: Readonly<Mesh>,
   ray: Readonly<Ray3D>,
@@ -211,7 +233,13 @@ function intersectMeshTriangles(
   cullBackfaces: boolean,
   onHit: (hit: Readonly<SceneHit>) => void,
 ): void {
-  getSceneNodeWorldBounds(_worldBounds, mesh);
+  const posedLocalBounds = (getNodeRuntime(mesh as NodeAny) as MeshRuntime).deformedLocalBounds;
+  if (posedLocalBounds != null) {
+    ensureNodeWorldMatrix4(mesh);
+    transformAabbByMatrix4(_worldBounds, posedLocalBounds, getNodeWorldMatrix4(mesh));
+  } else {
+    getSceneNodeWorldBounds(_worldBounds, mesh);
+  }
   if (intersectRay3DAabb(ray, _worldBounds) < 0) return;
 
   ensureNodeWorldMatrix4(mesh);
