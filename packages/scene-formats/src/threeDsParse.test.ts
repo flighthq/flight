@@ -12,17 +12,22 @@ import { BlinnPhongMaterialKind } from '@flighthq/types';
 import {
   THREE_DS_CHUNK_HEADER_BYTES,
   THREE_DS_COLOR_BYTE,
+  THREE_DS_COLOR_FLOAT,
   THREE_DS_EDITOR,
   THREE_DS_FACE_MATERIAL,
   THREE_DS_FACES,
   THREE_DS_MAIN,
   THREE_DS_MATERIAL,
+  THREE_DS_MATERIAL_BUMP_MAP,
   THREE_DS_MATERIAL_DIFFUSE,
   THREE_DS_MATERIAL_NAME,
+  THREE_DS_MATERIAL_SHININESS,
   THREE_DS_MATERIAL_SPECULAR,
   THREE_DS_MATERIAL_TEXTURE_FILENAME,
   THREE_DS_MATERIAL_TEXTURE_MAP,
+  THREE_DS_MATERIAL_TRANSPARENCY,
   THREE_DS_OBJECT,
+  THREE_DS_PERCENT_INT,
   THREE_DS_SMOOTH_GROUP,
   THREE_DS_TRIMESH,
   THREE_DS_UV_COORDS,
@@ -147,22 +152,54 @@ function writeColorByte(r: number, g: number, b: number): Uint8Array {
   return writeChunk(THREE_DS_COLOR_BYTE, new Uint8Array([r, g, b]));
 }
 
-// Builds a material block (0xAFFF) with a name, diffuse/specular color blocks, and an optional
-// diffuse texture map filename.
+// Builds a COLOR_FLOAT color sub-chunk (0x0010): 3 float32 channels in [0,1].
+function writeColorFloat(r: number, g: number, b: number): Uint8Array {
+  const payload = new Uint8Array(12);
+  const view = new DataView(payload.buffer);
+  view.setFloat32(0, r, true);
+  view.setFloat32(4, g, true);
+  view.setFloat32(8, b, true);
+  return writeChunk(THREE_DS_COLOR_FLOAT, payload);
+}
+
+// Builds an INT_PERCENTAGE sub-chunk (0x0030): a uint16 in [0,100].
+function writePercentInt(percent: number): Uint8Array {
+  const payload = new Uint8Array(2);
+  new DataView(payload.buffer).setUint16(0, percent, true);
+  return writeChunk(THREE_DS_PERCENT_INT, payload);
+}
+
+// Builds a material block (0xAFFF) with a name, diffuse/specular colors, and optional texture/shininess/
+// transparency/bump sub-chunks. `diffuseFloat` writes the diffuse color via COLOR_FLOAT instead of COLOR_BYTE.
 function writeMaterial(opts: {
+  bumpFilename?: string;
   diffuse: readonly [number, number, number];
+  diffuseFloat?: boolean;
   name: string;
+  shininessPercent?: number;
   specular?: readonly [number, number, number];
   textureFilename?: string;
+  transparencyPercent?: number;
 }): Uint8Array {
+  const diffuseColor = opts.diffuseFloat ? writeColorFloat(...opts.diffuse) : writeColorByte(...opts.diffuse);
   const parts: Uint8Array[] = [
     writeChunk(THREE_DS_MATERIAL_NAME, writeNullTerminatedString(opts.name)),
-    writeChunk(THREE_DS_MATERIAL_DIFFUSE, writeColorByte(...opts.diffuse)),
+    writeChunk(THREE_DS_MATERIAL_DIFFUSE, diffuseColor),
   ];
   if (opts.specular !== undefined) parts.push(writeChunk(THREE_DS_MATERIAL_SPECULAR, writeColorByte(...opts.specular)));
+  if (opts.shininessPercent !== undefined) {
+    parts.push(writeChunk(THREE_DS_MATERIAL_SHININESS, writePercentInt(opts.shininessPercent)));
+  }
+  if (opts.transparencyPercent !== undefined) {
+    parts.push(writeChunk(THREE_DS_MATERIAL_TRANSPARENCY, writePercentInt(opts.transparencyPercent)));
+  }
   if (opts.textureFilename !== undefined) {
     const filename = writeChunk(THREE_DS_MATERIAL_TEXTURE_FILENAME, writeNullTerminatedString(opts.textureFilename));
     parts.push(writeChunk(THREE_DS_MATERIAL_TEXTURE_MAP, filename));
+  }
+  if (opts.bumpFilename !== undefined) {
+    const filename = writeChunk(THREE_DS_MATERIAL_TEXTURE_FILENAME, writeNullTerminatedString(opts.bumpFilename));
+    parts.push(writeChunk(THREE_DS_MATERIAL_BUMP_MAP, filename));
   }
   return writeChunk(THREE_DS_MATERIAL, concatBytes(...parts));
 }
@@ -285,6 +322,50 @@ describe('createSceneFrom3ds', () => {
     // Texture filename is referenced, not decoded.
     expect((mat.diffuseMap!.resource as ExternalImageResourceReference).uri).toBe('skin.png');
     expect(mat.diffuseMap!.image).toBeNull();
+  });
+
+  // Builds a one-material scene from a material chunk and returns that material as a BlinnPhongMaterial.
+  const materialFrom3ds = (material: Uint8Array): BlinnPhongMaterial => {
+    const scene = createSceneFrom3ds(
+      buildMaterialScene3ds({
+        faceMaterialName: 'M',
+        indices: [0, 1, 2],
+        material,
+        meshName: 'Cube',
+        positions: [0, 0, 0, 1, 0, 0, 0, 1, 0],
+      }),
+    );
+    return (getNodeChildren(scene.root)[0] as Mesh).materials[0] as BlinnPhongMaterial;
+  };
+
+  it('maps the shininess percentage to a Blinn-Phong specular exponent', () => {
+    const mat = materialFrom3ds(writeMaterial({ diffuse: [128, 128, 128], name: 'M', shininessPercent: 50 }));
+    expect(mat.shininess).toBeCloseTo(64); // 50% → 0.5 × 128
+  });
+
+  it('maps the bump map filename to an unresolved normalMap reference', () => {
+    const mat = materialFrom3ds(writeMaterial({ bumpFilename: 'bump.png', diffuse: [128, 128, 128], name: 'M' }));
+    expect((mat.normalMap!.resource as ExternalImageResourceReference).uri).toBe('bump.png');
+    expect(mat.normalMap!.image).toBeNull();
+  });
+
+  it('folds transparency into the diffuse alpha and a blend alphaMode', () => {
+    const mat = materialFrom3ds(writeMaterial({ diffuse: [255, 0, 0], name: 'M', transparencyPercent: 25 }));
+    // 25% transparent → 0.75 opacity → alpha 0xBF; diffuse RGB unchanged.
+    expect(mat.diffuse).toBe(0xff0000bf);
+    expect(mat.alphaMode).toBe('blend');
+  });
+
+  it('leaves a fully-opaque material at alphaMode opaque', () => {
+    const mat = materialFrom3ds(writeMaterial({ diffuse: [255, 0, 0], name: 'M' }));
+    expect(mat.diffuse).toBe(0xff0000ff);
+    expect(mat.alphaMode).not.toBe('blend');
+  });
+
+  it('reads a diffuse color from the COL_FLOAT sub-chunk', () => {
+    const mat = materialFrom3ds(writeMaterial({ diffuse: [1, 0.4, 0.2], diffuseFloat: true, name: 'M' }));
+    // 1, 0.4, 0.2 → 255, 102, 51 → 0xff6633ff
+    expect(mat.diffuse).toBe(0xff6633ff);
   });
 
   it('leaves a mesh unmaterialed when it references no material', () => {

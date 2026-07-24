@@ -26,21 +26,34 @@ export const THREE_DS_MATERIAL_NAME = 0xa000;
 export const THREE_DS_MATERIAL_AMBIENT = 0xa010;
 export const THREE_DS_MATERIAL_DIFFUSE = 0xa020;
 export const THREE_DS_MATERIAL_SPECULAR = 0xa030;
+export const THREE_DS_MATERIAL_SHININESS = 0xa040;
+export const THREE_DS_MATERIAL_TRANSPARENCY = 0xa050;
 export const THREE_DS_MATERIAL_TEXTURE_MAP = 0xa200;
 export const THREE_DS_MATERIAL_TEXTURE_FILENAME = 0xa300;
+export const THREE_DS_MATERIAL_BUMP_MAP = 0xa230;
 
 // Color sub-chunk IDs.
 export const THREE_DS_COLOR_FLOAT = 0x0010;
 export const THREE_DS_COLOR_BYTE = 0x0011;
 
+// Percentage sub-chunk IDs (used by shininess/transparency): INT is a uint16 in [0,100], FLOAT is a
+// float32 fraction in [0,1].
+export const THREE_DS_PERCENT_INT = 0x0030;
+export const THREE_DS_PERCENT_FLOAT = 0x0031;
+
 // Chunk header size: uint16 id + uint32 length.
 export const THREE_DS_CHUNK_HEADER_BYTES = 6;
 
-// A parsed 3DS material descriptor.
+// A parsed 3DS material descriptor. `shininess` is the Blinn-Phong specular exponent derived from the
+// MAT_SHININESS percentage (0 when absent → the material default). `opacity` is 0..1 (1 = fully opaque)
+// from MAT_TRANSPARENCY. `bumpFilename` is the MAT_BUMPMAP texture filename (→ normal map) or null.
 export interface ThreeDsMaterial {
   ambient: readonly [number, number, number];
+  bumpFilename: string | null;
   diffuse: readonly [number, number, number];
   name: string;
+  opacity: number;
+  shininess: number;
   specular: readonly [number, number, number];
   textureFilename: string | null;
 }
