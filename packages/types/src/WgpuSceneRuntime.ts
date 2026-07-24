@@ -98,6 +98,7 @@ export interface WgpuSceneRuntime {
   pbrSampleShadowView: GPUTextureView | null;
   materialRegistry: Map<Kind, WgpuMeshMaterialRenderer>;
   modifierSnippetRegistry: ModifierRegistry | null;
+  modifierSnippetRevision: number;
   opaqueDrawList: WgpuSceneDrawEntry[];
   opaquePool: WgpuSceneDrawEntry[];
   pendingDrawOffset: number;
@@ -121,6 +122,10 @@ export interface WgpuSceneRuntime {
   shadowSampleLayout: GPUBindGroupLayout | null;
   shadowSampleView: GPUTextureView | null;
   shadowUniformBuffer: GPUBuffer | null;
+  // Opaque scene-wgpu caches. Values stay unknown here so backend-private binding/plan records do not
+  // leak into @flighthq/types; scene-wgpu narrows them at the ownership boundary.
+  shadedMaterialBindingCache: WeakMap<object, unknown>;
+  shadedMaterialPlanCache: WeakMap<object, unknown>;
   uploadCache: WeakMap<object, WgpuMeshUpload>;
 }
 

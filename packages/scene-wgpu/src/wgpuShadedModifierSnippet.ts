@@ -9,6 +9,7 @@ export function registerWgpuModifierSnippet(state: WgpuRenderState, snippet: Rea
   const runtime = getWgpuSceneRuntime(state);
   if (runtime.modifierSnippetRegistry === null) runtime.modifierSnippetRegistry = createModifierRegistry();
   registerModifier(runtime.modifierSnippetRegistry, snippet);
+  runtime.modifierSnippetRevision++;
 }
 
 export function resolveWgpuModifierSnippet(state: WgpuRenderState, kind: ModifierKind): WgpuModifierSnippet | null {
