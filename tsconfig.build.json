@@ -82,6 +82,7 @@
     { "path": "./packages/glyphatlas" },
     { "path": "./packages/image" },
     { "path": "./packages/image-codec" },
+    { "path": "./packages/importdiagnostics" },
     { "path": "./packages/video" },
     { "path": "./packages/loader" },
     { "path": "./packages/screen" },

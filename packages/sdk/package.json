@@ -127,6 +127,7 @@
     "@flighthq/haptics": "*",
     "@flighthq/image": "*",
     "@flighthq/image-codec": "*",
+    "@flighthq/importdiagnostics": "*",
     "@flighthq/input": "*",
     "@flighthq/interaction": "*",
     "@flighthq/intl": "*",

@@ -1,4 +1,5 @@
 export * from '@flighthq/bitmapfont-formats';
+export * from '@flighthq/importdiagnostics';
 export * from '@flighthq/particles-formats';
 export * from '@flighthq/path-formats';
 export * from '@flighthq/scene-formats';
