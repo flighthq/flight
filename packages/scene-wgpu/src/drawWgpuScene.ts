@@ -65,6 +65,7 @@ export function drawWgpuScene(
     const wz = worldMatrix.m[14];
     const vp = viewProjection.m;
     const clipW = vp[3] * wx + vp[7] * wy + vp[11] * wz + vp[15];
+    const clipZ = vp[2] * wx + vp[6] * wy + vp[10] * wz + vp[14];
     const objectAlpha = getSceneNodeWorldAlpha(mesh);
 
     for (let s = 0; s < subsets.length; s++) {
@@ -76,7 +77,7 @@ export function drawWgpuScene(
       const blended = isBlendedMaterial(resolvedMaterial) || objectAlpha < 1;
       const entry = acquireDrawEntry(blended ? runtime.blendedPool : runtime.opaquePool);
       entry.alpha = objectAlpha;
-      entry.clipW = clipW;
+      entry.depth = clipZ / clipW;
       entry.lightBlock = lightBlock;
       entry.material = resolvedMaterial;
       entry.mesh = mesh;
@@ -100,6 +101,7 @@ export function drawWgpuScene(
   // it early-returns when the scene has no emitters, so the mesh-only path is unaffected. Runs inside
   // this still-open render pass (it reads the pass off the render-state runtime).
   drawWgpuSceneParticleEmitter3Ds(state, scene, camera, lights);
+  runtime.activeBlendedRun = false;
 }
 
 function drawEntries(
@@ -147,12 +149,12 @@ function resolveSubsetMaterial(mesh: Readonly<Mesh>, subsetIndex: number): Reado
 }
 
 function compareBlendedEntriesDescending(a: WgpuSceneDrawEntry, b: WgpuSceneDrawEntry): number {
-  return b.clipW - a.clipW;
+  return b.depth - a.depth;
 }
 
 interface DrawEntry {
   alpha: number;
-  clipW: number;
+  depth: number;
   lightBlock: Readonly<SceneLightBlock>;
   material: Readonly<Material>;
   mesh: Mesh;
@@ -173,7 +175,7 @@ function recycleDrawEntries(entries: WgpuSceneDrawEntry[], pool: WgpuSceneDrawEn
 function createDrawEntry(): WgpuSceneDrawEntry {
   return {
     alpha: 1,
-    clipW: 0,
+    depth: 0,
     lightBlock: null!,
     material: DEFAULT_MATERIAL,
     mesh: null!,

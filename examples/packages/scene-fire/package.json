@@ -6,8 +6,7 @@
     "@flighthq/camera-controls": "*",
     "@flighthq/scene": "*",
     "@flighthq/scene-gl": "*",
-    "@flighthq/sdk": "*",
-    "@flighthq/tool-capture": "*"
+    "@flighthq/sdk": "*"
   },
   "scripts": {
     "dev": "npm run dev:webgl",
