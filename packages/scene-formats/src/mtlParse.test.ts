@@ -82,43 +82,36 @@ describe('parseObjMaterialLibrary', () => {
     expect(diagnostics).toHaveLength(0);
   });
 
-  it('records color-malformed (Recover, parseColor) on non-numeric color components', () => {
-    const mtl = 'newmtl M\nKd abc def ghi\n';
+  it.each([
+    { directive: 'Kd', mtl: 'newmtl M\nKd abc def ghi\n', reason: 'non-numeric' },
+    { directive: 'Ka', mtl: 'newmtl M\nKa 1 2\n', reason: 'too-few-components' },
+  ])('records color-malformed (Recover, parseColor) — $directive $reason', ({ directive, mtl, reason }) => {
     const diagnostics: ImportDiagnostic[] = [];
     parseObjMaterialLibrary(mtl, diagnostics);
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'mtl.color-malformed');
     expect(crumb.severity).toBe('Recover');
     expect(crumb.origin).toBe('parseColor');
-    expect(crumb.detail?.directive).toBe('Kd');
-    expect(crumb.detail?.line).toBe(2);
-    expect(crumb.detail?.reason).toBe('non-numeric');
+    expect(crumb.detail?.firstDirective).toBe(directive);
+    expect(crumb.detail?.firstLine).toBe(2);
+    expect(crumb.detail?.reason).toBe(reason);
+    expect(crumb.detail?.count).toBe(1);
   });
 
-  it('records color-malformed (Recover, parseColor) on a color with fewer than 3 components', () => {
-    const mtl = 'newmtl M\nKa 1 2\n';
-    const diagnostics: ImportDiagnostic[] = [];
-    parseObjMaterialLibrary(mtl, diagnostics);
-    expect(diagnostics).toHaveLength(1);
-    const crumb = expectOneCrumb(diagnostics, 'mtl.color-malformed');
-    expect(crumb.severity).toBe('Recover');
-    expect(crumb.origin).toBe('parseColor');
-    expect(crumb.detail?.directive).toBe('Ka');
-    expect(crumb.detail?.line).toBe(2);
-    expect(crumb.detail?.reason).toBe('too-few-components');
-  });
-
-  it('records invalid-value (Recover, parseObjMaterialLibrary) on a non-numeric Ns/d/Tr/illum value', () => {
-    const mtl = 'newmtl M\nNs abc\n';
-    const diagnostics: ImportDiagnostic[] = [];
-    parseObjMaterialLibrary(mtl, diagnostics);
-    expect(diagnostics).toHaveLength(1);
-    const crumb = expectOneCrumb(diagnostics, 'mtl.invalid-value');
-    expect(crumb.severity).toBe('Recover');
-    expect(crumb.origin).toBe('parseObjMaterialLibrary');
-    expect(crumb.detail?.directive).toBe('Ns');
-    expect(crumb.detail?.line).toBe(2);
-  });
+  it.each([{ directive: 'Ns' }, { directive: 'd' }, { directive: 'Tr' }, { directive: 'illum' }])(
+    'records invalid-value (Recover, parseObjMaterialLibrary) on a non-numeric $directive value',
+    ({ directive }) => {
+      const diagnostics: ImportDiagnostic[] = [];
+      parseObjMaterialLibrary(`newmtl M\n${directive} abc\n`, diagnostics);
+      expect(diagnostics).toHaveLength(1);
+      const crumb = expectOneCrumb(diagnostics, 'mtl.invalid-value');
+      expect(crumb.severity).toBe('Recover');
+      expect(crumb.origin).toBe('parseObjMaterialLibrary');
+      expect(crumb.detail?.directive).toBe(directive);
+      expect(crumb.detail?.firstLine).toBe(2);
+      expect(crumb.detail?.count).toBe(1);
+    },
+  );
 
   it('records directive-before-material (Drop, parseObjMaterialLibrary) when a directive precedes any newmtl', () => {
     const mtl = 'Kd 1 0 0\n';
@@ -128,8 +121,9 @@ describe('parseObjMaterialLibrary', () => {
     const crumb = expectOneCrumb(diagnostics, 'mtl.directive-before-material');
     expect(crumb.severity).toBe('Drop');
     expect(crumb.origin).toBe('parseObjMaterialLibrary');
-    expect(crumb.detail?.directive).toBe('Kd');
-    expect(crumb.detail?.line).toBe(1);
+    expect(crumb.detail?.firstDirective).toBe('Kd');
+    expect(crumb.detail?.firstLine).toBe(1);
+    expect(crumb.detail?.count).toBe(1);
   });
 
   it('records newmtl-no-name (Drop, parseObjMaterialLibrary) on a newmtl with no name', () => {
@@ -140,7 +134,22 @@ describe('parseObjMaterialLibrary', () => {
     const crumb = expectOneCrumb(diagnostics, 'mtl.newmtl-no-name');
     expect(crumb.severity).toBe('Drop');
     expect(crumb.origin).toBe('parseObjMaterialLibrary');
-    expect(crumb.detail?.line).toBe(1);
+    expect(crumb.detail?.firstLine).toBe(1);
+    expect(crumb.detail?.count).toBe(1);
+  });
+
+  it('aggregates repeated MTL failures into ONE crumb per (kind, discriminator) with the total count', () => {
+    // Two invalid Ns lines aggregate to a single invalid-value:Ns crumb (count 2, first line kept); a
+    // separate invalid Tr line is a distinct directive, so it is its own crumb — never emitted per line.
+    const diagnostics: ImportDiagnostic[] = [];
+    parseObjMaterialLibrary('newmtl M\nNs a\nNs b\nTr c\n', diagnostics);
+    const nsCrumbs = diagnostics.filter((d) => d.kind === 'mtl.invalid-value' && d.detail?.directive === 'Ns');
+    expect(nsCrumbs).toHaveLength(1);
+    expect(nsCrumbs[0].detail?.count).toBe(2);
+    expect(nsCrumbs[0].detail?.firstLine).toBe(2);
+    const trCrumbs = diagnostics.filter((d) => d.kind === 'mtl.invalid-value' && d.detail?.directive === 'Tr');
+    expect(trCrumbs).toHaveLength(1);
+    expect(trCrumbs[0].detail?.count).toBe(1);
   });
 
   it('provides defaults for unset properties', () => {

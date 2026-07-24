@@ -225,7 +225,8 @@ describe('createSceneFromObj', () => {
     const crumb = expectOneCrumb(diagnostics, 'obj.face-too-few-vertices');
     expect(crumb.severity).toBe('Drop');
     expect(crumb.origin).toBe('parseObj');
-    expect(crumb.detail?.line).toBe(3);
+    expect(crumb.detail?.firstLine).toBe(3);
+    expect(crumb.detail?.count).toBe(1);
   });
 
   it('records a diagnostic on out-of-range position indices', () => {
@@ -236,8 +237,9 @@ describe('createSceneFromObj', () => {
     const crumb = expectOneCrumb(diagnostics, 'obj.position-index-out-of-range');
     expect(crumb.severity).toBe('Drop');
     expect(crumb.origin).toBe('parseFaceVertex');
-    expect(crumb.detail?.line).toBe(2);
-    expect(crumb.detail?.index).toBe(2);
+    expect(crumb.detail?.firstLine).toBe(2);
+    expect(crumb.detail?.firstIndex).toBe(2);
+    expect(crumb.detail?.count).toBe(1);
   });
 
   it('records a diagnostic on non-numeric position components', () => {
@@ -248,8 +250,9 @@ describe('createSceneFromObj', () => {
     const crumb = expectOneCrumb(diagnostics, 'obj.vertex-malformed');
     expect(crumb.severity).toBe('Drop');
     expect(crumb.origin).toBe('parseObj');
-    expect(crumb.detail?.line).toBe(1);
+    expect(crumb.detail?.firstLine).toBe(1);
     expect(crumb.detail?.reason).toBe('non-numeric');
+    expect(crumb.detail?.count).toBe(1);
   });
 
   it('deduplicates vertices sharing the same position/uv/normal tuple', () => {
@@ -378,8 +381,9 @@ describe('obj diagnostic crumb coverage', () => {
       const crumb = expectOneCrumb(diagnostics, kind);
       expect(crumb.severity).toBe('Drop');
       expect(crumb.origin).toBe('parseObj');
-      expect(crumb.detail?.line).toBe(line);
+      expect(crumb.detail?.firstLine).toBe(line);
       expect(crumb.detail?.reason).toBe(reason);
+      expect(crumb.detail?.count).toBe(1);
     },
   );
 
@@ -391,8 +395,9 @@ describe('obj diagnostic crumb coverage', () => {
     const crumb = expectOneCrumb(diagnostics, 'obj.face-vertex-invalid');
     expect(crumb.severity).toBe('Drop');
     expect(crumb.origin).toBe('parseFaceVertex');
-    expect(crumb.detail?.line).toBe(2);
-    expect(crumb.detail?.token).toBe('0');
+    expect(crumb.detail?.firstLine).toBe(2);
+    expect(crumb.detail?.firstToken).toBe('0');
+    expect(crumb.detail?.count).toBe(1);
   });
 
   it('records uv-index-out-of-range (Recover, parseFaceVertex) — the vertex still emits without that uv', () => {
@@ -403,8 +408,9 @@ describe('obj diagnostic crumb coverage', () => {
     const crumb = expectOneCrumb(diagnostics, 'obj.uv-index-out-of-range');
     expect(crumb.severity).toBe('Recover');
     expect(crumb.origin).toBe('parseFaceVertex');
-    expect(crumb.detail?.line).toBe(5);
-    expect(crumb.detail?.index).toBe(9);
+    expect(crumb.detail?.firstLine).toBe(5);
+    expect(crumb.detail?.firstIndex).toBe(9);
+    expect(crumb.detail?.count).toBe(1);
   });
 
   it('records normal-index-out-of-range (Recover, parseFaceVertex) — the vertex still emits without that normal', () => {
@@ -414,8 +420,57 @@ describe('obj diagnostic crumb coverage', () => {
     const crumb = expectOneCrumb(diagnostics, 'obj.normal-index-out-of-range');
     expect(crumb.severity).toBe('Recover');
     expect(crumb.origin).toBe('parseFaceVertex');
-    expect(crumb.detail?.line).toBe(5);
-    expect(crumb.detail?.index).toBe(9);
+    expect(crumb.detail?.firstLine).toBe(5);
+    expect(crumb.detail?.firstIndex).toBe(9);
+    expect(crumb.detail?.count).toBe(1);
+  });
+
+  it('aggregates repeated malformed lines into ONE crumb with the total count and the first line', () => {
+    // Three non-numeric `v` lines — the collector contract requires ONE aggregated crumb (count 3), not three.
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromObj('v a b c\nv 0 0 0\nv d e f\nv g h i\n', undefined, diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'obj.vertex-malformed');
+    expect(crumb.detail?.reason).toBe('non-numeric');
+    expect(crumb.detail?.firstLine).toBe(1);
+    expect(crumb.detail?.count).toBe(3);
+  });
+
+  it('aggregates a multi-invalid N-gon face into ONE uv-index crumb, not one per token', () => {
+    // The regression review flagged: f 1/9 2/8 3/7 has three out-of-range uv refs; a per-token report would
+    // emit three crumbs. It must aggregate to ONE with count 3 and the first offending index.
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nvt 0 0\nf 1/9 2/8 3/7\n', undefined, diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'obj.uv-index-out-of-range');
+    expect(crumb.severity).toBe('Recover');
+    expect(crumb.detail?.firstLine).toBe(5);
+    expect(crumb.detail?.firstIndex).toBe(9);
+    expect(crumb.detail?.count).toBe(3);
+  });
+
+  it('records material-missing (Drop, resolveObjMaterial) when a usemtl name is absent from a supplied library', () => {
+    const library = parseObjMaterialLibrary('newmtl Present\nKd 1 0 0\n');
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nusemtl Absent\nf 1 2 3\n', library, diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'obj.material-missing');
+    expect(crumb.severity).toBe('Drop');
+    expect(crumb.origin).toBe('resolveObjMaterial');
+    expect(crumb.detail?.name).toBe('Absent');
+  });
+
+  it('reports material-missing once per distinct name (cache-deduped) and stays quiet with no library', () => {
+    // Two groups both referencing the same absent name → ONE crumb: the name cache dedupes the drop.
+    const library = parseObjMaterialLibrary('newmtl Present\n');
+    const deduped: ImportDiagnostic[] = [];
+    createSceneFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nusemtl Absent\ng A\nf 1 2 3\ng B\nf 1 2 3\n', library, deduped);
+    expect(deduped.filter((d) => d.kind === 'obj.material-missing')).toHaveLength(1);
+
+    // No library supplied is the documented intentional path — an unknown usemtl records nothing.
+    const noLibrary: ImportDiagnostic[] = [];
+    createSceneFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nusemtl Absent\nf 1 2 3\n', undefined, noLibrary);
+    expect(noLibrary).toHaveLength(0);
   });
 
   it('records no diagnostics for a well-formed OBJ even with a collector engaged', () => {
