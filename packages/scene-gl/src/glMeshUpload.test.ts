@@ -1,5 +1,10 @@
-import { createBoxMeshGeometry, createMeshGeometry, setMeshGeometrySkinBindPose } from '@flighthq/mesh';
-import type { MeshSkinBindPose, VertexAttributeLayout, GlMeshUpload } from '@flighthq/types';
+import {
+  createBoxMeshGeometry,
+  createMeshGeometry,
+  setMeshGeometrySkinBindPose,
+  updateMeshMorph,
+} from '@flighthq/mesh';
+import type { Mesh, MeshSkinBindPose, VertexAttributeLayout, GlMeshUpload } from '@flighthq/types';
 
 import { destroyGlMeshUpload, ensureGlMeshUpload } from './glMeshUpload';
 import { getGlSceneRuntime } from './glSceneRuntime';
@@ -204,4 +209,53 @@ describe('ensureGlMeshUpload', () => {
     // The static bind buffer is not re-uploaded on the version bump.
     expect(gl.calls.filter((c) => c.name === 'bufferData').length).toBe(afterFirst);
   });
+
+  // Morph + skin compose on GPU: when a geometry is both morphed and GPU-skinned, the per-frame morphed
+  // vertices (not the frozen skin bind pose) are what the shader skins, and they re-upload each frame.
+  it('uploads the morphed vertices (not the frozen skin bind pose) for a morphed + GPU-skinned draw', () => {
+    const { state, gl } = makeGlSceneState();
+    const geometry = createMeshGeometry({
+      layout: { attributes: [{ byteOffset: 0, format: 'float32x3', semantic: 'position' }], stride: 12 },
+      vertices: new Float32Array([1, 0, 0]),
+    });
+    // A captured skin bind pose at the rest position x = 1 — what the freeze would pin the buffer to.
+    setMeshGeometrySkinBindPose(geometry, {
+      joints: new Float32Array(0),
+      normals: new Float32Array(3),
+      positions: new Float32Array([1, 0, 0]),
+      skinnedNormals: new Float32Array(0),
+      skinnedPositions: new Float32Array(0),
+      weights: new Float32Array(0),
+    });
+
+    // prepareSceneMorph blends the morph into geometry.vertices (x → 5) and captures the morph bind pose.
+    const mesh = { geometry, materials: [], morph: undefined } as unknown as Mesh;
+    mesh.morph = {
+      targets: [{ normalDeltas: null, positionDeltas: new Float32Array([4, 0, 0]), tangentDeltas: null }],
+      weights: new Float32Array([1]),
+    };
+    updateMeshMorph(mesh);
+
+    ensureGlMeshUpload(state, geometry, true);
+    const firstUpload = lastFloat32BufferData(gl.calls);
+    // The morphed value (5), NOT the frozen skin bind (1): the morph is not discarded.
+    expect(firstUpload[0]).toBeCloseTo(5);
+
+    const uploadsAfterFirst = gl.calls.filter((c) => c.name === 'bufferData').length;
+
+    // A moving morph weight re-uploads the freshly-morphed bind (x → 9), unlike the skin-only freeze.
+    mesh.morph!.weights[0] = 2;
+    updateMeshMorph(mesh);
+    ensureGlMeshUpload(state, geometry, true);
+    expect(gl.calls.filter((c) => c.name === 'bufferData').length).toBeGreaterThan(uploadsAfterFirst);
+    expect(lastFloat32BufferData(gl.calls)[0]).toBeCloseTo(9);
+  });
 });
+
+function lastFloat32BufferData(calls: readonly { name: string; args: readonly unknown[] }[]): Float32Array {
+  const data = calls
+    .filter((c) => c.name === 'bufferData')
+    .map((c) => c.args[1])
+    .filter((d): d is Float32Array => d instanceof Float32Array);
+  return data[data.length - 1]!;
+}

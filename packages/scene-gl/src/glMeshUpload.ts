@@ -1,4 +1,4 @@
-import { getMeshGeometrySkinBindPose } from '@flighthq/mesh';
+import { getMeshGeometryMorphBindPose, getMeshGeometrySkinBindPose } from '@flighthq/mesh';
 import type {
   GlRenderState,
   MeshGeometry,
@@ -36,6 +36,14 @@ export function destroyGlMeshUpload(state: GlRenderState, upload: Readonly<GlMes
 // skinBindUploaded). Without a captured bind pose, geometry.vertices IS the bind pose, so it uploads
 // as-is. A rigid draw (not gpuSkinned) always uploads geometry.vertices — for an oversized skeleton that
 // falls back to CPU skinning, those are exactly the CPU-posed vertices it must draw.
+//
+// MORPH + SKIN COMPOSE ON GPU: when the geometry is also morphed (its morph bind pose is captured), the
+// static-bind-pose restore + freeze is skipped. prepareSceneMorph has blended this frame's morph into
+// geometry.vertices (position/normal, leaving joints0/weights0 intact), so those ARE the bind input the
+// shader must skin — restoring the frozen skin bind pose would discard the morph, and freezing would
+// pin the buffer at frame 0. Instead geometry.vertices uploads as-is, version-tracked, so each morph
+// frame re-uploads and the GPU skins the freshly-morphed bind. (There is no CPU double-skin to guard
+// against here: the composed GPU path runs prepareSceneMorph, never the CPU updateMeshSkin.)
 export function ensureGlMeshUpload(
   state: GlRenderState,
   geometry: Readonly<MeshGeometry>,
@@ -46,7 +54,10 @@ export function ensureGlMeshUpload(
   let upload = cache.get(geometry as MeshGeometry);
   const primitiveMode = getGlPrimitiveMode(gl, geometry.topology);
 
-  const bindPose = gpuSkinned ? getMeshGeometrySkinBindPose(geometry) : null;
+  // A morphed geometry's vertices are the per-frame morphed bind input the GPU skins directly, so the
+  // static skin-bind restore/freeze must not apply — the morph would be frozen out otherwise.
+  const morphed = getMeshGeometryMorphBindPose(geometry) !== null;
+  const bindPose = gpuSkinned && !morphed ? getMeshGeometrySkinBindPose(geometry) : null;
 
   if (
     upload !== undefined &&
