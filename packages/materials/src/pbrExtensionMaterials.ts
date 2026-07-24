@@ -24,7 +24,7 @@ import { createSurfaceMaterial } from './surfaceMaterial';
 // defaults to 0 (isotropic), `anisotropyRotation` to 0, the map to null. Composes a default
 // `standard` block.
 export function createAnisotropyPbrMaterial(opts?: Readonly<Partial<AnisotropyPbrMaterial>>): AnisotropyPbrMaterial {
-  const material = createSurfaceMaterial(AnisotropyPbrMaterialKind) as AnisotropyPbrMaterial;
+  const material = createSurfaceMaterial(AnisotropyPbrMaterialKind, opts) as AnisotropyPbrMaterial;
   material.anisotropyMap = opts?.anisotropyMap ?? null;
   material.anisotropyRotation = opts?.anisotropyRotation ?? 0;
   material.anisotropyStrength = opts?.anisotropyStrength ?? 0;
@@ -36,7 +36,7 @@ export function createAnisotropyPbrMaterial(opts?: Readonly<Partial<AnisotropyPb
 // to 0 (disabled), `clearcoatRoughness` to 0, all maps to null. Composes a default `standard`
 // block.
 export function createClearcoatPbrMaterial(opts?: Readonly<Partial<ClearcoatPbrMaterial>>): ClearcoatPbrMaterial {
-  const material = createSurfaceMaterial(ClearcoatPbrMaterialKind) as ClearcoatPbrMaterial;
+  const material = createSurfaceMaterial(ClearcoatPbrMaterialKind, opts) as ClearcoatPbrMaterial;
   material.clearcoat = opts?.clearcoat ?? 0;
   material.clearcoatMap = opts?.clearcoatMap ?? null;
   material.clearcoatNormalMap = opts?.clearcoatNormalMap ?? null;
@@ -50,7 +50,7 @@ export function createClearcoatPbrMaterial(opts?: Readonly<Partial<ClearcoatPbrM
 // `iridescenceIor` to 1.3, the thickness range to glTF's 100–400 nm, all maps to null.
 // Composes a default `standard` block.
 export function createIridescencePbrMaterial(opts?: Readonly<Partial<IridescencePbrMaterial>>): IridescencePbrMaterial {
-  const material = createSurfaceMaterial(IridescencePbrMaterialKind) as IridescencePbrMaterial;
+  const material = createSurfaceMaterial(IridescencePbrMaterialKind, opts) as IridescencePbrMaterial;
   material.iridescence = opts?.iridescence ?? 0;
   material.iridescenceIor = opts?.iridescenceIor ?? 1.3;
   material.iridescenceMap = opts?.iridescenceMap ?? null;
@@ -64,7 +64,7 @@ export function createIridescencePbrMaterial(opts?: Readonly<Partial<Iridescence
 // KHR_materials_sheen: a retroreflective cloth/fabric lobe. `sheenColor` defaults to opaque
 // black (disabled), `sheenRoughness` to 0, maps to null. Composes a default `standard` block.
 export function createSheenPbrMaterial(opts?: Readonly<Partial<SheenPbrMaterial>>): SheenPbrMaterial {
-  const material = createSurfaceMaterial(SheenPbrMaterialKind) as SheenPbrMaterial;
+  const material = createSurfaceMaterial(SheenPbrMaterialKind, opts) as SheenPbrMaterial;
   material.sheenColor = opts?.sheenColor ?? 0x000000ff;
   material.sheenColorMap = opts?.sheenColorMap ?? null;
   material.sheenRoughness = opts?.sheenRoughness ?? 0;
@@ -76,7 +76,7 @@ export function createSheenPbrMaterial(opts?: Readonly<Partial<SheenPbrMaterial>
 // KHR_materials_specular: independent dielectric specular strength and tint. `specular` defaults
 // to 1 (full), `specularColor` to white, maps to null. Composes a default `standard` block.
 export function createSpecularPbrMaterial(opts?: Readonly<Partial<SpecularPbrMaterial>>): SpecularPbrMaterial {
-  const material = createSurfaceMaterial(SpecularPbrMaterialKind) as SpecularPbrMaterial;
+  const material = createSurfaceMaterial(SpecularPbrMaterialKind, opts) as SpecularPbrMaterial;
   material.specular = opts?.specular ?? 1;
   material.specularColor = opts?.specularColor ?? 0xffffffff;
   material.specularColorMap = opts?.specularColorMap ?? null;
@@ -89,7 +89,7 @@ export function createSpecularPbrMaterial(opts?: Readonly<Partial<SpecularPbrMat
 // to 0 (disabled), `subsurfaceColor` to white, `thickness` to 0, maps to null. Composes a
 // default `standard` block.
 export function createSubsurfacePbrMaterial(opts?: Readonly<Partial<SubsurfacePbrMaterial>>): SubsurfacePbrMaterial {
-  const material = createSurfaceMaterial(SubsurfacePbrMaterialKind) as SubsurfacePbrMaterial;
+  const material = createSurfaceMaterial(SubsurfacePbrMaterialKind, opts) as SubsurfacePbrMaterial;
   material.standard = opts?.standard ?? createStandardPbrMaterialProperties();
   material.subsurface = opts?.subsurface ?? 0;
   material.subsurfaceColor = opts?.subsurfaceColor ?? 0xffffffff;
@@ -106,7 +106,7 @@ export function createSubsurfacePbrMaterial(opts?: Readonly<Partial<SubsurfacePb
 export function createTransmissionVolumePbrMaterial(
   opts?: Readonly<Partial<TransmissionVolumePbrMaterial>>,
 ): TransmissionVolumePbrMaterial {
-  const material = createSurfaceMaterial(TransmissionVolumePbrMaterialKind) as TransmissionVolumePbrMaterial;
+  const material = createSurfaceMaterial(TransmissionVolumePbrMaterialKind, opts) as TransmissionVolumePbrMaterial;
   material.attenuationColor = opts?.attenuationColor ?? 0xffffffff;
   material.attenuationDistance = opts?.attenuationDistance ?? Infinity;
   material.ior = opts?.ior ?? 1.5;

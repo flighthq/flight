@@ -9,7 +9,7 @@ import { createSurfaceMaterial } from './surfaceMaterial';
 // null bags) so a bare createCustomShaderMaterial() is structurally valid for tests and
 // serialization even before a shader key is assigned.
 export function createCustomShaderMaterial(opts?: Readonly<Partial<CustomShaderMaterial>>): CustomShaderMaterial {
-  const material = createSurfaceMaterial(CustomShaderMaterialKind) as CustomShaderMaterial;
+  const material = createSurfaceMaterial(CustomShaderMaterialKind, opts) as CustomShaderMaterial;
   material.shaderKey = opts?.shaderKey ?? '';
   material.textures = opts?.textures ?? null;
   material.uniforms = opts?.uniforms ?? null;

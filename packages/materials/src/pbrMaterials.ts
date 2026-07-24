@@ -86,7 +86,7 @@ export function convertSpecularGlossinessToStandardPbr(
 export function createSpecularGlossinessPbrMaterial(
   opts?: Readonly<Partial<SpecularGlossinessPbrMaterial>>,
 ): SpecularGlossinessPbrMaterial {
-  const material = createSurfaceMaterial(SpecularGlossinessPbrMaterialKind) as SpecularGlossinessPbrMaterial;
+  const material = createSurfaceMaterial(SpecularGlossinessPbrMaterialKind, opts) as SpecularGlossinessPbrMaterial;
   material.diffuse = opts?.diffuse ?? 0xffffffff;
   material.diffuseMap = opts?.diffuseMap ?? null;
   material.emissive = opts?.emissive ?? 0x000000ff;
@@ -106,7 +106,7 @@ export function createSpecularGlossinessPbrMaterial(
 // (`metallic` 0) and fully rough (`roughness` 1), opaque-black `emissive` at unit strength,
 // unit `normalScale`/`occlusionStrength`, all maps null.
 export function createStandardPbrMaterial(opts?: Readonly<Partial<StandardPbrMaterial>>): StandardPbrMaterial {
-  const material = createSurfaceMaterial(StandardPbrMaterialKind) as StandardPbrMaterial;
+  const material = createSurfaceMaterial(StandardPbrMaterialKind, opts) as StandardPbrMaterial;
   assignStandardPbrMaterialProperties(material, opts);
   return material;
 }
