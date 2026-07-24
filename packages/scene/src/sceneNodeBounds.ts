@@ -1,5 +1,5 @@
 import { createAabb, setAabb, transformAabbByMatrix4, unionAabb } from '@flighthq/geometry';
-import { computeMeshGeometryBounds } from '@flighthq/mesh';
+import { ensureMeshGeometryBounds } from '@flighthq/mesh';
 import { ensureNodeWorldMatrix4, getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node';
 import type { AabbLike, SceneNode } from '@flighthq/types';
 
@@ -12,6 +12,13 @@ import { isMesh } from './mesh';
 //
 // If neither `node` nor any descendant is a Mesh, `out` is set to an empty box
 // (min = +Infinity, max = -Infinity). The result is in world space.
+//
+// SKINNED MESHES CONTRIBUTE THEIR BIND-POSE BOX, NOT THEIR POSED ONE. A GPU-skinned mesh deforms in
+// the shader, so its geometry keeps bind-pose vertices and that is what this unions. The posed bound
+// needs the joint palette, which lives in @flighthq/skeleton3d — a layer this package sits below and
+// must not reach up into. A caller that needs posed-accurate aggregation composes the two itself at a
+// layer that sees both (this walk for rigid/morphed nodes, getMeshDeformedLocalBounds per skinned
+// node); a caller fitting a volume around the result absorbs pose excursions with padding instead.
 //
 // Alias-safe: reads all geometry bounds and world transforms before accumulating into `out`.
 export function getSceneNodeWorldBounds(out: AabbLike, node: Readonly<SceneNode>): void {
@@ -30,15 +37,11 @@ export function getSceneNodeWorldBounds(out: AabbLike, node: Readonly<SceneNode>
 
 function _accumulateWorldBounds(out: AabbLike, node: Readonly<SceneNode>): void {
   if (isMesh(node)) {
-    const geom = node.geometry;
-    // Prefer the cached geometry bounds; compute into a scratch if not yet computed.
-    let localBounds = geom.bounds;
-    if (localBounds === null) {
-      computeMeshGeometryBounds(_scratchLocalAabb, geom);
-      localBounds = _scratchLocalAabb;
-    }
+    // Read through the ensure, never `geometry.bounds` directly: bounds are a dirty-gated cache that a
+    // deform invalidates by bumping the version, so a raw field read can return a pre-deform box.
+    const localBounds = ensureMeshGeometryBounds(node.geometry);
     // Only add a non-empty local bounds to the world accumulator.
-    if (localBounds.min.x <= localBounds.max.x) {
+    if (localBounds !== null && localBounds.min.x <= localBounds.max.x) {
       ensureNodeWorldMatrix4(node);
       const worldMatrix = getNodeWorldMatrix4(node);
       transformAabbByMatrix4(_scratchWorldAabb, localBounds, worldMatrix);
@@ -53,5 +56,4 @@ function _accumulateWorldBounds(out: AabbLike, node: Readonly<SceneNode>): void 
   }
 }
 
-const _scratchLocalAabb = createAabb();
 const _scratchWorldAabb = createAabb();

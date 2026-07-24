@@ -83,8 +83,18 @@ export interface MeshGeometryWgpuData {
 // every frame by skinMeshGeometry. `morphBindPose` is the sibling morph slot: null until a morphed
 // mesh is first blended, then the de-interleaved base pose + scratch captureMeshMorphBindPose builds,
 // reused every frame by blendMeshGeometryMorph. Subsystems read/write only the slot they own.
+//
+// `boundsVersion` is the `geometry.version` the cached `geometry.bounds` was computed at, so bounds
+// are a dirty-gated cache rather than a per-frame recompute: a deform bumps `version` and thereby
+// marks bounds stale, and ensureMeshGeometryBounds does the O(vertices) sweep only when
+// `boundsVersion !== version`. A GPU-skinned or upload-only mesh that never culls or picks therefore
+// pays nothing. -1 means never computed. `morphBlendedWeights` is the weight vector the current blend
+// result corresponds to; blendMeshGeometryMorph's caller compares against it to skip re-blending a
+// morph whose weights did not move this frame. Null until the first blend.
 export interface MeshGeometryRuntime extends EntityRuntime {
+  boundsVersion: number;
   morphBindPose: MeshMorphBindPose | null;
+  morphBlendedWeights: Float32Array | null;
   skinBindPose: MeshSkinBindPose | null;
   webglData: MeshGeometryGlData | null;
   webgpuData: MeshGeometryWgpuData | null;

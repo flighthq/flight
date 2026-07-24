@@ -1,8 +1,7 @@
-import { createAabb } from '@flighthq/geometry';
 import type { MeshGeometry, VertexAttributeLayout } from '@flighthq/types';
 
 import { createMeshGeometry } from './meshGeometry';
-import { computeMeshGeometryBounds, computeMeshGeometryTangents } from './meshGeometryCompute';
+import { computeMeshGeometryTangents, refreshMeshGeometryBounds } from './meshGeometryCompute';
 
 // Primitive builders for the canonical interleaved PBR vertex record:
 //   position(3) + normal(3) + tangent(4, w = handedness) + uv0(2) = 12 f32 / 48 bytes.
@@ -796,9 +795,7 @@ function buildCanonicalMeshGeometry(
 
   computeMeshGeometryTangents(geometry, geometry);
 
-  const bounds = createAabb();
-  computeMeshGeometryBounds(bounds, geometry);
-  geometry.bounds = bounds;
+  refreshMeshGeometryBounds(geometry);
 
   return geometry;
 }

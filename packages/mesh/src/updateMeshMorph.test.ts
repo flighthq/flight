@@ -2,6 +2,7 @@ import type { Mesh, MeshGeometry, MeshMorph, VertexAttributeLayout } from '@flig
 import { describe, expect, it } from 'vitest';
 
 import { createMeshGeometry, getMeshGeometryMorphBindPose } from './meshGeometry';
+import { ensureMeshGeometryBounds } from './meshGeometryCompute';
 import { updateMeshMorph } from './updateMeshMorph';
 
 const POSITION_LAYOUT: VertexAttributeLayout = {
@@ -34,8 +35,10 @@ describe('updateMeshMorph', () => {
 
     expect(getMeshGeometryMorphBindPose(mesh.geometry)).not.toBeNull();
     expect(Array.from(mesh.geometry.vertices)).toEqual([1, 7, 3]);
-    expect(mesh.geometry.bounds?.min.y).toBe(7);
-    expect(mesh.geometry.bounds?.max.y).toBe(7);
+    // Bounds are a dirty-gated cache: the blend marks them stale, the ensure recomputes them.
+    const bounds = ensureMeshGeometryBounds(mesh.geometry);
+    expect(bounds?.min.y).toBe(7);
+    expect(bounds?.max.y).toBe(7);
   });
 
   it('reblends from the captured base each frame as weights change', () => {
@@ -51,7 +54,30 @@ describe('updateMeshMorph', () => {
     morph.weights[0] = 3;
     updateMeshMorph(mesh);
     expect(Array.from(mesh.geometry.vertices)).toEqual([6, 0, 0]);
-    expect(mesh.geometry.bounds?.min.x).toBe(6);
+    expect(ensureMeshGeometryBounds(mesh.geometry)?.min.x).toBe(6);
+  });
+
+  it('skips the reblend while the weights are unchanged, and resumes when they move', () => {
+    const morph: MeshMorph = {
+      targets: [{ normalDeltas: null, positionDeltas: new Float32Array([2, 0, 0]), tangentDeltas: null }],
+      weights: new Float32Array([1]),
+    };
+    const mesh = morphedMesh([0, 0, 0], morph);
+
+    updateMeshMorph(mesh);
+    const settledVersion = mesh.geometry.version;
+
+    // A settled morph must not bump the version — a blind rebuild would re-dirty bounds and force
+    // every backend to re-upload a byte-identical buffer every frame.
+    updateMeshMorph(mesh);
+    updateMeshMorph(mesh);
+    expect(mesh.geometry.version).toBe(settledVersion);
+    expect(Array.from(mesh.geometry.vertices)).toEqual([2, 0, 0]);
+
+    morph.weights[0] = 2;
+    updateMeshMorph(mesh);
+    expect(mesh.geometry.version).toBeGreaterThan(settledVersion);
+    expect(Array.from(mesh.geometry.vertices)).toEqual([4, 0, 0]);
   });
 
   it('is a no-op for a mesh with no morph', () => {
