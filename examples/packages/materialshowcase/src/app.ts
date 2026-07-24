@@ -46,7 +46,7 @@ import {
   setMeshGeometryVertexColor0,
 } from '@flighthq/sdk';
 
-import { canvas, render, scale } from './render';
+import { canvas, render, scale, supportsVertexColor0 } from './render';
 
 interface MaterialControl {
   getValue: () => number;
@@ -573,7 +573,9 @@ const scene = createSceneNode(SceneNodeKind);
 const meshes: Mesh[] = [];
 for (let index = 0; index < entries.length; index++) {
   const entry = entries[index];
-  const mesh = createMesh(entry.material === vertexColor ? vertexColorGeometry : geometry, [entry.material]);
+  const mesh = createMesh(entry.material === vertexColor && supportsVertexColor0 ? vertexColorGeometry : geometry, [
+    entry.material,
+  ]);
   mesh.position.x = ((index % 5) - 2) * 1.75 - 0.7;
   mesh.position.y = (1.5 - Math.floor(index / 5)) * 1.65;
   invalidateNodeLocalTransform(mesh);

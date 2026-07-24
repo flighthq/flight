@@ -15,7 +15,7 @@ const pixelRatio = window.devicePixelRatio || 1;
 export const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-const state = await createWgpuRenderState(canvas, {
+export const state = await createWgpuRenderState(canvas, {
   pixelRatio,
   backgroundColor: 0x07101bff,
 });
