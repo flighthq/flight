@@ -8,6 +8,7 @@ import { createSceneNode } from '@flighthq/scene';
 import type { Mesh, SceneLightsLike, SurfaceMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
+  convertMeshGeometryLayout,
   createAmbientLight,
   createAnisotropyPbrMaterial,
   createBlinnPhongMaterial,
@@ -31,6 +32,8 @@ import {
   createStandardPbrMaterial,
   createStandardPbrMaterialProperties,
   createSubsurfacePbrMaterial,
+  createSurface,
+  createTexture,
   createToonMaterial,
   createTransmissionVolumePbrMaterial,
   createUnlitMaterial,
@@ -40,6 +43,7 @@ import {
   invalidateNodeLocalTransform,
   normalizeVector3,
   SceneNodeKind,
+  setMeshGeometryVertexColor0,
 } from '@flighthq/sdk';
 
 import { canvas, render, scale } from './render';
@@ -64,6 +68,18 @@ interface MaterialEntry {
 const logicalWidth = 800 / scale;
 const logicalHeight = 600 / scale;
 const geometry = createSphereMeshGeometry(0.68, 36, 24);
+const vertexColorGeometry = convertMeshGeometryLayout(geometry, {
+  attributes: [...geometry.layout.attributes, { byteOffset: 48, format: 'float32x4', semantic: 'color0' }],
+  stride: 64,
+});
+
+for (let vertex = 0; vertex < vertexColorGeometry.vertices.length / 16; vertex++) {
+  const offset = vertex * 16;
+  const x = vertexColorGeometry.vertices[offset] / 0.68;
+  const y = vertexColorGeometry.vertices[offset + 1] / 0.68;
+  const z = vertexColorGeometry.vertices[offset + 2] / 0.68;
+  setMeshGeometryVertexColor0(vertexColorGeometry, vertex, 0.5 + x * 0.5, 0.5 + y * 0.5, 0.5 + z * 0.5, 1);
+}
 
 function createControl(
   label: string,
@@ -74,6 +90,46 @@ function createControl(
   setValue: (value: number) => void,
 ): MaterialControl {
   return { getValue, label, max, min, setValue, step };
+}
+
+function createMatcapTexture() {
+  const size = 128;
+  const surface = createSurface(size, size);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const u = (x + 0.5) / size - 0.5;
+      const v = (y + 0.5) / size - 0.5;
+      const radius = Math.min(1, Math.hypot(u, v) * 2);
+      const highlight = Math.exp(-((u + 0.2) ** 2 + (v + 0.24) ** 2) * 46);
+      const rim = Math.max(0, (radius - 0.58) / 0.42);
+      const offset = (y * size + x) * 4;
+      surface.data[offset] = Math.round(38 + highlight * 208 + rim * 68);
+      surface.data[offset + 1] = Math.round(52 + highlight * 188 + rim * 24);
+      surface.data[offset + 2] = Math.round(96 + highlight * 150 + rim * 132);
+      surface.data[offset + 3] = 255;
+    }
+  }
+  return createTexture({ image: surface });
+}
+
+function createNormalTexture() {
+  const size = 64;
+  const surface = createSurface(size, size);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const u = ((x + 0.5) / size) * 2 - 1;
+      const v = ((y + 0.5) / size) * 2 - 1;
+      const nx = Math.sin(u * Math.PI * 4) * 0.36;
+      const ny = Math.cos(v * Math.PI * 4) * 0.36;
+      const nz = Math.sqrt(Math.max(0, 1 - nx * nx - ny * ny));
+      const offset = (y * size + x) * 4;
+      surface.data[offset] = Math.round((nx * 0.5 + 0.5) * 255);
+      surface.data[offset + 1] = Math.round((ny * 0.5 + 0.5) * 255);
+      surface.data[offset + 2] = Math.round((nz * 0.5 + 0.5) * 255);
+      surface.data[offset + 3] = 255;
+    }
+  }
+  return createTexture({ colorSpace: 'linear', image: surface });
 }
 
 const standard = createStandardPbrMaterial({
@@ -172,8 +228,8 @@ const phong = createPhongMaterial({
 const toon = createToonMaterial({ baseColor: 0x7d66ffff, steps: 4 });
 const unlit = createUnlitMaterial({ baseColor: 0xff794dff });
 const emissive = createEmissiveMaterial({ emissive: 0x35d7ffff, emissiveStrength: 1.8 });
-const matcap = createMatcapMaterial({ tint: 0xd8b8ffff });
-const normal = createNormalMaterial({ normalScale: 1 });
+const matcap = createMatcapMaterial({ matcap: createMatcapTexture(), tint: 0xd8b8ffff });
+const normal = createNormalMaterial({ normalMap: createNormalTexture(), normalScale: 1 });
 const depth = createDepthMaterial({ far: 24, near: 0.1 });
 const vertexColor = createVertexColorMaterial({ tint: 0x65e6aaff });
 const wireframe = createWireframeMaterial({ color: 0xf0f5ffff, thickness: 1.5 });
@@ -516,7 +572,8 @@ const entries: readonly MaterialEntry[] = [
 const scene = createSceneNode(SceneNodeKind);
 const meshes: Mesh[] = [];
 for (let index = 0; index < entries.length; index++) {
-  const mesh = createMesh(geometry, [entries[index].material]);
+  const entry = entries[index];
+  const mesh = createMesh(entry.material === vertexColor ? vertexColorGeometry : geometry, [entry.material]);
   mesh.position.x = ((index % 5) - 2) * 1.75 - 0.7;
   mesh.position.y = (1.5 - Math.floor(index / 5)) * 1.65;
   invalidateNodeLocalTransform(mesh);
@@ -605,7 +662,7 @@ canvas.addEventListener(
 const controls = document.createElement('section');
 controls.className = 'controls';
 controls.innerHTML =
-  '<h1>Flight materials</h1><p>All 20 built-in 3D material families, rendered on the same geometry and lights.</p>';
+  '<h1>Flight materials</h1><p>All 20 built-in 3D material families, rendered on the same geometry and lights. WebGPU currently falls back to tint for Matcap textures and vertex color0, and to geometric normals for Normal maps.</p>';
 document.body.appendChild(controls);
 
 const selector = document.createElement('select');
@@ -651,7 +708,10 @@ function rebuildLiveControls(): void {
     const color = document.createElement('input');
     color.type = 'color';
     color.value = entry.color;
-    color.addEventListener('input', () => entry.setColor?.(parseColorInput(color.value)));
+    color.addEventListener('input', () => {
+      entry.color = color.value;
+      entry.setColor?.(parseColorInput(color.value));
+    });
     appendField(liveControls, 'Base color', color);
   }
 
