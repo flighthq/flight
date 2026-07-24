@@ -245,6 +245,28 @@ function float32Bits(value: number): number {
   return dv.getUint32(0, true);
 }
 
+// A minimal AWD file (triangle geometry + one material block, id 2, bound by a single mesh instance) for
+// exercising resolveAwdMaterial on `matBody` in isolation. Read the result via mesh.materials[0].
+function buildSingleMaterialAwd(matBody: Uint8Array): Uint8Array {
+  const posStream = buildStream(
+    AWD2_STREAM_POSITIONS,
+    AWD2_DATA_FLOAT32,
+    new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
+  );
+  const idxStream = buildStream(AWD2_STREAM_INDICES, AWD2_DATA_UINT16, new Uint16Array([0, 1, 2]));
+  const geomBody = buildTriangleGeometryBody('Geo', [{ streams: [posStream, idxStream] }]);
+  const miBody = buildMeshInstanceBodyWithMaterials('Mesh', 0, IDENTITY_TRANSFORM, 1, [2]);
+  const body = concatBytes(
+    buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+    geomBody,
+    buildBlockHeader(2, AWD2_BLOCK_MATERIAL, matBody.length),
+    matBody,
+    buildBlockHeader(3, AWD2_BLOCK_MESH_INSTANCE, miBody.length),
+    miBody,
+  );
+  return concatBytes(buildAwdHeader(body.length), body);
+}
+
 // Texture layout: name(VarString) → texType(uint8) → dataLen(uint32) → data → PropertyList → UserAttrList.
 function buildTextureBody(name: string, texType: number, imageBytes: Uint8Array): Uint8Array {
   const nameBytes = buildAwdString(name);
@@ -765,6 +787,51 @@ describe('createSceneFromAwd2', () => {
     expect(material.diffuse).toBe(0x112233ff); // base still imported despite the unmapped methods
     expect(material.modifiers).toHaveLength(0);
     expect(warnings.some((w) => w.includes('WithMethods') && w.includes('2 shading method'))).toBe(true);
+  });
+
+  it('imports an empty (no color, no textures) AWD material block as a default-white ShadedMaterial', () => {
+    // An existing material block with no base properties is a valid material, not a drop — it defaults to
+    // opaque white under the uniform-ShadedMaterial rule (regression: the early no-base-props return -1).
+    const warnings: string[] = [];
+    const scene = createSceneFromAwd2(
+      buildSingleMaterialAwd(buildMaterialBody('Empty', AWD2_MATERIAL_TYPE_COLOR, [])),
+      warnings,
+    );
+    const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as ShadedMaterial | null;
+    expect(material).not.toBeNull();
+    expect(material!.kind).toBe(ShadedMaterialKind);
+    expect(material!.diffuse).toBe(0xffffffff);
+    expect(material!.diffuseMap).toBeNull();
+    expect(material!.normalMap).toBeNull();
+    expect(material!.modifiers).toHaveLength(0);
+    expect(material!.alphaMode).toBe('opaque');
+    expect(warnings).toHaveLength(0);
+  });
+
+  it('imports an alpha-only AWD material (no color) as white RGBA with alpha folded in and blend coverage', () => {
+    // alpha 0.25 → white diffuse with alpha byte round(0.25*255)=64 (0x40) and blend coverage.
+    const matBody = buildMaterialBody('AlphaOnly', AWD2_MATERIAL_TYPE_COLOR, [
+      [AWD2_MATERIAL_PROP_ALPHA, float32Bits(0.25)],
+    ]);
+    const material = (getNodeChildren(createSceneFromAwd2(buildSingleMaterialAwd(matBody)).root)[0] as Mesh)
+      .materials[0] as ShadedMaterial;
+    expect(material.kind).toBe(ShadedMaterialKind);
+    expect(material.diffuse).toBe(0xffffff40);
+    expect(material.alphaMode).toBe('blend');
+  });
+
+  it('imports a method-only AWD material (numMethods > 0, no base props) as a ShadedMaterial and still warns', () => {
+    // Regression: this case previously dropped BEFORE the warning, so both the material AND its diagnostic
+    // silently disappeared. It must import a default-white ShadedMaterial and still emit the method warning.
+    const warnings: string[] = [];
+    const matBody = buildMaterialBody('MethodOnly', AWD2_MATERIAL_TYPE_COLOR, [], 3);
+    const scene = createSceneFromAwd2(buildSingleMaterialAwd(matBody), warnings);
+    const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as ShadedMaterial | null;
+    expect(material).not.toBeNull();
+    expect(material!.kind).toBe(ShadedMaterialKind);
+    expect(material!.diffuse).toBe(0xffffffff);
+    expect(material!.modifiers).toHaveLength(0);
+    expect(warnings.some((w) => w.includes('MethodOnly') && w.includes('3 shading method'))).toBe(true);
   });
 
   it('emits an External ImageResourceReference for an external-URL texture', () => {
