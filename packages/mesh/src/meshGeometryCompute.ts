@@ -358,15 +358,18 @@ export function computeMeshGeometryTangents(out: MeshGeometry, geometry: Readonl
 // O(vertices) sweep exactly once no matter how many callers ask. That laziness is the point: a
 // GPU-skinned or upload-only mesh that never culls or picks never computes bounds at all.
 //
-// Returns null only for a geometry with no vertices, which has no meaningful box.
+// Returns null only for a geometry with no boundable volume (no vertices) — computeMeshGeometryBounds
+// leaves such a geometry an empty (inverted, min > max) box, which this reports as null so a caller can
+// treat "no bounds" uniformly (cull keeps it, world-bounds skips it) rather than intersect an inverted
+// box.
 export function ensureMeshGeometryBounds(geometry: MeshGeometry): Readonly<Aabb> | null {
   const runtime = geometry[EntityRuntimeKey] as MeshGeometryRuntime | undefined;
-  const bounds = geometry.bounds;
-  if (bounds !== null && runtime !== undefined && runtime.boundsVersion === geometry.version) {
-    return bounds;
+  let bounds = geometry.bounds;
+  if (bounds === null || runtime === undefined || runtime.boundsVersion !== geometry.version) {
+    refreshMeshGeometryBounds(geometry);
+    bounds = geometry.bounds;
   }
-  refreshMeshGeometryBounds(geometry);
-  return geometry.bounds;
+  return bounds !== null && bounds.min.x <= bounds.max.x ? bounds : null;
 }
 
 // Recomputes a geometry's cached local bounds after an in-place vertex edit, unconditionally — the

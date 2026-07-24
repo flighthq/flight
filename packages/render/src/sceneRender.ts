@@ -10,8 +10,8 @@ import {
   setPerspectiveMatrix4,
   transformAabbByMatrix4,
 } from '@flighthq/geometry';
+import { ensureMeshGeometryBounds } from '@flighthq/mesh';
 import { getNodeRuntime, getNodeWorldMatrix4, invalidateNodeLocalTransform } from '@flighthq/node';
-import { computeSkeleton3DJointMatrices } from '@flighthq/skeleton3d';
 import type { LinearColor } from '@flighthq/types';
 import type {
   Aabb,
@@ -23,6 +23,7 @@ import type {
   HemisphereLight,
   Matrix4,
   Mesh,
+  MeshRuntime,
   NodeAny,
   PointLight,
   RenderState,
@@ -134,6 +135,15 @@ export function packSceneLightBlock(out: SceneLightBlock, lights: Readonly<Scene
 // The returned SceneRenderList is the render-ready frame the backend drawScene consumes — it only
 // has to upload buffers, bind, and draw the visible meshes.
 //
+// DEFORMATION IS A SEPARATE, EARLIER PASS. This pass no longer readies skinning palettes or blends
+// morphs — that would force @flighthq/render to depend on @flighthq/skeleton3d and bundle skinning into
+// every rigid or 2D consumer. A skinned scene must call prepareSceneSkinning (@flighthq/skeleton3d) and
+// a morphed scene prepareSceneMorph (@flighthq/scene) BEFORE this pass; each readies its own deformer
+// and writes the mesh's posed local bounds (skin: the deformedLocalBounds node-runtime slot this pass
+// reads; morph: the geometry vertices, hence its ensured bounds). Cull here consumes those as data, so
+// it sees the current-frame posed silhouette without any skinning code in this package. A rigid scene
+// calls neither and this pass is unchanged.
+//
 // `aspect` for a perspective camera is taken from the render state's pixel-space target (width /
 // height); a degenerate target falls back to 1. The returned list is reused scratch owned per render
 // state (so a gl state and a wgpu state prepare independently); a caller must not retain it past the
@@ -163,18 +173,6 @@ export function prepareSceneRender(
   const refreshTransforms = state.sceneGraphSyncPolicy === 'refreshDerivedState';
   collectVisibleMeshes(scene, prepared.frustum, prepared.worldBounds, prepared.meshes, refreshTransforms);
   list.meshCount = prepared.meshes.length;
-
-  // Refresh the GPU skin palette for every visible skinned mesh from its joints' current world
-  // transforms (jointWorld * inverseBind). The backend uploads skeleton.jointMatrices through the
-  // proxy and the HAS_SKIN vertex variant deforms from it, so the app poses the joints and this
-  // pass alone readies the palette — it need not call the CPU updateMeshSkin on a GPU backend
-  // (doing both would deform twice). Rigid meshes carry no skin and are skipped. Morph is driven by
-  // the GL backend's draw (updateMeshMorph in drawGlScene), not here, to keep render backend-neutral
-  // and free of a @flighthq/scene dependency.
-  for (let m = 0; m < prepared.meshes.length; m++) {
-    const skin = prepared.meshes[m].skin;
-    if (skin != null) computeSkeleton3DJointMatrices(skin.skeleton);
-  }
 
   return list;
 }
@@ -257,9 +255,14 @@ function isFloat32ArrayEqual(a: Readonly<Float32Array>, b: Readonly<Float32Array
 }
 
 function isMeshVisible(mesh: Readonly<Mesh>, frustum: Readonly<Frustum>, worldBounds: Aabb): boolean {
-  const bounds = mesh.geometry.bounds;
+  // Prefer the posed local bounds a deform pass wrote to the node runtime (skinned meshes deform in
+  // the shader, so geometry.vertices/bounds stay bind pose and would cull a swung limb wrongly). It is
+  // plain data — no skinning code reached from here. Fall back to the geometry's own ensured bounds
+  // for rigid and morphed meshes (morph writes real vertices, so those bounds are already posed).
+  const runtime = getNodeRuntime(mesh as NodeAny) as MeshRuntime;
+  const bounds = runtime.deformedLocalBounds ?? ensureMeshGeometryBounds(mesh.geometry);
   if (bounds === null) {
-    // No cached local bounds: cannot cull, so conservatively keep the mesh.
+    // No bounds at all (empty geometry): cannot cull, so conservatively keep the mesh.
     return true;
   }
   transformAabbByMatrix4(worldBounds, bounds, getNodeWorldMatrix4(mesh));

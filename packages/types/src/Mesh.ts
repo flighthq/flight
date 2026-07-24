@@ -1,3 +1,4 @@
+import type { Aabb } from './Aabb';
 import type { Material } from './Material';
 import type { MeshGeometry } from './MeshGeometry';
 import type { MeshMorph } from './MorphTarget';
@@ -29,6 +30,25 @@ export interface Mesh extends SceneNode {
   skin?: Skin | null;
 }
 
-export type MeshRuntime = SceneNodeRuntime;
+// The deform subsystem's slot on the Mesh node runtime. `deformedLocalBounds` is the mesh's CURRENT
+// local-space AABB once a deformer has posed it — the box cull and picking must test against. It
+// exists because a GPU-skinned mesh deforms in the shader: geometry.vertices (and therefore the
+// geometry's own cached bounds) stay bind pose, so a swung limb would fall outside the bind box and
+// be wrongly culled. prepareMeshDeformation writes the joint-driven conservative sweep here each
+// frame; consumers read `deformedLocalBounds ?? ensureMeshGeometryBounds(geometry)`.
+//
+// It lives on the NODE runtime, not the geometry runtime, because the posed box is a function of the
+// geometry AND the skeleton posing it — two mesh nodes may share one geometry under different
+// skeletons, and a geometry-level slot would thrash between them.
+//
+// This is deliberately DATA, not a call into skinning: @flighthq/render and @flighthq/picking read
+// this slot and must never import @flighthq/skeleton3d, so a rigid or 2D consumer of the renderer
+// never bundles the skinning code. Null (or absent) for a rigid or morph-only mesh, which needs no
+// slot — its geometry bounds already describe its current pose.
+export interface MeshDeformRuntime {
+  deformedLocalBounds?: Aabb | null;
+}
+
+export type MeshRuntime = SceneNodeRuntime & MeshDeformRuntime;
 
 export const MeshKind = 'Mesh';

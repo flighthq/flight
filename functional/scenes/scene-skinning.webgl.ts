@@ -25,6 +25,7 @@ import {
   invalidateNodeLocalTransform,
   normalizeVector3,
   prepareSceneRender,
+  prepareSceneSkinning,
   registerUnlitGlMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
@@ -44,7 +45,9 @@ import {
 //
 // drawGlScene collides in the @flighthq/sdk barrel (re-exported from both scene-gl and scene-wgpu) — import
 // the Gl one directly. Pipeline wiring (rgba16f + depth scene target, depth clear to far) mirrors the mesh-*
-// scenes; prepareSceneRender computes each skinned mesh's jointMatrices palette before the draw.
+// scenes; prepareSceneSkinning readies each skinned mesh's jointMatrices palette (and its posed cull bounds)
+// BEFORE prepareSceneRender, which no longer touches skinning — that separation keeps @flighthq/render free
+// of a @flighthq/skeleton3d dependency.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
@@ -73,6 +76,7 @@ export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, l
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
+  prepareSceneSkinning(scene);
   prepareSceneRender(state, scene, camera, lights);
   drawGlScene(state, scene, camera, lights);
   endGlRenderEffectPipeline(state, pipeline, []);
@@ -130,8 +134,8 @@ for (let r = 0; r < ringY.length - 1; r++) {
 const material = createUnlitMaterial({ baseColor: 0xff8030ff });
 
 // Two joints: a stationary root at the origin, and a bend joint parented mid-height that carries the
-// pose rotation. computeSkeleton3DJointMatrices (run inside prepareSceneRender) fills the palette from
-// each joint's world transform × inverse-bind.
+// pose rotation. prepareSceneSkinning (run before prepareSceneRender in render()) computes the palette
+// from each joint's world transform × inverse-bind.
 function buildPosedScene(bendAngle: number): SceneNode {
   const root = createSceneNode();
   const bend = createSceneNode();

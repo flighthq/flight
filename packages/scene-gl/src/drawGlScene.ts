@@ -1,5 +1,5 @@
 import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flighthq/geometry';
-import { hasMeshGeometrySkin, updateMeshMorph } from '@flighthq/mesh';
+import { hasMeshGeometrySkin } from '@flighthq/mesh';
 import { getNodeWorldMatrix4 } from '@flighthq/node';
 import { prepareSceneRender } from '@flighthq/render';
 import { declareGlRenderTargetColorSpace, invalidateGlRenderStateCache } from '@flighthq/render-gl';
@@ -81,16 +81,11 @@ export function drawGlScene(
   recycleDrawEntries(opaqueDrawList, runtime.opaquePool);
   recycleDrawEntries(blendedDrawList, runtime.blendedPool);
 
-  // GL vertex morph (CPU-blend-then-upload): blend each visible morphed mesh's base + Σ wᵢ·targetᵢ into
-  // its geometry.vertices and bump the version, so ensureGlMeshUpload below re-uploads the deformed base.
-  // Runs before the draw lists are built so the uploaded buffer reflects this frame's weights. A rigid
-  // mesh (no morph) is a no-op. Driven here in the GL backend rather than in render's prepareSceneRender
-  // to keep @flighthq/render free of a @flighthq/scene dependency (the GL-only morph decision).
-  for (let m = 0; m < list.meshCount; m++) {
-    const mesh = list.visibleMeshes[m];
-    if (mesh.morph != null) updateMeshMorph(mesh);
-  }
-
+  // Morph is NOT blended here. The app blends it in prepareSceneMorph (@flighthq/scene) before
+  // prepareSceneRender, so the cull sees the morphed bounds instead of lagging a frame and the uploaded
+  // buffer already reflects this frame's weights. A mesh that reaches this draw with an unblended morph
+  // is a missing-prepare-call bug the morph guard reports (enableSceneMorphGuards); the draw does not
+  // silently self-heal it, which would mask both the cull lag and the guard.
   for (let m = 0; m < list.meshCount; m++) {
     const mesh = list.visibleMeshes[m];
     const subsets = mesh.geometry.subsets;

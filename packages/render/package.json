@@ -37,9 +37,9 @@
     "@flighthq/geometry": "*",
     "@flighthq/log": "*",
     "@flighthq/materials": "*",
+    "@flighthq/mesh": "*",
     "@flighthq/node": "*",
     "@flighthq/signals": "*",
-    "@flighthq/skeleton3d": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
@@ -47,7 +47,6 @@
     "@flighthq/camera": "*",
     "@flighthq/displayobject": "*",
     "@flighthq/lighting": "*",
-    "@flighthq/mesh": "*",
     "@flighthq/scene": "*",
     "@flighthq/sprite": "*",
     "typescript": "^5.3.0"
