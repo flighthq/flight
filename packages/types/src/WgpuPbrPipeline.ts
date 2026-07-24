@@ -21,6 +21,7 @@ export interface WgpuPbrDefineKey {
   anisotropyEnabled: boolean;
   clearcoatEnabled: boolean;
   doubleSided: boolean;
+  hasAlphaMap: boolean;
   hasBaseColorMap: boolean;
   hasEmissiveMap: boolean;
   hasMetallicRoughnessMap: boolean;

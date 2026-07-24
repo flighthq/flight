@@ -44,7 +44,7 @@ export const phongWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
     let group: GPUBindGroup;
     if (phong === null) {
-      group = bindWgpuClassicSurface(state, pipeline, FALLBACK_MATERIAL, WHITE, WHITE, 32, 0.5, null, null, null);
+      group = bindWgpuClassicSurface(state, pipeline, FALLBACK_MATERIAL, WHITE, WHITE, 32, 0.5, null, null, null, null);
     } else {
       unpackColorToLinear(_diffuse, phong.diffuse);
       unpackColorToLinear(_specular, phong.specular);
@@ -59,6 +59,7 @@ export const phongWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
         phong.diffuseMap,
         phong.specularMap,
         phong.normalMap,
+        null,
       );
     }
 
@@ -83,6 +84,7 @@ function defineKeyForMaterial(material: Readonly<PhongMaterial> | null): WgpuCla
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
     doubleSided: material !== null && material.doubleSided,
+    hasAlphaMap: false,
     hasDiffuseMap: material !== null && isWgpuTextureReady(material.diffuseMap),
     hasNormalMap: material !== null && isWgpuTextureReady(material.normalMap),
     hasSpecularMap: material !== null && isWgpuTextureReady(material.specularMap),

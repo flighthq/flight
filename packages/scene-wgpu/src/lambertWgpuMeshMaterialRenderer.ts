@@ -43,7 +43,7 @@ export const lambertWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
     let group: GPUBindGroup;
     if (lambert === null) {
-      group = bindWgpuClassicSurface(state, pipeline, FALLBACK_MATERIAL, WHITE, WHITE, 32, 0.5, null, null, null);
+      group = bindWgpuClassicSurface(state, pipeline, FALLBACK_MATERIAL, WHITE, WHITE, 32, 0.5, null, null, null, null);
     } else {
       unpackColorToLinear(_diffuse, lambert.diffuse);
       group = bindWgpuClassicSurface(
@@ -55,6 +55,7 @@ export const lambertWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
         32,
         lambert.alphaCutoff,
         lambert.diffuseMap,
+        null,
         null,
         null,
       );
@@ -82,6 +83,7 @@ function defineKeyForMaterial(material: Readonly<LambertMaterial> | null): WgpuC
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
     doubleSided: material !== null && material.doubleSided,
+    hasAlphaMap: false,
     hasDiffuseMap: material !== null && isWgpuTextureReady(material.diffuseMap),
     hasNormalMap: false,
     hasSpecularMap: false,

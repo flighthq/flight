@@ -10,12 +10,13 @@ export interface WgpuClassicPipeline extends WgpuMeshPipeline {}
 
 // The feature flags that select a classic uber-shader variant. `lightingModel` chooses the shading
 // model (and whether a specular branch exists at all); `hasDiffuseMap` / `hasSpecularMap` /
-// `hasNormalMap` enable the textured paths (not yet used on wgpu — see the prelude note);
-// `alphaMaskEnabled` enables the alpha-cutoff discard for 'mask' materials; `doubleSided` selects the
-// cull-none pipeline and flips the normal toward the viewer on back faces.
+// `hasNormalMap` / `hasAlphaMap` enable the textured paths; `alphaMaskEnabled` enables the
+// alpha-cutoff discard for 'mask' materials; `doubleSided` selects the cull-none pipeline and flips
+// the normal toward the viewer on back faces.
 export interface WgpuClassicDefineKey {
   alphaMaskEnabled: boolean;
   doubleSided: boolean;
+  hasAlphaMap: boolean;
   hasDiffuseMap: boolean;
   hasNormalMap: boolean;
   hasSpecularMap: boolean;

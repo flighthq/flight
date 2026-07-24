@@ -117,6 +117,7 @@ function convertSpecularGlossinessToStandard(
   const b = lerp((_diffuseScratch[2] * oneMinusSpecularStrength) / denom, _specularScratch[2], metallic);
 
   return {
+    alphaMap: null,
     baseColor: packLinearRgba(r, g, b, _diffuseScratch[3]),
     baseColorMap: material.diffuseMap,
     emissive: material.emissive,

@@ -25,6 +25,7 @@ export function compileWgpuPbrPipeline(
       { binding: 4, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
       { binding: 5, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
       { binding: 6, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+      { binding: 7, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
     ],
   });
   // The PBR family is lit and may PCF-sample shadows plus image-based lighting. Both live in one group

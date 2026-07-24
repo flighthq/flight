@@ -13,6 +13,7 @@ function key(overrides?: Partial<WgpuPbrDefineKey>): WgpuPbrDefineKey {
     anisotropyEnabled: false,
     clearcoatEnabled: false,
     doubleSided: false,
+    hasAlphaMap: false,
     hasBaseColorMap: false,
     hasEmissiveMap: false,
     hasMetallicRoughnessMap: false,
@@ -50,18 +51,19 @@ const ALL = key({
 
 describe('buildWgpuPbrDefineKey', () => {
   it('produces a stable, distinct string per flag set', () => {
-    expect(buildWgpuPbrDefineKey(NONE)).toBe('-------:-------');
-    expect(buildWgpuPbrDefineKey(STANDARD_ALL)).toBe('mdbnroe:-------');
-    expect(buildWgpuPbrDefineKey(ALL)).toBe('mdbnroe:CSAIPUT');
-    expect(buildWgpuPbrDefineKey(key({ alphaMaskEnabled: true }))).toBe('m------:-------');
-    expect(buildWgpuPbrDefineKey(key({ doubleSided: true }))).toBe('-d-----:-------');
-    expect(buildWgpuPbrDefineKey(key({ hasBaseColorMap: true }))).toBe('--b----:-------');
-    expect(buildWgpuPbrDefineKey(key({ hasNormalMap: true }))).toBe('---n---:-------');
-    expect(buildWgpuPbrDefineKey(key({ hasMetallicRoughnessMap: true }))).toBe('----r--:-------');
-    expect(buildWgpuPbrDefineKey(key({ hasOcclusionMap: true }))).toBe('-----o-:-------');
-    expect(buildWgpuPbrDefineKey(key({ hasEmissiveMap: true }))).toBe('------e:-------');
-    expect(buildWgpuPbrDefineKey(key({ clearcoatEnabled: true }))).toBe('-------:C------');
-    expect(buildWgpuPbrDefineKey(key({ transmissionEnabled: true }))).toBe('-------:------T');
+    expect(buildWgpuPbrDefineKey(NONE)).toBe('--------:-------');
+    expect(buildWgpuPbrDefineKey(STANDARD_ALL)).toBe('mdbnroe-:-------');
+    expect(buildWgpuPbrDefineKey(ALL)).toBe('mdbnroe-:CSAIPUT');
+    expect(buildWgpuPbrDefineKey(key({ alphaMaskEnabled: true }))).toBe('m-------:-------');
+    expect(buildWgpuPbrDefineKey(key({ doubleSided: true }))).toBe('-d------:-------');
+    expect(buildWgpuPbrDefineKey(key({ hasBaseColorMap: true }))).toBe('--b-----:-------');
+    expect(buildWgpuPbrDefineKey(key({ hasNormalMap: true }))).toBe('---n----:-------');
+    expect(buildWgpuPbrDefineKey(key({ hasMetallicRoughnessMap: true }))).toBe('----r---:-------');
+    expect(buildWgpuPbrDefineKey(key({ hasOcclusionMap: true }))).toBe('-----o--:-------');
+    expect(buildWgpuPbrDefineKey(key({ hasEmissiveMap: true }))).toBe('------e-:-------');
+    expect(buildWgpuPbrDefineKey(key({ hasAlphaMap: true }))).toBe('-------a:-------');
+    expect(buildWgpuPbrDefineKey(key({ clearcoatEnabled: true }))).toBe('--------:C------');
+    expect(buildWgpuPbrDefineKey(key({ transmissionEnabled: true }))).toBe('--------:------T');
   });
 
   it('is identical for identical flags (cache soundness)', () => {
@@ -91,6 +93,11 @@ describe('buildWgpuPbrDefineSource', () => {
     const none = buildWgpuPbrDefineSource(NONE);
     expect(none).toContain('const CLEARCOAT : bool = false;');
     expect(none).toContain('const TRANSMISSION : bool = false;');
+    expect(none).toContain('const HAS_ALPHA_MAP : bool = false;');
+  });
+
+  it('gates the alpha-map const off the dedicated coverage-map flag', () => {
+    expect(buildWgpuPbrDefineSource(key({ hasAlphaMap: true }))).toContain('const HAS_ALPHA_MAP : bool = true;');
   });
 });
 

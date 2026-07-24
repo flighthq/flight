@@ -14,6 +14,7 @@ function makeKey(lightingModel: WgpuClassicLightingModel): WgpuClassicDefineKey 
   return {
     alphaMaskEnabled: false,
     doubleSided: false,
+    hasAlphaMap: false,
     hasDiffuseMap: false,
     hasNormalMap: false,
     hasSpecularMap: false,
@@ -26,8 +27,8 @@ describe('bindWgpuClassicSurface', () => {
     const { fake, state } = makeWgpuSceneState();
     const pipeline = ensureWgpuClassicPipeline(state, makeKey('phong'), 'bgra8unorm');
     const key = {};
-    bindWgpuClassicSurface(state, pipeline, key, [1, 0, 0, 1], [1, 1, 1, 1], 32, 0.5, null, null, null);
-    bindWgpuClassicSurface(state, pipeline, key, [0, 1, 0, 1], [1, 1, 1, 1], 64, 0.5, null, null, null);
+    bindWgpuClassicSurface(state, pipeline, key, [1, 0, 0, 1], [1, 1, 1, 1], 32, 0.5, null, null, null, null);
+    bindWgpuClassicSurface(state, pipeline, key, [0, 1, 0, 1], [1, 1, 1, 1], 64, 0.5, null, null, null, null);
 
     expect(fake.calls.filter((c) => c.name === 'createBindGroup').length).toBe(1);
     expect(fake.calls.filter((c) => c.name === 'writeBuffer').length).toBe(2);
@@ -46,6 +47,11 @@ describe('buildWgpuClassicDefineKey', () => {
       buildWgpuClassicDefineKey(makeKey('blinnphong')),
     ]);
     expect(keys.size).toBe(3);
+  });
+
+  it('encodes the alpha map as a distinct variant', () => {
+    const withAlpha = { ...makeKey('blinnphong'), hasAlphaMap: true };
+    expect(buildWgpuClassicDefineKey(withAlpha)).not.toBe(buildWgpuClassicDefineKey(makeKey('blinnphong')));
   });
 });
 
@@ -77,6 +83,15 @@ describe('ensureWgpuClassicPipeline', () => {
 });
 
 describe('getWgpuClassicModuleSourceForKey', () => {
+  it('gates the alpha-map const + coverage multiply off the alpha-map flag', () => {
+    const none = getWgpuClassicModuleSourceForKey(makeKey('blinnphong'));
+    expect(none).toContain('const HAS_ALPHA_MAP : bool = false;');
+    const withAlpha = getWgpuClassicModuleSourceForKey({ ...makeKey('blinnphong'), hasAlphaMap: true });
+    expect(withAlpha).toContain('const HAS_ALPHA_MAP : bool = true;');
+    expect(withAlpha).toContain('alphaTexture');
+    expect(withAlpha).toContain('textureSample(alphaTexture, materialSampler, in.uv).g');
+  });
+
   it('emits the lighting-model const matching the model and folds the others off', () => {
     const phong = getWgpuClassicModuleSourceForKey(makeKey('phong'));
     expect(phong).toContain('const LIGHTING_PHONG : bool = true;');
