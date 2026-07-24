@@ -29,10 +29,12 @@ import type {
 } from '@flighthq/types';
 import { MeshKind, SceneNodeKind } from '@flighthq/types';
 
+import { parseMd5Anim } from './md5AnimParse';
 import {
   convertPositionsZUpToYUp,
   convertQuaternionsZUpToYUp,
   createExternalTextureRef,
+  findSceneSkeletonJoints,
   MAX_SKIN_INFLUENCES,
   packSkinInfluences,
   reverseTriangleWinding,
@@ -54,6 +56,31 @@ export function createSceneFromMd5Mesh(source: string, warnings?: string[]): Sce
   return createSceneFromDocument(parseMd5Mesh(source, warnings));
 }
 
+// One-call MD5 import: builds the Scene from the `.md5mesh` source and, when a `.md5anim` source is
+// given, binds its skeletal animation to that mesh's skeleton and stores it in `scene.animations`. MD5
+// splits mesh and animation across two files that must be composed against the same skeleton — the mesh
+// supplies the joint nodes the animation's channels bind to — so this is the composition callers would
+// otherwise hand-write (createSceneFromMd5Mesh, then findSceneSkeletonJoints, then parseMd5Anim). The
+// `.md5anim` carries no name of its own, so the clip is keyed 'default'; a caller loading several
+// animations against one mesh uses parseMd5Anim directly and keys each as it likes. Warns (and skips the
+// animation) when `animSource` is given but the mesh carries no skeleton to bind it to.
+export function importMd5Mesh(meshSource: string, animSource?: string | null, warnings?: string[]): Scene {
+  const scene = createSceneFromMd5Mesh(meshSource, warnings);
+  if (animSource == null) return scene;
+
+  const joints = findSceneSkeletonJoints(scene.root);
+  if (joints === null) {
+    warnings?.push(
+      'importMd5Mesh: animation source given but the mesh has no skeleton to bind it to; ignoring the animation',
+    );
+    return scene;
+  }
+
+  const clip = parseMd5Anim(animSource, joints, warnings);
+  if (clip !== null) scene.animations.default = clip;
+  return scene;
+}
+
 // Parses an id Tech 4 MD5 mesh file (.md5mesh) into a format-neutral SceneDocument. The ASCII
 // line-oriented format contains a skeleton (joints) and one or more mesh sections. Each mesh section
 // becomes one document Mesh node (skinned layout, joints0/weights0), and the joints become a "skeleton"
@@ -71,8 +98,9 @@ export function createSceneFromMd5Mesh(source: string, warnings?: string[]): Sce
 // model) whose diffuseMap references the shader path as an unresolved External ref — the parser
 // references, it does not load; resolution is @flighthq/scene-resources's explicit step.
 //
-// MD5 splits mesh and animation across two files, so the document's `animations` table is empty. To bind a
-// paired `.md5anim`, the caller composes onto the assembled scene:
+// MD5 splits mesh and animation across two files, so the document's `animations` table is empty. Use the
+// `importMd5Mesh(meshSource, animSource?)` composer to bind a paired `.md5anim` in one call, or compose
+// onto the assembled scene directly:
 // `scene.animations['walk'] = parseMd5Anim(animSource, findSceneSkeletonJoints(scene.root)!)`.
 //
 // Malformed lines push a warning and are skipped; the function never throws on bad input.

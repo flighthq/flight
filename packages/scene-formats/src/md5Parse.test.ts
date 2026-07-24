@@ -17,7 +17,7 @@ import type {
 import { BlinnPhongMaterialKind } from '@flighthq/types';
 
 import { parseMd5Anim } from './md5AnimParse';
-import { createSceneFromMd5Mesh, parseMd5Mesh } from './md5Parse';
+import { createSceneFromMd5Mesh, importMd5Mesh, parseMd5Mesh } from './md5Parse';
 import { findSceneSkeletonJoints } from './shared';
 
 // A one-joint .md5anim matching SINGLE_TRIANGLE's single "root" joint, translating it per frame.
@@ -769,6 +769,64 @@ describe('createSceneFromMd5Mesh animations', () => {
     const channel = scene.animations.walk.channels[0];
     // The clip binds the SAME joint node the imported mesh skins from — no caller threading.
     expect((channel.targetRef as SceneAnimationTarget).node).toBe(meshJoints[0]);
+  });
+});
+
+// A degenerate MD5 mesh with no skeleton (numJoints 0, weightless verts): importMd5Mesh has no joints to
+// bind an animation to.
+const JOINTLESS_MESH = [
+  'MD5Version 10',
+  'commandline ""',
+  '',
+  'numJoints 0',
+  'numMeshes 1',
+  '',
+  'joints {',
+  '}',
+  '',
+  'mesh {',
+  '  shader "textures/none"',
+  '',
+  '  numverts 3',
+  '  vert 0 ( 0.0 0.0 ) 0 0',
+  '  vert 1 ( 1.0 0.0 ) 0 0',
+  '  vert 2 ( 0.0 1.0 ) 0 0',
+  '',
+  '  numtris 1',
+  '  tri 0 0 1 2',
+  '',
+  '  numweights 0',
+  '}',
+].join('\n');
+
+describe('importMd5Mesh', () => {
+  it('imports the mesh only when no animation source is given', () => {
+    const scene = importMd5Mesh(SINGLE_TRIANGLE);
+    // Skeleton group + mesh, and no animation.
+    expect(getNodeChildren(scene.root)).toHaveLength(2);
+    expect(Object.keys(scene.animations)).toHaveLength(0);
+  });
+
+  it('composes the .md5mesh and .md5anim into one scene with the clip bound to the mesh skeleton', () => {
+    const scene = importMd5Mesh(SINGLE_TRIANGLE, SINGLE_JOINT_ANIM);
+    expect(Object.keys(scene.animations)).toEqual(['default']);
+
+    const mesh = getNodeChildren(scene.root).find((c) => isMesh(c as SceneNode)) as unknown as Mesh;
+    const channel = scene.animations.default.channels[0];
+    // The composer bound the clip to the SAME joint node the mesh skins from — no caller threading.
+    expect((channel.targetRef as SceneAnimationTarget).node).toBe(mesh.skin!.skeleton.joints[0]);
+  });
+
+  it('treats a null animation source the same as omitting it', () => {
+    const scene = importMd5Mesh(SINGLE_TRIANGLE, null);
+    expect(Object.keys(scene.animations)).toHaveLength(0);
+  });
+
+  it('warns and skips the animation when the mesh has no skeleton', () => {
+    const warnings: string[] = [];
+    const scene = importMd5Mesh(JOINTLESS_MESH, SINGLE_JOINT_ANIM, warnings);
+    expect(Object.keys(scene.animations)).toHaveLength(0);
+    expect(warnings.some((w) => w.includes('no skeleton to bind'))).toBe(true);
   });
 });
 
