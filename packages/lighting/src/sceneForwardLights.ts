@@ -9,10 +9,11 @@ import { MAX_FORWARD_LIGHTS } from '@flighthq/types';
 
 import { getLightContributionAtBoundingSphere } from './lightAnalysis';
 
-// Selects the strongest point/spot contributors for one object's forward-light budget. Point and
-// spot lights compete for one combined MAX_FORWARD_LIGHTS budget. Ranking uses descriptor-side
-// shader-equivalent attenuation at `bounds`; equal scores retain the scene input order (all points,
-// then all spots), making captures reproducible. Zero-contribution lights are omitted.
+// Selects the strongest point and spot contributors for one object's forward-light budget. Each
+// family has its own MAX_FORWARD_LIGHTS budget, matching the shader's separate fixed arrays and
+// counts. Ranking uses descriptor-side shader-equivalent attenuation at `bounds`; equal scores
+// retain their family input order, making captures reproducible. Zero-contribution lights are
+// omitted.
 //
 // `out.point` and `out.spot` are reused mutable arrays. All inputs are read into fixed-size scratch
 // before either output array is changed, so `out` may alias `lights`.
@@ -21,22 +22,22 @@ export function selectSceneForwardLights(
   lights: Readonly<SceneLightsLike>,
   bounds: Readonly<BoundingSphereLike>,
 ): void {
-  let selectedCount = 0;
-  let inputOrder = 0;
-
   const points = lights.point;
-  if (points !== undefined) {
-    for (let i = 0; i < points.length; i++) {
-      selectedCount = insertSelectedLight(points[i], POINT_LIGHT_TYPE, inputOrder++, bounds, selectedCount);
-    }
-  }
-
   const spots = lights.spot;
-  if (spots !== undefined) {
-    for (let i = 0; i < spots.length; i++) {
-      selectedCount = insertSelectedLight(spots[i], SPOT_LIGHT_TYPE, inputOrder++, bounds, selectedCount);
-    }
-  }
+  const pointCount = selectStrongestLights(
+    points,
+    bounds,
+    scratchSelectedPointLights,
+    scratchSelectedPointIndices,
+    scratchSelectedPointScores,
+  );
+  const spotCount = selectStrongestLights(
+    spots,
+    bounds,
+    scratchSelectedSpotLights,
+    scratchSelectedSpotIndices,
+    scratchSelectedSpotScores,
+  );
 
   const outPoints = out.point;
   const outSpots = out.spot;
@@ -44,52 +45,59 @@ export function selectSceneForwardLights(
   outIndices.length = 0;
   outPoints.length = 0;
   outSpots.length = 0;
-  for (let i = 0; i < selectedCount; i++) {
-    outIndices.push(scratchSelectedOrders[i]);
-    if (scratchSelectedTypes[i] === POINT_LIGHT_TYPE) {
-      outPoints.push(scratchSelectedLights[i] as Readonly<PointLight>);
-    } else {
-      outSpots.push(scratchSelectedLights[i] as Readonly<SpotLight>);
-    }
+  for (let i = 0; i < pointCount; i++) {
+    outIndices.push(scratchSelectedPointIndices[i]);
+    outPoints.push(scratchSelectedPointLights[i] as Readonly<PointLight>);
+  }
+  for (let i = 0; i < spotCount; i++) {
+    // Bitwise complement makes every spot key negative and every point key non-negative, so two
+    // selections with the same family-local index cannot collide during block deduplication.
+    outIndices.push(~scratchSelectedSpotIndices[i]);
+    outSpots.push(scratchSelectedSpotLights[i] as Readonly<SpotLight>);
   }
 }
 
-function insertSelectedLight(
-  light: Readonly<PointLight | SpotLight>,
-  type: number,
-  inputOrder: number,
+function selectStrongestLights(
+  lights: readonly Readonly<PointLight | SpotLight>[] | undefined,
   bounds: Readonly<BoundingSphereLike>,
-  selectedCount: number,
+  selectedLights: Readonly<PointLight | SpotLight>[],
+  selectedIndices: Int32Array,
+  selectedScores: Float64Array,
 ): number {
-  const score = getLightContributionAtBoundingSphere(light, bounds);
-  if (!(score > 0)) return selectedCount;
+  let selectedCount = 0;
+  if (lights === undefined) return selectedCount;
 
-  let insertAt = selectedCount;
-  while (insertAt > 0) {
-    const previous = insertAt - 1;
-    if (score < scratchSelectedScores[previous]) break;
-    if (score === scratchSelectedScores[previous] && inputOrder > scratchSelectedOrders[previous]) break;
-    insertAt--;
-  }
-  if (insertAt >= MAX_FORWARD_LIGHTS) return selectedCount;
+  for (let inputIndex = 0; inputIndex < lights.length; inputIndex++) {
+    const light = lights[inputIndex];
+    const score = getLightContributionAtBoundingSphere(light, bounds);
+    if (!(score > 0)) continue;
 
-  const nextCount = Math.min(selectedCount + 1, MAX_FORWARD_LIGHTS);
-  for (let i = nextCount - 1; i > insertAt; i--) {
-    scratchSelectedLights[i] = scratchSelectedLights[i - 1];
-    scratchSelectedOrders[i] = scratchSelectedOrders[i - 1];
-    scratchSelectedScores[i] = scratchSelectedScores[i - 1];
-    scratchSelectedTypes[i] = scratchSelectedTypes[i - 1];
+    let insertAt = selectedCount;
+    while (insertAt > 0) {
+      const previous = insertAt - 1;
+      if (score < selectedScores[previous]) break;
+      if (score === selectedScores[previous] && inputIndex > selectedIndices[previous]) break;
+      insertAt--;
+    }
+    if (insertAt >= MAX_FORWARD_LIGHTS) continue;
+
+    const nextCount = Math.min(selectedCount + 1, MAX_FORWARD_LIGHTS);
+    for (let i = nextCount - 1; i > insertAt; i--) {
+      selectedLights[i] = selectedLights[i - 1];
+      selectedIndices[i] = selectedIndices[i - 1];
+      selectedScores[i] = selectedScores[i - 1];
+    }
+    selectedLights[insertAt] = light;
+    selectedIndices[insertAt] = inputIndex;
+    selectedScores[insertAt] = score;
+    selectedCount = nextCount;
   }
-  scratchSelectedLights[insertAt] = light;
-  scratchSelectedOrders[insertAt] = inputOrder;
-  scratchSelectedScores[insertAt] = score;
-  scratchSelectedTypes[insertAt] = type;
-  return nextCount;
+  return selectedCount;
 }
 
-const POINT_LIGHT_TYPE = 0;
-const SPOT_LIGHT_TYPE = 1;
-const scratchSelectedLights: Readonly<PointLight | SpotLight>[] = new Array(MAX_FORWARD_LIGHTS);
-const scratchSelectedOrders = new Int32Array(MAX_FORWARD_LIGHTS);
-const scratchSelectedScores = new Float64Array(MAX_FORWARD_LIGHTS);
-const scratchSelectedTypes = new Uint8Array(MAX_FORWARD_LIGHTS);
+const scratchSelectedPointIndices = new Int32Array(MAX_FORWARD_LIGHTS);
+const scratchSelectedPointLights: Readonly<PointLight | SpotLight>[] = new Array(MAX_FORWARD_LIGHTS);
+const scratchSelectedPointScores = new Float64Array(MAX_FORWARD_LIGHTS);
+const scratchSelectedSpotIndices = new Int32Array(MAX_FORWARD_LIGHTS);
+const scratchSelectedSpotLights: Readonly<PointLight | SpotLight>[] = new Array(MAX_FORWARD_LIGHTS);
+const scratchSelectedSpotScores = new Float64Array(MAX_FORWARD_LIGHTS);

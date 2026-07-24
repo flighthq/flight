@@ -9,27 +9,46 @@ function selection(): SceneForwardLightSelection {
   return { indices: [], point: [], spot: [] };
 }
 
+function spotLights(xs: readonly number[]) {
+  return xs.map((x) =>
+    createSpotLight({
+      direction: { x: -1, y: 0, z: 0 },
+      innerConeDegrees: 45,
+      outerConeDegrees: 60,
+      position: { x, y: 0, z: 0 },
+      range: -1,
+    }),
+  );
+}
+
 describe('selectSceneForwardLights', () => {
-  it('selects the four strongest point and spot lights in one combined budget', () => {
+  it('keeps all three points and three spots when both families are within budget', () => {
     const points = [8, 7, 6].map((x) => createPointLight({ position: { x, y: 0, z: 0 }, range: -1 }));
-    const spots = [5, 4, 3].map((x) =>
-      createSpotLight({
-        direction: { x: -1, y: 0, z: 0 },
-        innerConeDegrees: 45,
-        outerConeDegrees: 60,
-        position: { x, y: 0, z: 0 },
-        range: -1,
-      }),
-    );
+    const spots = spotLights([5, 4, 3]);
     const out = selection();
     selectSceneForwardLights(
       out,
       { ambient: null, directional: null, point: points, spot: spots },
       createBoundingSphere(0, 0, 0, 0),
     );
-    expect(out.point).toHaveLength(1);
+    expect(out.point).toHaveLength(3);
     expect(out.spot).toHaveLength(3);
-    expect(out.indices).toEqual([5, 4, 3, 2]);
+    expect(new Set(out.point)).toEqual(new Set(points));
+    expect(new Set(out.spot)).toEqual(new Set(spots));
+  });
+
+  it('selects the strongest four points and strongest four spots independently', () => {
+    const points = [8, 7, 6, 5, 4, 3].map((x) => createPointLight({ position: { x, y: 0, z: 0 }, range: -1 }));
+    const spots = spotLights([8, 7, 6, 5, 4, 3]);
+    const out = selection();
+    selectSceneForwardLights(
+      out,
+      { ambient: null, directional: null, point: points, spot: spots },
+      createBoundingSphere(0, 0, 0, 0),
+    );
+    expect(out.point).toEqual(points.slice(2).reverse());
+    expect(out.spot).toEqual(spots.slice(2).reverse());
+    expect(out.indices).toEqual([5, 4, 3, 2, ~5, ~4, ~3, ~2]);
   });
 
   it('uses stable input order to break equal-contribution ties', () => {
