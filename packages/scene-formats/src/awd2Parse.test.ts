@@ -370,6 +370,346 @@ function expectOneCrumb(diagnostics: readonly ImportDiagnostic[], kind: string):
   return matches[0];
 }
 
+describe('awd2 diagnostic crumb coverage', () => {
+  it.each(CREATE_PATH_TRUNCATIONS)(
+    'records $kind (field $field) on the createSceneFromAwd2 path',
+    ({ blockType, body, bytes, cut, field, kind, origin }) => {
+      const diagnostics: ImportDiagnostic[] = [];
+      createSceneFromAwd2(truncatedAwd(blockType, body, cut), diagnostics);
+      const crumb = expectOneCrumb(diagnostics, kind);
+      expect(crumb.severity).toBe('Drop');
+      expect(crumb.origin).toBe(origin);
+      expect(crumb.detail?.field).toBe(field);
+      expect(crumb.detail?.bytes).toBe(bytes); // undefined for every field variant except texture 'data'
+    },
+  );
+
+  // The pose/animation truncation crumbs on the createSceneFromAwd2 DOCUMENT path — the path the sink
+  // repair fixed. A valid skeleton drives buildAwdDocumentAnimations (and suppresses no-skeleton-blocks),
+  // so the truncated block's crumb is the ONLY diagnostic: assert the full set is exactly one, not merely
+  // that this kind appears among others.
+  it.each(ANIM_PATH_TRUNCATIONS)(
+    'records $kind (field $field) on the repaired createSceneFromAwd2 document path',
+    ({ blockType, body, cut, field, kind, origin }) => {
+      const diagnostics: ImportDiagnostic[] = [];
+      createSceneFromAwd2(docPathTruncatedAwd(blockType, body, cut), diagnostics);
+      expect(diagnostics).toHaveLength(1);
+      const crumb = expectOneCrumb(diagnostics, kind);
+      expect(crumb.severity).toBe('Drop');
+      expect(crumb.origin).toBe(origin);
+      expect(crumb.detail?.field).toBe(field);
+      expect(crumb.detail?.bytes).toBeUndefined();
+    },
+  );
+
+  it('records multiple-skeletons (Drop, parseAwd2) when a file carries more than one skeleton', () => {
+    const skel = buildSkeletonBody('Rig', [{ name: 'Root', parentIndex: 0, transform: IDENTITY_TRANSFORM }]);
+    const body = concatBytes(
+      buildBlockHeader(1, AWD2_BLOCK_SKELETON, skel.length),
+      skel,
+      buildBlockHeader(2, AWD2_BLOCK_SKELETON, skel.length),
+      skel,
+    );
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'awd2.multiple-skeletons');
+    expect(crumb.severity).toBe('Drop');
+    expect(crumb.origin).toBe('parseAwd2');
+    expect(crumb.detail?.skeletons).toBe(2);
+  });
+
+  it('records submesh-no-positions (Drop, parseTriangleGeometryBlock) when a sub-mesh has no position stream', () => {
+    const idxStream = buildStream(AWD2_STREAM_INDICES, AWD2_DATA_UINT16, new Uint16Array([0, 1, 2]));
+    const geomBody = buildTriangleGeometryBody('Geo', [{ streams: [idxStream] }]);
+    const body = concatBytes(buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length), geomBody);
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'awd2.submesh-no-positions');
+    expect(crumb.detail).toBeUndefined();
+    expect(crumb.severity).toBe('Drop');
+    expect(crumb.origin).toBe('parseTriangleGeometryBlock');
+  });
+
+  it('records stream-data-past-end (Recover, parseTriangleGeometryBlock) when a stream declares more bytes than the block holds', () => {
+    const posStream = buildStream(
+      AWD2_STREAM_POSITIONS,
+      AWD2_DATA_FLOAT32,
+      new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
+    );
+    // A stream header that declares 9999 payload bytes but carries only 4 — overshoots the block end.
+    const badStream = new Uint8Array(6 + 4);
+    badStream[0] = AWD2_STREAM_UVS;
+    badStream[1] = AWD2_DATA_FLOAT32;
+    new DataView(badStream.buffer).setUint32(2, 9999, true);
+    const geomBody = buildTriangleGeometryBody('Geo', [{ streams: [posStream, badStream] }]);
+    const body = concatBytes(buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length), geomBody);
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'awd2.stream-data-past-end');
+    expect(crumb.detail).toBeUndefined();
+    expect(crumb.severity).toBe('Recover');
+    expect(crumb.origin).toBe('parseTriangleGeometryBlock');
+  });
+
+  it('records skin-streams-mismatch (Recover, parseTriangleGeometryBlock) when joint streams do not match the vertex count', () => {
+    const posStream = buildStream(
+      AWD2_STREAM_POSITIONS,
+      AWD2_DATA_FLOAT32,
+      new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
+    );
+    const idxStream = buildStream(AWD2_STREAM_INDICES, AWD2_DATA_UINT16, new Uint16Array([0, 1, 2]));
+    // 3 vertices, weights imply 2 influences/vertex, but only 2 joint indices are present (need 6).
+    const jointIndexStream = buildStream(AWD2_STREAM_JOINT_INDICES, AWD2_DATA_FLOAT32, new Uint16Array([0, 1]));
+    const jointWeightStream = buildStream(
+      AWD2_STREAM_JOINT_WEIGHTS,
+      AWD2_DATA_FLOAT32,
+      new Float32Array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5]),
+    );
+    const geomBody = buildTriangleGeometryBody('Skin', [
+      { streams: [posStream, idxStream, jointIndexStream, jointWeightStream] },
+    ]);
+    const body = concatBytes(buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length), geomBody);
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'awd2.skin-streams-mismatch');
+    expect(crumb.detail).toBeUndefined();
+    expect(crumb.severity).toBe('Recover');
+    expect(crumb.origin).toBe('parseTriangleGeometryBlock');
+  });
+
+  it('records material-missing (Drop, resolveAwdMaterial) when a mesh references an absent material block', () => {
+    const posStream = buildStream(
+      AWD2_STREAM_POSITIONS,
+      AWD2_DATA_FLOAT32,
+      new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
+    );
+    const idxStream = buildStream(AWD2_STREAM_INDICES, AWD2_DATA_UINT16, new Uint16Array([0, 1, 2]));
+    const geomBody = buildTriangleGeometryBody('Geo', [{ streams: [posStream, idxStream] }]);
+    const miBody = buildMeshInstanceBodyWithMaterials('Mesh', 0, IDENTITY_TRANSFORM, 1, [99]);
+    const body = concatBytes(
+      buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+      geomBody,
+      buildBlockHeader(3, AWD2_BLOCK_MESH_INSTANCE, miBody.length),
+      miBody,
+    );
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'awd2.material-missing');
+    expect(crumb.severity).toBe('Drop');
+    expect(crumb.origin).toBe('resolveAwdMaterial');
+    expect(crumb.detail?.material).toBe(99);
+  });
+
+  it('records texture-missing (Drop, resolveAwdTexture) when a material references an absent texture block', () => {
+    const posStream = buildStream(
+      AWD2_STREAM_POSITIONS,
+      AWD2_DATA_FLOAT32,
+      new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
+    );
+    const idxStream = buildStream(AWD2_STREAM_INDICES, AWD2_DATA_UINT16, new Uint16Array([0, 1, 2]));
+    const geomBody = buildTriangleGeometryBody('Geo', [{ streams: [posStream, idxStream] }]);
+    const matBody = buildMaterialBody('Mat', AWD2_MATERIAL_TYPE_TEXTURE, [[AWD2_MATERIAL_PROP_DIFFUSE_TEXTURE, 99]]);
+    const miBody = buildMeshInstanceBodyWithMaterials('Mesh', 0, IDENTITY_TRANSFORM, 1, [2]);
+    const body = concatBytes(
+      buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+      geomBody,
+      buildBlockHeader(2, AWD2_BLOCK_MATERIAL, matBody.length),
+      matBody,
+      buildBlockHeader(3, AWD2_BLOCK_MESH_INSTANCE, miBody.length),
+      miBody,
+    );
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'awd2.texture-missing');
+    expect(crumb.severity).toBe('Drop');
+    expect(crumb.origin).toBe('resolveAwdTexture');
+    expect(crumb.detail?.texture).toBe(99);
+  });
+
+  it('records texture-unrecognized-format (Recover, parseTextureBlock) for an embedded payload that is not an image', () => {
+    const posStream = buildStream(
+      AWD2_STREAM_POSITIONS,
+      AWD2_DATA_FLOAT32,
+      new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
+    );
+    const idxStream = buildStream(AWD2_STREAM_INDICES, AWD2_DATA_UINT16, new Uint16Array([0, 1, 2]));
+    const geomBody = buildTriangleGeometryBody('Geo', [{ streams: [posStream, idxStream] }]);
+    const texBody = buildTextureBody('bad.dat', AWD2_TEXTURE_TYPE_EMBEDDED, new Uint8Array([1, 2, 3, 4]));
+    const matBody = buildMaterialBody('Mat', AWD2_MATERIAL_TYPE_TEXTURE, [[AWD2_MATERIAL_PROP_DIFFUSE_TEXTURE, 2]]);
+    const miBody = buildMeshInstanceBodyWithMaterials('Mesh', 0, IDENTITY_TRANSFORM, 1, [3]);
+    const body = concatBytes(
+      buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+      geomBody,
+      buildBlockHeader(2, AWD2_BLOCK_TEXTURE, texBody.length),
+      texBody,
+      buildBlockHeader(3, AWD2_BLOCK_MATERIAL, matBody.length),
+      matBody,
+      buildBlockHeader(4, AWD2_BLOCK_MESH_INSTANCE, miBody.length),
+      miBody,
+    );
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'awd2.texture-unrecognized-format');
+    expect(crumb.detail).toBeUndefined();
+    expect(crumb.severity).toBe('Recover');
+    expect(crumb.origin).toBe('parseTextureBlock');
+  });
+
+  it('records animation-no-poses (Drop, buildAwdSkeletonAnimationClip) on the live clip path', () => {
+    const skel = buildSkeletonBody('Rig', [{ name: 'Root', parentIndex: 0, transform: IDENTITY_TRANSFORM }]);
+    const anim = buildSkeletonAnimationBody('Anim', []);
+    const body = concatBytes(
+      buildBlockHeader(1, AWD2_BLOCK_SKELETON, skel.length),
+      skel,
+      buildBlockHeader(2, AWD2_BLOCK_SKELETON_ANIMATION, anim.length),
+      anim,
+    );
+    const diagnostics: ImportDiagnostic[] = [];
+    parseAwd2SkeletonAnimations(concatBytes(buildAwdHeader(body.length), body), [createSceneNode()], diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'awd2.animation-no-poses');
+    expect(crumb.detail).toBeUndefined();
+    expect(crumb.severity).toBe('Drop');
+    expect(crumb.origin).toBe('buildAwdSkeletonAnimationClip');
+  });
+
+  it('records animation-no-poses (Drop, buildAwdDocumentAnimation) on the document path', () => {
+    const skel = buildSkeletonBody('Rig', [{ name: 'Root', parentIndex: 0, transform: IDENTITY_TRANSFORM }]);
+    const anim = buildSkeletonAnimationBody('Anim', []);
+    const body = concatBytes(
+      buildBlockHeader(1, AWD2_BLOCK_SKELETON, skel.length),
+      skel,
+      buildBlockHeader(2, AWD2_BLOCK_SKELETON_ANIMATION, anim.length),
+      anim,
+    );
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'awd2.animation-no-poses');
+    expect(crumb.detail).toBeUndefined();
+    expect(crumb.severity).toBe('Drop');
+    expect(crumb.origin).toBe('buildAwdDocumentAnimation');
+  });
+
+  it('records pose-block-missing (Recover, buildAwdDocumentAnimation) on the document path', () => {
+    const skel = buildSkeletonBody('Rig', [{ name: 'Root', parentIndex: 0, transform: IDENTITY_TRANSFORM }]);
+    const anim = buildSkeletonAnimationBody('Anim', [{ duration: 100, poseBlockId: 99 }]);
+    const body = concatBytes(
+      buildBlockHeader(1, AWD2_BLOCK_SKELETON, skel.length),
+      skel,
+      buildBlockHeader(2, AWD2_BLOCK_SKELETON_ANIMATION, anim.length),
+      anim,
+    );
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'awd2.pose-block-missing');
+    expect(crumb.severity).toBe('Recover');
+    expect(crumb.origin).toBe('buildAwdDocumentAnimation');
+    expect(crumb.detail?.distinctPoseBlocks).toBe(1);
+    expect(crumb.detail?.firstPoseBlock).toBe(99);
+  });
+
+  it('records block-length-past-end (Recover, parseAwd2SkeletonAnimations) when a block overruns the body', () => {
+    const blockHeader = buildBlockHeader(1, AWD2_BLOCK_SKELETON, 9999);
+    const diagnostics: ImportDiagnostic[] = [];
+    parseAwd2SkeletonAnimations(concatBytes(buildAwdHeader(blockHeader.length), blockHeader), [], diagnostics);
+    // The overrun aborts the walk with no skeleton parsed, so the full emitted set is exactly these two,
+    // in walk order: the block-length abort, then the empty-result no-skeleton-blocks reject. Lock both.
+    expect(diagnostics.map((d) => d.kind)).toEqual(['awd2.block-length-past-end', 'awd2.no-skeleton-blocks']);
+    const crumb = expectOneCrumb(diagnostics, 'awd2.block-length-past-end');
+    expect(crumb.detail).toBeUndefined();
+    expect(crumb.severity).toBe('Recover');
+    expect(crumb.origin).toBe('parseAwd2SkeletonAnimations');
+  });
+});
+
+// Skeleton block body: name → jointCount(uint16) → NumAttrList → per joint:
+//   jointId(uint16) → parentId(uint16, 1-based, 0=root) → name → matrix4x3(float32) → NumAttrList → UserAttrList
+function buildSkeletonBody(
+  name: string,
+  joints: Array<{ name: string; parentIndex: number; transform: number[] }>,
+): Uint8Array {
+  const parts: Uint8Array[] = [buildAwdString(name)];
+  const jointCountBytes = new Uint8Array(2);
+  new DataView(jointCountBytes.buffer).setUint16(0, joints.length, true);
+  parts.push(jointCountBytes);
+  parts.push(buildEmptyAttrList());
+
+  for (let j = 0; j < joints.length; j++) {
+    const joint = joints[j];
+    const headerBytes = new Uint8Array(4);
+    const hv = new DataView(headerBytes.buffer);
+    hv.setUint16(0, j, true);
+    hv.setUint16(2, joint.parentIndex, true);
+    parts.push(headerBytes);
+    parts.push(buildAwdString(joint.name));
+    const transformBytes = new Uint8Array(12 * 4);
+    const transformView = new DataView(transformBytes.buffer);
+    for (let i = 0; i < 12; i++) {
+      transformView.setFloat32(i * 4, joint.transform[i] ?? 0, true);
+    }
+    parts.push(transformBytes);
+    parts.push(buildEmptyAttrList());
+    parts.push(buildEmptyAttrList());
+  }
+
+  return concatBytes(...parts);
+}
+
+// Skeleton-pose block body: name → jointCount(uint16) → NumAttrList → per joint:
+//   hasTransform(uint8) → optional matrix4x3(float32)
+function buildSkeletonPoseBody(name: string, jointTransforms: (number[] | null)[]): Uint8Array {
+  const parts: Uint8Array[] = [buildAwdString(name)];
+  const jointCountBytes = new Uint8Array(2);
+  new DataView(jointCountBytes.buffer).setUint16(0, jointTransforms.length, true);
+  parts.push(jointCountBytes);
+  parts.push(buildEmptyAttrList());
+
+  for (const transform of jointTransforms) {
+    if (transform !== null) {
+      const flagAndTransform = new Uint8Array(1 + 12 * 4);
+      flagAndTransform[0] = 1;
+      const tv = new DataView(flagAndTransform.buffer);
+      for (let i = 0; i < 12; i++) {
+        tv.setFloat32(1 + i * 4, transform[i] ?? 0, true);
+      }
+      parts.push(flagAndTransform);
+    } else {
+      parts.push(new Uint8Array([0]));
+    }
+  }
+
+  return concatBytes(...parts);
+}
+
+// Skeleton-animation block body: name → frameCount(uint16) → NumAttrList → per frame:
+//   poseBlockId(uint32) → duration(uint16, ms)
+function buildSkeletonAnimationBody(name: string, poses: Array<{ duration: number; poseBlockId: number }>): Uint8Array {
+  const parts: Uint8Array[] = [buildAwdString(name)];
+  const poseCountBytes = new Uint8Array(2);
+  new DataView(poseCountBytes.buffer).setUint16(0, poses.length, true);
+  parts.push(poseCountBytes);
+  parts.push(buildEmptyAttrList());
+
+  for (const pose of poses) {
+    const poseBytes = new Uint8Array(6);
+    const pv = new DataView(poseBytes.buffer);
+    pv.setUint32(0, pose.poseBlockId, true);
+    pv.setUint16(4, pose.duration, true);
+    parts.push(poseBytes);
+  }
+
+  return concatBytes(...parts);
+}
+
 describe('createSceneFromAwd2', () => {
   it('parses a single triangle with positions and indices', () => {
     const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
@@ -540,6 +880,7 @@ describe('createSceneFromAwd2', () => {
     const scene = createSceneFromAwd2(new Uint8Array(4), diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
     const crumb = expectOneCrumb(diagnostics, 'awd2.header-too-short');
+    expect(crumb.detail).toBeUndefined();
     expect(crumb.severity).toBe('Reject');
     expect(crumb.origin).toBe('parseAwd2');
   });
@@ -551,6 +892,7 @@ describe('createSceneFromAwd2', () => {
     const scene = createSceneFromAwd2(bogus, diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
     const crumb = expectOneCrumb(diagnostics, 'awd2.bad-magic');
+    expect(crumb.detail).toBeUndefined();
     expect(crumb.severity).toBe('Reject');
     expect(crumb.origin).toBe('parseAwd2');
   });
@@ -608,6 +950,7 @@ describe('createSceneFromAwd2', () => {
     const diagnostics: ImportDiagnostic[] = [];
     createSceneFromAwd2(awd, diagnostics);
     const crumb = expectOneCrumb(diagnostics, 'awd2.block-length-past-end');
+    expect(crumb.detail).toBeUndefined();
     expect(crumb.severity).toBe('Recover');
     expect(crumb.origin).toBe('parseAwd2');
   });
@@ -1016,85 +1359,6 @@ describe('createSceneFromAwd2', () => {
     expect(mesh.skin == null).toBe(true);
   });
 });
-
-// Skeleton block body: name → jointCount(uint16) → NumAttrList → per joint:
-//   jointId(uint16) → parentId(uint16, 1-based, 0=root) → name → matrix4x3(float32) → NumAttrList → UserAttrList
-function buildSkeletonBody(
-  name: string,
-  joints: Array<{ name: string; parentIndex: number; transform: number[] }>,
-): Uint8Array {
-  const parts: Uint8Array[] = [buildAwdString(name)];
-  const jointCountBytes = new Uint8Array(2);
-  new DataView(jointCountBytes.buffer).setUint16(0, joints.length, true);
-  parts.push(jointCountBytes);
-  parts.push(buildEmptyAttrList());
-
-  for (let j = 0; j < joints.length; j++) {
-    const joint = joints[j];
-    const headerBytes = new Uint8Array(4);
-    const hv = new DataView(headerBytes.buffer);
-    hv.setUint16(0, j, true);
-    hv.setUint16(2, joint.parentIndex, true);
-    parts.push(headerBytes);
-    parts.push(buildAwdString(joint.name));
-    const transformBytes = new Uint8Array(12 * 4);
-    const transformView = new DataView(transformBytes.buffer);
-    for (let i = 0; i < 12; i++) {
-      transformView.setFloat32(i * 4, joint.transform[i] ?? 0, true);
-    }
-    parts.push(transformBytes);
-    parts.push(buildEmptyAttrList());
-    parts.push(buildEmptyAttrList());
-  }
-
-  return concatBytes(...parts);
-}
-
-// Skeleton-pose block body: name → jointCount(uint16) → NumAttrList → per joint:
-//   hasTransform(uint8) → optional matrix4x3(float32)
-function buildSkeletonPoseBody(name: string, jointTransforms: (number[] | null)[]): Uint8Array {
-  const parts: Uint8Array[] = [buildAwdString(name)];
-  const jointCountBytes = new Uint8Array(2);
-  new DataView(jointCountBytes.buffer).setUint16(0, jointTransforms.length, true);
-  parts.push(jointCountBytes);
-  parts.push(buildEmptyAttrList());
-
-  for (const transform of jointTransforms) {
-    if (transform !== null) {
-      const flagAndTransform = new Uint8Array(1 + 12 * 4);
-      flagAndTransform[0] = 1;
-      const tv = new DataView(flagAndTransform.buffer);
-      for (let i = 0; i < 12; i++) {
-        tv.setFloat32(1 + i * 4, transform[i] ?? 0, true);
-      }
-      parts.push(flagAndTransform);
-    } else {
-      parts.push(new Uint8Array([0]));
-    }
-  }
-
-  return concatBytes(...parts);
-}
-
-// Skeleton-animation block body: name → frameCount(uint16) → NumAttrList → per frame:
-//   poseBlockId(uint32) → duration(uint16, ms)
-function buildSkeletonAnimationBody(name: string, poses: Array<{ duration: number; poseBlockId: number }>): Uint8Array {
-  const parts: Uint8Array[] = [buildAwdString(name)];
-  const poseCountBytes = new Uint8Array(2);
-  new DataView(poseCountBytes.buffer).setUint16(0, poses.length, true);
-  parts.push(poseCountBytes);
-  parts.push(buildEmptyAttrList());
-
-  for (const pose of poses) {
-    const poseBytes = new Uint8Array(6);
-    const pv = new DataView(poseBytes.buffer);
-    pv.setUint32(0, pose.poseBlockId, true);
-    pv.setUint16(4, pose.duration, true);
-    parts.push(poseBytes);
-  }
-
-  return concatBytes(...parts);
-}
 
 describe('createSceneFromAwd2 animations', () => {
   it('returns the scene plus the skeleton animation bound to the scene’s own joints', () => {
@@ -1561,6 +1825,7 @@ describe('parseAwd2SkeletonAnimations', () => {
     const clip = firstAwdClip(awd, [], diagnostics);
     expect(clip).toBeUndefined();
     const crumb = expectOneCrumb(diagnostics, 'awd2.no-skeleton-blocks');
+    expect(crumb.detail).toBeUndefined();
     expect(crumb.severity).toBe('Reject');
     expect(crumb.origin).toBe('parseAwd2SkeletonAnimations');
   });
@@ -1578,6 +1843,7 @@ describe('parseAwd2SkeletonAnimations', () => {
     const clip = firstAwdClip(awd, [createSceneNode()], diagnostics);
     expect(clip).toBeUndefined();
     const crumb = expectOneCrumb(diagnostics, 'awd2.no-skeleton-animation-blocks');
+    expect(crumb.detail).toBeUndefined();
     expect(crumb.severity).toBe('Reject');
     expect(crumb.origin).toBe('parseAwd2SkeletonAnimations');
   });
@@ -1587,6 +1853,7 @@ describe('parseAwd2SkeletonAnimations', () => {
     const clip = firstAwdClip(new Uint8Array(4), [], diagnostics);
     expect(clip).toBeUndefined();
     const crumb = expectOneCrumb(diagnostics, 'awd2.header-too-short');
+    expect(crumb.detail).toBeUndefined();
     expect(crumb.severity).toBe('Reject');
     expect(crumb.origin).toBe('parseAwd2SkeletonAnimations');
   });
@@ -1597,6 +1864,7 @@ describe('parseAwd2SkeletonAnimations', () => {
     const clip = firstAwdClip(bogus, [], diagnostics);
     expect(clip).toBeUndefined();
     const crumb = expectOneCrumb(diagnostics, 'awd2.bad-magic');
+    expect(crumb.detail).toBeUndefined();
     expect(crumb.severity).toBe('Reject');
     expect(crumb.origin).toBe('parseAwd2SkeletonAnimations');
   });
@@ -1616,6 +1884,7 @@ describe('parseAwd2SkeletonAnimations', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const clip = firstAwdClip(awd, [createSceneNode()], diagnostics);
     expect(clip).toBeDefined();
+    expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.pose-block-missing');
     expect(crumb.severity).toBe('Recover');
     expect(crumb.origin).toBe('buildAwdSkeletonAnimationClip');
@@ -1706,6 +1975,267 @@ describe('parseAwd2SkeletonAnimations', () => {
     expect(sampleX(clips.attack)).toBeCloseTo(9);
   });
 });
+
+// Wraps ONE block of `blockType` at a deliberately short declared length so the parser truncates INSIDE
+// it: the block carries only `fullBody`'s first `cut` bytes as its declared blockLength, and the AWD body
+// is sized to exactly that block — so the walk advances to the body end after the single truncated block
+// (one crumb, no trailing garbage parse). `cut` is the byte count of the fields BEFORE the truncated one.
+function truncatedAwd(blockType: number, fullBody: Uint8Array, cut: number): Uint8Array {
+  const body = concatBytes(buildBlockHeader(1, blockType, cut), fullBody.slice(0, cut));
+  return concatBytes(buildAwdHeader(body.length), body);
+}
+
+// A VALID skeleton block followed by ONE truncated pose/animation block. Pose/animation blocks are not
+// parsed by parseAwd2's first walk, so the ONLY thing that parses them on the createSceneFromAwd2 document
+// path is buildAwdDocumentAnimations — the exact call the sink-threading repair targeted. The valid
+// skeleton drives that second walk (and means no no-skeleton-blocks crumb is emitted), so the truncated
+// block's crumb is the sole diagnostic: this fixture regression-guards the repaired path directly.
+function docPathTruncatedAwd(blockType: number, fullBody: Uint8Array, cut: number): Uint8Array {
+  const skel = buildSkeletonBody('Rig', [{ name: 'Root', parentIndex: 0, transform: IDENTITY_TRANSFORM }]);
+  const body = concatBytes(
+    buildBlockHeader(1, AWD2_BLOCK_SKELETON, skel.length),
+    skel,
+    buildBlockHeader(2, blockType, cut),
+    fullBody.slice(0, cut),
+  );
+  return concatBytes(buildAwdHeader(body.length), body);
+}
+
+// Bodies whose first-walk block types are parsed by createSceneFromAwd2/parseAwd2 directly. Field cut
+// offsets come from each parse function's documented layout (empty names keep every length deterministic).
+const CONTAINER_BODY = buildContainerBody('', 0, IDENTITY_TRANSFORM);
+const MESH_INSTANCE_BODY = buildMeshInstanceBody('', 0, IDENTITY_TRANSFORM, 1);
+const MATERIAL_BODY_T = buildMaterialBody('', AWD2_MATERIAL_TYPE_COLOR, []);
+const TEXTURE_BODY_T = buildTextureBody('', AWD2_TEXTURE_TYPE_EMBEDDED, FAKE_PNG_BYTES);
+const SKELETON_BODY_T = buildSkeletonBody('', [{ name: '', parentIndex: 0, transform: IDENTITY_TRANSFORM }]);
+
+// (blockType, body, cut) → the exact Drop crumb the createSceneFromAwd2 first walk records. Every field
+// variant of every per-block "truncated" kind, locking kind + severity + true origin + detail.field.
+const CREATE_PATH_TRUNCATIONS: Array<{
+  blockType: number;
+  body: Uint8Array;
+  bytes?: number;
+  cut: number;
+  field: string;
+  kind: string;
+  origin: string;
+}> = [
+  {
+    blockType: AWD2_BLOCK_CONTAINER,
+    body: CONTAINER_BODY,
+    cut: 0,
+    field: 'parentId',
+    kind: 'awd2.container-truncated',
+    origin: 'parseContainerBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_CONTAINER,
+    body: CONTAINER_BODY,
+    cut: 4,
+    field: 'transform',
+    kind: 'awd2.container-truncated',
+    origin: 'parseContainerBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_CONTAINER,
+    body: CONTAINER_BODY,
+    cut: 52,
+    field: 'name',
+    kind: 'awd2.container-truncated',
+    origin: 'parseContainerBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_MESH_INSTANCE,
+    body: MESH_INSTANCE_BODY,
+    cut: 0,
+    field: 'parentId',
+    kind: 'awd2.mesh-instance-truncated',
+    origin: 'parseMeshInstanceBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_MESH_INSTANCE,
+    body: MESH_INSTANCE_BODY,
+    cut: 4,
+    field: 'transform',
+    kind: 'awd2.mesh-instance-truncated',
+    origin: 'parseMeshInstanceBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_MESH_INSTANCE,
+    body: MESH_INSTANCE_BODY,
+    cut: 52,
+    field: 'name',
+    kind: 'awd2.mesh-instance-truncated',
+    origin: 'parseMeshInstanceBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_MESH_INSTANCE,
+    body: MESH_INSTANCE_BODY,
+    cut: 54,
+    field: 'geometryId',
+    kind: 'awd2.mesh-instance-truncated',
+    origin: 'parseMeshInstanceBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_MATERIAL,
+    body: MATERIAL_BODY_T,
+    cut: 0,
+    field: 'name',
+    kind: 'awd2.material-truncated',
+    origin: 'parseMaterialBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_MATERIAL,
+    body: MATERIAL_BODY_T,
+    cut: 2,
+    field: 'type',
+    kind: 'awd2.material-truncated',
+    origin: 'parseMaterialBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_TEXTURE,
+    body: TEXTURE_BODY_T,
+    cut: 0,
+    field: 'name',
+    kind: 'awd2.texture-truncated',
+    origin: 'parseTextureBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_TEXTURE,
+    body: TEXTURE_BODY_T,
+    cut: 2,
+    field: 'payload',
+    kind: 'awd2.texture-truncated',
+    origin: 'parseTextureBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_TEXTURE,
+    body: TEXTURE_BODY_T,
+    bytes: FAKE_PNG_BYTES.length,
+    cut: 7,
+    field: 'data',
+    kind: 'awd2.texture-truncated',
+    origin: 'parseTextureBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_SKELETON,
+    body: SKELETON_BODY_T,
+    cut: 0,
+    field: 'name',
+    kind: 'awd2.skeleton-truncated',
+    origin: 'parseSkeletonBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_SKELETON,
+    body: SKELETON_BODY_T,
+    cut: 2,
+    field: 'jointCount',
+    kind: 'awd2.skeleton-truncated',
+    origin: 'parseSkeletonBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_SKELETON,
+    body: SKELETON_BODY_T,
+    cut: 8,
+    field: 'jointFields',
+    kind: 'awd2.skeleton-truncated',
+    origin: 'parseSkeletonBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_SKELETON,
+    body: SKELETON_BODY_T,
+    cut: 12,
+    field: 'jointName',
+    kind: 'awd2.skeleton-truncated',
+    origin: 'parseSkeletonBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_SKELETON,
+    body: SKELETON_BODY_T,
+    cut: 14,
+    field: 'jointTransform',
+    kind: 'awd2.skeleton-truncated',
+    origin: 'parseSkeletonBlock',
+  },
+];
+
+// Pose/animation blocks are NOT parsed by the first walk; parseAwd2SkeletonAnimations is their reporting
+// site (it also returns {} with a no-skeleton-blocks crumb, which expectOneCrumb ignores by kind).
+const POSE_BODY_T = buildSkeletonPoseBody('', [IDENTITY_TRANSFORM]);
+const ANIM_BODY_T = buildSkeletonAnimationBody('', [{ duration: 100, poseBlockId: 1 }]);
+const ANIM_PATH_TRUNCATIONS: Array<{
+  blockType: number;
+  body: Uint8Array;
+  cut: number;
+  field: string;
+  kind: string;
+  origin: string;
+}> = [
+  {
+    blockType: AWD2_BLOCK_SKELETON_POSE,
+    body: POSE_BODY_T,
+    cut: 0,
+    field: 'name',
+    kind: 'awd2.skeleton-pose-truncated',
+    origin: 'parseSkeletonPoseBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_SKELETON_POSE,
+    body: POSE_BODY_T,
+    cut: 2,
+    field: 'jointCount',
+    kind: 'awd2.skeleton-pose-truncated',
+    origin: 'parseSkeletonPoseBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_SKELETON_POSE,
+    body: POSE_BODY_T,
+    cut: 8,
+    field: 'hasTransform',
+    kind: 'awd2.skeleton-pose-truncated',
+    origin: 'parseSkeletonPoseBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_SKELETON_POSE,
+    body: POSE_BODY_T,
+    cut: 9,
+    field: 'jointTransform',
+    kind: 'awd2.skeleton-pose-truncated',
+    origin: 'parseSkeletonPoseBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_SKELETON_ANIMATION,
+    body: ANIM_BODY_T,
+    cut: 0,
+    field: 'name',
+    kind: 'awd2.skeleton-animation-truncated',
+    origin: 'parseSkeletonAnimationBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_SKELETON_ANIMATION,
+    body: ANIM_BODY_T,
+    cut: 2,
+    field: 'frameCount',
+    kind: 'awd2.skeleton-animation-truncated',
+    origin: 'parseSkeletonAnimationBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_SKELETON_ANIMATION,
+    body: ANIM_BODY_T,
+    cut: 8,
+    field: 'poseBlockId',
+    kind: 'awd2.skeleton-animation-truncated',
+    origin: 'parseSkeletonAnimationBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_SKELETON_ANIMATION,
+    body: ANIM_BODY_T,
+    cut: 12,
+    field: 'poseDuration',
+    kind: 'awd2.skeleton-animation-truncated',
+    origin: 'parseSkeletonAnimationBlock',
+  },
+];
 
 describe('registerAwd2Decompressor', () => {
   // A trivial reversible "codec": the compressed body is a 4-byte marker followed by the real block
