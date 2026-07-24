@@ -19,9 +19,10 @@ export interface AnimationCrossfadeOptions {
 }
 
 // An explicit two-player transition. Both players remain caller-visible and are advanced together by
-// advanceAnimationCrossfade. `weight` is the curved blend weight of `to`; completion is defined by
-// weight reaching 1. `channels` is the target-correspondence layout computed at construction. The
-// sample buffers are owned scratch storage, sized once so sampling stays allocation-free.
+// advanceAnimationCrossfade. `weight` is the curved blend weight of `to`; it may overshoot 1 when the
+// curve does, while lifecycle completion is based on elapsed time reaching duration. `channels` is the
+// target-correspondence layout computed at construction. The sample buffers are owned scratch storage,
+// sized once so sampling stays allocation-free.
 export interface AnimationCrossfade extends Entity {
   channels: readonly Readonly<AnimationCrossfadeChannel>[];
   curve: EasingFunction;
