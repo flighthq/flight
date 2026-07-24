@@ -17,11 +17,19 @@ import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 import { makeWgpuSceneState } from './wgpuSceneTestHelper';
 import { registerWgpuModifierSnippet, resolveWgpuModifierSnippet } from './wgpuShadedModifierSnippet';
 import {
+  animatedNormalWgpuModifierSnippet,
   bindWgpuShadedSurface,
   buildWgpuShadedCacheKey,
+  dissolveWgpuModifierSnippet,
+  emissiveWgpuModifierSnippet,
   ensureWgpuShadedPipeline,
+  envReflectWgpuModifierSnippet,
+  fogWgpuModifierSnippet,
   getWgpuShadedModuleSource,
   registerBuiltInWgpuModifierSnippets,
+  rimWgpuModifierSnippet,
+  toonWgpuModifierSnippet,
+  vertexDisplaceWgpuModifierSnippet,
 } from './wgpuShadedPrelude';
 
 describe('bindWgpuShadedSurface', () => {
@@ -77,6 +85,30 @@ describe('ensureWgpuShadedPipeline', () => {
       .map((call) => call.args[0] as { entries: { binding: number }[] })
       .find(({ entries }) => entries.some(({ binding }) => binding === 6));
     expect(layout?.entries.map(({ binding }) => binding)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+  });
+
+  it('recompiles after a last-write-wins snippet replacement with the same define signature', () => {
+    const { fake, state } = makeWgpuSceneState();
+    const modifier = { kind: 'acme.Replace', slot: ModifierSlot.Effect };
+    registerWgpuModifierSnippet(state, {
+      contribution: () => ({ source: '// compiler-marker-A' }),
+      kind: modifier.kind,
+      slot: modifier.slot,
+    });
+    const material = createShadedMaterial({ modifiers: [modifier] });
+    ensureWgpuShadedPipeline(state, material, 'bgra8unorm');
+    const before = fake.calls.filter((call) => call.name === 'createShaderModule').length;
+
+    registerWgpuModifierSnippet(state, {
+      contribution: () => ({ source: '// compiler-marker-B' }),
+      kind: modifier.kind,
+      slot: modifier.slot,
+    });
+    ensureWgpuShadedPipeline(state, material, 'bgra8unorm');
+    const modules = fake.calls.filter((call) => call.name === 'createShaderModule');
+
+    expect(modules).toHaveLength(before + 1);
+    expect((modules.at(-1)!.args[0] as { code: string }).code).toContain('compiler-marker-B');
   });
 });
 
@@ -211,10 +243,50 @@ describe('registerBuiltInWgpuModifierSnippets', () => {
     const { state } = makeWgpuSceneState();
     registerBuiltInWgpuModifierSnippets(state);
     expect(resolveWgpuModifierSnippet(state, 'RimModifier')).not.toBeNull();
+    expect([
+      animatedNormalWgpuModifierSnippet.kind,
+      dissolveWgpuModifierSnippet.kind,
+      emissiveWgpuModifierSnippet.kind,
+      envReflectWgpuModifierSnippet.kind,
+      fogWgpuModifierSnippet.kind,
+      rimWgpuModifierSnippet.kind,
+      toonWgpuModifierSnippet.kind,
+      vertexDisplaceWgpuModifierSnippet.kind,
+    ]).toEqual([
+      'AnimatedNormalModifier',
+      'DissolveModifier',
+      'EmissiveModifier',
+      'EnvReflectModifier',
+      'FogModifier',
+      'RimModifier',
+      'ToonModifier',
+      'VertexDisplaceModifier',
+    ]);
   });
 });
 
 describe('shaded binding cache', () => {
+  it('owns GPU bindings per render state when a material is shared across devices', () => {
+    const first = makeWgpuSceneState();
+    const second = makeWgpuSceneState();
+    registerBuiltInWgpuModifierSnippets(first.state);
+    registerBuiltInWgpuModifierSnippets(second.state);
+    const material = createShadedMaterial();
+    const firstPipeline = ensureWgpuShadedPipeline(first.state, material, 'bgra8unorm');
+    const secondPipeline = ensureWgpuShadedPipeline(second.state, material, 'bgra8unorm');
+
+    const firstGroup = bindWgpuShadedSurface(first.state, firstPipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
+    const firstBufferCount = first.fake.calls.filter((call) => call.name === 'createBuffer').length;
+    const firstGroupCount = first.fake.calls.filter((call) => call.name === 'createBindGroup').length;
+    const secondGroup = bindWgpuShadedSurface(second.state, secondPipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
+    const firstAgain = bindWgpuShadedSurface(first.state, firstPipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
+
+    expect(firstGroup).not.toBe(secondGroup);
+    expect(firstAgain).toBe(firstGroup);
+    expect(first.fake.calls.filter((call) => call.name === 'createBuffer')).toHaveLength(firstBufferCount);
+    expect(first.fake.calls.filter((call) => call.name === 'createBindGroup')).toHaveLength(firstGroupCount);
+  });
+
   it('reuses its uniform allocation while rebuilding for texture identity and readiness changes', () => {
     const { fake, state } = makeWgpuSceneState();
     registerBuiltInWgpuModifierSnippets(state);

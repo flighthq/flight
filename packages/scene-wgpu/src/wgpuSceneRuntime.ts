@@ -37,6 +37,7 @@ export function getWgpuSceneRuntime(state: WgpuRenderState): WgpuSceneRuntime {
       pbrSampleShadowView: null,
       materialRegistry: new Map(),
       modifierSnippetRegistry: null,
+      modifierSnippetRevision: 0,
       opaqueDrawList: [],
       opaquePool: [],
       pendingDrawOffset: 0,
@@ -53,6 +54,8 @@ export function getWgpuSceneRuntime(state: WgpuRenderState): WgpuSceneRuntime {
       shadowSampleLayout: null,
       shadowSampleView: null,
       shadowUniformBuffer: null,
+      shadedMaterialBindingCache: new WeakMap(),
+      shadedMaterialPlanCache: new WeakMap(),
       uploadCache: new WeakMap(),
     };
     sceneRuntimes.set(state, scene);

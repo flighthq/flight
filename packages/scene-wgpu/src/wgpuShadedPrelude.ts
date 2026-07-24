@@ -92,9 +92,10 @@ export function bindWgpuShadedSurface(
   specular: Readonly<LinearColor>,
 ): GPUBindGroup {
   const registry = getModifierRegistry(state);
-  const plan = getCachedModifierPlan(material, registry);
+  const plan = getCachedModifierPlan(state, material, registry);
   const byteLength = 48 + plan.uniformFloatCount * 4;
-  let binding = shadedBindings.get(material);
+  const stateBindings = getWgpuSceneRuntime(state).shadedMaterialBindingCache as WeakMap<ShadedMaterial, ShadedBinding>;
+  let binding = stateBindings.get(material);
   const sampler = getWgpuMaterialSampler(state, material.diffuseMap);
   if (
     binding === undefined ||
@@ -104,7 +105,7 @@ export function bindWgpuShadedSurface(
   ) {
     binding?.buffer.destroy();
     binding = createShadedBinding(state, pipeline.materialBindGroupLayout, byteLength, plan.textureCount + 3, sampler);
-    shadedBindings.set(material, binding);
+    stateBindings.set(material, binding);
   }
 
   binding.textures[0] = material.diffuseMap;
@@ -215,8 +216,8 @@ export function ensureWgpuShadedPipeline(
 ): WgpuMeshPipeline {
   const registry = getModifierRegistry(state);
   const defineKey = buildWgpuShadedCacheKey(material, registry);
-  const plan = getCachedModifierPlan(material, registry, defineKey);
-  const key = `${defineKey}|${format}`;
+  const plan = getCachedModifierPlan(state, material, registry, defineKey);
+  const key = `${defineKey}|registry:${getWgpuSceneRuntime(state).modifierSnippetRevision}|${format}`;
   return ensureWgpuScenePipeline(state, key, (blended) => {
     const entries: GPUBindGroupLayoutEntry[] = [
       {
@@ -440,11 +441,13 @@ function writeModifierUniforms(out: Float32Array, offset: number, plan: Readonly
 }
 
 function getCachedModifierPlan(
+  state: WgpuRenderState,
   material: Readonly<ShadedMaterial>,
   registry: Readonly<ModifierRegistry>,
   defineKey?: string,
 ): ShadedModifierPlan {
-  const cached = shadedPlans.get(material);
+  const plans = getWgpuSceneRuntime(state).shadedMaterialPlanCache as WeakMap<ShadedMaterial, CachedShadedPlan>;
+  const cached = plans.get(material);
   if (
     cached !== undefined &&
     cached.modifiers === material.modifiers &&
@@ -455,7 +458,7 @@ function getCachedModifierPlan(
     return cached.plan;
   }
   const plan = buildModifierPlan(material.modifiers, registry);
-  shadedPlans.set(material, {
+  plans.set(material, {
     defineKey: defineKey ?? buildWgpuShadedCacheKey(material, registry),
     modifiers: material.modifiers,
     plan,
@@ -477,7 +480,7 @@ function copyColorRgb(out: Float32Array, offset: number): void {
   out[offset + 2] = _color[2];
 }
 
-const animatedNormalWgpuModifierSnippet: WgpuModifierSnippet = {
+export const animatedNormalWgpuModifierSnippet: WgpuModifierSnippet = {
   bind(modifier, out, base): void {
     const value = modifier as Readonly<AnimatedNormalModifier>;
     out[base] = value.scroll.x;
@@ -519,7 +522,7 @@ const animatedNormalWgpuModifierSnippet: WgpuModifierSnippet = {
     return offset;
   },
 };
-const dissolveWgpuModifierSnippet: WgpuModifierSnippet = {
+export const dissolveWgpuModifierSnippet: WgpuModifierSnippet = {
   bind(modifier, out, base): void {
     const value = modifier as Readonly<DissolveModifier>;
     out[base] = value.threshold;
@@ -557,7 +560,7 @@ const dissolveWgpuModifierSnippet: WgpuModifierSnippet = {
     return offset;
   },
 };
-const emissiveWgpuModifierSnippet: WgpuModifierSnippet = {
+export const emissiveWgpuModifierSnippet: WgpuModifierSnippet = {
   bind(modifier, out, base): void {
     const value = modifier as Readonly<EmissiveModifier>;
     unpackColorToLinear(_color, value.color);
@@ -603,7 +606,7 @@ const emissiveWgpuModifierSnippet: WgpuModifierSnippet = {
     return offset;
   },
 };
-const envReflectWgpuModifierSnippet: WgpuModifierSnippet = {
+export const envReflectWgpuModifierSnippet: WgpuModifierSnippet = {
   bind(modifier, out, base): void {
     const value = modifier as Readonly<EnvReflectModifier>;
     unpackColorToLinear(_color, value.tint);
@@ -628,7 +631,7 @@ const envReflectWgpuModifierSnippet: WgpuModifierSnippet = {
   kind: EnvReflectModifierKind,
   slot: ModifierSlot.Effect,
 };
-const fogWgpuModifierSnippet: WgpuModifierSnippet = {
+export const fogWgpuModifierSnippet: WgpuModifierSnippet = {
   bind(modifier, out, base): void {
     const value = modifier as Readonly<FogModifier>;
     unpackColorToLinear(_color, value.color);
@@ -657,7 +660,7 @@ const fogWgpuModifierSnippet: WgpuModifierSnippet = {
   kind: FogModifierKind,
   slot: ModifierSlot.Effect,
 };
-const rimWgpuModifierSnippet: WgpuModifierSnippet = {
+export const rimWgpuModifierSnippet: WgpuModifierSnippet = {
   bind(modifier, out, base): void {
     const value = modifier as Readonly<RimModifier>;
     unpackColorToLinear(_color, value.color);
@@ -679,7 +682,7 @@ const rimWgpuModifierSnippet: WgpuModifierSnippet = {
   kind: RimModifierKind,
   slot: ModifierSlot.Effect,
 };
-const toonWgpuModifierSnippet: WgpuModifierSnippet = {
+export const toonWgpuModifierSnippet: WgpuModifierSnippet = {
   bind(modifier, out, base): void {
     const value = modifier as Readonly<ToonModifier>;
     out[base] = Math.max(value.steps, 2);
@@ -703,7 +706,7 @@ const toonWgpuModifierSnippet: WgpuModifierSnippet = {
   kind: ToonModifierKind,
   slot: ModifierSlot.Effect,
 };
-const vertexDisplaceWgpuModifierSnippet: WgpuModifierSnippet = {
+export const vertexDisplaceWgpuModifierSnippet: WgpuModifierSnippet = {
   bind(modifier, out, base): void {
     const value = modifier as Readonly<VertexDisplaceModifier>;
     out[base] = value.amplitude;
@@ -779,6 +782,4 @@ fn shadedValueNoise(p : vec2f) -> f32 {
 
 const MODIFIER_FLOATS = 12;
 const _color: LinearColor = [0, 0, 0, 0];
-const shadedBindings = new WeakMap<ShadedMaterial, ShadedBinding>();
-const shadedPlans = new WeakMap<ShadedMaterial, CachedShadedPlan>();
 const EMPTY_MODIFIER_REGISTRY: ModifierRegistry = { definitions: new Map() };
