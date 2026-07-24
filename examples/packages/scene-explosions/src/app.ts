@@ -200,7 +200,7 @@ function enterFrame(now: number): void {
   }
 
   render(scene, camera, lights);
-  requestAnimationFrame(enterFrame);
+  if (!captureMode) requestAnimationFrame(enterFrame);
 }
 
 requestAnimationFrame(enterFrame);

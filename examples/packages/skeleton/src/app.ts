@@ -163,10 +163,9 @@ const lights: SceneLightsLike = {
 const q = createQuaternion();
 const zAxis = createVector3(0, 0, 1);
 const captureMode = (window as typeof window & { __flightCapture?: boolean }).__flightCapture === true;
-let captureFrame = 0;
 
 function animate(time: number): void {
-  const t = captureMode ? captureFrame++ / 60 : time * 0.001;
+  const t = captureMode ? 0 : time * 0.001;
 
   // Pose each joint with a sinusoidal Z-axis rotation; a per-joint phase offset gives a traveling wave.
   for (let j = 0; j < JOINT_COUNT; j++) {
@@ -181,7 +180,7 @@ function animate(time: number): void {
   prepareSceneSkinning(scene);
 
   render(scene, camera, lights);
-  requestAnimationFrame(animate);
+  if (!captureMode) requestAnimationFrame(animate);
 }
 
 requestAnimationFrame(animate);
