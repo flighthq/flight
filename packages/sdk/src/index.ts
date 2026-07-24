@@ -41,6 +41,7 @@ export * from '@flighthq/glyphatlas';
 export * from '@flighthq/haptics';
 export * from '@flighthq/image';
 export * from '@flighthq/image-codec';
+export * from '@flighthq/importdiagnostics';
 export * from '@flighthq/input';
 export * from '@flighthq/interaction';
 export * from '@flighthq/intl';

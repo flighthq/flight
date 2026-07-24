@@ -128,6 +128,8 @@
       "@flighthq/image/*": ["./packages/image/src/*"],
       "@flighthq/image-codec": ["./packages/image-codec/src/index.ts"],
       "@flighthq/image-codec/*": ["./packages/image-codec/src/*"],
+      "@flighthq/importdiagnostics": ["./packages/importdiagnostics/src/index.ts"],
+      "@flighthq/importdiagnostics/*": ["./packages/importdiagnostics/src/*"],
       "@flighthq/video": ["./packages/video/src/index.ts"],
       "@flighthq/video/*": ["./packages/video/src/*"],
       "@flighthq/loader": ["./packages/loader/src/index.ts"],
