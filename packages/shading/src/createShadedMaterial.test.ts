@@ -30,6 +30,13 @@ describe('createShadedMaterial', () => {
     expect(material.doubleSided).toBe(false);
   });
 
+  it('forwards the SurfaceMaterial trailer from options (mask/blend expressible at construction)', () => {
+    const material = createShadedMaterial({ alphaCutoff: 0.25, alphaMode: 'mask', doubleSided: true });
+    expect(material.alphaMode).toBe('mask');
+    expect(material.alphaCutoff).toBe(0.25);
+    expect(material.doubleSided).toBe(true);
+  });
+
   it('defaults to an empty modifier stack', () => {
     const material = createShadedMaterial();
     expect(material.modifiers).toEqual([]);

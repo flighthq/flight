@@ -1,4 +1,4 @@
-import type { AlphaType, Kind, MaterialAlphaMode, SurfaceMaterial } from '@flighthq/types';
+import type { AlphaType, Kind, MaterialAlphaMode, SurfaceMaterial, SurfaceMaterialOptions } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 import { createMaterial } from './material';
@@ -9,7 +9,7 @@ import { createMaterial } from './material';
 // forwarding `opts` here is what lets any constructor set `alphaMode`/`alphaCutoff`/`doubleSided`/
 // `blendMode`/`alphaType` (e.g. `alphaMode: 'mask'` for an alpha-mapped cutout). The result is a
 // plain entity; callers mutate the returned object to set their own fields before returning it.
-export function createSurfaceMaterial(kind: Kind, opts?: Readonly<Partial<SurfaceMaterial>>): SurfaceMaterial {
+export function createSurfaceMaterial(kind: Kind, opts?: Readonly<SurfaceMaterialOptions>): SurfaceMaterial {
   const material = createMaterial(kind) as SurfaceMaterial;
   material.alphaCutoff = opts?.alphaCutoff ?? DEFAULT_ALPHA_CUTOFF;
   material.alphaMode = opts?.alphaMode ?? DEFAULT_ALPHA_MODE;
