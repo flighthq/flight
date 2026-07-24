@@ -1,0 +1,21 @@
+{
+  "name": "scene-shading",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/camera-controls": "*",
+    "@flighthq/scene": "*",
+    "@flighthq/scene-gl": "*",
+    "@flighthq/sdk": "*"
+  },
+  "scripts": {
+    "dev": "npm run dev:webgl",
+    "dev:webgl": "cross-env RENDER=webgl vite",
+    "dev:webgpu": "cross-env RENDER=webgpu vite",
+    "build": "npm run build:webgl && npm run build:webgpu",
+    "build:webgl": "cross-env RENDER=webgl vite build",
+    "build:webgpu": "cross-env RENDER=webgpu vite build",
+    "test": "npm run build",
+    "preview": "vite preview"
+  }
+}
