@@ -25,6 +25,10 @@ export const MD2_COMPRESSED_VERTEX_SIZE = 4;
 // Bytes for the per-frame header (scale + translate + name): 3*float32 + 3*float32 + 16 chars = 40.
 export const MD2_FRAME_HEADER_SIZE = 40;
 
+// Bytes of the per-frame name field (a null-padded ASCII label encoding the frame's sub-animation).
+// It follows the scale+translate vectors, at frameBase + 24.
+export const MD2_FRAME_NAME_SIZE = 16;
+
 // The frame playback rate MD2 animation is authored against (Quake 2 plays model frames at ~10 fps).
 // Used to derive the morph keyframe times (frameIndex / fps) when building the vertex-morph clip.
 export const MD2_FRAME_FPS = 10;
