@@ -217,7 +217,15 @@ export function getWgpuSampler(
   const anisotropy = Math.max(1, Math.floor(maxAnisotropy));
   const effectiveFilter: GPUFilterMode = anisotropy > 1 ? 'linear' : filter;
   const effectiveMipmapFilter = anisotropy > 1 ? 'linear' : mipmapFilter;
-  const key = `${effectiveFilter}|${wrapU}|${wrapV}|${effectiveMipmapFilter ?? 'none'}|${anisotropy}`;
+  // Pack the sampler config into a single NUMBER key rather than a template string — this runs on every
+  // material bind (per frame), so a per-call string allocation would be hidden GC pressure in the hot
+  // loop. filter (1 bit) | wrapU (2) | wrapV (2) | mipmap (2) | anisotropy (shifted above them).
+  const key =
+    SAMPLER_FILTER_BITS[effectiveFilter] |
+    (SAMPLER_WRAP_BITS[wrapU] << 1) |
+    (SAMPLER_WRAP_BITS[wrapV] << 3) |
+    ((effectiveMipmapFilter === undefined ? 0 : SAMPLER_MIPMAP_BITS[effectiveMipmapFilter]) << 5) |
+    (anisotropy << 7);
   let sampler = runtime.samplerCache.get(key);
   if (sampler === undefined) {
     const descriptor: GPUSamplerDescriptor = {
@@ -233,6 +241,12 @@ export function getWgpuSampler(
   }
   return sampler;
 }
+
+// Small-integer codes for the sampler-cache numeric key (see getWgpuSampler). Module-level so the key
+// packing reads a field instead of allocating — no per-call table construction.
+const SAMPLER_FILTER_BITS: Record<GPUFilterMode, number> = { nearest: 0, linear: 1 };
+const SAMPLER_WRAP_BITS: Record<TextureWrap, number> = { 'clamp-to-edge': 0, 'mirror-repeat': 1, repeat: 2 };
+const SAMPLER_MIPMAP_BITS: Record<GPUMipmapFilterMode, number> = { nearest: 1, linear: 2 };
 
 export function isWgpuSupported(): boolean {
   return typeof navigator !== 'undefined' && 'gpu' in navigator && navigator.gpu !== null;

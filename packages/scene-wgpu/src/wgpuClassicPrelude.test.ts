@@ -1,4 +1,5 @@
-import type { WgpuClassicDefineKey, WgpuClassicLightingModel } from '@flighthq/types';
+import { createTexture } from '@flighthq/texture';
+import type { ImageResource, WgpuClassicDefineKey, WgpuClassicLightingModel } from '@flighthq/types';
 
 import {
   bindWgpuClassicSurface,
@@ -38,6 +39,28 @@ describe('bindWgpuClassicSurface', () => {
   // are proven directly against wgpuMaterialBindGroupNeedsRebuild in wgpuMeshPipeline.test.ts; the binder
   // wires that predicate around buildWgpuMaterialBindGroup. The unchanged-binds-no-rebuild case is the
   // "creates a material bind group … once per key" test above.
+
+  it('exercises the real sampler path with a non-null primary texture and builds nothing new in steady state', () => {
+    const { fake, state } = makeWgpuSceneState();
+    const pipeline = ensureWgpuClassicPipeline(state, makeKey('phong'), 'bgra8unorm');
+    const key = {};
+    // A ready diffuse (primary) map so bind() actually runs getWgpuMaterialSampler → getWgpuSampler (the
+    // path an already-resolved-sampler helper test bypasses). Same shared binder that PBR uses.
+    const diffuseMap = createTexture({ image: { source: {} } as unknown as ImageResource });
+    bindWgpuClassicSurface(state, pipeline, key, [1, 0, 0, 1], [1, 1, 1, 1], 32, 0.5, diffuseMap, null, null, null);
+    const count = (name: string) => fake.calls.filter((c) => c.name === name).length;
+    const [samplers, bindGroups, buffers] = [count('createSampler'), count('createBindGroup'), count('createBuffer')];
+    expect(samplers).toBeGreaterThanOrEqual(1); // the primary sampler was built once on first bind
+
+    // Re-bind the unchanged textured material: the sampler + view resolution run again (getWgpuSampler
+    // cache hit via its packed-number key), but no new GPUSampler / bind group / buffer is constructed —
+    // steady state builds nothing beyond the per-bind uniform write.
+    bindWgpuClassicSurface(state, pipeline, key, [1, 0, 0, 1], [1, 1, 1, 1], 32, 0.5, diffuseMap, null, null, null);
+    bindWgpuClassicSurface(state, pipeline, key, [1, 0, 0, 1], [1, 1, 1, 1], 32, 0.5, diffuseMap, null, null, null);
+    expect(count('createSampler')).toBe(samplers);
+    expect(count('createBindGroup')).toBe(bindGroups);
+    expect(count('createBuffer')).toBe(buffers);
+  });
 });
 
 describe('buildWgpuClassicDefineKey', () => {
