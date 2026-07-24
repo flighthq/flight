@@ -8,12 +8,14 @@ import type {
 } from '@flighthq/types';
 
 import {
+  buildWgpuMaterialBindGroup,
   createWgpuMeshPipeline,
   ensureWgpuScenePipeline,
   ensureWgpuShadowSampleLayout,
   getWgpuMaterialSampler,
   resolveWgpuMaterialTextureView,
   stashWgpuUvTransform,
+  wgpuMaterialBindGroupNeedsRebuild,
   WGPU_MESH_PRELUDE_WGSL,
 } from './wgpuMeshPipeline';
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
@@ -36,25 +38,35 @@ export function bindWgpuClassicSurface(
   alphaMap: Readonly<Texture> | null,
 ): GPUBindGroup {
   const scene = getWgpuSceneRuntime(state);
+  // Re-resolve the sampler + map views every bind so a live material-map mutation (swap, unready→ready,
+  // image replacement, version bump, sampler change) is picked up; the bind group is only rebuilt when
+  // one of them actually differs from the cached set (wgpuMaterialBindGroupNeedsRebuild).
+  const sampler = getWgpuMaterialSampler(state, diffuseMap);
+  const views = [
+    resolveWgpuMaterialTextureView(state, diffuseMap),
+    resolveWgpuMaterialTextureView(state, specularMap),
+    resolveWgpuMaterialTextureView(state, normalMap),
+    resolveWgpuMaterialTextureView(state, alphaMap),
+  ];
   let binding: WgpuMaterialBinding | undefined = scene.materialBindGroups.get(materialKey);
   if (binding === undefined) {
     const buffer = state.device.createBuffer({
       size: CLASSIC_UNIFORM_BYTES,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
-    const bindGroup = state.device.createBindGroup({
-      layout: pipeline.materialBindGroupLayout,
-      entries: [
-        { binding: 0, resource: { buffer } },
-        { binding: 1, resource: getWgpuMaterialSampler(state, diffuseMap) },
-        { binding: 2, resource: resolveWgpuMaterialTextureView(state, diffuseMap) },
-        { binding: 3, resource: resolveWgpuMaterialTextureView(state, specularMap) },
-        { binding: 4, resource: resolveWgpuMaterialTextureView(state, normalMap) },
-        { binding: 5, resource: resolveWgpuMaterialTextureView(state, alphaMap) },
-      ],
-    });
-    binding = { bindGroup, buffer };
+    const bindGroup = buildWgpuMaterialBindGroup(state, pipeline.materialBindGroupLayout, buffer, sampler, views);
+    binding = { bindGroup, buffer, sampler, views };
     scene.materialBindGroups.set(materialKey, binding);
+  } else if (wgpuMaterialBindGroupNeedsRebuild(binding, sampler, views)) {
+    binding.bindGroup = buildWgpuMaterialBindGroup(
+      state,
+      pipeline.materialBindGroupLayout,
+      binding.buffer,
+      sampler,
+      views,
+    );
+    binding.sampler = sampler;
+    binding.views = views;
   }
 
   _scratch[0] = diffuse[0];

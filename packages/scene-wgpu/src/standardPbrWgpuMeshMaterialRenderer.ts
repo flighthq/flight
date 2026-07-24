@@ -19,11 +19,13 @@ import type {
 
 import {
   beginWgpuMeshDraw,
+  buildWgpuMaterialBindGroup,
   drawWgpuMeshSubset,
   getWgpuMaterialSampler,
   isWgpuTextureReady,
   resolveWgpuMaterialTextureView,
   stashWgpuUvTransform,
+  wgpuMaterialBindGroupNeedsRebuild,
   writeWgpuFrameUniform,
 } from './wgpuMeshPipeline';
 import { ensureWgpuPbrPipeline } from './wgpuPbrPipelineCache';
@@ -49,7 +51,9 @@ export function buildWgpuPbrStandardDefineKey(
     anisotropyEnabled: false,
     clearcoatEnabled: false,
     doubleSided: surface !== null && surface.doubleSided,
-    hasAlphaMap: standard !== null && isWgpuTextureReady(standard.alphaMap),
+    // Opaque materials ignore coverage (SurfaceMaterial contract) — only 'mask'/'blend' sample the map.
+    hasAlphaMap:
+      surface !== null && surface.alphaMode !== 'opaque' && standard !== null && isWgpuTextureReady(standard.alphaMap),
     hasBaseColorMap: standard !== null && isWgpuTextureReady(standard.baseColorMap),
     hasEmissiveMap: standard !== null && isWgpuTextureReady(standard.emissiveMap),
     hasMetallicRoughnessMap: standard !== null && isWgpuTextureReady(standard.metallicRoughnessMap),
@@ -79,42 +83,38 @@ export function ensureWgpuPbrMaterialBindGroup(
   standard: Readonly<StandardPbrMaterialProperties> | null,
 ): WgpuMaterialBinding {
   const scene = getWgpuSceneRuntime(state);
+  const baseColorMap = standard !== null ? standard.baseColorMap : null;
+  // Re-resolve the sampler + the six standard-block map views every bind (base-color, metallic-roughness,
+  // normal, occlusion, emissive, alpha) so a live map mutation is picked up; rebuild the bind group only
+  // when one differs from the cached set. Same invalidation seam and layout as the classic binder.
+  const sampler = getWgpuMaterialSampler(state, baseColorMap);
+  const views = [
+    resolveWgpuMaterialTextureView(state, baseColorMap),
+    resolveWgpuMaterialTextureView(state, standard !== null ? standard.metallicRoughnessMap : null),
+    resolveWgpuMaterialTextureView(state, standard !== null ? standard.normalMap : null),
+    resolveWgpuMaterialTextureView(state, standard !== null ? standard.occlusionMap : null),
+    resolveWgpuMaterialTextureView(state, standard !== null ? standard.emissiveMap : null),
+    resolveWgpuMaterialTextureView(state, standard !== null ? standard.alphaMap : null),
+  ];
   let binding: WgpuMaterialBinding | undefined = scene.materialBindGroups.get(key);
   if (binding === undefined) {
     const buffer = state.device.createBuffer({
       size: WGPU_PBR_MATERIAL_UNIFORM_FLOATS * 4,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
-    const bindGroup = state.device.createBindGroup({
-      layout: pipeline.materialBindGroupLayout,
-      entries: [
-        { binding: 0, resource: { buffer } },
-        { binding: 1, resource: getWgpuMaterialSampler(state, standard !== null ? standard.baseColorMap : null) },
-        {
-          binding: 2,
-          resource: resolveWgpuMaterialTextureView(state, standard !== null ? standard.baseColorMap : null),
-        },
-        {
-          binding: 3,
-          resource: resolveWgpuMaterialTextureView(state, standard !== null ? standard.metallicRoughnessMap : null),
-        },
-        { binding: 4, resource: resolveWgpuMaterialTextureView(state, standard !== null ? standard.normalMap : null) },
-        {
-          binding: 5,
-          resource: resolveWgpuMaterialTextureView(state, standard !== null ? standard.occlusionMap : null),
-        },
-        {
-          binding: 6,
-          resource: resolveWgpuMaterialTextureView(state, standard !== null ? standard.emissiveMap : null),
-        },
-        {
-          binding: 7,
-          resource: resolveWgpuMaterialTextureView(state, standard !== null ? standard.alphaMap : null),
-        },
-      ],
-    });
-    binding = { bindGroup, buffer };
+    const bindGroup = buildWgpuMaterialBindGroup(state, pipeline.materialBindGroupLayout, buffer, sampler, views);
+    binding = { bindGroup, buffer, sampler, views };
     scene.materialBindGroups.set(key, binding);
+  } else if (wgpuMaterialBindGroupNeedsRebuild(binding, sampler, views)) {
+    binding.bindGroup = buildWgpuMaterialBindGroup(
+      state,
+      pipeline.materialBindGroupLayout,
+      binding.buffer,
+      sampler,
+      views,
+    );
+    binding.sampler = sampler;
+    binding.views = views;
   }
   // The base-color map's uv transform drives the shared vertex-stage uv every standard map samples.
   // Runs every bind (standard + each extension routes through here), so the stash is always fresh.

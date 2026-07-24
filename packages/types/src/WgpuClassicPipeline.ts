@@ -12,11 +12,13 @@ export interface WgpuClassicPipeline extends WgpuMeshPipeline {}
 // model (and whether a specular branch exists at all); `hasDiffuseMap` / `hasSpecularMap` /
 // `hasNormalMap` / `hasAlphaMap` enable the textured paths; `alphaMaskEnabled` enables the
 // alpha-cutoff discard for 'mask' materials; `doubleSided` selects the cull-none pipeline and flips
-// the normal toward the viewer on back faces.
+// the normal toward the viewer on back faces. `hasAlphaMap` is optional (absent = false) so callers
+// that reuse the classic source generator without alpha-map semantics — notably the Shaded modifier
+// path, which owns group(2) binding 5's placeholder — need not thread it through.
 export interface WgpuClassicDefineKey {
   alphaMaskEnabled: boolean;
   doubleSided: boolean;
-  hasAlphaMap: boolean;
+  hasAlphaMap?: boolean;
   hasDiffuseMap: boolean;
   hasNormalMap: boolean;
   hasSpecularMap: boolean;

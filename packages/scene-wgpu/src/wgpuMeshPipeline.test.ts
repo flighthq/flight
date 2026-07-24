@@ -4,10 +4,18 @@ import { createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import { createTexture, setTextureUvOffset, setTextureUvScale } from '@flighthq/texture';
-import type { Camera3D, ImageResource, SceneLightBlock, SceneRenderProxy, Texture } from '@flighthq/types';
+import type {
+  Camera3D,
+  ImageResource,
+  SceneLightBlock,
+  SceneRenderProxy,
+  Texture,
+  WgpuMaterialBinding,
+} from '@flighthq/types';
 
 import {
   beginWgpuMeshDraw,
+  buildWgpuMaterialBindGroup,
   createWgpuMeshPipeline,
   drawWgpuMeshSubset,
   ensureWgpuFrameBindGroup,
@@ -24,6 +32,7 @@ import {
   isWgpuTextureReady,
   resolveWgpuMaterialTextureView,
   stashWgpuUvTransform,
+  wgpuMaterialBindGroupNeedsRebuild,
   WGPU_MESH_PRELUDE_WGSL,
   writeWgpuDrawUniform,
   writeWgpuFrameUniform,
@@ -115,6 +124,27 @@ describe('beginWgpuMeshDraw', () => {
     ensureWgpuFrameBindGroup(state);
     beginWgpuMeshDraw(state, makePbrSamplePipeline(state));
     expect(fake.calls.some((c) => c.name === 'setBindGroup' && c.args[0] === 3)).toBe(true);
+  });
+});
+
+describe('buildWgpuMaterialBindGroup', () => {
+  it('emits the uniform buffer at 0, the sampler at 1, and each map view at 2 + i', () => {
+    const { fake, state } = makeWgpuSceneState();
+    const layout = {} as GPUBindGroupLayout;
+    const buffer = {} as GPUBuffer;
+    const sampler = {} as GPUSampler;
+    const view0 = {} as GPUTextureView;
+    const view1 = {} as GPUTextureView;
+
+    buildWgpuMaterialBindGroup(state, layout, buffer, sampler, [view0, view1]);
+
+    const call = fake.calls.find((c) => c.name === 'createBindGroup');
+    const entries = (call!.args[0] as { entries: GPUBindGroupEntry[] }).entries;
+    expect(entries.map((e) => e.binding)).toEqual([0, 1, 2, 3]);
+    expect((entries[0].resource as { buffer: GPUBuffer }).buffer).toBe(buffer);
+    expect(entries[1].resource).toBe(sampler);
+    expect(entries[2].resource).toBe(view0);
+    expect(entries[3].resource).toBe(view1);
   });
 });
 
@@ -498,6 +528,39 @@ describe('WGPU_MESH_PRELUDE_WGSL', () => {
   it('applies the uv transform in the shared vertex stage', () => {
     expect(WGPU_MESH_PRELUDE_WGSL).toContain('uvTransform : mat3x3f');
     expect(WGPU_MESH_PRELUDE_WGSL).toContain('draw.uvTransform * vec3f(uv, 1.0)');
+  });
+});
+
+describe('wgpuMaterialBindGroupNeedsRebuild', () => {
+  const sampler = {} as GPUSampler;
+  const view0 = {} as GPUTextureView;
+  const view1 = {} as GPUTextureView;
+  const cached: WgpuMaterialBinding = {
+    bindGroup: {} as GPUBindGroup,
+    buffer: {} as GPUBuffer,
+    sampler,
+    views: [view0, view1],
+  };
+
+  it('is false when the sampler and every resolved view match the cache', () => {
+    expect(wgpuMaterialBindGroupNeedsRebuild(cached, sampler, [view0, view1])).toBe(false);
+  });
+
+  it('rebuilds when the sampler identity changes (a map sampler edit)', () => {
+    expect(wgpuMaterialBindGroupNeedsRebuild(cached, {} as GPUSampler, [view0, view1])).toBe(true);
+  });
+
+  it('rebuilds when any resolved view identity changes (swap / unready->ready / ready->ready / version++)', () => {
+    // resolveWgpuMaterialTextureView is the invalidation seam: a texture swap, an unready->ready
+    // transition, a ready->ready image replacement, or an ImageResource version bump each yield a new
+    // view identity, so this single identity check covers all four.
+    expect(wgpuMaterialBindGroupNeedsRebuild(cached, sampler, [{} as GPUTextureView, view1])).toBe(true);
+  });
+
+  it('rebuilds when the resolved view count changes or the cache has no views yet', () => {
+    expect(wgpuMaterialBindGroupNeedsRebuild(cached, sampler, [view0])).toBe(true);
+    const noViews: WgpuMaterialBinding = { bindGroup: {} as GPUBindGroup, buffer: {} as GPUBuffer };
+    expect(wgpuMaterialBindGroupNeedsRebuild(noViews, sampler, [view0])).toBe(true);
   });
 });
 

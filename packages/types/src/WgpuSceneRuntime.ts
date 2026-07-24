@@ -135,9 +135,15 @@ export interface WgpuMeshUpload {
 }
 
 // One material's per-state GPU binding: the Material uniform buffer (re-written each bind with the
-// material's factors) and the bind group wiring it + the placeholder maps to the pipeline's
-// material bind-group layout.
+// material's factors) and the bind group wiring it + the maps to the pipeline's material bind-group
+// layout. `views`/`sampler` cache the resolved map texture views and the sampler the bind group was
+// last built from; a binder re-resolves them each bind and rebuilds `bindGroup` only when one differs
+// (a map swap, an unready→ready transition, an ImageResource.version bump, or a sampler change all
+// yield a different resolved view), so a live material-map mutation is honored without per-frame bind
+// group churn. Optional so a binder that never re-resolves (or predates the cache) can omit them.
 export interface WgpuMaterialBinding {
   bindGroup: GPUBindGroup;
   buffer: GPUBuffer;
+  sampler?: GPUSampler;
+  views?: readonly GPUTextureView[];
 }
