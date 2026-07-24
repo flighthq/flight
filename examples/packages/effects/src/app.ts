@@ -10,6 +10,7 @@ import {
   createShape,
   createToneMapEffect,
   createVignetteEffect,
+  createWhiteBalanceEffect,
   invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
 
@@ -38,18 +39,19 @@ for (let i = 0; i < colors.length; i++) {
 // Center diamond shape.
 const center = createShape();
 appendShapeBeginFill(center, 0xffffff, 1);
-appendShapeRectangle(center, 350, 250, 100, 100);
+appendShapeRectangle(center, -50, -50, 100, 100);
 appendShapeEndFill(center);
+center.x = 400;
+center.y = 300;
 center.rotation = 45;
-center.pivotX = 400;
-center.pivotY = 300;
 invalidateNodeLocalTransform(center);
 addNodeChild(root, center);
 
-// Effect chain: bloom -> vignette -> tone map.
+// Effect chain: isolate highlights, focus the frame, grade it warmer, then tone-map HDR to display.
 const effects: readonly RenderEffect[] = [
-  createBloomEffect({ threshold: 0.5, intensity: 1.2 }),
-  createVignetteEffect({ intensity: 0.8 }),
+  createBloomEffect({ threshold: 0.5, intensity: 1.2, radius: 10 }),
+  createVignetteEffect({ intensity: 0.72 }),
+  createWhiteBalanceEffect({ temperature: 0.18, tint: -0.04 }),
   createToneMapEffect({ operator: 'aces', exposure: 1.2 }),
 ];
 
