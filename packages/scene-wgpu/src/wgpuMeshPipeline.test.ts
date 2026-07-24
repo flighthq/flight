@@ -18,6 +18,7 @@ import {
   buildWgpuMaterialBindGroup,
   createWgpuMeshPipeline,
   drawWgpuMeshSubset,
+  ensureWgpuMaterialBinding,
   ensureWgpuFrameBindGroup,
   ensureWgpuIblSampleBindGroup,
   ensureWgpuIblSampleLayout,
@@ -278,6 +279,56 @@ describe('ensureWgpuIblSampleLayout', () => {
     const b = ensureWgpuIblSampleLayout(state);
     expect(a).toBe(b);
     expect(fake.calls.filter((c) => c.name === 'createBindGroupLayout').length).toBe(made);
+  });
+});
+
+describe('ensureWgpuMaterialBinding', () => {
+  const layout = {} as GPUBindGroupLayout;
+  const sampler = {} as GPUSampler;
+  const view0 = {} as GPUTextureView;
+  const view1 = {} as GPUTextureView;
+
+  it('creates the buffer + bind group once, owns a copy of the scratch, and steady-state binds build nothing', () => {
+    const { fake, state } = makeWgpuSceneState();
+    const key = {};
+    const scratch = [view0, view1];
+    const binding = ensureWgpuMaterialBinding(state, key, layout, 48, sampler, scratch);
+
+    expect(fake.calls.filter((c) => c.name === 'createBuffer').length).toBe(1);
+    expect(fake.calls.filter((c) => c.name === 'createBindGroup').length).toBe(1);
+    // The binding owns a COPY of the scratch — a later material's bind reusing the scratch must not
+    // corrupt this binding's cached views.
+    expect(binding.views).not.toBe(scratch);
+    expect(binding.views).toEqual([view0, view1]);
+
+    // Steady state: same key + same sampler + same view identities re-bound → no new GPU objects built
+    // (the hot path allocates/builds nothing; the caller's uniform write is separate).
+    ensureWgpuMaterialBinding(state, key, layout, 48, sampler, scratch);
+    ensureWgpuMaterialBinding(state, key, layout, 48, sampler, scratch);
+    expect(fake.calls.filter((c) => c.name === 'createBuffer').length).toBe(1);
+    expect(fake.calls.filter((c) => c.name === 'createBindGroup').length).toBe(1);
+  });
+
+  it('rebuilds the bind group in place (reusing the buffer) when a resolved view changes', () => {
+    const { fake, state } = makeWgpuSceneState();
+    const key = {};
+    const scratch = [view0, view1];
+    ensureWgpuMaterialBinding(state, key, layout, 48, sampler, scratch);
+    // A live map swap resolves to a new view identity in the reused scratch.
+    scratch[0] = {} as GPUTextureView;
+    ensureWgpuMaterialBinding(state, key, layout, 48, sampler, scratch);
+
+    expect(fake.calls.filter((c) => c.name === 'createBuffer').length).toBe(1); // buffer reused
+    expect(fake.calls.filter((c) => c.name === 'createBindGroup').length).toBe(2); // bind group rebuilt
+  });
+
+  it('rebuilds when the primary sampler changes', () => {
+    const { fake, state } = makeWgpuSceneState();
+    const key = {};
+    const scratch = [view0, view1];
+    ensureWgpuMaterialBinding(state, key, layout, 48, sampler, scratch);
+    ensureWgpuMaterialBinding(state, key, layout, 48, {} as GPUSampler, scratch);
+    expect(fake.calls.filter((c) => c.name === 'createBindGroup').length).toBe(2);
   });
 });
 
@@ -546,7 +597,9 @@ describe('wgpuMaterialBindGroupNeedsRebuild', () => {
     expect(wgpuMaterialBindGroupNeedsRebuild(cached, sampler, [view0, view1])).toBe(false);
   });
 
-  it('rebuilds when the sampler identity changes (a map sampler edit)', () => {
+  it('rebuilds when the primary sampler identity changes (a primary-map sampler edit)', () => {
+    // Only the ONE primary-map sampler participates (shared-primary-sampler contract); a non-primary
+    // map's per-Texture sampler is never bound and cannot trip this.
     expect(wgpuMaterialBindGroupNeedsRebuild(cached, {} as GPUSampler, [view0, view1])).toBe(true);
   });
 

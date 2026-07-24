@@ -286,6 +286,51 @@ export function ensureWgpuIblSampleLayout(state: WgpuRenderState): GPUBindGroupL
   return scene.iblSampleLayout;
 }
 
+// Fetches (or on first use creates) the per-material binding cached under `key`, rebuilding its bind
+// group ONLY when the primary sampler or a resolved map view differs from the cached set. The hot path
+// (an unchanged material re-bound every frame) allocates nothing: the caller fills a REUSED `views`
+// scratch, this compares it against the binding's owned view array in place, and returns the cached
+// bind group untouched. A GPUBindGroupEntry array + the binding's own view copy are allocated only on
+// an actual create; a rebuild reuses the buffer and overwrites the owned view array in place. This is
+// the shared no-hidden-allocation cache both the classic and standard-PBR binders route through. The
+// caller still writes the uniform buffer + stashes the uv transform after this returns.
+export function ensureWgpuMaterialBinding(
+  state: WgpuRenderState,
+  key: object,
+  layout: GPUBindGroupLayout,
+  uniformByteSize: number,
+  sampler: GPUSampler,
+  views: readonly GPUTextureView[],
+): WgpuMaterialBinding {
+  const scene = getWgpuSceneRuntime(state);
+  let binding = scene.materialBindGroups.get(key);
+  if (binding === undefined) {
+    const buffer = state.device.createBuffer({
+      size: uniformByteSize,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+    binding = {
+      bindGroup: buildWgpuMaterialBindGroup(state, layout, buffer, sampler, views),
+      buffer,
+      sampler,
+      views: views.slice(),
+    };
+    scene.materialBindGroups.set(key, binding);
+  } else if (wgpuMaterialBindGroupNeedsRebuild(binding, sampler, views)) {
+    binding.bindGroup = buildWgpuMaterialBindGroup(state, layout, binding.buffer, sampler, views);
+    binding.sampler = sampler;
+    // Overwrite the binding-owned view array in place — never alias the reused caller scratch, which the
+    // next material's bind will overwrite.
+    const cached = binding.views;
+    if (cached === undefined || cached.length !== views.length) {
+      binding.views = views.slice();
+    } else {
+      for (let i = 0; i < views.length; i++) cached[i] = views[i];
+    }
+  }
+  return binding;
+}
+
 // Resolves the combined PBR sample bind group. WebGPU's required maxBindGroups minimum is 4, so PBR
 // cannot afford separate shadow group(3) and IBL group(4). This layout packs both into group(3).
 export function ensureWgpuPbrSampleBindGroup(state: WgpuRenderState): GPUBindGroup {
@@ -561,13 +606,21 @@ export function ensureWgpuShadowSampleLayout(state: WgpuRenderState): GPUBindGro
   return scene.shadowSampleLayout;
 }
 
-// Selects the GPUSampler a material bind group uses from its primary map's full sampler descriptor:
-// wrap (a tiling repeat/mirror-repeat map gets the matching cached sampler so setTextureUvScale tiles),
-// min/mag filter, a mip filter when the map requests a mip chain (paired with the mip chain
-// generateWgpuMipmaps builds on upload), and anisotropy — mirroring scene-gl's applyGlSamplerState. A
-// null/absent map falls back to the shared clamp sampler. Because a GPUSampler is immutable and baked
-// into the cached bind group, this reads the descriptor at bind-group creation — the same lifetime as
-// the resolved texture views.
+// Selects the ONE GPUSampler a material bind group uses, from its PRIMARY map's full sampler descriptor
+// (the diffuse map for classic, the base-color map for PBR): wrap (a tiling repeat/mirror-repeat map
+// gets the matching cached sampler so setTextureUvScale tiles), min/mag filter, a mip filter when the
+// map requests a mip chain (paired with the mip chain generateWgpuMipmaps builds on upload), and
+// anisotropy. A null/absent primary map falls back to the shared clamp sampler.
+//
+// SHARED-PRIMARY-SAMPLER CONTRACT (a deliberate wgpu↔GL divergence): the group(2) material layout carries
+// a single sampler at binding 1 that the WGSL samples EVERY map (diffuse/specular/normal/alpha; base-
+// color/metallic-roughness/normal/occlusion/emissive/alpha) through. So a non-primary map's per-Texture
+// sampler is NOT honored on wgpu — only the primary map's. scene-gl, by contrast, binds each map with
+// its own `map.sampler` (bindGlImageResourceTexture). This keeps the wgpu bind group to one sampler; a
+// per-map-sampler wgpu path (one sampler binding per map) is a chartered later change, not a bug. The
+// invalidation cache tracks this one sampler accordingly (see wgpuMaterialBindGroupNeedsRebuild).
+// Because a GPUSampler is immutable and baked into the cached bind group, this reads the descriptor at
+// bind-group creation — the same lifetime as the resolved texture views.
 export function getWgpuMaterialSampler(state: WgpuRenderState, texture: Readonly<Texture> | null): GPUSampler {
   if (texture === null) return getWgpuRenderStateRuntime(state).linearSampler;
   const sampler = texture.sampler;
@@ -624,10 +677,14 @@ export function stashWgpuUvTransform(state: WgpuRenderState, texture: Readonly<T
 }
 
 // Whether a cached material binding must rebuild its GPUBindGroup because a freshly-resolved view or the
-// sampler no longer matches what it was built from. `resolveWgpuMaterialTextureView` is the invalidation
-// seam: a map swap, an unready→ready transition, a ready→ready image replacement, or an ImageResource
-// version bump each yield a different view identity, so identity comparison alone catches every live
-// material-map mutation with no parallel epoch bookkeeping. A binding with no cached views always rebuilds.
+// primary sampler no longer matches what it was built from. `resolveWgpuMaterialTextureView` is the
+// invalidation seam: a map swap, an unready→ready transition, a ready→ready image replacement, or an
+// ImageResource version bump each yield a different view identity, so identity comparison alone catches
+// every live material-map mutation with no parallel epoch bookkeeping. `sampler` is the shared primary
+// sampler (getWgpuMaterialSampler of the diffuse/base-color map), so a change to the primary map's
+// sampler trips a rebuild; a non-primary map's per-Texture sampler is not bound and does not (the
+// shared-primary-sampler contract). A binding with no cached views always rebuilds. Allocation-free —
+// callers pass a reused scratch as `views`.
 export function wgpuMaterialBindGroupNeedsRebuild(
   binding: Readonly<WgpuMaterialBinding>,
   sampler: GPUSampler,
