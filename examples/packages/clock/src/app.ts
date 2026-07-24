@@ -36,6 +36,8 @@ root.scaleY = scale;
 const rootClock = createClock();
 const childClockA = createChildClock(rootClock, { scale: 1 });
 const childClockB = createChildClock(rootClock, { scale: 0.5 });
+const captureWindow = window as typeof window & { __flightCapture?: boolean };
+if (captureWindow.__flightCapture) pauseClock(childClockB);
 
 // Each clock drives a spinning shape. The shapes are drawn centered at origin and positioned via
 // the display object's x/y. Rotation is updated each frame from the clock's elapsed time.
