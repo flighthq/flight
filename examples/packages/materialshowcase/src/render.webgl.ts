@@ -50,6 +50,7 @@ const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
 });
 
 export const scale = pixelRatio;
+export const supportsVertexColor0 = true;
 
 export function render(
   scene: Readonly<SceneNode>,

@@ -42,6 +42,25 @@ function entryWithLogCapture(name: string, render: string): string {
     `import { createConsoleCaptureSink, setLogSink } from '@flighthq/log';`,
     `setLogSink(createConsoleCaptureSink());`,
   ];
+  if (!VERIFY_SKIP.has(name) && render === 'dom') {
+    // DOM render states do not have a GPU/canvas readback path that can self-register with the capture
+    // verifier. Import the renderer before the app and expose its element-backed state explicitly, just
+    // as the WebGPU branch below exposes its frame-capture state before the first submit.
+    lines.push(
+      `if (window['__flightCapture'] && window['__flightCaptureVerify'] !== false) {`,
+      `  const { registerFunctionalTarget } = await import(${JSON.stringify(verifyPath)});`,
+      `  const __render = await import(${JSON.stringify(renderPath)});`,
+      `  registerFunctionalTarget({`,
+      `    kind: 'dom',`,
+      `    state: __render.state,`,
+      `    width: __render.canvas.clientWidth,`,
+      `    height: __render.canvas.clientHeight,`,
+      `    scale: __render.scale,`,
+      `    render: () => {},`,
+      `  });`,
+      `}`,
+    );
+  }
   if (!VERIFY_SKIP.has(name) && render === 'webgpu') {
     // WebGPU's swapchain is never presented on the headless/software adapter, so the browser screenshots
     // a blank canvas and the verifier must read the frame back from the GPU instead. That path needs the

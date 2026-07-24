@@ -236,10 +236,12 @@ function enterFrame(): void {
 
 readPose();
 updateFrame();
-requestAnimationFrame(enterFrame);
 
-// Deterministic capture requests a fixed frame count. Queue additional callbacks together so browser
-// background-frame throttling cannot stretch that fixed count beyond the harness timeout.
+// Capture holds the authored midpoint rather than advancing it by an environment-dependent rAF delta.
+// Queue the fixed frame count as no-ops so the harness can stop deterministically without mutating the pose.
 if (captureWindow.__flightCapture) {
+  render(root);
   for (let frame = 0; frame < 32; frame++) requestAnimationFrame(() => {});
+} else {
+  requestAnimationFrame(enterFrame);
 }
