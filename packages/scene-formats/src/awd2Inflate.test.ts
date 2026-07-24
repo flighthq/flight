@@ -1,3 +1,5 @@
+import type { ImportDiagnostic } from '@flighthq/types';
+
 import { inflateAwdDeflate, registerAwd2DeflateDecompressor } from './awd2Inflate';
 import { parseAwd2, registerAwd2Decompressor } from './awd2Parse';
 import { AWD2_COMPRESSION_DEFLATE, AWD2_HEADER_BYTES, AWD2_MAGIC_0, AWD2_MAGIC_1, AWD2_MAGIC_2 } from './awd2Schema';
@@ -95,7 +97,7 @@ describe('registerAwd2DeflateDecompressor', () => {
   it('wires the vendored inflater so parseAwd2 imports a zlib-compressed AWD body', () => {
     registerAwd2DeflateDecompressor();
     // A valid AWD header whose (empty) body is a real zlib stream: the codec must inflate it cleanly, so
-    // parseAwd2 finishes with no "missing decompressor" / "failed to inflate" warning.
+    // parseAwd2 finishes with no "missing decompressor" / "failed to inflate" diagnostic.
     const compressedBody = decodeBase64(FIXTURES.EMPTY);
     const awd = new Uint8Array(AWD2_HEADER_BYTES + compressedBody.length);
     awd[0] = AWD2_MAGIC_0;
@@ -107,8 +109,10 @@ describe('registerAwd2DeflateDecompressor', () => {
     new DataView(awd.buffer).setUint32(8, compressedBody.length, true);
     awd.set(compressedBody, AWD2_HEADER_BYTES);
 
-    const warnings: string[] = [];
-    parseAwd2(awd, warnings);
-    expect(warnings.some((w) => w.includes('decompressor') || w.includes('inflate'))).toBe(false);
+    const diagnostics: ImportDiagnostic[] = [];
+    parseAwd2(awd, diagnostics);
+    expect(
+      diagnostics.some((d) => d.kind === 'awd2.compression-no-decompressor' || d.kind === 'awd2.decompression-failed'),
+    ).toBe(false);
   });
 });

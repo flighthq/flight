@@ -4,7 +4,7 @@ import {
   rotateOrbitCameraController,
   updateOrbitCameraController,
 } from '@flighthq/camera-controls';
-import type { Mesh, SceneLightsLike, ShadedMaterial } from '@flighthq/sdk';
+import type { ImportDiagnostic, Mesh, SceneLightsLike, ShadedMaterial } from '@flighthq/sdk';
 import {
   createAmbientLight,
   createCamera3D,
@@ -29,9 +29,10 @@ import { createSyntheticAwd2 } from './createSyntheticAwd2';
 import { canvas, render, scale } from './render';
 
 const awdBytes = createSyntheticAwd2();
-const warnings: string[] = [];
-const documentScene = createSceneFromAwd2(awdBytes, warnings);
-if (warnings.length !== 0) throw new Error(`Synthetic AWD2 fixture produced warnings: ${warnings.join('; ')}`);
+const diagnostics: ImportDiagnostic[] = [];
+const documentScene = createSceneFromAwd2(awdBytes, diagnostics);
+if (diagnostics.length !== 0)
+  throw new Error(`Synthetic AWD2 fixture produced diagnostics: ${diagnostics.map((d) => d.kind).join('; ')}`);
 const mesh = findImportedMesh();
 const material = mesh.materials[0];
 if (material?.kind !== ShadedMaterialKind) throw new Error('AWD2 material did not import as ShadedMaterial');
@@ -139,7 +140,7 @@ details.innerHTML = [
   '<h1>AWD2 loading</h1>',
   '<p>A tiny cube is authored into an AWD2 byte stream in the browser, then loaded with <strong>createSceneFromAwd2</strong>.</p>',
   `<p><strong>${formatBytes(awdBytes.byteLength)}</strong> · 1 mesh · 24 vertices · 1 ShadedMaterial</p>`,
-  '<p class="success">✓ parsed with 0 warnings<br>✓ built-in rim modifier registered</p>',
+  '<p class="success">✓ parsed with 0 diagnostics<br>✓ built-in rim modifier registered</p>',
   '<p>Drag to orbit · wheel to zoom</p>',
 ].join('');
 document.body.appendChild(details);

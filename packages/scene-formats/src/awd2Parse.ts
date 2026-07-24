@@ -8,6 +8,7 @@ import {
   multiplyMatrix4,
 } from '@flighthq/geometry';
 import { detectImageMimeType } from '@flighthq/image-codec';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   computeMeshGeometryNormals,
@@ -21,6 +22,7 @@ import type {
   AnimationClip,
   AnimationTrack,
   AwdDecompressor,
+  ImportDiagnostic,
   Material,
   MaterialLike,
   Matrix4,
@@ -37,6 +39,7 @@ import type {
   SkinInfluence,
 } from '@flighthq/types';
 import {
+  ImportDiagnosticSeverity,
   MeshKind,
   SceneAnimationPathRotation,
   SceneAnimationPathScale,
@@ -96,9 +99,9 @@ import {
 } from './shared';
 
 // Parses an Away3D AWD 2.x binary file into a Scene. Convenience over `createSceneFromDocument(parseAwd2
-// (bytes, warnings))`. See parseAwd2 for the import model.
-export function createSceneFromAwd2(bytes: Readonly<Uint8Array>, warnings?: string[]): Scene {
-  return createSceneFromDocument(parseAwd2(bytes, warnings));
+// (bytes, diagnostics))`. See parseAwd2 for the import model.
+export function createSceneFromAwd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagnostic[]): Scene {
+  return createSceneFromDocument(parseAwd2(bytes, diagnostics));
 }
 
 // Parses an Away3D AWD 2.x binary file into a format-neutral SceneDocument. The 12-byte header (magic
@@ -123,26 +126,26 @@ export function createSceneFromAwd2(bytes: Readonly<Uint8Array>, warnings?: stri
 //
 // A compressed body (Away3D's exporter default — deflate or LZMA) is inflated first when a decompressor
 // has been registered for that compression method via `registerAwd2Decompressor`; with no codec registered
-// the file pushes a warning and returns an empty document. Malformed input warns and returns empty rather
+// the file records a diagnostic and returns an empty document. Malformed input records a diagnostic and returns empty rather
 // than throwing.
-export function parseAwd2(bytes: Readonly<Uint8Array>, warnings?: string[]): SceneDocument {
+export function parseAwd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagnostic[]): SceneDocument {
   const input = bytes as Uint8Array;
   if (input.byteLength < AWD2_HEADER_BYTES) {
-    warnings?.push('createSceneFromAwd2: byte length is smaller than the 12-byte AWD header');
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'awd2.header-too-short', 'parseAwd2');
     return emptyAwdDocument();
   }
 
   if (input[0] !== AWD2_MAGIC_0 || input[1] !== AWD2_MAGIC_1 || input[2] !== AWD2_MAGIC_2) {
-    warnings?.push("createSceneFromAwd2: magic is not 'AWD'; not an AWD file");
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'awd2.bad-magic', 'parseAwd2');
     return emptyAwdDocument();
   }
 
-  if (!isAwd2Version(input, 'createSceneFromAwd2', warnings)) return emptyAwdDocument();
+  if (!isAwd2Version(input, diagnostics)) return emptyAwdDocument();
 
   // A compressed body is inflated (via a registered decompressor) and spliced back behind the header so
   // the block walk below is identical for compressed and uncompressed input; bails to empty when no codec
   // is registered for the file's compression method.
-  const rehydrated = rehydrateAwdBody(input, 'createSceneFromAwd2', warnings);
+  const rehydrated = rehydrateAwdBody(input, diagnostics);
   if (rehydrated === null) return emptyAwdDocument();
   const source = rehydrated.source;
   const view = rehydrated.view;
@@ -167,7 +170,7 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, warnings?: string[]): Sce
     const blockDataStart = offset + AWD2_BLOCK_HEADER_BYTES;
 
     if (blockDataStart + blockLength > bodyEnd) {
-      warnings?.push('createSceneFromAwd2: block length runs past the end of the body');
+      reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Recover, 'awd2.block-length-past-end', 'parseAwd2');
       break;
     }
 
@@ -182,7 +185,7 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, warnings?: string[]): Sce
           blockDataStart,
           blockDataStart + blockLength,
           geometryWide,
-          warnings,
+          diagnostics,
         );
         geometryBlocks.set(blockId, geoms);
       } else if (blockType === AWD2_BLOCK_CONTAINER) {
@@ -192,7 +195,7 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, warnings?: string[]): Sce
           blockDataStart,
           blockDataStart + blockLength,
           matrixWide,
-          warnings,
+          diagnostics,
         );
         if (container !== null) containerBlocks.set(blockId, container);
       } else if (blockType === AWD2_BLOCK_MESH_INSTANCE) {
@@ -202,14 +205,14 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, warnings?: string[]): Sce
           blockDataStart,
           blockDataStart + blockLength,
           matrixWide,
-          warnings,
+          diagnostics,
         );
         if (meshInst !== null) meshInstanceBlocks.set(blockId, meshInst);
       } else if (blockType === AWD2_BLOCK_MATERIAL) {
-        const material = parseMaterialBlock(view, source, blockDataStart, blockDataStart + blockLength, warnings);
+        const material = parseMaterialBlock(view, source, blockDataStart, blockDataStart + blockLength, diagnostics);
         if (material !== null) materialBlocks.set(blockId, material);
       } else if (blockType === AWD2_BLOCK_TEXTURE) {
-        const texture = parseTextureBlock(view, source, blockDataStart, blockDataStart + blockLength, warnings);
+        const texture = parseTextureBlock(view, source, blockDataStart, blockDataStart + blockLength, diagnostics);
         if (texture !== null) textureBlocks.set(blockId, texture);
       } else if (blockType === AWD2_BLOCK_SKELETON) {
         const skeleton = parseSkeletonBlock(
@@ -218,7 +221,7 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, warnings?: string[]): Sce
           blockDataStart,
           blockDataStart + blockLength,
           matrixWide,
-          warnings,
+          diagnostics,
         );
         if (skeleton !== null) skeletonBlocks.set(blockId, skeleton);
       }
@@ -245,9 +248,9 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, warnings?: string[]): Sce
     document.skins.push(built.skin);
     document.scenes[0].rootNodes.push(built.skeletonRootIndex);
     if (skeletonBlocks.size > 1) {
-      warnings?.push(
-        `createSceneFromAwd2: file has ${skeletonBlocks.size} skeletons; every skinned mesh binds to the first`,
-      );
+      reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'awd2.multiple-skeletons', 'parseAwd2', {
+        skeletons: skeletonBlocks.size,
+      });
     }
   }
 
@@ -267,7 +270,14 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, warnings?: string[]): Sce
   const resolvedMaterials = new Map<number, number>();
   const materialForSubset = (meshInst: ParsedMeshInstance, subsetIndex: number): number[] => {
     const materialId = subsetIndex < meshInst.materialIds.length ? meshInst.materialIds[subsetIndex] : 0;
-    const index = resolveAwdMaterial(materialId, materialBlocks, textureBlocks, resolvedMaterials, document, warnings);
+    const index = resolveAwdMaterial(
+      materialId,
+      materialBlocks,
+      textureBlocks,
+      resolvedMaterials,
+      document,
+      diagnostics,
+    );
     return index >= 0 ? [index] : [];
   };
 
@@ -312,16 +322,30 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, warnings?: string[]): Sce
           if (skinIndex !== undefined && geometries[i].skinned) mesh.skin = skinIndex;
           document.meshes.push(mesh);
           const childIndex = document.nodes.length;
-          document.nodes.push({ children: [], kind: MeshKind, mesh: meshIndex, transform: createTransform3D() });
+          document.nodes.push({
+            children: [],
+            kind: MeshKind,
+            mesh: meshIndex,
+            transform: createTransform3D(),
+          });
           group.children.push(childIndex);
         }
       }
     } else {
       nodeIndex = document.nodes.length;
-      document.nodes.push({ children: [], kind: SceneNodeKind, name: meshInst.name || undefined, transform });
+      document.nodes.push({
+        children: [],
+        kind: SceneNodeKind,
+        name: meshInst.name || undefined,
+        transform,
+      });
       if (meshInst.geometryId !== 0) {
-        warnings?.push(
-          `createSceneFromAwd2: mesh instance block ${blockId} references geometry block ${meshInst.geometryId} which was not found`,
+        reportImportDiagnostic(
+          diagnostics,
+          ImportDiagnosticSeverity.Recover,
+          'awd2.mesh-instance-missing-geometry',
+          'parseAwd2',
+          { block: blockId, geometry: meshInst.geometryId },
         );
       }
     }
@@ -358,7 +382,7 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, warnings?: string[]): Sce
   // still has a deflated body in `bytes`, so re-walking that would find no blocks and silently drop every
   // animation. `source` is already inflated with the compression byte + body-length rewritten by rehydrate.
   if (skeletonJointNodeIndices.length > 0) {
-    document.animations.push(...buildAwdDocumentAnimations(source, skeletonJointNodeIndices, warnings));
+    document.animations.push(...buildAwdDocumentAnimations(source, skeletonJointNodeIndices, diagnostics));
   }
 
   return document;
@@ -371,28 +395,38 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, warnings?: string[]): Sce
 // joints). A file may carry several named animations (idle/walk/attack); each is keyed by its block name
 // (or `animation${i}` in file order when unnamed), so a caller selects one with `clips['walk']`. Returns
 // an empty map when the header is invalid or no skeleton/animation blocks are found. The `joints` array
-// must be in AWD skeleton order (index j = joint j); a length mismatch with the file's skeleton warns.
+// must be in AWD skeleton order (index j = joint j); a length mismatch with the file's skeleton records a diagnostic.
 export function parseAwd2SkeletonAnimations(
   bytes: Readonly<Uint8Array>,
   joints: readonly SceneNode[],
-  warnings?: string[],
+  diagnostics?: ImportDiagnostic[],
 ): Record<string, AnimationClip> {
   const input = bytes as Uint8Array;
   if (input.byteLength < AWD2_HEADER_BYTES) {
-    warnings?.push('parseAwd2SkeletonAnimations: byte length is smaller than the 12-byte AWD header');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'awd2.header-too-short',
+      'parseAwd2SkeletonAnimations',
+    );
     return {};
   }
 
   if (input[0] !== AWD2_MAGIC_0 || input[1] !== AWD2_MAGIC_1 || input[2] !== AWD2_MAGIC_2) {
-    warnings?.push("parseAwd2SkeletonAnimations: magic is not 'AWD'; not an AWD file");
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'awd2.bad-magic',
+      'parseAwd2SkeletonAnimations',
+    );
     return {};
   }
 
-  if (!isAwd2Version(input, 'parseAwd2SkeletonAnimations', warnings)) return {};
+  if (!isAwd2Version(input, diagnostics)) return {};
 
   // Inflate a compressed body and splice it back behind the header so the walk is identical to the
   // uncompressed path; bails to an empty result when no codec is registered for the compression method.
-  const rehydrated = rehydrateAwdBody(input, 'parseAwd2SkeletonAnimations', warnings);
+  const rehydrated = rehydrateAwdBody(input, diagnostics);
   if (rehydrated === null) return {};
   const source = rehydrated.source;
   const view = rehydrated.view;
@@ -414,7 +448,12 @@ export function parseAwd2SkeletonAnimations(
     const blockDataStart = offset + AWD2_BLOCK_HEADER_BYTES;
 
     if (blockDataStart + blockLength > bodyEnd) {
-      warnings?.push('parseAwd2SkeletonAnimations: block length runs past the end of the body');
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Recover,
+        'awd2.block-length-past-end',
+        'parseAwd2SkeletonAnimations',
+      );
       break;
     }
 
@@ -428,7 +467,7 @@ export function parseAwd2SkeletonAnimations(
           blockDataStart,
           blockDataStart + blockLength,
           matrixWide,
-          warnings,
+          diagnostics,
         );
         if (skeleton !== null) skeletonBlocks.set(blockId, skeleton);
       } else if (blockType === AWD2_BLOCK_SKELETON_POSE) {
@@ -438,11 +477,17 @@ export function parseAwd2SkeletonAnimations(
           blockDataStart,
           blockDataStart + blockLength,
           matrixWide,
-          warnings,
+          diagnostics,
         );
         if (pose !== null) poseBlocks.set(blockId, pose);
       } else if (blockType === AWD2_BLOCK_SKELETON_ANIMATION) {
-        const anim = parseSkeletonAnimationBlock(view, source, blockDataStart, blockDataStart + blockLength, warnings);
+        const anim = parseSkeletonAnimationBlock(
+          view,
+          source,
+          blockDataStart,
+          blockDataStart + blockLength,
+          diagnostics,
+        );
         if (anim !== null) animationBlocks.set(blockId, anim);
       }
     }
@@ -451,18 +496,35 @@ export function parseAwd2SkeletonAnimations(
   }
 
   if (skeletonBlocks.size === 0) {
-    warnings?.push('parseAwd2SkeletonAnimations: no skeleton blocks found');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'awd2.no-skeleton-blocks',
+      'parseAwd2SkeletonAnimations',
+    );
     return {};
   }
   if (animationBlocks.size === 0) {
-    warnings?.push('parseAwd2SkeletonAnimations: no skeleton animation blocks found');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'awd2.no-skeleton-animation-blocks',
+      'parseAwd2SkeletonAnimations',
+    );
     return {};
   }
 
   const parsedSkeleton = skeletonBlocks.values().next().value!;
   if (joints.length < parsedSkeleton.joints.length) {
-    warnings?.push(
-      `parseAwd2SkeletonAnimations: joints array has ${joints.length} nodes but skeleton has ${parsedSkeleton.joints.length} joints`,
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'awd2.joint-count-mismatch',
+      'parseAwd2SkeletonAnimations',
+      {
+        jointNodes: joints.length,
+        skeletonJoints: parsedSkeleton.joints.length,
+      },
     );
     return {};
   }
@@ -477,7 +539,7 @@ export function parseAwd2SkeletonAnimations(
       parsedSkeleton.joints.length,
       poseBlocks,
       joints,
-      warnings,
+      diagnostics,
     );
     if (clip !== null) out[parsedAnimation.name || `animation${index}`] = clip;
     index++;
@@ -502,11 +564,16 @@ function buildAwdSkeletonAnimationClip(
   jointCount: number,
   poseBlocks: ReadonlyMap<number, ParsedSkeletonPose>,
   joints: readonly SceneNode[],
-  warnings?: string[],
+  diagnostics?: ImportDiagnostic[],
 ): AnimationClip | null {
   const poseCount = parsedAnimation.poses.length;
   if (poseCount === 0) {
-    warnings?.push('parseAwd2SkeletonAnimations: skeleton animation has no poses');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'awd2.animation-no-poses',
+      'buildAwdSkeletonAnimationClip',
+    );
     return null;
   }
 
@@ -524,6 +591,9 @@ function buildAwdSkeletonAnimationClip(
   const poseMatrix = createMatrix4();
   const poseTransform = createTransform3D();
   const channels = [];
+  // A pose block referenced by the animation can be missing; the same block is re-hit for every joint,
+  // so collect the distinct offenders and report once. Only allocated when a collector is engaged.
+  const missingPoseBlocks = diagnostics ? new Set<number>() : null;
   for (let j = 0; j < jointCount; j++) {
     const translationValues: number[] = [];
     const rotationValues: number[] = [];
@@ -533,9 +603,7 @@ function buildAwdSkeletonAnimationClip(
       const poseBlockId = parsedAnimation.poses[p].poseBlockId;
       const pose = poseBlocks.get(poseBlockId);
       if (pose === undefined) {
-        warnings?.push(
-          `parseAwd2SkeletonAnimations: pose block ${poseBlockId} referenced by animation not found; using identity`,
-        );
+        missingPoseBlocks?.add(poseBlockId);
         translationValues.push(0, 0, 0);
         rotationValues.push(0, 0, 0, 1);
         scaleValues.push(1, 1, 1);
@@ -567,7 +635,12 @@ function buildAwdSkeletonAnimationClip(
       times,
       values: translationValues,
     });
-    channels.push(createAnimationChannel(translationTrack, { node: joints[j], path: SceneAnimationPathTranslation }));
+    channels.push(
+      createAnimationChannel(translationTrack, {
+        node: joints[j],
+        path: SceneAnimationPathTranslation,
+      }),
+    );
 
     const rotationTrack = createAnimationTrack({
       components: 4,
@@ -575,16 +648,42 @@ function buildAwdSkeletonAnimationClip(
       times,
       values: rotationValues,
     });
-    channels.push(createAnimationChannel(rotationTrack, { node: joints[j], path: SceneAnimationPathRotation }));
+    channels.push(
+      createAnimationChannel(rotationTrack, {
+        node: joints[j],
+        path: SceneAnimationPathRotation,
+      }),
+    );
 
     // Only emit a scale track when some pose actually scales the joint — AWD skeletons rarely do, and a
     // redundant unit-scale channel would bloat every clip.
     if (hasScale) {
-      const scaleTrack = createAnimationTrack({ components: 3, times, values: scaleValues });
-      channels.push(createAnimationChannel(scaleTrack, { node: joints[j], path: SceneAnimationPathScale }));
+      const scaleTrack = createAnimationTrack({
+        components: 3,
+        times,
+        values: scaleValues,
+      });
+      channels.push(
+        createAnimationChannel(scaleTrack, {
+          node: joints[j],
+          path: SceneAnimationPathScale,
+        }),
+      );
     }
   }
 
+  if (missingPoseBlocks !== null && missingPoseBlocks.size > 0) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'awd2.pose-block-missing',
+      'buildAwdSkeletonAnimationClip',
+      {
+        distinctPoseBlocks: missingPoseBlocks.size,
+        firstPoseBlock: Math.min(...missingPoseBlocks),
+      },
+    );
+  }
   return createAnimationClip(channels, timeAccumulator);
 }
 
@@ -598,7 +697,7 @@ function buildAwdSkeletonAnimationClip(
 function buildAwdDocumentAnimations(
   bytes: Readonly<Uint8Array>,
   jointNodeIndices: readonly number[],
-  warnings?: string[],
+  diagnostics?: ImportDiagnostic[],
 ): SceneDocumentAnimation[] {
   const source = bytes as Uint8Array;
   const view = new DataView(source.buffer, source.byteOffset, source.byteLength);
@@ -641,7 +740,7 @@ function buildAwdDocumentAnimations(
   const animations: SceneDocumentAnimation[] = [];
   let index = 0;
   for (const parsedAnimation of animationBlocks.values()) {
-    const built = buildAwdDocumentAnimation(parsedAnimation, jointCount, poseBlocks, jointNodeIndices, warnings);
+    const built = buildAwdDocumentAnimation(parsedAnimation, jointCount, poseBlocks, jointNodeIndices, diagnostics);
     if (built !== null) {
       built.name = parsedAnimation.name || `animation${index}`;
       animations.push(built);
@@ -659,11 +758,16 @@ function buildAwdDocumentAnimation(
   jointCount: number,
   poseBlocks: ReadonlyMap<number, ParsedSkeletonPose>,
   jointNodeIndices: readonly number[],
-  warnings?: string[],
+  diagnostics?: ImportDiagnostic[],
 ): SceneDocumentAnimation | null {
   const poseCount = parsedAnimation.poses.length;
   if (poseCount === 0) {
-    warnings?.push('parseAwd2SkeletonAnimations: skeleton animation has no poses');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'awd2.animation-no-poses',
+      'buildAwdDocumentAnimation',
+    );
     return null;
   }
 
@@ -677,6 +781,8 @@ function buildAwdDocumentAnimation(
   const poseMatrix = createMatrix4();
   const poseTransform = createTransform3D();
   const channels: SceneDocumentAnimationChannel[] = [];
+  // See buildAwdSkeletonAnimationClip: aggregate the distinct missing pose blocks, report once.
+  const missingPoseBlocks = diagnostics ? new Set<number>() : null;
   for (let j = 0; j < jointCount; j++) {
     if (j >= jointNodeIndices.length) break;
     const translationValues: number[] = [];
@@ -687,9 +793,7 @@ function buildAwdDocumentAnimation(
       const poseBlockId = parsedAnimation.poses[p].poseBlockId;
       const pose = poseBlocks.get(poseBlockId);
       if (pose === undefined) {
-        warnings?.push(
-          `parseAwd2SkeletonAnimations: pose block ${poseBlockId} referenced by animation not found; using identity`,
-        );
+        missingPoseBlocks?.add(poseBlockId);
         translationValues.push(0, 0, 0);
         rotationValues.push(0, 0, 0, 1);
         scaleValues.push(1, 1, 1);
@@ -715,8 +819,16 @@ function buildAwdDocumentAnimation(
       }
     }
 
-    const translationTrack: AnimationTrack = createAnimationTrack({ components: 3, times, values: translationValues });
-    channels.push({ node: jointNodeIndices[j], path: SceneAnimationPathTranslation, track: translationTrack });
+    const translationTrack: AnimationTrack = createAnimationTrack({
+      components: 3,
+      times,
+      values: translationValues,
+    });
+    channels.push({
+      node: jointNodeIndices[j],
+      path: SceneAnimationPathTranslation,
+      track: translationTrack,
+    });
 
     const rotationTrack: AnimationTrack = createAnimationTrack({
       components: 4,
@@ -724,14 +836,38 @@ function buildAwdDocumentAnimation(
       times,
       values: rotationValues,
     });
-    channels.push({ node: jointNodeIndices[j], path: SceneAnimationPathRotation, track: rotationTrack });
+    channels.push({
+      node: jointNodeIndices[j],
+      path: SceneAnimationPathRotation,
+      track: rotationTrack,
+    });
 
     if (hasScale) {
-      const scaleTrack: AnimationTrack = createAnimationTrack({ components: 3, times, values: scaleValues });
-      channels.push({ node: jointNodeIndices[j], path: SceneAnimationPathScale, track: scaleTrack });
+      const scaleTrack: AnimationTrack = createAnimationTrack({
+        components: 3,
+        times,
+        values: scaleValues,
+      });
+      channels.push({
+        node: jointNodeIndices[j],
+        path: SceneAnimationPathScale,
+        track: scaleTrack,
+      });
     }
   }
 
+  if (missingPoseBlocks !== null && missingPoseBlocks.size > 0) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'awd2.pose-block-missing',
+      'buildAwdDocumentAnimation',
+      {
+        distinctPoseBlocks: missingPoseBlocks.size,
+        firstPoseBlock: Math.min(...missingPoseBlocks),
+      },
+    );
+  }
   return { channels, duration: timeAccumulator, name: parsedAnimation.name };
 }
 
@@ -739,13 +875,12 @@ function buildAwdDocumentAnimation(
 // than 2 (in practice version 3 — AWD3, AwayJS's SceneGraph format) has an entirely different block model,
 // so the AWD2 block walk would silently misparse it to an empty/garbage document. Reject it by name here
 // instead, pointing at AWD3 as a recognized but not-yet-implemented future format.
-function isAwd2Version(input: Readonly<Uint8Array>, context: string, warnings?: string[]): boolean {
+function isAwd2Version(input: Readonly<Uint8Array>, diagnostics?: ImportDiagnostic[]): boolean {
   const versionMajor = input[AWD2_VERSION_MAJOR_OFFSET];
   if (versionMajor === AWD2_FORMAT_VERSION) return true;
-  warnings?.push(
-    `${context}: AWD version ${versionMajor} is not supported — this importer reads AWD2 (version 2) only. ` +
-      'Version 3 (AWD3, the AwayJS SceneGraph format) is a recognized but not-yet-implemented future format.',
-  );
+  reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'awd2.unsupported-version', 'isAwd2Version', {
+    version: versionMajor,
+  });
   return false;
 }
 
@@ -776,11 +911,20 @@ function emptyAwdDocument(): SceneDocument {
 function buildAwdSkeletonDocument(
   parsedSkeleton: Readonly<ParsedSkeleton>,
   document: SceneDocument,
-): { jointNodeIndices: number[]; skeletonRootIndex: number; skin: SceneDocumentSkin } {
+): {
+  jointNodeIndices: number[];
+  skeletonRootIndex: number;
+  skin: SceneDocumentSkin;
+} {
   const jointCount = parsedSkeleton.joints.length;
 
   const skeletonRootIndex = document.nodes.length;
-  document.nodes.push({ children: [], kind: SceneNodeKind, name: 'skeleton', transform: createTransform3D() });
+  document.nodes.push({
+    children: [],
+    kind: SceneNodeKind,
+    name: 'skeleton',
+    transform: createTransform3D(),
+  });
 
   const jointNodeIndices: number[] = [];
   for (let j = 0; j < jointCount; j++) {
@@ -860,7 +1004,7 @@ interface ParsedMeshInstance {
 
 // A parsed AWD material block (type 81). `diffuseTextureId`/`normalTextureId` are texture block ids (0 =
 // absent), `color`/`alpha` the diffuse base (null = absent). `numMethods` is the declared shading-method
-// count — the method bodies are not walked yet (resolveAwdMaterial warns when > 0). Other base flags
+// count — the method bodies are not walked yet (resolveAwdMaterial records a Skip diagnostic when > 0). Other base flags
 // (smoothing/repeat/mipmap) are parsed past but not mapped.
 interface ParsedMaterial {
   alpha: number | null;
@@ -1004,7 +1148,7 @@ function parseTriangleGeometryBlock(
   start: number,
   end: number,
   geometryWide: boolean,
-  warnings?: string[],
+  diagnostics?: ImportDiagnostic[],
 ): ParsedGeometry[] {
   const dv = view as DataView;
   let offset = start;
@@ -1048,7 +1192,12 @@ function parseTriangleGeometryBlock(
       offset += 4;
 
       if (offset + streamByteLength > end) {
-        warnings?.push('createSceneFromAwd2: stream data runs past the end of the block');
+        reportImportDiagnostic(
+          diagnostics,
+          ImportDiagnosticSeverity.Recover,
+          'awd2.stream-data-past-end',
+          'parseTriangleGeometryBlock',
+        );
         break;
       }
 
@@ -1102,7 +1251,12 @@ function parseTriangleGeometryBlock(
     offset = skipAwdAttrList(view, offset, end);
 
     if (positions === null || positions.length < 3) {
-      warnings?.push('createSceneFromAwd2: sub-mesh has no positions or fewer than 3 position values');
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Drop,
+        'awd2.submesh-no-positions',
+        'parseTriangleGeometryBlock',
+      );
       continue;
     }
 
@@ -1122,7 +1276,12 @@ function parseTriangleGeometryBlock(
     if (jointIndices !== null && jointWeights !== null && vertexCount > 0) {
       jointsPerVertex = Math.floor(jointWeights.length / vertexCount);
       if (jointsPerVertex < 1 || jointIndices.length < vertexCount * jointsPerVertex) {
-        warnings?.push('createSceneFromAwd2: skin streams do not match vertex count; sub-mesh imported without skin');
+        reportImportDiagnostic(
+          diagnostics,
+          ImportDiagnosticSeverity.Recover,
+          'awd2.skin-streams-mismatch',
+          'parseTriangleGeometryBlock',
+        );
         jointsPerVertex = 0;
       }
     }
@@ -1167,7 +1326,11 @@ function parseTriangleGeometryBlock(
         const influences: SkinInfluence[] = [];
         for (let k = 0; k < jointsPerVertex; k++) {
           const weight = jointWeights![v * jointsPerVertex + k];
-          if (weight > 0) influences.push({ jointIndex: jointIndices![v * jointsPerVertex + k], weight });
+          if (weight > 0)
+            influences.push({
+              jointIndex: jointIndices![v * jointsPerVertex + k],
+              weight,
+            });
         }
         packSkinInfluences(influences, jointScratch, weightScratch);
         vertices[o + 12] = jointScratch[0];
@@ -1213,13 +1376,21 @@ function parseContainerBlock(
   start: number,
   end: number,
   matrixWide: boolean,
-  warnings?: string[],
+  diagnostics?: ImportDiagnostic[],
 ): ParsedContainer | null {
   const dv = view as DataView;
   let offset = start;
 
   if (offset + 4 > end) {
-    warnings?.push('createSceneFromAwd2: container block truncated before parent ID');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'awd2.container-truncated',
+      'parseContainerBlock',
+      {
+        field: 'parentId',
+      },
+    );
     return null;
   }
   const parentId = dv.getUint32(offset, true);
@@ -1227,14 +1398,30 @@ function parseContainerBlock(
 
   const floatSize = matrixWide ? 8 : 4;
   if (offset + 12 * floatSize > end) {
-    warnings?.push('createSceneFromAwd2: container block truncated before transform');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'awd2.container-truncated',
+      'parseContainerBlock',
+      {
+        field: 'transform',
+      },
+    );
     return null;
   }
   const transformResult = readAwdTransform(view, offset, matrixWide);
   offset = transformResult.end;
 
   if (offset + 2 > end) {
-    warnings?.push('createSceneFromAwd2: container block truncated before name');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'awd2.container-truncated',
+      'parseContainerBlock',
+      {
+        field: 'name',
+      },
+    );
     return null;
   }
   const nameResult = readAwdString(view, source, offset);
@@ -1243,7 +1430,11 @@ function parseContainerBlock(
   offset = skipAwdAttrList(view, offset, end);
   offset = skipAwdAttrList(view, offset, end);
 
-  return { name: nameResult.value, parentId, transform: transformResult.transform };
+  return {
+    name: nameResult.value,
+    parentId,
+    transform: transformResult.transform,
+  };
 }
 
 // Parses a MeshInstance block (type 23). Layout:
@@ -1255,13 +1446,21 @@ function parseMeshInstanceBlock(
   start: number,
   end: number,
   matrixWide: boolean,
-  warnings?: string[],
+  diagnostics?: ImportDiagnostic[],
 ): ParsedMeshInstance | null {
   const dv = view as DataView;
   let offset = start;
 
   if (offset + 4 > end) {
-    warnings?.push('createSceneFromAwd2: mesh instance block truncated before parent ID');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'awd2.mesh-instance-truncated',
+      'parseMeshInstanceBlock',
+      {
+        field: 'parentId',
+      },
+    );
     return null;
   }
   const parentId = dv.getUint32(offset, true);
@@ -1269,21 +1468,45 @@ function parseMeshInstanceBlock(
 
   const floatSize = matrixWide ? 8 : 4;
   if (offset + 12 * floatSize > end) {
-    warnings?.push('createSceneFromAwd2: mesh instance block truncated before transform');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'awd2.mesh-instance-truncated',
+      'parseMeshInstanceBlock',
+      {
+        field: 'transform',
+      },
+    );
     return null;
   }
   const transformResult = readAwdTransform(view, offset, matrixWide);
   offset = transformResult.end;
 
   if (offset + 2 > end) {
-    warnings?.push('createSceneFromAwd2: mesh instance block truncated before name');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'awd2.mesh-instance-truncated',
+      'parseMeshInstanceBlock',
+      {
+        field: 'name',
+      },
+    );
     return null;
   }
   const nameResult = readAwdString(view, source, offset);
   offset = nameResult.end;
 
   if (offset + 4 > end) {
-    warnings?.push('createSceneFromAwd2: mesh instance block truncated before geometry ID');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'awd2.mesh-instance-truncated',
+      'parseMeshInstanceBlock',
+      {
+        field: 'geometryId',
+      },
+    );
     return null;
   }
   const geometryId = dv.getUint32(offset, true);
@@ -1305,14 +1528,20 @@ function parseMeshInstanceBlock(
   offset = skipAwdAttrList(view, offset, end);
   offset = skipAwdAttrList(view, offset, end);
 
-  return { geometryId, materialIds, name: nameResult.value, parentId, transform: transformResult.transform };
+  return {
+    geometryId,
+    materialIds,
+    name: nameResult.value,
+    parentId,
+    transform: transformResult.transform,
+  };
 }
 
 // Parses a Material block (type 81). Layout:
 // name(VarString) → matType(uint8) → numMethods(uint8) → PropertyList → methods → UserAttrList.
 // The base PropertyList carries the flat color (property 1), diffuse texture id (property 2), normal
 // texture id (property 3), and alpha (property 10) — the properties Flight maps onto the ShadedMaterial
-// base. `numMethods` is captured so the resolver can warn that a method-bearing material's shading methods
+// base. `numMethods` is captured so the resolver can record a diagnostic that a method-bearing material's shading methods
 // (fog/env/fresnel/specular in Away3D's MethodMaterial model) are not yet imported as modifiers; the
 // method bodies themselves (which follow the base PropertyList) are left unwalked pending a real
 // method-bearing fixture and the verified AWD2 method-type layout — every AWD2 asset in the reference
@@ -1322,19 +1551,35 @@ function parseMaterialBlock(
   source: Readonly<Uint8Array>,
   start: number,
   end: number,
-  warnings?: string[],
+  diagnostics?: ImportDiagnostic[],
 ): ParsedMaterial | null {
   let offset = start;
 
   if (offset + 2 > end) {
-    warnings?.push('createSceneFromAwd2: material block truncated before name');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'awd2.material-truncated',
+      'parseMaterialBlock',
+      {
+        field: 'name',
+      },
+    );
     return null;
   }
   const nameResult = readAwdString(view, source, offset);
   offset = nameResult.end;
 
   if (offset + 2 > end) {
-    warnings?.push(`createSceneFromAwd2: material '${nameResult.value}' truncated before type`);
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'awd2.material-truncated',
+      'parseMaterialBlock',
+      {
+        field: 'type',
+      },
+    );
     return null;
   }
   offset += 1; // matType (uint8) — texture vs color is inferred from which properties are present
@@ -1347,7 +1592,14 @@ function parseMaterialBlock(
   const color = readAwdPropertyUint32(view, props.values, AWD2_MATERIAL_PROP_COLOR);
   const alpha = readAwdPropertyFloat32(view, props.values, AWD2_MATERIAL_PROP_ALPHA);
 
-  return { alpha, color, diffuseTextureId, name: nameResult.value, normalTextureId, numMethods };
+  return {
+    alpha,
+    color,
+    diffuseTextureId,
+    name: nameResult.value,
+    normalTextureId,
+    numMethods,
+  };
 }
 
 // Parses a Texture block (type 82). Layout:
@@ -1359,20 +1611,24 @@ function parseTextureBlock(
   source: Readonly<Uint8Array>,
   start: number,
   end: number,
-  warnings?: string[],
+  diagnostics?: ImportDiagnostic[],
 ): ParsedTexture | null {
   const dv = view as DataView;
   let offset = start;
 
   if (offset + 2 > end) {
-    warnings?.push('createSceneFromAwd2: texture block truncated before name');
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'awd2.texture-truncated', 'parseTextureBlock', {
+      field: 'name',
+    });
     return null;
   }
   const nameResult = readAwdString(view, source, offset);
   offset = nameResult.end;
 
   if (offset + 5 > end) {
-    warnings?.push(`createSceneFromAwd2: texture '${nameResult.value}' truncated before payload`);
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'awd2.texture-truncated', 'parseTextureBlock', {
+      field: 'payload',
+    });
     return null;
   }
   const texType = (source as Uint8Array)[offset];
@@ -1381,22 +1637,33 @@ function parseTextureBlock(
   offset += 4;
 
   if (offset + dataLen > end) {
-    warnings?.push(
-      `createSceneFromAwd2: texture '${nameResult.value}' declares ${dataLen} bytes but data is truncated`,
-    );
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'awd2.texture-truncated', 'parseTextureBlock', {
+      bytes: dataLen,
+      field: 'data',
+    });
     return null;
   }
 
   if (texType !== AWD2_TEXTURE_TYPE_EMBEDDED) {
     // AWD's external form carries the image URL as the block name; emit it as an External ref for
     // the resolver to fetch, rather than dropping it.
-    return { bytes: null, mimeType: null, name: nameResult.value, url: nameResult.value };
+    return {
+      bytes: null,
+      mimeType: null,
+      name: nameResult.value,
+      url: nameResult.value,
+    };
   }
 
   const bytes = (source as Uint8Array).slice(offset, offset + dataLen);
   const mimeType = detectImageMimeType(bytes);
   if (mimeType === null) {
-    warnings?.push(`createSceneFromAwd2: texture '${nameResult.value}' payload is not a recognized image format`);
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'awd2.texture-unrecognized-format',
+      'parseTextureBlock',
+    );
     return { bytes: null, mimeType: null, name: nameResult.value, url: null };
   }
 
@@ -1468,7 +1735,7 @@ function readAwdPropertyUint32(
 // to BlinnPhong: that discards the format's array-shaped intent to save a type. (Callers who genuinely want
 // the leaner kind can down-convert a modifier-less ShadedMaterial to BlinnPhong themselves.)
 //
-// A method-bearing material (numMethods > 0) warns and imports its base only: the AWD2 method-block layout
+// A method-bearing material (numMethods > 0) records a Skip diagnostic and imports its base only: the AWD2 method-block layout
 // is unverified in-sandbox (the whole reference corpus is numMethods=0), so shipping a blind method→modifier
 // walk would be speculative. The base carries color(1), diffuseTex(2), normalTex(3), alpha(10) — the only
 // base properties real AWD2 files use; specular/gloss/ambient are METHODS in Away3D's model, not base props.
@@ -1478,7 +1745,7 @@ function resolveAwdMaterial(
   textureBlocks: Readonly<Map<number, ParsedTexture>>,
   cache: Map<number, number>,
   document: SceneDocument,
-  warnings?: string[],
+  diagnostics?: ImportDiagnostic[],
 ): number {
   if (materialId === 0) return -1;
   const cached = cache.get(materialId);
@@ -1486,24 +1753,30 @@ function resolveAwdMaterial(
 
   const parsed = materialBlocks.get(materialId);
   if (parsed === undefined) {
-    warnings?.push(`createSceneFromAwd2: mesh references material block ${materialId} which was not found`);
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'awd2.material-missing', 'resolveAwdMaterial', {
+      material: materialId,
+    });
     cache.set(materialId, -1);
     return -1;
   }
 
   const diffuseTexture =
     parsed.diffuseTextureId !== 0
-      ? resolveAwdTexture(parsed.diffuseTextureId, textureBlocks, document, warnings)
+      ? resolveAwdTexture(parsed.diffuseTextureId, textureBlocks, document, diagnostics)
       : null;
   const normalTexture =
-    parsed.normalTextureId !== 0 ? resolveAwdTexture(parsed.normalTextureId, textureBlocks, document, warnings) : null;
+    parsed.normalTextureId !== 0
+      ? resolveAwdTexture(parsed.normalTextureId, textureBlocks, document, diagnostics)
+      : null;
 
-  // A method-bearing material imports its base only (see the header note) — warn rather than silently drop.
+  // A method-bearing material imports its base only (see the header note) — record a diagnostic rather than silently drop.
   if (parsed.numMethods > 0) {
-    warnings?.push(
-      `createSceneFromAwd2: material '${parsed.name || '(unnamed)'}' declares ${parsed.numMethods} shading ` +
-        'method(s); AWD method→ShadedMaterial-modifier import is not yet implemented — importing the base material ' +
-        'only (empty modifiers). Reproduce the original look by appending a modifier in the loading example.',
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'awd2.material-methods-unsupported',
+      'resolveAwdMaterial',
+      { methods: parsed.numMethods },
     );
   }
 
@@ -1532,11 +1805,13 @@ function resolveAwdTexture(
   textureId: number,
   textureBlocks: Readonly<Map<number, ParsedTexture>>,
   document: SceneDocument,
-  warnings?: string[],
+  diagnostics?: ImportDiagnostic[],
 ): Texture | null {
   const parsed = textureBlocks.get(textureId);
   if (parsed === undefined) {
-    warnings?.push(`createSceneFromAwd2: material references texture block ${textureId} which was not found`);
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'awd2.texture-missing', 'resolveAwdTexture', {
+      texture: textureId,
+    });
     return null;
   }
   if (parsed.bytes !== null && parsed.mimeType !== null) {
@@ -1567,20 +1842,36 @@ function parseSkeletonBlock(
   start: number,
   end: number,
   matrixWide: boolean,
-  warnings?: string[],
+  diagnostics?: ImportDiagnostic[],
 ): ParsedSkeleton | null {
   const dv = view as DataView;
   let offset = start;
 
   if (offset + 2 > end) {
-    warnings?.push('parseAwd2SkeletonAnimations: skeleton block truncated before name');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'awd2.skeleton-truncated',
+      'parseSkeletonBlock',
+      {
+        field: 'name',
+      },
+    );
     return null;
   }
   const nameResult = readAwdString(view, source, offset);
   offset = nameResult.end;
 
   if (offset + 2 > end) {
-    warnings?.push('parseAwd2SkeletonAnimations: skeleton block truncated before joint count');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'awd2.skeleton-truncated',
+      'parseSkeletonBlock',
+      {
+        field: 'jointCount',
+      },
+    );
     return null;
   }
   const jointCount = dv.getUint16(offset, true);
@@ -1592,7 +1883,15 @@ function parseSkeletonBlock(
   for (let j = 0; j < jointCount; j++) {
     // Joint ID (sequential, 0-based).
     if (offset + 4 > end) {
-      warnings?.push('parseAwd2SkeletonAnimations: skeleton block truncated before joint fields');
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Drop,
+        'awd2.skeleton-truncated',
+        'parseSkeletonBlock',
+        {
+          field: 'jointFields',
+        },
+      );
       return null;
     }
     offset += 2; // skip jointId (implicit from array position)
@@ -1600,7 +1899,15 @@ function parseSkeletonBlock(
     offset += 2;
 
     if (offset + 2 > end) {
-      warnings?.push('parseAwd2SkeletonAnimations: skeleton block truncated before joint name');
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Drop,
+        'awd2.skeleton-truncated',
+        'parseSkeletonBlock',
+        {
+          field: 'jointName',
+        },
+      );
       return null;
     }
     const jointNameResult = readAwdString(view, source, offset);
@@ -1608,7 +1915,15 @@ function parseSkeletonBlock(
 
     const floatSize = matrixWide ? 8 : 4;
     if (offset + 12 * floatSize > end) {
-      warnings?.push('parseAwd2SkeletonAnimations: skeleton block truncated before joint transform');
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Drop,
+        'awd2.skeleton-truncated',
+        'parseSkeletonBlock',
+        {
+          field: 'jointTransform',
+        },
+      );
       return null;
     }
     const transformResult = readAwdTransform(view, offset, matrixWide);
@@ -1617,7 +1932,11 @@ function parseSkeletonBlock(
     offset = skipAwdAttrList(view, offset, end);
     offset = skipAwdAttrList(view, offset, end);
 
-    joints.push({ name: jointNameResult.value, parentIndex, transform: transformResult.transform });
+    joints.push({
+      name: jointNameResult.value,
+      parentIndex,
+      transform: transformResult.transform,
+    });
   }
 
   return { joints, name: nameResult.value };
@@ -1632,20 +1951,36 @@ function parseSkeletonPoseBlock(
   start: number,
   end: number,
   matrixWide: boolean,
-  warnings?: string[],
+  diagnostics?: ImportDiagnostic[],
 ): ParsedSkeletonPose | null {
   const dv = view as DataView;
   let offset = start;
 
   if (offset + 2 > end) {
-    warnings?.push('parseAwd2SkeletonAnimations: skeleton pose block truncated before name');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'awd2.skeleton-pose-truncated',
+      'parseSkeletonPoseBlock',
+      {
+        field: 'name',
+      },
+    );
     return null;
   }
   const nameResult = readAwdString(view, source, offset);
   offset = nameResult.end;
 
   if (offset + 2 > end) {
-    warnings?.push('parseAwd2SkeletonAnimations: skeleton pose block truncated before joint count');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'awd2.skeleton-pose-truncated',
+      'parseSkeletonPoseBlock',
+      {
+        field: 'jointCount',
+      },
+    );
     return null;
   }
   const jointCount = dv.getUint16(offset, true);
@@ -1656,7 +1991,15 @@ function parseSkeletonPoseBlock(
   const jointTransforms: (Float64Array | null)[] = [];
   for (let j = 0; j < jointCount; j++) {
     if (offset + 1 > end) {
-      warnings?.push('parseAwd2SkeletonAnimations: skeleton pose block truncated before hasTransform');
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Drop,
+        'awd2.skeleton-pose-truncated',
+        'parseSkeletonPoseBlock',
+        {
+          field: 'hasTransform',
+        },
+      );
       return null;
     }
     const hasTransform = dv.getUint8(offset);
@@ -1665,7 +2008,15 @@ function parseSkeletonPoseBlock(
     if (hasTransform !== 0) {
       const floatSize = matrixWide ? 8 : 4;
       if (offset + 12 * floatSize > end) {
-        warnings?.push('parseAwd2SkeletonAnimations: skeleton pose block truncated before joint transform');
+        reportImportDiagnostic(
+          diagnostics,
+          ImportDiagnosticSeverity.Drop,
+          'awd2.skeleton-pose-truncated',
+          'parseSkeletonPoseBlock',
+          {
+            field: 'jointTransform',
+          },
+        );
         return null;
       }
       const transformResult = readAwdTransform(view, offset, matrixWide);
@@ -1687,20 +2038,36 @@ function parseSkeletonAnimationBlock(
   source: Readonly<Uint8Array>,
   start: number,
   end: number,
-  warnings?: string[],
+  diagnostics?: ImportDiagnostic[],
 ): ParsedSkeletonAnimation | null {
   const dv = view as DataView;
   let offset = start;
 
   if (offset + 2 > end) {
-    warnings?.push('parseAwd2SkeletonAnimations: skeleton animation block truncated before name');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'awd2.skeleton-animation-truncated',
+      'parseSkeletonAnimationBlock',
+      {
+        field: 'name',
+      },
+    );
     return null;
   }
   const nameResult = readAwdString(view, source, offset);
   offset = nameResult.end;
 
   if (offset + 2 > end) {
-    warnings?.push('parseAwd2SkeletonAnimations: skeleton animation block truncated before frame count');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'awd2.skeleton-animation-truncated',
+      'parseSkeletonAnimationBlock',
+      {
+        field: 'frameCount',
+      },
+    );
     return null;
   }
   const poseCount = dv.getUint16(offset, true);
@@ -1711,14 +2078,30 @@ function parseSkeletonAnimationBlock(
   const poses: { duration: number; poseBlockId: number }[] = [];
   for (let p = 0; p < poseCount; p++) {
     if (offset + 4 > end) {
-      warnings?.push('parseAwd2SkeletonAnimations: skeleton animation block truncated before pose block ID');
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Drop,
+        'awd2.skeleton-animation-truncated',
+        'parseSkeletonAnimationBlock',
+        {
+          field: 'poseBlockId',
+        },
+      );
       return null;
     }
     const poseBlockId = dv.getUint32(offset, true);
     offset += 4;
 
     if (offset + 2 > end) {
-      warnings?.push('parseAwd2SkeletonAnimations: skeleton animation block truncated before pose duration');
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Drop,
+        'awd2.skeleton-animation-truncated',
+        'parseSkeletonAnimationBlock',
+        {
+          field: 'poseDuration',
+        },
+      );
       return null;
     }
     const duration = dv.getUint16(offset, true);
@@ -1733,11 +2116,10 @@ function parseSkeletonAnimationBlock(
 // Resolves the block-stream buffer to walk: the source unchanged for an uncompressed body, or the 12-byte
 // header spliced in front of the inflated body for a compressed one — so the caller's walk is identical
 // either way (compression byte rewritten to NONE, body-length field to the inflated length). Returns null
-// (after a warning) when the compression method has no registered decompressor or the codec fails.
+// (after recording a diagnostic) when the compression method has no registered decompressor or the codec fails.
 function rehydrateAwdBody(
   input: Uint8Array,
-  context: string,
-  warnings?: string[],
+  diagnostics?: ImportDiagnostic[],
 ): { source: Uint8Array; view: DataView } | null {
   const view = new DataView(input.buffer, input.byteOffset, input.byteLength);
   const compression = input[7];
@@ -1745,8 +2127,12 @@ function rehydrateAwdBody(
 
   const decompressor = awdDecompressors.get(compression);
   if (decompressor === undefined) {
-    warnings?.push(
-      `${context}: AWD compression method ${compression} has no registered decompressor; call registerAwd2Decompressor for this method (Away3D exports compressed by default) before importing this file`,
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'awd2.compression-no-decompressor',
+      'rehydrateAwdBody',
+      { compression },
     );
     return null;
   }
@@ -1756,8 +2142,12 @@ function rehydrateAwdBody(
   const compressedEnd = Math.min(AWD2_HEADER_BYTES + view.getUint32(8, true), input.byteLength);
   const inflated = decompressor(input.subarray(AWD2_HEADER_BYTES, compressedEnd));
   if (inflated === null) {
-    warnings?.push(
-      `${context}: the registered decompressor for AWD compression method ${compression} failed to inflate the body`,
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'awd2.decompression-failed',
+      'rehydrateAwdBody',
+      { compression },
     );
     return null;
   }
