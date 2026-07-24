@@ -3,6 +3,7 @@ import {
   getMotionPathHeading,
   getMotionPathPosition,
   getMotionPathProgress,
+  setMotionPathProgress,
   updateMotionPath,
 } from '@flighthq/motionpath';
 import { appendPathCubicCurveTo, appendPathMoveTo, createPath } from '@flighthq/path';
@@ -40,6 +41,8 @@ appendPathCubicCurveTo(path, 450, 400, 550, 400, 700, 100);
 let speed = 150;
 let loopMode: MotionPathLoopMode = 'loop';
 const mp = createMotionPath(path, speed, loopMode);
+const captureWindow = window as typeof window & { __flightCapture?: boolean };
+if (captureWindow.__flightCapture) setMotionPathProgress(mp, 0.42);
 
 // Draw the visible track on screen as a shape with a line style.
 const track = createShape();
@@ -96,7 +99,11 @@ function drawArrow(x: number, y: number, headingDegrees: number): void {
   appendShapeEndFill(arrow);
 }
 
-drawArrow(100, 400, 0);
+const initialPoint = { x: 0, y: 0 };
+const initialTangent = { x: 0, y: 0 };
+if (getMotionPathPosition(mp, initialPoint, initialTangent)) {
+  drawArrow(initialPoint.x, initialPoint.y, getMotionPathHeading(mp) * RAD_TO_DEG);
+}
 addNodeChild(root, arrow);
 
 // HUD labels for speed, loop mode, and progress.

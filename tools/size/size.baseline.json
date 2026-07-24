@@ -118,5 +118,9 @@
   "scene-picking:webgpu": 31289,
   "bitmapfont-generate:canvas": 8905,
   "bitmapfont-generate:webgl": 11543,
-  "bitmapfont-generate:webgpu": 13826
+  "bitmapfont-generate:webgpu": 13826,
+  "formatloading:dom": 20752,
+  "formatloading:canvas": 19958,
+  "formatloading:webgl": 25693,
+  "formatloading:webgpu": 28531
 }
