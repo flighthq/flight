@@ -93,7 +93,7 @@ export function registerColorWgpuRenderEffects(state: WgpuRenderState): void {
   registerWgpuRenderEffect(state, 'WhiteBalanceEffect', defaultWgpuWhiteBalanceEffectRunner);
 }
 
-// Full standard set — composes all taxonomy bands. Registers all 44 default runners under their
+// Full standard set — composes all taxonomy bands. Registers all 45 default runners under their
 // canonical kind keys. Import this when the full effect palette is needed; import individual band
 // helpers when only a subset of effects is used.
 // Composite band: BevelEffect, BlendEffect, DropShadowEffect, GradientBevelEffect, GradientGlowEffect,

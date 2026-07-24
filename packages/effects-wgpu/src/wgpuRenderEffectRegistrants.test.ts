@@ -98,13 +98,14 @@ describe('registerScreenSpaceWgpuRenderEffects', () => {
 });
 
 describe('registerStandardWgpuRenderEffects', () => {
-  it('registers all 43 standard effect runners', async () => {
+  it('registers all 45 standard effect runners', async () => {
     const state = await createWgpuRenderStateForTest();
     registerStandardWgpuRenderEffects(state);
     // Spot-check one from each band.
     expect(getWgpuRenderEffectRunner(state, 'FxaaEffect')).not.toBe(null);
     expect(getWgpuRenderEffectRunner(state, 'BloomEffect')).not.toBe(null);
     expect(getWgpuRenderEffectRunner(state, 'DirectionalBlurEffect')).not.toBe(null);
+    expect(getWgpuRenderEffectRunner(state, 'BlendEffect')).not.toBe(null);
     expect(getWgpuRenderEffectRunner(state, 'SsaoEffect')).not.toBe(null);
     expect(getWgpuRenderEffectRunner(state, 'HalftoneEffect')).not.toBe(null);
   });
