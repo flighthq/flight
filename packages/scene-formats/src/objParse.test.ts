@@ -7,11 +7,25 @@ import {
 } from '@flighthq/mesh';
 import { getNodeChildren } from '@flighthq/node';
 import { isMesh } from '@flighthq/scene';
-import type { BlinnPhongMaterial, ExternalImageResourceReference, Mesh, SceneNode } from '@flighthq/types';
+import type {
+  BlinnPhongMaterial,
+  ExternalImageResourceReference,
+  ImportDiagnostic,
+  Mesh,
+  SceneNode,
+} from '@flighthq/types';
 import { BlinnPhongMaterialKind } from '@flighthq/types';
 
 import { parseObjMaterialLibrary } from './mtlParse';
 import { createSceneFromObj, parseObj } from './objParse';
+
+// Asserts EXACTLY ONE crumb of `kind` was recorded (guards the count) and returns it so a test can lock
+// the full contract — severity, true origin, and detail — for that emitted diagnostic.
+function expectOneCrumb(diagnostics: readonly ImportDiagnostic[], kind: string): ImportDiagnostic {
+  const matches = diagnostics.filter((d) => d.kind === kind);
+  expect(matches).toHaveLength(1);
+  return matches[0];
+}
 
 describe('createSceneFromObj', () => {
   it('parses a single triangle with positions only', () => {
@@ -203,25 +217,39 @@ describe('createSceneFromObj', () => {
     expect(getNodeChildren(scene.root)).toHaveLength(0);
   });
 
-  it('warns on faces with fewer than 3 vertices', () => {
+  it('records a diagnostic on faces with fewer than 3 vertices', () => {
     const obj = 'v 0 0 0\nv 1 0 0\nf 1 2\n';
-    const warnings: string[] = [];
-    createSceneFromObj(obj, undefined, warnings);
-    expect(warnings.some((w) => w.includes('fewer than 3'))).toBe(true);
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromObj(obj, undefined, diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'obj.face-too-few-vertices');
+    expect(crumb.severity).toBe('Drop');
+    expect(crumb.origin).toBe('parseObj');
+    expect(crumb.detail?.line).toBe(3);
   });
 
-  it('warns on out-of-range vertex indices', () => {
+  it('records a diagnostic on out-of-range position indices', () => {
     const obj = 'v 0 0 0\nf 1 2 3\n';
-    const warnings: string[] = [];
-    createSceneFromObj(obj, undefined, warnings);
-    expect(warnings.some((w) => w.includes('out of range'))).toBe(true);
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromObj(obj, undefined, diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'obj.position-index-out-of-range');
+    expect(crumb.severity).toBe('Drop');
+    expect(crumb.origin).toBe('parseFaceVertex');
+    expect(crumb.detail?.line).toBe(2);
+    expect(crumb.detail?.index).toBe(2);
   });
 
-  it('warns on non-numeric position components', () => {
+  it('records a diagnostic on non-numeric position components', () => {
     const obj = 'v abc def ghi\n';
-    const warnings: string[] = [];
-    createSceneFromObj(obj, undefined, warnings);
-    expect(warnings.some((w) => w.includes('non-numeric'))).toBe(true);
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromObj(obj, undefined, diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'obj.vertex-malformed');
+    expect(crumb.severity).toBe('Drop');
+    expect(crumb.origin).toBe('parseObj');
+    expect(crumb.detail?.line).toBe(1);
+    expect(crumb.detail?.reason).toBe('non-numeric');
   });
 
   it('deduplicates vertices sharing the same position/uv/normal tuple', () => {
@@ -339,6 +367,73 @@ describe('createSceneFromObj animations', () => {
     expect(Object.keys(createSceneFromObj(obj).animations)).toHaveLength(0);
   });
 });
+
+describe('obj diagnostic crumb coverage', () => {
+  it.each(OBJ_MALFORMED_CASES)(
+    'records $kind (reason $reason) as a Drop from parseObj',
+    ({ obj, kind, line, reason }) => {
+      const diagnostics: ImportDiagnostic[] = [];
+      createSceneFromObj(obj, undefined, diagnostics);
+      expect(diagnostics).toHaveLength(1);
+      const crumb = expectOneCrumb(diagnostics, kind);
+      expect(crumb.severity).toBe('Drop');
+      expect(crumb.origin).toBe('parseObj');
+      expect(crumb.detail?.line).toBe(line);
+      expect(crumb.detail?.reason).toBe(reason);
+    },
+  );
+
+  it('records face-vertex-invalid (Drop, parseFaceVertex) for a zero/non-numeric face index token', () => {
+    // Index 0 is invalid in OBJ (1-based); the token is dropped and the face vertex loop breaks.
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromObj('v 0 0 0\nf 0 1 2\n', undefined, diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'obj.face-vertex-invalid');
+    expect(crumb.severity).toBe('Drop');
+    expect(crumb.origin).toBe('parseFaceVertex');
+    expect(crumb.detail?.line).toBe(2);
+    expect(crumb.detail?.token).toBe('0');
+  });
+
+  it('records uv-index-out-of-range (Recover, parseFaceVertex) — the vertex still emits without that uv', () => {
+    // One vt (index 1); the face references uv index 9. The vertex is kept (uv falls back), so Recover.
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nvt 0 0\nf 1/1 2/9 3/1\n', undefined, diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'obj.uv-index-out-of-range');
+    expect(crumb.severity).toBe('Recover');
+    expect(crumb.origin).toBe('parseFaceVertex');
+    expect(crumb.detail?.line).toBe(5);
+    expect(crumb.detail?.index).toBe(9);
+  });
+
+  it('records normal-index-out-of-range (Recover, parseFaceVertex) — the vertex still emits without that normal', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nvn 0 0 1\nf 1//1 2//9 3//1\n', undefined, diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'obj.normal-index-out-of-range');
+    expect(crumb.severity).toBe('Recover');
+    expect(crumb.origin).toBe('parseFaceVertex');
+    expect(crumb.detail?.line).toBe(5);
+    expect(crumb.detail?.index).toBe(9);
+  });
+
+  it('records no diagnostics for a well-formed OBJ even with a collector engaged', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n', undefined, diagnostics);
+    expect(diagnostics).toHaveLength(0);
+  });
+});
+
+// (source, kind, severity, origin, detail) → every remaining OBJ diagnostic site, one row per emitting
+// variant, complementing the three converted createSceneFromObj cases above. Each locks the full crumb.
+const OBJ_MALFORMED_CASES: Array<{ obj: string; kind: string; line: number; reason: string }> = [
+  { obj: 'v 0 0\n', kind: 'obj.vertex-malformed', line: 1, reason: 'too-few-components' },
+  { obj: 'vn 0 0\n', kind: 'obj.normal-malformed', line: 1, reason: 'too-few-components' },
+  { obj: 'vn a b c\n', kind: 'obj.normal-malformed', line: 1, reason: 'non-numeric' },
+  { obj: 'vt 0\n', kind: 'obj.uv-malformed', line: 1, reason: 'too-few-components' },
+  { obj: 'vt a b\n', kind: 'obj.uv-malformed', line: 1, reason: 'non-numeric' },
+];
 
 describe('parseObj', () => {
   it('decomposes each group into a document mesh node with inline geometry', () => {
