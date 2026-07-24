@@ -5,11 +5,13 @@ import { createSceneFromDocument } from '@flighthq/scene';
 import type {
   Material,
   MaterialLike,
+  MeshSubset,
   Scene,
   SceneDocument,
   SceneDocumentMesh,
   SceneDocumentNode,
   ThreeDsMaterial,
+  ThreeDsMaterialGroup,
   ThreeDsMesh,
 } from '@flighthq/types';
 import { MeshKind } from '@flighthq/types';
@@ -29,6 +31,7 @@ import {
   THREE_DS_MATERIAL_TEXTURE_FILENAME,
   THREE_DS_MATERIAL_TEXTURE_MAP,
   THREE_DS_OBJECT,
+  THREE_DS_SMOOTH_GROUP,
   THREE_DS_TRIMESH,
   THREE_DS_UV_COORDS,
   THREE_DS_VERTICES,
@@ -103,7 +106,7 @@ export function parse3ds(bytes: Readonly<Uint8Array>, warnings?: string[]): Scen
   const meshes = collectMeshes(view, 0, materials, warnings);
   const materialIndexByName = new Map<string, number>();
   for (let i = 0; i < meshes.length; i++) {
-    appendMeshDocument(meshes[i], materials, materialIndexByName, document);
+    appendMeshDocument(meshes[i], materials, materialIndexByName, document, warnings);
   }
 
   return document;
@@ -191,7 +194,8 @@ function parseTrimesh(
   let vertices: Float32Array | null = null;
   let faces: Uint16Array | null = null;
   let uvs: Float32Array | null = null;
-  let materialNames: readonly string[] = [];
+  let materialGroups: readonly ThreeDsMaterialGroup[] = [];
+  let smoothingGroups: Uint32Array | null = null;
 
   let cursor = offset + THREE_DS_CHUNK_HEADER_BYTES;
 
@@ -215,7 +219,8 @@ function parseTrimesh(
       const parsed = parseFaces(view, dataStart, chunkEnd, warnings);
       if (parsed !== null) {
         faces = parsed.faces;
-        materialNames = parsed.materialNames;
+        materialGroups = parsed.materialGroups;
+        smoothingGroups = parsed.smoothingGroups;
       }
     } else if (chunkId === THREE_DS_UV_COORDS) {
       uvs = parseUvCoords(view, dataStart, chunkEnd, warnings);
@@ -231,7 +236,7 @@ function parseTrimesh(
     return null;
   }
 
-  return { faces, materialNames, name, uvs, vertices };
+  return { faces, materialGroups, name, smoothingGroups, uvs, vertices };
 }
 
 // Reads the vertex list sub-chunk (0x4110): uint16 count followed by count * 3 float32 values
@@ -263,15 +268,16 @@ function parseVertices(
 }
 
 // Reads the face list sub-chunk (0x4120): uint16 count followed by count * 4 uint16 values
-// (v0, v1, v2, flags per face). Only the first 3 values (triangle indices) are kept. FACE_MATERIAL
-// (0x4130) sub-chunks follow the face array within the same chunk; their material names are collected
-// (each names a material the mesh's faces use). Returns both the triangle indices and those names.
+// (v0, v1, v2, flags per face). Only the first 3 values (triangle indices) are kept. Two sub-chunks
+// follow the face array within the same chunk: FACE_MATERIAL (0x4130) — a material name plus the list of
+// face indices that use it, one per material subset — and SMOOTH_GROUP (0x4150) — one uint32 smoothing
+// bitmask per face. Returns the triangle indices, the per-material face groups, and the smoothing masks.
 function parseFaces(
   view: Readonly<DataView>,
   dataStart: number,
   end: number,
   warnings?: string[],
-): { faces: Uint16Array; materialNames: readonly string[] } | null {
+): { faces: Uint16Array; materialGroups: readonly ThreeDsMaterialGroup[]; smoothingGroups: Uint32Array | null } | null {
   if (dataStart + 2 > end) {
     warnings?.push('createSceneFrom3ds: face sub-chunk too small to read count');
     return null;
@@ -293,22 +299,83 @@ function parseFaces(
   }
 
   // Sub-chunks (FACE_MATERIAL, SMOOTH_GROUP, …) follow the face array up to the chunk boundary.
-  const materialNames: string[] = [];
+  const materialGroups: ThreeDsMaterialGroup[] = [];
+  let smoothingGroups: Uint32Array | null = null;
   let cursor = facesEnd;
   while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
     const subId = view.getUint16(cursor, true);
     const subLength = readChunkLength(view, cursor);
     const subEnd = cursor + subLength;
     if (subLength < THREE_DS_CHUNK_HEADER_BYTES || subEnd > end) break;
+    const dataOffset = cursor + THREE_DS_CHUNK_HEADER_BYTES;
     if (subId === THREE_DS_FACE_MATERIAL) {
-      const dataOffset = cursor + THREE_DS_CHUNK_HEADER_BYTES;
-      const materialName = readNullTerminatedString(view, dataOffset, subEnd);
-      if (materialName.length > 0) materialNames.push(materialName);
+      const group = parseFaceMaterialGroup(view, dataOffset, subEnd, count, warnings);
+      if (group !== null) materialGroups.push(group);
+    } else if (subId === THREE_DS_SMOOTH_GROUP) {
+      smoothingGroups = parseSmoothingGroups(view, dataOffset, subEnd, count, warnings);
     }
     cursor = subEnd;
   }
 
-  return { faces, materialNames };
+  return { faces, materialGroups, smoothingGroups };
+}
+
+// Reads one FACE_MATERIAL (0x4130) group: a null-terminated material name, then uint16 nFaces, then
+// nFaces uint16 face indices (into the mesh's triangle list) that bind that material. Returns null for a
+// nameless or truncated group. Face indices past the mesh's face count are dropped with a warning.
+function parseFaceMaterialGroup(
+  view: Readonly<DataView>,
+  dataStart: number,
+  end: number,
+  faceCount: number,
+  warnings?: string[],
+): ThreeDsMaterialGroup | null {
+  const name = readNullTerminatedString(view, dataStart, end);
+  if (name.length === 0) return null;
+  let offset = dataStart + name.length + 1; // past the name and null terminator
+  if (offset + 2 > end) {
+    warnings?.push(`createSceneFrom3ds: material group '${name}' is missing its face-index count`);
+    return null;
+  }
+  const groupFaceCount = view.getUint16(offset, true);
+  offset += 2;
+  if (offset + groupFaceCount * 2 > end) {
+    warnings?.push(
+      `createSceneFrom3ds: material group '${name}' declares ${groupFaceCount} faces but data is truncated`,
+    );
+    return null;
+  }
+  const faces = new Uint16Array(groupFaceCount);
+  let kept = 0;
+  for (let i = 0; i < groupFaceCount; i++) {
+    const faceIndex = view.getUint16(offset + i * 2, true);
+    if (faceIndex < faceCount) faces[kept++] = faceIndex;
+  }
+  if (kept < groupFaceCount) {
+    warnings?.push(
+      `createSceneFrom3ds: material group '${name}' references face indices past the mesh's ${faceCount} faces`,
+    );
+  }
+  return { faces: faces.subarray(0, kept), name };
+}
+
+// Reads the SMOOTH_GROUP (0x4150) sub-chunk: one uint32 smoothing-group bitmask per face. Two faces
+// share a smoothed vertex normal only where their masks share a set bit; a face with mask 0 is flat.
+// Returns null when the chunk is truncated (the mesh then smooths every shared vertex).
+function parseSmoothingGroups(
+  view: Readonly<DataView>,
+  dataStart: number,
+  end: number,
+  faceCount: number,
+  warnings?: string[],
+): Uint32Array | null {
+  if (dataStart + faceCount * 4 > end) {
+    warnings?.push(`createSceneFrom3ds: smoothing-group sub-chunk declares fewer than ${faceCount} masks; ignoring`);
+    return null;
+  }
+  const groups = new Uint32Array(faceCount);
+  for (let i = 0; i < faceCount; i++) groups[i] = view.getUint32(dataStart + i * 4, true);
+  return groups;
 }
 
 // Reads the UV coordinate sub-chunk (0x4140): uint16 count followed by count * 2 float32 values
@@ -339,123 +406,158 @@ function parseUvCoords(
   return uvCoords;
 }
 
-// Builds a Mesh scene node from a parsed ThreeDsMesh descriptor. Vertex positions are converted
-// from RH Z-up to RH Y-up via convertPositionsZUpToYUp. Face normals are computed per-face and
-// averaged at shared vertices to produce smooth normals. The materials the mesh's faces reference
-// are resolved against the file's material table (memoized in `resolved`) and attached to the Mesh node.
+// Builds a Mesh scene node from a parsed ThreeDsMesh descriptor. Vertex positions are converted from RH
+// Z-up to RH Y-up via convertPositionsZUpToYUp. Normals are generated per smoothing group — a vertex
+// shared by faces in different smoothing groups is split so each side keeps its own normal (so hard edges
+// stay hard) — and the geometry is partitioned into one MeshSubset per FACE_MATERIAL group, with any
+// faces belonging to no group forming a trailing default subset. Materials are resolved against the
+// file's material table (memoized in `materialIndexByName`) and named per subset by index (-1 = default).
 function appendMeshDocument(
   mesh: Readonly<ThreeDsMesh>,
   materials: Readonly<Map<string, ThreeDsMaterial>>,
   materialIndexByName: Map<string, number>,
   document: SceneDocument,
+  warnings?: string[],
 ): void {
   const vertexCount = mesh.vertices.length / 3;
   const faceCount = mesh.faces.length / 3;
 
   if (vertexCount === 0 || faceCount === 0) return;
 
-  // Convert positions from RH Z-up to RH Y-up before normal computation so all geometry
-  // operates in Flight's coordinate space. The rotation preserves winding, so computed normals
-  // come out facing outward and front faces are not culled.
+  // Convert positions from RH Z-up to RH Y-up before normal computation so all geometry operates in
+  // Flight's coordinate space. The rotation preserves winding, so computed normals face outward.
   const positions = Array.from(mesh.vertices);
   convertPositionsZUpToYUp(positions);
 
-  const vertices = new Float32Array(vertexCount * CANONICAL_FLOATS_PER_VERTEX);
-  const normals = new Float32Array(vertexCount * 3);
-
-  // Accumulate face normals into per-vertex normals for smooth shading.
+  // Per-face normals, area-weighted (the raw edge cross product, magnitude ∝ 2×area). Faces that
+  // reference a vertex past the buffer are skipped from all normal/emit work.
+  const faceNormals = new Float64Array(faceCount * 3);
+  const incidentFaces: number[][] = Array.from({ length: vertexCount }, () => []);
+  const faceValid = new Uint8Array(faceCount);
+  let droppedFaces = 0;
   for (let f = 0; f < faceCount; f++) {
     const i0 = mesh.faces[f * 3];
     const i1 = mesh.faces[f * 3 + 1];
     const i2 = mesh.faces[f * 3 + 2];
-
-    const x0 = positions[i0 * 3];
-    const y0 = positions[i0 * 3 + 1];
-    const z0 = positions[i0 * 3 + 2];
-    const x1 = positions[i1 * 3];
-    const y1 = positions[i1 * 3 + 1];
-    const z1 = positions[i1 * 3 + 2];
-    const x2 = positions[i2 * 3];
-    const y2 = positions[i2 * 3 + 1];
-    const z2 = positions[i2 * 3 + 2];
-
-    // Cross product of edge vectors to get face normal.
-    const e1x = x1 - x0;
-    const e1y = y1 - y0;
-    const e1z = z1 - z0;
-    const e2x = x2 - x0;
-    const e2y = y2 - y0;
-    const e2z = z2 - z0;
-    const nx = e1y * e2z - e1z * e2y;
-    const ny = e1z * e2x - e1x * e2z;
-    const nz = e1x * e2y - e1y * e2x;
-
-    normals[i0 * 3] += nx;
-    normals[i0 * 3 + 1] += ny;
-    normals[i0 * 3 + 2] += nz;
-    normals[i1 * 3] += nx;
-    normals[i1 * 3 + 1] += ny;
-    normals[i1 * 3 + 2] += nz;
-    normals[i2 * 3] += nx;
-    normals[i2 * 3 + 1] += ny;
-    normals[i2 * 3 + 2] += nz;
+    if (i0 >= vertexCount || i1 >= vertexCount || i2 >= vertexCount) {
+      droppedFaces++;
+      continue;
+    }
+    faceValid[f] = 1;
+    const e1x = positions[i1 * 3] - positions[i0 * 3];
+    const e1y = positions[i1 * 3 + 1] - positions[i0 * 3 + 1];
+    const e1z = positions[i1 * 3 + 2] - positions[i0 * 3 + 2];
+    const e2x = positions[i2 * 3] - positions[i0 * 3];
+    const e2y = positions[i2 * 3 + 1] - positions[i0 * 3 + 1];
+    const e2z = positions[i2 * 3 + 2] - positions[i0 * 3 + 2];
+    faceNormals[f * 3] = e1y * e2z - e1z * e2y;
+    faceNormals[f * 3 + 1] = e1z * e2x - e1x * e2z;
+    faceNormals[f * 3 + 2] = e1x * e2y - e1y * e2x;
+    incidentFaces[i0].push(f);
+    incidentFaces[i1].push(f);
+    incidentFaces[i2].push(f);
+  }
+  if (droppedFaces > 0) {
+    warnings?.push(
+      `createSceneFrom3ds: mesh '${mesh.name}' has ${droppedFaces} face(s) with a vertex index past its ${vertexCount} vertices; those faces were dropped`,
+    );
   }
 
-  // Normalize accumulated normals and fill the interleaved vertex buffer.
-  for (let v = 0; v < vertexCount; v++) {
-    const o = v * CANONICAL_FLOATS_PER_VERTEX;
+  const smoothing = mesh.smoothingGroups;
 
-    vertices[o] = positions[v * 3];
-    vertices[o + 1] = positions[v * 3 + 1];
-    vertices[o + 2] = positions[v * 3 + 2];
+  // Output vertex buffer, grown lazily. Each source vertex keeps its original output index for its first
+  // resolved normal, so a mesh with no hard edges reindexes identically to the source; a vertex needing a
+  // second (differently-smoothed) normal appends a split copy. `vertexSlots[v]` lists (normal, outIndex).
+  const outVertices: number[] = [];
+  const vertexSlots: { nx: number; ny: number; nz: number; outIndex: number }[][] = Array.from(
+    { length: vertexCount },
+    () => [],
+  );
 
-    // Normalize the accumulated face normal.
-    let nnx = normals[v * 3];
-    let nny = normals[v * 3 + 1];
-    let nnz = normals[v * 3 + 2];
-    const len = Math.sqrt(nnx * nnx + nny * nny + nnz * nnz);
+  const emitCorner = (face: number, vertex: number): number => {
+    // Sum the area-weighted normals of every face sharing this vertex that smooths with `face` (always
+    // itself; others only where a smoothing bit overlaps, or unconditionally when no smoothing chunk).
+    let nx = 0;
+    let ny = 0;
+    let nz = 0;
+    const incident = incidentFaces[vertex];
+    for (let k = 0; k < incident.length; k++) {
+      const other = incident[k];
+      if (other === face || smoothing === null || (smoothing[face] & smoothing[other]) !== 0) {
+        nx += faceNormals[other * 3];
+        ny += faceNormals[other * 3 + 1];
+        nz += faceNormals[other * 3 + 2];
+      }
+    }
+    const len = Math.sqrt(nx * nx + ny * ny + nz * nz);
     if (len > 0) {
-      nnx /= len;
-      nny /= len;
-      nnz /= len;
+      nx /= len;
+      ny /= len;
+      nz /= len;
     }
-    vertices[o + 3] = nnx;
-    vertices[o + 4] = nny;
-    vertices[o + 5] = nnz;
-
-    // Tangent (4 floats) — 3DS does not carry tangents; zero-filled.
-    // vertices[o + 6..9] are already 0 from Float32Array initialization.
-
-    // UV coordinates (2 floats).
-    if (mesh.uvs !== null && v < mesh.uvs.length / 2) {
-      vertices[o + 10] = mesh.uvs[v * 2];
-      vertices[o + 11] = 1 - mesh.uvs[v * 2 + 1];
+    const slots = vertexSlots[vertex];
+    for (let s = 0; s < slots.length; s++) {
+      const slot = slots[s];
+      if (Math.abs(slot.nx - nx) < 1e-6 && Math.abs(slot.ny - ny) < 1e-6 && Math.abs(slot.nz - nz) < 1e-6) {
+        return slot.outIndex;
+      }
     }
-    // else: already 0 from Float32Array initialization.
-  }
+    const outIndex = outVertices.length / CANONICAL_FLOATS_PER_VERTEX;
+    outVertices.push(positions[vertex * 3], positions[vertex * 3 + 1], positions[vertex * 3 + 2]);
+    outVertices.push(nx, ny, nz);
+    outVertices.push(0, 0, 0, 0); // tangent — 3DS carries none
+    if (mesh.uvs !== null && vertex < mesh.uvs.length / 2) {
+      outVertices.push(mesh.uvs[vertex * 2], 1 - mesh.uvs[vertex * 2 + 1]);
+    } else {
+      outVertices.push(0, 0);
+    }
+    slots.push({ nx, ny, nz, outIndex });
+    return outIndex;
+  };
 
-  const indices = Uint32Array.from(mesh.faces);
-  const geometry = createMeshGeometry({ indices, layout: CANONICAL_LAYOUT, vertices });
+  // Map each face to the ordinal of the last material group that claims it (-1 = unassigned). Then emit
+  // faces grouped by material so each material's triangles form one contiguous MeshSubset range.
+  const faceGroup = new Int32Array(faceCount).fill(-1);
+  mesh.materialGroups.forEach((group, groupIndex) => {
+    for (let i = 0; i < group.faces.length; i++) faceGroup[group.faces[i]] = groupIndex;
+  });
 
-  // Resolve each distinct material name the mesh references to a document material index, memoized so a
-  // material shared across meshes registers one entry. 3DS assigns materials per face-subset, but this
-  // importer keeps the mesh geometry whole, so the referenced materials are attached in file order
-  // without splitting the geometry into subsets.
+  const indices: number[] = [];
+  const subsets: MeshSubset[] = [];
   const meshMaterials: number[] = [];
-  const seen = new Set<string>();
-  for (const materialName of mesh.materialNames) {
-    if (seen.has(materialName)) continue;
-    seen.add(materialName);
-    const parsed = materials.get(materialName);
-    if (parsed === undefined) continue;
-    let index = materialIndexByName.get(materialName);
-    if (index === undefined) {
-      index = document.materials.length;
-      document.materials.push(threeDsMaterialToBlinnPhong(parsed, document) as unknown as MaterialLike);
-      materialIndexByName.set(materialName, index);
+  const emitSubset = (predicate: (face: number) => boolean, materialIndex: number): void => {
+    const indexOffset = indices.length;
+    for (let f = 0; f < faceCount; f++) {
+      if (!faceValid[f] || !predicate(f)) continue;
+      indices.push(
+        emitCorner(f, mesh.faces[f * 3]),
+        emitCorner(f, mesh.faces[f * 3 + 1]),
+        emitCorner(f, mesh.faces[f * 3 + 2]),
+      );
     }
-    meshMaterials.push(index);
-  }
+    const indexCount = indices.length - indexOffset;
+    if (indexCount > 0) {
+      subsets.push({ indexCount, indexOffset });
+      meshMaterials.push(materialIndex);
+    }
+  };
+
+  mesh.materialGroups.forEach((group, groupIndex) => {
+    emitSubset(
+      (f) => faceGroup[f] === groupIndex,
+      resolveThreeDsMaterial(group.name, materials, materialIndexByName, document),
+    );
+  });
+  emitSubset((f) => faceGroup[f] === -1, -1);
+
+  if (subsets.length === 0) return; // every face was dropped as malformed
+
+  const geometry = createMeshGeometry({
+    indices: Uint32Array.from(indices),
+    layout: CANONICAL_LAYOUT,
+    subsets,
+    vertices: new Float32Array(outVertices),
+  });
 
   const documentMesh: SceneDocumentMesh = { geometry, materials: meshMaterials };
   const meshIndex = document.meshes.length;
@@ -467,6 +569,26 @@ function appendMeshDocument(
   const nodeIndex = document.nodes.length;
   document.nodes.push(node);
   document.scenes[0].rootNodes.push(nodeIndex);
+}
+
+// Resolves a 3DS material name to its document material index, registering it (converted to BlinnPhong)
+// on first use and memoizing in `materialIndexByName` so a material shared across meshes registers once.
+// Returns -1 for an empty name or a name absent from the file's material table (a default-material subset).
+function resolveThreeDsMaterial(
+  name: string,
+  materials: Readonly<Map<string, ThreeDsMaterial>>,
+  materialIndexByName: Map<string, number>,
+  document: SceneDocument,
+): number {
+  if (name.length === 0) return -1;
+  const parsed = materials.get(name);
+  if (parsed === undefined) return -1;
+  const cached = materialIndexByName.get(name);
+  if (cached !== undefined) return cached;
+  const index = document.materials.length;
+  document.materials.push(threeDsMaterialToBlinnPhong(parsed, document) as unknown as MaterialLike);
+  materialIndexByName.set(name, index);
+  return index;
 }
 
 // Converts a parsed 3DS material to Flight's BlinnPhongMaterial — 3DS's own diffuse/specular shading
