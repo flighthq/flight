@@ -3,9 +3,12 @@ import {
   connectInputToInteraction,
   connectInteractionSignal,
   createInteractionManager,
+  createWebCursorBackend,
+  hitTestDisplayObjectsShape,
   registerDefaultHitTests,
   registerShapeHitTest,
   releaseInteractionPointer,
+  setNodeCursor,
   setNodeHitTestEnabled,
 } from '@flighthq/interaction';
 import type { PointerEventData, Shape } from '@flighthq/sdk';
@@ -38,15 +41,18 @@ root.scaleY = scale;
 // bank; registerShapeHitTest adds the exact fill-winding provider for Shape, so `precise: true`
 // resolves a hit against the actual circle/rectangle fill rather than its bounding box — a click in
 // a circle's bbox corner misses.
+const canvasElement = canvas;
 registerDefaultHitTests();
 registerShapeHitTest();
 
-const manager = createInteractionManager(root, { precise: true });
+const manager = createInteractionManager(root, {
+  cursorBackend: createWebCursorBackend(canvasElement),
+  precise: true,
+});
 
 // Wire DOM pointer events into the interaction manager via an InputManager. The coordScale
 // bridges CSS pixels to the backing-store pixel space used by hit testing.
 const inputManager = createInputManager();
-const canvasElement = canvas;
 attachPointerInput(inputManager, canvasElement);
 connectInputToInteraction(inputManager, manager, scale);
 
@@ -126,8 +132,8 @@ const shapes: DraggableShape[] = [
     baseColor: 0xcc44cc,
     hoverColor: 0xff66ff,
     kind: 'circle',
-    cx: 650,
-    cy: 250,
+    cx: 475,
+    cy: 300,
     w: 55,
     h: 55,
   },
@@ -166,6 +172,7 @@ for (const ds of shapes) {
   addNodeChild(root, ds.shape);
   // Hit testing is opt-in: each interactive shape volunteers itself as a candidate.
   setNodeHitTestEnabled(ds.shape, true);
+  setNodeCursor(ds.shape, 'grab');
   redrawShape(ds);
 
   // Hover: pointerOver / pointerOut change the fill to a brighter shade.
@@ -243,8 +250,16 @@ hudDragLabel.y = CANVAS_HEIGHT - 36;
 invalidateNodeLocalTransform(hudDragLabel);
 addNodeChild(root, hudDragLabel);
 
+const hudOverlapLabel = createTextLabel();
+hudOverlapLabel.data.text = 'Overlaps: none';
+hudOverlapLabel.data.textFormat = { size: 14, color: 0xdddddd };
+hudOverlapLabel.x = 10;
+hudOverlapLabel.y = CANVAS_HEIGHT - 102;
+invalidateNodeLocalTransform(hudOverlapLabel);
+addNodeChild(root, hudOverlapLabel);
+
 const titleLabel = createTextLabel();
-titleLabel.data.text = 'Drag the shapes around. Hover to highlight.';
+titleLabel.data.text = 'Drag shapes. Hover for precise hit + grab cursor. Overlaps update live.';
 titleLabel.data.textFormat = { size: 16, color: 0x999999 };
 titleLabel.x = 10;
 titleLabel.y = 10;
@@ -252,6 +267,22 @@ invalidateNodeLocalTransform(titleLabel);
 addNodeChild(root, titleLabel);
 
 function updateHud(): void {
+  const overlaps: string[] = [];
+  for (let i = 0; i < shapes.length; i++) {
+    for (let j = i + 1; j < shapes.length; j++) {
+      const a = shapes[i];
+      const b = shapes[j];
+      if (hitTestDisplayObjectsShape(a.shape, b.shape)) {
+        overlaps.push(`${a.name} + ${b.name}`);
+      }
+    }
+  }
+  const overlapText = 'Overlaps: ' + (overlaps.length === 0 ? 'none' : overlaps.join(', '));
+  if (hudOverlapLabel.data.text !== overlapText) {
+    hudOverlapLabel.data.text = overlapText;
+    invalidateNodeAppearance(hudOverlapLabel);
+  }
+
   const eventText = 'Event: ' + lastEventType;
   if (hudEventLabel.data.text !== eventText) {
     hudEventLabel.data.text = eventText;

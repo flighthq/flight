@@ -23,8 +23,9 @@ import {
   getTextInputState,
   handleTextInputKeyboard,
   insertTextInput,
-  undoTextInput,
   redoTextInput,
+  setTextInputSelection,
+  undoTextInput,
 } from '@flighthq/textinput';
 
 import { canvas, render, scale } from './render';
@@ -63,7 +64,7 @@ function configureField(field: RichText, y: number, placeholder: string): void {
   field.data.defaultTextFormat = { font: 'sans-serif', size: 16, color: 0x222222 };
 }
 
-configureField(normalField, START_Y + 22, 'Type here...');
+configureField(normalField, START_Y + 22, '');
 configureField(numericField, START_Y + FIELD_GAP + 22, '');
 configureField(passwordField, START_Y + FIELD_GAP * 2 + 22, '');
 
@@ -71,6 +72,13 @@ configureField(passwordField, START_Y + FIELD_GAP * 2 + 22, '');
 enableTextInput(normalField);
 enableTextInput(numericField, { restrict: '0-9' });
 enableTextInput(passwordField, { displayAsPassword: true });
+
+// Seed representative editable values. Passing mixed input through the numeric field demonstrates
+// that its restriction is enforced, while the password field renders the same raw text as bullets.
+insertTextInput(normalField, 'Edit this Flight text');
+insertTextInput(numericField, 'Flight 2026');
+insertTextInput(passwordField, 'flightdeck');
+setTextInputSelection(normalField, 5, 16);
 
 // Labels above each field.
 function createFieldLabel(text: string, y: number): ReturnType<typeof createTextLabel> {
@@ -166,8 +174,8 @@ function updateFocusHighlight(): void {
 // Click-to-focus: detect which field was clicked based on bounds.
 window.addEventListener('pointerdown', (e: PointerEvent) => {
   const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
+  const x = (e.clientX - rect.left) / scale;
+  const y = (e.clientY - rect.top) / scale;
 
   let hit = false;
   for (const field of fields) {
