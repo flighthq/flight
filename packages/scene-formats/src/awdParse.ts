@@ -17,6 +17,7 @@ import type { Scene } from '@flighthq/types';
 import type {
   AnimationClip,
   AnimationTrack,
+  AwdDecompressor,
   Material,
   MaterialLike,
   Matrix4,
@@ -104,29 +105,29 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
 // @flighthq/scene-resources's explicit pass. The file's skeleton animations become document `animations`
 // whose channels bind by joint node index. Assemble into a live Scene with `createSceneFromDocument`.
 //
-// Only uncompressed AWD files are supported; compressed files (deflate or LZMA) push a warning and return
-// an empty document. Malformed input pushes a warning and returns an empty document rather than throwing.
+// A compressed body (Away3D's exporter default — deflate or LZMA) is inflated first when a decompressor
+// has been registered for that compression method via `registerAwdDecompressor`; with no codec registered
+// the file pushes a warning and returns an empty document. Malformed input warns and returns empty rather
+// than throwing.
 export function parseAwd(bytes: Readonly<Uint8Array>, warnings?: string[]): SceneDocument {
-  const source = bytes as Uint8Array;
-  if (source.byteLength < AWD_HEADER_BYTES) {
+  const input = bytes as Uint8Array;
+  if (input.byteLength < AWD_HEADER_BYTES) {
     warnings?.push('createSceneFromAwd: byte length is smaller than the 12-byte AWD header');
     return emptyAwdDocument();
   }
 
-  const view = new DataView(source.buffer, source.byteOffset, source.byteLength);
-
-  if (source[0] !== AWD_MAGIC_0 || source[1] !== AWD_MAGIC_1 || source[2] !== AWD_MAGIC_2) {
+  if (input[0] !== AWD_MAGIC_0 || input[1] !== AWD_MAGIC_1 || input[2] !== AWD_MAGIC_2) {
     warnings?.push("createSceneFromAwd: magic is not 'AWD'; not an AWD file");
     return emptyAwdDocument();
   }
 
-  const compression = source[7];
-  if (compression !== AWD_COMPRESSION_NONE) {
-    warnings?.push(
-      `createSceneFromAwd: compression method ${compression} is not supported; only uncompressed AWD is supported`,
-    );
-    return emptyAwdDocument();
-  }
+  // A compressed body is inflated (via a registered decompressor) and spliced back behind the header so
+  // the block walk below is identical for compressed and uncompressed input; bails to empty when no codec
+  // is registered for the file's compression method.
+  const rehydrated = rehydrateAwdBody(input, 'createSceneFromAwd', warnings);
+  if (rehydrated === null) return emptyAwdDocument();
+  const source = rehydrated.source;
+  const view = rehydrated.view;
 
   const bodyLength = view.getUint32(8, true);
   const bodyEnd = Math.min(AWD_HEADER_BYTES + bodyLength, source.byteLength);
@@ -355,26 +356,23 @@ export function parseAwdSkeletonAnimations(
   joints: readonly SceneNode[],
   warnings?: string[],
 ): Record<string, AnimationClip> {
-  const source = bytes as Uint8Array;
-  if (source.byteLength < AWD_HEADER_BYTES) {
+  const input = bytes as Uint8Array;
+  if (input.byteLength < AWD_HEADER_BYTES) {
     warnings?.push('parseAwdSkeletonAnimations: byte length is smaller than the 12-byte AWD header');
     return {};
   }
 
-  const view = new DataView(source.buffer, source.byteOffset, source.byteLength);
-
-  if (source[0] !== AWD_MAGIC_0 || source[1] !== AWD_MAGIC_1 || source[2] !== AWD_MAGIC_2) {
+  if (input[0] !== AWD_MAGIC_0 || input[1] !== AWD_MAGIC_1 || input[2] !== AWD_MAGIC_2) {
     warnings?.push("parseAwdSkeletonAnimations: magic is not 'AWD'; not an AWD file");
     return {};
   }
 
-  const compression = source[7];
-  if (compression !== AWD_COMPRESSION_NONE) {
-    warnings?.push(
-      `parseAwdSkeletonAnimations: compression method ${compression} is not supported; only uncompressed AWD is supported`,
-    );
-    return {};
-  }
+  // Inflate a compressed body and splice it back behind the header so the walk is identical to the
+  // uncompressed path; bails to an empty result when no codec is registered for the compression method.
+  const rehydrated = rehydrateAwdBody(input, 'parseAwdSkeletonAnimations', warnings);
+  if (rehydrated === null) return {};
+  const source = rehydrated.source;
+  const view = rehydrated.view;
 
   const bodyLength = view.getUint32(8, true);
   const bodyEnd = Math.min(AWD_HEADER_BYTES + bodyLength, source.byteLength);
@@ -462,6 +460,16 @@ export function parseAwdSkeletonAnimations(
     index++;
   }
   return out;
+}
+
+// Registers a decompressor for an AWD compression method (AWD_COMPRESSION_DEFLATE / _LZMA), enabling
+// `parseAwd`/`parseAwdSkeletonAnimations` to import compressed files. Kept as an opt-in registry so the
+// codec stays tree-shakable — a bundle that only reads uncompressed AWD never pulls an inflate into its
+// output. Last registration for a method wins; passing null clears it. Codecs are keyed by the header's
+// compression byte, so a vendor can supply its own (e.g. a host-native inflate) for either method.
+export function registerAwdDecompressor(compression: number, decompressor: AwdDecompressor | null): void {
+  if (decompressor === null) awdDecompressors.delete(compression);
+  else awdDecompressors.set(compression, decompressor);
 }
 
 // Builds one AnimationClip from a parsed AWD skeleton-animation block: samples each pose's per-joint local
@@ -1590,12 +1598,57 @@ function parseSkeletonAnimationBlock(
   return { name: nameResult.value, poses };
 }
 
+// Resolves the block-stream buffer to walk: the source unchanged for an uncompressed body, or the 12-byte
+// header spliced in front of the inflated body for a compressed one — so the caller's walk is identical
+// either way (compression byte rewritten to NONE, body-length field to the inflated length). Returns null
+// (after a warning) when the compression method has no registered decompressor or the codec fails.
+function rehydrateAwdBody(
+  input: Uint8Array,
+  context: string,
+  warnings?: string[],
+): { source: Uint8Array; view: DataView } | null {
+  const view = new DataView(input.buffer, input.byteOffset, input.byteLength);
+  const compression = input[7];
+  if (compression === AWD_COMPRESSION_NONE) return { source: input, view };
+
+  const decompressor = awdDecompressors.get(compression);
+  if (decompressor === undefined) {
+    warnings?.push(
+      `${context}: AWD compression method ${compression} has no registered decompressor; call registerAwdDecompressor for this method (Away3D exports compressed by default) before importing this file`,
+    );
+    return null;
+  }
+
+  // The header's body-length field is the on-disk (compressed) length; the compressed stream is the bytes
+  // from the end of the 12-byte header to there.
+  const compressedEnd = Math.min(AWD_HEADER_BYTES + view.getUint32(8, true), input.byteLength);
+  const inflated = decompressor(input.subarray(AWD_HEADER_BYTES, compressedEnd));
+  if (inflated === null) {
+    warnings?.push(
+      `${context}: the registered decompressor for AWD compression method ${compression} failed to inflate the body`,
+    );
+    return null;
+  }
+
+  const rehydrated = new Uint8Array(AWD_HEADER_BYTES + inflated.byteLength);
+  rehydrated.set(input.subarray(0, AWD_HEADER_BYTES), 0);
+  rehydrated.set(inflated, AWD_HEADER_BYTES);
+  const rehydratedView = new DataView(rehydrated.buffer);
+  rehydrated[7] = AWD_COMPRESSION_NONE;
+  rehydratedView.setUint32(8, inflated.byteLength, true);
+  return { source: rehydrated, view: rehydratedView };
+}
+
 // Bitangent handedness written into every AWD tangent's W (B = W·normal×tangent). AWD carries no W and
 // Away3D uses a single mesh-wide handedness (bitangent = normal×tangent in its left-handed space); the
 // left→right-handed conversion (negateVec3Z, det = -1) inverts it, making -1 the correct Flight-space
 // sign. Kept as one named constant so a render proof against a normal-mapped fixture (shambler) can flip
 // it in one place if Away3D's convention proves to be the opposite chirality.
 const AWD_TANGENT_HANDEDNESS = -1;
+
+// Opt-in decompressor registry keyed by the header compression byte. Empty by default so an inflate/LZMA
+// codec is only pulled into a bundle when the caller registers one (registerAwdDecompressor).
+const awdDecompressors = new Map<number, AwdDecompressor>();
 
 interface ParsedJoint {
   name: string;
