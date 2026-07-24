@@ -2,22 +2,26 @@ import type { Shape } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
+  appendShapeBeginGradientFill,
   appendShapeCircle,
   appendShapeCubicCurveTo,
   appendShapeCurveTo,
   appendShapeEllipse,
   appendShapeEndFill,
+  appendShapeLineGradientStyle,
   appendShapeLineStyle,
   appendShapeLineTo,
   appendShapeMoveTo,
   appendShapeRectangle,
   appendShapeRoundRectangle,
+  clearShapeCommands,
   createDisplayObject,
+  createGradientTransformMatrix,
   createShape,
   invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
 
-import { render, scale } from './render';
+import { canvas, render, scale } from './render';
 
 const main = createDisplayObject();
 main.scaleX = scale;
@@ -174,34 +178,110 @@ appendShapeCubicCurveTo(
 );
 placeShape(cubicCurve, COL_START + 500, row3Y + 10);
 
-// ===== Row 4: Fill types =====
+// ===== Row 4: Gradient fills, gradient strokes, and interactive drawing =====
 
 const row4Y = rowY(3);
 const fillSize = 80;
 
-const solidFill = createShape();
-appendShapeBeginFill(solidFill, 0xcc4444);
-appendShapeRectangle(solidFill, 0, 0, fillSize, fillSize);
-appendShapeEndFill(solidFill);
-placeShape(solidFill, COL_START, row4Y + 15);
+const linearGradient = createShape();
+appendShapeBeginGradientFill(
+  linearGradient,
+  'linear',
+  [0xff4d6d, 0xffc300, 0x00bbf9],
+  [1, 1, 1],
+  [0, 128, 255],
+  createGradientTransformMatrix(120, fillSize, 0, 60, fillSize / 2),
+);
+appendShapeRectangle(linearGradient, 0, 0, 120, fillSize);
+appendShapeEndFill(linearGradient);
+placeShape(linearGradient, COL_START, row4Y + 15);
 
-const alphaFill = createShape();
-appendShapeBeginFill(alphaFill, 0x44cc44, 0.5);
-appendShapeRectangle(alphaFill, 0, 0, fillSize, fillSize);
-appendShapeEndFill(alphaFill);
-placeShape(alphaFill, COL_START + 140, row4Y + 15);
+const radialGradient = createShape();
+appendShapeBeginGradientFill(
+  radialGradient,
+  'radial',
+  [0xffffff, 0x70e000, 0x007200],
+  [1, 1, 1],
+  [0, 140, 255],
+  createGradientTransformMatrix(100, fillSize, 0, 50, fillSize / 2),
+  'pad',
+  'rgb',
+  -0.35,
+);
+appendShapeEllipse(radialGradient, 0, 0, 100, fillSize);
+appendShapeEndFill(radialGradient);
+placeShape(radialGradient, COL_START + 160, row4Y + 15);
 
-const strokeOnly = createShape();
-appendShapeLineStyle(strokeOnly, 3, 0xcccc44);
-appendShapeRectangle(strokeOnly, 0, 0, fillSize, fillSize);
-placeShape(strokeOnly, COL_START + 280, row4Y + 15);
+const gradientStroke = createShape();
+appendShapeLineStyle(gradientStroke, 10, 0xffffff, 1, false, 'normal', 'round', 'round');
+appendShapeLineGradientStyle(
+  gradientStroke,
+  'linear',
+  [0x9b5de5, 0xf15bb5, 0xfee440, 0x00f5d4],
+  [1, 1, 1, 1],
+  [0, 85, 170, 255],
+  createGradientTransformMatrix(210, fillSize, 0, 105, fillSize / 2),
+);
+appendShapeMoveTo(gradientStroke, 0, 65);
+appendShapeCubicCurveTo(gradientStroke, 55, -15, 145, 95, 210, 15);
+placeShape(gradientStroke, COL_START + 300, row4Y + 15);
 
-const fillAndStroke = createShape();
-appendShapeBeginFill(fillAndStroke, 0x4444cc);
-appendShapeLineStyle(fillAndStroke, 3, 0xcccc44);
-appendShapeRectangle(fillAndStroke, 0, 0, fillSize, fillSize);
-appendShapeEndFill(fillAndStroke);
-placeShape(fillAndStroke, COL_START + 420, row4Y + 15);
+// The fourth AwayJS drawing sample is interactive: its vector commands are rebuilt on pointer
+// state changes. Keeping this target in the drawing gallery avoids duplicating the full interaction
+// example while showing that Shape command buffers are live authoring data.
+const interactiveStar = createShape();
+let interactiveStarHovered = false;
+let interactiveStarPressed = false;
+
+function redrawInteractiveStar(): void {
+  const color = interactiveStarPressed ? 0x00f5d4 : interactiveStarHovered ? 0xfee440 : 0xf15bb5;
+  clearShapeCommands(interactiveStar);
+  appendShapeBeginFill(interactiveStar, color);
+  appendShapeLineStyle(interactiveStar, interactiveStarPressed ? 7 : 3, 0xffffff);
+  drawStar(interactiveStar, fillSize / 2, fillSize / 2, fillSize / 2, fillSize * 0.2, 5);
+  appendShapeEndFill(interactiveStar);
+  invalidateNodeLocalTransform(interactiveStar);
+}
+
+redrawInteractiveStar();
+const interactiveStarX = COL_START + 650;
+const interactiveStarY = row4Y + 15;
+placeShape(interactiveStar, interactiveStarX, interactiveStarY);
+
+function isInteractiveStarPointer(event: PointerEvent): boolean {
+  const bounds = canvas.getBoundingClientRect();
+  const x = ((event.clientX - bounds.left) * 800) / bounds.width;
+  const y = ((event.clientY - bounds.top) * 600) / bounds.height;
+  return (
+    x >= interactiveStarX &&
+    x <= interactiveStarX + fillSize &&
+    y >= interactiveStarY &&
+    y <= interactiveStarY + fillSize
+  );
+}
+
+canvas.addEventListener('pointermove', (event) => {
+  const hovered = isInteractiveStarPointer(event);
+  if (interactiveStarHovered === hovered) return;
+  interactiveStarHovered = hovered;
+  if (!hovered) interactiveStarPressed = false;
+  redrawInteractiveStar();
+});
+canvas.addEventListener('pointerleave', () => {
+  interactiveStarHovered = false;
+  interactiveStarPressed = false;
+  redrawInteractiveStar();
+});
+canvas.addEventListener('pointerdown', (event) => {
+  if (!isInteractiveStarPointer(event)) return;
+  interactiveStarPressed = true;
+  redrawInteractiveStar();
+});
+canvas.addEventListener('pointerup', () => {
+  if (!interactiveStarPressed) return;
+  interactiveStarPressed = false;
+  redrawInteractiveStar();
+});
 
 // ===== Row 5: Stroke variations =====
 
