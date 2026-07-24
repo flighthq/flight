@@ -1,4 +1,4 @@
-import { getMeshGeometrySkinBindPose, refreshMeshGeometryBounds, setMeshGeometrySkinBindPose } from '@flighthq/mesh';
+import { getMeshGeometrySkinBindPose, setMeshGeometrySkinBindPose } from '@flighthq/mesh';
 import type { Mesh } from '@flighthq/types';
 
 import { computeSkeleton3DJointMatrices } from './skeleton3d';
@@ -34,5 +34,7 @@ export function updateMeshSkin(mesh: Readonly<Mesh>): void {
   }
 
   skinMeshGeometry(geometry, skin.skeleton, bindPose);
-  refreshMeshGeometryBounds(geometry);
+  // Bounds are deliberately NOT refreshed here. skinMeshGeometry bumped geometry.version, which marks
+  // the bounds cache stale; ensureMeshGeometryBounds does the sweep on the first query. A skinned mesh
+  // that is only uploaded and never culled or picked never pays for a box it does not use.
 }

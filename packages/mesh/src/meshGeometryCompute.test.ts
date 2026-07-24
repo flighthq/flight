@@ -8,6 +8,7 @@ import {
   computeMeshGeometryFlatNormals,
   computeMeshGeometryNormals,
   computeMeshGeometryTangents,
+  ensureMeshGeometryBounds,
   refreshMeshGeometryBounds,
 } from './meshGeometryCompute';
 
@@ -215,6 +216,34 @@ describe('computeMeshGeometryTangents', () => {
     computeMeshGeometryNormals(geometry, geometry);
     computeMeshGeometryTangents(geometry, geometry);
     expect(geometry.vertices[9]).toBe(-1);
+  });
+});
+
+describe('ensureMeshGeometryBounds', () => {
+  it('computes on first query, then reuses the cache until the version moves', () => {
+    const geometry = makeTriangle();
+    expect(geometry.bounds).toBeNull();
+
+    const bounds = ensureMeshGeometryBounds(geometry);
+    expect(bounds?.max.x).toBe(1);
+
+    // A vertex edit WITHOUT a version bump must not be picked up — the version is the dirty signal,
+    // and honouring the cache is what makes the steady-state query an integer compare.
+    geometry.vertices[12] = 4;
+    expect(ensureMeshGeometryBounds(geometry)?.max.x).toBe(1);
+
+    // Bumping the version (what every deform does) is what marks the cache stale.
+    geometry.version++;
+    expect(ensureMeshGeometryBounds(geometry)?.max.x).toBe(4);
+  });
+
+  it('trusts bounds supplied at construction without re-sweeping them', () => {
+    const geometry = makeTriangle();
+    refreshMeshGeometryBounds(geometry);
+    const bounds = geometry.bounds;
+
+    // Same AABB instance back, no recompute: the cache is valid for the current version.
+    expect(ensureMeshGeometryBounds(geometry)).toBe(bounds);
   });
 });
 

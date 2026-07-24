@@ -14,7 +14,7 @@ import {
   setVector3,
 } from '@flighthq/geometry';
 import { createBoxMeshGeometry, createMeshGeometryFromAttributes } from '@flighthq/mesh';
-import { updateMeshMorph } from '@flighthq/mesh';
+import { ensureMeshGeometryBounds, updateMeshMorph } from '@flighthq/mesh';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import { createMesh, createSceneNode, SceneNodeKind } from '@flighthq/scene';
 import type { Camera3D, Mesh, MeshMorph, Ray3D, SceneHit, SceneNode } from '@flighthq/types';
@@ -412,8 +412,11 @@ describe('pickSceneWithRay3D', () => {
     expect(pickSceneWithRay3D(scene, ray, out)).toBeNull();
     updateMeshMorph(mesh);
 
-    expect(mesh.geometry.bounds?.min.x).toBe(-1);
-    expect(mesh.geometry.bounds?.max.x).toBe(1);
+    // Bounds are a dirty-gated cache; the morph marks them stale and the ensure recomputes them —
+    // which is exactly what the pick below does internally through the broad phase.
+    const bounds = ensureMeshGeometryBounds(mesh.geometry);
+    expect(bounds?.min.x).toBe(-1);
+    expect(bounds?.max.x).toBe(1);
     expect(pickSceneWithRay3D(scene, ray, out)?.node).toBe(mesh);
   });
 });

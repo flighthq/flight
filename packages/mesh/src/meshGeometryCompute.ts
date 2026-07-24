@@ -1,5 +1,6 @@
 import { createAabb } from '@flighthq/geometry';
-import type { AabbLike, BoundingSphereLike, MeshGeometry } from '@flighthq/types';
+import type { Aabb, AabbLike, BoundingSphereLike, MeshGeometry, MeshGeometryRuntime } from '@flighthq/types';
+import { EntityRuntimeKey } from '@flighthq/types';
 
 // Per-vertex compute over the canonical interleaved PBR record: position(3) + normal(3) +
 // tangent(4) + uv0(2) = 12 floats / 48 bytes, stride read from geometry.layout. These functions
@@ -349,8 +350,30 @@ export function computeMeshGeometryTangents(out: MeshGeometry, geometry: Readonl
   }
 }
 
-// Recomputes a geometry's cached local bounds after an in-place vertex edit. Reuses the existing AABB
-// when present and allocates it only on the first refresh; steady-state deformation is allocation-free.
+// Returns the geometry's cached local bounds, recomputing them first if a vertex edit has invalidated
+// them. THIS IS THE ONLY CORRECT WAY TO READ BOUNDS: `geometry.bounds` is a dirty-gated cache, so a
+// direct field read can hand back a box from before the last deform. A deform bumps `geometry.version`
+// and thereby marks bounds stale; this recomputes only when `version` has moved past the version the
+// cache was built at, so an unchanged geometry costs one integer compare and a deformed one pays the
+// O(vertices) sweep exactly once no matter how many callers ask. That laziness is the point: a
+// GPU-skinned or upload-only mesh that never culls or picks never computes bounds at all.
+//
+// Returns null only for a geometry with no vertices, which has no meaningful box.
+export function ensureMeshGeometryBounds(geometry: MeshGeometry): Readonly<Aabb> | null {
+  const runtime = geometry[EntityRuntimeKey] as MeshGeometryRuntime | undefined;
+  const bounds = geometry.bounds;
+  if (bounds !== null && runtime !== undefined && runtime.boundsVersion === geometry.version) {
+    return bounds;
+  }
+  refreshMeshGeometryBounds(geometry);
+  return geometry.bounds;
+}
+
+// Recomputes a geometry's cached local bounds after an in-place vertex edit, unconditionally — the
+// explicit "recompute now" verb. Reuses the existing AABB when present and allocates it only on the
+// first refresh; steady-state deformation is allocation-free. Stamps the version the cache is now
+// valid for, so ensureMeshGeometryBounds can skip the sweep until the next vertex edit. Prefer
+// ensureMeshGeometryBounds unless you specifically want to force the recompute.
 export function refreshMeshGeometryBounds(geometry: MeshGeometry): void {
   let bounds = geometry.bounds;
   if (bounds === null) {
@@ -358,6 +381,8 @@ export function refreshMeshGeometryBounds(geometry: MeshGeometry): void {
     geometry.bounds = bounds;
   }
   computeMeshGeometryBounds(bounds, geometry);
+  const runtime = geometry[EntityRuntimeKey] as MeshGeometryRuntime | undefined;
+  if (runtime !== undefined) runtime.boundsVersion = geometry.version;
 }
 
 // Canonical interleaved PBR record float offsets within one vertex (stride = 48 bytes / 12 floats):

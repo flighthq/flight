@@ -1,7 +1,7 @@
-import type { Mesh } from '@flighthq/types';
+import type { Mesh, MeshGeometry, MeshGeometryRuntime, MeshMorph } from '@flighthq/types';
+import { EntityRuntimeKey } from '@flighthq/types';
 
 import { getMeshGeometryMorphBindPose, setMeshGeometryMorphBindPose } from './meshGeometry';
-import { refreshMeshGeometryBounds } from './meshGeometryCompute';
 import { blendMeshGeometryMorph, captureMeshMorphBindPose } from './morphMeshGeometry';
 
 // Blends a morphed mesh into its geometry for the current weights — the explicit per-frame morph call,
@@ -33,8 +33,47 @@ export function updateMeshMorph(mesh: Readonly<Mesh>): void {
   if (bindPose === null) {
     bindPose = captureMeshMorphBindPose(geometry);
     setMeshGeometryMorphBindPose(geometry, bindPose);
+  } else if (!hasMorphWeightsChanged(geometry, morph)) {
+    // Weights have not moved since the blend that produced the current geometry.vertices, so
+    // re-running it would rewrite the same values and bump the version for nothing — dirtying bounds
+    // and forcing every backend to re-upload an identical buffer. A settled morph costs one pass over
+    // the weight vector (targets, not vertices) per frame.
+    return;
   }
 
   blendMeshGeometryMorph(geometry, morph, bindPose);
-  refreshMeshGeometryBounds(geometry);
+  recordMorphBlendedWeights(geometry, morph);
+  // Bounds are deliberately NOT refreshed here. blendMeshGeometryMorph bumped geometry.version, which
+  // marks the bounds cache stale; ensureMeshGeometryBounds does the sweep on the first query. A morphed
+  // mesh that is only uploaded and never culled or picked never pays for a box it does not use.
+}
+
+// True when `morph.weights` differs from the vector the geometry's current blend was produced for
+// (including the first blend, and a target count that changed underneath). O(targets).
+function hasMorphWeightsChanged(geometry: Readonly<MeshGeometry>, morph: Readonly<MeshMorph>): boolean {
+  const runtime = geometry[EntityRuntimeKey] as MeshGeometryRuntime | undefined;
+  const blended = runtime?.morphBlendedWeights;
+  if (blended == null) return true;
+
+  const weights = morph.weights;
+  if (blended.length !== weights.length) return true;
+  for (let i = 0; i < weights.length; i++) {
+    if (blended[i] !== weights[i]) return true;
+  }
+  return false;
+}
+
+// Snapshots the weights the blend just consumed, so the next frame can detect a settled morph.
+// Reuses the stored vector unless the target count changed, so a steady morph allocates nothing.
+function recordMorphBlendedWeights(geometry: Readonly<MeshGeometry>, morph: Readonly<MeshMorph>): void {
+  const runtime = geometry[EntityRuntimeKey] as MeshGeometryRuntime | undefined;
+  if (runtime === undefined) return;
+
+  const weights = morph.weights;
+  let blended = runtime.morphBlendedWeights;
+  if (blended == null || blended.length !== weights.length) {
+    blended = new Float32Array(weights.length);
+    runtime.morphBlendedWeights = blended;
+  }
+  blended.set(weights);
 }

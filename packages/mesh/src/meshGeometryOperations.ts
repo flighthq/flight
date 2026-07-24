@@ -1,4 +1,3 @@
-import { createAabb } from '@flighthq/geometry';
 import type {
   MeshGeometry,
   MeshGeometryFromAttributesOptions,
@@ -9,9 +8,9 @@ import type {
 
 import { createMeshGeometry, getMeshGeometryVertexCount } from './meshGeometry';
 import {
-  computeMeshGeometryBounds,
   computeMeshGeometryNormals,
   computeMeshGeometryTangents,
+  refreshMeshGeometryBounds,
 } from './meshGeometryCompute';
 import { CANONICAL_MESH_GEOMETRY_LAYOUT } from './meshGeometryLayout';
 
@@ -66,9 +65,7 @@ export function createMeshGeometryFromAttributes(options: Readonly<MeshGeometryF
     computeMeshGeometryNormals(geometry, geometry);
   }
   computeMeshGeometryTangents(geometry, geometry);
-  const bounds = createAabb();
-  computeMeshGeometryBounds(bounds, geometry);
-  geometry.bounds = bounds;
+  refreshMeshGeometryBounds(geometry);
   return geometry;
 }
 
@@ -202,9 +199,7 @@ export function mergeMeshGeometries(geometries: readonly Readonly<MeshGeometry>[
     topology: reference.topology,
     vertices: mergedVertices,
   });
-  const bounds = createAabb();
-  computeMeshGeometryBounds(bounds, merged);
-  merged.bounds = bounds;
+  refreshMeshGeometryBounds(merged);
   return merged;
 }
 
