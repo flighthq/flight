@@ -96,6 +96,23 @@ describe('bindGlMeshLightBlock', () => {
     expect(gl.calls.filter((c) => c.name === 'uniform4f').length).toBe(4);
   });
 
+  it('re-uploads when a different per-object block has the same version', () => {
+    const gl = makeFakeGl2();
+    const program = makeLitProgram();
+    const state = makeState(gl);
+    const common = {
+      ambientCount: 0,
+      directionalCount: 0,
+      hemisphereCount: 0,
+      pointCount: 1,
+      spotCount: 0,
+      version: 1,
+    };
+    bindGlMeshLightBlock(state, program, { ...common, data: new Float32Array(SCENE_LIGHT_BLOCK_FLOATS) });
+    bindGlMeshLightBlock(state, program, { ...common, data: new Float32Array(SCENE_LIGHT_BLOCK_FLOATS) });
+    expect(gl.calls.filter((c) => c.name === 'uniform4f')).toHaveLength(4);
+  });
+
   it('uploads the punctual light arrays and their int counts from the packed block', () => {
     const gl = makeFakeGl2();
     bindGlMeshLightBlock(makeState(gl), makeLitProgram(), {

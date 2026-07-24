@@ -8,6 +8,8 @@ import type { Matrix4 } from './Matrix4';
 import type { Mesh } from './Mesh';
 import type { MeshGeometry } from './MeshGeometry';
 import type { ModifierRegistry } from './ModifierRegistry';
+import type { SceneLightBlock } from './SceneLightBlock';
+import type { SceneLightsLike } from './SceneLights';
 
 // The active directional shadow for this state, set by drawGlSceneShadowMap and read by the lit bind
 // (bindGlMeshLightBlock) so every lit family samples the same shadow map. Null = no shadow this frame.
@@ -35,6 +37,7 @@ export interface GlSceneIbl {
 export interface GlSceneDrawEntry {
   alpha: number;
   clipW: number;
+  lightBlock: SceneLightBlock;
   material: object;
   mesh: object;
   renderer: object;
@@ -87,6 +90,10 @@ export interface GlSceneRuntime {
   iblBakeFramebuffer: WebGLFramebuffer | null;
   materialRegistry: Map<Kind, GlMeshMaterialRenderer>;
   modifierSnippetRegistry: ModifierRegistry | null;
+  // Opt-in forward-light selection guard, null until enableGlSceneForwardLightSelectionGuards installs
+  // it. drawGlScene reaches it only when excess punctual lights would be silently input-truncated and
+  // no prepared per-object selection list was supplied.
+  forwardLightSelectionGuard?: ((lights: Readonly<SceneLightsLike>) => void) | null;
   opaqueDrawList: GlSceneDrawEntry[];
   opaquePool: GlSceneDrawEntry[];
   programCache: Map<string, GlMeshProgram>;

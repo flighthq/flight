@@ -6,6 +6,7 @@ import { createDirectionalLight } from './directionalLight';
 import { createEnvironment } from './environment';
 import { createHemisphereLight } from './hemisphereLight';
 import {
+  getLightContributionAtBoundingSphere,
   getLightInfluenceBounds,
   getLightLuminance,
   hasLightInfluenceOnBounds,
@@ -13,6 +14,48 @@ import {
 } from './lightAnalysis';
 import { createPointLight } from './pointLight';
 import { createSpotLight } from './spotLight';
+
+describe('getLightContributionAtBoundingSphere', () => {
+  it('matches inverse-square attenuation for an infinite-range point light', () => {
+    const light = createPointLight({ intensity: 1, position: { x: 0, y: 0, z: 0 }, range: -1 });
+    const near = getLightContributionAtBoundingSphere(light, createBoundingSphere(2, 0, 0, 0));
+    const far = getLightContributionAtBoundingSphere(light, createBoundingSphere(4, 0, 0, 0));
+    expect(near / far).toBeCloseTo(4);
+  });
+
+  it('applies radius slack at the nearest sphere surface', () => {
+    const light = createPointLight({ position: { x: 0, y: 0, z: 0 }, range: -1 });
+    const point = getLightContributionAtBoundingSphere(light, createBoundingSphere(4, 0, 0, 0));
+    const sphere = getLightContributionAtBoundingSphere(light, createBoundingSphere(4, 0, 0, 2));
+    expect(sphere / point).toBeCloseTo(4);
+  });
+
+  it('applies the squared smooth range window and reaches zero at the range', () => {
+    const light = createPointLight({ position: { x: 0, y: 0, z: 0 }, range: 4 });
+    const inside = getLightContributionAtBoundingSphere(light, createBoundingSphere(2, 0, 0, 0));
+    const edge = getLightContributionAtBoundingSphere(light, createBoundingSphere(4, 0, 0, 0));
+    expect(inside).toBeGreaterThan(0);
+    expect(edge).toBe(0);
+  });
+
+  it('applies spot smoothstep cone attenuation', () => {
+    const light = createSpotLight({
+      direction: { x: 1, y: 0, z: 0 },
+      innerConeDegrees: 10,
+      outerConeDegrees: 30,
+      position: { x: 0, y: 0, z: 0 },
+      range: -1,
+    });
+    const inside = getLightContributionAtBoundingSphere(light, createBoundingSphere(4, 0, 0, 0));
+    const outside = getLightContributionAtBoundingSphere(light, createBoundingSphere(0, 4, 0, 0));
+    expect(inside).toBeGreaterThan(0);
+    expect(outside).toBe(0);
+  });
+
+  it('returns zero for empty bounds', () => {
+    expect(getLightContributionAtBoundingSphere(createPointLight(), createBoundingSphere(0, 0, 0, -1))).toBe(0);
+  });
+});
 
 describe('getLightInfluenceBounds', () => {
   it('returns sentinel radius (-1) for ambient lights', () => {
