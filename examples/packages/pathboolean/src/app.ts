@@ -10,6 +10,7 @@ import {
   clearShapeCommands,
   createDisplayObject,
   createShape,
+  invalidateNodeAppearance,
   invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
 
@@ -102,9 +103,11 @@ function rebuild(): void {
 
     clearShapeCommands(resultShapes[i]);
     drawBooleanResult(resultShapes[i], resultPath, FILL_COLORS[i]);
+    invalidateNodeAppearance(resultShapes[i]);
 
     clearShapeCommands(outlineShapes[i]);
     drawOutlines(outlineShapes[i], pathA, pathB);
+    invalidateNodeAppearance(outlineShapes[i]);
   }
 }
 
@@ -117,6 +120,8 @@ let dragStartX = 0;
 let dragStartY = 0;
 let dragStartOffsetX = 0;
 let dragStartOffsetY = 0;
+let dragCellCol = 0;
+let dragCellRow = 0;
 
 function canvasToWorld(clientX: number, clientY: number): { x: number; y: number } {
   const rect = canvasEl.getBoundingClientRect();
@@ -135,11 +140,15 @@ function distToShapeCenter(wx: number, wy: number, offsetX: number, offsetY: num
 }
 
 canvasEl.addEventListener('pointerdown', (e: PointerEvent) => {
-  const { x, y } = canvasToWorld(e.clientX, e.clientY);
+  const world = canvasToWorld(e.clientX, e.clientY);
+  dragCellCol = Math.min(1, Math.floor(world.x / CELL_W));
+  dragCellRow = Math.min(1, Math.floor(world.y / CELL_H));
+  const x = world.x - dragCellCol * CELL_W;
+  const y = world.y - dragCellRow * CELL_H;
   const distA = distToShapeCenter(x, y, shapeAOffsetX, shapeAOffsetY);
   const distB = distToShapeCenter(x, y, shapeBOffsetX, shapeBOffsetY);
 
-  // Pick the closer shape if within reach (generous 100px radius).
+  // Pick the closer source outline in whichever result cell was clicked.
   if (distA < 100 && distA <= distB) {
     dragging = 'a';
     dragStartX = x;
@@ -159,7 +168,9 @@ canvasEl.addEventListener('pointerdown', (e: PointerEvent) => {
 
 canvasEl.addEventListener('pointermove', (e: PointerEvent) => {
   if (dragging === null) return;
-  const { x, y } = canvasToWorld(e.clientX, e.clientY);
+  const world = canvasToWorld(e.clientX, e.clientY);
+  const x = world.x - dragCellCol * CELL_W;
+  const y = world.y - dragCellRow * CELL_H;
   const dx = x - dragStartX;
   const dy = y - dragStartY;
 
@@ -174,9 +185,12 @@ canvasEl.addEventListener('pointermove', (e: PointerEvent) => {
   rebuild();
 });
 
-canvasEl.addEventListener('pointerup', () => {
+function stopDragging(): void {
   dragging = null;
-});
+}
+
+canvasEl.addEventListener('pointerup', stopDragging);
+canvasEl.addEventListener('pointercancel', stopDragging);
 
 // Overlay labels using DOM elements positioned over the canvas.
 function addLabel(text: string, col: number, row: number): void {
