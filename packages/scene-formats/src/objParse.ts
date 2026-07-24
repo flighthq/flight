@@ -94,9 +94,10 @@ export function parseObj(
     if (spaceIndex < 0) {
       // A bare recognized directive (no arguments). For v/vn/vt/f it drops the geometry it announced — a
       // data-dropping branch, not a silent no-op. Bare `g` is the spec-defined DEFAULT (unnamed) group and
-      // bare `usemtl` the spec-defined DEFAULT material (white / no material) — Wavefront Appendix B1. Bare
-      // `o` has NO spec default (the spec always names an object), so it is treated as a permissive unnamed
-      // boundary — importer recovery, not a spec default — handled the same as `g` for consistency.
+      // bare `usemtl` the spec-defined DEFAULT material (white / no material) — Wavefront Appendix B1 — so both
+      // stay silent (valid input, no substitution). Bare `o` has NO spec default (the spec always names an
+      // object): the importer RECOVERS with an unnamed boundary, which the collector contract requires be
+      // recorded (a Recover crumb = continued with a substitute).
       if (raw === 'v')
         tallyObjDrop(objDrops, ImportDiagnosticSeverity.Drop, 'obj.vertex-malformed', 'too-few-components', {
           firstLine: i + 1,
@@ -115,8 +116,12 @@ export function parseObj(
       else if (raw === 'f')
         tallyObjDrop(objDrops, ImportDiagnosticSeverity.Drop, 'obj.face-too-few-vertices', '', { firstLine: i + 1 });
       else if (raw === 'g' || raw === 'o') {
-        // Close the current group and enter the unnamed group — the same boundary a named g/o makes. For `g`
-        // this is the spec default group; for `o` it is a permissive importer-recovery boundary (see above).
+        // A bare `o` is unnamed input the spec does not define — record the recovery before performing it.
+        if (raw === 'o')
+          tallyObjDrop(objDrops, ImportDiagnosticSeverity.Recover, 'obj.object-name-missing', '', {
+            firstLine: i + 1,
+          });
+        // Close the current group and enter the unnamed group — the same boundary a named g/o makes.
         flushGroup(materialBuckets, currentGroupName, document, materials, resolvedMaterials, diagnostics);
         materialBuckets = new Map<string, MaterialBucket>();
         currentGroupName = undefined;
