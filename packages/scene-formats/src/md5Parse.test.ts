@@ -136,6 +136,47 @@ const WEIGHTED_VERTICES = [
   '}',
 ].join('\n');
 
+// MD5 mesh whose vertex 0 is influenced by five joints — one more than linear-blend skinning's four
+// slots. The five biases (0.4/0.3/0.2/0.1/0.05) select the first four; the fifth, at a far-away joint,
+// is dropped. The kept four already sum to 1.0, so their bind position bakes to a clean (3,4,4) Z-up
+// while a naive all-influence bake would be dragged toward the far joint (x≈53).
+const OVER_INFLUENCED_VERTEX = [
+  'MD5Version 10',
+  'commandline ""',
+  '',
+  'numJoints 5',
+  'numMeshes 1',
+  '',
+  'joints {',
+  '  "root" -1 ( 0 0 0 ) ( 0 0 0 )',
+  '  "j1" 0 ( 10 0 0 ) ( 0 0 0 )',
+  '  "j2" 0 ( 0 20 0 ) ( 0 0 0 )',
+  '  "j3" 0 ( 0 0 40 ) ( 0 0 0 )',
+  '  "far" 0 ( 1000 0 0 ) ( 0 0 0 )',
+  '}',
+  '',
+  'mesh {',
+  '  shader "textures/over"',
+  '',
+  '  numverts 3',
+  '  vert 0 ( 0.0 0.0 ) 0 5',
+  '  vert 1 ( 1.0 0.0 ) 5 1',
+  '  vert 2 ( 0.0 1.0 ) 6 1',
+  '',
+  '  numtris 1',
+  '  tri 0 0 1 2',
+  '',
+  '  numweights 7',
+  '  weight 0 0 0.4 ( 0 0 0 )',
+  '  weight 1 1 0.3 ( 0 0 0 )',
+  '  weight 2 2 0.2 ( 0 0 0 )',
+  '  weight 3 3 0.1 ( 0 0 0 )',
+  '  weight 4 4 0.05 ( 0 0 0 )',
+  '  weight 5 0 1.0 ( 5 0 0 )',
+  '  weight 6 0 1.0 ( 0 5 0 )',
+  '}',
+].join('\n');
+
 describe('createSceneFromMd5Mesh', () => {
   it('parses a single triangle with one joint', () => {
     const scene = createSceneFromMd5Mesh(SINGLE_TRIANGLE);
@@ -360,6 +401,36 @@ describe('createSceneFromMd5Mesh', () => {
     expect(p.x).toBeCloseTo(10);
     expect(p.y).toBeCloseTo(0);
     expect(p.z).toBeCloseTo(-1);
+  });
+
+  it('reduces a >4-influence vertex to its 4 highest-weight influences and warns', () => {
+    const warnings: string[] = [];
+    const scene = createSceneFromMd5Mesh(OVER_INFLUENCED_VERTEX, warnings);
+    const geometry = (getNodeChildren(scene.root)[1] as unknown as Mesh).geometry;
+    const floatsPerVertex = geometry.layout.stride / 4;
+
+    // joints0/weights0 keep the four highest-bias joints (0,1,2,3), renormalized (they already sum to 1);
+    // the fifth (joint 4, bias 0.05) is dropped.
+    expect(Array.from(geometry.vertices.slice(12, 16))).toEqual([0, 1, 2, 3]);
+    expect(geometry.vertices[16]).toBeCloseTo(0.4);
+    expect(geometry.vertices[17]).toBeCloseTo(0.3);
+    expect(geometry.vertices[18]).toBeCloseTo(0.2);
+    expect(geometry.vertices[19]).toBeCloseTo(0.1);
+    const weightSum = geometry.vertices[16] + geometry.vertices[17] + geometry.vertices[18] + geometry.vertices[19];
+    expect(weightSum).toBeCloseTo(1);
+
+    // The bind position is baked from that SAME reduced top-4 set: Z-up (3,4,4) → Flight Y-up (3,4,-4).
+    // A naive all-influence bake would drag x toward the far joint (≈53), so this pins the fix.
+    const p = { x: 0, y: 0, z: 0 };
+    getMeshGeometryVertexPosition(p, geometry, 0);
+    expect(p.x).toBeCloseTo(3);
+    expect(p.y).toBeCloseTo(4);
+    expect(p.z).toBeCloseTo(-4);
+    expect(p.x).toBeLessThan(10); // far joint (x=1000) was truly dropped, not blended in
+
+    expect(warnings.some((w) => w.includes('more than 4 joint influences'))).toBe(true);
+    // Vertices 1 and 2 have a single influence — the layout stays 80-byte skinned regardless.
+    expect(floatsPerVertex).toBe(20);
   });
 
   it('handles multiple mesh sections', () => {

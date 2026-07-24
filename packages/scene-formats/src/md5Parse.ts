@@ -33,10 +33,20 @@ import {
   convertPositionsZUpToYUp,
   convertQuaternionsZUpToYUp,
   createExternalTextureRef,
+  MAX_SKIN_INFLUENCES,
   packSkinInfluences,
   reverseTriangleWinding,
   SKINNED_FLOATS_PER_VERTEX,
 } from './shared';
+
+// A single MD5 joint influence on a vertex, extended (over the shared SkinInfluence) with the weight's
+// resolved model-space position so the bind position can be baked from the same top-4 reduced set the
+// skin stores. File-local: it never leaves this parser's bind-baking loop.
+interface Md5WeightInfluence extends SkinInfluence {
+  mx: number;
+  my: number;
+  mz: number;
+}
 
 // Parses an id Tech 4 MD5 mesh file (.md5mesh) into a Scene. Convenience over
 // `createSceneFromDocument(parseMd5Mesh(source, warnings))`. See parseMd5Mesh for the import model.
@@ -116,7 +126,11 @@ export function parseMd5Mesh(source: string, warnings?: string[]): SceneDocument
 
   // Build mesh geometry from weighted vertices. Each vertex bakes its bind-pose position from the joint
   // influences and keeps those influences as the skinned layout's joints0/weights0 channels so the mesh can
-  // be re-deformed every frame from an animated skeleton.
+  // be re-deformed every frame from an animated skeleton. Linear-blend skinning carries at most
+  // MAX_SKIN_INFLUENCES influences per vertex; vertices with more are reduced to the highest-weight four,
+  // counted here so the truncation is reported once rather than staying silent.
+  let truncatedVertexCount = 0;
+  let maxObservedInfluences = 0;
   for (let m = 0; m < meshes.length; m++) {
     const md5Mesh = meshes[m];
     const vertices: number[] = [];
@@ -128,10 +142,9 @@ export function parseMd5Mesh(source: string, warnings?: string[]): SceneDocument
 
     for (let v = 0; v < md5Mesh.vertices.length; v++) {
       const vert = md5Mesh.vertices[v];
-      let px = 0;
-      let py = 0;
-      let pz = 0;
-      const influences: SkinInfluence[] = [];
+      // Each influence keeps its joint index, bias, and the weight's model-space position (mx,my,mz) so
+      // the bind position can be baked from the SAME reduced set the skin stores (see below).
+      const influences: Md5WeightInfluence[] = [];
 
       for (let w = 0; w < vert.countWeights; w++) {
         const weightIndex = vert.startWeight + w;
@@ -177,10 +190,36 @@ export function parseMd5Mesh(source: string, warnings?: string[]): SceneDocument
           weight.positionZ,
         );
 
-        px += weight.bias * (joint.positionX + rx);
-        py += weight.bias * (joint.positionY + ry);
-        pz += weight.bias * (joint.positionZ + rz);
-        influences.push({ jointIndex: weight.jointIndex, weight: weight.bias });
+        influences.push({
+          jointIndex: weight.jointIndex,
+          mx: joint.positionX + rx,
+          my: joint.positionY + ry,
+          mz: joint.positionZ + rz,
+          weight: weight.bias,
+        });
+      }
+
+      // Bake the bind position from the top-MAX_SKIN_INFLUENCES highest-bias influences, renormalized —
+      // the exact reduced set packSkinInfluences emits as joints0/weights0. Baking from all influences
+      // while skinning from only the top four would leave a >4-influence vertex's stored bind position
+      // disagreeing with what the CPU/GPU skin reproduces at bind pose. Sorting once here also fixes the
+      // reduction order packSkinInfluences (which re-sorts identically) will keep.
+      influences.sort((a, b) => b.weight - a.weight);
+      const kept = Math.min(influences.length, MAX_SKIN_INFLUENCES);
+      if (influences.length > MAX_SKIN_INFLUENCES) {
+        truncatedVertexCount++;
+        if (influences.length > maxObservedInfluences) maxObservedInfluences = influences.length;
+      }
+      let biasSum = 0;
+      for (let i = 0; i < kept; i++) biasSum += influences[i].weight;
+      let px = 0;
+      let py = 0;
+      let pz = 0;
+      for (let i = 0; i < kept; i++) {
+        const normWeight = biasSum > 0 ? influences[i].weight / biasSum : 0;
+        px += normWeight * influences[i].mx;
+        py += normWeight * influences[i].my;
+        pz += normWeight * influences[i].mz;
       }
 
       packSkinInfluences(influences, jointScratch, weightScratch);
@@ -243,6 +282,12 @@ export function parseMd5Mesh(source: string, warnings?: string[]): SceneDocument
       document.nodes.push({ children: [], kind: MeshKind, mesh: meshIndex, transform: createTransform3D() });
       document.scenes[0].rootNodes.push(nodeIndex);
     }
+  }
+
+  if (truncatedVertexCount > 0) {
+    warnings?.push(
+      `createSceneFromMd5Mesh: ${truncatedVertexCount} vertex(es) had more than ${MAX_SKIN_INFLUENCES} joint influences (up to ${maxObservedInfluences}); each was reduced to its ${MAX_SKIN_INFLUENCES} highest-weight influences`,
+    );
   }
 
   return document;
