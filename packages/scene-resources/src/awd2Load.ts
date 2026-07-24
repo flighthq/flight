@@ -7,7 +7,7 @@ import { loadSceneDocumentBytesFromUrl, setSceneDocumentResourceBasePathFromUrl 
 // and its skeleton animation). Fetches only the FILE — the document's texture refs stay unresolved; assemble
 // with createSceneFromDocument and resolve on your own schedule with resolveSceneResources. On a fetch
 // failure returns null; it never creates a renderer or GPU resource.
-export async function loadSceneDocumentFromAwdUrl(
+export async function loadSceneDocumentFromAwd2Url(
   url: string,
   options?: Readonly<SceneDocumentLoadOptions>,
 ): Promise<SceneDocument | null> {
