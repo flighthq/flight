@@ -88,8 +88,8 @@ const logicalHeight = height / scale;
 const geometry = createSphereMeshGeometry(0.5, 48, 32);
 
 // Mid-gray diffuse + specular so the directional N·L gradient reads clearly as a light/dark band
-// across the sphere. No maps — the Wgpu backend does not sample maps, so a texture-free material
-// keeps the Gl and Wgpu columns at parity.
+// across the sphere. No maps here — a texture-free material keeps this a focused directional-shading test that renders
+// identically on Gl and Wgpu (both backends DO sample material maps now — see material-alpha-map).
 const material = createPhongMaterial({
   diffuse: 0x808080ff,
   specular: 0x808080ff,
