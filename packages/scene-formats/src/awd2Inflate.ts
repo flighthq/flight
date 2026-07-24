@@ -1,21 +1,21 @@
 import type { AwdDecompressor } from '@flighthq/types';
 
-import { registerAwdDecompressor } from './awdParse';
-import { AWD_COMPRESSION_DEFLATE } from './awdSchema';
+import { registerAwd2Decompressor } from './awd2Parse';
+import { AWD2_COMPRESSION_DEFLATE } from './awd2Schema';
 
 // Vendored, dependency-free, synchronous DEFLATE/zlib inflater used as the default AWD decompressor.
 // Away3D's exporter compresses the AWD body with `ByteArray.compress()` (zlib format: a 2-byte header,
 // a raw DEFLATE stream, then a 4-byte Adler-32), so `inflateAwdDeflate` accepts a zlib-wrapped stream and
 // transparently falls back to treating the input as headerless raw DEFLATE. It is kept in its own module
-// so `registerAwdDecompressor`'s opt-in registry stays tree-shakable — a bundle that never calls
-// `registerAwdDeflateDecompressor` pays nothing for this ~200 lines of Huffman decoding.
+// so `registerAwd2Decompressor`'s opt-in registry stays tree-shakable — a bundle that never calls
+// `registerAwd2DeflateDecompressor` pays nothing for this ~200 lines of Huffman decoding.
 //
 // The seam is deliberately sync (RFC 1951/1950 inflate is a straight-line state machine) so the existing
-// synchronous `parseAwd` keeps working; a host with a faster native codec can register its own instead.
+// synchronous `parseAwd2` keeps working; a host with a faster native codec can register its own instead.
 
 // Inflates a zlib-wrapped or raw DEFLATE stream, returning the decompressed bytes or null on any malformed
 // input (bad Huffman table, back-reference past the output start, truncated stream). Typed as an
-// AwdDecompressor so it can be handed straight to registerAwdDecompressor.
+// AwdDecompressor so it can be handed straight to registerAwd2Decompressor.
 export const inflateAwdDeflate: AwdDecompressor = (compressed) => {
   const input = compressed as Uint8Array;
   // Detect a zlib header: low nibble of CMF is the compression method (8 = deflate) and the 16-bit
@@ -32,11 +32,11 @@ export const inflateAwdDeflate: AwdDecompressor = (compressed) => {
   }
 };
 
-// Registers `inflateAwdDeflate` as the decompressor for AWD_COMPRESSION_DEFLATE, enabling
-// `parseAwd`/`parseAwdSkeletonAnimations` to import Away3D's default (compressed) AWD exports. Opt-in so
+// Registers `inflateAwdDeflate` as the decompressor for AWD2_COMPRESSION_DEFLATE, enabling
+// `parseAwd2`/`parseAwd2SkeletonAnimations` to import Away3D's default (compressed) AWD exports. Opt-in so
 // the codec is only bundled when a caller asks for it. Idempotent; last registration wins.
-export function registerAwdDeflateDecompressor(): void {
-  registerAwdDecompressor(AWD_COMPRESSION_DEFLATE, inflateAwdDeflate);
+export function registerAwd2DeflateDecompressor(): void {
+  registerAwd2Decompressor(AWD2_COMPRESSION_DEFLATE, inflateAwdDeflate);
 }
 
 // RFC 1951 length codes 257-285: the base copy length and the number of extra bits that follow.

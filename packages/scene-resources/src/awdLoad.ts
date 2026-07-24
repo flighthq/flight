@@ -1,4 +1,4 @@
-import { parseAwd } from '@flighthq/scene-formats';
+import { parseAwd2 } from '@flighthq/scene-formats';
 import type { SceneDocument, SceneDocumentLoadOptions } from '@flighthq/types';
 
 import { loadSceneDocumentBytesFromUrl, setSceneDocumentResourceBasePathFromUrl } from './sceneDocumentSource';
@@ -13,7 +13,7 @@ export async function loadSceneDocumentFromAwdUrl(
 ): Promise<SceneDocument | null> {
   const bytes = await loadSceneDocumentBytesFromUrl(url, options);
   if (bytes === null) return null;
-  const document = parseAwd(bytes);
+  const document = parseAwd2(bytes);
   setSceneDocumentResourceBasePathFromUrl(document, url);
   return document;
 }

@@ -1,6 +1,6 @@
-import { inflateAwdDeflate, registerAwdDeflateDecompressor } from './awdInflate';
-import { parseAwd, registerAwdDecompressor } from './awdParse';
-import { AWD_COMPRESSION_DEFLATE, AWD_HEADER_BYTES, AWD_MAGIC_0, AWD_MAGIC_1, AWD_MAGIC_2 } from './awdSchema';
+import { inflateAwdDeflate, registerAwd2DeflateDecompressor } from './awd2Inflate';
+import { parseAwd2, registerAwd2Decompressor } from './awd2Parse';
+import { AWD2_COMPRESSION_DEFLATE, AWD2_HEADER_BYTES, AWD2_MAGIC_0, AWD2_MAGIC_1, AWD2_MAGIC_2 } from './awd2Schema';
 
 // The compressed fixtures below are precomputed with Node's zlib and embedded as base64 rather than
 // generated at test time: `scene-formats` is a browser-clean package whose build carries no `@types/node`,
@@ -89,26 +89,26 @@ describe('inflateAwdDeflate', () => {
   });
 });
 
-describe('registerAwdDeflateDecompressor', () => {
-  afterEach(() => registerAwdDecompressor(AWD_COMPRESSION_DEFLATE, null));
+describe('registerAwd2DeflateDecompressor', () => {
+  afterEach(() => registerAwd2Decompressor(AWD2_COMPRESSION_DEFLATE, null));
 
-  it('wires the vendored inflater so parseAwd imports a zlib-compressed AWD body', () => {
-    registerAwdDeflateDecompressor();
+  it('wires the vendored inflater so parseAwd2 imports a zlib-compressed AWD body', () => {
+    registerAwd2DeflateDecompressor();
     // A valid AWD header whose (empty) body is a real zlib stream: the codec must inflate it cleanly, so
-    // parseAwd finishes with no "missing decompressor" / "failed to inflate" warning.
+    // parseAwd2 finishes with no "missing decompressor" / "failed to inflate" warning.
     const compressedBody = decodeBase64(FIXTURES.EMPTY);
-    const awd = new Uint8Array(AWD_HEADER_BYTES + compressedBody.length);
-    awd[0] = AWD_MAGIC_0;
-    awd[1] = AWD_MAGIC_1;
-    awd[2] = AWD_MAGIC_2;
+    const awd = new Uint8Array(AWD2_HEADER_BYTES + compressedBody.length);
+    awd[0] = AWD2_MAGIC_0;
+    awd[1] = AWD2_MAGIC_1;
+    awd[2] = AWD2_MAGIC_2;
     awd[3] = 2; // version major
     awd[4] = 1; // version minor
-    awd[7] = AWD_COMPRESSION_DEFLATE;
+    awd[7] = AWD2_COMPRESSION_DEFLATE;
     new DataView(awd.buffer).setUint32(8, compressedBody.length, true);
-    awd.set(compressedBody, AWD_HEADER_BYTES);
+    awd.set(compressedBody, AWD2_HEADER_BYTES);
 
     const warnings: string[] = [];
-    parseAwd(awd, warnings);
+    parseAwd2(awd, warnings);
     expect(warnings.some((w) => w.includes('decompressor') || w.includes('inflate'))).toBe(false);
   });
 });
