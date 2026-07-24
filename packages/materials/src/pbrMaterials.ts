@@ -63,6 +63,9 @@ export function convertSpecularGlossinessToStandardPbr(
   const baseG = diffG * (1 - specLuma * (1 - metallic));
   const baseB = diffB * (1 - specLuma * (1 - metallic));
   const baseColor = packLinear(baseR, baseG, baseB, diffA);
+  // Specular-glossiness carries no dedicated coverage map; leave the standard block's alpha map
+  // empty so the converted material's alpha comes from baseColor/baseColorMap alone.
+  out.alphaMap = null;
   out.baseColor = baseColor;
   out.baseColorMap = diffuseMap;
   out.emissive = emissive;
@@ -125,6 +128,7 @@ function assignStandardPbrMaterialProperties(
   target: StandardPbrMaterialProperties,
   opts?: Readonly<Partial<StandardPbrMaterialProperties>>,
 ): void {
+  target.alphaMap = opts?.alphaMap ?? null;
   target.baseColor = opts?.baseColor ?? 0xffffffff;
   target.baseColorMap = opts?.baseColorMap ?? null;
   target.emissive = opts?.emissive ?? 0x000000ff;

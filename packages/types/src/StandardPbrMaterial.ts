@@ -4,9 +4,12 @@ import type { Texture } from './Texture';
 // The metallic-roughness PBR field-block shared by StandardPbrMaterial and composed (not
 // inherited) by every PBR-extension material as their `standard` block (D4). Pure descriptor
 // fields, no `kind` and no trailer. `baseColor`/`emissive` are packed sRgb-albedo RGBA;
-// metallic-roughness, normal, and occlusion maps are linear data. `occlusionStrength` and
-// `normalScale` scale their map contributions; `emissiveStrength` > 1 drives bloom.
+// metallic-roughness, normal, occlusion, and alpha maps are linear data. `occlusionStrength` and
+// `normalScale` scale their map contributions; `emissiveStrength` > 1 drives bloom. `alphaMap` is
+// a dedicated coverage texture whose green channel multiplies the final alpha (separate from
+// `baseColorMap`'s own alpha); it takes effect only when `alphaMode` is 'blend' or 'mask'.
 export interface StandardPbrMaterialProperties {
+  alphaMap: Texture | null;
   baseColor: number;
   baseColorMap: Texture | null;
   emissive: number;

@@ -7,6 +7,7 @@ import { createSurfaceMaterial } from './surfaceMaterial';
 // default to white, `shininess` to 32, `normalScale` to 1, all maps to null.
 export function createBlinnPhongMaterial(opts?: Readonly<Partial<BlinnPhongMaterial>>): BlinnPhongMaterial {
   const material = createSurfaceMaterial(BlinnPhongMaterialKind) as BlinnPhongMaterial;
+  material.alphaMap = opts?.alphaMap ?? null;
   material.diffuse = opts?.diffuse ?? 0xffffffff;
   material.diffuseMap = opts?.diffuseMap ?? null;
   material.normalMap = opts?.normalMap ?? null;
