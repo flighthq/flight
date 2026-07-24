@@ -12,6 +12,7 @@ export function compileWgpuPbrPipeline(
   state: WgpuRenderState,
   key: Readonly<WgpuPbrDefineKey>,
   format: GPUTextureFormat,
+  blended = false,
 ): WgpuPbrPipeline {
   const device = state.device;
   const module = device.createShaderModule({ code: getWgpuPbrModuleSourceForKey(key) });
@@ -29,6 +30,7 @@ export function compileWgpuPbrPipeline(
   // The PBR family is lit and may PCF-sample shadows plus image-based lighting. Both live in one group
   // 3 layout so the pipeline fits WebGPU's required maxBindGroups minimum of 4.
   return createWgpuMeshPipeline(state, {
+    blended,
     doubleSided: key.doubleSided,
     format,
     materialBindGroupLayout,
@@ -45,7 +47,7 @@ export function ensureWgpuPbrPipeline(
   key: Readonly<WgpuPbrDefineKey>,
   format: GPUTextureFormat,
 ): WgpuPbrPipeline {
-  return ensureWgpuScenePipeline(state, `pbr:${format}|${buildWgpuPbrDefineKey(key)}`, () =>
-    compileWgpuPbrPipeline(state, key, format),
+  return ensureWgpuScenePipeline(state, `pbr:${format}|${buildWgpuPbrDefineKey(key)}`, (blended) =>
+    compileWgpuPbrPipeline(state, key, format, blended),
   );
 }

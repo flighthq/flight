@@ -115,6 +115,7 @@ struct Draw {
   world : mat4x4f,
   normalMatrix : mat3x3f,
   uvTransform : mat3x3f,   // KHR_texture_transform of the base-color map (identity when unused)
+  params : vec4f,          // x = resolved object alpha
 };
 
 // The 48-float MaterialBlock: the base StandardPbr block (vec4 0..3) plus one vec4 slot per extension
@@ -188,6 +189,7 @@ struct VertexOutput {
   @location(1) worldNormal : vec3f,
   @location(2) worldTangent : vec4f,
   @location(3) uv : vec2f,
+  @location(4) @interpolate(flat) objectAlpha : f32,
 };
 
 @vertex fn vs_main(
@@ -205,6 +207,7 @@ struct VertexOutput {
   // draw.uvTransform is identity for an untiled material, so this reproduces the raw uv; see the shared
   // vs_main in wgpuMeshPipeline for why the KHR transform is applied unconditionally rather than gated.
   out.uv = (draw.uvTransform * vec3f(uv, 1.0)).xy;
+  out.objectAlpha = draw.params.x;
   return out;
 }
 
@@ -533,6 +536,6 @@ fn shadePbrPunctual(N : vec3f, V : vec3f, tangentDir : vec3f, bitangentDir : vec
     alpha = alpha * (1.0 - material.transmission.x);
   }
 
-  return vec4f(radiance, alpha);
+  return vec4f(radiance, alpha * in.objectAlpha);
 }
 `;

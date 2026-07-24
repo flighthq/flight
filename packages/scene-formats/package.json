@@ -46,6 +46,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
+    "@types/node": "^25.0.0",
     "typescript": "^5.3.0"
   },
   "description": "3D scene import codec — glTF (.gltf) into the scene/mesh node graph (USD/OBJ later)",

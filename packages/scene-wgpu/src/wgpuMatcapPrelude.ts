@@ -95,6 +95,7 @@ export function compileWgpuMatcapPipeline(
   state: WgpuRenderState,
   key: Readonly<WgpuMatcapDefineKey>,
   format: GPUTextureFormat,
+  blended = false,
 ): WgpuMatcapPipeline {
   const device = state.device;
   const module = device.createShaderModule({ code: getWgpuMatcapModuleSourceForKey(key) });
@@ -105,7 +106,13 @@ export function compileWgpuMatcapPipeline(
       { binding: 2, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
     ],
   });
-  return createWgpuMeshPipeline(state, { doubleSided: key.doubleSided, format, materialBindGroupLayout, module });
+  return createWgpuMeshPipeline(state, {
+    blended,
+    doubleSided: key.doubleSided,
+    format,
+    materialBindGroupLayout,
+    module,
+  });
 }
 
 // Resolves the matcap pipeline for a define key + color format, compiling and caching it on first use
@@ -115,8 +122,8 @@ export function ensureWgpuMatcapPipeline(
   key: Readonly<WgpuMatcapDefineKey>,
   format: GPUTextureFormat,
 ): WgpuMatcapPipeline {
-  return ensureWgpuScenePipeline(state, `matcap:${format}|${buildWgpuMatcapDefineKey(key)}`, () =>
-    compileWgpuMatcapPipeline(state, key, format),
+  return ensureWgpuScenePipeline(state, `matcap:${format}|${buildWgpuMatcapDefineKey(key)}`, (blended) =>
+    compileWgpuMatcapPipeline(state, key, format, blended),
   );
 }
 
@@ -161,7 +168,7 @@ struct MatcapMaterial {
   if (ALPHA_MASK && color.a < material.params.x) {
     discard;
   }
-  return color;
+  return vec4f(color.rgb, color.a * in.objectAlpha);
 }
 `;
 

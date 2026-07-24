@@ -8,6 +8,7 @@
     { "path": "../../../packages/camera-controls" },
     { "path": "../../../packages/scene" },
     { "path": "../../../packages/scene-gl" },
-    { "path": "../../../packages/sdk" }
+    { "path": "../../../packages/sdk" },
+    { "path": "../../../packages/tool-capture" }
   ]
 }

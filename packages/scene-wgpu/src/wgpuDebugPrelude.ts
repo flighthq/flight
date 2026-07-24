@@ -69,6 +69,7 @@ export function compileWgpuDebugPipeline(
   state: WgpuRenderState,
   key: Readonly<WgpuDebugDefineKey>,
   format: GPUTextureFormat,
+  blended = false,
 ): WgpuDebugPipeline {
   const device = state.device;
   const module = device.createShaderModule({ code: getWgpuDebugModuleSourceForKey(key) });
@@ -81,7 +82,7 @@ export function compileWgpuDebugPipeline(
   });
   // Debug materials are single-sided in OpenFL parity terms; the scene back-face cull is fine for both
   // depth and normal visualization (a culled back face contributes neither depth nor normal).
-  return createWgpuMeshPipeline(state, { doubleSided: false, format, materialBindGroupLayout, module });
+  return createWgpuMeshPipeline(state, { blended, doubleSided: false, format, materialBindGroupLayout, module });
 }
 
 // Resolves the debug pipeline for a define key + color format, compiling and caching it on first use
@@ -92,8 +93,8 @@ export function ensureWgpuDebugPipeline(
   key: Readonly<WgpuDebugDefineKey>,
   format: GPUTextureFormat,
 ): WgpuDebugPipeline {
-  return ensureWgpuScenePipeline(state, `debug:${format}|${buildWgpuDebugDefineKey(key)}`, () =>
-    compileWgpuDebugPipeline(state, key, format),
+  return ensureWgpuScenePipeline(state, `debug:${format}|${buildWgpuDebugDefineKey(key)}`, (blended) =>
+    compileWgpuDebugPipeline(state, key, format, blended),
   );
 }
 
@@ -140,7 +141,7 @@ struct DebugMaterial {
     let far = material.params.y;
     let eyeDepth = 1.0 / in.clipPosition.w;
     let d = clamp((eyeDepth - near) / max(far - near, 1e-6), 0.0, 1.0);
-    return vec4f(vec3f(d), 1.0);
+    return vec4f(vec3f(d), in.objectAlpha);
   }
 
   // NORMAL_MODE: visualize the WORLD-space surface normal — the geometric normal carried through
@@ -161,7 +162,7 @@ struct DebugMaterial {
     normal = normalize(tbn * tangentNormal);
   }
 
-  return vec4f(normal * 0.5 + 0.5, 1.0);
+  return vec4f(normal * 0.5 + 0.5, in.objectAlpha);
 }
 `;
 

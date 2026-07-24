@@ -9,7 +9,10 @@ export function getWgpuSceneRuntime(state: WgpuRenderState): WgpuSceneRuntime {
   let scene = sceneRuntimes.get(state);
   if (scene === undefined) {
     scene = {
+      activeBlendedRun: false,
       activeMeshPipeline: null,
+      blendedDrawList: [],
+      blendedPool: [],
       drawBindGroup: null,
       drawBindGroupLayout: null,
       frameBindGroup: null,
@@ -33,6 +36,8 @@ export function getWgpuSceneRuntime(state: WgpuRenderState): WgpuSceneRuntime {
       pbrSampleLayout: null,
       pbrSampleShadowView: null,
       materialRegistry: new Map(),
+      opaqueDrawList: [],
+      opaquePool: [],
       pendingDrawOffset: 0,
       // Column-major identity mat3 (the untiled default until a family stashes a real transform).
       pendingUvTransform: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]),

@@ -39,10 +39,10 @@ Findings are empirical (surfaced building the per-primitive functional suite, 20
 | Mesh transform (`mesh.localMatrix`) + parent-hierarchy composition | ✓ | ✓ | `node/transform3d.ts` world = parent×local |
 | Depth occlusion | ✓ | ✓ | depth-stencil in the effect pipeline |
 | Perspective projection | ✓ | ✓ |  |
-| Orthographic projection | ✓ | ✗ | see gap #6 — **blank on wgpu** |
+| Orthographic projection | ✓ | ✓ | wgpu remaps the GL-convention VP into `[0,1]` NDC-Z in `writeWgpuFrameUniform`; `camera-orthographic` covers both backends |
 | Ambient + Directional lights | ✓ | ✓ |  |
 | Point / Spot / Hemisphere lights | ✓ | ✓ | forward punctual lighting wired on both gl and wgpu |
-| Transparent (blend-alphaMode / faded) meshes composite correctly | ✓ | ✗ | see gap #11 — **wgpu draws every mesh opaque** (single-pass, no blend state, no back-to-front sort). gl is two-phased (`drawGlScene.ts`) |
+| Transparent (blend-alphaMode / faded) meshes composite correctly | ✓ | ✓ | both backends partition opaque/blended subsets and sort the blended pass back-to-front; wgpu uses immutable `|opaque` / `|blend` pipelines |
 | GPU skeletal skinning | ✓ | ✗ | **gl** = `HAS_SKIN` across classic/pbr/toon/unlit/shaded (bone-palette RGBA32F **data texture** read via `texelFetch`; joint count bounded by MAX_TEXTURE_SIZE — no uniform-budget cap, no CPU fallback). **wgpu** = none — bind pose. [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) §3 |
 | Morph / blend-shape deformation | ✓ | ✗ | **gl** CPU-blend-then-upload (glTF/MD2 import). **wgpu** = none. [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) |
 | ShadedMaterial modifier stack (fresnel/normalPerturb/emissive/envReflect/fog/vertexDisplace/dissolve/toon) | ✓ | ✗ | **gl** `shadedGlMeshMaterialRenderer` (+ working tangent-space normal map). **wgpu** = no ShadedMaterial renderer → subset skipped (draws nothing). [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) §4 |
@@ -54,7 +54,9 @@ Findings are empirical (surfaced building the per-primitive functional suite, 20
 3. **Per-bitmap `smoothing` ignored on gl/wgpu.** `bindGlTexture` (`packages/render-gl/src/glDraw.ts`) sets the texture min/mag filter from the **global** `state.allowSmoothing`, not the per-bitmap flag (and the texture is element-keyed cached, so the first draw's filter sticks). Test `bitmap-downscale-smoothing` scoped to canvas/dom.
 4. **Per-instance ColorTransform tint is gl/wgpu only.** Only `registerGlColorTransformMaterial` / `registerWgpuColorTransformMaterials` exist; Canvas/DOM bitmap renderers have no color-transform material renderer, so a `materialData` ColorTransform draws untinted there. (`bitmap-color-transform` sidesteps this by tinting source pixels via `applySurfaceColorTransform`, which is cross-backend.)
 5. **Text strikethrough not drawn on gl/wgpu** (the gl/wgpu RichText renderers handle `underline` but not `strikethrough`). Test `text-strikethrough` scoped to canvas/dom.
-6. **Orthographic projection renders blank on wgpu** (perspective is fine). Almost certainly a clip-space z-range issue — WebGPU NDC z is `[0,1]` vs WebGL `[-1,1]`, and the ortho matrix is not remapped for it. Test `camera-orthographic` scoped to gl (its `render.webgpu.ts` removed).
+6. **~~Orthographic projection renders blank on wgpu.~~ FIXED.** `writeWgpuFrameUniform` remaps the
+   camera's GL-convention VP into WebGPU `[0,1]` NDC-Z. `camera-orthographic.webgpu.ts` now covers the
+   previously blank raster path alongside the gl scene.
 7. **~~Single-line RichText alignment renders nothing.~~ FIXED.** The gl/canvas RichText renderers passed a `10000` wrap-prevention sentinel as the layout width when `wordWrap` was false, so `applyAlignment` (`textLayout.ts`) centered the line against 10000 and shifted it ~4975px off-screen. Both renderers now pass `data.width` unconditionally (wrapping stays `wordWrap`-gated inside `computeTextLayout`), so single-line `align:'center'/'right'` renders correctly. (Number retained to keep gap #8–#10 references stable.)
 
 ## Feature gaps (not implemented at all — implement before testing)
@@ -62,12 +64,17 @@ Findings are empirical (surfaced building the per-primitive functional suite, 20
 8. **~~Punctual lights — wired on gl, not wgpu.~~ DONE.** Forward punctual lighting (point/spot/hemisphere) now shades on **both gl and wgpu**: `SceneLights` (`packages/types/src/SceneLights.ts`) carries `point`/`spot`/`hemisphere` arrays alongside `ambient`/`directional`, `packSceneLightBlock` (`packages/render/src/sceneRender.ts`) packs up to `MAX_FORWARD_LIGHTS` (= 4) of each type into the `SceneLightBlock`, and both backends consume them — gl via `u_pointLights`/`u_spotLights`/`u_hemisphereLights` uniform arrays (`GL_MESH_LIGHT_BLOCK_GLSL` in `packages/scene-gl/src/glLitProgram.ts`), wgpu via the expanded Frame struct's `pointLights`/`spotLights`/`hemisphereLights` arrays (`wgpuPbrPrelude.ts`). Both share the `shadePbrPunctual` factored BRDF (Cook-Torrance + extension lobes), `rangeWindow` inverse-square falloff, and cone smoothstep for spots. Area lights remain deferred (no `SceneLights.area` field).
 9. **Group/layer blend.** A `blendMode` on a container (so the whole subtree composites as one layer) needs render-to-texture flattening; unverified whether the renderer does this. Treat as a gap until confirmed.
 10. **TextureAtlasRegion pivot.** `pivotX/pivotY` on an atlas region are reported (audit, unverified) as stored but never read by the sprite renderers.
-11. **wgpu 3D transparent pass silently draws opaque.** `drawWgpuScene` (`packages/scene-wgpu/src/drawWgpuScene.ts`) is single-pass in scene-graph order; the mesh pipelines carry **no blend state** (`fragment.targets` has no `blend`, `wgpuMeshPipeline.ts:119`) and there is **no opaque/blend partition and no back-to-front sort**. So a `blend`-alphaMode material or a faded (`alpha < 1`) mesh composites with no alpha blending — it writes opaque pixels + depth and occludes what's behind it. This is SURPRISE-class (renders, not blank, but every transparent material is wrong) and was undocumented until now. gl is two-phased for exactly this (`drawGlScene.ts:47–59`: opaque pass then back-to-front-sorted blended pass with `SRC_ALPHA`/`ONE_MINUS_SRC_ALPHA`). The un-postpone plan is [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) §1.
+11. **~~wgpu 3D transparent pass silently draws opaque.~~ FIXED.** `drawWgpuScene` now mirrors gl's
+    pooled opaque/blended partition and back-to-front sort. Blended pipeline variants use src-alpha /
+    one-minus-src-alpha compositing, retain depth testing, and disable depth writes; resolved node alpha
+    is carried through the Draw uniform. `scene-transparent.webgpu.ts` proves the layered composition.
 
 When you close one of these, update this table and un-scope the corresponding functional test's `renderers`.
 
 ## Related docs
 
-- [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) — the implementation plan to un-postpone WebGPU 3D parity (transparent pass, ortho remap, GPU skinning, ShadedMaterial, advanced-blend effects) — every wgpu ✗ in the 3D matrix above.
+- [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) — the WebGPU 3D parity plan; transparent passes and
+  orthographic projection are implemented, while GPU skinning, ShadedMaterial, and advanced-blend
+  effects remain open.
 - [render-architecture.md](render-architecture.md) — the **target** render/scene architecture (this doc is the current delta from it).
 - [`functional-test` skill](../.claude/skills/functional-test/SKILL.md) — authoring a visual test; scope backends via `"renderers": [...]` in the test's `package.json`.

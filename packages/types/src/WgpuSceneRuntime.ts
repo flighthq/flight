@@ -35,6 +35,19 @@ export interface WgpuSceneIbl {
   prefilteredMipCount: number;
 }
 
+// A per-subset draw record held in drawWgpuScene's opaque/blended lists. Pooled on
+// WgpuSceneRuntime so rebuilding the two passes does not allocate each frame.
+export interface WgpuSceneDrawEntry {
+  alpha: number;
+  clipW: number;
+  lightBlock: object;
+  material: object;
+  mesh: object;
+  renderer: object;
+  subset: object;
+  worldMatrix: object;
+}
+
 // scene-wgpu's per-WgpuRenderState private state — the WGSL mirror of GlSceneRuntime. Holds the 3D
 // mesh-material registry, the shared mesh-material pipeline cache (keyed by family + define key +
 // color-attachment format), the per-state geometry GPU-upload cache, the shared group(0)/group(1)
@@ -47,7 +60,12 @@ export interface WgpuSceneIbl {
 // sceneMeshUploadCache slots (kept opaque there); everything else lives only here. One WgpuSceneRuntime
 // is created lazily per state by getWgpuSceneRuntime.
 export interface WgpuSceneRuntime {
+  // Whether the run currently being bound uses the blended pipeline variant. drawWgpuScene sets this
+  // before bind(); each family's ensure function folds it into the immutable pipeline state/cache key.
+  activeBlendedRun: boolean;
   activeMeshPipeline: WgpuMeshPipeline | null;
+  blendedDrawList: WgpuSceneDrawEntry[];
+  blendedPool: WgpuSceneDrawEntry[];
   drawBindGroup: GPUBindGroup | null;
   drawBindGroupLayout: GPUBindGroupLayout | null;
   frameBindGroup: GPUBindGroup | null;
@@ -78,6 +96,8 @@ export interface WgpuSceneRuntime {
   pbrSampleLayout: GPUBindGroupLayout | null;
   pbrSampleShadowView: GPUTextureView | null;
   materialRegistry: Map<Kind, WgpuMeshMaterialRenderer>;
+  opaqueDrawList: WgpuSceneDrawEntry[];
+  opaquePool: WgpuSceneDrawEntry[];
   pendingDrawOffset: number;
   // Column-major mat3 uv transform staged by a family's bind() (stashWgpuUvTransform) and folded into the
   // Draw uniform by the next writeWgpuDrawUniform, which resets it to identity after consuming.
