@@ -16,6 +16,12 @@ describe('createBlinnPhongMaterial', () => {
   it('applies overrides', () => {
     expect(createBlinnPhongMaterial({ shininess: 8 }).shininess).toBe(8);
   });
+
+  it('forwards the surface trailer so an alpha-mapped cutout is expressible through the constructor', () => {
+    const material = createBlinnPhongMaterial({ alphaCutoff: 0.3, alphaMode: 'mask' });
+    expect(material.alphaMode).toBe('mask');
+    expect(material.alphaCutoff).toBe(0.3);
+  });
 });
 
 describe('createLambertMaterial', () => {

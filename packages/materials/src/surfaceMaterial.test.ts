@@ -23,6 +23,17 @@ describe('createSurfaceMaterial', () => {
     expect(material.blendMode).toBe(BlendMode.Normal);
     expect(material.doubleSided).toBe(false);
   });
+
+  it('forwards the shared trailer fields from opts', () => {
+    const material = createSurfaceMaterial(TestSurfaceMaterialKind, {
+      alphaCutoff: 0.25,
+      alphaMode: 'mask',
+      doubleSided: true,
+    });
+    expect(material.alphaMode).toBe('mask');
+    expect(material.alphaCutoff).toBe(0.25);
+    expect(material.doubleSided).toBe(true);
+  });
 });
 
 describe('getMaterialAlphaMode', () => {

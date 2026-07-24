@@ -3,17 +3,19 @@ import { BlendMode } from '@flighthq/types';
 
 import { createMaterial } from './material';
 
-// Builds a SurfaceMaterial carrying `kind` and the shared trailer at its defaults: opaque,
-// single-sided, straight alpha, Normal blend, a 0.5 mask cutoff. Every 3D material constructor
-// starts from this and adds its own maps and scalars. The result is a plain entity; callers
-// mutate the returned object to set their fields before returning it.
-export function createSurfaceMaterial(kind: Kind): SurfaceMaterial {
+// Builds a SurfaceMaterial carrying `kind` and the shared trailer, taking each trailer field from
+// `opts` or falling back to its default: opaque, single-sided, straight alpha, Normal blend, a 0.5
+// mask cutoff. Every 3D material constructor starts from this and adds its own maps and scalars;
+// forwarding `opts` here is what lets any constructor set `alphaMode`/`alphaCutoff`/`doubleSided`/
+// `blendMode`/`alphaType` (e.g. `alphaMode: 'mask'` for an alpha-mapped cutout). The result is a
+// plain entity; callers mutate the returned object to set their own fields before returning it.
+export function createSurfaceMaterial(kind: Kind, opts?: Readonly<Partial<SurfaceMaterial>>): SurfaceMaterial {
   const material = createMaterial(kind) as SurfaceMaterial;
-  material.alphaCutoff = DEFAULT_ALPHA_CUTOFF;
-  material.alphaMode = DEFAULT_ALPHA_MODE;
-  material.alphaType = DEFAULT_ALPHA_TYPE;
-  material.blendMode = BlendMode.Normal;
-  material.doubleSided = DEFAULT_DOUBLE_SIDED;
+  material.alphaCutoff = opts?.alphaCutoff ?? DEFAULT_ALPHA_CUTOFF;
+  material.alphaMode = opts?.alphaMode ?? DEFAULT_ALPHA_MODE;
+  material.alphaType = opts?.alphaType ?? DEFAULT_ALPHA_TYPE;
+  material.blendMode = opts?.blendMode ?? BlendMode.Normal;
+  material.doubleSided = opts?.doubleSided ?? DEFAULT_DOUBLE_SIDED;
   return material;
 }
 

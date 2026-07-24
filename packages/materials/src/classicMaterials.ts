@@ -6,7 +6,7 @@ import { createSurfaceMaterial } from './surfaceMaterial';
 // Classic Blinn-Phong material: diffuse plus a half-vector specular lobe. `diffuse`/`specular`
 // default to white, `shininess` to 32, `normalScale` to 1, all maps to null.
 export function createBlinnPhongMaterial(opts?: Readonly<Partial<BlinnPhongMaterial>>): BlinnPhongMaterial {
-  const material = createSurfaceMaterial(BlinnPhongMaterialKind) as BlinnPhongMaterial;
+  const material = createSurfaceMaterial(BlinnPhongMaterialKind, opts) as BlinnPhongMaterial;
   material.alphaMap = opts?.alphaMap ?? null;
   material.diffuse = opts?.diffuse ?? 0xffffffff;
   material.diffuseMap = opts?.diffuseMap ?? null;
@@ -21,7 +21,7 @@ export function createBlinnPhongMaterial(opts?: Readonly<Partial<BlinnPhongMater
 // Classic diffuse-only Lambertian material. `diffuse` defaults to white, `emissive` to opaque
 // black (no self-illumination), both maps to null.
 export function createLambertMaterial(opts?: Readonly<Partial<LambertMaterial>>): LambertMaterial {
-  const material = createSurfaceMaterial(LambertMaterialKind) as LambertMaterial;
+  const material = createSurfaceMaterial(LambertMaterialKind, opts) as LambertMaterial;
   material.diffuse = opts?.diffuse ?? 0xffffffff;
   material.diffuseMap = opts?.diffuseMap ?? null;
   material.emissive = opts?.emissive ?? 0x000000ff;
@@ -32,7 +32,7 @@ export function createLambertMaterial(opts?: Readonly<Partial<LambertMaterial>>)
 // Classic Phong material: diffuse plus a reflection-vector specular lobe. `diffuse`/`specular`
 // default to white, `shininess` to 32, `normalScale` to 1, all maps to null.
 export function createPhongMaterial(opts?: Readonly<Partial<PhongMaterial>>): PhongMaterial {
-  const material = createSurfaceMaterial(PhongMaterialKind) as PhongMaterial;
+  const material = createSurfaceMaterial(PhongMaterialKind, opts) as PhongMaterial;
   material.diffuse = opts?.diffuse ?? 0xffffffff;
   material.diffuseMap = opts?.diffuseMap ?? null;
   material.normalMap = opts?.normalMap ?? null;
