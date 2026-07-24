@@ -1,14 +1,16 @@
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import type { WgpuToonDefineKey, WgpuToonPipeline, WgpuRenderState, WgpuMaterialBinding } from '@flighthq/types';
+import type { WgpuSkinningAdapter } from '@flighthq/types';
 
 import {
   createWgpuMeshPipeline,
   ensureWgpuPlaceholderTextureView,
   ensureWgpuScenePipeline,
   ensureWgpuShadowSampleLayout,
+  getWgpuMeshPreludeWgsl,
   stashWgpuUvTransform,
-  WGPU_MESH_PRELUDE_WGSL,
 } from './wgpuMeshPipeline';
+import { getWgpuSkinningAdapter } from './wgpuSceneRuntime';
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 // Ensures (and caches per material reference) the Toon Material bind group — a uniform buffer + the
 // shared sampler + the placeholder base-color and ramp textures — and rewrites its uniform with this
@@ -76,9 +78,12 @@ export function compileWgpuToonPipeline(
   key: Readonly<WgpuToonDefineKey>,
   format: GPUTextureFormat,
   blended = false,
+  skinned = false,
 ): WgpuToonPipeline {
   const device = state.device;
-  const module = device.createShaderModule({ code: getWgpuToonModuleSourceForKey(key) });
+  const module = device.createShaderModule({
+    code: getWgpuToonModuleSourceForKey(key, skinned, getWgpuSkinningAdapter(state)),
+  });
   const materialBindGroupLayout = device.createBindGroupLayout({
     entries: [
       { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
@@ -96,6 +101,7 @@ export function compileWgpuToonPipeline(
     materialBindGroupLayout,
     module,
     shadowBindGroupLayout: ensureWgpuShadowSampleLayout(state),
+    skinned,
   });
 }
 
@@ -106,20 +112,24 @@ export function ensureWgpuToonPipeline(
   key: Readonly<WgpuToonDefineKey>,
   format: GPUTextureFormat,
 ): WgpuToonPipeline {
-  return ensureWgpuScenePipeline(state, `toon:${format}|${buildWgpuToonDefineKey(key)}`, (blended) =>
-    compileWgpuToonPipeline(state, key, format, blended),
+  return ensureWgpuScenePipeline(state, `toon:${format}|${buildWgpuToonDefineKey(key)}`, (blended, skinned) =>
+    compileWgpuToonPipeline(state, key, format, blended, skinned),
   );
 }
 
 // The full WGSL module source for a define key: the const-flag block + the shared mesh prelude (Frame/
 // Draw/vs_main/srgbToLinear) + the Toon material block + fs_main.
-export function getWgpuToonModuleSourceForKey(key: Readonly<WgpuToonDefineKey>): string {
+export function getWgpuToonModuleSourceForKey(
+  key: Readonly<WgpuToonDefineKey>,
+  skinned = false,
+  skinning: Readonly<WgpuSkinningAdapter> | null = null,
+): string {
   return (
     `const ALPHA_MASK : bool = ${key.alphaMaskEnabled ? 'true' : 'false'};\n` +
     `const DOUBLE_SIDED : bool = ${key.doubleSided ? 'true' : 'false'};\n` +
     `const HAS_BASE_COLOR_MAP : bool = ${key.hasBaseColorMap ? 'true' : 'false'};\n` +
     `const HAS_RAMP : bool = ${key.hasRamp ? 'true' : 'false'};\n` +
-    WGPU_MESH_PRELUDE_WGSL +
+    getWgpuMeshPreludeWgsl(skinned, skinning) +
     TOON_WGSL_BODY
   );
 }

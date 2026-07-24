@@ -24,6 +24,7 @@ import {
   SCENE_LIGHT_SPOT_OFFSET,
   SCENE_LIGHT_SPOT_STRIDE,
 } from '@flighthq/types';
+import type { WgpuSkinningAdapter } from '@flighthq/types';
 
 import { ensureWgpuMeshUpload } from './wgpuMeshUpload';
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
@@ -88,14 +89,16 @@ export function createWgpuMeshPipeline(
     module: GPUShaderModule;
     pbrSampleBindGroupLayout?: GPUBindGroupLayout;
     shadowBindGroupLayout?: GPUBindGroupLayout;
+    skinned?: boolean;
     topology?: GPUPrimitiveTopology;
   }>,
 ): WgpuMeshPipeline {
   const device = state.device;
   const layouts = ensureWgpuSceneLayouts(state);
+  const skinning = getWgpuSceneRuntime(state).skinningAdapter as WgpuSkinningAdapter | null;
   const bindGroupLayouts: GPUBindGroupLayout[] = [
     layouts.frameBindGroupLayout,
-    layouts.drawBindGroupLayout,
+    options.skinned && skinning !== null ? skinning.getDrawLayout(state) : layouts.drawBindGroupLayout,
     options.materialBindGroupLayout,
   ];
   if (options.pbrSampleBindGroupLayout !== undefined) {
@@ -109,7 +112,11 @@ export function createWgpuMeshPipeline(
   const layout = device.createPipelineLayout({ bindGroupLayouts });
   const pipeline = device.createRenderPipeline({
     layout,
-    vertex: { module: options.module, entryPoint: 'vs_main', buffers: VERTEX_BUFFER_LAYOUTS },
+    vertex: {
+      module: options.module,
+      entryPoint: 'vs_main',
+      buffers: options.skinned && skinning !== null ? skinning.vertexBufferLayouts : VERTEX_BUFFER_LAYOUTS,
+    },
     fragment: {
       module: options.module,
       entryPoint: 'fs_main',
@@ -138,6 +145,7 @@ export function createWgpuMeshPipeline(
     hasShadowGroup: options.shadowBindGroupLayout !== undefined,
     materialBindGroupLayout: options.materialBindGroupLayout,
     pipeline,
+    skinned: options.skinned === true,
   };
 }
 
@@ -159,13 +167,20 @@ export function drawWgpuMeshSubset(
   const subset = proxy.subset;
   if (subset.indexCount === 0) return;
 
-  const upload = ensureWgpuMeshUpload(state, geometry);
+  const upload = ensureWgpuMeshUpload(state, geometry, scene.activeMeshPipeline.skinned);
   if (upload === null || upload.indexBuffer === null) return;
 
   const drawBindGroup = writeWgpuDrawUniform(state, proxy);
+  const activePipeline = scene.activeMeshPipeline;
+  const jointMatrices = proxy.jointMatrices ?? null;
+  const skinning = scene.skinningAdapter as WgpuSkinningAdapter | null;
+  const boundDrawGroup =
+    activePipeline.skinned && jointMatrices !== null && skinning !== null
+      ? skinning.getDrawBindGroup(state, jointMatrices)
+      : drawBindGroup;
   _dynamicOffsets[0] = scene.pendingDrawOffset;
 
-  pass.setBindGroup(1, drawBindGroup, _dynamicOffsets);
+  pass.setBindGroup(1, boundDrawGroup, _dynamicOffsets);
   pass.setVertexBuffer(0, upload.vertexBuffer);
   pass.setIndexBuffer(upload.indexBuffer, upload.indexFormat);
   pass.drawIndexed(subset.indexCount, 1, subset.indexOffset, 0, 0);
@@ -511,14 +526,15 @@ export function ensureWgpuSceneLayouts(state: WgpuRenderState): WgpuSceneLayouts
 export function ensureWgpuScenePipeline<T extends WgpuMeshPipeline>(
   state: WgpuRenderState,
   key: string,
-  compile: (blended: boolean) => T,
+  compile: (blended: boolean, skinned: boolean) => T,
 ): T {
   const runtime = getWgpuSceneRuntime(state);
   const blended = runtime.activeBlendedRun;
-  const variantKey = `${key}|${blended ? 'blend' : 'opaque'}`;
+  const skinned = runtime.activeSkinnedRun;
+  const variantKey = `${key}|${blended ? 'blend' : 'opaque'}|${skinned ? 'skin' : 'rigid'}`;
   let pipeline = runtime.pipelineCache.get(variantKey);
   if (pipeline === undefined) {
-    pipeline = compile(blended);
+    pipeline = compile(blended, skinned);
     runtime.pipelineCache.set(variantKey, pipeline);
   }
   return pipeline as T;
@@ -634,6 +650,16 @@ export function getWgpuMaterialSampler(state: WgpuRenderState, texture: Readonly
       : 'linear'
     : undefined;
   return getWgpuSampler(state, filter, sampler.wrapU, sampler.wrapV, mipmapFilter, sampler.anisotropy);
+}
+
+// Produces the distinct HAS_SKIN vertex variant. The palette stays in group(1), beside Draw, so lit
+// pipelines still fit WebGPU's minimum four bind groups. Rigid source carries neither skin attributes
+// nor the palette binding.
+export function getWgpuMeshPreludeWgsl(
+  skinned: boolean,
+  skinning: Readonly<WgpuSkinningAdapter> | null = null,
+): string {
+  return skinned && skinning !== null ? skinning.extendMeshPrelude(WGPU_MESH_PRELUDE_WGSL) : WGPU_MESH_PRELUDE_WGSL;
 }
 
 // True when a material map texture is present AND carries GPU-uploadable pixels — an element or a data-only
@@ -768,6 +794,84 @@ export function writeWgpuDrawUniform(state: WgpuRenderState, proxy: Readonly<Sce
   return scene.drawBindGroup;
 }
 
+// The shared WGSL prelude every family module prepends after its const-flag block: the Frame + Draw
+// uniform structs and their group(0)/group(1) bindings, the VertexOutput, the vs_main entry, and the
+// srgbToLinear helper. A family appends its own group(2) Material block + fs_main. Keeping the Frame/
+// Draw structs here keeps them in lockstep with writeWgpuFrameUniform / writeWgpuDrawUniform. Mirrors
+// scene-gl's shared vertex body + GL_MESH_LIGHT_BLOCK_GLSL.
+export const WGPU_MESH_PRELUDE_WGSL = /* wgsl */ `
+const PI : f32 = 3.14159265359;
+const MAX_FORWARD_LIGHTS : u32 = 4u;
+
+struct Frame {
+  viewProjection : mat4x4f,
+  cameraPosition : vec4f,
+  lightDirection : vec4f,       // xyz = directional light travel direction; w = directionalCount
+  directionalRadiance : vec4f,  // rgb = linear premultiplied radiance
+  ambientRadiance : vec4f,      // rgb = linear premultiplied radiance; w = ambientCount
+  view : mat4x4f,               // camera view matrix; rotates world normals into view space (matcap)
+  // Punctual light arrays — layout mirrors SceneLightBlock.data (packSceneLightBlock).
+  //   point[i]      = pointLights[i*2+0]={pos.xyz,range}, [i*2+1]={radiance.rgb,invSqrRange}
+  //   spot[i]       = spotLights[i*4+0..1] as point, [i*4+2]={dir.xyz,_}, [i*4+3]={cosInner,cosOuter,_,_}
+  //   hemisphere[i] = hemisphereLights[i*3+0]={sky.rgb,_}, [i*3+1]={ground.rgb,_}, [i*3+2]={up.xyz,_}
+  pointLights : array<vec4f, 8>,       // MAX_FORWARD_LIGHTS * 2
+  spotLights : array<vec4f, 16>,       // MAX_FORWARD_LIGHTS * 4
+  hemisphereLights : array<vec4f, 12>, // MAX_FORWARD_LIGHTS * 3
+  punctualCounts : vec4f,              // x = pointCount, y = spotCount, z = hemisphereCount
+};
+
+struct Draw {
+  world : mat4x4f,
+  normalMatrix : mat3x3f,
+  uvTransform : mat3x3f,   // KHR_texture_transform of the material's primary map (identity when unused)
+  params : vec4f,          // x = resolved object alpha
+};
+
+@group(0) @binding(0) var<uniform> frame : Frame;
+@group(1) @binding(0) var<uniform> draw : Draw;
+
+struct VertexOutput {
+  @builtin(position) clipPosition : vec4f,
+  @location(0) worldPosition : vec3f,
+  @location(1) worldNormal : vec3f,
+  @location(2) worldTangent : vec4f,
+  @location(3) uv : vec2f,
+  @location(4) @interpolate(flat) objectAlpha : f32,
+};
+
+@vertex fn vs_main(
+  @location(0) position : vec3f,
+  @location(1) normal : vec3f,
+  @location(2) tangent : vec4f,
+  @location(3) uv : vec2f,
+) -> VertexOutput {
+  var out : VertexOutput;
+  var localPosition = vec4f(position, 1.0);
+  var localNormal = normal;
+  var localTangent = tangent.xyz;
+  let world = draw.world * localPosition;
+  out.worldPosition = world.xyz;
+  out.clipPosition = frame.viewProjection * world;
+  out.worldNormal = draw.normalMatrix * localNormal;
+  out.worldTangent = vec4f(draw.normalMatrix * localTangent, tangent.w);
+  // Apply the material's KHR_texture_transform to the uv. draw.uvTransform is identity for an untiled
+  // material (writeWgpuDrawUniform's default), so this is a no-op there — applied unconditionally rather
+  // than behind a pipeline const because this vs_main is shared by every family (classic/unlit/toon/
+  // matcap/debug/wireframe) and a const would have to thread through all of them; a per-vertex mat3
+  // multiply is negligible. The scene-gl mirror gates the equivalent branch via its #ifdef variant.
+  out.uv = (draw.uvTransform * vec3f(uv, 1.0)).xy;
+  out.objectAlpha = draw.params.x;
+  return out;
+}
+
+// sRgb albedo texels are gamma-encoded; decode to linear before lighting.
+fn srgbToLinear(c : vec3f) -> vec3f {
+  let lo = c / 12.92;
+  let hi = pow((c + vec3f(0.055)) / 1.055, vec3f(2.4));
+  return select(lo, hi, c > vec3f(0.04045));
+}
+`;
+
 // Writes the per-frame Frame uniform (camera view-projection + world position + the packed light
 // block) into the scene runtime's Frame buffer and ensures the Frame bind group exists. The light
 // block layout matches SceneLightBlock.data: directional { direction.xyz @0, radiance.rgb @4 } then
@@ -846,81 +950,6 @@ export function writeWgpuFrameUniform(
 
   state.device.queue.writeBuffer(scene.frameBuffer!, 0, f.buffer, 0, FRAME_UNIFORM_BYTES);
 }
-
-// The shared WGSL prelude every family module prepends after its const-flag block: the Frame + Draw
-// uniform structs and their group(0)/group(1) bindings, the VertexOutput, the vs_main entry, and the
-// srgbToLinear helper. A family appends its own group(2) Material block + fs_main. Keeping the Frame/
-// Draw structs here keeps them in lockstep with writeWgpuFrameUniform / writeWgpuDrawUniform. Mirrors
-// scene-gl's shared vertex body + GL_MESH_LIGHT_BLOCK_GLSL.
-export const WGPU_MESH_PRELUDE_WGSL = /* wgsl */ `
-const PI : f32 = 3.14159265359;
-const MAX_FORWARD_LIGHTS : u32 = 4u;
-
-struct Frame {
-  viewProjection : mat4x4f,
-  cameraPosition : vec4f,
-  lightDirection : vec4f,       // xyz = directional light travel direction; w = directionalCount
-  directionalRadiance : vec4f,  // rgb = linear premultiplied radiance
-  ambientRadiance : vec4f,      // rgb = linear premultiplied radiance; w = ambientCount
-  view : mat4x4f,               // camera view matrix; rotates world normals into view space (matcap)
-  // Punctual light arrays — layout mirrors SceneLightBlock.data (packSceneLightBlock).
-  //   point[i]      = pointLights[i*2+0]={pos.xyz,range}, [i*2+1]={radiance.rgb,invSqrRange}
-  //   spot[i]       = spotLights[i*4+0..1] as point, [i*4+2]={dir.xyz,_}, [i*4+3]={cosInner,cosOuter,_,_}
-  //   hemisphere[i] = hemisphereLights[i*3+0]={sky.rgb,_}, [i*3+1]={ground.rgb,_}, [i*3+2]={up.xyz,_}
-  pointLights : array<vec4f, 8>,       // MAX_FORWARD_LIGHTS * 2
-  spotLights : array<vec4f, 16>,       // MAX_FORWARD_LIGHTS * 4
-  hemisphereLights : array<vec4f, 12>, // MAX_FORWARD_LIGHTS * 3
-  punctualCounts : vec4f,              // x = pointCount, y = spotCount, z = hemisphereCount
-};
-
-struct Draw {
-  world : mat4x4f,
-  normalMatrix : mat3x3f,
-  uvTransform : mat3x3f,   // KHR_texture_transform of the material's primary map (identity when unused)
-  params : vec4f,          // x = resolved object alpha
-};
-
-@group(0) @binding(0) var<uniform> frame : Frame;
-@group(1) @binding(0) var<uniform> draw : Draw;
-
-struct VertexOutput {
-  @builtin(position) clipPosition : vec4f,
-  @location(0) worldPosition : vec3f,
-  @location(1) worldNormal : vec3f,
-  @location(2) worldTangent : vec4f,
-  @location(3) uv : vec2f,
-  @location(4) @interpolate(flat) objectAlpha : f32,
-};
-
-@vertex fn vs_main(
-  @location(0) position : vec3f,
-  @location(1) normal : vec3f,
-  @location(2) tangent : vec4f,
-  @location(3) uv : vec2f,
-) -> VertexOutput {
-  var out : VertexOutput;
-  let world = draw.world * vec4f(position, 1.0);
-  out.worldPosition = world.xyz;
-  out.clipPosition = frame.viewProjection * world;
-  out.worldNormal = draw.normalMatrix * normal;
-  out.worldTangent = vec4f(draw.normalMatrix * tangent.xyz, tangent.w);
-  // Apply the material's KHR_texture_transform to the uv. draw.uvTransform is identity for an untiled
-  // material (writeWgpuDrawUniform's default), so this is a no-op there — applied unconditionally rather
-  // than behind a pipeline const because this vs_main is shared by every family (classic/unlit/toon/
-  // matcap/debug/wireframe) and a const would have to thread through all of them; a per-vertex mat3
-  // multiply is negligible. The scene-gl mirror gates the equivalent branch via its #ifdef variant.
-  out.uv = (draw.uvTransform * vec3f(uv, 1.0)).xy;
-  out.objectAlpha = draw.params.x;
-  return out;
-}
-
-// sRgb albedo texels are gamma-encoded; decode to linear before lighting.
-fn srgbToLinear(c : vec3f) -> vec3f {
-  let lo = c / 12.92;
-  let hi = pow((c + vec3f(0.055)) / 1.055, vec3f(2.4));
-  return select(lo, hi, c > vec3f(0.04045));
-}
-`;
 
 // Frame uniform float offsets for the punctual light arrays — the byte offset within the Frame buffer
 // where each punctual array begins, used by writeWgpuFrameUniform to copy the packed data from

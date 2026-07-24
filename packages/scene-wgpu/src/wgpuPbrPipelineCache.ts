@@ -2,6 +2,7 @@ import type { WgpuPbrPipeline, WgpuRenderState, WgpuPbrDefineKey } from '@flight
 
 import { createWgpuMeshPipeline, ensureWgpuPbrSampleLayout, ensureWgpuScenePipeline } from './wgpuMeshPipeline';
 import { buildWgpuPbrDefineKey, getWgpuPbrModuleSourceForKey } from './wgpuPbrPrelude';
+import { getWgpuSkinningAdapter } from './wgpuSceneRuntime';
 // Compiles the PBR uber-shader module for a define key and builds the render pipeline for the given
 // color-attachment format. Pure GPU work — no caching — used by ensureWgpuPbrPipeline. The group(2)
 // material layout is a uniform (the MaterialBlock) + a filtering sampler + the six standard map
@@ -15,9 +16,12 @@ export function compileWgpuPbrPipeline(
   key: Readonly<WgpuPbrDefineKey>,
   format: GPUTextureFormat,
   blended = false,
+  skinned = false,
 ): WgpuPbrPipeline {
   const device = state.device;
-  const module = device.createShaderModule({ code: getWgpuPbrModuleSourceForKey(key) });
+  const module = device.createShaderModule({
+    code: getWgpuPbrModuleSourceForKey(key, skinned, getWgpuSkinningAdapter(state)),
+  });
   const materialBindGroupLayout = device.createBindGroupLayout({
     entries: [
       { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
@@ -39,6 +43,7 @@ export function compileWgpuPbrPipeline(
     materialBindGroupLayout,
     module,
     pbrSampleBindGroupLayout: ensureWgpuPbrSampleLayout(state),
+    skinned,
   });
 }
 
@@ -50,7 +55,7 @@ export function ensureWgpuPbrPipeline(
   key: Readonly<WgpuPbrDefineKey>,
   format: GPUTextureFormat,
 ): WgpuPbrPipeline {
-  return ensureWgpuScenePipeline(state, `pbr:${format}|${buildWgpuPbrDefineKey(key)}`, (blended) =>
-    compileWgpuPbrPipeline(state, key, format, blended),
+  return ensureWgpuScenePipeline(state, `pbr:${format}|${buildWgpuPbrDefineKey(key)}`, (blended, skinned) =>
+    compileWgpuPbrPipeline(state, key, format, blended, skinned),
   );
 }

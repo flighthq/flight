@@ -1,5 +1,6 @@
 import type { MeshGeometry, MeshGeometryRuntime, WgpuRenderState, WgpuMeshUpload } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
+import type { WgpuSkinningAdapter } from '@flighthq/types';
 
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 
@@ -10,14 +11,25 @@ import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 // MeshGeometryRuntime.webgpuData so destroyMeshGeometryWgpuData can null the slot. Returns null for
 // non-indexed geometry (this path draws indexed subsets only). The vertex layout the pipeline binds
 // (canonical 48-byte position/normal/tangent/uv0 record) is fixed on the pipeline, not here.
-export function ensureWgpuMeshUpload(state: WgpuRenderState, geometry: Readonly<MeshGeometry>): WgpuMeshUpload | null {
+export function ensureWgpuMeshUpload(
+  state: WgpuRenderState,
+  geometry: Readonly<MeshGeometry>,
+  gpuSkinned = false,
+): WgpuMeshUpload | null {
   const indices = geometry.indices;
   if (indices === null) return null;
 
-  const cache = getWgpuSceneRuntime(state).uploadCache;
+  const scene = getWgpuSceneRuntime(state);
+  const cache = scene.uploadCache;
   let upload = cache.get(geometry);
 
-  if (upload !== undefined && upload.version === geometry.version) {
+  const meshRuntime = geometry[EntityRuntimeKey] as MeshGeometryRuntime | undefined;
+  const skinning = scene.skinningAdapter as WgpuSkinningAdapter | null;
+  const hasSkinBindPose = gpuSkinned && skinning !== null && skinning.hasBindPose(geometry);
+  if (
+    upload !== undefined &&
+    (hasSkinBindPose ? upload.skinBindUploaded === true : upload.version === geometry.version)
+  ) {
     return upload;
   }
 
@@ -27,7 +39,7 @@ export function ensureWgpuMeshUpload(state: WgpuRenderState, geometry: Readonly<
     upload.indexBuffer?.destroy();
   }
 
-  const vertices = geometry.vertices;
+  const vertices = hasSkinBindPose ? skinning!.getUploadVertices(geometry)! : geometry.vertices;
   const vertexBuffer = device.createBuffer({
     size: Math.max(4, alignTo4(vertices.byteLength)),
     usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
@@ -44,12 +56,12 @@ export function ensureWgpuMeshUpload(state: WgpuRenderState, geometry: Readonly<
     indexBuffer,
     indexCount: indices.length,
     indexFormat: indices.BYTES_PER_ELEMENT === 4 ? 'uint32' : 'uint16',
+    skinBindUploaded: hasSkinBindPose,
     version: geometry.version,
     vertexBuffer,
   };
   cache.set(geometry, upload);
 
-  const meshRuntime = geometry[EntityRuntimeKey] as MeshGeometryRuntime | undefined;
   if (meshRuntime !== undefined) {
     meshRuntime.webgpuData = upload as unknown as MeshGeometryRuntime['webgpuData'];
   }

@@ -14,7 +14,7 @@ import type { ImageResource, Modifier, Texture, WgpuModifierSnippet } from '@fli
 import { FogModifierMode, ModifierSlot, VertexDisplaceModifierSource } from '@flighthq/types';
 
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
-import { makeWgpuSceneState } from './wgpuSceneTestHelper';
+import { makeWgpuSceneState, makeWgpuSkinningAdapter } from './wgpuSceneTestHelper';
 import { registerWgpuModifierSnippet, resolveWgpuModifierSnippet } from './wgpuShadedModifierSnippet';
 import {
   animatedNormalWgpuModifierSnippet,
@@ -68,8 +68,8 @@ describe('ensureWgpuShadedPipeline', () => {
     getWgpuSceneRuntime(state).activeBlendedRun = true;
     ensureWgpuShadedPipeline(state, material, 'bgra8unorm');
     const keys = [...getWgpuSceneRuntime(state).pipelineCache.keys()];
-    expect(keys.some((key) => key.startsWith('shaded:') && key.endsWith('|opaque'))).toBe(true);
-    expect(keys.some((key) => key.startsWith('shaded:') && key.endsWith('|blend'))).toBe(true);
+    expect(keys.some((key) => key.startsWith('shaded:') && key.endsWith('|opaque|rigid'))).toBe(true);
+    expect(keys.some((key) => key.startsWith('shaded:') && key.endsWith('|blend|rigid'))).toBe(true);
   });
 
   it('reserves alpha-map binding 5 and starts modifier textures at binding 6', () => {
@@ -113,6 +113,14 @@ describe('ensureWgpuShadedPipeline', () => {
 });
 
 describe('getWgpuShadedModuleSource', () => {
+  it('threads the HAS_SKIN palette variant through the composed classic base', () => {
+    const material = createShadedMaterial();
+    expect(getWgpuShadedModuleSource(material)).not.toContain('jointTexture');
+    expect(getWgpuShadedModuleSource(material, undefined, true, makeWgpuSkinningAdapter())).toContain(
+      'textureLoad(jointTexture',
+    );
+  });
+
   it('composes all built-in fragment modifier families into one shader', () => {
     const { state } = makeWgpuSceneState();
     registerBuiltInWgpuModifierSnippets(state);

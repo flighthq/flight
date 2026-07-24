@@ -19,6 +19,7 @@ import type {
   WgpuSceneDrawEntry,
 } from '@flighthq/types';
 import { DefaultMaterialKind } from '@flighthq/types';
+import type { WgpuSkinningAdapter } from '@flighthq/types';
 
 import { resolveWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { drawWgpuSceneParticleEmitter3Ds } from './wgpuParticleEmitter3D';
@@ -102,6 +103,12 @@ export function drawWgpuScene(
   // this still-open render pass (it reads the pass off the render-state runtime).
   drawWgpuSceneParticleEmitter3Ds(state, scene, camera, lights);
   runtime.activeBlendedRun = false;
+  runtime.activeSkinnedRun = false;
+}
+
+export function isWgpuMeshGpuSkinned(state: WgpuRenderState, mesh: Readonly<Mesh>): boolean {
+  const skinning = getWgpuSceneRuntime(state).skinningAdapter as WgpuSkinningAdapter | null;
+  return skinning !== null && skinning.isGpuSkinned(mesh);
 }
 
 function drawEntries(
@@ -115,20 +122,30 @@ function drawEntries(
   let boundMaterial: Readonly<Material> | undefined;
   let boundLightBlock: Readonly<SceneLightBlock> | null = null;
   let boundRenderer: WgpuMeshMaterialRenderer | null = null;
+  let boundSkinned: boolean | undefined;
 
   for (let i = 0; i < entries.length; i++) {
     const entry = entries[i] as DrawEntry;
     const worldMatrix = entry.worldMatrix as Matrix4;
     setMatrix3NormalFromMatrix4(scratchNormalMatrix, worldMatrix);
+    const skinned = isWgpuMeshGpuSkinned(state, entry.mesh);
 
-    if (entry.renderer !== boundRenderer || entry.material !== boundMaterial || entry.lightBlock !== boundLightBlock) {
+    if (
+      entry.renderer !== boundRenderer ||
+      entry.material !== boundMaterial ||
+      entry.lightBlock !== boundLightBlock ||
+      skinned !== boundSkinned
+    ) {
+      runtime.activeSkinnedRun = skinned;
       entry.renderer.bind(state, entry.material, entry.lightBlock, camera);
       boundRenderer = entry.renderer;
       boundMaterial = entry.material;
       boundLightBlock = entry.lightBlock;
+      boundSkinned = skinned;
     }
 
     proxy.alpha = entry.alpha;
+    proxy.jointMatrices = skinned ? entry.mesh.skin!.skeleton.jointMatrices : null;
     proxy.material = entry.material;
     proxy.normalMatrix = scratchNormalMatrix;
     proxy.subset = entry.subset;
@@ -189,6 +206,7 @@ function createDrawEntry(): WgpuSceneDrawEntry {
 // duration of the draw call it is passed to; renderers must not retain it.
 const proxy: SceneRenderProxy = {
   alpha: 1,
+  jointMatrices: null,
   material: { kind: DefaultMaterialKind } as Material,
   normalMatrix: createMatrix3() as Matrix3,
   subset: { indexCount: 0, indexOffset: 0 },

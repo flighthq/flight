@@ -30,6 +30,7 @@ import {
   ensureWgpuShadowSampleBindGroup,
   ensureWgpuShadowSampleLayout,
   getWgpuMaterialSampler,
+  getWgpuMeshPreludeWgsl,
   isWgpuTextureReady,
   resolveWgpuMaterialTextureView,
   stashWgpuUvTransform,
@@ -39,7 +40,7 @@ import {
   writeWgpuFrameUniform,
 } from './wgpuMeshPipeline';
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
-import { makeWgpuSceneState } from './wgpuSceneTestHelper';
+import { makeWgpuSceneState, makeWgpuSkinningAdapter } from './wgpuSceneTestHelper';
 
 function makeCamera(): Camera3D {
   return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
@@ -426,8 +427,27 @@ describe('ensureWgpuScenePipeline', () => {
 
     expect(variants).toEqual([false, true]);
     expect(Array.from(getWgpuSceneRuntime(state).pipelineCache.keys())).toEqual([
-      'fam:bgra8unorm|-|opaque',
-      'fam:bgra8unorm|-|blend',
+      'fam:bgra8unorm|-|opaque|rigid',
+      'fam:bgra8unorm|-|blend|rigid',
+    ]);
+  });
+
+  it('caches rigid and skinned variants independently', () => {
+    const { state } = makeWgpuSceneState();
+    const variants: boolean[] = [];
+    const compile = (_blended: boolean, skinned: boolean) => {
+      variants.push(skinned);
+      return makePipeline(state);
+    };
+
+    ensureWgpuScenePipeline(state, 'fam:bgra8unorm|-', compile);
+    getWgpuSceneRuntime(state).activeSkinnedRun = true;
+    ensureWgpuScenePipeline(state, 'fam:bgra8unorm|-', compile);
+
+    expect(variants).toEqual([false, true]);
+    expect(Array.from(getWgpuSceneRuntime(state).pipelineCache.keys())).toEqual([
+      'fam:bgra8unorm|-|opaque|rigid',
+      'fam:bgra8unorm|-|opaque|skin',
     ]);
   });
 });
@@ -511,6 +531,21 @@ describe('getWgpuMaterialSampler', () => {
     getWgpuMaterialSampler(state, aniso);
     getWgpuMaterialSampler(state, noAniso);
     expect(getWgpuRenderStateRuntime(state).samplerCache.size).toBe(2);
+  });
+});
+
+describe('getWgpuMeshPreludeWgsl', () => {
+  it('adds the palette binding, attributes, and textureLoad skin matrix only to the skinned variant', () => {
+    const rigid = getWgpuMeshPreludeWgsl(false);
+    const skinned = getWgpuMeshPreludeWgsl(true, makeWgpuSkinningAdapter());
+
+    expect(rigid).not.toContain('jointTexture');
+    expect(rigid).not.toContain('joints0');
+    expect(skinned).toContain('@group(1) @binding(1) var jointTexture');
+    expect(skinned).toContain('@location(4) joints0 : vec4f');
+    expect(skinned).toContain('@location(5) weights0 : vec4f');
+    expect(skinned).toContain('textureLoad(jointTexture');
+    expect(skinned).toContain('localPosition = skin * localPosition');
   });
 });
 

@@ -1057,7 +1057,7 @@
             "canvas": false,
             "dom": false,
             "webgl": true,
-            "webgpu": false
+            "webgpu": true
           }
         },
         {
@@ -1453,12 +1453,6 @@
       "capability": "FBX / USD / COLLADA / PLY / STL",
       "status": "not-implemented",
       "note": "No parser exists."
-    },
-    {
-      "area": "Skinning",
-      "capability": "GPU skinning — PBR / toon / unlit / matcap families",
-      "status": "not-implemented",
-      "note": "HAS_SKIN wired only for the classic prelude on WebGL; other families fall back to CPU deform. WebGPU: none."
     },
     {
       "area": "Skinning",

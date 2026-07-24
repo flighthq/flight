@@ -43,7 +43,7 @@ Findings are empirical (surfaced building the per-primitive functional suite, 20
 | Ambient + Directional lights | ✓ | ✓ |  |
 | Point / Spot / Hemisphere lights | ✓ | ✓ | forward punctual lighting wired on both gl and wgpu |
 | Transparent (blend-alphaMode / faded) meshes composite correctly | ✓ | ✓ | both backends partition opaque/blended subsets and sort the blended pass back-to-front; wgpu uses immutable `|opaque` / `|blend` pipelines |
-| GPU skeletal skinning | ✓ | ✗ | **gl** = `HAS_SKIN` across classic/pbr/toon/unlit/shaded (bone-palette RGBA32F **data texture** read via `texelFetch`; joint count bounded by MAX_TEXTURE_SIZE — no uniform-budget cap, no CPU fallback). **wgpu** = none — bind pose. [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) §3 |
+| GPU skeletal skinning | ✓ | ✓ | `HAS_SKIN` across classic/pbr/toon/unlit/shaded on both backends; a growable single-row RGBA32F palette is read with `texelFetch` (gl) / `textureLoad` (wgpu). WebGPU enables the tree-shakeable permutation with `registerWgpuGpuSkinning(state)`. No uniform-budget cap or CPU draw fallback; `scene-skinning` verifies a posed 80-joint WebGPU rig. [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) §3 |
 | Morph / blend-shape deformation | ✓ | ✗ | **gl** CPU-blend-then-upload (glTF/MD2 import). **wgpu** = none. [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) |
 | ShadedMaterial modifier stack (fresnel/normalPerturb/emissive/envReflect/fog/vertexDisplace/dissolve/toon) | ✓ | ✓ | `shadedGlMeshMaterialRenderer` / `shadedWgpuMeshMaterialRenderer`; both compose ordered modifier variants and support tangent-space normal maps. [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) §4 |
 

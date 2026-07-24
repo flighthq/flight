@@ -2,16 +2,17 @@ import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from '@flighthq/came
 import { createVector3 } from '@flighthq/geometry';
 import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting';
 import { createStandardPbrMaterial } from '@flighthq/materials';
-import { createBoxMeshGeometry } from '@flighthq/mesh';
+import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, createBoxMeshGeometry, createMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter';
 import { createMesh, createSceneNode, SceneNodeKind } from '@flighthq/scene';
-import type { Camera3D, ParticleEmitter3D, SceneLightsLike } from '@flighthq/types';
+import type { Camera3D, ParticleEmitter3D, SceneLightsLike, Skeleton3D } from '@flighthq/types';
 
-import { drawWgpuScene } from './drawWgpuScene';
+import { drawWgpuScene, isWgpuMeshGpuSkinned } from './drawWgpuScene';
 import { registerStandardPbrWgpuMaterial } from './registerStandardPbrWgpuMaterial';
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 import { makeWgpuSceneState } from './wgpuSceneTestHelper';
+import { registerWgpuGpuSkinning } from './wgpuSkinPalette';
 
 function makeCamera(): Camera3D {
   const camera = createCamera3D({
@@ -101,8 +102,8 @@ describe('drawWgpuScene', () => {
     const runtime = getWgpuSceneRuntime(state);
     expect(runtime.opaqueDrawList.map((entry) => entry.mesh)).toEqual([opaque]);
     expect(runtime.blendedDrawList.map((entry) => entry.mesh)).toEqual([blended]);
-    expect(Array.from(runtime.pipelineCache.keys()).some((key) => key.endsWith('|opaque'))).toBe(true);
-    expect(Array.from(runtime.pipelineCache.keys()).some((key) => key.endsWith('|blend'))).toBe(true);
+    expect(Array.from(runtime.pipelineCache.keys()).some((key) => key.endsWith('|opaque|rigid'))).toBe(true);
+    expect(Array.from(runtime.pipelineCache.keys()).some((key) => key.endsWith('|blend|rigid'))).toBe(true);
   });
 
   it('routes resolved node alpha through the blended pass and draw proxy', () => {
@@ -118,7 +119,7 @@ describe('drawWgpuScene', () => {
     const runtime = getWgpuSceneRuntime(state);
     expect(runtime.opaqueDrawList).toHaveLength(0);
     expect(runtime.blendedDrawList[0]!.alpha).toBeCloseTo(0.5);
-    expect(Array.from(runtime.pipelineCache.keys()).some((key) => key.endsWith('|blend'))).toBe(true);
+    expect(Array.from(runtime.pipelineCache.keys()).some((key) => key.endsWith('|blend|rigid'))).toBe(true);
   });
 
   it('sorts blended subsets back-to-front by projected depth', () => {
@@ -200,6 +201,26 @@ describe('drawWgpuScene', () => {
     expect(draw).toBeDefined();
     expect(draw!.args[0]).toBe(6);
     expect(draw!.args[1]).toBe(3);
+  });
+});
+
+describe('isWgpuMeshGpuSkinned', () => {
+  it('selects GPU skinning only for a skin plus joints0 and weights0 geometry', () => {
+    const { state } = makeWgpuSceneState();
+    registerWgpuGpuSkinning(state);
+    const rigid = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
+    expect(isWgpuMeshGpuSkinned(state, rigid)).toBe(false);
+
+    const skinned = createMesh(
+      createMeshGeometry({
+        indices: new Uint16Array([0, 0, 0]),
+        layout: CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
+        vertices: new Float32Array(20),
+      }),
+      [createStandardPbrMaterial()],
+    );
+    skinned.skin = { skeleton: { jointMatrices: new Float32Array(16) } as Skeleton3D };
+    expect(isWgpuMeshGpuSkinned(state, skinned)).toBe(true);
   });
 });
 

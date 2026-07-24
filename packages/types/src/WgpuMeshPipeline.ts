@@ -8,6 +8,8 @@ export interface WgpuMeshPipeline {
   hasShadowGroup: boolean;
   materialBindGroupLayout: GPUBindGroupLayout;
   pipeline: GPURenderPipeline;
+  // True only for the HAS_SKIN variant whose group(1) also carries the RGBA32F joint palette.
+  skinned: boolean;
 }
 
 // The shared group(0)/group(1) bind-group layouts every family pipeline uses. Created once per state.

@@ -161,9 +161,15 @@ today should match the gl baseline (within the software-AA tolerance).
 
 ---
 
-## 3. WebGPU GPU skinning (zero today, across every material)
+## 3. WebGPU GPU skinning
 
-### The gap
+**Implemented.** WebGPU now mirrors GL with distinct rigid/`HAS_SKIN` variants across classic, PBR,
+toon, unlit, and ShadedMaterial, using a growable single-row `rgba32float` palette read by
+`textureLoad`. Applications opt into the separately tree-shakeable palette and shader permutations with
+`registerWgpuGpuSkinning(state)`; rigid scenes retain the ordinary scene-wgpu bundle.
+`scene-skinning.webgpu.ts` verifies a posed 80-joint rig without a capacity gate or CPU draw fallback.
+
+### Historical gap
 
 `scene-wgpu` has **no GPU skinning of any kind** — grep confirms no `joint`/`skin`/palette handling in
 any mesh renderer or prelude. A skinned mesh (glTF/MD5/AWD with `JOINTS_0`/`WEIGHTS_0`) renders in **bind

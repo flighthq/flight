@@ -1,7 +1,7 @@
 import type { LinearColor, WgpuToonDefineKey } from '@flighthq/types';
 
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
-import { makeWgpuSceneState } from './wgpuSceneTestHelper';
+import { makeWgpuSceneState, makeWgpuSkinningAdapter } from './wgpuSceneTestHelper';
 import {
   bindWgpuToonSurface,
   buildWgpuToonDefineKey,
@@ -77,6 +77,8 @@ describe('getWgpuToonModuleSourceForKey', () => {
     expect(source).toContain('struct Frame');
     expect(source).toContain('frame.directionalRadiance');
     expect(source).toContain('fn fs_main');
+    expect(source).not.toContain('jointTexture');
+    expect(getWgpuToonModuleSourceForKey(FLAT, true, makeWgpuSkinningAdapter())).toContain('@location(4) joints0');
   });
 
   it('declares the group(3) shadow bindings and shadow-maps the banded directional term', () => {

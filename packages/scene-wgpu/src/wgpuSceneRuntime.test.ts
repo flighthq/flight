@@ -1,8 +1,9 @@
 import type { WgpuRenderStateRuntime } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
+import { getWgpuSceneRuntime, getWgpuSkinningAdapter } from './wgpuSceneRuntime';
 import { makeWgpuSceneState } from './wgpuSceneTestHelper';
+import { registerWgpuGpuSkinning } from './wgpuSkinPalette';
 
 describe('getWgpuSceneRuntime', () => {
   it('lazily creates one runtime per state and returns the same instance', () => {
@@ -21,5 +22,14 @@ describe('getWgpuSceneRuntime', () => {
     const stateRuntime = state[EntityRuntimeKey] as WgpuRenderStateRuntime;
     expect(stateRuntime.sceneMeshMaterialRegistry).toBe(scene.materialRegistry);
     expect(stateRuntime.sceneMeshUploadCache).toBe(scene.uploadCache);
+  });
+});
+
+describe('getWgpuSkinningAdapter', () => {
+  it('returns the state-scoped opt-in adapter', () => {
+    const { state } = makeWgpuSceneState();
+    expect(getWgpuSkinningAdapter(state)).toBeNull();
+    registerWgpuGpuSkinning(state);
+    expect(getWgpuSkinningAdapter(state)).not.toBeNull();
   });
 });

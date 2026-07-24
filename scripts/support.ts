@@ -95,12 +95,6 @@ const DECLARED_GAPS: readonly DeclaredGap[] = [
   },
   {
     area: 'Skinning',
-    capability: 'GPU skinning — PBR / toon / unlit / matcap families',
-    status: 'not-implemented',
-    note: 'HAS_SKIN wired only for the classic prelude on WebGL; other families fall back to CPU deform. WebGPU: none.',
-  },
-  {
-    area: 'Skinning',
     capability: 'Morph targets / blend shapes / IK / blend trees',
     status: 'not-implemented',
     note: 'skeleton3d Phase 4, chartered separately, not built.',

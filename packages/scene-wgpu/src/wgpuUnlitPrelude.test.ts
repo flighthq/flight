@@ -1,7 +1,7 @@
 import type { LinearColor, WgpuUnlitDefineKey } from '@flighthq/types';
 
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
-import { makeWgpuSceneState } from './wgpuSceneTestHelper';
+import { makeWgpuSceneState, makeWgpuSkinningAdapter } from './wgpuSceneTestHelper';
 import {
   bindWgpuUnlitSurface,
   buildWgpuUnlitDefineKey,
@@ -66,5 +66,7 @@ describe('getWgpuUnlitModuleSourceForKey', () => {
     const source = getWgpuUnlitModuleSourceForKey(FLAT);
     expect(source).toContain('struct Frame');
     expect(source).toContain('fn fs_main');
+    expect(source).not.toContain('jointTexture');
+    expect(getWgpuUnlitModuleSourceForKey(FLAT, true, makeWgpuSkinningAdapter())).toContain('@location(5) weights0');
   });
 });

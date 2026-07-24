@@ -37,6 +37,7 @@ export * from './wgpuSceneTime';
 export * from './wgpuShadedPrelude';
 export * from './wgpuShadedModifierSnippet';
 export * from './wgpuShadowMap';
+export * from './wgpuSkinPalette';
 export * from './wgpuToonPrelude';
 export * from './wgpuUnlitPrelude';
 export * from './wgpuWireframePrelude';

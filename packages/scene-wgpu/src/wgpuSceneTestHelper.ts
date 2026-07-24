@@ -2,6 +2,10 @@ import { createRenderState } from '@flighthq/render';
 import { createWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import type { WgpuRenderState, WgpuRenderStateRuntime } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
+import type { WgpuSkinningAdapter } from '@flighthq/types';
+
+import { getWgpuSkinningAdapter } from './wgpuSceneRuntime';
+import { registerWgpuGpuSkinning } from './wgpuSkinPalette';
 
 // A recording WgpuRenderState for scene-wgpu unit tests. The render-wgpu JSDOM mock device is no-op
 // (records nothing), so 3D tests that exercise the pipeline cache / upload / draw path drive this
@@ -132,4 +136,10 @@ export function makeWgpuSceneState(): { fake: FakeWgpu; state: WgpuRenderState }
   state[EntityRuntimeKey] = runtime;
 
   return { fake: { calls }, state };
+}
+
+export function makeWgpuSkinningAdapter(): WgpuSkinningAdapter {
+  const { state } = makeWgpuSceneState();
+  registerWgpuGpuSkinning(state);
+  return getWgpuSkinningAdapter(state)!;
 }
