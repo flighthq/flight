@@ -49,6 +49,7 @@ describe('buildGlPbrStandardDefineKey', () => {
   it('returns all-false map and extension flags for a null block', () => {
     const key = buildGlPbrStandardDefineKey(null, false);
     expect(key.clearcoatEnabled).toBe(false);
+    expect(key.hasAlphaMap).toBe(false);
     expect(key.hasBaseColorMap).toBe(false);
     expect(key.hasEmissiveMap).toBe(false);
     expect(key.hasMetallicRoughnessMap).toBe(false);

@@ -9,6 +9,7 @@ function makeKey(overrides?: Partial<GlPbrDefineKey>): GlPbrDefineKey {
     alphaMaskEnabled: false,
     anisotropyEnabled: false,
     clearcoatEnabled: false,
+    hasAlphaMap: false,
     hasBaseColorMap: false,
     hasEmissiveMap: false,
     hasMetallicRoughnessMap: false,
@@ -95,7 +96,7 @@ describe('ensureGlPbrProgram', () => {
     const skinned = ensureGlPbrProgram(state, KEY);
 
     expect(skinned).not.toBe(rigid);
-    expect([...getGlSceneRuntime(state).programCache.keys()]).toContain('pbr:-------:-------k');
+    expect([...getGlSceneRuntime(state).programCache.keys()]).toContain('pbr:--------:-------k');
     expect(skinned.locJointTexture).not.toBeNull();
   });
 
