@@ -45,6 +45,7 @@ export * from './AttractorForce';
 export * from './AudioBus';
 export * from './AudioResource';
 export * from './AutoExposureEffect';
+export * from './AwdDecompressor';
 export * from './BarrelDistortionEffect';
 export * from './BatchBarrier';
 export * from './BatchFormat';
