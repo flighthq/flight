@@ -21,6 +21,8 @@ import { isMesh } from './mesh';
 // node); a caller fitting a volume around the result absorbs pose excursions with padding instead.
 //
 // Alias-safe: reads all geometry bounds and world transforms before accumulating into `out`.
+// Skinned meshes contribute their bind-pose geometry extents. Posed-accurate aggregate bounds are
+// caller composition above the scene layer; shadow fits can use padding to absorb pose excursions.
 export function getSceneNodeWorldBounds(out: AabbLike, node: Readonly<SceneNode>): void {
   // Reset to empty before accumulation.
   setAabb(
