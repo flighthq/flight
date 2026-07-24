@@ -93,9 +93,10 @@ export function parseObj(
     const spaceIndex = raw.indexOf(' ');
     if (spaceIndex < 0) {
       // A bare recognized directive (no arguments). For v/vn/vt/f it drops the geometry it announced — a
-      // data-dropping branch, not a silent no-op. For g/o/usemtl a bare form is a defined OBJ state (Wavefront
-      // Appendix B1): a group/object with no name is the DEFAULT (unnamed) group, and `usemtl` with no name
-      // selects the DEFAULT material (white / no material).
+      // data-dropping branch, not a silent no-op. Bare `g` is the spec-defined DEFAULT (unnamed) group and
+      // bare `usemtl` the spec-defined DEFAULT material (white / no material) — Wavefront Appendix B1. Bare
+      // `o` has NO spec default (the spec always names an object), so it is treated as a permissive unnamed
+      // boundary — importer recovery, not a spec default — handled the same as `g` for consistency.
       if (raw === 'v')
         tallyObjDrop(objDrops, ImportDiagnosticSeverity.Drop, 'obj.vertex-malformed', 'too-few-components', {
           firstLine: i + 1,
@@ -114,7 +115,8 @@ export function parseObj(
       else if (raw === 'f')
         tallyObjDrop(objDrops, ImportDiagnosticSeverity.Drop, 'obj.face-too-few-vertices', '', { firstLine: i + 1 });
       else if (raw === 'g' || raw === 'o') {
-        // Close the current group and enter the default (unnamed) group — the same boundary a named g/o makes.
+        // Close the current group and enter the unnamed group — the same boundary a named g/o makes. For `g`
+        // this is the spec default group; for `o` it is a permissive importer-recovery boundary (see above).
         flushGroup(materialBuckets, currentGroupName, document, materials, resolvedMaterials, diagnostics);
         materialBuckets = new Map<string, MaterialBucket>();
         currentGroupName = undefined;
