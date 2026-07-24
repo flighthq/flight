@@ -723,10 +723,26 @@ function buildAwdDocumentAnimations(
         const skeleton = parseSkeletonBlock(view, source, blockDataStart, blockDataStart + blockLength, matrixWide);
         if (skeleton !== null) skeletonBlocks.set(blockId, skeleton);
       } else if (blockType === AWD2_BLOCK_SKELETON_POSE) {
-        const pose = parseSkeletonPoseBlock(view, source, blockDataStart, blockDataStart + blockLength, matrixWide);
+        // Pose/animation blocks are NOT parsed by parseAwd2's first walk, so this document-path walk is
+        // their only reporting site — thread the sink. The skeleton block above is deliberately left
+        // sink-less: the first walk already parses (and reports) it, so threading here would double-report.
+        const pose = parseSkeletonPoseBlock(
+          view,
+          source,
+          blockDataStart,
+          blockDataStart + blockLength,
+          matrixWide,
+          diagnostics,
+        );
         if (pose !== null) poseBlocks.set(blockId, pose);
       } else if (blockType === AWD2_BLOCK_SKELETON_ANIMATION) {
-        const anim = parseSkeletonAnimationBlock(view, source, blockDataStart, blockDataStart + blockLength);
+        const anim = parseSkeletonAnimationBlock(
+          view,
+          source,
+          blockDataStart,
+          blockDataStart + blockLength,
+          diagnostics,
+        );
         if (anim !== null) animationBlocks.set(blockId, anim);
       }
     }
