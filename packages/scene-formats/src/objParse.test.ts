@@ -207,6 +207,58 @@ describe('createSceneFromObj', () => {
     expect(getMeshGeometryIndexCount(mesh.geometry)).toBe(6);
   });
 
+  it('treats a bare g as the default (unnamed) group, closing the prior named group', () => {
+    // Wavefront spec: a group with no name is the default group. A bare `g` must close group A and enter it,
+    // not leave the following face in A. This is a defined state, not a drop — no diagnostic.
+    const obj = [
+      'v 0 0 0',
+      'v 1 0 0',
+      'v 0 1 0',
+      'v 2 0 0',
+      'v 2 1 0',
+      'v 3 0 0',
+      'g A',
+      'f 1 2 3',
+      'g',
+      'f 4 5 6',
+    ].join('\n');
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromObj(obj, undefined, diagnostics);
+    const roots = getNodeChildren(scene.root);
+    expect(roots).toHaveLength(2);
+    expect((roots[0] as SceneNode).name).toBe('A');
+    expect((roots[1] as SceneNode).name).toBeNull(); // the default (unnamed) group after the bare g
+    expect(diagnostics).toHaveLength(0);
+  });
+
+  it('treats a bare usemtl as the default material, clearing the previously active one', () => {
+    // Wavefront spec: `usemtl` with no name is the default (white / no) material. A bare `usemtl` must clear
+    // the active material so the following faces are NOT bound to the stale one. A defined state, not a drop.
+    const library = parseObjMaterialLibrary('newmtl Red\nKd 1 0 0\n');
+    const obj = [
+      'v 0 0 0',
+      'v 1 0 0',
+      'v 0 1 0',
+      'v 2 0 0',
+      'v 2 1 0',
+      'v 3 0 0',
+      'usemtl Red',
+      'f 1 2 3',
+      'usemtl',
+      'f 4 5 6',
+    ].join('\n');
+    const diagnostics: ImportDiagnostic[] = [];
+    const mesh = getNodeChildren(createSceneFromObj(obj, library, diagnostics).root)[0] as Mesh;
+    // One group, two subsets: the Red material then the default (no material) after the bare usemtl — the
+    // second slot must be null, NOT a stale Red.
+    expect(mesh.geometry.subsets).toHaveLength(2);
+    expect(mesh.materials).toHaveLength(2);
+    expect(mesh.materials[0]).not.toBeNull();
+    expect((mesh.materials[0] as BlinnPhongMaterial).kind).toBe(BlinnPhongMaterialKind);
+    expect(mesh.materials[1]).toBeNull();
+    expect(diagnostics).toHaveLength(0);
+  });
+
   it('returns an empty scene for empty input', () => {
     const scene = createSceneFromObj('');
     expect(getNodeChildren(scene.root)).toHaveLength(0);

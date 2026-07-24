@@ -92,8 +92,10 @@ export function parseObj(
 
     const spaceIndex = raw.indexOf(' ');
     if (spaceIndex < 0) {
-      // A bare recognized geometry directive (no arguments) still drops the vertex/normal/uv/face it
-      // announced — a data-dropping branch, not a silent no-op. (`g`/`o`/`usemtl`/`mtllib` bare are valid.)
+      // A bare recognized directive (no arguments). For v/vn/vt/f it drops the geometry it announced — a
+      // data-dropping branch, not a silent no-op. For g/o/usemtl a bare form is a defined OBJ state (Wavefront
+      // Appendix B1): a group/object with no name is the DEFAULT (unnamed) group, and `usemtl` with no name
+      // selects the DEFAULT material (white / no material).
       if (raw === 'v')
         tallyObjDrop(objDrops, ImportDiagnosticSeverity.Drop, 'obj.vertex-malformed', 'too-few-components', {
           firstLine: i + 1,
@@ -111,6 +113,17 @@ export function parseObj(
         });
       else if (raw === 'f')
         tallyObjDrop(objDrops, ImportDiagnosticSeverity.Drop, 'obj.face-too-few-vertices', '', { firstLine: i + 1 });
+      else if (raw === 'g' || raw === 'o') {
+        // Close the current group and enter the default (unnamed) group — the same boundary a named g/o makes.
+        flushGroup(materialBuckets, currentGroupName, document, materials, resolvedMaterials, diagnostics);
+        materialBuckets = new Map<string, MaterialBucket>();
+        currentGroupName = undefined;
+      } else if (raw === 'usemtl') {
+        // Reset to the default material rather than leaving the previous one bound to subsequent faces.
+        activeMaterial = '';
+      }
+      // A bare `mtllib` names no library file; the library is supplied via the `materials` param, so — like a
+      // filename-bearing `mtllib` — it is a deliberate no-op (nothing to load, no authored data dropped).
       continue;
     }
 
