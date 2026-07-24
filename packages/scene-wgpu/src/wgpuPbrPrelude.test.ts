@@ -6,6 +6,7 @@ import {
   getWgpuPbrModuleBody,
   getWgpuPbrModuleSourceForKey,
 } from './wgpuPbrPrelude';
+import { makeWgpuSkinningAdapter } from './wgpuSceneTestHelper';
 
 function key(overrides?: Partial<WgpuPbrDefineKey>): WgpuPbrDefineKey {
   return {
@@ -145,5 +146,7 @@ describe('getWgpuPbrModuleSourceForKey', () => {
     expect(source).toContain('fn fs_main');
     expect(source).toContain('@interpolate(flat) objectAlpha : f32');
     expect(source).toContain('alpha * in.objectAlpha');
+    expect(source).not.toContain('jointTexture');
+    expect(getWgpuPbrModuleSourceForKey(k, true, makeWgpuSkinningAdapter())).toContain('textureLoad(jointTexture');
   });
 });

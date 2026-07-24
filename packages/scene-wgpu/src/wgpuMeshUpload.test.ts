@@ -1,10 +1,16 @@
-import { createBoxMeshGeometry, createMeshGeometry } from '@flighthq/mesh';
+import {
+  CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
+  createBoxMeshGeometry,
+  createMeshGeometry,
+  setMeshGeometrySkinBindPose,
+} from '@flighthq/mesh';
 import type { MeshGeometryRuntime } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
 import { ensureWgpuMeshUpload } from './wgpuMeshUpload';
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 import { makeWgpuSceneState } from './wgpuSceneTestHelper';
+import { registerWgpuGpuSkinning } from './wgpuSkinPalette';
 
 describe('ensureWgpuMeshUpload', () => {
   it('uploads vertex + index buffers and caches by geometry', () => {
@@ -38,6 +44,38 @@ describe('ensureWgpuMeshUpload', () => {
     const second = ensureWgpuMeshUpload(state, geometry);
     expect(second).not.toBe(first);
     expect(second!.version).toBe(geometry.version);
+  });
+
+  it('uploads captured bind-pose positions for a GPU-skinned geometry', () => {
+    const { fake, state } = makeWgpuSceneState();
+    registerWgpuGpuSkinning(state);
+    const vertices = new Float32Array(20);
+    vertices[0] = 9;
+    const geometry = createMeshGeometry({
+      indices: new Uint16Array([0, 0, 0]),
+      layout: CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
+      vertices,
+    });
+    setMeshGeometrySkinBindPose(geometry, {
+      joints: new Float32Array([0, 0, 0, 0]),
+      normals: new Float32Array([0, 1, 0]),
+      positions: new Float32Array([1, 2, 3]),
+      skinnedNormals: new Float32Array(3),
+      skinnedPositions: new Float32Array(3),
+      weights: new Float32Array([1, 0, 0, 0]),
+    });
+
+    const upload = ensureWgpuMeshUpload(state, geometry, true);
+    const write = fake.calls.find((call) => call.name === 'writeBuffer')!;
+    const uploadedVertices = new Float32Array(
+      write.args[2] as ArrayBuffer,
+      write.args[3] as number,
+      (write.args[4] as number) / 4,
+    );
+
+    expect(upload?.skinBindUploaded).toBe(true);
+    expect(Array.from(uploadedVertices.slice(0, 3))).toEqual([1, 2, 3]);
+    expect(geometry.vertices[0]).toBe(9);
   });
 
   it('mirrors the upload onto MeshGeometryRuntime.webgpuData', () => {

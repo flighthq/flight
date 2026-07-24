@@ -64,6 +64,7 @@ export interface WgpuSceneRuntime {
   // Whether the run currently being bound uses the blended pipeline variant. drawWgpuScene sets this
   // before bind(); each family's ensure function folds it into the immutable pipeline state/cache key.
   activeBlendedRun: boolean;
+  activeSkinnedRun: boolean;
   activeMeshPipeline: WgpuMeshPipeline | null;
   blendedDrawList: WgpuSceneDrawEntry[];
   blendedPool: WgpuSceneDrawEntry[];
@@ -126,6 +127,12 @@ export interface WgpuSceneRuntime {
   // leak into @flighthq/types; scene-wgpu narrows them at the ownership boundary.
   shadedMaterialBindingCache: WeakMap<object, unknown>;
   shadedMaterialPlanCache: WeakMap<object, unknown>;
+  skinDrawBindGroup: GPUBindGroup | null;
+  skinDrawBindGroupLayout: GPUBindGroupLayout | null;
+  skinPaletteCapacity: number;
+  skinPaletteTexture: GPUTexture | null;
+  skinPaletteView: GPUTextureView | null;
+  skinningAdapter: unknown | null;
   uploadCache: WeakMap<object, WgpuMeshUpload>;
 }
 
@@ -137,6 +144,7 @@ export interface WgpuMeshUpload {
   indexBuffer: GPUBuffer | null;
   indexCount: number;
   indexFormat: GPUIndexFormat;
+  skinBindUploaded?: boolean;
   version: number;
   vertexBuffer: GPUBuffer;
 }

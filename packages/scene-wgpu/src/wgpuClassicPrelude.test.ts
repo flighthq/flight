@@ -9,7 +9,7 @@ import {
   getWgpuClassicModuleSourceForKey,
 } from './wgpuClassicPrelude';
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
-import { makeWgpuSceneState } from './wgpuSceneTestHelper';
+import { makeWgpuSceneState, makeWgpuSkinningAdapter } from './wgpuSceneTestHelper';
 
 function makeKey(lightingModel: WgpuClassicLightingModel): WgpuClassicDefineKey {
   return {
@@ -132,6 +132,13 @@ describe('getWgpuClassicModuleSourceForKey', () => {
     const lambert = getWgpuClassicModuleSourceForKey(makeKey('lambert'));
     expect(lambert).toContain('const LIGHTING_PHONG : bool = false;');
     expect(lambert).toContain('const LIGHTING_BLINNPHONG : bool = false;');
+  });
+
+  it('emits the palette and skin attributes only for the HAS_SKIN variant', () => {
+    expect(getWgpuClassicModuleSourceForKey(makeKey('blinnphong'))).not.toContain('jointTexture');
+    expect(getWgpuClassicModuleSourceForKey(makeKey('blinnphong'), true, makeWgpuSkinningAdapter())).toContain(
+      '@group(1) @binding(1) var jointTexture',
+    );
   });
 
   it('declares the group(3) shadow bindings and shadow-maps the directional term', () => {

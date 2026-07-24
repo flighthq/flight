@@ -1,5 +1,6 @@
 import type { WgpuSceneRuntime, WgpuRenderState, WgpuRenderStateRuntime } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
+import type { WgpuSkinningAdapter } from '@flighthq/types';
 
 // Resolves scene-wgpu's private runtime for a WgpuRenderState, allocating it (and wiring the header
 // runtime slots to its registry and upload cache) on first use. Mutable by design: the draw path
@@ -10,6 +11,7 @@ export function getWgpuSceneRuntime(state: WgpuRenderState): WgpuSceneRuntime {
   if (scene === undefined) {
     scene = {
       activeBlendedRun: false,
+      activeSkinnedRun: false,
       activeMeshPipeline: null,
       blendedDrawList: [],
       blendedPool: [],
@@ -56,6 +58,12 @@ export function getWgpuSceneRuntime(state: WgpuRenderState): WgpuSceneRuntime {
       shadowUniformBuffer: null,
       shadedMaterialBindingCache: new WeakMap(),
       shadedMaterialPlanCache: new WeakMap(),
+      skinDrawBindGroup: null,
+      skinDrawBindGroupLayout: null,
+      skinPaletteCapacity: 0,
+      skinPaletteTexture: null,
+      skinPaletteView: null,
+      skinningAdapter: null,
       uploadCache: new WeakMap(),
     };
     sceneRuntimes.set(state, scene);
@@ -65,6 +73,10 @@ export function getWgpuSceneRuntime(state: WgpuRenderState): WgpuSceneRuntime {
     stateRuntime.sceneMeshUploadCache = scene.uploadCache;
   }
   return scene;
+}
+
+export function getWgpuSkinningAdapter(state: WgpuRenderState): WgpuSkinningAdapter | null {
+  return getWgpuSceneRuntime(state).skinningAdapter as WgpuSkinningAdapter | null;
 }
 
 const sceneRuntimes = new WeakMap<WgpuRenderState, WgpuSceneRuntime>();

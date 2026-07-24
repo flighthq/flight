@@ -1,15 +1,23 @@
-import type { LinearColor, Texture, WgpuClassicDefineKey, WgpuClassicPipeline, WgpuRenderState } from '@flighthq/types';
+import type {
+  LinearColor,
+  Texture,
+  WgpuClassicDefineKey,
+  WgpuClassicPipeline,
+  WgpuRenderState,
+  WgpuSkinningAdapter,
+} from '@flighthq/types';
 
 import {
   createWgpuMeshPipeline,
   ensureWgpuMaterialBinding,
   ensureWgpuScenePipeline,
   ensureWgpuShadowSampleLayout,
+  getWgpuMeshPreludeWgsl,
   getWgpuMaterialSampler,
   resolveWgpuMaterialTextureView,
   stashWgpuUvTransform,
-  WGPU_MESH_PRELUDE_WGSL,
 } from './wgpuMeshPipeline';
+import { getWgpuSkinningAdapter } from './wgpuSceneRuntime';
 // Ensures (and caches per material reference) the classic Material bind group — a uniform buffer + the
 // shared sampler + the placeholder diffuse/specular/normal textures — and rewrites its uniform with
 // this surface's linear diffuse + specular colors, shininess, and alpha cutoff. Mirrors scene-gl's
@@ -83,9 +91,12 @@ export function compileWgpuClassicPipeline(
   key: Readonly<WgpuClassicDefineKey>,
   format: GPUTextureFormat,
   blended = false,
+  skinned = false,
 ): WgpuClassicPipeline {
   const device = state.device;
-  const module = device.createShaderModule({ code: getWgpuClassicModuleSourceForKey(key) });
+  const module = device.createShaderModule({
+    code: getWgpuClassicModuleSourceForKey(key, skinned, getWgpuSkinningAdapter(state)),
+  });
   const materialBindGroupLayout = device.createBindGroupLayout({
     entries: [
       { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
@@ -106,6 +117,7 @@ export function compileWgpuClassicPipeline(
     materialBindGroupLayout,
     module,
     shadowBindGroupLayout: ensureWgpuShadowSampleLayout(state),
+    skinned,
   });
 }
 
@@ -117,14 +129,18 @@ export function ensureWgpuClassicPipeline(
   key: Readonly<WgpuClassicDefineKey>,
   format: GPUTextureFormat,
 ): WgpuClassicPipeline {
-  return ensureWgpuScenePipeline(state, `classic:${format}|${buildWgpuClassicDefineKey(key)}`, (blended) =>
-    compileWgpuClassicPipeline(state, key, format, blended),
+  return ensureWgpuScenePipeline(state, `classic:${format}|${buildWgpuClassicDefineKey(key)}`, (blended, skinned) =>
+    compileWgpuClassicPipeline(state, key, format, blended, skinned),
   );
 }
 
 // The full WGSL module source for a define key: the const-flag block (lighting model first) + the
 // shared mesh prelude (Frame/Draw/vs_main/srgbToLinear) + the classic material block + fs_main.
-export function getWgpuClassicModuleSourceForKey(key: Readonly<WgpuClassicDefineKey>): string {
+export function getWgpuClassicModuleSourceForKey(
+  key: Readonly<WgpuClassicDefineKey>,
+  skinned = false,
+  skinning: Readonly<WgpuSkinningAdapter> | null = null,
+): string {
   return (
     `const LIGHTING_PHONG : bool = ${key.lightingModel === 'phong' ? 'true' : 'false'};\n` +
     `const LIGHTING_BLINNPHONG : bool = ${key.lightingModel === 'blinnphong' ? 'true' : 'false'};\n` +
@@ -134,7 +150,7 @@ export function getWgpuClassicModuleSourceForKey(key: Readonly<WgpuClassicDefine
     `const HAS_SPECULAR_MAP : bool = ${key.hasSpecularMap ? 'true' : 'false'};\n` +
     `const HAS_NORMAL_MAP : bool = ${key.hasNormalMap ? 'true' : 'false'};\n` +
     `const HAS_ALPHA_MAP : bool = ${key.hasAlphaMap ? 'true' : 'false'};\n` +
-    WGPU_MESH_PRELUDE_WGSL +
+    getWgpuMeshPreludeWgsl(skinned, skinning) +
     CLASSIC_WGSL_BODY
   );
 }

@@ -61,8 +61,8 @@ describe('ensureWgpuDebugPipeline', () => {
 
     const keys = [...getWgpuSceneRuntime(state).pipelineCache.keys()];
     expect(keys.some((k) => k.startsWith('debug:'))).toBe(true);
-    expect(keys).toContain('debug:bgra8unorm|d-|opaque');
-    expect(keys).toContain('debug:bgra8unorm|n-|opaque');
+    expect(keys).toContain('debug:bgra8unorm|d-|opaque|rigid');
+    expect(keys).toContain('debug:bgra8unorm|n-|opaque|rigid');
   });
 });
 

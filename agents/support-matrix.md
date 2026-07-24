@@ -19,7 +19,7 @@ drift-gated by `npm run support:check` (part of `npm run check`).
 
 | Canvas | DOM | WebGL | WebGPU |
 | --- | --- | --- | --- |
-| 91 / 142 | 39 / 142 | 136 / 142 | 124 / 142 |
+| 91 / 142 | 39 / 142 | 136 / 142 | 125 / 142 |
 
 All four backends re-verify in-sandbox — WebGPU via SwiftShader software Vulkan. A small set of WebGPU scenes exceed the fingerprint tolerance on software-vs-hardware antialiasing differences; see [maturity-gaps](maturity-gaps.md).
 
@@ -36,7 +36,6 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 | Resource lifecycle | Compressed texture upload (KTX2 / DDS / Basis) | `partial` | GL-native block upload landed (render-gl uploadGlCompressedTextureContainer + display draw path, behind the opt-in registerGlCompressedTextureUpload seam, with an RGBA decode fallback); wgpu/canvas/dom have none. Still no Basis/supercompression transcoder — supercompressed containers report the failure sentinel. |
 | Resource lifecycle | Texture unload / eviction / streaming (mip/LOD) | `not-implemented` | scene-resources resolves but never releases; assets refcount wired to nothing; no progressive streaming. |
 | Simulation | Physics / dynamics (rigid-body solver, swept/TOI, contacts) | `not-implemented` | collision is discrete overlap + MTV only; no solver, no world integration. |
-| Skinning | GPU skinning — PBR / toon / unlit / matcap families | `not-implemented` | HAS_SKIN wired only for the classic prelude on WebGL; other families fall back to CPU deform. WebGPU: none. |
 | Skinning | Morph targets / blend shapes / IK / blend trees | `not-implemented` | skeleton3d Phase 4, chartered separately, not built. |
 | Text | Bidi / complex-script shaping / MSDF | `not-implemented` | textbidi (UAX#9) + textsegment (UAX#29) ship but are wired into nothing; no real shaping backend (advances-only); MSDF parses, no shader. Non-Latin renders wrong. |
 
@@ -216,7 +215,7 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
 | `scene-morph` | · | · | ✓ | · |
-| `scene-skinning` | · | · | ✓ | · |
+| `scene-skinning` | · | · | ✓ | ✓ |
 | `scene-transparent` | · | · | · | ✓ |
 
 ### Scene Node

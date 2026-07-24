@@ -1,4 +1,5 @@
 import type { WgpuPbrDefineKey } from '@flighthq/types';
+import type { WgpuSkinningAdapter } from '@flighthq/types';
 // The shared Wgpu PBR prelude: the WGSL vertex + fragment uber-shader for the StandardPbr forward-lit
 // path AND every PBR-extension variant — the WGSL mirror of scene-gl's glPbrPrelude. One module source
 // is specialized per material at compile time by prepending a const-flag block (see WgpuPbrDefineKey /
@@ -88,8 +89,15 @@ export function getWgpuPbrModuleBody(): string {
 
 // The full WGSL module source for a define key (flag block + body), ready to hand to
 // device.createShaderModule. Convenience over buildWgpuPbrDefineSource + getWgpuPbrModuleBody.
-export function getWgpuPbrModuleSourceForKey(key: Readonly<WgpuPbrDefineKey>): string {
-  return buildWgpuPbrDefineSource(key) + PBR_WGSL_BODY;
+export function getWgpuPbrModuleSourceForKey(
+  key: Readonly<WgpuPbrDefineKey>,
+  skinned = false,
+  skinning: Readonly<WgpuSkinningAdapter> | null = null,
+): string {
+  return (
+    buildWgpuPbrDefineSource(key) +
+    (skinned && skinning !== null ? skinning.extendMeshPrelude(PBR_WGSL_BODY) : PBR_WGSL_BODY)
+  );
 }
 
 const PBR_WGSL_BODY = /* wgsl */ `
@@ -202,11 +210,14 @@ struct VertexOutput {
   @location(3) uv : vec2f,
 ) -> VertexOutput {
   var out : VertexOutput;
-  let world = draw.world * vec4f(position, 1.0);
+  var localPosition = vec4f(position, 1.0);
+  var localNormal = normal;
+  var localTangent = tangent.xyz;
+  let world = draw.world * localPosition;
   out.worldPosition = world.xyz;
   out.clipPosition = frame.viewProjection * world;
-  out.worldNormal = draw.normalMatrix * normal;
-  out.worldTangent = vec4f(draw.normalMatrix * tangent.xyz, tangent.w);
+  out.worldNormal = draw.normalMatrix * localNormal;
+  out.worldTangent = vec4f(draw.normalMatrix * localTangent, tangent.w);
   // draw.uvTransform is identity for an untiled material, so this reproduces the raw uv; see the shared
   // vs_main in wgpuMeshPipeline for why the KHR transform is applied unconditionally rather than gated.
   out.uv = (draw.uvTransform * vec3f(uv, 1.0)).xy;

@@ -34,6 +34,7 @@ import {
   VertexDisplaceModifierKind,
   VertexDisplaceModifierSource,
 } from '@flighthq/types';
+import type { WgpuSkinningAdapter } from '@flighthq/types';
 
 import { getWgpuShadedBaseFlags } from './shadedWgpuMeshMaterialRenderer';
 import { getWgpuClassicModuleSourceForKey } from './wgpuClassicPrelude';
@@ -45,7 +46,7 @@ import {
   resolveWgpuMaterialTextureView,
   stashWgpuUvTransform,
 } from './wgpuMeshPipeline';
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
+import { getWgpuSceneRuntime, getWgpuSkinningAdapter } from './wgpuSceneRuntime';
 import { getWgpuSceneTime } from './wgpuSceneTime';
 import { registerWgpuModifierSnippet } from './wgpuShadedModifierSnippet';
 
@@ -218,7 +219,7 @@ export function ensureWgpuShadedPipeline(
   const defineKey = buildWgpuShadedCacheKey(material, registry);
   const plan = getCachedModifierPlan(state, material, registry, defineKey);
   const key = `${defineKey}|registry:${getWgpuSceneRuntime(state).modifierSnippetRevision}|${format}`;
-  return ensureWgpuScenePipeline(state, key, (blended) => {
+  return ensureWgpuScenePipeline(state, key, (blended, skinned) => {
     const entries: GPUBindGroupLayoutEntry[] = [
       {
         binding: 0,
@@ -251,7 +252,9 @@ export function ensureWgpuShadedPipeline(
       });
     }
     const materialBindGroupLayout = state.device.createBindGroupLayout({ entries });
-    const module = state.device.createShaderModule({ code: assembleWgpuShadedModuleSource(material, plan) });
+    const module = state.device.createShaderModule({
+      code: assembleWgpuShadedModuleSource(material, plan, skinned, getWgpuSkinningAdapter(state)),
+    });
     return createWgpuMeshPipeline(state, {
       blended,
       doubleSided: getWgpuShadedBaseFlags(material).doubleSided,
@@ -259,6 +262,7 @@ export function ensureWgpuShadedPipeline(
       materialBindGroupLayout,
       module,
       pbrSampleBindGroupLayout: ensureWgpuPbrSampleLayout(state),
+      skinned,
     });
   });
 }
@@ -269,14 +273,18 @@ export function ensureWgpuShadedPipeline(
 export function getWgpuShadedModuleSource(
   material: Readonly<ShadedMaterial>,
   registry: Readonly<ModifierRegistry> = EMPTY_MODIFIER_REGISTRY,
+  skinned = false,
+  skinning: Readonly<WgpuSkinningAdapter> | null = null,
 ): string {
   const plan = buildModifierPlan(material.modifiers, registry);
-  return assembleWgpuShadedModuleSource(material, plan);
+  return assembleWgpuShadedModuleSource(material, plan, skinned, skinning);
 }
 
 function assembleWgpuShadedModuleSource(
   material: Readonly<ShadedMaterial>,
   plan: Readonly<ShadedModifierPlan>,
+  skinned: boolean,
+  skinning: Readonly<WgpuSkinningAdapter> | null,
 ): string {
   const flags = getWgpuShadedBaseFlags(material);
   const defineKey = {
@@ -288,19 +296,13 @@ function assembleWgpuShadedModuleSource(
     hasSpecularMap: flags.hasSpecularMap,
     lightingModel: 'blinnphong',
   } as const;
-  let source = getWgpuClassicModuleSourceForKey(defineKey);
+  let source = getWgpuClassicModuleSourceForKey(defineKey, skinned, skinning);
 
   source = source.replace(
-    'let world = draw.world * vec4f(position, 1.0);',
-    `var localPosition = vec4f(position, 1.0);
-  let localNormal = normal;
-  let vertexUv = uv;
+    '  let world = draw.world * localPosition;',
+    `  let vertexUv = uv;
 ${indent(plan.vertex, 2)}
   let world = draw.world * localPosition;`,
-  );
-  source = source.replace(
-    'out.worldNormal = draw.normalMatrix * normal;',
-    'out.worldNormal = draw.normalMatrix * localNormal;',
   );
   const modifierField =
     plan.uniformFloatCount === 0 ? '' : `\n  modifierData : array<vec4f, ${plan.uniformFloatCount / 4}>,`;

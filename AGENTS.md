@@ -279,7 +279,7 @@ Quick-reference for common feature keywords. All package names use the `@flighth
 | Camera (2D) | `camera` (`Camera2D`) | headless | Deadzone, parallax, zoom (absorbed from former `camera2d`) |
 | Camera (3D) | `camera` | gl, wgpu | Perspective, orthographic, frustum |
 | Tween / Spring / Easing | `tween`, `spring`, `easing` | headless |  |
-| Skeletal animation (GPU skinning) | `skeleton3d` + `animation` + `scene-gl` | gl | `HAS_SKIN` across classic/pbr/toon/unlit/shaded (bone-palette RGBA32F **data texture** read via `texelFetch` — joint count bounded by MAX_TEXTURE_SIZE, no uniform-budget cap, no CPU fallback). CPU kernel in `skeleton3d` for bounds/picking only. **wgpu unbuilt** — [wgpu-3d-parity-spec.md](agents/wgpu-3d-parity-spec.md) §3 |
+| Skeletal animation (GPU skinning) | `skeleton3d` + `animation` + `scene-gl` + `scene-wgpu` | gl, wgpu | `HAS_SKIN` across classic/pbr/toon/unlit/shaded with a growable single-row RGBA32F data-texture palette (`texelFetch` on gl, `textureLoad` on wgpu), no uniform-budget cap and no CPU draw fallback. WebGPU opts into its tree-shakeable permutation with `registerWgpuGpuSkinning(state)`. CPU kernel in `skeleton3d` is for bounds/picking only. [wgpu-3d-parity-spec.md](agents/wgpu-3d-parity-spec.md) §3 |
 | Morph / blend shapes | `mesh` + `scene` + `scene-gl` | gl | glTF/MD2 import; CPU-blend-then-upload. wgpu unbuilt |
 | Spritesheet animation | `spritesheet` + `movieclip` | canvas, gl, wgpu |  |
 | Path / shapes | `path` + `shape` | canvas, dom, gl, wgpu |  |

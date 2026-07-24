@@ -6,16 +6,17 @@ import type {
   WgpuUnlitDefineKey,
   WgpuUnlitPipeline,
 } from '@flighthq/types';
+import type { WgpuSkinningAdapter } from '@flighthq/types';
 
 import {
   createWgpuMeshPipeline,
   ensureWgpuScenePipeline,
+  getWgpuMeshPreludeWgsl,
   getWgpuMaterialSampler,
   resolveWgpuMaterialTextureView,
   stashWgpuUvTransform,
-  WGPU_MESH_PRELUDE_WGSL,
 } from './wgpuMeshPipeline';
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
+import { getWgpuSceneRuntime, getWgpuSkinningAdapter } from './wgpuSceneRuntime';
 // Ensures (and caches per material reference) the unlit Material bind group — a uniform buffer + the
 // shared sampler + the placeholder color texture — and rewrites its uniform with this surface's linear
 // color, intensity, and alpha cutoff. Mirrors scene-gl's bindGlUnlitSurface. Returns the bind group for
@@ -76,9 +77,12 @@ export function compileWgpuUnlitPipeline(
   key: Readonly<WgpuUnlitDefineKey>,
   format: GPUTextureFormat,
   blended = false,
+  skinned = false,
 ): WgpuUnlitPipeline {
   const device = state.device;
-  const module = device.createShaderModule({ code: getWgpuUnlitModuleSourceForKey(key) });
+  const module = device.createShaderModule({
+    code: getWgpuUnlitModuleSourceForKey(key, skinned, getWgpuSkinningAdapter(state)),
+  });
   const materialBindGroupLayout = device.createBindGroupLayout({
     entries: [
       { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
@@ -92,6 +96,7 @@ export function compileWgpuUnlitPipeline(
     format,
     materialBindGroupLayout,
     module,
+    skinned,
   });
 }
 
@@ -102,18 +107,22 @@ export function ensureWgpuUnlitPipeline(
   key: Readonly<WgpuUnlitDefineKey>,
   format: GPUTextureFormat,
 ): WgpuUnlitPipeline {
-  return ensureWgpuScenePipeline(state, `unlit:${format}|${buildWgpuUnlitDefineKey(key)}`, (blended) =>
-    compileWgpuUnlitPipeline(state, key, format, blended),
+  return ensureWgpuScenePipeline(state, `unlit:${format}|${buildWgpuUnlitDefineKey(key)}`, (blended, skinned) =>
+    compileWgpuUnlitPipeline(state, key, format, blended, skinned),
   );
 }
 
 // The full WGSL module source for a define key: the const-flag block + the shared mesh prelude (Frame/
 // Draw/vs_main/srgbToLinear) + the unlit material block + fs_main.
-export function getWgpuUnlitModuleSourceForKey(key: Readonly<WgpuUnlitDefineKey>): string {
+export function getWgpuUnlitModuleSourceForKey(
+  key: Readonly<WgpuUnlitDefineKey>,
+  skinned = false,
+  skinning: Readonly<WgpuSkinningAdapter> | null = null,
+): string {
   return (
     `const ALPHA_MASK : bool = ${key.alphaMaskEnabled ? 'true' : 'false'};\n` +
     `const HAS_COLOR_MAP : bool = ${key.hasColorMap ? 'true' : 'false'};\n` +
-    WGPU_MESH_PRELUDE_WGSL +
+    getWgpuMeshPreludeWgsl(skinned, skinning) +
     UNLIT_WGSL_BODY
   );
 }
