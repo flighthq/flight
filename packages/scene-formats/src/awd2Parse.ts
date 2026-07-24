@@ -1454,8 +1454,10 @@ function readAwdPropertyUint32(
 
 // Resolves an AWD material block id to a document material INDEX (appended to `document.materials`),
 // memoized so a material shared by several subsets registers one entry (and one Texture/ImageResource per
-// shared texture). Anything that resolves to no color and no textures returns -1 (a bare, unmaterialed
-// subset — the assembler resolves an out-of-range index to null).
+// shared texture). An EXISTING material block ALWAYS produces a ShadedMaterial — a block with no base
+// properties (no color, no textures, alpha-only, or method-only) is a valid material and defaults to
+// opaque white, honoring the uniform-ShadedMaterial rule. Only the sentinel id 0 (subset declares no
+// material) and a referenced-but-missing block id return -1 (the assembler resolves that to a null material).
 //
 // AWD materials import as ShadedMaterial UNIFORMLY — including numMethods=0 (empty modifiers[]). AWD's
 // material model is a MethodMaterial = a BlinnPhong base + a METHODS ARRAY; ShadedMaterial (base + an
@@ -1495,10 +1497,6 @@ function resolveAwdMaterial(
       : null;
   const normalTexture =
     parsed.normalTextureId !== 0 ? resolveAwdTexture(parsed.normalTextureId, textureBlocks, document, warnings) : null;
-  if (diffuseTexture === null && normalTexture === null && parsed.color === null) {
-    cache.set(materialId, -1);
-    return -1;
-  }
 
   // A method-bearing material imports its base only (see the header note) — warn rather than silently drop.
   if (parsed.numMethods > 0) {
