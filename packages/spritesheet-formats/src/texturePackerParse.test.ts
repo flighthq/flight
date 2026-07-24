@@ -212,6 +212,13 @@ describe('parseTexturePackerSpritesheet', () => {
 });
 
 describe('parseTexturePackerSpritesheetDocument', () => {
+  it('returns an empty result (no throw) on malformed JSON', () => {
+    expect(() => parseTexturePackerSpritesheetDocument('not json')).not.toThrow();
+    const { data, document } = parseTexturePackerSpritesheetDocument('not json');
+    expect(data.frames).toHaveLength(0);
+    expect((document as { frames: unknown[] }).frames).toHaveLength(0);
+  });
+
   it('returns the same data as parseTexturePackerSpritesheet', () => {
     const parsed = parseTexturePackerSpritesheet(HASH_JSON);
     const { data } = parseTexturePackerSpritesheetDocument(HASH_JSON);
