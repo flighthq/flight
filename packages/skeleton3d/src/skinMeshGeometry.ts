@@ -67,8 +67,8 @@ export function captureMeshSkinBindPose(geometry: Readonly<MeshGeometry>): MeshS
 // first) into the bind pose's scratch, writes the skinned positions/normals back into the interleaved
 // `geometry.vertices`, and bumps `geometry.version` so the backends re-upload. `bindPose` is the
 // capture the caller holds on the geometry runtime; only the position/normal channels are rewritten,
-// so tangent/uv0/joints0/weights0 stay intact. Scene-free by design — the mesh-level glue that owns
-// the runtime slot and drives the palette lives in @flighthq/scene (updateMeshSkin).
+// so tangent/uv0/joints0/weights0 stay intact. Scene-free by design — the node-level glue that owns
+// the runtime slot and drives the palette is updateMeshSkin, beside this file.
 export function skinMeshGeometry(
   geometry: MeshGeometry,
   skeleton: Readonly<Skeleton3D>,

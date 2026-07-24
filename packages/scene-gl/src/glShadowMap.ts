@@ -1,9 +1,9 @@
 import { getCamera3DViewProjectionMatrix4 } from '@flighthq/camera';
 import { createMatrix4 } from '@flighthq/geometry';
 import { hasMeshGeometrySkin } from '@flighthq/mesh';
+import { updateMeshMorph } from '@flighthq/mesh';
 import { forEachNodeDescendant, getNodeWorldMatrix4 } from '@flighthq/node';
 import { createGlRenderTarget, uploadGlSkinPaletteTexture } from '@flighthq/render-gl';
-import { updateMeshMorph } from '@flighthq/scene';
 import type { Camera3D, GlRenderState, Mesh, SceneNode, SceneNodeTraits, GlMeshProgram } from '@flighthq/types';
 
 import {

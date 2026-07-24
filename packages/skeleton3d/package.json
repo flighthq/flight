@@ -36,7 +36,6 @@
     "@flighthq/geometry": "*",
     "@flighthq/mesh": "*",
     "@flighthq/node": "*",
-    "@flighthq/scene": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
