@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, rmSync } from 'node:fs';
-import { homedir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -34,6 +34,7 @@ const MODES: Readonly<Record<string, Mode>> = {
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const referenceRepoUrl = process.env.FLIGHT_REFERENCE_REPO ?? 'https://github.com/flighthq/flight-reference';
 const checkoutDir = process.env.FLIGHT_REFERENCE_DIR ?? join(repoRoot, '.cache', 'flight-reference');
+const npmCacheDir = process.env.npm_config_cache ?? join(tmpdir(), 'flight-reference-npm-cache');
 const isWindows = process.platform === 'win32';
 
 function run(
@@ -67,7 +68,7 @@ function ensureCheckout(refresh: boolean): boolean {
   // Install on first checkout, or after a refresh may have moved the lockfile.
   if (refresh || !existsSync(join(checkoutDir, 'node_modules'))) {
     console.error('[reference] installing flight-reference dependencies');
-    if (run('npm', ['install'], checkoutDir) !== 0) return false;
+    if (run('npm', ['install'], checkoutDir, { npm_config_cache: npmCacheDir }) !== 0) return false;
   }
 
   return true;

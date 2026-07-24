@@ -7,6 +7,10 @@ import { workspacePackages } from '../../scripts/workspaces';
 
 const projectRoot = resolve(__dirname, '../..');
 const artifactsDir = resolve(projectRoot, '.artifacts');
+const galleryArtifactFiles = [
+  join(artifactsDir, '*', '*', '*', 'screenshot.png'),
+  join(artifactsDir, '*', '*', '*', 'status.json'),
+];
 
 const TOOL_ORDER = ['functional', 'examples', 'reference'];
 const RENDERER_ORDER = ['dom', 'canvas', 'webgl', 'webgpu'];
@@ -117,7 +121,9 @@ function galleryPlugin(): Plugin[] {
 
       configureServer(server) {
         if (existsSync(artifactsDir)) {
-          server.watcher.add(artifactsDir);
+          // Capture output also contains logs and transient files. Watch only the two fixed-depth
+          // files that can change the manifest instead of recursively subscribing to the artifact tree.
+          server.watcher.add(galleryArtifactFiles);
           const refresh = (file: string) => {
             if (!file.endsWith('screenshot.png') && !file.endsWith('status.json')) return;
             const mod = server.moduleGraph.getModuleById('\0virtual:gallery-manifest');

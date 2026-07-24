@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, '..');
 const packagesDir = path.join(root, 'packages');
+const ignoredDirectoryNames = new Set(['node_modules', 'dist', 'dev-dist', '.git']);
 
 function walk(dir: string): string[] {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -12,6 +13,8 @@ function walk(dir: string): string[] {
   const results: string[] = [];
 
   for (const entry of entries) {
+    if (ignoredDirectoryNames.has(entry.name)) continue;
+
     const full = path.join(dir, entry.name);
 
     if (entry.isDirectory()) {

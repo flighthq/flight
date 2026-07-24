@@ -157,7 +157,7 @@ async function main(): Promise<void> {
     tool === 'examples' ? `${root}/examples` : tool === 'functional' ? `${root}/functional` : `${root}/site`;
 
   const watcher = chokidar.watch(watchDir, {
-    ignored: /(node_modules|dist|\.git)/,
+    ignored: /(node_modules|dist|dev-dist|\.git|\.cache|public)/,
     ignoreInitial: true,
     awaitWriteFinish: { stabilityThreshold: 200, pollInterval: 100 },
   });

@@ -50,6 +50,7 @@ export function createBaseConfig(mode: string) {
     server: {
       watch: {
         followSymlinks: true,
+        ignored: ['**/dist/**', '**/dev-dist/**', '**/.cache/**', '**/.artifacts/**', '**/node_modules/**'],
       },
     },
   });

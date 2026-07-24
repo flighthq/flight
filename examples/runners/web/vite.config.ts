@@ -338,6 +338,7 @@ export default defineConfig(() => {
       },
       watch: {
         followSymlinks: true,
+        ignored: ['**/dist/**', '**/dev-dist/**', '**/.cache/**', '**/.artifacts/**', '**/node_modules/**'],
       },
     },
   };
