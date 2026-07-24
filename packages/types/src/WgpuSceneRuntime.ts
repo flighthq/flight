@@ -39,7 +39,7 @@ export interface WgpuSceneIbl {
 // WgpuSceneRuntime so rebuilding the two passes does not allocate each frame.
 export interface WgpuSceneDrawEntry {
   alpha: number;
-  clipW: number;
+  depth: number;
   lightBlock: object;
   material: object;
   mesh: object;
