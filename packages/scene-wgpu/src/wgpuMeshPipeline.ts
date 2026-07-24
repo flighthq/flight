@@ -61,6 +61,7 @@ export function beginWgpuMeshDraw(state: WgpuRenderState, pipeline: Readonly<Wgp
 export function createWgpuMeshPipeline(
   state: WgpuRenderState,
   options: Readonly<{
+    blended?: boolean;
     doubleSided: boolean;
     format: GPUTextureFormat;
     iblBindGroupLayout?: GPUBindGroupLayout;
@@ -90,13 +91,27 @@ export function createWgpuMeshPipeline(
   const pipeline = device.createRenderPipeline({
     layout,
     vertex: { module: options.module, entryPoint: 'vs_main', buffers: VERTEX_BUFFER_LAYOUTS },
-    fragment: { module: options.module, entryPoint: 'fs_main', targets: [{ format: options.format }] },
+    fragment: {
+      module: options.module,
+      entryPoint: 'fs_main',
+      targets: [
+        {
+          format: options.format,
+          blend: options.blended
+            ? {
+                color: { srcFactor: 'src-alpha', dstFactor: 'one-minus-src-alpha', operation: 'add' },
+                alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' },
+              }
+            : undefined,
+        },
+      ],
+    },
     primitive: {
       topology: options.topology ?? 'triangle-list',
       frontFace: 'ccw',
       cullMode: options.doubleSided ? 'none' : 'back',
     },
-    depthStencil: { format: DEPTH_STENCIL_FORMAT, depthWriteEnabled: true, depthCompare: 'less' },
+    depthStencil: { format: DEPTH_STENCIL_FORMAT, depthWriteEnabled: !options.blended, depthCompare: 'less' },
   });
   return {
     hasIblGroup: options.iblBindGroupLayout !== undefined,
@@ -430,13 +445,15 @@ export function ensureWgpuSceneLayouts(state: WgpuRenderState): WgpuSceneLayouts
 export function ensureWgpuScenePipeline<T extends WgpuMeshPipeline>(
   state: WgpuRenderState,
   key: string,
-  compile: () => T,
+  compile: (blended: boolean) => T,
 ): T {
   const runtime = getWgpuSceneRuntime(state);
-  let pipeline = runtime.pipelineCache.get(key);
+  const blended = runtime.activeBlendedRun;
+  const variantKey = `${key}|${blended ? 'blend' : 'opaque'}`;
+  let pipeline = runtime.pipelineCache.get(variantKey);
   if (pipeline === undefined) {
-    pipeline = compile();
-    runtime.pipelineCache.set(key, pipeline);
+    pipeline = compile(blended);
+    runtime.pipelineCache.set(variantKey, pipeline);
   }
   return pipeline as T;
 }
@@ -644,6 +661,10 @@ export function writeWgpuDrawUniform(state: WgpuRenderState, proxy: Readonly<Sce
   u[floatOffset + 37] = uv[7];
   u[floatOffset + 38] = uv[8];
   u[floatOffset + 39] = 0;
+  u[floatOffset + 40] = proxy.alpha ?? 1;
+  u[floatOffset + 41] = 0;
+  u[floatOffset + 42] = 0;
+  u[floatOffset + 43] = 0;
 
   scene.pendingDrawOffset = offset;
   stateRuntime.uniformOffset += stateRuntime.uniformStride;
@@ -669,7 +690,18 @@ export function writeWgpuFrameUniform(
 
   const aspect = camera.projection.kind === 'perspective' ? camera.projection.aspect : 1;
   getCamera3DViewProjectionMatrix4(scratchViewProjection, camera, aspect !== 0 ? aspect : 1);
-  const vp = scratchViewProjection.m;
+  // Camera projection matrices use OpenGL's [-1, 1] NDC-Z convention. WebGPU clips Z to [0, 1],
+  // so left-multiply the view-projection by the depth correction z' = 0.5z + 0.5w. In column-major
+  // storage this replaces the Z row while preserving X, Y, and W. Shadow-map WGSL applies its own
+  // equivalent correction and deliberately does not consume this frame uniform.
+  const sourceVp = scratchViewProjection.m;
+  const webGpuVp = scratchWebGpuViewProjection.m;
+  webGpuVp.set(sourceVp);
+  webGpuVp[2] = 0.5 * (sourceVp[2] + sourceVp[3]);
+  webGpuVp[6] = 0.5 * (sourceVp[6] + sourceVp[7]);
+  webGpuVp[10] = 0.5 * (sourceVp[10] + sourceVp[11]);
+  webGpuVp[14] = 0.5 * (sourceVp[14] + sourceVp[15]);
+  const vp = webGpuVp;
   for (let i = 0; i < 16; i++) f[i] = vp[i];
 
   inverseMatrix4(scratchInverseView, camera.view);
@@ -748,6 +780,7 @@ struct Draw {
   world : mat4x4f,
   normalMatrix : mat3x3f,
   uvTransform : mat3x3f,   // KHR_texture_transform of the material's primary map (identity when unused)
+  params : vec4f,          // x = resolved object alpha
 };
 
 @group(0) @binding(0) var<uniform> frame : Frame;
@@ -759,6 +792,7 @@ struct VertexOutput {
   @location(1) worldNormal : vec3f,
   @location(2) worldTangent : vec4f,
   @location(3) uv : vec2f,
+  @location(4) @interpolate(flat) objectAlpha : f32,
 };
 
 @vertex fn vs_main(
@@ -779,6 +813,7 @@ struct VertexOutput {
   // matcap/debug/wireframe) and a const would have to thread through all of them; a per-vertex mat3
   // multiply is negligible. The scene-gl mirror gates the equivalent branch via its #ifdef variant.
   out.uv = (draw.uvTransform * vec3f(uv, 1.0)).xy;
+  out.objectAlpha = draw.params.x;
   return out;
 }
 
@@ -807,9 +842,9 @@ const FRAME_COUNTS_OFFSET = FRAME_HEMISPHERE_OFFSET + SCENE_LIGHT_HEMISPHERE_STR
 const FRAME_UNIFORM_BYTES = (FRAME_COUNTS_OFFSET + 4) * 4;
 
 // Draw uniform: mat4x4f world (64) + mat3x3f normalMatrix as 3 padded vec4 (48) + mat3x3f uvTransform as
-// 3 padded vec4 (48) = 160; the ring buffer rounds the per-slot stride up to the device's
-// minUniformBufferOffsetAlignment.
-const DRAW_UNIFORM_BYTES = 160;
+// 3 padded vec4 (48) + vec4f params (16, x = resolved object alpha) = 176; the ring buffer rounds the
+// per-slot stride up to the device's minUniformBufferOffsetAlignment.
+const DRAW_UNIFORM_BYTES = 176;
 
 // Writes the column-major identity mat3 into a uv-transform stash buffer, the untiled default.
 function resetWgpuUvTransformStash(out: Float32Array): void {
@@ -863,6 +898,7 @@ const VERTEX_BUFFER_LAYOUTS: GPUVertexBufferLayout[] = [
 ];
 
 const scratchViewProjection = createMatrix4();
+const scratchWebGpuViewProjection = createMatrix4();
 const scratchInverseView = createMatrix4();
 const scratchCameraPosition = { x: 0, y: 0, z: 0 };
 const _frameScratch = new Float32Array(FRAME_UNIFORM_BYTES / 4);

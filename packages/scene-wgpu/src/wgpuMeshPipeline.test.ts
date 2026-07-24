@@ -146,6 +146,36 @@ describe('createWgpuMeshPipeline', () => {
     const layoutCall = fake.calls.filter((c) => c.name === 'createPipelineLayout').at(-1);
     expect((layoutCall!.args[0] as { bindGroupLayouts: unknown[] }).bindGroupLayouts.length).toBe(4);
   });
+
+  it('uses src-alpha blending and disables depth writes for a blended variant', () => {
+    const { fake, state } = makeWgpuSceneState();
+    const module = state.device.createShaderModule({ code: '' });
+    const materialBindGroupLayout = state.device.createBindGroupLayout({ entries: [] });
+    createWgpuMeshPipeline(state, {
+      blended: true,
+      doubleSided: false,
+      format: 'bgra8unorm',
+      materialBindGroupLayout,
+      module,
+    });
+
+    const call = fake.calls.filter((c) => c.name === 'createRenderPipeline').at(-1);
+    const descriptor = call!.args[0] as GPURenderPipelineDescriptor;
+    expect(Array.from(descriptor.fragment!.targets)[0]!.blend).toEqual({
+      alpha: { dstFactor: 'one-minus-src-alpha', operation: 'add', srcFactor: 'one' },
+      color: { dstFactor: 'one-minus-src-alpha', operation: 'add', srcFactor: 'src-alpha' },
+    });
+    expect(descriptor.depthStencil!.depthWriteEnabled).toBe(false);
+  });
+
+  it('keeps blending disabled and depth writes enabled for an opaque variant', () => {
+    const { fake, state } = makeWgpuSceneState();
+    makePipeline(state);
+    const call = fake.calls.filter((c) => c.name === 'createRenderPipeline').at(-1);
+    const descriptor = call!.args[0] as GPURenderPipelineDescriptor;
+    expect(Array.from(descriptor.fragment!.targets)[0]!.blend).toBeUndefined();
+    expect(descriptor.depthStencil!.depthWriteEnabled).toBe(true);
+  });
 });
 
 describe('drawWgpuMeshSubset', () => {
@@ -298,6 +328,26 @@ describe('ensureWgpuScenePipeline', () => {
     const b = ensureWgpuScenePipeline(state, 'fam:bgra8unorm|-', compile);
     expect(a).toBe(b);
     expect(compiles).toBe(1);
+  });
+
+  it('caches separate opaque and blended variants of the same family key', () => {
+    const { state } = makeWgpuSceneState();
+    const variants: boolean[] = [];
+    const compile = (blended: boolean) => {
+      variants.push(blended);
+      return makePipeline(state);
+    };
+
+    ensureWgpuScenePipeline(state, 'fam:bgra8unorm|-', compile);
+    getWgpuSceneRuntime(state).activeBlendedRun = true;
+    ensureWgpuScenePipeline(state, 'fam:bgra8unorm|-', compile);
+    ensureWgpuScenePipeline(state, 'fam:bgra8unorm|-', compile);
+
+    expect(variants).toEqual([false, true]);
+    expect(Array.from(getWgpuSceneRuntime(state).pipelineCache.keys())).toEqual([
+      'fam:bgra8unorm|-|opaque',
+      'fam:bgra8unorm|-|blend',
+    ]);
   });
 });
 
@@ -494,6 +544,14 @@ describe('writeWgpuDrawUniform', () => {
     // col0.x = scaleX at +28, col1.y = scaleY at +33.
     expect([u[secondBase + 28], u[secondBase + 33]].map((n) => n + 0)).toEqual([2, 3]);
   });
+
+  it('writes the resolved object alpha into the draw params', () => {
+    const { state } = makeWgpuSceneState();
+    const proxy = makeProxy();
+    proxy.alpha = 0.375;
+    writeWgpuDrawUniform(state, proxy);
+    expect(getWgpuRenderStateRuntime(state).uniformData[40]).toBeCloseTo(0.375);
+  });
 });
 
 describe('writeWgpuFrameUniform', () => {
@@ -501,5 +559,25 @@ describe('writeWgpuFrameUniform', () => {
     const { fake, state } = makeWgpuSceneState();
     writeWgpuFrameUniform(state, makeCamera(), makeLights());
     expect(fake.calls.some((c) => c.name === 'writeBuffer')).toBe(true);
+  });
+
+  it('remaps OpenGL clip-space Z into WebGPU NDC depth', () => {
+    const { fake, state } = makeWgpuSceneState();
+    const camera = createCamera3D({
+      far: 11,
+      near: 1,
+      projection: { halfHeight: 1, halfWidth: 1, kind: 'orthographic' },
+    });
+    writeWgpuFrameUniform(state, camera, makeLights());
+
+    const write = fake.calls.find((c) => c.name === 'writeBuffer');
+    const frame = new Float32Array(write!.args[2] as ArrayBuffer, 0, 16);
+    // With identity view, z=-near maps to NDC 0 and z=-far maps to NDC 1.
+    const nearClipZ = frame[10] * -camera.near + frame[14];
+    const nearClipW = frame[11] * -camera.near + frame[15];
+    const farClipZ = frame[10] * -camera.far + frame[14];
+    const farClipW = frame[11] * -camera.far + frame[15];
+    expect(nearClipZ / nearClipW).toBeCloseTo(0);
+    expect(farClipZ / farClipW).toBeCloseTo(1);
   });
 });

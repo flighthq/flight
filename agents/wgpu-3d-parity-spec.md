@@ -1,8 +1,9 @@
 # WebGPU 3D Parity — Implementation Spec
 
-**Status: SPEC ONLY. Nothing here is implemented.** The 2026-07 AAA workflow was scoped GL-only; every
-3D feature it closed on WebGL2 (`scene-gl`, `effects-gl`, `render-gl`, `displayobject-gl`) has **no
-WebGPU counterpart**. WebGPU 3D is deliberately postponed. This is the un-postpone plan: the concrete
+**Status: PARTIALLY IMPLEMENTED. Sections 1 and 2 are complete; sections 3–5 remain spec-only.** The
+2026-07 AAA workflow was scoped GL-only; several 3D features it closed on WebGL2 (`scene-gl`,
+`effects-gl`, `render-gl`, `displayobject-gl`) still have **no WebGPU counterpart**. This is the
+remaining un-postpone plan: the concrete
 gaps in `@flighthq/scene-wgpu` / `@flighthq/render-wgpu` / `@flighthq/effects-wgpu`, and — for each — the
 already-shipped GL path it must mirror, so a later worker can implement without re-deriving the design.
 
@@ -33,6 +34,10 @@ citizen"). The GL reference for each item is cited by file so the mirror is a tr
 ---
 
 ## 1. Silent transparent-pass failure (highest priority — wrong output, no diagnostic)
+
+**Implemented.** `drawWgpuScene` now partitions pooled opaque/blended draw lists, sorts blended entries
+back-to-front, propagates resolved node alpha, and selects immutable `|opaque` / `|blend` pipeline
+variants. `scene-transparent.webgpu.ts` proves an opaque backing layer and two transparent layers.
 
 ### The gap
 
@@ -114,6 +119,10 @@ through. Also add a two-transparent-layer scene to exercise the sort.
 ---
 
 ## 2. Orthographic projection renders blank on wgpu
+
+**Implemented.** `writeWgpuFrameUniform` remaps the camera VP from GL `[-1,1]` depth to WebGPU `[0,1]`
+depth at the backend seam. `camera-orthographic.webgpu.ts` is the raster proof; shadow-map WGSL retains
+its existing independent light-space remap and is not corrected twice.
 
 ### The gap
 

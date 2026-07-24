@@ -3,13 +3,14 @@ import { createVector3 } from '@flighthq/geometry';
 import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting';
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild } from '@flighthq/node';
+import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter';
 import { createMesh, createSceneNode, SceneNodeKind } from '@flighthq/scene';
 import type { Camera3D, ParticleEmitter3D, SceneLightsLike } from '@flighthq/types';
 
 import { drawWgpuScene } from './drawWgpuScene';
 import { registerStandardPbrWgpuMaterial } from './registerStandardPbrWgpuMaterial';
+import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 import { makeWgpuSceneState } from './wgpuSceneTestHelper';
 
 function makeCamera(): Camera3D {
@@ -82,6 +83,86 @@ describe('drawWgpuScene', () => {
 
     drawWgpuScene(state, scene, makeCamera(), LIGHTS);
     expect(fake.calls.some((c) => c.name === 'drawIndexed')).toBe(false);
+  });
+
+  it('partitions opaque and blended subsets into distinct pipeline runs', () => {
+    const { state } = makeWgpuSceneState();
+    registerStandardPbrWgpuMaterial(state);
+    const scene = createSceneNode(SceneNodeKind);
+    const blendedMaterial = createStandardPbrMaterial();
+    blendedMaterial.alphaMode = 'blend';
+    const blended = createMesh(createBoxMeshGeometry(), [blendedMaterial]);
+    const opaque = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
+    addNodeChild(scene, blended);
+    addNodeChild(scene, opaque);
+
+    drawWgpuScene(state, scene, makeCamera(), LIGHTS);
+
+    const runtime = getWgpuSceneRuntime(state);
+    expect(runtime.opaqueDrawList.map((entry) => entry.mesh)).toEqual([opaque]);
+    expect(runtime.blendedDrawList.map((entry) => entry.mesh)).toEqual([blended]);
+    expect(Array.from(runtime.pipelineCache.keys()).some((key) => key.endsWith('|opaque'))).toBe(true);
+    expect(Array.from(runtime.pipelineCache.keys()).some((key) => key.endsWith('|blend'))).toBe(true);
+  });
+
+  it('routes resolved node alpha through the blended pass and draw proxy', () => {
+    const { state } = makeWgpuSceneState();
+    registerStandardPbrWgpuMaterial(state);
+    const scene = createSceneNode(SceneNodeKind);
+    const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
+    mesh.alpha = 0.5;
+    addNodeChild(scene, mesh);
+
+    drawWgpuScene(state, scene, makeCamera(), LIGHTS);
+
+    const runtime = getWgpuSceneRuntime(state);
+    expect(runtime.opaqueDrawList).toHaveLength(0);
+    expect(runtime.blendedDrawList[0]!.alpha).toBeCloseTo(0.5);
+    expect(Array.from(runtime.pipelineCache.keys()).some((key) => key.endsWith('|blend'))).toBe(true);
+  });
+
+  it('sorts blended subsets back-to-front by clip W', () => {
+    const { state } = makeWgpuSceneState();
+    registerStandardPbrWgpuMaterial(state);
+    const scene = createSceneNode(SceneNodeKind);
+    const material = createStandardPbrMaterial();
+    material.alphaMode = 'blend';
+    const far = createMesh(createBoxMeshGeometry(), [material]);
+    const near = createMesh(createBoxMeshGeometry(), [material]);
+    far.position.z = -3;
+    near.position.z = -1;
+    invalidateNodeLocalTransform(far);
+    invalidateNodeLocalTransform(near);
+    addNodeChild(scene, near);
+    addNodeChild(scene, far);
+
+    drawWgpuScene(state, scene, makeCamera(), LIGHTS);
+
+    expect(getWgpuSceneRuntime(state).blendedDrawList.map((entry) => entry.mesh)).toEqual([far, near]);
+  });
+
+  it('reuses opaque and blended draw records across frames', () => {
+    const { state } = makeWgpuSceneState();
+    registerStandardPbrWgpuMaterial(state);
+    const scene = createSceneNode(SceneNodeKind);
+    const opaque = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
+    const material = createStandardPbrMaterial();
+    material.alphaMode = 'blend';
+    const blended = createMesh(createBoxMeshGeometry(), [material]);
+    addNodeChild(scene, opaque);
+    addNodeChild(scene, blended);
+    const camera = makeCamera();
+
+    drawWgpuScene(state, scene, camera, LIGHTS);
+    const runtime = getWgpuSceneRuntime(state);
+    const opaqueEntry = runtime.opaqueDrawList[0];
+    const blendedEntry = runtime.blendedDrawList[0];
+    drawWgpuScene(state, scene, camera, LIGHTS);
+
+    expect(runtime.opaqueDrawList[0]).toBe(opaqueEntry);
+    expect(runtime.blendedDrawList[0]).toBe(blendedEntry);
+    expect(runtime.opaquePool).toHaveLength(0);
+    expect(runtime.blendedPool).toHaveLength(0);
   });
 
   it('draws a scene ParticleEmitter3D as a final pass without a manual emitter call', () => {

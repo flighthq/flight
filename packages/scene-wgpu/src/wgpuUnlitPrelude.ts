@@ -75,6 +75,7 @@ export function compileWgpuUnlitPipeline(
   state: WgpuRenderState,
   key: Readonly<WgpuUnlitDefineKey>,
   format: GPUTextureFormat,
+  blended = false,
 ): WgpuUnlitPipeline {
   const device = state.device;
   const module = device.createShaderModule({ code: getWgpuUnlitModuleSourceForKey(key) });
@@ -85,7 +86,13 @@ export function compileWgpuUnlitPipeline(
       { binding: 2, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
     ],
   });
-  return createWgpuMeshPipeline(state, { doubleSided: key.doubleSided, format, materialBindGroupLayout, module });
+  return createWgpuMeshPipeline(state, {
+    blended,
+    doubleSided: key.doubleSided,
+    format,
+    materialBindGroupLayout,
+    module,
+  });
 }
 
 // Resolves the unlit pipeline for a define key + color format, compiling and caching it on first use
@@ -95,8 +102,8 @@ export function ensureWgpuUnlitPipeline(
   key: Readonly<WgpuUnlitDefineKey>,
   format: GPUTextureFormat,
 ): WgpuUnlitPipeline {
-  return ensureWgpuScenePipeline(state, `unlit:${format}|${buildWgpuUnlitDefineKey(key)}`, () =>
-    compileWgpuUnlitPipeline(state, key, format),
+  return ensureWgpuScenePipeline(state, `unlit:${format}|${buildWgpuUnlitDefineKey(key)}`, (blended) =>
+    compileWgpuUnlitPipeline(state, key, format, blended),
   );
 }
 
@@ -134,7 +141,7 @@ struct UnlitMaterial {
   if (ALPHA_MASK && color.a < material.params.y) {
     discard;
   }
-  return vec4f(color.rgb * material.params.x, color.a);
+  return vec4f(color.rgb * material.params.x, color.a * in.objectAlpha);
 }
 `;
 

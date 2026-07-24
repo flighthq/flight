@@ -91,6 +91,7 @@ export function compileWgpuClassicPipeline(
   state: WgpuRenderState,
   key: Readonly<WgpuClassicDefineKey>,
   format: GPUTextureFormat,
+  blended = false,
 ): WgpuClassicPipeline {
   const device = state.device;
   const module = device.createShaderModule({ code: getWgpuClassicModuleSourceForKey(key) });
@@ -107,6 +108,7 @@ export function compileWgpuClassicPipeline(
   // layout gains [Frame, Draw, Material, Shadow] and beginWgpuMeshDraw binds the shared shadow group each
   // draw (the real depth map when drawWgpuSceneShadowMap ran this frame, else a gated-off 1x1 dummy).
   return createWgpuMeshPipeline(state, {
+    blended,
     doubleSided: key.doubleSided,
     format,
     materialBindGroupLayout,
@@ -123,8 +125,8 @@ export function ensureWgpuClassicPipeline(
   key: Readonly<WgpuClassicDefineKey>,
   format: GPUTextureFormat,
 ): WgpuClassicPipeline {
-  return ensureWgpuScenePipeline(state, `classic:${format}|${buildWgpuClassicDefineKey(key)}`, () =>
-    compileWgpuClassicPipeline(state, key, format),
+  return ensureWgpuScenePipeline(state, `classic:${format}|${buildWgpuClassicDefineKey(key)}`, (blended) =>
+    compileWgpuClassicPipeline(state, key, format, blended),
   );
 }
 
@@ -270,7 +272,7 @@ fn sampleDirectionalShadow(worldPos : vec3f) -> f32 {
     radiance = radiance + diffuse.rgb * frame.ambientRadiance.rgb;
   }
 
-  return vec4f(radiance, diffuse.a);
+  return vec4f(radiance, diffuse.a * in.objectAlpha);
 }
 `;
 

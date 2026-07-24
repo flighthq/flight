@@ -85,7 +85,7 @@
             "canvas": false,
             "dom": false,
             "webgl": true,
-            "webgpu": false
+            "webgpu": true
           }
         }
       ]
@@ -1040,6 +1040,15 @@
             "dom": false,
             "webgl": true,
             "webgpu": false
+          }
+        },
+        {
+          "scene": "scene-transparent",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": false,
+            "webgpu": true
           }
         }
       ]

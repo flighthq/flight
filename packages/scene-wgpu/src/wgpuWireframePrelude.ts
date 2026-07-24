@@ -50,13 +50,18 @@ export function bindWgpuWireframeColor(
 // Compiles the wireframe module and builds the line-list render pipeline for the given color format,
 // with a group(2) material layout carrying just the color uniform. Cull-none (lines have no winding).
 // Pure GPU work — no caching — used by ensureWgpuWireframePipeline.
-export function compileWgpuWireframePipeline(state: WgpuRenderState, format: GPUTextureFormat): WgpuWireframePipeline {
+export function compileWgpuWireframePipeline(
+  state: WgpuRenderState,
+  format: GPUTextureFormat,
+  blended = false,
+): WgpuWireframePipeline {
   const device = state.device;
   const module = device.createShaderModule({ code: getWgpuWireframeModuleSource() });
   const materialBindGroupLayout = device.createBindGroupLayout({
     entries: [{ binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } }],
   });
   return createWgpuMeshPipeline(state, {
+    blended,
     doubleSided: true,
     format,
     materialBindGroupLayout,
@@ -68,7 +73,9 @@ export function compileWgpuWireframePipeline(state: WgpuRenderState, format: GPU
 // Resolves the wireframe pipeline for a color format, compiling and caching it on first use through the
 // shared scene pipeline cache under the `wireframe:` family namespace.
 export function ensureWgpuWireframePipeline(state: WgpuRenderState, format: GPUTextureFormat): WgpuWireframePipeline {
-  return ensureWgpuScenePipeline(state, `wireframe:${format}`, () => compileWgpuWireframePipeline(state, format));
+  return ensureWgpuScenePipeline(state, `wireframe:${format}`, (blended) =>
+    compileWgpuWireframePipeline(state, format, blended),
+  );
 }
 
 // The full WGSL module source: the shared mesh prelude (Frame/Draw/vs_main/srgbToLinear) + the
@@ -88,7 +95,7 @@ struct WireframeMaterial {
 @group(2) @binding(0) var<uniform> material : WireframeMaterial;
 
 @fragment fn fs_main(in : VertexOutput) -> @location(0) vec4f {
-  return material.color;
+  return vec4f(material.color.rgb, material.color.a * in.objectAlpha);
 }
 `;
 

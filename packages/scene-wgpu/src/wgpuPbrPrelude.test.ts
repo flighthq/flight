@@ -136,5 +136,7 @@ describe('getWgpuPbrModuleSourceForKey', () => {
     const source = getWgpuPbrModuleSourceForKey(k);
     expect(source.startsWith(buildWgpuPbrDefineSource(k))).toBe(true);
     expect(source).toContain('fn fs_main');
+    expect(source).toContain('@interpolate(flat) objectAlpha : f32');
+    expect(source).toContain('alpha * in.objectAlpha');
   });
 });

@@ -105,9 +105,7 @@ material — gl now has it across all five families), **no ShadedMaterial render
 stack), **no morph deformation** (gl CPU-blends), **no advanced-blend `BlendEffect` runner** (gl + canvas/dom
 realize it), **no video/compressed-texture upload** (gl-only), plus the pre-existing **no custom-shader
 material/effect**, **no 3D-particle renderer** (wait — 3D particles *do* render on wgpu via host capture; see
-that row), a silent **transparent-pass failure** (single-pass, no blend state — every transparent mesh draws
-opaque), **orthographic renders blank** (NDC-Z `[0,1]` vs `[-1,1]` remap missing), and **no `.webgpu.ts`
-functional baseline** for any light/shadow/IBL/ortho scene — so the punctual-lighting parity that
+that row), and **no `.webgpu.ts` functional baseline** for several light/shadow/IBL scenes — so the punctual-lighting parity that
 `render-backend-support.md` gap #8 marks "DONE on both gl and wgpu" is claimed by inspection, never by
 evidence. The "four co-equal backends" framing is false; treat wgpu 3D as partial. The concrete un-postpone
 plan for every one of these is [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md).
@@ -214,8 +212,8 @@ unsupported cases is largely unbuilt for the gaps that most need it.
 | What a user assumes works | Reality + cite | Backends | Bite |
 | --- | --- | --- | --- |
 | Unit tests green ⇒ GPU works | Unit tests use mock WebGL2 (`glTestHelper.ts:7`); no draw touches a rasterizer. Real-pixel checks live in the functional capture harness (wgpu runs there via SwiftShader software Vulkan, mostly reproducible in-sandbox) — not the unit suite | gl/wgpu | SURPRISE |
-| Orthographic camera on WebGPU | Renders blank — NDC-Z `[0,1]` vs `[-1,1]` remap missing; `camera-orthographic` scoped gl-only. Fix: [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) §2 (VP depth-correction premultiply) | wgpu | SURPRISE |
-| Transparent 3D meshes on WebGPU | `drawWgpuScene` is single-pass with no blend state / no back-to-front sort → every `blend`-alphaMode or faded mesh draws opaque + writes depth. gl is two-phased (`drawGlScene.ts:47–59`). Fix: [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) §1 | wgpu | SURPRISE |
+| Orthographic camera on WebGPU | RESOLVED — backend-seam VP depth remap plus `camera-orthographic.webgpu.ts` raster proof | wgpu | RESOLVED |
+| Transparent 3D meshes on WebGPU | RESOLVED — two-pass pooled partition, back-to-front sort, blended pipelines, and `scene-transparent.webgpu.ts` proof | wgpu | RESOLVED |
 | Overlay/HardLight/Difference/… blend | No longer in the `BlendMode` node enum (fixed-function only) — assigning one as a node property is impossible, killing the silent-degrade. Now an explicit `BlendEffect` composite recipe: realized on gl (`glBlendEffect`) + canvas/dom native; **wgpu runner unbuilt** ([wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) §5) | gl/canvas/dom (wgpu open) | RESOLVED (re-architected) |
 | Per-bitmap `smoothing` flag | Ignored on gl/wgpu; global filter, texture cached so first-draw filter sticks → pixel-art blurry | gl/wgpu | MAJOR |
 | Stroke joins (miter/bevel/round) | Not differentiated on gl/wgpu (caps work); scoped canvas/dom | gl/wgpu | MAJOR |
@@ -223,7 +221,7 @@ unsupported cases is largely unbuilt for the gaps that most need it.
 | Darken/Lighten (MIN/MAX) | Can't fold `(1-src.a)` on gl/wgpu → transparent surround darkens/clips backdrop at edges | gl/wgpu | MAJOR |
 | Group/container `blendMode` | Whole-subtree flatten unverified/likely absent; no render-to-texture group-blend path found | all | MAJOR |
 | Sprite/QuadBatch/Tilemap on DOM | No DOM renderer — renders nothing | dom | MAJOR |
-| wgpu 2D-blend/ortho parity covered | `node-blend-modes`/`camera-orthographic` have no `.webgpu.ts` baseline | wgpu | MAJOR |
+| wgpu 2D-blend parity covered | `node-blend-modes` has no `.webgpu.ts` baseline; orthographic now has one | wgpu | MAJOR |
 | Text strikethrough | No `strikethrough` branch in `glRichText.ts:170`/`wgpuRichText.ts:184` | gl/wgpu | MINOR |
 | cacheAsBitmap out-of-frame; atlas pivot | Bakes in-frame on dom/wgpu; `TextureAtlasRegion.pivotX/Y` never read | dom/wgpu | MINOR |
 
@@ -245,10 +243,10 @@ unsupported cases is largely unbuilt for the gaps that most need it.
 | --- | --- | --- | --- |
 | Area lights render | `SceneLights` has no `area` field (`SceneLights.ts:17-21`); `packSceneLightBlock` no area refs; grep across scene-gl/wgpu/render → nothing | none | SURPRISE |
 | Point/spot lights cast shadows | Shadows directional-only, single ortho map, no cascades/CSM, no point/spot/cube (`shadowCamera.ts:14` sole export) | gl/wgpu (dir only) | SURPRISE |
-| WebGPU 3D lighting/shadow/IBL/ortho works | No `.webgpu.ts` for light-point/spot/hemisphere/env-ibl/shadow-directional/camera-orthographic; symmetric to gl by inspection only | wgpu | SURPRISE |
+| WebGPU 3D lighting/shadow/IBL works | No `.webgpu.ts` for light-point/spot/hemisphere/env-ibl/shadow-directional; orthographic now has a raster proof | wgpu | SURPRISE |
 | `InstancedMesh`/`LodMesh` ship | Header types only; no `create*`, not exported from scene barrel, no renderer consumes them | none | SURPRISE |
 | Frustum culling is automatic | `cullSceneNodeByFrustum` exists but no renderer calls it (grep across render/scene-gl/wgpu → none); every mesh drawn every frame | gl/wgpu (manual) | MAJOR |
-| Orthographic on WebGPU | Blank (NDC-Z remap missing); functional test gl-only | wgpu | MAJOR |
+| Orthographic on WebGPU | RESOLVED — VP depth remap and functional baseline | wgpu | RESOLVED |
 | Particles (3D) status | Map says "not implemented" but GL renderer exists; no wgpu twin; no functional test | gl only | MAJOR |
 | IBL is production quality | Real split-sum but baked at "deliberately modest" software resolutions; wgpu unverified | gl (wgpu unverified) | MINOR |
 | Photometric units are real | Lux/Candela anchored at arbitrary "100000 units = 1.0"; directional needs ~+1.5-+3 EV manual fudge | all | MINOR |

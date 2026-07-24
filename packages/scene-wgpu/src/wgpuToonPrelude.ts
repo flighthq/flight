@@ -75,6 +75,7 @@ export function compileWgpuToonPipeline(
   state: WgpuRenderState,
   key: Readonly<WgpuToonDefineKey>,
   format: GPUTextureFormat,
+  blended = false,
 ): WgpuToonPipeline {
   const device = state.device;
   const module = device.createShaderModule({ code: getWgpuToonModuleSourceForKey(key) });
@@ -89,6 +90,7 @@ export function compileWgpuToonPipeline(
   // group(3) shadow-sample layout opts the toon pipeline into directional shadow reception; the shared
   // shadow group is bound each draw by beginWgpuMeshDraw (real depth map or a gated-off 1x1 dummy).
   return createWgpuMeshPipeline(state, {
+    blended,
     doubleSided: key.doubleSided,
     format,
     materialBindGroupLayout,
@@ -104,8 +106,8 @@ export function ensureWgpuToonPipeline(
   key: Readonly<WgpuToonDefineKey>,
   format: GPUTextureFormat,
 ): WgpuToonPipeline {
-  return ensureWgpuScenePipeline(state, `toon:${format}|${buildWgpuToonDefineKey(key)}`, () =>
-    compileWgpuToonPipeline(state, key, format),
+  return ensureWgpuScenePipeline(state, `toon:${format}|${buildWgpuToonDefineKey(key)}`, (blended) =>
+    compileWgpuToonPipeline(state, key, format, blended),
   );
 }
 
@@ -217,7 +219,7 @@ fn sampleDirectionalShadow(worldPos : vec3f) -> f32 {
     radiance = radiance + baseColor.rgb * frame.ambientRadiance.rgb;
   }
 
-  return vec4f(radiance, baseColor.a);
+  return vec4f(radiance, baseColor.a * in.objectAlpha);
 }
 `;
 
