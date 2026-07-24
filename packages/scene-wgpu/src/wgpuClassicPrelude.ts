@@ -241,8 +241,8 @@ fn sampleDirectionalShadow(worldPos : vec3f) -> f32 {
 
   // Specular color is resolved here in UNIFORM control flow. WGSL forbids textureSample inside the
   // per-pixel lighting branch below (it depends on nDotL, a non-uniform value), so the map sample is
-  // hoisted out. Maps are deferred on wgpu (placeholder bound), so this stays the material specular
-  // until texture upload lands.
+  // hoisted out. It starts at the material specular; when a specular map is present its sampled value
+  // multiplies in just below (an absent map binds a placeholder view and this stays the flat specular).
   var specularColor = material.specular.rgb;
   if (HAS_SPECULAR_MAP) {
     let sampledSpecular = textureSample(specularTexture, materialSampler, in.uv);

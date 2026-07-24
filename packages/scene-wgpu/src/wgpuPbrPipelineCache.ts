@@ -4,8 +4,10 @@ import { createWgpuMeshPipeline, ensureWgpuPbrSampleLayout, ensureWgpuScenePipel
 import { buildWgpuPbrDefineKey, getWgpuPbrModuleSourceForKey } from './wgpuPbrPrelude';
 // Compiles the PBR uber-shader module for a define key and builds the render pipeline for the given
 // color-attachment format. Pure GPU work — no caching — used by ensureWgpuPbrPipeline. The group(2)
-// material layout is a uniform (the MaterialBlock) + a filtering sampler + the five standard map
-// textures, so the layout matches whether or not the variant samples maps (maps deferred on wgpu).
+// material layout is a uniform (the MaterialBlock) + a filtering sampler + the six standard map
+// textures (base-color, normal, metallic-roughness, occlusion, emissive, alpha), which are all
+// sampled from real uploads when present; an absent map binds a shared placeholder view, so the
+// layout is fixed whether or not a given variant samples a particular map.
 // Depth-stencil, vertex layout, and back-face culling (unless doubleSided) come from the shared
 // createWgpuMeshPipeline. Mirrors scene-gl's compileGlPbrProgram.
 export function compileWgpuPbrPipeline(

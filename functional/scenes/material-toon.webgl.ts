@@ -92,8 +92,8 @@ const logicalHeight = height / scale;
 const geometry = createSphereMeshGeometry(0.5, 48, 32);
 
 // Mid-gray base color quantized into 4 cel bands so the directional N·L gradient reads clearly as a
-// light/dark step across the sphere. No maps — the Wgpu backend does not sample maps, so a
-// texture-free material keeps the Gl and Wgpu columns at parity.
+// light/dark step across the sphere. No maps here — a texture-free material keeps this a focused directional-shading test that renders
+// identically on Gl and Wgpu (both backends DO sample material maps now — see material-alpha-map).
 const material = createToonMaterial({
   baseColor: 0x808080ff,
   steps: 4,
