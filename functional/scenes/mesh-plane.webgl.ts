@@ -37,7 +37,7 @@ document.body.appendChild(canvas);
 
 export const state = createGlRenderState(canvas, {
   pixelRatio,
-  backgroundColor: 0x0a0c10ff,
+  backgroundColor: 0x000000ff,
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
 registerUnlitGlMaterial(state);

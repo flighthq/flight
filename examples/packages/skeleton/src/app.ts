@@ -14,11 +14,11 @@ import {
   createStandardPbrMaterial,
   createVector3,
   normalizeVector3,
+  prepareSceneSkinning,
   setCamera3DViewMatrix4FromLookAt,
   setQuaternionFromAxisAngle,
   copyQuaternion,
   invalidateNodeLocalTransform,
-  updateMeshSkin,
   SceneNodeKind,
 } from '@flighthq/sdk';
 
@@ -26,12 +26,12 @@ import { render } from './render';
 
 // The scene root is a bare SceneNode (createScene now allocates a Scene *document* that owns a root).
 
-// Skeleton example: a multi-segment tube mesh deformed by CPU skinning. Four joints form a chain
+// Skeleton example: a multi-segment tube mesh deformed by GPU skinning. Four joints form a chain
 // along the Y axis; sinusoidal rotations on the Z axis produce a smooth undulating wave. The mesh
-// carries its skin binding (joints0/weights0) in its geometry, and each frame is deformed by a
-// single updateMeshSkin call after the joints are posed — no hand-rolled palette, re-interleave, or
-// re-upload. This is the same recipe the MD5/glTF importers produce; the geometry here is built by
-// hand only because the example ships no asset.
+// carries its skin binding (joints0/weights0) in its geometry, and each frame prepares the scene's
+// GPU skin palettes and posed bounds after the joints are posed — no hand-rolled palette,
+// re-interleave, or re-upload. This is the same recipe the MD5/glTF importers produce; the geometry
+// is built by hand only because the example ships no asset.
 
 const JOINT_COUNT = 4;
 const SEGMENTS_PER_JOINT = 6;
@@ -162,9 +162,11 @@ const lights: SceneLightsLike = {
 
 const q = createQuaternion();
 const zAxis = createVector3(0, 0, 1);
+const captureMode = (window as typeof window & { __flightCapture?: boolean }).__flightCapture === true;
+let captureFrame = 0;
 
 function animate(time: number): void {
-  const t = time * 0.001;
+  const t = captureMode ? captureFrame++ / 60 : time * 0.001;
 
   // Pose each joint with a sinusoidal Z-axis rotation; a per-joint phase offset gives a traveling wave.
   for (let j = 0; j < JOINT_COUNT; j++) {
@@ -173,8 +175,10 @@ function animate(time: number): void {
     invalidateNodeLocalTransform(jointNodes[j]);
   }
 
-  // One call deforms the mesh from the posed skeleton and marks the geometry for re-upload.
-  updateMeshSkin(mesh);
+  // Readies the joint palette and posed bounds while leaving bind-pose vertices intact for the
+  // GPU-skinning shader. CPU-deforming here would make the WebGPU path consume an already-posed
+  // interleaved record before applying the palette a second time.
+  prepareSceneSkinning(scene);
 
   render(scene, camera, lights);
   requestAnimationFrame(animate);
