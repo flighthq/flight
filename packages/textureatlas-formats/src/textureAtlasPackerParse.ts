@@ -25,7 +25,14 @@ export function parseTextureAtlasPackerJson(
   atlas: TextureAtlas,
   options?: TextureAtlasPackerParseOptions,
 ): TextureAtlas {
-  const doc = JSON.parse(json) as TextureAtlasPackerDocument;
+  let doc: TextureAtlasPackerDocument;
+  try {
+    doc = JSON.parse(json) as TextureAtlasPackerDocument;
+  } catch {
+    // Malformed JSON is an expected failure (sentinel, not a throw) — return the atlas unchanged,
+    // matching the Starling XML path's `if (!root) return atlas` and the never-throw importer policy.
+    return atlas;
+  }
   applyDocument(atlas, doc, options ?? {});
   return atlas;
 }

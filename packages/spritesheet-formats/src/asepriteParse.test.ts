@@ -107,6 +107,13 @@ const NO_TAGS_JSON = JSON.stringify({
 });
 
 describe('parseAsepriteSpritesheet', () => {
+  it('returns an empty SpritesheetData (no throw) on malformed JSON', () => {
+    // Malformed JSON must yield the empty-data sentinel, not an uncaught SyntaxError — matching the
+    // never-throw importer policy and parseSpritesheet's null-on-unrecognized philosophy.
+    expect(() => parseAsepriteSpritesheet('{ not valid json')).not.toThrow();
+    expect(parseAsepriteSpritesheet('{ not valid json').frames).toHaveLength(0);
+  });
+
   it('returns a SpritesheetData (not a Parsed object)', () => {
     const result = parseAsepriteSpritesheet(HASH_JSON);
     expect(typeof result.frames).toBe('object');

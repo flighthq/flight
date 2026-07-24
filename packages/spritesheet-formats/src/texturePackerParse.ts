@@ -81,7 +81,16 @@ function documentToData(doc: TexturePackerDocument): SpritesheetData {
  *  Single-pass: no intermediate document object is allocated.
  *  Use `parseTexturePackerSpritesheetDocument` instead when you need round-trip serialisation. */
 export function parseTexturePackerSpritesheet(json: string): SpritesheetData {
-  return documentToData(JSON.parse(json) as TexturePackerDocument);
+  let document: TexturePackerDocument;
+  try {
+    document = JSON.parse(json) as TexturePackerDocument;
+  } catch {
+    // Malformed JSON is an expected failure — return an empty SpritesheetData sentinel rather than
+    // throwing an uncaught SyntaxError, matching `parseSpritesheet`'s null-on-unrecognized philosophy and
+    // the never-throw importer policy.
+    return createSpritesheetData();
+  }
+  return documentToData(document);
 }
 
 /** Parse a Texture Packer JSON string and preserve the full document for

@@ -174,6 +174,14 @@ describe('parseTextureAtlasPackerDocument', () => {
 });
 
 describe('parseTextureAtlasPackerJson', () => {
+  it('returns the atlas unchanged (no throw) on malformed JSON', () => {
+    // Malformed JSON must yield the sentinel (atlas with no regions), matching the XML path and the
+    // never-throw importer policy — not an uncaught SyntaxError.
+    const atlas = createTextureAtlas();
+    expect(() => parseTextureAtlasPackerJson('{ not valid json', atlas)).not.toThrow();
+    expect(atlas.regions).toHaveLength(0);
+  });
+
   it('parses a JSON string and populates atlas regions', () => {
     const atlas = createTextureAtlas();
     const json = JSON.stringify(ARRAY_FIXTURE);

@@ -117,6 +117,12 @@ describe('parseTextureAtlasAsepriteDocument', () => {
 });
 
 describe('parseTextureAtlasAsepriteJson', () => {
+  it('returns the atlas unchanged (no throw) on malformed JSON', () => {
+    const atlas = createTextureAtlas();
+    expect(() => parseTextureAtlasAsepriteJson('not json at all', atlas)).not.toThrow();
+    expect(atlas.regions).toHaveLength(0);
+  });
+
   it('parses a JSON string and populates atlas regions', () => {
     const atlas = createTextureAtlas();
     parseTextureAtlasAsepriteJson(JSON.stringify(ARRAY_DOC), atlas);
