@@ -4,9 +4,9 @@ import type { NetResponse, SceneDocument } from '@flighthq/types';
 import type { Mock } from 'vitest';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import type * as LoadAwdModule from './awdLoad';
+import type * as LoadAwd2Module from './awd2Load';
 
-let loadSceneDocumentFromAwdUrl: typeof LoadAwdModule.loadSceneDocumentFromAwdUrl;
+let loadSceneDocumentFromAwd2Url: typeof LoadAwd2Module.loadSceneDocumentFromAwd2Url;
 let parseAwd2: Mock<typeof SceneFormatsModule.parseAwd2>;
 let sendNetRequest: Mock<typeof NetModule.sendNetRequest>;
 
@@ -35,7 +35,7 @@ beforeAll(async () => {
   sendNetRequest = vi.fn<typeof NetModule.sendNetRequest>();
   vi.doMock('@flighthq/net', () => ({ sendNetRequest }));
   vi.doMock('@flighthq/scene-formats', () => ({ parseAwd2 }));
-  ({ loadSceneDocumentFromAwdUrl } = await import('./awdLoad'));
+  ({ loadSceneDocumentFromAwd2Url } = await import('./awd2Load'));
 });
 
 afterAll(() => {
@@ -49,13 +49,13 @@ afterEach(() => {
   sendNetRequest.mockReset();
 });
 
-describe('loadSceneDocumentFromAwdUrl', () => {
+describe('loadSceneDocumentFromAwd2Url', () => {
   it('fetches bytes and returns the parsed CPU document without resolving resources', async () => {
     const document = emptyDocument();
     parseAwd2.mockReturnValue(document);
     sendNetRequest.mockResolvedValue(okResponse(new Uint8Array([5, 6]).buffer));
 
-    const loaded = await loadSceneDocumentFromAwdUrl('model.awd');
+    const loaded = await loadSceneDocumentFromAwd2Url('model.awd');
 
     expect(Array.from(parseAwd2.mock.calls[0][0])).toEqual([5, 6]);
     expect(loaded).toBe(document);

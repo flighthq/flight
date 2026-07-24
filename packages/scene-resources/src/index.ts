@@ -5,7 +5,7 @@ export * from './md2Load';
 export * from './md5Load';
 export * from './objLoad';
 export * from './sceneDocumentSource';
-export * from './awdLoad';
+export * from './awd2Load';
 export * from './resolveSceneResources';
 export * from './resolveSceneResourcesAndWait';
 export * from './revealSceneResourcesOnResolve';
