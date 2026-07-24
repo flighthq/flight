@@ -59,6 +59,7 @@ import {
   AWD_MAGIC_2,
   AWD_MATERIAL_PROP_COLOR,
   AWD_MATERIAL_PROP_DIFFUSE_TEXTURE,
+  AWD_MATERIAL_PROP_NORMAL_TEXTURE,
   AWD_NAMESPACE_CORE,
   AWD_STREAM_INDICES,
   AWD_STREAM_JOINT_INDICES,
@@ -783,13 +784,14 @@ interface ParsedMeshInstance {
   transform: Float64Array;
 }
 
-// A parsed AWD material block (type 81). `diffuseTextureId`/`color` are the two paths Flight
-// realizes; 0 means "absent". Other AWD material properties (normal map, methods, blend flags) are
-// parsed past but not yet mapped.
+// A parsed AWD material block (type 81). `diffuseTextureId`/`normalTextureId`/`color` are the paths
+// Flight realizes; 0 means "absent". Other AWD material properties (methods, blend flags) are parsed past
+// but not yet mapped.
 interface ParsedMaterial {
   color: number | null;
   diffuseTextureId: number;
   name: string;
+  normalTextureId: number;
 }
 
 // A parsed AWD texture block (type 82). Exactly one source form is populated: `bytes` (+ detected
@@ -1222,9 +1224,9 @@ function parseMeshInstanceBlock(
 
 // Parses a Material block (type 81). Layout:
 // name(VarString) → matType(uint8) → numMethods(uint8) → PropertyList → methods → UserAttrList.
-// Flight reads the diffuse texture id (property 2) and the flat color (property 1) — the properties
-// precede the methods, so the method/attr tail is left unread. Normal maps, shading methods, and
-// blend flags are not yet mapped.
+// Flight reads the flat color (property 1), the diffuse texture id (property 2), and the normal texture id
+// (property 3) — the properties precede the methods, so the method/attr tail is left unread. Shading
+// methods and blend flags are not yet mapped.
 function parseMaterialBlock(
   view: Readonly<DataView>,
   source: Readonly<Uint8Array>,
@@ -1250,9 +1252,10 @@ function parseMaterialBlock(
 
   const props = readAwdProperties(view, offset, end);
   const diffuseTextureId = readAwdPropertyUint32(view, props.values, AWD_MATERIAL_PROP_DIFFUSE_TEXTURE) ?? 0;
+  const normalTextureId = readAwdPropertyUint32(view, props.values, AWD_MATERIAL_PROP_NORMAL_TEXTURE) ?? 0;
   const color = readAwdPropertyUint32(view, props.values, AWD_MATERIAL_PROP_COLOR);
 
-  return { color, diffuseTextureId, name: nameResult.value };
+  return { color, diffuseTextureId, name: nameResult.value, normalTextureId };
 }
 
 // Parses a Texture block (type 82). Layout:
@@ -1371,20 +1374,23 @@ function resolveAwdMaterial(
 
   // AWD's material model is Blinn-Phong (AwayJS MethodMaterial), so decode to BlinnPhongMaterial —
   // the format's own shading model — rather than reinterpreting into PBR/Unlit. The block carries a
-  // flat diffuse color (property 1) and/or a diffuse texture (property 2); map both faithfully. A
-  // caller wanting metallic-roughness converts explicitly downstream (getPbrRoughnessFromPhongShininess
-  // + getPhongToPbrLightExposure); the importer does not presume a PBR pipeline.
+  // flat diffuse color (property 1), a diffuse texture (property 2), and/or a normal texture (property
+  // 3); map all faithfully. A caller wanting metallic-roughness converts explicitly downstream
+  // (getPbrRoughnessFromPhongShininess + getPhongToPbrLightExposure); the importer presumes no PBR pipeline.
   const diffuseTexture =
     parsed.diffuseTextureId !== 0
       ? resolveAwdTexture(parsed.diffuseTextureId, textureBlocks, document, warnings)
       : null;
-  if (diffuseTexture === null && parsed.color === null) {
+  const normalTexture =
+    parsed.normalTextureId !== 0 ? resolveAwdTexture(parsed.normalTextureId, textureBlocks, document, warnings) : null;
+  if (diffuseTexture === null && normalTexture === null && parsed.color === null) {
     cache.set(materialId, -1);
     return -1;
   }
   const material = createBlinnPhongMaterial({
     diffuse: parsed.color !== null ? awdColorToRgba(parsed.color) : 0xffffffff,
     diffuseMap: diffuseTexture,
+    normalMap: normalTexture,
   }) as unknown as Material;
   // Preserve the AWD material block name as the material's authored name (empty → anonymous).
   material.name = parsed.name.length > 0 ? parsed.name : null;
