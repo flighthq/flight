@@ -20,6 +20,7 @@ import type {
 } from '@flighthq/types';
 import { BlinnPhongMaterialKind, ResourceResolutionState } from '@flighthq/types';
 
+import { registerAwdDeflateDecompressor } from './awdInflate';
 import { createSceneFromAwd, parseAwd, parseAwdSkeletonAnimations, registerAwdDecompressor } from './awdParse';
 import {
   AWD_BLOCK_CONTAINER,
@@ -1420,7 +1421,51 @@ describe('registerAwdDecompressor', () => {
     expect(warnings.some((w) => w.includes('no registered decompressor'))).toBe(true);
   });
 
-  // The vendored deflate codec's real-zlib end-to-end (registerAwdDeflateDecompressor → a genuinely
-  // zlib-compressed body inflated through parseAwd) lives in awdInflate.test.ts, whose fixtures are
-  // precompressed offline — this package's browser-clean build carries no node:zlib.
+  // The real end-to-end (Away3D zlib-compresses the body; the vendored inflater reconstructs the identical
+  // scene) uses a fixture precompressed offline, since this browser-clean package's build carries no
+  // node:zlib. Provenance — generated once with node v22.22.1 from the SKINNED_TRIANGLE_AWD body above:
+  //   Buffer.from(deflateSync(SKINNED_TRIANGLE_AWD.subarray(12))).toString('base64')
+  // The assertion is self-checking: if SKINNED_TRIANGLE_AWD ever changes, the stale fixture inflates to a
+  // different body and the scene-equivalence check fails rather than passing silently.
+  const SKINNED_BODY_COMPRESSED =
+    'eJxjZAACRoZGIMnOEJydmZeXmsIIEmPIY4AARnYVBnTQYI+Nz8TKBtHBwMTAxs4DZYMwiGRnlwCLOADVNtgBGfYQjDCLCUSkMkwAkswMQZnpTHDzWRiC8vNLcNmLmw/1ARCyMjhnZOakEGfEAgd0I5hBhDiDP9E2o/K5YUHrm1qcwYiikBVEpDHkMID8H2DABHUxiRaQrIENxVpDkqxVcCTDWogmdhCRzgBKCSwM4Yk52RCLQYHwhZENTAIA8+wq1A==';
+
+  // Minimal, dependency-free base64 decoder (no atob/Buffer) — keeps the test browser-clean.
+  const decodeBase64 = (input: string): Uint8Array => {
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+    const lookup = new Uint8Array(128);
+    for (let i = 0; i < alphabet.length; i++) lookup[alphabet.charCodeAt(i)] = i;
+    const clean = input.replace(/=+$/, '');
+    const out = new Uint8Array((clean.length * 3) >> 2);
+    let acc = 0;
+    let bits = 0;
+    let o = 0;
+    for (let i = 0; i < clean.length; i++) {
+      acc = (acc << 6) | lookup[clean.charCodeAt(i)];
+      bits += 6;
+      if (bits >= 8) {
+        bits -= 8;
+        out[o++] = (acc >> bits) & 0xff;
+      }
+    }
+    return out;
+  };
+
+  it('reconstructs the identical scene from a genuinely zlib-compressed AWD via the vendored inflater', () => {
+    registerAwdDeflateDecompressor();
+    const compressedBody = decodeBase64(SKINNED_BODY_COMPRESSED);
+    const header = SKINNED_TRIANGLE_AWD.slice(0, 12);
+    header[7] = AWD_COMPRESSION_DEFLATE;
+    new DataView(header.buffer).setUint32(8, compressedBody.length, true);
+
+    const fromCompressed = parseAwd(concatBytes(header, compressedBody));
+    const fromUncompressed = parseAwd(SKINNED_TRIANGLE_AWD);
+    expect(fromCompressed.meshes).toHaveLength(fromUncompressed.meshes.length);
+    expect(fromCompressed.nodes).toHaveLength(fromUncompressed.nodes.length);
+    expect(getMeshGeometryVertexCount(fromCompressed.meshes[0].geometry)).toBe(
+      getMeshGeometryVertexCount(fromUncompressed.meshes[0].geometry),
+    );
+    // The skinned mesh's joints0/weights0 survive the real inflate too (skin binding intact).
+    expect(fromCompressed.skins).toHaveLength(fromUncompressed.skins.length);
+  });
 });

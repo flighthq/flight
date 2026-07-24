@@ -11,15 +11,17 @@ import { AWD_COMPRESSION_DEFLATE, AWD_HEADER_BYTES, AWD_MAGIC_0, AWD_MAGIC_1, AW
 //   b64(deflateSync(enc('flighthq scene-formats')))                            // LITERAL (zlib)
 //   b64(deflateRawSync(enc('flighthq scene-formats')))                         // RAW_LITERAL (headerless)
 //   b64(deflateSync(enc('abcABC123'.repeat(600))))                            // REPETITIVE
-//   b64(deflateSync(enc('the quick brown fox jumps over the lazy dog '.repeat(40)))) // VARIED (dynamic Huffman)
+//   b64(deflateSync(enc('Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore. '.repeat(12)))) // LOREM (genuine dynamic-Huffman block)
 //   b64(deflateSync(enc('the quick brown fox jumps over the lazy dog'), { level: 0 }))  // STORED_L0
 // The round-trip assertions still verify the vendored inflater reproduces the original bytes EXACTLY.
+const LOREM = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore. ';
 const FIXTURES = {
   EMPTY: 'eJwDAAAAAAE=',
   LITERAL: 'eJxLy8lMzyjJKFQoTk7NS9VNyy/KTSwpBgBjVQiv',
   RAW_LITERAL: 'S8vJTM8oyShUKE5OzUvVTcsvyk0sKQYA',
   REPETITIVE: 'eJztxjEBACAIALBMYgIxCdC/g0HcrlXPybtil4iIiIiIiIiIiMgfeU6Y4Pw=',
-  VARIED: 'eJwryUhVKCzNTM5WSCrKL89TSMuvUMgqzS0oVsgvSy1SKAFK5yRWVSqk5KeDOaNqR9WOqh1VO6p2VO1QUAsATICEBw==',
+  LOREM:
+    'eJztzdENQyEMQ9FVPEDVSd4SlESVJUIQSfYvQ/STb+v6PL7VwBVlEB++EUw003yh+wztqVkbTbgYnfMLHTxjqJwAygpzQaqtE3N2CqVmohKjfc79G89FLnKRi/wX+QG1gr9k',
   STORED_L0: 'eAEBKwDU/3RoZSBxdWljayBicm93biBmb3gganVtcHMgb3ZlciB0aGUgbGF6eSBkb2dhPA/6',
 } as const;
 
@@ -65,10 +67,10 @@ describe('inflateAwdDeflate', () => {
     expect(inflateAwdDeflate(decodeBase64(FIXTURES.REPETITIVE))).toEqual(encode('abcABC123'.repeat(600)));
   });
 
-  it('round-trips varied text through a dynamic-Huffman block', () => {
-    expect(inflateAwdDeflate(decodeBase64(FIXTURES.VARIED))).toEqual(
-      encode('the quick brown fox jumps over the lazy dog '.repeat(40)),
-    );
+  it('round-trips prose through a genuine dynamic-Huffman block', () => {
+    // Verified offline that zlib emits BTYPE=2 (dynamic Huffman) for this input, exercising the
+    // dynamic literal/length + distance code-length decode path.
+    expect(inflateAwdDeflate(decodeBase64(FIXTURES.LOREM))).toEqual(encode(LOREM.repeat(12)));
   });
 
   it('round-trips a stored (level 0) block', () => {
