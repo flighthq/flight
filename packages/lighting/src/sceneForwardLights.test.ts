@@ -37,6 +37,31 @@ describe('selectSceneForwardLights', () => {
     expect(new Set(out.spot)).toEqual(new Set(spots));
   });
 
+  it('ranks the family cutoff by linear-light radiance instead of packed sRGB channels', () => {
+    const gray = Array.from({ length: 4 }, () =>
+      createPointLight({
+        color: 0x808080ff,
+        intensity: 1,
+        position: { x: 2, y: 0, z: 0 },
+        range: -1,
+      }),
+    );
+    const white = createPointLight({
+      color: 0xffffffff,
+      intensity: 0.3,
+      position: { x: 2, y: 0, z: 0 },
+      range: -1,
+    });
+    const out = selection();
+    selectSceneForwardLights(
+      out,
+      { ambient: null, directional: null, point: [...gray, white] },
+      createBoundingSphere(0, 0, 0, 0),
+    );
+    expect(out.point).toContain(white);
+    expect(out.point).toHaveLength(4);
+  });
+
   it('selects the strongest four points and strongest four spots independently', () => {
     const points = [8, 7, 6, 5, 4, 3].map((x) => createPointLight({ position: { x, y: 0, z: 0 }, range: -1 }));
     const spots = spotLights([8, 7, 6, 5, 4, 3]);
