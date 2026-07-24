@@ -231,9 +231,10 @@ describe('createSceneFromObj', () => {
     expect(diagnostics).toHaveLength(0);
   });
 
-  it('treats a bare o as a permissive unnamed boundary (importer recovery, not a spec default)', () => {
-    // `o` always takes a name in the spec, so a bare `o` has no defined default — the importer recovers by
-    // closing the prior object and starting an unnamed one, the same boundary as `g`. No diagnostic.
+  it('recovers a bare o as an unnamed boundary AND records object-name-missing (Recover, parseObj)', () => {
+    // `o` always takes a name in the spec, so a bare `o` is undefined input: the importer recovers by closing
+    // the prior object and starting an unnamed one — and because that is substitute-and-continue, the collector
+    // contract requires it be recorded as a Recover crumb (unlike the spec-defined, silent bare g/usemtl).
     const obj = [
       'v 0 0 0',
       'v 1 0 0',
@@ -248,10 +249,17 @@ describe('createSceneFromObj', () => {
     ].join('\n');
     const diagnostics: ImportDiagnostic[] = [];
     const roots = getNodeChildren(createSceneFromObj(obj, undefined, diagnostics).root);
+    // Exact output: the recovery still happens — two nodes, the named Cube then the unnamed boundary.
     expect(roots).toHaveLength(2);
     expect((roots[0] as SceneNode).name).toBe('Cube');
     expect((roots[1] as SceneNode).name).toBeNull();
-    expect(diagnostics).toHaveLength(0);
+    // Exact crumb: one Recover for the missing object name, emitted from parseObj.
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'obj.object-name-missing');
+    expect(crumb.severity).toBe('Recover');
+    expect(crumb.origin).toBe('parseObj');
+    expect(crumb.detail?.firstLine).toBe(9); // the bare `o` line
+    expect(crumb.detail?.count).toBe(1);
   });
 
   it('treats a bare usemtl as the default material, clearing the previously active one', () => {
