@@ -11,6 +11,34 @@ by: builder
 
 <!-- newest entry on top -->
 
+## 2026-07-24 — AWD2 materials import as ShadedMaterial (builder, user-directed review-bed46182/7062769f)
+
+`resolveAwdMaterial` now emits a **ShadedMaterial** (was BlinnPhongMaterial), UNIFORMLY — including a
+method-less material (empty `modifiers[]`). The durable WHY is in the resolveAwdMaterial doc comment (AWD's
+MethodMaterial = BlinnPhong base + method array ≅ ShadedMaterial base + modifier stack; empty stack compiles
+to the same base program, stays lossless if methods appear, lets a demo author append a modifier without a
+kind conversion — do NOT collapse to BlinnPhong). scene-formats gains a `@flighthq/shading` dependency
+(`createShadedMaterial`). Base props mapped: color(1)→diffuse, diffuseTex(2)→diffuseMap, normalTex(3)→normalMap,
+**alpha(10)→ folded into diffuse RGBA + alphaMode='blend' when < 1** (new). A method-bearing material
+(numMethods > 0) **warns via the diagnostics seam and imports the base only**. scene-formats 395/395, full
+`npm run check` exit 0.
+
+**Empirical findings that reshaped the parcel's rules (dumped the real material blocks):**
+- The parcel listed "specular color, gloss→shininess, ambient" as base properties to read. **They are NOT
+  base properties in real AWD2 files.** Every material in the corpus carries only props {1:color, 2:diffuseTex,
+  [3:normalTex], 10:alpha(f32), 11/13:bool flags, 12:unused baddr}. In Away3D's model specular/gloss/normal/
+  env/fog are **METHODS**, not base props — which is exactly why `numMethods` is the hinge. So there is nothing
+  to read for specular/gloss/ambient on the base; ShadedMaterial's specular/shininess stay at defaults.
+- **The method→modifier WALK is deferred, not built.** The whole reference corpus is `numMethods == 0`, so the
+  AWD2 method-block byte layout can't be observed or tested in-sandbox; shipping a blind walk would be
+  speculative (violates the honest-parse mandate). Instead: read `numMethods`, warn when > 0, leave method
+  bodies unwalked. When a real method-bearing AWD2 file + the verified method-type spec are available, the
+  walk + Fog/EnvMap/fresnel/soft-shadow→modifier mapping gets built and tested properly. Surfaced to review.
+
+**Still open (example-side, not importer):** an AWD-loading example must `registerBuiltInModifiers` + register
+the shaded mesh renderer (not just the BlinnPhong renderer) now that AWD meshes carry ShadedMaterial. No AWD
+example exists in-repo yet; note carried for whoever builds it.
+
 ## 2026-07-24 — AWD → AWD2: API/file split, version guard, compressed-animation fix, real-corpus verify (builder, user-directed)
 
 The AWD importer is now explicitly **AWD2** end-to-end, reserving the bare `Awd3` namespace for the
