@@ -122,7 +122,15 @@ export function parseMd2(bytes: Readonly<Uint8Array>, warnings?: string[]): Scen
   // pose; the rest become morph targets. Each frame carries its own quantization scale/translate, so
   // dequantization is per-frame; the Z-up→Y-up reflection is applied here so the morph deltas below are
   // computed entirely in Flight's Y-up space.
-  const frames: readonly Md2Frame[] = readMd2Frames(bytes, view, offFrames, numFrames, numVertices, frameStride);
+  const frames: readonly Md2Frame[] = readMd2Frames(
+    bytes,
+    view,
+    offFrames,
+    numFrames,
+    numVertices,
+    frameStride,
+    warnings,
+  );
   const base = frames[0];
 
   // Re-index triangles. Each MD2 triangle has 3 vertex indices and 3 texcoord indices (independent
@@ -232,8 +240,12 @@ function readMd2Frames(
   numFrames: number,
   numVertices: number,
   frameStride: number,
+  warnings?: string[],
 ): Md2Frame[] {
   const frames: Md2Frame[] = [];
+  // uint8 normal indices can exceed the 162-entry table in malformed files; collect the distinct
+  // offenders and warn once rather than per-vertex. Only allocated when a warnings sink is present.
+  const outOfRangeNormals = warnings ? new Set<number>() : null;
   for (let f = 0; f < numFrames; f++) {
     const frameBase = offFrames + f * frameStride;
     const scaleX = view.getFloat32(frameBase, true);
@@ -263,9 +275,17 @@ function readMd2Frames(
         normals[p] = n[0];
         normals[p + 1] = n[2];
         normals[p + 2] = -n[1];
+      } else if (outOfRangeNormals !== null) {
+        outOfRangeNormals.add(ni);
       }
     }
     frames.push({ normals, positions });
+  }
+  if (outOfRangeNormals !== null && outOfRangeNormals.size > 0) {
+    const indices = [...outOfRangeNormals].sort((a, b) => a - b).join(', ');
+    warnings?.push(
+      `createSceneFromMd2: vertex normal index(es) ${indices} are outside the 162-entry Anorms table; those normals were left zero`,
+    );
   }
   return frames;
 }
