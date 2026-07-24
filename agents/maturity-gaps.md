@@ -101,8 +101,8 @@ boxes — `glyphatlas/status.md`), particle emitters, and camera2d view-matrix a
 ### B. WebGPU is a second-class citizen everywhere
 wgpu lags gl in every domain audited, and the 2026-07 GL workflow **widened** the gap by design (GL-only
 scope): the 3D features it closed on gl have **no wgpu counterpart**. wgpu today has **no GPU skinning** (any
-material — gl now has it across all five families), **no ShadedMaterial renderer** (gl has the full modifier
-stack), **no morph deformation** (gl CPU-blends), **no advanced-blend `BlendEffect` runner** (gl + canvas/dom
+material — gl now has it across all five families), ShadedMaterial modifier stacks now render on both GPU
+backends, **no morph deformation** (gl CPU-blends), **no advanced-blend `BlendEffect` runner** (gl + canvas/dom
 realize it), **no video/compressed-texture upload** (gl-only), plus the pre-existing **no custom-shader
 material/effect**, **no 3D-particle renderer** (wait — 3D particles *do* render on wgpu via host capture; see
 that row), and **no `.webgpu.ts` functional baseline** for several light/shadow/IBL scenes — so the punctual-lighting parity that
@@ -232,7 +232,7 @@ unsupported cases is largely unbuilt for the gaps that most need it.
 | SSAO/SSR/TAA/motion-blur/fog work on GPU | Pipeline is color-only (no depth/normal/velocity/history); SSR/TAA = passthrough, SSAO/SMAA = crude single-pass, fog = screen-Y gradient proxy; baselines captured the stubs | gl/wgpu (canvas passthrough) | SURPRISE |
 | All 51 effects render | 6 are descriptor-only — no realization file in effects-{gl,wgpu,canvas} (autoExposure/barrelDistortion/contactShadows/filmEmulation/panniniProjection/volumetricLight); return passthrough sentinel | all | SURPRISE |
 | Canvas post-FX stack works | 31 of ~40 canvas effects are passthrough no-ops (`canvasSsaoEffect.ts:8` etc.); bevel/gradientBevel/gradientGlow/innerGlow/innerShadow have no canvas file despite Feature Lookup listing "canvas" | canvas | MAJOR |
-| ShadedMaterial + modifiers cross-backend | `@flighthq/shading` modifier tier (fresnel/normalPerturb/emissive/envReflect/fog/vertexDisplace/dissolve/toon) + `shadedGlMeshMaterialRenderer` shipped on **gl**, with the previously-disabled normal map fixed. scene-wgpu still has no ShadedMaterial renderer → subset skipped, draws nothing ([wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) §4); `shading-globe` no `.webgpu.ts` | gl (wgpu open) | RESOLVED (gl) |
+| ShadedMaterial + modifiers cross-backend | `@flighthq/shading` modifier tier (fresnel/normalPerturb/emissive/envReflect/fog/vertexDisplace/dissolve/toon) is realized by `shadedGlMeshMaterialRenderer` and `shadedWgpuMeshMaterialRenderer`, with tangent-space normal mapping on both. `shading-globe` and `shading-normal-map` carry WebGPU raster proof ([wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) §4). | gl, wgpu | RESOLVED |
 | customShader material/effect escape hatch on GPU | gl-only; no `customShader…Wgpu…`, no `wgpuCustomShaderEffect`; 3D particles gl-only too | gl only | MAJOR |
 | Saturation/hue/sepia/channel-mix fold onto sprites | Inline GPU fold is affine-only; off-diagonal terms dropped unless re-routed as full-frame Effect (`colorAdjustmentResolution.ts:67`); guard is opt-in so drop is silent; no canvas inline fold | gl/wgpu partial, canvas none | MAJOR |
 | Punctual lights/shadows verified on wgpu; ortho; area lights | Light/shadow scenes are `.webgl.ts` only (no wgpu baseline); ortho blank on wgpu; area lights descriptor-only, unwired | wgpu / all | MAJOR |
@@ -301,7 +301,7 @@ silent-wrong cases, then fill the biggest capability holes.
 3. **Close the WebGPU parity gaps that are outright broken (Theme B).** The GL-only 2026-07 workflow left
    these as the wgpu backlog, now specced end-to-end in [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md):
    the silent transparent-pass failure (§1, wrong-output — do first), orthographic-blank NDC-Z remap (§2,
-   black-screen), wgpu GPU skinning (§3), ShadedMaterial-on-wgpu (§4), and the wgpu advanced-blend
+   black-screen), wgpu GPU skinning (§3), and the wgpu advanced-blend
    `BlendEffect` runner (§5). Add `.webgpu.ts` functional baselines for every light/shadow/IBL/ortho scene so
    parity is evidenced. Each spec item is a translation of a shipped GL file.
 
