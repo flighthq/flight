@@ -231,6 +231,29 @@ describe('createSceneFromObj', () => {
     expect(diagnostics).toHaveLength(0);
   });
 
+  it('treats a bare o as a permissive unnamed boundary (importer recovery, not a spec default)', () => {
+    // `o` always takes a name in the spec, so a bare `o` has no defined default — the importer recovers by
+    // closing the prior object and starting an unnamed one, the same boundary as `g`. No diagnostic.
+    const obj = [
+      'v 0 0 0',
+      'v 1 0 0',
+      'v 0 1 0',
+      'v 2 0 0',
+      'v 2 1 0',
+      'v 3 0 0',
+      'o Cube',
+      'f 1 2 3',
+      'o',
+      'f 4 5 6',
+    ].join('\n');
+    const diagnostics: ImportDiagnostic[] = [];
+    const roots = getNodeChildren(createSceneFromObj(obj, undefined, diagnostics).root);
+    expect(roots).toHaveLength(2);
+    expect((roots[0] as SceneNode).name).toBe('Cube');
+    expect((roots[1] as SceneNode).name).toBeNull();
+    expect(diagnostics).toHaveLength(0);
+  });
+
   it('treats a bare usemtl as the default material, clearing the previously active one', () => {
     // Wavefront spec: `usemtl` with no name is the default (white / no) material. A bare `usemtl` must clear
     // the active material so the following faces are NOT bound to the stale one. A defined state, not a drop.
