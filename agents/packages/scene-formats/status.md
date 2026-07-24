@@ -1,7 +1,7 @@
 ---
 package: "@flighthq/scene-formats"
-updated: null
-by: null
+updated: "2026-07-24"
+by: builder
 ---
 
 # scene-formats — Status Log
@@ -10,6 +10,32 @@ by: null
 > watch next. Incoming status documents land here.
 
 <!-- newest entry on top -->
+
+## 2026-07-24 — md2/md5/awd/3ds parser-maturity pass (builder, per-chunk attested + reviewed)
+
+Correctness + major features + breadth landed this session (each its own commit, attested):
+
+- **MD2**: restored the canonical 162-entry Anorms table (the committed table had **129 scrambled tail
+  entries** + 2 missing → corrupt normals; now byte-exact vs `anorms.h`, warns on out-of-range indices).
+  Frame-name **animation segmentation** — contiguous same-prefix frame runs become N named morph clips.
+- **MD5**: bind position now baked from the **same top-4 renormalized** influence set the skin stores
+  (was all-influences → disagreed with joints0/weights0 for >4-influence verts); warns on truncation.
+  Added **`importMd5Mesh(meshSource, animSource?)`** one-call composer over parseMd5Mesh + parseMd5Anim.
+- **AWD**: tangent.W bitangent handedness now written (was 0 → broke normal mapping); sign derived
+  analytically as `-1` — **needs a builder2 shambler render-proof to confirm chirality** (flip the one
+  `AWD_TANGENT_HANDEDNESS` constant if bumps invert). **Compression support**: swappable
+  `registerAwdDecompressor` seam + vendored dependency-free sync DEFLATE/zlib inflater
+  (`registerAwdDeflateDecompressor`), tree-shakable — closes the "compressed AWD imports as nothing" gap.
+- **3DS**: per-face **material subsets** (MSH_MAT_GROUP face-index list → one MeshSubset per material) +
+  **smoothing-group normals** (SMOOTH_GROUP, vertex-split at hard edges). Material breadth: shininess
+  (0xA040 → specular exponent), bump (0xA230 → normalMap), transparency (0xA050 → alpha + blend).
+
+**Parked gap (review-ruled, not a parser fix):** the opacity texture **MAP** MAT_OPACMAP `0xA210` is left
+unread — BlinnPhongMaterial has no `opacityMap`/`alphaMap` field, and adding one is a cross-package
+feature (types + scene-gl/scene-wgpu alpha-map sampling + functional proof), not parser breadth. The same
+pending question applies to **AWD and glTF alpha maps**. Scalar transparency already covers the common
+case honestly. Awaiting a user direction ruling before this becomes a scoped dispatch (types → renderer →
+parsers). The 3DS FACE_MATERIAL subset-split gap below is now **done** (this pass).
 
 ## 2026-07-19 — AAA depth follow-ups recorded (doc-honesty stage)
 
