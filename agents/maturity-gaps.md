@@ -10,10 +10,11 @@ Companion docs: [quality-plan](quality-plan.md), [test-depth-review](test-depth-
 [render-backend-support](render-backend-support.md), [effect-adjustment-architecture](effect-adjustment-architecture.md),
 [wgpu-3d-parity-spec](wgpu-3d-parity-spec.md) (the un-postpone plan for every WebGPU 3D gap this doc marks open).
 
-**2026-07 update:** the GL-only AAA workflow closed many gaps below **on gl only** (GPU skinning across all
-material families, morph, ShadedMaterial + modifiers, the advanced-blend re-architecture, glTF/OBJ/3DS/MD5/AWD
-import, video + compressed textures). Rows it closed are marked RESOLVED/RESOLVED (gl); their WebGPU
-counterparts stay open and are specced in [wgpu-3d-parity-spec](wgpu-3d-parity-spec.md).
+**2026-07 update:** the AAA workflow closed many gaps below (GPU skinning across all material families on
+both GPU backends, morph on gl, ShadedMaterial + modifiers on both GPU backends, advanced blend on gl/wgpu,
+glTF/OBJ/3DS/MD5/AWD import, and video + compressed textures on gl). Rows it closed are marked
+RESOLVED/RESOLVED (gl); remaining WebGPU counterparts are specced in
+[wgpu-3d-parity-spec](wgpu-3d-parity-spec.md).
 
 Bite legend: **SURPRISE** = looks done / tests green but silently does nothing or wrong; **MAJOR** = real
 capability gap a real app hits; **MINOR** = fidelity/edge-case hole or breadth gap clearly unbuilt.
@@ -34,31 +35,26 @@ Ranked, worst first. Each is something a user assumes works and it does not.
    are descriptor-only or passthrough/approximate placeholders on *every* backend including gl/wgpu, because
    the effect pipeline is color-only (no depth/normal/velocity/history buffers). They pass regression baselines
    that captured the stub output.
-3. **~~Skinned glTF/PBR characters render in bind pose on the GPU.~~ CLOSED ON GL; WGPU OPEN.** The 2026-07
-   GL workflow wired `HAS_SKIN` across **all five** real material families on gl (classic/pbr/toon/unlit/
-   shaded — grep `HAS_SKIN` in scene-gl). The bone palette is a **RGBA32F data texture read via `texelFetch`**
-   (the carrier the design decision named): `GlSkinPaletteTexture` / `uploadGlSkinPaletteTexture` in
-   `@flighthq/render-gl`, one mat4 = four texels, per-state `skinPalette` grown to the largest skeleton.
-   Because it is a texture, the joint count is bounded by MAX_TEXTURE_SIZE — the old per-context
-   uniform-budget capacity gate and CPU fallback are **gone** (`isGpuSkinnedDraw` now GPU-skins any skinned
-   mesh with `joints0`/`weights0`). The CPU kernel in `@flighthq/skeleton3d` is retained for bounds/picking
-   only. **WebGPU still has zero GPU skinning** (grep confirms no joint/skin path in scene-wgpu) — a skinned
-   mesh renders in bind pose on wgpu. The un-postpone plan is [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md)
-   §3 (mirror the GL data texture with a `texture_2d<f32>` + `textureLoad`).
+3. **~~Skinned glTF/PBR characters render in bind pose on the GPU.~~ RESOLVED.** `HAS_SKIN` spans all five
+   real material families on gl and wgpu (classic/pbr/toon/unlit/shaded). Both use a growable
+   **RGBA32F data texture** for the bone palette, read with `texelFetch` on gl and `textureLoad` on wgpu,
+   so joint count is texture-dimension-bound rather than uniform-budget-bound. The old capacity gate and
+   CPU draw fallback are gone; the CPU kernel remains for bounds/picking only. `scene-skinning` verifies a
+   posed 80-joint rig on WebGPU.
 4. **Non-Latin text is fundamentally broken, not just unstyled.** `textbidi` (UAX #9) and `textsegment`
    (UAX #29) ship as packages but are wired into nothing — layout does no bidi reorder, no grapheme
    segmentation, and line-breaks on `\n`+ASCII-space only. Arabic/Hebrew/Indic/CJK/Thai render wrong. There is
    also no real shaping backend (advances-only `measureText`; no HarfBuzz), and MSDF/SDF fonts parse but no
    shader renders them.
-5. **~~Advanced blend modes silently degrade to Normal on both GPU backends.~~ RE-ARCHITECTED; WGPU
-   REALIZATION OPEN.** The footgun is gone: the advanced / non-separable modes (Overlay/HardLight/SoftLight/
+5. **~~Advanced blend modes silently degrade to Normal on both GPU backends.~~ RESOLVED.** The footgun is
+   gone: the advanced / non-separable modes (Overlay/HardLight/SoftLight/
    Difference/Exclusion/ColorDodge/ColorBurn/Hue/Saturation/Color/Luminosity) were **removed from the
    `BlendMode` node enum** — which is now fixed-function only — so one can no longer be assigned as a node
    property and silently fall to Normal. They are a separate `AdvancedBlendMode` vocabulary realized as a
    `BlendEffect` composite recipe (`@flighthq/effects` `createBlendEffect` + `blendModeMath`), run on **gl**
-   by `@flighthq/effects-gl` `glBlendEffect` and natively on canvas/dom. **wgpu has no `BlendEffect` runner
-   yet** — the effect no-ops on wgpu (a missing realization of an explicit effect, not a silent-degrade).
-   [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) §5.
+   by `@flighthq/effects-gl` `glBlendEffect`, on wgpu by `@flighthq/effects-wgpu` `wgpuBlendEffect`, and
+   natively on canvas/dom. The GPU runners use matching named-backdrop offscreen passes; the WebGPU
+   functional scene matches the WebGL raster exactly. [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) §5.
 6. **~~Compressed textures (KTX2/DDS/Basis) are a mirage.~~ NATIVE UPLOAD LANDED ON GL.** `render-gl`
    `uploadGlCompressedTextureContainer` now uploads BCn/ETC/ASTC/PVRTC + ATF containers natively via
    `WEBGL_compressed_texture_*` with `detectGlCompressedTextureSupport` capability detection and an optional
@@ -99,11 +95,9 @@ boxes — `glyphatlas/status.md`), particle emitters, and camera2d view-matrix a
 (`test-depth-review.md:126-128`). "Tests pass" systematically overstates readiness for anything GPU-rendered.
 
 ### B. WebGPU is a second-class citizen everywhere
-wgpu lags gl in every domain audited, and the 2026-07 GL workflow **widened** the gap by design (GL-only
-scope): the 3D features it closed on gl have **no wgpu counterpart**. wgpu today has **no GPU skinning** (any
-material — gl now has it across all five families), ShadedMaterial modifier stacks now render on both GPU
-backends, **no morph deformation** (gl CPU-blends), **no advanced-blend `BlendEffect` runner** (gl + canvas/dom
-realize it), **no video/compressed-texture upload** (gl-only), plus the pre-existing **no custom-shader
+wgpu still lags gl in several audited domains, though GPU skinning, ShadedMaterial modifier stacks, and
+advanced-blend `BlendEffect` now render on both GPU backends. Remaining gaps include **no morph deformation**
+(gl CPU-blends), **no video/compressed-texture upload** (gl-only), plus the pre-existing **no custom-shader
 material/effect**, **no 3D-particle renderer** (wait — 3D particles *do* render on wgpu via host capture; see
 that row), and **no `.webgpu.ts` functional baseline** for several light/shadow/IBL scenes — so the punctual-lighting parity that
 `render-backend-support.md` gap #8 marks "DONE on both gl and wgpu" is claimed by inspection, never by
@@ -214,7 +208,7 @@ unsupported cases is largely unbuilt for the gaps that most need it.
 | Unit tests green ⇒ GPU works | Unit tests use mock WebGL2 (`glTestHelper.ts:7`); no draw touches a rasterizer. Real-pixel checks live in the functional capture harness (wgpu runs there via SwiftShader software Vulkan, mostly reproducible in-sandbox) — not the unit suite | gl/wgpu | SURPRISE |
 | Orthographic camera on WebGPU | RESOLVED — backend-seam VP depth remap plus `camera-orthographic.webgpu.ts` raster proof | wgpu | RESOLVED |
 | Transparent 3D meshes on WebGPU | RESOLVED — two-pass pooled partition, back-to-front sort, blended pipelines, and `scene-transparent.webgpu.ts` proof | wgpu | RESOLVED |
-| Overlay/HardLight/Difference/… blend | No longer in the `BlendMode` node enum (fixed-function only) — assigning one as a node property is impossible, killing the silent-degrade. Now an explicit `BlendEffect` composite recipe: realized on gl (`glBlendEffect`) + canvas/dom native; **wgpu runner unbuilt** ([wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) §5) | gl/canvas/dom (wgpu open) | RESOLVED (re-architected) |
+| Overlay/HardLight/Difference/… blend | No longer in the `BlendMode` node enum (fixed-function only) — assigning one as a node property is impossible, killing the silent-degrade. Now an explicit `BlendEffect` composite recipe: realized on gl (`glBlendEffect`), wgpu (`wgpuBlendEffect`), and canvas/dom natively. `effect-blend-advanced` verifies exact gl/wgpu raster parity. | all | RESOLVED |
 | Per-bitmap `smoothing` flag | Ignored on gl/wgpu; global filter, texture cached so first-draw filter sticks → pixel-art blurry | gl/wgpu | MAJOR |
 | Stroke joins (miter/bevel/round) | Not differentiated on gl/wgpu (caps work); scoped canvas/dom | gl/wgpu | MAJOR |
 | Per-instance ColorTransform tint | gl/wgpu-only; Canvas/DOM draw untinted (no color-transform renderer) — flash-on-hit/team-color silently fails | canvas/dom | MAJOR |
@@ -298,12 +292,11 @@ silent-wrong cases, then fill the biggest capability holes.
    adjustment fold dropping saturation/hue. Where a true fix is large, at minimum add the guard-layer warnings
    (Theme I) so the drop stops being silent.
 
-3. **Close the WebGPU parity gaps that are outright broken (Theme B).** The GL-only 2026-07 workflow left
-   these as the wgpu backlog, now specced end-to-end in [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md):
-   the silent transparent-pass failure (§1, wrong-output — do first), orthographic-blank NDC-Z remap (§2,
-   black-screen), wgpu GPU skinning (§3), and the wgpu advanced-blend
-   `BlendEffect` runner (§5). Add `.webgpu.ts` functional baselines for every light/shadow/IBL/ortho scene so
-   parity is evidenced. Each spec item is a translation of a shipped GL file.
+3. **~~Close the first WebGPU parity gaps that were outright broken (Theme B).~~ SECTIONS 1–5 COMPLETE.**
+   Transparent-pass sorting (§1), the orthographic NDC-Z remap (§2), GPU skinning (§3), ShadedMaterial (§4),
+   and the advanced-blend `BlendEffect` runner (§5) now have WebGPU implementations and functional evidence.
+   Continue the later [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) gaps, including shadow-pass frame
+   ordering, and add `.webgpu.ts` baselines for the remaining light/shadow/IBL scenes.
 
 4. **~~Make skinned characters actually deform on the GPU (Exec #3).~~ DONE ON GL.** `HAS_SKIN` now spans all
    five gl families (classic/pbr/toon/unlit/shaded), the palette is an RGBA32F **data texture read via

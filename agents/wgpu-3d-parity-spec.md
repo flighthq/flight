@@ -1,6 +1,6 @@
 # WebGPU 3D Parity — Implementation Spec
 
-**Status: PARTIALLY IMPLEMENTED. Sections 1, 2, and 4 are complete; sections 3 and 5 remain spec-only.** The
+**Status: PARTIALLY IMPLEMENTED. Sections 1–5 are complete; the later renderer gaps remain open.** The
 2026-07 AAA workflow was scoped GL-only; several 3D features it closed on WebGL2 (`scene-gl`,
 `effects-gl`, `render-gl`, `displayobject-gl`) still have **no WebGPU counterpart**. This is the
 remaining un-postpone plan: the concrete
@@ -291,7 +291,13 @@ gl capture. The normal-map scene is the regression guard against re-disabling it
 
 ## 5. Advanced blend modes as wgpu composite-recipe effects
 
-### The gap
+**Implemented.** `@flighthq/effects-wgpu` now mirrors the GL runner with
+`applyBlendEffectToWgpu`, a state-scoped named-backdrop registry, and a cached dual-source fullscreen
+pipeline. Its WGSL ports all eleven separable and non-separable formulas, including the standard
+`setLum`/`setSat` construction, and preserves the GL runner's branch-based mode selection and missing-backdrop
+passthrough. `effect-blend-advanced.webgpu.ts` verifies the composite against the exact WebGL raster.
+
+### Historical gap
 
 The advanced / destination-reading / non-separable blend modes (Overlay, HardLight, SoftLight,
 Difference, Exclusion, ColorDodge, ColorBurn, Hue, Saturation, Color, Luminosity) are — per the locked
@@ -383,7 +389,7 @@ then `shadow-classic` is webgl-only and the AGENTS.md feature table lists shadow
 
 ## Sequencing
 
-Do them in bite order (worst-first), each with its `.webgpu.ts` capture before moving on:
+Sections 1–5 were completed in this bite order, each with its `.webgpu.ts` capture:
 
 1. **Transparent-pass two-phase (item 1)** — the only *wrong-output* item; everything transparent is
    broken today. Also the prerequisite shape (pooled draw lists + pipeline-cache variant keying) that

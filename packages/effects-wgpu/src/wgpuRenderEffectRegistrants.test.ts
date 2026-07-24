@@ -67,11 +67,12 @@ describe('registerColorWgpuRenderEffects', () => {
 });
 
 describe('registerCompositeWgpuRenderEffects', () => {
-  it('registers the seven former-filter composite effect runners', async () => {
+  it('registers all composite effect runners', async () => {
     const state = await createWgpuRenderStateForTest();
     registerCompositeWgpuRenderEffects(state);
     for (const kind of [
       'BevelEffect',
+      'BlendEffect',
       'DropShadowEffect',
       'GradientBevelEffect',
       'GradientGlowEffect',
