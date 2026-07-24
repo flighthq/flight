@@ -37,7 +37,7 @@ export const sheenPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     const gl = state.gl;
     const sheen = material as Readonly<SheenPbrMaterial> | null;
     const standard = sheen !== null ? sheen.standard : null;
-    const key = buildGlPbrStandardDefineKey(standard, sheen !== null && sheen.alphaMode === 'mask');
+    const key = buildGlPbrStandardDefineKey(standard, sheen);
     key.sheenEnabled = true;
     const program = ensureGlPbrProgram(state, key);
     beginGlMeshDraw(state, program, sheen !== null && sheen.doubleSided);

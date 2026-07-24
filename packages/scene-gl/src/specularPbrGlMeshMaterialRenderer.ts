@@ -38,7 +38,7 @@ export const specularPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     const gl = state.gl;
     const specular = material as Readonly<SpecularPbrMaterial> | null;
     const standard = specular !== null ? specular.standard : null;
-    const key = buildGlPbrStandardDefineKey(standard, specular !== null && specular.alphaMode === 'mask');
+    const key = buildGlPbrStandardDefineKey(standard, specular);
     key.specularEnabled = true;
     const program = ensureGlPbrProgram(state, key);
     beginGlMeshDraw(state, program, specular !== null && specular.doubleSided);

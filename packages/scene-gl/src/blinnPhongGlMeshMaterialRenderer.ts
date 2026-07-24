@@ -27,6 +27,7 @@ import {
   setGlMeshCameraPosition,
   setGlMeshViewProjection,
 } from './glMeshProgram';
+import { isGlTextureReady } from './glPbrStandardBlock';
 import { getGlSceneRuntime } from './glSceneRuntime';
 
 // The built-in classic BlinnPhong forward-lit mesh-material renderer (GlMeshMaterialRenderer for
@@ -127,7 +128,10 @@ function bindGlBlinnPhongMaterialUniforms(
 function defineKeyForMaterial(material: Readonly<BlinnPhongMaterial> | null): GlClassicDefineKey {
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
-    hasAlphaMap: material !== null && material.alphaMap !== null && material.alphaMap.image !== null,
+    // Match the bind's readiness test (isGlTextureReady, incl. hasImageResourcePixels) so the compiled
+    // HAS_ALPHA_MAP variant and the bound texture never disagree. Gated off 'opaque' — an opaque
+    // material ignores coverage (SurfaceMaterial contract), so it must not sample the alpha map.
+    hasAlphaMap: material !== null && material.alphaMode !== 'opaque' && isGlTextureReady(material.alphaMap),
     hasDiffuseMap: material !== null && material.diffuseMap !== null && material.diffuseMap.image !== null,
     hasNormalMap: material !== null && material.normalMap !== null && material.normalMap.image !== null,
     hasSpecularMap: material !== null && material.specularMap !== null && material.specularMap.image !== null,

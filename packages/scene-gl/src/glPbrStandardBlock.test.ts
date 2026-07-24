@@ -1,4 +1,5 @@
-import { createStandardPbrMaterialProperties } from '@flighthq/materials';
+import { createStandardPbrMaterial, createStandardPbrMaterialProperties } from '@flighthq/materials';
+import type { StandardPbrMaterialProperties, Texture } from '@flighthq/types';
 
 import { compileGlPbrProgram } from './glPbrProgramCache';
 import {
@@ -10,8 +11,11 @@ import {
 import { makeFakeGl2, makeGlSceneState } from './glSceneTestHelper';
 
 function makeProgram() {
-  return compileGlPbrProgram(makeFakeGl2(), buildGlPbrStandardDefineKey(null, false));
+  return compileGlPbrProgram(makeFakeGl2(), buildGlPbrStandardDefineKey(null, null));
 }
+
+// A texture that reports pixels (isGlTextureReady === true) without a real upload.
+const READY_TEXTURE = { image: { source: {}, data: null, compressed: null } } as unknown as Texture;
 
 describe('bindGlPbrStandardBlock', () => {
   it('uploads neutral defaults for a null block', () => {
@@ -42,12 +46,27 @@ describe('bindGlPbrStandardTexture', () => {
 });
 
 describe('buildGlPbrStandardDefineKey', () => {
-  it('propagates the alpha-mask flag', () => {
-    expect(buildGlPbrStandardDefineKey(null, true).alphaMaskEnabled).toBe(true);
+  it('propagates the alpha-mask flag from the surface material', () => {
+    expect(buildGlPbrStandardDefineKey(null, createStandardPbrMaterial({ alphaMode: 'mask' })).alphaMaskEnabled).toBe(
+      true,
+    );
+  });
+
+  it('samples the alpha map for mask/blend but not for an opaque material', () => {
+    const standard = { alphaMap: READY_TEXTURE } as unknown as StandardPbrMaterialProperties;
+    expect(buildGlPbrStandardDefineKey(standard, createStandardPbrMaterial({ alphaMode: 'mask' })).hasAlphaMap).toBe(
+      true,
+    );
+    expect(buildGlPbrStandardDefineKey(standard, createStandardPbrMaterial({ alphaMode: 'blend' })).hasAlphaMap).toBe(
+      true,
+    );
+    expect(buildGlPbrStandardDefineKey(standard, createStandardPbrMaterial({ alphaMode: 'opaque' })).hasAlphaMap).toBe(
+      false,
+    );
   });
 
   it('returns all-false map and extension flags for a null block', () => {
-    const key = buildGlPbrStandardDefineKey(null, false);
+    const key = buildGlPbrStandardDefineKey(null, null);
     expect(key.clearcoatEnabled).toBe(false);
     expect(key.hasAlphaMap).toBe(false);
     expect(key.hasBaseColorMap).toBe(false);

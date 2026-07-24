@@ -38,7 +38,7 @@ export const subsurfacePbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     const gl = state.gl;
     const subsurface = material as Readonly<SubsurfacePbrMaterial> | null;
     const standard = subsurface !== null ? subsurface.standard : null;
-    const key = buildGlPbrStandardDefineKey(standard, subsurface !== null && subsurface.alphaMode === 'mask');
+    const key = buildGlPbrStandardDefineKey(standard, subsurface);
     key.subsurfaceEnabled = true;
     const program = ensureGlPbrProgram(state, key);
     beginGlMeshDraw(state, program, subsurface !== null && subsurface.doubleSided);

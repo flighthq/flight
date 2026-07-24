@@ -44,7 +44,7 @@ export const transmissionVolumePbrGlMeshMaterialRenderer: GlMeshMaterialRenderer
     const gl = state.gl;
     const transmission = material as Readonly<TransmissionVolumePbrMaterial> | null;
     const standard = transmission !== null ? transmission.standard : null;
-    const key = buildGlPbrStandardDefineKey(standard, transmission !== null && transmission.alphaMode === 'mask');
+    const key = buildGlPbrStandardDefineKey(standard, transmission);
     key.transmissionEnabled = true;
     const program = ensureGlPbrProgram(state, key);
     beginGlMeshDraw(state, program, transmission !== null && transmission.doubleSided);

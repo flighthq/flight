@@ -35,7 +35,7 @@ export const iridescencePbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     const gl = state.gl;
     const iridescence = material as Readonly<IridescencePbrMaterial> | null;
     const standard = iridescence !== null ? iridescence.standard : null;
-    const key = buildGlPbrStandardDefineKey(standard, iridescence !== null && iridescence.alphaMode === 'mask');
+    const key = buildGlPbrStandardDefineKey(standard, iridescence);
     key.iridescenceEnabled = true;
     const program = ensureGlPbrProgram(state, key);
     beginGlMeshDraw(state, program, iridescence !== null && iridescence.doubleSided);

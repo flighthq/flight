@@ -6,6 +6,7 @@ import type {
   LinearColor,
   GlRenderState,
   StandardPbrMaterialProperties,
+  SurfaceMaterial,
   Texture,
   GlPbrDefineKey,
   GlPbrProgram,
@@ -97,20 +98,24 @@ export function bindGlPbrStandardTexture(
 }
 
 // Builds a GlPbrDefineKey with the standard-block map flags from `standard` and the alpha-mask flag
-// from the material's surface trailer, with every extension lobe disabled. Each extension renderer
-// calls this and then ORs in its own extension flag; the StandardPbr renderer uses it as-is. Keeps
-// the map-present test (isGlTextureReady) in one place so the compiled variant and the bound
-// textures never disagree.
+// from `surface`'s trailer, with every extension lobe disabled. Each extension renderer calls this and
+// then ORs in its own extension flag; the StandardPbr renderer uses it as-is. Keeps the map-present
+// test (isGlTextureReady) in one place so the compiled variant and the bound textures never disagree.
+// Takes the whole surface material (mirrors buildWgpuPbrStandardDefineKey) so it can read `alphaMode`
+// for both the mask flag and the alpha-map gate.
 export function buildGlPbrStandardDefineKey(
   standard: Readonly<StandardPbrMaterialProperties> | null,
-  alphaMaskEnabled: boolean,
+  surface: Readonly<SurfaceMaterial> | null,
 ): GlPbrDefineKey {
   const baseColorMap = standard?.baseColorMap ?? null;
+  const alphaMode = surface?.alphaMode ?? 'opaque';
   return {
-    alphaMaskEnabled,
+    alphaMaskEnabled: alphaMode === 'mask',
     anisotropyEnabled: false,
     clearcoatEnabled: false,
-    hasAlphaMap: isGlTextureReady(standard?.alphaMap ?? null),
+    // An opaque material ignores coverage (SurfaceMaterial contract), so it must not sample the alpha
+    // map; only 'mask'/'blend' do. Same isGlTextureReady predicate as the bind path.
+    hasAlphaMap: alphaMode !== 'opaque' && isGlTextureReady(standard?.alphaMap ?? null),
     hasBaseColorMap: isGlTextureReady(baseColorMap),
     hasEmissiveMap: isGlTextureReady(standard?.emissiveMap ?? null),
     hasMetallicRoughnessMap: isGlTextureReady(standard?.metallicRoughnessMap ?? null),
