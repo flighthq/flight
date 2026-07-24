@@ -9,7 +9,12 @@ import {
 } from '@flighthq/geometry';
 import { detectImageMimeType } from '@flighthq/image-codec';
 import { createBlinnPhongMaterial } from '@flighthq/materials';
-import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, computeMeshGeometryNormals, createMeshGeometry } from '@flighthq/mesh';
+import {
+  CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
+  computeMeshGeometryNormals,
+  computeMeshGeometryTangents,
+  createMeshGeometry,
+} from '@flighthq/mesh';
 import { createSceneFromDocument } from '@flighthq/scene';
 import type { Scene } from '@flighthq/types';
 import type {
@@ -1154,6 +1159,15 @@ function parseTriangleGeometryBlock(
     // Regenerate normals only when the sub-mesh carried none, matching the shared emitter; authored
     // AWD normals (present on skinned models like the shambler) are kept.
     if (normals === null && indexArray !== undefined) computeMeshGeometryNormals(geometry, geometry);
+    // Away3D commonly ships meshes with UVs but NO tangent stream and derives tangents at load time. With
+    // no stream the tangent frame above is left zero, so a normal-mapped material renders black (its
+    // sampled normal has no basis to transform through). Synthesize a tangent basis (xyz + handedness W)
+    // from positions/normals/UVs — the -1 W this yields for real AWD geometry is render-confirmed correct.
+    // Only when the stream is absent and there are UVs (and indices, for the per-triangle UV gradient);
+    // an authored tangent stream is kept untouched.
+    if (tangents === null && uvs !== null && indexArray !== undefined) {
+      computeMeshGeometryTangents(geometry, geometry);
+    }
     geometries.push({ geometry, skinned });
   }
 

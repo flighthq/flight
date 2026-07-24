@@ -412,6 +412,35 @@ describe('createSceneFromAwd', () => {
     for (let v = 0; v < 3; v++) expect(geometry.vertices[v * floatsPerVertex + 9]).toBe(geometry.vertices[9]);
   });
 
+  it('synthesizes a tangent basis when the sub-mesh has UVs but no tangent stream', () => {
+    // Away3D commonly omits the tangent stream; without synthesis the mesh imports with a zero tangent
+    // frame and a normal-mapped material renders black. A triangle in the z=0 plane with a varying UV
+    // gradient must yield a real, non-degenerate tangent + a unit handedness W.
+    const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    const normals = new Float32Array([0, 0, 1, 0, 0, 1, 0, 0, 1]);
+    const uvs = new Float32Array([0, 0, 1, 0, 0, 1]);
+    const indices = new Uint16Array([0, 1, 2]);
+
+    const posStream = buildStream(AWD_STREAM_POSITIONS, AWD_DATA_FLOAT32, positions);
+    const normStream = buildStream(AWD_STREAM_NORMALS, AWD_DATA_FLOAT32, normals);
+    const uvStream = buildStream(AWD_STREAM_UVS, AWD_DATA_FLOAT32, uvs);
+    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, indices);
+    // No AWD_STREAM_TANGENTS — the case Away3D exports hit.
+    const geomBody = buildTriangleGeometryBody('Geom', [{ streams: [posStream, normStream, uvStream, idxStream] }]);
+    const geomBlockHeader = buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length);
+    const meshBody = buildMeshInstanceBody('Mesh', 0, IDENTITY_TRANSFORM, 1);
+    const meshBlockHeader = buildBlockHeader(2, AWD_BLOCK_MESH_INSTANCE, meshBody.length);
+    const body = concatBytes(geomBlockHeader, geomBody, meshBlockHeader, meshBody);
+    const awd = concatBytes(buildAwdHeader(body.length), body);
+
+    const geometry = (getNodeChildren(createSceneFromAwd(awd).root)[0] as Mesh).geometry;
+    // Tangent xyz (float offset 6-8) is a real unit-length vector, not the zero a missing stream leaves.
+    const [tx, ty, tz] = [geometry.vertices[6], geometry.vertices[7], geometry.vertices[8]];
+    expect(Math.hypot(tx, ty, tz)).toBeCloseTo(1, 3);
+    // Tangent W (float offset 9) is a unit bitangent handedness (±1), not zero.
+    expect(Math.abs(geometry.vertices[9])).toBeCloseTo(1, 3);
+  });
+
   it('builds container and mesh instance hierarchy', () => {
     const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
     const indices = new Uint16Array([0, 1, 2]);
