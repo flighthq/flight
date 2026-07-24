@@ -13,6 +13,7 @@ import {
   createAnimatedNormalModifier,
   createCamera3D,
   createDirectionalLight,
+  createDissolveModifier,
   createEmissiveModifier,
   createImageResourceFromCanvas,
   createMesh,
@@ -89,6 +90,10 @@ const material = createShadedMaterial({
       facingSoftness: 0.25,
     }),
     createRimModifier({ color: 0x4aa6ffff, power: 3, intensity: 1.6 }),
+    // Repeated procedural modifiers share one helper declaration; this scene is the real WGSL compile
+    // regression for declaration deduplication (threshold zero leaves the raster unchanged).
+    createDissolveModifier({ threshold: 0 }),
+    createDissolveModifier({ threshold: 0 }),
   ],
 });
 

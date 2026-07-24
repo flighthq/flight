@@ -42,7 +42,6 @@ import {
   ensureWgpuPbrSampleLayout,
   ensureWgpuScenePipeline,
   getWgpuMaterialSampler,
-  isWgpuTextureReady,
   resolveWgpuMaterialTextureView,
   stashWgpuUvTransform,
 } from './wgpuMeshPipeline';
@@ -51,28 +50,35 @@ import { getWgpuSceneTime } from './wgpuSceneTime';
 import { registerWgpuModifierSnippet } from './wgpuShadedModifierSnippet';
 
 interface ShadedModifierPlan {
+  diffuse: string;
+  effect: string;
+  emissive: string;
   fragmentDeclarations: string;
   normal: string;
-  emissive: string;
-  effect: string;
-  textureBindings: readonly ShadedTextureBinding[];
+  orderedModifiers: readonly Modifier[];
+  snippets: readonly (Readonly<WgpuModifierSnippet> | null)[];
+  specular: string;
+  textureCount: number;
   uniformFloatCount: number;
   vertex: string;
 }
 
-interface ShadedTextureBinding {
-  binding: number;
-  texture: Readonly<Texture> | null;
+interface CachedShadedPlan {
+  defineKey: string;
+  modifiers: readonly Modifier[];
+  plan: ShadedModifierPlan;
+  registry: Readonly<ModifierRegistry>;
 }
 
 interface ShadedBinding {
   bindGroup: GPUBindGroup;
   buffer: GPUBuffer;
   data: Float32Array;
+  entries: GPUBindGroupEntry[];
   layout: GPUBindGroupLayout;
   sampler: GPUSampler;
-  textureReadiness: boolean[];
   textures: (Readonly<Texture> | null)[];
+  views: GPUTextureView[];
 }
 
 // Writes the base surface plus every ordered modifier into one uniform allocation and binds the base
@@ -86,55 +92,53 @@ export function bindWgpuShadedSurface(
   specular: Readonly<LinearColor>,
 ): GPUBindGroup {
   const registry = getModifierRegistry(state);
-  const plan = buildModifierPlan(material.modifiers, registry);
+  const plan = getCachedModifierPlan(material, registry);
   const byteLength = 48 + plan.uniformFloatCount * 4;
   let binding = shadedBindings.get(material);
-  const textures: (Readonly<Texture> | null)[] = [
-    material.diffuseMap,
-    material.specularMap,
-    material.normalMap,
-    ...plan.textureBindings.map(({ texture }) => texture),
-  ];
   const sampler = getWgpuMaterialSampler(state, material.diffuseMap);
-  const resourcesChanged =
+  if (
     binding === undefined ||
     binding.layout !== pipeline.materialBindGroupLayout ||
-    binding.sampler !== sampler ||
-    !sameTextureResources(binding, textures);
-  if (resourcesChanged) {
-    const canReuseBuffer = binding !== undefined && binding.data.byteLength === byteLength;
-    if (binding !== undefined && !canReuseBuffer) binding.buffer.destroy();
-    const buffer = canReuseBuffer
-      ? binding!.buffer
-      : state.device.createBuffer({
-          size: byteLength,
-          usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-        });
-    const entries: GPUBindGroupEntry[] = [
-      { binding: 0, resource: { buffer } },
-      { binding: 1, resource: sampler },
-      { binding: 2, resource: resolveWgpuMaterialTextureView(state, material.diffuseMap) },
-      { binding: 3, resource: resolveWgpuMaterialTextureView(state, material.specularMap) },
-      { binding: 4, resource: resolveWgpuMaterialTextureView(state, material.normalMap) },
-      ...plan.textureBindings.map(({ binding: textureBinding, texture }) => ({
-        binding: textureBinding,
-        resource: resolveWgpuMaterialTextureView(state, texture),
-      })),
-    ];
-    binding = {
-      bindGroup: state.device.createBindGroup({ entries, layout: pipeline.materialBindGroupLayout }),
-      buffer,
-      data: canReuseBuffer ? binding!.data : new Float32Array(byteLength / 4),
-      layout: pipeline.materialBindGroupLayout,
-      sampler,
-      textureReadiness: textures.map(isWgpuTextureReady),
-      textures,
-    };
+    binding.data.byteLength !== byteLength ||
+    binding.textures.length !== plan.textureCount + 3
+  ) {
+    binding?.buffer.destroy();
+    binding = createShadedBinding(state, pipeline.materialBindGroupLayout, byteLength, plan.textureCount + 3, sampler);
     shadedBindings.set(material, binding);
   }
 
-  const activeBinding = binding!;
-  const data = activeBinding.data;
+  binding.textures[0] = material.diffuseMap;
+  binding.textures[1] = material.specularMap;
+  binding.textures[2] = material.normalMap;
+  let textureOffset = 3;
+  for (let i = 0; i < plan.orderedModifiers.length; i++) {
+    const snippet = plan.snippets[i];
+    if (snippet?.textures !== undefined) {
+      textureOffset = snippet.textures(plan.orderedModifiers[i], binding.textures, textureOffset);
+    }
+  }
+
+  let resourcesChanged = binding.sampler !== sampler;
+  binding.sampler = sampler;
+  binding.entries[1].resource = sampler;
+  for (let i = 0; i < binding.textures.length; i++) {
+    // Resolving every current view is the invalidation seam: render-wgpu changes the view when the
+    // ImageResource identity or version changes, including ready->ready swaps.
+    const view = resolveWgpuMaterialTextureView(state, binding.textures[i]);
+    if (binding.views[i] !== view) {
+      binding.views[i] = view;
+      binding.entries[textureEntryIndex(i)].resource = view;
+      resourcesChanged = true;
+    }
+  }
+  if (resourcesChanged) {
+    binding.bindGroup = state.device.createBindGroup({
+      entries: binding.entries,
+      layout: pipeline.materialBindGroupLayout,
+    });
+  }
+
+  const data = binding.data;
   data.fill(0);
   data.set(diffuse, 0);
   data.set(specular, 4);
@@ -142,23 +146,51 @@ export function bindWgpuShadedSurface(
   data[9] = material.alphaCutoff;
   data[10] = getWgpuSceneTime(state);
   data[11] = material.normalScale;
-  writeModifierUniforms(data, 12, orderModifierStack(material.modifiers), registry);
-  state.device.queue.writeBuffer(activeBinding.buffer, 0, data.buffer, 0, byteLength);
+  writeModifierUniforms(data, 12, plan);
+  state.device.queue.writeBuffer(binding.buffer, 0, data.buffer, 0, byteLength);
   stashWgpuUvTransform(state, material.diffuseMap);
-  return activeBinding.bindGroup;
+  return binding.bindGroup;
 }
 
-function sameTextureResources(
-  binding: Readonly<ShadedBinding>,
-  textures: readonly (Readonly<Texture> | null)[],
-): boolean {
-  if (binding.textures.length !== textures.length) return false;
-  for (let i = 0; i < textures.length; i++) {
-    if (binding.textures[i] !== textures[i] || binding.textureReadiness[i] !== isWgpuTextureReady(textures[i])) {
-      return false;
-    }
+function createShadedBinding(
+  state: WgpuRenderState,
+  layout: GPUBindGroupLayout,
+  byteLength: number,
+  textureCount: number,
+  sampler: GPUSampler,
+): ShadedBinding {
+  const buffer = state.device.createBuffer({
+    size: byteLength,
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+  });
+  const textures = new Array<Readonly<Texture> | null>(textureCount).fill(null);
+  const placeholder = resolveWgpuMaterialTextureView(state, null);
+  const views = new Array<GPUTextureView>(textureCount).fill(placeholder);
+  const entries = new Array<GPUBindGroupEntry>(textureCount + 3);
+  entries[0] = { binding: 0, resource: { buffer } };
+  entries[1] = { binding: 1, resource: sampler };
+  entries[5] = { binding: 5, resource: placeholder };
+  for (let i = 0; i < textureCount; i++) {
+    // Binding 5 belongs to the classic alpha map; modifier textures occupy the open range at 6+.
+    entries[textureEntryIndex(i)] = {
+      binding: i < 3 ? i + 2 : i + 3,
+      resource: placeholder,
+    };
   }
-  return true;
+  return {
+    bindGroup: state.device.createBindGroup({ entries, layout }),
+    buffer,
+    data: new Float32Array(byteLength / 4),
+    entries,
+    layout,
+    sampler,
+    textures,
+    views,
+  };
+}
+
+function textureEntryIndex(textureIndex: number): number {
+  return textureIndex < 3 ? textureIndex + 2 : textureIndex + 3;
 }
 
 // Stable identity for one ShadedMaterial pipeline family. Base map/cull/mask flags precede the
@@ -182,9 +214,10 @@ export function ensureWgpuShadedPipeline(
   format: GPUTextureFormat,
 ): WgpuMeshPipeline {
   const registry = getModifierRegistry(state);
-  const key = `${buildWgpuShadedCacheKey(material, registry)}|${format}`;
+  const defineKey = buildWgpuShadedCacheKey(material, registry);
+  const plan = getCachedModifierPlan(material, registry, defineKey);
+  const key = `${defineKey}|${format}`;
   return ensureWgpuScenePipeline(state, key, (blended) => {
-    const plan = buildModifierPlan(material.modifiers, registry);
     const entries: GPUBindGroupLayoutEntry[] = [
       {
         binding: 0,
@@ -203,16 +236,21 @@ export function ensureWgpuShadedPipeline(
           texture: { sampleType: 'float' },
         }),
       ),
-      ...plan.textureBindings.map(
-        ({ binding }): GPUBindGroupLayoutEntry => ({
-          binding,
-          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-          texture: { sampleType: 'float' },
-        }),
-      ),
+      {
+        binding: 5,
+        visibility: GPUShaderStage.FRAGMENT,
+        texture: { sampleType: 'float' },
+      },
     ];
+    for (let i = 0; i < plan.textureCount; i++) {
+      entries.push({
+        binding: i + 6,
+        visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+        texture: { sampleType: 'float' },
+      });
+    }
     const materialBindGroupLayout = state.device.createBindGroupLayout({ entries });
-    const module = state.device.createShaderModule({ code: getWgpuShadedModuleSource(material, registry) });
+    const module = state.device.createShaderModule({ code: assembleWgpuShadedModuleSource(material, plan) });
     return createWgpuMeshPipeline(state, {
       blended,
       doubleSided: getWgpuShadedBaseFlags(material).doubleSided,
@@ -231,16 +269,25 @@ export function getWgpuShadedModuleSource(
   material: Readonly<ShadedMaterial>,
   registry: Readonly<ModifierRegistry> = EMPTY_MODIFIER_REGISTRY,
 ): string {
-  const flags = getWgpuShadedBaseFlags(material);
   const plan = buildModifierPlan(material.modifiers, registry);
-  let source = getWgpuClassicModuleSourceForKey({
+  return assembleWgpuShadedModuleSource(material, plan);
+}
+
+function assembleWgpuShadedModuleSource(
+  material: Readonly<ShadedMaterial>,
+  plan: Readonly<ShadedModifierPlan>,
+): string {
+  const flags = getWgpuShadedBaseFlags(material);
+  const defineKey = {
     alphaMaskEnabled: flags.alphaMaskEnabled,
     doubleSided: flags.doubleSided,
     hasDiffuseMap: flags.hasDiffuseMap,
+    hasAlphaMap: false,
     hasNormalMap: flags.hasNormalMap,
     hasSpecularMap: flags.hasSpecularMap,
     lightingModel: 'blinnphong',
-  });
+  } as const;
+  let source = getWgpuClassicModuleSourceForKey(defineKey);
 
   source = source.replace(
     'let world = draw.world * vec4f(position, 1.0);',
@@ -261,9 +308,11 @@ ${indent(plan.vertex, 2)}
     `params : vec4f,    // x = shininess, y = alphaCutoff, z = time, w = normalScale${modifierField}`,
   );
 
-  const textureDeclarations = plan.textureBindings
-    .map(({ binding }) => `@group(2) @binding(${binding}) var modifierTexture${binding} : texture_2d<f32>;`)
-    .join('\n');
+  let textureDeclarations = '';
+  for (let i = 0; i < plan.textureCount; i++) {
+    const binding = i + 6;
+    textureDeclarations += `@group(2) @binding(${binding}) var modifierTexture${binding} : texture_2d<f32>;\n`;
+  }
   source = source.replace(
     '@group(2) @binding(4) var normalTexture : texture_2d<f32>;',
     `@group(2) @binding(4) var normalTexture : texture_2d<f32>;\n${textureDeclarations}\n${plan.fragmentDeclarations}`,
@@ -289,6 +338,16 @@ ${indent(plan.vertex, 2)}
     normal = normalize(tbn * tangentNormal);
   }
 ${indent(plan.normal, 2)}`,
+  );
+  source = source.replace(
+    '  if (ALPHA_MASK && diffuse.a < material.params.y) {',
+    `${indent(plan.diffuse, 2)}
+  if (ALPHA_MASK && diffuse.a < material.params.y) {`,
+  );
+  source = source.replace(
+    '  var radiance = vec3f(0.0);',
+    `${indent(plan.specular, 2)}
+  var radiance = vec3f(0.0);`,
   );
   source = source.replace(
     '  var radiance = vec3f(0.0);',
@@ -325,57 +384,91 @@ struct Ibl {
 
 function buildModifierPlan(modifiers: readonly Modifier[], registry: Readonly<ModifierRegistry>): ShadedModifierPlan {
   const ordered = orderModifierStack(modifiers);
-  const textures: ShadedTextureBinding[] = [];
+  const snippets: (Readonly<WgpuModifierSnippet> | null)[] = new Array(ordered.length);
+  const declarations = new Set<string>();
+  let diffuse = '';
   let normal = '';
+  let specular = '';
   let emissive = '';
   let effect = '';
   let vertex = '';
-  let fragmentDeclarations = '';
+  let textureCount = 0;
   for (let index = 0; index < ordered.length; index++) {
     const modifier = ordered[index];
     const snippet = resolveModifier(registry, modifier.kind) as WgpuModifierSnippet | null;
+    snippets[index] = snippet;
     if (snippet === null) continue;
     const base = index * MODIFIER_FLOATS;
     const context: WgpuModifierCompileContext = {
-      acquireTexture: (texture) => addTexture(textures, texture),
+      acquireTexture: () => 6 + textureCount++,
       uniformBase: base,
     };
     const contribution = snippet.contribution(modifier, index, context);
-    if (contribution.declarations !== undefined) fragmentDeclarations += contribution.declarations;
-    if (snippet.slot === ModifierSlot.Normal) normal += contribution.source;
-    else if (snippet.slot === ModifierSlot.Emissive) emissive += contribution.source;
-    else if (snippet.slot === ModifierSlot.Effect) effect += contribution.source;
-    else if (snippet.slot === ModifierSlot.Vertex) vertex += contribution.source;
+    if (contribution.declarations !== undefined) declarations.add(contribution.declarations.trim());
+    const source = delimitContribution(contribution.source);
+    if (snippet.slot === ModifierSlot.Normal) normal += source;
+    else if (snippet.slot === ModifierSlot.Diffuse) diffuse += source;
+    else if (snippet.slot === ModifierSlot.Specular) specular += source;
+    else if (snippet.slot === ModifierSlot.Emissive) emissive += source;
+    else if (snippet.slot === ModifierSlot.Effect) effect += source;
+    else if (snippet.slot === ModifierSlot.Vertex) vertex += source;
   }
   return {
+    diffuse,
     effect,
     emissive,
-    fragmentDeclarations,
+    fragmentDeclarations: declarations.size === 0 ? '' : `${Array.from(declarations).join('\n')}\n`,
     normal,
-    textureBindings: textures,
+    orderedModifiers: ordered,
+    snippets,
+    specular,
+    textureCount,
     uniformFloatCount: ordered.length * MODIFIER_FLOATS,
     vertex,
   };
 }
 
-function addTexture(textures: ShadedTextureBinding[], texture: Readonly<Texture>): number {
-  const binding = 5 + textures.length;
-  textures.push({ binding, texture });
-  return binding;
+function delimitContribution(source: string): string {
+  if (source.length === 0) return '';
+  return source.endsWith('\n') ? source : `${source}\n`;
 }
 
-function writeModifierUniforms(
-  out: Float32Array,
-  offset: number,
-  modifiers: readonly Modifier[],
-  registry: Readonly<ModifierRegistry>,
-): void {
-  for (let index = 0; index < modifiers.length; index++) {
-    const modifier = modifiers[index];
-    const snippet = resolveModifier(registry, modifier.kind) as WgpuModifierSnippet | null;
-    if (snippet === null) continue;
-    snippet.bind?.(modifier, out, offset + index * MODIFIER_FLOATS);
+function writeModifierUniforms(out: Float32Array, offset: number, plan: Readonly<ShadedModifierPlan>): void {
+  for (let index = 0; index < plan.orderedModifiers.length; index++) {
+    plan.snippets[index]?.bind?.(plan.orderedModifiers[index], out, offset + index * MODIFIER_FLOATS);
   }
+}
+
+function getCachedModifierPlan(
+  material: Readonly<ShadedMaterial>,
+  registry: Readonly<ModifierRegistry>,
+  defineKey?: string,
+): ShadedModifierPlan {
+  const cached = shadedPlans.get(material);
+  if (
+    cached !== undefined &&
+    cached.modifiers === material.modifiers &&
+    cached.registry === registry &&
+    (defineKey === undefined || cached.defineKey === defineKey) &&
+    hasCurrentSnippets(cached.plan, registry)
+  ) {
+    return cached.plan;
+  }
+  const plan = buildModifierPlan(material.modifiers, registry);
+  shadedPlans.set(material, {
+    defineKey: defineKey ?? buildWgpuShadedCacheKey(material, registry),
+    modifiers: material.modifiers,
+    plan,
+    registry,
+  });
+  return plan;
+}
+
+function hasCurrentSnippets(plan: Readonly<ShadedModifierPlan>, registry: Readonly<ModifierRegistry>): boolean {
+  for (let i = 0; i < plan.orderedModifiers.length; i++) {
+    if (resolveModifier(registry, plan.orderedModifiers[i].kind) !== plan.snippets[i]) return false;
+  }
+  return true;
 }
 
 function copyColorRgb(out: Float32Array, offset: number): void {
@@ -418,6 +511,13 @@ const animatedNormalWgpuModifierSnippet: WgpuModifierSnippet = {
   },
   kind: AnimatedNormalModifierKind,
   slot: ModifierSlot.Normal,
+  textures(modifier, out, offset): number {
+    const value = modifier as Readonly<AnimatedNormalModifier>;
+    if (value.map === null) return offset;
+    out[offset++] = value.map;
+    if (value.secondaryMap !== undefined) out[offset++] = value.secondaryMap;
+    return offset;
+  },
 };
 const dissolveWgpuModifierSnippet: WgpuModifierSnippet = {
   bind(modifier, out, base): void {
@@ -451,6 +551,11 @@ const dissolveWgpuModifierSnippet: WgpuModifierSnippet = {
   },
   kind: DissolveModifierKind,
   slot: ModifierSlot.Effect,
+  textures(modifier, out, offset): number {
+    const map = (modifier as Readonly<DissolveModifier>).map;
+    if (map !== undefined) out[offset++] = map;
+    return offset;
+  },
 };
 const emissiveWgpuModifierSnippet: WgpuModifierSnippet = {
   bind(modifier, out, base): void {
@@ -492,6 +597,11 @@ const emissiveWgpuModifierSnippet: WgpuModifierSnippet = {
   },
   kind: EmissiveModifierKind,
   slot: ModifierSlot.Emissive,
+  textures(modifier, out, offset): number {
+    const mask = (modifier as Readonly<EmissiveModifier>).mask;
+    if (mask !== undefined) out[offset++] = mask;
+    return offset;
+  },
 };
 const envReflectWgpuModifierSnippet: WgpuModifierSnippet = {
   bind(modifier, out, base): void {
@@ -623,6 +733,11 @@ const vertexDisplaceWgpuModifierSnippet: WgpuModifierSnippet = {
   },
   kind: VertexDisplaceModifierKind,
   slot: ModifierSlot.Vertex,
+  textures(modifier, out, offset): number {
+    const value = modifier as Readonly<VertexDisplaceModifier>;
+    if (value.source === VertexDisplaceModifierSource.HeightMap && value.map !== undefined) out[offset++] = value.map;
+    return offset;
+  },
 };
 
 export function registerBuiltInWgpuModifierSnippets(state: WgpuRenderState): void {
@@ -665,4 +780,5 @@ fn shadedValueNoise(p : vec2f) -> f32 {
 const MODIFIER_FLOATS = 12;
 const _color: LinearColor = [0, 0, 0, 0];
 const shadedBindings = new WeakMap<ShadedMaterial, ShadedBinding>();
+const shadedPlans = new WeakMap<ShadedMaterial, CachedShadedPlan>();
 const EMPTY_MODIFIER_REGISTRY: ModifierRegistry = { definitions: new Map() };

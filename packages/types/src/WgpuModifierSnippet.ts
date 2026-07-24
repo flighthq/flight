@@ -22,4 +22,7 @@ export interface WgpuModifierSnippet extends ModifierDefinition {
     index: number,
     context: Readonly<WgpuModifierCompileContext>,
   ): WgpuModifierContribution;
+  // Writes the modifier's current texture references in the same order contribution acquired them.
+  // Called on each bind into backend-owned scratch; return the next free offset.
+  textures?(modifier: Readonly<Modifier>, out: (Readonly<Texture> | null)[], offset: number): number;
 }
