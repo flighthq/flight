@@ -1,4 +1,5 @@
 export * from './wgpuColorMatrixPass';
+export * from './wgpuBlendEffect';
 export * from './wgpuBevelEffect';
 export * from './wgpuBloomEffect';
 export * from './wgpuBlurEffect';

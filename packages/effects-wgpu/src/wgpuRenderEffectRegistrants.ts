@@ -1,6 +1,7 @@
 import type { WgpuRenderState } from '@flighthq/types';
 
 import { defaultWgpuBevelEffectRunner } from './wgpuBevelEffect';
+import { defaultWgpuBlendEffectRunner } from './wgpuBlendEffect';
 import { defaultWgpuBloomEffectRunner } from './wgpuBloomEffect';
 import { defaultWgpuBlurEffectRunner } from './wgpuBlurEffect';
 import { defaultWgpuBokehDepthOfFieldEffectRunner } from './wgpuBokehDepthOfFieldEffect';
@@ -92,15 +93,16 @@ export function registerColorWgpuRenderEffects(state: WgpuRenderState): void {
   registerWgpuRenderEffect(state, 'WhiteBalanceEffect', defaultWgpuWhiteBalanceEffectRunner);
 }
 
-// Full standard set — composes all taxonomy bands. Registers all 43 default runners under their
+// Full standard set — composes all taxonomy bands. Registers all 44 default runners under their
 // canonical kind keys. Import this when the full effect palette is needed; import individual band
 // helpers when only a subset of effects is used.
-// Composite band: BevelEffect, DropShadowEffect, GradientBevelEffect, GradientGlowEffect,
+// Composite band: BevelEffect, BlendEffect, DropShadowEffect, GradientBevelEffect, GradientGlowEffect,
 // InnerGlowEffect, InnerShadowEffect, OuterGlowEffect. The former filter-layer composite ops,
 // now full-frame composite effects chaining tint/blur/offset passes through pooled offscreen targets.
 // Symmetric with Gl's registerCompositeGlRenderEffects.
 export function registerCompositeWgpuRenderEffects(state: WgpuRenderState): void {
   registerWgpuRenderEffect(state, 'BevelEffect', defaultWgpuBevelEffectRunner);
+  registerWgpuRenderEffect(state, 'BlendEffect', defaultWgpuBlendEffectRunner);
   registerWgpuRenderEffect(state, 'DropShadowEffect', defaultWgpuDropShadowEffectRunner);
   registerWgpuRenderEffect(state, 'GradientBevelEffect', defaultWgpuGradientBevelEffectRunner);
   registerWgpuRenderEffect(state, 'GradientGlowEffect', defaultWgpuGradientGlowEffectRunner);
