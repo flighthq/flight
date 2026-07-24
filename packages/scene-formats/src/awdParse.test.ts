@@ -42,6 +42,7 @@ import {
   AWD_STREAM_JOINT_WEIGHTS,
   AWD_STREAM_NORMALS,
   AWD_STREAM_POSITIONS,
+  AWD_STREAM_TANGENTS,
   AWD_STREAM_UVS,
   AWD_TEXTURE_TYPE_EMBEDDED,
   AWD_TEXTURE_TYPE_EXTERNAL,
@@ -376,6 +377,35 @@ describe('createSceneFromAwd', () => {
     expect([uv.x, uv.y]).toEqual([1, 0]);
     getMeshGeometryVertexUv0(uv, geometry, 2);
     expect([uv.x, uv.y]).toEqual([0.5, 1]);
+  });
+
+  it('writes the tangent xyz and a unit bitangent handedness into tangent.W', () => {
+    const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    const normals = new Float32Array([0, 0, 1, 0, 0, 1, 0, 0, 1]);
+    // Tangents with a Z component so the left→right-handed Z-negation is observable in xyz.
+    const tangents = new Float32Array([0, 0, 1, 0, 0, 1, 0, 0, 1]);
+    const indices = new Uint16Array([0, 1, 2]);
+
+    const posStream = buildStream(AWD_STREAM_POSITIONS, AWD_DATA_FLOAT32, positions);
+    const normStream = buildStream(AWD_STREAM_NORMALS, AWD_DATA_FLOAT32, normals);
+    const tanStream = buildStream(AWD_STREAM_TANGENTS, AWD_DATA_FLOAT32, tangents);
+    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, indices);
+    const geomBody = buildTriangleGeometryBody('Geom', [{ streams: [posStream, normStream, tanStream, idxStream] }]);
+    const geomBlockHeader = buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length);
+    const meshBody = buildMeshInstanceBody('Mesh', 0, IDENTITY_TRANSFORM, 1);
+    const meshBlockHeader = buildBlockHeader(2, AWD_BLOCK_MESH_INSTANCE, meshBody.length);
+    const body = concatBytes(geomBlockHeader, geomBody, meshBlockHeader, meshBody);
+    const awd = concatBytes(buildAwdHeader(body.length), body);
+
+    const geometry = (getNodeChildren(createSceneFromAwd(awd).root)[0] as Mesh).geometry;
+    const floatsPerVertex = geometry.layout.stride / 4; // 12 for the canonical (non-skinned) layout
+
+    // Tangent xyz (float offset 6-8) carries the AWD tangent with Z negated by the handedness conversion.
+    expect([geometry.vertices[6], geometry.vertices[7], geometry.vertices[8]]).toEqual([0, 0, -1]);
+    // Tangent W (float offset 9) is the bitangent handedness — the bug was it staying 0; it is now unit.
+    expect(Math.abs(geometry.vertices[9])).toBe(1);
+    // Every vertex receives the same mesh-wide handedness sign.
+    for (let v = 0; v < 3; v++) expect(geometry.vertices[v * floatsPerVertex + 9]).toBe(geometry.vertices[9]);
   });
 
   it('builds container and mesh instance hierarchy', () => {
