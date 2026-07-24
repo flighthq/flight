@@ -138,6 +138,11 @@ describe('getLightLuminance', () => {
     expect(getLightLuminance(light)).toBeCloseTo(1, 4);
   });
 
+  it('gamma-decodes packed sRGB before computing luminance', () => {
+    const light = createAmbientLight({ color: 0x808080ff, intensity: 1 });
+    expect(getLightLuminance(light)).toBeCloseTo(0.21586, 5);
+  });
+
   it('scales luminance by intensity', () => {
     const a = createAmbientLight({ color: 0xffffffff, intensity: 2 });
     const b = createAmbientLight({ color: 0xffffffff, intensity: 4 });

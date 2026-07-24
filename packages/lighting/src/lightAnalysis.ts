@@ -1,3 +1,4 @@
+import { getColorLuminance } from '@flighthq/color';
 import type { BoundingSphereLike, Light, PointLight, SpotLight } from '@flighthq/types';
 import {
   AmbientLightKind,
@@ -94,20 +95,16 @@ export function getLightInfluenceBounds(out: BoundingSphereLike, light: Readonly
   out.radius = -1;
 }
 
-// Returns the perceptual luminance of a light's color × intensity. The luminance is computed
-// from the packed sRgb-albedo RGBA color using the standard ITU-R BT.709 coefficients, then
-// scaled by `intensity`. Useful for ranking lights by visual importance when prioritizing a
-// forward-light budget.
+// Returns the linear-light luminance of a light's color × intensity. Packed sRGB channels are
+// gamma-decoded through the shared color primitive before applying the Rec. 709 weights, matching
+// the radiance that packSceneLightBlock sends to the shader. Useful for ranking lights by their
+// rendered contribution when prioritizing a forward-light budget.
 export function getLightLuminance(light: Readonly<Light>): number {
   const colored = light as Readonly<{ color?: number; intensity?: number }>;
   const color = colored.color;
   if (color === undefined) return 0;
-  const r = ((color >>> 24) & 0xff) / 255;
-  const g = ((color >>> 16) & 0xff) / 255;
-  const b = ((color >>> 8) & 0xff) / 255;
-  const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
   const intensity = colored.intensity ?? 1;
-  return luma * intensity;
+  return getColorLuminance(color) * intensity;
 }
 
 // Returns true when `light` could influence a point within `bounds`. Non-spatial lights (ambient,
