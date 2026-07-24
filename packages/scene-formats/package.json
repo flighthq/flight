@@ -41,6 +41,7 @@
     "@flighthq/mesh": "*",
     "@flighthq/node": "*",
     "@flighthq/scene": "*",
+    "@flighthq/shading": "*",
     "@flighthq/skeleton3d": "*",
     "@flighthq/texture": "*",
     "@flighthq/types": "*"
