@@ -101,5 +101,19 @@
   "textinput:webgpu": 25071,
   "tilemap:webgpu": 10394,
   "tween:webgpu": 19737,
-  "video:webgpu": 9616
+  "video:webgpu": 9616,
+  "scene-primitives:webgl": 28651,
+  "scene-primitives:webgpu": 29920,
+  "scene-shading:webgl": 25554,
+  "scene-shading:webgpu": 25556,
+  "scene-skybox:webgl": 30946,
+  "scene-skybox:webgpu": 31863,
+  "scene-globe:webgl": 28879,
+  "scene-globe:webgpu": 30372,
+  "scene-fire:webgl": 31494,
+  "scene-fire:webgpu": 32857,
+  "scene-explosions:webgl": 19967,
+  "scene-explosions:webgpu": 20332,
+  "scene-picking:webgl": 30028,
+  "scene-picking:webgpu": 31289
 }

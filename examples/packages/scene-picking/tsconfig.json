@@ -1,0 +1,14 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts", "vite.config.ts"],
+  "references": [
+    { "path": "../../../packages/camera-controls" },
+    { "path": "../../../packages/picking" },
+    { "path": "../../../packages/scene" },
+    { "path": "../../../packages/scene-gl" },
+    { "path": "../../../packages/sdk" }
+  ]
+}
