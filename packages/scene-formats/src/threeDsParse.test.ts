@@ -343,10 +343,21 @@ describe('createSceneFrom3ds', () => {
     expect(mat.shininess).toBeCloseTo(64); // 50% → 0.5 × 128
   });
 
-  it('maps the bump map filename to an unresolved normalMap reference', () => {
+  it('passes an explicit 0% shininess through rather than reverting to the material default', () => {
+    // An explicit MAT_SHININESS of 0 is a valid matte value; it must survive as 0, not become the
+    // createBlinnPhongMaterial default.
+    const explicit = materialFrom3ds(writeMaterial({ diffuse: [128, 128, 128], name: 'M', shininessPercent: 0 }));
+    expect(explicit.shininess).toBe(0);
+    // An absent MAT_SHININESS leaves the material's default in place (non-zero).
+    const absent = materialFrom3ds(writeMaterial({ diffuse: [128, 128, 128], name: 'M' }));
+    expect(absent.shininess).not.toBe(0);
+  });
+
+  it('does not bind the legacy bump (height) map to normalMap', () => {
+    // MAT_BUMPMAP is a grayscale height map, not a tangent-space normal map — it must not land in
+    // normalMap (which shaders sample as RGB*2-1 normals). Parsed as metadata only.
     const mat = materialFrom3ds(writeMaterial({ bumpFilename: 'bump.png', diffuse: [128, 128, 128], name: 'M' }));
-    expect((mat.normalMap!.resource as ExternalImageResourceReference).uri).toBe('bump.png');
-    expect(mat.normalMap!.image).toBeNull();
+    expect(mat.normalMap).toBeNull();
   });
 
   it('folds transparency into the diffuse alpha and a blend alphaMode', () => {

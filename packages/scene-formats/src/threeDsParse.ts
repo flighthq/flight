@@ -609,11 +609,15 @@ function threeDsMaterialToBlinnPhong(material: Readonly<ThreeDsMaterial>, docume
       material.textureFilename !== null
         ? createExternalTextureRef(material.textureFilename, null, document.resources)
         : null,
-    normalMap:
-      material.bumpFilename !== null ? createExternalTextureRef(material.bumpFilename, null, document.resources) : null,
     specular: packThreeDsColor(material.specular),
-    ...(material.shininess > 0 ? { shininess: material.shininess } : {}),
+    // shininess is nullable so an explicit MAT_SHININESS of 0 (a valid, matte value) is passed through
+    // rather than dropped to createBlinnPhongMaterial's non-zero default; absent stays absent.
+    ...(material.shininess !== null ? { shininess: material.shininess } : {}),
   });
+  // NOTE: MAT_BUMPMAP (0xA230) is a legacy grayscale HEIGHT map, not a tangent-space normal map — binding
+  // it to `normalMap` (which the shaders sample as RGB*2-1 normals) would render bogus vectors. It is
+  // parsed into `material.bumpFilename` as metadata but intentionally NOT bound here; an honest bump→normal
+  // seam is a renderer feature (see scene-formats status.md, parked alongside the opacity map).
   // Preserve the 3DS material chunk name as the material's authored name (empty → anonymous).
   result.name = material.name.length > 0 ? material.name : null;
   // A material below full opacity blends: the opacity rode into the diffuse alpha above; the blend
@@ -630,7 +634,8 @@ function parseMaterial(view: Readonly<DataView>, offset: number, end: number): T
   let bumpFilename: string | null = null;
   let diffuse: readonly [number, number, number] = [1, 1, 1];
   let opacity = 1;
-  let shininess = 0;
+  // null = absent (use the material default); a parsed value (including an explicit 0) is passed through.
+  let shininess: number | null = null;
   let specular: readonly [number, number, number] = [1, 1, 1];
   let textureFilename: string | null = null;
 

@@ -289,7 +289,7 @@ Quick-reference for common feature keywords. All package names use the `@flighth
 | Asset loading | `assets` + `loader` | runtime | Ref-counted, concurrent |
 | glTF import | `scene-formats` | parser | JSON + GLB; PBR materials, textures (sampler/color-space/UV-transform), skins, morph, all animation channels, sparse accessors, external .bin/URIs |
 | OBJ / MTL import | `scene-formats` | parser | `importObj`/`createSceneFromObj` — groups, usemtl subsets, BlinnPhong |
-| 3DS import | `scene-formats` | parser | `createSceneFrom3ds`/`parse3ds` — meshes, per-face material subsets (MSH_MAT_GROUP), smoothing-group normals, shininess/bump/transparency, textures |
+| 3DS import | `scene-formats` | parser | `createSceneFrom3ds`/`parse3ds` — meshes, per-face material subsets (MSH_MAT_GROUP), smoothing-group normals, shininess/transparency, diffuse textures (bump/height map parsed as metadata, not applied) |
 | MD5 import | `scene-formats` | parser | `importMd5Mesh(meshSource, animSource?)` composer (or `createSceneFromMd5Mesh` + `parseMd5Anim`) — mesh + skeleton + `.md5anim` skeletal animation |
 | AWD import | `scene-formats` | parser | `createSceneFromAwd`/`parseAwd` — AwayJS binary: meshes, skins, skeleton animation, materials (diffuse/normal maps); deflate-compressed bodies via `registerAwdDeflateDecompressor` |
 | FBX import | --- | --- | Chartered, not implemented |
