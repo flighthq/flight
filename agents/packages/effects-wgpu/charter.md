@@ -13,7 +13,7 @@ status: ./status.md
 
 ## What it is
 
-`@flighthq/effects-wgpu` is the WebGPU/WGSL **backend** for the substrate-agnostic full-screen post-process effects pipeline. The agnostic `@flighthq/effects` package owns the data layer — the 52 `RenderEffect` descriptors and their math; this package turns those descriptors into actual WGSL draw work. It ships:
+`@flighthq/effects-wgpu` is the WebGPU/WGSL **backend** for the substrate-agnostic full-screen post-process effects pipeline. The agnostic `@flighthq/effects` package owns the data layer — the 53 `RenderEffect` descriptors and their math; this package turns those descriptors into actual WGSL draw work. It ships:
 
 - the per-`WgpuRenderState` **effect registry** (`registerWgpuRenderEffect`, `getWgpuRenderEffectRunner`, `hasWgpuRenderEffectRunner`) — registry dispatch, last-write-wins, tree-shakable, no monolithic `switch`;
 - the **ping-pong pipeline orchestrator** (`create/begin/end/destroyWgpuRenderEffectPipeline`, `setWgpuRenderEffectVelocityTexture`) that walks a per-frame `RenderEffect[]` across two pooled scratch targets and presents via a fullscreen pass;
