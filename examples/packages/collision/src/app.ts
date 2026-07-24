@@ -96,10 +96,10 @@ function makeRegularPolygonPoints(cx: number, cy: number, radius: number, sides:
 
 // Scene: two circles, one AABB, one convex polygon (pentagon).
 const colliders: Collider[] = [
-  createCircleCollider(200, 200, 50),
-  createCircleCollider(400, 300, 40),
-  createAabbCollider(550, 200, 60, 45),
-  createPolygonCollider(300, 450, makeRegularPolygonPoints(300, 450, 55, 5)),
+  createCircleCollider(210, 190, 58),
+  createCircleCollider(285, 190, 46),
+  createAabbCollider(500, 310, 70, 55),
+  createPolygonCollider(545, 325, makeRegularPolygonPoints(545, 325, 60, 5)),
 ];
 
 // MTV visualization overlay — a single shape redrawn each frame with all active MTV arrows.

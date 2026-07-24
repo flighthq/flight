@@ -11,9 +11,12 @@ import {
   clearShapeCommands,
   createDisplayObject,
   createShape,
-  damp,
+  createTween,
+  createTweenManager,
+  easeInOutCubic,
   invalidateNodeLocalTransform,
   invalidateNodeRender,
+  updateTweens,
 } from '@flighthq/sdk';
 import { createSpring2D, createSpringConfig, updateSpring2D } from '@flighthq/spring';
 
@@ -22,7 +25,7 @@ import { canvas, render, scale } from './render';
 const STAGE_WIDTH = 600;
 const STAGE_HEIGHT = 400;
 const CIRCLE_RADIUS = 18;
-const DAMP_LAMBDA = 6;
+const TRACK_OFFSET = 22;
 
 const root = createDisplayObject();
 root.scaleX = scale;
@@ -32,7 +35,7 @@ root.scaleY = scale;
 let springConfig: SpringConfig = createSpringConfig(3, 0.3);
 
 // Spring-driven circle (blue).
-const spring2D = createSpring2D(STAGE_WIDTH / 2, STAGE_HEIGHT / 2);
+const spring2D = createSpring2D(STAGE_WIDTH / 2, STAGE_HEIGHT / 2 - TRACK_OFFSET);
 const springCircle = createShape();
 appendShapeBeginFill(springCircle, 0x2196f3);
 appendShapeCircle(springCircle, 0, 0, CIRCLE_RADIUS);
@@ -42,20 +45,19 @@ springCircle.y = spring2D.y.value;
 invalidateNodeLocalTransform(springCircle);
 addNodeChild(root, springCircle);
 
-// Damp-driven circle (orange) — first-order, no overshoot.
-let dampX = STAGE_WIDTH / 2;
-let dampY = STAGE_HEIGHT / 2;
-const dampCircle = createShape();
-appendShapeBeginFill(dampCircle, 0xff9800);
-appendShapeCircle(dampCircle, 0, 0, CIRCLE_RADIUS);
-appendShapeEndFill(dampCircle);
-dampCircle.x = dampX;
-dampCircle.y = dampY;
-invalidateNodeLocalTransform(dampCircle);
-addNodeChild(root, dampCircle);
+// Tween-driven circle (orange) — fixed-duration easing, the first-order comparison.
+const tweenManager = createTweenManager();
+const tweenCircle = createShape();
+appendShapeBeginFill(tweenCircle, 0xff9800);
+appendShapeCircle(tweenCircle, 0, 0, CIRCLE_RADIUS);
+appendShapeEndFill(tweenCircle);
+tweenCircle.x = STAGE_WIDTH / 2;
+tweenCircle.y = STAGE_HEIGHT / 2 + TRACK_OFFSET;
+invalidateNodeLocalTransform(tweenCircle);
+addNodeChild(root, tweenCircle);
 
 // Target marker (small crosshair).
-let targetX = STAGE_WIDTH / 2;
+let targetX = 470;
 let targetY = STAGE_HEIGHT / 2;
 const targetMarker = createShape();
 addNodeChild(root, targetMarker);
@@ -72,6 +74,12 @@ function redrawTargetMarker(): void {
 }
 
 redrawTargetMarker();
+
+function tweenToTarget(): void {
+  createTween(tweenManager, tweenCircle, 900, { x: targetX, y: targetY + TRACK_OFFSET }, { ease: easeInOutCubic });
+}
+
+tweenToTarget();
 
 // Legend — small colored squares with labels drawn as shapes (no font dependency).
 const legend = createShape();
@@ -90,6 +98,7 @@ canvas.addEventListener('click', (event: MouseEvent) => {
   targetX = ((event.clientX - rect.left) / rect.width) * STAGE_WIDTH;
   targetY = ((event.clientY - rect.top) / rect.height) * STAGE_HEIGHT;
   redrawTargetMarker();
+  tweenToTarget();
 });
 
 // HTML controls for spring presets and parameter display.
@@ -132,7 +141,7 @@ labels.style.cssText = 'font-family:system-ui,sans-serif;font-size:12px;color:#6
 labels.innerHTML =
   '<span style="color:#2196f3">&#9632; Spring (2nd-order, overshoots)</span>' +
   '&nbsp;&nbsp;&nbsp;' +
-  '<span style="color:#ff9800">&#9632; Damp (1st-order, no overshoot)</span>' +
+  '<span style="color:#ff9800">&#9632; Tween (fixed duration)</span>' +
   '&nbsp;&nbsp;&nbsp;' +
   '<span style="color:#999">Click anywhere to move the target</span>';
 document.body.appendChild(labels);
@@ -147,17 +156,14 @@ function enterFrame(now: number): void {
   lastTime = now;
 
   // Advance the spring toward the target.
-  updateSpring2D(spring2D, targetX, targetY, springConfig, deltaTime);
+  updateSpring2D(spring2D, targetX, targetY - TRACK_OFFSET, springConfig, deltaTime);
   springCircle.x = spring2D.x.value;
   springCircle.y = spring2D.y.value;
   invalidateNodeLocalTransform(springCircle);
 
-  // Advance the damp toward the target (first-order exponential approach).
-  dampX = damp(dampX, targetX, DAMP_LAMBDA, deltaTime);
-  dampY = damp(dampY, targetY, DAMP_LAMBDA, deltaTime);
-  dampCircle.x = dampX;
-  dampCircle.y = dampY;
-  invalidateNodeLocalTransform(dampCircle);
+  // Advance the fixed-duration comparison in milliseconds (the manager is unit-agnostic).
+  updateTweens(tweenManager, deltaTime * 1000);
+  invalidateNodeLocalTransform(tweenCircle);
 
   render(root);
   requestAnimationFrame(enterFrame);
