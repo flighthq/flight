@@ -647,6 +647,15 @@
           }
         },
         {
+          "scene": "light-many-point",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": false
+          }
+        },
+        {
           "scene": "light-point",
           "backends": {
             "canvas": false,
@@ -1119,6 +1128,15 @@
         },
         {
           "scene": "shadow-directional",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": false
+          }
+        },
+        {
+          "scene": "shadow-scene-scale",
           "backends": {
             "canvas": false,
             "dom": false,

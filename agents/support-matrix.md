@@ -15,11 +15,11 @@ drift-gated by `npm run support:check` (part of `npm run check`).
 
 ## Coverage summary
 
-137 functional scenes with committed baselines. Scenes carrying a fingerprint per backend:
+139 functional scenes with committed baselines. Scenes carrying a fingerprint per backend:
 
 | Canvas | DOM | WebGL | WebGPU |
 | --- | --- | --- | --- |
-| 91 / 137 | 39 / 137 | 132 / 137 | 120 / 137 |
+| 91 / 139 | 39 / 139 | 134 / 139 | 120 / 139 |
 
 All four backends re-verify in-sandbox — WebGPU via SwiftShader software Vulkan. A small set of WebGPU scenes exceed the fingerprint tolerance on software-vs-hardware antialiasing differences; see [maturity-gaps](maturity-gaps.md).
 
@@ -145,6 +145,7 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
 | `light-hemisphere` | · | · | ✓ | · |
+| `light-many-point` | · | · | ✓ | · |
 | `light-point` | · | · | ✓ | · |
 | `light-spot` | · | · | ✓ | · |
 
@@ -233,6 +234,7 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 | --- | :-: | :-: | :-: | :-: |
 | `shadow-classic` | · | · | ✓ | · |
 | `shadow-directional` | · | · | ✓ | · |
+| `shadow-scene-scale` | · | · | ✓ | · |
 
 ### Shapes / Vector
 
