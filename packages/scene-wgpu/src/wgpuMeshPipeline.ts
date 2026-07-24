@@ -290,10 +290,12 @@ export function ensureWgpuIblSampleLayout(state: WgpuRenderState): GPUBindGroupL
 // group ONLY when the primary sampler or a resolved map view differs from the cached set. The hot path
 // (an unchanged material re-bound every frame) allocates nothing: the caller fills a REUSED `views`
 // scratch, this compares it against the binding's owned view array in place, and returns the cached
-// bind group untouched. A GPUBindGroupEntry array + the binding's own view copy are allocated only on
-// an actual create; a rebuild reuses the buffer and overwrites the owned view array in place. This is
-// the shared no-hidden-allocation cache both the classic and standard-PBR binders route through. The
-// caller still writes the uniform buffer + stashes the uv transform after this returns.
+// bind group untouched. On a create OR a rebuild — both change events, not steady state —
+// buildWgpuMaterialBindGroup (re)allocates the GPUBindGroupEntry array; the binding's own view-array
+// copy is allocated only on create (or a view-count change), and a rebuild reuses the buffer and
+// overwrites the owned view array in place. This is the shared no-hidden-allocation cache both the
+// classic and standard-PBR binders route through. The caller still writes the uniform buffer + stashes
+// the uv transform after this returns.
 export function ensureWgpuMaterialBinding(
   state: WgpuRenderState,
   key: object,

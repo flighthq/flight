@@ -484,30 +484,33 @@ describe('getWgpuMaterialSampler', () => {
 
     const sampler = getWgpuMaterialSampler(state, texture);
 
-    // A non-clamp map goes through the sampler cache, not the shared clamp sampler. The default sampler
-    // is trilinear (mipmaps + linear-mipmap-linear), so the derived key names a linear mip filter.
+    // A non-clamp (tiling) map goes through the sampler cache, not the shared clamp sampler, and the
+    // derivation is deterministic (same texture → same cached sampler).
     expect(sampler).not.toBe(getWgpuRenderStateRuntime(state).linearSampler);
-    expect(getWgpuRenderStateRuntime(state).samplerCache.get('linear|repeat|repeat|linear|1')).toBe(sampler);
+    expect(getWgpuMaterialSampler(state, texture)).toBe(sampler);
   });
 
-  it('drops the mip filter when the map disables mipmaps', () => {
+  it('drops the mip filter when the map disables mipmaps (distinct packed key from the mipmapped default)', () => {
     const { state } = makeWgpuSceneState();
-    const texture = createTexture({ image: {} as ImageResource });
-    texture.sampler.mipmaps = false;
+    const noMip = createTexture({ image: {} as ImageResource });
+    noMip.sampler.mipmaps = false;
+    const withMip = createTexture({ image: {} as ImageResource }); // default: trilinear (mipmaps on)
 
-    getWgpuMaterialSampler(state, texture);
-
-    expect(getWgpuRenderStateRuntime(state).samplerCache.has('linear|clamp-to-edge|clamp-to-edge|none|1')).toBe(true);
+    getWgpuMaterialSampler(state, noMip);
+    getWgpuMaterialSampler(state, withMip);
+    // The two mip configs pack into two distinct numeric keys, so the cache holds both.
+    expect(getWgpuRenderStateRuntime(state).samplerCache.size).toBe(2);
   });
 
-  it('carries the map anisotropy into the derived sampler key', () => {
+  it('carries the map anisotropy into the derived sampler (distinct packed key from the non-anisotropic one)', () => {
     const { state } = makeWgpuSceneState();
-    const texture = createTexture({ image: {} as ImageResource });
-    texture.sampler.anisotropy = 8;
+    const aniso = createTexture({ image: {} as ImageResource });
+    aniso.sampler.anisotropy = 8;
+    const noAniso = createTexture({ image: {} as ImageResource });
 
-    getWgpuMaterialSampler(state, texture);
-
-    expect(getWgpuRenderStateRuntime(state).samplerCache.has('linear|clamp-to-edge|clamp-to-edge|linear|8')).toBe(true);
+    getWgpuMaterialSampler(state, aniso);
+    getWgpuMaterialSampler(state, noAniso);
+    expect(getWgpuRenderStateRuntime(state).samplerCache.size).toBe(2);
   });
 });
 

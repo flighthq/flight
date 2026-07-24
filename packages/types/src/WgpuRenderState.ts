@@ -70,12 +70,13 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   pipelineCache: Map<string, GPURenderPipeline>;
 
   // Samplers. linear/nearest are the clamp-to-edge defaults for the 2D bitmap path; material textures
-  // that tile or mip go through samplerCache, keyed by `${filter}|${wrapU}|${wrapV}|${mipmapFilter}|
-  // ${anisotropy}`, since a GPUSampler's address mode, mip filter, and anisotropy are immutable and
+  // that tile or mip go through samplerCache, keyed by a NUMBER that bit-packs filter/wrapU/wrapV/mipmap/
+  // anisotropy (getWgpuSampler) — a number, not a template string, so the per-bind lookup that runs every
+  // frame allocates nothing. A GPUSampler's address mode, mip filter, and anisotropy are immutable and
   // must be chosen at bind-group creation.
   linearSampler: GPUSampler;
   nearestSampler: GPUSampler;
-  samplerCache: Map<string, GPUSampler>;
+  samplerCache: Map<number, GPUSampler>;
 
   // Lazily-built downsample render pipeline and its bind-group layout for GPU mip-chain generation.
   // WebGPU has no generateMipmap, so a mipmapped material texture's lower levels are rendered by
