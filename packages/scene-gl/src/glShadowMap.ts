@@ -1,7 +1,6 @@
 import { getCamera3DViewProjectionMatrix4 } from '@flighthq/camera';
 import { createMatrix4 } from '@flighthq/geometry';
 import { hasMeshGeometrySkin } from '@flighthq/mesh';
-import { updateMeshMorph } from '@flighthq/mesh';
 import { forEachNodeDescendant, getNodeWorldMatrix4 } from '@flighthq/node';
 import { createGlRenderTarget, uploadGlSkinPaletteTexture } from '@flighthq/render-gl';
 import type { Camera3D, GlRenderState, Mesh, SceneNode, SceneNodeTraits, GlMeshProgram } from '@flighthq/types';
@@ -71,15 +70,12 @@ export function drawGlSceneShadowMap(
     const mesh = node as unknown as Mesh;
     if (mesh.geometry == null) return;
 
-    // Deform the caster to its CURRENT pose before recording its depth, mirroring drawGlScene's forward
-    // pass, so an animated caster casts its animated silhouette rather than the base/bind pose:
-    //  - vertex morph is a CPU blend-then-upload into geometry.vertices; apply it here (weight-gated, so
-    //    an unmorphed or settled mesh is a no-op) so the depth pass — which runs BEFORE drawGlScene —
-    //    does not lag the forward morph by a frame. drawGlScene's own later call sees the version current.
-    //  - GPU skinning deforms in the vertex shader from the bone palette, so a skinned caster needs the
-    //    HAS_SKIN depth variant + the palette bound; the rigid path would upload the static bind pose.
-    if (mesh.morph != null) updateMeshMorph(mesh);
-
+    // The caster is already at its CURRENT pose when this pass runs: the app drives prepareSceneMorph +
+    // prepareSceneSkinning before prepareSceneRender, so morph is blended into geometry.vertices and the
+    // skin palette is current before either depth or forward draw. This pass just reads that pose, so an
+    // animated caster casts its animated silhouette without the depth pass re-deforming (and lagging or
+    // double-driving the forward pass). GPU skinning still deforms in the vertex shader from the bone
+    // palette, so a skinned caster needs the HAS_SKIN depth variant + the palette bound.
     const skinned = mesh.skin != null && hasMeshGeometrySkin(mesh.geometry);
     const program = skinned
       ? (skinnedProgram ??= ensureGlSceneProgram(state, 'shadow:depth:skin', compileShadowDepthSkinnedProgram))

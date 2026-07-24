@@ -1,6 +1,7 @@
 export * from './billboard';
 export * from './billboardCamera';
 export * from './mesh';
+export * from './prepareSceneMorph';
 export * from './scene';
 export * from './sceneAnimation';
 export * from './sceneDocument';

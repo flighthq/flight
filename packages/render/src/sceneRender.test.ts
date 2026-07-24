@@ -8,7 +8,12 @@ import {
   createPointLight,
   createSpotLight,
 } from '@flighthq/lighting';
-import { computeMeshGeometryBounds, createBoxMeshGeometry } from '@flighthq/mesh';
+import {
+  CANONICAL_MESH_GEOMETRY_LAYOUT,
+  computeMeshGeometryBounds,
+  createBoxMeshGeometry,
+  createMeshGeometry,
+} from '@flighthq/mesh';
 import { addNodeChild, getNodeWorldMatrix4, invalidateNodeLocalTransform } from '@flighthq/node';
 import { createMesh, createSceneNode, SceneNodeKind, getSceneNodeWorldAlpha } from '@flighthq/scene';
 import type { Camera3D, Material, MeshGeometry, SceneLightBlock, SceneLightsLike } from '@flighthq/types';
@@ -242,11 +247,28 @@ describe('prepareSceneRender', () => {
     expect(list.meshCount).toBe(0);
   });
 
-  it('keeps a mesh whose geometry has no cached bounds', () => {
+  it('computes uncached bounds on demand and culls against them', () => {
+    // A null bounds cache is uncomputed, not uncullable: the cull ensures the bounds (the box has
+    // vertices) and then culls a far-off box normally, rather than conservatively keeping it.
     const state = createRenderState();
     const scene = createSceneNode(SceneNodeKind);
-    const mesh = createMesh(createBoxMeshGeometry(), [null]);
+    const mesh = createMesh(createBoxMeshGeometry(2, 2, 2), [null]);
     mesh.geometry.bounds = null;
+    mesh.position.z = 1000;
+    invalidateNodeLocalTransform(mesh);
+    addNodeChild(scene, mesh);
+
+    const list = prepareSceneRender(state, scene, frontCamera(), emptyLights());
+    expect(list.meshCount).toBe(0);
+  });
+
+  it('keeps a mesh whose geometry is empty and cannot be bounded', () => {
+    // Truly unbounded geometry (no vertices) is the only case ensureMeshGeometryBounds returns null
+    // for, and it is what "cannot cull, so conservatively keep" now means.
+    const state = createRenderState();
+    const scene = createSceneNode(SceneNodeKind);
+    const empty = createMeshGeometry({ layout: CANONICAL_MESH_GEOMETRY_LAYOUT, vertices: new Float32Array(0) });
+    const mesh = createMesh(empty, [null]);
     mesh.position.z = 1000;
     invalidateNodeLocalTransform(mesh);
     addNodeChild(scene, mesh);

@@ -19,16 +19,17 @@ import {
   endGlRenderEffectPipeline,
   getSurfacePixelLuminance,
   normalizeVector3,
+  prepareSceneMorph,
   prepareSceneRender,
   registerUnlitGlMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
 
-// scene-morph — exercises the GL vertex-morph draw path (updateMeshMorph, driven inside drawGlScene on the
-// GL backend): a Mesh with a MeshMorph blends base + Σ wᵢ·targetᵢ into geometry.vertices each frame and the
-// non-skinned GL upload re-uploads the deformed vertices (CPU-blend-then-upload; no HAS_MORPH shader
-// permutation). A square quad's four corners carry a morph target that pushes them diagonally outward, so
+// scene-morph — exercises the GL vertex-morph draw path (prepareSceneMorph, the app's per-frame morph pass,
+// called before prepareSceneRender): a Mesh with a MeshMorph blends base + Σ wᵢ·targetᵢ into geometry.vertices
+// each frame and the non-skinned GL upload re-uploads the deformed vertices (CPU-blend-then-upload; no
+// HAS_MORPH shader permutation). A square quad's four corners carry a morph target that pushes them diagonally outward, so
 // at full weight the quad grows into a larger diamond. Driving the `weights` array to 1 is the manual
 // analogue of a glTF/MD2 `Weights` animation channel. The oracle asserts DEFORMATION vs the bind pose: a
 // probe just outside the bind-pose quad silhouette (background at weight 0) is covered at weight 1. A morph
@@ -63,6 +64,7 @@ export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, l
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
+  prepareSceneMorph(scene);
   prepareSceneRender(state, scene, camera, lights);
   drawGlScene(state, scene, camera, lights);
   endGlRenderEffectPipeline(state, pipeline, []);

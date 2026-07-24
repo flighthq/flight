@@ -1,6 +1,6 @@
 import { createCamera3D, createOrthographicProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
 import { createVector3 } from '@flighthq/geometry';
-import { createMeshGeometry } from '@flighthq/mesh';
+import { createMeshGeometry, updateMeshMorph } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
 import { createMesh, createSceneNode, SceneNodeKind } from '@flighthq/scene';
 import type { Skin, VertexAttributeLayout } from '@flighthq/types';
@@ -153,17 +153,20 @@ describe('drawGlSceneShadowMap', () => {
     expect(enableCullFaceCall).toBeDefined();
   });
 
-  it('applies the vertex morph to a caster before recording its depth', () => {
+  it('records the caster at the pose the app blended before the pass', () => {
     const { state, gl } = makeShadowState();
     const scene = createSceneNode(SceneNodeKind);
     const geometry = createMeshGeometry({ layout: POSITION_LAYOUT, vertices: new Float32Array([0, 0, 0, 1, 0, 0]) });
     const mesh = createMesh(geometry, []);
-    // Weight 1 on a target that raises y by 5: the depth pass must upload the blended pose, not the base.
+    // Weight 1 on a target that raises y by 5. The morph is blended by the app's prepareSceneMorph
+    // before any draw (here updateMeshMorph stands in for it); the depth pass just uploads that pose,
+    // it no longer re-blends internally — otherwise the cull would have already lagged a frame.
     mesh.morph = {
       targets: [{ normalDeltas: null, positionDeltas: new Float32Array([0, 5, 0, 0, 5, 0]), tangentDeltas: null }],
       weights: new Float32Array([1]),
     };
     addNodeChild(scene, mesh);
+    updateMeshMorph(mesh);
 
     drawGlSceneShadowMap(state, scene, makeShadowCamera());
 
