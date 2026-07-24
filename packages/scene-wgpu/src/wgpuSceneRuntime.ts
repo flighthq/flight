@@ -36,6 +36,7 @@ export function getWgpuSceneRuntime(state: WgpuRenderState): WgpuSceneRuntime {
       pbrSampleLayout: null,
       pbrSampleShadowView: null,
       materialRegistry: new Map(),
+      modifierSnippetRegistry: null,
       opaqueDrawList: [],
       opaquePool: [],
       pendingDrawOffset: 0,

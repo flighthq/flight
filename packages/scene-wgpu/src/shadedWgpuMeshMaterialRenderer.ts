@@ -63,8 +63,8 @@ export function getWgpuShadedBaseFlags(material: Readonly<ShadedMaterial>): {
   };
 }
 
-// Registers ShadedMaterialKind on one state. Built-in modifier composition is part of this renderer;
-// registration stays explicit and side-effect-free like every other WebGPU material family.
+// Registers ShadedMaterialKind on one state. Modifier compilers are a separate open registry: call
+// registerBuiltInWgpuModifierSnippets (and/or vendor registrations) explicitly before drawing.
 export function registerShadedWgpuMaterial(state: WgpuRenderState): void {
   registerWgpuMeshMaterialRenderer(state, ShadedMaterialKind, shadedWgpuMeshMaterialRenderer);
 }

@@ -1,5 +1,5 @@
 import { unpackColorToLinear } from '@flighthq/color';
-import { orderModifierStack } from '@flighthq/shading';
+import { getModifierDefineKey, orderModifierStack, resolveModifier } from '@flighthq/shading';
 import type {
   AnimatedNormalModifier,
   DissolveModifier,
@@ -8,12 +8,16 @@ import type {
   FogModifier,
   LinearColor,
   Modifier,
+  ModifierRegistry,
   RimModifier,
   ShadedMaterial,
   Texture,
   ToonModifier,
   VertexDisplaceModifier,
   WgpuMeshPipeline,
+  WgpuModifierCompileContext,
+  WgpuModifierContribution,
+  WgpuModifierSnippet,
   WgpuRenderState,
 } from '@flighthq/types';
 import {
@@ -24,6 +28,7 @@ import {
   EnvReflectModifierKind,
   FogModifierKind,
   FogModifierMode,
+  ModifierSlot,
   RimModifierKind,
   ToonModifierKind,
   VertexDisplaceModifierKind,
@@ -37,10 +42,13 @@ import {
   ensureWgpuPbrSampleLayout,
   ensureWgpuScenePipeline,
   getWgpuMaterialSampler,
+  isWgpuTextureReady,
   resolveWgpuMaterialTextureView,
   stashWgpuUvTransform,
 } from './wgpuMeshPipeline';
+import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 import { getWgpuSceneTime } from './wgpuSceneTime';
+import { registerWgpuModifierSnippet } from './wgpuShadedModifierSnippet';
 
 interface ShadedModifierPlan {
   fragmentDeclarations: string;
@@ -60,7 +68,11 @@ interface ShadedTextureBinding {
 interface ShadedBinding {
   bindGroup: GPUBindGroup;
   buffer: GPUBuffer;
+  data: Float32Array;
   layout: GPUBindGroupLayout;
+  sampler: GPUSampler;
+  textureReadiness: boolean[];
+  textures: (Readonly<Texture> | null)[];
 }
 
 // Writes the base surface plus every ordered modifier into one uniform allocation and binds the base
@@ -73,17 +85,34 @@ export function bindWgpuShadedSurface(
   diffuse: Readonly<LinearColor>,
   specular: Readonly<LinearColor>,
 ): GPUBindGroup {
-  const plan = buildModifierPlan(material.modifiers);
+  const registry = getModifierRegistry(state);
+  const plan = buildModifierPlan(material.modifiers, registry);
   const byteLength = 48 + plan.uniformFloatCount * 4;
   let binding = shadedBindings.get(material);
-  if (binding === undefined || binding.layout !== pipeline.materialBindGroupLayout) {
-    const buffer = state.device.createBuffer({
-      size: byteLength,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    });
+  const textures: (Readonly<Texture> | null)[] = [
+    material.diffuseMap,
+    material.specularMap,
+    material.normalMap,
+    ...plan.textureBindings.map(({ texture }) => texture),
+  ];
+  const sampler = getWgpuMaterialSampler(state, material.diffuseMap);
+  const resourcesChanged =
+    binding === undefined ||
+    binding.layout !== pipeline.materialBindGroupLayout ||
+    binding.sampler !== sampler ||
+    !sameTextureResources(binding, textures);
+  if (resourcesChanged) {
+    const canReuseBuffer = binding !== undefined && binding.data.byteLength === byteLength;
+    if (binding !== undefined && !canReuseBuffer) binding.buffer.destroy();
+    const buffer = canReuseBuffer
+      ? binding!.buffer
+      : state.device.createBuffer({
+          size: byteLength,
+          usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        });
     const entries: GPUBindGroupEntry[] = [
       { binding: 0, resource: { buffer } },
-      { binding: 1, resource: getWgpuMaterialSampler(state, material.diffuseMap) },
+      { binding: 1, resource: sampler },
       { binding: 2, resource: resolveWgpuMaterialTextureView(state, material.diffuseMap) },
       { binding: 3, resource: resolveWgpuMaterialTextureView(state, material.specularMap) },
       { binding: 4, resource: resolveWgpuMaterialTextureView(state, material.normalMap) },
@@ -95,32 +124,54 @@ export function bindWgpuShadedSurface(
     binding = {
       bindGroup: state.device.createBindGroup({ entries, layout: pipeline.materialBindGroupLayout }),
       buffer,
+      data: canReuseBuffer ? binding!.data : new Float32Array(byteLength / 4),
       layout: pipeline.materialBindGroupLayout,
+      sampler,
+      textureReadiness: textures.map(isWgpuTextureReady),
+      textures,
     };
     shadedBindings.set(material, binding);
   }
 
-  const data = new Float32Array(byteLength / 4);
+  const activeBinding = binding!;
+  const data = activeBinding.data;
+  data.fill(0);
   data.set(diffuse, 0);
   data.set(specular, 4);
   data[8] = material.shininess;
   data[9] = material.alphaCutoff;
   data[10] = getWgpuSceneTime(state);
   data[11] = material.normalScale;
-  writeModifierUniforms(data, 12, orderModifierStack(material.modifiers));
-  state.device.queue.writeBuffer(binding.buffer, 0, data.buffer, 0, byteLength);
+  writeModifierUniforms(data, 12, orderModifierStack(material.modifiers), registry);
+  state.device.queue.writeBuffer(activeBinding.buffer, 0, data.buffer, 0, byteLength);
   stashWgpuUvTransform(state, material.diffuseMap);
-  return binding.bindGroup;
+  return activeBinding.bindGroup;
+}
+
+function sameTextureResources(
+  binding: Readonly<ShadedBinding>,
+  textures: readonly (Readonly<Texture> | null)[],
+): boolean {
+  if (binding.textures.length !== textures.length) return false;
+  for (let i = 0; i < textures.length; i++) {
+    if (binding.textures[i] !== textures[i] || binding.textureReadiness[i] !== isWgpuTextureReady(textures[i])) {
+      return false;
+    }
+  }
+  return true;
 }
 
 // Stable identity for one ShadedMaterial pipeline family. Base map/cull/mask flags precede the
 // canonical ordered modifier signature; format and blend are added by the shared pipeline cache.
-export function buildWgpuShadedCacheKey(material: Readonly<ShadedMaterial>): string {
+export function buildWgpuShadedCacheKey(
+  material: Readonly<ShadedMaterial>,
+  registry: Readonly<ModifierRegistry> = EMPTY_MODIFIER_REGISTRY,
+): string {
   const flags = getWgpuShadedBaseFlags(material);
   const base = `${flags.alphaMaskEnabled ? 'm' : '-'}${flags.doubleSided ? 'd' : '-'}${
     flags.hasDiffuseMap ? 'd' : '-'
   }${flags.hasSpecularMap ? 's' : '-'}${flags.hasNormalMap ? 'n' : '-'}`;
-  return `shaded:${base}|${buildModifierDefineKey(material.modifiers)}`;
+  return `shaded:${base}|${getModifierDefineKey(material.modifiers, registry)}`;
 }
 
 // Resolves the immutable shader/layout/pipeline permutation. The shared cache appends opaque/blend,
@@ -130,9 +181,10 @@ export function ensureWgpuShadedPipeline(
   material: Readonly<ShadedMaterial>,
   format: GPUTextureFormat,
 ): WgpuMeshPipeline {
-  const key = `${buildWgpuShadedCacheKey(material)}|${format}`;
+  const registry = getModifierRegistry(state);
+  const key = `${buildWgpuShadedCacheKey(material, registry)}|${format}`;
   return ensureWgpuScenePipeline(state, key, (blended) => {
-    const plan = buildModifierPlan(material.modifiers);
+    const plan = buildModifierPlan(material.modifiers, registry);
     const entries: GPUBindGroupLayoutEntry[] = [
       {
         binding: 0,
@@ -160,7 +212,7 @@ export function ensureWgpuShadedPipeline(
       ),
     ];
     const materialBindGroupLayout = state.device.createBindGroupLayout({ entries });
-    const module = state.device.createShaderModule({ code: getWgpuShadedModuleSource(material) });
+    const module = state.device.createShaderModule({ code: getWgpuShadedModuleSource(material, registry) });
     return createWgpuMeshPipeline(state, {
       blended,
       doubleSided: getWgpuShadedBaseFlags(material).doubleSided,
@@ -175,9 +227,12 @@ export function ensureWgpuShadedPipeline(
 // Creates the WGSL module for a ShadedMaterial variant. The lean base is the existing Blinn-Phong
 // WGSL assembly; modifier declarations and slot contributions are spliced at stable semantic hooks.
 // This keeps shared Frame/Draw/light/shadow behavior byte-for-byte aligned with classic WebGPU.
-export function getWgpuShadedModuleSource(material: Readonly<ShadedMaterial>): string {
+export function getWgpuShadedModuleSource(
+  material: Readonly<ShadedMaterial>,
+  registry: Readonly<ModifierRegistry> = EMPTY_MODIFIER_REGISTRY,
+): string {
   const flags = getWgpuShadedBaseFlags(material);
-  const plan = buildModifierPlan(material.modifiers);
+  const plan = buildModifierPlan(material.modifiers, registry);
   let source = getWgpuClassicModuleSourceForKey({
     alphaMaskEnabled: flags.alphaMaskEnabled,
     doubleSided: flags.doubleSided,
@@ -268,37 +323,7 @@ struct Ibl {
   return source;
 }
 
-function buildModifierDefineKey(modifiers: readonly Modifier[]): string {
-  return orderModifierStack(modifiers)
-    .map((modifier) => {
-      if (modifier.kind === AnimatedNormalModifierKind) {
-        const value = modifier as Readonly<AnimatedNormalModifier>;
-        return `${modifier.kind}:${value.map === null ? '0' : value.secondaryMap === undefined ? '1' : '2'}`;
-      }
-      if (modifier.kind === EmissiveModifierKind) {
-        const value = modifier as Readonly<EmissiveModifier>;
-        return `${modifier.kind}:${value.mask === undefined ? '' : 'm'}${
-          value.facing === undefined || value.facing === EmissiveModifierFacing.Ignore ? '' : 'g'
-        }`;
-      }
-      if (modifier.kind === DissolveModifierKind) {
-        return `${modifier.kind}:${(modifier as Readonly<DissolveModifier>).map === undefined ? 'p' : 'm'}`;
-      }
-      if (modifier.kind === FogModifierKind) {
-        return `${modifier.kind}:${(modifier as Readonly<FogModifier>).mode ?? FogModifierMode.Linear}`;
-      }
-      if (modifier.kind === VertexDisplaceModifierKind) {
-        const value = modifier as Readonly<VertexDisplaceModifier>;
-        return `${modifier.kind}:${value.source}${value.axis === undefined ? '' : 'a'}${
-          value.map === undefined ? '' : 'm'
-        }`;
-      }
-      return modifier.kind;
-    })
-    .join('+');
-}
-
-function buildModifierPlan(modifiers: readonly Modifier[]): ShadedModifierPlan {
+function buildModifierPlan(modifiers: readonly Modifier[], registry: Readonly<ModifierRegistry>): ShadedModifierPlan {
   const ordered = orderModifierStack(modifiers);
   const textures: ShadedTextureBinding[] = [];
   let normal = '';
@@ -308,119 +333,19 @@ function buildModifierPlan(modifiers: readonly Modifier[]): ShadedModifierPlan {
   let fragmentDeclarations = '';
   for (let index = 0; index < ordered.length; index++) {
     const modifier = ordered[index];
+    const snippet = resolveModifier(registry, modifier.kind) as WgpuModifierSnippet | null;
+    if (snippet === null) continue;
     const base = index * MODIFIER_FLOATS;
-    if (modifier.kind === AnimatedNormalModifierKind) {
-      const value = modifier as Readonly<AnimatedNormalModifier>;
-      if (value.map === null) continue;
-      const primary = addTexture(textures, value.map);
-      const secondary =
-        value.secondaryMap === undefined
-          ? ''
-          : ` + textureSample(modifierTexture${addTexture(textures, value.secondaryMap)}, materialSampler, in.uv + material.modifierData[${base / 4 + 1}].xy * material.params.z).xyz * 2.0 - vec3f(1.0)`;
-      normal += `{
-  var animatedNormal = textureSample(modifierTexture${primary}, materialSampler, in.uv + material.modifierData[${
-    base / 4
-  }].xy * material.params.z).xyz * 2.0 - vec3f(1.0)${secondary};
-  animatedNormal.x = animatedNormal.x * material.modifierData[${base / 4}].z;
-  animatedNormal.y = animatedNormal.y * material.modifierData[${base / 4}].z;
-  normal = normalize(tbn * animatedNormal);
-}
-`;
-    } else if (modifier.kind === EmissiveModifierKind) {
-      const value = modifier as Readonly<EmissiveModifier>;
-      const mask =
-        value.mask === undefined
-          ? ''
-          : ` * textureSample(modifierTexture${addTexture(textures, value.mask)}, materialSampler, in.uv).rgb`;
-      const gated =
-        value.facing === undefined || value.facing === EmissiveModifierFacing.Ignore
-          ? ''
-          : `
-  let emissiveLightDir = select(vec3f(0.0, 0.0, 1.0), normalize(-frame.lightDirection.xyz), frame.lightDirection.w > 0.5);
-  let emissiveFacing = dot(normal, emissiveLightDir) * material.modifierData[${base / 4 + 1}].x;
-  let emissiveSoft = max(material.modifierData[${base / 4 + 1}].y, 0.0001);
-  emissiveTerm = emissiveTerm * smoothstep(-emissiveSoft, emissiveSoft, emissiveFacing);`;
-      emissive += `{
-  var emissiveTerm = material.modifierData[${base / 4}].rgb * material.modifierData[${base / 4}].w${mask};${gated}
-  emissive = emissive + emissiveTerm;
-}
-`;
-    } else if (modifier.kind === RimModifierKind) {
-      effect += `{
-  let rimFactor = clamp(material.modifierData[${base / 4 + 1}].y + material.modifierData[${
-    base / 4 + 1
-  }].x * pow(1.0 - max(dot(normal, shadedViewDir), 0.0), max(material.modifierData[${base / 4}].w, 0.0001)), 0.0, 1.0);
-  radiance = radiance + material.modifierData[${base / 4}].rgb * rimFactor;
-}
-`;
-    } else if (modifier.kind === DissolveModifierKind) {
-      const value = modifier as Readonly<DissolveModifier>;
-      let noise: string;
-      if (value.map === undefined) {
-        fragmentDeclarations = VALUE_NOISE_WGSL;
-        noise = `shadedValueNoise(in.uv * material.modifierData[${base / 4}].z)`;
-      } else {
-        noise = `textureSample(modifierTexture${addTexture(textures, value.map)}, materialSampler, in.uv).r`;
-      }
-      effect += `{
-  let dissolveNoise = ${noise};
-  if (dissolveNoise < material.modifierData[${base / 4}].x) { discard; }
-  let dissolveEdge = 1.0 - smoothstep(material.modifierData[${base / 4}].x, material.modifierData[${
-    base / 4
-  }].x + max(material.modifierData[${base / 4}].y, 0.0001), dissolveNoise);
-  radiance = mix(radiance, material.modifierData[${base / 4 + 1}].rgb, dissolveEdge);
-}
-`;
-    } else if (modifier.kind === EnvReflectModifierKind) {
-      effect += `{
-  let envDirection = reflect(-shadedViewDir, normal);
-  let envMip = clamp(material.modifierData[${base / 4 + 1}].y, 0.0, 1.0) * max(ibl.params.z, 0.0);
-  let envSample = select(material.modifierData[${base / 4}].rgb, textureSampleLevel(iblPrefiltered, iblSampler, envDirection, envMip).rgb, ibl.params.x > 0.5);
-  let envFresnel = material.modifierData[${base / 4 + 1}].x + (1.0 - material.modifierData[${
-    base / 4 + 1
-  }].x) * pow(1.0 - max(dot(normal, shadedViewDir), 0.0), 5.0);
-  radiance = radiance + envSample * material.modifierData[${base / 4}].rgb * (material.modifierData[${
-    base / 4
-  }].w * envFresnel);
-}
-`;
-    } else if (modifier.kind === FogModifierKind) {
-      const value = modifier as Readonly<FogModifier>;
-      const distance = `length(frame.cameraPosition.xyz - in.worldPosition)`;
-      const factor =
-        value.mode === FogModifierMode.Exponential
-          ? `1.0 - exp(-material.modifierData[${base / 4 + 1}].x * ${distance})`
-          : value.mode === FogModifierMode.Exponential2
-            ? `1.0 - exp(-pow(material.modifierData[${base / 4 + 1}].x * ${distance}, 2.0))`
-            : `clamp((${distance} - material.modifierData[${base / 4 + 1}].y) / max(material.modifierData[${
-                base / 4 + 1
-              }].z - material.modifierData[${base / 4 + 1}].y, 0.0001), 0.0, 1.0)`;
-      effect += `radiance = mix(radiance, material.modifierData[${base / 4}].rgb, clamp(${factor}, 0.0, 1.0));\n`;
-    } else if (modifier.kind === ToonModifierKind) {
-      effect += `{
-  let toonLum = dot(radiance, vec3f(0.2126, 0.7152, 0.0722));
-  let toonSteps = max(material.modifierData[${base / 4}].x, 2.0);
-  let toonScaled = toonLum * toonSteps;
-  let toonBand = floor(toonScaled);
-  let toonSoft = max(material.modifierData[${base / 4}].y, 0.0001);
-  let toonQuant = (toonBand + smoothstep(0.5 - toonSoft, 0.5 + toonSoft, toonScaled - toonBand)) / toonSteps;
-  radiance = radiance * select(1.0, toonQuant / toonLum, toonLum > 0.0001);
-}
-`;
-    } else if (modifier.kind === VertexDisplaceModifierKind) {
-      const value = modifier as Readonly<VertexDisplaceModifier>;
-      const axis =
-        value.axis === undefined ? 'normalize(localNormal)' : `normalize(material.modifierData[${base / 4 + 1}].xyz)`;
-      const amount =
-        value.source === VertexDisplaceModifierSource.HeightMap && value.map !== undefined
-          ? `textureSampleLevel(modifierTexture${addTexture(textures, value.map)}, materialSampler, vertexUv, 0.0).r * material.modifierData[${
-              base / 4
-            }].x`
-          : `sin(dot(localPosition.xyz, normalize(material.modifierData[${base / 4 + 2}].xyz)) * material.modifierData[${
-              base / 4
-            }].y + material.params.z * material.modifierData[${base / 4}].z) * material.modifierData[${base / 4}].x`;
-      vertex += `localPosition = vec4f(localPosition.xyz + ${axis} * (${amount}), 1.0);\n`;
-    }
+    const context: WgpuModifierCompileContext = {
+      acquireTexture: (texture) => addTexture(textures, texture),
+      uniformBase: base,
+    };
+    const contribution = snippet.contribution(modifier, index, context);
+    if (contribution.declarations !== undefined) fragmentDeclarations += contribution.declarations;
+    if (snippet.slot === ModifierSlot.Normal) normal += contribution.source;
+    else if (snippet.slot === ModifierSlot.Emissive) emissive += contribution.source;
+    else if (snippet.slot === ModifierSlot.Effect) effect += contribution.source;
+    else if (snippet.slot === ModifierSlot.Vertex) vertex += contribution.source;
   }
   return {
     effect,
@@ -439,69 +364,280 @@ function addTexture(textures: ShadedTextureBinding[], texture: Readonly<Texture>
   return binding;
 }
 
-function writeModifierUniforms(out: Float32Array, offset: number, modifiers: readonly Modifier[]): void {
+function writeModifierUniforms(
+  out: Float32Array,
+  offset: number,
+  modifiers: readonly Modifier[],
+  registry: Readonly<ModifierRegistry>,
+): void {
   for (let index = 0; index < modifiers.length; index++) {
     const modifier = modifiers[index];
-    const base = offset + index * MODIFIER_FLOATS;
-    if (modifier.kind === AnimatedNormalModifierKind) {
-      const value = modifier as Readonly<AnimatedNormalModifier>;
-      out[base] = value.scroll.x;
-      out[base + 1] = value.scroll.y;
-      out[base + 2] = value.strength ?? 1;
-      out[base + 4] = value.secondaryScroll?.x ?? 0;
-      out[base + 5] = value.secondaryScroll?.y ?? 0;
-    } else if (modifier.kind === EmissiveModifierKind) {
-      const value = modifier as Readonly<EmissiveModifier>;
-      unpackColorToLinear(_color, value.color);
-      out.set(_color.slice(0, 3), base);
-      out[base + 3] = value.strength;
-      out[base + 4] = value.facing === EmissiveModifierFacing.AwayFromLight ? -1 : 1;
-      out[base + 5] = value.facingSoftness ?? 0;
-    } else if (modifier.kind === RimModifierKind) {
-      const value = modifier as Readonly<RimModifier>;
-      unpackColorToLinear(_color, value.color);
-      out.set(_color.slice(0, 3), base);
-      out[base + 3] = value.power ?? 3;
-      out[base + 4] = value.intensity ?? 1;
-      out[base + 5] = value.bias ?? 0;
-    } else if (modifier.kind === DissolveModifierKind) {
-      const value = modifier as Readonly<DissolveModifier>;
-      out[base] = value.threshold;
-      out[base + 1] = value.edgeWidth ?? 0.05;
-      out[base + 2] = value.scale ?? 8;
-      unpackColorToLinear(_color, value.edgeColor);
-      out.set(_color.slice(0, 3), base + 4);
-    } else if (modifier.kind === EnvReflectModifierKind) {
-      const value = modifier as Readonly<EnvReflectModifier>;
-      unpackColorToLinear(_color, value.tint);
-      out.set(_color.slice(0, 3), base);
-      out[base + 3] = value.intensity ?? 1;
-      out[base + 4] = value.fresnelBias ?? 0.04;
-      out[base + 5] = value.roughness ?? 0;
-    } else if (modifier.kind === FogModifierKind) {
-      const value = modifier as Readonly<FogModifier>;
-      unpackColorToLinear(_color, value.color);
-      out.set(_color.slice(0, 3), base);
-      out[base + 4] = value.density ?? 1;
-      out[base + 5] = value.near ?? 0;
-      out[base + 6] = value.far ?? 1;
-    } else if (modifier.kind === ToonModifierKind) {
-      const value = modifier as Readonly<ToonModifier>;
-      out[base] = Math.max(value.steps, 2);
-      out[base + 1] = value.smoothness ?? 0;
-    } else if (modifier.kind === VertexDisplaceModifierKind) {
-      const value = modifier as Readonly<VertexDisplaceModifier>;
-      out[base] = value.amplitude;
-      out[base + 1] = value.frequency ?? 1;
-      out[base + 2] = value.speed ?? 1;
-      out[base + 4] = value.axis?.x ?? 0;
-      out[base + 5] = value.axis?.y ?? 0;
-      out[base + 6] = value.axis?.z ?? 0;
-      out[base + 8] = value.direction?.x ?? 1;
-      out[base + 9] = value.direction?.y ?? 0;
-      out[base + 10] = value.direction?.z ?? 0;
-    }
+    const snippet = resolveModifier(registry, modifier.kind) as WgpuModifierSnippet | null;
+    if (snippet === null) continue;
+    snippet.bind?.(modifier, out, offset + index * MODIFIER_FLOATS);
   }
+}
+
+function copyColorRgb(out: Float32Array, offset: number): void {
+  out[offset] = _color[0];
+  out[offset + 1] = _color[1];
+  out[offset + 2] = _color[2];
+}
+
+const animatedNormalWgpuModifierSnippet: WgpuModifierSnippet = {
+  bind(modifier, out, base): void {
+    const value = modifier as Readonly<AnimatedNormalModifier>;
+    out[base] = value.scroll.x;
+    out[base + 1] = value.scroll.y;
+    out[base + 2] = value.strength ?? 1;
+    out[base + 4] = value.secondaryScroll?.x ?? 0;
+    out[base + 5] = value.secondaryScroll?.y ?? 0;
+  },
+  contribution(modifier, _index, context): WgpuModifierContribution {
+    const value = modifier as Readonly<AnimatedNormalModifier>;
+    if (value.map === null) return { source: '' };
+    const base = context.uniformBase / 4;
+    const primary = context.acquireTexture(value.map);
+    const secondary =
+      value.secondaryMap === undefined
+        ? ''
+        : ` + textureSample(modifierTexture${context.acquireTexture(value.secondaryMap)}, materialSampler, in.uv + material.modifierData[${base + 1}].xy * material.params.z).xyz * 2.0 - vec3f(1.0)`;
+    return {
+      source: `{
+  var animatedNormal = textureSample(modifierTexture${primary}, materialSampler, in.uv + material.modifierData[${base}].xy * material.params.z).xyz * 2.0 - vec3f(1.0)${secondary};
+  animatedNormal.x = animatedNormal.x * material.modifierData[${base}].z;
+  animatedNormal.y = animatedNormal.y * material.modifierData[${base}].z;
+  normal = normalize(tbn * animatedNormal);
+}
+`,
+    };
+  },
+  getDefineSignature(modifier): string {
+    const value = modifier as Readonly<AnimatedNormalModifier>;
+    return value.map === null ? '0' : value.secondaryMap === undefined ? '1' : '2';
+  },
+  kind: AnimatedNormalModifierKind,
+  slot: ModifierSlot.Normal,
+};
+const dissolveWgpuModifierSnippet: WgpuModifierSnippet = {
+  bind(modifier, out, base): void {
+    const value = modifier as Readonly<DissolveModifier>;
+    out[base] = value.threshold;
+    out[base + 1] = value.edgeWidth ?? 0.05;
+    out[base + 2] = value.scale ?? 8;
+    unpackColorToLinear(_color, value.edgeColor);
+    copyColorRgb(out, base + 4);
+  },
+  contribution(modifier, _index, context): WgpuModifierContribution {
+    const value = modifier as Readonly<DissolveModifier>;
+    const base = context.uniformBase / 4;
+    const procedural = value.map === undefined;
+    const noise = procedural
+      ? `shadedValueNoise(in.uv * material.modifierData[${base}].z)`
+      : `textureSample(modifierTexture${context.acquireTexture(value.map!)}, materialSampler, in.uv).r`;
+    return {
+      declarations: procedural ? VALUE_NOISE_WGSL : undefined,
+      source: `{
+  let dissolveNoise = ${noise};
+  if (dissolveNoise < material.modifierData[${base}].x) { discard; }
+  let dissolveEdge = 1.0 - smoothstep(material.modifierData[${base}].x, material.modifierData[${base}].x + max(material.modifierData[${base}].y, 0.0001), dissolveNoise);
+  radiance = mix(radiance, material.modifierData[${base + 1}].rgb, dissolveEdge);
+}
+`,
+    };
+  },
+  getDefineSignature(modifier): string {
+    return (modifier as Readonly<DissolveModifier>).map === undefined ? 'p' : 'm';
+  },
+  kind: DissolveModifierKind,
+  slot: ModifierSlot.Effect,
+};
+const emissiveWgpuModifierSnippet: WgpuModifierSnippet = {
+  bind(modifier, out, base): void {
+    const value = modifier as Readonly<EmissiveModifier>;
+    unpackColorToLinear(_color, value.color);
+    copyColorRgb(out, base);
+    out[base + 3] = value.strength;
+    out[base + 4] = value.facing === EmissiveModifierFacing.AwayFromLight ? -1 : 1;
+    out[base + 5] = value.facingSoftness ?? 0;
+  },
+  contribution(modifier, _index, context): WgpuModifierContribution {
+    const value = modifier as Readonly<EmissiveModifier>;
+    const base = context.uniformBase / 4;
+    const mask =
+      value.mask === undefined
+        ? ''
+        : ` * textureSample(modifierTexture${context.acquireTexture(value.mask)}, materialSampler, in.uv).rgb`;
+    const gated =
+      value.facing === undefined || value.facing === EmissiveModifierFacing.Ignore
+        ? ''
+        : `
+  let emissiveLightDir = select(vec3f(0.0, 0.0, 1.0), normalize(-frame.lightDirection.xyz), frame.lightDirection.w > 0.5);
+  let emissiveFacing = dot(normal, emissiveLightDir) * material.modifierData[${base + 1}].x;
+  let emissiveSoft = max(material.modifierData[${base + 1}].y, 0.0001);
+  emissiveTerm = emissiveTerm * smoothstep(-emissiveSoft, emissiveSoft, emissiveFacing);`;
+    return {
+      source: `{
+  var emissiveTerm = material.modifierData[${base}].rgb * material.modifierData[${base}].w${mask};${gated}
+  emissive = emissive + emissiveTerm;
+}
+`,
+    };
+  },
+  getDefineSignature(modifier): string {
+    const value = modifier as Readonly<EmissiveModifier>;
+    return `${value.mask === undefined ? '' : 'm'}${
+      value.facing === undefined || value.facing === EmissiveModifierFacing.Ignore ? '' : 'g'
+    }`;
+  },
+  kind: EmissiveModifierKind,
+  slot: ModifierSlot.Emissive,
+};
+const envReflectWgpuModifierSnippet: WgpuModifierSnippet = {
+  bind(modifier, out, base): void {
+    const value = modifier as Readonly<EnvReflectModifier>;
+    unpackColorToLinear(_color, value.tint);
+    copyColorRgb(out, base);
+    out[base + 3] = value.intensity ?? 1;
+    out[base + 4] = value.fresnelBias ?? 0.04;
+    out[base + 5] = value.roughness ?? 0;
+  },
+  contribution(_modifier, _index, context): WgpuModifierContribution {
+    const base = context.uniformBase / 4;
+    return {
+      source: `{
+  let envDirection = reflect(-shadedViewDir, normal);
+  let envMip = clamp(material.modifierData[${base + 1}].y, 0.0, 1.0) * max(ibl.params.z, 0.0);
+  let envSample = select(material.modifierData[${base}].rgb, textureSampleLevel(iblPrefiltered, iblSampler, envDirection, envMip).rgb, ibl.params.x > 0.5);
+  let envFresnel = material.modifierData[${base + 1}].x + (1.0 - material.modifierData[${base + 1}].x) * pow(1.0 - max(dot(normal, shadedViewDir), 0.0), 5.0);
+  radiance = radiance + envSample * material.modifierData[${base}].rgb * (material.modifierData[${base}].w * envFresnel);
+}
+`,
+    };
+  },
+  kind: EnvReflectModifierKind,
+  slot: ModifierSlot.Effect,
+};
+const fogWgpuModifierSnippet: WgpuModifierSnippet = {
+  bind(modifier, out, base): void {
+    const value = modifier as Readonly<FogModifier>;
+    unpackColorToLinear(_color, value.color);
+    copyColorRgb(out, base);
+    out[base + 4] = value.density ?? 1;
+    out[base + 5] = value.near ?? 0;
+    out[base + 6] = value.far ?? 1;
+  },
+  contribution(modifier, _index, context): WgpuModifierContribution {
+    const value = modifier as Readonly<FogModifier>;
+    const base = context.uniformBase / 4;
+    const distance = `length(frame.cameraPosition.xyz - in.worldPosition)`;
+    const factor =
+      value.mode === FogModifierMode.Exponential
+        ? `1.0 - exp(-material.modifierData[${base + 1}].x * ${distance})`
+        : value.mode === FogModifierMode.Exponential2
+          ? `1.0 - exp(-pow(material.modifierData[${base + 1}].x * ${distance}, 2.0))`
+          : `clamp((${distance} - material.modifierData[${base + 1}].y) / max(material.modifierData[${base + 1}].z - material.modifierData[${base + 1}].y, 0.0001), 0.0, 1.0)`;
+    return {
+      source: `radiance = mix(radiance, material.modifierData[${base}].rgb, clamp(${factor}, 0.0, 1.0));\n`,
+    };
+  },
+  getDefineSignature(modifier): string {
+    return (modifier as Readonly<FogModifier>).mode ?? FogModifierMode.Linear;
+  },
+  kind: FogModifierKind,
+  slot: ModifierSlot.Effect,
+};
+const rimWgpuModifierSnippet: WgpuModifierSnippet = {
+  bind(modifier, out, base): void {
+    const value = modifier as Readonly<RimModifier>;
+    unpackColorToLinear(_color, value.color);
+    copyColorRgb(out, base);
+    out[base + 3] = value.power ?? 3;
+    out[base + 4] = value.intensity ?? 1;
+    out[base + 5] = value.bias ?? 0;
+  },
+  contribution(_modifier, _index, context): WgpuModifierContribution {
+    const base = context.uniformBase / 4;
+    return {
+      source: `{
+  let rimFactor = clamp(material.modifierData[${base + 1}].y + material.modifierData[${base + 1}].x * pow(1.0 - max(dot(normal, shadedViewDir), 0.0), max(material.modifierData[${base}].w, 0.0001)), 0.0, 1.0);
+  radiance = radiance + material.modifierData[${base}].rgb * rimFactor;
+}
+`,
+    };
+  },
+  kind: RimModifierKind,
+  slot: ModifierSlot.Effect,
+};
+const toonWgpuModifierSnippet: WgpuModifierSnippet = {
+  bind(modifier, out, base): void {
+    const value = modifier as Readonly<ToonModifier>;
+    out[base] = Math.max(value.steps, 2);
+    out[base + 1] = value.smoothness ?? 0;
+  },
+  contribution(_modifier, _index, context): WgpuModifierContribution {
+    const base = context.uniformBase / 4;
+    return {
+      source: `{
+  let toonLum = dot(radiance, vec3f(0.2126, 0.7152, 0.0722));
+  let toonSteps = max(material.modifierData[${base}].x, 2.0);
+  let toonScaled = toonLum * toonSteps;
+  let toonBand = floor(toonScaled);
+  let toonSoft = max(material.modifierData[${base}].y, 0.0001);
+  let toonQuant = (toonBand + smoothstep(0.5 - toonSoft, 0.5 + toonSoft, toonScaled - toonBand)) / toonSteps;
+  radiance = radiance * select(1.0, toonQuant / toonLum, toonLum > 0.0001);
+}
+`,
+    };
+  },
+  kind: ToonModifierKind,
+  slot: ModifierSlot.Effect,
+};
+const vertexDisplaceWgpuModifierSnippet: WgpuModifierSnippet = {
+  bind(modifier, out, base): void {
+    const value = modifier as Readonly<VertexDisplaceModifier>;
+    out[base] = value.amplitude;
+    out[base + 1] = value.frequency ?? 1;
+    out[base + 2] = value.speed ?? 1;
+    out[base + 4] = value.axis?.x ?? 0;
+    out[base + 5] = value.axis?.y ?? 0;
+    out[base + 6] = value.axis?.z ?? 0;
+    out[base + 8] = value.direction?.x ?? 1;
+    out[base + 9] = value.direction?.y ?? 0;
+    out[base + 10] = value.direction?.z ?? 0;
+  },
+  contribution(modifier, _index, context): WgpuModifierContribution {
+    const value = modifier as Readonly<VertexDisplaceModifier>;
+    const base = context.uniformBase / 4;
+    const axis =
+      value.axis === undefined ? 'normalize(localNormal)' : `normalize(material.modifierData[${base + 1}].xyz)`;
+    const amount =
+      value.source === VertexDisplaceModifierSource.HeightMap && value.map !== undefined
+        ? `textureSampleLevel(modifierTexture${context.acquireTexture(value.map)}, materialSampler, vertexUv, 0.0).r * material.modifierData[${base}].x`
+        : `sin(dot(localPosition.xyz, normalize(material.modifierData[${base + 2}].xyz)) * material.modifierData[${base}].y + material.params.z * material.modifierData[${base}].z) * material.modifierData[${base}].x`;
+    return { source: `localPosition = vec4f(localPosition.xyz + ${axis} * (${amount}), 1.0);\n` };
+  },
+  getDefineSignature(modifier): string {
+    const value = modifier as Readonly<VertexDisplaceModifier>;
+    return `${value.source}${value.axis === undefined ? '' : 'a'}${value.map === undefined ? '' : 'm'}`;
+  },
+  kind: VertexDisplaceModifierKind,
+  slot: ModifierSlot.Vertex,
+};
+
+export function registerBuiltInWgpuModifierSnippets(state: WgpuRenderState): void {
+  registerWgpuModifierSnippet(state, animatedNormalWgpuModifierSnippet);
+  registerWgpuModifierSnippet(state, dissolveWgpuModifierSnippet);
+  registerWgpuModifierSnippet(state, emissiveWgpuModifierSnippet);
+  registerWgpuModifierSnippet(state, envReflectWgpuModifierSnippet);
+  registerWgpuModifierSnippet(state, fogWgpuModifierSnippet);
+  registerWgpuModifierSnippet(state, rimWgpuModifierSnippet);
+  registerWgpuModifierSnippet(state, toonWgpuModifierSnippet);
+  registerWgpuModifierSnippet(state, vertexDisplaceWgpuModifierSnippet);
+}
+
+function getModifierRegistry(state: WgpuRenderState): Readonly<ModifierRegistry> {
+  return getWgpuSceneRuntime(state).modifierSnippetRegistry ?? EMPTY_MODIFIER_REGISTRY;
 }
 
 function indent(source: string, spaces: number): string {
@@ -529,3 +665,4 @@ fn shadedValueNoise(p : vec2f) -> f32 {
 const MODIFIER_FLOATS = 12;
 const _color: LinearColor = [0, 0, 0, 0];
 const shadedBindings = new WeakMap<ShadedMaterial, ShadedBinding>();
+const EMPTY_MODIFIER_REGISTRY: ModifierRegistry = { definitions: new Map() };
