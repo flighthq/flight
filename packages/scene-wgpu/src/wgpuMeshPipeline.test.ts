@@ -37,7 +37,7 @@ import {
   isWgpuTextureReady,
   resolveWgpuMaterialTextureView,
   stashWgpuUvTransform,
-  wgpuMaterialBindGroupNeedsRebuild,
+  isWgpuMaterialBindGroupRebuildNeeded,
   wgpuPerMapMaterialBindGroupNeedsRebuild,
   WGPU_MESH_PRELUDE_WGSL,
   writeWgpuDrawUniform,
@@ -685,7 +685,7 @@ describe('WGPU_MESH_PRELUDE_WGSL', () => {
   });
 });
 
-describe('wgpuMaterialBindGroupNeedsRebuild', () => {
+describe('isWgpuMaterialBindGroupRebuildNeeded', () => {
   const sampler = {} as GPUSampler;
   const view0 = {} as GPUTextureView;
   const view1 = {} as GPUTextureView;
@@ -697,26 +697,26 @@ describe('wgpuMaterialBindGroupNeedsRebuild', () => {
   };
 
   it('is false when the sampler and every resolved view match the cache', () => {
-    expect(wgpuMaterialBindGroupNeedsRebuild(cached, sampler, [view0, view1])).toBe(false);
+    expect(isWgpuMaterialBindGroupRebuildNeeded(cached, sampler, [view0, view1])).toBe(false);
   });
 
   it('rebuilds when the primary sampler identity changes (a primary-map sampler edit)', () => {
     // Only the ONE primary-map sampler participates (shared-primary-sampler contract); a non-primary
     // map's per-Texture sampler is never bound and cannot trip this.
-    expect(wgpuMaterialBindGroupNeedsRebuild(cached, {} as GPUSampler, [view0, view1])).toBe(true);
+    expect(isWgpuMaterialBindGroupRebuildNeeded(cached, {} as GPUSampler, [view0, view1])).toBe(true);
   });
 
   it('rebuilds when any resolved view identity changes (swap / unready->ready / ready->ready / version++)', () => {
     // resolveWgpuMaterialTextureView is the invalidation seam: a texture swap, an unready->ready
     // transition, a ready->ready image replacement, or an ImageResource version bump each yield a new
     // view identity, so this single identity check covers all four.
-    expect(wgpuMaterialBindGroupNeedsRebuild(cached, sampler, [{} as GPUTextureView, view1])).toBe(true);
+    expect(isWgpuMaterialBindGroupRebuildNeeded(cached, sampler, [{} as GPUTextureView, view1])).toBe(true);
   });
 
   it('rebuilds when the resolved view count changes or the cache has no views yet', () => {
-    expect(wgpuMaterialBindGroupNeedsRebuild(cached, sampler, [view0])).toBe(true);
+    expect(isWgpuMaterialBindGroupRebuildNeeded(cached, sampler, [view0])).toBe(true);
     const noViews: WgpuMaterialBinding = { bindGroup: {} as GPUBindGroup, buffer: {} as GPUBuffer };
-    expect(wgpuMaterialBindGroupNeedsRebuild(noViews, sampler, [view0])).toBe(true);
+    expect(isWgpuMaterialBindGroupRebuildNeeded(noViews, sampler, [view0])).toBe(true);
   });
 });
 

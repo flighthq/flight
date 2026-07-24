@@ -37,7 +37,7 @@ describe('bindWgpuClassicSurface', () => {
   });
 
   // The per-map rebuild conditions (swap / unready→ready / ready→ready / version bump / sampler change)
-  // are proven directly against wgpuMaterialBindGroupNeedsRebuild in wgpuMeshPipeline.test.ts; the binder
+  // are proven directly against isWgpuMaterialBindGroupRebuildNeeded in wgpuMeshPipeline.test.ts; the binder
   // wires that predicate around buildWgpuMaterialBindGroup. The unchanged-binds-no-rebuild case is the
   // "creates a material bind group … once per key" test above.
 

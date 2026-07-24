@@ -6,7 +6,7 @@ export * from './depthGlMeshMaterialRenderer';
 export * from './drawGlScene';
 export * from './enableGlSceneForwardLightSelectionGuards';
 export * from './emissiveGlMeshMaterialRenderer';
-export * from './explainSceneForwardLightSelection';
+export * from './explainGlSceneForwardLightSelection';
 export * from './enableGlSceneColorSpaceGuards';
 export * from './enableGlSceneCustomShaderGuards';
 export * from './enableGlSceneDeformGuards';
