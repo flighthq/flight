@@ -1,51 +1,84 @@
-import { deflateRawSync, deflateSync } from 'node:zlib';
-
 import { inflateAwdDeflate, registerAwdDeflateDecompressor } from './awdInflate';
 import { parseAwd, registerAwdDecompressor } from './awdParse';
 import { AWD_COMPRESSION_DEFLATE, AWD_HEADER_BYTES, AWD_MAGIC_0, AWD_MAGIC_1, AWD_MAGIC_2 } from './awdSchema';
 
-// Verifies the vendored inflater reproduces `original` exactly for both zlib-wrapped (what Away3D emits)
-// and headerless raw DEFLATE streams, using Node's zlib as the reference compressor.
-function expectRoundTrip(original: Uint8Array): void {
-  const zlib = new Uint8Array(deflateSync(original));
-  expect(inflateAwdDeflate(zlib)).toEqual(original);
-  const raw = new Uint8Array(deflateRawSync(original));
-  expect(inflateAwdDeflate(raw)).toEqual(original);
+// The compressed fixtures below are precomputed with Node's zlib and embedded as base64 rather than
+// generated at test time: `scene-formats` is a browser-clean package whose build carries no `@types/node`,
+// so a `node:zlib` import fails the `tsc -b` build. Provenance — generated once with node v22.22.1:
+//   const b64 = (u8) => Buffer.from(u8).toString('base64');
+//   const enc = (s) => new TextEncoder().encode(s);
+//   b64(deflateSync(new Uint8Array(0)))                                         // EMPTY
+//   b64(deflateSync(enc('flighthq scene-formats')))                            // LITERAL (zlib)
+//   b64(deflateRawSync(enc('flighthq scene-formats')))                         // RAW_LITERAL (headerless)
+//   b64(deflateSync(enc('abcABC123'.repeat(600))))                            // REPETITIVE
+//   b64(deflateSync(enc('the quick brown fox jumps over the lazy dog '.repeat(40)))) // VARIED (dynamic Huffman)
+//   b64(deflateSync(enc('the quick brown fox jumps over the lazy dog'), { level: 0 }))  // STORED_L0
+// The round-trip assertions still verify the vendored inflater reproduces the original bytes EXACTLY.
+const FIXTURES = {
+  EMPTY: 'eJwDAAAAAAE=',
+  LITERAL: 'eJxLy8lMzyjJKFQoTk7NS9VNyy/KTSwpBgBjVQiv',
+  RAW_LITERAL: 'S8vJTM8oyShUKE5OzUvVTcsvyk0sKQYA',
+  REPETITIVE: 'eJztxjEBACAIALBMYgIxCdC/g0HcrlXPybtil4iIiIiIiIiIiMgfeU6Y4Pw=',
+  VARIED: 'eJwryUhVKCzNTM5WSCrKL89TSMuvUMgqzS0oVsgvSy1SKAFK5yRWVSqk5KeDOaNqR9WOqh1VO6p2VO1QUAsATICEBw==',
+  STORED_L0: 'eAEBKwDU/3RoZSBxdWljayBicm93biBmb3gganVtcHMgb3ZlciB0aGUgbGF6eSBkb2dhPA/6',
+} as const;
+
+// Decodes a base64 string to bytes with no external dependency (no `atob`/`Buffer`) so the test stays
+// browser-clean. The embedded fixtures are canonical base64 (no whitespace, standard alphabet).
+function decodeBase64(input: string): Uint8Array {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  const lookup = new Uint8Array(128);
+  for (let i = 0; i < alphabet.length; i++) lookup[alphabet.charCodeAt(i)] = i;
+  const clean = input.replace(/=+$/, '');
+  const out = new Uint8Array((clean.length * 3) >> 2);
+  let accumulator = 0;
+  let bits = 0;
+  let o = 0;
+  for (let i = 0; i < clean.length; i++) {
+    accumulator = (accumulator << 6) | lookup[clean.charCodeAt(i)];
+    bits += 6;
+    if (bits >= 8) {
+      bits -= 8;
+      out[o++] = (accumulator >> bits) & 0xff;
+    }
+  }
+  return out;
 }
+
+const encode = (s: string): Uint8Array => new TextEncoder().encode(s);
 
 describe('inflateAwdDeflate', () => {
   it('round-trips empty input', () => {
-    expectRoundTrip(new Uint8Array(0));
+    expect(inflateAwdDeflate(decodeBase64(FIXTURES.EMPTY))).toEqual(new Uint8Array(0));
   });
 
-  it('round-trips a short literal run', () => {
-    expectRoundTrip(new TextEncoder().encode('flighthq scene-formats'));
+  it('round-trips a short literal run (zlib-wrapped)', () => {
+    expect(inflateAwdDeflate(decodeBase64(FIXTURES.LITERAL))).toEqual(encode('flighthq scene-formats'));
   });
 
-  it('round-trips highly repetitive data through back-references', () => {
-    expectRoundTrip(new TextEncoder().encode('abcABC123'.repeat(600)));
+  it('round-trips a headerless raw DEFLATE stream via the fallback path', () => {
+    expect(inflateAwdDeflate(decodeBase64(FIXTURES.RAW_LITERAL))).toEqual(encode('flighthq scene-formats'));
   });
 
-  it('round-trips incompressible pseudo-random data (dynamic Huffman)', () => {
-    const data = new Uint8Array(8192);
-    // Deterministic pseudo-random bytes — no Math.random so the fixture is stable.
-    let seed = 0x9e3779b9;
-    for (let i = 0; i < data.length; i++) {
-      seed = (seed * 1664525 + 1013904223) >>> 0;
-      data[i] = (seed >>> 16) & 0xff;
-    }
-    expectRoundTrip(data);
+  it('round-trips highly repetitive data through back-references and grows the output buffer', () => {
+    // 5400 bytes out — past the 1024-byte initial buffer, exercising the grow path.
+    expect(inflateAwdDeflate(decodeBase64(FIXTURES.REPETITIVE))).toEqual(encode('abcABC123'.repeat(600)));
+  });
+
+  it('round-trips varied text through a dynamic-Huffman block', () => {
+    expect(inflateAwdDeflate(decodeBase64(FIXTURES.VARIED))).toEqual(
+      encode('the quick brown fox jumps over the lazy dog '.repeat(40)),
+    );
   });
 
   it('round-trips a stored (level 0) block', () => {
-    const data = new TextEncoder().encode('the quick brown fox jumps over the lazy dog');
-    const stored = new Uint8Array(deflateSync(data, { level: 0 }));
-    expect(inflateAwdDeflate(stored)).toEqual(data);
+    expect(inflateAwdDeflate(decodeBase64(FIXTURES.STORED_L0))).toEqual(
+      encode('the quick brown fox jumps over the lazy dog'),
+    );
   });
 
   it('returns null on a truncated stream rather than throwing', () => {
-    const full = new Uint8Array(deflateSync(new TextEncoder().encode('abcABC123'.repeat(600))));
-    expect(inflateAwdDeflate(full.subarray(0, 6))).toBeNull();
+    expect(inflateAwdDeflate(decodeBase64(FIXTURES.REPETITIVE).subarray(0, 6))).toBeNull();
   });
 
   it('returns null on a corrupt (invalid block type) stream', () => {
@@ -59,9 +92,9 @@ describe('registerAwdDeflateDecompressor', () => {
 
   it('wires the vendored inflater so parseAwd imports a zlib-compressed AWD body', () => {
     registerAwdDeflateDecompressor();
-    // A valid AWD header whose (empty) body is zlib-compressed: the codec must inflate it cleanly, so
+    // A valid AWD header whose (empty) body is a real zlib stream: the codec must inflate it cleanly, so
     // parseAwd finishes with no "missing decompressor" / "failed to inflate" warning.
-    const compressedBody = new Uint8Array(deflateSync(new Uint8Array(0)));
+    const compressedBody = decodeBase64(FIXTURES.EMPTY);
     const awd = new Uint8Array(AWD_HEADER_BYTES + compressedBody.length);
     awd[0] = AWD_MAGIC_0;
     awd[1] = AWD_MAGIC_1;
