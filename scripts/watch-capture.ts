@@ -30,6 +30,7 @@ import type { Entry, Tool } from '@flighthq/tool-capture';
 import {
   captureEntry,
   discoverEntries,
+  FUNCTIONAL_BACKENDS,
   installAbortHandler,
   launchBrowser,
   resolveServer,
@@ -65,8 +66,23 @@ const root = process.cwd();
 
 function entryNameFromPath(filePath: string, tool: Tool): string | null {
   const parts = filePath.split(sep);
-  const marker = tool === 'examples' ? 'examples' : 'functional';
-  const idx = parts.lastIndexOf(marker);
+
+  if (tool === 'functional') {
+    // functional/scenes/<name>[.<backend>].ts — the entry name is the stem minus any backend suffix,
+    // mirroring how discoverEntries names functional scenes.
+    const idx = parts.lastIndexOf('scenes');
+    const file = idx >= 0 ? parts[idx + 1] : undefined;
+    if (!file || !file.endsWith('.ts')) return null;
+    const stem = file.slice(0, -'.ts'.length);
+    const dot = stem.lastIndexOf('.');
+    if (dot !== -1 && (FUNCTIONAL_BACKENDS as readonly string[]).includes(stem.slice(dot + 1))) {
+      return stem.slice(0, dot);
+    }
+    return stem;
+  }
+
+  // examples/packages/<name>/… — the entry name is the package directory.
+  const idx = parts.lastIndexOf('packages');
   return idx >= 0 && parts[idx + 1] ? parts[idx + 1] : null;
 }
 
