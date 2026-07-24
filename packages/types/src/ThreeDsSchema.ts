@@ -45,15 +45,17 @@ export const THREE_DS_PERCENT_FLOAT = 0x0031;
 export const THREE_DS_CHUNK_HEADER_BYTES = 6;
 
 // A parsed 3DS material descriptor. `shininess` is the Blinn-Phong specular exponent derived from the
-// MAT_SHININESS percentage (0 when absent → the material default). `opacity` is 0..1 (1 = fully opaque)
-// from MAT_TRANSPARENCY. `bumpFilename` is the MAT_BUMPMAP texture filename (→ normal map) or null.
+// MAT_SHININESS percentage, or null when absent (so an explicit 0 stays 0 rather than reverting to the
+// material default). `opacity` is 0..1 (1 = fully opaque) from MAT_TRANSPARENCY. `bumpFilename` is the
+// MAT_BUMPMAP filename — a legacy grayscale HEIGHT map kept as metadata only (NOT a tangent-space normal
+// map, so it is not bound to a material normalMap; see the scene-formats status log), or null.
 export interface ThreeDsMaterial {
   ambient: readonly [number, number, number];
   bumpFilename: string | null;
   diffuse: readonly [number, number, number];
   name: string;
   opacity: number;
-  shininess: number;
+  shininess: number | null;
   specular: readonly [number, number, number];
   textureFilename: string | null;
 }

@@ -30,12 +30,19 @@ Correctness + major features + breadth landed this session (each its own commit,
   **smoothing-group normals** (SMOOTH_GROUP, vertex-split at hard edges). Material breadth: shininess
   (0xA040 → specular exponent), bump (0xA230 → normalMap), transparency (0xA050 → alpha + blend).
 
-**Parked gap (review-ruled, not a parser fix):** the opacity texture **MAP** MAT_OPACMAP `0xA210` is left
-unread — BlinnPhongMaterial has no `opacityMap`/`alphaMap` field, and adding one is a cross-package
-feature (types + scene-gl/scene-wgpu alpha-map sampling + functional proof), not parser breadth. The same
-pending question applies to **AWD and glTF alpha maps**. Scalar transparency already covers the common
-case honestly. Awaiting a user direction ruling before this becomes a scoped dispatch (types → renderer →
-parsers). The 3DS FACE_MATERIAL subset-split gap below is now **done** (this pass).
+**Parked gaps (review-ruled, not parser fixes):**
+- **Opacity texture MAP** MAT_OPACMAP `0xA210` is left unread — BlinnPhongMaterial has no
+  `opacityMap`/`alphaMap` field, and adding one is a cross-package feature (types + scene-gl/scene-wgpu
+  alpha-map sampling + functional proof), not parser breadth. The same pending question applies to **AWD
+  and glTF alpha maps**. Scalar transparency already covers the common case honestly.
+- **Bump/height MAP** MAT_BUMPMAP `0xA230` is parsed into `ThreeDsMaterial.bumpFilename` as metadata but
+  **not bound to a material** — it is a legacy grayscale HEIGHT field, not a tangent-space normal map, so
+  binding it to `normalMap` (sampled as RGB*2-1) would render bogus vectors (three.js TDSLoader keeps
+  bumpMap distinct from normalMap for the same reason). An honest bump→normal seam / a `bumpMap` material
+  field is the same cross-package renderer feature as the alpha maps above.
+
+Both await a user direction ruling before becoming a scoped dispatch (types → renderer → parsers). The
+3DS FACE_MATERIAL subset-split gap below is now **done** (this pass).
 
 ## 2026-07-19 — AAA depth follow-ups recorded (doc-honesty stage)
 
