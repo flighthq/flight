@@ -35,7 +35,7 @@ export const clearcoatPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     const gl = state.gl;
     const clearcoat = material as Readonly<ClearcoatPbrMaterial> | null;
     const standard = clearcoat !== null ? clearcoat.standard : null;
-    const key = buildGlPbrStandardDefineKey(standard, clearcoat !== null && clearcoat.alphaMode === 'mask');
+    const key = buildGlPbrStandardDefineKey(standard, clearcoat);
     key.clearcoatEnabled = true;
     const program = ensureGlPbrProgram(state, key);
     beginGlMeshDraw(state, program, clearcoat !== null && clearcoat.doubleSided);

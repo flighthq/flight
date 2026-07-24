@@ -35,7 +35,7 @@ export const anisotropyPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     const gl = state.gl;
     const anisotropy = material as Readonly<AnisotropyPbrMaterial> | null;
     const standard = anisotropy !== null ? anisotropy.standard : null;
-    const key = buildGlPbrStandardDefineKey(standard, anisotropy !== null && anisotropy.alphaMode === 'mask');
+    const key = buildGlPbrStandardDefineKey(standard, anisotropy);
     key.anisotropyEnabled = true;
     const program = ensureGlPbrProgram(state, key);
     beginGlMeshDraw(state, program, anisotropy !== null && anisotropy.doubleSided);
