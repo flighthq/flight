@@ -1,24 +1,15 @@
-import type {
-  LinearColor,
-  Texture,
-  WgpuClassicDefineKey,
-  WgpuClassicPipeline,
-  WgpuMaterialBinding,
-  WgpuRenderState,
-} from '@flighthq/types';
+import type { LinearColor, Texture, WgpuClassicDefineKey, WgpuClassicPipeline, WgpuRenderState } from '@flighthq/types';
 
 import {
-  buildWgpuMaterialBindGroup,
   createWgpuMeshPipeline,
+  ensureWgpuMaterialBinding,
   ensureWgpuScenePipeline,
   ensureWgpuShadowSampleLayout,
   getWgpuMaterialSampler,
   resolveWgpuMaterialTextureView,
   stashWgpuUvTransform,
-  wgpuMaterialBindGroupNeedsRebuild,
   WGPU_MESH_PRELUDE_WGSL,
 } from './wgpuMeshPipeline';
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 // Ensures (and caches per material reference) the classic Material bind group — a uniform buffer + the
 // shared sampler + the placeholder diffuse/specular/normal textures — and rewrites its uniform with
 // this surface's linear diffuse + specular colors, shininess, and alpha cutoff. Mirrors scene-gl's
@@ -37,37 +28,23 @@ export function bindWgpuClassicSurface(
   normalMap: Readonly<Texture> | null,
   alphaMap: Readonly<Texture> | null,
 ): GPUBindGroup {
-  const scene = getWgpuSceneRuntime(state);
-  // Re-resolve the sampler + map views every bind so a live material-map mutation (swap, unready→ready,
-  // image replacement, version bump, sampler change) is picked up; the bind group is only rebuilt when
-  // one of them actually differs from the cached set (wgpuMaterialBindGroupNeedsRebuild).
+  // Re-resolve the primary sampler + map views every bind so a live material-map mutation (swap,
+  // unready→ready, image replacement, version bump, primary-sampler change) is picked up; the views land
+  // in a REUSED module scratch so the steady-state re-bind of an unchanged material allocates nothing.
+  // ensureWgpuMaterialBinding rebuilds the bind group only when a view/sampler actually differs.
   const sampler = getWgpuMaterialSampler(state, diffuseMap);
-  const views = [
-    resolveWgpuMaterialTextureView(state, diffuseMap),
-    resolveWgpuMaterialTextureView(state, specularMap),
-    resolveWgpuMaterialTextureView(state, normalMap),
-    resolveWgpuMaterialTextureView(state, alphaMap),
-  ];
-  let binding: WgpuMaterialBinding | undefined = scene.materialBindGroups.get(materialKey);
-  if (binding === undefined) {
-    const buffer = state.device.createBuffer({
-      size: CLASSIC_UNIFORM_BYTES,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    });
-    const bindGroup = buildWgpuMaterialBindGroup(state, pipeline.materialBindGroupLayout, buffer, sampler, views);
-    binding = { bindGroup, buffer, sampler, views };
-    scene.materialBindGroups.set(materialKey, binding);
-  } else if (wgpuMaterialBindGroupNeedsRebuild(binding, sampler, views)) {
-    binding.bindGroup = buildWgpuMaterialBindGroup(
-      state,
-      pipeline.materialBindGroupLayout,
-      binding.buffer,
-      sampler,
-      views,
-    );
-    binding.sampler = sampler;
-    binding.views = views;
-  }
+  _viewScratch[0] = resolveWgpuMaterialTextureView(state, diffuseMap);
+  _viewScratch[1] = resolveWgpuMaterialTextureView(state, specularMap);
+  _viewScratch[2] = resolveWgpuMaterialTextureView(state, normalMap);
+  _viewScratch[3] = resolveWgpuMaterialTextureView(state, alphaMap);
+  const binding = ensureWgpuMaterialBinding(
+    state,
+    materialKey,
+    pipeline.materialBindGroupLayout,
+    CLASSIC_UNIFORM_BYTES,
+    sampler,
+    _viewScratch,
+  );
 
   _scratch[0] = diffuse[0];
   _scratch[1] = diffuse[1];
@@ -300,3 +277,6 @@ fn sampleDirectionalShadow(worldPos : vec3f) -> f32 {
 `;
 
 const _scratch = new Float32Array(CLASSIC_UNIFORM_BYTES / 4);
+// Reused per-bind resolved-view scratch (diffuse, specular, normal, alpha) so a steady-state re-bind
+// allocates nothing; ensureWgpuMaterialBinding copies it into the binding only on create/rebuild.
+const _viewScratch = new Array<GPUTextureView>(4);

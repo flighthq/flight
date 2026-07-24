@@ -19,17 +19,15 @@ import type {
 
 import {
   beginWgpuMeshDraw,
-  buildWgpuMaterialBindGroup,
   drawWgpuMeshSubset,
+  ensureWgpuMaterialBinding,
   getWgpuMaterialSampler,
   isWgpuTextureReady,
   resolveWgpuMaterialTextureView,
   stashWgpuUvTransform,
-  wgpuMaterialBindGroupNeedsRebuild,
   writeWgpuFrameUniform,
 } from './wgpuMeshPipeline';
 import { ensureWgpuPbrPipeline } from './wgpuPbrPipelineCache';
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 
 // The Material uniform float count (MaterialBlock = 48 floats / 192 bytes). Exported so the extension
 // renderers, which write extension factors into the shared scratch through the helpers here, agree on
@@ -82,40 +80,26 @@ export function ensureWgpuPbrMaterialBindGroup(
   key: object,
   standard: Readonly<StandardPbrMaterialProperties> | null,
 ): WgpuMaterialBinding {
-  const scene = getWgpuSceneRuntime(state);
   const baseColorMap = standard !== null ? standard.baseColorMap : null;
-  // Re-resolve the sampler + the six standard-block map views every bind (base-color, metallic-roughness,
-  // normal, occlusion, emissive, alpha) so a live map mutation is picked up; rebuild the bind group only
-  // when one differs from the cached set. Same invalidation seam and layout as the classic binder.
+  // Re-resolve the primary (base-color) sampler + the six standard-block map views every bind (base-color,
+  // metallic-roughness, normal, occlusion, emissive, alpha) into a REUSED module scratch — no per-bind
+  // allocation — so ensureWgpuMaterialBinding can rebuild the bind group only when one differs. Same
+  // invalidation seam, shared-primary-sampler contract, and layout as the classic binder.
   const sampler = getWgpuMaterialSampler(state, baseColorMap);
-  const views = [
-    resolveWgpuMaterialTextureView(state, baseColorMap),
-    resolveWgpuMaterialTextureView(state, standard !== null ? standard.metallicRoughnessMap : null),
-    resolveWgpuMaterialTextureView(state, standard !== null ? standard.normalMap : null),
-    resolveWgpuMaterialTextureView(state, standard !== null ? standard.occlusionMap : null),
-    resolveWgpuMaterialTextureView(state, standard !== null ? standard.emissiveMap : null),
-    resolveWgpuMaterialTextureView(state, standard !== null ? standard.alphaMap : null),
-  ];
-  let binding: WgpuMaterialBinding | undefined = scene.materialBindGroups.get(key);
-  if (binding === undefined) {
-    const buffer = state.device.createBuffer({
-      size: WGPU_PBR_MATERIAL_UNIFORM_FLOATS * 4,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    });
-    const bindGroup = buildWgpuMaterialBindGroup(state, pipeline.materialBindGroupLayout, buffer, sampler, views);
-    binding = { bindGroup, buffer, sampler, views };
-    scene.materialBindGroups.set(key, binding);
-  } else if (wgpuMaterialBindGroupNeedsRebuild(binding, sampler, views)) {
-    binding.bindGroup = buildWgpuMaterialBindGroup(
-      state,
-      pipeline.materialBindGroupLayout,
-      binding.buffer,
-      sampler,
-      views,
-    );
-    binding.sampler = sampler;
-    binding.views = views;
-  }
+  _viewScratch[0] = resolveWgpuMaterialTextureView(state, baseColorMap);
+  _viewScratch[1] = resolveWgpuMaterialTextureView(state, standard !== null ? standard.metallicRoughnessMap : null);
+  _viewScratch[2] = resolveWgpuMaterialTextureView(state, standard !== null ? standard.normalMap : null);
+  _viewScratch[3] = resolveWgpuMaterialTextureView(state, standard !== null ? standard.occlusionMap : null);
+  _viewScratch[4] = resolveWgpuMaterialTextureView(state, standard !== null ? standard.emissiveMap : null);
+  _viewScratch[5] = resolveWgpuMaterialTextureView(state, standard !== null ? standard.alphaMap : null);
+  const binding = ensureWgpuMaterialBinding(
+    state,
+    key,
+    pipeline.materialBindGroupLayout,
+    WGPU_PBR_MATERIAL_UNIFORM_FLOATS * 4,
+    sampler,
+    _viewScratch,
+  );
   // The base-color map's uv transform drives the shared vertex-stage uv every standard map samples.
   // Runs every bind (standard + each extension routes through here), so the stash is always fresh.
   stashWgpuUvTransform(state, standard !== null ? standard.baseColorMap : null);
@@ -244,3 +228,7 @@ const FALLBACK_MATERIAL = {} as Readonly<StandardPbrMaterial>;
 
 const _colorScratch: LinearColor = [0, 0, 0, 0];
 const _materialScratch = new Float32Array(WGPU_PBR_MATERIAL_UNIFORM_FLOATS);
+// Reused per-bind resolved-view scratch (base-color, metallic-roughness, normal, occlusion, emissive,
+// alpha) so a steady-state re-bind allocates nothing; ensureWgpuMaterialBinding copies it only on
+// create/rebuild.
+const _viewScratch = new Array<GPUTextureView>(6);

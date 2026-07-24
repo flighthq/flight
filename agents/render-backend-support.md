@@ -57,6 +57,15 @@ Findings are empirical (surfaced building the per-primitive functional suite, 20
 6. **~~Orthographic projection renders blank on wgpu.~~ FIXED.** `writeWgpuFrameUniform` remaps the
    camera's GL-convention VP into WebGPU `[0,1]` NDC-Z. `camera-orthographic.webgpu.ts` now covers the
    previously blank raster path alongside the gl scene.
+12. **wgpu binds ONE sampler per material (shared-primary-sampler contract); gl binds a sampler per map.**
+    The wgpu classic + standard-PBR material bind group (`getWgpuMaterialSampler` in
+    `packages/scene-wgpu/src/wgpuMeshPipeline.ts`) carries a single sampler at group(2) binding 1 that the
+    WGSL samples every map through, taken from the **primary** map (diffuse for classic, base-color for
+    PBR). So a **non-primary** map's per-`Texture` sampler (e.g. a distinct `alphaMap.sampler` wrap/filter)
+    is not honored on wgpu — only the primary map's. **scene-gl** binds each map with its own `map.sampler`
+    (`bindGlImageResourceTexture`). The wgpu material-binding invalidation cache tracks this one primary
+    sampler accordingly (`wgpuMaterialBindGroupNeedsRebuild`). A per-map-sampler wgpu path (one sampler
+    binding per map) is a chartered later change, not a bug — scope claims/tests to the primary sampler.
 7. **~~Single-line RichText alignment renders nothing.~~ FIXED.** The gl/canvas RichText renderers passed a `10000` wrap-prevention sentinel as the layout width when `wordWrap` was false, so `applyAlignment` (`textLayout.ts`) centered the line against 10000 and shifted it ~4975px off-screen. Both renderers now pass `data.width` unconditionally (wrapping stays `wordWrap`-gated inside `computeTextLayout`), so single-line `align:'center'/'right'` renders correctly. (Number retained to keep gap #8–#10 references stable.)
 
 ## Feature gaps (not implemented at all — implement before testing)
