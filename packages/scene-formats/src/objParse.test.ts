@@ -236,7 +236,7 @@ describe('createSceneFromObj', () => {
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'obj.position-index-out-of-range');
     expect(crumb.severity).toBe('Drop');
-    expect(crumb.origin).toBe('parseFaceVertex');
+    expect(crumb.origin).toBe('parseObj');
     expect(crumb.detail?.firstLine).toBe(2);
     expect(crumb.detail?.firstIndex).toBe(2);
     expect(crumb.detail?.count).toBe(1);
@@ -387,41 +387,62 @@ describe('obj diagnostic crumb coverage', () => {
     },
   );
 
-  it('records face-vertex-invalid (Drop, parseFaceVertex) for a zero/non-numeric face index token', () => {
+  it('records face-vertex-invalid (Drop, parseObj) for a zero/non-numeric face index token', () => {
     // Index 0 is invalid in OBJ (1-based); the token is dropped and the face vertex loop breaks.
     const diagnostics: ImportDiagnostic[] = [];
     createSceneFromObj('v 0 0 0\nf 0 1 2\n', undefined, diagnostics);
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'obj.face-vertex-invalid');
     expect(crumb.severity).toBe('Drop');
-    expect(crumb.origin).toBe('parseFaceVertex');
+    expect(crumb.origin).toBe('parseObj');
     expect(crumb.detail?.firstLine).toBe(2);
     expect(crumb.detail?.firstToken).toBe('0');
     expect(crumb.detail?.count).toBe(1);
   });
 
-  it('records uv-index-out-of-range (Recover, parseFaceVertex) — the vertex still emits without that uv', () => {
+  it('records uv-index-invalid (Recover, parseObj) — the vertex still emits without that uv', () => {
     // One vt (index 1); the face references uv index 9. The vertex is kept (uv falls back), so Recover.
     const diagnostics: ImportDiagnostic[] = [];
     createSceneFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nvt 0 0\nf 1/1 2/9 3/1\n', undefined, diagnostics);
     expect(diagnostics).toHaveLength(1);
-    const crumb = expectOneCrumb(diagnostics, 'obj.uv-index-out-of-range');
+    const crumb = expectOneCrumb(diagnostics, 'obj.uv-index-invalid');
     expect(crumb.severity).toBe('Recover');
-    expect(crumb.origin).toBe('parseFaceVertex');
+    expect(crumb.origin).toBe('parseObj');
     expect(crumb.detail?.firstLine).toBe(5);
-    expect(crumb.detail?.firstIndex).toBe(9);
+    expect(crumb.detail?.firstToken).toBe('9');
     expect(crumb.detail?.count).toBe(1);
   });
 
-  it('records normal-index-out-of-range (Recover, parseFaceVertex) — the vertex still emits without that normal', () => {
+  it('records uv-index-invalid (Recover, parseObj) for a NON-NUMERIC uv token — previously a silent drop', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nvt 0 0\nf 1/1 2/x 3/1\n', undefined, diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'obj.uv-index-invalid');
+    expect(crumb.severity).toBe('Recover');
+    expect(crumb.origin).toBe('parseObj');
+    expect(crumb.detail?.firstToken).toBe('x');
+    expect(crumb.detail?.count).toBe(1);
+  });
+
+  it('records normal-index-invalid (Recover, parseObj) — the vertex still emits without that normal', () => {
     const diagnostics: ImportDiagnostic[] = [];
     createSceneFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nvn 0 0 1\nf 1//1 2//9 3//1\n', undefined, diagnostics);
     expect(diagnostics).toHaveLength(1);
-    const crumb = expectOneCrumb(diagnostics, 'obj.normal-index-out-of-range');
+    const crumb = expectOneCrumb(diagnostics, 'obj.normal-index-invalid');
     expect(crumb.severity).toBe('Recover');
-    expect(crumb.origin).toBe('parseFaceVertex');
+    expect(crumb.origin).toBe('parseObj');
     expect(crumb.detail?.firstLine).toBe(5);
-    expect(crumb.detail?.firstIndex).toBe(9);
+    expect(crumb.detail?.firstToken).toBe('9');
+    expect(crumb.detail?.count).toBe(1);
+  });
+
+  it('records normal-index-invalid (Recover, parseObj) for a NON-NUMERIC normal token — previously a silent drop', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nvn 0 0 1\nf 1//1 2//x 3//1\n', undefined, diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'obj.normal-index-invalid');
+    expect(crumb.origin).toBe('parseObj');
+    expect(crumb.detail?.firstToken).toBe('x');
     expect(crumb.detail?.count).toBe(1);
   });
 
@@ -442,10 +463,11 @@ describe('obj diagnostic crumb coverage', () => {
     const diagnostics: ImportDiagnostic[] = [];
     createSceneFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nvt 0 0\nf 1/9 2/8 3/7\n', undefined, diagnostics);
     expect(diagnostics).toHaveLength(1);
-    const crumb = expectOneCrumb(diagnostics, 'obj.uv-index-out-of-range');
+    const crumb = expectOneCrumb(diagnostics, 'obj.uv-index-invalid');
     expect(crumb.severity).toBe('Recover');
+    expect(crumb.origin).toBe('parseObj');
     expect(crumb.detail?.firstLine).toBe(5);
-    expect(crumb.detail?.firstIndex).toBe(9);
+    expect(crumb.detail?.firstToken).toBe('9');
     expect(crumb.detail?.count).toBe(3);
   });
 
@@ -471,6 +493,35 @@ describe('obj diagnostic crumb coverage', () => {
     const noLibrary: ImportDiagnostic[] = [];
     createSceneFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nusemtl Absent\nf 1 2 3\n', undefined, noLibrary);
     expect(noLibrary).toHaveLength(0);
+  });
+
+  // A BARE recognized geometry directive (no arguments at all) is an implicit malformed no-op the old code
+  // skipped silently. Probe each: the announced vertex/normal/uv/face still records a drop.
+  it.each([
+    { kind: 'obj.vertex-malformed', obj: 'v\n', reason: 'too-few-components' },
+    { kind: 'obj.normal-malformed', obj: 'vn\n', reason: 'too-few-components' },
+    { kind: 'obj.uv-malformed', obj: 'vt\n', reason: 'too-few-components' },
+  ])('records $kind (Drop, parseObj) for a bare $kind directive', ({ kind, obj, reason }) => {
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromObj(obj, undefined, diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, kind);
+    expect(crumb.severity).toBe('Drop');
+    expect(crumb.origin).toBe('parseObj');
+    expect(crumb.detail?.firstLine).toBe(1);
+    expect(crumb.detail?.reason).toBe(reason);
+    expect(crumb.detail?.count).toBe(1);
+  });
+
+  it('records face-too-few-vertices (Drop, parseObj) for a bare f directive', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromObj('f\n', undefined, diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'obj.face-too-few-vertices');
+    expect(crumb.severity).toBe('Drop');
+    expect(crumb.origin).toBe('parseObj');
+    expect(crumb.detail?.firstLine).toBe(1);
+    expect(crumb.detail?.count).toBe(1);
   });
 
   it('records no diagnostics for a well-formed OBJ even with a collector engaged', () => {

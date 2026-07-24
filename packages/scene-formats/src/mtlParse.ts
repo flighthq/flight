@@ -21,11 +21,28 @@ export function parseObjMaterialLibrary(source: string, diagnostics?: ImportDiag
 
     const spaceIndex = raw.indexOf(' ');
     if (spaceIndex < 0) {
-      // A directive with no argument — only `newmtl` requires one.
+      // A bare recognized directive carries no value — a data-dropping branch, not a silent no-op. Before a
+      // material it is a directive-before-material drop; after one, its value/filename is simply missing.
       if (raw === 'newmtl') {
-        tallyMtlDrop(mtlDrops, ImportDiagnosticSeverity.Drop, 'mtl.newmtl-no-name', 'parseObjMaterialLibrary', '', {
-          firstLine: i + 1,
-        });
+        tallyMtlDrop(mtlDrops, ImportDiagnosticSeverity.Drop, 'mtl.newmtl-no-name', '', { firstLine: i + 1 });
+      } else if (raw === 'Ka' || raw === 'Kd' || raw === 'Ks') {
+        if (current === null) tallyDirectiveBeforeMaterial(mtlDrops, raw, i);
+        else
+          tallyMtlDrop(mtlDrops, ImportDiagnosticSeverity.Recover, 'mtl.color-malformed', 'too-few-components', {
+            firstDirective: raw,
+            firstLine: i + 1,
+            reason: 'too-few-components',
+          });
+      } else if (raw === 'Ns' || raw === 'd' || raw === 'Tr' || raw === 'illum') {
+        if (current === null) tallyDirectiveBeforeMaterial(mtlDrops, raw, i);
+        else tallyInvalidValue(mtlDrops, raw, i);
+      } else if (raw === 'map_Kd' || raw === 'map_Ka' || raw === 'map_Ks' || raw === 'map_Bump' || raw === 'bump') {
+        if (current === null) tallyDirectiveBeforeMaterial(mtlDrops, raw, i);
+        else
+          tallyMtlDrop(mtlDrops, ImportDiagnosticSeverity.Drop, 'mtl.map-no-filename', raw, {
+            directive: raw,
+            firstLine: i + 1,
+          });
       }
       continue;
     }
@@ -144,7 +161,16 @@ export function parseObjMaterialLibrary(source: string, diagnostics?: ImportDiag
     }
   }
 
-  flushMtlDrops(mtlDrops, diagnostics);
+  // Emit the aggregated tallies here in parseObjMaterialLibrary (the emitting function, so it is the crumbs'
+  // origin per the collector contract) — one crumb per (kind, discriminator) with its total count.
+  if (mtlDrops !== null) {
+    for (const tally of mtlDrops.values()) {
+      reportImportDiagnostic(diagnostics, tally.severity, tally.kind, 'parseObjMaterialLibrary', {
+        ...tally.detail,
+        count: tally.count,
+      });
+    }
+  }
   return { materials };
 }
 
@@ -174,25 +200,18 @@ function parseColor(
 ): readonly [number, number, number] | null {
   const parts = args.split(/\s+/);
   if (parts.length < 3) {
-    tallyMtlDrop(
-      mtlDrops,
-      ImportDiagnosticSeverity.Recover,
-      'mtl.color-malformed',
-      'parseColor',
-      'too-few-components',
-      {
-        firstDirective: directive,
-        firstLine: lineIndex + 1,
-        reason: 'too-few-components',
-      },
-    );
+    tallyMtlDrop(mtlDrops, ImportDiagnosticSeverity.Recover, 'mtl.color-malformed', 'too-few-components', {
+      firstDirective: directive,
+      firstLine: lineIndex + 1,
+      reason: 'too-few-components',
+    });
     return null;
   }
   const r = parseFloat(parts[0]);
   const g = parseFloat(parts[1]);
   const b = parseFloat(parts[2]);
   if (!Number.isFinite(r) || !Number.isFinite(g) || !Number.isFinite(b)) {
-    tallyMtlDrop(mtlDrops, ImportDiagnosticSeverity.Recover, 'mtl.color-malformed', 'parseColor', 'non-numeric', {
+    tallyMtlDrop(mtlDrops, ImportDiagnosticSeverity.Recover, 'mtl.color-malformed', 'non-numeric', {
       firstDirective: directive,
       firstLine: lineIndex + 1,
       reason: 'non-numeric',
@@ -202,41 +221,35 @@ function parseColor(
   return [r, g, b];
 }
 
-// A directive carrying a value before any `newmtl` drops that value (no material to attach to). Aggregated
-// as one crumb; the first offending directive is kept as an example.
+// A directive carrying (or missing) a value before any `newmtl` drops it — no material to attach to.
+// Aggregated as one crumb; the first offending directive is kept as an example.
 function tallyDirectiveBeforeMaterial(
   mtlDrops: Map<string, MtlDropTally> | null,
   directive: string,
   lineIndex: number,
 ): void {
-  tallyMtlDrop(
-    mtlDrops,
-    ImportDiagnosticSeverity.Drop,
-    'mtl.directive-before-material',
-    'parseObjMaterialLibrary',
-    '',
-    {
-      firstDirective: directive,
-      firstLine: lineIndex + 1,
-    },
-  );
+  tallyMtlDrop(mtlDrops, ImportDiagnosticSeverity.Drop, 'mtl.directive-before-material', '', {
+    firstDirective: directive,
+    firstLine: lineIndex + 1,
+  });
 }
 
-// A non-numeric Ns/d/Tr/illum value is dropped and the material keeps its default (Recover). Keyed by the
-// directive so each property's failures aggregate separately.
+// A non-numeric (or missing) Ns/d/Tr/illum value is dropped and the material keeps its default (Recover).
+// Keyed by the directive so each property's failures aggregate separately.
 function tallyInvalidValue(mtlDrops: Map<string, MtlDropTally> | null, directive: string, lineIndex: number): void {
-  tallyMtlDrop(mtlDrops, ImportDiagnosticSeverity.Recover, 'mtl.invalid-value', 'parseObjMaterialLibrary', directive, {
+  tallyMtlDrop(mtlDrops, ImportDiagnosticSeverity.Recover, 'mtl.invalid-value', directive, {
     directive,
     firstLine: lineIndex + 1,
   });
 }
 
 // One accumulated MTL drop: a total `count` plus the first offender's `detail`, keyed by kind + discriminator.
+// No origin is stored — the tallies are flushed (physically reported) by parseObjMaterialLibrary, so it is
+// every aggregated crumb's origin per the collector's emitting-function contract; `kind` carries granularity.
 interface MtlDropTally {
   count: number;
   detail: Record<string, boolean | number | string>;
   kind: string;
-  origin: string;
   severity: ImportDiagnosticSeverity;
 }
 
@@ -247,24 +260,12 @@ function tallyMtlDrop(
   tallies: Map<string, MtlDropTally> | null,
   severity: ImportDiagnosticSeverity,
   kind: string,
-  origin: string,
   discriminator: string,
   firstDetail: Record<string, boolean | number | string>,
 ): void {
   if (tallies === null) return;
   const key = `${kind}|${discriminator}`;
   const existing = tallies.get(key);
-  if (existing === undefined) tallies.set(key, { count: 1, detail: firstDetail, kind, origin, severity });
+  if (existing === undefined) tallies.set(key, { count: 1, detail: firstDetail, kind, severity });
   else existing.count++;
-}
-
-// Emits each tally as ONE crumb — the first offender's detail plus the total `count` — after the parse loop.
-function flushMtlDrops(tallies: Map<string, MtlDropTally> | null, diagnostics: ImportDiagnostic[] | undefined): void {
-  if (tallies === null) return;
-  for (const tally of tallies.values()) {
-    reportImportDiagnostic(diagnostics, tally.severity, tally.kind, tally.origin, {
-      ...tally.detail,
-      count: tally.count,
-    });
-  }
 }
