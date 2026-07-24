@@ -544,6 +544,7 @@ export * from './SurfaceEdgeMode';
 export * from './SurfaceFingerprint';
 export * from './SurfaceHistogram';
 export * from './SurfaceMaterial';
+export * from './SurfaceMaterialOptions';
 export * from './SurfaceMismatch';
 export * from './SurfaceRegion';
 export * from './SurfaceResizeMode';
