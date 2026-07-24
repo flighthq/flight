@@ -121,7 +121,7 @@ describe('drawWgpuScene', () => {
     expect(Array.from(runtime.pipelineCache.keys()).some((key) => key.endsWith('|blend'))).toBe(true);
   });
 
-  it('sorts blended subsets back-to-front by clip W', () => {
+  it('sorts blended subsets back-to-front by projected depth', () => {
     const { state } = makeWgpuSceneState();
     registerStandardPbrWgpuMaterial(state);
     const scene = createSceneNode(SceneNodeKind);
@@ -138,6 +138,30 @@ describe('drawWgpuScene', () => {
 
     drawWgpuScene(state, scene, makeCamera(), LIGHTS);
 
+    expect(getWgpuSceneRuntime(state).blendedDrawList.map((entry) => entry.mesh)).toEqual([far, near]);
+  });
+
+  it('sorts blended subsets back-to-front with an orthographic camera', () => {
+    const { state } = makeWgpuSceneState();
+    registerStandardPbrWgpuMaterial(state);
+    const scene = createSceneNode(SceneNodeKind);
+    const material = createStandardPbrMaterial();
+    material.alphaMode = 'blend';
+    const far = createMesh(createBoxMeshGeometry(), [material]);
+    const near = createMesh(createBoxMeshGeometry(), [material]);
+    far.position.z = -3;
+    near.position.z = -1;
+    invalidateNodeLocalTransform(far);
+    invalidateNodeLocalTransform(near);
+    addNodeChild(scene, near);
+    addNodeChild(scene, far);
+    const camera = createCamera3D({
+      far: 100,
+      near: 0.1,
+      projection: { halfHeight: 1, halfWidth: 1, kind: 'orthographic' },
+    });
+    setCamera3DViewMatrix4FromLookAt(camera, { x: 0, y: 0, z: 5 }, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
+    drawWgpuScene(state, scene, camera, LIGHTS);
     expect(getWgpuSceneRuntime(state).blendedDrawList.map((entry) => entry.mesh)).toEqual([far, near]);
   });
 
