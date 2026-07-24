@@ -25,12 +25,17 @@ import {
   THREE_DS_MAIN,
   THREE_DS_MATERIAL,
   THREE_DS_MATERIAL_AMBIENT,
+  THREE_DS_MATERIAL_BUMP_MAP,
   THREE_DS_MATERIAL_DIFFUSE,
   THREE_DS_MATERIAL_NAME,
+  THREE_DS_MATERIAL_SHININESS,
   THREE_DS_MATERIAL_SPECULAR,
   THREE_DS_MATERIAL_TEXTURE_FILENAME,
   THREE_DS_MATERIAL_TEXTURE_MAP,
+  THREE_DS_MATERIAL_TRANSPARENCY,
   THREE_DS_OBJECT,
+  THREE_DS_PERCENT_FLOAT,
+  THREE_DS_PERCENT_INT,
   THREE_DS_SMOOTH_GROUP,
   THREE_DS_TRIMESH,
   THREE_DS_UV_COORDS,
@@ -592,29 +597,40 @@ function resolveThreeDsMaterial(
 }
 
 // Converts a parsed 3DS material to Flight's BlinnPhongMaterial — 3DS's own diffuse/specular shading
-// model. The diffuse and specular colors map directly; the texture map filename becomes an Unresolved
-// External diffuseMap ref. The ambient color has no Blinn-Phong equivalent (ambient is a scene light
-// in Flight), so it is dropped; a caller wanting PBR converts explicitly.
+// model. Diffuse and specular colors map directly; shininess maps to the specular exponent; the diffuse
+// and bump texture filenames become Unresolved External diffuseMap/normalMap refs; and a below-opaque
+// material folds its opacity into the diffuse alpha plus a blend alphaMode. The ambient color has no
+// Blinn-Phong equivalent (ambient is a scene light in Flight), so it is dropped; a caller wanting PBR
+// converts explicitly.
 function threeDsMaterialToBlinnPhong(material: Readonly<ThreeDsMaterial>, document: SceneDocument): Material {
   const result = createBlinnPhongMaterial({
-    diffuse: packThreeDsColor(material.diffuse),
+    diffuse: packThreeDsColor(material.diffuse, material.opacity),
     diffuseMap:
       material.textureFilename !== null
         ? createExternalTextureRef(material.textureFilename, null, document.resources)
         : null,
+    normalMap:
+      material.bumpFilename !== null ? createExternalTextureRef(material.bumpFilename, null, document.resources) : null,
     specular: packThreeDsColor(material.specular),
-  }) as unknown as Material;
+    ...(material.shininess > 0 ? { shininess: material.shininess } : {}),
+  });
   // Preserve the 3DS material chunk name as the material's authored name (empty → anonymous).
   result.name = material.name.length > 0 ? material.name : null;
-  return result;
+  // A material below full opacity blends: the opacity rode into the diffuse alpha above; the blend
+  // alphaMode makes the renderer actually blend rather than treat the alpha as coverage.
+  if (material.opacity < 1) result.alphaMode = 'blend';
+  return result as unknown as Material;
 }
 
 // Parses a material block (0xAFFF): walks sub-chunks for the name, the diffuse/specular/ambient color
-// blocks, and the diffuse texture map's filename.
+// blocks, the shininess and transparency percentages, and the diffuse and bump texture-map filenames.
 function parseMaterial(view: Readonly<DataView>, offset: number, end: number): ThreeDsMaterial {
   let name = '';
   let ambient: readonly [number, number, number] = [0, 0, 0];
+  let bumpFilename: string | null = null;
   let diffuse: readonly [number, number, number] = [1, 1, 1];
+  let opacity = 1;
+  let shininess = 0;
   let specular: readonly [number, number, number] = [1, 1, 1];
   let textureFilename: string | null = null;
 
@@ -634,14 +650,25 @@ function parseMaterial(view: Readonly<DataView>, offset: number, end: number): T
       diffuse = parseColorChunk(view, dataStart, chunkEnd) ?? diffuse;
     } else if (chunkId === THREE_DS_MATERIAL_SPECULAR) {
       specular = parseColorChunk(view, dataStart, chunkEnd) ?? specular;
+    } else if (chunkId === THREE_DS_MATERIAL_SHININESS) {
+      // The MAT_SHININESS percentage (0..1) maps to a Blinn-Phong specular exponent; 100% → 128, a
+      // conventional maximum. 3DS's shininess slider has no exact Phong-exponent equivalent.
+      const fraction = parsePercentageChunk(view, dataStart, chunkEnd);
+      if (fraction !== null) shininess = fraction * 128;
+    } else if (chunkId === THREE_DS_MATERIAL_TRANSPARENCY) {
+      // MAT_TRANSPARENCY is the transparent fraction (0 = opaque); opacity is its complement.
+      const fraction = parsePercentageChunk(view, dataStart, chunkEnd);
+      if (fraction !== null) opacity = 1 - fraction;
     } else if (chunkId === THREE_DS_MATERIAL_TEXTURE_MAP) {
       textureFilename = parseTextureFilename(view, dataStart, chunkEnd);
+    } else if (chunkId === THREE_DS_MATERIAL_BUMP_MAP) {
+      bumpFilename = parseTextureFilename(view, dataStart, chunkEnd);
     }
 
     cursor = chunkEnd;
   }
 
-  return { ambient, diffuse, name, specular, textureFilename };
+  return { ambient, bumpFilename, diffuse, name, opacity, shininess, specular, textureFilename };
 }
 
 // Reads the nested color sub-chunk of a material color block: COLOR_FLOAT (0x0010, 3 float32 in [0,1])
@@ -675,7 +702,32 @@ function parseColorChunk(
   return null;
 }
 
-// Reads the diffuse texture map block (0xA200), returning its filename sub-chunk (0xA300) or null.
+// Reads a percentage material sub-chunk (shininess/transparency), returning a fraction in [0,1]: an
+// INT_PERCENTAGE (0x0030) uint16 in [0,100] is divided by 100; a FLOAT_PERCENTAGE (0x0031) float32 is a
+// fraction already. Returns null if neither is present.
+function parsePercentageChunk(view: Readonly<DataView>, offset: number, end: number): number | null {
+  let cursor = offset;
+  while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
+    const chunkId = view.getUint16(cursor, true);
+    const chunkLength = readChunkLength(view, cursor);
+    const chunkEnd = cursor + chunkLength;
+    if (chunkLength < THREE_DS_CHUNK_HEADER_BYTES || chunkEnd > end) break;
+    const dataStart = cursor + THREE_DS_CHUNK_HEADER_BYTES;
+
+    if (chunkId === THREE_DS_PERCENT_INT && dataStart + 2 <= chunkEnd) {
+      return Math.min(1, Math.max(0, view.getUint16(dataStart, true) / 100));
+    }
+    if (chunkId === THREE_DS_PERCENT_FLOAT && dataStart + 4 <= chunkEnd) {
+      return Math.min(1, Math.max(0, view.getFloat32(dataStart, true)));
+    }
+
+    cursor = chunkEnd;
+  }
+  return null;
+}
+
+// Reads a texture map block (0xA200 diffuse, 0xA230 bump, …), returning its filename sub-chunk (0xA300)
+// or null.
 function parseTextureFilename(view: Readonly<DataView>, offset: number, end: number): string | null {
   let cursor = offset;
   while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
@@ -692,12 +744,13 @@ function parseTextureFilename(view: Readonly<DataView>, offset: number, end: num
   return null;
 }
 
-// Packs a 3DS sRGB-space [r,g,b] triple (each in [0,1]) into an opaque 0xRRGGBBAA integer.
-function packThreeDsColor(rgb: readonly [number, number, number]): number {
+// Packs a 3DS sRGB-space [r,g,b] triple plus an alpha (each in [0,1]) into a 0xRRGGBBAA integer.
+function packThreeDsColor(rgb: readonly [number, number, number], alpha = 1): number {
   const r = Math.round(Math.min(1, Math.max(0, rgb[0])) * 0xff);
   const g = Math.round(Math.min(1, Math.max(0, rgb[1])) * 0xff);
   const b = Math.round(Math.min(1, Math.max(0, rgb[2])) * 0xff);
-  return ((r << 24) | (g << 16) | (b << 8) | 0xff) >>> 0;
+  const a = Math.round(Math.min(1, Math.max(0, alpha)) * 0xff);
+  return ((r << 24) | (g << 16) | (b << 8) | a) >>> 0;
 }
 
 // Reads a null-terminated ASCII string starting at `offset`, stopping at the first null byte or at
