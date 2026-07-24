@@ -1,0 +1,113 @@
+import { drawWgpuScene } from '@flighthq/scene-wgpu';
+import type { Camera3D, MeshMorph, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import {
+  CANONICAL_MESH_GEOMETRY_LAYOUT,
+  addNodeChild,
+  beginWgpuRenderEffectPipeline,
+  createAmbientLight,
+  createCamera3D,
+  createDirectionalLight,
+  createMesh,
+  createMeshGeometry,
+  createPerspectiveProjection,
+  createScene,
+  createUnlitMaterial,
+  createVector3,
+  createWgpuCanvasElement,
+  createWgpuRenderEffectPipeline,
+  createWgpuRenderState,
+  endWgpuRenderEffectPipeline,
+  getSurfacePixelLuminance,
+  normalizeVector3,
+  prepareSceneMorph,
+  prepareSceneRender,
+  registerUnlitWgpuMaterial,
+  renderWgpuBackground,
+  setCamera3DViewMatrix4FromLookAt,
+  submitWgpuRenderPass,
+} from '@flighthq/sdk';
+import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+// WebGPU mirror of scene-morph.webgl: the outer probe is reachable only when the CPU morph blend
+// increments geometry.version and the WebGPU upload refreshes the deformed vertex buffer.
+const pixelRatio = window.devicePixelRatio || 1;
+const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
+document.body.appendChild(canvas);
+
+export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x0a0c10ff });
+registerUnlitWgpuMaterial(state);
+const pipeline = createWgpuRenderEffectPipeline(state, {
+  sampleCount: 4,
+  format: 'rgba16f',
+  depth: 'depth-stencil',
+});
+
+export const scale = pixelRatio;
+export const width = 800;
+export const height = 600;
+
+export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
+  renderWgpuBackground(state);
+  beginWgpuRenderEffectPipeline(state, pipeline);
+  prepareSceneMorph(scene);
+  prepareSceneRender(state, scene, camera, lights);
+  drawWgpuScene(state, scene, camera, lights);
+  endWgpuRenderEffectPipeline(state, pipeline, []);
+  submitWgpuRenderPass(state);
+}
+
+registerWgpuFunctionalTarget(state, scale);
+
+const corners: readonly [number, number][] = [
+  [-0.5, -0.5],
+  [0.5, -0.5],
+  [0.5, 0.5],
+  [-0.5, 0.5],
+];
+const stride = 12;
+const vertices = new Float32Array(corners.length * stride);
+const positionDeltas = new Float32Array(corners.length * 3);
+for (let corner = 0; corner < corners.length; corner++) {
+  const base = corner * stride;
+  vertices[base] = corners[corner][0];
+  vertices[base + 1] = corners[corner][1];
+  vertices[base + 5] = 1;
+  vertices[base + 8] = 1;
+  positionDeltas[corner * 3] = Math.sign(corners[corner][0]) * 0.6;
+  positionDeltas[corner * 3 + 1] = Math.sign(corners[corner][1]) * 0.6;
+}
+const morph: MeshMorph = {
+  targets: [{ normalDeltas: null, positionDeltas, tangentDeltas: null }],
+  weights: new Float32Array([1]),
+};
+const geometry = createMeshGeometry({
+  layout: CANONICAL_MESH_GEOMETRY_LAYOUT,
+  vertices,
+  indices: new Uint16Array([0, 1, 2, 0, 2, 3]),
+});
+const scene = createScene().root;
+const mesh = createMesh(geometry, [createUnlitMaterial({ baseColor: 0xff8030ff })]);
+mesh.morph = morph;
+addNodeChild(scene, mesh);
+
+const camera = createCamera3D({
+  far: 100,
+  near: 0.1,
+  projection: createPerspectiveProjection({ aspect: width / height, fovY: Math.PI / 4 }),
+});
+setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 3), createVector3(0, 0, 0), createVector3(0, 1, 0));
+const direction = createVector3(-1, -0.35, -0.55);
+normalizeVector3(direction, direction);
+const lights = {
+  ambient: createAmbientLight({ color: 0x6070a0ff, intensity: 0.15 }),
+  directional: createDirectionalLight({ color: 0xffffffff, direction, intensity: 1 }),
+};
+render(scene, camera, lights);
+
+export function assertRender(surface: Readonly<Surface>): void {
+  const covered = (x: number, y: number): boolean =>
+    getSurfacePixelLuminance(surface, Math.floor(surface.width * x), Math.floor(surface.height * y)) > 90;
+  if (!covered(0.5, 0.5)) throw new Error('[scene-morph] quad center is background');
+  if (!covered(0.8, 0.8)) throw new Error('[scene-morph] outer probe is background — morph upload was skipped');
+  if (covered(0.98, 0.02)) throw new Error('[scene-morph] extreme corner is covered — silhouette is not bounded');
+}
