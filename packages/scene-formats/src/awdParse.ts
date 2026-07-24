@@ -1062,6 +1062,13 @@ function parseTriangleGeometryBlock(
         vertices[o + 6] = tangents[v * 3];
         vertices[o + 7] = tangents[v * 3 + 1];
         vertices[o + 8] = tangents[v * 3 + 2];
+        // Tangent W is the bitangent handedness the shader reconstructs the bitangent with (B = W·N×T).
+        // AWD's tangent stream is xyz only, so W must be synthesized: Away3D derives the bitangent as
+        // N×T in its LEFT-handed space (one handedness for the whole mesh), and the left→right-handed
+        // conversion above (negateVec3Z on N and T is a det=-1 reflection) flips that handedness. So the
+        // correct sign in Flight's right-handed space is AWD_TANGENT_HANDEDNESS. Left 0 (no bitangent) for
+        // a vertex the tangent stream does not cover.
+        vertices[o + 9] = AWD_TANGENT_HANDEDNESS;
       }
 
       if (uvs !== null && v * 2 + 1 < uvs.length) {
@@ -1582,6 +1589,13 @@ function parseSkeletonAnimationBlock(
 
   return { name: nameResult.value, poses };
 }
+
+// Bitangent handedness written into every AWD tangent's W (B = W·normal×tangent). AWD carries no W and
+// Away3D uses a single mesh-wide handedness (bitangent = normal×tangent in its left-handed space); the
+// left→right-handed conversion (negateVec3Z, det = -1) inverts it, making -1 the correct Flight-space
+// sign. Kept as one named constant so a render proof against a normal-mapped fixture (shambler) can flip
+// it in one place if Away3D's convention proves to be the opposite chirality.
+const AWD_TANGENT_HANDEDNESS = -1;
 
 interface ParsedJoint {
   name: string;
