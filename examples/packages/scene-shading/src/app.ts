@@ -1,6 +1,6 @@
 import {
   createOrbitCameraController,
-  orbitCameraController,
+  rotateOrbitCameraController,
   updateOrbitCameraController,
 } from '@flighthq/camera-controls';
 import { createSceneNode } from '@flighthq/scene';
@@ -201,7 +201,7 @@ function enterFrame(now: number): void {
   const deltaTime = Math.min((now - previousTime) / 1000, 0.05);
   previousTime = now;
 
-  orbitCameraController(cameraController, deltaTime * 0.09, 0);
+  rotateOrbitCameraController(cameraController, deltaTime * 0.09, 0);
   updateOrbitCameraController(cameraController, camera, deltaTime);
 
   lightAngle += deltaTime * 0.34;

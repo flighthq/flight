@@ -1,7 +1,7 @@
 import {
   createOrbitCameraController,
-  dollyCameraController,
-  orbitCameraController,
+  dollyOrbitCameraController,
+  rotateOrbitCameraController,
   updateOrbitCameraController,
 } from '@flighthq/camera-controls';
 import { createSceneNode } from '@flighthq/scene';
@@ -140,7 +140,7 @@ canvas.addEventListener('pointerdown', (event: PointerEvent) => {
 
 canvas.addEventListener('pointermove', (event: PointerEvent) => {
   if (!dragging) return;
-  orbitCameraController(
+  rotateOrbitCameraController(
     cameraController,
     -(event.clientX - previousPointerX) * 0.008,
     (event.clientY - previousPointerY) * 0.008,
@@ -158,7 +158,7 @@ canvas.addEventListener(
   'wheel',
   (event: WheelEvent) => {
     event.preventDefault();
-    dollyCameraController(cameraController, event.deltaY * 0.006);
+    dollyOrbitCameraController(cameraController, event.deltaY * 0.006);
   },
   { passive: false },
 );
@@ -167,7 +167,7 @@ function enterFrame(now: number): void {
   const deltaTime = Math.min((now - previousTime) / 1000, 0.05);
   previousTime = now;
 
-  if (!dragging) orbitCameraController(cameraController, deltaTime * 0.12, 0);
+  if (!dragging) rotateOrbitCameraController(cameraController, deltaTime * 0.12, 0);
   updateOrbitCameraController(cameraController, camera, deltaTime);
 
   cubeRotation += deltaTime * 0.48;

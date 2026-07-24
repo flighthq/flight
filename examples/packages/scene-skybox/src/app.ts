@@ -1,6 +1,6 @@
 import {
   createOrbitCameraController,
-  orbitCameraController,
+  rotateOrbitCameraController,
   updateOrbitCameraController,
 } from '@flighthq/camera-controls';
 import { createSceneNode } from '@flighthq/scene';
@@ -98,7 +98,7 @@ function enterFrame(now: number): void {
   const deltaTime = Math.min((now - previousTime) / 1000, 0.05);
   previousTime = now;
 
-  orbitCameraController(cameraController, deltaTime * 0.08, Math.sin(now * 0.0002) * deltaTime * 0.01);
+  rotateOrbitCameraController(cameraController, deltaTime * 0.08, Math.sin(now * 0.0002) * deltaTime * 0.01);
   updateOrbitCameraController(cameraController, camera, deltaTime);
 
   torusAngle += deltaTime * 0.26;
