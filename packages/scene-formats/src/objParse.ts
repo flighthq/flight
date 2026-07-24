@@ -80,6 +80,11 @@ export function parseObj(
   // One document material index per MTL material name, shared across every mesh (and group) that uses it.
   const resolvedMaterials = new Map<string, number>();
 
+  // Repeated malformed lines/tokens are tallied here and flushed as ONE crumb per (kind, discriminator)
+  // after the parse — the collector contract forbids a per-element report inside this line loop. Null (and
+  // every tally call a no-op) when no collector is engaged, so an unopted parse stays allocation-free.
+  const objDrops = diagnostics ? new Map<string, ObjDropTally>() : null;
+
   const lines = source.split('\n');
   for (let i = 0; i < lines.length; i++) {
     const raw = lines[i].trim();
@@ -95,18 +100,25 @@ export function parseObj(
       case 'v': {
         const parts = args.split(/\s+/);
         if (parts.length < 3) {
-          reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'obj.vertex-malformed', 'parseObj', {
-            line: i + 1,
-            reason: 'too-few-components',
-          });
+          tallyObjDrop(
+            objDrops,
+            ImportDiagnosticSeverity.Drop,
+            'obj.vertex-malformed',
+            'parseObj',
+            'too-few-components',
+            {
+              firstLine: i + 1,
+              reason: 'too-few-components',
+            },
+          );
           break;
         }
         const x = parseFloat(parts[0]);
         const y = parseFloat(parts[1]);
         const z = parseFloat(parts[2]);
         if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) {
-          reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'obj.vertex-malformed', 'parseObj', {
-            line: i + 1,
+          tallyObjDrop(objDrops, ImportDiagnosticSeverity.Drop, 'obj.vertex-malformed', 'parseObj', 'non-numeric', {
+            firstLine: i + 1,
             reason: 'non-numeric',
           });
           break;
@@ -117,18 +129,25 @@ export function parseObj(
       case 'vn': {
         const parts = args.split(/\s+/);
         if (parts.length < 3) {
-          reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'obj.normal-malformed', 'parseObj', {
-            line: i + 1,
-            reason: 'too-few-components',
-          });
+          tallyObjDrop(
+            objDrops,
+            ImportDiagnosticSeverity.Drop,
+            'obj.normal-malformed',
+            'parseObj',
+            'too-few-components',
+            {
+              firstLine: i + 1,
+              reason: 'too-few-components',
+            },
+          );
           break;
         }
         const x = parseFloat(parts[0]);
         const y = parseFloat(parts[1]);
         const z = parseFloat(parts[2]);
         if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) {
-          reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'obj.normal-malformed', 'parseObj', {
-            line: i + 1,
+          tallyObjDrop(objDrops, ImportDiagnosticSeverity.Drop, 'obj.normal-malformed', 'parseObj', 'non-numeric', {
+            firstLine: i + 1,
             reason: 'non-numeric',
           });
           break;
@@ -139,8 +158,8 @@ export function parseObj(
       case 'vt': {
         const parts = args.split(/\s+/);
         if (parts.length < 2) {
-          reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'obj.uv-malformed', 'parseObj', {
-            line: i + 1,
+          tallyObjDrop(objDrops, ImportDiagnosticSeverity.Drop, 'obj.uv-malformed', 'parseObj', 'too-few-components', {
+            firstLine: i + 1,
             reason: 'too-few-components',
           });
           break;
@@ -148,8 +167,8 @@ export function parseObj(
         const u = parseFloat(parts[0]);
         const v = parseFloat(parts[1]);
         if (!Number.isFinite(u) || !Number.isFinite(v)) {
-          reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'obj.uv-malformed', 'parseObj', {
-            line: i + 1,
+          tallyObjDrop(objDrops, ImportDiagnosticSeverity.Drop, 'obj.uv-malformed', 'parseObj', 'non-numeric', {
+            firstLine: i + 1,
             reason: 'non-numeric',
           });
           break;
@@ -160,8 +179,8 @@ export function parseObj(
       case 'f': {
         const vertexTokens = args.split(/\s+/);
         if (vertexTokens.length < 3) {
-          reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'obj.face-too-few-vertices', 'parseObj', {
-            line: i + 1,
+          tallyObjDrop(objDrops, ImportDiagnosticSeverity.Drop, 'obj.face-too-few-vertices', 'parseObj', '', {
+            firstLine: i + 1,
           });
           break;
         }
@@ -170,7 +189,7 @@ export function parseObj(
         const faceIndices: number[] = [];
 
         for (let vi = 0; vi < vertexTokens.length; vi++) {
-          const idx = parseFaceVertex(vertexTokens[vi], positions, uvs, normals, bucket, diagnostics, i);
+          const idx = parseFaceVertex(vertexTokens[vi], positions, uvs, normals, bucket, objDrops, i);
           if (idx < 0) break;
           faceIndices.push(idx);
         }
@@ -188,7 +207,7 @@ export function parseObj(
         // A group/object boundary flushes the accumulated faces as one Mesh (one subset per
         // material) and starts a fresh group. `usemtl` state persists across the boundary per the
         // OBJ spec — `g`/`o` name geometry, they do not reset the active material.
-        flushGroup(materialBuckets, currentGroupName, document, materials, resolvedMaterials);
+        flushGroup(materialBuckets, currentGroupName, document, materials, resolvedMaterials, diagnostics);
         materialBuckets = new Map<string, MaterialBucket>();
         currentGroupName = args || undefined;
         break;
@@ -207,7 +226,10 @@ export function parseObj(
   }
 
   // Flush the final group's accumulated faces.
-  flushGroup(materialBuckets, currentGroupName, document, materials, resolvedMaterials);
+  flushGroup(materialBuckets, currentGroupName, document, materials, resolvedMaterials, diagnostics);
+
+  // Emit the aggregated malformed-line/token tallies as one crumb per (kind, discriminator).
+  flushObjDrops(objDrops, diagnostics);
 
   return document;
 }
@@ -238,7 +260,7 @@ function parseFaceVertex(
   uvs: readonly number[],
   normals: readonly number[],
   bucket: MaterialBucket,
-  diagnostics: ImportDiagnostic[] | undefined,
+  objDrops: Map<string, ObjDropTally> | null,
   lineIndex: number,
 ): number {
   const parts = token.split('/');
@@ -246,27 +268,23 @@ function parseFaceVertex(
   const uvCount = uvs.length / 2;
   const normalCount = normals.length / 3;
 
-  // Position index (1-based, may be negative).
+  // Position index (1-based, may be negative). Every drop is tallied — parseFaceVertex runs once per face
+  // vertex, so a per-token report would violate the collector's aggregate-once contract; origin stays this
+  // function (the true detector) and the parseObj-level flush emits it.
   const rawPosIdx = parseInt(parts[0], 10);
   if (!Number.isFinite(rawPosIdx) || rawPosIdx === 0) {
-    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'obj.face-vertex-invalid', 'parseFaceVertex', {
-      line: lineIndex + 1,
-      token,
+    tallyObjDrop(objDrops, ImportDiagnosticSeverity.Drop, 'obj.face-vertex-invalid', 'parseFaceVertex', '', {
+      firstLine: lineIndex + 1,
+      firstToken: token,
     });
     return -1;
   }
   const posIdx = rawPosIdx > 0 ? rawPosIdx - 1 : posCount + rawPosIdx;
   if (posIdx < 0 || posIdx >= posCount) {
-    reportImportDiagnostic(
-      diagnostics,
-      ImportDiagnosticSeverity.Drop,
-      'obj.position-index-out-of-range',
-      'parseFaceVertex',
-      {
-        index: rawPosIdx,
-        line: lineIndex + 1,
-      },
-    );
+    tallyObjDrop(objDrops, ImportDiagnosticSeverity.Drop, 'obj.position-index-out-of-range', 'parseFaceVertex', '', {
+      firstIndex: rawPosIdx,
+      firstLine: lineIndex + 1,
+    });
     return -1;
   }
 
@@ -276,16 +294,10 @@ function parseFaceVertex(
     if (Number.isFinite(rawUvIdx) && rawUvIdx !== 0) {
       uvIdx = rawUvIdx > 0 ? rawUvIdx - 1 : uvCount + rawUvIdx;
       if (uvIdx < 0 || uvIdx >= uvCount) {
-        reportImportDiagnostic(
-          diagnostics,
-          ImportDiagnosticSeverity.Recover,
-          'obj.uv-index-out-of-range',
-          'parseFaceVertex',
-          {
-            index: rawUvIdx,
-            line: lineIndex + 1,
-          },
-        );
+        tallyObjDrop(objDrops, ImportDiagnosticSeverity.Recover, 'obj.uv-index-out-of-range', 'parseFaceVertex', '', {
+          firstIndex: rawUvIdx,
+          firstLine: lineIndex + 1,
+        });
         uvIdx = -1;
       }
     }
@@ -297,14 +309,15 @@ function parseFaceVertex(
     if (Number.isFinite(rawNormalIdx) && rawNormalIdx !== 0) {
       normalIdx = rawNormalIdx > 0 ? rawNormalIdx - 1 : normalCount + rawNormalIdx;
       if (normalIdx < 0 || normalIdx >= normalCount) {
-        reportImportDiagnostic(
-          diagnostics,
+        tallyObjDrop(
+          objDrops,
           ImportDiagnosticSeverity.Recover,
           'obj.normal-index-out-of-range',
           'parseFaceVertex',
+          '',
           {
-            index: rawNormalIdx,
-            line: lineIndex + 1,
+            firstIndex: rawNormalIdx,
+            firstLine: lineIndex + 1,
           },
         );
         normalIdx = -1;
@@ -357,6 +370,7 @@ function flushGroup(
   document: SceneDocument,
   library: Readonly<ObjMaterialLibrary> | undefined,
   resolvedMaterials: Map<string, number>,
+  diagnostics: ImportDiagnostic[] | undefined,
 ): void {
   const vertices: number[] = [];
   const indices: number[] = [];
@@ -374,7 +388,7 @@ function flushGroup(
     for (let k = 0; k < bucket.vertices.length; k++) vertices.push(bucket.vertices[k]);
 
     subsets.push({ indexCount: bucket.indices.length, indexOffset });
-    materials.push(resolveObjMaterial(materialName, library, resolvedMaterials, document));
+    materials.push(resolveObjMaterial(materialName, library, resolvedMaterials, document, diagnostics));
   }
 
   if (subsets.length === 0) return;
@@ -438,11 +452,17 @@ function clampChannel(value: number): number {
 // registers one material entry. Empty name (no `usemtl`) or unknown name → -1 (no material; the assembler
 // resolves an out-of-range index to null, DefaultMaterialKind at draw time). A resolved material is
 // appended to the document's materials table and its index cached by name.
+//
+// A `usemtl` name absent from a SUPPLIED library drops that subset's authored material assignment — a
+// data-dropping branch, so it records `obj.material-missing` (deduped by the same name cache, one crumb per
+// distinct missing name). When no library was supplied at all the drop is the documented intentional path
+// (materials resolved downstream), so it stays quiet.
 function resolveObjMaterial(
   name: string,
   library: Readonly<ObjMaterialLibrary> | undefined,
   cache: Map<string, number>,
   document: SceneDocument,
+  diagnostics: ImportDiagnostic[] | undefined,
 ): number {
   if (name === '') return -1;
   const cached = cache.get(name);
@@ -450,6 +470,11 @@ function resolveObjMaterial(
 
   const parsed = library?.materials.get(name);
   if (parsed === undefined) {
+    if (library !== undefined) {
+      reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'obj.material-missing', 'resolveObjMaterial', {
+        name,
+      });
+    }
     cache.set(name, -1);
     return -1;
   }
@@ -460,4 +485,43 @@ function resolveObjMaterial(
   document.materials.push(material as unknown as MaterialLike);
   cache.set(name, index);
   return index;
+}
+
+// One accumulated OBJ drop: a total occurrence `count` plus the first offender's `detail` (line, and a
+// reason/index/token where the kind carries one), keyed while tallying by kind + discriminator.
+interface ObjDropTally {
+  count: number;
+  detail: Record<string, boolean | number | string>;
+  kind: string;
+  origin: string;
+  severity: ImportDiagnosticSeverity;
+}
+
+// Records one offender against its (kind, discriminator) tally — the aggregate-once alternative to a
+// per-element `reportImportDiagnostic` in the parse loop. No-op (and never allocates) when no collector is
+// engaged. `firstDetail` is kept from the FIRST offender; later ones only bump the count.
+function tallyObjDrop(
+  tallies: Map<string, ObjDropTally> | null,
+  severity: ImportDiagnosticSeverity,
+  kind: string,
+  origin: string,
+  discriminator: string,
+  firstDetail: Record<string, boolean | number | string>,
+): void {
+  if (tallies === null) return;
+  const key = `${kind}|${discriminator}`;
+  const existing = tallies.get(key);
+  if (existing === undefined) tallies.set(key, { count: 1, detail: firstDetail, kind, origin, severity });
+  else existing.count++;
+}
+
+// Emits each tally as ONE crumb — the first offender's detail plus the total `count` — after the parse loop.
+function flushObjDrops(tallies: Map<string, ObjDropTally> | null, diagnostics: ImportDiagnostic[] | undefined): void {
+  if (tallies === null) return;
+  for (const tally of tallies.values()) {
+    reportImportDiagnostic(diagnostics, tally.severity, tally.kind, tally.origin, {
+      ...tally.detail,
+      count: tally.count,
+    });
+  }
 }

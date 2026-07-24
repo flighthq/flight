@@ -5,11 +5,15 @@ import { ImportDiagnosticSeverity } from '@flighthq/types';
 // Parses a Wavefront MTL material library from its text source. Every recognized directive
 // (`newmtl`, `Ka`, `Kd`, `Ks`, `Ns`, `d`, `Tr`, `illum`, `map_Kd`, `map_Ka`, `map_Ks`,
 // `map_Bump`/`bump`) is read; unrecognized directives are silently skipped. Malformed values
-// record a diagnostic and fall back to defaults rather than throwing.
+// record a diagnostic and fall back to defaults rather than throwing. Repeated malformed lines are
+// aggregated into one crumb per (kind, discriminator) — the collector contract forbids a per-line report.
 export function parseObjMaterialLibrary(source: string, diagnostics?: ImportDiagnostic[]): ObjMaterialLibrary {
   const materials = new Map<string, ObjMaterial>();
   let current: ObjMaterial | null = null;
   const lines = source.split('\n');
+
+  // Tallied during the loop and flushed once after — null (every tally a no-op) when no collector is engaged.
+  const mtlDrops = diagnostics ? new Map<string, MtlDropTally>() : null;
 
   for (let i = 0; i < lines.length; i++) {
     const raw = lines[i].trim();
@@ -19,15 +23,9 @@ export function parseObjMaterialLibrary(source: string, diagnostics?: ImportDiag
     if (spaceIndex < 0) {
       // A directive with no argument — only `newmtl` requires one.
       if (raw === 'newmtl') {
-        reportImportDiagnostic(
-          diagnostics,
-          ImportDiagnosticSeverity.Drop,
-          'mtl.newmtl-no-name',
-          'parseObjMaterialLibrary',
-          {
-            line: i + 1,
-          },
-        );
+        tallyMtlDrop(mtlDrops, ImportDiagnosticSeverity.Drop, 'mtl.newmtl-no-name', 'parseObjMaterialLibrary', '', {
+          firstLine: i + 1,
+        });
       }
       continue;
     }
@@ -43,114 +41,74 @@ export function parseObjMaterialLibrary(source: string, diagnostics?: ImportDiag
       }
       case 'Ka': {
         if (current === null) {
-          reportObjDirectiveBeforeMaterial(diagnostics, directive, i);
+          tallyDirectiveBeforeMaterial(mtlDrops, directive, i);
           break;
         }
-        const c = parseColor(args, diagnostics, directive, i);
+        const c = parseColor(args, mtlDrops, directive, i);
         if (c !== null) current.ambient = c;
         break;
       }
       case 'Kd': {
         if (current === null) {
-          reportObjDirectiveBeforeMaterial(diagnostics, directive, i);
+          tallyDirectiveBeforeMaterial(mtlDrops, directive, i);
           break;
         }
-        const c = parseColor(args, diagnostics, directive, i);
+        const c = parseColor(args, mtlDrops, directive, i);
         if (c !== null) current.diffuse = c;
         break;
       }
       case 'Ks': {
         if (current === null) {
-          reportObjDirectiveBeforeMaterial(diagnostics, directive, i);
+          tallyDirectiveBeforeMaterial(mtlDrops, directive, i);
           break;
         }
-        const c = parseColor(args, diagnostics, directive, i);
+        const c = parseColor(args, mtlDrops, directive, i);
         if (c !== null) current.specular = c;
         break;
       }
       case 'Ns': {
         if (current === null) {
-          reportObjDirectiveBeforeMaterial(diagnostics, directive, i);
+          tallyDirectiveBeforeMaterial(mtlDrops, directive, i);
           break;
         }
         const v = parseFloat(args);
         if (Number.isFinite(v)) current.specularExponent = v;
-        else
-          reportImportDiagnostic(
-            diagnostics,
-            ImportDiagnosticSeverity.Recover,
-            'mtl.invalid-value',
-            'parseObjMaterialLibrary',
-            {
-              directive: 'Ns',
-              line: i + 1,
-            },
-          );
+        else tallyInvalidValue(mtlDrops, directive, i);
         break;
       }
       case 'd': {
         if (current === null) {
-          reportObjDirectiveBeforeMaterial(diagnostics, directive, i);
+          tallyDirectiveBeforeMaterial(mtlDrops, directive, i);
           break;
         }
         const v = parseFloat(args);
         if (Number.isFinite(v)) current.dissolve = v;
-        else
-          reportImportDiagnostic(
-            diagnostics,
-            ImportDiagnosticSeverity.Recover,
-            'mtl.invalid-value',
-            'parseObjMaterialLibrary',
-            {
-              directive: 'd',
-              line: i + 1,
-            },
-          );
+        else tallyInvalidValue(mtlDrops, directive, i);
         break;
       }
       case 'Tr': {
         if (current === null) {
-          reportObjDirectiveBeforeMaterial(diagnostics, directive, i);
+          tallyDirectiveBeforeMaterial(mtlDrops, directive, i);
           break;
         }
         const v = parseFloat(args);
         if (Number.isFinite(v)) current.dissolve = 1 - v;
-        else
-          reportImportDiagnostic(
-            diagnostics,
-            ImportDiagnosticSeverity.Recover,
-            'mtl.invalid-value',
-            'parseObjMaterialLibrary',
-            {
-              directive: 'Tr',
-              line: i + 1,
-            },
-          );
+        else tallyInvalidValue(mtlDrops, directive, i);
         break;
       }
       case 'illum': {
         if (current === null) {
-          reportObjDirectiveBeforeMaterial(diagnostics, directive, i);
+          tallyDirectiveBeforeMaterial(mtlDrops, directive, i);
           break;
         }
         const v = parseInt(args, 10);
         if (Number.isFinite(v)) current.illumination = v;
-        else
-          reportImportDiagnostic(
-            diagnostics,
-            ImportDiagnosticSeverity.Recover,
-            'mtl.invalid-value',
-            'parseObjMaterialLibrary',
-            {
-              directive: 'illum',
-              line: i + 1,
-            },
-          );
+        else tallyInvalidValue(mtlDrops, directive, i);
         break;
       }
       case 'map_Kd': {
         if (current === null) {
-          reportObjDirectiveBeforeMaterial(diagnostics, directive, i);
+          tallyDirectiveBeforeMaterial(mtlDrops, directive, i);
           break;
         }
         current.mapDiffuse = args;
@@ -158,7 +116,7 @@ export function parseObjMaterialLibrary(source: string, diagnostics?: ImportDiag
       }
       case 'map_Ka': {
         if (current === null) {
-          reportObjDirectiveBeforeMaterial(diagnostics, directive, i);
+          tallyDirectiveBeforeMaterial(mtlDrops, directive, i);
           break;
         }
         current.mapAmbient = args;
@@ -166,7 +124,7 @@ export function parseObjMaterialLibrary(source: string, diagnostics?: ImportDiag
       }
       case 'map_Ks': {
         if (current === null) {
-          reportObjDirectiveBeforeMaterial(diagnostics, directive, i);
+          tallyDirectiveBeforeMaterial(mtlDrops, directive, i);
           break;
         }
         current.mapSpecular = args;
@@ -175,7 +133,7 @@ export function parseObjMaterialLibrary(source: string, diagnostics?: ImportDiag
       case 'map_Bump':
       case 'bump': {
         if (current === null) {
-          reportObjDirectiveBeforeMaterial(diagnostics, directive, i);
+          tallyDirectiveBeforeMaterial(mtlDrops, directive, i);
           break;
         }
         current.mapBump = args;
@@ -186,6 +144,7 @@ export function parseObjMaterialLibrary(source: string, diagnostics?: ImportDiag
     }
   }
 
+  flushMtlDrops(mtlDrops, diagnostics);
   return { materials };
 }
 
@@ -205,28 +164,37 @@ function createDefaultObjMaterial(name: string): ObjMaterial {
   };
 }
 
+// Reads a color triple, tallying a `mtl.color-malformed` drop (keyed by failure reason, first directive
+// kept as an example) and returning null on malformed input so the caller keeps the material's default.
 function parseColor(
   args: string,
-  diagnostics: ImportDiagnostic[] | undefined,
+  mtlDrops: Map<string, MtlDropTally> | null,
   directive: string,
   lineIndex: number,
 ): readonly [number, number, number] | null {
   const parts = args.split(/\s+/);
   if (parts.length < 3) {
-    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Recover, 'mtl.color-malformed', 'parseColor', {
-      directive,
-      line: lineIndex + 1,
-      reason: 'too-few-components',
-    });
+    tallyMtlDrop(
+      mtlDrops,
+      ImportDiagnosticSeverity.Recover,
+      'mtl.color-malformed',
+      'parseColor',
+      'too-few-components',
+      {
+        firstDirective: directive,
+        firstLine: lineIndex + 1,
+        reason: 'too-few-components',
+      },
+    );
     return null;
   }
   const r = parseFloat(parts[0]);
   const g = parseFloat(parts[1]);
   const b = parseFloat(parts[2]);
   if (!Number.isFinite(r) || !Number.isFinite(g) || !Number.isFinite(b)) {
-    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Recover, 'mtl.color-malformed', 'parseColor', {
-      directive,
-      line: lineIndex + 1,
+    tallyMtlDrop(mtlDrops, ImportDiagnosticSeverity.Recover, 'mtl.color-malformed', 'parseColor', 'non-numeric', {
+      firstDirective: directive,
+      firstLine: lineIndex + 1,
       reason: 'non-numeric',
     });
     return null;
@@ -234,19 +202,69 @@ function parseColor(
   return [r, g, b];
 }
 
-function reportObjDirectiveBeforeMaterial(
-  diagnostics: ImportDiagnostic[] | undefined,
+// A directive carrying a value before any `newmtl` drops that value (no material to attach to). Aggregated
+// as one crumb; the first offending directive is kept as an example.
+function tallyDirectiveBeforeMaterial(
+  mtlDrops: Map<string, MtlDropTally> | null,
   directive: string,
   lineIndex: number,
 ): void {
-  reportImportDiagnostic(
-    diagnostics,
+  tallyMtlDrop(
+    mtlDrops,
     ImportDiagnosticSeverity.Drop,
     'mtl.directive-before-material',
     'parseObjMaterialLibrary',
+    '',
     {
-      directive,
-      line: lineIndex + 1,
+      firstDirective: directive,
+      firstLine: lineIndex + 1,
     },
   );
+}
+
+// A non-numeric Ns/d/Tr/illum value is dropped and the material keeps its default (Recover). Keyed by the
+// directive so each property's failures aggregate separately.
+function tallyInvalidValue(mtlDrops: Map<string, MtlDropTally> | null, directive: string, lineIndex: number): void {
+  tallyMtlDrop(mtlDrops, ImportDiagnosticSeverity.Recover, 'mtl.invalid-value', 'parseObjMaterialLibrary', directive, {
+    directive,
+    firstLine: lineIndex + 1,
+  });
+}
+
+// One accumulated MTL drop: a total `count` plus the first offender's `detail`, keyed by kind + discriminator.
+interface MtlDropTally {
+  count: number;
+  detail: Record<string, boolean | number | string>;
+  kind: string;
+  origin: string;
+  severity: ImportDiagnosticSeverity;
+}
+
+// Records one offender against its (kind, discriminator) tally — the aggregate-once alternative to a
+// per-line `reportImportDiagnostic`. No-op (never allocates) when no collector is engaged. `firstDetail` is
+// kept from the FIRST offender; later ones only bump the count.
+function tallyMtlDrop(
+  tallies: Map<string, MtlDropTally> | null,
+  severity: ImportDiagnosticSeverity,
+  kind: string,
+  origin: string,
+  discriminator: string,
+  firstDetail: Record<string, boolean | number | string>,
+): void {
+  if (tallies === null) return;
+  const key = `${kind}|${discriminator}`;
+  const existing = tallies.get(key);
+  if (existing === undefined) tallies.set(key, { count: 1, detail: firstDetail, kind, origin, severity });
+  else existing.count++;
+}
+
+// Emits each tally as ONE crumb — the first offender's detail plus the total `count` — after the parse loop.
+function flushMtlDrops(tallies: Map<string, MtlDropTally> | null, diagnostics: ImportDiagnostic[] | undefined): void {
+  if (tallies === null) return;
+  for (const tally of tallies.values()) {
+    reportImportDiagnostic(diagnostics, tally.severity, tally.kind, tally.origin, {
+      ...tally.detail,
+      count: tally.count,
+    });
+  }
 }
