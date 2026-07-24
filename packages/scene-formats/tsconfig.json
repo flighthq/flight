@@ -7,7 +7,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types", "node"]
+    "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
     { "path": "../animation" },
