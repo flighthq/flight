@@ -11,7 +11,12 @@ import {
   transformAabbByMatrix4,
 } from '@flighthq/geometry';
 import { ensureMeshGeometryBounds } from '@flighthq/mesh';
-import { getNodeRuntime, getNodeWorldMatrix4, invalidateNodeLocalTransform } from '@flighthq/node';
+import {
+  getNodeRuntime,
+  getNodeWorldMatrix4,
+  invalidateNodeLocalTransform,
+  isNodeLocalMatrix4Detached,
+} from '@flighthq/node';
 import type { LinearColor } from '@flighthq/types';
 import type {
   Aabb,
@@ -194,7 +199,12 @@ function collectVisibleMeshes(
   // world matrix is read below. Pre-order walk order means an ancestor is invalidated before any
   // descendant resolves the parent chain, so the whole visible subtree recomposes from live transform
   // fields this frame. See prepareSceneRender for the policy rationale.
-  if (refreshTransforms) invalidateNodeLocalTransform(node as NodeAny);
+  // A directly-authored local matrix is already the node's authoritative transform. The refresh
+  // policy exists to observe bare TRS-field mutations; invalidating a detached matrix here would
+  // recompose it from the dormant TRS fields and silently erase setNodeLocalMatrix4().
+  if (refreshTransforms && !isNodeLocalMatrix4Detached(node as NodeAny)) {
+    invalidateNodeLocalTransform(node as NodeAny);
+  }
 
   // worldAlpha is not folded in this walk: it is lazily ensured on access (getSceneNodeWorldAlpha), the
   // appearance analog of the ensure-on-access world matrix the renderer resolves at draw time. This walk

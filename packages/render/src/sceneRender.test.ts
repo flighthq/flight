@@ -1,6 +1,6 @@
 import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
 import { unpackColorToLinear } from '@flighthq/color';
-import { createAabb } from '@flighthq/geometry';
+import { createAabb, createMatrix4 } from '@flighthq/geometry';
 import {
   createAmbientLight,
   createDirectionalLight,
@@ -14,7 +14,7 @@ import {
   createBoxMeshGeometry,
   createMeshGeometry,
 } from '@flighthq/mesh';
-import { addNodeChild, getNodeWorldMatrix4, invalidateNodeLocalTransform } from '@flighthq/node';
+import { addNodeChild, getNodeWorldMatrix4, invalidateNodeLocalTransform, setNodeLocalMatrix4 } from '@flighthq/node';
 import { createMesh, createSceneNode, SceneNodeKind, getSceneNodeWorldAlpha } from '@flighthq/scene';
 import type { Camera3D, Material, MeshGeometry, SceneLightBlock, SceneLightsLike } from '@flighthq/types';
 import {
@@ -361,6 +361,20 @@ describe('prepareSceneRender', () => {
     prepareSceneRender(state, scene, camera, emptyLights());
     mesh.position.x = 3; // bare mutation, no invalidateNodeLocalTransform
     prepareSceneRender(state, scene, camera, emptyLights());
+    expect(getNodeWorldMatrix4(mesh).m[12]).toBeCloseTo(3);
+  });
+
+  it('preserves a directly-authored local matrix under the default refresh policy', () => {
+    const state = createRenderState();
+    const scene = createSceneNode(SceneNodeKind);
+    const mesh = createMesh(boundedBox(), [null]);
+    addNodeChild(scene, mesh);
+    const local = createMatrix4();
+    local.m[12] = 3;
+    setNodeLocalMatrix4(mesh, local);
+
+    prepareSceneRender(state, scene, frontCamera(), emptyLights());
+
     expect(getNodeWorldMatrix4(mesh).m[12]).toBeCloseTo(3);
   });
 

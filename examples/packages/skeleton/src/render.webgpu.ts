@@ -1,4 +1,4 @@
-import { drawWgpuScene } from '@flighthq/scene-wgpu';
+import { drawWgpuScene, registerWgpuGpuSkinning } from '@flighthq/scene-wgpu';
 import type { Camera3D, SceneLightsLike, SceneNode, WgpuRenderEffectPipeline } from '@flighthq/sdk';
 import {
   beginWgpuRenderEffectPipeline,
@@ -21,6 +21,7 @@ export const state = await createWgpuRenderState(canvas, {
   backgroundColor: 0x1a1c24ff,
 });
 registerStandardPbrWgpuMaterial(state);
+registerWgpuGpuSkinning(state);
 
 const pipeline: WgpuRenderEffectPipeline = createWgpuRenderEffectPipeline(state, {
   sampleCount: 4,
