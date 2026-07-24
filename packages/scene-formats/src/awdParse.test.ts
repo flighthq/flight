@@ -39,6 +39,7 @@ import {
   AWD_DATA_UINT16,
   AWD_MATERIAL_PROP_COLOR,
   AWD_MATERIAL_PROP_DIFFUSE_TEXTURE,
+  AWD_MATERIAL_PROP_NORMAL_TEXTURE,
   AWD_MATERIAL_TYPE_COLOR,
   AWD_MATERIAL_TYPE_TEXTURE,
   AWD_NAMESPACE_CORE,
@@ -578,6 +579,42 @@ describe('createSceneFromAwd', () => {
     expect(ref.bytes).toEqual(FAKE_PNG_BYTES);
     expect(ref.state).toBe(ResourceResolutionState.Unresolved);
     expect(warnings).toHaveLength(0);
+  });
+
+  it('maps the AWD normal-texture property (3) to the material normalMap', () => {
+    const posStream = buildStream(
+      AWD_STREAM_POSITIONS,
+      AWD_DATA_FLOAT32,
+      new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
+    );
+    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, new Uint16Array([0, 1, 2]));
+    const geomBody = buildTriangleGeometryBody('Geo', [{ streams: [posStream, idxStream] }]);
+    const texBody = buildTextureBody('normal.png', AWD_TEXTURE_TYPE_EMBEDDED, FAKE_PNG_BYTES);
+    // A material with a flat color plus a normal texture (block id 2, property 3).
+    const matBody = buildMaterialBody('Mat', AWD_MATERIAL_TYPE_TEXTURE, [
+      [AWD_MATERIAL_PROP_COLOR, 0x808080],
+      [AWD_MATERIAL_PROP_NORMAL_TEXTURE, 2],
+    ]);
+    const miBody = buildMeshInstanceBodyWithMaterials('Mesh', 0, IDENTITY_TRANSFORM, 1, [3]);
+
+    const body = concatBytes(
+      buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+      geomBody,
+      buildBlockHeader(2, AWD_BLOCK_TEXTURE, texBody.length),
+      texBody,
+      buildBlockHeader(3, AWD_BLOCK_MATERIAL, matBody.length),
+      matBody,
+      buildBlockHeader(4, AWD_BLOCK_MESH_INSTANCE, miBody.length),
+      miBody,
+    );
+    const scene = createSceneFromAwd(concatBytes(buildAwdHeader(body.length), body));
+
+    const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as BlinnPhongMaterial;
+    expect(material.normalMap).not.toBeNull();
+    expect(material.normalMap!.image).toBeNull(); // referenced, not decoded
+    const ref = material.normalMap!.resource as EmbeddedImageResourceReference;
+    expect(ref.kind).toBe('Embedded');
+    expect(ref.mimeType).toBe('image/png');
   });
 
   it('attaches a BlinnPhongMaterial from a flat-color material block, widening color to opaque rgba', () => {
