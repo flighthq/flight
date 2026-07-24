@@ -1,10 +1,12 @@
 import { createAnimationTrack } from '@flighthq/animation';
 import { createTransform3D } from '@flighthq/geometry';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
 import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { createMeshGeometry } from '@flighthq/mesh';
 import { createSceneFromDocument } from '@flighthq/scene';
 import type { Scene } from '@flighthq/types';
 import type {
+  ImportDiagnostic,
   Material,
   MaterialLike,
   MeshMorph,
@@ -13,7 +15,7 @@ import type {
   SceneDocumentAnimation,
   SceneDocumentMesh,
 } from '@flighthq/types';
-import { MeshKind, SceneAnimationPathWeights } from '@flighthq/types';
+import { ImportDiagnosticSeverity, MeshKind, SceneAnimationPathWeights } from '@flighthq/types';
 
 import {
   MD2_ANORMS,
@@ -44,19 +46,21 @@ import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, createExternalTextureRef
 // through the same re-indexing. MD2's oddities — byte-quantized frames, the normal LUT, and the Z-up→
 // Y-up reflection — stay quarantined here; the emitted morph targets are plain Y-up float deltas.
 //
-// Malformed input pushes a warning and returns an empty Scene rather than throwing. Convenience over
+// Malformed input records an ImportDiagnostic (into an engaged collector) and returns an empty Scene rather than throwing. Convenience over
 // `createSceneFromDocument(parseMd2(bytes))`.
-export function createSceneFromMd2(bytes: Readonly<Uint8Array>, warnings?: string[]): Scene {
-  return createSceneFromDocument(parseMd2(bytes, warnings));
+export function createSceneFromMd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagnostic[]): Scene {
+  return createSceneFromDocument(parseMd2(bytes, diagnostics));
 }
 
 // Parses an id Software MD2 (Quake 2) binary model into a format-neutral SceneDocument: one Mesh node
 // whose base pose is frame 0 and whose per-frame vertex animation is carried as a MeshMorph (each later
 // frame a position/normal delta target), plus one weights animation driving that morph. Assemble into a
-// live Scene with `createSceneFromDocument`. Malformed input returns an empty document with a warning.
-export function parseMd2(bytes: Readonly<Uint8Array>, warnings?: string[]): SceneDocument {
+// live Scene with `createSceneFromDocument`. Malformed input returns an empty document, recording an ImportDiagnostic when a collector is engaged.
+export function parseMd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagnostic[]): SceneDocument {
   if (bytes.length < MD2_HEADER_SIZE) {
-    warnings?.push('createSceneFromMd2: input is shorter than the 68-byte MD2 header');
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'md2.header-too-short', 'parseMd2', {
+      byteLength: bytes.length,
+    });
     return emptyMd2Document();
   }
 
@@ -64,13 +68,17 @@ export function parseMd2(bytes: Readonly<Uint8Array>, warnings?: string[]): Scen
 
   const magic = view.getInt32(0, true);
   if (magic !== MD2_MAGIC) {
-    warnings?.push(`createSceneFromMd2: invalid magic 0x${(magic >>> 0).toString(16)}, expected 0x32504449 (IDP2)`);
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'md2.bad-magic', 'parseMd2', {
+      magic: (magic >>> 0).toString(16),
+    });
     return emptyMd2Document();
   }
 
   const version = view.getInt32(4, true);
   if (version !== MD2_VERSION) {
-    warnings?.push(`createSceneFromMd2: unsupported version ${version}, expected 8`);
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'md2.unsupported-version', 'parseMd2', {
+      version,
+    });
     return emptyMd2Document();
   }
 
@@ -87,12 +95,12 @@ export function parseMd2(bytes: Readonly<Uint8Array>, warnings?: string[]): Scen
   const offFrames = view.getInt32(56, true);
 
   if (numFrames < 1) {
-    warnings?.push('createSceneFromMd2: model has no frames');
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'md2.no-frames', 'parseMd2');
     return emptyMd2Document();
   }
 
   if (numTriangles < 1) {
-    warnings?.push('createSceneFromMd2: model has no triangles');
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'md2.no-triangles', 'parseMd2');
     return emptyMd2Document();
   }
 
@@ -104,7 +112,9 @@ export function parseMd2(bytes: Readonly<Uint8Array>, warnings?: string[]): Scen
   const allFramesEnd = offFrames + numFrames * frameStride;
 
   if (texCoordsEnd > bytes.length || trianglesEnd > bytes.length || allFramesEnd > bytes.length) {
-    warnings?.push('createSceneFromMd2: input is truncated; data regions extend past end of buffer');
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'md2.truncated-data-region', 'parseMd2', {
+      byteLength: bytes.length,
+    });
     return emptyMd2Document();
   }
 
@@ -130,7 +140,7 @@ export function parseMd2(bytes: Readonly<Uint8Array>, warnings?: string[]): Scen
     numFrames,
     numVertices,
     frameStride,
-    warnings,
+    diagnostics,
   );
   const base = frames[0];
 
@@ -142,6 +152,11 @@ export function parseMd2(bytes: Readonly<Uint8Array>, warnings?: string[]): Scen
   const sourceVertexIndices: number[] = [];
   const indices: number[] = [];
 
+  // Out-of-range triangle indices are aggregated and reported once after the loop rather than per corner
+  // — the perf contract keeps the hot per-corner loop free of per-element seam calls (a well-formed model
+  // reaches neither counter).
+  let outOfRangeVertexCorners = 0;
+  let outOfRangeTexCoordCorners = 0;
   for (let t = 0; t < numTriangles; t++) {
     const triBase = offTriangles + t * MD2_TRIANGLE_SIZE;
     for (let c = 0; c < 3; c++) {
@@ -149,11 +164,11 @@ export function parseMd2(bytes: Readonly<Uint8Array>, warnings?: string[]): Scen
       const texIdx = view.getUint16(triBase + 6 + c * 2, true);
 
       if (vertIdx >= numVertices) {
-        warnings?.push(`createSceneFromMd2: triangle ${t} vertex index ${vertIdx} out of range`);
+        outOfRangeVertexCorners++;
         continue;
       }
       if (texIdx >= numTexCoords) {
-        warnings?.push(`createSceneFromMd2: triangle ${t} texcoord index ${texIdx} out of range`);
+        outOfRangeTexCoordCorners++;
         continue;
       }
 
@@ -178,8 +193,31 @@ export function parseMd2(bytes: Readonly<Uint8Array>, warnings?: string[]): Scen
     }
   }
 
+  if (outOfRangeVertexCorners > 0) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'md2.triangle-vertex-index-out-of-range',
+      'parseMd2',
+      {
+        corners: outOfRangeVertexCorners,
+      },
+    );
+  }
+  if (outOfRangeTexCoordCorners > 0) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'md2.triangle-texcoord-index-out-of-range',
+      'parseMd2',
+      {
+        corners: outOfRangeTexCoordCorners,
+      },
+    );
+  }
+
   if (indices.length === 0) {
-    warnings?.push('createSceneFromMd2: no valid triangle indices produced');
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'md2.no-valid-triangles', 'parseMd2');
     return emptyMd2Document();
   }
 
@@ -192,7 +230,9 @@ export function parseMd2(bytes: Readonly<Uint8Array>, warnings?: string[]): Scen
   for (let s = 0; s < numSkins; s++) {
     const skinOffset = offSkins + s * MD2_SKIN_SIZE;
     if (skinOffset + MD2_SKIN_SIZE > bytes.length) {
-      warnings?.push(`createSceneFromMd2: skin ${s} record runs past the end of the buffer`);
+      reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'md2.skin-record-truncated', 'parseMd2', {
+        skin: s,
+      });
       break;
     }
     const skinName = readMd2SkinName(bytes, skinOffset);
@@ -250,12 +290,12 @@ function readMd2Frames(
   numFrames: number,
   numVertices: number,
   frameStride: number,
-  warnings?: string[],
+  diagnostics?: ImportDiagnostic[],
 ): Md2Frame[] {
   const frames: Md2Frame[] = [];
   // uint8 normal indices can exceed the 162-entry table in malformed files; collect the distinct
-  // offenders and warn once rather than per-vertex. Only allocated when a warnings sink is present.
-  const outOfRangeNormals = warnings ? new Set<number>() : null;
+  // offenders and report once rather than per-vertex. Only allocated when a collector is engaged.
+  const outOfRangeNormals = diagnostics ? new Set<number>() : null;
   for (let f = 0; f < numFrames; f++) {
     const frameBase = offFrames + f * frameStride;
     const scaleX = view.getFloat32(frameBase, true);
@@ -294,9 +334,16 @@ function readMd2Frames(
     frames.push({ name, normals, positions });
   }
   if (outOfRangeNormals !== null && outOfRangeNormals.size > 0) {
-    const indices = [...outOfRangeNormals].sort((a, b) => a - b).join(', ');
-    warnings?.push(
-      `createSceneFromMd2: vertex normal index(es) ${indices} are outside the 162-entry Anorms table; those normals were left zero`,
+    // Recover, not Drop: the geometry survives with those normals left zero.
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'md2.normal-index-out-of-range',
+      'readMd2Frames',
+      {
+        distinctIndices: outOfRangeNormals.size,
+        firstIndex: Math.min(...outOfRangeNormals),
+      },
     );
   }
   return frames;

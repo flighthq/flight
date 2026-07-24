@@ -10,6 +10,7 @@ import { isMesh } from '@flighthq/scene';
 import type {
   BlinnPhongMaterial,
   ExternalImageResourceReference,
+  ImportDiagnostic,
   Mesh,
   SceneAnimationTarget,
   SceneNode,
@@ -160,6 +161,14 @@ function buildMd2(options: {
   return bytes;
 }
 
+// Asserts EXACTLY ONE crumb of `kind` was recorded (guards the count) and returns it so a test can lock
+// the full contract — severity, true origin, and detail — for that emitted diagnostic.
+function expectOneCrumb(diagnostics: readonly ImportDiagnostic[], kind: string): ImportDiagnostic {
+  const matches = diagnostics.filter((d) => d.kind === kind);
+  expect(matches).toHaveLength(1);
+  return matches[0];
+}
+
 describe('createSceneFromMd2', () => {
   it('deduplicates vertices sharing the same vertex/texcoord pair', () => {
     const md2 = buildMd2({
@@ -291,10 +300,13 @@ describe('createSceneFromMd2', () => {
   });
 
   it('returns an empty scene for input shorter than the header', () => {
-    const warnings: string[] = [];
-    const scene = createSceneFromMd2(new Uint8Array(10), warnings);
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromMd2(new Uint8Array(10), diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
-    expect(warnings.some((w) => w.includes('shorter than'))).toBe(true);
+    const crumb = expectOneCrumb(diagnostics, 'md2.header-too-short');
+    expect(crumb.severity).toBe('Reject');
+    expect(crumb.origin).toBe('parseMd2');
+    expect(crumb.detail?.byteLength).toBe(10);
   });
 
   it('returns an empty scene for invalid magic', () => {
@@ -309,10 +321,13 @@ describe('createSceneFromMd2', () => {
       triangles: [{ texIndices: [0, 0, 0], vertIndices: [0, 1, 2] }],
     });
 
-    const warnings: string[] = [];
-    const scene = createSceneFromMd2(md2, warnings);
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromMd2(md2, diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
-    expect(warnings.some((w) => w.includes('invalid magic'))).toBe(true);
+    const crumb = expectOneCrumb(diagnostics, 'md2.bad-magic');
+    expect(crumb.severity).toBe('Reject');
+    expect(crumb.origin).toBe('parseMd2');
+    expect(crumb.detail?.magic).toBe('12345678');
   });
 
   it('returns an empty scene for unsupported version', () => {
@@ -327,10 +342,13 @@ describe('createSceneFromMd2', () => {
       version: 99,
     });
 
-    const warnings: string[] = [];
-    const scene = createSceneFromMd2(md2, warnings);
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromMd2(md2, diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
-    expect(warnings.some((w) => w.includes('unsupported version'))).toBe(true);
+    const crumb = expectOneCrumb(diagnostics, 'md2.unsupported-version');
+    expect(crumb.severity).toBe('Reject');
+    expect(crumb.origin).toBe('parseMd2');
+    expect(crumb.detail?.version).toBe(99);
   });
 
   it('returns an empty scene when the buffer is truncated', () => {
@@ -346,10 +364,13 @@ describe('createSceneFromMd2', () => {
 
     // Truncate the buffer to cut off the frame data.
     const truncated = md2.slice(0, 70);
-    const warnings: string[] = [];
-    const scene = createSceneFromMd2(truncated, warnings);
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromMd2(truncated, diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
-    expect(warnings.some((w) => w.includes('truncated'))).toBe(true);
+    const crumb = expectOneCrumb(diagnostics, 'md2.truncated-data-region');
+    expect(crumb.severity).toBe('Reject');
+    expect(crumb.origin).toBe('parseMd2');
+    expect(crumb.detail?.byteLength).toBe(70);
   });
 
   it('returns an empty scene when numFrames is zero', () => {
@@ -364,10 +385,51 @@ describe('createSceneFromMd2', () => {
       triangles: [{ texIndices: [0, 0, 0], vertIndices: [0, 1, 2] }],
     });
 
-    const warnings: string[] = [];
-    const scene = createSceneFromMd2(md2, warnings);
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromMd2(md2, diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
-    expect(warnings.some((w) => w.includes('no frames'))).toBe(true);
+    const crumb = expectOneCrumb(diagnostics, 'md2.no-frames');
+    expect(crumb.severity).toBe('Reject');
+    expect(crumb.origin).toBe('parseMd2');
+    expect(crumb.detail).toBeUndefined();
+  });
+
+  it('reports a Reject diagnostic and yields an empty scene when the model declares no triangles', () => {
+    const md2 = buildMd2({
+      compressedVertices: [{ normalIndex: 0, x: 0, y: 0, z: 0 }],
+      texCoords: [{ s: 0, t: 0 }],
+      triangles: [], // numTriangles === 0 → the no-triangles reject (after the no-frames gate)
+    });
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromMd2(md2, diagnostics);
+    expect(getNodeChildren(scene.root)).toHaveLength(0);
+    const crumb = expectOneCrumb(diagnostics, 'md2.no-triangles');
+    expect(crumb.severity).toBe('Reject');
+    expect(crumb.origin).toBe('parseMd2');
+    expect(crumb.detail).toBeUndefined();
+  });
+
+  it('reports a Drop diagnostic when a skin record runs past the end of the buffer', () => {
+    // Build a valid single-skin model, then point the skins offset (header field @44) near the end so the
+    // skin record overruns — without disturbing the texcoord/triangle/frame regions the earlier
+    // truncation gate checks, so the skin-record branch is what fires.
+    const md2 = buildMd2({
+      compressedVertices: [
+        { normalIndex: 0, x: 0, y: 0, z: 0 },
+        { normalIndex: 0, x: 1, y: 0, z: 0 },
+        { normalIndex: 0, x: 0, y: 1, z: 0 },
+      ],
+      skin: 'players/hero.pcx',
+      texCoords: [{ s: 0, t: 0 }],
+      triangles: [{ texIndices: [0, 0, 0], vertIndices: [0, 1, 2] }],
+    });
+    new DataView(md2.buffer).setInt32(44, md2.length - 10, true); // offSkins past a full 64-byte skin record
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromMd2(md2, diagnostics);
+    const crumb = expectOneCrumb(diagnostics, 'md2.skin-record-truncated');
+    expect(crumb.severity).toBe('Drop');
+    expect(crumb.origin).toBe('parseMd2');
+    expect(crumb.detail?.skin).toBe(0);
   });
 
   it('scales UV coordinates by skinWidth and skinHeight', () => {
@@ -430,7 +492,7 @@ describe('createSceneFromMd2', () => {
     expect(getMeshGeometryIndexCount(geometry)).toBe(6);
   });
 
-  it('warns on out-of-range vertex indices without crashing', () => {
+  it('reports an aggregated Drop diagnostic for out-of-range vertex indices without crashing', () => {
     const md2 = buildMd2({
       compressedVertices: [
         { normalIndex: 0, x: 0, y: 0, z: 0 },
@@ -445,14 +507,17 @@ describe('createSceneFromMd2', () => {
       ],
     });
 
-    const warnings: string[] = [];
-    const scene = createSceneFromMd2(md2, warnings);
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromMd2(md2, diagnostics);
     // First triangle should still produce a mesh.
     expect(getNodeChildren(scene.root)).toHaveLength(1);
-    expect(warnings.some((w) => w.includes('vertex index') && w.includes('out of range'))).toBe(true);
+    const crumb = expectOneCrumb(diagnostics, 'md2.triangle-vertex-index-out-of-range');
+    expect(crumb.severity).toBe('Drop');
+    expect(crumb.origin).toBe('parseMd2');
+    expect(crumb.detail?.corners).toBe(1); // one out-of-range corner (index 99)
   });
 
-  it('warns on out-of-range texcoord indices without crashing', () => {
+  it('reports an aggregated Drop diagnostic for out-of-range texcoord indices without crashing', () => {
     const md2 = buildMd2({
       compressedVertices: [
         { normalIndex: 0, x: 0, y: 0, z: 0 },
@@ -467,13 +532,16 @@ describe('createSceneFromMd2', () => {
       ],
     });
 
-    const warnings: string[] = [];
-    const scene = createSceneFromMd2(md2, warnings);
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromMd2(md2, diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(1);
-    expect(warnings.some((w) => w.includes('texcoord index') && w.includes('out of range'))).toBe(true);
+    const crumb = expectOneCrumb(diagnostics, 'md2.triangle-texcoord-index-out-of-range');
+    expect(crumb.severity).toBe('Drop');
+    expect(crumb.origin).toBe('parseMd2');
+    expect(crumb.detail?.corners).toBe(1);
   });
 
-  it('warns on an out-of-range vertex normal index and leaves that normal zero', () => {
+  it('reports a Recover diagnostic (origin readMd2Frames) for an out-of-range vertex normal index, leaving that normal zero', () => {
     // normalIndex 200 is a valid uint8 but past the 162-entry Anorms table.
     const md2 = buildMd2({
       compressedVertices: [
@@ -486,18 +554,22 @@ describe('createSceneFromMd2', () => {
       triangles: [{ texIndices: [0, 0, 0], vertIndices: [0, 1, 2] }],
     });
 
-    const warnings: string[] = [];
-    const scene = createSceneFromMd2(md2, warnings);
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromMd2(md2, diagnostics);
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     const n = { x: 1, y: 1, z: 1 };
     getMeshGeometryVertexNormal(n, geometry, 0);
     expect(n).toEqual({ x: 0, y: 0, z: 0 });
-    expect(warnings.some((w) => w.includes('200') && w.includes('Anorms table'))).toBe(true);
+    const crumb = expectOneCrumb(diagnostics, 'md2.normal-index-out-of-range');
+    expect(crumb.severity).toBe('Recover'); // geometry survives; the normal is left zero
+    expect(crumb.origin).toBe('readMd2Frames'); // the TRUE emitting helper, not the parseMd2 wrapper
+    expect(crumb.detail?.firstIndex).toBe(200);
+    expect(crumb.detail?.distinctIndices).toBe(1);
   });
 
-  it('warns and yields an empty scene when every triangle has out-of-range vertex indices', () => {
+  it('reports a Reject diagnostic and yields an empty scene when every triangle has out-of-range vertex indices', () => {
     // All three vertex indices of the only triangle are past the vertex count, so no valid index survives
-    // and the model produces no geometry — the all-invalid branch, distinct from the per-triangle warning
+    // and the model produces no geometry — the all-invalid branch, distinct from the aggregated per-corner Drop
     // (which keeps the valid triangles alongside it).
     const md2 = buildMd2({
       compressedVertices: [
@@ -508,10 +580,57 @@ describe('createSceneFromMd2', () => {
       texCoords: [{ s: 0, t: 0 }],
       triangles: [{ texIndices: [0, 0, 0], vertIndices: [99, 98, 97] }],
     });
-    const warnings: string[] = [];
-    const scene = createSceneFromMd2(md2, warnings);
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromMd2(md2, diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
-    expect(warnings.some((w) => w.includes('no valid triangle indices produced'))).toBe(true);
+    const crumb = expectOneCrumb(diagnostics, 'md2.no-valid-triangles');
+    expect(crumb.severity).toBe('Reject');
+    expect(crumb.origin).toBe('parseMd2');
+    expect(crumb.detail).toBeUndefined();
+    // The same all-bad triangle also aggregates its 3 corners into one Drop crumb (origin parseMd2).
+    const drop = expectOneCrumb(diagnostics, 'md2.triangle-vertex-index-out-of-range');
+    expect(drop.severity).toBe('Drop');
+    expect(drop.detail?.corners).toBe(3);
+  });
+
+  it('records NO diagnostics for a well-formed model even with a collector engaged', () => {
+    // The seam fires only inside a drop branch, so a valid parse reaches none: the engaged collector
+    // stays empty. (Without a collector the drop branches allocate nothing at all — the near-free path.)
+    const md2 = buildMd2({
+      compressedVertices: [
+        { normalIndex: 0, x: 0, y: 0, z: 0 },
+        { normalIndex: 0, x: 1, y: 0, z: 0 },
+        { normalIndex: 0, x: 0, y: 1, z: 0 },
+      ],
+      texCoords: [{ s: 0, t: 0 }],
+      triangles: [{ texIndices: [0, 0, 0], vertIndices: [0, 1, 2] }],
+    });
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromMd2(md2, diagnostics);
+    expect(diagnostics).toHaveLength(0);
+  });
+
+  it('aggregates out-of-range triangle corners into ONE Drop crumb carrying the count', () => {
+    // One valid triangle keeps geometry alive; one all-out-of-range triangle contributes 3 bad vertex
+    // corners — aggregated to a single Drop crumb (not three), per the hot-loop perf contract.
+    const md2 = buildMd2({
+      compressedVertices: [
+        { normalIndex: 0, x: 0, y: 0, z: 0 },
+        { normalIndex: 0, x: 1, y: 0, z: 0 },
+        { normalIndex: 0, x: 0, y: 1, z: 0 },
+      ],
+      texCoords: [{ s: 0, t: 0 }],
+      triangles: [
+        { texIndices: [0, 0, 0], vertIndices: [0, 1, 2] },
+        { texIndices: [0, 0, 0], vertIndices: [99, 98, 97] },
+      ],
+    });
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromMd2(md2, diagnostics);
+    const drops = diagnostics.filter((d) => d.kind === 'md2.triangle-vertex-index-out-of-range');
+    expect(drops).toHaveLength(1);
+    expect(drops[0].severity).toBe('Drop');
+    expect(drops[0].detail?.corners).toBe(3);
   });
 });
 
@@ -878,11 +997,15 @@ describe('parseMd2', () => {
   });
 
   it('returns an empty document (every table present) for malformed input', () => {
-    const warnings: string[] = [];
-    const document = parseMd2(new Uint8Array(10), warnings);
+    const diagnostics: ImportDiagnostic[] = [];
+    const document = parseMd2(new Uint8Array(10), diagnostics);
     expect(document.nodes).toEqual([]);
     expect(document.meshes).toEqual([]);
     expect(document.scenes).toEqual([{ rootNodes: [] }]);
-    expect(warnings.length).toBeGreaterThan(0);
+    // parseMd2 (not the createSceneFromMd2 wrapper) is the true origin even on the document-returning path.
+    const crumb = expectOneCrumb(diagnostics, 'md2.header-too-short');
+    expect(crumb.severity).toBe('Reject');
+    expect(crumb.origin).toBe('parseMd2');
+    expect(crumb.detail?.byteLength).toBe(10);
   });
 });
