@@ -43,11 +43,14 @@ const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 
+const captureWindow = window as typeof window & { __flightCapture?: boolean };
+const captureMode = captureWindow.__flightCapture === true;
+
 // Slider state.
-let brightness = 0;
-let contrast = 1;
-let hueRotation = 0;
-let saturation = 1;
+let brightness = captureMode ? 24 : 0;
+let contrast = captureMode ? 1.2 : 1;
+let hueRotation = captureMode ? 30 : 0;
+let saturation = captureMode ? 0.75 : 1;
 
 // Fused color matrix (recomputed when sliders change).
 let fusedMatrix = createIdentityColorMatrix();
@@ -103,10 +106,10 @@ function createSlider(
 }
 
 // Create sliders in HTML overlay above the canvas.
-const brightnessSlider = createSlider('Brightness', -128, 128, 1, 0, 20, 20);
-const contrastSlider = createSlider('Contrast', 0, 3, 0.01, 1, 20, 50);
-const hueSlider = createSlider('Hue Rotate', -180, 180, 1, 0, 20, 80);
-const saturationSlider = createSlider('Saturation', 0, 3, 0.01, 1, 20, 110);
+const brightnessSlider = createSlider('Brightness', -128, 128, 1, brightness, 20, 20);
+const contrastSlider = createSlider('Contrast', 0, 3, 0.01, contrast, 20, 50);
+const hueSlider = createSlider('Hue Rotate', -180, 180, 1, hueRotation, 20, 80);
+const saturationSlider = createSlider('Saturation', 0, 3, 0.01, saturation, 20, 110);
 
 // Matrix display: 4 rows x 5 columns of text labels showing the fused matrix values.
 const matrixLabels: DisplayObject[] = [];
@@ -236,7 +239,7 @@ function updateSwatches(): void {
     clearShapeCommands(shape);
     appendShapeBeginFill(shape, transformed >>> 8, (transformed & 0xff) / 255);
     appendShapeRectangle(shape, x, SWATCHES_AFTER_Y, SWATCH_SIZE, SWATCH_SIZE);
-    invalidateNodeLocalTransform(shape);
+    invalidateNodeAppearance(shape);
 
     updateLabel(afterHexLabels[i], packedRgbaToHex(transformed));
   }
