@@ -109,6 +109,7 @@ export async function createWgpuRenderState(
   const runtime = createWgpuRenderStateRuntime();
   state[EntityRuntimeKey] = runtime;
   runtime.currentBlendMode = null;
+  runtime.currentRenderTarget = null;
 
   runtime.uniformBindGroupLayout = uniformBindGroupLayout;
   runtime.textureBindGroupLayout = textureBindGroupLayout;

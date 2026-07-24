@@ -1,6 +1,7 @@
 import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flighthq/geometry';
 import { getNodeWorldMatrix4 } from '@flighthq/node';
 import { prepareSceneRender } from '@flighthq/render';
+import { declareWgpuRenderTargetColorSpace } from '@flighthq/render-wgpu';
 import { getSceneNodeWorldAlpha } from '@flighthq/scene';
 import type {
   Camera3D,
@@ -54,6 +55,7 @@ export function drawWgpuScene(
   const lightBlock = list.lights;
   const viewProjection = list.viewProjection;
   const runtime = getWgpuSceneRuntime(state);
+  declareWgpuRenderTargetColorSpace(state, 'linear');
   const hasPreparedForwardLights = forwardLights !== undefined && forwardLights.meshCount === list.meshCount;
   if (!hasPreparedForwardLights && hasExcessForwardLights(lights)) runtime.forwardLightSelectionGuard?.(lights);
   const opaqueDrawList = runtime.opaqueDrawList;

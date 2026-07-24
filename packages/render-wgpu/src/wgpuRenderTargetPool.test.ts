@@ -29,6 +29,17 @@ describe('acquireWgpuRenderTarget', () => {
     expect(hdr).not.toBe(eight);
     expect(hdr.format).toBe('rgba16float');
   });
+
+  it('re-stamps the logical color space when reusing storage', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const pool = createWgpuRenderTargetPool();
+    const first = acquireWgpuRenderTarget(state, pool, { width: 64, height: 64, colorSpace: 'linear' });
+    expect(first.colorSpace).toBe('linear');
+    releaseWgpuRenderTarget(pool, first);
+    const reused = acquireWgpuRenderTarget(state, pool, { width: 64, height: 64 });
+    expect(reused).toBe(first);
+    expect(reused.colorSpace).toBe('srgb');
+  });
 });
 
 describe('createWgpuRenderTargetPool', () => {

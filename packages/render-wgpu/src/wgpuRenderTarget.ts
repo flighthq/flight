@@ -1,5 +1,12 @@
 import { copyMatrix, createMatrix } from '@flighthq/geometry';
-import type { Material, Matrix, RenderPassPreserve, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
+import type {
+  Material,
+  Matrix,
+  RenderPassPreserve,
+  RenderTargetColorSpace,
+  WgpuRenderState,
+  WgpuRenderTarget,
+} from '@flighthq/types';
 
 import { buildWgpuRenderTargetBindGroup, drawWgpuQuadWithTransform } from './wgpuDraw';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
@@ -58,11 +65,13 @@ export function beginWgpuRenderPass(
     renderTargetViewport: runtime.renderTargetViewport,
     renderTransform2D: state.renderTransform2D,
     colorFormat: runtime.currentColorFormat,
+    renderTarget: runtime.currentRenderTarget,
   });
 
   runtime.renderTargetViewport = { width: target.width, height: target.height };
   // Scene pipelines drawn into this target must match its color format (e.g. rgba16float for HDR).
   runtime.currentColorFormat = target.format;
+  runtime.currentRenderTarget = target;
 
   // Reset mask/clip state for the new pass
   runtime.currentMaskDepth = 0;
@@ -92,6 +101,7 @@ export function createWgpuRenderTarget(
   width: number,
   height: number,
   format: GPUTextureFormat = state.format,
+  colorSpace: RenderTargetColorSpace = 'srgb',
 ): WgpuRenderTarget {
   const device = state.device;
   const w = Math.max(1, Math.ceil(width));
@@ -114,6 +124,7 @@ export function createWgpuRenderTarget(
 
   return {
     bindGroup,
+    colorSpace,
     texture,
     view,
     depthStencilTexture,
@@ -124,6 +135,15 @@ export function createWgpuRenderTarget(
     width: w,
     height: h,
   };
+}
+
+// Stamps the color space produced into the currently bound target. False means the caller is drawing
+// straight to the canvas, where there is no target-aware present step available to encode linear color.
+export function declareWgpuRenderTargetColorSpace(state: WgpuRenderState, colorSpace: RenderTargetColorSpace): boolean {
+  const target = getWgpuRenderStateRuntime(state).currentRenderTarget;
+  if (target == null) return false;
+  target.colorSpace = colorSpace;
+  return true;
 }
 
 export function destroyWgpuRenderTarget(_state: WgpuRenderState, target: WgpuRenderTarget): void {
@@ -194,6 +214,7 @@ export function endWgpuRenderPass(state: WgpuRenderState): void {
   runtime.canvasViewCleared = saved.canvasViewCleared;
   runtime.renderTargetViewport = saved.renderTargetViewport;
   runtime.currentColorFormat = saved.colorFormat;
+  runtime.currentRenderTarget = saved.renderTarget;
   state.renderTransform2D = saved.renderTransform2D;
 
   // Reset mask/clip state when returning to the enclosing pass

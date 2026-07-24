@@ -53,6 +53,9 @@ export function beginWgpuRenderEffectPipeline(state: WgpuRenderState, pipeline: 
   } else {
     resizeWgpuRenderTarget(state, pipeline.sceneTarget, w, h);
   }
+  // The producer declares the frame's content after begin. Reset first so a reused pipeline cannot
+  // carry a prior 3D frame's linear tag into an sRGB 2D frame.
+  pipeline.sceneTarget.colorSpace = 'srgb';
   // Clear the scene target to the background colour (not transparent) so the background is part of the
   // image the effects process and the replace-blend present composites — mirroring the Gl pipeline,
   // where renderGlBackground draws into the scene target. The clear color is a target property now, so
@@ -103,7 +106,7 @@ export function endWgpuRenderEffectPipeline(
   endWgpuRenderPass(state);
 
   const format = scene.format;
-  const descriptor = { width: scene.width, height: scene.height, format };
+  const descriptor = { width: scene.width, height: scene.height, format, colorSpace: scene.colorSpace };
   let source: WgpuRenderTarget = scene;
   let scratchA: WgpuRenderTarget | null = null;
   let scratchB: WgpuRenderTarget | null = null;
@@ -183,7 +186,13 @@ export function setWgpuRenderEffectVelocityTexture(
 function presentWgpuRenderEffectResult(state: WgpuRenderState, source: Readonly<WgpuRenderTarget>): void {
   const runtime = getWgpuRenderStateRuntime(state);
   if (runtime.commandEncoder === null) return;
-  const pipeline = getWgpuEffectPipeline(state, 'effect.present', PRESENT_FRAGMENT_WGSL, 'replace');
+  const linear = source.colorSpace === 'linear';
+  const pipeline = getWgpuEffectPipeline(
+    state,
+    linear ? 'effect.present.linear' : 'effect.present',
+    linear ? LINEAR_PRESENT_FRAGMENT_WGSL : PRESENT_FRAGMENT_WGSL,
+    'replace',
+  );
   drawWgpuEffectPass(state, source as WgpuRenderTarget, null, pipeline, () => {});
 }
 
@@ -205,4 +214,23 @@ struct Uniforms { _u : f32, _pad0 : f32, _pad1 : f32, _pad2 : f32, }
 @fragment
 fn fs_main(@location(0) uv : vec2f) -> @location(0) vec4f {
   return textureSampleLevel(tex, smp, uv, 0.0);
+}`;
+
+const LINEAR_PRESENT_FRAGMENT_WGSL = /* wgsl */ `
+struct Uniforms { _u : f32, _pad0 : f32, _pad1 : f32, _pad2 : f32, }
+@group(0) @binding(0) var<uniform> uni : Uniforms;
+@group(1) @binding(0) var tex : texture_2d<f32>;
+@group(1) @binding(1) var smp : sampler;
+
+fn linearToSrgb(c0 : vec3f) -> vec3f {
+  let c = max(c0, vec3f(0.0));
+  let low = c * 12.92;
+  let high = 1.055 * pow(c, vec3f(1.0 / 2.4)) - 0.055;
+  return mix(low, high, step(vec3f(0.0031308), c));
+}
+
+@fragment
+fn fs_main(@location(0) uv : vec2f) -> @location(0) vec4f {
+  let linear = textureSampleLevel(tex, smp, uv, 0.0);
+  return vec4f(linearToSrgb(linear.rgb), linear.a);
 }`;

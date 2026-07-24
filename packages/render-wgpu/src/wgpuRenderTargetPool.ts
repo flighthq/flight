@@ -1,4 +1,4 @@
-import type { WgpuRenderState, WgpuRenderTarget, WgpuRenderTargetPool } from '@flighthq/types';
+import type { RenderTargetColorSpace, WgpuRenderState, WgpuRenderTarget, WgpuRenderTargetPool } from '@flighthq/types';
 
 import { createWgpuRenderTarget, destroyWgpuRenderTarget } from './wgpuRenderTarget';
 
@@ -12,7 +12,12 @@ import { createWgpuRenderTarget, destroyWgpuRenderTarget } from './wgpuRenderTar
 export function acquireWgpuRenderTarget(
   state: WgpuRenderState,
   pool: WgpuRenderTargetPool,
-  descriptor: Readonly<{ width: number; height: number; format?: GPUTextureFormat }>,
+  descriptor: Readonly<{
+    width: number;
+    height: number;
+    format?: GPUTextureFormat;
+    colorSpace?: RenderTargetColorSpace;
+  }>,
 ): WgpuRenderTarget {
   const w = Math.max(1, Math.ceil(descriptor.width));
   const h = Math.max(1, Math.ceil(descriptor.height));
@@ -22,10 +27,11 @@ export function acquireWgpuRenderTarget(
     const candidate = pool.free[i];
     if (candidate.width === w && candidate.height === h && candidate.format === format) {
       pool.free.splice(i, 1);
+      candidate.colorSpace = descriptor.colorSpace ?? 'srgb';
       return candidate;
     }
   }
-  return createWgpuRenderTarget(state, w, h, format);
+  return createWgpuRenderTarget(state, w, h, format, descriptor.colorSpace);
 }
 
 export function createWgpuRenderTargetPool(): WgpuRenderTargetPool {
