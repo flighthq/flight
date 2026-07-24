@@ -11,14 +11,14 @@ import { createSceneNode, isMesh } from '@flighthq/scene';
 import type {
   AnimationClip,
   AwdDecompressor,
-  BlinnPhongMaterial,
   EmbeddedImageResourceReference,
   ExternalImageResourceReference,
   Mesh,
   SceneAnimationTarget,
   SceneNode,
+  ShadedMaterial,
 } from '@flighthq/types';
-import { BlinnPhongMaterialKind, ResourceResolutionState } from '@flighthq/types';
+import { ResourceResolutionState, ShadedMaterialKind } from '@flighthq/types';
 
 import { registerAwd2DeflateDecompressor } from './awd2Inflate';
 import { createSceneFromAwd2, parseAwd2, parseAwd2SkeletonAnimations, registerAwd2Decompressor } from './awd2Parse';
@@ -36,6 +36,7 @@ import {
   AWD2_DATA_FLOAT32,
   AWD2_DATA_UINT16,
   AWD2_HEADER_BYTES,
+  AWD2_MATERIAL_PROP_ALPHA,
   AWD2_MATERIAL_PROP_COLOR,
   AWD2_MATERIAL_PROP_DIFFUSE_TEXTURE,
   AWD2_MATERIAL_PROP_NORMAL_TEXTURE,
@@ -215,8 +216,10 @@ function buildMeshInstanceBodyWithMaterials(
 }
 
 // Material layout: name(VarString) → matType(uint8) → numMethods(uint8) → PropertyList → UserAttrList.
-// Each property here is a uint32 value (key, value) — enough for the diffuse-texture and color keys.
-function buildMaterialBody(name: string, matType: number, props: Array<[number, number]>): Uint8Array {
+// Each property here is a uint32 value (key, value) — enough for the diffuse-texture and color keys; a
+// float32 property (e.g. alpha) is passed as its uint32 bit pattern via `float32Bits`. `numMethods` sets
+// the declared method count (the method bodies themselves are not emitted — the parser does not walk them).
+function buildMaterialBody(name: string, matType: number, props: Array<[number, number]>, numMethods = 0): Uint8Array {
   const nameBytes = buildAwdString(name);
   const recordSize = 2 + 4 + 4; // key(uint16) + fieldLength(uint32) + value(uint32)
   const propList = new Uint8Array(4 + props.length * recordSize);
@@ -231,7 +234,15 @@ function buildMaterialBody(name: string, matType: number, props: Array<[number, 
     pv.setUint32(o, value, true);
     o += 4;
   }
-  return concatBytes(nameBytes, new Uint8Array([matType, 0]), propList, buildEmptyAttrList());
+  return concatBytes(nameBytes, new Uint8Array([matType, numMethods]), propList, buildEmptyAttrList());
+}
+
+// The uint32 bit pattern of a float32 value, so a float property can ride buildMaterialBody's uint32 slot.
+function float32Bits(value: number): number {
+  const buffer = new ArrayBuffer(4);
+  const dv = new DataView(buffer);
+  dv.setFloat32(0, value, true);
+  return dv.getUint32(0, true);
 }
 
 // Texture layout: name(VarString) → texType(uint8) → dataLen(uint32) → data → PropertyList → UserAttrList.
@@ -584,7 +595,7 @@ describe('createSceneFromAwd2', () => {
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
   });
 
-  it('attaches a textured BlinnPhongMaterial from a material + embedded texture block', () => {
+  it('attaches a textured ShadedMaterial from a material + embedded texture block', () => {
     const posStream = buildStream(
       AWD2_STREAM_POSITIONS,
       AWD2_DATA_FLOAT32,
@@ -612,9 +623,10 @@ describe('createSceneFromAwd2', () => {
     const mesh = getNodeChildren(scene.root)[0] as Mesh;
     expect(isMesh(mesh)).toBe(true);
     expect(mesh.materials).toHaveLength(1);
-    const material = mesh.materials[0] as BlinnPhongMaterial | null;
+    const material = mesh.materials[0] as ShadedMaterial | null;
     expect(material).not.toBeNull();
-    expect(material!.kind).toBe(BlinnPhongMaterialKind);
+    expect(material!.kind).toBe(ShadedMaterialKind);
+    expect(material!.modifiers).toHaveLength(0); // method-less AWD material → empty modifier stack
     expect(material!.name).toBe('Mat'); // AWD material block name preserved as the authored identity
     expect(material!.diffuseMap).not.toBeNull();
     // The parser references, it does not decode: image stays null, a ref carries the source.
@@ -655,7 +667,7 @@ describe('createSceneFromAwd2', () => {
     );
     const scene = createSceneFromAwd2(concatBytes(buildAwdHeader(body.length), body));
 
-    const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as BlinnPhongMaterial;
+    const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as ShadedMaterial;
     expect(material.normalMap).not.toBeNull();
     expect(material.normalMap!.image).toBeNull(); // referenced, not decoded
     const ref = material.normalMap!.resource as EmbeddedImageResourceReference;
@@ -663,7 +675,7 @@ describe('createSceneFromAwd2', () => {
     expect(ref.mimeType).toBe('image/png');
   });
 
-  it('attaches a BlinnPhongMaterial from a flat-color material block, widening color to opaque rgba', () => {
+  it('attaches a ShadedMaterial from a flat-color material block, widening color to opaque rgba', () => {
     const posStream = buildStream(
       AWD2_STREAM_POSITIONS,
       AWD2_DATA_FLOAT32,
@@ -684,11 +696,75 @@ describe('createSceneFromAwd2', () => {
     );
     const scene = createSceneFromAwd2(concatBytes(buildAwdHeader(body.length), body));
 
-    const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as BlinnPhongMaterial | null;
+    const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as ShadedMaterial | null;
     expect(material).not.toBeNull();
-    expect(material!.kind).toBe(BlinnPhongMaterialKind);
+    expect(material!.kind).toBe(ShadedMaterialKind);
+    expect(material!.modifiers).toHaveLength(0);
     expect(material!.diffuse).toBe(0x336699ff);
     expect(material!.diffuseMap).toBeNull();
+  });
+
+  it('folds the AWD alpha property (10) into the diffuse RGBA and blends when below 1', () => {
+    const posStream = buildStream(
+      AWD2_STREAM_POSITIONS,
+      AWD2_DATA_FLOAT32,
+      new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
+    );
+    const idxStream = buildStream(AWD2_STREAM_INDICES, AWD2_DATA_UINT16, new Uint16Array([0, 1, 2]));
+    const geomBody = buildTriangleGeometryBody('Geo', [{ streams: [posStream, idxStream] }]);
+    // Color 0x336699 with alpha 0.5 → diffuse 0x33669980 (0x80 = round(0.5*255)) and blend coverage.
+    const matBody = buildMaterialBody('Translucent', AWD2_MATERIAL_TYPE_COLOR, [
+      [AWD2_MATERIAL_PROP_COLOR, 0x336699],
+      [AWD2_MATERIAL_PROP_ALPHA, float32Bits(0.5)],
+    ]);
+    const miBody = buildMeshInstanceBodyWithMaterials('Mesh', 0, IDENTITY_TRANSFORM, 1, [2]);
+    const body = concatBytes(
+      buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+      geomBody,
+      buildBlockHeader(2, AWD2_BLOCK_MATERIAL, matBody.length),
+      matBody,
+      buildBlockHeader(3, AWD2_BLOCK_MESH_INSTANCE, miBody.length),
+      miBody,
+    );
+    const material = (
+      getNodeChildren(createSceneFromAwd2(concatBytes(buildAwdHeader(body.length), body)).root)[0] as Mesh
+    ).materials[0] as ShadedMaterial;
+    expect(material.diffuse).toBe(0x33669980);
+    expect(material.alphaMode).toBe('blend');
+  });
+
+  it('warns but still imports the base when an AWD material declares shading methods (numMethods > 0)', () => {
+    const posStream = buildStream(
+      AWD2_STREAM_POSITIONS,
+      AWD2_DATA_FLOAT32,
+      new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
+    );
+    const idxStream = buildStream(AWD2_STREAM_INDICES, AWD2_DATA_UINT16, new Uint16Array([0, 1, 2]));
+    const geomBody = buildTriangleGeometryBody('Geo', [{ streams: [posStream, idxStream] }]);
+    // A method-bearing material: numMethods=2. The method bodies aren't emitted (the parser doesn't walk
+    // them yet); the base color must still import, with a warning naming the count.
+    const matBody = buildMaterialBody(
+      'WithMethods',
+      AWD2_MATERIAL_TYPE_COLOR,
+      [[AWD2_MATERIAL_PROP_COLOR, 0x112233]],
+      2,
+    );
+    const miBody = buildMeshInstanceBodyWithMaterials('Mesh', 0, IDENTITY_TRANSFORM, 1, [2]);
+    const body = concatBytes(
+      buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+      geomBody,
+      buildBlockHeader(2, AWD2_BLOCK_MATERIAL, matBody.length),
+      matBody,
+      buildBlockHeader(3, AWD2_BLOCK_MESH_INSTANCE, miBody.length),
+      miBody,
+    );
+    const warnings: string[] = [];
+    const scene = createSceneFromAwd2(concatBytes(buildAwdHeader(body.length), body), warnings);
+    const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as ShadedMaterial;
+    expect(material.kind).toBe(ShadedMaterialKind);
+    expect(material.diffuse).toBe(0x112233ff); // base still imported despite the unmapped methods
+    expect(material.modifiers).toHaveLength(0);
+    expect(warnings.some((w) => w.includes('WithMethods') && w.includes('2 shading method'))).toBe(true);
   });
 
   it('emits an External ImageResourceReference for an external-URL texture', () => {
@@ -716,8 +792,8 @@ describe('createSceneFromAwd2', () => {
     const warnings: string[] = [];
     const scene = createSceneFromAwd2(concatBytes(buildAwdHeader(body.length), body), warnings);
 
-    const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as BlinnPhongMaterial;
-    expect(material.kind).toBe(BlinnPhongMaterialKind);
+    const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as ShadedMaterial;
+    expect(material.kind).toBe(ShadedMaterialKind);
     expect(material.diffuseMap!.image).toBeNull();
     const ref = material.diffuseMap!.resource as ExternalImageResourceReference;
     expect(ref.kind).toBe('External');
@@ -750,7 +826,7 @@ describe('createSceneFromAwd2', () => {
     );
     const scene = createSceneFromAwd2(concatBytes(buildAwdHeader(body.length), body));
 
-    const texture = ((getNodeChildren(scene.root)[0] as Mesh).materials[0] as BlinnPhongMaterial).diffuseMap!;
+    const texture = ((getNodeChildren(scene.root)[0] as Mesh).materials[0] as ShadedMaterial).diffuseMap!;
     expect(texture.image).toBeNull(); // parse never allocates or fills an ImageResource
     const ref = texture.resource as EmbeddedImageResourceReference;
     expect(ref.kind).toBe('Embedded');
@@ -1104,8 +1180,8 @@ describe('parseAwd2', () => {
     );
 
     const doc = parseAwd2(concatBytes(buildAwdHeader(body.length), body));
-    const first = doc.materials[0] as BlinnPhongMaterial;
-    const second = doc.materials[1] as BlinnPhongMaterial;
+    const first = doc.materials[0] as ShadedMaterial;
+    const second = doc.materials[1] as ShadedMaterial;
     expect(doc.resources).toHaveLength(1);
     expect(first.diffuseMap).not.toBe(second.diffuseMap);
     expect(first.diffuseMap!.resource).toBe(doc.resources[0]);

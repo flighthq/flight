@@ -49,6 +49,7 @@ export const AWD2_TEXTURE_TYPE_EMBEDDED = 1;
 export const AWD2_MATERIAL_PROP_COLOR = 1; // uint32 packed 0xrrggbb color (color materials)
 export const AWD2_MATERIAL_PROP_DIFFUSE_TEXTURE = 2; // block id (baddr) of the diffuse/albedo texture
 export const AWD2_MATERIAL_PROP_NORMAL_TEXTURE = 3; // block id (baddr) of the normal texture
+export const AWD2_MATERIAL_PROP_ALPHA = 10; // float32 material alpha (opacity); real AWD2 files carry this on every material
 
 // Compression method constants from the AWD header.
 export const AWD2_COMPRESSION_NONE = 0;

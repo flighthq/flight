@@ -8,7 +8,6 @@ import {
   multiplyMatrix4,
 } from '@flighthq/geometry';
 import { detectImageMimeType } from '@flighthq/image-codec';
-import { createBlinnPhongMaterial } from '@flighthq/materials';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   computeMeshGeometryNormals,
@@ -16,6 +15,7 @@ import {
   createMeshGeometry,
 } from '@flighthq/mesh';
 import { createSceneFromDocument } from '@flighthq/scene';
+import { createShadedMaterial } from '@flighthq/shading';
 import type { Scene } from '@flighthq/types';
 import type {
   AnimationClip,
@@ -31,6 +31,7 @@ import type {
   SceneDocumentNode,
   SceneDocumentSkin,
   SceneNode,
+  SurfaceMaterial,
   Texture,
   Transform3D,
   SkinInfluence,
@@ -67,6 +68,7 @@ import {
   AWD2_MAGIC_0,
   AWD2_MAGIC_1,
   AWD2_MAGIC_2,
+  AWD2_MATERIAL_PROP_ALPHA,
   AWD2_MATERIAL_PROP_COLOR,
   AWD2_MATERIAL_PROP_DIFFUSE_TEXTURE,
   AWD2_MATERIAL_PROP_NORMAL_TEXTURE,
@@ -111,9 +113,11 @@ export function createSceneFromAwd2(bytes: Readonly<Uint8Array>, warnings?: stri
 // skin by index. Containers become group nodes, mesh instances become mesh nodes (one geometry → one mesh
 // node carrying the instance name; several geometries → a named group of anonymous per-subset mesh nodes),
 // and parenting is expressed through `children` index lists with the unparented nodes as scene roots. Each
-// AWD material becomes a BlinnPhongMaterial (the format's own AwayJS MethodMaterial shading model) in the
-// document `materials` table, carrying its flat diffuse color and/or a diffuseMap referencing an unresolved
-// AWD texture ImageResourceReference — the parser references, it does not fetch or decode; the resolution is
+// AWD material becomes a ShadedMaterial in the document `materials` table — AWD's AwayJS MethodMaterial model
+// (BlinnPhong base + method array) maps structurally onto ShadedMaterial (base + modifier stack); see the
+// resolveAwdMaterial note for why the mapping is uniform. It carries the diffuse color+alpha and/or a
+// diffuseMap/normalMap referencing an unresolved AWD texture ImageResourceReference — the parser references,
+// it does not fetch or decode; the resolution is
 // @flighthq/scene-resources's explicit pass. The file's skeleton animations become document `animations`
 // whose channels bind by joint node index. Assemble into a live Scene with `createSceneFromDocument`.
 //
@@ -854,14 +858,17 @@ interface ParsedMeshInstance {
   transform: Float64Array;
 }
 
-// A parsed AWD material block (type 81). `diffuseTextureId`/`normalTextureId`/`color` are the paths
-// Flight realizes; 0 means "absent". Other AWD material properties (methods, blend flags) are parsed past
-// but not yet mapped.
+// A parsed AWD material block (type 81). `diffuseTextureId`/`normalTextureId` are texture block ids (0 =
+// absent), `color`/`alpha` the diffuse base (null = absent). `numMethods` is the declared shading-method
+// count — the method bodies are not walked yet (resolveAwdMaterial warns when > 0). Other base flags
+// (smoothing/repeat/mipmap) are parsed past but not mapped.
 interface ParsedMaterial {
+  alpha: number | null;
   color: number | null;
   diffuseTextureId: number;
   name: string;
   normalTextureId: number;
+  numMethods: number;
 }
 
 // A parsed AWD texture block (type 82). Exactly one source form is populated: `bytes` (+ detected
@@ -1303,9 +1310,13 @@ function parseMeshInstanceBlock(
 
 // Parses a Material block (type 81). Layout:
 // name(VarString) → matType(uint8) → numMethods(uint8) → PropertyList → methods → UserAttrList.
-// Flight reads the flat color (property 1), the diffuse texture id (property 2), and the normal texture id
-// (property 3) — the properties precede the methods, so the method/attr tail is left unread. Shading
-// methods and blend flags are not yet mapped.
+// The base PropertyList carries the flat color (property 1), diffuse texture id (property 2), normal
+// texture id (property 3), and alpha (property 10) — the properties Flight maps onto the ShadedMaterial
+// base. `numMethods` is captured so the resolver can warn that a method-bearing material's shading methods
+// (fog/env/fresnel/specular in Away3D's MethodMaterial model) are not yet imported as modifiers; the
+// method bodies themselves (which follow the base PropertyList) are left unwalked pending a real
+// method-bearing fixture and the verified AWD2 method-type layout — every AWD2 asset in the reference
+// corpus is `numMethods == 0`, so there is nothing to observe or test the walk against yet.
 function parseMaterialBlock(
   view: Readonly<DataView>,
   source: Readonly<Uint8Array>,
@@ -1327,14 +1338,16 @@ function parseMaterialBlock(
     return null;
   }
   offset += 1; // matType (uint8) — texture vs color is inferred from which properties are present
+  const numMethods = source[offset];
   offset += 1; // numMethods (uint8)
 
   const props = readAwdProperties(view, offset, end);
   const diffuseTextureId = readAwdPropertyUint32(view, props.values, AWD2_MATERIAL_PROP_DIFFUSE_TEXTURE) ?? 0;
   const normalTextureId = readAwdPropertyUint32(view, props.values, AWD2_MATERIAL_PROP_NORMAL_TEXTURE) ?? 0;
   const color = readAwdPropertyUint32(view, props.values, AWD2_MATERIAL_PROP_COLOR);
+  const alpha = readAwdPropertyFloat32(view, props.values, AWD2_MATERIAL_PROP_ALPHA);
 
-  return { color, diffuseTextureId, name: nameResult.value, normalTextureId };
+  return { alpha, color, diffuseTextureId, name: nameResult.value, normalTextureId, numMethods };
 }
 
 // Parses a Texture block (type 82). Layout:
@@ -1419,6 +1432,16 @@ function readAwdProperties(
   return { end: listEnd, values };
 }
 
+function readAwdPropertyFloat32(
+  view: Readonly<DataView>,
+  values: Readonly<Map<number, { length: number; offset: number }>>,
+  key: number,
+): number | null {
+  const entry = values.get(key);
+  if (entry === undefined || entry.length < 4) return null;
+  return (view as DataView).getFloat32(entry.offset, true);
+}
+
 function readAwdPropertyUint32(
   view: Readonly<DataView>,
   values: Readonly<Map<number, { length: number; offset: number }>>,
@@ -1431,9 +1454,22 @@ function readAwdPropertyUint32(
 
 // Resolves an AWD material block id to a document material INDEX (appended to `document.materials`),
 // memoized so a material shared by several subsets registers one entry (and one Texture/ImageResource per
-// shared texture). A material with a diffuse texture and/or a flat diffuse color becomes a
-// BlinnPhongMaterial (AWD's own AwayJS MethodMaterial shading model); anything that resolves to neither
-// returns -1 (a bare, unmaterialed subset — the assembler resolves an out-of-range index to null).
+// shared texture). Anything that resolves to no color and no textures returns -1 (a bare, unmaterialed
+// subset — the assembler resolves an out-of-range index to null).
+//
+// AWD materials import as ShadedMaterial UNIFORMLY — including numMethods=0 (empty modifiers[]). AWD's
+// material model is a MethodMaterial = a BlinnPhong base + a METHODS ARRAY; ShadedMaterial (base + an
+// ordered modifiers[]) is its structural image. An empty stack honestly encodes a method-less material
+// and compiles to the same base program as BlinnPhong (zero pixel cost), while (a) preserving losslessness
+// if a file/exporter DOES carry methods, and (b) letting a demo author reproduce the original Away3D look
+// by APPENDING a fresnel/fog modifier — no material-kind conversion. Do NOT collapse method-less materials
+// to BlinnPhong: that discards the format's array-shaped intent to save a type. (Callers who genuinely want
+// the leaner kind can down-convert a modifier-less ShadedMaterial to BlinnPhong themselves.)
+//
+// A method-bearing material (numMethods > 0) warns and imports its base only: the AWD2 method-block layout
+// is unverified in-sandbox (the whole reference corpus is numMethods=0), so shipping a blind method→modifier
+// walk would be speculative. The base carries color(1), diffuseTex(2), normalTex(3), alpha(10) — the only
+// base properties real AWD2 files use; specular/gloss/ambient are METHODS in Away3D's model, not base props.
 function resolveAwdMaterial(
   materialId: number,
   materialBlocks: Readonly<Map<number, ParsedMaterial>>,
@@ -1453,11 +1489,6 @@ function resolveAwdMaterial(
     return -1;
   }
 
-  // AWD's material model is Blinn-Phong (AwayJS MethodMaterial), so decode to BlinnPhongMaterial —
-  // the format's own shading model — rather than reinterpreting into PBR/Unlit. The block carries a
-  // flat diffuse color (property 1), a diffuse texture (property 2), and/or a normal texture (property
-  // 3); map all faithfully. A caller wanting metallic-roughness converts explicitly downstream
-  // (getPbrRoughnessFromPhongShininess + getPhongToPbrLightExposure); the importer presumes no PBR pipeline.
   const diffuseTexture =
     parsed.diffuseTextureId !== 0
       ? resolveAwdTexture(parsed.diffuseTextureId, textureBlocks, document, warnings)
@@ -1468,11 +1499,24 @@ function resolveAwdMaterial(
     cache.set(materialId, -1);
     return -1;
   }
-  const material = createBlinnPhongMaterial({
-    diffuse: parsed.color !== null ? awdColorToRgba(parsed.color) : 0xffffffff,
+
+  // A method-bearing material imports its base only (see the header note) — warn rather than silently drop.
+  if (parsed.numMethods > 0) {
+    warnings?.push(
+      `createSceneFromAwd2: material '${parsed.name || '(unnamed)'}' declares ${parsed.numMethods} shading ` +
+        'method(s); AWD method→ShadedMaterial-modifier import is not yet implemented — importing the base material ' +
+        'only (empty modifiers). Reproduce the original look by appending a modifier in the loading example.',
+    );
+  }
+
+  const diffuse = getAwdDiffuseRgba(parsed.color, parsed.alpha);
+  const material = createShadedMaterial({
+    diffuse,
     diffuseMap: diffuseTexture,
     normalMap: normalTexture,
   }) as unknown as Material;
+  // An alpha below 1 must actually blend; ShadedMaterial defaults to opaque coverage.
+  if (parsed.alpha !== null && parsed.alpha < 1) (material as unknown as SurfaceMaterial).alphaMode = 'blend';
   // Preserve the AWD material block name as the material's authored name (empty → anonymous).
   material.name = parsed.name.length > 0 ? parsed.name : null;
   const index = document.materials.length;
@@ -1506,10 +1550,13 @@ function resolveAwdTexture(
   return null;
 }
 
-// AWD packs material color as 24-bit 0xrrggbb; Flight colors are 32-bit 0xrrggbbaa. Widen with a
-// fully-opaque alpha.
-function awdColorToRgba(color: number): number {
-  return ((color << 8) | 0xff) >>> 0;
+// Packs an AWD material's diffuse into a Flight 0xrrggbbaa color. AWD stores the color as 24-bit 0xrrggbb
+// (property 1) and opacity as a separate float32 alpha (property 10); Flight folds them into one packed
+// RGBA. A missing color defaults to white, a missing alpha to fully opaque.
+function getAwdDiffuseRgba(color: number | null, alpha: number | null): number {
+  const rgb = color ?? 0xffffff;
+  const alphaByte = alpha !== null ? Math.max(0, Math.min(255, Math.round(alpha * 255))) : 0xff;
+  return (((rgb << 8) >>> 0) | alphaByte) >>> 0;
 }
 
 // Parses a Skeleton block (type 101). Layout:
