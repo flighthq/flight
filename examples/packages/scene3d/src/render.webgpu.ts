@@ -34,7 +34,10 @@ export function render(
   scene: Readonly<SceneNode>,
   camera: Readonly<Camera3D>,
   lights: Readonly<SceneLightsLike>,
+  shadowCamera: Readonly<Camera3D>,
 ): void {
+  // WebGPU consumes the same scene/light contract; its directional depth pass is still pending.
+  void shadowCamera;
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline);
   prepareSceneRender(state, scene, camera, lights);

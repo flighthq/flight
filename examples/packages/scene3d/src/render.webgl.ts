@@ -1,4 +1,4 @@
-import { drawGlScene } from '@flighthq/scene-gl';
+import { drawGlScene, drawGlSceneShadowMap } from '@flighthq/scene-gl';
 import type { Camera3D, GlRenderEffectPipeline, SceneLightsLike, SceneNode } from '@flighthq/sdk';
 import {
   beginGlRenderEffectPipeline,
@@ -37,14 +37,18 @@ export function render(
   scene: Readonly<SceneNode>,
   camera: Readonly<Camera3D>,
   lights: Readonly<SceneLightsLike>,
+  shadowCamera: Readonly<Camera3D>,
 ): void {
+  // The directional depth pass must finish before the HDR effect target opens its framebuffer.
+  prepareSceneRender(state, scene, camera, lights);
+  drawGlSceneShadowMap(state, scene, shadowCamera);
+
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
-  prepareSceneRender(state, scene, camera, lights);
   drawGlScene(state, scene, camera, lights);
   endGlRenderEffectPipeline(state, pipeline, []);
 }
