@@ -30,7 +30,7 @@ services:
 
 layouts:
   default:
-    expr: ((review review2 review3 review4) | (builder builder2 builder3 builder4 integration)):80 / (host $serve):20
+    expr: ((review review2) | (builder builder2 builder3 builder4)):80 / (host $serve):20
 
 default: default
 
@@ -41,11 +41,6 @@ presets:
       review:
         role: review
       review2:
-        role: review
-      review3:
-        role: review
-        runtimeProfile: codex-sbx
-      review4:
         role: review
         runtimeProfile: codex-sbx
       builder:
@@ -58,5 +53,3 @@ presets:
       builder4:
         role: builder
         runtimeProfile: codex-sbx
-      integration:
-        role: integration
