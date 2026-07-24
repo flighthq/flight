@@ -15,6 +15,7 @@ import {
   createOrthographicProjection,
   createPointLight,
   createSceneLights,
+  createSpotLight,
   createVector3,
   endGlRenderEffectPipeline,
   getSurfacePixelLuminance,
@@ -59,6 +60,7 @@ const material = createBlinnPhongMaterial({
 });
 const scene = createScene().root;
 const pointLights = [];
+const spotLights = [];
 const colors = [0xff6040ff, 0x60a0ffff, 0x70ff80ff, 0xffd060ff];
 
 // These are the four lights the old global pack chose. Their short ranges do not reach the field.
@@ -94,6 +96,23 @@ for (let row = 0; row < zPositions.length; row++) {
   }
 }
 
+// Three overlapping spots share the centre-left mesh with its nearby points. The correct per-family
+// policy keeps all three spots in addition to the four strongest points; a combined four-light
+// budget changes this mesh's color fingerprint even though the point-only rows still render.
+for (const color of [0xff3030ff, 0x30ff30ff, 0x3030ffff]) {
+  spotLights.push(
+    createSpotLight({
+      color,
+      direction: { x: 0, y: -1, z: 0 },
+      innerConeDegrees: 20,
+      intensity: 18,
+      outerConeDegrees: 38,
+      position: { x: -1.5, y: 2.4, z: 0 },
+      range: 4.5,
+    }),
+  );
+}
+
 const camera = createCamera3D({
   far: 100,
   near: 0.1,
@@ -105,6 +124,7 @@ const lights = createSceneLights({
   ambient: createAmbientLight({ color: 0x202838ff, intensity: 0.015 }),
   directional: null,
   point: pointLights,
+  spot: spotLights,
 });
 
 beginGlRenderEffectPipeline(state, pipeline);
