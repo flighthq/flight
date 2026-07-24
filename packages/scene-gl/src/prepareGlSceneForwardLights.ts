@@ -15,13 +15,14 @@ import type {
 import { SCENE_LIGHT_BLOCK_FLOATS } from '@flighthq/types';
 
 // Prepares one punctual-light block for each visible mesh after prepareSceneRender. The selection is
-// opt-in and explicit: scenes within the forward budget need not import or run it. Point and spot
-// lights compete by estimated contribution at each mesh's world bounding sphere; directional,
-// ambient, and hemisphere terms remain scene-global.
+// opt-in and explicit: scenes within each family's forward budget need not import or run it. Point
+// and spot lights are independently ranked by estimated contribution at each mesh's world bounding
+// sphere; directional, ambient, and hemisphere terms remain scene-global.
 //
 // Identical stable light-index tuples reuse the same packed block, so spatially coherent meshes keep
-// material bind runs. The returned list, all blocks, selection arrays, and bounds are state-owned
-// scratch; steady-state calls allocate nothing and the result must not be retained past the draw.
+// material bind runs. The returned list, packed blocks, and selection arrays are state-owned scratch;
+// the bounds objects at the bottom of this module are transient and never retained. Steady-state
+// calls allocate nothing, and the result must not be retained past the draw.
 export function prepareGlSceneForwardLights(
   state: GlRenderState,
   sceneRenderList: Readonly<SceneRenderList>,

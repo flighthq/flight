@@ -1,5 +1,5 @@
 import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
-import { createPointLight } from '@flighthq/lighting';
+import { createPointLight, createSpotLight } from '@flighthq/lighting';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
 import { prepareSceneRender } from '@flighthq/render';
@@ -38,6 +38,32 @@ function clusteredLights(): SceneLightsLike {
 }
 
 describe('prepareGlSceneForwardLights', () => {
+  it('packs four selected points and four selected spots from independent family budgets', () => {
+    const { state } = makeGlSceneState();
+    const scene = createSceneNode(SceneNodeKind);
+    addNodeChild(scene, createMesh(createBoxMeshGeometry(), []));
+    const lights: SceneLightsLike = {
+      ambient: null,
+      directional: null,
+      point: Array.from({ length: 6 }, (_, index) =>
+        createPointLight({ position: { x: index + 1, y: 0, z: 0 }, range: -1 }),
+      ),
+      spot: Array.from({ length: 6 }, (_, index) =>
+        createSpotLight({
+          direction: { x: -1, y: 0, z: 0 },
+          innerConeDegrees: 45,
+          outerConeDegrees: 60,
+          position: { x: index + 1, y: 0, z: 0 },
+          range: -1,
+        }),
+      ),
+    };
+    const renderList = prepareSceneRender(state, scene, camera(), lights);
+    const block = prepareGlSceneForwardLights(state, renderList, lights).meshLightBlocks[0];
+    expect(block.pointCount).toBe(4);
+    expect(block.spotCount).toBe(4);
+  });
+
   it('selects punctual lights per visible mesh and deduplicates identical tuples', () => {
     const { state } = makeGlSceneState();
     const scene = createSceneNode(SceneNodeKind);
