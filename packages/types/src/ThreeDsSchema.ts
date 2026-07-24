@@ -17,6 +17,7 @@ export const THREE_DS_VERTICES = 0x4110;
 export const THREE_DS_FACES = 0x4120;
 export const THREE_DS_FACE_MATERIAL = 0x4130;
 export const THREE_DS_UV_COORDS = 0x4140;
+export const THREE_DS_SMOOTH_GROUP = 0x4150;
 export const THREE_DS_TRANSFORM_MATRIX = 0x4160;
 
 // Material chunk IDs.
@@ -44,13 +45,25 @@ export interface ThreeDsMaterial {
   textureFilename: string | null;
 }
 
+// A per-material face group within a 3DS mesh (a FACE_MATERIAL 0x4130 sub-chunk): the material `name`
+// and the `faces` — indices into the mesh's triangle list (each addressing one `ThreeDsMesh.faces`
+// triple) — that use it. The caller resolves the name against the file's material table and partitions
+// the geometry into one MeshSubset per group.
+export interface ThreeDsMaterialGroup {
+  faces: Uint16Array;
+  name: string;
+}
+
 // A parsed 3DS triangle mesh descriptor (one per named object that contains a trimesh sub-chunk).
-// `materialNames` lists the materials the mesh's faces reference (via FACE_MATERIAL sub-chunks), in
-// file order, resolved against the file's material table by the caller.
+// `materialGroups` are the FACE_MATERIAL sub-chunks — each names a material and the faces that use it,
+// resolved and partitioned into subsets by the caller. `smoothingGroups` is the per-face smoothing
+// bitmask (SMOOTH_GROUP 0x4150, one uint32 per face) driving per-group normal generation, or null when
+// the mesh carries no smoothing chunk (all faces smoothed together).
 export interface ThreeDsMesh {
   faces: Uint16Array;
-  materialNames: readonly string[];
+  materialGroups: readonly ThreeDsMaterialGroup[];
   name: string;
+  smoothingGroups: Uint32Array | null;
   uvs: Float32Array | null;
   vertices: Float32Array;
 }

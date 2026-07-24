@@ -23,6 +23,7 @@ import {
   THREE_DS_MATERIAL_TEXTURE_FILENAME,
   THREE_DS_MATERIAL_TEXTURE_MAP,
   THREE_DS_OBJECT,
+  THREE_DS_SMOOTH_GROUP,
   THREE_DS_TRIMESH,
   THREE_DS_UV_COORDS,
   THREE_DS_VERTICES,
@@ -191,6 +192,53 @@ function writeFacesWithMaterial(indices: readonly number[], materialName: string
   return writeChunk(THREE_DS_FACES, concatBytes(faceArray, faceMaterial));
 }
 
+// Builds a face sub-chunk (0x4120) followed by any number of FACE_MATERIAL (0x4130) groups and an
+// optional SMOOTH_GROUP (0x4150) per-face bitmask list — the general form the subset/smoothing tests use.
+function writeFacesWithGroups(
+  indices: readonly number[],
+  opts: { groups?: readonly { faces: readonly number[]; name: string }[]; smoothing?: readonly number[] } = {},
+): Uint8Array {
+  const count = indices.length / 3;
+  const faceArray = new Uint8Array(2 + count * 4 * 2);
+  const faceView = new DataView(faceArray.buffer);
+  faceView.setUint16(0, count, true);
+  for (let i = 0; i < count; i++) {
+    const o = 2 + i * 8;
+    faceView.setUint16(o, indices[i * 3], true);
+    faceView.setUint16(o + 2, indices[i * 3 + 1], true);
+    faceView.setUint16(o + 4, indices[i * 3 + 2], true);
+    faceView.setUint16(o + 6, 0, true); // flags
+  }
+  const parts: Uint8Array[] = [faceArray];
+  for (const group of opts.groups ?? []) {
+    const refs = new Uint8Array(2 + group.faces.length * 2);
+    const refView = new DataView(refs.buffer);
+    refView.setUint16(0, group.faces.length, true);
+    group.faces.forEach((f, i) => refView.setUint16(2 + i * 2, f, true));
+    parts.push(writeChunk(THREE_DS_FACE_MATERIAL, concatBytes(writeNullTerminatedString(group.name), refs)));
+  }
+  if (opts.smoothing !== undefined) {
+    const masks = new Uint8Array(opts.smoothing.length * 4);
+    const maskView = new DataView(masks.buffer);
+    opts.smoothing.forEach((m, i) => maskView.setUint32(i * 4, m >>> 0, true));
+    parts.push(writeChunk(THREE_DS_SMOOTH_GROUP, masks));
+  }
+  return writeChunk(THREE_DS_FACES, concatBytes(...parts));
+}
+
+// Wraps a vertex list + a prebuilt faces chunk and any material chunks into a full one-object 3DS file.
+function buildScene3ds(opts: {
+  facesChunk: Uint8Array;
+  materials?: readonly Uint8Array[];
+  meshName: string;
+  positions: readonly number[];
+}): Uint8Array {
+  const trimesh = writeChunk(THREE_DS_TRIMESH, concatBytes(writeVertices(opts.positions), opts.facesChunk));
+  const object = writeChunk(THREE_DS_OBJECT, concatBytes(writeNullTerminatedString(opts.meshName), trimesh));
+  const editor = writeChunk(THREE_DS_EDITOR, concatBytes(...(opts.materials ?? []), object));
+  return writeChunk(THREE_DS_MAIN, editor);
+}
+
 // Builds a 3DS file with one material and one mesh whose faces reference it by name.
 function buildMaterialScene3ds(opts: {
   faceMaterialName: string;
@@ -243,7 +291,95 @@ describe('createSceneFrom3ds', () => {
     const mesh = getNodeChildren(
       createSceneFrom3ds(buildTriangle3ds('Tri', [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 2])).root,
     )[0] as Mesh;
-    expect(mesh.materials).toHaveLength(0);
+    // A mesh with no FACE_MATERIAL group is one default subset with a null (default-material) binding.
+    expect(mesh.materials).toEqual([null]);
+  });
+
+  it('splits a multi-material mesh into one MeshSubset per FACE_MATERIAL group', () => {
+    const red = writeMaterial({ diffuse: [255, 0, 0], name: 'Red' });
+    const blue = writeMaterial({ diffuse: [0, 0, 255], name: 'Blue' });
+    // A quad (two triangles): face 0 → Red, face 1 → Blue.
+    const facesChunk = writeFacesWithGroups([0, 1, 2, 0, 2, 3], {
+      groups: [
+        { faces: [0], name: 'Red' },
+        { faces: [1], name: 'Blue' },
+      ],
+    });
+    const scene = createSceneFrom3ds(
+      buildScene3ds({
+        facesChunk,
+        materials: [red, blue],
+        meshName: 'Quad',
+        positions: [0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0],
+      }),
+    );
+
+    const mesh = getNodeChildren(scene.root)[0] as Mesh;
+    // Two contiguous subsets, one per material, each covering its triangle's 3 indices.
+    expect(mesh.geometry.subsets).toEqual([
+      { indexCount: 3, indexOffset: 0 },
+      { indexCount: 3, indexOffset: 3 },
+    ]);
+    expect(mesh.materials).toHaveLength(2);
+    expect((mesh.materials[0] as BlinnPhongMaterial).name).toBe('Red');
+    expect((mesh.materials[1] as BlinnPhongMaterial).name).toBe('Blue');
+  });
+
+  it('gives faces belonging to no material group a trailing default subset', () => {
+    const red = writeMaterial({ diffuse: [255, 0, 0], name: 'Red' });
+    // Face 0 → Red; face 1 is in no group.
+    const facesChunk = writeFacesWithGroups([0, 1, 2, 0, 2, 3], { groups: [{ faces: [0], name: 'Red' }] });
+    const scene = createSceneFrom3ds(
+      buildScene3ds({
+        facesChunk,
+        materials: [red],
+        meshName: 'Quad',
+        positions: [0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0],
+      }),
+    );
+
+    const mesh = getNodeChildren(scene.root)[0] as Mesh;
+    expect(mesh.geometry.subsets).toHaveLength(2);
+    // The Red subset then the unassigned faces as a null-material default subset.
+    expect((mesh.materials[0] as BlinnPhongMaterial).name).toBe('Red');
+    expect(mesh.materials[1]).toBeNull();
+  });
+
+  it('splits shared vertices across smoothing groups so a crease stays hard', () => {
+    // Two perpendicular triangles sharing edge v1–v2 (a 90° fold): face 0 in the z=0 plane, face 1 in x=1.
+    const positions = [0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1];
+    const indices = [0, 1, 2, 1, 3, 2];
+
+    // Same smoothing group → the shared edge is smoothed, so v1/v2 stay merged: 4 output vertices.
+    const smooth = createSceneFrom3ds(
+      buildScene3ds({ facesChunk: writeFacesWithGroups(indices, { smoothing: [1, 1] }), meshName: 'Fold', positions }),
+    );
+    expect(getMeshGeometryVertexCount((getNodeChildren(smooth.root)[0] as Mesh).geometry)).toBe(4);
+
+    // Different smoothing groups → the shared edge is a hard crease, so v1/v2 split: 6 output vertices.
+    const hard = createSceneFrom3ds(
+      buildScene3ds({ facesChunk: writeFacesWithGroups(indices, { smoothing: [1, 2] }), meshName: 'Fold', positions }),
+    );
+    const hardGeom = (getNodeChildren(hard.root)[0] as Mesh).geometry;
+    expect(getMeshGeometryVertexCount(hardGeom)).toBe(6);
+
+    // Flat shading: face 0's corner (vertex 0) and face 1's corner (vertex 3) carry their own, differing
+    // face normals — the perpendicular faces do not blend into a rounded edge.
+    const n0 = { x: 0, y: 0, z: 0 };
+    const n3 = { x: 0, y: 0, z: 0 };
+    getMeshGeometryVertexNormal(n0, hardGeom, 0);
+    getMeshGeometryVertexNormal(n3, hardGeom, 3);
+    expect([n0.x, n0.y, n0.z]).not.toEqual([n3.x, n3.y, n3.z]);
+    expect(Math.hypot(n0.x, n0.y, n0.z)).toBeCloseTo(1);
+  });
+
+  it('smooths every shared vertex when the mesh carries no smoothing chunk', () => {
+    // The same fold without a SMOOTH_GROUP chunk smooths across the crease (legacy behavior): 4 vertices.
+    const positions = [0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1];
+    const scene = createSceneFrom3ds(
+      buildScene3ds({ facesChunk: writeFacesWithGroups([0, 1, 2, 1, 3, 2]), meshName: 'Fold', positions }),
+    );
+    expect(getMeshGeometryVertexCount((getNodeChildren(scene.root)[0] as Mesh).geometry)).toBe(4);
   });
 
   it('converts Z-up to Y-up coordinates', () => {
