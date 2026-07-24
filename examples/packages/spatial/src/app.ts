@@ -36,9 +36,11 @@ const COLOR_POINT_HIT = 0x44cc44;
 const COLOR_RAY_HIT = 0xcccc44;
 const COLOR_REGION_HIT = 0x44cccc;
 const COLOR_OUTLINE = 0x335577;
+const COLOR_GRID = 0x263954;
 
 const OBJECT_COUNT = 20;
 const MOVING_COUNT = 5;
+const GRID_SIZE = 100;
 
 const root = createDisplayObject();
 root.scaleX = scale;
@@ -55,6 +57,20 @@ interface SpatialObject {
 }
 
 const objects: SpatialObject[] = [];
+
+// Draw the same 100px cells used by the uniform-grid backend, so bucket boundaries and query
+// locality are visible rather than hidden behind the API.
+const gridShape = createShape();
+appendShapeLineStyle(gridShape, 1, COLOR_GRID, 0.65);
+for (let x = GRID_SIZE; x < CANVAS_WIDTH; x += GRID_SIZE) {
+  appendShapeMoveTo(gridShape, x, 0);
+  appendShapeLineTo(gridShape, x, CANVAS_HEIGHT);
+}
+for (let y = GRID_SIZE; y < CANVAS_HEIGHT; y += GRID_SIZE) {
+  appendShapeMoveTo(gridShape, 0, y);
+  appendShapeLineTo(gridShape, CANVAS_WIDTH, y);
+}
+addNodeChild(root, gridShape);
 
 function randomRange(min: number, max: number): number {
   return min + Math.random() * (max - min);
@@ -110,7 +126,8 @@ let mouseX = CANVAS_WIDTH / 2;
 let mouseY = CANVAS_HEIGHT / 2;
 
 type QueryMode = 'pairs' | 'point' | 'ray' | 'region';
-let activeMode: QueryMode = 'pairs';
+const captureWindow = window as typeof window & { __flightCapture?: boolean };
+let activeMode: QueryMode = captureWindow.__flightCapture ? 'region' : 'pairs';
 
 const canvasElement = canvas;
 
@@ -138,6 +155,9 @@ window.addEventListener('keyup', (e: KeyboardEvent) => {
 canvasElement.addEventListener('pointerup', () => {
   activeMode = 'pairs';
 });
+canvasElement.addEventListener('pointercancel', () => {
+  activeMode = 'pairs';
+});
 
 // Reusable query output arrays.
 const pairsOut: SpatialPair[] = [];
@@ -150,7 +170,7 @@ function redrawObject(obj: SpatialObject, color: number): void {
   appendShapeLineStyle(obj.shape, 1, COLOR_OUTLINE);
   appendShapeRectangle(obj.shape, b.minX, b.minY, b.maxX - b.minX, b.maxY - b.minY);
   appendShapeEndFill(obj.shape);
-  invalidateNodeLocalTransform(obj.shape);
+  invalidateNodeAppearance(obj.shape);
 }
 
 function drawQueryOverlay(): void {
@@ -185,7 +205,7 @@ function drawQueryOverlay(): void {
     appendShapeEndFill(queryOverlay);
   }
 
-  invalidateNodeLocalTransform(queryOverlay);
+  invalidateNodeAppearance(queryOverlay);
 }
 
 function updateModeLabel(resultCount: number): void {

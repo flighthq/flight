@@ -134,8 +134,14 @@ addMovieClipFrameScript(clip, 'outro', () => {
   lastFrameScriptMessage = 'Frame script: entered "outro"';
 });
 
-// Start playing.
-playMovieClip(clip);
+// Interactive playback begins at intro. Capture jumps through the public label API after scripts
+// are registered, so the smoke frame proves label navigation and the loop frame script together.
+const captureWindow = window as typeof window & { __flightCapture?: boolean };
+if (captureWindow.__flightCapture) {
+  gotoAndPlayMovieClip(clip, 'loop');
+} else {
+  playMovieClip(clip);
+}
 
 // HUD labels.
 function createLabel(text: string, x: number, y: number, size: number, color: number): DisplayObject {
