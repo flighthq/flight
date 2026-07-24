@@ -10,6 +10,7 @@ describe('createBlinnPhongMaterial', () => {
     expect(material.specular).toBe(0xffffffff);
     expect(material.shininess).toBe(32);
     expect(material.normalMap).toBeNull();
+    expect(material.alphaMap).toBeNull();
   });
 
   it('applies overrides', () => {

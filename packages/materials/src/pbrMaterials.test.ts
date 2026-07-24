@@ -38,11 +38,13 @@ describe('convertSpecularGlossinessToStandardPbr', () => {
     const packedMap = {} as Texture;
     const previousMap = {} as Texture;
     const source = createSpecularGlossinessPbrMaterial({ specularGlossinessMap: packedMap });
-    const out = createStandardPbrMaterialProperties({ metallicRoughnessMap: previousMap });
+    const out = createStandardPbrMaterialProperties({ alphaMap: previousMap, metallicRoughnessMap: previousMap });
 
     convertSpecularGlossinessToStandardPbr(out, source);
 
     expect(out.metallicRoughnessMap).toBeNull();
+    // Specular-glossiness carries no coverage map, so any pre-existing alpha map on `out` is cleared.
+    expect(out.alphaMap).toBeNull();
     expect(source.specularGlossinessMap).toBe(packedMap);
   });
   it('is alias-safe when out is used as a different object from source', () => {
@@ -78,6 +80,7 @@ describe('createStandardPbrMaterial', () => {
     expect(material.roughness).toBe(1);
     expect(material.emissive).toBe(0x000000ff);
     expect(material.baseColorMap).toBeNull();
+    expect(material.alphaMap).toBeNull();
   });
 
   it('applies overrides', () => {
