@@ -598,7 +598,8 @@ function resolveThreeDsMaterial(
 
 // Converts a parsed 3DS material to Flight's BlinnPhongMaterial — 3DS's own diffuse/specular shading
 // model. Diffuse and specular colors map directly; shininess maps to the specular exponent; the diffuse
-// and bump texture filenames become Unresolved External diffuseMap/normalMap refs; and a below-opaque
+// texture filename becomes an Unresolved External diffuseMap ref (the bump filename stays parsed
+// metadata — see the NOTE below); and a below-opaque
 // material folds its opacity into the diffuse alpha plus a blend alphaMode. The ambient color has no
 // Blinn-Phong equivalent (ambient is a scene light in Flight), so it is dropped; a caller wanting PBR
 // converts explicitly.
