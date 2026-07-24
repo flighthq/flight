@@ -11,6 +11,78 @@ by: builder
 
 <!-- newest entry on top -->
 
+## 2026-07-24 — AWD → AWD2: API/file split, version guard, compressed-animation fix, real-corpus verify (builder, user-directed)
+
+The AWD importer is now explicitly **AWD2** end-to-end, reserving the bare `Awd3` namespace for the
+future AwayJS SceneGraph (version-3) parser.
+
+**API split (user-ratified).** Renamed the public surface: `parseAwd`→`parseAwd2`,
+`createSceneFromAwd`→`createSceneFromAwd2`, `parseAwdSkeletonAnimations`→`parseAwd2SkeletonAnimations`,
+`registerAwdDecompressor`→`registerAwd2Decompressor`, `registerAwdDeflateDecompressor`→
+`registerAwd2DeflateDecompressor`; internal `AWD_*` schema consts → `AWD2_*` (incl. `AWD2_TANGENT_HANDEDNESS`).
+The `@flighthq/types` `AwdDecompressor` type stays version-neutral (a payload-in/bytes-out contract a future
+AWD3 parser reuses). **Files renamed** (user request) `awdParse`→`awd2Parse`, `awdSchema`→`awd2Schema`,
+`awdInflate`→`awd2Inflate` (+ tests). scene-resources `awdLoad.ts` filename left as-is (cross-package; the
+symbol import was updated) — SUGGEST renaming to `awd2Load.ts` for consistency.
+
+**Version guard.** `parseAwd2`/`parseAwd2SkeletonAnimations` now validate the header version-major byte
+(offset 3) after the magic: accept 2, else warn + return empty, naming AWD3 explicitly as a recognized but
+not-yet-implemented future format. Previously only the magic was checked, so a version-3 file (the whole
+awayjs-examples AWD3 folder is v3) silently misparsed under the AWD2 block walk.
+
+**Compressed-animation BUG FIXED (found via real corpus).** `buildAwdDocumentAnimations` was re-walking the
+original `bytes` (still-deflated for a compressed file) instead of the rehydrated `source`, so **skeleton
+animations were silently dropped for every deflate-compressed AWD** — Away3D's export default — while the
+mesh/skin (walked from `source`) still imported. Now walks `source`. Confirmed on onkba.awd: 0 → 5 clips.
+Regression-tested with a stub decompressor (no `node:zlib` at build time).
+
+**Real-corpus verification bench (manual, not committed).** Ran the four review-named AWD2 assets end-to-end
+(parse → SceneDocument → createSceneFromAwd2). All parse with **0 warnings**:
+- PolarBear.awd — v2, uncompressed, skeletal: skin 31 joints, 3 clips (Breathe 62 channels).
+- onkba.awd — v2, deflate, skeletal: skin 40 joints, 5 clips (post-fix).
+- tictac.awd — v2, deflate: 13 textured materials.
+- MonsterHead.awd — v2, deflate: 1 material (4.7 MB, texture-heavy; no morph blocks present).
+Block types exercised: 1 geometry, 22 container, 23 mesh-instance, 81 material, 82 texture, 101 skeleton,
+102 pose, 103 skeleton-animation, **255 (namespace/metadata — unknown to the parser, skipped gracefully,
+no corruption)**. No other core-namespace block types appear in the corpus.
+
+**numMethods empirics (reported to review).** EVERY material in the corpus has **numMethods == 0**
+(tictac ×13, MonsterHead ×1; all matType=2 texture). ⇒ the Away3D demos store NO shading methods in-file;
+their fog/fresnel/env effects were attached at AS3 runtime by the example, not by the importer. This tells
+the *example* author what to wire, not the importer.
+
+### AWD3 — deferred format (chartered, not implemented)
+
+AWD3 is the AwayJS **SceneGraph** binary (version 3): a different block model from AWD2 (shapes, timelines,
+textfields, scripts, sounds — a 2D display/timeline authoring format, not just a 3D mesh container). It is
+**recognized-and-rejected** by the AWD2 version guard, not misparsed. Unnecessary for current demos; ranks
+below other unbuilt 3D importers (e.g. FBX). Building it is a separate future charter that will own the bare
+`Awd3`/`createSceneFromAwd3` namespace the AWD2 rename freed. Sample corpus: awayjs-examples `src/assets/AWD3/`.
+
+### NEXT CHUNK — AWD2 materials as ShadedMaterial (user-directed, review-bed46182; NOT yet done)
+
+Rule (final, overrides an earlier numMethods-conditional draft): import AWD2 materials as **ShadedMaterial
+uniformly** — honest to the material *model* (AWD material == AwayJS MethodMaterial == BlinnPhong base + method
+stack; ShadedMaterial is the Flight type whose range matches, BlinnPhong is a lossy projection). A method-less
+material → ShadedMaterial with an empty modifier stack (same base program/pixels). TODO:
+1. Read the FULL base PropertyList onto the ShadedMaterial base: diffuse, specular color, gloss→shininess,
+   ambient, + diffuse/normal/specular maps (parser currently reads only diffuse color + diffuse/normal tex).
+2. Read `numMethods` and walk the method blocks (tail currently unread); map known methods to modifiers
+   (Fog→FogModifier, EnvMap→EnvReflect, fresnel-specular→fresnel [may need a new modifier — flag],
+   soft-shadow→pcf/shadow config); WARN via the diagnostics seam on any unmapped method, never silent-drop.
+3. Wiring cost (accepted, eyes-open): AWD meshes then render through the shaded assembly, so an AWD-loading
+   example must `registerBuiltInModifiers` + the shaded mesh renderer, not just the classic BlinnPhong
+   renderer. Note this in the importer doc comment + here. Method-less consumers can down-convert themselves.
+4. DOC THE RATIONALE in the importer doc comment (durable architectural note, review-7062769f) — the WHY,
+   not just the how, as the guard against a future agent seeing all-zero numMethods and reverting to a
+   conditional BlinnPhong: "AWD materials import as ShadedMaterial UNIFORMLY — including numMethods=0 (empty
+   modifiers[]). AWD's material model is a MethodMaterial = BlinnPhong base + a METHODS ARRAY; ShadedMaterial
+   (base + ordered modifiers[]) is its structural image. An empty stack honestly encodes a method-less
+   material and compiles to the same base program as BlinnPhong (zero pixel cost), while (a) preserving
+   losslessness if any file/exporter DOES carry methods, and (b) letting a demo author reproduce the original
+   Away3D look by APPENDING a fresnel/fog modifier — no material-kind conversion. Do NOT collapse method-less
+   materials to BlinnPhong: that discards the format's array-shaped intent to save a type."
+
 ## 2026-07-24 — md2/md5/awd/3ds parser-maturity pass (builder, per-chunk attested + reviewed)
 
 Correctness + major features + breadth landed this session (each its own commit, attested):

@@ -291,7 +291,8 @@ Quick-reference for common feature keywords. All package names use the `@flighth
 | OBJ / MTL import | `scene-formats` | parser | `importObj`/`createSceneFromObj` — groups, usemtl subsets, BlinnPhong |
 | 3DS import | `scene-formats` | parser | `createSceneFrom3ds`/`parse3ds` — meshes, per-face material subsets (MSH_MAT_GROUP), smoothing-group normals, shininess/transparency, diffuse textures (bump/height map parsed as metadata, not applied) |
 | MD5 import | `scene-formats` | parser | `importMd5Mesh(meshSource, animSource?)` composer (or `createSceneFromMd5Mesh` + `parseMd5Anim`) — mesh + skeleton + `.md5anim` skeletal animation |
-| AWD import | `scene-formats` | parser | `createSceneFromAwd`/`parseAwd` — AwayJS binary: meshes, skins, skeleton animation, materials (diffuse/normal maps); deflate-compressed bodies via `registerAwdDeflateDecompressor` |
+| AWD2 import | `scene-formats` | parser | `createSceneFromAwd2`/`parseAwd2` — AwayJS AWD2 (version-2) binary: meshes, skins, skeleton animation, materials (diffuse/normal maps); deflate-compressed bodies via `registerAwd2DeflateDecompressor`. A version guard rejects non-2 files by version (see AWD3 row) rather than misparsing them |
+| AWD3 import | --- | --- | Chartered, not implemented — AwayJS SceneGraph format (version 3), recognized-and-rejected by the AWD2 version guard. Unnecessary for current demos; ranks below other unbuilt 3D formats (e.g. FBX). The `Awd2`-explicit API names reserve the bare `Awd3` namespace for this future parser |
 | FBX import | --- | --- | Chartered, not implemented |
 | Flow / game states | `flow` | headless |  |
 | Snapshot / undo | `snapshot` | headless |  |

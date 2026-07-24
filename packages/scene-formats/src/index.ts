@@ -1,5 +1,5 @@
-export * from './awdInflate';
-export * from './awdParse';
+export * from './awd2Inflate';
+export * from './awd2Parse';
 export * from './gltfParse';
 export { GltfPunctualLightsExtensionHandler } from './gltfPunctualLights';
 export * from './md2Parse';

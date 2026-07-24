@@ -20,45 +20,46 @@ import type {
 } from '@flighthq/types';
 import { BlinnPhongMaterialKind, ResourceResolutionState } from '@flighthq/types';
 
-import { registerAwdDeflateDecompressor } from './awdInflate';
-import { createSceneFromAwd, parseAwd, parseAwdSkeletonAnimations, registerAwdDecompressor } from './awdParse';
+import { registerAwd2DeflateDecompressor } from './awd2Inflate';
+import { createSceneFromAwd2, parseAwd2, parseAwd2SkeletonAnimations, registerAwd2Decompressor } from './awd2Parse';
 import {
-  AWD_BLOCK_CONTAINER,
-  AWD_BLOCK_MATERIAL,
-  AWD_BLOCK_MESH_INSTANCE,
-  AWD_BLOCK_SKELETON,
-  AWD_BLOCK_SKELETON_ANIMATION,
-  AWD_BLOCK_SKELETON_POSE,
-  AWD_BLOCK_TEXTURE,
-  AWD_BLOCK_TRIANGLE_GEOMETRY,
-  AWD_COMPRESSION_DEFLATE,
-  AWD_COMPRESSION_LZMA,
-  AWD_DATA_FLOAT32,
-  AWD_DATA_UINT16,
-  AWD_MATERIAL_PROP_COLOR,
-  AWD_MATERIAL_PROP_DIFFUSE_TEXTURE,
-  AWD_MATERIAL_PROP_NORMAL_TEXTURE,
-  AWD_MATERIAL_TYPE_COLOR,
-  AWD_MATERIAL_TYPE_TEXTURE,
-  AWD_NAMESPACE_CORE,
-  AWD_STREAM_INDICES,
-  AWD_STREAM_JOINT_INDICES,
-  AWD_STREAM_JOINT_WEIGHTS,
-  AWD_STREAM_NORMALS,
-  AWD_STREAM_POSITIONS,
-  AWD_STREAM_TANGENTS,
-  AWD_STREAM_UVS,
-  AWD_TEXTURE_TYPE_EMBEDDED,
-  AWD_TEXTURE_TYPE_EXTERNAL,
-} from './awdSchema';
+  AWD2_BLOCK_CONTAINER,
+  AWD2_BLOCK_MATERIAL,
+  AWD2_BLOCK_MESH_INSTANCE,
+  AWD2_BLOCK_SKELETON,
+  AWD2_BLOCK_SKELETON_ANIMATION,
+  AWD2_BLOCK_SKELETON_POSE,
+  AWD2_BLOCK_TEXTURE,
+  AWD2_BLOCK_TRIANGLE_GEOMETRY,
+  AWD2_COMPRESSION_DEFLATE,
+  AWD2_COMPRESSION_LZMA,
+  AWD2_DATA_FLOAT32,
+  AWD2_DATA_UINT16,
+  AWD2_HEADER_BYTES,
+  AWD2_MATERIAL_PROP_COLOR,
+  AWD2_MATERIAL_PROP_DIFFUSE_TEXTURE,
+  AWD2_MATERIAL_PROP_NORMAL_TEXTURE,
+  AWD2_MATERIAL_TYPE_COLOR,
+  AWD2_MATERIAL_TYPE_TEXTURE,
+  AWD2_NAMESPACE_CORE,
+  AWD2_STREAM_INDICES,
+  AWD2_STREAM_JOINT_INDICES,
+  AWD2_STREAM_JOINT_WEIGHTS,
+  AWD2_STREAM_NORMALS,
+  AWD2_STREAM_POSITIONS,
+  AWD2_STREAM_TANGENTS,
+  AWD2_STREAM_UVS,
+  AWD2_TEXTURE_TYPE_EMBEDDED,
+  AWD2_TEXTURE_TYPE_EXTERNAL,
+} from './awd2Schema';
 
-function buildAwdHeader(bodyLength: number, compression = 0, flags = 0): Uint8Array {
+function buildAwdHeader(bodyLength: number, compression = 0, flags = 0, versionMajor = 2): Uint8Array {
   const header = new Uint8Array(12);
   const view = new DataView(header.buffer);
   header[0] = 0x41; // 'A'
   header[1] = 0x57; // 'W'
   header[2] = 0x44; // 'D'
-  header[3] = 2; // version major
+  header[3] = versionMajor; // version major
   header[4] = 1; // version minor
   view.setUint16(5, flags, true);
   header[7] = compression;
@@ -71,7 +72,7 @@ function buildBlockHeader(
   blockType: number,
   blockLength: number,
   blockFlags = 0,
-  namespace = AWD_NAMESPACE_CORE,
+  namespace = AWD2_NAMESPACE_CORE,
 ): Uint8Array {
   const header = new Uint8Array(11);
   const view = new DataView(header.buffer);
@@ -265,12 +266,20 @@ const IDENTITY_TRANSFORM = [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0];
 // full skin path (joints0/weights0 emit, mesh.skin binding) and the anim→skin identity. The joint
 // index stream declares float32 in its header (as real AWD exporters do) but is packed as uint16.
 const SKINNED_TRIANGLE_AWD = (() => {
-  const posStream = buildStream(AWD_STREAM_POSITIONS, AWD_DATA_FLOAT32, new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]));
-  const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, new Uint16Array([0, 1, 2]));
-  const jointIndexStream = buildStream(AWD_STREAM_JOINT_INDICES, AWD_DATA_FLOAT32, new Uint16Array([0, 1, 0, 1, 1, 0]));
+  const posStream = buildStream(
+    AWD2_STREAM_POSITIONS,
+    AWD2_DATA_FLOAT32,
+    new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
+  );
+  const idxStream = buildStream(AWD2_STREAM_INDICES, AWD2_DATA_UINT16, new Uint16Array([0, 1, 2]));
+  const jointIndexStream = buildStream(
+    AWD2_STREAM_JOINT_INDICES,
+    AWD2_DATA_FLOAT32,
+    new Uint16Array([0, 1, 0, 1, 1, 0]),
+  );
   const jointWeightStream = buildStream(
-    AWD_STREAM_JOINT_WEIGHTS,
-    AWD_DATA_FLOAT32,
+    AWD2_STREAM_JOINT_WEIGHTS,
+    AWD2_DATA_FLOAT32,
     new Float32Array([0.75, 0.25, 0.5, 0.5, 1, 0]),
   );
   const geomBody = buildTriangleGeometryBody('Skinned', [
@@ -292,17 +301,17 @@ const SKINNED_TRIANGLE_AWD = (() => {
   ]);
 
   const body = concatBytes(
-    buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+    buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
     geomBody,
-    buildBlockHeader(2, AWD_BLOCK_SKELETON, skelBody.length),
+    buildBlockHeader(2, AWD2_BLOCK_SKELETON, skelBody.length),
     skelBody,
-    buildBlockHeader(3, AWD_BLOCK_MESH_INSTANCE, miBody.length),
+    buildBlockHeader(3, AWD2_BLOCK_MESH_INSTANCE, miBody.length),
     miBody,
-    buildBlockHeader(5, AWD_BLOCK_SKELETON_POSE, pose0Body.length),
+    buildBlockHeader(5, AWD2_BLOCK_SKELETON_POSE, pose0Body.length),
     pose0Body,
-    buildBlockHeader(6, AWD_BLOCK_SKELETON_POSE, pose1Body.length),
+    buildBlockHeader(6, AWD2_BLOCK_SKELETON_POSE, pose1Body.length),
     pose1Body,
-    buildBlockHeader(7, AWD_BLOCK_SKELETON_ANIMATION, animBody.length),
+    buildBlockHeader(7, AWD2_BLOCK_SKELETON_ANIMATION, animBody.length),
     animBody,
   );
   return concatBytes(buildAwdHeader(body.length), body);
@@ -313,25 +322,25 @@ const firstAwdClip = (
   bytes: Readonly<Uint8Array>,
   joints: readonly SceneNode[],
   warnings?: string[],
-): AnimationClip | undefined => Object.values(parseAwdSkeletonAnimations(bytes, joints, warnings))[0];
+): AnimationClip | undefined => Object.values(parseAwd2SkeletonAnimations(bytes, joints, warnings))[0];
 
-describe('createSceneFromAwd', () => {
+describe('createSceneFromAwd2', () => {
   it('parses a single triangle with positions and indices', () => {
     const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
     const indices = new Uint16Array([0, 1, 2]);
 
-    const posStream = buildStream(AWD_STREAM_POSITIONS, AWD_DATA_FLOAT32, positions);
-    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, indices);
+    const posStream = buildStream(AWD2_STREAM_POSITIONS, AWD2_DATA_FLOAT32, positions);
+    const idxStream = buildStream(AWD2_STREAM_INDICES, AWD2_DATA_UINT16, indices);
     const geomBody = buildTriangleGeometryBody('Triangle', [{ streams: [posStream, idxStream] }]);
-    const geomBlockHeader = buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length);
+    const geomBlockHeader = buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length);
 
     const meshBody = buildMeshInstanceBody('TriMesh', 0, IDENTITY_TRANSFORM, 1);
-    const meshBlockHeader = buildBlockHeader(2, AWD_BLOCK_MESH_INSTANCE, meshBody.length);
+    const meshBlockHeader = buildBlockHeader(2, AWD2_BLOCK_MESH_INSTANCE, meshBody.length);
 
     const body = concatBytes(geomBlockHeader, geomBody, meshBlockHeader, meshBody);
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
-    const scene = createSceneFromAwd(awd);
+    const scene = createSceneFromAwd2(awd);
     const children = getNodeChildren(scene.root);
     expect(children).toHaveLength(1);
     expect(isMesh(children[0] as SceneNode)).toBe(true);
@@ -356,20 +365,20 @@ describe('createSceneFromAwd', () => {
     const uvs = new Float32Array([0, 0, 1, 0, 0.5, 1]);
     const indices = new Uint16Array([0, 1, 2]);
 
-    const posStream = buildStream(AWD_STREAM_POSITIONS, AWD_DATA_FLOAT32, positions);
-    const normStream = buildStream(AWD_STREAM_NORMALS, AWD_DATA_FLOAT32, normals);
-    const uvStream = buildStream(AWD_STREAM_UVS, AWD_DATA_FLOAT32, uvs);
-    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, indices);
+    const posStream = buildStream(AWD2_STREAM_POSITIONS, AWD2_DATA_FLOAT32, positions);
+    const normStream = buildStream(AWD2_STREAM_NORMALS, AWD2_DATA_FLOAT32, normals);
+    const uvStream = buildStream(AWD2_STREAM_UVS, AWD2_DATA_FLOAT32, uvs);
+    const idxStream = buildStream(AWD2_STREAM_INDICES, AWD2_DATA_UINT16, indices);
     const geomBody = buildTriangleGeometryBody('Geom', [{ streams: [posStream, normStream, uvStream, idxStream] }]);
-    const geomBlockHeader = buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length);
+    const geomBlockHeader = buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length);
 
     const meshBody = buildMeshInstanceBody('Mesh', 0, IDENTITY_TRANSFORM, 1);
-    const meshBlockHeader = buildBlockHeader(2, AWD_BLOCK_MESH_INSTANCE, meshBody.length);
+    const meshBlockHeader = buildBlockHeader(2, AWD2_BLOCK_MESH_INSTANCE, meshBody.length);
 
     const body = concatBytes(geomBlockHeader, geomBody, meshBlockHeader, meshBody);
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
-    const scene = createSceneFromAwd(awd);
+    const scene = createSceneFromAwd2(awd);
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
 
     const n = { x: 0, y: 0, z: 0 };
@@ -390,18 +399,18 @@ describe('createSceneFromAwd', () => {
     const tangents = new Float32Array([0, 0, 1, 0, 0, 1, 0, 0, 1]);
     const indices = new Uint16Array([0, 1, 2]);
 
-    const posStream = buildStream(AWD_STREAM_POSITIONS, AWD_DATA_FLOAT32, positions);
-    const normStream = buildStream(AWD_STREAM_NORMALS, AWD_DATA_FLOAT32, normals);
-    const tanStream = buildStream(AWD_STREAM_TANGENTS, AWD_DATA_FLOAT32, tangents);
-    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, indices);
+    const posStream = buildStream(AWD2_STREAM_POSITIONS, AWD2_DATA_FLOAT32, positions);
+    const normStream = buildStream(AWD2_STREAM_NORMALS, AWD2_DATA_FLOAT32, normals);
+    const tanStream = buildStream(AWD2_STREAM_TANGENTS, AWD2_DATA_FLOAT32, tangents);
+    const idxStream = buildStream(AWD2_STREAM_INDICES, AWD2_DATA_UINT16, indices);
     const geomBody = buildTriangleGeometryBody('Geom', [{ streams: [posStream, normStream, tanStream, idxStream] }]);
-    const geomBlockHeader = buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length);
+    const geomBlockHeader = buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length);
     const meshBody = buildMeshInstanceBody('Mesh', 0, IDENTITY_TRANSFORM, 1);
-    const meshBlockHeader = buildBlockHeader(2, AWD_BLOCK_MESH_INSTANCE, meshBody.length);
+    const meshBlockHeader = buildBlockHeader(2, AWD2_BLOCK_MESH_INSTANCE, meshBody.length);
     const body = concatBytes(geomBlockHeader, geomBody, meshBlockHeader, meshBody);
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
-    const geometry = (getNodeChildren(createSceneFromAwd(awd).root)[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(createSceneFromAwd2(awd).root)[0] as Mesh).geometry;
     const floatsPerVertex = geometry.layout.stride / 4; // 12 for the canonical (non-skinned) layout
 
     // Tangent xyz (float offset 6-8) carries the AWD tangent with Z negated by the handedness conversion.
@@ -421,19 +430,19 @@ describe('createSceneFromAwd', () => {
     const uvs = new Float32Array([0, 0, 1, 0, 0, 1]);
     const indices = new Uint16Array([0, 1, 2]);
 
-    const posStream = buildStream(AWD_STREAM_POSITIONS, AWD_DATA_FLOAT32, positions);
-    const normStream = buildStream(AWD_STREAM_NORMALS, AWD_DATA_FLOAT32, normals);
-    const uvStream = buildStream(AWD_STREAM_UVS, AWD_DATA_FLOAT32, uvs);
-    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, indices);
-    // No AWD_STREAM_TANGENTS — the case Away3D exports hit.
+    const posStream = buildStream(AWD2_STREAM_POSITIONS, AWD2_DATA_FLOAT32, positions);
+    const normStream = buildStream(AWD2_STREAM_NORMALS, AWD2_DATA_FLOAT32, normals);
+    const uvStream = buildStream(AWD2_STREAM_UVS, AWD2_DATA_FLOAT32, uvs);
+    const idxStream = buildStream(AWD2_STREAM_INDICES, AWD2_DATA_UINT16, indices);
+    // No AWD2_STREAM_TANGENTS — the case Away3D exports hit.
     const geomBody = buildTriangleGeometryBody('Geom', [{ streams: [posStream, normStream, uvStream, idxStream] }]);
-    const geomBlockHeader = buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length);
+    const geomBlockHeader = buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length);
     const meshBody = buildMeshInstanceBody('Mesh', 0, IDENTITY_TRANSFORM, 1);
-    const meshBlockHeader = buildBlockHeader(2, AWD_BLOCK_MESH_INSTANCE, meshBody.length);
+    const meshBlockHeader = buildBlockHeader(2, AWD2_BLOCK_MESH_INSTANCE, meshBody.length);
     const body = concatBytes(geomBlockHeader, geomBody, meshBlockHeader, meshBody);
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
-    const geometry = (getNodeChildren(createSceneFromAwd(awd).root)[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(createSceneFromAwd2(awd).root)[0] as Mesh).geometry;
     // Tangent xyz (float offset 6-8) is a real unit-length vector, not the zero a missing stream leaves.
     const [tx, ty, tz] = [geometry.vertices[6], geometry.vertices[7], geometry.vertices[8]];
     expect(Math.hypot(tx, ty, tz)).toBeCloseTo(1, 3);
@@ -444,21 +453,21 @@ describe('createSceneFromAwd', () => {
   it('builds container and mesh instance hierarchy', () => {
     const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
     const indices = new Uint16Array([0, 1, 2]);
-    const posStream = buildStream(AWD_STREAM_POSITIONS, AWD_DATA_FLOAT32, positions);
-    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, indices);
+    const posStream = buildStream(AWD2_STREAM_POSITIONS, AWD2_DATA_FLOAT32, positions);
+    const idxStream = buildStream(AWD2_STREAM_INDICES, AWD2_DATA_UINT16, indices);
     const geomBody = buildTriangleGeometryBody('Geom', [{ streams: [posStream, idxStream] }]);
-    const geomBlockHeader = buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length);
+    const geomBlockHeader = buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length);
 
     const containerBody = buildContainerBody('Group', 0, IDENTITY_TRANSFORM);
-    const containerBlockHeader = buildBlockHeader(2, AWD_BLOCK_CONTAINER, containerBody.length);
+    const containerBlockHeader = buildBlockHeader(2, AWD2_BLOCK_CONTAINER, containerBody.length);
 
     const meshBody = buildMeshInstanceBody('ChildMesh', 2, IDENTITY_TRANSFORM, 1);
-    const meshBlockHeader = buildBlockHeader(3, AWD_BLOCK_MESH_INSTANCE, meshBody.length);
+    const meshBlockHeader = buildBlockHeader(3, AWD2_BLOCK_MESH_INSTANCE, meshBody.length);
 
     const body = concatBytes(geomBlockHeader, geomBody, containerBlockHeader, containerBody, meshBlockHeader, meshBody);
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
-    const scene = createSceneFromAwd(awd);
+    const scene = createSceneFromAwd2(awd);
     const roots = getNodeChildren(scene.root);
     expect(roots).toHaveLength(1);
     const container = roots[0] as SceneNode;
@@ -470,16 +479,16 @@ describe('createSceneFromAwd', () => {
   });
 
   it('warns and returns empty scene for compressed AWD', () => {
-    const awd = buildAwdHeader(0, AWD_COMPRESSION_DEFLATE);
+    const awd = buildAwdHeader(0, AWD2_COMPRESSION_DEFLATE);
     const warnings: string[] = [];
-    const scene = createSceneFromAwd(awd, warnings);
+    const scene = createSceneFromAwd2(awd, warnings);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
     expect(warnings.some((w) => w.includes('compression'))).toBe(true);
   });
 
   it('returns an empty scene and warns for truncated input', () => {
     const warnings: string[] = [];
-    const scene = createSceneFromAwd(new Uint8Array(4), warnings);
+    const scene = createSceneFromAwd2(new Uint8Array(4), warnings);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
     expect(warnings.some((w) => w.includes('header'))).toBe(true);
   });
@@ -488,33 +497,43 @@ describe('createSceneFromAwd', () => {
     const bogus = new Uint8Array(12);
     bogus[0] = 0x00;
     const warnings: string[] = [];
-    const scene = createSceneFromAwd(bogus, warnings);
+    const scene = createSceneFromAwd2(bogus, warnings);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
     expect(warnings.some((w) => w.includes('magic'))).toBe(true);
   });
 
+  it('rejects a version-3 (AWD3) file by version rather than misparsing it', () => {
+    // A version-3 file shares the 'AWD' magic but has a different block model; the AWD2 walk would
+    // silently produce an empty/garbage scene, so it must be rejected by version with an AWD3-naming warning.
+    const awd3 = buildAwdHeader(0, 0, 0, 3);
+    const warnings: string[] = [];
+    const scene = createSceneFromAwd2(awd3, warnings);
+    expect(getNodeChildren(scene.root)).toHaveLength(0);
+    expect(warnings.some((w) => w.includes('version 3') && w.includes('AWD2') && w.includes('AWD3'))).toBe(true);
+  });
+
   it('returns an empty scene for a valid header with no blocks', () => {
     const awd = buildAwdHeader(0);
-    const scene = createSceneFromAwd(awd);
+    const scene = createSceneFromAwd2(awd);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
   });
 
   it('applies transform from mesh instance block', () => {
     const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
     const indices = new Uint16Array([0, 1, 2]);
-    const posStream = buildStream(AWD_STREAM_POSITIONS, AWD_DATA_FLOAT32, positions);
-    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, indices);
+    const posStream = buildStream(AWD2_STREAM_POSITIONS, AWD2_DATA_FLOAT32, positions);
+    const idxStream = buildStream(AWD2_STREAM_INDICES, AWD2_DATA_UINT16, indices);
     const geomBody = buildTriangleGeometryBody('Geom', [{ streams: [posStream, idxStream] }]);
-    const geomBlockHeader = buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length);
+    const geomBlockHeader = buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length);
 
     const transform = [1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 20, 30];
     const meshBody = buildMeshInstanceBody('Mesh', 0, transform, 1);
-    const meshBlockHeader = buildBlockHeader(2, AWD_BLOCK_MESH_INSTANCE, meshBody.length);
+    const meshBlockHeader = buildBlockHeader(2, AWD2_BLOCK_MESH_INSTANCE, meshBody.length);
 
     const body = concatBytes(geomBlockHeader, geomBody, meshBlockHeader, meshBody);
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
-    const scene = createSceneFromAwd(awd);
+    const scene = createSceneFromAwd2(awd);
     const meshNode = getNodeChildren(scene.root)[0] as SceneNode;
     const m = getNodeLocalMatrix4(meshNode).m;
     expect(m[12]).toBeCloseTo(10);
@@ -526,69 +545,69 @@ describe('createSceneFromAwd', () => {
   });
 
   it('warns when block length runs past the end of the body', () => {
-    const blockHeader = buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, 9999);
+    const blockHeader = buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, 9999);
     const body = blockHeader;
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
     const warnings: string[] = [];
-    createSceneFromAwd(awd, warnings);
+    createSceneFromAwd2(awd, warnings);
     expect(warnings.some((w) => w.includes('block length'))).toBe(true);
   });
 
   it('warns when mesh instance references a nonexistent geometry block', () => {
     const meshBody = buildMeshInstanceBody('Mesh', 0, IDENTITY_TRANSFORM, 99);
-    const meshBlockHeader = buildBlockHeader(1, AWD_BLOCK_MESH_INSTANCE, meshBody.length);
+    const meshBlockHeader = buildBlockHeader(1, AWD2_BLOCK_MESH_INSTANCE, meshBody.length);
 
     const body = concatBytes(meshBlockHeader, meshBody);
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
     const warnings: string[] = [];
-    const scene = createSceneFromAwd(awd, warnings);
+    const scene = createSceneFromAwd2(awd, warnings);
     expect(getNodeChildren(scene.root)).toHaveLength(1);
     expect(warnings.some((w) => w.includes('geometry block 99'))).toBe(true);
   });
 
   it('parses positions-only geometry without indices', () => {
     const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
-    const posStream = buildStream(AWD_STREAM_POSITIONS, AWD_DATA_FLOAT32, positions);
+    const posStream = buildStream(AWD2_STREAM_POSITIONS, AWD2_DATA_FLOAT32, positions);
     const geomBody = buildTriangleGeometryBody('NoIdx', [{ streams: [posStream] }]);
-    const geomBlockHeader = buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length);
+    const geomBlockHeader = buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length);
 
     const meshBody = buildMeshInstanceBody('Mesh', 0, IDENTITY_TRANSFORM, 1);
-    const meshBlockHeader = buildBlockHeader(2, AWD_BLOCK_MESH_INSTANCE, meshBody.length);
+    const meshBlockHeader = buildBlockHeader(2, AWD2_BLOCK_MESH_INSTANCE, meshBody.length);
 
     const body = concatBytes(geomBlockHeader, geomBody, meshBlockHeader, meshBody);
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
-    const scene = createSceneFromAwd(awd);
+    const scene = createSceneFromAwd2(awd);
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
   });
 
   it('attaches a textured BlinnPhongMaterial from a material + embedded texture block', () => {
     const posStream = buildStream(
-      AWD_STREAM_POSITIONS,
-      AWD_DATA_FLOAT32,
+      AWD2_STREAM_POSITIONS,
+      AWD2_DATA_FLOAT32,
       new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
     );
-    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, new Uint16Array([0, 1, 2]));
+    const idxStream = buildStream(AWD2_STREAM_INDICES, AWD2_DATA_UINT16, new Uint16Array([0, 1, 2]));
     const geomBody = buildTriangleGeometryBody('Geo', [{ streams: [posStream, idxStream] }]);
-    const texBody = buildTextureBody('diffuse.png', AWD_TEXTURE_TYPE_EMBEDDED, FAKE_PNG_BYTES);
-    const matBody = buildMaterialBody('Mat', AWD_MATERIAL_TYPE_TEXTURE, [[AWD_MATERIAL_PROP_DIFFUSE_TEXTURE, 2]]);
+    const texBody = buildTextureBody('diffuse.png', AWD2_TEXTURE_TYPE_EMBEDDED, FAKE_PNG_BYTES);
+    const matBody = buildMaterialBody('Mat', AWD2_MATERIAL_TYPE_TEXTURE, [[AWD2_MATERIAL_PROP_DIFFUSE_TEXTURE, 2]]);
     const miBody = buildMeshInstanceBodyWithMaterials('Mesh', 0, IDENTITY_TRANSFORM, 1, [3]);
 
     const body = concatBytes(
-      buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+      buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
       geomBody,
-      buildBlockHeader(2, AWD_BLOCK_TEXTURE, texBody.length),
+      buildBlockHeader(2, AWD2_BLOCK_TEXTURE, texBody.length),
       texBody,
-      buildBlockHeader(3, AWD_BLOCK_MATERIAL, matBody.length),
+      buildBlockHeader(3, AWD2_BLOCK_MATERIAL, matBody.length),
       matBody,
-      buildBlockHeader(4, AWD_BLOCK_MESH_INSTANCE, miBody.length),
+      buildBlockHeader(4, AWD2_BLOCK_MESH_INSTANCE, miBody.length),
       miBody,
     );
     const warnings: string[] = [];
-    const scene = createSceneFromAwd(concatBytes(buildAwdHeader(body.length), body), warnings);
+    const scene = createSceneFromAwd2(concatBytes(buildAwdHeader(body.length), body), warnings);
 
     const mesh = getNodeChildren(scene.root)[0] as Mesh;
     expect(isMesh(mesh)).toBe(true);
@@ -610,31 +629,31 @@ describe('createSceneFromAwd', () => {
 
   it('maps the AWD normal-texture property (3) to the material normalMap', () => {
     const posStream = buildStream(
-      AWD_STREAM_POSITIONS,
-      AWD_DATA_FLOAT32,
+      AWD2_STREAM_POSITIONS,
+      AWD2_DATA_FLOAT32,
       new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
     );
-    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, new Uint16Array([0, 1, 2]));
+    const idxStream = buildStream(AWD2_STREAM_INDICES, AWD2_DATA_UINT16, new Uint16Array([0, 1, 2]));
     const geomBody = buildTriangleGeometryBody('Geo', [{ streams: [posStream, idxStream] }]);
-    const texBody = buildTextureBody('normal.png', AWD_TEXTURE_TYPE_EMBEDDED, FAKE_PNG_BYTES);
+    const texBody = buildTextureBody('normal.png', AWD2_TEXTURE_TYPE_EMBEDDED, FAKE_PNG_BYTES);
     // A material with a flat color plus a normal texture (block id 2, property 3).
-    const matBody = buildMaterialBody('Mat', AWD_MATERIAL_TYPE_TEXTURE, [
-      [AWD_MATERIAL_PROP_COLOR, 0x808080],
-      [AWD_MATERIAL_PROP_NORMAL_TEXTURE, 2],
+    const matBody = buildMaterialBody('Mat', AWD2_MATERIAL_TYPE_TEXTURE, [
+      [AWD2_MATERIAL_PROP_COLOR, 0x808080],
+      [AWD2_MATERIAL_PROP_NORMAL_TEXTURE, 2],
     ]);
     const miBody = buildMeshInstanceBodyWithMaterials('Mesh', 0, IDENTITY_TRANSFORM, 1, [3]);
 
     const body = concatBytes(
-      buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+      buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
       geomBody,
-      buildBlockHeader(2, AWD_BLOCK_TEXTURE, texBody.length),
+      buildBlockHeader(2, AWD2_BLOCK_TEXTURE, texBody.length),
       texBody,
-      buildBlockHeader(3, AWD_BLOCK_MATERIAL, matBody.length),
+      buildBlockHeader(3, AWD2_BLOCK_MATERIAL, matBody.length),
       matBody,
-      buildBlockHeader(4, AWD_BLOCK_MESH_INSTANCE, miBody.length),
+      buildBlockHeader(4, AWD2_BLOCK_MESH_INSTANCE, miBody.length),
       miBody,
     );
-    const scene = createSceneFromAwd(concatBytes(buildAwdHeader(body.length), body));
+    const scene = createSceneFromAwd2(concatBytes(buildAwdHeader(body.length), body));
 
     const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as BlinnPhongMaterial;
     expect(material.normalMap).not.toBeNull();
@@ -646,24 +665,24 @@ describe('createSceneFromAwd', () => {
 
   it('attaches a BlinnPhongMaterial from a flat-color material block, widening color to opaque rgba', () => {
     const posStream = buildStream(
-      AWD_STREAM_POSITIONS,
-      AWD_DATA_FLOAT32,
+      AWD2_STREAM_POSITIONS,
+      AWD2_DATA_FLOAT32,
       new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
     );
-    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, new Uint16Array([0, 1, 2]));
+    const idxStream = buildStream(AWD2_STREAM_INDICES, AWD2_DATA_UINT16, new Uint16Array([0, 1, 2]));
     const geomBody = buildTriangleGeometryBody('Geo', [{ streams: [posStream, idxStream] }]);
-    const matBody = buildMaterialBody('ColorMat', AWD_MATERIAL_TYPE_COLOR, [[AWD_MATERIAL_PROP_COLOR, 0x336699]]);
+    const matBody = buildMaterialBody('ColorMat', AWD2_MATERIAL_TYPE_COLOR, [[AWD2_MATERIAL_PROP_COLOR, 0x336699]]);
     const miBody = buildMeshInstanceBodyWithMaterials('Mesh', 0, IDENTITY_TRANSFORM, 1, [2]);
 
     const body = concatBytes(
-      buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+      buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
       geomBody,
-      buildBlockHeader(2, AWD_BLOCK_MATERIAL, matBody.length),
+      buildBlockHeader(2, AWD2_BLOCK_MATERIAL, matBody.length),
       matBody,
-      buildBlockHeader(3, AWD_BLOCK_MESH_INSTANCE, miBody.length),
+      buildBlockHeader(3, AWD2_BLOCK_MESH_INSTANCE, miBody.length),
       miBody,
     );
-    const scene = createSceneFromAwd(concatBytes(buildAwdHeader(body.length), body));
+    const scene = createSceneFromAwd2(concatBytes(buildAwdHeader(body.length), body));
 
     const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as BlinnPhongMaterial | null;
     expect(material).not.toBeNull();
@@ -674,28 +693,28 @@ describe('createSceneFromAwd', () => {
 
   it('emits an External ImageResourceReference for an external-URL texture', () => {
     const posStream = buildStream(
-      AWD_STREAM_POSITIONS,
-      AWD_DATA_FLOAT32,
+      AWD2_STREAM_POSITIONS,
+      AWD2_DATA_FLOAT32,
       new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
     );
-    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, new Uint16Array([0, 1, 2]));
+    const idxStream = buildStream(AWD2_STREAM_INDICES, AWD2_DATA_UINT16, new Uint16Array([0, 1, 2]));
     const geomBody = buildTriangleGeometryBody('Geo', [{ streams: [posStream, idxStream] }]);
-    const texBody = buildTextureBody('http://example.com/tex.png', AWD_TEXTURE_TYPE_EXTERNAL, new Uint8Array(0));
-    const matBody = buildMaterialBody('Mat', AWD_MATERIAL_TYPE_TEXTURE, [[AWD_MATERIAL_PROP_DIFFUSE_TEXTURE, 2]]);
+    const texBody = buildTextureBody('http://example.com/tex.png', AWD2_TEXTURE_TYPE_EXTERNAL, new Uint8Array(0));
+    const matBody = buildMaterialBody('Mat', AWD2_MATERIAL_TYPE_TEXTURE, [[AWD2_MATERIAL_PROP_DIFFUSE_TEXTURE, 2]]);
     const miBody = buildMeshInstanceBodyWithMaterials('Mesh', 0, IDENTITY_TRANSFORM, 1, [3]);
 
     const body = concatBytes(
-      buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+      buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
       geomBody,
-      buildBlockHeader(2, AWD_BLOCK_TEXTURE, texBody.length),
+      buildBlockHeader(2, AWD2_BLOCK_TEXTURE, texBody.length),
       texBody,
-      buildBlockHeader(3, AWD_BLOCK_MATERIAL, matBody.length),
+      buildBlockHeader(3, AWD2_BLOCK_MATERIAL, matBody.length),
       matBody,
-      buildBlockHeader(4, AWD_BLOCK_MESH_INSTANCE, miBody.length),
+      buildBlockHeader(4, AWD2_BLOCK_MESH_INSTANCE, miBody.length),
       miBody,
     );
     const warnings: string[] = [];
-    const scene = createSceneFromAwd(concatBytes(buildAwdHeader(body.length), body), warnings);
+    const scene = createSceneFromAwd2(concatBytes(buildAwdHeader(body.length), body), warnings);
 
     const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as BlinnPhongMaterial;
     expect(material.kind).toBe(BlinnPhongMaterialKind);
@@ -709,27 +728,27 @@ describe('createSceneFromAwd', () => {
 
   it('emits one Unresolved ref per shared texture and never decodes during parse', () => {
     const posStream = buildStream(
-      AWD_STREAM_POSITIONS,
-      AWD_DATA_FLOAT32,
+      AWD2_STREAM_POSITIONS,
+      AWD2_DATA_FLOAT32,
       new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
     );
-    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, new Uint16Array([0, 1, 2]));
+    const idxStream = buildStream(AWD2_STREAM_INDICES, AWD2_DATA_UINT16, new Uint16Array([0, 1, 2]));
     const geomBody = buildTriangleGeometryBody('Geo', [{ streams: [posStream, idxStream] }]);
-    const texBody = buildTextureBody('diffuse.png', AWD_TEXTURE_TYPE_EMBEDDED, FAKE_PNG_BYTES);
-    const matBody = buildMaterialBody('Mat', AWD_MATERIAL_TYPE_TEXTURE, [[AWD_MATERIAL_PROP_DIFFUSE_TEXTURE, 2]]);
+    const texBody = buildTextureBody('diffuse.png', AWD2_TEXTURE_TYPE_EMBEDDED, FAKE_PNG_BYTES);
+    const matBody = buildMaterialBody('Mat', AWD2_MATERIAL_TYPE_TEXTURE, [[AWD2_MATERIAL_PROP_DIFFUSE_TEXTURE, 2]]);
     const miBody = buildMeshInstanceBodyWithMaterials('Mesh', 0, IDENTITY_TRANSFORM, 1, [3]);
 
     const body = concatBytes(
-      buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+      buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
       geomBody,
-      buildBlockHeader(2, AWD_BLOCK_TEXTURE, texBody.length),
+      buildBlockHeader(2, AWD2_BLOCK_TEXTURE, texBody.length),
       texBody,
-      buildBlockHeader(3, AWD_BLOCK_MATERIAL, matBody.length),
+      buildBlockHeader(3, AWD2_BLOCK_MATERIAL, matBody.length),
       matBody,
-      buildBlockHeader(4, AWD_BLOCK_MESH_INSTANCE, miBody.length),
+      buildBlockHeader(4, AWD2_BLOCK_MESH_INSTANCE, miBody.length),
       miBody,
     );
-    const scene = createSceneFromAwd(concatBytes(buildAwdHeader(body.length), body));
+    const scene = createSceneFromAwd2(concatBytes(buildAwdHeader(body.length), body));
 
     const texture = ((getNodeChildren(scene.root)[0] as Mesh).materials[0] as BlinnPhongMaterial).diffuseMap!;
     expect(texture.image).toBeNull(); // parse never allocates or fills an ImageResource
@@ -741,7 +760,7 @@ describe('createSceneFromAwd', () => {
   });
 
   it('emits joints0/weights0 into the skinned layout and binds the skeleton via mesh.skin', () => {
-    const scene = createSceneFromAwd(SKINNED_TRIANGLE_AWD);
+    const scene = createSceneFromAwd2(SKINNED_TRIANGLE_AWD);
     const mesh = getNodeChildren(scene.root).find((c) => isMesh(c as SceneNode)) as unknown as Mesh;
     expect(mesh).toBeTruthy();
 
@@ -779,7 +798,7 @@ describe('createSceneFromAwd', () => {
   });
 
   it('binds the animation clip to the same joint nodes the mesh skins from (identity)', () => {
-    const scene = createSceneFromAwd(SKINNED_TRIANGLE_AWD);
+    const scene = createSceneFromAwd2(SKINNED_TRIANGLE_AWD);
     const mesh = getNodeChildren(scene.root).find((c) => isMesh(c as SceneNode)) as unknown as Mesh;
     const joints = mesh.skin!.skeleton.joints;
 
@@ -795,24 +814,24 @@ describe('createSceneFromAwd', () => {
 
   it('leaves a non-skinned mesh with skin null even when the file carries a skeleton', () => {
     const posStream = buildStream(
-      AWD_STREAM_POSITIONS,
-      AWD_DATA_FLOAT32,
+      AWD2_STREAM_POSITIONS,
+      AWD2_DATA_FLOAT32,
       new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
     );
-    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, new Uint16Array([0, 1, 2]));
+    const idxStream = buildStream(AWD2_STREAM_INDICES, AWD2_DATA_UINT16, new Uint16Array([0, 1, 2]));
     const geomBody = buildTriangleGeometryBody('Rigid', [{ streams: [posStream, idxStream] }]);
     const skelBody = buildSkeletonBody('Rig', [{ name: 'Root', parentIndex: 0, transform: IDENTITY_TRANSFORM }]);
     const miBody = buildMeshInstanceBody('RigidMesh', 0, IDENTITY_TRANSFORM, 1);
 
     const body = concatBytes(
-      buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+      buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
       geomBody,
-      buildBlockHeader(2, AWD_BLOCK_SKELETON, skelBody.length),
+      buildBlockHeader(2, AWD2_BLOCK_SKELETON, skelBody.length),
       skelBody,
-      buildBlockHeader(3, AWD_BLOCK_MESH_INSTANCE, miBody.length),
+      buildBlockHeader(3, AWD2_BLOCK_MESH_INSTANCE, miBody.length),
       miBody,
     );
-    const scene = createSceneFromAwd(concatBytes(buildAwdHeader(body.length), body));
+    const scene = createSceneFromAwd2(concatBytes(buildAwdHeader(body.length), body));
     const mesh = getNodeChildren(scene.root).find((c) => isMesh(c as SceneNode)) as unknown as Mesh;
 
     expect(mesh.geometry.layout.stride).toBe(48); // canonical (non-skinned) layout
@@ -899,9 +918,9 @@ function buildSkeletonAnimationBody(name: string, poses: Array<{ duration: numbe
   return concatBytes(...parts);
 }
 
-describe('createSceneFromAwd animations', () => {
+describe('createSceneFromAwd2 animations', () => {
   it('returns the scene plus the skeleton animation bound to the scene’s own joints', () => {
-    const scene = createSceneFromAwd(SKINNED_TRIANGLE_AWD);
+    const scene = createSceneFromAwd2(SKINNED_TRIANGLE_AWD);
     expect(Object.keys(scene.animations)).toHaveLength(1);
 
     // The clip binds the SAME joint nodes the imported scene's mesh skins from — no caller threading.
@@ -916,41 +935,60 @@ describe('createSceneFromAwd animations', () => {
 
   it('returns no animations for a static AWD with no skeleton', () => {
     const posStream = buildStream(
-      AWD_STREAM_POSITIONS,
-      AWD_DATA_FLOAT32,
+      AWD2_STREAM_POSITIONS,
+      AWD2_DATA_FLOAT32,
       new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
     );
-    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, new Uint16Array([0, 1, 2]));
+    const idxStream = buildStream(AWD2_STREAM_INDICES, AWD2_DATA_UINT16, new Uint16Array([0, 1, 2]));
     const geomBody = buildTriangleGeometryBody('Geo', [{ streams: [posStream, idxStream] }]);
     const miBody = buildMeshInstanceBody('Mesh', 0, IDENTITY_TRANSFORM, 1);
     const body = concatBytes(
-      buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+      buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
       geomBody,
-      buildBlockHeader(2, AWD_BLOCK_MESH_INSTANCE, miBody.length),
+      buildBlockHeader(2, AWD2_BLOCK_MESH_INSTANCE, miBody.length),
       miBody,
     );
-    const scene = createSceneFromAwd(concatBytes(buildAwdHeader(body.length), body));
+    const scene = createSceneFromAwd2(concatBytes(buildAwdHeader(body.length), body));
     expect(Object.keys(scene.animations)).toHaveLength(0);
     expect(getNodeChildren(scene.root).length).toBeGreaterThan(0);
   });
+
+  it('imports skeleton animations from a compressed body, not just the mesh', () => {
+    // Regression: the animation re-walk must run over the DECOMPRESSED body. Away3D exports compressed by
+    // default, so walking the still-deflated bytes finds no skeleton/animation blocks and silently drops
+    // every clip while the mesh (walked from the rehydrated source) still imports. The uncompressed twin
+    // SKINNED_TRIANGLE_AWD yields exactly one clip; the compressed file must yield the same, not zero.
+    const blockStream = SKINNED_TRIANGLE_AWD.subarray(AWD2_HEADER_BYTES);
+    const onDiskPayload = new Uint8Array(blockStream.length); // stand-in "compressed" bytes the stub inflates
+    const compressed = concatBytes(buildAwdHeader(onDiskPayload.length, AWD2_COMPRESSION_DEFLATE), onDiskPayload);
+    registerAwd2Decompressor(AWD2_COMPRESSION_DEFLATE, () => blockStream);
+    try {
+      const scene = createSceneFromAwd2(compressed);
+      expect(Object.keys(scene.animations)).toHaveLength(1);
+      const mesh = getNodeChildren(scene.root).find((c) => isMesh(c as SceneNode)) as unknown as Mesh;
+      expect(mesh.skin).not.toBeNull();
+    } finally {
+      registerAwd2Decompressor(AWD2_COMPRESSION_DEFLATE, null);
+    }
+  });
 });
 
-describe('parseAwd', () => {
+describe('parseAwd2', () => {
   it('returns a format-neutral document: a mesh node names its mesh by index, roots list it', () => {
     const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
     const indices = new Uint16Array([0, 1, 2]);
-    const posStream = buildStream(AWD_STREAM_POSITIONS, AWD_DATA_FLOAT32, positions);
-    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, indices);
+    const posStream = buildStream(AWD2_STREAM_POSITIONS, AWD2_DATA_FLOAT32, positions);
+    const idxStream = buildStream(AWD2_STREAM_INDICES, AWD2_DATA_UINT16, indices);
     const geomBody = buildTriangleGeometryBody('Triangle', [{ streams: [posStream, idxStream] }]);
     const meshBody = buildMeshInstanceBody('TriMesh', 0, IDENTITY_TRANSFORM, 1);
     const body = concatBytes(
-      buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+      buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
       geomBody,
-      buildBlockHeader(2, AWD_BLOCK_MESH_INSTANCE, meshBody.length),
+      buildBlockHeader(2, AWD2_BLOCK_MESH_INSTANCE, meshBody.length),
       meshBody,
     );
 
-    const doc = parseAwd(concatBytes(buildAwdHeader(body.length), body));
+    const doc = parseAwd2(concatBytes(buildAwdHeader(body.length), body));
     expect(doc.meshes).toHaveLength(1);
     expect(doc.nodes).toHaveLength(1);
     expect(doc.nodes[0].name).toBe('TriMesh');
@@ -964,21 +1002,21 @@ describe('parseAwd', () => {
 
   it('wires container parenting through node children index lists', () => {
     const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
-    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, new Uint16Array([0, 1, 2]));
-    const posStream = buildStream(AWD_STREAM_POSITIONS, AWD_DATA_FLOAT32, positions);
+    const idxStream = buildStream(AWD2_STREAM_INDICES, AWD2_DATA_UINT16, new Uint16Array([0, 1, 2]));
+    const posStream = buildStream(AWD2_STREAM_POSITIONS, AWD2_DATA_FLOAT32, positions);
     const geomBody = buildTriangleGeometryBody('Geom', [{ streams: [posStream, idxStream] }]);
     const containerBody = buildContainerBody('Parent', 0, IDENTITY_TRANSFORM);
     const meshBody = buildMeshInstanceBody('Child', 10, IDENTITY_TRANSFORM, 1);
     const body = concatBytes(
-      buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+      buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
       geomBody,
-      buildBlockHeader(10, AWD_BLOCK_CONTAINER, containerBody.length),
+      buildBlockHeader(10, AWD2_BLOCK_CONTAINER, containerBody.length),
       containerBody,
-      buildBlockHeader(11, AWD_BLOCK_MESH_INSTANCE, meshBody.length),
+      buildBlockHeader(11, AWD2_BLOCK_MESH_INSTANCE, meshBody.length),
       meshBody,
     );
 
-    const doc = parseAwd(concatBytes(buildAwdHeader(body.length), body));
+    const doc = parseAwd2(concatBytes(buildAwdHeader(body.length), body));
     const parentIndex = doc.nodes.findIndex((n) => n.name === 'Parent');
     const childIndex = doc.nodes.findIndex((n) => n.name === 'Child');
     expect(parentIndex).toBeGreaterThanOrEqual(0);
@@ -990,7 +1028,7 @@ describe('parseAwd', () => {
   });
 
   it('decomposes a skeleton into skins (joints by node index) + node-index-bound animation channels', () => {
-    const doc = parseAwd(SKINNED_TRIANGLE_AWD);
+    const doc = parseAwd2(SKINNED_TRIANGLE_AWD);
 
     // The skeleton becomes a skin whose joints are document node indices, with one inverse-bind per joint.
     expect(doc.skins).toHaveLength(1);
@@ -1015,21 +1053,21 @@ describe('parseAwd', () => {
 
   it('appends resolved materials to the document materials table by index', () => {
     const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
-    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, new Uint16Array([0, 1, 2]));
-    const posStream = buildStream(AWD_STREAM_POSITIONS, AWD_DATA_FLOAT32, positions);
+    const idxStream = buildStream(AWD2_STREAM_INDICES, AWD2_DATA_UINT16, new Uint16Array([0, 1, 2]));
+    const posStream = buildStream(AWD2_STREAM_POSITIONS, AWD2_DATA_FLOAT32, positions);
     const geomBody = buildTriangleGeometryBody('Geom', [{ streams: [posStream, idxStream] }]);
-    const matBody = buildMaterialBody('Red', AWD_MATERIAL_TYPE_COLOR, [[AWD_MATERIAL_PROP_COLOR, 0xff0000]]);
+    const matBody = buildMaterialBody('Red', AWD2_MATERIAL_TYPE_COLOR, [[AWD2_MATERIAL_PROP_COLOR, 0xff0000]]);
     const miBody = buildMeshInstanceBodyWithMaterials('Mesh', 0, IDENTITY_TRANSFORM, 1, [20]);
     const body = concatBytes(
-      buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+      buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
       geomBody,
-      buildBlockHeader(20, AWD_BLOCK_MATERIAL, matBody.length),
+      buildBlockHeader(20, AWD2_BLOCK_MATERIAL, matBody.length),
       matBody,
-      buildBlockHeader(2, AWD_BLOCK_MESH_INSTANCE, miBody.length),
+      buildBlockHeader(2, AWD2_BLOCK_MESH_INSTANCE, miBody.length),
       miBody,
     );
 
-    const doc = parseAwd(concatBytes(buildAwdHeader(body.length), body));
+    const doc = parseAwd2(concatBytes(buildAwdHeader(body.length), body));
     expect(doc.materials).toHaveLength(1);
     expect(doc.materials[0].name).toBe('Red');
     // The mesh's subset references the material by its document index.
@@ -1038,34 +1076,34 @@ describe('parseAwd', () => {
 
   it('records a texture block in resources and shares its reference across sampled Texture entities', () => {
     const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
-    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, new Uint16Array([0, 1, 2]));
-    const posStream = buildStream(AWD_STREAM_POSITIONS, AWD_DATA_FLOAT32, positions);
+    const idxStream = buildStream(AWD2_STREAM_INDICES, AWD2_DATA_UINT16, new Uint16Array([0, 1, 2]));
+    const posStream = buildStream(AWD2_STREAM_POSITIONS, AWD2_DATA_FLOAT32, positions);
     const geomBody = buildTriangleGeometryBody('Geom', [
       { streams: [posStream, idxStream] },
       { streams: [posStream, idxStream] },
     ]);
-    const texBody = buildTextureBody('diffuse.png', AWD_TEXTURE_TYPE_EMBEDDED, FAKE_PNG_BYTES);
-    const firstMaterial = buildMaterialBody('First', AWD_MATERIAL_TYPE_TEXTURE, [
-      [AWD_MATERIAL_PROP_DIFFUSE_TEXTURE, 2],
+    const texBody = buildTextureBody('diffuse.png', AWD2_TEXTURE_TYPE_EMBEDDED, FAKE_PNG_BYTES);
+    const firstMaterial = buildMaterialBody('First', AWD2_MATERIAL_TYPE_TEXTURE, [
+      [AWD2_MATERIAL_PROP_DIFFUSE_TEXTURE, 2],
     ]);
-    const secondMaterial = buildMaterialBody('Second', AWD_MATERIAL_TYPE_TEXTURE, [
-      [AWD_MATERIAL_PROP_DIFFUSE_TEXTURE, 2],
+    const secondMaterial = buildMaterialBody('Second', AWD2_MATERIAL_TYPE_TEXTURE, [
+      [AWD2_MATERIAL_PROP_DIFFUSE_TEXTURE, 2],
     ]);
     const meshBody = buildMeshInstanceBodyWithMaterials('Mesh', 0, IDENTITY_TRANSFORM, 1, [3, 4]);
     const body = concatBytes(
-      buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+      buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
       geomBody,
-      buildBlockHeader(2, AWD_BLOCK_TEXTURE, texBody.length),
+      buildBlockHeader(2, AWD2_BLOCK_TEXTURE, texBody.length),
       texBody,
-      buildBlockHeader(3, AWD_BLOCK_MATERIAL, firstMaterial.length),
+      buildBlockHeader(3, AWD2_BLOCK_MATERIAL, firstMaterial.length),
       firstMaterial,
-      buildBlockHeader(4, AWD_BLOCK_MATERIAL, secondMaterial.length),
+      buildBlockHeader(4, AWD2_BLOCK_MATERIAL, secondMaterial.length),
       secondMaterial,
-      buildBlockHeader(5, AWD_BLOCK_MESH_INSTANCE, meshBody.length),
+      buildBlockHeader(5, AWD2_BLOCK_MESH_INSTANCE, meshBody.length),
       meshBody,
     );
 
-    const doc = parseAwd(concatBytes(buildAwdHeader(body.length), body));
+    const doc = parseAwd2(concatBytes(buildAwdHeader(body.length), body));
     const first = doc.materials[0] as BlinnPhongMaterial;
     const second = doc.materials[1] as BlinnPhongMaterial;
     expect(doc.resources).toHaveLength(1);
@@ -1076,7 +1114,7 @@ describe('parseAwd', () => {
 
   it('returns an empty document with a warning for compressed input', () => {
     const warnings: string[] = [];
-    const doc = parseAwd(buildAwdHeader(0, AWD_COMPRESSION_DEFLATE), warnings);
+    const doc = parseAwd2(buildAwdHeader(0, AWD2_COMPRESSION_DEFLATE), warnings);
     expect(doc.nodes).toHaveLength(0);
     expect(doc.meshes).toHaveLength(0);
     expect(doc.scenes).toHaveLength(1);
@@ -1085,26 +1123,34 @@ describe('parseAwd', () => {
   });
 });
 
-describe('parseAwdSkeletonAnimations', () => {
+describe('parseAwd2SkeletonAnimations', () => {
+  it('rejects a version-3 (AWD3) file by version with an empty map and an AWD3-naming warning', () => {
+    const awd3 = buildAwdHeader(0, 0, 0, 3);
+    const warnings: string[] = [];
+    const clips = parseAwd2SkeletonAnimations(awd3, [], warnings);
+    expect(Object.keys(clips)).toHaveLength(0);
+    expect(warnings.some((w) => w.includes('version 3') && w.includes('AWD2') && w.includes('AWD3'))).toBe(true);
+  });
+
   it('binds channels to the provided joint nodes in skeleton order', () => {
     // parentIndex 0 = root (no parent); parentIndex 1 = parent is joint[0] (1-based).
     const skeletonBody = buildSkeletonBody('TestSkeleton', [
       { name: 'Root', parentIndex: 0, transform: IDENTITY_TRANSFORM },
       { name: 'Child', parentIndex: 1, transform: [1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 0] },
     ]);
-    const skeletonBlock = buildBlockHeader(1, AWD_BLOCK_SKELETON, skeletonBody.length);
+    const skeletonBlock = buildBlockHeader(1, AWD2_BLOCK_SKELETON, skeletonBody.length);
 
     const pose0Body = buildSkeletonPoseBody('Pose0', [IDENTITY_TRANSFORM, [1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 0]]);
-    const pose0Block = buildBlockHeader(2, AWD_BLOCK_SKELETON_POSE, pose0Body.length);
+    const pose0Block = buildBlockHeader(2, AWD2_BLOCK_SKELETON_POSE, pose0Body.length);
 
     const pose1Body = buildSkeletonPoseBody('Pose1', [IDENTITY_TRANSFORM, [1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 0]]);
-    const pose1Block = buildBlockHeader(3, AWD_BLOCK_SKELETON_POSE, pose1Body.length);
+    const pose1Block = buildBlockHeader(3, AWD2_BLOCK_SKELETON_POSE, pose1Body.length);
 
     const animBody = buildSkeletonAnimationBody('Walk', [
       { duration: 500, poseBlockId: 2 },
       { duration: 500, poseBlockId: 3 },
     ]);
-    const animBlock = buildBlockHeader(4, AWD_BLOCK_SKELETON_ANIMATION, animBody.length);
+    const animBlock = buildBlockHeader(4, AWD2_BLOCK_SKELETON_ANIMATION, animBody.length);
 
     const body = concatBytes(
       skeletonBlock,
@@ -1135,19 +1181,19 @@ describe('parseAwdSkeletonAnimations', () => {
     const skeletonBody = buildSkeletonBody('Skeleton', [
       { name: 'Joint0', parentIndex: 0, transform: IDENTITY_TRANSFORM },
     ]);
-    const skeletonBlock = buildBlockHeader(1, AWD_BLOCK_SKELETON, skeletonBody.length);
+    const skeletonBlock = buildBlockHeader(1, AWD2_BLOCK_SKELETON, skeletonBody.length);
 
     const pose0Body = buildSkeletonPoseBody('P0', [[1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]]);
-    const pose0Block = buildBlockHeader(2, AWD_BLOCK_SKELETON_POSE, pose0Body.length);
+    const pose0Block = buildBlockHeader(2, AWD2_BLOCK_SKELETON_POSE, pose0Body.length);
 
     const pose1Body = buildSkeletonPoseBody('P1', [[1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 20, 30]]);
-    const pose1Block = buildBlockHeader(3, AWD_BLOCK_SKELETON_POSE, pose1Body.length);
+    const pose1Block = buildBlockHeader(3, AWD2_BLOCK_SKELETON_POSE, pose1Body.length);
 
     const animBody = buildSkeletonAnimationBody('Anim', [
       { duration: 1000, poseBlockId: 2 },
       { duration: 1000, poseBlockId: 3 },
     ]);
-    const animBlock = buildBlockHeader(4, AWD_BLOCK_SKELETON_ANIMATION, animBody.length);
+    const animBlock = buildBlockHeader(4, AWD2_BLOCK_SKELETON_ANIMATION, animBody.length);
 
     const body = concatBytes(
       skeletonBlock,
@@ -1185,18 +1231,18 @@ describe('parseAwdSkeletonAnimations', () => {
     const skeletonBody = buildSkeletonBody('Skeleton', [
       { name: 'Joint0', parentIndex: 0, transform: IDENTITY_TRANSFORM },
     ]);
-    const skeletonBlock = buildBlockHeader(1, AWD_BLOCK_SKELETON, skeletonBody.length);
+    const skeletonBlock = buildBlockHeader(1, AWD2_BLOCK_SKELETON, skeletonBody.length);
     const pose0Body = buildSkeletonPoseBody('P0', [[1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]]);
-    const pose0Block = buildBlockHeader(2, AWD_BLOCK_SKELETON_POSE, pose0Body.length);
+    const pose0Block = buildBlockHeader(2, AWD2_BLOCK_SKELETON_POSE, pose0Body.length);
     // A diagonal 2/3/4 scale basis. convertTransformLhToRh (S·M·S) preserves diagonal scale, so it
     // decomposes back to exactly (2,3,4).
     const pose1Body = buildSkeletonPoseBody('P1', [[2, 0, 0, 0, 3, 0, 0, 0, 4, 0, 0, 0]]);
-    const pose1Block = buildBlockHeader(3, AWD_BLOCK_SKELETON_POSE, pose1Body.length);
+    const pose1Block = buildBlockHeader(3, AWD2_BLOCK_SKELETON_POSE, pose1Body.length);
     const animBody = buildSkeletonAnimationBody('Anim', [
       { duration: 1000, poseBlockId: 2 },
       { duration: 1000, poseBlockId: 3 },
     ]);
-    const animBlock = buildBlockHeader(4, AWD_BLOCK_SKELETON_ANIMATION, animBody.length);
+    const animBlock = buildBlockHeader(4, AWD2_BLOCK_SKELETON_ANIMATION, animBody.length);
     const body = concatBytes(
       skeletonBlock,
       skeletonBody,
@@ -1225,16 +1271,16 @@ describe('parseAwdSkeletonAnimations', () => {
     const skeletonBody = buildSkeletonBody('Skeleton', [
       { name: 'Joint0', parentIndex: 0, transform: IDENTITY_TRANSFORM },
     ]);
-    const skeletonBlock = buildBlockHeader(1, AWD_BLOCK_SKELETON, skeletonBody.length);
+    const skeletonBlock = buildBlockHeader(1, AWD2_BLOCK_SKELETON, skeletonBody.length);
     const pose0Body = buildSkeletonPoseBody('P0', [[1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]]);
-    const pose0Block = buildBlockHeader(2, AWD_BLOCK_SKELETON_POSE, pose0Body.length);
+    const pose0Block = buildBlockHeader(2, AWD2_BLOCK_SKELETON_POSE, pose0Body.length);
     const pose1Body = buildSkeletonPoseBody('P1', [[1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 0]]);
-    const pose1Block = buildBlockHeader(3, AWD_BLOCK_SKELETON_POSE, pose1Body.length);
+    const pose1Block = buildBlockHeader(3, AWD2_BLOCK_SKELETON_POSE, pose1Body.length);
     const animBody = buildSkeletonAnimationBody('Anim', [
       { duration: 1000, poseBlockId: 2 },
       { duration: 1000, poseBlockId: 3 },
     ]);
-    const animBlock = buildBlockHeader(4, AWD_BLOCK_SKELETON_ANIMATION, animBody.length);
+    const animBlock = buildBlockHeader(4, AWD2_BLOCK_SKELETON_ANIMATION, animBody.length);
     const body = concatBytes(
       skeletonBlock,
       skeletonBody,
@@ -1257,13 +1303,13 @@ describe('parseAwdSkeletonAnimations', () => {
     const skeletonBody = buildSkeletonBody('Skeleton', [
       { name: 'Bone', parentIndex: 0, transform: IDENTITY_TRANSFORM },
     ]);
-    const skeletonBlock = buildBlockHeader(1, AWD_BLOCK_SKELETON, skeletonBody.length);
+    const skeletonBlock = buildBlockHeader(1, AWD2_BLOCK_SKELETON, skeletonBody.length);
 
     const poseBody = buildSkeletonPoseBody('P0', [IDENTITY_TRANSFORM]);
-    const poseBlock = buildBlockHeader(2, AWD_BLOCK_SKELETON_POSE, poseBody.length);
+    const poseBlock = buildBlockHeader(2, AWD2_BLOCK_SKELETON_POSE, poseBody.length);
 
     const animBody = buildSkeletonAnimationBody('Anim', [{ duration: 100, poseBlockId: 2 }]);
-    const animBlock = buildBlockHeader(3, AWD_BLOCK_SKELETON_ANIMATION, animBody.length);
+    const animBlock = buildBlockHeader(3, AWD2_BLOCK_SKELETON_ANIMATION, animBody.length);
 
     const body = concatBytes(skeletonBlock, skeletonBody, poseBlock, poseBody, animBlock, animBody);
     const awd = concatBytes(buildAwdHeader(body.length), body);
@@ -1279,13 +1325,13 @@ describe('parseAwdSkeletonAnimations', () => {
     const skeletonBody = buildSkeletonBody('Skeleton', [
       { name: 'Joint0', parentIndex: 0, transform: IDENTITY_TRANSFORM },
     ]);
-    const skeletonBlock = buildBlockHeader(1, AWD_BLOCK_SKELETON, skeletonBody.length);
+    const skeletonBlock = buildBlockHeader(1, AWD2_BLOCK_SKELETON, skeletonBody.length);
 
     const poseBody = buildSkeletonPoseBody('P0', [null]);
-    const poseBlock = buildBlockHeader(2, AWD_BLOCK_SKELETON_POSE, poseBody.length);
+    const poseBlock = buildBlockHeader(2, AWD2_BLOCK_SKELETON_POSE, poseBody.length);
 
     const animBody = buildSkeletonAnimationBody('Anim', [{ duration: 100, poseBlockId: 2 }]);
-    const animBlock = buildBlockHeader(3, AWD_BLOCK_SKELETON_ANIMATION, animBody.length);
+    const animBlock = buildBlockHeader(3, AWD2_BLOCK_SKELETON_ANIMATION, animBody.length);
 
     const body = concatBytes(skeletonBlock, skeletonBody, poseBlock, poseBody, animBlock, animBody);
     const awd = concatBytes(buildAwdHeader(body.length), body);
@@ -1301,13 +1347,13 @@ describe('parseAwdSkeletonAnimations', () => {
       { name: 'Root', parentIndex: 0, transform: IDENTITY_TRANSFORM },
       { name: 'Child', parentIndex: 1, transform: IDENTITY_TRANSFORM },
     ]);
-    const skeletonBlock = buildBlockHeader(1, AWD_BLOCK_SKELETON, skeletonBody.length);
+    const skeletonBlock = buildBlockHeader(1, AWD2_BLOCK_SKELETON, skeletonBody.length);
 
     const poseBody = buildSkeletonPoseBody('P0', [IDENTITY_TRANSFORM, IDENTITY_TRANSFORM]);
-    const poseBlock = buildBlockHeader(2, AWD_BLOCK_SKELETON_POSE, poseBody.length);
+    const poseBlock = buildBlockHeader(2, AWD2_BLOCK_SKELETON_POSE, poseBody.length);
 
     const animBody = buildSkeletonAnimationBody('Anim', [{ duration: 100, poseBlockId: 2 }]);
-    const animBlock = buildBlockHeader(3, AWD_BLOCK_SKELETON_ANIMATION, animBody.length);
+    const animBlock = buildBlockHeader(3, AWD2_BLOCK_SKELETON_ANIMATION, animBody.length);
 
     const body = concatBytes(skeletonBlock, skeletonBody, poseBlock, poseBody, animBlock, animBody);
     const awd = concatBytes(buildAwdHeader(body.length), body);
@@ -1330,7 +1376,7 @@ describe('parseAwdSkeletonAnimations', () => {
     const skeletonBody = buildSkeletonBody('Skeleton', [
       { name: 'Root', parentIndex: 0, transform: IDENTITY_TRANSFORM },
     ]);
-    const skeletonBlock = buildBlockHeader(1, AWD_BLOCK_SKELETON, skeletonBody.length);
+    const skeletonBlock = buildBlockHeader(1, AWD2_BLOCK_SKELETON, skeletonBody.length);
 
     const body = concatBytes(skeletonBlock, skeletonBody);
     const awd = concatBytes(buildAwdHeader(body.length), body);
@@ -1360,10 +1406,10 @@ describe('parseAwdSkeletonAnimations', () => {
     const skeletonBody = buildSkeletonBody('Skeleton', [
       { name: 'Root', parentIndex: 0, transform: IDENTITY_TRANSFORM },
     ]);
-    const skeletonBlock = buildBlockHeader(1, AWD_BLOCK_SKELETON, skeletonBody.length);
+    const skeletonBlock = buildBlockHeader(1, AWD2_BLOCK_SKELETON, skeletonBody.length);
 
     const animBody = buildSkeletonAnimationBody('Anim', [{ duration: 100, poseBlockId: 99 }]);
-    const animBlock = buildBlockHeader(2, AWD_BLOCK_SKELETON_ANIMATION, animBody.length);
+    const animBlock = buildBlockHeader(2, AWD2_BLOCK_SKELETON_ANIMATION, animBody.length);
 
     const body = concatBytes(skeletonBlock, skeletonBody, animBlock, animBody);
     const awd = concatBytes(buildAwdHeader(body.length), body);
@@ -1378,19 +1424,19 @@ describe('parseAwdSkeletonAnimations', () => {
     const skeletonBody = buildSkeletonBody('Skeleton', [
       { name: 'Root', parentIndex: 0, transform: IDENTITY_TRANSFORM },
     ]);
-    const skeletonBlock = buildBlockHeader(1, AWD_BLOCK_SKELETON, skeletonBody.length);
+    const skeletonBlock = buildBlockHeader(1, AWD2_BLOCK_SKELETON, skeletonBody.length);
 
     const pose0Body = buildSkeletonPoseBody('P0', [IDENTITY_TRANSFORM]);
-    const pose0Block = buildBlockHeader(2, AWD_BLOCK_SKELETON_POSE, pose0Body.length);
+    const pose0Block = buildBlockHeader(2, AWD2_BLOCK_SKELETON_POSE, pose0Body.length);
 
     const pose1Body = buildSkeletonPoseBody('P1', [IDENTITY_TRANSFORM]);
-    const pose1Block = buildBlockHeader(3, AWD_BLOCK_SKELETON_POSE, pose1Body.length);
+    const pose1Block = buildBlockHeader(3, AWD2_BLOCK_SKELETON_POSE, pose1Body.length);
 
     const animBody = buildSkeletonAnimationBody('Anim', [
       { duration: 250, poseBlockId: 2 },
       { duration: 750, poseBlockId: 3 },
     ]);
-    const animBlock = buildBlockHeader(4, AWD_BLOCK_SKELETON_ANIMATION, animBody.length);
+    const animBlock = buildBlockHeader(4, AWD2_BLOCK_SKELETON_ANIMATION, animBody.length);
 
     const body = concatBytes(
       skeletonBlock,
@@ -1416,19 +1462,19 @@ describe('parseAwdSkeletonAnimations', () => {
     const skeletonBody = buildSkeletonBody('Skeleton', [
       { name: 'Root', parentIndex: 0, transform: IDENTITY_TRANSFORM },
     ]);
-    const skeletonBlock = buildBlockHeader(1, AWD_BLOCK_SKELETON, skeletonBody.length);
+    const skeletonBlock = buildBlockHeader(1, AWD2_BLOCK_SKELETON, skeletonBody.length);
 
     // Two poses at distinct X so each animation's sampled translation is distinguishable.
     const idlePoseBody = buildSkeletonPoseBody('IdlePose', [[1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 0]]);
-    const idlePoseBlock = buildBlockHeader(2, AWD_BLOCK_SKELETON_POSE, idlePoseBody.length);
+    const idlePoseBlock = buildBlockHeader(2, AWD2_BLOCK_SKELETON_POSE, idlePoseBody.length);
     const attackPoseBody = buildSkeletonPoseBody('AttackPose', [[1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 0]]);
-    const attackPoseBlock = buildBlockHeader(3, AWD_BLOCK_SKELETON_POSE, attackPoseBody.length);
+    const attackPoseBlock = buildBlockHeader(3, AWD2_BLOCK_SKELETON_POSE, attackPoseBody.length);
 
     // 'idle' first in file order, 'attack' second — order is what default selection falls back to.
     const idleAnimBody = buildSkeletonAnimationBody('idle', [{ duration: 100, poseBlockId: 2 }]);
-    const idleAnimBlock = buildBlockHeader(4, AWD_BLOCK_SKELETON_ANIMATION, idleAnimBody.length);
+    const idleAnimBlock = buildBlockHeader(4, AWD2_BLOCK_SKELETON_ANIMATION, idleAnimBody.length);
     const attackAnimBody = buildSkeletonAnimationBody('attack', [{ duration: 100, poseBlockId: 3 }]);
-    const attackAnimBlock = buildBlockHeader(5, AWD_BLOCK_SKELETON_ANIMATION, attackAnimBody.length);
+    const attackAnimBlock = buildBlockHeader(5, AWD2_BLOCK_SKELETON_ANIMATION, attackAnimBody.length);
 
     const body = concatBytes(
       skeletonBlock,
@@ -1451,14 +1497,14 @@ describe('parseAwdSkeletonAnimations', () => {
     };
 
     // Every named block is keyed into the map, each sampling its own poses ('idle' X=3, 'attack' X=9).
-    const clips = parseAwdSkeletonAnimations(awd, [createSceneNode()]);
+    const clips = parseAwd2SkeletonAnimations(awd, [createSceneNode()]);
     expect(Object.keys(clips).sort()).toEqual(['attack', 'idle']);
     expect(sampleX(clips.idle)).toBeCloseTo(3);
     expect(sampleX(clips.attack)).toBeCloseTo(9);
   });
 });
 
-describe('registerAwdDecompressor', () => {
+describe('registerAwd2Decompressor', () => {
   // A trivial reversible "codec": the compressed body is a 4-byte marker followed by the real block
   // stream, and the decompressor strips the marker. A compressed length that differs from the inflated
   // length exercises the header body-length rewrite the rehydration performs.
@@ -1475,14 +1521,14 @@ describe('registerAwdDecompressor', () => {
   };
 
   afterEach(() => {
-    registerAwdDecompressor(AWD_COMPRESSION_DEFLATE, null);
-    registerAwdDecompressor(AWD_COMPRESSION_LZMA, null);
+    registerAwd2Decompressor(AWD2_COMPRESSION_DEFLATE, null);
+    registerAwd2Decompressor(AWD2_COMPRESSION_LZMA, null);
   });
 
   it('inflates a compressed geometry file through the registered codec, matching the uncompressed parse', () => {
-    registerAwdDecompressor(AWD_COMPRESSION_DEFLATE, stripMarker);
-    const fromCompressed = parseAwd(asCompressed(SKINNED_TRIANGLE_AWD, AWD_COMPRESSION_DEFLATE));
-    const fromUncompressed = parseAwd(SKINNED_TRIANGLE_AWD);
+    registerAwd2Decompressor(AWD2_COMPRESSION_DEFLATE, stripMarker);
+    const fromCompressed = parseAwd2(asCompressed(SKINNED_TRIANGLE_AWD, AWD2_COMPRESSION_DEFLATE));
+    const fromUncompressed = parseAwd2(SKINNED_TRIANGLE_AWD);
     expect(fromCompressed.meshes).toHaveLength(fromUncompressed.meshes.length);
     expect(fromCompressed.nodes).toHaveLength(fromUncompressed.nodes.length);
     expect(getMeshGeometryVertexCount(fromCompressed.meshes[0].geometry)).toBe(
@@ -1491,9 +1537,9 @@ describe('registerAwdDecompressor', () => {
   });
 
   it('routes compressed skeleton-animation files through the same seam', () => {
-    registerAwdDecompressor(AWD_COMPRESSION_DEFLATE, stripMarker);
+    registerAwd2Decompressor(AWD2_COMPRESSION_DEFLATE, stripMarker);
     const joints = [createSceneNode(), createSceneNode()];
-    const compressed = asCompressed(SKINNED_TRIANGLE_AWD, AWD_COMPRESSION_DEFLATE);
+    const compressed = asCompressed(SKINNED_TRIANGLE_AWD, AWD2_COMPRESSION_DEFLATE);
     const clip = firstAwdClip(compressed, joints);
     expect(clip).toBeDefined();
     expect(clip!.channels).toHaveLength(4); // 2 joints × (translation + rotation)
@@ -1501,24 +1547,24 @@ describe('registerAwdDecompressor', () => {
 
   it('warns and returns empty when the compression method has no registered codec', () => {
     const warnings: string[] = [];
-    const scene = createSceneFromAwd(asCompressed(SKINNED_TRIANGLE_AWD, AWD_COMPRESSION_DEFLATE), warnings);
+    const scene = createSceneFromAwd2(asCompressed(SKINNED_TRIANGLE_AWD, AWD2_COMPRESSION_DEFLATE), warnings);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
     expect(warnings.some((w) => w.includes('no registered decompressor'))).toBe(true);
   });
 
   it('warns and returns empty when the registered codec fails to inflate', () => {
-    registerAwdDecompressor(AWD_COMPRESSION_DEFLATE, () => null);
+    registerAwd2Decompressor(AWD2_COMPRESSION_DEFLATE, () => null);
     const warnings: string[] = [];
-    const scene = createSceneFromAwd(asCompressed(SKINNED_TRIANGLE_AWD, AWD_COMPRESSION_DEFLATE), warnings);
+    const scene = createSceneFromAwd2(asCompressed(SKINNED_TRIANGLE_AWD, AWD2_COMPRESSION_DEFLATE), warnings);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
     expect(warnings.some((w) => w.includes('failed to inflate'))).toBe(true);
   });
 
   it('clears a codec when registered with null', () => {
-    registerAwdDecompressor(AWD_COMPRESSION_DEFLATE, stripMarker);
-    registerAwdDecompressor(AWD_COMPRESSION_DEFLATE, null);
+    registerAwd2Decompressor(AWD2_COMPRESSION_DEFLATE, stripMarker);
+    registerAwd2Decompressor(AWD2_COMPRESSION_DEFLATE, null);
     const warnings: string[] = [];
-    parseAwd(asCompressed(SKINNED_TRIANGLE_AWD, AWD_COMPRESSION_DEFLATE), warnings);
+    parseAwd2(asCompressed(SKINNED_TRIANGLE_AWD, AWD2_COMPRESSION_DEFLATE), warnings);
     expect(warnings.some((w) => w.includes('no registered decompressor'))).toBe(true);
   });
 
@@ -1553,14 +1599,14 @@ describe('registerAwdDecompressor', () => {
   };
 
   it('reconstructs the identical scene from a genuinely zlib-compressed AWD via the vendored inflater', () => {
-    registerAwdDeflateDecompressor();
+    registerAwd2DeflateDecompressor();
     const compressedBody = decodeBase64(SKINNED_BODY_COMPRESSED);
     const header = SKINNED_TRIANGLE_AWD.slice(0, 12);
-    header[7] = AWD_COMPRESSION_DEFLATE;
+    header[7] = AWD2_COMPRESSION_DEFLATE;
     new DataView(header.buffer).setUint32(8, compressedBody.length, true);
 
-    const fromCompressed = parseAwd(concatBytes(header, compressedBody));
-    const fromUncompressed = parseAwd(SKINNED_TRIANGLE_AWD);
+    const fromCompressed = parseAwd2(concatBytes(header, compressedBody));
+    const fromUncompressed = parseAwd2(SKINNED_TRIANGLE_AWD);
     expect(fromCompressed.meshes).toHaveLength(fromUncompressed.meshes.length);
     expect(fromCompressed.nodes).toHaveLength(fromUncompressed.nodes.length);
     expect(getMeshGeometryVertexCount(fromCompressed.meshes[0].geometry)).toBe(
