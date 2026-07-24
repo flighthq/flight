@@ -101,6 +101,40 @@ The fix lands in two repos:
   shims, `_Map`/`_Set` routing, `_Runtime`. **Port-side-only** items include the `setInterval`
   bug (non-JS `setInterval` uses `haxe.Timer.delay`, so it fires once instead of repeating).
 
+## Package shape
+
+Two kinds of seam, which get different package shapes:
+
+- **Runtime seams** — the host provides/registers the implementation, possibly swapped at runtime:
+  full `get*Backend`/`set*Backend`/`register*`/`createWeb*Backend` surface. `net`, `image-codec`,
+  the platform suite. A native host genuinely supplies HTTP / decoders / dialogs.
+- **Port-time seams** — exactly one implementation per build; the *port* substitutes the module
+  (`_internal.backend.*`), no runtime choice, **no `set*Backend`**. On JS these are thin functions
+  straight over the native API (zero indirection). `bytes`, `cancel`, most of `future`, encoding.
+
+`@flighthq/bytes` (the worked example) is port-time: types (`Bytes`, view interfaces) in
+`@flighthq/types`; the package is thin functions only — `createBytes`, `viewFloat32`/u8/u16/u32/…,
+`readFloat32(bytes, off, le)` / `writeFloat32` (the `DataView` parse ops), `subarrayBytes`,
+`setBytes`, `byteLength`. Views stay indexable (`view[i]`). On JS the functions inline to native
+typed arrays (zero cost); the port replaces the module with `Bytes`-backed impls. No runtime
+backend object — the seam *is* the function surface. (Named `bytes`, not `buffer`, which is
+overloaded by GPU/vertex buffers.)
+
+| Package | Kind | Shape | Depends on |
+|---|---|---|---|
+| `@flighthq/bytes` | port-time | thin fns, no backend object | `types` |
+| `@flighthq/cancel` | port-time | `CancelToken`/`CancelSource`, tiny | `types` |
+| `@flighthq/future` | port-time | `Future`/`Deferred` + combinators | `cancel` (+ scheduler) |
+| `@flighthq/scheduler` | mixed | timer/rAF/microtask/`now`; `clock`+`future` consume it | `types` (audit) |
+| `@flighthq/encoding` | port-time | base64 / UTF-8 byte↔string | `bytes` |
+| `@flighthq/net` (exists) | runtime | already `*Backend`; add cancellation | `future`, `cancel`, `bytes` |
+| `@flighthq/image-codec` (exists) | runtime | already the decode seam | `future`, `bytes` |
+
+`cancel` is its own package (not folded into `future`) so `net` can cancel without importing the
+async layer. `bytes` + `cancel` are the new bedrock leaves; `bytes` becomes the widest new
+foundational dependency (`scene-formats`, `surface`, `mesh`, `render-*` all gain it) — appropriate
+for the binary bedrock.
+
 ## The minimal portable foundation
 
 Per the port analysis, a native Lime scene stack needs: **Future** + **byte buffers & typed views**
