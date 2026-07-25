@@ -106,6 +106,7 @@ export function createGlCacheState(screenState: GlRenderState): GlRenderState {
   cacheRuntime.spriteBatchInstanceBuffer = null;
   cacheRuntime.spriteBatchInstanceData = new Float32Array(0);
   cacheRuntime.spriteBatchTexture = null;
+  cacheRuntime.spriteBatchSmoothing = null;
 
   _cacheStateScreen.set(cacheState, screenState);
   return cacheState;

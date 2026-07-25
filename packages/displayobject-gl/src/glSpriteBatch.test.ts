@@ -159,6 +159,33 @@ describe('prepareGlSpriteBatchWrite', () => {
 
     expect(runtime.spriteBatchInstanceData.length).toBeGreaterThan(initialFloats);
   });
+
+  it('flushes when per-bitmap smoothing changes on the same texture', () => {
+    const { state, gl } = createGlState();
+    const runtime = getGlRenderStateRuntime(state);
+    const tex = makeTexture();
+
+    // Same texture/blend/material, but a NEAREST bitmap must not share a bind with a LINEAR one.
+    prepareGlSpriteBatchWrite(state, tex, null, null, defaultGlMaterialRenderer, 1, false);
+    runtime.spriteBatchCount = 1;
+
+    prepareGlSpriteBatchWrite(state, tex, null, null, defaultGlMaterialRenderer, 1, true);
+
+    expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
+    expect(runtime.spriteBatchSmoothing).toBe(true);
+  });
+
+  it('keeps same-smoothing bitmaps in one batch (no spurious flush)', () => {
+    const { state, gl } = createGlState();
+    const runtime = getGlRenderStateRuntime(state);
+    const tex = makeTexture();
+
+    prepareGlSpriteBatchWrite(state, tex, null, null, defaultGlMaterialRenderer, 1, true);
+    runtime.spriteBatchCount = 1;
+    prepareGlSpriteBatchWrite(state, tex, null, null, defaultGlMaterialRenderer, 1, true);
+
+    expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
+  });
 });
 
 describe('recordGlSpriteBatchColorTransform', () => {

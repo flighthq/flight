@@ -149,8 +149,10 @@ export function flushGlSpriteBatch(state: GlRenderState): void {
   const material = runtime.spriteBatchMaterial;
   const renderer = runtime.spriteBatchMaterialRenderer!;
   const floats = runtime.spriteBatchMaterialFloats;
+  const smoothing = runtime.spriteBatchSmoothing;
   runtime.spriteBatchCount = 0;
   runtime.spriteBatchTexture = null;
+  runtime.spriteBatchSmoothing = null;
   runtime.spriteBatchBlendMode = null;
   runtime.spriteBatchMaterial = null;
   runtime.spriteBatchMaterialRenderer = null;
@@ -168,7 +170,7 @@ export function flushGlSpriteBatch(state: GlRenderState): void {
   gl.bufferSubData(gl.ARRAY_BUFFER, 0, runtime.spriteBatchInstanceData, 0, count * SPRITE_INSTANCE_FLOATS);
 
   state.applyBlendMode?.(state, blendMode);
-  bindGlImageResourceTexture(state, texture);
+  bindGlImageResourceTexture(state, texture, null, smoothing);
 
   // The color-adjustment fold is opt-in (enableGlColorAdjustment): when installed it selects and binds
   // its program for a tinted batch, returning true; when absent, or for an untinted batch, the lean
@@ -218,10 +220,12 @@ export function packGlSpriteBatchMaterialInstance(
 }
 
 // Ensures the sprite batch can accept up to `maxInstances` more instances for the given texture,
-// blend mode, and material. Flushes the current batch when any of the three changes (material is
-// compared by reference) or capacity is exceeded. The color transform is orthogonal — it never keys
-// the batch. Returns the float index in spriteBatchInstanceData where the caller should begin writing
-// base instance data; the caller increments state.spriteBatchCount and records per-instance data.
+// blend mode, material, and smoothing. Flushes the current batch when any of the four changes (material
+// is compared by reference) or capacity is exceeded. `smoothing` is a per-bitmap sampling preference
+// (`true`/`false` force LINEAR/NEAREST, `null` uses the global `allowSmoothing` default); it keys the
+// batch because filtering is a per-texture-bind property. The color transform is orthogonal — it never
+// keys the batch. Returns the float index in spriteBatchInstanceData where the caller should begin
+// writing base instance data; the caller increments state.spriteBatchCount and records per-instance data.
 export function prepareGlSpriteBatchWrite(
   state: GlRenderState,
   texture: Readonly<ImageResource>,
@@ -229,16 +233,19 @@ export function prepareGlSpriteBatchWrite(
   material: Material | null,
   materialRenderer: GlMaterialRenderer,
   maxInstances: number,
+  smoothing: boolean | null = null,
 ): number {
   const runtime = getGlRenderStateRuntime(state);
   if (
     texture !== runtime.spriteBatchTexture ||
     blendMode !== runtime.spriteBatchBlendMode ||
-    material !== runtime.spriteBatchMaterial
+    material !== runtime.spriteBatchMaterial ||
+    smoothing !== runtime.spriteBatchSmoothing
   ) {
     flushGlSpriteBatch(state);
   }
   runtime.spriteBatchTexture = texture;
+  runtime.spriteBatchSmoothing = smoothing;
   runtime.spriteBatchBlendMode = blendMode;
   runtime.spriteBatchMaterial = material;
   runtime.spriteBatchMaterialRenderer = materialRenderer;
