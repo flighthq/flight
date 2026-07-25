@@ -1,4 +1,4 @@
-import { createClipRegionFromPath } from '@flighthq/clip';
+import { createClipRegionFromPath, intersectClipRegions, transformClipRegion, unionClipRegions } from '@flighthq/clip';
 import { packColor } from '@flighthq/color';
 import { createBitmap, createDisplayContainer } from '@flighthq/displayobject';
 import {
@@ -45,6 +45,7 @@ import {
 import { createRichText, createTextLabel } from '@flighthq/text';
 import { createTextFormatRange } from '@flighthq/textlayout';
 import type {
+  ClipRegion,
   DisplayContainer,
   DisplayObject,
   ImportDiagnostic,
@@ -97,10 +98,13 @@ export function createDisplayObjectFromSvgDocument(
     elementsById: new Map(),
     gradientsById: new Map(),
     options,
+    parentByElement: new Map(),
     reportedUnsupportedElements: new Set(),
     resolvingClipUses: new Set(),
+    resolvingClips: new Set(),
     resolvingGradients: new Set(),
     resolvingUses: new Set(),
+    resolvedDefinitionStyles: new Map(),
   };
   indexSvgDefinitions(document, context);
 
@@ -118,7 +122,8 @@ interface SvgColor {
 }
 
 interface SvgClipGeometry {
-  path: Path;
+  path: Path | null;
+  region: ClipRegion | null;
   winding: PathWinding;
 }
 
@@ -157,10 +162,13 @@ interface SvgImportContext {
   elementsById: Map<string, XmlElement>;
   gradientsById: Map<string, SvgGradient>;
   options: Readonly<SvgDocumentImportOptions> | undefined;
+  parentByElement: Map<XmlElement, XmlElement | null>;
   reportedUnsupportedElements: Set<XmlElement>;
   resolvingClipUses: Set<string>;
+  resolvingClips: Set<string>;
   resolvingGradients: Set<string>;
   resolvingUses: Set<string>;
+  resolvedDefinitionStyles: Map<XmlElement, SvgStyle>;
 }
 
 interface SvgStyle {
@@ -296,18 +304,7 @@ function applySvgElementClip(
     );
     return;
   }
-  const clipPath = createSvgClipPath(clipElement, targetBounds, context);
-  if (clipPath === null) {
-    reportImportDiagnostic(
-      context.diagnostics,
-      ImportDiagnosticSeverity.Drop,
-      'svg.unresolved-clip-reference',
-      'applySvgElementClip',
-      { id: clipId },
-    );
-    return;
-  }
-  target.clip = createClipRegionFromPath(clipPath);
+  target.clip = createSvgClipRegion(clipElement, targetBounds, context);
   if (maskReference !== null) {
     reportImportDiagnostic(
       context.diagnostics,
@@ -382,18 +379,18 @@ function createSvgDisplayObjectBounds(target: DisplayObject): Rectangle | null {
   return hasBounds && !hasUnresolvedChildBounds ? out : null;
 }
 
-function createSvgClipPath(
+function createSvgClipRegion(
   element: Readonly<XmlElement>,
   targetBounds: Readonly<Rectangle> | null,
   context: SvgImportContext,
-): Path | null {
-  const clipStyle = resolveSvgStyle(element, defaultSvgStyle, context);
+): ClipRegion {
+  const clipStyle = resolveSvgDefinitionStyle(element, context);
   const out = createPath(clipStyle.clipRule);
   const geometries: SvgClipGeometry[] = [];
   collectSvgClipGeometry(element, clipStyle, null, context, geometries);
-  if (geometries.length === 0) return null;
   let winding: PathWinding | null = null;
   let mixedWindingReported = false;
+  const clippedRegions: ClipRegion[] = [];
   for (const geometry of geometries) {
     if (winding === null) {
       winding = geometry.winding;
@@ -408,8 +405,15 @@ function createSvgClipPath(
         { id: attribute(element, 'id') ?? '' },
       );
     }
-    appendPathData(out, geometry.path);
+    if (geometry.path !== null) appendPathData(out, geometry.path);
+    if (geometry.region !== null) clippedRegions.push(geometry.region);
   }
+  let region = createClipRegionFromPath(out);
+  for (const clippedRegion of clippedRegions) {
+    if (out.commands.length === 0 && region.rect.width === 0 && region.rect.height === 0) region = clippedRegion;
+    else unionClipRegions(region, region, clippedRegion);
+  }
+  region = intersectSvgClipReference(region, element, null, context);
   let transform = parseSvgTransform(attribute(element, 'transform'));
   const unitsAttribute =
     localName(element.name) === 'mask' ? attribute(element, 'maskContentUnits') : attribute(element, 'clipPathUnits');
@@ -417,10 +421,9 @@ function createSvgClipPath(
     const unitTransform = createMatrix(targetBounds.width, 0, 0, targetBounds.height, targetBounds.x, targetBounds.y);
     transform = transform === null ? unitTransform : multiplySvgMatrices(unitTransform, transform);
   }
-  if (transform === null) return out;
-  const transformed = createPath(out.winding);
-  transformPath(out, transform, transformed);
-  return transformed;
+  if (transform === null) return region;
+  transformClipRegion(region, region, transform);
+  return region;
 }
 
 function collectSvgClipGeometry(
@@ -481,17 +484,70 @@ function collectSvgClipGeometryElement(
   const path = createSvgGeometryPath(element, style.clipRule);
   if (path !== null) {
     if (style.visibility !== 'visible') return;
-    if (transform === null) out.push({ path, winding: path.winding });
-    else {
+    let transformedPath = path;
+    if (transform !== null) {
       const transformed = createPath(path.winding);
       transformPath(path, transform, transformed);
-      out.push({ path: transformed, winding: path.winding });
+      transformedPath = transformed;
+    }
+    if (parseUrlReference(attribute(element, 'clip-path')) === null) {
+      out.push({ path: transformedPath, region: null, winding: path.winding });
+    } else {
+      const region = intersectSvgClipReference(createClipRegionFromPath(transformedPath), element, transform, context);
+      out.push({ path: null, region, winding: region.winding });
     }
     return;
   }
   if (name === 'a' || name === 'g' || name === 'svg' || name === 'switch' || name === 'symbol') {
+    const start = out.length;
     collectSvgClipGeometry(element, style, transform, context, out);
+    if (parseUrlReference(attribute(element, 'clip-path')) !== null) {
+      for (let index = start; index < out.length; index++) {
+        const geometry = out[index];
+        const region = geometry.region ?? createClipRegionFromPath(geometry.path!);
+        geometry.path = null;
+        geometry.region = intersectSvgClipReference(region, element, transform, context);
+        geometry.winding = geometry.region.winding;
+      }
+    }
+    return;
   }
+  if (name === 'text') {
+    reportImportDiagnostic(
+      context.diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'svg.unsupported-clip-text',
+      'collectSvgClipGeometryElement',
+      { element: name },
+    );
+  }
+}
+
+function intersectSvgClipReference(
+  base: ClipRegion,
+  element: Readonly<XmlElement>,
+  transform: Readonly<Matrix> | null,
+  context: SvgImportContext,
+): ClipRegion {
+  const id = parseUrlReference(attribute(element, 'clip-path'));
+  if (id === null) return base;
+  const referenced = context.elementsById.get(id);
+  if (referenced === undefined || context.resolvingClips.has(id)) {
+    reportImportDiagnostic(
+      context.diagnostics,
+      context.resolvingClips.has(id) ? ImportDiagnosticSeverity.Reject : ImportDiagnosticSeverity.Drop,
+      'svg.unresolved-clip-reference',
+      'intersectSvgClipReference',
+      { id },
+    );
+    return base;
+  }
+  context.resolvingClips.add(id);
+  const referencedRegion = createSvgClipRegion(referenced, base.rect, context);
+  context.resolvingClips.delete(id);
+  if (transform !== null) transformClipRegion(referencedRegion, referencedRegion, transform);
+  intersectClipRegions(base, base, referencedRegion);
+  return base;
 }
 
 function collectSvgClipUseGeometry(
@@ -1038,10 +1094,13 @@ function getCssSelectorSpecificity(selector: string): number {
 }
 
 function indexSvgDefinitions(root: Readonly<XmlElement>, context: SvgImportContext): void {
-  visitXmlElements(root, (element) => {
+  const indexElement = (element: Readonly<XmlElement>, parent: Readonly<XmlElement> | null): void => {
+    context.parentByElement.set(element, parent);
     const id = attribute(element, 'id');
     if (id !== null) context.elementsById.set(id, element);
-  });
+    for (const child of element.children) indexElement(child, element);
+  };
+  indexElement(root, null);
   visitXmlElements(root, (element) => {
     const name = localName(element.name);
     const id = attribute(element, 'id');
@@ -1345,7 +1404,9 @@ function resolveSvgStyle(
   const style: SvgStyle = { ...parentStyle };
   style.clipRule = resolveSvgWinding(declarations['clip-rule'], style.clipRule);
   style.color = declarations.color ?? style.color;
-  style.display = declarations.display ?? style.display;
+  // `display` is not inherited. An ancestor with display:none still suppresses its subtree via
+  // the display-object hierarchy (and the clip collector's early return).
+  style.display = declarations.display ?? 'inline';
   style.fill = declarations.fill ?? style.fill;
   style.fillOpacity = clamp(parseCssNumber(declarations['fill-opacity'], style.fillOpacity), 0, 1);
   style.fillRule = resolveSvgWinding(declarations['fill-rule'], style.fillRule);
@@ -1365,6 +1426,16 @@ function resolveSvgStyle(
   style.strokeWidth = Math.max(0, parseSvgLength(declarations['stroke-width'] ?? null, style.strokeWidth));
   style.textAnchor = declarations['text-anchor'] ?? style.textAnchor;
   style.visibility = declarations.visibility ?? style.visibility;
+  return style;
+}
+
+function resolveSvgDefinitionStyle(element: Readonly<XmlElement>, context: SvgImportContext): SvgStyle {
+  const cached = context.resolvedDefinitionStyles.get(element);
+  if (cached !== undefined) return cached;
+  const parent = context.parentByElement.get(element) ?? null;
+  const parentStyle = parent === null ? defaultSvgStyle : resolveSvgDefinitionStyle(parent, context);
+  const style = resolveSvgStyle(element, parentStyle, context);
+  context.resolvedDefinitionStyles.set(element, style);
   return style;
 }
 
