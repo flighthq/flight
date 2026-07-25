@@ -219,7 +219,7 @@ unsupported cases is largely unbuilt for the gaps that most need it.
 | Sprite/QuadBatch/Tilemap on DOM | No DOM renderer — renders nothing | dom | MAJOR |
 | wgpu 2D-blend parity covered | RESOLVED — all six fixed Shape states plus Bitmap Multiply are asserted in `node-blend-modes.webgpu.ts` | wgpu | RESOLVED |
 | Text strikethrough | No `strikethrough` branch in `glRichText.ts:170`/`wgpuRichText.ts:184` | gl/wgpu | MINOR |
-| cacheAsBitmap out-of-frame; atlas pivot | WebGPU out-of-frame bake RESOLVED with a standalone encoder and `displayobject-cache` raster proof; DOM still bakes in-frame and `TextureAtlasRegion.pivotX/Y` remains unread | dom | MINOR |
+| cacheAsBitmap out-of-frame | WebGPU out-of-frame bake RESOLVED with a standalone encoder and `displayobject-cache` raster proof; DOM still bakes in-frame | dom | MINOR |
 
 ### Materials, Shading, Effects & Adjustments
 

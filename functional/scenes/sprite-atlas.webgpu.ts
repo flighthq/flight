@@ -55,7 +55,7 @@ function makeAtlasCanvas(): HTMLCanvasElement {
 
 const atlas = createTextureAtlas({ image: createImageResource(makeAtlasCanvas()) });
 addTextureAtlasRegion(atlas, 0, 0, REGION, REGION); // region id 0 — red
-addTextureAtlasRegion(atlas, REGION, 0, REGION, REGION); // region id 1 — green
+addTextureAtlasRegion(atlas, REGION, 0, REGION, REGION, REGION / 2, REGION / 2); // region id 1 — green, center pivot
 
 const root = createDisplayContainer();
 
@@ -87,10 +87,14 @@ export function assertRender(frame: Readonly<Surface>): void {
     throw new Error(`[sprite-atlas] sprite A (region 0) center not red — got #${hex(aMid)}`);
   }
 
-  // Sprite B draws region 1; its center must be green — proving the id selects a different sub-rect.
-  const bMid = at(B_X + REGION / 2, B_Y + REGION / 2);
+  // Sprite B's region has a center pivot, so the sprite position itself is the green quad's center.
+  const bMid = at(B_X, B_Y);
   if (!isGreen(bMid)) {
     throw new Error(`[sprite-atlas] sprite B (region 1) center not green — got #${hex(bMid)}`);
+  }
+  const bUnpivotedCorner = at(B_X + REGION - 4, B_Y + REGION - 4);
+  if (!isBackground(bUnpivotedCorner)) {
+    throw new Error(`[sprite-atlas] sprite B ignored its region pivot — got #${hex(bUnpivotedCorner)}`);
   }
 
   // Empty space between the two sprites stays background — a Sprite only paints its region footprint.

@@ -1,3 +1,4 @@
+import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import type { RenderProxy2D } from '@flighthq/types';
 
 import { registerDefaultGlMaterial } from './glDefaultMaterial';
@@ -5,11 +6,11 @@ import { flushGlSpriteBatch } from './glSpriteBatch';
 import { defaultGlSpriteRenderer } from './glSpriteRenderer';
 import { createGlState } from './glTestHelper';
 
-function makeAtlas(regionWidth = 32, regionHeight = 32) {
+function makeAtlas(regionWidth = 32, regionHeight = 32, pivotX: number | null = null, pivotY: number | null = null) {
   const img = document.createElement('img');
   return {
     image: { source: img, width: 64, height: 64 },
-    regions: [{ x: 0, y: 0, width: regionWidth, height: regionHeight }],
+    regions: [{ x: 0, y: 0, width: regionWidth, height: regionHeight, pivotX, pivotY }],
   };
 }
 
@@ -71,5 +72,18 @@ describe('defaultGlSpriteRenderer.submit', () => {
     defaultGlSpriteRenderer.submit(state, makeSpriteNode({ atlas: makeAtlas(), id: 0 }));
     flushGlSpriteBatch(state);
     expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 1);
+  });
+
+  it('folds the region pivot through the sprite transform into batch translation', () => {
+    const { state } = createGlState();
+    registerDefaultGlMaterial(state);
+    const node = makeSpriteNode({ atlas: makeAtlas(32, 32, 7, 9), id: 0 });
+    Object.assign(node.transform2D, { a: 2, b: 3, c: 4, d: 5, tx: 100, ty: 200 });
+
+    defaultGlSpriteRenderer.submit(state, node);
+
+    const data = getGlRenderStateRuntime(state).spriteBatchInstanceData;
+    expect(data[4]).toBe(50);
+    expect(data[5]).toBe(134);
   });
 });

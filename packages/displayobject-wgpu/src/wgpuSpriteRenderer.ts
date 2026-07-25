@@ -28,6 +28,8 @@ function submitWgpuSpriteNode(state: WgpuRenderState, spriteNode: RenderProxy2D)
   const iw = 1 / (atlas.image.width || 1);
   const ih = 1 / (atlas.image.height || 1);
   const t = spriteNode.transform2D;
+  const originX = -(region.pivotX ?? 0);
+  const originY = -(region.pivotY ?? 0);
 
   const material = spriteNode.material;
   const materialRenderer = resolveWgpuMaterialRenderer(state, material);
@@ -39,8 +41,8 @@ function submitWgpuSpriteNode(state: WgpuRenderState, spriteNode: RenderProxy2D)
   d[base + 1] = t.b;
   d[base + 2] = t.c;
   d[base + 3] = t.d;
-  d[base + 4] = t.tx;
-  d[base + 5] = t.ty;
+  d[base + 4] = t.tx + t.a * originX + t.c * originY;
+  d[base + 5] = t.ty + t.b * originX + t.d * originY;
   d[base + 6] = region.width;
   d[base + 7] = region.height;
   d[base + 8] = region.x * iw;
