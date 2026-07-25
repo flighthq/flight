@@ -1,12 +1,12 @@
-import { bakeWgpuEnvironmentIbl, drawWgpuEnvironmentSkybox, drawWgpuScene } from '@flighthq/scene-wgpu';
-import type { Camera3D, Environment, SceneLightsLike, SceneNode, WgpuRenderEffectPipeline } from '@flighthq/sdk';
+import { bakeWgpuEnvironmentIbl, drawWgpuEnvironmentSkybox, drawWgpuScene3D } from '@flighthq/scene-wgpu';
+import type { Camera3D, Environment, Scene3DLightsLike, Node3D, WgpuRenderEffectPipeline } from '@flighthq/sdk';
 import {
   beginWgpuRenderEffectPipeline,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   endWgpuRenderEffectPipeline,
-  prepareSceneRender,
+  prepareScene3DRender,
   registerStandardPbrWgpuMaterial,
   renderWgpuBackground,
   submitWgpuRenderPass,
@@ -34,9 +34,9 @@ export const scale = pixelRatio;
 let environmentBaked = false;
 
 export function render(
-  scene: Readonly<SceneNode>,
+  scene: Readonly<Node3D>,
   camera: Readonly<Camera3D>,
-  lights: Readonly<SceneLightsLike>,
+  lights: Readonly<Scene3DLightsLike>,
   environment: Readonly<Environment>,
 ): void {
   if (!environmentBaked) {
@@ -47,8 +47,8 @@ export function render(
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
   drawWgpuEnvironmentSkybox(state, environment, camera, width / height);
-  prepareSceneRender(state, scene, camera, lights);
-  drawWgpuScene(state, scene, camera, lights);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawWgpuScene3D(state, scene, camera, lights);
   endWgpuRenderEffectPipeline(state, pipeline, []);
   submitWgpuRenderPass(state);
 }

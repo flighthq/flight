@@ -1,7 +1,7 @@
 import { uploadWgpuTextureImageResource } from '@flighthq/render-wgpu';
 import type { CubeTexture, Environment, ImageResource, WgpuRenderState } from '@flighthq/types';
 
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 
 // Uploads an Environment's source radiance cubemap (six ImageResource faces) to a wgpu cube texture,
 // caching it on the scene runtime. Returns null when the environment has no complete cube — all six faces
@@ -10,16 +10,16 @@ import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 // copyExternalImageToTexture for a `source`, or queue.writeTexture for a data-only face (a generated
 // Surface, e.g. the skybox's rotateSurface180 path, which never allocates a canvas). The WGSL mirror of
 // scene-gl's ensureGlEnvironmentSourceCube. The upload is keyed by identity: re-uploaded only when the
-// cached view is absent (a changed cube must drop the cache first via destroyWgpuSceneIbl). The faces are
+// cached view is absent (a changed cube must drop the cache first via destroyWgpuScene3DIbl). The faces are
 // stored sRGB-encoded (rgba8unorm) and decoded to linear by the bake/skybox shaders that sample them,
 // matching scene-gl's sRGB-passthrough convention (the GL path uploads UNSIGNED_BYTE + decodes in-shader).
 // Returns the cube-dimension GPUTextureView the bake + skybox sample. The source cube is a non-GC GPU
-// resource freed by destroyWgpuSceneIbl.
+// resource freed by destroyWgpuScene3DIbl.
 export function ensureWgpuEnvironmentSourceCube(
   state: WgpuRenderState,
   environment: Readonly<Environment>,
 ): GPUTextureView | null {
-  const scene = getWgpuSceneRuntime(state);
+  const scene = getWgpuScene3DRuntime(state);
   if (scene.environmentSourceCubeView !== null) return scene.environmentSourceCubeView;
 
   const cube = environment.environment;
@@ -56,7 +56,7 @@ export function updateWgpuEnvironmentCubeFace(
   face: number,
   image: Readonly<ImageResource>,
 ): boolean {
-  const texture = getWgpuSceneRuntime(state).environmentSourceCube;
+  const texture = getWgpuScene3DRuntime(state).environmentSourceCube;
   if (texture === null) return false;
   uploadWgpuTextureImageResource(state.device, texture, [0, 0, face], image);
   return true;

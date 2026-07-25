@@ -7,8 +7,8 @@ import type {
   GlRenderState,
   Material,
   MeshGeometry,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
   UnlitMaterial,
   GlUnlitDefineKey,
 } from '@flighthq/types';
@@ -22,7 +22,7 @@ import {
   hasGlUvTransform,
   setGlMeshViewProjection,
 } from './glMeshProgram';
-import { getGlSceneRuntime } from './glSceneRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { bindGlUnlitSurface, bindGlUnlitVideoSurface, ensureGlUnlitProgram } from './glUnlitPrelude';
 
 // The built-in Unlit forward renderer (GlMeshMaterialRenderer for UnlitMaterialKind). Lighting-
@@ -33,7 +33,7 @@ export const unlitGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
     material: Readonly<Material> | null,
-    _lights: Readonly<SceneLightBlock>,
+    _lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const gl = state.gl;
@@ -57,15 +57,15 @@ export const unlitGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     }
   },
 
-  draw(state: GlRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
-    const program = getGlSceneRuntime(state).activeMeshProgram;
+  draw(state: GlRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+    const program = getGlScene3DRuntime(state).activeMeshProgram;
     if (program === null) return;
     drawGlMeshSubset(state, program, proxy, geometry);
   },
 };
 
 // Registers the built-in Unlit renderer for UnlitMaterialKind on this state. Opt-in (no top-level
-// side effect); call once per GlRenderState before drawScene so meshes with UnlitMaterials draw.
+// side effect); call once per GlRenderState before drawScene3D so meshes with UnlitMaterials draw.
 export function registerUnlitGlMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, UnlitMaterialKind, unlitGlMeshMaterialRenderer);
 }

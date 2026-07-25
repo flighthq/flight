@@ -1,6 +1,6 @@
-import { createScene } from '@flighthq/scene';
-import { drawGlScene } from '@flighthq/scene-gl';
-import type { Camera3D, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import { createScene3D } from '@flighthq/scene';
+import { drawGlScene3D } from '@flighthq/scene-gl';
+import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -18,13 +18,13 @@ import {
   endGlRenderEffectPipeline,
   getSurfacePixelLuminance,
   normalizeVector3,
-  prepareSceneRender,
+  prepareScene3DRender,
   registerEmissiveGlMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
 
-// drawGlScene exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel
+// drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel
 // (re-exported from both) and is unavailable there — import the Gl one directly from its package.
 
 // Gl forward-lit 3D column. The StandardPbr renderer writes linear HDR into the effect pipeline's
@@ -51,7 +51,7 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   beginGlRenderEffectPipeline(state, pipeline);
   // renderGlBackground clears color; the depth attachment needs its own clear to the far plane (1.0)
   // or every fragment fails the LESS depth test against an uncleared (0) buffer and the scene is black.
@@ -60,8 +60,8 @@ export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, l
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
-  prepareSceneRender(state, scene, camera, lights);
-  drawGlScene(state, scene, camera, lights);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawGlScene3D(state, scene, camera, lights);
   endGlRenderEffectPipeline(state, pipeline, []);
 }
 
@@ -90,7 +90,7 @@ const material = createEmissiveMaterial({
   emissiveStrength: 2,
 });
 
-const scene = createScene().root;
+const scene = createScene3D().root;
 const mesh = createMesh(geometry, [material]);
 addNodeChild(scene, mesh);
 

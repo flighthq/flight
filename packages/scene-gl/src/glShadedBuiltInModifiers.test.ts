@@ -23,8 +23,8 @@ import {
   VertexDisplaceModifierSource,
 } from '@flighthq/types';
 
-import type { FakeGl2 } from './glSceneTestHelper';
-import { makeGlSceneState } from './glSceneTestHelper';
+import type { FakeGl2 } from './glScene3DTestHelper';
+import { makeGlScene3DState } from './glScene3DTestHelper';
 import {
   animatedNormalGlModifierSnippet,
   dissolveGlModifierSnippet,
@@ -41,7 +41,7 @@ import { resolveGlModifierSnippet } from './glShadedModifierSnippet';
 // A Texture whose image is unloaded — the snippet binds the sampler unit without an upload.
 const UNLOADED_TEXTURE = { image: null } as unknown as Texture;
 
-function makeContext(state: ReturnType<typeof makeGlSceneState>['state'], index = 0): GlModifierBindContext {
+function makeContext(state: ReturnType<typeof makeGlScene3DState>['state'], index = 0): GlModifierBindContext {
   let unit = 3;
   return {
     acquireModifierTextureUnit: () => unit++,
@@ -84,7 +84,7 @@ describe('animatedNormalGlModifierSnippet', () => {
   });
 
   it('bind uploads scroll + strength and binds the sampler unit', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const modifier = createAnimatedNormalModifier({ map: UNLOADED_TEXTURE, scroll: { x: 0.2, y: 0.3 }, strength: 2 });
     animatedNormalGlModifierSnippet.bind?.(modifier, makeContext(state));
     expect(countCalls(gl, 'uniform2f')).toBe(1);
@@ -93,7 +93,7 @@ describe('animatedNormalGlModifierSnippet', () => {
   });
 
   it('bind is a no-op for a disabled modifier', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const modifier = createAnimatedNormalModifier({ map: null, scroll: { x: 0, y: 0 } });
     animatedNormalGlModifierSnippet.bind?.(modifier, makeContext(state));
     expect(countCalls(gl, 'uniform2f')).toBe(0);
@@ -101,7 +101,7 @@ describe('animatedNormalGlModifierSnippet', () => {
   });
 
   it('drops the sampler (no bind) when the texture-unit allocator is exhausted', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const modifier = createAnimatedNormalModifier({ map: UNLOADED_TEXTURE, scroll: { x: 0.2, y: 0.3 } });
     const exhausted: GlModifierBindContext = {
       acquireModifierTextureUnit: () => -1,
@@ -140,7 +140,7 @@ describe('dissolveGlModifierSnippet', () => {
   });
 
   it('bind uploads threshold/edge and the noise scale for the procedural variant', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     dissolveGlModifierSnippet.bind?.(createDissolveModifier({ threshold: 0.5 }), makeContext(state));
     // threshold + edgeWidth + scale.
     expect(countCalls(gl, 'uniform1f')).toBe(3);
@@ -179,13 +179,13 @@ describe('emissiveGlModifierSnippet', () => {
   });
 
   it('bind uploads color + strength, plus the facing sign when gated', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     emissiveGlModifierSnippet.bind?.(createEmissiveModifier({ color: 0xffcc88ff }), makeContext(state));
     expect(countCalls(gl, 'uniform3f')).toBe(1);
     const plainFloats = countCalls(gl, 'uniform1f');
     expect(plainFloats).toBe(1);
 
-    const gated = makeGlSceneState();
+    const gated = makeGlScene3DState();
     emissiveGlModifierSnippet.bind?.(
       createEmissiveModifier({ color: 0xffcc88ff, facing: EmissiveModifierFacing.AwayFromLight, facingSoftness: 0.1 }),
       makeContext(gated.state),
@@ -214,7 +214,7 @@ describe('envReflectGlModifierSnippet', () => {
   });
 
   it('bind uploads the tint and the three reflection scalars', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     envReflectGlModifierSnippet.bind?.(createEnvReflectModifier(), makeContext(state));
     expect(countCalls(gl, 'uniform3f')).toBe(1);
     // intensity + fresnel + roughness.
@@ -249,12 +249,12 @@ describe('fogGlModifierSnippet', () => {
   });
 
   it('bind uploads the color and near/far for linear, density for exponential', () => {
-    const linear = makeGlSceneState();
+    const linear = makeGlScene3DState();
     fogGlModifierSnippet.bind?.(createFogModifier({ color: 0xaabbccff }), makeContext(linear.state));
     expect(countCalls(linear.gl, 'uniform3f')).toBe(1);
     expect(countCalls(linear.gl, 'uniform1f')).toBe(2);
 
-    const exp = makeGlSceneState();
+    const exp = makeGlScene3DState();
     fogGlModifierSnippet.bind?.(
       createFogModifier({ color: 0xaabbccff, mode: FogModifierMode.Exponential2, density: 0.02 }),
       makeContext(exp.state),
@@ -265,7 +265,7 @@ describe('fogGlModifierSnippet', () => {
 
 describe('registerBuiltInGlModifierSnippets', () => {
   it('registers all eight built-in snippets on the state', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     registerBuiltInGlModifierSnippets(state);
     expect(resolveGlModifierSnippet(state, AnimatedNormalModifierKind)).toBe(animatedNormalGlModifierSnippet);
     expect(resolveGlModifierSnippet(state, EmissiveModifierKind)).toBe(emissiveGlModifierSnippet);
@@ -290,7 +290,7 @@ describe('rimGlModifierSnippet', () => {
   });
 
   it('bind uploads the rim color and power/intensity/bias uniforms', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     rimGlModifierSnippet.bind?.(createRimModifier({ color: 0x88ccffff }), makeContext(state));
     expect(countCalls(gl, 'uniform3f')).toBe(1);
     expect(countCalls(gl, 'uniform1f')).toBe(3);
@@ -309,7 +309,7 @@ describe('toonGlModifierSnippet', () => {
   });
 
   it('bind uploads steps (floored at 2) and smoothness', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     toonGlModifierSnippet.bind?.(createToonModifier({ steps: 1 }), makeContext(state));
     expect(countCalls(gl, 'uniform1f')).toBe(2);
     const stepsCall = gl.calls.find((c) => c.name === 'uniform1f');
@@ -364,7 +364,7 @@ describe('vertexDisplaceGlModifierSnippet', () => {
   });
 
   it('bind uploads amplitude plus the sine wave params for the procedural source', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     vertexDisplaceGlModifierSnippet.bind?.(
       createVertexDisplaceModifier({ source: VertexDisplaceModifierSource.Sine, amplitude: 0.3 }),
       makeContext(state),

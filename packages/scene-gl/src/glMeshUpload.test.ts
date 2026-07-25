@@ -8,12 +8,12 @@ import { createMesh } from '@flighthq/scene';
 import type { Mesh, MeshMorph, MeshSkinBindPose, VertexAttributeLayout, GlMeshUpload } from '@flighthq/types';
 
 import { destroyGlMeshUpload, ensureGlMeshUpload } from './glMeshUpload';
-import { getGlSceneRuntime } from './glSceneRuntime';
-import { makeGlSceneState } from './glSceneTestHelper';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { makeGlScene3DState } from './glScene3DTestHelper';
 
 describe('destroyGlMeshUpload', () => {
   it('deletes the VAO and the vertex + index buffers of an indexed upload', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const upload = ensureGlMeshUpload(state, createBoxMeshGeometry());
     destroyGlMeshUpload(state, upload);
     expect(gl.calls.filter((c) => c.name === 'deleteVertexArray').length).toBe(1);
@@ -21,7 +21,7 @@ describe('destroyGlMeshUpload', () => {
   });
 
   it('skips the index buffer when the upload is non-indexed', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const upload: GlMeshUpload = {
       indexBuffer: null,
       indexCount: 0,
@@ -39,7 +39,7 @@ describe('destroyGlMeshUpload', () => {
 
 describe('ensureGlMeshUpload', () => {
   it('uploads vertex + index buffers into a VAO and reports the indexed draw shape', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const geometry = createBoxMeshGeometry();
     const upload = ensureGlMeshUpload(state, geometry);
 
@@ -55,7 +55,7 @@ describe('ensureGlMeshUpload', () => {
   });
 
   it('reports the vertex count for a non-indexed upload', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const layout: VertexAttributeLayout = {
       attributes: [{ byteOffset: 0, format: 'float32x3', semantic: 'position' }],
       stride: 12,
@@ -69,7 +69,7 @@ describe('ensureGlMeshUpload', () => {
   });
 
   it('refreshes the primitive mode on a cached upload without re-uploading buffers', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const geometry = createBoxMeshGeometry();
     const upload = ensureGlMeshUpload(state, geometry);
     const bufferDataCount = gl.calls.filter((call) => call.name === 'bufferData').length;
@@ -83,7 +83,7 @@ describe('ensureGlMeshUpload', () => {
   });
 
   it('deletes an obsolete index buffer when geometry becomes non-indexed', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const geometry = createBoxMeshGeometry();
     const upload = ensureGlMeshUpload(state, geometry);
     expect(upload.indexBuffer).not.toBeNull();
@@ -97,7 +97,7 @@ describe('ensureGlMeshUpload', () => {
   });
 
   it('caches by geometry and reuses the upload when the version is unchanged', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const geometry = createBoxMeshGeometry();
     const first = ensureGlMeshUpload(state, geometry);
     const bufferDataCount = gl.calls.filter((c) => c.name === 'bufferData').length;
@@ -105,11 +105,11 @@ describe('ensureGlMeshUpload', () => {
     expect(second).toBe(first);
     // No re-upload: bufferData not called again, only the VAO re-bound.
     expect(gl.calls.filter((c) => c.name === 'bufferData').length).toBe(bufferDataCount);
-    expect(getGlSceneRuntime(state).uploadCache.get(geometry)).toBe(first);
+    expect(getGlScene3DRuntime(state).uploadCache.get(geometry)).toBe(first);
   });
 
   it('re-uploads when the geometry version is bumped, reusing the GL objects', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const geometry = createBoxMeshGeometry();
     const first = ensureGlMeshUpload(state, geometry);
     geometry.version++;
@@ -122,7 +122,7 @@ describe('ensureGlMeshUpload', () => {
   });
 
   it('converts packed integer storage into the float inputs declared by mesh shaders', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const layout: VertexAttributeLayout = {
       attributes: [
         { byteOffset: 0, format: 'float32x3', semantic: 'position' },
@@ -145,7 +145,7 @@ describe('ensureGlMeshUpload', () => {
   // vertex (M²). Captures the box's original positions as the bind pose, then displaces every vertex to
   // simulate a CPU pose and asserts the uploaded buffer carries the bind position, not the displaced one.
   it('uploads the skin bind pose (not the CPU-posed vertices) for a GPU-skinned draw', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const geometry = createBoxMeshGeometry(2, 2, 2);
     const floatsPerVertex = geometry.layout.stride / 4;
     const vertexCount = geometry.vertices.length / floatsPerVertex;
@@ -184,7 +184,7 @@ describe('ensureGlMeshUpload', () => {
   });
 
   it('reuses the bind-pose upload across version bumps for a GPU-skinned draw (no per-frame re-skin)', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const geometry = createBoxMeshGeometry(2, 2, 2);
     const floatsPerVertex = geometry.layout.stride / 4;
     const vertexCount = geometry.vertices.length / floatsPerVertex;
@@ -214,7 +214,7 @@ describe('ensureGlMeshUpload', () => {
   // Morph + skin compose on GPU: when a geometry is both morphed and GPU-skinned, the per-frame morphed
   // vertices (not the frozen skin bind pose) are what the shader skins, and they re-upload each frame.
   it('uploads the morphed vertices (not the frozen skin bind pose) for a morphed + GPU-skinned draw', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const geometry = createMeshGeometry({
       layout: { attributes: [{ byteOffset: 0, format: 'float32x3', semantic: 'position' }], stride: 12 },
       vertices: new Float32Array([1, 0, 0]),
@@ -229,7 +229,7 @@ describe('ensureGlMeshUpload', () => {
       weights: new Float32Array(0),
     });
 
-    // prepareSceneMorph blends the morph into geometry.vertices (x → 5) and captures the morph bind pose.
+    // prepareScene3DMorph blends the morph into geometry.vertices (x → 5) and captures the morph bind pose.
     const mesh = { geometry, materials: [], morph: undefined } as unknown as Mesh;
     mesh.morph = {
       targets: [{ normalDeltas: null, positionDeltas: new Float32Array([4, 0, 0]), tangentDeltas: null }],
@@ -257,7 +257,7 @@ describe('ensureGlMeshUpload', () => {
   // deformed vertices — no HAS_MORPH shader permutation. (Folded from the former glMeshMorph.test.ts,
   // whose source lives here in glMeshUpload.ts.)
   it('uploads the morph-blended vertices for a morphed mesh (CPU-blend-then-upload GL path)', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const layout: VertexAttributeLayout = {
       attributes: [{ byteOffset: 0, format: 'float32x3', semantic: 'position' }],
       stride: 12,
@@ -278,7 +278,7 @@ describe('ensureGlMeshUpload', () => {
   });
 
   it('re-uploads as the morph weights change frame to frame', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const layout: VertexAttributeLayout = {
       attributes: [{ byteOffset: 0, format: 'float32x3', semantic: 'position' }],
       stride: 12,

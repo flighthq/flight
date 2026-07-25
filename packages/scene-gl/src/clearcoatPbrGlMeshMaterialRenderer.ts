@@ -5,8 +5,8 @@ import type {
   GlRenderState,
   Material,
   MeshGeometry,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
 } from '@flighthq/types';
 import { ClearcoatPbrMaterialKind } from '@flighthq/types';
 
@@ -15,7 +15,7 @@ import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshCameraPosition, setGlMeshViewProjection } from './glMeshProgram';
 import { ensureGlPbrProgram } from './glPbrProgramCache';
 import { bindGlPbrStandardBlock, buildGlPbrStandardDefineKey } from './glPbrStandardBlock';
-import { getGlSceneRuntime } from './glSceneRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 
 // The built-in Clearcoat (KHR_materials_clearcoat) forward-lit mesh-material renderer. Clearcoat
 // adds a second, always-dielectric GGX specular lobe (F0 = 0.04) over the base PBR layer — the wet,
@@ -29,7 +29,7 @@ export const clearcoatPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
     material: Readonly<Material> | null,
-    lights: Readonly<SceneLightBlock>,
+    lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const gl = state.gl;
@@ -50,15 +50,15 @@ export const clearcoatPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     gl.uniform1f(program.locClearcoatRoughness, clearcoat !== null ? clearcoat.clearcoatRoughness : 0);
   },
 
-  draw(state: GlRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
-    const program = getGlSceneRuntime(state).activeMeshProgram;
+  draw(state: GlRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+    const program = getGlScene3DRuntime(state).activeMeshProgram;
     if (program === null) return;
     drawGlMeshSubset(state, program, proxy, geometry);
   },
 };
 
 // Installs the built-in Clearcoat renderer for ClearcoatPbrMaterialKind on this state. Opt-in (no
-// top-level side effect): drawScene only draws Clearcoat subsets once this is called.
+// top-level side effect): drawScene3D only draws Clearcoat subsets once this is called.
 export function registerClearcoatPbrGlMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, ClearcoatPbrMaterialKind, clearcoatPbrGlMeshMaterialRenderer);
 }

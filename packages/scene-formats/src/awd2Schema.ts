@@ -11,7 +11,7 @@ export const AWD2_MAGIC_2 = 0x44; // 'D'
 export const AWD2_HEADER_BYTES = 12;
 
 // Header byte offset of the version-major field, and the only major version this parser reads. A
-// version-3 file (AWD3, AwayJS's SceneGraph format) shares the 'AWD' magic but has an entirely different
+// version-3 file (AWD3, AwayJS's Scene3DGraph format) shares the 'AWD' magic but has an entirely different
 // block model, so it is rejected by version rather than misparsed by the AWD2 block walk.
 export const AWD2_VERSION_MAJOR_OFFSET = 3;
 export const AWD2_FORMAT_VERSION = 2;

@@ -12,14 +12,14 @@ import type {
   ExternalImageResourceReference,
   ImportDiagnostic,
   Mesh,
-  SceneAnimationTarget,
-  SceneNode,
+  Scene3DAnimationTarget,
+  Node3D,
 } from '@flighthq/types';
 import { BlinnPhongMaterialKind, ImportDiagnosticSeverity } from '@flighthq/types';
 
 import { parseMd5Anim } from './md5AnimParse';
-import { createSceneFromMd5Mesh, importMd5Mesh, parseMd5Mesh } from './md5Parse';
-import { findSceneSkeletonJoints } from './sceneSkeleton';
+import { createScene3DFromMd5Mesh, importMd5Mesh, parseMd5Mesh } from './md5Parse';
+import { findScene3DSkeletonJoints } from './sceneSkeleton';
 
 function findDiagnostic(diagnostics: readonly ImportDiagnostic[], kind: string): ImportDiagnostic | undefined {
   return diagnostics.find((diagnostic) => diagnostic.kind === kind);
@@ -182,19 +182,19 @@ const OVER_INFLUENCED_VERTEX = [
   '}',
 ].join('\n');
 
-describe('createSceneFromMd5Mesh', () => {
+describe('createScene3DFromMd5Mesh', () => {
   it('parses a single triangle with one joint', () => {
-    const scene = createSceneFromMd5Mesh(SINGLE_TRIANGLE);
+    const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
     const children = getNodeChildren(scene.root);
     // Skeleton group + one mesh.
     expect(children).toHaveLength(2);
 
     // The skeleton is the first child.
-    const skeleton = children[0] as SceneNode;
+    const skeleton = children[0] as Node3D;
     expect(isMesh(skeleton)).toBe(false);
 
     // The mesh is the second child.
-    const meshNode = children[1] as SceneNode;
+    const meshNode = children[1] as Node3D;
     expect(isMesh(meshNode)).toBe(true);
 
     const geometry = (meshNode as unknown as Mesh).geometry;
@@ -219,7 +219,7 @@ describe('createSceneFromMd5Mesh', () => {
   });
 
   it('emits a skin binding the mesh to a skeleton over the parsed joints', () => {
-    const scene = createSceneFromMd5Mesh(MULTI_JOINT_HIERARCHY);
+    const scene = createScene3DFromMd5Mesh(MULTI_JOINT_HIERARCHY);
     const meshNode = getNodeChildren(scene.root)[1] as unknown as Mesh;
 
     expect(meshNode.skin).toBeTruthy();
@@ -227,14 +227,14 @@ describe('createSceneFromMd5Mesh', () => {
     expect(meshNode.skin?.skeleton.joints).toHaveLength(3);
     expect(meshNode.skin?.skeleton.names).toEqual(['root', 'child_a', 'child_b']);
     // The document assembler does not rethread the skeleton group as the skin's skeletonRoot (it stays
-    // null, matching every importer that routes through createSceneFromDocument); the "skeleton" group is
+    // null, matching every importer that routes through createScene3DFromDocument); the "skeleton" group is
     // still a scene-root child (children[0]).
     expect(meshNode.skin?.skeletonRoot).toBeNull();
     expect(getNodeChildren(scene.root)[0].name).toBe('skeleton');
   });
 
   it('emits joints0/weights0 into an 80-byte skinned layout with weights renormalized to 1', () => {
-    const scene = createSceneFromMd5Mesh(SINGLE_TRIANGLE);
+    const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
     const geometry = (getNodeChildren(scene.root)[1] as unknown as Mesh).geometry;
 
     expect(geometry.layout.stride).toBe(80);
@@ -254,7 +254,7 @@ describe('createSceneFromMd5Mesh', () => {
   });
 
   it('regenerates vertex normals the MD5 mesh does not carry', () => {
-    const scene = createSceneFromMd5Mesh(SINGLE_TRIANGLE);
+    const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
     const geometry = (getNodeChildren(scene.root)[1] as unknown as Mesh).geometry;
     const floatsPerVertex = geometry.layout.stride / 4;
     // Normal is at float offset 3; a flat triangle yields a unit face normal, not the zero-fill.
@@ -271,7 +271,7 @@ describe('createSceneFromMd5Mesh', () => {
   });
 
   it('reverses MD5 triangle winding to Flight CCW-front (front faces stay front under culling)', () => {
-    const scene = createSceneFromMd5Mesh(SINGLE_TRIANGLE);
+    const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
     const geometry = (getNodeChildren(scene.root)[1] as unknown as Mesh).geometry;
     // MD5 declares "tri 0 0 1 2"; id Tech 4 winds clockwise, and the Z-up→Y-up conversion is a
     // determinant-+1 rotation that preserves winding, so the parser reverses each triangle (swaps
@@ -280,7 +280,7 @@ describe('createSceneFromMd5Mesh', () => {
   });
 
   it('preserves UV coordinates', () => {
-    const scene = createSceneFromMd5Mesh(SINGLE_TRIANGLE);
+    const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
     const children = getNodeChildren(scene.root);
     const meshNode = children[1] as unknown as Mesh;
     const geometry = meshNode.geometry;
@@ -323,10 +323,10 @@ describe('createSceneFromMd5Mesh', () => {
       '}',
     ].join('\n');
 
-    const scene = createSceneFromMd5Mesh(chain);
+    const scene = createScene3DFromMd5Mesh(chain);
     // Nested: skeleton → root → child.
-    const root = getNodeChildren(getNodeChildren(scene.root)[0] as SceneNode)[0] as SceneNode;
-    const child = getNodeChildren(root)[0] as SceneNode;
+    const root = getNodeChildren(getNodeChildren(scene.root)[0] as Node3D)[0] as Node3D;
+    const child = getNodeChildren(root)[0] as Node3D;
 
     const rootLocal = { x: 0, y: 0, z: 0 };
     const childLocal = { x: 0, y: 0, z: 0 };
@@ -344,16 +344,16 @@ describe('createSceneFromMd5Mesh', () => {
     // absolute world transform from the parent-relative locals the bind conversion produced. The
     // .md5anim frames (parent-relative) then drive these same nested joints. MULTI_JOINT_HIERARCHY has
     // root (parent -1) with child_a and child_b both parented to root.
-    const scene = createSceneFromMd5Mesh(MULTI_JOINT_HIERARCHY);
-    const skeleton = getNodeChildren(scene.root)[0] as SceneNode;
+    const scene = createScene3DFromMd5Mesh(MULTI_JOINT_HIERARCHY);
+    const skeleton = getNodeChildren(scene.root)[0] as Node3D;
 
     const rootJoints = getNodeChildren(skeleton);
     expect(rootJoints).toHaveLength(1);
-    expect(getNodeChildren(rootJoints[0] as SceneNode)).toHaveLength(2);
+    expect(getNodeChildren(rootJoints[0] as Node3D)).toHaveLength(2);
   });
 
   it('computes vertex positions from weights referencing different joints', () => {
-    const scene = createSceneFromMd5Mesh(MULTI_JOINT_HIERARCHY);
+    const scene = createScene3DFromMd5Mesh(MULTI_JOINT_HIERARCHY);
     // Find the mesh node (second child after skeleton).
     const meshNode = getNodeChildren(scene.root)[1] as unknown as Mesh;
     const geometry = meshNode.geometry;
@@ -381,7 +381,7 @@ describe('createSceneFromMd5Mesh', () => {
   });
 
   it('blends vertex positions from multiple weighted joints', () => {
-    const scene = createSceneFromMd5Mesh(WEIGHTED_VERTICES);
+    const scene = createScene3DFromMd5Mesh(WEIGHTED_VERTICES);
     const meshNode = getNodeChildren(scene.root)[1] as unknown as Mesh;
     const geometry = meshNode.geometry;
 
@@ -410,7 +410,7 @@ describe('createSceneFromMd5Mesh', () => {
 
   it('reduces a >4-influence vertex to its 4 highest-weight influences and reports md5mesh.vertex-over-influenced', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    const scene = createSceneFromMd5Mesh(OVER_INFLUENCED_VERTEX, diagnostics);
+    const scene = createScene3DFromMd5Mesh(OVER_INFLUENCED_VERTEX, diagnostics);
     const geometry = (getNodeChildren(scene.root)[1] as unknown as Mesh).geometry;
     const floatsPerVertex = geometry.layout.stride / 4;
 
@@ -480,16 +480,16 @@ describe('createSceneFromMd5Mesh', () => {
       '}',
     ].join('\n');
 
-    const scene = createSceneFromMd5Mesh(source);
+    const scene = createScene3DFromMd5Mesh(source);
     const children = getNodeChildren(scene.root);
     // Skeleton + 2 meshes.
     expect(children).toHaveLength(3);
-    expect(isMesh(children[1] as SceneNode)).toBe(true);
-    expect(isMesh(children[2] as SceneNode)).toBe(true);
+    expect(isMesh(children[1] as Node3D)).toBe(true);
+    expect(isMesh(children[2] as Node3D)).toBe(true);
   });
 
   it("decodes each section's shader to a BlinnPhongMaterial referencing the shader path as a diffuseMap", () => {
-    const mesh = getNodeChildren(createSceneFromMd5Mesh(SINGLE_TRIANGLE).root)[1] as Mesh;
+    const mesh = getNodeChildren(createScene3DFromMd5Mesh(SINGLE_TRIANGLE).root)[1] as Mesh;
     expect(mesh.materials).toHaveLength(1);
     const material = mesh.materials[0] as BlinnPhongMaterial;
     expect(material.kind).toBe(BlinnPhongMaterialKind);
@@ -500,12 +500,12 @@ describe('createSceneFromMd5Mesh', () => {
   });
 
   it('returns an empty scene for empty input', () => {
-    const scene = createSceneFromMd5Mesh('');
+    const scene = createScene3DFromMd5Mesh('');
     expect(getNodeChildren(scene.root)).toHaveLength(0);
   });
 
   it('returns an empty scene for comment-only input', () => {
-    const scene = createSceneFromMd5Mesh('// just a comment\n');
+    const scene = createScene3DFromMd5Mesh('// just a comment\n');
     expect(getNodeChildren(scene.root)).toHaveLength(0);
   });
 
@@ -513,7 +513,7 @@ describe('createSceneFromMd5Mesh', () => {
     const source = ['MD5Version 10', 'numJoints 1', 'numMeshes 0', 'joints {', '  bad joint line', '}'].join('\n');
 
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromMd5Mesh(source, diagnostics);
+    createScene3DFromMd5Mesh(source, diagnostics);
     const crumb = findDiagnostic(diagnostics, 'md5mesh.malformed-joint');
     expect(crumb).toBeDefined();
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
@@ -541,7 +541,7 @@ describe('createSceneFromMd5Mesh', () => {
     ].join('\n');
 
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromMd5Mesh(source, diagnostics);
+    createScene3DFromMd5Mesh(source, diagnostics);
     const crumb = findDiagnostic(diagnostics, 'md5mesh.malformed-vert');
     expect(crumb).toBeDefined();
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
@@ -568,7 +568,7 @@ describe('createSceneFromMd5Mesh', () => {
     ].join('\n');
 
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromMd5Mesh(source, diagnostics);
+    createScene3DFromMd5Mesh(source, diagnostics);
     const crumb = findDiagnostic(diagnostics, 'md5mesh.malformed-tri');
     expect(crumb).toBeDefined();
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
@@ -595,7 +595,7 @@ describe('createSceneFromMd5Mesh', () => {
     ].join('\n');
 
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromMd5Mesh(source, diagnostics);
+    createScene3DFromMd5Mesh(source, diagnostics);
     const crumb = findDiagnostic(diagnostics, 'md5mesh.malformed-weight');
     expect(crumb).toBeDefined();
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
@@ -608,7 +608,7 @@ describe('createSceneFromMd5Mesh', () => {
     const source = ['MD5Version 11', 'numJoints 0', 'numMeshes 0'].join('\n');
 
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromMd5Mesh(source, diagnostics);
+    createScene3DFromMd5Mesh(source, diagnostics);
     const crumb = findDiagnostic(diagnostics, 'md5mesh.unsupported-version');
     expect(crumb).toBeDefined();
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
@@ -631,7 +631,7 @@ describe('createSceneFromMd5Mesh', () => {
       '}',
     ].join('\n');
 
-    const scene = createSceneFromMd5Mesh(source);
+    const scene = createScene3DFromMd5Mesh(source);
     // No skeleton node (no joints), no mesh node (no indices).
     expect(getNodeChildren(scene.root)).toHaveLength(0);
   });
@@ -662,7 +662,7 @@ describe('createSceneFromMd5Mesh', () => {
     ].join('\n');
 
     const diagnostics: ImportDiagnostic[] = [];
-    const scene = createSceneFromMd5Mesh(source, diagnostics);
+    const scene = createScene3DFromMd5Mesh(source, diagnostics);
     expect(diagnostics).toHaveLength(0);
     expect(getNodeChildren(scene.root)).toHaveLength(2);
   });
@@ -692,7 +692,7 @@ describe('createSceneFromMd5Mesh', () => {
       '}',
     ].join('\n');
 
-    const scene = createSceneFromMd5Mesh(source);
+    const scene = createScene3DFromMd5Mesh(source);
     const meshNode = getNodeChildren(scene.root)[1] as unknown as Mesh;
     const geometry = meshNode.geometry;
 
@@ -741,7 +741,7 @@ describe('createSceneFromMd5Mesh', () => {
     ].join('\n');
 
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromMd5Mesh(source, diagnostics);
+    createScene3DFromMd5Mesh(source, diagnostics);
     const crumb = findDiagnostic(diagnostics, 'md5mesh.weight-joint-out-of-range');
     expect(crumb).toBeDefined();
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
@@ -772,7 +772,7 @@ describe('createSceneFromMd5Mesh', () => {
       '}',
     ].join('\n');
 
-    const scene = createSceneFromMd5Mesh(source);
+    const scene = createScene3DFromMd5Mesh(source);
     const meshNode = getNodeChildren(scene.root)[1] as unknown as Mesh;
     const geometry = meshNode.geometry;
 
@@ -796,7 +796,7 @@ describe('createSceneFromMd5Mesh', () => {
       '\n',
     );
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromMd5Mesh(source, diagnostics);
+    createScene3DFromMd5Mesh(source, diagnostics);
     const crumb = findDiagnostic(diagnostics, 'md5mesh.joints-block-unclosed');
     expect(crumb).toBeDefined();
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
@@ -818,7 +818,7 @@ describe('createSceneFromMd5Mesh', () => {
       '  numweights 0',
     ].join('\n');
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromMd5Mesh(source, diagnostics);
+    createScene3DFromMd5Mesh(source, diagnostics);
     const crumb = findDiagnostic(diagnostics, 'md5mesh.mesh-block-unclosed');
     expect(crumb).toBeDefined();
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
@@ -830,7 +830,7 @@ describe('createSceneFromMd5Mesh', () => {
     // material. The geometry survives, so this is a Recover.
     const source = SINGLE_TRIANGLE.replace('shader "textures/default"', 'shader textures/default');
     const diagnostics: ImportDiagnostic[] = [];
-    const scene = createSceneFromMd5Mesh(source, diagnostics);
+    const scene = createScene3DFromMd5Mesh(source, diagnostics);
     const mesh = getNodeChildren(scene.root)[1] as unknown as Mesh;
     expect(mesh.materials).toHaveLength(0); // material binding was lost
     const crumb = findDiagnostic(diagnostics, 'md5mesh.shader-unquoted');
@@ -858,7 +858,7 @@ describe('createSceneFromMd5Mesh', () => {
       '}',
     ].join('\n');
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromMd5Mesh(source, diagnostics);
+    createScene3DFromMd5Mesh(source, diagnostics);
     const crumb = findDiagnostic(diagnostics, 'md5mesh.mesh-empty');
     expect(crumb).toBeDefined();
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
@@ -876,7 +876,7 @@ describe('createSceneFromMd5Mesh', () => {
       '}',
     ].join('\n');
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromMd5Mesh(source, diagnostics);
+    createScene3DFromMd5Mesh(source, diagnostics);
     const crumb = findDiagnostic(diagnostics, 'md5mesh.joint-parent-out-of-range');
     expect(crumb).toBeDefined();
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
@@ -906,7 +906,7 @@ describe('createSceneFromMd5Mesh', () => {
       '}',
     ].join('\n');
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromMd5Mesh(source, diagnostics);
+    createScene3DFromMd5Mesh(source, diagnostics);
     const crumb = findDiagnostic(diagnostics, 'md5mesh.vertex-weight-out-of-range');
     expect(crumb).toBeDefined();
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
@@ -927,7 +927,7 @@ describe('createSceneFromMd5Mesh', () => {
       '}',
     ].join('\n');
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromMd5Mesh(source, diagnostics);
+    createScene3DFromMd5Mesh(source, diagnostics);
     const matching = diagnostics.filter((d) => d.kind === 'md5mesh.malformed-joint');
     expect(matching).toHaveLength(1);
     expect(matching[0].detail?.count).toBe(3);
@@ -951,27 +951,27 @@ describe('createSceneFromMd5Mesh', () => {
       '  numweights 0',
     ].join('\n');
     // Exercising every crumb path without a sink must not throw and must be side-effect-free.
-    expect(() => createSceneFromMd5Mesh(source)).not.toThrow();
+    expect(() => createScene3DFromMd5Mesh(source)).not.toThrow();
   });
 });
 
-describe('createSceneFromMd5Mesh animations', () => {
+describe('createScene3DFromMd5Mesh animations', () => {
   it('returns the mesh scene with an empty animations map (the .md5anim is a separate file)', () => {
-    const scene = createSceneFromMd5Mesh(SINGLE_TRIANGLE);
+    const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
     expect(Object.keys(scene.animations)).toHaveLength(0);
   });
 
   it('composes a paired .md5anim into a named clip bound to the scene’s own skeleton joints', () => {
-    const scene = createSceneFromMd5Mesh(SINGLE_TRIANGLE);
-    const joints = findSceneSkeletonJoints(scene.root)!;
+    const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
+    const joints = findScene3DSkeletonJoints(scene.root)!;
     scene.animations.walk = parseMd5Anim(SINGLE_JOINT_ANIM, joints)!;
     expect(Object.keys(scene.animations)).toEqual(['walk']);
 
-    const mesh = getNodeChildren(scene.root).find((c) => isMesh(c as SceneNode)) as unknown as Mesh;
+    const mesh = getNodeChildren(scene.root).find((c) => isMesh(c as Node3D)) as unknown as Mesh;
     const meshJoints = mesh.skin!.skeleton.joints;
     const channel = scene.animations.walk.channels[0];
     // The clip binds the SAME joint node the imported mesh skins from — no caller threading.
-    expect((channel.targetRef as SceneAnimationTarget).node).toBe(meshJoints[0]);
+    expect((channel.targetRef as Scene3DAnimationTarget).node).toBe(meshJoints[0]);
   });
 });
 
@@ -1014,10 +1014,10 @@ describe('importMd5Mesh', () => {
     const scene = importMd5Mesh(SINGLE_TRIANGLE, SINGLE_JOINT_ANIM);
     expect(Object.keys(scene.animations)).toEqual(['default']);
 
-    const mesh = getNodeChildren(scene.root).find((c) => isMesh(c as SceneNode)) as unknown as Mesh;
+    const mesh = getNodeChildren(scene.root).find((c) => isMesh(c as Node3D)) as unknown as Mesh;
     const channel = scene.animations.default.channels[0];
     // The composer bound the clip to the SAME joint node the mesh skins from — no caller threading.
-    expect((channel.targetRef as SceneAnimationTarget).node).toBe(mesh.skin!.skeleton.joints[0]);
+    expect((channel.targetRef as Scene3DAnimationTarget).node).toBe(mesh.skin!.skeleton.joints[0]);
   });
 
   it('treats a null animation source the same as omitting it', () => {

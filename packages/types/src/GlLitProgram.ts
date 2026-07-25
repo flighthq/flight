@@ -2,7 +2,7 @@ import type { GlMeshProgram } from './GlMeshProgram';
 
 // The shared base for every lit mesh-material family (classic Lambert/Phong/BlinnPhong, Toon, and the
 // PBR family). Extends GlMeshProgram with the standard forward-light uniform locations every lit
-// shader reads: one packed directional + one ambient term from the SceneLightBlock, the camera world
+// shader reads: one packed directional + one ambient term from the Scene3DLightBlock, the camera world
 // position for view-dependent terms, and the directional shadow uniforms. A family program interface
 // extends GlLitProgram and adds its own material uniforms; bindGlMeshLightBlock + resolveGlLitLocations
 // keep the CPU upload and the GL_MESH_LIGHT_BLOCK_GLSL declaration the single source of truth.

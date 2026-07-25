@@ -1,5 +1,5 @@
-import { createScene } from '@flighthq/scene';
-import { drawGlScene, drawGlSceneShadowMap } from '@flighthq/scene-gl';
+import { createScene3D } from '@flighthq/scene';
+import { drawGlScene3D, drawGlScene3DShadowMap } from '@flighthq/scene-gl';
 import type { GlRenderEffectPipeline, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -19,11 +19,11 @@ import {
   createPlaneMeshGeometry,
   createVector3,
   endGlRenderEffectPipeline,
-  getSceneNodeWorldBounds,
+  getNode3DWorldBounds,
   getSurfacePixelLuminance,
   invalidateNodeLocalTransform,
   normalizeVector3,
-  prepareSceneRender,
+  prepareScene3DRender,
   registerBlinnPhongGlMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
@@ -60,7 +60,7 @@ const material = createBlinnPhongMaterial({
   shininess: 12,
   specular: 0x181818ff,
 });
-const scene = createScene().root;
+const scene = createScene3D().root;
 addNodeChild(scene, createMesh(createPlaneMeshGeometry(80, 60), [material]));
 
 for (const x of [-22, 0, 22]) {
@@ -85,22 +85,22 @@ const lights = {
 };
 
 const sceneBounds = createAabb();
-getSceneNodeWorldBounds(sceneBounds, scene);
+getNode3DWorldBounds(sceneBounds, scene);
 const shadowCamera = createCamera3D({
   far: 200,
   near: 0.1,
   projection: createOrthographicProjection({ halfHeight: 1, halfWidth: 1 }),
 });
 configureDirectionalShadowCamera3DTightFit(shadowCamera, direction, sceneBounds, 1.03);
-drawGlSceneShadowMap(state, scene, shadowCamera);
+drawGlScene3DShadowMap(state, scene, shadowCamera);
 
 beginGlRenderEffectPipeline(state, pipeline);
 renderGlBackground(state);
 state.gl.depthMask(true);
 state.gl.clearDepth(1);
 state.gl.clear(state.gl.DEPTH_BUFFER_BIT);
-prepareSceneRender(state, scene, camera, lights);
-drawGlScene(state, scene, camera, lights);
+prepareScene3DRender(state, scene, camera, lights);
+drawGlScene3D(state, scene, camera, lights);
 endGlRenderEffectPipeline(state, pipeline, []);
 
 export function assertRender(surface: Readonly<Surface>): void {

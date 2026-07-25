@@ -3,13 +3,13 @@ import {
   rotateOrbitCameraController,
   updateOrbitCameraController,
 } from '@flighthq/camera-controls';
-import { createSceneNode } from '@flighthq/scene';
+import { createNode3D } from '@flighthq/scene';
 import type {
   Camera3D,
   ParticleEmitter3D,
   ParticleEmitterConfig,
   ParticleEmitterState,
-  SceneLightsLike,
+  Scene3DLightsLike,
   Surface,
 } from '@flighthq/sdk';
 import {
@@ -25,7 +25,7 @@ import {
   emitParticleBurst3D,
   invalidateNodeAppearance,
   prewarmParticleEmitter3D,
-  SceneNodeKind,
+  Node3DKind,
   stepParticleEmitter3D,
 } from '@flighthq/sdk';
 
@@ -133,7 +133,7 @@ function emitSampledImage(burst: BurstEmitter): void {
   invalidateNodeAppearance(burst.emitter);
 }
 
-const scene = createSceneNode(SceneNodeKind);
+const scene = createNode3D(Node3DKind);
 const burstEmitters: BurstEmitter[] = [];
 const burstPositions = [-2.25, 0, 2.25];
 
@@ -164,7 +164,7 @@ for (let i = 0; i < burstPositions.length; i++) {
   burstEmitters.push(burst);
 }
 
-const lights: SceneLightsLike = {
+const lights: Scene3DLightsLike = {
   ambient: createAmbientLight({ color: 0x8899c0ff, intensity: 0.18 }),
   directional: null,
   point: [],

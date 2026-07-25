@@ -1,8 +1,8 @@
 import type { CubeTexture, Environment, ImageResource } from '@flighthq/types';
 
 import { ensureWgpuEnvironmentSourceCube, updateWgpuEnvironmentCubeFace } from './wgpuEnvironmentCube';
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
-import { makeWgpuSceneState } from './wgpuSceneTestHelper';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 
 // The GPU upload + sampling is validated by the functional `env-skybox` / `env-ibl` captures (jsdom has no
 // real WebGPU cube texture). These cover the CPU-side wiring: the six-face upload, the caching identity,
@@ -34,20 +34,20 @@ function dataOnlyEnvironment(): Environment {
 
 describe('ensureWgpuEnvironmentSourceCube', () => {
   it('returns null when the environment has no complete source cube', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     expect(ensureWgpuEnvironmentSourceCube(state, { environment: null, intensity: 1 } as Environment)).toBe(null);
   });
 
   it('uploads six faces into a cube texture and caches the view', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const view = ensureWgpuEnvironmentSourceCube(state, completeEnvironment());
     expect(view).not.toBe(null);
     expect(fake.calls.filter((c) => c.name === 'copyExternalImageToTexture').length).toBe(6);
-    expect(getWgpuSceneRuntime(state).environmentSourceCube).not.toBe(null);
+    expect(getWgpuScene3DRuntime(state).environmentSourceCube).not.toBe(null);
   });
 
   it('uploads a data-only cube through queue.writeTexture', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const view = ensureWgpuEnvironmentSourceCube(state, dataOnlyEnvironment());
     expect(view).not.toBe(null);
     const writes = fake.calls.filter((c) => c.name === 'writeTexture');
@@ -59,7 +59,7 @@ describe('ensureWgpuEnvironmentSourceCube', () => {
   });
 
   it('re-uses the cached cube view without re-uploading', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const view = ensureWgpuEnvironmentSourceCube(state, completeEnvironment());
     const uploads = fake.calls.filter((c) => c.name === 'copyExternalImageToTexture').length;
     const again = ensureWgpuEnvironmentSourceCube(state, completeEnvironment());
@@ -70,13 +70,13 @@ describe('ensureWgpuEnvironmentSourceCube', () => {
 
 describe('updateWgpuEnvironmentCubeFace', () => {
   it('returns false when no source cube has been built yet', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     expect(updateWgpuEnvironmentCubeFace(state, 2, dataFace())).toBe(false);
     expect(fake.calls.some((c) => c.name === 'writeTexture')).toBe(false);
   });
 
   it('restamps a single face of the built cube without rebuilding the other five', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     ensureWgpuEnvironmentSourceCube(state, dataOnlyEnvironment());
     const afterBuild = fake.calls.filter((c) => c.name === 'writeTexture').length;
     expect(afterBuild).toBe(6);

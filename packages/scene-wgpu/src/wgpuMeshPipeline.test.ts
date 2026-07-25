@@ -7,8 +7,8 @@ import { createTexture, setTextureUvOffset, setTextureUvScale } from '@flighthq/
 import type {
   Camera3D,
   ImageResource,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
   Texture,
   WgpuMaterialBinding,
 } from '@flighthq/types';
@@ -28,8 +28,8 @@ import {
   ensureWgpuPbrSampleBindGroup,
   ensureWgpuPbrSampleLayout,
   ensureWgpuPlaceholderTextureView,
-  ensureWgpuSceneLayouts,
-  ensureWgpuScenePipeline,
+  ensureWgpuScene3DLayouts,
+  ensureWgpuScene3DPipeline,
   ensureWgpuShadowSampleBindGroup,
   ensureWgpuShadowSampleLayout,
   getWgpuMaterialSampler,
@@ -43,14 +43,14 @@ import {
   writeWgpuDrawUniform,
   writeWgpuFrameUniform,
 } from './wgpuMeshPipeline';
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
-import { makeWgpuSceneState, makeWgpuSkinningAdapter } from './wgpuSceneTestHelper';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper';
 
 function makeCamera(): Camera3D {
   return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
 }
 
-function makeLights(): SceneLightBlock {
+function makeLights(): Scene3DLightBlock {
   const data = new Float32Array(SCENE_LIGHT_BLOCK_FLOATS);
   data[1] = -1;
   data[4] = 1;
@@ -60,7 +60,7 @@ function makeLights(): SceneLightBlock {
   return { ambientCount: 1, data, directionalCount: 1, hemisphereCount: 0, pointCount: 0, spotCount: 0, version: 1 };
 }
 
-function makeProxy(): SceneRenderProxy {
+function makeProxy(): Scene3DRenderProxy {
   const geometry = createBoxMeshGeometry();
   return {
     material: createStandardPbrMaterial(),
@@ -70,13 +70,13 @@ function makeProxy(): SceneRenderProxy {
   };
 }
 
-function makePipeline(state: ReturnType<typeof makeWgpuSceneState>['state']) {
+function makePipeline(state: ReturnType<typeof makeWgpuScene3DState>['state']) {
   const module = state.device.createShaderModule({ code: '' });
   const materialBindGroupLayout = state.device.createBindGroupLayout({ entries: [] });
   return createWgpuMeshPipeline(state, { doubleSided: false, format: 'bgra8unorm', materialBindGroupLayout, module });
 }
 
-function makeShadowPipeline(state: ReturnType<typeof makeWgpuSceneState>['state']) {
+function makeShadowPipeline(state: ReturnType<typeof makeWgpuScene3DState>['state']) {
   const module = state.device.createShaderModule({ code: '' });
   const materialBindGroupLayout = state.device.createBindGroupLayout({ entries: [] });
   return createWgpuMeshPipeline(state, {
@@ -88,7 +88,7 @@ function makeShadowPipeline(state: ReturnType<typeof makeWgpuSceneState>['state'
   });
 }
 
-function makePbrSamplePipeline(state: ReturnType<typeof makeWgpuSceneState>['state']) {
+function makePbrSamplePipeline(state: ReturnType<typeof makeWgpuScene3DState>['state']) {
   const module = state.device.createShaderModule({ code: '' });
   const materialBindGroupLayout = state.device.createBindGroupLayout({ entries: [] });
   return createWgpuMeshPipeline(state, {
@@ -102,31 +102,31 @@ function makePbrSamplePipeline(state: ReturnType<typeof makeWgpuSceneState>['sta
 
 describe('beginWgpuMeshDraw', () => {
   it('stores the active pipeline, sets it, and binds the frame group', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     ensureWgpuFrameBindGroup(state);
     const pipeline = makePipeline(state);
     beginWgpuMeshDraw(state, pipeline);
-    expect(getWgpuSceneRuntime(state).activeMeshPipeline).toBe(pipeline);
+    expect(getWgpuScene3DRuntime(state).activeMeshPipeline).toBe(pipeline);
     expect(fake.calls.some((c) => c.name === 'setPipeline')).toBe(true);
     expect(fake.calls.some((c) => c.name === 'setBindGroup' && c.args[0] === 0)).toBe(true);
   });
 
   it('does not bind group(3) for a pipeline without a shadow layout', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     ensureWgpuFrameBindGroup(state);
     beginWgpuMeshDraw(state, makePipeline(state));
     expect(fake.calls.some((c) => c.name === 'setBindGroup' && c.args[0] === 3)).toBe(false);
   });
 
   it('binds the shared shadow group at group(3) for a shadow pipeline', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     ensureWgpuFrameBindGroup(state);
     beginWgpuMeshDraw(state, makeShadowPipeline(state));
     expect(fake.calls.some((c) => c.name === 'setBindGroup' && c.args[0] === 3)).toBe(true);
   });
 
   it('binds the combined PBR sample group at group(3)', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     ensureWgpuFrameBindGroup(state);
     beginWgpuMeshDraw(state, makePbrSamplePipeline(state));
     expect(fake.calls.some((c) => c.name === 'setBindGroup' && c.args[0] === 3)).toBe(true);
@@ -135,7 +135,7 @@ describe('beginWgpuMeshDraw', () => {
 
 describe('buildWgpuMaterialBindGroup', () => {
   it('emits the uniform buffer at 0, the sampler at 1, and each map view at 2 + i', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const layout = {} as GPUBindGroupLayout;
     const buffer = {} as GPUBuffer;
     const sampler = {} as GPUSampler;
@@ -156,7 +156,7 @@ describe('buildWgpuMaterialBindGroup', () => {
 
 describe('buildWgpuPerMapMaterialBindGroup', () => {
   it('emits parallel samplers before their matching map views', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const layout = {} as GPUBindGroupLayout;
     const buffer = {} as GPUBuffer;
     const sampler0 = {} as GPUSampler;
@@ -176,7 +176,7 @@ describe('buildWgpuPerMapMaterialBindGroup', () => {
 
 describe('createWgpuMeshPipeline', () => {
   it('builds a pipeline over the shared frame + draw layouts', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const pipeline = makePipeline(state);
     expect(pipeline.pipeline).toBeDefined();
     expect(pipeline.materialBindGroupLayout).toBeDefined();
@@ -186,7 +186,7 @@ describe('createWgpuMeshPipeline', () => {
   });
 
   it('appends the shadow layout as group(3) when given a shadow bind-group layout', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const pipeline = makeShadowPipeline(state);
     expect(pipeline.hasShadowGroup).toBe(true);
     const layoutCall = fake.calls.filter((c) => c.name === 'createPipelineLayout').at(-1);
@@ -194,7 +194,7 @@ describe('createWgpuMeshPipeline', () => {
   });
 
   it('uses one group(3) sample layout for PBR shadow and IBL resources', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const pipeline = makePbrSamplePipeline(state);
     expect(pipeline.hasPbrSampleGroup).toBe(true);
     expect(pipeline.hasShadowGroup).toBe(false);
@@ -204,7 +204,7 @@ describe('createWgpuMeshPipeline', () => {
   });
 
   it('uses src-alpha blending and disables depth writes for a blended variant', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const module = state.device.createShaderModule({ code: '' });
     const materialBindGroupLayout = state.device.createBindGroupLayout({ entries: [] });
     createWgpuMeshPipeline(state, {
@@ -225,7 +225,7 @@ describe('createWgpuMeshPipeline', () => {
   });
 
   it('keeps blending disabled and depth writes enabled for an opaque variant', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     makePipeline(state);
     const call = fake.calls.filter((c) => c.name === 'createRenderPipeline').at(-1);
     const descriptor = call!.args[0] as GPURenderPipelineDescriptor;
@@ -236,7 +236,7 @@ describe('createWgpuMeshPipeline', () => {
 
 describe('drawWgpuMeshSubset', () => {
   it('issues an indexed draw over the subset after a pipeline is active', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     ensureWgpuFrameBindGroup(state);
     beginWgpuMeshDraw(state, makePipeline(state));
     const proxy = makeProxy();
@@ -247,7 +247,7 @@ describe('drawWgpuMeshSubset', () => {
   });
 
   it('is a no-op when no pipeline is active', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     drawWgpuMeshSubset(state, makeProxy(), createBoxMeshGeometry());
     expect(fake.calls.some((c) => c.name === 'drawIndexed')).toBe(false);
   });
@@ -255,7 +255,7 @@ describe('drawWgpuMeshSubset', () => {
 
 describe('ensureWgpuFrameBindGroup', () => {
   it('creates the frame buffer + bind group once and reuses them', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const a = ensureWgpuFrameBindGroup(state);
     const buffers = fake.calls.filter((c) => c.name === 'createBuffer').length;
     const b = ensureWgpuFrameBindGroup(state);
@@ -266,7 +266,7 @@ describe('ensureWgpuFrameBindGroup', () => {
 
 describe('ensureWgpuIblSampleBindGroup', () => {
   it('writes the disabled IBL uniform and reuses the bind group when no IBL changes', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const a = ensureWgpuIblSampleBindGroup(state);
     const made = fake.calls.filter((c) => c.name === 'createBindGroup').length;
     const b = ensureWgpuIblSampleBindGroup(state);
@@ -277,11 +277,11 @@ describe('ensureWgpuIblSampleBindGroup', () => {
   });
 
   it('rebuilds the bind group when a baked IBL set becomes present', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     ensureWgpuIblSampleBindGroup(state);
     const before = fake.calls.filter((c) => c.name === 'createBindGroup').length;
     // Simulate bakeWgpuEnvironmentIbl having stored a baked set this frame.
-    getWgpuSceneRuntime(state).ibl = {
+    getWgpuScene3DRuntime(state).ibl = {
       brdfLut: {} as GPUTexture,
       brdfLutView: {} as GPUTextureView,
       intensity: 1,
@@ -298,7 +298,7 @@ describe('ensureWgpuIblSampleBindGroup', () => {
 
 describe('ensureWgpuIblSampleLayout', () => {
   it('creates the IBL-sample layout once per state', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const a = ensureWgpuIblSampleLayout(state);
     const made = fake.calls.filter((c) => c.name === 'createBindGroupLayout').length;
     const b = ensureWgpuIblSampleLayout(state);
@@ -314,7 +314,7 @@ describe('ensureWgpuMaterialBinding', () => {
   const view1 = {} as GPUTextureView;
 
   it('creates the buffer + bind group once, owns a copy of the scratch, and steady-state binds build nothing', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const key = {};
     const scratch = [view0, view1];
     const binding = ensureWgpuMaterialBinding(state, key, layout, 48, sampler, scratch);
@@ -335,7 +335,7 @@ describe('ensureWgpuMaterialBinding', () => {
   });
 
   it('rebuilds the bind group in place (reusing the buffer) when a resolved view changes', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const key = {};
     const scratch = [view0, view1];
     ensureWgpuMaterialBinding(state, key, layout, 48, sampler, scratch);
@@ -348,7 +348,7 @@ describe('ensureWgpuMaterialBinding', () => {
   });
 
   it('rebuilds when the primary sampler changes', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const key = {};
     const scratch = [view0, view1];
     ensureWgpuMaterialBinding(state, key, layout, 48, sampler, scratch);
@@ -359,7 +359,7 @@ describe('ensureWgpuMaterialBinding', () => {
 
 describe('ensureWgpuPbrSampleBindGroup', () => {
   it('packs shadow and IBL sample bindings into one cached group', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const a = ensureWgpuPbrSampleBindGroup(state);
     const bindGroupCall = fake.calls.filter((c) => c.name === 'createBindGroup').at(-1);
     const made = fake.calls.filter((c) => c.name === 'createBindGroup').length;
@@ -372,11 +372,11 @@ describe('ensureWgpuPbrSampleBindGroup', () => {
   });
 
   it('rebuilds the group when a shadow map becomes present', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     ensureWgpuPbrSampleBindGroup(state);
     const before = fake.calls.filter((c) => c.name === 'createBindGroup').length;
 
-    getWgpuSceneRuntime(state).shadow = {
+    getWgpuScene3DRuntime(state).shadow = {
       depthTexture: {} as GPUTexture,
       depthView: {} as GPUTextureView,
       matrix: createMatrix4(),
@@ -389,7 +389,7 @@ describe('ensureWgpuPbrSampleBindGroup', () => {
 
 describe('ensureWgpuPbrSampleLayout', () => {
   it('creates the combined PBR sample layout once per state', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const a = ensureWgpuPbrSampleLayout(state);
     const layoutCall = fake.calls.filter((c) => c.name === 'createBindGroupLayout').at(-1);
     const made = fake.calls.filter((c) => c.name === 'createBindGroupLayout').length;
@@ -409,7 +409,7 @@ describe('ensureWgpuPerMapMaterialBinding', () => {
   const view1 = {} as GPUTextureView;
 
   it('owns the parallel scratch copies and builds nothing on steady-state rebind', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const key = {};
     const samplers = [sampler0, sampler1];
     const views = [view0, view1];
@@ -425,7 +425,7 @@ describe('ensureWgpuPerMapMaterialBinding', () => {
   });
 
   it('rebuilds only the bind group when a non-primary sampler changes', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const key = {};
     const samplers = [sampler0, sampler1];
     const views = [view0, view1];
@@ -444,7 +444,7 @@ describe('ensureWgpuPerMapMaterialBinding', () => {
 
 describe('ensureWgpuPlaceholderTextureView', () => {
   it('creates the 1x1 white texture once and reuses the view', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const a = ensureWgpuPlaceholderTextureView(state);
     const textures = fake.calls.filter((c) => c.name === 'createTexture').length;
     const b = ensureWgpuPlaceholderTextureView(state);
@@ -453,64 +453,64 @@ describe('ensureWgpuPlaceholderTextureView', () => {
   });
 });
 
-describe('ensureWgpuSceneLayouts', () => {
+describe('ensureWgpuScene3DLayouts', () => {
   it('creates the frame + draw layouts once per state', () => {
-    const { fake, state } = makeWgpuSceneState();
-    ensureWgpuSceneLayouts(state);
+    const { fake, state } = makeWgpuScene3DState();
+    ensureWgpuScene3DLayouts(state);
     const made = fake.calls.filter((c) => c.name === 'createBindGroupLayout').length;
-    ensureWgpuSceneLayouts(state);
+    ensureWgpuScene3DLayouts(state);
     expect(fake.calls.filter((c) => c.name === 'createBindGroupLayout').length).toBe(made);
   });
 });
 
-describe('ensureWgpuScenePipeline', () => {
+describe('ensureWgpuScene3DPipeline', () => {
   it('compiles a key once and returns the cached pipeline', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     let compiles = 0;
     const compile = () => {
       compiles++;
       return makePipeline(state);
     };
-    const a = ensureWgpuScenePipeline(state, 'fam:bgra8unorm|-', compile);
-    const b = ensureWgpuScenePipeline(state, 'fam:bgra8unorm|-', compile);
+    const a = ensureWgpuScene3DPipeline(state, 'fam:bgra8unorm|-', compile);
+    const b = ensureWgpuScene3DPipeline(state, 'fam:bgra8unorm|-', compile);
     expect(a).toBe(b);
     expect(compiles).toBe(1);
   });
 
   it('caches separate opaque and blended variants of the same family key', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     const variants: boolean[] = [];
     const compile = (blended: boolean) => {
       variants.push(blended);
       return makePipeline(state);
     };
 
-    ensureWgpuScenePipeline(state, 'fam:bgra8unorm|-', compile);
-    getWgpuSceneRuntime(state).activeBlendedRun = true;
-    ensureWgpuScenePipeline(state, 'fam:bgra8unorm|-', compile);
-    ensureWgpuScenePipeline(state, 'fam:bgra8unorm|-', compile);
+    ensureWgpuScene3DPipeline(state, 'fam:bgra8unorm|-', compile);
+    getWgpuScene3DRuntime(state).activeBlendedRun = true;
+    ensureWgpuScene3DPipeline(state, 'fam:bgra8unorm|-', compile);
+    ensureWgpuScene3DPipeline(state, 'fam:bgra8unorm|-', compile);
 
     expect(variants).toEqual([false, true]);
-    expect(Array.from(getWgpuSceneRuntime(state).pipelineCache.keys())).toEqual([
+    expect(Array.from(getWgpuScene3DRuntime(state).pipelineCache.keys())).toEqual([
       'fam:bgra8unorm|-|opaque|rigid',
       'fam:bgra8unorm|-|blend|rigid',
     ]);
   });
 
   it('caches rigid and skinned variants independently', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     const variants: boolean[] = [];
     const compile = (_blended: boolean, skinned: boolean) => {
       variants.push(skinned);
       return makePipeline(state);
     };
 
-    ensureWgpuScenePipeline(state, 'fam:bgra8unorm|-', compile);
-    getWgpuSceneRuntime(state).activeSkinnedRun = true;
-    ensureWgpuScenePipeline(state, 'fam:bgra8unorm|-', compile);
+    ensureWgpuScene3DPipeline(state, 'fam:bgra8unorm|-', compile);
+    getWgpuScene3DRuntime(state).activeSkinnedRun = true;
+    ensureWgpuScene3DPipeline(state, 'fam:bgra8unorm|-', compile);
 
     expect(variants).toEqual([false, true]);
-    expect(Array.from(getWgpuSceneRuntime(state).pipelineCache.keys())).toEqual([
+    expect(Array.from(getWgpuScene3DRuntime(state).pipelineCache.keys())).toEqual([
       'fam:bgra8unorm|-|opaque|rigid',
       'fam:bgra8unorm|-|opaque|skin',
     ]);
@@ -519,7 +519,7 @@ describe('ensureWgpuScenePipeline', () => {
 
 describe('ensureWgpuShadowSampleBindGroup', () => {
   it('writes the disabled shadow uniform and reuses the bind group when no shadow changes', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const a = ensureWgpuShadowSampleBindGroup(state);
     const made = fake.calls.filter((c) => c.name === 'createBindGroup').length;
     const b = ensureWgpuShadowSampleBindGroup(state);
@@ -530,11 +530,11 @@ describe('ensureWgpuShadowSampleBindGroup', () => {
   });
 
   it('rebuilds the bind group when a shadow map becomes present', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     ensureWgpuShadowSampleBindGroup(state);
     const before = fake.calls.filter((c) => c.name === 'createBindGroup').length;
-    // Simulate drawWgpuSceneShadowMap having stored a shadow this frame.
-    getWgpuSceneRuntime(state).shadow = {
+    // Simulate drawWgpuScene3DShadowMap having stored a shadow this frame.
+    getWgpuScene3DRuntime(state).shadow = {
       depthTexture: {} as GPUTexture,
       depthView: {} as GPUTextureView,
       matrix: createMatrix4(),
@@ -546,7 +546,7 @@ describe('ensureWgpuShadowSampleBindGroup', () => {
 
 describe('ensureWgpuShadowSampleLayout', () => {
   it('creates the shadow-sample layout once per state', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const a = ensureWgpuShadowSampleLayout(state);
     const made = fake.calls.filter((c) => c.name === 'createBindGroupLayout').length;
     const b = ensureWgpuShadowSampleLayout(state);
@@ -557,12 +557,12 @@ describe('ensureWgpuShadowSampleLayout', () => {
 
 describe('getWgpuMaterialSampler', () => {
   it('returns the shared clamp sampler for a null map', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     expect(getWgpuMaterialSampler(state, null)).toBe(getWgpuRenderStateRuntime(state).linearSampler);
   });
 
   it('derives a wrap- and mip-specific sampler for a tiling map', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     const texture = createTexture({ image: {} as ImageResource });
     texture.sampler.wrapU = 'repeat';
     texture.sampler.wrapV = 'repeat';
@@ -576,7 +576,7 @@ describe('getWgpuMaterialSampler', () => {
   });
 
   it('drops the mip filter when the map disables mipmaps (distinct packed key from the mipmapped default)', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     const noMip = createTexture({ image: {} as ImageResource });
     noMip.sampler.mipmaps = false;
     const withMip = createTexture({ image: {} as ImageResource }); // default: trilinear (mipmaps on)
@@ -588,7 +588,7 @@ describe('getWgpuMaterialSampler', () => {
   });
 
   it('carries the map anisotropy into the derived sampler (distinct packed key from the non-anisotropic one)', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     const aniso = createTexture({ image: {} as ImageResource });
     aniso.sampler.anisotropy = 8;
     const noAniso = createTexture({ image: {} as ImageResource });
@@ -665,7 +665,7 @@ describe('isWgpuTextureReady', () => {
 
 describe('resolveWgpuMaterialTextureView', () => {
   it('returns the shared placeholder view for a map without an image source', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     const placeholder = ensureWgpuPlaceholderTextureView(state);
     expect(resolveWgpuMaterialTextureView(state, null)).toBe(placeholder);
     expect(resolveWgpuMaterialTextureView(state, { image: null } as unknown as Texture)).toBe(placeholder);
@@ -674,7 +674,7 @@ describe('resolveWgpuMaterialTextureView', () => {
 
 describe('stashWgpuUvTransform', () => {
   it('stores the column-major transform for a bound non-identity texture', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     const texture = createTexture({ image: {} as ImageResource });
     setTextureUvScale(texture, 2, 3);
     setTextureUvOffset(texture, 0.5, 0.25);
@@ -682,27 +682,27 @@ describe('stashWgpuUvTransform', () => {
     stashWgpuUvTransform(state, texture);
 
     // Column-major: col0 = scaled U axis, col1 = scaled V axis, col2 = translation.
-    const stash = Array.from(getWgpuSceneRuntime(state).pendingUvTransform).map((n) => n + 0);
+    const stash = Array.from(getWgpuScene3DRuntime(state).pendingUvTransform).map((n) => n + 0);
     expect(stash).toEqual([2, 0, 0, 0, 3, 0, 0.5, 0.25, 1]);
   });
 
   it('resets to identity for a null texture', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     const texture = createTexture({ image: {} as ImageResource });
     setTextureUvScale(texture, 4, 4);
     stashWgpuUvTransform(state, texture);
 
     stashWgpuUvTransform(state, null);
 
-    expect(Array.from(getWgpuSceneRuntime(state).pendingUvTransform)).toEqual([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+    expect(Array.from(getWgpuScene3DRuntime(state).pendingUvTransform)).toEqual([1, 0, 0, 0, 1, 0, 0, 0, 1]);
   });
 
   it('resets to identity for an identity-transform texture', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
 
     stashWgpuUvTransform(state, createTexture({ image: {} as ImageResource }));
 
-    expect(Array.from(getWgpuSceneRuntime(state).pendingUvTransform)).toEqual([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+    expect(Array.from(getWgpuScene3DRuntime(state).pendingUvTransform)).toEqual([1, 0, 0, 0, 1, 0, 0, 0, 1]);
   });
 });
 
@@ -750,14 +750,14 @@ describe('wgpuPerMapMaterialBindGroupNeedsRebuild', () => {
 
 describe('writeWgpuDrawUniform', () => {
   it('writes the draw uniform and returns the dynamic-offset bind group', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     const group = writeWgpuDrawUniform(state, makeProxy());
     expect(group).toBeDefined();
-    expect(getWgpuSceneRuntime(state).pendingDrawOffset).toBe(0);
+    expect(getWgpuScene3DRuntime(state).pendingDrawOffset).toBe(0);
   });
 
   it('folds the stashed uv transform into the draw uniform', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     const texture = createTexture({ image: {} as ImageResource });
     setTextureUvScale(texture, 2, 3);
     stashWgpuUvTransform(state, texture);
@@ -771,16 +771,16 @@ describe('writeWgpuDrawUniform', () => {
   });
 
   it('persists the stash across draws so a material shared by many meshes tiles every one', () => {
-    // Regression: drawWgpuScene binds once per material then draws many meshes. The stash must survive
+    // Regression: drawWgpuScene3D binds once per material then draws many meshes. The stash must survive
     // each writeWgpuDrawUniform (not be consumed), or only the first mesh under a bind would tile.
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     const texture = createTexture({ image: {} as ImageResource });
     setTextureUvScale(texture, 2, 3);
     stashWgpuUvTransform(state, texture);
 
     writeWgpuDrawUniform(state, makeProxy());
     // Not consumed — the stash still holds the transform for the next mesh under the same bind.
-    expect(Array.from(getWgpuSceneRuntime(state).pendingUvTransform).map((n) => n + 0)).toEqual([
+    expect(Array.from(getWgpuScene3DRuntime(state).pendingUvTransform).map((n) => n + 0)).toEqual([
       2, 0, 0, 0, 3, 0, 0, 0, 1,
     ]);
 
@@ -793,7 +793,7 @@ describe('writeWgpuDrawUniform', () => {
   });
 
   it('writes the resolved object alpha into the draw params', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     const proxy = makeProxy();
     proxy.alpha = 0.375;
     writeWgpuDrawUniform(state, proxy);
@@ -803,27 +803,27 @@ describe('writeWgpuDrawUniform', () => {
 
 describe('writeWgpuFrameUniform', () => {
   it('writes the frame uniform buffer', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     writeWgpuFrameUniform(state, makeCamera(), makeLights());
     expect(fake.calls.some((c) => c.name === 'writeBuffer')).toBe(true);
   });
 
   it('uses distinct cached buffers for distinct light blocks so queued draws retain their data', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     const camera = makeCamera();
     const firstLights = makeLights();
     const secondLights = makeLights();
     writeWgpuFrameUniform(state, camera, firstLights);
-    const firstBuffer = getWgpuSceneRuntime(state).frameBuffer;
+    const firstBuffer = getWgpuScene3DRuntime(state).frameBuffer;
     writeWgpuFrameUniform(state, camera, secondLights);
-    const secondBuffer = getWgpuSceneRuntime(state).frameBuffer;
+    const secondBuffer = getWgpuScene3DRuntime(state).frameBuffer;
     expect(secondBuffer).not.toBe(firstBuffer);
     writeWgpuFrameUniform(state, camera, firstLights);
-    expect(getWgpuSceneRuntime(state).frameBuffer).toBe(firstBuffer);
+    expect(getWgpuScene3DRuntime(state).frameBuffer).toBe(firstBuffer);
   });
 
   it('remaps OpenGL clip-space Z into WebGPU NDC depth', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const camera = createCamera3D({
       far: 11,
       near: 1,

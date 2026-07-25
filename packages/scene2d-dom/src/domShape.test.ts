@@ -1,6 +1,6 @@
-﻿iimport { registerRenderer } from '@flighthq/render';
+﻿import { registerRenderer } from '@flighthq/render';
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
-mport { defaultCanvasShapeCommands, registerCanvasShapeCommands } from '@flighthq/scene2d-canvas';
+import { defaultCanvasShapeCommands, registerCanvasShapeCommands } from '@flighthq/scene2d-canvas';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape';
 import { ShapeKind } from '@flighthq/types';
 

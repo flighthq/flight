@@ -48,7 +48,7 @@ export function beginGlRenderEffectPipeline(state: GlRenderState, pipeline: GlRe
   } else {
     resizeGlRenderTarget(state, pipeline.sceneTarget, w, h);
   }
-  // Reset the declared color space each frame so the frame's producer re-declares it: drawGlScene stamps
+  // Reset the declared color space each frame so the frame's producer re-declares it: drawGlScene3D stamps
   // 'linear' while it draws (the present then encodes once); a 2D display-object frame leaves it 'srgb'
   // (plain-copy present, byte-identical to before this seam existed). A reused pipeline never carries a
   // stale space from a prior frame's content.

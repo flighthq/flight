@@ -7,8 +7,8 @@ import {
   ensureWgpuDebugPipeline,
   getWgpuDebugModuleSourceForKey,
 } from './wgpuDebugPrelude';
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
-import { makeWgpuSceneState } from './wgpuSceneTestHelper';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 
 const DEPTH: WgpuDebugDefineKey = { hasNormalMap: false, mode: 'depth' };
 const NORMAL: WgpuDebugDefineKey = { hasNormalMap: false, mode: 'normal' };
@@ -16,7 +16,7 @@ const NORMAL_MAP: WgpuDebugDefineKey = { hasNormalMap: true, mode: 'normal' };
 
 describe('bindWgpuDebugSurface', () => {
   it('creates a material bind group once per key and writes its uniform', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const pipeline = compileWgpuDebugPipeline(state, DEPTH, 'bgra8unorm');
     const key = {};
     bindWgpuDebugSurface(state, pipeline, key, 0.1, 100, 1);
@@ -37,7 +37,7 @@ describe('buildWgpuDebugDefineKey', () => {
 
 describe('compileWgpuDebugPipeline', () => {
   it('compiles a module and builds the pipeline with a 3-entry material layout', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const pipeline = compileWgpuDebugPipeline(state, NORMAL, 'rgba16float');
     expect(pipeline.pipeline).toBeDefined();
     expect(fake.calls.some((c) => c.name === 'createShaderModule')).toBe(true);
@@ -51,7 +51,7 @@ describe('compileWgpuDebugPipeline', () => {
 
 describe('ensureWgpuDebugPipeline', () => {
   it('caches variants under the debug namespace with distinct depth and normal entries', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     const depthFirst = ensureWgpuDebugPipeline(state, DEPTH, 'bgra8unorm');
     const depthSecond = ensureWgpuDebugPipeline(state, DEPTH, 'bgra8unorm');
     expect(depthSecond).toBe(depthFirst);
@@ -59,7 +59,7 @@ describe('ensureWgpuDebugPipeline', () => {
     const normalPipeline = ensureWgpuDebugPipeline(state, NORMAL, 'bgra8unorm');
     expect(normalPipeline).not.toBe(depthFirst);
 
-    const keys = [...getWgpuSceneRuntime(state).pipelineCache.keys()];
+    const keys = [...getWgpuScene3DRuntime(state).pipelineCache.keys()];
     expect(keys.some((k) => k.startsWith('debug:'))).toBe(true);
     expect(keys).toContain('debug:bgra8unorm|d-|opaque|rigid');
     expect(keys).toContain('debug:bgra8unorm|n-|opaque|rigid');

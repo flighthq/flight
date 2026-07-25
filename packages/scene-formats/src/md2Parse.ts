@@ -3,19 +3,19 @@ import { createTransform3D } from '@flighthq/geometry';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
 import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { createMeshGeometry } from '@flighthq/mesh';
-import { createSceneFromDocument } from '@flighthq/scene';
-import type { Scene } from '@flighthq/types';
+import { createScene3DFromDocument } from '@flighthq/scene';
+import type { Scene3D } from '@flighthq/types';
 import type {
   ImportDiagnostic,
   Material,
   MaterialLike,
   MeshMorph,
   MorphTarget,
-  SceneDocument,
-  SceneDocumentAnimation,
-  SceneDocumentMesh,
+  Scene3DDocument,
+  Scene3DDocumentAnimation,
+  Scene3DDocumentMesh,
 } from '@flighthq/types';
-import { ImportDiagnosticSeverity, MeshKind, SceneAnimationPathWeights } from '@flighthq/types';
+import { ImportDiagnosticSeverity, MeshKind, Scene3DAnimationPathWeights } from '@flighthq/types';
 
 import {
   MD2_ANORMS,
@@ -32,9 +32,9 @@ import {
 } from './md2Schema';
 import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, createExternalTextureRef } from './shared';
 
-// Parses an id Software MD2 (Quake 2) binary model into a Scene. Frame 0 is the base pose of a single
+// Parses an id Software MD2 (Quake 2) binary model into a Scene3D. Frame 0 is the base pose of a single
 // Mesh node; every subsequent frame becomes a morph target (position/normal deltas from frame 0), so
-// the mesh carries a MeshMorph for its vertex-frame animation (createSceneFromMd2 folds the clip that drives it
+// the mesh carries a MeshMorph for its vertex-frame animation (createScene3DFromMd2 folds the clip that drives it
 // — see agents/morph-target-animation.md, where MD2 is the legacy validation case for the morph
 // deformer). Compressed vertices are decompressed using each frame's scale and translate vectors, and
 // normals are resolved from the 162-entry Anorms lookup table. UV coordinates are scaled from integer
@@ -46,17 +46,17 @@ import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, createExternalTextureRef
 // through the same re-indexing. MD2's oddities — byte-quantized frames, the normal LUT, and the Z-up→
 // Y-up reflection — stay quarantined here; the emitted morph targets are plain Y-up float deltas.
 //
-// Malformed input records an ImportDiagnostic (into an engaged collector) and returns an empty Scene rather than throwing. Convenience over
-// `createSceneFromDocument(parseMd2(bytes))`.
-export function createSceneFromMd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagnostic[]): Scene {
-  return createSceneFromDocument(parseMd2(bytes, diagnostics));
+// Malformed input records an ImportDiagnostic (into an engaged collector) and returns an empty Scene3D rather than throwing. Convenience over
+// `createScene3DFromDocument(parseMd2(bytes))`.
+export function createScene3DFromMd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagnostic[]): Scene3D {
+  return createScene3DFromDocument(parseMd2(bytes, diagnostics));
 }
 
-// Parses an id Software MD2 (Quake 2) binary model into a format-neutral SceneDocument: one Mesh node
+// Parses an id Software MD2 (Quake 2) binary model into a format-neutral Scene3DDocument: one Mesh node
 // whose base pose is frame 0 and whose per-frame vertex animation is carried as a MeshMorph (each later
 // frame a position/normal delta target), plus one weights animation driving that morph. Assemble into a
-// live Scene with `createSceneFromDocument`. Malformed input returns an empty document, recording an ImportDiagnostic when a collector is engaged.
-export function parseMd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagnostic[]): SceneDocument {
+// live Scene3D with `createScene3DFromDocument`. Malformed input returns an empty document, recording an ImportDiagnostic when a collector is engaged.
+export function parseMd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagnostic[]): Scene3DDocument {
   if (bytes.length < MD2_HEADER_SIZE) {
     reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'md2.header-too-short', 'parseMd2', {
       byteLength: bytes.length,
@@ -266,7 +266,7 @@ export function parseMd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagno
   const indexArray = Uint32Array.from(indices);
   const geometry = createMeshGeometry({ indices: indexArray, layout: CANONICAL_LAYOUT, vertices });
   const morph = buildMd2Morph(frames, sourceVertexIndices);
-  const documentMesh: SceneDocumentMesh = { geometry, materials: meshMaterials };
+  const documentMesh: Scene3DDocumentMesh = { geometry, materials: meshMaterials };
   if (morph !== null) documentMesh.morph = morph;
   document.meshes.push(documentMesh);
   document.nodes.push({ children: [], kind: MeshKind, mesh: 0, transform: createTransform3D() });
@@ -394,15 +394,15 @@ function buildMd2Morph(frames: readonly Md2Frame[], sourceVertexIndices: readonl
 // Segments MD2's frames into named vertex-morph clips, one per contiguous run of same-action frames.
 // MD2 stores each sub-animation as a run of frames whose names share an action prefix and end in a
 // frame number ("stand01".."stand40"); `md2FrameActionName` recovers that prefix, and contiguous
-// same-prefix frames become one `SceneDocumentAnimation`. Returns an empty array for a model with no
+// same-prefix frames become one `Scene3DDocumentAnimation`. Returns an empty array for a model with no
 // morph (single frame). A model whose frames carry no names collapses to one clip named 'default',
 // identical to MD2's implicit single animation. Each clip binds mesh node 0.
-function buildMd2MorphAnimations(frames: readonly Md2Frame[], morph: MeshMorph | null): SceneDocumentAnimation[] {
+function buildMd2MorphAnimations(frames: readonly Md2Frame[], morph: MeshMorph | null): Scene3DDocumentAnimation[] {
   if (morph === null) return [];
   const targetCount = morph.targets.length;
   if (targetCount === 0) return [];
 
-  const animations: SceneDocumentAnimation[] = [];
+  const animations: Scene3DDocumentAnimation[] = [];
   const usedNames = new Set<string>();
   let runStart = 0;
   for (let k = 1; k <= frames.length; k++) {
@@ -427,7 +427,7 @@ function buildMd2ActionClip(
   endFrame: number,
   targetCount: number,
   usedNames: Set<string>,
-): SceneDocumentAnimation {
+): Scene3DDocumentAnimation {
   const count = endFrame - startFrame + 1;
   const times = new Float32Array(count);
   const values = new Float32Array(count * targetCount);
@@ -438,7 +438,7 @@ function buildMd2ActionClip(
   }
   const track = createAnimationTrack({ components: targetCount, interpolation: 'Linear', times, values });
   return {
-    channels: [{ node: 0, path: SceneAnimationPathWeights, track }],
+    channels: [{ node: 0, path: Scene3DAnimationPathWeights, track }],
     duration: times[count - 1],
     name: uniqueMd2ClipName(action, usedNames),
   };
@@ -463,8 +463,8 @@ function uniqueMd2ClipName(action: string, usedNames: Set<string>): string {
   return name;
 }
 
-// The empty SceneDocument returned when MD2 parsing fails or before assembly begins — every table present.
-function emptyMd2Document(): SceneDocument {
+// The empty Scene3DDocument returned when MD2 parsing fails or before assembly begins — every table present.
+function emptyMd2Document(): Scene3DDocument {
   return {
     animations: [],
     cameras: [],

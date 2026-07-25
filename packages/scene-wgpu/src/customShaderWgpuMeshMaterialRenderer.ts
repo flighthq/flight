@@ -4,8 +4,8 @@ import type {
   CustomShaderMaterial,
   Material,
   MeshGeometry,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
   WgpuCustomMaterialShaderSource,
   WgpuMeshMaterialRenderer,
   WgpuMeshPipeline,
@@ -20,14 +20,14 @@ import {
   createWgpuMeshPipeline,
   drawWgpuMeshSubset,
   ensureWgpuPlaceholderTextureView,
-  ensureWgpuScenePipeline,
+  ensureWgpuScene3DPipeline,
   getWgpuMaterialSampler,
   isWgpuTextureReady,
   resolveWgpuMaterialTextureView,
   stashWgpuUvTransform,
   writeWgpuFrameUniform,
 } from './wgpuMeshPipeline';
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 
 export { WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY, WGPU_CUSTOM_SHADER_USER_VEC4_CAPACITY } from './wgpuCustomMaterialAbi';
 
@@ -52,10 +52,10 @@ export const customShaderWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
   bind(
     state: WgpuRenderState,
     material: Readonly<Material> | null,
-    lights: Readonly<SceneLightBlock>,
+    lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
-    const scene = getWgpuSceneRuntime(state);
+    const scene = getWgpuScene3DRuntime(state);
     const runtime = getWgpuRenderStateRuntime(state);
     const pass = runtime.renderPass;
     const custom = material as Readonly<CustomShaderMaterial> | null;
@@ -83,7 +83,7 @@ export const customShaderWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     const layouts = ensureCustomMaterialLayouts(state);
     const format = runtime.currentColorFormat ?? state.format;
     const sideKey = custom.doubleSided ? 'double' : 'single';
-    const pipeline = ensureWgpuScenePipeline(
+    const pipeline = ensureWgpuScene3DPipeline(
       state,
       `custom:${custom.shaderKey}:${format}:${sideKey}`,
       (blended, skinned) =>
@@ -100,7 +100,7 @@ export const customShaderWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     pass.setBindGroup(3, textureBindGroup);
   },
 
-  draw(state: WgpuRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+  draw(state: WgpuRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
     drawWgpuMeshSubset(state, proxy, geometry);
   },
 };

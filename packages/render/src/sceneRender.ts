@@ -32,10 +32,10 @@ import type {
   NodeAny,
   PointLight,
   RenderState,
-  SceneLightBlock,
-  SceneLightsLike,
-  SceneNode,
-  SceneRenderList,
+  Scene3DLightBlock,
+  Scene3DLightsLike,
+  Node3D,
+  Scene3DRenderList,
   SpotLight,
   Transform3DNode,
 } from '@flighthq/types';
@@ -61,11 +61,11 @@ import {
 // terms and unused array slots stay zeroed. Punctual arrays beyond MAX_FORWARD_LIGHTS are dropped.
 //
 // `version` bumps only when the packed data or counts actually change from the previous pack — a
-// no-op re-pack of identical lights leaves it untouched. This is the SceneLightBlock contract a
+// no-op re-pack of identical lights leaves it untouched. This is the Scene3DLightBlock contract a
 // backend keyed off `version` relies on to skip re-uploading an unchanged block across frames; a
 // blind per-frame bump would defeat that skip. Packs into a scratch, compares, then commits only on
 // change so an unchanged block is never dirtied.
-export function packSceneLightBlock(out: SceneLightBlock, lights: Readonly<SceneLightsLike>): void {
+export function packScene3DLightBlock(out: Scene3DLightBlock, lights: Readonly<Scene3DLightsLike>): void {
   scratchLightData.fill(0);
 
   let directionalCount = 0;
@@ -134,17 +134,17 @@ export function packSceneLightBlock(out: SceneLightBlock, lights: Readonly<Scene
 }
 
 // The per-frame preparation pass for a 3D scene, the 3D analog of prepareScene2DRender. It is
-// backend-agnostic (no GPU context): it walks the SceneNode hierarchy rooted at `scene`, propagating
+// backend-agnostic (no GPU context): it walks the Node3D hierarchy rooted at `scene`, propagating
 // each node's world matrix (parentWorld x local matrix, resolved lazily on the node runtime and
 // alias-safe), computes the draw camera's view-projection, frustum-culls every Mesh against its
-// world-space bounds, and packs `lights` into the shared SceneLightBlock (sRgb->linear at pack time).
-// The returned SceneRenderList is the render-ready frame the backend drawScene consumes — it only
+// world-space bounds, and packs `lights` into the shared Scene3DLightBlock (sRgb->linear at pack time).
+// The returned Scene3DRenderList is the render-ready frame the backend drawScene3D consumes — it only
 // has to upload buffers, bind, and draw the visible meshes.
 //
 // DEFORMATION IS A SEPARATE, EARLIER PASS. This pass no longer readies skinning palettes or blends
 // morphs — that would force @flighthq/render to depend on @flighthq/skeleton3d and bundle skinning into
-// every rigid or 2D consumer. A skinned scene must call prepareSceneSkinning (@flighthq/skeleton3d) and
-// a morphed scene prepareSceneMorph (@flighthq/scene) BEFORE this pass; each readies its own deformer
+// every rigid or 2D consumer. A skinned scene must call prepareScene3DSkinning (@flighthq/skeleton3d) and
+// a morphed scene prepareScene3DMorph (@flighthq/scene) BEFORE this pass; each readies its own deformer
 // and writes the mesh's posed local bounds (skin: the deformedLocalBounds node-runtime slot this pass
 // reads; morph: the geometry vertices, hence its ensured bounds). Cull here consumes those as data, so
 // it sees the current-frame posed silhouette without any skinning code in this package. A rigid scene
@@ -153,23 +153,23 @@ export function packSceneLightBlock(out: SceneLightBlock, lights: Readonly<Scene
 // `aspect` for a perspective camera is taken from the render state's pixel-space target (width /
 // height); a degenerate target falls back to 1. The returned list is reused scratch owned per render
 // state (so a gl state and a wgpu state prepare independently); a caller must not retain it past the
-// drawScene it feeds.
-export function prepareSceneRender(
+// drawScene3D it feeds.
+export function prepareScene3DRender(
   state: RenderState,
-  scene: Readonly<SceneNode>,
+  scene: Readonly<Node3D>,
   camera: Readonly<Camera3D>,
-  lights: Readonly<SceneLightsLike>,
-): SceneRenderList {
-  const prepared = ensurePreparedScene(state);
+  lights: Readonly<Scene3DLightsLike>,
+): Scene3DRenderList {
+  const prepared = ensurePreparedScene3D(state);
   const list = prepared.list;
 
   // RenderState carries no canonical viewport size, so a perspective camera supplies its own aspect
   // through its projection; this neutral fallback keeps an orthographic frame and a pre-aspected
   // perspective frame correct. A backend that owns a sized target sets the projection aspect first.
-  setSceneViewProjectionMatrix4(prepared.viewProjection, camera, DEFAULT_VIEWPORT_ASPECT);
+  setScene3DViewProjectionMatrix4(prepared.viewProjection, camera, DEFAULT_VIEWPORT_ASPECT);
   setFrustumFromMatrix4(prepared.frustum, prepared.viewProjection);
 
-  packSceneLightBlock(list.lights, lights);
+  packScene3DLightBlock(list.lights, lights);
 
   prepared.meshes.length = 0;
   // The sync policy governs transform freshness in the prepare pass, consistently with the 2D
@@ -199,7 +199,7 @@ function collectVisibleMeshes(
   // Under 'refreshDerivedState', bump the local-transform revision of every visited node before its
   // world matrix is read below. Pre-order walk order means an ancestor is invalidated before any
   // descendant resolves the parent chain, so the whole visible subtree recomposes from live transform
-  // fields this frame. See prepareSceneRender for the policy rationale.
+  // fields this frame. See prepareScene3DRender for the policy rationale.
   // A directly-authored local matrix is already the node's authoritative transform. The refresh
   // policy exists to observe bare TRS-field mutations; invalidating a detached matrix here would
   // recompose it from the dormant TRS fields and silently erase setNodeLocalMatrix4().
@@ -207,7 +207,7 @@ function collectVisibleMeshes(
     invalidateNodeLocalTransform(node as NodeAny);
   }
 
-  // worldAlpha is not folded in this walk: it is lazily ensured on access (getSceneNodeWorldAlpha), the
+  // worldAlpha is not folded in this walk: it is lazily ensured on access (getNode3DWorldAlpha), the
   // appearance analog of the ensure-on-access world matrix the renderer resolves at draw time. This walk
   // is culling + mesh collection only.
 
@@ -226,12 +226,12 @@ function collectVisibleMeshes(
   }
 }
 
-function ensurePreparedScene(state: RenderState): PreparedScene {
-  let prepared = preparedScenes.get(state);
+function ensurePreparedScene3D(state: RenderState): PreparedScene3D {
+  let prepared = preparedScene3Ds.get(state);
   if (prepared === undefined) {
     const viewProjection = createMatrix4();
     const meshes: Mesh[] = [];
-    const list: SceneRenderList = {
+    const list: Scene3DRenderList = {
       lights: {
         ambientCount: 0,
         data: new Float32Array(SCENE_LIGHT_BLOCK_FLOATS),
@@ -252,7 +252,7 @@ function ensurePreparedScene(state: RenderState): PreparedScene {
       viewProjection: viewProjection,
       worldBounds: createAabb(),
     };
-    preparedScenes.set(state, prepared);
+    preparedScene3Ds.set(state, prepared);
   }
   return prepared;
 }
@@ -358,7 +358,7 @@ function packSpotLight(data: Float32Array, offset: number, spot: Readonly<SpotLi
 // projection's own aspect is used when set (non-zero), else the render state's `aspect` fallback;
 // near/far come from the camera. Reads camera fields through a scratch projection before the multiply,
 // so it is safe even if `out` aliases the camera's view.
-function setSceneViewProjectionMatrix4(out: Matrix4, camera: Readonly<Camera3D>, aspect: number): void {
+function setScene3DViewProjectionMatrix4(out: Matrix4, camera: Readonly<Camera3D>, aspect: number): void {
   const projection = camera.projection;
   if (projection.kind === 'perspective') {
     // Geometry's setPerspectiveMatrix4 takes the tangent of the half-FOV, not the full angle.
@@ -383,11 +383,11 @@ function setSceneViewProjectionMatrix4(out: Matrix4, camera: Readonly<Camera3D>,
   multiplyMatrix4(out, scratchProjection, camera.view);
 }
 
-// The per-render-state prepared frame: the reused SceneRenderList plus the scratch the prepare pass
+// The per-render-state prepared frame: the reused Scene3DRenderList plus the scratch the prepare pass
 // fills (the culling frustum, the live visible-mesh array, and a world-bounds scratch).
-interface PreparedScene {
+interface PreparedScene3D {
   frustum: Frustum;
-  list: SceneRenderList;
+  list: Scene3DRenderList;
   meshes: Mesh[];
   viewProjection: Matrix4;
   worldBounds: Aabb;
@@ -398,12 +398,12 @@ const DEFAULT_VIEWPORT_ASPECT = 1;
 
 // Per-render-state prepared frames. Keyed by state so independent backends prepare without sharing
 // scratch; a state's entry is freed when the state is GC'd.
-const preparedScenes = new WeakMap<RenderState, PreparedScene>();
+const preparedScene3Ds = new WeakMap<RenderState, PreparedScene3D>();
 
 const scratchColor: LinearColor = [0, 0, 0, 0];
 const scratchProjection = createMatrix4();
 
-// Reused staging buffer for packSceneLightBlock's pack-then-compare: the new block is packed here and
+// Reused staging buffer for packScene3DLightBlock's pack-then-compare: the new block is packed here and
 // committed to `out.data` only when it differs, so an unchanged block never bumps `version`. Sized to
 // the full head + MAX_FORWARD_LIGHTS-per-type layout (SCENE_LIGHT_BLOCK_FLOATS).
 const scratchLightData = new Float32Array(SCENE_LIGHT_BLOCK_FLOATS);

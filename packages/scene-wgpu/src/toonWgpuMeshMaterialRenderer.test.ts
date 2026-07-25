@@ -2,18 +2,18 @@ import { createCamera3D } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createToonMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
-import type { Camera3D, Matrix3, Matrix4, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
+import type { Camera3D, Matrix3, Matrix4, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types';
 import { ToonMaterialKind } from '@flighthq/types';
 
 import { registerToonWgpuMaterial, toonWgpuMeshMaterialRenderer } from './toonWgpuMeshMaterialRenderer';
 import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { makeWgpuSceneState } from './wgpuSceneTestHelper';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 
 function makeCamera(): Camera3D {
   return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
 }
 
-function makeLights(): SceneLightBlock {
+function makeLights(): Scene3DLightBlock {
   const data = new Float32Array(12);
   data[0] = 0;
   data[1] = -1;
@@ -27,7 +27,7 @@ function makeLights(): SceneLightBlock {
   return { ambientCount: 1, data, directionalCount: 1, hemisphereCount: 0, pointCount: 0, spotCount: 0, version: 1 };
 }
 
-function makeProxy(): SceneRenderProxy {
+function makeProxy(): Scene3DRenderProxy {
   const geometry = createBoxMeshGeometry();
   return {
     material: createToonMaterial(),
@@ -39,7 +39,7 @@ function makeProxy(): SceneRenderProxy {
 
 describe('registerToonWgpuMaterial', () => {
   it('installs the toon renderer for ToonMaterialKind', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     registerToonWgpuMaterial(state);
     expect(getWgpuMeshMaterialRenderer(state, ToonMaterialKind)).toBe(toonWgpuMeshMaterialRenderer);
   });
@@ -47,7 +47,7 @@ describe('registerToonWgpuMaterial', () => {
 
 describe('toonWgpuMeshMaterialRenderer', () => {
   it('bind selects a pipeline and binds frame + material groups + uploads uniforms', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     toonWgpuMeshMaterialRenderer.bind(state, createToonMaterial(), makeLights(), makeCamera());
 
     expect(fake.calls.some((c) => c.name === 'createRenderPipeline')).toBe(true);
@@ -57,7 +57,7 @@ describe('toonWgpuMeshMaterialRenderer', () => {
   });
 
   it('bind compiles a cull-none pipeline for a double-sided material', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const material = createToonMaterial();
     material.doubleSided = true;
     toonWgpuMeshMaterialRenderer.bind(state, material, makeLights(), makeCamera());
@@ -67,7 +67,7 @@ describe('toonWgpuMeshMaterialRenderer', () => {
   });
 
   it('draw uploads geometry and issues an indexed draw over the subset range', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const proxy = makeProxy();
     const geometry = createBoxMeshGeometry();
     toonWgpuMeshMaterialRenderer.bind(state, proxy.material, makeLights(), makeCamera());
@@ -82,7 +82,7 @@ describe('toonWgpuMeshMaterialRenderer', () => {
   });
 
   it('draw is a no-op when bind has not selected a pipeline', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     toonWgpuMeshMaterialRenderer.draw(state, makeProxy(), createBoxMeshGeometry());
     expect(fake.calls.some((c) => c.name === 'drawIndexed')).toBe(false);
   });

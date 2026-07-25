@@ -5,13 +5,13 @@ import type { WgpuSkinningAdapter } from '@flighthq/types';
 import {
   createWgpuMeshPipeline,
   ensureWgpuPlaceholderTextureView,
-  ensureWgpuScenePipeline,
+  ensureWgpuScene3DPipeline,
   ensureWgpuShadowSampleLayout,
   getWgpuMeshPreludeWgsl,
   stashWgpuUvTransform,
 } from './wgpuMeshPipeline';
-import { getWgpuSkinningAdapter } from './wgpuSceneRuntime';
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
+import { getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 // Ensures (and caches per material reference) the Toon Material bind group — a uniform buffer + the
 // shared sampler + the placeholder base-color and ramp textures — and rewrites its uniform with this
 // surface's linear base color, step count, and alpha cutoff. Mirrors scene-gl's bindGlToonMaterialUniforms
@@ -25,7 +25,7 @@ export function bindWgpuToonSurface(
   steps: number,
   alphaCutoff: number,
 ): GPUBindGroup {
-  const scene = getWgpuSceneRuntime(state);
+  const scene = getWgpuScene3DRuntime(state);
   let binding: WgpuMaterialBinding | undefined = scene.materialBindGroups.get(materialKey);
   if (binding === undefined) {
     const stateRuntime = getWgpuRenderStateRuntime(state);
@@ -112,7 +112,7 @@ export function ensureWgpuToonPipeline(
   key: Readonly<WgpuToonDefineKey>,
   format: GPUTextureFormat,
 ): WgpuToonPipeline {
-  return ensureWgpuScenePipeline(state, `toon:${format}|${buildWgpuToonDefineKey(key)}`, (blended, skinned) =>
+  return ensureWgpuScene3DPipeline(state, `toon:${format}|${buildWgpuToonDefineKey(key)}`, (blended, skinned) =>
     compileWgpuToonPipeline(state, key, format, blended, skinned),
   );
 }

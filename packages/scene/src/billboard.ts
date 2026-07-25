@@ -7,20 +7,20 @@ import type {
   Material,
   MeshGeometry,
   NodeSignals,
-  SceneNode,
+  Node3D,
 } from '@flighthq/types';
 import { BillboardKind } from '@flighthq/types';
 
-import { createSceneNode, getSceneNodeRuntime } from './sceneNode';
+import { createNode3D, getNode3DRuntime } from './sceneNode';
 
 export { BillboardKind } from '@flighthq/types';
 
-// Allocates a camera-facing Billboard node: a SceneNode (so it shares the scene hierarchy with mesh
+// Allocates a camera-facing Billboard node: a Node3D (so it shares the scene hierarchy with mesh
 // and group nodes) carrying `geometry`, one `materials` entry per geometry subset (positional; a
 // missing or null slot resolves to DefaultMaterialKind at draw time), and a facing `mode`. Because a
 // Billboard carries geometry it is structurally a drawable leaf (isMesh) and is drawn by the same
 // per-material mesh renderers as a Mesh on every backend — the only billboard-specific step is the
-// per-frame facing pass (orientBillboardToCamera / orientSceneBillboardsToCamera), which rewrites
+// per-frame facing pass (orientBillboardToCamera / orientScene3DBillboardsToCamera), which rewrites
 // the node's transform so its local axes face the camera before drawing.
 //
 // Facing convention: the geometry is authored in the local XY plane facing local +Z. The facing pass
@@ -35,7 +35,7 @@ export function createBillboard(
   kind: Kind = BillboardKind,
   obj?: Readonly<Partial<Pick<Billboard, 'enabled' | 'name'>>>,
 ): Billboard {
-  const billboard = createSceneNode(kind, obj) as Billboard;
+  const billboard = createNode3D(kind, obj) as Billboard;
   billboard.geometry = geometry;
   billboard.materials = materials;
   billboard.mode = mode;
@@ -47,7 +47,7 @@ export function enableBillboardSignals(source: Billboard): NodeSignals {
 }
 
 export function getBillboardRuntime(source: Readonly<Billboard>): BillboardRuntime {
-  return getSceneNodeRuntime(source);
+  return getNode3DRuntime(source);
 }
 
 export function getBillboardSignals(source: Billboard): NodeSignals | null {
@@ -57,7 +57,7 @@ export function getBillboardSignals(source: Billboard): NodeSignals | null {
 // A node is a Billboard — a camera-facing drawable — when it carries both geometry (making it a
 // drawable leaf) and a facing `mode`. Structural, so it holds for Billboards created with a custom
 // kind, not just BillboardKind, and distinguishes a Billboard from a plain Mesh (geometry, no mode).
-export function isBillboard(source: Readonly<SceneNode>): source is Billboard {
+export function isBillboard(source: Readonly<Node3D>): source is Billboard {
   const candidate = source as Partial<Billboard>;
   return candidate.geometry != null && candidate.mode != null;
 }

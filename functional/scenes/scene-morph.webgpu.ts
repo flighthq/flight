@@ -1,5 +1,5 @@
-import { drawWgpuScene } from '@flighthq/scene-wgpu';
-import type { Camera3D, MeshMorph, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import { drawWgpuScene3D } from '@flighthq/scene-wgpu';
+import type { Camera3D, MeshMorph, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   CANONICAL_MESH_GEOMETRY_LAYOUT,
   addNodeChild,
@@ -10,7 +10,7 @@ import {
   createMesh,
   createMeshGeometry,
   createPerspectiveProjection,
-  createScene,
+  createScene3D,
   createUnlitMaterial,
   createVector3,
   createWgpuCanvasElement,
@@ -19,8 +19,8 @@ import {
   endWgpuRenderEffectPipeline,
   getSurfacePixelLuminance,
   normalizeVector3,
-  prepareSceneMorph,
-  prepareSceneRender,
+  prepareScene3DMorph,
+  prepareScene3DRender,
   registerUnlitWgpuMaterial,
   renderWgpuBackground,
   setCamera3DViewMatrix4FromLookAt,
@@ -46,12 +46,12 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
-  prepareSceneMorph(scene);
-  prepareSceneRender(state, scene, camera, lights);
-  drawWgpuScene(state, scene, camera, lights);
+  prepareScene3DMorph(scene);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawWgpuScene3D(state, scene, camera, lights);
   endWgpuRenderEffectPipeline(state, pipeline, []);
   submitWgpuRenderPass(state);
 }
@@ -85,7 +85,7 @@ const geometry = createMeshGeometry({
   vertices,
   indices: new Uint16Array([0, 1, 2, 0, 2, 3]),
 });
-const scene = createScene().root;
+const scene = createScene3D().root;
 const mesh = createMesh(geometry, [createUnlitMaterial({ baseColor: 0xff8030ff })]);
 mesh.morph = morph;
 addNodeChild(scene, mesh);

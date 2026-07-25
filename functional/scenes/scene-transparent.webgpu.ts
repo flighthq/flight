@@ -1,6 +1,6 @@
-import { createScene } from '@flighthq/scene';
-import { drawWgpuScene } from '@flighthq/scene-wgpu';
-import type { Camera3D, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import { createScene3D } from '@flighthq/scene';
+import { drawWgpuScene3D } from '@flighthq/scene-wgpu';
+import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
@@ -18,7 +18,7 @@ import {
   endWgpuRenderEffectPipeline,
   getSurfacePixelRgb,
   invalidateNodeLocalTransform,
-  prepareSceneRender,
+  prepareScene3DRender,
   registerUnlitWgpuMaterial,
   renderWgpuBackground,
   setCamera3DViewMatrix4FromLookAt,
@@ -43,11 +43,11 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
-  prepareSceneRender(state, scene, camera, lights);
-  drawWgpuScene(state, scene, camera, lights);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawWgpuScene3D(state, scene, camera, lights);
   endWgpuRenderEffectPipeline(state, pipeline, []);
   submitWgpuRenderPass(state);
 }
@@ -55,11 +55,11 @@ export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, l
 registerWgpuFunctionalTarget(state, scale);
 
 // Three overlapping, shallow boxes prove the WebGPU scene renderer's two-pass transparency contract.
-// Scene order is deliberately near-transparent, opaque, far-transparent: opaque must still render
+// Scene3D order is deliberately near-transparent, opaque, far-transparent: opaque must still render
 // first, then transparent surfaces must render far-to-near with depth testing on and depth writes off.
 // Correct composition at center is red-dominant (near red over far blue over opaque green); drawing
 // transparent scene order instead would make blue dominant.
-const scene = createScene().root;
+const scene = createScene3D().root;
 const geometry = createBoxMeshGeometry(2.4, 2.4, 0.08);
 
 const nearRed = createUnlitMaterial({ baseColor: 0xff000080 });

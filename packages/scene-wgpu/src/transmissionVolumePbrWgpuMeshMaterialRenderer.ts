@@ -5,8 +5,8 @@ import type {
   Camera3D,
   Material,
   MeshGeometry,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
   TransmissionVolumePbrMaterial,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
@@ -47,7 +47,7 @@ export const transmissionVolumePbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRend
   bind(
     state: WgpuRenderState,
     material: Readonly<Material> | null,
-    lights: Readonly<SceneLightBlock>,
+    lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const stateRuntime = getWgpuRenderStateRuntime(state);
@@ -85,13 +85,13 @@ export const transmissionVolumePbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRend
     pass.setBindGroup(2, binding.bindGroup);
   },
 
-  draw(state: WgpuRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+  draw(state: WgpuRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
     drawWgpuMeshSubset(state, proxy, geometry);
   },
 };
 
 // Installs the built-in TransmissionVolume renderer for TransmissionVolumePbrMaterialKind on this
-// state. Opt-in (no top-level side effect): drawScene only draws TransmissionVolume subsets once this
+// state. Opt-in (no top-level side effect): drawScene3D only draws TransmissionVolume subsets once this
 // is called.
 export function registerTransmissionVolumePbrWgpuMaterial(state: WgpuRenderState): void {
   registerWgpuMeshMaterialRenderer(

@@ -59,7 +59,7 @@ export interface NodeRuntime<Traits extends object = NodeTraits> extends EntityR
 }
 export const NodeKind = 'Node';
 export type NodeOf<Traits extends object> = Node<Traits> & Traits;
-export const NullScene = Symbol('NullScene');
+export const NullScene3D = Symbol('NullScene3D');
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type NodeAny = Node<any>;
 export type { NodeSignals };

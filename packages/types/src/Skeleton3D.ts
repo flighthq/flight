@@ -1,8 +1,8 @@
 import type { Entity } from './Entity';
-import type { SceneNode } from './SceneNode';
+import type { Node3D } from './Node3D';
 
-// A skin: an ordered set of joint (bone) SceneNodes plus their inverse-bind matrices, and the computed
-// skin palette the renderer (or a CPU skinner) consumes. The joints are ordinary SceneNodes in the scene
+// A skin: an ordered set of joint (bone) Node3Ds plus their inverse-bind matrices, and the computed
+// skin palette the renderer (or a CPU skinner) consumes. The joints are ordinary Node3Ds in the scene
 // hierarchy — they are animated like any node (the animation core drives them through the scene binding),
 // so the skeleton itself only owns the skinning math, not a second hierarchy.
 //
@@ -13,7 +13,7 @@ import type { SceneNode } from './SceneNode';
 export interface Skeleton3D extends Entity {
   inverseBindMatrices: Float32Array;
   jointMatrices: Float32Array;
-  joints: SceneNode[];
+  joints: Node3D[];
   // Optional per-joint names, aligned by index with `joints`, for name-based lookup and prop socketing
   // (getSkeleton3DJointIndexByName). Omitted or null when the source (e.g. a nameless glTF skin) has none.
   names?: readonly string[] | null;

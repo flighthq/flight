@@ -8,24 +8,24 @@ import {
   initTransform3DRuntimeTrait,
   initTransform3DTrait,
 } from '@flighthq/node';
-import type { Kind, NodeSignals, SceneNode, SceneNodeRuntime, SceneNodeTraits } from '@flighthq/types';
-import { SceneNodeKind, SceneNodeTraitsKey } from '@flighthq/types';
+import type { Kind, NodeSignals, Node3D, Node3DRuntime, Node3DTraits } from '@flighthq/types';
+import { Node3DKind, Node3DTraitsKey } from '@flighthq/types';
 
-export { SceneNodeKind } from '@flighthq/types';
+export { Node3DKind } from '@flighthq/types';
 
-export function createSceneNode(
-  kind: Kind = SceneNodeKind,
-  obj?: Readonly<Partial<Pick<SceneNode, 'alpha' | 'enabled' | 'name' | 'visible'>>>,
-): SceneNode {
-  const node = createNode<SceneNodeTraits>(kind, obj, undefined, createSceneNodeRuntime);
+export function createNode3D(
+  kind: Kind = Node3DKind,
+  obj?: Readonly<Partial<Pick<Node3D, 'alpha' | 'enabled' | 'name' | 'visible'>>>,
+): Node3D {
+  const node = createNode<Node3DTraits>(kind, obj, undefined, createNode3DRuntime);
   initAppearanceTrait(node, obj);
   initTransform3DTrait(node);
-  return node as SceneNode;
+  return node as Node3D;
 }
 
-export function createSceneNodeRuntime(): SceneNodeRuntime {
-  const out = createNodeRuntime<SceneNodeTraits>() as SceneNodeRuntime;
-  out.traits = SceneNodeTraitsKey;
+export function createNode3DRuntime(): Node3DRuntime {
+  const out = createNodeRuntime<Node3DTraits>() as Node3DRuntime;
+  out.traits = Node3DTraitsKey;
   out.worldAlpha = null;
   out.worldAlphaUsingAppearanceId = -1;
   out.worldAlphaUsingParentAppearanceId = -1;
@@ -34,14 +34,14 @@ export function createSceneNodeRuntime(): SceneNodeRuntime {
   return out;
 }
 
-export function enableSceneNodeSignals(source: SceneNode): NodeSignals {
+export function enableNode3DSignals(source: Node3D): NodeSignals {
   return enableNodeSignals(source);
 }
 
-export function getSceneNodeRuntime(source: Readonly<SceneNode>): SceneNodeRuntime {
-  return getNodeRuntime(source) as SceneNodeRuntime;
+export function getNode3DRuntime(source: Readonly<Node3D>): Node3DRuntime {
+  return getNodeRuntime(source) as Node3DRuntime;
 }
 
-export function getSceneNodeSignals(source: SceneNode): NodeSignals | null {
+export function getNode3DSignals(source: Node3D): NodeSignals | null {
   return getNodeSignals(source);
 }

@@ -6,55 +6,55 @@ import {
   StandardPbrMaterialKind,
   UnlitMaterialKind,
 } from '@flighthq/types';
-import { SceneResourceResolverRuntimeKey } from '@flighthq/types';
-import type { SceneResourceInFlight, SceneResourceResolverWithRuntime } from '@flighthq/types';
+import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types';
+import type { Scene3DResourceInFlight, Scene3DResourceResolverWithRuntime } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
-import { createSceneMaterialTextureRegistry } from './sceneMaterialTextureRegistry';
+import { createScene3DMaterialTextureRegistry } from './sceneMaterialTextureRegistry';
 import {
-  createBuiltInSceneResourceResolver,
-  createSceneResourceResolver,
-  disposeSceneResourceResolver,
+  createBuiltInScene3DResourceResolver,
+  createScene3DResourceResolver,
+  disposeScene3DResourceResolver,
 } from './sceneResourceResolver';
 
-describe('createBuiltInSceneResourceResolver', () => {
+describe('createBuiltInScene3DResourceResolver', () => {
   it('assembles Standard PBR and Unlit discovery only through the explicit built-in constructor', () => {
-    const resolver = createBuiltInSceneResourceResolver();
+    const resolver = createBuiltInScene3DResourceResolver();
     expect(resolver.registry.listers.has(StandardPbrMaterialKind)).toBe(true);
     expect(resolver.registry.listers.has(UnlitMaterialKind)).toBe(true);
-    disposeSceneResourceResolver(resolver);
+    disposeScene3DResourceResolver(resolver);
   });
 });
 
-describe('createSceneResourceResolver', () => {
+describe('createScene3DResourceResolver', () => {
   it('creates an Entity with an empty registry and private runtime machinery', () => {
-    const resolver = createSceneResourceResolver();
-    const runtime = (resolver as SceneResourceResolverWithRuntime)[SceneResourceResolverRuntimeKey];
+    const resolver = createScene3DResourceResolver();
+    const runtime = (resolver as Scene3DResourceResolverWithRuntime)[Scene3DResourceResolverRuntimeKey];
     expect(EntityRuntimeKey in resolver).toBe(true);
     expect(resolver.registry.listers.size).toBe(0);
     expect(typeof resolver.fetch).toBe('function');
     expect(runtime.inFlight.size).toBe(0);
     expect(runtime.signals).toBeNull();
     expect(runtime.loader).toBeDefined();
-    disposeSceneResourceResolver(resolver);
+    disposeScene3DResourceResolver(resolver);
   });
 });
 
-describe('createSceneResourceResolver options', () => {
+describe('createScene3DResourceResolver options', () => {
   it('uses a caller-supplied registry and fetch wholesale', () => {
-    const registry = createSceneMaterialTextureRegistry();
+    const registry = createScene3DMaterialTextureRegistry();
     const fetch = async () => null;
-    const resolver = createSceneResourceResolver({ fetch, registry });
+    const resolver = createScene3DResourceResolver({ fetch, registry });
     expect(resolver.registry).toBe(registry);
     expect(resolver.registry.listers.has(UnlitMaterialKind)).toBe(false);
     expect(resolver.fetch).toBe(fetch);
-    disposeSceneResourceResolver(resolver);
+    disposeScene3DResourceResolver(resolver);
   });
 });
 
-describe('disposeSceneResourceResolver', () => {
+describe('disposeScene3DResourceResolver', () => {
   it('aborts every in-flight controller and clears the map', () => {
-    const resolver = createSceneResourceResolver();
+    const resolver = createScene3DResourceResolver();
     const controller = new AbortController();
     const texture = createTexture({
       resource: {
@@ -65,15 +65,15 @@ describe('disposeSceneResourceResolver', () => {
         state: ResourceResolutionState.Loading,
       },
     });
-    const entry: SceneResourceInFlight = {
+    const entry: Scene3DResourceInFlight = {
       controller,
       promise: Promise.resolve(),
       subscribers: new Set([texture]),
     };
-    const runtime = (resolver as SceneResourceResolverWithRuntime)[SceneResourceResolverRuntimeKey];
+    const runtime = (resolver as Scene3DResourceResolverWithRuntime)[Scene3DResourceResolverRuntimeKey];
     runtime.inFlight.set(texture.resource!, entry);
 
-    disposeSceneResourceResolver(resolver);
+    disposeScene3DResourceResolver(resolver);
     expect(controller.signal.aborted).toBe(true);
     expect(runtime.inFlight.size).toBe(0);
   });

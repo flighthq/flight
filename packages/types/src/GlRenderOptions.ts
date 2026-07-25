@@ -1,4 +1,4 @@
-import type { SceneGraphSyncPolicy } from './RenderState';
+import type { Scene3DGraphSyncPolicy } from './RenderState';
 
 export interface GlRenderOptions {
   allowSmoothing?: boolean;
@@ -13,5 +13,5 @@ export interface GlRenderOptions {
   pixelRatio?: number;
   powerPreference?: WebGLPowerPreference;
   roundPixels?: boolean;
-  sceneGraphSyncPolicy?: SceneGraphSyncPolicy;
+  sceneGraphSyncPolicy?: Scene3DGraphSyncPolicy;
 }

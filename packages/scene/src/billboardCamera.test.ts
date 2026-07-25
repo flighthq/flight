@@ -6,9 +6,9 @@ import type { Camera3D } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { createBillboard } from './billboard';
-import { orientBillboardToCamera, orientSceneBillboardsToCamera } from './billboardCamera';
+import { orientBillboardToCamera, orientScene3DBillboardsToCamera } from './billboardCamera';
 import { createMesh } from './mesh';
-import { createSceneNode } from './sceneNode';
+import { createNode3D } from './sceneNode';
 
 // A camera at (ex,ey,ez) looking at the world origin with world +Y up.
 function cameraLookingFrom(ex: number, ey: number, ez: number): Camera3D {
@@ -109,9 +109,9 @@ describe('orientBillboardToCamera', () => {
   });
 });
 
-describe('orientSceneBillboardsToCamera', () => {
+describe('orientScene3DBillboardsToCamera', () => {
   it('orients billboards in a subtree and leaves non-billboards untouched', () => {
-    const root = createSceneNode();
+    const root = createNode3D();
     const mesh = createMesh(createPlaneMeshGeometry(), [null]);
     setVector3(mesh.position, 7, 0, 0);
     invalidateNodeLocalTransform(mesh);
@@ -119,7 +119,7 @@ describe('orientSceneBillboardsToCamera', () => {
     addNodeChild(root, mesh);
     addNodeChild(root, billboard);
 
-    orientSceneBillboardsToCamera(root, cameraLookingFrom(0, 0, 10));
+    orientScene3DBillboardsToCamera(root, cameraLookingFrom(0, 0, 10));
 
     // Billboard faces the camera.
     const b = getNodeWorldMatrix4(billboard).m;
@@ -131,7 +131,7 @@ describe('orientSceneBillboardsToCamera', () => {
   });
 
   it('faces the camera in world space regardless of parent rotation', () => {
-    const parent = createSceneNode();
+    const parent = createNode3D();
     const rotation = createQuaternion(0, 0, 0, 1);
     setQuaternionFromAxisAngle(rotation, { x: 0, y: 1, z: 0 }, Math.PI / 2);
     copyQuaternion(parent.rotation, rotation);
@@ -139,7 +139,7 @@ describe('orientSceneBillboardsToCamera', () => {
     const billboard = createBillboard(createPlaneMeshGeometry(), [null], 'full');
     addNodeChild(parent, billboard);
 
-    orientSceneBillboardsToCamera(parent, cameraLookingFrom(0, 0, 10));
+    orientScene3DBillboardsToCamera(parent, cameraLookingFrom(0, 0, 10));
 
     // Parent is yawed 90°, but the billboard's world basis still faces the camera (identity).
     const m = getNodeWorldMatrix4(billboard).m;

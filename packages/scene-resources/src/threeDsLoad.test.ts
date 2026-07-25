@@ -1,16 +1,16 @@
 import type * as NetModule from '@flighthq/net';
-import type * as SceneFormatsModule from '@flighthq/scene-formats';
-import type { NetResponse, SceneDocument } from '@flighthq/types';
+import type * as Scene3DFormatsModule from '@flighthq/scene-formats';
+import type { NetResponse, Scene3DDocument } from '@flighthq/types';
 import type { Mock } from 'vitest';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import type * as Load3dsModule from './threeDsLoad';
 
-let loadSceneDocumentFrom3dsUrl: typeof Load3dsModule.loadSceneDocumentFrom3dsUrl;
-let parse3ds: Mock<typeof SceneFormatsModule.parse3ds>;
+let loadScene3DDocumentFrom3dsUrl: typeof Load3dsModule.loadScene3DDocumentFrom3dsUrl;
+let parse3ds: Mock<typeof Scene3DFormatsModule.parse3ds>;
 let sendNetRequest: Mock<typeof NetModule.sendNetRequest>;
 
-function emptyDocument(): SceneDocument {
+function emptyDocument(): Scene3DDocument {
   return {
     animations: [],
     cameras: [],
@@ -31,11 +31,11 @@ function okResponse(body: ArrayBuffer): NetResponse {
 
 beforeAll(async () => {
   vi.resetModules();
-  parse3ds = vi.fn<typeof SceneFormatsModule.parse3ds>();
+  parse3ds = vi.fn<typeof Scene3DFormatsModule.parse3ds>();
   sendNetRequest = vi.fn<typeof NetModule.sendNetRequest>();
   vi.doMock('@flighthq/net', () => ({ sendNetRequest }));
   vi.doMock('@flighthq/scene-formats', () => ({ parse3ds }));
-  ({ loadSceneDocumentFrom3dsUrl } = await import('./threeDsLoad'));
+  ({ loadScene3DDocumentFrom3dsUrl } = await import('./threeDsLoad'));
 });
 
 afterAll(() => {
@@ -49,13 +49,13 @@ afterEach(() => {
   sendNetRequest.mockReset();
 });
 
-describe('loadSceneDocumentFrom3dsUrl', () => {
+describe('loadScene3DDocumentFrom3dsUrl', () => {
   it('fetches bytes and returns the parsed CPU document without resolving resources', async () => {
     const document = emptyDocument();
     parse3ds.mockReturnValue(document);
     sendNetRequest.mockResolvedValue(okResponse(new Uint8Array([9, 8]).buffer));
 
-    const loaded = await loadSceneDocumentFrom3dsUrl('model.3ds');
+    const loaded = await loadScene3DDocumentFrom3dsUrl('model.3ds');
 
     expect(Array.from(parse3ds.mock.calls[0][0])).toEqual([9, 8]);
     expect(loaded).toBe(document);

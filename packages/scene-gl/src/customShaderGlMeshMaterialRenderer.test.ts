@@ -2,7 +2,7 @@ import { createCamera3D } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createCustomShaderMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
-import type { Camera3D, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
+import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types';
 import { CustomShaderMaterialKind } from '@flighthq/types';
 
 import {
@@ -12,13 +12,13 @@ import {
   registerGlCustomMaterialShader,
 } from './customShaderGlMeshMaterialRenderer';
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { makeGlSceneState } from './glSceneTestHelper';
+import { makeGlScene3DState } from './glScene3DTestHelper';
 
 function makeCamera(): Camera3D {
   return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
 }
 
-const NO_LIGHTS: SceneLightBlock = {
+const NO_LIGHTS: Scene3DLightBlock = {
   ambientCount: 0,
   data: new Float32Array(12),
   directionalCount: 0,
@@ -49,7 +49,7 @@ void main() {
   fragColor = vec4(1.0, 0.0, u_time, 1.0);
 }`;
 
-function makeProxy(): SceneRenderProxy {
+function makeProxy(): Scene3DRenderProxy {
   const geometry = createBoxMeshGeometry();
   return {
     material: createCustomShaderMaterial({ shaderKey: 'test' }),
@@ -61,7 +61,7 @@ function makeProxy(): SceneRenderProxy {
 
 describe('customShaderGlMeshMaterialRenderer', () => {
   it('bind selects a program and uploads view-projection and camera position when shader is registered', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     registerGlCustomMaterialShader(state, 'test', { fragment: FRAGMENT_SRC, vertex: VERTEX_SRC });
     customShaderGlMeshMaterialRenderer.bind(
       state,
@@ -75,7 +75,7 @@ describe('customShaderGlMeshMaterialRenderer', () => {
   });
 
   it('bind uploads custom uniforms from the material', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     registerGlCustomMaterialShader(state, 'test', { fragment: FRAGMENT_SRC, vertex: VERTEX_SRC });
     customShaderGlMeshMaterialRenderer.bind(
       state,
@@ -88,7 +88,7 @@ describe('customShaderGlMeshMaterialRenderer', () => {
   });
 
   it('bind is a no-op (sets active program null) when shaderKey is not registered', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     customShaderGlMeshMaterialRenderer.bind(
       state,
       createCustomShaderMaterial({ shaderKey: 'missing' }),
@@ -99,13 +99,13 @@ describe('customShaderGlMeshMaterialRenderer', () => {
   });
 
   it('bind is a no-op when shaderKey is empty', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     customShaderGlMeshMaterialRenderer.bind(state, createCustomShaderMaterial(), NO_LIGHTS, makeCamera());
     expect(gl.calls.some((c) => c.name === 'useProgram')).toBe(false);
   });
 
   it('draw issues an indexed draw over the subset after bind', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     registerGlCustomMaterialShader(state, 'test', { fragment: FRAGMENT_SRC, vertex: VERTEX_SRC });
     const proxy = makeProxy();
     customShaderGlMeshMaterialRenderer.bind(state, proxy.material, NO_LIGHTS, makeCamera());
@@ -116,7 +116,7 @@ describe('customShaderGlMeshMaterialRenderer', () => {
   });
 
   it('draw is a no-op when bind skipped due to missing shader key', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     customShaderGlMeshMaterialRenderer.bind(
       state,
       createCustomShaderMaterial({ shaderKey: 'missing' }),
@@ -130,21 +130,21 @@ describe('customShaderGlMeshMaterialRenderer', () => {
 
 describe('getGlCustomMaterialShaderSource', () => {
   it('returns the source registered under the given key', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     const source = { fragment: FRAGMENT_SRC, vertex: VERTEX_SRC };
     registerGlCustomMaterialShader(state, 'ripple', source);
     expect(getGlCustomMaterialShaderSource(state, 'ripple')).toBe(source);
   });
 
   it('returns null for an unregistered key', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     expect(getGlCustomMaterialShaderSource(state, 'nope')).toBeNull();
   });
 });
 
 describe('registerCustomShaderGlMaterial', () => {
   it('installs the renderer for CustomShaderMaterialKind', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     registerCustomShaderGlMaterial(state);
     expect(getGlMeshMaterialRenderer(state, CustomShaderMaterialKind)).toBe(customShaderGlMeshMaterialRenderer);
   });
@@ -152,14 +152,14 @@ describe('registerCustomShaderGlMaterial', () => {
 
 describe('registerGlCustomMaterialShader', () => {
   it('stores shader source retrievable by key', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     const source = { fragment: FRAGMENT_SRC, vertex: VERTEX_SRC };
     registerGlCustomMaterialShader(state, 'ripple', source);
     expect(getGlCustomMaterialShaderSource(state, 'ripple')).toBe(source);
   });
 
   it('last write wins per key', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     const a = { fragment: 'a', vertex: 'a' };
     const b = { fragment: 'b', vertex: 'b' };
     registerGlCustomMaterialShader(state, 'key', a);

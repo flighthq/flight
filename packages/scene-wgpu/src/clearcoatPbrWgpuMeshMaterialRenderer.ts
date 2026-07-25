@@ -4,8 +4,8 @@ import type {
   ClearcoatPbrMaterial,
   Material,
   MeshGeometry,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
 } from '@flighthq/types';
@@ -37,7 +37,7 @@ export const clearcoatPbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
   bind(
     state: WgpuRenderState,
     material: Readonly<Material> | null,
-    lights: Readonly<SceneLightBlock>,
+    lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const stateRuntime = getWgpuRenderStateRuntime(state);
@@ -65,13 +65,13 @@ export const clearcoatPbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     pass.setBindGroup(2, binding.bindGroup);
   },
 
-  draw(state: WgpuRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+  draw(state: WgpuRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
     drawWgpuMeshSubset(state, proxy, geometry);
   },
 };
 
 // Installs the built-in Clearcoat renderer for ClearcoatPbrMaterialKind on this state. Opt-in (no
-// top-level side effect): drawScene only draws Clearcoat subsets once this is called.
+// top-level side effect): drawScene3D only draws Clearcoat subsets once this is called.
 export function registerClearcoatPbrWgpuMaterial(state: WgpuRenderState): void {
   registerWgpuMeshMaterialRenderer(state, ClearcoatPbrMaterialKind, clearcoatPbrWgpuMeshMaterialRenderer);
 }

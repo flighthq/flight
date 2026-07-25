@@ -79,7 +79,7 @@ function getAudioContext(): AudioContext {
   return audioContext;
 }
 
-// Scene graph root, scaled to device pixel ratio.
+// Scene3D graph root, scaled to device pixel ratio.
 const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;

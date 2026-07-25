@@ -6,9 +6,9 @@ import {
   GL_SKIN_VERTEX_DECLARATIONS_GLSL,
   GL_UV_TRANSFORM_VERTEX_GLSL,
   compileGlProgram,
-  ensureGlSceneProgram,
+  ensureGlScene3DProgram,
 } from './glMeshProgram';
-import { getGlSceneRuntime } from './glSceneRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 // A short, stable, order-independent string identity for a Toon define key, used as the program-
 // cache key. Two keys with the same flags produce the same string and so share a compiled program.
 export function buildGlToonDefineKey(key: Readonly<GlToonDefineKey>): string {
@@ -47,9 +47,9 @@ export function ensureGlToonProgram(state: GlRenderState, key: Readonly<GlToonDe
   // material compiles + caches its own HAS_SKIN program, without the material renderer knowing.
   const fullKey: GlToonDefineKey = {
     ...key,
-    hasSkin: getGlSceneRuntime(state).activeSkinnedRun,
+    hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
   };
-  return ensureGlSceneProgram(state, `toon:${buildGlToonDefineKey(fullKey)}`, (gl) =>
+  return ensureGlScene3DProgram(state, `toon:${buildGlToonDefineKey(fullKey)}`, (gl) =>
     compileGlToonProgram(gl, fullKey),
   );
 }
@@ -159,7 +159,7 @@ void main() {
   // The raw N·L is quantized into cel bands — via a 1D ramp lookup or a stepped floor — then scales
   // the base color and the directional radiance. The banded contribution is shadow-mapped like the
   // classic/PBR directional term; sampleDirectionalShadow is 1.0 when no shadow map is bound, so a toon
-  // scene that never calls drawGlSceneShadowMap is unchanged.
+  // scene that never calls drawGlScene3DShadowMap is unchanged.
   if (u_directionalCount > 0.5) {
     vec3 lightDir = normalize(-u_directional.xyz);
     float nDotL = clamp(dot(normal, lightDir), 0.0, 1.0);

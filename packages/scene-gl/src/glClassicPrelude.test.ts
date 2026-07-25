@@ -9,8 +9,8 @@ import {
   getGlClassicVertexSource,
   getGlClassicVertexSourceForKey,
 } from './glClassicPrelude';
-import { getGlSceneRuntime } from './glSceneRuntime';
-import { makeFakeGl2, makeGlSceneState } from './glSceneTestHelper';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
 
 const LAMBERT: GlClassicDefineKey = {
   alphaMaskEnabled: false,
@@ -81,34 +81,34 @@ describe('compileGlClassicProgram', () => {
 
 describe('ensureGlClassicProgram', () => {
   it('caches a variant under the classic namespace and reuses it', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const first = ensureGlClassicProgram(state, LAMBERT);
     const links = gl.calls.filter((c) => c.name === 'linkProgram').length;
     const second = ensureGlClassicProgram(state, LAMBERT);
     expect(second).toBe(first);
     expect(gl.calls.filter((c) => c.name === 'linkProgram').length).toBe(links);
-    expect([...getGlSceneRuntime(state).programCache.keys()].some((k) => k.startsWith('classic:'))).toBe(true);
+    expect([...getGlScene3DRuntime(state).programCache.keys()].some((k) => k.startsWith('classic:'))).toBe(true);
   });
 
   it('caches a distinct entry per lighting model', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     const lambert = ensureGlClassicProgram(state, LAMBERT);
     const phong = ensureGlClassicProgram(state, PHONG);
     const blinnPhong = ensureGlClassicProgram(state, BLINNPHONG);
     expect(lambert).not.toBe(phong);
     expect(phong).not.toBe(blinnPhong);
     expect(lambert).not.toBe(blinnPhong);
-    expect(getGlSceneRuntime(state).programCache.size).toBe(3);
+    expect(getGlScene3DRuntime(state).programCache.size).toBe(3);
   });
 
   it('folds the render-state skinned-run flag into a distinct HAS_SKIN variant', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     const rigid = ensureGlClassicProgram(state, LAMBERT);
-    getGlSceneRuntime(state).activeSkinnedRun = true;
+    getGlScene3DRuntime(state).activeSkinnedRun = true;
     const skinned = ensureGlClassicProgram(state, LAMBERT);
 
     expect(skinned).not.toBe(rigid);
-    expect([...getGlSceneRuntime(state).programCache.keys()]).toContain('classic:l------k');
+    expect([...getGlScene3DRuntime(state).programCache.keys()]).toContain('classic:l------k');
     expect(skinned.locJointTexture).not.toBeNull();
   });
 });

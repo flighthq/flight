@@ -1,6 +1,6 @@
-﻿iimport { addNodeChild } from '@flighthq/node';
+﻿import { addNodeChild } from '@flighthq/node';
 import { getOrCreateRenderProxy2D, prepareScene2DRender, registerRenderer } from '@flighthq/render';
-mport { createDisplayObject } from '@flighthq/scene2d';
+import { createDisplayObject } from '@flighthq/scene2d';
 import { DisplayObjectKind } from '@flighthq/types';
 
 import { enableCanvasCssFilter, setCanvasCssFilter } from './canvasCSSFilterBinding';

@@ -1,5 +1,5 @@
-import { drawGlScene } from '@flighthq/scene-gl';
-import type { Camera3D, GlRenderEffectPipeline, MeshMorph, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import { drawGlScene3D } from '@flighthq/scene-gl';
+import type { Camera3D, GlRenderEffectPipeline, MeshMorph, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   CANONICAL_MESH_GEOMETRY_LAYOUT,
   addNodeChild,
@@ -12,22 +12,22 @@ import {
   createMesh,
   createMeshGeometry,
   createPerspectiveProjection,
-  createScene,
+  createScene3D,
   createUnlitMaterial,
   createVector3,
   beginGlRenderEffectPipeline,
   endGlRenderEffectPipeline,
   getSurfacePixelLuminance,
   normalizeVector3,
-  prepareSceneMorph,
-  prepareSceneRender,
+  prepareScene3DMorph,
+  prepareScene3DRender,
   registerUnlitGlMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
 
-// scene-morph — exercises the GL vertex-morph draw path (prepareSceneMorph, the app's per-frame morph pass,
-// called before prepareSceneRender): a Mesh with a MeshMorph blends base + Σ wᵢ·targetᵢ into geometry.vertices
+// scene-morph — exercises the GL vertex-morph draw path (prepareScene3DMorph, the app's per-frame morph pass,
+// called before prepareScene3DRender): a Mesh with a MeshMorph blends base + Σ wᵢ·targetᵢ into geometry.vertices
 // each frame and the non-skinned GL upload re-uploads the deformed vertices (CPU-blend-then-upload; no
 // HAS_MORPH shader permutation). A square quad's four corners carry a morph target that pushes them diagonally outward, so
 // at full weight the quad grows into a larger diamond. Driving the `weights` array to 1 is the manual
@@ -35,7 +35,7 @@ import {
 // probe just outside the bind-pose quad silhouette (background at weight 0) is covered at weight 1. A morph
 // path that failed to blend or re-upload would draw the bind-pose quad and the probe would stay background.
 //
-// drawGlScene collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu) — import the Gl one directly.
+// drawGlScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu) — import the Gl one directly.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
@@ -57,16 +57,16 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
-  prepareSceneMorph(scene);
-  prepareSceneRender(state, scene, camera, lights);
-  drawGlScene(state, scene, camera, lights);
+  prepareScene3DMorph(scene);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawGlScene3D(state, scene, camera, lights);
   endGlRenderEffectPipeline(state, pipeline, []);
 }
 
@@ -114,7 +114,7 @@ const geometry = createMeshGeometry({
 });
 const material = createUnlitMaterial({ baseColor: 0xff8030ff });
 
-const scene = createScene().root;
+const scene = createScene3D().root;
 const mesh = createMesh(geometry, [material]);
 mesh.morph = morph;
 addNodeChild(scene, mesh);

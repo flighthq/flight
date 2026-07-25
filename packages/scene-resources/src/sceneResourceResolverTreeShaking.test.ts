@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 const resolveDir = getFileUrlDirectory(import.meta.url);
 
-async function bundleSceneResourceResolverExport(name: string): Promise<string> {
+async function bundleScene3DResourceResolverExport(name: string): Promise<string> {
   const result = await build({
     bundle: true,
     format: 'esm',
@@ -25,20 +25,20 @@ async function bundleSceneResourceResolverExport(name: string): Promise<string> 
 
 describe('scene resource resolver tree shaking', () => {
   it('keeps the primitive resolver independent of built-in material listers', async () => {
-    const output = await bundleSceneResourceResolverExport('createSceneResourceResolver');
+    const output = await bundleScene3DResourceResolverExport('createScene3DResourceResolver');
     expect(output).not.toContain('StandardPbrMaterial');
     expect(output).not.toContain('UnlitMaterial');
     expect(output).not.toContain('image resource resolution failed');
   });
 
   it('includes built-in material listers only through the named assembly', async () => {
-    const output = await bundleSceneResourceResolverExport('createBuiltInSceneResourceResolver');
+    const output = await bundleScene3DResourceResolverExport('createBuiltInScene3DResourceResolver');
     expect(output).toContain('StandardPbrMaterial');
     expect(output).toContain('UnlitMaterial');
   });
 
   it('includes failure logging only through the separately imported guard', async () => {
-    const output = await bundleSceneResourceResolverExport('enableSceneResourceFailureGuards');
+    const output = await bundleScene3DResourceResolverExport('enableScene3DResourceFailureGuards');
     expect(output).toContain('image resource resolution failed');
   });
 });

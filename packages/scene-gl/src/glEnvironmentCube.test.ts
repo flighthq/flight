@@ -1,7 +1,7 @@
 import type { CubeTexture, Environment, ImageResource } from '@flighthq/types';
 
 import { ensureGlEnvironmentSourceCube, getGlCubeFaceTarget, updateGlEnvironmentCubeFace } from './glEnvironmentCube';
-import { makeGlSceneState } from './glSceneTestHelper';
+import { makeGlScene3DState } from './glScene3DTestHelper';
 
 // The GPU upload + sampling is validated by the functional `env-skybox` capture (jsdom has no real
 // WebGL2 cubemap). These cover the CPU-side guards: the face-target arithmetic, the "no complete
@@ -23,13 +23,13 @@ function dataOnlyEnvironment(size: number): Environment {
 
 describe('ensureGlEnvironmentSourceCube', () => {
   it('returns null when the environment has no source cube', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     const environment = { environment: null, intensity: 1 } as Environment;
     expect(ensureGlEnvironmentSourceCube(state, environment)).toBe(null);
   });
 
   it('uploads a data-only cube through the raw-pixel texImage2D overload', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const environment = dataOnlyEnvironment(4);
     const texture = ensureGlEnvironmentSourceCube(state, environment);
     expect(texture).not.toBe(null);
@@ -55,13 +55,13 @@ describe('getGlCubeFaceTarget', () => {
 
 describe('updateGlEnvironmentCubeFace', () => {
   it('returns false when no source cube has been built yet', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     expect(updateGlEnvironmentCubeFace(state, 2, dataFace(4))).toBe(false);
     expect(gl.calls.some((c) => c.name === 'texImage2D')).toBe(false);
   });
 
   it('restamps a single face of the built cube without rebuilding the other five', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     ensureGlEnvironmentSourceCube(state, dataOnlyEnvironment(4));
     const afterBuild = gl.calls.filter((c) => c.name === 'texImage2D').length;
     expect(afterBuild).toBe(6);

@@ -1,7 +1,7 @@
 import { uploadGlTextureImageResource } from '@flighthq/render-gl';
 import type { CubeTexture, Environment, GlRenderState, ImageResource } from '@flighthq/types';
 
-import { getGlSceneRuntime } from './glSceneRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 
 // Uploads an Environment's source radiance cubemap (six ImageResource faces) to a GL cubemap texture,
 // caching it on the scene runtime. Returns null when the environment has no complete cube — all six
@@ -16,7 +16,7 @@ export function ensureGlEnvironmentSourceCube(
   state: GlRenderState,
   environment: Readonly<Environment>,
 ): WebGLTexture | null {
-  const runtime = getGlSceneRuntime(state);
+  const runtime = getGlScene3DRuntime(state);
   if (runtime.environmentSourceCube !== null) return runtime.environmentSourceCube;
 
   const cube = environment.environment;
@@ -56,7 +56,7 @@ export function updateGlEnvironmentCubeFace(
   face: number,
   image: Readonly<ImageResource>,
 ): boolean {
-  const texture = getGlSceneRuntime(state).environmentSourceCube;
+  const texture = getGlScene3DRuntime(state).environmentSourceCube;
   if (texture === null) return false;
   const gl = state.gl;
   gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);

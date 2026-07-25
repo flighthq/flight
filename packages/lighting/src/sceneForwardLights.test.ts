@@ -1,11 +1,11 @@
 import { createBoundingSphere } from '@flighthq/geometry';
-import type { SceneForwardLightSelection, SceneLightsLike } from '@flighthq/types';
+import type { Scene3DForwardLightSelection, Scene3DLightsLike } from '@flighthq/types';
 
 import { createPointLight } from './pointLight';
-import { selectSceneForwardLights } from './sceneForwardLights';
+import { selectScene3DForwardLights } from './sceneForwardLights';
 import { createSpotLight } from './spotLight';
 
-function selection(): SceneForwardLightSelection {
+function selection(): Scene3DForwardLightSelection {
   return { indices: [], point: [], spot: [] };
 }
 
@@ -21,12 +21,12 @@ function spotLights(xs: readonly number[]) {
   );
 }
 
-describe('selectSceneForwardLights', () => {
+describe('selectScene3DForwardLights', () => {
   it('keeps all three points and three spots when both families are within budget', () => {
     const points = [8, 7, 6].map((x) => createPointLight({ position: { x, y: 0, z: 0 }, range: -1 }));
     const spots = spotLights([5, 4, 3]);
     const out = selection();
-    selectSceneForwardLights(
+    selectScene3DForwardLights(
       out,
       { ambient: null, directional: null, point: points, spot: spots },
       createBoundingSphere(0, 0, 0, 0),
@@ -53,7 +53,7 @@ describe('selectSceneForwardLights', () => {
       range: -1,
     });
     const out = selection();
-    selectSceneForwardLights(
+    selectScene3DForwardLights(
       out,
       { ambient: null, directional: null, point: [...gray, white] },
       createBoundingSphere(0, 0, 0, 0),
@@ -66,7 +66,7 @@ describe('selectSceneForwardLights', () => {
     const points = [8, 7, 6, 5, 4, 3].map((x) => createPointLight({ position: { x, y: 0, z: 0 }, range: -1 }));
     const spots = spotLights([8, 7, 6, 5, 4, 3]);
     const out = selection();
-    selectSceneForwardLights(
+    selectScene3DForwardLights(
       out,
       { ambient: null, directional: null, point: points, spot: spots },
       createBoundingSphere(0, 0, 0, 0),
@@ -79,7 +79,7 @@ describe('selectSceneForwardLights', () => {
   it('uses stable input order to break equal-contribution ties', () => {
     const points = Array.from({ length: 6 }, () => createPointLight({ position: { x: 2, y: 0, z: 0 }, range: -1 }));
     const out = selection();
-    selectSceneForwardLights(
+    selectScene3DForwardLights(
       out,
       { ambient: null, directional: null, point: points },
       createBoundingSphere(0, 0, 0, 0),
@@ -90,7 +90,7 @@ describe('selectSceneForwardLights', () => {
 
   it('omits zero-contribution lights', () => {
     const out = selection();
-    selectSceneForwardLights(
+    selectScene3DForwardLights(
       out,
       {
         ambient: null,
@@ -110,10 +110,10 @@ describe('selectSceneForwardLights', () => {
     ];
     const far = points[0];
     const near = points[1];
-    const lights: SceneLightsLike = { ambient: null, directional: null, point: points, spot: [] };
-    const out = lights as SceneLightsLike & SceneForwardLightSelection;
+    const lights: Scene3DLightsLike = { ambient: null, directional: null, point: points, spot: [] };
+    const out = lights as Scene3DLightsLike & Scene3DForwardLightSelection;
     out.indices = [];
-    selectSceneForwardLights(out, lights, createBoundingSphere(0, 0, 0, 0));
+    selectScene3DForwardLights(out, lights, createBoundingSphere(0, 0, 0, 0));
     expect(out.point).toEqual([near, far]);
     expect(out.indices).toEqual([1, 0]);
   });

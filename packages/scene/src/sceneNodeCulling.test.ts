@@ -1,11 +1,11 @@
 import { createFrustum, createMatrix4, setVector3 } from '@flighthq/geometry';
 import { createMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
-import { SceneNodeKind } from '@flighthq/types';
+import { Node3DKind } from '@flighthq/types';
 
 import { createMesh } from './mesh';
-import { createSceneNode } from './sceneNode';
-import { buildSceneFrustum, cullSceneNodeByFrustum } from './sceneNodeCulling';
+import { createNode3D } from './sceneNode';
+import { buildScene3DFrustum, cullNode3DByFrustum } from './sceneNodeCulling';
 
 // Builds a simple box geometry centered at origin with side 2 (bounds [-1,-1,-1] to [1,1,1]).
 function makeBoxGeometry() {
@@ -37,11 +37,11 @@ function makeViewProjection() {
   return mat;
 }
 
-describe('buildSceneFrustum', () => {
+describe('buildScene3DFrustum', () => {
   it('writes frustum planes from a view-projection matrix', () => {
     const frustum = createFrustum();
     const vp = makeViewProjection();
-    buildSceneFrustum(frustum, vp);
+    buildScene3DFrustum(frustum, vp);
     // All 6 named planes should have non-zero normals after extraction.
     const planes = [frustum.near, frustum.far, frustum.left, frustum.right, frustum.top, frustum.bottom];
     for (const p of planes) {
@@ -51,30 +51,30 @@ describe('buildSceneFrustum', () => {
   });
 });
 
-describe('cullSceneNodeByFrustum', () => {
+describe('cullNode3DByFrustum', () => {
   it('returns empty when no meshes', () => {
-    const root = createSceneNode(SceneNodeKind);
+    const root = createNode3D(Node3DKind);
     const frustum = createFrustum();
-    buildSceneFrustum(frustum, makeViewProjection());
-    const out = cullSceneNodeByFrustum([], root, frustum);
+    buildScene3DFrustum(frustum, makeViewProjection());
+    const out = cullNode3DByFrustum([], root, frustum);
     expect(out).toHaveLength(0);
   });
 
   it('collects a mesh at the origin that is in frustum', () => {
-    const root = createSceneNode(SceneNodeKind);
+    const root = createNode3D(Node3DKind);
     const mesh = createMesh(makeBoxGeometry(), []);
     setVector3(mesh.position, 0, 0, -5); // in front of camera
     invalidateNodeLocalTransform(mesh);
     addNodeChild(root, mesh);
     const frustum = createFrustum();
-    buildSceneFrustum(frustum, makeViewProjection());
-    const out = cullSceneNodeByFrustum([], root, frustum);
+    buildScene3DFrustum(frustum, makeViewProjection());
+    const out = cullNode3DByFrustum([], root, frustum);
     expect(out).toContain(mesh);
   });
 
   it('excludes disabled nodes and their subtrees', () => {
-    const root = createSceneNode(SceneNodeKind);
-    const parent = createSceneNode();
+    const root = createNode3D(Node3DKind);
+    const parent = createNode3D();
     parent.enabled = false;
     const mesh = createMesh(makeBoxGeometry(), []);
     setVector3(mesh.position, 0, 0, -5);
@@ -82,42 +82,42 @@ describe('cullSceneNodeByFrustum', () => {
     addNodeChild(parent, mesh);
     addNodeChild(root, parent);
     const frustum = createFrustum();
-    buildSceneFrustum(frustum, makeViewProjection());
-    const out = cullSceneNodeByFrustum([], root, frustum);
+    buildScene3DFrustum(frustum, makeViewProjection());
+    const out = cullNode3DByFrustum([], root, frustum);
     expect(out).not.toContain(mesh);
     expect(out).not.toContain(parent);
   });
 
   it('excludes meshes behind the camera', () => {
-    const root = createSceneNode(SceneNodeKind);
+    const root = createNode3D(Node3DKind);
     const mesh = createMesh(makeBoxGeometry(), []);
     setVector3(mesh.position, 0, 0, 50); // behind camera (positive Z in RH)
     invalidateNodeLocalTransform(mesh);
     addNodeChild(root, mesh);
     const frustum = createFrustum();
-    buildSceneFrustum(frustum, makeViewProjection());
-    const out = cullSceneNodeByFrustum([], root, frustum);
+    buildScene3DFrustum(frustum, makeViewProjection());
+    const out = cullNode3DByFrustum([], root, frustum);
     expect(out).not.toContain(mesh);
   });
 
   it('does not clear out before appending', () => {
-    const root = createSceneNode(SceneNodeKind);
+    const root = createNode3D(Node3DKind);
     const mesh = createMesh(makeBoxGeometry(), []);
     setVector3(mesh.position, 0, 0, -5);
     invalidateNodeLocalTransform(mesh);
     addNodeChild(root, mesh);
     const frustum = createFrustum();
-    buildSceneFrustum(frustum, makeViewProjection());
-    const existing = [createSceneNode()];
-    cullSceneNodeByFrustum(existing, root, frustum);
+    buildScene3DFrustum(frustum, makeViewProjection());
+    const existing = [createNode3D()];
+    cullNode3DByFrustum(existing, root, frustum);
     expect(existing).toHaveLength(2); // original + new mesh
   });
 
   it('returns the out array', () => {
-    const root = createSceneNode(SceneNodeKind);
+    const root = createNode3D(Node3DKind);
     const frustum = createFrustum();
-    buildSceneFrustum(frustum, makeViewProjection());
-    const out: ReturnType<typeof createSceneNode>[] = [];
-    expect(cullSceneNodeByFrustum(out, root, frustum)).toBe(out);
+    buildScene3DFrustum(frustum, makeViewProjection());
+    const out: ReturnType<typeof createNode3D>[] = [];
+    expect(cullNode3DByFrustum(out, root, frustum)).toBe(out);
   });
 });

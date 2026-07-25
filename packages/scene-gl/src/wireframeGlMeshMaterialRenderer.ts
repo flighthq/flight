@@ -6,15 +6,15 @@ import type {
   GlRenderState,
   Material,
   MeshGeometry,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
   WireframeMaterial,
 } from '@flighthq/types';
 import { WireframeMaterialKind } from '@flighthq/types';
 
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { beginGlMeshDraw, setGlMeshViewProjection } from './glMeshProgram';
-import { getGlSceneRuntime } from './glSceneRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { ensureGlWireframeProgram } from './glWireframePrelude';
 import { ensureGlWireframeUpload } from './glWireframeUpload';
 
@@ -28,7 +28,7 @@ export const wireframeGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
     material: Readonly<Material> | null,
-    _lights: Readonly<SceneLightBlock>,
+    _lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const gl = state.gl;
@@ -46,9 +46,9 @@ export const wireframeGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     gl.uniform4f(program.locColor, scratchRgba[0], scratchRgba[1], scratchRgba[2], scratchRgba[3]);
   },
 
-  draw(state: GlRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+  draw(state: GlRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
     const gl = state.gl;
-    const program = getGlSceneRuntime(state).activeMeshProgram;
+    const program = getGlScene3DRuntime(state).activeMeshProgram;
     if (program === null) return;
 
     gl.uniformMatrix4fv(program.locModel, false, proxy.worldMatrix.m);
@@ -63,7 +63,7 @@ export const wireframeGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 };
 
 // Registers the built-in Wireframe renderer for WireframeMaterialKind on this state. Opt-in (no
-// top-level side effect); call once per GlRenderState before drawScene so meshes with
+// top-level side effect); call once per GlRenderState before drawScene3D so meshes with
 // WireframeMaterials draw.
 export function registerWireframeGlMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, WireframeMaterialKind, wireframeGlMeshMaterialRenderer);

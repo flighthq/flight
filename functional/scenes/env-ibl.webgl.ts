@@ -1,6 +1,6 @@
-import { createScene } from '@flighthq/scene';
-import { bakeGlEnvironmentIbl, drawGlEnvironmentSkybox, drawGlScene } from '@flighthq/scene-gl';
-import type { Camera3D, Environment, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import { createScene3D } from '@flighthq/scene';
+import { bakeGlEnvironmentIbl, drawGlEnvironmentSkybox, drawGlScene3D } from '@flighthq/scene-gl';
+import type { Camera3D, Environment, GlRenderEffectPipeline, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -20,7 +20,7 @@ import {
   getSurfacePixel,
   getSurfacePixelLuminance,
   invalidateNodeLocalTransform,
-  prepareSceneRender,
+  prepareScene3DRender,
   registerStandardPbrGlMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
@@ -30,7 +30,7 @@ import {
 
 // Gl-backend IBL render: bake the environment's split-sum set once, draw the skybox backdrop, then
 // draw the scene whose PBR materials are lit purely by the baked environment (no punctual lights).
-// drawGlScene / the env functions collide with the wgpu backend in the @flighthq/sdk barrel, so they
+// drawGlScene3D / the env functions collide with the wgpu backend in the @flighthq/sdk barrel, so they
 // are imported from @flighthq/scene-gl directly.
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -57,9 +57,9 @@ export const height = 600;
 let baked = false;
 
 export function render(
-  scene: Readonly<SceneNode>,
+  scene: Readonly<Node3D>,
   camera: Readonly<Camera3D>,
-  lights: Readonly<SceneLights>,
+  lights: Readonly<Scene3DLights>,
   environment: Readonly<Environment>,
 ): void {
   // The bake is the substantial, once-per-environment cost — run it before the first frame and reuse.
@@ -77,8 +77,8 @@ export function render(
 
   drawGlEnvironmentSkybox(state, environment, camera, width / height);
 
-  prepareSceneRender(state, scene, camera, lights);
-  drawGlScene(state, scene, camera, lights);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawGlScene3D(state, scene, camera, lights);
   endGlRenderEffectPipeline(state, pipeline, []);
 }
 
@@ -101,7 +101,7 @@ for (let face = 0; face < 6; face++) {
 }
 const environment = createEnvironment({ environment: cube, intensity: 1 });
 
-const scene = createScene().root;
+const scene = createScene3D().root;
 
 // Left: smooth metal — specular IBL reflects the environment.
 const metal = createMesh(createSphereMeshGeometry(0.9, 48, 32), [

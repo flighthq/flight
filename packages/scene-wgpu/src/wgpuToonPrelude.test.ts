@@ -1,7 +1,7 @@
 import type { LinearColor, WgpuToonDefineKey } from '@flighthq/types';
 
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
-import { makeWgpuSceneState, makeWgpuSkinningAdapter } from './wgpuSceneTestHelper';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper';
 import {
   bindWgpuToonSurface,
   buildWgpuToonDefineKey,
@@ -15,7 +15,7 @@ const COLOR: LinearColor = [0.5, 0.25, 0.1, 1];
 
 describe('bindWgpuToonSurface', () => {
   it('creates a material bind group once per key and writes its uniform', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const pipeline = compileWgpuToonPipeline(state, FLAT, 'bgra8unorm');
     const key = {};
     bindWgpuToonSurface(state, pipeline, key, COLOR, 3, 0.5);
@@ -37,7 +37,7 @@ describe('buildWgpuToonDefineKey', () => {
 
 describe('compileWgpuToonPipeline', () => {
   it('compiles a module and builds the pipeline with a 4-entry material layout', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const pipeline = compileWgpuToonPipeline(state, FLAT, 'rgba16float');
     expect(pipeline.pipeline).toBeDefined();
     expect(fake.calls.some((c) => c.name === 'createShaderModule')).toBe(true);
@@ -49,7 +49,7 @@ describe('compileWgpuToonPipeline', () => {
   });
 
   it('compiles a cull-none pipeline for a double-sided key', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     compileWgpuToonPipeline(state, { ...FLAT, doubleSided: true }, 'bgra8unorm');
     const pipelineCall = fake.calls.find((c) => c.name === 'createRenderPipeline');
     const descriptor = pipelineCall!.args[0] as { primitive: { cullMode: string } };
@@ -59,11 +59,11 @@ describe('compileWgpuToonPipeline', () => {
 
 describe('ensureWgpuToonPipeline', () => {
   it('caches one pipeline per define key + format under the toon namespace', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     const a = ensureWgpuToonPipeline(state, FLAT, 'bgra8unorm');
     const b = ensureWgpuToonPipeline(state, FLAT, 'bgra8unorm');
     expect(a).toBe(b);
-    expect([...getWgpuSceneRuntime(state).pipelineCache.keys()].some((k) => k.startsWith('toon:'))).toBe(true);
+    expect([...getWgpuScene3DRuntime(state).pipelineCache.keys()].some((k) => k.startsWith('toon:'))).toBe(true);
   });
 });
 

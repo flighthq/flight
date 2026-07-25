@@ -1,8 +1,8 @@
 import type {
   BoundingSphereLike,
   PointLight,
-  SceneForwardLightSelection,
-  SceneLightsLike,
+  Scene3DForwardLightSelection,
+  Scene3DLightsLike,
   SpotLight,
 } from '@flighthq/types';
 import { MAX_FORWARD_LIGHTS } from '@flighthq/types';
@@ -17,9 +17,9 @@ import { getLightContributionAtBoundingSphere } from './lightAnalysis';
 //
 // `out.point` and `out.spot` are reused mutable arrays. All inputs are read into fixed-size scratch
 // before either output array is changed, so `out` may alias `lights`.
-export function selectSceneForwardLights(
-  out: SceneForwardLightSelection,
-  lights: Readonly<SceneLightsLike>,
+export function selectScene3DForwardLights(
+  out: Scene3DForwardLightSelection,
+  lights: Readonly<Scene3DLightsLike>,
   bounds: Readonly<BoundingSphereLike>,
 ): void {
   const points = lights.point;

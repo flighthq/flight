@@ -2,12 +2,12 @@ import { createCamera3D } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createTransmissionVolumePbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
-import type { Camera3D, Matrix3, Matrix4, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
+import type { Camera3D, Matrix3, Matrix4, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types';
 import { TransmissionVolumePbrMaterialKind } from '@flighthq/types';
 
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { getGlSceneRuntime } from './glSceneRuntime';
-import { makeGlSceneState } from './glSceneTestHelper';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { makeGlScene3DState } from './glScene3DTestHelper';
 import {
   registerTransmissionVolumePbrGlMaterial,
   transmissionVolumePbrGlMeshMaterialRenderer,
@@ -17,7 +17,7 @@ function makeCamera(): Camera3D {
   return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
 }
 
-function makeLights(): SceneLightBlock {
+function makeLights(): Scene3DLightBlock {
   const data = new Float32Array(12);
   data[1] = -1;
   data[4] = 1;
@@ -29,7 +29,7 @@ function makeLights(): SceneLightBlock {
   return { ambientCount: 1, data, directionalCount: 1, hemisphereCount: 0, pointCount: 0, spotCount: 0, version: 1 };
 }
 
-function makeProxy(): SceneRenderProxy {
+function makeProxy(): Scene3DRenderProxy {
   const geometry = createBoxMeshGeometry();
   return {
     material: createTransmissionVolumePbrMaterial(),
@@ -41,7 +41,7 @@ function makeProxy(): SceneRenderProxy {
 
 describe('registerTransmissionVolumePbrGlMaterial', () => {
   it('installs the renderer for TransmissionVolumePbrMaterialKind', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     registerTransmissionVolumePbrGlMaterial(state);
     expect(getGlMeshMaterialRenderer(state, TransmissionVolumePbrMaterialKind)).toBe(
       transmissionVolumePbrGlMeshMaterialRenderer,
@@ -51,7 +51,7 @@ describe('registerTransmissionVolumePbrGlMaterial', () => {
 
 describe('transmissionVolumePbrGlMeshMaterialRenderer', () => {
   it('bind uploads the light block, standard block, and transmission uniforms', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     transmissionVolumePbrGlMeshMaterialRenderer.bind(
       state,
       createTransmissionVolumePbrMaterial({ attenuationColor: 0x80c0ffff, transmission: 0.9 }),
@@ -65,20 +65,20 @@ describe('transmissionVolumePbrGlMeshMaterialRenderer', () => {
   });
 
   it('caches the transmission program under the pbr: namespace', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     transmissionVolumePbrGlMeshMaterialRenderer.bind(
       state,
       createTransmissionVolumePbrMaterial(),
       makeLights(),
       makeCamera(),
     );
-    const cache = getGlSceneRuntime(state).programCache;
+    const cache = getGlScene3DRuntime(state).programCache;
     expect(cache.size).toBe(1);
     expect([...cache.keys()][0].startsWith('pbr:')).toBe(true);
   });
 
   it('draw issues an indexed draw after bind', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const proxy = makeProxy();
     transmissionVolumePbrGlMeshMaterialRenderer.bind(state, proxy.material, makeLights(), makeCamera());
     transmissionVolumePbrGlMeshMaterialRenderer.draw(state, proxy, createBoxMeshGeometry());
@@ -86,7 +86,7 @@ describe('transmissionVolumePbrGlMeshMaterialRenderer', () => {
   });
 
   it('draw is a no-op before bind', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     transmissionVolumePbrGlMeshMaterialRenderer.draw(state, makeProxy(), createBoxMeshGeometry());
     expect(gl.calls.some((c) => c.name === 'drawElements')).toBe(false);
   });

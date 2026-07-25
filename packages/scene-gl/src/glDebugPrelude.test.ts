@@ -9,8 +9,8 @@ import {
   getGlDebugFragmentSourceForKey,
   getGlDebugVertexSourceForKey,
 } from './glDebugPrelude';
-import { getGlSceneRuntime } from './glSceneRuntime';
-import { makeFakeGl2, makeGlSceneState } from './glSceneTestHelper';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
 
 const DEPTH: GlDebugDefineKey = { hasNormalMap: false, mode: 'depth' };
 const NORMAL: GlDebugDefineKey = { hasNormalMap: false, mode: 'normal' };
@@ -18,7 +18,7 @@ const NORMAL_MAP: GlDebugDefineKey = { hasNormalMap: true, mode: 'normal' };
 
 describe('bindGlDebugNormalMap', () => {
   it('uploads the normal scale and binds no texture when no map is present', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const program = compileGlDebugProgram(gl, NORMAL);
     bindGlDebugNormalMap(state, program, null, 2);
     expect(gl.calls.some((c) => c.name === 'uniform1f')).toBe(true);
@@ -28,7 +28,7 @@ describe('bindGlDebugNormalMap', () => {
 
 describe('bindGlDebugRange', () => {
   it('uploads the near and far linearization range', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const program = compileGlDebugProgram(gl, DEPTH);
     bindGlDebugRange(state, program, 0.1, 100);
     expect(gl.calls.filter((c) => c.name === 'uniform1f').length).toBeGreaterThanOrEqual(2);
@@ -56,7 +56,7 @@ describe('compileGlDebugProgram', () => {
 
 describe('ensureGlDebugProgram', () => {
   it('caches variants under the debug namespace with distinct depth and normal entries', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const depthFirst = ensureGlDebugProgram(state, DEPTH);
     const depthSecond = ensureGlDebugProgram(state, DEPTH);
     expect(depthSecond).toBe(depthFirst);
@@ -64,7 +64,7 @@ describe('ensureGlDebugProgram', () => {
     const normalProgram = ensureGlDebugProgram(state, NORMAL);
     expect(normalProgram).not.toBe(depthFirst);
 
-    const keys = [...getGlSceneRuntime(state).programCache.keys()];
+    const keys = [...getGlScene3DRuntime(state).programCache.keys()];
     expect(keys.some((k) => k.startsWith('debug:'))).toBe(true);
     expect(keys).toContain('debug:d-');
     expect(keys).toContain('debug:n-');

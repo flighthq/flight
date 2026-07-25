@@ -13,62 +13,62 @@ import {
   removeNodeChild,
   setNodeLocalMatrix4,
 } from '@flighthq/node';
-import type { Matrix4, SceneNode } from '@flighthq/types';
-import type { SceneNodeRuntime } from '@flighthq/types';
+import type { Matrix4, Node3D } from '@flighthq/types';
+import type { Node3DRuntime } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import {
-  createSceneNode,
-  createSceneNodeRuntime,
-  enableSceneNodeSignals,
-  getSceneNodeRuntime,
-  getSceneNodeSignals,
-  SceneNodeKind,
+  createNode3D,
+  createNode3DRuntime,
+  enableNode3DSignals,
+  getNode3DRuntime,
+  getNode3DSignals,
+  Node3DKind,
 } from './sceneNode';
 
-function createTransformNode(): SceneNode {
-  const node = createSceneNode();
+function createTransformNode(): Node3D {
+  const node = createNode3D();
   initTransform3DTrait(node);
-  initTransform3DRuntimeTrait(getSceneNodeRuntime(node));
+  initTransform3DRuntimeTrait(getNode3DRuntime(node));
   return node;
 }
 
-describe('createSceneNode', () => {
-  it('uses SceneNodeKind by default', () => {
-    const node = createSceneNode();
-    expect(node.kind).toBe(SceneNodeKind);
+describe('createNode3D', () => {
+  it('uses Node3DKind by default', () => {
+    const node = createNode3D();
+    expect(node.kind).toBe(Node3DKind);
   });
 
   it('accepts a custom kind', () => {
     const MyKind = 'MyKind';
-    const node = createSceneNode(MyKind);
+    const node = createNode3D(MyKind);
     expect(node.kind).toBe(MyKind);
   });
 
   it('defaults enabled to true and name to null', () => {
-    const node = createSceneNode();
+    const node = createNode3D();
     expect(node.enabled).toBe(true);
     expect(node.name).toBe(null);
   });
 
   it('accepts partial initial values', () => {
-    const node = createSceneNode(SceneNodeKind, { enabled: false, name: 'root' });
+    const node = createNode3D(Node3DKind, { enabled: false, name: 'root' });
     expect(node.enabled).toBe(false);
     expect(node.name).toBe('root');
   });
 
   it('defaults alpha to 1 (fully opaque)', () => {
-    expect(createSceneNode().alpha).toBe(1);
+    expect(createNode3D().alpha).toBe(1);
   });
 
   it('accepts an initial alpha', () => {
-    expect(createSceneNode(SceneNodeKind, { alpha: 0.4 }).alpha).toBeCloseTo(0.4);
+    expect(createNode3D(Node3DKind, { alpha: 0.4 }).alpha).toBeCloseTo(0.4);
   });
 });
 
-describe('createSceneNodeRuntime', () => {
+describe('createNode3DRuntime', () => {
   it('initializes transform bookkeeping ids', () => {
-    const runtime = createSceneNodeRuntime();
+    const runtime = createNode3DRuntime();
     expect(runtime.localTransformId).toBe(0);
     expect(runtime.worldTransformId).toBe(0);
     expect(runtime.worldTransformUsingLocalTransformId).toBe(-1);
@@ -76,55 +76,55 @@ describe('createSceneNodeRuntime', () => {
   });
 
   it('initializes worldMatrix to null', () => {
-    const runtime = createSceneNodeRuntime();
+    const runtime = createNode3DRuntime();
     expect(runtime.worldMatrix4).toBeNull();
   });
 
   it('initializes worldAlpha to null (unresolved until prepared)', () => {
-    expect(createSceneNodeRuntime().worldAlpha).toBeNull();
+    expect(createNode3DRuntime().worldAlpha).toBeNull();
   });
 });
 
-describe('enableSceneNodeSignals', () => {
+describe('enableNode3DSignals', () => {
   it('creates and returns the signal bag on first call', () => {
-    const node = createSceneNode();
-    const signals = enableSceneNodeSignals(node);
+    const node = createNode3D();
+    const signals = enableNode3DSignals(node);
     expect(signals.onChildAdded).toBeDefined();
     expect(signals.onParentChanged).toBeDefined();
   });
 
   it('returns the same object on subsequent calls', () => {
-    const node = createSceneNode();
-    expect(enableSceneNodeSignals(node)).toBe(enableSceneNodeSignals(node));
+    const node = createNode3D();
+    expect(enableNode3DSignals(node)).toBe(enableNode3DSignals(node));
   });
 
   it('stores the signals on the runtime nodeSignals slot', () => {
-    const node = createSceneNode();
-    const signals = enableSceneNodeSignals(node);
-    expect(getSceneNodeRuntime(node).nodeSignals).toBe(signals);
+    const node = createNode3D();
+    const signals = enableNode3DSignals(node);
+    expect(getNode3DRuntime(node).nodeSignals).toBe(signals);
   });
 });
 
-describe('getSceneNodeRuntime', () => {
+describe('getNode3DRuntime', () => {
   it('returns a runtime with the expected initial state', () => {
-    const node = createSceneNode();
-    const runtime = getSceneNodeRuntime(node);
+    const node = createNode3D();
+    const runtime = getNode3DRuntime(node);
     expect(runtime.children).toBeNull();
     expect(runtime.parent).toBeNull();
   });
 });
 
-describe('getSceneNodeSignals', () => {
+describe('getNode3DSignals', () => {
   it('returns null before signals are enabled', () => {
-    const node = createSceneNode();
-    expect(getSceneNodeSignals(node)).toBeNull();
+    const node = createNode3D();
+    expect(getNode3DSignals(node)).toBeNull();
   });
 
-  it('returns the runtime nodeSignals after enableSceneNodeSignals', () => {
-    const node = createSceneNode();
-    const signals = enableSceneNodeSignals(node);
-    expect(getSceneNodeSignals(node)).toBe(signals);
-    expect(getSceneNodeSignals(node)).toBe(getSceneNodeRuntime(node).nodeSignals);
+  it('returns the runtime nodeSignals after enableNode3DSignals', () => {
+    const node = createNode3D();
+    const signals = enableNode3DSignals(node);
+    expect(getNode3DSignals(node)).toBe(signals);
+    expect(getNode3DSignals(node)).toBe(getNode3DRuntime(node).nodeSignals);
   });
 });
 
@@ -142,7 +142,7 @@ describe('initTransform3DTrait', () => {
   });
 
   it('accepts an existing matrix', () => {
-    const node = createSceneNode();
+    const node = createNode3D();
     const existing = { m: new Float32Array(16) } as unknown as Matrix4;
     existing.m[12] = 42;
     setNodeLocalMatrix4(node, existing);
@@ -152,26 +152,26 @@ describe('initTransform3DTrait', () => {
 
 describe('invalidateNodeLocalTransform', () => {
   it('increments the local transform id', () => {
-    const node = createSceneNode();
-    const before = getSceneNodeRuntime(node).localTransformId;
+    const node = createNode3D();
+    const before = getNode3DRuntime(node).localTransformId;
     invalidateNodeLocalTransform(node);
-    expect(getSceneNodeRuntime(node).localTransformId).toBe(before + 1);
+    expect(getNode3DRuntime(node).localTransformId).toBe(before + 1);
   });
 });
 
 describe('invalidateNodeParentReference', () => {
   it('resets the cached parent transform id so the world matrix recomputes', () => {
-    const node = createSceneNode();
-    getSceneNodeRuntime(node).worldTransformUsingParentTransformId = 5;
+    const node = createNode3D();
+    getNode3DRuntime(node).worldTransformUsingParentTransformId = 5;
     invalidateNodeParentReference(node);
-    expect(getSceneNodeRuntime(node).worldTransformUsingParentTransformId).toBe(-1);
+    expect(getNode3DRuntime(node).worldTransformUsingParentTransformId).toBe(-1);
   });
 });
 
-describe('SceneNodeRuntime', () => {
+describe('Node3DRuntime', () => {
   it('starts with no parent, no children, and null worldMatrix', () => {
     const node = createTransformNode();
-    const runtime = getSceneNodeRuntime(node) as SceneNodeRuntime;
+    const runtime = getNode3DRuntime(node) as Node3DRuntime;
     expect(runtime.parent).toBe(null);
     expect(runtime.children).toBe(null);
     expect(runtime.worldMatrix4).toBe(null);
@@ -180,17 +180,17 @@ describe('SceneNodeRuntime', () => {
 
 describe('worldHierarchy', () => {
   it('addNodeChild links parent and child', () => {
-    const parent = createSceneNode();
-    const child = createSceneNode();
+    const parent = createNode3D();
+    const child = createNode3D();
     addNodeChild(parent, child);
     expect(getNodeParent(child)).toBe(parent);
     expect(getNodeChildCount(parent)).toBe(1);
   });
 
   it('reparents a child from one node to another', () => {
-    const a = createSceneNode();
-    const b = createSceneNode();
-    const child = createSceneNode();
+    const a = createNode3D();
+    const b = createNode3D();
+    const child = createNode3D();
     addNodeChild(a, child);
     addNodeChild(b, child);
     expect(getNodeParent(child)).toBe(b);
@@ -199,8 +199,8 @@ describe('worldHierarchy', () => {
   });
 
   it('removeNodeChild unlinks parent and child', () => {
-    const parent = createSceneNode();
-    const child = createSceneNode();
+    const parent = createNode3D();
+    const child = createNode3D();
     addNodeChild(parent, child);
     removeNodeChild(parent, child);
     expect(getNodeParent(child)).toBe(null);
@@ -208,9 +208,9 @@ describe('worldHierarchy', () => {
   });
 
   it('getNodeRoot traverses to the top ancestor', () => {
-    const root = createSceneNode();
-    const mid = createSceneNode();
-    const leaf = createSceneNode();
+    const root = createNode3D();
+    const mid = createNode3D();
+    const leaf = createNode3D();
     addNodeChild(root, mid);
     addNodeChild(mid, leaf);
     expect(getNodeRoot(leaf)).toBe(root);
@@ -219,7 +219,7 @@ describe('worldHierarchy', () => {
   });
 
   it('throws when adding a node as its own child', () => {
-    const node = createSceneNode();
+    const node = createNode3D();
     expect(() => addNodeChild(node, node)).toThrow(TypeError);
   });
 });
@@ -257,13 +257,13 @@ describe('worldTransform', () => {
     const node = createTransformNode();
     invalidateNodeLocalTransform(node);
     ensureNodeWorldMatrix4(node);
-    const first = getSceneNodeRuntime(node).worldTransformId;
+    const first = getNode3DRuntime(node).worldTransformId;
 
     node.position.x = 99;
     invalidateNodeLocalTransform(node);
 
     ensureNodeWorldMatrix4(node);
-    const second = getSceneNodeRuntime(node).worldTransformId;
+    const second = getNode3DRuntime(node).worldTransformId;
 
     expect(second).not.toBe(first);
   });
@@ -271,9 +271,9 @@ describe('worldTransform', () => {
   it('world matrix is cached when nothing changes', () => {
     const node = createTransformNode();
     ensureNodeWorldMatrix4(node);
-    const id1 = getSceneNodeRuntime(node).worldTransformId;
+    const id1 = getNode3DRuntime(node).worldTransformId;
     ensureNodeWorldMatrix4(node);
-    const id2 = getSceneNodeRuntime(node).worldTransformId;
+    const id2 = getNode3DRuntime(node).worldTransformId;
     expect(id1).toBe(id2);
   });
 

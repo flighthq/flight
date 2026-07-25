@@ -11,7 +11,7 @@ import {
   isBillboard,
 } from './billboard';
 import { createMesh } from './mesh';
-import { createSceneNode } from './sceneNode';
+import { createNode3D } from './sceneNode';
 
 describe('createBillboard', () => {
   it('uses BillboardKind and full facing by default', () => {
@@ -74,6 +74,6 @@ describe('isBillboard', () => {
   });
 
   it('is false for a transform-only scene node', () => {
-    expect(isBillboard(createSceneNode())).toBe(false);
+    expect(isBillboard(createNode3D())).toBe(false);
   });
 });

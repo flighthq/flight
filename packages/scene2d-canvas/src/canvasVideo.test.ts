@@ -1,6 +1,6 @@
-﻿iimport { registerRenderer } from '@flighthq/render';
+﻿import { registerRenderer } from '@flighthq/render';
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
-mport { createVideo } from '@flighthq/scene2d';
+import { createVideo } from '@flighthq/scene2d';
 import { VideoKind } from '@flighthq/types';
 
 import { createCanvasRenderState } from './canvasRenderState';

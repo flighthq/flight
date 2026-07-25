@@ -1,7 +1,7 @@
-﻿iimport { addNodeChild } from '@flighthq/node';
+﻿import { addNodeChild } from '@flighthq/node';
 import { getOrCreateRenderProxy2D, prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import { createGlRenderState } from '@flighthq/render-gl';
-mport { createDisplayObject } from '@flighthq/scene2d';
+import { createDisplayObject } from '@flighthq/scene2d';
 import type { GlRenderState } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 

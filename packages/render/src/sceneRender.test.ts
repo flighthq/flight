@@ -15,8 +15,8 @@ import {
   createMeshGeometry,
 } from '@flighthq/mesh';
 import { addNodeChild, getNodeWorldMatrix4, invalidateNodeLocalTransform, setNodeLocalMatrix4 } from '@flighthq/node';
-import { createMesh, createSceneNode, SceneNodeKind, getSceneNodeWorldAlpha } from '@flighthq/scene';
-import type { Camera3D, Material, MeshGeometry, SceneLightBlock, SceneLightsLike } from '@flighthq/types';
+import { createMesh, createNode3D, Node3DKind, getNode3DWorldAlpha } from '@flighthq/scene';
+import type { Camera3D, Material, MeshGeometry, Scene3DLightBlock, Scene3DLightsLike } from '@flighthq/types';
 import {
   SCENE_LIGHT_BLOCK_FLOATS,
   SCENE_LIGHT_HEMISPHERE_OFFSET,
@@ -26,7 +26,7 @@ import {
 import { describe, expect, it } from 'vitest';
 
 import { createRenderState } from './renderState';
-import { packSceneLightBlock, prepareSceneRender } from './sceneRender';
+import { packScene3DLightBlock, prepareScene3DRender } from './sceneRender';
 
 function boundedBox(): MeshGeometry {
   const geometry = createBoxMeshGeometry(2, 2, 2);
@@ -46,11 +46,11 @@ function frontCamera(): Camera3D {
   return camera;
 }
 
-function emptyLights(): SceneLightsLike {
+function emptyLights(): Scene3DLightsLike {
   return { ambient: null, directional: null };
 }
 
-function newLightBlock(): SceneLightBlock {
+function newLightBlock(): Scene3DLightBlock {
   return {
     ambientCount: 0,
     data: new Float32Array(SCENE_LIGHT_BLOCK_FLOATS),
@@ -62,11 +62,11 @@ function newLightBlock(): SceneLightBlock {
   };
 }
 
-describe('packSceneLightBlock', () => {
+describe('packScene3DLightBlock', () => {
   it('zeroes the block and clears counts when no lights are present', () => {
     const block = newLightBlock();
     block.data[0] = 5;
-    packSceneLightBlock(block, emptyLights());
+    packScene3DLightBlock(block, emptyLights());
     expect(block.directionalCount).toBe(0);
     expect(block.ambientCount).toBe(0);
     expect(block.data[0]).toBe(0);
@@ -75,7 +75,7 @@ describe('packSceneLightBlock', () => {
   it('packs the directional direction and linear, premultiplied radiance', () => {
     const block = newLightBlock();
     const directional = createDirectionalLight({ color: 0xffffffff, direction: { x: 0, y: -1, z: 0 }, intensity: 2 });
-    packSceneLightBlock(block, { ambient: null, directional });
+    packScene3DLightBlock(block, { ambient: null, directional });
     expect(block.directionalCount).toBe(1);
     expect(block.data[0]).toBeCloseTo(0);
     expect(block.data[1]).toBeCloseTo(-1);
@@ -89,7 +89,7 @@ describe('packSceneLightBlock', () => {
   it('packs the ambient radiance into the ambient slot', () => {
     const block = newLightBlock();
     const ambient = createAmbientLight({ color: 0xffffffff, intensity: 0.5 });
-    packSceneLightBlock(block, { ambient, directional: null });
+    packScene3DLightBlock(block, { ambient, directional: null });
     expect(block.ambientCount).toBe(1);
     const expected = unpackColorToLinear([0, 0, 0, 0], 0xffffffff);
     expect(block.data[8]).toBeCloseTo(expected[0] * 0.5);
@@ -99,9 +99,9 @@ describe('packSceneLightBlock', () => {
 
   it('bumps version when the packed block changes', () => {
     const block = newLightBlock();
-    packSceneLightBlock(block, emptyLights());
+    packScene3DLightBlock(block, emptyLights());
     const v = block.version;
-    packSceneLightBlock(block, {
+    packScene3DLightBlock(block, {
       ambient: createAmbientLight({ color: 0xffffffff, intensity: 0.5 }),
       directional: null,
     });
@@ -111,16 +111,16 @@ describe('packSceneLightBlock', () => {
   it('does not bump version when re-packed with identical lights', () => {
     const block = newLightBlock();
     const lights = { ambient: createAmbientLight({ color: 0xffffffff, intensity: 0.5 }), directional: null };
-    packSceneLightBlock(block, lights);
+    packScene3DLightBlock(block, lights);
     const v = block.version;
-    packSceneLightBlock(block, lights);
+    packScene3DLightBlock(block, lights);
     expect(block.version).toBe(v);
   });
 
   it('decodes sRgb color to linear (a mid-gray channel is darker in linear)', () => {
     const block = newLightBlock();
     const ambient = createAmbientLight({ color: 0x808080ff, intensity: 1 });
-    packSceneLightBlock(block, { ambient, directional: null });
+    packScene3DLightBlock(block, { ambient, directional: null });
     expect(block.data[8]).toBeLessThan(0x80 / 0xff);
     expect(block.data[8]).toBeGreaterThan(0);
   });
@@ -128,7 +128,7 @@ describe('packSceneLightBlock', () => {
   it('packs point lights: position + range, and linear radiance + inverse-square range', () => {
     const block = newLightBlock();
     const point = createPointLight({ color: 0xffffffff, intensity: 3, position: { x: 1, y: 2, z: 3 }, range: 10 });
-    packSceneLightBlock(block, { ambient: null, directional: null, point: [point] });
+    packScene3DLightBlock(block, { ambient: null, directional: null, point: [point] });
     expect(block.pointCount).toBe(1);
     const o = SCENE_LIGHT_POINT_OFFSET;
     expect(block.data[o + 0]).toBeCloseTo(1);
@@ -143,7 +143,7 @@ describe('packSceneLightBlock', () => {
   it('packs an infinite-range point light with invSqrRange 0 (no cutoff)', () => {
     const block = newLightBlock();
     const point = createPointLight({ range: -1 });
-    packSceneLightBlock(block, { ambient: null, directional: null, point: [point] });
+    packScene3DLightBlock(block, { ambient: null, directional: null, point: [point] });
     expect(block.data[SCENE_LIGHT_POINT_OFFSET + 3]).toBeCloseTo(-1);
     expect(block.data[SCENE_LIGHT_POINT_OFFSET + 7]).toBe(0);
   });
@@ -156,7 +156,7 @@ describe('packSceneLightBlock', () => {
       outerConeDegrees: 30,
       position: { x: 4, y: 5, z: 6 },
     });
-    packSceneLightBlock(block, { ambient: null, directional: null, spot: [spot] });
+    packScene3DLightBlock(block, { ambient: null, directional: null, spot: [spot] });
     expect(block.spotCount).toBe(1);
     const o = SCENE_LIGHT_SPOT_OFFSET;
     expect(block.data[o + 0]).toBeCloseTo(4);
@@ -172,7 +172,7 @@ describe('packSceneLightBlock', () => {
   it('packs hemisphere lights: sky, ground, and packed world-up', () => {
     const block = newLightBlock();
     const hemisphere = createHemisphereLight({ groundColor: 0x000000ff, intensity: 2, skyColor: 0xffffffff });
-    packSceneLightBlock(block, { ambient: null, directional: null, hemisphere: [hemisphere] });
+    packScene3DLightBlock(block, { ambient: null, directional: null, hemisphere: [hemisphere] });
     expect(block.hemisphereCount).toBe(1);
     const o = SCENE_LIGHT_HEMISPHERE_OFFSET;
     const sky = unpackColorToLinear([0, 0, 0, 0], 0xffffffff);
@@ -187,13 +187,13 @@ describe('packSceneLightBlock', () => {
   it('caps each punctual array at MAX_FORWARD_LIGHTS', () => {
     const block = newLightBlock();
     const many = Array.from({ length: 9 }, () => createPointLight());
-    packSceneLightBlock(block, { ambient: null, directional: null, point: many });
+    packScene3DLightBlock(block, { ambient: null, directional: null, point: many });
     expect(block.pointCount).toBe(4);
   });
 
   it('reports zero counts for empty punctual arrays', () => {
     const block = newLightBlock();
-    packSceneLightBlock(block, { ambient: null, directional: null, hemisphere: [], point: [], spot: [] });
+    packScene3DLightBlock(block, { ambient: null, directional: null, hemisphere: [], point: [], spot: [] });
     expect(block.pointCount).toBe(0);
     expect(block.spotCount).toBe(0);
     expect(block.hemisphereCount).toBe(0);
@@ -202,21 +202,21 @@ describe('packSceneLightBlock', () => {
   it('does not bump version when re-packed with identical punctual lights', () => {
     const block = newLightBlock();
     const lights = { ambient: null, directional: null, point: [createPointLight({ range: 5 })] };
-    packSceneLightBlock(block, lights);
+    packScene3DLightBlock(block, lights);
     const v = block.version;
-    packSceneLightBlock(block, lights);
+    packScene3DLightBlock(block, lights);
     expect(block.version).toBe(v);
   });
 });
 
-describe('prepareSceneRender', () => {
+describe('prepareScene3DRender', () => {
   it('returns the lit, view-projected frame with the visible mesh', () => {
     const state = createRenderState();
-    const scene = createSceneNode(SceneNodeKind);
+    const scene = createNode3D(Node3DKind);
     const mesh = createMesh(boundedBox(), [null]);
     addNodeChild(scene, mesh);
 
-    const list = prepareSceneRender(state, scene, frontCamera(), {
+    const list = prepareScene3DRender(state, scene, frontCamera(), {
       ambient: createAmbientLight(),
       directional: createDirectionalLight(),
     });
@@ -229,21 +229,21 @@ describe('prepareSceneRender', () => {
 
   it('computes a non-identity view-projection', () => {
     const state = createRenderState();
-    const scene = createSceneNode(SceneNodeKind);
-    const list = prepareSceneRender(state, scene, frontCamera(), emptyLights());
+    const scene = createNode3D(Node3DKind);
+    const list = prepareScene3DRender(state, scene, frontCamera(), emptyLights());
     // A perspective view-projection is not the identity matrix.
     expect(list.viewProjection.m[15]).not.toBe(1);
   });
 
   it('culls a mesh placed far behind the camera', () => {
     const state = createRenderState();
-    const scene = createSceneNode(SceneNodeKind);
+    const scene = createNode3D(Node3DKind);
     const mesh = createMesh(boundedBox(), [null]);
     mesh.position.z = 1000;
     invalidateNodeLocalTransform(mesh);
     addNodeChild(scene, mesh);
 
-    const list = prepareSceneRender(state, scene, frontCamera(), emptyLights());
+    const list = prepareScene3DRender(state, scene, frontCamera(), emptyLights());
     expect(list.meshCount).toBe(0);
   });
 
@@ -251,14 +251,14 @@ describe('prepareSceneRender', () => {
     // A null bounds cache is uncomputed, not uncullable: the cull ensures the bounds (the box has
     // vertices) and then culls a far-off box normally, rather than conservatively keeping it.
     const state = createRenderState();
-    const scene = createSceneNode(SceneNodeKind);
+    const scene = createNode3D(Node3DKind);
     const mesh = createMesh(createBoxMeshGeometry(2, 2, 2), [null]);
     mesh.geometry.bounds = null;
     mesh.position.z = 1000;
     invalidateNodeLocalTransform(mesh);
     addNodeChild(scene, mesh);
 
-    const list = prepareSceneRender(state, scene, frontCamera(), emptyLights());
+    const list = prepareScene3DRender(state, scene, frontCamera(), emptyLights());
     expect(list.meshCount).toBe(0);
   });
 
@@ -266,61 +266,61 @@ describe('prepareSceneRender', () => {
     // Truly unbounded geometry (no vertices) is the only case ensureMeshGeometryBounds returns null
     // for, and it is what "cannot cull, so conservatively keep" now means.
     const state = createRenderState();
-    const scene = createSceneNode(SceneNodeKind);
+    const scene = createNode3D(Node3DKind);
     const empty = createMeshGeometry({ layout: CANONICAL_MESH_GEOMETRY_LAYOUT, vertices: new Float32Array(0) });
     const mesh = createMesh(empty, [null]);
     mesh.position.z = 1000;
     invalidateNodeLocalTransform(mesh);
     addNodeChild(scene, mesh);
 
-    const list = prepareSceneRender(state, scene, frontCamera(), emptyLights());
+    const list = prepareScene3DRender(state, scene, frontCamera(), emptyLights());
     expect(list.meshCount).toBe(1);
   });
 
   it('skips disabled subtrees', () => {
     const state = createRenderState();
-    const scene = createSceneNode(SceneNodeKind);
-    const group = createSceneNode(SceneNodeKind, { enabled: false });
+    const scene = createNode3D(Node3DKind);
+    const group = createNode3D(Node3DKind, { enabled: false });
     const mesh = createMesh(boundedBox(), [null]);
     addNodeChild(group, mesh);
     addNodeChild(scene, group);
 
-    const list = prepareSceneRender(state, scene, frontCamera(), emptyLights());
+    const list = prepareScene3DRender(state, scene, frontCamera(), emptyLights());
     expect(list.meshCount).toBe(0);
   });
 
   it('skips a hidden subtree (visible=false propagates to descendants)', () => {
     const state = createRenderState();
-    const scene = createSceneNode(SceneNodeKind);
-    const group = createSceneNode(SceneNodeKind);
+    const scene = createNode3D(Node3DKind);
+    const group = createNode3D(Node3DKind);
     group.visible = false;
     const mesh = createMesh(boundedBox(), [null]);
     addNodeChild(group, mesh);
     addNodeChild(scene, group);
 
-    const list = prepareSceneRender(state, scene, frontCamera(), emptyLights());
+    const list = prepareScene3DRender(state, scene, frontCamera(), emptyLights());
     expect(list.meshCount).toBe(0);
   });
 
   it('resolves world transforms through nested groups', () => {
     const state = createRenderState();
-    const scene = createSceneNode(SceneNodeKind);
-    const group = createSceneNode(SceneNodeKind);
+    const scene = createNode3D(Node3DKind);
+    const group = createNode3D(Node3DKind);
     const mesh = createMesh(boundedBox(), [null]);
     addNodeChild(group, mesh);
     addNodeChild(scene, group);
     group.position.x = 1;
     invalidateNodeLocalTransform(group);
 
-    const list = prepareSceneRender(state, scene, frontCamera(), emptyLights());
+    const list = prepareScene3DRender(state, scene, frontCamera(), emptyLights());
     expect(list.meshCount).toBe(1);
     expect(list.visibleMeshes[0]).toBe(mesh);
   });
 
   it('folds parent x self alpha into each node resolved worldAlpha', () => {
     const state = createRenderState();
-    const scene = createSceneNode(SceneNodeKind);
-    const group = createSceneNode(SceneNodeKind);
+    const scene = createNode3D(Node3DKind);
+    const group = createNode3D(Node3DKind);
     const mesh = createMesh(boundedBox(), [null]);
     addNodeChild(group, mesh);
     addNodeChild(scene, group);
@@ -328,68 +328,68 @@ describe('prepareSceneRender', () => {
     group.alpha = 0.5;
     mesh.alpha = 0.5;
 
-    prepareSceneRender(state, scene, frontCamera(), emptyLights());
-    expect(getSceneNodeWorldAlpha(scene)).toBeCloseTo(0.5);
-    expect(getSceneNodeWorldAlpha(group)).toBeCloseTo(0.25);
-    expect(getSceneNodeWorldAlpha(mesh)).toBeCloseTo(0.125);
+    prepareScene3DRender(state, scene, frontCamera(), emptyLights());
+    expect(getNode3DWorldAlpha(scene)).toBeCloseTo(0.5);
+    expect(getNode3DWorldAlpha(group)).toBeCloseTo(0.25);
+    expect(getNode3DWorldAlpha(mesh)).toBeCloseTo(0.125);
   });
 
   it('reuses the same list per render state across calls', () => {
     const state = createRenderState();
-    const scene = createSceneNode(SceneNodeKind);
-    const first = prepareSceneRender(state, scene, frontCamera(), emptyLights());
-    const second = prepareSceneRender(state, scene, frontCamera(), emptyLights());
+    const scene = createNode3D(Node3DKind);
+    const first = prepareScene3DRender(state, scene, frontCamera(), emptyLights());
+    const second = prepareScene3DRender(state, scene, frontCamera(), emptyLights());
     expect(second).toBe(first);
   });
 
   it('honors a positional material on a mesh', () => {
     const state = createRenderState();
-    const scene = createSceneNode(SceneNodeKind);
+    const scene = createNode3D(Node3DKind);
     const material = { kind: 'TestMaterial' } as unknown as Material;
     const mesh = createMesh(boundedBox(), [material]);
     addNodeChild(scene, mesh);
-    const list = prepareSceneRender(state, scene, frontCamera(), emptyLights());
+    const list = prepareScene3DRender(state, scene, frontCamera(), emptyLights());
     expect(list.visibleMeshes[0].materials[0]).toBe(material);
   });
 
   it('refreshes a mesh world transform under the default policy without an explicit invalidate', () => {
     const state = createRenderState(); // default 'refreshDerivedState'
-    const scene = createSceneNode(SceneNodeKind);
+    const scene = createNode3D(Node3DKind);
     const mesh = createMesh(boundedBox(), [null]);
     addNodeChild(scene, mesh);
     const camera = frontCamera();
-    prepareSceneRender(state, scene, camera, emptyLights());
+    prepareScene3DRender(state, scene, camera, emptyLights());
     mesh.position.x = 3; // bare mutation, no invalidateNodeLocalTransform
-    prepareSceneRender(state, scene, camera, emptyLights());
+    prepareScene3DRender(state, scene, camera, emptyLights());
     expect(getNodeWorldMatrix4(mesh).m[12]).toBeCloseTo(3);
   });
 
   it('preserves a directly-authored local matrix under the default refresh policy', () => {
     const state = createRenderState();
-    const scene = createSceneNode(SceneNodeKind);
+    const scene = createNode3D(Node3DKind);
     const mesh = createMesh(boundedBox(), [null]);
     addNodeChild(scene, mesh);
     const local = createMatrix4();
     local.m[12] = 3;
     setNodeLocalMatrix4(mesh, local);
 
-    prepareSceneRender(state, scene, frontCamera(), emptyLights());
+    prepareScene3DRender(state, scene, frontCamera(), emptyLights());
 
     expect(getNodeWorldMatrix4(mesh).m[12]).toBeCloseTo(3);
   });
 
   it('leaves a mesh world transform stale under requiresInvalidation until invalidated', () => {
     const state = createRenderState({ sceneGraphSyncPolicy: 'requiresInvalidation' });
-    const scene = createSceneNode(SceneNodeKind);
+    const scene = createNode3D(Node3DKind);
     const mesh = createMesh(boundedBox(), [null]);
     addNodeChild(scene, mesh);
     const camera = frontCamera();
-    prepareSceneRender(state, scene, camera, emptyLights());
+    prepareScene3DRender(state, scene, camera, emptyLights());
     mesh.position.x = 3;
-    prepareSceneRender(state, scene, camera, emptyLights());
+    prepareScene3DRender(state, scene, camera, emptyLights());
     expect(getNodeWorldMatrix4(mesh).m[12]).toBeCloseTo(0); // stale: the caller never invalidated
     invalidateNodeLocalTransform(mesh);
-    prepareSceneRender(state, scene, camera, emptyLights());
+    prepareScene3DRender(state, scene, camera, emptyLights());
     expect(getNodeWorldMatrix4(mesh).m[12]).toBeCloseTo(3);
   });
 });

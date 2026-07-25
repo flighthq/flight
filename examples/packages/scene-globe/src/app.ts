@@ -3,8 +3,8 @@ import {
   rotateOrbitCameraController,
   updateOrbitCameraController,
 } from '@flighthq/camera-controls';
-import { createSceneNode } from '@flighthq/scene';
-import type { Camera3D, SceneLightsLike, Surface } from '@flighthq/sdk';
+import { createNode3D } from '@flighthq/scene';
+import type { Camera3D, Scene3DLightsLike, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   createAmbientLight,
@@ -21,7 +21,7 @@ import {
   createTexture,
   createVector3,
   invalidateNodeLocalTransform,
-  SceneNodeKind,
+  Node3DKind,
   setCubeTextureFace,
   setQuaternionFromEuler,
 } from '@flighthq/sdk';
@@ -119,7 +119,7 @@ const environment = createEnvironment({ environment: starCube, intensity: 0.75 }
 const longitudeSampler = createSampler({ wrapU: 'repeat' });
 const earthTexture = createTexture({ image: createEarthSurface(), sampler: longitudeSampler });
 const cloudTexture = createTexture({ image: createCloudSurface(), sampler: longitudeSampler });
-const scene = createSceneNode(SceneNodeKind);
+const scene = createNode3D(Node3DKind);
 
 const earth = createMesh(createSphereMeshGeometry(1.55, 72, 48), [
   createStandardPbrMaterial({
@@ -167,7 +167,7 @@ const sun = createPointLight({
   position: createVector3(4.5, 1.8, 3.4),
   range: 14,
 });
-const lights: SceneLightsLike = {
+const lights: Scene3DLightsLike = {
   ambient: createAmbientLight({ color: 0x6688b8ff, intensity: 0.42 }),
   directional: null,
   point: [sun],

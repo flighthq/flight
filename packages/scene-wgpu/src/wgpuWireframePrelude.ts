@@ -2,11 +2,11 @@ import type { LinearColor, WgpuMaterialBinding, WgpuRenderState, WgpuWireframePi
 
 import {
   createWgpuMeshPipeline,
-  ensureWgpuScenePipeline,
+  ensureWgpuScene3DPipeline,
   stashWgpuUvTransform,
   WGPU_MESH_PRELUDE_WGSL,
 } from './wgpuMeshPipeline';
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 
 // The Wgpu wireframe prelude — the WGSL mirror of scene-gl's glWireframePrelude. A minimal module that
 // reuses the shared vs_main (position → clip) and outputs a single flat LINE color; the wireframe
@@ -21,7 +21,7 @@ export function bindWgpuWireframeColor(
   materialKey: object,
   color: Readonly<LinearColor>,
 ): GPUBindGroup {
-  const scene = getWgpuSceneRuntime(state);
+  const scene = getWgpuScene3DRuntime(state);
   let binding: WgpuMaterialBinding | undefined = scene.materialBindGroups.get(materialKey);
   if (binding === undefined) {
     const buffer = state.device.createBuffer({
@@ -73,7 +73,7 @@ export function compileWgpuWireframePipeline(
 // Resolves the wireframe pipeline for a color format, compiling and caching it on first use through the
 // shared scene pipeline cache under the `wireframe:` family namespace.
 export function ensureWgpuWireframePipeline(state: WgpuRenderState, format: GPUTextureFormat): WgpuWireframePipeline {
-  return ensureWgpuScenePipeline(state, `wireframe:${format}`, (blended) =>
+  return ensureWgpuScene3DPipeline(state, `wireframe:${format}`, (blended) =>
     compileWgpuWireframePipeline(state, format, blended),
   );
 }

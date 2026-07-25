@@ -2,7 +2,7 @@ import { createGlProgram } from '@flighthq/render-gl';
 import type { Environment, GlRenderState } from '@flighthq/types';
 
 import { ensureGlEnvironmentSourceCube, getGlCubeFaceTarget } from './glEnvironmentCube';
-import { getGlSceneRuntime } from './glSceneRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 
 // Bakes an Environment's source radiance cubemap into the split-sum image-based-lighting set —
 // a diffuse irradiance cubemap, a roughness-mipped prefiltered specular cubemap, and the 2D BRDF
@@ -21,7 +21,7 @@ export function bakeGlEnvironmentIbl(state: GlRenderState, environment: Readonly
   const gl = state.gl;
   gl.getExtension('EXT_color_buffer_float');
   gl.getExtension('OES_texture_float_linear');
-  const runtime = getGlSceneRuntime(state);
+  const runtime = getGlScene3DRuntime(state);
 
   if (runtime.iblBakeFramebuffer === null) runtime.iblBakeFramebuffer = gl.createFramebuffer();
   const fbo = runtime.iblBakeFramebuffer!;
@@ -51,9 +51,9 @@ export function bakeGlEnvironmentIbl(state: GlRenderState, environment: Readonly
 
 // Frees the IBL bake shader programs cached for `state` — the irradiance / prefilter / BRDF pass
 // programs and each one's fullscreen-quad VAO + vertex buffer. These are module-local (keyed by
-// state), so they cannot be reached from the scene runtime; destroyGlSceneRuntime calls this to fold
+// state), so they cannot be reached from the scene runtime; destroyGlScene3DRuntime calls this to fold
 // them into the one-call teardown. A no-op when no bake has run for the state. The baked result
-// textures (runtime.ibl) are freed separately by destroyGlSceneRuntime.
+// textures (runtime.ibl) are freed separately by destroyGlScene3DRuntime.
 export function destroyGlEnvironmentIblBakePrograms(state: GlRenderState): void {
   const byState = _bakePrograms.get(state);
   if (byState === undefined) return;

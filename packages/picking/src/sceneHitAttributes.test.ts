@@ -3,27 +3,27 @@ import { createRay3D, createVector3, setRay3D, setVector3 } from '@flighthq/geom
 import { createMeshGeometry, createMeshGeometryFromAttributes, setMeshGeometrySubsets } from '@flighthq/mesh';
 import { invalidateNodeLocalTransform } from '@flighthq/node';
 import { createMesh } from '@flighthq/scene';
-import type { SceneHit, VertexAttributeLayout } from '@flighthq/types';
+import type { Scene3DHit, VertexAttributeLayout } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
-import { createSceneHit } from './pickScene';
+import { createScene3DHit } from './pickScene3D';
 import {
-  getSceneHitMaterial,
-  getSceneHitSubsetIndex,
-  getSceneHitUv0,
-  getSceneHitVertexNormal,
-  getSceneHitVertexTangent,
-  isSceneHitFrontFacing,
+  getScene3DHitMaterial,
+  getScene3DHitSubsetIndex,
+  getScene3DHitUv0,
+  getScene3DHitVertexNormal,
+  getScene3DHitVertexTangent,
+  isScene3DHitFrontFacing,
 } from './sceneHitAttributes';
 
-function attributedHit(): SceneHit {
+function attributedHit(): Scene3DHit {
   const geometry = createMeshGeometryFromAttributes({
     indices: [0, 1, 2],
     normals: [0, 0, 1, 0, 0, 1, 0, 0, 1],
     positions: [0, 0, 0, 1, 0, 0, 0, 1, 0],
     uvs: [0, 0, 1, 0, 0, 1],
   });
-  const hit = createSceneHit();
+  const hit = createScene3DHit();
   hit.node = createMesh(geometry, []);
   hit.triangleIndex = 0;
   hit.u = 0.25;
@@ -33,31 +33,31 @@ function attributedHit(): SceneHit {
   return hit;
 }
 
-describe('getSceneHitMaterial', () => {
+describe('getScene3DHitMaterial', () => {
   it('returns the subset material or null for the default slot', () => {
     const hit = attributedHit();
     const material = createEntity({ kind: 'TestMaterial' });
     hit.node.materials = [material];
-    expect(getSceneHitMaterial(hit)).toBe(material);
+    expect(getScene3DHitMaterial(hit)).toBe(material);
     hit.node.materials[0] = null;
-    expect(getSceneHitMaterial(hit)).toBeNull();
+    expect(getScene3DHitMaterial(hit)).toBeNull();
   });
 });
 
-describe('getSceneHitSubsetIndex', () => {
+describe('getScene3DHitSubsetIndex', () => {
   it('resolves the subset owning the hit triangle', () => {
     const hit = attributedHit();
     setMeshGeometrySubsets(hit.node.geometry, [{ indexCount: 3, indexOffset: 0 }]);
-    expect(getSceneHitSubsetIndex(hit)).toBe(0);
+    expect(getScene3DHitSubsetIndex(hit)).toBe(0);
     hit.triangleIndex = 2;
-    expect(getSceneHitSubsetIndex(hit)).toBe(-1);
+    expect(getScene3DHitSubsetIndex(hit)).toBe(-1);
   });
 });
 
-describe('getSceneHitUv0', () => {
+describe('getScene3DHitUv0', () => {
   it('barycentrically interpolates the current triangle uv', () => {
     const out = { x: 0, y: 0 };
-    expect(getSceneHitUv0(out, attributedHit())).toBe(true);
+    expect(getScene3DHitUv0(out, attributedHit())).toBe(true);
     expect(out.x).toBeCloseTo(0.25);
     expect(out.y).toBeCloseTo(0.5);
   });
@@ -65,12 +65,12 @@ describe('getSceneHitUv0', () => {
   it('leaves out unchanged when uv0 is absent', () => {
     const hit = positionOnlyHit();
     const out = { x: 7, y: 8 };
-    expect(getSceneHitUv0(out, hit)).toBe(false);
+    expect(getScene3DHitUv0(out, hit)).toBe(false);
     expect(out).toEqual({ x: 7, y: 8 });
   });
 });
 
-describe('getSceneHitVertexNormal', () => {
+describe('getScene3DHitVertexNormal', () => {
   it('uses inverse-transpose under non-uniform scale', () => {
     const hit = attributedHit();
     const vertices = hit.node.geometry.vertices;
@@ -82,7 +82,7 @@ describe('getSceneHitVertexNormal', () => {
     setVector3(hit.node.scale, 2, 1, 1);
     invalidateNodeLocalTransform(hit.node);
     const out = createVector3();
-    expect(getSceneHitVertexNormal(out, hit)).toBe(true);
+    expect(getScene3DHitVertexNormal(out, hit)).toBe(true);
     const inverseLength = 1 / Math.sqrt(1.25);
     expect(out.x).toBeCloseTo(0.5 * inverseLength);
     expect(out.y).toBeCloseTo(inverseLength);
@@ -91,18 +91,18 @@ describe('getSceneHitVertexNormal', () => {
 
   it('leaves out unchanged when normals are absent', () => {
     const out = createVector3(7, 8, 9);
-    expect(getSceneHitVertexNormal(out, positionOnlyHit())).toBe(false);
+    expect(getScene3DHitVertexNormal(out, positionOnlyHit())).toBe(false);
     expect(out).toMatchObject({ x: 7, y: 8, z: 9 });
   });
 });
 
-describe('getSceneHitVertexTangent', () => {
+describe('getScene3DHitVertexTangent', () => {
   it('transforms tangent and flips handedness under mirroring', () => {
     const hit = attributedHit();
     setVector3(hit.node.scale, -1, 1, 1);
     invalidateNodeLocalTransform(hit.node);
     const out = { w: 0, x: 0, y: 0, z: 0 };
-    expect(getSceneHitVertexTangent(out, hit)).toBe(true);
+    expect(getScene3DHitVertexTangent(out, hit)).toBe(true);
     expect(out.x).toBeCloseTo(-1);
     expect(out.y).toBeCloseTo(0);
     expect(out.z).toBeCloseTo(0);
@@ -111,29 +111,29 @@ describe('getSceneHitVertexTangent', () => {
 
   it('leaves out unchanged when tangents are absent', () => {
     const out = { w: 4, x: 1, y: 2, z: 3 };
-    expect(getSceneHitVertexTangent(out, positionOnlyHit())).toBe(false);
+    expect(getScene3DHitVertexTangent(out, positionOnlyHit())).toBe(false);
     expect(out).toEqual({ w: 4, x: 1, y: 2, z: 3 });
   });
 });
 
-describe('isSceneHitFrontFacing', () => {
+describe('isScene3DHitFrontFacing', () => {
   it('compares the world ray direction with the geometric face normal', () => {
     const hit = attributedHit();
     const ray = createRay3D();
     setRay3D(ray, createVector3(0, 0, 1), createVector3(0, 0, -2));
-    expect(isSceneHitFrontFacing(hit, ray)).toBe(true);
+    expect(isScene3DHitFrontFacing(hit, ray)).toBe(true);
     ray.direction.z = 2;
-    expect(isSceneHitFrontFacing(hit, ray)).toBe(false);
+    expect(isScene3DHitFrontFacing(hit, ray)).toBe(false);
   });
 });
 
-function positionOnlyHit(): SceneHit {
+function positionOnlyHit(): Scene3DHit {
   const layout: VertexAttributeLayout = {
     attributes: [{ byteOffset: 0, format: 'float32x3', semantic: 'position' }],
     stride: 12,
   };
   const geometry = createMeshGeometry({ layout, vertices: new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]) });
-  const hit = createSceneHit();
+  const hit = createScene3DHit();
   hit.node = createMesh(geometry, []);
   hit.triangleIndex = 0;
   hit.u = 1;

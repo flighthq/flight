@@ -1,5 +1,5 @@
-import { createScene } from '@flighthq/scene';
-import { drawWgpuScene } from '@flighthq/scene-wgpu';
+import { createScene3D } from '@flighthq/scene';
+import { drawWgpuScene3D } from '@flighthq/scene-wgpu';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -17,7 +17,7 @@ import {
   createWgpuCanvasElement,
   createWgpuRenderState,
   getSurfacePixelRgb,
-  prepareSceneRender,
+  prepareScene3DRender,
   registerUnlitWgpuMaterial,
   renderWgpuBackground,
   setCamera3DViewMatrix4FromLookAt,
@@ -54,7 +54,7 @@ videoMap.sampler.magFilter = 'nearest';
 videoMap.sampler.minFilter = 'nearest';
 advanceVideoTexture(videoMap);
 
-const scene = createScene().root;
+const scene = createScene3D().root;
 addNodeChild(
   scene,
   createMesh(createPlaneMeshGeometry(2, 1), [
@@ -73,8 +73,8 @@ const lights = {
 };
 
 renderWgpuBackground(state);
-prepareSceneRender(state, scene, camera, lights);
-drawWgpuScene(state, scene, camera, lights);
+prepareScene3DRender(state, scene, camera, lights);
+drawWgpuScene3D(state, scene, camera, lights);
 submitWgpuRenderPass(state);
 
 export function assertRender(surface: Readonly<Surface>): void {

@@ -18,19 +18,19 @@ type SavedGlPass = {
 // everything starts fresh; name what to keep.
 //
 // A render pass carries NO 2D transform — that is a display-object DRAW concern, not a pass concern, so
-// a 3D pass (drawGlScene, which uses the camera) is unaffected. A 2D pass that needs a specific root
+// a 3D pass (drawGlScene3D, which uses the camera) is unaffected. A 2D pass that needs a specific root
 // device transform sets it explicitly with setGlRenderTransform2D after begin; the value is saved and
 // restored by the begin/end bracket like the rest of the pass state.
 //
 // Single-attachment (the common no-effects scene / 2D-offscreen path):
 //   beginGlRenderPass(state, target)                       // clear color + depth
-//   drawGlScene(state, scene, camera, lights)
+//   drawGlScene3D(state, scene, camera, lights)
 //   endGlRenderPass(state, target)                         // restore binding + resolve MSAA
 //   presentGlRenderTarget(state, target)                   // colorSpace-aware encode to the canvas
 //
 // MRT / G-buffer (three color attachments, keep depth for a later lighting pass over the same target):
 //   beginGlRenderPass(state, gbuffer, { preserveColor: [false, false, false], preserveDepth: false })
-//   drawGlScene(state, scene, camera, lights)              // fragment shader writes location 0,1,2
+//   drawGlScene3D(state, scene, camera, lights)              // fragment shader writes location 0,1,2
 //   endGlRenderPass(state, gbuffer)
 //   // ...lighting pass samples gbuffer.textures[0..2], preserving depth: { preserveDepth: true }
 export function beginGlRenderPass(

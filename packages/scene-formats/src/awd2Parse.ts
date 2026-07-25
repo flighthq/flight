@@ -15,9 +15,9 @@ import {
   computeMeshGeometryTangents,
   createMeshGeometry,
 } from '@flighthq/mesh';
-import { createSceneFromDocument } from '@flighthq/scene';
+import { createScene3DFromDocument } from '@flighthq/scene';
 import { createShadedMaterial } from '@flighthq/shading';
-import type { Scene } from '@flighthq/types';
+import type { Scene3D } from '@flighthq/types';
 import type {
   AnimationClip,
   AnimationTrack,
@@ -26,13 +26,13 @@ import type {
   Material,
   MaterialLike,
   Matrix4,
-  SceneDocument,
-  SceneDocumentAnimation,
-  SceneDocumentAnimationChannel,
-  SceneDocumentMesh,
-  SceneDocumentNode,
-  SceneDocumentSkin,
-  SceneNode,
+  Scene3DDocument,
+  Scene3DDocumentAnimation,
+  Scene3DDocumentAnimationChannel,
+  Scene3DDocumentMesh,
+  Scene3DDocumentNode,
+  Scene3DDocumentSkin,
+  Node3D,
   SurfaceMaterial,
   Texture,
   Transform3D,
@@ -41,10 +41,10 @@ import type {
 import {
   ImportDiagnosticSeverity,
   MeshKind,
-  SceneAnimationPathRotation,
-  SceneAnimationPathScale,
-  SceneAnimationPathTranslation,
-  SceneNodeKind,
+  Scene3DAnimationPathRotation,
+  Scene3DAnimationPathScale,
+  Scene3DAnimationPathTranslation,
+  Node3DKind,
 } from '@flighthq/types';
 
 import {
@@ -98,13 +98,13 @@ import {
   SKINNED_FLOATS_PER_VERTEX,
 } from './shared';
 
-// Parses an Away3D AWD 2.x binary file into a Scene. Convenience over `createSceneFromDocument(parseAwd2
+// Parses an Away3D AWD 2.x binary file into a Scene3D. Convenience over `createScene3DFromDocument(parseAwd2
 // (bytes, diagnostics))`. See parseAwd2 for the import model.
-export function createSceneFromAwd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagnostic[]): Scene {
-  return createSceneFromDocument(parseAwd2(bytes, diagnostics));
+export function createScene3DFromAwd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagnostic[]): Scene3D {
+  return createScene3DFromDocument(parseAwd2(bytes, diagnostics));
 }
 
-// Parses an Away3D AWD 2.x binary file into a format-neutral SceneDocument. The 12-byte header (magic
+// Parses an Away3D AWD 2.x binary file into a format-neutral Scene3DDocument. The 12-byte header (magic
 // `AWD`, version, flags, compression, body length) is validated, then the block stream is walked to
 // extract geometry blocks (type 1), container blocks (type 22), mesh-instance blocks (type 23), material
 // blocks (type 81), texture blocks (type 82), and the skeleton block (type 101). Mesh instances reference
@@ -122,13 +122,13 @@ export function createSceneFromAwd2(bytes: Readonly<Uint8Array>, diagnostics?: I
 // diffuseMap/normalMap referencing an unresolved AWD texture ImageResourceReference — the parser references,
 // it does not fetch or decode; the resolution is
 // @flighthq/scene-resources's explicit pass. The file's skeleton animations become document `animations`
-// whose channels bind by joint node index. Assemble into a live Scene with `createSceneFromDocument`.
+// whose channels bind by joint node index. Assemble into a live Scene3D with `createScene3DFromDocument`.
 //
 // A compressed body (Away3D's exporter default — deflate or LZMA) is inflated first when a decompressor
 // has been registered for that compression method via `registerAwd2Decompressor`; with no codec registered
 // the file records a diagnostic and returns an empty document. Malformed input records a diagnostic and returns empty rather
 // than throwing.
-export function parseAwd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagnostic[]): SceneDocument {
+export function parseAwd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagnostic[]): Scene3DDocument {
   const input = bytes as Uint8Array;
   if (input.byteLength < AWD2_HEADER_BYTES) {
     reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'awd2.header-too-short', 'parseAwd2');
@@ -232,7 +232,7 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagn
 
   const document = emptyAwdDocument();
   // Maps an AWD block id to the document node index it produced (containers + mesh instances), so parenting
-  // can rewire the flat node array by index the way the scene graph did by SceneNode reference.
+  // can rewire the flat node array by index the way the scene graph did by Node3D reference.
   const nodeIndexForBlock = new Map<number, number>();
 
   // Build the file's skeleton (if any) once as document nodes: a skeleton-group node + joint nodes with
@@ -258,7 +258,7 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagn
     const nodeIndex = document.nodes.length;
     document.nodes.push({
       children: [],
-      kind: SceneNodeKind,
+      kind: Node3DKind,
       name: container.name || undefined,
       transform: awdTransformToTransform3D(container.transform),
     });
@@ -290,7 +290,7 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagn
         // The single mesh node carries the instance name directly; the multi-geometry branch instead names
         // the wrapping group (its subset meshes stay anonymous parts).
         const meshIndex = document.meshes.length;
-        const mesh: SceneDocumentMesh = {
+        const mesh: Scene3DDocumentMesh = {
           geometry: geometries[0].geometry,
           materials: materialForSubset(meshInst, 0),
         };
@@ -306,16 +306,16 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagn
         });
       } else {
         nodeIndex = document.nodes.length;
-        const group: SceneDocumentNode = {
+        const group: Scene3DDocumentNode = {
           children: [],
-          kind: SceneNodeKind,
+          kind: Node3DKind,
           name: meshInst.name || undefined,
           transform,
         };
         document.nodes.push(group);
         for (let i = 0; i < geometries.length; i++) {
           const meshIndex = document.meshes.length;
-          const mesh: SceneDocumentMesh = {
+          const mesh: Scene3DDocumentMesh = {
             geometry: geometries[i].geometry,
             materials: materialForSubset(meshInst, i),
           };
@@ -335,7 +335,7 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagn
       nodeIndex = document.nodes.length;
       document.nodes.push({
         children: [],
-        kind: SceneNodeKind,
+        kind: Node3DKind,
         name: meshInst.name || undefined,
         transform,
       });
@@ -389,7 +389,7 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagn
 }
 
 // Parses every named skeleton-animation block in an AWD file into a name→clip map. Each clip drives the
-// given joint SceneNodes — the joints createSceneFromAwd2 built and exposed as mesh.skin.skeleton.joints —
+// given joint Node3Ds — the joints createScene3DFromAwd2 built and exposed as mesh.skin.skeleton.joints —
 // so binding to those same nodes (rather than freshly-created ones) is what lets a clip deform the skinned
 // mesh: animation, skeleton, and skin all reference one joint hierarchy. Mirrors parseMd5Anim(source,
 // joints). A file may carry several named animations (idle/walk/attack); each is keyed by its block name
@@ -398,7 +398,7 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagn
 // must be in AWD skeleton order (index j = joint j); a length mismatch with the file's skeleton records a diagnostic.
 export function parseAwd2SkeletonAnimations(
   bytes: Readonly<Uint8Array>,
-  joints: readonly SceneNode[],
+  joints: readonly Node3D[],
   diagnostics?: ImportDiagnostic[],
 ): Record<string, AnimationClip> {
   const input = bytes as Uint8Array;
@@ -563,7 +563,7 @@ function buildAwdSkeletonAnimationClip(
   parsedAnimation: Readonly<ParsedSkeletonAnimation>,
   jointCount: number,
   poseBlocks: ReadonlyMap<number, ParsedSkeletonPose>,
-  joints: readonly SceneNode[],
+  joints: readonly Node3D[],
   diagnostics?: ImportDiagnostic[],
 ): AnimationClip | null {
   const poseCount = parsedAnimation.poses.length;
@@ -638,7 +638,7 @@ function buildAwdSkeletonAnimationClip(
     channels.push(
       createAnimationChannel(translationTrack, {
         node: joints[j],
-        path: SceneAnimationPathTranslation,
+        path: Scene3DAnimationPathTranslation,
       }),
     );
 
@@ -651,7 +651,7 @@ function buildAwdSkeletonAnimationClip(
     channels.push(
       createAnimationChannel(rotationTrack, {
         node: joints[j],
-        path: SceneAnimationPathRotation,
+        path: Scene3DAnimationPathRotation,
       }),
     );
 
@@ -666,7 +666,7 @@ function buildAwdSkeletonAnimationClip(
       channels.push(
         createAnimationChannel(scaleTrack, {
           node: joints[j],
-          path: SceneAnimationPathScale,
+          path: Scene3DAnimationPathScale,
         }),
       );
     }
@@ -691,14 +691,14 @@ function buildAwdSkeletonAnimationClip(
 // the joint's document node index (in `jointNodeIndices`, AWD joint order). The block walk mirrors the live
 // parseAwd2SkeletonAnimations; the difference is only the sink — document channels carry a node index + path
 // + track rather than a live-node-bound AnimationChannel. Every named animation (idle/walk/attack) becomes
-// one SceneDocumentAnimation keyed by its block name (or `animation${i}` in file order when unnamed). Returns
+// one Scene3DDocumentAnimation keyed by its block name (or `animation${i}` in file order when unnamed). Returns
 // an empty array when no skeleton/animation blocks are found. `bytes` must be the REHYDRATED body (compression
 // byte NONE, inflated), not the raw file — this helper does not decompress, unlike parseAwd2SkeletonAnimations.
 function buildAwdDocumentAnimations(
   bytes: Readonly<Uint8Array>,
   jointNodeIndices: readonly number[],
   diagnostics?: ImportDiagnostic[],
-): SceneDocumentAnimation[] {
+): Scene3DDocumentAnimation[] {
   const source = bytes as Uint8Array;
   const view = new DataView(source.buffer, source.byteOffset, source.byteLength);
   const bodyLength = view.getUint32(8, true);
@@ -753,7 +753,7 @@ function buildAwdDocumentAnimations(
   const parsedSkeleton = skeletonBlocks.values().next().value!;
   const jointCount = parsedSkeleton.joints.length;
 
-  const animations: SceneDocumentAnimation[] = [];
+  const animations: Scene3DDocumentAnimation[] = [];
   let index = 0;
   for (const parsedAnimation of animationBlocks.values()) {
     const built = buildAwdDocumentAnimation(parsedAnimation, jointCount, poseBlocks, jointNodeIndices, diagnostics);
@@ -766,7 +766,7 @@ function buildAwdDocumentAnimations(
   return animations;
 }
 
-// Builds one SceneDocumentAnimation from a parsed AWD skeleton-animation block: samples each pose's per-joint
+// Builds one Scene3DDocumentAnimation from a parsed AWD skeleton-animation block: samples each pose's per-joint
 // local matrix into a translation + rotation track bound to the matching joint node INDEX. Null when it has
 // no poses. Mirrors buildAwdSkeletonAnimationClip's per-joint sampling, emitting document channels.
 function buildAwdDocumentAnimation(
@@ -775,7 +775,7 @@ function buildAwdDocumentAnimation(
   poseBlocks: ReadonlyMap<number, ParsedSkeletonPose>,
   jointNodeIndices: readonly number[],
   diagnostics?: ImportDiagnostic[],
-): SceneDocumentAnimation | null {
+): Scene3DDocumentAnimation | null {
   const poseCount = parsedAnimation.poses.length;
   if (poseCount === 0) {
     reportImportDiagnostic(
@@ -796,7 +796,7 @@ function buildAwdDocumentAnimation(
 
   const poseMatrix = createMatrix4();
   const poseTransform = createTransform3D();
-  const channels: SceneDocumentAnimationChannel[] = [];
+  const channels: Scene3DDocumentAnimationChannel[] = [];
   // See buildAwdSkeletonAnimationClip: aggregate the distinct missing pose blocks, report once.
   const missingPoseBlocks = diagnostics ? new Set<number>() : null;
   for (let j = 0; j < jointCount; j++) {
@@ -842,7 +842,7 @@ function buildAwdDocumentAnimation(
     });
     channels.push({
       node: jointNodeIndices[j],
-      path: SceneAnimationPathTranslation,
+      path: Scene3DAnimationPathTranslation,
       track: translationTrack,
     });
 
@@ -854,7 +854,7 @@ function buildAwdDocumentAnimation(
     });
     channels.push({
       node: jointNodeIndices[j],
-      path: SceneAnimationPathRotation,
+      path: Scene3DAnimationPathRotation,
       track: rotationTrack,
     });
 
@@ -866,7 +866,7 @@ function buildAwdDocumentAnimation(
       });
       channels.push({
         node: jointNodeIndices[j],
-        path: SceneAnimationPathScale,
+        path: Scene3DAnimationPathScale,
         track: scaleTrack,
       });
     }
@@ -888,7 +888,7 @@ function buildAwdDocumentAnimation(
 }
 
 // Validates the header version-major byte before the block walk. An 'AWD'-magic file with a version other
-// than 2 (in practice version 3 — AWD3, AwayJS's SceneGraph format) has an entirely different block model,
+// than 2 (in practice version 3 — AWD3, AwayJS's Scene3DGraph format) has an entirely different block model,
 // so the AWD2 block walk would silently misparse it to an empty/garbage document. Reject it by name here
 // instead, pointing at AWD3 as a recognized but not-yet-implemented future format.
 function isAwd2Version(input: Readonly<Uint8Array>, diagnostics?: ImportDiagnostic[]): boolean {
@@ -900,8 +900,8 @@ function isAwd2Version(input: Readonly<Uint8Array>, diagnostics?: ImportDiagnost
   return false;
 }
 
-// The empty SceneDocument returned when AWD parsing fails or before assembly begins — every table present.
-function emptyAwdDocument(): SceneDocument {
+// The empty Scene3DDocument returned when AWD parsing fails or before assembly begins — every table present.
+function emptyAwdDocument(): Scene3DDocument {
   return {
     animations: [],
     cameras: [],
@@ -916,8 +916,8 @@ function emptyAwdDocument(): SceneDocument {
   };
 }
 
-// Emits an AWD skeleton block into a SceneDocument as a "skeleton" group node + one joint node per AWD
-// joint (with its bind-pose local transform), plus a SceneDocumentSkin whose joints are those node indices
+// Emits an AWD skeleton block into a Scene3DDocument as a "skeleton" group node + one joint node per AWD
+// joint (with its bind-pose local transform), plus a Scene3DDocumentSkin whose joints are those node indices
 // and whose inverseBind are the AWD joint matrices (which ARE the inverse bind pose). Appends the nodes to
 // `document.nodes` and returns the skeleton-group node index, the joint node indices (in AWD joint order,
 // for animation binding), and the skin. The parent chain is wired through the joint nodes' `children` index
@@ -926,18 +926,18 @@ function emptyAwdDocument(): SceneDocument {
 // the same math the live scene path used, decomposed to a Transform3D for the document node.
 function buildAwdSkeletonDocument(
   parsedSkeleton: Readonly<ParsedSkeleton>,
-  document: SceneDocument,
+  document: Scene3DDocument,
 ): {
   jointNodeIndices: number[];
   skeletonRootIndex: number;
-  skin: SceneDocumentSkin;
+  skin: Scene3DDocumentSkin;
 } {
   const jointCount = parsedSkeleton.joints.length;
 
   const skeletonRootIndex = document.nodes.length;
   document.nodes.push({
     children: [],
-    kind: SceneNodeKind,
+    kind: Node3DKind,
     name: 'skeleton',
     transform: createTransform3D(),
   });
@@ -947,7 +947,7 @@ function buildAwdSkeletonDocument(
     jointNodeIndices.push(document.nodes.length);
     document.nodes.push({
       children: [],
-      kind: SceneNodeKind,
+      kind: Node3DKind,
       name: parsedSkeleton.joints[j].name || undefined,
       transform: createTransform3D(),
     });
@@ -993,7 +993,7 @@ function buildAwdSkeletonDocument(
     decomposeMatrix4ToTransform3D(document.nodes[jointNodeIndices[j]].transform, local);
   }
 
-  const skin: SceneDocumentSkin = { inverseBind, joints: jointNodeIndices };
+  const skin: Scene3DDocumentSkin = { inverseBind, joints: jointNodeIndices };
   return { jointNodeIndices, skeletonRootIndex, skin };
 }
 
@@ -1421,7 +1421,7 @@ function parseTriangleGeometryBlock(
   return geometries;
 }
 
-// Parses a Container block (type 22). AWD SceneHeader layout:
+// Parses a Container block (type 22). AWD Scene3DHeader layout:
 // parentId(uint32) → matrix4x3(12 × floatSize) → name(VarString) → NumAttrList → UserAttrList
 function parseContainerBlock(
   view: Readonly<DataView>,
@@ -1491,7 +1491,7 @@ function parseContainerBlock(
 }
 
 // Parses a MeshInstance block (type 23). Layout:
-// SceneHeader(parentId → matrix → name) → geometryId(uint32)
+// Scene3DHeader(parentId → matrix → name) → geometryId(uint32)
 // → numMaterials(uint16) → materialIds(uint32 × N) → NumAttrList → UserAttrList
 function parseMeshInstanceBlock(
   view: Readonly<DataView>,
@@ -1797,7 +1797,7 @@ function resolveAwdMaterial(
   materialBlocks: Readonly<Map<number, ParsedMaterial>>,
   textureBlocks: Readonly<Map<number, ParsedTexture>>,
   cache: Map<number, number>,
-  document: SceneDocument,
+  document: Scene3DDocument,
   diagnostics?: ImportDiagnostic[],
 ): number {
   if (materialId === 0) return -1;
@@ -1857,7 +1857,7 @@ function resolveAwdMaterial(
 function resolveAwdTexture(
   textureId: number,
   textureBlocks: Readonly<Map<number, ParsedTexture>>,
-  document: SceneDocument,
+  document: Scene3DDocument,
   diagnostics?: ImportDiagnostic[],
 ): Texture | null {
   const parsed = textureBlocks.get(textureId);

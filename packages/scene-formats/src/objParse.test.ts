@@ -12,12 +12,12 @@ import type {
   ExternalImageResourceReference,
   ImportDiagnostic,
   Mesh,
-  SceneNode,
+  Node3D,
 } from '@flighthq/types';
 import { BlinnPhongMaterialKind } from '@flighthq/types';
 
 import { parseObjMaterialLibrary } from './mtlParse';
-import { createSceneFromObj, parseObj } from './objParse';
+import { createScene3DFromObj, parseObj } from './objParse';
 
 // Asserts EXACTLY ONE crumb of `kind` was recorded (guards the count) and returns it so a test can lock
 // the full contract — severity, true origin, and detail — for that emitted diagnostic.
@@ -27,14 +27,14 @@ function expectOneCrumb(diagnostics: readonly ImportDiagnostic[], kind: string):
   return matches[0];
 }
 
-describe('createSceneFromObj', () => {
+describe('createScene3DFromObj', () => {
   it('parses a single triangle with positions only', () => {
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'f 1 2 3'].join('\n');
 
-    const scene = createSceneFromObj(obj);
+    const scene = createScene3DFromObj(obj);
     const children = getNodeChildren(scene.root);
     expect(children).toHaveLength(1);
-    expect(isMesh(children[0] as SceneNode)).toBe(true);
+    expect(isMesh(children[0] as Node3D)).toBe(true);
 
     const geometry = (children[0] as Mesh).geometry;
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
@@ -52,7 +52,7 @@ describe('createSceneFromObj', () => {
   it('parses multiple faces sharing vertices', () => {
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 1 1 0', 'v 0 1 0', 'f 1 2 3', 'f 1 3 4'].join('\n');
 
-    const scene = createSceneFromObj(obj);
+    const scene = createScene3DFromObj(obj);
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     // 4 unique vertices, 6 indices (2 triangles).
     expect(getMeshGeometryVertexCount(geometry)).toBe(4);
@@ -62,7 +62,7 @@ describe('createSceneFromObj', () => {
   it('fan-triangulates a quad face', () => {
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 1 1 0', 'v 0 1 0', 'f 1 2 3 4'].join('\n');
 
-    const scene = createSceneFromObj(obj);
+    const scene = createScene3DFromObj(obj);
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     // A quad becomes 2 triangles = 6 indices.
     expect(getMeshGeometryIndexCount(geometry)).toBe(6);
@@ -71,7 +71,7 @@ describe('createSceneFromObj', () => {
   it('fan-triangulates an N-gon face (pentagon)', () => {
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 1.5 0.5 0', 'v 1 1 0', 'v 0 1 0', 'f 1 2 3 4 5'].join('\n');
 
-    const scene = createSceneFromObj(obj);
+    const scene = createScene3DFromObj(obj);
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     // A pentagon becomes 3 triangles = 9 indices.
     expect(getMeshGeometryIndexCount(geometry)).toBe(9);
@@ -82,7 +82,7 @@ describe('createSceneFromObj', () => {
       '\n',
     );
 
-    const scene = createSceneFromObj(obj);
+    const scene = createScene3DFromObj(obj);
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
 
@@ -100,7 +100,7 @@ describe('createSceneFromObj', () => {
   it('handles v//vn syntax (position and normal, no uv)', () => {
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'vn 0 0 -1', 'f 1//1 2//1 3//1'].join('\n');
 
-    const scene = createSceneFromObj(obj);
+    const scene = createScene3DFromObj(obj);
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
 
@@ -112,7 +112,7 @@ describe('createSceneFromObj', () => {
   it('handles v/vt syntax (position and uv, no normal)', () => {
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'vt 0.5 0.5', 'f 1/1 2/1 3/1'].join('\n');
 
-    const scene = createSceneFromObj(obj);
+    const scene = createScene3DFromObj(obj);
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
 
@@ -124,7 +124,7 @@ describe('createSceneFromObj', () => {
   it('resolves negative (relative) vertex indices', () => {
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'f -3 -2 -1'].join('\n');
 
-    const scene = createSceneFromObj(obj);
+    const scene = createScene3DFromObj(obj);
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
 
@@ -149,17 +149,17 @@ describe('createSceneFromObj', () => {
       'f 4 5 6',
     ].join('\n');
 
-    const scene = createSceneFromObj(obj);
+    const scene = createScene3DFromObj(obj);
     const roots = getNodeChildren(scene.root);
     expect(roots).toHaveLength(2);
 
     // Each single-material group becomes one bare Mesh carrying the group name —
     // getNodeChildren(scene.root) returns Mesh nodes, not transform-only wrappers.
-    const groupA = roots[0] as SceneNode;
+    const groupA = roots[0] as Node3D;
     expect(isMesh(groupA)).toBe(true);
     expect(groupA.name).toBe('GroupA');
 
-    const groupB = roots[1] as SceneNode;
+    const groupB = roots[1] as Node3D;
     expect(isMesh(groupB)).toBe(true);
     expect(groupB.name).toBe('GroupB');
   });
@@ -167,11 +167,11 @@ describe('createSceneFromObj', () => {
   it('emits a single-object group as a bare Mesh carrying the object name', () => {
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'o Cube', 'f 1 2 3'].join('\n');
 
-    const scene = createSceneFromObj(obj);
+    const scene = createScene3DFromObj(obj);
     const roots = getNodeChildren(scene.root);
     expect(roots).toHaveLength(1);
-    expect(isMesh(roots[0] as SceneNode)).toBe(true);
-    expect((roots[0] as SceneNode).name).toBe('Cube');
+    expect(isMesh(roots[0] as Node3D)).toBe(true);
+    expect((roots[0] as Node3D).name).toBe('Cube');
   });
 
   it('emits a multi-material group as one Mesh with a subset per material', () => {
@@ -189,7 +189,7 @@ describe('createSceneFromObj', () => {
       'f 4 5 6',
     ].join('\n');
 
-    const scene = createSceneFromObj(obj);
+    const scene = createScene3DFromObj(obj);
     // The group "Body" is one bare Mesh, not a wrapper over per-material child meshes.
     const roots = getNodeChildren(scene.root);
     expect(roots).toHaveLength(1);
@@ -223,11 +223,11 @@ describe('createSceneFromObj', () => {
       'f 4 5 6',
     ].join('\n');
     const diagnostics: ImportDiagnostic[] = [];
-    const scene = createSceneFromObj(obj, undefined, diagnostics);
+    const scene = createScene3DFromObj(obj, undefined, diagnostics);
     const roots = getNodeChildren(scene.root);
     expect(roots).toHaveLength(2);
-    expect((roots[0] as SceneNode).name).toBe('A');
-    expect((roots[1] as SceneNode).name).toBeNull(); // the default (unnamed) group after the bare g
+    expect((roots[0] as Node3D).name).toBe('A');
+    expect((roots[1] as Node3D).name).toBeNull(); // the default (unnamed) group after the bare g
     expect(diagnostics).toHaveLength(0);
   });
 
@@ -248,11 +248,11 @@ describe('createSceneFromObj', () => {
       'f 4 5 6',
     ].join('\n');
     const diagnostics: ImportDiagnostic[] = [];
-    const roots = getNodeChildren(createSceneFromObj(obj, undefined, diagnostics).root);
+    const roots = getNodeChildren(createScene3DFromObj(obj, undefined, diagnostics).root);
     // Exact output: the recovery still happens — two nodes, the named Cube then the unnamed boundary.
     expect(roots).toHaveLength(2);
-    expect((roots[0] as SceneNode).name).toBe('Cube');
-    expect((roots[1] as SceneNode).name).toBeNull();
+    expect((roots[0] as Node3D).name).toBe('Cube');
+    expect((roots[1] as Node3D).name).toBeNull();
     // Exact crumb: one Recover for the missing object name, emitted from parseObj.
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'obj.object-name-missing');
@@ -279,7 +279,7 @@ describe('createSceneFromObj', () => {
       'f 4 5 6',
     ].join('\n');
     const diagnostics: ImportDiagnostic[] = [];
-    const mesh = getNodeChildren(createSceneFromObj(obj, library, diagnostics).root)[0] as Mesh;
+    const mesh = getNodeChildren(createScene3DFromObj(obj, library, diagnostics).root)[0] as Mesh;
     // One group, two subsets: the Red material then the default (no material) after the bare usemtl — the
     // second slot must be null, NOT a stale Red.
     expect(mesh.geometry.subsets).toHaveLength(2);
@@ -291,19 +291,19 @@ describe('createSceneFromObj', () => {
   });
 
   it('returns an empty scene for empty input', () => {
-    const scene = createSceneFromObj('');
+    const scene = createScene3DFromObj('');
     expect(getNodeChildren(scene.root)).toHaveLength(0);
   });
 
   it('returns an empty scene for comment-only input', () => {
-    const scene = createSceneFromObj('# just a comment\n');
+    const scene = createScene3DFromObj('# just a comment\n');
     expect(getNodeChildren(scene.root)).toHaveLength(0);
   });
 
   it('records a diagnostic on faces with fewer than 3 vertices', () => {
     const obj = 'v 0 0 0\nv 1 0 0\nf 1 2\n';
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromObj(obj, undefined, diagnostics);
+    createScene3DFromObj(obj, undefined, diagnostics);
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'obj.face-too-few-vertices');
     expect(crumb.severity).toBe('Drop');
@@ -315,7 +315,7 @@ describe('createSceneFromObj', () => {
   it('records a diagnostic on out-of-range position indices', () => {
     const obj = 'v 0 0 0\nf 1 2 3\n';
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromObj(obj, undefined, diagnostics);
+    createScene3DFromObj(obj, undefined, diagnostics);
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'obj.position-index-out-of-range');
     expect(crumb.severity).toBe('Drop');
@@ -328,7 +328,7 @@ describe('createSceneFromObj', () => {
   it('records a diagnostic on non-numeric position components', () => {
     const obj = 'v abc def ghi\n';
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromObj(obj, undefined, diagnostics);
+    createScene3DFromObj(obj, undefined, diagnostics);
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'obj.vertex-malformed');
     expect(crumb.severity).toBe('Drop');
@@ -341,7 +341,7 @@ describe('createSceneFromObj', () => {
   it('deduplicates vertices sharing the same position/uv/normal tuple', () => {
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'f 1 2 3', 'f 3 2 1'].join('\n');
 
-    const scene = createSceneFromObj(obj);
+    const scene = createScene3DFromObj(obj);
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     // Same 3 unique vertex combos used by both faces.
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
@@ -353,7 +353,7 @@ describe('createSceneFromObj', () => {
       '\n',
     );
 
-    const scene = createSceneFromObj(obj);
+    const scene = createScene3DFromObj(obj);
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     // 3 pos * 2 normals = 6 unique vertices.
     expect(getMeshGeometryVertexCount(geometry)).toBe(6);
@@ -365,7 +365,7 @@ describe('createSceneFromObj', () => {
 
     const obj = ['mtllib materials.mtl', 'v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'usemtl RedMat', 'f 1 2 3'].join('\n');
 
-    const scene = createSceneFromObj(obj, lib);
+    const scene = createScene3DFromObj(obj, lib);
     const mesh = getNodeChildren(scene.root)[0] as Mesh;
     expect(isMesh(mesh)).toBe(true);
     expect(mesh.materials).toHaveLength(1);
@@ -389,7 +389,7 @@ describe('createSceneFromObj', () => {
     const lib = parseObjMaterialLibrary(mtl);
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'usemtl Shiny', 'f 1 2 3'].join('\n');
 
-    const material = (getNodeChildren(createSceneFromObj(obj, lib).root)[0] as Mesh).materials[0] as BlinnPhongMaterial;
+    const material = (getNodeChildren(createScene3DFromObj(obj, lib).root)[0] as Mesh).materials[0] as BlinnPhongMaterial;
     expect(material.kind).toBe(BlinnPhongMaterialKind);
     expect(material.diffuse).toBe(0xcc6633_80 >>> 0); // Kd 0.8,0.4,0.2 with d=0.5 alpha
     expect(material.specular).toBe(0xffffffff); // Ks 1,1,1 opaque
@@ -406,7 +406,7 @@ describe('createSceneFromObj', () => {
     const lib = parseObjMaterialLibrary('newmtl Known\nKd 1 1 1\n');
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'usemtl Missing', 'f 1 2 3'].join('\n');
 
-    const mesh = getNodeChildren(createSceneFromObj(obj, lib).root)[0] as Mesh;
+    const mesh = getNodeChildren(createScene3DFromObj(obj, lib).root)[0] as Mesh;
     // One subset, one positional slot — null (resolves to DefaultMaterialKind at draw time).
     expect(mesh.materials).toEqual([null]);
   });
@@ -427,7 +427,7 @@ describe('createSceneFromObj', () => {
       'f 4 5 6',
     ].join('\n');
 
-    const roots = getNodeChildren(createSceneFromObj(obj, lib).root);
+    const roots = getNodeChildren(createScene3DFromObj(obj, lib).root);
     expect(roots).toHaveLength(2);
     // Group B declares no usemtl of its own; per the OBJ spec it inherits RedMat set before group A.
     const groupB = roots[1] as Mesh;
@@ -439,18 +439,18 @@ describe('createSceneFromObj', () => {
   it('handles faces before any group or object (top-level geometry)', () => {
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'f 1 2 3'].join('\n');
 
-    const scene = createSceneFromObj(obj);
+    const scene = createScene3DFromObj(obj);
     // Mesh should be a direct child of scene (no wrapper group).
     const children = getNodeChildren(scene.root);
     expect(children).toHaveLength(1);
-    expect(isMesh(children[0] as SceneNode)).toBe(true);
+    expect(isMesh(children[0] as Node3D)).toBe(true);
   });
 });
 
-describe('createSceneFromObj animations', () => {
+describe('createScene3DFromObj animations', () => {
   it('carries no animations (OBJ has none)', () => {
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'f 1 2 3'].join('\n');
-    expect(Object.keys(createSceneFromObj(obj).animations)).toHaveLength(0);
+    expect(Object.keys(createScene3DFromObj(obj).animations)).toHaveLength(0);
   });
 });
 
@@ -459,7 +459,7 @@ describe('obj diagnostic crumb coverage', () => {
     'records $kind (reason $reason) as a Drop from parseObj',
     ({ obj, kind, line, reason }) => {
       const diagnostics: ImportDiagnostic[] = [];
-      createSceneFromObj(obj, undefined, diagnostics);
+      createScene3DFromObj(obj, undefined, diagnostics);
       expect(diagnostics).toHaveLength(1);
       const crumb = expectOneCrumb(diagnostics, kind);
       expect(crumb.severity).toBe('Drop');
@@ -473,7 +473,7 @@ describe('obj diagnostic crumb coverage', () => {
   it('records face-vertex-invalid (Drop, parseObj) for a zero/non-numeric face index token', () => {
     // Index 0 is invalid in OBJ (1-based); the token is dropped and the face vertex loop breaks.
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromObj('v 0 0 0\nf 0 1 2\n', undefined, diagnostics);
+    createScene3DFromObj('v 0 0 0\nf 0 1 2\n', undefined, diagnostics);
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'obj.face-vertex-invalid');
     expect(crumb.severity).toBe('Drop');
@@ -486,7 +486,7 @@ describe('obj diagnostic crumb coverage', () => {
   it('records uv-index-invalid (Recover, parseObj) — the vertex still emits without that uv', () => {
     // One vt (index 1); the face references uv index 9. The vertex is kept (uv falls back), so Recover.
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nvt 0 0\nf 1/1 2/9 3/1\n', undefined, diagnostics);
+    createScene3DFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nvt 0 0\nf 1/1 2/9 3/1\n', undefined, diagnostics);
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'obj.uv-index-invalid');
     expect(crumb.severity).toBe('Recover');
@@ -498,7 +498,7 @@ describe('obj diagnostic crumb coverage', () => {
 
   it('records uv-index-invalid (Recover, parseObj) for a NON-NUMERIC uv token — previously a silent drop', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nvt 0 0\nf 1/1 2/x 3/1\n', undefined, diagnostics);
+    createScene3DFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nvt 0 0\nf 1/1 2/x 3/1\n', undefined, diagnostics);
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'obj.uv-index-invalid');
     expect(crumb.severity).toBe('Recover');
@@ -509,7 +509,7 @@ describe('obj diagnostic crumb coverage', () => {
 
   it('records normal-index-invalid (Recover, parseObj) — the vertex still emits without that normal', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nvn 0 0 1\nf 1//1 2//9 3//1\n', undefined, diagnostics);
+    createScene3DFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nvn 0 0 1\nf 1//1 2//9 3//1\n', undefined, diagnostics);
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'obj.normal-index-invalid');
     expect(crumb.severity).toBe('Recover');
@@ -521,7 +521,7 @@ describe('obj diagnostic crumb coverage', () => {
 
   it('records normal-index-invalid (Recover, parseObj) for a NON-NUMERIC normal token — previously a silent drop', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nvn 0 0 1\nf 1//1 2//x 3//1\n', undefined, diagnostics);
+    createScene3DFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nvn 0 0 1\nf 1//1 2//x 3//1\n', undefined, diagnostics);
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'obj.normal-index-invalid');
     expect(crumb.origin).toBe('parseObj');
@@ -532,7 +532,7 @@ describe('obj diagnostic crumb coverage', () => {
   it('aggregates repeated malformed lines into ONE crumb with the total count and the first line', () => {
     // Three non-numeric `v` lines — the collector contract requires ONE aggregated crumb (count 3), not three.
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromObj('v a b c\nv 0 0 0\nv d e f\nv g h i\n', undefined, diagnostics);
+    createScene3DFromObj('v a b c\nv 0 0 0\nv d e f\nv g h i\n', undefined, diagnostics);
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'obj.vertex-malformed');
     expect(crumb.detail?.reason).toBe('non-numeric');
@@ -544,7 +544,7 @@ describe('obj diagnostic crumb coverage', () => {
     // The regression review flagged: f 1/9 2/8 3/7 has three out-of-range uv refs; a per-token report would
     // emit three crumbs. It must aggregate to ONE with count 3 and the first offending index.
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nvt 0 0\nf 1/9 2/8 3/7\n', undefined, diagnostics);
+    createScene3DFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nvt 0 0\nf 1/9 2/8 3/7\n', undefined, diagnostics);
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'obj.uv-index-invalid');
     expect(crumb.severity).toBe('Recover');
@@ -557,7 +557,7 @@ describe('obj diagnostic crumb coverage', () => {
   it('records material-missing (Drop, resolveObjMaterial) when a usemtl name is absent from a supplied library', () => {
     const library = parseObjMaterialLibrary('newmtl Present\nKd 1 0 0\n');
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nusemtl Absent\nf 1 2 3\n', library, diagnostics);
+    createScene3DFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nusemtl Absent\nf 1 2 3\n', library, diagnostics);
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'obj.material-missing');
     expect(crumb.severity).toBe('Drop');
@@ -569,12 +569,12 @@ describe('obj diagnostic crumb coverage', () => {
     // Two groups both referencing the same absent name → ONE crumb: the name cache dedupes the drop.
     const library = parseObjMaterialLibrary('newmtl Present\n');
     const deduped: ImportDiagnostic[] = [];
-    createSceneFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nusemtl Absent\ng A\nf 1 2 3\ng B\nf 1 2 3\n', library, deduped);
+    createScene3DFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nusemtl Absent\ng A\nf 1 2 3\ng B\nf 1 2 3\n', library, deduped);
     expect(deduped.filter((d) => d.kind === 'obj.material-missing')).toHaveLength(1);
 
     // No library supplied is the documented intentional path — an unknown usemtl records nothing.
     const noLibrary: ImportDiagnostic[] = [];
-    createSceneFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nusemtl Absent\nf 1 2 3\n', undefined, noLibrary);
+    createScene3DFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nusemtl Absent\nf 1 2 3\n', undefined, noLibrary);
     expect(noLibrary).toHaveLength(0);
   });
 
@@ -586,7 +586,7 @@ describe('obj diagnostic crumb coverage', () => {
     { kind: 'obj.uv-malformed', obj: 'vt\n', reason: 'too-few-components' },
   ])('records $kind (Drop, parseObj) for a bare $kind directive', ({ kind, obj, reason }) => {
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromObj(obj, undefined, diagnostics);
+    createScene3DFromObj(obj, undefined, diagnostics);
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, kind);
     expect(crumb.severity).toBe('Drop');
@@ -598,7 +598,7 @@ describe('obj diagnostic crumb coverage', () => {
 
   it('records face-too-few-vertices (Drop, parseObj) for a bare f directive', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromObj('f\n', undefined, diagnostics);
+    createScene3DFromObj('f\n', undefined, diagnostics);
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'obj.face-too-few-vertices');
     expect(crumb.severity).toBe('Drop');
@@ -609,7 +609,7 @@ describe('obj diagnostic crumb coverage', () => {
 
   it('records obj.directive-unsupported (Skip, parseObj) for a recognized-but-unmodeled directive (s)', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromObj('s 1\n', undefined, diagnostics);
+    createScene3DFromObj('s 1\n', undefined, diagnostics);
     const crumb = expectOneCrumb(diagnostics, 'obj.directive-unsupported');
     expect(crumb.severity).toBe('Skip');
     expect(crumb.origin).toBe('parseObj');
@@ -619,13 +619,13 @@ describe('obj diagnostic crumb coverage', () => {
 
   it('records no diagnostics for a well-formed OBJ even with a collector engaged', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n', undefined, diagnostics);
+    createScene3DFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n', undefined, diagnostics);
     expect(diagnostics).toHaveLength(0);
   });
 });
 
 // (source, kind, severity, origin, detail) → every remaining OBJ diagnostic site, one row per emitting
-// variant, complementing the three converted createSceneFromObj cases above. Each locks the full crumb.
+// variant, complementing the three converted createScene3DFromObj cases above. Each locks the full crumb.
 const OBJ_MALFORMED_CASES: Array<{ obj: string; kind: string; line: number; reason: string }> = [
   { obj: 'v 0 0\n', kind: 'obj.vertex-malformed', line: 1, reason: 'too-few-components' },
   { obj: 'vn 0 0\n', kind: 'obj.normal-malformed', line: 1, reason: 'too-few-components' },

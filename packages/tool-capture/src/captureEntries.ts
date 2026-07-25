@@ -4,7 +4,7 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { discoverFunctionalScenes } from './functionalScenes.js';
+import { discoverFunctionalScene3Ds } from './functionalScene3Ds.js';
 
 export const RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu'] as const;
 // 'examples'/'functional' are the monorepo's own subjects (discoverEntries enumerates them). 'reference'
@@ -40,7 +40,7 @@ export function discoverEntries(tool: Tool, root: string): Entry[] {
   if (tool === 'reference') return [];
   // Functional scenes are flat files under functional/scenes/; the shared discovery is the single
   // source of truth (also used by tools/functional/vite.config.ts).
-  if (tool === 'functional') return discoverFunctionalScenes(join(root, 'functional', 'scenes'));
+  if (tool === 'functional') return discoverFunctionalScene3Ds(join(root, 'functional', 'scenes'));
 
   const dir = join(root, 'examples', 'packages');
   if (!existsSync(dir)) return [];

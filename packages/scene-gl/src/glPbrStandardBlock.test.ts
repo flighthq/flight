@@ -8,7 +8,7 @@ import {
   buildGlPbrStandardDefineKey,
   isGlTextureReady,
 } from './glPbrStandardBlock';
-import { makeFakeGl2, makeGlSceneState } from './glSceneTestHelper';
+import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
 
 function makeProgram() {
   return compileGlPbrProgram(makeFakeGl2(), buildGlPbrStandardDefineKey(null, null));
@@ -19,14 +19,14 @@ const READY_TEXTURE = { image: { source: {}, data: null, compressed: null } } as
 
 describe('bindGlPbrStandardBlock', () => {
   it('uploads neutral defaults for a null block', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     bindGlPbrStandardBlock(state, makeProgram(), null);
     expect(gl.calls.some((c) => c.name === 'uniform4f')).toBe(true);
     expect(gl.calls.filter((c) => c.name === 'uniform1f').length).toBeGreaterThanOrEqual(4);
   });
 
   it('uploads the metallic-roughness scalars and emissive for a material block', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const standard = createStandardPbrMaterialProperties({ metallic: 0.5, occlusionStrength: 0.3, roughness: 0.6 });
     bindGlPbrStandardBlock(state, makeProgram(), standard);
     expect(gl.calls.some((c) => c.name === 'uniform4f')).toBe(true);
@@ -39,7 +39,7 @@ describe('bindGlPbrStandardBlock', () => {
 
 describe('bindGlPbrStandardTexture', () => {
   it('is a no-op when the texture slot is empty', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     bindGlPbrStandardTexture(state, null, makeProgram().locBaseColorMap, 0);
     expect(gl.calls.some((c) => c.name === 'activeTexture')).toBe(false);
   });

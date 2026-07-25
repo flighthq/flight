@@ -3,14 +3,14 @@ import { createTransform3D } from '@flighthq/geometry';
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { CANONICAL_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh';
 import { getNodeChildren } from '@flighthq/node';
-import type { MaterialLike, Mesh, SceneDocument, SceneNode } from '@flighthq/types';
-import { EntityRuntimeKey, SceneAnimationPathTranslation, SceneNodeKind, MeshKind } from '@flighthq/types';
+import type { MaterialLike, Mesh, Scene3DDocument, Node3D } from '@flighthq/types';
+import { EntityRuntimeKey, Scene3DAnimationPathTranslation, Node3DKind, MeshKind } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { isMesh } from './mesh';
-import { createSceneFromDocument, createScenesFromDocument } from './sceneDocument';
+import { createScene3DFromDocument, createScene3DsFromDocument } from './sceneDocument';
 
-function emptyDocument(): SceneDocument {
+function emptyDocument(): Scene3DDocument {
   return {
     animations: [],
     cameras: [],
@@ -29,9 +29,9 @@ function triangleGeometry(): ReturnType<typeof createMeshGeometry> {
   return createMeshGeometry({ layout: CANONICAL_MESH_GEOMETRY_LAYOUT, vertices: new Float32Array(12 * 3) });
 }
 
-describe('createSceneFromDocument', () => {
+describe('createScene3DFromDocument', () => {
   it('returns an empty scene for an empty document', () => {
-    const scene = createSceneFromDocument(emptyDocument());
+    const scene = createScene3DFromDocument(emptyDocument());
     expect(getNodeChildren(scene.root)).toHaveLength(0);
     expect(scene.metadata).toBe(null);
   });
@@ -44,10 +44,10 @@ describe('createSceneFromDocument', () => {
     document.nodes = [{ children: [], kind: MeshKind, mesh: 0, transform: createTransform3D() }];
     document.scenes = [{ rootNodes: [0] }];
 
-    const scene = createSceneFromDocument(document);
+    const scene = createScene3DFromDocument(document);
     const roots = getNodeChildren(scene.root);
     expect(roots).toHaveLength(1);
-    expect(isMesh(roots[0] as SceneNode)).toBe(true);
+    expect(isMesh(roots[0] as Node3D)).toBe(true);
     expect((roots[0] as unknown as Mesh).materials[0]).toBe(material);
   });
 
@@ -56,26 +56,26 @@ describe('createSceneFromDocument', () => {
     const parent = createTransform3D();
     const child = createTransform3D();
     document.nodes = [
-      { children: [1], kind: SceneNodeKind, name: 'parent', transform: parent },
-      { children: [], kind: SceneNodeKind, name: 'child', transform: child },
+      { children: [1], kind: Node3DKind, name: 'parent', transform: parent },
+      { children: [], kind: Node3DKind, name: 'child', transform: child },
     ];
     document.scenes = [{ rootNodes: [0] }];
 
-    const scene = createSceneFromDocument(document);
+    const scene = createScene3DFromDocument(document);
     const roots = getNodeChildren(scene.root);
     expect(roots).toHaveLength(1);
-    expect(getNodeChildren(roots[0] as SceneNode)).toHaveLength(1);
+    expect(getNodeChildren(roots[0] as Node3D)).toHaveLength(1);
   });
 
   it('applies a node transform onto the built node', () => {
     const document = emptyDocument();
     const transform = createTransform3D();
     transform.position.x = 5;
-    document.nodes = [{ children: [], kind: SceneNodeKind, transform }];
+    document.nodes = [{ children: [], kind: Node3DKind, transform }];
     document.scenes = [{ rootNodes: [0] }];
 
-    const scene = createSceneFromDocument(document);
-    const node = getNodeChildren(scene.root)[0] as SceneNode;
+    const scene = createScene3DFromDocument(document);
+    const node = getNodeChildren(scene.root)[0] as Node3D;
     expect(node.position.x).toBe(5);
   });
 
@@ -84,12 +84,12 @@ describe('createSceneFromDocument', () => {
     document.meshes = [{ geometry: triangleGeometry(), materials: [], skin: 0 }];
     document.nodes = [
       { children: [1], kind: MeshKind, mesh: 0, transform: createTransform3D() },
-      { children: [], kind: SceneNodeKind, name: 'joint', transform: createTransform3D() },
+      { children: [], kind: Node3DKind, name: 'joint', transform: createTransform3D() },
     ];
     document.skins = [{ inverseBind: [{ m: identity16() }], joints: [1] }];
     document.scenes = [{ rootNodes: [0] }];
 
-    const scene = createSceneFromDocument(document);
+    const scene = createScene3DFromDocument(document);
     const mesh = getNodeChildren(scene.root)[0] as unknown as Mesh;
     expect(mesh.skin).toBeTruthy();
     expect(mesh.skin?.skeleton.joints).toHaveLength(1);
@@ -99,14 +99,14 @@ describe('createSceneFromDocument', () => {
 
   it('rebuilds a node-bound animation clip from a document channel', () => {
     const document = emptyDocument();
-    document.nodes = [{ children: [], kind: SceneNodeKind, transform: createTransform3D() }];
+    document.nodes = [{ children: [], kind: Node3DKind, transform: createTransform3D() }];
     document.scenes = [{ rootNodes: [0] }];
     const track = createAnimationTrack({ components: 3, times: [0, 1], values: [0, 0, 0, 1, 2, 3] });
     document.animations = [
-      { channels: [{ node: 0, path: SceneAnimationPathTranslation, track }], duration: 1, name: 'move' },
+      { channels: [{ node: 0, path: Scene3DAnimationPathTranslation, track }], duration: 1, name: 'move' },
     ];
 
-    const scene = createSceneFromDocument(document);
+    const scene = createScene3DFromDocument(document);
     expect(Object.keys(scene.animations)).toEqual(['move']);
     expect(scene.animations.move.duration).toBe(1);
     expect(scene.animations.move.channels[0].track).toBe(track);
@@ -115,26 +115,26 @@ describe('createSceneFromDocument', () => {
   it('selects the scene at the given index', () => {
     const document = emptyDocument();
     document.nodes = [
-      { children: [], kind: SceneNodeKind, name: 'a', transform: createTransform3D() },
-      { children: [], kind: SceneNodeKind, name: 'b', transform: createTransform3D() },
+      { children: [], kind: Node3DKind, name: 'a', transform: createTransform3D() },
+      { children: [], kind: Node3DKind, name: 'b', transform: createTransform3D() },
     ];
     document.scenes = [{ rootNodes: [0] }, { rootNodes: [1] }];
 
-    const scene = createSceneFromDocument(document, 1);
-    expect((getNodeChildren(scene.root)[0] as SceneNode).name).toBe('b');
+    const scene = createScene3DFromDocument(document, 1);
+    expect((getNodeChildren(scene.root)[0] as Node3D).name).toBe('b');
   });
 });
 
-describe('createScenesFromDocument', () => {
+describe('createScene3DsFromDocument', () => {
   it('builds every scene the document declares, sharing one node pool', () => {
     const document = emptyDocument();
     document.nodes = [
-      { children: [], kind: SceneNodeKind, transform: createTransform3D() },
-      { children: [], kind: SceneNodeKind, transform: createTransform3D() },
+      { children: [], kind: Node3DKind, transform: createTransform3D() },
+      { children: [], kind: Node3DKind, transform: createTransform3D() },
     ];
     document.scenes = [{ rootNodes: [0] }, { rootNodes: [1] }];
 
-    const scenes = createScenesFromDocument(document);
+    const scenes = createScene3DsFromDocument(document);
     expect(scenes).toHaveLength(2);
     expect(getNodeChildren(scenes[0].root)).toHaveLength(1);
     expect(getNodeChildren(scenes[1].root)).toHaveLength(1);
@@ -143,23 +143,23 @@ describe('createScenesFromDocument', () => {
   it('attaches the animations to the first scene, bound to the shared node instance', () => {
     const document = emptyDocument();
     document.nodes = [
-      { children: [], kind: SceneNodeKind, transform: createTransform3D() },
-      { children: [], kind: SceneNodeKind, transform: createTransform3D() },
+      { children: [], kind: Node3DKind, transform: createTransform3D() },
+      { children: [], kind: Node3DKind, transform: createTransform3D() },
     ];
     document.scenes = [{ rootNodes: [0] }, { rootNodes: [1] }];
     const track = createAnimationTrack({ components: 3, times: [0, 1], values: [0, 0, 0, 1, 1, 1] });
     document.animations = [
-      { channels: [{ node: 1, path: SceneAnimationPathTranslation, track }], duration: 1, name: 'spin' },
+      { channels: [{ node: 1, path: Scene3DAnimationPathTranslation, track }], duration: 1, name: 'spin' },
     ];
 
-    const scenes = createScenesFromDocument(document);
+    const scenes = createScene3DsFromDocument(document);
     expect(Object.keys(scenes[0].animations)).toEqual(['spin']);
-    const target = scenes[0].animations.spin.channels[0].targetRef as { node: SceneNode };
+    const target = scenes[0].animations.spin.channels[0].targetRef as { node: Node3D };
     expect(target.node).toBe(getNodeChildren(scenes[1].root)[0]);
   });
 
   it('returns an empty array for a scene-less document', () => {
-    expect(createScenesFromDocument(emptyDocument())).toHaveLength(0);
+    expect(createScene3DsFromDocument(emptyDocument())).toHaveLength(0);
   });
 });
 

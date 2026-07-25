@@ -8,10 +8,10 @@ import {
   multiplyMatrix4,
 } from '@flighthq/geometry';
 import { getNodeParent, getNodeWorldMatrix4, setNodeLocalMatrix4 } from '@flighthq/node';
-import type { Billboard, BillboardMode, Camera3D, Matrix4, SceneNode } from '@flighthq/types';
+import type { Billboard, BillboardMode, Camera3D, Matrix4, Node3D } from '@flighthq/types';
 
 import { isBillboard } from './billboard';
-import { getSceneNodeRuntime } from './sceneNode';
+import { getNode3DRuntime } from './sceneNode';
 
 // Orients a single Billboard to face `camera`, rewriting its localMatrix so that after the scene's
 // world transforms resolve, the billboard's world axes face the camera per its `mode`. The
@@ -20,7 +20,7 @@ import { getSceneNodeRuntime } from './sceneNode';
 // per-material mesh renderers as any Mesh, on every backend, with no billboard-specific draw path.
 //
 // Call once per frame per billboard after the camera's view matrix is set and before drawing. For a
-// whole subtree, orientSceneBillboardsToCamera walks and orients every Billboard in one pass, deriving
+// whole subtree, orientScene3DBillboardsToCamera walks and orients every Billboard in one pass, deriving
 // the camera basis a single time.
 export function orientBillboardToCamera(billboard: Billboard, camera: Readonly<Camera3D>): void {
   setBillboardCameraBasis(camera);
@@ -32,7 +32,7 @@ export function orientBillboardToCamera(billboard: Billboard, camera: Readonly<C
 // camera basis is derived once and reused across every billboard. Parents are oriented before their
 // descendants (top-down), so a billboard nested under another billboard sees its parent's updated
 // transform.
-export function orientSceneBillboardsToCamera(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>): void {
+export function orientScene3DBillboardsToCamera(scene: Readonly<Node3D>, camera: Readonly<Camera3D>): void {
   setBillboardCameraBasis(camera);
   orientBillboardSubtree(scene);
 }
@@ -46,7 +46,7 @@ function applyBillboardFacing(billboard: Billboard): void {
   decomposeMatrix4(_position, _rotationScratch, _scale, world);
   writeBillboardFacingMatrix(_facingWorld, billboard.mode);
 
-  const parent = getNodeParent(billboard as SceneNode) as SceneNode | null;
+  const parent = getNodeParent(billboard as Node3D) as Node3D | null;
   if (parent === null) {
     copyMatrix4(_localScratch, _facingWorld);
   } else {
@@ -63,14 +63,14 @@ function applyBillboardFacing(billboard: Billboard): void {
   setNodeLocalMatrix4(billboard, _localScratch);
 }
 
-function orientBillboardSubtree(node: Readonly<SceneNode>): void {
+function orientBillboardSubtree(node: Readonly<Node3D>): void {
   if (isBillboard(node)) {
     applyBillboardFacing(node);
   }
-  const children = getSceneNodeRuntime(node).children;
+  const children = getNode3DRuntime(node).children;
   if (children !== null) {
     for (let i = 0; i < children.length; i++) {
-      orientBillboardSubtree(children[i] as SceneNode);
+      orientBillboardSubtree(children[i] as Node3D);
     }
   }
 }

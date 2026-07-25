@@ -15,6 +15,6 @@ export * from './captureServer';
 export * from './captureSuite';
 export * from './captureValidation';
 export * from './captureWorkflow';
-export * from './functionalScenes';
+export * from './functionalScene3Ds';
 export * from './functionalVerify';
 export * from './referenceCapture';

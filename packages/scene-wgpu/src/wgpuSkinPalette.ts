@@ -3,10 +3,10 @@ import type { Mesh, MeshGeometry, MeshGeometryRuntime, MeshSkinBindPose, WgpuRen
 import { EntityRuntimeKey } from '@flighthq/types';
 import type { WgpuSkinningAdapter } from '@flighthq/types';
 
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 
 export function destroyWgpuSkinPalette(state: WgpuRenderState): void {
-  const runtime = getWgpuSceneRuntime(state);
+  const runtime = getWgpuScene3DRuntime(state);
   runtime.skinPaletteTexture?.destroy();
   runtime.skinPaletteTexture = null;
   runtime.skinPaletteView = null;
@@ -18,7 +18,7 @@ export function ensureWgpuSkinDrawBindGroup(
   state: WgpuRenderState,
   jointMatrices: Readonly<Float32Array>,
 ): GPUBindGroup {
-  const scene = getWgpuSceneRuntime(state);
+  const scene = getWgpuScene3DRuntime(state);
   const stateRuntime = getWgpuRenderStateRuntime(state);
   const previousView = scene.skinPaletteView;
   const view = uploadWgpuSkinPalette(state, jointMatrices);
@@ -35,7 +35,7 @@ export function ensureWgpuSkinDrawBindGroup(
 }
 
 export function ensureWgpuSkinDrawLayout(state: WgpuRenderState): GPUBindGroupLayout {
-  const scene = getWgpuSceneRuntime(state);
+  const scene = getWgpuScene3DRuntime(state);
   if (scene.skinDrawBindGroupLayout === null) {
     scene.skinDrawBindGroupLayout = state.device.createBindGroupLayout({
       entries: [
@@ -48,14 +48,14 @@ export function ensureWgpuSkinDrawLayout(state: WgpuRenderState): GPUBindGroupLa
 }
 
 export function registerWgpuGpuSkinning(state: WgpuRenderState): void {
-  getWgpuSceneRuntime(state).skinningAdapter = WGPU_SKINNING_ADAPTER;
+  getWgpuScene3DRuntime(state).skinningAdapter = WGPU_SKINNING_ADAPTER;
 }
 
 // Uploads one flat column-major joint palette into the state-scoped single-row RGBA32F data texture.
 // Four consecutive texels encode one mat4. Storage grows to the largest skeleton observed and is
 // otherwise rewritten in place; there is deliberately no uniform-budget capacity gate or CPU fallback.
 export function uploadWgpuSkinPalette(state: WgpuRenderState, jointMatrices: Readonly<Float32Array>): GPUTextureView {
-  const runtime = getWgpuSceneRuntime(state);
+  const runtime = getWgpuScene3DRuntime(state);
   const jointCount = (jointMatrices.length / 16) | 0;
   const width = jointCount * 4;
   if (runtime.skinPaletteTexture === null || jointCount > runtime.skinPaletteCapacity) {

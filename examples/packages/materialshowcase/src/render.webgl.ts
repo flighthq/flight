@@ -1,5 +1,5 @@
 import {
-  drawGlScene,
+  drawGlScene3D,
   registerAnisotropyPbrGlMaterial,
   registerBlinnPhongGlMaterial,
   registerClearcoatPbrGlMaterial,
@@ -21,14 +21,14 @@ import {
   registerVertexColorGlMaterial,
   registerWireframeGlMaterial,
 } from '@flighthq/scene-gl';
-import type { Camera3D, GlRenderEffectPipeline, GlRenderState, SceneLightsLike, SceneNode } from '@flighthq/sdk';
+import type { Camera3D, GlRenderEffectPipeline, GlRenderState, Scene3DLightsLike, Node3D } from '@flighthq/sdk';
 import {
   beginGlRenderEffectPipeline,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
   endGlRenderEffectPipeline,
-  prepareSceneRender,
+  prepareScene3DRender,
   renderGlBackground,
 } from '@flighthq/sdk';
 
@@ -53,9 +53,9 @@ export const scale = pixelRatio;
 export const supportsVertexColor0 = true;
 
 export function render(
-  scene: Readonly<SceneNode>,
+  scene: Readonly<Node3D>,
   camera: Readonly<Camera3D>,
-  lights: Readonly<SceneLightsLike>,
+  lights: Readonly<Scene3DLightsLike>,
 ): void {
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
@@ -63,8 +63,8 @@ export function render(
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
-  prepareSceneRender(state, scene, camera, lights);
-  drawGlScene(state, scene, camera, lights);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawGlScene3D(state, scene, camera, lights);
   endGlRenderEffectPipeline(state, pipeline, []);
 }
 

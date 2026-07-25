@@ -12,7 +12,7 @@ import type {
   ExternalImageResourceReference,
   ImportDiagnostic,
   Mesh,
-  SceneNode,
+  Node3D,
 } from '@flighthq/types';
 import { BlinnPhongMaterialKind, ImportDiagnosticSeverity } from '@flighthq/types';
 import {
@@ -40,7 +40,7 @@ import {
   THREE_DS_VERTICES,
 } from '@flighthq/types';
 
-import { createSceneFrom3ds, parse3ds } from './threeDsParse';
+import { createScene3DFrom3ds, parse3ds } from './threeDsParse';
 
 // Builds a minimal valid 3DS binary from helper functions. The 3DS format is a recursive chunk tree:
 // each chunk has a uint16 ID + uint32 length (including the 6-byte header) + payload.
@@ -270,7 +270,7 @@ function writeFacesWithGroups(
 }
 
 // Wraps a vertex list + a prebuilt faces chunk and any material chunks into a full one-object 3DS file.
-function buildScene3ds(opts: {
+function buildScene3D3ds(opts: {
   facesChunk: Uint8Array;
   materials?: readonly Uint8Array[];
   meshName: string;
@@ -283,7 +283,7 @@ function buildScene3ds(opts: {
 }
 
 // Builds a 3DS file with one material and one mesh whose faces reference it by name.
-function buildMaterialScene3ds(opts: {
+function buildMaterialScene3D3ds(opts: {
   faceMaterialName: string;
   indices: readonly number[];
   material: Uint8Array;
@@ -344,7 +344,7 @@ function tamperChunkLength(chunk: Uint8Array, newLength: number): Uint8Array {
   return copy;
 }
 
-describe('createSceneFrom3ds', () => {
+describe('createScene3DFrom3ds', () => {
   it('decodes a material to BlinnPhong and attaches it to the mesh that references it by name', () => {
     const material = writeMaterial({
       diffuse: [204, 102, 51],
@@ -352,8 +352,8 @@ describe('createSceneFrom3ds', () => {
       specular: [255, 255, 255],
       textureFilename: 'skin.png',
     });
-    const scene = createSceneFrom3ds(
-      buildMaterialScene3ds({
+    const scene = createScene3DFrom3ds(
+      buildMaterialScene3D3ds({
         faceMaterialName: 'Skin',
         indices: [0, 1, 2],
         material,
@@ -376,8 +376,8 @@ describe('createSceneFrom3ds', () => {
 
   // Builds a one-material scene from a material chunk and returns that material as a BlinnPhongMaterial.
   const materialFrom3ds = (material: Uint8Array): BlinnPhongMaterial => {
-    const scene = createSceneFrom3ds(
-      buildMaterialScene3ds({
+    const scene = createScene3DFrom3ds(
+      buildMaterialScene3D3ds({
         faceMaterialName: 'M',
         indices: [0, 1, 2],
         material,
@@ -431,7 +431,7 @@ describe('createSceneFrom3ds', () => {
 
   it('leaves a mesh unmaterialed when it references no material', () => {
     const mesh = getNodeChildren(
-      createSceneFrom3ds(buildTriangle3ds('Tri', [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 2])).root,
+      createScene3DFrom3ds(buildTriangle3ds('Tri', [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 2])).root,
     )[0] as Mesh;
     // A mesh with no FACE_MATERIAL group is one default subset with a null (default-material) binding.
     expect(mesh.materials).toEqual([null]);
@@ -447,8 +447,8 @@ describe('createSceneFrom3ds', () => {
         { faces: [1], name: 'Blue' },
       ],
     });
-    const scene = createSceneFrom3ds(
-      buildScene3ds({
+    const scene = createScene3DFrom3ds(
+      buildScene3D3ds({
         facesChunk,
         materials: [red, blue],
         meshName: 'Quad',
@@ -471,8 +471,8 @@ describe('createSceneFrom3ds', () => {
     const red = writeMaterial({ diffuse: [255, 0, 0], name: 'Red' });
     // Face 0 → Red; face 1 is in no group.
     const facesChunk = writeFacesWithGroups([0, 1, 2, 0, 2, 3], { groups: [{ faces: [0], name: 'Red' }] });
-    const scene = createSceneFrom3ds(
-      buildScene3ds({
+    const scene = createScene3DFrom3ds(
+      buildScene3D3ds({
         facesChunk,
         materials: [red],
         meshName: 'Quad',
@@ -493,14 +493,14 @@ describe('createSceneFrom3ds', () => {
     const indices = [0, 1, 2, 1, 3, 2];
 
     // Same smoothing group → the shared edge is smoothed, so v1/v2 stay merged: 4 output vertices.
-    const smooth = createSceneFrom3ds(
-      buildScene3ds({ facesChunk: writeFacesWithGroups(indices, { smoothing: [1, 1] }), meshName: 'Fold', positions }),
+    const smooth = createScene3DFrom3ds(
+      buildScene3D3ds({ facesChunk: writeFacesWithGroups(indices, { smoothing: [1, 1] }), meshName: 'Fold', positions }),
     );
     expect(getMeshGeometryVertexCount((getNodeChildren(smooth.root)[0] as Mesh).geometry)).toBe(4);
 
     // Different smoothing groups → the shared edge is a hard crease, so v1/v2 split: 6 output vertices.
-    const hard = createSceneFrom3ds(
-      buildScene3ds({ facesChunk: writeFacesWithGroups(indices, { smoothing: [1, 2] }), meshName: 'Fold', positions }),
+    const hard = createScene3DFrom3ds(
+      buildScene3D3ds({ facesChunk: writeFacesWithGroups(indices, { smoothing: [1, 2] }), meshName: 'Fold', positions }),
     );
     const hardGeom = (getNodeChildren(hard.root)[0] as Mesh).geometry;
     expect(getMeshGeometryVertexCount(hardGeom)).toBe(6);
@@ -518,8 +518,8 @@ describe('createSceneFrom3ds', () => {
   it('smooths every shared vertex when the mesh carries no smoothing chunk', () => {
     // The same fold without a SMOOTH_GROUP chunk smooths across the crease (legacy behavior): 4 vertices.
     const positions = [0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1];
-    const scene = createSceneFrom3ds(
-      buildScene3ds({ facesChunk: writeFacesWithGroups([0, 1, 2, 1, 3, 2]), meshName: 'Fold', positions }),
+    const scene = createScene3DFrom3ds(
+      buildScene3D3ds({ facesChunk: writeFacesWithGroups([0, 1, 2, 1, 3, 2]), meshName: 'Fold', positions }),
     );
     expect(getMeshGeometryVertexCount((getNodeChildren(scene.root)[0] as Mesh).geometry)).toBe(4);
   });
@@ -527,12 +527,12 @@ describe('createSceneFrom3ds', () => {
   it('converts Z-up to Y-up coordinates', () => {
     // A triangle in 3DS Z-up: (0,0,0), (1,0,0), (0,0,1) → Y-up: (0,0,0), (1,0,0), (0,1,0)
     const bytes = buildTriangle3ds('Tri', [0, 0, 0, 1, 0, 0, 0, 0, 1], [0, 1, 2]);
-    const scene = createSceneFrom3ds(bytes);
+    const scene = createScene3DFrom3ds(bytes);
     const children = getNodeChildren(scene.root);
     expect(children).toHaveLength(1);
 
     // A named 3DS object is returned as a bare Mesh carrying the name, not a transform wrapper.
-    const mesh = children[0] as SceneNode;
+    const mesh = children[0] as Node3D;
     expect(isMesh(mesh)).toBe(true);
     expect(mesh.name).toBe('Tri');
 
@@ -553,11 +553,11 @@ describe('createSceneFrom3ds', () => {
   it('parses a single mesh with a triangle', () => {
     // 3DS Z-up vertices: (0,0,0), (1,0,0), (0,1,0) — note Y is the "forward" axis in Z-up.
     const bytes = buildTriangle3ds('Triangle', [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 2]);
-    const scene = createSceneFrom3ds(bytes);
+    const scene = createScene3DFrom3ds(bytes);
     const children = getNodeChildren(scene.root);
     expect(children).toHaveLength(1);
 
-    const mesh = children[0] as SceneNode;
+    const mesh = children[0] as Node3D;
     expect(isMesh(mesh)).toBe(true);
     expect(mesh.name).toBe('Triangle');
 
@@ -571,20 +571,20 @@ describe('createSceneFrom3ds', () => {
       { indices: [0, 1, 2], name: 'MeshA', positions: [0, 0, 0, 1, 0, 0, 0, 1, 0] },
       { indices: [0, 1, 2], name: 'MeshB', positions: [2, 0, 0, 3, 0, 0, 2, 1, 0] },
     ]);
-    const scene = createSceneFrom3ds(bytes);
+    const scene = createScene3DFrom3ds(bytes);
     const children = getNodeChildren(scene.root);
     expect(children).toHaveLength(2);
 
     // Each named object is a bare Mesh child of the scene, carrying its name.
-    expect(isMesh(children[0] as SceneNode)).toBe(true);
-    expect((children[0] as SceneNode).name).toBe('MeshA');
-    expect(isMesh(children[1] as SceneNode)).toBe(true);
-    expect((children[1] as SceneNode).name).toBe('MeshB');
+    expect(isMesh(children[0] as Node3D)).toBe(true);
+    expect((children[0] as Node3D).name).toBe('MeshA');
+    expect(isMesh(children[1] as Node3D)).toBe(true);
+    expect((children[1] as Node3D).name).toBe('MeshB');
   });
 
   it('parses UV coordinates', () => {
     const bytes = buildTriangle3ds('UvTri', [0, 0, 0, 1, 0, 0, 0, 0, 1], [0, 1, 2], [0, 0, 1, 0, 0.5, 1]);
-    const scene = createSceneFrom3ds(bytes);
+    const scene = createScene3DFrom3ds(bytes);
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
 
     const uv = { x: 0, y: 0 };
@@ -602,7 +602,7 @@ describe('createSceneFrom3ds', () => {
     // winding and produce -Y — the "holes into the model" / inverted-lighting symptom — so this
     // asserts the sign, not just the magnitude.
     const bytes = buildTriangle3ds('NormalTri', [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 2]);
-    const scene = createSceneFrom3ds(bytes);
+    const scene = createScene3DFrom3ds(bytes);
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
 
     const n = { x: 0, y: 0, z: 0 };
@@ -617,7 +617,7 @@ describe('createSceneFrom3ds', () => {
     // rotation (x, y, z) → (x, z, -y) negates the forward axis, whereas a Y↔Z swap would keep it
     // positive and mirror the model. Vertex (0, 1, 0) in 3DS Z-up must land at (0, 0, -1).
     const bytes = buildTriangle3ds('RotTri', [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 2]);
-    const scene = createSceneFrom3ds(bytes);
+    const scene = createScene3DFrom3ds(bytes);
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
 
     const p = { x: 0, y: 0, z: 0 };
@@ -626,13 +626,13 @@ describe('createSceneFrom3ds', () => {
   });
 
   it('returns an empty scene for empty input', () => {
-    const scene = createSceneFrom3ds(new Uint8Array(0));
+    const scene = createScene3DFrom3ds(new Uint8Array(0));
     expect(getNodeChildren(scene.root)).toHaveLength(0);
   });
 
   it('rejects and reports 3ds.input-too-small on empty input', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFrom3ds(new Uint8Array(0), diagnostics);
+    createScene3DFrom3ds(new Uint8Array(0), diagnostics);
     expect(diagnostics).toHaveLength(1);
     expect(diagnostics[0].kind).toBe('3ds.input-too-small');
     expect(diagnostics[0].severity).toBe(ImportDiagnosticSeverity.Reject);
@@ -645,7 +645,7 @@ describe('createSceneFrom3ds', () => {
     const view = new DataView(bytes.buffer);
     view.setUint16(0, 0x1234, true);
     view.setUint32(2, 6, true);
-    createSceneFrom3ds(bytes, diagnostics);
+    createScene3DFrom3ds(bytes, diagnostics);
     expect(diagnostics).toHaveLength(1);
     expect(diagnostics[0].kind).toBe('3ds.wrong-main-chunk');
     expect(diagnostics[0].severity).toBe(ImportDiagnosticSeverity.Reject);
@@ -659,7 +659,7 @@ describe('createSceneFrom3ds', () => {
     const full = buildTriangle3ds('Trunc', [0, 0, 0, 1, 0, 0, 0, 0, 1], [0, 1, 2]);
     // Cut off a significant portion of the end.
     const truncated = full.slice(0, Math.floor(full.byteLength * 0.5));
-    createSceneFrom3ds(truncated, diagnostics);
+    createScene3DFrom3ds(truncated, diagnostics);
     expect(diagnostics.length).toBeGreaterThan(0);
     // Every crumb carries the top-level emitter origin and a count from its aggregation.
     for (const diagnostic of diagnostics) {
@@ -678,7 +678,7 @@ describe('createSceneFrom3ds', () => {
     const bytes = writeChunk(THREE_DS_MAIN, editor);
 
     const diagnostics: ImportDiagnostic[] = [];
-    const scene = createSceneFrom3ds(bytes, diagnostics);
+    const scene = createScene3DFrom3ds(bytes, diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
     const crumb = findDiagnostic(diagnostics, '3ds.mesh-missing-geometry');
     expect(crumb).toBeDefined();
@@ -690,10 +690,10 @@ describe('createSceneFrom3ds', () => {
   });
 });
 
-describe('createSceneFrom3ds animations', () => {
+describe('createScene3DFrom3ds animations', () => {
   it('wraps the parsed scene with no animation and a one-element scenes array', () => {
     const bytes = buildTriangle3ds('Tri', [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 2]);
-    const scene = createSceneFrom3ds(bytes);
+    const scene = createScene3DFrom3ds(bytes);
 
     expect(Object.keys(scene.animations)).toHaveLength(0);
     expect(getNodeChildren(scene.root)).toHaveLength(1);
@@ -701,7 +701,7 @@ describe('createSceneFrom3ds animations', () => {
 
   it('returns an empty import (no scene children) for non-3DS input', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    const scene = createSceneFrom3ds(new Uint8Array([0, 0, 0, 0, 0, 0]), diagnostics);
+    const scene = createScene3DFrom3ds(new Uint8Array([0, 0, 0, 0, 0, 0]), diagnostics);
 
     expect(Object.keys(scene.animations)).toHaveLength(0);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
@@ -727,7 +727,7 @@ describe('parse3ds', () => {
       textureFilename: 'skin.png',
     });
     const document = parse3ds(
-      buildMaterialScene3ds({
+      buildMaterialScene3D3ds({
         faceMaterialName: 'Skin',
         indices: [0, 1, 2],
         material,
@@ -816,7 +816,7 @@ describe('parse3ds diagnostics', () => {
   });
 
   it('recovers and reports 3ds.material-group-face-out-of-range for a group face index past the mesh', () => {
-    const bytes = buildScene3ds({
+    const bytes = buildScene3D3ds({
       facesChunk: writeFacesWithGroups([0, 1, 2], { groups: [{ faces: [0, 9], name: 'Red' }] }),
       materials: [writeMaterial({ diffuse: [255, 0, 0], name: 'Red' })],
       meshName: 'MG',
@@ -834,7 +834,7 @@ describe('parse3ds diagnostics', () => {
   });
 
   it('recovers and reports 3ds.smoothing-truncated for a mask list shorter than the face count', () => {
-    const bytes = buildScene3ds({
+    const bytes = buildScene3D3ds({
       facesChunk: writeFacesWithGroups([0, 1, 2, 0, 2, 1], { smoothing: [1] }),
       meshName: 'SM',
       positions: [0, 0, 0, 1, 0, 0, 0, 1, 0],
@@ -854,7 +854,7 @@ describe('parse3ds diagnostics', () => {
     new DataView(faceArray.buffer).setUint16(0, 1, true);
     const faceMaterial = writeChunk(THREE_DS_FACE_MATERIAL, writeNullTerminatedString('Red'));
     const facesChunk = writeChunk(THREE_DS_FACES, concatBytes(faceArray, faceMaterial));
-    const bytes = buildScene3ds({
+    const bytes = buildScene3D3ds({
       facesChunk,
       materials: [writeMaterial({ diffuse: [255, 0, 0], name: 'Red' })],
       meshName: 'MGT',
@@ -912,7 +912,7 @@ describe('parse3ds diagnostics', () => {
     new DataView(refs.buffer).setUint16(0, 100, true);
     const faceMaterial = writeChunk(THREE_DS_FACE_MATERIAL, concatBytes(writeNullTerminatedString('Red'), refs));
     const facesChunk = writeChunk(THREE_DS_FACES, concatBytes(faceArray, faceMaterial));
-    const bytes = buildScene3ds({
+    const bytes = buildScene3D3ds({
       facesChunk,
       materials: [writeMaterial({ diffuse: [255, 0, 0], name: 'Red' })],
       meshName: 'MGT',
@@ -1020,7 +1020,7 @@ describe('parse3ds diagnostics', () => {
   it('drops and reports 3ds.mesh-empty for a parsed trimesh with zero vertices/faces', () => {
     const bytes = wrapTrimesh('Empty', concatBytes(writeVertices([]), writeFaces([])));
     const diagnostics: ImportDiagnostic[] = [];
-    const scene = createSceneFrom3ds(bytes, diagnostics);
+    const scene = createScene3DFrom3ds(bytes, diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
     const crumb = findDiagnostic(diagnostics, '3ds.mesh-empty');
     expect(crumb).toBeDefined();
@@ -1031,7 +1031,7 @@ describe('parse3ds diagnostics', () => {
   });
 
   it('drops and reports 3ds.material-missing for a FACE_MATERIAL group naming an unknown material', () => {
-    const bytes = buildScene3ds({
+    const bytes = buildScene3D3ds({
       facesChunk: writeFacesWithGroups([0, 1, 2], { groups: [{ faces: [0], name: 'Ghost' }] }),
       meshName: 'MM',
       positions: [0, 0, 0, 1, 0, 0, 0, 1, 0],
@@ -1052,7 +1052,7 @@ describe('parse3ds diagnostics', () => {
     const editor = writeChunk(THREE_DS_EDITOR, object);
     const bytes = writeChunk(THREE_DS_MAIN, editor);
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFrom3ds(bytes, diagnostics);
+    createScene3DFrom3ds(bytes, diagnostics);
     const crumb = findDiagnostic(diagnostics, '3ds.non-mesh-object');
     expect(crumb).toBeDefined();
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
@@ -1070,7 +1070,7 @@ describe('parse3ds diagnostics', () => {
     badView.setUint16(0, THREE_DS_FACE_MATERIAL, true);
     badView.setUint32(2, 10000, true); // length far past the faces chunk
     const facesChunk = writeChunk(THREE_DS_FACES, concatBytes(faceArray, badSub));
-    const bytes = buildScene3ds({ facesChunk, meshName: 'FS', positions: [0, 0, 0, 1, 0, 0, 0, 1, 0] });
+    const bytes = buildScene3D3ds({ facesChunk, meshName: 'FS', positions: [0, 0, 0, 1, 0, 0, 0, 1, 0] });
     const diagnostics: ImportDiagnostic[] = [];
     parse3ds(bytes, diagnostics);
     const crumb = findDiagnostic(diagnostics, '3ds.face-subchunk-exceeds');

@@ -41,13 +41,13 @@ import { getWgpuClassicSharedSamplerModuleSourceForKey } from './wgpuClassicPrel
 import {
   createWgpuMeshPipeline,
   ensureWgpuPbrSampleLayout,
-  ensureWgpuScenePipeline,
+  ensureWgpuScene3DPipeline,
   getWgpuMaterialSampler,
   resolveWgpuMaterialTextureView,
   stashWgpuUvTransform,
 } from './wgpuMeshPipeline';
-import { getWgpuSceneRuntime, getWgpuSkinningAdapter } from './wgpuSceneRuntime';
-import { getWgpuSceneTime } from './wgpuSceneTime';
+import { getWgpuScene3DRuntime, getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
+import { getWgpuScene3DTime } from './wgpuScene3DTime';
 import { registerWgpuModifierSnippet } from './wgpuShadedModifierSnippet';
 
 interface ShadedModifierPlan {
@@ -95,7 +95,7 @@ export function bindWgpuShadedSurface(
   const registry = getModifierRegistry(state);
   const plan = getCachedModifierPlan(state, material, registry);
   const byteLength = 48 + plan.uniformFloatCount * 4;
-  const stateBindings = getWgpuSceneRuntime(state).shadedMaterialBindingCache as WeakMap<ShadedMaterial, ShadedBinding>;
+  const stateBindings = getWgpuScene3DRuntime(state).shadedMaterialBindingCache as WeakMap<ShadedMaterial, ShadedBinding>;
   let binding = stateBindings.get(material);
   const sampler = getWgpuMaterialSampler(state, material.diffuseMap);
   if (
@@ -146,7 +146,7 @@ export function bindWgpuShadedSurface(
   data.set(specular, 4);
   data[8] = material.shininess;
   data[9] = material.alphaCutoff;
-  data[10] = getWgpuSceneTime(state);
+  data[10] = getWgpuScene3DTime(state);
   data[11] = material.normalScale;
   writeModifierUniforms(data, 12, plan);
   state.device.queue.writeBuffer(binding.buffer, 0, data.buffer, 0, byteLength);
@@ -218,8 +218,8 @@ export function ensureWgpuShadedPipeline(
   const registry = getModifierRegistry(state);
   const defineKey = buildWgpuShadedCacheKey(material, registry);
   const plan = getCachedModifierPlan(state, material, registry, defineKey);
-  const key = `${defineKey}|registry:${getWgpuSceneRuntime(state).modifierSnippetRevision}|${format}`;
-  return ensureWgpuScenePipeline(state, key, (blended, skinned) => {
+  const key = `${defineKey}|registry:${getWgpuScene3DRuntime(state).modifierSnippetRevision}|${format}`;
+  return ensureWgpuScene3DPipeline(state, key, (blended, skinned) => {
     const entries: GPUBindGroupLayoutEntry[] = [
       {
         binding: 0,
@@ -448,7 +448,7 @@ function getCachedModifierPlan(
   registry: Readonly<ModifierRegistry>,
   defineKey?: string,
 ): ShadedModifierPlan {
-  const plans = getWgpuSceneRuntime(state).shadedMaterialPlanCache as WeakMap<ShadedMaterial, CachedShadedPlan>;
+  const plans = getWgpuScene3DRuntime(state).shadedMaterialPlanCache as WeakMap<ShadedMaterial, CachedShadedPlan>;
   const cached = plans.get(material);
   if (
     cached !== undefined &&
@@ -757,7 +757,7 @@ export function registerBuiltInWgpuModifierSnippets(state: WgpuRenderState): voi
 }
 
 function getModifierRegistry(state: WgpuRenderState): Readonly<ModifierRegistry> {
-  return getWgpuSceneRuntime(state).modifierSnippetRegistry ?? EMPTY_MODIFIER_REGISTRY;
+  return getWgpuScene3DRuntime(state).modifierSnippetRegistry ?? EMPTY_MODIFIER_REGISTRY;
 }
 
 function indent(source: string, spaces: number): string {

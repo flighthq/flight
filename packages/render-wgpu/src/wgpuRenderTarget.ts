@@ -70,7 +70,7 @@ export function beginWgpuRenderPass(
   });
 
   runtime.renderTargetViewport = { width: target.width, height: target.height };
-  // Scene pipelines drawn into this target must match its color format (e.g. rgba16float for HDR).
+  // Scene3D pipelines drawn into this target must match its color format (e.g. rgba16float for HDR).
   runtime.currentColorFormat = target.format;
   runtime.currentRenderTarget = target;
 

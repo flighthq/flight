@@ -1,12 +1,12 @@
-import { drawGlScene, registerBuiltInGlModifierSnippets, registerShadedGlMaterial } from '@flighthq/scene-gl';
-import type { Camera3D, GlRenderEffectPipeline, SceneLightsLike, SceneNode } from '@flighthq/sdk';
+import { drawGlScene3D, registerBuiltInGlModifierSnippets, registerShadedGlMaterial } from '@flighthq/scene-gl';
+import type { Camera3D, GlRenderEffectPipeline, Scene3DLightsLike, Node3D } from '@flighthq/sdk';
 import {
   beginGlRenderEffectPipeline,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
   endGlRenderEffectPipeline,
-  prepareSceneRender,
+  prepareScene3DRender,
   renderGlBackground,
 } from '@flighthq/sdk';
 
@@ -31,16 +31,16 @@ const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
 export const scale = pixelRatio;
 
 export function render(
-  scene: Readonly<SceneNode>,
+  scene: Readonly<Node3D>,
   camera: Readonly<Camera3D>,
-  lights: Readonly<SceneLightsLike>,
+  lights: Readonly<Scene3DLightsLike>,
 ): void {
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
   state.gl.depthMask(true);
   state.gl.clearDepth(1);
   state.gl.clear(state.gl.DEPTH_BUFFER_BIT);
-  prepareSceneRender(state, scene, camera, lights);
-  drawGlScene(state, scene, camera, lights);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawGlScene3D(state, scene, camera, lights);
   endGlRenderEffectPipeline(state, pipeline, []);
 }

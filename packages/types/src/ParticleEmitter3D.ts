@@ -1,8 +1,8 @@
+import type { Node3D, Node3DRuntime } from './Node3D';
 import type { ParticleEmitterData } from './ParticleEmitter2D';
 import type { ParticleBlendMode } from './ParticleEmitterConfig';
-import type { SceneNode, SceneNodeRuntime } from './SceneNode';
 
-export interface ParticleEmitter3D extends SceneNode {
+export interface ParticleEmitter3D extends Node3D {
   // How each particle composites against what is already in the target. 'add' is the canonical
   // fire/glow mode (a black-background sprite that brightens rather than occludes). Defaults to
   // 'normal'; the config's blendMode is only a parse-time hint, so it must be set here to take effect.
@@ -10,6 +10,6 @@ export interface ParticleEmitter3D extends SceneNode {
   data: ParticleEmitterData;
 }
 
-export type ParticleEmitter3DRuntime = SceneNodeRuntime;
+export type ParticleEmitter3DRuntime = Node3DRuntime;
 
 export const ParticleEmitter3DKind = 'ParticleEmitter3D';

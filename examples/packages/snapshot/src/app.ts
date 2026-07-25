@@ -82,7 +82,7 @@ let interpTarget: Snapshot<GameState> | null = null;
 // A mutable working copy that receives interpolated values each frame.
 const interpState: GameState = createInitialState();
 
-// Scene graph: display objects that visualize the game state.
+// Scene3D graph: display objects that visualize the game state.
 const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;

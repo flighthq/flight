@@ -1,7 +1,7 @@
-import type { Environment, WgpuRenderState, WgpuSceneIbl } from '@flighthq/types';
+import type { Environment, WgpuRenderState, WgpuScene3DIbl } from '@flighthq/types';
 
 import { ensureWgpuEnvironmentSourceCube } from './wgpuEnvironmentCube';
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 
 // Bakes an Environment's source radiance cubemap into the split-sum image-based-lighting set — a diffuse
 // irradiance cubemap, a roughness-mipped prefiltered specular cubemap, and the 2D BRDF integration LUT —
@@ -20,7 +20,7 @@ export function bakeWgpuEnvironmentIbl(state: WgpuRenderState, environment: Read
   const sourceCubeView = ensureWgpuEnvironmentSourceCube(state, environment);
   if (sourceCubeView === null) return;
 
-  const scene = getWgpuSceneRuntime(state);
+  const scene = getWgpuScene3DRuntime(state);
   const programs = ensureWgpuBakePrograms(state);
   const sourceBindGroup = state.device.createBindGroup({
     layout: programs.sourceBindGroupLayout,
@@ -35,9 +35,9 @@ export function bakeWgpuEnvironmentIbl(state: WgpuRenderState, environment: Read
   const brdf = scene.ibl?.brdfLut ?? bakeWgpuBrdfLut(state, programs);
   const brdfView = scene.ibl?.brdfLutView ?? brdf.createView();
 
-  // Replace the prior set (its textures are freed by destroyWgpuSceneIbl, not here — a re-bake leaks the
+  // Replace the prior set (its textures are freed by destroyWgpuScene3DIbl, not here — a re-bake leaks the
   // old irradiance/prefiltered until teardown, matching scene-gl's re-bake which also relies on teardown).
-  const ibl: WgpuSceneIbl = {
+  const ibl: WgpuScene3DIbl = {
     brdfLut: brdf,
     brdfLutView: brdfView,
     intensity: environment.intensity,
@@ -53,10 +53,10 @@ export function bakeWgpuEnvironmentIbl(state: WgpuRenderState, environment: Read
 // Frees the IBL set's non-GC GPU resources for `state`: the baked irradiance / prefiltered / BRDF textures,
 // the uploaded source radiance cube, the IBL uniform buffer, and the 1x1 no-IBL dummies, then clears the
 // derived slots (bake pipelines, sampler, sample layout + bind group are GC-managed and left null). The
-// WGSL mirror of the IBL branch of scene-gl's destroyGlSceneRuntime + destroyGlEnvironmentIblBakePrograms. Safe to call
+// WGSL mirror of the IBL branch of scene-gl's destroyGlScene3DRuntime + destroyGlEnvironmentIblBakePrograms. Safe to call
 // more than once and when no bake ever ran — every slot is nullable and destroy is idempotent.
-export function destroyWgpuSceneIbl(state: WgpuRenderState): void {
-  const scene = getWgpuSceneRuntime(state);
+export function destroyWgpuScene3DIbl(state: WgpuRenderState): void {
+  const scene = getWgpuScene3DRuntime(state);
 
   if (scene.ibl !== null) {
     scene.ibl.brdfLut.destroy();
@@ -236,7 +236,7 @@ interface WgpuBakePrograms {
 }
 
 // Resolves (creating once per state) the three bake pipelines + their shared uniform/source layouts. The
-// pipelines and layouts are GC-managed (no destroy); the uniform buffer is freed by destroyWgpuSceneIbl.
+// pipelines and layouts are GC-managed (no destroy); the uniform buffer is freed by destroyWgpuScene3DIbl.
 // Mirrors scene-gl's ensureGlBakeProgram cache (keyed by state).
 function ensureWgpuBakePrograms(state: WgpuRenderState): WgpuBakePrograms {
   let programs = _bakePrograms.get(state);

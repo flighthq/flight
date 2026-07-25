@@ -1,5 +1,5 @@
 export * from './getMeshSkinBounds';
-export * from './prepareSceneSkinning';
+export * from './prepareScene3DSkinning';
 export * from './skeleton3d';
 export * from './skinMeshGeometry';
 export * from './skinVertices';

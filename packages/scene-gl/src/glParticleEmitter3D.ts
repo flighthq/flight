@@ -1,6 +1,6 @@
 import { hasImageResourcePixels } from '@flighthq/image';
 import { getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node';
-import { prepareSceneRender } from '@flighthq/render';
+import { prepareScene3DRender } from '@flighthq/render';
 import { bindGlTexture, createGlProgram, invalidateGlRenderStateCache } from '@flighthq/render-gl';
 import type {
   Camera3D,
@@ -10,8 +10,8 @@ import type {
   ParticleBlendMode,
   ParticleEmitter3D,
   ParticleEmitterData,
-  SceneLightsLike,
-  SceneNode,
+  Scene3DLightsLike,
+  Node3D,
 } from '@flighthq/types';
 import { ParticleEmitter3DKind } from '@flighthq/types';
 
@@ -117,7 +117,7 @@ function compileParticle3DShader(gl: WebGL2RenderingContext): GlParticle3DShader
   const program = createGlProgram(gl, PARTICLE_3D_VS, PARTICLE_3D_FS, 'ParticleEmitter3D');
 
   // Bind the emitter's dedicated VAO before creating buffers. This compile runs lazily inside the first
-  // particle draw — mid drawGlScene, with the last mesh's VAO still bound — so the ELEMENT_ARRAY_BUFFER
+  // particle draw — mid drawGlScene3D, with the last mesh's VAO still bound — so the ELEMENT_ARRAY_BUFFER
   // binding below must land in this VAO, not in that mesh's cached VAO (which would leave it drawing
   // against this 6-index quad buffer and reporting "Insufficient buffer size" on later frames).
   const vao = gl.createVertexArray()!;
@@ -229,7 +229,7 @@ function drawParticleEmitter3DNode(
   const iw = hasAtlas ? 1 / (atlas!.image!.width || 1) : 0;
   const ih = hasAtlas ? 1 / (atlas!.image!.height || 1) : 0;
 
-  const worldMatrix = getNodeWorldMatrix4(emitter as unknown as SceneNode) as Matrix4;
+  const worldMatrix = getNodeWorldMatrix4(emitter as unknown as Node3D) as Matrix4;
   const wm = worldMatrix.m;
   // World-space particles are already baked into world coordinates at spawn (see updateParticleEmitter3D),
   // so they must NOT be re-transformed by the emitter's world matrix here.
@@ -310,7 +310,7 @@ function drawParticleEmitter3DNode(
 
   // Bind a dedicated VAO before setting any buffer/attribute state. This instanced draw configures
   // ARRAY_BUFFER, ELEMENT_ARRAY_BUFFER, pointers, and divisors; without its own VAO those writes land
-  // in whatever VAO is currently bound — typically the last mesh VAO left bound by drawGlScene — whose
+  // in whatever VAO is currently bound — typically the last mesh VAO left bound by drawGlScene3D — whose
   // index buffer then becomes this 6-index quad buffer, so the mesh's next-frame drawElements reports
   // "Insufficient buffer size". The VAO isolates all of it.
   gl.bindVertexArray(shader.vao);
@@ -379,17 +379,17 @@ export function destroyGlParticleEmitter3DShader(state: GlRenderState): void {
   shaderCache.delete(state);
 }
 
-export function drawGlSceneParticleEmitter3Ds(
+export function drawGlScene3DParticleEmitter3Ds(
   state: GlRenderState,
-  scene: Readonly<SceneNode>,
+  scene: Readonly<Node3D>,
   camera: Readonly<Camera3D>,
-  lights: Readonly<SceneLightsLike>,
+  lights: Readonly<Scene3DLightsLike>,
 ): void {
   emitterScratch.length = 0;
   collectParticleEmitter3DNodes(scene, emitterScratch);
   if (emitterScratch.length === 0) return;
 
-  const list = prepareSceneRender(state, scene, camera, lights);
+  const list = prepareScene3DRender(state, scene, camera, lights);
 
   const shader = ensureParticle3DShader(state);
   const gl = state.gl;

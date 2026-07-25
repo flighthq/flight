@@ -6,8 +6,8 @@ import type {
   EmissiveMaterial,
   Material,
   MeshGeometry,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
   WgpuUnlitDefineKey,
@@ -26,7 +26,7 @@ export const emissiveWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
   bind(
     state: WgpuRenderState,
     material: Readonly<Material> | null,
-    _lights: Readonly<SceneLightBlock>,
+    _lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const stateRuntime = getWgpuRenderStateRuntime(state);
@@ -58,13 +58,13 @@ export const emissiveWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     pass.setBindGroup(2, group);
   },
 
-  draw(state: WgpuRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+  draw(state: WgpuRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
     drawWgpuMeshSubset(state, proxy, geometry);
   },
 };
 
 // Registers the built-in Emissive renderer for EmissiveMaterialKind on this state. Opt-in (no top-level
-// side effect); call once per WgpuRenderState before drawWgpuScene so meshes with EmissiveMaterials draw.
+// side effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with EmissiveMaterials draw.
 export function registerEmissiveWgpuMaterial(state: WgpuRenderState): void {
   registerWgpuMeshMaterialRenderer(state, EmissiveMaterialKind, emissiveWgpuMeshMaterialRenderer);
 }

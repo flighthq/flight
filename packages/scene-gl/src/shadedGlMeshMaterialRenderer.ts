@@ -11,8 +11,8 @@ import type {
   Material,
   MeshGeometry,
   Modifier,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
   ShadedMaterial,
   GlModifierBindContext,
   GlModifierSnippet,
@@ -31,8 +31,8 @@ import {
   setGlMeshCameraPosition,
   setGlMeshViewProjection,
 } from './glMeshProgram';
-import { getGlSceneRuntime } from './glSceneRuntime';
-import { getGlSceneTime } from './glSceneTime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { getGlScene3DTime } from './glScene3DTime';
 import { ensureGlShadedProgram } from './glShadedPrelude';
 
 // The built-in ShadedMaterial forward-lit mesh-material renderer — @flighthq/shading's composable
@@ -47,7 +47,7 @@ export const shadedGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
     material: Readonly<Material> | null,
-    lights: Readonly<SceneLightBlock>,
+    lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const gl = state.gl;
@@ -60,19 +60,19 @@ export const shadedGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     setGlMeshCameraPosition(gl, program.locCameraPosition, camera);
     bindGlMeshLightBlock(state, program, lights);
     bindGlShadedMaterialUniforms(state, program, shaded);
-    gl.uniform1f(program.locTime, getGlSceneTime(state));
+    gl.uniform1f(program.locTime, getGlScene3DTime(state));
     if (modifiers.length > 0) bindGlShadedModifiers(state, program, modifiers);
   },
 
-  draw(state: GlRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
-    const program = getGlSceneRuntime(state).activeMeshProgram;
+  draw(state: GlRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+    const program = getGlScene3DRuntime(state).activeMeshProgram;
     if (program === null) return;
     drawGlMeshSubset(state, program, proxy, geometry);
   },
 };
 
 // Registers the built-in ShadedMaterial renderer for ShadedMaterialKind on this state. Opt-in (no
-// top-level side effect); call once per GlRenderState before drawScene so meshes with ShadedMaterials
+// top-level side effect); call once per GlRenderState before drawScene3D so meshes with ShadedMaterials
 // draw. Enable the built-in modifiers separately with registerBuiltInGlModifierSnippets — a plain
 // ShadedMaterial needs only this registration.
 export function registerShadedGlMaterial(state: GlRenderState): void {
@@ -89,7 +89,7 @@ function bindGlShadedModifiers(
   program: Readonly<GlShadedProgram>,
   modifiers: readonly Modifier[],
 ): void {
-  const registry: Readonly<ModifierRegistry> | null = getGlSceneRuntime(state).modifierSnippetRegistry;
+  const registry: Readonly<ModifierRegistry> | null = getGlScene3DRuntime(state).modifierSnippetRegistry;
   if (registry === null) return;
   const ordered = orderModifierStack(modifiers);
   let nextTextureUnit = MODIFIER_TEXTURE_UNIT_BASE;

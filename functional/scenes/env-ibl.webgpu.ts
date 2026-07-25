@@ -1,6 +1,6 @@
-import { createScene } from '@flighthq/scene';
-import { bakeWgpuEnvironmentIbl, drawWgpuEnvironmentSkybox, drawWgpuScene } from '@flighthq/scene-wgpu';
-import type { Camera3D, Environment, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import { createScene3D } from '@flighthq/scene';
+import { bakeWgpuEnvironmentIbl, drawWgpuEnvironmentSkybox, drawWgpuScene3D } from '@flighthq/scene-wgpu';
+import type { Camera3D, Environment, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
@@ -20,7 +20,7 @@ import {
   getSurfacePixel,
   getSurfacePixelLuminance,
   invalidateNodeLocalTransform,
-  prepareSceneRender,
+  prepareScene3DRender,
   registerStandardPbrWgpuMaterial,
   renderWgpuBackground,
   setCamera3DViewMatrix4FromLookAt,
@@ -48,9 +48,9 @@ export const height = 600;
 let baked = false;
 
 export function render(
-  scene: Readonly<SceneNode>,
+  scene: Readonly<Node3D>,
   camera: Readonly<Camera3D>,
-  lights: Readonly<SceneLights>,
+  lights: Readonly<Scene3DLights>,
   environment: Readonly<Environment>,
 ): void {
   if (!baked) {
@@ -60,8 +60,8 @@ export function render(
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
   drawWgpuEnvironmentSkybox(state, environment, camera, width / height);
-  prepareSceneRender(state, scene, camera, lights);
-  drawWgpuScene(state, scene, camera, lights);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawWgpuScene3D(state, scene, camera, lights);
   endWgpuRenderEffectPipeline(state, pipeline, []);
   submitWgpuRenderPass(state);
 }
@@ -74,7 +74,7 @@ for (let face = 0; face < colors.length; face++) {
   setCubeTextureFace(cube, face, createImageResourceFromCanvas(solidFaceCanvas(colors[face])));
 }
 const environment = createEnvironment({ environment: cube, intensity: 1 });
-const scene = createScene().root;
+const scene = createScene3D().root;
 const metal = createMesh(createSphereMeshGeometry(0.9, 48, 32), [
   createStandardPbrMaterial({ baseColor: 0xffffffff, metallic: 1, roughness: 0.06 }),
 ]);

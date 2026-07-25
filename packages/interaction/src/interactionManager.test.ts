@@ -35,7 +35,7 @@ beforeAll(() => {
 
 describe('captureInteractionPointer', () => {
   it('routes pointer events to the captured target', () => {
-    const { child, manager } = createHitScene();
+    const { child, manager } = createHitScene3D();
     let fired = 0;
     connectSignal(enableInteractionSignals(child).onPointerMove, () => fired++);
 
@@ -48,7 +48,7 @@ describe('captureInteractionPointer', () => {
 describe('connectInputToInteraction', () => {
   it('routes normalized input signals into interaction dispatch', () => {
     const input = createInputSource();
-    const { child, manager } = createHitScene();
+    const { child, manager } = createHitScene3D();
     let fired = 0;
     connectSignal(enableInteractionSignals(child).onPointerDown, () => fired++);
 
@@ -199,7 +199,7 @@ describe('disconnectInteractionSignal', () => {
 
 describe('dispatchInteractionContextMenu', () => {
   it('fires onContextMenu on a hit target', () => {
-    const { child, manager } = createHitScene();
+    const { child, manager } = createHitScene3D();
     let fired = 0;
     connectSignal(enableInteractionSignals(child).onContextMenu, () => fired++);
 
@@ -238,7 +238,7 @@ describe('dispatchInteractionKeyUp', () => {
 
 describe('dispatchInteractionPointerCancel', () => {
   it('fires onPointerCancel on the active pointer target', () => {
-    const { child, manager } = createHitScene();
+    const { child, manager } = createHitScene3D();
     let fired = 0;
     connectSignal(enableInteractionSignals(child).onPointerCancel, () => fired++);
 
@@ -248,7 +248,7 @@ describe('dispatchInteractionPointerCancel', () => {
   });
 
   it('clears pointer capture', () => {
-    const { child, manager } = createHitScene();
+    const { child, manager } = createHitScene3D();
     let fired = 0;
     connectSignal(enableInteractionSignals(child).onPointerCancel, () => fired++);
     connectSignal(enableInteractionSignals(child).onPointerMove, () => fired++);
@@ -419,7 +419,7 @@ describe('dispatchInteractionPointerDown', () => {
   });
 
   it('tracks a click target when only onClick is connected', () => {
-    const { child, manager } = createHitScene();
+    const { child, manager } = createHitScene3D();
     let fired = 0;
     connectSignal(enableInteractionSignals(child).onClick, () => fired++);
 
@@ -431,7 +431,7 @@ describe('dispatchInteractionPointerDown', () => {
 
 describe('dispatchInteractionPointerMove', () => {
   it('fires onPointerMove on a hit target', () => {
-    const { child, manager } = createHitScene();
+    const { child, manager } = createHitScene3D();
     let fired = 0;
     connectSignal(enableInteractionSignals(child).onPointerMove, () => fired++);
 
@@ -457,7 +457,7 @@ describe('dispatchInteractionPointerMove', () => {
   });
 
   it('fires over and roll over when entering a target', () => {
-    const { child, manager } = createHitScene();
+    const { child, manager } = createHitScene3D();
     const order: string[] = [];
     const signals = enableInteractionSignals(child);
     connectSignal(signals.onPointerOver, () => order.push('over'));
@@ -468,7 +468,7 @@ describe('dispatchInteractionPointerMove', () => {
   });
 
   it('fires out and roll out when leaving a target', () => {
-    const { child, manager } = createHitScene();
+    const { child, manager } = createHitScene3D();
     const order: string[] = [];
     const signals = enableInteractionSignals(child);
     connectSignal(signals.onPointerOut, () => order.push('out'));
@@ -482,7 +482,7 @@ describe('dispatchInteractionPointerMove', () => {
 
 describe('dispatchInteractionPointerUp', () => {
   it('fires onPointerUp on a hit target', () => {
-    const { child, manager } = createHitScene();
+    const { child, manager } = createHitScene3D();
     let fired = 0;
     connectSignal(enableInteractionSignals(child).onPointerUp, () => fired++);
 
@@ -491,7 +491,7 @@ describe('dispatchInteractionPointerUp', () => {
   });
 
   it('fires onClick after down and up on the same target', () => {
-    const { child, manager } = createHitScene();
+    const { child, manager } = createHitScene3D();
     let fired = 0;
     connectSignal(enableInteractionSignals(child).onClick, () => fired++);
 
@@ -501,7 +501,7 @@ describe('dispatchInteractionPointerUp', () => {
   });
 
   it('fires onDoubleClick for two clicks within the manager delay', () => {
-    const { child, manager } = createHitScene();
+    const { child, manager } = createHitScene3D();
     let fired = 0;
     connectSignal(enableInteractionSignals(child).onDoubleClick, () => fired++);
 
@@ -513,7 +513,7 @@ describe('dispatchInteractionPointerUp', () => {
   });
 
   it('tracks double clicks independently by pointer id', () => {
-    const { child, manager } = createHitScene();
+    const { child, manager } = createHitScene3D();
     let fired = 0;
     connectSignal(enableInteractionSignals(child).onDoubleClick, () => fired++);
 
@@ -527,7 +527,7 @@ describe('dispatchInteractionPointerUp', () => {
   });
 
   it('fires onReleaseOutside on the original down target', () => {
-    const { child, manager } = createHitScene();
+    const { child, manager } = createHitScene3D();
     let fired = 0;
     connectSignal(enableInteractionSignals(child).onReleaseOutside, () => fired++);
 
@@ -539,7 +539,7 @@ describe('dispatchInteractionPointerUp', () => {
 
 describe('dispatchInteractionWheel', () => {
   it('fires onWheel with delta values', () => {
-    const { child, manager } = createHitScene();
+    const { child, manager } = createHitScene3D();
     let receivedDeltaY = 0;
     connectSignal(enableInteractionSignals(child).onWheel, (data) => {
       receivedDeltaY = data.deltaY;
@@ -585,7 +585,7 @@ describe('getInteractionSignals', () => {
 
 describe('releaseInteractionPointer', () => {
   it('stops routing pointer events to the captured target', () => {
-    const { child, manager } = createHitScene();
+    const { child, manager } = createHitScene3D();
     let fired = 0;
     connectSignal(enableInteractionSignals(child).onPointerMove, () => fired++);
 
@@ -612,7 +612,7 @@ describe('setInteractionConnectGuard', () => {
   });
 });
 
-function createHitScene() {
+function createHitScene3D() {
   const root = createDisplayObject();
   const child = createDisplayObject();
   setRectangle(getNodeLocalBoundsRectangle(child), 0, 0, 100, 100);

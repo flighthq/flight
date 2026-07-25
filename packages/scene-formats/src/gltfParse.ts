@@ -11,9 +11,9 @@ import { detectImageMimeType } from '@flighthq/image-codec';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, createMeshGeometry, getMeshGeometryVertexCount } from '@flighthq/mesh';
-import { createSceneFromDocument, createScenesFromDocument } from '@flighthq/scene';
+import { createScene3DFromDocument, createScene3DsFromDocument } from '@flighthq/scene';
 import { createTexture } from '@flighthq/texture';
-import type { Scene } from '@flighthq/types';
+import type { Scene3D } from '@flighthq/types';
 import type {
   AnimationInterpolation,
   ImageResourceReference,
@@ -24,14 +24,14 @@ import type {
   MeshMorph,
   MorphTarget,
   PrimitiveTopology,
-  SceneAnimationPath,
-  SceneDocument,
-  SceneDocumentAnimation,
-  SceneDocumentAnimationChannel,
-  SceneDocumentCamera,
-  SceneDocumentMesh,
-  SceneDocumentNode,
-  SceneDocumentSkin,
+  Scene3DAnimationPath,
+  Scene3DDocument,
+  Scene3DDocumentAnimation,
+  Scene3DDocumentAnimationChannel,
+  Scene3DDocumentCamera,
+  Scene3DDocumentMesh,
+  Scene3DDocumentNode,
+  Scene3DDocumentSkin,
   Texture,
   TextureColorSpace,
   TextureFilter,
@@ -55,84 +55,84 @@ import type {
 import {
   ImportDiagnosticSeverity,
   MeshKind,
-  SceneAnimationPathRotation,
-  SceneAnimationPathScale,
-  SceneAnimationPathTranslation,
-  SceneAnimationPathWeights,
-  SceneNodeKind,
+  Scene3DAnimationPathRotation,
+  Scene3DAnimationPathScale,
+  Scene3DAnimationPathTranslation,
+  Scene3DAnimationPathWeights,
+  Node3DKind,
 } from '@flighthq/types';
 
-// Parses a binary glTF (`.glb`) container into a Scene — the file's default scene (`doc.scene`).
-// Convenience over `createSceneFromDocument(parseGlb(bytes), defaultScene)`; malformed containers return an
-// empty Scene.
-export function createSceneFromGlb(
+// Parses a binary glTF (`.glb`) container into a Scene3D — the file's default scene (`doc.scene`).
+// Convenience over `createScene3DFromDocument(parseGlb(bytes), defaultScene3D)`; malformed containers return an
+// empty Scene3D.
+export function createScene3DFromGlb(
   bytes: Readonly<Uint8Array>,
   diagnostics?: ImportDiagnostic[],
   options?: Readonly<GltfImportOptions>,
-): Scene {
+): Scene3D {
   const container = readGlbContainer(bytes, diagnostics);
-  if (container === null) return createSceneFromDocument(createEmptyGltfDocument());
-  return createSceneFromDocument(
+  if (container === null) return createScene3DFromDocument(createEmptyGltfDocument());
+  return createScene3DFromDocument(
     buildGltfDocument(container.document, container.binary, options, diagnostics),
     container.document.scene ?? 0,
   );
 }
 
-// Parses a glTF 2.0 document (JSON string or already-parsed object) into a Scene — the file's default scene
-// (`doc.scene`). Convenience over `createSceneFromDocument(parseGltf(source), defaultScene)`; a malformed
-// JSON string returns an empty Scene.
-export function createSceneFromGltf(
+// Parses a glTF 2.0 document (JSON string or already-parsed object) into a Scene3D — the file's default scene
+// (`doc.scene`). Convenience over `createScene3DFromDocument(parseGltf(source), defaultScene3D)`; a malformed
+// JSON string returns an empty Scene3D.
+export function createScene3DFromGltf(
   source: GltfDocument | string,
   diagnostics?: ImportDiagnostic[],
   options?: Readonly<GltfImportOptions>,
-): Scene {
+): Scene3D {
   const doc = parseGltfSource(source, diagnostics);
-  if (doc === null) return createSceneFromDocument(createEmptyGltfDocument());
-  return createSceneFromDocument(buildGltfDocument(doc, null, options, diagnostics), doc.scene ?? 0);
+  if (doc === null) return createScene3DFromDocument(createEmptyGltfDocument());
+  return createScene3DFromDocument(buildGltfDocument(doc, null, options, diagnostics), doc.scene ?? 0);
 }
 
-// Parses a binary glTF (`.glb`) container into every scene it declares (`Scene[]`), each carrying its
+// Parses a binary glTF (`.glb`) container into every scene it declares (`Scene3D[]`), each carrying its
 // geometry; the file's animation clips are attached to the default scene. Malformed containers return an
 // empty array.
-export function createScenesFromGlb(
+export function createScene3DsFromGlb(
   bytes: Readonly<Uint8Array>,
   diagnostics?: ImportDiagnostic[],
   options?: Readonly<GltfImportOptions>,
-): Scene[] {
-  return createScenesFromDocument(parseGlb(bytes, diagnostics, options));
+): Scene3D[] {
+  return createScene3DsFromDocument(parseGlb(bytes, diagnostics, options));
 }
 
-// Parses a glTF 2.0 document into every scene it declares (`Scene[]`), each carrying its geometry; the
-// file's animation clips are attached to the default scene. Reach for this over createSceneFromGltf when the
+// Parses a glTF 2.0 document into every scene it declares (`Scene3D[]`), each carrying its geometry; the
+// file's animation clips are attached to the default scene. Reach for this over createScene3DFromGltf when the
 // file declares multiple scenes. A malformed JSON string returns an empty array.
-export function createScenesFromGltf(
+export function createScene3DsFromGltf(
   source: GltfDocument | string,
   diagnostics?: ImportDiagnostic[],
   options?: Readonly<GltfImportOptions>,
-): Scene[] {
-  return createScenesFromDocument(parseGltf(source, diagnostics, options));
+): Scene3D[] {
+  return createScene3DsFromDocument(parseGltf(source, diagnostics, options));
 }
 
-// Parses a binary glTF (`.glb`) container into a format-neutral SceneDocument. The 12-byte header (magic
+// Parses a binary glTF (`.glb`) container into a format-neutral Scene3DDocument. The 12-byte header (magic
 // `glTF`, version, length) is validated, then the chunk stream is walked to extract the embedded JSON
 // document and the optional BIN chunk; the BIN chunk backs any buffer that has no `uri`. `options` supplies
 // external buffer bytes and a base path for any external URIs the GLB still references. Malformed containers
-// return an empty document and push a warning rather than throwing. Assemble it into a live Scene with
-// `createSceneFromDocument`.
+// return an empty document and push a warning rather than throwing. Assemble it into a live Scene3D with
+// `createScene3DFromDocument`.
 export function parseGlb(
   bytes: Readonly<Uint8Array>,
   diagnostics?: ImportDiagnostic[],
   options?: Readonly<GltfImportOptions>,
-): SceneDocument {
+): Scene3DDocument {
   const container = readGlbContainer(bytes, diagnostics);
   if (container === null) return createEmptyGltfDocument();
   return buildGltfDocument(container.document, container.binary, options, diagnostics);
 }
 
-// Parses a glTF 2.0 document (JSON string or already-parsed object) into a format-neutral SceneDocument:
+// Parses a glTF 2.0 document (JSON string or already-parsed object) into a format-neutral Scene3DDocument:
 // the node hierarchy with transforms, meshes (inline geometry + materials), skins, morph, and animation.
 // A malformed JSON string returns an empty document and pushes a warning rather than throwing. Assemble it
-// into a live Scene with `createSceneFromDocument`.
+// into a live Scene3D with `createScene3DFromDocument`.
 //
 // Imported today: POSITION + optional NORMAL / TANGENT / TEXCOORD_0 + indices, interleaved into the
 // canonical PBR vertex layout (or the skinned layout when JOINTS_0/WEIGHTS_0 are present); skins (joint
@@ -146,7 +146,7 @@ export function parseGltf(
   source: GltfDocument | string,
   diagnostics?: ImportDiagnostic[],
   options?: Readonly<GltfImportOptions>,
-): SceneDocument {
+): Scene3DDocument {
   const doc = parseGltfSource(source, diagnostics);
   if (doc === null) return createEmptyGltfDocument();
   return buildGltfDocument(doc, null, options, diagnostics);
@@ -173,9 +173,9 @@ function parseGltfSource(source: GltfDocument | string, diagnostics?: ImportDiag
   return doc;
 }
 
-// The empty SceneDocument returned when parsing fails — every table present and empty, so callers and the
+// The empty Scene3DDocument returned when parsing fails — every table present and empty, so callers and the
 // assembler never special-case a partial document.
-function createEmptyGltfDocument(): SceneDocument {
+function createEmptyGltfDocument(): Scene3DDocument {
   return {
     animations: [],
     cameras: [],
@@ -190,17 +190,17 @@ function createEmptyGltfDocument(): SceneDocument {
   };
 }
 
-// Builds the format-neutral SceneDocument from a parsed glTF document plus an optional GLB binary chunk
+// Builds the format-neutral Scene3DDocument from a parsed glTF document plus an optional GLB binary chunk
 // (null for the JSON path). This is the decomposition the importer stops at: inline mesh geometry, resolved
 // materials, node tables with index refs, skins by joint index, and node-index-bound animation channels —
-// `createSceneFromDocument` assembles it into live entities. A multi-primitive glTF mesh expands into a
+// `createScene3DFromDocument` assembles it into live entities. A multi-primitive glTF mesh expands into a
 // group node with one child mesh node per primitive, so every document mesh carries exactly one geometry.
 function buildGltfDocument(
   doc: Readonly<GltfDocument>,
   binary: Readonly<Uint8Array> | null,
   options: Readonly<GltfImportOptions> | undefined,
   diagnostics?: ImportDiagnostic[],
-): SceneDocument {
+): Scene3DDocument {
   // buildGltfDocument is the single physical emitter for every aggregated document-build crumb (hence the
   // origin); the tallies store no origin. Every per-node/per-primitive/per-accessor fault it fans out to
   // aggregates here and flushes once at the end. The pre-parse gates (parseGltfSource/readGlbContainer)
@@ -232,7 +232,7 @@ function buildGltfDocument(
 
   // One document mesh per glTF primitive (inline geometry + morph + material indices). Track, per glTF
   // mesh, the list of document-mesh indices it expands to, so a node can point at the right ones.
-  const meshes: SceneDocumentMesh[] = [];
+  const meshes: Scene3DDocumentMesh[] = [];
   const gltfMeshToDocMeshes: number[][] = (doc.meshes ?? []).map((gltfMesh) => {
     const docMeshIndices: number[] = [];
     for (let p = 0; p < gltfMesh.primitives.length; p++) {
@@ -250,7 +250,7 @@ function buildGltfDocument(
         getMeshGeometryVertexCount(geometry),
         gltfDrops,
       );
-      const documentMesh: SceneDocumentMesh = {
+      const documentMesh: Scene3DDocumentMesh = {
         geometry,
         materials: primitive.material !== undefined ? [primitive.material] : [],
       };
@@ -262,7 +262,7 @@ function buildGltfDocument(
   });
 
   const gltfNodes = doc.nodes ?? [];
-  const nodes: SceneDocumentNode[] = [];
+  const nodes: Scene3DDocumentNode[] = [];
   // Maps a glTF node index to the document node index that carries its transform + hierarchy. For a
   // multi-primitive mesh the group node holds the transform and the extra primitives become its children.
   const gltfNodeToDocNode: number[] = new Array(gltfNodes.length);
@@ -280,7 +280,7 @@ function buildGltfDocument(
       nodes.push({ children: [], kind: MeshKind, mesh: docMeshes[0], name: gltfNode.name, transform });
     } else if (docMeshes !== undefined && docMeshes.length > 1) {
       // Group node holds the transform; one child mesh node per primitive (identity transform).
-      const group: SceneDocumentNode = { children: [], kind: SceneNodeKind, name: gltfNode.name, transform };
+      const group: Scene3DDocumentNode = { children: [], kind: Node3DKind, name: gltfNode.name, transform };
       nodes.push(group);
       for (let m = 0; m < docMeshes.length; m++) {
         const childIndex = nodes.length;
@@ -289,7 +289,7 @@ function buildGltfDocument(
         nodes.push({ children: [], kind: MeshKind, mesh: docMeshes[m], transform: createIdentityTransform() });
       }
     } else {
-      nodes.push({ children: [], kind: SceneNodeKind, name: gltfNode.name, transform });
+      nodes.push({ children: [], kind: Node3DKind, name: gltfNode.name, transform });
     }
   }
 
@@ -326,7 +326,7 @@ function buildGltfDocument(
   );
   const nodeWorldTransforms = buildGltfNodeWorldTransforms(gltfNodes, gltfDrops);
   const cameras = buildGltfCameras(doc, gltfNodes, gltfNodeToDocNode, nodeWorldTransforms, gltfDrops);
-  const document: SceneDocument = {
+  const document: Scene3DDocument = {
     animations,
     cameras,
     lights: [],
@@ -368,8 +368,8 @@ function buildGltfCameras(
   nodeIndices: readonly number[],
   nodeWorldTransforms: readonly Transform3D[],
   gltfDrops: Map<string, GltfDropTally> | null,
-): SceneDocumentCamera[] {
-  const cameras: SceneDocumentCamera[] = [];
+): Scene3DDocumentCamera[] {
+  const cameras: Scene3DDocumentCamera[] = [];
   const definitions = doc.cameras ?? [];
   for (let node = 0; node < nodes.length; node++) {
     const cameraIndex = nodes[node].camera;
@@ -446,7 +446,7 @@ function buildGltfCameras(
 }
 
 function applyGltfExtensionHandlers(
-  document: SceneDocument,
+  document: Scene3DDocument,
   source: Readonly<GltfDocument>,
   nodeIndices: readonly number[],
   nodeWorldTransforms: readonly Transform3D[],
@@ -573,7 +573,7 @@ function cloneGltfTransform(source: Readonly<Transform3D>): Transform3D {
   return transform;
 }
 
-// Builds the document's skin table: each glTF `skins[]` entry becomes a SceneDocumentSkin whose `joints` are
+// Builds the document's skin table: each glTF `skins[]` entry becomes a Scene3DDocumentSkin whose `joints` are
 // document node indices and whose `inverseBind` is one Matrix4 per joint (identity per the spec when the
 // accessor is absent).
 function buildGltfSkins(
@@ -581,7 +581,7 @@ function buildGltfSkins(
   buffers: readonly Uint8Array[],
   gltfNodeToDocNode: readonly number[],
   gltfDrops: Map<string, GltfDropTally> | null,
-): SceneDocumentSkin[] {
+): Scene3DDocumentSkin[] {
   return (doc.skins ?? []).map((gltfSkin) => {
     const joints = gltfSkin.joints.map((jointNodeIndex) => gltfNodeToDocNode[jointNodeIndex]);
     const inverseBind: { m: Float32Array }[] = [];
@@ -615,8 +615,8 @@ function buildGltfSkins(
   });
 }
 
-// Builds the document's animation table. Each glTF animation becomes a SceneDocumentAnimation whose channels
-// carry a document node index + SceneAnimationPath + a sampled AnimationTrack. A `weights` (morph) channel
+// Builds the document's animation table. Each glTF animation becomes a Scene3DDocumentAnimation whose channels
+// carry a document node index + Scene3DAnimationPath + a sampled AnimationTrack. A `weights` (morph) channel
 // fans out to each morphable mesh node the target produced (the group's per-primitive children, or the leaf
 // mesh node itself), its track width set to that mesh's morph-target count.
 function buildGltfAnimations(
@@ -624,15 +624,15 @@ function buildGltfAnimations(
   buffers: readonly Uint8Array[],
   gltfNodeToDocNode: readonly number[],
   gltfNodePrimitiveNodes: readonly number[][],
-  nodes: readonly SceneDocumentNode[],
-  meshes: readonly SceneDocumentMesh[],
+  nodes: readonly Scene3DDocumentNode[],
+  meshes: readonly Scene3DDocumentMesh[],
   gltfDrops: Map<string, GltfDropTally> | null,
-): SceneDocumentAnimation[] {
-  const animations: SceneDocumentAnimation[] = [];
+): Scene3DDocumentAnimation[] {
+  const animations: Scene3DDocumentAnimation[] = [];
   const gltfAnimations = doc.animations ?? [];
   for (let a = 0; a < gltfAnimations.length; a++) {
     const animation = gltfAnimations[a];
-    const channels: SceneDocumentAnimationChannel[] = [];
+    const channels: Scene3DDocumentAnimationChannel[] = [];
     let duration = 0;
     for (const channel of animation.channels) {
       const targetNodeIndex = channel.target.node;
@@ -720,7 +720,7 @@ function buildGltfAnimations(
         });
         continue;
       }
-      const quaternion = path === SceneAnimationPathRotation;
+      const quaternion = path === Scene3DAnimationPathRotation;
       const track = createAnimationTrack({
         components: quaternion ? 4 : 3,
         interpolation: GLTF_SAMPLER_INTERPOLATIONS[sampler.interpolation ?? 'LINEAR'],
@@ -741,10 +741,10 @@ function buildGltfAnimations(
 // track width is that mesh's morph-target count so the per-keyframe value block samples straight into the
 // mesh's weight array. A target with no morphable mesh yields no channel (silently dropped).
 function appendGltfWeightsChannels(
-  channels: SceneDocumentAnimationChannel[],
+  channels: Scene3DDocumentAnimationChannel[],
   meshNodeIndices: readonly number[],
-  nodes: readonly SceneDocumentNode[],
-  meshes: readonly SceneDocumentMesh[],
+  nodes: readonly Scene3DDocumentNode[],
+  meshes: readonly Scene3DDocumentMesh[],
   times: ArrayLike<number>,
   values: ArrayLike<number>,
   interpolation: string | undefined,
@@ -774,7 +774,7 @@ function appendGltfWeightsChannels(
       times,
       values,
     });
-    channels.push({ node: meshNodeIndices[i], path: SceneAnimationPathWeights, track });
+    channels.push({ node: meshNodeIndices[i], path: Scene3DAnimationPathWeights, track });
     bound++;
   }
   if (bound === 0 && !cardinalityDropped) {
@@ -1699,13 +1699,13 @@ function createComponentArray(componentType: GltfComponentType, length: number):
 const COMPONENT_BYTE_SIZE: Record<GltfComponentType, number> = { 5120: 1, 5121: 1, 5122: 2, 5123: 2, 5125: 4, 5126: 4 };
 const TYPE_COMPONENTS: Record<string, number> = { MAT2: 4, MAT3: 9, MAT4: 16, SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4 };
 
-// glTF TRS animation target paths → Flight SceneAnimationPath. The 'weights' (morph) path is handled
+// glTF TRS animation target paths → Flight Scene3DAnimationPath. The 'weights' (morph) path is handled
 // separately by the caller (appendGltfWeightsChannels), because it binds to a mesh's weight array with a
 // mesh-specific track width rather than a fixed-width transform component, so it is not in this map.
-const GLTF_ANIMATION_PATHS: Record<string, SceneAnimationPath | undefined> = {
-  rotation: SceneAnimationPathRotation,
-  scale: SceneAnimationPathScale,
-  translation: SceneAnimationPathTranslation,
+const GLTF_ANIMATION_PATHS: Record<string, Scene3DAnimationPath | undefined> = {
+  rotation: Scene3DAnimationPathRotation,
+  scale: Scene3DAnimationPathScale,
+  translation: Scene3DAnimationPathTranslation,
 };
 
 // The required output-accessor element type per animated path (glTF spec). rotation is a VEC4 quaternion,

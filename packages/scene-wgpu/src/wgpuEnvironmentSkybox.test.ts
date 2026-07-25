@@ -2,7 +2,7 @@ import { createCamera3D } from '@flighthq/camera';
 import type { Camera3D, CubeTexture, Environment, ImageResource } from '@flighthq/types';
 
 import { drawWgpuEnvironmentSkybox } from './wgpuEnvironmentSkybox';
-import { makeWgpuSceneState } from './wgpuSceneTestHelper';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 
 // The skybox draw itself is validated by the functional `env-skybox` capture (jsdom cannot run WGSL). These
 // cover the CPU-side wiring: the no-complete-cube sentinel no-op, and the pipeline/bind/draw call shape of
@@ -24,7 +24,7 @@ function completeEnvironment(): Environment {
 
 describe('drawWgpuEnvironmentSkybox', () => {
   it('is a no-op when the environment has no complete source cube', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const before = fake.calls.length;
     expect(() =>
       drawWgpuEnvironmentSkybox(state, { environment: null, intensity: 1 } as Environment, makeCamera(), 1),
@@ -33,7 +33,7 @@ describe('drawWgpuEnvironmentSkybox', () => {
   });
 
   it('binds the cube + uniform and draws the fullscreen backdrop', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     drawWgpuEnvironmentSkybox(state, completeEnvironment(), makeCamera(), 1);
 
     expect(fake.calls.some((c) => c.name === 'setPipeline')).toBe(true);
@@ -42,7 +42,7 @@ describe('drawWgpuEnvironmentSkybox', () => {
   });
 
   it('compiles skybox WGSL that reconstructs the ray from the inverse view-projection', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     drawWgpuEnvironmentSkybox(state, completeEnvironment(), makeCamera(), 1);
 
     const shader = fake.calls.find(

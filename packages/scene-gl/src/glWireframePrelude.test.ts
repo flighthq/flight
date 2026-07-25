@@ -1,5 +1,5 @@
-import { getGlSceneRuntime } from './glSceneRuntime';
-import { makeFakeGl2, makeGlSceneState } from './glSceneTestHelper';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
 import {
   compileGlWireframeProgram,
   ensureGlWireframeProgram,
@@ -20,13 +20,13 @@ describe('compileGlWireframeProgram', () => {
 
 describe('ensureGlWireframeProgram', () => {
   it('caches the single wireframe program under the wireframe namespace', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const first = ensureGlWireframeProgram(state);
     const links = gl.calls.filter((c) => c.name === 'linkProgram').length;
     const second = ensureGlWireframeProgram(state);
     expect(second).toBe(first);
     expect(gl.calls.filter((c) => c.name === 'linkProgram').length).toBe(links);
-    expect([...getGlSceneRuntime(state).programCache.keys()].some((k) => k.startsWith('wireframe:'))).toBe(true);
+    expect([...getGlScene3DRuntime(state).programCache.keys()].some((k) => k.startsWith('wireframe:'))).toBe(true);
   });
 });
 

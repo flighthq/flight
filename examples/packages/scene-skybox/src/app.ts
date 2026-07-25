@@ -3,8 +3,8 @@ import {
   rotateOrbitCameraController,
   updateOrbitCameraController,
 } from '@flighthq/camera-controls';
-import { createSceneNode } from '@flighthq/scene';
-import type { Camera3D, SceneLightsLike, Surface } from '@flighthq/sdk';
+import { createNode3D } from '@flighthq/scene';
+import type { Camera3D, Scene3DLightsLike, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   createCamera3D,
@@ -17,7 +17,7 @@ import {
   createTorusMeshGeometry,
   createVector3,
   invalidateNodeLocalTransform,
-  SceneNodeKind,
+  Node3DKind,
   setCubeTextureFace,
   setQuaternionFromEuler,
 } from '@flighthq/sdk';
@@ -65,7 +65,7 @@ for (let face = 0; face < 6; face++) {
 }
 const environment = createEnvironment({ environment: cubeTexture, intensity: 1.05 });
 
-const scene = createSceneNode(SceneNodeKind);
+const scene = createNode3D(Node3DKind);
 const reflectiveMaterial = createStandardPbrMaterial({
   baseColor: 0xd8e8ffff,
   metallic: 1,
@@ -89,7 +89,7 @@ const cameraController = createOrbitCameraController({
   smoothTime: 0.12,
   target: createVector3(0, 0, 0),
 });
-const lights: SceneLightsLike = { ambient: null, directional: null };
+const lights: Scene3DLightsLike = { ambient: null, directional: null };
 
 let previousTime = performance.now();
 let torusAngle = 0;

@@ -10,7 +10,7 @@ import {
 import type { Kind, Material, Mesh, MeshDeformer, MeshGeometry, MeshRuntime, NodeSignals } from '@flighthq/types';
 import { MeshDeformerMorph, MeshDeformerNone, MeshDeformerSkeletal, MeshKind } from '@flighthq/types';
 
-import { createSceneNode, getSceneNodeRuntime } from './sceneNode';
+import { createNode3D, getNode3DRuntime } from './sceneNode';
 
 export { MeshKind } from '@flighthq/types';
 
@@ -21,7 +21,7 @@ export { MeshKind } from '@flighthq/types';
 // independent rig clone its joint hierarchy and Skeleton3D separately. `alpha`, `enabled`, `name`,
 // and `kind` are copied. Only the mesh node itself is cloned;
 // its children are not (a Mesh is a drawable leaf — clone each node you need explicitly). There is
-// no general cloneSceneNode: not every node kind can be duplicated (some own GPU/native resources
+// no general cloneNode3D: not every node kind can be duplicated (some own GPU/native resources
 // or runtime bindings that cannot alias), so cloning is a per-type capability, defined here where
 // it is well-formed.
 export function cloneMesh(source: Readonly<Mesh>): Mesh {
@@ -42,7 +42,7 @@ export function cloneMesh(source: Readonly<Mesh>): Mesh {
   return clone;
 }
 
-// Allocates a renderable Mesh node: a SceneNode (so it shares the scene hierarchy with group nodes
+// Allocates a renderable Mesh node: a Node3D (so it shares the scene hierarchy with group nodes
 // and other meshes) carrying `geometry` and one `materials` entry per geometry subset (indexed
 // positionally; a missing or null slot resolves to DefaultMaterialKind at draw time). The node has
 // an identity localMatrix — its model matrix once placed in the hierarchy — and no children.
@@ -53,7 +53,7 @@ export function createMesh(
   kind: Kind = MeshKind,
   obj?: Readonly<Partial<Pick<Mesh, 'enabled' | 'name'>>>,
 ): Mesh {
-  const mesh = createSceneNode(kind, obj) as Mesh;
+  const mesh = createNode3D(kind, obj) as Mesh;
   mesh.geometry = geometry;
   mesh.materials = materials;
   return mesh;
@@ -76,7 +76,7 @@ export function getMeshDeformer(source: Readonly<Mesh>): MeshDeformer {
 }
 
 export function getMeshRuntime(source: Readonly<Mesh>): MeshRuntime {
-  return getSceneNodeRuntime(source);
+  return getNode3DRuntime(source);
 }
 
 export function getMeshSignals(source: Mesh): NodeSignals | null {

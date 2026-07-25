@@ -1,8 +1,8 @@
 import type { GlPbrDefineKey } from '@flighthq/types';
 
 import { compileGlPbrProgram, ensureGlPbrProgram } from './glPbrProgramCache';
-import { getGlSceneRuntime } from './glSceneRuntime';
-import { makeFakeGl2, makeGlSceneState } from './glSceneTestHelper';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
 
 function makeKey(overrides?: Partial<GlPbrDefineKey>): GlPbrDefineKey {
   return {
@@ -73,35 +73,35 @@ describe('compileGlPbrProgram', () => {
 
 describe('ensureGlPbrProgram', () => {
   it('compiles a variant once and caches it by define key', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const first = ensureGlPbrProgram(state, KEY);
     const linkCount = gl.calls.filter((c) => c.name === 'linkProgram').length;
     const second = ensureGlPbrProgram(state, KEY);
     expect(second).toBe(first);
     expect(gl.calls.filter((c) => c.name === 'linkProgram').length).toBe(linkCount);
-    expect(getGlSceneRuntime(state).programCache.size).toBe(1);
+    expect(getGlScene3DRuntime(state).programCache.size).toBe(1);
   });
 
   it('compiles a distinct program for a different standard map flag', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     ensureGlPbrProgram(state, KEY);
     ensureGlPbrProgram(state, makeKey({ hasBaseColorMap: true }));
-    expect(getGlSceneRuntime(state).programCache.size).toBe(2);
+    expect(getGlScene3DRuntime(state).programCache.size).toBe(2);
   });
 
   it('folds the render-state skinned-run flag into a distinct HAS_SKIN variant', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     const rigid = ensureGlPbrProgram(state, KEY);
-    getGlSceneRuntime(state).activeSkinnedRun = true;
+    getGlScene3DRuntime(state).activeSkinnedRun = true;
     const skinned = ensureGlPbrProgram(state, KEY);
 
     expect(skinned).not.toBe(rigid);
-    expect([...getGlSceneRuntime(state).programCache.keys()]).toContain('pbr:--------:-------k');
+    expect([...getGlScene3DRuntime(state).programCache.keys()]).toContain('pbr:--------:-------k');
     expect(skinned.locJointTexture).not.toBeNull();
   });
 
   it('caches a distinct entry per extension define under the pbr: namespace', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     ensureGlPbrProgram(state, makeKey({ clearcoatEnabled: true }));
     ensureGlPbrProgram(state, makeKey({ sheenEnabled: true }));
     ensureGlPbrProgram(state, makeKey({ anisotropyEnabled: true }));
@@ -109,7 +109,7 @@ describe('ensureGlPbrProgram', () => {
     ensureGlPbrProgram(state, makeKey({ specularEnabled: true }));
     ensureGlPbrProgram(state, makeKey({ subsurfaceEnabled: true }));
     ensureGlPbrProgram(state, makeKey({ transmissionEnabled: true }));
-    const cache = getGlSceneRuntime(state).programCache;
+    const cache = getGlScene3DRuntime(state).programCache;
     expect(cache.size).toBe(7);
     for (const key of cache.keys()) expect(key.startsWith('pbr:')).toBe(true);
   });

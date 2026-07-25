@@ -2,18 +2,18 @@ import { createCamera3D } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createToonMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
-import type { Camera3D, Matrix3, Matrix4, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
+import type { Camera3D, Matrix3, Matrix4, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types';
 import { ToonMaterialKind } from '@flighthq/types';
 
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { makeGlSceneState } from './glSceneTestHelper';
+import { makeGlScene3DState } from './glScene3DTestHelper';
 import { registerToonGlMaterial, toonGlMeshMaterialRenderer } from './toonGlMeshMaterialRenderer';
 
 function makeCamera(): Camera3D {
   return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
 }
 
-function makeLights(): SceneLightBlock {
+function makeLights(): Scene3DLightBlock {
   // Directional { dir.xyz @0, _pad, radiance.rgb @4, _pad } + ambient { radiance.rgb @8 }.
   const data = new Float32Array(12);
   data[0] = 0;
@@ -28,7 +28,7 @@ function makeLights(): SceneLightBlock {
   return { ambientCount: 1, data, directionalCount: 1, hemisphereCount: 0, pointCount: 0, spotCount: 0, version: 1 };
 }
 
-function makeProxy(): SceneRenderProxy {
+function makeProxy(): Scene3DRenderProxy {
   const geometry = createBoxMeshGeometry();
   return {
     material: createToonMaterial(),
@@ -40,7 +40,7 @@ function makeProxy(): SceneRenderProxy {
 
 describe('registerToonGlMaterial', () => {
   it('installs the renderer for ToonMaterialKind', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     registerToonGlMaterial(state);
     expect(getGlMeshMaterialRenderer(state, ToonMaterialKind)).toBe(toonGlMeshMaterialRenderer);
   });
@@ -48,7 +48,7 @@ describe('registerToonGlMaterial', () => {
 
 describe('toonGlMeshMaterialRenderer', () => {
   it('bind selects a program, sets depth/cull state, and uploads camera + light block + base color', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     toonGlMeshMaterialRenderer.bind(state, createToonMaterial(), makeLights(), makeCamera());
 
     expect(gl.calls.some((c) => c.name === 'useProgram')).toBe(true);
@@ -64,7 +64,7 @@ describe('toonGlMeshMaterialRenderer', () => {
   });
 
   it('bind disables back-face culling for a double-sided material', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const material = createToonMaterial();
     material.doubleSided = true;
     toonGlMeshMaterialRenderer.bind(state, material, makeLights(), makeCamera());
@@ -72,7 +72,7 @@ describe('toonGlMeshMaterialRenderer', () => {
   });
 
   it('draw uploads geometry and issues an indexed draw over the subset range', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const proxy = makeProxy();
     const geometry = createBoxMeshGeometry();
     toonGlMeshMaterialRenderer.bind(state, proxy.material, makeLights(), makeCamera());
@@ -85,7 +85,7 @@ describe('toonGlMeshMaterialRenderer', () => {
   });
 
   it('draw is a no-op when bind has not selected a program', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     toonGlMeshMaterialRenderer.draw(state, makeProxy(), createBoxMeshGeometry());
     expect(gl.calls.some((c) => c.name === 'drawElements')).toBe(false);
   });

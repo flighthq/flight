@@ -6,35 +6,35 @@ import type {
   AnimationChannel,
   Material,
   Mesh,
-  Scene,
-  SceneAnimationTarget,
-  SceneDocument,
-  SceneDocumentNode,
-  SceneNode,
+  Scene3D,
+  Scene3DAnimationTarget,
+  Scene3DDocument,
+  Scene3DDocumentNode,
+  Node3D,
   Skin,
 } from '@flighthq/types';
 
 import { createMesh } from './mesh';
-import { createScene } from './scene';
-import { createSceneNode } from './sceneNode';
+import { createScene3D } from './scene';
+import { createNode3D } from './sceneNode';
 
-// Assembles a SceneDocument's scene into a live Scene — the inverse of the scene-format parsers, which STOP
-// at the format-neutral SceneDocument decomposition rather than building entities inline. This is the single
-// assembler every importer shares: `createSceneFromGltf` and its siblings are `createSceneFromDocument(parse
+// Assembles a Scene3DDocument's scene into a live Scene3D — the inverse of the scene-format parsers, which STOP
+// at the format-neutral Scene3DDocument decomposition rather than building entities inline. This is the single
+// assembler every importer shares: `createScene3DFromGltf` and its siblings are `createScene3DFromDocument(parse
 // <Format>(bytes))`. `sceneIndex` selects which of the document's scenes to build (default the first); the
 // document's animation clips and metadata are attached to it. An empty or scene-less document yields an
-// empty Scene.
+// empty Scene3D.
 //
-// The function is a THIN composition of small per-component steps: build one SceneNode per document node
+// The function is a THIN composition of small per-component steps: build one Node3D per document node
 // (Mesh when the node names a mesh, group otherwise), wire the child index lists, resolve each skin's joint
 // indices to the built nodes, and rebuild each animation clip's channels against them — no format knowledge
 // lives here. Cameras and lights are placement tables the document carries for the caller to read; they are
 // not parented into the graph (a camera is a pure entity, not a scene node), so this assembler leaves them
 // on the document.
-export function createSceneFromDocument(document: Readonly<SceneDocument>, sceneIndex = 0): Scene {
+export function createScene3DFromDocument(document: Readonly<Scene3DDocument>, sceneIndex = 0): Scene3D {
   const nodes = buildDocumentNodes(document);
   applyDocumentSkins(document, nodes);
-  const scene = createScene();
+  const scene = createScene3D();
   const roots = document.scenes[sceneIndex]?.rootNodes ?? [];
   for (let r = 0; r < roots.length; r++) {
     const node = nodes[roots[r]];
@@ -48,12 +48,12 @@ export function createSceneFromDocument(document: Readonly<SceneDocument>, scene
 // Assembles every scene the document declares (each a view of the shared node pool), in declaration order.
 // The document's animation clips and metadata are attached to the default scene (index 0), matching the
 // per-format multi-scene importers. An empty document yields an empty array.
-export function createScenesFromDocument(document: Readonly<SceneDocument>): Scene[] {
+export function createScene3DsFromDocument(document: Readonly<Scene3DDocument>): Scene3D[] {
   const nodes = buildDocumentNodes(document);
   applyDocumentSkins(document, nodes);
-  const scenes: Scene[] = [];
+  const scenes: Scene3D[] = [];
   for (let s = 0; s < document.scenes.length; s++) {
-    const scene = createScene();
+    const scene = createScene3D();
     const roots = document.scenes[s].rootNodes;
     for (let r = 0; r < roots.length; r++) {
       const node = nodes[roots[r]];
@@ -70,7 +70,7 @@ export function createScenesFromDocument(document: Readonly<SceneDocument>): Sce
 
 // Applies a document node's authored TRS transform, marking the local matrix stale so the world matrix
 // recomposes from the fields.
-function applyDocumentNodeTransform(node: SceneNode, source: Readonly<SceneDocumentNode>): void {
+function applyDocumentNodeTransform(node: Node3D, source: Readonly<Scene3DDocumentNode>): void {
   const t = source.transform;
   setVector3(node.position, t.position.x, t.position.y, t.position.z);
   setQuaternion(node.rotation, t.rotation.x, t.rotation.y, t.rotation.z, t.rotation.w);
@@ -80,9 +80,9 @@ function applyDocumentNodeTransform(node: SceneNode, source: Readonly<SceneDocum
 
 // Resolves each document skin's joint node indices to the built nodes, constructs a Skeleton3D (with its
 // flat inverse-bind matrix array), and binds it onto every mesh whose document entry names that skin.
-function applyDocumentSkins(document: Readonly<SceneDocument>, nodes: readonly SceneNode[]): void {
+function applyDocumentSkins(document: Readonly<Scene3DDocument>, nodes: readonly Node3D[]): void {
   const skins: (Skin | null)[] = document.skins.map((skin) => {
-    const joints: SceneNode[] = [];
+    const joints: Node3D[] = [];
     const names: string[] = [];
     for (let j = 0; j < skin.joints.length; j++) {
       const joint = nodes[skin.joints[j]];
@@ -97,7 +97,7 @@ function applyDocumentSkins(document: Readonly<SceneDocument>, nodes: readonly S
     }
     // The Skeleton3D palette (jointMatrices) is filled per-frame by computeSkeleton3DJointMatrices; here it
     // starts zeroed. Built inline through createEntity rather than via @flighthq/skeleton3d because that
-    // package depends on @flighthq/scene (createMesh/createSceneNode), which would form a cycle; the
+    // package depends on @flighthq/scene (createMesh/createNode3D), which would form a cycle; the
     // Entity shape invariant still holds at this assembly seam.
     // Joint names are recovered from the resolved joint nodes; null when the source named none.
     const skeleton = createEntity({
@@ -120,9 +120,9 @@ function applyDocumentSkins(document: Readonly<SceneDocument>, nodes: readonly S
 
 // Rebuilds each document animation into a node-bound AnimationClip and keys it into the scene's animation
 // map by name (falling back to `animation${i}`). The document carries each channel's target as a node index
-// plus SceneAnimationPath (the animation core's clip is target-free); here they become live
-// SceneAnimationTarget bindings against the built nodes.
-function attachDocumentAnimations(document: Readonly<SceneDocument>, nodes: readonly SceneNode[], scene: Scene): void {
+// plus Scene3DAnimationPath (the animation core's clip is target-free); here they become live
+// Scene3DAnimationTarget bindings against the built nodes.
+function attachDocumentAnimations(document: Readonly<Scene3DDocument>, nodes: readonly Node3D[], scene: Scene3D): void {
   for (let a = 0; a < document.animations.length; a++) {
     const source = document.animations[a];
     const channels: AnimationChannel[] = [];
@@ -130,7 +130,7 @@ function attachDocumentAnimations(document: Readonly<SceneDocument>, nodes: read
       const channel = source.channels[c];
       const node = nodes[channel.node];
       if (node === undefined) continue;
-      const target: SceneAnimationTarget = { node, path: channel.path };
+      const target: Scene3DAnimationTarget = { node, path: channel.path };
       channels.push(createAnimationChannel(channel.track, target));
     }
     if (channels.length === 0) continue;
@@ -138,16 +138,16 @@ function attachDocumentAnimations(document: Readonly<SceneDocument>, nodes: read
   }
 }
 
-// Builds one SceneNode per document node (a Mesh when the node names a mesh index, a transform-only group
+// Builds one Node3D per document node (a Mesh when the node names a mesh index, a transform-only group
 // otherwise), applies each authored transform, and wires the child index lists — returning the node pool
 // that skins and animations resolve their indices against. Node identity never leaves the assembler; the
 // document addresses everything by index.
-function buildDocumentNodes(document: Readonly<SceneDocument>): SceneNode[] {
+function buildDocumentNodes(document: Readonly<Scene3DDocument>): Node3D[] {
   const meshes = document.meshes;
   // A document's materials are stored as plain-data MaterialLike, but the importers fill them with real
   // entity-backed materials (createStandardPbrMaterial etc.); treat them as Material for assembly.
   const materials = document.materials as unknown as readonly Material[];
-  const nodes: SceneNode[] = document.nodes.map((node) => buildDocumentNode(node, meshes, materials));
+  const nodes: Node3D[] = document.nodes.map((node) => buildDocumentNode(node, meshes, materials));
   for (let i = 0; i < document.nodes.length; i++) {
     applyDocumentNodeTransform(nodes[i], document.nodes[i]);
     const children = document.nodes[i].children;
@@ -160,16 +160,16 @@ function buildDocumentNodes(document: Readonly<SceneDocument>): SceneNode[] {
 }
 
 // Builds a single node: a Mesh (with its inline geometry, resolved materials, and morph) when the node
-// names a mesh index, or a bare transform-only SceneNode otherwise.
+// names a mesh index, or a bare transform-only Node3D otherwise.
 function buildDocumentNode(
-  node: Readonly<SceneDocumentNode>,
-  meshes: Readonly<SceneDocument['meshes']>,
+  node: Readonly<Scene3DDocumentNode>,
+  meshes: Readonly<Scene3DDocument['meshes']>,
   materials: readonly Material[],
-): SceneNode {
-  if (node.mesh === undefined) return createSceneNode(node.kind, { name: node.name });
+): Node3D {
+  if (node.mesh === undefined) return createNode3D(node.kind, { name: node.name });
   const documentMesh = meshes[node.mesh];
   const meshMaterials: (Material | null)[] = documentMesh.materials.map((index) => materials[index] ?? null);
   const mesh = createMesh(documentMesh.geometry, meshMaterials, node.kind, { name: node.name });
   if (documentMesh.morph != null) mesh.morph = documentMesh.morph;
-  return mesh as unknown as SceneNode;
+  return mesh as unknown as Node3D;
 }

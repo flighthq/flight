@@ -2,7 +2,7 @@ import { createCamera3D } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createIridescencePbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
-import type { Camera3D, Matrix3, Matrix4, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
+import type { Camera3D, Matrix3, Matrix4, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types';
 import { IridescencePbrMaterialKind } from '@flighthq/types';
 
 import {
@@ -10,13 +10,13 @@ import {
   registerIridescencePbrWgpuMaterial,
 } from './iridescencePbrWgpuMeshMaterialRenderer';
 import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { makeWgpuSceneState } from './wgpuSceneTestHelper';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 
 function makeCamera(): Camera3D {
   return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
 }
 
-function makeLights(): SceneLightBlock {
+function makeLights(): Scene3DLightBlock {
   const data = new Float32Array(12);
   data[1] = -1;
   data[4] = 1;
@@ -28,7 +28,7 @@ function makeLights(): SceneLightBlock {
   return { ambientCount: 1, data, directionalCount: 1, hemisphereCount: 0, pointCount: 0, spotCount: 0, version: 1 };
 }
 
-function makeProxy(): SceneRenderProxy {
+function makeProxy(): Scene3DRenderProxy {
   const geometry = createBoxMeshGeometry();
   return {
     material: createIridescencePbrMaterial({ iridescence: 1 }),
@@ -40,7 +40,7 @@ function makeProxy(): SceneRenderProxy {
 
 describe('iridescencePbrWgpuMeshMaterialRenderer', () => {
   it('bind selects a pipeline and binds frame + material groups + uploads uniforms', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     iridescencePbrWgpuMeshMaterialRenderer.bind(
       state,
       createIridescencePbrMaterial({ iridescence: 1 }),
@@ -55,7 +55,7 @@ describe('iridescencePbrWgpuMeshMaterialRenderer', () => {
   });
 
   it('bind compiles the IRIDESCENCE extension variant', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     iridescencePbrWgpuMeshMaterialRenderer.bind(state, createIridescencePbrMaterial(), makeLights(), makeCamera());
     const moduleCall = fake.calls.find((c) => c.name === 'createShaderModule');
     const code = (moduleCall!.args[0] as { code: string }).code;
@@ -63,7 +63,7 @@ describe('iridescencePbrWgpuMeshMaterialRenderer', () => {
   });
 
   it('draw uploads geometry and issues an indexed draw over the subset range', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const proxy = makeProxy();
     iridescencePbrWgpuMeshMaterialRenderer.bind(state, proxy.material, makeLights(), makeCamera());
     iridescencePbrWgpuMeshMaterialRenderer.draw(state, proxy, createBoxMeshGeometry());
@@ -75,7 +75,7 @@ describe('iridescencePbrWgpuMeshMaterialRenderer', () => {
   });
 
   it('draw is a no-op when bind has not selected a pipeline', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     iridescencePbrWgpuMeshMaterialRenderer.draw(state, makeProxy(), createBoxMeshGeometry());
     expect(fake.calls.some((c) => c.name === 'drawIndexed')).toBe(false);
   });
@@ -83,7 +83,7 @@ describe('iridescencePbrWgpuMeshMaterialRenderer', () => {
 
 describe('registerIridescencePbrWgpuMaterial', () => {
   it('installs the renderer for IridescencePbrMaterialKind', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     registerIridescencePbrWgpuMaterial(state);
     expect(getWgpuMeshMaterialRenderer(state, IridescencePbrMaterialKind)).toBe(iridescencePbrWgpuMeshMaterialRenderer);
   });

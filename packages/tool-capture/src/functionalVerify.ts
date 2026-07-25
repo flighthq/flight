@@ -87,7 +87,7 @@ type VerificationWindow = typeof window & {
 
 // Synchronously reads the registered webgl target's default framebuffer and publishes it for the capture
 // harness (sets __ftVerification + __ftRenderImage). Unlike runRenderVerification it does NOT wait for a
-// presented frame — so it MUST be called in the same task as the draw (right after presentGlScene in an
+// presented frame — so it MUST be called in the same task as the draw (right after presentGlScene3D in an
 // animation frame), while the drawing buffer is still valid. This is what lets an animated app read back
 // without preserveDrawingBuffer:true (which a wait-then-read would need, and which breaks on-screen
 // animation on some drivers). Returns true once a non-blank frame was published; the caller stops calling

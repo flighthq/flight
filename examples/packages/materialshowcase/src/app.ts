@@ -4,8 +4,8 @@ import {
   rotateOrbitCameraController,
   updateOrbitCameraController,
 } from '@flighthq/camera-controls';
-import { createSceneNode } from '@flighthq/scene';
-import type { Mesh, SceneLightsLike, SurfaceMaterial } from '@flighthq/sdk';
+import { createNode3D } from '@flighthq/scene';
+import type { Mesh, Scene3DLightsLike, SurfaceMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
   convertMeshGeometryLayout,
@@ -42,7 +42,7 @@ import {
   createWireframeMaterial,
   invalidateNodeLocalTransform,
   normalizeVector3,
-  SceneNodeKind,
+  Node3DKind,
   setMeshGeometryVertexColor0,
 } from '@flighthq/sdk';
 
@@ -569,7 +569,7 @@ const entries: readonly MaterialEntry[] = [
   },
 ];
 
-const scene = createSceneNode(SceneNodeKind);
+const scene = createNode3D(Node3DKind);
 const meshes: Mesh[] = [];
 for (let index = 0; index < entries.length; index++) {
   const entry = entries[index];
@@ -601,7 +601,7 @@ updateOrbitCameraController(cameraController, camera, 1);
 
 const directionalDirection = createVector3(-0.75, -0.9, -0.5);
 normalizeVector3(directionalDirection, directionalDirection);
-const lights: SceneLightsLike = {
+const lights: Scene3DLightsLike = {
   ambient: createAmbientLight({ color: 0x59709fff, intensity: 0.18 }),
   directional: createDirectionalLight({
     color: 0xffe4c4ff,

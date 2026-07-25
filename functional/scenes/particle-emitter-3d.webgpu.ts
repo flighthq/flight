@@ -1,19 +1,19 @@
-import { drawWgpuScene } from '@flighthq/scene-wgpu';
-import type { Camera3D, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import { drawWgpuScene3D } from '@flighthq/scene-wgpu';
+import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
   createCamera3D,
   createParticleEmitter3D,
   createPerspectiveProjection,
-  createScene,
+  createScene3D,
   createVector3,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   endWgpuRenderEffectPipeline,
   getSurfacePixel,
-  prepareSceneRender,
+  prepareScene3DRender,
   renderWgpuBackground,
   reserveParticleEmitter3D,
   setCamera3DViewMatrix4FromLookAt,
@@ -21,7 +21,7 @@ import {
 } from '@flighthq/sdk';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-// Real-WebGPU proof for the ParticleEmitter3D path that drawWgpuScene invokes automatically. Three
+// Real-WebGPU proof for the ParticleEmitter3D path that drawWgpuScene3D invokes automatically. Three
 // untextured camera-facing instances carry independent positions and color tints.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
@@ -36,18 +36,18 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
-  prepareSceneRender(state, scene, camera, lights);
-  drawWgpuScene(state, scene, camera, lights);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawWgpuScene3D(state, scene, camera, lights);
   endWgpuRenderEffectPipeline(state, pipeline, []);
   submitWgpuRenderPass(state);
 }
 
 registerWgpuFunctionalTarget(state, scale);
 
-const scene = createScene().root;
+const scene = createScene3D().root;
 const emitter = createParticleEmitter3D();
 reserveParticleEmitter3D(emitter, 3);
 emitter.data.particleCount = 3;

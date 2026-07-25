@@ -1,6 +1,6 @@
-import { createScene } from '@flighthq/scene';
-import { drawGlScene, drawGlSceneShadowMap } from '@flighthq/scene-gl';
-import type { Camera3D, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import { createScene3D } from '@flighthq/scene';
+import { drawGlScene3D, drawGlScene3DShadowMap } from '@flighthq/scene-gl';
+import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -20,10 +20,10 @@ import {
   createSphereMeshGeometry,
   createVector3,
   endGlRenderEffectPipeline,
-  getSceneNodeWorldBounds,
+  getNode3DWorldBounds,
   getSurfacePixelLuminance,
   invalidateNodeLocalTransform,
-  prepareSceneRender,
+  prepareScene3DRender,
   registerBlinnPhongGlMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
@@ -40,7 +40,7 @@ import {
 // The WebGPU twin uses beginWgpuFrame to open its encoder before the shadow pass, then opens the canvas
 // pass with renderWgpuBackground on that same encoder.
 //
-// createScene / drawGlScene collide in the @flighthq/sdk barrel (both scene + scene-gl re-export them) —
+// createScene3D / drawGlScene3D collide in the @flighthq/sdk barrel (both scene + scene-gl re-export them) —
 // import the Gl 3D ones directly. Pipeline wiring mirrors shadow-directional.
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -65,13 +65,13 @@ export const width = 800;
 export const height = 600;
 
 export function render(
-  scene: Readonly<SceneNode>,
+  scene: Readonly<Node3D>,
   camera: Readonly<Camera3D>,
-  lights: Readonly<SceneLights>,
+  lights: Readonly<Scene3DLights>,
   shadowCamera: Readonly<Camera3D>,
 ): void {
   // 1) Depth pass from the light's POV into the shadow map.
-  drawGlSceneShadowMap(state, scene, shadowCamera);
+  drawGlScene3DShadowMap(state, scene, shadowCamera);
 
   // 2) Forward-lit pass; the classic prelude's directional term PCF-samples the shadow map set above.
   beginGlRenderEffectPipeline(state, pipeline);
@@ -80,8 +80,8 @@ export function render(
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
-  prepareSceneRender(state, scene, camera, lights);
-  drawGlScene(state, scene, camera, lights);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawGlScene3D(state, scene, camera, lights);
   endGlRenderEffectPipeline(state, pipeline, []);
 }
 
@@ -91,7 +91,7 @@ const logicalHeight = height / scale;
 // Diffuse-dominant Blinn-Phong (low specular) so the lit ground is a broad even bright the shadow darkens.
 const material = createBlinnPhongMaterial({ diffuse: 0xb8b8b8ff, shininess: 16, specular: 0x101010ff });
 
-const scene = createScene().root;
+const scene = createScene3D().root;
 
 const ground = createMesh(createPlaneMeshGeometry(8, 8), [material]);
 addNodeChild(scene, ground);
@@ -115,7 +115,7 @@ const lights = {
 };
 
 const sceneBounds = createAabb();
-getSceneNodeWorldBounds(sceneBounds, scene);
+getNode3DWorldBounds(sceneBounds, scene);
 const shadowCamera = createCamera3D({
   far: 100,
   near: 0.1,

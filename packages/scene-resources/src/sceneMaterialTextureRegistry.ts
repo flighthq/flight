@@ -2,23 +2,23 @@ import { createEntity } from '@flighthq/entity';
 import type {
   Kind,
   Material,
-  SceneMaterialTextureLister,
-  SceneMaterialTextureRegistry,
+  Scene3DMaterialTextureLister,
+  Scene3DMaterialTextureRegistry,
   StandardPbrMaterial,
   Texture,
   UnlitMaterial,
 } from '@flighthq/types';
 import { StandardPbrMaterialKind, UnlitMaterialKind } from '@flighthq/types';
 
-export function createSceneMaterialTextureRegistry(): SceneMaterialTextureRegistry {
+export function createScene3DMaterialTextureRegistry(): Scene3DMaterialTextureRegistry {
   return createEntity({ listers: new Map() });
 }
 
 // Looks up the lister for `material.kind` and, when present, appends the material's non-null Textures
 // to `out`. An unregistered kind appends nothing. Does not clear `out` — it accumulates across the
 // materials of a mesh.
-export function getSceneMaterialTextures(
-  registry: Readonly<SceneMaterialTextureRegistry>,
+export function getScene3DMaterialTextures(
+  registry: Readonly<Scene3DMaterialTextureRegistry>,
   material: Readonly<Material>,
   out: Texture[],
 ): void {
@@ -28,17 +28,17 @@ export function getSceneMaterialTextures(
 
 // Registers the built-in surface-material listers (StandardPbrMaterial and UnlitMaterial). Opt-in so
 // it carries no top-level side effect; callers that build their own registry invoke it explicitly.
-export function registerBuiltInSceneMaterialTextures(registry: SceneMaterialTextureRegistry): void {
-  registerSceneMaterialTextures(registry, StandardPbrMaterialKind, listStandardPbrMaterialTextures);
-  registerSceneMaterialTextures(registry, UnlitMaterialKind, listUnlitMaterialTextures);
+export function registerBuiltInScene3DMaterialTextures(registry: Scene3DMaterialTextureRegistry): void {
+  registerScene3DMaterialTextures(registry, StandardPbrMaterialKind, listStandardPbrMaterialTextures);
+  registerScene3DMaterialTextures(registry, UnlitMaterialKind, listUnlitMaterialTextures);
 }
 
 // Binds `lister` to `kind` (last-write-wins; overriding a built-in with a custom lister is a
 // feature, not an error — no registration guard).
-export function registerSceneMaterialTextures(
-  registry: SceneMaterialTextureRegistry,
+export function registerScene3DMaterialTextures(
+  registry: Scene3DMaterialTextureRegistry,
   kind: Kind,
-  lister: SceneMaterialTextureLister,
+  lister: Scene3DMaterialTextureLister,
 ): void {
   registry.listers.set(kind, lister);
 }

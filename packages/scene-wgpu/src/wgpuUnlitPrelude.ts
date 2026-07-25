@@ -12,14 +12,14 @@ import type { WgpuSkinningAdapter } from '@flighthq/types';
 
 import {
   createWgpuMeshPipeline,
-  ensureWgpuScenePipeline,
+  ensureWgpuScene3DPipeline,
   getWgpuMeshPreludeWgsl,
   getWgpuMaterialSampler,
   ensureWgpuPlaceholderTextureView,
   resolveWgpuMaterialTextureView,
   stashWgpuUvTransform,
 } from './wgpuMeshPipeline';
-import { getWgpuSceneRuntime, getWgpuSkinningAdapter } from './wgpuSceneRuntime';
+import { getWgpuScene3DRuntime, getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
 // Ensures (and caches per material reference) the unlit Material bind group — a uniform buffer + the
 // shared sampler + the placeholder color texture — and rewrites its uniform with this surface's linear
 // color, intensity, and alpha cutoff. Mirrors scene-gl's bindGlUnlitSurface. Returns the bind group for
@@ -69,7 +69,7 @@ function ensureWgpuUnlitBinding(
   sampler: GPUSampler,
   view: GPUTextureView,
 ): WgpuMaterialBinding {
-  const scene = getWgpuSceneRuntime(state);
+  const scene = getWgpuScene3DRuntime(state);
   let binding = scene.materialBindGroups.get(materialKey);
   if (binding === undefined) {
     const buffer = state.device.createBuffer({
@@ -172,7 +172,7 @@ export function ensureWgpuUnlitPipeline(
   key: Readonly<WgpuUnlitDefineKey>,
   format: GPUTextureFormat,
 ): WgpuUnlitPipeline {
-  return ensureWgpuScenePipeline(state, `unlit:${format}|${buildWgpuUnlitDefineKey(key)}`, (blended, skinned) =>
+  return ensureWgpuScene3DPipeline(state, `unlit:${format}|${buildWgpuUnlitDefineKey(key)}`, (blended, skinned) =>
     compileWgpuUnlitPipeline(state, key, format, blended, skinned),
   );
 }

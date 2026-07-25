@@ -5,15 +5,15 @@ import type {
   GlRenderState,
   Material,
   MeshGeometry,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
 } from '@flighthq/types';
 import { DepthMaterialKind } from '@flighthq/types';
 
 import { bindGlDebugRange, ensureGlDebugProgram } from './glDebugPrelude';
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshViewProjection } from './glMeshProgram';
-import { getGlSceneRuntime } from './glSceneRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 
 // The built-in Depth forward renderer (GlMeshMaterialRenderer for DepthMaterialKind). A lighting-
 // independent debug/utility pass material: bind selects the debug program in depth mode, uploads the
@@ -24,7 +24,7 @@ export const depthGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
     material: Readonly<Material> | null,
-    _lights: Readonly<SceneLightBlock>,
+    _lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const gl = state.gl;
@@ -40,15 +40,15 @@ export const depthGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     bindGlDebugRange(state, program, depth.near, depth.far);
   },
 
-  draw(state: GlRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
-    const program = getGlSceneRuntime(state).activeMeshProgram;
+  draw(state: GlRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+    const program = getGlScene3DRuntime(state).activeMeshProgram;
     if (program === null) return;
     drawGlMeshSubset(state, program, proxy, geometry);
   },
 };
 
 // Registers the built-in Depth renderer for DepthMaterialKind on this state. Opt-in (no top-level
-// side effect); call once per GlRenderState before drawScene so meshes with DepthMaterials draw.
+// side effect); call once per GlRenderState before drawScene3D so meshes with DepthMaterials draw.
 export function registerDepthGlMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, DepthMaterialKind, depthGlMeshMaterialRenderer);
 }

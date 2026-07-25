@@ -4,11 +4,11 @@ import { describe, expect, it } from 'vitest';
 import { createAmbientLight } from './ambientLight';
 import { createDirectionalLight } from './directionalLight';
 import { createPointLight } from './pointLight';
-import { createSceneLights } from './sceneLights';
+import { createScene3DLights } from './sceneLights';
 
-describe('createSceneLights', () => {
+describe('createScene3DLights', () => {
   it('fills every absent slot — singles to null, punctual arrays to empty', () => {
-    const lights = createSceneLights();
+    const lights = createScene3DLights();
     expect(lights.ambient).toBeNull();
     expect(lights.directional).toBeNull();
     expect(lights.point).toEqual([]);
@@ -19,7 +19,7 @@ describe('createSceneLights', () => {
 
   it('carries the provided lights and defaults the omitted ones (no undefined slot)', () => {
     const point = createPointLight({ intensity: 2 });
-    const lights = createSceneLights({ point: [point] });
+    const lights = createScene3DLights({ point: [point] });
     // The omitted directional must be null, not undefined — a literal that dropped it would crash the
     // packer's strict `!== null` check; the constructor makes that unrepresentable.
     expect(lights.directional).toBeNull();
@@ -31,7 +31,7 @@ describe('createSceneLights', () => {
   it('passes through ambient + directional when supplied', () => {
     const ambient = createAmbientLight({ intensity: 0.2 });
     const directional = createDirectionalLight({ intensity: 3 });
-    const lights = createSceneLights({ ambient, directional });
+    const lights = createScene3DLights({ ambient, directional });
     expect(lights.ambient).toBe(ambient);
     expect(lights.directional).toBe(directional);
   });

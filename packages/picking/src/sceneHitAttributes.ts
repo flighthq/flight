@@ -7,23 +7,23 @@ import {
   getMeshGeometryVertexUv0,
 } from '@flighthq/mesh';
 import { ensureNodeWorldMatrix4, getNodeWorldMatrix4 } from '@flighthq/node';
-import type { Material, Ray3D, SceneHit, Vector2Like, Vector3Like } from '@flighthq/types';
+import type { Material, Ray3D, Scene3DHit, Vector2Like, Vector3Like } from '@flighthq/types';
 
 // Returns the authored material at the hit subset, or null for an absent/out-of-range/default slot.
-export function getSceneHitMaterial(hit: Readonly<SceneHit>): Material | null {
-  const subsetIndex = getSceneHitSubsetIndex(hit);
+export function getScene3DHitMaterial(hit: Readonly<Scene3DHit>): Material | null {
+  const subsetIndex = getScene3DHitSubsetIndex(hit);
   return subsetIndex < 0 ? null : (hit.node.materials[subsetIndex] ?? null);
 }
 
 // Returns the material/subset slot owning the hit triangle, or -1 when no declared subset contains
 // it. This is computed on demand so the nearest-hit core remains flat and small.
-export function getSceneHitSubsetIndex(hit: Readonly<SceneHit>): number {
+export function getScene3DHitSubsetIndex(hit: Readonly<Scene3DHit>): number {
   return getMeshGeometryTriangleSubsetIndex(hit.node.geometry, hit.triangleIndex);
 }
 
 // Interpolates uv0 from the hit triangle's current geometry. Returns false without changing `out`
 // when the triangle or channel is unavailable.
-export function getSceneHitUv0(out: Vector2Like, hit: Readonly<SceneHit>): boolean {
+export function getScene3DHitUv0(out: Vector2Like, hit: Readonly<Scene3DHit>): boolean {
   const geometry = hit.node.geometry;
   if (!getMeshGeometryTriangleVertexIndices(_triangle, geometry, hit.triangleIndex)) return false;
   if (!getMeshGeometryVertexUv0(_uv0, geometry, _triangle.i0)) return false;
@@ -35,9 +35,9 @@ export function getSceneHitUv0(out: Vector2Like, hit: Readonly<SceneHit>): boole
 }
 
 // Interpolates the vertex normal and transforms it to world space with inverse-transpose, so
-// non-uniform scale remains correct. This is distinct from SceneHit.normal*, the geometric face
+// non-uniform scale remains correct. This is distinct from Scene3DHit.normal*, the geometric face
 // normal used for culling. Returns false without changing `out` when unavailable or degenerate.
-export function getSceneHitVertexNormal(out: Vector3Like, hit: Readonly<SceneHit>): boolean {
+export function getScene3DHitVertexNormal(out: Vector3Like, hit: Readonly<Scene3DHit>): boolean {
   const geometry = hit.node.geometry;
   if (!getMeshGeometryTriangleVertexIndices(_triangle, geometry, hit.triangleIndex)) return false;
   if (!getMeshGeometryVertexNormal(_normal0, geometry, _triangle.i0)) return false;
@@ -61,16 +61,16 @@ export function getSceneHitVertexNormal(out: Vector3Like, hit: Readonly<SceneHit
 // Interpolates tangent xyz/w, transforms the direction to world space, orthogonalizes it against the
 // interpolated world normal, and flips handedness under a mirrored world transform. Returns false
 // without changing `out` when normal/tangent data is unavailable or degenerate.
-export function getSceneHitVertexTangent(
+export function getScene3DHitVertexTangent(
   out: { w: number; x: number; y: number; z: number },
-  hit: Readonly<SceneHit>,
+  hit: Readonly<Scene3DHit>,
 ): boolean {
   const geometry = hit.node.geometry;
   if (!getMeshGeometryTriangleVertexIndices(_triangle, geometry, hit.triangleIndex)) return false;
   if (!getMeshGeometryVertexTangent(_tangent0, geometry, _triangle.i0)) return false;
   if (!getMeshGeometryVertexTangent(_tangent1, geometry, _triangle.i1)) return false;
   if (!getMeshGeometryVertexTangent(_tangent2, geometry, _triangle.i2)) return false;
-  if (!getSceneHitVertexNormal(_worldNormal, hit)) return false;
+  if (!getScene3DHitVertexNormal(_worldNormal, hit)) return false;
 
   const tx = hit.u * _tangent0.x + hit.v * _tangent1.x + hit.w * _tangent2.x;
   const ty = hit.u * _tangent0.y + hit.v * _tangent1.y + hit.w * _tangent2.y;
@@ -98,7 +98,7 @@ export function getSceneHitVertexTangent(
 
 // True when the world ray meets the front side of the hit's geometric face normal. Perpendicular
 // rays are treated as front-facing; the ray direction need not be normalized.
-export function isSceneHitFrontFacing(hit: Readonly<SceneHit>, ray: Readonly<Ray3D>): boolean {
+export function isScene3DHitFrontFacing(hit: Readonly<Scene3DHit>, ray: Readonly<Ray3D>): boolean {
   return ray.direction.x * hit.normalX + ray.direction.y * hit.normalY + ray.direction.z * hit.normalZ <= 0;
 }
 

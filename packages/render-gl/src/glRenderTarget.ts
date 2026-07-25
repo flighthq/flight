@@ -63,7 +63,7 @@ export function createGlRenderTarget(
 }
 
 // Stamps the color space of the render target currently bound via beginGlRenderPass: the producer of
-// the pixels declares what space it writes (drawGlScene declares 'linear'), and the present step reads
+// the pixels declares what space it writes (drawGlScene3D declares 'linear'), and the present step reads
 // it back off the target. Returns false when no target is bound — i.e. rendering straight to the canvas,
 // where linear content has no present pass to encode it — so a caller can flag that mismatch. A no-op
 // (returns false) in that case.

@@ -7,13 +7,13 @@ import type {
   Camera3D,
   GlRenderState,
   MeshGeometry,
-  SceneRenderProxy,
+  Scene3DRenderProxy,
   TextureLike,
   VideoTexture,
 } from '@flighthq/types';
 
 import { ensureGlMeshUpload } from './glMeshUpload';
-import { ensureGlSkinPalette, getGlSceneRuntime } from './glSceneRuntime';
+import { ensureGlSkinPalette, getGlScene3DRuntime } from './glScene3DRuntime';
 // The shared per-bind head for every mesh-material family: stores the family's program as the active
 // bind→draw handoff, selects it, and sets the depth + face-cull state a forward 3D draw needs (depth
 // test LESS + depth write on; back-face cull unless the material is double-sided). The render-effect
@@ -22,7 +22,7 @@ import { ensureGlSkinPalette, getGlSceneRuntime } from './glSceneRuntime';
 // occludes correctly. A family's bind() calls this, then sets its own camera/material uniforms.
 export function beginGlMeshDraw(state: GlRenderState, program: Readonly<GlMeshProgram>, doubleSided: boolean): void {
   const gl = state.gl;
-  getGlSceneRuntime(state).activeMeshProgram = program;
+  getGlScene3DRuntime(state).activeMeshProgram = program;
   gl.useProgram(program.program);
 
   gl.enable(gl.DEPTH_TEST);
@@ -72,7 +72,7 @@ export function compileGlProgram(
 // Frees the linked GL program backing a mesh-material family program. The program object must not be
 // used after this call. Deleting an already-deleted GL program is a silent no-op, so destroying a
 // program that a sibling render state still aliases is safe. Frees only the shader — the caller drops
-// the program from its cache separately (see destroyGlSceneRuntime, which does both).
+// the program from its cache separately (see destroyGlScene3DRuntime, which does both).
 export function destroyGlMeshProgram(state: GlRenderState, program: Readonly<GlMeshProgram>): void {
   state.gl.deleteProgram(program.program);
 }
@@ -84,7 +84,7 @@ export function destroyGlMeshProgram(state: GlRenderState, program: Readonly<GlM
 export function drawGlMeshSubset(
   state: GlRenderState,
   program: Readonly<GlMeshProgram>,
-  proxy: Readonly<SceneRenderProxy>,
+  proxy: Readonly<Scene3DRenderProxy>,
   geometry: Readonly<MeshGeometry>,
 ): void {
   const gl = state.gl;
@@ -133,12 +133,12 @@ export function drawGlMeshSubset(
 // families and feature variants compile at most once per state and never collide. The factory returns
 // the family's program record (locations resolved at compile time); the cast is sound because the key
 // namespace guarantees a given key always maps to the same family's program shape.
-export function ensureGlSceneProgram<T extends GlMeshProgram>(
+export function ensureGlScene3DProgram<T extends GlMeshProgram>(
   state: GlRenderState,
   key: string,
   compile: (gl: WebGL2RenderingContext) => T,
 ): T {
-  const runtime = getGlSceneRuntime(state);
+  const runtime = getGlScene3DRuntime(state);
   let program = runtime.programCache.get(key);
   if (program === undefined) {
     program = compile(state.gl);

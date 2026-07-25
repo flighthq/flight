@@ -1,8 +1,8 @@
 import type { CubeTexture, Environment, ImageResource } from '@flighthq/types';
 
-import { bakeWgpuEnvironmentIbl, destroyWgpuSceneIbl } from './wgpuEnvironmentIblBake';
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
-import { makeWgpuSceneState } from './wgpuSceneTestHelper';
+import { bakeWgpuEnvironmentIbl, destroyWgpuScene3DIbl } from './wgpuEnvironmentIblBake';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 
 // The GPU bake (irradiance / prefiltered specular / BRDF LUT) is validated by the functional `env-ibl`
 // capture — jsdom cannot run WGSL. These cover the CPU-side wiring: the no-op sentinel, the split-sum set's
@@ -21,16 +21,16 @@ function completeEnvironment(): Environment {
 
 describe('bakeWgpuEnvironmentIbl', () => {
   it('is a no-op leaving runtime.ibl null when the environment has no source cube', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     bakeWgpuEnvironmentIbl(state, { environment: null, intensity: 1 } as Environment);
-    expect(getWgpuSceneRuntime(state).ibl).toBe(null);
+    expect(getWgpuScene3DRuntime(state).ibl).toBe(null);
   });
 
   it('bakes the split-sum set: rgba16float irradiance + prefiltered cubes + BRDF LUT with the mip chain', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     bakeWgpuEnvironmentIbl(state, completeEnvironment());
 
-    const runtime = getWgpuSceneRuntime(state);
+    const runtime = getWgpuScene3DRuntime(state);
     expect(runtime.ibl).not.toBe(null);
     expect(runtime.ibl!.prefilteredMipCount).toBe(5);
     expect(runtime.ibl!.intensity).toBe(1);
@@ -53,18 +53,18 @@ describe('bakeWgpuEnvironmentIbl', () => {
   });
 });
 
-describe('destroyWgpuSceneIbl', () => {
+describe('destroyWgpuScene3DIbl', () => {
   it('frees the baked textures + source cube and clears the runtime slots', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     bakeWgpuEnvironmentIbl(state, completeEnvironment());
 
-    const runtime = getWgpuSceneRuntime(state);
+    const runtime = getWgpuScene3DRuntime(state);
     let destroyed = 0;
     runtime.ibl!.brdfLut.destroy = () => void destroyed++;
     runtime.ibl!.irradianceCube.destroy = () => void destroyed++;
     runtime.ibl!.prefilteredCube.destroy = () => void destroyed++;
 
-    destroyWgpuSceneIbl(state);
+    destroyWgpuScene3DIbl(state);
     expect(destroyed).toBe(3);
     expect(runtime.ibl).toBe(null);
     expect(runtime.environmentSourceCube).toBe(null);
@@ -72,8 +72,8 @@ describe('destroyWgpuSceneIbl', () => {
   });
 
   it('is a safe no-op when no bake ran for the state', () => {
-    const { state } = makeWgpuSceneState();
-    expect(() => destroyWgpuSceneIbl(state)).not.toThrow();
-    expect(() => destroyWgpuSceneIbl(state)).not.toThrow();
+    const { state } = makeWgpuScene3DState();
+    expect(() => destroyWgpuScene3DIbl(state)).not.toThrow();
+    expect(() => destroyWgpuScene3DIbl(state)).not.toThrow();
   });
 });

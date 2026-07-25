@@ -1,6 +1,6 @@
-import { createScene } from '@flighthq/scene';
-import { drawWgpuScene } from '@flighthq/scene-wgpu';
-import type { Camera3D, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import { createScene3D } from '@flighthq/scene';
+import { drawWgpuScene3D } from '@flighthq/scene-wgpu';
+import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
@@ -18,7 +18,7 @@ import {
   endWgpuRenderEffectPipeline,
   getSurfacePixelLuminance,
   normalizeVector3,
-  prepareSceneRender,
+  prepareScene3DRender,
   registerWireframeWgpuMaterial,
   renderWgpuBackground,
   setCamera3DViewMatrix4FromLookAt,
@@ -26,7 +26,7 @@ import {
 } from '@flighthq/sdk';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-// drawWgpuScene collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
+// drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
 // the Wgpu one directly from its package.
 
 // Wgpu parity column for the same sphere as render.webgl.ts. Wgpu state init is async.
@@ -51,11 +51,11 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
-  prepareSceneRender(state, scene, camera, lights);
-  drawWgpuScene(state, scene, camera, lights);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawWgpuScene3D(state, scene, camera, lights);
   endWgpuRenderEffectPipeline(state, pipeline, []);
   submitWgpuRenderPass(state);
 }
@@ -89,7 +89,7 @@ const geometry = createSphereMeshGeometry(0.5, 48, 32);
 // White edges, 1px thick (thickness > 1 is unsupported; the backends draw 1px lines). Lighting-independent.
 const material = createWireframeMaterial({ color: 0xffffffff });
 
-const scene = createScene().root;
+const scene = createScene3D().root;
 const mesh = createMesh(geometry, [material]);
 addNodeChild(scene, mesh);
 

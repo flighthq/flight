@@ -11,7 +11,7 @@ export interface HasAppearance {
 }
 
 // Runtime cache for `HasAppearance`'s resolved parent×self opacity, used where appearance resolves on
-// the node (the 3D scene graph — see ensureSceneNodeWorldAlpha). Mirrors the transform world matrix:
+// the node (the 3D scene graph — see ensureNode3DWorldAlpha). Mirrors the transform world matrix:
 // lazily ensured, revision-gated (self appearance revision + parent's `worldAppearanceId`), with
 // `worldAppearanceId` propagating a change downward like `worldTransformId`. (2D resolves appearance on
 // the render proxy instead, so 2D display-object runtimes do not carry this tier.)

@@ -4,8 +4,8 @@ import { Skeleton2DAnimationPath } from '@flighthq/types';
 
 // Poses a Skeleton2D from an AnimationClip at `time`: for each channel whose `targetRef` is a
 // Skeleton2DAnimationTarget, samples the channel's track and writes the value into the target bone's local
-// setup-transform fields. The 2D-skeletal analogue of @flighthq/scene's `applyAnimationClipToScene`, over
-// `Bone2D` instead of a `SceneNode`. It mutates only the bones' local pose — the caller runs
+// setup-transform fields. The 2D-skeletal analogue of @flighthq/scene's `applyAnimationClipToScene3D`, over
+// `Bone2D` instead of a `Node3D`. It mutates only the bones' local pose — the caller runs
 // `computeSkeleton2DWorldTransforms` (then the deform) afterward, so a whole clip applies before one world
 // propagation. Module scratch, allocation-free. A channel whose target is foreign (not a
 // Skeleton2DAnimationTarget) or out of range is skipped (sentinel guard, no throw).

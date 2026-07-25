@@ -1,5 +1,5 @@
-import { drawWgpuScene, registerWgpuGpuSkinning } from '@flighthq/scene-wgpu';
-import type { Camera3D, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import { drawWgpuScene3D, registerWgpuGpuSkinning } from '@flighthq/scene-wgpu';
+import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   addNodeChild,
@@ -12,8 +12,8 @@ import {
   createMeshGeometry,
   createPerspectiveProjection,
   createQuaternion,
-  createScene,
-  createSceneNode,
+  createScene3D,
+  createNode3D,
   createSkeleton3D,
   createUnlitMaterial,
   createVector3,
@@ -24,9 +24,9 @@ import {
   getSurfacePixelLuminance,
   invalidateNodeLocalTransform,
   normalizeVector3,
-  prepareSceneMorph,
-  prepareSceneRender,
-  prepareSceneSkinning,
+  prepareScene3DMorph,
+  prepareScene3DRender,
+  prepareScene3DSkinning,
   registerUnlitWgpuMaterial,
   renderWgpuBackground,
   setCamera3DViewMatrix4FromLookAt,
@@ -54,13 +54,13 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
-  prepareSceneMorph(scene);
-  prepareSceneSkinning(scene);
-  prepareSceneRender(state, scene, camera, lights);
-  drawWgpuScene(state, scene, camera, lights);
+  prepareScene3DMorph(scene);
+  prepareScene3DSkinning(scene);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawWgpuScene3D(state, scene, camera, lights);
   endWgpuRenderEffectPipeline(state, pipeline, []);
   submitWgpuRenderPass(state);
 }
@@ -100,8 +100,8 @@ for (let ring = 0; ring < ringY.length - 1; ring++) {
   }
 }
 
-const root = createSceneNode();
-const bend = createSceneNode();
+const root = createNode3D();
+const bend = createNode3D();
 setVector3(bend.position, 0, 1, 0);
 invalidateNodeLocalTransform(bend);
 addNodeChild(root, bend);
@@ -122,7 +122,7 @@ mesh.morph = {
   targets: [{ normalDeltas: null, positionDeltas, tangentDeltas: null }],
   weights: new Float32Array([1]),
 };
-const scene = createScene().root;
+const scene = createScene3D().root;
 addNodeChild(scene, root);
 addNodeChild(scene, mesh);
 

@@ -1,5 +1,5 @@
-import { createScene } from '@flighthq/scene';
-import { drawWgpuScene, prepareWgpuSceneForwardLights } from '@flighthq/scene-wgpu';
+import { createScene3D } from '@flighthq/scene';
+import { drawWgpuScene3D, prepareWgpuScene3DForwardLights } from '@flighthq/scene-wgpu';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -11,7 +11,7 @@ import {
   createMesh,
   createOrthographicProjection,
   createPointLight,
-  createSceneLights,
+  createScene3DLights,
   createSpotLight,
   createVector3,
   createWgpuCanvasElement,
@@ -20,7 +20,7 @@ import {
   endWgpuRenderEffectPipeline,
   getSurfacePixelLuminance,
   invalidateNodeLocalTransform,
-  prepareSceneRender,
+  prepareScene3DRender,
   registerBlinnPhongWgpuMaterial,
   renderWgpuBackground,
   setCamera3DViewMatrix4FromLookAt,
@@ -47,7 +47,7 @@ export const height = 600;
 registerWgpuFunctionalTarget(state, scale);
 
 const material = createBlinnPhongMaterial({ diffuse: 0x707884ff, shininess: 24, specular: 0x282828ff });
-const scene = createScene().root;
+const scene = createScene3D().root;
 const pointLights = [];
 const spotLights = [];
 const colors = [0xff6040ff, 0x60a0ffff, 0x70ff80ff, 0xffd060ff];
@@ -100,7 +100,7 @@ const camera = createCamera3D({
   projection: createOrthographicProjection({ halfHeight: 4.5, halfWidth: 6 }),
 });
 setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 12, 0), createVector3(0, 0, 0), createVector3(0, 0, -1));
-const lights = createSceneLights({
+const lights = createScene3DLights({
   ambient: createAmbientLight({ color: 0x202838ff, intensity: 0.015 }),
   directional: null,
   point: pointLights,
@@ -109,9 +109,9 @@ const lights = createSceneLights({
 
 renderWgpuBackground(state);
 beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
-const renderList = prepareSceneRender(state, scene, camera, lights);
-const forwardLights = prepareWgpuSceneForwardLights(state, renderList, lights);
-drawWgpuScene(state, scene, camera, lights, forwardLights);
+const renderList = prepareScene3DRender(state, scene, camera, lights);
+const forwardLights = prepareWgpuScene3DForwardLights(state, renderList, lights);
+drawWgpuScene3D(state, scene, camera, lights, forwardLights);
 endWgpuRenderEffectPipeline(state, pipeline, []);
 submitWgpuRenderPass(state);
 

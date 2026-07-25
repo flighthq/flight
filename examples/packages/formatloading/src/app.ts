@@ -37,7 +37,7 @@ const gltfFixture = JSON.stringify({
   meshes: [{ name: 'Flight Triangle', primitives: [{ attributes: { POSITION: 0 } }] }],
   nodes: [{ mesh: 0, name: 'Triangle Node' }],
   scene: 0,
-  scenes: [{ name: 'Fixture Scene', nodes: [0] }],
+  scenes: [{ name: 'Fixture Scene3D', nodes: [0] }],
 });
 
 const texturePackerFixture = JSON.stringify({

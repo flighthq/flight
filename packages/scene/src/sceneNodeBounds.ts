@@ -1,7 +1,7 @@
 import { createAabb, setAabb, transformAabbByMatrix4, unionAabb } from '@flighthq/geometry';
 import { ensureMeshGeometryBounds } from '@flighthq/mesh';
 import { ensureNodeWorldMatrix4, getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node';
-import type { AabbLike, SceneNode } from '@flighthq/types';
+import type { AabbLike, Node3D } from '@flighthq/types';
 
 import { isMesh } from './mesh';
 
@@ -23,7 +23,7 @@ import { isMesh } from './mesh';
 // Alias-safe: reads all geometry bounds and world transforms before accumulating into `out`.
 // Skinned meshes contribute their bind-pose geometry extents. Posed-accurate aggregate bounds are
 // caller composition above the scene layer; shadow fits can use padding to absorb pose excursions.
-export function getSceneNodeWorldBounds(out: AabbLike, node: Readonly<SceneNode>): void {
+export function getNode3DWorldBounds(out: AabbLike, node: Readonly<Node3D>): void {
   // Reset to empty before accumulation.
   setAabb(
     out,
@@ -37,7 +37,7 @@ export function getSceneNodeWorldBounds(out: AabbLike, node: Readonly<SceneNode>
   _accumulateWorldBounds(out, node);
 }
 
-function _accumulateWorldBounds(out: AabbLike, node: Readonly<SceneNode>): void {
+function _accumulateWorldBounds(out: AabbLike, node: Readonly<Node3D>): void {
   if (isMesh(node)) {
     // Read through the ensure, never `geometry.bounds` directly: bounds are a dirty-gated cache that a
     // deform invalidates by bumping the version, so a raw field read can return a pre-deform box.
@@ -53,7 +53,7 @@ function _accumulateWorldBounds(out: AabbLike, node: Readonly<SceneNode>): void 
   const children = getNodeRuntime(node).children;
   if (children !== null) {
     for (let i = 0; i < children.length; i++) {
-      _accumulateWorldBounds(out, children[i] as SceneNode);
+      _accumulateWorldBounds(out, children[i] as Node3D);
     }
   }
 }

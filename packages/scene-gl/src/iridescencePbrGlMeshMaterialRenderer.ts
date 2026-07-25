@@ -5,8 +5,8 @@ import type {
   IridescencePbrMaterial,
   Material,
   MeshGeometry,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
 } from '@flighthq/types';
 import { IridescencePbrMaterialKind } from '@flighthq/types';
 
@@ -15,7 +15,7 @@ import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshCameraPosition, setGlMeshViewProjection } from './glMeshProgram';
 import { ensureGlPbrProgram } from './glPbrProgramCache';
 import { bindGlPbrStandardBlock, buildGlPbrStandardDefineKey } from './glPbrStandardBlock';
-import { getGlSceneRuntime } from './glSceneRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 
 // The built-in Iridescence (KHR_materials_iridescence) forward-lit mesh-material renderer.
 // Iridescence models a thin transparent film over the surface whose interference shifts the Fresnel
@@ -29,7 +29,7 @@ export const iridescencePbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
     material: Readonly<Material> | null,
-    lights: Readonly<SceneLightBlock>,
+    lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const gl = state.gl;
@@ -58,15 +58,15 @@ export const iridescencePbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     }
   },
 
-  draw(state: GlRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
-    const program = getGlSceneRuntime(state).activeMeshProgram;
+  draw(state: GlRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+    const program = getGlScene3DRuntime(state).activeMeshProgram;
     if (program === null) return;
     drawGlMeshSubset(state, program, proxy, geometry);
   },
 };
 
 // Installs the built-in Iridescence renderer for IridescencePbrMaterialKind on this state. Opt-in
-// (no top-level side effect): drawScene only draws Iridescence subsets once this is called.
+// (no top-level side effect): drawScene3D only draws Iridescence subsets once this is called.
 export function registerIridescencePbrGlMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, IridescencePbrMaterialKind, iridescencePbrGlMeshMaterialRenderer);
 }

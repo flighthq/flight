@@ -1,5 +1,5 @@
-import { drawGlScene } from '@flighthq/scene-gl';
-import type { Camera3D, GlRenderEffectPipeline, Mesh, MeshMorph, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import { drawGlScene3D } from '@flighthq/scene-gl';
+import type { Camera3D, GlRenderEffectPipeline, Mesh, MeshMorph, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   addNodeChild,
@@ -15,8 +15,8 @@ import {
   createMeshGeometry,
   createPerspectiveProjection,
   createQuaternion,
-  createScene,
-  createSceneNode,
+  createScene3D,
+  createNode3D,
   createSkeleton3D,
   createUnlitMaterial,
   createVector3,
@@ -24,9 +24,9 @@ import {
   getSurfacePixelLuminance,
   invalidateNodeLocalTransform,
   normalizeVector3,
-  prepareSceneMorph,
-  prepareSceneRender,
-  prepareSceneSkinning,
+  prepareScene3DMorph,
+  prepareScene3DRender,
+  prepareScene3DSkinning,
   registerUnlitGlMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
@@ -36,7 +36,7 @@ import {
 
 // scene-skin-morph-compose — the end-to-end compose proof for Part-1 #3: a single Mesh that is BOTH
 // GPU-skinned and morphed rendering both deforms together on the GPU, driven through the real app path
-// (prepareSceneMorph → prepareSceneSkinning → prepareSceneRender → drawGlScene). The glMeshUpload freeze
+// (prepareScene3DMorph → prepareScene3DSkinning → prepareScene3DRender → drawGlScene3D). The glMeshUpload freeze
 // this un-froze (skinBindUploaded ignoring version) would otherwise discard a morph composed onto a
 // skinned draw; the precise across-frames regression for that freeze lives in the ensureGlMeshUpload unit
 // test, while this scene proves the composed frame renders correctly end to end.
@@ -49,8 +49,8 @@ import {
 //   - morph discarded (the freeze bug): the base stops at y=0 — the deep vertical-extension probe is background.
 //   - skin discarded: a straight-up bar — the sideways leaned-arm probe is background.
 //   - either deform missing entirely: the bar is blank or bind-pose.
-// drawGlScene collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu) — import the Gl one directly.
-// prepareSceneMorph then prepareSceneSkinning both run before prepareSceneRender.
+// drawGlScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu) — import the Gl one directly.
+// prepareScene3DMorph then prepareScene3DSkinning both run before prepareScene3DRender.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
@@ -72,20 +72,20 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
-  // Both deform passes run before the render prepare pass. prepareSceneMorph blends the morph into
-  // geometry.vertices (fattening the bar); prepareSceneSkinning readies the joint palette. The GPU then
+  // Both deform passes run before the render prepare pass. prepareScene3DMorph blends the morph into
+  // geometry.vertices (fattening the bar); prepareScene3DSkinning readies the joint palette. The GPU then
   // skins the freshly-morphed bind each frame — the compose the glMeshUpload fix restored.
-  prepareSceneMorph(scene);
-  prepareSceneSkinning(scene);
-  prepareSceneRender(state, scene, camera, lights);
-  drawGlScene(state, scene, camera, lights);
+  prepareScene3DMorph(scene);
+  prepareScene3DSkinning(scene);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawGlScene3D(state, scene, camera, lights);
   endGlRenderEffectPipeline(state, pipeline, []);
 }
 
@@ -151,9 +151,9 @@ const morph: MeshMorph = {
 // non-identity deform once the bend is rotated after skeleton construction. The mesh starts at morph
 // weight 0 (bar un-extended) — the render sequence below raises it to 1 across a second frame, which is
 // what actually exercises the freeze bug (see render sequence).
-function buildComposedScene(bendAngle: number): { scene: SceneNode; mesh: Mesh } {
-  const root = createSceneNode();
-  const bend = createSceneNode();
+function buildComposedScene3D(bendAngle: number): { scene: Node3D; mesh: Mesh } {
+  const root = createNode3D();
+  const bend = createNode3D();
   setVector3(bend.position, 0, 1, 0);
   invalidateNodeLocalTransform(bend);
   addNodeChild(root, bend);
@@ -165,7 +165,7 @@ function buildComposedScene(bendAngle: number): { scene: SceneNode; mesh: Mesh }
   copyQuaternion(bend.rotation, q);
   invalidateNodeLocalTransform(bend);
 
-  const scene = createScene().root;
+  const scene = createScene3D().root;
   addNodeChild(scene, root);
   const geometry = createMeshGeometry({
     layout: CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
@@ -198,9 +198,9 @@ const lights = {
 // weight re-feeds the skinned upload rather than being pinned at the first upload) is locked precisely by
 // the ensureGlMeshUpload unit test, which re-uploads across a version bump; the functional harness reads
 // back the first rendered frame, so it proves the composed draw is correct, not the multi-frame re-upload.
-const { scene: composedScene, mesh: composedMesh } = buildComposedScene((75 * Math.PI) / 180);
+const { scene: composedScene3D, mesh: composedMesh } = buildComposedScene3D((75 * Math.PI) / 180);
 composedMesh.morph!.weights[0] = 1;
-render(composedScene, camera, lights);
+render(composedScene3D, camera, lights);
 
 export function assertRender(surface: Readonly<Surface>): void {
   const w = surface.width;

@@ -6,8 +6,8 @@ import type {
   GlRenderState,
   Material,
   MeshGeometry,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
   VertexColorMaterial,
   GlUnlitDefineKey,
 } from '@flighthq/types';
@@ -15,7 +15,7 @@ import { VertexColorMaterialKind } from '@flighthq/types';
 
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshViewProjection } from './glMeshProgram';
-import { getGlSceneRuntime } from './glSceneRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { bindGlUnlitSurface, ensureGlUnlitProgram } from './glUnlitPrelude';
 
 // The built-in VertexColor forward renderer (GlMeshMaterialRenderer for VertexColorMaterialKind).
@@ -27,7 +27,7 @@ export const vertexColorGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
     material: Readonly<Material> | null,
-    _lights: Readonly<SceneLightBlock>,
+    _lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const gl = state.gl;
@@ -49,15 +49,15 @@ export const vertexColorGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     bindGlUnlitSurface(state, program, scratchRgba, 1, null, vertexColor.alphaCutoff);
   },
 
-  draw(state: GlRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
-    const program = getGlSceneRuntime(state).activeMeshProgram;
+  draw(state: GlRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+    const program = getGlScene3DRuntime(state).activeMeshProgram;
     if (program === null) return;
     drawGlMeshSubset(state, program, proxy, geometry);
   },
 };
 
 // Registers the built-in VertexColor renderer for VertexColorMaterialKind on this state. Opt-in (no
-// top-level side effect); call once per GlRenderState before drawScene so meshes with
+// top-level side effect); call once per GlRenderState before drawScene3D so meshes with
 // VertexColorMaterials draw.
 export function registerVertexColorGlMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, VertexColorMaterialKind, vertexColorGlMeshMaterialRenderer);

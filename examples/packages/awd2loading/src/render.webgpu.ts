@@ -1,12 +1,12 @@
-import { drawWgpuScene, registerBuiltInWgpuModifierSnippets, registerShadedWgpuMaterial } from '@flighthq/scene-wgpu';
-import type { Camera3D, SceneLightsLike, SceneNode, WgpuRenderEffectPipeline } from '@flighthq/sdk';
+import { drawWgpuScene3D, registerBuiltInWgpuModifierSnippets, registerShadedWgpuMaterial } from '@flighthq/scene-wgpu';
+import type { Camera3D, Scene3DLightsLike, Node3D, WgpuRenderEffectPipeline } from '@flighthq/sdk';
 import {
   beginWgpuRenderEffectPipeline,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   endWgpuRenderEffectPipeline,
-  prepareSceneRender,
+  prepareScene3DRender,
   renderWgpuBackground,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
@@ -31,14 +31,14 @@ const pipeline: WgpuRenderEffectPipeline = createWgpuRenderEffectPipeline(state,
 export const scale = pixelRatio;
 
 export function render(
-  scene: Readonly<SceneNode>,
+  scene: Readonly<Node3D>,
   camera: Readonly<Camera3D>,
-  lights: Readonly<SceneLightsLike>,
+  lights: Readonly<Scene3DLightsLike>,
 ): void {
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
-  prepareSceneRender(state, scene, camera, lights);
-  drawWgpuScene(state, scene, camera, lights);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawWgpuScene3D(state, scene, camera, lights);
   endWgpuRenderEffectPipeline(state, pipeline, []);
   submitWgpuRenderPass(state);
 }

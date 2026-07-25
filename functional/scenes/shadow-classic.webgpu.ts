@@ -1,6 +1,6 @@
-import { createScene } from '@flighthq/scene';
-import { drawWgpuScene, drawWgpuSceneShadowMap } from '@flighthq/scene-wgpu';
-import type { Camera3D, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import { createScene3D } from '@flighthq/scene';
+import { drawWgpuScene3D, drawWgpuScene3DShadowMap } from '@flighthq/scene-wgpu';
+import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuFrame,
@@ -18,10 +18,10 @@ import {
   createVector3,
   createWgpuCanvasElement,
   createWgpuRenderState,
-  getSceneNodeWorldBounds,
+  getNode3DWorldBounds,
   getSurfacePixelLuminance,
   invalidateNodeLocalTransform,
-  prepareSceneRender,
+  prepareScene3DRender,
   registerBlinnPhongWgpuMaterial,
   renderWgpuBackground,
   setCamera3DViewMatrix4FromLookAt,
@@ -46,23 +46,23 @@ export const height = 600;
 registerWgpuFunctionalTarget(state, scale);
 
 export function render(
-  scene: Readonly<SceneNode>,
+  scene: Readonly<Node3D>,
   camera: Readonly<Camera3D>,
-  lights: Readonly<SceneLights>,
+  lights: Readonly<Scene3DLights>,
   shadowCamera: Readonly<Camera3D>,
 ): void {
   beginWgpuFrame(state);
-  drawWgpuSceneShadowMap(state, scene, shadowCamera);
+  drawWgpuScene3DShadowMap(state, scene, shadowCamera);
   renderWgpuBackground(state);
-  prepareSceneRender(state, scene, camera, lights);
-  drawWgpuScene(state, scene, camera, lights);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawWgpuScene3D(state, scene, camera, lights);
   submitWgpuRenderPass(state);
 }
 
 const logicalWidth = width / scale;
 const logicalHeight = height / scale;
 const material = createBlinnPhongMaterial({ diffuse: 0xb8b8b8ff, shininess: 16, specular: 0x101010ff });
-const scene = createScene().root;
+const scene = createScene3D().root;
 
 const ground = createMesh(createPlaneMeshGeometry(8, 8), [material]);
 addNodeChild(scene, ground);
@@ -85,7 +85,7 @@ const lights = {
   directional: createDirectionalLight({ color: 0xffffffff, direction, intensity: 3 }),
 };
 const sceneBounds = createAabb();
-getSceneNodeWorldBounds(sceneBounds, scene);
+getNode3DWorldBounds(sceneBounds, scene);
 const shadowCamera = createCamera3D({
   far: 100,
   near: 0.1,

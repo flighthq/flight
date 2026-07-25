@@ -7,15 +7,15 @@ import {
   ensureWgpuMatcapPipeline,
   getWgpuMatcapModuleSourceForKey,
 } from './wgpuMatcapPrelude';
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
-import { makeWgpuSceneState } from './wgpuSceneTestHelper';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 
 const FLAT: WgpuMatcapDefineKey = { alphaMaskEnabled: false, doubleSided: false, hasMatcap: false };
 const TINT: LinearColor = [0.5, 0.25, 0.1, 1];
 
 describe('bindWgpuMatcapSurface', () => {
   it('creates a material bind group once per key and writes its uniform', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const pipeline = compileWgpuMatcapPipeline(state, FLAT, 'bgra8unorm');
     const key = {};
     bindWgpuMatcapSurface(state, pipeline, key, TINT, 0.5);
@@ -35,7 +35,7 @@ describe('buildWgpuMatcapDefineKey', () => {
 
 describe('compileWgpuMatcapPipeline', () => {
   it('compiles a module and builds the pipeline with a 3-entry material layout', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const pipeline = compileWgpuMatcapPipeline(state, FLAT, 'rgba16float');
     expect(pipeline.pipeline).toBeDefined();
     expect(fake.calls.some((c) => c.name === 'createShaderModule')).toBe(true);
@@ -49,11 +49,11 @@ describe('compileWgpuMatcapPipeline', () => {
 
 describe('ensureWgpuMatcapPipeline', () => {
   it('caches one pipeline per define key + format under the matcap namespace', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     const a = ensureWgpuMatcapPipeline(state, FLAT, 'bgra8unorm');
     const b = ensureWgpuMatcapPipeline(state, FLAT, 'bgra8unorm');
     expect(a).toBe(b);
-    expect([...getWgpuSceneRuntime(state).pipelineCache.keys()].some((k) => k.startsWith('matcap:'))).toBe(true);
+    expect([...getWgpuScene3DRuntime(state).pipelineCache.keys()].some((k) => k.startsWith('matcap:'))).toBe(true);
   });
 });
 

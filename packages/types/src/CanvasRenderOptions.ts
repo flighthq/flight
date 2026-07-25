@@ -1,5 +1,5 @@
 import type { Matrix } from './Matrix';
-import type { SceneGraphSyncPolicy } from './RenderState';
+import type { Scene3DGraphSyncPolicy } from './RenderState';
 
 export interface CanvasRenderOptions {
   backgroundColor?: number | null;
@@ -9,5 +9,5 @@ export interface CanvasRenderOptions {
   pixelRatio?: number;
   renderTransform?: Matrix;
   roundPixels?: boolean;
-  sceneGraphSyncPolicy?: SceneGraphSyncPolicy;
+  sceneGraphSyncPolicy?: Scene3DGraphSyncPolicy;
 }

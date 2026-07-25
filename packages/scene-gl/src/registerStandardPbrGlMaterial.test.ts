@@ -1,13 +1,13 @@
 import { StandardPbrMaterialKind } from '@flighthq/types';
 
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { makeGlSceneState } from './glSceneTestHelper';
+import { makeGlScene3DState } from './glScene3DTestHelper';
 import { registerStandardPbrGlMaterial } from './registerStandardPbrGlMaterial';
 import { standardPbrGlMeshMaterialRenderer } from './standardPbrGlMeshMaterialRenderer';
 
 describe('registerStandardPbrGlMaterial', () => {
   it('registers the StandardPbr renderer for StandardPbrMaterialKind', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     registerStandardPbrGlMaterial(state);
     expect(getGlMeshMaterialRenderer(state, StandardPbrMaterialKind)).toBe(standardPbrGlMeshMaterialRenderer);
   });

@@ -2,16 +2,16 @@ import { createTransform3D } from '@flighthq/geometry';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
 import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { createMeshGeometry } from '@flighthq/mesh';
-import { createSceneFromDocument } from '@flighthq/scene';
+import { createScene3DFromDocument } from '@flighthq/scene';
 import type {
   ImportDiagnostic,
   Material,
   MaterialLike,
   MeshSubset,
-  Scene,
-  SceneDocument,
-  SceneDocumentMesh,
-  SceneDocumentNode,
+  Scene3D,
+  Scene3DDocument,
+  Scene3DDocumentMesh,
+  Scene3DDocumentNode,
   ThreeDsMaterial,
   ThreeDsMaterialGroup,
   ThreeDsMesh,
@@ -51,7 +51,7 @@ import {
   createExternalTextureRef,
 } from './shared';
 
-// Parses an Autodesk 3DS binary file into a Scene. The 3DS format is a recursive chunk tree
+// Parses an Autodesk 3DS binary file into a Scene3D. The 3DS format is a recursive chunk tree
 // (little-endian): each chunk has a uint16 ID, a uint32 total length (including the 6-byte header),
 // and a payload of sub-chunks and/or inline data. The editor chunk (0x3D3D) contains named objects
 // (0x4000), each of which may contain a triangle mesh (0x4100) with vertex, face, and UV sub-chunks.
@@ -66,18 +66,18 @@ import {
 // common in practice and each becomes a separate Mesh child of the scene.
 //
 // Malformed or truncated input records a diagnostic and returns an empty or partial scene; the function
-// never throws on bad input. Convenience over `createSceneFromDocument(parse3ds(bytes))`.
-export function createSceneFrom3ds(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagnostic[]): Scene {
-  return createSceneFromDocument(parse3ds(bytes, diagnostics));
+// never throws on bad input. Convenience over `createScene3DFromDocument(parse3ds(bytes))`.
+export function createScene3DFrom3ds(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagnostic[]): Scene3D {
+  return createScene3DFromDocument(parse3ds(bytes, diagnostics));
 }
 
-// Parses an Autodesk 3DS binary file into a format-neutral SceneDocument. Each named-object trimesh
+// Parses an Autodesk 3DS binary file into a format-neutral Scene3DDocument. Each named-object trimesh
 // becomes one document Mesh node (inline geometry, canonical PBR layout, RH Z-up → Y-up). Referenced
 // materials are registered into the document's materials table (deduped by name) and named per mesh by
-// index. Assemble into a live Scene with `createSceneFromDocument`. Malformed input returns an empty or
+// index. Assemble into a live Scene3D with `createScene3DFromDocument`. Malformed input returns an empty or
 // partial document with a diagnostic.
-export function parse3ds(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagnostic[]): SceneDocument {
-  const document: SceneDocument = {
+export function parse3ds(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagnostic[]): Scene3DDocument {
+  const document: Scene3DDocument = {
     animations: [],
     cameras: [],
     lights: [],
@@ -480,7 +480,7 @@ function appendMeshDocument(
   mesh: Readonly<ThreeDsMesh>,
   materials: Readonly<Map<string, ThreeDsMaterial>>,
   materialIndexByName: Map<string, number>,
-  document: SceneDocument,
+  document: Scene3DDocument,
   threeDsDrops: Map<string, ThreeDsDropTally> | null,
 ): void {
   const vertexCount = mesh.vertices.length / 3;
@@ -633,12 +633,12 @@ function appendMeshDocument(
     vertices: new Float32Array(outVertices),
   });
 
-  const documentMesh: SceneDocumentMesh = { geometry, materials: meshMaterials };
+  const documentMesh: Scene3DDocumentMesh = { geometry, materials: meshMaterials };
   const meshIndex = document.meshes.length;
   document.meshes.push(documentMesh);
   // A 3DS named object holds a single trimesh, so the name belongs on the Mesh node itself. Match glTF:
   // a lone mesh is a bare Mesh node, named.
-  const node: SceneDocumentNode = { children: [], kind: MeshKind, mesh: meshIndex, transform: createTransform3D() };
+  const node: Scene3DDocumentNode = { children: [], kind: MeshKind, mesh: meshIndex, transform: createTransform3D() };
   if (mesh.name.length > 0) node.name = mesh.name;
   const nodeIndex = document.nodes.length;
   document.nodes.push(node);
@@ -652,7 +652,7 @@ function resolveThreeDsMaterial(
   name: string,
   materials: Readonly<Map<string, ThreeDsMaterial>>,
   materialIndexByName: Map<string, number>,
-  document: SceneDocument,
+  document: Scene3DDocument,
   threeDsDrops: Map<string, ThreeDsDropTally> | null,
 ): number {
   if (name.length === 0) return -1; // an empty name is a spec-valid default-material subset — silent
@@ -678,7 +678,7 @@ function resolveThreeDsMaterial(
 // material folds its opacity into the diffuse alpha plus a blend alphaMode. The ambient color has no
 // Blinn-Phong equivalent (ambient is a scene light in Flight), so it is dropped; a caller wanting PBR
 // converts explicitly.
-function threeDsMaterialToBlinnPhong(material: Readonly<ThreeDsMaterial>, document: SceneDocument): Material {
+function threeDsMaterialToBlinnPhong(material: Readonly<ThreeDsMaterial>, document: Scene3DDocument): Material {
   const result = createBlinnPhongMaterial({
     diffuse: packThreeDsColor(material.diffuse, material.opacity),
     diffuseMap:

@@ -1,4 +1,4 @@
-import type { SceneGraphSyncPolicy } from '@flighthq/sdk';
+import type { Scene3DGraphSyncPolicy } from '@flighthq/sdk';
 import type {
   FunctionalCanvasTarget,
   FunctionalDomTarget,
@@ -15,7 +15,7 @@ export interface FunctionalTargetOptions {
   background?: number;
   kinds?: readonly symbol[];
   contextAttributes?: { alpha?: boolean };
-  syncPolicy?: SceneGraphSyncPolicy;
+  syncPolicy?: Scene3DGraphSyncPolicy;
   clip?: boolean;
   cache?: boolean;
   blend?: boolean;

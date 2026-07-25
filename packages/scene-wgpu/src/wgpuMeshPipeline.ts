@@ -6,11 +6,11 @@ import { getTextureUvMatrix, hasTextureUvTransform } from '@flighthq/texture';
 import type {
   WgpuMaterialBinding,
   WgpuMeshPipeline,
-  WgpuSceneLayouts,
+  WgpuScene3DLayouts,
   Camera3D,
   MeshGeometry,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
   Texture,
   TextureLike,
   VideoTexture,
@@ -28,7 +28,7 @@ import {
 import type { WgpuSkinningAdapter } from '@flighthq/types';
 
 import { ensureWgpuMeshUpload } from './wgpuMeshUpload';
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 // Sets the family's pipeline active for the bind→draw handoff, binds it, and binds the shared Frame
 // bind group at group(0). A family's bind() calls this after selecting its pipeline + writing the
 // Frame uniform; draw() reads scene.activeMeshPipeline back. Mirrors scene-gl's beginGlMeshDraw.
@@ -36,12 +36,12 @@ export function beginWgpuMeshDraw(state: WgpuRenderState, pipeline: Readonly<Wgp
   const stateRuntime = getWgpuRenderStateRuntime(state);
   const pass = stateRuntime.renderPass;
   if (pass === null) return;
-  const scene = getWgpuSceneRuntime(state);
+  const scene = getWgpuScene3DRuntime(state);
   scene.activeMeshPipeline = pipeline;
   pass.setPipeline(pipeline.pipeline);
   pass.setBindGroup(0, scene.frameBindGroup!);
   // Lit families that PCF-sample the directional shadow map carry a group(3) shadow layout; bind the
-  // shared shadow-sample group (the real depth map when drawWgpuSceneShadowMap ran this frame, else a
+  // shared shadow-sample group (the real depth map when drawWgpuScene3DShadowMap ran this frame, else a
   // 1x1 dummy gated off by the shadow uniform). Non-lit families have no group(3) and skip this.
   if (pipeline.hasPbrSampleGroup) {
     pass.setBindGroup(3, ensureWgpuPbrSampleBindGroup(state));
@@ -114,8 +114,8 @@ export function createWgpuMeshPipeline(
   }>,
 ): WgpuMeshPipeline {
   const device = state.device;
-  const layouts = ensureWgpuSceneLayouts(state);
-  const skinning = getWgpuSceneRuntime(state).skinningAdapter as WgpuSkinningAdapter | null;
+  const layouts = ensureWgpuScene3DLayouts(state);
+  const skinning = getWgpuScene3DRuntime(state).skinningAdapter as WgpuSkinningAdapter | null;
   const bindGroupLayouts: GPUBindGroupLayout[] = [
     layouts.frameBindGroupLayout,
     options.skinned && skinning !== null ? skinning.getDrawLayout(state) : layouts.drawBindGroupLayout,
@@ -179,12 +179,12 @@ export function createWgpuMeshPipeline(
 // by beginWgpuMeshDraw) before calling this. Mirrors scene-gl's drawGlMeshSubset.
 export function drawWgpuMeshSubset(
   state: WgpuRenderState,
-  proxy: Readonly<SceneRenderProxy>,
+  proxy: Readonly<Scene3DRenderProxy>,
   geometry: Readonly<MeshGeometry>,
 ): void {
   const stateRuntime = getWgpuRenderStateRuntime(state);
   const pass = stateRuntime.renderPass;
-  const scene = getWgpuSceneRuntime(state);
+  const scene = getWgpuScene3DRuntime(state);
   if (pass === null || scene.activeMeshPipeline === null) return;
 
   const subset = proxy.subset;
@@ -213,7 +213,7 @@ export function drawWgpuMeshSubset(
 // first use. Every family pipeline declares the same group(0) layout, so this one bind group is valid
 // for all of them.
 export function ensureWgpuFrameBindGroup(state: WgpuRenderState): GPUBindGroup {
-  const scene = getWgpuSceneRuntime(state);
+  const scene = getWgpuScene3DRuntime(state);
   if (scene.frameBuffer === null) {
     scene.frameBuffer = state.device.createBuffer({
       size: FRAME_UNIFORM_BYTES,
@@ -222,7 +222,7 @@ export function ensureWgpuFrameBindGroup(state: WgpuRenderState): GPUBindGroup {
   }
   if (scene.frameBindGroup === null) {
     scene.frameBindGroup = state.device.createBindGroup({
-      layout: ensureWgpuSceneLayouts(state).frameBindGroupLayout,
+      layout: ensureWgpuScene3DLayouts(state).frameBindGroupLayout,
       entries: [{ binding: 0, resource: { buffer: scene.frameBuffer } }],
     });
   }
@@ -237,7 +237,7 @@ export function ensureWgpuFrameBindGroup(state: WgpuRenderState): GPUBindGroup {
 // absent). A scene with no baked environment still renders: the dummy views are bound and the shader's
 // `enabled < 0.5` gate keeps them unsampled — mirroring GL's u_iblEnabled = 0 placeholder path.
 export function ensureWgpuIblSampleBindGroup(state: WgpuRenderState): GPUBindGroup {
-  const scene = getWgpuSceneRuntime(state);
+  const scene = getWgpuScene3DRuntime(state);
   const device = state.device;
 
   if (scene.iblUniformBuffer === null) {
@@ -309,7 +309,7 @@ export function ensureWgpuIblSampleBindGroup(state: WgpuRenderState): GPUBindGro
 // state. Lit PBR pipelines pass this to createWgpuMeshPipeline; the shared bind group built by
 // ensureWgpuIblSampleBindGroup targets it, so one IBL bind group serves every lit PBR pipeline variant.
 export function ensureWgpuIblSampleLayout(state: WgpuRenderState): GPUBindGroupLayout {
-  const scene = getWgpuSceneRuntime(state);
+  const scene = getWgpuScene3DRuntime(state);
   if (scene.iblSampleLayout === null) {
     scene.iblSampleLayout = state.device.createBindGroupLayout({
       entries: [
@@ -342,7 +342,7 @@ export function ensureWgpuMaterialBinding(
   sampler: GPUSampler,
   views: readonly GPUTextureView[],
 ): WgpuMaterialBinding {
-  const scene = getWgpuSceneRuntime(state);
+  const scene = getWgpuScene3DRuntime(state);
   let binding = scene.materialBindGroups.get(key);
   if (binding === undefined) {
     const buffer = state.device.createBuffer({
@@ -374,7 +374,7 @@ export function ensureWgpuMaterialBinding(
 // Resolves the combined PBR sample bind group. WebGPU's required maxBindGroups minimum is 4, so PBR
 // cannot afford separate shadow group(3) and IBL group(4). This layout packs both into group(3).
 export function ensureWgpuPbrSampleBindGroup(state: WgpuRenderState): GPUBindGroup {
-  const scene = getWgpuSceneRuntime(state);
+  const scene = getWgpuScene3DRuntime(state);
   const device = state.device;
 
   if (scene.shadowUniformBuffer === null) {
@@ -485,7 +485,7 @@ export function ensureWgpuPbrSampleBindGroup(state: WgpuRenderState): GPUBindGro
 }
 
 export function ensureWgpuPbrSampleLayout(state: WgpuRenderState): GPUBindGroupLayout {
-  const scene = getWgpuSceneRuntime(state);
+  const scene = getWgpuScene3DRuntime(state);
   if (scene.pbrSampleLayout === null) {
     scene.pbrSampleLayout = state.device.createBindGroupLayout({
       entries: [
@@ -511,7 +511,7 @@ export function ensureWgpuPerMapMaterialBinding(
   samplers: readonly GPUSampler[],
   views: readonly GPUTextureView[],
 ): WgpuMaterialBinding {
-  const scene = getWgpuSceneRuntime(state);
+  const scene = getWgpuScene3DRuntime(state);
   let binding = scene.materialBindGroups.get(key);
   if (binding === undefined) {
     const buffer = state.device.createBuffer({
@@ -537,7 +537,7 @@ export function ensureWgpuPerMapMaterialBinding(
 // path, so a material bind-group layout that declares texture slots can be satisfied without uploading
 // real maps. Shared across families (cached on the scene runtime).
 export function ensureWgpuPlaceholderTextureView(state: WgpuRenderState): GPUTextureView {
-  const scene = getWgpuSceneRuntime(state);
+  const scene = getWgpuScene3DRuntime(state);
   let view = scene.placeholderView;
   if (view === null) {
     const texture = state.device.createTexture({
@@ -555,8 +555,8 @@ export function ensureWgpuPlaceholderTextureView(state: WgpuRenderState): GPUTex
 // Resolves the shared group(0) Frame + group(1) Draw bind-group layouts, creating them once per state.
 // group(0) is a single uniform visible to both stages (camera + lights); group(1) is a dynamic-offset
 // uniform visible to the vertex scene2d (per-draw world + normal matrix).
-export function ensureWgpuSceneLayouts(state: WgpuRenderState): WgpuSceneLayouts {
-  const scene = getWgpuSceneRuntime(state);
+export function ensureWgpuScene3DLayouts(state: WgpuRenderState): WgpuScene3DLayouts {
+  const scene = getWgpuScene3DRuntime(state);
   if (scene.frameBindGroupLayout === null || scene.drawBindGroupLayout === null) {
     const device = state.device;
     scene.frameBindGroupLayout = device.createBindGroupLayout({
@@ -575,13 +575,13 @@ export function ensureWgpuSceneLayouts(state: WgpuRenderState): WgpuSceneLayouts
 // caching it on the scene runtime's per-state pipelineCache. Every family routes its pipeline through
 // this one cache; the key is namespaced by family + define key + color format (for example
 // `unlit:bgra8unorm|-c-`), so families and feature/format variants compile at most once and never
-// collide. Mirrors scene-gl's ensureGlSceneProgram.
-export function ensureWgpuScenePipeline<T extends WgpuMeshPipeline>(
+// collide. Mirrors scene-gl's ensureGlScene3DProgram.
+export function ensureWgpuScene3DPipeline<T extends WgpuMeshPipeline>(
   state: WgpuRenderState,
   key: string,
   compile: (blended: boolean, skinned: boolean) => T,
 ): T {
-  const runtime = getWgpuSceneRuntime(state);
+  const runtime = getWgpuScene3DRuntime(state);
   const blended = runtime.activeBlendedRun;
   const skinned = runtime.activeSkinnedRun;
   const variantKey = `${key}|${blended ? 'blend' : 'opaque'}|${skinned ? 'skin' : 'rigid'}`;
@@ -602,7 +602,7 @@ export function ensureWgpuScenePipeline<T extends WgpuMeshPipeline>(
 // A shadow-less scene still renders: the dummy view is bound and the shader's `enabled < 0.5` early-out
 // keeps it unsampled — mirroring GL's u_shadowEnabled = 0 path.
 export function ensureWgpuShadowSampleBindGroup(state: WgpuRenderState): GPUBindGroup {
-  const scene = getWgpuSceneRuntime(state);
+  const scene = getWgpuScene3DRuntime(state);
   const device = state.device;
 
   if (scene.shadowUniformBuffer === null) {
@@ -664,7 +664,7 @@ export function ensureWgpuShadowSampleBindGroup(state: WgpuRenderState): GPUBind
 // createWgpuMeshPipeline; the shared bind group built by ensureWgpuShadowSampleBindGroup targets it, so
 // one shadow bind group serves every lit family's pipeline (pbr today).
 export function ensureWgpuShadowSampleLayout(state: WgpuRenderState): GPUBindGroupLayout {
-  const scene = getWgpuSceneRuntime(state);
+  const scene = getWgpuScene3DRuntime(state);
   if (scene.shadowSampleLayout === null) {
     scene.shadowSampleLayout = state.device.createBindGroupLayout({
       entries: [
@@ -776,7 +776,7 @@ export function stashWgpuUvTransform(
   state: WgpuRenderState,
   texture: Readonly<TextureLike | VideoTexture> | null,
 ): void {
-  const out = getWgpuSceneRuntime(state).pendingUvTransform;
+  const out = getWgpuScene3DRuntime(state).pendingUvTransform;
   if (texture === null || ('image' in texture && texture.image === null) || !hasTextureUvTransform(texture)) {
     resetWgpuUvTransformStash(out);
     return;
@@ -827,13 +827,13 @@ function overwriteIdentityCache<T extends 'samplers' | 'views'>(
 // dynamic-offset Draw bind group. Reusing the render-state ring keeps each subset draw to one ring
 // slot, not a fresh buffer; submitWgpuRenderPass uploads the used ring region before submit. Mirrors
 // the per-draw model/normal upload in scene-gl's drawGlMeshSubset.
-export function writeWgpuDrawUniform(state: WgpuRenderState, proxy: Readonly<SceneRenderProxy>): GPUBindGroup {
-  const scene = getWgpuSceneRuntime(state);
+export function writeWgpuDrawUniform(state: WgpuRenderState, proxy: Readonly<Scene3DRenderProxy>): GPUBindGroup {
+  const scene = getWgpuScene3DRuntime(state);
   const stateRuntime = getWgpuRenderStateRuntime(state);
 
   if (scene.drawBindGroup === null) {
     scene.drawBindGroup = state.device.createBindGroup({
-      layout: ensureWgpuSceneLayouts(state).drawBindGroupLayout,
+      layout: ensureWgpuScene3DLayouts(state).drawBindGroupLayout,
       entries: [{ binding: 0, resource: { buffer: stateRuntime.uniformBuffer, size: DRAW_UNIFORM_BYTES } }],
     });
   }
@@ -861,7 +861,7 @@ export function writeWgpuDrawUniform(state: WgpuRenderState, proxy: Readonly<Sce
 
   // mat3x3f uv transform: three vec3 columns each padded to vec4 (std140) → floats 28..39. The stash
   // (set by a family's bind() via stashWgpuUvTransform) is already column-major and PERSISTS across
-  // draws — read, never reset here. drawWgpuScene binds once per material then draws many meshes, so the
+  // draws — read, never reset here. drawWgpuScene3D binds once per material then draws many meshes, so the
   // transform must survive every draw under one bind, mirroring the persistent GL u_uvTransform uniform.
   // Every family's bind stashes authoritatively (its map, or identity for non-texturing families), so
   // switching materials always re-establishes the correct value and no stale transform leaks forward.
@@ -904,7 +904,7 @@ struct Frame {
   directionalRadiance : vec4f,  // rgb = linear premultiplied radiance
   ambientRadiance : vec4f,      // rgb = linear premultiplied radiance; w = ambientCount
   view : mat4x4f,               // camera view matrix; rotates world normals into view space (matcap)
-  // Punctual light arrays — layout mirrors SceneLightBlock.data (packSceneLightBlock).
+  // Punctual light arrays — layout mirrors Scene3DLightBlock.data (packScene3DLightBlock).
   //   point[i]      = pointLights[i*2+0]={pos.xyz,range}, [i*2+1]={radiance.rgb,invSqrRange}
   //   spot[i]       = spotLights[i*4+0..1] as point, [i*4+2]={dir.xyz,_}, [i*4+3]={cosInner,cosOuter,_,_}
   //   hemisphere[i] = hemisphereLights[i*3+0]={sky.rgb,_}, [i*3+1]={ground.rgb,_}, [i*3+2]={up.xyz,_}
@@ -968,18 +968,18 @@ fn srgbToLinear(c : vec3f) -> vec3f {
 
 // Writes the per-frame Frame uniform (camera view-projection + world position + the packed light
 // block) into the scene runtime's Frame buffer and ensures the Frame bind group exists. The light
-// block layout matches SceneLightBlock.data: directional { direction.xyz @0, radiance.rgb @4 } then
+// block layout matches Scene3DLightBlock.data: directional { direction.xyz @0, radiance.rgb @4 } then
 // ambient { radiance.rgb @8 }; the presence counts go into the lightDirection.w / ambientRadiance.w
 // lanes the shader branches on. Camera3D world position is the translation of the inverse view matrix.
 // Punctual light arrays (point/spot/hemisphere) follow the camera view matrix, mirroring the packed
-// layout from SceneLightBlock.data; a final vec4f carries the three punctual counts. Shared by every
+// layout from Scene3DLightBlock.data; a final vec4f carries the three punctual counts. Shared by every
 // family — lighting-independent families simply ignore the light lanes.
 export function writeWgpuFrameUniform(
   state: WgpuRenderState,
   camera: Readonly<Camera3D>,
-  lights: Readonly<SceneLightBlock>,
+  lights: Readonly<Scene3DLightBlock>,
 ): void {
-  const scene = getWgpuSceneRuntime(state);
+  const scene = getWgpuScene3DRuntime(state);
   let binding = scene.frameBindings.get(lights);
   if (binding === undefined) {
     const buffer = state.device.createBuffer({
@@ -987,7 +987,7 @@ export function writeWgpuFrameUniform(
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
     const bindGroup = state.device.createBindGroup({
-      layout: ensureWgpuSceneLayouts(state).frameBindGroupLayout,
+      layout: ensureWgpuScene3DLayouts(state).frameBindGroupLayout,
       entries: [{ binding: 0, resource: { buffer } }],
     });
     binding = { bindGroup, buffer };
@@ -1041,7 +1041,7 @@ export function writeWgpuFrameUniform(
   const view = camera.view.m;
   for (let i = 0; i < 16; i++) f[32 + i] = view[i];
 
-  // Punctual light arrays (floats 48..) — the point/spot/hemisphere slices from SceneLightBlock.data
+  // Punctual light arrays (floats 48..) — the point/spot/hemisphere slices from Scene3DLightBlock.data
   // (identical packed layout), followed by a counts vec4f. Families that shade punctual lights read
   // these; others simply ignore the trailing data.
   const pointFloats = SCENE_LIGHT_POINT_STRIDE * MAX_FORWARD_LIGHTS;
@@ -1063,7 +1063,7 @@ export function writeWgpuFrameUniform(
 
 // Frame uniform float offsets for the punctual light arrays — the byte offset within the Frame buffer
 // where each punctual array begins, used by writeWgpuFrameUniform to copy the packed data from
-// SceneLightBlock.data into the right Frame buffer position. All offsets in FLOATS (multiply by 4
+// Scene3DLightBlock.data into the right Frame buffer position. All offsets in FLOATS (multiply by 4
 // for bytes). The head block (viewProjection + cameraPosition + directional + ambient + view) is 48
 // floats, followed by point → spot → hemisphere → counts.
 const FRAME_POINT_OFFSET = 48;
@@ -1103,7 +1103,7 @@ const scratchUvMatrix = createMatrix3();
 const DEPTH_STENCIL_FORMAT: GPUTextureFormat = 'depth24plus-stencil8';
 
 // The sampleable depth format the directional shadow map (and its 1x1 no-shadow dummy) use. depth32float
-// is bindable as a texture_depth_2d for the lit PCF comparison; drawWgpuSceneShadowMap renders into it.
+// is bindable as a texture_depth_2d for the lit PCF comparison; drawWgpuScene3DShadowMap renders into it.
 export const SHADOW_DEPTH_FORMAT: GPUTextureFormat = 'depth32float';
 
 // Shadow-sample uniform: mat4x4f light matrix (64) + vec4f params (16, x = enabled) = 80 bytes / 20 floats.

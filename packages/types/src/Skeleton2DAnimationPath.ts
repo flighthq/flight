@@ -1,5 +1,5 @@
 // Which group of a Bone2D's local setup-transform fields an AnimationChannel drives — the 2D-skeletal
-// analogue of SceneAnimationPath, matching Spine/DragonBones bone timeline granularity (translate/rotate/
+// analogue of Scene3DAnimationPath, matching Spine/DragonBones bone timeline granularity (translate/rotate/
 // scale/shear are the four bone timeline kinds). A finite vocabulary dispatched in the per-channel binder
 // loop, so a closed union with `switch` dispatch, not an open registry.
 //

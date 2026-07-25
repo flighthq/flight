@@ -18,7 +18,7 @@ import type { WgpuSkinningAdapter } from '@flighthq/types';
 // tonemap / gamma here — the effect pipeline's resolve/tonemap pass owns that), matching the
 // rgba16float scene target.
 //
-// The Frame uniform mirrors SceneLightBlock.data: a directional term { direction.xyz, _pad,
+// The Frame uniform mirrors Scene3DLightBlock.data: a directional term { direction.xyz, _pad,
 // radiance.rgb, _pad } then an ambient term { radiance.rgb, _pad }, followed by packed point/spot/
 // hemisphere arrays and a punctualCounts vec4f — radiance is already linear and premultiplied by
 // intensity at pack time, so the shader never decodes sRgb. directionalCount / ambientCount (0 or 1)
@@ -111,7 +111,7 @@ struct Frame {
   directionalRadiance : vec4f,  // rgb = linear premultiplied radiance
   ambientRadiance : vec4f,      // rgb = linear premultiplied radiance; w = ambientCount
   view : mat4x4f,               // camera view matrix (unused by PBR, but keeps struct in lockstep)
-  // Punctual light arrays — layout mirrors SceneLightBlock.data (packSceneLightBlock).
+  // Punctual light arrays — layout mirrors Scene3DLightBlock.data (packScene3DLightBlock).
   //   point[i]      = pointLights[i*2+0]={pos.xyz,range}, [i*2+1]={radiance.rgb,invSqrRange}
   //   spot[i]       = spotLights[i*4+0..1] as point, [i*4+2]={dir.xyz,_}, [i*4+3]={cosInner,cosOuter,_,_}
   //   hemisphere[i] = hemisphereLights[i*3+0]={sky.rgb,_}, [i*3+1]={ground.rgb,_}, [i*3+2]={up.xyz,_}

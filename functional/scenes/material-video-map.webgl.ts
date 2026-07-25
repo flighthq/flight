@@ -1,5 +1,5 @@
-import { createScene } from '@flighthq/scene';
-import { drawGlScene } from '@flighthq/scene-gl';
+import { createScene3D } from '@flighthq/scene';
+import { drawGlScene3D } from '@flighthq/scene-gl';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -17,7 +17,7 @@ import {
   createVideoTexture,
   createVector3,
   getSurfacePixelRgb,
-  prepareSceneRender,
+  prepareScene3DRender,
   registerUnlitGlMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
@@ -55,7 +55,7 @@ videoMap.sampler.magFilter = 'nearest';
 videoMap.sampler.minFilter = 'nearest';
 advanceVideoTexture(videoMap);
 
-const scene = createScene().root;
+const scene = createScene3D().root;
 addNodeChild(
   scene,
   createMesh(createPlaneMeshGeometry(2, 1), [
@@ -74,8 +74,8 @@ const lights = {
 };
 
 renderGlBackground(state);
-prepareSceneRender(state, scene, camera, lights);
-drawGlScene(state, scene, camera, lights);
+prepareScene3DRender(state, scene, camera, lights);
+drawGlScene3D(state, scene, camera, lights);
 
 export function assertRender(surface: Readonly<Surface>): void {
   const sample = (x: number): number =>

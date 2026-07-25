@@ -2,13 +2,13 @@ import { createCamera3D, createOrthographicProjection, setCamera3DViewMatrix4Fro
 import { createVector3 } from '@flighthq/geometry';
 import { createMeshGeometry, updateMeshMorph } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
-import { createMesh, createSceneNode, SceneNodeKind } from '@flighthq/scene';
+import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene';
 import type { Skin, VertexAttributeLayout } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
-import { getGlSceneRuntime } from './glSceneRuntime';
-import { makeGlSceneState } from './glSceneTestHelper';
-import { drawGlSceneShadowMap } from './glShadowMap';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { makeGlScene3DState } from './glScene3DTestHelper';
+import { drawGlScene3DShadowMap } from './glShadowMap';
 
 const POSITION_LAYOUT: VertexAttributeLayout = {
   attributes: [{ byteOffset: 0, format: 'float32x3', semantic: 'position' }],
@@ -34,7 +34,7 @@ function lastUploadedVertices(calls: readonly { name: string; args: readonly unk
 }
 
 function makeShadowState() {
-  const { state, gl } = makeGlSceneState();
+  const { state, gl } = makeGlScene3DState();
 
   const calls = gl.calls;
   const record =
@@ -100,49 +100,49 @@ function makeShadowCamera() {
   return camera;
 }
 
-describe('drawGlSceneShadowMap', () => {
+describe('drawGlScene3DShadowMap', () => {
   it('lazily creates the shadow target on the first call', () => {
     const { state } = makeShadowState();
-    const scene = createSceneNode(SceneNodeKind);
+    const scene = createNode3D(Node3DKind);
     const camera = makeShadowCamera();
 
-    drawGlSceneShadowMap(state, scene, camera);
+    drawGlScene3DShadowMap(state, scene, camera);
 
-    expect(getGlSceneRuntime(state).shadowTarget).not.toBeNull();
+    expect(getGlScene3DRuntime(state).shadowTarget).not.toBeNull();
   });
 
   it('reuses the same shadow target on subsequent calls', () => {
     const { state } = makeShadowState();
-    const scene = createSceneNode(SceneNodeKind);
+    const scene = createNode3D(Node3DKind);
     const camera = makeShadowCamera();
 
-    drawGlSceneShadowMap(state, scene, camera);
-    const firstTarget = getGlSceneRuntime(state).shadowTarget;
+    drawGlScene3DShadowMap(state, scene, camera);
+    const firstTarget = getGlScene3DRuntime(state).shadowTarget;
 
-    drawGlSceneShadowMap(state, scene, camera);
-    const secondTarget = getGlSceneRuntime(state).shadowTarget;
+    drawGlScene3DShadowMap(state, scene, camera);
+    const secondTarget = getGlScene3DRuntime(state).shadowTarget;
 
     expect(secondTarget).toBe(firstTarget);
   });
 
   it('records the light-space matrix on the runtime', () => {
     const { state } = makeShadowState();
-    const scene = createSceneNode(SceneNodeKind);
+    const scene = createNode3D(Node3DKind);
     const camera = makeShadowCamera();
 
-    drawGlSceneShadowMap(state, scene, camera);
+    drawGlScene3DShadowMap(state, scene, camera);
 
-    const shadow = getGlSceneRuntime(state).shadow;
+    const shadow = getGlScene3DRuntime(state).shadow;
     expect(shadow).not.toBeNull();
     expect(shadow!.matrix).not.toBeNull();
   });
 
   it('sets up the depth pass with front-face culling', () => {
     const { state, gl } = makeShadowState();
-    const scene = createSceneNode(SceneNodeKind);
+    const scene = createNode3D(Node3DKind);
     const camera = makeShadowCamera();
 
-    drawGlSceneShadowMap(state, scene, camera);
+    drawGlScene3DShadowMap(state, scene, camera);
 
     const frontValue = (gl as unknown as Record<string, number>)['FRONT'];
     const cullFaceCall = gl.calls.find((c) => c.name === 'cullFace' && c.args[0] === frontValue);
@@ -155,10 +155,10 @@ describe('drawGlSceneShadowMap', () => {
 
   it('records the caster at the pose the app blended before the pass', () => {
     const { state, gl } = makeShadowState();
-    const scene = createSceneNode(SceneNodeKind);
+    const scene = createNode3D(Node3DKind);
     const geometry = createMeshGeometry({ layout: POSITION_LAYOUT, vertices: new Float32Array([0, 0, 0, 1, 0, 0]) });
     const mesh = createMesh(geometry, []);
-    // Weight 1 on a target that raises y by 5. The morph is blended by the app's prepareSceneMorph
+    // Weight 1 on a target that raises y by 5. The morph is blended by the app's prepareScene3DMorph
     // before any draw (here updateMeshMorph stands in for it); the depth pass just uploads that pose,
     // it no longer re-blends internally — otherwise the cull would have already lagged a frame.
     mesh.morph = {
@@ -168,7 +168,7 @@ describe('drawGlSceneShadowMap', () => {
     addNodeChild(scene, mesh);
     updateMeshMorph(mesh);
 
-    drawGlSceneShadowMap(state, scene, makeShadowCamera());
+    drawGlScene3DShadowMap(state, scene, makeShadowCamera());
 
     const uploaded = lastUploadedVertices(gl.calls);
     expect(uploaded[1]).toBe(5);
@@ -177,7 +177,7 @@ describe('drawGlSceneShadowMap', () => {
 
   it('draws a GPU-skinned caster through the HAS_SKIN depth variant', () => {
     const { state } = makeShadowState();
-    const scene = createSceneNode(SceneNodeKind);
+    const scene = createNode3D(Node3DKind);
     const geometry = createMeshGeometry({
       layout: SKINNED_LAYOUT,
       vertices: new Float32Array([0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]),
@@ -195,18 +195,18 @@ describe('drawGlSceneShadowMap', () => {
     mesh.skin = skin;
     addNodeChild(scene, mesh);
 
-    drawGlSceneShadowMap(state, scene, makeShadowCamera());
+    drawGlScene3DShadowMap(state, scene, makeShadowCamera());
 
     // A skinned caster compiles + uses the dedicated HAS_SKIN depth program rather than the rigid one.
-    expect([...getGlSceneRuntime(state).programCache.keys()]).toContain('shadow:depth:skin');
+    expect([...getGlScene3DRuntime(state).programCache.keys()]).toContain('shadow:depth:skin');
   });
 
   it('restores the previous framebuffer after the depth pass', () => {
     const { state, gl } = makeShadowState();
-    const scene = createSceneNode(SceneNodeKind);
+    const scene = createNode3D(Node3DKind);
     const camera = makeShadowCamera();
 
-    drawGlSceneShadowMap(state, scene, camera);
+    drawGlScene3DShadowMap(state, scene, camera);
 
     const framebufferConstant = (gl as unknown as Record<string, number>)['FRAMEBUFFER'];
     const bindFramebufferCalls = gl.calls.filter((c) => c.name === 'bindFramebuffer');

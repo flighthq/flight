@@ -6,8 +6,8 @@ import type {
   LambertMaterial,
   Material,
   MeshGeometry,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
   WgpuClassicDefineKey,
@@ -29,7 +29,7 @@ export const lambertWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
   bind(
     state: WgpuRenderState,
     material: Readonly<Material> | null,
-    lights: Readonly<SceneLightBlock>,
+    lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const stateRuntime = getWgpuRenderStateRuntime(state);
@@ -65,13 +65,13 @@ export const lambertWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     pass.setBindGroup(2, group);
   },
 
-  draw(state: WgpuRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+  draw(state: WgpuRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
     drawWgpuMeshSubset(state, proxy, geometry);
   },
 };
 
 // Registers the built-in Lambert renderer for LambertMaterialKind on this state. Opt-in (no top-level
-// side effect); call once per WgpuRenderState before drawWgpuScene so meshes with LambertMaterials draw.
+// side effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with LambertMaterials draw.
 export function registerLambertWgpuMaterial(state: WgpuRenderState): void {
   registerWgpuMeshMaterialRenderer(state, LambertMaterialKind, lambertWgpuMeshMaterialRenderer);
 }
