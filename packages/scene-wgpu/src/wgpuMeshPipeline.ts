@@ -713,6 +713,29 @@ export function getWgpuMeshPreludeWgsl(
   return skinned && skinning !== null ? skinning.extendMeshPrelude(WGPU_MESH_PRELUDE_WGSL) : WGPU_MESH_PRELUDE_WGSL;
 }
 
+// Whether a cached material binding must rebuild its GPUBindGroup because a freshly-resolved view or the
+// primary sampler no longer matches what it was built from. `resolveWgpuMaterialTextureView` is the
+// invalidation seam: a map swap, an unready→ready transition, a ready→ready image replacement, or an
+// ImageResource version bump each yield a different view identity, so identity comparison alone catches
+// every live material-map mutation with no parallel epoch bookkeeping. `sampler` is the shared primary
+// sampler (getWgpuMaterialSampler of the diffuse/base-color map), so a change to the primary map's
+// sampler trips a rebuild; a non-primary map's per-Texture sampler is not bound and does not (the
+// shared-primary-sampler contract). A binding with no cached views always rebuilds. Allocation-free —
+// callers pass a reused scratch as `views`.
+export function isWgpuMaterialBindGroupRebuildNeeded(
+  binding: Readonly<WgpuMaterialBinding>,
+  sampler: GPUSampler,
+  views: readonly GPUTextureView[],
+): boolean {
+  if (binding.sampler !== sampler) return true;
+  const cached = binding.views;
+  if (cached === undefined || cached.length !== views.length) return true;
+  for (let i = 0; i < views.length; i++) {
+    if (cached[i] !== views[i]) return true;
+  }
+  return false;
+}
+
 // True when a material map texture is present AND carries GPU-uploadable pixels — an element or a data-only
 // generated Surface. Families call this to decide the `has*Map` define flag — the textured pipeline variant
 // compiles only when the map can actually be sampled, so an empty texture renders the untextured path.
@@ -756,29 +779,6 @@ export function stashWgpuUvTransform(
   getTextureUvMatrix(scratchUvMatrix, texture);
   const m = scratchUvMatrix.m;
   for (let i = 0; i < 9; i++) out[i] = m[i];
-}
-
-// Whether a cached material binding must rebuild its GPUBindGroup because a freshly-resolved view or the
-// primary sampler no longer matches what it was built from. `resolveWgpuMaterialTextureView` is the
-// invalidation seam: a map swap, an unready→ready transition, a ready→ready image replacement, or an
-// ImageResource version bump each yield a different view identity, so identity comparison alone catches
-// every live material-map mutation with no parallel epoch bookkeeping. `sampler` is the shared primary
-// sampler (getWgpuMaterialSampler of the diffuse/base-color map), so a change to the primary map's
-// sampler trips a rebuild; a non-primary map's per-Texture sampler is not bound and does not (the
-// shared-primary-sampler contract). A binding with no cached views always rebuilds. Allocation-free —
-// callers pass a reused scratch as `views`.
-export function isWgpuMaterialBindGroupRebuildNeeded(
-  binding: Readonly<WgpuMaterialBinding>,
-  sampler: GPUSampler,
-  views: readonly GPUTextureView[],
-): boolean {
-  if (binding.sampler !== sampler) return true;
-  const cached = binding.views;
-  if (cached === undefined || cached.length !== views.length) return true;
-  for (let i = 0; i < views.length; i++) {
-    if (cached[i] !== views[i]) return true;
-  }
-  return false;
 }
 
 export function wgpuPerMapMaterialBindGroupNeedsRebuild(

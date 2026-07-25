@@ -15,11 +15,11 @@ drift-gated by `npm run support:check` (part of `npm run check`).
 
 ## Coverage summary
 
-143 functional scenes with committed baselines. Scenes carrying a fingerprint per backend:
+145 functional scenes with committed baselines. Scenes carrying a fingerprint per backend:
 
 | Canvas | DOM | WebGL | WebGPU |
 | --- | --- | --- | --- |
-| 91 / 143 | 39 / 143 | 139 / 143 | 127 / 143 |
+| 91 / 145 | 39 / 145 | 141 / 145 | 131 / 145 |
 
 All four backends re-verify in-sandbox — WebGPU via SwiftShader software Vulkan. A small set of WebGPU scenes exceed the fingerprint tolerance on software-vs-hardware antialiasing differences; see [maturity-gaps](maturity-gaps.md).
 
@@ -33,7 +33,7 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 | Model Import | FBX / USD / COLLADA / PLY / STL | `not-implemented` | No parser exists. |
 | Model Import | glTF materials / textures / animations | `not-implemented` | glTF imports geometry + skins only; drops materials, textures, animation channels, external .bin (gltfParse.ts header). |
 | Model Import | OBJ / 3DS / MD2 / MD5 textures | `not-implemented` | Only AWD emits SceneResourceRefs; other parsers leave textures unresolved. |
-| Resource lifecycle | Compressed texture upload (KTX2 / DDS / Basis) | `partial` | GL-native block upload landed (render-gl uploadGlCompressedTextureContainer + display draw path, behind the opt-in registerGlCompressedTextureUpload seam, with an RGBA decode fallback); wgpu/canvas/dom have none. Still no Basis/supercompression transcoder — supercompressed containers report the failure sentinel. |
+| Resource lifecycle | Compressed texture upload (KTX2 / DDS / Basis) | `partial` | GL and WebGPU native block upload plus display draw paths are implemented behind opt-in uploader seams, with RGBA decode fallbacks. WebGPU supports native BC/ETC2/ASTC and decoder-backed PVRTC/unavailable families. Canvas/DOM have none. Still no Basis/supercompression transcoder — supercompressed containers report the failure sentinel. |
 | Resource lifecycle | Texture unload / eviction / streaming (mip/LOD) | `not-implemented` | scene-resources resolves but never releases; assets refcount wired to nothing; no progressive streaming. |
 | Simulation | Physics / dynamics (rigid-body solver, swept/TOI, contacts) | `not-implemented` | collision is discrete overlap + MTV only; no solver, no world integration. |
 | Skinning | Morph targets / blend shapes / IK / blend trees | `not-implemented` | skeleton3d Phase 4, chartered separately, not built. |
@@ -70,6 +70,12 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 | --- | :-: | :-: | :-: | :-: |
 | `color-adjustment` | ✓ | · | ✓ | ✓ |
 
+### Compressed
+
+| Scene | Canvas | DOM | WebGL | WebGPU |
+| --- | :-: | :-: | :-: | :-: |
+| `compressed-texture` | · | · | ✓ | ✓ |
+
 ### Display Object
 
 | Scene | Canvas | DOM | WebGL | WebGPU |
@@ -83,7 +89,7 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
-| `effect-blend-advanced` | · | · | ✓ | · |
+| `effect-blend-advanced` | · | · | ✓ | ✓ |
 | `effect-bloom` | ✓ | · | ✓ | ✓ |
 | `effect-bokeh-dof` | ✓ | · | ✓ | ✓ |
 | `effect-brightness-contrast` | ✓ | · | ✓ | ✓ |
@@ -215,7 +221,8 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
-| `scene-morph` | · | · | ✓ | · |
+| `scene-morph` | · | · | ✓ | ✓ |
+| `scene-skin-morph-compose` | · | · | ✓ | ✓ |
 | `scene-skinning` | · | · | ✓ | ✓ |
 | `scene-transparent` | · | · | · | ✓ |
 
@@ -293,4 +300,3 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
 | `video-frame` | ✓ | ✓ | ✓ | ✓ |
-
