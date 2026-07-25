@@ -432,6 +432,28 @@ describe('createSceneFromMd2', () => {
     expect(crumb.detail?.skin).toBe(0);
   });
 
+  it('reports a Drop diagnostic (aggregated) for skin records with an empty path', () => {
+    // Two skin slots counted in numSkins but with all-null (empty) paths → no material, aggregated to one
+    // crumb with a count.
+    const md2 = buildMd2({
+      compressedVertices: [
+        { normalIndex: 0, x: 0, y: 0, z: 0 },
+        { normalIndex: 0, x: 1, y: 0, z: 0 },
+        { normalIndex: 0, x: 0, y: 1, z: 0 },
+      ],
+      skins: ['', ''],
+      texCoords: [{ s: 0, t: 0 }],
+      triangles: [{ texIndices: [0, 0, 0], vertIndices: [0, 1, 2] }],
+    });
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromMd2(md2, diagnostics);
+    const crumb = expectOneCrumb(diagnostics, 'md2.skin-empty-path');
+    expect(crumb.severity).toBe('Drop');
+    expect(crumb.origin).toBe('parseMd2');
+    expect(crumb.detail?.count).toBe(2);
+    expect(crumb.detail?.firstSkin).toBe(0);
+  });
+
   it('scales UV coordinates by skinWidth and skinHeight', () => {
     const md2 = buildMd2({
       compressedVertices: [

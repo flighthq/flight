@@ -479,7 +479,14 @@ function buildGltfNodeWorldTransforms(
   parents.fill(-1);
   for (let parent = 0; parent < nodes.length; parent++) {
     for (const child of nodes[parent].children ?? []) {
-      if (child < 0 || child >= nodes.length) continue;
+      if (child < 0 || child >= nodes.length) {
+        // A child index outside the node table — the malformed reference is ignored (the rest of the
+        // hierarchy still resolves), so this is a Recover, like the multiple-parents/cycle guards below.
+        tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.node-child-out-of-range', '', {
+          firstChild: child,
+        });
+        continue;
+      }
       if (parents[child] !== -1) {
         tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.node-multiple-parents', '', {
           firstChild: child,
@@ -599,7 +606,15 @@ function buildGltfAnimations(
     let duration = 0;
     for (const channel of animation.channels) {
       const targetNodeIndex = channel.target.node;
-      if (targetNodeIndex === undefined || gltfNodeToDocNode[targetNodeIndex] === undefined) continue;
+      if (targetNodeIndex === undefined || gltfNodeToDocNode[targetNodeIndex] === undefined) {
+        // The channel targets no node, or a node index outside the table — it cannot be bound, so the
+        // channel is omitted (Drop). If every channel of an animation drops this way the animation vanishes
+        // (see the channels.length > 0 guard below), which the crumb makes visible.
+        tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.animation-target-unresolved', '', {
+          firstTarget: targetNodeIndex ?? -1,
+        });
+        continue;
+      }
       const sampler = animation.samplers[channel.sampler];
       if (sampler === undefined) {
         tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.animation-missing-sampler', '', {

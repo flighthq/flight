@@ -623,6 +623,10 @@ function parseMeshBlock(
       const nameEnd = line.indexOf('"', nameStart + 1);
       if (nameStart >= 0 && nameEnd > nameStart) {
         shader = line.slice(nameStart + 1, nameEnd);
+      } else {
+        // A `shader` directive with no quoted name: the mesh is emitted WITHOUT a material (the shader path
+        // is the mesh's only material/texture reference). Recover — geometry survives, the binding is lost.
+        tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Recover, 'md5mesh.shader-unquoted', '', { firstLine: i });
       }
       continue;
     }

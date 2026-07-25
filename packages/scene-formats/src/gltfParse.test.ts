@@ -1664,6 +1664,35 @@ describe('gltf diagnostics coverage', () => {
     expect(crumb!.detail?.firstType).toBe('perspective');
   });
 
+  it('recovers and reports gltf.node-child-out-of-range for a child index outside the node table', () => {
+    const doc = {
+      asset: { version: '2.0' },
+      nodes: [{ children: [9] }, {}],
+      scenes: [{ nodes: [0, 1] }],
+    } as GltfDocument;
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.node-child-out-of-range');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(crumb!.detail?.firstChild).toBe(9);
+  });
+
+  it('drops and reports gltf.animation-target-unresolved for a channel targeting an out-of-range node', () => {
+    const doc = makeTriangleGltf();
+    doc.animations = [
+      { channels: [{ sampler: 0, target: { node: 99, path: 'translation' } }], samplers: [{ input: 0, output: 0 }] },
+    ];
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.animation-target-unresolved');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(crumb!.detail?.firstTarget).toBe(99);
+  });
+
   it('recovers and reports gltf.node-multiple-parents when two nodes claim the same child', () => {
     const doc = {
       asset: { version: '2.0' },

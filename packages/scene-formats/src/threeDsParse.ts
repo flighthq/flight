@@ -349,7 +349,12 @@ function parseFaces(
     const subId = view.getUint16(cursor, true);
     const subLength = readChunkLength(view, cursor);
     const subEnd = cursor + subLength;
-    if (subLength < THREE_DS_CHUNK_HEADER_BYTES || subEnd > end) break;
+    if (subLength < THREE_DS_CHUNK_HEADER_BYTES || subEnd > end) {
+      // The faces survive; only trailing FACE_MATERIAL/SMOOTH_GROUP sub-chunks past this malformed one are
+      // abandoned — a break-keeps-parsed recovery, mirroring the chunk-exceeds guards in the sibling walks.
+      tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Recover, '3ds.face-subchunk-exceeds', '', {});
+      break;
+    }
     const dataOffset = cursor + THREE_DS_CHUNK_HEADER_BYTES;
     if (subId === THREE_DS_FACE_MATERIAL) {
       const group = parseFaceMaterialGroup(view, dataOffset, subEnd, count, threeDsDrops);
@@ -478,7 +483,12 @@ function appendMeshDocument(
   const vertexCount = mesh.vertices.length / 3;
   const faceCount = mesh.faces.length / 3;
 
-  if (vertexCount === 0 || faceCount === 0) return;
+  // A parsed-but-empty trimesh (no vertices or no faces) yields no document mesh — an omitted element,
+  // mirroring md5mesh.mesh-empty.
+  if (vertexCount === 0 || faceCount === 0) {
+    tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Drop, '3ds.mesh-empty', '', { firstName: mesh.name });
+    return;
+  }
 
   // Convert positions from RH Z-up to RH Y-up before normal computation so all geometry operates in
   // Flight's coordinate space. The rotation preserves winding, so computed normals face outward.
@@ -606,7 +616,7 @@ function appendMeshDocument(
   mesh.materialGroups.forEach((group, groupIndex) => {
     emitSubset(
       (f) => faceGroup[f] === groupIndex,
-      resolveThreeDsMaterial(group.name, materials, materialIndexByName, document),
+      resolveThreeDsMaterial(group.name, materials, materialIndexByName, document, threeDsDrops),
     );
   });
   emitSubset((f) => faceGroup[f] === -1, -1);
@@ -640,10 +650,16 @@ function resolveThreeDsMaterial(
   materials: Readonly<Map<string, ThreeDsMaterial>>,
   materialIndexByName: Map<string, number>,
   document: SceneDocument,
+  threeDsDrops: Map<string, ThreeDsDropTally> | null,
 ): number {
-  if (name.length === 0) return -1;
+  if (name.length === 0) return -1; // an empty name is a spec-valid default-material subset — silent
   const parsed = materials.get(name);
-  if (parsed === undefined) return -1;
+  if (parsed === undefined) {
+    // A FACE_MATERIAL group naming a material absent from the file's table: the authored binding is dropped
+    // and the subset falls back to the default material — mirrors obj.material-missing (Drop).
+    tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Drop, '3ds.material-missing', '', { firstName: name });
+    return -1;
+  }
   const cached = materialIndexByName.get(name);
   if (cached !== undefined) return cached;
   const index = document.materials.length;

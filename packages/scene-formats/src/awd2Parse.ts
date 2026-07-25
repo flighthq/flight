@@ -1169,11 +1169,36 @@ function parseTriangleGeometryBlock(
   const dv = view as DataView;
   let offset = start;
 
-  if (offset + 2 > end) return [];
+  // Guard the name in two steps: the 2-byte VarString length prefix, then its declared payload — otherwise a
+  // truncated name payload slips past readAwdString (which does not bound-check) and mislabels the next
+  // guard's field as 'num-submeshes' when the missing bytes actually belong to the name.
+  if (offset + 2 > end || offset + 2 + dv.getUint16(offset, true) > end) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'awd2.geometry-truncated',
+      'parseTriangleGeometryBlock',
+      {
+        field: 'name',
+      },
+    );
+    return [];
+  }
   const nameResult = readAwdString(view, source, offset);
   offset = nameResult.end;
 
-  if (offset + 2 > end) return [];
+  if (offset + 2 > end) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'awd2.geometry-truncated',
+      'parseTriangleGeometryBlock',
+      {
+        field: 'num-submeshes',
+      },
+    );
+    return [];
+  }
   const numSubMeshes = dv.getUint16(offset, true);
   offset += 2;
 
@@ -1182,7 +1207,19 @@ function parseTriangleGeometryBlock(
   const geometries: ParsedGeometry[] = [];
 
   for (let s = 0; s < numSubMeshes; s++) {
-    if (offset + 4 > end) break;
+    if (offset + 4 > end) {
+      // The sub-mesh header is truncated: this and every remaining sub-mesh of the block are omitted.
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Drop,
+        'awd2.submesh-truncated',
+        'parseTriangleGeometryBlock',
+        {
+          firstSubMesh: s,
+        },
+      );
+      break;
+    }
     const subMeshByteLen = dv.getUint32(offset, true);
     const subMeshEnd = offset + 4 + subMeshByteLen;
     offset += 4;

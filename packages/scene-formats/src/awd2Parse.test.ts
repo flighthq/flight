@@ -433,6 +433,58 @@ describe('awd2 diagnostic crumb coverage', () => {
     expect(crumb.origin).toBe('parseTriangleGeometryBlock');
   });
 
+  it('records geometry-truncated (field name) when the block ends before the geometry name', () => {
+    const geomBody = new Uint8Array(1); // less than the 2 bytes a VarString length needs
+    const body = concatBytes(buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length), geomBody);
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'awd2.geometry-truncated');
+    expect(crumb.severity).toBe('Drop');
+    expect(crumb.origin).toBe('parseTriangleGeometryBlock');
+    expect(crumb.detail?.field).toBe('name');
+  });
+
+  it('records geometry-truncated (field name) when the declared name PAYLOAD runs past the block', () => {
+    // Length prefix says 10 name bytes, but only one payload byte is present — the missing bytes belong to
+    // the name, so the field must be 'name', not 'num-submeshes'.
+    const geomBody = new Uint8Array([10, 0, 65]);
+    const body = concatBytes(buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length), geomBody);
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'awd2.geometry-truncated');
+    expect(crumb.severity).toBe('Drop');
+    expect(crumb.origin).toBe('parseTriangleGeometryBlock');
+    expect(crumb.detail?.field).toBe('name');
+  });
+
+  it('records geometry-truncated (field num-submeshes) when the block ends before the sub-mesh count', () => {
+    const geomBody = buildAwdString('Geo'); // name only, nothing after
+    const body = concatBytes(buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length), geomBody);
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'awd2.geometry-truncated');
+    expect(crumb.severity).toBe('Drop');
+    expect(crumb.origin).toBe('parseTriangleGeometryBlock');
+    expect(crumb.detail?.field).toBe('num-submeshes');
+  });
+
+  it('records submesh-truncated when a declared sub-mesh header is missing', () => {
+    const numSubMeshes = new Uint8Array(2);
+    new DataView(numSubMeshes.buffer).setUint16(0, 1, true); // declares one sub-mesh, supplies none
+    const geomBody = concatBytes(buildAwdString('Geo'), numSubMeshes, new Uint8Array(4));
+    const body = concatBytes(buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length), geomBody);
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'awd2.submesh-truncated');
+    expect(crumb.severity).toBe('Drop');
+    expect(crumb.origin).toBe('parseTriangleGeometryBlock');
+    expect(crumb.detail?.firstSubMesh).toBe(0);
+  });
+
   it('records stream-data-past-end (Recover, parseTriangleGeometryBlock) when a stream declares more bytes than the block holds', () => {
     const posStream = buildStream(
       AWD2_STREAM_POSITIONS,
