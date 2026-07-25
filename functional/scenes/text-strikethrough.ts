@@ -3,14 +3,13 @@
 // height, in the text color. Purely visual — the line is added by the rasterizer and does not affect
 // layout — so only a real render proves it.
 //
-// BACKEND CAVEAT: strikethrough is drawn ONLY by the canvas and dom RichText renderers. The gl/wgpu
-// RichText renderers handle `format.underline` but NOT `format.strikethrough`, so this test is scoped to
-// "renderers":["canvas","dom"] in package.json. (Underline, which all four backends draw, is covered by
-// the sibling text-underline test across all backends.) If/when the GPU renderers gain strikethrough, add
-// "webgl"/"webgpu" here.
+// All four backends draw strikethrough: canvas/dom natively, and gl/wgpu through their canvas-raster
+// RichText path (glRichText/wgpuRichText draw the strike at baseline - ascent*0.35, mirroring
+// displayobject-canvas). So this backend-agnostic test runs across canvas/dom/webgl/webgpu — the sibling
+// of the all-backend text-underline test.
 //
-// Oracle (coverage-based, lenient): canvasRichText draws the strike at baseline - ascent*0.35, i.e. through
-// the upper-middle of the glyph bodies. A scanline through that mid-height carries BOTH glyph ink and the
+// Oracle (coverage-based, lenient): the strike sits at baseline - ascent*0.35, i.e. through the
+// upper-middle of the glyph bodies. A scanline through that mid-height carries BOTH glyph ink and the
 // continuous strike, so a struck word shows a much wider continuous ink run across the mid-band than the
 // glyphs alone would (the strike bridges the inter-glyph gaps). We require a wide continuous run through
 // the mid-height band; estimates are fuzzy because exact metrics are font-dependent and we cannot run a
