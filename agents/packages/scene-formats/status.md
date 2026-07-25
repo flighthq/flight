@@ -64,6 +64,17 @@ empty or ragged (values not a whole multiple of times) accessor pair now drops t
 (`gltf.animation-sampler-empty` Drop) so no empty-channel animation is created. Five probe regressions added.
 scene-formats 497/497 (gltfParse 116/116), npm run check exit 0.
 
+**Item-4 morph-drop granularity — RULED whole-set-drop (review, on record).** When any morph target is invalid
+the WHOLE set drops, not just that target. Why this over individual-drop-with-weight-remap: (a) whole-set-drop
+is provably correct and trivially honors the no-weight-shift invariant (no partial survivors = nothing to
+renumber); (b) a morph target set is authored as a COHERENT unit (facial blendshapes etc.) — a partial-morph
+survivor missing one target is usually visibly wrong, not graceful degradation; (c) the remap alternative would
+thread a survivor-index map from `buildGltfMorph` into `buildGltfAnimations` purely to preserve that low-value
+partial case — completeness-for-a-rare-case bought with a cross-function index-aliasing bug surface, against the
+"small functions, explicit ownership" rule. POSSIBLE FUTURE DEEPENING (do NOT build speculatively): individual-
+target-drop with mesh-weight + weights-animation-value remap, keeping the good targets when one is bad. Revisit
+ONLY if a real asset shows a partial-morph survivor is worth the cross-function index-map coupling.
+
 **D exhaustive accessor-site sweep (review directive + review2-954ae4c2 6th finding).** review confirmed the
 classification-free `readAccessor` + role-based classification is the right architecture and pushed to sweep
 EVERY accessor consumer so no further gap remains. Two closed: (a) `applyAccessorSparse` read `sparse.count`
