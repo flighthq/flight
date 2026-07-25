@@ -1,3 +1,4 @@
+import { ImportDiagnosticSeverity } from '@flighthq/types';
 import {
   LibgdxParticleFormatKind,
   ParticleDesignerFormatKind,
@@ -406,7 +407,7 @@ describe('parseParticleConfigDocument', () => {
     const result = parseParticleConfigDocument(PLIST_SNIPPET);
     expect(result.format).toBe(ParticleDesignerFormatKind);
     expect(result.config.maxParticles).toBe(150);
-    expect(result.warnings).toEqual([]);
+    expect(result.diagnostics).toEqual([]);
   });
   it('returns Pixi format kind for Pixi JSON', () => {
     const result = parseParticleConfigDocument(PIXI_JSON);
@@ -429,15 +430,18 @@ describe('parseParticleConfigDocument', () => {
     expect(result.format).toBe(UnityParticleFormatKind);
     expect(result.config.maxParticles).toBe(500);
   });
-  it('returns null format and unknown-format warning for unrecognised input', () => {
+  it('reports particles.unknown-format (Reject) with null format for unrecognised input', () => {
     const result = parseParticleConfigDocument('totally unknown content');
     expect(result.format).toBeNull();
-    expect(result.warnings.some((w) => w.includes('unknown-format'))).toBe(true);
+    const crumb = result.diagnostics.find((d) => d.kind === 'particles.unknown-format');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Reject);
+    expect(crumb!.origin).toBe('parseParticleConfigDocument');
   });
   it('returns null format for empty string', () => {
     const result = parseParticleConfigDocument('');
     expect(result.format).toBeNull();
-    expect(result.warnings.length).toBeGreaterThan(0);
+    expect(result.diagnostics.length).toBeGreaterThan(0);
   });
   it('does not throw for malformed JSON that passes detection', () => {
     // A JSON object with Unity-ish keys but truncated

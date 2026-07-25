@@ -1,6 +1,13 @@
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
 import { createParticleEmitterConfig } from '@flighthq/particles';
-import type { ParseParticleConfigOptions, ParticleConfigParseResult, ParticleEmitterConfig } from '@flighthq/types';
+import type {
+  ImportDiagnostic,
+  ParseParticleConfigOptions,
+  ParticleConfigParseResult,
+  ParticleEmitterConfig,
+} from '@flighthq/types';
 import {
+  ImportDiagnosticSeverity,
   LibgdxParticleFormatKind,
   ParticleDesignerFormatKind,
   PixiParticleFormatKind,
@@ -19,13 +26,11 @@ import { parseUnityParticle, parseUnityParticleDocument } from './unityParse';
 /** Parse any supported particle format string to a ParticleEmitterConfig.
  *
  *  Calls `detectParticleFormat` internally and routes to the format-specific
- *  parser. When the format cannot be detected the result carries a default
- *  config and a `warnings` entry of `'unknown-format: <reason>'` rather than
- *  throwing — follow-up parsing errors from the per-format parsers are also
- *  caught and returned as warnings.
+ *  parser. When the format cannot be detected, or a per-format parser throws, it
+ *  returns a default config rather than throwing.
  *
- *  Use `parseParticleConfigDocument` instead when you need the full document
- *  for round-trip serialisation. */
+ *  Use `parseParticleConfigDocument` instead when you need the full document plus
+ *  structured import diagnostics for round-trip serialisation. */
 export function parseParticleConfig(text: string, options?: ParseParticleConfigOptions): ParticleEmitterConfig {
   const format = detectParticleFormat(text);
   if (format === null) return createParticleEmitterConfig();
@@ -43,57 +48,76 @@ export function parseParticleConfig(text: string, options?: ParseParticleConfigO
 }
 
 /** Parse any supported particle format string and return the config, detected
- *  format, and any import warnings.
+ *  format, and any structured import diagnostics.
  *
- *  Unknown or unparseable input returns a default config with a warning entry
- *  of `'unknown-format'` rather than throwing. */
+ *  Unknown or unparseable input returns a default config with a `particles.unknown-format` or
+ *  `particles.parse-error` Reject diagnostic rather than throwing. The per-format parsers own their own
+ *  Drop/Skip/Recover diagnostics, forwarded here unchanged. */
 export function parseParticleConfigDocument(
   text: string,
   options?: ParseParticleConfigOptions,
 ): ParticleConfigParseResult {
   const format = detectParticleFormat(text);
   if (format === null) {
-    return {
-      config: createParticleEmitterConfig(),
-      format: null,
-      warnings: ['unknown-format: input did not match any supported particle format'],
-    };
+    const diagnostics: ImportDiagnostic[] = [];
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'particles.unknown-format',
+      'parseParticleConfigDocument',
+      {
+        reason: 'no-format-detected',
+      },
+    );
+    return { config: createParticleEmitterConfig(), diagnostics, format: null };
   }
   try {
     if (format === LibgdxParticleFormatKind) {
       const result = parseLibgdxParticleDocument(text, options);
-      return { config: result.config, format, warnings: result.warnings };
+      return { config: result.config, diagnostics: result.diagnostics, format };
     }
     if (format === ParticleDesignerFormatKind) {
       const result = parseParticleDesignerPlistDocument(text, options);
-      return { config: result.config, format, warnings: result.warnings };
+      return { config: result.config, diagnostics: result.diagnostics, format };
     }
     if (format === PixiParticleFormatKind) {
       const result = parsePixiParticleDocument(text);
-      return { config: result.config, format, warnings: result.warnings };
+      return { config: result.config, diagnostics: result.diagnostics, format };
     }
     if (format === SpineParticleFormatKind) {
       const result = parseSpineParticleDocument(text);
-      return { config: result.config, format, warnings: result.warnings };
+      return { config: result.config, diagnostics: result.diagnostics, format };
     }
     if (format === StarlingPexFormatKind) {
       const result = parseStarlingPexDocument(text, options);
-      return { config: result.config, format, warnings: result.warnings };
+      return { config: result.config, diagnostics: result.diagnostics, format };
     }
     if (format === UnityParticleFormatKind) {
       const result = parseUnityParticleDocument(text, options);
-      return { config: result.config, format, warnings: result.warnings };
+      return { config: result.config, diagnostics: result.diagnostics, format };
     }
   } catch (err) {
-    return {
-      config: createParticleEmitterConfig(),
-      format,
-      warnings: [`parse-error: ${(err as Error).message}`],
-    };
+    const diagnostics: ImportDiagnostic[] = [];
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'particles.parse-error',
+      'parseParticleConfigDocument',
+      {
+        message: (err as Error).message,
+      },
+    );
+    return { config: createParticleEmitterConfig(), diagnostics, format };
   }
-  return {
-    config: createParticleEmitterConfig(),
-    format,
-    warnings: [`unknown-format: format '${format}' has no registered parser`],
-  };
+  const diagnostics: ImportDiagnostic[] = [];
+  reportImportDiagnostic(
+    diagnostics,
+    ImportDiagnosticSeverity.Reject,
+    'particles.unknown-format',
+    'parseParticleConfigDocument',
+    {
+      reason: 'no-registered-parser',
+    },
+  );
+  return { config: createParticleEmitterConfig(), diagnostics, format };
 }

@@ -1,3 +1,5 @@
+import { ImportDiagnosticSeverity } from '@flighthq/types';
+
 import { parseLibgdxParticle, parseLibgdxParticleDocument } from './libgdxParse';
 
 const SPARK_P = `Particle Effect
@@ -292,18 +294,50 @@ describe('parseLibgdxParticleDocument', () => {
     const { document } = parseLibgdxParticleDocument(SPARK_P);
     expect(document.imagePath).toBe('spark.png');
   });
-  it('has no warnings for a standard point emitter', () => {
-    const { warnings } = parseLibgdxParticleDocument(SPARK_P);
-    expect(warnings).toEqual([]);
+  it('has no diagnostics for a standard point emitter', () => {
+    const { diagnostics } = parseLibgdxParticleDocument(SPARK_P);
+    expect(diagnostics).toEqual([]);
   });
-  it('warns when delay is active', () => {
-    const text = SPARK_P.replace('Delay\nactive: false', 'Delay\nactive: true');
-    const { warnings } = parseLibgdxParticleDocument(text);
-    expect(warnings.some((w) => w.includes('delay'))).toBe(true);
+  it('reports libgdx.delay-unsupported (Skip) when delay is active', () => {
+    const { diagnostics } = parseLibgdxParticleDocument(SPARK_P.replace('Delay\nactive: false', 'Delay\nactive: true'));
+    const crumb = diagnostics.find((d) => d.kind === 'libgdx.delay-unsupported');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+    expect(crumb!.origin).toBe('collectLibgdxDiagnostics');
   });
-  it('warns when spawn shape is line (no mapping)', () => {
-    const text = SPARK_P.replace('shape: point', 'shape: line');
-    const { warnings } = parseLibgdxParticleDocument(text);
-    expect(warnings.some((w) => w.includes('line'))).toBe(true);
+  it('reports libgdx.life-offset-unsupported (Skip) when lifeOffset is active', () => {
+    const { diagnostics } = parseLibgdxParticleDocument(
+      SPARK_P.replace('Life Offset\nactive: false', 'Life Offset\nactive: true'),
+    );
+    const crumb = diagnostics.find((d) => d.kind === 'libgdx.life-offset-unsupported');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+    expect(crumb!.origin).toBe('collectLibgdxDiagnostics');
+  });
+  it('reports libgdx.position-offset-unsupported (Skip) when an x/y offset is active', () => {
+    const { diagnostics } = parseLibgdxParticleDocument(
+      SPARK_P.replace('X Offset\nactive: false', 'X Offset\nactive: true'),
+    );
+    const crumb = diagnostics.find((d) => d.kind === 'libgdx.position-offset-unsupported');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+    expect(crumb!.origin).toBe('collectLibgdxDiagnostics');
+  });
+  it('reports libgdx.premultiplied-alpha-informational (Skip) when the flag is set', () => {
+    // premultipliedAlpha is a root-level key (read before the first named section), so inject it there.
+    const { diagnostics } = parseLibgdxParticleDocument(
+      SPARK_P.replace('maxParticleCount: 100', 'maxParticleCount: 100\npremultipliedAlpha: true'),
+    );
+    const crumb = diagnostics.find((d) => d.kind === 'libgdx.premultiplied-alpha-informational');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+    expect(crumb!.origin).toBe('collectLibgdxDiagnostics');
+  });
+  it('reports libgdx.line-shape-mapped-to-point (Recover) when the spawn shape is line', () => {
+    const { diagnostics } = parseLibgdxParticleDocument(SPARK_P.replace('shape: point', 'shape: line'));
+    const crumb = diagnostics.find((d) => d.kind === 'libgdx.line-shape-mapped-to-point');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('collectLibgdxDiagnostics');
   });
 });

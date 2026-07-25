@@ -1,3 +1,5 @@
+import { ImportDiagnosticSeverity } from '@flighthq/types';
+
 import { parseStarlingPex, parseStarlingPexDocument } from './starlingPexParse';
 
 // Attribute-style PEX (the canonical Sparrow/Starling variant)
@@ -141,14 +143,31 @@ describe('parseStarlingPexDocument', () => {
     expect(document.blendFuncDestination).toBe(771);
   });
   it('has no warnings for a standard gravity emitter', () => {
-    expect(parseStarlingPexDocument(FIRE_PEX_ATTR).warnings).toEqual([]);
+    expect(parseStarlingPexDocument(FIRE_PEX_ATTR).diagnostics).toEqual([]);
   });
-  it('warns that a radial emitter is approximated', () => {
+  it('reports starlingpex.radial-approximated (Recover) for a radial emitter', () => {
     const pex = FIRE_PEX_ATTR.replace('emitterType" value="0"', 'emitterType" value="1"');
-    expect(parseStarlingPexDocument(pex).warnings.some((w) => w.toLowerCase().includes('radial'))).toBe(true);
+    const crumb = parseStarlingPexDocument(pex).diagnostics.find((d) => d.kind === 'starlingpex.radial-approximated');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('collectStarlingPexDiagnostics');
   });
-  it('warns about unsupported radial/tangential acceleration', () => {
+  it('reports starlingpex.radial-acceleration-unsupported (Skip)', () => {
     const pex = FIRE_PEX_ATTR.replace('radialAcceleration" value="0"', 'radialAcceleration" value="50"');
-    expect(parseStarlingPexDocument(pex).warnings.some((w) => w.includes('radialAcceleration'))).toBe(true);
+    const crumb = parseStarlingPexDocument(pex).diagnostics.find(
+      (d) => d.kind === 'starlingpex.radial-acceleration-unsupported',
+    );
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+    expect(crumb!.origin).toBe('collectStarlingPexDiagnostics');
+  });
+  it('reports starlingpex.tangential-acceleration-unsupported (Skip)', () => {
+    const pex = FIRE_PEX_ATTR.replace('tangentialAcceleration" value="0"', 'tangentialAcceleration" value="50"');
+    const crumb = parseStarlingPexDocument(pex).diagnostics.find(
+      (d) => d.kind === 'starlingpex.tangential-acceleration-unsupported',
+    );
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+    expect(crumb!.origin).toBe('collectStarlingPexDiagnostics');
   });
 });

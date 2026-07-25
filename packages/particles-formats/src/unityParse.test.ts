@@ -5,6 +5,7 @@ import {
   sampleParticleColorCurve,
   sampleParticleCurve,
 } from '@flighthq/particles';
+import { ImportDiagnosticSeverity } from '@flighthq/types';
 
 import { parseUnityParticle, parseUnityParticleDocument } from './unityParse';
 import { serializeUnityParticle } from './unitySerialize';
@@ -117,7 +118,9 @@ describe('parseUnityParticle', () => {
           },
         },
       });
-      expect(parseUnityParticleDocument(json).warnings.some((w) => w.toLowerCase().includes('gradient'))).toBe(false);
+      expect(parseUnityParticleDocument(json).diagnostics.some((d) => d.kind.toLowerCase().includes('gradient'))).toBe(
+        false,
+      );
     });
   });
 
@@ -238,7 +241,7 @@ describe('parseUnityParticleDocument', () => {
 
   describe('import warnings', () => {
     it('has no warnings for a config-representable system', () => {
-      expect(parseUnityParticleDocument(SMOKE_JSON, { pixelsPerUnit: PPU }).warnings).toEqual([]);
+      expect(parseUnityParticleDocument(SMOKE_JSON, { pixelsPerUnit: PPU }).diagnostics).toEqual([]);
     });
 
     it('warns about unsupported modules that are enabled', () => {
@@ -248,13 +251,20 @@ describe('parseUnityParticleDocument', () => {
         collision: { enabled: true },
         trails: { enabled: false }, // disabled → no warning
       });
-      const { warnings } = parseUnityParticleDocument(json, { pixelsPerUnit: PPU });
-      expect(warnings.some((w) => w.includes('noise'))).toBe(true);
-      expect(warnings.some((w) => w.includes('collision'))).toBe(true);
-      expect(warnings.some((w) => w.includes('trails'))).toBe(false);
+      const { diagnostics } = parseUnityParticleDocument(json, { pixelsPerUnit: PPU });
+      // One Skip crumb per distinct unsupported module (module label as the discriminator), from
+      // collectUnityDiagnostics; the disabled trails module produces none.
+      const noise = diagnostics.find((d) => d.kind === 'unity.module-unsupported' && d.detail?.module === 'noise');
+      expect(noise).toBeDefined();
+      expect(noise!.severity).toBe(ImportDiagnosticSeverity.Skip);
+      expect(noise!.origin).toBe('collectUnityDiagnostics');
+      expect(diagnostics.some((d) => d.kind === 'unity.module-unsupported' && d.detail?.module === 'collision')).toBe(
+        true,
+      );
+      expect(diagnostics.some((d) => d.detail?.module === 'trails')).toBe(false);
     });
 
-    it('warns when more than one burst is present', () => {
+    it('reports unity.extra-bursts-dropped (Drop) when more than one burst is present', () => {
       const json = JSON.stringify({
         ...JSON.parse(SMOKE_JSON),
         emission: {
@@ -265,7 +275,11 @@ describe('parseUnityParticleDocument', () => {
           ],
         },
       });
-      expect(parseUnityParticleDocument(json).warnings.some((w) => w.includes('burst'))).toBe(true);
+      const crumb = parseUnityParticleDocument(json).diagnostics.find((d) => d.kind === 'unity.extra-bursts-dropped');
+      expect(crumb).toBeDefined();
+      expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+      expect(crumb!.origin).toBe('collectUnityDiagnostics');
+      expect(crumb!.detail?.burstCount).toBe(2);
     });
   });
 });

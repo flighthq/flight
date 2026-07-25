@@ -1,5 +1,7 @@
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
 import { createParticleEmitterConfig } from '@flighthq/particles';
-import type { PixiParseResult, ParticleBlendMode, ParticleEmitterConfig } from '@flighthq/types';
+import type { ImportDiagnostic, PixiParseResult, ParticleBlendMode, ParticleEmitterConfig } from '@flighthq/types';
+import { ImportDiagnosticSeverity } from '@flighthq/types';
 /** @deprecated Use `PixiParseResult`. */
 /** Parse a Pixi.js / pixi-particle-emitter JSON config string directly to a ParticleEmitterConfig.
  *
@@ -10,12 +12,12 @@ export function parsePixiParticle(json: string): ParticleEmitterConfig {
 }
 
 /** Parse a Pixi.js / pixi-particle-emitter JSON config string, returning the config
- *  and any import warnings for features that could not be represented. */
+ *  and structured import diagnostics for features that could not be represented. */
 export function parsePixiParticleDocument(json: string): PixiParseResult {
   const raw = parsePixiJson(json);
   return {
     config: rawToConfig(raw),
-    warnings: collectPixiWarnings(raw),
+    diagnostics: collectPixiDiagnostics(raw),
   };
 }
 
@@ -23,26 +25,45 @@ const DEG2RAD = Math.PI / 180;
 
 type PixiRaw = Record<string, unknown>;
 
-function collectPixiWarnings(raw: PixiRaw): string[] {
-  const warnings: string[] = [];
-  // Pixi supports spawnBurst which has no equivalent
+// Single-field checks (not a hot loop) → direct reports; collectPixiDiagnostics is the physical emitter and
+// hence the origin. Recover = a spawn type substituted with a point emitter; Skip = a recognized field Flight
+// does not model or imports only partially.
+function collectPixiDiagnostics(raw: PixiRaw): ImportDiagnostic[] {
+  const diagnostics: ImportDiagnostic[] = [];
   if (raw.spawnBurst !== undefined) {
-    warnings.push('Pixi spawnBurst spawn type has no equivalent and was mapped to point emitter');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'pixi.spawn-burst-mapped-to-point',
+      'collectPixiDiagnostics',
+    );
   }
-  // Pixi spawnPolygon
   if (raw.spawnPolygon !== undefined) {
-    warnings.push('Pixi spawnPolygon spawn type has no equivalent and was mapped to point emitter');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'pixi.spawn-polygon-mapped-to-point',
+      'collectPixiDiagnostics',
+    );
   }
-  // Pixi acceleration (only warn when non-zero)
   const accel = raw.acceleration as { x?: unknown; y?: unknown } | undefined;
   if (accel !== undefined && (rn(accel.x, 0) !== 0 || rn(accel.y, 0) !== 0)) {
-    warnings.push('Pixi acceleration is not supported and was ignored');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'pixi.acceleration-unsupported',
+      'collectPixiDiagnostics',
+    );
   }
-  // extraData / behaviors
   if (raw.behaviors !== undefined) {
-    warnings.push('Pixi v5+ behaviors array is partially supported; only core properties were imported');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'pixi.behaviors-partial',
+      'collectPixiDiagnostics',
+    );
   }
-  return warnings;
+  return diagnostics;
 }
 
 function parsePixiJson(json: string): PixiRaw {

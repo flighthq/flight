@@ -1,9 +1,11 @@
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
 import {
   createParticleEmitterConfig,
   particleColorCurveFromKeyframes,
   particleCurveFromKeyframes,
 } from '@flighthq/particles';
 import type {
+  ImportDiagnostic,
   UnityParseOptions,
   UnityParsed,
   ColorKeyframe,
@@ -20,6 +22,7 @@ import type {
   UnityShape,
   UnitySizeOverLifetime,
 } from '@flighthq/types';
+import { ImportDiagnosticSeverity } from '@flighthq/types';
 
 const DEG2RAD = Math.PI / 180;
 const DEFAULT_PPU = 100;
@@ -209,22 +212,49 @@ const UNSUPPORTED_UNITY_MODULES: ReadonlyArray<readonly [string, string]> = [
   ['lights', 'lights'],
 ];
 
-function collectUnityWarnings(raw: Record<string, unknown>): string[] {
-  const warnings: string[] = [];
+// collectUnityDiagnostics is the physical emitter and hence the origin. The module scan collects the
+// unsupported modules WITHOUT reporting inside the loop (per the aggregate-once contract), then flushes one
+// Skip crumb per distinct module — the module label is the discriminator, so each recognized-but-unmodeled
+// module keeps its identity (like scene-formats' reason-discriminated drops) rather than collapsing to a
+// single opaque count. The burst check is a single direct Drop (the extra bursts are omitted).
+function collectUnityDiagnostics(raw: Record<string, unknown>): ImportDiagnostic[] {
+  const diagnostics: ImportDiagnostic[] = [];
 
+  const unsupportedModules: string[] = [];
   for (const [key, label] of UNSUPPORTED_UNITY_MODULES) {
     const mod = raw[key];
     if (mod != null && typeof mod === 'object' && rb((mod as Record<string, unknown>).enabled, false)) {
-      warnings.push(`Unity ${label} module is not supported and was ignored`);
+      unsupportedModules.push(label);
     }
+  }
+  for (const module of unsupportedModules) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'unity.module-unsupported',
+      'collectUnityDiagnostics',
+      {
+        module,
+      },
+    );
   }
 
   const em = raw.emission as Record<string, unknown> | undefined;
   const bursts = Array.isArray(em?.bursts) ? em.bursts : [];
-  if (bursts.length > 1) warnings.push(`Only the first of ${bursts.length} emission bursts was imported`);
+  if (bursts.length > 1) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'unity.extra-bursts-dropped',
+      'collectUnityDiagnostics',
+      {
+        burstCount: bursts.length,
+      },
+    );
+  }
 
-  // Multi-stop color gradients are now baked into a colorCurve, so they no longer warn.
-  return warnings;
+  // Multi-stop color gradients are now baked into a colorCurve, so they no longer report.
+  return diagnostics;
 }
 
 // Unity gradient colorKeys → baked color curve, but only for genuine multi-stop
@@ -376,5 +406,5 @@ export function parseUnityParticle(json: string, options?: UnityParseOptions): P
 export function parseUnityParticleDocument(json: string, options?: UnityParseOptions): UnityParsed {
   const ppu = options?.pixelsPerUnit ?? DEFAULT_PPU;
   const raw = parseUnityJson(json);
-  return { config: rawToConfig(raw, ppu), document: rawToDocument(raw), warnings: collectUnityWarnings(raw) };
+  return { config: rawToConfig(raw, ppu), diagnostics: collectUnityDiagnostics(raw), document: rawToDocument(raw) };
 }

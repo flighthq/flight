@@ -5,6 +5,7 @@ import {
   sampleParticleColorCurve,
   sampleParticleCurve,
 } from '@flighthq/particles';
+import { ImportDiagnosticSeverity } from '@flighthq/types';
 
 import { parseSpineParticle, parseSpineParticleDocument } from './spineParse';
 import { serializeSpineParticle } from './spineSerialize';
@@ -219,7 +220,7 @@ describe('parseSpineParticleDocument', () => {
 
   describe('import warnings', () => {
     it('has no warnings for a 2-keyframe tint/alpha effect', () => {
-      expect(parseSpineParticleDocument(SPARK_JSON).warnings).toEqual([]);
+      expect(parseSpineParticleDocument(SPARK_JSON).diagnostics).toEqual([]);
     });
 
     it('does NOT warn for multi-keyframe tint timelines (they are baked into curves)', () => {
@@ -231,13 +232,28 @@ describe('parseSpineParticleDocument', () => {
           { time: 1, color: '0000ff' },
         ],
       });
-      const { warnings } = parseSpineParticleDocument(json);
-      expect(warnings.some((w) => w.includes('Tint'))).toBe(false);
+      const { diagnostics } = parseSpineParticleDocument(json);
+      expect(diagnostics.some((d) => d.kind.toLowerCase().includes('tint'))).toBe(false);
     });
 
-    it('warns about unsupported lifeOffset', () => {
+    it('reports spine.life-offset-unsupported (Skip)', () => {
       const json = JSON.stringify({ ...JSON.parse(SPARK_JSON), lifeOffset: { low: 100, high: 200 } });
-      expect(parseSpineParticleDocument(json).warnings.some((w) => w.includes('lifeOffset'))).toBe(true);
+      const crumb = parseSpineParticleDocument(json).diagnostics.find(
+        (d) => d.kind === 'spine.life-offset-unsupported',
+      );
+      expect(crumb).toBeDefined();
+      expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+      expect(crumb!.origin).toBe('collectSpineDiagnostics');
+    });
+
+    it('reports spine.position-range-unsupported (Skip) for a non-zero x/y range', () => {
+      const json = JSON.stringify({ ...JSON.parse(SPARK_JSON), x: { low: 0, high: 50 } });
+      const crumb = parseSpineParticleDocument(json).diagnostics.find(
+        (d) => d.kind === 'spine.position-range-unsupported',
+      );
+      expect(crumb).toBeDefined();
+      expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+      expect(crumb!.origin).toBe('collectSpineDiagnostics');
     });
   });
 });
