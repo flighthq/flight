@@ -37,7 +37,7 @@ import {
 import type { WgpuSkinningAdapter } from '@flighthq/types';
 
 import { getWgpuShadedBaseFlags } from './shadedWgpuMeshMaterialRenderer';
-import { getWgpuClassicModuleSourceForKey } from './wgpuClassicPrelude';
+import { getWgpuClassicSharedSamplerModuleSourceForKey } from './wgpuClassicPrelude';
 import {
   createWgpuMeshPipeline,
   ensureWgpuPbrSampleLayout,
@@ -296,7 +296,7 @@ function assembleWgpuShadedModuleSource(
     hasSpecularMap: flags.hasSpecularMap,
     lightingModel: 'blinnphong',
   } as const;
-  let source = getWgpuClassicModuleSourceForKey(defineKey, skinned, skinning);
+  let source = getWgpuClassicSharedSamplerModuleSourceForKey(defineKey, skinned, skinning);
 
   source = source.replace(
     '  let world = draw.world * localPosition;',
