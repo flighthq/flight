@@ -91,6 +91,43 @@ all now apply the usable-survivor rule. Image bufferView slicing uses bounds-saf
 and GLB parsing has its own header/length guards. Three more regressions. scene-formats 500/500
 (gltfParse 119/119), npm run check exit 0.
 
+**D READ-INTEGRITY foundation (review-2153529d + review2-16c12072 findings 1–3).** review reframed review2's
+three findings as a deeper class than severity-labeling: READ-INTEGRITY that was never happening — the
+usable-survivor rule is meaningless if the read itself silently pulls bytes from OUTSIDE the accessor's window
+or reinterprets a wrong-width type. Fixed as a structural layer (not three patches), then a full validation
+census (below) surfaced and closed everything in one pass:
+- **accessor TYPE validation** — `readAccessor` gained an `expectedType` param; a wrong element type (e.g. a
+  VEC3 "rotation" output, a VEC2 "NORMAL") returns a `gltf.accessor-type-mismatch` fault the caller classifies
+  by role (mandatory → Drop, optional → Recover-absent). Threaded to every consumer with its layout-fixed type.
+- **bufferView-WINDOW bound** — base reads (`readAccessor`) and both sparse reads (`applyAccessorSparse`) now
+  clamp to `min(bufferView.byteOffset + byteLength, buffer end)`, not just the buffer end. A POSITION needing
+  36 bytes through a declared 4-byte view now faults (`gltf.accessor-past-buffer`) instead of reading 32 bytes
+  of unrelated buffer.
+- **sparse DESTINATION-INDEX bound** — `applyAccessorSparse` pre-scans indices; a sparse index ≥ accessor.count
+  (a silently-ignored typed-array write) skips the whole override and keeps the base → `gltf.sparse-index-out-
+  of-range` Recover.
+- **animation input/output ROLE type** — input must be SCALAR; output type by path (rotation VEC4,
+  translation/scale VEC3, weights SCALAR) via `GLTF_ANIMATION_OUTPUT_TYPES`; a mismatch drops the channel.
+
+VALIDATION CENSUS (accessor consumer × type-validated × window-bounded × fault→role) — every cell closed:
+| consumer | expected type | type✓ | window✓ | fault → role |
+| --- | --- | --- | --- | --- |
+| primitive POSITION | VEC3 | ✓ | ✓ | count0/fault → primitive Drop |
+| NORMAL / TANGENT / TEXCOORD_0 | VEC3 / VEC4 / VEC2 | ✓ | ✓ | fault → Recover, absent |
+| JOINTS_0 / WEIGHTS_0 | VEC4 / VEC4 | ✓ | ✓ | fault → Recover, unskinned |
+| primitive indices | SCALAR | ✓ | ✓ | fault → primitive Drop |
+| skin inverseBindMatrices | MAT4 | ✓ | ✓ | fault/short → identity Recover |
+| animation input (times) | SCALAR | ✓ | ✓ | fault → channel Drop |
+| animation output | VEC4/VEC3/SCALAR by path | ✓ | ✓ | fault → channel Drop |
+| morph POSITION delta | VEC3 | ✓ | ✓ | fault → target/whole-morph Drop |
+| morph NORMAL / TANGENT delta | VEC3 | ✓ | ✓ | fault → Recover, absent |
+| sparse index/value reads | — | n/a | ✓ | past-window → Recover, skip override |
+| sparse destination index | < accessor.count | ✓ | n/a | out-of-range → Recover, skip override |
+| image bufferView slice | — (bytes) | n/a | ✓ (`Uint8Array.slice`) | short → decoder handles |
+| GLB chunk reads | — (bytes) | n/a | ✓ (header/length guards) | — |
+Four more regressions (VEC3-rotation type Drop, optional wrong-type Recover, sparse-index-out-of-range Recover,
+bufferView-window overrun Drop). scene-formats 504/504 (gltfParse 123/123), npm run check exit 0.
+
 **AWD skeleton-binding / multi-skeleton — DECIDED DEFERRED NON-GOAL (user-pinned 2026-07-25).** Not
 "blocked awaiting a multi-skeleton .awd + animator-block spec" — it is deferred because AWD is a legacy
 format and there is no multi-skeleton AWD corpus to hold an implementation honest. A multi-skeleton file
