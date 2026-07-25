@@ -82,7 +82,7 @@
     "portable": "tsx ./scripts/portable.ts",
     "portable:check": "tsx ./scripts/portable.ts --check",
     "portable:json": "tsx ./scripts/portable.ts --json",
-    "precommit": "lint-staged",
+    "precommit": "lint-staged --no-stash",
     "prepare": "husky",
     "prepush": "tsx ./scripts/prepush.ts",
     "preview:examples": "npm run build:examples && npm run preview --workspace=@flighthq/examples",
