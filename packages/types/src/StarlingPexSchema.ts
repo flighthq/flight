@@ -1,3 +1,4 @@
+import type { ImportDiagnostic } from './ImportDiagnostic';
 import type { ParticleEmitterConfig } from './ParticleEmitterConfig';
 
 // Starling / Sparrow PEX particle format schema.
@@ -73,9 +74,9 @@ export interface StarlingPexParseOptions {
 export interface StarlingPexParseResult {
   config: ParticleEmitterConfig;
   document: StarlingPexDocument;
-  /** Features present in the source that the common-subset importer cannot
-   *  represent and silently dropped — surface these in your asset pipeline. */
-  warnings: string[];
+  /** Structured import diagnostics: features the source carries that the common-subset importer dropped,
+   *  skipped, or recovered — surface these in your asset pipeline to audit import fidelity. */
+  diagnostics: ImportDiagnostic[];
 }
 
 export type StarlingPexParsed = StarlingPexParseResult;
