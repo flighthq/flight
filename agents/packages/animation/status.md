@@ -11,6 +11,13 @@ by: null
 
 <!-- newest entry on top -->
 
+## 2026-07-25 — reusable root-motion extraction
+
+Added `AnimationRootMotionExtractor` for one explicit clip channel. It extracts additive vector or
+compositional quaternion deltas over arbitrary unwrapped time ranges, including multiple forward or
+reverse loop crossings, using construction-owned scratch. Translation and rotation can use separate
+extractors; applying either delta remains binding/gameplay-owned.
+
 ## 2026-07-25 — target-free masked animation layers
 
 Added `AnimationLayerStack`, an ordered pose stack whose sources may be blend trees or state machines.

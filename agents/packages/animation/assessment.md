@@ -16,8 +16,8 @@ composition tier; remaining work is playback events and separable authoring/runt
 1. **Keep mixing policy decoupled from bindings.** N-way override/additive blend trees, crossfades,
    named state transitions, and channel-index-masked ordered layers now compose complete target-free
    poses. Skeleton joint-mask authoring remains a binding-layer adapter over those indices.
-2. **Complete playback semantics.** Add clip markers/events, root-motion extraction, robust seeking across
-   markers, and interruption policy for active state transitions.
+2. **Complete playback semantics.** Add clip markers/events, robust seeking across markers, and
+   interruption policy for active state transitions. Root-motion delta extraction is complete.
 3. **Add authoring/runtime utilities without a kitchen sink.** Key reduction, additive rebasing, and cursor
    sampling remain separable primitives. The state machine/blend tree composes sampling and accumulation
    rather than entering the sampler core.
@@ -37,7 +37,6 @@ Parked — each with the reason it is not sweep-safe.
 - **Clip events / time markers.** _Parked — charter-in-scope, but the marker data model (markers on clips vs channels, payload shape) is undecided; the player finished/looped signals above are the sweep-safe slice._
 - **Cached sample-cursor state** (per-player/per-channel last-index). _Parked — needs a new sample-state type on the player or channel; the review flags this as design-pass territory since the target-free track cannot hold it._
 - **Clip serialization** (serialize/validate posture of filters/effects/particles). _Parked — pending the scene-serialization naming fork; the codec vocabulary should be settled once, not invented here._
-- **Root motion** extraction/accumulation. _Parked — binding semantics cross into `scene`/`skeleton`._
 - **Type the `targetRef` seam** (branded `AnimationTargetRef` or a kind-keyed binding registry replacing `scene`'s structural type-sniffing). _Parked — design decision / cross-package; candidate Open direction for the charter._
 - **The animation/skeleton/tween/timeline boundary pass** (three playhead concepts — `AnimationPlayer`, tween's driver, the planned `clock`; whether tween targets ride `AnimationChannel`). _Parked — design decision / cross-package; candidate Open direction for the charter._
 
@@ -52,3 +51,5 @@ Parked — each with the reason it is not sweep-safe.
   tests across all four product families.
 - [2026-07-25 · completed] Flat N-way blend trees, imperative named state machines, and ordered
   override/additive layer stacks with validated per-source channel masks compose target-free poses.
+- [2026-07-25 · completed] Reusable explicit-channel root-motion extractors accumulate additive vector
+  or compositional quaternion deltas over forward/reverse looped ranges without applying bindings.

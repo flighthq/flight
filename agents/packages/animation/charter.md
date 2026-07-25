@@ -32,6 +32,7 @@ Target-free animation core -- keyframe sampling, clip/channel bundling, playback
 - **2026-07-25 — State conditions stay external and transitions are imperative.** Why: gameplay already owns its parameters and conditions; explicitly requesting a named transition avoids a hidden predicate scheduler while the state machine still owns target correspondence, timing, and pose blending.
 - **2026-07-25 — Blend trees are flat weighted player sets with ordered additive leaves.** Why: the irreducible operation is N-way per-target accumulation; hierarchy is composition by named state and shared players, without a recursive closed node union or implicit evaluator registry.
 - **2026-07-25 — Partial-body masks are source-channel index subsets.** Why: channel indices are stable within each blend-tree/state-machine source and stay target-free; skeleton-specific joint masks remain a binding-layer concern. Ordered override/additive layers provide the composition policy.
+- **2026-07-25 — Root motion extraction selects explicit channels and never applies them.** Why: translation and rotation commonly live in separate root channels; reusable extractors can accumulate either delta across unwrapped looped time while the binding/gameplay layer remains solely responsible for moving a node.
 
 ## Open directions
 
