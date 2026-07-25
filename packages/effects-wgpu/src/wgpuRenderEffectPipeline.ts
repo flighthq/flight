@@ -201,7 +201,7 @@ function presentWgpuRenderEffectResult(state: WgpuRenderState, source: Readonly<
   drawWgpuEffectPass(state, source as WgpuRenderTarget, null, pipeline, () => {});
 }
 
-// Packs a linear 0..1 RGBA background into the 0xRRGGBBAA integer WgpuRenderTarget.clearColors holds.
+// Packs normalized sRGB + coverage alpha into the 0xRRGGBBAA integer WgpuRenderTarget.clearColors holds.
 function packBackgroundClearColor(rgba: ReadonlyArray<number>): number {
   const r = Math.round((rgba[0] ?? 0) * 255) & 0xff;
   const g = Math.round((rgba[1] ?? 0) * 255) & 0xff;

@@ -108,7 +108,10 @@ function ensureShapeMeshIndexBuffer(
   // Index buffers must be a multiple of 4 bytes for COPY_DST writes; round up the requested size.
   const size = Math.max(4, (byteLength + 3) & ~3);
   if (buffers.indexBuffer === null || buffers.indexCapacity < size) {
-    buffers.indexBuffer?.destroy();
+    if (buffers.indexBuffer !== null) {
+      const runtime = getWgpuRenderStateRuntime(state);
+      (runtime.retiredBuffers ?? (runtime.retiredBuffers = [])).push(buffers.indexBuffer);
+    }
     buffers.indexBuffer = state.device.createBuffer({
       size,
       usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
@@ -197,7 +200,10 @@ function ensureShapeMeshVertexBuffer(
 ): GPUBuffer {
   const size = Math.max(8, byteLength);
   if (buffers.vertexBuffer === null || buffers.vertexCapacity < size) {
-    buffers.vertexBuffer?.destroy();
+    if (buffers.vertexBuffer !== null) {
+      const runtime = getWgpuRenderStateRuntime(state);
+      (runtime.retiredBuffers ?? (runtime.retiredBuffers = [])).push(buffers.vertexBuffer);
+    }
     buffers.vertexBuffer = state.device.createBuffer({
       size,
       usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
