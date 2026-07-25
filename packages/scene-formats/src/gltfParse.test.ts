@@ -763,30 +763,35 @@ describe('createSceneFromGltf', () => {
     expect(getMeshGeometryIndexCount(geometry)).toBe(3);
   });
 
-  it('collects a warning when an accessor index is out of bounds', () => {
+  it('drops the primitive when the POSITION accessor index is out of bounds', () => {
     const doc = makeTriangleGltf();
-    // Point the POSITION attribute to accessor index 99, which does not exist in the array.
+    // Point the POSITION attribute to accessor index 99, which does not exist in the array. POSITION is
+    // mandatory, so an unreadable one leaves no usable geometry: the primitive drops with primitive-no-position
+    // Drop (the honest classification), and the subsuming accessor fault is NOT emitted as a contradictory Recover.
     doc.meshes![0].primitives[0].attributes.POSITION = 99;
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromGltf(doc, diagnostics);
-    expect(diagnostics.length).toBeGreaterThan(0);
-    const crumb = findGltfDiagnostic(diagnostics, 'gltf.accessor-not-found');
+    const scene = createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.primitive-no-position');
     expect(crumb).toBeDefined();
-    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
     expect(crumb!.origin).toBe('buildGltfDocument');
     expect(crumb!.detail?.firstAccessor).toBe(99);
+    expect(findGltfDiagnostic(diagnostics, 'gltf.accessor-not-found')).toBeUndefined();
+    expect(isMesh(getNodeChildren(scene.root)[0] as SceneNode)).toBe(false);
   });
 
-  it('collects a warning when bufferViews are missing', () => {
+  it('drops the primitive when the POSITION accessor bufferView is missing', () => {
     const doc = makeTriangleGltf();
-    // Clear bufferViews so accessor.bufferView references a missing entry.
+    // Clear bufferViews so accessor.bufferView references a missing entry. POSITION faults first, so the
+    // primitive drops (primitive-no-position Drop) before any other accessor is read.
     doc.bufferViews = [];
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromGltf(doc, diagnostics);
-    const crumb = findGltfDiagnostic(diagnostics, 'gltf.accessor-bufferview-not-found');
+    const scene = createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.primitive-no-position');
     expect(crumb).toBeDefined();
-    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
     expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(isMesh(getNodeChildren(scene.root)[0] as SceneNode)).toBe(false);
   });
 
   it('returns a scene for a document with no nodes', () => {
@@ -916,9 +921,10 @@ describe('createSceneFromGltf', () => {
     expect(uv.y).toBeCloseTo(128 / 255, 5);
   });
 
-  it('warns and drops the primitive when an accessor runs past its backing buffer', () => {
+  it('drops the primitive when the POSITION accessor runs past its backing buffer', () => {
     // The accessor claims 10 vertices but the buffer holds only 3 — the bounds guard must reject it rather
-    // than read out of range.
+    // than read out of range. Because it is the POSITION accessor, the primitive drops (primitive-no-position
+    // Drop) instead of emitting a standalone accessor-past-buffer crumb.
     const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]); // 3 verts, 36 bytes
     const uri = toDataUri(bytesOf(positions));
     const doc: GltfDocument = {
@@ -932,11 +938,45 @@ describe('createSceneFromGltf', () => {
       scenes: [{ nodes: [0] }],
     };
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromGltf(doc, diagnostics);
-    const crumb = findGltfDiagnostic(diagnostics, 'gltf.accessor-past-buffer');
+    const scene = createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.primitive-no-position');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(isMesh(getNodeChildren(scene.root)[0] as SceneNode)).toBe(false);
+  });
+
+  it('keeps a drawable, finite mesh when an optional NORMAL accessor fails', () => {
+    // POSITION survives, so the primitive is a usable survivor. The failed optional NORMAL is substituted with
+    // a zeroed (finite, never NaN) attribute rather than poisoning the vertices — a Recover, not a corrupt keep.
+    const doc = makeTriangleGltf();
+    doc.meshes![0].primitives[0].attributes.NORMAL = 99; // missing accessor
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.accessor-not-found');
     expect(crumb).toBeDefined();
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
-    expect(crumb!.origin).toBe('buildGltfDocument');
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
+    expect(getMeshGeometryVertexCount(geometry)).toBe(3);
+    // The normal slots (interleaved floats 3..5 of each canonical vertex) are the finite zero default.
+    for (const value of geometry.vertices) expect(Number.isFinite(value)).toBe(true);
+    expect(geometry.vertices[3]).toBe(0);
+    expect(geometry.vertices[4]).toBe(0);
+    expect(geometry.vertices[5]).toBe(0);
+  });
+
+  it('drops the primitive when the indices accessor is unreadable', () => {
+    // The index buffer defines topology; without it the vertex storage order is not a sane triangle list, so
+    // no usable primitive survives — the primitive drops (Drop, mandatory role) rather than keep it undrawable.
+    const doc = makeTriangleGltf();
+    doc.meshes![0].primitives[0].indices = 99; // missing accessor
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.accessor-not-found');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.detail?.firstAccessor).toBe(99);
+    expect(isMesh(getNodeChildren(scene.root)[0] as SceneNode)).toBe(false);
   });
 
   it('drops the mesh entirely for a primitive with no POSITION attribute', () => {
@@ -1070,17 +1110,19 @@ describe('createSceneFromGltf', () => {
     expect(Array.from(geometry.indices ?? [])).toEqual([0, 1, 2]);
   });
 
-  it('omits an unknown primitive mode with a warning instead of drawing the wrong topology', () => {
+  it('drops the primitive for an unknown mode instead of keeping undrawable geometry', () => {
+    // Mode 7 has no valid topology; reinterpreting it would draw wrong geometry and keeping zero elements
+    // is undrawable, so neither is a usable survivor — the primitive drops (Drop) and no mesh is emitted.
     const doc = makeTriangleGltf();
     doc.meshes![0].primitives[0].mode = 7;
     const diagnostics: ImportDiagnostic[] = [];
-    const geometry = (getNodeChildren(createSceneFromGltf(doc, diagnostics).root)[0] as Mesh).geometry;
-    expect(getMeshGeometryIndexCount(geometry)).toBe(0);
+    const scene = createSceneFromGltf(doc, diagnostics);
     const crumb = findGltfDiagnostic(diagnostics, 'gltf.primitive-unsupported-mode');
     expect(crumb).toBeDefined();
-    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
     expect(crumb!.origin).toBe('buildGltfDocument');
     expect(crumb!.detail?.firstMode).toBe(7);
+    expect(isMesh(getNodeChildren(scene.root)[0] as SceneNode)).toBe(false);
   });
 
   it('applies a matrix transform when node.matrix is a 16-element column-major array', () => {
@@ -1774,16 +1816,24 @@ describe('gltf diagnostics coverage', () => {
     expect(crumb!.detail?.reason).toBe('no-uri-no-binary');
   });
 
-  it('recovers and reports gltf.accessor-buffer-not-found for a bufferView with a missing buffer', () => {
+  it('recovers and reports gltf.accessor-buffer-not-found for an optional attribute with a missing buffer', () => {
+    // POSITION stays valid so the mesh survives; an optional NORMAL points at a bufferView whose buffer is
+    // absent. The failed optional attribute is treated as absent (finite zero-fill) and Recover-crumbed.
     const doc = makeTriangleGltf();
-    doc.bufferViews![0].buffer = 9; // buffers array has no index 9
+    doc.accessors!.push({ bufferView: 2, componentType: 5126, count: 3, type: 'VEC3' });
+    doc.bufferViews!.push({ buffer: 9, byteLength: 36, byteOffset: 0 }); // buffers array has no index 9
+    doc.meshes![0].primitives[0].attributes.NORMAL = 2;
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromGltf(doc, diagnostics);
+    const scene = createSceneFromGltf(doc, diagnostics);
     const crumb = findGltfDiagnostic(diagnostics, 'gltf.accessor-buffer-not-found');
     expect(crumb).toBeDefined();
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
     expect(crumb!.origin).toBe('buildGltfDocument');
     expect(crumb!.detail?.firstBuffer).toBe(9);
+    // The mesh is kept and drawable; the missing normals zero-fill to finite values.
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
+    expect(getMeshGeometryVertexCount(geometry)).toBe(3);
+    for (const value of geometry.vertices) expect(Number.isFinite(value)).toBe(true);
   });
 
   it('recovers and reports gltf.sparse-bufferview-not-found for a bad sparse bufferView', () => {

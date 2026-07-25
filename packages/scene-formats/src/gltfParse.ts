@@ -579,9 +579,18 @@ function buildGltfSkins(
     const joints = gltfSkin.joints.map((jointNodeIndex) => gltfNodeToDocNode[jointNodeIndex]);
     const inverseBind: { m: Float32Array }[] = [];
     if (gltfSkin.inverseBindMatrices !== undefined) {
-      const flat = readAccessor(doc, buffers, gltfSkin.inverseBindMatrices, gltfDrops).data;
-      for (let j = 0; j < joints.length; j++) {
-        inverseBind.push({ m: Float32Array.from({ length: 16 }, (_, k) => flat[j * 16 + k] ?? 0) });
+      const ibm = readAccessor(doc, buffers, gltfSkin.inverseBindMatrices, gltfDrops);
+      if (ibm.fault !== null) {
+        // The IBM accessor is unreadable. glTF treats absent inverse-bind matrices as identity, so fall
+        // back to identity per joint — the skin survives in bind pose rather than collapsing to a zero
+        // matrix (which would send the mesh to the origin). Degraded-but-usable = Recover.
+        reportGltfAccessorFault(gltfDrops, ImportDiagnosticSeverity.Recover, ibm.fault);
+        for (let j = 0; j < joints.length; j++) inverseBind.push({ m: identityMatrix16() });
+      } else {
+        const flat = ibm.data;
+        for (let j = 0; j < joints.length; j++) {
+          inverseBind.push({ m: Float32Array.from({ length: 16 }, (_, k) => flat[j * 16 + k] ?? 0) });
+        }
       }
     } else {
       for (let j = 0; j < joints.length; j++) inverseBind.push({ m: identityMatrix16() });
@@ -627,8 +636,17 @@ function buildGltfAnimations(
         });
         continue;
       }
-      const times = readAccessor(doc, buffers, sampler.input, gltfDrops).data;
-      const values = readAccessor(doc, buffers, sampler.output, gltfDrops).data;
+      const inputResult = readAccessor(doc, buffers, sampler.input, gltfDrops);
+      const outputResult = readAccessor(doc, buffers, sampler.output, gltfDrops);
+      if (inputResult.fault !== null || outputResult.fault !== null) {
+        // A sampler whose time or value accessor is unreadable cannot produce a track — drop this channel
+        // (Drop), consistent with the unresolved-target and missing-sampler channel drops above. No
+        // partial track survives, so this is not a Recover.
+        reportGltfAccessorFault(gltfDrops, ImportDiagnosticSeverity.Drop, inputResult.fault ?? outputResult.fault!);
+        continue;
+      }
+      const times = inputResult.data;
+      const values = outputResult.data;
       duration = Math.max(duration, times.length > 0 ? times[times.length - 1] : 0);
 
       if (channel.target.path === 'weights') {
@@ -1018,7 +1036,9 @@ function primitiveToGeometry(
 ): MeshGeometry | null {
   // Position is mandatory in glTF; a primitive with no usable position data (the attribute absent, or its
   // accessor unreadable so it yields zero vertices) is an unusable empty shell — DROP it (return null so the
-  // mesh is not emitted) rather than push an empty mesh node. Drop matches md5mesh.mesh-empty.
+  // mesh is not emitted) rather than push an empty mesh node. Drop matches md5mesh.mesh-empty. The primitive
+  // crumb is the honest classification; the subsuming accessor fault is not emitted as a contradictory
+  // Recover (a dropped primitive did not recover).
   const positionIndex = primitive.attributes.POSITION;
   if (positionIndex === undefined) {
     tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.primitive-no-position', '', {});
@@ -1027,33 +1047,25 @@ function primitiveToGeometry(
   const position = readAccessor(doc, buffers, positionIndex, gltfDrops);
   const vertexCount = position.count;
   if (vertexCount === 0) {
-    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.primitive-no-position', '', {});
+    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.primitive-no-position', '', {
+      firstAccessor: positionIndex,
+    });
     return null;
   }
-  const normal =
-    primitive.attributes.NORMAL !== undefined
-      ? readAccessor(doc, buffers, primitive.attributes.NORMAL, gltfDrops)
-      : null;
-  const tangent =
-    primitive.attributes.TANGENT !== undefined
-      ? readAccessor(doc, buffers, primitive.attributes.TANGENT, gltfDrops)
-      : null;
-  const uv =
-    primitive.attributes.TEXCOORD_0 !== undefined
-      ? readAccessor(doc, buffers, primitive.attributes.TEXCOORD_0, gltfDrops)
-      : null;
+
+  // Optional attributes: a failed or count-mismatched accessor is treated as absent (its vertex slots
+  // zero-fill with finite defaults) and Recover-crumbed — the mesh stays drawable, the usable survivor a
+  // Recover requires.
+  const normal = readOptionalGltfAttribute(doc, buffers, primitive.attributes.NORMAL, vertexCount, gltfDrops);
+  const tangent = readOptionalGltfAttribute(doc, buffers, primitive.attributes.TANGENT, vertexCount, gltfDrops);
+  const uv = readOptionalGltfAttribute(doc, buffers, primitive.attributes.TEXCOORD_0, vertexCount, gltfDrops);
 
   // A primitive is skinned when it carries both influence channels; it then emits the skinned layout
   // (joints0/weights0 past uv0). JOINTS_0 is unsigned-integer indices (not normalized); WEIGHTS_0 is
   // float or normalized-integer weights, renormalized per vertex so any quantization drift still sums 1.
-  const joints =
-    primitive.attributes.JOINTS_0 !== undefined
-      ? readAccessor(doc, buffers, primitive.attributes.JOINTS_0, gltfDrops)
-      : null;
-  const weights =
-    primitive.attributes.WEIGHTS_0 !== undefined
-      ? readAccessor(doc, buffers, primitive.attributes.WEIGHTS_0, gltfDrops)
-      : null;
+  // A failed influence accessor drops just that channel (Recover), so the mesh falls back to unskinned.
+  const joints = readOptionalGltfAttribute(doc, buffers, primitive.attributes.JOINTS_0, vertexCount, gltfDrops);
+  const weights = readOptionalGltfAttribute(doc, buffers, primitive.attributes.WEIGHTS_0, vertexCount, gltfDrops);
   const skinned = joints !== null && weights !== null;
 
   const floatsPerVertex = skinned ? SKINNED_FLOATS_PER_VERTEX : CANONICAL_FLOATS_PER_VERTEX;
@@ -1097,12 +1109,26 @@ function primitiveToGeometry(
   }
 
   // glTF index accessors are ubyte/ushort/uint; normalize to Uint32Array (createMeshGeometry promotes/
-  // accepts 16- or 32-bit index buffers).
-  const sourceIndices =
-    primitive.indices !== undefined
-      ? Uint32Array.from(readAccessor(doc, buffers, primitive.indices, gltfDrops).data)
-      : undefined;
+  // accepts 16- or 32-bit index buffers). The index buffer defines the primitive's topology; an unreadable
+  // or empty one leaves the vertex storage order — which is not a sane triangle list — so no usable
+  // primitive survives and the primitive is DROPPED (Drop, mandatory role) rather than kept undrawable.
+  let sourceIndices: Uint32Array<ArrayBuffer> | undefined;
+  if (primitive.indices !== undefined) {
+    const indexResult = readAccessor(doc, buffers, primitive.indices, gltfDrops);
+    if (indexResult.fault !== null) {
+      reportGltfAccessorFault(gltfDrops, ImportDiagnosticSeverity.Drop, indexResult.fault);
+      return null;
+    }
+    if (indexResult.count === 0) {
+      tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.primitive-empty-indices', '', {
+        firstAccessor: primitive.indices,
+      });
+      return null;
+    }
+    sourceIndices = Uint32Array.from(indexResult.data);
+  }
   const primitiveElements = buildGltfPrimitiveElements(primitive.mode ?? 4, sourceIndices, vertexCount, gltfDrops);
+  if (primitiveElements === null) return null; // unsupported primitive mode → drop (no drawable topology)
   return createMeshGeometry({
     indices: primitiveElements.indices,
     layout: skinned ? CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT : CANONICAL_LAYOUT,
@@ -1111,12 +1137,15 @@ function primitiveToGeometry(
   });
 }
 
+// Maps a glTF primitive mode to its index buffer + topology, or null when the mode is unsupported — an
+// unknown mode has no sane drawable interpretation (reinterpreting it as another topology would draw wrong
+// geometry), so the caller drops the primitive rather than keep zero-element geometry labeled as recovered.
 function buildGltfPrimitiveElements(
   mode: number,
   source: Uint32Array<ArrayBuffer> | undefined,
   vertexCount: number,
   gltfDrops: Map<string, GltfDropTally> | null,
-): { indices: Uint32Array<ArrayBuffer> | undefined; topology: PrimitiveTopology } {
+): { indices: Uint32Array<ArrayBuffer> | undefined; topology: PrimitiveTopology } | null {
   switch (mode) {
     case 0:
       return { indices: source, topology: 'point-list' };
@@ -1133,10 +1162,10 @@ function buildGltfPrimitiveElements(
     case 6:
       return { indices: buildGltfTriangleFanIndices(source, vertexCount), topology: 'triangle-list' };
     default:
-      tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.primitive-unsupported-mode', '', {
+      tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.primitive-unsupported-mode', '', {
         firstMode: mode,
       });
-      return { indices: new Uint32Array(0), topology: 'triangle-list' };
+      return null;
   }
 }
 
@@ -1197,13 +1226,21 @@ function buildGltfMorph(
       });
       continue;
     }
-    const positionDeltas = Float32Array.from(readAccessor(doc, buffers, target.POSITION, gltfDrops).data);
-    const normalDeltas =
-      target.NORMAL !== undefined ? Float32Array.from(readAccessor(doc, buffers, target.NORMAL, gltfDrops).data) : null;
-    const tangentDeltas =
-      target.TANGENT !== undefined
-        ? Float32Array.from(readAccessor(doc, buffers, target.TANGENT, gltfDrops).data)
-        : null;
+    // A target's POSITION delta is mandatory like the base primitive's: unreadable or empty means no valid
+    // deformation, so drop just this target (Drop, matching the no-POSITION case) rather than push a delta
+    // that reads NaN past its end. Optional NORMAL/TANGENT deltas degrade to absent (Recover).
+    const positionResult = readAccessor(doc, buffers, target.POSITION, gltfDrops);
+    if (positionResult.fault !== null || positionResult.count === 0) {
+      tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.morph-target-no-position', '', {
+        firstTarget: t,
+      });
+      continue;
+    }
+    const positionDeltas = Float32Array.from(positionResult.data);
+    const normal = readOptionalGltfAttribute(doc, buffers, target.NORMAL, positionResult.count, gltfDrops);
+    const tangent = readOptionalGltfAttribute(doc, buffers, target.TANGENT, positionResult.count, gltfDrops);
+    const normalDeltas = normal !== null ? Float32Array.from(normal.data) : null;
+    const tangentDeltas = tangent !== null ? Float32Array.from(tangent.data) : null;
     targets.push({ normalDeltas, positionDeltas, tangentDeltas });
   }
   if (targets.length === 0) return null;
@@ -1213,6 +1250,55 @@ function buildGltfMorph(
     for (let i = 0; i < weights.length && i < meshWeights.length; i++) weights[i] = meshWeights[i];
   }
   return { targets, weights };
+}
+
+// A decoded accessor plus the fault that made it unreadable, if any. readAccessor never decides the
+// severity of a fault — the meaning of an unreadable accessor depends on its call-site role (a failed
+// POSITION drops the primitive; a failed optional normal degrades it). So it returns the fault kind and
+// leaves severity + recovery to the caller (reportGltfAccessorFault). `fault` is null on success.
+interface GltfAccessorResult {
+  count: number;
+  data: ArrayLike<number>;
+  fault: GltfAccessorFault | null;
+}
+
+interface GltfAccessorFault {
+  detail: Record<string, number>;
+  kind: string;
+}
+
+// Emits an accessor fault at the severity its call-site role dictates: Drop where the fault leaves no
+// usable survivor (mandatory POSITION/indices, an unsamplable animation channel), Recover where a
+// non-empty, non-NaN, drawable element remains after substituting a sane default (optional attributes,
+// identity inverse-bind matrices, an omitted morph delta).
+function reportGltfAccessorFault(
+  gltfDrops: Map<string, GltfDropTally> | null,
+  severity: ImportDiagnosticSeverity,
+  fault: Readonly<GltfAccessorFault>,
+): void {
+  tallyGltfDrop(gltfDrops, severity, fault.kind, '', fault.detail);
+}
+
+// Reads an optional vertex attribute (normal/tangent/uv/joints/weights). Returns null — the attribute is
+// treated as absent, so the vertex loop zero-fills its slots with finite defaults — when the index is
+// undefined, when the accessor faults (Recover-crumbed: the mesh stays drawable without it), or when its
+// element count does not match the primitive's vertex count (a count mismatch would read past the shorter
+// array into non-finite territory). A present, correctly-sized attribute returns its decoded data.
+function readOptionalGltfAttribute(
+  doc: Readonly<GltfDocument>,
+  buffers: readonly Uint8Array[],
+  index: number | undefined,
+  vertexCount: number,
+  gltfDrops: Map<string, GltfDropTally> | null,
+): { data: ArrayLike<number> } | null {
+  if (index === undefined) return null;
+  const result = readAccessor(doc, buffers, index, gltfDrops);
+  if (result.fault !== null) {
+    reportGltfAccessorFault(gltfDrops, ImportDiagnosticSeverity.Recover, result.fault);
+    return null;
+  }
+  if (result.count !== vertexCount) return null;
+  return { data: result.data };
 }
 
 // Decodes a glTF accessor into a flat array, de-striding per `bufferView.byteStride` and decoding
@@ -1225,13 +1311,14 @@ function readAccessor(
   buffers: readonly Uint8Array[],
   accessorIndex: number,
   gltfDrops: Map<string, GltfDropTally> | null,
-): { count: number; data: ArrayLike<number> } {
+): GltfAccessorResult {
   const accessor = doc.accessors?.[accessorIndex];
   if (accessor === undefined) {
-    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.accessor-not-found', '', {
-      firstAccessor: accessorIndex,
-    });
-    return { count: 0, data: new Float32Array(0) };
+    return {
+      count: 0,
+      data: new Float32Array(0),
+      fault: { detail: { firstAccessor: accessorIndex }, kind: 'gltf.accessor-not-found' },
+    };
   }
 
   const componentCount = TYPE_COMPONENTS[accessor.type];
@@ -1247,11 +1334,14 @@ function readAccessor(
   if (view !== undefined) {
     const bytes = buffers[view.buffer];
     if (bytes === undefined) {
-      tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.accessor-buffer-not-found', '', {
-        firstAccessor: accessorIndex,
-        firstBuffer: view.buffer,
-      });
-      return { count: 0, data: new Float32Array(0) };
+      return {
+        count: 0,
+        data: new Float32Array(0),
+        fault: {
+          detail: { firstAccessor: accessorIndex, firstBuffer: view.buffer },
+          kind: 'gltf.accessor-buffer-not-found',
+        },
+      };
     }
     const elementByteSize = componentCount * componentByteSize;
     const stride = view.byteStride !== undefined && view.byteStride > 0 ? view.byteStride : elementByteSize;
@@ -1260,10 +1350,11 @@ function readAccessor(
     // component's end against the buffer's real length and bail with empty rather than throwing.
     const lastByteEnd = accessor.count > 0 ? baseOffset + (accessor.count - 1) * stride + elementByteSize : baseOffset;
     if (lastByteEnd > bytes.byteOffset + bytes.byteLength) {
-      tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.accessor-past-buffer', '', {
-        firstAccessor: accessorIndex,
-      });
-      return { count: 0, data: new Float32Array(0) };
+      return {
+        count: 0,
+        data: new Float32Array(0),
+        fault: { detail: { firstAccessor: accessorIndex }, kind: 'gltf.accessor-past-buffer' },
+      };
     }
     const dataView = new DataView(bytes.buffer);
     for (let i = 0; i < accessor.count; i++) {
@@ -1274,11 +1365,14 @@ function readAccessor(
       }
     }
   } else if (accessor.sparse === undefined) {
-    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.accessor-bufferview-not-found', '', {
-      firstAccessor: accessorIndex,
-      firstBufferView: bufferViewIndex,
-    });
-    return { count: 0, data: new Float32Array(0) };
+    return {
+      count: 0,
+      data: new Float32Array(0),
+      fault: {
+        detail: { firstAccessor: accessorIndex, firstBufferView: bufferViewIndex },
+        kind: 'gltf.accessor-bufferview-not-found',
+      },
+    };
   }
 
   if (accessor.sparse !== undefined) {
@@ -1294,7 +1388,7 @@ function readAccessor(
     );
   }
 
-  return { count: accessor.count, data: out };
+  return { count: accessor.count, data: out, fault: null };
 }
 
 // Applies an accessor's sparse override in place: reads `sparse.count` element indices and the matching
