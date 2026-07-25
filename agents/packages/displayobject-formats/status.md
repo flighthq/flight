@@ -8,6 +8,18 @@ by: builder3
 
 > Append-only handoff log, newest entry on top.
 
+## 2026-07-25 — Lottie charter/type scope only
+
+Drafted the proposed Lottie module boundary without implementing a parser. Added data-only
+Bodymovin schema and import-contract types to `@flighthq/types`, retaining source field names so
+import need not allocate a second normalized document.
+
+Surfaced four decisions for review: segment-local/component-local easing cannot fit the current
+track-wide `AnimationTrack.easing`; animated target ownership must avoid reversing
+displayobject/shape dependencies; arbitrary precomposition time remapping needs either an explicit
+primitive or diagnosed resampling; and the reserved `lottie-formats` charter should be marked
+absorbed only after blessing.
+
 ## 2026-07-25 — SVG conformance matrix sweep
 
 Added a systematic conformance matrix spanning shape, image, text/tspan, group, use, symbol, and

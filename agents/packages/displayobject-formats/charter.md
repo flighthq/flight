@@ -49,6 +49,45 @@ clip as an unresolved reference.
 SVG animation, scripts, foreignObject, live DOM behavior, and filter graphs are not retained. Filter
 effects belong to `@flighthq/effects`; application behavior remains application-owned.
 
+## Draft Lottie scope — awaiting review blessing
+
+Lottie remains charter work only until review blesses this direction. The proposed module accepts
+Bodymovin JSON or the data-only `LottieDocument` boundary type and returns a display subtree plus
+animation data. It performs no playback and acquires images only through
+`LottieDocumentImportOptions.resolveImageResource`.
+
+The common Bodymovin export path is the AAA baseline: shape, precomposition, image, null, solid, and
+text layers; parenting and 2D transforms; static and animated paths, fills, strokes, gradients,
+trim paths, basic masks, and composition markers as clip events. Document frame `f` maps to seconds
+as `(f - ip) / fr`; duration is `(op - ip) / fr`. Hidden layers and unsupported records remain
+visible through structured `ImportDiagnostic` crumbs rather than disappearing silently.
+
+The first implementation would Skip-crumb expressions, text animators, effect layers, audio,
+cameras, 3D transforms, exotic mattes, unsupported blend modes, arbitrary time remapping, and shape
+modifiers without a Flight equivalent. Static hard masks may recover to `ClipRegion`. These scope
+exclusions are deliberate up front; none authorizes parser work before review resolves the forks
+below.
+
+### Mapping forks for review
+
+1. **Segment-local temporal easing.** Bodymovin stores cubic-Bezier handles per keyframe segment and
+   may store different handles per vector component. `AnimationTrack.easing` currently supplies one
+   function for an entire track. Preferred: add segment-local easing to `AnimationTrack`, splitting a
+   vector into scalar tracks only when component handles differ. Alternative: bake samples, making
+   fidelity depend on an arbitrary sampling rate.
+2. **Animation target ownership.** Transform and opacity channels fit a reusable display-object
+   animation target, but animated shape, paint, and text properties belong to packages layered above
+   `displayobject`. Preferred: a Lottie target descriptor plus separately imported apply function in
+   `displayobject-formats`; extract a lower shared target only after another display format proves
+   the vocabulary.
+3. **Precompositions and time remapping.** Flatten ordinary precomposition channels into one
+   root-time clip, mapping layer stretch and start offsets exactly. Arbitrary animated time remapping
+   needs either a small explicit time-map primitive or diagnosed resampling; it is outside the common
+   baseline until review chooses.
+4. **Reserved-package cleanup.** The 2026-07-12 `lottie-formats` charter predates the umbrella naming
+   ruling. Preferred: absorb it into `displayobject-formats`, matching `svg-formats`, instead of
+   maintaining two candidate homes.
+
 ## Decisions
 
 - **[2026-07-25] Package name and first format.** User-directed review queue named
@@ -68,6 +107,6 @@ effects belong to `@flighthq/effects`; application behavior remains application-
 1. Exotic clip/mask deepening: nested intersections, definition-ancestor clip-rule inheritance, and
    measured text clip geometry.
 2. SVG paint-server patterns and soft/luminance mask fidelity beyond Flight's hard `ClipRegion`.
-3. Whether Lottie remains a module here or becomes the already-chartered `lottie-formats` cell.
+3. Review blessing for the Lottie scope and the four mapping forks above.
 4. Whether Rive's parser and state-machine data justify the already-chartered `rive-formats` cell
    once skeleton2d is available.
