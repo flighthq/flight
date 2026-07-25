@@ -3,6 +3,7 @@ import {
   addNodeChild,
   createDisplayContainer,
   createVideo,
+  createVideoResource,
   invalidateNodeAppearance,
   loadVideoResourceFromBlob,
   setVideoSource,
@@ -10,6 +11,7 @@ import {
 
 import { render, scale } from './render';
 
+const captureWindow = window as typeof window & { __flightCapture?: boolean };
 const root = createDisplayContainer();
 root.scaleX = scale;
 root.scaleY = scale;
@@ -33,35 +35,82 @@ thirdVideoNode.y = 280;
 thirdVideoNode.rotation = 10;
 addNodeChild(root, thirdVideoNode);
 
-generateVideoBlob().then(async (blob) => {
-  const opts = { muted: true, playsInline: true } as const;
-  const [resource1, resource2, resource3] = await Promise.all([
-    loadVideoResourceFromBlob(blob, opts),
-    loadVideoResourceFromBlob(blob, opts),
-    loadVideoResourceFromBlob(blob, opts),
-  ]);
+if (captureWindow.__flightCapture === true) {
+  setVideoSources(createCaptureVideoResource(), createCaptureVideoResource(), createCaptureVideoResource());
+  renderFrame();
+} else {
+  generateVideoBlob().then(async (blob) => {
+    const opts = { muted: true, playsInline: true } as const;
+    const [resource1, resource2, resource3] = await Promise.all([
+      loadVideoResourceFromBlob(blob, opts),
+      loadVideoResourceFromBlob(blob, opts),
+      loadVideoResourceFromBlob(blob, opts),
+    ]);
 
+    setVideoSources(resource1, resource2, resource3);
+
+    for (const resource of [resource1, resource2, resource3]) {
+      if (resource.element !== null) {
+        resource.element.loop = true;
+        resource.element.play();
+      }
+    }
+
+    requestAnimationFrame(enterFrame);
+  });
+}
+
+function createCaptureVideoResource(): ReturnType<typeof createVideoResource> {
+  const width = 320;
+  const height = 240;
+  const frame = document.createElement('canvas');
+  frame.width = width;
+  frame.height = height;
+  drawVideoFrame(frame.getContext('2d')!, width, height, 5);
+  Object.defineProperty(frame, 'videoWidth', { value: width });
+  Object.defineProperty(frame, 'videoHeight', { value: height });
+  Object.defineProperty(frame, 'readyState', { value: 2 });
+  return createVideoResource(frame as unknown as HTMLVideoElement);
+}
+
+function drawVideoFrame(ctx: CanvasRenderingContext2D, width: number, height: number, frame: number): void {
+  const hue = (frame * 4) % 360;
+  ctx.fillStyle = `hsl(${hue}, 70%, 30%)`;
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.fillStyle = '#ffffff';
+  const barX = (frame * 3) % width;
+  ctx.fillRect(barX, 60, 30, 120);
+
+  ctx.fillStyle = `hsl(${(hue + 180) % 360}, 80%, 60%)`;
+  const circleX = width / 2 + Math.cos(frame * 0.1) * 80;
+  const circleY = height / 2 + Math.sin(frame * 0.1) * 40;
+  ctx.beginPath();
+  ctx.arc(circleX, circleY, 25, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function enterFrame(): void {
+  renderFrame();
+  requestAnimationFrame(enterFrame);
+}
+
+function renderFrame(): void {
+  invalidateNodeAppearance(videoNode);
+  invalidateNodeAppearance(secondVideoNode);
+  invalidateNodeAppearance(thirdVideoNode);
+  render(root as DisplayObject);
+}
+
+function setVideoSources(
+  resource1: Parameters<typeof setVideoSource>[1],
+  resource2: Parameters<typeof setVideoSource>[1],
+  resource3: Parameters<typeof setVideoSource>[1],
+): void {
   setVideoSource(videoNode, resource1);
   setVideoSource(secondVideoNode, resource2);
   setVideoSource(thirdVideoNode, resource3);
-
-  for (const r of [resource1, resource2, resource3]) {
-    if (r.element !== null) {
-      r.element.loop = true;
-      r.element.play();
-    }
-  }
-
-  function enterFrame(): void {
-    invalidateNodeAppearance(videoNode);
-    invalidateNodeAppearance(secondVideoNode);
-    invalidateNodeAppearance(thirdVideoNode);
-    render(root as DisplayObject);
-    requestAnimationFrame(enterFrame);
-  }
-
-  requestAnimationFrame(enterFrame);
-});
+}
 
 function generateVideoBlob(): Promise<Blob> {
   const width = 320;
@@ -88,27 +137,11 @@ function generateVideoBlob(): Promise<Blob> {
     const totalFrames = 90;
 
     const drawFrame = (): void => {
-      const hue = (frame * 4) % 360;
-      ctx.fillStyle = `hsl(${hue}, 70%, 30%)`;
-      ctx.fillRect(0, 0, width, height);
-
-      ctx.fillStyle = '#ffffff';
-      const barX = (frame * 3) % width;
-      ctx.fillRect(barX, 60, 30, 120);
-
-      ctx.fillStyle = `hsl(${(hue + 180) % 360}, 80%, 60%)`;
-      const circleX = width / 2 + Math.cos(frame * 0.1) * 80;
-      const circleY = height / 2 + Math.sin(frame * 0.1) * 40;
-      ctx.beginPath();
-      ctx.arc(circleX, circleY, 25, 0, Math.PI * 2);
-      ctx.fill();
+      drawVideoFrame(ctx, width, height, frame);
 
       frame++;
-      if (frame < totalFrames) {
-        requestAnimationFrame(drawFrame);
-      } else {
-        recorder.stop();
-      }
+      if (frame < totalFrames) requestAnimationFrame(drawFrame);
+      else recorder.stop();
     };
 
     drawFrame();
