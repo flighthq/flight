@@ -1,6 +1,7 @@
 import type { Kind } from './Entity';
 import type { Matrix4 } from './Matrix4';
 import type { ModifierRegistry } from './ModifierRegistry';
+import type { SceneLightsLike } from './SceneLights';
 import type { WgpuMeshMaterialRenderer } from './WgpuMeshMaterialRenderer';
 import type { WgpuMeshPipeline } from './WgpuMeshPipeline';
 
@@ -34,6 +35,11 @@ export interface WgpuSceneIbl {
   prefilteredCube: GPUTexture;
   prefilteredCubeView: GPUTextureView;
   prefilteredMipCount: number;
+}
+
+export interface WgpuSceneFrameBinding {
+  bindGroup: GPUBindGroup;
+  buffer: GPUBuffer;
 }
 
 // A per-subset draw record held in drawWgpuScene's opaque/blended lists. Pooled on
@@ -73,6 +79,12 @@ export interface WgpuSceneRuntime {
   frameBindGroup: GPUBindGroup | null;
   frameBindGroupLayout: GPUBindGroupLayout | null;
   frameBuffer: GPUBuffer | null;
+  // One immutable binding identity per SceneLightBlock. Queue writes for several selected blocks are
+  // recorded before submit, so sharing one buffer would make every draw observe the final write.
+  frameBindings: WeakMap<object, WgpuSceneFrameBinding>;
+  // Optional diagnostic invoked when excess punctual inputs would be truncated without an explicit
+  // prepareWgpuSceneForwardLights result.
+  forwardLightSelectionGuard?: ((lights: Readonly<SceneLightsLike>) => void) | null;
   // Image-based-lighting state (mirrors GlSceneRuntime.ibl / environmentSourceCube). `environmentSource*`
   // is the uploaded source radiance cube (ensureWgpuEnvironmentSourceCube); `ibl` is the baked split-sum
   // result written by bakeWgpuEnvironmentIbl. The rest are the lazily-created singletons the lit sample

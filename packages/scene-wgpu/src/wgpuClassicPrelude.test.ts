@@ -150,4 +150,15 @@ describe('getWgpuClassicModuleSourceForKey', () => {
     expect(source).toContain('direct * sampleDirectionalShadow(in.worldPosition)');
     expect(source.match(/direct \* sampleDirectionalShadow\(in\.worldPosition\)/g)).toHaveLength(1);
   });
+
+  it('consumes every packed punctual-light family through the shared classic BRDF', () => {
+    const source = getWgpuClassicModuleSourceForKey(makeKey('blinnphong'));
+    expect(source).toContain('let pointCount = u32(frame.punctualCounts.x);');
+    expect(source).toContain('frame.pointLights[point * 2u + 1u].xyz * atten');
+    expect(source).toContain('let spotCount = u32(frame.punctualCounts.y);');
+    expect(source).toContain('frame.spotLights[spot * 4u + 1u].xyz * atten * cone');
+    expect(source).toContain('let hemisphereCount = u32(frame.punctualCounts.z);');
+    expect(source).toContain('frame.hemisphereLights[hemisphere * 3u + 1u].xyz');
+    expect(source.match(/shadeClassicLight\(/g)).toHaveLength(4);
+  });
 });

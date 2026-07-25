@@ -12,6 +12,7 @@ import type {
   Texture,
   WgpuMaterialBinding,
 } from '@flighthq/types';
+import { SCENE_LIGHT_BLOCK_FLOATS } from '@flighthq/types';
 
 import {
   beginWgpuMeshDraw,
@@ -47,7 +48,7 @@ function makeCamera(): Camera3D {
 }
 
 function makeLights(): SceneLightBlock {
-  const data = new Float32Array(12);
+  const data = new Float32Array(SCENE_LIGHT_BLOCK_FLOATS);
   data[1] = -1;
   data[4] = 1;
   data[5] = 1;
@@ -713,6 +714,20 @@ describe('writeWgpuFrameUniform', () => {
     const { fake, state } = makeWgpuSceneState();
     writeWgpuFrameUniform(state, makeCamera(), makeLights());
     expect(fake.calls.some((c) => c.name === 'writeBuffer')).toBe(true);
+  });
+
+  it('uses distinct cached buffers for distinct light blocks so queued draws retain their data', () => {
+    const { state } = makeWgpuSceneState();
+    const camera = makeCamera();
+    const firstLights = makeLights();
+    const secondLights = makeLights();
+    writeWgpuFrameUniform(state, camera, firstLights);
+    const firstBuffer = getWgpuSceneRuntime(state).frameBuffer;
+    writeWgpuFrameUniform(state, camera, secondLights);
+    const secondBuffer = getWgpuSceneRuntime(state).frameBuffer;
+    expect(secondBuffer).not.toBe(firstBuffer);
+    writeWgpuFrameUniform(state, camera, firstLights);
+    expect(getWgpuSceneRuntime(state).frameBuffer).toBe(firstBuffer);
   });
 
   it('remaps OpenGL clip-space Z into WebGPU NDC depth', () => {

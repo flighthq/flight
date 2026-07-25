@@ -20,6 +20,8 @@ export function getWgpuSceneRuntime(state: WgpuRenderState): WgpuSceneRuntime {
       frameBindGroup: null,
       frameBindGroupLayout: null,
       frameBuffer: null,
+      frameBindings: new WeakMap(),
+      forwardLightSelectionGuard: null,
       environmentSourceCube: null,
       environmentSourceCubeView: null,
       ibl: null,

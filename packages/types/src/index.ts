@@ -677,6 +677,7 @@ export * from './WgpuRenderStateSignals';
 export * from './WgpuRenderStats';
 export * from './WgpuRenderTarget';
 export * from './WgpuSceneRuntime';
+export * from './WgpuSceneForwardLightList';
 export * from './WgpuSkinningAdapter';
 export * from './WgpuToonPipeline';
 export * from './WgpuUnlitPipeline';
