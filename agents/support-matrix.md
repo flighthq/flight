@@ -15,11 +15,11 @@ drift-gated by `npm run support:check` (part of `npm run check`).
 
 ## Coverage summary
 
-146 functional scenes with committed baselines. Scenes carrying a fingerprint per backend:
+145 functional scenes with committed baselines. Scenes carrying a fingerprint per backend:
 
 | Canvas | DOM | WebGL | WebGPU |
 | --- | --- | --- | --- |
-| 91 / 146 | 39 / 146 | 142 / 146 | 134 / 146 |
+| 91 / 145 | 39 / 145 | 141 / 145 | 132 / 145 |
 
 All four backends re-verify in-sandbox — WebGPU via SwiftShader software Vulkan. A small set of WebGPU scenes exceed the fingerprint tolerance on software-vs-hardware antialiasing differences; see [maturity-gaps](maturity-gaps.md).
 
@@ -47,7 +47,7 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 | --- | :-: | :-: | :-: | :-: |
 | `bitmap-color-transform` | ✓ | ✓ | ✓ | ✓ |
 | `bitmap-downscale-smoothing` | ✓ | ✓ | · | · |
-| `bitmap-perbitmap-smoothing` | · | · | ✓ | · |
+| `bitmap-perbitmap-smoothing` | · | · | ✓ | ✓ |
 | `bitmap-smoothing` | ✓ | ✓ | ✓ | ✓ |
 | `bitmap-source-rect` | ✓ | ✓ | ✓ | ✓ |
 | `bitmap-transparent-compositing` | ✓ | ✓ | ✓ | ✓ |
@@ -164,7 +164,6 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 | `material-anisotropy` | · | · | ✓ | ✓ |
 | `material-blinn-phong` | · | · | ✓ | ✓ |
 | `material-clearcoat` | · | · | ✓ | ✓ |
-| `material-custom-shader` | · | · | ✓ | ✓ |
 | `material-depth` | · | · | ✓ | ✓ |
 | `material-emissive` | · | · | ✓ | ✓ |
 | `material-iridescence` | · | · | ✓ | ✓ |
@@ -243,8 +242,8 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
-| `shadow-classic` | · | · | ✓ | ✓ |
-| `shadow-directional` | · | · | ✓ | ✓ |
+| `shadow-classic` | · | · | ✓ | · |
+| `shadow-directional` | · | · | ✓ | · |
 | `shadow-scene-scale` | · | · | ✓ | · |
 
 ### Shapes / Vector
