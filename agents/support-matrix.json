@@ -47,6 +47,15 @@
           }
         },
         {
+          "scene": "bitmap-perbitmap-smoothing",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": false
+          }
+        },
+        {
           "scene": "bitmap-smoothing",
           "backends": {
             "canvas": true,
