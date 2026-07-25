@@ -43,7 +43,13 @@ The port substrate depends on Flight source staying inside a **lowerable subset 
 - `file.ts` → one module, type FQN = `package.Type` ([file naming](conventions/file-naming.md));
 - `Readonly<>` = `const`; no hidden state; the await handling `flight-hx` is refining.
 
-**The near-term move is to make that subset a *checkable gate*** (a lint/`npm run` check, sibling to `order`/`api`) rather than a convention enforced by review — the compiler front-end's *contract*, gotten for free, protecting every future port path from drift. Build the contract now; defer the backends until the lowering rules are proven.
+That subset is now a **checkable gate** — `npm run portable:check` (`scripts/portable.ts`, in the `check` suite), AST-based over `oxc-parser` so comments/strings and property names never false-positive. It does *not* re-check what `order`/`type-home`/`lint` already enforce; it blocks the small set of **genuinely non-lowerable dynamic escapes** — `eval`, `new Function`, `new Proxy`, `Reflect.*`, `with`, `*.prototype` assignment, `structuredClone` — in shipped source (`tool-*`, tests, and `*TestHelper` mocks exempt). Genuinely-intentional escapes are named in the script's `ALLOW` with a reason. Defer the *backends* until the lowering rules are proven; the gate is the front-end contract, gotten for free, that keeps the source from drifting under them.
+
+### It is a C++-family subset, not C99 — deliberately
+
+Measured against the tree (2026-07): closures (`=>` in **573 of ~2000** source files), `async`/`await` (83 files, ~1,500 `await`s), generics (56 files), and `Map`/`Set` are pervasive and intentional — and all lower to **C++/Rust/Haxe**, so they are *not* gated. Classes are near-absent (**23 across 3 files**) — the biggest portability win, already banked. The genuinely non-lowerable surface in shipped core was **two contained spots**: `snapshot`'s `structuredClone` and `entity/guards`' `Proxy` — both allow-listed. So the gate **ratifies existing conformance and blocks regression**; it forced no migration.
+
+**C99 is the outlier.** Closures alone (573 files) make raw-C lowering a major manual-closure effort, so the "C-family" target is **C++**. If literal C99 is ever wanted, the closure/`async`-heavy I/O + loader layer (the 83 `async` files) goes through the native seam (`flight-rs`-style) while the closure-light compute core lowers directly. The **`await`-ban is dropped** — 1,499 `await`s prove it was already dead, and the lowering is settled in `flight-hx`.
 
 ## Memory is the crux, not the IR choice
 
