@@ -32,6 +32,7 @@ run('format:check', 'oxfmt', scoped ? ['--check', ...paths] : ['--check', '.']);
 run('order:check', 'tsx', ['scripts/order.ts', '--check', ...selectors]);
 run('exports:check', 'tsx', ['scripts/completeness.ts', ...selectors]);
 run('type-home:check', 'tsx', ['scripts/type-home-progress.ts', '--gate', ...selectors]);
+run('portable:check', 'tsx', ['scripts/portable.ts', '--check', ...selectors]);
 
 if (!scoped) {
   run('api:check', 'tsx', ['scripts/api.ts', '--check']);
