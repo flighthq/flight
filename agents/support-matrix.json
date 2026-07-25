@@ -1269,7 +1269,7 @@
           "backends": {
             "canvas": true,
             "dom": true,
-            "webgl": false,
+            "webgl": true,
             "webgpu": false
           }
         }
