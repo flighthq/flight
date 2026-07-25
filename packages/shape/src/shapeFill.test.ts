@@ -11,7 +11,7 @@ import {
   appendShapeMoveTo,
   appendShapeRectangle,
 } from './shapeCommands';
-import { appendShapeGeometryCommand, getShapeFillRegions, hasNonSolidShapeFill } from './shapeFill';
+import { appendShapeGeometryCommand, getShapeFillRegions, hasNonSolidShapeFill, hasShapeFill } from './shapeFill';
 
 describe('appendShapeGeometryCommand', () => {
   it('appends polyline verbs and expands primitives, ignoring non-geometry names', () => {
@@ -138,5 +138,20 @@ describe('hasNonSolidShapeFill', () => {
     const shape = createShape();
     appendShapeLineStyle(shape, 1, 0);
     expect(hasNonSolidShapeFill(shape.data.commands)).toBe(true);
+  });
+});
+
+describe('hasShapeFill', () => {
+  it('is true when a fill is declared and false for a stroke-only shape', () => {
+    const filled = createShape();
+    appendShapeBeginFill(filled, 0xff0000);
+    appendShapeRectangle(filled, 0, 0, 10, 10);
+    expect(hasShapeFill(filled.data.commands)).toBe(true);
+
+    const strokeOnly = createShape();
+    appendShapeLineStyle(strokeOnly, 2, 0);
+    appendShapeMoveTo(strokeOnly, 0, 0);
+    appendShapeLineTo(strokeOnly, 10, 0);
+    expect(hasShapeFill(strokeOnly.data.commands)).toBe(false);
   });
 });
