@@ -48,6 +48,22 @@ describe('drawCanvasSprite', () => {
     drawCanvasSprite(state, renderProxy);
     expect(spy).not.toHaveBeenCalled();
   });
+
+  it('draws a pivoted atlas region around the sprite origin', () => {
+    const atlas = makeAtlas();
+    atlas.regions[0].pivotX = 7;
+    atlas.regions[0].pivotY = 9;
+    const state = makeState();
+    const sprite = createSprite();
+    sprite.data.atlas = atlas;
+    prepareDisplayObjectRender(state, sprite);
+    const renderProxy = getOrCreateRenderProxy2D(state, sprite);
+    const spy = vi.spyOn(state.context, 'drawImage');
+
+    drawCanvasSprite(state, renderProxy);
+
+    expect(spy.mock.calls[0].slice(5, 7)).toEqual([-7, -9]);
+  });
 });
 
 describe('renderCanvasSprite', () => {

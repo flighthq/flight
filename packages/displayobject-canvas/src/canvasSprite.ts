@@ -28,6 +28,8 @@ export function drawCanvasSprite(state: CanvasRenderState, spriteNode: RenderPro
   }
 
   const restoreMaterial = applyCanvasMaterial(state, spriteNode.material);
+  const originX = -(region.pivotX ?? 0);
+  const originY = -(region.pivotY ?? 0);
 
   context.setTransform(transform.a, transform.b, transform.c, transform.d, transform.tx, transform.ty);
   context.drawImage(
@@ -36,8 +38,8 @@ export function drawCanvasSprite(state: CanvasRenderState, spriteNode: RenderPro
     region.y,
     region.width,
     region.height,
-    0,
-    0,
+    originX,
+    originY,
     region.width,
     region.height,
   );

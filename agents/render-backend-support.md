@@ -71,7 +71,10 @@ Findings are empirical (surfaced building the per-primitive functional suite, 20
 
 8. **~~Punctual lights — wired on gl, not wgpu.~~ DONE.** Forward punctual lighting (point/spot/hemisphere) now shades on **both gl and wgpu**: `SceneLights` (`packages/types/src/SceneLights.ts`) carries `point`/`spot`/`hemisphere` arrays alongside `ambient`/`directional`, `packSceneLightBlock` (`packages/render/src/sceneRender.ts`) packs up to `MAX_FORWARD_LIGHTS` (= 4) of each type into the `SceneLightBlock`, and both backends consume them — gl via `u_pointLights`/`u_spotLights`/`u_hemisphereLights` uniform arrays (`GL_MESH_LIGHT_BLOCK_GLSL` in `packages/scene-gl/src/glLitProgram.ts`), wgpu via the expanded Frame struct's `pointLights`/`spotLights`/`hemisphereLights` arrays (`wgpuPbrPrelude.ts`). Both share the `shadePbrPunctual` factored BRDF (Cook-Torrance + extension lobes), `rangeWindow` inverse-square falloff, and cone smoothstep for spots. Area lights remain deferred (no `SceneLights.area` field).
 9. **Group/layer blend.** A `blendMode` on a container (so the whole subtree composites as one layer) needs render-to-texture flattening; unverified whether the renderer does this. Treat as a gap until confirmed.
-10. **TextureAtlasRegion pivot.** `pivotX/pivotY` on an atlas region are reported (audit, unverified) as stored but never read by the sprite renderers.
+10. **~~TextureAtlasRegion pivot was stored but unread by sprite renderers.~~ FIXED.**
+    Canvas draws the atlas sub-rectangle at the negative region pivot; GL and WebGPU fold that local
+    origin through the sprite transform into the batched translation. `sprite-atlas` uses a center-pivoted
+    green region and produces the same raster on Canvas, GL, and WebGPU.
 11. **~~wgpu 3D transparent pass silently draws opaque.~~ FIXED.** `drawWgpuScene` now mirrors gl's
     pooled opaque/blended partition and back-to-front sort. Blended pipeline variants use src-alpha /
     one-minus-src-alpha compositing, retain depth testing, and disable depth writes; resolved node alpha
