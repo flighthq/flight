@@ -1,0 +1,14 @@
+{
+  "canvas": {
+    "sha256": "be36aa019505ebb76f010fa3ee288f0d9db5454dfad576b4c82d55f68f777d1b"
+  },
+  "dom": {
+    "sha256": "5ad039458247d0b223c7664f22301950e1dc23ca4ab6608f4f768ee73a59fd8d"
+  },
+  "webgl": {
+    "sha256": "3b9b173b0d916860bfd89c32f791d96705705a2829502f4bf3d273734dd63f3e"
+  },
+  "webgpu": {
+    "sha256": "3b9b173b0d916860bfd89c32f791d96705705a2829502f4bf3d273734dd63f3e"
+  }
+}
