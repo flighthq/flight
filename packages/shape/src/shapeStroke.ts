@@ -2,7 +2,7 @@ import { strokePath } from '@flighthq/path';
 import type { Path, ShapeCommandToken, ShapeFillRegion, StrokeStyle } from '@flighthq/types';
 import { PathCommand } from '@flighthq/types';
 
-import { appendShapeGeometryCommand } from './shapeFill';
+import { appendShapeGeometryCommand, getPathCommandOperandCount } from './shapeFill';
 
 // Resolves a Shape's drawing-command stream into stroke OUTLINE regions for the GPU fill path: each
 // `lineStyle` span's centerline geometry is offset into a fillable outline via `@flighthq/path`'s
@@ -13,13 +13,17 @@ import { appendShapeGeometryCommand } from './shapeFill';
 // and no bounds-clipped miter spikes) — and is the first consumer of the otherwise-orphaned strokePath.
 //
 // Returns `null` when the shape uses a stroke the direct-fill outline route cannot express, so the
-// caller falls back to the raster path: a gradient/bitmap stroke (non-solid color), or a CLOSED stroke
-// (a self-closing rectangle/ellipse/circle/round-rect primitive). A closed stroke offsets into a
-// hollow RING, and the tessellator fills each contour solid with no hole subtraction, so a ring can't
-// be direct-filled — only an OPEN stroke's outline is a simple fillable polygon. Solid open strokes
-// only; ring tessellation (a stroke-strip or stencil-cover route) is a later addition.
+// caller falls back to the raster path: a gradient/bitmap stroke (non-solid color), or a CLOSED stroke.
+// A closed stroke offsets into a hollow RING, and the tessellator fills each contour solid with no hole
+// subtraction, so a ring can't be direct-filled — only an OPEN stroke's outline is a simple fillable
+// polygon. Closure is decided geometrically on the accumulated centerline (a CLOSE verb, or a subpath
+// whose end returns to its start — which covers self-closing rect/ellipse/circle/round-rect primitives,
+// `appendShapePolygon`, a manual return-to-start polyline, and a `drawPath` carrying either), so it is
+// stroke-span-aware: only geometry drawn under an active `lineStyle` reaches a centerline, so an
+// unstroked closed primitive never forces the fallback. Solid open strokes only; ring tessellation (a
+// stroke-strip or stencil-cover route) is a later addition.
 export function getShapeStrokeRegions(commands: readonly ShapeCommandToken[]): ShapeFillRegion[] | null {
-  if (hasNonSolidShapeStroke(commands) || hasClosedShapeStroke(commands)) return null;
+  if (hasNonSolidShapeStroke(commands)) return null;
 
   const regions: ShapeFillRegion[] = [];
   let centerline: Path | null = null; // accumulated centerline for the active stroke span
@@ -28,9 +32,14 @@ export function getShapeStrokeRegions(commands: readonly ShapeCommandToken[]): S
   let alpha = 1;
   let penX = 0;
   let penY = 0;
+  let deferred = false; // a stroked span closed into a ring the direct-fill route can't express
 
   const flush = (): void => {
     if (style === null || centerline === null || centerline.commands.length === 0) return;
+    if (isCenterlineClosed(centerline)) {
+      deferred = true;
+      return;
+    }
     const outline = strokePath(centerline, style);
     if (outline.commands.length > 0) regions.push({ path: outline, color, alpha });
   };
@@ -88,22 +97,7 @@ export function getShapeStrokeRegions(commands: readonly ShapeCommandToken[]): S
     // Fill-style + other non-geometry commands do not affect the stroke centerline.
   }
   flush();
-  return regions;
-}
-
-// True if the stream strokes a self-closing primitive (rectangle/ellipse/circle/round-rect). Such a
-// stroke offsets into a hollow ring the direct-fill tessellator cannot express (see the header note),
-// so the caller defers the whole shape to the raster path.
-export function hasClosedShapeStroke(commands: readonly ShapeCommandToken[]): boolean {
-  let i = 0;
-  while (i < commands.length) {
-    const name = commands[i] as string;
-    if (name === 'drawCircle' || name === 'drawEllipse' || name === 'drawRectangle' || name === 'drawRoundRectangle') {
-      return true;
-    }
-    i += 2 + (commands[i + 1] as number);
-  }
-  return false;
+  return deferred ? null : regions;
 }
 
 // True if the stream uses a stroke the GPU outline path cannot express (a gradient or bitmap stroke),
@@ -116,6 +110,41 @@ export function hasNonSolidShapeStroke(commands: readonly ShapeCommandToken[]): 
     i += 2 + (commands[i + 1] as number);
   }
   return false;
+}
+
+// True if the centerline encloses a region — a CLOSE verb, or any subpath whose end returns to its
+// start (≥2 segments so it bounds area). Such a stroke offsets into a hollow ring the direct-fill
+// tessellator cannot express, so the caller defers the whole shape to raster. Walks the verb/data
+// stream with getPathCommandOperandCount so CLOSE/WIDE verbs keep the data cursor aligned.
+function isCenterlineClosed(path: Readonly<Path>): boolean {
+  const { commands, data } = path;
+  let d = 0;
+  let subStartX = 0;
+  let subStartY = 0;
+  let lastX = 0;
+  let lastY = 0;
+  let segments = 0;
+  const subpathReturnsToStart = (): boolean =>
+    segments >= 2 && Math.abs(lastX - subStartX) < CLOSE_EPSILON && Math.abs(lastY - subStartY) < CLOSE_EPSILON;
+  for (let c = 0; c < commands.length; c++) {
+    const verb = commands[c];
+    if (verb === PathCommand.CLOSE) return true;
+    const n = getPathCommandOperandCount(verb);
+    if (verb === PathCommand.MOVE_TO || verb === PathCommand.WIDE_MOVE_TO) {
+      if (subpathReturnsToStart()) return true;
+      // A WIDE_MOVE_TO's real endpoint is its trailing (x,y) pair; MOVE_TO's is its only pair.
+      lastX = subStartX = data[d + n - 2];
+      lastY = subStartY = data[d + n - 1];
+      segments = 0;
+    } else if (n >= 2) {
+      // The endpoint of LINE/CURVE/CUBIC/WIDE_LINE is its trailing (x,y) pair.
+      lastX = data[d + n - 2];
+      lastY = data[d + n - 1];
+      segments++;
+    }
+    d += n;
+  }
+  return subpathReturnsToStart();
 }
 
 function isShapeGeometryCommand(name: string): boolean {
@@ -131,3 +160,7 @@ function isShapeGeometryCommand(name: string): boolean {
     name === 'drawPath'
   );
 }
+
+// Endpoint-coincidence tolerance for return-to-start closure. Authored primitives (rect/ellipse) and
+// polygons re-emit their start coordinate exactly, so this only absorbs trivial float noise.
+const CLOSE_EPSILON = 1e-6;

@@ -11,7 +11,13 @@ import {
   appendShapeMoveTo,
   appendShapeRectangle,
 } from './shapeCommands';
-import { appendShapeGeometryCommand, getShapeFillRegions, hasNonSolidShapeFill, hasShapeFill } from './shapeFill';
+import {
+  appendShapeGeometryCommand,
+  getPathCommandOperandCount,
+  getShapeFillRegions,
+  hasNonSolidShapeFill,
+  hasShapeFill,
+} from './shapeFill';
 
 describe('appendShapeGeometryCommand', () => {
   it('appends polyline verbs and expands primitives, ignoring non-geometry names', () => {
@@ -36,6 +42,37 @@ describe('appendShapeGeometryCommand', () => {
     const noop = { commands: [] as number[], data: [] as number[], winding: 'nonZero' as const };
     appendShapeGeometryCommand(noop, 'beginFill', ['beginFill', 2, 0xff0000, 1], 2);
     expect(noop.commands).toEqual([]);
+  });
+
+  it('keeps the data cursor aligned across a raw CLOSE between drawPath subpaths', () => {
+    // A drawPath with two subpaths separated by a CLOSE verb. CLOSE consumes 0 operands: if it were
+    // parsed as 2, the second subpath's coordinates would shift.
+    const path = { commands: [] as number[], data: [] as number[], winding: 'nonZero' as const };
+    const verbs = [
+      PathCommand.MOVE_TO,
+      PathCommand.LINE_TO,
+      PathCommand.CLOSE,
+      PathCommand.MOVE_TO,
+      PathCommand.LINE_TO,
+    ];
+    const raw = [0, 0, 10, 0, 20, 20, 30, 20];
+    appendShapeGeometryCommand(path, 'drawPath', ['drawPath', 3, verbs, raw, 'nonZero'], 2);
+    expect(path.commands).toEqual(verbs);
+    // The second subpath still reads (20,20)->(30,20); CLOSE contributed no data.
+    expect(path.data).toEqual([0, 0, 10, 0, 20, 20, 30, 20]);
+  });
+});
+
+describe('getPathCommandOperandCount', () => {
+  it('reports operand width per verb (MOVE/LINE 2, CURVE/WIDE 4, CUBIC 6, CLOSE/NO_OP 0)', () => {
+    expect(getPathCommandOperandCount(PathCommand.MOVE_TO)).toBe(2);
+    expect(getPathCommandOperandCount(PathCommand.LINE_TO)).toBe(2);
+    expect(getPathCommandOperandCount(PathCommand.CURVE_TO)).toBe(4);
+    expect(getPathCommandOperandCount(PathCommand.WIDE_MOVE_TO)).toBe(4);
+    expect(getPathCommandOperandCount(PathCommand.WIDE_LINE_TO)).toBe(4);
+    expect(getPathCommandOperandCount(PathCommand.CUBIC_CURVE_TO)).toBe(6);
+    expect(getPathCommandOperandCount(PathCommand.CLOSE)).toBe(0);
+    expect(getPathCommandOperandCount(PathCommand.NO_OP)).toBe(0);
   });
 });
 

@@ -83,6 +83,26 @@ export function appendShapeGeometryCommand(
   }
 }
 
+// The number of `data` numbers a PathCommand verb consumes: MOVE_TO/LINE_TO = 2, CURVE_TO (quadratic)
+// and WIDE_MOVE_TO/WIDE_LINE_TO = 4, CUBIC_CURVE_TO = 6, CLOSE/NO_OP = 0. The one place that maps a raw
+// Path verb to its operand width, so a verb/data stream (appendRawPath) and a closure scan
+// (shapeStroke) walk it without desynchronizing the data cursor.
+export function getPathCommandOperandCount(verb: number): number {
+  switch (verb) {
+    case PathCommand.MOVE_TO:
+    case PathCommand.LINE_TO:
+      return 2;
+    case PathCommand.CURVE_TO:
+    case PathCommand.WIDE_MOVE_TO:
+    case PathCommand.WIDE_LINE_TO:
+      return 4;
+    case PathCommand.CUBIC_CURVE_TO:
+      return 6;
+    default: // CLOSE, NO_OP
+      return 0;
+  }
+}
+
 // Resolves a Shape's drawing-command stream into solid-fill regions for the GPU fill path: each
 // `beginFill … endFill` (or the next fill) span becomes one `ShapeFillRegion` whose `path` carries the
 // geometry (primitives expanded to MOVE/LINE/CURVE verbs, curves kept for the renderer to flatten).
@@ -185,7 +205,9 @@ function appendRawPath(path: Path, verbs: readonly number[], data: readonly numb
   let d = 0;
   for (let v = 0; v < verbs.length; v++) {
     const verb = verbs[v];
-    const args = verb === PathCommand.CUBIC_CURVE_TO ? 6 : verb === PathCommand.CURVE_TO ? 4 : 2;
+    // Per-verb operand width — CLOSE/NO_OP consume 0 and WIDE_* consume 4, so a CLOSE or wide verb
+    // followed by another subpath keeps the data cursor aligned (assuming 2 for all-but-curves did not).
+    const args = getPathCommandOperandCount(verb);
     path.commands.push(verb);
     for (let k = 0; k < args; k++) path.data.push(data[d + k]);
     d += args;
