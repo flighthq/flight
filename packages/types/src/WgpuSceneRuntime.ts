@@ -175,6 +175,11 @@ export interface WgpuMeshUpload {
 export interface WgpuMaterialBinding {
   bindGroup: GPUBindGroup;
   buffer: GPUBuffer;
+  // Per-map sampler cache for layouts that bind one immutable GPUSampler beside each texture view.
+  // Classic and standard/PBR use this to honor every Texture.sampler independently.
+  samplers?: GPUSampler[];
+  // Legacy one-sampler layouts (unlit/toon/debug/matcap/shaded) retain this slot until their layouts
+  // migrate to the per-map helper.
   sampler?: GPUSampler;
   views?: GPUTextureView[];
 }

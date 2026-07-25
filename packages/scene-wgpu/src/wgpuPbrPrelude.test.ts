@@ -112,6 +112,16 @@ describe('getWgpuPbrModuleBody', () => {
     expect(body).toContain('var<uniform> frame');
   });
 
+  it('samples every standard map through its own sampler binding', () => {
+    const body = getWgpuPbrModuleBody();
+    expect(body).toContain('textureSample(baseColorTexture, baseColorSampler, in.uv)');
+    expect(body).toContain('textureSample(metallicRoughnessTexture, metallicRoughnessSampler, in.uv)');
+    expect(body).toContain('textureSample(normalTexture, normalSampler, in.uv)');
+    expect(body).toContain('textureSample(occlusionTexture, occlusionSampler, in.uv)');
+    expect(body).toContain('textureSample(emissiveTexture, emissiveSampler, in.uv)');
+    expect(body).toContain('textureSample(alphaTexture, alphaSampler, in.uv)');
+  });
+
   it('includes the extension lobe helpers behind their const flags', () => {
     const body = getWgpuPbrModuleBody();
     expect(body).toContain('distributionGgxAnisotropic');

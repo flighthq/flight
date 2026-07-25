@@ -117,7 +117,7 @@ describe('getWgpuClassicModuleSourceForKey', () => {
     const withAlpha = getWgpuClassicModuleSourceForKey({ ...makeKey('blinnphong'), hasAlphaMap: true });
     expect(withAlpha).toContain('const HAS_ALPHA_MAP : bool = true;');
     expect(withAlpha).toContain('alphaTexture');
-    expect(withAlpha).toContain('textureSample(alphaTexture, materialSampler, in.uv).g');
+    expect(withAlpha).toContain('textureSample(alphaTexture, alphaSampler, in.uv).g');
   });
 
   it('emits the lighting-model const matching the model and folds the others off', () => {

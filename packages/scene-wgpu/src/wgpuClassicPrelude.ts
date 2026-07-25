@@ -9,7 +9,7 @@ import type {
 
 import {
   createWgpuMeshPipeline,
-  ensureWgpuMaterialBinding,
+  ensureWgpuPerMapMaterialBinding,
   ensureWgpuScenePipeline,
   ensureWgpuShadowSampleLayout,
   getWgpuMeshPreludeWgsl,
@@ -39,18 +39,21 @@ export function bindWgpuClassicSurface(
   // Re-resolve the primary sampler + map views every bind so a live material-map mutation (swap,
   // unready→ready, image replacement, version bump, primary-sampler change) is picked up; the views land
   // in a REUSED module scratch so the steady-state re-bind of an unchanged material allocates nothing.
-  // ensureWgpuMaterialBinding rebuilds the bind group only when a view/sampler actually differs.
-  const sampler = getWgpuMaterialSampler(state, diffuseMap);
+  // ensureWgpuPerMapMaterialBinding rebuilds the bind group only when a view/sampler actually differs.
+  _samplerScratch[0] = getWgpuMaterialSampler(state, diffuseMap);
+  _samplerScratch[1] = getWgpuMaterialSampler(state, specularMap);
+  _samplerScratch[2] = getWgpuMaterialSampler(state, normalMap);
+  _samplerScratch[3] = getWgpuMaterialSampler(state, alphaMap);
   _viewScratch[0] = resolveWgpuMaterialTextureView(state, diffuseMap);
   _viewScratch[1] = resolveWgpuMaterialTextureView(state, specularMap);
   _viewScratch[2] = resolveWgpuMaterialTextureView(state, normalMap);
   _viewScratch[3] = resolveWgpuMaterialTextureView(state, alphaMap);
-  const binding = ensureWgpuMaterialBinding(
+  const binding = ensureWgpuPerMapMaterialBinding(
     state,
     materialKey,
     pipeline.materialBindGroupLayout,
     CLASSIC_UNIFORM_BYTES,
-    sampler,
+    _samplerScratch,
     _viewScratch,
   );
 
@@ -84,8 +87,9 @@ export function buildWgpuClassicDefineKey(key: Readonly<WgpuClassicDefineKey>): 
 }
 
 // Compiles the classic module for a define key and builds the render pipeline for the given color
-// format, with the group(2) material bind-group layout (uniform + sampler + diffuse/specular/normal
-// textures). Pure GPU work — no caching — used by ensureWgpuClassicPipeline.
+// format, with the group(2) material bind-group layout (uniform + one sampler per map +
+// diffuse/specular/normal/alpha textures). Pure GPU work — no caching — used by
+// ensureWgpuClassicPipeline.
 export function compileWgpuClassicPipeline(
   state: WgpuRenderState,
   key: Readonly<WgpuClassicDefineKey>,
@@ -101,10 +105,13 @@ export function compileWgpuClassicPipeline(
     entries: [
       { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
       { binding: 1, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
-      { binding: 2, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
-      { binding: 3, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
-      { binding: 4, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+      { binding: 2, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+      { binding: 3, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+      { binding: 4, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
       { binding: 5, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+      { binding: 6, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+      { binding: 7, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+      { binding: 8, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
     ],
   });
   // The group(3) shadow-sample layout opts this pipeline into directional shadow reception: the pipeline
@@ -167,11 +174,14 @@ struct ClassicMaterial {
 };
 
 @group(2) @binding(0) var<uniform> material : ClassicMaterial;
-@group(2) @binding(1) var materialSampler : sampler;
-@group(2) @binding(2) var diffuseTexture : texture_2d<f32>;
-@group(2) @binding(3) var specularTexture : texture_2d<f32>;
-@group(2) @binding(4) var normalTexture : texture_2d<f32>;
-@group(2) @binding(5) var alphaTexture : texture_2d<f32>;
+@group(2) @binding(1) var diffuseSampler : sampler;
+@group(2) @binding(2) var specularSampler : sampler;
+@group(2) @binding(3) var normalSampler : sampler;
+@group(2) @binding(4) var alphaSampler : sampler;
+@group(2) @binding(5) var diffuseTexture : texture_2d<f32>;
+@group(2) @binding(6) var specularTexture : texture_2d<f32>;
+@group(2) @binding(7) var normalTexture : texture_2d<f32>;
+@group(2) @binding(8) var alphaTexture : texture_2d<f32>;
 
 // The directional shadow inputs (group 3), the shared shadow-sample layout ensureWgpuShadowSampleLayout
 // builds and beginWgpuMeshDraw binds. matrix is the light view-projection (world -> shadow clip);
@@ -245,14 +255,14 @@ fn shadeClassicLight(normal : vec3f, lightDir : vec3f, lightColor : vec3f, diffu
 @fragment fn fs_main(in : VertexOutput, @builtin(front_facing) isFront : bool) -> @location(0) vec4f {
   var diffuse = material.diffuse;
   if (HAS_DIFFUSE_MAP) {
-    let sampled = textureSample(diffuseTexture, materialSampler, in.uv);
+    let sampled = textureSample(diffuseTexture, diffuseSampler, in.uv);
     diffuse = vec4f(diffuse.rgb * srgbToLinear(sampled.rgb), diffuse.a * sampled.a);
   }
 
   // Dedicated coverage (opacity) map: its green channel is linear data, multiplied into alpha before
   // the alpha-mask cutoff so 'mask' cutout and 'blend' transparency both see the combined coverage.
   if (HAS_ALPHA_MAP) {
-    diffuse.a = diffuse.a * textureSample(alphaTexture, materialSampler, in.uv).g;
+    diffuse.a = diffuse.a * textureSample(alphaTexture, alphaSampler, in.uv).g;
   }
 
   if (ALPHA_MASK && diffuse.a < material.params.y) {
@@ -269,7 +279,7 @@ fn shadeClassicLight(normal : vec3f, lightDir : vec3f, lightColor : vec3f, diffu
   if (HAS_NORMAL_MAP) {
     let tangent = normalize(in.worldTangent.xyz);
     let bitangent = cross(geometricNormal, tangent) * in.worldTangent.w;
-    var tangentNormal = textureSample(normalTexture, materialSampler, in.uv).xyz * 2.0 - vec3f(1.0);
+    var tangentNormal = textureSample(normalTexture, normalSampler, in.uv).xyz * 2.0 - vec3f(1.0);
     let tbn = mat3x3f(tangent, bitangent, geometricNormal);
     normal = normalize(tbn * tangentNormal);
   }
@@ -280,7 +290,7 @@ fn shadeClassicLight(normal : vec3f, lightDir : vec3f, lightColor : vec3f, diffu
   // multiplies in just below (an absent map binds a placeholder view and this stays the flat specular).
   var specularColor = material.specular.rgb;
   if (HAS_SPECULAR_MAP) {
-    let sampledSpecular = textureSample(specularTexture, materialSampler, in.uv);
+    let sampledSpecular = textureSample(specularTexture, specularSampler, in.uv);
     specularColor = specularColor * srgbToLinear(sampledSpecular.rgb);
   }
 
@@ -341,6 +351,7 @@ fn shadeClassicLight(normal : vec3f, lightDir : vec3f, lightColor : vec3f, diffu
 `;
 
 const _scratch = new Float32Array(CLASSIC_UNIFORM_BYTES / 4);
+const _samplerScratch = new Array<GPUSampler>(4);
 // Reused per-bind resolved-view scratch (diffuse, specular, normal, alpha) so a steady-state re-bind
-// allocates nothing; ensureWgpuMaterialBinding copies it into the binding only on create/rebuild.
+// allocates nothing; ensureWgpuPerMapMaterialBinding copies it into the binding only on create/rebuild.
 const _viewScratch = new Array<GPUTextureView>(4);
