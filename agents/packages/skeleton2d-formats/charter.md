@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/skeleton2d-formats'
 crate: flighthq-skeleton2d-formats
-draft: true
+draft: false
 lastDirection: 2026-07-25
 review: ./review.md
 assessment: ./assessment.md
@@ -10,7 +10,7 @@ status: ./status.md
 
 # skeleton2d-formats — Charter
 
-_Draft for review + user blessing. The **sequencing fork** below is the decision that gates builder2's next arcs — do not implement parsers until it is resolved._
+_**Decided [2026-07-25]: Option C** (formats now + animation binding; defer only the constraint solvers) — review + user. See the fork section and Decisions._
 
 ## What it is
 
@@ -30,7 +30,7 @@ Distinct from its atlas sibling: `@flighthq/spritesheet-formats` already parses 
 
 **In scope:**
 - Parse Spine `.json`, Spine `.skel` (binary), and DragonBones `.json` into `Skeleton2D` + slots + attachments + skins.
-- Build `@flighthq/animation` `AnimationClip`s (bone-TRS + slot timelines) from the file's animations, with `Bone2D`-targeting `targetRef`s — **if** the fork lands animation now (see below).
+- Build `@flighthq/animation` `AnimationClip`s (bone-TRS + slot timelines) from the file's animations, with `Bone2D`-targeting `targetRef`s — Option C (animation lands now).
 - Format auto-detection, an open registry seam for custom formats, and a tolerant `ImportDiagnostic` path.
 - The cross-package types this layer needs, defined in `@flighthq/types` (one concept per file) — chiefly the animation-binding target (`Skeleton2DAnimationTarget`).
 
@@ -46,7 +46,7 @@ Distinct from its atlas sibling: `@flighthq/spritesheet-formats` already parses 
 
 ### Animation seam — and a correction to the premise
 
-The task framed `@flighthq/animation` as "layer/mask/blend-tree-rich." **It is not.** The core is a thin, target-free primitive set: `AnimationClip`/`AnimationChannel`/`AnimationTrack`, a keyframe sampler (`sampleAnimationClip` visitor / `sampleAnimationTrack`), an `AnimationPlayer` playhead (Repeat/PingPong), an `AnimationCrossfade` (two-player transition), and blend math (`accumulate`/`add`/`blend` samples). There is **no** `AnimationLayer`, `AnimationMask`, `BlendTree`, `AnimationMixer`, or state machine — none exist as types or functions. So Spine's multi-track mixing model has no ready-made home; a first demo does not need it (single-clip playback via `AnimationPlayer` is enough and IS supported), and building the mixing infrastructure is out of scope for skeleton2d-formats regardless.
+The `@flighthq/animation` core **currently visible in this clone** is a thin, target-free primitive set: `AnimationClip`/`AnimationChannel`/`AnimationTrack`, a keyframe sampler (`sampleAnimationClip` visitor / `sampleAnimationTrack`), an `AnimationPlayer` playhead (Repeat/PingPong), an `AnimationCrossfade` (two-player transition), and blend math (`accumulate`/`add`/`blend` samples). **Boundary note (review, 2026-07-25):** builder3's `AnimationBlendTree` / `AnimationStateMachine` / `AnimationLayerStack` are review2-passed and mergeable — they are simply not yet merged into this clone, so Spine's multi-track mixing **does** have a home coming. The consequence for this package is the same either way: skeleton2d-formats does **not** build a mixer, and the first demo needs only **single-clip playback**, which the thin core already provides — so this package is not blocked on that merge and builds against the core in-clone; the richer core lights up when the user merges builder3's arc.
 
 The binding precedent is `@flighthq/scene`'s `applyAnimationClipToScene`: iterate `clip.channels`, cast `channel.targetRef` (typed `unknown`) to a domain target, `sampleAnimationTrack` into scratch, write to the target's transform fields, invalidate. There is **no 2D/bone binder yet**. The skeleton2d analogue — a `Skeleton2DAnimationTarget` (`{ boneIndex, path }` where `path` is `Translation | Rotation | Scale | Shear`, matching Spine/DragonBones' four bone-timeline kinds — the scene TRS vocabulary plus `Shear`, over `Bone2D` instead of a `SceneNode`) plus an `applyAnimationClipToSkeleton2D` binder — belongs in **`@flighthq/skeleton2d`** (the `Bone2D` owner), exactly as the 3D binder lives in scene not animation. `boneIndex` (not a `Bone2D` ref) keeps a clip stable across `cloneSkeleton2D`. skeleton2d-formats only *builds* the clip + targetRefs; the per-frame apply is the runtime's.
 
@@ -54,7 +54,7 @@ The binding precedent is `@flighthq/scene`'s `applyAnimationClipToScene`: iterat
 
 Production-ready and idiomatic — reuse `@flighthq/importdiagnostics`, no new package or convention. Thread a trailing `diagnostics?: ImportDiagnostic[]` sink through `parseSpine`/`parseDragonBones`; at each unmodeled-feature branch call `reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Skip, 'spine.<feature>-unsupported', 'parseSpine', { count })`. The sink is opt-in-gated (a `undefined` check when absent — zero cost to the default parse), and hot per-timeline/per-keyframe validation aggregates offenders and reports once, per `agents/conventions/diagnostics.md`.
 
-## THE SEQUENCING FORK — for review + user (do not let builder2 pick)
+## The sequencing fork (DECIDED — Option C)
 
 Spine/DragonBones rigs carry more than skeleton2d P1 models (P1 = bones + all inherit modes + region/mesh attachments + skins-as-setup + bind/palette + weighted/rigid deform; P1 does **not** have IK/transform/path constraints, animation binding, or skin *sets*). So: **what does the importer parse on its first landing, and does skeleton2d P2/P3 come before or after it?**
 
@@ -67,7 +67,13 @@ Spine/DragonBones rigs carry more than skeleton2d P1 models (P1 = bones + all in
 **Option C — formats NOW + animation binding, defer only the constraint solvers (builder2's recommendation, review/user to confirm):** land formats parsing bones/slots/region+mesh/skins/setup-pose **and animation** (bone-TRS + slot timelines → `@flighthq/animation` clips), plus the small `Skeleton2DAnimationTarget` type + `applyAnimationClipToSkeleton2D` binder in skeleton2d. `Skip`-crumb only the genuinely-hard, genuinely-separable P2 features: IK/transform/path constraints, events, clipping/path/point attachments.
 - _Why this is demo-optimal:_ the north-star example needs **animation, not constraints**. Animation binding is *small* (a scalar-channel binder mirroring the scene one, ~one file + one type; single-clip playback already exists) and is *separable* from the constraint solvers (a large fraction of real Spine animations are pure bone-TRS with no IK — or have IK baked). Option C therefore yields a **compelling animated demo with real assets in the next arc**, and moves the bit-parity checkpoint to real animated rigs, while leaving the heavy constraint math to a properly-scoped P2. It is Option A's "get real assets now" plus the one thing A's demo is missing, without B's full delay.
 
-The fork decides the next few arcs; the recommendation is C, but the call is review's + the user's.
+**DECIDED: Option C** (review + user, 2026-07-25). The recommendation was accepted.
+
+## Decisions
+
+- **[2026-07-25] Option C — formats now + animation binding; defer only the constraint solvers.** review + user. First landing parses bones/slots/region+mesh attachments/skins-as-setup + bone-TRS/slot **animation** timelines (→ `@flighthq/animation` clips with `Skeleton2DAnimationTarget` refs). Documented `Skip`-crumb deferrals: IK/transform/path **constraints**, **events**, and **clipping/path/point attachments** — recognized-but-unmodeled, each emitting an `ImportDiagnosticSeverity.Skip` crumb. The heavy constraint solvers are a properly-scoped skeleton2d P2, not blockers for the animated demo.
+- **[2026-07-25] Build order (review-sequenced): binder → Spine `.json` → DragonBones.** (1) `applyAnimationClipToSkeleton2D` binder lands FIRST in `@flighthq/skeleton2d` (the target owner, mirroring scene's `applyAnimationClipToScene`) over the committed `Skeleton2DAnimationTarget` seam. (2) The Spine `.json` parser is the priority format (it drives the demo, and Spine JSON is human-writable → TDD with hand-authored minimal fixtures, no blind-binary-parse risk). (3) DragonBones after Spine. Spine `.skel` binary is a later pass behind the same registry.
+- **[2026-07-25] No multi-track mixer here; single-clip playback for the first demo.** The core's mixing (builder3's blend-tree/state-machine/layer-stack) is out of this package's scope and merges via the boundary; skeleton2d-formats emits plain `AnimationClip`s a single `AnimationPlayer` plays.
 
 ## Open directions
 
