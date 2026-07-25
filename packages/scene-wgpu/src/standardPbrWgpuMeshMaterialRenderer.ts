@@ -105,7 +105,7 @@ export function ensureWgpuPbrMaterialBindGroup(
     _samplerScratch,
     _viewScratch,
   );
-  // The base-color map's uv transform drives the shared vertex-stage uv every standard map samples.
+  // The base-color map's uv transform drives the shared vertex-scene2d uv every standard map samples.
   // Runs every bind (standard + each extension routes through here), so the stash is always fresh.
   stashWgpuUvTransform(state, standard !== null ? standard.baseColorMap : null);
   return binding;

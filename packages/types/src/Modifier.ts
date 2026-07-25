@@ -8,7 +8,7 @@ import type { ModifierSlot } from './ModifierSlot';
 // assembles `base + ordered modifiers` into ONE program, keyed by feature-set define-key.
 //
 // A Modifier is CODE (a snippet composed into the material program, producing a batchable variant),
-// distinct from an Adjustment (DATA — a matrix/LUT feeding a fixed stage) and a RenderEffect (an
+// distinct from an Adjustment (DATA — a matrix/LUT feeding a fixed scene2d) and a RenderEffect (an
 // offscreen pass). Anything that reduces to a color matrix or a LUT belongs in @flighthq/adjustments,
 // not here.
 //

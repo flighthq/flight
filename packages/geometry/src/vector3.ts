@@ -60,7 +60,7 @@ export function copyVector3(out: Vector3Like, source: Readonly<Vector3Like>): vo
  * right-handed three-dimensional coordinate system, the positive z-axis points away from
  * the viewer and the value of the `z` property increases as the object moves away from the
  * viewer's eye. The origin point (0,0,0) of the global space is the upper-left corner of
- * the stage.
+ * the scene2d.
  *
  * Invariants:
  *

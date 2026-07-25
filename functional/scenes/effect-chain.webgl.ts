@@ -29,8 +29,8 @@ import {
 } from '@flighthq/sdk';
 
 // Effect chain: a STACK of three effects runs in one pipeline — bloom, then color grade, then
-// vignette. The pipeline ping-pongs between offscreen targets so each stage reads the previous
-// stage's output, proving multi-stage ordering. HDR (rgba16f) keeps the bright pass for bloom.
+// vignette. The pipeline ping-pongs between offscreen targets so each scene2d reads the previous
+// scene2d's output, proving multi-scene2d ordering. HDR (rgba16f) keeps the bright pass for bloom.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
@@ -67,7 +67,7 @@ export function render(root: Node2D): void {
   ]);
 }
 
-// Bright, saturated shapes on a near-black field feed a three-stage effect chain: their high
+// Bright, saturated shapes on a near-black field feed a three-scene2d effect chain: their high
 // luminance crosses the bloom threshold for a glowing halo, the color grade pushes saturation and
 // contrast, and the vignette darkens the corners.
 

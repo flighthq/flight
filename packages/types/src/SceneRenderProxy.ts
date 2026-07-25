@@ -22,7 +22,7 @@ import type { MeshSubset } from './MeshGeometry';
 // `jointMatrices` is the GPU skin palette for this draw — the source Mesh's skin skeleton's
 // `jointMatrices` (jointWorld * inverseBind per joint, column-major, 16 floats each). Absent or null
 // means the mesh is rigid: drawScene sets it only for a skinned mesh, and the HAS_SKIN shader
-// variant uploads it and deforms in the vertex stage. Optional because rigid draws — the common
+// variant uploads it and deforms in the vertex scene2d. Optional because rigid draws — the common
 // case — carry no palette; a renderer reads it as `proxy.jointMatrices ?? null`.
 export interface SceneRenderProxy {
   // The resolved per-object opacity in [0, 1] (parent×self worldAlpha). Absent/undefined means fully

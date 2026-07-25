@@ -2,7 +2,7 @@ import { createColorGradeAdjustment } from './colorGradeAdjustment';
 
 describe('createColorGradeAdjustment', () => {
   it('defaults to approximately neutral (contrast 1, all stages near-neutral)', () => {
-    // The lift/gamma/gain stage's packed neutral 0x808080 gamma is 128/255 ≈ 0.502, so the default is
+    // The lift/gamma/gain scene2d's packed neutral 0x808080 gamma is 128/255 ≈ 0.502, so the default is
     // near- (not exactly) neutral — faithful to the ported shader.
     const adjustment = createColorGradeAdjustment();
     expect(adjustment.kind).toBe('ColorGradeAdjustment');

@@ -9,8 +9,8 @@ import type { DomClipContourEntry, Matrix, PathWinding } from '@flighthq/types';
 // contour clip is active, apply it directly and ignore stacked rects for that element (v1), or nest one
 // clip-path per clipping wrapper element (preferred, more DOM churn).
 
-// Builds a CSS clip-path value from stage-space contours mapped into one element's local space.
-// `elementInverse` maps stage space -> element local (reuse getElementMatrix + invert from
+// Builds a CSS clip-path value from scene2d-space contours mapped into one element's local space.
+// `elementInverse` maps scene2d space -> element local (reuse getElementMatrix + invert from
 // domClipRectangle). Single contour -> polygon(); multiple/holes -> path() with clip-rule.
 export function buildDomContourClipPath(
   entry: DomClipContourEntry,

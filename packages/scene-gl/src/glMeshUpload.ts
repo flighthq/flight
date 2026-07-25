@@ -172,7 +172,7 @@ function floatOffsetForSemantic(geometry: Readonly<MeshGeometry>, semantic: stri
 // (position/normal/tangent/uv0); `color0` (location 4) is bound only when a geometry's layout carries
 // it (the VertexColor path); `uv1` (location 5) is the second UV set (occlusion/lightmap channel per
 // glTF TEXCOORD_1); `joints0`/`weights0` (locations 6–7) are the skinning channels the HAS_SKIN vertex
-// stage reads (see GL_SKIN_VERTEX_DECLARATIONS_GLSL). Semantics absent from a layout are left unbound.
+// scene2d reads (see GL_SKIN_VERTEX_DECLARATIONS_GLSL). Semantics absent from a layout are left unbound.
 const ATTRIBUTE_LOCATION: Readonly<Record<string, number>> = {
   color0: 4,
   joints0: 6,

@@ -5,7 +5,7 @@ import { compileGlProgram, ensureGlSceneProgram } from './glMeshProgram';
 // The Gl wireframe prelude: a minimal GLSL 300 es shader that transforms the position attribute by
 // the model + view-projection matrices and outputs a single flat LINE color. It has no lighting and
 // no maps — the WireframeMaterial draws mesh edges as GL lines (see glWireframeUpload for the derived
-// line-index buffer), so the fragment stage only needs the line color (decoded to linear on the CPU).
+// line-index buffer), so the fragment scene2d only needs the line color (decoded to linear on the CPU).
 // There are no feature variants, so a single program is cached per state under the `wireframe:` key.
 // Compiles the wireframe shader, links it, and resolves its uniform locations. Pure GL work — no
 // caching — used by ensureGlWireframeProgram.

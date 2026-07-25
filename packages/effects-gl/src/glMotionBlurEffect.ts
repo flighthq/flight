@@ -8,7 +8,7 @@ import { getGlEffectProgram } from './glEffectProgramCache';
 // RG channels), this is the real recipe — read each fragment's velocity, scale it by `intensity`, and
 // accumulate `samples` taps spread along that vector centered on the fragment, smearing every object by
 // its own motion. When velocity is absent (the scene did not write the buffer), u_hasVelocity=0 and it is
-// a passthrough copy (sentinel path), preserving the pipeline stage without altering the image. Demonstrates
+// a passthrough copy (sentinel path), preserving the pipeline scene2d without altering the image. Demonstrates
 // the ctx.sceneVelocityTexture seam: real velocity path when present, sentinel copy when null.
 export function applyMotionBlurEffectToGl(
   state: GlRenderState,

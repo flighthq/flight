@@ -38,7 +38,7 @@ describe('buildDomContourClipPath', () => {
 });
 
 describe('pushDomClipContours', () => {
-  it('pushes a contour entry with points transformed to stage space', () => {
+  it('pushes a contour entry with points transformed to scene2d space', () => {
     const stack: DomClipContourEntry[] = [];
     const transform = createMatrix();
     transform.tx = 100;

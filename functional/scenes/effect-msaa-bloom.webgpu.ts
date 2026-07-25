@@ -29,7 +29,7 @@ import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for MSAA + bloom. NOTE: sampleCount currently no-ops on the Wgpu effect
 // pipeline (the offscreen scene target is single-sampled today) — wiring a multisampled Wgpu target
-// is a follow-up, mirroring the Gl seam. The bloom stage still runs over the HDR rgba16f scene, so
+// is a follow-up, mirroring the Gl seam. The bloom scene2d still runs over the HDR rgba16f scene, so
 // this column verifies effect compose; its edges may alias more than Gl's until Wgpu MSAA lands.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);

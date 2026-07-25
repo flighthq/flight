@@ -24,7 +24,7 @@ import { bindWgpuToonSurface, ensureWgpuToonPipeline } from './wgpuToonPrelude';
 // shared Frame uniform (camera view-projection + position, the packed light block), binds the pipeline
 // + Frame bind group (beginWgpuMeshDraw), then writes + binds the material's uniform/texture bind group
 // (linear base color, step count, alpha cutoff) at group(2). The diffuse N·L is quantized into stepped
-// cel bands in the fragment stage (a stepped floor over `steps`); output is LINEAR color for the
+// cel bands in the fragment scene2d (a stepped floor over `steps`); output is LINEAR color for the
 // rgba16float scene target. draw uploads the geometry's GPU buffers lazily (cached by geometry.version),
 // writes the per-draw model + normal matrices into the render-state's uniform ring buffer (group(1),
 // dynamic offset), and issues the indexed draw over the proxy's subset. Depth-test LESS + depth-write

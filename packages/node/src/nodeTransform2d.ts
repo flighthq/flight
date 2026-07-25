@@ -21,7 +21,7 @@ import type {
 import { invalidateNodeLocalTransform } from './revision';
 
 /**
- * Converts the `vector` object from the Stage (global) coordinates
+ * Converts the `vector` object from the Scene2D (global) coordinates
  * to the display object's (local) coordinates.
  **/
 export function convertNodeVector2GlobalToLocal<Traits extends object>(

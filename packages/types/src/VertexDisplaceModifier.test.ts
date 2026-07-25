@@ -17,7 +17,7 @@ describe('VertexDisplaceModifier', () => {
   });
 
   describe('descriptor shape', () => {
-    it('is assignable to the open Modifier base with the vertex-stage slot', () => {
+    it('is assignable to the open Modifier base with the vertex-scene2d slot', () => {
       const flag: VertexDisplaceModifier = {
         kind: 'VertexDisplaceModifier',
         slot: 'Vertex',

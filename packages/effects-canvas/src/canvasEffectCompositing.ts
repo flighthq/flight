@@ -88,7 +88,7 @@ export function drawCanvasImageDataPass(
 // Copies `source` into `dest` unchanged. The Canvas realization for effects not carried out on Canvas 2D
 // — either genuinely unsupportable here (they need a depth/normal, velocity, or temporal-history buffer the
 // 2D context does not expose) or expressible per-pixel via getImageData/putImageData but not yet
-// implemented. Either way the pipeline stage is preserved so the registry stays populated for parity, but
+// implemented. Either way the pipeline scene2d is preserved so the registry stays populated for parity, but
 // the image is untouched.
 export function passthroughCanvasEffectPass(
   dest: Readonly<CanvasRenderTarget>,

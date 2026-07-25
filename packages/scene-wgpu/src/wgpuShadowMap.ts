@@ -124,7 +124,7 @@ export function drawWgpuSceneShadowMap(
 }
 
 // Resolves (creating once per state) the minimal depth-only shadow pipeline: a vertex-only WGSL module
-// (position → light clip, with the GL→WebGPU depth remap), no fragment/color stage, rendered depth32float
+// (position → light clip, with the GL→WebGPU depth remap), no fragment/color scene2d, rendered depth32float
 // with front-face culling. Its group(0) is the shared Draw layout (dynamic-offset per-mesh world matrix),
 // so drawWgpuSceneShadowMap reuses writeWgpuDrawUniform's ring bind group. The WGSL mirror of scene-gl's
 // compileShadowDepthProgram.

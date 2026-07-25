@@ -91,7 +91,7 @@ export function getGlPbrFragmentSourceForKey(key: Readonly<GlPbrDefineKey>): str
 
 // The vertex shader body (everything after the "#version 300 es" + defines block). Transforms the
 // canonical PBR vertex record (position/normal/tangent/uv0) by the model and view-projection
-// matrices and passes world-space position, normal, tangent, and uv to the fragment stage.
+// matrices and passes world-space position, normal, tangent, and uv to the fragment scene2d.
 export function getGlPbrVertexSource(): string {
   return PBR_VERTEX_BODY;
 }

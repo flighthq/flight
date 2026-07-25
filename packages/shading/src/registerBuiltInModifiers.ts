@@ -116,7 +116,7 @@ export const toonModifierDefinition: ModifierDefinition = {
   slot: ModifierSlot.Effect,
 };
 
-// The substrate-agnostic VertexDisplace built-in definition (slot: Vertex — the one vertex-stage
+// The substrate-agnostic VertexDisplace built-in definition (slot: Vertex — the one vertex-scene2d
 // built-in). Its signature keys the two compile-time-affecting choices: the noise `source` (`s` Sine,
 // `h` HeightMap) and whether a fixed `axis` replaces the surface-normal push (`+a`); amplitude/
 // frequency/speed/direction are uniforms.

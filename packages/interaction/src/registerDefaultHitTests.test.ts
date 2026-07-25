@@ -1,4 +1,4 @@
-import { createBitmap, createStage } from '@flighthq/displayobject';
+import { createBitmap, createScene2D } from '@flighthq/displayobject';
 import { setRectangle } from '@flighthq/geometry';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node';
 import { createShape } from '@flighthq/shape';
@@ -25,7 +25,7 @@ describe('registerDefaultHitTests', () => {
   it('containers return null for self hit', () => {
     registerDefaultHitTests();
 
-    const root = createStage().root;
+    const root = createScene2D().root;
     setRectangle(getNodeLocalBoundsRectangle(root), 0, 0, 100, 100);
     expect(findGraphHitTarget(root, 50, 50)).toBeNull();
   });

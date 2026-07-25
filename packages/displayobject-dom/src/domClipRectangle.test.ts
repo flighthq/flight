@@ -1,11 +1,11 @@
 import { createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix, createRectangle } from '@flighthq/geometry';
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
-import type { DomRenderState, DomStageRectangle } from '@flighthq/types';
+import type { DomRenderState, DomScene2DRectangle } from '@flighthq/types';
 
 import {
   applyDomClipRectangles,
-  createDomStageRectangle,
+  createDomScene2DRectangle,
   pushDomClipRectangle,
   setDomClipHooks,
 } from './domClipRectangle';
@@ -29,7 +29,7 @@ describe('applyDomClipRectangles', () => {
     expect(element.style.clipPath).toBe('');
   });
 
-  it('sets a local polygon clip path from intersected stage rectangles', () => {
+  it('sets a local polygon clip path from intersected scene2d rectangles', () => {
     const state = makeState();
     const source = createDisplayObject();
     const data = getOrCreateRenderProxy2D(state, source);
@@ -46,17 +46,17 @@ describe('applyDomClipRectangles', () => {
   });
 });
 
-describe('createDomStageRectangle', () => {
-  it('transforms a local rectangle into a stage-space AABB', () => {
-    const rect = createDomStageRectangle(createRectangle(10, 20, 30, 40), createMatrix(1, 0, 0, 1, 5, 6));
+describe('createDomScene2DRectangle', () => {
+  it('transforms a local rectangle into a scene2d-space AABB', () => {
+    const rect = createDomScene2DRectangle(createRectangle(10, 20, 30, 40), createMatrix(1, 0, 0, 1, 5, 6));
 
     expect(rect).toEqual({ bottom: 66, left: 15, right: 45, top: 26 });
   });
 });
 
 describe('pushDomClipRectangle', () => {
-  it('pushes a transformed stage rectangle', () => {
-    const rectangles: DomStageRectangle[] = [];
+  it('pushes a transformed scene2d rectangle', () => {
+    const rectangles: DomScene2DRectangle[] = [];
 
     pushDomClipRectangle(rectangles, createRectangle(0, 0, 10, 20), createMatrix(1, 0, 0, 1, 2, 3));
 
