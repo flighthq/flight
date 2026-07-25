@@ -97,18 +97,18 @@ function collectLibgdxDiagnostics(doc: LibgdxParticleDocument): ImportDiagnostic
       'collectLibgdxDiagnostics',
     );
   }
-  if (doc.emission.highMax > 0 || doc.emission.lowMax > 0) {
-    // libGDX's Emission rate is not mapped onto spawnRate (createParticleEmitterConfig substitutes its
-    // default), so the authored rate is a real semantic loss — Recover (the emitter runs at a substituted
-    // rate). This fires on standard .p files because they always author an emission rate; that is honest.
-    // Modeling spawnRate to eliminate the loss is the queued feature-half (see particles-formats/status.md).
-    reportImportDiagnostic(
-      diagnostics,
-      ImportDiagnosticSeverity.Recover,
-      'libgdx.emission-unsupported',
-      'collectLibgdxDiagnostics',
-    );
-  }
+  // libGDX's Emission section is never mapped onto spawnRate — documentToConfig omits it, so
+  // createParticleEmitterConfig substitutes its default rate on EVERY conversion, including an explicit
+  // zero-rate (burst-only) document. The authored rate is therefore always lost, so this reports
+  // UNCONDITIONALLY (Recover — the emitter runs at a substituted rate). A conditional guard would miss the
+  // explicit-zero case, and the collector has no section-presence provenance to distinguish it. Modeling
+  // spawnRate to eliminate the loss is the queued feature-half (see particles-formats/status.md).
+  reportImportDiagnostic(
+    diagnostics,
+    ImportDiagnosticSeverity.Recover,
+    'libgdx.emission-unsupported',
+    'collectLibgdxDiagnostics',
+  );
   if (doc.tint.colors.length > 2) {
     // Only the first and last tint stops are imported (no colorCurve is built), so intermediate stops of a
     // multi-color tint are approximated away — a substituted 2-stop gradient.
