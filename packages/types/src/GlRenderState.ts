@@ -117,6 +117,10 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   spriteBatchInstanceBuffer: WebGLBuffer | null;
   spriteBatchInstanceData: Float32Array;
   spriteBatchTexture: ImageResource | null;
+  // Per-bitmap smoothing for the active batch (a flush key). `true`/`false` force LINEAR/NEAREST
+  // sampling; `null` uses the global `state.allowSmoothing` default (sprites/text/shapes). A bitmap
+  // whose `smoothing` differs from the batch's flushes, since filtering is a per-texture-bind property.
+  spriteBatchSmoothing: boolean | null;
   // Color-transform fold state for the active sprite batch. Orthogonal to the material and never a
   // flush key, so tinted and untinted nodes with the same texture+blend share one batch. Mode 0 =
   // no tint (lean base shader), 1 = one uniform tint for the whole batch (u_ctMult/u_ctOff), 2 =

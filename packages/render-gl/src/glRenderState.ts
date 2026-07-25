@@ -71,6 +71,7 @@ export function createGlRenderState(canvas: HTMLCanvasElement, options: GlRender
   runtime.spriteBatchInstanceBuffer = null;
   runtime.spriteBatchInstanceData = new Float32Array(13 * 256);
   runtime.spriteBatchTexture = null;
+  runtime.spriteBatchSmoothing = null;
   // Color-adjustment fold state (mode/data/buffer + the compiled programs) is not allocated here: it
   // is owned by the opt-in enableGlColorAdjustment, so a state that never tints carries none of it.
   runtime.textureCache = new WeakMap();
