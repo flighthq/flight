@@ -3,14 +3,31 @@ import {
   createBoxMeshGeometry,
   createMeshGeometry,
   setMeshGeometrySkinBindPose,
+  updateMeshMorph,
 } from '@flighthq/mesh';
-import type { MeshGeometryRuntime } from '@flighthq/types';
+import { createMesh } from '@flighthq/scene';
+import type { MeshGeometryRuntime, MeshMorph, VertexAttributeLayout } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
 import { ensureWgpuMeshUpload } from './wgpuMeshUpload';
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 import { makeWgpuSceneState } from './wgpuSceneTestHelper';
 import { registerWgpuGpuSkinning } from './wgpuSkinPalette';
+
+const POSITION_LAYOUT: VertexAttributeLayout = {
+  attributes: [{ byteOffset: 0, format: 'float32x3', semantic: 'position' }],
+  stride: 12,
+};
+
+function lastUploadedVertices(calls: readonly { name: string; args: readonly unknown[] }[]): Float32Array {
+  const writes = calls.filter((call) => call.name === 'writeBuffer');
+  const write = writes[writes.length - 2]!;
+  return new Float32Array(
+    write.args[2] as ArrayBuffer,
+    write.args[3] as number,
+    (write.args[4] as number) / Float32Array.BYTES_PER_ELEMENT,
+  );
+}
 
 describe('ensureWgpuMeshUpload', () => {
   it('uploads vertex + index buffers and caches by geometry', () => {
@@ -76,6 +93,64 @@ describe('ensureWgpuMeshUpload', () => {
     expect(upload?.skinBindUploaded).toBe(true);
     expect(Array.from(uploadedVertices.slice(0, 3))).toEqual([1, 2, 3]);
     expect(geometry.vertices[0]).toBe(9);
+  });
+
+  it('re-uploads morph-blended vertices as weights change', () => {
+    const { fake, state } = makeWgpuSceneState();
+    const geometry = createMeshGeometry({
+      indices: new Uint16Array([0, 0, 0]),
+      layout: POSITION_LAYOUT,
+      vertices: new Float32Array([0, 0, 0]),
+    });
+    const morph: MeshMorph = {
+      targets: [{ normalDeltas: null, positionDeltas: new Float32Array([4, 0, 0]), tangentDeltas: null }],
+      weights: new Float32Array([1]),
+    };
+    const mesh = createMesh(geometry, []);
+    mesh.morph = morph;
+
+    updateMeshMorph(mesh);
+    ensureWgpuMeshUpload(state, geometry);
+    expect(lastUploadedVertices(fake.calls)[0]).toBeCloseTo(4);
+
+    morph.weights[0] = 0.5;
+    updateMeshMorph(mesh);
+    ensureWgpuMeshUpload(state, geometry);
+    expect(lastUploadedVertices(fake.calls)[0]).toBeCloseTo(2);
+  });
+
+  it('uploads current morphed vertices instead of a frozen skin bind pose for GPU skinning', () => {
+    const { fake, state } = makeWgpuSceneState();
+    registerWgpuGpuSkinning(state);
+    const geometry = createMeshGeometry({
+      indices: new Uint16Array([0, 0, 0]),
+      layout: CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
+      vertices: new Float32Array(20),
+    });
+    geometry.vertices[0] = 1;
+    setMeshGeometrySkinBindPose(geometry, {
+      joints: new Float32Array([0, 0, 0, 0]),
+      normals: new Float32Array([0, 1, 0]),
+      positions: new Float32Array([1, 0, 0]),
+      skinnedNormals: new Float32Array(3),
+      skinnedPositions: new Float32Array(3),
+      weights: new Float32Array([1, 0, 0, 0]),
+    });
+    const morph: MeshMorph = {
+      targets: [{ normalDeltas: null, positionDeltas: new Float32Array([4, 0, 0]), tangentDeltas: null }],
+      weights: new Float32Array([1]),
+    };
+    const mesh = createMesh(geometry, []);
+    mesh.morph = morph;
+
+    updateMeshMorph(mesh);
+    ensureWgpuMeshUpload(state, geometry, true);
+    expect(lastUploadedVertices(fake.calls)[0]).toBeCloseTo(5);
+
+    morph.weights[0] = 2;
+    updateMeshMorph(mesh);
+    ensureWgpuMeshUpload(state, geometry, true);
+    expect(lastUploadedVertices(fake.calls)[0]).toBeCloseTo(9);
   });
 
   it('mirrors the upload onto MeshGeometryRuntime.webgpuData', () => {

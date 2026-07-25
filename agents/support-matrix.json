@@ -1063,7 +1063,16 @@
             "canvas": false,
             "dom": false,
             "webgl": true,
-            "webgpu": false
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "scene-skin-morph-compose",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
           }
         },
         {
