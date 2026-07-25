@@ -68,6 +68,30 @@ describe('drawWgpuShapeMeshes', () => {
     expect(pass.drawIndexed).toHaveBeenCalledWith(3);
   });
 
+  it('retires grown geometry buffers until the recorded frame is submitted', async () => {
+    const state = await makeState();
+    const buffers = makeBuffers();
+    const createBuffer = state.device.createBuffer.bind(state.device);
+    vi.spyOn(state.device, 'createBuffer').mockImplementation((descriptor) => {
+      const buffer = createBuffer(descriptor);
+      buffer.destroy = vi.fn();
+      return buffer;
+    });
+    const larger: WgpuShapeMesh = {
+      ...TRIANGLE,
+      vertices: new Float32Array([...TRIANGLE.vertices, 10, 10]),
+      indices: new Uint16Array([0, 1, 2, 1, 3, 2]),
+    };
+
+    drawWgpuShapeMeshes(state, makeProxy(), [TRIANGLE, larger], buffers);
+
+    const retired = getWgpuRenderStateRuntime(state).retiredBuffers!;
+    expect(retired).toHaveLength(2);
+    for (const buffer of retired) {
+      expect(buffer.destroy).not.toHaveBeenCalled();
+    }
+  });
+
   it('gates the fill by the active contour-clip stencil reference', async () => {
     const state = await makeState();
     const runtime = getWgpuRenderStateRuntime(state);

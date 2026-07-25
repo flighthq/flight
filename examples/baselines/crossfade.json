@@ -6,9 +6,9 @@
     "sha256": "4a8440debb5649c3e07fba39857ac0c8bdb217acaa3e156e7eaea7d93ca005c9"
   },
   "webgl": {
-    "sha256": "c8106f9981abd0566cb786c38a43cb6ae802d89ce81986c15621f1c337a513bc"
+    "sha256": "8f0516b542ec19d8cf5592d84f7021d6cda84cdf3faed12b1bacb6fad27995aa"
   },
   "webgpu": {
-    "sha256": "4ead3df44488926e911956441981366bd383edc931cdfec6a572fa008860c848"
+    "sha256": "83e55aaeeb2a801bbbfc19eefd3638b84864098dabe07b0a90172865a9d3d196"
   }
 }
