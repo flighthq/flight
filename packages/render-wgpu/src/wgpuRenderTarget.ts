@@ -1,3 +1,4 @@
+import { srgbChannelToLinear } from '@flighthq/color';
 import { copyMatrix, createMatrix } from '@flighthq/geometry';
 import type {
   Material,
@@ -140,7 +141,8 @@ export function createWgpuRenderTarget(
 // Stamps the color space produced into the currently bound target. False means the caller is drawing
 // straight to the canvas, where there is no target-aware present step available to encode linear color.
 export function declareWgpuRenderTargetColorSpace(state: WgpuRenderState, colorSpace: RenderTargetColorSpace): boolean {
-  const target = getWgpuRenderStateRuntime(state).currentRenderTarget;
+  const runtime = getWgpuRenderStateRuntime(state);
+  const target = runtime.currentRenderTarget;
   if (target == null) return false;
   target.colorSpace = colorSpace;
   return true;
@@ -282,10 +284,13 @@ function isWgpuColorPreserved(preserve: boolean | ReadonlyArray<boolean>, index:
 function resolveWgpuClearColor(target: Readonly<WgpuRenderTarget>): GPUColor {
   const packed = target.clearColors[0];
   if (packed === undefined) return { r: 0, g: 0, b: 0, a: 0 };
+  const r = ((packed >>> 24) & 0xff) / 255;
+  const g = ((packed >>> 16) & 0xff) / 255;
+  const b = ((packed >>> 8) & 0xff) / 255;
   return {
-    r: ((packed >>> 24) & 0xff) / 255,
-    g: ((packed >>> 16) & 0xff) / 255,
-    b: ((packed >>> 8) & 0xff) / 255,
+    r: target.colorSpace === 'linear' ? srgbChannelToLinear(r) : r,
+    g: target.colorSpace === 'linear' ? srgbChannelToLinear(g) : g,
+    b: target.colorSpace === 'linear' ? srgbChannelToLinear(b) : b,
     a: (packed & 0xff) / 255,
   };
 }

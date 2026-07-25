@@ -36,7 +36,7 @@ export function render(
   lights: Readonly<SceneLightsLike>,
 ): void {
   renderWgpuBackground(state);
-  beginWgpuRenderEffectPipeline(state, pipeline);
+  beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
   prepareSceneRender(state, scene, camera, lights);
   drawWgpuScene(state, scene, camera, lights);
   endWgpuRenderEffectPipeline(state, pipeline, []);

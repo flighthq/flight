@@ -21,6 +21,7 @@ import type {
   Adjustment,
   RenderEffect,
   RenderEffectPipelineOptions,
+  RenderTargetColorSpace,
   WgpuRenderEffectPipeline,
   WgpuRenderState,
   WgpuRenderTarget,
@@ -43,19 +44,23 @@ import { getWgpuRenderEffectRunner } from './wgpuRenderEffectRegistry';
 // target and pool are retained. Depth/velocity G-buffers are not yet produced (follow-up); depth- and
 // velocity-driven recipes receive null and fall back to their color-only paths.
 
-export function beginWgpuRenderEffectPipeline(state: WgpuRenderState, pipeline: WgpuRenderEffectPipeline): void {
+export function beginWgpuRenderEffectPipeline(
+  state: WgpuRenderState,
+  pipeline: WgpuRenderEffectPipeline,
+  colorSpace: RenderTargetColorSpace = 'srgb',
+): void {
   const w = state.canvas.width;
   const h = state.canvas.height;
   const format = pipeline.options.format === 'rgba16f' ? 'rgba16float' : state.format;
 
   if (pipeline.sceneTarget === null) {
-    pipeline.sceneTarget = createWgpuRenderTarget(state, w, h, format);
+    pipeline.sceneTarget = createWgpuRenderTarget(state, w, h, format, colorSpace);
   } else {
     resizeWgpuRenderTarget(state, pipeline.sceneTarget, w, h);
   }
-  // The producer declares the frame's content after begin. Reset first so a reused pipeline cannot
-  // carry a prior 3D frame's linear tag into an sRGB 2D frame.
-  pipeline.sceneTarget.colorSpace = 'srgb';
+  // Declare the producer's space before the pass opens: the clear value is packed sRGB input and
+  // must be decoded when the target stores linear scene color.
+  pipeline.sceneTarget.colorSpace = colorSpace;
   // Clear the scene target to the background colour (not transparent) so the background is part of the
   // image the effects process and the replace-blend present composites — mirroring the Gl pipeline,
   // where renderGlBackground draws into the scene target. The clear color is a target property now, so

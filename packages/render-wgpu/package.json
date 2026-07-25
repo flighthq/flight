@@ -32,6 +32,7 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/color": "*",
     "@flighthq/displayobject": "*",
     "@flighthq/geometry": "*",
     "@flighthq/render": "*",

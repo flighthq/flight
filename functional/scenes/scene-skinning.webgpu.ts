@@ -56,7 +56,7 @@ export const height = 600;
 
 export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
   renderWgpuBackground(state);
-  beginWgpuRenderEffectPipeline(state, pipeline);
+  beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
   prepareSceneSkinning(scene);
   prepareSceneRender(state, scene, camera, lights);
   drawWgpuScene(state, scene, camera, lights);
