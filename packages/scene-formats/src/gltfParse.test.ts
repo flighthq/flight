@@ -660,7 +660,7 @@ describe('createSceneFromGltf', () => {
     expect([p.x, p.y, p.z]).toEqual([1, 0, 0]);
   });
 
-  it('warns and returns empty geometry for an unsupplied external buffer', () => {
+  it('warns and drops the mesh for an unsupplied external buffer', () => {
     const doc: GltfDocument = {
       accessors: [{ bufferView: 0, componentType: 5126, count: 3, type: 'VEC3' }],
       asset: { version: '2.0' },
@@ -673,8 +673,9 @@ describe('createSceneFromGltf', () => {
     };
     const diagnostics: ImportDiagnostic[] = [];
 
-    const geometry = (getNodeChildren(createSceneFromGltf(doc, diagnostics).root)[0] as Mesh).geometry;
-    expect(getMeshGeometryVertexCount(geometry)).toBe(0);
+    // The empty buffer yields a 0-vertex POSITION accessor, so the primitive is dropped and no mesh is emitted.
+    const node = getNodeChildren(createSceneFromGltf(doc, diagnostics).root)[0] as SceneNode;
+    expect(isMesh(node)).toBe(false);
     const crumb = findGltfDiagnostic(diagnostics, 'gltf.buffer-empty');
     expect(crumb).toBeDefined();
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
@@ -771,7 +772,7 @@ describe('createSceneFromGltf', () => {
     expect(diagnostics.length).toBeGreaterThan(0);
     const crumb = findGltfDiagnostic(diagnostics, 'gltf.accessor-not-found');
     expect(crumb).toBeDefined();
-    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
     expect(crumb!.origin).toBe('buildGltfDocument');
     expect(crumb!.detail?.firstAccessor).toBe(99);
   });
@@ -784,7 +785,7 @@ describe('createSceneFromGltf', () => {
     createSceneFromGltf(doc, diagnostics);
     const crumb = findGltfDiagnostic(diagnostics, 'gltf.accessor-bufferview-not-found');
     expect(crumb).toBeDefined();
-    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
     expect(crumb!.origin).toBe('buildGltfDocument');
   });
 
@@ -915,7 +916,7 @@ describe('createSceneFromGltf', () => {
     expect(uv.y).toBeCloseTo(128 / 255, 5);
   });
 
-  it('warns and yields empty geometry when an accessor runs past its backing buffer', () => {
+  it('warns and drops the primitive when an accessor runs past its backing buffer', () => {
     // The accessor claims 10 vertices but the buffer holds only 3 — the bounds guard must reject it rather
     // than read out of range.
     const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]); // 3 verts, 36 bytes
@@ -934,13 +935,13 @@ describe('createSceneFromGltf', () => {
     createSceneFromGltf(doc, diagnostics);
     const crumb = findGltfDiagnostic(diagnostics, 'gltf.accessor-past-buffer');
     expect(crumb).toBeDefined();
-    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
     expect(crumb!.origin).toBe('buildGltfDocument');
   });
 
-  it('warns and yields empty geometry for a primitive with no POSITION attribute', () => {
-    // The parser keeps the mesh node but its geometry is empty (0 vertices). Assert that outcome
-    // unconditionally — a conditional check would pass even if assembly wrongly dropped the mesh.
+  it('drops the mesh entirely for a primitive with no POSITION attribute', () => {
+    // Position is mandatory, so an empty-geometry primitive is unusable and DROPPED (not emitted): the mesh's
+    // only primitive drops, so its node becomes a bare node with no mesh. Drop matches md5mesh.mesh-empty.
     const doc = makeTriangleGltf();
     doc.meshes![0].primitives[0].attributes = {}; // drop POSITION
     const diagnostics: ImportDiagnostic[] = [];
@@ -949,9 +950,9 @@ describe('createSceneFromGltf', () => {
     expect(crumb).toBeDefined();
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
     expect(crumb!.origin).toBe('buildGltfDocument');
-    const mesh = getNodeChildren(scene.root)[0] as Mesh;
-    expect(isMesh(mesh)).toBe(true);
-    expect(getMeshGeometryVertexCount(mesh.geometry)).toBe(0);
+    // The node survives but carries no mesh (the empty primitive was dropped, not emitted as an empty mesh).
+    const node = getNodeChildren(scene.root)[0] as SceneNode;
+    expect(isMesh(node)).toBe(false);
   });
 
   it('imports every primitive of a multi-primitive mesh as its own sub-mesh', () => {
@@ -1077,7 +1078,7 @@ describe('createSceneFromGltf', () => {
     expect(getMeshGeometryIndexCount(geometry)).toBe(0);
     const crumb = findGltfDiagnostic(diagnostics, 'gltf.primitive-unsupported-mode');
     expect(crumb).toBeDefined();
-    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
     expect(crumb!.origin).toBe('buildGltfDocument');
     expect(crumb!.detail?.firstMode).toBe(7);
   });
@@ -1773,14 +1774,14 @@ describe('gltf diagnostics coverage', () => {
     expect(crumb!.detail?.reason).toBe('no-uri-no-binary');
   });
 
-  it('drops and reports gltf.accessor-buffer-not-found for a bufferView with a missing buffer', () => {
+  it('recovers and reports gltf.accessor-buffer-not-found for a bufferView with a missing buffer', () => {
     const doc = makeTriangleGltf();
     doc.bufferViews![0].buffer = 9; // buffers array has no index 9
     const diagnostics: ImportDiagnostic[] = [];
     createSceneFromGltf(doc, diagnostics);
     const crumb = findGltfDiagnostic(diagnostics, 'gltf.accessor-buffer-not-found');
     expect(crumb).toBeDefined();
-    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
     expect(crumb!.origin).toBe('buildGltfDocument');
     expect(crumb!.detail?.firstBuffer).toBe(9);
   });
@@ -1800,11 +1801,12 @@ describe('gltf diagnostics coverage', () => {
     expect(crumb!.origin).toBe('buildGltfDocument');
   });
 
-  it('aggregates repeated accessor-not-found drops into one crumb with a count', () => {
+  it('aggregates repeated accessor-not-found recoveries into one crumb with a count', () => {
     const doc = makeTriangleGltf();
-    // Two attributes both pointing at a missing accessor 99 → two drops of the same kind.
-    doc.meshes![0].primitives[0].attributes.POSITION = 99;
+    // POSITION stays valid so the primitive survives; two non-position attributes point at a missing
+    // accessor 99 → two recoveries of the same kind, aggregated into one crumb.
     doc.meshes![0].primitives[0].attributes.NORMAL = 99;
+    doc.meshes![0].primitives[0].attributes.TANGENT = 99;
     const diagnostics: ImportDiagnostic[] = [];
     createSceneFromGltf(doc, diagnostics);
     const matching = diagnostics.filter((d) => d.kind === 'gltf.accessor-not-found');

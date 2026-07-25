@@ -237,9 +237,14 @@ function buildGltfDocument(
     const docMeshIndices: number[] = [];
     for (let p = 0; p < gltfMesh.primitives.length; p++) {
       const primitive = gltfMesh.primitives[p];
+      const geometry = primitiveToGeometry(doc, buffers, primitive, gltfDrops);
+      // A primitive with no usable position data yields no geometry and is dropped (its gltf.primitive-no-
+      // position crumb already fired) — it produces no document mesh, so a mesh whose every primitive drops
+      // becomes a bare node with no children.
+      if (geometry === null) continue;
       const morph = buildGltfMorph(doc, buffers, primitive, gltfMesh.weights, gltfDrops);
       const documentMesh: SceneDocumentMesh = {
-        geometry: primitiveToGeometry(doc, buffers, primitive, gltfDrops),
+        geometry,
         materials: primitive.material !== undefined ? [primitive.material] : [],
       };
       if (morph !== null) documentMesh.morph = morph;
@@ -1010,14 +1015,21 @@ function primitiveToGeometry(
   buffers: readonly Uint8Array[],
   primitive: Readonly<GltfPrimitive>,
   gltfDrops: Map<string, GltfDropTally> | null,
-): MeshGeometry {
+): MeshGeometry | null {
+  // Position is mandatory in glTF; a primitive with no usable position data (the attribute absent, or its
+  // accessor unreadable so it yields zero vertices) is an unusable empty shell — DROP it (return null so the
+  // mesh is not emitted) rather than push an empty mesh node. Drop matches md5mesh.mesh-empty.
   const positionIndex = primitive.attributes.POSITION;
   if (positionIndex === undefined) {
     tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.primitive-no-position', '', {});
-    return createMeshGeometry({ layout: CANONICAL_LAYOUT, vertices: new Float32Array(0) });
+    return null;
   }
   const position = readAccessor(doc, buffers, positionIndex, gltfDrops);
   const vertexCount = position.count;
+  if (vertexCount === 0) {
+    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.primitive-no-position', '', {});
+    return null;
+  }
   const normal =
     primitive.attributes.NORMAL !== undefined
       ? readAccessor(doc, buffers, primitive.attributes.NORMAL, gltfDrops)
@@ -1121,7 +1133,7 @@ function buildGltfPrimitiveElements(
     case 6:
       return { indices: buildGltfTriangleFanIndices(source, vertexCount), topology: 'triangle-list' };
     default:
-      tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.primitive-unsupported-mode', '', {
+      tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.primitive-unsupported-mode', '', {
         firstMode: mode,
       });
       return { indices: new Uint32Array(0), topology: 'triangle-list' };
@@ -1216,7 +1228,7 @@ function readAccessor(
 ): { count: number; data: ArrayLike<number> } {
   const accessor = doc.accessors?.[accessorIndex];
   if (accessor === undefined) {
-    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.accessor-not-found', '', {
+    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.accessor-not-found', '', {
       firstAccessor: accessorIndex,
     });
     return { count: 0, data: new Float32Array(0) };
@@ -1235,7 +1247,7 @@ function readAccessor(
   if (view !== undefined) {
     const bytes = buffers[view.buffer];
     if (bytes === undefined) {
-      tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.accessor-buffer-not-found', '', {
+      tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.accessor-buffer-not-found', '', {
         firstAccessor: accessorIndex,
         firstBuffer: view.buffer,
       });
@@ -1248,7 +1260,7 @@ function readAccessor(
     // component's end against the buffer's real length and bail with empty rather than throwing.
     const lastByteEnd = accessor.count > 0 ? baseOffset + (accessor.count - 1) * stride + elementByteSize : baseOffset;
     if (lastByteEnd > bytes.byteOffset + bytes.byteLength) {
-      tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.accessor-past-buffer', '', {
+      tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.accessor-past-buffer', '', {
         firstAccessor: accessorIndex,
       });
       return { count: 0, data: new Float32Array(0) };
@@ -1262,7 +1274,7 @@ function readAccessor(
       }
     }
   } else if (accessor.sparse === undefined) {
-    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.accessor-bufferview-not-found', '', {
+    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.accessor-bufferview-not-found', '', {
       firstAccessor: accessorIndex,
       firstBufferView: bufferViewIndex,
     });
