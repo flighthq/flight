@@ -232,6 +232,33 @@ describe('bindGlImageResourceTexture', () => {
     expect(gl.texImage2D).not.toHaveBeenCalled();
     expect(gl.compressedTexImage2D).not.toHaveBeenCalled();
   });
+
+  it('a per-bitmap smoothingOverride=false forces NEAREST even when allowSmoothing is true', () => {
+    // A non-smoothed bitmap must sample NEAREST regardless of the global allowSmoothing default.
+    const { state, gl } = createGlState({ allowSmoothing: true });
+    bindGlImageResourceTexture(state, dataResource(4, 1), null, false);
+    const g = gl as unknown as {
+      TEXTURE_2D: number;
+      TEXTURE_MIN_FILTER: number;
+      TEXTURE_MAG_FILTER: number;
+      NEAREST: number;
+    };
+    expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_MIN_FILTER, g.NEAREST);
+    expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_MAG_FILTER, g.NEAREST);
+  });
+
+  it('a per-bitmap smoothingOverride=true forces LINEAR even when allowSmoothing is false', () => {
+    const { state, gl } = createGlState({ allowSmoothing: false });
+    bindGlImageResourceTexture(state, dataResource(4, 1), null, true);
+    const g = gl as unknown as {
+      TEXTURE_2D: number;
+      TEXTURE_MIN_FILTER: number;
+      TEXTURE_MAG_FILTER: number;
+      LINEAR: number;
+    };
+    expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_MIN_FILTER, g.LINEAR);
+    expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_MAG_FILTER, g.LINEAR);
+  });
 });
 
 describe('bindGlTexture', () => {

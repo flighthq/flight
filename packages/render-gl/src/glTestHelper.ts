@@ -55,6 +55,7 @@ export function createGlState(options?: { allowSmoothing?: boolean; backgroundCo
     spriteBatchInstanceBuffer: null,
     spriteBatchInstanceData: new Float32Array(13 * 256),
     spriteBatchTexture: null,
+    spriteBatchSmoothing: null,
   } satisfies Partial<GlRenderStateRuntime>);
   state[EntityRuntimeKey] = runtime;
 

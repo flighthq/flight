@@ -42,6 +42,7 @@ export function bindGlImageResourceTexture(
   state: GlRenderState,
   image: Readonly<ImageResource>,
   sampler?: Readonly<SamplerLike> | null,
+  smoothingOverride?: boolean | null,
 ): WebGLTexture {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
@@ -58,7 +59,7 @@ export function bindGlImageResourceTexture(
     uploadGlDisplayTexture(state, image);
     entry.version = image.version;
   }
-  applyGlSamplerState(state, runtime, entry.texture, sampler ?? null);
+  applyGlSamplerState(state, runtime, entry.texture, sampler ?? null, smoothingOverride ?? null);
   return entry.texture;
 }
 
@@ -319,9 +320,10 @@ function premultiplyStraightRgba8(data: Readonly<Uint8ClampedArray<ArrayBuffer>>
 }
 
 // Applies a sampler's wrap, filtering, anisotropy, and mip chain to the currently-bound TEXTURE_2D.
-// Without a sampler it falls back to the state's allowSmoothing flag with clamp-to-edge and no mips —
-// the 2D bitmap/sprite default. With one, every field comes from the descriptor. The mip chain is
-// generated once per texture (tracked in runtime.mipmappedTextures) the first time a mip-sampling
+// Without a sampler it falls back to the clamp-to-edge, no-mips 2D bitmap/sprite default, filtered by
+// `smoothingOverride` when the caller supplies one (a per-bitmap `smoothing` flag) and otherwise by the
+// state's global `allowSmoothing`. With a sampler, every field comes from the descriptor. The mip chain
+// is generated once per texture (tracked in runtime.mipmappedTextures) the first time a mip-sampling
 // filter asks for it, so a shared texture first bound without mips and later with them still generates
 // its chain. Filtering and wrap are set every bind (cheap) so a texture shared across samplers follows
 // the current draw; only the one-time mip generation is gated.
@@ -330,10 +332,12 @@ function applyGlSamplerState(
   runtime: GlRenderStateRuntime,
   texture: WebGLTexture,
   sampler: Readonly<SamplerLike> | null,
+  smoothingOverride: boolean | null = null,
 ): void {
   const gl = state.gl;
   if (!sampler) {
-    const filter = state.allowSmoothing ? gl.LINEAR : gl.NEAREST;
+    const smooth = smoothingOverride ?? state.allowSmoothing;
+    const filter = smooth ? gl.LINEAR : gl.NEAREST;
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
