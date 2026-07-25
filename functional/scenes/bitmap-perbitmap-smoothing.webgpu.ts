@@ -10,8 +10,8 @@
 // between the white cell (0,0) and the black cell (1,0) is sampled on each copy:
 //   - smoothing = FALSE (nearest): the boundary is a hard edge — the sampled pixel is pure black or white.
 //   - smoothing = TRUE  (bilinear): the boundary blends the two texels — the sampled pixel is mid-gray.
-// The crisp copy's boundary being PURE is the real per-bitmap proof: it only holds if GL applied NEAREST
-// to that specific bitmap rather than the (bilinear) global default the smoothed copy also uses.
+// The crisp copy's boundary being PURE is the real per-bitmap proof: it only holds if WebGPU applied
+// NEAREST to that specific bitmap rather than the (bilinear) global default the smoothed copy also uses.
 //
 // The two bitmaps SHARE ONE ImageResource, so the texture/blend/material batch keys are identical between
 // them — smoothing is the ONLY key that differs, forcing a flush. Give each bitmap its own resource and
