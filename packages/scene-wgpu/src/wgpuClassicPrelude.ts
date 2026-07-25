@@ -148,6 +148,27 @@ export function getWgpuClassicModuleSourceForKey(
   skinned = false,
   skinning: Readonly<WgpuSkinningAdapter> | null = null,
 ): string {
+  return assembleWgpuClassicModuleSource(key, skinned, skinning, CLASSIC_WGSL_BODY);
+}
+
+// ShadedMaterial composes modifier declarations and contributions into the classic WGSL, but retains
+// its intentionally extensible legacy group(2) layout: one sampler at binding 1, base textures at 2..5,
+// and modifier textures at 6+. Keep that source contract separate from the per-map classic pipeline so
+// changing classic's sampler layout cannot collide with shaded modifier bindings.
+export function getWgpuClassicSharedSamplerModuleSourceForKey(
+  key: Readonly<WgpuClassicDefineKey>,
+  skinned = false,
+  skinning: Readonly<WgpuSkinningAdapter> | null = null,
+): string {
+  return assembleWgpuClassicModuleSource(key, skinned, skinning, CLASSIC_SHARED_SAMPLER_WGSL_BODY);
+}
+
+function assembleWgpuClassicModuleSource(
+  key: Readonly<WgpuClassicDefineKey>,
+  skinned: boolean,
+  skinning: Readonly<WgpuSkinningAdapter> | null,
+  body: string,
+): string {
   return (
     `const LIGHTING_PHONG : bool = ${key.lightingModel === 'phong' ? 'true' : 'false'};\n` +
     `const LIGHTING_BLINNPHONG : bool = ${key.lightingModel === 'blinnphong' ? 'true' : 'false'};\n` +
@@ -158,7 +179,7 @@ export function getWgpuClassicModuleSourceForKey(
     `const HAS_NORMAL_MAP : bool = ${key.hasNormalMap ? 'true' : 'false'};\n` +
     `const HAS_ALPHA_MAP : bool = ${key.hasAlphaMap ? 'true' : 'false'};\n` +
     getWgpuMeshPreludeWgsl(skinned, skinning) +
-    CLASSIC_WGSL_BODY
+    body
   );
 }
 
@@ -349,6 +370,26 @@ fn shadeClassicLight(normal : vec3f, lightDir : vec3f, lightColor : vec3f, diffu
   return vec4f(radiance, diffuse.a * in.objectAlpha);
 }
 `;
+
+const CLASSIC_SHARED_SAMPLER_WGSL_BODY = CLASSIC_WGSL_BODY.replace(
+  `@group(2) @binding(1) var diffuseSampler : sampler;
+@group(2) @binding(2) var specularSampler : sampler;
+@group(2) @binding(3) var normalSampler : sampler;
+@group(2) @binding(4) var alphaSampler : sampler;
+@group(2) @binding(5) var diffuseTexture : texture_2d<f32>;
+@group(2) @binding(6) var specularTexture : texture_2d<f32>;
+@group(2) @binding(7) var normalTexture : texture_2d<f32>;
+@group(2) @binding(8) var alphaTexture : texture_2d<f32>;`,
+  `@group(2) @binding(1) var materialSampler : sampler;
+@group(2) @binding(2) var diffuseTexture : texture_2d<f32>;
+@group(2) @binding(3) var specularTexture : texture_2d<f32>;
+@group(2) @binding(4) var normalTexture : texture_2d<f32>;
+@group(2) @binding(5) var alphaTexture : texture_2d<f32>;`,
+)
+  .replaceAll('diffuseSampler', 'materialSampler')
+  .replaceAll('specularSampler', 'materialSampler')
+  .replaceAll('normalSampler', 'materialSampler')
+  .replaceAll('alphaSampler', 'materialSampler');
 
 const _scratch = new Float32Array(CLASSIC_UNIFORM_BYTES / 4);
 const _samplerScratch = new Array<GPUSampler>(4);
