@@ -345,45 +345,22 @@ a backdrop), matching the gl capture.
 
 ---
 
-## 6. Directional shadow depth pass is unrunnable (produces an invalid command buffer)
+## 6. Directional shadow depth pass frame lifecycle — resolved
 
-### The gap
+`beginWgpuFrame(state)` now creates and resets the frame encoder without opening the canvas pass.
+`renderWgpuBackground` lazily calls it for ordinary loops, while multi-pass recipes use:
 
-`drawWgpuSceneShadowMap` exists and its shadow-sample bind group is wired into every lit family (PBR today,
-classic/toon after the shadow-reception change), but **the depth pass has never run in a real frame** — no
-functional scene exercised it, and the unit tests use a fake device that does not enforce WebGPU's
-render-pass validation. Running it (the `shadow-classic` scene, first attempt) fails at submit:
+`beginWgpuFrame → drawWgpuSceneShadowMap → renderWgpuBackground → prepare/draw → submit`.
 
-```
-Recording in [CommandEncoder] which is locked while [RenderPassEncoder] is open.
- - While encoding [CommandEncoder].BeginRenderPass(...)
-[Invalid CommandBuffer] is invalid due to a previous error — While calling [Queue].Submit(...)
-```
-
-Root cause: `renderWgpuBackground` (`render-wgpu/src/wgpuBackground.ts`) **creates the command encoder and
-opens the main color/background render pass in the same call**, leaving that pass open. `drawWgpuSceneShadowMap`
-calls `encoder.beginRenderPass(...)` for its depth pass, but its own contract — "called before the main scene
-render pass opens; no-op if no command encoder is active" — is **impossible to satisfy**: the only thing that
-creates the encoder also opens a pass, so there is no window where the encoder exists with no pass open. The
-frame renders blank (coverage 0). This blocks shadows for *all* lit families on wgpu, not just classic/toon.
-
-### The fix (render-wgpu frame-API change — a design decision, not a scene fix)
-
-Split encoder creation from the background pass so a caller can insert the depth pass between them. Options:
-1. A `beginWgpuFrame(state)` that creates the encoder (and resets frame state) without opening the background
-   pass; `renderWgpuBackground` then only opens/clears the color pass. Scene order becomes
-   `beginWgpuFrame → drawWgpuSceneShadowMap → renderWgpuBackground → begin…RenderEffectPipeline → …`.
-2. Or have `drawWgpuSceneShadowMap` record its depth pass on its **own** encoder submitted before the frame
-   encoder (it already owns a dedicated depth target), decoupling it from the background-pass lifecycle.
-
-Mirror gl's proven order (shadow → background/pipeline → prepare → draw). gl works because `drawGlSceneShadowMap`
-binds its own FBO and there is no "one open pass locks the encoder" rule.
+The shadow depth and forward passes therefore share one valid encoder without nesting render passes.
+The same primitive lets `refreshWgpuRenderCache` open and submit a standalone offscreen frame when cache
+baking is requested outside the visible frame.
 
 ### Verification
 
-Un-scope `shadow-classic` (and eventually a PBR shadow scene) to `+wgpu` and capture a `.webgpu.ts` baseline
-matching the gl capture (a Blinn-Phong sphere casting a dark shadow onto the plane it receives onto). Until
-then `shadow-classic` is webgl-only and the AGENTS.md feature table lists shadows as gl-only.
+`shadow-classic.webgpu.ts` and `shadow-directional.webgpu.ts` both pass real WebGPU pixel oracles: a
+Blinn-Phong/PBR sphere casts a clearly darker projected shadow onto a lit plane. `displayobject-cache`
+also exercises the restored out-of-frame WebGPU cache bake.
 
 ---
 

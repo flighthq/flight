@@ -13,6 +13,7 @@ import {
 } from '@flighthq/render';
 import { createWgpuRenderStateRuntime, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import {
+  beginWgpuFrame,
   beginWgpuRenderPass,
   createWgpuRenderTarget,
   destroyWgpuRenderTarget,
@@ -20,6 +21,7 @@ import {
   endWgpuRenderPass,
   resizeWgpuRenderTarget,
   setWgpuRenderTransform2D,
+  submitWgpuRenderPass,
 } from '@flighthq/render-wgpu';
 import type {
   DisplayObject,
@@ -179,10 +181,13 @@ export function refreshWgpuRenderCache(
   const screenState = _cacheStateScreen.get(cacheState) ?? cacheState;
   const cacheRuntime = getWgpuRenderStateRuntime(cacheState);
   const screenRuntime = getWgpuRenderStateRuntime(screenState);
+  const ownsFrame = screenRuntime.commandEncoder === null;
+  if (ownsFrame) beginWgpuFrame(screenState);
   // The bake records into the screen state's live, per-frame command encoder and render pass.
-  // createWgpuCacheState captured those once at setup — stale now, since webgpu rebuilds them
-  // every frame — so sync them here. This requires refresh to run within a frame (after the
-  // encoder/pass have begun), unlike the immediate-mode Gl backend.
+  // createWgpuCacheState captured those once at setup — stale now, since webgpu rebuilds them every
+  // frame — so sync them here. When no application frame is active, beginWgpuFrame gives this bake a
+  // standalone encoder that is submitted below; callers may therefore refresh either inside or outside
+  // their visible frame, matching the GL/cache API contract.
   cacheRuntime.commandEncoder = screenRuntime.commandEncoder;
   cacheRuntime.renderPass = screenRuntime.renderPass;
   cacheRuntime.canvasTextureView = screenRuntime.canvasTextureView;
@@ -241,6 +246,7 @@ export function refreshWgpuRenderCache(
   // Advance the screen's cursor past the bake's uniform writes so its subsequent draws don't
   // overwrite them in the shared ring buffer.
   screenRuntime.uniformOffset = cacheRuntime.uniformOffset;
+  if (ownsFrame) submitWgpuRenderPass(screenState);
   return dirty || resized;
 }
 
