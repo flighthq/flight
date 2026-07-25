@@ -181,21 +181,64 @@ describe('createDisplayObjectFromSvgDocument', () => {
               <rect width="10" height="10" clip-rule="evenodd"/>
               <circle cx="5" cy="5" r="2" clip-rule="nonzero"/>
             </clipPath>
+            <clipPath id="fillOnly" fill-rule="evenodd">
+              <path d="M0 0 H20 V20 H0 Z M5 5 H15 V15 H5 Z"/>
+            </clipPath>
           </defs>
           <rect width="20" height="20" clip-path="url(#hole)"/>
           <rect width="20" height="20" clip-path="url(#mixed)"/>
+          <rect width="20" height="20" clip-path="url(#fillOnly)"/>
         </svg>
       `,
       diagnostics,
     );
 
     expect(getNodeChildAt(root, 0)?.clip?.winding).toBe('evenOdd');
+    expect(getNodeChildAt(root, 2)?.clip?.winding).toBe('nonZero');
     expect(diagnostics).toContainEqual({
       detail: { id: 'mixed' },
       kind: 'svg.mixed-clip-rule',
       origin: 'createSvgClipPath',
       severity: 'Recover',
     });
+  });
+
+  it('instantiates use geometry inside clip paths with placement and transforms', () => {
+    const root = createDisplayObjectFromSvgDocument(`
+      <svg>
+        <defs>
+          <path id="clipShape" d="M0 0 H10 V10 H0 Z"/>
+          <clipPath id="used"><use href="#clipShape" x="5" transform="scale(2)"/></clipPath>
+        </defs>
+        <rect width="40" height="40" clip-path="url(#used)"/>
+      </svg>
+    `);
+
+    expect(getNodeChildAt(root, 0)?.clip?.rect).toMatchObject({ height: 20, width: 20, x: 10, y: 0 });
+  });
+
+  it('honors display suppression and descendant visibility overrides in clip geometry', () => {
+    const root = createDisplayObjectFromSvgDocument(`
+      <svg>
+        <defs>
+          <clipPath id="visibleOnly">
+            <rect x="0" width="10" height="10" display="none"/>
+            <rect x="10" width="10" height="10"/>
+          </clipPath>
+          <clipPath id="visibilityOverride">
+            <g visibility="hidden">
+              <rect x="0" width="10" height="10"/>
+              <rect x="20" width="10" height="10" visibility="visible"/>
+            </g>
+          </clipPath>
+        </defs>
+        <rect width="40" height="40" clip-path="url(#visibleOnly)"/>
+        <rect width="40" height="40" clip-path="url(#visibilityOverride)"/>
+      </svg>
+    `);
+
+    expect(getNodeChildAt(root, 0)?.clip?.rect).toMatchObject({ height: 10, width: 10, x: 10, y: 0 });
+    expect(getNodeChildAt(root, 1)?.clip?.rect).toMatchObject({ height: 10, width: 10, x: 20, y: 0 });
   });
 
   it('lets author CSS outrank presentation attributes by specificity and source order', () => {
