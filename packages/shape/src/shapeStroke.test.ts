@@ -1,10 +1,11 @@
+import { tessellatePath } from '@flighthq/path';
 import type { ShapeCommandToken } from '@flighthq/types';
 import { PathCommand } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { createShape } from './shape';
-import { appendShapeLineStyle, appendShapeLineTo, appendShapeMoveTo } from './shapeCommands';
-import { getShapeStrokeRegions, hasNonSolidShapeStroke } from './shapeStroke';
+import { appendShapeLineStyle, appendShapeLineTo, appendShapeMoveTo, appendShapeRectangle } from './shapeCommands';
+import { getShapeStrokeRegions, hasClosedShapeStroke, hasNonSolidShapeStroke } from './shapeStroke';
 
 // A 90° corner stroked with the given join, as one span.
 function strokedCorner(join: 'bevel' | 'miter' | 'round', thickness = 20) {
@@ -65,9 +66,39 @@ describe('getShapeStrokeRegions', () => {
     expect(regions![1].color).toBe(0x00ff00);
   });
 
+  it('tessellates an OPEN stroke outline into a fillable (non-empty) mesh', () => {
+    const outline = strokedCorner('miter')![0].path;
+    // The V's outline is a simple polygon: ear-clipping fills it (indices > 0). A closed stroke's ring
+    // could not be direct-filled, which is why closed strokes defer (next test).
+    const mesh = tessellatePath(outline);
+    expect(mesh.indices.length).toBeGreaterThan(0);
+  });
+
+  it('defers a CLOSED stroke (rectangle) to the raster path — a ring is not direct-fillable (null)', () => {
+    const shape = createShape();
+    appendShapeLineStyle(shape, 8, 0xff0000, 1, false, 'normal', 'none', 'miter', 4);
+    appendShapeRectangle(shape, 10, 10, 100, 50);
+    expect(getShapeStrokeRegions(shape.data.commands)).toBeNull();
+  });
+
   it('defers a gradient/bitmap stroke to the raster path (null)', () => {
     const gradientStroke: ShapeCommandToken[] = ['lineGradientStyle', 1, 0, 'moveTo', 2, 0, 0, 'lineTo', 2, 50, 0];
     expect(getShapeStrokeRegions(gradientStroke)).toBeNull();
+  });
+});
+
+describe('hasClosedShapeStroke', () => {
+  it('is true for a self-closing primitive and false for an open polyline', () => {
+    const rect = createShape();
+    appendShapeLineStyle(rect, 4, 0);
+    appendShapeRectangle(rect, 0, 0, 10, 10);
+    expect(hasClosedShapeStroke(rect.data.commands)).toBe(true);
+
+    const open = createShape();
+    appendShapeLineStyle(open, 4, 0);
+    appendShapeMoveTo(open, 0, 0);
+    appendShapeLineTo(open, 10, 0);
+    expect(hasClosedShapeStroke(open.data.commands)).toBe(false);
   });
 });
 

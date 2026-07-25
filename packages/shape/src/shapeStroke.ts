@@ -12,10 +12,14 @@ import { appendShapeGeometryCommand } from './shapeFill';
 // GPU-tessellated, resolution-independent geometry (sharp when scaled, no per-shape offscreen cost,
 // and no bounds-clipped miter spikes) — and is the first consumer of the otherwise-orphaned strokePath.
 //
-// Returns `null` when the shape uses a stroke the GPU outline path cannot express (gradient/bitmap
-// stroke), so the caller falls back to the raster path. Solid-color strokes only.
+// Returns `null` when the shape uses a stroke the direct-fill outline route cannot express, so the
+// caller falls back to the raster path: a gradient/bitmap stroke (non-solid color), or a CLOSED stroke
+// (a self-closing rectangle/ellipse/circle/round-rect primitive). A closed stroke offsets into a
+// hollow RING, and the tessellator fills each contour solid with no hole subtraction, so a ring can't
+// be direct-filled — only an OPEN stroke's outline is a simple fillable polygon. Solid open strokes
+// only; ring tessellation (a stroke-strip or stencil-cover route) is a later addition.
 export function getShapeStrokeRegions(commands: readonly ShapeCommandToken[]): ShapeFillRegion[] | null {
-  if (hasNonSolidShapeStroke(commands)) return null;
+  if (hasNonSolidShapeStroke(commands) || hasClosedShapeStroke(commands)) return null;
 
   const regions: ShapeFillRegion[] = [];
   let centerline: Path | null = null; // accumulated centerline for the active stroke span
@@ -85,6 +89,21 @@ export function getShapeStrokeRegions(commands: readonly ShapeCommandToken[]): S
   }
   flush();
   return regions;
+}
+
+// True if the stream strokes a self-closing primitive (rectangle/ellipse/circle/round-rect). Such a
+// stroke offsets into a hollow ring the direct-fill tessellator cannot express (see the header note),
+// so the caller defers the whole shape to the raster path.
+export function hasClosedShapeStroke(commands: readonly ShapeCommandToken[]): boolean {
+  let i = 0;
+  while (i < commands.length) {
+    const name = commands[i] as string;
+    if (name === 'drawCircle' || name === 'drawEllipse' || name === 'drawRectangle' || name === 'drawRoundRectangle') {
+      return true;
+    }
+    i += 2 + (commands[i + 1] as number);
+  }
+  return false;
 }
 
 // True if the stream uses a stroke the GPU outline path cannot express (a gradient or bitmap stroke),
