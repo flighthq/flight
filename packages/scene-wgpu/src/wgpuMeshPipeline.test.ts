@@ -614,6 +614,41 @@ describe('getWgpuMeshPreludeWgsl', () => {
   });
 });
 
+describe('isWgpuMaterialBindGroupRebuildNeeded', () => {
+  const sampler = {} as GPUSampler;
+  const view0 = {} as GPUTextureView;
+  const view1 = {} as GPUTextureView;
+  const cached: WgpuMaterialBinding = {
+    bindGroup: {} as GPUBindGroup,
+    buffer: {} as GPUBuffer,
+    sampler,
+    views: [view0, view1],
+  };
+
+  it('is false when the sampler and every resolved view match the cache', () => {
+    expect(isWgpuMaterialBindGroupRebuildNeeded(cached, sampler, [view0, view1])).toBe(false);
+  });
+
+  it('rebuilds when the primary sampler identity changes (a primary-map sampler edit)', () => {
+    // Only the ONE primary-map sampler participates (shared-primary-sampler contract); a non-primary
+    // map's per-Texture sampler is never bound and cannot trip this.
+    expect(isWgpuMaterialBindGroupRebuildNeeded(cached, {} as GPUSampler, [view0, view1])).toBe(true);
+  });
+
+  it('rebuilds when any resolved view identity changes (swap / unready->ready / ready->ready / version++)', () => {
+    // resolveWgpuMaterialTextureView is the invalidation seam: a texture swap, an unready->ready
+    // transition, a ready->ready image replacement, or an ImageResource version bump each yield a new
+    // view identity, so this single identity check covers all four.
+    expect(isWgpuMaterialBindGroupRebuildNeeded(cached, sampler, [{} as GPUTextureView, view1])).toBe(true);
+  });
+
+  it('rebuilds when the resolved view count changes or the cache has no views yet', () => {
+    expect(isWgpuMaterialBindGroupRebuildNeeded(cached, sampler, [view0])).toBe(true);
+    const noViews: WgpuMaterialBinding = { bindGroup: {} as GPUBindGroup, buffer: {} as GPUBuffer };
+    expect(isWgpuMaterialBindGroupRebuildNeeded(noViews, sampler, [view0])).toBe(true);
+  });
+});
+
 describe('isWgpuTextureReady', () => {
   it('is true when the texture carries pixels (element or data), false otherwise', () => {
     expect(isWgpuTextureReady(null)).toBe(false);
@@ -682,41 +717,6 @@ describe('WGPU_MESH_PRELUDE_WGSL', () => {
   it('applies the uv transform in the shared vertex stage', () => {
     expect(WGPU_MESH_PRELUDE_WGSL).toContain('uvTransform : mat3x3f');
     expect(WGPU_MESH_PRELUDE_WGSL).toContain('draw.uvTransform * vec3f(uv, 1.0)');
-  });
-});
-
-describe('isWgpuMaterialBindGroupRebuildNeeded', () => {
-  const sampler = {} as GPUSampler;
-  const view0 = {} as GPUTextureView;
-  const view1 = {} as GPUTextureView;
-  const cached: WgpuMaterialBinding = {
-    bindGroup: {} as GPUBindGroup,
-    buffer: {} as GPUBuffer,
-    sampler,
-    views: [view0, view1],
-  };
-
-  it('is false when the sampler and every resolved view match the cache', () => {
-    expect(isWgpuMaterialBindGroupRebuildNeeded(cached, sampler, [view0, view1])).toBe(false);
-  });
-
-  it('rebuilds when the primary sampler identity changes (a primary-map sampler edit)', () => {
-    // Only the ONE primary-map sampler participates (shared-primary-sampler contract); a non-primary
-    // map's per-Texture sampler is never bound and cannot trip this.
-    expect(isWgpuMaterialBindGroupRebuildNeeded(cached, {} as GPUSampler, [view0, view1])).toBe(true);
-  });
-
-  it('rebuilds when any resolved view identity changes (swap / unready->ready / ready->ready / version++)', () => {
-    // resolveWgpuMaterialTextureView is the invalidation seam: a texture swap, an unready->ready
-    // transition, a ready->ready image replacement, or an ImageResource version bump each yield a new
-    // view identity, so this single identity check covers all four.
-    expect(isWgpuMaterialBindGroupRebuildNeeded(cached, sampler, [{} as GPUTextureView, view1])).toBe(true);
-  });
-
-  it('rebuilds when the resolved view count changes or the cache has no views yet', () => {
-    expect(isWgpuMaterialBindGroupRebuildNeeded(cached, sampler, [view0])).toBe(true);
-    const noViews: WgpuMaterialBinding = { bindGroup: {} as GPUBindGroup, buffer: {} as GPUBuffer };
-    expect(isWgpuMaterialBindGroupRebuildNeeded(noViews, sampler, [view0])).toBe(true);
   });
 });
 
