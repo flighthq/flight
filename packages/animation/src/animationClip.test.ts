@@ -2,6 +2,7 @@ import {
   cloneAnimationClip,
   createAnimationChannel,
   createAnimationClip,
+  createAnimationClipEvent,
   getAnimationClipDuration,
   sampleAnimationClip,
 } from './animationClip';
@@ -12,15 +13,21 @@ function track(times: number[]) {
 }
 
 describe('cloneAnimationClip', () => {
-  it('deep-copies each channel track but shares targetRefs by reference', () => {
+  it('deep-copies tracks and event descriptors but shares opaque references', () => {
     const target = {};
-    const clip = createAnimationClip([createAnimationChannel(track([0, 1]), target)]);
+    const payload = {};
+    const clip = createAnimationClip([createAnimationChannel(track([0, 1]), target)], undefined, [
+      createAnimationClipEvent(0.5, 'step', payload),
+    ]);
     const clone = cloneAnimationClip(clip);
     expect(clone).not.toBe(clip);
     expect(clone.channels).not.toBe(clip.channels);
     expect(clone.channels[0].track).not.toBe(clip.channels[0].track);
     expect(clone.channels[0].track.times).not.toBe(clip.channels[0].track.times);
     expect(clone.channels[0].targetRef).toBe(target);
+    expect(clone.events).not.toBe(clip.events);
+    expect(clone.events[0]).not.toBe(clip.events[0]);
+    expect(clone.events[0].payload).toBe(payload);
     expect(clone.duration).toBe(clip.duration);
     expect(EntityRuntimeKey in clone).toBe(true);
   });
@@ -50,6 +57,32 @@ describe('createAnimationClip', () => {
   it('honors an explicit duration override', () => {
     const clip = createAnimationClip([createAnimationChannel(track([0, 1]), null)], 10);
     expect(clip.duration).toBe(10);
+  });
+
+  it('copies and sorts events and includes their latest time in derived duration', () => {
+    const late = createAnimationClipEvent(3, 'late');
+    const early = createAnimationClipEvent(1, 'early');
+    const events = [late, early];
+    const clip = createAnimationClip([], undefined, events);
+    expect(clip.events).not.toBe(events);
+    expect(clip.events).toEqual([early, late]);
+    expect(clip.duration).toBe(3);
+  });
+
+  it('rejects invalid or unreachable event times', () => {
+    expect(() => createAnimationClip([], undefined, [createAnimationClipEvent(-1, 'bad')])).toThrow(
+      /finite non-negative/,
+    );
+    expect(() => createAnimationClip([], 1, [createAnimationClipEvent(2, 'late')])).toThrow(/exceeds/);
+  });
+});
+
+describe('createAnimationClipEvent', () => {
+  it('creates an Entity with opaque payload', () => {
+    const payload = {};
+    const event = createAnimationClipEvent(0.5, 'step', payload);
+    expect(event).toMatchObject({ name: 'step', payload, time: 0.5 });
+    expect(EntityRuntimeKey in event).toBe(true);
   });
 });
 

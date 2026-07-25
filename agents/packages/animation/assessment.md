@@ -16,8 +16,8 @@ composition tier; remaining work is playback events and separable authoring/runt
 1. **Keep mixing policy decoupled from bindings.** N-way override/additive blend trees, crossfades,
    named state transitions, and channel-index-masked ordered layers now compose complete target-free
    poses. Skeleton joint-mask authoring remains a binding-layer adapter over those indices.
-2. **Complete playback semantics.** Add clip markers/events, robust seeking across markers, and
-   interruption policy for active state transitions. Root-motion delta extraction is complete.
+2. **Complete playback semantics.** Clip markers/events and root-motion delta extraction are complete.
+   Explicit seek-event policy and interruption policy for active state transitions remain separable.
 3. **Add authoring/runtime utilities without a kitchen sink.** Key reduction, additive rebasing, and cursor
    sampling remain separable primitives. The state machine/blend tree composes sampling and accumulation
    rather than entering the sampler core.
@@ -34,7 +34,6 @@ Parked — each with the reason it is not sweep-safe.
 
 - **Additive animation rebasing** (`makeAnimationClipAdditive`). _Parked — ordered additive layer
   composition is implemented; automatic delta-clip authoring remains a separable utility._
-- **Clip events / time markers.** _Parked — charter-in-scope, but the marker data model (markers on clips vs channels, payload shape) is undecided; the player finished/looped signals above are the sweep-safe slice._
 - **Cached sample-cursor state** (per-player/per-channel last-index). _Parked — needs a new sample-state type on the player or channel; the review flags this as design-pass territory since the target-free track cannot hold it._
 - **Clip serialization** (serialize/validate posture of filters/effects/particles). _Parked — pending the scene-serialization naming fork; the codec vocabulary should be settled once, not invented here._
 - **Type the `targetRef` seam** (branded `AnimationTargetRef` or a kind-keyed binding registry replacing `scene`'s structural type-sniffing). _Parked — design decision / cross-package; candidate Open direction for the charter._
@@ -53,3 +52,5 @@ Parked — each with the reason it is not sweep-safe.
   override/additive layer stacks with validated per-source channel masks compose target-free poses.
 - [2026-07-25 · completed] Reusable explicit-channel root-motion extractors accumulate additive vector
   or compositional quaternion deltas over forward/reverse looped ranges without applying bindings.
+- [2026-07-25 · completed] Sorted clip-level events with opaque payloads report forward/reverse,
+  Repeat, and PingPong crossings through the player's opt-in signal.

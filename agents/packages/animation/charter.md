@@ -33,6 +33,7 @@ Target-free animation core -- keyframe sampling, clip/channel bundling, playback
 - **2026-07-25 — Blend trees are flat weighted player sets with ordered additive leaves.** Why: the irreducible operation is N-way per-target accumulation; hierarchy is composition by named state and shared players, without a recursive closed node union or implicit evaluator registry.
 - **2026-07-25 — Partial-body masks are source-channel index subsets.** Why: channel indices are stable within each blend-tree/state-machine source and stay target-free; skeleton-specific joint masks remain a binding-layer concern. Ordered override/additive layers provide the composition policy.
 - **2026-07-25 — Root motion extraction selects explicit channels and never applies them.** Why: translation and rotation commonly live in separate root channels; reusable extractors can accumulate either delta across unwrapped looped time while the binding/gameplay layer remains solely responsible for moving a node.
+- **2026-07-25 — Events are sorted clip markers reported through the player's opt-in signal.** Why: markers are clip-time data, while crossing depends on player direction, repeats, and ping-pong traversal. Payload stays opaque and no timeline dependency is introduced.
 
 ## Open directions
 

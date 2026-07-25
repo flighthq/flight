@@ -1,5 +1,5 @@
 import { createEntity } from '@flighthq/entity';
-import type { AnimationChannel, AnimationClip, AnimationTrack } from '@flighthq/types';
+import type { AnimationChannel, AnimationClip, AnimationClipEvent, AnimationTrack } from '@flighthq/types';
 
 import { cloneAnimationTrack, sampleAnimationTrack } from './animationTrack';
 
@@ -10,7 +10,8 @@ export function cloneAnimationClip(clip: Readonly<AnimationClip>): AnimationClip
   for (const channel of clip.channels) {
     channels.push(createAnimationChannel(cloneAnimationTrack(channel.track), channel.targetRef));
   }
-  return createEntity({ channels, duration: clip.duration });
+  const events = clip.events.map((event) => createAnimationClipEvent(event.time, event.name, event.payload));
+  return createEntity({ channels, duration: clip.duration, events });
 }
 
 // Pairs a track with an opaque target reference (interpreted only by the domain binding layer).
@@ -18,9 +19,28 @@ export function createAnimationChannel(track: AnimationTrack, targetRef: unknown
   return createEntity({ targetRef, track });
 }
 
-// Bundles channels into a clip. `duration` defaults to the latest keyframe time across all channels.
-export function createAnimationClip(channels: AnimationChannel[], duration?: number): AnimationClip {
-  return createEntity({ channels, duration: duration ?? computeChannelsDuration(channels) });
+// Bundles channels and sorted clip events. `duration` defaults to the latest keyframe or event time.
+// Explicit duration must include every event so no marker is silently unreachable.
+export function createAnimationClip(
+  channels: AnimationChannel[],
+  duration?: number,
+  events: readonly AnimationClipEvent[] = [],
+): AnimationClip {
+  const copiedEvents = events.slice().sort((a, b) => a.time - b.time);
+  validateAnimationClipEvents(copiedEvents);
+  const computedDuration = Math.max(
+    computeChannelsDuration(channels),
+    computeAnimationClipEventsDuration(copiedEvents),
+  );
+  if (duration !== undefined && copiedEvents.length > 0 && copiedEvents[copiedEvents.length - 1].time > duration) {
+    throw new RangeError('AnimationClip event time exceeds the explicit clip duration.');
+  }
+  return createEntity({ channels, duration: duration ?? computedDuration, events: copiedEvents });
+}
+
+// Allocates one opaque-payload clip marker. Clip construction validates its time against the clip.
+export function createAnimationClipEvent(time: number, name: string, payload: unknown = null): AnimationClipEvent {
+  return createEntity({ name, payload, time });
 }
 
 // Returns the clip's total duration in seconds.
@@ -55,4 +75,16 @@ function computeChannelsDuration(channels: readonly Readonly<AnimationChannel>[]
     if (last > 0 && times[last - 1] > max) max = times[last - 1];
   }
   return max;
+}
+
+function computeAnimationClipEventsDuration(events: readonly Readonly<AnimationClipEvent>[]): number {
+  return events.length > 0 ? events[events.length - 1].time : 0;
+}
+
+function validateAnimationClipEvents(events: readonly Readonly<AnimationClipEvent>[]): void {
+  for (const event of events) {
+    if (!Number.isFinite(event.time) || event.time < 0) {
+      throw new RangeError(`AnimationClip event "${event.name}" time must be a finite non-negative number.`);
+    }
+  }
 }

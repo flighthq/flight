@@ -17,65 +17,85 @@ export function advanceAnimationPlayer(player: AnimationPlayer, dt: number): voi
     player.time = 0;
     return;
   }
+  const fromTime = player.time;
   let time = player.time + dt * player.speed;
 
   if (!player.loop) {
     if (time >= duration) {
+      emitAnimationPlayerEvents(player, fromTime, duration);
       player.time = duration;
       player.playing = false;
       emitAnimationPlayerFinished(player);
     } else if (time < 0) {
+      emitAnimationPlayerEvents(player, fromTime, 0);
       player.time = 0;
       player.playing = false;
       emitAnimationPlayerFinished(player);
     } else {
+      emitAnimationPlayerEvents(player, fromTime, time);
       player.time = time;
     }
     return;
   }
 
   let looped = false;
+  let segmentStart = fromTime;
+  let includeSegmentStart = false;
   if (player.loopMode === AnimationLoopModePingPong) {
     // Reflect at each boundary, flipping the travel direction (`speed` sign). A loop handles a `dt`
     // large enough to cross a boundary more than once.
     for (;;) {
       if (time > duration) {
+        emitAnimationPlayerEvents(player, segmentStart, duration, includeSegmentStart);
         if (!consumeAnimationPlayerLoop(player)) {
           finishAnimationPlayerAt(player, duration);
           return;
         }
         time = 2 * duration - time;
         player.speed = -player.speed;
+        segmentStart = duration;
+        includeSegmentStart = false;
         looped = true;
       } else if (time < 0) {
+        emitAnimationPlayerEvents(player, segmentStart, 0, includeSegmentStart);
         if (!consumeAnimationPlayerLoop(player)) {
           finishAnimationPlayerAt(player, 0);
           return;
         }
         time = -time;
         player.speed = -player.speed;
+        segmentStart = 0;
+        includeSegmentStart = false;
         looped = true;
       } else {
         break;
       }
     }
+    emitAnimationPlayerEvents(player, segmentStart, time, includeSegmentStart);
   } else {
     while (time >= duration) {
+      emitAnimationPlayerEvents(player, segmentStart, duration, includeSegmentStart);
       if (!consumeAnimationPlayerLoop(player)) {
         finishAnimationPlayerAt(player, duration);
         return;
       }
       time -= duration;
+      segmentStart = 0;
+      includeSegmentStart = true;
       looped = true;
     }
     while (time < 0) {
+      emitAnimationPlayerEvents(player, segmentStart, 0, includeSegmentStart);
       if (!consumeAnimationPlayerLoop(player)) {
         finishAnimationPlayerAt(player, 0);
         return;
       }
       time += duration;
+      segmentStart = duration;
+      includeSegmentStart = true;
       looped = true;
     }
+    emitAnimationPlayerEvents(player, segmentStart, time, includeSegmentStart);
   }
 
   player.time = time;
@@ -90,6 +110,7 @@ export function cloneAnimationPlayer(player: Readonly<AnimationPlayer>): Animati
     clip: player.clip,
     loop: player.loop,
     loopMode: player.loopMode,
+    onEvent: null,
     onFinished: null,
     onLooped: null,
     playing: player.playing,
@@ -116,6 +137,7 @@ export function createAnimationPlayer(
     clip,
     loop: opts?.loop ?? true,
     loopMode: opts?.loopMode ?? AnimationLoopModeRepeat,
+    onEvent: null,
     onFinished: null,
     onLooped: null,
     playing: opts?.playing ?? true,
@@ -128,6 +150,7 @@ export function createAnimationPlayer(
 // Allocates and attaches the opt-in player signals (onFinished, onLooped) to a player created before
 // they were needed. Idempotent — calling twice does not create duplicate signals.
 export function enableAnimationPlayerSignals(player: AnimationPlayer): void {
+  if (player.onEvent == null) player.onEvent = createSignal();
   if (player.onFinished == null) player.onFinished = createSignal();
   if (player.onLooped == null) player.onLooped = createSignal();
 }
@@ -173,6 +196,37 @@ function consumeAnimationPlayerLoop(player: AnimationPlayer): boolean {
 
 function emitAnimationPlayerFinished(player: Readonly<AnimationPlayer>): void {
   if (player.onFinished != null) emitSignal(player.onFinished);
+}
+
+function emitAnimationPlayerEvents(
+  player: Readonly<AnimationPlayer>,
+  fromTime: number,
+  toTime: number,
+  includeFrom = false,
+): void {
+  const signal = player.onEvent;
+  const events = player.clip.events;
+  if (signal == null || events.length === 0) return;
+  if (toTime > fromTime) {
+    for (const event of events) {
+      if (event.time > toTime) break;
+      if (event.time > fromTime || (includeFrom && event.time === fromTime)) emitSignal(signal, event);
+    }
+    return;
+  }
+  if (toTime < fromTime) {
+    for (let index = events.length - 1; index >= 0; index--) {
+      const event = events[index];
+      if (event.time < toTime) break;
+      if (event.time < fromTime || (includeFrom && event.time === fromTime)) emitSignal(signal, event);
+    }
+    return;
+  }
+  if (!includeFrom) return;
+  for (const event of events) {
+    if (event.time === fromTime) emitSignal(signal, event);
+    else if (event.time > fromTime) break;
+  }
 }
 
 function emitAnimationPlayerLooped(player: Readonly<AnimationPlayer>): void {

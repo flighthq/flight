@@ -1,4 +1,5 @@
 import type { AnimationClip } from './AnimationClip';
+import type { AnimationClipEvent } from './AnimationClipEvent';
 import type { AnimationLoopMode } from './AnimationLoopMode';
 import type { Entity } from './Entity';
 import type { Signal } from './Signal';
@@ -12,11 +13,13 @@ import type { Signal } from './Signal';
 // reflects at each end and flips the sign of `speed`. `repeatCount` (undefined or negative = infinite)
 // is the remaining number of loop wraps/bounces permitted; each wrap decrements it and playback stops
 // once it reaches zero. `onFinished`/`onLooped` are opt-in signals allocated by
-// enableAnimationPlayerSignals — null/undefined until enabled, so a bare player stays signal-free.
+// enableAnimationPlayerSignals; `onEvent` reports crossed clip markers through the same opt-in path.
+// All are null/undefined until enabled, so a bare player stays signal-free.
 export interface AnimationPlayer extends Entity {
   clip: AnimationClip;
   loop: boolean;
   loopMode?: AnimationLoopMode;
+  onEvent?: Signal<(event: Readonly<AnimationClipEvent>) => void> | null;
   onFinished?: Signal<() => void> | null;
   onLooped?: Signal<() => void> | null;
   playing: boolean;

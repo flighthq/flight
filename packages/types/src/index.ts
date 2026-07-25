@@ -26,6 +26,7 @@ export * from './AmbientLight';
 export * from './AnimationChannel';
 export * from './AnimationBlendTree';
 export * from './AnimationClip';
+export * from './AnimationClipEvent';
 export * from './AnimationCrossfade';
 export * from './AnimationInterpolation';
 export * from './AnimationLayerStack';

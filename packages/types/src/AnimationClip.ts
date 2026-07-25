@@ -1,4 +1,5 @@
 import type { AnimationChannel } from './AnimationChannel';
+import type { AnimationClipEvent } from './AnimationClipEvent';
 import type { Entity } from './Entity';
 
 // A bundle of channels with a total `duration` in seconds. Sampling a clip means sampling each
@@ -7,4 +8,5 @@ import type { Entity } from './Entity';
 export interface AnimationClip extends Entity {
   channels: AnimationChannel[];
   duration: number;
+  events: AnimationClipEvent[];
 }
