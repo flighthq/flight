@@ -109,7 +109,7 @@ const DECLARED_GAPS: readonly DeclaredGap[] = [
     area: 'Resource lifecycle',
     capability: 'Compressed texture upload (KTX2 / DDS / Basis)',
     status: 'partial',
-    note: 'GL-native block upload landed (render-gl uploadGlCompressedTextureContainer + display draw path, behind the opt-in registerGlCompressedTextureUpload seam, with an RGBA decode fallback); wgpu/canvas/dom have none. Still no Basis/supercompression transcoder — supercompressed containers report the failure sentinel.',
+    note: 'GL and WebGPU native block upload plus display draw paths are implemented behind opt-in uploader seams, with RGBA decode fallbacks. WebGPU supports native BC/ETC2/ASTC and decoder-backed PVRTC/unavailable families. Canvas/DOM have none. Still no Basis/supercompression transcoder — supercompressed containers report the failure sentinel.',
   },
   {
     area: 'Effects',
@@ -266,7 +266,9 @@ function renderMarkdown(groups: AreaGroup[]): string {
     }
     lines.push('');
   }
-  return lines.join('\n') + '\n';
+  // Every area appends one empty separator line, so joining already contributes the canonical single
+  // newline at EOF. Appending another newline creates a blank line that `git diff --check` rejects.
+  return lines.join('\n');
 }
 
 function renderJson(groups: AreaGroup[]): string {

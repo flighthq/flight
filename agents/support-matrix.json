@@ -121,6 +121,21 @@
       ]
     },
     {
+      "key": "compressed",
+      "label": "Compressed",
+      "scenes": [
+        {
+          "scene": "compressed-texture",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        }
+      ]
+    },
+    {
       "key": "displayobject",
       "label": "Display Object",
       "scenes": [
