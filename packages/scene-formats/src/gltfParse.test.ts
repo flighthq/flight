@@ -1932,6 +1932,44 @@ describe('gltf diagnostics coverage', () => {
     expect(Object.keys(scene.animations)).toHaveLength(0);
   });
 
+  it('drops an animation channel whose output element count mismatches the keyframe count', () => {
+    // LINEAR rotation with 2 keyframes but only 1 VEC4 output element: flattened value length (4) is a
+    // multiple of the keyframe count (2), so a length-based check wrongly admits it. Validate by ELEMENT
+    // count and interpolation instead — LINEAR needs one output element per key — and drop the channel.
+    const doc = makeChannelGltf({
+      interpolation: 'LINEAR',
+      output: new Float32Array([0, 0, 0, 1]),
+      outputCount: 1, // one VEC4 output element…
+      outputType: 'VEC4',
+      path: 'rotation',
+      times: new Float32Array([0, 1]), // …against two keyframes
+    });
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.animation-sampler-cardinality');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(Object.keys(scene.animations)).toHaveLength(0);
+  });
+
+  it('drops a weights animation channel whose output width mismatches the morph target count', () => {
+    // A weights sampler must pack one weight per morph target per key. This mesh has 1 target and 2 keys, so a
+    // usable output is 2 scalars; supplying only 1 is malformed and drops the weights channel. (count 1 reads
+    // within the backing buffer, so it is a genuine cardinality mismatch — not a past-buffer fault.)
+    const doc = makeMorphGltf();
+    doc.accessors![5].count = 1; // weight-values accessor: 1 scalar vs the required 1 target × 2 keys = 2
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.weights-cardinality-mismatch');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(crumb!.detail?.firstExpected).toBe(2);
+    expect(crumb!.detail?.firstActual).toBe(1);
+    expect(Object.keys(scene.animations)).toHaveLength(0);
+  });
+
   it('recovers and reports gltf.sparse-bufferview-not-found for a bad sparse bufferView', () => {
     const doc = makeTriangleGltf();
     doc.accessors![0].sparse = {
@@ -1945,6 +1983,26 @@ describe('gltf diagnostics coverage', () => {
     expect(crumb).toBeDefined();
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
     expect(crumb!.origin).toBe('buildGltfDocument');
+  });
+
+  it('recovers and reports gltf.sparse-past-buffer for an oversized sparse count', () => {
+    // A sparse.count far larger than the backing bufferViews can hold would read past the DataView and throw;
+    // the bounds guard skips the override and keeps the base accessor data — the mesh survives with its base
+    // vertices (Recover), never throws.
+    const doc = makeTriangleGltf();
+    doc.accessors![0].sparse = {
+      count: 100,
+      indices: { bufferView: 0, componentType: 5123 },
+      values: { bufferView: 0 },
+    };
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.sparse-past-buffer');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
+    expect(getMeshGeometryVertexCount(geometry)).toBe(3);
   });
 
   it('aggregates repeated accessor-not-found recoveries into one crumb with a count', () => {
