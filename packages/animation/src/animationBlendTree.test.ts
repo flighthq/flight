@@ -36,8 +36,11 @@ describe('advanceAnimationBlendTree', () => {
       createAnimationBlendTreeInput(shared, 0.25),
       createAnimationBlendTreeInput(shared, 0.75),
     ]);
+    const players = tree.players;
+    expect(players).toEqual([shared]);
     advanceAnimationBlendTree(tree, 0.5);
     expect(shared.time).toBe(0.5);
+    expect(tree.players).toBe(players);
   });
 });
 

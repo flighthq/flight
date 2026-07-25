@@ -31,5 +31,6 @@ export interface AnimationBlendTreeChannel {
 export interface AnimationBlendTree extends Entity {
   channels: readonly Readonly<AnimationBlendTreeChannel>[];
   inputs: readonly AnimationBlendTreeInput[];
+  players: readonly AnimationPlayer[];
   sampleScratch: Float32Array;
 }

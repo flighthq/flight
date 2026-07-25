@@ -17,7 +17,8 @@ import { advanceAnimationPlayer } from './animationPlayer';
 // Shared player identity is advanced once. Completion selects the destination state by elapsed duration,
 // independently of a curve that overshoots or undershoots its endpoint.
 export function advanceAnimationStateMachine(machine: AnimationStateMachine, dt: number): void {
-  const advanced = new Set<AnimationPlayer>();
+  const advanced = machine.advanceScratch;
+  advanced.length = 0;
   advanceAnimationStateMachineTree(machine.states[machine.currentStateIndex].blendTree, dt, advanced);
   const toIndex = machine.transitionToStateIndex;
   if (toIndex === null) return;
@@ -57,6 +58,7 @@ export function createAnimationStateMachine(
   let sampleWidth = 0;
   for (const entry of channels) sampleWidth = Math.max(sampleWidth, entry.channel.track.components);
   return createEntity({
+    advanceScratch: [],
     channels,
     currentStateIndex: initialStateIndex,
     fromSample: new Float32Array(sampleWidth),
@@ -159,12 +161,12 @@ export function transitionAnimationStateMachine(
 function advanceAnimationStateMachineTree(
   tree: Readonly<AnimationBlendTree>,
   dt: number,
-  advanced: Set<AnimationPlayer>,
+  advanced: AnimationPlayer[],
 ): void {
-  for (const input of tree.inputs) {
-    if (advanced.has(input.player)) continue;
-    advanced.add(input.player);
-    advanceAnimationPlayer(input.player, dt);
+  for (const player of tree.players) {
+    if (advanced.includes(player)) continue;
+    advanced.push(player);
+    advanceAnimationPlayer(player, dt);
   }
 }
 

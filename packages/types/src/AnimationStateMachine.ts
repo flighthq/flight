@@ -1,5 +1,6 @@
 import type { AnimationBlendTree } from './AnimationBlendTree';
 import type { AnimationChannel } from './AnimationChannel';
+import type { AnimationPlayer } from './AnimationPlayer';
 import type { EasingFunction } from './EasingFunction';
 import type { Entity } from './Entity';
 
@@ -20,6 +21,7 @@ export interface AnimationStateMachineChannel {
 // transition at a time; callers own gameplay conditions and call advance/sample explicitly. The global
 // channel layout and scratch buffers make transition sampling allocation-free after construction.
 export interface AnimationStateMachine extends Entity {
+  advanceScratch: AnimationPlayer[];
   channels: readonly Readonly<AnimationStateMachineChannel>[];
   currentStateIndex: number;
   fromSample: Float32Array;

@@ -21,12 +21,7 @@ import { sampleAnimationTrack } from './animationTrack';
 // Advances each distinct player referenced by the tree exactly once. Leaves sharing a player can weight
 // it differently without multiplying playhead speed.
 export function advanceAnimationBlendTree(tree: AnimationBlendTree, dt: number): void {
-  const advanced = new Set<AnimationPlayer>();
-  for (const input of tree.inputs) {
-    if (advanced.has(input.player)) continue;
-    advanced.add(input.player);
-    advanceAnimationPlayer(input.player, dt);
-  }
+  for (const player of tree.players) advanceAnimationPlayer(player, dt);
 }
 
 // Allocates an N-way target-correspondence layout and one reusable accumulator per target. Every clip
@@ -35,9 +30,12 @@ export function createAnimationBlendTree(inputs: readonly AnimationBlendTreeInpu
   const copiedInputs = inputs.slice();
   const channels: AnimationBlendTreeChannel[] = [];
   const channelByTarget = new Map<unknown, number>();
+  const players: AnimationPlayer[] = [];
   let sampleWidth = 0;
 
   for (let inputIndex = 0; inputIndex < copiedInputs.length; inputIndex++) {
+    const player = copiedInputs[inputIndex].player;
+    if (!players.includes(player)) players.push(player);
     const inputChannels = copiedInputs[inputIndex].player.clip.channels;
     assertUniqueAnimationBlendTreeTargets(inputChannels, inputIndex);
     for (let channelIndex = 0; channelIndex < inputChannels.length; channelIndex++) {
@@ -59,7 +57,7 @@ export function createAnimationBlendTree(inputs: readonly AnimationBlendTreeInpu
     }
   }
 
-  return createEntity({ channels, inputs: copiedInputs, sampleScratch: new Float32Array(sampleWidth) });
+  return createEntity({ channels, inputs: copiedInputs, players, sampleScratch: new Float32Array(sampleWidth) });
 }
 
 // Allocates one caller-visible leaf descriptor. Weight is not clamped; sampling ignores values that are
