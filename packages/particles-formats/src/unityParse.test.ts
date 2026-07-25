@@ -299,8 +299,21 @@ describe('parseUnityParticleDocument', () => {
       expect(crumb!.origin).toBe('collectUnityDiagnostics');
     });
 
-    it('reports unity.start-rotation-unsupported (Skip) for a non-zero startRotation', () => {
+    it('reports unity.start-rotation-unsupported (Skip) for a non-zero constant startRotation', () => {
       const json = JSON.stringify({ ...JSON.parse(SMOKE_JSON), startRotation: { mode: 'constant', constant: 45 } });
+      const crumb = parseUnityParticleDocument(json).diagnostics.find(
+        (d) => d.kind === 'unity.start-rotation-unsupported',
+      );
+      expect(crumb).toBeDefined();
+      expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+      expect(crumb!.origin).toBe('collectUnityDiagnostics');
+    });
+
+    it('reports unity.start-rotation-unsupported (Skip) for a curve-mode startRotation (value lives in a curve)', () => {
+      const json = JSON.stringify({
+        ...JSON.parse(SMOKE_JSON),
+        startRotation: { mode: 'curve', curve: { keys: [{ time: 0, value: 90 }] } },
+      });
       const crumb = parseUnityParticleDocument(json).diagnostics.find(
         (d) => d.kind === 'unity.start-rotation-unsupported',
       );

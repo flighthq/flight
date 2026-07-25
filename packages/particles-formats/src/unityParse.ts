@@ -280,9 +280,17 @@ function collectUnityDiagnostics(raw: Record<string, unknown>): ImportDiagnostic
     );
   }
 
-  // startRotation is read but rotation is derived only from rotationOverLifetime, so an initial rotation is dropped.
+  // startRotation is read but rotation is derived only from rotationOverLifetime, so an initial rotation is
+  // dropped. Fire for a non-zero constant/twoConstants value AND for curve/twoCurves modes (whose value lives
+  // in a curve readMinMax reduces to zero constants — a silent drop otherwise).
   const startRotation = readMinMax(raw.startRotation, 0);
-  if (startRotation.constant !== 0 || startRotation.constantMin !== 0 || startRotation.constantMax !== 0) {
+  const startRotationDropped =
+    startRotation.mode === 'curve' ||
+    startRotation.mode === 'twoCurves' ||
+    startRotation.constant !== 0 ||
+    startRotation.constantMin !== 0 ||
+    startRotation.constantMax !== 0;
+  if (startRotationDropped) {
     reportImportDiagnostic(
       diagnostics,
       ImportDiagnosticSeverity.Skip,

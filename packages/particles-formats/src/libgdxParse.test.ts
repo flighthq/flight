@@ -294,9 +294,13 @@ describe('parseLibgdxParticleDocument', () => {
     const { document } = parseLibgdxParticleDocument(SPARK_P);
     expect(document.imagePath).toBe('spark.png');
   });
-  it('has no diagnostics for a standard point emitter', () => {
+  it('reports only libgdx.emission-unsupported for a standard point emitter (its authored rate is dropped)', () => {
+    // A standard .p always authors an emission rate that Flight substitutes with a default, so the one honest
+    // diagnostic on an otherwise-clean import is that emission-rate loss (Recover). No other crumb fires.
     const { diagnostics } = parseLibgdxParticleDocument(SPARK_P);
-    expect(diagnostics).toEqual([]);
+    expect(diagnostics.map((d) => d.kind)).toEqual(['libgdx.emission-unsupported']);
+    expect(diagnostics[0].severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(diagnostics[0].origin).toBe('collectLibgdxDiagnostics');
   });
   it('reports libgdx.delay-unsupported (Skip) when delay is active', () => {
     const { diagnostics } = parseLibgdxParticleDocument(SPARK_P.replace('Delay\nactive: false', 'Delay\nactive: true'));
