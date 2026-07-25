@@ -1384,8 +1384,11 @@ function makeAnimatedMultiSceneGltf(): GltfDocument {
 describe('createSceneFromGltf animations', () => {
   it('drops a weights channel targeting a node with no morphable mesh, with a warning', () => {
     const doc = makeAnimatedMultiSceneGltf();
-    // Node 1's mesh has no morph targets, so the weights channel cannot bind and is dropped.
-    doc.animations![0].channels.push({ sampler: 0, target: { node: 1, path: 'weights' } });
+    // Node 1's mesh has no morph targets, so the weights channel cannot bind and is dropped. Weights output is
+    // SCALAR, so add a SCALAR-output sampler (reusing the SCALAR times accessor) rather than the VEC4 rotation
+    // sampler — the point under test is the no-morphable-mesh drop, not a type mismatch.
+    doc.animations![0].samplers.push({ input: 1, interpolation: 'LINEAR', output: 1 });
+    doc.animations![0].channels.push({ sampler: 1, target: { node: 1, path: 'weights' } });
     const diagnostics: ImportDiagnostic[] = [];
     const scene = createSceneFromGltf(doc, diagnostics);
     expect(Object.values(scene.animations)[0].channels).toHaveLength(1); // only the rotation channel survives
@@ -1395,9 +1398,16 @@ describe('createSceneFromGltf animations', () => {
     expect(crumb!.origin).toBe('buildGltfDocument');
   });
 
-  it('imports translation and scale channels as 3-component non-quaternion tracks', () => {
-    const doc = makeAnimatedMultiSceneGltf();
-    doc.animations![0].channels[0].target.path = 'translation';
+  it('imports a translation channel as a 3-component non-quaternion track', () => {
+    // A schema-valid VEC3 translation output (rotation would be VEC4); the track is a 3-component non-quaternion.
+    const doc = makeChannelGltf({
+      interpolation: 'LINEAR',
+      output: new Float32Array([0, 0, 0, 1, 2, 3]),
+      outputCount: 2,
+      outputType: 'VEC3',
+      path: 'translation',
+      times: new Float32Array([0, 1]),
+    });
     const clip = Object.values(createSceneFromGltf(doc).animations)[0];
     expect((clip.channels[0].targetRef as SceneAnimationTarget).path).toBe('Translation');
     expect(clip.channels[0].track.quaternion).toBe(false);
@@ -1799,10 +1809,12 @@ describe('gltf diagnostics coverage', () => {
   it('skips and reports gltf.animation-unsupported-path for an unknown target path', () => {
     const doc = makeTriangleGltf();
     // 'color' is not a glTF 2.0 animation target path — cast past the closed union to exercise the branch.
+    // input is the SCALAR indices accessor (times must be SCALAR); the unknown path has no required output
+    // type, so the channel reaches the unsupported-path Skip rather than a type-mismatch drop.
     doc.animations = [
       {
         channels: [{ sampler: 0, target: { node: 0, path: 'color' as 'translation' } }],
-        samplers: [{ input: 0, output: 0 }],
+        samplers: [{ input: 1, output: 0 }],
       },
     ];
     const diagnostics: ImportDiagnostic[] = [];
@@ -2003,6 +2015,103 @@ describe('gltf diagnostics coverage', () => {
     expect(crumb!.origin).toBe('buildGltfDocument');
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
+  });
+
+  it('drops an animation channel whose output accessor type mismatches the path', () => {
+    // rotation output must be VEC4 (a quaternion); a VEC3 output has the right element count but the track
+    // would sample four components from three-component tuples. Validate the TYPE, not just the count, and
+    // drop the channel — so no animation is created.
+    const doc = makeChannelGltf({
+      interpolation: 'LINEAR',
+      output: new Float32Array([0, 0, 0, 1, 2, 3]),
+      outputCount: 2,
+      outputType: 'VEC3', // wrong: rotation requires VEC4
+      path: 'rotation',
+      times: new Float32Array([0, 1]),
+    });
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.accessor-type-mismatch');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(Object.keys(scene.animations)).toHaveLength(0);
+  });
+
+  it('recovers and reports gltf.accessor-type-mismatch for an optional attribute of the wrong type', () => {
+    // POSITION (VEC3) survives; an optional NORMAL points at a VEC2 accessor where the reader expects VEC3.
+    // A wrong-width attribute would mis-stride the read, so it is treated as absent (finite zero-fill) and
+    // Recover-crumbed rather than silently reinterpreted.
+    const doc = makeTriangleGltf();
+    doc.accessors!.push({ bufferView: 0, componentType: 5126, count: 3, type: 'VEC2' });
+    doc.meshes![0].primitives[0].attributes.NORMAL = 2;
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.accessor-type-mismatch');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
+    expect(getMeshGeometryVertexCount(geometry)).toBe(3);
+    for (const value of geometry.vertices) expect(Number.isFinite(value)).toBe(true);
+  });
+
+  it('recovers and reports gltf.sparse-index-out-of-range for a sparse index past the accessor count', () => {
+    // POSITION count 3 with a bounds-safe sparse payload whose destination index (99) exceeds the accessor
+    // count. A typed-array write past the base length is silently ignored, so the override is skipped and the
+    // base data kept (Recover) — the mesh imports normally.
+    const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    const sparseIndex = new Uint16Array([99]); // out of range for count 3
+    const sparseValue = new Float32Array([9, 9, 9]);
+    const uri = toDataUri(bytesOf(positions), bytesOf(sparseIndex), bytesOf(sparseValue));
+    const posLen = positions.byteLength;
+    const idxLen = sparseIndex.byteLength;
+    const doc: GltfDocument = {
+      accessors: [
+        {
+          bufferView: 0,
+          componentType: 5126,
+          count: 3,
+          sparse: { count: 1, indices: { bufferView: 1, componentType: 5123 }, values: { bufferView: 2 } },
+          type: 'VEC3',
+        },
+      ],
+      asset: { version: '2.0' },
+      bufferViews: [
+        { buffer: 0, byteLength: posLen, byteOffset: 0 },
+        { buffer: 0, byteLength: idxLen, byteOffset: posLen },
+        { buffer: 0, byteLength: sparseValue.byteLength, byteOffset: posLen + idxLen },
+      ],
+      buffers: [{ byteLength: posLen + idxLen + sparseValue.byteLength, uri }],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0 } }] }],
+      nodes: [{ mesh: 0 }],
+      scene: 0,
+      scenes: [{ nodes: [0] }],
+    };
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.sparse-index-out-of-range');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(crumb!.detail?.firstIndex).toBe(99);
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
+    expect(getMeshGeometryVertexCount(geometry)).toBe(3);
+  });
+
+  it('drops the primitive when the POSITION accessor overruns its declared bufferView window', () => {
+    // The backing buffer is long, but POSITION's bufferView declares only 4 bytes while the accessor needs 36.
+    // A whole-buffer bounds check would read 32 bytes past the declared view into unrelated data; the window
+    // bound faults the read instead, so the primitive drops rather than importing corrupt vertices.
+    const doc = makeTriangleGltf();
+    doc.bufferViews![0].byteLength = 4; // POSITION view: far too short for 3 × VEC3 (36 bytes)
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.primitive-no-position');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(isMesh(getNodeChildren(scene.root)[0] as SceneNode)).toBe(false);
   });
 
   it('aggregates repeated accessor-not-found recoveries into one crumb with a count', () => {

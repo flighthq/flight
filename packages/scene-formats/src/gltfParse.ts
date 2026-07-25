@@ -586,7 +586,7 @@ function buildGltfSkins(
     const joints = gltfSkin.joints.map((jointNodeIndex) => gltfNodeToDocNode[jointNodeIndex]);
     const inverseBind: { m: Float32Array }[] = [];
     if (gltfSkin.inverseBindMatrices !== undefined) {
-      const ibm = readAccessor(doc, buffers, gltfSkin.inverseBindMatrices, gltfDrops);
+      const ibm = readAccessor(doc, buffers, gltfSkin.inverseBindMatrices, gltfDrops, 'MAT4');
       if (ibm.fault !== null) {
         // The IBM accessor is unreadable. glTF treats absent inverse-bind matrices as identity, so fall
         // back to identity per joint — the skin survives in bind pose rather than collapsing to a zero
@@ -652,12 +652,21 @@ function buildGltfAnimations(
         });
         continue;
       }
-      const inputResult = readAccessor(doc, buffers, sampler.input, gltfDrops);
-      const outputResult = readAccessor(doc, buffers, sampler.output, gltfDrops);
+      // Time keys are SCALAR; the output element type is fixed by the path (rotation VEC4, translation/scale
+      // VEC3, weights SCALAR). readAccessor faults on a type mismatch, so a VEC3 "rotation" output is caught
+      // here as a fault rather than silently sampled as a 4-component quaternion.
+      const inputResult = readAccessor(doc, buffers, sampler.input, gltfDrops, 'SCALAR');
+      const outputResult = readAccessor(
+        doc,
+        buffers,
+        sampler.output,
+        gltfDrops,
+        GLTF_ANIMATION_OUTPUT_TYPES[channel.target.path],
+      );
       if (inputResult.fault !== null || outputResult.fault !== null) {
-        // A sampler whose time or value accessor is unreadable cannot produce a track — drop this channel
-        // (Drop), consistent with the unresolved-target and missing-sampler channel drops above. No
-        // partial track survives, so this is not a Recover.
+        // A sampler whose time or value accessor is unreadable or the wrong type cannot produce a track — drop
+        // this channel (Drop), consistent with the unresolved-target and missing-sampler channel drops above.
+        // No partial track survives, so this is not a Recover.
         reportGltfAccessorFault(gltfDrops, ImportDiagnosticSeverity.Drop, inputResult.fault ?? outputResult.fault!);
         continue;
       }
@@ -1093,7 +1102,7 @@ function primitiveToGeometry(
     tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.primitive-no-position', '', {});
     return null;
   }
-  const position = readAccessor(doc, buffers, positionIndex, gltfDrops);
+  const position = readAccessor(doc, buffers, positionIndex, gltfDrops, 'VEC3');
   const vertexCount = position.count;
   if (vertexCount === 0) {
     tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.primitive-no-position', '', {
@@ -1102,19 +1111,26 @@ function primitiveToGeometry(
     return null;
   }
 
-  // Optional attributes: a failed or count-mismatched accessor is treated as absent (its vertex slots
-  // zero-fill with finite defaults) and Recover-crumbed — the mesh stays drawable, the usable survivor a
-  // Recover requires.
-  const normal = readOptionalGltfAttribute(doc, buffers, primitive.attributes.NORMAL, vertexCount, gltfDrops);
-  const tangent = readOptionalGltfAttribute(doc, buffers, primitive.attributes.TANGENT, vertexCount, gltfDrops);
-  const uv = readOptionalGltfAttribute(doc, buffers, primitive.attributes.TEXCOORD_0, vertexCount, gltfDrops);
+  // Optional attributes: a failed, type-mismatched, or count-mismatched accessor is treated as absent (its
+  // vertex slots zero-fill with finite defaults) and Recover-crumbed — the mesh stays drawable, the usable
+  // survivor a Recover requires. Each expected type is fixed by the vertex layout the loop below reads.
+  const normal = readOptionalGltfAttribute(doc, buffers, primitive.attributes.NORMAL, vertexCount, 'VEC3', gltfDrops);
+  const tangent = readOptionalGltfAttribute(doc, buffers, primitive.attributes.TANGENT, vertexCount, 'VEC4', gltfDrops);
+  const uv = readOptionalGltfAttribute(doc, buffers, primitive.attributes.TEXCOORD_0, vertexCount, 'VEC2', gltfDrops);
 
   // A primitive is skinned when it carries both influence channels; it then emits the skinned layout
   // (joints0/weights0 past uv0). JOINTS_0 is unsigned-integer indices (not normalized); WEIGHTS_0 is
   // float or normalized-integer weights, renormalized per vertex so any quantization drift still sums 1.
   // A failed influence accessor drops just that channel (Recover), so the mesh falls back to unskinned.
-  const joints = readOptionalGltfAttribute(doc, buffers, primitive.attributes.JOINTS_0, vertexCount, gltfDrops);
-  const weights = readOptionalGltfAttribute(doc, buffers, primitive.attributes.WEIGHTS_0, vertexCount, gltfDrops);
+  const joints = readOptionalGltfAttribute(doc, buffers, primitive.attributes.JOINTS_0, vertexCount, 'VEC4', gltfDrops);
+  const weights = readOptionalGltfAttribute(
+    doc,
+    buffers,
+    primitive.attributes.WEIGHTS_0,
+    vertexCount,
+    'VEC4',
+    gltfDrops,
+  );
   const skinned = joints !== null && weights !== null;
 
   const floatsPerVertex = skinned ? SKINNED_FLOATS_PER_VERTEX : CANONICAL_FLOATS_PER_VERTEX;
@@ -1163,7 +1179,7 @@ function primitiveToGeometry(
   // primitive survives and the primitive is DROPPED (Drop, mandatory role) rather than kept undrawable.
   let sourceIndices: Uint32Array<ArrayBuffer> | undefined;
   if (primitive.indices !== undefined) {
-    const indexResult = readAccessor(doc, buffers, primitive.indices, gltfDrops);
+    const indexResult = readAccessor(doc, buffers, primitive.indices, gltfDrops, 'SCALAR');
     if (indexResult.fault !== null) {
       reportGltfAccessorFault(gltfDrops, ImportDiagnosticSeverity.Drop, indexResult.fault);
       return null;
@@ -1281,7 +1297,7 @@ function buildGltfMorph(
       });
       return null;
     }
-    const positionResult = readAccessor(doc, buffers, target.POSITION, gltfDrops);
+    const positionResult = readAccessor(doc, buffers, target.POSITION, gltfDrops, 'VEC3');
     if (positionResult.fault !== null) {
       tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.morph-target-no-position', '', {
         firstTarget: t,
@@ -1300,8 +1316,9 @@ function buildGltfMorph(
       return null;
     }
     const positionDeltas = Float32Array.from(positionResult.data);
-    const normal = readOptionalGltfAttribute(doc, buffers, target.NORMAL, baseVertexCount, gltfDrops);
-    const tangent = readOptionalGltfAttribute(doc, buffers, target.TANGENT, baseVertexCount, gltfDrops);
+    // glTF morph deltas are VEC3 for all three channels (the tangent handedness w is not morphed).
+    const normal = readOptionalGltfAttribute(doc, buffers, target.NORMAL, baseVertexCount, 'VEC3', gltfDrops);
+    const tangent = readOptionalGltfAttribute(doc, buffers, target.TANGENT, baseVertexCount, 'VEC3', gltfDrops);
     const normalDeltas = normal !== null ? Float32Array.from(normal.data) : null;
     const tangentDeltas = tangent !== null ? Float32Array.from(tangent.data) : null;
     targets.push({ normalDeltas, positionDeltas, tangentDeltas });
@@ -1353,10 +1370,11 @@ function readOptionalGltfAttribute(
   buffers: readonly Uint8Array[],
   index: number | undefined,
   vertexCount: number,
+  expectedType: string,
   gltfDrops: Map<string, GltfDropTally> | null,
 ): { data: ArrayLike<number> } | null {
   if (index === undefined) return null;
-  const result = readAccessor(doc, buffers, index, gltfDrops);
+  const result = readAccessor(doc, buffers, index, gltfDrops, expectedType);
   if (result.fault !== null) {
     reportGltfAccessorFault(gltfDrops, ImportDiagnosticSeverity.Recover, result.fault);
     return null;
@@ -1381,6 +1399,7 @@ function readAccessor(
   buffers: readonly Uint8Array[],
   accessorIndex: number,
   gltfDrops: Map<string, GltfDropTally> | null,
+  expectedType?: string,
 ): GltfAccessorResult {
   const accessor = doc.accessors?.[accessorIndex];
   if (accessor === undefined) {
@@ -1388,6 +1407,17 @@ function readAccessor(
       count: 0,
       data: new Float32Array(0),
       fault: { detail: { firstAccessor: accessorIndex }, kind: 'gltf.accessor-not-found' },
+    };
+  }
+  // Validate the element TYPE against the consumer's expectation before reading. Every consumer reads a
+  // fixed component count (POSITION VEC3, indices SCALAR, rotation VEC4…); a wrong-width accessor (a VEC3
+  // "rotation", say) would otherwise be silently reinterpreted, striding the read across tuple boundaries.
+  // A mismatch is a fault the caller classifies by role (mandatory → Drop, optional → Recover-absent).
+  if (expectedType !== undefined && accessor.type !== expectedType) {
+    return {
+      count: 0,
+      data: new Float32Array(0),
+      fault: { detail: { firstAccessor: accessorIndex }, kind: 'gltf.accessor-type-mismatch' },
     };
   }
 
@@ -1416,10 +1446,14 @@ function readAccessor(
     const elementByteSize = componentCount * componentByteSize;
     const stride = view.byteStride !== undefined && view.byteStride > 0 ? view.byteStride : elementByteSize;
     const baseOffset = bytes.byteOffset + (view.byteOffset ?? 0) + (accessor.byteOffset ?? 0);
-    // A truncated or unsupplied (empty) backing buffer would read past the DataView; guard the last
-    // component's end against the buffer's real length and bail with empty rather than throwing.
+    // The read must stay within BOTH the declared bufferView extent and the real backing buffer. Guarding
+    // only the buffer end lets an accessor overrun a short bufferView into unrelated bytes of a longer buffer;
+    // guard the last component's end against the tighter of the two and bail with empty rather than throwing
+    // or reading past the declared view.
+    const viewEnd = bytes.byteOffset + (view.byteOffset ?? 0) + view.byteLength;
+    const readLimit = Math.min(viewEnd, bytes.byteOffset + bytes.byteLength);
     const lastByteEnd = accessor.count > 0 ? baseOffset + (accessor.count - 1) * stride + elementByteSize : baseOffset;
-    if (lastByteEnd > bytes.byteOffset + bytes.byteLength) {
+    if (lastByteEnd > readLimit) {
       return {
         count: 0,
         data: new Float32Array(0),
@@ -1450,6 +1484,7 @@ function readAccessor(
       doc,
       buffers,
       accessor.sparse,
+      accessor.count,
       accessor.componentType,
       componentCount,
       normalize,
@@ -1468,6 +1503,7 @@ function applyAccessorSparse(
   doc: Readonly<GltfDocument>,
   buffers: readonly Uint8Array[],
   sparse: NonNullable<GltfAccessor['sparse']>,
+  accessorCount: number,
   valueComponentType: GltfComponentType,
   componentCount: number,
   normalize: boolean,
@@ -1493,19 +1529,40 @@ function applyAccessorSparse(
   const valueSize = COMPONENT_BYTE_SIZE[valueComponentType];
   const valueBase = valueBytes.byteOffset + (valuesView.byteOffset ?? 0) + (sparse.values.byteOffset ?? 0);
 
-  // Guard the packed index and value reads against their real buffer lengths. An oversized sparse.count
-  // would otherwise read past the DataView and throw a RangeError. The base accessor data is already valid,
-  // so a bad override is skipped (not applied) and the accessor survives with its base values — Recover.
-  const indexEnd = indexBase + sparse.count * indexSize;
-  const valueEnd = valueBase + sparse.count * componentCount * valueSize;
+  // Guard the packed index and value reads against the tighter of each sparse bufferView's declared window
+  // and its real buffer length (an oversized sparse.count or a short window would otherwise read past the
+  // DataView and throw, or pull unrelated bytes). The base accessor data is already valid, so a bad override
+  // is skipped and the accessor survives with its base values — Recover.
+  const indexLimit = Math.min(
+    indexBytes.byteOffset + (indicesView.byteOffset ?? 0) + indicesView.byteLength,
+    indexBytes.byteOffset + indexBytes.byteLength,
+  );
+  const valueLimit = Math.min(
+    valueBytes.byteOffset + (valuesView.byteOffset ?? 0) + valuesView.byteLength,
+    valueBytes.byteOffset + valueBytes.byteLength,
+  );
   if (
-    indexEnd > indexBytes.byteOffset + indexBytes.byteLength ||
-    valueEnd > valueBytes.byteOffset + valueBytes.byteLength
+    indexBase + sparse.count * indexSize > indexLimit ||
+    valueBase + sparse.count * componentCount * valueSize > valueLimit
   ) {
     tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.sparse-past-buffer', '', {
       firstCount: sparse.count,
     });
     return;
+  }
+
+  // Every sparse override replaces a base element, so its destination index must be within [0, accessorCount).
+  // A typed-array write past the base length is SILENTLY ignored — the override would vanish with no signal —
+  // so pre-scan the indices and, if any is out of range, skip the whole override and keep the base (Recover).
+  for (let s = 0; s < sparse.count; s++) {
+    const targetIndex = readComponent(indexView, sparse.indices.componentType, indexBase + s * indexSize);
+    if (targetIndex < 0 || targetIndex >= accessorCount) {
+      tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.sparse-index-out-of-range', '', {
+        firstCount: accessorCount,
+        firstIndex: targetIndex,
+      });
+      return;
+    }
   }
 
   for (let s = 0; s < sparse.count; s++) {
@@ -1649,6 +1706,16 @@ const GLTF_ANIMATION_PATHS: Record<string, SceneAnimationPath | undefined> = {
   rotation: SceneAnimationPathRotation,
   scale: SceneAnimationPathScale,
   translation: SceneAnimationPathTranslation,
+};
+
+// The required output-accessor element type per animated path (glTF spec). rotation is a VEC4 quaternion,
+// translation/scale are VEC3, weights are SCALAR (target-width-scaled by element count). An output whose type
+// disagrees would be silently reinterpreted at the wrong stride, so a mismatch faults the channel.
+const GLTF_ANIMATION_OUTPUT_TYPES: Record<string, string | undefined> = {
+  rotation: 'VEC4',
+  scale: 'VEC3',
+  translation: 'VEC3',
+  weights: 'SCALAR',
 };
 
 // glTF sampler interpolation → Flight AnimationInterpolation (same three modes, same CUBICSPLINE
