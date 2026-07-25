@@ -1,6 +1,6 @@
 import { createBitmap } from '@flighthq/displayobject';
 import { getOrCreateRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
-import type { ImageResource } from '@flighthq/types';
+import type { ImageResource, VideoTexture } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
@@ -8,10 +8,12 @@ import {
   applyWgpuBlendMode,
   bindWgpuImageResourceTexture,
   bindWgpuTexture,
+  bindWgpuVideoTexture,
   buildWgpuRenderTargetBindGroup,
   createWgpuTextureEntry,
   drawWgpuQuad,
   drawWgpuQuadWithTransform,
+  destroyWgpuVideoTexture,
   enableWgpuBlendModeSupport,
   getWgpuRenderProxyColorTransform,
   submitWgpuQuadDraw,
@@ -122,6 +124,61 @@ describe('bindWgpuTexture', () => {
     // 8x8 → 4 mip levels; the lower 3 are rendered via generateWgpuMipmaps (a queue submit).
     expect(createTexture).toHaveBeenCalledWith(expect.objectContaining({ mipLevelCount: 4 }));
     expect(submit).toHaveBeenCalled();
+  });
+});
+
+describe('bindWgpuVideoTexture', () => {
+  function videoTexture(frameId: number, readyState = 4, width = 320, height = 240): VideoTexture {
+    return {
+      frameId,
+      sampler: {
+        anisotropy: 1,
+        magFilter: 'linear',
+        minFilter: 'linear',
+        mipmaps: false,
+        wrapU: 'clamp-to-edge',
+        wrapV: 'clamp-to-edge',
+      },
+      source: { element: { readyState, videoHeight: height, videoWidth: width } as HTMLVideoElement },
+    } as unknown as VideoTexture;
+  }
+
+  it('uploads once per frameId and caches the texture by VideoTexture identity', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const copy = vi.spyOn(state.device.queue, 'copyExternalImageToTexture');
+    const video = videoTexture(1);
+    const first = bindWgpuVideoTexture(state, video);
+    expect(first).not.toBeNull();
+    expect(copy).toHaveBeenCalledTimes(1);
+    expect(bindWgpuVideoTexture(state, video)).toBe(first);
+    expect(copy).toHaveBeenCalledTimes(1);
+    video.frameId = 2;
+    expect(bindWgpuVideoTexture(state, video)).toBe(first);
+    expect(copy).toHaveBeenCalledTimes(2);
+  });
+
+  it('waits for a decoded frame and recreates the texture after a resolution change', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const video = videoTexture(1, 1, 0, 0);
+    expect(bindWgpuVideoTexture(state, video)).toBeNull();
+    const element = video.source.element!;
+    Object.assign(element, { readyState: 4, videoHeight: 120, videoWidth: 160 });
+    const first = bindWgpuVideoTexture(state, video)!;
+    const destroy = vi.spyOn(first.texture, 'destroy');
+    Object.assign(element, { videoHeight: 240, videoWidth: 320 });
+    const second = bindWgpuVideoTexture(state, video)!;
+    expect(second).not.toBe(first);
+    expect(destroy).toHaveBeenCalled();
+  });
+
+  it('destroys and removes an uploaded video texture', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const video = videoTexture(1);
+    const entry = bindWgpuVideoTexture(state, video)!;
+    const destroy = vi.spyOn(entry.texture, 'destroy');
+    expect(destroyWgpuVideoTexture(state, video)).toBe(true);
+    expect(destroy).toHaveBeenCalled();
+    expect(destroyWgpuVideoTexture(state, video)).toBe(false);
   });
 });
 

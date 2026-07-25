@@ -4,14 +4,16 @@ import type {
   ImageResource,
   RenderProxy,
   RenderProxy2D,
+  VideoTexture,
   WgpuImageResourceTextureEntry,
   WgpuRenderState,
   WgpuTextureEntry,
+  WgpuVideoTextureEntry,
 } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 import { generateWgpuMipmaps, getWgpuMipLevelCount } from './wgpuMipmap';
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { getWgpuRenderStateRuntime, getWgpuSampler } from './wgpuRenderState';
 import { getActiveWgpuPipeline, getWgpuPipeline, writeWgpuQuadUniforms } from './wgpuShader';
 
 export function applyWgpuBlendMode(state: WgpuRenderState, blendMode: BlendMode | null): void {
@@ -126,6 +128,56 @@ export function bindWgpuTexture(
   return entry;
 }
 
+// Dynamic VideoTexture upload. The texture is cached by VideoTexture identity and copied only when its
+// frameId advances; a resolution change recreates the allocation/view, and a sampler mutation rebuilds
+// only the bind group. Returns null until the backing element has a decoded frame.
+export function bindWgpuVideoTexture(
+  state: WgpuRenderState,
+  videoTexture: Readonly<VideoTexture>,
+): WgpuVideoTextureEntry | null {
+  const element = videoTexture.source.element;
+  if (element === null || element.readyState < 2 || element.videoWidth <= 0 || element.videoHeight <= 0) return null;
+
+  const runtime = getWgpuRenderStateRuntime(state);
+  const cache = (runtime.videoTextureCache ??= new WeakMap());
+  const width = element.videoWidth;
+  const height = element.videoHeight;
+  const sampler = getWgpuVideoSampler(state, videoTexture);
+  let entry = cache.get(videoTexture);
+  if (entry === undefined || entry.width !== width || entry.height !== height) {
+    entry?.texture.destroy();
+    const texture = state.device.createTexture({
+      size: [width, height, 1],
+      format: 'rgba8unorm',
+      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+    const view = texture.createView();
+    entry = {
+      bindGroup: buildWgpuTextureBindGroup(state, view, sampler),
+      height,
+      sampler,
+      texture,
+      uploadedFrameId: -1,
+      view,
+      width,
+    };
+    cache.set(videoTexture, entry);
+  } else if (entry.sampler !== sampler) {
+    entry.sampler = sampler;
+    entry.bindGroup = buildWgpuTextureBindGroup(state, entry.view, sampler);
+  }
+
+  if (entry.uploadedFrameId !== videoTexture.frameId) {
+    state.device.queue.copyExternalImageToTexture(
+      { source: element, flipY: false },
+      { texture: entry.texture, premultipliedAlpha: true },
+      [width, height],
+    );
+    entry.uploadedFrameId = videoTexture.frameId;
+  }
+  return entry;
+}
+
 export function buildWgpuRenderTargetBindGroup(state: WgpuRenderState, view: GPUTextureView): GPUBindGroup {
   const runtime = getWgpuRenderStateRuntime(state);
   const sampler = state.allowSmoothing ? runtime.linearSampler : runtime.nearestSampler;
@@ -174,6 +226,34 @@ export function createWgpuTextureEntry(
   });
 
   return { texture, view, bindGroup };
+}
+
+function buildWgpuTextureBindGroup(state: WgpuRenderState, view: GPUTextureView, sampler: GPUSampler): GPUBindGroup {
+  return state.device.createBindGroup({
+    layout: getWgpuRenderStateRuntime(state).textureBindGroupLayout,
+    entries: [
+      { binding: 0, resource: view },
+      { binding: 1, resource: sampler },
+    ],
+  });
+}
+
+function getWgpuVideoSampler(state: WgpuRenderState, videoTexture: Readonly<VideoTexture>): GPUSampler {
+  const sampler = videoTexture.sampler;
+  const filter: GPUFilterMode = sampler.magFilter.startsWith('nearest') ? 'nearest' : 'linear';
+  // A live frame carries base level only; mip-aware filters collapse to their base filter rather than
+  // sampling absent levels. Regenerating a full chain for every decoded frame would defeat the video
+  // dirty gate.
+  return getWgpuSampler(state, filter, sampler.wrapU, sampler.wrapV, undefined, sampler.anisotropy);
+}
+
+export function destroyWgpuVideoTexture(state: WgpuRenderState, videoTexture: Readonly<VideoTexture>): boolean {
+  const cache = getWgpuRenderStateRuntime(state).videoTextureCache;
+  const entry = cache?.get(videoTexture);
+  if (entry === undefined) return false;
+  entry.texture.destroy();
+  cache!.delete(videoTexture);
+  return true;
 }
 
 export function drawWgpuQuad(

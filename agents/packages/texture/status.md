@@ -168,4 +168,6 @@ Height` (read the live element, -1 until a frame decodes), `getVideoTextureUvMat
 `isVideoTextureFrameReady` (readyState >= HAVE_CURRENT_DATA + known dims), `resetVideoTextureFrame`
 (force re-upload after context loss), `setVideoTextureSource`. No new package dep — `VideoResource` is
 read from `@flighthq/types`. The per-frame GL upload lives in `render-gl` (`uploadGlTextureVideoFrame`,
-frameId dirty-gated). Rust parity + a `VideoTexture` display/material binding are follow-ups.
+frameId dirty-gated). GL/WebGPU material binding is now realized through
+`UnlitMaterial.baseColorVideoMap` with exact raster parity; Rust parity and additional material slots
+remain follow-ups.

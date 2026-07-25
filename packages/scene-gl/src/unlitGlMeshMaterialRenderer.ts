@@ -1,4 +1,5 @@
 import { unpackColorToLinear } from '@flighthq/color';
+import { isVideoTextureFrameReady } from '@flighthq/texture';
 import type {
   LinearColor,
   Camera3D,
@@ -22,7 +23,7 @@ import {
   setGlMeshViewProjection,
 } from './glMeshProgram';
 import { getGlSceneRuntime } from './glSceneRuntime';
-import { bindGlUnlitSurface, ensureGlUnlitProgram } from './glUnlitPrelude';
+import { bindGlUnlitSurface, bindGlUnlitVideoSurface, ensureGlUnlitProgram } from './glUnlitPrelude';
 
 // The built-in Unlit forward renderer (GlMeshMaterialRenderer for UnlitMaterialKind). Lighting-
 // independent flat color: bind selects the unlit variant for the material's base-color map / alpha
@@ -46,8 +47,14 @@ export const unlitGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
       return;
     }
     unpackColorToLinear(scratchRgba, unlit.baseColor);
-    bindGlUnlitSurface(state, program, scratchRgba, 1, unlit.baseColorMap, unlit.alphaCutoff);
-    bindGlUvTransform(gl, program, unlit.baseColorMap);
+    const videoMap = unlit.baseColorVideoMap;
+    if (videoMap !== null && isVideoTextureFrameReady(videoMap)) {
+      bindGlUnlitVideoSurface(state, program, scratchRgba, 1, videoMap, unlit.alphaCutoff);
+      bindGlUvTransform(gl, program, videoMap);
+    } else {
+      bindGlUnlitSurface(state, program, scratchRgba, 1, unlit.baseColorMap, unlit.alphaCutoff);
+      bindGlUvTransform(gl, program, unlit.baseColorMap);
+    }
   },
 
   draw(state: GlRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
@@ -66,8 +73,17 @@ export function registerUnlitGlMaterial(state: GlRenderState): void {
 function defineKeyForMaterial(material: Readonly<UnlitMaterial> | null): GlUnlitDefineKey {
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
-    hasColorMap: material !== null && material.baseColorMap !== null && material.baseColorMap.image !== null,
-    hasUvTransform: hasGlUvTransform(material !== null ? material.baseColorMap : null),
+    hasColorMap:
+      material !== null &&
+      ((material.baseColorVideoMap !== null && isVideoTextureFrameReady(material.baseColorVideoMap)) ||
+        (material.baseColorMap !== null && material.baseColorMap.image !== null)),
+    hasUvTransform:
+      material !== null &&
+      hasGlUvTransform(
+        material.baseColorVideoMap !== null && isVideoTextureFrameReady(material.baseColorVideoMap)
+          ? material.baseColorVideoMap
+          : material.baseColorMap,
+      ),
     vertexColor: false,
   };
 }

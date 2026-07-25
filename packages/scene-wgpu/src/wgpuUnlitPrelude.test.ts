@@ -1,9 +1,10 @@
-import type { LinearColor, WgpuUnlitDefineKey } from '@flighthq/types';
+import type { LinearColor, VideoTexture, WgpuUnlitDefineKey } from '@flighthq/types';
 
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 import { makeWgpuSceneState, makeWgpuSkinningAdapter } from './wgpuSceneTestHelper';
 import {
   bindWgpuUnlitSurface,
+  bindWgpuUnlitVideoSurface,
   buildWgpuUnlitDefineKey,
   compileWgpuUnlitPipeline,
   ensureWgpuUnlitPipeline,
@@ -22,6 +23,35 @@ describe('bindWgpuUnlitSurface', () => {
     const groups = fake.calls.filter((c) => c.name === 'createBindGroup').length;
     bindWgpuUnlitSurface(state, pipeline, key, COLOR, 2, 0.5, null);
     expect(fake.calls.filter((c) => c.name === 'createBindGroup').length).toBe(groups);
+    expect(fake.calls.some((c) => c.name === 'writeBuffer')).toBe(true);
+  });
+});
+
+describe('bindWgpuUnlitVideoSurface', () => {
+  it('uploads the ready video frame into the same unlit material layout', () => {
+    const { fake, state } = makeWgpuSceneState();
+    const pipeline = compileWgpuUnlitPipeline(state, { ...FLAT, hasColorMap: true }, 'bgra8unorm');
+    const video = {
+      frameId: 1,
+      sampler: {
+        anisotropy: 1,
+        magFilter: 'linear',
+        minFilter: 'linear',
+        mipmaps: false,
+        wrapU: 'clamp-to-edge',
+        wrapV: 'clamp-to-edge',
+      },
+      source: {
+        element: { readyState: 4, videoHeight: 120, videoWidth: 160 } as HTMLVideoElement,
+      },
+      flipX: false,
+      flipY: false,
+      uvOffset: { x: 0, y: 0 },
+      uvRotation: 0,
+      uvScale: { x: 1, y: 1 },
+    } as unknown as VideoTexture;
+    bindWgpuUnlitVideoSurface(state, pipeline, {}, COLOR, 1, 0.5, video);
+    expect(fake.calls.some((c) => c.name === 'copyExternalImageToTexture')).toBe(true);
     expect(fake.calls.some((c) => c.name === 'writeBuffer')).toBe(true);
   });
 });

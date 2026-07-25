@@ -69,8 +69,8 @@ export function createToonMaterial(opts?: Readonly<Partial<ToonMaterial>>): Toon
 }
 
 // Lighting-independent flat-color material. `baseColor` defaults to white, `baseColorMap` and
-// `baseColorVideoMap` to null. Full fidelity on every backend including Canvas2D; a bound
-// `baseColorVideoMap` (live video stream) is sampled only on the GL backend today.
+// `baseColorVideoMap` to null. A bound live video stream is sampled by the GL and WebGPU mesh
+// renderers; backends without that dynamic texture path fall back to `baseColorMap`.
 export function createUnlitMaterial(opts?: Readonly<Partial<UnlitMaterial>>): UnlitMaterial {
   const material = createSurfaceMaterial(UnlitMaterialKind, opts) as UnlitMaterial;
   material.baseColor = opts?.baseColor ?? 0xffffffff;
