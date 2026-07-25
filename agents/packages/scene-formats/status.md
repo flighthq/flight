@@ -64,6 +64,22 @@ empty or ragged (values not a whole multiple of times) accessor pair now drops t
 (`gltf.animation-sampler-empty` Drop) so no empty-channel animation is created. Five probe regressions added.
 scene-formats 497/497 (gltfParse 116/116), npm run check exit 0.
 
+**D exhaustive accessor-site sweep (review directive + review2-954ae4c2 6th finding).** review confirmed the
+classification-free `readAccessor` + role-based classification is the right architecture and pushed to sweep
+EVERY accessor consumer so no further gap remains. Two closed: (a) `applyAccessorSparse` read `sparse.count`
+elements through a DataView with NO bounds guard — an oversized count threw a RangeError; now guarded (skip the
+override, keep the valid base accessor data → `gltf.sparse-past-buffer` Recover). (b) the animation cardinality
+guard checked flattened `values.length % times.length` — a LINEAR VEC4 output with 1 element vs 2 keys has
+length 4 and passed (4 % 2 == 0). Now validates ELEMENT counts by interpolation: fixed-width channels require
+`outputCount === (CUBICSPLINE ? 3 : 1) · inputCount` (`gltf.animation-sampler-cardinality` Drop), and weights
+channels are validated per-mesh in `appendGltfWeightsChannels` against `perKey · keys · targetWidth`
+(`gltf.weights-cardinality-mismatch` Drop) since their SCALAR output is target-width-scaled. The complete
+accessor-consumer census: 7 `readAccessor` sites (skin IBM, animation input/output, primitive POSITION/indices,
+morph POSITION, `readOptionalGltfAttribute`) + `applyAccessorSparse` + the two animation cardinality gates —
+all now apply the usable-survivor rule. Image bufferView slicing uses bounds-safe `Uint8Array.slice` (no throw)
+and GLB parsing has its own header/length guards. Three more regressions. scene-formats 500/500
+(gltfParse 119/119), npm run check exit 0.
+
 **AWD skeleton-binding / multi-skeleton — DECIDED DEFERRED NON-GOAL (user-pinned 2026-07-25).** Not
 "blocked awaiting a multi-skeleton .awd + animator-block spec" — it is deferred because AWD is a legacy
 format and there is no multi-skeleton AWD corpus to hold an implementation honest. A multi-skeleton file
