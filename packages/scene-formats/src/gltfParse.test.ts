@@ -13,13 +13,14 @@ import { isMesh } from '@flighthq/scene';
 import type {
   EmbeddedImageResourceReference,
   ExternalImageResourceReference,
+  ImportDiagnostic,
   Mesh,
   SceneAnimationTarget,
   SceneNode,
   StandardPbrMaterial,
   GltfDocument,
 } from '@flighthq/types';
-import { StandardPbrMaterialKind } from '@flighthq/types';
+import { ImportDiagnosticSeverity, StandardPbrMaterialKind } from '@flighthq/types';
 
 import {
   createSceneFromGlb,
@@ -29,6 +30,10 @@ import {
   parseGlb,
   parseGltf,
 } from './gltfParse';
+
+function findGltfDiagnostic(diagnostics: readonly ImportDiagnostic[], kind: string): ImportDiagnostic | undefined {
+  return diagnostics.find((diagnostic) => diagnostic.kind === kind);
+}
 
 // A base64 `data:` URI carrying `bytes` under an explicit image MIME type.
 function imageDataUri(mimeType: string, bytes: Uint8Array): string {
@@ -311,27 +316,34 @@ describe('createSceneFromGlb', () => {
   it('returns an empty scene and warns when the magic is not glTF', () => {
     const bogus = new Uint8Array(16);
     bogus[0] = 0x00;
-    const warnings: string[] = [];
-    const scene = createSceneFromGlb(bogus, warnings);
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromGlb(bogus, diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
-    expect(warnings.some((w) => w.includes('magic'))).toBe(true);
+    const crumb = findGltfDiagnostic(diagnostics, 'glb.wrong-magic');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Reject);
+    expect(crumb!.origin).toBe('readGlbContainer');
   });
 
   it('returns an empty scene and warns when the byte length is below the header size', () => {
-    const warnings: string[] = [];
-    const scene = createSceneFromGlb(new Uint8Array(4), warnings);
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromGlb(new Uint8Array(4), diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
-    expect(warnings.length).toBeGreaterThan(0);
+    expect(diagnostics.length).toBeGreaterThan(0);
   });
 
   it('returns an empty scene and warns for an unsupported GLB container version', () => {
     // A well-formed glTF-magic container whose header version is 3 (not 2) must be rejected by version.
     const glb = buildGlb(makeTriangleGltf(), new Uint8Array(0));
     new DataView(glb.buffer).setUint32(4, 3, true); // header version 2 → 3
-    const warnings: string[] = [];
-    const scene = createSceneFromGlb(glb, warnings);
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromGlb(glb, diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
-    expect(warnings.some((w) => w.includes('version'))).toBe(true);
+    const crumb = findGltfDiagnostic(diagnostics, 'glb.unsupported-version');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Reject);
+    expect(crumb!.origin).toBe('readGlbContainer');
+    expect(crumb!.detail?.version).toBe(3);
   });
 
   it('returns an empty scene and warns when the GLB JSON chunk is not valid JSON', () => {
@@ -339,10 +351,13 @@ describe('createSceneFromGlb', () => {
     // throws — the container is otherwise well-formed, exercising the malformed-JSON branch, not the magic one.
     const glb = buildGlb(makeTriangleGltf(), new Uint8Array(0));
     glb[20] = 0x78; // 'x'
-    const warnings: string[] = [];
-    const scene = createSceneFromGlb(glb, warnings);
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromGlb(glb, diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
-    expect(warnings.some((w) => w.includes('JSON'))).toBe(true);
+    const crumb = findGltfDiagnostic(diagnostics, 'glb.json-chunk-invalid');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Reject);
+    expect(crumb!.origin).toBe('readGlbContainer');
   });
 });
 
@@ -656,11 +671,15 @@ describe('createSceneFromGltf', () => {
       scene: 0,
       scenes: [{ nodes: [0] }],
     };
-    const warnings: string[] = [];
+    const diagnostics: ImportDiagnostic[] = [];
 
-    const geometry = (getNodeChildren(createSceneFromGltf(doc, warnings).root)[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(createSceneFromGltf(doc, diagnostics).root)[0] as Mesh).geometry;
     expect(getMeshGeometryVertexCount(geometry)).toBe(0);
-    expect(warnings.some((w) => w.includes('missing.bin'))).toBe(true);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.buffer-empty');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(crumb!.detail?.firstUri).toBe('missing.bin');
   });
 
   it('applies a sparse accessor override on top of the base values', () => {
@@ -747,19 +766,26 @@ describe('createSceneFromGltf', () => {
     const doc = makeTriangleGltf();
     // Point the POSITION attribute to accessor index 99, which does not exist in the array.
     doc.meshes![0].primitives[0].attributes.POSITION = 99;
-    const warnings: string[] = [];
-    createSceneFromGltf(doc, warnings);
-    expect(warnings.length).toBeGreaterThan(0);
-    expect(warnings.some((w) => w.includes('99'))).toBe(true);
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromGltf(doc, diagnostics);
+    expect(diagnostics.length).toBeGreaterThan(0);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.accessor-not-found');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(crumb!.detail?.firstAccessor).toBe(99);
   });
 
   it('collects a warning when bufferViews are missing', () => {
     const doc = makeTriangleGltf();
     // Clear bufferViews so accessor.bufferView references a missing entry.
     doc.bufferViews = [];
-    const warnings: string[] = [];
-    createSceneFromGltf(doc, warnings);
-    expect(warnings.some((w) => w.includes('bufferView'))).toBe(true);
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.accessor-bufferview-not-found');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('buildGltfDocument');
   });
 
   it('returns a scene for a document with no nodes', () => {
@@ -904,9 +930,12 @@ describe('createSceneFromGltf', () => {
       scene: 0,
       scenes: [{ nodes: [0] }],
     };
-    const warnings: string[] = [];
-    createSceneFromGltf(doc, warnings);
-    expect(warnings.some((w) => w.includes('runs past'))).toBe(true);
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.accessor-past-buffer');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('buildGltfDocument');
   });
 
   it('warns and yields empty geometry for a primitive with no POSITION attribute', () => {
@@ -914,9 +943,12 @@ describe('createSceneFromGltf', () => {
     // unconditionally — a conditional check would pass even if assembly wrongly dropped the mesh.
     const doc = makeTriangleGltf();
     doc.meshes![0].primitives[0].attributes = {}; // drop POSITION
-    const warnings: string[] = [];
-    const scene = createSceneFromGltf(doc, warnings);
-    expect(warnings.some((w) => w.includes('POSITION'))).toBe(true);
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.primitive-no-position');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('buildGltfDocument');
     const mesh = getNodeChildren(scene.root)[0] as Mesh;
     expect(isMesh(mesh)).toBe(true);
     expect(getMeshGeometryVertexCount(mesh.geometry)).toBe(0);
@@ -987,21 +1019,25 @@ describe('createSceneFromGltf', () => {
   });
 
   it('returns an empty scene and warns on malformed JSON instead of throwing', () => {
-    const warnings: string[] = [];
+    const diagnostics: ImportDiagnostic[] = [];
     let scene;
     expect(() => {
-      scene = createSceneFromGltf('{ this is not valid json', warnings);
+      scene = createSceneFromGltf('{ this is not valid json', diagnostics);
     }).not.toThrow();
     expect(getNodeChildren(scene!.root)).toHaveLength(0);
-    expect(warnings.length).toBeGreaterThan(0);
+    expect(diagnostics.length).toBeGreaterThan(0);
   });
 
   it('warns when asset.version has an unsupported major version', () => {
     const doc = makeTriangleGltf();
     doc.asset = { version: '3.0' };
-    const warnings: string[] = [];
-    createSceneFromGltf(doc, warnings);
-    expect(warnings.some((w) => w.includes('version'))).toBe(true);
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.unsupported-version');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(crumb!.detail?.version).toBe('3.0');
   });
 
   it.each([
@@ -1036,10 +1072,14 @@ describe('createSceneFromGltf', () => {
   it('omits an unknown primitive mode with a warning instead of drawing the wrong topology', () => {
     const doc = makeTriangleGltf();
     doc.meshes![0].primitives[0].mode = 7;
-    const warnings: string[] = [];
-    const geometry = (getNodeChildren(createSceneFromGltf(doc, warnings).root)[0] as Mesh).geometry;
+    const diagnostics: ImportDiagnostic[] = [];
+    const geometry = (getNodeChildren(createSceneFromGltf(doc, diagnostics).root)[0] as Mesh).geometry;
     expect(getMeshGeometryIndexCount(geometry)).toBe(0);
-    expect(warnings.some((warning) => warning.includes('mode 7'))).toBe(true);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.primitive-unsupported-mode');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(crumb!.detail?.firstMode).toBe(7);
   });
 
   it('applies a matrix transform when node.matrix is a 16-element column-major array', () => {
@@ -1174,17 +1214,21 @@ describe('createSceneFromGltf', () => {
   it('warns when extensionsRequired names an unsupported extension', () => {
     const doc = makeTriangleGltf();
     doc.extensionsRequired = ['KHR_draco_mesh_compression'];
-    const warnings: string[] = [];
-    createSceneFromGltf(doc, warnings);
-    expect(warnings.some((w) => w.includes('KHR_draco_mesh_compression'))).toBe(true);
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.unsupported-required-extension');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(crumb!.detail?.firstExtension).toBe('KHR_draco_mesh_compression');
   });
 
   it('does not label the consumed KHR_texture_transform extension unsupported', () => {
     const doc = makeTriangleGltf();
     doc.extensionsRequired = ['KHR_texture_transform'];
-    const warnings: string[] = [];
-    createSceneFromGltf(doc, warnings);
-    expect(warnings).toEqual([]);
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromGltf(doc, diagnostics);
+    expect(diagnostics).toEqual([]);
   });
 
   it('imports a skin binding the mesh to a skeleton over its joint nodes', () => {
@@ -1277,10 +1321,13 @@ describe('createSceneFromGltf animations', () => {
     const doc = makeAnimatedMultiSceneGltf();
     // Node 1's mesh has no morph targets, so the weights channel cannot bind and is dropped.
     doc.animations![0].channels.push({ sampler: 0, target: { node: 1, path: 'weights' } });
-    const warnings: string[] = [];
-    const scene = createSceneFromGltf(doc, warnings);
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromGltf(doc, diagnostics);
     expect(Object.values(scene.animations)[0].channels).toHaveLength(1); // only the rotation channel survives
-    expect(warnings.some((w) => w.includes('no morphable mesh'))).toBe(true);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.weights-no-morphable-mesh');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('buildGltfDocument');
   });
 
   it('imports translation and scale channels as 3-component non-quaternion tracks', () => {
@@ -1372,11 +1419,14 @@ describe('createSceneFromGltf animations', () => {
   });
 
   it('returns an empty scene for invalid input', () => {
-    const warnings: string[] = [];
-    const scene = createSceneFromGltf('{ not json', warnings);
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromGltf('{ not json', diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
     expect(Object.keys(scene.animations)).toHaveLength(0);
-    expect(warnings.some((w) => w.includes('not valid JSON'))).toBe(true);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.invalid-json');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Reject);
+    expect(crumb!.origin).toBe('parseGltfSource');
   });
 
   it('reads primitives[].targets into the mesh morph set with seeded weights', () => {
@@ -1478,9 +1528,267 @@ describe('createScenesFromGltf', () => {
   });
 
   it('returns an empty array for invalid input', () => {
-    const warnings: string[] = [];
-    expect(createScenesFromGltf('{ not json', warnings)).toHaveLength(0);
-    expect(warnings.some((w) => w.includes('not valid JSON'))).toBe(true);
+    const diagnostics: ImportDiagnostic[] = [];
+    expect(createScenesFromGltf('{ not json', diagnostics)).toHaveLength(0);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.invalid-json');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Reject);
+    expect(crumb!.origin).toBe('parseGltfSource');
+  });
+});
+
+describe('gltf diagnostics coverage', () => {
+  it('rejects and reports gltf.not-an-object for a JSON scalar', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromGltf('42', diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.not-an-object');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Reject);
+    expect(crumb!.origin).toBe('parseGltfSource');
+  });
+
+  it('rejects and reports glb.header-too-small for a sub-12-byte container', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromGlb(new Uint8Array(4), diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'glb.header-too-small');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Reject);
+    expect(crumb!.origin).toBe('readGlbContainer');
+  });
+
+  it('rejects and reports glb.no-json-chunk for a header-only container', () => {
+    const bytes = new Uint8Array(12);
+    const view = new DataView(bytes.buffer);
+    view.setUint32(0, 0x46546c67, true); // magic 'glTF'
+    view.setUint32(4, 2, true); // version
+    view.setUint32(8, 12, true); // total length = header only
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromGlb(bytes, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'glb.no-json-chunk');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Reject);
+    expect(crumb!.origin).toBe('readGlbContainer');
+  });
+
+  it('recovers and reports glb.chunk-past-end when the oversized chunk is the JSON chunk (no usable document)', () => {
+    const glb = buildGlb(makeTriangleGltf(), new Uint8Array(0));
+    // Overwrite the first (JSON) chunk's length (uint32 at offset 12) with a value past the container end, so
+    // the walk breaks before any JSON is read. chunk-past-end is Recover; the whole-input refusal is the
+    // separate glb.no-json-chunk Reject that then fires, so the scene is empty.
+    new DataView(glb.buffer).setUint32(12, glb.byteLength + 1000, true);
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromGlb(glb, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'glb.chunk-past-end');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('readGlbContainer');
+    expect(findGltfDiagnostic(diagnostics, 'glb.no-json-chunk')).toBeDefined();
+    expect(getNodeChildren(scene.root)).toHaveLength(0);
+  });
+
+  it('recovers via glb.chunk-past-end and still returns the document when a valid JSON chunk precedes the bad chunk', () => {
+    const glb = buildGlb(makeTriangleGltf(), new Uint8Array(0));
+    const view = new DataView(glb.buffer);
+    // Walk to the SECOND chunk (past the valid JSON chunk) and oversize its length. The JSON parses first, so
+    // the container recovers: chunk-past-end is a Recover and the mesh document is still returned.
+    const secondChunkOffset = 12 + 8 + view.getUint32(12, true);
+    view.setUint32(secondChunkOffset, glb.byteLength + 1000, true);
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromGlb(glb, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'glb.chunk-past-end');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('readGlbContainer');
+    // Recover means continued import: the mesh from the valid JSON chunk survives.
+    expect(getNodeChildren(scene.root)).toHaveLength(1);
+    expect(findGltfDiagnostic(diagnostics, 'glb.no-json-chunk')).toBeUndefined();
+  });
+
+  it('drops and reports gltf.camera-missing for a node referencing a missing camera', () => {
+    const doc = { asset: { version: '2.0' }, nodes: [{ camera: 5 }], scenes: [{ nodes: [0] }] } as GltfDocument;
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.camera-missing');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(crumb!.detail?.count).toBe(1);
+    expect(crumb!.detail?.firstCamera).toBe(5);
+    expect(crumb!.detail?.firstNode).toBe(0);
+  });
+
+  it('drops and reports gltf.camera-invalid-perspective for a bad view volume', () => {
+    const doc = {
+      asset: { version: '2.0' },
+      cameras: [{ perspective: { yfov: 0, znear: 0.1 }, type: 'perspective' }],
+      nodes: [{ camera: 0 }],
+      scenes: [{ nodes: [0] }],
+    } as GltfDocument;
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.camera-invalid-perspective');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(crumb!.detail?.firstCamera).toBe(0);
+  });
+
+  it('drops and reports gltf.camera-invalid-orthographic for a bad view volume', () => {
+    const doc = {
+      asset: { version: '2.0' },
+      cameras: [{ orthographic: { xmag: 0, ymag: 1, zfar: 10, znear: 0 }, type: 'orthographic' }],
+      nodes: [{ camera: 0 }],
+      scenes: [{ nodes: [0] }],
+    } as GltfDocument;
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.camera-invalid-orthographic');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+  });
+
+  it('drops and reports gltf.camera-missing-descriptor for a type with no descriptor', () => {
+    const doc = {
+      asset: { version: '2.0' },
+      cameras: [{ type: 'perspective' }],
+      nodes: [{ camera: 0 }],
+      scenes: [{ nodes: [0] }],
+    } as GltfDocument;
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.camera-missing-descriptor');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(crumb!.detail?.firstType).toBe('perspective');
+  });
+
+  it('recovers and reports gltf.node-multiple-parents when two nodes claim the same child', () => {
+    const doc = {
+      asset: { version: '2.0' },
+      nodes: [{ children: [2] }, { children: [2] }, {}],
+      scenes: [{ nodes: [0, 1] }],
+    } as GltfDocument;
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.node-multiple-parents');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(crumb!.detail?.firstChild).toBe(2);
+  });
+
+  it('recovers and reports gltf.duplicate-extension-handler for two handlers of one kind', () => {
+    const handler = { apply() {}, kind: 'VENDOR_x' };
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromGltf(makeTriangleGltf(), diagnostics, { extensionHandlers: [handler, handler] });
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.duplicate-extension-handler');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(crumb!.detail?.firstKind).toBe('VENDOR_x');
+  });
+
+  it('drops and reports gltf.animation-missing-sampler for an out-of-range sampler', () => {
+    const doc = makeTriangleGltf();
+    doc.animations = [{ channels: [{ sampler: 9, target: { node: 0, path: 'translation' } }], samplers: [] }];
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.animation-missing-sampler');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(crumb!.detail?.firstSampler).toBe(9);
+  });
+
+  it('skips and reports gltf.animation-unsupported-path for an unknown target path', () => {
+    const doc = makeTriangleGltf();
+    // 'color' is not a glTF 2.0 animation target path — cast past the closed union to exercise the branch.
+    doc.animations = [
+      {
+        channels: [{ sampler: 0, target: { node: 0, path: 'color' as 'translation' } }],
+        samplers: [{ input: 0, output: 0 }],
+      },
+    ];
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.animation-unsupported-path');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(crumb!.detail?.firstPath).toBe('color');
+  });
+
+  it('drops and reports gltf.morph-target-no-position for a POSITION-less morph target', () => {
+    const doc = makeTriangleGltf();
+    doc.meshes![0].primitives[0].targets = [{ NORMAL: 0 }];
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.morph-target-no-position');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(crumb!.detail?.firstTarget).toBe(0);
+  });
+
+  it('recovers and reports gltf.buffer-empty (no-uri) for a uri-less buffer on the JSON path', () => {
+    const doc = makeTriangleGltf();
+    doc.buffers = [{ byteLength: 4 }]; // no uri, and no GLB binary on the JSON path
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.buffer-empty');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(crumb!.detail?.reason).toBe('no-uri-no-binary');
+  });
+
+  it('drops and reports gltf.accessor-buffer-not-found for a bufferView with a missing buffer', () => {
+    const doc = makeTriangleGltf();
+    doc.bufferViews![0].buffer = 9; // buffers array has no index 9
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.accessor-buffer-not-found');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(crumb!.detail?.firstBuffer).toBe(9);
+  });
+
+  it('recovers and reports gltf.sparse-bufferview-not-found for a bad sparse bufferView', () => {
+    const doc = makeTriangleGltf();
+    doc.accessors![0].sparse = {
+      count: 1,
+      indices: { bufferView: 9, componentType: 5123 },
+      values: { bufferView: 9 },
+    };
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.sparse-bufferview-not-found');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+  });
+
+  it('aggregates repeated accessor-not-found drops into one crumb with a count', () => {
+    const doc = makeTriangleGltf();
+    // Two attributes both pointing at a missing accessor 99 → two drops of the same kind.
+    doc.meshes![0].primitives[0].attributes.POSITION = 99;
+    doc.meshes![0].primitives[0].attributes.NORMAL = 99;
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromGltf(doc, diagnostics);
+    const matching = diagnostics.filter((d) => d.kind === 'gltf.accessor-not-found');
+    expect(matching).toHaveLength(1);
+    expect(matching[0].detail?.count).toBeGreaterThanOrEqual(2);
+    expect(matching[0].detail?.firstAccessor).toBe(99);
+  });
+
+  it('emits no diagnostics when no collector array is supplied', () => {
+    const doc = makeTriangleGltf();
+    doc.meshes![0].primitives[0].attributes.POSITION = 99;
+    doc.asset = { version: '3.0' };
+    expect(() => createSceneFromGltf(doc)).not.toThrow();
   });
 });
 
@@ -1561,7 +1869,7 @@ describe('parseGltf', () => {
   });
 
   it('breaks a malformed camera-node cycle deterministically', () => {
-    const warnings: string[] = [];
+    const diagnostics: ImportDiagnostic[] = [];
     const document = parseGltf(
       {
         asset: { version: '2.0' },
@@ -1572,10 +1880,13 @@ describe('parseGltf', () => {
         ],
         scenes: [{ nodes: [0] }],
       },
-      warnings,
+      diagnostics,
     );
     expect(Number.isFinite(document.cameras[0].transform.position.x)).toBe(true);
-    expect(warnings.some((warning) => warning.includes('cycle'))).toBe(true);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.node-hierarchy-cycle');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('buildGltfDocument');
   });
 
   it('expands a multi-primitive mesh into a group node with per-primitive child mesh nodes', () => {
@@ -1607,9 +1918,12 @@ describe('parseGltf', () => {
   });
 
   it('returns an empty document and warns for invalid JSON', () => {
-    const warnings: string[] = [];
-    const document = parseGltf('{ not json', warnings);
+    const diagnostics: ImportDiagnostic[] = [];
+    const document = parseGltf('{ not json', diagnostics);
     expect(document.nodes).toHaveLength(0);
-    expect(warnings.some((w) => w.includes('not valid JSON'))).toBe(true);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.invalid-json');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Reject);
+    expect(crumb!.origin).toBe('parseGltfSource');
   });
 });

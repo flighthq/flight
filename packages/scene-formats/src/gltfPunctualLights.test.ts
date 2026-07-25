@@ -1,9 +1,24 @@
-import type { DirectionalLight, PointLight, SpotLight, GltfDocument } from '@flighthq/types';
-import { DirectionalLightKind, PointLightKind, SpotLightKind } from '@flighthq/types';
+import type { DirectionalLight, ImportDiagnostic, PointLight, SpotLight, GltfDocument } from '@flighthq/types';
+import { DirectionalLightKind, ImportDiagnosticSeverity, PointLightKind, SpotLightKind } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { parseGltf } from './gltfParse';
 import { GltfPunctualLightsExtensionHandler } from './gltfPunctualLights';
+
+function findLightDiagnostic(diagnostics: readonly ImportDiagnostic[], kind: string): ImportDiagnostic | undefined {
+  return diagnostics.find((diagnostic) => diagnostic.kind === kind);
+}
+
+// A KHR_lights_punctual glTF document with one light and one node referencing it — the fixture the
+// per-light diagnostic tests vary.
+function makeLightGltf(light: unknown): GltfDocument {
+  return {
+    asset: { version: '2.0' },
+    extensions: { KHR_lights_punctual: { lights: [light] } },
+    nodes: [{ extensions: { KHR_lights_punctual: { light: 0 } } }],
+    scenes: [{ nodes: [0] }],
+  } as GltfDocument;
+}
 
 describe('GltfPunctualLightsExtensionHandler', () => {
   it('individually realizes placed directional, point, and spot lights', () => {
@@ -26,12 +41,12 @@ describe('GltfPunctualLightsExtensionHandler', () => {
       ],
       scenes: [{ nodes: [0, 1, 2] }],
     };
-    const warnings: string[] = [];
-    const document = parseGltf(source, warnings, {
+    const diagnostics: ImportDiagnostic[] = [];
+    const document = parseGltf(source, diagnostics, {
       extensionHandlers: [GltfPunctualLightsExtensionHandler],
     });
 
-    expect(warnings).toEqual([]);
+    expect(diagnostics).toEqual([]);
     expect(document.lights).toHaveLength(3);
     const directional = document.lights[0].descriptor as DirectionalLight;
     expect(directional.kind).toBe(DirectionalLightKind);
@@ -60,5 +75,110 @@ describe('GltfPunctualLightsExtensionHandler', () => {
       scenes: [{ nodes: [0] }],
     };
     expect(parseGltf(source).lights).toEqual([]);
+  });
+
+  it('drops and reports gltf.light-missing for a node referencing a missing light', () => {
+    const source: GltfDocument = {
+      asset: { version: '2.0' },
+      extensions: { KHR_lights_punctual: { lights: [] } },
+      nodes: [{ extensions: { KHR_lights_punctual: { light: 5 } } }],
+      scenes: [{ nodes: [0] }],
+    } as GltfDocument;
+    const diagnostics: ImportDiagnostic[] = [];
+    const document = parseGltf(source, diagnostics, { extensionHandlers: [GltfPunctualLightsExtensionHandler] });
+    expect(document.lights).toHaveLength(0);
+    const crumb = findLightDiagnostic(diagnostics, 'gltf.light-missing');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('buildGltfPunctualLight');
+    expect(crumb!.detail?.count).toBe(1);
+    expect(crumb!.detail?.firstLight).toBe(5);
+    expect(crumb!.detail?.firstNode).toBe(0);
+  });
+
+  it('drops the light and reports gltf.light-negative-intensity', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const document = parseGltf(makeLightGltf({ intensity: -1, type: 'point' }), diagnostics, {
+      extensionHandlers: [GltfPunctualLightsExtensionHandler],
+    });
+    // Drop (not Recover): the light is omitted — no clamp/substitute — so the document carries no light.
+    expect(document.lights).toHaveLength(0);
+    const crumb = findLightDiagnostic(diagnostics, 'gltf.light-negative-intensity');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('buildGltfPunctualLight');
+    expect(crumb!.detail?.count).toBe(1);
+    expect(crumb!.detail?.firstLight).toBe(0);
+  });
+
+  it('drops the light and reports gltf.light-non-positive-range', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const document = parseGltf(makeLightGltf({ range: 0, type: 'point' }), diagnostics, {
+      extensionHandlers: [GltfPunctualLightsExtensionHandler],
+    });
+    expect(document.lights).toHaveLength(0);
+    const crumb = findLightDiagnostic(diagnostics, 'gltf.light-non-positive-range');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('buildGltfPunctualLight');
+    expect(crumb!.detail?.firstLight).toBe(0);
+  });
+
+  it('drops the light and reports gltf.light-invalid-spot-cone', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const document = parseGltf(
+      makeLightGltf({ spot: { innerConeAngle: 0.6, outerConeAngle: 0.3 }, type: 'spot' }),
+      diagnostics,
+      {
+        extensionHandlers: [GltfPunctualLightsExtensionHandler],
+      },
+    );
+    expect(document.lights).toHaveLength(0);
+    const crumb = findLightDiagnostic(diagnostics, 'gltf.light-invalid-spot-cone');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('buildGltfPunctualLight');
+    expect(crumb!.detail?.firstLight).toBe(0);
+  });
+
+  it('skips and reports gltf.light-unsupported-type', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const document = parseGltf(makeLightGltf({ type: 'area' }), diagnostics, {
+      extensionHandlers: [GltfPunctualLightsExtensionHandler],
+    });
+    // Skip: a recognized light type Flight does not realize (area) — the light is not produced.
+    expect(document.lights).toHaveLength(0);
+    const crumb = findLightDiagnostic(diagnostics, 'gltf.light-unsupported-type');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+    expect(crumb!.origin).toBe('buildGltfPunctualLight');
+    expect(crumb!.detail?.firstLight).toBe(0);
+    expect(crumb!.detail?.firstType).toBe('area');
+  });
+
+  it('aggregates repeated light-missing drops across nodes into one crumb with a count', () => {
+    const source: GltfDocument = {
+      asset: { version: '2.0' },
+      extensions: { KHR_lights_punctual: { lights: [] } },
+      nodes: [
+        { extensions: { KHR_lights_punctual: { light: 3 } } },
+        { extensions: { KHR_lights_punctual: { light: 4 } } },
+      ],
+      scenes: [{ nodes: [0, 1] }],
+    } as GltfDocument;
+    const diagnostics: ImportDiagnostic[] = [];
+    parseGltf(source, diagnostics, { extensionHandlers: [GltfPunctualLightsExtensionHandler] });
+    const matching = diagnostics.filter((d) => d.kind === 'gltf.light-missing');
+    expect(matching).toHaveLength(1);
+    expect(matching[0].detail?.count).toBe(2);
+    expect(matching[0].detail?.firstLight).toBe(3);
+  });
+
+  it('emits no diagnostics when no collector array is supplied', () => {
+    expect(() =>
+      parseGltf(makeLightGltf({ intensity: -1, type: 'area' }), undefined, {
+        extensionHandlers: [GltfPunctualLightsExtensionHandler],
+      }),
+    ).not.toThrow();
   });
 });
