@@ -108,7 +108,7 @@ const lights = createSceneLights({
 });
 
 renderWgpuBackground(state);
-beginWgpuRenderEffectPipeline(state, pipeline);
+beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
 const renderList = prepareSceneRender(state, scene, camera, lights);
 const forwardLights = prepareWgpuSceneForwardLights(state, renderList, lights);
 drawWgpuScene(state, scene, camera, lights, forwardLights);

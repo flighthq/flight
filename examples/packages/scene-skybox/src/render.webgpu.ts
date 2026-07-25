@@ -45,7 +45,7 @@ export function render(
   }
 
   renderWgpuBackground(state);
-  beginWgpuRenderEffectPipeline(state, pipeline);
+  beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
   drawWgpuEnvironmentSkybox(state, environment, camera, width / height);
   prepareSceneRender(state, scene, camera, lights);
   drawWgpuScene(state, scene, camera, lights);

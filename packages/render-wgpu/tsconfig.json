@@ -11,6 +11,7 @@
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
+    { "path": "../color" },
     { "path": "../displayobject" },
     { "path": "../geometry" },
     { "path": "../render" },
