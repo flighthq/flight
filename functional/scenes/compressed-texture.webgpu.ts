@@ -25,11 +25,20 @@ const SCALE = 40;
 const BITMAP_X = 320;
 const BITMAP_Y = 220;
 const BC1_BLUE_BLOCK = new Uint8Array([0x1f, 0x00, 0x1f, 0x00, 0x00, 0x00, 0x00, 0x00]);
+const ALPHA_BITMAP_X = 100;
+// A valid BC3 block with a constant straight-alpha red texel: alpha endpoints and every alpha
+// index select 128/255, while both RGB565 endpoints are solid red and every color index is zero.
+const BC3_HALF_RED_BLOCK = new Uint8Array([
+  0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf8, 0x00, 0xf8, 0x00, 0x00, 0x00, 0x00,
+]);
 
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(WIDTH, HEIGHT, pixelRatio);
 document.body.appendChild(canvas);
 export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x000000ff });
+if (!state.device.features.has('texture-compression-bc')) {
+  throw new Error('[compressed-texture] native BC support is required for this WebGPU proof');
+}
 export const scale = pixelRatio;
 export const width = WIDTH;
 export const height = HEIGHT;
@@ -52,22 +61,22 @@ export function render(root: DisplayObject): void {
   submitWgpuRenderPass(state);
 }
 
-const container: TextureContainer = {
+const container = (format: 'bc1' | 'bc3', byteLength: number): TextureContainer => ({
   depth: 1,
   faces: 1,
-  format: 'bc1',
+  format,
   height: TEX,
   layers: 1,
-  levels: [{ byteLength: 8, byteOffset: 0, height: TEX, width: TEX }],
+  levels: [{ byteLength, byteOffset: 0, height: TEX, width: TEX }],
   mipLevels: 1,
   supercompression: 'None',
   width: TEX,
-};
+});
 const root = createDisplayContainer();
 root.scaleX = scale;
 root.scaleY = scale;
 const bitmap = createBitmap();
-bitmap.data.image = createCompressedImageResource({ container, payload: BC1_BLUE_BLOCK });
+bitmap.data.image = createCompressedImageResource({ container: container('bc1', 8), payload: BC1_BLUE_BLOCK });
 bitmap.data.smoothing = false;
 bitmap.x = BITMAP_X;
 bitmap.y = BITMAP_Y;
@@ -75,18 +84,37 @@ bitmap.scaleX = SCALE;
 bitmap.scaleY = SCALE;
 invalidateNodeLocalTransform(bitmap);
 addNodeChild(root, bitmap);
+
+const alphaBitmap = createBitmap();
+alphaBitmap.data.image = createCompressedImageResource({
+  container: container('bc3', 16),
+  payload: BC3_HALF_RED_BLOCK,
+});
+alphaBitmap.data.smoothing = false;
+alphaBitmap.x = ALPHA_BITMAP_X;
+alphaBitmap.y = BITMAP_Y;
+alphaBitmap.scaleX = SCALE;
+alphaBitmap.scaleY = SCALE;
+invalidateNodeLocalTransform(alphaBitmap);
+addNodeChild(root, alphaBitmap);
 render(root);
 
 export function assertRender(frame: Readonly<Surface>): void {
   const s = frame.width / width;
   const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
   const center = at(BITMAP_X + (TEX * SCALE) / 2, BITMAP_Y + (TEX * SCALE) / 2);
+  const alphaCenter = at(ALPHA_BITMAP_X + (TEX * SCALE) / 2, BITMAP_Y + (TEX * SCALE) / 2);
   const outside = at(BITMAP_X - 60, BITMAP_Y - 60);
   if (!isBlue(center)) {
     throw new Error(`[compressed-texture] bitmap center not blue, got #${hex(center)}`);
   }
   if (!isBackground(outside)) {
     throw new Error(`[compressed-texture] area outside bitmap not background, got #${hex(outside)}`);
+  }
+  if (!isHalfRed(alphaCenter)) {
+    throw new Error(
+      `[compressed-texture] native straight-alpha BC3 did not premultiply before blending, got #${hex(alphaCenter)}`,
+    );
   }
 }
 
@@ -96,6 +124,11 @@ function isBlue(rgb: number): boolean {
 
 function isBackground(rgb: number): boolean {
   return ((rgb >> 16) & 255) < 60 && ((rgb >> 8) & 255) < 60 && (rgb & 255) < 60;
+}
+
+function isHalfRed(rgb: number): boolean {
+  const red = (rgb >> 16) & 255;
+  return red >= 100 && red <= 160 && ((rgb >> 8) & 255) < 30 && (rgb & 255) < 30;
 }
 
 function hex(rgb: number): string {

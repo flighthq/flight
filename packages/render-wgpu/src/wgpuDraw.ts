@@ -42,6 +42,7 @@ export function bindWgpuImageResourceTexture(
     cached.texture = built.texture;
     cached.view = built.view;
     cached.bindGroup = built.bindGroup;
+    cached.straightAlpha = built.straightAlpha;
     cached.version = image.version;
     return cached;
   }
@@ -285,6 +286,7 @@ export function drawWgpuQuad(
     v0,
     u1,
     v1,
+    textureEntry.straightAlpha === true,
   );
   submitWgpuQuadDraw(state, uniformOffset, textureEntry.bindGroup);
 }
@@ -318,6 +320,7 @@ export function drawWgpuQuadWithTransform(
     v0,
     u1,
     v1,
+    textureEntry.straightAlpha === true,
   );
   submitWgpuQuadDraw(state, uniformOffset, textureEntry.bindGroup);
 }

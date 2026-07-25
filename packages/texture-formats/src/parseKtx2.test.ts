@@ -113,6 +113,48 @@ describe('parseKtx2', () => {
     expect(container!.levels.map((l) => l.byteOffset)).toEqual([176, 432, 496, 512]);
   });
 
+  it('normalizes a multi-mip cubemap from KTX mip-major order to face-major canonical order', () => {
+    const container = parseKtx2(
+      buildKtx2({
+        faceCount: 6,
+        height: 8,
+        levels: [
+          { byteLength: 1536, byteOffset: 128 },
+          { byteLength: 384, byteOffset: 1664 },
+        ],
+        vkFormat: 37,
+        width: 8,
+      }),
+    )!;
+    expect(container.levels.slice(0, 4)).toEqual([
+      { byteLength: 256, byteOffset: 128, height: 8, width: 8 },
+      { byteLength: 64, byteOffset: 1664, height: 4, width: 4 },
+      { byteLength: 256, byteOffset: 384, height: 8, width: 8 },
+      { byteLength: 64, byteOffset: 1728, height: 4, width: 4 },
+    ]);
+  });
+
+  it('normalizes a multi-mip array from KTX mip-major order to layer-major canonical order', () => {
+    const container = parseKtx2(
+      buildKtx2({
+        height: 8,
+        layerCount: 2,
+        levels: [
+          { byteLength: 512, byteOffset: 128 },
+          { byteLength: 128, byteOffset: 640 },
+        ],
+        vkFormat: 37,
+        width: 8,
+      }),
+    )!;
+    expect(container.levels).toEqual([
+      { byteLength: 256, byteOffset: 128, height: 8, width: 8 },
+      { byteLength: 64, byteOffset: 640, height: 4, width: 4 },
+      { byteLength: 256, byteOffset: 384, height: 8, width: 8 },
+      { byteLength: 64, byteOffset: 704, height: 4, width: 4 },
+    ]);
+  });
+
   it('reports a BasisLZ-supercompressed level as one compressed blob (etc1s)', () => {
     const container = parseKtx2(
       buildKtx2({ vkFormat: 0, width: 4, height: 4, scheme: 1, levels: [{ byteLength: 48, byteOffset: 104 }] }),

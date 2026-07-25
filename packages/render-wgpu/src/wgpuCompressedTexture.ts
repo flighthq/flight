@@ -147,7 +147,15 @@ function uploadWgpuCompressedImageResource(
   if (compressed === null) return null;
   const container = compressed.container;
   if (container.depth !== 1 || container.faces !== 1 || container.layers !== 1) return null;
-  const texture = uploadWgpuCompressedTextureContainer(state, container, compressed.payload, decode ?? undefined);
+  const native = getWgpuCompressedTextureFormat(state.device, container.format) !== null;
+  const fallback =
+    decode === null
+      ? undefined
+      : (format: TextureContainerFormat, width: number, height: number, data: Readonly<Uint8Array>) => {
+          const rgba = decode(format, width, height, data);
+          return rgba !== null && image.alphaType === 'straight' ? premultiplyRgba8(rgba) : rgba;
+        };
+  const texture = uploadWgpuCompressedTextureContainer(state, container, compressed.payload, fallback);
   if (texture === null) return null;
   const view = texture.createView();
   const runtime = getWgpuRenderStateRuntime(state);
@@ -159,7 +167,19 @@ function uploadWgpuCompressedImageResource(
       { binding: 1, resource: sampler },
     ],
   });
-  return { bindGroup, texture, view };
+  return { bindGroup, straightAlpha: native && image.alphaType === 'straight', texture, view };
+}
+
+function premultiplyRgba8(data: Readonly<Uint8ClampedArray<ArrayBuffer>>): Uint8ClampedArray<ArrayBuffer> {
+  const out = new Uint8ClampedArray(data.length);
+  for (let i = 0; i < data.length; i += 4) {
+    const alpha = data[i + 3];
+    out[i] = (data[i] * alpha) / 255;
+    out[i + 1] = (data[i + 1] * alpha) / 255;
+    out[i + 2] = (data[i + 2] * alpha) / 255;
+    out[i + 3] = alpha;
+  }
+  return out;
 }
 
 function getCompressedFormatInfo(format: TextureContainerFormat): WgpuCompressedFormatInfo | null {

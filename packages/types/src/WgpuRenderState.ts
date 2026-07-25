@@ -323,6 +323,9 @@ export interface WgpuSpriteBatchBufferSlot {
 // WgpuRenderState runtime's textureCache.
 export interface WgpuTextureEntry {
   bindGroup: GPUBindGroup;
+  // True when sampled RGB is straight-alpha and the 2D display shader must premultiply it before
+  // applying color transforms/blending. Native compressed blocks cannot be premultiplied in place.
+  straightAlpha?: boolean;
   texture: GPUTexture;
   view: GPUTextureView;
 }
