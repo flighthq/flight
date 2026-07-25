@@ -395,6 +395,10 @@ function uploadWgpuImageResourceEntry(
 ): WgpuTextureEntry {
   const runtime = getWgpuRenderStateRuntime(state);
   const { device } = state;
+  if (image.source === null && image.data === null && image.compressed !== null) {
+    const compressed = runtime.compressedTextureUpload?.(state, image, runtime.compressedTextureDecoder ?? null);
+    if (compressed != null) return compressed;
+  }
   const width = image.width || 1;
   const height = image.height || 1;
   const mipLevelCount = generateMips ? getWgpuMipLevelCount(width, height) : 1;
@@ -410,7 +414,7 @@ function uploadWgpuImageResourceEntry(
       { texture, premultipliedAlpha: true },
       [width, height],
     );
-  } else {
+  } else if (image.data !== null) {
     const data = image.alphaType === 'straight' ? premultiplyStraightRgba8(image.data!) : image.data!;
     device.queue.writeTexture({ texture }, data, { bytesPerRow: width * 4, rowsPerImage: height }, [width, height, 1]);
   }

@@ -7,6 +7,8 @@ import type { Matrix } from './Matrix';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
 import type { VideoTexture } from './VideoTexture';
+import type { WgpuCompressedTextureDecoder } from './WgpuCompressedTextureDecoder';
+import type { WgpuCompressedTextureUploader } from './WgpuCompressedTextureUploader';
 import type { WgpuMaterialRenderer } from './WgpuMaterialRenderer';
 import type { WgpuMeshMaterialRenderer } from './WgpuMeshMaterialRenderer';
 
@@ -91,6 +93,11 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // a data-only generated Surface. Keyed by the resource entity so a data-only Surface caches too, with the
   // uploaded `version` tracked so bindWgpuImageResourceTexture re-uploads when the pixels change.
   imageResourceTextureCache: WeakMap<ImageResource, WgpuImageResourceTextureEntry>;
+  // Optional block-compressed upload and CPU-decode seams. The uploader is installed explicitly so
+  // ordinary bitmap bundles do not retain the format table; the decoder is consulted only when the
+  // device lacks the container's native family.
+  compressedTextureDecoder?: WgpuCompressedTextureDecoder | null;
+  compressedTextureUpload?: WgpuCompressedTextureUploader | null;
   // Dynamic VideoTexture cache. The GPU texture persists across frames; uploadedFrameId gates the
   // expensive external-image copy, while width/height detect mid-stream resolution changes.
   videoTextureCache?: WeakMap<VideoTexture, WgpuVideoTextureEntry>;

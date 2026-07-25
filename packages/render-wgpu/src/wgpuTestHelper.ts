@@ -95,6 +95,7 @@ function makePipelineLayout(): GPUPipelineLayout {
 
 function makeDevice(): GPUDevice {
   return {
+    features: new Set(),
     limits: { minUniformBufferOffsetAlignment: 256 },
     createBindGroup: () => makeBindGroup(),
     createBindGroupLayout: () => makeBindGroupLayout(),
@@ -119,6 +120,7 @@ function makeAdapter(): GPUAdapter {
     // A real GPUAdapter always exposes `.limits`; the forward-lit pipeline's device request reads
     // maxBindGroups off it. Report 8 (the common desktop cap) so the 5-group request path is exercised.
     limits: { maxBindGroups: 8, minUniformBufferOffsetAlignment: 256 },
+    features: new Set(),
     requestDevice: () => Promise.resolve(makeDevice()),
   } as unknown as GPUAdapter;
 }

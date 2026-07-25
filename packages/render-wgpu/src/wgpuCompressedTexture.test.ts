@@ -1,0 +1,153 @@
+import type { ImageResource, TextureContainer, WgpuCompressedTextureSupport } from '@flighthq/types';
+
+import {
+  detectWgpuCompressedTextureSupport,
+  getWgpuCompressedTextureFormat,
+  hasWgpuCompressedTextureFormat,
+  registerWgpuCompressedTextureDecoder,
+  registerWgpuCompressedTextureUpload,
+  uploadWgpuCompressedTextureContainer,
+} from './wgpuCompressedTexture';
+import { bindWgpuImageResourceTexture } from './wgpuDraw';
+import { getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
+
+beforeAll(() => installWgpuMock());
+
+function container(overrides: Partial<TextureContainer> = {}): TextureContainer {
+  return {
+    depth: 1,
+    faces: 1,
+    format: 'bc1',
+    height: 4,
+    layers: 1,
+    levels: [{ byteLength: 8, byteOffset: 0, height: 4, width: 4 }],
+    mipLevels: 1,
+    supercompression: 'None',
+    width: 4,
+    ...overrides,
+  };
+}
+
+describe('detectWgpuCompressedTextureSupport', () => {
+  it('reads the three WebGPU compression features', async () => {
+    const state = await createWgpuRenderStateForTest();
+    (state.device.features as Set<GPUFeatureName>).add('texture-compression-bc');
+    expect(detectWgpuCompressedTextureSupport(state.device)).toEqual({ astc: false, bc: true, etc2: false });
+  });
+});
+
+describe('getWgpuCompressedTextureFormat', () => {
+  it('maps a format only when its family is enabled', async () => {
+    const state = await createWgpuRenderStateForTest();
+    expect(getWgpuCompressedTextureFormat(state.device, 'bc1')).toBeNull();
+    (state.device.features as Set<GPUFeatureName>).add('texture-compression-bc');
+    expect(getWgpuCompressedTextureFormat(state.device, 'bc1')).toBe('bc1-rgba-unorm');
+    expect(getWgpuCompressedTextureFormat(state.device, 'rgba8unorm')).toBeNull();
+  });
+});
+
+describe('hasWgpuCompressedTextureFormat', () => {
+  it('maps formats to the detected family and rejects PVRTC', () => {
+    const support: WgpuCompressedTextureSupport = { astc: true, bc: false, etc2: true };
+    expect(hasWgpuCompressedTextureFormat(support, 'astc8x8')).toBe(true);
+    expect(hasWgpuCompressedTextureFormat(support, 'etc2Rgba')).toBe(true);
+    expect(hasWgpuCompressedTextureFormat(support, 'bc7')).toBe(false);
+    expect(hasWgpuCompressedTextureFormat(support, 'pvrtc4bppRgba')).toBe(false);
+  });
+});
+
+describe('registerWgpuCompressedTextureDecoder', () => {
+  it('installs and clears the fallback decoder', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const decoder = vi.fn(() => new Uint8ClampedArray(64));
+    registerWgpuCompressedTextureDecoder(state, decoder);
+    expect(getWgpuRenderStateRuntime(state).compressedTextureDecoder).toBe(decoder);
+    registerWgpuCompressedTextureDecoder(state, null);
+    expect(getWgpuRenderStateRuntime(state).compressedTextureDecoder).toBeNull();
+  });
+});
+
+describe('registerWgpuCompressedTextureUpload', () => {
+  it('installs and clears the ImageResource upload seam', async () => {
+    const state = await createWgpuRenderStateForTest();
+    registerWgpuCompressedTextureUpload(state);
+    expect(getWgpuRenderStateRuntime(state).compressedTextureUpload).toBeTypeOf('function');
+    registerWgpuCompressedTextureUpload(state, null);
+    expect(getWgpuRenderStateRuntime(state).compressedTextureUpload).toBeNull();
+  });
+
+  it('lets the normal image binder consume a compressed-only resource', async () => {
+    const state = await createWgpuRenderStateForTest();
+    registerWgpuCompressedTextureUpload(state);
+    registerWgpuCompressedTextureDecoder(state, (_format, width, height) => {
+      return new Uint8ClampedArray(width * height * 4);
+    });
+    const image = {
+      alphaType: 'straight',
+      compressed: { container: container(), payload: new Uint8Array(8) },
+      data: null,
+      height: 4,
+      source: null,
+      version: 1,
+      width: 4,
+    } as unknown as ImageResource;
+    const writeTexture = vi.spyOn(state.device.queue, 'writeTexture');
+    expect(bindWgpuImageResourceTexture(state, image).view).toBeDefined();
+    expect(writeTexture).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('uploadWgpuCompressedTextureContainer', () => {
+  it('uploads native blocks with their block-row layout', async () => {
+    const state = await createWgpuRenderStateForTest();
+    (state.device.features as Set<GPUFeatureName>).add('texture-compression-bc');
+    const createTexture = vi.spyOn(state.device, 'createTexture');
+    const writeTexture = vi.spyOn(state.device.queue, 'writeTexture');
+    expect(uploadWgpuCompressedTextureContainer(state, container(), new Uint8Array(8))).not.toBeNull();
+    expect(createTexture).toHaveBeenCalledWith(expect.objectContaining({ format: 'bc1-rgba-unorm', mipLevelCount: 1 }));
+    expect(writeTexture).toHaveBeenCalledWith(
+      expect.objectContaining({ mipLevel: 0 }),
+      expect.any(Uint8Array),
+      { bytesPerRow: 8, rowsPerImage: 1 },
+      [4, 4, 1],
+    );
+  });
+
+  it('decodes plain 2D levels to RGBA when native support is absent', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const decoder = vi.fn(() => new Uint8ClampedArray(64));
+    const createTexture = vi.spyOn(state.device, 'createTexture');
+    expect(uploadWgpuCompressedTextureContainer(state, container(), new Uint8Array(8), decoder)).not.toBeNull();
+    expect(decoder).toHaveBeenCalledWith('bc1', 4, 4, expect.any(Uint8Array));
+    expect(createTexture).toHaveBeenCalledWith(expect.objectContaining({ format: 'rgba8unorm' }));
+  });
+
+  it('supports native cubemap slices and rejects their decoder fallback', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const levels = Array.from({ length: 6 }, (_, face) => ({
+      byteLength: 8,
+      byteOffset: face * 8,
+      height: 4,
+      width: 4,
+    }));
+    const cube = container({ faces: 6, levels });
+    expect(
+      uploadWgpuCompressedTextureContainer(state, cube, new Uint8Array(48), () => new Uint8ClampedArray(64)),
+    ).toBeNull();
+    (state.device.features as Set<GPUFeatureName>).add('texture-compression-bc');
+    const writeTexture = vi.spyOn(state.device.queue, 'writeTexture');
+    expect(uploadWgpuCompressedTextureContainer(state, cube, new Uint8Array(48))).not.toBeNull();
+    expect(writeTexture).toHaveBeenCalledTimes(6);
+    expect(writeTexture.mock.calls[5][0]).toEqual(expect.objectContaining({ origin: [0, 0, 5] }));
+  });
+
+  it('rejects supercompressed, volume, cubemap-array, and unavailable payloads', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const payload = new Uint8Array(8);
+    expect(uploadWgpuCompressedTextureContainer(state, container({ supercompression: 'Zstd' }), payload)).toBeNull();
+    expect(uploadWgpuCompressedTextureContainer(state, container({ depth: 2 }), payload)).toBeNull();
+    expect(uploadWgpuCompressedTextureContainer(state, container({ faces: 6, layers: 2 }), payload)).toBeNull();
+    expect(uploadWgpuCompressedTextureContainer(state, container(), payload)).toBeNull();
+  });
+});
