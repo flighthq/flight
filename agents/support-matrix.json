@@ -74,6 +74,15 @@
           }
         },
         {
+          "scene": "bitmap-transform-rotation",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": false,
+            "webgpu": false
+          }
+        },
+        {
           "scene": "bitmap-transparent-compositing",
           "backends": {
             "canvas": true,
@@ -95,6 +104,21 @@
             "dom": false,
             "webgl": true,
             "webgpu": true
+          }
+        }
+      ]
+    },
+    {
+      "key": "camera2d",
+      "label": "Camera2d",
+      "scenes": [
+        {
+          "scene": "camera2d-viewport",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": false,
+            "webgpu": false
           }
         }
       ]
@@ -268,6 +292,15 @@
             "canvas": true,
             "dom": false,
             "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-composite",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": false,
             "webgpu": true
           }
         },
@@ -643,7 +676,7 @@
             "canvas": false,
             "dom": false,
             "webgl": true,
-            "webgpu": false
+            "webgpu": true
           }
         },
         {
@@ -652,7 +685,7 @@
             "canvas": false,
             "dom": false,
             "webgl": true,
-            "webgpu": false
+            "webgpu": true
           }
         }
       ]
@@ -667,7 +700,7 @@
             "canvas": false,
             "dom": false,
             "webgl": true,
-            "webgpu": false
+            "webgpu": true
           }
         },
         {
@@ -676,7 +709,7 @@
             "canvas": false,
             "dom": false,
             "webgl": true,
-            "webgpu": false
+            "webgpu": true
           }
         },
         {
@@ -685,7 +718,7 @@
             "canvas": false,
             "dom": false,
             "webgl": true,
-            "webgpu": false
+            "webgpu": true
           }
         },
         {
@@ -694,7 +727,7 @@
             "canvas": false,
             "dom": false,
             "webgl": true,
-            "webgpu": false
+            "webgpu": true
           }
         }
       ]
@@ -902,6 +935,15 @@
           }
         },
         {
+          "scene": "material-video-map",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
           "scene": "material-wireframe",
           "backends": {
             "canvas": false,
@@ -1013,6 +1055,15 @@
           }
         },
         {
+          "scene": "particle-emitter-3d",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": false,
+            "webgpu": true
+          }
+        },
+        {
           "scene": "particle-emitter-color",
           "backends": {
             "canvas": false,
@@ -1028,6 +1079,48 @@
             "dom": false,
             "webgl": true,
             "webgpu": true
+          }
+        }
+      ]
+    },
+    {
+      "key": "path",
+      "label": "Path",
+      "scenes": [
+        {
+          "scene": "path-boolean-difference",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": false,
+            "webgpu": false
+          }
+        },
+        {
+          "scene": "path-boolean-intersection",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": false,
+            "webgpu": false
+          }
+        },
+        {
+          "scene": "path-boolean-union",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": false,
+            "webgpu": false
+          }
+        },
+        {
+          "scene": "path-boolean-xor",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": false,
+            "webgpu": false
           }
         }
       ]
@@ -1132,7 +1225,7 @@
             "canvas": true,
             "dom": true,
             "webgl": true,
-            "webgpu": false
+            "webgpu": true
           }
         },
         {
@@ -1179,6 +1272,39 @@
             "webgl": true,
             "webgpu": true
           }
+        },
+        {
+          "scene": "node-z-order",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": false,
+            "webgpu": false
+          }
+        }
+      ]
+    },
+    {
+      "key": "shading",
+      "label": "Shading",
+      "scenes": [
+        {
+          "scene": "shading-globe",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "shading-normal-map",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": false,
+            "webgpu": true
+          }
         }
       ]
     },
@@ -1220,12 +1346,39 @@
       "label": "Shapes / Vector",
       "scenes": [
         {
+          "scene": "shape-arc-fill",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": false,
+            "webgpu": false
+          }
+        },
+        {
+          "scene": "shape-circle-fill",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": false,
+            "webgpu": false
+          }
+        },
+        {
           "scene": "shape-curves",
           "backends": {
             "canvas": true,
             "dom": true,
             "webgl": true,
             "webgpu": true
+          }
+        },
+        {
+          "scene": "shape-ellipse-fill",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": false,
+            "webgpu": false
           }
         },
         {
@@ -1262,6 +1415,33 @@
             "dom": true,
             "webgl": true,
             "webgpu": true
+          }
+        },
+        {
+          "scene": "shape-fill-stroke-combined",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": false,
+            "webgpu": false
+          }
+        },
+        {
+          "scene": "shape-polygon-fill",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": false,
+            "webgpu": false
+          }
+        },
+        {
+          "scene": "shape-round-rect",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": false,
+            "webgpu": false
           }
         },
         {
@@ -1304,6 +1484,21 @@
             "dom": false,
             "webgl": true,
             "webgpu": true
+          }
+        }
+      ]
+    },
+    {
+      "key": "spritesheet",
+      "label": "Spritesheet",
+      "scenes": [
+        {
+          "scene": "spritesheet-frame",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": false,
+            "webgpu": false
           }
         }
       ]

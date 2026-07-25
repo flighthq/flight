@@ -26,6 +26,7 @@ const FRAME_SIZE = 192;
 const FRAME_COUNT = 12;
 const STRIP_WIDTH = FRAME_SIZE * FRAME_COUNT;
 const DISPLAY_SCALE = 0.5;
+const captureMode = (window as typeof window & { __flightCapture?: boolean }).__flightCapture === true;
 
 const root = createDisplayObject();
 root.scaleX = scale;
@@ -185,7 +186,7 @@ applyFrameToBitmap(player3, spritesheet, bitmap3);
 let lastTime = performance.now();
 
 function enterFrame(now: number): void {
-  const deltaTime = now - lastTime;
+  const deltaTime = captureMode ? 1000 / 60 : now - lastTime;
   lastTime = now;
 
   updateSpritesheetPlayer(player1, deltaTime);
@@ -197,7 +198,7 @@ function enterFrame(now: number): void {
   applyFrameToBitmap(player3, spritesheet, bitmap3);
 
   render(root as DisplayObject);
-  requestAnimationFrame(enterFrame);
+  if (!captureMode) requestAnimationFrame(enterFrame);
 }
 
 requestAnimationFrame(enterFrame);
