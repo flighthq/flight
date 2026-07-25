@@ -213,6 +213,88 @@ describe('SVG conformance matrix', () => {
     expect(getNodeChildAt(root, 0)?.clip?.rect).toMatchObject({ height: 10, width: 10, x: 10, y: 0 });
   });
 
+  it('treats a resolved display-none clip definition as an empty clip', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const root = createDisplayObjectFromSvgDocument(
+      `
+        <svg>
+          <defs><clipPath id="empty"><rect width="10" height="10" display="none"/></clipPath></defs>
+          <rect width="20" height="20" clip-path="url(#empty)"/>
+        </svg>
+      `,
+      diagnostics,
+    );
+
+    expect(getNodeChildAt(root, 0)?.clip?.rect).toMatchObject({ height: 0, width: 0 });
+    expect(diagnostics.map((diagnostic) => diagnostic.kind)).not.toContain('svg.unresolved-clip-reference');
+  });
+
+  it('keeps an empty hidden mask as a hard clip and reports the recovery', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const root = createDisplayObjectFromSvgDocument(
+      `
+        <svg>
+          <defs><mask id="empty"><rect width="10" height="10" visibility="hidden"/></mask></defs>
+          <rect width="20" height="20" mask="url(#empty)"/>
+        </svg>
+      `,
+      diagnostics,
+    );
+
+    expect(getNodeChildAt(root, 0)?.clip?.rect).toMatchObject({ height: 0, width: 0 });
+    expect(diagnostics.map((diagnostic) => diagnostic.kind)).toContain('svg.mask-as-hard-clip');
+    expect(diagnostics.map((diagnostic) => diagnostic.kind)).not.toContain('svg.unresolved-clip-reference');
+  });
+
+  it('diagnoses unsupported clip text while preserving empty-clip semantics', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const root = createDisplayObjectFromSvgDocument(
+      `
+        <svg>
+          <defs><clipPath id="text"><text>Clip</text></clipPath></defs>
+          <rect width="20" height="20" clip-path="url(#text)"/>
+        </svg>
+      `,
+      diagnostics,
+    );
+
+    expect(getNodeChildAt(root, 0)?.clip?.rect).toMatchObject({ height: 0, width: 0 });
+    expect(diagnostics.map((diagnostic) => diagnostic.kind)).toContain('svg.unsupported-clip-text');
+    expect(diagnostics.map((diagnostic) => diagnostic.kind)).not.toContain('svg.unresolved-clip-reference');
+  });
+
+  it('intersects clip-path references on clip definitions and their children', () => {
+    const root = createDisplayObjectFromSvgDocument(`
+      <svg>
+        <defs>
+          <clipPath id="narrow"><rect width="10" height="20"/></clipPath>
+          <clipPath id="definition" clip-path="url(#narrow)"><rect width="20" height="20"/></clipPath>
+          <clipPath id="child"><rect width="20" height="20" clip-path="url(#narrow)"/></clipPath>
+        </defs>
+        <rect width="30" height="30" clip-path="url(#definition)"/>
+        <rect width="30" height="30" clip-path="url(#child)"/>
+      </svg>
+    `);
+
+    expect(getNodeChildAt(root, 0)?.clip?.rect.width).toBe(10);
+    expect(getNodeChildAt(root, 1)?.clip?.rect.width).toBe(10);
+  });
+
+  it('inherits clip-rule from a clip definition ancestor, not its referencing target', () => {
+    const root = createDisplayObjectFromSvgDocument(`
+      <svg>
+        <defs>
+          <g clip-rule="evenodd">
+            <clipPath id="ancestorRule"><path d="M0 0 H20 V20 H0 Z M5 5 H15 V15 H5 Z"/></clipPath>
+          </g>
+        </defs>
+        <rect clip-rule="nonzero" width="20" height="20" clip-path="url(#ancestorRule)"/>
+      </svg>
+    `);
+
+    expect(getNodeChildAt(root, 0)?.clip?.winding).toBe('evenOdd');
+  });
+
   it('keeps fill and clip winding properties independently inherited', () => {
     const root = createDisplayObjectFromSvgDocument(`
       <svg>
@@ -307,6 +389,16 @@ describe('SVG conformance matrix', () => {
     expect(visibilityGroup.visible).toBe(true);
     expect(getNodeChildAt(visibilityGroup, 0)?.visible).toBe(false);
     expect(getNodeChildAt(visibilityGroup, 1)?.visible).toBe(true);
+  });
+
+  it('keeps display at its initial value on descendants of a display-none ancestor', () => {
+    const root = createDisplayObjectFromSvgDocument(`
+      <svg><g display="none"><rect width="10" height="10"/></g></svg>
+    `);
+    const group = getNodeChildAt(root, 0)!;
+
+    expect(group.visible).toBe(false);
+    expect(getNodeChildAt(group, 0)?.visible).toBe(true);
   });
 
   it.each([
