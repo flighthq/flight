@@ -11,6 +11,14 @@ by: null
 
 <!-- newest entry on top -->
 
+## 2026-07-25 — clip-level animation events
+
+Animation clips now own validated, sorted `{ time, name, payload }` event entities. Players report
+crossed markers through an opt-in `onEvent` signal without allocating in the advance loop. Forward,
+reverse, Repeat, finite-repeat exhaustion, and multi-bounce PingPong traversal use explicit half-open
+crossing rules; repeat-entry markers at time 0/duration fire once per cycle and bounce boundaries do not
+double-fire. Timeline frame scripts remain unrelated.
+
 ## 2026-07-25 — reusable root-motion extraction
 
 Added `AnimationRootMotionExtractor` for one explicit clip channel. It extracts additive vector or

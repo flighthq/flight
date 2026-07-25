@@ -1,7 +1,7 @@
 import { connectSignal } from '@flighthq/signals';
 import { EntityRuntimeKey } from '@flighthq/types';
 
-import { createAnimationClip } from './animationClip';
+import { createAnimationClip, createAnimationClipEvent } from './animationClip';
 import {
   advanceAnimationPlayer,
   cloneAnimationPlayer,
@@ -15,6 +15,17 @@ import {
 
 function player(duration: number, opts?: Parameters<typeof createAnimationPlayer>[1]) {
   return createAnimationPlayer(createAnimationClip([], duration), opts);
+}
+
+function eventPlayer(duration: number, times: readonly number[], opts?: Parameters<typeof createAnimationPlayer>[1]) {
+  return createAnimationPlayer(
+    createAnimationClip(
+      [],
+      duration,
+      times.map((time) => createAnimationClipEvent(time, String(time), time)),
+    ),
+    opts,
+  );
 }
 
 describe('advanceAnimationPlayer', () => {
@@ -120,6 +131,42 @@ describe('advanceAnimationPlayer', () => {
     advanceAnimationPlayer(p, 5);
     expect(finished).toBe(1);
   });
+
+  it('emits crossed clip events in forward order', () => {
+    const p = eventPlayer(10, [1, 3, 7], { loop: false });
+    enableAnimationPlayerSignals(p);
+    const crossed: number[] = [];
+    connectSignal(p.onEvent!, (event) => crossed.push(event.payload as number));
+    advanceAnimationPlayer(p, 4);
+    expect(crossed).toEqual([1, 3]);
+  });
+
+  it('emits time-zero and end markers once per crossed Repeat boundary', () => {
+    const p = eventPlayer(10, [0, 2, 10], { time: 9 });
+    enableAnimationPlayerSignals(p);
+    const crossed: number[] = [];
+    connectSignal(p.onEvent!, (event) => crossed.push(event.time));
+    advanceAnimationPlayer(p, 13);
+    expect(crossed).toEqual([10, 0, 2, 10, 0, 2]);
+  });
+
+  it('emits reverse crossings and loop-entry markers in reverse traversal order', () => {
+    const p = eventPlayer(10, [0, 2, 8, 10], { speed: -1, time: 1 });
+    enableAnimationPlayerSignals(p);
+    const crossed: number[] = [];
+    connectSignal(p.onEvent!, (event) => crossed.push(event.time));
+    advanceAnimationPlayer(p, 4);
+    expect(crossed).toEqual([0, 10, 8]);
+  });
+
+  it('does not double-fire a PingPong boundary marker on reflection', () => {
+    const p = eventPlayer(10, [8, 10], { loopMode: 'PingPong', time: 9 });
+    enableAnimationPlayerSignals(p);
+    const crossed: number[] = [];
+    connectSignal(p.onEvent!, (event) => crossed.push(event.time));
+    advanceAnimationPlayer(p, 3);
+    expect(crossed).toEqual([10, 8]);
+  });
 });
 
 describe('cloneAnimationPlayer', () => {
@@ -134,6 +181,7 @@ describe('cloneAnimationPlayer', () => {
     expect(clone.repeatCount).toBe(3);
     expect(clone.speed).toBe(2);
     expect(clone.time).toBe(4);
+    expect(clone.onEvent).toBeNull();
     expect(clone.onFinished).toBeNull();
     expect(clone.onLooped).toBeNull();
     expect(EntityRuntimeKey in clone).toBe(true);
@@ -156,6 +204,7 @@ describe('createAnimationPlayer', () => {
     expect(p.repeatCount).toBe(-1);
     expect(p.onFinished).toBeNull();
     expect(p.onLooped).toBeNull();
+    expect(p.onEvent).toBeNull();
   });
 });
 
@@ -165,6 +214,7 @@ describe('enableAnimationPlayerSignals', () => {
     enableAnimationPlayerSignals(p);
     expect(p.onFinished).not.toBeNull();
     expect(p.onLooped).not.toBeNull();
+    expect(p.onEvent).not.toBeNull();
   });
 
   it('is idempotent (keeps the existing signal instances)', () => {
@@ -172,9 +222,11 @@ describe('enableAnimationPlayerSignals', () => {
     enableAnimationPlayerSignals(p);
     const finished = p.onFinished;
     const looped = p.onLooped;
+    const event = p.onEvent;
     enableAnimationPlayerSignals(p);
     expect(p.onFinished).toBe(finished);
     expect(p.onLooped).toBe(looped);
+    expect(p.onEvent).toBe(event);
   });
 });
 
