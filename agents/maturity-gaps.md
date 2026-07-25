@@ -187,7 +187,7 @@ unsupported cases is largely unbuilt for the gaps that most need it.
 | Feature Lookup "gl, wgpu" for skeletal | GPU skinning spans the same five material families on both GPU backends. | gl, wgpu | RESOLVED |
 | Animated character culls/picks correctly | Skinned bounds stay bind-pose (AABB never recomputed); frustum cull + raycast test rest bounds → mis-cull/mis-pick | all | MAJOR |
 | >64-joint rig works | Both GPU backends use an RGBA32F data texture (`texelFetch` / `textureLoad`), so joint count is texture-dimension-bound rather than uniform-budget-bound. The WebGPU functional proof uses 80 joints. | gl, wgpu | RESOLVED |
-| Morph targets / blend trees / state machines / IK / DQS | Morph/blend-shape deformation works on gl/wgpu. The target-free animation core now provides normalized N-way override blending, ordered additive leaves, and named timed state transitions. IK / DQS / retargeting remain absent; skinning is LBS-only | gl/wgpu (morph); all (animation core) | RESOLVED (morph + blend/state) |
+| Morph targets / blend trees / state machines / masked layers / IK / DQS | Morph/blend-shape deformation works on gl/wgpu. The target-free animation core now provides normalized N-way override blending, ordered additive leaves, named timed state transitions, and ordered override/additive layer stacks with channel-index masks. IK / DQS / retargeting remain absent; skinning is LBS-only | gl/wgpu (morph); all (animation core) | RESOLVED (morph + blend/state/layers) |
 | >4 influences | Fixed 4; glTF reads only JOINTS_0/WEIGHTS_0, JOINTS_1 dropped (renormalized, silent) | all | MINOR |
 
 ### Resource Loading, Streaming & Lifecycle

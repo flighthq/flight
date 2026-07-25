@@ -28,6 +28,7 @@ export * from './AnimationBlendTree';
 export * from './AnimationClip';
 export * from './AnimationCrossfade';
 export * from './AnimationInterpolation';
+export * from './AnimationLayerStack';
 export * from './AnimationLoopMode';
 export * from './AnimationPlayer';
 export * from './AnimationSampleAccumulator';
