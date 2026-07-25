@@ -280,6 +280,27 @@ describe('SVG conformance matrix', () => {
     expect(getNodeChildAt(root, 1)?.clip?.rect.width).toBe(10);
   });
 
+  it('honestly skips a transformed objectBoundingBox nested clip intersection', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const root = createDisplayObjectFromSvgDocument(
+      `
+        <svg>
+          <defs>
+            <clipPath id="half" clipPathUnits="objectBoundingBox"><rect width=".5" height="1"/></clipPath>
+            <clipPath id="translated">
+              <rect width="10" height="10" transform="translate(10)" clip-path="url(#half)"/>
+            </clipPath>
+          </defs>
+          <rect width="30" height="20" clip-path="url(#translated)"/>
+        </svg>
+      `,
+      diagnostics,
+    );
+
+    expect(getNodeChildAt(root, 0)?.clip?.rect).toMatchObject({ height: 10, width: 10, x: 10, y: 0 });
+    expect(diagnostics.map((diagnostic) => diagnostic.kind)).toContain('svg.clip-nested-intersection-unsupported');
+  });
+
   it('inherits clip-rule from a clip definition ancestor, not its referencing target', () => {
     const root = createDisplayObjectFromSvgDocument(`
       <svg>

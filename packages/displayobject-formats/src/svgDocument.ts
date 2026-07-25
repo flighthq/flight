@@ -542,6 +542,16 @@ function intersectSvgClipReference(
     );
     return base;
   }
+  if (transform !== null && usesSvgObjectBoundingBoxUnits(referenced)) {
+    reportImportDiagnostic(
+      context.diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'svg.clip-nested-intersection-unsupported',
+      'intersectSvgClipReference',
+      { id, reason: 'transformed-object-bounding-box-target' },
+    );
+    return base;
+  }
   context.resolvingClips.add(id);
   const referencedRegion = createSvgClipRegion(referenced, base.rect, context);
   context.resolvingClips.delete(id);
