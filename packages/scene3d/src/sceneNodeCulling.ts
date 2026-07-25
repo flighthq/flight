@@ -33,11 +33,7 @@ export function buildScene3DFrustum(out: FrustumLike, viewProjection: Readonly<M
 // Design note: the integration point with `prepareScene3DRender` is caller-driven — the caller
 // builds the cull list here, then passes it to the render walk. Scene3D does not call render; the
 // render walk does not call scene. This keeps the dependency graph acyclic.
-export function cullNode3DByFrustum(
-  out: Node3D[],
-  root: Readonly<Node3D>,
-  frustum: Readonly<FrustumLike>,
-): Node3D[] {
+export function cullNode3DByFrustum(out: Node3D[], root: Readonly<Node3D>, frustum: Readonly<FrustumLike>): Node3D[] {
   _cullNode(out, root, frustum);
   return out;
 }

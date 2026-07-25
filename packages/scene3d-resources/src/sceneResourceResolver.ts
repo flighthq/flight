@@ -20,7 +20,9 @@ export function createBuiltInScene3DResourceResolver(
   return resolver;
 }
 
-export function createScene3DResourceResolver(options?: Readonly<Scene3DResourceResolverOptions>): Scene3DResourceResolver {
+export function createScene3DResourceResolver(
+  options?: Readonly<Scene3DResourceResolverOptions>,
+): Scene3DResourceResolver {
   // Streaming so passes can queue after the loader has started; dedupe off since each pending texture
   // is queued once under a unique auto-assigned key, and disabling it avoids an unbounded dedupe map.
   const loader = createResourceLoader({ dedupe: false, maxConcurrent: options?.maxConcurrent, streaming: true });

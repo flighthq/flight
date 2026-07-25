@@ -1165,48 +1165,6 @@
       ]
     },
     {
-      "key": "scene",
-      "label": "Scene",
-      "scenes": [
-        {
-          "scene": "scene-morph",
-          "backends": {
-            "canvas": false,
-            "dom": false,
-            "webgl": true,
-            "webgpu": true
-          }
-        },
-        {
-          "scene": "scene-skin-morph-compose",
-          "backends": {
-            "canvas": false,
-            "dom": false,
-            "webgl": true,
-            "webgpu": true
-          }
-        },
-        {
-          "scene": "scene-skinning",
-          "backends": {
-            "canvas": false,
-            "dom": false,
-            "webgl": true,
-            "webgpu": true
-          }
-        },
-        {
-          "scene": "scene-transparent",
-          "backends": {
-            "canvas": false,
-            "dom": false,
-            "webgl": false,
-            "webgpu": true
-          }
-        }
-      ]
-    },
-    {
       "key": "node",
       "label": "Scene Node",
       "scenes": [
@@ -1280,6 +1238,48 @@
             "dom": false,
             "webgl": false,
             "webgpu": false
+          }
+        }
+      ]
+    },
+    {
+      "key": "scene3d",
+      "label": "Scene3d",
+      "scenes": [
+        {
+          "scene": "scene3d-morph",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "scene3d-skin-morph-compose",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "scene3d-skinning",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "scene3d-transparent",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": false,
+            "webgpu": true
           }
         }
       ]

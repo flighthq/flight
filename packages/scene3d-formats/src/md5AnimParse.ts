@@ -1,7 +1,11 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
 import type { AnimationChannel, AnimationClip, ImportDiagnostic, Node3D } from '@flighthq/types';
-import { ImportDiagnosticSeverity, Scene3DAnimationPathRotation, Scene3DAnimationPathTranslation } from '@flighthq/types';
+import {
+  ImportDiagnosticSeverity,
+  Scene3DAnimationPathRotation,
+  Scene3DAnimationPathTranslation,
+} from '@flighthq/types';
 
 import { convertPositionsZUpToYUp, convertQuaternionsZUpToYUp } from './shared';
 

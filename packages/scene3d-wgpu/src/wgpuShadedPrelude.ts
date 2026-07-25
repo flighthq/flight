@@ -95,7 +95,10 @@ export function bindWgpuShadedSurface(
   const registry = getModifierRegistry(state);
   const plan = getCachedModifierPlan(state, material, registry);
   const byteLength = 48 + plan.uniformFloatCount * 4;
-  const stateBindings = getWgpuScene3DRuntime(state).shadedMaterialBindingCache as WeakMap<ShadedMaterial, ShadedBinding>;
+  const stateBindings = getWgpuScene3DRuntime(state).shadedMaterialBindingCache as WeakMap<
+    ShadedMaterial,
+    ShadedBinding
+  >;
   let binding = stateBindings.get(material);
   const sampler = getWgpuMaterialSampler(state, material.diffuseMap);
   if (

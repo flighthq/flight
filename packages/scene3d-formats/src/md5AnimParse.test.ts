@@ -1,7 +1,11 @@
 import { sampleAnimationTrack } from '@flighthq/animation';
 import { createNode3D } from '@flighthq/scene3d';
 import type { AnimationClip, ImportDiagnostic, Scene3DAnimationTarget, Node3D } from '@flighthq/types';
-import { ImportDiagnosticSeverity, Scene3DAnimationPathRotation, Scene3DAnimationPathTranslation } from '@flighthq/types';
+import {
+  ImportDiagnosticSeverity,
+  Scene3DAnimationPathRotation,
+  Scene3DAnimationPathTranslation,
+} from '@flighthq/types';
 
 import { parseMd5Anim } from './md5AnimParse';
 
