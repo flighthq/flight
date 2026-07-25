@@ -1,15 +1,18 @@
 import {
-  advanceAnimationStateMachine,
+  advanceAnimationLayerStack,
   createAnimationBlendTree,
   createAnimationBlendTreeInput,
+  createAnimationBlendTreeLayer,
   createAnimationChannel,
   createAnimationClip,
+  createAnimationLayerStack,
   createAnimationPlayer,
   createAnimationStateMachine,
+  createAnimationStateMachineLayer,
   createAnimationStateMachineState,
   createAnimationTrack,
   isAnimationStateMachineTransitioning,
-  sampleAnimationStateMachine,
+  sampleAnimationLayerStack,
   transitionAnimationStateMachine,
 } from '@flighthq/animation';
 import type { Shape, TextLabel } from '@flighthq/sdk';
@@ -85,9 +88,23 @@ const stateMachine = createAnimationStateMachine([
   createAnimationStateMachineState('idle', idleTree),
   createAnimationStateMachineState('locomotion', locomotionTree),
 ]);
+const accentTree = createAnimationBlendTree([
+  createAnimationBlendTreeInput(
+    createAnimationPlayer(
+      createAnimationClip([
+        createAnimationChannel(createAnimationTrack({ times, values: [0, -6, 0, -6, 0] }), bodyTarget),
+        createAnimationChannel(quaternionTrack([12, -12, 12, -12, 12]), rightLegTarget),
+      ]),
+    ),
+  ),
+]);
+const layers = createAnimationLayerStack([
+  createAnimationStateMachineLayer(stateMachine),
+  createAnimationBlendTreeLayer(accentTree, { additive: true, channelIndices: [0], weight: 0.5 }),
+]);
 transitionAnimationStateMachine(stateMachine, 'locomotion', 1.8, (t) => t * t * (3 - 2 * t));
 const captureWindow = window as typeof window & { __flightCapture?: boolean };
-if (captureWindow.__flightCapture) advanceAnimationStateMachine(stateMachine, 0.9);
+if (captureWindow.__flightCapture) advanceAnimationLayerStack(layers, 0.9);
 const sample = new Float32Array(4);
 
 let bodyOffset = 0;
@@ -95,7 +112,7 @@ let leftLegAngle = 0;
 let rightLegAngle = 0;
 
 function readPose(): void {
-  sampleAnimationStateMachine(sample, stateMachine, (value, channel) => {
+  sampleAnimationLayerStack(sample, layers, (value, channel) => {
     if (channel.targetRef === bodyTarget) bodyOffset = value[0];
     else {
       const angle = (2 * Math.atan2(value[2], value[3]) * 180) / Math.PI;
@@ -124,7 +141,7 @@ function label(text: string, x: number, y: number, size: number, color: number):
 }
 
 label('Animation State Machine', 24, 18, 26, 0xffffff);
-label('Idle -> N-way walk/run blend tree | target-matched quaternion pose', 24, 54, 14, 0x9aa9c7);
+label('Idle -> N-way locomotion | masked additive body layer', 24, 54, 14, 0x9aa9c7);
 label('IDLE', 86, 390, 14, 0x7086ad);
 label('BLENDED POSE', 330, 390, 14, 0x63e6be);
 label('WALK/RUN', 644, 390, 14, 0xf0a85b);
@@ -235,7 +252,7 @@ function updateFrame(): void {
   invalidateNodeLocalTransform(barFill);
   status.data.text = isAnimationStateMachineTransitioning(stateMachine)
     ? `Idle -> locomotion  ${(stateMachine.transitionWeight * 100).toFixed(0)}%`
-    : 'Locomotion | walk 70% + run 30%';
+    : 'Locomotion | walk/run + masked body accent';
   invalidateNodeAppearance(status);
 }
 
@@ -246,7 +263,7 @@ function enterFrame(): void {
   const now = performance.now();
   const deltaTime = Math.min(0.05, (now - lastTime) / 1000);
   lastTime = now;
-  advanceAnimationStateMachine(stateMachine, deltaTime);
+  advanceAnimationLayerStack(layers, deltaTime);
   readPose();
   updateFrame();
   render(root);
