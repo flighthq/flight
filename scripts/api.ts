@@ -6,6 +6,8 @@ import pc from 'picocolors';
 import type { FunctionDeclaration } from 'ts-morph';
 import { Node, Project } from 'ts-morph';
 
+import { matchesPackageName } from './select';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 const packagesDir = join(root, 'packages');
@@ -392,8 +394,9 @@ function normalizeQuery(value: string): string {
 }
 
 function matchPackage(pkg: ApiPackage, query: string): boolean {
-  const normalized = normalizeQuery(query);
-  return normalizeQuery(pkg.name).includes(normalized);
+  // Route package matching through the shared selector so api accepts the same tolerant forms as every other
+  // script — bare name, `@flighthq/<name>`, or a `packages/<name>` path — not just a raw name substring.
+  return matchesPackageName(pkg.name, query);
 }
 
 function matchFunction(fn: ApiFunction, query: string): boolean {

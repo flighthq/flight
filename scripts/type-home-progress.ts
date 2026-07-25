@@ -10,9 +10,12 @@ import { join } from 'node:path';
 
 import ts from 'typescript';
 
+import { getSelectors, selectPackages } from './select';
+
 const root = process.cwd();
 const packagesDir = join(root, 'packages');
 const gate = process.argv.includes('--gate');
+const selected = new Set(selectPackages(getSelectors()));
 
 function sourceFiles(dir: string): string[] {
   if (!existsSync(dir)) return [];
@@ -48,6 +51,7 @@ const perPackage: Array<{ pkg: string; count: number }> = [];
 let total = 0;
 for (const e of readdirSync(packagesDir, { withFileTypes: true })) {
   if (!e.isDirectory() || e.name === 'types' || e.name.startsWith('tool-')) continue; // tool-* tier exempt
+  if (!selected.has(e.name)) continue;
   let count = 0;
   for (const f of sourceFiles(join(packagesDir, e.name, 'src'))) count += exportedTypeNames(f).length;
   if (count > 0) {
