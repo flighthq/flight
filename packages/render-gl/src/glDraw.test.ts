@@ -220,6 +220,7 @@ describe('bindGlImageResourceTexture', () => {
     bindGlImageResourceTexture(state, image);
     expect(decode).toHaveBeenCalledWith('bc3', 4, 4, expect.any(Uint8Array));
     expect(gl.texImage2D).toHaveBeenCalled();
+    expect(getGlRenderStateRuntime(state).currentTextureStraightAlpha).toBe(true);
   });
 
   it('skips a compressed-only ImageResource when no compressed uploader is registered', () => {

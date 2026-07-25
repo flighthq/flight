@@ -20,7 +20,7 @@ struct Uniforms {
   matrix : mat3x3f,
   alpha : f32,
   hasColorTransform : u32,
-  _pad0 : f32,
+  straightTextureAlpha : u32,
   _pad1 : f32,
   colorMultiplier : vec4f,
   colorOffset : vec4f,
@@ -72,7 +72,10 @@ fn vs_main(
 
 @fragment
 fn fs_main(in : VertexOut) -> @location(0) vec4f {
-  let tex_color = textureSample(tex, smp, in.uv);
+  var tex_color = textureSample(tex, smp, in.uv);
+  if (uni.straightTextureAlpha != 0u) {
+    tex_color = vec4f(tex_color.rgb * tex_color.a, tex_color.a);
+  }
   let out_color = vec4f(tex_color.rgb * in.color.rgb, tex_color.a) * in.color.a;
   if (out_color.a <= 0.0) { discard; }
   return out_color;
@@ -294,7 +297,8 @@ export function drawWgpuParticleEmitter2D(state: WgpuRenderState, renderProxy: R
   uniformData[floatBase + 11] = 0;
   uniformData[floatBase + 12] = 1; // alpha = 1 (per-instance handles alpha)
   uniformDataU32[floatBase + 13] = 0;
-  for (let k = 14; k < 32; k++) uniformData[floatBase + k] = 0;
+  uniformDataU32[floatBase + 14] = textureEntry.straightAlpha === true ? 1 : 0;
+  for (let k = 15; k < 32; k++) uniformData[floatBase + k] = 0;
   runtime.uniformOffset += runtime.uniformStride;
 
   // Create per-frame instance bind group

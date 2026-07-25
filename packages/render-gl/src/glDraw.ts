@@ -53,6 +53,7 @@ export function bindGlImageResourceTexture(
   }
   gl.bindTexture(gl.TEXTURE_2D, entry.texture);
   runtime.currentTexture = entry.texture;
+  runtime.currentTextureStraightAlpha = image.compressed !== null && image.alphaType === 'straight';
   if (entry.version !== image.version) {
     uploadGlDisplayTexture(state, image);
     entry.version = image.version;
@@ -91,6 +92,7 @@ export function bindGlTexture(
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imageSource as TexImageSource);
     textureCache.set(imageSource, texture);
     runtime.currentTexture = texture;
+    runtime.currentTextureStraightAlpha = false;
   } else {
     // Always rebind on a cache hit, never skip on runtime.currentTexture. That tracker is the last
     // texture bound to whatever unit was active THEN, but callers change the active unit between binds
@@ -100,6 +102,7 @@ export function bindGlTexture(
     // dropped skip costs nothing meaningful.
     gl.bindTexture(gl.TEXTURE_2D, texture);
     runtime.currentTexture = texture;
+    runtime.currentTextureStraightAlpha = false;
   }
   // texture is the active TEXTURE_2D binding in every path above; apply this draw's sampler state here
   // so a cache hit picks it up instead of the first uploader's.
@@ -131,6 +134,7 @@ export function bindGlVideoTexture(
   }
   gl.bindTexture(gl.TEXTURE_2D, entry.texture);
   runtime.currentTexture = entry.texture;
+  runtime.currentTextureStraightAlpha = false;
   // Straight-alpha element under premultiplied blend would blow out RGB; match the bitmap/element path.
   gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
   entry.uploadedFrameId = uploadGlTextureVideoFrame(gl, videoTexture, entry.uploadedFrameId);
@@ -149,6 +153,7 @@ export function createGlTexture(state: GlRenderState): WebGLTexture {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   runtime.currentTexture = texture;
+  runtime.currentTextureStraightAlpha = false;
   return texture;
 }
 
@@ -250,6 +255,7 @@ export function updateGlTexture(state: GlRenderState, texture: WebGLTexture, can
   // skip could upload into whatever is bound on the currently-active unit instead of `texture`.
   gl.bindTexture(gl.TEXTURE_2D, texture);
   runtime.currentTexture = texture;
+  runtime.currentTextureStraightAlpha = false;
   // Browsers pass canvas pixel data to Gl as straight (unmultiplied) alpha.
   // Premultiply on upload so the texture matches the (ONE, ONE_MINUS_SRC_ALPHA) blend mode.
   gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);

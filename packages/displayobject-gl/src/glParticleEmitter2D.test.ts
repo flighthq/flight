@@ -1,3 +1,4 @@
+import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import type { RenderProxy2D } from '@flighthq/types';
 
 import { defaultGlParticleEmitter2DRenderer, drawGlParticleEmitter2D } from './glParticleEmitter2D';
@@ -94,5 +95,28 @@ describe('drawGlParticleEmitter2D', () => {
       }),
     );
     expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 2);
+  });
+
+  it('uploads the straight-alpha flag for a compressed particle atlas', () => {
+    const { state, gl } = createGlState();
+    const image = {
+      alphaType: 'straight',
+      compressed: { container: {}, payload: new Uint8Array() },
+      data: null,
+      height: 4,
+      source: null,
+      version: 1,
+      width: 4,
+    };
+
+    drawGlParticleEmitter2D(
+      state,
+      makeParticleEmitter2DNode({
+        atlas: { image, regions: [{ id: 0, x: 0, y: 0, width: 4, height: 4 }] },
+      }),
+    );
+
+    const shader = getGlRenderStateRuntime(state).particleShader!;
+    expect(gl.uniform1i).toHaveBeenCalledWith(shader.locStraightTextureAlpha, 1);
   });
 });
