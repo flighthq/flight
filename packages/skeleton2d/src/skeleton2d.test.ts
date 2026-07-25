@@ -108,6 +108,49 @@ describe('computeSkeleton2DWorldTransforms', () => {
     expect(out.tx).toBeCloseTo(0, 5);
     expect(out.ty).toBeCloseTo(3, 5);
   });
+
+  it('NoScale strips the parent scale but keeps its rotation', () => {
+    const s = createSkeleton2D([
+      makeBone({ scaleX: 3, scaleY: 3 }),
+      makeBone({ parentIndex: 0, transformMode: TransformMode2D.NoScale }),
+    ]);
+    computeSkeleton2DWorldTransforms(s);
+    const out = createMatrix();
+    getSkeleton2DBoneWorldMatrix(out, s, 1);
+    // Parent's 3× scale removed → the child's world linear part is unit (identity here, no rotation).
+    expect(out.a).toBeCloseTo(1, 5);
+    expect(out.b).toBeCloseTo(0, 5);
+    expect(out.c).toBeCloseTo(0, 5);
+    expect(out.d).toBeCloseTo(1, 5);
+  });
+
+  it('NoRotationOrReflection keeps the parent scale but strips its rotation', () => {
+    const s = createSkeleton2D([
+      makeBone({ rotation: 90, scaleX: 2, scaleY: 2 }),
+      makeBone({ parentIndex: 0, transformMode: TransformMode2D.NoRotationOrReflection }),
+    ]);
+    computeSkeleton2DWorldTransforms(s);
+    const out = createMatrix();
+    getSkeleton2DBoneWorldMatrix(out, s, 1);
+    // Parent's 90° rotation removed, its 2× scale kept → axis-aligned 2× world.
+    expect(out.a).toBeCloseTo(2, 5);
+    expect(out.b).toBeCloseTo(0, 5);
+    expect(out.c).toBeCloseTo(0, 5);
+    expect(out.d).toBeCloseTo(2, 5);
+  });
+
+  it('NoScaleOrReflection never flips the child under a reflected parent', () => {
+    const s = createSkeleton2D([
+      makeBone({ scaleX: -2, scaleY: 2 }), // reflected (negative X scale)
+      makeBone({ parentIndex: 0, transformMode: TransformMode2D.NoScaleOrReflection }),
+    ]);
+    computeSkeleton2DWorldTransforms(s);
+    const out = createMatrix();
+    getSkeleton2DBoneWorldMatrix(out, s, 1);
+    // Determinant stays positive (no reflection) and unit magnitude (no scale).
+    const det = out.a * out.d - out.c * out.b;
+    expect(det).toBeCloseTo(1, 5);
+  });
 });
 
 describe('createSkeleton2D', () => {

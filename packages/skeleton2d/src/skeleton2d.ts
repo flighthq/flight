@@ -76,21 +76,58 @@ export function computeSkeleton2DWorldTransforms(skeleton: Readonly<Skeleton2D>)
     // Local origin placed by the parent — the same for every inherit mode.
     world[o + 4] = pa * bone.x + pc * bone.y + world[p + 4];
     world[o + 5] = pb * bone.x + pd * bone.y + world[p + 5];
-    if (bone.transformMode === TransformMode2D.OnlyTranslation) {
-      // Position inherits; rotation/scale come from the bone's own local transform.
-      world[o] = la;
-      world[o + 1] = lb;
-      world[o + 2] = lc;
-      world[o + 3] = ld;
-      continue;
+    switch (bone.transformMode) {
+      case TransformMode2D.OnlyTranslation:
+        // Rotation/scale come from the bone's own local transform; only position inherits (set above).
+        world[o] = la;
+        world[o + 1] = lb;
+        world[o + 2] = lc;
+        world[o + 3] = ld;
+        break;
+      case TransformMode2D.NoRotationOrReflection: {
+        // Inherit the parent's SCALE (its column lengths) but strip rotation + reflection: compose the
+        // local transform with a diagonal, axis-aligned scale-only parent.
+        const psx = Math.hypot(pa, pb);
+        const psy = Math.hypot(pc, pd);
+        world[o] = psx * la;
+        world[o + 1] = psy * lb;
+        world[o + 2] = psx * lc;
+        world[o + 3] = psy * ld;
+        break;
+      }
+      case TransformMode2D.NoScale:
+      case TransformMode2D.NoScaleOrReflection: {
+        // Inherit the parent's ORIENTATION but not its scale: normalize the parent's columns to unit
+        // length, then compose with the local transform. NoScale keeps the parent's reflection (its
+        // normalized columns as-is); NoScaleOrReflection strips it, forcing the y-axis to the +90°
+        // rotation of the x-axis (det = +1) so the child never flips under a negatively-scaled parent.
+        const psx = Math.hypot(pa, pb) || 1;
+        const nax = pa / psx;
+        const nay = pb / psx;
+        let ncx: number;
+        let ncy: number;
+        if (bone.transformMode === TransformMode2D.NoScaleOrReflection) {
+          ncx = -nay;
+          ncy = nax;
+        } else {
+          const psy = Math.hypot(pc, pd) || 1;
+          ncx = pc / psy;
+          ncy = pd / psy;
+        }
+        world[o] = nax * la + ncx * lb;
+        world[o + 1] = nay * la + ncy * lb;
+        world[o + 2] = nax * lc + ncx * ld;
+        world[o + 3] = nay * lc + ncy * ld;
+        break;
+      }
+      default:
+        // Normal: full inherit — world linear part = parent × local.
+        world[o] = pa * la + pc * lb;
+        world[o + 1] = pb * la + pd * lb;
+        world[o + 2] = pa * lc + pc * ld;
+        world[o + 3] = pb * lc + pd * ld;
+        break;
     }
-    // Normal (and, until their parent-decomposition math lands, the three No* modes): world linear part =
-    // parent × local. NoRotationOrReflection / NoScale / NoScaleOrReflection are explicit charter items;
-    // their exact parent-scale/rotation extraction is the next P1 commit — they compose as Normal for now.
-    world[o] = pa * la + pc * lb;
-    world[o + 1] = pb * la + pd * lb;
-    world[o + 2] = pa * lc + pc * ld;
-    world[o + 3] = pb * lc + pd * ld;
   }
 }
 
