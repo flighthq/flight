@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "@flighthq/adjustments": "*",
+    "@flighthq/animation": "*",
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/materials": "*",

@@ -10,6 +10,7 @@
   },
   "references": [
     { "path": "../adjustments" },
+    { "path": "../animation" },
     { "path": "../entity" },
     { "path": "../geometry" },
     { "path": "../materials" },
