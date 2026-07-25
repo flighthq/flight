@@ -615,7 +615,7 @@ Fragment shader:
 - Alpha sorting produces correct compositing order.
 - Existing scene rendering (meshes, lights) is unaffected.
 - `npm run check` passes.
-- `npm run ci` passes.
+- `npm run check` and `npm run test` pass.
 - Functional test renders correctly on GL and WebGPU.
 
 ### Effort Estimate

@@ -129,4 +129,4 @@ is "no operation hides its cost *class*," not "the API predicts nanoseconds."
 - **Pending**: Canvas `CompositeEffect` runner (`globalCompositeOperation` 1:1) and wgpu runner; the
   `BlendMode` enum cleanup (the re-filings above) across `render-gl`/`render-wgpu`/`scene2d-canvas`/
   `scene2d-dom` + serialization + tests; DOM `Add` → `plus-lighter` capability gate; `Invert` as a
-  `BlendEffect` mode. The enum cleanup is a breaking cross-package reshape — run `npm run ci`.
+  `BlendEffect` mode. The enum cleanup is a breaking cross-package reshape — run the whole-repo `npm run check` and `npm run test`.

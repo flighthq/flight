@@ -230,7 +230,7 @@ Before removing the old path, demonstrate all of the following:
 - run benchmark twice and confirm it remains serial, records raw samples, and fences WebGL/WebGPU work;
 - force one transient page failure and confirm a fresh-page retry is recorded;
 - run installed-package and `FLIGHT_REPO` modes;
-- run `npm run fix`, `npm run check`, and `npm run ci`.
+- run `npm run fix`, `npm run check`, and `npm run test`.
 
 ## 10. Completion criteria
 
