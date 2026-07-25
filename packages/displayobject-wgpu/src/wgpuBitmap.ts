@@ -65,7 +65,17 @@ export function drawWgpuBitmap(state: WgpuRenderState, renderProxy: RenderProxy2
   }
 
   const startCount = runtime.spriteBatchCount;
-  const base = prepareWgpuSpriteBatchWrite(state, imageSource, renderProxy.blendMode, material, materialRenderer, 1);
+  // Per-bitmap smoothing keys the batch so a NEAREST bitmap never inherits a LINEAR neighbor's sampler;
+  // the flush binds the group(1) variant matching this filter. Mirrors drawGlBitmap.
+  const base = prepareWgpuSpriteBatchWrite(
+    state,
+    imageSource,
+    renderProxy.blendMode,
+    material,
+    materialRenderer,
+    1,
+    source.data.smoothing,
+  );
   const d = runtime.spriteBatchInstanceData;
   const t = renderProxy.transform2D;
   d[base] = t.a;

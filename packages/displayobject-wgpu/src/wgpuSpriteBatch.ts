@@ -1,4 +1,4 @@
-import { bindWgpuImageResourceTexture, getWgpuBlendState } from '@flighthq/render-wgpu';
+import { bindWgpuImageResourceTexture, getWgpuBlendState, resolveWgpuSmoothingBindGroup } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import type {
   ColorTransform,
@@ -125,6 +125,7 @@ export function flushWgpuSpriteBatch(state: WgpuRenderState): void {
 
   const texture = runtime.spriteBatchTexture!;
   const blendMode = runtime.spriteBatchBlendMode;
+  const smoothing = runtime.spriteBatchSmoothing;
   const renderer = runtime.spriteBatchMaterialRenderer!;
   // The color-adjustment fold is opt-in (enableWgpuColorAdjustment): when installed it resolves a
   // tinted batch to its per-instance @group(3) storage data + folded module; an untinted batch (or an
@@ -176,7 +177,9 @@ export function flushWgpuSpriteBatch(state: WgpuRenderState): void {
   const pass = runtime.renderPass!;
   pass.setPipeline(pipeline);
   pass.setBindGroup(0, runtime.uniformBindGroup, [uniformOffset]);
-  pass.setBindGroup(1, textureEntry.bindGroup);
+  // Per-bitmap smoothing selects the LINEAR/NEAREST variant bind group; a null key (sprites/text/shapes)
+  // uses the entry's global-default bind group.
+  pass.setBindGroup(1, resolveWgpuSmoothingBindGroup(state, textureEntry, smoothing));
   pass.setBindGroup(2, instanceBindGroup);
   if (group3Floats > 0) {
     const materialBindGroup = state.device.createBindGroup({
@@ -288,16 +291,19 @@ export function prepareWgpuSpriteBatchWrite(
   material: Material | null,
   materialRenderer: WgpuMaterialRenderer,
   maxInstances: number,
+  smoothing: boolean | null = null,
 ): number {
   const runtime = getWgpuRenderStateRuntime(state);
   if (
     texture !== runtime.spriteBatchTexture ||
     blendMode !== runtime.spriteBatchBlendMode ||
-    material !== runtime.spriteBatchMaterial
+    material !== runtime.spriteBatchMaterial ||
+    smoothing !== runtime.spriteBatchSmoothing
   ) {
     flushWgpuSpriteBatch(state);
   }
   runtime.spriteBatchTexture = texture;
+  runtime.spriteBatchSmoothing = smoothing;
   runtime.spriteBatchBlendMode = blendMode;
   runtime.spriteBatchMaterial = material;
   runtime.spriteBatchMaterialRenderer = materialRenderer;
@@ -369,6 +375,7 @@ function resetWgpuSpriteBatch(state: WgpuRenderState): void {
   const runtime = getWgpuRenderStateRuntime(state);
   runtime.spriteBatchCount = 0;
   runtime.spriteBatchTexture = null;
+  runtime.spriteBatchSmoothing = null;
   runtime.spriteBatchBlendMode = null;
   runtime.spriteBatchMaterial = null;
   runtime.spriteBatchMaterialRenderer = null;
