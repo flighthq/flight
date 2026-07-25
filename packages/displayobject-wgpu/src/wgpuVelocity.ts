@@ -28,7 +28,7 @@ import { getVelocity } from '@flighthq/velocity';
 // Wgpu velocity-buffer production, the mirror of displayobject-gl's webglVelocity. Velocity is tied to the
 // draw, so production is per-kind: the velocity pass walks the scene and dispatches a registered
 // WgpuVelocityWriter for each node's kind, which draws that kind's velocity into the bound rgba16float
-// target. The DisplayObject writer covers a node's world bounds with its (single) velocity; batched kinds
+// target. The Node2D writer covers a node's world bounds with its (single) velocity; batched kinds
 // register their own writer to emit per-instance velocity. The generic velocity DATA comes from a
 // render-agnostic VelocityField (@flighthq/velocity); this module is only the render-side hook.
 //
@@ -44,7 +44,7 @@ export function createWgpuVelocityTarget(state: WgpuRenderState, width: number, 
 
 // The default writer for plain display-object nodes: cover the node's world bounds with its velocity.
 // Batched/instanced kinds (QuadBatch, particles) register a writer that emits per-instance velocity.
-export const defaultWgpuDisplayObjectVelocityWriter: WgpuVelocityWriter = (ctx, node) => {
+export const defaultWgpuNode2DVelocityWriter: WgpuVelocityWriter = (ctx, node) => {
   getVelocity(ctx.field, node, _scratchVelocity);
   if (_scratchVelocity.x === 0 && _scratchVelocity.y === 0) return;
   const spatial = node as unknown as Spatial2DNode;
@@ -55,7 +55,7 @@ export const defaultWgpuDisplayObjectVelocityWriter: WgpuVelocityWriter = (ctx, 
 
 // The ParticleEmitter2D writer emits PER-PARTICLE velocity: each particle moves on its own vector (a
 // fountain fans outward), so one emitter-wide vector would be wrong — a user who wants the whole emitter
-// to share a velocity attaches it to a parent node, which the DisplayObject writer covers. The per-particle
+// to share a velocity attaches it to a parent node, which the Node2D writer covers. The per-particle
 // world rect is reconstructed exactly as the particle renderer composes its quad: a [0,1] corner scaled by
 // the atlas region, rotated/scaled by the particle's (cos,sin)·scale and offset by its position, then
 // mapped by the emitter world transform (skipped when worldSpace puts particles in world space already).
@@ -132,7 +132,7 @@ export const defaultWgpuParticleEmitter2DVelocityWriter: WgpuVelocityWriter = (c
 // batch renderer composes it (batch world transform ∘ per-instance local transform, then axis-aligned
 // bounds). Velocity stays in node units; drawWgpuVelocityQuad applies pixelRatio. Fallback: when no
 // per-instance array is present, cover the batch's world bounds with one coarse field velocity, like the
-// DisplayObject writer. Identical math to defaultGlQuadBatchVelocityWriter.
+// Node2D writer. Identical math to defaultGlQuadBatchVelocityWriter.
 export const defaultWgpuQuadBatchVelocityWriter: WgpuVelocityWriter = (ctx, node) => {
   const batch = node as unknown as QuadBatch;
   const data = batch.data;

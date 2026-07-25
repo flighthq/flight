@@ -6,7 +6,7 @@ import {
   appendShapeEndFill,
   appendShapeRectangle,
   createBloomEffect,
-  createDisplayContainer,
+  createDisplayObject,
   createShape,
   createToneMapEffect,
   createVignetteEffect,
@@ -16,7 +16,7 @@ import {
 
 import { render, scale } from './render';
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 

@@ -1,10 +1,4 @@
-import type {
-  CanvasRenderState,
-  DisplayObject,
-  DisplayObjectClipHooks,
-  RenderProxy2D,
-  RenderState,
-} from '@flighthq/types';
+import type { CanvasRenderState, Node2D, Scene2DClipHooks, RenderProxy2D, RenderState } from '@flighthq/types';
 
 import { popCanvasClipRectangle, pushCanvasClipContours, pushCanvasClipRectangle } from './canvasClipRectangle';
 
@@ -15,7 +9,7 @@ export function enableCanvasClip(state: CanvasRenderState): void {
   state.displayObjectClipHooks = canvasClipHooks;
 }
 
-const canvasClipHooks: DisplayObjectClipHooks = {
+const canvasClipHooks: Scene2DClipHooks = {
   finalize(state: RenderState): void {
     const s = state as CanvasRenderState;
     while (s.currentClipDepth > 0) {
@@ -23,7 +17,7 @@ const canvasClipHooks: DisplayObjectClipHooks = {
       s.currentClipDepth--;
     }
   },
-  popClip(state: RenderState, data: RenderProxy2D, source: DisplayObject): void {
+  popClip(state: RenderState, data: RenderProxy2D, source: Node2D): void {
     const s = state as CanvasRenderState;
     const target = data.clipDepth - (source.clip != null ? 1 : 0);
     while (s.currentClipDepth > target) {
@@ -31,7 +25,7 @@ const canvasClipHooks: DisplayObjectClipHooks = {
       s.currentClipDepth--;
     }
   },
-  pushClip(state: RenderState, data: RenderProxy2D, source: DisplayObject): void {
+  pushClip(state: RenderState, data: RenderProxy2D, source: Node2D): void {
     const s = state as CanvasRenderState;
     const clip = source.clip;
     if (clip === null) return;

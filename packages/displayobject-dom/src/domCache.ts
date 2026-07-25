@@ -2,7 +2,7 @@ import { createCanvasRenderTarget, resizeCanvasRenderTarget } from '@flighthq/di
 import { getRenderProxyCache, noopRendererData, registerRenderCacheRenderer } from '@flighthq/render';
 import type {
   CanvasRenderTarget,
-  DisplayObjectRenderer,
+  Scene2DRenderer,
   DomRenderState,
   RenderCache,
   RenderProxy2D,
@@ -74,7 +74,7 @@ function getTargets(state: DomRenderState): WeakMap<RenderCache, CanvasRenderTar
   return targets;
 }
 
-export const defaultDomRenderCacheRenderer: DisplayObjectRenderer = {
+export const defaultDomRenderCacheRenderer: Scene2DRenderer = {
   createData: noopRendererData,
   submit: drawDomRenderCache,
 };

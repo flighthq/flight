@@ -8,7 +8,7 @@ import { beginVelocityFrame, contributeVelocity, createVelocityField } from '@fl
 import { createGlState } from './glTestHelper';
 import {
   createGlVelocityTarget,
-  defaultGlDisplayObjectVelocityWriter,
+  defaultGlNode2DVelocityWriter,
   defaultGlParticleEmitter2DVelocityWriter,
   defaultGlQuadBatchVelocityWriter,
   drawGlVelocityQuad,
@@ -27,9 +27,9 @@ describe('createGlVelocityTarget', () => {
   });
 });
 
-describe('defaultGlDisplayObjectVelocityWriter', () => {
+describe('defaultGlNode2DVelocityWriter', () => {
   it('is a velocity writer function', () => {
-    expect(typeof defaultGlDisplayObjectVelocityWriter).toBe('function');
+    expect(typeof defaultGlNode2DVelocityWriter).toBe('function');
   });
 });
 
@@ -125,8 +125,8 @@ describe('registerGlVelocityWriter', () => {
   it('registers a writer dispatched by kind', () => {
     const { state } = createGlState();
     const root = createDisplayObject();
-    registerGlVelocityWriter(state, root.kind, defaultGlDisplayObjectVelocityWriter);
-    expect(getGlVelocityWriter(state, root.kind)).toBe(defaultGlDisplayObjectVelocityWriter);
+    registerGlVelocityWriter(state, root.kind, defaultGlNode2DVelocityWriter);
+    expect(getGlVelocityWriter(state, root.kind)).toBe(defaultGlNode2DVelocityWriter);
   });
 });
 
@@ -135,7 +135,7 @@ describe('renderGlVelocity', () => {
     const { state } = createGlState();
     const target = createGlVelocityTarget(state, 128, 64);
     const root = createDisplayObject();
-    registerGlVelocityWriter(state, root.kind, defaultGlDisplayObjectVelocityWriter);
+    registerGlVelocityWriter(state, root.kind, defaultGlNode2DVelocityWriter);
 
     const field = createVelocityField();
     beginVelocityFrame(field);

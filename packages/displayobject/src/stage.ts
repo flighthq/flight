@@ -1,7 +1,7 @@
 import { createEntity } from '@flighthq/entity';
 import { getNodeRoot, getNodeRuntime } from '@flighthq/node';
 import { createSignal, emitSignal } from '@flighthq/signals';
-import type { DisplayObject, DisplayObjectRuntime, Stage, StageRuntime, StageSignals } from '@flighthq/types';
+import type { Node2D, Node2DRuntime, Stage, StageRuntime, StageSignals } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
 import { createDisplayObject } from './displayObject';
@@ -9,7 +9,7 @@ import { createDisplayObject } from './displayObject';
 // Allocates a Stage: a presentation-context Entity that owns a display-object `root` (allocated here), not a
 // node in the tree. Carries the fit context (`align`/`scaleMode`) directly — fit is the Stage's concern, and
 // the bedrock `Viewport` is a drawable rect, not a base of Stage — plus the view dimensions and background
-// color. The entity runtime stays unbound; the root's runtime carries a back-pointer so getDisplayObjectStage
+// color. The entity runtime stays unbound; the root's runtime carries a back-pointer so getScene2DRoot
 // resolves membership by a lazy walk to the root.
 export function createStage(
   obj?: Readonly<Partial<Pick<Stage, 'align' | 'color' | 'scaleMode' | 'stageHeight' | 'stageWidth'>>>,
@@ -23,7 +23,7 @@ export function createStage(
     stageHeight: obj?.stageHeight ?? 550,
     stageWidth: obj?.stageWidth ?? 400,
   }) as Stage;
-  (getNodeRuntime(root) as DisplayObjectRuntime).stage = stage;
+  (getNodeRuntime(root) as Node2DRuntime).stage = stage;
   return stage;
 }
 
@@ -49,9 +49,9 @@ export function enableStageSignals(source: Stage): StageSignals {
 
 // Resolves the Stage a display object belongs to, or null when its root is not owned by a stage. Walks to the
 // root (a cheap parent walk) and reads the stage back-pointer the root runtime carries.
-export function getDisplayObjectStage(source: Readonly<DisplayObject>): Stage | null {
+export function getScene2DRoot(source: Readonly<Node2D>): Stage | null {
   const root = getNodeRoot(source);
-  return (getNodeRuntime(root) as DisplayObjectRuntime).stage;
+  return (getNodeRuntime(root) as Node2DRuntime).stage;
 }
 
 // The stage's runtime, allocated on first access (the entity is created unbound). Callers that only read

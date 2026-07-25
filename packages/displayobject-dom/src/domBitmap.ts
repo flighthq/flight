@@ -1,7 +1,7 @@
 ﻿import { createEntity } from '@flighthq/entity';
 import type {
   Bitmap,
-  DisplayObjectRenderer,
+  Scene2DRenderer,
   DomRenderState,
   Renderable,
   RendererData,
@@ -124,7 +124,7 @@ function renderBitmapAsCanvas(
   setDomRendererElement(state, data.canvas);
 }
 
-export const defaultDomBitmapRenderer: DisplayObjectRenderer = {
+export const defaultDomBitmapRenderer: Scene2DRenderer = {
   createData: createDomBitmapData,
   submit: drawDomBitmap,
 };

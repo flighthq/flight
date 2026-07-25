@@ -1,13 +1,13 @@
-import type { DisplayContainer } from '@flighthq/types';
+import type { DisplayObject } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 
-import { createDisplayContainer, createDisplayContainerRuntime, getDisplayContainerRuntime } from './displayContainer';
+import { createDisplayObject, createDisplayObjectRuntime, getDisplayObjectRuntime } from './displayContainer';
 
-describe('createDisplayContainer', () => {
-  let displayContainer: DisplayContainer;
+describe('createDisplayObject', () => {
+  let displayContainer: DisplayObject;
 
   beforeEach(() => {
-    displayContainer = createDisplayContainer();
+    displayContainer = createDisplayObject();
   });
 
   it('initializes default values', () => {
@@ -16,22 +16,22 @@ describe('createDisplayContainer', () => {
 
   it('returns a new object for better hidden-class performance', () => {
     const base = {};
-    const obj = createDisplayContainer(base);
+    const obj = createDisplayObject(base);
     expect(obj).not.toStrictEqual(base);
   });
 });
 
-describe('createDisplayContainerRuntime', () => {
+describe('createDisplayObjectRuntime', () => {
   it('returns a non-null runtime', () => {
-    const runtime = createDisplayContainerRuntime();
+    const runtime = createDisplayObjectRuntime();
     expect(runtime).not.toBeNull();
   });
 });
 
-describe('getDisplayContainerRuntime', () => {
-  it('returns the runtime for a DisplayContainer', () => {
-    const container = createDisplayContainer();
-    const runtime = getDisplayContainerRuntime(container);
+describe('getDisplayObjectRuntime', () => {
+  it('returns the runtime for a DisplayObject', () => {
+    const container = createDisplayObject();
+    const runtime = getDisplayObjectRuntime(container);
     expect(runtime).not.toBeNull();
   });
 });

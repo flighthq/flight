@@ -28,7 +28,7 @@ export interface NodeRuntime<Traits extends object = NodeTraits> extends EntityR
   children: Node<Traits>[] | null;
   // Adjustment-tier subsystem slot (off the entity, like nodeSignals): the node's pointwise
   // color-adjustment stack — the source of truth, default `null` → no adjustments. Set through
-  // `setDisplayObjectColorAdjustments`, which fuses it once (on change, not per frame) into the affine
+  // `setNode2DColorAdjustments`, which fuses it once (on change, not per frame) into the affine
   // `resolvedColorTransform` cache below; the render walk just hands that cache to the inline fold as
   // `RenderProxy.colorTransform`, so the hot path is identical to reading the old `.colorTransform` and
   // the fuse math never weighs on the base render bundle.

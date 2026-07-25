@@ -1,5 +1,5 @@
 ﻿import { noopRendererData } from '@flighthq/render';
-import type { DisplayObjectRenderer, DomRenderState, HtmlView, RenderProxy2D } from '@flighthq/types';
+import type { Scene2DRenderer, DomRenderState, HtmlView, RenderProxy2D } from '@flighthq/types';
 
 import { setDomRendererElement } from './domStyle';
 import { setDomTransform } from './domTransform';
@@ -27,7 +27,7 @@ export function drawDomHtmlView(state: DomRenderState, renderProxy: RenderProxy2
   setDomRendererElement(state, element);
 }
 
-export const defaultHtmlViewRenderer: DisplayObjectRenderer = {
+export const defaultHtmlViewRenderer: Scene2DRenderer = {
   createData: noopRendererData,
   submit: drawDomHtmlView,
 };

@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import { addNodeChild, createBitmap, createDisplayObject, createImageResource } from '@flighthq/sdk';
 
 import { render, scale } from './render';
@@ -56,7 +56,7 @@ combinedBitmap.rotation = -15;
 addNodeChild(root, combinedBitmap);
 
 function enterFrame(): void {
-  render(root as DisplayObject);
+  render(root as Node2D);
   requestAnimationFrame(enterFrame);
 }
 

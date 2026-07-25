@@ -8,7 +8,7 @@ import {
   getNodeRuntime,
 } from '@flighthq/node';
 import type {
-  DisplayObject,
+  Node2D,
   HasBoundsRectangle,
   HasTransform2D,
   Node,
@@ -68,17 +68,6 @@ export function createRenderProxy2D(
   return node;
 }
 
-// Teardown counterpart to prepareDisplayObjectRender: disposes the render of `root` and every descendant —
-// the render proxies that prepareDisplayObjectRender created. Each disposeRenderProxy cascades to the
-// renderer's destroyData, so the GPU textures/framebuffers are freed now while the proxies become
-// GC-eligible. Sprites and display objects share one render proxy, so a single dispose serves both;
-// there is no mask proxy to dispose separately (masks were retired into clips). Call after
-// removeNodeChild for nodes that will never be rendered again. Unlike prepareDisplayObjectRender, this visits
-// all nodes regardless of enabled or visible state.
-export function disposeDisplayObjectRender(state: RenderState, root: Renderable): void {
-  walkRenderSubtree(state, root, disposeRenderProxy);
-}
-
 // Disposes the framework-side render proxy for `source`: drops it from the renderProxyMap (a
 // WeakMap, so this just makes the GC-managed proxy collectable sooner) and cascades to the
 // renderer's destroyData to free the non-GC GPU resources it owns. Call when a node is removed from
@@ -89,6 +78,17 @@ export function disposeRenderProxy(state: RenderState, source: Renderable): void
   if (node === undefined) return;
   if (node.rendererData !== null) node.renderer?.destroyData?.(state, node.rendererData);
   renderProxyMap.delete(source);
+}
+
+// Teardown counterpart to prepareScene2DRender: disposes the render of `root` and every descendant —
+// the render proxies that prepareScene2DRender created. Each disposeRenderProxy cascades to the
+// renderer's destroyData, so the GPU textures/framebuffers are freed now while the proxies become
+// GC-eligible. Sprites and display objects share one render proxy, so a single dispose serves both;
+// there is no mask proxy to dispose separately (masks were retired into clips). Call after
+// removeNodeChild for nodes that will never be rendered again. Unlike prepareScene2DRender, this visits
+// all nodes regardless of enabled or visible state.
+export function disposeScene2DRender(state: RenderState, root: Renderable): void {
+  walkRenderSubtree(state, root, disposeRenderProxy);
 }
 
 export function getOrCreateRenderProxy2D(state: RenderState, source: Renderable): RenderProxy2D {
@@ -135,12 +135,12 @@ export function isRenderProxyVisible(data: RenderProxy2D): boolean {
   return data.visible && data.alpha > 0 && !(data.transform2D.a === 0 && data.transform2D.d === 0);
 }
 
-// The pre-render update pass for the 2D graph. Sprites align onto DisplayObject — they share one
+// The pre-render update pass for the 2D graph. Sprites align onto Node2D — they share one
 // identical trait base — so there is a single prepare named for the trait-complete entity it readies
-// (Node + DisplayObject traits); the former per-graph prepares collapsed into this. Masks were retired
+// (Node + Node2D traits); the former per-graph prepares collapsed into this. Masks were retired
 // into clips, so there is no second tree pass; clips are realized by the backend clip hooks during the
 // draw walk, keyed off each node's `clip`.
-export function prepareDisplayObjectRender(state: RenderState, source: Renderable): boolean {
+export function prepareScene2DRender(state: RenderState, source: Renderable): boolean {
   return walkNode(state, source, updateRenderProxy2D);
 }
 
@@ -155,7 +155,7 @@ export function updateNodeClip(
   parentData: RenderProxy2D | undefined,
 ): void {
   const parentDepth = parentData !== undefined ? parentData.clipDepth : 0;
-  data.clipDepth = parentDepth + ((source as DisplayObject).clip != null ? 1 : 0);
+  data.clipDepth = parentDepth + ((source as Node2D).clip != null ? 1 : 0);
 }
 
 // The one per-node update step for the 2D walk: appearance, transform, material, color transform,

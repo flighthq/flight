@@ -1,10 +1,10 @@
-import type { DisplayObject, DisplayObjectData, DisplayObjectRuntime } from './DisplayObject';
+import type { Node2D, Node2DData, Node2DRuntime } from './Node2D';
 import type { TextAutoSize } from './TextAutoSize';
 import type { TextFormat } from './TextFormat';
 import type { TextLayoutParams, TextLayoutResult, TextMeasureFunction } from './TextLayout';
 import type { TextVerticalAlign } from './TextVerticalAlign';
 
-export interface TextLabelData extends DisplayObjectData {
+export interface TextLabelData extends Node2DData {
   autoSize: TextAutoSize;
   height: number;
   text: string;
@@ -15,7 +15,7 @@ export interface TextLabelData extends DisplayObjectData {
   width: number;
 }
 
-export interface TextLabelRuntime extends DisplayObjectRuntime {
+export interface TextLabelRuntime extends Node2DRuntime {
   // Per-kind content + constraint assembly for the shared ensureTextLayout: TextLabel produces a
   // single format run; RichText produces multi-format/html runs with wrap/multiline. The measure
   // provider is injected by ensureTextLayout. This is the one place the text kinds differ in how they
@@ -28,7 +28,7 @@ export interface TextLabelRuntime extends DisplayObjectRuntime {
   textLayoutUsingContentId: number;
 }
 
-export interface TextLabel extends DisplayObject {
+export interface TextLabel extends Node2D {
   data: TextLabelData;
 }
 

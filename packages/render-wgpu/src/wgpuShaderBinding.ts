@@ -1,5 +1,5 @@
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
-import type { DisplayObject, RenderProxy2D, WgpuBitmapShader, WgpuRenderState } from '@flighthq/types';
+import type { Node2D, RenderProxy2D, WgpuBitmapShader, WgpuRenderState } from '@flighthq/types';
 
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 
@@ -21,7 +21,7 @@ export function resolveWgpuShader(state: WgpuRenderState, renderProxy: RenderPro
   return null;
 }
 
-export function setWgpuShader(state: WgpuRenderState, node: DisplayObject, shader: WgpuBitmapShader | null): void {
+export function setWgpuShader(state: WgpuRenderState, node: Node2D, shader: WgpuBitmapShader | null): void {
   const renderProxy = getOrCreateRenderProxy2D(state, node);
   if (shader === null) {
     _shaderBindings.delete(renderProxy);

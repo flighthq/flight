@@ -24,7 +24,7 @@ import {
   addNodeChild,
   BitmapKind,
   createBitmap,
-  createDisplayContainer,
+  createDisplayObject,
   createImageResourceFromCanvas,
   getSurfacePixelRgb,
   invalidateNodeLocalTransform,
@@ -63,7 +63,7 @@ const { render, width } = await createFunctionalTarget({
   kinds: [BitmapKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 // One shared checker resource for BOTH bitmaps — see the header: this makes smoothing the only differing
 // batch key, so the scene fails if the smoothing key is dropped from the flush comparison.

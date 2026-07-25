@@ -1,4 +1,4 @@
-import { getRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
+import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render';
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
 import { createTilemap } from '@flighthq/sprite';
@@ -26,7 +26,7 @@ describe('defaultWgpuTilemapRenderer.submit', () => {
     renderWgpuBackground(state);
 
     const tilemap = createTilemap();
-    prepareDisplayObjectRender(state, tilemap);
+    prepareScene2DRender(state, tilemap);
     const renderProxy = getRenderProxy2D(state, tilemap)!;
 
     expect(() => {
@@ -39,7 +39,7 @@ describe('defaultWgpuTilemapRenderer.submit', () => {
   it('does not throw when renderPass is null', async () => {
     const state = await createWgpuRenderStateForTest();
     const tilemap = createTilemap();
-    prepareDisplayObjectRender(state, tilemap);
+    prepareScene2DRender(state, tilemap);
     const renderProxy = getRenderProxy2D(state, tilemap)!;
 
     expect(() => defaultWgpuTilemapRenderer.submit(state, renderProxy)).not.toThrow();

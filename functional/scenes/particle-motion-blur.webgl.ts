@@ -1,4 +1,4 @@
-import type { DisplayObject, GlRenderEffectPipeline, GlRenderTarget } from '@flighthq/sdk';
+import type { Node2D, GlRenderEffectPipeline, GlRenderTarget } from '@flighthq/sdk';
 import {
   ParticleEmitter2DKind,
   addNodeChild,
@@ -20,12 +20,12 @@ import {
   defaultGlParticleEmitter2DVelocityWriter,
   endGlRenderEffectPipeline,
   invalidateNodeLocalTransform,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerGlRenderEffect,
   registerGlVelocityWriter,
   registerRenderer,
   renderGlBackground,
-  renderGlDisplayObject,
+  renderGlScene2D,
   renderGlVelocity,
   reserveParticleEmitter2D,
   setGlRenderEffectVelocityTexture,
@@ -54,8 +54,8 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+export function render(root: Node2D): void {
+  if (!prepareScene2DRender(state, root)) return;
 
   // The particle writer reads each particle's velocity from emitter.data.velocities, so no per-frame field
   // contribution is needed here; the field is passed for the (unused) display-object writer path.
@@ -65,7 +65,7 @@ export function render(root: DisplayObject): void {
 
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
-  renderGlDisplayObject(state, root);
+  renderGlScene2D(state, root);
   endGlRenderEffectPipeline(state, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
 }
 

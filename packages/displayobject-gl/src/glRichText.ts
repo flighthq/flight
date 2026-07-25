@@ -14,7 +14,7 @@ import {
   getTextLayoutResult,
 } from '@flighthq/textlayout';
 import type {
-  DisplayObjectRenderer,
+  Scene2DRenderer,
   GlRenderState,
   GlRichTextOverlay,
   Renderable,
@@ -42,7 +42,7 @@ export function createGlRichTextData(_state: GlRenderState, _source: Renderable)
   return { texture: null } as unknown as RendererData;
 }
 
-// Frees the GPU texture this rich text node owns when it is torn down via disposeDisplayObjectRender.
+// Frees the GPU texture this rich text node owns when it is torn down via disposeScene2DRender.
 export function destroyGlRichTextData(state: GlRenderState, data: RendererData): void {
   const { texture } = data as unknown as GlRichTextData;
   if (texture !== null) state.gl.deleteTexture(texture);
@@ -122,7 +122,7 @@ export function registerGlTextInputOverlay(overlay: GlRichTextOverlay): void {
   _webglTextInputOverlay = overlay;
 }
 
-export const defaultGlRichTextRenderer: DisplayObjectRenderer = {
+export const defaultGlRichTextRenderer: Scene2DRenderer = {
   createData: createGlRichTextData,
   destroyData: destroyGlRichTextData,
   submit: drawGlRichText,

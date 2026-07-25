@@ -10,7 +10,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 
 import {
   createWgpuVelocityTarget,
-  defaultWgpuDisplayObjectVelocityWriter,
+  defaultWgpuNode2DVelocityWriter,
   defaultWgpuParticleEmitter2DVelocityWriter,
   defaultWgpuQuadBatchVelocityWriter,
   drawWgpuVelocityQuad,
@@ -33,9 +33,9 @@ describe('createWgpuVelocityTarget', () => {
   });
 });
 
-describe('defaultWgpuDisplayObjectVelocityWriter', () => {
+describe('defaultWgpuNode2DVelocityWriter', () => {
   it('is a velocity writer function', () => {
-    expect(typeof defaultWgpuDisplayObjectVelocityWriter).toBe('function');
+    expect(typeof defaultWgpuNode2DVelocityWriter).toBe('function');
   });
 });
 
@@ -116,8 +116,8 @@ describe('registerWgpuVelocityWriter', () => {
   it('registers a writer dispatched by kind', async () => {
     const state = await createWgpuRenderStateForTest();
     const root = createDisplayObject();
-    registerWgpuVelocityWriter(state, root.kind, defaultWgpuDisplayObjectVelocityWriter);
-    expect(getWgpuVelocityWriter(state, root.kind)).toBe(defaultWgpuDisplayObjectVelocityWriter);
+    registerWgpuVelocityWriter(state, root.kind, defaultWgpuNode2DVelocityWriter);
+    expect(getWgpuVelocityWriter(state, root.kind)).toBe(defaultWgpuNode2DVelocityWriter);
   });
 });
 
@@ -126,7 +126,7 @@ describe('renderWgpuVelocity', () => {
     const state = await createWgpuRenderStateForTest();
     const target = createWgpuVelocityTarget(state, 128, 64);
     const root = createDisplayObject();
-    registerWgpuVelocityWriter(state, root.kind, defaultWgpuDisplayObjectVelocityWriter);
+    registerWgpuVelocityWriter(state, root.kind, defaultWgpuNode2DVelocityWriter);
 
     const field = createVelocityField();
     beginVelocityFrame(field);

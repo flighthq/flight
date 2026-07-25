@@ -1,7 +1,7 @@
-import type { DisplayObject } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import {
   addNodeChild,
-  createDisplayContainer,
+  createDisplayObject,
   createVideo,
   createVideoResource,
   invalidateNodeAppearance,
@@ -12,7 +12,7 @@ import {
 import { render, scale } from './render';
 
 const captureWindow = window as typeof window & { __flightCapture?: boolean };
-const root = createDisplayContainer();
+const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 
@@ -99,7 +99,7 @@ function renderFrame(): void {
   invalidateNodeAppearance(videoNode);
   invalidateNodeAppearance(secondVideoNode);
   invalidateNodeAppearance(thirdVideoNode);
-  render(root as DisplayObject);
+  render(root as Node2D);
 }
 
 function setVideoSources(

@@ -8,7 +8,7 @@
 // BELOW it. Hits in both bands prove the text occupied two lines, i.e. it wrapped. The vertical gap
 // between the bands is wide enough that a single line of this font size could not span both.
 import type { Surface } from '@flighthq/sdk';
-import { addNodeChild, createDisplayContainer, createRichText, getSurfacePixelRgb, RichTextKind } from '@flighthq/sdk';
+import { addNodeChild, createDisplayObject, createRichText, getSurfacePixelRgb, RichTextKind } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
 const WIDTH = 800;
@@ -35,7 +35,7 @@ const { render, width } = await createFunctionalTarget({
   kinds: [RichTextKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const field = createRichText();
 field.data.defaultTextFormat = { font: 'sans-serif', size: FONT_SIZE };

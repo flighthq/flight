@@ -1,5 +1,5 @@
-import type { DisplayObject, DisplayObjectData, DisplayObjectRuntime } from './DisplayObject';
 import type { GlyphSource } from './GlyphSource';
+import type { Node2D, Node2DData, Node2DRuntime } from './Node2D';
 import type { QuadBatch } from './QuadBatch';
 import type { Rectangle } from './Rectangle';
 
@@ -17,7 +17,7 @@ export type BitmapTextAlign = 'center' | 'justify' | 'left' | 'right';
 // The node registers no GPU renderer. Its backing QuadBatches (on `BitmapTextRuntime.quadBatches`,
 // one per glyph-atlas page) are real children in the display hierarchy, so the existing QuadBatch
 // renderer draws them — the same way a `MovieClip` renders through its child display objects.
-export interface BitmapTextData extends DisplayObjectData {
+export interface BitmapTextData extends Node2DData {
   align: BitmapTextAlign;
   // Packed RGBA tint (`0xRRGGBBAA`) multiplied over the glyph pixels. `0xffffffff` (white) is the
   // untinted default and leaves the backing batch tint-free; any other value sets the batch's
@@ -37,7 +37,7 @@ export interface BitmapTextData extends DisplayObjectData {
   wrapWidth: number | null;
 }
 
-export interface BitmapTextRuntime extends DisplayObjectRuntime {
+export interface BitmapTextRuntime extends Node2DRuntime {
   // Cached local bounds of the laid-out text, written by `updateBitmapText` and copied out by
   // `computeBitmapTextLocalBoundsRectangle`. Null before the first layout.
   localBoundsRectangle: Rectangle | null;
@@ -49,7 +49,7 @@ export interface BitmapTextRuntime extends DisplayObjectRuntime {
   quadBatches: QuadBatch[];
 }
 
-export interface BitmapText extends DisplayObject {
+export interface BitmapText extends Node2D {
   data: BitmapTextData;
 }
 

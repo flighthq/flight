@@ -1,17 +1,17 @@
-import type { DisplayObjectRenderBlankReason } from './DisplayObjectRenderBlankReason';
 import type { Kind } from './Entity';
+import type { Scene2DRenderBlankReason } from './Scene2DRenderBlankReason';
 
 // Plain-data answer to "why is this display object blank?", the pull half of the diagnostics
 // convention: recomputed on demand from live render state, holding no reference to it. Every field is
 // re-derived by reading the same seams the draw path reads, so an agent or test can assert on the
 // cause without a human-readable string. Format for humans in a separate format* companion, never here.
-export interface DisplayObjectRenderExplanation {
+export interface Scene2DRenderExplanation {
   readonly kind: Kind;
   // A renderer is registered for `kind` on this state (the getOrCreateRenderProxy2D / buildRenderQueue
   // lookup, re-run). False is the classic blank-on-a-new-backend bug: prepared and visible, but no
   // registerRenderer(state, kind, renderer) for this kind, so buildRenderQueue never emits a draw.
   readonly hasRenderer: boolean;
-  // A render proxy exists for `source`, i.e. prepareDisplayObjectRender reached it. False when prepare
+  // A render proxy exists for `source`, i.e. prepareScene2DRender reached it. False when prepare
   // was never called, or an ancestor was disabled/hidden so the prepare walk stopped before this node.
   readonly prepared: boolean;
   // Effective visibility and alpha. When prepared these come off the proxy, which folds in the
@@ -23,5 +23,5 @@ export interface DisplayObjectRenderExplanation {
   // — best-effort values dominated by prepared:false.
   readonly visible: boolean;
   readonly effectiveAlpha: number;
-  readonly reason: DisplayObjectRenderBlankReason;
+  readonly reason: Scene2DRenderBlankReason;
 }

@@ -12,7 +12,7 @@ import {
   appendShapeLineTo,
   appendShapeMoveTo,
   appendShapeRectangle,
-  createDisplayContainer,
+  createDisplayObject,
   createShape,
   getSurfacePixelRgb,
   ShapeKind,
@@ -42,7 +42,7 @@ const { render, width } = await createFunctionalTarget({
   kinds: [ShapeKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const line = createShape();
 appendShapeLineStyle(line, LINE_THICKNESS, 0xffffff, 1);

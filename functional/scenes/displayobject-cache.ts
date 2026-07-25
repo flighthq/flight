@@ -13,14 +13,14 @@
 // Canvas, WebGL, and WebGPU all support that contract; WebGPU opens a standalone command encoder for the
 // bake and submits it before the visible frame. DOM rasterizes its cache canvas inside its own frame, so
 // this shared scene keeps the direct subtree path there.
-import type { DisplayObject, Surface } from '@flighthq/sdk';
+import type { Node2D, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
   createCanvasCacheState,
-  createDisplayContainer,
+  createDisplayObject,
   createGlCacheState,
   createRenderCache,
   createShape,
@@ -57,10 +57,10 @@ const target = await createFunctionalTarget({
 });
 const { render, width } = target;
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 // The subtree to cache: a container with two filled shapes.
-const subtree = createDisplayContainer();
+const subtree = createDisplayObject();
 
 const magenta = createShape();
 appendShapeBeginFill(magenta, MAGENTA_COLOR, 1);
@@ -97,7 +97,7 @@ if (target.kind === 'canvas') {
   useRenderCache(target.state, subtree, cache);
 }
 
-render(root as DisplayObject);
+render(root as Node2D);
 
 export function assertRender(frame: Readonly<Surface>): void {
   const s = frame.width / width; // device-pixel scale

@@ -8,13 +8,7 @@
 // contain a healthy number of amber "ink" pixels (glyphs drew), and a region outside the label stays
 // background. A renderer that didn't draw the label, or a missing registration, leaves the box empty.
 import type { Surface } from '@flighthq/sdk';
-import {
-  addNodeChild,
-  createDisplayContainer,
-  createTextLabel,
-  getSurfacePixelRgb,
-  TextLabelKind,
-} from '@flighthq/sdk';
+import { addNodeChild, createDisplayObject, createTextLabel, getSurfacePixelRgb, TextLabelKind } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
 const WIDTH = 800;
@@ -33,7 +27,7 @@ const { render, width } = await createFunctionalTarget({
   kinds: [TextLabelKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const label = createTextLabel();
 label.data.text = 'FLIGHT';

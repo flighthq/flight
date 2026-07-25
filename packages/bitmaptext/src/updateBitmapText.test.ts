@@ -1,4 +1,4 @@
-import { getDisplayObjectColorAdjustments } from '@flighthq/displayobject';
+import { getNode2DColorAdjustments } from '@flighthq/displayobject';
 import {
   createGlyphAtlas,
   createGlyphSourceFromGlyphAtlas,
@@ -209,11 +209,11 @@ describe('updateBitmapText', () => {
   it('sets a whole-batch color-transform tint only for non-white colors', () => {
     const text = createBitmapText(createTestGlyphSource(), { text: 'AB' });
     updateBitmapText(text);
-    expect(getDisplayObjectColorAdjustments(getBitmapTextQuadBatches(text)[0]!)).toBeNull();
+    expect(getNode2DColorAdjustments(getBitmapTextQuadBatches(text)[0]!)).toBeNull();
     setBitmapTextColor(text, 0xff0000ff);
     updateBitmapText(text);
     // One color-transform adjustment on the batch's runtime slot — a single whole-batch tint, not per-glyph.
-    const adjustments = getDisplayObjectColorAdjustments(getBitmapTextQuadBatches(text)[0]!);
+    const adjustments = getNode2DColorAdjustments(getBitmapTextQuadBatches(text)[0]!);
     expect(adjustments).not.toBeNull();
     expect(adjustments!).toHaveLength(1);
     const colorTransform = (adjustments![0] as ColorTransformAdjustment).colorTransform;

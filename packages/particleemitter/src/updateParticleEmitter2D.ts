@@ -7,7 +7,7 @@ import {
   sampleParticleCurve,
 } from '@flighthq/particles';
 import type {
-  DisplayObject,
+  Node2D,
   ParticleEmitter2D,
   ParticleEmitterCallbacks,
   ParticleEmitterConfig,
@@ -52,7 +52,7 @@ export function updateParticleEmitter2D(
   // (the same one the renderer draws with), so particles stay put as the emitter moves; position a
   // world-space emitter by its node transform, not a passed-in transform. Only claim world-space to the
   // renderer when a transform is in hand, so it never skips the node transform over unbaked particles.
-  const worldTransform = config.worldSpace ? getNodeWorldMatrix(emitter as unknown as DisplayObject) : null;
+  const worldTransform = config.worldSpace ? getNodeWorldMatrix(emitter as unknown as Node2D) : null;
   data.worldSpace = worldTransform !== null;
 
   // Guard against a zero or negative time step: no time has elapsed, so there is

@@ -1,14 +1,14 @@
 import { createMatrix, createRectangle, multiplyMatrix } from '@flighthq/geometry';
 import { computeNodeBoundsRectangle } from '@flighthq/node';
 import {
-  computeDisplayObjectRenderTargetTransform,
+  computeScene2DRenderTargetTransform,
   computeRenderCacheTransform,
   computeRenderTargetSize,
   copyAllRenderersFromRenderState,
   createRenderState,
   getRenderProxyCache,
   noopRendererData,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerRenderCacheRenderer,
 } from '@flighthq/render';
 import { createWgpuRenderStateRuntime, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
@@ -24,8 +24,8 @@ import {
   submitWgpuRenderPass,
 } from '@flighthq/render-wgpu';
 import type {
-  DisplayObject,
-  DisplayObjectRenderer,
+  Node2D,
+  Scene2DRenderer,
   Matrix,
   RenderCache,
   RenderCacheRefreshOptions,
@@ -35,7 +35,7 @@ import type {
 } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
-import { renderWgpuDisplayObject } from './wgpuDisplayObject';
+import { renderWgpuScene2D } from './wgpuNode2D';
 import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
 
 /**
@@ -176,7 +176,7 @@ export function getWgpuRenderCacheTarget(state: WgpuRenderState, cache: RenderCa
 export function refreshWgpuRenderCache(
   cacheState: WgpuRenderState,
   cache: RenderCache,
-  source: DisplayObject,
+  source: Node2D,
   options?: Readonly<RenderCacheRefreshOptions>,
 ): boolean {
   const screenState = _cacheStateScreen.get(cacheState) ?? cacheState;
@@ -214,7 +214,7 @@ export function refreshWgpuRenderCache(
   const resized = existing === null || existing.width !== width || existing.height !== height;
   const target = ensureWgpuRenderCacheTarget(screenState, cache, width, height);
 
-  computeDisplayObjectRenderTargetTransform(_renderTransform, source, _bounds, padding, padding);
+  computeScene2DRenderTargetTransform(_renderTransform, source, _bounds, padding, padding);
   computeRenderCacheTransform(cache.transform, _bounds, padding, padding);
 
   // Wgpu render targets store content for a bottom-left UV origin (what drawWgpuRenderTargetResult's
@@ -231,9 +231,9 @@ export function refreshWgpuRenderCache(
   // transform is a display-object draw concern, set explicitly rather than carried by the pass.
   beginWgpuRenderPass(cacheState, target);
   setWgpuRenderTransform2D(cacheState, _bakeTransform);
-  const dirty = prepareDisplayObjectRender(cacheState, source);
+  const dirty = prepareScene2DRender(cacheState, source);
   if (dirty || resized) {
-    renderWgpuDisplayObject(cacheState, source);
+    renderWgpuScene2D(cacheState, source);
   }
   endWgpuRenderPass(cacheState);
 
@@ -284,7 +284,7 @@ function getTargets(state: WgpuRenderState): WeakMap<RenderCache, WgpuRenderTarg
   return targets;
 }
 
-export const defaultWgpuRenderCacheRenderer: DisplayObjectRenderer = {
+export const defaultWgpuRenderCacheRenderer: Scene2DRenderer = {
   createData: noopRendererData,
   submit: drawWgpuRenderCache,
 };

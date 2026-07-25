@@ -4,7 +4,7 @@ import { createSprite } from '@flighthq/sprite';
 import type { Renderer, RenderProxy, RenderQueueEntry } from '@flighthq/types';
 
 import { registerRenderer } from './renderer';
-import { prepareDisplayObjectRender } from './renderProxy';
+import { prepareScene2DRender } from './renderProxy';
 import {
   buildRenderQueue,
   clearRenderQueue,
@@ -24,7 +24,7 @@ describe('buildRenderQueue', () => {
   it('produces zero entries for a scene with no renderers', () => {
     const state = createRenderState();
     const root = createDisplayObject();
-    prepareDisplayObjectRender(state, root);
+    prepareScene2DRender(state, root);
     const queue = createRenderQueue();
     buildRenderQueue(state, root, queue);
     expect(queue.entryCount).toBe(0);
@@ -35,7 +35,7 @@ describe('buildRenderQueue', () => {
     const child = createDisplayObject();
     addNodeChild(root, child);
     registerRenderer(state, root.kind, makeRenderer());
-    prepareDisplayObjectRender(state, root);
+    prepareScene2DRender(state, root);
     const queue = createRenderQueue();
     buildRenderQueue(state, root, queue);
     expect(queue.entryCount).toBe(2);
@@ -45,7 +45,7 @@ describe('buildRenderQueue', () => {
     const root = createDisplayObject();
     root.visible = false;
     registerRenderer(state, root.kind, makeRenderer());
-    prepareDisplayObjectRender(state, root);
+    prepareScene2DRender(state, root);
     const queue = createRenderQueue();
     buildRenderQueue(state, root, queue);
     expect(queue.entryCount).toBe(0);
@@ -54,7 +54,7 @@ describe('buildRenderQueue', () => {
     const state = createRenderState();
     const root = createDisplayObject();
     registerRenderer(state, root.kind, makeRenderer());
-    prepareDisplayObjectRender(state, root);
+    prepareScene2DRender(state, root);
     const queue = createRenderQueue();
     buildRenderQueue(state, root, queue);
     const firstCount = queue.entryCount;
@@ -71,7 +71,7 @@ describe('buildRenderQueue', () => {
     registerRenderer(state, root.kind, makeRenderer());
     registerRenderer(state, child1.kind, makeRenderer());
     registerRenderer(state, child2.kind, makeRenderer());
-    prepareDisplayObjectRender(state, root);
+    prepareScene2DRender(state, root);
     const queue = createRenderQueue();
     buildRenderQueue(state, root, queue);
     expect(queue.entries[0].sortKey).toBeLessThan(queue.entries[1].sortKey);

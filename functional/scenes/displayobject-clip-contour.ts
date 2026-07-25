@@ -18,11 +18,11 @@ import {
   appendShapeEndFill,
   appendShapeRectangle,
   createClipRegionFromPath,
-  createDisplayContainer,
+  createDisplayObject,
   createPath,
   createShape,
   getSurfacePixelRgb,
-  setDisplayObjectClip,
+  setNode2DClip,
   ShapeKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -51,7 +51,7 @@ const { render, width } = await createFunctionalTarget({
   clip: true,
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const shape = createShape();
 appendShapeBeginFill(shape, SHAPE_COLOR, 1);
@@ -59,7 +59,7 @@ appendShapeRectangle(shape, SHAPE_X, SHAPE_Y, SHAPE_SIZE, SHAPE_SIZE);
 appendShapeEndFill(shape);
 
 const triangle = createTrianglePath();
-setDisplayObjectClip(shape, createClipRegionFromPath(triangle));
+setNode2DClip(shape, createClipRegionFromPath(triangle));
 addNodeChild(root, shape);
 
 render(root);

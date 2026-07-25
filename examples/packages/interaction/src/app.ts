@@ -4,7 +4,7 @@ import {
   connectInteractionSignal,
   createInteractionManager,
   createWebCursorBackend,
-  hitTestDisplayObjectsShape,
+  hitTestNode2DsShape,
   registerDefaultHitTests,
   registerShapeHitTest,
   releaseInteractionPointer,
@@ -276,7 +276,7 @@ function updateHud(): void {
     for (let j = i + 1; j < shapes.length; j++) {
       const a = shapes[i];
       const b = shapes[j];
-      if (hitTestDisplayObjectsShape(a.shape, b.shape)) {
+      if (hitTestNode2DsShape(a.shape, b.shape)) {
         overlaps.push(`${a.name} + ${b.name}`);
       }
     }

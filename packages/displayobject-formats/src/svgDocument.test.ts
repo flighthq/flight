@@ -5,11 +5,11 @@ import { getShapeBounds } from '@flighthq/shape';
 import type { Bitmap, ImportDiagnostic, RichText, Shape, TextLabel } from '@flighthq/types';
 import { BitmapKind, DisplayObjectKind, RichTextKind, ShapeKind, TextLabelKind } from '@flighthq/types';
 
-import { createDisplayObjectFromSvgDocument } from './svgDocument';
+import { createScene2DFromSvgDocument } from './svgDocument';
 
-describe('createDisplayObjectFromSvgDocument', () => {
+describe('createScene2DFromSvgDocument', () => {
   it('applies object-bounding-box clip and mask content units to target geometry', () => {
-    const root = createDisplayObjectFromSvgDocument(`
+    const root = createScene2DFromSvgDocument(`
       <svg>
         <defs>
           <clipPath id="half" clipPathUnits="objectBoundingBox">
@@ -35,7 +35,7 @@ describe('createDisplayObjectFromSvgDocument', () => {
     const image = createImageResource();
     image.width = 20;
     image.height = 10;
-    const root = createDisplayObjectFromSvgDocument(
+    const root = createScene2DFromSvgDocument(
       `
         <svg>
           <defs>
@@ -72,7 +72,7 @@ describe('createDisplayObjectFromSvgDocument', () => {
   });
 
   it('applies root presentation to descendants', () => {
-    const root = createDisplayObjectFromSvgDocument('<svg fill="red"><rect width="10" height="10"/></svg>');
+    const root = createScene2DFromSvgDocument('<svg fill="red"><rect width="10" height="10"/></svg>');
     const shape = getNodeChildAt(root, 0) as Shape;
 
     expect(shape.data.commands).toContain(0xff0000);
@@ -82,7 +82,7 @@ describe('createDisplayObjectFromSvgDocument', () => {
     const image = createImageResource();
     image.width = 20;
     image.height = 10;
-    const root = createDisplayObjectFromSvgDocument(
+    const root = createScene2DFromSvgDocument(
       '<svg><image href="asset.png" x="3" y="4" width="40" height="30" transform="translate(10 20)"/></svg>',
       undefined,
       { resolveImageResource: () => image },
@@ -99,7 +99,7 @@ describe('createDisplayObjectFromSvgDocument', () => {
     const image = createImageResource();
     image.width = 10;
     image.height = 10;
-    const root = createDisplayObjectFromSvgDocument(
+    const root = createScene2DFromSvgDocument(
       `
         <svg>
           <defs><g id="mark"><rect width="1" height="1"/></g></defs>
@@ -123,7 +123,7 @@ describe('createDisplayObjectFromSvgDocument', () => {
   });
 
   it('composes use placement before its SVG transform', () => {
-    const root = createDisplayObjectFromSvgDocument(`
+    const root = createScene2DFromSvgDocument(`
       <svg>
         <defs><g id="mark"><rect width="1" height="1"/></g></defs>
         <use href="#mark" x="7" y="9" transform="scale(2)"/>
@@ -139,7 +139,7 @@ describe('createDisplayObjectFromSvgDocument', () => {
 
   it('diagnoses applied filters and nested animation at their use sites', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    createDisplayObjectFromSvgDocument(
+    createScene2DFromSvgDocument(
       `
         <svg>
           <defs><filter id="blur"/></defs>
@@ -158,7 +158,7 @@ describe('createDisplayObjectFromSvgDocument', () => {
   });
 
   it('inherits fill-rule through groups', () => {
-    const root = createDisplayObjectFromSvgDocument(`
+    const root = createScene2DFromSvgDocument(`
       <svg><g fill-rule="evenodd"><path d="M0 0 L10 0 L10 10 Z"/></g></svg>
     `);
     const group = getNodeChildAt(root, 0)!;
@@ -170,7 +170,7 @@ describe('createDisplayObjectFromSvgDocument', () => {
 
   it('honors clip-rule winding and diagnoses mixed clip child winding', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    const root = createDisplayObjectFromSvgDocument(
+    const root = createScene2DFromSvgDocument(
       `
         <svg>
           <defs>
@@ -204,7 +204,7 @@ describe('createDisplayObjectFromSvgDocument', () => {
   });
 
   it('instantiates use geometry inside clip paths with placement and transforms', () => {
-    const root = createDisplayObjectFromSvgDocument(`
+    const root = createScene2DFromSvgDocument(`
       <svg>
         <defs>
           <path id="clipShape" d="M0 0 H10 V10 H0 Z"/>
@@ -218,7 +218,7 @@ describe('createDisplayObjectFromSvgDocument', () => {
   });
 
   it('honors display suppression and descendant visibility overrides in clip geometry', () => {
-    const root = createDisplayObjectFromSvgDocument(`
+    const root = createScene2DFromSvgDocument(`
       <svg>
         <defs>
           <clipPath id="visibleOnly">
@@ -242,7 +242,7 @@ describe('createDisplayObjectFromSvgDocument', () => {
   });
 
   it('lets author CSS outrank presentation attributes by specificity and source order', () => {
-    const root = createDisplayObjectFromSvgDocument(`
+    const root = createScene2DFromSvgDocument(`
       <svg>
         <style>
           rect { fill: red }
@@ -259,9 +259,7 @@ describe('createDisplayObjectFromSvgDocument', () => {
   });
 
   it('preserves mixed text and tspan source order', () => {
-    const root = createDisplayObjectFromSvgDocument(
-      '<svg><text font-size="12">A<tspan fill="red">B</tspan>C</text></svg>',
-    );
+    const root = createScene2DFromSvgDocument('<svg><text font-size="12">A<tspan fill="red">B</tspan>C</text></svg>');
     const text = getNodeChildAt(root, 0) as RichText;
 
     expect(text.data.text).toBe('ABC');
@@ -271,7 +269,7 @@ describe('createDisplayObjectFromSvgDocument', () => {
   });
 
   it('preserves meaningful collapsed whitespace across mixed text runs', () => {
-    const root = createDisplayObjectFromSvgDocument(
+    const root = createScene2DFromSvgDocument(
       '<svg><text font-size="12">Hello <tspan fill="red">world</tspan>!</text></svg>',
     );
     const text = getNodeChildAt(root, 0) as RichText;
@@ -282,7 +280,7 @@ describe('createDisplayObjectFromSvgDocument', () => {
 
   it('returns an empty tree and a structured diagnostic for non-SVG input', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    const root = createDisplayObjectFromSvgDocument('<html/>', diagnostics);
+    const root = createScene2DFromSvgDocument('<html/>', diagnostics);
 
     expect(root.kind).toBe(DisplayObjectKind);
     expect(getNodeChildCount(root)).toBe(0);
@@ -290,14 +288,14 @@ describe('createDisplayObjectFromSvgDocument', () => {
       {
         detail: undefined,
         kind: 'svg.invalid-document',
-        origin: 'createDisplayObjectFromSvgDocument',
+        origin: 'createScene2DFromSvgDocument',
         severity: 'Reject',
       },
     ]);
   });
 
   it('imports grouped geometry with inherited CSS presentation and transforms', () => {
-    const root = createDisplayObjectFromSvgDocument(`
+    const root = createScene2DFromSvgDocument(`
       <svg id="art" width="200" height="100" viewBox="0 0 100 50">
         <style>.accent { fill: #123456; stroke: rgb(255, 0, 0); stroke-width: 3 }</style>
         <g id="layer" opacity="0.5" transform="translate(4 5)">
@@ -326,7 +324,7 @@ describe('createDisplayObjectFromSvgDocument', () => {
 
   it('imports gradients, use references, text, clips, and mask degradation', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    const root = createDisplayObjectFromSvgDocument(
+    const root = createScene2DFromSvgDocument(
       `
         <svg>
           <defs>
@@ -378,7 +376,7 @@ describe('createDisplayObjectFromSvgDocument', () => {
 
   it('imports every common SVG geometry element and skips live-document features loudly', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    const root = createDisplayObjectFromSvgDocument(
+    const root = createScene2DFromSvgDocument(
       `
         <svg>
           <rect x="1" y="2" width="3" height="4" rx="1"/>
@@ -405,7 +403,7 @@ describe('createDisplayObjectFromSvgDocument', () => {
     const image = createImageResource();
     image.width = 20;
     image.height = 10;
-    const root = createDisplayObjectFromSvgDocument(
+    const root = createScene2DFromSvgDocument(
       '<svg><image id="photo" href="asset.png" x="3" y="4" width="40" height="30"/></svg>',
       undefined,
       { resolveImageResource: (href) => (href === 'asset.png' ? image : null) },
@@ -423,7 +421,7 @@ describe('createDisplayObjectFromSvgDocument', () => {
 
   it('retains tspan style runs and diagnoses positional flattening', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    const root = createDisplayObjectFromSvgDocument(
+    const root = createScene2DFromSvgDocument(
       `
         <svg>
           <text id="mixed" font-family="Inter" font-size="12">
@@ -453,7 +451,7 @@ describe('createDisplayObjectFromSvgDocument', () => {
   });
 
   it('composes text placement and baseline before its SVG transform', () => {
-    const root = createDisplayObjectFromSvgDocument(
+    const root = createScene2DFromSvgDocument(
       '<svg><text x="3" y="20" font-size="10" transform="translate(10 5)">Hello</text></svg>',
     );
     const text = getNodeChildAt(root, 0) as TextLabel;
@@ -463,7 +461,7 @@ describe('createDisplayObjectFromSvgDocument', () => {
   });
 
   it('honors preserveAspectRatio and forward gradient inheritance', () => {
-    const root = createDisplayObjectFromSvgDocument(`
+    const root = createScene2DFromSvgDocument(`
       <svg width="200" height="100" viewBox="0 0 50 50">
         <defs>
           <linearGradient id="derived" href="#base" x2="100%"/>
@@ -483,7 +481,7 @@ describe('createDisplayObjectFromSvgDocument', () => {
     const gradientCommandIndex = shape.data.commands.indexOf('beginGradientFill');
     expect(shape.data.commands[gradientCommandIndex + 3]).toEqual([0xff0000, 0x0000ff]);
 
-    const stretched = createDisplayObjectFromSvgDocument(
+    const stretched = createScene2DFromSvgDocument(
       '<svg width="200" height="100" viewBox="0 0 50 50" preserveAspectRatio="none"/>',
     );
     expect(stretched.scaleX).toBe(4);
@@ -492,7 +490,7 @@ describe('createDisplayObjectFromSvgDocument', () => {
   });
 
   it('uses symbol viewBox semantics and the use viewport size', () => {
-    const root = createDisplayObjectFromSvgDocument(`
+    const root = createScene2DFromSvgDocument(`
       <svg>
         <defs>
           <symbol id="icon" viewBox="0 0 10 10" preserveAspectRatio="none">
@@ -511,7 +509,7 @@ describe('createDisplayObjectFromSvgDocument', () => {
 
   it('reports unsupported animation inside an instantiated symbol', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    createDisplayObjectFromSvgDocument(
+    createScene2DFromSvgDocument(
       `
         <svg>
           <defs>

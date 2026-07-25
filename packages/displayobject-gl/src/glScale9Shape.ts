@@ -4,7 +4,7 @@ import { createGlTexture, drawGlQuad, updateGlTexture, useGlProgram } from '@fli
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import { setGlBaseUniforms, setGlMatrixFromValues } from '@flighthq/render-gl';
 import type {
-  DisplayObjectRenderer,
+  Scene2DRenderer,
   GlRenderState,
   MatrixLike,
   Renderable,
@@ -150,7 +150,7 @@ export function remapGlScale9Commands(
   }
 }
 
-export const defaultGlScale9ShapeRenderer: DisplayObjectRenderer = {
+export const defaultGlScale9ShapeRenderer: Scene2DRenderer = {
   createData: createGlScale9ShapeData,
   destroyData: destroyGlScale9ShapeData,
   submit: drawGlScale9Shape,

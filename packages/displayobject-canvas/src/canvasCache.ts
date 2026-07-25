@@ -1,20 +1,20 @@
 import { createMatrix, createRectangle } from '@flighthq/geometry';
 import { computeNodeBoundsRectangle } from '@flighthq/node';
 import {
-  computeDisplayObjectRenderTargetTransform,
+  computeScene2DRenderTargetTransform,
   computeRenderCacheTransform,
   computeRenderTargetSize,
   copyAllRenderersFromRenderState,
   getRenderProxyCache,
   noopRendererData,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerRenderCacheRenderer,
 } from '@flighthq/render';
 import type {
   CanvasRenderState,
   CanvasRenderTarget,
-  DisplayObject,
-  DisplayObjectRenderer,
+  Node2D,
+  Scene2DRenderer,
   Matrix,
   RenderCache,
   RenderCacheRefreshOptions,
@@ -22,7 +22,7 @@ import type {
   RenderState,
 } from '@flighthq/types';
 
-import { renderCanvasDisplayObject } from './canvasDisplayObject';
+import { renderCanvasScene2D } from './canvasNode2D';
 import { createCanvasRenderState, getCanvasRenderStateRuntime } from './canvasRenderState';
 import { createCanvasRenderTarget, resizeCanvasRenderTarget, setCanvasRenderTransform2D } from './canvasRenderTarget';
 import { setCanvasTransform } from './canvasTransform';
@@ -116,7 +116,7 @@ export function getCanvasRenderCacheTarget(state: CanvasRenderState, cache: Rend
 export function refreshCanvasRenderCache(
   cacheState: CanvasRenderState,
   cache: RenderCache,
-  source: DisplayObject,
+  source: Node2D,
   options?: Readonly<RenderCacheRefreshOptions>,
 ): boolean {
   const screenState = _cacheStateScreen.get(cacheState) ?? cacheState;
@@ -133,7 +133,7 @@ export function refreshCanvasRenderCache(
   const resized = existing === null || existing.width !== width || existing.height !== height;
   const target = ensureCanvasRenderCacheTarget(screenState, cache, width, height);
 
-  computeDisplayObjectRenderTargetTransform(_renderTransform, source, _bounds, padding, padding);
+  computeScene2DRenderTargetTransform(_renderTransform, source, _bounds, padding, padding);
   computeRenderCacheTransform(cache.transform, _bounds, padding, padding);
 
   const handles = cacheState as CanvasRenderStateHandles;
@@ -144,10 +144,10 @@ export function refreshCanvasRenderCache(
   handles.context.imageSmoothingQuality = runtime.imageSmoothingQuality;
   setCanvasRenderTransform2D(cacheState, _renderTransform);
 
-  const dirty = prepareDisplayObjectRender(cacheState, source);
+  const dirty = prepareScene2DRender(cacheState, source);
   if (dirty || resized) {
     handles.context.clearRect(0, 0, target.canvas.width, target.canvas.height);
-    renderCanvasDisplayObject(cacheState, source);
+    renderCanvasScene2D(cacheState, source);
   }
   return dirty || resized;
 }
@@ -178,7 +178,7 @@ function getTargets(state: CanvasRenderState): WeakMap<RenderCache, CanvasRender
   return targets;
 }
 
-export const defaultCanvasRenderCacheRenderer: DisplayObjectRenderer = {
+export const defaultCanvasRenderCacheRenderer: Scene2DRenderer = {
   createData: noopRendererData,
   submit: drawCanvasRenderCache,
 };

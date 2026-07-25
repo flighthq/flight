@@ -1,6 +1,6 @@
 ﻿import { createEntity } from '@flighthq/entity';
 import type {
-  DisplayObjectRenderer,
+  Scene2DRenderer,
   DomRenderState,
   Renderable,
   RendererData,
@@ -39,7 +39,7 @@ export function drawDomVideo(state: DomRenderState, renderProxy: RenderProxy2D):
   setDomRendererElement(state, element);
 }
 
-export const defaultDomVideoRenderer: DisplayObjectRenderer = {
+export const defaultDomVideoRenderer: Scene2DRenderer = {
   createData: createDomVideoData,
   submit: drawDomVideo,
 };

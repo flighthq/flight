@@ -14,7 +14,7 @@ import {
   appendShapeCurveTo,
   appendShapeEndFill,
   appendShapeMoveTo,
-  createDisplayContainer,
+  createDisplayObject,
   createShape,
   getSurfacePixelRgb,
   ShapeKind,
@@ -40,7 +40,7 @@ const { render, width } = await createFunctionalTarget({
   kinds: [ShapeKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const blob = createShape();
 appendShapeBeginFill(blob, FILL_COLOR, 1);

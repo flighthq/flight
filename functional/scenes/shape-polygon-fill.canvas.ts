@@ -13,7 +13,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapePolygon,
-  createDisplayContainer,
+  createDisplayObject,
   createShape,
   getSurfacePixelRgb,
   invalidateNodeAppearance,
@@ -41,7 +41,7 @@ for (let i = 0; i < 5; i++) {
   points.push(CY + Math.sin(angle) * RADIUS);
 }
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const pentagon = createShape();
 appendShapeBeginFill(pentagon, 0x00cc00, 1);

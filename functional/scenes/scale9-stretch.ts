@@ -19,7 +19,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  createDisplayContainer,
+  createDisplayObject,
   createScale9Shape,
   getSurfacePixelRgb,
   invalidateNodeLocalTransform,
@@ -53,7 +53,7 @@ const { render, width } = await createFunctionalTarget({
   kinds: [Scale9ShapeKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const panel = createScale9Shape(GRID);
 // Outer frame fills the whole NATURAL box in the border color.

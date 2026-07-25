@@ -2,7 +2,7 @@ import { inverseMatrixTransformPointXY } from '@flighthq/geometry';
 import { getNodeWorldMatrix } from '@flighthq/node';
 import { getTextLayout } from '@flighthq/text';
 import { computeRichTextCharIndexAtPoint } from '@flighthq/textlayout';
-import type { DisplayObject, NodeAny, TextLabel } from '@flighthq/types';
+import type { Node2D, NodeAny, TextLabel } from '@flighthq/types';
 import { RichTextKind, TextLabelKind } from '@flighthq/types';
 
 import { hitTestGraphLocalBounds, registerHitTestPrecise } from './hitTests';
@@ -27,7 +27,7 @@ function resolveTextCharIndex(source: NodeAny, x: number, y: number): number {
   if (!hitTestGraphLocalBounds(source, x, y)) return -1;
   const layout = getTextLayout(source as TextLabel);
   if (layout === null) return 0;
-  inverseMatrixTransformPointXY(textHitLocalPoint, getNodeWorldMatrix(source as DisplayObject), x, y);
+  inverseMatrixTransformPointXY(textHitLocalPoint, getNodeWorldMatrix(source as Node2D), x, y);
   return computeRichTextCharIndexAtPoint(layout, textHitLocalPoint.x, textHitLocalPoint.y);
 }
 

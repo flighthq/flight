@@ -1,29 +1,6 @@
 import { createMatrix, inverseMatrix, multiplyMatrix } from '@flighthq/geometry';
 import { getNodeLocalMatrix } from '@flighthq/node';
-import type { DisplayObject, MatrixLike, RectangleLike } from '@flighthq/types';
-
-/**
- * Writes into outRenderTransform the transform to set as state.renderTransform2D when
- * capturing source into a render target. Maps source content into target pixel space so
- * that the bounds origin lands at (contentX, contentY).
- */
-export function computeDisplayObjectRenderTargetTransform(
-  outRenderTransform: MatrixLike,
-  source: DisplayObject,
-  bounds: Readonly<RectangleLike>,
-  contentX: number = 0,
-  contentY: number = 0,
-): void {
-  const localTransform = getNodeLocalMatrix(source);
-  inverseMatrix(_tempInvLocal, localTransform);
-  _tempTranslation.a = 1;
-  _tempTranslation.b = 0;
-  _tempTranslation.c = 0;
-  _tempTranslation.d = 1;
-  _tempTranslation.tx = contentX - bounds.x;
-  _tempTranslation.ty = contentY - bounds.y;
-  multiplyMatrix(outRenderTransform, _tempTranslation, _tempInvLocal);
-}
+import type { Node2D, MatrixLike, RectangleLike } from '@flighthq/types';
 
 /**
  * Writes into outCacheTransform the transform to pass to the cache resolver so the
@@ -53,6 +30,29 @@ export function computeRenderTargetSize(
     width: Math.max(minWidth, Math.ceil(bounds.width) + padding * 2),
     height: Math.max(minHeight, Math.ceil(bounds.height) + padding * 2),
   };
+}
+
+/**
+ * Writes into outRenderTransform the transform to set as state.renderTransform2D when
+ * capturing source into a render target. Maps source content into target pixel space so
+ * that the bounds origin lands at (contentX, contentY).
+ */
+export function computeScene2DRenderTargetTransform(
+  outRenderTransform: MatrixLike,
+  source: Node2D,
+  bounds: Readonly<RectangleLike>,
+  contentX: number = 0,
+  contentY: number = 0,
+): void {
+  const localTransform = getNodeLocalMatrix(source);
+  inverseMatrix(_tempInvLocal, localTransform);
+  _tempTranslation.a = 1;
+  _tempTranslation.b = 0;
+  _tempTranslation.c = 0;
+  _tempTranslation.d = 1;
+  _tempTranslation.tx = contentX - bounds.x;
+  _tempTranslation.ty = contentY - bounds.y;
+  multiplyMatrix(outRenderTransform, _tempTranslation, _tempInvLocal);
 }
 
 const _tempInvLocal = createMatrix();

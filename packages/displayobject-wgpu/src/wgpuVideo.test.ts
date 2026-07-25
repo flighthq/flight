@@ -1,5 +1,5 @@
 import { createVideo } from '@flighthq/displayobject';
-import { getOrCreateRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
+import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render';
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
 
@@ -41,7 +41,7 @@ describe('drawWgpuVideo', () => {
     renderWgpuBackground(state);
 
     const video = createVideo();
-    prepareDisplayObjectRender(state, video);
+    prepareScene2DRender(state, video);
     const renderProxy = getOrCreateRenderProxy2D(state, video);
 
     expect(() => drawWgpuVideo(state, renderProxy)).not.toThrow();
@@ -51,7 +51,7 @@ describe('drawWgpuVideo', () => {
   it('does not throw when renderPass is null', async () => {
     const state = await createWgpuRenderStateForTest();
     const video = createVideo();
-    prepareDisplayObjectRender(state, video);
+    prepareScene2DRender(state, video);
     const renderProxy = getOrCreateRenderProxy2D(state, video);
 
     expect(() => drawWgpuVideo(state, renderProxy)).not.toThrow();

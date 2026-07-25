@@ -16,7 +16,7 @@ import {
   appendShapeEndFill,
   appendShapeLineStyle,
   appendShapeRectangle,
-  createDisplayContainer,
+  createDisplayObject,
   createShape,
   getSurfacePixelRgb,
   invalidateNodeAppearance,
@@ -39,7 +39,7 @@ const { render, width } = await createFunctionalTarget({
   kinds: [ShapeKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const shape = createShape();
 appendShapeLineStyle(shape, STROKE, 0xff0000, 1);

@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -9,19 +9,19 @@ import {
   createCanvasElement,
   createCanvasRenderEffectPipeline,
   createCanvasRenderState,
-  createDisplayContainer,
+  createDisplayObject,
   createFilmGrainEffect,
   createShape,
   defaultCanvasFilmGrainEffectRunner,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   endCanvasRenderEffectPipeline,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerCanvasRenderEffect,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
-  renderCanvasDisplayObject,
+  renderCanvasScene2D,
 } from '@flighthq/sdk';
 
 // Canvas parity column for the same film-grain intent as render.webgl.ts: per-pixel noise mixed over
@@ -42,18 +42,18 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+export function render(root: Node2D): void {
+  if (!prepareScene2DRender(state, root)) return;
   beginCanvasRenderEffectPipeline(state, pipeline);
   renderCanvasBackground(state);
-  renderCanvasDisplayObject(state, root);
+  renderCanvasScene2D(state, root);
   endCanvasRenderEffectPipeline(state, pipeline, [createFilmGrainEffect({ intensity: 0.3, size: 1.5, seed: 7 })]);
 }
 
 // A flat mid-gray fill covering the whole frame. The even tone is the ideal backdrop for film grain:
 // the noise speckle is the only structure in the image.
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 

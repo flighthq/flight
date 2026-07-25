@@ -1,24 +1,24 @@
-import { getDisplayObjectRuntime } from '@flighthq/displayobject';
+import { getNode2DRuntime } from '@flighthq/displayobject';
 import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render';
-import type { DisplayObject, DisplayObjectRenderer, DomRenderState, RenderProxy2D } from '@flighthq/types';
+import type { Node2D, Scene2DRenderer, DomRenderState, RenderProxy2D } from '@flighthq/types';
 
 import { hasDomStructureChanged, processDomNode, reconcileDomContainer, swapDomOrderLists } from './domReconcile';
 import { getDomRenderStateRuntime } from './domRenderState';
 
 // Plain display objects (containers, stages) have no visual geometry of their own.
 // Registering this renderer for DisplayObjectKind ensures cross-backend symmetry with
-// defaultCanvasDisplayObjectRenderer and allows the DOM traversal to correctly process
+// defaultCanvasScene2DRenderer and allows the DOM traversal to correctly process
 // display-object containers when their kind is registered.
-export function drawDomDisplayObject(_state: DomRenderState, _renderProxy: RenderProxy2D): void {
-  // No-op: containers are rendered implicitly by the traversal in renderDomDisplayObject.
+export function drawDomScene2D(_state: DomRenderState, _renderProxy: RenderProxy2D): void {
+  // No-op: containers are rendered implicitly by the traversal in renderDomScene2D.
 }
 
-export const defaultDomDisplayObjectRenderer: DisplayObjectRenderer = {
+export const defaultDomScene2DRenderer: Scene2DRenderer = {
   createData: noopRendererData,
-  submit: drawDomDisplayObject,
+  submit: drawDomScene2D,
 };
 
-export function renderDomDisplayObject(state: DomRenderState, source: DisplayObject): void {
+export function renderDomScene2D(state: DomRenderState, source: Node2D): void {
   const runtime = getDomRenderStateRuntime(state);
   const container = state.element;
   const clipHooks = state.displayObjectClipHooks;
@@ -32,7 +32,7 @@ export function renderDomDisplayObject(state: DomRenderState, source: DisplayObj
   let needsReconcile = false;
 
   while (stackLength > 0) {
-    const current = tempStack[--stackLength] as DisplayObject;
+    const current = tempStack[--stackLength] as Node2D;
     if (!current.enabled) continue;
 
     const data = getRenderProxy2D(state, current);
@@ -51,10 +51,10 @@ export function renderDomDisplayObject(state: DomRenderState, source: DisplayObj
       applyClip?.apply(state, data);
     }
     if (data.traverseChildren) {
-      const children = getDisplayObjectRuntime(current).children;
+      const children = getNode2DRuntime(current).children;
       if (children !== null) {
         for (let i = children.length - 1; i >= 0; i--) {
-          tempStack[stackLength++] = children[i] as DisplayObject;
+          tempStack[stackLength++] = children[i] as Node2D;
         }
       }
     }

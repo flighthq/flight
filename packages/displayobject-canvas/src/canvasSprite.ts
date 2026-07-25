@@ -1,6 +1,6 @@
-import { getDisplayObjectRuntime } from '@flighthq/displayobject';
+import { getNode2DRuntime } from '@flighthq/displayobject';
 import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render';
-import type { CanvasRenderState, DisplayObject, RenderProxy2D, Sprite, SpriteRenderer } from '@flighthq/types';
+import type { CanvasRenderState, Node2D, RenderProxy2D, Sprite, SpriteRenderer } from '@flighthq/types';
 
 import { applyCanvasMaterial } from './canvasMaterialRegistry';
 import { getCanvasRenderStateRuntime } from './canvasRenderState';
@@ -56,13 +56,13 @@ export const defaultCanvasSpriteRenderer: SpriteRenderer = {
   submit: drawCanvasSprite,
 };
 
-export function renderCanvasSprite(state: CanvasRenderState, source: DisplayObject): void {
+export function renderCanvasSprite(state: CanvasRenderState, source: Node2D): void {
   const tempStack = getCanvasRenderStateRuntime(state).tempStack;
   let stackLength = 1;
   tempStack[0] = source;
 
   while (stackLength > 0) {
-    const current = tempStack[--stackLength] as DisplayObject;
+    const current = tempStack[--stackLength] as Node2D;
     if (!current.enabled) continue;
     const data = getRenderProxy2D(state, current);
     if (data === undefined || !isRenderProxyVisible(data)) continue;
@@ -70,10 +70,10 @@ export function renderCanvasSprite(state: CanvasRenderState, source: DisplayObje
     if (data.renderer !== null) data.renderer.submit(state, data);
 
     if (data.traverseChildren) {
-      const children = getDisplayObjectRuntime(current).children;
+      const children = getNode2DRuntime(current).children;
       if (children !== null) {
         for (let i = children.length - 1; i >= 0; i--) {
-          tempStack[stackLength++] = children[i] as DisplayObject;
+          tempStack[stackLength++] = children[i] as Node2D;
         }
       }
     }

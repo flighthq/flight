@@ -19,7 +19,7 @@ import {
   addNodeChild,
   BitmapKind,
   createBitmap,
-  createDisplayContainer,
+  createDisplayObject,
   createImageResourceFromCanvas,
   getSurfacePixelRgb,
   invalidateNodeAppearance,
@@ -63,7 +63,7 @@ const { render, width } = await createFunctionalTarget({
   kinds: [BitmapKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 function placeRamp(x: number, y: number, alpha: number): void {
   const bmp = createBitmap();

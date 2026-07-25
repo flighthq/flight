@@ -10,7 +10,7 @@
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
-  createDisplayContainer,
+  createDisplayObject,
   createVideo,
   createVideoResource,
   getSurfacePixelRgb,
@@ -49,7 +49,7 @@ Object.defineProperty(frame, 'videoWidth', { value: FRAME_W });
 Object.defineProperty(frame, 'videoHeight', { value: FRAME_H });
 Object.defineProperty(frame, 'readyState', { value: 2 }); // HAVE_CURRENT_DATA — a frame is available
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const videoNode = createVideo();
 videoNode.data.source = createVideoResource(frame as unknown as HTMLVideoElement);

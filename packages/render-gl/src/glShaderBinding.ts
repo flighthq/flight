@@ -1,5 +1,5 @@
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
-import type { DisplayObject, GlRenderState, Kind, RenderProxy2D } from '@flighthq/types';
+import type { Node2D, GlRenderState, Kind, RenderProxy2D } from '@flighthq/types';
 import type { GlBitmapShader } from '@flighthq/types';
 
 import { getGlRenderStateRuntime } from './glRenderState';
@@ -55,7 +55,7 @@ export function resolveGlShader(state: GlRenderState, renderProxy: RenderProxy2D
  * none) in different render states — e.g. a custom shader for an offscreen pass
  * that the standard renderer has no memory of.
  */
-export function setGlShader(state: GlRenderState, node: DisplayObject, shader: GlBitmapShader | null): void {
+export function setGlShader(state: GlRenderState, node: Node2D, shader: GlBitmapShader | null): void {
   const renderProxy = getOrCreateRenderProxy2D(state, node);
   if (shader === null) {
     _shaderBindings.delete(renderProxy);

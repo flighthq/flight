@@ -4,18 +4,18 @@ import { computeTextFormatFontString, getTextLabelRuntime } from '@flighthq/text
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout';
 import type {
   CanvasRenderState,
-  DisplayObjectRenderer,
+  Scene2DRenderer,
   RenderProxy2D,
   TextFormat,
   TextLabel,
   TextLabelRuntime,
 } from '@flighthq/types';
 
-import { drawCanvasDisplayObject } from './canvasDisplayObject';
+import { drawCanvasScene2D } from './canvasNode2D';
 import { setCanvasTransform } from './canvasTransform';
 
 export function drawCanvasTextLabel(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
-  drawCanvasDisplayObject(state, renderProxy);
+  drawCanvasScene2D(state, renderProxy);
 
   const source = renderProxy.source as TextLabel;
   const { text, textFormat } = source.data;
@@ -66,7 +66,7 @@ export function drawCanvasTextLabel(state: CanvasRenderState, renderProxy: Rende
   }
 }
 
-export const defaultCanvasTextLabelRenderer: DisplayObjectRenderer = {
+export const defaultCanvasTextLabelRenderer: Scene2DRenderer = {
   createData: noopRendererData,
   submit: drawCanvasTextLabel,
 };

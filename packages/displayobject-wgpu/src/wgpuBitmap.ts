@@ -4,7 +4,7 @@ import { bindWgpuImageResourceTexture } from '@flighthq/render-wgpu';
 import { resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import { resolveWgpuShader } from '@flighthq/render-wgpu';
-import type { Bitmap, DisplayObjectRenderer, RenderProxy2D, WgpuRenderState } from '@flighthq/types';
+import type { Bitmap, Scene2DRenderer, RenderProxy2D, WgpuRenderState } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
 import {
@@ -96,7 +96,7 @@ export function drawWgpuBitmap(state: WgpuRenderState, renderProxy: RenderProxy2
   runtime.spriteBatchCount++;
 }
 
-export const defaultWgpuBitmapRenderer: DisplayObjectRenderer = {
+export const defaultWgpuBitmapRenderer: Scene2DRenderer = {
   format: BatchFormat.Quad,
   createData: noopRendererData,
   submit: drawWgpuBitmap,

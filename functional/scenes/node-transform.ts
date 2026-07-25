@@ -14,7 +14,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  createDisplayContainer,
+  createDisplayObject,
   createShape,
   getSurfacePixelRgb,
   invalidateNodeLocalTransform,
@@ -39,7 +39,7 @@ const { render, width } = await createFunctionalTarget({
   kinds: [ShapeKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 // Local geometry: a SIDE×SIDE square with its top-left at the local origin. The pivot is the square's
 // center, so setting rotation turns the square about its own middle, and (x, y) places that center.

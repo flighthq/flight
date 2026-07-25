@@ -1,5 +1,5 @@
 ﻿import { createImageResource } from '@flighthq/image';
-import { getOrCreateRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
+import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render';
 import { createTilemap, setTilemapTile } from '@flighthq/sprite';
 import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas';
 import { buildTilesetRegions, createTileset } from '@flighthq/tileset';
@@ -34,7 +34,7 @@ describe('drawCanvasTilemap', () => {
   it('does not draw when tileset is null', () => {
     const state = makeState();
     const tilemap = createTilemap();
-    prepareDisplayObjectRender(state, tilemap);
+    prepareScene2DRender(state, tilemap);
     const renderProxy = getOrCreateRenderProxy2D(state, tilemap);
     const spy = vi.spyOn(state.context, 'drawImage');
     drawCanvasTilemap(state, renderProxy);
@@ -47,7 +47,7 @@ describe('drawCanvasTilemap', () => {
     const tilemap = createTilemap({ data: { columns: 2, rows: 1, tileset } });
     setTilemapTile(tilemap, 0, 0, 0);
     setTilemapTile(tilemap, 1, 0, 1);
-    prepareDisplayObjectRender(state, tilemap);
+    prepareScene2DRender(state, tilemap);
     const renderProxy = getOrCreateRenderProxy2D(state, tilemap);
     const spy = vi.spyOn(state.context, 'drawImage');
     drawCanvasTilemap(state, renderProxy);
@@ -60,7 +60,7 @@ describe('drawCanvasTilemap', () => {
     const tilemap = createTilemap({ data: { columns: 2, rows: 1, tileset } });
     setTilemapTile(tilemap, 0, 0, 0);
     // cell (1,0) remains -1
-    prepareDisplayObjectRender(state, tilemap);
+    prepareScene2DRender(state, tilemap);
     const renderProxy = getOrCreateRenderProxy2D(state, tilemap);
     const spy = vi.spyOn(state.context, 'drawImage');
     drawCanvasTilemap(state, renderProxy);

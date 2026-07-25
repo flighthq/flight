@@ -2,10 +2,10 @@ import { createRectangle } from '@flighthq/geometry';
 import { createImageResource } from '@flighthq/image';
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node';
 import { getShapeBounds } from '@flighthq/shape';
-import type { DisplayObject, ImportDiagnostic, RichText, Shape } from '@flighthq/types';
+import type { Node2D, ImportDiagnostic, RichText, Shape } from '@flighthq/types';
 import { ShapeKind } from '@flighthq/types';
 
-import { createDisplayObjectFromSvgDocument } from './svgDocument';
+import { createScene2DFromSvgDocument } from './svgDocument';
 
 describe('SVG conformance matrix', () => {
   it.each([
@@ -48,7 +48,7 @@ describe('SVG conformance matrix', () => {
     const image = createImageResource();
     image.width = 10;
     image.height = 10;
-    const root = createDisplayObjectFromSvgDocument(
+    const root = createScene2DFromSvgDocument(
       `
         <svg>
           <defs>
@@ -95,7 +95,7 @@ describe('SVG conformance matrix', () => {
     const image = createImageResource();
     image.width = 20;
     image.height = 10;
-    const root = createDisplayObjectFromSvgDocument(
+    const root = createScene2DFromSvgDocument(
       `
         <svg>
           <defs>
@@ -118,7 +118,7 @@ describe('SVG conformance matrix', () => {
 
   it('diagnoses objectBoundingBox clips when text bounds cannot be measured honestly', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    const root = createDisplayObjectFromSvgDocument(
+    const root = createScene2DFromSvgDocument(
       `
         <svg>
           <defs>
@@ -135,7 +135,7 @@ describe('SVG conformance matrix', () => {
   });
 
   it('instantiates path, symbol, and nested-use geometry inside clip paths', () => {
-    const root = createDisplayObjectFromSvgDocument(`
+    const root = createScene2DFromSvgDocument(`
       <svg>
         <defs>
           <path id="clipPathShape" d="M0 0 H10 V10 H0 Z"/>
@@ -176,7 +176,7 @@ describe('SVG conformance matrix', () => {
     const image = createImageResource();
     image.width = 20;
     image.height = 10;
-    const root = createDisplayObjectFromSvgDocument(
+    const root = createScene2DFromSvgDocument(
       `
         <svg>
           <defs>
@@ -197,7 +197,7 @@ describe('SVG conformance matrix', () => {
   });
 
   it('shares use resolution and display suppression between masks and clip paths', () => {
-    const root = createDisplayObjectFromSvgDocument(`
+    const root = createScene2DFromSvgDocument(`
       <svg>
         <defs>
           <path id="maskShape" d="M0 0 H10 V10 H0 Z"/>
@@ -215,7 +215,7 @@ describe('SVG conformance matrix', () => {
 
   it('treats a resolved display-none clip definition as an empty clip', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    const root = createDisplayObjectFromSvgDocument(
+    const root = createScene2DFromSvgDocument(
       `
         <svg>
           <defs><clipPath id="empty"><rect width="10" height="10" display="none"/></clipPath></defs>
@@ -231,7 +231,7 @@ describe('SVG conformance matrix', () => {
 
   it('keeps an empty hidden mask as a hard clip and reports the recovery', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    const root = createDisplayObjectFromSvgDocument(
+    const root = createScene2DFromSvgDocument(
       `
         <svg>
           <defs><mask id="empty"><rect width="10" height="10" visibility="hidden"/></mask></defs>
@@ -248,7 +248,7 @@ describe('SVG conformance matrix', () => {
 
   it('diagnoses unsupported clip text while preserving empty-clip semantics', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    const root = createDisplayObjectFromSvgDocument(
+    const root = createScene2DFromSvgDocument(
       `
         <svg>
           <defs><clipPath id="text"><text>Clip</text></clipPath></defs>
@@ -264,7 +264,7 @@ describe('SVG conformance matrix', () => {
   });
 
   it('intersects clip-path references on clip definitions and their children', () => {
-    const root = createDisplayObjectFromSvgDocument(`
+    const root = createScene2DFromSvgDocument(`
       <svg>
         <defs>
           <clipPath id="narrow"><rect width="10" height="20"/></clipPath>
@@ -282,7 +282,7 @@ describe('SVG conformance matrix', () => {
 
   it('honestly skips a transformed objectBoundingBox nested clip intersection', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    const root = createDisplayObjectFromSvgDocument(
+    const root = createScene2DFromSvgDocument(
       `
         <svg>
           <defs>
@@ -302,7 +302,7 @@ describe('SVG conformance matrix', () => {
   });
 
   it('inherits clip-rule from a clip definition ancestor, not its referencing target', () => {
-    const root = createDisplayObjectFromSvgDocument(`
+    const root = createScene2DFromSvgDocument(`
       <svg>
         <defs>
           <g clip-rule="evenodd">
@@ -317,7 +317,7 @@ describe('SVG conformance matrix', () => {
   });
 
   it('keeps fill and clip winding properties independently inherited', () => {
-    const root = createDisplayObjectFromSvgDocument(`
+    const root = createScene2DFromSvgDocument(`
       <svg>
         <defs>
           <clipPath id="fillOnly" fill-rule="evenodd"><path d="M0 0 H10 V10 H0 Z"/></clipPath>
@@ -357,7 +357,7 @@ describe('SVG conformance matrix', () => {
       target: '<use href="#symbol" class="theme"/>',
     },
   ])('applies CSS cascade and presentation inheritance for $kind', ({ expected, target }) => {
-    const root = createDisplayObjectFromSvgDocument(`
+    const root = createScene2DFromSvgDocument(`
       <svg>
         <style>
           .accent { fill: red }
@@ -377,7 +377,7 @@ describe('SVG conformance matrix', () => {
   });
 
   it('applies stylesheet cascade to text and tspan runs', () => {
-    const root = createDisplayObjectFromSvgDocument(`
+    const root = createScene2DFromSvgDocument(`
       <svg>
         <style>
           text { fill: red }
@@ -393,7 +393,7 @@ describe('SVG conformance matrix', () => {
   });
 
   it('suppresses display none while allowing visibility descendants to override', () => {
-    const root = createDisplayObjectFromSvgDocument(`
+    const root = createScene2DFromSvgDocument(`
       <svg>
         <g display="none"><rect width="10" height="10" display="inline"/></g>
         <g visibility="hidden">
@@ -413,7 +413,7 @@ describe('SVG conformance matrix', () => {
   });
 
   it('keeps display at its initial value on descendants of a display-none ancestor', () => {
-    const root = createDisplayObjectFromSvgDocument(`
+    const root = createScene2DFromSvgDocument(`
       <svg><g display="none"><rect width="10" height="10"/></g></svg>
     `);
     const group = getNodeChildAt(root, 0)!;
@@ -434,7 +434,7 @@ describe('SVG conformance matrix', () => {
     const image = createImageResource();
     image.width = 10;
     image.height = 10;
-    const root = createDisplayObjectFromSvgDocument(
+    const root = createScene2DFromSvgDocument(
       `
         <svg>
           <defs>
@@ -453,7 +453,7 @@ describe('SVG conformance matrix', () => {
   });
 
   it('excludes hidden clip graphics and permits descendant visibility overrides', () => {
-    const root = createDisplayObjectFromSvgDocument(`
+    const root = createScene2DFromSvgDocument(`
       <svg>
         <defs>
           <clipPath id="visibility">
@@ -492,7 +492,7 @@ describe('SVG conformance matrix', () => {
       target: 'symbol',
     },
   ])('maps viewBox and viewport sizing for $kind', ({ expected, source, target }) => {
-    const root = createDisplayObjectFromSvgDocument(source);
+    const root = createScene2DFromSvgDocument(source);
     const node =
       target === 'root'
         ? root
@@ -504,11 +504,11 @@ describe('SVG conformance matrix', () => {
   });
 });
 
-function findFirstShape(target: DisplayObject): Shape | null {
+function findFirstShape(target: Node2D): Shape | null {
   if (target.kind === ShapeKind) return target as Shape;
   const count = getNodeChildCount(target);
   for (let index = 0; index < count; index++) {
-    const child = getNodeChildAt(target, index) as DisplayObject | null;
+    const child = getNodeChildAt(target, index) as Node2D | null;
     if (child === null) continue;
     const shape = findFirstShape(child);
     if (shape !== null) return shape;
@@ -532,8 +532,8 @@ function getShapePathWinding(shape: Shape): unknown {
   return index === -1 ? null : shape.data.commands[index + 4];
 }
 
-function getDescendant(root: DisplayObject, path: number[]): DisplayObject {
+function getDescendant(root: Node2D, path: number[]): Node2D {
   let node = root;
-  for (const index of path) node = getNodeChildAt(node, index) as DisplayObject;
+  for (const index of path) node = getNodeChildAt(node, index) as Node2D;
   return node;
 }

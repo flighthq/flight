@@ -23,45 +23,41 @@ import type {
   Adjustment,
   ClipRegion,
   ColorTransform,
-  DisplayObject,
-  DisplayObjectDataFactory,
-  DisplayObjectRuntime,
-  DisplayObjectRuntimeFactory,
+  Node2D,
+  Node2DDataFactory,
+  Node2DRuntime,
+  Node2DRuntimeFactory,
   Kind,
   MethodsOf,
   NodeAny,
   NodeRuntimeFactory,
   PartialNode,
 } from '@flighthq/types';
-import { DisplayObjectKind, DisplayObjectTraitsKey } from '@flighthq/types';
+import { Node2DTraitsKey } from '@flighthq/types';
 
 // Appends one pointwise color adjustment to this object's stack (creating the stack if absent), re-fuses
 // the resolved cache, and invalidates appearance so the render walk hands the fold the new value.
 // Allocates a new array — the stack is a plain `readonly Adjustment[]`, never mutated in place.
-export function addDisplayObjectColorAdjustment(source: DisplayObject, adjustment: Adjustment): void {
-  const runtime = getNodeRuntime(source) as DisplayObjectRuntime;
+export function addNode2DColorAdjustment(source: Node2D, adjustment: Adjustment): void {
+  const runtime = getNodeRuntime(source) as Node2DRuntime;
   const current = runtime.colorAdjustments;
   runtime.colorAdjustments = current === null ? [adjustment] : [...current, adjustment];
-  resolveDisplayObjectColorAdjustments(runtime);
+  resolveNode2DColorAdjustments(runtime);
   invalidateNodeAppearance(source);
 }
 
-export function createDisplayObject(obj?: Readonly<PartialNode<DisplayObject>>): DisplayObject {
-  return createDisplayObjectGeneric(DisplayObjectKind, obj);
-}
-
-export function createDisplayObjectGeneric<R extends DisplayObjectRuntime>(
+export function createNode2D<R extends Node2DRuntime>(
   kind: Kind,
-  obj?: Readonly<PartialNode<DisplayObject>>,
-  createData?: DisplayObjectDataFactory,
-  createDisplayObjectRuntimeFactory?: DisplayObjectRuntimeFactory<R>,
-): DisplayObject {
+  obj?: Readonly<PartialNode<Node2D>>,
+  createData?: Node2DDataFactory,
+  createNode2DRuntimeFactory?: Node2DRuntimeFactory<R>,
+): Node2D {
   const out = createNode(
     kind,
     obj,
     createData,
-    createDisplayObjectRuntimeFactory ?? (createDisplayObjectRuntime as unknown as NodeRuntimeFactory<R>),
-  ) as DisplayObject;
+    createNode2DRuntimeFactory ?? (createNode2DRuntime as unknown as NodeRuntimeFactory<R>),
+  ) as Node2D;
   initTransform2DTrait(out, obj);
   initBoundsRectangleTrait(out, obj);
   initAppearanceTrait(out, obj);
@@ -71,11 +67,9 @@ export function createDisplayObjectGeneric<R extends DisplayObjectRuntime>(
   return out;
 }
 
-export function createDisplayObjectRuntime(
-  methods?: Readonly<Partial<MethodsOf<DisplayObjectRuntime>>>,
-): DisplayObjectRuntime {
-  const out = createNodeRuntime(methods) as DisplayObjectRuntime;
-  out.traits = DisplayObjectTraitsKey;
+export function createNode2DRuntime(methods?: Readonly<Partial<MethodsOf<Node2DRuntime>>>): Node2DRuntime {
+  const out = createNodeRuntime(methods) as Node2DRuntime;
+  out.traits = Node2DTraitsKey;
   out.stage = null;
   initTransform2DRuntimeTrait(out, methods);
   initBoundsRectangleRuntimeTrait(out, methods);
@@ -84,19 +78,19 @@ export function createDisplayObjectRuntime(
 
 // Returns this object's pointwise color-adjustment stack (the source of truth on the node runtime), or
 // null when it carries none.
-export function getDisplayObjectColorAdjustments(source: Readonly<DisplayObject>): readonly Adjustment[] | null {
+export function getNode2DColorAdjustments(source: Readonly<Node2D>): readonly Adjustment[] | null {
   return getNodeRuntime(source).colorAdjustments;
 }
 
-export function getDisplayObjectRuntime(source: Readonly<DisplayObject>): Readonly<DisplayObjectRuntime> {
-  return getNodeRuntime(source) as DisplayObjectRuntime;
+export function getNode2DRuntime(source: Readonly<Node2D>): Readonly<Node2DRuntime> {
+  return getNodeRuntime(source) as Node2DRuntime;
 }
 
-export function isDisplayObject(node: NodeAny): node is DisplayObject {
-  return getNodeRuntime(node).traits === DisplayObjectTraitsKey;
+export function isNode2D(node: NodeAny): node is Node2D {
+  return getNodeRuntime(node).traits === Node2DTraitsKey;
 }
 
-export function setDisplayObjectClip(source: DisplayObject, value: ClipRegion | null): void {
+export function setNode2DClip(source: Node2D, value: ClipRegion | null): void {
   source.clip = value;
   invalidateNodeAppearance(source);
 }
@@ -105,24 +99,18 @@ export function setDisplayObjectClip(source: DisplayObject, value: ClipRegion | 
 // the removed color-transform trait. A color transform is one member: `createColorTransformAdjustment`.
 // Re-fuses the resolved cache once here (not per frame) and invalidates appearance so the render walk
 // hands the fold the affine ColorTransform the stack resolves to. Null is the untinted default.
-export function setDisplayObjectColorAdjustments(source: DisplayObject, value: readonly Adjustment[] | null): void {
-  const runtime = getNodeRuntime(source) as DisplayObjectRuntime;
+export function setNode2DColorAdjustments(source: Node2D, value: readonly Adjustment[] | null): void {
+  const runtime = getNodeRuntime(source) as Node2DRuntime;
   runtime.colorAdjustments = value;
-  resolveDisplayObjectColorAdjustments(runtime);
+  resolveNode2DColorAdjustments(runtime);
   invalidateNodeAppearance(source);
 }
 
 // Convenience for the common single-tint path (the color-transform an agent looks for): sets this object's
 // adjustment stack to one `ColorTransformAdjustment`, or clears it with null. Thin wrapper over
-// `setDisplayObjectColorAdjustments` — a color transform is just one adjustment in the generic stack.
-export function setDisplayObjectColorTransform(
-  source: DisplayObject,
-  colorTransform: Readonly<ColorTransform> | null,
-): void {
-  setDisplayObjectColorAdjustments(
-    source,
-    colorTransform === null ? null : [createColorTransformAdjustment(colorTransform)],
-  );
+// `setNode2DColorAdjustments` — a color transform is just one adjustment in the generic stack.
+export function setNode2DColorTransform(source: Node2D, colorTransform: Readonly<ColorTransform> | null): void {
+  setNode2DColorAdjustments(source, colorTransform === null ? null : [createColorTransformAdjustment(colorTransform)]);
 }
 
 // Fuses the runtime's color-adjustment stack once into its cached affine `resolvedColorTransform`, setting
@@ -130,7 +118,7 @@ export function setDisplayObjectColorTransform(
 // fold cannot represent yet (the render walk reports that through the shakeable guard). Called by the
 // accessors on change — the render walk only reads the cache, so no fuse math weighs on the base render
 // path. The cached ColorTransform is reused in place across re-fuses to avoid per-set allocation churn.
-function resolveDisplayObjectColorAdjustments(runtime: DisplayObjectRuntime): void {
+function resolveNode2DColorAdjustments(runtime: Node2DRuntime): void {
   const adjustments = runtime.colorAdjustments;
   if (adjustments === null || adjustments.length === 0) {
     runtime.resolvedColorTransform = null;
@@ -147,3 +135,5 @@ function resolveDisplayObjectColorAdjustments(runtime: DisplayObjectRuntime): vo
   runtime.resolvedColorTransform = out;
   runtime.colorAdjustmentsChannelMixing = status === COLOR_ADJUSTMENT_CHANNEL_MIXING;
 }
+
+export { createDisplayObject } from './displayContainer';

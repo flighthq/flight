@@ -1,14 +1,14 @@
 ﻿import { noopRendererData } from '@flighthq/render';
 import type {
   CanvasRenderState,
-  DisplayObjectRenderer,
+  Scene2DRenderer,
   MatrixLike,
   RenderProxy2D,
   Scale9Mapper,
   Scale9Shape,
 } from '@flighthq/types';
 
-import { drawCanvasDisplayObject } from './canvasDisplayObject';
+import { drawCanvasScene2D } from './canvasNode2D';
 import { buildScale9Mapper } from './canvasScale9Mapper';
 import { renderCanvasShapeCommands } from './canvasShape';
 import { setCanvasTransform } from './canvasTransform';
@@ -17,7 +17,7 @@ const _remappedCommands: unknown[] = [];
 const _remappedPathData: number[] = [];
 
 export function drawCanvasScale9Shape(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
-  drawCanvasDisplayObject(state, renderProxy);
+  drawCanvasScene2D(state, renderProxy);
 
   const source = renderProxy.source as Scale9Shape;
   const { commands, scale9Grid } = source.data;
@@ -112,7 +112,7 @@ export function mapCanvasScale9ShapeCommands(out: unknown[], source: readonly un
   }
 }
 
-export const defaultCanvasScale9ShapeRenderer: DisplayObjectRenderer = {
+export const defaultCanvasScale9ShapeRenderer: Scene2DRenderer = {
   createData: noopRendererData,
   submit: drawCanvasScale9Shape,
 };

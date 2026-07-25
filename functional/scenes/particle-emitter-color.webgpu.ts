@@ -16,7 +16,7 @@ import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   addTextureAtlasRegion,
-  createDisplayContainer,
+  createDisplayObject,
   createImageResource,
   createParticleEmitter2D,
   createTextureAtlas,
@@ -64,7 +64,7 @@ function makeWhiteCanvas(): HTMLCanvasElement {
 const atlas = createTextureAtlas({ image: createImageResource(makeWhiteCanvas()) });
 addTextureAtlasRegion(atlas, 0, 0, REGION, REGION);
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const emitter = createParticleEmitter2D();
 emitter.data.atlas = atlas;

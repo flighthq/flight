@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import {
   BitmapKind,
   createCanvasElement,
@@ -20,12 +20,12 @@ import {
   enableCanvasRenderCache,
   invalidateNodeLocalTransform,
   ParticleEmitter2DKind,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   QuadBatchKind,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
-  renderCanvasDisplayObject,
+  renderCanvasScene2D,
   RichTextKind,
   Scale9ShapeKind,
   ShapeKind,
@@ -93,12 +93,12 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
     width,
     height,
     scale: pixelRatio,
-    render(root: DisplayObject): void {
-      if (!prepareDisplayObjectRender(state, root)) return;
+    render(root: Node2D): void {
+      if (!prepareScene2DRender(state, root)) return;
       renderCanvasBackground(state);
-      renderCanvasDisplayObject(state, root);
+      renderCanvasScene2D(state, root);
     },
-    benchmark(root: DisplayObject): void {
+    benchmark(root: Node2D): void {
       invalidateNodeLocalTransform(root);
       this.render(root);
     },

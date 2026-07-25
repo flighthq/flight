@@ -6,7 +6,7 @@ import { resolveGlMaterialRenderer } from '@flighthq/render-gl';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import { getShapeFillRegions, getShapeStrokeRegions, hasShapeFill } from '@flighthq/shape';
 import type {
-  DisplayObjectRenderer,
+  Scene2DRenderer,
   GlRenderState,
   GlShapeMesh,
   ImageResource,
@@ -183,7 +183,7 @@ export function drawGlShape(state: GlRenderState, renderProxy: RenderProxy2D): v
   runtime.spriteBatchCount++;
 }
 
-export const defaultGlShapeRenderer: DisplayObjectRenderer = {
+export const defaultGlShapeRenderer: Scene2DRenderer = {
   format: BatchFormat.Quad,
   createData: createGlShapeData,
   destroyData: destroyGlShapeData,

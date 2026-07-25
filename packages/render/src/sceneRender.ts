@@ -133,7 +133,7 @@ export function packSceneLightBlock(out: SceneLightBlock, lights: Readonly<Scene
   out.version++;
 }
 
-// The per-frame preparation pass for a 3D scene, the 3D analog of prepareDisplayObjectRender. It is
+// The per-frame preparation pass for a 3D scene, the 3D analog of prepareScene2DRender. It is
 // backend-agnostic (no GPU context): it walks the SceneNode hierarchy rooted at `scene`, propagating
 // each node's world matrix (parentWorld x local matrix, resolved lazily on the node runtime and
 // alias-safe), computes the draw camera's view-projection, frustum-culls every Mesh against its

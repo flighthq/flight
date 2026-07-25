@@ -13,7 +13,7 @@ import {
   appendShapeEndFill,
   appendShapeRectangle,
   BlendMode,
-  createDisplayContainer,
+  createDisplayObject,
   createShape,
   getSurfacePixelRgb,
   invalidateNodeAppearance,
@@ -45,7 +45,7 @@ const { render, width } = await createFunctionalTarget({
   blend: true,
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const base = createShape();
 appendShapeBeginFill(base, GRAY, 1);

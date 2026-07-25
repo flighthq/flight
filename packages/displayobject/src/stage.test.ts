@@ -8,7 +8,7 @@ import {
   createStageRuntime,
   createStageSignals,
   enableStageSignals,
-  getDisplayObjectStage,
+  getScene2DRoot,
   getStageRuntime,
   getStageSignals,
   setStageSize,
@@ -31,7 +31,7 @@ describe('createStage', () => {
 
   it('allocates a display-object root the stage points back to', () => {
     expect(stage.root).toBeDefined();
-    expect(getDisplayObjectStage(stage.root)).toBe(stage);
+    expect(getScene2DRoot(stage.root)).toBe(stage);
   });
 
   it('allows pre-defined values', () => {
@@ -79,24 +79,24 @@ describe('enableStageSignals', () => {
   });
 });
 
-describe('getDisplayObjectStage', () => {
+describe('getScene2DRoot', () => {
   it('returns null when the node has no parent', () => {
     const obj = createDisplayObject();
-    expect(getDisplayObjectStage(obj)).toBeNull();
+    expect(getScene2DRoot(obj)).toBeNull();
   });
 
   it('returns null when the root is not owned by a Stage', () => {
     const root = createDisplayObject();
     const child = createDisplayObject();
     addNodeChild(root, child);
-    expect(getDisplayObjectStage(child)).toBeNull();
+    expect(getScene2DRoot(child)).toBeNull();
   });
 
   it('returns the Stage when a child is added under its root', () => {
     const stage = createStage();
     const child = createDisplayObject();
     addNodeChild(stage.root, child);
-    expect(getDisplayObjectStage(child)).toBe(stage);
+    expect(getScene2DRoot(child)).toBe(stage);
   });
 
   it('returns the Stage from a deeply nested node', () => {
@@ -105,7 +105,7 @@ describe('getDisplayObjectStage', () => {
     const leaf = createDisplayObject();
     addNodeChild(stage.root, mid);
     addNodeChild(mid, leaf);
-    expect(getDisplayObjectStage(leaf)).toBe(stage);
+    expect(getScene2DRoot(leaf)).toBe(stage);
   });
 });
 

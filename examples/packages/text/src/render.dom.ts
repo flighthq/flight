@@ -1,15 +1,15 @@
-import type { DisplayObject } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import {
   createDomRenderState,
   defaultCanvasShapeCommands,
   defaultDomRichTextRenderer,
   defaultDomShapeRenderer,
   defaultDomTextLabelRenderer,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerCanvasShapeCommands,
   registerRenderer,
   renderDomBackground,
-  renderDomDisplayObject,
+  renderDomScene2D,
   RichTextKind,
   ShapeKind,
   TextLabelKind,
@@ -35,8 +35,8 @@ export const canvas: HTMLElement = container;
 
 export const scale = 1;
 
-export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+export function render(root: Node2D): void {
+  if (!prepareScene2DRender(state, root)) return;
   renderDomBackground(state);
-  renderDomDisplayObject(state, root);
+  renderDomScene2D(state, root);
 }

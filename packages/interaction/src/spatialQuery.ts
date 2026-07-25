@@ -1,12 +1,8 @@
 import { intersectsRectangle } from '@flighthq/geometry';
 import { getNodeRuntime, getNodeWorldBoundsRectangle } from '@flighthq/node';
-import type { DisplayObject, Rectangle } from '@flighthq/types';
+import type { Node2D, Rectangle } from '@flighthq/types';
 
-export function hitTestAreaQuery(
-  root: DisplayObject,
-  rect: Readonly<Rectangle>,
-  out: DisplayObject[] = [],
-): DisplayObject[] {
+export function hitTestAreaQuery(root: Node2D, rect: Readonly<Rectangle>, out: Node2D[] = []): Node2D[] {
   if (!root.enabled) return out;
 
   const worldBounds = getNodeWorldBoundsRectangle(root);
@@ -17,7 +13,7 @@ export function hitTestAreaQuery(
   const children = getNodeRuntime(root).children;
   if (children !== null) {
     for (const child of children) {
-      hitTestAreaQuery(child as DisplayObject, rect, out);
+      hitTestAreaQuery(child as Node2D, rect, out);
     }
   }
 
@@ -25,12 +21,12 @@ export function hitTestAreaQuery(
 }
 
 export function hitTestAreaQueryCircle(
-  root: DisplayObject,
+  root: Node2D,
   cx: number,
   cy: number,
   radius: number,
-  out: DisplayObject[] = [],
-): DisplayObject[] {
+  out: Node2D[] = [],
+): Node2D[] {
   if (!root.enabled) return out;
 
   const b = getNodeWorldBoundsRectangle(root);
@@ -45,7 +41,7 @@ export function hitTestAreaQueryCircle(
   const children = getNodeRuntime(root).children;
   if (children !== null) {
     for (const child of children) {
-      hitTestAreaQueryCircle(child as DisplayObject, cx, cy, radius, out);
+      hitTestAreaQueryCircle(child as Node2D, cx, cy, radius, out);
     }
   }
 

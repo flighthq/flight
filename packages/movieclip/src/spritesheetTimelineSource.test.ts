@@ -1,8 +1,8 @@
-import { createDisplayContainer, getDisplayObjectRuntime } from '@flighthq/displayobject';
+import { createDisplayObject, getNode2DRuntime } from '@flighthq/displayobject';
 import { createImageResource } from '@flighthq/image';
 import { createSpritesheet, createSpritesheetAnimation, createSpritesheetFrame } from '@flighthq/spritesheet';
 import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas';
-import type { DisplayObject } from '@flighthq/types';
+import type { Node2D } from '@flighthq/types';
 
 import { createSpritesheetTimelineSource } from './spritesheetTimelineSource';
 
@@ -37,12 +37,12 @@ describe('createSpritesheetTimelineSource', () => {
     const sheet = makeSheet(2);
     const anim = createSpritesheetAnimation({ frameDuration: 100, frames: [0, 1] });
     const source = createSpritesheetTimelineSource(sheet, anim);
-    const target = createDisplayContainer();
+    const target = createDisplayObject();
 
-    source.constructFrame(target as DisplayObject, 1);
-    source.constructFrame(target as DisplayObject, 2);
+    source.constructFrame(target as Node2D, 1);
+    source.constructFrame(target as Node2D, 2);
 
-    const children = getDisplayObjectRuntime(target).children;
+    const children = getNode2DRuntime(target).children;
     expect(children).not.toBeNull();
     expect(children!.length).toBe(1); // reused across frames, not one-per-frame
   });
@@ -53,6 +53,6 @@ describe('createSpritesheetTimelineSource', () => {
     const anim = createSpritesheetAnimation({ frameDuration: 100, frames: [0] });
     const source = createSpritesheetTimelineSource(sheet, anim);
 
-    expect(() => source.constructFrame(createDisplayContainer() as DisplayObject, 1)).not.toThrow();
+    expect(() => source.constructFrame(createDisplayObject() as Node2D, 1)).not.toThrow();
   });
 });

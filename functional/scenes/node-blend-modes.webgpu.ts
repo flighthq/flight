@@ -7,7 +7,7 @@ import {
   BitmapKind,
   BlendMode,
   createBitmap,
-  createDisplayContainer,
+  createDisplayObject,
   createImageResourceFromCanvas,
   createShape,
   getSurfacePixelRgb,
@@ -45,7 +45,7 @@ const { render, width } = await createFunctionalTarget({
   blend: true,
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 const base = createShape();
 appendShapeBeginFill(base, BASE_GRAY, 1);
 appendShapeRectangle(base, BAND_X, BAND_Y, BAND_W, BAND_H);

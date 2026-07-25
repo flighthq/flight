@@ -7,11 +7,11 @@ import { EntityRuntimeKey } from '@flighthq/types';
 
 import { scopeModuleMocks } from './moduleMockTestHelper';
 import type * as WgpuCacheModule from './wgpuCache';
-import type * as WgpuDisplayObjectModule from './wgpuDisplayObject';
+import type * as WgpuNode2DModule from './wgpuNode2D';
 import type * as WgpuSpriteBatchModule from './wgpuSpriteBatch';
 
 // The GPU render-target lifecycle (@flighthq/render-wgpu) and the two local collaborators
-// ./wgpuSpriteBatch and ./wgpuDisplayObject are stubbed so cache orchestration can be unit-tested
+// ./wgpuSpriteBatch and ./wgpuNode2D are stubbed so cache orchestration can be unit-tested
 // without a real GPU pipeline: createWgpuRenderTarget returns a plain descriptor, and the composite,
 // batch-flush, and subtree-render calls become spies for the call and ordering assertions below.
 // The mocks are scoped to this file's dynamic import of ./wgpuCache and unmocked in afterAll, so
@@ -31,14 +31,14 @@ let beginWgpuFrame: typeof WgpuRenderWgpuModule.beginWgpuFrame;
 let destroyWgpuRenderTarget: typeof WgpuRenderWgpuModule.destroyWgpuRenderTarget;
 let drawWgpuRenderTargetResult: typeof WgpuRenderWgpuModule.drawWgpuRenderTargetResult;
 let submitWgpuRenderPass: typeof WgpuRenderWgpuModule.submitWgpuRenderPass;
-let renderWgpuDisplayObject: typeof WgpuDisplayObjectModule.renderWgpuDisplayObject;
+let renderWgpuScene2D: typeof WgpuNode2DModule.renderWgpuScene2D;
 let flushWgpuSpriteBatch: typeof WgpuSpriteBatchModule.flushWgpuSpriteBatch;
 
 // EntityRuntimeKey (Symbol.for) and RenderCacheKind (a string) are identity-stable across the
 // registry reset scopeModuleMocks performs, and cache adapters are stored on the state, not module-
 // level, so the statically-imported @flighthq/render still interoperates with the re-evaluated
 // subject even though the subject re-imports @flighthq/render under the reset.
-scopeModuleMocks(['./wgpuSpriteBatch', '@flighthq/render-wgpu', './wgpuDisplayObject']);
+scopeModuleMocks(['./wgpuSpriteBatch', '@flighthq/render-wgpu', './wgpuNode2D']);
 
 beforeAll(async () => {
   vi.doMock('./wgpuSpriteBatch', async (importOriginal) => {
@@ -81,9 +81,9 @@ beforeAll(async () => {
       }),
     };
   });
-  vi.doMock('./wgpuDisplayObject', async (importOriginal) => {
-    const actual = await importOriginal<typeof WgpuDisplayObjectModule>();
-    return { ...actual, renderWgpuDisplayObject: vi.fn() };
+  vi.doMock('./wgpuNode2D', async (importOriginal) => {
+    const actual = await importOriginal<typeof WgpuNode2DModule>();
+    return { ...actual, renderWgpuScene2D: vi.fn() };
   });
 
   ({
@@ -95,7 +95,7 @@ beforeAll(async () => {
     submitWgpuRenderPass,
   } = await import('@flighthq/render-wgpu'));
   ({ flushWgpuSpriteBatch } = await import('./wgpuSpriteBatch'));
-  ({ renderWgpuDisplayObject } = await import('./wgpuDisplayObject'));
+  ({ renderWgpuScene2D } = await import('./wgpuNode2D'));
   ({
     createWgpuCacheState,
     defaultWgpuRenderCacheRenderer,
@@ -244,7 +244,7 @@ describe('refreshWgpuRenderCache', () => {
     const obj = createDisplayObject();
     const rebaked = refreshWgpuRenderCache(cacheState, cache, obj, { padding: 5 });
     expect(rebaked).toBe(true);
-    expect(renderWgpuDisplayObject).toHaveBeenCalled();
+    expect(renderWgpuScene2D).toHaveBeenCalled();
     const target = getWgpuRenderCacheTarget(screen, cache);
     expect(target).not.toBeNull();
     expect(target!.width).toBe(10);

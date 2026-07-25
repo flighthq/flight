@@ -12,7 +12,7 @@ import {
   appendShapeBeginBitmapFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  createDisplayContainer,
+  createDisplayObject,
   createImageResourceFromCanvas,
   createShape,
   getSurfacePixelRgb,
@@ -54,7 +54,7 @@ const { render, width } = await createFunctionalTarget({
   kinds: [ShapeKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const shape = createShape();
 const checker = createImageResourceFromCanvas(buildCheckerCanvas());

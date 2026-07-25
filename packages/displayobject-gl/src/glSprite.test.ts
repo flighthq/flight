@@ -1,5 +1,5 @@
 import { addNodeChild } from '@flighthq/node';
-import { getOrCreateRenderProxy2D, prepareDisplayObjectRender, registerRenderer } from '@flighthq/render';
+import { getOrCreateRenderProxy2D, prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import { createSprite } from '@flighthq/sprite';
 import { SpriteKind } from '@flighthq/types';
 
@@ -15,7 +15,7 @@ describe('renderGlSprite', () => {
     const { state } = createGlState();
     const sprite = createSprite();
     expect(() => {
-      prepareDisplayObjectRender(state, sprite);
+      prepareScene2DRender(state, sprite);
       renderGlSprite(state, sprite);
     }).not.toThrow();
   });
@@ -28,7 +28,7 @@ describe('renderGlSprite', () => {
     const sprite = createSprite();
     const data = getOrCreateRenderProxy2D(state, sprite);
 
-    prepareDisplayObjectRender(state, sprite);
+    prepareScene2DRender(state, sprite);
     renderGlSprite(state, sprite);
 
     expect(renderer.submit).toHaveBeenCalledWith(state, data);
@@ -42,7 +42,7 @@ describe('renderGlSprite', () => {
     const sprite = createSprite();
     sprite.visible = false;
 
-    prepareDisplayObjectRender(state, sprite);
+    prepareScene2DRender(state, sprite);
     renderGlSprite(state, sprite);
 
     expect(renderer.submit).not.toHaveBeenCalled();
@@ -56,7 +56,7 @@ describe('renderGlSprite', () => {
     const sprite = createSprite();
     sprite.alpha = 0;
 
-    prepareDisplayObjectRender(state, sprite);
+    prepareScene2DRender(state, sprite);
     renderGlSprite(state, sprite);
 
     expect(renderer.submit).not.toHaveBeenCalled();
@@ -71,7 +71,7 @@ describe('renderGlSprite', () => {
     const child = createSprite();
     addNodeChild(parent, child);
 
-    prepareDisplayObjectRender(state, parent);
+    prepareScene2DRender(state, parent);
     renderGlSprite(state, parent);
 
     expect(renderer.submit).toHaveBeenCalledTimes(2);

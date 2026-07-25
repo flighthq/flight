@@ -18,7 +18,7 @@ import {
 import { defaultWgpuBitmapRenderer } from './wgpuBitmap';
 import { defaultWgpuRenderCacheRenderer } from './wgpuCache';
 import { registerDefaultWgpuMaterial } from './wgpuDefaultMaterial';
-import { defaultWgpuDisplayObjectRenderer } from './wgpuDisplayObject';
+import { defaultWgpuScene2DRenderer } from './wgpuNode2D';
 import { defaultWgpuParticleEmitter2DRenderer } from './wgpuParticleEmitter2D';
 import { defaultWgpuQuadBatchRenderer } from './wgpuQuadBatch';
 import { defaultWgpuRichTextRenderer } from './wgpuRichText';
@@ -39,10 +39,10 @@ import { defaultWgpuVideoRenderer } from './wgpuVideo';
  * is unchanged: apps that import only one kind's renderer still pull no extra weight. The function
  * itself can be tree-shaken when not called.
  */
-export function registerWgpuDisplayObjectRenderers(state: WgpuRenderState): void {
+export function registerWgpuScene2DRenderers(state: WgpuRenderState): void {
   registerDefaultWgpuMaterial(state);
   registerRenderer(state, BitmapKind, defaultWgpuBitmapRenderer);
-  registerRenderer(state, DisplayObjectKind, defaultWgpuDisplayObjectRenderer);
+  registerRenderer(state, DisplayObjectKind, defaultWgpuScene2DRenderer);
   registerRenderer(state, ParticleEmitter2DKind, defaultWgpuParticleEmitter2DRenderer);
   registerRenderer(state, QuadBatchKind, defaultWgpuQuadBatchRenderer);
   registerRenderer(state, RichTextKind, defaultWgpuRichTextRenderer);

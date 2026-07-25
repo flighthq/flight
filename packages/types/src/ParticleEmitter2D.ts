@@ -1,8 +1,8 @@
-import type { DisplayObject, DisplayObjectData, DisplayObjectRuntime } from './DisplayObject';
+import type { Node2D, Node2DData, Node2DRuntime } from './Node2D';
 import type { Rectangle } from './Rectangle';
 import type { TextureAtlas } from './TextureAtlas';
 
-export interface ParticleEmitterData extends DisplayObjectData {
+export interface ParticleEmitterData extends Node2DData {
   alphas: Float32Array;
   atlas: TextureAtlas | null;
   colors: Float32Array; // [r, g, b] × capacity — interpolated from colorStart→colorEnd
@@ -19,11 +19,11 @@ export interface ParticleEmitterData extends DisplayObjectData {
   worldSpace: boolean; // when true, particle positions are world-space; renderers skip node transform
 }
 
-export interface ParticleEmitter2DRuntime extends DisplayObjectRuntime {
+export interface ParticleEmitter2DRuntime extends Node2DRuntime {
   localBoundsRectangle: Rectangle | null;
 }
 
-export interface ParticleEmitter2D extends DisplayObject {
+export interface ParticleEmitter2D extends Node2D {
   data: ParticleEmitterData;
 }
 

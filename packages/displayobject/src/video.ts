@@ -2,7 +2,7 @@ import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq
 import type { MethodsOf, Node, PartialNode, Rectangle, Video, VideoData, VideoRuntime } from '@flighthq/types';
 import { VideoKind } from '@flighthq/types';
 
-import { createDisplayObjectGeneric, createDisplayObjectRuntime, getDisplayObjectRuntime } from './displayObject';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from './displayObject';
 
 export function computeVideoLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
   const element = (source.data as VideoData).source?.element;
@@ -13,7 +13,7 @@ export function computeVideoLocalBoundsRectangle(out: Rectangle, source: Readonl
 }
 
 export function createVideo(obj?: Readonly<PartialNode<Video>>): Video {
-  return createDisplayObjectGeneric(VideoKind, obj, createVideoData, createVideoRuntime) as Video;
+  return createNode2D(VideoKind, obj, createVideoData, createVideoRuntime) as Video;
 }
 
 export function createVideoData(data?: Readonly<Partial<VideoData>>): VideoData {
@@ -24,11 +24,11 @@ export function createVideoData(data?: Readonly<Partial<VideoData>>): VideoData 
 }
 
 export function createVideoRuntime(): VideoRuntime {
-  return createDisplayObjectRuntime(defaultMethods) as VideoRuntime;
+  return createNode2DRuntime(defaultMethods) as VideoRuntime;
 }
 
 export function getVideoRuntime(source: Readonly<Video>): Readonly<VideoRuntime> {
-  return getDisplayObjectRuntime(source) as VideoRuntime;
+  return getNode2DRuntime(source) as VideoRuntime;
 }
 
 export function setVideoSmoothing(source: Video, value: boolean): void {

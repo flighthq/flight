@@ -14,76 +14,76 @@ import {
   VideoKind,
 } from '@flighthq/types';
 
-import { registerWgpuDisplayObjectRenderers, registerWgpuSpriteRenderers } from './wgpuRegistration';
+import { registerWgpuScene2DRenderers, registerWgpuSpriteRenderers } from './wgpuRegistration';
 
 beforeAll(() => {
   installWgpuMock();
 });
 
-describe('registerWgpuDisplayObjectRenderers', () => {
+describe('registerWgpuScene2DRenderers', () => {
   it('registers bitmap renderer', async () => {
     const state = await createWgpuRenderStateForTest();
-    registerWgpuDisplayObjectRenderers(state);
+    registerWgpuScene2DRenderers(state);
     expect(getRenderStateRuntime(state).rendererMap.get(BitmapKind)).not.toBeUndefined();
   });
 
   it('registers display object renderer', async () => {
     const state = await createWgpuRenderStateForTest();
-    registerWgpuDisplayObjectRenderers(state);
+    registerWgpuScene2DRenderers(state);
     expect(getRenderStateRuntime(state).rendererMap.get(DisplayObjectKind)).not.toBeUndefined();
   });
 
   it('registers particle emitter renderer', async () => {
     const state = await createWgpuRenderStateForTest();
-    registerWgpuDisplayObjectRenderers(state);
+    registerWgpuScene2DRenderers(state);
     expect(getRenderStateRuntime(state).rendererMap.get(ParticleEmitter2DKind)).not.toBeUndefined();
   });
 
   it('registers quad batch renderer', async () => {
     const state = await createWgpuRenderStateForTest();
-    registerWgpuDisplayObjectRenderers(state);
+    registerWgpuScene2DRenderers(state);
     expect(getRenderStateRuntime(state).rendererMap.get(QuadBatchKind)).not.toBeUndefined();
   });
 
   it('registers rich text renderer', async () => {
     const state = await createWgpuRenderStateForTest();
-    registerWgpuDisplayObjectRenderers(state);
+    registerWgpuScene2DRenderers(state);
     expect(getRenderStateRuntime(state).rendererMap.get(RichTextKind)).not.toBeUndefined();
   });
 
   it('registers scale9 shape renderer', async () => {
     const state = await createWgpuRenderStateForTest();
-    registerWgpuDisplayObjectRenderers(state);
+    registerWgpuScene2DRenderers(state);
     expect(getRenderStateRuntime(state).rendererMap.get(Scale9ShapeKind)).not.toBeUndefined();
   });
 
   it('registers shape renderer', async () => {
     const state = await createWgpuRenderStateForTest();
-    registerWgpuDisplayObjectRenderers(state);
+    registerWgpuScene2DRenderers(state);
     expect(getRenderStateRuntime(state).rendererMap.get(ShapeKind)).not.toBeUndefined();
   });
 
   it('registers sprite renderer', async () => {
     const state = await createWgpuRenderStateForTest();
-    registerWgpuDisplayObjectRenderers(state);
+    registerWgpuScene2DRenderers(state);
     expect(getRenderStateRuntime(state).rendererMap.get(SpriteKind)).not.toBeUndefined();
   });
 
   it('registers text label renderer', async () => {
     const state = await createWgpuRenderStateForTest();
-    registerWgpuDisplayObjectRenderers(state);
+    registerWgpuScene2DRenderers(state);
     expect(getRenderStateRuntime(state).rendererMap.get(TextLabelKind)).not.toBeUndefined();
   });
 
   it('registers tilemap renderer', async () => {
     const state = await createWgpuRenderStateForTest();
-    registerWgpuDisplayObjectRenderers(state);
+    registerWgpuScene2DRenderers(state);
     expect(getRenderStateRuntime(state).rendererMap.get(TilemapKind)).not.toBeUndefined();
   });
 
   it('registers video renderer', async () => {
     const state = await createWgpuRenderStateForTest();
-    registerWgpuDisplayObjectRenderers(state);
+    registerWgpuScene2DRenderers(state);
     expect(getRenderStateRuntime(state).rendererMap.get(VideoKind)).not.toBeUndefined();
   });
 });

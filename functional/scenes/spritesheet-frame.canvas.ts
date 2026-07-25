@@ -11,7 +11,7 @@ import {
   addNodeChild,
   BitmapKind,
   createBitmap,
-  createDisplayContainer,
+  createDisplayObject,
   createImageResource,
   createRectangle,
   createSpritesheetFromGrid,
@@ -55,7 +55,7 @@ const spritesheet = createSpritesheetFromGrid({
 });
 spritesheet.atlas!.image = imageResource;
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 for (let i = 0; i < FRAME_COUNT; i++) {
   const bitmap = createBitmap();

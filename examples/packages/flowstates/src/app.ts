@@ -9,7 +9,7 @@ import {
   replaceFlowState,
   updateFlowStack,
 } from '@flighthq/flow';
-import type { DisplayObject, FlowState } from '@flighthq/sdk';
+import type { Node2D, FlowState } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -37,14 +37,14 @@ const visibleStates: FlowState[] = [];
 let score = 0;
 let bootTimer = 0;
 
-function createBackground(color: number, alpha: number): DisplayObject {
+function createBackground(color: number, alpha: number): Node2D {
   const bg = createShape();
   appendShapeBeginFill(bg, color, alpha);
   appendShapeRectangle(bg, 0, 0, WIDTH, HEIGHT);
   return bg;
 }
 
-function createLabel(text: string, x: number, y: number, size: number, color: number): DisplayObject {
+function createLabel(text: string, x: number, y: number, size: number, color: number): Node2D {
   const label = createTextLabel();
   label.data.text = text;
   label.data.textFormat = { size, color };
@@ -54,7 +54,7 @@ function createLabel(text: string, x: number, y: number, size: number, color: nu
   return label;
 }
 
-function updateLabel(label: DisplayObject, text: string): void {
+function updateLabel(label: Node2D, text: string): void {
   (label as ReturnType<typeof createTextLabel>).data.text = text;
   invalidateNodeAppearance(label);
 }
@@ -63,22 +63,22 @@ function updateLabel(label: DisplayObject, text: string): void {
 // discarded in onExit. The render loop reads getFlowStackVisibleStates each frame and adds only the
 // visible containers to the root -- the flow stack drives what is drawn.
 
-const stateContainers = new Map<FlowState, DisplayObject>();
+const stateContainers = new Map<FlowState, Node2D>();
 
-function createStateContainer(flowState: FlowState): DisplayObject {
+function createStateContainer(flowState: FlowState): Node2D {
   const container = createDisplayObject();
   stateContainers.set(flowState, container);
   return container;
 }
 
-function getStateContainer(flowState: FlowState): DisplayObject | null {
+function getStateContainer(flowState: FlowState): Node2D | null {
   return stateContainers.get(flowState) ?? null;
 }
 
 // State definitions. Each builds its visual layer in onEnter and drops it in onExit.
 
-let playScoreLabel: DisplayObject;
-let playTimerLabel: DisplayObject;
+let playScoreLabel: Node2D;
+let playTimerLabel: Node2D;
 
 const bootState: FlowState = {
   name: 'Boot',

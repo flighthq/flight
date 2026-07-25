@@ -1,22 +1,22 @@
 import { createDisplayObject } from '@flighthq/displayobject';
 import { addNodeChild } from '@flighthq/node';
 
-import { explainDisplayObjectRender } from './explainDisplayObjectRender';
+import { explainScene2DRender } from './explainScene2DRender';
 import { registerRenderer } from './renderer';
-import { getRenderProxy2D, prepareDisplayObjectRender } from './renderProxy';
+import { getRenderProxy2D, prepareScene2DRender } from './renderProxy';
 import { createRenderState, getRenderStateRuntime } from './renderState';
 
 function makeRenderer() {
   return { createData: () => ({ tag: 'data' }), submit: vi.fn() } as any;
 }
 
-describe('explainDisplayObjectRender', () => {
+describe('explainScene2DRender', () => {
   it('reports no-renderer for a node whose kind has no registered renderer', () => {
     const state = createRenderState();
     const source = createDisplayObject();
-    prepareDisplayObjectRender(state, source);
+    prepareScene2DRender(state, source);
 
-    const explanation = explainDisplayObjectRender(state, source);
+    const explanation = explainScene2DRender(state, source);
 
     expect(explanation.hasRenderer).toBe(false);
     expect(explanation.reason).toBe('no-renderer');
@@ -28,7 +28,7 @@ describe('explainDisplayObjectRender', () => {
     const source = createDisplayObject();
     registerRenderer(state, source.kind, makeRenderer());
 
-    const explanation = explainDisplayObjectRender(state, source);
+    const explanation = explainScene2DRender(state, source);
 
     expect(explanation.hasRenderer).toBe(true);
     expect(explanation.prepared).toBe(false);
@@ -39,9 +39,9 @@ describe('explainDisplayObjectRender', () => {
     const state = createRenderState();
     const source = createDisplayObject();
     registerRenderer(state, source.kind, makeRenderer());
-    prepareDisplayObjectRender(state, source);
+    prepareScene2DRender(state, source);
 
-    const explanation = explainDisplayObjectRender(state, source);
+    const explanation = explainScene2DRender(state, source);
 
     expect(explanation.prepared).toBe(true);
     expect(explanation.visible).toBe(true);
@@ -54,9 +54,9 @@ describe('explainDisplayObjectRender', () => {
     const source = createDisplayObject();
     source.visible = false;
     registerRenderer(state, source.kind, makeRenderer());
-    prepareDisplayObjectRender(state, source);
+    prepareScene2DRender(state, source);
 
-    const explanation = explainDisplayObjectRender(state, source);
+    const explanation = explainScene2DRender(state, source);
 
     expect(explanation.visible).toBe(false);
     expect(explanation.reason).toBe('not-visible');
@@ -67,9 +67,9 @@ describe('explainDisplayObjectRender', () => {
     const source = createDisplayObject();
     source.alpha = 0;
     registerRenderer(state, source.kind, makeRenderer());
-    prepareDisplayObjectRender(state, source);
+    prepareScene2DRender(state, source);
 
-    const explanation = explainDisplayObjectRender(state, source);
+    const explanation = explainScene2DRender(state, source);
 
     expect(explanation.visible).toBe(true);
     expect(explanation.effectiveAlpha).toBe(0);
@@ -83,9 +83,9 @@ describe('explainDisplayObjectRender', () => {
     parent.visible = false;
     addNodeChild(parent, child);
     registerRenderer(state, child.kind, makeRenderer());
-    prepareDisplayObjectRender(state, parent);
+    prepareScene2DRender(state, parent);
 
-    const explanation = explainDisplayObjectRender(state, child);
+    const explanation = explainScene2DRender(state, child);
 
     expect(explanation.prepared).toBe(false);
     expect(explanation.reason).toBe('not-prepared');
@@ -99,9 +99,9 @@ describe('explainDisplayObjectRender', () => {
     child.alpha = 0.5;
     addNodeChild(parent, child);
     registerRenderer(state, child.kind, makeRenderer());
-    prepareDisplayObjectRender(state, parent);
+    prepareScene2DRender(state, parent);
 
-    const explanation = explainDisplayObjectRender(state, child);
+    const explanation = explainScene2DRender(state, child);
 
     expect(explanation.effectiveAlpha).toBeCloseTo(0.25);
     expect(explanation.reason).toBe('ok');
@@ -112,10 +112,10 @@ describe('explainDisplayObjectRender', () => {
     const source = createDisplayObject();
     registerRenderer(state, source.kind, makeRenderer());
 
-    expect(() => explainDisplayObjectRender(state, source)).not.toThrow();
+    expect(() => explainScene2DRender(state, source)).not.toThrow();
     // Two calls agree and neither materialized a proxy — the query is a pure read.
-    const first = explainDisplayObjectRender(state, source);
-    const second = explainDisplayObjectRender(state, source);
+    const first = explainScene2DRender(state, source);
+    const second = explainScene2DRender(state, source);
     expect(second).toEqual(first);
     expect(getRenderProxy2D(state, source)).toBeUndefined();
     expect(getRenderStateRuntime(state).renderProxyMap.get(source)).toBeUndefined();
@@ -125,6 +125,6 @@ describe('explainDisplayObjectRender', () => {
     const state = createRenderState();
     const bare = { kind: 'DisplayObject' } as any;
 
-    expect(() => explainDisplayObjectRender(state, bare)).not.toThrow();
+    expect(() => explainScene2DRender(state, bare)).not.toThrow();
   });
 });

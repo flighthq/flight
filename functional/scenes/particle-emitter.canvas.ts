@@ -17,7 +17,7 @@ import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   addTextureAtlasRegion,
-  createDisplayContainer,
+  createDisplayObject,
   createImageResource,
   createParticleEmitter2D,
   createTextureAtlas,
@@ -80,7 +80,7 @@ function makeAtlasCanvas(): HTMLCanvasElement {
 const atlas = createTextureAtlas({ image: createImageResource(makeAtlasCanvas()) });
 for (let i = 0; i < SWATCHES.length; i++) addTextureAtlasRegion(atlas, i * REGION, 0, REGION, REGION);
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 // One emitter at the origin; particle transforms are authored directly in logical canvas coordinates.
 const emitter = createParticleEmitter2D();

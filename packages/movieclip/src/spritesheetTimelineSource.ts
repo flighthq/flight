@@ -1,6 +1,6 @@
 import { createBitmap } from '@flighthq/displayobject';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
-import type { Bitmap, DisplayObject, Spritesheet, SpritesheetAnimation, TimelineSource } from '@flighthq/types';
+import type { Bitmap, Node2D, Spritesheet, SpritesheetAnimation, TimelineSource } from '@flighthq/types';
 
 // Exposes a spritesheet animation as a TimelineSource so a MovieClip can play it (the spritesheet side of
 // the timeline frame-source contract — `@flighthq/timeline` consumes `TimelineSource`, this produces one,
@@ -14,12 +14,12 @@ export function createSpritesheetTimelineSource(
   spritesheet: Readonly<Spritesheet>,
   animation: Readonly<SpritesheetAnimation>,
 ): TimelineSource {
-  const bitmaps = new WeakMap<DisplayObject, Bitmap>();
+  const bitmaps = new WeakMap<Node2D, Bitmap>();
   return {
     totalFrames: animation.frames.length,
     labels: [],
     frameRate: 1000 / animation.frameDuration,
-    constructFrame(target: DisplayObject, frame: number): void {
+    constructFrame(target: Node2D, frame: number): void {
       const atlas = spritesheet.atlas;
       if (atlas === null) return;
 

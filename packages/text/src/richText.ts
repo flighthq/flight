@@ -1,8 +1,4 @@
-import {
-  createDisplayObjectGeneric,
-  createDisplayObjectRuntime,
-  getDisplayObjectRuntime,
-} from '@flighthq/displayobject';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/displayobject';
 import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node';
 import { createSignal } from '@flighthq/signals';
 import {
@@ -61,7 +57,7 @@ export function appendRichTextString(source: RichText, value: string): void {
 export function buildRichTextLayoutParams(source: Readonly<TextLabel>, measure: TextMeasureFunction): TextLayoutParams {
   const richText = source as Readonly<RichText>;
   const data = richText.data;
-  const runtime = getDisplayObjectRuntime(richText) as RichTextRuntime;
+  const runtime = getNode2DRuntime(richText) as RichTextRuntime;
   const content = getRichTextContent(runtime);
   computeRichTextContent(content, data, getRichTextPasswordCharacter(richText));
   return {
@@ -114,7 +110,7 @@ export function computeRichTextLocalBoundsRectangle(out: Rectangle, source: Read
 }
 
 export function createRichText(obj?: Readonly<PartialNode<RichText>>): RichText {
-  return createDisplayObjectGeneric(RichTextKind, obj, createRichTextData, createRichTextRuntime) as RichText;
+  return createNode2D(RichTextKind, obj, createRichTextData, createRichTextRuntime) as RichText;
 }
 
 export function createRichTextData(data?: Readonly<Partial<RichTextData>>): RichTextData {
@@ -140,7 +136,7 @@ export function createRichTextData(data?: Readonly<Partial<RichTextData>>): Rich
 }
 
 export function createRichTextRuntime(): RichTextRuntime {
-  const out = createDisplayObjectRuntime(defaultMethods) as RichTextRuntime;
+  const out = createNode2DRuntime(defaultMethods) as RichTextRuntime;
   // buildTextLayoutParams is a text-specific per-kind seam, not a display-object trait, so no
   // trait-init copies it off defaultMethods — assign it onto the runtime directly.
   out.buildTextLayoutParams = buildRichTextLayoutParams;
@@ -175,7 +171,7 @@ export function dispatchRichTextLinkAtPoint(source: RichText, x: number, y: numb
   if (layout === null) return null;
   const url = getRichTextLinkAtPoint(layout, x, y);
   if (url !== null) {
-    const signals = (getDisplayObjectRuntime(source) as RichTextRuntime).textFieldSignals;
+    const signals = (getNode2DRuntime(source) as RichTextRuntime).textFieldSignals;
     if (signals !== null) {
       const event: TextFieldLinkEvent = { url, x, y };
       signals.onTextFieldLink.emit(event);
@@ -189,7 +185,7 @@ export function dispatchRichTextWheel(source: RichText, deltaLines: number, layo
 }
 
 export function enableTextFieldSignals(source: RichText): TextFieldSignals {
-  const runtime = getDisplayObjectRuntime(source) as RichTextRuntime;
+  const runtime = getNode2DRuntime(source) as RichTextRuntime;
   return (runtime.textFieldSignals ??= createTextFieldSignals());
 }
 
@@ -295,12 +291,12 @@ export function getRichTextMaxScrollV(source: Readonly<RichText>): number {
 // editable-input slot (enableTextInput), not on RichTextData, so a static RichText is never masked.
 // Shared by buildRichTextLayoutParams and every RichText renderer that self-measures its content.
 export function getRichTextPasswordCharacter(source: Readonly<RichText>): string | null {
-  const input = (getDisplayObjectRuntime(source) as RichTextRuntime).input;
+  const input = (getNode2DRuntime(source) as RichTextRuntime).input;
   return input !== null && input.displayAsPassword ? input.passwordCharacter : null;
 }
 
 export function getRichTextRuntime(source: Readonly<RichText>): Readonly<RichTextRuntime> {
-  return getDisplayObjectRuntime(source) as RichTextRuntime;
+  return getNode2DRuntime(source) as RichTextRuntime;
 }
 
 export function getRichTextString(source: Readonly<RichText>): string {
@@ -322,7 +318,7 @@ export function getRichTextTextWidth(source: Readonly<RichText>): number {
 }
 
 export function getTextFieldSignals(source: Readonly<RichText>): TextFieldSignals | null {
-  return (getDisplayObjectRuntime(source) as RichTextRuntime).textFieldSignals;
+  return (getNode2DRuntime(source) as RichTextRuntime).textFieldSignals;
 }
 
 // Inserts `value` at the given character `index` (clamped to `[0, text.length]`), then shifts all
@@ -587,7 +583,7 @@ function computeRichTextMaxScrollVFromLayout(data: Readonly<RichTextData>, layou
 // Emits onTextFieldChange when the signals group is enabled. Callers must supply `previousText`
 // captured before the mutation; `source.data.text` is the new text at call time.
 function emitTextFieldChange(source: Readonly<RichText>, previousText: string): void {
-  const signals = (getDisplayObjectRuntime(source) as RichTextRuntime).textFieldSignals;
+  const signals = (getNode2DRuntime(source) as RichTextRuntime).textFieldSignals;
   if (signals === null) return;
   const event: TextFieldChangeEvent = { previousText, text: source.data.text };
   signals.onTextFieldChange.emit(event);
@@ -596,7 +592,7 @@ function emitTextFieldChange(source: Readonly<RichText>, previousText: string): 
 // Emits onTextFieldScroll when the signals group is enabled. Callers must supply `previousScrollH`
 // and `previousScrollV` captured before the mutation.
 function emitTextFieldScroll(source: Readonly<RichText>, previousScrollH: number, previousScrollV: number): void {
-  const signals = (getDisplayObjectRuntime(source) as RichTextRuntime).textFieldSignals;
+  const signals = (getNode2DRuntime(source) as RichTextRuntime).textFieldSignals;
   if (signals === null) return;
   const event: TextFieldScrollEvent = {
     previousScrollH,

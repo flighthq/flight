@@ -2,7 +2,7 @@ import { invalidateNodeLocalBounds } from '@flighthq/node';
 import type { HtmlView, HtmlViewData, HtmlViewRuntime, MethodsOf, Node, PartialNode, Rectangle } from '@flighthq/types';
 import { HtmlViewKind } from '@flighthq/types';
 
-import { createDisplayObjectGeneric, createDisplayObjectRuntime, getDisplayObjectRuntime } from './displayObject';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from './displayObject';
 
 export function computeHtmlViewLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
   const data = (source as HtmlView).data;
@@ -11,7 +11,7 @@ export function computeHtmlViewLocalBoundsRectangle(out: Rectangle, source: Read
 }
 
 export function createHtmlView(obj?: Readonly<PartialNode<HtmlView>>): HtmlView {
-  return createDisplayObjectGeneric(HtmlViewKind, obj, createHtmlViewData, createHtmlViewRuntime) as HtmlView;
+  return createNode2D(HtmlViewKind, obj, createHtmlViewData, createHtmlViewRuntime) as HtmlView;
 }
 
 export function createHtmlViewData(data?: Readonly<Partial<HtmlViewData>>): HtmlViewData {
@@ -23,11 +23,11 @@ export function createHtmlViewData(data?: Readonly<Partial<HtmlViewData>>): Html
 }
 
 export function createHtmlViewRuntime(): HtmlViewRuntime {
-  return createDisplayObjectRuntime(defaultMethods) as HtmlViewRuntime;
+  return createNode2DRuntime(defaultMethods) as HtmlViewRuntime;
 }
 
 export function getHtmlViewRuntime(source: Readonly<HtmlView>): Readonly<HtmlViewRuntime> {
-  return getDisplayObjectRuntime(source) as HtmlViewRuntime;
+  return getNode2DRuntime(source) as HtmlViewRuntime;
 }
 
 export function setHtmlViewSize(source: HtmlView, width: number, height: number): void {

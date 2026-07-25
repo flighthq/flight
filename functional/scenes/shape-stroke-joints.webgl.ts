@@ -24,7 +24,7 @@ import {
   appendShapeLineStyle,
   appendShapeLineTo,
   appendShapeMoveTo,
-  createDisplayContainer,
+  createDisplayObject,
   createShape,
   getSurfacePixelRgb,
   ShapeKind,
@@ -54,7 +54,7 @@ const { render, width } = await createFunctionalTarget({
   kinds: [ShapeKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 function vShape(apexY: number, joint: JointStyle): void {
   const shape = createShape();

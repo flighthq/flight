@@ -14,7 +14,7 @@ import {
   getTextLayoutResult,
 } from '@flighthq/textlayout';
 import type {
-  DisplayObjectRenderer,
+  Scene2DRenderer,
   Renderable,
   RendererData,
   RenderProxy2D,
@@ -47,7 +47,7 @@ export function createWgpuRichTextData(_state: RenderState, _source: Renderable)
   return createWgpuRendererData<WgpuRichTextData>({ entry: null, h: 0, w: 0 });
 }
 
-// Destroys the GPU texture this rich text node owns when it is torn down via disposeDisplayObjectRender.
+// Destroys the GPU texture this rich text node owns when it is torn down via disposeScene2DRender.
 export function destroyWgpuRichTextData(_state: RenderState, data: RendererData): void {
   const richData = getWgpuRendererData<WgpuRichTextData>(data);
   if (richData === null) return;
@@ -136,7 +136,7 @@ export function registerWgpuTextInputOverlay(overlay: WgpuRichTextOverlay): void
   _webgpuTextInputOverlay = overlay;
 }
 
-export const defaultWgpuRichTextRenderer: DisplayObjectRenderer = {
+export const defaultWgpuRichTextRenderer: Scene2DRenderer = {
   createData: createWgpuRichTextData,
   destroyData: destroyWgpuRichTextData,
   submit: drawWgpuRichText,

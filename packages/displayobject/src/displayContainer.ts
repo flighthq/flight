@@ -1,21 +1,16 @@
-import type { DisplayContainer, DisplayContainerRuntime, PartialNode } from '@flighthq/types';
+import type { DisplayObject, DisplayObjectRuntime, PartialNode } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 
-import { createDisplayObjectGeneric, createDisplayObjectRuntime, getDisplayObjectRuntime } from './displayObject';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from './displayObject';
 
-export function createDisplayContainer(obj?: Readonly<PartialNode<DisplayContainer>>): DisplayContainer {
-  return createDisplayObjectGeneric(
-    DisplayObjectKind,
-    obj,
-    undefined,
-    createDisplayContainerRuntime,
-  ) as DisplayContainer;
+export function createDisplayObject(obj?: Readonly<PartialNode<DisplayObject>>): DisplayObject {
+  return createNode2D(DisplayObjectKind, obj, undefined, createDisplayObjectRuntime) as DisplayObject;
 }
 
-export function createDisplayContainerRuntime(): DisplayContainerRuntime {
-  return createDisplayObjectRuntime() as DisplayContainerRuntime;
+export function createDisplayObjectRuntime(): DisplayObjectRuntime {
+  return createNode2DRuntime() as DisplayObjectRuntime;
 }
 
-export function getDisplayContainerRuntime(source: Readonly<DisplayContainer>): Readonly<DisplayContainerRuntime> {
-  return getDisplayObjectRuntime(source) as DisplayContainerRuntime;
+export function getDisplayObjectRuntime(source: Readonly<DisplayObject>): Readonly<DisplayObjectRuntime> {
+  return getNode2DRuntime(source) as DisplayObjectRuntime;
 }

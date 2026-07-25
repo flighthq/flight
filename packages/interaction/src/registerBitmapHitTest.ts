@@ -1,7 +1,7 @@
 import { inverseMatrixTransformPointXY } from '@flighthq/geometry';
 import { getNodeWorldMatrix } from '@flighthq/node';
 import { createSurfaceFromImageResource, getSurfacePixelChannel } from '@flighthq/surface';
-import type { Bitmap, DisplayObject, ImageResource, NodeAny, Surface } from '@flighthq/types';
+import type { Bitmap, Node2D, ImageResource, NodeAny, Surface } from '@flighthq/types';
 import { BitmapKind, ImageChannel } from '@flighthq/types';
 
 import { hitTestGraphLocalBounds, registerHitTestPrecise } from './hitTests';
@@ -30,7 +30,7 @@ function hitTestBitmapAlpha(source: NodeAny, x: number, y: number, alphaThreshol
   const surface = surfaceForImage(image);
   if (surface === null) return 0;
 
-  inverseMatrixTransformPointXY(bitmapAlphaLocalPoint, getNodeWorldMatrix(source as DisplayObject), x, y);
+  inverseMatrixTransformPointXY(bitmapAlphaLocalPoint, getNodeWorldMatrix(source as Node2D), x, y);
   const rect = bitmap.data.sourceRectangle;
   const px = Math.floor(bitmapAlphaLocalPoint.x + (rect !== null ? rect.x : 0));
   const py = Math.floor(bitmapAlphaLocalPoint.y + (rect !== null ? rect.y : 0));

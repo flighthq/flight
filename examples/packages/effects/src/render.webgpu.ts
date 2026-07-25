@@ -1,4 +1,4 @@
-import type { DisplayObject, RenderEffect } from '@flighthq/sdk';
+import type { Node2D, RenderEffect } from '@flighthq/sdk';
 import {
   ShapeKind,
   beginWgpuRenderEffectPipeline,
@@ -8,13 +8,13 @@ import {
   defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultWgpuMaterial,
   registerStandardWgpuRenderEffects,
   registerWgpuShapeCommands,
   registerRenderer,
   renderWgpuBackground,
-  renderWgpuDisplayObject,
+  renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
@@ -36,11 +36,11 @@ const pipeline = createWgpuRenderEffectPipeline(state);
 
 export const scale = pixelRatio;
 
-export function render(root: DisplayObject, effects: readonly RenderEffect[]): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+export function render(root: Node2D, effects: readonly RenderEffect[]): void {
+  if (!prepareScene2DRender(state, root)) return;
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline);
-  renderWgpuDisplayObject(state, root);
+  renderWgpuScene2D(state, root);
   endWgpuRenderEffectPipeline(state, pipeline, effects);
   submitWgpuRenderPass(state);
 }

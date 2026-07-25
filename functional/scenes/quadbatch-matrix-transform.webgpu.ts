@@ -15,7 +15,7 @@ import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   addTextureAtlasRegion,
-  createDisplayContainer,
+  createDisplayObject,
   createImageResource,
   createQuadBatch,
   createRectangle,
@@ -79,7 +79,7 @@ const aTy = A_CENTER_Y - (SIN45 * (QUAD / 2) + COS45 * (QUAD / 2));
 // covers (B_ORIGIN_X, B_ORIGIN_Y)..(B_ORIGIN_X + 2W, B_ORIGIN_Y + 2W).
 //   [a,b,c,d,tx,ty] = [2,0,0,2, B_ORIGIN_X, B_ORIGIN_Y].
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const batch = createQuadBatch();
 batch.data.atlas = atlas;

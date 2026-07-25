@@ -13,7 +13,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  createDisplayContainer,
+  createDisplayObject,
   createShape,
   getSurfacePixelRgb,
   invalidateNodeAppearance,
@@ -44,9 +44,9 @@ const { render, width } = await createFunctionalTarget({
   kinds: [ShapeKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
-const outer = createDisplayContainer();
+const outer = createDisplayObject();
 outer.x = OUTER_X;
 outer.y = OUTER_Y;
 outer.alpha = 0.5; // inherited by every descendant
@@ -54,7 +54,7 @@ invalidateNodeLocalTransform(outer);
 invalidateNodeAppearance(outer);
 addNodeChild(root, outer);
 
-const inner = createDisplayContainer();
+const inner = createDisplayObject();
 inner.x = INNER_DX;
 inner.y = INNER_DY;
 invalidateNodeLocalTransform(inner);

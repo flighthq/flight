@@ -1,15 +1,15 @@
-import { getDisplayObjectRuntime } from '@flighthq/displayobject';
+import { getNode2DRuntime } from '@flighthq/displayobject';
 import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { DisplayObject, DisplayObjectRenderer, RenderProxy2D, WgpuRenderState } from '@flighthq/types';
+import type { Node2D, Scene2DRenderer, RenderProxy2D, WgpuRenderState } from '@flighthq/types';
 
 import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
 
-export function drawWgpuDisplayObject(_state: WgpuRenderState, _renderProxy: RenderProxy2D): void {
+export function drawWgpuScene2D(_state: WgpuRenderState, _renderProxy: RenderProxy2D): void {
   // Plain display objects have no visual geometry of their own.
 }
 
-export function renderWgpuDisplayObject(state: WgpuRenderState, source: DisplayObject): void {
+export function renderWgpuScene2D(state: WgpuRenderState, source: Node2D): void {
   const tempStack = getWgpuRenderStateRuntime(state).tempStack;
   const clipHooks = state.displayObjectClipHooks;
 
@@ -17,7 +17,7 @@ export function renderWgpuDisplayObject(state: WgpuRenderState, source: DisplayO
   tempStack[0] = source;
 
   while (stackLength > 0) {
-    const current = tempStack[--stackLength] as DisplayObject;
+    const current = tempStack[--stackLength] as Node2D;
     if (!current.enabled) continue;
 
     const data = getRenderProxy2D(state, current);
@@ -31,10 +31,10 @@ export function renderWgpuDisplayObject(state: WgpuRenderState, source: DisplayO
 
     data.renderer?.submit(state, data);
     if (data.traverseChildren) {
-      const children = getDisplayObjectRuntime(current).children;
+      const children = getNode2DRuntime(current).children;
       if (children !== null) {
         for (let i = children.length - 1; i >= 0; i--) {
-          tempStack[stackLength++] = children[i] as DisplayObject;
+          tempStack[stackLength++] = children[i] as Node2D;
         }
       }
     }
@@ -44,7 +44,7 @@ export function renderWgpuDisplayObject(state: WgpuRenderState, source: DisplayO
   clipHooks?.finalize(state);
 }
 
-export const defaultWgpuDisplayObjectRenderer: DisplayObjectRenderer = {
+export const defaultWgpuScene2DRenderer: Scene2DRenderer = {
   createData: noopRendererData,
-  submit: drawWgpuDisplayObject,
+  submit: drawWgpuScene2D,
 };

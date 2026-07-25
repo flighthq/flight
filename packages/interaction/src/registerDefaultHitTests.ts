@@ -16,7 +16,7 @@ import {
 
 import {
   defaultBitmapHitTestHandler,
-  defaultDisplayObjectHitTestHandler,
+  defaultNode2DHitTestHandler,
   defaultHtmlViewHitTestHandler,
   defaultMovieClipHitTestHandler,
   defaultRenderViewHitTestHandler,
@@ -34,7 +34,7 @@ import {
 
 export function registerDefaultHitTests(): void {
   registerHitTest(BitmapKind, defaultBitmapHitTestHandler);
-  registerHitTest(DisplayObjectKind, defaultDisplayObjectHitTestHandler);
+  registerHitTest(DisplayObjectKind, defaultNode2DHitTestHandler);
   registerHitTest(HtmlViewKind, defaultHtmlViewHitTestHandler);
   registerHitTest(MovieClipKind, defaultMovieClipHitTestHandler);
   registerHitTest(QuadBatchKind, defaultQuadBatchHitTestHandler);

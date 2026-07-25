@@ -1,10 +1,10 @@
-import type { DisplayObject, DisplayObjectData, DisplayObjectRuntime } from './DisplayObject';
 import type { MaterialData } from './Material';
+import type { Node2D, Node2DData, Node2DRuntime } from './Node2D';
 import type { QuadTransformType } from './QuadTransformType';
 import type { Rectangle } from './Rectangle';
 import type { TextureAtlas } from './TextureAtlas';
 
-export interface QuadBatchData extends DisplayObjectData {
+export interface QuadBatchData extends Node2DData {
   atlas: TextureAtlas | null;
   ids: Uint16Array;
   instanceCount: number;
@@ -17,7 +17,7 @@ export interface QuadBatchData extends DisplayObjectData {
   transformType: QuadTransformType;
 }
 
-export interface QuadBatchRuntime extends DisplayObjectRuntime {
+export interface QuadBatchRuntime extends Node2DRuntime {
   localBoundsRectangle: Rectangle | null;
   // Per-instance velocity, interleaved as (x, y) in node units per instance: index 2*i is instance i's
   // x velocity, 2*i+1 its y. This is a batch-owned array — NOT an entry in the per-entity VelocityField —
@@ -28,7 +28,7 @@ export interface QuadBatchRuntime extends DisplayObjectRuntime {
   instanceVelocities: Float32Array | null;
 }
 
-export interface QuadBatch extends DisplayObject {
+export interface QuadBatch extends Node2D {
   data: QuadBatchData;
 }
 

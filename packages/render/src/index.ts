@@ -1,5 +1,5 @@
 export * from './enableColorAdjustmentGuards';
-export * from './explainDisplayObjectRender';
+export * from './explainScene2DRender';
 export * from './renderAppearance';
 export * from './renderCache';
 export * from './renderColor';

@@ -13,7 +13,7 @@
 // API used: TextFormat.align ('left' | 'center'), applied via field.data.defaultTextFormat; plus
 // field.data.text/width/height/textColor and a shared FONT_SIZE.
 import type { Surface } from '@flighthq/sdk';
-import { addNodeChild, createDisplayContainer, createRichText, getSurfacePixelRgb, RichTextKind } from '@flighthq/sdk';
+import { addNodeChild, createDisplayObject, createRichText, getSurfacePixelRgb, RichTextKind } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
 const WIDTH = 800;
@@ -37,7 +37,7 @@ const { render, width } = await createFunctionalTarget({
   kinds: [RichTextKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const leftField = createRichText();
 leftField.data.defaultTextFormat = { font: 'sans-serif', size: FONT_SIZE, bold: true, align: 'left' };

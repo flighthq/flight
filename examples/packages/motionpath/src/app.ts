@@ -7,7 +7,7 @@ import {
   updateMotionPath,
 } from '@flighthq/motionpath';
 import { appendPathCubicCurveTo, appendPathMoveTo, createPath } from '@flighthq/path';
-import type { DisplayObject, MotionPathLoopMode } from '@flighthq/sdk';
+import type { Node2D, MotionPathLoopMode } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -108,7 +108,7 @@ if (getMotionPathPosition(mp, initialPoint, initialTangent)) {
 addNodeChild(root, arrow);
 
 // HUD labels for speed, loop mode, and progress.
-function createLabel(text: string, x: number, y: number, size: number, color: number): DisplayObject {
+function createLabel(text: string, x: number, y: number, size: number, color: number): Node2D {
   const label = createTextLabel();
   label.data.text = text;
   label.data.textFormat = { size, color };
@@ -118,7 +118,7 @@ function createLabel(text: string, x: number, y: number, size: number, color: nu
   return label;
 }
 
-function updateLabel(label: DisplayObject, text: string): void {
+function updateLabel(label: Node2D, text: string): void {
   (label as ReturnType<typeof createTextLabel>).data.text = text;
   invalidateNodeAppearance(label);
 }

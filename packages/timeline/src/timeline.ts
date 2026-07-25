@@ -1,6 +1,6 @@
 import { createSignal, emitSignal } from '@flighthq/signals';
 import type {
-  DisplayObject,
+  Node2D,
   FrameScript,
   Timeline,
   TimelineFrameEvent,
@@ -36,7 +36,7 @@ export function createTimelineSource(obj: {
   totalFrames?: number;
   frameRate?: number | null;
   labels?: readonly TimelineLabel[];
-  constructFrame?: (target: DisplayObject, frame: number) => void;
+  constructFrame?: (target: Node2D, frame: number) => void;
 }): TimelineSource {
   return {
     totalFrames: obj.totalFrames ?? 1,

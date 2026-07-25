@@ -1,20 +1,13 @@
 import { createImageResource } from '@flighthq/image';
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node';
-import type {
-  DisplayObject,
-  ImportDiagnostic,
-  LottieDocument,
-  LottieLayer,
-  LottieShapePath,
-  Shape,
-} from '@flighthq/types';
+import type { Node2D, ImportDiagnostic, LottieDocument, LottieLayer, LottieShapePath, Shape } from '@flighthq/types';
 import { BitmapKind, ShapeKind, TextLabelKind } from '@flighthq/types';
 
-import { applyAnimationClipToLottieDocument, createDisplayObjectFromLottieDocument } from './lottieDocument';
+import { applyAnimationClipToLottieDocument, createScene2DFromLottieDocument } from './lottieDocument';
 
 describe('applyAnimationClipToLottieDocument', () => {
   it('applies the imported target-bound clip', () => {
-    const result = createDisplayObjectFromLottieDocument(
+    const result = createScene2DFromLottieDocument(
       createDocument([{ ind: 1, ip: 0, ks: { p: animatedVector([0, 0], [10, 20]) }, nm: 'node', op: 60, ty: 3 }]),
     );
     applyAnimationClipToLottieDocument(result.clip, 0.5);
@@ -22,9 +15,9 @@ describe('applyAnimationClipToLottieDocument', () => {
   });
 });
 
-describe('createDisplayObjectFromLottieDocument', () => {
+describe('createScene2DFromLottieDocument', () => {
   it('returns the display subtree and target-bound clip', () => {
-    const result = createDisplayObjectFromLottieDocument(createDocument([shapeLayer(1, 'shape')]));
+    const result = createScene2DFromLottieDocument(createDocument([shapeLayer(1, 'shape')]));
     expect(findByName(result.root, 'shape')).not.toBeNull();
     expect(result.clip.duration).toBe(2);
   });
@@ -34,7 +27,7 @@ describe('Lottie document conformance census', () => {
   it('rejects malformed JSON and structurally invalid documents', () => {
     for (const source of ['{', JSON.stringify({ fr: 0, layers: [] })]) {
       const diagnostics: ImportDiagnostic[] = [];
-      const result = createDisplayObjectFromLottieDocument(source, diagnostics);
+      const result = createScene2DFromLottieDocument(source, diagnostics);
       expect(getNodeChildCount(result.root)).toBe(0);
       expect(diagnostics.map((diagnostic) => diagnostic.kind)).toContain('lottie.invalid-document');
     }
@@ -64,7 +57,7 @@ describe('Lottie document conformance census', () => {
       { id: 'precompAsset', layers: [shapeLayer(7, 'nested')] },
     ];
 
-    const result = createDisplayObjectFromLottieDocument(document, undefined, {
+    const result = createScene2DFromLottieDocument(document, undefined, {
       resolveImageResource: () => image,
     });
 
@@ -93,7 +86,7 @@ describe('Lottie document conformance census', () => {
       ty: 3,
     };
     const child: LottieLayer = { ind: 2, ip: 0, nm: 'child', op: 60, parent: 1, ty: 3 };
-    const result = createDisplayObjectFromLottieDocument(createDocument([parent, child]));
+    const result = createScene2DFromLottieDocument(createDocument([parent, child]));
     const parentNode = findByName(result.root, 'parent')!;
     const childNode = findByName(result.root, 'child')!;
 
@@ -113,7 +106,7 @@ describe('Lottie document conformance census', () => {
   it('maps uniform vector easing to one channel and component-specific easing to scalar channels', () => {
     const uniform = animatedVector([0, 0], [10, 20], [0.42], [0], [1], [1]);
     const split = animatedVector([0, 0], [10, 20], [0.42, 0], [0, 0], [1, 1], [1, 1]);
-    const result = createDisplayObjectFromLottieDocument(
+    const result = createScene2DFromLottieDocument(
       createDocument([
         { ind: 1, ip: 0, ks: { p: uniform }, nm: 'uniform', op: 60, ty: 3 },
         { ind: 2, ip: 0, ks: { p: split }, nm: 'split', op: 60, ty: 3 },
@@ -153,7 +146,7 @@ describe('Lottie document conformance census', () => {
         ty: 3,
       },
     ]);
-    const result = createDisplayObjectFromLottieDocument(JSON.stringify(document));
+    const result = createScene2DFromLottieDocument(JSON.stringify(document));
     const node = findByName(result.root, 'timed')!;
 
     applyAnimationClipToLottieDocument(result.clip, 0.25);
@@ -185,7 +178,7 @@ describe('Lottie document conformance census', () => {
         ty: 'gf',
       },
     ] as LottieLayer['shapes'];
-    const result = createDisplayObjectFromLottieDocument(
+    const result = createScene2DFromLottieDocument(
       createDocument([
         { ind: 1, ip: 0, nm: 'paint', op: 60, shapes: items, ty: 4 },
         { ind: 2, ip: 0, nm: 'gradient', op: 60, shapes: gradientItems, ty: 4 },
@@ -255,7 +248,7 @@ describe('Lottie document conformance census', () => {
       ],
       ty: 4,
     };
-    const result = createDisplayObjectFromLottieDocument(createDocument([layer, gradientLayer]));
+    const result = createScene2DFromLottieDocument(createDocument([layer, gradientLayer]));
     const node = findByName(result.root, 'animated-paint')!;
     const shape = findFirstKind(node, ShapeKind) as Shape;
     const gradientShape = findFirstKind(findByName(result.root, 'animated-gradient')!, ShapeKind) as Shape;
@@ -281,7 +274,7 @@ describe('Lottie document conformance census', () => {
     const document = createDocument([{ ind: 1, ip: 0, nm: 'precomp', op: 60, refId: 'pc', sr: 2, st: 10, ty: 0 }]);
     document.assets = [{ id: 'pc', layers: [child] }];
     document.markers = [{ cm: 'beat', dr: 5, tm: 15 }];
-    const result = createDisplayObjectFromLottieDocument(document);
+    const result = createScene2DFromLottieDocument(document);
     const position = result.clip.channels.find(
       (channel) => (channel.targetRef as { path?: string }).path === 'Position',
     )!;
@@ -303,7 +296,7 @@ describe('Lottie document conformance census', () => {
     layer.tt = 1;
     layer.shapes!.push({ e: { k: 50 }, m: 1, o: { k: 0 }, s: { k: 0 }, ty: 'tm' });
     layer.ks = { p: { k: [0, 0], x: 'wiggle(1, 2)' } };
-    const result = createDisplayObjectFromLottieDocument(createDocument([layer]), diagnostics);
+    const result = createScene2DFromLottieDocument(createDocument([layer]), diagnostics);
     const kinds = diagnostics.map((diagnostic) => diagnostic.kind);
     const shape = findFirstKind(result.root, ShapeKind) as Shape;
 
@@ -327,7 +320,7 @@ describe('Lottie document conformance census', () => {
       { f: { k: [2, 2] }, mode: 'a', o: { k: 100 }, pt: { k: squarePath(0, 0, 10) } },
       { mode: 's', o: { k: 100 }, pt: { k: squarePath(2, 2, 4) } },
     ];
-    createDisplayObjectFromLottieDocument(
+    createScene2DFromLottieDocument(
       createDocument([
         masked,
         { ind: 2, ip: 0, nm: 'missing', op: 60, refId: 'absent', ty: 2 },
@@ -417,19 +410,19 @@ function squarePath(x: number, y: number, size: number): LottieShapePath {
   };
 }
 
-function findByName(root: DisplayObject, name: string): DisplayObject | null {
+function findByName(root: Node2D, name: string): Node2D | null {
   if (root.name === name) return root;
   for (let index = 0; index < getNodeChildCount(root); index++) {
-    const found = findByName(getNodeChildAt(root, index) as DisplayObject, name);
+    const found = findByName(getNodeChildAt(root, index) as Node2D, name);
     if (found !== null) return found;
   }
   return null;
 }
 
-function findFirstKind(root: DisplayObject, kind: string): DisplayObject | null {
+function findFirstKind(root: Node2D, kind: string): Node2D | null {
   if (root.kind === kind) return root;
   for (let index = 0; index < getNodeChildCount(root); index++) {
-    const found = findFirstKind(getNodeChildAt(root, index) as DisplayObject, kind);
+    const found = findFirstKind(getNodeChildAt(root, index) as Node2D, kind);
     if (found !== null) return found;
   }
   return null;

@@ -1,5 +1,5 @@
 import { createParticleEmitter2D } from '@flighthq/particleemitter';
-import { getRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
+import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render';
 import { getWgpuRenderStateRuntime, renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
 import type { ImageResource, RenderProxy2D } from '@flighthq/types';
@@ -26,7 +26,7 @@ describe('drawWgpuParticleEmitter2D', () => {
     renderWgpuBackground(state);
 
     const emitter = createParticleEmitter2D();
-    prepareDisplayObjectRender(state, emitter);
+    prepareScene2DRender(state, emitter);
     const renderProxy = getRenderProxy2D(state, emitter)!;
 
     expect(() => drawWgpuParticleEmitter2D(state, renderProxy)).not.toThrow();

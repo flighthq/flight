@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import { addNodeChild, createDisplayObject, createRichText, createTextLabel } from '@flighthq/sdk';
 
 import { render, scale } from './render';
@@ -268,7 +268,7 @@ bgCode.data.borderColor = 0x444444;
 addNodeChild(root, bgCode);
 
 function enterFrame(): void {
-  render(root as DisplayObject);
+  render(root as Node2D);
   requestAnimationFrame(enterFrame);
 }
 

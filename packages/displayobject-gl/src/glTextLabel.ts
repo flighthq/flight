@@ -7,7 +7,7 @@ import { computeTextFormatFontString } from '@flighthq/text';
 import { getTextLabelRuntime } from '@flighthq/text';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout';
 import type {
-  DisplayObjectRenderer,
+  Scene2DRenderer,
   GlRenderState,
   Renderable,
   RendererData,
@@ -180,7 +180,7 @@ export function drawGlTextLabel(state: GlRenderState, renderProxy: RenderProxy2D
   runtime.spriteBatchCount++;
 }
 
-export const defaultGlTextLabelRenderer: DisplayObjectRenderer = {
+export const defaultGlTextLabelRenderer: Scene2DRenderer = {
   format: BatchFormat.Quad,
   createData: createGlTextLabelData,
   destroyData: destroyGlTextLabelData,

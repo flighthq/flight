@@ -1,4 +1,4 @@
-import type { DisplayObject, GlRenderEffectPipeline, GlRenderTarget, Surface } from '@flighthq/sdk';
+import type { Node2D, GlRenderEffectPipeline, GlRenderTarget, Surface } from '@flighthq/sdk';
 import {
   AdvancedBlendMode,
   ShapeKind,
@@ -9,7 +9,7 @@ import {
   beginGlRenderEffectPipeline,
   beginGlRenderPass,
   createBlendEffect,
-  createDisplayContainer,
+  createDisplayObject,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
@@ -21,14 +21,14 @@ import {
   endGlRenderEffectPipeline,
   endGlRenderPass,
   getSurfacePixelRgb,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultGlMaterial,
   registerGlBlendEffectBackdrop,
   registerGlRenderEffect,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
-  renderGlDisplayObject,
+  renderGlScene2D,
 } from '@flighthq/sdk';
 
 // effect-blend-advanced — pixel-level coverage of the advanced-blend BlendEffect on GL (glBlendEffect),
@@ -72,26 +72,26 @@ const BACKDROP_KEY = 'scene';
 // Renders `root` into a fresh standalone target and registers its resolved texture as the blend backdrop.
 // The target's lifetime spans the whole scene (the effect samples it during end()), so it is retained on
 // the module rather than released. Cleared to opaque black so the "backdrop-only" quadrant reads as black.
-function renderBackdrop(root: DisplayObject): GlRenderTarget {
+function renderBackdrop(root: Node2D): GlRenderTarget {
   const target = createGlRenderTarget(state, {
     width: state.canvas.width,
     height: state.canvas.height,
     format: 'rgba8',
     clearColors: [0x000000ff],
   });
-  prepareDisplayObjectRender(state, root);
+  prepareScene2DRender(state, root);
   beginGlRenderPass(state, target);
-  renderGlDisplayObject(state, root);
+  renderGlScene2D(state, root);
   endGlRenderPass(state);
   registerGlBlendEffectBackdrop(state, BACKDROP_KEY, target.texture);
   return target;
 }
 
-export function render(layerRoot: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, layerRoot)) return;
+export function render(layerRoot: Node2D): void {
+  if (!prepareScene2DRender(state, layerRoot)) return;
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
-  renderGlDisplayObject(state, layerRoot);
+  renderGlScene2D(state, layerRoot);
   endGlRenderEffectPipeline(state, pipeline, [
     createBlendEffect(AdvancedBlendMode.Difference, { backdropKey: BACKDROP_KEY }),
   ]);
@@ -100,7 +100,7 @@ export function render(layerRoot: DisplayObject): void {
 const logicalWidth = width / scale;
 const logicalHeight = height / scale;
 
-function fillRectShape(color: number, x: number, y: number, w: number, h: number): DisplayObject {
+function fillRectShape(color: number, x: number, y: number, w: number, h: number): Node2D {
   const shape = createShape();
   appendShapeBeginFill(shape, color, 1);
   appendShapeRectangle(shape, 0, 0, w, h);
@@ -111,7 +111,7 @@ function fillRectShape(color: number, x: number, y: number, w: number, h: number
 }
 
 // The BACKDROP: a white block filling the LEFT half of the frame (the rest stays cleared black).
-const backdropRoot = createDisplayContainer();
+const backdropRoot = createDisplayObject();
 backdropRoot.scaleX = scale;
 backdropRoot.scaleY = scale;
 addNodeChild(backdropRoot, fillRectShape(0xffffffff, 0, 0, logicalWidth * 0.5, logicalHeight));
@@ -121,7 +121,7 @@ const backdropTarget = renderBackdrop(backdropRoot);
 // backdrop (top-left) is white-over-white → Difference black; its top-right (over black backdrop) stays
 // white (|white - black| = white). The bottom-left is backdrop-only (layer transparent) → passes the
 // backdrop white through; the bottom-right is empty in both.
-const layerRoot = createDisplayContainer();
+const layerRoot = createDisplayObject();
 layerRoot.scaleX = scale;
 layerRoot.scaleY = scale;
 addNodeChild(layerRoot, fillRectShape(0xffffffff, 0, 0, logicalWidth, logicalHeight * 0.5));

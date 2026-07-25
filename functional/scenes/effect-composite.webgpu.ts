@@ -1,4 +1,4 @@
-import type { DisplayObject, Surface, WgpuRenderTarget } from '@flighthq/sdk';
+import type { Node2D, Surface, WgpuRenderTarget } from '@flighthq/sdk';
 import {
   CompositeOperator,
   ShapeKind,
@@ -9,7 +9,7 @@ import {
   beginWgpuRenderEffectPipeline,
   beginWgpuRenderPass,
   createCompositeEffect,
-  createDisplayContainer,
+  createDisplayObject,
   createShape,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
@@ -21,14 +21,14 @@ import {
   endWgpuRenderEffectPipeline,
   endWgpuRenderPass,
   getSurfacePixelRgb,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultWgpuMaterial,
   registerRenderer,
   registerWgpuBlendEffectBackdrop,
   registerWgpuRenderEffect,
   registerWgpuShapeCommands,
   renderWgpuBackground,
-  renderWgpuDisplayObject,
+  renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -60,7 +60,7 @@ export const width = 800;
 export const height = 600;
 registerWgpuFunctionalTarget(state, scale);
 
-function fillRectangle(x: number, y: number, width: number, height: number): DisplayObject {
+function fillRectangle(x: number, y: number, width: number, height: number): Node2D {
   const shape = createShape();
   appendShapeBeginFill(shape, 0xffffffff, 1);
   appendShapeRectangle(shape, 0, 0, width, height);
@@ -72,27 +72,27 @@ function fillRectangle(x: number, y: number, width: number, height: number): Dis
 
 const logicalWidth = width / scale;
 const logicalHeight = height / scale;
-const backdropRoot = createDisplayContainer();
+const backdropRoot = createDisplayObject();
 backdropRoot.scaleX = scale;
 backdropRoot.scaleY = scale;
 addNodeChild(backdropRoot, fillRectangle(0, 0, logicalWidth * 0.5, logicalHeight));
 
-const layerRoot = createDisplayContainer();
+const layerRoot = createDisplayObject();
 layerRoot.scaleX = scale;
 layerRoot.scaleY = scale;
 addNodeChild(layerRoot, fillRectangle(0, 0, logicalWidth, logicalHeight * 0.5));
 
 renderWgpuBackground(state);
-if (prepareDisplayObjectRender(state, backdropRoot)) {
+if (prepareScene2DRender(state, backdropRoot)) {
   beginWgpuRenderPass(state, backdropTarget);
-  renderWgpuDisplayObject(state, backdropRoot);
+  renderWgpuScene2D(state, backdropRoot);
   endWgpuRenderPass(state);
 }
 registerWgpuBlendEffectBackdrop(state, 'scene', backdropTarget);
 
-if (prepareDisplayObjectRender(state, layerRoot)) {
+if (prepareScene2DRender(state, layerRoot)) {
   beginWgpuRenderEffectPipeline(state, pipeline);
-  renderWgpuDisplayObject(state, layerRoot);
+  renderWgpuScene2D(state, layerRoot);
   endWgpuRenderEffectPipeline(state, pipeline, [
     createCompositeEffect(CompositeOperator.SourceIn, { backdropKey: 'scene' }),
   ]);

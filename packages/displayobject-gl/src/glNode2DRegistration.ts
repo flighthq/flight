@@ -17,7 +17,7 @@ import {
 
 import { defaultGlBitmapRenderer } from './glBitmap';
 import { defaultGlRenderCacheRenderer } from './glCache';
-import { defaultGlDisplayObjectRenderer } from './glDisplayObject';
+import { defaultGlScene2DRenderer } from './glNode2D';
 import { defaultGlParticleEmitter2DRenderer } from './glParticleEmitter2D';
 import { defaultGlQuadBatchRenderer } from './glQuadBatch';
 import { defaultGlRichTextRenderer } from './glRichText';
@@ -38,7 +38,7 @@ import { defaultGlVideoRenderer } from './glVideo';
  *
  * Registered renderers:
  * - `BitmapKind`         → `defaultGlBitmapRenderer`
- * - `DisplayObjectKind`  → `defaultGlDisplayObjectRenderer`
+ * - `DisplayObjectKind`  → `defaultGlScene2DRenderer`
  * - `ParticleEmitter2DKind`→ `defaultGlParticleEmitter2DRenderer`
  * - `QuadBatchKind`      → `defaultGlQuadBatchRenderer`
  * - `RenderCacheKind`    → `defaultGlRenderCacheRenderer`
@@ -50,9 +50,9 @@ import { defaultGlVideoRenderer } from './glVideo';
  * - `TilemapKind`        → `defaultGlTilemapRenderer`
  * - `VideoKind`          → `defaultGlVideoRenderer`
  */
-export function registerGlDisplayObjectRenderers(state: GlRenderState): void {
+export function registerGlScene2DRenderers(state: GlRenderState): void {
   registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
-  registerRenderer(state, DisplayObjectKind, defaultGlDisplayObjectRenderer);
+  registerRenderer(state, DisplayObjectKind, defaultGlScene2DRenderer);
   registerRenderer(state, ParticleEmitter2DKind, defaultGlParticleEmitter2DRenderer);
   registerRenderer(state, QuadBatchKind, defaultGlQuadBatchRenderer);
   registerRenderer(state, RenderCacheKind, defaultGlRenderCacheRenderer);

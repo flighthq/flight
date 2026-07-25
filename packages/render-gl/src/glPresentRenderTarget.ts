@@ -7,7 +7,7 @@ import { drawGlLinearToSrgbPass } from './glLinearToSrgbPass';
 // puts a finished render target on screen. It reads the target's DECLARED color space — 'linear' content
 // (3D scene radiance) gets the single sRGB OETF encode; 'srgb' content (2D, already encoded) is copied
 // straight through. Present is a property of the target, not of the scene or the display object, so both
-// paths share this one function — there is deliberately no presentGlScene / presentGlDisplayObject split.
+// paths share this one function — there is deliberately no presentGlScene / presentGlNode2D split.
 // Assumes MSAA is already resolved (endGlRenderPass does that); present only encodes or copies.
 export function presentGlRenderTarget(
   state: GlRenderState,

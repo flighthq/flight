@@ -1,5 +1,5 @@
-import type { DisplayObject } from './DisplayObject';
 import type { FrameScript } from './FrameScript';
+import type { Node2D } from './Node2D';
 import type { TimelinePlayMode } from './TimelinePlayMode';
 import type { TimelineSignals } from './TimelineSignals';
 import type { TimelineSource } from './TimelineSource';
@@ -10,7 +10,7 @@ import type { TimelineSource } from './TimelineSource';
 // read from the source, not stored here.
 export interface Timeline {
   source: TimelineSource | null;
-  target: DisplayObject | null;
+  target: Node2D | null;
   currentFrame: number;
   // Per-frame scripts keyed by 1-based frame number; null until the first script is attached and reset
   // to null when the last is removed.

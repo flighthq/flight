@@ -9,7 +9,7 @@ import { drawGlScene } from './drawGlScene';
 // to the canvas). It is an alternative to the effect pipeline, not a companion.
 //
 // This is now trivial enough to inline at the callsite; kept only as a named entry for the common case.
-// Note the asymmetry with the old version is gone: there is no presentGlDisplayObject twin, because
+// Note the asymmetry with the old version is gone: there is no presentGlNode2D twin, because
 // `presentGlRenderTarget` is subject-agnostic — a 2D-offscreen path presents through the very same call.
 //
 // `target` is the caller-owned linear intermediate: create once via createGlRenderTarget({ width,

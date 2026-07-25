@@ -14,7 +14,7 @@ import {
   stopMovieClip,
   updateMovieClip,
 } from '@flighthq/movieclip';
-import type { DisplayObject, Shape } from '@flighthq/sdk';
+import type { Node2D, Shape } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -42,9 +42,9 @@ const TOTAL_FRAMES = 24;
 const FRAME_RATE = 8;
 
 // Lazily cache a child Shape per MovieClip target so the source is shareable.
-const shapeCache = new WeakMap<DisplayObject, Shape>();
+const shapeCache = new WeakMap<Node2D, Shape>();
 
-function getOrCreateChildShape(target: DisplayObject): Shape {
+function getOrCreateChildShape(target: Node2D): Shape {
   let shape = shapeCache.get(target);
   if (shape === undefined) {
     shape = createShape();
@@ -105,7 +105,7 @@ const timelineSource = createTimelineSource({
     { name: 'loop', frame: 9 },
     { name: 'outro', frame: 19 },
   ],
-  constructFrame(target: DisplayObject, frame: number): void {
+  constructFrame(target: Node2D, frame: number): void {
     const shape = getOrCreateChildShape(target);
     drawFrameContent(shape, frame);
   },
@@ -144,7 +144,7 @@ if (captureWindow.__flightCapture) {
 }
 
 // HUD labels.
-function createLabel(text: string, x: number, y: number, size: number, color: number): DisplayObject {
+function createLabel(text: string, x: number, y: number, size: number, color: number): Node2D {
   const label = createTextLabel();
   label.data.text = text;
   label.data.textFormat = { size, color };
@@ -154,7 +154,7 @@ function createLabel(text: string, x: number, y: number, size: number, color: nu
   return label;
 }
 
-function updateLabel(label: DisplayObject, text: string): void {
+function updateLabel(label: Node2D, text: string): void {
   (label as ReturnType<typeof createTextLabel>).data.text = text;
   invalidateNodeAppearance(label);
 }

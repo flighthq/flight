@@ -13,7 +13,7 @@ import {
   BitmapKind,
   createBitmap,
   createCompressedImageResource,
-  createDisplayContainer,
+  createDisplayObject,
   getSurfacePixelRgb,
   invalidateNodeLocalTransform,
   registerGlCompressedTextureDecoder,
@@ -80,7 +80,7 @@ const container = (format: 'bc1' | 'bc3', byteLength: number): TextureContainer 
   levels: [{ byteOffset: 0, byteLength, width: TEX, height: TEX }],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const bitmap = createBitmap();
 bitmap.data.image = createCompressedImageResource({ container: container('bc1', 8), payload: BC1_BLUE_BLOCK });

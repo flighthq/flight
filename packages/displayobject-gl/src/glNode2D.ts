@@ -1,15 +1,15 @@
-import { getDisplayObjectRuntime } from '@flighthq/displayobject';
+import { getNode2DRuntime } from '@flighthq/displayobject';
 import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import type { DisplayObject, DisplayObjectRenderer, GlRenderState, RenderProxy2D } from '@flighthq/types';
+import type { Node2D, Scene2DRenderer, GlRenderState, RenderProxy2D } from '@flighthq/types';
 
 import { flushGlSpriteBatch } from './glSpriteBatch';
 
-export function drawGlDisplayObject(_state: GlRenderState, _renderProxy: RenderProxy2D): void {
+export function drawGlScene2D(_state: GlRenderState, _renderProxy: RenderProxy2D): void {
   // Plain display objects have no visual geometry of their own.
 }
 
-export function renderGlDisplayObject(state: GlRenderState, source: DisplayObject): void {
+export function renderGlScene2D(state: GlRenderState, source: Node2D): void {
   const tempStack = getGlRenderStateRuntime(state).tempStack;
   const clipHooks = state.displayObjectClipHooks;
 
@@ -17,7 +17,7 @@ export function renderGlDisplayObject(state: GlRenderState, source: DisplayObjec
   tempStack[0] = source;
 
   while (stackLength > 0) {
-    const current = tempStack[--stackLength] as DisplayObject;
+    const current = tempStack[--stackLength] as Node2D;
     if (!current.enabled) continue;
 
     const data = getRenderProxy2D(state, current);
@@ -31,10 +31,10 @@ export function renderGlDisplayObject(state: GlRenderState, source: DisplayObjec
 
     data.renderer?.submit(state, data);
     if (data.traverseChildren) {
-      const children = getDisplayObjectRuntime(current).children;
+      const children = getNode2DRuntime(current).children;
       if (children !== null) {
         for (let i = children.length - 1; i >= 0; i--) {
-          tempStack[stackLength++] = children[i] as DisplayObject;
+          tempStack[stackLength++] = children[i] as Node2D;
         }
       }
     }
@@ -44,7 +44,7 @@ export function renderGlDisplayObject(state: GlRenderState, source: DisplayObjec
   clipHooks?.finalize(state);
 }
 
-export const defaultGlDisplayObjectRenderer: DisplayObjectRenderer = {
+export const defaultGlScene2DRenderer: Scene2DRenderer = {
   createData: noopRendererData,
-  submit: drawGlDisplayObject,
+  submit: drawGlScene2D,
 };

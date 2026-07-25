@@ -1,4 +1,4 @@
-import { createDisplayObject, createDisplayObjectGeneric } from '@flighthq/displayobject';
+import { createDisplayObject, createNode2D } from '@flighthq/displayobject';
 import { setRectangle } from '@flighthq/geometry';
 import { addNodeChild, getNodeLocalBoundsRectangle, invalidateNodeLocalTransform } from '@flighthq/node';
 import { createSpatialIndex, createUniformGridSpatialBackend } from '@flighthq/spatial';
@@ -10,7 +10,7 @@ import { findSpatialInteractionTarget, refreshInteractionSpatialIndex } from './
 import { setNodeHitArea, setNodeHitTestEnabled } from './nodeInteractionState';
 
 function candidate(x: number, y: number, w: number, h: number) {
-  const obj = createDisplayObjectGeneric(DisplayObjectKind);
+  const obj = createNode2D(DisplayObjectKind);
   obj.x = x;
   obj.y = y;
   invalidateNodeLocalTransform(obj);
@@ -62,7 +62,7 @@ describe('findSpatialInteractionTarget', () => {
 describe('refreshInteractionSpatialIndex', () => {
   it('indexes only opted-in nodes', () => {
     const { manager, root } = managedScene();
-    const inert = createDisplayObjectGeneric(DisplayObjectKind);
+    const inert = createNode2D(DisplayObjectKind);
     setRectangle(getNodeLocalBoundsRectangle(inert), 0, 0, 50, 50);
     addNodeChild(root, inert);
     refreshInteractionSpatialIndex(manager);

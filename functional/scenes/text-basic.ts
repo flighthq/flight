@@ -8,7 +8,7 @@
 // region and asserts that several pixels land near the text color (text was drawn), and that a region
 // well outside the field has none (the field did not flood the screen).
 import type { Surface } from '@flighthq/sdk';
-import { addNodeChild, createDisplayContainer, createRichText, getSurfacePixelRgb, RichTextKind } from '@flighthq/sdk';
+import { addNodeChild, createDisplayObject, createRichText, getSurfacePixelRgb, RichTextKind } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
 const WIDTH = 800;
@@ -29,7 +29,7 @@ const { render, width } = await createFunctionalTarget({
   kinds: [RichTextKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const field = createRichText();
 field.data.defaultTextFormat = { font: 'sans-serif', size: FONT_SIZE, bold: true };

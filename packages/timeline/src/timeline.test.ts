@@ -1,4 +1,4 @@
-import type { DisplayObject, Timeline } from '@flighthq/types';
+import type { Node2D, Timeline } from '@flighthq/types';
 
 import {
   addTimelineFrameScript,
@@ -38,7 +38,7 @@ function make(o: MakeOptions = {}): Timeline {
       labels: o.labels,
       constructFrame: o.constructFrame ? (_target, frame) => o.constructFrame!(frame) : undefined,
     }),
-    target: {} as DisplayObject,
+    target: {} as Node2D,
     currentFrame: o.currentFrame,
     isPlaying: o.isPlaying,
   });
@@ -126,7 +126,7 @@ describe('createTimelineSource', () => {
     expect(s.totalFrames).toBe(3);
     expect(s.frameRate).toBe(12);
     expect(s.labels).toEqual([{ name: 'a', frame: 2 }]);
-    s.constructFrame({} as unknown as DisplayObject, 2);
+    s.constructFrame({} as unknown as Node2D, 2);
     expect(seen).toEqual([2]);
   });
 });

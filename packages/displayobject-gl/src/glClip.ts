@@ -1,11 +1,11 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import type { DisplayObject, DisplayObjectClipHooks, GlRenderState, RenderProxy2D } from '@flighthq/types';
+import type { Node2D, Scene2DClipHooks, GlRenderState, RenderProxy2D } from '@flighthq/types';
 
 import { popGlClipContours, pushGlClipContours } from './glClipContours';
 import { popGlClipRectangle, pushGlClipRectangle } from './glClipRectangle';
 
 // Clip support installs the unified clip hooks. Masks are RETIRED — a former mask is now a path
-// ClipRegion (createClipRegionFromPath + setDisplayObjectClip), realized by the contour stencil below.
+// ClipRegion (createClipRegionFromPath + setNode2DClip), realized by the contour stencil below.
 export function enableGlClipSupport(state: GlRenderState): void {
   state.displayObjectClipHooks = webglClipHooks;
 }
@@ -19,17 +19,17 @@ function popOneGlClip(state: GlRenderState): void {
   else popGlClipRectangle(state);
 }
 
-const webglClipHooks: DisplayObjectClipHooks = {
+const webglClipHooks: Scene2DClipHooks = {
   finalize(state: GlRenderState): void {
     const runtime = getGlRenderStateRuntime(state);
     while (runtime.clipForms.length > 0) popOneGlClip(state);
   },
-  popClip(state: GlRenderState, data: RenderProxy2D, source: DisplayObject): void {
+  popClip(state: GlRenderState, data: RenderProxy2D, source: Node2D): void {
     const runtime = getGlRenderStateRuntime(state);
     const target = data.clipDepth - (source.clip != null ? 1 : 0);
     while (runtime.clipForms.length > target) popOneGlClip(state);
   },
-  pushClip(state: GlRenderState, data: RenderProxy2D, source: DisplayObject): void {
+  pushClip(state: GlRenderState, data: RenderProxy2D, source: Node2D): void {
     const runtime = getGlRenderStateRuntime(state);
     const clip = source.clip;
     if (clip === null) return;

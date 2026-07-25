@@ -17,7 +17,7 @@ import { getRenderStateRuntime } from './renderState';
 // afterward to reorder by an explicit criterion such as opaque-front-to-back / alpha-back-to-front.
 //
 // Does not advance the frame id — the prepare pass has already done that. Call
-// prepareDisplayObjectRender before buildRenderQueue.
+// prepareScene2DRender before buildRenderQueue.
 export function buildRenderQueue(state: RenderState, source: Renderable, out: RenderQueue): void {
   clearRenderQueue(out);
   const runtime = getRenderStateRuntime(state);

@@ -18,8 +18,8 @@ import {
 
 import { defaultGlBitmapRenderer } from './glBitmap';
 import { defaultGlRenderCacheRenderer } from './glCache';
-import { defaultGlDisplayObjectRenderer } from './glDisplayObject';
-import { registerGlDisplayObjectRenderers } from './glDisplayObjectRegistration';
+import { defaultGlScene2DRenderer } from './glNode2D';
+import { registerGlScene2DRenderers } from './glNode2DRegistration';
 import { defaultGlParticleEmitter2DRenderer } from './glParticleEmitter2D';
 import { defaultGlQuadBatchRenderer } from './glQuadBatch';
 import { defaultGlRichTextRenderer } from './glRichText';
@@ -37,13 +37,13 @@ function makeState(): GlRenderState {
   return createGlRenderState(canvas);
 }
 
-describe('registerGlDisplayObjectRenderers', () => {
+describe('registerGlScene2DRenderers', () => {
   it('registers all twelve display-object renderer kinds in one call', () => {
     const state = makeState();
-    registerGlDisplayObjectRenderers(state);
+    registerGlScene2DRenderers(state);
     const { rendererMap } = getRenderStateRuntime(state);
     expect(rendererMap.get(BitmapKind)).toBe(defaultGlBitmapRenderer);
-    expect(rendererMap.get(DisplayObjectKind)).toBe(defaultGlDisplayObjectRenderer);
+    expect(rendererMap.get(DisplayObjectKind)).toBe(defaultGlScene2DRenderer);
     expect(rendererMap.get(ParticleEmitter2DKind)).toBe(defaultGlParticleEmitter2DRenderer);
     expect(rendererMap.get(QuadBatchKind)).toBe(defaultGlQuadBatchRenderer);
     expect(rendererMap.get(RenderCacheKind)).toBe(defaultGlRenderCacheRenderer);
@@ -58,19 +58,19 @@ describe('registerGlDisplayObjectRenderers', () => {
 
   it('registers BitmapKind with the default bitmap renderer', () => {
     const state = makeState();
-    registerGlDisplayObjectRenderers(state);
+    registerGlScene2DRenderers(state);
     expect(getRenderStateRuntime(state).rendererMap.get(BitmapKind)).toBe(defaultGlBitmapRenderer);
   });
 
   it('registers DisplayObjectKind with the default display object renderer', () => {
     const state = makeState();
-    registerGlDisplayObjectRenderers(state);
-    expect(getRenderStateRuntime(state).rendererMap.get(DisplayObjectKind)).toBe(defaultGlDisplayObjectRenderer);
+    registerGlScene2DRenderers(state);
+    expect(getRenderStateRuntime(state).rendererMap.get(DisplayObjectKind)).toBe(defaultGlScene2DRenderer);
   });
 
   it('registers ParticleEmitter2DKind with the default particle emitter renderer', () => {
     const state = makeState();
-    registerGlDisplayObjectRenderers(state);
+    registerGlScene2DRenderers(state);
     expect(getRenderStateRuntime(state).rendererMap.get(ParticleEmitter2DKind)).toBe(
       defaultGlParticleEmitter2DRenderer,
     );
@@ -78,55 +78,55 @@ describe('registerGlDisplayObjectRenderers', () => {
 
   it('registers QuadBatchKind with the default quad batch renderer', () => {
     const state = makeState();
-    registerGlDisplayObjectRenderers(state);
+    registerGlScene2DRenderers(state);
     expect(getRenderStateRuntime(state).rendererMap.get(QuadBatchKind)).toBe(defaultGlQuadBatchRenderer);
   });
 
   it('registers RenderCacheKind with the default render cache renderer', () => {
     const state = makeState();
-    registerGlDisplayObjectRenderers(state);
+    registerGlScene2DRenderers(state);
     expect(getRenderStateRuntime(state).rendererMap.get(RenderCacheKind)).toBe(defaultGlRenderCacheRenderer);
   });
 
   it('registers RichTextKind with the default rich text renderer', () => {
     const state = makeState();
-    registerGlDisplayObjectRenderers(state);
+    registerGlScene2DRenderers(state);
     expect(getRenderStateRuntime(state).rendererMap.get(RichTextKind)).toBe(defaultGlRichTextRenderer);
   });
 
   it('registers Scale9ShapeKind with the default scale9 shape renderer', () => {
     const state = makeState();
-    registerGlDisplayObjectRenderers(state);
+    registerGlScene2DRenderers(state);
     expect(getRenderStateRuntime(state).rendererMap.get(Scale9ShapeKind)).toBe(defaultGlScale9ShapeRenderer);
   });
 
   it('registers ShapeKind with the default shape renderer', () => {
     const state = makeState();
-    registerGlDisplayObjectRenderers(state);
+    registerGlScene2DRenderers(state);
     expect(getRenderStateRuntime(state).rendererMap.get(ShapeKind)).toBe(defaultGlShapeRenderer);
   });
 
   it('registers SpriteKind with the default sprite renderer', () => {
     const state = makeState();
-    registerGlDisplayObjectRenderers(state);
+    registerGlScene2DRenderers(state);
     expect(getRenderStateRuntime(state).rendererMap.get(SpriteKind)).toBe(defaultGlSpriteRenderer);
   });
 
   it('registers TextLabelKind with the default text label renderer', () => {
     const state = makeState();
-    registerGlDisplayObjectRenderers(state);
+    registerGlScene2DRenderers(state);
     expect(getRenderStateRuntime(state).rendererMap.get(TextLabelKind)).toBe(defaultGlTextLabelRenderer);
   });
 
   it('registers TilemapKind with the default tilemap renderer', () => {
     const state = makeState();
-    registerGlDisplayObjectRenderers(state);
+    registerGlScene2DRenderers(state);
     expect(getRenderStateRuntime(state).rendererMap.get(TilemapKind)).toBe(defaultGlTilemapRenderer);
   });
 
   it('registers VideoKind with the default video renderer', () => {
     const state = makeState();
-    registerGlDisplayObjectRenderers(state);
+    registerGlScene2DRenderers(state);
     expect(getRenderStateRuntime(state).rendererMap.get(VideoKind)).toBe(defaultGlVideoRenderer);
   });
 });

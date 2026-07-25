@@ -16,7 +16,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  createDisplayContainer,
+  createDisplayObject,
   createShape,
   getSurfacePixelRgb,
   invalidateNodeAppearance,
@@ -48,10 +48,10 @@ const { render, width } = await createFunctionalTarget({
   kinds: [ShapeKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 // Visible container with a red child shape.
-const visibleContainer = createDisplayContainer();
+const visibleContainer = createDisplayObject();
 addNodeChild(root, visibleContainer);
 
 const visibleChild = createShape();
@@ -62,7 +62,7 @@ addNodeChild(visibleContainer, visibleChild);
 
 // Hidden container with a green child shape. The CHILD stays visible; only the CONTAINER is hidden,
 // so the child must be pruned by inherited visibility.
-const hiddenContainer = createDisplayContainer();
+const hiddenContainer = createDisplayObject();
 hiddenContainer.visible = false; // hides the whole subtree
 invalidateNodeAppearance(hiddenContainer);
 addNodeChild(root, hiddenContainer);

@@ -1,5 +1,5 @@
 import type { AnimationClip } from './AnimationClip';
-import type { DisplayContainer } from './DisplayContainer';
+import type { DisplayObject } from './DisplayObject';
 import type { ImageResource } from './ImageResource';
 import type { LottieImageAsset } from './LottieDocument';
 
@@ -20,5 +20,5 @@ export interface LottieDocumentImportResult {
   clip: AnimationClip;
   duration: number;
   frameRate: number;
-  root: DisplayContainer;
+  root: DisplayObject;
 }

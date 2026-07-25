@@ -2,35 +2,35 @@ import { createDisplayObject } from '@flighthq/displayobject';
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
 
-import { defaultWgpuDisplayObjectRenderer, drawWgpuDisplayObject, renderWgpuDisplayObject } from './wgpuDisplayObject';
+import { defaultWgpuScene2DRenderer, drawWgpuScene2D, renderWgpuScene2D } from './wgpuNode2D';
 
 beforeAll(() => {
   installWgpuMock();
 });
 
-describe('defaultWgpuDisplayObjectRenderer', () => {
+describe('defaultWgpuScene2DRenderer', () => {
   it('has createData and draw functions', () => {
-    expect(typeof defaultWgpuDisplayObjectRenderer.createData).toBe('function');
-    expect(typeof defaultWgpuDisplayObjectRenderer.submit).toBe('function');
+    expect(typeof defaultWgpuScene2DRenderer.createData).toBe('function');
+    expect(typeof defaultWgpuScene2DRenderer.submit).toBe('function');
   });
 });
 
-describe('drawWgpuDisplayObject', () => {
+describe('drawWgpuScene2D', () => {
   it('is a no-op (plain display objects have no geometry)', async () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
     const renderProxy = { source: createDisplayObject() } as never;
-    expect(() => drawWgpuDisplayObject(state, renderProxy)).not.toThrow();
+    expect(() => drawWgpuScene2D(state, renderProxy)).not.toThrow();
     submitWgpuRenderPass(state);
   });
 });
 
-describe('renderWgpuDisplayObject', () => {
+describe('renderWgpuScene2D', () => {
   it('traverses a display object without error', async () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
     const root = createDisplayObject();
-    expect(() => renderWgpuDisplayObject(state, root)).not.toThrow();
+    expect(() => renderWgpuScene2D(state, root)).not.toThrow();
     submitWgpuRenderPass(state);
   });
 });
