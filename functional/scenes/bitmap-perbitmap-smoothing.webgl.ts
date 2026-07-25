@@ -12,8 +12,8 @@
 // The crisp copy's boundary being PURE is the real per-bitmap proof: it only holds if GL applied NEAREST
 // to that specific bitmap rather than the (bilinear) global default the smoothed copy also uses.
 //
-// WGPU is not wired for per-bitmap smoothing yet (its sampler binding is mid-rework), so this proof is
-// webgl-only for now; canvas/dom are covered by the bare bitmap-smoothing / bitmap-downscale-smoothing.
+// WebGPU has the same proof in the sibling .webgpu variant (its own bind-group-variant path); canvas/dom
+// always honored per-bitmap smoothing (covered by the bare bitmap-smoothing / bitmap-downscale-smoothing).
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
