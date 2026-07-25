@@ -1,5 +1,7 @@
 ---
 package: '@flighthq/lottie-formats'
+absorbed: displayobject-formats
+supersededBy: '@flighthq/displayobject-formats'
 draft: true
 lastDirection: 2026-07-12
 review: ./review.md
@@ -7,7 +9,11 @@ assessment: ./assessment.md
 status: ./status.md
 ---
 
-# lottie-formats — Charter (reserved home)
+# lottie-formats — Superseded Charter
+
+> Superseded by [`@flighthq/displayobject-formats`](../displayobject-formats/charter.md). No
+> `packages/lottie-formats/` implementation was created. This file retains the original direction
+> history only.
 
 ## What it is
 
@@ -27,6 +33,9 @@ Lottie is shape layers + transforms + keyframes: a designer's motion graphic as 
 _Append-only, dated, blessed rulings._
 
 - **[2026-07-12] Chartered as a candidate; not built.** Part of the visual-authoring-import arc (fork I). Output is `shape` + `animation` data driven by the existing player; expressions/effect-layers out of scope. Bless-to-build is the user's. User-directed 2026-07-12 ("Lottie in scope as a `-formats` member").
+- **[2026-07-25] Superseded before build by `@flighthq/displayobject-formats`.** The user-approved
+  umbrella package owns document-to-display-tree codecs. Lottie is a parser within that package,
+  not a neighbor of a standalone Lottie runtime model.
 
 ## Open directions
 

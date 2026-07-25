@@ -3,14 +3,15 @@ import type { AnimationInterpolation, AnimationTrack, AnimationTrackValidationDi
 import { AnimationInterpolationLinear } from '@flighthq/types';
 
 // Deep-copies an AnimationTrack, allocating fresh `times` and `values` buffers (preserving Float32Array
-// vs number[] backing) so the clone shares no mutable state with the source. `easing` is a pure
-// function and is carried by reference; all scalar fields are copied.
+// vs number[] backing) so the clone shares no mutable state with the source. Easing functions are
+// carried by reference; the segment-easing array itself is copied.
 export function cloneAnimationTrack(track: Readonly<AnimationTrack>): AnimationTrack {
   return createEntity({
     components: track.components,
     easing: track.easing,
     interpolation: track.interpolation,
     quaternion: track.quaternion,
+    segmentEasings: track.segmentEasings === null ? null : track.segmentEasings.slice(),
     times: cloneNumberBuffer(track.times),
     values: cloneNumberBuffer(track.values),
   });
@@ -26,12 +27,14 @@ export function createAnimationTrack(opts: {
   interpolation?: AnimationInterpolation;
   quaternion?: boolean;
   easing?: AnimationTrack['easing'];
+  segmentEasings?: AnimationTrack['segmentEasings'];
 }): AnimationTrack {
   return createEntity({
     components: opts.components ?? 1,
     easing: opts.easing ?? null,
     interpolation: opts.interpolation ?? AnimationInterpolationLinear,
     quaternion: opts.quaternion ?? false,
+    segmentEasings: opts.segmentEasings ?? null,
     times: opts.times,
     values: opts.values,
   });
@@ -71,7 +74,8 @@ export function sampleAnimationTrack(out: number[] | Float32Array, track: Readon
   const t0 = times[i];
   const dt = times[i + 1] - t0;
   let alpha = dt > 0 ? (t - t0) / dt : 0;
-  if (track.easing !== null) alpha = track.easing(alpha);
+  const easing = track.segmentEasings?.[i] ?? track.easing;
+  if (easing !== null) alpha = easing(alpha);
 
   if (track.interpolation === 'Step') {
     copyKeyframeValue(out, track, i);
@@ -110,10 +114,12 @@ export function trimAnimationTrack(
   const stride = keyframeStride(track);
   const outTimes: number[] = [];
   const outValues: number[] = [];
+  const sourceKeyframes: number[] = [];
   for (let k = 0; k < count; k++) {
     const time = times[k];
     if (time < startTime || time > endTime) continue;
     outTimes.push(time - startTime);
+    sourceKeyframes.push(k);
     const off = k * stride;
     for (let c = 0; c < stride; c++) outValues.push(track.values[off + c]);
   }
@@ -122,6 +128,12 @@ export function trimAnimationTrack(
     easing: track.easing,
     interpolation: track.interpolation,
     quaternion: track.quaternion,
+    segmentEasings:
+      track.segmentEasings === null || sourceKeyframes.length < 2
+        ? track.segmentEasings === null
+          ? null
+          : []
+        : track.segmentEasings.slice(sourceKeyframes[0], sourceKeyframes[sourceKeyframes.length - 1]),
     times: outTimes,
     values: outValues,
   });
@@ -149,6 +161,14 @@ export function validateAnimationTrack(track: Readonly<AnimationTrack>): Animati
       code: 'valuesLengthMismatch',
       index: null,
       message: `values.length (${values.length}) must equal keyCount * componentsPerKeyframe (${expected}).`,
+    });
+  }
+  const expectedEasings = Math.max(0, count - 1);
+  if (track.segmentEasings !== null && track.segmentEasings.length !== expectedEasings) {
+    diagnostics.push({
+      code: 'segmentEasingsLengthMismatch',
+      index: null,
+      message: `segmentEasings.length (${track.segmentEasings.length}) must equal keyCount - 1 (${expectedEasings}).`,
     });
   }
   return diagnostics.length > 0 ? diagnostics : null;

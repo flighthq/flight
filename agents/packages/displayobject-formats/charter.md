@@ -49,11 +49,10 @@ clip as an unresolved reference.
 SVG animation, scripts, foreignObject, live DOM behavior, and filter graphs are not retained. Filter
 effects belong to `@flighthq/effects`; application behavior remains application-owned.
 
-## Draft Lottie scope — awaiting review blessing
+## Lottie scope
 
-Lottie remains charter work only until review blesses this direction. The proposed module accepts
-Bodymovin JSON or the data-only `LottieDocument` boundary type and returns a display subtree plus
-animation data. It performs no playback and acquires images only through
+The Lottie module accepts Bodymovin JSON or the data-only `LottieDocument` boundary type and returns
+a display subtree plus animation data. It performs no playback and acquires images only through
 `LottieDocumentImportOptions.resolveImageResource`.
 
 The common Bodymovin export path is the AAA baseline: shape, precomposition, image, null, solid, and
@@ -68,25 +67,21 @@ modifiers without a Flight equivalent. Static hard masks may recover to `ClipReg
 exclusions are deliberate up front; none authorizes parser work before review resolves the forks
 below.
 
-### Mapping forks for review
+### Mapping decisions
 
-1. **Segment-local temporal easing.** Bodymovin stores cubic-Bezier handles per keyframe segment and
-   may store different handles per vector component. `AnimationTrack.easing` currently supplies one
-   function for an entire track. Preferred: add segment-local easing to `AnimationTrack`, splitting a
-   vector into scalar tracks only when component handles differ. Alternative: bake samples, making
-   fidelity depend on an arbitrary sampling rate.
-2. **Animation target ownership.** Transform and opacity channels fit a reusable display-object
-   animation target, but animated shape, paint, and text properties belong to packages layered above
-   `displayobject`. Preferred: a Lottie target descriptor plus separately imported apply function in
-   `displayobject-formats`; extract a lower shared target only after another display format proves
-   the vocabulary.
-3. **Precompositions and time remapping.** Flatten ordinary precomposition channels into one
-   root-time clip, mapping layer stretch and start offsets exactly. Arbitrary animated time remapping
-   needs either a small explicit time-map primitive or diagnosed resampling; it is outside the common
-   baseline until review chooses.
-4. **Reserved-package cleanup.** The 2026-07-12 `lottie-formats` charter predates the umbrella naming
-   ruling. Preferred: absorb it into `displayobject-formats`, matching `svg-formats`, instead of
-   maintaining two candidate homes.
+1. **Segment-local temporal easing.** Map Bodymovin cubic-Bezier handles analytically through
+   segment-local easing on `AnimationTrack`. Split vectors into scalar tracks only when their
+   component handles differ. Dense baking is a fallback only for a genuinely unrepresentable curve.
+2. **Animation target ownership.** Transform and opacity bind through the general
+   `DisplayObjectAnimationTarget` and `applyAnimationClipToDisplayObject` in
+   `@flighthq/displayobject`. Format-owned targets remain only for properties above that package,
+   such as mutable shape, paint, and text data.
+3. **Precompositions and time remapping.** Flatten ordinary precomposition channels into root time,
+   folding constant layer offset and stretch exactly. Arbitrary animated time remapping is an honest
+   Skip site; no speculative time-map primitive or lossy resampling enters the baseline.
+4. **Package home.** The reserved `lottie-formats` charter is absorbed here, matching
+   `svg-formats`. Lottie is a parser within the display-object document codec rather than a neighbor
+   of a nonexistent Lottie runtime model.
 
 ## Decisions
 
@@ -101,12 +96,15 @@ below.
   produced by common design-tool exports. Nested clip intersections, definition-ancestor clip-rule
   inheritance, and text-as-clip geometry are deferred exotic composition. Working correct support
   may remain, while unsupported variants must degrade through honest Skip diagnostics.
+- **[2026-07-25] Lottie charter blessed.** Segment-local analytic easing, the shared display-object
+  animation binder, flattened ordinary precompositions, diagnosed arbitrary time remapping, and
+  absorption of the reserved `lottie-formats` home are the implementation rules.
 
 ## Open directions
 
 1. Exotic clip/mask deepening: nested intersections, definition-ancestor clip-rule inheritance, and
    measured text clip geometry.
 2. SVG paint-server patterns and soft/luminance mask fidelity beyond Flight's hard `ClipRegion`.
-3. Review blessing for the Lottie scope and the four mapping forks above.
+3. A real-asset Lottie demo and fidelity checkpoint after the hand-authored conformance gate.
 4. Whether Rive's parser and state-machine data justify the already-chartered `rive-formats` cell
    once skeleton2d is available.

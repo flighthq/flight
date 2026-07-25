@@ -8,7 +8,8 @@ import type { Entity } from './Entity';
 // for 'Cubic' it holds 3 * `components` per keyframe (in-tangent, value, out-tangent), glTF-style.
 // When `quaternion` is true the four components are a unit quaternion [x, y, z, w] and 'Linear'
 // sampling slerps instead of interpolating component-wise. `easing`, when non-null, reshapes the
-// per-segment interpolation alpha (the bridge to @flighthq/easing's curves) — null is the raw curve.
+// interpolation alpha for every segment. `segmentEasings`, when non-null, contains one optional
+// override per interval (`times.length - 1`); a null entry falls back to the track-wide easing.
 export interface AnimationTrack extends Entity {
   interpolation: AnimationInterpolation;
   times: ArrayLike<number>;
@@ -16,4 +17,5 @@ export interface AnimationTrack extends Entity {
   components: number;
   quaternion: boolean;
   easing: EasingFunction | null;
+  segmentEasings: ReadonlyArray<EasingFunction | null> | null;
 }
