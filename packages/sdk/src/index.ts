@@ -90,6 +90,7 @@ export * from '@flighthq/share';
 export * from '@flighthq/shell';
 export * from '@flighthq/shortcut';
 export * from '@flighthq/signals';
+export * from '@flighthq/skeleton2d';
 export * from '@flighthq/skeleton3d';
 export * from '@flighthq/snapshot';
 export * from '@flighthq/socket';
