@@ -1270,7 +1270,7 @@
             "canvas": true,
             "dom": true,
             "webgl": true,
-            "webgpu": false
+            "webgpu": true
           }
         }
       ]
