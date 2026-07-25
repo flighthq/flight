@@ -19,7 +19,7 @@ drift-gated by `npm run support:check` (part of `npm run check`).
 
 | Canvas | DOM | WebGL | WebGPU |
 | --- | --- | --- | --- |
-| 91 / 142 | 39 / 142 | 137 / 142 | 125 / 142 |
+| 91 / 142 | 39 / 142 | 137 / 142 | 126 / 142 |
 
 All four backends re-verify in-sandbox — WebGPU via SwiftShader software Vulkan. A small set of WebGPU scenes exceed the fingerprint tolerance on software-vs-hardware antialiasing differences; see [maturity-gaps](maturity-gaps.md).
 
@@ -249,7 +249,7 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 | `shape-fill-solid` | ✓ | ✓ | ✓ | ✓ |
 | `shape-stroke` | ✓ | ✓ | ✓ | ✓ |
 | `shape-stroke-caps` | ✓ | ✓ | ✓ | ✓ |
-| `shape-stroke-joints` | ✓ | ✓ | ✓ | · |
+| `shape-stroke-joints` | ✓ | ✓ | ✓ | ✓ |
 
 ### Sprites
 
