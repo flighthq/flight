@@ -7,7 +7,7 @@ Discovered during side-by-side comparison of all 26 AwayJS examples (Flight vs A
 **Package:** `@flighthq/scene3d-formats` — `awdParse.ts`
 **Impact:** `intermediate-awd-viewer` (shambler model renders as untextured gray instead of detailed textured skin)
 
-`createSceneFromAwd` extracts geometry and skeleton data but has zero texture/material handling — no matches for `texture`, `diffuseMap`, `bitmap`, `image`, or `embed` in the parser. AWD files can embed textures and material definitions. Without this, every AWD model requires manual material/texture assignment in example code, and models with embedded-only textures (no separate image files on disk) cannot be textured at all.
+`createScene3DFromAwd` extracts geometry and skeleton data but has zero texture/material handling — no matches for `texture`, `diffuseMap`, `bitmap`, `image`, or `embed` in the parser. AWD files can embed textures and material definitions. Without this, every AWD model requires manual material/texture assignment in example code, and models with embedded-only textures (no separate image files on disk) cannot be textured at all.
 
 ## 2. `drawGlScene` does not draw `ParticleEmitter3D` nodes
 
@@ -42,7 +42,7 @@ Shape rendering has two paths: Path A (solid fills → GPU tessellated mesh via 
 **Package:** `@flighthq/scene3d-formats` — `objParse.ts`, `threeDsParse.ts`
 **Impact:** `obj-loader-master-chief`, `aircraft-demo`, `basic-load-3ds` (all required `forEachNodeDescendant` workaround)
 
-`createSceneFromObj` wraps meshes inside `SceneNode` groups (from `g`/`o` directives). `createSceneFrom3ds` wraps named meshes in `SceneNode` wrappers (line ~349-351). In both cases, `getNodeChildren(scene)` returns wrapper nodes with `geometry: null`, not actual `Mesh` nodes. Users must use `forEachNodeDescendant` to find actual meshes. This is a documentation/API discoverability issue — the returned scene's immediate children are NOT the meshes.
+`createScene3DFromObj` wraps meshes inside `Node3D` groups (from `g`/`o` directives). `createScene3DFrom3ds` wraps named meshes in `Node3D` wrappers (line ~349-351). In both cases, `getNodeChildren(scene)` returns wrapper nodes with `geometry: null`, not actual `Mesh` nodes. Users must use `forEachNodeDescendant` to find actual meshes. This is a documentation/API discoverability issue — the returned scene's immediate children are NOT the meshes.
 
 ## 7. Linear HDR pipeline requires significant lighting intensity tuning
 

@@ -328,7 +328,7 @@ Design calls to settle before building the affected entries:
 
 ### picking (solid 70)
 
-- Make `SceneHit.node` type-honest
+- Make `Scene3DHit.node` type-honest
 
 ### assets (solid 72)
 
@@ -474,7 +474,7 @@ Design calls to settle before building the affected entries:
 
 - Replace the `'pivotX' in source` duck-type sniff in `isSpatial2DNode` (`renderViewport.ts`)
 - Complete the chartered guard/explain set (Approved 2026-07-03, still pending)
-- Honor `sceneGraphSyncPolicy` in `prepareSceneRender` — the 3D dirty short-circuit (Approved 2026-07-09, still pending)
+- Honor `sceneGraphSyncPolicy` in `prepareScene3DRender` — the 3D dirty short-circuit (Approved 2026-07-09, still pending)
 - Delete the dead `RenderTargetSizeOptions` export (`renderTarget.ts`)
 - Fix the stale `drawDriver` comment (`renderQueue.ts:114`)
 - Convert `collectVisibleMeshes` (`sceneRender.ts`) to the package's explicit-stack walk pattern

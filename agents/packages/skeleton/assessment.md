@@ -6,7 +6,7 @@ basedOn: ./review.md
 
 # skeleton — Assessment
 
-See [charter](./charter.md) for blessed direction. Sorted from the 2026-07-03 review (stub, 27/100). The palette kernel and the joints-are-`SceneNode`s architecture are right and stay; the review's build-out order (CPU skinning → names/validation → poses/blending → bounds/attachment → IK/DQS) splits cleanly: the buffer-level math and entity hygiene are sweep-safe, while everything touching the mesh vertex layout, the animation mixer boundary, or a charter Open direction is parked.
+See [charter](./charter.md) for blessed direction. Sorted from the 2026-07-03 review (stub, 27/100). The palette kernel and the joints-are-`Node3D`s architecture are right and stay; the review's build-out order (CPU skinning → names/validation → poses/blending → bounds/attachment → IK/DQS) splits cleanly: the buffer-level math and entity hygiene are sweep-safe, while everything touching the mesh vertex layout, the animation mixer boundary, or a charter Open direction is parked.
 
 ## Recommended
 
@@ -14,7 +14,7 @@ See [charter](./charter.md) for blessed direction. Sorted from the 2026-07-03 re
 2. CPU linear-blend-skinning kernel — a buffer-level `skinVertices(outPositions, outNormals, positions, normals, joints, weights, jointMatrices)` over plain arrays. Unlocks software rendering, skinned picking, and skinned bounds, and is required for Rust-port conformance fingerprinting (deterministic, GPU-free). The `MeshGeometry`-level wrapper is parked (see Backlog).
 3. Joint names on `Skeleton` plus `getSkeletonJointIndexByName` (sentinel `-1`) — the importer/attachment seam; the type currently has no place to put names. Types-first in `@flighthq/types`.
 4. `validateSkeleton` — sentinel-returning check that `inverseBindMatrices.length === joints.length × 16`; a mismatch currently reads/writes out of range silently.
-5. Make the palette an explicit `out` parameter — `computeSkeletonJointMatrices` and `setSkeletonBindPose` take `Readonly<Skeleton>` yet write its buffers; the out-parameter form fixes the semantics and composes with multi-instance palettes (many palettes, one skeleton). Tighten `joints` to `readonly SceneNode[]` while touching the type.
+5. Make the palette an explicit `out` parameter — `computeSkeletonJointMatrices` and `setSkeletonBindPose` take `Readonly<Skeleton>` yet write its buffers; the out-parameter form fixes the semantics and composes with multi-instance palettes (many palettes, one skeleton). Tighten `joints` to `readonly Node3D[]` while touching the type.
 6. `getSkeletonJointWorldMatrix`-style attachment accessor (prop socketing by joint index/name), once names land.
 
 ## Backlog

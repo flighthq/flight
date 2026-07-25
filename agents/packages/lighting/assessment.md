@@ -27,8 +27,8 @@ an allocation-free scalar intersection directly from the light descriptor.
 
 ## Approved
 
-- [2026-07-21 · completed] `createSceneLights` now returns an Entity-backed `SceneLights`, matching
-  the repository constructor invariant. `SceneLightsLike` remains the explicit structural draw input,
+- [2026-07-21 · completed] `createSceneLights` now returns an Entity-backed `Scene3DLights`, matching
+  the repository constructor invariant. `Scene3DLightsLike` remains the explicit structural draw input,
   so callers can supply a one-off descriptor without pretending that input already owns identity.
 - [2026-07-22 · completed] `KHR_lights_punctual` import is an individually supplied glTF extension
   handler, not core parser knowledge or a register-all side effect. It preserves linear color, intensity,

@@ -65,7 +65,7 @@ The package is a full input library, to be refactored down into more packages as
 
 1. **`InputBackend` shape.** What does the backend interface look like? Does it wrap `attach*`/`detach*` pairs, or does it push events directly? How does it relate to the `WindowBackend` in application?
 
-2. **`enableInputSignals` opt-in.** `createInputManager` eagerly folds all 15 signals. Signals are this package's sole delivery mechanism, so a manager without them is inert — but the pattern differs from `enableDisplayObjectSignals`. Bless the eager fold or add an opt-in.
+2. **`enableInputSignals` opt-in.** `createInputManager` eagerly folds all 15 signals. Signals are this package's sole delivery mechanism, so a manager without them is inert — but the pattern differs from `enableNode2DSignals`. Bless the eager fold or add an opt-in.
 
 3. **Neighbor package shapes.** `input-bindings`, `gestures`, `gamepad-mappings` are blessed but undesigned. Each needs its own direction session when built.
 

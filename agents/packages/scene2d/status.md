@@ -61,7 +61,7 @@ The package shape has diverged from the assessment (which was written against th
 - `setDisplayObjectCacheAsBitmap(source, value)` — sets `cacheAsBitmap`, guard-skips if unchanged, invalidates appearance.
 - `setDisplayObjectCacheAsBitmapMatrix(source, value)` — sets `cacheAsBitmapMatrix`, guard-skips if unchanged, invalidates appearance.
 - `createDisplayObjectRuntime` — now initializes `lifecycleSignals = null`.
-- `createDisplayObjectGeneric` — now calls `initCacheAsBitmapTrait` as part of the trait init sequence.
+- `createNode2D` — now calls `initCacheAsBitmapTrait` as part of the trait init sequence.
 
 **stage.ts:**
 
@@ -127,7 +127,7 @@ All 195 tests pass. `npm run packages:check` ✓ · `npm run exports:check` ✓ 
 
 **displayContainer.ts:** `createDisplayContainer`, `createDisplayContainerRuntime`, `getDisplayContainerRuntime`.
 
-**displayObject.ts:** `createDisplayObject`, `createDisplayObjectGeneric`, `createDisplayObjectLifecycleSignals`, `createDisplayObjectRuntime`, `enableDisplayObjectLifecycleSignals`, `getDisplayObjectByName`, `getDisplayObjectLifecycleSignals`, `getDisplayObjectRuntime`, `isDisplayObject`, `setDisplayObjectCacheAsBitmap`, `setDisplayObjectCacheAsBitmapMatrix`, `setDisplayObjectClip`, `setDisplayObjectOpaqueBackground`, `setDisplayObjectScrollRect`.
+**displayObject.ts:** `createDisplayObject`, `createNode2D`, `createDisplayObjectLifecycleSignals`, `createDisplayObjectRuntime`, `enableDisplayObjectLifecycleSignals`, `getDisplayObjectByName`, `getDisplayObjectLifecycleSignals`, `getDisplayObjectRuntime`, `isDisplayObject`, `setDisplayObjectCacheAsBitmap`, `setDisplayObjectCacheAsBitmapMatrix`, `setDisplayObjectClip`, `setDisplayObjectOpaqueBackground`, `setDisplayObjectScrollRect`.
 
 **htmlView.ts:** (unchanged from prior pass).
 
@@ -135,7 +135,7 @@ All 195 tests pass. `npm run packages:check` ✓ · `npm run exports:check` ✓ 
 
 **renderView.ts:** (unchanged from prior pass).
 
-**stage.ts:** `computeStageLocalBoundsRectangle`, `createStage`, `createStageData`, `createStageRuntime`, `createStageSignals`, `enableStageSignals`, `getDisplayObjectStage`, `getDisplayObjectStageDepth`, `getStageRuntime`, `getStageSignals`, `isDisplayObjectOnStage`, `setStageAlign`, `setStageColor`, `setStageContentsScaleFactor`, `setStageDisplayState`, `setStageFrameRate`, `setStageMouseChildren`, `setStageQuality`, `setStageScaleMode`, `setStageShowDefaultContextMenu`, `setStageStageFocusRect`, `setStageSize`, `setStageTabChildren`.
+**stage.ts:** `computeStageLocalBoundsRectangle`, `createStage`, `createStageData`, `createStageRuntime`, `createStageSignals`, `enableStageSignals`, `getScene2DRoot`, `getScene2DRootDepth`, `getStageRuntime`, `getStageSignals`, `isDisplayObjectOnStage`, `setStageAlign`, `setStageColor`, `setStageContentsScaleFactor`, `setStageDisplayState`, `setStageFrameRate`, `setStageMouseChildren`, `setStageQuality`, `setStageScaleMode`, `setStageShowDefaultContextMenu`, `setStageStageFocusRect`, `setStageSize`, `setStageTabChildren`.
 
 **video.ts:** `computeVideoLocalBoundsRectangle`, `createVideo`, `createVideoData`, `createVideoRuntime`, `getVideoRuntime`, `setVideoSmoothing`, `setVideoSource`.
 

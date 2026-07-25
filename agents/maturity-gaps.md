@@ -90,7 +90,7 @@ with no host GPU. Re-verified 2026-07-18: of the WebGPU functional scenes, the l
 committed host baselines exactly (`0.00`), and only a small set exceed the fingerprint tolerance on
 software-vs-hardware antialiasing. So the regression tier is mostly reproducible in-sandbox for wgpu, not
 blind. What remains genuine debt: whole feature classes have **no functional/example coverage at all**:
-scene-format imports (no `createSceneFrom*` anywhere under
+scene-format imports (no `createScene3DFrom*` anywhere under
 examples/functional), GPU skinning (no `*skin*` functional scene; the example exercises the CPU path),
 streaming/compressed-texture/resource-resolution, glyph/bitmaptext (headless only ever draws stub white
 boxes — `glyphatlas/status.md`), particle emitters, and camera2d view-matrix application
@@ -116,7 +116,7 @@ green run and a glance on one backend.
 
 ### D. Descriptor/header layer advertises features with no renderer behind them
 The "header layer is the design surface" convention means many fully-formed types exist with no implementation,
-reading as shipped: **area lights** (`AreaLightKind` + photometric helpers, but `SceneLights` has no `area`
+reading as shipped: **area lights** (`AreaLightKind` + photometric helpers, but `Scene3DLights` has no `area`
 field — unrenderable on any backend), **`InstancedMesh`/`LodMesh`** (typed, not exported from scene, no
 renderer), **six effects** (autoExposure/barrelDistortion/contactShadows/filmEmulation/panniniProjection/
 volumetricLight — descriptor+tests, zero realization files), **`ThreeDsMaterial`** (dead exported type). The
@@ -124,7 +124,7 @@ header promises breadth the renderers don't cover.
 
 ### E. Resource lifecycle: no unload, eviction, or refcount in the live path
 Scene-resource streaming grows memory unbounded — cancel-on-drop only aborts in-flight loads; a *resolved*
-`Texture.image` is never released (`resolveSceneResources.ts:65,103`). `assets` has the refcount/dedup/dispose
+`Texture.image` is never released (`resolveScene3DResources.ts:65,103`). `assets` has the refcount/dedup/dispose
 machinery but is wired to nothing (no package imports it but the barrel), ships no default adapters, and
 `loadAssetGroup` silently swallows member failures. The exact large-world stream-in/stream-out use case the
 resolver advertises is the one that leaks.
@@ -169,7 +169,7 @@ unsupported cases is largely unbuilt for the gaps that most need it.
 | Textured/material-bearing meshes from OBJ/3DS/MD2/MD5 | OBJ + 3DS + MD5 + AWD emit materials (OBJ: one BlinnPhong per `usemtl` + `map_*` refs; 3DS: per-face materials + textures via `import3ds`; MD5: BlinnPhong per section `shader`); MD2 still emits geometry-only. Emitted texture refs stay `Unresolved` until the asset pipeline decodes them | all (parse) | RESOLVED (parse) |
 | glTF import is comprehensive | Now reads `primitive.material` (PBR materials + textures with sampler/color-space/UV-transform), **all animation channels**, skins, morph targets, sparse accessors, external `.bin`/image URIs. Deferred: cameras, `KHR_lights_punctual`, `TEXCOORD_1`/`COLOR_0`, `JOINTS_1`, Draco/meshopt. Texture refs `Unresolved` until decoded downstream | all (parse) | RESOLVED (parse) |
 | AWD (the good one) opens real files | Compressed AWD unsupported → returns empty scene (`awdParse.ts:85-90`); Away3D defaults to LZMA/deflate. Emitted textures `Unresolved`, `image:null`, never decoded | all | SURPRISE |
-| OBJ+MTL attaches materials | Works: `createSceneFromObj(source, parseObjMaterialLibrary(mtl))` reads the library, resolves one `BlinnPhongMaterial` per `usemtl` (`flushGroup`/`resolveObjMaterial`), and emits a `MeshSubset` per material. Gap is downstream — the emitted `map_Kd` refs are `Unresolved` (no decode) and the aircraft-demo ignores the `materials` arg entirely | all | RESOLVED |
+| OBJ+MTL attaches materials | Works: `createScene3DFromObj(source, parseObjMaterialLibrary(mtl))` reads the library, resolves one `BlinnPhongMaterial` per `usemtl` (`flushGroup`/`resolveObjMaterial`), and emits a `MeshSubset` per material. Gap is downstream — the emitted `map_Kd` refs are `Unresolved` (no decode) and the aircraft-demo ignores the `materials` arg entirely | all | RESOLVED |
 | 3DS respects material + object placement | `import3ds` now parses per-face materials + textures; object-transform placement (`TRANSFORM_MATRIX 0x4160`) may still be partial — verify against a multi-object `.3ds` | all | RESOLVED (materials) |
 | MD2 (animated Quake2) imports animation | Only frame 0 kept (`md2Parse.ts:20-21`); skin/texture paths not even modeled | all | MAJOR |
 | Imports have ever been rendered | Zero example/functional coverage; skinned imports deform on gl only, wgpu unwired | gl/wgpu | MAJOR |
@@ -195,7 +195,7 @@ unsupported cases is largely unbuilt for the gaps that most need it.
 | What a user assumes works | Reality + cite | Backends | Bite |
 | --- | --- | --- | --- |
 | KTX2/Basis/DDS compressed textures render | GL uploads BCn/ETC/ASTC/PVRTC natively when extensions exist; WebGPU uploads BC/ETC2/ASTC natively when device features exist; both use opt-in RGBA decoder fallbacks. `compressed-texture` proves exact GPU-backend parity. Basis-Universal transcode and KTX2 Zstd/BasisLZ inflation remain spec-only. | gl, wgpu | RESOLVED (GPU) |
-| Visibility streaming can stream a world in and out | No unload/evict/refcount/budget; resolved `Texture.image` never released (`resolveSceneResources.ts:65,103`); assets deferred to phase 2 | all | SURPRISE |
+| Visibility streaming can stream a world in and out | No unload/evict/refcount/budget; resolved `Texture.image` never released (`resolveScene3DResources.ts:65,103`); assets deferred to phase 2 | all | SURPRISE |
 | The 6-format resource seam is general | Only AWD emits `SceneResourceRef`; glTF/OBJ/3DS/MD2/MD5 emit none → textured glTF loads untextured, no error | n/a | MAJOR |
 | Image decoding works | Only `createImageBitmap`+`OffscreenCanvas` (web-only); tests stub it to a 1×1 — no real PNG/JPEG bytes ever decoded in CI | web only | MAJOR |
 | `assets` is a wired pipeline | Ships no default adapters; imported by nothing but barrel; `loadAssetGroup` swallows member failures | n/a | MAJOR |
@@ -237,7 +237,7 @@ unsupported cases is largely unbuilt for the gaps that most need it.
 
 | What a user assumes works | Reality + cite | Backends | Bite |
 | --- | --- | --- | --- |
-| Area lights render | `SceneLights` has no `area` field (`SceneLights.ts:17-21`); `packSceneLightBlock` no area refs; grep across scene-gl/wgpu/render → nothing | none | SURPRISE |
+| Area lights render | `Scene3DLights` has no `area` field (`Scene3DLights.ts:17-21`); `packSceneLightBlock` no area refs; grep across scene-gl/wgpu/render → nothing | none | SURPRISE |
 | Point/spot lights cast shadows | Shadows directional-only, single ortho map, no cascades/CSM, no point/spot/cube (`shadowCamera.ts:14` sole export) | gl/wgpu (dir only) | SURPRISE |
 | WebGPU 3D lighting/shadow/IBL works | RESOLVED with WebGPU raster proofs for point/spot/hemisphere lights, IBL, orthographic projection, and directional shadows received by both PBR and classic materials (`shadow-directional` / `shadow-classic`) | wgpu | RESOLVED |
 | `InstancedMesh`/`LodMesh` ship | Header types only; no `create*`, not exported from scene barrel, no renderer consumes them | none | SURPRISE |

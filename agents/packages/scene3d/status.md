@@ -28,7 +28,7 @@ mesh carrying both deformers pays a full CPU vertex pass per frame.
 
 ### Types added to `@flighthq/types`
 
-- **`SceneNodeVisitor`** (`SceneNodeVisitor.ts`) — visitor callback type `(node: Readonly<SceneNode>, depth: number) => boolean | void`. Return `false` to prune the subtree.
+- **`Node3DVisitor`** (`Node3DVisitor.ts`) — visitor callback type `(node: Readonly<Node3D>, depth: number) => boolean | void`. Return `false` to prune the subtree.
 
 ### New exports in `@flighthq/scene3d`
 
@@ -81,10 +81,10 @@ mesh carrying both deformers pays a full CPU vertex pass per frame.
 
 ### Silver items (cross-package design decisions required)
 
-- **Frustum culling (`cullSceneNodeByFrustum`)** — depends on `getCameraViewProjectionMatrix4` from `@flighthq/camera`. The integration point with `@flighthq/render`'s `prepareSceneRender` (does render consume a cull result, or does scene expose a cull pass the render walk calls?) requires a coordinated design decision before building.
+- **Frustum culling (`cullSceneNodeByFrustum`)** — depends on `getCameraViewProjectionMatrix4` from `@flighthq/camera`. The integration point with `@flighthq/render`'s `prepareScene3DRender` (does render consume a cull result, or does scene expose a cull pass the render walk calls?) requires a coordinated design decision before building.
 - **Raycasting (`raycastSceneNode`, `raycastSceneNodeFirst`, `raycastSceneNodeFromCamera`)** — per-triangle narrowphase against `MeshGeometry` triangles (iterating index + vertex buffer) is self-contained, but the types (`SceneRaycastHit`, `SceneRaycastOptions`) and the camera screen-pick path (`getCameraInverseViewProjectionMatrix4`) need a design pass. Added as a cross-package item.
 - **Instanced/LOD/Billboard node taxonomy** (`createGroup`, `createInstancedMesh`, `createLodMesh`, `createBillboard`) — the instanced-draw path touches `scene-gl`/`scene-wgpu` backends. Surface this as a coordinated cross-package effort.
-- **Per-node render layer / visibility mask** — adds `renderLayer` field to `SceneNode` which is a types change; coordinate with render and cull.
+- **Per-node render layer / visibility mask** — adds `renderLayer` field to `Node3D` which is a types change; coordinate with render and cull.
 - **Subtree clone (`cloneSceneNode`)** — straightforward but touches `@flighthq/mesh` (geometry/material references); ownership semantics need doc + review.
 
 ### Gold items (multi-session design programs)
@@ -107,4 +107,4 @@ mesh carrying both deformers pays a full CPU vertex pass per frame.
 2. **Implement `raycastSceneNode`** — triangle-level intersection against `MeshGeometry`. The broadphase (world AABB via `getSceneNodeWorldBounds`) is now in place; the narrowphase just needs index/vertex iteration.
 3. **Implement `cloneSceneNode`** — low design risk (geometry/materials share by reference), high utility for instancing patterns before `createInstancedMesh` lands.
 4. **Consider `getSceneNodeWorldBoundingSphere`** — a bounding sphere alongside the AABB for cheaper frustum rejection (sphere test is one comparison vs. 6 for AABB).
-5. **Coordinate with `@flighthq/render` on the cull/render-walk integration** before building Silver. The question: does `prepareSceneRender` accept a pre-filtered list (from `cullSceneNodeByFrustum`), or does scene expose a cull callback the render walk uses?
+5. **Coordinate with `@flighthq/render` on the cull/render-walk integration** before building Silver. The question: does `prepareScene3DRender` accept a pre-filtered list (from `cullSceneNodeByFrustum`), or does scene expose a cull callback the render walk uses?

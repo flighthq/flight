@@ -17,7 +17,7 @@ Landed the #1 half of a scene-render dirtiness review (the full 3D dirty short-c
 - `packSceneLightBlock` (`sceneRender.ts`) now bumps `SceneLightBlock.version` **only when the packed data or counts actually change** — packs into a reused scratch, compares, commits on change. Previously it bumped every frame, which silently lied about the field's documented contract ("version bumps whenever data or the counts change so a backend can skip re-uploading an unchanged block") and defeated any version-keyed skip.
 - scene-gl `bindGlMeshLightBlock` (`glLitProgram.ts`) now honors that version: the five light uniforms upload only when the bound program's last-uploaded version differs, tracked per program in a `WeakMap<GlLitProgram, number>` (default uniforms are per-program state). Shadow/IBL binds stay unconditional — they carry per-frame texture binds.
 
-**Context surfaced during the review (not yet acted on):** `prepareSceneRender` ignores `state.sceneGraphSyncPolicy` entirely — it always re-walks/re-culls/rebuilds the `SceneRenderList`, with no `requiresInvalidation` analog of the 2D `isRenderProxyDirty` path. The only dirtiness respected in the scene path is the per-node world-transform revision cache in `@flighthq/node` (always-on, invalidation-based, not policy-gated). scene-wgpu bundles lights into the per-frame Frame uniform with the camera, so its light upload can't be version-skipped independently.
+**Context surfaced during the review (not yet acted on):** `prepareScene3DRender` ignores `state.sceneGraphSyncPolicy` entirely — it always re-walks/re-culls/rebuilds the `SceneRenderList`, with no `requiresInvalidation` analog of the 2D `isRenderProxyDirty` path. The only dirtiness respected in the scene path is the per-node world-transform revision cache in `@flighthq/node` (always-on, invalidation-based, not policy-gated). scene-wgpu bundles lights into the per-frame Frame uniform with the camera, so its light upload can't be version-skipped independently.
 
 ## 2026-06-25 — builder Phase 3 (Recommended sweep)
 
@@ -75,7 +75,7 @@ Suggested follow-up for a human: reconcile the assessment/review/status docs for
 
 **`renderQueue.ts`** — retained, sortable render queue:
 
-- `buildRenderQueue(state, source, out)` — fills `out` with one entry per visible proxy with a renderer, using scene-order encounter indices as sort keys. Call `prepareDisplayObjectRender` first; does not advance the frame id.
+- `buildRenderQueue(state, source, out)` — fills `out` with one entry per visible proxy with a renderer, using scene-order encounter indices as sort keys. Call `prepareScene2DRender` first; does not advance the frame id.
 - `clearRenderQueue(queue)` — resets `entryCount` to 0 without releasing the array (capacity preserved for the next fill).
 - `compareRenderQueueEntries(a, b)` — ascending sort-key comparator; the default for `sortRenderQueue`.
 - `createRenderQueue()` — allocates a new empty `RenderQueue`.

@@ -130,9 +130,9 @@ The functional test is authored and assertRender is implemented, but the baselin
 
 ### Multi-light forward path (Bronze #1) — cross-package design decision
 
-The single highest-leverage gap. `SceneLights`/`SceneLightBlock`/`packSceneLightBlock` carry at most one directional + one ambient. Extending to N point + spot + directional lights requires:
+The single highest-leverage gap. `Scene3DLights`/`SceneLightBlock`/`packSceneLightBlock` carry at most one directional + one ambient. Extending to N point + spot + directional lights requires:
 
-- `@flighthq/types`: replace `SceneLights` with arrays, grow `SceneLightBlock` data layout, add `MAX_FORWARD_LIGHTS`, update `GlMeshMaterialRenderer`/`WgpuMeshMaterialRenderer` comments.
+- `@flighthq/types`: replace `Scene3DLights` with arrays, grow `SceneLightBlock` data layout, add `MAX_FORWARD_LIGHTS`, update `GlMeshMaterialRenderer`/`WgpuMeshMaterialRenderer` comments.
 - `@flighthq/render`: rewrite `packSceneLightBlock` and `LIGHT_BLOCK_FLOATS`.
 - `@flighthq/scene3d-gl`: rewrite `GL_MESH_LIGHT_BLOCK_GLSL`, `GlLitProgram`, `resolveGlLitLocations`, and `bindGlMeshLightBlock`.
 - `@flighthq/scene3d-wgpu`: mirror the same shader and upload changes.
@@ -141,7 +141,7 @@ This must be a coordinated change with the wgpu sibling and the Rust `flighthq-t
 
 ### Hemisphere light (Bronze #4) — cross-package, blocked by multi-light
 
-`HemisphereLight` is already defined in `@flighthq/types` and `@flighthq/lighting`, but consuming it in the shader requires `SceneLights` to carry it. Blocked on the multi-light `SceneLights` redesign.
+`HemisphereLight` is already defined in `@flighthq/types` and `@flighthq/lighting`, but consuming it in the shader requires `Scene3DLights` to carry it. Blocked on the multi-light `Scene3DLights` redesign.
 
 ### IBL / environment (Silver) — cross-package, new resource types
 

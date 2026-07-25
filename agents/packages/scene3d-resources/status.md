@@ -4,11 +4,11 @@ Continuity log for `@flighthq/scene3d-resources`. See [charter](charter.md).
 
 ## 2026-07-22 — explicit document and resource load boundaries
 
-Replaced ambiguous format-only URL names with `loadSceneDocumentFrom*Url` returning
-`SceneDocument | null`; removed in-hand parse+implicit-built-in-resolver `loadSceneFrom*` wrappers and
-renamed eager resource realization to `loadSceneResources`. URL acquisition supports abort and
+Replaced ambiguous format-only URL names with `loadScene3DDocumentFrom*Url` returning
+`Scene3DDocument | null`; removed in-hand parse+implicit-built-in-resolver `loadSceneFrom*` wrappers and
+renamed eager resource realization to `loadScene3DResources`. URL acquisition supports abort and
 source-identified byte progress. glTF closes required external `.bin` geometry and every format carries
-the model base path onto relative image refs. `loadSceneResources` reports operation-scoped unique-ref
+the model base path onto relative image refs. `loadScene3DResources` reports operation-scoped unique-ref
 progress. No loader imports or populates backend renderer/GPU state. Package tests cover URL source type,
 null failures, malformed JSON, external-buffer closure/base path, cancellation/progress, and eager resource
 completion/progress.
@@ -18,7 +18,7 @@ completion/progress.
 Built on the integrated color+shading HEAD; `npm run check` green (130 pkgs), 43 tests. Types
 (`SceneResourceRef` closed union + `ResourceResolutionState` closed const-union + additive
 `Texture.resource?`), AWD emits refs (drops decode + `@flighthq/image` dep), and the package
-(resolver + `resolveSceneResources` policy engine w/ cancel-on-drop + stale-settle guard +
+(resolver + `resolveScene3DResources` policy engine w/ cancel-on-drop + stale-settle guard +
 `enableSceneResourceSignals` + eager `loadSceneFromAwd` + open `SceneMaterialTextureRegistry`).
 Reviewer verified the cancellation semantics (identity guard, abort-vs-fail, revert-on-drop) correct.
 
@@ -56,7 +56,7 @@ placeholder instead of popping) rather than the resolver animating.
    (AWD first, then glTF texture route).
 2. Resolver: `SceneResourceRef` → `ImageResource`/`Texture` via `image-codec` + a swappable fetch,
    over `loader` + `assets`.
-3. `resolveSceneResources(scene, resolver, policy)` — visibility/priority policy engine + cancellation.
+3. `resolveScene3DResources(scene, resolver, policy)` — visibility/priority policy engine + cancellation.
 4. `enableSceneResourceSignals` availability seam + reveal-policy convenience.
 5. Eager `loadSceneFrom*` wrapper (parse + resolve-all) — the convenience + deterministic capture mode.
 6. Companion (cross-package): a reveal/opacity input on `materials` + `scene-gl`/`scene-wgpu`.

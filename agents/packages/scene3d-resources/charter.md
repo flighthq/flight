@@ -34,9 +34,9 @@ to **all six** scene-formats (glTF, AWD, OBJ/MTL, 3DS, MD2, MD5), and retro-fits
 deferred-fill onto one shared, controllable path.
 
 ```
-parse*(source) ── sync ──▶ SceneDocument ── createSceneFromDocument ──▶ Scene + unresolved refs
+parse*(source) ── sync ──▶ Scene3DDocument ── createScene3DFromDocument ──▶ Scene + unresolved refs
                                                   │
-                                    resolveSceneResources(scene, resolver, policy)  ── async, caller-driven
+                                    resolveScene3DResources(scene, resolver, policy)  ── async, caller-driven
                                                   │
         loader (concurrency/priority/cancel) → assets (refcount/dedup) → image-codec (decode)
                                                   │
@@ -71,13 +71,13 @@ engine; only the most advanced progressive path (mip/low-res→full cross-fade) 
 2. **A resolver** that maps a `SceneResourceRef` → `ImageResource`/`Texture` through
    `image-codec` (embedded) or a caller-supplied fetch (external), orchestrated by `loader` and
    ref-counted/deduped by `assets`. Swappable seam so a native host supplies its own fetch.
-3. **A resolution policy** — the visibility/priority engine: `resolveSceneResources(scene, resolver,
+3. **A resolution policy** — the visibility/priority engine: `resolveScene3DResources(scene, resolver,
    policy)` where policy selects *what* resolves *when* (all-eager; visible-only via a caller-provided
    visibility/culling signal; prioritized). **Cancellation** when an object leaves the working set
    before its load completes; re-request on re-entry (over `loader` cancel + `assets` refcount).
 4. **The availability + transition seam** (see below).
-5. **Explicit asynchronous boundaries** — `loadSceneDocumentFrom*Url` acquires and parses the CPU
-   document closure; `loadSceneResources` realizes selected image references. No wrapper conflates
+5. **Explicit asynchronous boundaries** — `loadScene3DDocumentFrom*Url` acquires and parses the CPU
+   document closure; `loadScene3DResources` realizes selected image references. No wrapper conflates
    in-hand parsing, resource policy, renderer registration, or GPU realization.
 
 ### The availability + transition seam
@@ -122,12 +122,12 @@ _Append-only, dated, blessed rulings._
 - **[2026-07-17] Sync parse / async separate resolve is the model** — parsers emit plain-data `SceneResourceRef`s; the caller resolves on its schedule under a visibility/priority policy. Chosen over making parsers async / loading everything up front, because textures dwarf geometry and visibility should gate load. AWD's deferred-fill retro-fits onto this shared path.
 - **[2026-07-17] The resolver reports availability via an opt-in signal; transitions are composed from `tween`/`easing`, with an optional reveal policy convenience.** The resolver never animates. Motivating case (fade-in on stream, cancel on re-hide) is blessed as the progressive target's first rung.
 - **[2026-07-17] Building the mature architecture, not a stopgap** — v1 delivers the full seam + policy engine + availability/transition; only mip/low-res→full progressive cross-fade is deferred to phase 2.
-- **[2026-07-17] DELIVERED v1 Phases 1–3 (parcel builder-2afc1234), reviewed & approved.** `SceneResourceRef` (closed `Embedded|External`) + `ResourceResolutionState` (closed const-union) + additive `Texture.resource?` in types; AWD emits refs (drops the fire-and-forget decode + the `@flighthq/image` dep); the package = resolver (loader + image-codec + per-texture AbortController) + `resolveSceneResources(scene, resolver, {select?, priority?})` policy engine (all/visible/prioritized + cancel-on-drop + stale-settle identity guard) + `enableSceneResourceSignals` + eager `loadSceneFromAwd`/`resolveSceneResourcesAndWait`; texture discovery via an OPEN `SceneMaterialTextureRegistry` (touches neither `scene` nor `materials`). `npm run check` green, 43 tests.
+- **[2026-07-17] DELIVERED v1 Phases 1–3 (parcel builder-2afc1234), reviewed & approved.** `SceneResourceRef` (closed `Embedded|External`) + `ResourceResolutionState` (closed const-union) + additive `Texture.resource?` in types; AWD emits refs (drops the fire-and-forget decode + the `@flighthq/image` dep); the package = resolver (loader + image-codec + per-texture AbortController) + `resolveScene3DResources(scene, resolver, {select?, priority?})` policy engine (all/visible/prioritized + cancel-on-drop + stale-settle identity guard) + `enableSceneResourceSignals` + eager `loadSceneFromAwd`/`resolveScene3DResourcesAndWait`; texture discovery via an OPEN `SceneMaterialTextureRegistry` (touches neither `scene` nor `materials`). `npm run check` green, 43 tests.
 - **[2026-07-17] `@flighthq/assets` DEFERRED to the streaming phase (revises the option-B "composing assets" wording).** assets is id/manifest-centric (`acquireAsset(library, id)`); embedded byte-refs have no ids, so v1 dedups by `Texture` identity at the walk and assets' refcount/unload belongs to the progressive/streaming phase where external URIs carry natural ids. Well-justified worker call.
 - **[2026-07-17] glTF texture import DEFERRED (STOP-AND-ASK hit).** glTF has zero texture/material-texture wiring today, so it's net-new glTF material modeling, not a ref retrofit. AWD is the v1 embedded-path proof; glTF is a focused follow-up.
-- **[2026-07-17] The reveal hook is a MISSING PRIMITIVE, not a material field — reframed as "3D node opacity" and split out (being built separately).** 3D `SceneNode` has no alpha/opacity at all (only `HasTransform3D`); a reveal factor needs per-object opacity across the material shaders + blend phase. So: charter/build **3D node opacity** (alpha on the node + `prepareSceneRender` propagation + shaders honoring it) as its own primitive; reveal-fade = `tween`/`easing` driving `node.alpha` on availability, layered on top. Resolves Open direction #2. Coordinate its shader changes with the in-flight skinning track.
-- **[2026-07-22] `load` means asynchronous acquisition; result and source name the readiness boundary.** `parse*`/`create*` remain synchronous over in-hand data. URL loaders are globally identifying (`loadSceneDocumentFromGltfUrl`, `loadSceneDocumentFromGlbUrl`, and format peers), return `SceneDocument | null`, accept cancellation/per-source byte progress, fetch glTF external geometry buffers, and carry the model base path onto image refs. `loadSceneResources` is the separate eager resource operation; the streaming policy atom remains `resolveSceneResources`. Removed the parse+implicit-built-in-resolver `loadSceneFrom*` wrappers. Loading never registers renderers, compiles shaders, uploads GPU data, or touches RenderState. User-directed 2026-07-22.
-- **[2026-07-23] Direction session re-confirmed the `Url` suffix on the fetch family (`loadSceneDocumentFrom*Url`).** With the eager `loadSceneFrom*(bytes)→Scene` wrappers removed (above), the earlier "drop `Url` for symmetry" idea is moot; `Url` cleanly marks the url-fetch input against its `createSceneFrom*(bytes)` sibling. User-confirmed. The optional one-call URL→resolved-`Scene` convenience stays a deferred follow-up (Open direction #7).
+- **[2026-07-17] The reveal hook is a MISSING PRIMITIVE, not a material field — reframed as "3D node opacity" and split out (being built separately).** 3D `Node3D` has no alpha/opacity at all (only `HasTransform3D`); a reveal factor needs per-object opacity across the material shaders + blend phase. So: charter/build **3D node opacity** (alpha on the node + `prepareScene3DRender` propagation + shaders honoring it) as its own primitive; reveal-fade = `tween`/`easing` driving `node.alpha` on availability, layered on top. Resolves Open direction #2. Coordinate its shader changes with the in-flight skinning track.
+- **[2026-07-22] `load` means asynchronous acquisition; result and source name the readiness boundary.** `parse*`/`create*` remain synchronous over in-hand data. URL loaders are globally identifying (`loadScene3DDocumentFromGltfUrl`, `loadScene3DDocumentFromGlbUrl`, and format peers), return `Scene3DDocument | null`, accept cancellation/per-source byte progress, fetch glTF external geometry buffers, and carry the model base path onto image refs. `loadScene3DResources` is the separate eager resource operation; the streaming policy atom remains `resolveScene3DResources`. Removed the parse+implicit-built-in-resolver `loadSceneFrom*` wrappers. Loading never registers renderers, compiles shaders, uploads GPU data, or touches RenderState. User-directed 2026-07-22.
+- **[2026-07-23] Direction session re-confirmed the `Url` suffix on the fetch family (`loadScene3DDocumentFrom*Url`).** With the eager `loadSceneFrom*(bytes)→Scene` wrappers removed (above), the earlier "drop `Url` for symmetry" idea is moot; `Url` cleanly marks the url-fetch input against its `createScene3DFrom*(bytes)` sibling. User-confirmed. The optional one-call URL→resolved-`Scene` convenience stays a deferred follow-up (Open direction #7).
 
 ## Open directions
 
@@ -147,6 +147,6 @@ _Append-only, dated, blessed rulings._
 6. **Determinism** — the resolve-all wrapper is the capture/test mode; confirm the streaming path is
    excluded from fingerprint baselines.
 7. ~~**The `load*` verb means two opposite I/O halves.**~~ **Resolved 2026-07-22:** see the explicit
-   `loadSceneDocumentFrom*Url` → synchronous `createSceneFromDocument` → optional
-   `resolveSceneResources`/`loadSceneResources` composition in Decisions. `Url` suffix re-confirmed
+   `loadScene3DDocumentFrom*Url` → synchronous `createScene3DFromDocument` → optional
+   `resolveScene3DResources`/`loadScene3DResources` composition in Decisions. `Url` suffix re-confirmed
    2026-07-23; the optional one-call URL→resolved-`Scene` convenience remains a deferred follow-up.

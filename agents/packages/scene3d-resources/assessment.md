@@ -41,9 +41,9 @@ _None from the loading-vocabulary review; remaining work is directed or depth-ti
 ## Approved
 
 - [2026-07-22 · completed] `load` consistently marks asynchronous work. URL acquisition names both its
-  result and source (`loadSceneDocumentFrom*Url`), returns `SceneDocument | null`, and supports abort plus
+  result and source (`loadScene3DDocumentFrom*Url`), returns `Scene3DDocument | null`, and supports abort plus
   source-identified byte progress. In-hand parse/create remains synchronous in scene-formats;
-  `loadSceneResources` is the separate eager image-realization operation. No scene load imports a backend,
+  `loadScene3DResources` is the separate eager image-realization operation. No scene load imports a backend,
   registers render code, touches RenderState, or realizes GPU data.
 - [2026-07-22 · completed] glTF URL acquisition closes every required external `.bin` before parsing
   inline geometry and carries the model directory onto unresolved image refs; every format URL loader

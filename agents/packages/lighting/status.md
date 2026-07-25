@@ -131,7 +131,7 @@ Ten test files, 102 tests passing. All new exports have colocated tests. `setPoi
 
 ### Silver Wave B — deferred (cross-package design decision)
 
-The roadmap calls for extending `SceneLightBlock` / `SceneLights` with `shadowMapSize`, `cascadeCount`, cascade split config, and `priority`/`layerMask` on punctual lights. These fields extend the std140/std430 packed layout shared with `render`, `scene-gl`, and `scene-wgpu`. This is an explicit cross-package contract; the roadmap says to "coordinate, do not unilaterally change the packed layout." Deferred for design coordination.
+The roadmap calls for extending `SceneLightBlock` / `Scene3DLights` with `shadowMapSize`, `cascadeCount`, cascade split config, and `priority`/`layerMask` on punctual lights. These fields extend the std140/std430 packed layout shared with `render`, `scene-gl`, and `scene-wgpu`. This is an explicit cross-package contract; the roadmap says to "coordinate, do not unilaterally change the packed layout." Deferred for design coordination.
 
 ### Silver — Light probe / SH irradiance descriptor
 

@@ -64,7 +64,7 @@ Audited all display object entity files. Added `*DataFactory` and `*RuntimeFacto
 - `Tilemap.ts` — added `TilemapDataFactory`, `TilemapRuntimeFactory<R>`
 - `Video.ts` — added `VideoDataFactory`, `VideoRuntimeFactory<R>`
 
-`DisplayContainer` was intentionally skipped: it has no distinct `*Data` type of its own (inherits `DisplayObjectData` directly) and no `*Kind`, so a factory would be structurally identical to `DisplayObjectDataFactory`.
+`DisplayObject` was intentionally skipped: it has no distinct `*Data` type of its own (inherits `DisplayObjectData` directly) and no `*Kind`, so a factory would be structurally identical to `DisplayObjectDataFactory`.
 
 ## Deferred Items and Why
 
@@ -76,7 +76,7 @@ Audited all display object entity files. Added `*DataFactory` and `*RuntimeFacto
 
 **Open `ParticleForce` / `ParticleCollider`** — DEFERRED (Gold, requires particles refactor) Correctly deferred at Bronze (closed-by-design is now settled). Reopening requires `@flighthq/particles` to move from `switch` dispatch to registry dispatch. This is a joint decision with the particles package; do not do it here.
 
-**Scene serialization / versioning contract** — DEFERRED (Gold) `SceneDocument`, `SceneVersion`, `SceneMigration` types are not yet defined. This is a foundational design decision about scene format and migration ownership. It requires coordination with whatever package owns scene load/save. Surface for a dedicated design session.
+**Scene serialization / versioning contract** — DEFERRED (Gold) `Scene3DDocument`, `SceneVersion`, `SceneMigration` types are not yet defined. This is a foundational design decision about scene format and migration ownership. It requires coordination with whatever package owns scene load/save. Surface for a dedicated design session.
 
 **Branded primitives (`PackedRgba`, angle units)** — DEFERRED (Gold) High value, high blast radius (every callsite that produces/consumes packed colors or angle values). Needs deliberate go-ahead from the project owner before proceeding.
 
@@ -104,7 +104,7 @@ Audited all display object entity files. Added `*DataFactory` and `*RuntimeFacto
 
 3. **Header-closure enforcement in `packages:check`** — add a graph walk that verifies no `@flighthq/types` source transitively imports from an impl package. This makes the "navigable without impl imports" promise CI-enforced.
 
-4. **Scene serialization contract** — requires a design session. The types-layout spec documents the intent; it just needs to be shaped into `SceneDocument`/`SceneVersion`/`SceneMigration` types with buy-in from the scene-owning packages.
+4. **Scene serialization contract** — requires a design session. The types-layout spec documents the intent; it just needs to be shaped into `Scene3DDocument`/`SceneVersion`/`SceneMigration` types with buy-in from the scene-owning packages.
 
 5. **Branded primitives** — `PackedRgba` as a branded `number` is a high-leverage change for catching color-convention bugs across the SDK. Worth a deliberate design go-ahead discussion.
 

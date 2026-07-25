@@ -80,7 +80,7 @@ None — the charter is a stub (only "What it is" seeded; North star / Boundarie
 
 ## Contract & docs fit
 
-Where it compiles, adherence is strong: full unabbreviated `Storage`/`NamespacedStorage` names; uniform sentinels (`null`/`false`/`-1`/`[]`/`0`); `Readonly<T>` on every object parameter; single-line root barrel; `sideEffects: false`; lazy/opt-in module state (no import-time side effect); `enable*`/`disable*` signal-group convention matching `enableDisplayObjectSignals`. The two convention drifts are the `.emit` call and the async outlier above.
+Where it compiles, adherence is strong: full unabbreviated `Storage`/`NamespacedStorage` names; uniform sentinels (`null`/`false`/`-1`/`[]`/`0`); `Readonly<T>` on every object parameter; single-line root barrel; `sideEffects: false`; lazy/opt-in module state (no import-time side effect); `enable*`/`disable*` signal-group convention matching `enableNode2DSignals`. The two convention drifts are the `.emit` call and the async outlier above.
 
 The one **contract-hygiene failure** is the types-first rule itself: the integration ships the _implementation_ of cross-package shapes (`StorageChange`, `StorageNamespace`, …) with no corresponding definition in `@flighthq/types`. The header layer must lead the implementation; here the implementation arrived orphaned. `package.json` correctly adds the `@flighthq/signals` dependency (`b2824e3d8:packages/storage/package.json:30`), so the dependency manifest is not the problem — the missing **type definitions** are.
 

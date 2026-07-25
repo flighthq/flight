@@ -12,11 +12,11 @@ ingested:
 
 _Migrated from the 2026-07-03 depth-review generation (reviews/depth/skeleton.md)._
 
-**Domain:** Skeletal animation / skinning — joint sets, bind poses, skin-palette computation, pose operations, and skeletal deformation — over animated `SceneNode` bones.
+**Domain:** Skeletal animation / skinning — joint sets, bind poses, skin-palette computation, pose operations, and skeletal deformation — over animated `Node3D` bones.
 
 **Verdict:** stub — completeness 27/100
 
-The package exports exactly three functions in one file: `createSkeleton(joints, inverseBindMatrices?)`, `setSkeletonBindPose(skeleton)`, and `computeSkeletonJointMatrices(skeleton)`, over a three-field `Skeleton` type (`joints: SceneNode[]`, `inverseBindMatrices`, `jointMatrices` — flat column-major 16-float blocks). The architectural position is deliberate and good: joints are ordinary `SceneNode`s animated through the scene binding, so the skeleton owns no second hierarchy and no sampling — only skinning math. But within that already-narrowed scope, the package implements exactly one operation (the GPU palette) and none of the rest of what a skinning library provides. Against ozz-animation (sampling/blending/local-to-model jobs, two-bone and aim IK, rest poses) or Spine runtime concepts (named bone lookup, attachments, constraints, skinned bounds), this is the first ~quarter of the smallest tier of the domain.
+The package exports exactly three functions in one file: `createSkeleton(joints, inverseBindMatrices?)`, `setSkeletonBindPose(skeleton)`, and `computeSkeletonJointMatrices(skeleton)`, over a three-field `Skeleton` type (`joints: Node3D[]`, `inverseBindMatrices`, `jointMatrices` — flat column-major 16-float blocks). The architectural position is deliberate and good: joints are ordinary `Node3D`s animated through the scene binding, so the skeleton owns no second hierarchy and no sampling — only skinning math. But within that already-narrowed scope, the package implements exactly one operation (the GPU palette) and none of the rest of what a skinning library provides. Against ozz-animation (sampling/blending/local-to-model jobs, two-bone and aim IK, rest poses) or Spine runtime concepts (named bone lookup, attachments, constraints, skinned bounds), this is the first ~quarter of the smallest tier of the domain.
 
 ## Present capabilities
 
@@ -44,12 +44,12 @@ The `Skeleton` type lives in `@flighthq/types` with a strong doc comment explain
 - All three names carry the full `Skeleton` type word and are globally self-identifying. `create*` allocates; `compute*`/`set*` mutate in place with no hidden allocation — verb usage matches the SDK contract precisely.
 - `computeSkeletonJointMatrices(skeleton: Readonly<Skeleton>)` takes `Readonly<>` yet writes `skeleton.jointMatrices` — legal (the `Float32Array` contents are not frozen by `Readonly`) but semantically off: the palette is the function's output. Either drop `Readonly` or split the palette out as an explicit `out: Float32Array` parameter; the same applies to `setSkeletonBindPose` writing `inverseBindMatrices`. The out-parameter form would also compose better with multi-skeleton instancing (many palettes, one skeleton).
 - Module scratch matrices (`_invBind`, `_result`) at the bottom of the file follow source-style rules; the per-element copy loop into `_invBind` is a small inefficiency a `setMatrix4FromArray(out, array, offset)` geometry helper would clean up.
-- `Skeleton` stores `joints: SceneNode[]` (mutable array of mutable nodes) — fine as plain data, but the type could take `readonly SceneNode[]` since reordering joints after palette allocation is never valid.
+- `Skeleton` stores `joints: Node3D[]` (mutable array of mutable nodes) — fine as plain data, but the type could take `readonly Node3D[]` since reordering joints after palette allocation is never valid.
 - The type is correctly header-first in `@flighthq/types`. When joint names/masks/poses arrive, define them there first per the header-layer rule.
 
 ## Recommendation
 
-Keep the palette kernel and the joints-are-SceneNodes architecture — both are right. Build outward in this order:
+Keep the palette kernel and the joints-are-Node3Ds architecture — both are right. Build outward in this order:
 
 1. **CPU skinning** (`applySkeletonToMeshGeometry` or a lower-level `skinVertices(outPositions, outNormals, positions, normals, joints, weights, jointMatrices)`): unlocks software rendering, skinned picking, and skinned bounds, and is required for Rust-port conformance fingerprinting (deterministic, GPU-free).
 2. **Joint names + `getSkeletonJointIndexByName`** (sentinel `-1`) — the importer/attachment seam; add `validateSkeleton` alongside.

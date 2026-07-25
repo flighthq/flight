@@ -25,7 +25,7 @@ Multi-pass orchestration is **explicit named functions the app sequences** (`dra
 
 ### 2. `picking` — standalone 3D ray resolution
 
-3D picking is hit-testing by **camera raycast** (ray ↔ triangle/AABB/sphere — the Phase-1 geometry raycasting). It is a **different domain** from `@flighthq/interaction` (2D point-in-shape) with its own standard name. Keep them distinct; they share the pointer-event source, not the resolver. Standalone **`@flighthq/picking`**, mirroring interaction's role for 3D. API shape: `pickScene(scene, camera, screenX, screenY, out): SceneHit | null` (node + barycentric + distance). **Brute-force ray/triangle first**; a per-`MeshGeometry` BVH is a later _additive_ optimization (a runtime slot), not a v1 requirement.
+3D picking is hit-testing by **camera raycast** (ray ↔ triangle/AABB/sphere — the Phase-1 geometry raycasting). It is a **different domain** from `@flighthq/interaction` (2D point-in-shape) with its own standard name. Keep them distinct; they share the pointer-event source, not the resolver. Standalone **`@flighthq/picking`**, mirroring interaction's role for 3D. API shape: `pickScene(scene, camera, screenX, screenY, out): Scene3DHit | null` (node + barycentric + distance). **Brute-force ray/triangle first**; a per-`MeshGeometry` BVH is a later _additive_ optimization (a runtime slot), not a v1 requirement.
 
 ### 3. `shadow` + `environment` — recipes over primitives (package-vs-recipe deferred)
 
@@ -40,7 +40,7 @@ Both are **recipes** (compositions of passes over `render-gl`/`render-wgpu`, `te
 
 ### 5. `instancing` — a draw-path option, not a package
 
-Mesh _reuse_ (many `SceneNode`s referencing one `MeshGeometry`) is already free. **Instancing** is the GPU optimization to draw N copies in one call with a per-instance buffer (transform/tint), for forests/crowds/mesh-particles. It is a **draw-path variant in `scene-{backend}`/`mesh`**, not a new data type or package.
+Mesh _reuse_ (many `Node3D`s referencing one `MeshGeometry`) is already free. **Instancing** is the GPU optimization to draw N copies in one call with a per-instance buffer (transform/tint), for forests/crowds/mesh-particles. It is a **draw-path variant in `scene-{backend}`/`mesh`**, not a new data type or package.
 
 ### 6. A shared animation core (3 tiers)
 
@@ -52,7 +52,7 @@ The bedrock is **sampling a value from keyframes at time `t`**; everything layer
 
 **Tree-shaking holds** because the sampler/clock are shared but the bindings are separate: a `tween` user pulls only the sampler; a 3D user pulls sampler + scene binding; neither drags in the other.
 
-**Dependency direction — `animation` is its own package, kept target-free and 3D-free.** Tiers 1–2 are the `animation` package: value-typed sampler/clip/player with an **opaque `targetRef`** and _zero_ 3D in it. The 3D node/morph binding (apply a clip's channels to `SceneNode` TRS) lives in **`scene`**, and the bone binding in **`skeleton`** — _not_ in `animation`. So the graph is a clean DAG with no domain→domain and no 2D→3D edges:
+**Dependency direction — `animation` is its own package, kept target-free and 3D-free.** Tiers 1–2 are the `animation` package: value-typed sampler/clip/player with an **opaque `targetRef`** and _zero_ 3D in it. The 3D node/morph binding (apply a clip's channels to `Node3D` TRS) lives in **`scene`**, and the bone binding in **`skeleton`** — _not_ in `animation`. So the graph is a clean DAG with no domain→domain and no 2D→3D edges:
 
 ```
 easing  ←  animation  ←  { scene, skeleton, tween, timeline }
@@ -73,7 +73,7 @@ glTF (`.gltf`/`.glb`) is the standard 3D interchange format and is effectively a
 ## Build sequencing
 
 1. **`picking`** (consumes Phase-1 raycasting; smallest, immediately useful).
-2. **`scene` core-lit** — promote from stub: `Scene` root + `Mesh` node (`geometry` + `materials[]`) + transform-only `SceneNode` group, `prepareSceneRender` (world matrices, frustum cull via Phase-1 frustum helpers, pack light block). Mirrors the 2D `node`/`scene2d` split.
+2. **`scene` core-lit** — promote from stub: `Scene` root + `Mesh` node (`geometry` + `materials[]`) + transform-only `Node3D` group, `prepareScene3DRender` (world matrices, frustum cull via Phase-1 frustum helpers, pack light block). Mirrors the 2D `node`/`scene2d` split.
 3. **shadows** (recipe; directional first).
 4. **environment / IBL** (bake + skybox).
 5. **animation core + `skeleton`**.

@@ -23,13 +23,13 @@ proof rather than another larger loader.
 
 ## What is solid
 
-- `parse*` and `create*` remain synchronous in `scene-formats`. `loadSceneDocumentFrom*Url` names both
-  asynchronous source and CPU result, returns `SceneDocument | null`, forwards abort/per-source byte
+- `parse*` and `create*` remain synchronous in `scene-formats`. `loadScene3DDocumentFrom*Url` names both
+  asynchronous source and CPU result, returns `Scene3DDocument | null`, forwards abort/per-source byte
   progress, and never resolves images or touches rendering.
 - glTF URL acquisition fetches the main JSON plus every external `.bin` needed for inline geometry;
   external image refs retain the model base path. Other URL format loaders likewise carry their base path.
-- `resolveSceneResources` remains the synchronous working-set reconciliation/streaming atom.
-  `loadSceneResources` is its deterministic Promise composition, reports unique-reference progress, and
+- `resolveScene3DResources` remains the synchronous working-set reconciliation/streaming atom.
+  `loadScene3DResources` is its deterministic Promise composition, reports unique-reference progress, and
   resolves when selected refs are terminal. Resolver failure signals retain per-resource errors.
 - `createSceneResourceResolver` is empty; `createBuiltInSceneResourceResolver` is the explicit Standard
   PBR + Unlit assembly. Root bundle proof keeps built-ins out of the primitive.
