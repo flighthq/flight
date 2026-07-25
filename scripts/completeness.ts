@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 import pc from 'picocolors';
 import { Node, Project } from 'ts-morph';
 
+import { getSelectors, selectPackages } from './select';
+
 interface FileCoverage {
   covered: string[];
   exports: string[];
@@ -144,9 +146,10 @@ function collectSourceFiles(srcDir: string, dir: string, out: SourceFile[]): voi
 
 function findSourceFiles(): SourceFile[] {
   const results: SourceFile[] = [];
+  const selected = new Set(selectPackages(getSelectors()));
 
   for (const packageEntry of readdirSync(packagesDir, { withFileTypes: true })) {
-    if (!packageEntry.isDirectory()) continue;
+    if (!packageEntry.isDirectory() || !selected.has(packageEntry.name)) continue;
     const srcDir = join(packagesDir, packageEntry.name, 'src');
     if (!existsSync(srcDir)) continue;
     collectSourceFiles(srcDir, srcDir, results);

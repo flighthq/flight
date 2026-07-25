@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 import { parseSync } from 'oxc-parser';
 import pc from 'picocolors';
 
+import { filterPaths, getSelectors } from './select';
+
 interface OrderIssue {
   labels: string[];
   path: string;
@@ -33,7 +35,6 @@ const root = join(__dirname, '..');
 const checkMode = process.argv.includes('--check');
 const fixMode = process.argv.includes('--fix');
 const jsonMode = process.argv.includes('--json');
-const pathFilters = process.argv.slice(2).filter((arg) => !arg.startsWith('--'));
 
 // Directory names skipped everywhere during the file walk. Mirrors the oxlint/oxfmt ignore set so
 // the two tools agree on what counts as hand-authored source.
@@ -332,13 +333,7 @@ function isPackageSource(path: string): boolean {
 function getOrderableFiles(): string[] {
   const files: string[] = [];
   walk(root, files);
-  const filtered = pathFilters.length === 0 ? files : files.filter((f) => matchesFilter(f));
-  return filtered.sort();
-}
-
-function matchesFilter(path: string): boolean {
-  const normalized = path.replaceAll('\\', '/');
-  return pathFilters.some((filter) => normalized.includes(filter.replaceAll('\\', '/')));
+  return filterPaths(files, getSelectors()).sort();
 }
 
 function walk(dir: string, out: string[]): void {
