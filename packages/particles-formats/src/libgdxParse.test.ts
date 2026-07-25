@@ -302,6 +302,16 @@ describe('parseLibgdxParticleDocument', () => {
     expect(diagnostics[0].severity).toBe(ImportDiagnosticSeverity.Recover);
     expect(diagnostics[0].origin).toBe('collectLibgdxDiagnostics');
   });
+  it('still reports libgdx.emission-unsupported for an explicit zero-rate (burst-only) emission', () => {
+    // An explicit Emission of all zeros is still authored data that Flight replaces with its default rate,
+    // so the crumb must fire even though the rate is zero (the conditional-on-nonzero form missed this).
+    const { config, diagnostics } = parseLibgdxParticleDocument(
+      SPARK_P.replace('highMin: 80\nhighMax: 120', 'highMin: 0\nhighMax: 0'),
+    );
+    expect(config.spawnRate).not.toBe(0); // Flight substituted its default rate — the authored 0 was lost
+    expect(diagnostics.map((d) => d.kind)).toEqual(['libgdx.emission-unsupported']);
+    expect(diagnostics[0].severity).toBe(ImportDiagnosticSeverity.Recover);
+  });
   it('reports libgdx.delay-unsupported (Skip) when delay is active', () => {
     const { diagnostics } = parseLibgdxParticleDocument(SPARK_P.replace('Delay\nactive: false', 'Delay\nactive: true'));
     const crumb = diagnostics.find((d) => d.kind === 'libgdx.delay-unsupported');
