@@ -40,8 +40,8 @@ export function createAnimationRootMotionExtractor(
   return extractor;
 }
 
-// Writes the accumulated root delta from unwrapped `startTime` to `endTime`. Times may cross any
-// number of repeat boundaries or run backward. Vector deltas add complete-cycle displacement;
+// Writes the accumulated root delta from finite unwrapped `startTime` to `endTime`. Times may cross
+// any number of repeat boundaries or run backward. Vector deltas add complete-cycle displacement;
 // quaternion deltas compose complete-cycle rotation. Returns false without changing `out` if too short.
 export function extractAnimationRootMotion(
   out: number[] | Float32Array,
@@ -49,6 +49,9 @@ export function extractAnimationRootMotion(
   startTime: number,
   endTime: number,
 ): boolean {
+  if (!Number.isFinite(startTime) || !Number.isFinite(endTime)) {
+    throw new RangeError('AnimationRootMotionExtractor time range must contain only finite numbers.');
+  }
   const components = extractor.channel.track.components;
   if (out.length < components) return false;
   writeAnimationRootMotionAt(extractor.fromMotion, extractor, startTime, extractor.fromSample);
