@@ -1,5 +1,5 @@
-import { createScene3D } from '@flighthq/scene';
-import { bakeWgpuEnvironmentIbl, drawWgpuEnvironmentSkybox, drawWgpuScene3D } from '@flighthq/scene-wgpu';
+import { createScene3D } from '@flighthq/scene3d';
+import { bakeWgpuEnvironmentIbl, drawWgpuEnvironmentSkybox, drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Environment, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

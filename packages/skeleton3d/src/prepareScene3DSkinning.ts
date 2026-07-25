@@ -50,14 +50,14 @@ export function prepareMeshSkinning(mesh: Readonly<Mesh>): void {
 // Runs prepareMeshSkinning over every enabled mesh in the subtree rooted at `scene` — the per-frame
 // skinning-prep pass. Call it BEFORE prepareScene3DRender: the render prepare pass culls against the
 // posed bounds this writes, so driving it afterwards would cull one frame stale. A skinned+morphed app
-// also calls the morph pass (prepareScene3DMorph in @flighthq/scene); the two are independent so each
+// also calls the morph pass (prepareScene3DMorph in @flighthq/scene3d); the two are independent so each
 // deformer's consumers pay only for the pass they use — a morph-only app never imports this package.
 //
 // This is a separate caller-invoked pass rather than something prepareScene3DRender does itself so that
 // @flighthq/render never depends on @flighthq/skeleton3d: cull consumes the posed bounds as plain data
 // off the node runtime, and a rigid or 2D bundle pays nothing for skinning it does not use. The walk
 // itself needs only @flighthq/node + @flighthq/mesh (both already skeleton3d dependencies), so it
-// carries no @flighthq/scene dependency at all. A scene with no skinned meshes may skip this call; it
+// carries no @flighthq/scene3d dependency at all. A scene with no skinned meshes may skip this call; it
 // is a no-op for rigid meshes, and disabled subtrees are skipped whole (matching the render walk).
 export function prepareScene3DSkinning(scene: Readonly<NodeAny>): void {
   if (!scene.enabled) return;

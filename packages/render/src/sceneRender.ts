@@ -144,7 +144,7 @@ export function packScene3DLightBlock(out: Scene3DLightBlock, lights: Readonly<S
 // DEFORMATION IS A SEPARATE, EARLIER PASS. This pass no longer readies skinning palettes or blends
 // morphs — that would force @flighthq/render to depend on @flighthq/skeleton3d and bundle skinning into
 // every rigid or 2D consumer. A skinned scene must call prepareScene3DSkinning (@flighthq/skeleton3d) and
-// a morphed scene prepareScene3DMorph (@flighthq/scene) BEFORE this pass; each readies its own deformer
+// a morphed scene prepareScene3DMorph (@flighthq/scene3d) BEFORE this pass; each readies its own deformer
 // and writes the mesh's posed local bounds (skin: the deformedLocalBounds node-runtime slot this pass
 // reads; morph: the geometry vertices, hence its ensured bounds). Cull here consumes those as data, so
 // it sees the current-frame posed silhouette without any skinning code in this package. A rigid scene

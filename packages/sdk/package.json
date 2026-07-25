@@ -58,9 +58,9 @@
       "types": "./dist/scene2d.d.ts",
       "default": "./dist/scene2d.js"
     },
-    "./scene": {
-      "types": "./dist/scene.d.ts",
-      "default": "./dist/scene.js"
+    "./scene3d": {
+      "types": "./dist/scene3d.d.ts",
+      "default": "./dist/scene3d.js"
     },
     "./text": {
       "types": "./dist/text.d.ts",
@@ -163,11 +163,11 @@
     "@flighthq/render": "*",
     "@flighthq/render-gl": "*",
     "@flighthq/render-wgpu": "*",
-    "@flighthq/scene": "*",
-    "@flighthq/scene-formats": "*",
-    "@flighthq/scene-gl": "*",
-    "@flighthq/scene-resources": "*",
-    "@flighthq/scene-wgpu": "*",
+    "@flighthq/scene3d": "*",
+    "@flighthq/scene3d-formats": "*",
+    "@flighthq/scene3d-gl": "*",
+    "@flighthq/scene3d-resources": "*",
+    "@flighthq/scene3d-wgpu": "*",
     "@flighthq/screen": "*",
     "@flighthq/sensors": "*",
     "@flighthq/shading": "*",

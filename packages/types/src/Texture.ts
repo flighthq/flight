@@ -21,7 +21,7 @@ export interface Texture extends Entity, TextureUvTransform {
   image: ImageResource | null;
   // An unresolved reference to this texture's image, emitted by a scene-format parser so the parse
   // stays synchronous while the heavy decode/fetch is deferred. Absent (`null`/undefined) for a
-  // texture whose image is already in hand or bound. @flighthq/scene-resources resolves it and
+  // texture whose image is already in hand or bound. @flighthq/scene3d-resources resolves it and
   // fills `image`; the renderer may read `resource.state` to fade the surface in on availability.
   resource?: ImageResourceReference | null;
   sampler: Sampler;

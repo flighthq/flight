@@ -5,9 +5,9 @@
     "rootDir": "./src"
   },
   "references": [
-    { "path": "../../../packages/scene" },
-    { "path": "../../../packages/scene-gl" },
-    { "path": "../../../packages/scene-wgpu" },
+    { "path": "../../../packages/scene3d" },
+    { "path": "../../../packages/scene3d-gl" },
+    { "path": "../../../packages/scene3d-wgpu" },
     { "path": "../../../packages/sdk" }
   ],
   "include": ["src/**/*"],

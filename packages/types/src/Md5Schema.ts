@@ -1,4 +1,4 @@
-// id Software MD5 wire-format types — the subset @flighthq/scene-formats imports for .md5mesh
+// id Software MD5 wire-format types — the subset @flighthq/scene3d-formats imports for .md5mesh
 // parsing. These are format-internal and not re-exported from the package barrel.
 
 // A single joint in the MD5 skeleton hierarchy.

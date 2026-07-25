@@ -3,7 +3,7 @@ import {
   rotateOrbitCameraController,
   updateOrbitCameraController,
 } from '@flighthq/camera-controls';
-import { createNode3D } from '@flighthq/scene';
+import { createNode3D } from '@flighthq/scene3d';
 import type {
   Camera3D,
   ParticleEmitter3D,

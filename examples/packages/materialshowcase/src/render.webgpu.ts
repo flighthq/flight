@@ -20,7 +20,7 @@ import {
   registerUnlitWgpuMaterial,
   registerVertexColorWgpuMaterial,
   registerWireframeWgpuMaterial,
-} from '@flighthq/scene-wgpu';
+} from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Scene3DLightsLike, Node3D, WgpuRenderEffectPipeline, WgpuRenderState } from '@flighthq/sdk';
 import {
   beginWgpuRenderEffectPipeline,

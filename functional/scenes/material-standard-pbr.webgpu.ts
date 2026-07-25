@@ -1,5 +1,5 @@
-import { createScene3D } from '@flighthq/scene';
-import { drawWgpuScene3D } from '@flighthq/scene-wgpu';
+import { createScene3D } from '@flighthq/scene3d';
+import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -77,9 +77,9 @@ registerWgpuFunctionalTarget(state, scale);
 // per-backend implementation lives in render.webgl.ts / render.webgpu.ts. It imports render from
 // ./render (the local TS stub); the functional vite harness routes ./render to the active backend's
 // render.<renderer>.ts at runtime.
-// createScene3D exists on both @flighthq/node and @flighthq/scene, so it collides in the @flighthq/sdk
+// createScene3D exists on both @flighthq/node and @flighthq/scene3d, so it collides in the @flighthq/sdk
 // barrel (conflicting star exports) and is unavailable there — import the 3D scene one directly. The
-// Mesh added to it is a @flighthq/scene Node3D, so this is the type-correct source too.
+// Mesh added to it is a @flighthq/scene3d Node3D, so this is the type-correct source too.
 
 const logicalWidth = width / scale;
 const logicalHeight = height / scale;

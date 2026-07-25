@@ -1,5 +1,5 @@
 import { reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry';
-import { createNode3D, getNode3DRuntime } from '@flighthq/scene';
+import { createNode3D, getNode3DRuntime } from '@flighthq/scene3d';
 import type {
   AabbLike,
   Matrix4Like,

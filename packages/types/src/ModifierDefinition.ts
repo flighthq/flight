@@ -4,7 +4,7 @@ import type { ModifierSlot } from './ModifierSlot';
 
 // The substrate-agnostic registration record for one modifier kind: where it injects (`slot`) and
 // how its descriptor's compile-time structure contributes to the define-key (`getDefineSignature`).
-// It carries NO backend GLSL — per-backend compilers (e.g. @flighthq/scene-gl) register their own
+// It carries NO backend GLSL — per-backend compilers (e.g. @flighthq/scene3d-gl) register their own
 // snippet against the same `kind` in a backend-side registry. This tier only owns the composition
 // contract: slot ordering and the stable define-key that keys the compiled variant cache.
 //

@@ -6,7 +6,7 @@ Build spec for the full PBR material + forward-lighting system. Produced by a de
 
 Refined in design discussion. These decisions override the `World*Node` names and bridge design in §2–§7:
 
-- **Two graph roots:** `Stage` (2D — the `DisplayObject`-graph root, mirror of `Scene`; renders to the screen _or_ to a `Texture`) and `Scene` (3D — the `SceneNode`-graph root). Rename package `@flighthq/world` → `@flighthq/scene`; drop the `World` prefix from every type.
+- **Two graph roots:** `Stage` (2D — the `DisplayObject`-graph root, mirror of `Scene`; renders to the screen _or_ to a `Texture`) and `Scene` (3D — the `SceneNode`-graph root). Rename package `@flighthq/world` → `@flighthq/scene3d`; drop the `World` prefix from every type.
 - **`SceneNode`** is the 3D base node (parallels `DisplayObject`). Concrete scene nodes drop the suffix: `Mesh`, `Camera`, `DirectionalLight`, … (NOT built in the current pass — see scope.)
 - **Canonical local transform = `Matrix4`.** There is no `Transform3D` type. TRS is free-function molecules (compose/decompose). Internal traits `HasTransform2D` / `HasTransform3D` stay as-is (internal).
 - **`Texture` is the universal bridge.** Any graph renders to a `Texture`; any `Mesh` + `Material` consumes one. No `DisplayPanel` / `SceneView` / `Plane` node types — a "panel" is a `Mesh` with `createPlaneMeshGeometry`. (If a bundled bridge node is ever wanted, it follows the rule "a node in family A with a `.root` into family B." Parked, not built.)

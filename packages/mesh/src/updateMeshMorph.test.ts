@@ -11,7 +11,7 @@ const POSITION_LAYOUT: VertexAttributeLayout = {
 };
 
 // updateMeshMorph reads only `geometry` and `morph` off the node and touches the geometry runtime, so
-// these tests carry the node envelope structurally rather than through @flighthq/scene's createMesh —
+// these tests carry the node envelope structurally rather than through @flighthq/scene3d's createMesh —
 // depending on scene from a mesh test would reintroduce the very scene→mesh→scene cycle that moving
 // this deformer down removed. The scene-level createMesh path is covered by scene's own mesh tests.
 function meshCarrying(geometry: MeshGeometry, morph: MeshMorph | null): Mesh {

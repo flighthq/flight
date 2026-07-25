@@ -7,8 +7,8 @@
   "references": [
     { "path": "../../../packages/camera-controls" },
     { "path": "../../../packages/picking" },
-    { "path": "../../../packages/scene" },
-    { "path": "../../../packages/scene-gl" },
+    { "path": "../../../packages/scene3d" },
+    { "path": "../../../packages/scene3d-gl" },
     { "path": "../../../packages/sdk" }
   ]
 }

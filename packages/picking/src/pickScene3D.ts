@@ -17,7 +17,7 @@ import {
   getMeshGeometryVertexPosition,
 } from '@flighthq/mesh';
 import { ensureNodeWorldMatrix4, getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node';
-import { getNode3DWorldBounds, isMesh } from '@flighthq/scene';
+import { getNode3DWorldBounds, isMesh } from '@flighthq/scene3d';
 import type {
   Camera3D,
   Mesh,

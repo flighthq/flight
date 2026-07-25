@@ -39,7 +39,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "@flighthq/scene": "*",
+    "@flighthq/scene3d": "*",
     "typescript": "^5.3.0"
   },
   "description": "3D skeleton: joint bind poses and skin-palette (jointWorld * inverseBind) computation over animated SceneNode bones",

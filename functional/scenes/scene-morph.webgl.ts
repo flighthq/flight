@@ -1,4 +1,4 @@
-import { drawGlScene3D } from '@flighthq/scene-gl';
+import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, GlRenderEffectPipeline, MeshMorph, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   CANONICAL_MESH_GEOMETRY_LAYOUT,

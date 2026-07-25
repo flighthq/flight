@@ -20,7 +20,7 @@ import {
   registerUnlitGlMaterial,
   registerVertexColorGlMaterial,
   registerWireframeGlMaterial,
-} from '@flighthq/scene-gl';
+} from '@flighthq/scene3d-gl';
 import type { Camera3D, GlRenderEffectPipeline, GlRenderState, Scene3DLightsLike, Node3D } from '@flighthq/sdk';
 import {
   beginGlRenderEffectPipeline,

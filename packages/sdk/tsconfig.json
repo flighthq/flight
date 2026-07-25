@@ -247,19 +247,19 @@
       "path": "../render-wgpu"
     },
     {
-      "path": "../scene"
+      "path": "../scene3d"
     },
     {
-      "path": "../scene-formats"
+      "path": "../scene3d-formats"
     },
     {
-      "path": "../scene-gl"
+      "path": "../scene3d-gl"
     },
     {
-      "path": "../scene-resources"
+      "path": "../scene3d-resources"
     },
     {
-      "path": "../scene-wgpu"
+      "path": "../scene3d-wgpu"
     },
     {
       "path": "../screen"

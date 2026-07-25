@@ -1,5 +1,5 @@
-import { createScene3D } from '@flighthq/scene';
-import { drawGlScene3D, drawGlScene3DShadowMap } from '@flighthq/scene-gl';
+import { createScene3D } from '@flighthq/scene3d';
+import { drawGlScene3D, drawGlScene3DShadowMap } from '@flighthq/scene3d-gl';
 import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -87,7 +87,7 @@ export function render(
 // (shadowed) and asserts the under-sphere ground is clearly darker — the signature of a real shadow (an
 // unshadowed scene would light the whole plane uniformly). The WebGPU twin exercises the same recipe.
 //
-// createScene3D exists on both @flighthq/node and @flighthq/scene, so it collides in the @flighthq/sdk
+// createScene3D exists on both @flighthq/node and @flighthq/scene3d, so it collides in the @flighthq/sdk
 // barrel — import the 3D scene one directly.
 
 const logicalWidth = width / scale;

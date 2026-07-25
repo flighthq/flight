@@ -2,7 +2,7 @@ import { createEntity } from '@flighthq/entity';
 import { createRay3D, createVector3, setRay3D, setVector3 } from '@flighthq/geometry';
 import { createMeshGeometry, createMeshGeometryFromAttributes, setMeshGeometrySubsets } from '@flighthq/mesh';
 import { invalidateNodeLocalTransform } from '@flighthq/node';
-import { createMesh } from '@flighthq/scene';
+import { createMesh } from '@flighthq/scene3d';
 import type { Scene3DHit, VertexAttributeLayout } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 

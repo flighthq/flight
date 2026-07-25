@@ -4,7 +4,7 @@
 2026-07 AAA workflow was scoped GL-only; several 3D features it closed on WebGL2 (`scene-gl`,
 `effects-gl`, `render-gl`, `scene2d-gl`) still have **no WebGPU counterpart**. This is the
 remaining un-postpone plan: the concrete
-gaps in `@flighthq/scene-wgpu` / `@flighthq/render-wgpu` / `@flighthq/effects-wgpu`, and — for each — the
+gaps in `@flighthq/scene3d-wgpu` / `@flighthq/render-wgpu` / `@flighthq/effects-wgpu`, and — for each — the
 already-shipped GL path it must mirror, so a later worker can implement without re-deriving the design.
 
 Read alongside [render-backend-support.md](render-backend-support.md) (the current-state matrix, which
@@ -95,7 +95,7 @@ The partition is built into two pooled draw lists (`runtime.opaqueDrawList` / `b
    `blendedDrawList` on `WgpuSceneRuntime` (add the pooled draw-entry lists + pool, mirroring
    `glSceneRuntime.ts`), compute `clipW` per mesh from the same VP row-3 dot, resolve `objectAlpha` via
    `getSceneNodeWorldAlpha`, route `isBlendedMaterial(material) || objectAlpha < 1` to the blended list,
-   and sort the blended list back-to-front (descending `clipW`) before drawing. `@flighthq/scene` and
+   and sort the blended list back-to-front (descending `clipW`) before drawing. `@flighthq/scene3d` and
    `@flighthq/render` already export everything needed (`getSceneNodeWorldAlpha`, `prepareSceneRender`);
    this is a pure translation.
 

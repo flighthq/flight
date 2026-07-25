@@ -3,7 +3,7 @@ import {
   rotateOrbitCameraController,
   updateOrbitCameraController,
 } from '@flighthq/camera-controls';
-import { createNode3D } from '@flighthq/scene';
+import { createNode3D } from '@flighthq/scene3d';
 import type { BlinnPhongMaterial, Camera3D, Scene3DLightsLike, Surface, Texture } from '@flighthq/sdk';
 import {
   addNodeChild,

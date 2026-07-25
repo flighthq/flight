@@ -1,7 +1,7 @@
 import { setVector3 } from '@flighthq/geometry';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh';
 import { invalidateNodeLocalTransform } from '@flighthq/node';
-import { createMesh, createNode3D } from '@flighthq/scene';
+import { createMesh, createNode3D } from '@flighthq/scene3d';
 import type { MeshMorph } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 

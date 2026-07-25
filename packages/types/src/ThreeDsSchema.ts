@@ -1,5 +1,5 @@
 // Autodesk 3DS binary chunked format — chunk ID constants and descriptor interfaces for the subset
-// @flighthq/scene-formats imports. The 3DS format is a recursive chunk tree: each chunk has a
+// @flighthq/scene3d-formats imports. The 3DS format is a recursive chunk tree: each chunk has a
 // uint16 ID, a uint32 total length (including the 6-byte header), and a payload of sub-chunks
 // and/or inline data. Field names use the conventional 3DS documentation terms.
 //

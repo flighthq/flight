@@ -4,8 +4,8 @@
   "type": "module",
   "dependencies": {
     "@flighthq/camera-controls": "*",
-    "@flighthq/scene": "*",
-    "@flighthq/scene-gl": "*",
+    "@flighthq/scene3d": "*",
+    "@flighthq/scene3d-gl": "*",
     "@flighthq/sdk": "*"
   },
   "scripts": {

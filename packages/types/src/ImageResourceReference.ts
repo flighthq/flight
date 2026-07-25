@@ -2,7 +2,7 @@ import type { ResourceResolutionState } from './ResourceResolutionState';
 
 // A lightweight, plain-data reference to a texture's image source that a scene/mesh parser emits
 // synchronously instead of decoding inline. It rides on a Texture (`Texture.resource`) with its
-// `image` left null; a separate, caller-driven pass (@flighthq/scene-resources) resolves the ref
+// `image` left null; a separate, caller-driven pass (@flighthq/scene3d-resources) resolves the ref
 // into a live ImageResource and binds it onto the Texture, advancing `state` as it goes. This is
 // the seam that lets parse stay synchronous and format-symmetric across every scene-format while
 // the heavy async decode/fetch happens later, under a visibility/priority policy.

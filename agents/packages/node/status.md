@@ -86,7 +86,7 @@ The depth review noted that `HasTransform2D` has `x,y,rotation,scaleX,scaleY,piv
 
 ### 3D TRS parity (Silver)
 
-The Silver roadmap calls for a cached, lazy 3D local-matrix built from TRS components (position/quaternion-or-euler/scale) analogous to the 2D path. Currently `HasTransform3D` stores only a raw `localMatrix` with no TRS fields. Adding TRS components requires changing `HasTransform3D` in `@flighthq/types`, adding `initTransform3DTrait` initializers, and updating `ensureNodeWorldTransformMatrix4`. **Design decision to surface**: should 3D rotation use quaternion or Euler angles (or both)? This changes the public type surface. Also: 3D bounds (`getNodeLocalBoundsBox`/`getNodeWorldBoundsBox`) may belong in `@flighthq/scene` not here — mark the boundary explicitly before building.
+The Silver roadmap calls for a cached, lazy 3D local-matrix built from TRS components (position/quaternion-or-euler/scale) analogous to the 2D path. Currently `HasTransform3D` stores only a raw `localMatrix` with no TRS fields. Adding TRS components requires changing `HasTransform3D` in `@flighthq/types`, adding `initTransform3DTrait` initializers, and updating `ensureNodeWorldTransformMatrix4`. **Design decision to surface**: should 3D rotation use quaternion or Euler angles (or both)? This changes the public type surface. Also: 3D bounds (`getNodeLocalBoundsBox`/`getNodeWorldBoundsBox`) may belong in `@flighthq/scene3d` not here — mark the boundary explicitly before building.
 
 ### 3D cached inverse for `convertNodeVector3GlobalToLocal`
 

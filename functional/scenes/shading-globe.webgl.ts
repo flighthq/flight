@@ -1,10 +1,10 @@
-import { createScene3D } from '@flighthq/scene';
+import { createScene3D } from '@flighthq/scene3d';
 import {
   drawGlScene3D,
   registerBuiltInGlModifierSnippets,
   registerShadedGlMaterial,
   setGlScene3DTime,
-} from '@flighthq/scene-gl';
+} from '@flighthq/scene3d-gl';
 import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -37,7 +37,7 @@ import {
 
 // drawGlScene3D / setGlScene3DTime / the ShadedMaterial registrations exist only on scene-gl; drawGlScene3D
 // also collides in the @flighthq/sdk barrel (re-exported from scene-wgpu too), so the whole shading-GL
-// group is imported directly from @flighthq/scene-gl.
+// group is imported directly from @flighthq/scene3d-gl.
 
 // shading-globe — the end-to-end proof of the @flighthq/shading Modifier tier: ONE ShadedMaterial on
 // one sphere stacking all three v1 seed modifiers across three slots, assembled by scene-gl into a

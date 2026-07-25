@@ -9,7 +9,7 @@ import { updateMeshSkin } from './updateMeshSkin';
 //
 // Both halves are same-layer primitives: morph needs only geometry, so it lives in @flighthq/mesh;
 // skin needs the joint palette, so it lives here. Composing them here — at the upper of the two —
-// keeps skeleton3d below @flighthq/scene with no cycle.
+// keeps skeleton3d below @flighthq/scene3d with no cycle.
 // Backends using GPU skinning should continue to update morph CPU-side and upload the joint palette,
 // rather than calling this CPU skin path and then skinning again in the shader.
 export function updateMeshDeformation(mesh: Readonly<Mesh>): void {

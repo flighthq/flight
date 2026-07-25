@@ -17,7 +17,7 @@ import {
 import { createBoxMeshGeometry, createMeshGeometryFromAttributes } from '@flighthq/mesh';
 import { ensureMeshGeometryBounds, updateMeshMorph } from '@flighthq/mesh';
 import { addNodeChild, getNodeRuntime, invalidateNodeLocalTransform } from '@flighthq/node';
-import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene';
+import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d';
 import type { Camera3D, Mesh, MeshMorph, MeshRuntime, Ray3D, Scene3DHit, Node3D } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 

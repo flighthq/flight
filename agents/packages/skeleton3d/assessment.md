@@ -67,8 +67,8 @@ _(All current Recommended items implemented — see Approved.)_
   moved down into `@flighthq/mesh` (it reads only `mesh.geometry`/`mesh.morph` and the geometry runtime
   slot, so mesh is the lowest layer that can host it); `updateMeshSkin` stays in skeleton3d, which owns
   the palette. `updateMeshDeformation` now composes two same-layer primitives, and skeleton3d's source
-  no longer imports `@flighthq/scene` at all — the duplicate `dependencies` entry is dropped, leaving
-  `@flighthq/scene` only in `devDependencies` where the tests' `createMesh` legitimately needs it, so
-  the "below scene with no cycle" comment is true again. `@flighthq/scene` keeps the half that genuinely
+  no longer imports `@flighthq/scene3d` at all — the duplicate `dependencies` entry is dropped, leaving
+  `@flighthq/scene3d` only in `devDependencies` where the tests' `createMesh` legitimately needs it, so
+  the "below scene with no cycle" comment is true again. `@flighthq/scene3d` keeps the half that genuinely
   needs the graph — routing `Weights` channels into `mesh.morph.weights`. Unify at the channel target,
   split at the deformer.

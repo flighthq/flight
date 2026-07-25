@@ -56,7 +56,7 @@ One live contradiction: **North star #5 / Decision #5 require the bounds fallbac
 
 ## Contract & docs fit
 
-**Lives up to the contract:** single root barrel (`index.ts` thin re-exports); `sideEffects: false`; registration opt-in, never top-level; open registries not `switch(kind)`; sentinels not throws (`null` miss, empty rect); full unabbreviated names with correct `is*`/`register*`/`enable*`/`dispatch*` verbs; out-params on the overlap rect and area queries; allocation-free hot paths via module scratch state; types-first (`InteractionManager`, signals, event data all in `@flighthq/types`). The prior review's stale `@flighthq/scene` dependency is confirmed removed.
+**Lives up to the contract:** single root barrel (`index.ts` thin re-exports); `sideEffects: false`; registration opt-in, never top-level; open registries not `switch(kind)`; sentinels not throws (`null` miss, empty rect); full unabbreviated names with correct `is*`/`register*`/`enable*`/`dispatch*` verbs; out-params on the overlap rect and area queries; allocation-free hot paths via module scratch state; types-first (`InteractionManager`, signals, event data all in `@flighthq/types`). The prior review's stale `@flighthq/scene3d` dependency is confirmed removed.
 
 **Candidate revisions:**
 

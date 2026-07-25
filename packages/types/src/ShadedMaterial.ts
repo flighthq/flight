@@ -4,7 +4,7 @@ import type { Texture } from './Texture';
 
 // The composable lit base material owned by @flighthq/shading: a diffuse + half-vector-specular
 // surface (the classic lit path) that carries an ordered `modifiers` stack of compiled shader
-// augmentations. It is a THIRD assembly over the shared light block — the @flighthq/scene-gl
+// augmentations. It is a THIRD assembly over the shared light block — the @flighthq/scene3d-gl
 // compiler reuses GL_MESH_LIGHT_BLOCK_GLSL / glLitProgram exactly as the PBR and classic assemblies
 // do, never forking a second light loop — and assembles `base + ordered modifiers` into ONE program
 // keyed by the stack's feature-set define-key.

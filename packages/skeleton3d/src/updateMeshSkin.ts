@@ -13,7 +13,7 @@ import { captureMeshSkinBindPose, skinMeshGeometry, updateMeshSkinBindPoseDeform
 // onto the geometry runtime and reused every frame, so steady-state skinning allocates nothing. The
 // version bump alone drives the backend re-upload — no per-frame destroy* of GPU data is needed.
 //
-// Lives here (with a mesh dep) rather than in @flighthq/scene: its only dependencies are the skinning
+// Lives here (with a mesh dep) rather than in @flighthq/scene3d: its only dependencies are the skinning
 // primitives above and mesh's runtime-slot accessors — it never touches the scene graph or animation,
 // so pairing it with the skinning it drives keeps skeleton3d below scene with no cycle.
 export function updateMeshSkin(mesh: Readonly<Mesh>): void {
