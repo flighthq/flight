@@ -1,6 +1,6 @@
 import { createClipRegionFromPath } from '@flighthq/clip';
 import { packColor } from '@flighthq/color';
-import { createDisplayContainer } from '@flighthq/displayobject';
+import { createBitmap, createDisplayContainer } from '@flighthq/displayobject';
 import {
   createGradientTransformMatrix,
   createMatrix,
@@ -35,7 +35,8 @@ import {
   appendShapePath,
   createShape,
 } from '@flighthq/shape';
-import { createTextLabel } from '@flighthq/text';
+import { createRichText, createTextLabel } from '@flighthq/text';
+import { createTextFormatRange } from '@flighthq/textlayout';
 import type {
   DisplayContainer,
   DisplayObject,
@@ -45,7 +46,9 @@ import type {
   PathWinding,
   Shape,
   SpreadMethod,
+  SvgDocumentImportOptions,
   TextFormat,
+  TextFormatRange,
   Transform2D,
   XmlElement,
 } from '@flighthq/types';
@@ -63,7 +66,11 @@ import { parseXmlDocument } from '@flighthq/xml';
  * and live DOM behavior are deliberately not retained. Pass an `ImportDiagnostic[]` collector to
  * observe every recognized feature that was skipped or recovered.
  */
-export function createDisplayObjectFromSvgDocument(source: string, diagnostics?: ImportDiagnostic[]): DisplayContainer {
+export function createDisplayObjectFromSvgDocument(
+  source: string,
+  diagnostics?: ImportDiagnostic[],
+  options?: Readonly<SvgDocumentImportOptions>,
+): DisplayContainer {
   const out = createDisplayContainer();
   const document = parseXmlDocument(source);
   if (document === null || localName(document.name) !== 'svg') {
@@ -81,6 +88,7 @@ export function createDisplayObjectFromSvgDocument(source: string, diagnostics?:
     diagnostics,
     elementsById: new Map(),
     gradientsById: new Map(),
+    options,
     resolvingUses: new Set(),
   };
   indexSvgDefinitions(document, context);
@@ -130,6 +138,7 @@ interface SvgImportContext {
   diagnostics: ImportDiagnostic[] | undefined;
   elementsById: Map<string, XmlElement>;
   gradientsById: Map<string, SvgGradient>;
+  options: Readonly<SvgDocumentImportOptions> | undefined;
   resolvingUses: Set<string>;
 }
 
@@ -330,6 +339,7 @@ function createSvgElementNode(
 
   if (name === 'use') return createSvgUseNode(element, parentStyle, context);
   if (name === 'text') return createSvgTextNode(element, parentStyle, context);
+  if (name === 'image') return createSvgImageNode(element, parentStyle, context);
 
   const style = resolveSvgStyle(element, parentStyle, context);
   const path = createSvgGeometryPath(element, style.fillRule);
@@ -341,7 +351,6 @@ function createSvgElementNode(
   }
 
   const unsupportedKind =
-    name === 'image' ||
     name === 'filter' ||
     name === 'foreignObject' ||
     name === 'script' ||
@@ -357,6 +366,37 @@ function createSvgElementNode(
     { element: name },
   );
   return null;
+}
+
+function createSvgImageNode(
+  element: Readonly<XmlElement>,
+  parentStyle: Readonly<SvgStyle>,
+  context: SvgImportContext,
+): DisplayObject | null {
+  const href = attribute(element, 'href');
+  const image = href === null ? null : (context.options?.resolveImageResource?.(href) ?? null);
+  if (href === null || image === null) {
+    reportImportDiagnostic(
+      context.diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      href === null ? 'svg.image-missing-href' : 'svg.unresolved-image',
+      'createSvgImageNode',
+      href === null ? undefined : { href },
+    );
+    return null;
+  }
+
+  const width = numberAttribute(element, 'width', image.width);
+  const height = numberAttribute(element, 'height', image.height);
+  const bitmap = createBitmap({
+    data: { image, smoothing: true },
+    x: numberAttribute(element, 'x', 0),
+    y: numberAttribute(element, 'y', 0),
+  });
+  if (image.width > 0 && width >= 0) bitmap.scaleX = width / image.width;
+  if (image.height > 0 && height >= 0) bitmap.scaleY = height / image.height;
+  applySvgElementAppearance(bitmap, element, parentStyle, context);
+  return bitmap;
 }
 
 function createSvgGeometryPath(element: Readonly<XmlElement>, winding: PathWinding): Path | null {
@@ -420,9 +460,64 @@ function createSvgTextNode(
   context: SvgImportContext,
 ): DisplayObject {
   const style = resolveSvgStyle(element, parentStyle, context);
-  const text = collectSvgText(element);
+  const format = createSvgTextFormat(style);
+  const tspans = element.children.filter((child) => localName(child.name) === 'tspan');
+  const text = tspans.length === 0 ? collectSvgText(element) : element.text + tspans.map(collectSvgText).join('');
+  const ranges: TextFormatRange[] = [];
+  let offset = element.text.length;
+  for (const tspan of tspans) {
+    const tspanText = collectSvgText(tspan);
+    const tspanStyle = resolveSvgStyle(tspan, style, context);
+    ranges.push(createTextFormatRange(createSvgTextFormat(tspanStyle), offset, offset + tspanText.length));
+    offset += tspanText.length;
+  }
+  const firstTspan = tspans[0];
+  const xElement = attribute(element, 'x') === null && firstTspan !== undefined ? firstTspan : element;
+  const yElement = attribute(element, 'y') === null && firstTspan !== undefined ? firstTspan : element;
+  const common = {
+    alpha: style.opacity,
+    name: attribute(element, 'id'),
+    visible: style.display !== 'none' && style.visibility === 'visible',
+    x: firstNumber(attribute(xElement, 'x'), 0) + firstNumber(attribute(element, 'dx'), 0),
+    y: firstNumber(attribute(yElement, 'y'), 0) + firstNumber(attribute(element, 'dy'), 0) - style.fontSize,
+  };
+  const label =
+    ranges.length === 0
+      ? createTextLabel({
+          ...common,
+          data: { autoSize: 'left', height: style.fontSize * 1.25, text, textFormat: format, width: 10000 },
+        })
+      : createRichText({
+          ...common,
+          data: {
+            autoSize: 'left',
+            defaultTextFormat: format,
+            height: style.fontSize * 1.25,
+            text,
+            textFormat: format,
+            textFormatRanges: ranges,
+            width: 10000,
+          },
+        });
+  if (
+    tspans.slice(1).some((tspan) => ['x', 'y', 'dx', 'dy', 'rotate'].some((name) => attribute(tspan, name) !== null))
+  ) {
+    reportImportDiagnostic(
+      context.diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'svg.tspan-position-flattened',
+      'createSvgTextNode',
+      { count: tspans.length },
+    );
+  }
+  const transform = parseSvgTransform(attribute(element, 'transform'));
+  applySvgTransform(label, transform);
+  return label;
+}
+
+function createSvgTextFormat(style: Readonly<SvgStyle>): TextFormat {
   const color = resolveSvgColor(style.fill, style.color) ?? { alpha: 1, rgb: 0 };
-  const format: TextFormat = {
+  return {
     align: style.textAnchor === 'middle' ? 'center' : style.textAnchor === 'end' ? 'right' : 'left',
     bold: style.fontWeight === 'bold' || Number(style.fontWeight) >= 600,
     color: packColor(
@@ -435,17 +530,6 @@ function createSvgTextNode(
     italic: style.fontStyle === 'italic' || style.fontStyle === 'oblique',
     size: style.fontSize,
   };
-  const label = createTextLabel({
-    alpha: style.opacity,
-    data: { autoSize: 'left', height: style.fontSize * 1.25, text, textFormat: format, width: 10000 },
-    name: attribute(element, 'id'),
-    visible: style.display !== 'none' && style.visibility === 'visible',
-    x: firstNumber(attribute(element, 'x'), 0) + firstNumber(attribute(element, 'dx'), 0),
-    y: firstNumber(attribute(element, 'y'), 0) + firstNumber(attribute(element, 'dy'), 0) - style.fontSize,
-  });
-  const transform = parseSvgTransform(attribute(element, 'transform'));
-  applySvgTransform(label, transform);
-  return label;
 }
 
 function createSvgUseNode(

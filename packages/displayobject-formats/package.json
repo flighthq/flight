@@ -42,10 +42,12 @@
     "@flighthq/path-formats": "*",
     "@flighthq/shape": "*",
     "@flighthq/text": "*",
+    "@flighthq/textlayout": "*",
     "@flighthq/types": "*",
     "@flighthq/xml": "*"
   },
   "devDependencies": {
+    "@flighthq/image": "*",
     "typescript": "^5.3.0"
   },
   "description": "Display-object authoring format codecs — SVG documents into Flight display trees",

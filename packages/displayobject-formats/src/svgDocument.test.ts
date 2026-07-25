@@ -1,6 +1,7 @@
+import { createImageResource } from '@flighthq/image';
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node';
-import type { ImportDiagnostic, Shape, TextLabel } from '@flighthq/types';
-import { DisplayObjectKind, ShapeKind, TextLabelKind } from '@flighthq/types';
+import type { Bitmap, ImportDiagnostic, RichText, Shape, TextLabel } from '@flighthq/types';
+import { BitmapKind, DisplayObjectKind, RichTextKind, ShapeKind, TextLabelKind } from '@flighthq/types';
 
 import { createDisplayObjectFromSvgDocument } from './svgDocument';
 
@@ -121,8 +122,59 @@ describe('createDisplayObjectFromSvgDocument', () => {
 
     expect(getNodeChildCount(root)).toBe(6);
     expect(diagnostics.map((diagnostic) => diagnostic.kind)).toEqual([
-      'svg.unsupported-image',
+      'svg.unresolved-image',
       'svg.unsupported-foreignObject',
     ]);
+  });
+
+  it('resolves image resources through an explicit no-I/O seam', () => {
+    const image = createImageResource();
+    image.width = 20;
+    image.height = 10;
+    const root = createDisplayObjectFromSvgDocument(
+      '<svg><image id="photo" href="asset.png" x="3" y="4" width="40" height="30"/></svg>',
+      undefined,
+      { resolveImageResource: (href) => (href === 'asset.png' ? image : null) },
+    );
+
+    const bitmap = getNodeChildAt(root, 0) as Bitmap;
+    expect(bitmap.kind).toBe(BitmapKind);
+    expect(bitmap.name).toBe('photo');
+    expect(bitmap.data.image).toBe(image);
+    expect(bitmap.x).toBe(3);
+    expect(bitmap.y).toBe(4);
+    expect(bitmap.scaleX).toBe(2);
+    expect(bitmap.scaleY).toBe(3);
+  });
+
+  it('retains tspan style runs and diagnoses positional flattening', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const root = createDisplayObjectFromSvgDocument(
+      `
+        <svg>
+          <text id="mixed" font-family="Inter" font-size="12">
+            <tspan x="4" y="20" fill="#ff0000">Red</tspan>
+            <tspan x="30" y="20" fill="#0000ff" font-weight="bold">Blue</tspan>
+          </text>
+        </svg>
+      `,
+      diagnostics,
+    );
+
+    const text = getNodeChildAt(root, 0) as RichText;
+    expect(text.kind).toBe(RichTextKind);
+    expect(text.data.text).toBe('RedBlue');
+    expect(text.data.textFormatRanges).toHaveLength(2);
+    expect(text.data.textFormatRanges[0].format.color).toBe(0xff0000ff);
+    expect(text.data.textFormatRanges[1].format.color).toBe(0x0000ffff);
+    expect(text.data.textFormatRanges[1].format.bold).toBe(true);
+    expect(text.x).toBe(4);
+    expect(text.y).toBe(8);
+    expect(diagnostics).toContainEqual({
+      detail: { count: 2 },
+      kind: 'svg.tspan-position-flattened',
+      origin: 'createSvgTextNode',
+      severity: 'Recover',
+    });
   });
 });
