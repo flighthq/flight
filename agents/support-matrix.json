@@ -749,6 +749,15 @@
           }
         },
         {
+          "scene": "material-custom-shader",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
           "scene": "material-depth",
           "backends": {
             "canvas": false,

@@ -1,0 +1,128 @@
+import { createScene } from '@flighthq/scene';
+import { drawWgpuScene } from '@flighthq/scene-wgpu';
+import type { Camera3D, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import {
+  addNodeChild,
+  beginWgpuRenderEffectPipeline,
+  createCamera3D,
+  createCustomShaderMaterial,
+  createMesh,
+  createPerspectiveProjection,
+  createSphereMeshGeometry,
+  createVector3,
+  createWgpuCanvasElement,
+  createWgpuRenderEffectPipeline,
+  createWgpuRenderState,
+  endWgpuRenderEffectPipeline,
+  getSurfacePixelLuminance,
+  getSurfacePixelRgb,
+  prepareSceneRender,
+  registerCustomShaderWgpuMaterial,
+  registerWgpuCustomMaterialShader,
+  renderWgpuBackground,
+  setCamera3DViewMatrix4FromLookAt,
+  submitWgpuRenderPass,
+} from '@flighthq/sdk';
+import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+const pixelRatio = window.devicePixelRatio || 1;
+const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
+document.body.appendChild(canvas);
+
+export const state = await createWgpuRenderState(canvas, {
+  pixelRatio,
+  backgroundColor: 0x0a0c10ff,
+});
+registerCustomShaderWgpuMaterial(state);
+registerWgpuCustomMaterialShader(
+  state,
+  'normal-tint',
+  `
+struct Frame {
+  viewProjection : mat4x4f,
+};
+struct Draw {
+  world : mat4x4f,
+  normalMatrix : mat3x3f,
+};
+// UserBlock fields MUST follow alphabetical uniform-name order. Each logical value consumes vec4f.
+struct UserBlock {
+  alpha : vec4f,
+  blue : vec4f,
+  green : vec4f,
+  red : vec4f,
+};
+@group(0) @binding(0) var<uniform> frame : Frame;
+@group(1) @binding(0) var<uniform> draw : Draw;
+@group(2) @binding(0) var<uniform> user : UserBlock;
+
+struct VertexOutput {
+  @builtin(position) clipPosition : vec4f,
+  @location(0) worldNormal : vec3f,
+};
+@vertex fn vs_main(
+  @location(0) position : vec3f,
+  @location(1) normal : vec3f,
+) -> VertexOutput {
+  var out : VertexOutput;
+  out.clipPosition = frame.viewProjection * draw.world * vec4f(position, 1.0);
+  out.worldNormal = normalize(draw.normalMatrix * normal);
+  return out;
+}
+@fragment fn fs_main(input : VertexOutput) -> @location(0) vec4f {
+  let normalColor = abs(normalize(input.worldNormal)) * 0.45;
+  return vec4f(normalColor + vec3f(user.red.x, user.green.x, user.blue.x), user.alpha.x);
+}
+`,
+);
+
+const pipeline = createWgpuRenderEffectPipeline(state, {
+  sampleCount: 4,
+  format: 'rgba16f',
+  depth: 'depth-stencil',
+});
+
+export const scale = pixelRatio;
+export const width = 800;
+export const height = 600;
+
+export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
+  renderWgpuBackground(state);
+  beginWgpuRenderEffectPipeline(state, pipeline);
+  prepareSceneRender(state, scene, camera, lights);
+  drawWgpuScene(state, scene, camera, lights);
+  endWgpuRenderEffectPipeline(state, pipeline, []);
+  submitWgpuRenderPass(state);
+}
+
+registerWgpuFunctionalTarget(state, scale);
+
+const material = createCustomShaderMaterial({
+  shaderKey: 'normal-tint',
+  uniforms: { red: 0.08, green: 0.16, blue: 0.3, alpha: 1 },
+});
+const scene = createScene().root;
+addNodeChild(scene, createMesh(createSphereMeshGeometry(0.5, 48, 32), [material]));
+
+const camera = createCamera3D({
+  far: 100,
+  near: 0.1,
+  projection: createPerspectiveProjection({
+    aspect: width / height,
+    fovY: Math.PI / 4,
+  }),
+});
+setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 3), createVector3(), createVector3(0, 1, 0));
+render(scene, camera, { ambient: null, directional: null });
+
+export function assertRender(surface: Readonly<Surface>): void {
+  const cx = Math.floor(surface.width / 2);
+  const cy = Math.floor(surface.height / 2);
+  const center = getSurfacePixelLuminance(surface, cx, cy);
+  const centerRgb = getSurfacePixelRgb(surface, cx, cy);
+  const edgeRgb = getSurfacePixelRgb(surface, cx + Math.floor(surface.width * 0.07), cy);
+  if (center <= 24) throw new Error(`[material-custom-shader] blank custom material (${center})`);
+  if (centerRgb === edgeRgb) {
+    throw new Error('[material-custom-shader] custom normal-matrix shading did not vary across the sphere');
+  }
+}

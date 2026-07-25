@@ -17,6 +17,7 @@ export function getWgpuSceneRuntime(state: WgpuRenderState): WgpuSceneRuntime {
       blendedPool: [],
       drawBindGroup: null,
       drawBindGroupLayout: null,
+      customShaderGuard: null,
       frameBindGroup: null,
       frameBindGroupLayout: null,
       frameBuffer: null,

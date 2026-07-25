@@ -255,7 +255,7 @@ Quick-reference for common feature keywords. All package names use the `@flighth
 | Collision (2D) | `collision` | headless | SAT narrow-phase |
 | Broadphase | `spatial` | headless | Uniform grid |
 | Custom shaders (post-process) | `effects` (CustomShaderEffect) | gl, wgpu |  |
-| Custom shaders (material) | --- | --- | Not yet implemented |
+| Custom shaders (material) | `materials` (CustomShaderMaterial) + `scene-gl` + `scene-wgpu` | gl, wgpu | State-scoped GLSL/WGSL source registries; WGPU uses the fixed Frame/Draw/UserBlock/texture binding ABI |
 | Bloom | `effects` (BloomEffect) | canvas, gl, wgpu |  |
 | Blur | `effects` (BlurEffect) | canvas, gl, wgpu |  |
 | Vignette | `effects` (VignetteEffect) | canvas, gl, wgpu |  |
