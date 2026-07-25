@@ -1183,7 +1183,7 @@
             "canvas": false,
             "dom": false,
             "webgl": true,
-            "webgpu": false
+            "webgpu": true
           }
         },
         {
@@ -1192,7 +1192,7 @@
             "canvas": false,
             "dom": false,
             "webgl": true,
-            "webgpu": false
+            "webgpu": true
           }
         },
         {

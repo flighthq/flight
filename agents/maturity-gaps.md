@@ -239,7 +239,7 @@ unsupported cases is largely unbuilt for the gaps that most need it.
 | --- | --- | --- | --- |
 | Area lights render | `SceneLights` has no `area` field (`SceneLights.ts:17-21`); `packSceneLightBlock` no area refs; grep across scene-gl/wgpu/render → nothing | none | SURPRISE |
 | Point/spot lights cast shadows | Shadows directional-only, single ortho map, no cascades/CSM, no point/spot/cube (`shadowCamera.ts:14` sole export) | gl/wgpu (dir only) | SURPRISE |
-| WebGPU 3D lighting/shadow/IBL works | No `.webgpu.ts` for light-point/spot/hemisphere/env-ibl/shadow-directional; orthographic now has a raster proof | wgpu | SURPRISE |
+| WebGPU 3D lighting/shadow/IBL works | RESOLVED with WebGPU raster proofs for point/spot/hemisphere lights, IBL, orthographic projection, and directional shadows received by both PBR and classic materials (`shadow-directional` / `shadow-classic`) | wgpu | RESOLVED |
 | `InstancedMesh`/`LodMesh` ship | Header types only; no `create*`, not exported from scene barrel, no renderer consumes them | none | SURPRISE |
 | Frustum culling is automatic | `cullSceneNodeByFrustum` exists but no renderer calls it (grep across render/scene-gl/wgpu → none); every mesh drawn every frame | gl/wgpu (manual) | MAJOR |
 | Orthographic on WebGPU | RESOLVED — VP depth remap and functional baseline | wgpu | RESOLVED |
