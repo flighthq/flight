@@ -139,9 +139,8 @@ describe('drawWgpuSceneShadowMap', () => {
   });
 });
 
-// The lit WGSL string surface: the PBR prelude declares the group(3) shadow bindings and the PCF
-// comparison mirroring scene-gl; the classic prelude — like scene-gl's classic — does NOT apply a shadow
-// term (so raster parity with GL holds).
+// The lit WGSL string surface: both PBR and classic declare the group(3) shadow bindings and apply the
+// PCF comparison to their directional terms, mirroring scene-gl.
 describe('wgpuPbrPrelude shadow sampling', () => {
   it('declares the group(3) shadow bindings and PCF comparison', () => {
     const code = getWgpuPbrModuleSourceForKey(buildWgpuPbrStandardDefineKey(null, null));
