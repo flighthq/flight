@@ -181,11 +181,13 @@ export interface LottieGradientShapeItem extends LottieShapeItemBase {
   /** Radial highlight angle and length. */
   a?: LottieAnimatable<number>;
   h?: LottieAnimatable<number>;
+  o?: LottieAnimatable<number>;
   /** Gradient kind: 1 = linear, 2 = radial. */
   t: 1 | 2;
   /** Start point. */
   s: LottieAnimatable<number[]>;
   ty: 'gf' | 'gs';
+  w?: LottieAnimatable<number>;
 }
 
 export interface LottieTransformShapeItem extends LottieShapeItemBase, LottieTransform {
@@ -314,6 +316,10 @@ export interface LottieLayer {
   /** Asset reference for image/precomposition layers. */
   refId?: string;
   shapes?: LottieShapeItem[];
+  /** Solid-layer color and dimensions. */
+  sc?: string;
+  sh?: number;
+  sw?: number;
   t?: LottieTextData;
   /** Track-matte mode and matte-source marker. */
   tt?: number;
