@@ -13,8 +13,10 @@
 // The crisp copy's boundary being PURE is the real per-bitmap proof: it only holds if GL applied NEAREST
 // to that specific bitmap rather than the (bilinear) global default the smoothed copy also uses.
 //
-// WGPU is not wired for per-bitmap smoothing yet (its sampler binding is mid-rework), so this proof is
-// webgl-only for now; canvas/dom are covered by the bare bitmap-smoothing / bitmap-downscale-smoothing.
+// The two bitmaps SHARE ONE ImageResource, so the texture/blend/material batch keys are identical between
+// them — smoothing is the ONLY key that differs, forcing a flush. Give each bitmap its own resource and
+// the pre-existing texture key would flush regardless, and the scene would pass even with the smoothing
+// key removed; sharing the resource is what makes this genuinely gate the per-bitmap smoothing path.
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -61,9 +63,13 @@ const { render, width } = await createFunctionalTarget({
 
 const root = createDisplayContainer();
 
+// One shared checker resource for BOTH bitmaps — see the header: this makes smoothing the only differing
+// batch key, so the scene fails if the smoothing key is dropped from the flush comparison.
+const checker = createImageResourceFromCanvas(buildCheckerCanvas());
+
 function placeChecker(x: number, y: number, smoothing: boolean): void {
   const bmp = createBitmap();
-  bmp.data.image = createImageResourceFromCanvas(buildCheckerCanvas());
+  bmp.data.image = checker;
   bmp.data.smoothing = smoothing;
   bmp.x = x;
   bmp.y = y;
