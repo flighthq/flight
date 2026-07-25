@@ -1046,6 +1046,21 @@ describe('parse3ds diagnostics', () => {
     expect(crumb!.detail?.firstName).toBe('Ghost');
   });
 
+  it('skips and reports 3ds.non-mesh-object for a named object with no trimesh (light/camera)', () => {
+    // An OBJECT chunk carrying only a name, no TRIMESH sub-chunk — Flight imports meshes only.
+    const object = writeChunk(THREE_DS_OBJECT, writeNullTerminatedString('Light'));
+    const editor = writeChunk(THREE_DS_EDITOR, object);
+    const bytes = writeChunk(THREE_DS_MAIN, editor);
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFrom3ds(bytes, diagnostics);
+    const crumb = findDiagnostic(diagnostics, '3ds.non-mesh-object');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+    expect(crumb!.origin).toBe('parse3ds');
+    expect(crumb!.detail?.count).toBe(1);
+    expect(crumb!.detail?.firstName).toBe('Light');
+  });
+
   it('recovers and reports 3ds.face-subchunk-exceeds for a face sub-chunk declaring length past the chunk', () => {
     // A FACE_MATERIAL sub-chunk header inside the FACES chunk whose declared length runs past the chunk end.
     const faceArray = new Uint8Array(2 + 1 * 4 * 2);

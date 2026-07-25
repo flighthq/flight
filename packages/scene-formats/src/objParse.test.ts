@@ -607,6 +607,16 @@ describe('obj diagnostic crumb coverage', () => {
     expect(crumb.detail?.count).toBe(1);
   });
 
+  it('records obj.directive-unsupported (Skip, parseObj) for a recognized-but-unmodeled directive (s)', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromObj('s 1\n', undefined, diagnostics);
+    const crumb = expectOneCrumb(diagnostics, 'obj.directive-unsupported');
+    expect(crumb.severity).toBe('Skip');
+    expect(crumb.origin).toBe('parseObj');
+    expect(crumb.detail?.directive).toBe('s');
+    expect(crumb.detail?.count).toBe(1);
+  });
+
   it('records no diagnostics for a well-formed OBJ even with a collector engaged', () => {
     const diagnostics: ImportDiagnostic[] = [];
     createSceneFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n', undefined, diagnostics);

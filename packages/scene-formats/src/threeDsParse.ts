@@ -197,7 +197,7 @@ function parseObject(
       tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Recover, '3ds.subchunk-exceeds-object', '', {
         firstOffset: cursor,
       });
-      break;
+      return null;
     }
 
     if (chunkId === THREE_DS_TRIMESH) {
@@ -207,6 +207,9 @@ function parseObject(
     cursor = chunkEnd;
   }
 
+  // A named object with no trimesh sub-chunk (a 3DS light/camera/dummy object): Flight imports meshes only,
+  // so the object is not modeled — recognized but skipped.
+  tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Skip, '3ds.non-mesh-object', '', { firstName: name });
   return null;
 }
 

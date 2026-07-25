@@ -247,6 +247,17 @@ export function parseObj(
         // Acknowledged; the caller passes the parsed material library via the `materials` param.
         break;
       }
+      // Recognized OBJ directives Flight does not model: `s` (smoothing groups), `l`/`p` (line/point
+      // primitives). Crumb them (Skip) per directive so the drop is not silent; a truly-unknown directive
+      // falls through the default and stays silent (it is not an authored Flight-representable feature).
+      case 's':
+      case 'l':
+      case 'p':
+        tallyObjDrop(objDrops, ImportDiagnosticSeverity.Skip, 'obj.directive-unsupported', directive, {
+          directive,
+          firstLine: i + 1,
+        });
+        break;
       default:
         break;
     }
