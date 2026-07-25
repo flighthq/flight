@@ -885,8 +885,24 @@ export function writeWgpuFrameUniform(
   camera: Readonly<Camera3D>,
   lights: Readonly<SceneLightBlock>,
 ): void {
-  ensureWgpuFrameBindGroup(state);
   const scene = getWgpuSceneRuntime(state);
+  let binding = scene.frameBindings.get(lights);
+  if (binding === undefined) {
+    const buffer = state.device.createBuffer({
+      size: FRAME_UNIFORM_BYTES,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+    const bindGroup = state.device.createBindGroup({
+      layout: ensureWgpuSceneLayouts(state).frameBindGroupLayout,
+      entries: [{ binding: 0, resource: { buffer } }],
+    });
+    binding = { bindGroup, buffer };
+    scene.frameBindings.set(lights, binding);
+  }
+  // beginWgpuMeshDraw binds these current aliases immediately after this write. Distinct light blocks
+  // retain distinct buffers until command submission, so later binds cannot rewrite earlier draws.
+  scene.frameBuffer = binding.buffer;
+  scene.frameBindGroup = binding.bindGroup;
   const f = _frameScratch;
 
   const aspect = camera.projection.kind === 'perspective' ? camera.projection.aspect : 1;
@@ -948,7 +964,7 @@ export function writeWgpuFrameUniform(
   f[FRAME_COUNTS_OFFSET + 2] = lights.hemisphereCount;
   f[FRAME_COUNTS_OFFSET + 3] = 0;
 
-  state.device.queue.writeBuffer(scene.frameBuffer!, 0, f.buffer, 0, FRAME_UNIFORM_BYTES);
+  state.device.queue.writeBuffer(binding.buffer, 0, f.buffer, 0, FRAME_UNIFORM_BYTES);
 }
 
 // Frame uniform float offsets for the punctual light arrays — the byte offset within the Frame buffer

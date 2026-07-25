@@ -17,8 +17,9 @@ import type {
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
   WgpuSceneDrawEntry,
+  WgpuSceneForwardLightList,
 } from '@flighthq/types';
-import { DefaultMaterialKind } from '@flighthq/types';
+import { DefaultMaterialKind, MAX_FORWARD_LIGHTS } from '@flighthq/types';
 import type { WgpuSkinningAdapter } from '@flighthq/types';
 
 import { resolveWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
@@ -47,11 +48,14 @@ export function drawWgpuScene(
   scene: Readonly<SceneNode>,
   camera: Readonly<Camera3D>,
   lights: Readonly<SceneLightsLike>,
+  forwardLights?: Readonly<WgpuSceneForwardLightList>,
 ): void {
   const list = prepareSceneRender(state, scene, camera, lights);
   const lightBlock = list.lights;
   const viewProjection = list.viewProjection;
   const runtime = getWgpuSceneRuntime(state);
+  const hasPreparedForwardLights = forwardLights !== undefined && forwardLights.meshCount === list.meshCount;
+  if (!hasPreparedForwardLights && hasExcessForwardLights(lights)) runtime.forwardLightSelectionGuard?.(lights);
   const opaqueDrawList = runtime.opaqueDrawList;
   const blendedDrawList = runtime.blendedDrawList;
   recycleDrawEntries(opaqueDrawList, runtime.opaquePool);
@@ -79,7 +83,7 @@ export function drawWgpuScene(
       const entry = acquireDrawEntry(blended ? runtime.blendedPool : runtime.opaquePool);
       entry.alpha = objectAlpha;
       entry.depth = clipZ / clipW;
-      entry.lightBlock = lightBlock;
+      entry.lightBlock = hasPreparedForwardLights ? forwardLights.meshLightBlocks[m] : lightBlock;
       entry.material = resolvedMaterial;
       entry.mesh = mesh;
       entry.renderer = renderer;
@@ -156,6 +160,10 @@ function drawEntries(
 
 function isBlendedMaterial(material: Readonly<Material>): boolean {
   return (material as Readonly<SurfaceMaterial>).alphaMode === 'blend';
+}
+
+function hasExcessForwardLights(lights: Readonly<SceneLightsLike>): boolean {
+  return (lights.point?.length ?? 0) > MAX_FORWARD_LIGHTS || (lights.spot?.length ?? 0) > MAX_FORWARD_LIGHTS;
 }
 
 // Resolves the Material for a subset index: the positional materials[i] entry, or null when the

@@ -212,6 +212,36 @@ fn sampleDirectionalShadow(worldPos : vec3f) -> f32 {
   return sum / 9.0;
 }
 
+// Smooth finite-range window over inverse-square falloff. A non-positive inverse range means
+// unlimited range, matching packSceneLightBlock and the GL classic/PBR preludes.
+fn rangeWindow(dist2 : f32, invSqrRange : f32) -> f32 {
+  if (invSqrRange <= 0.0) {
+    return 1.0;
+  }
+  let factor = clamp(1.0 - dist2 * invSqrRange, 0.0, 1.0);
+  return factor * factor;
+}
+
+// One classic-light contribution shared by directional, point, and spot lights. Keeping the BRDF in
+// one function prevents the positional families from drifting from the directional model.
+fn shadeClassicLight(normal : vec3f, lightDir : vec3f, lightColor : vec3f, diffuseRgb : vec3f,
+                     specularColor : vec3f, worldPosition : vec3f) -> vec3f {
+  let nDotL = max(dot(normal, lightDir), 0.0);
+  var result = diffuseRgb * nDotL * lightColor;
+  if ((LIGHTING_PHONG || LIGHTING_BLINNPHONG) && nDotL > 0.0) {
+    let viewDir = normalize(frame.cameraPosition.xyz - worldPosition);
+    var specAngle = 0.0;
+    if (LIGHTING_PHONG) {
+      specAngle = max(dot(reflect(-lightDir, normal), viewDir), 0.0);
+    } else {
+      specAngle = max(dot(normal, normalize(lightDir + viewDir)), 0.0);
+    }
+    let specular = pow(specAngle, max(material.params.x, 1.0));
+    result = result + specular * specularColor * lightColor;
+  }
+  return result;
+}
+
 @fragment fn fs_main(in : VertexOutput, @builtin(front_facing) isFront : bool) -> @location(0) vec4f {
   var diffuse = material.diffuse;
   if (HAS_DIFFUSE_MAP) {
@@ -261,31 +291,49 @@ fn sampleDirectionalShadow(worldPos : vec3f) -> f32 {
   // sampleDirectionalShadow returns 1.0 when no shadow map is bound, so an unshadowed scene is unchanged.
   if (frame.lightDirection.w > 0.5) {
     let lightDir = normalize(-frame.lightDirection.xyz);
-    let nDotL = max(dot(normal, lightDir), 0.0);
-    var direct = diffuse.rgb * nDotL * frame.directionalRadiance.rgb;
-
-    if ((LIGHTING_PHONG || LIGHTING_BLINNPHONG) && nDotL > 0.0) {
-      let viewDir = normalize(frame.cameraPosition.xyz - in.worldPosition);
-      var specAngle = 0.0;
-      if (LIGHTING_PHONG) {
-        // Phong: reflection-vector specular.
-        let reflectDir = reflect(-lightDir, normal);
-        specAngle = max(dot(reflectDir, viewDir), 0.0);
-      } else {
-        // BlinnPhong: half-vector specular.
-        let halfVec = normalize(lightDir + viewDir);
-        specAngle = max(dot(normal, halfVec), 0.0);
-      }
-      let specular = pow(specAngle, max(material.params.x, 1.0));
-      direct = direct + specular * specularColor * frame.directionalRadiance.rgb;
-    }
-
+    let direct = shadeClassicLight(normal, lightDir, frame.directionalRadiance.rgb, diffuse.rgb,
+                                   specularColor, in.worldPosition);
     radiance = radiance + direct * sampleDirectionalShadow(in.worldPosition);
+  }
+
+  // Point lights: surface-to-light direction with smooth inverse-square range falloff.
+  let pointCount = u32(frame.punctualCounts.x);
+  for (var point = 0u; point < 4u; point = point + 1u) {
+    if (point >= pointCount) { break; }
+    let toLight = frame.pointLights[point * 2u].xyz - in.worldPosition;
+    let dist2 = dot(toLight, toLight);
+    let lightDir = toLight * inverseSqrt(max(dist2, 1e-8));
+    let atten = rangeWindow(dist2, frame.pointLights[point * 2u + 1u].w) / max(dist2, 1e-4);
+    radiance = radiance + shadeClassicLight(normal, lightDir,
+      frame.pointLights[point * 2u + 1u].xyz * atten, diffuse.rgb, specularColor, in.worldPosition);
+  }
+
+  // Spot lights: point attenuation multiplied by the smooth inner/outer cone window.
+  let spotCount = u32(frame.punctualCounts.y);
+  for (var spot = 0u; spot < 4u; spot = spot + 1u) {
+    if (spot >= spotCount) { break; }
+    let toLight = frame.spotLights[spot * 4u].xyz - in.worldPosition;
+    let dist2 = dot(toLight, toLight);
+    let lightDir = toLight * inverseSqrt(max(dist2, 1e-8));
+    let atten = rangeWindow(dist2, frame.spotLights[spot * 4u + 1u].w) / max(dist2, 1e-4);
+    let cone = smoothstep(frame.spotLights[spot * 4u + 3u].y, frame.spotLights[spot * 4u + 3u].x,
+                          dot(normalize(frame.spotLights[spot * 4u + 2u].xyz), -lightDir));
+    radiance = radiance + shadeClassicLight(normal, lightDir,
+      frame.spotLights[spot * 4u + 1u].xyz * atten * cone, diffuse.rgb, specularColor, in.worldPosition);
   }
 
   // Ambient term: flat irradiance over the diffuse albedo.
   if (frame.ambientRadiance.w > 0.5) {
     radiance = radiance + diffuse.rgb * frame.ambientRadiance.rgb;
+  }
+
+  // Hemisphere fill: sky/ground gradient blended by the normal's up-axis alignment.
+  let hemisphereCount = u32(frame.punctualCounts.z);
+  for (var hemisphere = 0u; hemisphere < 4u; hemisphere = hemisphere + 1u) {
+    if (hemisphere >= hemisphereCount) { break; }
+    let factor = 0.5 + 0.5 * dot(normal, frame.hemisphereLights[hemisphere * 3u + 2u].xyz);
+    radiance = radiance + mix(frame.hemisphereLights[hemisphere * 3u + 1u].xyz,
+      frame.hemisphereLights[hemisphere * 3u].xyz, factor) * diffuse.rgb;
   }
 
   return vec4f(radiance, diffuse.a * in.objectAlpha);
