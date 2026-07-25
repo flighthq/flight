@@ -172,14 +172,25 @@ function drawRichTextToCanvas(
     const y = group.offsetY + group.ascent - scrollYOffset;
     context.fillText(slice, x, y);
 
-    if (group.format.underline) {
-      const lineY = y + group.descent;
+    if (group.format.underline || group.format.strikethrough) {
       context.strokeStyle = computeRgbHexString(group.format.color ?? data.textColor);
       context.lineWidth = Math.max(1, (group.format.size ?? 12) / 16);
-      context.beginPath();
-      context.moveTo(x, lineY);
-      context.lineTo(x + group.width, lineY);
-      context.stroke();
+      if (group.format.underline) {
+        const lineY = y + group.descent;
+        context.beginPath();
+        context.moveTo(x, lineY);
+        context.lineTo(x + group.width, lineY);
+        context.stroke();
+      }
+      // Strikethrough sits ~35% of the ascent above the baseline — through the middle of the glyphs,
+      // matching displayobject-canvas's canvasRichText.
+      if (group.format.strikethrough) {
+        const lineY = y - group.ascent * 0.35;
+        context.beginPath();
+        context.moveTo(x, lineY);
+        context.lineTo(x + group.width, lineY);
+        context.stroke();
+      }
     }
   }
 
