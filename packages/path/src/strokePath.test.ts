@@ -47,6 +47,28 @@ describe('strokePath', () => {
     expect(roundResult.commands.length).toBeGreaterThan(buttResult.commands.length);
   });
 
+  it('extends the miter point past a symmetric corner without collapsing to the centerline', () => {
+    // A symmetric downward V with a 90° corner at the apex. The miter must extend the outer
+    // corner to a point PAST the apex — not sit on the centerline vertex (an earlier bug that
+    // advanced along the normal instead of the tangent, producing a self-intersecting outline
+    // that could not be tessellated).
+    const path = createPath();
+    appendPathMoveTo(path, 290, 410);
+    appendPathLineTo(path, 400, 520);
+    appendPathLineTo(path, 510, 410);
+    const result = strokePath(path, { width: 30, join: 'miter', cap: 'butt', miterLimit: 6 });
+    // The outline must not contain the raw centerline apex (400,520) as a vertex.
+    let apexHits = 0;
+    let maxY = -Infinity;
+    for (let i = 0; i < result.data.length; i += 2) {
+      if (Math.abs(result.data[i] - 400) < 1e-6 && Math.abs(result.data[i + 1] - 520) < 1e-6) apexHits++;
+      maxY = Math.max(maxY, result.data[i + 1]);
+    }
+    expect(apexHits).toBe(0);
+    // The outer miter reaches ~21.2px past the apex (halfWidth 15 / sin45°) at y ≈ 541.
+    expect(maxY).toBeCloseTo(541.2, 0);
+  });
+
   it('handles a closed path without adding caps', () => {
     const path = createPath();
     appendPathMoveTo(path, 0, 0);

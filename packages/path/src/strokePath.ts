@@ -150,12 +150,16 @@ function addJoin(
       left.push(lx0, ly0);
       right.push(rx0, ry0);
     } else {
-      // Find the miter intersection point.
+      // Miter point = intersection of the two left-side offset lines. Each passes through its
+      // offset endpoint along the segment tangent — perpendicular to that segment's normal, so
+      // tangent0 = (ny0, -nx0). Advancing along the NORMAL (nx0, ny0) instead collapsed a symmetric
+      // corner's miter onto the centerline vertex, yielding a self-intersecting (untessellatable)
+      // outline. Solve P0 + s·T0 = P1 + u·T1 for the left miter, then mirror through the vertex.
       const dx = lx1 - lx0;
       const dy = ly1 - ly0;
-      const t = (dx * ny1 - dy * nx1) / cross;
-      const mx = lx0 + t * nx0;
-      const my = ly0 + t * ny0;
+      const t = -(dx * nx1 + dy * ny1) / cross;
+      const mx = lx0 + t * ny0;
+      const my = ly0 - t * nx0;
       const miterLen = Math.sqrt((mx - px) * (mx - px) + (my - py) * (my - py));
       if (miterLen <= halfWidth * miterLimit) {
         left.push(mx, my);
