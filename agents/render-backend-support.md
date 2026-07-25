@@ -22,7 +22,7 @@ Findings are empirical (surfaced building the per-primitive functional suite, 20
 | Per-**bitmap** `smoothing` flag | ✓ | ✓ | ✗ | ✗ | see gap #3 |
 | Per-**instance** ColorTransform tint (quad/tile/node `materialData`) | ✗ | ✗ | ✓ | ✓ | see gap #4; canvas/dom apply node-level material only |
 | Text underline | ✓ | ✓ | ✓ | ✓ |  |
-| Text strikethrough | ✓ | ✓ | ✗ | ✗ | see gap #5 |
+| Text strikethrough | ✓ | ✓ | ✓ | ✓ | all backends; gl/wgpu draw it through their canvas-raster RichText path (gap #5 fixed) |
 | Text background / border box | ✓ | ✓ | ✓ | ✓ |  |
 | Text alignment (center/right) | ✓ | ✓ | ✓ | ✓ | single-line and multiline both render (gap #7 fixed) |
 | Sprite / QuadBatch / Tilemap | ✓ | ✗ | ✓ | ✓ | no DOM renderer for the atlas-batch primitives |
@@ -53,7 +53,7 @@ Findings are empirical (surfaced building the per-primitive functional suite, 20
 2. **Stroke joins tessellate on gl now; wgpu pending.** A **stroke-only** shape (no fill) resolves its `lineStyle` spans to fillable outlines via `@flighthq/shape` `getShapeStrokeRegions` → `@flighthq/path` `strokePath` (real miter/bevel/round joins, butt/round/square caps, dashing), and `@flighthq/displayobject-gl` `drawGlShape` tessellates them to GPU meshes — resolution-independent, no offscreen raster. `shape-stroke-joints` now runs on canvas/dom/**webgl**. A **filled-and-stroked** shape still uses the Canvas-2D raster fallback (the GPU fill + stroke mesh paths don't compose yet), and **wgpu** shape strokes are not yet wired (`wgpuShape` mesh path pending) — scope wgpu stroke tests out. (Earlier the GL path had no join handling at all, and a symmetric-corner miter collapsed onto the centerline vertex producing an untessellatable self-intersecting outline — fixed in `strokePath` by intersecting the offset lines along the segment tangent rather than the normal.)
 3. **Per-bitmap `smoothing` ignored on gl/wgpu.** `bindGlTexture` (`packages/render-gl/src/glDraw.ts`) sets the texture min/mag filter from the **global** `state.allowSmoothing`, not the per-bitmap flag (and the texture is element-keyed cached, so the first draw's filter sticks). Test `bitmap-downscale-smoothing` scoped to canvas/dom.
 4. **Per-instance ColorTransform tint is gl/wgpu only.** Only `registerGlColorTransformMaterial` / `registerWgpuColorTransformMaterials` exist; Canvas/DOM bitmap renderers have no color-transform material renderer, so a `materialData` ColorTransform draws untinted there. (`bitmap-color-transform` sidesteps this by tinting source pixels via `applySurfaceColorTransform`, which is cross-backend.)
-5. **Text strikethrough not drawn on gl/wgpu** (the gl/wgpu RichText renderers handle `underline` but not `strikethrough`). Test `text-strikethrough` scoped to canvas/dom.
+5. **~~Text strikethrough not drawn on gl/wgpu.~~ FIXED.** The gl/wgpu RichText renderers (`glRichText`/`wgpuRichText`) are canvas-raster-backed, so — like canvas/dom — they now stroke the line-through at `baseline - ascent*0.35` alongside the existing `underline`, mirroring `displayobject-canvas`. `text-strikethrough` is a single bare scene covering canvas/dom/webgl/webgpu (the sibling of the all-backend `text-underline`).
 6. **~~Orthographic projection renders blank on wgpu.~~ FIXED.** `writeWgpuFrameUniform` remaps the
    camera's GL-convention VP into WebGPU `[0,1]` NDC-Z. `camera-orthographic.webgpu.ts` now covers the
    previously blank raster path alongside the gl scene.
