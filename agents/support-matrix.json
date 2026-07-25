@@ -1693,9 +1693,9 @@
     },
     {
       "area": "Skinning",
-      "capability": "Morph targets / blend shapes / IK / blend trees",
+      "capability": "Inverse kinematics / dual-quaternion skinning / retargeting",
       "status": "not-implemented",
-      "note": "skeleton3d Phase 4, chartered separately, not built."
+      "note": "Blend trees and state machines are implemented in animation; IK, DQS, and retargeting remain absent."
     },
     {
       "area": "Resource lifecycle",

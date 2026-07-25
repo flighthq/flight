@@ -10,12 +10,14 @@ See [charter](./charter.md) for blessed direction. Sorted from the 2026-07-03 re
 
 ## Depth gaps
 
-1. **Compose target-free samples into mixer/layer policy.** The reusable weighted sample accumulator,
-   normalized quaternion blend, and additive quaternion/vector atoms have landed. Per-clip grouping,
-   cross-fade scheduling, additive/override layer ordering, and partial masks remain the missing policy
-   tier above those atoms. Bindings remain separate consumers.
-2. **Complete playback semantics.** Add clip markers/events, root-motion extraction, finite repeat and ping-pong behavior, robust seeking across markers, and deterministic transition behavior.
-3. **Add authoring/runtime utilities without a kitchen sink.** Subclip/trim, key reduction, additive rebasing, clip validation, and binary/cursor sampling remain separable primitives. A later state machine/blend tree composes them rather than entering the sampler core.
+1. **Extend mixing policy without coupling bindings.** N-way normalized override blending, ordered additive
+   layers, cross-fade scheduling, and named state transitions now compose the correct atoms. Partial
+   per-channel masks remain the missing policy tier. Bindings remain separate consumers.
+2. **Complete playback semantics.** Add clip markers/events, root-motion extraction, robust seeking across
+   markers, and interruption policy for active state transitions.
+3. **Add authoring/runtime utilities without a kitchen sink.** Key reduction, additive rebasing, and cursor
+   sampling remain separable primitives. The state machine/blend tree composes sampling and accumulation
+   rather than entering the sampler core.
 
 ## Recommended
 

@@ -36,7 +36,7 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 | Resource lifecycle | Compressed texture upload (KTX2 / DDS / Basis) | `partial` | GL and WebGPU native block upload plus display draw paths are implemented behind opt-in uploader seams, with RGBA decode fallbacks. WebGPU supports native BC/ETC2/ASTC and decoder-backed PVRTC/unavailable families. Canvas/DOM have none. Still no Basis/supercompression transcoder — supercompressed containers report the failure sentinel. |
 | Resource lifecycle | Texture unload / eviction / streaming (mip/LOD) | `not-implemented` | scene-resources resolves but never releases; assets refcount wired to nothing; no progressive streaming. |
 | Simulation | Physics / dynamics (rigid-body solver, swept/TOI, contacts) | `not-implemented` | collision is discrete overlap + MTV only; no solver, no world integration. |
-| Skinning | Morph targets / blend shapes / IK / blend trees | `not-implemented` | skeleton3d Phase 4, chartered separately, not built. |
+| Skinning | Inverse kinematics / dual-quaternion skinning / retargeting | `not-implemented` | Blend trees and state machines are implemented in animation; IK, DQS, and retargeting remain absent. |
 | Text | Bidi / complex-script shaping / MSDF | `not-implemented` | textbidi (UAX#9) + textsegment (UAX#29) ship but are wired into nothing; no real shaping backend (advances-only); MSDF parses, no shader. Non-Latin renders wrong. |
 
 ## Verified-by-baseline (per area)
