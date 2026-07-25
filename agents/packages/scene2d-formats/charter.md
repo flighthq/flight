@@ -94,32 +94,29 @@ transitions) is a *runtime interpretation*, not a parse — it stays a distinct 
 node/sim split, à la `particles`/`particleemitter`); this codec emits the state-machine *descriptor* as
 data only.
 
-## SWF scope
-
-SWF (Flash) is the **archetypal named-graph source** — the format #3 was modeled on; its MovieClip
-symbols (nested timelines), named instances, and `SymbolClass` linkage *are* the slot + linkage model.
-Format parse only: `.swf` bytes → shapes (`shape`), bitmaps (`image`), text (`text`), MovieClip symbols
-→ `movieclip`/`timeline`, named instances + linkage → a `Scene2DDocument` with slots. ActionScript
-(AVM1/AVM2 bytecode) is **out of scope** — it is code, application-owned, like SVG `<script>`
-(`DoAction`/`DoABC` Skip-crumbed). SWF is a **legacy/preservation** capability (Flash is EOL; the value
-is the archive of Flash content and validating #3 against the original), not a forward-authoring path —
-Rive owns that.
-
 ## Decisions
 
 - **[2026-07-25] Package name and first format.** User-directed review queue named
   `@flighthq/scene2d-formats` as the home and directed full SVG-document import first.
-- **[2026-07-25] One target package, many source codecs.** SVG, Lottie, Rive, and SWF are all
-  **codecs within `scene2d-formats`**, never separate source-named `*-formats` packages — `-formats` is
-  target-named (this package produces 2D display / `Scene2DDocument` data), exactly as `scene3d-formats`
-  holds glTF/OBJ/USD/3DS/MD5/AWD2. This supersedes the reserved `svg-formats`, `lottie-formats`, and
-  `rive-formats` cells. SVG is the first increment; Lottie, then the richer Rive and legacy SWF, are
-  later increments here.
-- **[2026-07-25] Heavy binary sources inject deps through seams, not packages.** Rive's `.riv` binary
-  reader and SWF's `CWS`/`ZWS` decompression are injected via registered seams (the
-  `registerAwd2DeflateDecompressor` precedent in `scene3d-formats`), so each codec stays in this package
-  while its heavy dependency remains optional and tree-shakeable. A source's *weight* never earns it a
-  source-named package.
+- **[2026-07-25] One target package, many source codecs.** SVG, Lottie, and Rive are **codecs within
+  `scene2d-formats`**, never separate source-named `*-formats` packages — `-formats` is target-named
+  (this package produces 2D display / `Scene2DDocument` data), exactly as `scene3d-formats` holds
+  glTF/OBJ/USD/3DS/MD5/AWD2. This supersedes the reserved `svg-formats`, `lottie-formats`, and
+  `rive-formats` cells. SVG is the first increment; Lottie, then the richer Rive, are later increments.
+- **[2026-07-25] A huge source domain graduates to its own package; SWF did.** The codec-in-cell rule
+  holds for **bounded** formats that share the cell's infra and read well beside their siblings. A
+  source that is a *huge, distinct domain* (its own data model, big surface) graduates to a **domain
+  package** — domain-named, never `-formats`-suffixed — exactly as `movieclip`/`sprite` are their own
+  packages despite sharing the `Node2D` contract. **SWF took this exit →
+  [`@flighthq/swf`](../swf/charter.md)** (a peer that produces `Scene2DDocument` over the shared layer,
+  depending on neither this cell nor it on `swf`). The test: shares this cell's infra and reads well
+  beside its siblings → codec here; a domain that would bloat the cell and wants its own greppable
+  space → its own package. Rive stays a codec for now, graduating only if it earns it by measurement.
+- **[2026-07-25] Heavy binary deps inject through seams, not packages.** A codec's heavy dependency
+  (e.g. Rive's `.riv` binary reader) is injected via a registered seam (the
+  `registerAwd2DeflateDecompressor` precedent in `scene3d-formats`), so the codec stays in this package
+  while the dependency stays optional and tree-shakeable. A source's *weight* alone never earns a
+  source-named package — but its *domain size* can earn a domain package (above).
 - **[2026-07-25] No hidden resource acquisition.** SVG `<image>` values resolve through
   `SvgDocumentImportOptions.resolveImageResource`; unresolved images emit structured diagnostics.
 - **[2026-07-25] Core-subset SVG compatibility.** The user set the AAA bar at the static subset
@@ -149,6 +146,6 @@ Rive owns that.
    *runtime* cell to consume it (the parse/runtime split's second half; not a `-formats` concern — the
    one Rive piece that does not fold into this package). See the superseded
    [`rive-formats`](../rive-formats/charter.md) for that open thread.
-5. The named-graph output mode's slot/linkage handshake, shared across the SVG-from-XD, Rive, and SWF
-   codecs through the one `Scene2DDocument` slot contract
+5. The named-graph output mode's slot/linkage handshake, shared across the SVG-from-XD and Rive codecs
+   and the [`@flighthq/swf`](../swf/charter.md) peer through the one `Scene2DDocument` slot contract
    ([`scene2d-resources`](../scene2d-resources/charter.md)).

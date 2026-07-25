@@ -116,6 +116,15 @@ _Append-only, dated, blessed rulings._
 - **[2026-07-25] No live document runtime.** `Scene2DDocument` is static plain data (like
   `Scene3DDocument`), never a live DOM/SWF/Rive runtime. It defers *realization*, it does not host a
   foreign engine.
+- **[2026-07-25] Format dispatch is optional, and an open registry if present.** This cell's job is the
+  `Scene2DDocument` boundary + resolve/load + named-slot seam. Auto-detecting *which* importer to run
+  (sniff bytes → codec) is **not required** — the default is explicit per-importer calls
+  (`createScene2DFromSvg`, `createScene2DFromSwf`, …). If a unified auto-detect entry is wanted, it is an
+  **open registry, never a closed switch/enum**: `registerScene2DImporter(magic, importer)` +
+  a `createScene2DFromDocument(bytes)` dispatcher, where each codec (`scene2d-formats`, `@flighthq/swf`,
+  …) registers *in*. The dispatcher depends on no codec, unused codecs tree-shake, users add their own
+  format the same way — dependency points **codec → registry**, exactly like `image-codec`'s
+  MIME→decoder table and `registerRenderer`'s kind→renderer table.
 
 ## Open directions
 
