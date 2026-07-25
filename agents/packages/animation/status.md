@@ -11,6 +11,16 @@ by: null
 
 <!-- newest entry on top -->
 
+## 2026-07-25 — target-free masked animation layers
+
+Added `AnimationLayerStack`, an ordered pose stack whose sources may be blend trees or state machines.
+Each layer has a mutable weight, override/additive policy, and an optional validated subset of source
+channel indices. The stack precomputes target correspondence and distinct sources, reuses fixed sampling
+and advancement scratch, and advances shared player identity once across the whole stack. This closes
+partial-body composition without putting skeleton joint semantics into the animation core. Blend trees
+also precompute distinct players, and state machines reuse construction-owned scratch, removing hidden
+per-frame `Set` allocation from all controller update paths.
+
 ## 2026-07-25 — N-way blend tree and explicit state machine
 
 Added the crossfade successor as two composed target-free layers. `AnimationBlendTree` normalizes any

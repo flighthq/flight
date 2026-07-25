@@ -31,7 +31,8 @@ Target-free animation core -- keyframe sampling, clip/channel bundling, playback
 - **2026-07-03 — TS-leads, Rust conforms later.** Why: standard project posture.
 - **2026-07-25 — State conditions stay external and transitions are imperative.** Why: gameplay already owns its parameters and conditions; explicitly requesting a named transition avoids a hidden predicate scheduler while the state machine still owns target correspondence, timing, and pose blending.
 - **2026-07-25 — Blend trees are flat weighted player sets with ordered additive leaves.** Why: the irreducible operation is N-way per-target accumulation; hierarchy is composition by named state and shared players, without a recursive closed node union or implicit evaluator registry.
+- **2026-07-25 — Partial-body masks are source-channel index subsets.** Why: channel indices are stable within each blend-tree/state-machine source and stay target-free; skeleton-specific joint masks remain a binding-layer concern. Ordered override/additive layers provide the composition policy.
 
 ## Open directions
 
-- Weight/influence per channel: partial-body animation (upper body attack + lower body walk).
+None.

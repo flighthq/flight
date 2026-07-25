@@ -2,7 +2,6 @@ import { createEntity } from '@flighthq/entity';
 import type {
   AnimationBlendTree,
   AnimationChannel,
-  AnimationPlayer,
   AnimationStateMachine,
   AnimationStateMachineChannel,
   AnimationStateMachineState,
@@ -10,8 +9,8 @@ import type {
 } from '@flighthq/types';
 
 import { blendAnimationSamples } from './animationBlend';
-import { sampleAnimationBlendTree, sampleAnimationBlendTreeChannel } from './animationBlendTree';
-import { advanceAnimationPlayer } from './animationPlayer';
+import { sampleAnimationBlendTreeChannel } from './animationBlendTree';
+import { advanceAnimationStateMachineWithScratch } from './animationStateMachineAdvance';
 
 // Advances the current state, or both sides of an active transition, then advances transition time.
 // Shared player identity is advanced once. Completion selects the destination state by elapsed duration,
@@ -19,19 +18,7 @@ import { advanceAnimationPlayer } from './animationPlayer';
 export function advanceAnimationStateMachine(machine: AnimationStateMachine, dt: number): void {
   const advanced = machine.advanceScratch;
   advanced.length = 0;
-  advanceAnimationStateMachineTree(machine.states[machine.currentStateIndex].blendTree, dt, advanced);
-  const toIndex = machine.transitionToStateIndex;
-  if (toIndex === null) return;
-  advanceAnimationStateMachineTree(machine.states[toIndex].blendTree, dt, advanced);
-  machine.transitionElapsed += dt;
-  machine.transitionWeight = machine.transitionCurve(
-    getLinearAnimationStateMachineTransitionWeight(machine.transitionElapsed, machine.transitionDuration),
-  );
-  if (machine.transitionDuration <= 0 || machine.transitionElapsed >= machine.transitionDuration) {
-    machine.currentStateIndex = toIndex;
-    machine.transitionFromStateIndex = null;
-    machine.transitionToStateIndex = null;
-  }
+  advanceAnimationStateMachineWithScratch(machine, dt, advanced);
 }
 
 // Allocates a named-state controller with a global target correspondence layout and reusable transition
@@ -100,37 +87,53 @@ export function sampleAnimationStateMachine(
   machine: Readonly<AnimationStateMachine>,
   visit: (sampled: Readonly<number[] | Float32Array>, channel: Readonly<AnimationChannel>, index: number) => void,
 ): void {
+  for (let index = 0; index < machine.channels.length; index++) {
+    if (sampleAnimationStateMachineChannel(out, machine, index)) visit(out, machine.channels[index].channel, index);
+  }
+}
+
+// Samples one channel in the machine's global target layout. This is the channel-level composition
+// seam used by target-free animation layers. Returns false without changing `out` when no active pose
+// contributes to the requested channel.
+export function sampleAnimationStateMachineChannel(
+  out: number[] | Float32Array,
+  machine: Readonly<AnimationStateMachine>,
+  channelIndex: number,
+): boolean {
+  const entry = machine.channels[channelIndex];
+  if (entry === undefined) return false;
   const toStateIndex = machine.transitionToStateIndex;
   if (toStateIndex === null) {
-    sampleAnimationBlendTree(out, machine.states[machine.currentStateIndex].blendTree, visit);
-    return;
+    const currentChannelIndex = entry.stateChannelIndices[machine.currentStateIndex];
+    return (
+      currentChannelIndex !== null &&
+      sampleAnimationBlendTreeChannel(out, machine.states[machine.currentStateIndex].blendTree, currentChannelIndex)
+    );
   }
   const fromStateIndex = machine.transitionFromStateIndex!;
-  const fromTree = machine.states[fromStateIndex].blendTree;
-  const toTree = machine.states[toStateIndex].blendTree;
-  for (let index = 0; index < machine.channels.length; index++) {
-    const entry = machine.channels[index];
-    const fromChannelIndex = entry.stateChannelIndices[fromStateIndex];
-    const toChannelIndex = entry.stateChannelIndices[toStateIndex];
-    const hasFrom =
-      fromChannelIndex !== null && sampleAnimationBlendTreeChannel(machine.fromSample, fromTree, fromChannelIndex);
-    const hasTo = toChannelIndex !== null && sampleAnimationBlendTreeChannel(machine.toSample, toTree, toChannelIndex);
-    if (!hasFrom && !hasTo) continue;
-    if (hasFrom && hasTo) {
-      blendAnimationSamples(
-        out,
-        machine.fromSample,
-        machine.toSample,
-        machine.transitionWeight,
-        entry.channel.track.quaternion,
-      );
-    } else {
-      const source = hasFrom ? machine.fromSample : machine.toSample;
-      const width = Math.min(out.length, entry.channel.track.components, source.length);
-      for (let component = 0; component < width; component++) out[component] = source[component];
-    }
-    visit(out, entry.channel, index);
+  const fromChannelIndex = entry.stateChannelIndices[fromStateIndex];
+  const toChannelIndex = entry.stateChannelIndices[toStateIndex];
+  const hasFrom =
+    fromChannelIndex !== null &&
+    sampleAnimationBlendTreeChannel(machine.fromSample, machine.states[fromStateIndex].blendTree, fromChannelIndex);
+  const hasTo =
+    toChannelIndex !== null &&
+    sampleAnimationBlendTreeChannel(machine.toSample, machine.states[toStateIndex].blendTree, toChannelIndex);
+  if (!hasFrom && !hasTo) return false;
+  if (hasFrom && hasTo) {
+    blendAnimationSamples(
+      out,
+      machine.fromSample,
+      machine.toSample,
+      machine.transitionWeight,
+      entry.channel.track.quaternion,
+    );
+  } else {
+    const source = hasFrom ? machine.fromSample : machine.toSample;
+    const width = Math.min(out.length, entry.channel.track.components, source.length);
+    for (let component = 0; component < width; component++) out[component] = source[component];
   }
+  return true;
 }
 
 // Starts a timed transition to a named or indexed state. Returns false for an unknown/same destination
@@ -156,18 +159,6 @@ export function transitionAnimationStateMachine(
     machine.transitionToStateIndex = null;
   }
   return true;
-}
-
-function advanceAnimationStateMachineTree(
-  tree: Readonly<AnimationBlendTree>,
-  dt: number,
-  advanced: AnimationPlayer[],
-): void {
-  for (const player of tree.players) {
-    if (advanced.includes(player)) continue;
-    advanced.push(player);
-    advanceAnimationPlayer(player, dt);
-  }
 }
 
 function assertCompatibleAnimationStateMachineChannels(

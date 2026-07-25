@@ -11,6 +11,7 @@ import {
   getAnimationStateMachineCurrentState,
   isAnimationStateMachineTransitioning,
   sampleAnimationStateMachine,
+  sampleAnimationStateMachineChannel,
   transitionAnimationStateMachine,
 } from './animationStateMachine';
 import { createAnimationTrack } from './animationTrack';
@@ -143,6 +144,17 @@ describe('sampleAnimationStateMachine', () => {
       { target: fromOnly, value: 3 },
       { target: toOnly, value: 7 },
     ]);
+  });
+});
+
+describe('sampleAnimationStateMachineChannel', () => {
+  it('samples one global channel and preserves output for an absent index', () => {
+    const machine = createAnimationStateMachine([state('only', player({}, 7))]);
+    const out = [99];
+    expect(sampleAnimationStateMachineChannel(out, machine, 0)).toBe(true);
+    expect(out).toEqual([7]);
+    expect(sampleAnimationStateMachineChannel(out, machine, 3)).toBe(false);
+    expect(out).toEqual([7]);
   });
 });
 
