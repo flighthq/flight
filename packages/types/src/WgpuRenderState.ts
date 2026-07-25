@@ -128,6 +128,11 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // no material concern.
   spriteBatchMaterialData: Float32Array;
   spriteBatchTexture: ImageResource | null;
+  // Per-bitmap smoothing for the active batch (a flush key, mirroring the gl sprite batch). `true`/`false`
+  // force LINEAR/NEAREST sampling; `null` uses the global `state.allowSmoothing` default (sprites/text/
+  // shapes). A bitmap whose `smoothing` differs from the batch's flushes, since the sampler is baked into
+  // the group(1) bind group.
+  spriteBatchSmoothing: boolean | null;
   // Color-adjustment fold state for the active sprite batch, owned by the opt-in
   // enableWgpuColorAdjustment (absent until then, so a state that never tints allocates none of it).
   // Orthogonal to the material and never a flush key, so tinted and untinted nodes with the same
@@ -323,6 +328,12 @@ export interface WgpuSpriteBatchBufferSlot {
 // WgpuRenderState runtime's textureCache.
 export interface WgpuTextureEntry {
   bindGroup: GPUBindGroup;
+  // Lazily-built group(1) bind group variants for per-bitmap smoothing (2D path): the linear-sampler and
+  // nearest-sampler forms over this entry's `view`, so a NEAREST bitmap and a LINEAR one sharing a texture
+  // each sample with their own filter without rebuilding the whole entry. Cleared when the texture/view is
+  // re-uploaded (version bump). Absent for callers that pass no smoothing override (they use `bindGroup`).
+  bindGroupLinear?: GPUBindGroup;
+  bindGroupNearest?: GPUBindGroup;
   // True when sampled RGB is straight-alpha and the 2D display shader must premultiply it before
   // applying color transforms/blending. Native compressed blocks cannot be premultiplied in place.
   straightAlpha?: boolean;
