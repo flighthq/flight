@@ -7,8 +7,14 @@ import {
 } from '@flighthq/mesh';
 import { getNodeChildren } from '@flighthq/node';
 import { isMesh } from '@flighthq/scene';
-import type { BlinnPhongMaterial, ExternalImageResourceReference, Mesh, SceneNode } from '@flighthq/types';
-import { BlinnPhongMaterialKind } from '@flighthq/types';
+import type {
+  BlinnPhongMaterial,
+  ExternalImageResourceReference,
+  ImportDiagnostic,
+  Mesh,
+  SceneNode,
+} from '@flighthq/types';
+import { BlinnPhongMaterialKind, ImportDiagnosticSeverity } from '@flighthq/types';
 import {
   THREE_DS_CHUNK_HEADER_BYTES,
   THREE_DS_COLOR_BYTE,
@@ -292,6 +298,50 @@ function buildMaterialScene3ds(opts: {
   const object = writeChunk(THREE_DS_OBJECT, concatBytes(writeNullTerminatedString(opts.meshName), trimesh));
   const editor = writeChunk(THREE_DS_EDITOR, concatBytes(opts.material, object));
   return writeChunk(THREE_DS_MAIN, editor);
+}
+
+function findDiagnostic(diagnostics: readonly ImportDiagnostic[], kind: string): ImportDiagnostic | undefined {
+  return diagnostics.find((diagnostic) => diagnostic.kind === kind);
+}
+
+// Wraps a raw trimesh payload (any sub-chunks) into a full one-object 3DS file so parse3ds reaches it.
+function wrapTrimesh(name: string, trimeshPayload: Uint8Array): Uint8Array {
+  const trimesh = writeChunk(THREE_DS_TRIMESH, trimeshPayload);
+  const object = writeChunk(THREE_DS_OBJECT, concatBytes(writeNullTerminatedString(name), trimesh));
+  const editor = writeChunk(THREE_DS_EDITOR, object);
+  return writeChunk(THREE_DS_MAIN, editor);
+}
+
+// A VERTICES sub-chunk whose declared count does not match the payload — for truncation coverage.
+function rawVerticesChunk(declaredCount: number, floats: readonly number[]): Uint8Array {
+  const payload = new Uint8Array(2 + floats.length * 4);
+  const view = new DataView(payload.buffer);
+  view.setUint16(0, declaredCount, true);
+  floats.forEach((f, i) => view.setFloat32(2 + i * 4, f, true));
+  return writeChunk(THREE_DS_VERTICES, payload);
+}
+
+// A FACES sub-chunk whose declared count does not match the payload — for truncation coverage.
+function rawFacesChunk(declaredCount: number, indexBytes: number): Uint8Array {
+  const payload = new Uint8Array(2 + indexBytes);
+  new DataView(payload.buffer).setUint16(0, declaredCount, true);
+  return writeChunk(THREE_DS_FACES, payload);
+}
+
+// A UV_COORDS sub-chunk whose declared count does not match the payload — for truncation coverage.
+function rawUvChunk(declaredCount: number, floats: readonly number[]): Uint8Array {
+  const payload = new Uint8Array(2 + floats.length * 4);
+  const view = new DataView(payload.buffer);
+  view.setUint16(0, declaredCount, true);
+  floats.forEach((f, i) => view.setFloat32(2 + i * 4, f, true));
+  return writeChunk(THREE_DS_UV_COORDS, payload);
+}
+
+// Overwrites a chunk's uint32 length field (at offset+2) in place — for boundary-exceed coverage.
+function tamperChunkLength(chunk: Uint8Array, newLength: number): Uint8Array {
+  const copy = chunk.slice();
+  new DataView(copy.buffer).setUint32(2, newLength, true);
+  return copy;
 }
 
 describe('createSceneFrom3ds', () => {
@@ -580,35 +630,45 @@ describe('createSceneFrom3ds', () => {
     expect(getNodeChildren(scene.root)).toHaveLength(0);
   });
 
-  it('warns on empty input', () => {
-    const warnings: string[] = [];
-    createSceneFrom3ds(new Uint8Array(0), warnings);
-    expect(warnings).toHaveLength(1);
-    expect(warnings[0]).toContain('smaller than');
+  it('rejects and reports 3ds.input-too-small on empty input', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFrom3ds(new Uint8Array(0), diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0].kind).toBe('3ds.input-too-small');
+    expect(diagnostics[0].severity).toBe(ImportDiagnosticSeverity.Reject);
+    expect(diagnostics[0].origin).toBe('parse3ds');
   });
 
-  it('warns on invalid main chunk ID', () => {
-    const warnings: string[] = [];
+  it('rejects and reports 3ds.wrong-main-chunk on an invalid main chunk ID', () => {
+    const diagnostics: ImportDiagnostic[] = [];
     const bytes = new Uint8Array(6);
     const view = new DataView(bytes.buffer);
     view.setUint16(0, 0x1234, true);
     view.setUint32(2, 6, true);
-    createSceneFrom3ds(bytes, warnings);
-    expect(warnings).toHaveLength(1);
-    expect(warnings[0]).toContain('0x4D4D');
+    createSceneFrom3ds(bytes, diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0].kind).toBe('3ds.wrong-main-chunk');
+    expect(diagnostics[0].severity).toBe(ImportDiagnosticSeverity.Reject);
+    expect(diagnostics[0].origin).toBe('parse3ds');
+    expect(diagnostics[0].detail?.foundId).toBe(0x1234);
   });
 
-  it('warns on truncated chunk data and returns partial result', () => {
-    const warnings: string[] = [];
+  it('reports a diagnostic on truncated chunk data and returns a partial result', () => {
+    const diagnostics: ImportDiagnostic[] = [];
     // Build a valid 3DS but truncate it.
     const full = buildTriangle3ds('Trunc', [0, 0, 0, 1, 0, 0, 0, 0, 1], [0, 1, 2]);
     // Cut off a significant portion of the end.
     const truncated = full.slice(0, Math.floor(full.byteLength * 0.5));
-    createSceneFrom3ds(truncated, warnings);
-    expect(warnings.length).toBeGreaterThan(0);
+    createSceneFrom3ds(truncated, diagnostics);
+    expect(diagnostics.length).toBeGreaterThan(0);
+    // Every crumb carries the top-level emitter origin and a count from its aggregation.
+    for (const diagnostic of diagnostics) {
+      expect(diagnostic.origin).toBe('parse3ds');
+      expect(diagnostic.detail?.count).toBeGreaterThanOrEqual(1);
+    }
   });
 
-  it('handles a mesh with no faces gracefully', () => {
+  it('drops and reports 3ds.mesh-missing-geometry for a mesh with no faces sub-chunk', () => {
     // Build a trimesh chunk with vertices but no faces sub-chunk.
     const trimeshPayload = writeVertices([0, 0, 0, 1, 0, 0, 0, 0, 1]);
     const trimesh = writeChunk(THREE_DS_TRIMESH, trimeshPayload);
@@ -617,10 +677,16 @@ describe('createSceneFrom3ds', () => {
     const editor = writeChunk(THREE_DS_EDITOR, object);
     const bytes = writeChunk(THREE_DS_MAIN, editor);
 
-    const warnings: string[] = [];
-    const scene = createSceneFrom3ds(bytes, warnings);
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFrom3ds(bytes, diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
-    expect(warnings.some((w) => w.includes('missing'))).toBe(true);
+    const crumb = findDiagnostic(diagnostics, '3ds.mesh-missing-geometry');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('parse3ds');
+    expect(crumb!.detail?.count).toBe(1);
+    expect(crumb!.detail?.missing).toBe('faces');
+    expect(crumb!.detail?.firstName).toBe('NoFaces');
   });
 });
 
@@ -634,12 +700,12 @@ describe('createSceneFrom3ds animations', () => {
   });
 
   it('returns an empty import (no scene children) for non-3DS input', () => {
-    const warnings: string[] = [];
-    const scene = createSceneFrom3ds(new Uint8Array([0, 0, 0, 0, 0, 0]), warnings);
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFrom3ds(new Uint8Array([0, 0, 0, 0, 0, 0]), diagnostics);
 
     expect(Object.keys(scene.animations)).toHaveLength(0);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
-    expect(warnings.length).toBeGreaterThan(0);
+    expect(diagnostics.length).toBeGreaterThan(0);
   });
 });
 
@@ -676,10 +742,278 @@ describe('parse3ds', () => {
     expect(document.resources[0]).toBe((document.materials[0] as BlinnPhongMaterial).diffuseMap!.resource);
   });
 
-  it('returns an empty document with a warning for non-3DS input', () => {
-    const warnings: string[] = [];
-    const document = parse3ds(new Uint8Array([0, 0, 0, 0, 0, 0]), warnings);
+  it('returns an empty document with a diagnostic for non-3DS input', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const document = parse3ds(new Uint8Array([0, 0, 0, 0, 0, 0]), diagnostics);
     expect(document.nodes).toHaveLength(0);
-    expect(warnings.length).toBeGreaterThan(0);
+    expect(diagnostics.length).toBeGreaterThan(0);
+  });
+});
+
+describe('parse3ds diagnostics', () => {
+  it('drops and reports 3ds.vertices-truncated (no-count) for a vertex chunk too small for its count', () => {
+    const bytes = wrapTrimesh(
+      'V',
+      concatBytes(writeChunk(THREE_DS_VERTICES, new Uint8Array(1)), writeFaces([0, 1, 2])),
+    );
+    const diagnostics: ImportDiagnostic[] = [];
+    parse3ds(bytes, diagnostics);
+    const crumb = findDiagnostic(diagnostics, '3ds.vertices-truncated');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('parse3ds');
+    expect(crumb!.detail?.count).toBe(1);
+    expect(crumb!.detail?.reason).toBe('no-count');
+  });
+
+  it('drops and reports 3ds.vertices-truncated (truncated) with the declared count', () => {
+    const bytes = wrapTrimesh('V', concatBytes(rawVerticesChunk(100, [0, 0, 0]), writeFaces([0, 1, 2])));
+    const diagnostics: ImportDiagnostic[] = [];
+    parse3ds(bytes, diagnostics);
+    const crumb = findDiagnostic(diagnostics, '3ds.vertices-truncated');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.detail?.reason).toBe('truncated');
+    expect(crumb!.detail?.firstCount).toBe(100);
+  });
+
+  it('drops and reports 3ds.faces-truncated (truncated) with the declared count', () => {
+    const bytes = wrapTrimesh('F', concatBytes(writeVertices([0, 0, 0, 1, 0, 0, 0, 1, 0]), rawFacesChunk(100, 8)));
+    const diagnostics: ImportDiagnostic[] = [];
+    parse3ds(bytes, diagnostics);
+    const crumb = findDiagnostic(diagnostics, '3ds.faces-truncated');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('parse3ds');
+    expect(crumb!.detail?.firstCount).toBe(100);
+  });
+
+  it('recovers and reports 3ds.uv-truncated (truncated) for a UV chunk short of its count', () => {
+    const bytes = wrapTrimesh(
+      'U',
+      concatBytes(writeVertices([0, 0, 0, 1, 0, 0, 0, 1, 0]), writeFaces([0, 1, 2]), rawUvChunk(100, [0, 0])),
+    );
+    const diagnostics: ImportDiagnostic[] = [];
+    parse3ds(bytes, diagnostics);
+    const crumb = findDiagnostic(diagnostics, '3ds.uv-truncated');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.detail?.firstCount).toBe(100);
+  });
+
+  it('drops and reports 3ds.face-index-out-of-range for a face referencing a missing vertex', () => {
+    const bytes = buildTriangle3ds('OOR', [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 5]);
+    const diagnostics: ImportDiagnostic[] = [];
+    parse3ds(bytes, diagnostics);
+    const crumb = findDiagnostic(diagnostics, '3ds.face-index-out-of-range');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('parse3ds');
+    expect(crumb!.detail?.count).toBe(1);
+    expect(crumb!.detail?.firstDroppedFaces).toBe(1);
+    expect(crumb!.detail?.firstVertexCount).toBe(3);
+    expect(crumb!.detail?.firstName).toBe('OOR');
+  });
+
+  it('recovers and reports 3ds.material-group-face-out-of-range for a group face index past the mesh', () => {
+    const bytes = buildScene3ds({
+      facesChunk: writeFacesWithGroups([0, 1, 2], { groups: [{ faces: [0, 9], name: 'Red' }] }),
+      materials: [writeMaterial({ diffuse: [255, 0, 0], name: 'Red' })],
+      meshName: 'MG',
+      positions: [0, 0, 0, 1, 0, 0, 0, 1, 0],
+    });
+    const diagnostics: ImportDiagnostic[] = [];
+    parse3ds(bytes, diagnostics);
+    const crumb = findDiagnostic(diagnostics, '3ds.material-group-face-out-of-range');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('parse3ds');
+    expect(crumb!.detail?.count).toBe(1);
+    expect(crumb!.detail?.firstFaceCount).toBe(1);
+    expect(crumb!.detail?.firstName).toBe('Red');
+  });
+
+  it('recovers and reports 3ds.smoothing-truncated for a mask list shorter than the face count', () => {
+    const bytes = buildScene3ds({
+      facesChunk: writeFacesWithGroups([0, 1, 2, 0, 2, 1], { smoothing: [1] }),
+      meshName: 'SM',
+      positions: [0, 0, 0, 1, 0, 0, 0, 1, 0],
+    });
+    const diagnostics: ImportDiagnostic[] = [];
+    parse3ds(bytes, diagnostics);
+    const crumb = findDiagnostic(diagnostics, '3ds.smoothing-truncated');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('parse3ds');
+    expect(crumb!.detail?.firstFaceCount).toBe(2);
+  });
+
+  it('drops and reports 3ds.material-group-truncated (no-count) for a group missing its face count', () => {
+    // A FACE_MATERIAL sub-chunk carrying only a name, no uint16 count.
+    const faceArray = new Uint8Array(2 + 1 * 4 * 2);
+    new DataView(faceArray.buffer).setUint16(0, 1, true);
+    const faceMaterial = writeChunk(THREE_DS_FACE_MATERIAL, writeNullTerminatedString('Red'));
+    const facesChunk = writeChunk(THREE_DS_FACES, concatBytes(faceArray, faceMaterial));
+    const bytes = buildScene3ds({
+      facesChunk,
+      materials: [writeMaterial({ diffuse: [255, 0, 0], name: 'Red' })],
+      meshName: 'MGT',
+      positions: [0, 0, 0, 1, 0, 0, 0, 1, 0],
+    });
+    const diagnostics: ImportDiagnostic[] = [];
+    parse3ds(bytes, diagnostics);
+    const crumb = findDiagnostic(diagnostics, '3ds.material-group-truncated');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('parse3ds');
+    expect(crumb!.detail?.reason).toBe('no-count');
+    expect(crumb!.detail?.firstName).toBe('Red');
+  });
+
+  it('drops and reports 3ds.faces-truncated (no-count) for a face chunk too small to read its count', () => {
+    const bytes = wrapTrimesh(
+      'F',
+      concatBytes(writeVertices([0, 0, 0, 1, 0, 0, 0, 1, 0]), writeChunk(THREE_DS_FACES, new Uint8Array(1))),
+    );
+    const diagnostics: ImportDiagnostic[] = [];
+    parse3ds(bytes, diagnostics);
+    const crumb = findDiagnostic(diagnostics, '3ds.faces-truncated');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('parse3ds');
+    expect(crumb!.detail?.count).toBe(1);
+    expect(crumb!.detail?.reason).toBe('no-count');
+  });
+
+  it('recovers and reports 3ds.uv-truncated (no-count) for a UV chunk too small to read its count', () => {
+    const bytes = wrapTrimesh(
+      'U',
+      concatBytes(
+        writeVertices([0, 0, 0, 1, 0, 0, 0, 1, 0]),
+        writeFaces([0, 1, 2]),
+        writeChunk(THREE_DS_UV_COORDS, new Uint8Array(1)),
+      ),
+    );
+    const diagnostics: ImportDiagnostic[] = [];
+    parse3ds(bytes, diagnostics);
+    const crumb = findDiagnostic(diagnostics, '3ds.uv-truncated');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('parse3ds');
+    expect(crumb!.detail?.count).toBe(1);
+    expect(crumb!.detail?.reason).toBe('no-count');
+  });
+
+  it('drops and reports 3ds.material-group-truncated (truncated) for a group short of its declared refs', () => {
+    // A FACE_MATERIAL sub-chunk whose declared ref count (100) exceeds its actual ref payload.
+    const faceArray = new Uint8Array(2 + 1 * 4 * 2);
+    new DataView(faceArray.buffer).setUint16(0, 1, true);
+    const refs = new Uint8Array(2 + 2); // declares 100 refs but only room for 1
+    new DataView(refs.buffer).setUint16(0, 100, true);
+    const faceMaterial = writeChunk(THREE_DS_FACE_MATERIAL, concatBytes(writeNullTerminatedString('Red'), refs));
+    const facesChunk = writeChunk(THREE_DS_FACES, concatBytes(faceArray, faceMaterial));
+    const bytes = buildScene3ds({
+      facesChunk,
+      materials: [writeMaterial({ diffuse: [255, 0, 0], name: 'Red' })],
+      meshName: 'MGT',
+      positions: [0, 0, 0, 1, 0, 0, 0, 1, 0],
+    });
+    const diagnostics: ImportDiagnostic[] = [];
+    parse3ds(bytes, diagnostics);
+    const crumb = findDiagnostic(diagnostics, '3ds.material-group-truncated');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('parse3ds');
+    expect(crumb!.detail?.count).toBe(1);
+    expect(crumb!.detail?.reason).toBe('truncated');
+    expect(crumb!.detail?.firstCount).toBe(100);
+    expect(crumb!.detail?.firstName).toBe('Red');
+  });
+
+  it('drops and reports 3ds.mesh-missing-geometry (missing=vertices) for a trimesh with faces but no vertices', () => {
+    const bytes = wrapTrimesh('NoVerts', writeFaces([0, 1, 2]));
+    const diagnostics: ImportDiagnostic[] = [];
+    parse3ds(bytes, diagnostics);
+    const crumb = findDiagnostic(diagnostics, '3ds.mesh-missing-geometry');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('parse3ds');
+    expect(crumb!.detail?.count).toBe(1);
+    expect(crumb!.detail?.missing).toBe('vertices');
+    expect(crumb!.detail?.firstName).toBe('NoVerts');
+  });
+
+  it('recovers and reports 3ds.chunk-exceeds-parent for a child chunk declaring length past its parent', () => {
+    const object = writeChunk(
+      THREE_DS_OBJECT,
+      concatBytes(
+        writeNullTerminatedString('X'),
+        writeChunk(THREE_DS_TRIMESH, concatBytes(writeVertices([0, 0, 0, 1, 0, 0, 0, 1, 0]), writeFaces([0, 1, 2]))),
+      ),
+    );
+    const editor = writeChunk(THREE_DS_EDITOR, tamperChunkLength(object, object.byteLength + 1000));
+    const bytes = writeChunk(THREE_DS_MAIN, editor);
+    const diagnostics: ImportDiagnostic[] = [];
+    parse3ds(bytes, diagnostics);
+    const crumb = findDiagnostic(diagnostics, '3ds.chunk-exceeds-parent');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('parse3ds');
+    expect(crumb!.detail?.count).toBe(1);
+  });
+
+  it('recovers and reports 3ds.subchunk-exceeds-object for a sub-chunk declaring length past its object', () => {
+    const trimesh = writeChunk(
+      THREE_DS_TRIMESH,
+      concatBytes(writeVertices([0, 0, 0, 1, 0, 0, 0, 1, 0]), writeFaces([0, 1, 2])),
+    );
+    const objectPayload = concatBytes(
+      writeNullTerminatedString('X'),
+      tamperChunkLength(trimesh, trimesh.byteLength + 1000),
+    );
+    const object = writeChunk(THREE_DS_OBJECT, objectPayload);
+    const editor = writeChunk(THREE_DS_EDITOR, object);
+    const bytes = writeChunk(THREE_DS_MAIN, editor);
+    const diagnostics: ImportDiagnostic[] = [];
+    parse3ds(bytes, diagnostics);
+    const crumb = findDiagnostic(diagnostics, '3ds.subchunk-exceeds-object');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('parse3ds');
+  });
+
+  it('recovers and reports 3ds.subchunk-exceeds-trimesh for a sub-chunk declaring length past its trimesh', () => {
+    const vertices = writeVertices([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    const trimeshPayload = concatBytes(tamperChunkLength(vertices, vertices.byteLength + 1000), writeFaces([0, 1, 2]));
+    const bytes = wrapTrimesh('X', trimeshPayload);
+    const diagnostics: ImportDiagnostic[] = [];
+    parse3ds(bytes, diagnostics);
+    const crumb = findDiagnostic(diagnostics, '3ds.subchunk-exceeds-trimesh');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('parse3ds');
+    expect(crumb!.detail?.firstName).toBe('X');
+  });
+
+  it('aggregates repeated mesh-missing-geometry drops across meshes into one crumb with a count', () => {
+    // Two objects, each a trimesh with vertices but no faces sub-chunk.
+    const makeObject = (name: string): Uint8Array => {
+      const trimesh = writeChunk(THREE_DS_TRIMESH, writeVertices([0, 0, 0, 1, 0, 0, 0, 1, 0]));
+      return writeChunk(THREE_DS_OBJECT, concatBytes(writeNullTerminatedString(name), trimesh));
+    };
+    const editor = writeChunk(THREE_DS_EDITOR, concatBytes(makeObject('A'), makeObject('B')));
+    const bytes = writeChunk(THREE_DS_MAIN, editor);
+    const diagnostics: ImportDiagnostic[] = [];
+    parse3ds(bytes, diagnostics);
+    const matching = diagnostics.filter((d) => d.kind === '3ds.mesh-missing-geometry');
+    expect(matching).toHaveLength(1);
+    expect(matching[0].detail?.count).toBe(2);
+    expect(matching[0].detail?.firstName).toBe('A');
+  });
+
+  it('emits no diagnostics when no collector array is supplied', () => {
+    const bytes = wrapTrimesh('X', concatBytes(rawVerticesChunk(100, [0, 0, 0]), rawFacesChunk(100, 8)));
+    // Exercising the crumb paths without a sink must not throw and must be side-effect-free.
+    expect(() => parse3ds(bytes)).not.toThrow();
   });
 });
