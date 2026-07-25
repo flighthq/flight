@@ -1,3 +1,4 @@
+import type { ImportDiagnostic } from './ImportDiagnostic';
 import type { ParticleEmitterConfig } from './ParticleEmitterConfig';
 
 // Particle Designer plist schema — field names as they appear in the XML file.
@@ -91,9 +92,9 @@ export interface ParticleDesignerParseOptions {
 export interface ParticleDesignerParsed {
   config: ParticleEmitterConfig;
   document: ParticleDesignerDocument;
-  /** Features present in the source that the common-subset importer cannot
-   *  represent and silently dropped — surface these in your asset pipeline. */
-  warnings: string[];
+  /** Structured import diagnostics: features the source carries that the common-subset importer dropped,
+   *  skipped, or recovered — surface these in your asset pipeline to audit import fidelity. */
+  diagnostics: ImportDiagnostic[];
 }
 
 export interface ParticleDesignerSerializeOptions {
