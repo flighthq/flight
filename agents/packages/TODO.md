@@ -8,12 +8,12 @@ One line per tracked item. For detail, read only the named package's cell: `agen
 
 Blessed charters with no code behind them. Start from the charter; add a register + Package Map entry with the code.
 
-- **`lottie-formats`** — `@flighthq/lottie-formats` is the reserved home for **Lottie (Bodymovin JSON) import** — parsing an After-Effects vector-animation export into Flight's vector + animation primitives: `@flighthq/shape` command streams plus `@flighthq/animation` tracks. It is the animated-vector importer in the visual-authoring-artifact arc ([structural-forks](../structural-forks.md#i-visual-authoring-artifacts-import-as--formats-not-as-a-code-layout-dsl)) — the animated sibling of static `svg-formats`, and the simpler cousin of `rive-formats` (which adds meshes/bones/state machines).
+- **`future`** — `@flighthq/future` is the SDK's **portable async contract**. It disambiguates *what Flight's
 - **`markup-tokenizer`** — `@flighthq/markup-tokenizer` is the reserved home for the **lenient angle-bracket lexer** that sits *below* markup meaning — the layer that turns a `<b>hi <i>there</i></b>`-style string into a flat stream of text runs and open/close/void tag tokens (name + entity-decoded attributes), tolerating malformed input rather than rejecting it. It is the parse-structure half of markup, distinct from the meaning half (`text-markup`'s tag registry, which maps a tag name to its `TextFormat` contribution).
 - **`physics2d`** — 2D rigid-body dynamics: a deterministic constraint solver over `@flighthq/collision` shapes, producing contact resolution, friction, restitution, joints, and sleeping. The 2D physics engine — Box2D/Planck.js territory — as a plain-data simulation with explicit step, no implicit world object, no hidden allocation per frame.
 - **`physics3d`** — 3D rigid-body dynamics: a constraint solver over 3D collision shapes (sphere, box, capsule, convex hull, triangle mesh), producing contact resolution, friction, restitution, joints, and sleeping in three dimensions. The 3D physics engine — Bullet/Rapier/PhysX territory — as a plain-data simulation with explicit step.
-- **`rive-formats`** — `@flighthq/rive-formats` is the reserved home for **Rive `.riv` import** — parsing Rive's runtime format into Flight's primitives. It is the richest importer in the visual-authoring-artifact arc ([structural-forks](../structural-forks.md#i-visual-authoring-artifacts-import-as--formats-not-as-a-code-layout-dsl)): on top of the vector + keyframe animation that `lottie-formats` covers, Rive adds **meshes**, **bones/skinning**, and **state machines**.
-- **`skeleton2d`** — 2D skeletal animation: bone hierarchies with 2D transforms (translate/rotate/scale), mesh deformation (weighted vertices over a 2D polygon mesh), slot-based draw order, and 2D IK constraints. The domain Spine, DragonBones, and Creature occupy — skeletal character animation for 2D games.
+- **`scene2d-resources`** — `@flighthq/scene2d-resources` is the **2D twin of `@flighthq/scene3d-resources`**. It owns the
+- **`skeleton2d-formats`** — The format-interop layer for 2D skeletal rigs: it maps third-party skeleton/animation files — **Spine** (`.json` and the `.skel` binary) and **DragonBones** (`.json`) — into Flight's internal `@flighthq/skeleton2d` data model (`Skeleton2D` bones, `Slot2D`, `RegionAttachment2D`/`MeshAttachment2D`, `Skin2D`) and, for animation, into `@flighthq/animation` `AnimationClip`s whose channels target `Bone2D` transforms. It is the `-formats` cell of the skeleton2d subject triad — the codec layer (`file → value`, registry-dispatched) — sitting between the runtime primitive (`@flighthq/skeleton2d`, which owns the bone/skin/pose math) and the consumers that play or draw those rigs. It ends where mapping ends: it parses descriptor files and reports diagnostics, but never propagates world transforms, deforms meshes, plays animation, or draws.
 
 ## External — spun out to another repo (not built here)
 
@@ -26,6 +26,8 @@ Charter kept here for reference; the code and its crate live in the named repo. 
 These cells retain their direction/review history, but are not packages to recreate or deepen independently.
 
 - **`camera2d`** → `@flighthq/camera`
+- **`lottie-formats`** → `scene2d-formats`
+- **`rive-formats`** → `scene2d-formats`
 - **`skeleton`** → `@flighthq/skeleton3d`
 - **`svg-formats`** → `scene2d-formats`
 
@@ -146,7 +148,7 @@ Design calls to settle before building the affected entries:
 - Correct the "pull-style" package description
 - Add the small query-helper layer
 
-### scene-formats (partial 46)
+### scene3d-formats (partial 46)
 
 - Add fixture-backed assertions for the already-supported glTF/GLB core before expanding the schema
 - Reconcile the `warnings: string[]` diagnostics idiom with the inversion rule
@@ -450,7 +452,7 @@ Design calls to settle before building the affected entries:
 
 - Fix `null as any` cast
 
-### scene-gl (solid 75)
+### scene3d-gl (solid 75)
 
 - Keep UV1 as a vertex-layout fact, not a shader-registration feature
 - Delete old IBL textures on rebake
@@ -509,7 +511,7 @@ Design calls to settle before building the affected entries:
 - Add `generateWgpuTextureMipmaps` and mip/anisotropy sampler support
 - Move `@flighthq/scene2d` from `dependencies` to `devDependencies` (after confirming it is test-only)
 
-### scene-wgpu (solid 78)
+### scene3d-wgpu (solid 78)
 
 - Mark the dormant `HAS_UV1` key field as inert in-source
 
@@ -529,13 +531,6 @@ Design calls to settle before building the affected entries:
 - `enableTextSegmentGuards`
 - Boundary-helper allocation trim
 - Conformance fixtures (light)
-
-### scene2d (solid 80)
-
-- Delete the dead `internal.ts` module
-- Drop the unused `@flighthq/geometry` dependency
-- Add `setBitmapSmoothing` / `setBitmapSourceRectangle` setters
-- Fix the `package.json` description drift
 
 ### haptics (solid 80)
 
@@ -563,6 +558,13 @@ Design calls to settle before building the affected entries:
 
 - Move `_wakeLockSentinel` into the web backend closure
 - Trim the vacuous alias-safety comment in `getStatus`
+
+### scene2d (solid 80)
+
+- Delete the dead `internal.ts` module
+- Drop the unused `@flighthq/geometry` dependency
+- Add `setBitmapSmoothing` / `setBitmapSourceRectangle` setters
+- Fix the `package.json` description drift
 
 ### shell (solid 80)
 
@@ -645,12 +647,6 @@ Design calls to settle before building the affected entries:
 - Honor unsubscribe in the `subscribeReady` web fill
 - Alphabetize `getLoginItem` in `createWebAppBackend`
 
-### scene2d-gl (solid 84)
-
-- Fix the inaccurate word in the new `glTestHelper.ts` docstring
-- Replace the `as unknown as` casts in `createGlShapeData` / `createGlTextLabelData` with a typed runtime-slot accessor
-- Track the orphan `GlBitmapSamplingLike` so it cannot rot
-
 ### effects-gl (solid 84)
 
 - Record GL effects + stand-ins in `render-backend-support.md`
@@ -658,6 +654,12 @@ Design calls to settle before building the affected entries:
 ### protocol (solid 84)
 
 - Fix type error
+
+### scene2d-gl (solid 84)
+
+- Fix the inaccurate word in the new `glTestHelper.ts` docstring
+- Replace the `as unknown as` casts in `createGlShapeData` / `createGlTextLabelData` with a typed runtime-slot accessor
+- Track the orphan `GlBitmapSamplingLike` so it cannot rot
 
 ### path-boolean (solid 85)
 
@@ -677,14 +679,6 @@ Design calls to settle before building the affected entries:
 ### application (solid 88)
 
 - Fold the triplicated `onError` emit guard into one internal helper
-
-### scene2d-canvas (solid 88)
-
-- `LineScaleMode 'horizontal'` / `'vertical'`
-- Image-smoothing parity audit
-- Draw-walk state-minimization extension
-- Particle-emitter additive fast path
-- Degenerate-input sentinel tests
 
 ### effects-canvas (solid 88)
 
@@ -707,6 +701,14 @@ Design calls to settle before building the affected entries:
 - Update `package.json` description
 - Run `npm run order:check` confirmation
 
+### scene2d-canvas (solid 88)
+
+- `LineScaleMode 'horizontal'` / `'vertical'`
+- Image-smoothing parity audit
+- Draw-walk state-minimization extension
+- Particle-emitter additive fast path
+- Degenerate-input sentinel tests
+
 ### types (solid 88)
 
 - ~~**Lift the notification seam to `id`.**~~ _Already done._ `notify` returns `Promise<string>` (the id), all subscribers use `id`
@@ -716,12 +718,6 @@ Design calls to settle before building the affected entries:
 - Document `glyphCount` on `ShapedRun`
 - Rename `ViewportAlign`/`ViewportScaleMode` → `StageAlign`/`StageScaleMode`
 
-### scene2d-dom (solid 89)
-
-- HiDPI follow-up for `drawDomBitmap`
-- Wire `enableDomRasterFilterSupport(state)`
-- Further SVG exact-filter paths: `ConvolutionFilter` → `<feConvolveMatrix>`, `DisplacementMapFilter` → `<feDisplacementMap>`
-
 ### node (solid 89)
 
 - Fix the self-import
@@ -730,11 +726,11 @@ Design calls to settle before building the affected entries:
 - Unify the early-out callback convention
 - Type the `computeViewportRenderTransform` casts
 
-### scene2d-wgpu (solid 90)
+### scene2d-dom (solid 89)
 
-- Stats integration test
-- Degenerate-input sentinel hardening
-- Velocity-writer coverage for the remaining drawable kinds
+- HiDPI follow-up for `drawDomBitmap`
+- Wire `enableDomRasterFilterSupport(state)`
+- Further SVG exact-filter paths: `ConvolutionFilter` → `<feConvolveMatrix>`, `DisplacementMapFilter` → `<feDisplacementMap>`
 
 ### effects (solid 90)
 
@@ -750,6 +746,12 @@ Design calls to settle before building the affected entries:
 - Add a curvature query
 - Update the `package.json` description
 - Replace `strokePath`'s result object literal with `createPath()`
+
+### scene2d-wgpu (solid 90)
+
+- Stats integration test
+- Degenerate-input sentinel hardening
+- Velocity-writer coverage for the remaining drawable kinds
 
 ### sdk (solid 90)
 
@@ -796,7 +798,7 @@ These are explicit user directions whose implementation may span packages or req
 - Prove viewport behavior with raster functionals
 - Do not create an upward application dependency
 
-### scene-gl (solid 75)
+### scene3d-gl (solid 75)
 
 - Realize ExtendedPbrMaterial through separately imported extension registrations
 - Sample every declared extension map and compose lobes coherently
@@ -813,7 +815,7 @@ These are explicit user directions whose implementation may span packages or req
 - Keep `RenderState` as the explicit current command/destination context
 - Retire `RenderViewport2D` without inventing a false world-space replacement
 
-### scene-resources (solid 76)
+### scene3d-resources (solid 76)
 
 - Compose Extended PBR texture discovery through a nested extension-kind registry
 
@@ -821,7 +823,7 @@ These are explicit user directions whose implementation may span packages or req
 
 - Defer `ApplicationRenderView` and partial-target parity until the GL contract settles
 
-### scene-wgpu (solid 78)
+### scene3d-wgpu (solid 78)
 
 - Defer PBR-extension parity until the GL contracts and raster evidence settle
 
@@ -860,7 +862,7 @@ These are explicit user directions whose implementation may span packages or req
 
 These are observed maturity gaps, including intentionally deferred work. They require prioritization or a package direction before execution unless separately approved.
 
-### scene-formats (partial 46)
+### scene3d-formats (partial 46)
 
 - Make the complete import result truthful
 - Carry every common vertex channel and topology
@@ -879,7 +881,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 - Complete playback semantics
 - Add authoring/runtime utilities without a kitchen sink
 
-### scene (solid 68)
+### scene3d (solid 68)
 
 - Realize InstancedMesh around one versioned data entity
 - Replace single-node LOD state with per-view selection
@@ -945,7 +947,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 - Narrow the exported runtime seam
 - Disambiguate the compressed-texture upload sentinel, and share one shape classifier
 
-### scene-gl (solid 75)
+### scene3d-gl (solid 75)
 
 - Make environment caches identity/version aware
 - Honor CubeTexture.colorSpace
@@ -970,7 +972,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 - Defer render-graph machinery until the attachment/pass contracts are proven
 - Replace the prepared `Mesh[]` with a truthful draw-entry contract before scale features
 
-### scene-resources (solid 76)
+### scene3d-resources (solid 76)
 
 - Add residency rather than a larger resolver
 - Prove resource realization behaviorally
@@ -1011,14 +1013,14 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene` · `particleemitter` · `skeleton3d` · `scene-resources` · `camera-controls` · `debug` · `lifecycle` · `adjustments` · `camera` · `platform` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `scene2d-formats` · `host-capacitor` · `intl` · `movieclip` · `shading`
+`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene3d` · `particleemitter` · `skeleton3d` · `scene3d-resources` · `camera-controls` · `debug` · `lifecycle` · `adjustments` · `camera` · `platform` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `scene2d-formats` · `shading` · `skeleton2d`
 
 ## Liveness — which stage each stale cell needs next
 
 Computed from cell front matter (dates are `updated:`/`lastDirection:` fields). The review loop works this list to keep everything above trustworthy; it can be ignored when simply orienting in a package.
 
-- **Needs a direction session (charter stub or never directed):** `textshaper-canvas` · `textureatlas-formats` · `xml`
-- **Needs a first review (built, no review.md):** `accessibility` · `clock` · `scene2d-formats` · `host-capacitor` · `intl` · `movieclip` · `shading`
-- **Needs re-review (work landed after the survey):** `scene2d-wgpu (review 2026-06-24 < status 2026-06-25)` · `glyphatlas (review 2026-07-13 < status 2026-07-17)` · `render-gl (review 2026-07-21 < status 2026-07-22)` · `scene-formats (review 2026-07-09 < status 2026-07-24)` · `texture (review 2026-06-25 < status 2026-07-22)`
+- **Needs a direction session (charter stub or never directed):** `future` · `textshaper-canvas` · `textureatlas-formats` · `xml`
+- **Needs a first review (built, no review.md):** `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `scene2d-formats` · `shading` · `skeleton2d`
+- **Needs re-review (work landed after the survey):** `glyphatlas (review 2026-07-13 < status 2026-07-17)` · `particles-formats (review 2026-07-13 < status 2026-07-25)` · `render-gl (review 2026-07-21 < status 2026-07-22)` · `scene2d-wgpu (review 2026-06-24 < status 2026-06-25)` · `scene3d-formats (review 2026-07-09 < status 2026-07-25)` · `texture (review 2026-06-25 < status 2026-07-22)`
 - **Needs assess refresh (review newer than assessment):** `assets (assessment 2026-07-21 < review 2026-07-22)` · `audio (assessment 2026-07-03 < review 2026-07-13)` · `log (assessment 2026-07-02 < review 2026-07-13)` · `spritesheet (assessment 2026-07-02 < review 2026-07-13)` · `tileset (assessment 2026-07-03 < review 2026-07-09)` · `tween (assessment 2026-07-02 < review 2026-07-13)` · `video (assessment 2026-07-03 < review 2026-07-09)` · `xml (assessment 2026-07-03 < review 2026-07-09)`
-- **Open directions awaiting the user:** 590 across 132 charters — most-loaded: `scene` (13) · `scene2d-gl` (12) · `render-gl` (12) · `scene2d` (11) · `scene2d-dom` (10) · `effects-wgpu` (10) · `lighting` (10) · `scene-gl` (10) · `spritesheet-formats` (10) · `scene2d-canvas` (9) · `mesh` (9) · `render-wgpu` (9) · `skeleton3d` (9) · `scene2d-wgpu` (8) · `effects-gl` (8) · `geometry` (8) · `materials` (8) · `particles-formats` (8) · `scene-wgpu` (8) · `render` (7) · `scene-resources` (7) · `timeline` (7) · `camera` (6) · `capture` (6) · `color` (6) · `effects-canvas` (6) · `loader` (6) · `texture-formats` (6) · `tween` (6). Each charter's `## Open directions` section holds the questions; a direction session drains them.
+- **Open directions awaiting the user:** 594 across 132 charters — most-loaded: `scene3d` (13) · `render-gl` (12) · `scene2d-gl` (12) · `scene2d` (11) · `effects-wgpu` (10) · `lighting` (10) · `scene2d-dom` (10) · `scene3d-gl` (10) · `spritesheet-formats` (10) · `mesh` (9) · `render-wgpu` (9) · `scene2d-canvas` (9) · `skeleton3d` (9) · `effects-gl` (8) · `geometry` (8) · `materials` (8) · `particles-formats` (8) · `scene2d-wgpu` (8) · `scene3d-wgpu` (8) · `render` (7) · `scene3d-resources` (7) · `timeline` (7) · `camera` (6) · `capture` (6) · `color` (6) · `effects-canvas` (6) · `loader` (6) · `texture-formats` (6) · `tween` (6). Each charter's `## Open directions` section holds the questions; a direction session drains them.
