@@ -5,5 +5,6 @@ export * from '@flighthq/mesh';
 export * from '@flighthq/picking';
 export * from '@flighthq/scene';
 export * from '@flighthq/scene-resources';
+export * from '@flighthq/skeleton2d';
 export * from '@flighthq/skeleton3d';
 export * from '@flighthq/texture';

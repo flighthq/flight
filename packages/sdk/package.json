@@ -176,6 +176,7 @@
     "@flighthq/shell": "*",
     "@flighthq/shortcut": "*",
     "@flighthq/signals": "*",
+    "@flighthq/skeleton2d": "*",
     "@flighthq/skeleton3d": "*",
     "@flighthq/snapshot": "*",
     "@flighthq/socket": "*",

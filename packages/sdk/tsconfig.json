@@ -286,6 +286,9 @@
       "path": "../signals"
     },
     {
+      "path": "../skeleton2d"
+    },
+    {
       "path": "../skeleton3d"
     },
     {
