@@ -1,8 +1,10 @@
 import { createTransform3D } from '@flighthq/geometry';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
 import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { createMeshGeometry } from '@flighthq/mesh';
 import { createSceneFromDocument } from '@flighthq/scene';
 import type {
+  ImportDiagnostic,
   Material,
   MaterialLike,
   MeshSubset,
@@ -14,7 +16,7 @@ import type {
   ThreeDsMaterialGroup,
   ThreeDsMesh,
 } from '@flighthq/types';
-import { MeshKind } from '@flighthq/types';
+import { ImportDiagnosticSeverity, MeshKind } from '@flighthq/types';
 import {
   THREE_DS_CHUNK_HEADER_BYTES,
   THREE_DS_COLOR_BYTE,
@@ -63,18 +65,18 @@ import {
 // The 3DS format limits each mesh to 65535 vertices (uint16 indices). Multiple mesh objects are
 // common in practice and each becomes a separate Mesh child of the scene.
 //
-// Malformed or truncated input pushes a warning and returns an empty or partial scene; the function
+// Malformed or truncated input records a diagnostic and returns an empty or partial scene; the function
 // never throws on bad input. Convenience over `createSceneFromDocument(parse3ds(bytes))`.
-export function createSceneFrom3ds(bytes: Readonly<Uint8Array>, warnings?: string[]): Scene {
-  return createSceneFromDocument(parse3ds(bytes, warnings));
+export function createSceneFrom3ds(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagnostic[]): Scene {
+  return createSceneFromDocument(parse3ds(bytes, diagnostics));
 }
 
 // Parses an Autodesk 3DS binary file into a format-neutral SceneDocument. Each named-object trimesh
 // becomes one document Mesh node (inline geometry, canonical PBR layout, RH Z-up → Y-up). Referenced
 // materials are registered into the document's materials table (deduped by name) and named per mesh by
 // index. Assemble into a live Scene with `createSceneFromDocument`. Malformed input returns an empty or
-// partial document with a warning.
-export function parse3ds(bytes: Readonly<Uint8Array>, warnings?: string[]): SceneDocument {
+// partial document with a diagnostic.
+export function parse3ds(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagnostic[]): SceneDocument {
   const document: SceneDocument = {
     animations: [],
     cameras: [],
@@ -89,7 +91,7 @@ export function parse3ds(bytes: Readonly<Uint8Array>, warnings?: string[]): Scen
   };
 
   if (bytes.byteLength < THREE_DS_CHUNK_HEADER_BYTES) {
-    warnings?.push('createSceneFrom3ds: input is smaller than the minimum chunk header (6 bytes)');
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, '3ds.input-too-small', 'parse3ds');
     return document;
   }
 
@@ -98,20 +100,32 @@ export function parse3ds(bytes: Readonly<Uint8Array>, warnings?: string[]): Scen
 
   const mainId = view.getUint16(0, true);
   if (mainId !== THREE_DS_MAIN) {
-    warnings?.push(
-      `createSceneFrom3ds: expected main chunk ID 0x4D4D but found 0x${mainId.toString(16).toUpperCase().padStart(4, '0')}`,
-    );
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, '3ds.wrong-main-chunk', 'parse3ds', {
+      foundId: mainId,
+    });
     return document;
   }
 
   // The material table (0xAFFF chunks) and the meshes are siblings under the editor chunk, and a mesh
   // references its materials by name via FACE_MATERIAL — so collect the whole table first, then
   // resolve each mesh's referenced names against it.
+  const threeDsDrops = diagnostics ? new Map<string, ThreeDsDropTally>() : null;
   const materials = new Map<string, ThreeDsMaterial>();
-  const meshes = collectMeshes(view, 0, materials, warnings);
+  const meshes = collectMeshes(view, 0, materials, threeDsDrops);
   const materialIndexByName = new Map<string, number>();
   for (let i = 0; i < meshes.length; i++) {
-    appendMeshDocument(meshes[i], materials, materialIndexByName, document, warnings);
+    appendMeshDocument(meshes[i], materials, materialIndexByName, document, threeDsDrops);
+  }
+
+  // parse3ds is the single physical emitter for every aggregated crumb (hence the origin); the tallies
+  // store no origin. Flush once so per-chunk faults collapse to one crumb per kind/discriminator + count.
+  if (threeDsDrops !== null) {
+    for (const tally of threeDsDrops.values()) {
+      reportImportDiagnostic(diagnostics, tally.severity, tally.kind, 'parse3ds', {
+        ...tally.detail,
+        count: tally.count,
+      });
+    }
   }
 
   return document;
@@ -124,7 +138,7 @@ function collectMeshes(
   view: Readonly<DataView>,
   offset: number,
   materials: Map<string, ThreeDsMaterial>,
-  warnings?: string[],
+  threeDsDrops: Map<string, ThreeDsDropTally> | null,
 ): readonly ThreeDsMesh[] {
   const end = Math.min(offset + readChunkLength(view, offset), view.byteLength);
   const meshes: ThreeDsMesh[] = [];
@@ -136,17 +150,19 @@ function collectMeshes(
     const chunkEnd = cursor + chunkLength;
 
     if (chunkEnd > end) {
-      warnings?.push(
-        `createSceneFrom3ds: chunk 0x${chunkId.toString(16).toUpperCase().padStart(4, '0')} at offset ${cursor} declares length ${chunkLength} which exceeds parent boundary`,
-      );
+      tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Recover, '3ds.chunk-exceeds-parent', '', {
+        firstChunkId: chunkId,
+        firstLength: chunkLength,
+        firstOffset: cursor,
+      });
       break;
     }
 
     if (chunkId === THREE_DS_EDITOR || chunkId === THREE_DS_MAIN) {
-      const inner = collectMeshes(view, cursor, materials, warnings);
+      const inner = collectMeshes(view, cursor, materials, threeDsDrops);
       for (let i = 0; i < inner.length; i++) meshes.push(inner[i]);
     } else if (chunkId === THREE_DS_OBJECT) {
-      const mesh = parseObject(view, cursor, chunkEnd, warnings);
+      const mesh = parseObject(view, cursor, chunkEnd, threeDsDrops);
       if (mesh !== null) meshes.push(mesh);
     } else if (chunkId === THREE_DS_MATERIAL) {
       const material = parseMaterial(view, cursor, chunkEnd);
@@ -162,7 +178,12 @@ function collectMeshes(
 // Parses a named object chunk (0x4000). The payload starts with a null-terminated ASCII name string,
 // followed by sub-chunks. If a trimesh sub-chunk (0x4100) is found, its vertex/face/UV data is
 // returned as a ThreeDsMesh.
-function parseObject(view: Readonly<DataView>, offset: number, end: number, warnings?: string[]): ThreeDsMesh | null {
+function parseObject(
+  view: Readonly<DataView>,
+  offset: number,
+  end: number,
+  threeDsDrops: Map<string, ThreeDsDropTally> | null,
+): ThreeDsMesh | null {
   let cursor = offset + THREE_DS_CHUNK_HEADER_BYTES;
   const name = readNullTerminatedString(view, cursor, end);
   cursor += name.length + 1; // advance past the name and null terminator
@@ -173,12 +194,14 @@ function parseObject(view: Readonly<DataView>, offset: number, end: number, warn
     const chunkEnd = cursor + chunkLength;
 
     if (chunkEnd > end) {
-      warnings?.push(`createSceneFrom3ds: trimesh sub-chunk at offset ${cursor} exceeds object boundary`);
+      tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Recover, '3ds.subchunk-exceeds-object', '', {
+        firstOffset: cursor,
+      });
       break;
     }
 
     if (chunkId === THREE_DS_TRIMESH) {
-      return parseTrimesh(view, cursor, chunkEnd, name, warnings);
+      return parseTrimesh(view, cursor, chunkEnd, name, threeDsDrops);
     }
 
     cursor = chunkEnd;
@@ -194,7 +217,7 @@ function parseTrimesh(
   offset: number,
   end: number,
   name: string,
-  warnings?: string[],
+  threeDsDrops: Map<string, ThreeDsDropTally> | null,
 ): ThreeDsMesh | null {
   let vertices: Float32Array | null = null;
   let faces: Uint16Array | null = null;
@@ -210,33 +233,38 @@ function parseTrimesh(
     const chunkEnd = cursor + chunkLength;
 
     if (chunkEnd > end) {
-      warnings?.push(
-        `createSceneFrom3ds: sub-chunk 0x${chunkId.toString(16).toUpperCase().padStart(4, '0')} in mesh '${name}' exceeds trimesh boundary`,
-      );
+      tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Recover, '3ds.subchunk-exceeds-trimesh', '', {
+        firstChunkId: chunkId,
+        firstName: name,
+      });
       break;
     }
 
     const dataStart = cursor + THREE_DS_CHUNK_HEADER_BYTES;
 
     if (chunkId === THREE_DS_VERTICES) {
-      vertices = parseVertices(view, dataStart, chunkEnd, warnings);
+      vertices = parseVertices(view, dataStart, chunkEnd, threeDsDrops);
     } else if (chunkId === THREE_DS_FACES) {
-      const parsed = parseFaces(view, dataStart, chunkEnd, warnings);
+      const parsed = parseFaces(view, dataStart, chunkEnd, threeDsDrops);
       if (parsed !== null) {
         faces = parsed.faces;
         materialGroups = parsed.materialGroups;
         smoothingGroups = parsed.smoothingGroups;
       }
     } else if (chunkId === THREE_DS_UV_COORDS) {
-      uvs = parseUvCoords(view, dataStart, chunkEnd, warnings);
+      uvs = parseUvCoords(view, dataStart, chunkEnd, threeDsDrops);
     }
 
     cursor = chunkEnd;
   }
 
   if (vertices === null || faces === null) {
-    warnings?.push(
-      `createSceneFrom3ds: mesh '${name}' is missing ${vertices === null ? 'vertices' : 'faces'}; skipping`,
+    tallyThreeDsDrop(
+      threeDsDrops,
+      ImportDiagnosticSeverity.Drop,
+      '3ds.mesh-missing-geometry',
+      vertices === null ? 'vertices' : 'faces',
+      { firstName: name, missing: vertices === null ? 'vertices' : 'faces' },
     );
     return null;
   }
@@ -250,17 +278,22 @@ function parseVertices(
   view: Readonly<DataView>,
   dataStart: number,
   end: number,
-  warnings?: string[],
+  threeDsDrops: Map<string, ThreeDsDropTally> | null,
 ): Float32Array | null {
   if (dataStart + 2 > end) {
-    warnings?.push('createSceneFrom3ds: vertex sub-chunk too small to read count');
+    tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Drop, '3ds.vertices-truncated', 'no-count', {
+      reason: 'no-count',
+    });
     return null;
   }
   const count = view.getUint16(dataStart, true);
   const floatsNeeded = count * 3;
   const bytesNeeded = dataStart + 2 + floatsNeeded * 4;
   if (bytesNeeded > end) {
-    warnings?.push(`createSceneFrom3ds: vertex sub-chunk declares ${count} vertices but data is truncated`);
+    tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Drop, '3ds.vertices-truncated', 'truncated', {
+      firstCount: count,
+      reason: 'truncated',
+    });
     return null;
   }
   const vertices = new Float32Array(floatsNeeded);
@@ -281,16 +314,21 @@ function parseFaces(
   view: Readonly<DataView>,
   dataStart: number,
   end: number,
-  warnings?: string[],
+  threeDsDrops: Map<string, ThreeDsDropTally> | null,
 ): { faces: Uint16Array; materialGroups: readonly ThreeDsMaterialGroup[]; smoothingGroups: Uint32Array | null } | null {
   if (dataStart + 2 > end) {
-    warnings?.push('createSceneFrom3ds: face sub-chunk too small to read count');
+    tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Drop, '3ds.faces-truncated', 'no-count', {
+      reason: 'no-count',
+    });
     return null;
   }
   const count = view.getUint16(dataStart, true);
   const facesEnd = dataStart + 2 + count * 4 * 2;
   if (facesEnd > end) {
-    warnings?.push(`createSceneFrom3ds: face sub-chunk declares ${count} faces but data is truncated`);
+    tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Drop, '3ds.faces-truncated', 'truncated', {
+      firstCount: count,
+      reason: 'truncated',
+    });
     return null;
   }
   const faces = new Uint16Array(count * 3);
@@ -314,10 +352,10 @@ function parseFaces(
     if (subLength < THREE_DS_CHUNK_HEADER_BYTES || subEnd > end) break;
     const dataOffset = cursor + THREE_DS_CHUNK_HEADER_BYTES;
     if (subId === THREE_DS_FACE_MATERIAL) {
-      const group = parseFaceMaterialGroup(view, dataOffset, subEnd, count, warnings);
+      const group = parseFaceMaterialGroup(view, dataOffset, subEnd, count, threeDsDrops);
       if (group !== null) materialGroups.push(group);
     } else if (subId === THREE_DS_SMOOTH_GROUP) {
-      smoothingGroups = parseSmoothingGroups(view, dataOffset, subEnd, count, warnings);
+      smoothingGroups = parseSmoothingGroups(view, dataOffset, subEnd, count, threeDsDrops);
     }
     cursor = subEnd;
   }
@@ -333,21 +371,26 @@ function parseFaceMaterialGroup(
   dataStart: number,
   end: number,
   faceCount: number,
-  warnings?: string[],
+  threeDsDrops: Map<string, ThreeDsDropTally> | null,
 ): ThreeDsMaterialGroup | null {
   const name = readNullTerminatedString(view, dataStart, end);
   if (name.length === 0) return null;
   let offset = dataStart + name.length + 1; // past the name and null terminator
   if (offset + 2 > end) {
-    warnings?.push(`createSceneFrom3ds: material group '${name}' is missing its face-index count`);
+    tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Drop, '3ds.material-group-truncated', 'no-count', {
+      firstName: name,
+      reason: 'no-count',
+    });
     return null;
   }
   const groupFaceCount = view.getUint16(offset, true);
   offset += 2;
   if (offset + groupFaceCount * 2 > end) {
-    warnings?.push(
-      `createSceneFrom3ds: material group '${name}' declares ${groupFaceCount} faces but data is truncated`,
-    );
+    tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Drop, '3ds.material-group-truncated', 'truncated', {
+      firstCount: groupFaceCount,
+      firstName: name,
+      reason: 'truncated',
+    });
     return null;
   }
   const faces = new Uint16Array(groupFaceCount);
@@ -357,9 +400,10 @@ function parseFaceMaterialGroup(
     if (faceIndex < faceCount) faces[kept++] = faceIndex;
   }
   if (kept < groupFaceCount) {
-    warnings?.push(
-      `createSceneFrom3ds: material group '${name}' references face indices past the mesh's ${faceCount} faces`,
-    );
+    tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Recover, '3ds.material-group-face-out-of-range', '', {
+      firstFaceCount: faceCount,
+      firstName: name,
+    });
   }
   return { faces: faces.subarray(0, kept), name };
 }
@@ -372,10 +416,12 @@ function parseSmoothingGroups(
   dataStart: number,
   end: number,
   faceCount: number,
-  warnings?: string[],
+  threeDsDrops: Map<string, ThreeDsDropTally> | null,
 ): Uint32Array | null {
   if (dataStart + faceCount * 4 > end) {
-    warnings?.push(`createSceneFrom3ds: smoothing-group sub-chunk declares fewer than ${faceCount} masks; ignoring`);
+    tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Recover, '3ds.smoothing-truncated', '', {
+      firstFaceCount: faceCount,
+    });
     return null;
   }
   const groups = new Uint32Array(faceCount);
@@ -389,17 +435,22 @@ function parseUvCoords(
   view: Readonly<DataView>,
   dataStart: number,
   end: number,
-  warnings?: string[],
+  threeDsDrops: Map<string, ThreeDsDropTally> | null,
 ): Float32Array | null {
   if (dataStart + 2 > end) {
-    warnings?.push('createSceneFrom3ds: UV sub-chunk too small to read count');
+    tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Recover, '3ds.uv-truncated', 'no-count', {
+      reason: 'no-count',
+    });
     return null;
   }
   const count = view.getUint16(dataStart, true);
   const floatsNeeded = count * 2;
   const bytesNeeded = dataStart + 2 + floatsNeeded * 4;
   if (bytesNeeded > end) {
-    warnings?.push(`createSceneFrom3ds: UV sub-chunk declares ${count} entries but data is truncated`);
+    tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Recover, '3ds.uv-truncated', 'truncated', {
+      firstCount: count,
+      reason: 'truncated',
+    });
     return null;
   }
   const uvCoords = new Float32Array(floatsNeeded);
@@ -422,7 +473,7 @@ function appendMeshDocument(
   materials: Readonly<Map<string, ThreeDsMaterial>>,
   materialIndexByName: Map<string, number>,
   document: SceneDocument,
-  warnings?: string[],
+  threeDsDrops: Map<string, ThreeDsDropTally> | null,
 ): void {
   const vertexCount = mesh.vertices.length / 3;
   const faceCount = mesh.faces.length / 3;
@@ -463,9 +514,14 @@ function appendMeshDocument(
     incidentFaces[i2].push(f);
   }
   if (droppedFaces > 0) {
-    warnings?.push(
-      `createSceneFrom3ds: mesh '${mesh.name}' has ${droppedFaces} face(s) with a vertex index past its ${vertexCount} vertices; those faces were dropped`,
-    );
+    // Drop, not Recover: the offending faces are omitted entirely (the mesh keeps its valid faces), so
+    // this mirrors obj.position-index-out-of-range / md2.triangle-vertex-index-out-of-range — the dropped
+    // face is the element the crumb names, not the surviving mesh.
+    tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Drop, '3ds.face-index-out-of-range', '', {
+      firstDroppedFaces: droppedFaces,
+      firstName: mesh.name,
+      firstVertexCount: vertexCount,
+    });
   }
 
   const smoothing = mesh.smoothingGroups;
@@ -776,4 +832,34 @@ function readNullTerminatedString(view: Readonly<DataView>, offset: number, end:
 // Reads the chunk length (uint32 at offset + 2). The length includes the 6-byte header.
 function readChunkLength(view: Readonly<DataView>, offset: number): number {
   return view.getUint32(offset + 2, true);
+}
+
+// One accumulated 3DS chunk-level drop: a total occurrence `count` plus the first offender's `detail`,
+// keyed by kind + discriminator. No origin is stored — the tallies are flushed (physically reported) by
+// parse3ds, so it is every aggregated crumb's origin per the collector's emitting-function contract;
+// `kind` carries the drop-site granularity.
+interface ThreeDsDropTally {
+  count: number;
+  detail: Record<string, boolean | number | string>;
+  kind: string;
+  severity: ImportDiagnosticSeverity;
+}
+
+// Records one offender against its (kind, discriminator) tally — the aggregate-once alternative to a
+// per-chunk/per-mesh `reportImportDiagnostic` while walking the recursive chunk tree. No-op (never
+// allocates) when no collector is engaged. `firstDetail` is kept from the FIRST offender; later ones only
+// bump the count. The discriminator is the categorical sub-reason (never an instance name), so faults of
+// the same kind across many meshes collapse to one crumb.
+function tallyThreeDsDrop(
+  tallies: Map<string, ThreeDsDropTally> | null,
+  severity: ImportDiagnosticSeverity,
+  kind: string,
+  discriminator: string,
+  firstDetail: Record<string, boolean | number | string>,
+): void {
+  if (tallies === null) return;
+  const key = `${kind}|${discriminator}`;
+  const existing = tallies.get(key);
+  if (existing === undefined) tallies.set(key, { count: 1, detail: firstDetail, kind, severity });
+  else existing.count++;
 }
