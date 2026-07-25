@@ -85,7 +85,7 @@ export function render(
 //
 // The oracle samples the ground in the foreground (lit) and the ground directly under the sphere
 // (shadowed) and asserts the under-sphere ground is clearly darker — the signature of a real shadow (an
-// unshadowed scene would light the whole plane uniformly). webgl-only: shadows are a Gl recipe today.
+// unshadowed scene would light the whole plane uniformly). The WebGPU twin exercises the same recipe.
 //
 // createScene exists on both @flighthq/node and @flighthq/scene, so it collides in the @flighthq/sdk
 // barrel — import the 3D scene one directly.

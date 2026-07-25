@@ -27,15 +27,18 @@ function ensureWgpuDepthStencil(state: WgpuRenderState, width: number, height: n
   runtime.depthStencilHeight = height;
 }
 
-export function renderWgpuBackground(state: WgpuRenderState): void {
+/**
+ * Opens the command encoder for a WebGPU frame without opening the canvas render pass.
+ *
+ * Recipes with prerequisite GPU work (for example a directional-shadow depth pass) call this first,
+ * record that work, then call renderWgpuBackground to open the forward canvas pass on the same encoder.
+ * Ordinary render loops can keep calling renderWgpuBackground directly; it begins a frame lazily.
+ */
+export function beginWgpuFrame(state: WgpuRenderState): void {
   const runtime = getWgpuRenderStateRuntime(state);
+  if (runtime.commandEncoder !== null) return;
 
-  // End any previous open pass (safety guard)
-  if (runtime.renderPass !== null) {
-    runtime.renderPass.end();
-    runtime.renderPass = null;
-  }
-
+  runtime.commandEncoder = state.device.createCommandEncoder();
   runtime.uniformOffset = 0;
   // Reclaim the sprite-batch buffer pool from the start of the frame; last frame's submit has been
   // queued, so its slots are safe to overwrite.
@@ -45,8 +48,21 @@ export function renderWgpuBackground(state: WgpuRenderState): void {
   runtime.maskWriteMode = false;
   runtime.currentScissorRect = null;
   runtime.scissorStack = [];
+}
 
-  const device = state.device;
+export function renderWgpuBackground(state: WgpuRenderState): void {
+  const runtime = getWgpuRenderStateRuntime(state);
+
+  // End any previous open pass (safety guard).
+  if (runtime.renderPass !== null) {
+    runtime.renderPass.end();
+    runtime.renderPass = null;
+  }
+
+  // Preserve prerequisite work and its uniform-ring allocations when a recipe opened the frame
+  // explicitly. The common path still creates and resets the frame here.
+  beginWgpuFrame(state);
+
   const canvas = state.canvas;
   const context = state.context;
   const width = canvas.width;
@@ -69,10 +85,7 @@ export function renderWgpuBackground(state: WgpuRenderState): void {
   const clearValue: GPUColor =
     rgba.length >= 4 && rgba[3] > 0 ? { r: rgba[0], g: rgba[1], b: rgba[2], a: rgba[3] } : { r: 0, g: 0, b: 0, a: 0 };
 
-  const commandEncoder = device.createCommandEncoder();
-  runtime.commandEncoder = commandEncoder;
-
-  const renderPass = commandEncoder.beginRenderPass({
+  const renderPass = runtime.commandEncoder!.beginRenderPass({
     colorAttachments: [
       {
         view: canvasView,
@@ -114,7 +127,9 @@ export function submitWgpuRenderPass(state: WgpuRenderState): void {
     }
     // Copy the offscreen capture texture into the readback buffer within this frame's encoder; on the
     // adapters capture exists for, GPU work queued in a later task does not land.
-    encodeWgpuFrameCapture(state, commandEncoder);
+    // A standalone offscreen frame (for example a render-cache bake) has no canvas view and must not
+    // overwrite the capture buffer with the previous visible frame's retained capture texture.
+    if (runtime.canvasTextureView !== null) encodeWgpuFrameCapture(state, commandEncoder);
     device.queue.submit([commandEncoder.finish()]);
     runtime.commandEncoder = null;
 

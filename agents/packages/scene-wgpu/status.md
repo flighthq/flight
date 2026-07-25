@@ -179,9 +179,12 @@ No `joints0` (vec4u, location 4) or `weights0` (vec4f, location 5) vertex attrib
 
 Requires `EnvironmentResources` type in `@flighthq/types`, cubemap upload in `@flighthq/render-wgpu`, and WGSL prelude changes. The `IBL` define-key flag and `wgpuIblPrelude` are the next natural step.
 
-### Shadow mapping (Silver/Gold)
+### Shadow mapping (resolved directional atom)
 
-Requires shadow descriptor types, a depth-only pre-pass pipeline (`drawWgpuShadowPass`), shadow atlas runtime slot, and `wgpuShadowPrelude` for PCF. Should be designed simultaneously with `scene-gl` since both need the same `ShadowMap`/`LightShadowSettings` types.
+`drawWgpuSceneShadowMap` renders a sampleable directional depth map and the PBR, classic, and toon
+preludes PCF-sample it. `beginWgpuFrame` exposes the required encoder-before-canvas-pass window.
+`shadow-directional.webgpu.ts` and `shadow-classic.webgpu.ts` provide real raster proof. Shadow atlases
+and additional shadow-light families remain future composable-pass work shared with GL.
 
 ### Forward light count specialization design decision
 

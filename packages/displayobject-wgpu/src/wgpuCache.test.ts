@@ -27,8 +27,10 @@ let refreshWgpuRenderCache: typeof WgpuCacheModule.refreshWgpuRenderCache;
 let releaseWgpuRenderCache: typeof WgpuCacheModule.releaseWgpuRenderCache;
 let createWgpuRenderStateRuntime: typeof WgpuRenderWgpuModule.createWgpuRenderStateRuntime;
 let getWgpuRenderStateRuntime: typeof WgpuRenderWgpuModule.getWgpuRenderStateRuntime;
+let beginWgpuFrame: typeof WgpuRenderWgpuModule.beginWgpuFrame;
 let destroyWgpuRenderTarget: typeof WgpuRenderWgpuModule.destroyWgpuRenderTarget;
 let drawWgpuRenderTargetResult: typeof WgpuRenderWgpuModule.drawWgpuRenderTargetResult;
+let submitWgpuRenderPass: typeof WgpuRenderWgpuModule.submitWgpuRenderPass;
 let renderWgpuDisplayObject: typeof WgpuDisplayObjectModule.renderWgpuDisplayObject;
 let flushWgpuSpriteBatch: typeof WgpuSpriteBatchModule.flushWgpuSpriteBatch;
 
@@ -47,6 +49,9 @@ beforeAll(async () => {
     const actual = await importOriginal<typeof WgpuRenderWgpuModule>();
     return {
       ...actual,
+      beginWgpuFrame: vi.fn((state: WgpuRenderState) => {
+        getWgpuRenderStateRuntime(state).commandEncoder = {} as GPUCommandEncoder;
+      }),
       beginWgpuRenderPass: vi.fn(),
       setWgpuRenderTransform2D: vi.fn(),
       createWgpuRenderTarget: vi.fn(
@@ -70,6 +75,9 @@ beforeAll(async () => {
         target.width = width;
         target.height = height;
       }),
+      submitWgpuRenderPass: vi.fn((state: WgpuRenderState) => {
+        getWgpuRenderStateRuntime(state).commandEncoder = null;
+      }),
     };
   });
   vi.doMock('./wgpuDisplayObject', async (importOriginal) => {
@@ -77,8 +85,14 @@ beforeAll(async () => {
     return { ...actual, renderWgpuDisplayObject: vi.fn() };
   });
 
-  ({ createWgpuRenderStateRuntime, getWgpuRenderStateRuntime, destroyWgpuRenderTarget, drawWgpuRenderTargetResult } =
-    await import('@flighthq/render-wgpu'));
+  ({
+    beginWgpuFrame,
+    createWgpuRenderStateRuntime,
+    destroyWgpuRenderTarget,
+    drawWgpuRenderTargetResult,
+    getWgpuRenderStateRuntime,
+    submitWgpuRenderPass,
+  } = await import('@flighthq/render-wgpu'));
   ({ flushWgpuSpriteBatch } = await import('./wgpuSpriteBatch'));
   ({ renderWgpuDisplayObject } = await import('./wgpuDisplayObject'));
   ({
@@ -96,7 +110,9 @@ function fakeScreen(options = {}): WgpuRenderState {
   const state = createRenderState(options) as unknown as WgpuRenderState;
   (state as any).device = {} as GPUDevice;
   state[EntityRuntimeKey] = createWgpuRenderStateRuntime();
-  getWgpuRenderStateRuntime(state).currentBlendMode = null;
+  const runtime = getWgpuRenderStateRuntime(state);
+  runtime.commandEncoder = null;
+  runtime.currentBlendMode = null;
   return state;
 }
 
@@ -198,6 +214,28 @@ describe('getWgpuRenderCacheTarget', () => {
 });
 
 describe('refreshWgpuRenderCache', () => {
+  it('opens and submits a standalone frame when called outside the visible frame', () => {
+    const screen = fakeScreen();
+    const cacheState = createWgpuCacheState(screen);
+    refreshWgpuRenderCache(cacheState, createRenderCache(), createDisplayObject(), { padding: 5 });
+    expect(beginWgpuFrame).toHaveBeenCalledWith(screen);
+    expect(submitWgpuRenderPass).toHaveBeenCalledWith(screen);
+    expect(getWgpuRenderStateRuntime(screen).commandEncoder).toBeNull();
+  });
+
+  it('records into an active application frame without submitting it', () => {
+    const screen = fakeScreen();
+    const encoder = {} as GPUCommandEncoder;
+    getWgpuRenderStateRuntime(screen).commandEncoder = encoder;
+    const cacheState = createWgpuCacheState(screen);
+    vi.mocked(beginWgpuFrame).mockClear();
+    vi.mocked(submitWgpuRenderPass).mockClear();
+    refreshWgpuRenderCache(cacheState, createRenderCache(), createDisplayObject(), { padding: 5 });
+    expect(beginWgpuFrame).not.toHaveBeenCalled();
+    expect(submitWgpuRenderPass).not.toHaveBeenCalled();
+    expect(getWgpuRenderStateRuntime(screen).commandEncoder).toBe(encoder);
+  });
+
   it('bakes on the first call and allocates the target on the screen state', () => {
     const screen = fakeScreen();
     const cacheState = createWgpuCacheState(screen);

@@ -9,10 +9,10 @@
 // empty gap (expecting background), so a cache that bakes nothing, mis-places, or mis-colors the result
 // fails.
 //
-// The engine bake (offscreen cache state + refresh) is driven from outside the harness frame loop, which
-// the canvas and webgl backends support directly. The dom and webgpu backends bake inside their own frame
-// (dom rasterizes a cache canvas itself; webgpu needs a live command encoder), so for those this test
-// renders the subtree directly — the same visible result the oracle checks.
+// The engine bake (offscreen cache state + refresh) is driven from outside the harness frame loop.
+// Canvas, WebGL, and WebGPU all support that contract; WebGPU opens a standalone command encoder for the
+// bake and submits it before the visible frame. DOM rasterizes its cache canvas inside its own frame, so
+// this shared scene keeps the direct subtree path there.
 import type { DisplayObject, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -24,9 +24,11 @@ import {
   createGlCacheState,
   createRenderCache,
   createShape,
+  createWgpuCacheState,
   getSurfacePixelRgb,
   refreshCanvasRenderCache,
   refreshGlRenderCache,
+  refreshWgpuRenderCache,
   ShapeKind,
   useRenderCache,
 } from '@flighthq/sdk';
@@ -87,6 +89,11 @@ if (target.kind === 'canvas') {
   const cache = createRenderCache();
   const cacheState = createGlCacheState(target.state);
   refreshGlRenderCache(cacheState, cache, subtree);
+  useRenderCache(target.state, subtree, cache);
+} else if (target.kind === 'webgpu') {
+  const cache = createRenderCache();
+  const cacheState = createWgpuCacheState(target.state);
+  refreshWgpuRenderCache(cacheState, cache, subtree);
   useRenderCache(target.state, subtree, cache);
 }
 

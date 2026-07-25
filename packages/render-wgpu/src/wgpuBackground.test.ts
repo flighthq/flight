@@ -1,9 +1,30 @@
-import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
+import { beginWgpuFrame, renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
 
 beforeAll(() => {
   installWgpuMock();
+});
+
+describe('beginWgpuFrame', () => {
+  it('opens an encoder without opening the canvas pass', async () => {
+    const state = await createWgpuRenderStateForTest();
+    beginWgpuFrame(state);
+    const runtime = getWgpuRenderStateRuntime(state);
+    expect(runtime.commandEncoder).not.toBeNull();
+    expect(runtime.renderPass).toBeNull();
+  });
+
+  it('does not replace an active encoder or reset its uniform allocations', async () => {
+    const state = await createWgpuRenderStateForTest();
+    beginWgpuFrame(state);
+    const runtime = getWgpuRenderStateRuntime(state);
+    const encoder = runtime.commandEncoder;
+    runtime.uniformOffset = 512;
+    beginWgpuFrame(state);
+    expect(runtime.commandEncoder).toBe(encoder);
+    expect(runtime.uniformOffset).toBe(512);
+  });
 });
 
 describe('renderWgpuBackground', () => {
@@ -27,6 +48,18 @@ describe('renderWgpuBackground', () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
     expect(getWgpuRenderStateRuntime(state).commandEncoder).not.toBeNull();
+  });
+
+  it('opens the canvas pass on an explicitly begun frame without resetting its uniform allocations', async () => {
+    const state = await createWgpuRenderStateForTest();
+    beginWgpuFrame(state);
+    const runtime = getWgpuRenderStateRuntime(state);
+    const encoder = runtime.commandEncoder;
+    runtime.uniformOffset = 512;
+    renderWgpuBackground(state);
+    expect(runtime.commandEncoder).toBe(encoder);
+    expect(runtime.uniformOffset).toBe(512);
+    expect(runtime.renderPass).not.toBeNull();
   });
 });
 

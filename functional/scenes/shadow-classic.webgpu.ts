@@ -1,68 +1,49 @@
 import { createScene } from '@flighthq/scene';
-import { drawGlScene, drawGlSceneShadowMap } from '@flighthq/scene-gl';
-import type { Camera3D, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import { drawWgpuScene, drawWgpuSceneShadowMap } from '@flighthq/scene-wgpu';
+import type { Camera3D, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
-  beginGlRenderEffectPipeline,
+  beginWgpuFrame,
   configureDirectionalShadowCamera3D,
   createAabb,
   createAmbientLight,
   createBlinnPhongMaterial,
   createCamera3D,
   createDirectionalLight,
-  createGlCanvasElement,
-  createGlRenderEffectPipeline,
-  createGlRenderState,
   createMesh,
   createOrthographicProjection,
   createPerspectiveProjection,
   createPlaneMeshGeometry,
   createSphereMeshGeometry,
   createVector3,
-  endGlRenderEffectPipeline,
+  createWgpuCanvasElement,
+  createWgpuRenderState,
   getSceneNodeWorldBounds,
   getSurfacePixelLuminance,
   invalidateNodeLocalTransform,
   prepareSceneRender,
-  registerBlinnPhongGlMaterial,
-  renderGlBackground,
+  registerBlinnPhongWgpuMaterial,
+  renderWgpuBackground,
   setCamera3DViewMatrix4FromLookAt,
   setVector3,
+  submitWgpuRenderPass,
 } from '@flighthq/sdk';
-
-// shadow-classic — proves the directional shadow map is RECEIVED by the classic (Blinn-Phong) material
-// family, not just PBR: the same sphere-over-plane recipe as shadow-directional but shaded with
-// createBlinnPhongMaterial. Before the classic prelude sampled sampleDirectionalShadow on its directional
-// term, this ground would light uniformly; now the ground under the sphere is darkened like the PBR case.
-// This is the exact family the downstream scene used (metals render black without IBL, so it fell back to
-// Blinn-Phong) — the reason classic shadow reception was wired.
-//
-// The WebGPU twin uses beginWgpuFrame to open its encoder before the shadow pass, then opens the canvas
-// pass with renderWgpuBackground on that same encoder.
-//
-// createScene / drawGlScene collide in the @flighthq/sdk barrel (both scene + scene-gl re-export them) —
-// import the Gl 3D ones directly. Pipeline wiring mirrors shadow-directional.
+import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createGlCanvasElement(800, 600, pixelRatio);
+const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = createGlRenderState(canvas, {
+export const state = await createWgpuRenderState(canvas, {
   pixelRatio,
   backgroundColor: 0x0a0c10ff,
-  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
-registerBlinnPhongGlMaterial(state);
-
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
-  sampleCount: 4,
-  format: 'rgba16f',
-  depth: 'depth-stencil',
-});
+registerBlinnPhongWgpuMaterial(state);
 
 export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
+registerWgpuFunctionalTarget(state, scale);
 
 export function render(
   scene: Readonly<SceneNode>,
@@ -70,27 +51,17 @@ export function render(
   lights: Readonly<SceneLights>,
   shadowCamera: Readonly<Camera3D>,
 ): void {
-  // 1) Depth pass from the light's POV into the shadow map.
-  drawGlSceneShadowMap(state, scene, shadowCamera);
-
-  // 2) Forward-lit pass; the classic prelude's directional term PCF-samples the shadow map set above.
-  beginGlRenderEffectPipeline(state, pipeline);
-  renderGlBackground(state);
-  const gl = state.gl;
-  gl.depthMask(true);
-  gl.clearDepth(1);
-  gl.clear(gl.DEPTH_BUFFER_BIT);
+  beginWgpuFrame(state);
+  drawWgpuSceneShadowMap(state, scene, shadowCamera);
+  renderWgpuBackground(state);
   prepareSceneRender(state, scene, camera, lights);
-  drawGlScene(state, scene, camera, lights);
-  endGlRenderEffectPipeline(state, pipeline, []);
+  drawWgpuScene(state, scene, camera, lights);
+  submitWgpuRenderPass(state);
 }
 
 const logicalWidth = width / scale;
 const logicalHeight = height / scale;
-
-// Diffuse-dominant Blinn-Phong (low specular) so the lit ground is a broad even bright the shadow darkens.
 const material = createBlinnPhongMaterial({ diffuse: 0xb8b8b8ff, shininess: 16, specular: 0x101010ff });
-
 const scene = createScene().root;
 
 const ground = createMesh(createPlaneMeshGeometry(8, 8), [material]);
@@ -113,7 +84,6 @@ const lights = {
   ambient: createAmbientLight({ color: 0x404040ff, intensity: 0.12 }),
   directional: createDirectionalLight({ color: 0xffffffff, direction, intensity: 3 }),
 };
-
 const sceneBounds = createAabb();
 getSceneNodeWorldBounds(sceneBounds, scene);
 const shadowCamera = createCamera3D({
@@ -127,8 +97,6 @@ render(scene, camera, lights, shadowCamera);
 
 export function assertRender(surface: Readonly<Surface>): void {
   const cx = Math.floor(surface.width / 2);
-  // Same sampling geometry as shadow-directional: lit ground in the near foreground (90% height) vs the
-  // shadowed ground directly under the sphere (~56% height). Classic reception darkens the latter.
   const litLuminance = getSurfacePixelLuminance(surface, cx, Math.floor(surface.height * 0.9));
   const shadowLuminance = getSurfacePixelLuminance(surface, cx, Math.floor(surface.height * 0.56));
 
@@ -137,7 +105,7 @@ export function assertRender(surface: Readonly<Surface>): void {
   }
   if (shadowLuminance + 32 >= litLuminance) {
     throw new Error(
-      `[shadow-classic] no shadow: ground under the sphere (${shadowLuminance}) is not clearly darker than the lit ground (${litLuminance}) — classic material did not receive the shadow`,
+      `[shadow-classic] no shadow: ground under the sphere (${shadowLuminance}) is not clearly darker than the lit ground (${litLuminance})`,
     );
   }
 }

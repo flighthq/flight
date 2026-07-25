@@ -215,9 +215,9 @@ unsupported cases is largely unbuilt for the gaps that most need it.
 | Darken/Lighten (MIN/MAX) | Can't fold `(1-src.a)` on gl/wgpu → transparent surround darkens/clips backdrop at edges | gl/wgpu | MAJOR |
 | Group/container `blendMode` | Whole-subtree flatten unverified/likely absent; no render-to-texture group-blend path found | all | MAJOR |
 | Sprite/QuadBatch/Tilemap on DOM | No DOM renderer — renders nothing | dom | MAJOR |
-| wgpu 2D-blend parity covered | `node-blend-modes` has no `.webgpu.ts` baseline; orthographic now has one | wgpu | MAJOR |
+| wgpu 2D-blend parity covered | RESOLVED — all six fixed Shape states plus Bitmap Multiply are asserted in `node-blend-modes.webgpu.ts` | wgpu | RESOLVED |
 | Text strikethrough | No `strikethrough` branch in `glRichText.ts:170`/`wgpuRichText.ts:184` | gl/wgpu | MINOR |
-| cacheAsBitmap out-of-frame; atlas pivot | Bakes in-frame on dom/wgpu; `TextureAtlasRegion.pivotX/Y` never read | dom/wgpu | MINOR |
+| cacheAsBitmap out-of-frame; atlas pivot | WebGPU out-of-frame bake RESOLVED with a standalone encoder and `displayobject-cache` raster proof; DOM still bakes in-frame and `TextureAtlasRegion.pivotX/Y` remains unread | dom | MINOR |
 
 ### Materials, Shading, Effects & Adjustments
 
@@ -229,7 +229,7 @@ unsupported cases is largely unbuilt for the gaps that most need it.
 | ShadedMaterial + modifiers cross-backend | `@flighthq/shading` modifier tier (fresnel/normalPerturb/emissive/envReflect/fog/vertexDisplace/dissolve/toon) is realized by `shadedGlMeshMaterialRenderer` and `shadedWgpuMeshMaterialRenderer`, with tangent-space normal mapping on both. `shading-globe` and `shading-normal-map` carry WebGPU raster proof ([wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) §4). | gl, wgpu | RESOLVED |
 | customShader material/effect escape hatch on GPU | gl-only; no `customShader…Wgpu…`, no `wgpuCustomShaderEffect`; 3D particles gl-only too | gl only | MAJOR |
 | Saturation/hue/sepia/channel-mix fold onto sprites | Inline GPU fold is affine-only; off-diagonal terms dropped unless re-routed as full-frame Effect (`colorAdjustmentResolution.ts:67`); guard is opt-in so drop is silent; no canvas inline fold | gl/wgpu partial, canvas none | MAJOR |
-| Punctual lights/shadows verified on wgpu; ortho; area lights | Light/shadow scenes are `.webgl.ts` only (no wgpu baseline); ortho blank on wgpu; area lights descriptor-only, unwired | wgpu / all | MAJOR |
+| Punctual lights/shadows verified on wgpu; ortho; area lights | WebGPU point/spot/hemisphere selection, directional shadows (PBR + classic), and ortho are RESOLVED with raster proofs; area lights remain descriptor-only on all backends | all | MAJOR |
 
 ### Lighting & 3D Scene
 

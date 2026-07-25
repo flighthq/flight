@@ -1,0 +1,111 @@
+import { createScene } from '@flighthq/scene';
+import { drawWgpuScene, drawWgpuSceneShadowMap } from '@flighthq/scene-wgpu';
+import type { Camera3D, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import {
+  addNodeChild,
+  beginWgpuFrame,
+  configureDirectionalShadowCamera3D,
+  createAabb,
+  createAmbientLight,
+  createCamera3D,
+  createDirectionalLight,
+  createMesh,
+  createOrthographicProjection,
+  createPerspectiveProjection,
+  createPlaneMeshGeometry,
+  createSphereMeshGeometry,
+  createStandardPbrMaterial,
+  createVector3,
+  createWgpuCanvasElement,
+  createWgpuRenderState,
+  getSceneNodeWorldBounds,
+  getSurfacePixelLuminance,
+  invalidateNodeLocalTransform,
+  prepareSceneRender,
+  registerStandardPbrWgpuMaterial,
+  renderWgpuBackground,
+  setCamera3DViewMatrix4FromLookAt,
+  setVector3,
+  submitWgpuRenderPass,
+} from '@flighthq/sdk';
+import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+const pixelRatio = window.devicePixelRatio || 1;
+const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
+document.body.appendChild(canvas);
+
+export const state = await createWgpuRenderState(canvas, {
+  pixelRatio,
+  backgroundColor: 0x0a0c10ff,
+});
+registerStandardPbrWgpuMaterial(state);
+
+export const scale = pixelRatio;
+export const width = 800;
+export const height = 600;
+registerWgpuFunctionalTarget(state, scale);
+
+export function render(
+  scene: Readonly<SceneNode>,
+  camera: Readonly<Camera3D>,
+  lights: Readonly<SceneLights>,
+  shadowCamera: Readonly<Camera3D>,
+): void {
+  beginWgpuFrame(state);
+  drawWgpuSceneShadowMap(state, scene, shadowCamera);
+  renderWgpuBackground(state);
+  prepareSceneRender(state, scene, camera, lights);
+  drawWgpuScene(state, scene, camera, lights);
+  submitWgpuRenderPass(state);
+}
+
+const logicalWidth = width / scale;
+const logicalHeight = height / scale;
+const material = createStandardPbrMaterial({ baseColor: 0xb8b8b8ff, metallic: 0, roughness: 0.8 });
+const scene = createScene().root;
+
+const ground = createMesh(createPlaneMeshGeometry(8, 8), [material]);
+addNodeChild(scene, ground);
+
+const sphere = createMesh(createSphereMeshGeometry(0.7, 32, 24), [material]);
+setVector3(sphere.position, 0, 1.3, 0);
+invalidateNodeLocalTransform(sphere);
+addNodeChild(scene, sphere);
+
+const camera = createCamera3D({
+  far: 100,
+  near: 0.1,
+  projection: createPerspectiveProjection({ aspect: logicalWidth / logicalHeight, fovY: Math.PI / 4 }),
+});
+setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 3, 5), createVector3(0, 0.4, 0), createVector3(0, 1, 0));
+
+const direction = createVector3(0, -1, 0);
+const lights = {
+  ambient: createAmbientLight({ color: 0x404040ff, intensity: 0.12 }),
+  directional: createDirectionalLight({ color: 0xffffffff, direction, intensity: 3 }),
+};
+const sceneBounds = createAabb();
+getSceneNodeWorldBounds(sceneBounds, scene);
+const shadowCamera = createCamera3D({
+  far: 100,
+  near: 0.1,
+  projection: createOrthographicProjection({ halfHeight: 1, halfWidth: 1 }),
+});
+configureDirectionalShadowCamera3D(shadowCamera, direction, sceneBounds);
+
+render(scene, camera, lights, shadowCamera);
+
+export function assertRender(surface: Readonly<Surface>): void {
+  const cx = Math.floor(surface.width / 2);
+  const litLuminance = getSurfacePixelLuminance(surface, cx, Math.floor(surface.height * 0.9));
+  const shadowLuminance = getSurfacePixelLuminance(surface, cx, Math.floor(surface.height * 0.56));
+
+  if (litLuminance <= 24) {
+    throw new Error(`[shadow-directional] ground is blank (luminance ${litLuminance}) — scene did not render`);
+  }
+  if (shadowLuminance + 32 >= litLuminance) {
+    throw new Error(
+      `[shadow-directional] no shadow: ground under the sphere (${shadowLuminance}) is not clearly darker than the lit ground (${litLuminance})`,
+    );
+  }
+}
