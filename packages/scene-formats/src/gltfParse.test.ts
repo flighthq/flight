@@ -1312,6 +1312,28 @@ describe('createSceneFromGltf', () => {
     expect(inverseBind?.[1]).toBe(0);
   });
 
+  it('recovers to identity inverse-bind matrices when the accessor has too few for the joints', () => {
+    // A present IBM accessor with count 0 covers none of the skin's one joint. Filling the missing joint
+    // with a zero matrix would collapse the mesh to the origin, so recover to identity (bind pose) for the
+    // joint and Recover-crumb the mismatch rather than emit a corrupt palette.
+    const doc = makeSkinnedGltf(true);
+    doc.accessors![3].count = 0; // inverse-bind-matrices accessor: zero matrices for one joint
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.skin-ibm-count-mismatch');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(crumb!.detail?.firstExpected).toBe(1);
+    expect(crumb!.detail?.firstActual).toBe(0);
+    const inverseBind = (getNodeChildren(scene.root)[0] as unknown as Mesh).skin?.skeleton.inverseBindMatrices;
+    expect(inverseBind?.[0]).toBe(1);
+    expect(inverseBind?.[5]).toBe(1);
+    expect(inverseBind?.[10]).toBe(1);
+    expect(inverseBind?.[15]).toBe(1);
+    expect(inverseBind?.[1]).toBe(0);
+  });
+
   it('leaves an unskinned primitive on the canonical layout with no skin', () => {
     const scene = createSceneFromGltf(makeTriangleGltf());
     const meshNode = getNodeChildren(scene.root)[0] as unknown as Mesh;
@@ -1804,6 +1826,38 @@ describe('gltf diagnostics coverage', () => {
     expect(crumb!.detail?.firstTarget).toBe(0);
   });
 
+  it('drops the whole morph set (not just the target) when a POSITION delta count mismatches the base', () => {
+    // The morph target's POSITION delta accessor has count 1 against the base mesh's 3 vertices. A shorter
+    // delta would blend past the base vertices, and dropping just this target would renumber the survivors,
+    // so the WHOLE morph set drops (Drop) — the mesh keeps its base geometry but carries no morph.
+    const doc = makeMorphGltf();
+    doc.accessors![2].count = 1; // position-deltas accessor: 1 delta vs 3 base vertices
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.morph-target-count-mismatch');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.detail?.firstExpected).toBe(3);
+    expect(crumb!.detail?.firstActual).toBe(1);
+    expect((getNodeChildren(scene.root)[0] as unknown as Mesh).morph ?? null).toBeNull();
+  });
+
+  it('drops the whole morph set when any target faults so weight/target correspondence stays honest', () => {
+    // Two targets whose weights are [0.25, 0.75]. Target 0's POSITION delta faults; dropping only it would
+    // slide weight 0.75 onto index 0. Instead the whole set drops (Drop), so target↔weight↔animation indexing
+    // never desynchronizes.
+    const doc = makeMorphGltf();
+    doc.meshes![0].primitives[0].targets = [{ POSITION: 99 }, { POSITION: 2 }]; // target 0 → missing accessor
+    doc.meshes![0].weights = [0.25, 0.75];
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.morph-target-no-position');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.detail?.firstTarget).toBe(0);
+    expect((getNodeChildren(scene.root)[0] as unknown as Mesh).morph ?? null).toBeNull();
+  });
+
   it('recovers and reports gltf.buffer-empty (no-uri) for a uri-less buffer on the JSON path', () => {
     const doc = makeTriangleGltf();
     doc.buffers = [{ byteLength: 4 }]; // no uri, and no GLB binary on the JSON path
@@ -1834,6 +1888,48 @@ describe('gltf diagnostics coverage', () => {
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
     for (const value of geometry.vertices) expect(Number.isFinite(value)).toBe(true);
+  });
+
+  it('recovers and reports gltf.accessor-count-mismatch for an optional attribute shorter than POSITION', () => {
+    // A NORMAL accessor with count 1 against POSITION count 3 reads within the buffer (no past-buffer fault)
+    // but its element count mismatches, so it is treated as absent (finite zero-fill) and Recover-crumbed with
+    // the expected/actual counts.
+    const doc = makeTriangleGltf();
+    doc.accessors!.push({ bufferView: 0, componentType: 5126, count: 1, type: 'VEC3' });
+    doc.meshes![0].primitives[0].attributes.NORMAL = 2;
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.accessor-count-mismatch');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(crumb!.detail?.firstExpected).toBe(3);
+    expect(crumb!.detail?.firstActual).toBe(1);
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
+    expect(getMeshGeometryVertexCount(geometry)).toBe(3);
+    for (const value of geometry.vertices) expect(Number.isFinite(value)).toBe(true);
+  });
+
+  it('drops an animation channel with an empty sampler instead of creating an empty track', () => {
+    // A sampler whose time+value accessors are count 0 has no keyframes — no usable track survives, so the
+    // channel drops (Drop). With that its only channel gone, the animation is not created at all.
+    const doc = makeChannelGltf({
+      interpolation: 'LINEAR',
+      output: new Float32Array([0, 0, 0, 1]),
+      outputCount: 1,
+      outputType: 'VEC4',
+      path: 'rotation',
+      times: new Float32Array([0]),
+    });
+    doc.accessors![1].count = 0; // times accessor → empty
+    doc.accessors![2].count = 0; // output accessor → empty
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.animation-sampler-empty');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(Object.keys(scene.animations)).toHaveLength(0);
   });
 
   it('recovers and reports gltf.sparse-bufferview-not-found for a bad sparse bufferView', () => {

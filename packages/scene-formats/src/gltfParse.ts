@@ -10,7 +10,7 @@ import {
 import { detectImageMimeType } from '@flighthq/image-codec';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
 import { createStandardPbrMaterial } from '@flighthq/materials';
-import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh';
+import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, createMeshGeometry, getMeshGeometryVertexCount } from '@flighthq/mesh';
 import { createSceneFromDocument, createScenesFromDocument } from '@flighthq/scene';
 import { createTexture } from '@flighthq/texture';
 import type { Scene } from '@flighthq/types';
@@ -242,7 +242,14 @@ function buildGltfDocument(
       // position crumb already fired) — it produces no document mesh, so a mesh whose every primitive drops
       // becomes a bare node with no children.
       if (geometry === null) continue;
-      const morph = buildGltfMorph(doc, buffers, primitive, gltfMesh.weights, gltfDrops);
+      const morph = buildGltfMorph(
+        doc,
+        buffers,
+        primitive,
+        gltfMesh.weights,
+        getMeshGeometryVertexCount(geometry),
+        gltfDrops,
+      );
       const documentMesh: SceneDocumentMesh = {
         geometry,
         materials: primitive.material !== undefined ? [primitive.material] : [],
@@ -586,6 +593,15 @@ function buildGltfSkins(
         // matrix (which would send the mesh to the origin). Degraded-but-usable = Recover.
         reportGltfAccessorFault(gltfDrops, ImportDiagnosticSeverity.Recover, ibm.fault);
         for (let j = 0; j < joints.length; j++) inverseBind.push({ m: identityMatrix16() });
+      } else if (ibm.count < joints.length) {
+        // Present but too few matrices to cover every joint: filling the missing joints with a zero matrix
+        // would collapse the mesh, so recover to identity for ALL joints (bind pose) rather than a partial,
+        // corrupt palette. Recover — the skin stays usable.
+        tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.skin-ibm-count-mismatch', '', {
+          firstActual: ibm.count,
+          firstExpected: joints.length,
+        });
+        for (let j = 0; j < joints.length; j++) inverseBind.push({ m: identityMatrix16() });
       } else {
         const flat = ibm.data;
         for (let j = 0; j < joints.length; j++) {
@@ -647,6 +663,15 @@ function buildGltfAnimations(
       }
       const times = inputResult.data;
       const values = outputResult.data;
+      if (times.length === 0 || values.length === 0 || values.length % times.length !== 0) {
+        // A usable track needs at least one keyframe and a value count that is a whole multiple of the
+        // keyframe count (one output tuple per keyframe). An empty or ragged sampler yields no usable track,
+        // so drop the channel (Drop) rather than create an animation with an empty channel.
+        tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.animation-sampler-empty', '', {
+          firstSampler: channel.sampler,
+        });
+        continue;
+      }
       duration = Math.max(duration, times.length > 0 ? times[times.length - 1] : 0);
 
       if (channel.target.path === 'weights') {
@@ -1207,11 +1232,17 @@ function buildGltfTriangleFanIndices(
 // `w` is not morphed), so the tangent delta is copied as 3 floats per vertex. `weights` seeds the live
 // weight array from the mesh's default weights (spec: mesh.weights), zero-filled when absent; a
 // `weights` animation channel overrides it at runtime.
+//
+// Target index is identity: the Nth target corresponds to mesh.weights[N] and to weight-animation output
+// index N. So an invalid target is NOT dropped in isolation (that would renumber the survivors and shift
+// every weight/animation correspondence); the WHOLE morph set is dropped instead, keeping indexing honest.
+// A target is valid only when its POSITION delta reads cleanly with exactly `baseVertexCount` elements.
 function buildGltfMorph(
   doc: Readonly<GltfDocument>,
   buffers: readonly Uint8Array[],
   primitive: Readonly<GltfPrimitive>,
   meshWeights: readonly number[] | undefined,
+  baseVertexCount: number,
   gltfDrops: Map<string, GltfDropTally> | null,
 ): MeshMorph | null {
   const gltfTargets = primitive.targets;
@@ -1224,27 +1255,35 @@ function buildGltfMorph(
       tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.morph-target-no-position', '', {
         firstTarget: t,
       });
-      continue;
+      return null;
     }
-    // A target's POSITION delta is mandatory like the base primitive's: unreadable or empty means no valid
-    // deformation, so drop just this target (Drop, matching the no-POSITION case) rather than push a delta
-    // that reads NaN past its end. Optional NORMAL/TANGENT deltas degrade to absent (Recover).
     const positionResult = readAccessor(doc, buffers, target.POSITION, gltfDrops);
-    if (positionResult.fault !== null || positionResult.count === 0) {
+    if (positionResult.fault !== null) {
       tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.morph-target-no-position', '', {
         firstTarget: t,
       });
-      continue;
+      return null;
+    }
+    if (positionResult.count !== baseVertexCount) {
+      // A delta shorter or longer than the base mesh would blend past the base vertices (NaN) or leave
+      // vertices unmorphed — not a usable target, and it invalidates the index correspondence, so drop the
+      // whole set (Drop) rather than keep a mismatched target.
+      tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.morph-target-count-mismatch', '', {
+        firstActual: positionResult.count,
+        firstExpected: baseVertexCount,
+        firstTarget: t,
+      });
+      return null;
     }
     const positionDeltas = Float32Array.from(positionResult.data);
-    const normal = readOptionalGltfAttribute(doc, buffers, target.NORMAL, positionResult.count, gltfDrops);
-    const tangent = readOptionalGltfAttribute(doc, buffers, target.TANGENT, positionResult.count, gltfDrops);
+    const normal = readOptionalGltfAttribute(doc, buffers, target.NORMAL, baseVertexCount, gltfDrops);
+    const tangent = readOptionalGltfAttribute(doc, buffers, target.TANGENT, baseVertexCount, gltfDrops);
     const normalDeltas = normal !== null ? Float32Array.from(normal.data) : null;
     const tangentDeltas = tangent !== null ? Float32Array.from(tangent.data) : null;
     targets.push({ normalDeltas, positionDeltas, tangentDeltas });
   }
-  if (targets.length === 0) return null;
 
+  // Every target survived, so targets index-aligns 1:1 with gltfTargets and with mesh.weights.
   const weights = new Float32Array(targets.length);
   if (meshWeights !== undefined) {
     for (let i = 0; i < weights.length && i < meshWeights.length; i++) weights[i] = meshWeights[i];
@@ -1283,7 +1322,8 @@ function reportGltfAccessorFault(
 // treated as absent, so the vertex loop zero-fills its slots with finite defaults — when the index is
 // undefined, when the accessor faults (Recover-crumbed: the mesh stays drawable without it), or when its
 // element count does not match the primitive's vertex count (a count mismatch would read past the shorter
-// array into non-finite territory). A present, correctly-sized attribute returns its decoded data.
+// array into non-finite territory; also Recover-crumbed with the expected/actual counts). A present,
+// correctly-sized attribute returns its decoded data.
 function readOptionalGltfAttribute(
   doc: Readonly<GltfDocument>,
   buffers: readonly Uint8Array[],
@@ -1297,7 +1337,13 @@ function readOptionalGltfAttribute(
     reportGltfAccessorFault(gltfDrops, ImportDiagnosticSeverity.Recover, result.fault);
     return null;
   }
-  if (result.count !== vertexCount) return null;
+  if (result.count !== vertexCount) {
+    reportGltfAccessorFault(gltfDrops, ImportDiagnosticSeverity.Recover, {
+      detail: { firstAccessor: index, firstActual: result.count, firstExpected: vertexCount },
+      kind: 'gltf.accessor-count-mismatch',
+    });
+    return null;
+  }
   return { data: result.data };
 }
 
