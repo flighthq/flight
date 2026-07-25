@@ -7,6 +7,7 @@ import {
   compileWgpuClassicPipeline,
   ensureWgpuClassicPipeline,
   getWgpuClassicModuleSourceForKey,
+  getWgpuClassicSharedSamplerModuleSourceForKey,
 } from './wgpuClassicPrelude';
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 import { makeWgpuSceneState, makeWgpuSkinningAdapter } from './wgpuSceneTestHelper';
@@ -139,6 +140,15 @@ describe('getWgpuClassicModuleSourceForKey', () => {
     expect(getWgpuClassicModuleSourceForKey(makeKey('blinnphong'), true, makeWgpuSkinningAdapter())).toContain(
       '@group(1) @binding(1) var jointTexture',
     );
+  });
+
+  it('retains the legacy shared-sampler binding contract for shaded composition', () => {
+    const source = getWgpuClassicSharedSamplerModuleSourceForKey(makeKey('blinnphong'));
+    expect(source).toContain('@group(2) @binding(1) var materialSampler : sampler;');
+    expect(source).toContain('@group(2) @binding(2) var diffuseTexture : texture_2d<f32>;');
+    expect(source).toContain('@group(2) @binding(5) var alphaTexture : texture_2d<f32>;');
+    expect(source).toContain('textureSample(normalTexture, materialSampler, in.uv)');
+    expect(source).not.toContain('diffuseSampler');
   });
 
   it('declares the group(3) shadow bindings and shadow-maps the directional term', () => {
