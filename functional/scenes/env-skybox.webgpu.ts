@@ -30,7 +30,7 @@ import {
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // WebGPU mirror of env-skybox.webgl: distinct procedural cube faces must vary across reconstructed
-// view rays, and opaque geometry must remain in front of the backdrop.
+// view rays rather than collapsing to a flat backdrop.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

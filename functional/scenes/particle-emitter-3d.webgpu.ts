@@ -22,7 +22,7 @@ import {
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Real-WebGPU proof for the ParticleEmitter3D path that drawWgpuScene invokes automatically. Three
-// untextured camera-facing instances carry independent positions, scales, rotations, and color tints.
+// untextured camera-facing instances carry independent positions and color tints.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
