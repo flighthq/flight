@@ -203,6 +203,12 @@ describe('createWgpuTextureEntry', () => {
   });
 });
 
+describe('destroyWgpuVideoTexture', () => {
+  it('is the public disposal entry point for dynamic video uploads', () => {
+    expect(typeof destroyWgpuVideoTexture).toBe('function');
+  });
+});
+
 describe('drawWgpuQuad', () => {
   it('does not throw when render pass is open', async () => {
     const state = await createWgpuRenderStateForTest();
