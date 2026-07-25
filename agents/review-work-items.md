@@ -21,20 +21,20 @@ Additionally: smoke test fix already committed (favicon 404), orphaned baselines
 
 ## Context
 
-`@flighthq/scene3d-formats` currently implements glTF 2.0 JSON and GLB parsing (`createSceneFromGltf`, `createSceneFromGlb`). The charter names OBJ and USD as future targets; the user has expanded scope to include legacy formats (AWD, 3DS, MD5, MD2, FBX) under the "whole hardware store" directive. All parsers live in this package, not separate ones (charter Decision 2026-07-03: "mesh-formats is NOT a separate package").
+`@flighthq/scene3d-formats` currently implements glTF 2.0 JSON and GLB parsing (`createScene3DFromGltf`, `createScene3DFromGlb`). The charter names OBJ and USD as future targets; the user has expanded scope to include legacy formats (AWD, 3DS, MD5, MD2, FBX) under the "whole hardware store" directive. All parsers live in this package, not separate ones (charter Decision 2026-07-03: "mesh-formats is NOT a separate package").
 
 Current package score: 46/100 (partial). The existing glTF parser is well-shaped: accessor decoding across all component types, strided/normalized attributes, GLB container, multi-primitive meshes, TRS+matrix transforms, sentinel-plus-warnings degradation. Materials/textures and animations are not imported yet (cross-package gaps, tracked in assessment).
 
 ## Scope
 
-Six formats to add, in priority order. Each gets its own parse file + schema file, exports a `createSceneFrom{Format}` function, and returns a `Scene` node hierarchy through the same `@flighthq/scene3d` + `@flighthq/mesh` primitives the glTF parser uses.
+Six formats to add, in priority order. Each gets its own parse file + schema file, exports a `createScene3DFrom{Format}` function, and returns a `Scene` node hierarchy through the same `@flighthq/scene3d` + `@flighthq/mesh` primitives the glTF parser uses.
 
 ### Priority 1: OBJ/MTL
 
 **Format:** Wavefront OBJ — ASCII text, line-oriented (`v`, `vn`, `vt`, `f` directives). Material references via `mtllib`/`usemtl` pointing to a companion `.mtl` file. The most common legacy interchange format; nearly every 3D tool exports it.
 
 **Files:**
-- `objParse.ts` — `createSceneFromObj(source: string, materials?: ObjMaterialLibrary, warnings?: string[]): Scene`
+- `objParse.ts` — `createScene3DFromObj(source: string, materials?: ObjMaterialLibrary, warnings?: string[]): Scene`
 - `objSchema.ts` — `ObjMaterialLibrary` (parsed MTL data: ambient/diffuse/specular colors, texture map names, Ns/d/illum)
 - `mtlParse.ts` — `parseObjMaterialLibrary(source: string, warnings?: string[]): ObjMaterialLibrary`
 
@@ -54,7 +54,7 @@ Six formats to add, in priority order. Each gets its own parse file + schema fil
 **Format:** Autodesk 3DS — binary chunked format (little-endian). Chunk ID (uint16) + chunk length (uint32) + payload. Legacy but ubiquitous in asset libraries; many free model sites still distribute `.3ds` files.
 
 **Files:**
-- `threeDsParse.ts` — `createSceneFrom3ds(bytes: Readonly<Uint8Array>, warnings?: string[]): Scene`
+- `threeDsParse.ts` — `createScene3DFrom3ds(bytes: Readonly<Uint8Array>, warnings?: string[]): Scene`
 - `threeDsSchema.ts` — chunk ID constants, material/mesh/keyframe descriptor interfaces
 
 **Key concerns:**
@@ -73,7 +73,7 @@ Six formats to add, in priority order. Each gets its own parse file + schema fil
 **Format:** Autodesk FBX — both binary and ASCII variants. The dominant professional interchange format (Maya, Blender, Unity, Unreal all use it). Complex: node-property tree with typed arrays, connections graph, deformers, animation curves.
 
 **Files:**
-- `fbxParse.ts` — `createSceneFromFbx(source: string | Readonly<Uint8Array>, warnings?: string[]): Scene`
+- `fbxParse.ts` — `createScene3DFromFbx(source: string | Readonly<Uint8Array>, warnings?: string[]): Scene`
 - `fbxSchema.ts` — FBX node tree types, property types, connection model
 
 **Key concerns:**
@@ -93,7 +93,7 @@ Six formats to add, in priority order. Each gets its own parse file + schema fil
 **Format:** id Software MD5 — ASCII text, two files: `.md5mesh` (bind-pose skeleton + weighted meshes) and `.md5anim` (skeletal animation). A clean, well-documented format popular in game development tutorials and indie assets.
 
 **Files:**
-- `md5Parse.ts` — `createSceneFromMd5Mesh(source: string, warnings?: string[]): Scene`
+- `md5Parse.ts` — `createScene3DFromMd5Mesh(source: string, warnings?: string[]): Scene`
 - `md5Schema.ts` — joint, weight, mesh, animation frame types
 
 **Key concerns:**
@@ -110,7 +110,7 @@ Six formats to add, in priority order. Each gets its own parse file + schema fil
 **Format:** id Software MD2 — binary, fixed header (68 bytes), per-frame vertex animation (no skeleton). Classic format from Quake 2 era; small, fast, well-documented.
 
 **Files:**
-- `md2Parse.ts` — `createSceneFromMd2(bytes: Readonly<Uint8Array>, warnings?: string[]): Scene`
+- `md2Parse.ts` — `createScene3DFromMd2(bytes: Readonly<Uint8Array>, warnings?: string[]): Scene`
 - `md2Schema.ts` — header layout, frame vertex types, normal lookup table
 
 **Key concerns:**
@@ -128,7 +128,7 @@ Six formats to add, in priority order. Each gets its own parse file + schema fil
 **Format:** Away3D AWD — binary block-based format. Niche; primarily used in the Flash/Away3D ecosystem. Included for completeness ("the whole hardware store") given Flight's lineage.
 
 **Files:**
-- `awdParse.ts` — `createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: string[]): Scene`
+- `awdParse.ts` — `createScene3DFromAwd(bytes: Readonly<Uint8Array>, warnings?: string[]): Scene`
 - `awdSchema.ts` — block type constants, attribute types
 
 **Key concerns:**
@@ -151,17 +151,17 @@ Follow the established glTF pattern exactly:
 
 ### Naming convention
 
-Each format exports one primary parse function: `createSceneFrom{Format}(source, warnings?): Scene`
+Each format exports one primary parse function: `createScene3DFrom{Format}(source, warnings?): Scene`
 
 | Format | Function | Input type |
 |--------|----------|------------|
-| OBJ | `createSceneFromObj` | `string` |
+| OBJ | `createScene3DFromObj` | `string` |
 | MTL | `parseObjMaterialLibrary` | `string` |
-| 3DS | `createSceneFrom3ds` | `Readonly<Uint8Array>` |
-| FBX | `createSceneFromFbx` | `string \| Readonly<Uint8Array>` |
-| MD5 | `createSceneFromMd5Mesh` | `string` |
-| MD2 | `createSceneFromMd2` | `Readonly<Uint8Array>` |
-| AWD | `createSceneFromAwd` | `Readonly<Uint8Array>` |
+| 3DS | `createScene3DFrom3ds` | `Readonly<Uint8Array>` |
+| FBX | `createScene3DFromFbx` | `string \| Readonly<Uint8Array>` |
+| MD5 | `createScene3DFromMd5Mesh` | `string` |
+| MD2 | `createScene3DFromMd2` | `Readonly<Uint8Array>` |
+| AWD | `createScene3DFromAwd` | `Readonly<Uint8Array>` |
 
 Text formats take `string`; binary formats take `Readonly<Uint8Array>`. FBX takes both (binary and ASCII variants). All accept an optional `warnings?: string[]` out-array for sentinel-based degradation.
 
@@ -226,7 +226,7 @@ Rationale:
 
 - **Coordinate system normalization:** 3DS is Z-up, FBX embeds axis metadata, MD2 is Z-up. Should each parser individually convert to Y-up, or should there be a shared coordinate-system conversion utility?
 - **Material data:** All formats carry material information. Until the cross-package material/texture mapping gap is resolved (glTF assessment item 1), parsers should preserve material names/indices on mesh nodes (or as a side output) so they can be bound later without re-parsing.
-- **Format auto-detection:** The charter mentions "format auto-detection" as in-scope. A `createSceneFromFile(bytes, filename?, warnings?)` dispatcher that sniffs magic bytes or file extension could unify all parsers behind one entry point. This is a follow-up, not a blocker for individual parsers.
+- **Format auto-detection:** The charter mentions "format auto-detection" as in-scope. A `createScene3DFromFile(bytes, filename?, warnings?)` dispatcher that sniffs magic bytes or file extension could unify all parsers behind one entry point. This is a follow-up, not a blocker for individual parsers.
 
 ---
 
@@ -243,7 +243,7 @@ Add point, spot, and hemisphere light consumption loops to the WGSL PBR shader i
 The entire data pipeline is complete:
 
 - **Data descriptors**: `PointLight`, `SpotLight`, `HemisphereLight` types in `@flighthq/types`.
-- **SceneLights**: carries `point?`, `spot?`, `hemisphere?` arrays alongside `ambient`/`directional`.
+- **Scene3DLights**: carries `point?`, `spot?`, `hemisphere?` arrays alongside `ambient`/`directional`.
 - **Packing**: `packSceneLightBlock` (`packages/render/src/sceneRender.ts`) packs up to `MAX_FORWARD_LIGHTS` (= 4) of each type into `SceneLightBlock.data`, a flat `Float32Array` with documented offsets/strides (`SCENE_LIGHT_POINT_OFFSET`, `SCENE_LIGHT_SPOT_OFFSET`, `SCENE_LIGHT_HEMISPHERE_OFFSET` in `@flighthq/types/SceneLightBlock.ts`).
 - **Counts**: `SceneLightBlock.pointCount`, `.spotCount`, `.hemisphereCount` (0..4).
 - **Version gating**: `SceneLightBlock.version` bumps only on actual data change.
@@ -338,7 +338,7 @@ Decision: the implementer should check whether all families share a single Frame
 |------|--------|
 | `packages/render/src/sceneRender.ts` | Packing already complete |
 | `packages/types/src/SceneLightBlock.ts` | Layout already defined |
-| `packages/types/src/SceneLights.ts` | Data types already defined |
+| `packages/types/src/Scene3DLights.ts` | Data types already defined |
 | `packages/lighting/src/*` | Data layer already complete |
 
 ## Acceptance criteria
@@ -378,7 +378,7 @@ The particle system today is purely 2D. The simulation core (`@flighthq/particle
 
 **Scene-node integration (`@flighthq/particleemitter`):** `ParticleEmitter` extends `DisplayObject` (2D graph). `ParticleEmitterData` stores typed arrays: `transforms` (stride 4: x, y, rotation, scale), `alphas`, `colors` (stride 3), `ids`, `velocities` (stride 2). `updateParticleEmitter` handles spawn, age, compact, and position integration. `stepParticleEmitter` is the convenience wrapper: forces -> update -> collisions.
 
-**3D scene graph (`@flighthq/scene3d`):** `SceneNode` is the 3D hierarchy node with a `localMatrix: Matrix4`. `Mesh` extends `SceneNode` with `geometry: MeshGeometry` and `materials`. Scene rendering uses `prepareSceneRender` + `drawGlScene`/`drawWgpuScene`, with per-material renderers registered via `GlMeshMaterialRenderer`. Meshes are drawn in opaque/blended passes.
+**3D scene graph (`@flighthq/scene3d`):** `Node3D` is the 3D hierarchy node with a `localMatrix: Matrix4`. `Mesh` extends `Node3D` with `geometry: MeshGeometry` and `materials`. Scene rendering uses `prepareScene3DRender` + `drawGlScene`/`drawWgpuScene`, with per-material renderers registered via `GlMeshMaterialRenderer`. Meshes are drawn in opaque/blended passes.
 
 ---
 
@@ -492,7 +492,7 @@ The `resolveColliders` scratch changes from 4-element `[px, py, vx, vy]` to 6-el
 
 ### Goal
 
-Create a new package that bridges the `@flighthq/particles` simulation to the 3D scene graph (`@flighthq/scene3d`), following the same sim/node decomposition as `particles`/`particleemitter` but for `SceneNode` instead of `DisplayObject`.
+Create a new package that bridges the `@flighthq/particles` simulation to the 3D scene graph (`@flighthq/scene3d`), following the same sim/node decomposition as `particles`/`particleemitter` but for `Node3D` instead of `DisplayObject`.
 
 ### Package Name
 
@@ -502,7 +502,7 @@ Alternative considered: `particles-scene`. Rejected because the `-subpackage` su
 
 ### Node Design
 
-`SceneParticleSystem` extends `SceneNode` (so it participates in the 3D hierarchy with `addNodeChild`). It carries:
+`SceneParticleSystem` extends `Node3D` (so it participates in the 3D hierarchy with `addNodeChild`). It carries:
 
 ```typescript
 interface SceneParticleSystemData {
@@ -563,7 +563,7 @@ Recommendation: **CPU sort (Phase 2).** The sim already produces sorted index ar
 
 ### Dependencies
 
-`@flighthq/sceneparticles` depends on: `particles` (sim), `scene` (SceneNode), `geometry`, `node`, `types`.
+`@flighthq/sceneparticles` depends on: `particles` (sim), `scene` (Node3D), `geometry`, `node`, `types`.
 
 It does NOT depend on: `scene2d`, `sprite`, `particleemitter` (those are the 2D path).
 
@@ -889,11 +889,11 @@ This section maps common feature keywords to their implementing packages and bac
 | --- | --- | --- | --- |
 | **Shadows** (directional) | `@flighthq/lighting` (descriptors), `scene-gl`, `scene-wgpu` (renderers) | gl, wgpu | Directional shadow maps with PCF; `ShadowConfig` on `DirectionalLight` |
 | **Fog** | `@flighthq/effects` (`ScreenSpaceFogEffect`) | canvas, gl, wgpu | Post-process fog with color/near/far/density; applied as a render effect |
-| **Ambient light** | `@flighthq/lighting` (`AmbientLight`), `SceneLights.ambient` | gl, wgpu | `createAmbientLight(color, intensity)` |
+| **Ambient light** | `@flighthq/lighting` (`AmbientLight`), `Scene3DLights.ambient` | gl, wgpu | `createAmbientLight(color, intensity)` |
 | **Directional light** | `@flighthq/lighting` (`DirectionalLight`) | gl, wgpu | Supports shadow config |
-| **Point light** | `@flighthq/lighting` (`PointLight`), `SceneLights.point` | gl only | WebGPU gap: data pipeline done, WGSL consumer missing (gap #8) |
-| **Spot light** | `@flighthq/lighting` (`SpotLight`), `SceneLights.spot` | gl only | Same WebGPU gap as point lights |
-| **Hemisphere light** | `@flighthq/lighting` (`HemisphereLight`), `SceneLights.hemisphere` | gl only | Same WebGPU gap |
+| **Point light** | `@flighthq/lighting` (`PointLight`), `Scene3DLights.point` | gl only | WebGPU gap: data pipeline done, WGSL consumer missing (gap #8) |
+| **Spot light** | `@flighthq/lighting` (`SpotLight`), `Scene3DLights.spot` | gl only | Same WebGPU gap as point lights |
+| **Hemisphere light** | `@flighthq/lighting` (`HemisphereLight`), `Scene3DLights.hemisphere` | gl only | Same WebGPU gap |
 | **Area light** | `@flighthq/lighting` (`AreaLight`) | — | Descriptor exists; renderer not wired |
 | **IBL / Environment maps** | `@flighthq/lighting` (`createEnvironment`), `@flighthq/texture` (`CubeTexture`) | gl, wgpu | PBR materials integrate `Environment` for image-based lighting |
 | **Particles (2D)** | `@flighthq/particles` (sim), `@flighthq/particleemitter` (display node) | canvas, gl, wgpu | CPU simulation, display-object rendering |

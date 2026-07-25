@@ -42,10 +42,10 @@ Swept the assessment's `## Recommended` section. It contained exactly one sweep-
 
 Extended `@flighthq/types` `SceneLightBlock` and `@flighthq/render` `packSceneLightBlock` to carry point, spot, and hemisphere lights alongside the existing directional + ambient terms.
 
-**`packages/types/src/SceneLights.ts`**
+**`packages/types/src/Scene3DLights.ts`**
 
 - Added `MaxForwardLights = 8` — the per-type cap for point and spot lights.
-- Extended `SceneLights` with optional `hemisphere?`, `point?`, and `spot?` arrays.
+- Extended `Scene3DLights` with optional `hemisphere?`, `point?`, and `spot?` arrays.
 
 **`packages/types/src/SceneLightBlock.ts`**
 

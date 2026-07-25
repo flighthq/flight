@@ -96,7 +96,7 @@ The partition is built into two pooled draw lists (`runtime.opaqueDrawList` / `b
    `glSceneRuntime.ts`), compute `clipW` per mesh from the same VP row-3 dot, resolve `objectAlpha` via
    `getSceneNodeWorldAlpha`, route `isBlendedMaterial(material) || objectAlpha < 1` to the blended list,
    and sort the blended list back-to-front (descending `clipW`) before drawing. `@flighthq/scene3d` and
-   `@flighthq/render` already export everything needed (`getSceneNodeWorldAlpha`, `prepareSceneRender`);
+   `@flighthq/render` already export everything needed (`getSceneNodeWorldAlpha`, `prepareScene3DRender`);
    this is a pure translation.
 
 3. **Bind the right pipeline per pass.** Pass 1 binds each family's opaque pipeline; pass 2 binds its

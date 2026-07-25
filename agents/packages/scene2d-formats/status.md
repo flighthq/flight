@@ -17,7 +17,7 @@ gradient animation, trim paths, hard masks, image resolution, ordinary precompos
 markers. The predeclared exotic set emits structured diagnostics.
 
 Added general segment-local `AnimationTrack` easing and the additive
-`DisplayObjectAnimationTarget`/`applyAnimationClipToDisplayObject` target-owner binder. Focused tests
+`Node2DAnimationTarget`/`applyAnimationClipToNode2D` target-owner binder. Focused tests
 pass 46 cases across animation, display binding, and Lottie import; full repository check and all
 12,874 tests pass. A real asset remains intentionally deferred to the post-gate demo checkpoint.
 
@@ -89,8 +89,8 @@ focused suites pass 41/41, the monorepo build passes, and `npm run check` is gre
 
 ## 2026-07-25 — static SVG document importer
 
-Created the package and `createDisplayObjectFromSvgDocument`. The importer assembles SVG document
-structure into DisplayContainer/Shape/TextLabel/RichText/Bitmap nodes, delegates path data to
+Created the package and `createScene2DFromSvgDocument`. The importer assembles SVG document
+structure into DisplayObject/Shape/TextLabel/RichText/Bitmap nodes, delegates path data to
 `path-formats`, and reports format loss through opt-in `ImportDiagnostic[]` crumbs.
 
 Implemented geometry primitives, solid and gradient fills/strokes, dashed strokes, inherited

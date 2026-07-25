@@ -6,8 +6,8 @@ Build spec for the full PBR material + forward-lighting system. Produced by a de
 
 Refined in design discussion. These decisions override the `World*Node` names and bridge design in §2–§7:
 
-- **Two graph roots:** `Stage` (2D — the `DisplayObject`-graph root, mirror of `Scene`; renders to the screen _or_ to a `Texture`) and `Scene` (3D — the `SceneNode`-graph root). Rename package `@flighthq/world` → `@flighthq/scene3d`; drop the `World` prefix from every type.
-- **`SceneNode`** is the 3D base node (parallels `DisplayObject`). Concrete scene nodes drop the suffix: `Mesh`, `Camera`, `DirectionalLight`, … (NOT built in the current pass — see scope.)
+- **Two graph roots:** `Stage` (2D — the `DisplayObject`-graph root, mirror of `Scene`; renders to the screen _or_ to a `Texture`) and `Scene` (3D — the `Node3D`-graph root). Rename package `@flighthq/world` → `@flighthq/scene3d`; drop the `World` prefix from every type.
+- **`Node3D`** is the 3D base node (parallels `DisplayObject`). Concrete scene nodes drop the suffix: `Mesh`, `Camera`, `DirectionalLight`, … (NOT built in the current pass — see scope.)
 - **Canonical local transform = `Matrix4`.** There is no `Transform3D` type. TRS is free-function molecules (compose/decompose). Internal traits `HasTransform2D` / `HasTransform3D` stay as-is (internal).
 - **`Texture` is the universal bridge.** Any graph renders to a `Texture`; any `Mesh` + `Material` consumes one. No `DisplayPanel` / `SceneView` / `Plane` node types — a "panel" is a `Mesh` with `createPlaneMeshGeometry`. (If a bundled bridge node is ever wanted, it follows the rule "a node in family A with a `.root` into family B." Parked, not built.)
 - **Rename device `@flighthq/camera` → `@flighthq/webcam`** (type `Camera` → `Webcam`) to free `Camera` for the 3D camera.
@@ -23,7 +23,7 @@ Refined in design discussion. These decisions override the `World*Node` names an
 6. **`@flighthq/lighting` (new):** light DATA types `AmbientLight`/`DirectionalLight`/`PointLight`/ `SpotLight`/`HemisphereLight`/`AreaLight` + `Environment` (IBL/skybox source). Pure data (color/intensity/range/cone/shadow params); placement/node-ness deferred.
 7. **`@flighthq/materials` (extend):** the full descriptor taxonomy + constructors (§2), the packed-RGBA `Color` convention + the single `unpackColorToLinear` sRGB→linear seam + per-texture colorSpace.
 
-Types-first: every type lands in `@flighthq/types` first, then the impl package. Gates: `npm run fix`, `packages:check`, `exports:check`, `order`, `api`. **Deferred to a later forward pass:** `SceneNode` graph + `Mesh`/`Camera`/`Light` _nodes_, the forward-lighting render pipeline, per-backend mesh-material renderers, bridges, functional render tests.
+Types-first: every type lands in `@flighthq/types` first, then the impl package. Gates: `npm run fix`, `packages:check`, `exports:check`, `order`, `api`. **Deferred to a later forward pass:** `Node3D` graph + `Mesh`/`Camera`/`Light` _nodes_, the forward-lighting render pipeline, per-backend mesh-material renderers, bridges, functional render tests.
 
 ## 1. Decision Summary
 
@@ -32,7 +32,7 @@ Spine: **minimal-forward 3D PBR layered on the existing render-effect scene targ
 | # | Decision | Rationale | Beat |
 | --- | --- | --- | --- |
 | D1 | **Single-pass forward lighting**, packed light UBO/storage block, `MAX_FORWARD_LIGHTS` a **spec constant** (`#define`/`const`, never inlined). Clustered Forward+ is a non-breaking later phase. | Composes natively into the one `rgba16f` scene target; deferred needs an MRT G-buffer that duplicates the post stack and can't cheap-MSAA. | Clustered-forward day-one. |
-| D2 | **3D nests in the shared `HierarchyNode` graph** — new kinds `WorldMeshNodeKind` / `WorldLightNodeKind` / `WorldCameraNodeKind`. `prepareWorldRender(state, root, camera)` mirrors **`prepareDisplayObjectRender`** (the real precedent — see §0 correction). One frame = `beginPipeline → drawWorld → draw 2D → endPipeline`. | `WorldNode` already exists as an inert `HasTransform3D` node with a `worldMatrix` runtime slot + family gate — 3D is additive, not a parallel renderer. | A 3D scene/camera object outside the hierarchy. |
+| D2 | **3D nests in the shared `HierarchyNode` graph** — new kinds `WorldMeshNodeKind` / `WorldLightNodeKind` / `WorldCameraNodeKind`. `prepareWorldRender(state, root, camera)` mirrors **`prepareScene2DRender`** (the real precedent — see §0 correction). One frame = `beginPipeline → drawWorld → draw 2D → endPipeline`. | `WorldNode` already exists as an inert `HasTransform3D` node with a `worldMatrix` runtime slot + family gate — 3D is additive, not a parallel renderer. | A 3D scene/camera object outside the hierarchy. |
 | D3 | **Reuse the existing scene target by calling render functions while it is bound.** `drawWorld` lives in `render-webgl/webgpu/canvas`; the _app_ sequences `begin…Pipeline → drawWorld → end…Pipeline`. The pipeline (`effects-webgl`) depends ON `render-webgl`; never invert that. | The pipeline doc says "the scene renders into the target between begin/end." Nothing draws scene content there yet → **proving it is an explicit Phase-1 deliverable.** | Putting `drawWorld` in `effects-webgl` (inverts the dep, breaks tree-shaking). |
 | D4 | **Distinct `*Kind` per material type** (incl. each PBR extension); extensions **compose** a `standard` field-block of `StandardPBRMaterial`, they do not inherit. | The kind symbol is the type id **and** the registry/batch key; one mega-kind forces a renderer to branch on field presence — opposite of data-descriptor + kind-keyed-renderer. | One `StandardPBRMaterialKind` + shader-permutation fields. |
 | D5 | **Sibling mesh material-renderer interface** (`WebGLMeshMaterialRenderer` etc.) registered in the **same kind registry** as the quad renderer; `resolveWebGLMeshMaterialRenderer` is a parallel lookup. `webglShapeMesh` (non-quad indexed `drawElements`, world-transformed, own program) is the precedent. | The existing `WebGLMaterialRenderer` is quad-instance-only and "may not change base geometry/topology" — a mesh PBR program over interpolated normals/tangents/UVs has no representation there. | Widening `WebGLMaterialRenderer` (muddies the 2D batch path). |
@@ -42,7 +42,7 @@ Spine: **minimal-forward 3D PBR layered on the existing render-effect scene targ
 
 These are header-precision fixes the build MUST honor:
 
-1. **Precedent is `prepareDisplayObjectRender(state, source)`** in the shared `@flighthq/render` package — there is **no `prepareSpriteRender`**. `prepareWorldRender` lives in `@flighthq/world` and is sequenced by the app (it calls `render` functions); the world package depends on `render`.
+1. **Precedent is `prepareScene2DRender(state, source)`** in the shared `@flighthq/render` package — there is **no `prepareSpriteRender`**. `prepareWorldRender` lives in `@flighthq/world` and is sequenced by the app (it calls `render` functions); the world package depends on `render`.
 2. **Color-space / HDR convention (biggest correctness hole).** Packed `0xrrggbbaa` is **sRGB albedo (0–1)**. A packed 8-bit integer **cannot carry HDR**, so light/emissive **radiance = `unpackColorToLinear(color) × intensity`** (float). Pin sRGB↔linear at exactly one named seam, `unpackColorToLinear(out, color)` in `@flighthq/materials`; forbid per-backend re-decoding. Add a **per-texture `colorSpace: 'srgb' | 'linear'` flag** on `MaterialTextureSlot` (baseColor/emissive = srgb; normal/metallicRoughness/occlusion = linear) — without it every textured material is gamma-wrong.
 3. **Normal matrix.** `matrix3.ts` has `inverseMatrix3` but no transpose. Add `transposeMatrix3(out, src)`
    - `setMatrix3NormalFromMatrix4(out, m4)` (inverse-transpose of upper 3×3) in Phase 0, or lit materials are wrong under non-uniform scale.
@@ -116,7 +116,7 @@ One frame:
 beginWebGLRenderEffectPipeline(state, pipeline)        // rgba16f/MSAA/depth scene target
 prepareWorldRender(state, worldRoot, camera)
 drawWorld(state, worldRoot, camera)                    // depthMask(true)/depthFunc(LESS), writes HDR+depth(+velocity)
-prepareDisplayObjectRender(state, uiRoot)
+prepareScene2DRender(state, uiRoot)
 drawDisplayObjects(state, uiRoot)                      // depthMask(false)/depthFunc(ALWAYS) overlay
 endWebGLRenderEffectPipeline(state, pipeline, effects) // resolve + post FX over shaded 3D
 ```

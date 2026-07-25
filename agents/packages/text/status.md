@@ -152,7 +152,7 @@ The `RichTextDataInternal` pattern from `internal.ts` is gone. `scrollH` and `sc
 ## Suggestions for future sessions
 
 1. **Fix the `textlayout` bug first** (line 68 of `richTextQuery.ts`). It makes `getRichTextCharIndexAtPointValue` unreliable in the common case.
-2. **Silver signals** (`enableTextFieldSignals`): define payload types in `@flighthq/types`, then wire into setters. Coordinate with `enableDisplayObjectSignals` naming.
+2. **Silver signals** (`enableTextFieldSignals`): define payload types in `@flighthq/types`, then wire into setters. Coordinate with `enableNode2DSignals` naming.
 3. **Design decision: HTML seam.** Decide whether `setRichTextHtml` should call a registered parser (like the shaper seam) or do nothing until a parser registers. This unlocks `@flighthq/text-formats` neighbor package.
 4. **`insertRichTextString` / `replaceRichTextString`**: implement once the format-range re-indexing design is clear (how to handle ranges that straddle an insertion point — split? truncate? shift?).
 5. **Functional tests**: `tests/functional/richtext-multiformat`, `tests/functional/richtext-autosize`, `tests/functional/richtext-scroll` — these test the full render path and are unblocked now that the entity surface is complete.

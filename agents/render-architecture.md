@@ -39,7 +39,7 @@ A renderer is the per-backend realization of a node family — its name says _wh
 
 ```
 beginGlRenderEffectPipeline(state, pipeline)       // rgba16f + MSAA + depth scene target
-prepareSceneRender(state, scene, camera, lights)   // world matrices, frustum cull, pack light block
+prepareScene3DRender(state, scene, camera, lights)   // world matrices, frustum cull, pack light block
 drawScene(state, scene, camera, lights)            // depth-test ON, writes linear HDR + depth
 endGlRenderEffectPipeline(state, pipeline, fx)     // resolve + tonemap/bloom over the shaded scene
 ```
@@ -72,7 +72,7 @@ linear/HDR is opt-in only.**
 
 The scene graph is observer-agnostic. Because the camera is a parameter of the render _call_, every multi-observer case — shadow maps (a shadow "camera" is just a `Camera` at the light), reflection probes, split-screen, thumbnails, debug views — is free, and rendering from a perspective that is not a node in the graph is never a fight. v1 passes plain `Camera` + `Light[]` data. The optional future convenience — `CameraNode`/`LightNode` plus `findSceneCameras(scene)`/`findSceneLights(scene)` that _produce_ the draw-args — stays additive, never structural.
 
-**Scene nodes (minimal):** `Scene` (root `SceneNode`), `Mesh` (a `SceneNode` carrying `geometry: MeshGeometry` + `materials: Material[]`, one per subset). A bare `SceneNode` is a transform-only group.
+**Scene nodes (minimal):** `Scene` (root `Node3D`), `Mesh` (a `Node3D` carrying `geometry: MeshGeometry` + `materials: Material[]`, one per subset). A bare `Node3D` is a transform-only group.
 
 **Mesh-material seam:** `registerGlMeshMaterialRenderer(state, MaterialKind, renderer)` — a registry owned by `scene-{backend}` (its own `WeakMap<state, …>`, separate from the 2D quad-material registry; a material kind is either 2D or 3D, never both). A renderer is `{ bind, draw }`: it lazily uploads the mesh GPU buffers (keyed by `geometry.version`, cached in the `MeshGeometryRuntime` slot, freed by `destroyMeshGeometryGlData`), binds the camera matrices + packed light block + the material's uniforms/textures, and draws each subset's indexed range with the right cull/blend state. `glShapeMesh` is the precedent (non-quad indexed draw, own program).
 
@@ -84,7 +84,7 @@ The scene graph is observer-agnostic. Because the camera is a parameter of the r
 
 ## Stage / Texture bridge (2D ↔ 3D)
 
-`Stage` (the 2D `DisplayObject`-graph root) and `Scene` (the 3D `SceneNode`-graph root) are the two graph roots. They do not nest (different node families). **`Texture` is the universal bridge:** any graph renders to a `Texture`, and any `Mesh` + `Material` consumes one. There are no bridge node types — a 2D panel in a 3D world is just a `Mesh` with `createPlaneMeshGeometry` whose material samples a `Stage`-rendered render-target `Texture`; the inverse (3D inside 2D) is a `Scene` rendered to a `Texture` drawn as a `Bitmap`. The passes stay explicit (the user renders each graph), so the two pipelines stay decoupled and tree-shakable.
+`Stage` (the 2D `DisplayObject`-graph root) and `Scene` (the 3D `Node3D`-graph root) are the two graph roots. They do not nest (different node families). **`Texture` is the universal bridge:** any graph renders to a `Texture`, and any `Mesh` + `Material` consumes one. There are no bridge node types — a 2D panel in a 3D world is just a `Mesh` with `createPlaneMeshGeometry` whose material samples a `Stage`-rendered render-target `Texture`; the inverse (3D inside 2D) is a `Scene` rendered to a `Texture` drawn as a `Bitmap`. The passes stay explicit (the user renders each graph), so the two pipelines stay decoupled and tree-shakable.
 
 ## Related docs
 

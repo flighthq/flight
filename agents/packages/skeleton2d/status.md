@@ -13,7 +13,7 @@ The package exists, is registered (tsconfig paths/build refs, sdk barrel + `scen
 - `setSkeleton2DBindPose` (inverse-bind capture, identity fallback on degenerate) + `computeSkeleton2DBoneMatrices` (palette = world × inverseBind).
 - `deformSkeleton2DMeshAttachment` — weighted (Σ w·(boneWorld·localOffset), offsets bake the bind → bone world matrices, no palette) + rigid (slot-bone world × local vertices); out-param flat interleaved `Float32Array`, alias-safe.
 - `computeSkeleton2DRegionAttachmentVertices` — 4 world corners (BL/TL/TR/BR) of a region rect via boneWorld × regionLocal.
-- Lifecycle `create*`/`clone*`/`dispose*`/`equals*`/`validate*` + sentinel lookups `getSkeleton2DBoneIndexByName` (−1) / `getSkeleton2DBoneWorldMatrix` (false). `cloneSkeleton2D` IS the independent-pose clone (bones are deep-copied plain data — no separate `cloneBoneHierarchy` atom, unlike skeleton3d's shared SceneNodes).
+- Lifecycle `create*`/`clone*`/`dispose*`/`equals*`/`validate*` + sentinel lookups `getSkeleton2DBoneIndexByName` (−1) / `getSkeleton2DBoneWorldMatrix` (false). `cloneSkeleton2D` IS the independent-pose clone (bones are deep-copied plain data — no separate `cloneBoneHierarchy` atom, unlike skeleton3d's shared Node3Ds).
 
 ## Deferred (per charter phasing)
 

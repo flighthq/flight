@@ -13,7 +13,7 @@ status: ./status.md
 
 ## What it is
 
-`@flighthq/scene2d` is the **concrete 2D leaf entity layer** — the retained-mode display-object types built as plain entity/runtime quartets. It owns the base `DisplayObject` / `DisplayContainer` from which every renderable 2D node derives, plus the composited leaf surfaces: `Bitmap`, `Stage`, `Video`, `Loader`, `RenderView`, and `HtmlView`. Each kind follows the `create*` / `create*Data` / `create*Runtime` / `get*Runtime` shape, exposes guarded-and-invalidating setters over its data fields, and opts into signals via `enable*`.
+`@flighthq/scene2d` is the **concrete 2D leaf entity layer** — the retained-mode display-object types built as plain entity/runtime quartets. It owns the base `DisplayObject` / `DisplayObject` from which every renderable 2D node derives, plus the composited leaf surfaces: `Bitmap`, `Stage`, `Video`, `Loader`, `RenderView`, and `HtmlView`. Each kind follows the `create*` / `create*Data` / `create*Runtime` / `get*Runtime` shape, exposes guarded-and-invalidating setters over its data fields, and opts into signals via `enable*`.
 
 Where it **ends** and a neighbor begins is the package's defining edge, and the source comment is explicit about it: hierarchy / display-list mechanics and transforms/bounds live in `@flighthq/node`; vector shapes in `@flighthq/shape`; text display objects in `@flighthq/text`; sprite/tilemap in `@flighthq/sprite`; clip-region producers in `@flighthq/clip`; filters/effects in `@flighthq/filters`; hit testing in `@flighthq/interaction`; and the actual drawing in `@flighthq/render` plus the `scene2d-<backend>` leaves. This package holds the **entities and their source data**, not their graph participation or their rendering.
 
@@ -33,7 +33,7 @@ _In scope vs. non-goals, drawn from the review and the neighbor map. Proposals �
 
 **In scope:**
 
-- The base `DisplayObject` / `DisplayContainer` entity and trait-init sequence.
+- The base `DisplayObject` / `DisplayObject` entity and trait-init sequence.
 - The composited leaf surfaces: `Bitmap`, `Stage`, `Video`, `Loader`, `RenderView`, `HtmlView`.
 - Compositing-hint _data_: `cacheAsBitmap`(`Matrix`), `scrollRect`, `opaqueBackground`, `clip`, `material` — as settable fields that invalidate, regardless of which backend later honors them.
 - Stage-locating helpers and the lifecycle/loader signal _definitions_ + `enable*` opt-ins.
@@ -63,7 +63,7 @@ _In scope vs. non-goals, drawn from the review and the neighbor map. Proposals �
   - **`Bitmap` = `image` + `smoothing` + `sourceRectangle`.** `sourceRectangle` is kept — it is the mechanism for displaying a sub-region of a source image directly on a Bitmap without requiring a texture atlas or sprite frame. `smoothing` stays (cleanly honored on every backend as the sampler filter mode).
   - **`pixelSnapping` — deferred to a render-layer hint, not Bitmap data.** It is implementable (round device-space position) but niche; per the no-unhonored-data rule it must not ship as an eager per-Bitmap field that sits as a silent no-op. It returns **at the render tier**, honored by each `scene2d-<backend>`, only when pixel-art/crisp-positioning is prioritized and built across backends in one pass.
   - **`Video` setters — kept.** `setVideoSource`/`setVideoSmoothing` are plain field setters (siblings to Bitmap's `setBitmapImage`/smoothing); a Video node needs a way to set its source.
-  - **DisplayObject traversal wrappers — dropped.** `getDisplayObjectByName`/`getDisplayObjectStageDepth`/`isDisplayObjectOnStage` were typed casts over the generic `@flighthq/node` traversal (`findNodeByName`/`getNodeDepth`/`getNodeRoot`); use the generic functions directly.
+  - **DisplayObject traversal wrappers — dropped.** `getDisplayObjectByName`/`getScene2DRootDepth`/`isDisplayObjectOnStage` were typed casts over the generic `@flighthq/node` traversal (`findNodeByName`/`getNodeDepth`/`getNodeRoot`); use the generic functions directly.
 
 ## Open directions
 
@@ -79,7 +79,7 @@ _Every candidate question the review surfaced, plus the structural forks that to
 
 5. **Should `setLoaderResourceLoader` own slot lifecycle?** It connects four slots on the new loader but does not disconnect the _previous_ loader's slots on replace. Is wire-once the contract (making the re-wire a documented misuse precondition) or should replace disconnect-then-reconnect (making the current behavior a leak to fix)?
 
-6. **Is `Stage` a privileged graph root or just another `DisplayObject`?** `getDisplayObjectStageDepth` and the `internal.ts` `stage` slot encode stage-specific hierarchy semantics. Should the charter bless `Stage` as a distinguished root kind, or treat it as an ordinary `DisplayObject` that happens to sit at the top?
+6. **Is `Stage` a privileged graph root or just another `DisplayObject`?** `getScene2DRootDepth` and the `internal.ts` `stage` slot encode stage-specific hierarchy semantics. Should the charter bless `Stage` as a distinguished root kind, or treat it as an ordinary `DisplayObject` that happens to sit at the top?
 
 7. **`fullScreenWidth`/`fullScreenHeight` have no setter** — documented as renderer-set, breaking the "every `stage.ts` data field has a guarded setter" pattern. Is the renderer-only mutation path intentional, or should these gain a first-class setter for symmetry?
 

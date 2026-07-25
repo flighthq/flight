@@ -67,7 +67,7 @@ Missing: target with extra keys not in snapshot, nested field type change (objec
 
 **Add:** test restore into target with extra keys and verify preservation/removal behavior. Test type mismatch at nested level. Test number/string top-level snapshot.
 
-### 8. scene-formats: `createSceneFromGltf`
+### 8. scene-formats: `createScene3DFromGltf`
 
 No test for quaternion rotation, scale transforms, matrix transform path, uint32 index buffers, or multi-scene documents.
 

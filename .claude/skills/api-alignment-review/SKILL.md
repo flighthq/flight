@@ -27,7 +27,7 @@ For a small, targeted check you can also just follow the checklists below by han
 
 ### 1. `api` — exported API conventions (per package + `_consistency.md`)
 
-- Function names contain the **full, unabbreviated type word** (`getDisplayObjectBounds`, never `getDOBounds`).
+- Function names contain the **full, unabbreviated type word** (`getNode2DBounds`, never `getDOBounds`).
 - Exported names globally unique, especially from package roots.
 - Allocation by verb: `create*`/`clone*`/pool `acquire*` may allocate; math/transform/bounds/update write into `out`/`target` and must not.
 - `out`-param functions are **alias-safe** (read inputs into locals before writing).

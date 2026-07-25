@@ -8,7 +8,7 @@ spans: ["@flighthq/types", "@flighthq/mesh", "@flighthq/scene3d", "@flighthq/ani
 # Morph-Target Animation — Charter
 
 > **Blessed design of record; BUILT (GL path).** The architecture below is approved and implemented on
-> the GL backend: `Weights` is a `SceneAnimationPath`; `Mesh.morph` carries a `MeshMorph` (targets +
+> the GL backend: `Weights` is a `Scene3DAnimationPath`; `Mesh.morph` carries a `MeshMorph` (targets +
 > weight array); `@flighthq/mesh` blends base + Σ wᵢ·targetᵢ (`blendMeshGeometryMorph`/
 > `captureMeshMorphBindPose`); `@flighthq/scene3d` routes `Weights` channels into the weight array
 > (`applyAnimationClipToScene`) and drives the deform (`updateMeshMorph`), with `getMeshDeformer`
@@ -64,7 +64,7 @@ tail; it is the *validation case*, not the driver.
 - One clip abstraction, one animator, one clock. The morph-vs-skeletal difference lives **only** in the
   deformer and, for MD2, a per-clip evaluator. It never infects the shared animation system.
 - Morph is plain data: a target set on the mesh + a weight array; no hidden runtime behavior.
-- `weights` is a first-class `SceneAnimationPath` alongside TRS — generic blend shapes and glTF morph
+- `weights` is a first-class `Scene3DAnimationPath` alongside TRS — generic blend shapes and glTF morph
   animation ride the exact same channel/sampler/track machinery.
 - MD2's oddities (absolute poses, normal LUT, quantization) are **quarantined in the MD2 importer**,
   never in the model.
@@ -111,7 +111,7 @@ MD2, keep the generic `weights` path for real blend shapes.** Same abstraction, 
 
 ## Boundaries
 
-- **In scope:** a `weights` `SceneAnimationPath`; a morph-target set + weight array on `Mesh`; a
+- **In scope:** a `weights` `Scene3DAnimationPath`; a morph-target set + weight array on `Mesh`; a
   deformer abstraction (`none`/`skeletal`/`morph`) in `@flighthq/scene3d`; the morph sink in
   `sceneAnimation.ts`; generic additive blend-shape evaluation; the MD2 specialized two-frame evaluator;
   CPU morph blend (and the GPU morph path in `scene-gl`/`scene-wgpu`); wiring `importGltf` to read
@@ -124,7 +124,7 @@ MD2, keep the generic `weights` path for real blend shapes.** Same abstraction, 
 
 | Package | Change |
 | --- | --- |
-| `@flighthq/types` | Add `'weights'` to `SceneAnimationPath`; a `SceneAnimationTarget` variant (or sibling) that targets a mesh's weight array, not a node TRS; morph-target + weight-array fields on the `Mesh`/geometry types; a `MeshDeformer` tag (`none`/`skeletal`/`morph`). |
+| `@flighthq/types` | Add `'weights'` to `Scene3DAnimationPath`; a `Scene3DAnimationTarget` variant (or sibling) that targets a mesh's weight array, not a node TRS; morph-target + weight-array fields on the `Mesh`/geometry types; a `MeshDeformer` tag (`none`/`skeletal`/`morph`). |
 | `@flighthq/mesh` | Morph-target storage (base + per-target position/normal/tangent deltas) and the CPU blend that produces a deformed `MeshGeometry` from base + weights (sibling of `skinMeshGeometry`). |
 | `@flighthq/scene3d` | The deformer abstraction; the morph sink in `sceneAnimation.ts` (`applyAnimationClipToScene` must route `weights` channels into the mesh weight array); the MD2 specialized evaluator hook. |
 | `@flighthq/animation` | Likely nothing structural — `Sampler`/`AnimationTrack` already carry the curve. Confirm `weights` (variable-width value) samples cleanly. |
@@ -134,7 +134,7 @@ MD2, keep the generic `weights` path for real blend shapes.** Same abstraction, 
 ## Decisions
 
 - **2026-07-18 — Charter this as its own feature, not an MD2-importer tail.** Why: it reshapes
-  `SceneAnimationPath`/`SceneAnimationTarget` and adds a deformer tier to `@flighthq/scene3d` —
+  `Scene3DAnimationPath`/`Scene3DAnimationTarget` and adds a deformer tier to `@flighthq/scene3d` —
   foundational animation surface that should be designed deliberately, not as a side effect of a format
   importer. Building it under the MD2 task would smuggle a cross-package design decision into a leaf.
 - **2026-07-18 — glTF morph + blend shapes are the primary consumers; MD2 is validation.** Why: MD2 is

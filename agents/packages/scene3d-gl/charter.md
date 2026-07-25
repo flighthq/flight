@@ -13,9 +13,9 @@ status: ./status.md
 
 ## What it is
 
-WebGL2 forward renderer for the 3D scene graph — the per-subject leaf renderer in the `<subject>-<backend>` layering that turns a `SceneNode` tree of `Mesh`es into draw calls over `render-gl`. It owns the mesh-material program/shader library that a real-time 3D engine's GL backend is expected to provide: a single GLSL 300 es PBR uber-shader (Cook-Torrance GGX, seven glTF extension lobes) specialized by a `#define` block, plus classic (lambert/phong/blinn-phong), stylized (toon/matcap), attribute (vertex-color/emissive), and debug (normal/depth/wireframe) families — twenty material renderers in all, registered opt-in per render state.
+WebGL2 forward renderer for the 3D scene graph — the per-subject leaf renderer in the `<subject>-<backend>` layering that turns a `Node3D` tree of `Mesh`es into draw calls over `render-gl`. It owns the mesh-material program/shader library that a real-time 3D engine's GL backend is expected to provide: a single GLSL 300 es PBR uber-shader (Cook-Torrance GGX, seven glTF extension lobes) specialized by a `#define` block, plus classic (lambert/phong/blinn-phong), stylized (toon/matcap), attribute (vertex-color/emissive), and debug (normal/depth/wireframe) families — twenty material renderers in all, registered opt-in per render state.
 
-It ends where the substrate begins: `render-gl` owns GPU plumbing (state, targets, fullscreen/surface, the GL context), `render` owns the backend-agnostic update pipeline and `prepareSceneRender`, and `@flighthq/types` owns every cross-package type (`Material`, `MeshSubset`, `SceneLights`, `GlMeshMaterialRenderer`). scene-gl is the GL leaf that binds those together into a forward draw. Its peer is `scene-wgpu` — the same subject over a different backend core. It is **not** the 3D scene graph itself (that is `scene`), nor the data primitives (`mesh`, `texture`, `lighting`, `camera`).
+It ends where the substrate begins: `render-gl` owns GPU plumbing (state, targets, fullscreen/surface, the GL context), `render` owns the backend-agnostic update pipeline and `prepareScene3DRender`, and `@flighthq/types` owns every cross-package type (`Material`, `MeshSubset`, `Scene3DLights`, `GlMeshMaterialRenderer`). scene-gl is the GL leaf that binds those together into a forward draw. Its peer is `scene-wgpu` — the same subject over a different backend core. It is **not** the 3D scene graph itself (that is `scene`), nor the data primitives (`mesh`, `texture`, `lighting`, `camera`).
 
 ## North star
 
@@ -41,7 +41,7 @@ In scope:
 Out of scope (owned elsewhere):
 
 - The 3D scene graph and node hierarchy (`scene`), and the data primitives `mesh` / `texture` / `lighting` / `camera`.
-- GPU plumbing — context, targets, fullscreen/surface, state — owned by `render-gl`; the update pipeline and `prepareSceneRender`, owned by `render`.
+- GPU plumbing — context, targets, fullscreen/surface, state — owned by `render-gl`; the update pipeline and `prepareScene3DRender`, owned by `render`.
 - Cross-package type definitions, owned by `@flighthq/types`.
 - The wgpu backend (`scene-wgpu`) and the Canvas2D/DOM substrates (which do not exist for 3D).
 
@@ -58,7 +58,7 @@ Open at the boundary (see Open directions): the multi-light model, IBL/shadow/sk
 
 Every candidate question the review surfaced, plus the structural forks that touch this package. These are where an agent should **ask**, not assume.
 
-- **Lighting model bound (highest leverage).** The forward path carries at most one directional + one ambient light — no point/spot/hemisphere, no attenuation. Is this a temporary state or a deliberate tier-1 boundary? Multi-light requires a `SceneLights`/`SceneLightBlock` redesign (`MAX_FORWARD_LIGHTS`, point/spot arrays, attenuation, an N-light loop) that is a cross-package coordination with `types` / `render` / `scene-wgpu` / Rust — a design fork, not within-package work. (Touches fork A: where light source-data lives vs. its consumption here.)
+- **Lighting model bound (highest leverage).** The forward path carries at most one directional + one ambient light — no point/spot/hemisphere, no attenuation. Is this a temporary state or a deliberate tier-1 boundary? Multi-light requires a `Scene3DLights`/`SceneLightBlock` redesign (`MAX_FORWARD_LIGHTS`, point/spot arrays, attenuation, an N-light loop) that is a cross-package coordination with `types` / `render` / `scene-wgpu` / Rust — a design fork, not within-package work. (Touches fork A: where light source-data lives vs. its consumption here.)
 - **GPU teardown ownership (correctness/leak gap).** The package creates `WebGLProgram`s, VAOs, and vertex/index buffers but exposes no `destroy*`. The codebase-map rule says a GPU backend that allocates owes a `destroy*`. Where does it live — scene-gl per family, a single `destroyGlScene*` over `GlSceneRuntime`, or delegated to `render-gl`'s state destroy? The runtime only gestures at "a future destroy path"; the charter should rule.
 - **Pool semantics.** The draw-entry "pool" does not actually recycle — after frame 1 it allocates fresh entries every frame, and there is no `release*` to match `acquire*`. Either make it a real `acquire*`/`release*` bracket that recycles, or drop the pool for plain per-frame arrays (entries are cheap). The current half-state is the worst of both and the "pool" name implies a contract the code does not honor.
 - **scene-wgpu parity as a stated boundary.** Every scene-gl feature (uv1, HAS_UV1, the transparency sort) lands on the wgpu parity-gap list. Is "scene-gl leads, scene-wgpu follows" a blessed boundary, or should new features land in both backends together? The status flags this as a standing risk.

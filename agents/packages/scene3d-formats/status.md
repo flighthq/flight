@@ -168,7 +168,7 @@ The AWD importer is now explicitly **AWD2** end-to-end, reserving the bare `Awd3
 future AwayJS SceneGraph (version-3) parser.
 
 **API split (user-ratified).** Renamed the public surface: `parseAwd`→`parseAwd2`,
-`createSceneFromAwd`→`createSceneFromAwd2`, `parseAwdSkeletonAnimations`→`parseAwd2SkeletonAnimations`,
+`createScene3DFromAwd`→`createScene3DFromAwd2`, `parseAwdSkeletonAnimations`→`parseAwd2SkeletonAnimations`,
 `registerAwdDecompressor`→`registerAwd2Decompressor`, `registerAwdDeflateDecompressor`→
 `registerAwd2DeflateDecompressor`; internal `AWD_*` schema consts → `AWD2_*` (incl. `AWD2_TANGENT_HANDEDNESS`).
 The `@flighthq/types` `AwdDecompressor` type stays version-neutral (a payload-in/bytes-out contract a future
@@ -188,7 +188,7 @@ mesh/skin (walked from `source`) still imported. Now walks `source`. Confirmed o
 Regression-tested with a stub decompressor (no `node:zlib` at build time).
 
 **Real-corpus verification bench (manual, not committed).** Ran the four review-named AWD2 assets end-to-end
-(parse → SceneDocument → createSceneFromAwd2). All parse with **0 warnings**:
+(parse → Scene3DDocument → createScene3DFromAwd2). All parse with **0 warnings**:
 - PolarBear.awd — v2, uncompressed, skeletal: skin 31 joints, 3 clips (Breathe 62 channels).
 - onkba.awd — v2, deflate, skeletal: skin 40 joints, 5 clips (post-fix).
 - tictac.awd — v2, deflate: 13 textured materials.
@@ -208,7 +208,7 @@ AWD3 is the AwayJS **SceneGraph** binary (version 3): a different block model fr
 textfields, scripts, sounds — a 2D display/timeline authoring format, not just a 3D mesh container). It is
 **recognized-and-rejected** by the AWD2 version guard, not misparsed. Unnecessary for current demos; ranks
 below other unbuilt 3D importers (e.g. FBX). Building it is a separate future charter that will own the bare
-`Awd3`/`createSceneFromAwd3` namespace the AWD2 rename freed. Sample corpus: awayjs-examples `src/assets/AWD3/`.
+`Awd3`/`createScene3DFromAwd3` namespace the AWD2 rename freed. Sample corpus: awayjs-examples `src/assets/AWD3/`.
 
 ### NEXT CHUNK — AWD2 materials as ShadedMaterial (user-directed, review-bed46182; NOT yet done)
 
@@ -285,7 +285,7 @@ Known parser depth gaps, parked here rather than as inline TODOs:
 
 ## 2026-07-17 — AWD skinning wired; shared skin-emit seam across all 3 skeletal formats (builder, reviewed)
 
-`createSceneFromAwd` now emits `joints0`/`weights0` + parses the skeleton block + sets `mesh.skin`
+`createScene3DFromAwd` now emits `joints0`/`weights0` + parses the skeleton block + sets `mesh.skin`
 (joints reachable as `mesh.skin.skeleton.joints`), reaching parity with MD5 and glTF. The "one emitter"
 seam is now real: a shared **`packSkinInfluences`** primitive in `shared.ts` (top-4-by-weight +
 renormalize; `SKINNED_FLOATS_PER_VERTEX`); **MD5 refactored onto it (dropped its duplicate)**, glTF
@@ -299,7 +299,7 @@ renorm is mandatory.
 
 **BREAKING (intra-package):** `parseAwdSkeletonAnimation(bytes, joints, warnings) → AnimationClip` — now
 MD5-symmetric, binds channels to the caller's joints so anim/skeleton/skin share ONE hierarchy (was
-`{clip, skeleton}`; only its own tests called it). App flow: `scene = createSceneFromAwd(bytes)` →
+`{clip, skeleton}`; only its own tests called it). App flow: `scene = createScene3DFromAwd(bytes)` →
 find skinned mesh → `parseAwdSkeletonAnimation(bytes, mesh.skin.skeleton.joints)`. Flag for downstream
 (flight-reference) AWD usage.
 

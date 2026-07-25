@@ -14,7 +14,7 @@ None remaining.
 
 ## Recommended
 
-1. **Make `SceneHit.node` type-honest.** `SceneHit.node` (in `@flighthq/types`) is declared non-null
+1. **Make `Scene3DHit.node` type-honest.** `Scene3DHit.node` (in `@flighthq/types`) is declared non-null
    `Mesh`, but `createSceneHit()` initializes it `null as unknown as Mesh` (`pickScene.ts`). A fresh
    hit — the documented `out` for `pickScene` and a reused slot in `pickSceneAll`'s output array —
    therefore exposes `node === null` under a type that promises `Mesh`; any consumer reading `.node`
@@ -53,7 +53,7 @@ instancing/LOD contracts.
 
 ## Approved
 
-- [2026-07-21 · completed] `SceneHit` extends Entity and `createSceneHit` uses `createEntity`, preserving
+- [2026-07-21 · completed] `Scene3DHit` extends Entity and `createSceneHit` uses `createEntity`, preserving
   caller-owned reuse and flat result fields.
 - [2026-07-21 · completed] Narrow-phase triangle decoding now consumes mesh's shared logical-triangle
   primitive. Indexed/non-indexed triangle strips use alternating CCW winding rather than the old

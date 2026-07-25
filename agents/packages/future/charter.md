@@ -41,7 +41,7 @@ replaces wholesale.
   `complete(value | null)`. Named `Deferred` rather than `Promise` to avoid shadowing the global
   `Promise` in TS.
 - **Progress** — normalized `0..1` plus an optional typed detail. The loader's currently-separate
-  progress signals (`loadAssetGroup`, `loadSceneResources`) **fold into** the Future's progress
+  progress signals (`loadAssetGroup`, `loadScene3DResources`) **fold into** the Future's progress
   channel — one object instead of "Promise + separate progress signal."
 
 ## Surface

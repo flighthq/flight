@@ -29,7 +29,7 @@ import {
   createDisplayObject,
   defaultCanvasBitmapRenderer,
   loadImageResourceFromUrl,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasDisplayObject,
@@ -55,7 +55,7 @@ bitmap.data.image = await loadImageResourceFromUrl('assets/wabbit_alpha.png');
 addNodeChild(root, bitmap);
 
 function enterFrame(): void {
-  if (prepareDisplayObjectRender(state, root)) {
+  if (prepareScene2DRender(state, root)) {
     renderCanvasBackground(state);
     renderCanvasDisplayObject(state, root);
   }
@@ -92,7 +92,7 @@ connectSignal(tween.onUpdate, () => invalidateNodeRender(sprite));
 const app = createApplication();
 connectSignal(app.onUpdate, (delta) => updateTweens(manager, delta));
 connectSignal(app.onRender, () => {
-  if (prepareDisplayObjectRender(state, root)) {
+  if (prepareScene2DRender(state, root)) {
     renderCanvasBackground(state);
     renderCanvasDisplayObject(state, root);
   }

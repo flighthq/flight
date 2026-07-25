@@ -73,7 +73,7 @@ below.
    segment-local easing on `AnimationTrack`. Split vectors into scalar tracks only when their
    component handles differ. Dense baking is a fallback only for a genuinely unrepresentable curve.
 2. **Animation target ownership.** Transform and opacity bind through the general
-   `DisplayObjectAnimationTarget` and `applyAnimationClipToDisplayObject` in
+   `Node2DAnimationTarget` and `applyAnimationClipToNode2D` in
    `@flighthq/scene2d`. Format-owned targets remain only for properties above that package,
    such as mutable shape, paint, and text data.
 3. **Precompositions and time remapping.** Flatten ordinary precomposition channels into root time,

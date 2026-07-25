@@ -23,7 +23,7 @@ attribute access.
 The next depth is semantic rather than another overload: picks must agree with what was actually drawn.
 GPU-skinned, morphed, billboarded, instanced, and LOD-selected geometry can currently diverge from the
 CPU geometry queried here. Result data also stops short of interpolated attributes and material/subset
-identity. `SceneHit` now honors the repository-wide Entity constructor invariant.
+identity. `Scene3DHit` now honors the repository-wide Entity constructor invariant.
 
 ## What is solid
 

@@ -13,7 +13,7 @@ status: ./status.md
 
 ## What it is
 
-The WebGPU (WGSL) backend renderer for the 3D scene/mesh subject family — the per-backend leaf that turns a prepared `SceneNode` graph + `Camera` + `SceneLights` into draw calls. It carries the full catalogue of mesh-material shaders: a glTF-tier Cook-Torrance PBR uber-shader with its KHR extension lobes (clearcoat, sheen, anisotropy, iridescence, specular, subsurface, transmission/volume), the classic families (unlit, Blinn-Phong, Phong, Lambert, emissive), the NPR families (toon, matcap), and the debug families (vertex-color, normal, depth, wireframe).
+The WebGPU (WGSL) backend renderer for the 3D scene/mesh subject family — the per-backend leaf that turns a prepared `Node3D` graph + `Camera` + `Scene3DLights` into draw calls. It carries the full catalogue of mesh-material shaders: a glTF-tier Cook-Torrance PBR uber-shader with its KHR extension lobes (clearcoat, sheen, anisotropy, iridescence, specular, subsurface, transmission/volume), the classic families (unlit, Blinn-Phong, Phong, Lambert, emissive), the NPR families (toon, matcap), and the debug families (vertex-color, normal, depth, wireframe).
 
 It is the `scene-<backend>` leaf in the render layering: it sits over the `render-wgpu` core (state, targets, GPU plumbing) and the backend-agnostic `render` core (registration, queue, update pipeline), consumes types defined in `@flighthq/types` and packed in `@flighthq/render`, and renders the 3D subject `scene` / `mesh` / `lighting` / `texture` / `camera` produce. It ends where the GPU plumbing begins (`render-wgpu`) and where the deliberate twin `scene-gl` (WebGL/GLSL) covers the other GPU backend — the two are designed to mirror each other.
 
