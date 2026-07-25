@@ -1,6 +1,6 @@
 import type { GltfDocument } from './GltfSchema';
 import type { ImportDiagnostic } from './ImportDiagnostic';
-import type { SceneDocument } from './SceneDocument';
+import type { Scene3DDocument } from './Scene3DDocument';
 import type { Transform3D } from './Transform3D';
 
 // The deliberately small context an individually imported glTF extension handler receives. Core parsing
@@ -11,7 +11,7 @@ import type { Transform3D } from './Transform3D';
 export interface GltfExtensionContext {
   buildNodeTransform(node: number): Transform3D;
   diagnostics?: ImportDiagnostic[];
-  document: SceneDocument;
+  document: Scene3DDocument;
   nodeIndices: readonly number[];
   source: Readonly<GltfDocument>;
 }

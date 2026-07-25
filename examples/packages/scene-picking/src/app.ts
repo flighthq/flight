@@ -3,9 +3,9 @@ import {
   rotateOrbitCameraController,
   updateOrbitCameraController,
 } from '@flighthq/camera-controls';
-import { createSceneHit, pickScene } from '@flighthq/picking';
-import { createSceneNode } from '@flighthq/scene';
-import type { Camera3D, Mesh, SceneLightsLike, StandardPbrMaterial } from '@flighthq/sdk';
+import { createScene3DHit, pickScene3D } from '@flighthq/picking';
+import { createNode3D } from '@flighthq/scene';
+import type { Camera3D, Mesh, Scene3DLightsLike, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
   createAmbientLight,
@@ -21,7 +21,7 @@ import {
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   normalizeVector3,
-  SceneNodeKind,
+  Node3DKind,
   setQuaternionFromEuler,
 } from '@flighthq/sdk';
 
@@ -35,7 +35,7 @@ interface Pickable {
 
 const logicalWidth = 800 / scale;
 const logicalHeight = 600 / scale;
-const scene = createSceneNode(SceneNodeKind);
+const scene = createNode3D(Node3DKind);
 const pickables: Pickable[] = [];
 const colors = [0xe95f6dff, 0x44c6d8ff, 0xf1af4bff, 0x8d71eaff, 0x62c979ff, 0xe076b4ff];
 
@@ -75,12 +75,12 @@ const controller = createOrbitCameraController({
 });
 const direction = createVector3(-0.6, -1, -0.8);
 normalizeVector3(direction, direction);
-const lights: SceneLightsLike = {
+const lights: Scene3DLightsLike = {
   ambient: createAmbientLight({ color: 0x7890b8ff, intensity: 0.3 }),
   directional: createDirectionalLight({ color: 0xffead2ff, direction, intensity: 3.2 }),
 };
 
-const hit = createSceneHit();
+const hit = createScene3DHit();
 const pickableMeshes = new Set(pickables.map((item) => item.mesh));
 let hovered: Mesh | null = null;
 let selected: Mesh | null = pickables[4].mesh;
@@ -100,7 +100,7 @@ function pickPointer(event: PointerEvent): Mesh | null {
   const screenX = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
   const screenY = 1 - ((event.clientY - bounds.top) / bounds.height) * 2;
   return (
-    pickScene(scene, camera, screenX, screenY, hit, {
+    pickScene3D(scene, camera, screenX, screenY, hit, {
       predicate: (mesh) => pickableMeshes.has(mesh),
     })?.node ?? null
   );

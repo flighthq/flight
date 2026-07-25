@@ -1,7 +1,7 @@
 import { setVector3 } from '@flighthq/geometry';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh';
 import { invalidateNodeLocalTransform } from '@flighthq/node';
-import { createSceneNode } from '@flighthq/scene';
+import { createNode3D } from '@flighthq/scene';
 import type { MeshGeometry, VertexAttributeLayout } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
@@ -77,7 +77,7 @@ describe('captureMeshSkinBindPose', () => {
 describe('skinMeshGeometry', () => {
   it('leaves the vertex at its bind position when the palette is identity', () => {
     const geometry = createOneVertexSkinnedGeometry([1, 0, 0], [0, 1, 0], [0, 0, 0, 0], [1, 0, 0, 0]);
-    const joint = createSceneNode();
+    const joint = createNode3D();
     const skeleton = createSkeleton3D([joint]);
     const bindPose = captureMeshSkinBindPose(geometry);
     const versionBefore = geometry.version;
@@ -93,7 +93,7 @@ describe('skinMeshGeometry', () => {
 
   it('translates the vertex by a translated joint and preserves the untouched channels', () => {
     const geometry = createOneVertexSkinnedGeometry([1, 0, 0], [0, 1, 0], [0, 0, 0, 0], [1, 0, 0, 0]);
-    const joint = createSceneNode();
+    const joint = createNode3D();
     // Bind pose is captured with the joint at the origin (inverse-bind = identity), then the joint moves.
     const skeleton = createSkeleton3D([joint]);
     const bindPose = captureMeshSkinBindPose(geometry);

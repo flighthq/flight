@@ -3,7 +3,7 @@ import type { TransformMode2D } from './TransformMode2D';
 // One bone in a Skeleton2D's flat, parent-before-child ordered bone array. It carries its LOCAL setup
 // transform (the pose that animation mutates), its parent link, and its inherit mode. World transforms
 // are derived from these by computeSkeleton2DWorldTransforms — skeleton2d owns and propagates the tree
-// itself (unlike skeleton3d, whose joints are external SceneNodes it only reads), the Spine/DragonBones
+// itself (unlike skeleton3d, whose joints are external Node3Ds it only reads), the Spine/DragonBones
 // model.
 //
 // Angles are DEGREES (the authoring layer; converted to radians internally before any trig), matching

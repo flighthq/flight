@@ -192,7 +192,7 @@ export async function launchBrowser(
       // bake, a float render target) needs more than `frames` frames before its first non-blank frame.
       // Freezing hard on frame N would then shoot black. So for a GPU verifier the halt treats `frames`
       // as a minimum: once past it, keep advancing until the verifier publishes a real (non-blank) frame,
-      // up to this ceiling. Scenes already non-blank by frame N halt at exactly N (unchanged), so stable
+      // up to this ceiling. Scene3Ds already non-blank by frame N halt at exactly N (unchanged), so stable
       // baselines are unaffected; only warm-up-slow scenes render the extra frames. A scene that stays
       // blank to the ceiling still stops, and the verifier guard in captureEntry then fails it — no false
       // green, no unbounded loop (captureEntry's own 15s wait is the outer bound either way).

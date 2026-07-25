@@ -3,23 +3,23 @@ import { copyQuaternion, copyVector3, createQuaternion, createVector3 } from '@f
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import type { MeshMorph } from '@flighthq/types';
 import {
-  SceneAnimationPathRotation,
-  SceneAnimationPathScale,
-  SceneAnimationPathTranslation,
-  SceneAnimationPathWeights,
+  Scene3DAnimationPathRotation,
+  Scene3DAnimationPathScale,
+  Scene3DAnimationPathTranslation,
+  Scene3DAnimationPathWeights,
 } from '@flighthq/types';
 
 import { createMesh } from './mesh';
-import { applyAnimationClipToScene } from './sceneAnimation';
-import { createSceneNode } from './sceneNode';
+import { applyAnimationClipToScene3D } from './sceneAnimation';
+import { createNode3D } from './sceneNode';
 
-describe('applyAnimationClipToScene', () => {
+describe('applyAnimationClipToScene3D', () => {
   it('drives a node translation from a Vector3 channel', () => {
-    const node = createSceneNode();
+    const node = createNode3D();
     const track = createAnimationTrack({ components: 3, times: [0, 1], values: [0, 0, 0, 10, 20, 30] });
-    const clip = createAnimationClip([createAnimationChannel(track, { node, path: SceneAnimationPathTranslation })]);
+    const clip = createAnimationClip([createAnimationChannel(track, { node, path: Scene3DAnimationPathTranslation })]);
 
-    applyAnimationClipToScene(clip, 0.5);
+    applyAnimationClipToScene3D(clip, 0.5);
 
     const out = createVector3();
     copyVector3(out, node.position);
@@ -29,7 +29,7 @@ describe('applyAnimationClipToScene', () => {
   });
 
   it('drives a node rotation from a quaternion channel', () => {
-    const node = createSceneNode();
+    const node = createNode3D();
     const s = Math.sin(Math.PI / 4);
     const c = Math.cos(Math.PI / 4);
     const track = createAnimationTrack({
@@ -37,9 +37,9 @@ describe('applyAnimationClipToScene', () => {
       times: [0, 1],
       values: [0, 0, 0, 1, 0, 0, s, c],
     });
-    const clip = createAnimationClip([createAnimationChannel(track, { node, path: SceneAnimationPathRotation })]);
+    const clip = createAnimationClip([createAnimationChannel(track, { node, path: Scene3DAnimationPathRotation })]);
 
-    applyAnimationClipToScene(clip, 1);
+    applyAnimationClipToScene3D(clip, 1);
 
     const out = createQuaternion();
     copyQuaternion(out, node.rotation);
@@ -50,11 +50,11 @@ describe('applyAnimationClipToScene', () => {
   });
 
   it('drives a node scale', () => {
-    const node = createSceneNode();
+    const node = createNode3D();
     const track = createAnimationTrack({ components: 3, times: [0, 1], values: [1, 1, 1, 3, 3, 3] });
-    const clip = createAnimationClip([createAnimationChannel(track, { node, path: SceneAnimationPathScale })]);
+    const clip = createAnimationClip([createAnimationChannel(track, { node, path: Scene3DAnimationPathScale })]);
 
-    applyAnimationClipToScene(clip, 1);
+    applyAnimationClipToScene3D(clip, 1);
 
     const out = createVector3();
     copyVector3(out, node.scale);
@@ -75,9 +75,9 @@ describe('applyAnimationClipToScene', () => {
     mesh.morph = morph;
     // A 2-wide weights track: at t=0.5 it interpolates halfway between [0,0] and [1,0.5].
     const track = createAnimationTrack({ components: 2, times: [0, 1], values: [0, 0, 1, 0.5] });
-    const clip = createAnimationClip([createAnimationChannel(track, { node: mesh, path: SceneAnimationPathWeights })]);
+    const clip = createAnimationClip([createAnimationChannel(track, { node: mesh, path: Scene3DAnimationPathWeights })]);
 
-    applyAnimationClipToScene(clip, 0.5);
+    applyAnimationClipToScene3D(clip, 0.5);
 
     expect(morph.weights[0]).toBeCloseTo(0.5);
     expect(morph.weights[1]).toBeCloseTo(0.25);
@@ -86,17 +86,17 @@ describe('applyAnimationClipToScene', () => {
   it('skips a Weights channel whose target mesh carries no morph', () => {
     const mesh = createMesh(createBoxMeshGeometry(), []);
     const track = createAnimationTrack({ components: 1, times: [0, 1], values: [0, 1] });
-    const clip = createAnimationClip([createAnimationChannel(track, { node: mesh, path: SceneAnimationPathWeights })]);
+    const clip = createAnimationClip([createAnimationChannel(track, { node: mesh, path: Scene3DAnimationPathWeights })]);
     // No morph on the mesh — the channel is skipped without throwing.
-    expect(() => applyAnimationClipToScene(clip, 1)).not.toThrow();
+    expect(() => applyAnimationClipToScene3D(clip, 1)).not.toThrow();
   });
 
   it('skips channels whose targetRef is not a scene target', () => {
-    const node = createSceneNode();
+    const node = createNode3D();
     const track = createAnimationTrack({ components: 3, times: [0, 1], values: [0, 0, 0, 9, 9, 9] });
     const clip = createAnimationClip([createAnimationChannel(track, null)]);
 
-    applyAnimationClipToScene(clip, 1);
+    applyAnimationClipToScene3D(clip, 1);
 
     const out = createVector3();
     copyVector3(out, node.position);

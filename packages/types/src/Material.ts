@@ -18,7 +18,7 @@ export interface Material extends Entity {
   readonly kind: Kind;
   // The authored material name — an importer preserves the source file's material identity here
   // (an MTL `newmtl`, a glTF `material.name`, a 3DS material chunk), so a material stays
-  // addressable by its artist-given handle after import (see findSceneMaterialByName). `null` for
+  // addressable by its artist-given handle after import (see findScene3DMaterialByName). `null` for
   // programmatically-created materials that carry no authored name (createMaterial defaults it so).
   // Optional so `MaterialLike` structural literals need not spell it; entity constructors normalize
   // it to `null`. Inert data, part of the serialized round-trip.

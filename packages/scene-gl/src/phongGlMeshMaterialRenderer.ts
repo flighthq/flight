@@ -9,8 +9,8 @@ import type {
   Material,
   MeshGeometry,
   PhongMaterial,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
   GlClassicDefineKey,
   GlClassicProgram,
 } from '@flighthq/types';
@@ -27,7 +27,7 @@ import {
   setGlMeshCameraPosition,
   setGlMeshViewProjection,
 } from './glMeshProgram';
-import { getGlSceneRuntime } from './glSceneRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 
 // The built-in classic Phong forward-lit mesh-material renderer (GlMeshMaterialRenderer for
 // PhongMaterialKind). Lambert diffuse plus a reflection-vector specular lobe: bind selects the classic
@@ -39,7 +39,7 @@ export const phongGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
     material: Readonly<Material> | null,
-    lights: Readonly<SceneLightBlock>,
+    lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const gl = state.gl;
@@ -53,15 +53,15 @@ export const phongGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     bindGlPhongMaterialUniforms(state, program, phong);
   },
 
-  draw(state: GlRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
-    const program = getGlSceneRuntime(state).activeMeshProgram;
+  draw(state: GlRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+    const program = getGlScene3DRuntime(state).activeMeshProgram;
     if (program === null) return;
     drawGlMeshSubset(state, program, proxy, geometry);
   },
 };
 
 // Registers the built-in Phong renderer for PhongMaterialKind on this state. Opt-in (no top-level
-// side effect); call once per GlRenderState before drawScene so meshes with PhongMaterials draw.
+// side effect); call once per GlRenderState before drawScene3D so meshes with PhongMaterials draw.
 export function registerPhongGlMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, PhongMaterialKind, phongGlMeshMaterialRenderer);
 }

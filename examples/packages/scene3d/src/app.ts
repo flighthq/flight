@@ -1,5 +1,5 @@
-import { createSceneNode } from '@flighthq/scene';
-import type { Camera3D, SceneLightsLike } from '@flighthq/sdk';
+import { createNode3D } from '@flighthq/scene';
+import type { Camera3D, Scene3DLightsLike } from '@flighthq/sdk';
 import {
   addNodeChild,
   configureDirectionalShadowCamera3D,
@@ -22,14 +22,14 @@ import {
   invalidateNodeLocalTransform,
   normalizeVector3,
   rotateOrbitCameraController,
-  SceneNodeKind,
+  Node3DKind,
   updateOrbitCameraController,
 } from '@flighthq/sdk';
 
 import { canvas, render, scale } from './render';
 
-// The scene root is a bare SceneNode (createScene now allocates a Scene *document* that owns a root);
-// createSceneNode is imported from @flighthq/scene directly to sidestep the @flighthq/sdk barrel.
+// The scene root is a bare Node3D (createScene3D now allocates a Scene3D *document* that owns a root);
+// createNode3D is imported from @flighthq/scene directly to sidestep the @flighthq/sdk barrel.
 
 const logicalWidth = 800 / scale;
 const logicalHeight = 600 / scale;
@@ -58,7 +58,7 @@ const blueMaterial = createStandardPbrMaterial({
   roughness: 0.5,
 });
 
-const scene = createSceneNode(SceneNodeKind);
+const scene = createNode3D(Node3DKind);
 
 const ground = createMesh(createPlaneMeshGeometry(7, 5, 7, 5), [
   createStandardPbrMaterial({
@@ -117,7 +117,7 @@ const directionalLight = createDirectionalLight({
   pcfRadius: 1,
   shadowBias: 0.001,
 });
-const lights: SceneLightsLike = {
+const lights: Scene3DLightsLike = {
   ambient: createAmbientLight({ color: 0x607090ff, intensity: 0.2 }),
   directional: directionalLight,
   point: [

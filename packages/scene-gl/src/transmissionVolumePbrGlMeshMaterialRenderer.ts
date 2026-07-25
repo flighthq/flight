@@ -6,8 +6,8 @@ import type {
   GlRenderState,
   Material,
   MeshGeometry,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
   TransmissionVolumePbrMaterial,
 } from '@flighthq/types';
 import { TransmissionVolumePbrMaterialKind } from '@flighthq/types';
@@ -17,7 +17,7 @@ import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshCameraPosition, setGlMeshViewProjection } from './glMeshProgram';
 import { ensureGlPbrProgram } from './glPbrProgramCache';
 import { bindGlPbrStandardBlock, buildGlPbrStandardDefineKey } from './glPbrStandardBlock';
-import { getGlSceneRuntime } from './glSceneRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 
 // The built-in TransmissionVolume (KHR_materials_transmission + KHR_materials_volume) forward-lit
 // mesh-material renderer for refractive, see-through surfaces (glass, liquid).
@@ -38,7 +38,7 @@ export const transmissionVolumePbrGlMeshMaterialRenderer: GlMeshMaterialRenderer
   bind(
     state: GlRenderState,
     material: Readonly<Material> | null,
-    lights: Readonly<SceneLightBlock>,
+    lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const gl = state.gl;
@@ -65,15 +65,15 @@ export const transmissionVolumePbrGlMeshMaterialRenderer: GlMeshMaterialRenderer
     }
   },
 
-  draw(state: GlRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
-    const program = getGlSceneRuntime(state).activeMeshProgram;
+  draw(state: GlRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+    const program = getGlScene3DRuntime(state).activeMeshProgram;
     if (program === null) return;
     drawGlMeshSubset(state, program, proxy, geometry);
   },
 };
 
 // Installs the built-in TransmissionVolume renderer for TransmissionVolumePbrMaterialKind on this
-// state. Opt-in (no top-level side effect): drawScene only draws TransmissionVolume subsets once
+// state. Opt-in (no top-level side effect): drawScene3D only draws TransmissionVolume subsets once
 // this is called.
 export function registerTransmissionVolumePbrGlMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, TransmissionVolumePbrMaterialKind, transmissionVolumePbrGlMeshMaterialRenderer);

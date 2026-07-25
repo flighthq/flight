@@ -8,8 +8,8 @@ import {
 import type { Modifier, GlShadedDefineKey } from '@flighthq/types';
 import { VertexDisplaceModifierSource } from '@flighthq/types';
 
-import { getGlSceneRuntime } from './glSceneRuntime';
-import { makeFakeGl2, makeGlSceneState } from './glSceneTestHelper';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
 import { emissiveGlModifierSnippet, envReflectGlModifierSnippet } from './glShadedBuiltInModifiers';
 import { registerBuiltInGlModifierSnippets, vertexDisplaceGlModifierSnippet } from './glShadedBuiltInModifiers';
 import { buildGlShadedCacheKey, compileGlShadedProgram, ensureGlShadedProgram } from './glShadedPrelude';
@@ -147,31 +147,31 @@ describe('compileGlShadedProgram', () => {
 
 describe('ensureGlShadedProgram', () => {
   it('caches the compiled program under a shaded: key and reuses it', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     const first = ensureGlShadedProgram(state, BASE_KEY, []);
     const second = ensureGlShadedProgram(state, BASE_KEY, []);
     expect(second).toBe(first);
-    const keys = [...getGlSceneRuntime(state).programCache.keys()];
+    const keys = [...getGlScene3DRuntime(state).programCache.keys()];
     expect(keys.some((k) => k.startsWith('shaded:'))).toBe(true);
   });
 
   it('folds the render-state skinned-run flag into a distinct HAS_SKIN variant', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     const rigid = ensureGlShadedProgram(state, BASE_KEY, []);
-    getGlSceneRuntime(state).activeSkinnedRun = true;
+    getGlScene3DRuntime(state).activeSkinnedRun = true;
     const skinned = ensureGlShadedProgram(state, BASE_KEY, []);
 
     expect(skinned).not.toBe(rigid);
-    expect([...getGlSceneRuntime(state).programCache.keys()]).toContain('shaded:-----k|');
+    expect([...getGlScene3DRuntime(state).programCache.keys()]).toContain('shaded:-----k|');
     expect(skinned.locJointTexture).not.toBeNull();
   });
 
   it('compiles distinct variants for distinct modifier feature-sets', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     registerBuiltInGlModifierSnippets(state);
     ensureGlShadedProgram(state, BASE_KEY, []);
     ensureGlShadedProgram(state, BASE_KEY, [createEmissiveModifier({ color: 0xffffffff })]);
-    const keys = [...getGlSceneRuntime(state).programCache.keys()].filter((k) => k.startsWith('shaded:'));
+    const keys = [...getGlScene3DRuntime(state).programCache.keys()].filter((k) => k.startsWith('shaded:'));
     expect(new Set(keys).size).toBe(2);
   });
 });

@@ -117,7 +117,7 @@ instructionsText.data.text =
   'Backspace/Delete: delete | Ctrl+Backspace: delete word';
 invalidateNodeLocalTransform(instructionsText);
 
-// Scene graph assembly.
+// Scene3D graph assembly.
 addNodeChild(root, focusHighlight);
 addNodeChild(root, normalLabel);
 addNodeChild(root, normalField);

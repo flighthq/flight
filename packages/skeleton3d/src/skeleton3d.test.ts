@@ -1,6 +1,6 @@
 import { createMatrix4, getMatrix4Element, setVector3 } from '@flighthq/geometry';
 import { addNodeChild, getNodeParent, invalidateNodeLocalTransform, setNodeTransform3D } from '@flighthq/node';
-import { createSceneNode } from '@flighthq/scene';
+import { createNode3D } from '@flighthq/scene';
 import { EntityRuntimeKey } from '@flighthq/types';
 
 import {
@@ -19,7 +19,7 @@ import {
 
 describe('cloneSkeleton3D', () => {
   it('copies buffers and arrays into a new identity while sharing joint nodes', () => {
-    const joint = createSceneNode();
+    const joint = createNode3D();
     setVector3(joint.position, 5, 0, 0);
     invalidateNodeLocalTransform(joint);
     const skeleton = createSkeleton3D([joint], undefined, ['root']);
@@ -38,15 +38,15 @@ describe('cloneSkeleton3D', () => {
   });
 
   it('preserves a null names field', () => {
-    const clone = cloneSkeleton3D(createSkeleton3D([createSceneNode()]));
+    const clone = cloneSkeleton3D(createSkeleton3D([createNode3D()]));
     expect(clone.names).toBeNull();
   });
 });
 
 describe('cloneSkeleton3DJointHierarchy', () => {
   it('rebuilds joint parentage over fresh nodes and isolates pose updates', () => {
-    const root = createSceneNode();
-    const child = createSceneNode();
+    const root = createNode3D();
+    const child = createNode3D();
     setVector3(root.position, 1, 0, 0);
     setVector3(child.position, 0, 2, 0);
     invalidateNodeLocalTransform(root);
@@ -55,7 +55,7 @@ describe('cloneSkeleton3DJointHierarchy', () => {
     const source = createSkeleton3D([root, child], undefined, ['root', 'child']);
 
     const clone = cloneSkeleton3DJointHierarchy(source, (joint) => {
-      const out = createSceneNode(joint.kind, joint);
+      const out = createNode3D(joint.kind, joint);
       setNodeTransform3D(out, joint);
       return out;
     });
@@ -81,7 +81,7 @@ describe('cloneSkeleton3DJointHierarchy', () => {
 
 describe('computeSkeleton3DJointMatrices', () => {
   it('encodes the joint delta from its bind pose', () => {
-    const joint = createSceneNode();
+    const joint = createNode3D();
     setVector3(joint.position, 5, 0, 0);
     invalidateNodeLocalTransform(joint);
     const skeleton = createSkeleton3D([joint]); // binds at (5, 0, 0)
@@ -95,8 +95,8 @@ describe('computeSkeleton3DJointMatrices', () => {
   });
 
   it('is alias-safe when jointMatrices and inverseBindMatrices share the same buffer', () => {
-    const joint0 = createSceneNode();
-    const joint1 = createSceneNode();
+    const joint0 = createNode3D();
+    const joint1 = createNode3D();
     setVector3(joint0.position, 0, 0, 0);
     invalidateNodeLocalTransform(joint0);
     setVector3(joint1.position, 3, 0, 0);
@@ -119,9 +119,9 @@ describe('computeSkeleton3DJointMatrices', () => {
   });
 
   it('propagates correctly through a 3-joint chain', () => {
-    const joint0 = createSceneNode();
-    const joint1 = createSceneNode();
-    const joint2 = createSceneNode();
+    const joint0 = createNode3D();
+    const joint1 = createNode3D();
+    const joint2 = createNode3D();
     setVector3(joint0.position, 1, 0, 0);
     invalidateNodeLocalTransform(joint0);
     setVector3(joint1.position, 0, 1, 0);
@@ -149,7 +149,7 @@ describe('computeSkeleton3DJointMatrices', () => {
   });
 
   it('yields identity when a joint is at its bind pose', () => {
-    const joint = createSceneNode();
+    const joint = createNode3D();
     setVector3(joint.position, 5, 0, 0);
     invalidateNodeLocalTransform(joint);
     const skeleton = createSkeleton3D([joint]);
@@ -164,7 +164,7 @@ describe('computeSkeleton3DJointMatrices', () => {
 
 describe('createSkeleton3D', () => {
   it('allocates a palette sized to the joint count when no inverse-bind is given', () => {
-    const skeleton = createSkeleton3D([createSceneNode(), createSceneNode()]);
+    const skeleton = createSkeleton3D([createNode3D(), createNode3D()]);
     expect(skeleton.jointMatrices.length).toBe(32);
     expect(skeleton.inverseBindMatrices.length).toBe(32);
     expect(EntityRuntimeKey in skeleton).toBe(true);
@@ -173,7 +173,7 @@ describe('createSkeleton3D', () => {
 
 describe('disposeSkeleton3D', () => {
   it('drops joint references and clears names', () => {
-    const skeleton = createSkeleton3D([createSceneNode(), createSceneNode()], undefined, ['a', 'b']);
+    const skeleton = createSkeleton3D([createNode3D(), createNode3D()], undefined, ['a', 'b']);
     disposeSkeleton3D(skeleton);
     expect(skeleton.joints.length).toBe(0);
     expect(skeleton.names).toBeNull();
@@ -182,7 +182,7 @@ describe('disposeSkeleton3D', () => {
 
 describe('equalsSkeleton3D', () => {
   it('is reflexive and compares clones as equal', () => {
-    const joint = createSceneNode();
+    const joint = createNode3D();
     setVector3(joint.position, 2, 0, 0);
     invalidateNodeLocalTransform(joint);
     const skeleton = createSkeleton3D([joint], undefined, ['root']);
@@ -191,18 +191,18 @@ describe('equalsSkeleton3D', () => {
   });
 
   it('differs on joint count, inverse-bind contents, and names', () => {
-    const j0 = createSceneNode();
+    const j0 = createNode3D();
     setVector3(j0.position, 1, 0, 0);
     invalidateNodeLocalTransform(j0);
     const a = createSkeleton3D([j0]);
 
-    const j1 = createSceneNode();
+    const j1 = createNode3D();
     setVector3(j1.position, 9, 0, 0);
     invalidateNodeLocalTransform(j1);
     const differentBind = createSkeleton3D([j1]);
     expect(equalsSkeleton3D(a, differentBind)).toBe(false);
 
-    const extra = createSkeleton3D([createSceneNode(), createSceneNode()]);
+    const extra = createSkeleton3D([createNode3D(), createNode3D()]);
     expect(equalsSkeleton3D(a, extra)).toBe(false);
 
     const named = createSkeleton3D([j0], a.inverseBindMatrices, ['root']);
@@ -214,16 +214,16 @@ describe('equalsSkeleton3D', () => {
 
 describe('getSkeleton3DJointIndexByName', () => {
   it('returns the joint index or -1 when unnamed or missing', () => {
-    const skeleton = createSkeleton3D([createSceneNode(), createSceneNode()], undefined, ['hip', 'spine']);
+    const skeleton = createSkeleton3D([createNode3D(), createNode3D()], undefined, ['hip', 'spine']);
     expect(getSkeleton3DJointIndexByName(skeleton, 'spine')).toBe(1);
     expect(getSkeleton3DJointIndexByName(skeleton, 'missing')).toBe(-1);
-    expect(getSkeleton3DJointIndexByName(createSkeleton3D([createSceneNode()]), 'hip')).toBe(-1);
+    expect(getSkeleton3DJointIndexByName(createSkeleton3D([createNode3D()]), 'hip')).toBe(-1);
   });
 });
 
 describe('getSkeleton3DJointWorldMatrix', () => {
   it('reads the joint world matrix into out and returns true', () => {
-    const joint = createSceneNode();
+    const joint = createNode3D();
     setVector3(joint.position, 5, 3, 0);
     invalidateNodeLocalTransform(joint);
     const skeleton = createSkeleton3D([joint]);
@@ -235,7 +235,7 @@ describe('getSkeleton3DJointWorldMatrix', () => {
   });
 
   it('returns false and leaves out untouched for an out-of-range index', () => {
-    const skeleton = createSkeleton3D([createSceneNode()]);
+    const skeleton = createSkeleton3D([createNode3D()]);
     const out = createMatrix4();
     expect(getSkeleton3DJointWorldMatrix(out, skeleton, 5)).toBe(false);
     expect(getSkeleton3DJointWorldMatrix(out, skeleton, -1)).toBe(false);
@@ -245,8 +245,8 @@ describe('getSkeleton3DJointWorldMatrix', () => {
 
 describe('getSkeleton3DJointWorldMatrixByName', () => {
   it('resolves the joint by name and reads its world matrix', () => {
-    const hip = createSceneNode();
-    const hand = createSceneNode();
+    const hip = createNode3D();
+    const hand = createNode3D();
     setVector3(hand.position, 7, 0, 0);
     invalidateNodeLocalTransform(hand);
     const skeleton = createSkeleton3D([hip, hand], undefined, ['hip', 'hand']);
@@ -260,7 +260,7 @@ describe('getSkeleton3DJointWorldMatrixByName', () => {
 
 describe('setSkeleton3DBindPose', () => {
   it('rebinds so the current pose becomes the rest pose', () => {
-    const joint = createSceneNode();
+    const joint = createNode3D();
     const skeleton = createSkeleton3D([joint]);
     setVector3(joint.position, 2, 0, 0);
     invalidateNodeLocalTransform(joint);
@@ -274,11 +274,11 @@ describe('setSkeleton3DBindPose', () => {
 
 describe('validateSkeleton3D', () => {
   it('returns null for a well-formed skeleton', () => {
-    expect(validateSkeleton3D(createSkeleton3D([createSceneNode(), createSceneNode()]))).toBeNull();
+    expect(validateSkeleton3D(createSkeleton3D([createNode3D(), createNode3D()]))).toBeNull();
   });
 
   it('returns a diagnostic when inverseBindMatrices length does not match jointCount * 16', () => {
-    const skeleton = createSkeleton3D([createSceneNode(), createSceneNode()]);
+    const skeleton = createSkeleton3D([createNode3D(), createNode3D()]);
     skeleton.inverseBindMatrices = new Float32Array(16);
 
     const diagnostic = validateSkeleton3D(skeleton);

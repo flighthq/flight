@@ -10,8 +10,8 @@ import type { MeshGeometryRuntime, MeshMorph, VertexAttributeLayout } from '@fli
 import { EntityRuntimeKey } from '@flighthq/types';
 
 import { ensureWgpuMeshUpload } from './wgpuMeshUpload';
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
-import { makeWgpuSceneState } from './wgpuSceneTestHelper';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 import { registerWgpuGpuSkinning } from './wgpuSkinPalette';
 
 const POSITION_LAYOUT: VertexAttributeLayout = {
@@ -31,7 +31,7 @@ function lastUploadedVertices(calls: readonly { name: string; args: readonly unk
 
 describe('ensureWgpuMeshUpload', () => {
   it('uploads vertex + index buffers and caches by geometry', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const geometry = createBoxMeshGeometry();
     const upload = ensureWgpuMeshUpload(state, geometry);
 
@@ -44,7 +44,7 @@ describe('ensureWgpuMeshUpload', () => {
   });
 
   it('returns the cached upload without re-uploading when version is unchanged', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const geometry = createBoxMeshGeometry();
     const first = ensureWgpuMeshUpload(state, geometry);
     const writesAfterFirst = fake.calls.filter((c) => c.name === 'writeBuffer').length;
@@ -54,7 +54,7 @@ describe('ensureWgpuMeshUpload', () => {
   });
 
   it('re-uploads when geometry.version changes', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     const geometry = createBoxMeshGeometry();
     const first = ensureWgpuMeshUpload(state, geometry);
     geometry.version++;
@@ -64,7 +64,7 @@ describe('ensureWgpuMeshUpload', () => {
   });
 
   it('uploads captured bind-pose positions for a GPU-skinned geometry', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     registerWgpuGpuSkinning(state);
     const vertices = new Float32Array(20);
     vertices[0] = 9;
@@ -96,7 +96,7 @@ describe('ensureWgpuMeshUpload', () => {
   });
 
   it('re-uploads morph-blended vertices as weights change', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const geometry = createMeshGeometry({
       indices: new Uint16Array([0, 0, 0]),
       layout: POSITION_LAYOUT,
@@ -120,7 +120,7 @@ describe('ensureWgpuMeshUpload', () => {
   });
 
   it('uploads current morphed vertices instead of a frozen skin bind pose for GPU skinning', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     registerWgpuGpuSkinning(state);
     const geometry = createMeshGeometry({
       indices: new Uint16Array([0, 0, 0]),
@@ -154,7 +154,7 @@ describe('ensureWgpuMeshUpload', () => {
   });
 
   it('mirrors the upload onto MeshGeometryRuntime.webgpuData', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     const geometry = createBoxMeshGeometry();
     const upload = ensureWgpuMeshUpload(state, geometry);
     const meshRuntime = geometry[EntityRuntimeKey] as MeshGeometryRuntime;
@@ -162,7 +162,7 @@ describe('ensureWgpuMeshUpload', () => {
   });
 
   it('returns null for non-indexed geometry', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     const geometry = createMeshGeometry({
       indices: null,
       layout: {
@@ -172,6 +172,6 @@ describe('ensureWgpuMeshUpload', () => {
       vertices: new Float32Array(9),
     });
     expect(ensureWgpuMeshUpload(state, geometry)).toBeNull();
-    expect(getWgpuSceneRuntime(state).uploadCache.get(geometry)).toBeUndefined();
+    expect(getWgpuScene3DRuntime(state).uploadCache.get(geometry)).toBeUndefined();
   });
 });

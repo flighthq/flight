@@ -3,7 +3,7 @@ import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createCustomShaderMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { createTexture } from '@flighthq/texture';
-import type { Camera3D, ImageResource, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
+import type { Camera3D, ImageResource, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types';
 import { CustomShaderMaterialKind } from '@flighthq/types';
 
 import {
@@ -13,7 +13,7 @@ import {
   registerWgpuCustomMaterialShader,
 } from './customShaderWgpuMeshMaterialRenderer';
 import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { makeWgpuSceneState } from './wgpuSceneTestHelper';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 
 const SOURCE = `
 @group(0) @binding(0) var<uniform> frame: vec4f;
@@ -25,7 +25,7 @@ const SOURCE = `
 @fragment fn fs_main() -> @location(0) vec4f { return user; }
 `;
 
-const NO_LIGHTS: SceneLightBlock = {
+const NO_LIGHTS: Scene3DLightBlock = {
   ambientCount: 0,
   data: new Float32Array(12),
   directionalCount: 0,
@@ -43,7 +43,7 @@ function makeCamera(): Camera3D {
   });
 }
 
-function makeProxy(): SceneRenderProxy {
+function makeProxy(): Scene3DRenderProxy {
   const geometry = createBoxMeshGeometry();
   return {
     material: createCustomShaderMaterial({ shaderKey: 'test' }),
@@ -55,7 +55,7 @@ function makeProxy(): SceneRenderProxy {
 
 describe('customShaderWgpuMeshMaterialRenderer', () => {
   it('reuses Frame/Draw layouts and binds reserved user + texture groups', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     registerWgpuCustomMaterialShader(state, 'test', SOURCE);
     customShaderWgpuMeshMaterialRenderer.bind(
       state,
@@ -71,7 +71,7 @@ describe('customShaderWgpuMeshMaterialRenderer', () => {
   });
 
   it('packs logical values into alphabetically sorted vec4 slots', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     registerWgpuCustomMaterialShader(state, 'test', SOURCE);
     customShaderWgpuMeshMaterialRenderer.bind(
       state,
@@ -89,7 +89,7 @@ describe('customShaderWgpuMeshMaterialRenderer', () => {
   });
 
   it('reuses the group(3) bind group when the texture bag is unchanged', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const material = createCustomShaderMaterial({
       shaderKey: 'test',
       textures: { map: createTexture() },
@@ -103,7 +103,7 @@ describe('customShaderWgpuMeshMaterialRenderer', () => {
   });
 
   it('rebuilds group(3) for readiness, replacement, sampler, key, and bag-order changes', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     state.device.createSampler = ((descriptor: GPUSamplerDescriptor) => {
       fake.calls.push({ name: 'createSampler', args: [descriptor] });
       return { descriptor } as unknown as GPUSampler;
@@ -139,7 +139,7 @@ describe('customShaderWgpuMeshMaterialRenderer', () => {
   });
 
   it('draws an indexed subset after a valid bind and skips a missing shader', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const geometry = createBoxMeshGeometry();
     const proxy = makeProxy();
     customShaderWgpuMeshMaterialRenderer.bind(state, proxy.material, NO_LIGHTS, makeCamera());
@@ -153,7 +153,7 @@ describe('customShaderWgpuMeshMaterialRenderer', () => {
   });
 
   it('skips a user block that exceeds the fixed packing capacity', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     registerWgpuCustomMaterialShader(state, 'test', SOURCE);
     const uniforms: Record<string, number> = {};
     for (let i = 0; i < 33; i++) uniforms[`value${i}`] = i;
@@ -182,14 +182,14 @@ function makeImageResource(version: number): ImageResource {
 
 describe('getWgpuCustomMaterialShaderSource', () => {
   it('returns null for an unknown key', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     expect(getWgpuCustomMaterialShaderSource(state, 'unknown')).toBeNull();
   });
 });
 
 describe('registerCustomShaderWgpuMaterial', () => {
   it('installs the renderer for CustomShaderMaterialKind', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     registerCustomShaderWgpuMaterial(state);
     expect(getWgpuMeshMaterialRenderer(state, CustomShaderMaterialKind)).toBe(customShaderWgpuMeshMaterialRenderer);
   });
@@ -197,7 +197,7 @@ describe('registerCustomShaderWgpuMaterial', () => {
 
 describe('registerWgpuCustomMaterialShader', () => {
   it('registers WGSL by key with last-write-wins lookup', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     registerWgpuCustomMaterialShader(state, 'ripple', SOURCE);
     expect(getWgpuCustomMaterialShaderSource(state, 'ripple')).toBe(SOURCE);
     registerWgpuCustomMaterialShader(state, 'ripple', `${SOURCE}\n// edited`);

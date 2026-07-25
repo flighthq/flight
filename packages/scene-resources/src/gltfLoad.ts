@@ -1,33 +1,33 @@
 import { parseGlb, parseGltf } from '@flighthq/scene-formats';
-import type { GltfDocument, SceneDocument, SceneDocumentLoadOptions } from '@flighthq/types';
+import type { GltfDocument, Scene3DDocument, Scene3DDocumentLoadOptions } from '@flighthq/types';
 
 import {
-  getSceneDocumentBasePathFromUrl,
-  loadSceneDocumentBytesFromUrl,
-  loadSceneDocumentTextFromUrl,
+  getScene3DDocumentBasePathFromUrl,
+  loadScene3DDocumentBytesFromUrl,
+  loadScene3DDocumentTextFromUrl,
 } from './sceneDocumentSource';
 
-// Fetches a binary glTF (`.glb`) from a URL and parses it into a format-neutral SceneDocument. Fetches only
-// the FILE — the document's texture refs stay unresolved; assemble with createSceneFromDocument and load
+// Fetches a binary glTF (`.glb`) from a URL and parses it into a format-neutral Scene3DDocument. Fetches only
+// the FILE — the document's texture refs stay unresolved; assemble with createScene3DFromDocument and load
 // resources on your own schedule. Returns null on transport failure and never touches rendering/GPU state.
-export async function loadSceneDocumentFromGlbUrl(
+export async function loadScene3DDocumentFromGlbUrl(
   url: string,
-  options?: Readonly<SceneDocumentLoadOptions>,
-): Promise<SceneDocument | null> {
-  const bytes = await loadSceneDocumentBytesFromUrl(url, options);
+  options?: Readonly<Scene3DDocumentLoadOptions>,
+): Promise<Scene3DDocument | null> {
+  const bytes = await loadScene3DDocumentBytesFromUrl(url, options);
   if (bytes === null) return null;
-  return parseGlb(bytes, undefined, { basePath: getSceneDocumentBasePathFromUrl(url) });
+  return parseGlb(bytes, undefined, { basePath: getScene3DDocumentBasePathFromUrl(url) });
 }
 
-// Fetches a glTF file from a URL and parses it into a format-neutral SceneDocument. The JSON `.gltf` form is
+// Fetches a glTF file from a URL and parses it into a format-neutral Scene3DDocument. The JSON `.gltf` form is
 // fetched as text; every external `.bin` required to build inline geometry is fetched too, while image URIs
-// remain unresolved resource refs carrying the model's base path. Assemble with createSceneFromDocument and
+// remain unresolved resource refs carrying the model's base path. Assemble with createScene3DFromDocument and
 // load images explicitly. Returns null if the main source or required geometry closure cannot be acquired.
-export async function loadSceneDocumentFromGltfUrl(
+export async function loadScene3DDocumentFromGltfUrl(
   url: string,
-  options?: Readonly<SceneDocumentLoadOptions>,
-): Promise<SceneDocument | null> {
-  const source = await loadSceneDocumentTextFromUrl(url, options);
+  options?: Readonly<Scene3DDocumentLoadOptions>,
+): Promise<Scene3DDocument | null> {
+  const source = await loadScene3DDocumentTextFromUrl(url, options);
   if (source === null) return null;
 
   let gltf: GltfDocument;
@@ -38,7 +38,7 @@ export async function loadSceneDocumentFromGltfUrl(
   }
   if (gltf === null || typeof gltf !== 'object') return null;
 
-  const basePath = getSceneDocumentBasePathFromUrl(url);
+  const basePath = getScene3DDocumentBasePathFromUrl(url);
   const externalBuffers = await loadGltfExternalBuffers(gltf, basePath, options);
   if (externalBuffers === null) return null;
   return parseGltf(gltf, undefined, { basePath, externalBuffers });
@@ -47,7 +47,7 @@ export async function loadSceneDocumentFromGltfUrl(
 async function loadGltfExternalBuffers(
   gltf: Readonly<GltfDocument>,
   basePath: string | null,
-  options?: Readonly<SceneDocumentLoadOptions>,
+  options?: Readonly<Scene3DDocumentLoadOptions>,
 ): Promise<Record<string, Uint8Array> | null> {
   const uris = new Set<string>();
   for (const buffer of gltf.buffers ?? []) {
@@ -58,7 +58,7 @@ async function loadGltfExternalBuffers(
   const externalBuffers: Record<string, Uint8Array> = {};
   const entries = [...uris];
   const bytes = await Promise.all(
-    entries.map((uri) => loadSceneDocumentBytesFromUrl(resolveGltfBufferUrl(uri, basePath), options)),
+    entries.map((uri) => loadScene3DDocumentBytesFromUrl(resolveGltfBufferUrl(uri, basePath), options)),
   );
   for (let i = 0; i < entries.length; i++) {
     const value = bytes[i];

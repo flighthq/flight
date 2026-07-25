@@ -1,5 +1,5 @@
 import {
-  drawWgpuScene,
+  drawWgpuScene3D,
   registerAnisotropyPbrWgpuMaterial,
   registerBlinnPhongWgpuMaterial,
   registerClearcoatPbrWgpuMaterial,
@@ -21,14 +21,14 @@ import {
   registerVertexColorWgpuMaterial,
   registerWireframeWgpuMaterial,
 } from '@flighthq/scene-wgpu';
-import type { Camera3D, SceneLightsLike, SceneNode, WgpuRenderEffectPipeline, WgpuRenderState } from '@flighthq/sdk';
+import type { Camera3D, Scene3DLightsLike, Node3D, WgpuRenderEffectPipeline, WgpuRenderState } from '@flighthq/sdk';
 import {
   beginWgpuRenderEffectPipeline,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   endWgpuRenderEffectPipeline,
-  prepareSceneRender,
+  prepareScene3DRender,
   renderWgpuBackground,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
@@ -53,14 +53,14 @@ export const scale = pixelRatio;
 export const supportsVertexColor0 = false;
 
 export function render(
-  scene: Readonly<SceneNode>,
+  scene: Readonly<Node3D>,
   camera: Readonly<Camera3D>,
-  lights: Readonly<SceneLightsLike>,
+  lights: Readonly<Scene3DLightsLike>,
 ): void {
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
-  prepareSceneRender(state, scene, camera, lights);
-  drawWgpuScene(state, scene, camera, lights);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawWgpuScene3D(state, scene, camera, lights);
   endWgpuRenderEffectPipeline(state, pipeline, []);
   submitWgpuRenderPass(state);
 }

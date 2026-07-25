@@ -1,5 +1,5 @@
 import { reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry';
-import { createSceneNode, getSceneNodeRuntime } from '@flighthq/scene';
+import { createNode3D, getNode3DRuntime } from '@flighthq/scene';
 import type {
   AabbLike,
   Matrix4Like,
@@ -7,7 +7,7 @@ import type {
   ParticleEmitter3DRuntime,
   ParticleEmitterData,
   PartialNode,
-  SceneNode,
+  Node3D,
   Vector3Like,
 } from '@flighthq/types';
 import { ParticleEmitter3DKind } from '@flighthq/types';
@@ -153,7 +153,7 @@ export function computeParticleEmitter3DLocalBoundsAabb(out: AabbLike, source: R
 }
 
 export function createParticleEmitter3D(obj?: Readonly<PartialNode<ParticleEmitter3D>>): ParticleEmitter3D {
-  const node = createSceneNode(ParticleEmitter3DKind, obj) as unknown as ParticleEmitter3D;
+  const node = createNode3D(ParticleEmitter3DKind, obj) as unknown as ParticleEmitter3D;
   node.data = createParticleEmitterData(obj?.data as Readonly<Partial<ParticleEmitterData>> | undefined);
   node.blendMode = obj?.blendMode ?? 'normal';
   return node;
@@ -198,7 +198,7 @@ export function getParticleEmitter3DParticleVelocity(
 }
 
 export function getParticleEmitter3DRuntime(source: Readonly<ParticleEmitter3D>): Readonly<ParticleEmitter3DRuntime> {
-  return getSceneNodeRuntime(source as unknown as SceneNode) as ParticleEmitter3DRuntime;
+  return getNode3DRuntime(source as unknown as Node3D) as ParticleEmitter3DRuntime;
 }
 
 export function isParticleEmitter3D(node: Readonly<{ kind: string }>): node is ParticleEmitter3D {

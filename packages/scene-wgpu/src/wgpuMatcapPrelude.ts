@@ -10,11 +10,11 @@ import type {
 import {
   createWgpuMeshPipeline,
   ensureWgpuPlaceholderTextureView,
-  ensureWgpuScenePipeline,
+  ensureWgpuScene3DPipeline,
   stashWgpuUvTransform,
   WGPU_MESH_PRELUDE_WGSL,
 } from './wgpuMeshPipeline';
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 
 // The shared Wgpu matcap prelude — the WGSL mirror of scene-gl's glMatcapPrelude. One module for the
 // lighting-independent Matcap (material-capture) material: a matcap is a prebaked-lit sphere texture
@@ -47,7 +47,7 @@ export function bindWgpuMatcapSurface(
   tint: Readonly<LinearColor>,
   alphaCutoff: number,
 ): GPUBindGroup {
-  const scene = getWgpuSceneRuntime(state);
+  const scene = getWgpuScene3DRuntime(state);
   let binding: WgpuMaterialBinding | undefined = scene.materialBindGroups.get(materialKey);
   if (binding === undefined) {
     const stateRuntime = getWgpuRenderStateRuntime(state);
@@ -122,7 +122,7 @@ export function ensureWgpuMatcapPipeline(
   key: Readonly<WgpuMatcapDefineKey>,
   format: GPUTextureFormat,
 ): WgpuMatcapPipeline {
-  return ensureWgpuScenePipeline(state, `matcap:${format}|${buildWgpuMatcapDefineKey(key)}`, (blended) =>
+  return ensureWgpuScene3DPipeline(state, `matcap:${format}|${buildWgpuMatcapDefineKey(key)}`, (blended) =>
     compileWgpuMatcapPipeline(state, key, format, blended),
   );
 }

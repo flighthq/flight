@@ -2,13 +2,13 @@ import { createCamera3D } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { createEmissiveModifier, createRimModifier, createShadedMaterial } from '@flighthq/shading';
-import type { Camera3D, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
+import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types';
 import { ShadedMaterialKind } from '@flighthq/types';
 
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { getGlSceneRuntime } from './glSceneRuntime';
-import { makeGlSceneState } from './glSceneTestHelper';
-import { setGlSceneTime } from './glSceneTime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { makeGlScene3DState } from './glScene3DTestHelper';
+import { setGlScene3DTime } from './glScene3DTime';
 import { registerBuiltInGlModifierSnippets } from './glShadedBuiltInModifiers';
 import { registerShadedGlMaterial, shadedGlMeshMaterialRenderer } from './shadedGlMeshMaterialRenderer';
 
@@ -16,7 +16,7 @@ function makeCamera(): Camera3D {
   return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
 }
 
-function makeLights(): SceneLightBlock {
+function makeLights(): Scene3DLightBlock {
   const data = new Float32Array(12);
   data[1] = -1;
   data[4] = 1;
@@ -28,7 +28,7 @@ function makeLights(): SceneLightBlock {
   return { ambientCount: 1, data, directionalCount: 1, hemisphereCount: 0, pointCount: 0, spotCount: 0, version: 1 };
 }
 
-function makeProxy(): SceneRenderProxy {
+function makeProxy(): Scene3DRenderProxy {
   const geometry = createBoxMeshGeometry();
   return {
     material: createShadedMaterial(),
@@ -40,7 +40,7 @@ function makeProxy(): SceneRenderProxy {
 
 describe('registerShadedGlMaterial', () => {
   it('installs the renderer for ShadedMaterialKind', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     registerShadedGlMaterial(state);
     expect(getGlMeshMaterialRenderer(state, ShadedMaterialKind)).toBe(shadedGlMeshMaterialRenderer);
   });
@@ -48,7 +48,7 @@ describe('registerShadedGlMaterial', () => {
 
 describe('shadedGlMeshMaterialRenderer', () => {
   it('bind selects a program and uploads camera + light block + base colors + time', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     shadedGlMeshMaterialRenderer.bind(state, createShadedMaterial(), makeLights(), makeCamera());
 
     expect(gl.calls.some((c) => c.name === 'useProgram')).toBe(true);
@@ -60,25 +60,25 @@ describe('shadedGlMeshMaterialRenderer', () => {
   });
 
   it('bind caches the program under the shaded: namespace', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     shadedGlMeshMaterialRenderer.bind(state, createShadedMaterial(), makeLights(), makeCamera());
-    const keys = [...getGlSceneRuntime(state).programCache.keys()];
+    const keys = [...getGlScene3DRuntime(state).programCache.keys()];
     expect(keys.some((k) => k.startsWith('shaded:'))).toBe(true);
   });
 
   it('a plain ShadedMaterial (empty stack) compiles the lean base variant', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     shadedGlMeshMaterialRenderer.bind(state, createShadedMaterial(), makeLights(), makeCamera());
-    const keys = [...getGlSceneRuntime(state).programCache.keys()];
+    const keys = [...getGlScene3DRuntime(state).programCache.keys()];
     // Empty modifier feature-set → the define-key trails with an empty modifier segment. The last two
     // base flags are the (unset) uv-transform and skin flags.
     expect(keys).toContain('shaded:------|');
   });
 
   it('binds modifier uniforms for a material carrying a modifier stack', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     registerBuiltInGlModifierSnippets(state);
-    setGlSceneTime(state, 1.5);
+    setGlScene3DTime(state, 1.5);
     const material = createShadedMaterial({
       modifiers: [createEmissiveModifier({ color: 0xffcc88ff }), createRimModifier({ color: 0x88ccffff })],
     });
@@ -88,7 +88,7 @@ describe('shadedGlMeshMaterialRenderer', () => {
   });
 
   it('draw uploads geometry and issues an indexed draw over the subset range', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const proxy = makeProxy();
     shadedGlMeshMaterialRenderer.bind(state, proxy.material, makeLights(), makeCamera());
     shadedGlMeshMaterialRenderer.draw(state, proxy, createBoxMeshGeometry());
@@ -99,7 +99,7 @@ describe('shadedGlMeshMaterialRenderer', () => {
   });
 
   it('draw is a no-op when bind has not selected a program', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     shadedGlMeshMaterialRenderer.draw(state, makeProxy(), createBoxMeshGeometry());
     expect(gl.calls.some((c) => c.name === 'drawElements')).toBe(false);
   });

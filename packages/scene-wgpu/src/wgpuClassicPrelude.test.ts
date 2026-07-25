@@ -9,8 +9,8 @@ import {
   getWgpuClassicModuleSourceForKey,
   getWgpuClassicSharedSamplerModuleSourceForKey,
 } from './wgpuClassicPrelude';
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
-import { makeWgpuSceneState, makeWgpuSkinningAdapter } from './wgpuSceneTestHelper';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper';
 
 function makeKey(lightingModel: WgpuClassicLightingModel): WgpuClassicDefineKey {
   return {
@@ -26,7 +26,7 @@ function makeKey(lightingModel: WgpuClassicLightingModel): WgpuClassicDefineKey 
 
 describe('bindWgpuClassicSurface', () => {
   it('creates a material bind group + buffer once per key and rewrites the uniform each call', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const pipeline = ensureWgpuClassicPipeline(state, makeKey('phong'), 'bgra8unorm');
     const key = {};
     bindWgpuClassicSurface(state, pipeline, key, [1, 0, 0, 1], [1, 1, 1, 1], 32, 0.5, null, null, null, null);
@@ -42,7 +42,7 @@ describe('bindWgpuClassicSurface', () => {
   // "creates a material bind group … once per key" test above.
 
   it('exercises the real sampler path with a non-null primary texture and builds nothing new in steady state', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const pipeline = ensureWgpuClassicPipeline(state, makeKey('phong'), 'bgra8unorm');
     const key = {};
     // A ready diffuse (primary) map so bind() actually runs getWgpuMaterialSampler → getWgpuSampler (the
@@ -86,7 +86,7 @@ describe('buildWgpuClassicDefineKey', () => {
 
 describe('compileWgpuClassicPipeline', () => {
   it('builds a render pipeline with a material bind-group layout', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const pipeline = compileWgpuClassicPipeline(state, makeKey('lambert'), 'bgra8unorm');
 
     expect(pipeline.pipeline).toBeDefined();
@@ -98,14 +98,14 @@ describe('compileWgpuClassicPipeline', () => {
 
 describe('ensureWgpuClassicPipeline', () => {
   it('caches under the classic: namespace with three distinct entries for the three models', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     ensureWgpuClassicPipeline(state, makeKey('lambert'), 'bgra8unorm');
     ensureWgpuClassicPipeline(state, makeKey('phong'), 'bgra8unorm');
     ensureWgpuClassicPipeline(state, makeKey('blinnphong'), 'bgra8unorm');
     // Re-ensuring an existing model must not add a new cache entry.
     ensureWgpuClassicPipeline(state, makeKey('phong'), 'bgra8unorm');
 
-    const cache = getWgpuSceneRuntime(state).pipelineCache;
+    const cache = getWgpuScene3DRuntime(state).pipelineCache;
     const classicKeys = [...cache.keys()].filter((k) => k.startsWith('classic:'));
     expect(classicKeys.length).toBe(3);
   });

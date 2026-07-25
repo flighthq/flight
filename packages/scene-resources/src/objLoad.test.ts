@@ -1,16 +1,16 @@
 import type * as NetModule from '@flighthq/net';
-import type * as SceneFormatsModule from '@flighthq/scene-formats';
-import type { NetResponse, SceneDocument } from '@flighthq/types';
+import type * as Scene3DFormatsModule from '@flighthq/scene-formats';
+import type { NetResponse, Scene3DDocument } from '@flighthq/types';
 import type { Mock } from 'vitest';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import type * as LoadObjModule from './objLoad';
 
-let loadSceneDocumentFromObjUrl: typeof LoadObjModule.loadSceneDocumentFromObjUrl;
-let parseObj: Mock<typeof SceneFormatsModule.parseObj>;
+let loadScene3DDocumentFromObjUrl: typeof LoadObjModule.loadScene3DDocumentFromObjUrl;
+let parseObj: Mock<typeof Scene3DFormatsModule.parseObj>;
 let sendNetRequest: Mock<typeof NetModule.sendNetRequest>;
 
-function emptyDocument(): SceneDocument {
+function emptyDocument(): Scene3DDocument {
   return {
     animations: [],
     cameras: [],
@@ -31,11 +31,11 @@ function okResponse(body: string): NetResponse {
 
 beforeAll(async () => {
   vi.resetModules();
-  parseObj = vi.fn<typeof SceneFormatsModule.parseObj>();
+  parseObj = vi.fn<typeof Scene3DFormatsModule.parseObj>();
   sendNetRequest = vi.fn<typeof NetModule.sendNetRequest>();
   vi.doMock('@flighthq/net', () => ({ sendNetRequest }));
   vi.doMock('@flighthq/scene-formats', () => ({ parseObj }));
-  ({ loadSceneDocumentFromObjUrl } = await import('./objLoad'));
+  ({ loadScene3DDocumentFromObjUrl } = await import('./objLoad'));
 });
 
 afterAll(() => {
@@ -49,13 +49,13 @@ afterEach(() => {
   sendNetRequest.mockReset();
 });
 
-describe('loadSceneDocumentFromObjUrl', () => {
+describe('loadScene3DDocumentFromObjUrl', () => {
   it('fetches text and returns the parsed CPU document without resolving resources', async () => {
     const document = emptyDocument();
     parseObj.mockReturnValue(document);
     sendNetRequest.mockResolvedValue(okResponse('v 0 0 0'));
 
-    const loaded = await loadSceneDocumentFromObjUrl('model.obj');
+    const loaded = await loadScene3DDocumentFromObjUrl('model.obj');
 
     expect(parseObj).toHaveBeenCalledWith('v 0 0 0', undefined);
     expect(loaded).toBe(document);

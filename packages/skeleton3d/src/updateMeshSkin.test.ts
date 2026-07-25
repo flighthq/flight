@@ -6,7 +6,7 @@ import {
   getMeshGeometrySkinBindPose,
 } from '@flighthq/mesh';
 import { invalidateNodeLocalTransform } from '@flighthq/node';
-import { createMesh, createSceneNode } from '@flighthq/scene';
+import { createMesh, createNode3D } from '@flighthq/scene';
 import { describe, expect, it } from 'vitest';
 
 import { createSkeleton3D } from './skeleton3d';
@@ -24,7 +24,7 @@ function createOneVertexSkinnedMesh() {
 describe('updateMeshSkin', () => {
   it('deforms the mesh, bumps the version, and lazily captures the bind pose onto the runtime', () => {
     const mesh = createOneVertexSkinnedMesh();
-    const joint = createSceneNode();
+    const joint = createNode3D();
     mesh.skin = { skeleton: createSkeleton3D([joint]) };
     setVector3(joint.position, 0, 5, 0);
     invalidateNodeLocalTransform(joint);
@@ -45,7 +45,7 @@ describe('updateMeshSkin', () => {
 
   it('reuses the captured bind pose across frames rather than recapturing', () => {
     const mesh = createOneVertexSkinnedMesh();
-    const joint = createSceneNode();
+    const joint = createNode3D();
     mesh.skin = { skeleton: createSkeleton3D([joint]) };
 
     updateMeshSkin(mesh);

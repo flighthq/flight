@@ -19,7 +19,7 @@ function candidate(x: number, y: number, w: number, h: number) {
   return obj;
 }
 
-function managedScene() {
+function managedScene3D() {
   registerHitTest(DisplayObjectKind, hitTestGraphLocalBounds);
   const root = createDisplayObject();
   const index = createSpatialIndex(createUniformGridSpatialBackend(64));
@@ -29,7 +29,7 @@ function managedScene() {
 
 describe('findSpatialInteractionTarget', () => {
   it('returns the candidate whose region contains the point', () => {
-    const { manager, root } = managedScene();
+    const { manager, root } = managedScene3D();
     const a = candidate(0, 0, 50, 50);
     const b = candidate(200, 200, 50, 50);
     addNodeChild(root, a);
@@ -42,7 +42,7 @@ describe('findSpatialInteractionTarget', () => {
   });
 
   it('returns the topmost (last-drawn) candidate when regions overlap', () => {
-    const { manager, root } = managedScene();
+    const { manager, root } = managedScene3D();
     const under = candidate(0, 0, 100, 100);
     const over = candidate(0, 0, 100, 100);
     addNodeChild(root, under);
@@ -53,7 +53,7 @@ describe('findSpatialInteractionTarget', () => {
   });
 
   it('returns null before the index is refreshed', () => {
-    const { manager, root } = managedScene();
+    const { manager, root } = managedScene3D();
     addNodeChild(root, candidate(0, 0, 50, 50));
     expect(findSpatialInteractionTarget(manager, 25, 25)).toBeNull();
   });
@@ -61,7 +61,7 @@ describe('findSpatialInteractionTarget', () => {
 
 describe('refreshInteractionSpatialIndex', () => {
   it('indexes only opted-in nodes', () => {
-    const { manager, root } = managedScene();
+    const { manager, root } = managedScene3D();
     const inert = createNode2D(DisplayObjectKind);
     setRectangle(getNodeLocalBoundsRectangle(inert), 0, 0, 50, 50);
     addNodeChild(root, inert);
@@ -75,7 +75,7 @@ describe('refreshInteractionSpatialIndex', () => {
   });
 
   it('indexes an atomic hitArea unit without descending into its children', () => {
-    const { manager, root } = managedScene();
+    const { manager, root } = managedScene3D();
     const unit = candidate(0, 0, 100, 100);
     setNodeHitArea(unit, 'bounds');
     const child = candidate(0, 0, 20, 20);
@@ -88,7 +88,7 @@ describe('refreshInteractionSpatialIndex', () => {
   });
 
   it('agrees with the linear pick after a transform change is re-synced', () => {
-    const { manager, root } = managedScene();
+    const { manager, root } = managedScene3D();
     const a = candidate(0, 0, 50, 50);
     addNodeChild(root, a);
     refreshInteractionSpatialIndex(manager);

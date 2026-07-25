@@ -1,9 +1,9 @@
 import type { GlPbrProgram, GlRenderState, GlPbrDefineKey } from '@flighthq/types';
 
 import { resolveGlLitLocations } from './glLitProgram';
-import { compileGlProgram, ensureGlSceneProgram } from './glMeshProgram';
+import { compileGlProgram, ensureGlScene3DProgram } from './glMeshProgram';
 import { buildGlPbrDefineKey, getGlPbrFragmentSourceForKey, getGlPbrVertexSourceForKey } from './glPbrPrelude';
-import { getGlSceneRuntime } from './glSceneRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 // Compiles the StandardPbr uber-shader for a define key, links it, and resolves its uniform
 // locations. Pure GL work — no caching — used by ensureGlPbrProgram. Throws on a compile/link
 // failure, which is a programmer error (a malformed prelude), not an expected runtime condition.
@@ -59,7 +59,7 @@ export function ensureGlPbrProgram(state: GlRenderState, key: Readonly<GlPbrDefi
   // material compiles + caches its own HAS_SKIN program, without the material renderer knowing.
   const fullKey: GlPbrDefineKey = {
     ...key,
-    hasSkin: getGlSceneRuntime(state).activeSkinnedRun,
+    hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
   };
-  return ensureGlSceneProgram(state, `pbr:${buildGlPbrDefineKey(fullKey)}`, (gl) => compileGlPbrProgram(gl, fullKey));
+  return ensureGlScene3DProgram(state, `pbr:${buildGlPbrDefineKey(fullKey)}`, (gl) => compileGlPbrProgram(gl, fullKey));
 }

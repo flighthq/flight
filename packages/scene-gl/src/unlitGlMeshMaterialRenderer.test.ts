@@ -2,18 +2,18 @@ import { createCamera3D } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createUnlitMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
-import type { Camera3D, SceneLightBlock, SceneRenderProxy, VideoTexture } from '@flighthq/types';
+import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy, VideoTexture } from '@flighthq/types';
 import { UnlitMaterialKind } from '@flighthq/types';
 
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { makeGlSceneState } from './glSceneTestHelper';
+import { makeGlScene3DState } from './glScene3DTestHelper';
 import { registerUnlitGlMaterial, unlitGlMeshMaterialRenderer } from './unlitGlMeshMaterialRenderer';
 
 function makeCamera(): Camera3D {
   return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
 }
 
-const NO_LIGHTS: SceneLightBlock = {
+const NO_LIGHTS: Scene3DLightBlock = {
   ambientCount: 0,
   data: new Float32Array(12),
   directionalCount: 0,
@@ -23,7 +23,7 @@ const NO_LIGHTS: SceneLightBlock = {
   version: 1,
 };
 
-function makeProxy(): SceneRenderProxy {
+function makeProxy(): Scene3DRenderProxy {
   const geometry = createBoxMeshGeometry();
   return {
     material: createUnlitMaterial(),
@@ -35,7 +35,7 @@ function makeProxy(): SceneRenderProxy {
 
 describe('registerUnlitGlMaterial', () => {
   it('installs the renderer for UnlitMaterialKind', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     registerUnlitGlMaterial(state);
     expect(getGlMeshMaterialRenderer(state, UnlitMaterialKind)).toBe(unlitGlMeshMaterialRenderer);
   });
@@ -43,7 +43,7 @@ describe('registerUnlitGlMaterial', () => {
 
 describe('unlitGlMeshMaterialRenderer', () => {
   it('bind selects a program, sets depth/cull, view-projection, and the color uniform', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     unlitGlMeshMaterialRenderer.bind(state, createUnlitMaterial(), NO_LIGHTS, makeCamera());
     expect(gl.calls.some((c) => c.name === 'useProgram')).toBe(true);
     expect(gl.calls.some((c) => c.name === 'enable' && c.args[0] === gl.DEPTH_TEST)).toBe(true);
@@ -52,7 +52,7 @@ describe('unlitGlMeshMaterialRenderer', () => {
   });
 
   it('binds a ready dynamic video map into the color-map slot', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const material = createUnlitMaterial();
     material.baseColorVideoMap = {
       frameId: 1,
@@ -71,7 +71,7 @@ describe('unlitGlMeshMaterialRenderer', () => {
   });
 
   it('draw issues an indexed draw over the subset after bind', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const proxy = makeProxy();
     unlitGlMeshMaterialRenderer.bind(state, proxy.material, NO_LIGHTS, makeCamera());
     unlitGlMeshMaterialRenderer.draw(state, proxy, createBoxMeshGeometry());
@@ -81,7 +81,7 @@ describe('unlitGlMeshMaterialRenderer', () => {
   });
 
   it('draw is a no-op when bind has not selected a program', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     unlitGlMeshMaterialRenderer.draw(state, makeProxy(), createBoxMeshGeometry());
     expect(gl.calls.some((c) => c.name === 'drawElements')).toBe(false);
   });

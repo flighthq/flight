@@ -8,15 +8,15 @@ import {
   getGlMatcapFragmentSourceForKey,
   getGlMatcapVertexSourceForKey,
 } from './glMatcapPrelude';
-import { getGlSceneRuntime } from './glSceneRuntime';
-import { makeFakeGl2, makeGlSceneState } from './glSceneTestHelper';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
 
 const FLAT: GlMatcapDefineKey = { alphaMaskEnabled: false, hasMatcap: false };
 const TINT: LinearColor = [0.5, 0.25, 0.1, 1];
 
 describe('bindGlMatcapSurface', () => {
   it('uploads the tint and alpha cutoff with no texture bind when the matcap is absent', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const program = compileGlMatcapProgram(gl, FLAT);
     bindGlMatcapSurface(state, program, TINT, null, 0.5);
     expect(gl.calls.some((c) => c.name === 'uniform4f')).toBe(true);
@@ -47,13 +47,13 @@ describe('compileGlMatcapProgram', () => {
 
 describe('ensureGlMatcapProgram', () => {
   it('caches a variant under the matcap namespace and reuses it', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const first = ensureGlMatcapProgram(state, FLAT);
     const links = gl.calls.filter((c) => c.name === 'linkProgram').length;
     const second = ensureGlMatcapProgram(state, FLAT);
     expect(second).toBe(first);
     expect(gl.calls.filter((c) => c.name === 'linkProgram').length).toBe(links);
-    expect([...getGlSceneRuntime(state).programCache.keys()].some((k) => k.startsWith('matcap:'))).toBe(true);
+    expect([...getGlScene3DRuntime(state).programCache.keys()].some((k) => k.startsWith('matcap:'))).toBe(true);
   });
 });
 

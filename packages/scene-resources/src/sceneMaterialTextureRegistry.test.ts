@@ -5,91 +5,91 @@ import { EntityRuntimeKey, StandardPbrMaterialKind, UnlitMaterialKind } from '@f
 import { describe, expect, it } from 'vitest';
 
 import {
-  createSceneMaterialTextureRegistry,
-  getSceneMaterialTextures,
-  registerBuiltInSceneMaterialTextures,
-  registerSceneMaterialTextures,
+  createScene3DMaterialTextureRegistry,
+  getScene3DMaterialTextures,
+  registerBuiltInScene3DMaterialTextures,
+  registerScene3DMaterialTextures,
 } from './sceneMaterialTextureRegistry';
 
-describe('createSceneMaterialTextureRegistry', () => {
+describe('createScene3DMaterialTextureRegistry', () => {
   it('creates an empty registry', () => {
-    const registry = createSceneMaterialTextureRegistry();
+    const registry = createScene3DMaterialTextureRegistry();
     expect(EntityRuntimeKey in registry).toBe(true);
     expect(registry.listers.size).toBe(0);
   });
 });
 
-describe('getSceneMaterialTextures', () => {
+describe('getScene3DMaterialTextures', () => {
   it('appends nothing for an unregistered kind', () => {
-    const registry = createSceneMaterialTextureRegistry();
+    const registry = createScene3DMaterialTextureRegistry();
     const out: Texture[] = [];
-    getSceneMaterialTextures(registry, createUnlitMaterial(), out);
+    getScene3DMaterialTextures(registry, createUnlitMaterial(), out);
     expect(out).toHaveLength(0);
   });
 
   it('accumulates across calls without clearing out', () => {
-    const registry = createSceneMaterialTextureRegistry();
-    registerBuiltInSceneMaterialTextures(registry);
+    const registry = createScene3DMaterialTextureRegistry();
+    registerBuiltInScene3DMaterialTextures(registry);
     const a = createTexture();
     const b = createTexture();
     const out: Texture[] = [];
-    getSceneMaterialTextures(registry, createUnlitMaterial({ baseColorMap: a }), out);
-    getSceneMaterialTextures(registry, createUnlitMaterial({ baseColorMap: b }), out);
+    getScene3DMaterialTextures(registry, createUnlitMaterial({ baseColorMap: a }), out);
+    getScene3DMaterialTextures(registry, createUnlitMaterial({ baseColorMap: b }), out);
     expect(out).toEqual([a, b]);
   });
 });
 
-describe('registerBuiltInSceneMaterialTextures', () => {
+describe('registerBuiltInScene3DMaterialTextures', () => {
   it('registers the standard-pbr and unlit listers', () => {
-    const registry = createSceneMaterialTextureRegistry();
-    registerBuiltInSceneMaterialTextures(registry);
+    const registry = createScene3DMaterialTextureRegistry();
+    registerBuiltInScene3DMaterialTextures(registry);
     expect(registry.listers.has(StandardPbrMaterialKind)).toBe(true);
     expect(registry.listers.has(UnlitMaterialKind)).toBe(true);
   });
 
   it('lists every non-null standard-pbr texture slot and skips null ones', () => {
-    const registry = createSceneMaterialTextureRegistry();
-    registerBuiltInSceneMaterialTextures(registry);
+    const registry = createScene3DMaterialTextureRegistry();
+    registerBuiltInScene3DMaterialTextures(registry);
     const baseColorMap = createTexture();
     const normalMap = createTexture();
     const material = createStandardPbrMaterial({ baseColorMap, normalMap });
     const out: Texture[] = [];
-    getSceneMaterialTextures(registry, material, out);
+    getScene3DMaterialTextures(registry, material, out);
     expect(out).toContain(baseColorMap);
     expect(out).toContain(normalMap);
     expect(out).toHaveLength(2);
   });
 
   it('lists the unlit base-color slot', () => {
-    const registry = createSceneMaterialTextureRegistry();
-    registerBuiltInSceneMaterialTextures(registry);
+    const registry = createScene3DMaterialTextureRegistry();
+    registerBuiltInScene3DMaterialTextures(registry);
     const baseColorMap = createTexture();
     const out: Texture[] = [];
-    getSceneMaterialTextures(registry, createUnlitMaterial({ baseColorMap }), out);
+    getScene3DMaterialTextures(registry, createUnlitMaterial({ baseColorMap }), out);
     expect(out).toEqual([baseColorMap]);
   });
 });
 
-describe('registerSceneMaterialTextures', () => {
+describe('registerScene3DMaterialTextures', () => {
   it('binds a lister for a custom kind', () => {
-    const registry = createSceneMaterialTextureRegistry();
+    const registry = createScene3DMaterialTextureRegistry();
     const custom = createTexture();
-    registerSceneMaterialTextures(registry, 'acme.Custom', (_material: Readonly<Material>, out: Texture[]) => {
+    registerScene3DMaterialTextures(registry, 'acme.Custom', (_material: Readonly<Material>, out: Texture[]) => {
       out.push(custom);
     });
     const out: Texture[] = [];
-    getSceneMaterialTextures(registry, { kind: 'acme.Custom' } as unknown as Material, out);
+    getScene3DMaterialTextures(registry, { kind: 'acme.Custom' } as unknown as Material, out);
     expect(out).toEqual([custom]);
   });
 
   it('is last-write-wins with no guard', () => {
-    const registry = createSceneMaterialTextureRegistry();
+    const registry = createScene3DMaterialTextureRegistry();
     const first = createTexture();
     const second = createTexture();
-    registerSceneMaterialTextures(registry, UnlitMaterialKind, (_m, out) => out.push(first));
-    registerSceneMaterialTextures(registry, UnlitMaterialKind, (_m, out) => out.push(second));
+    registerScene3DMaterialTextures(registry, UnlitMaterialKind, (_m, out) => out.push(first));
+    registerScene3DMaterialTextures(registry, UnlitMaterialKind, (_m, out) => out.push(second));
     const out: Texture[] = [];
-    getSceneMaterialTextures(registry, createUnlitMaterial(), out);
+    getScene3DMaterialTextures(registry, createUnlitMaterial(), out);
     expect(out).toEqual([second]);
   });
 });

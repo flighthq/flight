@@ -1,8 +1,8 @@
 import type { WgpuModifierSnippet } from '@flighthq/types';
 import { ModifierSlot } from '@flighthq/types';
 
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
-import { makeWgpuSceneState } from './wgpuSceneTestHelper';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 import { registerWgpuModifierSnippet, resolveWgpuModifierSnippet } from './wgpuShadedModifierSnippet';
 
 function makeSnippet(overrides?: Partial<WgpuModifierSnippet>): WgpuModifierSnippet {
@@ -16,8 +16,8 @@ function makeSnippet(overrides?: Partial<WgpuModifierSnippet>): WgpuModifierSnip
 
 describe('registerWgpuModifierSnippet', () => {
   it('lazily allocates a state-scoped registry and is last-write-wins', () => {
-    const { state } = makeWgpuSceneState();
-    expect(getWgpuSceneRuntime(state).modifierSnippetRegistry).toBeNull();
+    const { state } = makeWgpuScene3DState();
+    expect(getWgpuScene3DRuntime(state).modifierSnippetRegistry).toBeNull();
     registerWgpuModifierSnippet(state, makeSnippet());
     const override = makeSnippet({ contribution: () => ({ source: '// override' }) });
     registerWgpuModifierSnippet(state, override);
@@ -27,7 +27,7 @@ describe('registerWgpuModifierSnippet', () => {
 
 describe('resolveWgpuModifierSnippet', () => {
   it('returns null for an unregistered kind', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     expect(resolveWgpuModifierSnippet(state, 'acme.Missing')).toBeNull();
   });
 });

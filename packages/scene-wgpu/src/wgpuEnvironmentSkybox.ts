@@ -4,15 +4,15 @@ import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import type { Camera3D, Environment, Matrix4, WgpuRenderState } from '@flighthq/types';
 
 import { ensureWgpuEnvironmentSourceCube } from './wgpuEnvironmentCube';
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 
 // Draws the environment's radiance cubemap as the scene backdrop — the WGSL mirror of scene-gl's
 // drawGlEnvironmentSkybox. A screen-filling triangle that, per pixel, reconstructs the world-space view
 // ray from the inverse view-projection and samples the cube. The pipeline writes no depth and compares
 // 'always', so it fills every pixel with the backdrop; call it once, inside the open scene render pass and
-// BEFORE drawWgpuScene, so opaque geometry (depth-test LESS) draws over it. A no-op when the environment
+// BEFORE drawWgpuScene3D, so opaque geometry (depth-test LESS) draws over it. A no-op when the environment
 // has no complete source cube or no render pass is open. `aspect` is the viewport width / height (matches
-// the camera aspect drawWgpuScene uses). The ray reconstruction uses GL-convention clip Z (near -1, far
+// the camera aspect drawWgpuScene3D uses). The ray reconstruction uses GL-convention clip Z (near -1, far
 // +1) to match the camera's projection matrices — the same convention the mesh/shadow paths assume.
 export function drawWgpuEnvironmentSkybox(
   state: WgpuRenderState,
@@ -27,7 +27,7 @@ export function drawWgpuEnvironmentSkybox(
   const pass = stateRuntime.renderPass;
   if (pass === null) return;
 
-  const scene = getWgpuSceneRuntime(state);
+  const scene = getWgpuScene3DRuntime(state);
   const format = stateRuntime.currentColorFormat ?? state.format;
   const sky = ensureWgpuSkyboxPipeline(state, format);
 

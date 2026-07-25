@@ -1,16 +1,16 @@
 import type * as NetModule from '@flighthq/net';
-import type * as SceneFormatsModule from '@flighthq/scene-formats';
-import type { NetResponse, SceneDocument } from '@flighthq/types';
+import type * as Scene3DFormatsModule from '@flighthq/scene-formats';
+import type { NetResponse, Scene3DDocument } from '@flighthq/types';
 import type { Mock } from 'vitest';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import type * as LoadMd2Module from './md2Load';
 
-let loadSceneDocumentFromMd2Url: typeof LoadMd2Module.loadSceneDocumentFromMd2Url;
-let parseMd2: Mock<typeof SceneFormatsModule.parseMd2>;
+let loadScene3DDocumentFromMd2Url: typeof LoadMd2Module.loadScene3DDocumentFromMd2Url;
+let parseMd2: Mock<typeof Scene3DFormatsModule.parseMd2>;
 let sendNetRequest: Mock<typeof NetModule.sendNetRequest>;
 
-function emptyDocument(): SceneDocument {
+function emptyDocument(): Scene3DDocument {
   return {
     animations: [],
     cameras: [],
@@ -31,11 +31,11 @@ function okResponse(body: ArrayBuffer): NetResponse {
 
 beforeAll(async () => {
   vi.resetModules();
-  parseMd2 = vi.fn<typeof SceneFormatsModule.parseMd2>();
+  parseMd2 = vi.fn<typeof Scene3DFormatsModule.parseMd2>();
   sendNetRequest = vi.fn<typeof NetModule.sendNetRequest>();
   vi.doMock('@flighthq/net', () => ({ sendNetRequest }));
   vi.doMock('@flighthq/scene-formats', () => ({ parseMd2 }));
-  ({ loadSceneDocumentFromMd2Url } = await import('./md2Load'));
+  ({ loadScene3DDocumentFromMd2Url } = await import('./md2Load'));
 });
 
 afterAll(() => {
@@ -49,13 +49,13 @@ afterEach(() => {
   sendNetRequest.mockReset();
 });
 
-describe('loadSceneDocumentFromMd2Url', () => {
+describe('loadScene3DDocumentFromMd2Url', () => {
   it('fetches bytes and returns the parsed CPU document without resolving resources', async () => {
     const document = emptyDocument();
     parseMd2.mockReturnValue(document);
     sendNetRequest.mockResolvedValue(okResponse(new Uint8Array([7]).buffer));
 
-    const loaded = await loadSceneDocumentFromMd2Url('model.md2');
+    const loaded = await loadScene3DDocumentFromMd2Url('model.md2');
 
     expect(Array.from(parseMd2.mock.calls[0][0])).toEqual([7]);
     expect(loaded).toBe(document);

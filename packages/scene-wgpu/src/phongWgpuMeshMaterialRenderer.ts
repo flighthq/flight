@@ -6,8 +6,8 @@ import type {
   Material,
   MeshGeometry,
   PhongMaterial,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
   WgpuClassicDefineKey,
@@ -30,7 +30,7 @@ export const phongWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
   bind(
     state: WgpuRenderState,
     material: Readonly<Material> | null,
-    lights: Readonly<SceneLightBlock>,
+    lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const stateRuntime = getWgpuRenderStateRuntime(state);
@@ -67,13 +67,13 @@ export const phongWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     pass.setBindGroup(2, group);
   },
 
-  draw(state: WgpuRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+  draw(state: WgpuRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
     drawWgpuMeshSubset(state, proxy, geometry);
   },
 };
 
 // Registers the built-in Phong renderer for PhongMaterialKind on this state. Opt-in (no top-level
-// side effect); call once per WgpuRenderState before drawWgpuScene so meshes with PhongMaterials draw.
+// side effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with PhongMaterials draw.
 export function registerPhongWgpuMaterial(state: WgpuRenderState): void {
   registerWgpuMeshMaterialRenderer(state, PhongMaterialKind, phongWgpuMeshMaterialRenderer);
 }

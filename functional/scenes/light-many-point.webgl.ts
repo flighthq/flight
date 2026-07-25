@@ -1,5 +1,5 @@
-import { createScene } from '@flighthq/scene';
-import { drawGlScene, prepareGlSceneForwardLights } from '@flighthq/scene-gl';
+import { createScene3D } from '@flighthq/scene';
+import { drawGlScene3D, prepareGlScene3DForwardLights } from '@flighthq/scene-gl';
 import type { GlRenderEffectPipeline, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -14,13 +14,13 @@ import {
   createMesh,
   createOrthographicProjection,
   createPointLight,
-  createSceneLights,
+  createScene3DLights,
   createSpotLight,
   createVector3,
   endGlRenderEffectPipeline,
   getSurfacePixelLuminance,
   invalidateNodeLocalTransform,
-  prepareSceneRender,
+  prepareScene3DRender,
   registerBlinnPhongGlMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
@@ -30,7 +30,7 @@ import {
 // Twelve independently lit meshes demonstrate per-object selection. Four finite-range decoy lights
 // are intentionally first in input order and far outside the field; the twelve useful lights come
 // last. The old scene-global first-four pack therefore leaves the field dark, while the explicit
-// prepareGlSceneForwardLights pass selects the nearby contributors for each mesh.
+// prepareGlScene3DForwardLights pass selects the nearby contributors for each mesh.
 
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
@@ -58,7 +58,7 @@ const material = createBlinnPhongMaterial({
   shininess: 24,
   specular: 0x282828ff,
 });
-const scene = createScene().root;
+const scene = createScene3D().root;
 const pointLights = [];
 const spotLights = [];
 const colors = [0xff6040ff, 0x60a0ffff, 0x70ff80ff, 0xffd060ff];
@@ -120,7 +120,7 @@ const camera = createCamera3D({
 });
 setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 12, 0), createVector3(0, 0, 0), createVector3(0, 0, -1));
 
-const lights = createSceneLights({
+const lights = createScene3DLights({
   ambient: createAmbientLight({ color: 0x202838ff, intensity: 0.015 }),
   directional: null,
   point: pointLights,
@@ -132,9 +132,9 @@ renderGlBackground(state);
 state.gl.depthMask(true);
 state.gl.clearDepth(1);
 state.gl.clear(state.gl.DEPTH_BUFFER_BIT);
-const renderList = prepareSceneRender(state, scene, camera, lights);
-const forwardLights = prepareGlSceneForwardLights(state, renderList, lights);
-drawGlScene(state, scene, camera, lights, forwardLights);
+const renderList = prepareScene3DRender(state, scene, camera, lights);
+const forwardLights = prepareGlScene3DForwardLights(state, renderList, lights);
+drawGlScene3D(state, scene, camera, lights, forwardLights);
 endGlRenderEffectPipeline(state, pipeline, []);
 
 export function assertRender(surface: Readonly<Surface>): void {

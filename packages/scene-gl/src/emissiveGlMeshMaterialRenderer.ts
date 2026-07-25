@@ -7,8 +7,8 @@ import type {
   GlRenderState,
   Material,
   MeshGeometry,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
   GlUnlitDefineKey,
 } from '@flighthq/types';
 import { EmissiveMaterialKind } from '@flighthq/types';
@@ -21,7 +21,7 @@ import {
   hasGlUvTransform,
   setGlMeshViewProjection,
 } from './glMeshProgram';
-import { getGlSceneRuntime } from './glSceneRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { bindGlUnlitSurface, ensureGlUnlitProgram } from './glUnlitPrelude';
 
 // The built-in Emissive forward renderer (GlMeshMaterialRenderer for EmissiveMaterialKind). Self-
@@ -32,7 +32,7 @@ export const emissiveGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
     material: Readonly<Material> | null,
-    _lights: Readonly<SceneLightBlock>,
+    _lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const gl = state.gl;
@@ -57,15 +57,15 @@ export const emissiveGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     bindGlUvTransform(gl, program, emissive.emissiveMap);
   },
 
-  draw(state: GlRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
-    const program = getGlSceneRuntime(state).activeMeshProgram;
+  draw(state: GlRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+    const program = getGlScene3DRuntime(state).activeMeshProgram;
     if (program === null) return;
     drawGlMeshSubset(state, program, proxy, geometry);
   },
 };
 
 // Registers the built-in Emissive renderer for EmissiveMaterialKind on this state. Opt-in (no top-
-// level side effect); call once per GlRenderState before drawScene so meshes with EmissiveMaterials
+// level side effect); call once per GlRenderState before drawScene3D so meshes with EmissiveMaterials
 // draw.
 export function registerEmissiveGlMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, EmissiveMaterialKind, emissiveGlMeshMaterialRenderer);

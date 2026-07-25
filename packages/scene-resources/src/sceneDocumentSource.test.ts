@@ -1,14 +1,14 @@
 import { setNetBackend } from '@flighthq/net';
 import { connectSignal, createSignal, emitSignal } from '@flighthq/signals';
-import type { NetResponse, SceneDocument, SceneDocumentLoadProgress } from '@flighthq/types';
+import type { NetResponse, Scene3DDocument, Scene3DDocumentLoadProgress } from '@flighthq/types';
 import { ImageResourceReferenceKind, ResourceResolutionState } from '@flighthq/types';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {
-  getSceneDocumentBasePathFromUrl,
-  loadSceneDocumentBytesFromUrl,
-  loadSceneDocumentTextFromUrl,
-  setSceneDocumentResourceBasePathFromUrl,
+  getScene3DDocumentBasePathFromUrl,
+  loadScene3DDocumentBytesFromUrl,
+  loadScene3DDocumentTextFromUrl,
+  setScene3DDocumentResourceBasePathFromUrl,
 } from './sceneDocumentSource';
 
 function okResponse(body: string | ArrayBuffer): NetResponse {
@@ -23,18 +23,18 @@ afterEach(() => {
   setNetBackend(null);
 });
 
-describe('getSceneDocumentBasePathFromUrl', () => {
+describe('getScene3DDocumentBasePathFromUrl', () => {
   it('returns the containing path without query or fragment data', () => {
-    expect(getSceneDocumentBasePathFromUrl('models/ship.gltf?cache=1')).toBe('models');
-    expect(getSceneDocumentBasePathFromUrl('ship.gltf')).toBeNull();
+    expect(getScene3DDocumentBasePathFromUrl('models/ship.gltf?cache=1')).toBe('models');
+    expect(getScene3DDocumentBasePathFromUrl('ship.gltf')).toBeNull();
   });
 });
 
-describe('loadSceneDocumentBytesFromUrl', () => {
+describe('loadScene3DDocumentBytesFromUrl', () => {
   it('forwards cancellation and identifies byte-progress events by URL', async () => {
     const controller = new AbortController();
-    const events: SceneDocumentLoadProgress[] = [];
-    const progress = createSignal<(event: Readonly<SceneDocumentLoadProgress>) => void>();
+    const events: Scene3DDocumentLoadProgress[] = [];
+    const progress = createSignal<(event: Readonly<Scene3DDocumentLoadProgress>) => void>();
     connectSignal(progress, (event) => events.push({ ...event }));
     setNetBackend({
       sendNetRequest: async (_request, options) => {
@@ -44,7 +44,7 @@ describe('loadSceneDocumentBytesFromUrl', () => {
       },
     });
 
-    const bytes = await loadSceneDocumentBytesFromUrl('model.bin', { progress, signal: controller.signal });
+    const bytes = await loadScene3DDocumentBytesFromUrl('model.bin', { progress, signal: controller.signal });
 
     expect(Array.from(bytes!)).toEqual([1, 2, 3]);
     expect(events).toEqual([{ loaded: 2, phase: 'download', total: 3, url: 'model.bin' }]);
@@ -52,11 +52,11 @@ describe('loadSceneDocumentBytesFromUrl', () => {
 
   it('returns null on an expected transport failure', async () => {
     setNetBackend({ sendNetRequest: async () => failResponse() });
-    await expect(loadSceneDocumentBytesFromUrl('missing.bin')).resolves.toBeNull();
+    await expect(loadScene3DDocumentBytesFromUrl('missing.bin')).resolves.toBeNull();
   });
 });
 
-describe('loadSceneDocumentTextFromUrl', () => {
+describe('loadScene3DDocumentTextFromUrl', () => {
   it('fetches the URL as text and returns the string', async () => {
     let requestedType: string | undefined;
     setNetBackend({
@@ -66,17 +66,17 @@ describe('loadSceneDocumentTextFromUrl', () => {
       },
     });
 
-    await expect(loadSceneDocumentTextFromUrl('model.obj')).resolves.toBe('v 0 0 0');
+    await expect(loadScene3DDocumentTextFromUrl('model.obj')).resolves.toBe('v 0 0 0');
     expect(requestedType).toBe('text');
   });
 
   it('returns null on an expected transport failure', async () => {
     setNetBackend({ sendNetRequest: async () => failResponse() });
-    await expect(loadSceneDocumentTextFromUrl('missing.obj')).resolves.toBeNull();
+    await expect(loadScene3DDocumentTextFromUrl('missing.obj')).resolves.toBeNull();
   });
 });
 
-describe('setSceneDocumentResourceBasePathFromUrl', () => {
+describe('setScene3DDocumentResourceBasePathFromUrl', () => {
   it('sets only unresolved relative resources whose parser did not already supply a base path', () => {
     const document = {
       animations: [],
@@ -106,9 +106,9 @@ describe('setSceneDocumentResourceBasePathFromUrl', () => {
           uri: 'fixed.png',
         },
       ],
-    } satisfies SceneDocument;
+    } satisfies Scene3DDocument;
 
-    setSceneDocumentResourceBasePathFromUrl(document, 'models/ship.obj');
+    setScene3DDocumentResourceBasePathFromUrl(document, 'models/ship.obj');
 
     expect(document.resources[0].basePath).toBe('models');
     expect(document.resources[1].basePath).toBe('authored');

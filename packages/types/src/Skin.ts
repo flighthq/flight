@@ -1,4 +1,4 @@
-import type { SceneNode } from './SceneNode';
+import type { Node3D } from './Node3D';
 import type { Skeleton3D } from './Skeleton3D';
 
 // A mesh skin: the binding that turns a Mesh's per-vertex joint influences (the joints0/weights0
@@ -12,5 +12,5 @@ import type { Skeleton3D } from './Skeleton3D';
 // is not skeleton-scoped — a joint subset or skeleton root — since several skins can share a skeleton.
 export interface Skin {
   skeleton: Skeleton3D;
-  skeletonRoot?: SceneNode | null;
+  skeletonRoot?: Node3D | null;
 }

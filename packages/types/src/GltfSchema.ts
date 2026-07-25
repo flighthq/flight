@@ -5,13 +5,13 @@
 // referencing model.
 //
 // These wire types are format-internal: only `GltfDocument` is re-exported from the package barrel (it
-// is the public input shape of `createSceneFromGltf`); the rest stay module-internal to the package.
+// is the public input shape of `createScene3DFromGltf`); the rest stay module-internal to the package.
 
 export interface GltfDocument {
   asset?: { version: string };
   cameras?: GltfCamera[];
   scene?: number;
-  scenes?: GltfScene[];
+  scenes?: GltfScene3D[];
   nodes?: GltfNode[];
   meshes?: GltfMesh[];
   materials?: GltfMaterial[];
@@ -166,7 +166,7 @@ export interface GltfImage {
   bufferView?: number;
 }
 
-export interface GltfScene {
+export interface GltfScene3D {
   name?: string;
   nodes?: number[];
 }

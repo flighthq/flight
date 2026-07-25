@@ -8,23 +8,23 @@ import type {
   Matrix3,
   Matrix4,
   Mesh,
-  SceneNode,
-  SceneNodeTraits,
-  SceneRenderProxy,
+  Node3D,
+  Node3DTraits,
+  Scene3DRenderProxy,
   WgpuRenderState,
 } from '@flighthq/types';
 
-import { ensureWgpuSceneLayouts, SHADOW_DEPTH_FORMAT, writeWgpuDrawUniform } from './wgpuMeshPipeline';
+import { ensureWgpuScene3DLayouts, SHADOW_DEPTH_FORMAT, writeWgpuDrawUniform } from './wgpuMeshPipeline';
 import { ensureWgpuMeshUpload } from './wgpuMeshUpload';
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 
 // Frees the directional shadow's non-GC GPU resources for `state`: the shadow depth map, the 1x1
 // no-shadow dummy depth texture, and the shadow-sample uniform buffer, then clears the derived slots
 // (the depth pipeline, comparison sampler, sample layout, and sample bind group are GC-managed and left
-// null). The WGSL mirror of the shadow branch of scene-gl's destroyGlSceneRuntime. Safe to call more
+// null). The WGSL mirror of the shadow branch of scene-gl's destroyGlScene3DRuntime. Safe to call more
 // than once and when no shadow was ever drawn — every slot is nullable and destroy is idempotent.
-export function destroyWgpuSceneShadow(state: WgpuRenderState): void {
-  const scene = getWgpuSceneRuntime(state);
+export function destroyWgpuScene3DShadow(state: WgpuRenderState): void {
+  const scene = getWgpuScene3DRuntime(state);
 
   if (scene.shadow !== null) {
     scene.shadow.depthTexture.destroy();
@@ -48,9 +48,9 @@ export function destroyWgpuSceneShadow(state: WgpuRenderState): void {
   scene.pbrSampleShadowView = null;
 }
 
-// The directional shadow recipe's first pass — the WGSL mirror of scene-gl's drawGlSceneShadowMap.
+// The directional shadow recipe's first pass — the WGSL mirror of scene-gl's drawGlScene3DShadowMap.
 // Renders every mesh's depth from the light's orthographic camera into a sampleable depth32float shadow
-// map, and records the map + the light view-projection on the scene runtime; the subsequent drawWgpuScene
+// map, and records the map + the light view-projection on the scene runtime; the subsequent drawWgpuScene3D
 // lit binds (beginWgpuMeshDraw → ensureWgpuShadowSampleBindGroup) read that to PCF-sample the shadow.
 // Shadows are opt-in: an app that never calls this leaves runtime.shadow null, so existing scenes render
 // unchanged (the lit draws bind a dummy depth map gated off by the shadow uniform).
@@ -62,16 +62,16 @@ export function destroyWgpuSceneShadow(state: WgpuRenderState): void {
 // the state's command encoder, in the same submit as the forward pass (so the shared uniform ring the
 // per-mesh world matrices are written into is uploaded once before submit). A no-op if no command encoder
 // is active. Front faces are culled (back faces recorded) to suppress self-shadow acne, mirroring GL.
-export function drawWgpuSceneShadowMap(
+export function drawWgpuScene3DShadowMap(
   state: WgpuRenderState,
-  scene: Readonly<SceneNode>,
+  scene: Readonly<Node3D>,
   shadowCamera: Readonly<Camera3D>,
 ): void {
   const runtime = getWgpuRenderStateRuntime(state);
   const encoder = runtime.commandEncoder;
   if (encoder === null) return;
 
-  const sceneRuntime = getWgpuSceneRuntime(state);
+  const sceneRuntime = getWgpuScene3DRuntime(state);
   let shadow = sceneRuntime.shadow;
   if (shadow === null) {
     const depthTexture = state.device.createTexture({
@@ -99,8 +99,8 @@ export function drawWgpuSceneShadowMap(
   pass.setViewport(0, 0, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 0, 1);
   pass.setPipeline(pipeline);
 
-  forEachNodeDescendant<SceneNodeTraits>(scene, (node) => {
-    // A drawable node carries geometry (structural, like prepareSceneRender's mesh test).
+  forEachNodeDescendant<Node3DTraits>(scene, (node) => {
+    // A drawable node carries geometry (structural, like prepareScene3DRender's mesh test).
     const mesh = node as unknown as Mesh;
     if (mesh.geometry == null) return;
     const upload = ensureWgpuMeshUpload(state, mesh.geometry);
@@ -126,16 +126,16 @@ export function drawWgpuSceneShadowMap(
 // Resolves (creating once per state) the minimal depth-only shadow pipeline: a vertex-only WGSL module
 // (position → light clip, with the GL→WebGPU depth remap), no fragment/color scene2d, rendered depth32float
 // with front-face culling. Its group(0) is the shared Draw layout (dynamic-offset per-mesh world matrix),
-// so drawWgpuSceneShadowMap reuses writeWgpuDrawUniform's ring bind group. The WGSL mirror of scene-gl's
+// so drawWgpuScene3DShadowMap reuses writeWgpuDrawUniform's ring bind group. The WGSL mirror of scene-gl's
 // compileShadowDepthProgram.
 function ensureWgpuShadowDepthPipeline(state: WgpuRenderState): GPURenderPipeline {
-  const scene = getWgpuSceneRuntime(state);
+  const scene = getWgpuScene3DRuntime(state);
   if (scene.shadowDepthPipeline !== null) return scene.shadowDepthPipeline;
 
   const device = state.device;
   const module = device.createShaderModule({ code: SHADOW_DEPTH_WGSL });
   const layout = device.createPipelineLayout({
-    bindGroupLayouts: [ensureWgpuSceneLayouts(state).drawBindGroupLayout],
+    bindGroupLayouts: [ensureWgpuScene3DLayouts(state).drawBindGroupLayout],
   });
   const pipeline = device.createRenderPipeline({
     layout,
@@ -151,7 +151,7 @@ function ensureWgpuShadowDepthPipeline(state: WgpuRenderState): GPURenderPipelin
 const SHADOW_MAP_SIZE = 1024;
 
 // The depth-only shadow vertex module. Reads only position from the canonical 48-byte vertex; draw.world
-// already carries the light view-projection (baked per mesh by drawWgpuSceneShadowMap). The one WebGPU
+// already carries the light view-projection (baked per mesh by drawWgpuScene3DShadowMap). The one WebGPU
 // adaptation from GL's shadow VS: remap the GL-convention clip Z (-1..1) into WebGPU's 0..1 depth range
 // (clip.z = (clip.z + clip.w) * 0.5), the identical remap the lit sampler's depthRef applies — so what is
 // written here and what is compared there agree.
@@ -173,7 +173,7 @@ const SHADOW_VERTEX_BUFFER_LAYOUTS: GPUVertexBufferLayout[] = [
 
 // The reused per-mesh proxy handed to writeWgpuDrawUniform in the depth pass; only worldMatrix is read
 // (normalMatrix is written but unused by the shadow VS). subset/material are placeholders.
-const _shadowProxy: SceneRenderProxy = {
+const _shadowProxy: Scene3DRenderProxy = {
   material: {} as Readonly<Material>,
   normalMatrix: createMatrix3() as Matrix3,
   subset: { indexCount: 0, indexOffset: 0 },

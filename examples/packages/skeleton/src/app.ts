@@ -1,4 +1,4 @@
-import type { Camera3D, Mesh, SceneLightsLike, SceneNode } from '@flighthq/sdk';
+import type { Camera3D, Mesh, Scene3DLightsLike, Node3D } from '@flighthq/sdk';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   addNodeChild,
@@ -9,22 +9,22 @@ import {
   createMeshGeometry,
   createPerspectiveProjection,
   createQuaternion,
-  createSceneNode,
+  createNode3D,
   createSkeleton3D,
   createStandardPbrMaterial,
   createVector3,
   normalizeVector3,
-  prepareSceneSkinning,
+  prepareScene3DSkinning,
   setCamera3DViewMatrix4FromLookAt,
   setQuaternionFromAxisAngle,
   copyQuaternion,
   invalidateNodeLocalTransform,
-  SceneNodeKind,
+  Node3DKind,
 } from '@flighthq/sdk';
 
 import { render } from './render';
 
-// The scene root is a bare SceneNode (createScene now allocates a Scene *document* that owns a root).
+// The scene root is a bare Node3D (createScene3D now allocates a Scene3D *document* that owns a root).
 
 // Skeleton example: a multi-segment tube mesh deformed by GPU skinning. Four joints form a chain
 // along the Y axis; sinusoidal rotations on the Z axis produce a smooth undulating wave. The mesh
@@ -119,14 +119,14 @@ const geometry = createMeshGeometry({
   vertices,
 });
 
-// Build the joint hierarchy as SceneNodes in a chain along Y. Joint 0 is the root at the bottom of
+// Build the joint hierarchy as Node3Ds in a chain along Y. Joint 0 is the root at the bottom of
 // the tube; each successive joint is offset upward by the segment span.
-const scene = createSceneNode(SceneNodeKind);
+const scene = createNode3D(Node3DKind);
 
 const jointSpacing = TOTAL_HEIGHT / (JOINT_COUNT - 1);
-const jointNodes: SceneNode[] = [];
+const jointNodes: Node3D[] = [];
 for (let j = 0; j < JOINT_COUNT; j++) {
-  const node = createSceneNode();
+  const node = createNode3D();
   if (j === 0) {
     node.position.y = -TOTAL_HEIGHT / 2;
     invalidateNodeLocalTransform(node);
@@ -155,7 +155,7 @@ setCamera3DViewMatrix4FromLookAt(camera, createVector3(7, 3, 18), createVector3(
 
 const directionalDirection = createVector3(-1, -0.5, -0.7);
 normalizeVector3(directionalDirection, directionalDirection);
-const lights: SceneLightsLike = {
+const lights: Scene3DLightsLike = {
   ambient: createAmbientLight({ color: 0x6080b0ff, intensity: 0.2 }),
   directional: createDirectionalLight({ color: 0xffffffff, direction: directionalDirection, intensity: 3 }),
 };
@@ -177,7 +177,7 @@ function animate(time: number): void {
   // Readies the joint palette and posed bounds while leaving bind-pose vertices intact for the
   // GPU-skinning shader. CPU-deforming here would make the WebGPU path consume an already-posed
   // interleaved record before applying the palette a second time.
-  prepareSceneSkinning(scene);
+  prepareScene3DSkinning(scene);
 
   render(scene, camera, lights);
   if (!captureMode) requestAnimationFrame(animate);

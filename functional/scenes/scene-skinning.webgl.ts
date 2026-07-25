@@ -1,5 +1,5 @@
-import { drawGlScene } from '@flighthq/scene-gl';
-import type { Camera3D, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import { drawGlScene3D } from '@flighthq/scene-gl';
+import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   addNodeChild,
@@ -15,8 +15,8 @@ import {
   createMeshGeometry,
   createPerspectiveProjection,
   createQuaternion,
-  createScene,
-  createSceneNode,
+  createScene3D,
+  createNode3D,
   createSkeleton3D,
   createUnlitMaterial,
   createVector3,
@@ -24,8 +24,8 @@ import {
   getSurfacePixelLuminance,
   invalidateNodeLocalTransform,
   normalizeVector3,
-  prepareSceneRender,
-  prepareSceneSkinning,
+  prepareScene3DRender,
+  prepareScene3DSkinning,
   registerUnlitGlMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
@@ -43,10 +43,10 @@ import {
 // bind silhouette clears at the top where the leaned bar no longer reaches. A skin that failed to upload
 // the palette or bind the texelFetch texture would draw the rigid bind pose and both probes would match.
 //
-// drawGlScene collides in the @flighthq/sdk barrel (re-exported from both scene-gl and scene-wgpu) — import
+// drawGlScene3D collides in the @flighthq/sdk barrel (re-exported from both scene-gl and scene-wgpu) — import
 // the Gl one directly. Pipeline wiring (rgba16f + depth scene target, depth clear to far) mirrors the mesh-*
-// scenes; prepareSceneSkinning readies each skinned mesh's jointMatrices palette (and its posed cull bounds)
-// BEFORE prepareSceneRender, which no longer touches skinning — that separation keeps @flighthq/render free
+// scenes; prepareScene3DSkinning readies each skinned mesh's jointMatrices palette (and its posed cull bounds)
+// BEFORE prepareScene3DRender, which no longer touches skinning — that separation keeps @flighthq/render free
 // of a @flighthq/skeleton3d dependency.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
@@ -69,16 +69,16 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
-  prepareSceneSkinning(scene);
-  prepareSceneRender(state, scene, camera, lights);
-  drawGlScene(state, scene, camera, lights);
+  prepareScene3DSkinning(scene);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawGlScene3D(state, scene, camera, lights);
   endGlRenderEffectPipeline(state, pipeline, []);
 }
 
@@ -134,11 +134,11 @@ for (let r = 0; r < ringY.length - 1; r++) {
 const material = createUnlitMaterial({ baseColor: 0xff8030ff });
 
 // Two joints: a stationary root at the origin, and a bend joint parented mid-height that carries the
-// pose rotation. prepareSceneSkinning (run before prepareSceneRender in render()) computes the palette
+// pose rotation. prepareScene3DSkinning (run before prepareScene3DRender in render()) computes the palette
 // from each joint's world transform × inverse-bind.
-function buildPosedScene(bendAngle: number): SceneNode {
-  const root = createSceneNode();
-  const bend = createSceneNode();
+function buildPosedScene3D(bendAngle: number): Node3D {
+  const root = createNode3D();
+  const bend = createNode3D();
   setVector3(bend.position, 0, 1, 0);
   invalidateNodeLocalTransform(bend);
   addNodeChild(root, bend);
@@ -153,7 +153,7 @@ function buildPosedScene(bendAngle: number): SceneNode {
   copyQuaternion(bend.rotation, q);
   invalidateNodeLocalTransform(bend);
 
-  const scene = createScene().root;
+  const scene = createScene3D().root;
   addNodeChild(scene, root);
   const geometry = createMeshGeometry({
     layout: CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
@@ -182,8 +182,8 @@ const lights = {
 };
 
 // The posed rig: the upper half leans 75° to +X.
-const posedScene = buildPosedScene((75 * Math.PI) / 180);
-render(posedScene, camera, lights);
+const posedScene3D = buildPosedScene3D((75 * Math.PI) / 180);
+render(posedScene3D, camera, lights);
 
 export function assertRender(surface: Readonly<Surface>): void {
   const w = surface.width;

@@ -5,19 +5,19 @@ import { createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import { createMesh, createSceneNode, SceneNodeKind } from '@flighthq/scene';
-import type { Camera3D, SceneLightsLike, SceneNode } from '@flighthq/types';
+import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene';
+import type { Camera3D, Scene3DLightsLike, Node3D } from '@flighthq/types';
 
-import { drawWgpuScene } from './drawWgpuScene';
+import { drawWgpuScene3D } from './drawWgpuScene3D';
 import { registerStandardPbrWgpuMaterial } from './registerStandardPbrWgpuMaterial';
 import { buildWgpuPbrStandardDefineKey } from './standardPbrWgpuMeshMaterialRenderer';
 import { getWgpuClassicModuleSourceForKey } from './wgpuClassicPrelude';
 import { getWgpuPbrModuleSourceForKey } from './wgpuPbrPrelude';
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
-import { makeWgpuSceneState } from './wgpuSceneTestHelper';
-import { destroyWgpuSceneShadow, drawWgpuSceneShadowMap } from './wgpuShadowMap';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
+import { destroyWgpuScene3DShadow, drawWgpuScene3DShadowMap } from './wgpuShadowMap';
 
-const LIGHTS: SceneLightsLike = {
+const LIGHTS: Scene3DLightsLike = {
   ambient: createAmbientLight({ color: 0xffffffff, intensity: 0.2 }),
   directional: createDirectionalLight({ color: 0xffffffff, direction: createVector3(0, -1, -1), intensity: 1 }),
 };
@@ -33,54 +33,54 @@ function makeShadowCamera(): Camera3D {
   return camera;
 }
 
-function makeShadowScene(): SceneNode {
-  const scene = createSceneNode(SceneNodeKind);
+function makeShadowScene3D(): Node3D {
+  const scene = createNode3D(Node3DKind);
   addNodeChild(scene, createMesh(createBoxMeshGeometry(), []));
   return scene;
 }
 
-describe('destroyWgpuSceneShadow', () => {
+describe('destroyWgpuScene3DShadow', () => {
   it('destroys the shadow depth texture and clears the slot', () => {
-    const { state } = makeWgpuSceneState();
-    drawWgpuSceneShadowMap(state, makeShadowScene(), makeShadowCamera());
+    const { state } = makeWgpuScene3DState();
+    drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera());
 
-    const runtime = getWgpuSceneRuntime(state);
+    const runtime = getWgpuScene3DRuntime(state);
     expect(runtime.shadow).not.toBeNull();
     let destroyed = false;
     runtime.shadow!.depthTexture.destroy = () => {
       destroyed = true;
     };
 
-    destroyWgpuSceneShadow(state);
+    destroyWgpuScene3DShadow(state);
     expect(destroyed).toBe(true);
     expect(runtime.shadow).toBeNull();
     expect(runtime.shadowDepthPipeline).toBeNull();
   });
 
   it('is a no-op when no shadow was drawn', () => {
-    const { state } = makeWgpuSceneState();
-    expect(() => destroyWgpuSceneShadow(state)).not.toThrow();
+    const { state } = makeWgpuScene3DState();
+    expect(() => destroyWgpuScene3DShadow(state)).not.toThrow();
   });
 });
 
-describe('drawWgpuSceneShadowMap', () => {
+describe('drawWgpuScene3DShadowMap', () => {
   it('creates a sampleable depth32float shadow map and stores it on the runtime', () => {
-    const { fake, state } = makeWgpuSceneState();
-    drawWgpuSceneShadowMap(state, makeShadowScene(), makeShadowCamera());
+    const { fake, state } = makeWgpuScene3DState();
+    drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera());
 
     const depthCreate = fake.calls.find(
       (c) => c.name === 'createTexture' && (c.args[0] as GPUTextureDescriptor).format === 'depth32float',
     );
     expect(depthCreate).toBeDefined();
 
-    const runtime = getWgpuSceneRuntime(state);
+    const runtime = getWgpuScene3DRuntime(state);
     expect(runtime.shadow).not.toBeNull();
     expect(runtime.shadow!.matrix.m.some((v) => v !== 0)).toBe(true);
   });
 
   it('opens a depth-only pass and renders each caster mesh depth', () => {
-    const { fake, state } = makeWgpuSceneState();
-    drawWgpuSceneShadowMap(state, makeShadowScene(), makeShadowCamera());
+    const { fake, state } = makeWgpuScene3DState();
+    drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera());
 
     expect(fake.calls.some((c) => c.name === 'beginRenderPass')).toBe(true);
     expect(fake.calls.some((c) => c.name === 'setPipeline')).toBe(true);
@@ -89,8 +89,8 @@ describe('drawWgpuSceneShadowMap', () => {
   });
 
   it('compiles a vertex-only depth module with the GL->WebGPU depth remap', () => {
-    const { fake, state } = makeWgpuSceneState();
-    drawWgpuSceneShadowMap(state, makeShadowScene(), makeShadowCamera());
+    const { fake, state } = makeWgpuScene3DState();
+    drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera());
 
     const shaderCall = fake.calls.find(
       (c) => c.name === 'createShaderModule' && String((c.args[0] as { code: string }).code).includes('draw.world'),
@@ -102,11 +102,11 @@ describe('drawWgpuSceneShadowMap', () => {
   });
 
   it('reuses the shadow depth texture across frames', () => {
-    const { fake, state } = makeWgpuSceneState();
-    const scene = makeShadowScene();
+    const { fake, state } = makeWgpuScene3DState();
+    const scene = makeShadowScene3D();
     const camera = makeShadowCamera();
-    drawWgpuSceneShadowMap(state, scene, camera);
-    drawWgpuSceneShadowMap(state, scene, camera);
+    drawWgpuScene3DShadowMap(state, scene, camera);
+    drawWgpuScene3DShadowMap(state, scene, camera);
     const depthCreates = fake.calls.filter(
       (c) => c.name === 'createTexture' && (c.args[0] as GPUTextureDescriptor).format === 'depth32float',
     ).length;
@@ -114,26 +114,26 @@ describe('drawWgpuSceneShadowMap', () => {
   });
 
   it('is a no-op when no command encoder is active', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     getWgpuRenderStateRuntime(state).commandEncoder = null;
-    drawWgpuSceneShadowMap(state, makeShadowScene(), makeShadowCamera());
+    drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera());
     expect(fake.calls.some((c) => c.name === 'beginRenderPass')).toBe(false);
-    expect(getWgpuSceneRuntime(state).shadow).toBeNull();
+    expect(getWgpuScene3DRuntime(state).shadow).toBeNull();
   });
 
   it('binds a group(3) shadow group on the lit PBR draw that follows', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     registerStandardPbrWgpuMaterial(state);
-    drawWgpuSceneShadowMap(state, makeShadowScene(), makeShadowCamera());
+    drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera());
 
-    const scene = createSceneNode(SceneNodeKind);
+    const scene = createNode3D(Node3DKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));
     const camera = createCamera3D({
       far: 100,
       near: 0.1,
       projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' },
     });
-    drawWgpuScene(state, scene, camera, LIGHTS);
+    drawWgpuScene3D(state, scene, camera, LIGHTS);
 
     expect(fake.calls.some((c) => c.name === 'setBindGroup' && c.args[0] === 3)).toBe(true);
   });

@@ -1,7 +1,7 @@
 import type { LinearColor } from '@flighthq/types';
 
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
-import { makeWgpuSceneState } from './wgpuSceneTestHelper';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 import {
   bindWgpuWireframeColor,
   compileWgpuWireframePipeline,
@@ -13,7 +13,7 @@ const COLOR: LinearColor = [1, 0, 0, 1];
 
 describe('bindWgpuWireframeColor', () => {
   it('creates a color bind group once per key and writes its uniform', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const pipeline = compileWgpuWireframePipeline(state, 'bgra8unorm');
     const key = {};
     bindWgpuWireframeColor(state, pipeline, key, COLOR);
@@ -26,7 +26,7 @@ describe('bindWgpuWireframeColor', () => {
 
 describe('compileWgpuWireframePipeline', () => {
   it('builds a line-list pipeline with a single-uniform material layout', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const pipeline = compileWgpuWireframePipeline(state, 'rgba16float');
     expect(pipeline.pipeline).toBeDefined();
     const pipelineCall = fake.calls.find((c) => c.name === 'createRenderPipeline');
@@ -36,11 +36,11 @@ describe('compileWgpuWireframePipeline', () => {
 
 describe('ensureWgpuWireframePipeline', () => {
   it('caches one pipeline per format under the wireframe namespace', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     const a = ensureWgpuWireframePipeline(state, 'bgra8unorm');
     const b = ensureWgpuWireframePipeline(state, 'bgra8unorm');
     expect(a).toBe(b);
-    expect([...getWgpuSceneRuntime(state).pipelineCache.keys()].some((k) => k.startsWith('wireframe:'))).toBe(true);
+    expect([...getWgpuScene3DRuntime(state).pipelineCache.keys()].some((k) => k.startsWith('wireframe:'))).toBe(true);
   });
 });
 

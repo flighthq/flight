@@ -1,8 +1,8 @@
 import type { Camera3D } from './Camera3D';
 import type { Material } from './Material';
 import type { MeshGeometry } from './MeshGeometry';
-import type { SceneLightBlock } from './SceneLightBlock';
-import type { SceneRenderProxy } from './SceneRenderProxy';
+import type { Scene3DLightBlock } from './Scene3DLightBlock';
+import type { Scene3DRenderProxy } from './Scene3DRenderProxy';
 import type { WgpuRenderState } from './WgpuRenderState';
 
 // Per-backend 3D draw behavior for a material kind on Wgpu, registered against the kind via
@@ -12,7 +12,7 @@ import type { WgpuRenderState } from './WgpuRenderState';
 // 2D materialRendererMap, because a material kind is either 2D or 3D, never both.
 //
 // The renderer owns its pipeline (the StandardPbr uber-shader variant for its define key) and is
-// driven per draw in two steps. drawScene binds shared per-frame state once per material run, then
+// driven per draw in two steps. drawScene3D binds shared per-frame state once per material run, then
 // draws each Mesh subset:
 //
 //   bind(state, material, lights, camera)   // pipeline + camera matrices + light block + material
@@ -31,7 +31,7 @@ export interface WgpuMeshMaterialRenderer {
   bind(
     state: WgpuRenderState,
     material: Readonly<Material> | null,
-    lights: Readonly<SceneLightBlock>,
+    lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void;
 
@@ -39,5 +39,5 @@ export interface WgpuMeshMaterialRenderer {
   // cached in MeshGeometryRuntime.webgpuData, freed by destroyMeshGeometryWgpuData), sets the
   // per-draw world and normal matrices from `proxy`, and issues the indexed draw over proxy.subset's
   // range with the material's cull/blend state. Called once per subset within a bind run.
-  draw(state: WgpuRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void;
+  draw(state: WgpuRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void;
 }

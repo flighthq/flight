@@ -9,8 +9,8 @@ import type {
   LambertMaterial,
   Material,
   MeshGeometry,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
   GlClassicDefineKey,
   GlClassicProgram,
 } from '@flighthq/types';
@@ -26,7 +26,7 @@ import {
   hasGlUvTransform,
   setGlMeshViewProjection,
 } from './glMeshProgram';
-import { getGlSceneRuntime } from './glSceneRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 
 // The built-in classic Lambert forward-lit mesh-material renderer (GlMeshMaterialRenderer for
 // LambertMaterialKind). Diffuse-only Lambertian shading: bind selects the classic uber-shader's
@@ -38,7 +38,7 @@ export const lambertGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
     material: Readonly<Material> | null,
-    lights: Readonly<SceneLightBlock>,
+    lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const gl = state.gl;
@@ -51,15 +51,15 @@ export const lambertGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     bindGlLambertMaterialUniforms(state, program, lambert);
   },
 
-  draw(state: GlRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
-    const program = getGlSceneRuntime(state).activeMeshProgram;
+  draw(state: GlRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+    const program = getGlScene3DRuntime(state).activeMeshProgram;
     if (program === null) return;
     drawGlMeshSubset(state, program, proxy, geometry);
   },
 };
 
 // Registers the built-in Lambert renderer for LambertMaterialKind on this state. Opt-in (no top-level
-// side effect); call once per GlRenderState before drawScene so meshes with LambertMaterials draw.
+// side effect); call once per GlRenderState before drawScene3D so meshes with LambertMaterials draw.
 export function registerLambertGlMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, LambertMaterialKind, lambertGlMeshMaterialRenderer);
 }

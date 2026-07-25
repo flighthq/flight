@@ -6,9 +6,9 @@ import {
   GL_SKIN_VERTEX_DECLARATIONS_GLSL,
   GL_UV_TRANSFORM_VERTEX_GLSL,
   compileGlProgram,
-  ensureGlSceneProgram,
+  ensureGlScene3DProgram,
 } from './glMeshProgram';
-import { getGlSceneRuntime } from './glSceneRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 // A short, stable, order-independent string identity for a classic define key, used as the program-
 // cache key. The lighting model is encoded first (l/p/b) so the three models never collide, followed
 // by the feature flags. Two keys with the same model + flags produce the same string and so share a
@@ -59,9 +59,9 @@ export function ensureGlClassicProgram(state: GlRenderState, key: Readonly<GlCla
   // material compiles + caches its own HAS_SKIN program, without the material renderer knowing.
   const fullKey: GlClassicDefineKey = {
     ...key,
-    hasSkin: getGlSceneRuntime(state).activeSkinnedRun,
+    hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
   };
-  return ensureGlSceneProgram(state, `classic:${buildGlClassicDefineKey(fullKey)}`, (gl) =>
+  return ensureGlScene3DProgram(state, `classic:${buildGlClassicDefineKey(fullKey)}`, (gl) =>
     compileGlClassicProgram(gl, fullKey),
   );
 }
@@ -256,7 +256,7 @@ void main() {
   // Directional light: -direction is the surface-to-light vector (light travels along direction).
   // Only the directional term is shadow-mapped (mirrors the PBR path); point/spot/ambient stay unshadowed.
   // sampleDirectionalShadow returns 1.0 when no shadow map is bound (u_shadowEnabled == 0), so a classic
-  // scene that never calls drawGlSceneShadowMap is unchanged.
+  // scene that never calls drawGlScene3DShadowMap is unchanged.
   if (u_directionalCount > 0.5) {
     vec3 lightDir = normalize(-u_directional.xyz);
     radiance += shadeClassicLight(normal, lightDir, u_directionalRadiance.rgb, diffuse.rgb)

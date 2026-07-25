@@ -14,9 +14,9 @@ import {
   GL_SKIN_VERTEX_DECLARATIONS_GLSL,
   GL_UV_TRANSFORM_VERTEX_GLSL,
   compileGlProgram,
-  ensureGlSceneProgram,
+  ensureGlScene3DProgram,
 } from './glMeshProgram';
-import { getGlSceneRuntime } from './glSceneRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 // The stable program-cache key for a ShadedMaterial variant: the base feature flags joined with the
 // modifier stack's define-key. Two materials sharing both the same base flags AND the same modifier
 // feature-set produce the same key and share one compiled program (and batch together); a different
@@ -82,16 +82,16 @@ export function ensureGlShadedProgram(
   // A null registry means no modifier snippet was ever registered (the lazy-allocation default); the
   // shared empty registry then yields the coarse bare-kind define-key and no modifier GLSL — the same
   // result an allocated-but-empty registry gives — without allocating on this per-bind path.
-  const registry = getGlSceneRuntime(state).modifierSnippetRegistry ?? EMPTY_MODIFIER_REGISTRY;
+  const registry = getGlScene3DRuntime(state).modifierSnippetRegistry ?? EMPTY_MODIFIER_REGISTRY;
   const ordered = orderModifierStack(modifiers);
   // Fold the render-state skinned-run flag into the variant so a skinned draw of an otherwise-identical
   // material compiles + caches its own HAS_SKIN program, without the material renderer knowing.
   const fullKey: GlShadedDefineKey = {
     ...key,
-    hasSkin: getGlSceneRuntime(state).activeSkinnedRun,
+    hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
   };
   const cacheKey = buildGlShadedCacheKey(fullKey, getModifierDefineKey(modifiers, registry));
-  return ensureGlSceneProgram(state, cacheKey, (gl) => compileGlShadedProgram(gl, fullKey, ordered, registry));
+  return ensureGlScene3DProgram(state, cacheKey, (gl) => compileGlShadedProgram(gl, fullKey, ordered, registry));
 }
 
 // Assembles the ShadedMaterial fragment body for an ordered modifier stack: each FRAGMENT-slot

@@ -1,8 +1,8 @@
 import type { Environment } from '@flighthq/types';
 
 import { bakeGlEnvironmentIbl, destroyGlEnvironmentIblBakePrograms } from './glEnvironmentIblBake';
-import { getGlSceneRuntime } from './glSceneRuntime';
-import { makeGlSceneState } from './glSceneTestHelper';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { makeGlScene3DState } from './glScene3DTestHelper';
 
 // The GPU bake (irradiance / prefiltered specular / BRDF LUT) is validated by the functional `env-ibl`
 // capture — software jsdom has no float-cube render path. This covers the guard: with no source cube
@@ -10,10 +10,10 @@ import { makeGlSceneState } from './glSceneTestHelper';
 
 describe('bakeGlEnvironmentIbl', () => {
   it('is a no-op leaving runtime.ibl null when the environment has no source cube', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     const environment = { environment: null, intensity: 1 } as Environment;
     bakeGlEnvironmentIbl(state, environment);
-    expect(getGlSceneRuntime(state).ibl).toBe(null);
+    expect(getGlScene3DRuntime(state).ibl).toBe(null);
   });
 });
 
@@ -23,7 +23,7 @@ describe('destroyGlEnvironmentIblBakePrograms', () => {
   // Here we cover the guard: with no bake having run for the state, teardown is a safe, repeatable
   // no-op that issues no GL deletes.
   it('is a safe no-op when no bake ran for the state', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     destroyGlEnvironmentIblBakePrograms(state);
     destroyGlEnvironmentIblBakePrograms(state);
     expect(gl.calls.some((c) => c.name.startsWith('delete'))).toBe(false);

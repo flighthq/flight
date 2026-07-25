@@ -6,8 +6,8 @@ import type {
   Camera3D,
   Material,
   MeshGeometry,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
   WgpuClassicDefineKey,
@@ -30,7 +30,7 @@ export const blinnPhongWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
   bind(
     state: WgpuRenderState,
     material: Readonly<Material> | null,
-    lights: Readonly<SceneLightBlock>,
+    lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const stateRuntime = getWgpuRenderStateRuntime(state);
@@ -67,13 +67,13 @@ export const blinnPhongWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     pass.setBindGroup(2, group);
   },
 
-  draw(state: WgpuRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+  draw(state: WgpuRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
     drawWgpuMeshSubset(state, proxy, geometry);
   },
 };
 
 // Registers the built-in BlinnPhong renderer for BlinnPhongMaterialKind on this state. Opt-in (no
-// top-level side effect); call once per WgpuRenderState before drawWgpuScene so meshes with BlinnPhong
+// top-level side effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with BlinnPhong
 // materials draw.
 export function registerBlinnPhongWgpuMaterial(state: WgpuRenderState): void {
   registerWgpuMeshMaterialRenderer(state, BlinnPhongMaterialKind, blinnPhongWgpuMeshMaterialRenderer);

@@ -2,7 +2,7 @@ import { createCamera3D } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createAnisotropyPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
-import type { Camera3D, Matrix3, Matrix4, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
+import type { Camera3D, Matrix3, Matrix4, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types';
 import { AnisotropyPbrMaterialKind } from '@flighthq/types';
 
 import {
@@ -10,14 +10,14 @@ import {
   registerAnisotropyPbrGlMaterial,
 } from './anisotropyPbrGlMeshMaterialRenderer';
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { getGlSceneRuntime } from './glSceneRuntime';
-import { makeGlSceneState } from './glSceneTestHelper';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { makeGlScene3DState } from './glScene3DTestHelper';
 
 function makeCamera(): Camera3D {
   return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
 }
 
-function makeLights(): SceneLightBlock {
+function makeLights(): Scene3DLightBlock {
   const data = new Float32Array(12);
   data[1] = -1;
   data[4] = 1;
@@ -29,7 +29,7 @@ function makeLights(): SceneLightBlock {
   return { ambientCount: 1, data, directionalCount: 1, hemisphereCount: 0, pointCount: 0, spotCount: 0, version: 1 };
 }
 
-function makeProxy(): SceneRenderProxy {
+function makeProxy(): Scene3DRenderProxy {
   const geometry = createBoxMeshGeometry();
   return {
     material: createAnisotropyPbrMaterial(),
@@ -41,7 +41,7 @@ function makeProxy(): SceneRenderProxy {
 
 describe('anisotropyPbrGlMeshMaterialRenderer', () => {
   it('bind uploads the light block, standard block, and anisotropy uniforms', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     anisotropyPbrGlMeshMaterialRenderer.bind(
       state,
       createAnisotropyPbrMaterial({ anisotropyRotation: 0.5, anisotropyStrength: 0.7 }),
@@ -55,15 +55,15 @@ describe('anisotropyPbrGlMeshMaterialRenderer', () => {
   });
 
   it('caches the anisotropy program under the pbr: namespace', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     anisotropyPbrGlMeshMaterialRenderer.bind(state, createAnisotropyPbrMaterial(), makeLights(), makeCamera());
-    const cache = getGlSceneRuntime(state).programCache;
+    const cache = getGlScene3DRuntime(state).programCache;
     expect(cache.size).toBe(1);
     expect([...cache.keys()][0].startsWith('pbr:')).toBe(true);
   });
 
   it('draw issues an indexed draw after bind', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const proxy = makeProxy();
     anisotropyPbrGlMeshMaterialRenderer.bind(state, proxy.material, makeLights(), makeCamera());
     anisotropyPbrGlMeshMaterialRenderer.draw(state, proxy, createBoxMeshGeometry());
@@ -71,7 +71,7 @@ describe('anisotropyPbrGlMeshMaterialRenderer', () => {
   });
 
   it('draw is a no-op before bind', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     anisotropyPbrGlMeshMaterialRenderer.draw(state, makeProxy(), createBoxMeshGeometry());
     expect(gl.calls.some((c) => c.name === 'drawElements')).toBe(false);
   });
@@ -79,7 +79,7 @@ describe('anisotropyPbrGlMeshMaterialRenderer', () => {
 
 describe('registerAnisotropyPbrGlMaterial', () => {
   it('installs the renderer for AnisotropyPbrMaterialKind', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     registerAnisotropyPbrGlMaterial(state);
     expect(getGlMeshMaterialRenderer(state, AnisotropyPbrMaterialKind)).toBe(anisotropyPbrGlMeshMaterialRenderer);
   });

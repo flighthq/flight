@@ -15,7 +15,7 @@ import type { Scene2DClipHooks } from './Scene2DRenderer';
  * Direct field writes such as `object.x = 10` require explicit invalidate*
  * calls when this policy is "requiresInvalidation".
  */
-export type SceneGraphSyncPolicy = 'refreshDerivedState' | 'requiresInvalidation';
+export type Scene3DGraphSyncPolicy = 'refreshDerivedState' | 'requiresInvalidation';
 
 export interface RenderState extends Entity {
   allowSmoothing: boolean;
@@ -30,7 +30,7 @@ export interface RenderState extends Entity {
   renderAlpha: number;
   renderBlendMode: BlendMode | null;
   renderTransform2D: Matrix | null;
-  sceneGraphSyncPolicy: SceneGraphSyncPolicy;
+  sceneGraphSyncPolicy: Scene3DGraphSyncPolicy;
   roundPixels: boolean;
 }
 

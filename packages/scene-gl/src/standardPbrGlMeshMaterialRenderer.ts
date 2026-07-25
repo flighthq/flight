@@ -4,8 +4,8 @@ import type {
   GlRenderState,
   Material,
   MeshGeometry,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
   StandardPbrMaterial,
 } from '@flighthq/types';
 
@@ -13,7 +13,7 @@ import { bindGlMeshLightBlock } from './glLitProgram';
 import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshCameraPosition, setGlMeshViewProjection } from './glMeshProgram';
 import { ensureGlPbrProgram } from './glPbrProgramCache';
 import { bindGlPbrStandardBlock, buildGlPbrStandardDefineKey } from './glPbrStandardBlock';
-import { getGlSceneRuntime } from './glSceneRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 
 // The built-in StandardPbr forward-lit mesh-material renderer (GlMeshMaterialRenderer for
 // StandardPbrMaterialKind). bind selects the uber-shader variant for the material's maps/alpha mode,
@@ -29,7 +29,7 @@ export const standardPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
     material: Readonly<Material> | null,
-    lights: Readonly<SceneLightBlock>,
+    lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const gl = state.gl;
@@ -44,8 +44,8 @@ export const standardPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     gl.uniform1f(program.locAlphaCutoff, pbr !== null ? pbr.alphaCutoff : 0.5);
   },
 
-  draw(state: GlRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
-    const program = getGlSceneRuntime(state).activeMeshProgram;
+  draw(state: GlRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+    const program = getGlScene3DRuntime(state).activeMeshProgram;
     if (program === null) return;
     drawGlMeshSubset(state, program, proxy, geometry);
   },

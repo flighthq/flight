@@ -2,19 +2,19 @@ import { createCamera3D } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createPhongMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
-import type { Camera3D, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
+import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types';
 import { PhongMaterialKind } from '@flighthq/types';
 
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { getGlSceneRuntime } from './glSceneRuntime';
-import { makeGlSceneState } from './glSceneTestHelper';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { makeGlScene3DState } from './glScene3DTestHelper';
 import { phongGlMeshMaterialRenderer, registerPhongGlMaterial } from './phongGlMeshMaterialRenderer';
 
 function makeCamera(): Camera3D {
   return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
 }
 
-function makeLights(): SceneLightBlock {
+function makeLights(): Scene3DLightBlock {
   // Directional { dir.xyz @0, _pad, radiance.rgb @4, _pad } + ambient { radiance.rgb @8 }.
   const data = new Float32Array(12);
   data[1] = -1;
@@ -27,7 +27,7 @@ function makeLights(): SceneLightBlock {
   return { ambientCount: 1, data, directionalCount: 1, hemisphereCount: 0, pointCount: 0, spotCount: 0, version: 1 };
 }
 
-function makeProxy(): SceneRenderProxy {
+function makeProxy(): Scene3DRenderProxy {
   const geometry = createBoxMeshGeometry();
   return {
     material: createPhongMaterial(),
@@ -39,7 +39,7 @@ function makeProxy(): SceneRenderProxy {
 
 describe('phongGlMeshMaterialRenderer', () => {
   it('bind selects a program, uploads camera position + light block + diffuse/specular colors', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     phongGlMeshMaterialRenderer.bind(state, createPhongMaterial(), makeLights(), makeCamera());
 
     expect(gl.calls.some((c) => c.name === 'useProgram')).toBe(true);
@@ -52,14 +52,14 @@ describe('phongGlMeshMaterialRenderer', () => {
   });
 
   it('bind caches the program under the classic namespace with a phong key', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     phongGlMeshMaterialRenderer.bind(state, createPhongMaterial(), makeLights(), makeCamera());
-    const keys = [...getGlSceneRuntime(state).programCache.keys()];
+    const keys = [...getGlScene3DRuntime(state).programCache.keys()];
     expect(keys.some((k) => k.startsWith('classic:p'))).toBe(true);
   });
 
   it('bind disables back-face culling for a double-sided material', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const material = createPhongMaterial();
     material.doubleSided = true;
     phongGlMeshMaterialRenderer.bind(state, material, makeLights(), makeCamera());
@@ -67,7 +67,7 @@ describe('phongGlMeshMaterialRenderer', () => {
   });
 
   it('draw uploads geometry and issues an indexed draw over the subset range', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const proxy = makeProxy();
     phongGlMeshMaterialRenderer.bind(state, proxy.material, makeLights(), makeCamera());
     phongGlMeshMaterialRenderer.draw(state, proxy, createBoxMeshGeometry());
@@ -79,7 +79,7 @@ describe('phongGlMeshMaterialRenderer', () => {
   });
 
   it('draw is a no-op when bind has not selected a program', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     phongGlMeshMaterialRenderer.draw(state, makeProxy(), createBoxMeshGeometry());
     expect(gl.calls.some((c) => c.name === 'drawElements')).toBe(false);
   });
@@ -87,7 +87,7 @@ describe('phongGlMeshMaterialRenderer', () => {
 
 describe('registerPhongGlMaterial', () => {
   it('installs the renderer for PhongMaterialKind', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     registerPhongGlMaterial(state);
     expect(getGlMeshMaterialRenderer(state, PhongMaterialKind)).toBe(phongGlMeshMaterialRenderer);
   });

@@ -4,8 +4,8 @@ import {
   rotateOrbitCameraController,
   updateOrbitCameraController,
 } from '@flighthq/camera-controls';
-import { createSceneNode } from '@flighthq/scene';
-import type { Camera3D, SceneLightsLike } from '@flighthq/sdk';
+import { createNode3D } from '@flighthq/scene';
+import type { Camera3D, Scene3DLightsLike } from '@flighthq/sdk';
 import {
   addNodeChild,
   createAmbientLight,
@@ -24,7 +24,7 @@ import {
   createVector3,
   invalidateNodeLocalTransform,
   normalizeVector3,
-  SceneNodeKind,
+  Node3DKind,
   setQuaternionFromEuler,
 } from '@flighthq/sdk';
 
@@ -73,7 +73,7 @@ const sphereMaterial = createStandardPbrMaterial({
   roughness: 0.3,
 });
 
-const scene = createSceneNode(SceneNodeKind);
+const scene = createNode3D(Node3DKind);
 
 const ground = createMesh(createPlaneMeshGeometry(8, 6, 8, 6), [groundMaterial]);
 ground.position.y = -1.35;
@@ -114,7 +114,7 @@ const cameraController = createOrbitCameraController({
 
 const directionalDirection = createVector3(-0.7, -1, -0.45);
 normalizeVector3(directionalDirection, directionalDirection);
-const lights: SceneLightsLike = {
+const lights: Scene3DLightsLike = {
   ambient: createAmbientLight({ color: 0x7184aaff, intensity: 0.32 }),
   directional: createDirectionalLight({
     color: 0xfff1dcff,

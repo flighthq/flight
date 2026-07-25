@@ -12,12 +12,12 @@ import {
   compileGlProgram,
   destroyGlMeshProgram,
   drawGlMeshSubset,
-  ensureGlSceneProgram,
+  ensureGlScene3DProgram,
   hasGlUvTransform,
   setGlMeshCameraPosition,
   setGlMeshViewProjection,
 } from './glMeshProgram';
-import { makeFakeGl2, makeGlSceneState } from './glSceneTestHelper';
+import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
 
 function makeCamera(): Camera3D {
   return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
@@ -34,7 +34,7 @@ function makeProgram(): GlMeshProgram {
 
 describe('beginGlMeshDraw', () => {
   it('stores the active program, selects it, and sets depth + back-face cull', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     beginGlMeshDraw(state, makeProgram(), false);
     expect(gl.calls.some((c) => c.name === 'useProgram')).toBe(true);
     expect(gl.calls.some((c) => c.name === 'enable' && c.args[0] === gl.DEPTH_TEST)).toBe(true);
@@ -42,7 +42,7 @@ describe('beginGlMeshDraw', () => {
   });
 
   it('disables culling for a double-sided material', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     beginGlMeshDraw(state, makeProgram(), true);
     expect(gl.calls.some((c) => c.name === 'disable' && c.args[0] === gl.CULL_FACE)).toBe(true);
   });
@@ -100,7 +100,7 @@ describe('compileGlProgram', () => {
 
 describe('destroyGlMeshProgram', () => {
   it('deletes the linked GL program', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const program = makeProgram();
     destroyGlMeshProgram(state, program);
     const deletes = gl.calls.filter((c) => c.name === 'deleteProgram');
@@ -111,7 +111,7 @@ describe('destroyGlMeshProgram', () => {
 
 describe('drawGlMeshSubset', () => {
   it('uploads the model + normal matrices and issues an indexed draw over the subset', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const geometry = createBoxMeshGeometry();
     const proxy = {
       material: createStandardPbrMaterial(),
@@ -135,7 +135,7 @@ describe('drawGlMeshSubset', () => {
     ['triangle-list', 'TRIANGLES'],
     ['triangle-strip', 'TRIANGLE_STRIP'],
   ] as const)('draws %s geometry with the matching GL primitive mode', (topology, constant) => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const geometry = createBoxMeshGeometry();
     geometry.topology = topology as PrimitiveTopology;
     drawGlMeshSubset(
@@ -154,7 +154,7 @@ describe('drawGlMeshSubset', () => {
   });
 
   it('draws a non-indexed geometry with its vertex count', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const layout: VertexAttributeLayout = {
       attributes: [{ byteOffset: 0, format: 'float32x3', semantic: 'position' }],
       stride: 12,
@@ -176,7 +176,7 @@ describe('drawGlMeshSubset', () => {
   });
 
   it('uploads u_objectAlpha with the proxy alpha when the program has an object-alpha location', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const geometry = createBoxMeshGeometry();
     const program = makeProgram();
     program.locObjectAlpha = { name: 'u_objectAlpha' } as WebGLUniformLocation;
@@ -196,7 +196,7 @@ describe('drawGlMeshSubset', () => {
   });
 
   it('defaults u_objectAlpha to 1 when the proxy carries no alpha', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const geometry = createBoxMeshGeometry();
     const program = makeProgram();
     program.locObjectAlpha = { name: 'u_objectAlpha' } as WebGLUniformLocation;
@@ -215,7 +215,7 @@ describe('drawGlMeshSubset', () => {
   });
 
   it('is a no-op for object alpha when the program has no object-alpha location', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const geometry = createBoxMeshGeometry();
     const program = makeProgram();
     program.locObjectAlpha = null; // resolved: this shader has no u_objectAlpha
@@ -237,7 +237,7 @@ describe('drawGlMeshSubset', () => {
   });
 
   it('resolves u_objectAlpha lazily on first draw when unresolved (undefined)', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const geometry = createBoxMeshGeometry();
     const program = makeProgram(); // locObjectAlpha undefined
     drawGlMeshSubset(
@@ -256,7 +256,7 @@ describe('drawGlMeshSubset', () => {
   });
 
   it('skips the normal matrix when the program has no normal-matrix location', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const geometry = createBoxMeshGeometry();
     const program = makeProgram();
     program.locNormalMatrix = null;
@@ -275,7 +275,7 @@ describe('drawGlMeshSubset', () => {
   });
 
   it('uploads the bone palette into the data texture and binds the skin unit for a skinned draw', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const geometry = createBoxMeshGeometry();
     const program = makeProgram();
     program.locJointTexture = { name: 'u_jointTexture' } as WebGLUniformLocation;
@@ -304,7 +304,7 @@ describe('drawGlMeshSubset', () => {
   });
 
   it('skips the skin upload when the program has no joint-texture location', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const geometry = createBoxMeshGeometry();
     const program = makeProgram(); // locJointTexture undefined → not a skinned program
     drawGlMeshSubset(
@@ -323,7 +323,7 @@ describe('drawGlMeshSubset', () => {
   });
 
   it('skips the skin upload for a skinned program drawing a rigid (paletteless) mesh', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const geometry = createBoxMeshGeometry();
     const program = makeProgram();
     program.locJointTexture = { name: 'u_jointTexture' } as WebGLUniformLocation;
@@ -342,26 +342,26 @@ describe('drawGlMeshSubset', () => {
   });
 });
 
-describe('ensureGlSceneProgram', () => {
+describe('ensureGlScene3DProgram', () => {
   it('compiles a key once and returns the cached program on repeat', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     let compiles = 0;
     const compile = (): GlMeshProgram => {
       compiles++;
       return makeProgram();
     };
-    const first = ensureGlSceneProgram(state, 'fam:a', compile);
-    const second = ensureGlSceneProgram(state, 'fam:a', compile);
+    const first = ensureGlScene3DProgram(state, 'fam:a', compile);
+    const second = ensureGlScene3DProgram(state, 'fam:a', compile);
     expect(second).toBe(first);
     expect(compiles).toBe(1);
   });
 
   it('compiles distinct programs for distinct keys', () => {
-    const { state } = makeGlSceneState();
-    ensureGlSceneProgram(state, 'fam:a', makeProgram);
-    ensureGlSceneProgram(state, 'fam:b', makeProgram);
+    const { state } = makeGlScene3DState();
+    ensureGlScene3DProgram(state, 'fam:a', makeProgram);
+    ensureGlScene3DProgram(state, 'fam:b', makeProgram);
     // Two distinct keys → two cached entries (the shared programCache spans every family).
-    ensureGlSceneProgram(state, 'fam:a', makeProgram);
+    ensureGlScene3DProgram(state, 'fam:a', makeProgram);
   });
 });
 

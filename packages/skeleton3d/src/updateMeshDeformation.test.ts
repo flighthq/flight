@@ -1,7 +1,7 @@
 import { setVector3 } from '@flighthq/geometry';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh';
 import { invalidateNodeLocalTransform } from '@flighthq/node';
-import { createMesh, createSceneNode } from '@flighthq/scene';
+import { createMesh, createNode3D } from '@flighthq/scene';
 import type { MeshMorph } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
@@ -20,7 +20,7 @@ describe('updateMeshDeformation', () => {
       weights: new Float32Array([1]),
     };
     mesh.morph = morph;
-    const joint = createSceneNode();
+    const joint = createNode3D();
     mesh.skin = { skeleton: createSkeleton3D([joint]) };
     setVector3(joint.position, 0, 5, 0);
     invalidateNodeLocalTransform(joint);
@@ -53,7 +53,7 @@ describe('updateMeshDeformation', () => {
       createMeshGeometry({ layout: CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, vertices: skinVertices }),
       [],
     );
-    const joint = createSceneNode();
+    const joint = createNode3D();
     skinMesh.skin = { skeleton: createSkeleton3D([joint]) };
     setVector3(joint.position, 0, 2, 0);
     invalidateNodeLocalTransform(joint);

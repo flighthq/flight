@@ -1,6 +1,6 @@
 import type { GlWireframeProgram, GlRenderState } from '@flighthq/types';
 
-import { compileGlProgram, ensureGlSceneProgram } from './glMeshProgram';
+import { compileGlProgram, ensureGlScene3DProgram } from './glMeshProgram';
 
 // The Gl wireframe prelude: a minimal GLSL 300 es shader that transforms the position attribute by
 // the model + view-projection matrices and outputs a single flat LINE color. It has no lighting and
@@ -23,7 +23,7 @@ export function compileGlWireframeProgram(gl: WebGL2RenderingContext): GlWirefra
 // Resolves the wireframe program, compiling and caching it on first use through the shared scene
 // program cache under the `wireframe:` family namespace.
 export function ensureGlWireframeProgram(state: GlRenderState): GlWireframeProgram {
-  return ensureGlSceneProgram(state, 'wireframe:', (gl) => compileGlWireframeProgram(gl));
+  return ensureGlScene3DProgram(state, 'wireframe:', (gl) => compileGlWireframeProgram(gl));
 }
 
 // The wireframe fragment source: outputs the flat linear line color.

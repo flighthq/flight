@@ -13,9 +13,9 @@ import {
   GL_SKIN_VERTEX_DECLARATIONS_GLSL,
   GL_UV_TRANSFORM_VERTEX_GLSL,
   compileGlProgram,
-  ensureGlSceneProgram,
+  ensureGlScene3DProgram,
 } from './glMeshProgram';
-import { getGlSceneRuntime } from './glSceneRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 // Uploads the resolved unlit surface uniforms shared by all three unlit materials: the linear color
 // (already sRgb-decoded on the CPU), the intensity scale (1 for Unlit/VertexColor, emissiveStrength
 // for Emissive), the optional color map on texture unit 0, and the alpha-mask cutoff. The caller has
@@ -95,9 +95,9 @@ export function ensureGlUnlitProgram(state: GlRenderState, key: Readonly<GlUnlit
   // material compiles + caches its own HAS_SKIN program, without the material renderer knowing.
   const fullKey: GlUnlitDefineKey = {
     ...key,
-    hasSkin: getGlSceneRuntime(state).activeSkinnedRun,
+    hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
   };
-  return ensureGlSceneProgram(state, `unlit:${buildGlUnlitDefineKey(fullKey)}`, (gl) =>
+  return ensureGlScene3DProgram(state, `unlit:${buildGlUnlitDefineKey(fullKey)}`, (gl) =>
     compileGlUnlitProgram(gl, fullKey),
   );
 }

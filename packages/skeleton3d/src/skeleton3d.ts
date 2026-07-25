@@ -1,7 +1,7 @@
 import { createEntity } from '@flighthq/entity';
 import { copyMatrix4, createMatrix4, inverseMatrix4, multiplyMatrix4 } from '@flighthq/geometry';
 import { addNodeChild, getNodeParent, getNodeWorldMatrix4 } from '@flighthq/node';
-import type { Matrix4Like, SceneNode, Skeleton3D, Skeleton3DValidationDiagnostic } from '@flighthq/types';
+import type { Matrix4Like, Node3D, Skeleton3D, Skeleton3DValidationDiagnostic } from '@flighthq/types';
 
 export function cloneSkeleton3D(skeleton: Readonly<Skeleton3D>): Skeleton3D {
   const clone = createEntity({
@@ -13,18 +13,18 @@ export function cloneSkeleton3D(skeleton: Readonly<Skeleton3D>): Skeleton3D {
   return clone;
 }
 
-// Clones a skeleton and its joint-to-joint hierarchy without assuming that every SceneNode kind is
+// Clones a skeleton and its joint-to-joint hierarchy without assuming that every Node3D kind is
 // generically cloneable. `cloneJoint` is the one narrow policy seam: it must return a fresh detached
 // node carrying the source joint's local pose/data. Parent links whose parent is another skeleton
 // joint are rebuilt over the cloned nodes; a parent outside the joint set is intentionally left to
 // the caller's surrounding scene clone. Buffers, names, joint nodes, and hierarchy are all independent.
 export function cloneSkeleton3DJointHierarchy(
   skeleton: Readonly<Skeleton3D>,
-  cloneJoint: (joint: Readonly<SceneNode>, jointIndex: number) => SceneNode,
+  cloneJoint: (joint: Readonly<Node3D>, jointIndex: number) => Node3D,
 ): Skeleton3D {
   const sourceJoints = skeleton.joints;
-  const joints = new Array<SceneNode>(sourceJoints.length);
-  const clonesBySource = new Map<SceneNode, SceneNode>();
+  const joints = new Array<Node3D>(sourceJoints.length);
+  const clonesBySource = new Map<Node3D, Node3D>();
   for (let i = 0; i < sourceJoints.length; i++) {
     const source = sourceJoints[i];
     const clone = cloneJoint(source, i);
@@ -56,7 +56,7 @@ export function computeSkeleton3DJointMatrices(skeleton: Readonly<Skeleton3D>): 
 }
 
 export function createSkeleton3D(
-  joints: SceneNode[],
+  joints: Node3D[],
   inverseBindMatrices?: Float32Array,
   names?: readonly string[] | null,
 ): Skeleton3D {

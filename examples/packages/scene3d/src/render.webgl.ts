@@ -1,18 +1,18 @@
-import { drawGlScene, drawGlSceneShadowMap } from '@flighthq/scene-gl';
-import type { Camera3D, GlRenderEffectPipeline, SceneLightsLike, SceneNode } from '@flighthq/sdk';
+import { drawGlScene3D, drawGlScene3DShadowMap } from '@flighthq/scene-gl';
+import type { Camera3D, GlRenderEffectPipeline, Scene3DLightsLike, Node3D } from '@flighthq/sdk';
 import {
   beginGlRenderEffectPipeline,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
   endGlRenderEffectPipeline,
-  prepareSceneRender,
+  prepareScene3DRender,
   registerStandardPbrGlMaterial,
   renderGlBackground,
 } from '@flighthq/sdk';
 
-// drawGlScene is imported from @flighthq/scene-gl directly because it collides in the
-// @flighthq/sdk barrel (both scene-gl and scene-wgpu re-export a drawScene function).
+// drawGlScene3D is imported from @flighthq/scene-gl directly because it collides in the
+// @flighthq/sdk barrel (both scene-gl and scene-wgpu re-export a drawScene3D function).
 
 const pixelRatio = window.devicePixelRatio || 1;
 export const canvas = createGlCanvasElement(800, 600, pixelRatio);
@@ -34,14 +34,14 @@ const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
 export const scale = pixelRatio;
 
 export function render(
-  scene: Readonly<SceneNode>,
+  scene: Readonly<Node3D>,
   camera: Readonly<Camera3D>,
-  lights: Readonly<SceneLightsLike>,
+  lights: Readonly<Scene3DLightsLike>,
   shadowCamera: Readonly<Camera3D>,
 ): void {
   // The directional depth pass must finish before the HDR effect target opens its framebuffer.
-  prepareSceneRender(state, scene, camera, lights);
-  drawGlSceneShadowMap(state, scene, shadowCamera);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawGlScene3DShadowMap(state, scene, shadowCamera);
 
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
@@ -49,6 +49,6 @@ export function render(
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
-  drawGlScene(state, scene, camera, lights);
+  drawGlScene3D(state, scene, camera, lights);
   endGlRenderEffectPipeline(state, pipeline, []);
 }

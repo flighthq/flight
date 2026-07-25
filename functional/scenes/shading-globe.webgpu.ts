@@ -1,11 +1,11 @@
-import { createScene } from '@flighthq/scene';
+import { createScene3D } from '@flighthq/scene';
 import {
-  drawWgpuScene,
+  drawWgpuScene3D,
   registerBuiltInWgpuModifierSnippets,
   registerShadedWgpuMaterial,
-  setWgpuSceneTime,
+  setWgpuScene3DTime,
 } from '@flighthq/scene-wgpu';
-import type { Camera3D, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
@@ -31,7 +31,7 @@ import {
   endWgpuRenderEffectPipeline,
   getSurfacePixelLuminance,
   normalizeVector3,
-  prepareSceneRender,
+  prepareScene3DRender,
   renderWgpuBackground,
   setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
@@ -59,12 +59,12 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
-  setWgpuSceneTime(state, 0.35);
-  prepareSceneRender(state, scene, camera, lights);
-  drawWgpuScene(state, scene, camera, lights);
+  setWgpuScene3DTime(state, 0.35);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawWgpuScene3D(state, scene, camera, lights);
   endWgpuRenderEffectPipeline(state, pipeline, []);
   submitWgpuRenderPass(state);
 }
@@ -97,7 +97,7 @@ const material = createShadedMaterial({
   ],
 });
 
-const scene = createScene().root;
+const scene = createScene3D().root;
 addNodeChild(scene, createMesh(geometry, [material]));
 
 const camera = createCamera3D({

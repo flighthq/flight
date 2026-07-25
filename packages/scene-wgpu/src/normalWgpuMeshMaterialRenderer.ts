@@ -4,8 +4,8 @@ import type {
   Material,
   MeshGeometry,
   NormalMaterial,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
 } from '@flighthq/types';
@@ -27,7 +27,7 @@ export const normalWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
   bind(
     state: WgpuRenderState,
     material: Readonly<Material> | null,
-    _lights: Readonly<SceneLightBlock>,
+    _lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const stateRuntime = getWgpuRenderStateRuntime(state);
@@ -53,13 +53,13 @@ export const normalWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     pass.setBindGroup(2, group);
   },
 
-  draw(state: WgpuRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+  draw(state: WgpuRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
     drawWgpuMeshSubset(state, proxy, geometry);
   },
 };
 
 // Registers the built-in Normal renderer for NormalMaterialKind on this state. Opt-in (no top-level side
-// effect); call once per WgpuRenderState before drawWgpuScene so meshes with NormalMaterials draw.
+// effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with NormalMaterials draw.
 export function registerNormalWgpuMaterial(state: WgpuRenderState): void {
   registerWgpuMeshMaterialRenderer(state, NormalMaterialKind, normalWgpuMeshMaterialRenderer);
 }

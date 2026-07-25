@@ -2,19 +2,19 @@ import { createCamera3D } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createSheenPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
-import type { Camera3D, Matrix3, Matrix4, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
+import type { Camera3D, Matrix3, Matrix4, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types';
 import { SheenPbrMaterialKind } from '@flighthq/types';
 
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { getGlSceneRuntime } from './glSceneRuntime';
-import { makeGlSceneState } from './glSceneTestHelper';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { makeGlScene3DState } from './glScene3DTestHelper';
 import { registerSheenPbrGlMaterial, sheenPbrGlMeshMaterialRenderer } from './sheenPbrGlMeshMaterialRenderer';
 
 function makeCamera(): Camera3D {
   return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
 }
 
-function makeLights(): SceneLightBlock {
+function makeLights(): Scene3DLightBlock {
   const data = new Float32Array(12);
   data[1] = -1;
   data[4] = 1;
@@ -26,7 +26,7 @@ function makeLights(): SceneLightBlock {
   return { ambientCount: 1, data, directionalCount: 1, hemisphereCount: 0, pointCount: 0, spotCount: 0, version: 1 };
 }
 
-function makeProxy(): SceneRenderProxy {
+function makeProxy(): Scene3DRenderProxy {
   const geometry = createBoxMeshGeometry();
   return {
     material: createSheenPbrMaterial(),
@@ -38,7 +38,7 @@ function makeProxy(): SceneRenderProxy {
 
 describe('registerSheenPbrGlMaterial', () => {
   it('installs the renderer for SheenPbrMaterialKind', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     registerSheenPbrGlMaterial(state);
     expect(getGlMeshMaterialRenderer(state, SheenPbrMaterialKind)).toBe(sheenPbrGlMeshMaterialRenderer);
   });
@@ -46,7 +46,7 @@ describe('registerSheenPbrGlMaterial', () => {
 
 describe('sheenPbrGlMeshMaterialRenderer', () => {
   it('bind uploads the light block, standard block, and sheen uniforms', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     sheenPbrGlMeshMaterialRenderer.bind(
       state,
       createSheenPbrMaterial({ sheenColor: 0x80604000 }),
@@ -60,15 +60,15 @@ describe('sheenPbrGlMeshMaterialRenderer', () => {
   });
 
   it('caches the sheen program under the pbr: namespace', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     sheenPbrGlMeshMaterialRenderer.bind(state, createSheenPbrMaterial(), makeLights(), makeCamera());
-    const cache = getGlSceneRuntime(state).programCache;
+    const cache = getGlScene3DRuntime(state).programCache;
     expect(cache.size).toBe(1);
     expect([...cache.keys()][0].startsWith('pbr:')).toBe(true);
   });
 
   it('draw issues an indexed draw after bind', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const proxy = makeProxy();
     sheenPbrGlMeshMaterialRenderer.bind(state, proxy.material, makeLights(), makeCamera());
     sheenPbrGlMeshMaterialRenderer.draw(state, proxy, createBoxMeshGeometry());
@@ -76,7 +76,7 @@ describe('sheenPbrGlMeshMaterialRenderer', () => {
   });
 
   it('draw is a no-op before bind', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     sheenPbrGlMeshMaterialRenderer.draw(state, makeProxy(), createBoxMeshGeometry());
     expect(gl.calls.some((c) => c.name === 'drawElements')).toBe(false);
   });

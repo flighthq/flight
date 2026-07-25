@@ -1,7 +1,7 @@
 import type { LinearColor, VideoTexture, WgpuUnlitDefineKey } from '@flighthq/types';
 
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
-import { makeWgpuSceneState, makeWgpuSkinningAdapter } from './wgpuSceneTestHelper';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper';
 import {
   bindWgpuUnlitSurface,
   bindWgpuUnlitVideoSurface,
@@ -16,7 +16,7 @@ const COLOR: LinearColor = [0.5, 0.25, 0.1, 1];
 
 describe('bindWgpuUnlitSurface', () => {
   it('creates a material bind group once per key and writes its uniform', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const pipeline = compileWgpuUnlitPipeline(state, FLAT, 'bgra8unorm');
     const key = {};
     bindWgpuUnlitSurface(state, pipeline, key, COLOR, 2, 0.5, null);
@@ -29,7 +29,7 @@ describe('bindWgpuUnlitSurface', () => {
 
 describe('bindWgpuUnlitVideoSurface', () => {
   it('uploads the ready video frame into the same unlit material layout', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const pipeline = compileWgpuUnlitPipeline(state, { ...FLAT, hasColorMap: true }, 'bgra8unorm');
     const video = {
       frameId: 1,
@@ -65,7 +65,7 @@ describe('buildWgpuUnlitDefineKey', () => {
 
 describe('compileWgpuUnlitPipeline', () => {
   it('compiles a module and builds the pipeline with a 3-entry material layout', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const pipeline = compileWgpuUnlitPipeline(state, FLAT, 'rgba16float');
     expect(pipeline.pipeline).toBeDefined();
     expect(fake.calls.some((c) => c.name === 'createShaderModule')).toBe(true);
@@ -79,11 +79,11 @@ describe('compileWgpuUnlitPipeline', () => {
 
 describe('ensureWgpuUnlitPipeline', () => {
   it('caches one pipeline per define key + format under the unlit namespace', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     const a = ensureWgpuUnlitPipeline(state, FLAT, 'bgra8unorm');
     const b = ensureWgpuUnlitPipeline(state, FLAT, 'bgra8unorm');
     expect(a).toBe(b);
-    expect([...getWgpuSceneRuntime(state).pipelineCache.keys()].some((k) => k.startsWith('unlit:'))).toBe(true);
+    expect([...getWgpuScene3DRuntime(state).pipelineCache.keys()].some((k) => k.startsWith('unlit:'))).toBe(true);
   });
 });
 

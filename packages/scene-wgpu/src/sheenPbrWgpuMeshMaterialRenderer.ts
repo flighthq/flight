@@ -5,8 +5,8 @@ import type {
   Camera3D,
   Material,
   MeshGeometry,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
   SheenPbrMaterial,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
@@ -38,7 +38,7 @@ export const sheenPbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
   bind(
     state: WgpuRenderState,
     material: Readonly<Material> | null,
-    lights: Readonly<SceneLightBlock>,
+    lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const stateRuntime = getWgpuRenderStateRuntime(state);
@@ -71,13 +71,13 @@ export const sheenPbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     pass.setBindGroup(2, binding.bindGroup);
   },
 
-  draw(state: WgpuRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+  draw(state: WgpuRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
     drawWgpuMeshSubset(state, proxy, geometry);
   },
 };
 
 // Installs the built-in Sheen renderer for SheenPbrMaterialKind on this state. Opt-in (no top-level
-// side effect): drawScene only draws Sheen subsets once this is called.
+// side effect): drawScene3D only draws Sheen subsets once this is called.
 export function registerSheenPbrWgpuMaterial(state: WgpuRenderState): void {
   registerWgpuMeshMaterialRenderer(state, SheenPbrMaterialKind, sheenPbrWgpuMeshMaterialRenderer);
 }

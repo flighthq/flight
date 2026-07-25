@@ -94,7 +94,7 @@ function makeRegularPolygonPoints(cx: number, cy: number, radius: number, sides:
   return points;
 }
 
-// Scene: two circles, one AABB, one convex polygon (pentagon).
+// Scene3D: two circles, one AABB, one convex polygon (pentagon).
 const colliders: Collider[] = [
   createCircleCollider(210, 190, 58),
   createCircleCollider(285, 190, 46),

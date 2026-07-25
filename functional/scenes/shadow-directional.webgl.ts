@@ -1,6 +1,6 @@
-import { createScene } from '@flighthq/scene';
-import { drawGlScene, drawGlSceneShadowMap } from '@flighthq/scene-gl';
-import type { Camera3D, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import { createScene3D } from '@flighthq/scene';
+import { drawGlScene3D, drawGlScene3DShadowMap } from '@flighthq/scene-gl';
+import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -20,19 +20,19 @@ import {
   createStandardPbrMaterial,
   createVector3,
   endGlRenderEffectPipeline,
-  getSceneNodeWorldBounds,
+  getNode3DWorldBounds,
   getSurfacePixelLuminance,
   invalidateNodeLocalTransform,
-  prepareSceneRender,
+  prepareScene3DRender,
   registerStandardPbrGlMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
   setVector3,
 } from '@flighthq/sdk';
 
-// drawGlScene exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel —
-// import the Gl scene functions directly. drawGlSceneShadowMap renders scene depth from the light into
-// the shadow map (setting the per-state shadow on the runtime); drawGlScene's lit binds then PCF-sample
+// drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel —
+// import the Gl scene functions directly. drawGlScene3DShadowMap renders scene depth from the light into
+// the shadow map (setting the per-state shadow on the runtime); drawGlScene3D's lit binds then PCF-sample
 // it during shading.
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -57,13 +57,13 @@ export const width = 800;
 export const height = 600;
 
 export function render(
-  scene: Readonly<SceneNode>,
+  scene: Readonly<Node3D>,
   camera: Readonly<Camera3D>,
-  lights: Readonly<SceneLights>,
+  lights: Readonly<Scene3DLights>,
   shadowCamera: Readonly<Camera3D>,
 ): void {
   // 1) Depth pass: render the scene from the light's POV into the shadow map (off the scene target).
-  drawGlSceneShadowMap(state, scene, shadowCamera);
+  drawGlScene3DShadowMap(state, scene, shadowCamera);
 
   // 2) Forward-lit pass into the effect pipeline's rgba16f + depth target; the lit shaders PCF-sample
   // the shadow map set above. Clear depth to the far plane so the LESS depth test occludes correctly.
@@ -73,21 +73,21 @@ export function render(
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
-  prepareSceneRender(state, scene, camera, lights);
-  drawGlScene(state, scene, camera, lights);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawGlScene3D(state, scene, camera, lights);
   endGlRenderEffectPipeline(state, pipeline, []);
 }
 
 // shadow-directional — proves the directional shadow recipe on the Gl backend: a sphere hovering over a
 // ground plane, lit by one straight-down white sun, casts a dark shadow onto the plane beneath it. The
-// recipe is two passes (render.webgl.ts): drawGlSceneShadowMap renders scene depth from the light into a
-// shadow map, then drawGlScene's lit shaders PCF-sample it so the plane under the sphere is darkened.
+// recipe is two passes (render.webgl.ts): drawGlScene3DShadowMap renders scene depth from the light into a
+// shadow map, then drawGlScene3D's lit shaders PCF-sample it so the plane under the sphere is darkened.
 //
 // The oracle samples the ground in the foreground (lit) and the ground directly under the sphere
 // (shadowed) and asserts the under-sphere ground is clearly darker — the signature of a real shadow (an
 // unshadowed scene would light the whole plane uniformly). The WebGPU twin exercises the same recipe.
 //
-// createScene exists on both @flighthq/node and @flighthq/scene, so it collides in the @flighthq/sdk
+// createScene3D exists on both @flighthq/node and @flighthq/scene, so it collides in the @flighthq/sdk
 // barrel — import the 3D scene one directly.
 
 const logicalWidth = width / scale;
@@ -97,7 +97,7 @@ const logicalHeight = height / scale;
 // a broad even bright that the shadow clearly darkens.
 const material = createStandardPbrMaterial({ baseColor: 0xb8b8b8ff, metallic: 0, roughness: 0.8 });
 
-const scene = createScene().root;
+const scene = createScene3D().root;
 
 // Horizontal ground plane (createPlaneMeshGeometry is XZ, normal +Y).
 const ground = createMesh(createPlaneMeshGeometry(8, 8), [material]);
@@ -125,7 +125,7 @@ const lights = {
 
 // Shadow camera fitted to the scene's world bounds along the light direction.
 const sceneBounds = createAabb();
-getSceneNodeWorldBounds(sceneBounds, scene);
+getNode3DWorldBounds(sceneBounds, scene);
 const shadowCamera = createCamera3D({
   far: 100,
   near: 0.1,

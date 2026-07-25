@@ -1,7 +1,7 @@
 import type { GlToonDefineKey } from '@flighthq/types';
 
-import { getGlSceneRuntime } from './glSceneRuntime';
-import { makeFakeGl2, makeGlSceneState } from './glSceneTestHelper';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
 import {
   buildGlToonDefineKey,
   compileGlToonProgram,
@@ -61,13 +61,13 @@ describe('compileGlToonProgram', () => {
 
 describe('ensureGlToonProgram', () => {
   it('caches a variant under the toon namespace and reuses it', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const first = ensureGlToonProgram(state, FLAT);
     const links = gl.calls.filter((c) => c.name === 'linkProgram').length;
     const second = ensureGlToonProgram(state, FLAT);
     expect(second).toBe(first);
     expect(gl.calls.filter((c) => c.name === 'linkProgram').length).toBe(links);
-    expect([...getGlSceneRuntime(state).programCache.keys()].some((k) => k.startsWith('toon:'))).toBe(true);
+    expect([...getGlScene3DRuntime(state).programCache.keys()].some((k) => k.startsWith('toon:'))).toBe(true);
   });
 });
 

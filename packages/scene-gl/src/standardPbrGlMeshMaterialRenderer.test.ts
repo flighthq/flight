@@ -2,16 +2,16 @@ import { createCamera3D } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
-import type { Camera3D, Matrix3, Matrix4, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
+import type { Camera3D, Matrix3, Matrix4, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types';
 
-import { makeGlSceneState } from './glSceneTestHelper';
+import { makeGlScene3DState } from './glScene3DTestHelper';
 import { standardPbrGlMeshMaterialRenderer } from './standardPbrGlMeshMaterialRenderer';
 
 function makeCamera(): Camera3D {
   return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
 }
 
-function makeLights(): SceneLightBlock {
+function makeLights(): Scene3DLightBlock {
   // Directional { dir.xyz @0, _pad, radiance.rgb @4, _pad } + ambient { radiance.rgb @8 }.
   const data = new Float32Array(12);
   data[0] = 0;
@@ -26,7 +26,7 @@ function makeLights(): SceneLightBlock {
   return { ambientCount: 1, data, directionalCount: 1, hemisphereCount: 0, pointCount: 0, spotCount: 0, version: 1 };
 }
 
-function makeProxy(): SceneRenderProxy {
+function makeProxy(): Scene3DRenderProxy {
   const geometry = createBoxMeshGeometry();
   return {
     material: createStandardPbrMaterial(),
@@ -38,7 +38,7 @@ function makeProxy(): SceneRenderProxy {
 
 describe('standardPbrGlMeshMaterialRenderer', () => {
   it('bind selects a program, sets depth/cull state, and uploads camera + light + material uniforms', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     standardPbrGlMeshMaterialRenderer.bind(state, createStandardPbrMaterial(), makeLights(), makeCamera());
 
     expect(gl.calls.some((c) => c.name === 'useProgram')).toBe(true);
@@ -50,7 +50,7 @@ describe('standardPbrGlMeshMaterialRenderer', () => {
   });
 
   it('bind disables back-face culling for a double-sided material', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const material = createStandardPbrMaterial();
     material.doubleSided = true;
     standardPbrGlMeshMaterialRenderer.bind(state, material, makeLights(), makeCamera());
@@ -58,7 +58,7 @@ describe('standardPbrGlMeshMaterialRenderer', () => {
   });
 
   it('draw uploads geometry and issues an indexed draw over the subset range', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const proxy = makeProxy();
     const geometry = createBoxMeshGeometry();
     standardPbrGlMeshMaterialRenderer.bind(state, proxy.material, makeLights(), makeCamera());
@@ -71,13 +71,13 @@ describe('standardPbrGlMeshMaterialRenderer', () => {
   });
 
   it('draw is a no-op when bind has not selected a program', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     standardPbrGlMeshMaterialRenderer.draw(state, makeProxy(), createBoxMeshGeometry());
     expect(gl.calls.some((c) => c.name === 'drawElements')).toBe(false);
   });
 
   it('bind uploads the full standard block including occlusion strength and emissive', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const material = createStandardPbrMaterial({ metallic: 0.25, occlusionStrength: 0.7, roughness: 0.4 });
     standardPbrGlMeshMaterialRenderer.bind(state, material, makeLights(), makeCamera());
     // The standard block uploads metallic + roughness + normalScale + emissiveStrength +

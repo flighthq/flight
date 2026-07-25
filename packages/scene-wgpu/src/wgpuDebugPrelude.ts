@@ -4,11 +4,11 @@ import type { WgpuDebugDefineKey, WgpuDebugPipeline, WgpuRenderState, WgpuMateri
 import {
   createWgpuMeshPipeline,
   ensureWgpuPlaceholderTextureView,
-  ensureWgpuScenePipeline,
+  ensureWgpuScene3DPipeline,
   stashWgpuUvTransform,
   WGPU_MESH_PRELUDE_WGSL,
 } from './wgpuMeshPipeline';
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 // Ensures (and caches per material reference) the debug Material bind group — a uniform buffer + the
 // shared sampler + the placeholder texture — and rewrites its uniform with this surface's params. The
 // params vec4 packs near/far (depth mode) and normalScale (normal mode) into one buffer shared by both
@@ -23,7 +23,7 @@ export function bindWgpuDebugSurface(
   far: number,
   normalScale: number,
 ): GPUBindGroup {
-  const scene = getWgpuSceneRuntime(state);
+  const scene = getWgpuScene3DRuntime(state);
   let binding: WgpuMaterialBinding | undefined = scene.materialBindGroups.get(materialKey);
   if (binding === undefined) {
     const stateRuntime = getWgpuRenderStateRuntime(state);
@@ -93,7 +93,7 @@ export function ensureWgpuDebugPipeline(
   key: Readonly<WgpuDebugDefineKey>,
   format: GPUTextureFormat,
 ): WgpuDebugPipeline {
-  return ensureWgpuScenePipeline(state, `debug:${format}|${buildWgpuDebugDefineKey(key)}`, (blended) =>
+  return ensureWgpuScene3DPipeline(state, `debug:${format}|${buildWgpuDebugDefineKey(key)}`, (blended) =>
     compileWgpuDebugPipeline(state, key, format, blended),
   );
 }

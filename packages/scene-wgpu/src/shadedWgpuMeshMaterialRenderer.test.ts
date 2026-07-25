@@ -1,6 +1,6 @@
 import { createCamera3D } from '@flighthq/camera';
 import { createShadedMaterial } from '@flighthq/shading';
-import type { SceneLightBlock } from '@flighthq/types';
+import type { Scene3DLightBlock } from '@flighthq/types';
 import { ShadedMaterialKind } from '@flighthq/types';
 
 import {
@@ -24,11 +24,11 @@ describe('getWgpuShadedBaseFlags', () => {
   });
 });
 import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { makeWgpuSceneState } from './wgpuSceneTestHelper';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 
 describe('registerShadedWgpuMaterial', () => {
   it('installs the renderer for ShadedMaterialKind', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     registerShadedWgpuMaterial(state);
     expect(getWgpuMeshMaterialRenderer(state, ShadedMaterialKind)).toBe(shadedWgpuMeshMaterialRenderer);
   });
@@ -36,7 +36,7 @@ describe('registerShadedWgpuMaterial', () => {
 
 describe('shadedWgpuMeshMaterialRenderer', () => {
   it('bind compiles a shaded module and binds frame, material, and sample groups', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const camera = createCamera3D({
       far: 100,
       near: 0.1,
@@ -52,7 +52,7 @@ describe('shadedWgpuMeshMaterialRenderer', () => {
   });
 });
 
-const LIGHTS: SceneLightBlock = {
+const LIGHTS: Scene3DLightBlock = {
   ambientCount: 0,
   data: new Float32Array(128),
   directionalCount: 0,

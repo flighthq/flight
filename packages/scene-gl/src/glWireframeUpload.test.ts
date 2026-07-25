@@ -1,11 +1,11 @@
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 
-import { makeGlSceneState } from './glSceneTestHelper';
+import { makeGlScene3DState } from './glScene3DTestHelper';
 import { destroyGlWireframeUpload, ensureGlWireframeUpload } from './glWireframeUpload';
 
 describe('destroyGlWireframeUpload', () => {
   it('deletes the VAO and the line-index buffer, but not the shared vertex buffer', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const upload = ensureGlWireframeUpload(state, createBoxMeshGeometry());
     const deletesBefore = gl.calls.filter((c) => c.name === 'deleteBuffer').length;
     destroyGlWireframeUpload(state, upload);
@@ -20,7 +20,7 @@ describe('destroyGlWireframeUpload', () => {
 
 describe('ensureGlWireframeUpload', () => {
   it('builds a line-index VAO and uploads the derived line buffer', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const geometry = createBoxMeshGeometry();
     const upload = ensureGlWireframeUpload(state, geometry);
     expect(upload.vao).toBeDefined();
@@ -39,7 +39,7 @@ describe('ensureGlWireframeUpload', () => {
   });
 
   it('re-binds the cached VAO without rebuilding when the version is unchanged', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const geometry = createBoxMeshGeometry();
     const first = ensureGlWireframeUpload(state, geometry);
     const builds = gl.calls.filter((c) => c.name === 'createVertexArray').length;

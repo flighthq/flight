@@ -1,6 +1,6 @@
-import { createScene } from '@flighthq/scene';
-import { drawGlEnvironmentSkybox, drawGlScene } from '@flighthq/scene-gl';
-import type { Camera3D, Environment, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import { createScene3D } from '@flighthq/scene';
+import { drawGlEnvironmentSkybox, drawGlScene3D } from '@flighthq/scene-gl';
+import type { Camera3D, Environment, GlRenderEffectPipeline, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -20,14 +20,14 @@ import {
   createVector3,
   endGlRenderEffectPipeline,
   getSurfacePixel,
-  prepareSceneRender,
+  prepareScene3DRender,
   registerStandardPbrGlMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
   setCubeTextureFace,
 } from '@flighthq/sdk';
 
-// drawGlEnvironmentSkybox + drawGlScene collide with the wgpu backend in the @flighthq/sdk barrel, so
+// drawGlEnvironmentSkybox + drawGlScene3D collide with the wgpu backend in the @flighthq/sdk barrel, so
 // import the Gl scene functions directly. The skybox draws the environment cubemap as the backdrop
 // (depth off) before the scene draws over it.
 
@@ -53,9 +53,9 @@ export const width = 800;
 export const height = 600;
 
 export function render(
-  scene: Readonly<SceneNode>,
+  scene: Readonly<Node3D>,
   camera: Readonly<Camera3D>,
-  lights: Readonly<SceneLights>,
+  lights: Readonly<Scene3DLights>,
   environment: Readonly<Environment>,
 ): void {
   beginGlRenderEffectPipeline(state, pipeline);
@@ -68,8 +68,8 @@ export function render(
   // Backdrop: the environment cubemap, behind everything (the pass writes no depth).
   drawGlEnvironmentSkybox(state, environment, camera, width / height);
 
-  prepareSceneRender(state, scene, camera, lights);
-  drawGlScene(state, scene, camera, lights);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawGlScene3D(state, scene, camera, lights);
   endGlRenderEffectPipeline(state, pipeline, []);
 }
 
@@ -100,7 +100,7 @@ for (let face = 0; face < 6; face++) {
 }
 const environment = createEnvironment({ environment: cube, intensity: 1 });
 
-const scene = createScene().root;
+const scene = createScene3D().root;
 const sphere = createMesh(createSphereMeshGeometry(0.8, 32, 24), [
   createStandardPbrMaterial({ baseColor: 0x808080ff, metallic: 0, roughness: 0.5 }),
 ]);

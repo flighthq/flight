@@ -2,16 +2,16 @@ import type { Aabb } from './Aabb';
 import type { Material } from './Material';
 import type { MeshGeometry } from './MeshGeometry';
 import type { MeshMorph } from './MorphTarget';
-import type { SceneNode, SceneNodeRuntime } from './SceneNode';
+import type { Node3D, Node3DRuntime } from './Node3D';
 import type { Skin } from './Skin';
 
-// A renderable 3D leaf node. A Mesh shares the SceneNode trait family (so it lives in the same
-// hierarchy as group SceneNodes and other Meshes — addNodeChild accepts both) and adds the two
+// A renderable 3D leaf node. A Mesh shares the Node3D trait family (so it lives in the same
+// hierarchy as group Node3Ds and other Meshes — addNodeChild accepts both) and adds the two
 // own fields that make it drawable: the `geometry` to draw and one `materials` entry per geometry
 // subset, indexed positionally (subset i is drawn with materials[i]). A subset whose index is past
 // the end of `materials`, or whose slot is null, resolves to DefaultMaterialKind at draw time. The
 // node's world transform (from HasTransform3D) is the model matrix for every subset. A bare
-// SceneNode (no geometry) is a transform-only group; the presence of `geometry` is what makes a
+// Node3D (no geometry) is a transform-only group; the presence of `geometry` is what makes a
 // node a Mesh (isMesh).
 //
 // `skin` binds the mesh to a Skeleton3D for skeletal deformation: null (or absent) draws rigidly;
@@ -23,7 +23,7 @@ import type { Skin } from './Skin';
 // null/absent for a non-morphed mesh. updateMeshMorph blends base + Σ wᵢ·targetᵢ into geometry.vertices
 // each frame; a `Weights` animation channel drives the weights. Like skin it is a field, not a node
 // kind, and the two compose (corrective morph over skinning) — see MeshDeformer.
-export interface Mesh extends SceneNode {
+export interface Mesh extends Node3D {
   geometry: MeshGeometry;
   materials: (Material | null)[];
   morph?: MeshMorph | null;
@@ -49,6 +49,6 @@ export interface MeshDeformRuntime {
   deformedLocalBounds?: Aabb | null;
 }
 
-export type MeshRuntime = SceneNodeRuntime & MeshDeformRuntime;
+export type MeshRuntime = Node3DRuntime & MeshDeformRuntime;
 
 export const MeshKind = 'Mesh';

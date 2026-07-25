@@ -97,7 +97,7 @@ export function getLightInfluenceBounds(out: BoundingSphereLike, light: Readonly
 
 // Returns the linear-light luminance of a light's color × intensity. Packed sRGB channels are
 // gamma-decoded through the shared color primitive before applying the Rec. 709 weights, matching
-// the radiance that packSceneLightBlock sends to the shader. Useful for ranking lights by their
+// the radiance that packScene3DLightBlock sends to the shader. Useful for ranking lights by their
 // rendered contribution when prioritizing a forward-light budget.
 export function getLightLuminance(light: Readonly<Light>): number {
   const colored = light as Readonly<{ color?: number; intensity?: number }>;

@@ -5,15 +5,15 @@ import { defineConfig } from 'vite';
 
 // Imported from the package source (not the built barrel) so `vite --config` resolves it before
 // @flighthq/tool-capture is built; it is the same single source the capture scripts consume.
-import { discoverFunctionalScenes, functionalSceneFile } from '../../packages/tool-capture/src/functionalScenes';
-import type { FunctionalScene } from '../../packages/tool-capture/src/functionalScenes';
+import { discoverFunctionalScene3Ds, functionalScene3DFile } from '../../packages/tool-capture/src/functionalScene3Ds';
+import type { FunctionalScene3D } from '../../packages/tool-capture/src/functionalScene3Ds';
 import { resolveAssetTarget } from '../../scripts/asset-cache';
 import { copyDirectoryContents } from '../../scripts/copy-dir';
 import { workspacePackages } from '../../scripts/workspaces';
 
 const projectRoot = resolve(__dirname, '../..');
 const testsDir = join(projectRoot, 'functional');
-// Scenes are flat files under functional/scenes/: <name>.ts (backend-agnostic) or
+// Scene3Ds are flat files under functional/scenes/: <name>.ts (backend-agnostic) or
 // <name>.<backend>.ts (self-contained backend-specific target). See @flighthq/tool-capture.
 const scenesDir = join(testsDir, 'scenes');
 // The shared render harness lives in tools/ (createFunctionalTarget, verify, per-backend factories).
@@ -46,15 +46,15 @@ function splitFirst(str: string, sep: string): [string, string] {
   return [str.slice(0, i), str.slice(i + sep.length)];
 }
 
-function discoverTests(): FunctionalScene[] {
-  return discoverFunctionalScenes(scenesDir);
+function discoverTests(): FunctionalScene3D[] {
+  return discoverFunctionalScene3Ds(scenesDir);
 }
 
 // The per-cell entry: install the log-capture sink, declare the backend the page renders (a
 // backend-agnostic scene reads window.__ftBackend to pick its target; a backend-specific scene
 // ignores it), dynamically import the scene so both run before its module-init, then verify.
 function entryModule(name: string, backend: string): string {
-  const scenePath = functionalSceneFile(scenesDir, name, backend);
+  const scenePath = functionalScene3DFile(scenesDir, name, backend);
   return [
     `import { createConsoleCaptureSink, setLogSink } from '@flighthq/log';`,
     `setLogSink(createConsoleCaptureSink());`,
@@ -94,8 +94,8 @@ function buildEntryHtml(name: string, render: string, scriptSrc: string, assetBa
 </html>`;
 }
 
-function functionalTestsPlugin(tests: FunctionalScene[]): Plugin[] {
-  const buildTests: FunctionalScene[] = tests;
+function functionalTestsPlugin(tests: FunctionalScene3D[]): Plugin[] {
+  const buildTests: FunctionalScene3D[] = tests;
 
   let viteBase = '/';
   let outDir = resolve(__dirname, 'dist');

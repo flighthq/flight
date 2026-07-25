@@ -1,7 +1,7 @@
 import type { LinearColor, VideoTexture, GlUnlitDefineKey } from '@flighthq/types';
 
-import { getGlSceneRuntime } from './glSceneRuntime';
-import { makeFakeGl2, makeGlSceneState } from './glSceneTestHelper';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
 import {
   bindGlUnlitSurface,
   bindGlUnlitVideoSurface,
@@ -30,7 +30,7 @@ const COLOR: LinearColor = [0.5, 0.25, 0.1, 1];
 
 describe('bindGlUnlitSurface', () => {
   it('uploads the color, intensity, and alpha cutoff', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const program = compileGlUnlitProgram(gl, FLAT);
     bindGlUnlitSurface(state, program, COLOR, 2, null, 0.5);
     expect(gl.calls.some((c) => c.name === 'uniform4f')).toBe(true);
@@ -42,7 +42,7 @@ describe('bindGlUnlitSurface', () => {
 
 describe('bindGlUnlitVideoSurface', () => {
   it('uploads the color/intensity/cutoff and binds the video map on unit 0', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const program = compileGlUnlitProgram(gl, { ...FLAT, hasColorMap: true });
     bindGlUnlitVideoSurface(state, program, COLOR, 1, makeReadyVideoTexture(2), 0.5);
     expect(gl.calls.some((c) => c.name === 'uniform4f')).toBe(true);
@@ -53,7 +53,7 @@ describe('bindGlUnlitVideoSurface', () => {
   });
 
   it('does not upload a frame that has not advanced (the dirty-gate)', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const program = compileGlUnlitProgram(gl, { ...FLAT, hasColorMap: true });
     const videoMap = makeReadyVideoTexture(3);
     bindGlUnlitVideoSurface(state, program, COLOR, 1, videoMap, 0.5);
@@ -96,21 +96,21 @@ describe('compileGlUnlitProgram', () => {
 
 describe('ensureGlUnlitProgram', () => {
   it('caches a variant under the unlit namespace and reuses it', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const first = ensureGlUnlitProgram(state, FLAT);
     const links = gl.calls.filter((c) => c.name === 'linkProgram').length;
     const second = ensureGlUnlitProgram(state, FLAT);
     expect(second).toBe(first);
     expect(gl.calls.filter((c) => c.name === 'linkProgram').length).toBe(links);
-    expect([...getGlSceneRuntime(state).programCache.keys()].some((k) => k.startsWith('unlit:'))).toBe(true);
+    expect([...getGlScene3DRuntime(state).programCache.keys()].some((k) => k.startsWith('unlit:'))).toBe(true);
   });
 
   it('compiles the skinned variant as a distinct cache entry', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     ensureGlUnlitProgram(state, FLAT);
-    getGlSceneRuntime(state).activeSkinnedRun = true;
+    getGlScene3DRuntime(state).activeSkinnedRun = true;
     ensureGlUnlitProgram(state, FLAT);
-    const keys = [...getGlSceneRuntime(state).programCache.keys()];
+    const keys = [...getGlScene3DRuntime(state).programCache.keys()];
     expect(keys.some((k) => k.startsWith('unlit:') && k.endsWith('k'))).toBe(true);
     expect(keys.filter((k) => k.startsWith('unlit:')).length).toBe(2);
   });

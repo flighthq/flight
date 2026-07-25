@@ -11,7 +11,7 @@ import type {
   ParticleEmitterCallbacks,
   ParticleEmitterConfig,
   ParticleEmitterState,
-  SceneNode,
+  Node3D,
 } from '@flighthq/types';
 
 import { reserveParticleEmitter3D } from './particleEmitter3D';
@@ -44,7 +44,7 @@ export function updateParticleEmitter3D(
   // velocity through its rotation/scale) so puffs stay put as the emitter moves. The frame is the emitter
   // node's own world matrix — the same transform the renderer draws with — so position a world-space
   // emitter by its node transform (set it, or parent it), not through a passed-in matrix.
-  const worldM = config.worldSpace ? getNodeWorldMatrix4(emitter as unknown as SceneNode).m : null;
+  const worldM = config.worldSpace ? getNodeWorldMatrix4(emitter as unknown as Node3D).m : null;
   data.worldSpace = worldM !== null;
 
   if (deltaTime <= 0) return;
@@ -52,7 +52,7 @@ export function updateParticleEmitter3D(
   // Emitter origin this frame: the world translation when baking to world space, else the node's local
   // translation. Tracked frame-to-frame (state.prev*) to derive the emitter's own velocity for velocity
   // inheritance and to spread world-space spawns along the emitter's path (trail interpolation).
-  const originM = worldM !== null ? worldM : getNodeLocalMatrix4(emitter as unknown as SceneNode).m;
+  const originM = worldM !== null ? worldM : getNodeLocalMatrix4(emitter as unknown as Node3D).m;
   const trackX = originM[12];
   const trackY = originM[13];
   const trackZ = originM[14];

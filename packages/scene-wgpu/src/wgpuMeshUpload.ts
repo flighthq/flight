@@ -2,7 +2,7 @@ import type { MeshGeometry, MeshGeometryRuntime, WgpuRenderState, WgpuMeshUpload
 import { EntityRuntimeKey } from '@flighthq/types';
 import type { WgpuSkinningAdapter } from '@flighthq/types';
 
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 
 // Lazily uploads a MeshGeometry's interleaved vertex buffer + index buffer into GPU buffers for this
 // WgpuRenderState, caching the result keyed by the geometry entity (the per-state parallel of
@@ -19,7 +19,7 @@ export function ensureWgpuMeshUpload(
   const indices = geometry.indices;
   if (indices === null) return null;
 
-  const scene = getWgpuSceneRuntime(state);
+  const scene = getWgpuScene3DRuntime(state);
   const cache = scene.uploadCache;
   let upload = cache.get(geometry);
 

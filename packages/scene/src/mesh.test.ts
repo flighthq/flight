@@ -21,7 +21,7 @@ import {
   isMesh,
   MeshKind,
 } from './mesh';
-import { createSceneNode } from './sceneNode';
+import { createNode3D } from './sceneNode';
 
 describe('cloneMesh', () => {
   it('shares the geometry by reference', () => {
@@ -159,7 +159,7 @@ describe('createMesh', () => {
     expect(getNodeLocalMatrix4(mesh).m[15]).toBe(1);
   });
 
-  it('participates in the SceneNode hierarchy and world transform', () => {
+  it('participates in the Node3D hierarchy and world transform', () => {
     const parent = createMesh(createBoxMeshGeometry(), []);
     const child = createMesh(createBoxMeshGeometry(), []);
     addNodeChild(parent, child);
@@ -241,7 +241,7 @@ describe('isMesh', () => {
     expect(isMesh(mesh)).toBe(true);
   });
 
-  it('is false for a bare SceneNode group', () => {
-    expect(isMesh(createSceneNode())).toBe(false);
+  it('is false for a bare Node3D group', () => {
+    expect(isMesh(createNode3D())).toBe(false);
   });
 });

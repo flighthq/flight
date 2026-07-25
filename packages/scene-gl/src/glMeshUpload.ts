@@ -8,7 +8,7 @@ import type {
   GlMeshUpload,
 } from '@flighthq/types';
 
-import { getGlSceneRuntime } from './glSceneRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 
 // Frees the GL objects owned by a mesh upload — the VAO and the vertex/index buffers. The upload
 // must not be used after this call. The upload cache is a WeakMap keyed by the geometry entity, so
@@ -38,19 +38,19 @@ export function destroyGlMeshUpload(state: GlRenderState, upload: Readonly<GlMes
 // falls back to CPU skinning, those are exactly the CPU-posed vertices it must draw.
 //
 // MORPH + SKIN COMPOSE ON GPU: when the geometry is also morphed (its morph bind pose is captured), the
-// static-bind-pose restore + freeze is skipped. prepareSceneMorph has blended this frame's morph into
+// static-bind-pose restore + freeze is skipped. prepareScene3DMorph has blended this frame's morph into
 // geometry.vertices (position/normal, leaving joints0/weights0 intact), so those ARE the bind input the
 // shader must skin — restoring the frozen skin bind pose would discard the morph, and freezing would
 // pin the buffer at frame 0. Instead geometry.vertices uploads as-is, version-tracked, so each morph
 // frame re-uploads and the GPU skins the freshly-morphed bind. (There is no CPU double-skin to guard
-// against here: the composed GPU path runs prepareSceneMorph, never the CPU updateMeshSkin.)
+// against here: the composed GPU path runs prepareScene3DMorph, never the CPU updateMeshSkin.)
 export function ensureGlMeshUpload(
   state: GlRenderState,
   geometry: Readonly<MeshGeometry>,
   gpuSkinned = false,
 ): GlMeshUpload {
   const gl = state.gl;
-  const cache = getGlSceneRuntime(state).uploadCache;
+  const cache = getGlScene3DRuntime(state).uploadCache;
   let upload = cache.get(geometry as MeshGeometry);
   const primitiveMode = getGlPrimitiveMode(gl, geometry.topology);
 

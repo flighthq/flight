@@ -2,7 +2,7 @@ import { hasImageResourcePixels } from '@flighthq/image';
 import { bindGlImageResourceTexture } from '@flighthq/render-gl';
 import type { GlDebugProgram, GlDebugDefineKey, GlRenderState, Texture } from '@flighthq/types';
 
-import { compileGlProgram, ensureGlSceneProgram } from './glMeshProgram';
+import { compileGlProgram, ensureGlScene3DProgram } from './glMeshProgram';
 // Binds the optional tangent-space normal map (on texture unit 0) and its scale for the normal-mode
 // debug material. The caller has already selected the program (beginGlMeshDraw) and set the
 // view-projection. A no-op when no map is bound; depth mode never calls this.
@@ -61,7 +61,7 @@ export function compileGlDebugProgram(gl: WebGL2RenderingContext, key: Readonly<
 // Resolves the debug program for a define key, compiling and caching it on first use through the
 // shared scene program cache under the `debug:` family namespace.
 export function ensureGlDebugProgram(state: GlRenderState, key: Readonly<GlDebugDefineKey>): GlDebugProgram {
-  return ensureGlSceneProgram(state, `debug:${buildGlDebugDefineKey(key)}`, (gl) => compileGlDebugProgram(gl, key));
+  return ensureGlScene3DProgram(state, `debug:${buildGlDebugDefineKey(key)}`, (gl) => compileGlDebugProgram(gl, key));
 }
 
 // The full fragment source for a define key (define block + body), ready to hand to the GL compiler.

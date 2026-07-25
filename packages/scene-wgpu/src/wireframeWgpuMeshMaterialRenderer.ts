@@ -5,8 +5,8 @@ import type {
   Camera3D,
   Material,
   MeshGeometry,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
   WireframeMaterial,
@@ -15,7 +15,7 @@ import { WireframeMaterialKind } from '@flighthq/types';
 
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { beginWgpuMeshDraw, writeWgpuDrawUniform, writeWgpuFrameUniform } from './wgpuMeshPipeline';
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 import { bindWgpuWireframeColor, ensureWgpuWireframePipeline } from './wgpuWireframePrelude';
 import { ensureWgpuWireframeUpload } from './wgpuWireframeUpload';
 
@@ -30,7 +30,7 @@ export const wireframeWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
   bind(
     state: WgpuRenderState,
     material: Readonly<Material> | null,
-    _lights: Readonly<SceneLightBlock>,
+    _lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const stateRuntime = getWgpuRenderStateRuntime(state);
@@ -54,10 +54,10 @@ export const wireframeWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     pass.setBindGroup(2, group);
   },
 
-  draw(state: WgpuRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+  draw(state: WgpuRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
     const stateRuntime = getWgpuRenderStateRuntime(state);
     const pass = stateRuntime.renderPass;
-    const scene = getWgpuSceneRuntime(state);
+    const scene = getWgpuScene3DRuntime(state);
     if (pass === null || scene.activeMeshPipeline === null) return;
 
     const subset = proxy.subset;
@@ -79,7 +79,7 @@ export const wireframeWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 };
 
 // Registers the built-in Wireframe renderer for WireframeMaterialKind on this state. Opt-in (no top-
-// level side effect); call once per WgpuRenderState before drawWgpuScene so meshes with
+// level side effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with
 // WireframeMaterials draw.
 export function registerWireframeWgpuMaterial(state: WgpuRenderState): void {
   registerWgpuMeshMaterialRenderer(state, WireframeMaterialKind, wireframeWgpuMeshMaterialRenderer);

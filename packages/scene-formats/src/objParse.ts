@@ -2,17 +2,17 @@ import { createTransform3D } from '@flighthq/geometry';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
 import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { createMeshGeometry } from '@flighthq/mesh';
-import { createSceneFromDocument } from '@flighthq/scene';
-import type { Scene } from '@flighthq/types';
+import { createScene3DFromDocument } from '@flighthq/scene';
+import type { Scene3D } from '@flighthq/types';
 import type {
   BlinnPhongMaterial,
   ImportDiagnostic,
   Material,
   MaterialLike,
   MeshSubset,
-  SceneDocument,
-  SceneDocumentMesh,
-  SceneDocumentNode,
+  Scene3DDocument,
+  Scene3DDocumentMesh,
+  Scene3DDocumentNode,
   Texture,
   ObjMaterial,
   ObjMaterialLibrary,
@@ -21,17 +21,17 @@ import { ImportDiagnosticSeverity, MeshKind } from '@flighthq/types';
 
 import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, createExternalTextureRef } from './shared';
 
-// Parses a Wavefront OBJ text source into a Scene. Convenience over `createSceneFromDocument(parseObj
+// Parses a Wavefront OBJ text source into a Scene3D. Convenience over `createScene3DFromDocument(parseObj
 // (source, materials))`. See parseObj for the import model.
-export function createSceneFromObj(
+export function createScene3DFromObj(
   source: string,
   materials?: Readonly<ObjMaterialLibrary>,
   diagnostics?: ImportDiagnostic[],
-): Scene {
-  return createSceneFromDocument(parseObj(source, materials, diagnostics));
+): Scene3D {
+  return createScene3DFromDocument(parseObj(source, materials, diagnostics));
 }
 
-// Parses a Wavefront OBJ text source into a format-neutral SceneDocument. Each group (`g`) or object
+// Parses a Wavefront OBJ text source into a format-neutral Scene3DDocument. Each group (`g`) or object
 // (`o`) — and any top-level faces before the first group — becomes one document Mesh (inline geometry),
 // using the canonical vertex layout. A group that spans several `usemtl` materials becomes a single Mesh
 // with one MeshSubset per material (contiguous index ranges) and a positional `materials` index array —
@@ -39,7 +39,7 @@ export function createSceneFromObj(
 // library referenced by `mtllib`/`usemtl`; each named material becomes a BlinnPhongMaterial (MTL's own
 // Kd/Ks/Ns shading model) in the document's materials table, deduped by name. Without the library,
 // material directives are acknowledged but the subset's material index stays absent (resolving to
-// DefaultMaterialKind at draw time). Assemble into a live Scene with `createSceneFromDocument`.
+// DefaultMaterialKind at draw time). Assemble into a live Scene3D with `createScene3DFromDocument`.
 //
 // Supported directives: `v`, `vn`, `vt`, `f`, `g`, `o`, `mtllib`, `usemtl`. Faces may be
 // triangles, quads, or N-gons (fan-triangulated). Face vertex references support independent
@@ -50,12 +50,12 @@ export function parseObj(
   source: string,
   materials?: Readonly<ObjMaterialLibrary>,
   diagnostics?: ImportDiagnostic[],
-): SceneDocument {
+): Scene3DDocument {
   const positions: number[] = [];
   const normals: number[] = [];
   const uvs: number[] = [];
 
-  const document: SceneDocument = {
+  const document: Scene3DDocument = {
     animations: [],
     cameras: [],
     lights: [],
@@ -400,7 +400,7 @@ function parseFaceVertex(
 function flushGroup(
   buckets: Readonly<Map<string, MaterialBucket>>,
   name: string | undefined,
-  document: SceneDocument,
+  document: Scene3DDocument,
   library: Readonly<ObjMaterialLibrary> | undefined,
   resolvedMaterials: Map<string, number>,
   diagnostics: ImportDiagnostic[] | undefined,
@@ -433,10 +433,10 @@ function flushGroup(
     vertices: new Float32Array(vertices),
   });
   const meshIndex = document.meshes.length;
-  const mesh: SceneDocumentMesh = { geometry, materials };
+  const mesh: Scene3DDocumentMesh = { geometry, materials };
   document.meshes.push(mesh);
   const nodeIndex = document.nodes.length;
-  const node: SceneDocumentNode = { children: [], kind: MeshKind, mesh: meshIndex, transform: createTransform3D() };
+  const node: Scene3DDocumentNode = { children: [], kind: MeshKind, mesh: meshIndex, transform: createTransform3D() };
   if (name !== undefined) node.name = name;
   document.nodes.push(node);
   document.scenes[0].rootNodes.push(nodeIndex);
@@ -448,7 +448,7 @@ function flushGroup(
 // load). Ka/map_Ka and the illum model have no Blinn-Phong equivalent — ambient is a scene light in
 // Flight, not a material property — so they are dropped; a caller wanting metallic-roughness PBR
 // converts explicitly downstream.
-function objMaterialToBlinnPhong(material: Readonly<ObjMaterial>, document: SceneDocument): BlinnPhongMaterial {
+function objMaterialToBlinnPhong(material: Readonly<ObjMaterial>, document: Scene3DDocument): BlinnPhongMaterial {
   const result = createBlinnPhongMaterial({
     diffuse: packObjColor(material.diffuse, material.dissolve),
     diffuseMap: externalObjTexture(material.mapDiffuse, document),
@@ -464,7 +464,7 @@ function objMaterialToBlinnPhong(material: Readonly<ObjMaterial>, document: Scen
 }
 
 // Wraps an MTL texture filename as an Unresolved External resource ref; null filename → no map.
-function externalObjTexture(uri: string | null, document: SceneDocument): Texture | null {
+function externalObjTexture(uri: string | null, document: Scene3DDocument): Texture | null {
   return uri === null ? null : createExternalTextureRef(uri, null, document.resources);
 }
 
@@ -494,7 +494,7 @@ function resolveObjMaterial(
   name: string,
   library: Readonly<ObjMaterialLibrary> | undefined,
   cache: Map<string, number>,
-  document: SceneDocument,
+  document: Scene3DDocument,
   diagnostics: ImportDiagnostic[] | undefined,
 ): number {
   if (name === '') return -1;
@@ -512,7 +512,7 @@ function resolveObjMaterial(
     return -1;
   }
   const material = objMaterialToBlinnPhong(parsed, document) as unknown as Material;
-  // Preserve the MTL `newmtl` handle as the material's authored name (findSceneMaterialByName).
+  // Preserve the MTL `newmtl` handle as the material's authored name (findScene3DMaterialByName).
   material.name = name;
   const index = document.materials.length;
   document.materials.push(material as unknown as MaterialLike);

@@ -5,8 +5,8 @@ import type {
   Camera3D,
   Material,
   MeshGeometry,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
   VertexColorMaterial,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
@@ -27,7 +27,7 @@ export const vertexColorWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
   bind(
     state: WgpuRenderState,
     material: Readonly<Material> | null,
-    _lights: Readonly<SceneLightBlock>,
+    _lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const stateRuntime = getWgpuRenderStateRuntime(state);
@@ -53,13 +53,13 @@ export const vertexColorWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     pass.setBindGroup(2, group);
   },
 
-  draw(state: WgpuRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+  draw(state: WgpuRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
     drawWgpuMeshSubset(state, proxy, geometry);
   },
 };
 
 // Registers the built-in VertexColor renderer for VertexColorMaterialKind on this state. Opt-in (no
-// top-level side effect); call once per WgpuRenderState before drawWgpuScene so meshes with
+// top-level side effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with
 // VertexColorMaterials draw.
 export function registerVertexColorWgpuMaterial(state: WgpuRenderState): void {
   registerWgpuMeshMaterialRenderer(state, VertexColorMaterialKind, vertexColorWgpuMeshMaterialRenderer);

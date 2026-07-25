@@ -1,11 +1,11 @@
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 
-import { makeWgpuSceneState } from './wgpuSceneTestHelper';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 import { ensureWgpuWireframeUpload } from './wgpuWireframeUpload';
 
 describe('ensureWgpuWireframeUpload', () => {
   it('builds a line-index buffer sized two indices per triangle edge', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const geometry = createBoxMeshGeometry();
     const upload = ensureWgpuWireframeUpload(state, geometry);
     expect(upload).not.toBeNull();
@@ -25,7 +25,7 @@ describe('ensureWgpuWireframeUpload', () => {
   });
 
   it('returns the cached upload without rebuilding when the version is unchanged', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const geometry = createBoxMeshGeometry();
     const first = ensureWgpuWireframeUpload(state, geometry);
     const buffers = fake.calls.filter((c) => c.name === 'createBuffer').length;

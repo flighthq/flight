@@ -2,18 +2,18 @@ import { createCamera3D } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createMatcapMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
-import type { Camera3D, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
+import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types';
 import { MatcapMaterialKind } from '@flighthq/types';
 
 import { matcapWgpuMeshMaterialRenderer, registerMatcapWgpuMaterial } from './matcapWgpuMeshMaterialRenderer';
 import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { makeWgpuSceneState } from './wgpuSceneTestHelper';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 
 function makeCamera(): Camera3D {
   return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
 }
 
-const NO_LIGHTS: SceneLightBlock = {
+const NO_LIGHTS: Scene3DLightBlock = {
   ambientCount: 0,
   data: new Float32Array(12),
   directionalCount: 0,
@@ -23,7 +23,7 @@ const NO_LIGHTS: SceneLightBlock = {
   version: 1,
 };
 
-function makeProxy(): SceneRenderProxy {
+function makeProxy(): Scene3DRenderProxy {
   const geometry = createBoxMeshGeometry();
   return {
     material: createMatcapMaterial(),
@@ -35,7 +35,7 @@ function makeProxy(): SceneRenderProxy {
 
 describe('matcapWgpuMeshMaterialRenderer', () => {
   it('bind selects a pipeline and binds the frame + material groups', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     matcapWgpuMeshMaterialRenderer.bind(state, createMatcapMaterial(), NO_LIGHTS, makeCamera());
     expect(fake.calls.some((c) => c.name === 'createRenderPipeline')).toBe(true);
     expect(fake.calls.some((c) => c.name === 'setPipeline')).toBe(true);
@@ -44,7 +44,7 @@ describe('matcapWgpuMeshMaterialRenderer', () => {
   });
 
   it('draw issues an indexed draw over the subset after bind', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const proxy = makeProxy();
     matcapWgpuMeshMaterialRenderer.bind(state, proxy.material, NO_LIGHTS, makeCamera());
     matcapWgpuMeshMaterialRenderer.draw(state, proxy, createBoxMeshGeometry());
@@ -54,7 +54,7 @@ describe('matcapWgpuMeshMaterialRenderer', () => {
   });
 
   it('draw is a no-op when bind has not selected a pipeline', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     matcapWgpuMeshMaterialRenderer.draw(state, makeProxy(), createBoxMeshGeometry());
     expect(fake.calls.some((c) => c.name === 'drawIndexed')).toBe(false);
   });
@@ -62,7 +62,7 @@ describe('matcapWgpuMeshMaterialRenderer', () => {
 
 describe('registerMatcapWgpuMaterial', () => {
   it('installs the renderer for MatcapMaterialKind', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     registerMatcapWgpuMaterial(state);
     expect(getWgpuMeshMaterialRenderer(state, MatcapMaterialKind)).toBe(matcapWgpuMeshMaterialRenderer);
   });

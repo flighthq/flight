@@ -1,12 +1,12 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
-import type { AnimationChannel, AnimationClip, ImportDiagnostic, SceneNode } from '@flighthq/types';
-import { ImportDiagnosticSeverity, SceneAnimationPathRotation, SceneAnimationPathTranslation } from '@flighthq/types';
+import type { AnimationChannel, AnimationClip, ImportDiagnostic, Node3D } from '@flighthq/types';
+import { ImportDiagnosticSeverity, Scene3DAnimationPathRotation, Scene3DAnimationPathTranslation } from '@flighthq/types';
 
 import { convertPositionsZUpToYUp, convertQuaternionsZUpToYUp } from './shared';
 
 // Parses an id Tech 4 MD5 animation file (.md5anim) into an AnimationClip that drives the given
-// joint SceneNodes (produced by createSceneFromMd5Mesh). The ASCII line-oriented format declares a
+// joint Node3Ds (produced by createScene3DFromMd5Mesh). The ASCII line-oriented format declares a
 // skeleton hierarchy, a baseframe pose, and per-frame animated components selected by a bitmask.
 // Each joint produces up to two channels (translation and rotation) in the returned clip. Channels
 // bind to their joint by NAME (falling back to array position for unnamed joints), so the caller may
@@ -14,7 +14,7 @@ import { convertPositionsZUpToYUp, convertQuaternionsZUpToYUp } from './shared';
 //
 // IMPORTANT: .md5anim baseframe/frame joint transforms are PARENT-RELATIVE (unlike the .md5mesh
 // joints, which are absolute). These relative values are driven straight onto the joints' LOCAL
-// transforms, and the NESTED skeleton createSceneFromMd5Mesh builds (which converts its absolute bind
+// transforms, and the NESTED skeleton createScene3DFromMd5Mesh builds (which converts its absolute bind
 // pose to parent-relative locals) composes parent × child back to the correct absolute world pose.
 // The two files are coupled: a flat skeleton, or one that kept absolute bind locals, would deform the
 // mesh wrongly. Do not "compose to absolute" here — the scene graph does that.
@@ -27,7 +27,7 @@ import { convertPositionsZUpToYUp, convertQuaternionsZUpToYUp } from './shared';
 // are skipped; the function never throws on bad input.
 export function parseMd5Anim(
   source: string,
-  joints: readonly SceneNode[],
+  joints: readonly Node3D[],
   diagnostics?: ImportDiagnostic[],
 ): AnimationClip | null {
   const lines = source.split('\n');
@@ -188,7 +188,7 @@ export function parseMd5Anim(
 // Builds the AnimationClip from parsed MD5 anim data. Each joint gets a translation channel
 // (3 components) and a rotation channel (4 components, quaternion slerp).
 function buildAnimationClip(
-  joints: readonly SceneNode[],
+  joints: readonly Node3D[],
   hierarchy: readonly Md5AnimHierarchyEntry[],
   baseframe: readonly Md5AnimBaseframePose[],
   frames: readonly number[][],
@@ -211,7 +211,7 @@ function buildAnimationClip(
   // (worst at skeleton branches like finger chains); name binding is order-independent. Falls back to the
   // positional joint when a hierarchy name has no matching node (e.g. unnamed nodes), preserving the old
   // behavior for callers that pass MD5-ordered, possibly-unnamed joints.
-  const nodeByName = new Map<string, SceneNode>();
+  const nodeByName = new Map<string, Node3D>();
   for (const joint of joints) {
     if (joint.name) nodeByName.set(joint.name, joint);
   }
@@ -275,7 +275,7 @@ function buildAnimationClip(
       times,
       values: translationValues,
     });
-    channels.push(createAnimationChannel(translationTrack, { node, path: SceneAnimationPathTranslation }));
+    channels.push(createAnimationChannel(translationTrack, { node, path: Scene3DAnimationPathTranslation }));
 
     const rotationTrack = createAnimationTrack({
       components: 4,
@@ -283,7 +283,7 @@ function buildAnimationClip(
       times,
       values: rotationValues,
     });
-    channels.push(createAnimationChannel(rotationTrack, { node, path: SceneAnimationPathRotation }));
+    channels.push(createAnimationChannel(rotationTrack, { node, path: Scene3DAnimationPathRotation }));
   }
 
   return createAnimationClip(channels);

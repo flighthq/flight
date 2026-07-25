@@ -1,12 +1,12 @@
-import { bakeGlEnvironmentIbl, drawGlEnvironmentSkybox, drawGlScene } from '@flighthq/scene-gl';
-import type { Camera3D, Environment, GlRenderEffectPipeline, SceneLightsLike, SceneNode } from '@flighthq/sdk';
+import { bakeGlEnvironmentIbl, drawGlEnvironmentSkybox, drawGlScene3D } from '@flighthq/scene-gl';
+import type { Camera3D, Environment, GlRenderEffectPipeline, Scene3DLightsLike, Node3D } from '@flighthq/sdk';
 import {
   beginGlRenderEffectPipeline,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
   endGlRenderEffectPipeline,
-  prepareSceneRender,
+  prepareScene3DRender,
   registerStandardPbrGlMaterial,
   renderGlBackground,
 } from '@flighthq/sdk';
@@ -34,9 +34,9 @@ export const scale = pixelRatio;
 let environmentBaked = false;
 
 export function render(
-  scene: Readonly<SceneNode>,
+  scene: Readonly<Node3D>,
   camera: Readonly<Camera3D>,
-  lights: Readonly<SceneLightsLike>,
+  lights: Readonly<Scene3DLightsLike>,
   environment: Readonly<Environment>,
 ): void {
   if (!environmentBaked) {
@@ -51,7 +51,7 @@ export function render(
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   drawGlEnvironmentSkybox(state, environment, camera, width / height);
-  prepareSceneRender(state, scene, camera, lights);
-  drawGlScene(state, scene, camera, lights);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawGlScene3D(state, scene, camera, lights);
   endGlRenderEffectPipeline(state, pipeline, []);
 }

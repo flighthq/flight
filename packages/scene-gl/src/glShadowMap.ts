@@ -3,32 +3,32 @@ import { createMatrix4 } from '@flighthq/geometry';
 import { hasMeshGeometrySkin } from '@flighthq/mesh';
 import { forEachNodeDescendant, getNodeWorldMatrix4 } from '@flighthq/node';
 import { createGlRenderTarget, uploadGlSkinPaletteTexture } from '@flighthq/render-gl';
-import type { Camera3D, GlRenderState, Mesh, SceneNode, SceneNodeTraits, GlMeshProgram } from '@flighthq/types';
+import type { Camera3D, GlRenderState, Mesh, Node3D, Node3DTraits, GlMeshProgram } from '@flighthq/types';
 
 import {
   compileGlProgram,
-  ensureGlSceneProgram,
+  ensureGlScene3DProgram,
   GL_SKIN_VERTEX_DECLARATIONS_GLSL,
   SKIN_PALETTE_TEXTURE_UNIT,
 } from './glMeshProgram';
 import { ensureGlMeshUpload } from './glMeshUpload';
-import { ensureGlSkinPalette, getGlSceneRuntime } from './glSceneRuntime';
+import { ensureGlSkinPalette, getGlScene3DRuntime } from './glScene3DRuntime';
 
 // The directional shadow recipe's first pass: render scene depth from the light's point of view into a
 // sampleable depth render target (the shadow map), and record it + the light view-projection on the
-// scene runtime. The subsequent drawGlScene's lit binds (bindGlMeshLightBlock) read that to PCF-sample
+// scene runtime. The subsequent drawGlScene3D's lit binds (bindGlMeshLightBlock) read that to PCF-sample
 // the shadow during shading. Shadows are opt-in: an app that never calls this leaves runtime.shadow
 // null, so existing scenes render unchanged.
 //
 // `shadowCamera` is the orthographic light camera (see camera's configureDirectionalShadowCamera3D). All
 // meshes are drawn (no frustum cull — an off-screen caster can still shadow the visible scene).
-export function drawGlSceneShadowMap(
+export function drawGlScene3DShadowMap(
   state: GlRenderState,
-  scene: Readonly<SceneNode>,
+  scene: Readonly<Node3D>,
   shadowCamera: Readonly<Camera3D>,
 ): void {
   const gl = state.gl;
-  const runtime = getGlSceneRuntime(state);
+  const runtime = getGlScene3DRuntime(state);
 
   if (runtime.shadowTarget === null) {
     runtime.shadowTarget = createGlRenderTarget(state, {
@@ -41,7 +41,7 @@ export function drawGlSceneShadowMap(
   const matrix = runtime.shadow?.matrix ?? createMatrix4();
   getCamera3DViewProjectionMatrix4(matrix, shadowCamera, 1);
 
-  const rigidProgram = ensureGlSceneProgram(state, 'shadow:depth', compileShadowDepthProgram);
+  const rigidProgram = ensureGlScene3DProgram(state, 'shadow:depth', compileShadowDepthProgram);
   // Compiled lazily on the first GPU-skinned caster so a scene without skinned meshes never pays for it.
   let skinnedProgram: GlMeshProgram | null = null;
 
@@ -65,20 +65,20 @@ export function drawGlSceneShadowMap(
   // program switch; u_model is per caster. boundProgram tracks the last program bound to avoid redundant
   // useProgram + view-projection uploads across a run of same-kind casters.
   let boundProgram: GlMeshProgram | null = null;
-  forEachNodeDescendant<SceneNodeTraits>(scene, (node) => {
-    // A drawable node carries geometry (structural, like prepareSceneRender's mesh test).
+  forEachNodeDescendant<Node3DTraits>(scene, (node) => {
+    // A drawable node carries geometry (structural, like prepareScene3DRender's mesh test).
     const mesh = node as unknown as Mesh;
     if (mesh.geometry == null) return;
 
-    // The caster is already at its CURRENT pose when this pass runs: the app drives prepareSceneMorph +
-    // prepareSceneSkinning before prepareSceneRender, so morph is blended into geometry.vertices and the
+    // The caster is already at its CURRENT pose when this pass runs: the app drives prepareScene3DMorph +
+    // prepareScene3DSkinning before prepareScene3DRender, so morph is blended into geometry.vertices and the
     // skin palette is current before either depth or forward draw. This pass just reads that pose, so an
     // animated caster casts its animated silhouette without the depth pass re-deforming (and lagging or
     // double-driving the forward pass). GPU skinning still deforms in the vertex shader from the bone
     // palette, so a skinned caster needs the HAS_SKIN depth variant + the palette bound.
     const skinned = mesh.skin != null && hasMeshGeometrySkin(mesh.geometry);
     const program = skinned
-      ? (skinnedProgram ??= ensureGlSceneProgram(state, 'shadow:depth:skin', compileShadowDepthSkinnedProgram))
+      ? (skinnedProgram ??= ensureGlScene3DProgram(state, 'shadow:depth:skin', compileShadowDepthSkinnedProgram))
       : rigidProgram;
     if (program !== boundProgram) {
       gl.useProgram(program.program);

@@ -1,4 +1,4 @@
-import type { SceneGraphSyncPolicy } from './RenderState';
+import type { Scene3DGraphSyncPolicy } from './RenderState';
 
 export interface WgpuRenderOptions {
   antialias?: boolean;
@@ -8,5 +8,5 @@ export interface WgpuRenderOptions {
   pixelRatio?: number;
   powerPreference?: GPUPowerPreference;
   roundPixels?: boolean;
-  sceneGraphSyncPolicy?: SceneGraphSyncPolicy;
+  sceneGraphSyncPolicy?: Scene3DGraphSyncPolicy;
 }

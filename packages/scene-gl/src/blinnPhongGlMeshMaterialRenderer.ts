@@ -9,8 +9,8 @@ import type {
   GlRenderState,
   Material,
   MeshGeometry,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
   GlClassicDefineKey,
   GlClassicProgram,
 } from '@flighthq/types';
@@ -28,7 +28,7 @@ import {
   setGlMeshViewProjection,
 } from './glMeshProgram';
 import { isGlTextureReady } from './glPbrStandardBlock';
-import { getGlSceneRuntime } from './glSceneRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 
 // The built-in classic BlinnPhong forward-lit mesh-material renderer (GlMeshMaterialRenderer for
 // BlinnPhongMaterialKind). Lambert diffuse plus a half-vector specular lobe (cheaper, smoother
@@ -41,7 +41,7 @@ export const blinnPhongGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
     material: Readonly<Material> | null,
-    lights: Readonly<SceneLightBlock>,
+    lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const gl = state.gl;
@@ -55,15 +55,15 @@ export const blinnPhongGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     bindGlBlinnPhongMaterialUniforms(state, program, blinnPhong);
   },
 
-  draw(state: GlRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
-    const program = getGlSceneRuntime(state).activeMeshProgram;
+  draw(state: GlRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+    const program = getGlScene3DRuntime(state).activeMeshProgram;
     if (program === null) return;
     drawGlMeshSubset(state, program, proxy, geometry);
   },
 };
 
 // Registers the built-in BlinnPhong renderer for BlinnPhongMaterialKind on this state. Opt-in (no
-// top-level side effect); call once per GlRenderState before drawScene so meshes with BlinnPhong
+// top-level side effect); call once per GlRenderState before drawScene3D so meshes with BlinnPhong
 // materials draw.
 export function registerBlinnPhongGlMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, BlinnPhongMaterialKind, blinnPhongGlMeshMaterialRenderer);

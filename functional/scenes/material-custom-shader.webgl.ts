@@ -1,6 +1,6 @@
-import { createScene } from '@flighthq/scene';
-import { drawGlScene } from '@flighthq/scene-gl';
-import type { Camera3D, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import { createScene3D } from '@flighthq/scene';
+import { drawGlScene3D } from '@flighthq/scene-gl';
+import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -16,7 +16,7 @@ import {
   endGlRenderEffectPipeline,
   getSurfacePixelLuminance,
   getSurfacePixelRgb,
-  prepareSceneRender,
+  prepareScene3DRender,
   registerCustomShaderGlMaterial,
   registerGlCustomMaterialShader,
   renderGlBackground,
@@ -70,14 +70,14 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
   state.gl.depthMask(true);
   state.gl.clearDepth(1);
   state.gl.clear(state.gl.DEPTH_BUFFER_BIT);
-  prepareSceneRender(state, scene, camera, lights);
-  drawGlScene(state, scene, camera, lights);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawGlScene3D(state, scene, camera, lights);
   endGlRenderEffectPipeline(state, pipeline, []);
 }
 
@@ -87,7 +87,7 @@ const material = createCustomShaderMaterial({
   shaderKey: 'normal-tint',
   uniforms: { red: 0.08, green: 0.16, blue: 0.3, alpha: 1 },
 });
-const scene = createScene().root;
+const scene = createScene3D().root;
 addNodeChild(scene, createMesh(createSphereMeshGeometry(0.5, 48, 32), [material]));
 
 const camera = createCamera3D({

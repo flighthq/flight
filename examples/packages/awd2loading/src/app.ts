@@ -4,7 +4,7 @@ import {
   rotateOrbitCameraController,
   updateOrbitCameraController,
 } from '@flighthq/camera-controls';
-import type { ImportDiagnostic, Mesh, SceneLightsLike, ShadedMaterial } from '@flighthq/sdk';
+import type { ImportDiagnostic, Mesh, Scene3DLightsLike, ShadedMaterial } from '@flighthq/sdk';
 import {
   createAmbientLight,
   createCamera3D,
@@ -13,7 +13,7 @@ import {
   createPerspectiveProjection,
   createPointLight,
   createRimModifier,
-  createSceneFromAwd2,
+  createScene3DFromAwd2,
   createVector3,
   getNodeChildren,
   isMesh,
@@ -30,7 +30,7 @@ import { canvas, render, scale } from './render';
 
 const awdBytes = createSyntheticAwd2();
 const diagnostics: ImportDiagnostic[] = [];
-const documentScene = createSceneFromAwd2(awdBytes, diagnostics);
+const documentScene3D = createScene3DFromAwd2(awdBytes, diagnostics);
 if (diagnostics.length !== 0)
   throw new Error(`Synthetic AWD2 fixture produced diagnostics: ${diagnostics.map((d) => d.kind).join('; ')}`);
 const mesh = findImportedMesh();
@@ -75,7 +75,7 @@ updateOrbitCameraController(cameraController, camera, 1);
 
 const directionalDirection = createVector3(-0.65, -0.9, -0.5);
 normalizeVector3(directionalDirection, directionalDirection);
-const lights: SceneLightsLike = {
+const lights: Scene3DLightsLike = {
   ambient: createAmbientLight({ color: 0x688bc0ff, intensity: 0.22 }),
   directional: createDirectionalLight({
     color: 0xffe2c3ff,
@@ -138,14 +138,14 @@ const details = document.createElement('section');
 details.className = 'details';
 details.innerHTML = [
   '<h1>AWD2 loading</h1>',
-  '<p>A tiny cube is authored into an AWD2 byte stream in the browser, then loaded with <strong>createSceneFromAwd2</strong>.</p>',
+  '<p>A tiny cube is authored into an AWD2 byte stream in the browser, then loaded with <strong>createScene3DFromAwd2</strong>.</p>',
   `<p><strong>${formatBytes(awdBytes.byteLength)}</strong> · 1 mesh · 24 vertices · 1 ShadedMaterial</p>`,
   '<p class="success">✓ parsed with 0 diagnostics<br>✓ built-in rim modifier registered</p>',
   '<p>Drag to orbit · wheel to zoom</p>',
 ].join('');
 document.body.appendChild(details);
 
-render(documentScene.root, camera, lights);
+render(documentScene3D.root, camera, lights);
 
 const captureWindow = window as typeof window & { __flightCapture?: boolean };
 let previousTime = performance.now();
@@ -154,7 +154,7 @@ function enterFrame(now: number): void {
   const deltaTime = Math.min((now - previousTime) / 1000, 0.05);
   previousTime = now;
   updateOrbitCameraController(cameraController, camera, deltaTime);
-  render(documentScene.root, camera, lights);
+  render(documentScene3D.root, camera, lights);
   requestAnimationFrame(enterFrame);
 }
 
@@ -175,7 +175,7 @@ function queueCaptureFramesAfterWarmup(framesRemaining: number): void {
 }
 
 function findImportedMesh(): Mesh {
-  const child = getNodeChildren(documentScene.root).find(isMesh);
+  const child = getNodeChildren(documentScene3D.root).find(isMesh);
   if (child === undefined) throw new Error('The synthetic AWD2 scene did not contain a mesh');
   return child;
 }

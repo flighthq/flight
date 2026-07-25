@@ -1,11 +1,11 @@
-import { createScene } from '@flighthq/scene';
+import { createScene3D } from '@flighthq/scene';
 import {
-  drawGlScene,
+  drawGlScene3D,
   registerBuiltInGlModifierSnippets,
   registerShadedGlMaterial,
-  setGlSceneTime,
+  setGlScene3DTime,
 } from '@flighthq/scene-gl';
-import type { Camera3D, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   createAmbientLight,
@@ -30,12 +30,12 @@ import {
   endGlRenderEffectPipeline,
   getSurfacePixelLuminance,
   normalizeVector3,
-  prepareSceneRender,
+  prepareScene3DRender,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
 
-// drawGlScene / setGlSceneTime / the ShadedMaterial registrations exist only on scene-gl; drawGlScene
+// drawGlScene3D / setGlScene3DTime / the ShadedMaterial registrations exist only on scene-gl; drawGlScene3D
 // also collides in the @flighthq/sdk barrel (re-exported from scene-wgpu too), so the whole shading-GL
 // group is imported directly from @flighthq/scene-gl.
 
@@ -44,7 +44,7 @@ import {
 // single program over the shared light block. This re-expresses the AwayJS "globe material" as a
 // COMPOSITION of reusable modifiers rather than a bespoke class:
 //   - AnimatedNormalModifier (Normal slot)   — a UV-panned ocean normal scrolled by the per-frame
-//                                               `time` uniform (setGlSceneTime).
+//                                               `time` uniform (setGlScene3DTime).
 //   - EmissiveModifier (Emissive slot)        — night-side city lights: a mask texture gated by
 //                                               EmissiveModifierFacing.AwayFromLight so it only lights
 //                                               the hemisphere turned away from the sun.
@@ -76,10 +76,10 @@ export const width = 800;
 export const height = 600;
 
 // A fixed per-frame time so the scrolling AnimatedNormalModifier samples a deterministic UV offset for
-// a reproducible capture — the seam is setGlSceneTime; an app would advance it with elapsed seconds.
+// a reproducible capture — the seam is setGlScene3DTime; an app would advance it with elapsed seconds.
 const sceneTimeSeconds = 0.35;
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   beginGlRenderEffectPipeline(state, pipeline);
   // renderGlBackground clears color; the depth attachment needs its own clear to the far plane (1.0)
   // or every fragment fails the LESS depth test against an uncleared (0) buffer and the scene is black.
@@ -88,9 +88,9 @@ export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, l
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
-  setGlSceneTime(state, sceneTimeSeconds);
-  prepareSceneRender(state, scene, camera, lights);
-  drawGlScene(state, scene, camera, lights);
+  setGlScene3DTime(state, sceneTimeSeconds);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawGlScene3D(state, scene, camera, lights);
   endGlRenderEffectPipeline(state, pipeline, []);
 }
 
@@ -123,7 +123,7 @@ const material = createShadedMaterial({
   ],
 });
 
-const scene = createScene().root;
+const scene = createScene3D().root;
 const mesh = createMesh(geometry, [material]);
 addNodeChild(scene, mesh);
 

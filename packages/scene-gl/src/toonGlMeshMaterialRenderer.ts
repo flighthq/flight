@@ -8,8 +8,8 @@ import type {
   GlRenderState,
   Material,
   MeshGeometry,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
   ToonMaterial,
   GlToonDefineKey,
   GlToonProgram,
@@ -26,7 +26,7 @@ import {
   setGlMeshCameraPosition,
   setGlMeshViewProjection,
 } from './glMeshProgram';
-import { getGlSceneRuntime } from './glSceneRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { ensureGlToonProgram } from './glToonPrelude';
 
 // The built-in Toon (cel-shading) forward-lit mesh-material renderer (GlMeshMaterialRenderer for
@@ -43,7 +43,7 @@ export const toonGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
     material: Readonly<Material> | null,
-    lights: Readonly<SceneLightBlock>,
+    lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const gl = state.gl;
@@ -57,15 +57,15 @@ export const toonGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     bindGlToonMaterialUniforms(state, program, toon);
   },
 
-  draw(state: GlRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
-    const program = getGlSceneRuntime(state).activeMeshProgram;
+  draw(state: GlRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+    const program = getGlScene3DRuntime(state).activeMeshProgram;
     if (program === null) return;
     drawGlMeshSubset(state, program, proxy, geometry);
   },
 };
 
 // Registers the built-in Toon renderer for ToonMaterialKind on this state. Opt-in (no top-level side
-// effect); call once per GlRenderState before drawScene so meshes with ToonMaterials draw.
+// effect); call once per GlRenderState before drawScene3D so meshes with ToonMaterials draw.
 export function registerToonGlMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, ToonMaterialKind, toonGlMeshMaterialRenderer);
 }

@@ -6,8 +6,8 @@ import type {
   GlRenderState,
   Material,
   MeshGeometry,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
   SpecularGlossinessPbrMaterial,
   StandardPbrMaterialProperties,
 } from '@flighthq/types';
@@ -18,7 +18,7 @@ import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshCameraPosition, setGlMeshViewProjection } from './glMeshProgram';
 import { ensureGlPbrProgram } from './glPbrProgramCache';
 import { bindGlPbrStandardBlock, buildGlPbrStandardDefineKey } from './glPbrStandardBlock';
-import { getGlSceneRuntime } from './glSceneRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 
 // The built-in SpecularGlossiness forward-lit mesh-material renderer (legacy KHR_materials_
 // pbrSpecularGlossiness workflow). There is no spec-gloss path in the shader: this renderer converts
@@ -47,7 +47,7 @@ export const specularGlossinessPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer
   bind(
     state: GlRenderState,
     material: Readonly<Material> | null,
-    lights: Readonly<SceneLightBlock>,
+    lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const gl = state.gl;
@@ -63,15 +63,15 @@ export const specularGlossinessPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer
     gl.uniform1f(program.locAlphaCutoff, specGloss !== null ? specGloss.alphaCutoff : 0.5);
   },
 
-  draw(state: GlRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
-    const program = getGlSceneRuntime(state).activeMeshProgram;
+  draw(state: GlRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+    const program = getGlScene3DRuntime(state).activeMeshProgram;
     if (program === null) return;
     drawGlMeshSubset(state, program, proxy, geometry);
   },
 };
 
 // Installs the built-in SpecularGlossiness renderer for SpecularGlossinessPbrMaterialKind on this
-// state. Opt-in (no top-level side effect): drawScene only draws SpecularGlossiness subsets once
+// state. Opt-in (no top-level side effect): drawScene3D only draws SpecularGlossiness subsets once
 // this is called.
 export function registerSpecularGlossinessPbrGlMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, SpecularGlossinessPbrMaterialKind, specularGlossinessPbrGlMeshMaterialRenderer);

@@ -1,6 +1,6 @@
 import { hasImageResourcePixels } from '@flighthq/image';
 import { getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node';
-import { prepareSceneRender } from '@flighthq/render';
+import { prepareScene3DRender } from '@flighthq/render';
 import { bindWgpuImageResourceTexture, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import type {
   Camera3D,
@@ -9,8 +9,8 @@ import type {
   ParticleBlendMode,
   ParticleEmitter3D,
   ParticleEmitterData,
-  SceneLightsLike,
-  SceneNode,
+  Scene3DLightsLike,
+  Node3D,
   WgpuRenderState,
 } from '@flighthq/types';
 import { ParticleEmitter3DKind } from '@flighthq/types';
@@ -277,7 +277,7 @@ function drawParticleEmitter3DNode(
   const iw = hasAtlas ? 1 / (atlas!.image!.width || 1) : 0;
   const ih = hasAtlas ? 1 / (atlas!.image!.height || 1) : 0;
 
-  const worldMatrix = getNodeWorldMatrix4(emitter as unknown as SceneNode) as Matrix4;
+  const worldMatrix = getNodeWorldMatrix4(emitter as unknown as Node3D) as Matrix4;
   const wm = worldMatrix.m;
   // World-space particles are already baked into world coordinates at spawn (see updateParticleEmitter3D),
   // so they must NOT be re-transformed by the emitter's world matrix here.
@@ -410,16 +410,16 @@ export function destroyWgpuParticleEmitter3DResources(state: WgpuRenderState): v
 }
 
 // Draws every ParticleEmitter3D under `scene` on the WebGPU backend — the WGSL mirror of scene-gl's
-// drawGlSceneParticleEmitter3Ds. Camera3D-facing billboards, instanced, one pipeline per (blend mode,
+// drawGlScene3DParticleEmitter3Ds. Camera3D-facing billboards, instanced, one pipeline per (blend mode,
 // textured) variant, depth-tested but not depth-writing. Must run inside an open scene render pass
-// (reuses the pass on the render-state runtime). drawWgpuScene calls this automatically as its final
-// transparent pass (mirroring drawGlScene), so the common path needs no manual call; it stays exported
+// (reuses the pass on the render-state runtime). drawWgpuScene3D calls this automatically as its final
+// transparent pass (mirroring drawGlScene3D), so the common path needs no manual call; it stays exported
 // for manual ordering and early-returns when the scene has no emitters.
-export function drawWgpuSceneParticleEmitter3Ds(
+export function drawWgpuScene3DParticleEmitter3Ds(
   state: WgpuRenderState,
-  scene: Readonly<SceneNode>,
+  scene: Readonly<Node3D>,
   camera: Readonly<Camera3D>,
-  lights: Readonly<SceneLightsLike>,
+  lights: Readonly<Scene3DLightsLike>,
 ): void {
   emitterScratch.length = 0;
   collectParticleEmitter3DNodes(scene, emitterScratch);
@@ -428,7 +428,7 @@ export function drawWgpuSceneParticleEmitter3Ds(
   const pass = getWgpuRenderStateRuntime(state).renderPass;
   if (pass === null) return;
 
-  const list = prepareSceneRender(state, scene, camera, lights);
+  const list = prepareScene3DRender(state, scene, camera, lights);
   const resources = ensureParticle3DResources(state);
 
   // Frame uniform: view-projection + camera right/up (from the view matrix rows, column-major storage).

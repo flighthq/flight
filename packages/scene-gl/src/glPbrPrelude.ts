@@ -14,7 +14,7 @@ import type { GlPbrDefineKey } from '@flighthq/types';
 // fragment shader outputs LINEAR HDR radiance (no tonemap / gamma here — the effect pipeline's
 // resolve/tonemap pass owns that), matching the rgba16f scene target.
 //
-// The light block UBO mirrors SceneLightBlock.data exactly (std140): a directional term
+// The light block UBO mirrors Scene3DLightBlock.data exactly (std140): a directional term
 // { direction.xyz, _pad, radiance.rgb, _pad } at offset 0 then an ambient term { radiance.rgb,
 // _pad } — radiance is already linear and premultiplied by intensity at pack time, so the shader
 // never decodes sRgb. u_directionalCount / u_ambientCount (0 or 1) gate each term's contribution.
@@ -162,8 +162,8 @@ uniform vec3 u_ambientRadiance;
 uniform float u_directionalCount;
 uniform float u_ambientCount;
 
-// Punctual (point/spot/hemisphere) forward-light arrays — layout mirrors SceneLightBlock.data exactly
-// (packSceneLightBlock), matching GL_MESH_LIGHT_BLOCK_GLSL used by the classic prelude. Fixed
+// Punctual (point/spot/hemisphere) forward-light arrays — layout mirrors Scene3DLightBlock.data exactly
+// (packScene3DLightBlock), matching GL_MESH_LIGHT_BLOCK_GLSL used by the classic prelude. Fixed
 // MAX_FORWARD_LIGHTS-wide; each count bounds its loop.
 //   point[i]      = u_pointLights[i*2+0]={pos.xyz,range}, [i*2+1]={radiance.rgb,invSqrRange}
 //   spot[i]       = u_spotLights[i*4+0..1] as point, [i*4+2]={dir.xyz,_}, [i*4+3]={cosInner,cosOuter,_,_}

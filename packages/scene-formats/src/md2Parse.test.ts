@@ -12,12 +12,12 @@ import type {
   ExternalImageResourceReference,
   ImportDiagnostic,
   Mesh,
-  SceneAnimationTarget,
-  SceneNode,
+  Scene3DAnimationTarget,
+  Node3D,
 } from '@flighthq/types';
 import { BlinnPhongMaterialKind } from '@flighthq/types';
 
-import { createSceneFromMd2, parseMd2 } from './md2Parse';
+import { createScene3DFromMd2, parseMd2 } from './md2Parse';
 import { MD2_ANORMS } from './md2Schema';
 
 // Builds a minimal valid MD2 binary buffer with one frame and the given triangles, vertices, and
@@ -169,7 +169,7 @@ function expectOneCrumb(diagnostics: readonly ImportDiagnostic[], kind: string):
   return matches[0];
 }
 
-describe('createSceneFromMd2', () => {
+describe('createScene3DFromMd2', () => {
   it('deduplicates vertices sharing the same vertex/texcoord pair', () => {
     const md2 = buildMd2({
       compressedVertices: [
@@ -186,7 +186,7 @@ describe('createSceneFromMd2', () => {
       ],
     });
 
-    const scene = createSceneFromMd2(md2);
+    const scene = createScene3DFromMd2(md2);
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     // 3 unique vertex/texcoord combos, 6 indices (2 triangles).
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
@@ -207,7 +207,7 @@ describe('createSceneFromMd2', () => {
       triangles: [{ texIndices: [0, 0, 0], vertIndices: [0, 1, 2] }],
     });
 
-    const scene = createSceneFromMd2(md2);
+    const scene = createScene3DFromMd2(md2);
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     const n = { x: 0, y: 0, z: 0 };
     getMeshGeometryVertexNormal(n, geometry, 0);
@@ -236,10 +236,10 @@ describe('createSceneFromMd2', () => {
       triangles: [{ texIndices: [0, 1, 2], vertIndices: [0, 1, 2] }],
     });
 
-    const scene = createSceneFromMd2(md2);
+    const scene = createScene3DFromMd2(md2);
     const children = getNodeChildren(scene.root);
     expect(children).toHaveLength(1);
-    expect(isMesh(children[0] as SceneNode)).toBe(true);
+    expect(isMesh(children[0] as Node3D)).toBe(true);
 
     const geometry = (children[0] as Mesh).geometry;
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
@@ -270,7 +270,7 @@ describe('createSceneFromMd2', () => {
       triangles: [{ texIndices: [0, 1, 2], vertIndices: [0, 1, 2] }],
     });
 
-    const mesh = getNodeChildren(createSceneFromMd2(md2).root)[0] as Mesh;
+    const mesh = getNodeChildren(createScene3DFromMd2(md2).root)[0] as Mesh;
     expect(mesh.materials).toHaveLength(1);
     const material = mesh.materials[0] as BlinnPhongMaterial;
     expect(material.kind).toBe(BlinnPhongMaterialKind);
@@ -295,13 +295,13 @@ describe('createSceneFromMd2', () => {
       triangles: [{ texIndices: [0, 1, 2], vertIndices: [0, 1, 2] }],
     });
 
-    const mesh = getNodeChildren(createSceneFromMd2(md2).root)[0] as Mesh;
+    const mesh = getNodeChildren(createScene3DFromMd2(md2).root)[0] as Mesh;
     expect(mesh.materials).toHaveLength(0);
   });
 
   it('returns an empty scene for input shorter than the header', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    const scene = createSceneFromMd2(new Uint8Array(10), diagnostics);
+    const scene = createScene3DFromMd2(new Uint8Array(10), diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
     const crumb = expectOneCrumb(diagnostics, 'md2.header-too-short');
     expect(crumb.severity).toBe('Reject');
@@ -322,7 +322,7 @@ describe('createSceneFromMd2', () => {
     });
 
     const diagnostics: ImportDiagnostic[] = [];
-    const scene = createSceneFromMd2(md2, diagnostics);
+    const scene = createScene3DFromMd2(md2, diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
     const crumb = expectOneCrumb(diagnostics, 'md2.bad-magic');
     expect(crumb.severity).toBe('Reject');
@@ -343,7 +343,7 @@ describe('createSceneFromMd2', () => {
     });
 
     const diagnostics: ImportDiagnostic[] = [];
-    const scene = createSceneFromMd2(md2, diagnostics);
+    const scene = createScene3DFromMd2(md2, diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
     const crumb = expectOneCrumb(diagnostics, 'md2.unsupported-version');
     expect(crumb.severity).toBe('Reject');
@@ -365,7 +365,7 @@ describe('createSceneFromMd2', () => {
     // Truncate the buffer to cut off the frame data.
     const truncated = md2.slice(0, 70);
     const diagnostics: ImportDiagnostic[] = [];
-    const scene = createSceneFromMd2(truncated, diagnostics);
+    const scene = createScene3DFromMd2(truncated, diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
     const crumb = expectOneCrumb(diagnostics, 'md2.truncated-data-region');
     expect(crumb.severity).toBe('Reject');
@@ -386,7 +386,7 @@ describe('createSceneFromMd2', () => {
     });
 
     const diagnostics: ImportDiagnostic[] = [];
-    const scene = createSceneFromMd2(md2, diagnostics);
+    const scene = createScene3DFromMd2(md2, diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
     const crumb = expectOneCrumb(diagnostics, 'md2.no-frames');
     expect(crumb.severity).toBe('Reject');
@@ -401,7 +401,7 @@ describe('createSceneFromMd2', () => {
       triangles: [], // numTriangles === 0 → the no-triangles reject (after the no-frames gate)
     });
     const diagnostics: ImportDiagnostic[] = [];
-    const scene = createSceneFromMd2(md2, diagnostics);
+    const scene = createScene3DFromMd2(md2, diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
     const crumb = expectOneCrumb(diagnostics, 'md2.no-triangles');
     expect(crumb.severity).toBe('Reject');
@@ -425,7 +425,7 @@ describe('createSceneFromMd2', () => {
     });
     new DataView(md2.buffer).setInt32(44, md2.length - 10, true); // offSkins past a full 64-byte skin record
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromMd2(md2, diagnostics);
+    createScene3DFromMd2(md2, diagnostics);
     const crumb = expectOneCrumb(diagnostics, 'md2.skin-record-truncated');
     expect(crumb.severity).toBe('Drop');
     expect(crumb.origin).toBe('parseMd2');
@@ -446,7 +446,7 @@ describe('createSceneFromMd2', () => {
       triangles: [{ texIndices: [0, 0, 0], vertIndices: [0, 1, 2] }],
     });
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromMd2(md2, diagnostics);
+    createScene3DFromMd2(md2, diagnostics);
     const crumb = expectOneCrumb(diagnostics, 'md2.skin-empty-path');
     expect(crumb.severity).toBe('Drop');
     expect(crumb.origin).toBe('parseMd2');
@@ -472,7 +472,7 @@ describe('createSceneFromMd2', () => {
       triangles: [{ texIndices: [0, 1, 2], vertIndices: [0, 1, 2] }],
     });
 
-    const scene = createSceneFromMd2(md2);
+    const scene = createScene3DFromMd2(md2);
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
 
     const uv = { x: 0, y: 0 };
@@ -507,7 +507,7 @@ describe('createSceneFromMd2', () => {
       ],
     });
 
-    const scene = createSceneFromMd2(md2);
+    const scene = createScene3DFromMd2(md2);
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     // 3 vertices * 2 texcoord variants = 6 unique vertices.
     expect(getMeshGeometryVertexCount(geometry)).toBe(6);
@@ -530,7 +530,7 @@ describe('createSceneFromMd2', () => {
     });
 
     const diagnostics: ImportDiagnostic[] = [];
-    const scene = createSceneFromMd2(md2, diagnostics);
+    const scene = createScene3DFromMd2(md2, diagnostics);
     // First triangle should still produce a mesh.
     expect(getNodeChildren(scene.root)).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'md2.triangle-vertex-index-out-of-range');
@@ -555,7 +555,7 @@ describe('createSceneFromMd2', () => {
     });
 
     const diagnostics: ImportDiagnostic[] = [];
-    const scene = createSceneFromMd2(md2, diagnostics);
+    const scene = createScene3DFromMd2(md2, diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'md2.triangle-texcoord-index-out-of-range');
     expect(crumb.severity).toBe('Drop');
@@ -577,7 +577,7 @@ describe('createSceneFromMd2', () => {
     });
 
     const diagnostics: ImportDiagnostic[] = [];
-    const scene = createSceneFromMd2(md2, diagnostics);
+    const scene = createScene3DFromMd2(md2, diagnostics);
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     const n = { x: 1, y: 1, z: 1 };
     getMeshGeometryVertexNormal(n, geometry, 0);
@@ -603,7 +603,7 @@ describe('createSceneFromMd2', () => {
       triangles: [{ texIndices: [0, 0, 0], vertIndices: [99, 98, 97] }],
     });
     const diagnostics: ImportDiagnostic[] = [];
-    const scene = createSceneFromMd2(md2, diagnostics);
+    const scene = createScene3DFromMd2(md2, diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
     const crumb = expectOneCrumb(diagnostics, 'md2.no-valid-triangles');
     expect(crumb.severity).toBe('Reject');
@@ -628,7 +628,7 @@ describe('createSceneFromMd2', () => {
       triangles: [{ texIndices: [0, 0, 0], vertIndices: [0, 1, 2] }],
     });
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromMd2(md2, diagnostics);
+    createScene3DFromMd2(md2, diagnostics);
     expect(diagnostics).toHaveLength(0);
   });
 
@@ -648,7 +648,7 @@ describe('createSceneFromMd2', () => {
       ],
     });
     const diagnostics: ImportDiagnostic[] = [];
-    createSceneFromMd2(md2, diagnostics);
+    createScene3DFromMd2(md2, diagnostics);
     const drops = diagnostics.filter((d) => d.kind === 'md2.triangle-vertex-index-out-of-range');
     expect(drops).toHaveLength(1);
     expect(drops[0].severity).toBe('Drop');
@@ -656,7 +656,7 @@ describe('createSceneFromMd2', () => {
   });
 });
 
-describe('createSceneFromMd2 animations', () => {
+describe('createScene3DFromMd2 animations', () => {
   const singleTriangleFrame0 = [
     { normalIndex: 0, x: 0, y: 0, z: 0 },
     { normalIndex: 0, x: 1, y: 0, z: 0 },
@@ -675,7 +675,7 @@ describe('createSceneFromMd2 animations', () => {
       texCoords: singleTriangleTexCoords,
       triangles: singleTriangle,
     });
-    const scene = createSceneFromMd2(md2);
+    const scene = createScene3DFromMd2(md2);
     expect(Object.keys(scene.animations)).toHaveLength(0);
     expect(getNodeChildren(scene.root)).toHaveLength(1);
   });
@@ -695,7 +695,7 @@ describe('createSceneFromMd2 animations', () => {
       texCoords: singleTriangleTexCoords,
       triangles: singleTriangle,
     });
-    const mesh = getNodeChildren(createSceneFromMd2(md2).root)[0] as Mesh;
+    const mesh = getNodeChildren(createScene3DFromMd2(md2).root)[0] as Mesh;
     expect(mesh.morph).not.toBeNull();
     expect(mesh.morph!.targets).toHaveLength(1);
     // The deduped vertex for source vertex 1 carries a +2 x position delta.
@@ -725,7 +725,7 @@ describe('createSceneFromMd2 animations', () => {
       texCoords: singleTriangleTexCoords,
       triangles: singleTriangle,
     });
-    const target = (getNodeChildren(createSceneFromMd2(md2).root)[0] as Mesh).morph!.targets[0];
+    const target = (getNodeChildren(createScene3DFromMd2(md2).root)[0] as Mesh).morph!.targets[0];
     const dxs = Array.from({ length: target.positionDeltas.length / 3 }, (_, v) => target.positionDeltas[v * 3]);
     expect(dxs.some((dx) => Math.abs(dx - 6) < 1e-5)).toBe(true);
   });
@@ -745,7 +745,7 @@ describe('createSceneFromMd2 animations', () => {
       texCoords: singleTriangleTexCoords,
       triangles: singleTriangle,
     });
-    const target = (getNodeChildren(createSceneFromMd2(md2).root)[0] as Mesh).morph!.targets[0];
+    const target = (getNodeChildren(createScene3DFromMd2(md2).root)[0] as Mesh).morph!.targets[0];
     const a0 = MD2_ANORMS[0];
     const a5 = MD2_ANORMS[5];
     // Y-up transform is (x, y, z) → (x, z, -y), so the per-component delta is (a5x-a0x, a5z-a0z, a0y-a5y).
@@ -774,12 +774,12 @@ describe('createSceneFromMd2 animations', () => {
       texCoords: singleTriangleTexCoords,
       triangles: singleTriangle,
     });
-    const scene = createSceneFromMd2(md2);
+    const scene = createScene3DFromMd2(md2);
     expect(Object.keys(scene.animations)).toHaveLength(1);
     const clip = Object.values(scene.animations)[0];
     expect(clip.channels).toHaveLength(1);
     const channel = clip.channels[0];
-    expect((channel.targetRef as SceneAnimationTarget).path).toBe('Weights');
+    expect((channel.targetRef as Scene3DAnimationTarget).path).toBe('Weights');
     expect(channel.track.components).toBe(1); // one non-base frame → one target weight
     // Two frames → times [0, 0.1] at 10 fps.
     expect(channel.track.times).toHaveLength(2);
@@ -1024,7 +1024,7 @@ describe('parseMd2', () => {
     expect(document.nodes).toEqual([]);
     expect(document.meshes).toEqual([]);
     expect(document.scenes).toEqual([{ rootNodes: [] }]);
-    // parseMd2 (not the createSceneFromMd2 wrapper) is the true origin even on the document-returning path.
+    // parseMd2 (not the createScene3DFromMd2 wrapper) is the true origin even on the document-returning path.
     const crumb = expectOneCrumb(diagnostics, 'md2.header-too-short');
     expect(crumb.severity).toBe('Reject');
     expect(crumb.origin).toBe('parseMd2');

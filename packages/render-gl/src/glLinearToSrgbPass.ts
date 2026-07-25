@@ -5,7 +5,7 @@ import { compileGlFullscreenProgram, drawGlFullscreenPass } from './glFullscreen
 // The linear->sRGB OETF present pass: encode a linear render-target texture into display sRGB as a
 // fullscreen pass. scene-gl materials write linear HDR radiance into an rgba16f target and tonemap
 // (when present) is a linear HDR->LDR step BEFORE this, so a caller who draws linear content must end
-// with one encode or the canvas receives raw-linear (dark) pixels. presentGlScene ends the no-effects
+// with one encode or the canvas receives raw-linear (dark) pixels. presentGlScene3D ends the no-effects
 // 3D path with exactly this pass. Keep this the single linear->sRGB seam for content that routes
 // through it: encode once at present, never inside a per-material fragment shader.
 //

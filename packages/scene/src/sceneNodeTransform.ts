@@ -1,6 +1,6 @@
 import { createMatrix4 } from '@flighthq/geometry';
 import { setNodeLocalMatrix4 } from '@flighthq/node';
-import type { SceneNode, Vector3Like } from '@flighthq/types';
+import type { Node3D, Vector3Like } from '@flighthq/types';
 
 // Sets the node's local matrix directly to a model-space look-at transform that places the node at
 // `eye`, oriented so its local -Z axis points toward `target`, with the given `up` hint vector. The
@@ -15,8 +15,8 @@ import type { SceneNode, Vector3Like } from '@flighthq/types';
 //
 // Note: geometry's setMatrix4LookAt is a view matrix (inverted). This function builds the model
 // matrix directly: basis vectors are the same but the translation is eye, not -dot(axis, eye).
-export function setSceneNodeLookAt(
-  node: SceneNode,
+export function setNode3DLookAt(
+  node: Node3D,
   eye: Readonly<Vector3Like>,
   target: Readonly<Vector3Like>,
   up: Readonly<Vector3Like>,

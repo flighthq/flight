@@ -7,7 +7,7 @@ import {
   registerWgpuMeshMaterialRenderer,
   resolveWgpuMeshMaterialRenderer,
 } from './wgpuMeshMaterialRegistry';
-import { makeWgpuSceneState } from './wgpuSceneTestHelper';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 
 function makeRenderer(): WgpuMeshMaterialRenderer {
   return { bind: () => {}, draw: () => {} };
@@ -15,7 +15,7 @@ function makeRenderer(): WgpuMeshMaterialRenderer {
 
 describe('getWgpuMeshMaterialRenderer', () => {
   it('returns a registered renderer by kind, else null', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     const renderer = makeRenderer();
     expect(getWgpuMeshMaterialRenderer(state, StandardPbrMaterialKind)).toBeNull();
     registerWgpuMeshMaterialRenderer(state, StandardPbrMaterialKind, renderer);
@@ -25,7 +25,7 @@ describe('getWgpuMeshMaterialRenderer', () => {
 
 describe('registerWgpuMeshMaterialRenderer', () => {
   it('registers a renderer in the scene-wgpu 3D registry', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     const renderer = makeRenderer();
     registerWgpuMeshMaterialRenderer(state, StandardPbrMaterialKind, renderer);
     expect(getWgpuMeshMaterialRenderer(state, StandardPbrMaterialKind)).toBe(renderer);
@@ -34,14 +34,14 @@ describe('registerWgpuMeshMaterialRenderer', () => {
 
 describe('resolveWgpuMeshMaterialRenderer', () => {
   it('resolves by the material kind', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     const renderer = makeRenderer();
     registerWgpuMeshMaterialRenderer(state, StandardPbrMaterialKind, renderer);
     expect(resolveWgpuMeshMaterialRenderer(state, createStandardPbrMaterial())).toBe(renderer);
   });
 
   it('falls back to DefaultMaterialKind for an unregistered kind or null material', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     const fallback = makeRenderer();
     registerWgpuMeshMaterialRenderer(state, DefaultMaterialKind, fallback);
     expect(resolveWgpuMeshMaterialRenderer(state, createStandardPbrMaterial())).toBe(fallback);
@@ -49,7 +49,7 @@ describe('resolveWgpuMeshMaterialRenderer', () => {
   });
 
   it('returns null when neither the kind nor the default is registered', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     expect(resolveWgpuMeshMaterialRenderer(state, createStandardPbrMaterial())).toBeNull();
   });
 });

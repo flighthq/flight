@@ -1,6 +1,6 @@
-import { createScene } from '@flighthq/scene';
-import { drawWgpuScene } from '@flighthq/scene-wgpu';
-import type { Camera3D, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import { createScene3D } from '@flighthq/scene';
+import { drawWgpuScene3D } from '@flighthq/scene-wgpu';
+import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
@@ -19,7 +19,7 @@ import {
   getSurfacePixelLuminance,
   getSurfacePixelRgb,
   normalizeVector3,
-  prepareSceneRender,
+  prepareScene3DRender,
   registerNormalWgpuMaterial,
   renderWgpuBackground,
   setCamera3DViewMatrix4FromLookAt,
@@ -27,7 +27,7 @@ import {
 } from '@flighthq/sdk';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-// drawWgpuScene collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
+// drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
 // the Wgpu one directly from its package.
 
 // Wgpu parity column for the same sphere as render.webgl.ts. Wgpu state init is async.
@@ -52,11 +52,11 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
-  prepareSceneRender(state, scene, camera, lights);
-  drawWgpuScene(state, scene, camera, lights);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawWgpuScene3D(state, scene, camera, lights);
   endWgpuRenderEffectPipeline(state, pipeline, []);
   submitWgpuRenderPass(state);
 }
@@ -88,7 +88,7 @@ const geometry = createSphereMeshGeometry(0.5, 48, 32);
 // Encodes the world-space surface normal as color (n * 0.5 + 0.5). Lighting-independent.
 const material = createNormalMaterial();
 
-const scene = createScene().root;
+const scene = createScene3D().root;
 const mesh = createMesh(geometry, [material]);
 addNodeChild(scene, mesh);
 

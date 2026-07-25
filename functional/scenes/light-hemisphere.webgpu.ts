@@ -1,6 +1,6 @@
-import { createScene } from '@flighthq/scene';
-import { drawWgpuScene } from '@flighthq/scene-wgpu';
-import type { Camera3D, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import { createScene3D } from '@flighthq/scene';
+import { drawWgpuScene3D } from '@flighthq/scene-wgpu';
+import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
@@ -9,7 +9,7 @@ import {
   createHemisphereLight,
   createMesh,
   createPerspectiveProjection,
-  createSceneLights,
+  createScene3DLights,
   createSphereMeshGeometry,
   createVector3,
   createWgpuCanvasElement,
@@ -17,7 +17,7 @@ import {
   createWgpuRenderState,
   endWgpuRenderEffectPipeline,
   getSurfacePixelLuminance,
-  prepareSceneRender,
+  prepareScene3DRender,
   registerBlinnPhongWgpuMaterial,
   renderWgpuBackground,
   setCamera3DViewMatrix4FromLookAt,
@@ -41,11 +41,11 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
+function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
-  prepareSceneRender(state, scene, camera, lights);
-  drawWgpuScene(state, scene, camera, lights);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawWgpuScene3D(state, scene, camera, lights);
   endWgpuRenderEffectPipeline(state, pipeline, []);
   submitWgpuRenderPass(state);
 }
@@ -54,7 +54,7 @@ registerWgpuFunctionalTarget(state, scale);
 
 const geometry = createSphereMeshGeometry(0.5, 48, 32);
 const material = createBlinnPhongMaterial({ diffuse: 0x808080ff, specular: 0x808080ff, shininess: 32 });
-const scene = createScene().root;
+const scene = createScene3D().root;
 addNodeChild(scene, createMesh(geometry, [material]));
 const camera = createCamera3D({
   far: 100,
@@ -63,7 +63,7 @@ const camera = createCamera3D({
 });
 setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 3), createVector3(0, 0, 0), createVector3(0, 1, 0));
 
-const lights = createSceneLights({
+const lights = createScene3DLights({
   hemisphere: [createHemisphereLight({ groundColor: 0x101014ff, intensity: 3, skyColor: 0xfff0e0ff })],
 });
 render(scene, camera, lights);

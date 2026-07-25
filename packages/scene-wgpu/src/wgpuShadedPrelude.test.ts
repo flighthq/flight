@@ -13,8 +13,8 @@ import { createTexture } from '@flighthq/texture';
 import type { ImageResource, Modifier, Texture, WgpuModifierSnippet } from '@flighthq/types';
 import { FogModifierMode, ModifierSlot, VertexDisplaceModifierSource } from '@flighthq/types';
 
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
-import { makeWgpuSceneState, makeWgpuSkinningAdapter } from './wgpuSceneTestHelper';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper';
 import { registerWgpuModifierSnippet, resolveWgpuModifierSnippet } from './wgpuShadedModifierSnippet';
 import {
   animatedNormalWgpuModifierSnippet,
@@ -34,7 +34,7 @@ import {
 
 describe('bindWgpuShadedSurface', () => {
   it('uploads the base and modifier uniform block and binds group resources', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     registerBuiltInWgpuModifierSnippets(state);
     const material = createShadedMaterial({ modifiers: [createRimModifier({ color: 0xffffffff })] });
     const pipeline = ensureWgpuShadedPipeline(state, material, 'bgra8unorm');
@@ -61,19 +61,19 @@ describe('buildWgpuShadedCacheKey', () => {
 
 describe('ensureWgpuShadedPipeline', () => {
   it('caches shaded opaque and blended variants separately', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     registerBuiltInWgpuModifierSnippets(state);
     const material = createShadedMaterial({ modifiers: [createRimModifier({ color: 0xffffffff })] });
     ensureWgpuShadedPipeline(state, material, 'bgra8unorm');
-    getWgpuSceneRuntime(state).activeBlendedRun = true;
+    getWgpuScene3DRuntime(state).activeBlendedRun = true;
     ensureWgpuShadedPipeline(state, material, 'bgra8unorm');
-    const keys = [...getWgpuSceneRuntime(state).pipelineCache.keys()];
+    const keys = [...getWgpuScene3DRuntime(state).pipelineCache.keys()];
     expect(keys.some((key) => key.startsWith('shaded:') && key.endsWith('|opaque|rigid'))).toBe(true);
     expect(keys.some((key) => key.startsWith('shaded:') && key.endsWith('|blend|rigid'))).toBe(true);
   });
 
   it('reserves alpha-map binding 5 and starts modifier textures at binding 6', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     registerBuiltInWgpuModifierSnippets(state);
     const mask = createTexture();
     const material = createShadedMaterial({
@@ -88,7 +88,7 @@ describe('ensureWgpuShadedPipeline', () => {
   });
 
   it('recompiles after a last-write-wins snippet replacement with the same define signature', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const modifier = { kind: 'acme.Replace', slot: ModifierSlot.Effect };
     registerWgpuModifierSnippet(state, {
       contribution: () => ({ source: '// compiler-marker-A' }),
@@ -122,7 +122,7 @@ describe('getWgpuShadedModuleSource', () => {
   });
 
   it('composes all built-in fragment modifier families into one shader', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     registerBuiltInWgpuModifierSnippets(state);
     const texture = createTexture();
     const material = createShadedMaterial({
@@ -136,7 +136,7 @@ describe('getWgpuShadedModuleSource', () => {
         createToonModifier({ steps: 3 }),
       ],
     });
-    const source = getWgpuShadedModuleSource(material, getWgpuSceneRuntime(state).modifierSnippetRegistry!);
+    const source = getWgpuShadedModuleSource(material, getWgpuScene3DRuntime(state).modifierSnippetRegistry!);
     expect(source).toContain('animatedNormal');
     expect(source).toContain('emissiveTerm');
     expect(source).toContain('rimFactor');
@@ -148,7 +148,7 @@ describe('getWgpuShadedModuleSource', () => {
   });
 
   it('injects vertex displacement before the world transform', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     registerBuiltInWgpuModifierSnippets(state);
     const material = createShadedMaterial({
       modifiers: [
@@ -158,14 +158,14 @@ describe('getWgpuShadedModuleSource', () => {
         }),
       ],
     });
-    const source = getWgpuShadedModuleSource(material, getWgpuSceneRuntime(state).modifierSnippetRegistry!);
+    const source = getWgpuShadedModuleSource(material, getWgpuScene3DRuntime(state).modifierSnippetRegistry!);
     expect(source.indexOf('localPosition = vec4f(localPosition.xyz')).toBeLessThan(
       source.indexOf('let world = draw.world * localPosition'),
     );
   });
 
   it('composes a registered vendor kind and treats an unregistered kind as an explicit miss', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     const vendor: WgpuModifierSnippet = {
       contribution: () => ({ source: 'radiance = radiance + vec3f(0.125);\\n' }),
       kind: 'acme.Glow',
@@ -175,7 +175,7 @@ describe('getWgpuShadedModuleSource', () => {
     const registered = { kind: 'acme.Glow', slot: ModifierSlot.Effect } as Modifier;
     const missing = { kind: 'acme.Missing', slot: ModifierSlot.Effect } as Modifier;
     const material = createShadedMaterial({ modifiers: [registered, missing] });
-    const registry = getWgpuSceneRuntime(state).modifierSnippetRegistry!;
+    const registry = getWgpuScene3DRuntime(state).modifierSnippetRegistry!;
     const source = getWgpuShadedModuleSource(material, registry);
     expect(source).toContain('radiance = radiance + vec3f(0.125)');
     expect(buildWgpuShadedCacheKey(material, registry)).toContain('acme.Missing');
@@ -184,7 +184,7 @@ describe('getWgpuShadedModuleSource', () => {
   });
 
   it('routes every open modifier slot and delimits vendor contributions', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     const slots = [
       ModifierSlot.Normal,
       ModifierSlot.Diffuse,
@@ -212,7 +212,7 @@ describe('getWgpuShadedModuleSource', () => {
       });
       modifiers.push({ kind, slot: slots[i] });
     }
-    const registry = getWgpuSceneRuntime(state).modifierSnippetRegistry!;
+    const registry = getWgpuScene3DRuntime(state).modifierSnippetRegistry!;
     const source = getWgpuShadedModuleSource(createShadedMaterial({ modifiers }), registry);
     for (let i = 0; i < slots.length; i++) expect(source).toContain(`slot_marker_${i}`);
     expect(source).toMatch(/\/\/ slot_marker_1\s+diffuse = diffuse;\s+if \(ALPHA_MASK/);
@@ -220,7 +220,7 @@ describe('getWgpuShadedModuleSource', () => {
   });
 
   it('deduplicates repeated helper declarations and separates arbitrary declaration blocks', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     registerBuiltInWgpuModifierSnippets(state);
     registerWgpuModifierSnippet(state, {
       contribution: () => ({ declarations: 'fn vendorA() {}', source: '' }),
@@ -240,7 +240,7 @@ describe('getWgpuShadedModuleSource', () => {
         { kind: 'acme.DeclarationB', slot: ModifierSlot.Effect },
       ],
     });
-    const source = getWgpuShadedModuleSource(material, getWgpuSceneRuntime(state).modifierSnippetRegistry!);
+    const source = getWgpuShadedModuleSource(material, getWgpuScene3DRuntime(state).modifierSnippetRegistry!);
     expect(source.match(/fn shadedValueNoise/g)).toHaveLength(1);
     expect(source).toContain('fn vendorA() {}\nfn vendorB() {}');
   });
@@ -248,7 +248,7 @@ describe('getWgpuShadedModuleSource', () => {
 
 describe('registerBuiltInWgpuModifierSnippets', () => {
   it('installs the built-in compiler records explicitly', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     registerBuiltInWgpuModifierSnippets(state);
     expect(resolveWgpuModifierSnippet(state, 'RimModifier')).not.toBeNull();
     expect([
@@ -275,8 +275,8 @@ describe('registerBuiltInWgpuModifierSnippets', () => {
 
 describe('shaded binding cache', () => {
   it('owns GPU bindings per render state when a material is shared across devices', () => {
-    const first = makeWgpuSceneState();
-    const second = makeWgpuSceneState();
+    const first = makeWgpuScene3DState();
+    const second = makeWgpuScene3DState();
     registerBuiltInWgpuModifierSnippets(first.state);
     registerBuiltInWgpuModifierSnippets(second.state);
     const material = createShadedMaterial();
@@ -296,7 +296,7 @@ describe('shaded binding cache', () => {
   });
 
   it('reuses its uniform allocation while rebuilding for texture identity and readiness changes', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     registerBuiltInWgpuModifierSnippets(state);
     const first = createTexture({ image: { source: {} } as ImageResource });
     const material = createShadedMaterial({ diffuseMap: first });
@@ -335,7 +335,7 @@ describe('shaded binding cache', () => {
   });
 
   it('rebinds when a ready image swaps or its version changes', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     registerBuiltInWgpuModifierSnippets(state);
     const firstImage = makeImageResource();
     const texture = createTexture({ image: firstImage });
@@ -355,7 +355,7 @@ describe('shaded binding cache', () => {
   });
 
   it('reuses the compiled plan and GPU resource arrays on an unchanged draw', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     let contributions = 0;
     const modifier = { kind: 'acme.Stable', slot: ModifierSlot.Effect };
     registerWgpuModifierSnippet(state, {

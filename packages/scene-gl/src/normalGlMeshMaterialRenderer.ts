@@ -5,15 +5,15 @@ import type {
   Material,
   MeshGeometry,
   NormalMaterial,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
 } from '@flighthq/types';
 import { NormalMaterialKind } from '@flighthq/types';
 
 import { bindGlDebugNormalMap, ensureGlDebugProgram } from './glDebugPrelude';
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshViewProjection } from './glMeshProgram';
-import { getGlSceneRuntime } from './glSceneRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 
 // The built-in Normal forward renderer (GlMeshMaterialRenderer for NormalMaterialKind). A lighting-
 // independent debug/utility pass material: bind selects the debug program in normal mode (with the
@@ -26,7 +26,7 @@ export const normalGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
     material: Readonly<Material> | null,
-    _lights: Readonly<SceneLightBlock>,
+    _lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const gl = state.gl;
@@ -43,15 +43,15 @@ export const normalGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     bindGlDebugNormalMap(state, program, normal.normalMap, normal.normalScale);
   },
 
-  draw(state: GlRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
-    const program = getGlSceneRuntime(state).activeMeshProgram;
+  draw(state: GlRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+    const program = getGlScene3DRuntime(state).activeMeshProgram;
     if (program === null) return;
     drawGlMeshSubset(state, program, proxy, geometry);
   },
 };
 
 // Registers the built-in Normal renderer for NormalMaterialKind on this state. Opt-in (no top-level
-// side effect); call once per GlRenderState before drawScene so meshes with NormalMaterials draw.
+// side effect); call once per GlRenderState before drawScene3D so meshes with NormalMaterials draw.
 export function registerNormalGlMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, NormalMaterialKind, normalGlMeshMaterialRenderer);
 }

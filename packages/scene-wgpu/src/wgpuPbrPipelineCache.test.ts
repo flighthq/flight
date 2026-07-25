@@ -1,8 +1,8 @@
 import type { WgpuPbrDefineKey } from '@flighthq/types';
 
 import { compileWgpuPbrPipeline, ensureWgpuPbrPipeline } from './wgpuPbrPipelineCache';
-import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
-import { makeWgpuSceneState } from './wgpuSceneTestHelper';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 
 function key(overrides?: Partial<WgpuPbrDefineKey>): WgpuPbrDefineKey {
   return {
@@ -27,7 +27,7 @@ function key(overrides?: Partial<WgpuPbrDefineKey>): WgpuPbrDefineKey {
 
 describe('compileWgpuPbrPipeline', () => {
   it('compiles a module and builds the pipeline + material bind-group layout', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     const pipeline = compileWgpuPbrPipeline(state, key(), 'rgba16float');
     expect(pipeline.pipeline).toBeDefined();
     expect(pipeline.materialBindGroupLayout).toBeDefined();
@@ -36,7 +36,7 @@ describe('compileWgpuPbrPipeline', () => {
   });
 
   it('bakes back-face culling unless the key is doubleSided', () => {
-    const { fake, state } = makeWgpuSceneState();
+    const { fake, state } = makeWgpuScene3DState();
     compileWgpuPbrPipeline(state, key(), 'bgra8unorm');
     compileWgpuPbrPipeline(state, key({ doubleSided: true }), 'bgra8unorm');
     const pipelineCalls = fake.calls.filter((c) => c.name === 'createRenderPipeline');
@@ -49,19 +49,19 @@ describe('compileWgpuPbrPipeline', () => {
 
 describe('ensureWgpuPbrPipeline', () => {
   it('caches one pipeline per define key + format', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     const a = ensureWgpuPbrPipeline(state, key(), 'rgba16float');
     const b = ensureWgpuPbrPipeline(state, key(), 'rgba16float');
     expect(a).toBe(b);
-    expect(getWgpuSceneRuntime(state).pipelineCache.size).toBe(1);
+    expect(getWgpuScene3DRuntime(state).pipelineCache.size).toBe(1);
   });
 
   it('compiles distinct variants for distinct format, standard, or extension defines', () => {
-    const { state } = makeWgpuSceneState();
+    const { state } = makeWgpuScene3DState();
     ensureWgpuPbrPipeline(state, key(), 'rgba16float');
     ensureWgpuPbrPipeline(state, key(), 'bgra8unorm');
     ensureWgpuPbrPipeline(state, key({ doubleSided: true }), 'rgba16float');
     ensureWgpuPbrPipeline(state, key({ clearcoatEnabled: true }), 'rgba16float');
-    expect(getWgpuSceneRuntime(state).pipelineCache.size).toBe(4);
+    expect(getWgpuScene3DRuntime(state).pipelineCache.size).toBe(4);
   });
 });

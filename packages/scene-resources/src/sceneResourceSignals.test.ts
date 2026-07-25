@@ -3,11 +3,11 @@ import type { ImageResourceReference, Texture } from '@flighthq/types';
 import { EntityRuntimeKey, ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
-import { createSceneResourceResolver, disposeSceneResourceResolver } from './sceneResourceResolver';
+import { createScene3DResourceResolver, disposeScene3DResourceResolver } from './sceneResourceResolver';
 import {
-  createSceneResourceSignals,
-  enableSceneResourceSignals,
-  getSceneResourceSignals,
+  createScene3DResourceSignals,
+  enableScene3DResourceSignals,
+  getScene3DResourceSignals,
 } from './sceneResourceSignals';
 
 const ref: ImageResourceReference = {
@@ -18,9 +18,9 @@ const ref: ImageResourceReference = {
   state: ResourceResolutionState.Resolved,
 };
 
-describe('createSceneResourceSignals', () => {
+describe('createScene3DResourceSignals', () => {
   it('creates a connectable, emittable signal group', () => {
-    const signals = createSceneResourceSignals();
+    const signals = createScene3DResourceSignals();
     expect(EntityRuntimeKey in signals).toBe(true);
     let received = 0;
     connectSignal(signals.onResourceResolved, () => received++);
@@ -29,23 +29,23 @@ describe('createSceneResourceSignals', () => {
   });
 });
 
-describe('enableSceneResourceSignals', () => {
+describe('enableScene3DResourceSignals', () => {
   it('stores the group on the resolver and is idempotent', () => {
-    const resolver = createSceneResourceResolver();
-    const first = enableSceneResourceSignals(resolver);
-    const second = enableSceneResourceSignals(resolver);
+    const resolver = createScene3DResourceResolver();
+    const first = enableScene3DResourceSignals(resolver);
+    const second = enableScene3DResourceSignals(resolver);
     expect(first).toBe(second);
-    expect(getSceneResourceSignals(resolver)).toBe(first);
-    disposeSceneResourceResolver(resolver);
+    expect(getScene3DResourceSignals(resolver)).toBe(first);
+    disposeScene3DResourceResolver(resolver);
   });
 });
 
-describe('getSceneResourceSignals', () => {
+describe('getScene3DResourceSignals', () => {
   it('returns null until enabled, then the enabled group', () => {
-    const resolver = createSceneResourceResolver();
-    expect(getSceneResourceSignals(resolver)).toBeNull();
-    const signals = enableSceneResourceSignals(resolver);
-    expect(getSceneResourceSignals(resolver)).toBe(signals);
-    disposeSceneResourceResolver(resolver);
+    const resolver = createScene3DResourceResolver();
+    expect(getScene3DResourceSignals(resolver)).toBeNull();
+    const signals = enableScene3DResourceSignals(resolver);
+    expect(getScene3DResourceSignals(resolver)).toBe(signals);
+    disposeScene3DResourceResolver(resolver);
   });
 });

@@ -1,6 +1,6 @@
-import { createScene } from '@flighthq/scene';
-import { drawGlScene } from '@flighthq/scene-gl';
-import type { Camera3D, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import { createScene3D } from '@flighthq/scene';
+import { drawGlScene3D } from '@flighthq/scene-gl';
+import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -12,20 +12,20 @@ import {
   createGlRenderState,
   createMesh,
   createPerspectiveProjection,
-  createSceneLights,
+  createScene3DLights,
   createSpotLight,
   createSphereMeshGeometry,
   createVector3,
   endGlRenderEffectPipeline,
   getSurfacePixelLuminance,
   normalizeVector3,
-  prepareSceneRender,
+  prepareScene3DRender,
   registerBlinnPhongGlMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
 
-// drawGlScene collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu) — import the Gl one directly.
+// drawGlScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu) — import the Gl one directly.
 
 // light-spot — proves a SPOT light shades the forward Gl mesh pass. A mid-gray sphere at the origin is
 // lit by one white spot placed up-front-right, aimed at the origin with a moderate cone. A spot is a
@@ -54,15 +54,15 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
-  prepareSceneRender(state, scene, camera, lights);
-  drawGlScene(state, scene, camera, lights);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawGlScene3D(state, scene, camera, lights);
   endGlRenderEffectPipeline(state, pipeline, []);
 }
 
@@ -72,7 +72,7 @@ const logicalHeight = height / scale;
 const geometry = createSphereMeshGeometry(0.5, 48, 32);
 const material = createBlinnPhongMaterial({ diffuse: 0x808080ff, specular: 0x808080ff, shininess: 32 });
 
-const scene = createScene().root;
+const scene = createScene3D().root;
 const mesh = createMesh(geometry, [material]);
 addNodeChild(scene, mesh);
 
@@ -89,7 +89,7 @@ setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 3), createVector3(0
 const spotPosition = createVector3(1.3, 0.5, 1.6);
 const spotDirection = createVector3(-1.3, -0.5, -1.6);
 normalizeVector3(spotDirection, spotDirection);
-const lights = createSceneLights({
+const lights = createScene3DLights({
   ambient: createAmbientLight({ color: 0x6070a0ff, intensity: 0.15 }),
   spot: [
     createSpotLight({

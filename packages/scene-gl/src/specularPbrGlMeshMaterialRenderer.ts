@@ -6,8 +6,8 @@ import type {
   GlRenderState,
   Material,
   MeshGeometry,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
   SpecularPbrMaterial,
 } from '@flighthq/types';
 import { SpecularPbrMaterialKind } from '@flighthq/types';
@@ -17,7 +17,7 @@ import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshCameraPosition, setGlMeshViewProjection } from './glMeshProgram';
 import { ensureGlPbrProgram } from './glPbrProgramCache';
 import { bindGlPbrStandardBlock, buildGlPbrStandardDefineKey } from './glPbrStandardBlock';
-import { getGlSceneRuntime } from './glSceneRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 
 // The built-in Specular (KHR_materials_specular) forward-lit mesh-material renderer. This extension
 // gives independent control of a dielectric's specular reflection: `specular` scales the base
@@ -32,7 +32,7 @@ export const specularPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
     material: Readonly<Material> | null,
-    lights: Readonly<SceneLightBlock>,
+    lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const gl = state.gl;
@@ -59,15 +59,15 @@ export const specularPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     }
   },
 
-  draw(state: GlRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
-    const program = getGlSceneRuntime(state).activeMeshProgram;
+  draw(state: GlRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+    const program = getGlScene3DRuntime(state).activeMeshProgram;
     if (program === null) return;
     drawGlMeshSubset(state, program, proxy, geometry);
   },
 };
 
 // Installs the built-in Specular renderer for SpecularPbrMaterialKind on this state. Opt-in (no
-// top-level side effect): drawScene only draws Specular subsets once this is called.
+// top-level side effect): drawScene3D only draws Specular subsets once this is called.
 export function registerSpecularPbrGlMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, SpecularPbrMaterialKind, specularPbrGlMeshMaterialRenderer);
 }

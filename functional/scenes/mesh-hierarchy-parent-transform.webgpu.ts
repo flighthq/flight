@@ -1,6 +1,6 @@
-import { createScene, createSceneNode } from '@flighthq/scene';
-import { drawWgpuScene } from '@flighthq/scene-wgpu';
-import type { Camera3D, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import { createScene3D, createNode3D } from '@flighthq/scene';
+import { drawWgpuScene3D } from '@flighthq/scene-wgpu';
+import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
@@ -20,7 +20,7 @@ import {
   getSurfacePixelLuminance,
   getSurfacePixelRgb,
   normalizeVector3,
-  prepareSceneRender,
+  prepareScene3DRender,
   registerUnlitWgpuMaterial,
   renderWgpuBackground,
   setCamera3DViewMatrix4FromLookAt,
@@ -30,7 +30,7 @@ import {
 } from '@flighthq/sdk';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-// drawWgpuScene collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
+// drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
 // the Wgpu one directly from its package.
 
 // Wgpu parity column for the same unlit cube as render.webgl.ts. Wgpu state init is async.
@@ -55,11 +55,11 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
-  prepareSceneRender(state, scene, camera, lights);
-  drawWgpuScene(state, scene, camera, lights);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawWgpuScene3D(state, scene, camera, lights);
   endWgpuRenderEffectPipeline(state, pipeline, []);
   submitWgpuRenderPass(state);
 }
@@ -67,7 +67,7 @@ export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, l
 registerWgpuFunctionalTarget(state, scale);
 
 // mesh-hierarchy-parent-transform — proves the scene hierarchy composes a PARENT node's transform onto
-// its CHILD mesh's world matrix on the Gl and Wgpu scene renderers. A transform-only parent SceneNode
+// its CHILD mesh's world matrix on the Gl and Wgpu scene renderers. A transform-only parent Node3D
 // is translated up-and-right by (+1.3, +0.7, 0); a child mesh sits at the parent's LOCAL origin (its
 // own localMatrix is identity). Because the renderer resolves each mesh's world matrix as
 // parentWorld × localMatrix, the child must render at the PARENT-translated position (upper-right of the
@@ -88,10 +88,10 @@ const logicalHeight = height / scale;
 const geometry = createBoxMeshGeometry(1, 1, 1);
 const material = createUnlitMaterial({ baseColor: 0x40e080ff }); // child: green
 
-const scene = createScene().root;
+const scene = createScene3D().root;
 
 // Transform-only parent: translated up-and-right. The child inherits this through world composition.
-const parent = createSceneNode();
+const parent = createNode3D();
 const parentLocal = createMatrix4();
 translateMatrix4(parentLocal, parentLocal, 1.3, 0.7, 0);
 setNodeLocalMatrix4(parent, parentLocal);

@@ -1,0 +1,99 @@
+import type { EasingFunction } from './EasingFunction';
+import type { Entity, Kind } from './Entity';
+import type { ImageResource } from './ImageResource';
+import type { ExternalImageResourceReference, ImageResourceReference } from './ImageResourceReference';
+import type { Material } from './Material';
+import type { ResourceLoader } from './ResourceLoader';
+import type { Signal } from './Signal';
+import type { Texture } from './Texture';
+
+export type ImageResourceFetch = (
+  ref: Readonly<ExternalImageResourceReference>,
+  signal: AbortSignal,
+) => Promise<ImageResource | null>;
+
+export type Scene3DMaterialTextureLister = (material: Readonly<Material>, out: Texture[]) => void;
+
+export interface Scene3DMaterialTextureRegistry extends Entity {
+  listers: Map<Kind, Scene3DMaterialTextureLister>;
+}
+
+export interface Scene3DResourceEvent {
+  ref: ImageResourceReference;
+  texture: Texture;
+}
+
+export interface Scene3DResourceSignals extends Entity {
+  onResourceFailed: Signal<(event: Readonly<Scene3DResourceEvent>) => void>;
+  onResourceResolved: Signal<(event: Readonly<Scene3DResourceEvent>) => void>;
+}
+
+// The public, caller-composable resolver atom. Queueing, settled-image retention, subscribers, and
+// optional signals are package-private runtime state: callers select the fetch and texture-discovery
+// seams, then advance/query the resolver through named functions rather than mutating its machinery.
+export interface Scene3DResourceResolver extends Entity {
+  fetch: ImageResourceFetch;
+  registry: Scene3DMaterialTextureRegistry;
+}
+
+export interface Scene3DResourceResolverOptions {
+  fetch?: ImageResourceFetch;
+  maxConcurrent?: number;
+  registry?: Scene3DMaterialTextureRegistry;
+}
+
+// One resource identity's private in-flight resolution. Several sampled Texture entities may share
+// one image resource while retaining independent sampler/color/UV state.
+export interface Scene3DResourceInFlight {
+  controller: AbortController;
+  promise: Promise<void>;
+  subscribers: Set<Texture>;
+}
+
+export interface Scene3DResourceResolverRuntime {
+  inFlight: Map<ImageResourceReference, Scene3DResourceInFlight>;
+  loader: ResourceLoader;
+  resolved: Map<ImageResourceReference, ImageResource>;
+  signals: Scene3DResourceSignals | null;
+}
+
+export const Scene3DResourceResolverRuntimeKey: unique symbol = Symbol('Scene3DResourceResolverRuntime');
+
+export type Scene3DResourceResolverWithRuntime = Scene3DResourceResolver & {
+  [Scene3DResourceResolverRuntimeKey]: Scene3DResourceResolverRuntime;
+};
+
+// One byte-progress tick for a source participating in asynchronous Scene3DDocument acquisition. The URL
+// identifies the main file or discovered dependency; totals are per source and may be zero when the
+// transport cannot determine Content-Length.
+export interface Scene3DDocumentLoadProgress {
+  loaded: number;
+  phase: 'download' | 'upload';
+  total: number;
+  url: string;
+}
+
+export interface Scene3DDocumentLoadOptions {
+  progress?: Signal<(progress: Readonly<Scene3DDocumentLoadProgress>) => void>;
+  signal?: AbortSignal;
+}
+
+export interface Scene3DResourceLoadProgress {
+  loaded: number;
+  total: number;
+}
+
+export interface LoadScene3DResourcesOptions extends ResolveScene3DResourcesOptions {
+  progress?: Signal<(progress: Readonly<Scene3DResourceLoadProgress>) => void>;
+}
+
+export interface ResolveScene3DResourcesOptions {
+  priority?: (texture: Readonly<Texture>, ref: Readonly<ImageResourceReference>) => number;
+  select?: (texture: Readonly<Texture>, ref: Readonly<ImageResourceReference>) => boolean;
+}
+
+export interface Scene3DResourceRevealOptions {
+  ease?: EasingFunction;
+  fadeSeconds?: number;
+  from?: number;
+}

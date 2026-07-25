@@ -8,8 +8,8 @@ import type {
   GlRenderState,
   Material,
   MeshGeometry,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
   Texture,
   GlMeshProgram,
 } from '@flighthq/types';
@@ -20,11 +20,11 @@ import {
   beginGlMeshDraw,
   compileGlProgram,
   drawGlMeshSubset,
-  ensureGlSceneProgram,
+  ensureGlScene3DProgram,
   setGlMeshCameraPosition,
   setGlMeshViewProjection,
 } from './glMeshProgram';
-import { getGlSceneRuntime } from './glSceneRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 
 // A compiled custom-shader program plus its resolved built-in uniform locations. The user's
 // custom uniform locations are resolved lazily (getUniformLocation on first use per name) and
@@ -43,23 +43,23 @@ export const customShaderGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
     material: Readonly<Material> | null,
-    _lights: Readonly<SceneLightBlock>,
+    _lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const custom = material as Readonly<CustomShaderMaterial> | null;
     if (custom === null || custom.shaderKey === '') {
-      getGlSceneRuntime(state).activeMeshProgram = null;
+      getGlScene3DRuntime(state).activeMeshProgram = null;
       return;
     }
 
     const source = getGlCustomMaterialShaderSource(state, custom.shaderKey);
     if (source === null) {
-      getGlSceneRuntime(state).activeMeshProgram = null;
+      getGlScene3DRuntime(state).activeMeshProgram = null;
       return;
     }
 
     const program = ensureGlCustomShaderProgram(state, custom.shaderKey, source);
-    getGlSceneRuntime(state).customShaderGuard?.(state, program.program, custom.shaderKey);
+    getGlScene3DRuntime(state).customShaderGuard?.(state, program.program, custom.shaderKey);
     beginGlMeshDraw(state, program, custom.doubleSided);
     setGlMeshViewProjection(state.gl, program.locViewProjection, camera);
     setGlMeshCameraPosition(state.gl, program.locCameraPosition, camera);
@@ -68,8 +68,8 @@ export const customShaderGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     uploadCustomShaderMaterialTextures(state, program.program, custom);
   },
 
-  draw(state: GlRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
-    const program = getGlSceneRuntime(state).activeMeshProgram;
+  draw(state: GlRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+    const program = getGlScene3DRuntime(state).activeMeshProgram;
     if (program === null) return;
     drawGlMeshSubset(state, program, proxy, geometry);
   },
@@ -85,7 +85,7 @@ export function getGlCustomMaterialShaderSource(
 }
 
 // Registers the built-in CustomShaderMaterial renderer for CustomShaderMaterialKind on this
-// state. Opt-in (no top-level side effect); call once per GlRenderState before drawScene so
+// state. Opt-in (no top-level side effect); call once per GlRenderState before drawScene3D so
 // meshes carrying CustomShaderMaterials draw.
 export function registerCustomShaderGlMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, CustomShaderMaterialKind, customShaderGlMeshMaterialRenderer);
@@ -97,8 +97,8 @@ export function registerCustomShaderGlMaterial(state: GlRenderState): void {
 // and must declare the four built-in uniforms with these exact types: `mat4 u_viewProjection`,
 // `mat4 u_model`, `mat3 u_normalMatrix` (NOT mat4 — the renderer uploads it with glUniformMatrix3fv,
 // so a mat4 declaration raises a silent GL_INVALID_OPERATION and the mesh draws nothing;
-// enableGlSceneCustomShaderGuards catches this), and `vec3 u_cameraPosition`. When the material's
-// alphaMode is 'blend', drawGlScene composites with glBlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA), so
+// enableGlScene3DCustomShaderGuards catches this), and `vec3 u_cameraPosition`. When the material's
+// alphaMode is 'blend', drawGlScene3D composites with glBlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA), so
 // the fragment scene2d must output straight (non-premultiplied) alpha. Last write wins for the source
 // lookup, but the compiled program is cached
 // by shaderKey, so re-registering a different source under the same key keeps running the
@@ -120,7 +120,7 @@ function ensureGlCustomShaderProgram(
   shaderKey: string,
   source: Readonly<GlCustomMaterialShaderSource>,
 ): GlCustomShaderProgram {
-  return ensureGlSceneProgram(state, `custom:${shaderKey}`, (gl) => compileGlCustomShaderProgram(gl, source));
+  return ensureGlScene3DProgram(state, `custom:${shaderKey}`, (gl) => compileGlCustomShaderProgram(gl, source));
 }
 
 function compileGlCustomShaderProgram(

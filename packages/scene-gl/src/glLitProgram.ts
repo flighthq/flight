@@ -1,4 +1,4 @@
-import type { GlLitProgram, GlRenderState, SceneLightBlock, GlMeshProgram } from '@flighthq/types';
+import type { GlLitProgram, GlRenderState, Scene3DLightBlock, GlMeshProgram } from '@flighthq/types';
 import {
   MAX_FORWARD_LIGHTS,
   SCENE_LIGHT_HEMISPHERE_OFFSET,
@@ -9,7 +9,7 @@ import {
   SCENE_LIGHT_SPOT_STRIDE,
 } from '@flighthq/types';
 
-import { getGlSceneRuntime } from './glSceneRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 // The texture unit the directional shadow map binds to — above the material texture units (a material
 // uses at most baseColor/normal/metallicRoughness/occlusion/emissive ⇒ units 0–4). The IBL set sits
 // above the shadow map: irradiance/prefiltered cubemaps + the BRDF LUT on units 9/10/11.
@@ -25,26 +25,26 @@ interface GlIblPlaceholders {
 
 const _iblPlaceholders = new WeakMap<GlRenderState, GlIblPlaceholders>();
 
-// The SceneLightBlock.version last uploaded into each program's light uniforms. Keyed by program
+// The Scene3DLightBlock.version last uploaded into each program's light uniforms. Keyed by program
 // because default uniforms are per-program state; freed with the program when it is GC'd.
 const _uploadedLightVersion = new WeakMap<Readonly<GlLitProgram>, number>();
-const _uploadedLightBlock = new WeakMap<Readonly<GlLitProgram>, Readonly<SceneLightBlock>>();
+const _uploadedLightBlock = new WeakMap<Readonly<GlLitProgram>, Readonly<Scene3DLightBlock>>();
 
 // Uploads the packed light block to a lit program's standard light uniforms, then binds the active
-// directional shadow (set by drawGlSceneShadowMap on the scene runtime) or disables shadowing. The
-// block layout (std140) mirrors SceneLightBlock.data exactly: directional { direction.xyz @0, _pad,
+// directional shadow (set by drawGlScene3DShadowMap on the scene runtime) or disables shadowing. The
+// block layout (std140) mirrors Scene3DLightBlock.data exactly: directional { direction.xyz @0, _pad,
 // radiance.rgb @4, _pad } then ambient { radiance.rgb @8, _pad }. Radiance is already linear and
 // premultiplied at pack time. The count uniforms (0 or 1) gate each term. Every lit family calls this
 // from bind() — it is the one place light + shadow data reach GL.
 export function bindGlMeshLightBlock(
   state: GlRenderState,
   program: Readonly<GlLitProgram>,
-  lights: Readonly<SceneLightBlock>,
+  lights: Readonly<Scene3DLightBlock>,
 ): void {
   const gl = state.gl;
 
   // The light uniforms are default (non-block) uniforms, which persist on the program object across
-  // useProgram switches and frames, so re-uploading an unchanged block is wasted work. packSceneLightBlock
+  // useProgram switches and frames, so re-uploading an unchanged block is wasted work. packScene3DLightBlock
   // only advances `version` on an actual change, so skip the upload when this program already holds the
   // current version. Tracked per program (not per state) because each program keeps its own uniform
   // values — a version cached on one program says nothing about another. Shadow and IBL binds below are
@@ -83,7 +83,7 @@ export function bindGlMeshLightBlock(
     _uploadedLightVersion.set(program, lights.version);
   }
 
-  const runtime = getGlSceneRuntime(state);
+  const runtime = getGlScene3DRuntime(state);
 
   const shadow = runtime.shadow;
   if (shadow !== null) {
@@ -214,7 +214,7 @@ uniform mat4 u_shadowMatrix;         // world -> shadow light-clip
 uniform float u_shadowEnabled;       // 0 or 1 — gates shadow sampling
 
 // Punctual (point/spot/hemisphere) forward-light arrays. Fixed MAX_FORWARD_LIGHTS-wide; each count
-// uniform bounds its loop. Layout matches SceneLightBlock.data (packSceneLightBlock) byte-for-byte:
+// uniform bounds its loop. Layout matches Scene3DLightBlock.data (packScene3DLightBlock) byte-for-byte:
 //   point[i]      = u_pointLights[i*2+0]={pos.xyz,range}, [i*2+1]={radiance.rgb,invSqrRange}
 //   spot[i]       = u_spotLights[i*4+0..1] as point, [i*4+2]={dir.xyz,_}, [i*4+3]={cosInner,cosOuter,_,_}
 //   hemisphere[i] = u_hemisphereLights[i*3+0]={sky.rgb,_}, [i*3+1]={ground.rgb,_}, [i*3+2]={up.xyz,_}

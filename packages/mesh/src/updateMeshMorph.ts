@@ -6,7 +6,7 @@ import { blendMeshGeometryMorph, captureMeshMorphBindPose } from './morphMeshGeo
 
 // Blends a morphed mesh into its geometry for the current weights — the explicit per-frame morph call,
 // sibling of updateMeshSkin. Run it after the weights are set (a Weights animation channel applied via
-// applyAnimationClipToScene, or manual mesh.morph.weights writes) and before rendering: it captures the
+// applyAnimationClipToScene3D, or manual mesh.morph.weights writes) and before rendering: it captures the
 // geometry's base pose once (lazily, onto the geometry runtime) and reuses it every frame, then blends
 // base + Σ wᵢ·targetᵢ into geometry.vertices and bumps the version so the GL backend re-uploads (the
 // CPU-blend-then-upload morph path). A mesh with no morph is a no-op, so calling it over a whole scene's

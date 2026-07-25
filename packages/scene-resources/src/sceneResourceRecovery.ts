@@ -1,15 +1,15 @@
 import type {
   ImageResourceReference,
   ImageResourceReferenceResolutionExplanation,
-  ResolveSceneResourcesOptions,
-  SceneNode,
-  SceneResourceResolver,
+  ResolveScene3DResourcesOptions,
+  Node3D,
+  Scene3DResourceResolver,
   Texture,
 } from '@flighthq/types';
 import { ResourceResolutionState } from '@flighthq/types';
 
-import { getSceneResourceTextures } from './getSceneResourceTextures';
-import { resolveSceneResources } from './resolveSceneResources';
+import { getScene3DResourceTextures } from './getScene3DResourceTextures';
+import { resolveScene3DResources } from './resolveScene3DResources';
 
 // Returns a detached plain-data explanation suitable for logs, tools, and serialization. It never
 // throws and exposes no resolver runtime or raw thrown value.
@@ -36,13 +36,13 @@ export function resetFailedImageResourceReference(ref: ImageResourceReference): 
 // Resets every selected failed identity once, then performs a normal resolver pass under the same
 // selection/priority policy. The normal pass remains authoritative for the working set, including its
 // documented cancellation behavior when visibility selection drops an existing subscriber.
-export function retryFailedSceneResources(
-  scene: Readonly<SceneNode>,
-  resolver: SceneResourceResolver,
-  options?: Readonly<ResolveSceneResourcesOptions>,
+export function retryFailedScene3DResources(
+  scene: Readonly<Node3D>,
+  resolver: Scene3DResourceResolver,
+  options?: Readonly<ResolveScene3DResourcesOptions>,
 ): number {
   const textures: Texture[] = [];
-  getSceneResourceTextures(scene, resolver.registry, textures);
+  getScene3DResourceTextures(scene, resolver.registry, textures);
   const reset = new Set<ImageResourceReference>();
   for (let i = 0; i < textures.length; i++) {
     const texture = textures[i];
@@ -51,6 +51,6 @@ export function retryFailedSceneResources(
     if (options?.select !== undefined && !options.select(texture, ref)) continue;
     if (resetFailedImageResourceReference(ref)) reset.add(ref);
   }
-  resolveSceneResources(scene, resolver, options);
+  resolveScene3DResources(scene, resolver, options);
   return reset.size;
 }

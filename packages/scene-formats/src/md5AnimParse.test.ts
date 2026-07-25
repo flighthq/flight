@@ -1,7 +1,7 @@
 import { sampleAnimationTrack } from '@flighthq/animation';
-import { createSceneNode } from '@flighthq/scene';
-import type { AnimationClip, ImportDiagnostic, SceneAnimationTarget, SceneNode } from '@flighthq/types';
-import { ImportDiagnosticSeverity, SceneAnimationPathRotation, SceneAnimationPathTranslation } from '@flighthq/types';
+import { createNode3D } from '@flighthq/scene';
+import type { AnimationClip, ImportDiagnostic, Scene3DAnimationTarget, Node3D } from '@flighthq/types';
+import { ImportDiagnosticSeverity, Scene3DAnimationPathRotation, Scene3DAnimationPathTranslation } from '@flighthq/types';
 
 import { parseMd5Anim } from './md5AnimParse';
 
@@ -97,10 +97,10 @@ const ANIMATED_ROTATION = [
   '}',
 ].join('\n');
 
-function makeJoints(count: number): SceneNode[] {
-  const nodes: SceneNode[] = [];
+function makeJoints(count: number): Node3D[] {
+  const nodes: Node3D[] = [];
   for (let i = 0; i < count; i++) {
-    nodes.push(createSceneNode(undefined, { name: `joint${i}` }));
+    nodes.push(createNode3D(undefined, { name: `joint${i}` }));
   }
   return nodes;
 }
@@ -119,9 +119,9 @@ describe('parseMd5Anim', () => {
     expect(clip!.channels).toHaveLength(2);
 
     const translationChannel = clip!.channels[0];
-    const target = translationChannel.targetRef as SceneAnimationTarget;
+    const target = translationChannel.targetRef as Scene3DAnimationTarget;
     expect(target.node).toBe(joints[0]);
-    expect(target.path).toBe(SceneAnimationPathTranslation);
+    expect(target.path).toBe(Scene3DAnimationPathTranslation);
 
     // Baseframe (5, 10, 15) in Z-up → (5, 15, -10) in Y-up.
     const out = [0, 0, 0];
@@ -131,14 +131,14 @@ describe('parseMd5Anim', () => {
     expect(out[2]).toBeCloseTo(-10);
   });
 
-  it('produces rotation channels targeting SceneAnimationPathRotation', () => {
+  it('produces rotation channels targeting Scene3DAnimationPathRotation', () => {
     const joints = makeJoints(1);
     const clip = parseMd5Anim(SINGLE_JOINT_STATIC, joints)!;
 
     const rotationChannel = clip.channels[1];
-    const target = rotationChannel.targetRef as SceneAnimationTarget;
+    const target = rotationChannel.targetRef as Scene3DAnimationTarget;
     expect(target.node).toBe(joints[0]);
-    expect(target.path).toBe(SceneAnimationPathRotation);
+    expect(target.path).toBe(Scene3DAnimationPathRotation);
   });
 
   it('animates translation across two frames', () => {
@@ -169,13 +169,13 @@ describe('parseMd5Anim', () => {
     // would bind the root channel to the child node; name binding must resolve each to its named node —
     // the fix for a caller that collects joints in a different order than MD5 (e.g. depth-first over a
     // nested skeleton, which reorders branches like finger chains).
-    const child = createSceneNode(undefined, { name: 'child' });
-    const root = createSceneNode(undefined, { name: 'root' });
+    const child = createNode3D(undefined, { name: 'child' });
+    const root = createNode3D(undefined, { name: 'root' });
     const clip = parseMd5Anim(TWO_JOINT_TWO_FRAME, [child, root])!;
 
     // Channels are [root-translation, root-rotation, child-translation, child-rotation] (hierarchy order).
-    expect((clip.channels[0].targetRef as SceneAnimationTarget).node).toBe(root);
-    expect((clip.channels[2].targetRef as SceneAnimationTarget).node).toBe(child);
+    expect((clip.channels[0].targetRef as Scene3DAnimationTarget).node).toBe(root);
+    expect((clip.channels[2].targetRef as Scene3DAnimationTarget).node).toBe(child);
   });
 
   it('uses baseframe values for unanimated joints', () => {

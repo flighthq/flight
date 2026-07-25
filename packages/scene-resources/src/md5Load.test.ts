@@ -1,16 +1,16 @@
 import type * as NetModule from '@flighthq/net';
-import type * as SceneFormatsModule from '@flighthq/scene-formats';
-import type { NetResponse, SceneDocument } from '@flighthq/types';
+import type * as Scene3DFormatsModule from '@flighthq/scene-formats';
+import type { NetResponse, Scene3DDocument } from '@flighthq/types';
 import type { Mock } from 'vitest';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import type * as LoadMd5Module from './md5Load';
 
-let loadSceneDocumentFromMd5MeshUrl: typeof LoadMd5Module.loadSceneDocumentFromMd5MeshUrl;
-let parseMd5Mesh: Mock<typeof SceneFormatsModule.parseMd5Mesh>;
+let loadScene3DDocumentFromMd5MeshUrl: typeof LoadMd5Module.loadScene3DDocumentFromMd5MeshUrl;
+let parseMd5Mesh: Mock<typeof Scene3DFormatsModule.parseMd5Mesh>;
 let sendNetRequest: Mock<typeof NetModule.sendNetRequest>;
 
-function emptyDocument(): SceneDocument {
+function emptyDocument(): Scene3DDocument {
   return {
     animations: [],
     cameras: [],
@@ -31,11 +31,11 @@ function okResponse(body: string): NetResponse {
 
 beforeAll(async () => {
   vi.resetModules();
-  parseMd5Mesh = vi.fn<typeof SceneFormatsModule.parseMd5Mesh>();
+  parseMd5Mesh = vi.fn<typeof Scene3DFormatsModule.parseMd5Mesh>();
   sendNetRequest = vi.fn<typeof NetModule.sendNetRequest>();
   vi.doMock('@flighthq/net', () => ({ sendNetRequest }));
   vi.doMock('@flighthq/scene-formats', () => ({ parseMd5Mesh }));
-  ({ loadSceneDocumentFromMd5MeshUrl } = await import('./md5Load'));
+  ({ loadScene3DDocumentFromMd5MeshUrl } = await import('./md5Load'));
 });
 
 afterAll(() => {
@@ -49,13 +49,13 @@ afterEach(() => {
   sendNetRequest.mockReset();
 });
 
-describe('loadSceneDocumentFromMd5MeshUrl', () => {
+describe('loadScene3DDocumentFromMd5MeshUrl', () => {
   it('fetches text and returns the parsed CPU document without resolving resources', async () => {
     const document = emptyDocument();
     parseMd5Mesh.mockReturnValue(document);
     sendNetRequest.mockResolvedValue(okResponse('MD5Version 10'));
 
-    const loaded = await loadSceneDocumentFromMd5MeshUrl('model.md5mesh');
+    const loaded = await loadScene3DDocumentFromMd5MeshUrl('model.md5mesh');
 
     expect(parseMd5Mesh).toHaveBeenCalledWith('MD5Version 10');
     expect(loaded).toBe(document);

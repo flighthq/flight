@@ -6,8 +6,8 @@ import type {
   GlRenderState,
   Material,
   MeshGeometry,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
   SubsurfacePbrMaterial,
 } from '@flighthq/types';
 import { SubsurfacePbrMaterialKind } from '@flighthq/types';
@@ -17,7 +17,7 @@ import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshCameraPosition, setGlMeshViewProjection } from './glMeshProgram';
 import { ensureGlPbrProgram } from './glPbrProgramCache';
 import { bindGlPbrStandardBlock, buildGlPbrStandardDefineKey } from './glPbrStandardBlock';
-import { getGlSceneRuntime } from './glSceneRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 
 // The built-in Subsurface forward-lit mesh-material renderer (Flight extension; flagged non-interop
 // — there is no glTF equivalent). It approximates subsurface scattering with a wrapped-diffuse term:
@@ -32,7 +32,7 @@ export const subsurfacePbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
     material: Readonly<Material> | null,
-    lights: Readonly<SceneLightBlock>,
+    lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const gl = state.gl;
@@ -61,15 +61,15 @@ export const subsurfacePbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     }
   },
 
-  draw(state: GlRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
-    const program = getGlSceneRuntime(state).activeMeshProgram;
+  draw(state: GlRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+    const program = getGlScene3DRuntime(state).activeMeshProgram;
     if (program === null) return;
     drawGlMeshSubset(state, program, proxy, geometry);
   },
 };
 
 // Installs the built-in Subsurface renderer for SubsurfacePbrMaterialKind on this state. Opt-in (no
-// top-level side effect): drawScene only draws Subsurface subsets once this is called.
+// top-level side effect): drawScene3D only draws Subsurface subsets once this is called.
 export function registerSubsurfacePbrGlMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, SubsurfacePbrMaterialKind, subsurfacePbrGlMeshMaterialRenderer);
 }

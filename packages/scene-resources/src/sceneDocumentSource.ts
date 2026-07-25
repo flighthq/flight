@@ -1,9 +1,9 @@
 import { sendNetRequest } from '@flighthq/net';
 import { connectSignal, createSignal, emitSignal } from '@flighthq/signals';
-import type { NetProgress, NetRequestOptions, SceneDocument, SceneDocumentLoadOptions } from '@flighthq/types';
+import type { NetProgress, NetRequestOptions, Scene3DDocument, Scene3DDocumentLoadOptions } from '@flighthq/types';
 import { ImageResourceReferenceKind } from '@flighthq/types';
 
-export function getSceneDocumentBasePathFromUrl(url: string): string | null {
+export function getScene3DDocumentBasePathFromUrl(url: string): string | null {
   const query = url.search(/[?#]/);
   const source = query >= 0 ? url.slice(0, query) : url;
   const slash = source.lastIndexOf('/');
@@ -14,13 +14,13 @@ export function getSceneDocumentBasePathFromUrl(url: string): string | null {
 // 'arraybuffer'), for the binary document loaders (glTF `.glb`, AWD, MD2, 3DS). Returns the bytes on a 2xx
 // response, or null on any expected transport/HTTP failure. No resource resolution or renderer/GPU work
 // happens here; callers compose parsing and later resource acquisition explicitly.
-export async function loadSceneDocumentBytesFromUrl(
+export async function loadScene3DDocumentBytesFromUrl(
   url: string,
-  options?: Readonly<SceneDocumentLoadOptions>,
+  options?: Readonly<Scene3DDocumentLoadOptions>,
 ): Promise<Uint8Array | null> {
   const response = await sendNetRequest(
     { method: 'GET', responseType: 'arraybuffer', url },
-    createSceneDocumentNetRequestOptions(url, options),
+    createScene3DDocumentNetRequestOptions(url, options),
   );
   if (!response.ok || !(response.body instanceof ArrayBuffer)) return null;
   return new Uint8Array(response.body);
@@ -29,13 +29,13 @@ export async function loadSceneDocumentBytesFromUrl(
 // Fetches a scene file's text from a URL through the active @flighthq/net backend (responseType 'text'),
 // for the text document loaders (OBJ, MD5). Returns the text on a 2xx response, or null on any expected
 // transport/HTTP failure. Fetches only source text — no parsing, resource realization, or rendering work.
-export async function loadSceneDocumentTextFromUrl(
+export async function loadScene3DDocumentTextFromUrl(
   url: string,
-  options?: Readonly<SceneDocumentLoadOptions>,
+  options?: Readonly<Scene3DDocumentLoadOptions>,
 ): Promise<string | null> {
   const response = await sendNetRequest(
     { method: 'GET', responseType: 'text', url },
-    createSceneDocumentNetRequestOptions(url, options),
+    createScene3DDocumentNetRequestOptions(url, options),
   );
   if (!response.ok || typeof response.body !== 'string') return null;
   return response.body;
@@ -43,8 +43,8 @@ export async function loadSceneDocumentTextFromUrl(
 
 // Carries the loaded model's directory onto relative external image references emitted by formats whose
 // parser consumed only in-hand bytes/text. Existing non-null base paths are authoritative and untouched.
-export function setSceneDocumentResourceBasePathFromUrl(document: SceneDocument, url: string): void {
-  const basePath = getSceneDocumentBasePathFromUrl(url);
+export function setScene3DDocumentResourceBasePathFromUrl(document: Scene3DDocument, url: string): void {
+  const basePath = getScene3DDocumentBasePathFromUrl(url);
   if (basePath === null) return;
   for (const resource of document.resources) {
     if (resource.kind === ImageResourceReferenceKind.External && resource.basePath === null) {
@@ -53,9 +53,9 @@ export function setSceneDocumentResourceBasePathFromUrl(document: SceneDocument,
   }
 }
 
-function createSceneDocumentNetRequestOptions(
+function createScene3DDocumentNetRequestOptions(
   url: string,
-  options?: Readonly<SceneDocumentLoadOptions>,
+  options?: Readonly<Scene3DDocumentLoadOptions>,
 ): NetRequestOptions | undefined {
   if (options === undefined) return undefined;
   const out: NetRequestOptions = { signal: options.signal };

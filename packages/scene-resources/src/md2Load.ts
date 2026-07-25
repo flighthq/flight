@@ -1,19 +1,19 @@
 import { parseMd2 } from '@flighthq/scene-formats';
-import type { SceneDocument, SceneDocumentLoadOptions } from '@flighthq/types';
+import type { Scene3DDocument, Scene3DDocumentLoadOptions } from '@flighthq/types';
 
-import { loadSceneDocumentBytesFromUrl, setSceneDocumentResourceBasePathFromUrl } from './sceneDocumentSource';
+import { loadScene3DDocumentBytesFromUrl, setScene3DDocumentResourceBasePathFromUrl } from './sceneDocumentSource';
 
-// Fetches an id Software MD2 (Quake 2) model from a URL and parses it into a format-neutral SceneDocument
+// Fetches an id Software MD2 (Quake 2) model from a URL and parses it into a format-neutral Scene3DDocument
 // (a morph-animated mesh). Fetches only the FILE — the document's skin texture ref stays unresolved;
-// assemble with createSceneFromDocument and resolve on your own schedule. Returns null on transport failure;
+// assemble with createScene3DFromDocument and resolve on your own schedule. Returns null on transport failure;
 // it never creates a renderer or GPU resource.
-export async function loadSceneDocumentFromMd2Url(
+export async function loadScene3DDocumentFromMd2Url(
   url: string,
-  options?: Readonly<SceneDocumentLoadOptions>,
-): Promise<SceneDocument | null> {
-  const bytes = await loadSceneDocumentBytesFromUrl(url, options);
+  options?: Readonly<Scene3DDocumentLoadOptions>,
+): Promise<Scene3DDocument | null> {
+  const bytes = await loadScene3DDocumentBytesFromUrl(url, options);
   if (bytes === null) return null;
   const document = parseMd2(bytes);
-  setSceneDocumentResourceBasePathFromUrl(document, url);
+  setScene3DDocumentResourceBasePathFromUrl(document, url);
   return document;
 }

@@ -1,6 +1,6 @@
-import { createScene } from '@flighthq/scene';
-import { drawWgpuScene } from '@flighthq/scene-wgpu';
-import type { Camera3D, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import { createScene3D } from '@flighthq/scene';
+import { drawWgpuScene3D } from '@flighthq/scene-wgpu';
+import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
@@ -18,7 +18,7 @@ import {
   endWgpuRenderEffectPipeline,
   getSurfacePixelLuminance,
   normalizeVector3,
-  prepareSceneRender,
+  prepareScene3DRender,
   registerLambertWgpuMaterial,
   renderWgpuBackground,
   setCamera3DViewMatrix4FromLookAt,
@@ -26,7 +26,7 @@ import {
 } from '@flighthq/sdk';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-// drawWgpuScene collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
+// drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
 // the Wgpu one directly from its package.
 
 // Wgpu parity column for the same forward-lit sphere as render.webgl.ts. Wgpu state init is async.
@@ -51,11 +51,11 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
-  prepareSceneRender(state, scene, camera, lights);
-  drawWgpuScene(state, scene, camera, lights);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawWgpuScene3D(state, scene, camera, lights);
   endWgpuRenderEffectPipeline(state, pipeline, []);
   submitWgpuRenderPass(state);
 }
@@ -77,9 +77,9 @@ registerWgpuFunctionalTarget(state, scale);
 // per-backend implementation lives in render.webgl.ts / render.webgpu.ts. It imports render from
 // ./render (the local TS stub); the functional vite harness routes ./render to the active backend's
 // render.<renderer>.ts at runtime.
-// createScene exists on both @flighthq/node and @flighthq/scene, so it collides in the @flighthq/sdk
+// createScene3D exists on both @flighthq/node and @flighthq/scene, so it collides in the @flighthq/sdk
 // barrel (conflicting star exports) and is unavailable there — import the 3D scene one directly. The
-// Mesh added to it is a @flighthq/scene SceneNode, so this is the type-correct source too.
+// Mesh added to it is a @flighthq/scene Node3D, so this is the type-correct source too.
 
 const logicalWidth = width / scale;
 const logicalHeight = height / scale;
@@ -94,12 +94,12 @@ const material = createLambertMaterial({
   diffuse: 0x808080ff,
 });
 
-const scene = createScene().root;
+const scene = createScene3D().root;
 const mesh = createMesh(geometry, [material]);
 addNodeChild(scene, mesh);
 
 // Perspective camera dead-on the sphere from +z, looking at the origin. The aspect must match the
-// target so the sphere stays circular (prepareSceneRender reads aspect off the projection).
+// target so the sphere stays circular (prepareScene3DRender reads aspect off the projection).
 const camera = createCamera3D({
   far: 100,
   near: 0.1,

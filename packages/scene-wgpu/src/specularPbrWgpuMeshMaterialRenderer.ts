@@ -5,8 +5,8 @@ import type {
   Camera3D,
   Material,
   MeshGeometry,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
   SpecularPbrMaterial,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
@@ -39,7 +39,7 @@ export const specularPbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
   bind(
     state: WgpuRenderState,
     material: Readonly<Material> | null,
-    lights: Readonly<SceneLightBlock>,
+    lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const stateRuntime = getWgpuRenderStateRuntime(state);
@@ -77,13 +77,13 @@ export const specularPbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     pass.setBindGroup(2, binding.bindGroup);
   },
 
-  draw(state: WgpuRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+  draw(state: WgpuRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
     drawWgpuMeshSubset(state, proxy, geometry);
   },
 };
 
 // Installs the built-in Specular renderer for SpecularPbrMaterialKind on this state. Opt-in (no
-// top-level side effect): drawScene only draws Specular subsets once this is called.
+// top-level side effect): drawScene3D only draws Specular subsets once this is called.
 export function registerSpecularPbrWgpuMaterial(state: WgpuRenderState): void {
   registerWgpuMeshMaterialRenderer(state, SpecularPbrMaterialKind, specularPbrWgpuMeshMaterialRenderer);
 }

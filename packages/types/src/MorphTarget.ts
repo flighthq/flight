@@ -16,7 +16,7 @@ export interface MorphTarget {
 // A mesh's morph-target set plus its live per-target weight array — the `morph` deformer's data, held
 // as the nullable Mesh.morph field (null/absent = no morph, the mesh draws by its base geometry). Each
 // `weights[i]` scales `targets[i]`; the two arrays are index-aligned and the same length. A `Weights`
-// animation channel writes into `weights` (see applyAnimationClipToScene); the morph deformer reads
+// animation channel writes into `weights` (see applyAnimationClipToScene3D); the morph deformer reads
 // base + Σ weights[i]·targets[i] each frame. `weights` is mutable live state (the animation sink and
 // authoring write it); `targets` is immutable delta data captured at build/import time.
 export interface MeshMorph {

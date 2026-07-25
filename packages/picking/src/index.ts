@@ -1,2 +1,2 @@
-export * from './pickScene';
+export * from './pickScene3D';
 export * from './sceneHitAttributes';

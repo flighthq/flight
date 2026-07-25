@@ -3,8 +3,8 @@ import {
   rotateOrbitCameraController,
   updateOrbitCameraController,
 } from '@flighthq/camera-controls';
-import { createSceneNode } from '@flighthq/scene';
-import type { BlinnPhongMaterial, Camera3D, SceneLightsLike, Surface, Texture } from '@flighthq/sdk';
+import { createNode3D } from '@flighthq/scene';
+import type { BlinnPhongMaterial, Camera3D, Scene3DLightsLike, Surface, Texture } from '@flighthq/sdk';
 import {
   addNodeChild,
   createAmbientLight,
@@ -25,7 +25,7 @@ import {
   createVector3,
   invalidateNodeLocalTransform,
   normalizeVector3,
-  SceneNodeKind,
+  Node3DKind,
   setQuaternionFromEuler,
 } from '@flighthq/sdk';
 
@@ -132,7 +132,7 @@ const tileMaps = createMaterialMaps('tile', 3);
 const stripeMaps = createMaterialMaps('stripe', 1);
 const weaveMaps = createMaterialMaps('weave', 4);
 
-const scene = createSceneNode(SceneNodeKind);
+const scene = createNode3D(Node3DKind);
 
 const floor = createMesh(createPlaneMeshGeometry(10, 8, 8, 8), [createMappedMaterial(tileMaps, 42)]);
 floor.position.y = -1.35;
@@ -176,7 +176,7 @@ const cameraController = createOrbitCameraController({
 
 const directionalDirection = createVector3(-0.8, -1, -0.35);
 normalizeVector3(directionalDirection, directionalDirection);
-const lights: SceneLightsLike = {
+const lights: Scene3DLightsLike = {
   ambient: createAmbientLight({ color: 0x506080ff, intensity: 0.16 }),
   directional: createDirectionalLight({
     color: 0xffe4c2ff,

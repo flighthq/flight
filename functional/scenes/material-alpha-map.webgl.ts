@@ -1,6 +1,6 @@
-import { createScene } from '@flighthq/scene';
-import { drawGlScene } from '@flighthq/scene-gl';
-import type { Camera3D, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import { createScene3D } from '@flighthq/scene';
+import { drawGlScene3D } from '@flighthq/scene-gl';
+import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -21,13 +21,13 @@ import {
   getSurfacePixelChannel,
   ImageChannel,
   normalizeVector3,
-  prepareSceneRender,
+  prepareScene3DRender,
   registerBlinnPhongGlMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
 
-// drawGlScene exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel —
+// drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel —
 // import the Gl one directly from its package.
 
 // Gl column. The BlinnPhong renderer writes linear HDR into the effect pipeline's rgba16f + depth
@@ -53,15 +53,15 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
-  prepareSceneRender(state, scene, camera, lights);
-  drawGlScene(state, scene, camera, lights);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawGlScene3D(state, scene, camera, lights);
   endGlRenderEffectPipeline(state, pipeline, []);
 }
 
@@ -92,7 +92,7 @@ const material = createBlinnPhongMaterial({
   shininess: 16,
 });
 
-const scene = createScene().root;
+const scene = createScene3D().root;
 addNodeChild(scene, createMesh(geometry, [material]));
 
 // Perspective camera dead-on the quad from +z, looking at the origin.

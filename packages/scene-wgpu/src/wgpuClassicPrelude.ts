@@ -10,14 +10,14 @@ import type {
 import {
   createWgpuMeshPipeline,
   ensureWgpuPerMapMaterialBinding,
-  ensureWgpuScenePipeline,
+  ensureWgpuScene3DPipeline,
   ensureWgpuShadowSampleLayout,
   getWgpuMeshPreludeWgsl,
   getWgpuMaterialSampler,
   resolveWgpuMaterialTextureView,
   stashWgpuUvTransform,
 } from './wgpuMeshPipeline';
-import { getWgpuSkinningAdapter } from './wgpuSceneRuntime';
+import { getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
 // Ensures (and caches per material reference) the classic Material bind group — a uniform buffer + the
 // shared sampler + the placeholder diffuse/specular/normal textures — and rewrites its uniform with
 // this surface's linear diffuse + specular colors, shininess, and alpha cutoff. Mirrors scene-gl's
@@ -116,7 +116,7 @@ export function compileWgpuClassicPipeline(
   });
   // The group(3) shadow-sample layout opts this pipeline into directional shadow reception: the pipeline
   // layout gains [Frame, Draw, Material, Shadow] and beginWgpuMeshDraw binds the shared shadow group each
-  // draw (the real depth map when drawWgpuSceneShadowMap ran this frame, else a gated-off 1x1 dummy).
+  // draw (the real depth map when drawWgpuScene3DShadowMap ran this frame, else a gated-off 1x1 dummy).
   return createWgpuMeshPipeline(state, {
     blended,
     doubleSided: key.doubleSided,
@@ -136,7 +136,7 @@ export function ensureWgpuClassicPipeline(
   key: Readonly<WgpuClassicDefineKey>,
   format: GPUTextureFormat,
 ): WgpuClassicPipeline {
-  return ensureWgpuScenePipeline(state, `classic:${format}|${buildWgpuClassicDefineKey(key)}`, (blended, skinned) =>
+  return ensureWgpuScene3DPipeline(state, `classic:${format}|${buildWgpuClassicDefineKey(key)}`, (blended, skinned) =>
     compileWgpuClassicPipeline(state, key, format, blended, skinned),
   );
 }
@@ -244,7 +244,7 @@ fn sampleDirectionalShadow(worldPos : vec3f) -> f32 {
 }
 
 // Smooth finite-range window over inverse-square falloff. A non-positive inverse range means
-// unlimited range, matching packSceneLightBlock and the GL classic/PBR preludes.
+// unlimited range, matching packScene3DLightBlock and the GL classic/PBR preludes.
 fn rangeWindow(dist2 : f32, invSqrRange : f32) -> f32 {
   if (invSqrRange <= 0.0) {
     return 1.0;

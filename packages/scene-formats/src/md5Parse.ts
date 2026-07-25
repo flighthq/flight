@@ -13,26 +13,26 @@ import {
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
 import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, computeMeshGeometryNormals, createMeshGeometry } from '@flighthq/mesh';
-import { createSceneFromDocument } from '@flighthq/scene';
-import type { Scene } from '@flighthq/types';
+import { createScene3DFromDocument } from '@flighthq/scene';
+import type { Scene3D } from '@flighthq/types';
 import type {
   ImportDiagnostic,
   Material,
   MaterialLike,
   Matrix4,
-  SceneDocument,
-  SceneDocumentMesh,
-  SceneDocumentSkin,
+  Scene3DDocument,
+  Scene3DDocumentMesh,
+  Scene3DDocumentSkin,
   Md5Joint,
   Md5Mesh,
   Md5Vertex,
   Md5Weight,
   SkinInfluence,
 } from '@flighthq/types';
-import { ImportDiagnosticSeverity, MeshKind, SceneNodeKind } from '@flighthq/types';
+import { ImportDiagnosticSeverity, MeshKind, Node3DKind } from '@flighthq/types';
 
 import { parseMd5Anim } from './md5AnimParse';
-import { findSceneSkeletonJoints } from './sceneSkeleton';
+import { findScene3DSkeletonJoints } from './sceneSkeleton';
 import {
   convertPositionsZUpToYUp,
   convertQuaternionsZUpToYUp,
@@ -52,25 +52,25 @@ interface Md5WeightInfluence extends SkinInfluence {
   mz: number;
 }
 
-// Parses an id Tech 4 MD5 mesh file (.md5mesh) into a Scene. Convenience over
-// `createSceneFromDocument(parseMd5Mesh(source, diagnostics))`. See parseMd5Mesh for the import model.
-export function createSceneFromMd5Mesh(source: string, diagnostics?: ImportDiagnostic[]): Scene {
-  return createSceneFromDocument(parseMd5Mesh(source, diagnostics));
+// Parses an id Tech 4 MD5 mesh file (.md5mesh) into a Scene3D. Convenience over
+// `createScene3DFromDocument(parseMd5Mesh(source, diagnostics))`. See parseMd5Mesh for the import model.
+export function createScene3DFromMd5Mesh(source: string, diagnostics?: ImportDiagnostic[]): Scene3D {
+  return createScene3DFromDocument(parseMd5Mesh(source, diagnostics));
 }
 
-// One-call MD5 import: builds the Scene from the `.md5mesh` source and, when a `.md5anim` source is
+// One-call MD5 import: builds the Scene3D from the `.md5mesh` source and, when a `.md5anim` source is
 // given, binds its skeletal animation to that mesh's skeleton and stores it in `scene.animations`. MD5
 // splits mesh and animation across two files that must be composed against the same skeleton — the mesh
 // supplies the joint nodes the animation's channels bind to — so this is the composition callers would
-// otherwise hand-write (createSceneFromMd5Mesh, then findSceneSkeletonJoints, then parseMd5Anim). The
+// otherwise hand-write (createScene3DFromMd5Mesh, then findScene3DSkeletonJoints, then parseMd5Anim). The
 // `.md5anim` carries no name of its own, so the clip is keyed 'default'; a caller loading several
 // animations against one mesh uses parseMd5Anim directly and keys each as it likes. Warns (and skips the
 // animation) when `animSource` is given but the mesh carries no skeleton to bind it to.
-export function importMd5Mesh(meshSource: string, animSource?: string | null, diagnostics?: ImportDiagnostic[]): Scene {
-  const scene = createSceneFromMd5Mesh(meshSource, diagnostics);
+export function importMd5Mesh(meshSource: string, animSource?: string | null, diagnostics?: ImportDiagnostic[]): Scene3D {
+  const scene = createScene3DFromMd5Mesh(meshSource, diagnostics);
   if (animSource == null) return scene;
 
-  const joints = findSceneSkeletonJoints(scene.root);
+  const joints = findScene3DSkeletonJoints(scene.root);
   if (joints === null) {
     // The mesh carried no skeleton, so a recognized-but-unbindable animation is skipped (the mesh is fine).
     reportImportDiagnostic(
@@ -87,7 +87,7 @@ export function importMd5Mesh(meshSource: string, animSource?: string | null, di
   return scene;
 }
 
-// Parses an id Tech 4 MD5 mesh file (.md5mesh) into a format-neutral SceneDocument. The ASCII
+// Parses an id Tech 4 MD5 mesh file (.md5mesh) into a format-neutral Scene3DDocument. The ASCII
 // line-oriented format contains a skeleton (joints) and one or more mesh sections. Each mesh section
 // becomes one document Mesh node (skinned layout, joints0/weights0), and the joints become a "skeleton"
 // group + joint node subtree in the document `nodes` table plus one entry in `skins` (joints by node
@@ -107,10 +107,10 @@ export function importMd5Mesh(meshSource: string, animSource?: string | null, di
 // MD5 splits mesh and animation across two files, so the document's `animations` table is empty. Use the
 // `importMd5Mesh(meshSource, animSource?)` composer to bind a paired `.md5anim` in one call, or compose
 // onto the assembled scene directly:
-// `scene.animations['walk'] = parseMd5Anim(animSource, findSceneSkeletonJoints(scene.root)!)`.
+// `scene.animations['walk'] = parseMd5Anim(animSource, findScene3DSkeletonJoints(scene.root)!)`.
 //
 // Malformed lines record a diagnostic and are skipped; the function never throws on bad input.
-export function parseMd5Mesh(source: string, diagnostics?: ImportDiagnostic[]): SceneDocument {
+export function parseMd5Mesh(source: string, diagnostics?: ImportDiagnostic[]): Scene3DDocument {
   const document = emptyMd5Document();
 
   // Repeated malformed lines/indices are tallied here and flushed as ONE crumb per (kind, discriminator)
@@ -320,7 +320,7 @@ export function parseMd5Mesh(source: string, diagnostics?: ImportDiagnostic[]): 
         meshMaterials.push(document.materials.length);
         document.materials.push(material as unknown as MaterialLike);
       }
-      const documentMesh: SceneDocumentMesh = { geometry, materials: meshMaterials };
+      const documentMesh: Scene3DDocumentMesh = { geometry, materials: meshMaterials };
       if (skinIndex !== undefined) documentMesh.skin = skinIndex;
       const meshIndex = document.meshes.length;
       document.meshes.push(documentMesh);
@@ -361,18 +361,18 @@ export function parseMd5Mesh(source: string, diagnostics?: ImportDiagnostic[]): 
   return document;
 }
 
-// Emits an MD5 joint list into a SceneDocument as a "skeleton" group node + one joint node per MD5 joint
-// (with its parent-RELATIVE local transform), and returns the SceneDocumentSkin whose joints are those node
+// Emits an MD5 joint list into a Scene3DDocument as a "skeleton" group node + one joint node per MD5 joint
+// (with its parent-RELATIVE local transform), and returns the Scene3DDocumentSkin whose joints are those node
 // indices and whose inverse-bind is derived from the ABSOLUTE bind world. Appends the nodes to
 // `document.nodes` and wires the skeleton-group node as a scene root plus each joint under its parent joint
 // (roots under the group) via `children` index lists.
 function buildMd5SkeletonDocument(
   joints: readonly Md5Joint[],
-  document: SceneDocument,
+  document: Scene3DDocument,
   md5Drops: Map<string, Md5DropTally> | null,
-): SceneDocumentSkin {
+): Scene3DDocumentSkin {
   const skeletonRootIndex = document.nodes.length;
-  document.nodes.push({ children: [], kind: SceneNodeKind, name: 'skeleton', transform: createTransform3D() });
+  document.nodes.push({ children: [], kind: Node3DKind, name: 'skeleton', transform: createTransform3D() });
   document.scenes[0].rootNodes.push(skeletonRootIndex);
 
   // Convert joint positions and orientations from Z-up to Y-up.
@@ -388,10 +388,10 @@ function buildMd5SkeletonDocument(
   const jointNodeIndices: number[] = [];
   for (let j = 0; j < joints.length; j++) {
     jointNodeIndices.push(document.nodes.length);
-    document.nodes.push({ children: [], kind: SceneNodeKind, name: joints[j].name, transform: createTransform3D() });
+    document.nodes.push({ children: [], kind: Node3DKind, name: joints[j].name, transform: createTransform3D() });
   }
 
-  // The .md5mesh joints are ABSOLUTE (object-space) transforms, but the SceneNode hierarchy composes parent
+  // The .md5mesh joints are ABSOLUTE (object-space) transforms, but the Node3D hierarchy composes parent
   // × child, so each joint's LOCAL transform must be its transform relative to its parent: localQuat =
   // parentAbsQuat⁻¹ · absQuat, localPos = parentAbsQuat⁻¹ · (absPos − parentAbsPos). This is the crux MD5
   // skinning gets wrong two ways: setting the absolute transform directly as the local (double-accumulates →
@@ -490,8 +490,8 @@ function buildMd5SkeletonDocument(
   return { inverseBind, joints: jointNodeIndices };
 }
 
-// The empty SceneDocument returned before assembly begins — every table present.
-function emptyMd5Document(): SceneDocument {
+// The empty Scene3DDocument returned before assembly begins — every table present.
+function emptyMd5Document(): Scene3DDocument {
   return {
     animations: [],
     cameras: [],

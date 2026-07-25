@@ -1,6 +1,6 @@
-﻿iimport { setMatrix } from '@flighthq/geometry';
+﻿import { setMatrix } from '@flighthq/geometry';
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
-mport { createDisplayObject } from '@flighthq/scene2d';
+import { createDisplayObject } from '@flighthq/scene2d';
 import { BlendMode } from '@flighthq/types';
 
 import { enableDomCssFilterSupport, setDomCssFilter } from './domCSSFilterBinding';

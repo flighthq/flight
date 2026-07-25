@@ -2,18 +2,18 @@ import { createCamera3D } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createDepthMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
-import type { Camera3D, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
+import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types';
 import { DepthMaterialKind } from '@flighthq/types';
 
 import { depthGlMeshMaterialRenderer, registerDepthGlMaterial } from './depthGlMeshMaterialRenderer';
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { makeGlSceneState } from './glSceneTestHelper';
+import { makeGlScene3DState } from './glScene3DTestHelper';
 
 function makeCamera(): Camera3D {
   return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
 }
 
-const NO_LIGHTS: SceneLightBlock = {
+const NO_LIGHTS: Scene3DLightBlock = {
   ambientCount: 0,
   data: new Float32Array(12),
   directionalCount: 0,
@@ -23,7 +23,7 @@ const NO_LIGHTS: SceneLightBlock = {
   version: 1,
 };
 
-function makeProxy(): SceneRenderProxy {
+function makeProxy(): Scene3DRenderProxy {
   const geometry = createBoxMeshGeometry();
   return {
     material: createDepthMaterial(),
@@ -35,7 +35,7 @@ function makeProxy(): SceneRenderProxy {
 
 describe('depthGlMeshMaterialRenderer', () => {
   it('bind selects a program, sets depth/cull, view-projection, and the near/far range', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     depthGlMeshMaterialRenderer.bind(state, createDepthMaterial(), NO_LIGHTS, makeCamera());
     expect(gl.calls.some((c) => c.name === 'useProgram')).toBe(true);
     expect(gl.calls.some((c) => c.name === 'enable' && c.args[0] === gl.DEPTH_TEST)).toBe(true);
@@ -44,7 +44,7 @@ describe('depthGlMeshMaterialRenderer', () => {
   });
 
   it('draw issues an indexed draw over the subset after bind', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     const proxy = makeProxy();
     depthGlMeshMaterialRenderer.bind(state, proxy.material, NO_LIGHTS, makeCamera());
     depthGlMeshMaterialRenderer.draw(state, proxy, createBoxMeshGeometry());
@@ -54,7 +54,7 @@ describe('depthGlMeshMaterialRenderer', () => {
   });
 
   it('draw is a no-op when bind has not selected a program', () => {
-    const { state, gl } = makeGlSceneState();
+    const { state, gl } = makeGlScene3DState();
     depthGlMeshMaterialRenderer.draw(state, makeProxy(), createBoxMeshGeometry());
     expect(gl.calls.some((c) => c.name === 'drawElements')).toBe(false);
   });
@@ -62,7 +62,7 @@ describe('depthGlMeshMaterialRenderer', () => {
 
 describe('registerDepthGlMaterial', () => {
   it('installs the renderer for DepthMaterialKind', () => {
-    const { state } = makeGlSceneState();
+    const { state } = makeGlScene3DState();
     registerDepthGlMaterial(state);
     expect(getGlMeshMaterialRenderer(state, DepthMaterialKind)).toBe(depthGlMeshMaterialRenderer);
   });
