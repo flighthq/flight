@@ -32,6 +32,10 @@ import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 export { WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY, WGPU_CUSTOM_SHADER_USER_VEC4_CAPACITY } from './wgpuCustomMaterialAbi';
 
 interface CustomMaterialBinding {
+  textureBindGroup: GPUBindGroup | null;
+  textureKeys: string[];
+  textureSamplers: GPUSampler[];
+  textureViews: GPUTextureView[];
   uniformBindGroup: GPUBindGroup;
   uniformBuffer: GPUBuffer;
 }
@@ -87,7 +91,7 @@ export const customShaderWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     );
     const binding = ensureCustomMaterialBinding(state, custom, layouts.user);
     uploadCustomUniforms(state, binding.uniformBuffer, custom);
-    const textureBindGroup = buildCustomTextureBindGroup(state, custom, layouts.texture);
+    const textureBindGroup = ensureCustomTextureBindGroup(state, custom, layouts.texture, binding);
 
     writeWgpuFrameUniform(state, camera, lights);
     stashWgpuUvTransform(state, null);
@@ -207,6 +211,10 @@ function ensureCustomMaterialBinding(
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
   binding = {
+    textureBindGroup: null,
+    textureKeys: [],
+    textureSamplers: [],
+    textureViews: [],
     uniformBindGroup: state.device.createBindGroup({
       layout,
       entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
@@ -241,32 +249,70 @@ function uploadCustomUniforms(
   state.device.queue.writeBuffer(buffer, 0, _uniformScratch.buffer, 0, _uniformScratch.byteLength);
 }
 
-function buildCustomTextureBindGroup(
+function ensureCustomTextureBindGroup(
   state: WgpuRenderState,
   material: Readonly<CustomShaderMaterial>,
   layout: GPUBindGroupLayout,
+  binding: CustomMaterialBinding,
 ): GPUBindGroup {
   const textures = material.textures ?? {};
-  const textureNames = Object.keys(textures);
-
   const placeholder = ensureWgpuPlaceholderTextureView(state);
+  let textureCount = 0;
+  for (const name in textures) {
+    if (!Object.prototype.hasOwnProperty.call(textures, name)) continue;
+    const texture = textures[name];
+    _textureKeyScratch[textureCount] = name;
+    _textureSamplerScratch[textureCount] = getWgpuMaterialSampler(state, texture);
+    _textureViewScratch[textureCount] = isWgpuTextureReady(texture)
+      ? resolveWgpuMaterialTextureView(state, texture)
+      : placeholder;
+    textureCount++;
+  }
+  _textureKeyScratch.length = textureCount;
+  for (let slot = textureCount; slot < WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY; slot++) {
+    _textureSamplerScratch[slot] = getWgpuMaterialSampler(state, null);
+    _textureViewScratch[slot] = placeholder;
+  }
+
+  if (!customTextureBindingNeedsRebuild(binding, textureCount)) return binding.textureBindGroup!;
+
   const entries: GPUBindGroupEntry[] = [];
   for (let slot = 0; slot < WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY; slot++) {
-    const texture = slot < textureNames.length ? textures[textureNames[slot]] : null;
-    entries.push({
-      binding: slot * 2,
-      resource: getWgpuMaterialSampler(state, texture),
-    });
-    entries.push({
-      binding: slot * 2 + 1,
-      resource:
-        texture !== null && isWgpuTextureReady(texture) ? resolveWgpuMaterialTextureView(state, texture) : placeholder,
-    });
+    entries.push({ binding: slot * 2, resource: _textureSamplerScratch[slot] });
+    entries.push({ binding: slot * 2 + 1, resource: _textureViewScratch[slot] });
   }
-  return state.device.createBindGroup({ layout, entries });
+  binding.textureBindGroup = state.device.createBindGroup({ layout, entries });
+  overwriteCache(binding.textureKeys, _textureKeyScratch);
+  overwriteCache(binding.textureSamplers, _textureSamplerScratch);
+  overwriteCache(binding.textureViews, _textureViewScratch);
+  return binding.textureBindGroup;
+}
+
+function customTextureBindingNeedsRebuild(binding: Readonly<CustomMaterialBinding>, textureCount: number): boolean {
+  if (binding.textureBindGroup === null || binding.textureKeys.length !== textureCount) return true;
+  for (let slot = 0; slot < textureCount; slot++) {
+    if (binding.textureKeys[slot] !== _textureKeyScratch[slot]) return true;
+  }
+  for (let slot = 0; slot < WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY; slot++) {
+    if (
+      binding.textureSamplers[slot] !== _textureSamplerScratch[slot] ||
+      binding.textureViews[slot] !== _textureViewScratch[slot]
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function overwriteCache<T>(cache: T[], source: readonly T[]): void {
+  cache.length = source.length;
+  for (let i = 0; i < source.length; i++) cache[i] = source[i];
 }
 
 const _customMaterialShaders = new WeakMap<WgpuRenderState, Map<string, WgpuCustomMaterialShaderSource>>();
 const _customMaterialLayouts = new WeakMap<WgpuRenderState, CustomMaterialLayouts>();
 const _customMaterialBindings = new WeakMap<WgpuRenderState, WeakMap<object, CustomMaterialBinding>>();
 const _uniformScratch = new Float32Array(WGPU_CUSTOM_SHADER_USER_VEC4_CAPACITY * 4);
+const _textureKeyScratch: string[] = [];
+const _textureSamplerScratch: GPUSampler[] = new Array(WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY);
+const _textureViewScratch: GPUTextureView[] = new Array(WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY);

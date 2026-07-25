@@ -2,7 +2,8 @@ import { createCamera3D } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createCustomShaderMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
-import type { Camera3D, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
+import { createTexture } from '@flighthq/texture';
+import type { Camera3D, ImageResource, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
 import { CustomShaderMaterialKind } from '@flighthq/types';
 
 import {
@@ -87,6 +88,56 @@ describe('customShaderWgpuMeshMaterialRenderer', () => {
     expect(Array.from(packed.slice(0, 8))).toEqual([2, 0, 0, 0, 5, 6, 0, 0]);
   });
 
+  it('reuses the group(3) bind group when the texture bag is unchanged', () => {
+    const { fake, state } = makeWgpuSceneState();
+    const material = createCustomShaderMaterial({
+      shaderKey: 'test',
+      textures: { map: createTexture() },
+    });
+    registerWgpuCustomMaterialShader(state, 'test', SOURCE);
+    customShaderWgpuMeshMaterialRenderer.bind(state, material, NO_LIGHTS, makeCamera());
+    const firstCount = fake.calls.filter((call) => call.name === 'createBindGroup').length;
+
+    customShaderWgpuMeshMaterialRenderer.bind(state, material, NO_LIGHTS, makeCamera());
+    expect(fake.calls.filter((call) => call.name === 'createBindGroup')).toHaveLength(firstCount);
+  });
+
+  it('rebuilds group(3) for readiness, replacement, sampler, key, and bag-order changes', () => {
+    const { fake, state } = makeWgpuSceneState();
+    state.device.createSampler = ((descriptor: GPUSamplerDescriptor) => {
+      fake.calls.push({ name: 'createSampler', args: [descriptor] });
+      return { descriptor } as unknown as GPUSampler;
+    }) as GPUDevice['createSampler'];
+    const first = createTexture();
+    const second = createTexture();
+    const material = createCustomShaderMaterial({
+      shaderKey: 'test',
+      textures: { first, second },
+    });
+    registerWgpuCustomMaterialShader(state, 'test', SOURCE);
+    const bindGroupCount = () => fake.calls.filter((call) => call.name === 'createBindGroup').length;
+    const bindAndExpectRebuild = (previous: number): number => {
+      customShaderWgpuMeshMaterialRenderer.bind(state, material, NO_LIGHTS, makeCamera());
+      const next = bindGroupCount();
+      expect(next).toBeGreaterThan(previous);
+      return next;
+    };
+
+    let count = bindAndExpectRebuild(0);
+    first.sampler.wrapU = 'repeat';
+    count = bindAndExpectRebuild(count);
+
+    first.image = makeImageResource(1);
+    count = bindAndExpectRebuild(count);
+    first.image = makeImageResource(2);
+    count = bindAndExpectRebuild(count);
+
+    material.textures = { renamed: first, second };
+    count = bindAndExpectRebuild(count);
+    material.textures = { second, renamed: first };
+    bindAndExpectRebuild(count);
+  });
+
   it('draws an indexed subset after a valid bind and skips a missing shader', () => {
     const { fake, state } = makeWgpuSceneState();
     const geometry = createBoxMeshGeometry();
@@ -115,6 +166,19 @@ describe('customShaderWgpuMeshMaterialRenderer', () => {
     expect(fake.calls.some((call) => call.name === 'createRenderPipeline')).toBe(false);
   });
 });
+
+function makeImageResource(version: number): ImageResource {
+  return {
+    alphaType: 'straight',
+    compressed: null,
+    data: null,
+    format: 'rgba8unorm',
+    height: 1,
+    source: {} as CanvasImageSource,
+    version,
+    width: 1,
+  } as ImageResource;
+}
 
 describe('getWgpuCustomMaterialShaderSource', () => {
   it('returns null for an unknown key', () => {
