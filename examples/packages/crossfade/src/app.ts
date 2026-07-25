@@ -1,12 +1,16 @@
 import {
-  advanceAnimationCrossfade,
+  advanceAnimationStateMachine,
+  createAnimationBlendTree,
+  createAnimationBlendTreeInput,
   createAnimationChannel,
   createAnimationClip,
-  createAnimationCrossfade,
   createAnimationPlayer,
+  createAnimationStateMachine,
+  createAnimationStateMachineState,
   createAnimationTrack,
-  isAnimationCrossfadeComplete,
-  sampleAnimationCrossfade,
+  isAnimationStateMachineTransitioning,
+  sampleAnimationStateMachine,
+  transitionAnimationStateMachine,
 } from '@flighthq/animation';
 import type { Shape, TextLabel } from '@flighthq/sdk';
 import {
@@ -63,13 +67,27 @@ const walkClip = createAnimationClip([
   createAnimationChannel(quaternionTrack([-28, 28, -28, 28, -28]), leftLegTarget),
 ]);
 
+const runClip = createAnimationClip([
+  createAnimationChannel(quaternionTrack([45, -45, 45, -45, 45]), rightLegTarget),
+  createAnimationChannel(createAnimationTrack({ times, values: [0, -18, 0, -18, 0] }), bodyTarget),
+  createAnimationChannel(quaternionTrack([-45, 45, -45, 45, -45]), leftLegTarget),
+]);
+
 const idlePlayer = createAnimationPlayer(idleClip);
 const walkPlayer = createAnimationPlayer(walkClip);
-const crossfade = createAnimationCrossfade(idlePlayer, walkPlayer, 1.8, {
-  curve: (t) => t * t * (3 - 2 * t),
-});
+const runPlayer = createAnimationPlayer(runClip);
+const idleTree = createAnimationBlendTree([createAnimationBlendTreeInput(idlePlayer)]);
+const locomotionTree = createAnimationBlendTree([
+  createAnimationBlendTreeInput(walkPlayer, 0.7),
+  createAnimationBlendTreeInput(runPlayer, 0.3),
+]);
+const stateMachine = createAnimationStateMachine([
+  createAnimationStateMachineState('idle', idleTree),
+  createAnimationStateMachineState('locomotion', locomotionTree),
+]);
+transitionAnimationStateMachine(stateMachine, 'locomotion', 1.8, (t) => t * t * (3 - 2 * t));
 const captureWindow = window as typeof window & { __flightCapture?: boolean };
-if (captureWindow.__flightCapture) advanceAnimationCrossfade(crossfade, 0.9);
+if (captureWindow.__flightCapture) advanceAnimationStateMachine(stateMachine, 0.9);
 const sample = new Float32Array(4);
 
 let bodyOffset = 0;
@@ -77,7 +95,7 @@ let leftLegAngle = 0;
 let rightLegAngle = 0;
 
 function readPose(): void {
-  sampleAnimationCrossfade(sample, crossfade, (value, channel) => {
+  sampleAnimationStateMachine(sample, stateMachine, (value, channel) => {
     if (channel.targetRef === bodyTarget) bodyOffset = value[0];
     else {
       const angle = (2 * Math.atan2(value[2], value[3]) * 180) / Math.PI;
@@ -105,11 +123,11 @@ function label(text: string, x: number, y: number, size: number, color: number):
   return result;
 }
 
-label('Animation Crossfade', 24, 18, 26, 0xffffff);
-label('Two explicit players | target-matched channels | quaternion slerp', 24, 54, 14, 0x9aa9c7);
+label('Animation State Machine', 24, 18, 26, 0xffffff);
+label('Idle -> N-way walk/run blend tree | target-matched quaternion pose', 24, 54, 14, 0x9aa9c7);
 label('IDLE', 86, 390, 14, 0x7086ad);
 label('BLENDED POSE', 330, 390, 14, 0x63e6be);
-label('WALK', 664, 390, 14, 0xf0a85b);
+label('WALK/RUN', 644, 390, 14, 0xf0a85b);
 const status = label('', 250, 438, 15, 0xffffff);
 
 function pointFromLeg(x: number, y: number, length: number, angle: number): readonly [number, number] {
@@ -210,14 +228,14 @@ function updateFrame(): void {
   rightLeg.x = 404;
   rightLeg.y = y + 10;
   rightLeg.rotation = rightLegAngle;
-  barFill.scaleX = Math.max(0.001, Math.min(1, crossfade.weight));
+  barFill.scaleX = Math.max(0.001, Math.min(1, stateMachine.transitionWeight));
   invalidateNodeLocalTransform(upperBody);
   invalidateNodeLocalTransform(leftLeg);
   invalidateNodeLocalTransform(rightLeg);
   invalidateNodeLocalTransform(barFill);
-  status.data.text = isAnimationCrossfadeComplete(crossfade)
-    ? 'Transition complete | destination player continues'
-    : `Idle -> walk  ${(crossfade.weight * 100).toFixed(0)}%`;
+  status.data.text = isAnimationStateMachineTransitioning(stateMachine)
+    ? `Idle -> locomotion  ${(stateMachine.transitionWeight * 100).toFixed(0)}%`
+    : 'Locomotion | walk 70% + run 30%';
   invalidateNodeAppearance(status);
 }
 
@@ -228,7 +246,7 @@ function enterFrame(): void {
   const now = performance.now();
   const deltaTime = Math.min(0.05, (now - lastTime) / 1000);
   lastTime = now;
-  advanceAnimationCrossfade(crossfade, deltaTime);
+  advanceAnimationStateMachine(stateMachine, deltaTime);
   readPose();
   updateFrame();
   render(root);
