@@ -4,11 +4,10 @@
 // baseline, invisible to layout/measurement, so only a real render proves it was drawn.
 //
 // BACKEND CAVEAT: underline is drawn by ALL FOUR RichText renderers (canvasRichText, domRichText,
-// glRichText, wgpuRichText each handle `format.underline`), so this test runs on all backends. NOTE that
-// STRIKETHROUGH is NOT drawn by the gl/wgpu renderers (only canvas/dom) — that is why the sibling
-// text-strikethrough test is scoped to ["canvas","dom"]. If a future change drops underline from the GPU
-// RichText renderers, this oracle will fail on webgl/webgpu and the test should be narrowed to
-// "renderers":["canvas","dom"] at that point.
+// glRichText, wgpuRichText each handle `format.underline`), so this test runs on all backends — as does
+// its sibling text-strikethrough (the GPU renderers now draw `format.strikethrough` too). If a future
+// change drops underline from the GPU RichText renderers, this oracle will fail on webgl/webgpu and the
+// test should be narrowed to "renderers":["canvas","dom"] at that point.
 //
 // Oracle (coverage-based, lenient): the underline stroke is drawn at roughly the bottom of the line box
 // (canvasRichText draws it at baseline + descent). We scan a horizontal BAND in the lower portion of the
