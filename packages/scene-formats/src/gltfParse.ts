@@ -222,12 +222,12 @@ function buildGltfDocument(
   }
 
   const buffers = (doc.buffers ?? []).map((buffer) => decodeGltfBuffer(buffer, binary, options, gltfDrops));
-  const imageResources = (doc.images ?? []).map((image) =>
-    buildGltfImageResourceReference(doc, buffers, image, options),
+  const imageResources = (doc.images ?? []).map((image, i) =>
+    buildGltfImageResourceReference(doc, buffers, image, options, i, gltfDrops),
   );
   const resources = imageResources.filter((resource): resource is ImageResourceReference => resource !== null);
   const materials: MaterialLike[] = (doc.materials ?? []).map(
-    (material) => gltfMaterialToPbr(doc, imageResources, material) as MaterialLike,
+    (material) => gltfMaterialToPbr(doc, imageResources, material, gltfDrops) as MaterialLike,
   );
 
   // One document mesh per glTF primitive (inline geometry + morph + material indices). Track, per glTF
@@ -769,18 +769,19 @@ function gltfMaterialToPbr(
   doc: Readonly<GltfDocument>,
   imageResources: readonly (ImageResourceReference | null)[],
   material: Readonly<GltfMaterial>,
+  gltfDrops: Map<string, GltfDropTally> | null,
 ): Material {
   const pbr = material.pbrMetallicRoughness ?? {};
   const result = createStandardPbrMaterial({
     baseColor: packGltfLinearColor(pbr.baseColorFactor ?? [1, 1, 1, 1], 4),
-    baseColorMap: resolveGltfTexture(doc, imageResources, pbr.baseColorTexture, 'srgb'),
+    baseColorMap: resolveGltfTexture(doc, imageResources, pbr.baseColorTexture, 'srgb', gltfDrops),
     emissive: packGltfLinearColor(material.emissiveFactor ?? [0, 0, 0], 3),
-    emissiveMap: resolveGltfTexture(doc, imageResources, material.emissiveTexture, 'srgb'),
+    emissiveMap: resolveGltfTexture(doc, imageResources, material.emissiveTexture, 'srgb', gltfDrops),
     metallic: pbr.metallicFactor ?? 1,
-    metallicRoughnessMap: resolveGltfTexture(doc, imageResources, pbr.metallicRoughnessTexture, 'linear'),
-    normalMap: resolveGltfTexture(doc, imageResources, material.normalTexture, 'linear'),
+    metallicRoughnessMap: resolveGltfTexture(doc, imageResources, pbr.metallicRoughnessTexture, 'linear', gltfDrops),
+    normalMap: resolveGltfTexture(doc, imageResources, material.normalTexture, 'linear', gltfDrops),
     normalScale: material.normalTexture?.scale ?? 1,
-    occlusionMap: resolveGltfTexture(doc, imageResources, material.occlusionTexture, 'linear'),
+    occlusionMap: resolveGltfTexture(doc, imageResources, material.occlusionTexture, 'linear', gltfDrops),
     occlusionStrength: material.occlusionTexture?.strength ?? 1,
     roughness: pbr.roughnessFactor ?? 1,
   });
@@ -803,12 +804,27 @@ function resolveGltfTexture(
   imageResources: readonly (ImageResourceReference | null)[],
   info: Readonly<GltfTextureInfo> | undefined,
   colorSpace: TextureColorSpace,
+  gltfDrops: Map<string, GltfDropTally> | null,
 ): Texture | null {
-  if (info === undefined) return null;
+  if (info === undefined) return null; // the material simply has no texture in this slot — spec-valid, silent
   const texture = doc.textures?.[info.index];
-  if (texture?.source === undefined) return null;
+  if (texture?.source === undefined) {
+    // The textureInfo points at a missing texture, or a texture with no image source — the material keeps
+    // its factor and renders without the map (degraded but usable) → Recover.
+    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.texture-source-missing', '', {
+      firstTexture: info.index,
+    });
+    return null;
+  }
   const resource = imageResources[texture.source];
-  if (resource == null) return null;
+  if (resource == null) {
+    // The referenced image failed to build (already tallied as an image Drop); the material loses this map
+    // but survives → Recover.
+    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.texture-image-unresolved', '', {
+      firstImage: texture.source,
+    });
+    return null;
+  }
   const result = createTexture({ resource });
 
   result.colorSpace = colorSpace;
@@ -856,11 +872,19 @@ function buildGltfImageResourceReference(
   buffers: readonly Uint8Array[],
   image: Readonly<GltfImage>,
   options: Readonly<GltfImportOptions> | undefined,
+  imageIndex: number,
+  gltfDrops: Map<string, GltfDropTally> | null,
 ): ImageResourceReference | null {
   if (image.uri !== undefined) {
     if (image.uri.startsWith('data:')) {
       const comma = image.uri.indexOf(',');
-      if (comma < 0) return null;
+      if (comma < 0) {
+        // A data: URI with no comma has no decodable payload — the image is omitted from the resource set.
+        tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.image-malformed-uri', '', {
+          firstImage: imageIndex,
+        });
+        return null;
+      }
       const semicolon = image.uri.indexOf(';');
       const declared = semicolon > 5 ? image.uri.slice(5, semicolon) : (image.mimeType ?? null);
       const bytes = decodeBase64(image.uri.slice(comma + 1));
@@ -871,11 +895,20 @@ function buildGltfImageResourceReference(
   if (image.bufferView !== undefined) {
     const bufferView = doc.bufferViews?.[image.bufferView];
     const buffer = bufferView !== undefined ? buffers[bufferView.buffer] : undefined;
-    if (bufferView === undefined || buffer === undefined) return null;
+    if (bufferView === undefined || buffer === undefined) {
+      // The image's bufferView (or its backing buffer) is out of range — the image is omitted.
+      tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.image-bufferview-out-of-range', '', {
+        firstBufferView: image.bufferView,
+        firstImage: imageIndex,
+      });
+      return null;
+    }
     const start = bufferView.byteOffset ?? 0;
     const bytes = buffer.slice(start, start + bufferView.byteLength);
     return buildEmbeddedImageResourceReference(bytes, image.mimeType ?? detectImageMimeType(bytes));
   }
+  // A glTF image must carry a uri or a bufferView; one with neither cannot be resolved and is omitted.
+  tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.image-no-source', '', { firstImage: imageIndex });
   return null;
 }
 

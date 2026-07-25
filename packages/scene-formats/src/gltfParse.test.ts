@@ -1819,6 +1819,72 @@ describe('gltf diagnostics coverage', () => {
     doc.asset = { version: '3.0' };
     expect(() => createSceneFromGltf(doc)).not.toThrow();
   });
+
+  it('drops and reports gltf.image-malformed-uri for a data: URI with no comma', () => {
+    const doc = { asset: { version: '2.0' }, images: [{ uri: 'data:image/png;base64' }], scenes: [] } as GltfDocument;
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.image-malformed-uri');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(crumb!.detail?.firstImage).toBe(0);
+  });
+
+  it('drops and reports gltf.image-bufferview-out-of-range for an image bufferView outside the table', () => {
+    const doc = { asset: { version: '2.0' }, images: [{ bufferView: 9 }], scenes: [] } as GltfDocument;
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.image-bufferview-out-of-range');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(crumb!.detail?.firstBufferView).toBe(9);
+  });
+
+  it('drops and reports gltf.image-no-source for an image with neither uri nor bufferView', () => {
+    const doc = { asset: { version: '2.0' }, images: [{}], scenes: [] } as GltfDocument;
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.image-no-source');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(crumb!.detail?.firstImage).toBe(0);
+  });
+
+  it('recovers and reports gltf.texture-source-missing for a material texture whose texture has no source', () => {
+    const doc = {
+      asset: { version: '2.0' },
+      materials: [{ pbrMetallicRoughness: { baseColorTexture: { index: 0 } } }],
+      scenes: [],
+      textures: [{}],
+    } as GltfDocument;
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.texture-source-missing');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(crumb!.detail?.firstTexture).toBe(0);
+  });
+
+  it('recovers and reports gltf.texture-image-unresolved for a material texture whose image failed to build', () => {
+    const doc = {
+      asset: { version: '2.0' },
+      images: [{}], // no source → image resource is null
+      materials: [{ pbrMetallicRoughness: { baseColorTexture: { index: 0 } } }],
+      scenes: [],
+      textures: [{ source: 0 }],
+    } as GltfDocument;
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.texture-image-unresolved');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('buildGltfDocument');
+    expect(crumb!.detail?.firstImage).toBe(0);
+  });
 });
 
 describe('parseGlb', () => {
