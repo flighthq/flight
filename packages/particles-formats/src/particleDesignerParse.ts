@@ -1,5 +1,7 @@
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
 import { createParticleEmitterConfig } from '@flighthq/particles';
 import type {
+  ImportDiagnostic,
   ParticleDesignerParseOptions,
   ParticleDesignerParsed,
   ParticleBlendMode,
@@ -7,6 +9,7 @@ import type {
   ParticleDesignerDocument,
   ParticleDesignerRawDict,
 } from '@flighthq/types';
+import { ImportDiagnosticSeverity } from '@flighthq/types';
 
 const DEG2RAD = Math.PI / 180;
 
@@ -156,20 +159,36 @@ export function parseParticleDesignerPlist(
   return rawDictToConfig(parsePlistRawDict(plistXml), options?.textureSize ?? 1);
 }
 
-function collectParticleDesignerWarnings(d: ParticleDesignerRawDict): string[] {
-  const warnings: string[] = [];
+// Single-field checks (not a hot loop) → direct single-occurrence reports; collectParticleDesignerDiagnostics
+// is the physical emitter and hence the origin. Recover = approximated with a Flight substitute; Skip = a
+// recognized field Flight does not model.
+function collectParticleDesignerDiagnostics(d: ParticleDesignerRawDict): ImportDiagnostic[] {
+  const diagnostics: ImportDiagnostic[] = [];
   if (num(d, 'emitterType', 0) === 1) {
-    warnings.push(
-      'Radial (emitterType=1) emitter was approximated as a gravity emitter; radial motion is not simulated',
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'particledesigner.radial-approximated',
+      'collectParticleDesignerDiagnostics',
     );
   }
   if (num(d, 'radialAcceleration', 0) !== 0 || num(d, 'radialAccelVariance', 0) !== 0) {
-    warnings.push('radialAcceleration is not supported and was ignored');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'particledesigner.radial-acceleration-unsupported',
+      'collectParticleDesignerDiagnostics',
+    );
   }
   if (num(d, 'tangentialAcceleration', 0) !== 0 || num(d, 'tangentialAccelVariance', 0) !== 0) {
-    warnings.push('tangentialAcceleration is not supported and was ignored');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'particledesigner.tangential-acceleration-unsupported',
+      'collectParticleDesignerDiagnostics',
+    );
   }
-  return warnings;
+  return diagnostics;
 }
 
 /** Parse a Particle Designer plist XML string and preserve the full document for
@@ -228,5 +247,5 @@ export function parseParticleDesignerPlistDocument(
     blendFuncDestination: num(d, 'blendFuncDestination', 771),
     textureFileName: str(d, 'textureFileName', ''),
   };
-  return { config: rawDictToConfig(d, textureSize), document, warnings: collectParticleDesignerWarnings(d) };
+  return { config: rawDictToConfig(d, textureSize), diagnostics: collectParticleDesignerDiagnostics(d), document };
 }

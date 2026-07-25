@@ -1,4 +1,5 @@
 import { createParticleEmitterConfig } from '@flighthq/particles';
+import { ImportDiagnosticSeverity } from '@flighthq/types';
 import type { ParticleFormatCodec } from '@flighthq/types';
 
 import {
@@ -17,7 +18,7 @@ const testCodec: ParticleFormatCodec = {
   parseToConfig: (text) => createParticleEmitterConfig({ maxParticles: parseInt(text.slice(10), 10) || 50 }),
   parseToDocument: (text) => ({
     config: createParticleEmitterConfig({ maxParticles: parseInt(text.slice(10), 10) || 50 }),
-    warnings: [],
+    diagnostics: [],
   }),
   serialize: () => ({ text: 'MY_FORMAT:50', warnings: [] }),
 };
@@ -74,15 +75,18 @@ describe('parseRegisteredParticleFormat', () => {
     const result = parseRegisteredParticleFormat('MY_FORMAT:75', TEST_KIND);
     expect(result.format).toBe(TEST_KIND);
     expect(result.config.maxParticles).toBe(75);
-    expect(result.warnings).toEqual([]);
+    expect(result.diagnostics).toEqual([]);
     unregisterParticleFormat(TEST_KIND);
   });
-  it('returns a default config with unknown-format warning when no codec is registered', () => {
+  it('reports particles.unknown-format (Reject) when no codec is registered', () => {
     const result = parseRegisteredParticleFormat('whatever', 'nope.Missing');
     expect(result.config).toBeDefined();
-    expect(result.warnings.some((w) => w.includes('unknown-format'))).toBe(true);
+    const crumb = result.diagnostics.find((d) => d.kind === 'particles.unknown-format');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Reject);
+    expect(crumb!.origin).toBe('parseRegisteredParticleFormat');
   });
-  it('catches codec parse errors and returns them as parse-error warnings', () => {
+  it('catches codec parse errors and reports particles.parse-error (Reject) with the message', () => {
     const errCodec: ParticleFormatCodec = {
       ...testCodec,
       parseToDocument: () => {
@@ -91,7 +95,11 @@ describe('parseRegisteredParticleFormat', () => {
     };
     registerParticleFormat(TEST_KIND, errCodec);
     const result = parseRegisteredParticleFormat('MY_FORMAT:bad', TEST_KIND);
-    expect(result.warnings.some((w) => w.includes('parse-error'))).toBe(true);
+    const crumb = result.diagnostics.find((d) => d.kind === 'particles.parse-error');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Reject);
+    expect(crumb!.origin).toBe('parseRegisteredParticleFormat');
+    expect(crumb!.detail?.message).toBe('bad input');
     unregisterParticleFormat(TEST_KIND);
   });
 });

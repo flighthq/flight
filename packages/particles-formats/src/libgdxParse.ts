@@ -1,11 +1,14 @@
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
 import { createParticleEmitterConfig } from '@flighthq/particles';
 import type {
+  ImportDiagnostic,
   LibgdxParseOptions,
   LibgdxParseResult,
   ParticleEmitterConfig,
   LibgdxParticleDocument,
   LibgdxRangeValue,
 } from '@flighthq/types';
+import { ImportDiagnosticSeverity } from '@flighthq/types';
 
 /** @deprecated Use `LibgdxParseResult`. */
 /** Parse a libGDX 2D Particle Editor `.p` file string directly to a ParticleEmitterConfig.
@@ -34,8 +37,8 @@ export function parseLibgdxParticleDocument(text: string, options?: LibgdxParseO
   const textureSize = options?.textureSize ?? 1;
   return {
     config: documentToConfig(doc, textureSize),
+    diagnostics: collectLibgdxDiagnostics(doc),
     document: doc,
-    warnings: collectLibgdxWarnings(doc),
   };
 }
 
@@ -49,20 +52,52 @@ function boolKey(section: LibgdxSection, key: string, def = false): boolean {
   return v === 'true';
 }
 
-function collectLibgdxWarnings(doc: LibgdxParticleDocument): string[] {
-  const warnings: string[] = [];
-  if (doc.delay.active) warnings.push('libGDX emission delay is not supported and was ignored');
-  if (doc.lifeOffset.active) warnings.push('libGDX lifeOffset is not supported and was ignored');
+// Each check fires at most once per document (not a hot loop), so these are direct single-occurrence
+// reports — collectLibgdxDiagnostics is the physical emitter and hence the origin. Skip = a recognized
+// libGDX feature Flight does not model; Recover = a feature substituted with a Flight equivalent.
+function collectLibgdxDiagnostics(doc: LibgdxParticleDocument): ImportDiagnostic[] {
+  const diagnostics: ImportDiagnostic[] = [];
+  if (doc.delay.active) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'libgdx.delay-unsupported',
+      'collectLibgdxDiagnostics',
+    );
+  }
+  if (doc.lifeOffset.active) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'libgdx.life-offset-unsupported',
+      'collectLibgdxDiagnostics',
+    );
+  }
   if (doc.xOffset.active || doc.yOffset.active) {
-    warnings.push('libGDX emitter x/y position offsets are not supported and were ignored');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'libgdx.position-offset-unsupported',
+      'collectLibgdxDiagnostics',
+    );
   }
   if (doc.premultipliedAlpha) {
-    warnings.push('libGDX premultipliedAlpha flag is informational only; blending behavior may differ');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'libgdx.premultiplied-alpha-informational',
+      'collectLibgdxDiagnostics',
+    );
   }
   if (doc.spawnShape.shape === 'line') {
-    warnings.push('libGDX line spawn shape has no equivalent and was mapped to point emitter');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'libgdx.line-shape-mapped-to-point',
+      'collectLibgdxDiagnostics',
+    );
   }
-  return warnings;
+  return diagnostics;
 }
 
 function documentToConfig(doc: LibgdxParticleDocument, textureSize: number): ParticleEmitterConfig {

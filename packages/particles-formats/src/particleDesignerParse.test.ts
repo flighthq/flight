@@ -1,3 +1,5 @@
+import { ImportDiagnosticSeverity } from '@flighthq/types';
+
 import { parseParticleDesignerPlist, parseParticleDesignerPlistDocument } from './particleDesignerParse';
 import { serializeParticleDesignerPlist } from './particleDesignerSerialize';
 
@@ -216,27 +218,46 @@ describe('parseParticleDesignerPlistDocument', () => {
 
   describe('import warnings', () => {
     it('has no warnings for a standard gravity emitter', () => {
-      expect(parseParticleDesignerPlistDocument(FIRE_PLIST).warnings).toEqual([]);
+      expect(parseParticleDesignerPlistDocument(FIRE_PLIST).diagnostics).toEqual([]);
     });
 
-    it('warns that a radial emitter is approximated', () => {
+    it('reports particledesigner.radial-approximated (Recover) for a radial emitter', () => {
       const plist = FIRE_PLIST.replace(
         '<key>emitterType</key><integer>0</integer>',
         '<key>emitterType</key><integer>1</integer>',
       );
-      expect(parseParticleDesignerPlistDocument(plist).warnings.some((w) => w.toLowerCase().includes('radial'))).toBe(
-        true,
+      const crumb = parseParticleDesignerPlistDocument(plist).diagnostics.find(
+        (d) => d.kind === 'particledesigner.radial-approximated',
       );
+      expect(crumb).toBeDefined();
+      expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+      expect(crumb!.origin).toBe('collectParticleDesignerDiagnostics');
     });
 
-    it('warns about unsupported radial/tangential acceleration', () => {
+    it('reports particledesigner.radial-acceleration-unsupported (Skip)', () => {
       const plist = FIRE_PLIST.replace(
         '<key>maxParticles</key><integer>200</integer>',
         '<key>maxParticles</key><integer>200</integer><key>radialAcceleration</key><real>50</real>',
       );
-      expect(parseParticleDesignerPlistDocument(plist).warnings.some((w) => w.includes('radialAcceleration'))).toBe(
-        true,
+      const crumb = parseParticleDesignerPlistDocument(plist).diagnostics.find(
+        (d) => d.kind === 'particledesigner.radial-acceleration-unsupported',
       );
+      expect(crumb).toBeDefined();
+      expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+      expect(crumb!.origin).toBe('collectParticleDesignerDiagnostics');
+    });
+
+    it('reports particledesigner.tangential-acceleration-unsupported (Skip)', () => {
+      const plist = FIRE_PLIST.replace(
+        '<key>maxParticles</key><integer>200</integer>',
+        '<key>maxParticles</key><integer>200</integer><key>tangentialAcceleration</key><real>50</real>',
+      );
+      const crumb = parseParticleDesignerPlistDocument(plist).diagnostics.find(
+        (d) => d.kind === 'particledesigner.tangential-acceleration-unsupported',
+      );
+      expect(crumb).toBeDefined();
+      expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+      expect(crumb!.origin).toBe('collectParticleDesignerDiagnostics');
     });
   });
 });

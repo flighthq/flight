@@ -1,5 +1,7 @@
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
 import { createParticleEmitterConfig } from '@flighthq/particles';
 import type {
+  ImportDiagnostic,
   StarlingPexParseOptions,
   StarlingPexParseResult,
   ParticleBlendMode,
@@ -7,6 +9,7 @@ import type {
   StarlingPexColor,
   StarlingPexDocument,
 } from '@flighthq/types';
+import { ImportDiagnosticSeverity } from '@flighthq/types';
 
 /** @deprecated Use `StarlingPexParseResult`. */
 /** Parse a Starling / Sparrow PEX XML string directly to a ParticleEmitterConfig.
@@ -36,8 +39,8 @@ export function parseStarlingPexDocument(xml: string, options?: StarlingPexParse
   const doc = dictToDocument(d);
   return {
     config: documentToConfig(doc, options?.textureSize ?? 1),
+    diagnostics: collectStarlingPexDiagnostics(doc),
     document: doc,
-    warnings: collectStarlingPexWarnings(doc),
   };
 }
 
@@ -45,20 +48,36 @@ const DEG2RAD = Math.PI / 180;
 
 type PexDict = Record<string, string>;
 
-function collectStarlingPexWarnings(doc: Readonly<StarlingPexDocument>): string[] {
-  const warnings: string[] = [];
+// Single-field checks (not a hot loop) → direct reports; collectStarlingPexDiagnostics is the physical
+// emitter and hence the origin. Recover = approximated with a Flight substitute; Skip = a recognized field
+// Flight does not model.
+function collectStarlingPexDiagnostics(doc: Readonly<StarlingPexDocument>): ImportDiagnostic[] {
+  const diagnostics: ImportDiagnostic[] = [];
   if (doc.emitterType === 1) {
-    warnings.push(
-      'Radial (emitterType=1) emitter was approximated as a gravity emitter; radial motion is not simulated',
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'starlingpex.radial-approximated',
+      'collectStarlingPexDiagnostics',
     );
   }
   if (doc.radialAcceleration !== 0 || doc.radialAccelVariance !== 0) {
-    warnings.push('radialAcceleration is not supported and was ignored');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'starlingpex.radial-acceleration-unsupported',
+      'collectStarlingPexDiagnostics',
+    );
   }
   if (doc.tangentialAcceleration !== 0 || doc.tangentialAccelVariance !== 0) {
-    warnings.push('tangentialAcceleration is not supported and was ignored');
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'starlingpex.tangential-acceleration-unsupported',
+      'collectStarlingPexDiagnostics',
+    );
   }
-  return warnings;
+  return diagnostics;
 }
 
 function dictToDocument(d: PexDict): StarlingPexDocument {

@@ -1,5 +1,12 @@
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
 import { createParticleEmitterConfig } from '@flighthq/particles';
-import type { ParticleFormatCodec, ParticleFormatKind, ParticleConfigParseResult } from '@flighthq/types';
+import type {
+  ImportDiagnostic,
+  ParticleFormatCodec,
+  ParticleFormatKind,
+  ParticleConfigParseResult,
+} from '@flighthq/types';
+import { ImportDiagnosticSeverity } from '@flighthq/types';
 
 /** Contract for a particle format codec registered via `registerParticleFormat`.
  *
@@ -8,7 +15,7 @@ import type { ParticleFormatCodec, ParticleFormatKind, ParticleConfigParseResult
  *
  *  `detect` should return `true` when the text is confidently recognized as this format —
  *  it must not throw. `parseToConfig` and `parseToDocument` may throw on genuinely
- *  malformed input; the dispatcher catches and wraps errors as warnings. */
+ *  malformed input; the dispatcher catches errors and returns a `particles.parse-error` diagnostic. */
 /** Detect the format of `text` by consulting all registered codecs in registration order.
  *
  *  Returns the first `kind` whose codec's `detect` returns `true`, or `null` when no
@@ -40,27 +47,39 @@ export function getRegisteredParticleFormats(): ReadonlyArray<string> {
 
 /** Parse `text` using the registered codec for `kind`.
  *
- *  Returns a `ParticleConfigParseResult` with the config, format, and any import warnings.
- *  When no codec is registered for `kind`, returns a default config with an
- *  `'unknown-format'` warning. Codec errors are caught and returned as `'parse-error'` warnings. */
+ *  Returns a `ParticleConfigParseResult` with the config, format, and any structured import diagnostics.
+ *  When no codec is registered for `kind`, returns a default config with a `particles.unknown-format` Reject
+ *  diagnostic. Codec errors are caught and returned as a `particles.parse-error` Reject. */
 export function parseRegisteredParticleFormat(text: string, kind: string): ParticleConfigParseResult {
   const codec = _registry.get(kind);
   if (!codec) {
-    return {
-      config: createParticleEmitterConfig(),
-      format: kind,
-      warnings: [`unknown-format: format '${kind}' has no registered codec`],
-    };
+    const diagnostics: ImportDiagnostic[] = [];
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'particles.unknown-format',
+      'parseRegisteredParticleFormat',
+      {
+        reason: 'no-registered-codec',
+      },
+    );
+    return { config: createParticleEmitterConfig(), diagnostics, format: kind };
   }
   try {
     const result = codec.parseToDocument(text);
-    return { config: result.config, format: kind, warnings: result.warnings };
+    return { config: result.config, diagnostics: result.diagnostics, format: kind };
   } catch (err) {
-    return {
-      config: createParticleEmitterConfig(),
-      format: kind,
-      warnings: [`parse-error: ${(err as Error).message}`],
-    };
+    const diagnostics: ImportDiagnostic[] = [];
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'particles.parse-error',
+      'parseRegisteredParticleFormat',
+      {
+        message: (err as Error).message,
+      },
+    );
+    return { config: createParticleEmitterConfig(), diagnostics, format: kind };
   }
 }
 

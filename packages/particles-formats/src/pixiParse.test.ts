@@ -1,3 +1,5 @@
+import { ImportDiagnosticSeverity } from '@flighthq/types';
+
 import { parsePixiParticle, parsePixiParticleDocument } from './pixiParse';
 
 const FIRE_PIXI = JSON.stringify({
@@ -37,7 +39,7 @@ describe('parsePixiParticle', () => {
   it('returns a ParticleEmitterConfig (not a ParseResult object)', () => {
     const result = parsePixiParticle(FIRE_PIXI) as unknown as Record<string, unknown>;
     expect(typeof result.maxParticles).toBe('number');
-    expect(result.warnings).toBeUndefined();
+    expect(result.diagnostics).toBeUndefined();
   });
   it('parses maxParticles', () => {
     expect(parsePixiParticle(FIRE_PIXI).maxParticles).toBe(1000);
@@ -115,17 +117,39 @@ describe('parsePixiParticleDocument', () => {
     expect(loaded.speedMax).toBeCloseTo(config.speedMax, 3);
   });
   it('has no warnings for a standard point emitter', () => {
-    const { warnings } = parsePixiParticleDocument(FIRE_PIXI);
-    expect(warnings).toEqual([]);
+    const { diagnostics } = parsePixiParticleDocument(FIRE_PIXI);
+    expect(diagnostics).toEqual([]);
   });
-  it('warns when acceleration is non-zero', () => {
+  it('reports pixi.acceleration-unsupported (Skip) when acceleration is non-zero', () => {
     const json = JSON.stringify({ ...JSON.parse(FIRE_PIXI), acceleration: { x: 0, y: 100 } });
-    const { warnings } = parsePixiParticleDocument(json);
-    expect(warnings.some((w) => w.includes('acceleration'))).toBe(true);
+    const crumb = parsePixiParticleDocument(json).diagnostics.find((d) => d.kind === 'pixi.acceleration-unsupported');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+    expect(crumb!.origin).toBe('collectPixiDiagnostics');
   });
-  it('warns when spawnBurst is present', () => {
+  it('reports pixi.spawn-burst-mapped-to-point (Recover) when spawnBurst is present', () => {
     const json = JSON.stringify({ ...JSON.parse(FIRE_PIXI), spawnBurst: { count: 5, time: 0.5 } });
-    const { warnings } = parsePixiParticleDocument(json);
-    expect(warnings.some((w) => w.includes('spawnBurst'))).toBe(true);
+    const crumb = parsePixiParticleDocument(json).diagnostics.find(
+      (d) => d.kind === 'pixi.spawn-burst-mapped-to-point',
+    );
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('collectPixiDiagnostics');
+  });
+  it('reports pixi.spawn-polygon-mapped-to-point (Recover) when spawnPolygon is present', () => {
+    const json = JSON.stringify({ ...JSON.parse(FIRE_PIXI), spawnPolygon: [{ x: 0, y: 0 }] });
+    const crumb = parsePixiParticleDocument(json).diagnostics.find(
+      (d) => d.kind === 'pixi.spawn-polygon-mapped-to-point',
+    );
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('collectPixiDiagnostics');
+  });
+  it('reports pixi.behaviors-partial (Skip) when a v5+ behaviors array is present', () => {
+    const json = JSON.stringify({ ...JSON.parse(FIRE_PIXI), behaviors: [{ type: 'moveSpeed' }] });
+    const crumb = parsePixiParticleDocument(json).diagnostics.find((d) => d.kind === 'pixi.behaviors-partial');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+    expect(crumb!.origin).toBe('collectPixiDiagnostics');
   });
 });

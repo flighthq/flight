@@ -1,9 +1,11 @@
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
 import {
   createParticleEmitterConfig,
   particleColorCurveFromKeyframes,
   particleCurveFromKeyframes,
 } from '@flighthq/particles';
 import type {
+  ImportDiagnostic,
   SpineParsed,
   ColorKeyframe,
   CurveKeyframe,
@@ -14,6 +16,7 @@ import type {
   SpineParticleDocument,
   SpineTintKeyframe,
 } from '@flighthq/types';
+import { ImportDiagnosticSeverity } from '@flighthq/types';
 
 const DEG2RAD = Math.PI / 180;
 
@@ -152,23 +155,34 @@ function rawToConfig(raw: Record<string, unknown>): ParticleEmitterConfig {
   });
 }
 
-function collectSpineWarnings(raw: Record<string, unknown>): string[] {
-  const warnings: string[] = [];
-
-  // Multi-stop tint/alpha timelines are now baked into lifetime curves, so they
-  // no longer warn. Remaining unsupported features:
+// Single-field checks (not a hot loop) → direct reports; collectSpineDiagnostics is the physical emitter and
+// hence the origin. Skip = a recognized Spine field Flight does not model. (Multi-stop tint/alpha timelines
+// are baked into lifetime curves, so they no longer report.)
+function collectSpineDiagnostics(raw: Record<string, unknown>): ImportDiagnostic[] {
+  const diagnostics: ImportDiagnostic[] = [];
   const nonZeroRange = (key: string): boolean => {
     const o = raw[key];
     if (o == null || typeof o !== 'object') return false;
     const r = o as Record<string, unknown>;
     return (typeof r.low === 'number' && r.low !== 0) || (typeof r.high === 'number' && r.high !== 0);
   };
-  if (nonZeroRange('lifeOffset')) warnings.push('Spine lifeOffset is not supported and was ignored');
-  if (nonZeroRange('x') || nonZeroRange('y')) {
-    warnings.push('Spine emitter x/y position ranges are not supported and were ignored');
+  if (nonZeroRange('lifeOffset')) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'spine.life-offset-unsupported',
+      'collectSpineDiagnostics',
+    );
   }
-
-  return warnings;
+  if (nonZeroRange('x') || nonZeroRange('y')) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'spine.position-range-unsupported',
+      'collectSpineDiagnostics',
+    );
+  }
+  return diagnostics;
 }
 
 // Build a color curve from a tint timeline, but only when it has more than two
@@ -293,5 +307,5 @@ export function parseSpineParticle(json: string): ParticleEmitterConfig {
  *  round-trip serialisation via `serializeSpineParticle`. */
 export function parseSpineParticleDocument(json: string): SpineParsed {
   const raw = parseSpineJson(json);
-  return { config: rawToConfig(raw), document: rawToDocument(raw), warnings: collectSpineWarnings(raw) };
+  return { config: rawToConfig(raw), diagnostics: collectSpineDiagnostics(raw), document: rawToDocument(raw) };
 }
