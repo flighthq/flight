@@ -8,6 +8,17 @@ by: builder3
 
 > Append-only handoff log, newest entry on top.
 
+## 2026-07-25 — authoritative SVG gate repairs
+
+Resolved the nine interaction failures from review2: root presentation inheritance, author-CSS
+cascade precedence/source order, inherited fill-rule, image and use transform composition, symbol
+viewBox/use viewport sizing, mixed text/tspan source order, applied-filter and nested-animation
+diagnostics, and objectBoundingBox clip/mask-content mapping.
+
+Mixed XML content now has an ordered `XmlElement.content` projection while the existing `children`
+and `text` projections remain intact. Added one focused regression per reported interaction; SVG/XML
+focused suites pass 41/41, the monorepo build passes, and `npm run check` is green.
+
 ## 2026-07-25 — static SVG document importer
 
 Created the package and `createDisplayObjectFromSvgDocument`. The importer assembles SVG document

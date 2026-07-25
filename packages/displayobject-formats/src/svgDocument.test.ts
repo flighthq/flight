@@ -6,6 +6,127 @@ import { BitmapKind, DisplayObjectKind, RichTextKind, ShapeKind, TextLabelKind }
 import { createDisplayObjectFromSvgDocument } from './svgDocument';
 
 describe('createDisplayObjectFromSvgDocument', () => {
+  it('applies object-bounding-box clip and mask content units to target geometry', () => {
+    const root = createDisplayObjectFromSvgDocument(`
+      <svg>
+        <defs>
+          <clipPath id="half" clipPathUnits="objectBoundingBox">
+            <rect width="0.5" height="1"/>
+          </clipPath>
+          <mask id="quarter" maskContentUnits="objectBoundingBox">
+            <rect x="0.25" width="0.5" height="1"/>
+          </mask>
+        </defs>
+        <rect width="200" height="100" clip-path="url(#half)"/>
+        <rect width="200" height="100" mask="url(#quarter)"/>
+      </svg>
+    `);
+
+    const clipped = getNodeChildAt(root, 0)!;
+    expect(clipped.clip?.rect).toMatchObject({ height: 100, width: 100, x: 0, y: 0 });
+    const masked = getNodeChildAt(root, 1)!;
+    expect(masked.clip?.rect).toMatchObject({ height: 100, width: 100, x: 50, y: 0 });
+  });
+
+  it('applies root presentation to descendants', () => {
+    const root = createDisplayObjectFromSvgDocument('<svg fill="red"><rect width="10" height="10"/></svg>');
+    const shape = getNodeChildAt(root, 0) as Shape;
+
+    expect(shape.data.commands).toContain(0xff0000);
+  });
+
+  it('composes image geometry before its SVG transform', () => {
+    const image = createImageResource();
+    image.width = 20;
+    image.height = 10;
+    const root = createDisplayObjectFromSvgDocument(
+      '<svg><image href="asset.png" x="3" y="4" width="40" height="30" transform="translate(10 20)"/></svg>',
+      undefined,
+      { resolveImageResource: () => image },
+    );
+
+    const bitmap = getNodeChildAt(root, 0) as Bitmap;
+    expect(bitmap.x).toBe(13);
+    expect(bitmap.y).toBe(24);
+    expect(bitmap.scaleX).toBe(2);
+    expect(bitmap.scaleY).toBe(3);
+  });
+
+  it('composes use placement before its SVG transform', () => {
+    const root = createDisplayObjectFromSvgDocument(`
+      <svg>
+        <defs><g id="mark"><rect width="1" height="1"/></g></defs>
+        <use href="#mark" x="7" y="9" transform="scale(2)"/>
+      </svg>
+    `);
+
+    const use = getNodeChildAt(root, 0)!;
+    expect(use.x).toBe(14);
+    expect(use.y).toBe(18);
+    expect(use.scaleX).toBe(2);
+    expect(use.scaleY).toBe(2);
+  });
+
+  it('diagnoses applied filters and nested animation at their use sites', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    createDisplayObjectFromSvgDocument(
+      `
+        <svg>
+          <defs><filter id="blur"/></defs>
+          <rect width="10" height="10" filter="url(#blur)">
+            <animate attributeName="x" from="0" to="10"/>
+          </rect>
+        </svg>
+      `,
+      diagnostics,
+    );
+
+    expect(diagnostics.map((diagnostic) => diagnostic.kind)).toEqual([
+      'svg.unsupported-filter',
+      'svg.unsupported-animate',
+    ]);
+  });
+
+  it('inherits fill-rule through groups', () => {
+    const root = createDisplayObjectFromSvgDocument(`
+      <svg><g fill-rule="evenodd"><path d="M0 0 L10 0 L10 10 Z"/></g></svg>
+    `);
+    const group = getNodeChildAt(root, 0)!;
+    const shape = getNodeChildAt(group, 0) as Shape;
+    const drawPathIndex = shape.data.commands.indexOf('drawPath');
+
+    expect(shape.data.commands[drawPathIndex + 4]).toBe('evenOdd');
+  });
+
+  it('lets author CSS outrank presentation attributes by specificity and source order', () => {
+    const root = createDisplayObjectFromSvgDocument(`
+      <svg>
+        <style>
+          rect { fill: red }
+          .accent { fill: green }
+          .accent { fill: orange }
+        </style>
+        <rect class="accent" fill="blue" width="10" height="10"/>
+      </svg>
+    `);
+    const shape = getNodeChildAt(root, 0) as Shape;
+
+    expect(shape.data.commands).toContain(0xffa500);
+    expect(shape.data.commands).not.toContain(0x0000ff);
+  });
+
+  it('preserves mixed text and tspan source order', () => {
+    const root = createDisplayObjectFromSvgDocument(
+      '<svg><text font-size="12">A<tspan fill="red">B</tspan>C</text></svg>',
+    );
+    const text = getNodeChildAt(root, 0) as RichText;
+
+    expect(text.data.text).toBe('ABC');
+    expect(text.data.textFormatRanges).toHaveLength(1);
+    expect(text.data.textFormatRanges[0]).toMatchObject({ end: 2, start: 1 });
+    expect(text.data.textFormatRanges[0].format.color).toBe(0xff0000ff);
+  });
+
   it('returns an empty tree and a structured diagnostic for non-SVG input', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const root = createDisplayObjectFromSvgDocument('<html/>', diagnostics);
@@ -205,5 +326,23 @@ describe('createDisplayObjectFromSvgDocument', () => {
     expect(stretched.scaleX).toBe(4);
     expect(stretched.scaleY).toBe(2);
     expect(stretched.x).toBe(0);
+  });
+
+  it('uses symbol viewBox semantics and the use viewport size', () => {
+    const root = createDisplayObjectFromSvgDocument(`
+      <svg>
+        <defs>
+          <symbol id="icon" viewBox="0 0 10 10" preserveAspectRatio="none">
+            <rect width="10" height="10"/>
+          </symbol>
+        </defs>
+        <use href="#icon" width="20" height="30"/>
+      </svg>
+    `);
+
+    const use = getNodeChildAt(root, 0)!;
+    const symbol = getNodeChildAt(use, 0)!;
+    expect(symbol.scaleX).toBe(2);
+    expect(symbol.scaleY).toBe(3);
   });
 });

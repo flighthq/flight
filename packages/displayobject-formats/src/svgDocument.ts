@@ -89,19 +89,21 @@ export function createDisplayObjectFromSvgDocument(
     elementsById: new Map(),
     gradientsById: new Map(),
     options,
+    reportedUnsupportedElements: new Set(),
     resolvingGradients: new Set(),
     resolvingUses: new Set(),
   };
   indexSvgDefinitions(document, context);
 
   out.name = attribute(document, 'id');
-  applySvgElementAppearance(out, document, defaultSvgStyle, context);
+  const rootStyle = applySvgElementAppearance(out, document, defaultSvgStyle, context);
   const viewport = createSvgViewportMatrix(document);
   if (viewport !== null) {
     const own = parseSvgTransform(attribute(document, 'transform'));
     applySvgTransform(out, own === null ? viewport : multiplySvgMatrices(own, viewport));
   }
-  appendSvgChildren(out, document, defaultSvgStyle, context);
+  appendSvgChildren(out, document, rootStyle, context);
+  reportRemainingUnsupportedSvgElements(document, context);
   return out;
 }
 
@@ -112,6 +114,7 @@ interface SvgColor {
 
 interface SvgCssRule {
   declarations: Record<string, string>;
+  order: number;
   selector: string;
   specificity: number;
 }
@@ -144,6 +147,7 @@ interface SvgImportContext {
   elementsById: Map<string, XmlElement>;
   gradientsById: Map<string, SvgGradient>;
   options: Readonly<SvgDocumentImportOptions> | undefined;
+  reportedUnsupportedElements: Set<XmlElement>;
   resolvingGradients: Set<string>;
   resolvingUses: Set<string>;
 }
@@ -154,6 +158,7 @@ interface SvgStyle {
   fill: string;
   fillOpacity: number;
   fillRule: PathWinding;
+  filter: string;
   fontFamily: string;
   fontSize: number;
   fontStyle: string;
@@ -171,12 +176,18 @@ interface SvgStyle {
   visibility: string;
 }
 
+interface SvgTextRun {
+  style: Readonly<SvgStyle>;
+  text: string;
+}
+
 const defaultSvgStyle: SvgStyle = {
   color: '#000000',
   display: 'inline',
   fill: '#000000',
   fillOpacity: 1,
   fillRule: 'nonZero',
+  filter: 'none',
   fontFamily: 'sans-serif',
   fontSize: 16,
   fontStyle: 'normal',
@@ -211,11 +222,21 @@ function applySvgElementAppearance(
   element: Readonly<XmlElement>,
   parentStyle: Readonly<SvgStyle>,
   context: SvgImportContext,
+  targetPath?: Readonly<Path>,
 ): SvgStyle {
   const style = resolveSvgStyle(element, parentStyle, context);
   target.alpha = style.opacity;
   target.visible = style.display !== 'none' && style.visibility !== 'hidden' && style.visibility !== 'collapse';
   target.name = attribute(element, 'id');
+  if (style.filter !== 'none') {
+    reportImportDiagnostic(
+      context.diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'svg.unsupported-filter',
+      'applySvgElementAppearance',
+      { filter: style.filter },
+    );
+  }
 
   const transform = parseSvgTransform(attribute(element, 'transform'));
   applySvgTransform(target, transform);
@@ -225,7 +246,7 @@ function applySvgElementAppearance(
   const clipId = clipReference ?? maskReference;
   if (clipId !== null) {
     const clipElement = context.elementsById.get(clipId);
-    const clipPath = clipElement === undefined ? null : createSvgClipPath(clipElement);
+    const clipPath = clipElement === undefined ? null : createSvgClipPath(clipElement, targetPath);
     if (clipPath !== null) {
       target.clip = createClipRegionFromPath(clipPath);
       if (maskReference !== null) {
@@ -285,14 +306,14 @@ function collectCssRules(root: Readonly<XmlElement>): SvgCssRule[] {
       for (const selectorText of match[1].split(',')) {
         const selector = selectorText.trim();
         if (selector === '' || /[\s>+~:[\]]/.test(selector)) continue;
-        rules.push({ declarations, selector, specificity: getCssSelectorSpecificity(selector) });
+        rules.push({ declarations, order: rules.length, selector, specificity: getCssSelectorSpecificity(selector) });
       }
     }
   });
   return rules;
 }
 
-function createSvgClipPath(element: Readonly<XmlElement>): Path | null {
+function createSvgClipPath(element: Readonly<XmlElement>, targetPath?: Readonly<Path>): Path | null {
   const out = createPath('nonZero');
   let appended = false;
   for (const child of element.children) {
@@ -305,7 +326,15 @@ function createSvgClipPath(element: Readonly<XmlElement>): Path | null {
     appended = true;
   }
   if (!appended) return null;
-  const transform = parseSvgTransform(attribute(element, 'transform'));
+  let transform = parseSvgTransform(attribute(element, 'transform'));
+  const unitsAttribute =
+    localName(element.name) === 'mask' ? attribute(element, 'maskContentUnits') : attribute(element, 'clipPathUnits');
+  if (unitsAttribute === 'objectBoundingBox' && targetPath !== undefined) {
+    const bounds = createRectangle();
+    getPathBounds(targetPath, bounds);
+    const unitTransform = createMatrix(bounds.width, 0, 0, bounds.height, bounds.x, bounds.y);
+    transform = transform === null ? unitTransform : multiplySvgMatrices(unitTransform, transform);
+  }
   if (transform === null) return out;
   const transformed = createPath(out.winding);
   transformPath(out, transform, transformed);
@@ -351,26 +380,20 @@ function createSvgElementNode(
   const path = createSvgGeometryPath(element, style.fillRule);
   if (path !== null) {
     const shape = createShape();
-    applySvgElementAppearance(shape, element, parentStyle, context);
+    applySvgElementAppearance(shape, element, parentStyle, context, path);
     appendSvgShapePaint(shape, path, style, element, context);
     return shape;
   }
 
-  const unsupportedKind =
-    name === 'filter' ||
-    name === 'foreignObject' ||
-    name === 'script' ||
-    name === 'animate' ||
-    name === 'animateTransform' ||
-    name === 'set' ||
-    name === 'pattern';
-  reportImportDiagnostic(
-    context.diagnostics,
-    ImportDiagnosticSeverity.Skip,
-    unsupportedKind ? `svg.unsupported-${name}` : 'svg.unknown-element',
-    'createSvgElementNode',
-    { element: name },
-  );
+  if (isUnsupportedSvgElementName(name)) reportUnsupportedSvgElement(element, context);
+  else
+    reportImportDiagnostic(
+      context.diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'svg.unknown-element',
+      'createSvgElementNode',
+      { element: name },
+    );
   return null;
 }
 
@@ -394,14 +417,19 @@ function createSvgImageNode(
 
   const width = numberAttribute(element, 'width', image.width);
   const height = numberAttribute(element, 'height', image.height);
+  const x = numberAttribute(element, 'x', 0);
+  const y = numberAttribute(element, 'y', 0);
+  const scaleX = image.width > 0 && width >= 0 ? width / image.width : 1;
+  const scaleY = image.height > 0 && height >= 0 ? height / image.height : 1;
   const bitmap = createBitmap({
     data: { image, smoothing: true },
-    x: numberAttribute(element, 'x', 0),
-    y: numberAttribute(element, 'y', 0),
+    x,
+    y,
   });
-  if (image.width > 0 && width >= 0) bitmap.scaleX = width / image.width;
-  if (image.height > 0 && height >= 0) bitmap.scaleY = height / image.height;
   applySvgElementAppearance(bitmap, element, parentStyle, context);
+  const geometry = createMatrix(scaleX, 0, 0, scaleY, x, y);
+  const transform = parseSvgTransform(attribute(element, 'transform'));
+  applySvgTransform(bitmap, transform === null ? geometry : multiplySvgMatrices(transform, geometry));
   return bitmap;
 }
 
@@ -468,14 +496,15 @@ function createSvgTextNode(
   const style = resolveSvgStyle(element, parentStyle, context);
   const format = createSvgTextFormat(style);
   const tspans = element.children.filter((child) => localName(child.name) === 'tspan');
-  const text = tspans.length === 0 ? collectSvgText(element) : element.text + tspans.map(collectSvgText).join('');
+  const runs: SvgTextRun[] = [];
+  collectSvgTextRuns(element, style, context, runs);
+  const text = runs.map((run) => run.text).join('');
   const ranges: TextFormatRange[] = [];
-  let offset = element.text.length;
-  for (const tspan of tspans) {
-    const tspanText = collectSvgText(tspan);
-    const tspanStyle = resolveSvgStyle(tspan, style, context);
-    ranges.push(createTextFormatRange(createSvgTextFormat(tspanStyle), offset, offset + tspanText.length));
-    offset += tspanText.length;
+  let offset = 0;
+  for (const run of runs) {
+    const end = offset + run.text.length;
+    if (run.style !== style) ranges.push(createTextFormatRange(createSvgTextFormat(run.style), offset, end));
+    offset = end;
   }
   const firstTspan = tspans[0];
   const xElement = attribute(element, 'x') === null && firstTspan !== undefined ? firstTspan : element;
@@ -570,11 +599,12 @@ function createSvgUseNode(
   context.resolvingUses.add(id);
   const container = createDisplayContainer();
   const style = applySvgElementAppearance(container, element, parentStyle, context);
-  container.x += numberAttribute(element, 'x', 0);
-  container.y += numberAttribute(element, 'y', 0);
+  const placement = createMatrix(1, 0, 0, 1, numberAttribute(element, 'x', 0), numberAttribute(element, 'y', 0));
+  const transform = parseSvgTransform(attribute(element, 'transform'));
+  applySvgTransform(container, transform === null ? placement : multiplySvgMatrices(transform, placement));
   const referencedNode =
     localName(referenced.name) === 'symbol'
-      ? createSvgSymbolNode(referenced, style, context)
+      ? createSvgSymbolNode(referenced, element, style, context)
       : createSvgElementNode(referenced, style, context);
   if (referencedNode !== null) addNodeChild(container, referencedNode);
   context.resolvingUses.delete(id);
@@ -583,11 +613,21 @@ function createSvgUseNode(
 
 function createSvgSymbolNode(
   element: Readonly<XmlElement>,
+  useElement: Readonly<XmlElement>,
   parentStyle: Readonly<SvgStyle>,
   context: SvgImportContext,
 ): DisplayContainer {
   const container = createDisplayContainer({ name: attribute(element, 'id') });
   const style = resolveSvgStyle(element, parentStyle, context);
+  const useWidth = optionalNumberAttribute(useElement, 'width');
+  const useHeight = optionalNumberAttribute(useElement, 'height');
+  const viewport = createSvgViewportMatrix(element, {
+    height: useHeight ?? undefined,
+    width: useWidth ?? undefined,
+    x: 0,
+    y: 0,
+  });
+  applySvgTransform(container, viewport);
   appendSvgChildren(container, element, style, context);
   return container;
 }
@@ -680,10 +720,20 @@ function appendPathData(out: Path, source: Readonly<Path>): void {
   out.data.push(...source.data);
 }
 
-function collectSvgText(element: Readonly<XmlElement>): string {
-  let text = element.text;
-  for (const child of element.children) text += collectSvgText(child);
-  return text;
+function collectSvgTextRuns(
+  element: Readonly<XmlElement>,
+  style: Readonly<SvgStyle>,
+  context: Readonly<SvgImportContext>,
+  out: SvgTextRun[],
+): void {
+  for (const content of element.content) {
+    if (typeof content === 'string') {
+      out.push({ style, text: content });
+      continue;
+    }
+    if (localName(content.name) !== 'tspan') continue;
+    collectSvgTextRuns(content, resolveSvgStyle(content, style, context), context, out);
+  }
 }
 
 function createSvgGradientMatrix(gradient: Readonly<SvgGradient>, path: Readonly<Path>): Matrix {
@@ -718,13 +768,16 @@ function createSvgGradientMatrix(gradient: Readonly<SvgGradient>, path: Readonly
   return matrix;
 }
 
-function createSvgViewportMatrix(element: Readonly<XmlElement>): Matrix | null {
-  const x = numberAttribute(element, 'x', 0);
-  const y = numberAttribute(element, 'y', 0);
+function createSvgViewportMatrix(
+  element: Readonly<XmlElement>,
+  viewport?: Readonly<{ height?: number; width?: number; x?: number; y?: number }>,
+): Matrix | null {
+  const x = viewport?.x ?? numberAttribute(element, 'x', 0);
+  const y = viewport?.y ?? numberAttribute(element, 'y', 0);
   const viewBox = parseSvgNumberList(attribute(element, 'viewBox') ?? '');
   if (viewBox.length < 4) return x === 0 && y === 0 ? null : createMatrix(1, 0, 0, 1, x, y);
-  const width = parseSvgLength(attribute(element, 'width'), viewBox[2]);
-  const height = parseSvgLength(attribute(element, 'height'), viewBox[3]);
+  const width = viewport?.width ?? parseSvgLength(attribute(element, 'width'), viewBox[2]);
+  const height = viewport?.height ?? parseSvgLength(attribute(element, 'height'), viewBox[3]);
   let sx = viewBox[2] === 0 ? 1 : width / viewBox[2];
   let sy = viewBox[3] === 0 ? 1 : height / viewBox[3];
   const preserveAspectRatio = (attribute(element, 'preserveAspectRatio') ?? 'xMidYMid meet').trim();
@@ -746,9 +799,10 @@ function createSvgViewportMatrix(element: Readonly<XmlElement>): Matrix | null {
 }
 
 function getCssSelectorSpecificity(selector: string): number {
-  if (selector.startsWith('#')) return 100;
-  if (selector.startsWith('.')) return 10;
-  return 1;
+  const ids = selector.match(/#[\w-]+/g)?.length ?? 0;
+  const classes = selector.match(/\.[\w-]+/g)?.length ?? 0;
+  const hasType = /^[a-zA-Z_][\w-]*/.test(selector) ? 1 : 0;
+  return ids * 100 + classes * 10 + hasType;
 }
 
 function indexSvgDefinitions(root: Readonly<XmlElement>, context: SvgImportContext): void {
@@ -797,6 +851,13 @@ function multiplySvgMatrices(a: Readonly<Matrix>, b: Readonly<Matrix>): Matrix {
 
 function numberAttribute(element: Readonly<XmlElement>, name: string, fallback: number): number {
   return parseSvgLength(attribute(element, name), fallback);
+}
+
+function optionalNumberAttribute(element: Readonly<XmlElement>, name: string): number | null {
+  const value = attribute(element, name);
+  if (value === null) return null;
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function parseCssNumber(value: string | undefined, fallback: number): number {
@@ -1000,6 +1061,30 @@ function parseUrlReference(value: string | null): string | null {
   return match?.[1] ?? null;
 }
 
+function reportRemainingUnsupportedSvgElements(
+  element: Readonly<XmlElement>,
+  context: SvgImportContext,
+  insideDefinitions = false,
+): void {
+  const name = localName(element.name);
+  const definitions = insideDefinitions || name === 'defs';
+  if (!definitions && isUnsupportedSvgElementName(name)) reportUnsupportedSvgElement(element, context);
+  for (const child of element.children) reportRemainingUnsupportedSvgElements(child, context, definitions);
+}
+
+function reportUnsupportedSvgElement(element: Readonly<XmlElement>, context: SvgImportContext): void {
+  if (context.reportedUnsupportedElements.has(element)) return;
+  context.reportedUnsupportedElements.add(element);
+  const name = localName(element.name);
+  reportImportDiagnostic(
+    context.diagnostics,
+    ImportDiagnosticSeverity.Skip,
+    `svg.unsupported-${name}`,
+    'createSvgElementNode',
+    { element: name },
+  );
+}
+
 function resolveSvgColor(value: string, currentColor: string): SvgColor | null {
   return parseSvgColor(value === 'currentColor' ? currentColor : value);
 }
@@ -1015,14 +1100,14 @@ function resolveSvgStyle(
   context: Readonly<SvgImportContext>,
 ): SvgStyle {
   const declarations: Record<string, string> = {};
-  const matchingRules = context.cssRules
-    .filter((rule) => matchesCssSelector(element, rule.selector))
-    .sort((a, b) => a.specificity - b.specificity);
-  for (const rule of matchingRules) Object.assign(declarations, rule.declarations);
   for (const name of svgPresentationAttributes) {
     const value = attribute(element, name);
     if (value !== null) declarations[name] = value;
   }
+  const matchingRules = context.cssRules
+    .filter((rule) => matchesCssSelector(element, rule.selector))
+    .sort((a, b) => a.specificity - b.specificity || a.order - b.order);
+  for (const rule of matchingRules) Object.assign(declarations, rule.declarations);
   Object.assign(declarations, parseStyleDeclarations(attribute(element, 'style') ?? ''));
 
   const style: SvgStyle = { ...parentStyle };
@@ -1030,7 +1115,13 @@ function resolveSvgStyle(
   style.display = declarations.display ?? style.display;
   style.fill = declarations.fill ?? style.fill;
   style.fillOpacity = clamp(parseCssNumber(declarations['fill-opacity'], style.fillOpacity), 0, 1);
-  style.fillRule = declarations['fill-rule'] === 'evenodd' ? 'evenOdd' : 'nonZero';
+  style.fillRule =
+    declarations['fill-rule'] === undefined
+      ? style.fillRule
+      : declarations['fill-rule'] === 'evenodd'
+        ? 'evenOdd'
+        : 'nonZero';
+  style.filter = declarations.filter ?? 'none';
   style.fontFamily = declarations['font-family'] ?? style.fontFamily;
   style.fontSize = parseSvgLength(declarations['font-size'] ?? null, style.fontSize);
   style.fontStyle = declarations['font-style'] ?? style.fontStyle;
@@ -1053,6 +1144,19 @@ function firstNumber(value: string | null, fallback: number): number {
   return parseSvgNumberList(value ?? '')[0] ?? fallback;
 }
 
+function isUnsupportedSvgElementName(name: string): boolean {
+  return (
+    name === 'animate' ||
+    name === 'animateMotion' ||
+    name === 'animateTransform' ||
+    name === 'filter' ||
+    name === 'foreignObject' ||
+    name === 'pattern' ||
+    name === 'script' ||
+    name === 'set'
+  );
+}
+
 function visitXmlElements(element: Readonly<XmlElement>, visitor: (element: Readonly<XmlElement>) => void): void {
   visitor(element);
   for (const child of element.children) visitXmlElements(child, visitor);
@@ -1068,6 +1172,7 @@ const svgPresentationAttributes = [
   'fill',
   'fill-opacity',
   'fill-rule',
+  'filter',
   'font-family',
   'font-size',
   'font-style',
