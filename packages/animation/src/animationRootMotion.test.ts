@@ -89,4 +89,23 @@ describe('extractAnimationRootMotion', () => {
     expect(extractAnimationRootMotion(short, extractor, 0, 1)).toBe(false);
     expect(short).toEqual([7]);
   });
+
+  it('rejects non-finite quaternion ranges before mutating output', () => {
+    const clip = createAnimationClip([
+      createAnimationChannel(
+        createAnimationTrack({
+          components: 4,
+          quaternion: true,
+          times: [0, 1],
+          values: [0, 0, 0, 1, 0, 0, Math.SQRT1_2, Math.SQRT1_2],
+        }),
+        {},
+      ),
+    ]);
+    const extractor = createAnimationRootMotionExtractor(clip, 0);
+    const out = new Float32Array([1, 2, 3, 4]);
+    expect(() => extractAnimationRootMotion(out, extractor, 0, Infinity)).toThrow(/finite numbers/);
+    expect(() => extractAnimationRootMotion(out, extractor, -Infinity, 0)).toThrow(/finite numbers/);
+    expect(Array.from(out)).toEqual([1, 2, 3, 4]);
+  });
 });
