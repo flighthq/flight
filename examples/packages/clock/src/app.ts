@@ -37,7 +37,8 @@ const rootClock = createClock();
 const childClockA = createChildClock(rootClock, { scale: 1 });
 const childClockB = createChildClock(rootClock, { scale: 0.5 });
 const captureWindow = window as typeof window & { __flightCapture?: boolean };
-if (captureWindow.__flightCapture) pauseClock(childClockB);
+const captureMode = captureWindow.__flightCapture === true;
+if (captureMode) pauseClock(childClockB);
 
 // Each clock drives a spinning shape. The shapes are drawn centered at origin and positioned via
 // the display object's x/y. Rotation is updated each frame from the clock's elapsed time.
@@ -229,7 +230,7 @@ let lastTime = performance.now();
 
 function enterFrame(): void {
   const now = performance.now();
-  const rawDelta = (now - lastTime) / 1000;
+  const rawDelta = captureMode ? 1 / 60 : (now - lastTime) / 1000;
   lastTime = now;
 
   // Advance the root clock; children are advanced recursively.
@@ -297,7 +298,7 @@ function enterFrame(): void {
   invalidateNodeAppearance(childBPausedLabel);
 
   render(root);
-  requestAnimationFrame(enterFrame);
+  if (!captureMode) requestAnimationFrame(enterFrame);
 }
 
 requestAnimationFrame(enterFrame);

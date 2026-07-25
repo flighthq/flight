@@ -294,10 +294,11 @@ function updateSimulation(dt: number): void {
 // Render loop.
 
 let lastTime = performance.now();
+const captureMode = (window as typeof window & { __flightCapture?: boolean }).__flightCapture === true;
 
 function enterFrame(): void {
   const now = performance.now();
-  const dt = Math.min((now - lastTime) / 1000, 0.1);
+  const dt = captureMode ? 1 / 60 : Math.min((now - lastTime) / 1000, 0.1);
   lastTime = now;
 
   // Determine which state to render: if interpolating, blend between saved snapshots.
@@ -332,7 +333,7 @@ function enterFrame(): void {
   }
 
   render(root);
-  requestAnimationFrame(enterFrame);
+  if (!captureMode) requestAnimationFrame(enterFrame);
 }
 
 enterFrame();

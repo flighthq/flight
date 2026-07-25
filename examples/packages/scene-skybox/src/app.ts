@@ -93,12 +93,14 @@ const lights: SceneLightsLike = { ambient: null, directional: null };
 
 let previousTime = performance.now();
 let torusAngle = 0;
+const captureMode = (window as typeof window & { __flightCapture?: boolean }).__flightCapture === true;
 
 function enterFrame(now: number): void {
-  const deltaTime = Math.min((now - previousTime) / 1000, 0.05);
+  const deltaTime = captureMode ? 1 / 60 : Math.min((now - previousTime) / 1000, 0.05);
   previousTime = now;
 
-  rotateOrbitCameraController(cameraController, deltaTime * 0.08, Math.sin(now * 0.0002) * deltaTime * 0.01);
+  const animationTime = captureMode ? 1_000 / 60 : now;
+  rotateOrbitCameraController(cameraController, deltaTime * 0.08, Math.sin(animationTime * 0.0002) * deltaTime * 0.01);
   updateOrbitCameraController(cameraController, camera, deltaTime);
 
   torusAngle += deltaTime * 0.26;
@@ -106,7 +108,7 @@ function enterFrame(now: number): void {
   invalidateNodeLocalTransform(torus);
 
   render(scene, camera, lights, environment);
-  requestAnimationFrame(enterFrame);
+  if (!captureMode) requestAnimationFrame(enterFrame);
 }
 
 requestAnimationFrame(enterFrame);

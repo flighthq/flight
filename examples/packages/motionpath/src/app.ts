@@ -42,7 +42,8 @@ let speed = 150;
 let loopMode: MotionPathLoopMode = 'loop';
 const mp = createMotionPath(path, speed, loopMode);
 const captureWindow = window as typeof window & { __flightCapture?: boolean };
-if (captureWindow.__flightCapture) setMotionPathProgress(mp, 0.42);
+const captureMode = captureWindow.__flightCapture === true;
+if (captureMode) setMotionPathProgress(mp, 0.42);
 
 // Draw the visible track on screen as a shape with a line style.
 const track = createShape();
@@ -174,7 +175,7 @@ let lastTime = performance.now();
 
 function enterFrame(): void {
   const now = performance.now();
-  const deltaTime = (now - lastTime) / 1000;
+  const deltaTime = captureMode ? 1 / 60 : (now - lastTime) / 1000;
   lastTime = now;
 
   // Advance the motion path by the elapsed time.
@@ -191,7 +192,7 @@ function enterFrame(): void {
   updateLabel(progressLabel, 'Progress: ' + ((progress * 100) | 0) + '%');
 
   render(root);
-  requestAnimationFrame(enterFrame);
+  if (!captureMode) requestAnimationFrame(enterFrame);
 }
 
 requestAnimationFrame(enterFrame);

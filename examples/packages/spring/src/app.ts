@@ -150,9 +150,10 @@ updateInfo();
 
 // Animation loop.
 let lastTime = performance.now();
+const captureMode = (window as typeof window & { __flightCapture?: boolean }).__flightCapture === true;
 
 function enterFrame(now: number): void {
-  const deltaTime = Math.min((now - lastTime) / 1000, 0.1);
+  const deltaTime = captureMode ? 1 / 60 : Math.min((now - lastTime) / 1000, 0.1);
   lastTime = now;
 
   // Advance the spring toward the target.
@@ -166,7 +167,7 @@ function enterFrame(now: number): void {
   invalidateNodeLocalTransform(tweenCircle);
 
   render(root);
-  requestAnimationFrame(enterFrame);
+  if (!captureMode) requestAnimationFrame(enterFrame);
 }
 
 requestAnimationFrame(enterFrame);
