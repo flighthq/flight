@@ -162,6 +162,7 @@ describe('getWgpuQuadBatchPreludeWGSL', () => {
     expect(typeof wgsl).toBe('string');
     expect(wgsl).toContain('struct Uniforms');
     expect(wgsl).toContain('quadBaseVertex');
+    expect(wgsl).toContain('straightTextureAlpha : u32');
   });
 });
 

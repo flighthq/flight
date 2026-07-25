@@ -210,6 +210,9 @@ fn vs_main(@builtin(vertex_index) vi : u32, @builtin(instance_index) ii : u32) -
 fn fs_main(in : VertexOut) -> @location(0) vec4f {
   var color = textureSample(tex, smp, in.uv);
   if (color.a <= 0.0) { discard; }
+  if (uni.straightTextureAlpha != 0u) {
+    color = vec4f(color.rgb * color.a, color.a);
+  }
   color = color * clamp(in.alpha, 0.0, 1.0);
   if (color.a > 0.0) {
     color = vec4f(color.rgb / color.a, color.a);

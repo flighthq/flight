@@ -9,11 +9,12 @@ import type { TextureContainerSupercompression } from './TextureContainerSuperco
 //
 // `width`/`height`/`depth` are the base (mip 0) dimensions (`depth` is 1 for 2D). `mipLevels`,
 // `layers` (array slices; 1 for non-array), and `faces` (6 for a cubemap, else 1) give the container's
-// shape. `levels` is the flat list of every stored sub-image: for a non-supercompressed container it
-// holds `mipLevels * layers * faces` entries (each face/layer split out as its own contiguous range);
+// shape. `levels` is the canonical layer → face → mip flat list of every stored sub-image
+// (`mip + (face + layer * faces) * mipLevels`): for a non-supercompressed container it holds
+// `mipLevels * layers * faces` entries (each face/layer split out as its own contiguous range);
 // for a supercompressed KTX2 it holds one entry per mip level covering the whole compressed blob
-// (a supercompressed level cannot be split per image without inflating it first). Entry order matches
-// the source container's native layout — see each `parse*` function for the exact nesting.
+// (a supercompressed level cannot be split per image without inflating it first). Parsers normalize
+// source-native ordering to this contract while preserving each entry's original byte range.
 export interface TextureContainer {
   readonly format: TextureContainerFormat;
   readonly width: number;

@@ -32,6 +32,7 @@ const SPRITE_INSTANCE_STRIDE = SPRITE_INSTANCE_FLOATS * 4;
 const QUAD_BATCH_PRELUDE_WGSL = /* wgsl */ `
 struct Uniforms {
   matrix : mat3x3f,
+  straightTextureAlpha : u32,
 }
 
 struct InstanceData {
@@ -163,7 +164,7 @@ export function flushWgpuSpriteBatch(state: WgpuRenderState): void {
   state.applyBlendMode?.(state, blendMode);
   const textureEntry = bindWgpuImageResourceTexture(state, texture);
 
-  const uniformOffset = writeWgpuSpriteBatchUniforms(state);
+  const uniformOffset = writeWgpuSpriteBatchUniforms(state, textureEntry.straightAlpha === true);
 
   const instanceBindGroup = state.device.createBindGroup({
     layout: resources.instanceBindGroupLayout,
@@ -374,13 +375,13 @@ function resetWgpuSpriteBatch(state: WgpuRenderState): void {
   runtime.spriteBatchMaterialFloats = 0;
 }
 
-// Writes the NDC viewport matrix into the uniform ring (the only uniform the batch shader reads) and
-// advances the ring offset. Returns the byte offset for the dynamic bind-group binding.
-function writeWgpuSpriteBatchUniforms(state: WgpuRenderState): number {
+// Writes the NDC viewport matrix and the shared texture's alpha representation into the uniform ring,
+// then advances the ring offset. Returns the byte offset for the dynamic bind-group binding.
+function writeWgpuSpriteBatchUniforms(state: WgpuRenderState, straightTextureAlpha: boolean): number {
   const runtime = getWgpuRenderStateRuntime(state);
   const uniformOffset = runtime.uniformOffset;
   const floatBase = uniformOffset >> 2;
-  const { uniformData } = runtime;
+  const { uniformData, uniformDataU32 } = runtime;
   const viewport = runtime.renderTargetViewport ?? state.canvas;
   const iw = 2 / viewport.width;
   const ih = 2 / viewport.height;
@@ -397,6 +398,7 @@ function writeWgpuSpriteBatchUniforms(state: WgpuRenderState): number {
   uniformData[floatBase + 9] = 1;
   uniformData[floatBase + 10] = 1;
   uniformData[floatBase + 11] = 0;
+  uniformDataU32[floatBase + 12] = straightTextureAlpha ? 1 : 0;
   runtime.uniformOffset += runtime.uniformStride;
   return uniformOffset;
 }

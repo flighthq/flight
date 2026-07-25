@@ -266,6 +266,24 @@ describe('uploadGlCompressedTextureContainer', () => {
     expect(gl.texStorage3D).not.toHaveBeenCalled();
   });
 
+  it('maps canonical multi-mip cube entries to mip-fastest faces', () => {
+    const gl = makeGl({ WEBGL_compressed_texture_s3tc: S3TC_EXT });
+    const levels = Array.from({ length: 6 }, (_unused, face) => [
+      { byteOffset: face * 32, byteLength: 16, width: 8, height: 8 },
+      { byteOffset: face * 32 + 16, byteLength: 16, width: 4, height: 4 },
+    ]).flat();
+    uploadGlCompressedTextureContainer(
+      gl,
+      { ...makeContainer(), faces: 6, height: 8, levels, mipLevels: 2, width: 8 },
+      new Uint8Array(192),
+    );
+    const calls = (gl.compressedTexImage2D as ReturnType<typeof vi.fn>).mock.calls;
+    expect(calls[1][0]).toBe(gl.TEXTURE_CUBE_MAP_POSITIVE_X);
+    expect(calls[1][1]).toBe(1);
+    expect(calls[2][0]).toBe(gl.TEXTURE_CUBE_MAP_POSITIVE_X + 1);
+    expect(calls[2][1]).toBe(0);
+  });
+
   it('allocates immutable storage once and sub-uploads each layer of an array into TEXTURE_2D_ARRAY', () => {
     const gl = makeGl({ WEBGL_compressed_texture_s3tc: S3TC_EXT });
     // A single-mip, two-layer array (layer-major): flat index 0 = layer 0, index 1 = layer 1.
@@ -285,6 +303,26 @@ describe('uploadGlCompressedTextureContainer', () => {
     expect(subCalls[0][4]).toBe(0);
     expect(subCalls[1][4]).toBe(1);
     expect(gl.compressedTexImage2D).not.toHaveBeenCalled();
+  });
+
+  it('maps canonical multi-mip array entries to mip-fastest layers', () => {
+    const gl = makeGl({ WEBGL_compressed_texture_s3tc: S3TC_EXT });
+    const levels = [
+      { byteOffset: 0, byteLength: 16, width: 8, height: 8 },
+      { byteOffset: 16, byteLength: 16, width: 4, height: 4 },
+      { byteOffset: 32, byteLength: 16, width: 8, height: 8 },
+      { byteOffset: 48, byteLength: 16, width: 4, height: 4 },
+    ];
+    uploadGlCompressedTextureContainer(
+      gl,
+      { ...makeContainer(), height: 8, layers: 2, levels, mipLevels: 2, width: 8 },
+      new Uint8Array(64),
+    );
+    const calls = (gl.compressedTexSubImage3D as ReturnType<typeof vi.fn>).mock.calls;
+    expect(calls[1][1]).toBe(1);
+    expect(calls[1][4]).toBe(0);
+    expect(calls[2][1]).toBe(0);
+    expect(calls[2][4]).toBe(1);
   });
 
   it('returns false for a cubemap the device cannot upload natively (no face-by-face decode)', () => {

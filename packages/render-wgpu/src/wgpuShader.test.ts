@@ -201,4 +201,22 @@ describe('writeWgpuQuadUniforms', () => {
     expect(runtime.uniformData[floatBase + 28]).toBeCloseTo(0.1);
     expect(runtime.uniformData[floatBase + 12]).toBeCloseTo(0.5); // alpha
   });
+
+  it('writes the native straight-alpha texture flag at u32 offset 14', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const runtime = getWgpuRenderStateRuntime(state);
+    renderWgpuBackground(state);
+    const fakeNode = {
+      alpha: 1,
+      useColorTransform: false,
+      colorTransform: null,
+      transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
+    };
+
+    const straightOffset = writeWgpuQuadUniforms(state, fakeNode, null, 0, 0, 1, 1, 0, 0, 1, 1, true);
+    const premultipliedOffset = writeWgpuQuadUniforms(state, fakeNode, null, 0, 0, 1, 1, 0, 0, 1, 1);
+
+    expect(runtime.uniformDataU32[(straightOffset >> 2) + 14]).toBe(1);
+    expect(runtime.uniformDataU32[(premultipliedOffset >> 2) + 14]).toBe(0);
+  });
 });

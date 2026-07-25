@@ -21,7 +21,8 @@ import {
 // `BasisLZ`-supercompressed level is ETC1S, otherwise it is UASTC (the DFD's exact colorModel is not
 // deep-parsed). Supercompressed levels are reported as single compressed blobs (they cannot be split
 // per face/layer without inflating); uncompressed levels are split into their per-`(layer, face)`
-// sub-images, nested mip-major → layer → face to match the KTX2 image order.
+// sub-images and normalized from KTX2's mip-major file order into TextureContainer's canonical
+// layer → face → mip order.
 export function parseKtx2(bytes: Readonly<Uint8Array>): TextureContainer | null {
   if (!hasKtx2Identifier(bytes)) return null;
 
@@ -56,7 +57,7 @@ export function parseKtx2(bytes: Readonly<Uint8Array>): TextureContainer | null 
   reader.offset = ktx2LevelIndexOffset;
   if (!hasByteReaderBytes(reader, levelCountPresent * 24)) return null;
 
-  const levels: TextureContainerLevel[] = [];
+  const fileOrderLevels: TextureContainerLevel[] = [];
   const imagesPerLevel = layers * faces;
   for (let mip = 0; mip < levelCountPresent; mip += 1) {
     const byteOffset = readByteReaderU64(reader);
@@ -69,17 +70,31 @@ export function parseKtx2(bytes: Readonly<Uint8Array>): TextureContainer | null 
 
     const splittable = supercompression === 'None' && imagesPerLevel > 1 && byteLength % imagesPerLevel === 0;
     if (!splittable) {
-      levels.push({ byteLength, byteOffset, height: mipHeight, width: mipWidth });
+      fileOrderLevels.push({ byteLength, byteOffset, height: mipHeight, width: mipWidth });
       continue;
     }
     const imageSize = byteLength / imagesPerLevel;
     for (let image = 0; image < imagesPerLevel; image += 1) {
-      levels.push({
+      fileOrderLevels.push({
         byteLength: imageSize,
         byteOffset: byteOffset + image * imageSize,
         height: mipHeight,
         width: mipWidth,
       });
+    }
+  }
+
+  let levels = fileOrderLevels;
+  if (
+    supercompression === 'None' &&
+    imagesPerLevel > 1 &&
+    fileOrderLevels.length === levelCountPresent * imagesPerLevel
+  ) {
+    levels = [];
+    for (let image = 0; image < imagesPerLevel; image += 1) {
+      for (let mip = 0; mip < levelCountPresent; mip += 1) {
+        levels.push(fileOrderLevels[mip * imagesPerLevel + image]);
+      }
     }
   }
 

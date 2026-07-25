@@ -9,7 +9,8 @@ import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 //   offset  0–47 : mat3x3f matrix (3 columns × 16 bytes each due to vec3 padding)
 //   offset 48    : f32 alpha
 //   offset 52    : u32 hasColorTransform
-//   offset 56–63 : 2× f32 padding
+//   offset 56    : u32 straightTextureAlpha
+//   offset 60    : f32 padding
 //   offset 64–79 : vec4f colorMultiplier
 //   offset 80–95 : vec4f colorOffset
 //   offset 96–111: f32 x0, y0, x1, y1 (quad pixel-space corners)
@@ -22,7 +23,7 @@ struct Uniforms {
   matrix : mat3x3f,
   alpha : f32,
   hasColorTransform : u32,
-  _pad0 : f32,
+  straightTextureAlpha : u32,
   _pad1 : f32,
   colorMultiplier : vec4f,
   colorOffset : vec4f,
@@ -66,6 +67,9 @@ fn vs_main(@builtin(vertex_index) vi : u32) -> VertexOut {
 fn fs_main(in : VertexOut) -> @location(0) vec4f {
   var color = textureSample(tex, smp, in.uv);
   if (color.a <= 0.0) { discard; }
+  if (uni.straightTextureAlpha != 0u) {
+    color = vec4f(color.rgb * color.a, color.a);
+  }
   if (uni.hasColorTransform != 0u && color.a > 0.0) {
     // Unpremultiply, apply transform, repremultiply
     color = vec4f(color.rgb / color.a, color.a);
@@ -333,6 +337,7 @@ export function writeWgpuQuadUniforms(
   v0: number,
   u1: number,
   v1: number,
+  straightTextureAlpha = false,
 ): number {
   const runtime = getWgpuRenderStateRuntime(state);
   const byteOffset = runtime.uniformOffset;
@@ -360,8 +365,10 @@ export function writeWgpuQuadUniforms(
   // hasColorTransform at float 13 (byte 52) — written as u32. The color transform comes from the
   // node's material (resolved by the caller); null → identity.
   uniformDataU32[floatBase + 13] = colorTransform !== null ? 1 : 0;
-  // padding floats 14–15
-  uniformData[floatBase + 14] = 0;
+  // straightTextureAlpha at float 14 (byte 56) — native compressed blocks retain straight RGB and
+  // the display shader premultiplies their sample before color transforms and fixed-function blend.
+  uniformDataU32[floatBase + 14] = straightTextureAlpha ? 1 : 0;
+  // padding float 15
   uniformData[floatBase + 15] = 0;
   // colorMultiplier at float 16–19 (byte 64–79)
   uniformData[floatBase + 16] = colorTransform?.redMultiplier ?? 1;
