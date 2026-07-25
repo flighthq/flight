@@ -743,3 +743,5 @@ export * from './MeshAttachment2D';
 export * from './RegionAttachment2D';
 export * from './Slot2D';
 export * from './Skeleton2D';
+export * from './Skeleton2DAnimationPath';
+export * from './Skeleton2DAnimationTarget';
