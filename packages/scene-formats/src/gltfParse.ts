@@ -663,11 +663,22 @@ function buildGltfAnimations(
       }
       const times = inputResult.data;
       const values = outputResult.data;
-      if (times.length === 0 || values.length === 0 || values.length % times.length !== 0) {
-        // A usable track needs at least one keyframe and a value count that is a whole multiple of the
-        // keyframe count (one output tuple per keyframe). An empty or ragged sampler yields no usable track,
-        // so drop the channel (Drop) rather than create an animation with an empty channel.
+      if (inputResult.count === 0 || outputResult.count === 0) {
+        // A usable track needs at least one keyframe — an empty sampler yields no usable track, so drop the
+        // channel (Drop) rather than create an animation with an empty channel.
         tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.animation-sampler-empty', '', {
+          firstSampler: channel.sampler,
+        });
+        continue;
+      }
+      // Validate output cardinality against the keyframe count by INTERPOLATION (element counts, not flattened
+      // lengths — a VEC4 output with 1 element against 2 keys has length 4, which a `% keys` check wrongly
+      // admits). LINEAR/STEP: one output element per key; CUBICSPLINE: three (in-tangent, value, out-tangent).
+      // A mismatch is a malformed track → drop the channel. Weights are SCALAR but target-width-scaled, so
+      // their cardinality is validated per-mesh in appendGltfWeightsChannels where the target count is known.
+      const cubic = sampler.interpolation === 'CUBICSPLINE';
+      if (channel.target.path !== 'weights' && outputResult.count !== (cubic ? 3 : 1) * inputResult.count) {
+        tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.animation-sampler-cardinality', '', {
           firstSampler: channel.sampler,
         });
         continue;
@@ -730,11 +741,24 @@ function appendGltfWeightsChannels(
   interpolation: string | undefined,
   gltfDrops: Map<string, GltfDropTally> | null,
 ): void {
+  // SCALAR weight keys, so `times.length` is the keyframe count and `values.length` packs the per-key weights.
+  // Each key carries one weight per morph target (×3 for CUBICSPLINE tangents), so the output must be exactly
+  // (perKey · keys · targetWidth) long; a mismatch cannot drive that mesh's morph and its channel is dropped.
+  const perKey = interpolation === 'CUBICSPLINE' ? 3 : 1;
   let bound = 0;
+  let cardinalityDropped = false;
   for (let i = 0; i < meshNodeIndices.length; i++) {
     const meshIndex = nodes[meshNodeIndices[i]]?.mesh;
     const morph = meshIndex !== undefined ? meshes[meshIndex]?.morph : null;
     if (morph == null || morph.targets.length === 0) continue;
+    if (values.length !== perKey * times.length * morph.targets.length) {
+      tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.weights-cardinality-mismatch', '', {
+        firstExpected: perKey * times.length * morph.targets.length,
+        firstActual: values.length,
+      });
+      cardinalityDropped = true;
+      continue;
+    }
     const track = createAnimationTrack({
       components: morph.targets.length,
       interpolation: GLTF_SAMPLER_INTERPOLATIONS[interpolation ?? 'LINEAR'],
@@ -744,7 +768,7 @@ function appendGltfWeightsChannels(
     channels.push({ node: meshNodeIndices[i], path: SceneAnimationPathWeights, track });
     bound++;
   }
-  if (bound === 0) {
+  if (bound === 0 && !cardinalityDropped) {
     tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.weights-no-morphable-mesh', '', {});
   }
 }
@@ -1468,6 +1492,21 @@ function applyAccessorSparse(
   const indexBase = indexBytes.byteOffset + (indicesView.byteOffset ?? 0) + (sparse.indices.byteOffset ?? 0);
   const valueSize = COMPONENT_BYTE_SIZE[valueComponentType];
   const valueBase = valueBytes.byteOffset + (valuesView.byteOffset ?? 0) + (sparse.values.byteOffset ?? 0);
+
+  // Guard the packed index and value reads against their real buffer lengths. An oversized sparse.count
+  // would otherwise read past the DataView and throw a RangeError. The base accessor data is already valid,
+  // so a bad override is skipped (not applied) and the accessor survives with its base values — Recover.
+  const indexEnd = indexBase + sparse.count * indexSize;
+  const valueEnd = valueBase + sparse.count * componentCount * valueSize;
+  if (
+    indexEnd > indexBytes.byteOffset + indexBytes.byteLength ||
+    valueEnd > valueBytes.byteOffset + valueBytes.byteLength
+  ) {
+    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.sparse-past-buffer', '', {
+      firstCount: sparse.count,
+    });
+    return;
+  }
 
   for (let s = 0; s < sparse.count; s++) {
     const targetIndex = readComponent(indexView, sparse.indices.componentType, indexBase + s * indexSize);
