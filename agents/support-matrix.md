@@ -15,11 +15,11 @@ drift-gated by `npm run support:check` (part of `npm run check`).
 
 ## Coverage summary
 
-146 functional scenes with committed baselines. Scenes carrying a fingerprint per backend:
+165 functional scenes with committed baselines. Scenes carrying a fingerprint per backend:
 
 | Canvas | DOM | WebGL | WebGPU |
 | --- | --- | --- | --- |
-| 91 / 146 | 39 / 146 | 142 / 146 | 135 / 146 |
+| 105 / 165 | 39 / 165 | 144 / 165 | 147 / 165 |
 
 All four backends re-verify in-sandbox — WebGPU via SwiftShader software Vulkan. A small set of WebGPU scenes exceed the fingerprint tolerance on software-vs-hardware antialiasing differences; see [maturity-gaps](maturity-gaps.md).
 
@@ -50,6 +50,7 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 | `bitmap-perbitmap-smoothing` | · | · | ✓ | ✓ |
 | `bitmap-smoothing` | ✓ | ✓ | ✓ | ✓ |
 | `bitmap-source-rect` | ✓ | ✓ | ✓ | ✓ |
+| `bitmap-transform-rotation` | ✓ | · | · | · |
 | `bitmap-transparent-compositing` | ✓ | ✓ | ✓ | ✓ |
 
 ### Camera
@@ -57,6 +58,12 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
 | `camera-orthographic` | · | · | ✓ | ✓ |
+
+### Camera2d
+
+| Scene | Canvas | DOM | WebGL | WebGPU |
+| --- | :-: | :-: | :-: | :-: |
+| `camera2d-viewport` | ✓ | · | · | · |
 
 ### Clipping
 
@@ -98,6 +105,7 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 | `effect-channel-mixer` | ✓ | · | ✓ | ✓ |
 | `effect-chromatic-aberration` | ✓ | · | ✓ | ✓ |
 | `effect-color-grade` | ✓ | · | ✓ | ✓ |
+| `effect-composite` | · | · | · | ✓ |
 | `effect-crt` | ✓ | · | ✓ | ✓ |
 | `effect-directional-blur` | ✓ | · | ✓ | ✓ |
 | `effect-displacement` | ✓ | · | ✓ | ✓ |
@@ -143,17 +151,17 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
-| `env-ibl` | · | · | ✓ | · |
-| `env-skybox` | · | · | ✓ | · |
+| `env-ibl` | · | · | ✓ | ✓ |
+| `env-skybox` | · | · | ✓ | ✓ |
 
 ### Lighting
 
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
-| `light-hemisphere` | · | · | ✓ | · |
-| `light-many-point` | · | · | ✓ | · |
-| `light-point` | · | · | ✓ | · |
-| `light-spot` | · | · | ✓ | · |
+| `light-hemisphere` | · | · | ✓ | ✓ |
+| `light-many-point` | · | · | ✓ | ✓ |
+| `light-point` | · | · | ✓ | ✓ |
+| `light-spot` | · | · | ✓ | ✓ |
 
 ### Materials (3D)
 
@@ -181,6 +189,7 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 | `material-transmission-volume` | · | · | ✓ | ✓ |
 | `material-unlit` | · | · | ✓ | ✓ |
 | `material-vertex-color` | · | · | ✓ | ✓ |
+| `material-video-map` | · | · | ✓ | ✓ |
 | `material-wireframe` | · | · | ✓ | ✓ |
 
 ### Mesh (3D)
@@ -202,8 +211,18 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
 | `particle-emitter` | ✓ | · | ✓ | ✓ |
+| `particle-emitter-3d` | · | · | · | ✓ |
 | `particle-emitter-color` | · | · | ✓ | ✓ |
 | `particle-motion-blur` | · | · | ✓ | ✓ |
+
+### Path
+
+| Scene | Canvas | DOM | WebGL | WebGPU |
+| --- | :-: | :-: | :-: | :-: |
+| `path-boolean-difference` | ✓ | · | · | · |
+| `path-boolean-intersection` | ✓ | · | · | · |
+| `path-boolean-union` | ✓ | · | · | · |
+| `path-boolean-xor` | ✓ | · | · | · |
 
 ### QuadBatch
 
@@ -232,12 +251,20 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
 | `node-alpha` | ✓ | ✓ | ✓ | ✓ |
-| `node-blend-modes` | ✓ | ✓ | ✓ | · |
+| `node-blend-modes` | ✓ | ✓ | ✓ | ✓ |
 | `node-blend-modes-advanced` | ✓ | ✓ | · | · |
 | `node-hierarchy` | ✓ | ✓ | ✓ | ✓ |
 | `node-transform` | ✓ | ✓ | ✓ | ✓ |
 | `node-visibility` | ✓ | ✓ | ✓ | ✓ |
 | `node-visibility-inheritance` | ✓ | ✓ | ✓ | ✓ |
+| `node-z-order` | ✓ | · | · | · |
+
+### Shading
+
+| Scene | Canvas | DOM | WebGL | WebGPU |
+| --- | :-: | :-: | :-: | :-: |
+| `shading-globe` | · | · | ✓ | ✓ |
+| `shading-normal-map` | · | · | · | ✓ |
 
 ### Shadows
 
@@ -251,11 +278,17 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
+| `shape-arc-fill` | ✓ | · | · | · |
+| `shape-circle-fill` | ✓ | · | · | · |
 | `shape-curves` | ✓ | ✓ | ✓ | ✓ |
+| `shape-ellipse-fill` | ✓ | · | · | · |
 | `shape-fill-bitmap` | ✓ | ✓ | ✓ | ✓ |
 | `shape-fill-gradient` | ✓ | ✓ | ✓ | ✓ |
 | `shape-fill-radial` | ✓ | ✓ | ✓ | ✓ |
 | `shape-fill-solid` | ✓ | ✓ | ✓ | ✓ |
+| `shape-fill-stroke-combined` | ✓ | · | · | · |
+| `shape-polygon-fill` | ✓ | · | · | · |
+| `shape-round-rect` | ✓ | · | · | · |
 | `shape-stroke` | ✓ | ✓ | ✓ | ✓ |
 | `shape-stroke-caps` | ✓ | ✓ | ✓ | ✓ |
 | `shape-stroke-joints` | ✓ | ✓ | ✓ | ✓ |
@@ -265,6 +298,12 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
 | `sprite-atlas` | ✓ | · | ✓ | ✓ |
+
+### Spritesheet
+
+| Scene | Canvas | DOM | WebGL | WebGPU |
+| --- | :-: | :-: | :-: | :-: |
+| `spritesheet-frame` | ✓ | · | · | · |
 
 ### Text
 

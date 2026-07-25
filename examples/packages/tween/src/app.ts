@@ -44,6 +44,7 @@ const CIRCLE_RADIUS = 8;
 const TWEEN_DURATION = 1500;
 const TRACK_MARGIN = 20;
 const FRAME_DELTA = 1000 / 60;
+const captureMode = (window as typeof window & { __flightCapture?: boolean }).__flightCapture === true;
 
 const easings: ReadonlyArray<{ readonly name: string; readonly ease: EasingFunction }> = [
   { name: 'easeInQuadratic', ease: easeInQuadratic },
@@ -117,7 +118,7 @@ let frame = 0;
 function enterFrame(): void {
   stepApplicationLoop(app, frame === 0 ? 0 : FRAME_DELTA);
   frame++;
-  requestAnimationFrame(enterFrame);
+  if (!captureMode) requestAnimationFrame(enterFrame);
 }
 
 requestAnimationFrame(enterFrame);

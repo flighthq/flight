@@ -19,6 +19,17 @@ const HEIGHT = 500;
 const INITIAL_COUNT = 10;
 const BATCH_SIZE = 100;
 const SHAPE_SIZE = 16;
+const captureMode = (window as typeof window & { __flightCapture?: boolean }).__flightCapture === true;
+
+function createCaptureRandom(seed: number): () => number {
+  let state = seed | 0;
+  return () => {
+    state = (Math.imul(state, 1_664_525) + 1_013_904_223) | 0;
+    return (state >>> 0) / 0x1_0000_0000;
+  };
+}
+
+const random = captureMode ? createCaptureRandom(0xbe_7c) : Math.random;
 
 const shapeCanvas = document.createElement('canvas');
 shapeCanvas.width = SHAPE_SIZE;
@@ -64,8 +75,8 @@ function addShape(): void {
   invalidateNodeAppearance(quadBatch);
   posX.push(0);
   posY.push(0);
-  speedX.push(Math.random() * 5);
-  speedY.push(Math.random() * 5 - 2.5);
+  speedX.push(random() * 5);
+  speedY.push(random() * 5 - 2.5);
 }
 
 canvas.addEventListener('mousedown', () => {
@@ -99,8 +110,8 @@ function enterFrame(): void {
     if (posY[i] > HEIGHT - SHAPE_SIZE) {
       speedY[i] *= -0.8;
       posY[i] = HEIGHT - SHAPE_SIZE;
-      if (Math.random() > 0.5) {
-        speedY[i] -= 3 + Math.random() * 4;
+      if (random() > 0.5) {
+        speedY[i] -= 3 + random() * 4;
       }
     } else if (posY[i] < 0) {
       speedY[i] = 0;
@@ -132,7 +143,7 @@ function enterFrame(): void {
 
   render(root);
 
-  requestAnimationFrame(enterFrame);
+  if (!captureMode) requestAnimationFrame(enterFrame);
 }
 
 for (let i = 0; i < INITIAL_COUNT; i++) {
