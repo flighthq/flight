@@ -10,11 +10,13 @@ import {
   setQuaternion,
   setVector3,
 } from '@flighthq/geometry';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
 import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, computeMeshGeometryNormals, createMeshGeometry } from '@flighthq/mesh';
 import { createSceneFromDocument } from '@flighthq/scene';
 import type { Scene } from '@flighthq/types';
 import type {
+  ImportDiagnostic,
   Material,
   MaterialLike,
   Matrix4,
@@ -27,7 +29,7 @@ import type {
   Md5Weight,
   SkinInfluence,
 } from '@flighthq/types';
-import { MeshKind, SceneNodeKind } from '@flighthq/types';
+import { ImportDiagnosticSeverity, MeshKind, SceneNodeKind } from '@flighthq/types';
 
 import { parseMd5Anim } from './md5AnimParse';
 import { findSceneSkeletonJoints } from './sceneSkeleton';
@@ -51,9 +53,9 @@ interface Md5WeightInfluence extends SkinInfluence {
 }
 
 // Parses an id Tech 4 MD5 mesh file (.md5mesh) into a Scene. Convenience over
-// `createSceneFromDocument(parseMd5Mesh(source, warnings))`. See parseMd5Mesh for the import model.
-export function createSceneFromMd5Mesh(source: string, warnings?: string[]): Scene {
-  return createSceneFromDocument(parseMd5Mesh(source, warnings));
+// `createSceneFromDocument(parseMd5Mesh(source, diagnostics))`. See parseMd5Mesh for the import model.
+export function createSceneFromMd5Mesh(source: string, diagnostics?: ImportDiagnostic[]): Scene {
+  return createSceneFromDocument(parseMd5Mesh(source, diagnostics));
 }
 
 // One-call MD5 import: builds the Scene from the `.md5mesh` source and, when a `.md5anim` source is
@@ -64,19 +66,23 @@ export function createSceneFromMd5Mesh(source: string, warnings?: string[]): Sce
 // `.md5anim` carries no name of its own, so the clip is keyed 'default'; a caller loading several
 // animations against one mesh uses parseMd5Anim directly and keys each as it likes. Warns (and skips the
 // animation) when `animSource` is given but the mesh carries no skeleton to bind it to.
-export function importMd5Mesh(meshSource: string, animSource?: string | null, warnings?: string[]): Scene {
-  const scene = createSceneFromMd5Mesh(meshSource, warnings);
+export function importMd5Mesh(meshSource: string, animSource?: string | null, diagnostics?: ImportDiagnostic[]): Scene {
+  const scene = createSceneFromMd5Mesh(meshSource, diagnostics);
   if (animSource == null) return scene;
 
   const joints = findSceneSkeletonJoints(scene.root);
   if (joints === null) {
-    warnings?.push(
-      'importMd5Mesh: animation source given but the mesh has no skeleton to bind it to; ignoring the animation',
+    // The mesh carried no skeleton, so a recognized-but-unbindable animation is skipped (the mesh is fine).
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'md5mesh.animation-no-skeleton',
+      'importMd5Mesh',
     );
     return scene;
   }
 
-  const clip = parseMd5Anim(animSource, joints, warnings);
+  const clip = parseMd5Anim(animSource, joints, diagnostics);
   if (clip !== null) scene.animations.default = clip;
   return scene;
 }
@@ -103,9 +109,14 @@ export function importMd5Mesh(meshSource: string, animSource?: string | null, wa
 // onto the assembled scene directly:
 // `scene.animations['walk'] = parseMd5Anim(animSource, findSceneSkeletonJoints(scene.root)!)`.
 //
-// Malformed lines push a warning and are skipped; the function never throws on bad input.
-export function parseMd5Mesh(source: string, warnings?: string[]): SceneDocument {
+// Malformed lines record a diagnostic and are skipped; the function never throws on bad input.
+export function parseMd5Mesh(source: string, diagnostics?: ImportDiagnostic[]): SceneDocument {
   const document = emptyMd5Document();
+
+  // Repeated malformed lines/indices are tallied here and flushed as ONE crumb per (kind, discriminator)
+  // at the end — parseMd5Mesh is the emitting function, so it is every aggregated crumb's origin. Null
+  // (and every tally call a no-op) when no collector is engaged, so an unopted parse stays allocation-free.
+  const md5Drops = diagnostics ? new Map<string, Md5DropTally>() : null;
 
   const joints: Md5Joint[] = [];
   const meshes: Md5Mesh[] = [];
@@ -122,7 +133,8 @@ export function parseMd5Mesh(source: string, warnings?: string[]): SceneDocument
     if (line.startsWith('MD5Version')) {
       const version = parseInt(line.split(/\s+/)[1], 10);
       if (Number.isFinite(version) && version !== 10) {
-        warnings?.push(`createSceneFromMd5Mesh: unsupported MD5Version ${version} (expected 10)`);
+        // The block layout is assumed to be v10 and parsing continues regardless — a degraded recovery.
+        tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Recover, 'md5mesh.unsupported-version', '', { version });
       }
       continue;
     }
@@ -132,12 +144,12 @@ export function parseMd5Mesh(source: string, warnings?: string[]): SceneDocument
     }
 
     if (line === 'joints {') {
-      i = parseJointsBlock(lines, i, joints, warnings);
+      i = parseJointsBlock(lines, i, joints, md5Drops);
       continue;
     }
 
     if (line === 'mesh {') {
-      const mesh = parseMeshBlock(lines, i, warnings);
+      const mesh = parseMeshBlock(lines, i, md5Drops);
       i = mesh.nextLine;
       meshes.push(mesh.result);
       continue;
@@ -149,7 +161,7 @@ export function parseMd5Mesh(source: string, warnings?: string[]): SceneDocument
   let skinIndex: number | undefined;
   if (joints.length > 0) {
     skinIndex = document.skins.length;
-    document.skins.push(buildMd5SkeletonDocument(joints, document, warnings));
+    document.skins.push(buildMd5SkeletonDocument(joints, document, md5Drops));
   }
 
   // Build mesh geometry from weighted vertices. Each vertex bakes its bind-pose position from the joint
@@ -177,14 +189,20 @@ export function parseMd5Mesh(source: string, warnings?: string[]): SceneDocument
       for (let w = 0; w < vert.countWeights; w++) {
         const weightIndex = vert.startWeight + w;
         if (weightIndex >= md5Mesh.weights.length) {
-          warnings?.push(`createSceneFromMd5Mesh: vertex ${v} references weight index ${weightIndex} out of range`);
+          // The vertex keeps the influences read so far (a partial, degraded vertex) — Recover.
+          tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Recover, 'md5mesh.vertex-weight-out-of-range', '', {
+            firstIndex: weightIndex,
+            firstVertex: v,
+          });
           break;
         }
         const weight = md5Mesh.weights[weightIndex];
         if (weight.jointIndex < 0 || weight.jointIndex >= joints.length) {
-          warnings?.push(
-            `createSceneFromMd5Mesh: weight ${weightIndex} references joint index ${weight.jointIndex} out of range`,
-          );
+          // The bad weight is skipped; the vertex keeps its other influences — Recover.
+          tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Recover, 'md5mesh.weight-joint-out-of-range', '', {
+            firstIndex: weight.jointIndex,
+            firstWeight: weightIndex,
+          });
           continue;
         }
         const joint = joints[weight.jointIndex];
@@ -309,13 +327,35 @@ export function parseMd5Mesh(source: string, warnings?: string[]): SceneDocument
       const nodeIndex = document.nodes.length;
       document.nodes.push({ children: [], kind: MeshKind, mesh: meshIndex, transform: createTransform3D() });
       document.scenes[0].rootNodes.push(nodeIndex);
+    } else {
+      // A parsed mesh section with no triangles produces no node — the section's geometry is dropped.
+      tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Drop, 'md5mesh.mesh-empty', '', {});
     }
   }
 
   if (truncatedVertexCount > 0) {
-    warnings?.push(
-      `createSceneFromMd5Mesh: ${truncatedVertexCount} vertex(es) had more than ${MAX_SKIN_INFLUENCES} joint influences (up to ${maxObservedInfluences}); each was reduced to its ${MAX_SKIN_INFLUENCES} highest-weight influences`,
+    // Pre-counted total (not a per-occurrence tally): linear-blend skinning keeps at most 4 influences, so
+    // the extras are reduced to the highest-weight four — a universal, benign clamp. Emitted from parseMd5Mesh.
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'md5mesh.vertex-over-influenced',
+      'parseMd5Mesh',
+      {
+        count: truncatedVertexCount,
+        maxInfluences: maxObservedInfluences,
+      },
     );
+  }
+
+  // Flush the aggregated tallies as one crumb per (kind, discriminator) with its total count.
+  if (md5Drops !== null) {
+    for (const tally of md5Drops.values()) {
+      reportImportDiagnostic(diagnostics, tally.severity, tally.kind, 'parseMd5Mesh', {
+        ...tally.detail,
+        count: tally.count,
+      });
+    }
   }
 
   return document;
@@ -329,7 +369,7 @@ export function parseMd5Mesh(source: string, warnings?: string[]): SceneDocument
 function buildMd5SkeletonDocument(
   joints: readonly Md5Joint[],
   document: SceneDocument,
-  warnings?: string[],
+  md5Drops: Map<string, Md5DropTally> | null,
 ): SceneDocumentSkin {
   const skeletonRootIndex = document.nodes.length;
   document.nodes.push({ children: [], kind: SceneNodeKind, name: 'skeleton', transform: createTransform3D() });
@@ -400,7 +440,11 @@ function buildMd5SkeletonDocument(
       localQz = relQuat.z;
       localQw = relQuat.w;
     } else if (parentIndex >= joints.length) {
-      warnings?.push(`createSceneFromMd5Mesh: joint ${j} has out-of-range parent index ${parentIndex}`);
+      // The joint keeps its absolute transform as local (degraded parenting) — Recover.
+      tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Recover, 'md5mesh.joint-parent-out-of-range', '', {
+        firstJoint: j,
+        firstParent: parentIndex,
+      });
     }
     const transform = document.nodes[jointNodeIndices[j]].transform;
     setVector3(transform.position, localPx, localPy, localPz);
@@ -467,7 +511,7 @@ function parseJointsBlock(
   lines: readonly string[],
   startLine: number,
   joints: Md5Joint[],
-  warnings: string[] | undefined,
+  md5Drops: Map<string, Md5DropTally> | null,
 ): number {
   let i = startLine;
   while (i < lines.length) {
@@ -477,20 +521,23 @@ function parseJointsBlock(
     if (line === '}') return i;
     if (line.length === 0 || line.startsWith('//')) continue;
 
-    const joint = parseJointLine(line, warnings, i - 1);
+    const joint = parseJointLine(line, md5Drops, i - 1);
     if (joint !== null) joints.push(joint);
   }
-  warnings?.push('createSceneFromMd5Mesh: joints block was not closed');
+  tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Recover, 'md5mesh.joints-block-unclosed', '', {});
   return i;
 }
 
 // Parses a single joint line: "name" parentIndex ( px py pz ) ( qx qy qz )
-function parseJointLine(line: string, warnings: string[] | undefined, lineIndex: number): Md5Joint | null {
+function parseJointLine(line: string, md5Drops: Map<string, Md5DropTally> | null, lineIndex: number): Md5Joint | null {
   // Extract the quoted name.
   const nameStart = line.indexOf('"');
   const nameEnd = line.indexOf('"', nameStart + 1);
   if (nameStart < 0 || nameEnd < 0) {
-    warnings?.push(`createSceneFromMd5Mesh: malformed joint on line ${lineIndex + 1}: missing name quotes`);
+    tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Drop, 'md5mesh.malformed-joint', 'missing-name-quotes', {
+      firstLine: lineIndex + 1,
+      reason: 'missing-name-quotes',
+    });
     return null;
   }
   const name = line.slice(nameStart + 1, nameEnd);
@@ -503,7 +550,10 @@ function parseJointLine(line: string, warnings: string[] | undefined, lineIndex:
     .filter((t) => t.length > 0);
 
   if (tokens.length < 7) {
-    warnings?.push(`createSceneFromMd5Mesh: malformed joint on line ${lineIndex + 1}: not enough components`);
+    tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Drop, 'md5mesh.malformed-joint', 'not-enough-components', {
+      firstLine: lineIndex + 1,
+      reason: 'not-enough-components',
+    });
     return null;
   }
 
@@ -524,7 +574,10 @@ function parseJointLine(line: string, warnings: string[] | undefined, lineIndex:
     !Number.isFinite(orientationY) ||
     !Number.isFinite(orientationZ)
   ) {
-    warnings?.push(`createSceneFromMd5Mesh: malformed joint on line ${lineIndex + 1}: non-numeric values`);
+    tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Drop, 'md5mesh.malformed-joint', 'non-numeric', {
+      firstLine: lineIndex + 1,
+      reason: 'non-numeric',
+    });
     return null;
   }
 
@@ -550,7 +603,7 @@ function parseJointLine(line: string, warnings: string[] | undefined, lineIndex:
 function parseMeshBlock(
   lines: readonly string[],
   startLine: number,
-  warnings: string[] | undefined,
+  md5Drops: Map<string, Md5DropTally> | null,
 ): { nextLine: number; result: Md5Mesh } {
   let shader = '';
   const vertices: Md5Vertex[] = [];
@@ -579,13 +632,13 @@ function parseMeshBlock(
     }
 
     if (line.startsWith('vert ')) {
-      const vert = parseVertLine(line, warnings, i - 1);
+      const vert = parseVertLine(line, md5Drops, i - 1);
       if (vert !== null) vertices.push(vert);
       continue;
     }
 
     if (line.startsWith('tri ')) {
-      const tri = parseTriLine(line, warnings, i - 1);
+      const tri = parseTriLine(line, md5Drops, i - 1);
       if (tri !== null) {
         indices.push(tri[0], tri[1], tri[2]);
       }
@@ -593,25 +646,28 @@ function parseMeshBlock(
     }
 
     if (line.startsWith('weight ')) {
-      const weight = parseWeightLine(line, warnings, i - 1);
+      const weight = parseWeightLine(line, md5Drops, i - 1);
       if (weight !== null) weights.push(weight);
       continue;
     }
   }
 
-  warnings?.push('createSceneFromMd5Mesh: mesh block was not closed');
+  tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Recover, 'md5mesh.mesh-block-unclosed', '', {});
   return { nextLine: i, result: { indices, shader, vertices, weights } };
 }
 
 // Parses: vert vertIndex ( u v ) startWeight countWeights
-function parseVertLine(line: string, warnings: string[] | undefined, lineIndex: number): Md5Vertex | null {
+function parseVertLine(line: string, md5Drops: Map<string, Md5DropTally> | null, lineIndex: number): Md5Vertex | null {
   const tokens = line
     .replace(/[()]/g, '')
     .split(/\s+/)
     .filter((t) => t.length > 0);
   // tokens: ["vert", vertIndex, u, v, startWeight, countWeights]
   if (tokens.length < 6) {
-    warnings?.push(`createSceneFromMd5Mesh: malformed vert on line ${lineIndex + 1}`);
+    tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Drop, 'md5mesh.malformed-vert', 'not-enough-components', {
+      firstLine: lineIndex + 1,
+      reason: 'not-enough-components',
+    });
     return null;
   }
 
@@ -621,7 +677,10 @@ function parseVertLine(line: string, warnings: string[] | undefined, lineIndex: 
   const countWeights = parseInt(tokens[5], 10);
 
   if (!Number.isFinite(u) || !Number.isFinite(v) || !Number.isFinite(startWeight) || !Number.isFinite(countWeights)) {
-    warnings?.push(`createSceneFromMd5Mesh: malformed vert on line ${lineIndex + 1}: non-numeric values`);
+    tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Drop, 'md5mesh.malformed-vert', 'non-numeric', {
+      firstLine: lineIndex + 1,
+      reason: 'non-numeric',
+    });
     return null;
   }
 
@@ -631,13 +690,16 @@ function parseVertLine(line: string, warnings: string[] | undefined, lineIndex: 
 // Parses: tri triIndex v0 v1 v2
 function parseTriLine(
   line: string,
-  warnings: string[] | undefined,
+  md5Drops: Map<string, Md5DropTally> | null,
   lineIndex: number,
 ): readonly [number, number, number] | null {
   const tokens = line.split(/\s+/).filter((t) => t.length > 0);
   // tokens: ["tri", triIndex, v0, v1, v2]
   if (tokens.length < 5) {
-    warnings?.push(`createSceneFromMd5Mesh: malformed tri on line ${lineIndex + 1}`);
+    tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Drop, 'md5mesh.malformed-tri', 'not-enough-components', {
+      firstLine: lineIndex + 1,
+      reason: 'not-enough-components',
+    });
     return null;
   }
 
@@ -646,7 +708,10 @@ function parseTriLine(
   const v2 = parseInt(tokens[4], 10);
 
   if (!Number.isFinite(v0) || !Number.isFinite(v1) || !Number.isFinite(v2)) {
-    warnings?.push(`createSceneFromMd5Mesh: malformed tri on line ${lineIndex + 1}: non-numeric indices`);
+    tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Drop, 'md5mesh.malformed-tri', 'non-numeric', {
+      firstLine: lineIndex + 1,
+      reason: 'non-numeric',
+    });
     return null;
   }
 
@@ -654,14 +719,21 @@ function parseTriLine(
 }
 
 // Parses: weight weightIndex jointIndex bias ( px py pz )
-function parseWeightLine(line: string, warnings: string[] | undefined, lineIndex: number): Md5Weight | null {
+function parseWeightLine(
+  line: string,
+  md5Drops: Map<string, Md5DropTally> | null,
+  lineIndex: number,
+): Md5Weight | null {
   const tokens = line
     .replace(/[()]/g, '')
     .split(/\s+/)
     .filter((t) => t.length > 0);
   // tokens: ["weight", weightIndex, jointIndex, bias, px, py, pz]
   if (tokens.length < 7) {
-    warnings?.push(`createSceneFromMd5Mesh: malformed weight on line ${lineIndex + 1}`);
+    tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Drop, 'md5mesh.malformed-weight', 'not-enough-components', {
+      firstLine: lineIndex + 1,
+      reason: 'not-enough-components',
+    });
     return null;
   }
 
@@ -678,7 +750,10 @@ function parseWeightLine(line: string, warnings: string[] | undefined, lineIndex
     !Number.isFinite(positionY) ||
     !Number.isFinite(positionZ)
   ) {
-    warnings?.push(`createSceneFromMd5Mesh: malformed weight on line ${lineIndex + 1}: non-numeric values`);
+    tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Drop, 'md5mesh.malformed-weight', 'non-numeric', {
+      firstLine: lineIndex + 1,
+      reason: 'non-numeric',
+    });
     return null;
   }
 
@@ -708,4 +783,32 @@ function quatRotateVec3Z(qx: number, qy: number, qz: number, qw: number, vx: num
   const ty = 2 * (qz * vx - qx * vz);
   const tz = 2 * (qx * vy - qy * vx);
   return vz + qw * tz + (qx * ty - qy * tx);
+}
+
+// One accumulated MD5-mesh drop: a total occurrence `count` plus the first offender's `detail`, keyed by
+// kind + discriminator. No origin is stored — the tallies are flushed (physically reported) by parseMd5Mesh,
+// so it is every aggregated crumb's origin per the collector's emitting-function contract; `kind` carries
+// the drop-site granularity.
+interface Md5DropTally {
+  count: number;
+  detail: Record<string, boolean | number | string>;
+  kind: string;
+  severity: ImportDiagnosticSeverity;
+}
+
+// Records one offender against its (kind, discriminator) tally — the aggregate-once alternative to a
+// per-line/per-index `reportImportDiagnostic`. No-op (never allocates) when no collector is engaged.
+// `firstDetail` is kept from the FIRST offender; later ones only bump the count.
+function tallyMd5Drop(
+  tallies: Map<string, Md5DropTally> | null,
+  severity: ImportDiagnosticSeverity,
+  kind: string,
+  discriminator: string,
+  firstDetail: Record<string, boolean | number | string>,
+): void {
+  if (tallies === null) return;
+  const key = `${kind}|${discriminator}`;
+  const existing = tallies.get(key);
+  if (existing === undefined) tallies.set(key, { count: 1, detail: firstDetail, kind, severity });
+  else existing.count++;
 }

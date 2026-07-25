@@ -1,7 +1,7 @@
 import { sampleAnimationTrack } from '@flighthq/animation';
 import { createSceneNode } from '@flighthq/scene';
-import type { AnimationClip, SceneAnimationTarget, SceneNode } from '@flighthq/types';
-import { SceneAnimationPathRotation, SceneAnimationPathTranslation } from '@flighthq/types';
+import type { AnimationClip, ImportDiagnostic, SceneAnimationTarget, SceneNode } from '@flighthq/types';
+import { ImportDiagnosticSeverity, SceneAnimationPathRotation, SceneAnimationPathTranslation } from '@flighthq/types';
 
 import { parseMd5Anim } from './md5AnimParse';
 
@@ -103,6 +103,10 @@ function makeJoints(count: number): SceneNode[] {
     nodes.push(createSceneNode(undefined, { name: `joint${i}` }));
   }
   return nodes;
+}
+
+function findDiagnostic(diagnostics: readonly ImportDiagnostic[], kind: string): ImportDiagnostic | undefined {
+  return diagnostics.find((diagnostic) => diagnostic.kind === kind);
 }
 
 describe('parseMd5Anim', () => {
@@ -237,14 +241,18 @@ describe('parseMd5Anim', () => {
     expect(result).toBeNull();
   });
 
-  it('returns null when joints array is too short', () => {
-    const warnings: string[] = [];
-    const result = parseMd5Anim(SINGLE_JOINT_STATIC, [], warnings);
+  it('rejects and reports md5anim.joints-too-few when the joints array is too short', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const result = parseMd5Anim(SINGLE_JOINT_STATIC, [], diagnostics);
     expect(result).toBeNull();
-    expect(warnings.some((w) => w.includes('joints array'))).toBe(true);
+    const crumb = findDiagnostic(diagnostics, 'md5anim.joints-too-few');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Reject);
+    expect(crumb!.origin).toBe('parseMd5Anim');
+    expect(crumb!.detail).toEqual({ animationJoints: 1, suppliedJoints: 0 });
   });
 
-  it('warns on malformed hierarchy entries', () => {
+  it('drops and reports md5anim.malformed-hierarchy for a bad hierarchy entry', () => {
     const source = [
       'MD5Version 10',
       'numFrames 1',
@@ -260,12 +268,18 @@ describe('parseMd5Anim', () => {
       '}',
     ].join('\n');
 
-    const warnings: string[] = [];
-    parseMd5Anim(source, makeJoints(1), warnings);
-    expect(warnings.some((w) => w.includes('malformed hierarchy'))).toBe(true);
+    const diagnostics: ImportDiagnostic[] = [];
+    parseMd5Anim(source, makeJoints(1), diagnostics);
+    const crumb = findDiagnostic(diagnostics, 'md5anim.malformed-hierarchy');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('parseMd5Anim');
+    expect(crumb!.detail?.count).toBe(1);
+    expect(crumb!.detail?.reason).toBe('missing-name-quotes');
+    expect(crumb!.detail?.firstLine).toBe(6);
   });
 
-  it('warns on malformed baseframe entries', () => {
+  it('drops and reports md5anim.malformed-baseframe for a bad baseframe entry', () => {
     const source = [
       'MD5Version 10',
       'numFrames 1',
@@ -281,12 +295,17 @@ describe('parseMd5Anim', () => {
       '}',
     ].join('\n');
 
-    const warnings: string[] = [];
-    parseMd5Anim(source, makeJoints(1), warnings);
-    expect(warnings.some((w) => w.includes('malformed baseframe'))).toBe(true);
+    const diagnostics: ImportDiagnostic[] = [];
+    parseMd5Anim(source, makeJoints(1), diagnostics);
+    const crumb = findDiagnostic(diagnostics, 'md5anim.malformed-baseframe');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('parseMd5Anim');
+    expect(crumb!.detail?.count).toBe(1);
+    expect(crumb!.detail?.reason).toBe('not-enough-components');
   });
 
-  it('warns on unsupported MD5Version', () => {
+  it('recovers and reports md5anim.unsupported-version', () => {
     const source = [
       'MD5Version 11',
       'numFrames 1',
@@ -302,9 +321,13 @@ describe('parseMd5Anim', () => {
       '}',
     ].join('\n');
 
-    const warnings: string[] = [];
-    parseMd5Anim(source, makeJoints(1), warnings);
-    expect(warnings.some((w) => w.includes('unsupported MD5Version'))).toBe(true);
+    const diagnostics: ImportDiagnostic[] = [];
+    parseMd5Anim(source, makeJoints(1), diagnostics);
+    const crumb = findDiagnostic(diagnostics, 'md5anim.unsupported-version');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('parseMd5Anim');
+    expect(crumb!.detail).toEqual({ version: 11 });
   });
 
   it('handles mixed animated components (position and rotation bits)', () => {
@@ -361,11 +384,11 @@ describe('parseMd5Anim', () => {
       '}',
     ].join('\n');
 
-    const warnings: string[] = [];
+    const diagnostics: ImportDiagnostic[] = [];
     const joints = makeJoints(1);
-    const clip = parseMd5Anim(source, joints, warnings);
+    const clip = parseMd5Anim(source, joints, diagnostics);
     expect(clip).not.toBeNull();
-    expect(warnings).toHaveLength(0);
+    expect(diagnostics).toHaveLength(0);
   });
 
   it('interpolates translation values between frames', () => {
@@ -382,5 +405,265 @@ describe('parseMd5Anim', () => {
     expect(out[0]).toBeCloseTo(5);
     expect(out[1]).toBeCloseTo(15);
     expect(out[2]).toBeCloseTo(-10);
+  });
+
+  it('recovers and reports md5anim.non-numeric-numframes', () => {
+    const source = [
+      'MD5Version 10',
+      'numFrames xx',
+      'numJoints 1',
+      'frameRate 24',
+      'hierarchy {',
+      '  "root" -1 0 0',
+      '}',
+      'baseframe {',
+      '  ( 0 0 0 ) ( 0 0 0 )',
+      '}',
+      'frame 0 {',
+      '}',
+    ].join('\n');
+
+    const diagnostics: ImportDiagnostic[] = [];
+    parseMd5Anim(source, makeJoints(1), diagnostics);
+    const crumb = findDiagnostic(diagnostics, 'md5anim.non-numeric-numframes');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('parseMd5Anim');
+  });
+
+  it('recovers and reports md5anim.non-numeric-numjoints', () => {
+    const source = [
+      'MD5Version 10',
+      'numFrames 1',
+      'numJoints zz',
+      'frameRate 24',
+      'hierarchy {',
+      '  "root" -1 0 0',
+      '}',
+      'baseframe {',
+      '  ( 0 0 0 ) ( 0 0 0 )',
+      '}',
+      'frame 0 {',
+      '}',
+    ].join('\n');
+
+    const diagnostics: ImportDiagnostic[] = [];
+    parseMd5Anim(source, makeJoints(1), diagnostics);
+    const crumb = findDiagnostic(diagnostics, 'md5anim.non-numeric-numjoints');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('parseMd5Anim');
+  });
+
+  it('recovers and reports md5anim.invalid-framerate', () => {
+    const source = [
+      'MD5Version 10',
+      'numFrames 1',
+      'numJoints 1',
+      'frameRate 0',
+      'hierarchy {',
+      '  "root" -1 0 0',
+      '}',
+      'baseframe {',
+      '  ( 0 0 0 ) ( 0 0 0 )',
+      '}',
+      'frame 0 {',
+      '}',
+    ].join('\n');
+
+    const diagnostics: ImportDiagnostic[] = [];
+    parseMd5Anim(source, makeJoints(1), diagnostics);
+    const crumb = findDiagnostic(diagnostics, 'md5anim.invalid-framerate');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('parseMd5Anim');
+  });
+
+  it('rejects and reports md5anim.no-data when no hierarchy or frame data is present', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const result = parseMd5Anim('MD5Version 10\nnumFrames 0\nnumJoints 0\n', makeJoints(1), diagnostics);
+    expect(result).toBeNull();
+    const crumb = findDiagnostic(diagnostics, 'md5anim.no-data');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Reject);
+    expect(crumb!.origin).toBe('parseMd5Anim');
+  });
+
+  it('recovers and reports md5anim.joint-count-mismatch with declared/found detail', () => {
+    const source = [
+      'MD5Version 10',
+      'numFrames 1',
+      'numJoints 5',
+      'frameRate 24',
+      'hierarchy {',
+      '  "root" -1 0 0',
+      '}',
+      'baseframe {',
+      '  ( 0 0 0 ) ( 0 0 0 )',
+      '}',
+      'frame 0 {',
+      '}',
+    ].join('\n');
+
+    const diagnostics: ImportDiagnostic[] = [];
+    parseMd5Anim(source, makeJoints(1), diagnostics);
+    const crumb = findDiagnostic(diagnostics, 'md5anim.joint-count-mismatch');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('parseMd5Anim');
+    expect(crumb!.detail).toEqual({ declared: 5, found: 1 });
+  });
+
+  it('recovers and reports md5anim.frame-count-mismatch with declared/found detail', () => {
+    const source = [
+      'MD5Version 10',
+      'numFrames 9',
+      'numJoints 1',
+      'frameRate 24',
+      'hierarchy {',
+      '  "root" -1 0 0',
+      '}',
+      'baseframe {',
+      '  ( 0 0 0 ) ( 0 0 0 )',
+      '}',
+      'frame 0 {',
+      '}',
+    ].join('\n');
+
+    const diagnostics: ImportDiagnostic[] = [];
+    parseMd5Anim(source, makeJoints(1), diagnostics);
+    const crumb = findDiagnostic(diagnostics, 'md5anim.frame-count-mismatch');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('parseMd5Anim');
+    expect(crumb!.detail).toEqual({ declared: 9, found: 1 });
+  });
+
+  it('recovers and reports md5anim.hierarchy-block-unclosed', () => {
+    const source = [
+      'MD5Version 10',
+      'numFrames 1',
+      'numJoints 1',
+      'frameRate 24',
+      'hierarchy {',
+      '  "root" -1 0 0',
+    ].join('\n');
+    const diagnostics: ImportDiagnostic[] = [];
+    parseMd5Anim(source, makeJoints(1), diagnostics);
+    const crumb = findDiagnostic(diagnostics, 'md5anim.hierarchy-block-unclosed');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('parseMd5Anim');
+  });
+
+  it('recovers and reports md5anim.baseframe-block-unclosed', () => {
+    const source = [
+      'MD5Version 10',
+      'numFrames 1',
+      'numJoints 1',
+      'frameRate 24',
+      'hierarchy {',
+      '  "root" -1 0 0',
+      '}',
+      'baseframe {',
+      '  ( 0 0 0 ) ( 0 0 0 )',
+    ].join('\n');
+    const diagnostics: ImportDiagnostic[] = [];
+    parseMd5Anim(source, makeJoints(1), diagnostics);
+    const crumb = findDiagnostic(diagnostics, 'md5anim.baseframe-block-unclosed');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('parseMd5Anim');
+  });
+
+  it('drops and reports md5anim.non-numeric-frame-value with firstToken detail', () => {
+    const source = [
+      'MD5Version 10',
+      'numFrames 1',
+      'numJoints 1',
+      'frameRate 24',
+      'hierarchy {',
+      '  "root" -1 63 0',
+      '}',
+      'baseframe {',
+      '  ( 0 0 0 ) ( 0 0 0 )',
+      '}',
+      'frame 0 {',
+      '  1 2 nope 4 5 6',
+      '}',
+    ].join('\n');
+
+    const diagnostics: ImportDiagnostic[] = [];
+    parseMd5Anim(source, makeJoints(1), diagnostics);
+    const crumb = findDiagnostic(diagnostics, 'md5anim.non-numeric-frame-value');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('parseMd5Anim');
+    expect(crumb!.detail?.count).toBe(1);
+    expect(crumb!.detail?.firstToken).toBe('nope');
+  });
+
+  it('recovers and reports md5anim.frame-block-unclosed', () => {
+    const source = [
+      'MD5Version 10',
+      'numFrames 1',
+      'numJoints 1',
+      'frameRate 24',
+      'hierarchy {',
+      '  "root" -1 0 0',
+      '}',
+      'baseframe {',
+      '  ( 0 0 0 ) ( 0 0 0 )',
+      '}',
+      'frame 0 {',
+      '  0 0 0',
+    ].join('\n');
+    const diagnostics: ImportDiagnostic[] = [];
+    parseMd5Anim(source, makeJoints(1), diagnostics);
+    const crumb = findDiagnostic(diagnostics, 'md5anim.frame-block-unclosed');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('parseMd5Anim');
+  });
+
+  it('aggregates repeated malformed-hierarchy drops into one crumb with a count', () => {
+    const source = [
+      'MD5Version 10',
+      'numFrames 1',
+      'numJoints 1',
+      'frameRate 24',
+      'hierarchy {',
+      '  bad one',
+      '  bad two',
+      '  bad three',
+      '  "root" -1 0 0',
+      '}',
+      'baseframe {',
+      '  ( 0 0 0 ) ( 0 0 0 )',
+      '}',
+      'frame 0 {',
+      '}',
+    ].join('\n');
+
+    const diagnostics: ImportDiagnostic[] = [];
+    parseMd5Anim(source, makeJoints(1), diagnostics);
+    const matching = diagnostics.filter((d) => d.kind === 'md5anim.malformed-hierarchy');
+    expect(matching).toHaveLength(1);
+    expect(matching[0].detail?.count).toBe(3);
+    expect(matching[0].detail?.firstLine).toBe(6);
+  });
+
+  it('emits no diagnostics when no collector array is supplied', () => {
+    const source = [
+      'MD5Version 11',
+      'numFrames 9',
+      'numJoints 5',
+      'frameRate 0',
+      'hierarchy {',
+      '  bad line',
+      '  "root" -1 0 0',
+    ].join('\n');
+    // Exercising every crumb path without a sink must not throw and must be side-effect-free.
+    expect(() => parseMd5Anim(source, makeJoints(1))).not.toThrow();
   });
 });

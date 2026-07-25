@@ -10,15 +10,20 @@ import { isMesh } from '@flighthq/scene';
 import type {
   BlinnPhongMaterial,
   ExternalImageResourceReference,
+  ImportDiagnostic,
   Mesh,
   SceneAnimationTarget,
   SceneNode,
 } from '@flighthq/types';
-import { BlinnPhongMaterialKind } from '@flighthq/types';
+import { BlinnPhongMaterialKind, ImportDiagnosticSeverity } from '@flighthq/types';
 
 import { parseMd5Anim } from './md5AnimParse';
 import { createSceneFromMd5Mesh, importMd5Mesh, parseMd5Mesh } from './md5Parse';
 import { findSceneSkeletonJoints } from './sceneSkeleton';
+
+function findDiagnostic(diagnostics: readonly ImportDiagnostic[], kind: string): ImportDiagnostic | undefined {
+  return diagnostics.find((diagnostic) => diagnostic.kind === kind);
+}
 
 // A one-joint .md5anim matching SINGLE_TRIANGLE's single "root" joint, translating it per frame.
 const SINGLE_JOINT_ANIM = [
@@ -403,9 +408,9 @@ describe('createSceneFromMd5Mesh', () => {
     expect(p.z).toBeCloseTo(-1);
   });
 
-  it('reduces a >4-influence vertex to its 4 highest-weight influences and warns', () => {
-    const warnings: string[] = [];
-    const scene = createSceneFromMd5Mesh(OVER_INFLUENCED_VERTEX, warnings);
+  it('reduces a >4-influence vertex to its 4 highest-weight influences and reports md5mesh.vertex-over-influenced', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromMd5Mesh(OVER_INFLUENCED_VERTEX, diagnostics);
     const geometry = (getNodeChildren(scene.root)[1] as unknown as Mesh).geometry;
     const floatsPerVertex = geometry.layout.stride / 4;
 
@@ -428,7 +433,12 @@ describe('createSceneFromMd5Mesh', () => {
     expect(p.z).toBeCloseTo(-4);
     expect(p.x).toBeLessThan(10); // far joint (x=1000) was truly dropped, not blended in
 
-    expect(warnings.some((w) => w.includes('more than 4 joint influences'))).toBe(true);
+    const crumb = findDiagnostic(diagnostics, 'md5mesh.vertex-over-influenced');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('parseMd5Mesh');
+    expect(crumb!.detail?.count).toBe(1);
+    expect(crumb!.detail?.maxInfluences).toBe(5);
     // Vertices 1 and 2 have a single influence — the layout stays 80-byte skinned regardless.
     expect(floatsPerVertex).toBe(20);
   });
@@ -499,15 +509,21 @@ describe('createSceneFromMd5Mesh', () => {
     expect(getNodeChildren(scene.root)).toHaveLength(0);
   });
 
-  it('warns on malformed joint lines', () => {
+  it('drops and reports md5mesh.malformed-joint for a bad joint line', () => {
     const source = ['MD5Version 10', 'numJoints 1', 'numMeshes 0', 'joints {', '  bad joint line', '}'].join('\n');
 
-    const warnings: string[] = [];
-    createSceneFromMd5Mesh(source, warnings);
-    expect(warnings.some((w) => w.includes('malformed joint'))).toBe(true);
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromMd5Mesh(source, diagnostics);
+    const crumb = findDiagnostic(diagnostics, 'md5mesh.malformed-joint');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('parseMd5Mesh');
+    expect(crumb!.detail?.count).toBe(1);
+    expect(crumb!.detail?.reason).toBe('missing-name-quotes');
+    expect(crumb!.detail?.firstLine).toBe(5);
   });
 
-  it('warns on malformed vert lines', () => {
+  it('drops and reports md5mesh.malformed-vert for a bad vert line', () => {
     const source = [
       'MD5Version 10',
       'numJoints 1',
@@ -524,12 +540,17 @@ describe('createSceneFromMd5Mesh', () => {
       '}',
     ].join('\n');
 
-    const warnings: string[] = [];
-    createSceneFromMd5Mesh(source, warnings);
-    expect(warnings.some((w) => w.includes('malformed vert'))).toBe(true);
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromMd5Mesh(source, diagnostics);
+    const crumb = findDiagnostic(diagnostics, 'md5mesh.malformed-vert');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('parseMd5Mesh');
+    expect(crumb!.detail?.count).toBe(1);
+    expect(crumb!.detail?.reason).toBe('non-numeric');
   });
 
-  it('warns on malformed tri lines', () => {
+  it('drops and reports md5mesh.malformed-tri for a bad tri line', () => {
     const source = [
       'MD5Version 10',
       'numJoints 1',
@@ -546,12 +567,17 @@ describe('createSceneFromMd5Mesh', () => {
       '}',
     ].join('\n');
 
-    const warnings: string[] = [];
-    createSceneFromMd5Mesh(source, warnings);
-    expect(warnings.some((w) => w.includes('malformed tri'))).toBe(true);
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromMd5Mesh(source, diagnostics);
+    const crumb = findDiagnostic(diagnostics, 'md5mesh.malformed-tri');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('parseMd5Mesh');
+    expect(crumb!.detail?.count).toBe(1);
+    expect(crumb!.detail?.reason).toBe('not-enough-components');
   });
 
-  it('warns on malformed weight lines', () => {
+  it('drops and reports md5mesh.malformed-weight for a bad weight line', () => {
     const source = [
       'MD5Version 10',
       'numJoints 1',
@@ -568,17 +594,26 @@ describe('createSceneFromMd5Mesh', () => {
       '}',
     ].join('\n');
 
-    const warnings: string[] = [];
-    createSceneFromMd5Mesh(source, warnings);
-    expect(warnings.some((w) => w.includes('malformed weight'))).toBe(true);
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromMd5Mesh(source, diagnostics);
+    const crumb = findDiagnostic(diagnostics, 'md5mesh.malformed-weight');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('parseMd5Mesh');
+    expect(crumb!.detail?.count).toBe(1);
+    expect(crumb!.detail?.reason).toBe('not-enough-components');
   });
 
-  it('warns on unsupported MD5Version', () => {
+  it('recovers and reports md5mesh.unsupported-version', () => {
     const source = ['MD5Version 11', 'numJoints 0', 'numMeshes 0'].join('\n');
 
-    const warnings: string[] = [];
-    createSceneFromMd5Mesh(source, warnings);
-    expect(warnings.some((w) => w.includes('unsupported MD5Version'))).toBe(true);
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromMd5Mesh(source, diagnostics);
+    const crumb = findDiagnostic(diagnostics, 'md5mesh.unsupported-version');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('parseMd5Mesh');
+    expect(crumb!.detail).toEqual({ count: 1, version: 11 });
   });
 
   it('handles empty joints and mesh sections gracefully', () => {
@@ -626,9 +661,9 @@ describe('createSceneFromMd5Mesh', () => {
       '}',
     ].join('\n');
 
-    const warnings: string[] = [];
-    const scene = createSceneFromMd5Mesh(source, warnings);
-    expect(warnings).toHaveLength(0);
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromMd5Mesh(source, diagnostics);
+    expect(diagnostics).toHaveLength(0);
     expect(getNodeChildren(scene.root)).toHaveLength(2);
   });
 
@@ -682,7 +717,7 @@ describe('createSceneFromMd5Mesh', () => {
     expect(p.z).toBeCloseTo(-1);
   });
 
-  it('warns on out-of-range weight joint index', () => {
+  it('recovers and reports md5mesh.weight-joint-out-of-range for a bad weight joint index', () => {
     const source = [
       'MD5Version 10',
       'numJoints 1',
@@ -705,9 +740,14 @@ describe('createSceneFromMd5Mesh', () => {
       '}',
     ].join('\n');
 
-    const warnings: string[] = [];
-    createSceneFromMd5Mesh(source, warnings);
-    expect(warnings.some((w) => w.includes('joint index') && w.includes('out of range'))).toBe(true);
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromMd5Mesh(source, diagnostics);
+    const crumb = findDiagnostic(diagnostics, 'md5mesh.weight-joint-out-of-range');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('parseMd5Mesh');
+    expect(crumb!.detail?.count).toBe(1);
+    expect(crumb!.detail?.firstIndex).toBe(99);
   });
 
   it('handles joint with no weights gracefully (zero-position vertex)', () => {
@@ -749,6 +789,154 @@ describe('createSceneFromMd5Mesh', () => {
     expect(p.x).toBeCloseTo(5);
     expect(p.y).toBeCloseTo(5);
     expect(p.z).toBeCloseTo(-5);
+  });
+
+  it('recovers and reports md5mesh.joints-block-unclosed', () => {
+    const source = ['MD5Version 10', 'numJoints 1', 'numMeshes 0', 'joints {', '  "root" -1 ( 0 0 0 ) ( 0 0 0 )'].join(
+      '\n',
+    );
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromMd5Mesh(source, diagnostics);
+    const crumb = findDiagnostic(diagnostics, 'md5mesh.joints-block-unclosed');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('parseMd5Mesh');
+  });
+
+  it('recovers and reports md5mesh.mesh-block-unclosed', () => {
+    const source = [
+      'MD5Version 10',
+      'numJoints 1',
+      'numMeshes 1',
+      'joints {',
+      '  "root" -1 ( 0 0 0 ) ( 0 0 0 )',
+      '}',
+      'mesh {',
+      '  shader "default"',
+      '  numverts 0',
+      '  numtris 0',
+      '  numweights 0',
+    ].join('\n');
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromMd5Mesh(source, diagnostics);
+    const crumb = findDiagnostic(diagnostics, 'md5mesh.mesh-block-unclosed');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('parseMd5Mesh');
+  });
+
+  it('drops and reports md5mesh.mesh-empty for a mesh that yields no triangles', () => {
+    const source = [
+      'MD5Version 10',
+      'numJoints 1',
+      'numMeshes 1',
+      'joints {',
+      '  "root" -1 ( 0 0 0 ) ( 0 0 0 )',
+      '}',
+      'mesh {',
+      '  shader "default"',
+      '  numverts 1',
+      '  vert 0 ( 0 0 ) 0 1',
+      '  numtris 0',
+      '  numweights 1',
+      '  weight 0 0 1.0 ( 0 0 0 )',
+      '}',
+    ].join('\n');
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromMd5Mesh(source, diagnostics);
+    const crumb = findDiagnostic(diagnostics, 'md5mesh.mesh-empty');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('parseMd5Mesh');
+    expect(crumb!.detail?.count).toBe(1);
+  });
+
+  it('recovers and reports md5mesh.joint-parent-out-of-range', () => {
+    const source = [
+      'MD5Version 10',
+      'numJoints 1',
+      'numMeshes 0',
+      'joints {',
+      '  "root" 9 ( 0 0 0 ) ( 0 0 0 )',
+      '}',
+    ].join('\n');
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromMd5Mesh(source, diagnostics);
+    const crumb = findDiagnostic(diagnostics, 'md5mesh.joint-parent-out-of-range');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('parseMd5Mesh');
+    expect(crumb!.detail?.count).toBe(1);
+    expect(crumb!.detail?.firstParent).toBe(9);
+  });
+
+  it('recovers and reports md5mesh.vertex-weight-out-of-range for an out-of-range weight index', () => {
+    const source = [
+      'MD5Version 10',
+      'numJoints 1',
+      'numMeshes 1',
+      'joints {',
+      '  "root" -1 ( 0 0 0 ) ( 0 0 0 )',
+      '}',
+      'mesh {',
+      '  shader "default"',
+      '  numverts 3',
+      '  vert 0 ( 0 0 ) 50 1',
+      '  vert 1 ( 0 0 ) 0 1',
+      '  vert 2 ( 0 0 ) 0 1',
+      '  numtris 1',
+      '  tri 0 0 1 2',
+      '  numweights 1',
+      '  weight 0 0 1.0 ( 0 0 0 )',
+      '}',
+    ].join('\n');
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromMd5Mesh(source, diagnostics);
+    const crumb = findDiagnostic(diagnostics, 'md5mesh.vertex-weight-out-of-range');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('parseMd5Mesh');
+    expect(crumb!.detail?.count).toBe(1);
+    expect(crumb!.detail?.firstIndex).toBe(50);
+  });
+
+  it('aggregates repeated malformed-joint drops into one crumb with a count', () => {
+    const source = [
+      'MD5Version 10',
+      'numJoints 3',
+      'numMeshes 0',
+      'joints {',
+      '  bad one',
+      '  bad two',
+      '  bad three',
+      '}',
+    ].join('\n');
+    const diagnostics: ImportDiagnostic[] = [];
+    createSceneFromMd5Mesh(source, diagnostics);
+    const matching = diagnostics.filter((d) => d.kind === 'md5mesh.malformed-joint');
+    expect(matching).toHaveLength(1);
+    expect(matching[0].detail?.count).toBe(3);
+    expect(matching[0].detail?.firstLine).toBe(5);
+  });
+
+  it('emits no diagnostics when no collector array is supplied', () => {
+    const source = [
+      'MD5Version 11',
+      'numJoints 1',
+      'numMeshes 1',
+      'joints {',
+      '  "root" 9 ( 0 0 0 ) ( 0 0 0 )',
+      '  bad line',
+      '}',
+      'mesh {',
+      '  shader "default"',
+      '  numverts 1',
+      '  vert 0 ( 0 0 ) 50 1',
+      '  numtris 0',
+      '  numweights 0',
+    ].join('\n');
+    // Exercising every crumb path without a sink must not throw and must be side-effect-free.
+    expect(() => createSceneFromMd5Mesh(source)).not.toThrow();
   });
 });
 
@@ -822,11 +1010,14 @@ describe('importMd5Mesh', () => {
     expect(Object.keys(scene.animations)).toHaveLength(0);
   });
 
-  it('warns and skips the animation when the mesh has no skeleton', () => {
-    const warnings: string[] = [];
-    const scene = importMd5Mesh(JOINTLESS_MESH, SINGLE_JOINT_ANIM, warnings);
+  it('skips the animation and reports md5mesh.animation-no-skeleton when the mesh has no skeleton', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = importMd5Mesh(JOINTLESS_MESH, SINGLE_JOINT_ANIM, diagnostics);
     expect(Object.keys(scene.animations)).toHaveLength(0);
-    expect(warnings.some((w) => w.includes('no skeleton to bind'))).toBe(true);
+    const crumb = findDiagnostic(diagnostics, 'md5mesh.animation-no-skeleton');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+    expect(crumb!.origin).toBe('importMd5Mesh');
   });
 });
 

@@ -1,6 +1,7 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation';
-import type { AnimationChannel, AnimationClip, SceneNode } from '@flighthq/types';
-import { SceneAnimationPathRotation, SceneAnimationPathTranslation } from '@flighthq/types';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
+import type { AnimationChannel, AnimationClip, ImportDiagnostic, SceneNode } from '@flighthq/types';
+import { ImportDiagnosticSeverity, SceneAnimationPathRotation, SceneAnimationPathTranslation } from '@flighthq/types';
 
 import { convertPositionsZUpToYUp, convertQuaternionsZUpToYUp } from './shared';
 
@@ -22,9 +23,13 @@ import { convertPositionsZUpToYUp, convertQuaternionsZUpToYUp } from './shared';
 // to Flight's right-handed Y-up system via convertPositionsZUpToYUp and
 // convertQuaternionsZUpToYUp. Quaternion W is reconstructed from XYZ.
 //
-// Returns null when the source is empty or cannot be parsed. Malformed lines push a warning and are
-// skipped; the function never throws on bad input.
-export function parseMd5Anim(source: string, joints: readonly SceneNode[], warnings?: string[]): AnimationClip | null {
+// Returns null when the source is empty or cannot be parsed. Malformed lines record a diagnostic and
+// are skipped; the function never throws on bad input.
+export function parseMd5Anim(
+  source: string,
+  joints: readonly SceneNode[],
+  diagnostics?: ImportDiagnostic[],
+): AnimationClip | null {
   const lines = source.split('\n');
   let i = 0;
 
@@ -36,6 +41,8 @@ export function parseMd5Anim(source: string, joints: readonly SceneNode[], warni
   const baseframe: Md5AnimBaseframePose[] = [];
   const frames: number[][] = [];
 
+  const md5Drops = diagnostics ? new Map<string, Md5AnimDropTally>() : null;
+
   while (i < lines.length) {
     const line = lines[i].trim();
     i++;
@@ -45,7 +52,15 @@ export function parseMd5Anim(source: string, joints: readonly SceneNode[], warni
     if (line.startsWith('MD5Version')) {
       const version = parseInt(line.split(/\s+/)[1], 10);
       if (Number.isFinite(version) && version !== 10) {
-        warnings?.push(`parseMd5Anim: unsupported MD5Version ${version} (expected 10)`);
+        reportImportDiagnostic(
+          diagnostics,
+          ImportDiagnosticSeverity.Recover,
+          'md5anim.unsupported-version',
+          'parseMd5Anim',
+          {
+            version,
+          },
+        );
       }
       continue;
     }
@@ -55,7 +70,12 @@ export function parseMd5Anim(source: string, joints: readonly SceneNode[], warni
     if (line.startsWith('numFrames')) {
       numFrames = parseInt(line.split(/\s+/)[1], 10);
       if (!Number.isFinite(numFrames)) {
-        warnings?.push(`parseMd5Anim: non-numeric numFrames`);
+        reportImportDiagnostic(
+          diagnostics,
+          ImportDiagnosticSeverity.Recover,
+          'md5anim.non-numeric-numframes',
+          'parseMd5Anim',
+        );
         numFrames = 0;
       }
       continue;
@@ -64,7 +84,12 @@ export function parseMd5Anim(source: string, joints: readonly SceneNode[], warni
     if (line.startsWith('numJoints')) {
       numJoints = parseInt(line.split(/\s+/)[1], 10);
       if (!Number.isFinite(numJoints)) {
-        warnings?.push(`parseMd5Anim: non-numeric numJoints`);
+        reportImportDiagnostic(
+          diagnostics,
+          ImportDiagnosticSeverity.Recover,
+          'md5anim.non-numeric-numjoints',
+          'parseMd5Anim',
+        );
         numJoints = 0;
       }
       continue;
@@ -73,7 +98,12 @@ export function parseMd5Anim(source: string, joints: readonly SceneNode[], warni
     if (line.startsWith('frameRate')) {
       frameRate = parseInt(line.split(/\s+/)[1], 10);
       if (!Number.isFinite(frameRate) || frameRate <= 0) {
-        warnings?.push(`parseMd5Anim: invalid frameRate, defaulting to 24`);
+        reportImportDiagnostic(
+          diagnostics,
+          ImportDiagnosticSeverity.Recover,
+          'md5anim.invalid-framerate',
+          'parseMd5Anim',
+        );
         frameRate = 24;
       }
       continue;
@@ -82,7 +112,7 @@ export function parseMd5Anim(source: string, joints: readonly SceneNode[], warni
     if (line.startsWith('numAnimatedComponents')) continue;
 
     if (line === 'hierarchy {') {
-      i = parseHierarchyBlock(lines, i, hierarchy, warnings);
+      i = parseHierarchyBlock(lines, i, hierarchy, md5Drops);
       continue;
     }
 
@@ -92,39 +122,67 @@ export function parseMd5Anim(source: string, joints: readonly SceneNode[], warni
     }
 
     if (line === 'baseframe {') {
-      i = parseBaseframeBlock(lines, i, baseframe, warnings);
+      i = parseBaseframeBlock(lines, i, baseframe, md5Drops);
       continue;
     }
 
     if (line.startsWith('frame ') && line.endsWith('{')) {
       const frameData: number[] = [];
-      i = parseFrameBlock(lines, i, frameData, warnings);
+      i = parseFrameBlock(lines, i, frameData, md5Drops);
       frames.push(frameData);
       continue;
     }
   }
 
+  // Resolve the outcome first, then flush the aggregated block-level drops once — so no accumulated
+  // crumb is lost on either early-reject path below (parseMd5Anim is the physical emitter, hence origin).
+  let clip: AnimationClip | null = null;
   if (hierarchy.length === 0 || frames.length === 0) {
-    warnings?.push('parseMd5Anim: no hierarchy or frame data found');
-    return null;
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'md5anim.no-data', 'parseMd5Anim');
+  } else {
+    if (hierarchy.length !== numJoints) {
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Recover,
+        'md5anim.joint-count-mismatch',
+        'parseMd5Anim',
+        {
+          declared: numJoints,
+          found: hierarchy.length,
+        },
+      );
+    }
+    if (frames.length !== numFrames) {
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Recover,
+        'md5anim.frame-count-mismatch',
+        'parseMd5Anim',
+        {
+          declared: numFrames,
+          found: frames.length,
+        },
+      );
+    }
+    if (joints.length < hierarchy.length) {
+      reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'md5anim.joints-too-few', 'parseMd5Anim', {
+        animationJoints: hierarchy.length,
+        suppliedJoints: joints.length,
+      });
+    } else {
+      clip = buildAnimationClip(joints, hierarchy, baseframe, frames, frameRate);
+    }
   }
 
-  if (hierarchy.length !== numJoints) {
-    warnings?.push(`parseMd5Anim: hierarchy has ${hierarchy.length} entries but numJoints declared ${numJoints}`);
+  if (md5Drops !== null) {
+    for (const tally of md5Drops.values()) {
+      reportImportDiagnostic(diagnostics, tally.severity, tally.kind, 'parseMd5Anim', {
+        ...tally.detail,
+        count: tally.count,
+      });
+    }
   }
-
-  if (frames.length !== numFrames) {
-    warnings?.push(`parseMd5Anim: found ${frames.length} frames but numFrames declared ${numFrames}`);
-  }
-
-  if (joints.length < hierarchy.length) {
-    warnings?.push(
-      `parseMd5Anim: joints array has ${joints.length} nodes but animation has ${hierarchy.length} joints`,
-    );
-    return null;
-  }
-
-  return buildAnimationClip(joints, hierarchy, baseframe, frames, frameRate);
+  return clip;
 }
 
 // Builds the AnimationClip from parsed MD5 anim data. Each joint gets a translation channel
@@ -236,7 +294,7 @@ function parseHierarchyBlock(
   lines: readonly string[],
   startLine: number,
   hierarchy: Md5AnimHierarchyEntry[],
-  warnings: string[] | undefined,
+  md5Drops: Map<string, Md5AnimDropTally> | null,
 ): number {
   let i = startLine;
   while (i < lines.length) {
@@ -246,23 +304,26 @@ function parseHierarchyBlock(
     if (line === '}') return i;
     if (line.length === 0 || line.startsWith('//')) continue;
 
-    const entry = parseHierarchyLine(line, warnings, i - 1);
+    const entry = parseHierarchyLine(line, md5Drops, i - 1);
     if (entry !== null) hierarchy.push(entry);
   }
-  warnings?.push('parseMd5Anim: hierarchy block was not closed');
+  tallyMd5AnimDrop(md5Drops, ImportDiagnosticSeverity.Recover, 'md5anim.hierarchy-block-unclosed', '', {});
   return i;
 }
 
 // Parses a single hierarchy line: "jointName" parentIndex flags startIndex
 function parseHierarchyLine(
   line: string,
-  warnings: string[] | undefined,
+  md5Drops: Map<string, Md5AnimDropTally> | null,
   lineIndex: number,
 ): Md5AnimHierarchyEntry | null {
   const nameStart = line.indexOf('"');
   const nameEnd = line.indexOf('"', nameStart + 1);
   if (nameStart < 0 || nameEnd < 0) {
-    warnings?.push(`parseMd5Anim: malformed hierarchy entry on line ${lineIndex + 1}: missing name quotes`);
+    tallyMd5AnimDrop(md5Drops, ImportDiagnosticSeverity.Drop, 'md5anim.malformed-hierarchy', 'missing-name-quotes', {
+      firstLine: lineIndex + 1,
+      reason: 'missing-name-quotes',
+    });
     return null;
   }
   const name = line.slice(nameStart + 1, nameEnd);
@@ -271,7 +332,10 @@ function parseHierarchyLine(
   const tokens = rest.split(/\s+/).filter((t) => t.length > 0);
 
   if (tokens.length < 3) {
-    warnings?.push(`parseMd5Anim: malformed hierarchy entry on line ${lineIndex + 1}: not enough components`);
+    tallyMd5AnimDrop(md5Drops, ImportDiagnosticSeverity.Drop, 'md5anim.malformed-hierarchy', 'not-enough-components', {
+      firstLine: lineIndex + 1,
+      reason: 'not-enough-components',
+    });
     return null;
   }
 
@@ -280,7 +344,10 @@ function parseHierarchyLine(
   const startIndex = parseInt(tokens[2], 10);
 
   if (!Number.isFinite(parentIndex) || !Number.isFinite(flags) || !Number.isFinite(startIndex)) {
-    warnings?.push(`parseMd5Anim: malformed hierarchy entry on line ${lineIndex + 1}: non-numeric values`);
+    tallyMd5AnimDrop(md5Drops, ImportDiagnosticSeverity.Drop, 'md5anim.malformed-hierarchy', 'non-numeric-values', {
+      firstLine: lineIndex + 1,
+      reason: 'non-numeric-values',
+    });
     return null;
   }
 
@@ -292,7 +359,7 @@ function parseBaseframeBlock(
   lines: readonly string[],
   startLine: number,
   baseframe: Md5AnimBaseframePose[],
-  warnings: string[] | undefined,
+  md5Drops: Map<string, Md5AnimDropTally> | null,
 ): number {
   let i = startLine;
   while (i < lines.length) {
@@ -302,17 +369,17 @@ function parseBaseframeBlock(
     if (line === '}') return i;
     if (line.length === 0 || line.startsWith('//')) continue;
 
-    const pose = parseBaseframeLine(line, warnings, i - 1);
+    const pose = parseBaseframeLine(line, md5Drops, i - 1);
     if (pose !== null) baseframe.push(pose);
   }
-  warnings?.push('parseMd5Anim: baseframe block was not closed');
+  tallyMd5AnimDrop(md5Drops, ImportDiagnosticSeverity.Recover, 'md5anim.baseframe-block-unclosed', '', {});
   return i;
 }
 
 // Parses a baseframe line: ( posX posY posZ ) ( quatX quatY quatZ )
 function parseBaseframeLine(
   line: string,
-  warnings: string[] | undefined,
+  md5Drops: Map<string, Md5AnimDropTally> | null,
   lineIndex: number,
 ): Md5AnimBaseframePose | null {
   const tokens = line
@@ -321,7 +388,10 @@ function parseBaseframeLine(
     .filter((t) => t.length > 0);
 
   if (tokens.length < 6) {
-    warnings?.push(`parseMd5Anim: malformed baseframe entry on line ${lineIndex + 1}: not enough components`);
+    tallyMd5AnimDrop(md5Drops, ImportDiagnosticSeverity.Drop, 'md5anim.malformed-baseframe', 'not-enough-components', {
+      firstLine: lineIndex + 1,
+      reason: 'not-enough-components',
+    });
     return null;
   }
 
@@ -340,7 +410,10 @@ function parseBaseframeLine(
     !Number.isFinite(orientationY) ||
     !Number.isFinite(orientationZ)
   ) {
-    warnings?.push(`parseMd5Anim: malformed baseframe entry on line ${lineIndex + 1}: non-numeric values`);
+    tallyMd5AnimDrop(md5Drops, ImportDiagnosticSeverity.Drop, 'md5anim.malformed-baseframe', 'non-numeric-values', {
+      firstLine: lineIndex + 1,
+      reason: 'non-numeric-values',
+    });
     return null;
   }
 
@@ -353,7 +426,7 @@ function parseFrameBlock(
   lines: readonly string[],
   startLine: number,
   frameData: number[],
-  warnings: string[] | undefined,
+  md5Drops: Map<string, Md5AnimDropTally> | null,
 ): number {
   let i = startLine;
   while (i < lines.length) {
@@ -367,13 +440,22 @@ function parseFrameBlock(
     for (const token of tokens) {
       const value = parseFloat(token);
       if (!Number.isFinite(value)) {
-        warnings?.push(`parseMd5Anim: non-numeric frame value "${token}" on line ${i}`);
+        tallyMd5AnimDrop(
+          md5Drops,
+          ImportDiagnosticSeverity.Drop,
+          'md5anim.non-numeric-frame-value',
+          'non-numeric-frame-value',
+          {
+            firstLine: i,
+            firstToken: token,
+          },
+        );
         continue;
       }
       frameData.push(value);
     }
   }
-  warnings?.push('parseMd5Anim: frame block was not closed');
+  tallyMd5AnimDrop(md5Drops, ImportDiagnosticSeverity.Recover, 'md5anim.frame-block-unclosed', '', {});
   return i;
 }
 
@@ -420,3 +502,31 @@ const DEFAULT_BASEFRAME: Md5AnimBaseframePose = {
   positionY: 0,
   positionZ: 0,
 };
+
+// One accumulated MD5-anim block-level drop: a total occurrence `count` plus the first offender's `detail`,
+// keyed by kind + discriminator. No origin is stored — the tallies are flushed (physically reported) by
+// parseMd5Anim, so it is every aggregated crumb's origin per the collector's emitting-function contract;
+// `kind` carries the drop-site granularity.
+interface Md5AnimDropTally {
+  count: number;
+  detail: Record<string, boolean | number | string>;
+  kind: string;
+  severity: ImportDiagnosticSeverity;
+}
+
+// Records one offender against its (kind, discriminator) tally — the aggregate-once alternative to a
+// per-line/per-token `reportImportDiagnostic` in a hierarchy/baseframe/frame block. No-op (never allocates)
+// when no collector is engaged. `firstDetail` is kept from the FIRST offender; later ones only bump count.
+function tallyMd5AnimDrop(
+  tallies: Map<string, Md5AnimDropTally> | null,
+  severity: ImportDiagnosticSeverity,
+  kind: string,
+  discriminator: string,
+  firstDetail: Record<string, boolean | number | string>,
+): void {
+  if (tallies === null) return;
+  const key = `${kind}|${discriminator}`;
+  const existing = tallies.get(key);
+  if (existing === undefined) tallies.set(key, { count: 1, detail: firstDetail, kind, severity });
+  else existing.count++;
+}
