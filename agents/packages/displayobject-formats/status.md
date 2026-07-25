@@ -8,6 +8,19 @@ by: builder3
 
 > Append-only handoff log, newest entry on top.
 
+## 2026-07-25 — Lottie common-path implementation
+
+Implemented Bodymovin JSON import as a display subtree plus target-bound `AnimationClip`, with an
+explicit apply function. The common-path census covers all baseline layer families, hierarchy,
+static/animated 2D transforms, analytic segment/component easing, path/primitives, fill/stroke and
+gradient animation, trim paths, hard masks, image resolution, ordinary precomposition timing, and
+markers. The predeclared exotic set emits structured diagnostics.
+
+Added general segment-local `AnimationTrack` easing and the additive
+`DisplayObjectAnimationTarget`/`applyAnimationClipToDisplayObject` target-owner binder. Focused tests
+pass 46 cases across animation, display binding, and Lottie import; full repository check and all
+12,874 tests pass. A real asset remains intentionally deferred to the post-gate demo checkpoint.
+
 ## 2026-07-25 — Lottie charter blessed
 
 Review approved analytic segment-local easing, a general display-object animation binder, ordinary
