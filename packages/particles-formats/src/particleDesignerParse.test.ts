@@ -259,6 +259,32 @@ describe('parseParticleDesignerPlistDocument', () => {
       expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
       expect(crumb!.origin).toBe('collectParticleDesignerDiagnostics');
     });
+
+    it('reports particledesigner.finish-size-variance-unsupported (Skip)', () => {
+      const plist = FIRE_PLIST.replace(
+        '<key>finishParticleSizeVariance</key><real>0</real>',
+        '<key>finishParticleSizeVariance</key><real>4</real>',
+      );
+      const crumb = parseParticleDesignerPlistDocument(plist).diagnostics.find(
+        (d) => d.kind === 'particledesigner.finish-size-variance-unsupported',
+      );
+      expect(crumb).toBeDefined();
+      expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+      expect(crumb!.origin).toBe('collectParticleDesignerDiagnostics');
+    });
+
+    it('reports particledesigner.alpha-variance-unsupported (Skip)', () => {
+      const plist = FIRE_PLIST.replace(
+        '<key>startColorVarianceAlpha</key><real>0</real>',
+        '<key>startColorVarianceAlpha</key><real>0.5</real>',
+      );
+      const crumb = parseParticleDesignerPlistDocument(plist).diagnostics.find(
+        (d) => d.kind === 'particledesigner.alpha-variance-unsupported',
+      );
+      expect(crumb).toBeDefined();
+      expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+      expect(crumb!.origin).toBe('collectParticleDesignerDiagnostics');
+    });
   });
 });
 

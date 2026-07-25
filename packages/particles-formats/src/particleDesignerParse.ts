@@ -188,6 +188,24 @@ function collectParticleDesignerDiagnostics(d: ParticleDesignerRawDict): ImportD
       'collectParticleDesignerDiagnostics',
     );
   }
+  if (num(d, 'finishParticleSizeVariance', 0) !== 0) {
+    // Flight's scaleEnd is a single ratio with no end-size variance — the field is recognized but not modeled.
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'particledesigner.finish-size-variance-unsupported',
+      'collectParticleDesignerDiagnostics',
+    );
+  }
+  if (num(d, 'startColorVarianceAlpha', 0) !== 0 || num(d, 'finishColorVarianceAlpha', 0) !== 0) {
+    // The config carries only RGB color variance, so alpha-channel color variance is dropped.
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'particledesigner.alpha-variance-unsupported',
+      'collectParticleDesignerDiagnostics',
+    );
+  }
   return diagnostics;
 }
 

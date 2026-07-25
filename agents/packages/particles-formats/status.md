@@ -1,12 +1,33 @@
 ---
 package: '@flighthq/particles-formats'
-updated: 2026-06-24
-by: ingest:builder-67dc46d64
+updated: 2026-07-25
+by: builder
 ---
 
 # particles-formats — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## [2026-07-25 · builder] — QUEUED: unmodeled-feature deepening inventory (user-approved, review-d3d31086 / review-86c96272)
+
+The structured-diagnostics capstone's B-diagnostics pass now CRUMBS every recognized-but-unmodeled feature
+below (Skip when the feature is dropped, Recover when it is approximated), so the drops are no longer silent
+and the parsers agree. The FEATURE-modeling work — actually importing these features instead of dropping
+them — is a separate particles-formats DEEPENING pass, QUEUED by the user behind the current next-wave
+(skeleton2d / skeleton2d-formats / displayobject-formats). Do NOT implement now; this is the work-list for it:
+
+- **libGDX**: map the `Emission` section onto `spawnRate` (currently dropped on EVERY import — the one feature
+  NOT crumbed, since an always-firing crumb would break the clean-import contract; modeling it closes the gap
+  honestly). Bake multi-stop `Tint` → `colorCurve` and multi-stop `Transparency` → `alphaCurve` (currently
+  reduced to first/last stops; crumbs `libgdx.tint-reduced`/`libgdx.transparency-reduced`). Model spawn-shape
+  `edges`/`side` and `minParticleCount` (minParticleCount is a pool pre-alloc hint — low value).
+- **Unity**: map the non-Cone/Sphere/Box shape types (Edge/Donut/Mesh…) instead of collapsing to point
+  (`unity.shape-unsupported`); model `startRotation` (initial particle rotation) and `prewarm`.
+- **Particle Designer + Starling PEX**: model `finishParticleSizeVariance` (end-size variance — the config's
+  `scaleEnd` is a single ratio) and alpha-channel color variance (config carries only RGB variance).
+- **Spine**: honor `premultiplied` blending (a renderer concern; currently `spine.premultiplied-informational`).
+- **Pixi**: model `acceleration` and v5+ `behaviors` (currently `pixi.acceleration-unsupported` /
+  `pixi.behaviors-partial`).
 
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
