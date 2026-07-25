@@ -1,0 +1,426 @@
+import { createRectangle } from '@flighthq/geometry';
+import { createImageResource } from '@flighthq/image';
+import { getNodeChildAt, getNodeChildCount } from '@flighthq/node';
+import { getShapeBounds } from '@flighthq/shape';
+import type { DisplayObject, ImportDiagnostic, RichText, Shape } from '@flighthq/types';
+import { ShapeKind } from '@flighthq/types';
+
+import { createDisplayObjectFromSvgDocument } from './svgDocument';
+
+describe('SVG conformance matrix', () => {
+  it.each([
+    {
+      element: '<rect x="3" width="10" height="10" transform="translate(10 5)"/>',
+      expectedY: 5,
+      kind: 'shape',
+    },
+    {
+      element: '<image href="asset.png" x="3" width="10" height="10" transform="translate(10 5)"/>',
+      expectedY: 5,
+      kind: 'image',
+    },
+    {
+      element: '<text x="3" y="15" font-size="10" transform="translate(10 5)">T</text>',
+      expectedY: 10,
+      kind: 'text',
+    },
+    {
+      element: '<g transform="translate(10 5)"><rect x="3" width="10" height="10"/></g>',
+      expectedY: 5,
+      kind: 'group',
+    },
+    {
+      element: '<use href="#mark" x="3" transform="translate(10 5)"/>',
+      expectedY: 5,
+      kind: 'use',
+    },
+    {
+      element: '<use href="#symbol" x="3" width="10" height="10" transform="translate(10 5)"/>',
+      expectedY: 5,
+      kind: 'symbol',
+    },
+    {
+      element: '<use href="#nested" x="3" transform="translate(10 5)"/>',
+      expectedY: 5,
+      kind: 'nested-use',
+    },
+  ])('composes geometry before transforms for $kind', ({ element, expectedY, kind }) => {
+    const image = createImageResource();
+    image.width = 10;
+    image.height = 10;
+    const root = createDisplayObjectFromSvgDocument(
+      `
+        <svg>
+          <defs>
+            <g id="mark"><rect width="1" height="1"/></g>
+            <symbol id="symbol" viewBox="0 0 10 10"><rect width="10" height="10"/></symbol>
+            <g id="nested"><use href="#mark"/></g>
+          </defs>
+          ${element}
+        </svg>
+      `,
+      undefined,
+      { resolveImageResource: () => image },
+    );
+    const target = getNodeChildAt(root, 0)!;
+    const shape = findFirstShape(target);
+
+    if (kind === 'image' || kind === 'text' || kind === 'use' || kind === 'symbol' || kind === 'nested-use') {
+      expect(target.x).toBe(13);
+    } else {
+      expect(target.x + getShapeLocalX(shape!)).toBe(13);
+    }
+    expect(target.y).toBe(expectedY);
+  });
+
+  it.each([
+    { kind: 'shape', target: '<rect width="200" height="100" clip-path="url(#half)"/>', width: 100 },
+    { kind: 'image', target: '<image href="asset.png" width="200" height="100" clip-path="url(#half)"/>', width: 10 },
+    {
+      kind: 'group',
+      target: '<g clip-path="url(#half)"><rect width="200" height="100"/></g>',
+      width: 100,
+    },
+    {
+      kind: 'use',
+      target: '<use href="#panel" width="200" height="100" clip-path="url(#half)"/>',
+      width: 100,
+    },
+    {
+      kind: 'nested-use',
+      target: '<use href="#nestedPanel" clip-path="url(#half)"/>',
+      width: 100,
+    },
+  ])('maps objectBoundingBox clip units for $kind', ({ target, width }) => {
+    const image = createImageResource();
+    image.width = 20;
+    image.height = 10;
+    const root = createDisplayObjectFromSvgDocument(
+      `
+        <svg>
+          <defs>
+            <clipPath id="half" clipPathUnits="objectBoundingBox"><rect width=".5" height="1"/></clipPath>
+            <symbol id="panel" viewBox="0 0 20 10" preserveAspectRatio="none">
+              <rect width="20" height="10"/>
+            </symbol>
+            <g id="panelGeometry"><rect width="200" height="100"/></g>
+            <g id="nestedPanel"><use href="#panelGeometry"/></g>
+          </defs>
+          ${target}
+        </svg>
+      `,
+      undefined,
+      { resolveImageResource: () => image },
+    );
+
+    expect(getNodeChildAt(root, 0)?.clip?.rect.width).toBe(width);
+  });
+
+  it('diagnoses objectBoundingBox clips when text bounds cannot be measured honestly', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const root = createDisplayObjectFromSvgDocument(
+      `
+        <svg>
+          <defs>
+            <clipPath id="half" clipPathUnits="objectBoundingBox"><rect width=".5" height="1"/></clipPath>
+          </defs>
+          <text clip-path="url(#half)">Text</text>
+        </svg>
+      `,
+      diagnostics,
+    );
+
+    expect(getNodeChildAt(root, 0)?.clip).toBeNull();
+    expect(diagnostics.map((diagnostic) => diagnostic.kind)).toContain('svg.object-bounding-box-clip-without-bounds');
+  });
+
+  it('instantiates path, symbol, and nested-use geometry inside clip paths', () => {
+    const root = createDisplayObjectFromSvgDocument(`
+      <svg>
+        <defs>
+          <path id="clipPathShape" d="M0 0 H10 V10 H0 Z"/>
+          <symbol id="clipSymbol" viewBox="0 0 10 10" preserveAspectRatio="none">
+            <rect width="10" height="10"/>
+          </symbol>
+          <g id="clipNested"><use href="#clipPathShape" x="5"/></g>
+          <clipPath id="pathUse"><use href="#clipPathShape"/></clipPath>
+          <clipPath id="symbolUse"><use href="#clipSymbol" width="20" height="30"/></clipPath>
+          <clipPath id="nestedUse"><use href="#clipNested"/></clipPath>
+        </defs>
+        <rect width="40" height="40" clip-path="url(#pathUse)"/>
+        <rect width="40" height="40" clip-path="url(#symbolUse)"/>
+        <rect width="40" height="40" clip-path="url(#nestedUse)"/>
+      </svg>
+    `);
+
+    expect(getNodeChildAt(root, 0)?.clip?.rect).toMatchObject({ height: 10, width: 10, x: 0, y: 0 });
+    expect(getNodeChildAt(root, 1)?.clip?.rect).toMatchObject({ height: 30, width: 20, x: 0, y: 0 });
+    expect(getNodeChildAt(root, 2)?.clip?.rect).toMatchObject({ height: 10, width: 10, x: 5, y: 0 });
+  });
+
+  it.each([
+    { kind: 'shape', target: '<rect width="200" height="100" mask="url(#halfMask)"/>', width: 100 },
+    { kind: 'image', target: '<image href="asset.png" width="200" height="100" mask="url(#halfMask)"/>', width: 10 },
+    {
+      kind: 'group',
+      target: '<g mask="url(#halfMask)"><rect width="200" height="100"/></g>',
+      width: 100,
+    },
+    {
+      kind: 'use',
+      target: '<use href="#panel" width="200" height="100" mask="url(#halfMask)"/>',
+      width: 100,
+    },
+  ])('maps objectBoundingBox mask content for $kind', ({ target, width }) => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const image = createImageResource();
+    image.width = 20;
+    image.height = 10;
+    const root = createDisplayObjectFromSvgDocument(
+      `
+        <svg>
+          <defs>
+            <mask id="halfMask" maskContentUnits="objectBoundingBox"><rect width=".5" height="1"/></mask>
+            <symbol id="panel" viewBox="0 0 20 10" preserveAspectRatio="none">
+              <rect width="20" height="10"/>
+            </symbol>
+          </defs>
+          ${target}
+        </svg>
+      `,
+      diagnostics,
+      { resolveImageResource: () => image },
+    );
+
+    expect(getNodeChildAt(root, 0)?.clip?.rect.width).toBe(width);
+    expect(diagnostics.map((diagnostic) => diagnostic.kind)).toContain('svg.mask-as-hard-clip');
+  });
+
+  it('shares use resolution and display suppression between masks and clip paths', () => {
+    const root = createDisplayObjectFromSvgDocument(`
+      <svg>
+        <defs>
+          <path id="maskShape" d="M0 0 H10 V10 H0 Z"/>
+          <mask id="usedMask">
+            <rect width="10" height="10" display="none"/>
+            <use href="#maskShape" x="10"/>
+          </mask>
+        </defs>
+        <rect width="30" height="20" mask="url(#usedMask)"/>
+      </svg>
+    `);
+
+    expect(getNodeChildAt(root, 0)?.clip?.rect).toMatchObject({ height: 10, width: 10, x: 10, y: 0 });
+  });
+
+  it('keeps fill and clip winding properties independently inherited', () => {
+    const root = createDisplayObjectFromSvgDocument(`
+      <svg>
+        <defs>
+          <clipPath id="fillOnly" fill-rule="evenodd"><path d="M0 0 H10 V10 H0 Z"/></clipPath>
+          <clipPath id="clipOnly" clip-rule="evenodd"><path d="M0 0 H10 V10 H0 Z"/></clipPath>
+        </defs>
+        <g fill-rule="evenodd"><path d="M0 0 H10 V10 H0 Z"/></g>
+        <rect width="10" height="10" clip-path="url(#fillOnly)"/>
+        <rect width="10" height="10" clip-path="url(#clipOnly)"/>
+      </svg>
+    `);
+
+    const fillShape = findFirstShape(getNodeChildAt(root, 0)!);
+    expect(getShapePathWinding(fillShape!)).toBe('evenOdd');
+    expect(getNodeChildAt(root, 1)?.clip?.winding).toBe('nonZero');
+    expect(getNodeChildAt(root, 2)?.clip?.winding).toBe('evenOdd');
+  });
+
+  it.each([
+    {
+      expected: 0xffa500,
+      kind: 'shape',
+      target: '<rect class="accent" fill="blue" width="10" height="10"/>',
+    },
+    {
+      expected: 0xff0000,
+      kind: 'group inheritance',
+      target: '<g class="theme"><rect width="10" height="10"/></g>',
+    },
+    {
+      expected: 0xff0000,
+      kind: 'use inheritance',
+      target: '<use href="#mark" class="theme"/>',
+    },
+    {
+      expected: 0xff0000,
+      kind: 'symbol inheritance',
+      target: '<use href="#symbol" class="theme"/>',
+    },
+  ])('applies CSS cascade and presentation inheritance for $kind', ({ expected, target }) => {
+    const root = createDisplayObjectFromSvgDocument(`
+      <svg>
+        <style>
+          .accent { fill: red }
+          .accent { fill: orange }
+          .theme { fill: red }
+        </style>
+        <defs>
+          <g id="mark"><rect width="10" height="10"/></g>
+          <symbol id="symbol"><rect width="10" height="10"/></symbol>
+        </defs>
+        ${target}
+      </svg>
+    `);
+    const shape = findFirstShape(getNodeChildAt(root, 0)!)!;
+
+    expect(getShapeFillColor(shape)).toBe(expected);
+  });
+
+  it('applies stylesheet cascade to text and tspan runs', () => {
+    const root = createDisplayObjectFromSvgDocument(`
+      <svg>
+        <style>
+          text { fill: red }
+          .accent { fill: blue }
+        </style>
+        <text fill="green">A<tspan class="accent">B</tspan></text>
+      </svg>
+    `);
+    const text = getNodeChildAt(root, 0) as RichText;
+
+    expect(text.data.textFormat.color).toBe(0xff0000ff);
+    expect(text.data.textFormatRanges[0].format.color).toBe(0x0000ffff);
+  });
+
+  it('suppresses display none while allowing visibility descendants to override', () => {
+    const root = createDisplayObjectFromSvgDocument(`
+      <svg>
+        <g display="none"><rect width="10" height="10" display="inline"/></g>
+        <g visibility="hidden">
+          <rect width="10" height="10"/>
+          <rect x="20" width="10" height="10" visibility="visible"/>
+        </g>
+      </svg>
+    `);
+    const displayGroup = getNodeChildAt(root, 0)!;
+    const visibilityGroup = getNodeChildAt(root, 1)!;
+
+    expect(displayGroup.visible).toBe(false);
+    expect(getNodeChildAt(displayGroup, 0)?.visible).toBe(true);
+    expect(visibilityGroup.visible).toBe(true);
+    expect(getNodeChildAt(visibilityGroup, 0)?.visible).toBe(false);
+    expect(getNodeChildAt(visibilityGroup, 1)?.visible).toBe(true);
+  });
+
+  it.each([
+    { kind: 'shape', path: [0], target: '<rect width="10" height="10" display="none"/>' },
+    { kind: 'image', path: [0], target: '<image href="asset.png" display="none"/>' },
+    { kind: 'text', path: [0], target: '<text display="none">T</text>' },
+    { kind: 'group', path: [0], target: '<g display="none"><rect width="10" height="10"/></g>' },
+    { kind: 'use', path: [0], target: '<use href="#mark" display="none"/>' },
+    { kind: 'symbol', path: [0, 0], target: '<use href="#hiddenSymbol"/>' },
+    { kind: 'nested-use', path: [0, 0], target: '<use href="#hiddenNested"/>' },
+  ])('suppresses display none for $kind', ({ path, target }) => {
+    const image = createImageResource();
+    image.width = 10;
+    image.height = 10;
+    const root = createDisplayObjectFromSvgDocument(
+      `
+        <svg>
+          <defs>
+            <g id="mark"><rect width="10" height="10"/></g>
+            <symbol id="hiddenSymbol" display="none"><rect width="10" height="10"/></symbol>
+            <g id="hiddenNested" display="none"><use href="#mark"/></g>
+          </defs>
+          ${target}
+        </svg>
+      `,
+      undefined,
+      { resolveImageResource: () => image },
+    );
+
+    expect(getDescendant(root, path).visible).toBe(false);
+  });
+
+  it('excludes hidden clip graphics and permits descendant visibility overrides', () => {
+    const root = createDisplayObjectFromSvgDocument(`
+      <svg>
+        <defs>
+          <clipPath id="visibility">
+            <rect width="10" height="10" display="none"/>
+            <g visibility="hidden">
+              <rect x="10" width="10" height="10"/>
+              <rect x="20" width="10" height="10" visibility="visible"/>
+            </g>
+          </clipPath>
+        </defs>
+        <rect width="40" height="40" clip-path="url(#visibility)"/>
+      </svg>
+    `);
+
+    expect(getNodeChildAt(root, 0)?.clip?.rect).toMatchObject({ height: 10, width: 10, x: 20, y: 0 });
+  });
+
+  it.each([
+    {
+      expected: { scaleX: 4, scaleY: 2, x: 0 },
+      kind: 'root SVG',
+      source: '<svg width="200" height="100" viewBox="0 0 50 50" preserveAspectRatio="none"/>',
+      target: 'root',
+    },
+    {
+      expected: { scaleX: 2, scaleY: 3, x: 5 },
+      kind: 'nested SVG',
+      source: '<svg><svg x="5" width="20" height="30" viewBox="0 0 10 10" preserveAspectRatio="none"/></svg>',
+      target: 'child',
+    },
+    {
+      expected: { scaleX: 2, scaleY: 3, x: 0 },
+      kind: 'symbol viewport',
+      source:
+        '<svg><defs><symbol id="s" viewBox="0 0 10 10" preserveAspectRatio="none"/></defs><use href="#s" width="20" height="30"/></svg>',
+      target: 'symbol',
+    },
+  ])('maps viewBox and viewport sizing for $kind', ({ expected, source, target }) => {
+    const root = createDisplayObjectFromSvgDocument(source);
+    const node =
+      target === 'root'
+        ? root
+        : target === 'child'
+          ? getNodeChildAt(root, 0)!
+          : getNodeChildAt(getNodeChildAt(root, 0)!, 0)!;
+
+    expect(node).toMatchObject(expected);
+  });
+});
+
+function findFirstShape(target: DisplayObject): Shape | null {
+  if (target.kind === ShapeKind) return target as Shape;
+  const count = getNodeChildCount(target);
+  for (let index = 0; index < count; index++) {
+    const child = getNodeChildAt(target, index) as DisplayObject | null;
+    if (child === null) continue;
+    const shape = findFirstShape(child);
+    if (shape !== null) return shape;
+  }
+  return null;
+}
+
+function getShapeFillColor(shape: Shape): number | null {
+  const index = shape.data.commands.indexOf('beginFill');
+  return index === -1 ? null : (shape.data.commands[index + 2] as number);
+}
+
+function getShapeLocalX(shape: Shape): number {
+  const bounds = createRectangle();
+  getShapeBounds(bounds, shape);
+  return bounds.x;
+}
+
+function getShapePathWinding(shape: Shape): unknown {
+  const index = shape.data.commands.indexOf('drawPath');
+  return index === -1 ? null : shape.data.commands[index + 4];
+}
+
+function getDescendant(root: DisplayObject, path: number[]): DisplayObject {
+  let node = root;
+  for (const index of path) node = getNodeChildAt(node, index) as DisplayObject;
+  return node;
+}

@@ -98,13 +98,14 @@ export function createDisplayObjectFromSvgDocument(
     gradientsById: new Map(),
     options,
     reportedUnsupportedElements: new Set(),
+    resolvingClipUses: new Set(),
     resolvingGradients: new Set(),
     resolvingUses: new Set(),
   };
   indexSvgDefinitions(document, context);
 
   const viewport = createSvgViewportMatrix(document);
-  const rootStyle = applySvgElementAppearance(out, document, defaultSvgStyle, context, viewport);
+  const rootStyle = applySvgElementAppearance(out, document, defaultSvgStyle, context, viewport, true);
   appendSvgChildren(out, document, rootStyle, context);
   applySvgElementClip(out, document, context, createSvgDisplayObjectBounds(out));
   reportRemainingUnsupportedSvgElements(document, context);
@@ -157,6 +158,7 @@ interface SvgImportContext {
   gradientsById: Map<string, SvgGradient>;
   options: Readonly<SvgDocumentImportOptions> | undefined;
   reportedUnsupportedElements: Set<XmlElement>;
+  resolvingClipUses: Set<string>;
   resolvingGradients: Set<string>;
   resolvingUses: Set<string>;
 }
@@ -234,10 +236,13 @@ function applySvgElementAppearance(
   parentStyle: Readonly<SvgStyle>,
   context: SvgImportContext,
   geometryTransform: Readonly<Matrix> | null = null,
+  hasVisualDescendants = false,
 ): SvgStyle {
   const style = resolveSvgStyle(element, parentStyle, context);
   target.alpha = style.opacity;
-  target.visible = style.display !== 'none' && style.visibility !== 'hidden' && style.visibility !== 'collapse';
+  target.visible =
+    style.display !== 'none' &&
+    (hasVisualDescendants || (style.visibility !== 'hidden' && style.visibility !== 'collapse'));
   target.name = attribute(element, 'id');
   if (style.filter !== 'none') {
     reportImportDiagnostic(
@@ -426,36 +431,102 @@ function collectSvgClipGeometry(
   out: SvgClipGeometry[],
 ): void {
   for (const child of element.children) {
-    const style = resolveSvgStyle(child, parentStyle, context);
-    const authorTransform = parseSvgTransform(attribute(child, 'transform'));
-    const viewport = localName(child.name) === 'svg' ? createSvgViewportMatrix(child) : null;
-    const localTransform =
-      authorTransform === null
-        ? viewport
-        : viewport === null
-          ? authorTransform
-          : multiplySvgMatrices(authorTransform, viewport);
-    const transform =
-      parentTransform === null
-        ? localTransform
-        : localTransform === null
-          ? parentTransform
-          : multiplySvgMatrices(parentTransform, localTransform);
-    const path = createSvgGeometryPath(child, style.clipRule);
-    if (path !== null) {
-      if (transform === null) out.push({ path, winding: path.winding });
-      else {
-        const transformed = createPath(path.winding);
-        transformPath(path, transform, transformed);
-        out.push({ path: transformed, winding: path.winding });
-      }
-      continue;
-    }
-    const name = localName(child.name);
-    if (name === 'a' || name === 'g' || name === 'svg' || name === 'switch') {
-      collectSvgClipGeometry(child, style, transform, context, out);
-    }
+    collectSvgClipGeometryElement(child, parentStyle, parentTransform, context, out);
   }
+}
+
+function collectSvgClipGeometryElement(
+  element: Readonly<XmlElement>,
+  parentStyle: Readonly<SvgStyle>,
+  parentTransform: Readonly<Matrix> | null,
+  context: SvgImportContext,
+  out: SvgClipGeometry[],
+  viewportElement?: Readonly<XmlElement>,
+): void {
+  const style = resolveSvgStyle(element, parentStyle, context);
+  if (style.display === 'none') return;
+  const name = localName(element.name);
+  let geometryTransform: Matrix | null = null;
+  if (name === 'use') {
+    geometryTransform = createMatrix(1, 0, 0, 1, numberAttribute(element, 'x', 0), numberAttribute(element, 'y', 0));
+  } else if (name === 'svg') {
+    geometryTransform = createSvgViewportMatrix(element);
+  } else if (name === 'symbol' && viewportElement !== undefined) {
+    geometryTransform = createSvgViewportMatrix(element, {
+      height: optionalNumberAttribute(viewportElement, 'height') ?? undefined,
+      width: optionalNumberAttribute(viewportElement, 'width') ?? undefined,
+      x: 0,
+      y: 0,
+    });
+  }
+  const authorTransform = parseSvgTransform(attribute(element, 'transform'));
+  const localTransform =
+    authorTransform === null
+      ? geometryTransform
+      : geometryTransform === null
+        ? authorTransform
+        : multiplySvgMatrices(authorTransform, geometryTransform);
+  const transform =
+    parentTransform === null
+      ? localTransform
+      : localTransform === null
+        ? parentTransform
+        : multiplySvgMatrices(parentTransform, localTransform);
+
+  if (name === 'use') {
+    collectSvgClipUseGeometry(element, style, transform, context, out);
+    return;
+  }
+
+  const path = createSvgGeometryPath(element, style.clipRule);
+  if (path !== null) {
+    if (style.visibility !== 'visible') return;
+    if (transform === null) out.push({ path, winding: path.winding });
+    else {
+      const transformed = createPath(path.winding);
+      transformPath(path, transform, transformed);
+      out.push({ path: transformed, winding: path.winding });
+    }
+    return;
+  }
+  if (name === 'a' || name === 'g' || name === 'svg' || name === 'switch' || name === 'symbol') {
+    collectSvgClipGeometry(element, style, transform, context, out);
+  }
+}
+
+function collectSvgClipUseGeometry(
+  element: Readonly<XmlElement>,
+  style: Readonly<SvgStyle>,
+  transform: Readonly<Matrix> | null,
+  context: SvgImportContext,
+  out: SvgClipGeometry[],
+): void {
+  const href = attribute(element, 'href');
+  const id = href?.startsWith('#') === true ? href.slice(1) : null;
+  if (id === null || context.resolvingClipUses.has(id)) {
+    reportImportDiagnostic(
+      context.diagnostics,
+      id === null ? ImportDiagnosticSeverity.Drop : ImportDiagnosticSeverity.Reject,
+      id === null ? 'svg.unresolved-use' : 'svg.recursive-use',
+      'collectSvgClipUseGeometry',
+      id === null ? undefined : { id },
+    );
+    return;
+  }
+  const referenced = context.elementsById.get(id);
+  if (referenced === undefined) {
+    reportImportDiagnostic(
+      context.diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'svg.unresolved-use',
+      'collectSvgClipUseGeometry',
+      { id },
+    );
+    return;
+  }
+  context.resolvingClipUses.add(id);
+  collectSvgClipGeometryElement(referenced, style, transform, context, out, element);
+  context.resolvingClipUses.delete(id);
 }
 
 function copyNonEmptySvgBounds(out: Rectangle, source: Readonly<Rectangle>, hasBounds: boolean): boolean {
@@ -498,7 +569,7 @@ function createSvgElementNode(
   if (name === 'g' || name === 'a' || name === 'switch' || name === 'svg') {
     const container = createDisplayContainer();
     const viewport = name === 'svg' ? createSvgViewportMatrix(element) : null;
-    const style = applySvgElementAppearance(container, element, parentStyle, context, viewport);
+    const style = applySvgElementAppearance(container, element, parentStyle, context, viewport, true);
     appendSvgChildren(container, element, style, context);
     applySvgElementClip(container, element, context, createSvgDisplayObjectBounds(container));
     return container;
@@ -741,7 +812,7 @@ function createSvgUseNode(
   reportRemainingUnsupportedSvgElements(referenced, context);
   const container = createDisplayContainer();
   const placement = createMatrix(1, 0, 0, 1, numberAttribute(element, 'x', 0), numberAttribute(element, 'y', 0));
-  const style = applySvgElementAppearance(container, element, parentStyle, context, placement);
+  const style = applySvgElementAppearance(container, element, parentStyle, context, placement, true);
   const referencedNode =
     localName(referenced.name) === 'symbol'
       ? createSvgSymbolNode(referenced, element, style, context)
@@ -767,7 +838,7 @@ function createSvgSymbolNode(
     x: 0,
     y: 0,
   });
-  const style = applySvgElementAppearance(container, element, parentStyle, context, viewport);
+  const style = applySvgElementAppearance(container, element, parentStyle, context, viewport, true);
   appendSvgChildren(container, element, style, context);
   applySvgElementClip(container, element, context, createSvgDisplayObjectBounds(container));
   return container;
@@ -1272,7 +1343,7 @@ function resolveSvgStyle(
   Object.assign(declarations, parseStyleDeclarations(attribute(element, 'style') ?? ''));
 
   const style: SvgStyle = { ...parentStyle };
-  style.clipRule = resolveSvgWinding(declarations['clip-rule'] ?? declarations['fill-rule'], style.clipRule);
+  style.clipRule = resolveSvgWinding(declarations['clip-rule'], style.clipRule);
   style.color = declarations.color ?? style.color;
   style.display = declarations.display ?? style.display;
   style.fill = declarations.fill ?? style.fill;

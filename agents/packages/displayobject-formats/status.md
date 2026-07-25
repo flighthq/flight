@@ -8,6 +8,23 @@ by: builder3
 
 > Append-only handoff log, newest entry on top.
 
+## 2026-07-25 — SVG conformance matrix sweep
+
+Added a systematic conformance matrix spanning shape, image, text/tspan, group, use, symbol, and
+nested-use across transform composition; clipPath target bounds, winding, use instantiation, and
+render-state exclusion; hard-mask recovery; CSS cascade/inheritance; display/visibility; and
+root/nested/symbol viewports. Together with the focused SVG and XML suites the sweep covers 86 tests.
+
+The matrix surfaced one additional output issue before re-gating: a `visibility:hidden` container was
+made invisible, preventing a descendant `visibility:visible` override. Containers now remain
+traversable for visibility inheritance while `display:none` still suppresses the subtree. Added
+display cells for every element family and mask/clip reference cells for path, symbol, and nested use.
+
+The three round-three clip blockers are fixed: fill-rule and clip-rule keep independent inherited
+state while sharing the winding parser; clip geometry recursively instantiates use references with
+x/y, transforms, symbol viewports, nested-use support, and cycle protection; computed display and
+visibility now exclude the correct clip/mask geometry.
+
 ## 2026-07-25 — cross-cutting SVG interaction pass
 
 Replaced the element-specific round-one repairs with shared category paths. All display nodes now
