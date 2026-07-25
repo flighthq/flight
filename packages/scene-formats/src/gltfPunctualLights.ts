@@ -1,7 +1,7 @@
 import { packLinearToColor } from '@flighthq/color';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
 import { createDirectionalLight, createPointLight, createSpotLight } from '@flighthq/lighting';
-import type { ImportDiagnostic, Light, GltfExtensionHandler, GltfPunctualLight } from '@flighthq/types';
+import type { Light, GltfExtensionHandler, GltfPunctualLight } from '@flighthq/types';
 import { ImportDiagnosticSeverity } from '@flighthq/types';
 
 export const GltfPunctualLightsExtensionHandler: GltfExtensionHandler = {
