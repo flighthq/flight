@@ -137,12 +137,12 @@ describe('parseXmlDocument', () => {
   });
 
   it('preserves the order of mixed text and child elements', () => {
-    const doc = parseXmlDocument('<text>A<tspan>B</tspan>C</text>');
+    const doc = parseXmlDocument('<text>Hello <tspan>world</tspan>!</text>');
 
-    expect(doc?.content[0]).toBe('A');
+    expect(doc?.content[0]).toBe('Hello ');
     expect((doc?.content[1] as { name: string } | undefined)?.name).toBe('tspan');
-    expect(doc?.content[2]).toBe('C');
-    expect(doc?.text).toBe('AC');
+    expect(doc?.content[2]).toBe('!');
+    expect(doc?.text).toBe('Hello!');
   });
 
   it('keeps a > inside a quoted attribute value as data, not tag-end', () => {
