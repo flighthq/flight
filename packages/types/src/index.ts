@@ -184,6 +184,7 @@ export * from './GlCompressedTextureUploader';
 export * from './GlContextLoss';
 export * from './GlCullFaceKind';
 export * from './GlCustomMaterialShaderSource';
+export * from './WgpuCustomMaterialShaderSource';
 export * from './GlDebugProgram';
 export * from './GlDepthFuncKind';
 export * from './GlFramebufferStatusKind';

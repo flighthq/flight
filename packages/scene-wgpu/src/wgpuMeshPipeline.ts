@@ -95,12 +95,14 @@ export function buildWgpuPerMapMaterialBindGroup(
 // unless doubleSided. The family passes its own materialBindGroupLayout + entry points (default
 // vs_main/fs_main). A lit family that PCF-samples the directional shadow map passes the shared
 // group(3) `shadowBindGroupLayout` (ensureWgpuShadowSampleLayout), which extends the pipeline layout to
-// [Frame, Draw, Material, Shadow] and flags the pipeline so beginWgpuMeshDraw binds group(3).
+// [Frame, Draw, Material, Shadow] and flags the pipeline so beginWgpuMeshDraw binds group(3). A custom
+// family may instead pass `extraBindGroupLayout`; it occupies group(3), but the family binds it itself.
 export function createWgpuMeshPipeline(
   state: WgpuRenderState,
   options: Readonly<{
     blended?: boolean;
     doubleSided: boolean;
+    extraBindGroupLayout?: GPUBindGroupLayout;
     format: GPUTextureFormat;
     iblBindGroupLayout?: GPUBindGroupLayout;
     materialBindGroupLayout: GPUBindGroupLayout;
@@ -119,9 +121,12 @@ export function createWgpuMeshPipeline(
     options.skinned && skinning !== null ? skinning.getDrawLayout(state) : layouts.drawBindGroupLayout,
     options.materialBindGroupLayout,
   ];
-  if (options.pbrSampleBindGroupLayout !== undefined) {
+  if (options.extraBindGroupLayout !== undefined) {
+    bindGroupLayouts.push(options.extraBindGroupLayout);
+  }
+  if (options.extraBindGroupLayout === undefined && options.pbrSampleBindGroupLayout !== undefined) {
     bindGroupLayouts.push(options.pbrSampleBindGroupLayout);
-  } else {
+  } else if (options.extraBindGroupLayout === undefined) {
     // Group order is positional: shadow (group 3) then IBL (group 4). Prefer pbrSampleBindGroupLayout
     // for new PBR pipelines so they fit WebGPU's minimum maxBindGroups=4.
     if (options.shadowBindGroupLayout !== undefined) bindGroupLayouts.push(options.shadowBindGroupLayout);

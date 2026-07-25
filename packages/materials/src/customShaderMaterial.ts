@@ -3,11 +3,10 @@ import { CustomShaderMaterialKind } from '@flighthq/types';
 
 import { createSurfaceMaterial } from './surfaceMaterial';
 
-// User-authored shader material. `shaderKey` references a vertex+fragment pair registered on
-// the render state (registerGlCustomMaterialShader); `uniforms` carries flat scalar/vector
-// values; `textures` carries named texture bindings. All default to their sentinel (empty key,
-// null bags) so a bare createCustomShaderMaterial() is structurally valid for tests and
-// serialization even before a shader key is assigned.
+// User-authored shader material. `shaderKey` references backend-native source registered on the
+// render state (registerGlCustomMaterialShader or registerWgpuCustomMaterialShader); `uniforms`
+// carries flat scalar/vector values and `textures` carries named bindings. All default to their
+// sentinel (empty key, null bags) so a bare material remains structurally valid before registration.
 export function createCustomShaderMaterial(opts?: Readonly<Partial<CustomShaderMaterial>>): CustomShaderMaterial {
   const material = createSurfaceMaterial(CustomShaderMaterialKind, opts) as CustomShaderMaterial;
   material.shaderKey = opts?.shaderKey ?? '';

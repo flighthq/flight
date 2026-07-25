@@ -1,9 +1,12 @@
+import type { CustomShaderMaterial } from './CustomShaderMaterial';
 import type { Kind } from './Entity';
 import type { Matrix4 } from './Matrix4';
 import type { ModifierRegistry } from './ModifierRegistry';
 import type { SceneLightsLike } from './SceneLights';
+import type { WgpuCustomMaterialShaderSource } from './WgpuCustomMaterialShaderSource';
 import type { WgpuMeshMaterialRenderer } from './WgpuMeshMaterialRenderer';
 import type { WgpuMeshPipeline } from './WgpuMeshPipeline';
+import type { WgpuRenderState } from './WgpuRenderState';
 
 // The active directional shadow for this state, set by drawWgpuSceneShadowMap and read by the lit bind
 // (beginWgpuMeshDraw → ensureWgpuShadowSampleBindGroup) so every lit family samples the same shadow map.
@@ -82,6 +85,15 @@ export interface WgpuSceneRuntime {
   // One immutable binding identity per SceneLightBlock. Queue writes for several selected blocks are
   // recorded before submit, so sharing one buffer would make every draw observe the final write.
   frameBindings: WeakMap<object, WgpuSceneFrameBinding>;
+  // Optional shakeable diagnostics for the fixed CustomShaderMaterial WGSL binding ABI.
+  customShaderGuard?:
+    | ((
+        state: WgpuRenderState,
+        shaderKey: string,
+        source: WgpuCustomMaterialShaderSource,
+        material: Readonly<CustomShaderMaterial>,
+      ) => void)
+    | null;
   // Optional diagnostic invoked when excess punctual inputs would be truncated without an explicit
   // prepareWgpuSceneForwardLights result.
   forwardLightSelectionGuard?: ((lights: Readonly<SceneLightsLike>) => void) | null;
