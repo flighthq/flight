@@ -1,8 +1,6 @@
-// node-blend-modes-advanced — validates the SEPARABLE blend equations (Multiply, Screen) that only the
-// Canvas (globalCompositeOperation) and DOM (CSS mix-blend-mode) backends implement. The webgl/webgpu
-// backends express blending with fixed-function blend state and support only Normal/Layer + Add (every
-// other mode falls back to Normal there), so this test is scoped to canvas+dom via package.json
-// `renderers` — the cross-backend Add proof lives in node-blend-modes.
+// node-blend-modes-advanced — validates the Canvas/DOM realization of the separable Multiply and Screen
+// equations. GPU backends realize the same fixed modes through immutable blend state; their dedicated
+// raster coverage lives in node-blend-modes.webgpu (WebGPU) and the WebGL blend suite.
 //
 // Both overlays use the SAME mid-gray as the base, so the result is purely the blend equation:
 //   Multiply(0.5, 0.5) = 0.25 → ~64   (darkens)

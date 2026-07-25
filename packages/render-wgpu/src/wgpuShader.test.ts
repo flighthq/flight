@@ -6,6 +6,7 @@ import {
   createWgpuBindGroupLayouts,
   createWgpuPipelineLayout,
   getActiveWgpuPipeline,
+  getWgpuBlendState,
   getWgpuPipeline,
   setWgpuMatrixFromTransform,
   UNIFORM_BYTE_SIZE,
@@ -48,6 +49,29 @@ describe('getActiveWgpuPipeline', () => {
     runtime.maskWriteMode = false;
     const pipeline = getActiveWgpuPipeline(state);
     expect(pipeline).toBeDefined();
+  });
+});
+
+describe('getWgpuBlendState', () => {
+  it('resolves all six fixed states and falls back to Normal for null or unknown modes', () => {
+    const color = (mode: BlendMode | null) => getWgpuBlendState(mode).color;
+    const normal = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' };
+    expect(color(null)).toEqual(normal);
+    expect(color(AdvancedBlendMode.Overlay)).toEqual(normal);
+    expect(color(BlendMode.Normal)).toEqual(normal);
+    expect(color(BlendMode.Add)).toEqual({ srcFactor: 'one', dstFactor: 'one', operation: 'add' });
+    expect(color(BlendMode.Multiply)).toEqual({
+      srcFactor: 'dst',
+      dstFactor: 'one-minus-src-alpha',
+      operation: 'add',
+    });
+    expect(color(BlendMode.Screen)).toEqual({
+      srcFactor: 'one',
+      dstFactor: 'one-minus-src',
+      operation: 'add',
+    });
+    expect(color(BlendMode.Darken).operation).toBe('min');
+    expect(color(BlendMode.Lighten).operation).toBe('max');
   });
 });
 
