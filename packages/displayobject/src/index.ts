@@ -1,6 +1,7 @@
 export * from './bitmap';
 export * from './displayContainer';
 export * from './displayObject';
+export * from './displayObjectAnimation';
 export * from './htmlView';
 export * from './renderView';
 export * from './stage';

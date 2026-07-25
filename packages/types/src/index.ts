@@ -133,6 +133,8 @@ export * from './DirectionalLight';
 export * from './DisplacementEffect';
 export * from './DisplayContainer';
 export * from './DisplayObject';
+export * from './DisplayObjectAnimationPath';
+export * from './DisplayObjectAnimationTarget';
 export * from './DisplayObjectInteractionSignals';
 export * from './DisplayObjectRenderBlankReason';
 export * from './DisplayObjectRenderExplanation';
