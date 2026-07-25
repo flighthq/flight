@@ -64,6 +64,12 @@ type. So it is **not** adopted by default. See the friction budget in `agents/po
 Gate: **commission the ban only if the downstream converter cannot map `await`→`flatMap`** (a
 standard CPS transform). Confirm with the converter team first.
 
+**Status (2026-07): the flight-hx converter is now unwrapping `await` on its own** — developing,
+looking like it works. If confirmed, the ban is **not adopted**: the TS keeps idiomatic linear
+`async`/`await` and this charter reduces to the `Future` type + seam, with no orchestration
+rewrite anywhere in the SDK. This is a live confirmation of the port-readiness "bend the converter,
+not the SDK" principle — the highest-friction item resolved converter-side, not by degrading the TS.
+
 - **If the converter handles `await`:** skip the ban entirely. The `Future` *type* alone gives the
   port a named async contract to map; the TS keeps idiomatic linear `async`/`await`. This removes
   nearly all the charter's friction and is the preferred outcome.
