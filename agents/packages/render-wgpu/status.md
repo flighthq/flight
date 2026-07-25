@@ -8,6 +8,14 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-07-24 — compressed texture upload
+
+Added native BC/ETC2/ASTC `TextureContainer` uploads, capability reporting and format mapping, plus
+opt-in compressed `ImageResource` upload and RGBA decoder seams. Device creation enables every
+compression family exposed by the adapter. The low-level uploader realizes 2D, cubemap, and 2D-array
+containers; unsupported families decode for plain 2D. The new real WebGPU functional scene matches the
+existing GL capture byte-for-byte.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/render-wgpu

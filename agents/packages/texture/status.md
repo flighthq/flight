@@ -8,6 +8,14 @@ by: review3
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-07-24 — WebGPU compressed upload parity
+
+`render-wgpu` now consumes the same compressed `ImageResource` contract as GL through an opt-in
+uploader and optional RGBA decoder. Native BC/ETC2/ASTC formats are enabled during device creation;
+unavailable families fall back to decoded RGBA. The low-level atom covers 2D, cubemap, and 2D-array
+containers, while the generic image binder and decoder remain deliberately 2D. The real
+`compressed-texture` GL/WebGPU captures are pixel-identical.
+
 ## 2026-07-22 — compressed texture shape boundary
 
 The GL container atom already has useful 2D-array upload depth, but that is not a `Texture` feature by

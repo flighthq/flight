@@ -31,7 +31,16 @@ export async function createWgpuRenderState(
   // are folded into one group — a portability follow-up). 2D and unlit paths use ≤4 groups regardless.
   const requiredLimits: Record<string, number> = {};
   if (adapter.limits.maxBindGroups >= 5) requiredLimits.maxBindGroups = 5;
-  const device = await adapter.requestDevice(Object.keys(requiredLimits).length > 0 ? { requiredLimits } : undefined);
+  // Compression features must be enabled at device creation; there is no later extension activation
+  // like WebGL. Enable every family the adapter exposes so the opt-in compressed uploader can use the
+  // native path when it is registered, while unsupported families retain their CPU decode fallback.
+  const requiredFeatures = (
+    ['texture-compression-bc', 'texture-compression-etc2', 'texture-compression-astc'] as GPUFeatureName[]
+  ).filter((feature) => adapter.features.has(feature));
+  const deviceDescriptor: GPUDeviceDescriptor = {};
+  if (Object.keys(requiredLimits).length > 0) deviceDescriptor.requiredLimits = requiredLimits;
+  if (requiredFeatures.length > 0) deviceDescriptor.requiredFeatures = requiredFeatures;
+  const device = await adapter.requestDevice(deviceDescriptor);
 
   const format = options.format ?? navigator.gpu.getPreferredCanvasFormat();
 

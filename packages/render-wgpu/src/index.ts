@@ -1,5 +1,6 @@
 export * from './wgpuAdapterCapabilities';
 export * from './wgpuBackground';
+export * from './wgpuCompressedTexture';
 export * from './wgpuDraw';
 export * from './wgpuElement';
 export * from './wgpuFullscreenPass';

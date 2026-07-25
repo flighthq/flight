@@ -55,11 +55,13 @@ Ranked, worst first. Each is something a user assumes works and it does not.
    by `@flighthq/effects-gl` `glBlendEffect`, on wgpu by `@flighthq/effects-wgpu` `wgpuBlendEffect`, and
    natively on canvas/dom. The GPU runners use matching named-backdrop offscreen passes; the WebGPU
    functional scene matches the WebGL raster exactly. [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) §5.
-6. **~~Compressed textures (KTX2/DDS/Basis) are a mirage.~~ NATIVE UPLOAD LANDED ON GL.** `render-gl`
+6. **~~Compressed textures (KTX2/DDS/Basis) are a mirage.~~ NATIVE UPLOAD LANDED ON GL + WGPU.** `render-gl`
    `uploadGlCompressedTextureContainer` now uploads BCn/ETC/ASTC/PVRTC + ATF containers natively via
    `WEBGL_compressed_texture_*` with `detectGlCompressedTextureSupport` capability detection and an optional
-   RGBA decode fallback seam, so a parsed `.ktx2`/`.dds` reaches pixels on **gl**. Basis-Universal WASM
-   transcode stays spec-only ([basis-transcode.md](basis-transcode.md)); wgpu compressed upload is unbuilt.
+   RGBA decode fallback seam. `render-wgpu` mirrors that contract with native BC/ETC2/ASTC device
+   features and an RGBA fallback for unavailable families (including PVRTC), so parsed containers reach
+   pixels on both GPU backends. Basis-Universal WASM transcode stays spec-only
+   ([basis-transcode.md](basis-transcode.md)).
 7. **~~Imported material texture references are never resolved / glTF imports nothing textured.~~ IMPORTERS
    COMPLETED (parse); pixel-resolution still asset-pipeline's job.** glTF now reads `primitive.material` (PBR
    materials + textures with sampler/color-space/UV-transform), **all animation channels**, skins, morph
@@ -192,7 +194,7 @@ unsupported cases is largely unbuilt for the gaps that most need it.
 
 | What a user assumes works | Reality + cite | Backends | Bite |
 | --- | --- | --- | --- |
-| KTX2/Basis/DDS compressed textures render | `render-gl` `uploadGlCompressedTextureContainer` now uploads BCn/ETC/ASTC/PVRTC + ATF natively (`WEBGL_compressed_texture_*` + `detectGlCompressedTextureSupport` + RGBA decode fallback) → renders on **gl**. Basis-Universal transcode spec-only; wgpu compressed upload unbuilt; KTX2 Zstd/BasisLZ super-compression not inflated | gl | RESOLVED (gl) |
+| KTX2/Basis/DDS compressed textures render | GL uploads BCn/ETC/ASTC/PVRTC natively when extensions exist; WebGPU uploads BC/ETC2/ASTC natively when device features exist; both use opt-in RGBA decoder fallbacks. `compressed-texture` proves exact GPU-backend parity. Basis-Universal transcode and KTX2 Zstd/BasisLZ inflation remain spec-only. | gl, wgpu | RESOLVED (GPU) |
 | Visibility streaming can stream a world in and out | No unload/evict/refcount/budget; resolved `Texture.image` never released (`resolveSceneResources.ts:65,103`); assets deferred to phase 2 | all | SURPRISE |
 | The 6-format resource seam is general | Only AWD emits `SceneResourceRef`; glTF/OBJ/3DS/MD2/MD5 emit none → textured glTF loads untextured, no error | n/a | MAJOR |
 | Image decoding works | Only `createImageBitmap`+`OffscreenCanvas` (web-only); tests stub it to a 1×1 — no real PNG/JPEG bytes ever decoded in CI | web only | MAJOR |
