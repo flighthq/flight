@@ -1,6 +1,7 @@
 ---
 package: '@flighthq/svg-formats'
 absorbed: displayobject-formats
+supersededBy: '@flighthq/displayobject-formats'
 draft: true
 lastDirection: 2026-07-12
 review: ./review.md
@@ -8,7 +9,11 @@ assessment: ./assessment.md
 status: ./status.md
 ---
 
-# svg-formats — Charter (reserved home)
+# svg-formats — Superseded Charter
+
+> Superseded by [`@flighthq/displayobject-formats`](../displayobject-formats/charter.md). No
+> `packages/svg-formats/` implementation was created. This file retains the original direction
+> history only.
 
 ## What it is
 
