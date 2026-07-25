@@ -7,6 +7,7 @@ import { defaultWgpuBlurEffectRunner } from './wgpuBlurEffect';
 import { defaultWgpuBokehDepthOfFieldEffectRunner } from './wgpuBokehDepthOfFieldEffect';
 import { defaultWgpuCameraMotionBlurEffectRunner } from './wgpuCameraMotionBlurEffect';
 import { defaultWgpuChromaticAberrationEffectRunner } from './wgpuChromaticAberrationEffect';
+import { defaultWgpuCompositeEffectRunner } from './wgpuCompositeEffect';
 import { defaultWgpuConvolutionEffectRunner } from './wgpuConvolutionEffect';
 import { defaultWgpuCrtEffectRunner } from './wgpuCrtEffect';
 import { defaultWgpuDirectionalBlurEffectRunner } from './wgpuDirectionalBlurEffect';
@@ -93,16 +94,17 @@ export function registerColorWgpuRenderEffects(state: WgpuRenderState): void {
   registerWgpuRenderEffect(state, 'WhiteBalanceEffect', defaultWgpuWhiteBalanceEffectRunner);
 }
 
-// Full standard set — composes all taxonomy bands. Registers all 45 default runners under their
+// Full standard set — composes all taxonomy bands. Registers all 46 default runners under their
 // canonical kind keys. Import this when the full effect palette is needed; import individual band
 // helpers when only a subset of effects is used.
-// Composite band: BevelEffect, BlendEffect, DropShadowEffect, GradientBevelEffect, GradientGlowEffect,
-// InnerGlowEffect, InnerShadowEffect, OuterGlowEffect. The former filter-layer composite ops,
-// now full-frame composite effects chaining tint/blur/offset passes through pooled offscreen targets.
-// Symmetric with Gl's registerCompositeGlRenderEffects.
+// Composite band: BevelEffect, BlendEffect, CompositeEffect, DropShadowEffect, GradientBevelEffect,
+// GradientGlowEffect, InnerGlowEffect, InnerShadowEffect, OuterGlowEffect. The former filter-layer
+// composite ops, now full-frame composite effects chaining tint/blur/offset passes through pooled
+// offscreen targets. Symmetric with Gl's registerCompositeGlRenderEffects.
 export function registerCompositeWgpuRenderEffects(state: WgpuRenderState): void {
   registerWgpuRenderEffect(state, 'BevelEffect', defaultWgpuBevelEffectRunner);
   registerWgpuRenderEffect(state, 'BlendEffect', defaultWgpuBlendEffectRunner);
+  registerWgpuRenderEffect(state, 'CompositeEffect', defaultWgpuCompositeEffectRunner);
   registerWgpuRenderEffect(state, 'DropShadowEffect', defaultWgpuDropShadowEffectRunner);
   registerWgpuRenderEffect(state, 'GradientBevelEffect', defaultWgpuGradientBevelEffectRunner);
   registerWgpuRenderEffect(state, 'GradientGlowEffect', defaultWgpuGradientGlowEffectRunner);

@@ -1,0 +1,127 @@
+import type { DisplayObject, Surface, WgpuRenderTarget } from '@flighthq/sdk';
+import {
+  CompositeOperator,
+  ShapeKind,
+  addNodeChild,
+  appendShapeBeginFill,
+  appendShapeEndFill,
+  appendShapeRectangle,
+  beginWgpuRenderEffectPipeline,
+  beginWgpuRenderPass,
+  createCompositeEffect,
+  createDisplayContainer,
+  createShape,
+  createWgpuCanvasElement,
+  createWgpuRenderEffectPipeline,
+  createWgpuRenderState,
+  createWgpuRenderTarget,
+  defaultWgpuCompositeEffectRunner,
+  defaultWgpuShapeCommands,
+  defaultWgpuShapeRenderer,
+  endWgpuRenderEffectPipeline,
+  endWgpuRenderPass,
+  getSurfacePixelRgb,
+  prepareDisplayObjectRender,
+  registerDefaultWgpuMaterial,
+  registerRenderer,
+  registerWgpuBlendEffectBackdrop,
+  registerWgpuRenderEffect,
+  registerWgpuShapeCommands,
+  renderWgpuBackground,
+  renderWgpuDisplayObject,
+  submitWgpuRenderPass,
+} from '@flighthq/sdk';
+import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+const pixelRatio = window.devicePixelRatio || 1;
+const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
+document.body.appendChild(canvas);
+
+export const state = await createWgpuRenderState(canvas, {
+  pixelRatio,
+  backgroundColor: 0x000000ff,
+});
+registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
+registerWgpuShapeCommands(defaultWgpuShapeCommands);
+registerDefaultWgpuMaterial(state);
+registerWgpuRenderEffect(state, 'CompositeEffect', defaultWgpuCompositeEffectRunner);
+
+const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 1, format: 'rgba8' });
+const backdropTarget: WgpuRenderTarget = createWgpuRenderTarget(
+  state,
+  state.canvas.width,
+  state.canvas.height,
+  state.format,
+);
+backdropTarget.clearColors = [0x00000000];
+
+export const scale = pixelRatio;
+export const width = 800;
+export const height = 600;
+registerWgpuFunctionalTarget(state, scale);
+
+function fillRectangle(x: number, y: number, width: number, height: number): DisplayObject {
+  const shape = createShape();
+  appendShapeBeginFill(shape, 0xffffffff, 1);
+  appendShapeRectangle(shape, 0, 0, width, height);
+  appendShapeEndFill(shape);
+  shape.x = x;
+  shape.y = y;
+  return shape;
+}
+
+const logicalWidth = width / scale;
+const logicalHeight = height / scale;
+const backdropRoot = createDisplayContainer();
+backdropRoot.scaleX = scale;
+backdropRoot.scaleY = scale;
+addNodeChild(backdropRoot, fillRectangle(0, 0, logicalWidth * 0.5, logicalHeight));
+
+const layerRoot = createDisplayContainer();
+layerRoot.scaleX = scale;
+layerRoot.scaleY = scale;
+addNodeChild(layerRoot, fillRectangle(0, 0, logicalWidth, logicalHeight * 0.5));
+
+renderWgpuBackground(state);
+if (prepareDisplayObjectRender(state, backdropRoot)) {
+  beginWgpuRenderPass(state, backdropTarget);
+  renderWgpuDisplayObject(state, backdropRoot);
+  endWgpuRenderPass(state);
+}
+registerWgpuBlendEffectBackdrop(state, 'scene', backdropTarget);
+
+if (prepareDisplayObjectRender(state, layerRoot)) {
+  beginWgpuRenderEffectPipeline(state, pipeline);
+  renderWgpuDisplayObject(state, layerRoot);
+  endWgpuRenderEffectPipeline(state, pipeline, [
+    createCompositeEffect(CompositeOperator.SourceIn, { backdropKey: 'scene' }),
+  ]);
+}
+submitWgpuRenderPass(state);
+
+export function assertRender(surface: Readonly<Surface>): void {
+  const near = (rgb: number, expected: number): boolean => {
+    const red = (rgb >> 16) & 255;
+    const green = (rgb >> 8) & 255;
+    const blue = rgb & 255;
+    return Math.abs(red - expected) <= 24 && Math.abs(green - expected) <= 24 && Math.abs(blue - expected) <= 24;
+  };
+  const sample = (x: number, y: number): number =>
+    getSurfacePixelRgb(surface, Math.floor(surface.width * x), Math.floor(surface.height * y));
+  const overlap = sample(0.25, 0.25);
+  const sourceOnly = sample(0.75, 0.25);
+  const backdropOnly = sample(0.25, 0.75);
+  const hex = (rgb: number): string => (rgb & 0xffffff).toString(16).padStart(6, '0');
+
+  if (!near(overlap, 255)) {
+    throw new Error(`[effect-composite] overlap is #${hex(overlap)}, expected SourceIn to retain the source`);
+  }
+  if (!near(sourceOnly, 0)) {
+    throw new Error(`[effect-composite] source-only region is #${hex(sourceOnly)}, expected SourceIn to mask it out`);
+  }
+  if (!near(backdropOnly, 0)) {
+    throw new Error(
+      `[effect-composite] backdrop-only region is #${hex(backdropOnly)}, expected SourceIn to omit the backdrop`,
+    );
+  }
+}

@@ -73,6 +73,7 @@ describe('registerCompositeWgpuRenderEffects', () => {
     for (const kind of [
       'BevelEffect',
       'BlendEffect',
+      'CompositeEffect',
       'DropShadowEffect',
       'GradientBevelEffect',
       'GradientGlowEffect',
@@ -98,7 +99,7 @@ describe('registerScreenSpaceWgpuRenderEffects', () => {
 });
 
 describe('registerStandardWgpuRenderEffects', () => {
-  it('registers all 45 standard effect runners', async () => {
+  it('registers all 46 standard effect runners', async () => {
     const state = await createWgpuRenderStateForTest();
     registerStandardWgpuRenderEffects(state);
     // Spot-check one from each band.
