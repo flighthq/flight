@@ -7,6 +7,7 @@ import type {
   VideoTexture,
   WgpuImageResourceTextureEntry,
   WgpuRenderState,
+  WgpuRenderStateRuntime,
   WgpuTextureEntry,
   WgpuVideoTextureEntry,
 } from '@flighthq/types';
@@ -42,6 +43,9 @@ export function bindWgpuImageResourceTexture(
     cached.texture = built.texture;
     cached.view = built.view;
     cached.bindGroup = built.bindGroup;
+    // The per-smoothing variants referenced the old view; drop them so they rebuild against the new one.
+    cached.bindGroupLinear = undefined;
+    cached.bindGroupNearest = undefined;
     cached.straightAlpha = built.straightAlpha;
     cached.version = image.version;
     return cached;
@@ -127,6 +131,21 @@ export function bindWgpuTexture(
   const entry: WgpuTextureEntry = { texture, view, bindGroup };
   runtime.textureCache.set(imageSource, entry);
   return entry;
+}
+
+function buildWgpuSmoothingBindGroup(
+  state: WgpuRenderState,
+  runtime: WgpuRenderStateRuntime,
+  view: GPUTextureView,
+  sampler: GPUSampler,
+): GPUBindGroup {
+  return state.device.createBindGroup({
+    layout: runtime.textureBindGroupLayout,
+    entries: [
+      { binding: 0, resource: view },
+      { binding: 1, resource: sampler },
+    ],
+  });
 }
 
 // Dynamic VideoTexture upload. The texture is cached by VideoTexture identity and copied only when its
@@ -229,6 +248,15 @@ export function createWgpuTextureEntry(
   return { texture, view, bindGroup };
 }
 
+export function destroyWgpuVideoTexture(state: WgpuRenderState, videoTexture: Readonly<VideoTexture>): boolean {
+  const cache = getWgpuRenderStateRuntime(state).videoTextureCache;
+  const entry = cache?.get(videoTexture);
+  if (entry === undefined) return false;
+  entry.texture.destroy();
+  cache!.delete(videoTexture);
+  return true;
+}
+
 function buildWgpuTextureBindGroup(state: WgpuRenderState, view: GPUTextureView, sampler: GPUSampler): GPUBindGroup {
   return state.device.createBindGroup({
     layout: getWgpuRenderStateRuntime(state).textureBindGroupLayout,
@@ -246,15 +274,6 @@ function getWgpuVideoSampler(state: WgpuRenderState, videoTexture: Readonly<Vide
   // sampling absent levels. Regenerating a full chain for every decoded frame would defeat the video
   // dirty gate.
   return getWgpuSampler(state, filter, sampler.wrapU, sampler.wrapV, undefined, sampler.anisotropy);
-}
-
-export function destroyWgpuVideoTexture(state: WgpuRenderState, videoTexture: Readonly<VideoTexture>): boolean {
-  const cache = getWgpuRenderStateRuntime(state).videoTextureCache;
-  const entry = cache?.get(videoTexture);
-  if (entry === undefined) return false;
-  entry.texture.destroy();
-  cache!.delete(videoTexture);
-  return true;
 }
 
 export function drawWgpuQuad(
@@ -333,6 +352,25 @@ export function enableWgpuBlendModeSupport(state: WgpuRenderState): void {
 // by the immediate (display-object) draw path; the batch path folds it per-instance instead.
 export function getWgpuRenderProxyColorTransform(renderProxy: Readonly<RenderProxy>): ColorTransform | null {
   return (renderProxy as Readonly<Partial<HasColorTransform>>).colorTransform ?? null;
+}
+
+// The group(1) bind group a 2D bitmap should sample through for a per-bitmap `smoothing` preference:
+// `null` returns the entry's default bind group (the global `state.allowSmoothing` sampler, for
+// sprites/text/shapes); `true`/`false` returns a lazily-built variant over the entry's view bound with the
+// LINEAR/NEAREST sampler, so a smoothed and an unsmoothed bitmap sharing one texture each sample with their
+// own filter. The variants cache on the entry and are cleared when the texture re-uploads. Mirrors the gl
+// `smoothingOverride` on `bindGlImageResourceTexture`.
+export function resolveWgpuSmoothingBindGroup(
+  state: WgpuRenderState,
+  entry: WgpuTextureEntry,
+  smoothing: boolean | null,
+): GPUBindGroup {
+  if (smoothing === null) return entry.bindGroup;
+  const runtime = getWgpuRenderStateRuntime(state);
+  if (smoothing) {
+    return (entry.bindGroupLinear ??= buildWgpuSmoothingBindGroup(state, runtime, entry.view, runtime.linearSampler));
+  }
+  return (entry.bindGroupNearest ??= buildWgpuSmoothingBindGroup(state, runtime, entry.view, runtime.nearestSampler));
 }
 
 export function submitWgpuQuadDraw(

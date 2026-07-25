@@ -16,6 +16,7 @@ import {
   destroyWgpuVideoTexture,
   enableWgpuBlendModeSupport,
   getWgpuRenderProxyColorTransform,
+  resolveWgpuSmoothingBindGroup,
   submitWgpuQuadDraw,
   updateWgpuTextureEntry,
   warmWgpuPipelines,
@@ -259,6 +260,59 @@ describe('getWgpuRenderProxyColorTransform', () => {
   it('returns the resolved node-level color transform trait', () => {
     const colorTransform = { redMultiplier: 0.5 };
     expect(getWgpuRenderProxyColorTransform({ colorTransform } as never)).toBe(colorTransform);
+  });
+});
+
+describe('resolveWgpuSmoothingBindGroup', () => {
+  function dataResource(size: number, version: number): ImageResource {
+    return {
+      source: null,
+      data: new Uint8ClampedArray(size * size * 4),
+      width: size,
+      height: size,
+      version,
+      alphaType: 'straight',
+    } as unknown as ImageResource;
+  }
+
+  it('returns the default bind group for a null smoothing (no variant built)', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const entry = bindWgpuImageResourceTexture(state, dataResource(4, 1));
+    expect(resolveWgpuSmoothingBindGroup(state, entry, null)).toBe(entry.bindGroup);
+    expect(entry.bindGroupLinear).toBeUndefined();
+    expect(entry.bindGroupNearest).toBeUndefined();
+  });
+
+  it('builds and caches distinct LINEAR and NEAREST variants for true/false', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const entry = bindWgpuImageResourceTexture(state, dataResource(4, 1));
+    const createBindGroup = vi.spyOn(state.device, 'createBindGroup');
+
+    resolveWgpuSmoothingBindGroup(state, entry, true);
+    expect(entry.bindGroupLinear).toBeDefined();
+    expect(createBindGroup).toHaveBeenCalledTimes(1);
+
+    // Second smoothed bind reuses the cached variant — no new bind group.
+    resolveWgpuSmoothingBindGroup(state, entry, true);
+    expect(createBindGroup).toHaveBeenCalledTimes(1);
+
+    // The unsmoothed variant is a separate cached bind group.
+    resolveWgpuSmoothingBindGroup(state, entry, false);
+    expect(entry.bindGroupNearest).toBeDefined();
+    expect(createBindGroup).toHaveBeenCalledTimes(2);
+  });
+
+  it('drops the cached variants when the texture re-uploads (version bump)', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const image = dataResource(4, 1);
+    const entry = bindWgpuImageResourceTexture(state, image);
+    resolveWgpuSmoothingBindGroup(state, entry, true);
+    resolveWgpuSmoothingBindGroup(state, entry, false);
+    expect(entry.bindGroupLinear).toBeDefined();
+    image.version = 2;
+    bindWgpuImageResourceTexture(state, image);
+    expect(entry.bindGroupLinear).toBeUndefined();
+    expect(entry.bindGroupNearest).toBeUndefined();
   });
 });
 

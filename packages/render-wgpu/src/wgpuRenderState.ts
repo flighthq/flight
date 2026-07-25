@@ -140,6 +140,7 @@ export async function createWgpuRenderState(
   runtime.spriteBatchInstanceData = new Float32Array(13 * 256);
   runtime.spriteBatchMaterialData = new Float32Array(8 * 256);
   runtime.spriteBatchTexture = null;
+  runtime.spriteBatchSmoothing = null;
   // Color-adjustment fold state (mode/data + the folded module) is not allocated here: it is owned by
   // the opt-in enableWgpuColorAdjustment, so a state that never tints carries none of it.
   runtime.spriteBatchBufferPool = [];
