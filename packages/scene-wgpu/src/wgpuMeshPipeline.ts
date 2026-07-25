@@ -72,6 +72,23 @@ export function buildWgpuMaterialBindGroup(
   return state.device.createBindGroup({ layout, entries });
 }
 
+// Per-map material bind group: uniform at binding 0, N samplers at 1..N, then N matching texture
+// views at N+1..2N. Keeping the two equal-length arrays parallel makes each WGSL map select its own
+// Texture.sampler while preserving a fixed layout for absent maps via placeholder views/default samplers.
+export function buildWgpuPerMapMaterialBindGroup(
+  state: WgpuRenderState,
+  layout: GPUBindGroupLayout,
+  buffer: GPUBuffer,
+  samplers: readonly GPUSampler[],
+  views: readonly GPUTextureView[],
+): GPUBindGroup {
+  const count = views.length;
+  const entries: GPUBindGroupEntry[] = [{ binding: 0, resource: { buffer } }];
+  for (let i = 0; i < count; i++) entries.push({ binding: 1 + i, resource: samplers[i] });
+  for (let i = 0; i < count; i++) entries.push({ binding: 1 + count + i, resource: views[i] });
+  return state.device.createBindGroup({ layout, entries });
+}
+
 // Builds a render pipeline for a family: compiles its WGSL module, and lays out [shared Frame, shared
 // Draw, family Material] over the canonical 48-byte PBR vertex. Depth-stencil is depth24plus-stencil8,
 // compare 'less', depth-write on (the scene pass owns depth; stencil inert); culling is back-face
@@ -481,6 +498,36 @@ export function ensureWgpuPbrSampleLayout(state: WgpuRenderState): GPUBindGroupL
   return scene.pbrSampleLayout;
 }
 
+export function ensureWgpuPerMapMaterialBinding(
+  state: WgpuRenderState,
+  key: object,
+  layout: GPUBindGroupLayout,
+  uniformByteSize: number,
+  samplers: readonly GPUSampler[],
+  views: readonly GPUTextureView[],
+): WgpuMaterialBinding {
+  const scene = getWgpuSceneRuntime(state);
+  let binding = scene.materialBindGroups.get(key);
+  if (binding === undefined) {
+    const buffer = state.device.createBuffer({
+      size: uniformByteSize,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+    binding = {
+      bindGroup: buildWgpuPerMapMaterialBindGroup(state, layout, buffer, samplers, views),
+      buffer,
+      samplers: samplers.slice(),
+      views: views.slice(),
+    };
+    scene.materialBindGroups.set(key, binding);
+  } else if (wgpuPerMapMaterialBindGroupNeedsRebuild(binding, samplers, views)) {
+    binding.bindGroup = buildWgpuPerMapMaterialBindGroup(state, layout, binding.buffer, samplers, views);
+    overwriteIdentityCache(binding, 'samplers', samplers);
+    overwriteIdentityCache(binding, 'views', views);
+  }
+  return binding;
+}
+
 // The one-time opaque-white 1x1 RGBA texture view bound to a family's map slots in the untextured
 // path, so a material bind-group layout that declares texture slots can be satisfied without uploading
 // real maps. Shared across families (cached on the scene runtime).
@@ -732,6 +779,41 @@ export function wgpuMaterialBindGroupNeedsRebuild(
     if (cached[i] !== views[i]) return true;
   }
   return false;
+}
+
+export function wgpuPerMapMaterialBindGroupNeedsRebuild(
+  binding: Readonly<WgpuMaterialBinding>,
+  samplers: readonly GPUSampler[],
+  views: readonly GPUTextureView[],
+): boolean {
+  if (samplers.length !== views.length) return true;
+  const cachedSamplers = binding.samplers;
+  const cachedViews = binding.views;
+  if (
+    cachedSamplers === undefined ||
+    cachedViews === undefined ||
+    cachedSamplers.length !== samplers.length ||
+    cachedViews.length !== views.length
+  ) {
+    return true;
+  }
+  for (let i = 0; i < views.length; i++) {
+    if (cachedSamplers[i] !== samplers[i] || cachedViews[i] !== views[i]) return true;
+  }
+  return false;
+}
+
+function overwriteIdentityCache<T extends 'samplers' | 'views'>(
+  binding: WgpuMaterialBinding,
+  key: T,
+  values: T extends 'samplers' ? readonly GPUSampler[] : readonly GPUTextureView[],
+): void {
+  const cached = binding[key] as unknown[] | undefined;
+  if (cached === undefined || cached.length !== values.length) {
+    (binding[key] as unknown[] | undefined) = values.slice();
+    return;
+  }
+  for (let i = 0; i < values.length; i++) cached[i] = values[i];
 }
 
 // Allocates a draw slot from the render-state's uniform ring buffer, writes the Draw uniform (world

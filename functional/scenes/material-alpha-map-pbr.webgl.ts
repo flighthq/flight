@@ -24,6 +24,7 @@ import {
   prepareSceneRender,
   registerStandardPbrGlMaterial,
   renderGlBackground,
+  setTextureUvScale,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
 
@@ -77,10 +78,16 @@ const logicalHeight = height / scale;
 // A camera-facing quad slightly larger than the view so all three sample points land on it.
 const geometry = createQuadMeshGeometry(3.4, 2.6);
 
+const baseColorMap = createTexture({ image: createImageResourceFromCanvas(baseColorCanvas()) });
+baseColorMap.sampler.wrapU = 'repeat';
+setTextureUvScale(baseColorMap, 3, 1);
+const alphaMap = createTexture({ colorSpace: 'linear', image: createImageResourceFromCanvas(alphaGradientCanvas()) });
+alphaMap.sampler.wrapU = 'clamp-to-edge';
 const material = createStandardPbrMaterial({
-  alphaMap: createTexture({ colorSpace: 'linear', image: createImageResourceFromCanvas(alphaGradientCanvas()) }),
+  alphaMap,
   alphaMode: 'blend',
-  baseColor: 0xcc5522ff,
+  baseColor: 0xffffffff,
+  baseColorMap,
   metallic: 0,
   roughness: 1,
 });
@@ -106,9 +113,9 @@ const lights = {
 
 render(scene, camera, lights);
 
-// Oracle: red decreases strictly left → middle → right as the alpha gradient blends more of the cool
-// background over the warm PBR quad. Strictly-monotonic (not just left>right) proves the middle is a
-// genuine partial BLEND, not a mask's binary cut, and that the PBR path sampled the alpha map at all.
+// The primary base-color map repeats across 3 UV spans, while the non-primary alpha map clamps after
+// its first span. If a backend incorrectly shares the primary sampler, the alpha gradient repeats and
+// the middle/right samples reveal the quad. Per-map sampling leaves both at background.
 export function assertRender(surface: Readonly<Surface>): void {
   const cx = Math.floor(surface.width / 2);
   const cy = Math.floor(surface.height / 2);
@@ -118,14 +125,24 @@ export function assertRender(surface: Readonly<Surface>): void {
   const middleRed = getSurfacePixelChannel(surface, cx, cy, ImageChannel.Red);
   const rightRed = getSurfacePixelChannel(surface, cx + offset, cy, ImageChannel.Red);
 
-  if (leftRed <= 40) {
+  if (leftRed <= 15) {
     throw new Error(`[material-alpha-map-pbr] opaque (left) edge did not render the PBR quad (red ${leftRed})`);
   }
-  if (!(leftRed > middleRed + 12 && middleRed > rightRed + 12)) {
+  if (!(leftRed > middleRed + 12 && Math.abs(middleRed - rightRed) < 8)) {
     throw new Error(
-      `[material-alpha-map-pbr] alpha gradient did not blend monotonically: left ${leftRed}, middle ${middleRed}, right ${rightRed}`,
+      `[material-alpha-map-pbr] non-primary alpha sampler did not clamp: left ${leftRed}, middle ${middleRed}, right ${rightRed}`,
     );
   }
+}
+
+function baseColorCanvas(): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1;
+  canvas.height = 1;
+  const ctx = canvas.getContext('2d')!;
+  ctx.fillStyle = '#cc5522';
+  ctx.fillRect(0, 0, 1, 1);
+  return canvas;
 }
 
 // A 16×1 opacity gradient: green (the sampled coverage channel) fades 255 → 0 left to right, so the

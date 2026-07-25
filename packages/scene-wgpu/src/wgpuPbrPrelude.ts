@@ -168,13 +168,18 @@ struct Shadow {
 };
 
 @group(2) @binding(0) var<uniform> material : MaterialBlock;
-@group(2) @binding(1) var materialSampler : sampler;
-@group(2) @binding(2) var baseColorTexture : texture_2d<f32>;
-@group(2) @binding(3) var metallicRoughnessTexture : texture_2d<f32>;
-@group(2) @binding(4) var normalTexture : texture_2d<f32>;
-@group(2) @binding(5) var occlusionTexture : texture_2d<f32>;
-@group(2) @binding(6) var emissiveTexture : texture_2d<f32>;
-@group(2) @binding(7) var alphaTexture : texture_2d<f32>;
+@group(2) @binding(1) var baseColorSampler : sampler;
+@group(2) @binding(2) var metallicRoughnessSampler : sampler;
+@group(2) @binding(3) var normalSampler : sampler;
+@group(2) @binding(4) var occlusionSampler : sampler;
+@group(2) @binding(5) var emissiveSampler : sampler;
+@group(2) @binding(6) var alphaSampler : sampler;
+@group(2) @binding(7) var baseColorTexture : texture_2d<f32>;
+@group(2) @binding(8) var metallicRoughnessTexture : texture_2d<f32>;
+@group(2) @binding(9) var normalTexture : texture_2d<f32>;
+@group(2) @binding(10) var occlusionTexture : texture_2d<f32>;
+@group(2) @binding(11) var emissiveTexture : texture_2d<f32>;
+@group(2) @binding(12) var alphaTexture : texture_2d<f32>;
 
 @group(3) @binding(0) var<uniform> shadow : Shadow;
 @group(3) @binding(1) var shadowMap : texture_depth_2d;
@@ -402,14 +407,14 @@ fn shadePbrPunctual(N : vec3f, V : vec3f, tangentDir : vec3f, bitangentDir : vec
 @fragment fn fs_main(in : VertexOutput, @builtin(front_facing) isFront : bool) -> @location(0) vec4f {
   var baseColor = material.baseColor;
   if (HAS_BASE_COLOR_MAP) {
-    let sampled = textureSample(baseColorTexture, materialSampler, in.uv);
+    let sampled = textureSample(baseColorTexture, baseColorSampler, in.uv);
     baseColor = vec4f(baseColor.rgb * srgbToLinear(sampled.rgb), baseColor.a * sampled.a);
   }
 
   // Dedicated coverage (opacity) map: its green channel is linear data, multiplied into alpha before
   // the alpha-mask cutoff so 'mask' cutout and 'blend' transparency both see the combined coverage.
   if (HAS_ALPHA_MAP) {
-    baseColor.a = baseColor.a * textureSample(alphaTexture, materialSampler, in.uv).g;
+    baseColor.a = baseColor.a * textureSample(alphaTexture, alphaSampler, in.uv).g;
   }
 
   if (ALPHA_MASK && baseColor.a < material.flags.x) {
@@ -427,7 +432,7 @@ fn shadePbrPunctual(N : vec3f, V : vec3f, tangentDir : vec3f, bitangentDir : vec
 
   var normal = geometricNormal;
   if (HAS_NORMAL_MAP) {
-    var tangentNormal = textureSample(normalTexture, materialSampler, in.uv).xyz * 2.0 - vec3f(1.0);
+    var tangentNormal = textureSample(normalTexture, normalSampler, in.uv).xyz * 2.0 - vec3f(1.0);
     tangentNormal = vec3f(tangentNormal.xy * material.factors.z, tangentNormal.z);
     let tbn = mat3x3f(tangent, bitangent, geometricNormal);
     normal = normalize(tbn * tangentNormal);
@@ -440,7 +445,7 @@ fn shadePbrPunctual(N : vec3f, V : vec3f, tangentDir : vec3f, bitangentDir : vec
   var metallic = clamp(material.factors.x, 0.0, 1.0);
   if (HAS_METALLIC_ROUGHNESS_MAP) {
     // glTF packing: roughness in G, metallic in B (R is occlusion if combined, ignored here).
-    let mr = textureSample(metallicRoughnessTexture, materialSampler, in.uv);
+    let mr = textureSample(metallicRoughnessTexture, metallicRoughnessSampler, in.uv);
     roughness = clamp(roughness * mr.g, 0.04, 1.0);
     metallic = clamp(metallic * mr.b, 0.0, 1.0);
   }
@@ -449,7 +454,7 @@ fn shadePbrPunctual(N : vec3f, V : vec3f, tangentDir : vec3f, bitangentDir : vec
   // (factors.w). Without a map the ambient term is unattenuated, matching the GL path.
   var occlusion = 1.0;
   if (HAS_OCCLUSION_MAP) {
-    let ao = textureSample(occlusionTexture, materialSampler, in.uv).r;
+    let ao = textureSample(occlusionTexture, occlusionSampler, in.uv).r;
     occlusion = mix(1.0, ao, clamp(material.factors.w, 0.0, 1.0));
   }
 
@@ -543,7 +548,7 @@ fn shadePbrPunctual(N : vec3f, V : vec3f, tangentDir : vec3f, bitangentDir : vec
 
   var emissive = material.emissive.rgb;
   if (HAS_EMISSIVE_MAP) {
-    emissive = emissive * srgbToLinear(textureSample(emissiveTexture, materialSampler, in.uv).rgb);
+    emissive = emissive * srgbToLinear(textureSample(emissiveTexture, emissiveSampler, in.uv).rgb);
   }
   radiance = radiance + emissive;
 

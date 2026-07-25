@@ -20,7 +20,7 @@ import type {
 import {
   beginWgpuMeshDraw,
   drawWgpuMeshSubset,
-  ensureWgpuMaterialBinding,
+  ensureWgpuPerMapMaterialBinding,
   getWgpuMaterialSampler,
   isWgpuTextureReady,
   resolveWgpuMaterialTextureView,
@@ -83,21 +83,26 @@ export function ensureWgpuPbrMaterialBindGroup(
   const baseColorMap = standard !== null ? standard.baseColorMap : null;
   // Re-resolve the primary (base-color) sampler + the six standard-block map views every bind (base-color,
   // metallic-roughness, normal, occlusion, emissive, alpha) into a REUSED module scratch — no per-bind
-  // allocation — so ensureWgpuMaterialBinding can rebuild the bind group only when one differs. Same
-  // invalidation seam, shared-primary-sampler contract, and layout as the classic binder.
-  const sampler = getWgpuMaterialSampler(state, baseColorMap);
+  // allocation — so ensureWgpuPerMapMaterialBinding can rebuild the bind group only when one differs.
+  // Each view is paired with its own cached sampler, matching GL's per-Texture sampler contract.
+  _samplerScratch[0] = getWgpuMaterialSampler(state, baseColorMap);
+  _samplerScratch[1] = getWgpuMaterialSampler(state, standard !== null ? standard.metallicRoughnessMap : null);
+  _samplerScratch[2] = getWgpuMaterialSampler(state, standard !== null ? standard.normalMap : null);
+  _samplerScratch[3] = getWgpuMaterialSampler(state, standard !== null ? standard.occlusionMap : null);
+  _samplerScratch[4] = getWgpuMaterialSampler(state, standard !== null ? standard.emissiveMap : null);
+  _samplerScratch[5] = getWgpuMaterialSampler(state, standard !== null ? standard.alphaMap : null);
   _viewScratch[0] = resolveWgpuMaterialTextureView(state, baseColorMap);
   _viewScratch[1] = resolveWgpuMaterialTextureView(state, standard !== null ? standard.metallicRoughnessMap : null);
   _viewScratch[2] = resolveWgpuMaterialTextureView(state, standard !== null ? standard.normalMap : null);
   _viewScratch[3] = resolveWgpuMaterialTextureView(state, standard !== null ? standard.occlusionMap : null);
   _viewScratch[4] = resolveWgpuMaterialTextureView(state, standard !== null ? standard.emissiveMap : null);
   _viewScratch[5] = resolveWgpuMaterialTextureView(state, standard !== null ? standard.alphaMap : null);
-  const binding = ensureWgpuMaterialBinding(
+  const binding = ensureWgpuPerMapMaterialBinding(
     state,
     key,
     pipeline.materialBindGroupLayout,
     WGPU_PBR_MATERIAL_UNIFORM_FLOATS * 4,
-    sampler,
+    _samplerScratch,
     _viewScratch,
   );
   // The base-color map's uv transform drives the shared vertex-stage uv every standard map samples.
@@ -228,7 +233,8 @@ const FALLBACK_MATERIAL = {} as Readonly<StandardPbrMaterial>;
 
 const _colorScratch: LinearColor = [0, 0, 0, 0];
 const _materialScratch = new Float32Array(WGPU_PBR_MATERIAL_UNIFORM_FLOATS);
+const _samplerScratch = new Array<GPUSampler>(6);
 // Reused per-bind resolved-view scratch (base-color, metallic-roughness, normal, occlusion, emissive,
-// alpha) so a steady-state re-bind allocates nothing; ensureWgpuMaterialBinding copies it only on
+// alpha) so a steady-state re-bind allocates nothing; ensureWgpuPerMapMaterialBinding copies it only on
 // create/rebuild.
 const _viewScratch = new Array<GPUTextureView>(6);

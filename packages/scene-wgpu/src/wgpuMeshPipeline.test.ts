@@ -17,9 +17,11 @@ import { SCENE_LIGHT_BLOCK_FLOATS } from '@flighthq/types';
 import {
   beginWgpuMeshDraw,
   buildWgpuMaterialBindGroup,
+  buildWgpuPerMapMaterialBindGroup,
   createWgpuMeshPipeline,
   drawWgpuMeshSubset,
   ensureWgpuMaterialBinding,
+  ensureWgpuPerMapMaterialBinding,
   ensureWgpuFrameBindGroup,
   ensureWgpuIblSampleBindGroup,
   ensureWgpuIblSampleLayout,
@@ -36,6 +38,7 @@ import {
   resolveWgpuMaterialTextureView,
   stashWgpuUvTransform,
   wgpuMaterialBindGroupNeedsRebuild,
+  wgpuPerMapMaterialBindGroupNeedsRebuild,
   WGPU_MESH_PRELUDE_WGSL,
   writeWgpuDrawUniform,
   writeWgpuFrameUniform,
@@ -148,6 +151,26 @@ describe('buildWgpuMaterialBindGroup', () => {
     expect(entries[1].resource).toBe(sampler);
     expect(entries[2].resource).toBe(view0);
     expect(entries[3].resource).toBe(view1);
+  });
+});
+
+describe('buildWgpuPerMapMaterialBindGroup', () => {
+  it('emits parallel samplers before their matching map views', () => {
+    const { fake, state } = makeWgpuSceneState();
+    const layout = {} as GPUBindGroupLayout;
+    const buffer = {} as GPUBuffer;
+    const sampler0 = {} as GPUSampler;
+    const sampler1 = {} as GPUSampler;
+    const view0 = {} as GPUTextureView;
+    const view1 = {} as GPUTextureView;
+
+    buildWgpuPerMapMaterialBindGroup(state, layout, buffer, [sampler0, sampler1], [view0, view1]);
+
+    const call = fake.calls.find((c) => c.name === 'createBindGroup');
+    const entries = (call!.args[0] as { entries: GPUBindGroupEntry[] }).entries;
+    expect(entries.map((entry) => entry.binding)).toEqual([0, 1, 2, 3, 4]);
+    expect((entries[0].resource as { buffer: GPUBuffer }).buffer).toBe(buffer);
+    expect(entries.slice(1).map((entry) => entry.resource)).toEqual([sampler0, sampler1, view0, view1]);
   });
 });
 
@@ -375,6 +398,47 @@ describe('ensureWgpuPbrSampleLayout', () => {
     expect(a).toBe(b);
     expect(fake.calls.filter((c) => c.name === 'createBindGroupLayout').length).toBe(made);
     expect((layoutCall!.args[0] as { entries: unknown[] }).entries.length).toBe(8);
+  });
+});
+
+describe('ensureWgpuPerMapMaterialBinding', () => {
+  const layout = {} as GPUBindGroupLayout;
+  const sampler0 = {} as GPUSampler;
+  const sampler1 = {} as GPUSampler;
+  const view0 = {} as GPUTextureView;
+  const view1 = {} as GPUTextureView;
+
+  it('owns the parallel scratch copies and builds nothing on steady-state rebind', () => {
+    const { fake, state } = makeWgpuSceneState();
+    const key = {};
+    const samplers = [sampler0, sampler1];
+    const views = [view0, view1];
+    const binding = ensureWgpuPerMapMaterialBinding(state, key, layout, 48, samplers, views);
+
+    expect(binding.samplers).not.toBe(samplers);
+    expect(binding.views).not.toBe(views);
+    expect(binding.samplers).toEqual(samplers);
+    expect(binding.views).toEqual(views);
+    ensureWgpuPerMapMaterialBinding(state, key, layout, 48, samplers, views);
+    expect(fake.calls.filter((call) => call.name === 'createBuffer')).toHaveLength(1);
+    expect(fake.calls.filter((call) => call.name === 'createBindGroup')).toHaveLength(1);
+  });
+
+  it('rebuilds only the bind group when a non-primary sampler changes', () => {
+    const { fake, state } = makeWgpuSceneState();
+    const key = {};
+    const samplers = [sampler0, sampler1];
+    const views = [view0, view1];
+    const binding = ensureWgpuPerMapMaterialBinding(state, key, layout, 48, samplers, views);
+    const replacement = {} as GPUSampler;
+    samplers[1] = replacement;
+
+    const rebuilt = ensureWgpuPerMapMaterialBinding(state, key, layout, 48, samplers, views);
+
+    expect(rebuilt).toBe(binding);
+    expect(rebuilt.samplers).toEqual([sampler0, replacement]);
+    expect(fake.calls.filter((call) => call.name === 'createBuffer')).toHaveLength(1);
+    expect(fake.calls.filter((call) => call.name === 'createBindGroup')).toHaveLength(2);
   });
 });
 
@@ -653,6 +717,34 @@ describe('wgpuMaterialBindGroupNeedsRebuild', () => {
     expect(wgpuMaterialBindGroupNeedsRebuild(cached, sampler, [view0])).toBe(true);
     const noViews: WgpuMaterialBinding = { bindGroup: {} as GPUBindGroup, buffer: {} as GPUBuffer };
     expect(wgpuMaterialBindGroupNeedsRebuild(noViews, sampler, [view0])).toBe(true);
+  });
+});
+
+describe('wgpuPerMapMaterialBindGroupNeedsRebuild', () => {
+  const sampler0 = {} as GPUSampler;
+  const sampler1 = {} as GPUSampler;
+  const view0 = {} as GPUTextureView;
+  const view1 = {} as GPUTextureView;
+  const cached: WgpuMaterialBinding = {
+    bindGroup: {} as GPUBindGroup,
+    buffer: {} as GPUBuffer,
+    samplers: [sampler0, sampler1],
+    views: [view0, view1],
+  };
+
+  it('keeps an unchanged parallel sampler/view cache', () => {
+    expect(wgpuPerMapMaterialBindGroupNeedsRebuild(cached, [sampler0, sampler1], [view0, view1])).toBe(false);
+  });
+
+  it('rebuilds when a non-primary sampler changes', () => {
+    expect(wgpuPerMapMaterialBindGroupNeedsRebuild(cached, [sampler0, {} as GPUSampler], [view0, view1])).toBe(true);
+  });
+
+  it('rebuilds for a view change or mismatched array shape', () => {
+    expect(wgpuPerMapMaterialBindGroupNeedsRebuild(cached, [sampler0, sampler1], [view0, {} as GPUTextureView])).toBe(
+      true,
+    );
+    expect(wgpuPerMapMaterialBindGroupNeedsRebuild(cached, [sampler0], [view0, view1])).toBe(true);
   });
 });
 
