@@ -1,16 +1,19 @@
 import type { GltfDocument } from './GltfSchema';
+import type { ImportDiagnostic } from './ImportDiagnostic';
 import type { SceneDocument } from './SceneDocument';
 import type { Transform3D } from './Transform3D';
 
 // The deliberately small context an individually imported glTF extension handler receives. Core parsing
 // has already decomposed nodes/materials/meshes before handlers run. Handlers append only the document
 // facts their named extension owns; they do not fetch resources or reach into parser-private buffers.
+// A handler that drops/skips/recovers input records structured crumbs onto `diagnostics` (the same raw
+// array the parser functions accept), aggregating repeated per-element faults itself.
 export interface GltfExtensionContext {
   buildNodeTransform(node: number): Transform3D;
+  diagnostics?: ImportDiagnostic[];
   document: SceneDocument;
   nodeIndices: readonly number[];
   source: Readonly<GltfDocument>;
-  warnings?: string[];
 }
 
 // One open glTF extension atom. Callers import only the handlers their asset pipeline accepts and pass
