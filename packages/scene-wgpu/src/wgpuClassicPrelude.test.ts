@@ -142,15 +142,6 @@ describe('getWgpuClassicModuleSourceForKey', () => {
     );
   });
 
-  it('retains the legacy shared-sampler binding contract for shaded composition', () => {
-    const source = getWgpuClassicSharedSamplerModuleSourceForKey(makeKey('blinnphong'));
-    expect(source).toContain('@group(2) @binding(1) var materialSampler : sampler;');
-    expect(source).toContain('@group(2) @binding(2) var diffuseTexture : texture_2d<f32>;');
-    expect(source).toContain('@group(2) @binding(5) var alphaTexture : texture_2d<f32>;');
-    expect(source).toContain('textureSample(normalTexture, materialSampler, in.uv)');
-    expect(source).not.toContain('diffuseSampler');
-  });
-
   it('declares the group(3) shadow bindings and shadow-maps the directional term', () => {
     const source = getWgpuClassicModuleSourceForKey(makeKey('blinnphong'));
     expect(source).toContain('@group(3) @binding(0) var<uniform> shadow : Shadow;');
@@ -170,5 +161,16 @@ describe('getWgpuClassicModuleSourceForKey', () => {
     expect(source).toContain('let hemisphereCount = u32(frame.punctualCounts.z);');
     expect(source).toContain('frame.hemisphereLights[hemisphere * 3u + 1u].xyz');
     expect(source.match(/shadeClassicLight\(/g)).toHaveLength(4);
+  });
+});
+
+describe('getWgpuClassicSharedSamplerModuleSourceForKey', () => {
+  it('retains the legacy shared-sampler binding contract for shaded composition', () => {
+    const source = getWgpuClassicSharedSamplerModuleSourceForKey(makeKey('blinnphong'));
+    expect(source).toContain('@group(2) @binding(1) var materialSampler : sampler;');
+    expect(source).toContain('@group(2) @binding(2) var diffuseTexture : texture_2d<f32>;');
+    expect(source).toContain('@group(2) @binding(5) var alphaTexture : texture_2d<f32>;');
+    expect(source).toContain('textureSample(normalTexture, materialSampler, in.uv)');
+    expect(source).not.toContain('diffuseSampler');
   });
 });
