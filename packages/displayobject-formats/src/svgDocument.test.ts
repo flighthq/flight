@@ -177,4 +177,33 @@ describe('createDisplayObjectFromSvgDocument', () => {
       severity: 'Recover',
     });
   });
+
+  it('honors preserveAspectRatio and forward gradient inheritance', () => {
+    const root = createDisplayObjectFromSvgDocument(`
+      <svg width="200" height="100" viewBox="0 0 50 50">
+        <defs>
+          <linearGradient id="derived" href="#base" x2="100%"/>
+          <linearGradient id="base">
+            <stop offset="0" stop-color="red"/>
+            <stop offset="1" stop-color="blue"/>
+          </linearGradient>
+        </defs>
+        <rect width="50" height="50" fill="url(#derived)"/>
+      </svg>
+    `);
+
+    expect(root.scaleX).toBe(2);
+    expect(root.scaleY).toBe(2);
+    expect(root.x).toBe(50);
+    const shape = getNodeChildAt(root, 0) as Shape;
+    const gradientCommandIndex = shape.data.commands.indexOf('beginGradientFill');
+    expect(shape.data.commands[gradientCommandIndex + 3]).toEqual([0xff0000, 0x0000ff]);
+
+    const stretched = createDisplayObjectFromSvgDocument(
+      '<svg width="200" height="100" viewBox="0 0 50 50" preserveAspectRatio="none"/>',
+    );
+    expect(stretched.scaleX).toBe(4);
+    expect(stretched.scaleY).toBe(2);
+    expect(stretched.x).toBe(0);
+  });
 });

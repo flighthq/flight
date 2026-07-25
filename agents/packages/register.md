@@ -144,7 +144,7 @@ The visual-authoring-artifact arc ([structural-forks fork I](structural-forks.md
 
 | Candidate          | Subject · layer                       | Verdict                                                                                   |
 | ------------------ | ------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `svg-formats`      | shape/display · `-formats`            | **bedrock** — static SVG only ("to a point"); path data delegates to `path-formats`; output is `shape`/display |
+| `displayobject-formats` | display · `-formats`              | ✅ landed — static SVG document import first; path data delegates to `path-formats`; output is a display subtree |
 | `lottie-formats`   | shape + animation · `-formats`        | **bedrock** — Bodymovin JSON → `shape` + `@flighthq/animation` tracks; static-vector path shared with `svg-formats` |
 | `rive-formats`     | shape/mesh/skeleton/anim · `-formats` | **bedrock**, with a parse/runtime split — `.riv` → Flight data here; the state-machine *runtime* is a distinct future cell (à la `particles`/`particleemitter`) |
 | `markup-tokenizer` | text · lenient lexer                  | **reserved** — extract `text-markup`'s inline lenient lexer at the 2nd consumer; the rich-text runs inside the importers above are that trigger |
