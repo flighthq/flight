@@ -47,6 +47,7 @@ describe('cloneAnimationTrack', () => {
     expect(clone.components).toBe(3);
     expect(clone.interpolation).toBe(AnimationInterpolationStep);
     expect(clone.easing).toBe(easing);
+    expect(clone.segmentEasings).toBeNull();
   });
 });
 
@@ -57,6 +58,7 @@ describe('createAnimationTrack', () => {
     expect(track.components).toBe(1);
     expect(track.quaternion).toBe(false);
     expect(track.easing).toBeNull();
+    expect(track.segmentEasings).toBeNull();
     expect(EntityRuntimeKey in track).toBe(true);
   });
 });
@@ -140,6 +142,20 @@ describe('sampleAnimationTrack', () => {
     expect(out[0]).toBe(0);
   });
 
+  it('applies a segment-local easing before the track-wide fallback', () => {
+    const track = createAnimationTrack({
+      easing: () => 0.25,
+      segmentEasings: [() => 0, null],
+      times: [0, 1, 2],
+      values: [0, 10, 20],
+    });
+    const out = [0];
+    sampleAnimationTrack(out, track, 0.75);
+    expect(out[0]).toBe(0);
+    sampleAnimationTrack(out, track, 1.75);
+    expect(out[0]).toBeCloseTo(12.5);
+  });
+
   it('returns the first value when t is exactly on the first keyframe', () => {
     const track = createAnimationTrack({ times: [2, 5], values: [7, 42] });
     const out = [0];
@@ -190,6 +206,18 @@ describe('trimAnimationTrack', () => {
     expect(sub.values).not.toBe(track.values);
   });
 
+  it('keeps the segment easings between retained keyframes', () => {
+    const easings = [() => 0, () => 0.25, () => 0.5];
+    const track = createAnimationTrack({
+      segmentEasings: easings,
+      times: [0, 1, 2, 3],
+      values: [0, 10, 20, 30],
+    });
+    const sub = trimAnimationTrack(track, 1, 3);
+    expect(sub.segmentEasings).toEqual([easings[1], easings[2]]);
+    expect(sub.segmentEasings).not.toBe(track.segmentEasings);
+  });
+
   it('copies the 3x cubic keyframe stride', () => {
     const track = createAnimationTrack({
       interpolation: AnimationInterpolationCubic,
@@ -228,6 +256,13 @@ describe('validateAnimationTrack', () => {
     const diagnostics = validateAnimationTrack(track);
     expect(diagnostics).not.toBeNull();
     expect(diagnostics!.some((d) => d.code === 'valuesLengthMismatch')).toBe(true);
+  });
+
+  it('flags a segment-easing count that does not match the intervals', () => {
+    const track = createAnimationTrack({ segmentEasings: [], times: [0, 1], values: [0, 1] });
+    expect(validateAnimationTrack(track)?.map((diagnostic) => diagnostic.code)).toContain(
+      'segmentEasingsLengthMismatch',
+    );
   });
 
   it('accounts for the 3x cubic stride in the length check', () => {

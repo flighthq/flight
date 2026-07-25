@@ -8,6 +8,13 @@ by: builder3
 
 > Append-only handoff log, newest entry on top.
 
+## 2026-07-25 — Lottie charter blessed
+
+Review approved analytic segment-local easing, a general display-object animation binder, ordinary
+precomposition flattening with exact constant offset/stretch, diagnosed arbitrary time remapping,
+and absorption of the reserved `lottie-formats` charter. Implementation proceeds types-first and
+TDD against hand-authored Bodymovin fixtures; a real asset waits for the demo checkpoint.
+
 ## 2026-07-25 — Lottie charter/type scope only
 
 Drafted the proposed Lottie module boundary without implementing a parser. Added data-only
