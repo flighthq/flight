@@ -4,7 +4,7 @@ import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@fligh
 import { tessellatePath } from '@flighthq/path';
 import { resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import { getShapeFillRegions } from '@flighthq/shape';
+import { getShapeFillRegions, getShapeStrokeRegions, hasShapeFill } from '@flighthq/shape';
 import type {
   DisplayObjectRenderer,
   ImageResource,
@@ -13,6 +13,8 @@ import type {
   RenderProxy2D,
   RenderState,
   Shape,
+  ShapeCommandToken,
+  ShapeFillRegion,
   WgpuRenderState,
   WgpuShapeMeshBuffers,
 } from '@flighthq/types';
@@ -38,8 +40,8 @@ interface WgpuShapeData {
   lastContentId: number;
   lastW: number;
   lastH: number;
-  // GPU tessellated-fill cache, rebuilt when the content revision changes. Null until first resolved;
-  // populated only for solid-fill shapes (getShapeFillRegions != null), otherwise the raster path runs.
+  // GPU tessellated-mesh cache, rebuilt when the content revision changes. Null until first resolved;
+  // populated for solid-fill and stroke-only shapes (resolveWgpuShapeMeshRegions), else the raster path runs.
   meshVersion: number;
   meshes: WgpuShapeMesh[] | null;
   // Reusable per-shape GPU buffers for the mesh path, grown on demand and destroyed in destroyData.
@@ -92,6 +94,18 @@ function destroyWgpuShapeData(state: WgpuRenderState, data: RendererData): void 
   b.bindGroup = null;
 }
 
+// Chooses the fillable regions to tessellate into GPU meshes for a shape: its solid-fill regions when it
+// is fill-only, or its stroke-outline regions (via getShapeStrokeRegions → strokePath) when it is
+// stroke-only. Returns null when the shape must use the raster fallback — a gradient/bitmap fill or
+// stroke, a closed-primitive (ring) stroke, or a shape that BOTH fills and strokes. Mirrors
+// displayobject-gl/glShape's resolveGlShapeMeshRegions.
+function resolveWgpuShapeMeshRegions(commands: readonly ShapeCommandToken[]): ShapeFillRegion[] | null {
+  const fillRegions = getShapeFillRegions(commands);
+  if (fillRegions !== null) return fillRegions.length > 0 ? fillRegions : null;
+  if (hasShapeFill(commands)) return null;
+  return getShapeStrokeRegions(commands);
+}
+
 export function drawWgpuShape(state: WgpuRenderState, renderProxy: RenderProxy2D): void {
   const runtime = getWgpuRenderStateRuntime(state);
   if (runtime.renderPass === null) return;
@@ -102,9 +116,12 @@ export function drawWgpuShape(state: WgpuRenderState, renderProxy: RenderProxy2D
   if (commands.length === 0) return;
   if (renderProxy.rendererData === null) return;
 
-  // GPU fill path: solid-fill shapes tessellate to colored meshes (crisp at any zoom). Falls through to
-  // the canvas-raster path for gradient/bitmap fills and strokes (getShapeFillRegions returns null).
-  const regions = getShapeFillRegions(commands);
+  // GPU mesh path: solid-fill shapes tessellate to colored meshes (crisp at any zoom), and a STROKE-ONLY
+  // shape offsets its strokes to fillable outlines via getShapeStrokeRegions (real joins/caps/dashing,
+  // resolution-independent — no offscreen raster). Falls through to the canvas-raster path for
+  // gradient/bitmap fills/strokes, closed-primitive (ring) strokes, and filled-and-stroked shapes (the
+  // fill + stroke mesh paths don't compose yet). Mirrors displayobject-gl/glShape.
+  const regions = resolveWgpuShapeMeshRegions(commands);
   if (regions !== null && regions.length > 0) {
     const meshData = getWgpuRendererData<WgpuShapeData>(renderProxy.rendererData);
     if (meshData === null) return;
