@@ -1,9 +1,10 @@
-// bitmap-perbitmap-smoothing — proves WebGL honors PER-BITMAP Bitmap.smoothing: two bitmaps in the SAME
-// frame, sharing the same texture format, must sample with DIFFERENT filters. Before drawGlBitmap threaded
-// the flag into the sprite-batch key, GL took the filter from the global state.allowSmoothing, so both
-// bitmaps shared one filter and this distinction could not be made — the sibling bitmap-smoothing test
-// only samples cell CENTERS (pure under either filter) and so never gated it. This scene samples the cell
-// BOUNDARY, where nearest and bilinear diverge unambiguously under magnification (no mipmaps needed).
+// bitmap-perbitmap-smoothing — proves WebGPU honors PER-BITMAP Bitmap.smoothing: two bitmaps in the SAME
+// frame, sharing the same texture, must sample with DIFFERENT filters. Before drawWgpuBitmap threaded the
+// flag into the sprite-batch key, WebGPU baked the global state.allowSmoothing sampler into the shared
+// group(1) bind group, so both bitmaps sampled with one filter. drawWgpuBitmap now keys the batch on
+// smoothing and the flush picks the LINEAR/NEAREST bind-group variant (resolveWgpuSmoothingBindGroup) for
+// this bitmap. This scene samples the cell BOUNDARY, where nearest and bilinear diverge unambiguously
+// under magnification (no mipmaps needed) — the webgpu twin of the .webgl variant.
 //
 // A tiny 4×4 high-contrast checkerboard is drawn twice, upscaled 40× to 160px. The vertical boundary
 // between the white cell (0,0) and the black cell (1,0) is sampled on each copy:
@@ -12,8 +13,8 @@
 // The crisp copy's boundary being PURE is the real per-bitmap proof: it only holds if GL applied NEAREST
 // to that specific bitmap rather than the (bilinear) global default the smoothed copy also uses.
 //
-// WebGPU has the same proof in the sibling .webgpu variant (its own bind-group-variant path); canvas/dom
-// always honored per-bitmap smoothing (covered by the bare bitmap-smoothing / bitmap-downscale-smoothing).
+// WGPU is not wired for per-bitmap smoothing yet (its sampler binding is mid-rework), so this proof is
+// webgl-only for now; canvas/dom are covered by the bare bitmap-smoothing / bitmap-downscale-smoothing.
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
