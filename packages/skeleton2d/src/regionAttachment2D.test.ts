@@ -1,0 +1,71 @@
+import type { Bone2D, RegionAttachment2D } from '@flighthq/types';
+import { RegionAttachment2DKind, TransformMode2D } from '@flighthq/types';
+import { describe, expect, it } from 'vitest';
+
+import { computeSkeleton2DRegionAttachmentVertices } from './regionAttachment2D';
+import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d';
+
+function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
+  return {
+    length: 0,
+    name: null,
+    parentIndex: -1,
+    rotation: 0,
+    scaleX: 1,
+    scaleY: 1,
+    shearX: 0,
+    shearY: 0,
+    transformMode: TransformMode2D.Normal,
+    x: 0,
+    y: 0,
+    ...overrides,
+  };
+}
+
+function region(overrides: Partial<RegionAttachment2D> = {}): RegionAttachment2D {
+  return {
+    kind: RegionAttachment2DKind,
+    height: 2,
+    rotation: 0,
+    scaleX: 1,
+    scaleY: 1,
+    width: 4,
+    x: 0,
+    y: 0,
+    ...overrides,
+  };
+}
+
+describe('computeSkeleton2DRegionAttachmentVertices', () => {
+  it('offsets a 4×2 region rect by the bone translation (BL, TL, TR, BR order)', () => {
+    const s = createSkeleton2D([makeBone({ x: 10, y: 5 })]);
+    computeSkeleton2DWorldTransforms(s);
+    const out = new Float32Array(8);
+    computeSkeleton2DRegionAttachmentVertices(out, region(), s, 0);
+    // Corners (±2, ±1) shifted by (10,5): BL(8,4) TL(8,6) TR(12,6) BR(12,4).
+    expect(Array.from(out)).toEqual([8, 4, 8, 6, 12, 6, 12, 4]);
+  });
+
+  it('rotates the region rect through a 90° bone', () => {
+    const s = createSkeleton2D([makeBone({ rotation: 90 })]);
+    computeSkeleton2DWorldTransforms(s);
+    const out = new Float32Array(8);
+    computeSkeleton2DRegionAttachmentVertices(out, region(), s, 0);
+    // BL local (-2,-1) rotated 90° CCW → (1,-2).
+    expect(out[0]).toBeCloseTo(1, 5);
+    expect(out[1]).toBeCloseTo(-2, 5);
+    // TR local (2,1) → (-1,2).
+    expect(out[4]).toBeCloseTo(-1, 5);
+    expect(out[5]).toBeCloseTo(2, 5);
+  });
+
+  it('applies the region local offset and scale on top of the bone', () => {
+    const s = createSkeleton2D([makeBone()]);
+    computeSkeleton2DWorldTransforms(s);
+    const out = new Float32Array(8);
+    // Region offset to (3,0), doubled in x: half-width 2·2 = 4, so BL at (3-4, 0-1) = (-1,-1).
+    computeSkeleton2DRegionAttachmentVertices(out, region({ x: 3, scaleX: 2 }), s, 0);
+    expect(out[0]).toBeCloseTo(-1, 5);
+    expect(out[1]).toBeCloseTo(-1, 5);
+  });
+});
