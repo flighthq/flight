@@ -59,7 +59,7 @@ const idleClip = createAnimationClip([
   createAnimationChannel(quaternionTrack([3, -3, 3, -3, 3]), rightLegTarget),
 ]);
 
-// The walk clip deliberately shuffles channel order. Crossfade correspondence follows targetRef
+// The walk clip deliberately shuffles channel order. State-machine correspondence follows targetRef
 // identity, so the binding receives the right body/leg sample rather than relying on array position.
 const walkClip = createAnimationClip([
   createAnimationChannel(quaternionTrack([28, -28, 28, -28, 28]), rightLegTarget),

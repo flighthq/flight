@@ -36,10 +36,13 @@ describe('advanceAnimationStateMachine', () => {
     const shared = player(target, 0, 4);
     const destination = player(target, 20, 4);
     const machine = createAnimationStateMachine([state('idle', shared), state('walk', shared, destination)]);
+    const advanceScratch = machine.advanceScratch;
     expect(transitionAnimationStateMachine(machine, 'walk', 1)).toBe(true);
     advanceAnimationStateMachine(machine, 0.5);
     expect(shared.time).toBe(0.5);
     expect(destination.time).toBe(0.5);
+    expect(machine.advanceScratch).toBe(advanceScratch);
+    expect(machine.advanceScratch).toEqual([shared, destination]);
     expect(machine.transitionWeight).toBe(0.5);
     advanceAnimationStateMachine(machine, 0.5);
     expect(getAnimationStateMachineCurrentState(machine).name).toBe('walk');
