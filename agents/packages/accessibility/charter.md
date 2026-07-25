@@ -37,5 +37,5 @@ _Append-only, dated, blessed rulings._
 ## Open directions
 
 1. **Batched flush.** A `beginAccessibilityUpdate`/`flush` bracket so a frame's many node updates reflect to the DOM once, not per-call — a performance follow-on over the immediate-reflect default.
-2. **Interaction bridge.** An opt-in adapter that derives nodes from `@flighthq/interaction` hit regions + `@flighthq/displayobject` bounds, so common widgets publish semantics automatically instead of by hand.
+2. **Interaction bridge.** An opt-in adapter that derives nodes from `@flighthq/interaction` hit regions + `@flighthq/scene2d` bounds, so common widgets publish semantics automatically instead of by hand.
 3. **Keyboard focus order / tabindex model.** Explicit focus-traversal order and roving-tabindex helpers over the flat node set.

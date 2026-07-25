@@ -1,6 +1,6 @@
-import { createBitmap, createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix, createRectangle } from '@flighthq/geometry';
 import { addNodeChild, getNodeRuntime, invalidateNodeLocalBounds, invalidateNodeLocalTransform } from '@flighthq/node';
+import { createBitmap, createDisplayObject } from '@flighthq/scene2d';
 import type { HasBoundsRectangleRuntime, RenderProxy2D, RenderViewport2D } from '@flighthq/types';
 
 import { createRenderProxy2D, prepareScene2DRender } from './renderProxy';

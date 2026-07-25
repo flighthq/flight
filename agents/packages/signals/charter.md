@@ -14,7 +14,7 @@ status: ./status.md
 
 `@flighthq/signals` is the SDK's typed observer/event-dispatch primitive: strictly-typed signals and slots for loose, multi-listener notification across the public API. A `Signal<T>` is a lazily-allocated dispatch point; `connectSignal` registers a slot. The package provides priority ordering, one-shot connections (`connectSignalOnce`), cancellation (`cancelSignal`), introspection (`hasSignalSlots`/`isSlotConnected`), and temporal operators (frame-rate gating, throttle, debounce).
 
-It is **fundamental infrastructure** — effectively always present in the SDK — but it is _opt-in cost_: specific signal groups are enabled by `enable*` functions defined in the package that **owns** the entity (e.g. `enableNodeSignals` in `@flighthq/node`, `enableStageSignals` in `@flighthq/displayobject`), not here. Signals is the dispatch mechanism; the entity packages own the policy of when to pay for it.
+It is **fundamental infrastructure** — effectively always present in the SDK — but it is _opt-in cost_: specific signal groups are enabled by `enable*` functions defined in the package that **owns** the entity (e.g. `enableNodeSignals` in `@flighthq/node`, `enableStageSignals` in `@flighthq/scene2d`), not here. Signals is the dispatch mechanism; the entity packages own the policy of when to pay for it.
 
 Where it ends: signals is the _loose-dispatch_ primitive (multiple listeners, priority, cancellation). Strict internal wiring with a single guaranteed callsite stays a direct callback and never reaches for a signal.
 

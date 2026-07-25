@@ -1,5 +1,5 @@
-import { createBitmap } from '@flighthq/displayobject';
 import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render';
+import { createBitmap } from '@flighthq/scene2d';
 import type { ImageResource, VideoTexture } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 

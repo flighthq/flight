@@ -37,7 +37,7 @@ basedOn: ./review.md
    fullscreen VAO WeakMap are not reachable from destroyGlRenderState. Add explicit internal teardown
    hooks and tests for their programs/VAOs.
 4. **Replace the unit-blind texture cache with private state-owned binding facts.** `currentTexture`
-   records neither active unit nor target, yet `displayobject-gl` still trusts it to skip a bind while
+   records neither active unit nor target, yet `scene2d-gl` still trusts it to skip a bind while
    scene/material paths bind many units. Track active unit plus per-unit/target bindings privately, or
    bind unconditionally at the few remaining call sites. Route pixel unpack state through the same
    internal tier: element/video uploads currently set `UNPACK_PREMULTIPLY_ALPHA_WEBGL` ad hoc and leave

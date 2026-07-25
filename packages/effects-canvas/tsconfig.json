@@ -13,7 +13,7 @@
       "path": "../adjustments"
     },
     {
-      "path": "../displayobject-canvas"
+      "path": "../scene2d-canvas"
     },
     {
       "path": "../effects"

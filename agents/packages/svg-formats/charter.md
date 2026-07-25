@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/svg-formats'
-absorbed: displayobject-formats
-supersededBy: '@flighthq/displayobject-formats'
+absorbed: scene2d-formats
+supersededBy: '@flighthq/scene2d-formats'
 draft: true
 lastDirection: 2026-07-12
 review: ./review.md
@@ -11,7 +11,7 @@ status: ./status.md
 
 # svg-formats — Superseded Charter
 
-> Superseded by [`@flighthq/displayobject-formats`](../displayobject-formats/charter.md). No
+> Superseded by [`@flighthq/scene2d-formats`](../scene2d-formats/charter.md). No
 > `packages/svg-formats/` implementation was created. This file retains the original direction
 > history only.
 
@@ -37,8 +37,8 @@ Path *data* (`d="…"`) already lands in `@flighthq/path-formats` (`parseSvgPath
 _Append-only, dated, blessed rulings._
 
 - **[2026-07-12] Chartered as a candidate; not built.** Part of the visual-authoring-import arc (fork I). Static-vector scope only; path data delegates to `path-formats`; output is `shape`/display data. Bless-to-build is the user's. User-directed 2026-07-12 ("SVG to a point, in scope as a `-formats` member").
-- **[2026-07-25] Superseded before build by `@flighthq/displayobject-formats`.** The user-directed
-  animation follow-on queue broadened the subject home and explicitly named `displayobject-formats`;
+- **[2026-07-25] Superseded before build by `@flighthq/scene2d-formats`.** The user-directed
+  animation follow-on queue broadened the subject home and explicitly named `scene2d-formats`;
   the static SVG scope moved there unchanged. This reserved package was never built.
 
 ## Open directions

@@ -1,5 +1,5 @@
-import { getNode2DRuntime } from '@flighthq/displayobject';
 import { getNodeLocalContentRevision } from '@flighthq/node';
+import { getNode2DRuntime } from '@flighthq/scene2d';
 import {
   computeTextLayout,
   getTextLayoutMeasureProvider,

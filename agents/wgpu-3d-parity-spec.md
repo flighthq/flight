@@ -2,7 +2,7 @@
 
 **Status: PARTIALLY IMPLEMENTED. Sections 1–5 are complete; the later renderer gaps remain open.** The
 2026-07 AAA workflow was scoped GL-only; several 3D features it closed on WebGL2 (`scene-gl`,
-`effects-gl`, `render-gl`, `displayobject-gl`) still have **no WebGPU counterpart**. This is the
+`effects-gl`, `render-gl`, `scene2d-gl`) still have **no WebGPU counterpart**. This is the
 remaining un-postpone plan: the concrete
 gaps in `@flighthq/scene-wgpu` / `@flighthq/render-wgpu` / `@flighthq/effects-wgpu`, and — for each — the
 already-shipped GL path it must mirror, so a later worker can implement without re-deriving the design.
@@ -359,7 +359,7 @@ baking is requested outside the visible frame.
 ### Verification
 
 `shadow-classic.webgpu.ts` and `shadow-directional.webgpu.ts` both pass real WebGPU pixel oracles: a
-Blinn-Phong/PBR sphere casts a clearly darker projected shadow onto a lit plane. `displayobject-cache`
+Blinn-Phong/PBR sphere casts a clearly darker projected shadow onto a lit plane. `scene2d-cache`
 also exercises the restored out-of-frame WebGPU cache bake.
 
 ---

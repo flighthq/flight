@@ -14,7 +14,7 @@ status: ./status.md
 
 `@flighthq/motionpath` is the **path-following animation cell** — it advances a marker along a `@flighthq/path` over time at a controlled speed and reports the marker's world position and heading, so a caller can move (and orient) an object along a curve. It is the animation-family driver on top of `@flighthq/path`'s arc-length sampling: path owns the geometry and the "point at distance D" query; motionpath owns the "where is the marker now, and where is it heading, given speed and a loop mode" state over frames.
 
-The name is `motionpath` (one word, no dash): a first-level compound domain, per the SDK's no-dash-first-level rule (`displayobject`, `movieclip`, `camera2d`), not a `-subpackage` neighbor of `path`.
+The name is `motionpath` (one word, no dash): a first-level compound domain, per the SDK's no-dash-first-level rule (`scene2d`, `movieclip`, `camera2d`), not a `-subpackage` neighbor of `path`.
 
 ## North star
 

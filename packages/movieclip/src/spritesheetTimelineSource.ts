@@ -1,5 +1,5 @@
-import { createBitmap } from '@flighthq/displayobject';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
+import { createBitmap } from '@flighthq/scene2d';
 import type { Bitmap, Node2D, Spritesheet, SpritesheetAnimation, TimelineSource } from '@flighthq/types';
 
 // Exposes a spritesheet animation as a TimelineSource so a MovieClip can play it (the spritesheet side of

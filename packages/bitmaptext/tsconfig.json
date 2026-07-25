@@ -10,7 +10,7 @@
   },
   "references": [
     { "path": "../adjustments" },
-    { "path": "../displayobject" },
+    { "path": "../scene2d" },
     { "path": "../geometry" },
     { "path": "../glyphatlas" },
     { "path": "../materials" },

@@ -155,7 +155,7 @@ No source files changed this pass. Recommend re-running `package-assess` against
 
 ### Silver (cross-package coordination — still requires design decision)
 
-- **Scissor/stencil clip primitive promotion** — `pushGlScissorClip`/`popGlScissorClip`/`pushGlStencilClip`/`popGlStencilClip` — the runtime type already has `scissorStack`, `clipForms`, `currentMaskDepth`, `currentScissorRect`. These operations currently live in `displayobject-gl`. Promoting them into render-gl is the right layering but crosses a package boundary (requires removing or deprecating the `displayobject-gl` equivalents). Deferred to user design decision.
+- **Scissor/stencil clip primitive promotion** — `pushGlScissorClip`/`popGlScissorClip`/`pushGlStencilClip`/`popGlStencilClip` — the runtime type already has `scissorStack`, `clipForms`, `currentMaskDepth`, `currentScissorRect`. These operations currently live in `scene2d-gl`. Promoting them into render-gl is the right layering but crosses a package boundary (requires removing or deprecating the `scene2d-gl` equivalents). Deferred to user design decision.
 - **Context-loss recreation contract (`GlRecreatable` registry)** — detection/signals done; the recreation tier (render-target, program, buffer owners self-register via `registerGlRecreatable`) requires deciding whether the contract is render-gl-internal or a shared seam leaf packages participate in. Deferred to user design decision.
 - **Blend-equation + separate blend state** — `setGlBlendEquation`, `setGlBlendFuncSeparate` cached setters; `registerGlBlendModeShader` seam for non-separable modes. The non-separable blend mode decision (shader blending responsibility: render-gl vs leaf?) needs confirmation before implementing.
 - **Compressed-texture upload** — `uploadGlCompressedTexture` over `compressedTexImage2D`, gated on capability detection. Deferred until the compressed format capability query (`getGlCompressedTextureFormats`) design is confirmed.
@@ -189,13 +189,13 @@ No source files changed this pass. Recommend re-running `package-assess` against
 
 ## Design Decisions Still Needing User Input
 
-1. **Scissor/stencil clip move (Silver)** — should `pushGlScissorClip`/`pushGlStencilClip`/pop be promoted from `displayobject-gl` into `render-gl`? This is the right layering (backend-core primitives belong here) but requires removing ownership from `displayobject-gl`. Confirm before moving.
+1. **Scissor/stencil clip move (Silver)** — should `pushGlScissorClip`/`pushGlStencilClip`/pop be promoted from `scene2d-gl` into `render-gl`? This is the right layering (backend-core primitives belong here) but requires removing ownership from `scene2d-gl`. Confirm before moving.
 
-2. **Context-loss recreation contract (Silver)** — is `GlRecreatable` a render-gl-internal registry or a shared seam that leaf packages (`displayobject-gl`, `scene-gl`) participate in? This determines whether `registerGlRecreatable`/`unregisterGlRecreatable` need to be exported from `render-gl` or stay internal.
+2. **Context-loss recreation contract (Silver)** — is `GlRecreatable` a render-gl-internal registry or a shared seam that leaf packages (`scene2d-gl`, `scene-gl`) participate in? This determines whether `registerGlRecreatable`/`unregisterGlRecreatable` need to be exported from `render-gl` or stay internal.
 
 3. **sRGB/color-space correctness (Gold)** — must be decided jointly with `render-wgpu` and the Rust port conformance map. The Rust port is committed to "sRGB pass-through" (non-sRGB `Rgba8Unorm` targets, no gamma conversion). Does the TS side match this exactly, or does render-gl optionally support sRGB framebuffers behind capability detection? Settling this determines whether `SRGB8_ALPHA8` in `GlTextureInternalFormat` is usable as a render-target format.
 
-4. **Non-separable blend modes** — the `registerGlBlendModeShader` seam for shader-based blending: is this render-gl's responsibility or the leaf package's (e.g., `displayobject-gl` supplying a Multiply shader)? This determines the scope of the blend-equation Silver item.
+4. **Non-separable blend modes** — the `registerGlBlendModeShader` seam for shader-based blending: is this render-gl's responsibility or the leaf package's (e.g., `scene2d-gl` supplying a Multiply shader)? This determines the scope of the blend-equation Silver item.
 
 5. **Stats hot-path wiring** — confirm the `recordGl*` functions should be wired into `drawGlQuad`, `bindGlTexture`, `useGlProgram`, and `beginGlRenderTarget`. This is low-risk but touches tested hot-path code.
 

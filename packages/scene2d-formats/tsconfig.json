@@ -1,0 +1,31 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
+  },
+  "references": [
+    { "path": "../animation" },
+    { "path": "../clip" },
+    { "path": "../color" },
+    { "path": "../scene2d" },
+    { "path": "../easing" },
+    { "path": "../geometry" },
+    { "path": "../image" },
+    { "path": "../importdiagnostics" },
+    { "path": "../node" },
+    { "path": "../path" },
+    { "path": "../path-formats" },
+    { "path": "../shape" },
+    { "path": "../text" },
+    { "path": "../textlayout" },
+    { "path": "../types" },
+    { "path": "../xml" }
+  ],
+  "include": ["src"]
+}

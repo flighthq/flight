@@ -27,7 +27,7 @@ Track which packages have had a direction session, what was dispatched, and what
 
 | Package | State | Last visited | Note |
 | --- | --- | --- | --- |
-| displayobject | dispatched | 2026-07-01 | Reversed prior drop of `sourceRectangle` on Bitmap. Blessed charter decisions: drop cacheAsBitmap/scrollRect/opaqueBackground, Loader, lifecycle signals, traversal wrappers, pixelSnapping. Builder2 parcel: stale-reference cleanup + textlayout dep removal. |
+| scene2d | dispatched | 2026-07-01 | Reversed prior drop of `sourceRectangle` on Bitmap. Blessed charter decisions: drop cacheAsBitmap/scrollRect/opaqueBackground, Loader, lifecycle signals, traversal wrappers, pixelSnapping. Builder2 parcel: stale-reference cleanup + textlayout dep removal. |
 | text | direction | 2026-07-02 | 4 decisions blessed: entity layer identity, programmatic mutation on text / interactive on textinput, \*Value suffix dropped, pre-release no-backward-compat rule. Builder landed most depth-review work (setters, read accessors, signals, insert/replace). Open: signal ownership (text vs textinput), text-formats neighbor, package rename. 1 approved item (textlayout \_text param removal). |
 | sprite | direction | 2026-07-02 | 5 decisions blessed: compact sentinel is user-facing API, ParticleEmitter signals intentionally absent, transformType no-guard for perf, Vector2Like for all {x,y} out-params, Int32Array for tile flags. Builder parcel: 3 items (signals dep, Vector2Like swap, named sentinel constant). |
 | movieclip | direction | 2026-07-03 | Approved for extraction from timeline. |
@@ -56,10 +56,10 @@ Track which packages have had a direction session, what was dispatched, and what
 | render | direction | 2026-07-02 | 6 decisions blessed: shared draw driver, render-graph in scope, font-string → text, 3D prepare boundary (render composes / lighting defines), viewport culling = real world bounds, housekeeping sweep. Builder parcel: delete no-op + alias, per-state adapt hook, fix viewport culling, move computeTextFormatFontString. |
 | render-gl | direction | 2026-07-02 | Remove `makeGlState` from barrel. Backlog: context-loss, device-caps, texture abstraction. |
 | render-wgpu | direction | 2026-07-02 | Wire `setScissorRect`, collapse duplicated quad-draw paths. Backlog: blend modes, MSAA, device-loss. |
-| displayobject-canvas | direction | 2026-07-02 | Map Alpha→destination-in, Erase→destination-out. Unify naming. `crate: null`. |
-| displayobject-dom | direction | 2026-07-02 | Source caret color/width from text format. `crate: null`. |
-| displayobject-gl | direction | 2026-07-02 | Tighten `remapGlScale9Commands` signature. |
-| displayobject-wgpu | direction | 2026-07-02 | Tidy RendererData casts behind typed helper. |
+| scene2d-canvas | direction | 2026-07-02 | Map Alpha→destination-in, Erase→destination-out. Unify naming. `crate: null`. |
+| scene2d-dom | direction | 2026-07-02 | Source caret color/width from text format. `crate: null`. |
+| scene2d-gl | direction | 2026-07-02 | Tighten `remapGlScale9Commands` signature. |
+| scene2d-wgpu | direction | 2026-07-02 | Tidy RendererData casts behind typed helper. |
 | scene-gl | direction | 2026-07-02 | Add `destroy*` for GPU resources. |
 | scene-wgpu | direction | 2026-07-02 | No sweep items. Backlog: multi-light, shadows, IBL, transparency. |
 

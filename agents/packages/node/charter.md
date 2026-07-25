@@ -12,7 +12,7 @@ status: ./status.md
 
 ## What it is
 
-Retained-mode scene-graph core — the shared base graph that display objects, sprite graphs, and future graph families build on. Its concerns are: parent/child hierarchy and z-ordering, traversal, 2D/3D transform composition (local→world), 2D/3D bounds propagation, a seven-channel invalidation/revision system, lifecycle (`createNode`/`disposeNode`), opt-in cross-family traits (appearance, clip, material, boundsRectangle, transform2d, transform3d), hierarchy change signals, and a viewport scale/align transform. This is the "node library" tier of an engine (analogous to `Node` / `Spatial` / `Object3D` in Godot, Cocos, three.js) — explicitly _not_ concrete primitives, which live in `@flighthq/displayobject`, `@flighthq/sprite`, and `@flighthq/scene`.
+Retained-mode scene-graph core — the shared base graph that display objects, sprite graphs, and future graph families build on. Its concerns are: parent/child hierarchy and z-ordering, traversal, 2D/3D transform composition (local→world), 2D/3D bounds propagation, a seven-channel invalidation/revision system, lifecycle (`createNode`/`disposeNode`), opt-in cross-family traits (appearance, clip, material, boundsRectangle, transform2d, transform3d), hierarchy change signals, and a viewport scale/align transform. This is the "node library" tier of an engine (analogous to `Node` / `Spatial` / `Object3D` in Godot, Cocos, three.js) — explicitly _not_ concrete primitives, which live in `@flighthq/scene2d`, `@flighthq/sprite`, and `@flighthq/scene`.
 
 Where it ends and a neighbor begins: `node` owns the shared graph machinery — anything generic across graph families. A concrete primitive (bitmap, sprite, 3D mesh) belongs to its owning package. Traits on `node` are the ones that cross graph families; entity-specific properties belong on the entity package.
 
@@ -38,15 +38,15 @@ Where it ends and a neighbor begins: `node` owns the shared graph machinery — 
 
 **Non-goals:**
 
-- Concrete primitives (bitmap, shape, sprite, mesh) — `displayobject` / `sprite` / `scene`.
-- DisplayObject-specific properties — belong in `@flighthq/displayobject`.
+- Concrete primitives (bitmap, shape, sprite, mesh) — `scene2d` / `sprite` / `scene`.
+- DisplayObject-specific properties — belong in `@flighthq/scene2d`.
 - Renderer registration, render state, the draw/update pipeline — `@flighthq/render`.
 - Serialization — a new dedicated package with a render-like registration seam (Decision #6).
 - Transform/bounds/enabled "changed" signals — the revision system is the dirty-check mechanism; invalidation marks possibly-dirty, not actually-changed, so change signals would be misleading (Decision #4).
 
 ## Decisions
 
-- **[2026-07-01] Trait boundary: cross-family traits live on node; entity-specific traits on their entity package.** The current trait set — appearance, clip, material, boundsRectangle, transform2d, transform3d — lives on `@flighthq/node` because these are concerns shared across display objects, sprites, and 3D scene nodes. DisplayObject-specific properties (`cacheAsBitmap`, `opaqueBackground`, `scrollRect`) do not belong here — they were already dropped by the displayobject charter Decision (2026-06-25). **Resolves Open direction #1.**
+- **[2026-07-01] Trait boundary: cross-family traits live on node; entity-specific traits on their entity package.** The current trait set — appearance, clip, material, boundsRectangle, transform2d, transform3d — lives on `@flighthq/node` because these are concerns shared across display objects, sprites, and 3D scene nodes. DisplayObject-specific properties (`cacheAsBitmap`, `opaqueBackground`, `scrollRect`) do not belong here — they were already dropped by the scene2d charter Decision (2026-06-25). **Resolves Open direction #1.**
 
   **Why:** Node is the shared graph spine. A trait that only one graph family uses belongs on that family's package. These six traits are genuinely cross-family (sprites have appearance and transforms; 3D nodes have materials and transforms). The boundary is: if it crosses graph families, it's a node trait; if it's specific to one kind, it belongs on that kind's package.
 

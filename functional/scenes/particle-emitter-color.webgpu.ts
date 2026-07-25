@@ -4,7 +4,7 @@
 // is the color-over-lifetime channel a fire/spark emitter relies on.
 //
 // This runs on WEBGL + WEBGPU only, on purpose: the Canvas 2D particle renderer has no per-pixel multiply
-// and intentionally ignores the `colors` array (see displayobject-canvas/canvasParticleEmitter.ts), so a
+// and intentionally ignores the `colors` array (see scene2d-canvas/canvasParticleEmitter.ts), so a
 // canvas capture would draw every particle white and disagree with the GPU backends. The cross-backend
 // behavior canvas CAN honor (position, atlas-region selection, scale, rotation) is covered by the sibling
 // particle-emitter test; this one isolates the tint so it is tested honestly where it exists.

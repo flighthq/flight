@@ -37,7 +37,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "@flighthq/displayobject": "*",
+    "@flighthq/scene2d": "*",
     "typescript": "^5.3.0"
   },
   "description": "Generic per-node velocity field and contributors (transform-delta baseline + explicit overrides)",

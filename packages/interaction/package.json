@@ -34,7 +34,7 @@
   "dependencies": {
     "@flighthq/geometry": "*",
     "@flighthq/node": "*",
-    "@flighthq/displayobject": "*",
+    "@flighthq/scene2d": "*",
     "@flighthq/log": "*",
     "@flighthq/path": "*",
     "@flighthq/shape": "*",

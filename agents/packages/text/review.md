@@ -31,7 +31,7 @@ Note on the bundle's own pre-written `review.md`/`assessment.md`/`status.md` (au
 
 4. **Test constructs missing `TextInputState` fields.** Head `head/packages/types/src/TextInputState.ts` declares only `alwaysShowSelection` and `caretIndex`, but `b2824e3d8:packages/text/src/richText.test.ts:530-541` builds an `input` literal also setting `caretColor`, `caretWidth`, `desiredCaretX`, `history`, `historyIndex`, `historyLimit`. `tsc -b` typechecks `src/*.test.ts`, so this is a build failure. → TS2353.
 
-5. **Missing `@flighthq/signals` dependency.** `b2824e3d8:packages/text/src/richText.ts:7` `import { createSignal } from '@flighthq/signals'` (and `richText.test.ts:4` `connectSignal`), but `b2824e3d8:packages/text/package.json` `dependencies` lists only `displayobject, entity, geometry, node, textlayout, types`. → `npm run packages:check` (workspace dependency conventions) fails; the build survives only by hoisting.
+5. **Missing `@flighthq/signals` dependency.** `b2824e3d8:packages/text/src/richText.ts:7` `import { createSignal } from '@flighthq/signals'` (and `richText.test.ts:4` `connectSignal`), but `b2824e3d8:packages/text/package.json` `dependencies` lists only `scene2d, entity, geometry, node, textlayout, types`. → `npm run packages:check` (workspace dependency conventions) fails; the build survives only by hoisting.
 
 Root cause is singular: the feature's `@flighthq/types` half (the four event types + the `textFieldSignals` slot + dropping `readonly` on the scroll fields + the editing-slot fields) was not included in the integration. Blockers 1–4 all heal with that one header change; blocker 5 is an independent manifest fix.
 

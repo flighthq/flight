@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@flighthq/color": "*",
-    "@flighthq/displayobject": "*",
+    "@flighthq/scene2d": "*",
     "@flighthq/geometry": "*",
     "@flighthq/render": "*",
     "@flighthq/surface": "*",

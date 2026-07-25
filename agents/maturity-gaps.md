@@ -26,7 +26,7 @@ capability gap a real app hits; **MINOR** = fidelity/edge-case hole or breadth g
 Ranked, worst first. Each is something a user assumes works and it does not.
 
 1. **The GPU unit-test-confidence illusion.** Every gl/wgpu code path is *unit*-tested against a *mock*
-   WebGL2 context in jsdom (`displayobject-gl/src/glTestHelper.ts:7`); a green unit run is a far weaker
+   WebGL2 context in jsdom (`scene2d-gl/src/glTestHelper.ts:7`); a green unit run is a far weaker
    guarantee for the GPU backends than for Canvas — the real parity gaps (joins, smoothing, tint, blend
    modes, skinning) are exactly what a mock can't catch. Real-pixel verification does exist, but it lives
    in the **functional capture harness** (Playwright + SwiftShader software Vulkan for wgpu — see Theme A),
@@ -219,7 +219,7 @@ unsupported cases is largely unbuilt for the gaps that most need it.
 | Sprite/QuadBatch/Tilemap on DOM | No DOM renderer — renders nothing | dom | MAJOR |
 | wgpu 2D-blend parity covered | RESOLVED — all six fixed Shape states plus Bitmap Multiply are asserted in `node-blend-modes.webgpu.ts` | wgpu | RESOLVED |
 | Text strikethrough | No `strikethrough` branch in `glRichText.ts:170`/`wgpuRichText.ts:184` | gl/wgpu | MINOR |
-| cacheAsBitmap out-of-frame | WebGPU out-of-frame bake RESOLVED with a standalone encoder and `displayobject-cache` raster proof; DOM still bakes in-frame | dom | MINOR |
+| cacheAsBitmap out-of-frame | WebGPU out-of-frame bake RESOLVED with a standalone encoder and `scene2d-cache` raster proof; DOM still bakes in-frame | dom | MINOR |
 
 ### Materials, Shading, Effects & Adjustments
 

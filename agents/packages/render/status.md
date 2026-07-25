@@ -111,7 +111,7 @@ A recording stub `Renderer` implementation (`RecordingRenderer`) captures every 
 
 ### `computeTextFormatFontString` cross-package move
 
-The depth review and maturation roadmap both flag this as a scope leak in the render core (it is a CSS font-string builder for `TextFormat`, residing in `renderTextFormat.ts`). Moving it to `@flighthq/text` requires updating **14 import sites** across `displayobject-canvas`, `displayobject-dom`, `displayobject-gl`, `displayobject-wgpu`, and `textshaper-canvas`. This is a deliberate cross-package rename. Deferred because the instruction scope is `@flighthq/render` and the guidance says to raise cross-package changes rather than act autonomously. **Suggestion**: move `computeTextFormatFontString` to `@flighthq/text` in a dedicated cross-package cleanup session.
+The depth review and maturation roadmap both flag this as a scope leak in the render core (it is a CSS font-string builder for `TextFormat`, residing in `renderTextFormat.ts`). Moving it to `@flighthq/text` requires updating **14 import sites** across `scene2d-canvas`, `scene2d-dom`, `scene2d-gl`, `scene2d-wgpu`, and `textshaper-canvas`. This is a deliberate cross-package rename. Deferred because the instruction scope is `@flighthq/render` and the guidance says to raise cross-package changes rather than act autonomously. **Suggestion**: move `computeTextFormatFontString` to `@flighthq/text` in a dedicated cross-package cleanup session.
 
 ### Backend-agnostic render-pass / attachment descriptor (Silver)
 

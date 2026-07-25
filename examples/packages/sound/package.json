@@ -4,7 +4,7 @@
   "type": "module",
   "dependencies": {
     "@flighthq/audio": "*",
-    "@flighthq/displayobject-canvas": "*",
+    "@flighthq/scene2d-canvas": "*",
     "@flighthq/media": "*",
     "@flighthq/sdk": "*"
   },

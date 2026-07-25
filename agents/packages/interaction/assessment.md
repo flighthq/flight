@@ -23,7 +23,7 @@ New sweep-safe items from the rereview:
 
 - **Document the bounds fallbacks** on every `_shapeFlag` handler (Decision #5 / North star #5 compliance: the fallback must be stated, not silent) and on `hitTestDisplayObjectsShape` (cross-center approximation + pointer to the exact path) and `getDisplayObjectOverlapRectangle` (empty-rect-on-disjoint contract).
 - **Fix doc slips**: `hitTestGraphPoint` comment says `registerHitTest` → `registerHitTest`; `CursorBackend` doc in `@flighthq/types` claims a disposer against a `void` signature (types file, one line — pair with any Tier-2 types touch).
-- **Manifest hygiene**: move `@flighthq/displayobject` to `devDependencies` (only tests import it); extend the `package.json` description to mention pointer dispatch.
+- **Manifest hygiene**: move `@flighthq/scene2d` to `devDependencies` (only tests import it); extend the `package.json` description to mention pointer dispatch.
 - **Register `defaultTextInputHitTestHandler` or unexport it** — currently exported but wired to no kind; resolve within the registrar once the coverage-policy question (Open direction below) is answered, or drop the export as dead surface.
 
 ## Backlog

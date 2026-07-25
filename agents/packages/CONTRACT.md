@@ -10,7 +10,7 @@ The contract a future `docs:packages:check` enforces and every skill references.
 
 ## Front matter
 
-YAML front matter is the only machine-read surface. Keys below are required unless marked optional. Values that are dates use `YYYY-MM-DD`. `package` must equal `"@flighthq/<name>"` and match the folder. `crate` is `flighthq-<name>` (identity) or `null` for packages with no Rust crate (`displayobject-canvas`, `displayobject-dom`, `effects-canvas`, `filters-canvas`, `filters-css`, `host-electron`, `surface-rs`, `textshaper-canvas`).
+YAML front matter is the only machine-read surface. Keys below are required unless marked optional. Values that are dates use `YYYY-MM-DD`. `package` must equal `"@flighthq/<name>"` and match the folder. `crate` is `flighthq-<name>` (identity) or `null` for packages with no Rust crate (`scene2d-canvas`, `scene2d-dom`, `effects-canvas`, `filters-canvas`, `filters-css`, `host-electron`, `surface-rs`, `textshaper-canvas`).
 
 ### `charter.md`
 

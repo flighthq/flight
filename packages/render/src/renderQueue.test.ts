@@ -1,5 +1,5 @@
-import { createDisplayObject } from '@flighthq/displayobject';
 import { addNodeChild } from '@flighthq/node';
+import { createDisplayObject } from '@flighthq/scene2d';
 import { createSprite } from '@flighthq/sprite';
 import type { Renderer, RenderProxy, RenderQueueEntry } from '@flighthq/types';
 

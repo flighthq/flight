@@ -177,9 +177,9 @@ Major areas:
 | --- | --- |
 | Core | `types`, `entity`, `node`, `signals` |
 | Math and geometry | `math`, `geometry`, `path`, `path-boolean`, `clip`, `binpack` |
-| 2D scene graph | `displayobject`, `shape`, `sprite`, `text` |
+| 2D scene graph | `scene2d`, `shape`, `sprite`, `text` |
 | 3D scene graph | `scene`, `mesh`, `materials`, `lighting`, `texture`, `camera`, `skeleton`, `picking` |
-| Rendering | `render`, `displayobject-canvas`, `displayobject-dom`, `render-gl`, `displayobject-gl`, `render-wgpu`, `displayobject-wgpu`, `scene-gl`, `scene-wgpu` |
+| Rendering | `render`, `scene2d-canvas`, `scene2d-dom`, `render-gl`, `scene2d-gl`, `render-wgpu`, `scene2d-wgpu`, `scene-gl`, `scene-wgpu` |
 | Effects and adjustments | `adjustments`, `effects`, `effects-canvas`, `effects-gl`, `effects-wgpu` |
 | Text | `textlayout`, `textshaper`, `textshaper-canvas`, `textsegment`, `textbidi`, `textinput`, `glyphatlas`, `bitmapfont`, `bitmaptext`, `text-markup` |
 | Animation and simulation | `easing`, `tween`, `spring`, `animation`, `timeline`, `movieclip`, `spritesheet`, `motionpath`, `clock`, `particles`, `particleemitter` |

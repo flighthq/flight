@@ -1,6 +1,6 @@
-import { createDisplayObject } from '@flighthq/displayobject';
 import { setRectangle } from '@flighthq/geometry';
 import { addNodeChild, getNodeLocalBoundsRectangle, invalidateNodeLocalTransform } from '@flighthq/node';
+import { createDisplayObject } from '@flighthq/scene2d';
 import { connectSignal, createSignal, emitSignal } from '@flighthq/signals';
 import type { Node2D, FocusEventData, InputKeyboardData } from '@flighthq/types';
 

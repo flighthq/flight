@@ -37,7 +37,7 @@ Full re-survey of the live package. The prior review (2026-06-25) was a merge ga
 
 **Types-first**: `Velocity2D` / `VelocitySample` / `VelocityField` / `VelocityContributor` live in `@flighthq/types/Velocity.ts` with the per-instance-velocity ownership rule documented there (instances live on the batch, not the field).
 
-**Real consumption**: `displayobject-gl/src/glVelocity.ts` and `displayobject-wgpu/src/wgpuVelocity.ts` build the per-kind velocity-writer registries and rgba16f velocity passes over `VelocityField` + `getVelocity`; `effects-gl`/`effects-wgpu` motion blur reads the resulting buffer; `functional/scenes/effect-motion-blur.*` and `particle-motion-blur.*` exercise the whole path with `beginVelocityFrame`/`contributeVelocity`. (Neither render-backend doc mentions the velocity pass — see Contract & docs fit.)
+**Real consumption**: `scene2d-gl/src/glVelocity.ts` and `scene2d-wgpu/src/wgpuVelocity.ts` build the per-kind velocity-writer registries and rgba16f velocity passes over `VelocityField` + `getVelocity`; `effects-gl`/`effects-wgpu` motion blur reads the resulting buffer; `functional/scenes/effect-motion-blur.*` and `particle-motion-blur.*` exercise the whole path with `beginVelocityFrame`/`contributeVelocity`. (Neither render-backend doc mentions the velocity pass — see Contract & docs fit.)
 
 ## Gaps
 

@@ -87,10 +87,10 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
-| `displayobject-cache` | ✓ | ✓ | ✓ | ✓ |
-| `displayobject-clip-contour` | ✓ | ✓ | ✓ | ✓ |
-| `displayobject-clip-contour-hdr` | · | · | ✓ | ✓ |
-| `displayobject-clip-rect` | ✓ | ✓ | ✓ | ✓ |
+| `scene2d-cache` | ✓ | ✓ | ✓ | ✓ |
+| `scene2d-clip-contour` | ✓ | ✓ | ✓ | ✓ |
+| `scene2d-clip-contour-hdr` | · | · | ✓ | ✓ |
+| `scene2d-clip-rect` | ✓ | ✓ | ✓ | ✓ |
 
 ### Effects
 

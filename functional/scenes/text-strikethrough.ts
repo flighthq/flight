@@ -5,7 +5,7 @@
 //
 // All four backends draw strikethrough: canvas/dom natively, and gl/wgpu through their canvas-raster
 // RichText path (glRichText/wgpuRichText draw the strike at baseline - ascent*0.35, mirroring
-// displayobject-canvas). So this backend-agnostic test runs across canvas/dom/webgl/webgpu — the sibling
+// scene2d-canvas). So this backend-agnostic test runs across canvas/dom/webgl/webgpu — the sibling
 // of the all-backend text-underline test.
 //
 // Oracle (coverage-based, lenient): the strike sits at baseline - ascent*0.35, i.e. through the

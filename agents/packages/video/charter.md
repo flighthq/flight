@@ -12,7 +12,7 @@ status: ./status.md
 
 ## What it is
 
-`@flighthq/video` is the **VideoResource lifecycle manager** — create and load `VideoResource` entities wrapping `HTMLVideoElement`. 5 exports across 2 source files. Dependencies: `types` only. Extracted from the old `@flighthq/resources`. Consumed by `@flighthq/media` (playback) and `@flighthq/displayobject` (Video display object).
+`@flighthq/video` is the **VideoResource lifecycle manager** — create and load `VideoResource` entities wrapping `HTMLVideoElement`. 5 exports across 2 source files. Dependencies: `types` only. Extracted from the old `@flighthq/resources`. Consumed by `@flighthq/media` (playback) and `@flighthq/scene2d` (Video display object).
 
 ## North star
 
@@ -31,7 +31,7 @@ status: ./status.md
 **Non-goals:**
 
 - Video playback control — `@flighthq/media`.
-- Video display object — `@flighthq/displayobject`.
+- Video display object — `@flighthq/scene2d`.
 - Video decoding/encoding — future codec package if needed.
 
 ## Decisions

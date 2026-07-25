@@ -1,6 +1,6 @@
-import { createDisplayObject, createNode2D } from '@flighthq/displayobject';
 import { setRectangle } from '@flighthq/geometry';
 import { addNodeChild, getNodeLocalBoundsRectangle, invalidateNodeLocalTransform } from '@flighthq/node';
+import { createDisplayObject, createNode2D } from '@flighthq/scene2d';
 import { createSpatialIndex, createUniformGridSpatialBackend } from '@flighthq/spatial';
 import { DisplayObjectKind } from '@flighthq/types';
 

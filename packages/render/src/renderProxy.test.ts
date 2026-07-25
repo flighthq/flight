@@ -1,4 +1,3 @@
-import { createDisplayObject, setNode2DClip } from '@flighthq/displayobject';
 import { createMatrix, createRectangle } from '@flighthq/geometry';
 import {
   addNodeChild,
@@ -8,6 +7,7 @@ import {
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
 } from '@flighthq/node';
+import { createDisplayObject, setNode2DClip } from '@flighthq/scene2d';
 import { createSprite } from '@flighthq/sprite';
 import type { ClipRegion } from '@flighthq/types';
 

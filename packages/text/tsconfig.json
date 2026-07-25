@@ -10,7 +10,7 @@
   },
   "references": [
     {
-      "path": "../displayobject"
+      "path": "../scene2d"
     },
     {
       "path": "../entity"

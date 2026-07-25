@@ -17,7 +17,7 @@ ingested:
 
 ## Verdict
 
-**solid — 78/100.** A genuine, subject-agnostic WebGPU backend core with excellent opt-in discipline and a first-class, environment-hardened capture path — but the charter's own identity paragraph and one blessed Decision describe capabilities (MSAA, timestamp profiling, a device-lost signal group) that do not exist in the live tree, teardown leaks the frame-capture GPU resources, `@flighthq/displayobject` is still a mis-declared runtime dependency, and the destination-read blend modes now fall back to Normal *silently* — the honest predicate the bundle had was not carried over.
+**solid — 78/100.** A genuine, subject-agnostic WebGPU backend core with excellent opt-in discipline and a first-class, environment-hardened capture path — but the charter's own identity paragraph and one blessed Decision describe capabilities (MSAA, timestamp profiling, a device-lost signal group) that do not exist in the live tree, teardown leaks the frame-capture GPU resources, `@flighthq/scene2d` is still a mis-declared runtime dependency, and the destination-read blend modes now fall back to Normal *silently* — the honest predicate the bundle had was not carried over.
 
 ## Present capabilities
 
@@ -31,7 +31,7 @@ ingested:
 - **Registries** — `registerWgpuBitmapShader` (state-wide default shader), `setWgpuShader`/`getWgpuShader`/`resolveWgpuShader` (per-node binding via a WeakMap + a runtime resolver slot, tree-shaken until first use — a clean cost-on-opt-in design), `registerWgpuMaterialRenderer`/`getWgpuMaterialRenderer`/`resolveWgpuMaterialRenderer` (open registry, `DefaultMaterialKind` fallback, unresolved = no-op never a built-in — textbook fork-B shape). The 3D mesh-material registry slot (`sceneMeshMaterialRegistry`) is owned by `scene-wgpu`, held here as a nullable runtime slot.
 - **Capture readback** (`wgpuSurface.ts`) — the conformance instrument, meaningfully hardened since the prior review: `enableWgpuFrameCapture` redirects the frame into an offscreen `COPY_SRC` texture (headless/software adapters never present the swapchain), `encodeWgpuFrameCapture` copies texture→buffer *within the frame's encoder* (later-task GPU work is dropped on those adapters), `createSurfaceFromWgpuRenderState` maps the retained buffer, normalizes BGRA→RGBA, and deliberately keeps premultiplied pixels (the un-premultiply quantization rationale is documented). North star #5 is genuinely met.
 - **Adapter capabilities** (`wgpuAdapterCapabilities.ts`) — `getWgpuAdapterCapabilities` (float32-filterable, timestamp-query, maxTextureDimension2D, maxSampleCount=4 conservative).
-- **Test seam** — `installWgpuMock`/`createWgpuRenderStateForTest` exported from the barrel and consumed by `displayobject-wgpu`/`scene-wgpu` tests (a deliberate cross-package test seam; `render-gl` keeps its helper private — an asymmetry, below).
+- **Test seam** — `installWgpuMock`/`createWgpuRenderStateForTest` exported from the barrel and consumed by `scene2d-wgpu`/`scene-wgpu` tests (a deliberate cross-package test seam; `render-gl` keeps its helper private — an asymmetry, below).
 
 Tests: 96 across 14 colocated files, jsdom + the mock (which stashes pipeline descriptors so blend/target state is assertable). Every source module has its test file; `wgpuTestHelper.ts` itself has none despite exporting from the barrel.
 
@@ -47,14 +47,14 @@ Measured against the charter (which speaks broadly now) and a textbook mature We
 - **Uniform ring overflow is unguarded.** 4096 slots per frame; past that, `writeWgpuQuadUniforms` writes out of bounds (silently dropped by the typed array) and `submitWgpuRenderPass`'s `writeBuffer` fails confusingly. No guard module, no `explain*`.
 - **No MSAA anywhere** — main pass or offscreen targets — while `WgpuRenderOptions.antialias` exists in types and is read by nothing (a dead option field).
 - **Per-call bind-group allocation in `drawWgpuFullscreenPass`** — a fresh `createBindGroup` per input per pass per frame; a mature core caches these (the render-target path already caches its bind group on the target).
-- **No compressed-texture upload** (`texture-formats` parses KTX2/DDS/Basis; nothing here can upload a described compressed texture), **no error scopes**, **no instanced batch primitive in the core** (the sprite-batch *state* lives on the runtime here, but the batch logic is `displayobject-wgpu`'s — consistent with the still-open core/leaf cut, Open direction #2).
+- **No compressed-texture upload** (`texture-formats` parses KTX2/DDS/Basis; nothing here can upload a described compressed texture), **no error scopes**, **no instanced batch primitive in the core** (the sprite-batch *state* lives on the runtime here, but the batch logic is `scene2d-wgpu`'s — consistent with the still-open core/leaf cut, Open direction #2).
 - **Known cross-package deltas confirmed still open:** orthographic projection blank on wgpu (nothing in this package or `scene-wgpu` remaps NDC z to [0,1] — gap #6), punctual lights not consumed by `scene-wgpu` (no point/spot/hemisphere uniforms in its shaders — gap #8). Both live outside this package but bound its "full parity" story.
 
 ## Charter contradictions
 
 1. **"What it is" describes a package that does not exist.** MSAA draw-and-resolve, the `blendMode-stencilMode-format-sampleCount[-depthwrite]` cache key, timestamp profiling, and the device-lost signal group are all named as owned capabilities; the live key is `blendMode-stencilMode-format` and the rest are absent. The charter was authored (2026-07-02) against the bundle's shape. Candidate revision — or a directive to build to it; the user's call.
 2. **Decision 2026-07-02 "Context/device loss: detect and signal minimum" is unimplemented.** No detection, no signal. Highest-value contradiction: a blessed ruling with zero code behind it.
-3. **North star #1 (no subject dependency) vs `package.json`.** `@flighthq/displayobject` sits in `dependencies` but is imported only by `wgpuDraw.test.ts` and `wgpuShaderBinding.test.ts` (verified — no runtime import). The inversion the charter names is real but manifest-only; the fix is a one-line demotion.
+3. **North star #1 (no subject dependency) vs `package.json`.** `@flighthq/scene2d` sits in `dependencies` but is imported only by `wgpuDraw.test.ts` and `wgpuShaderBinding.test.ts` (verified — no runtime import). The inversion the charter names is real but manifest-only; the fix is a one-line demotion.
 4. **North star #3 (deterministic teardown) vs the capture leak** in `destroyWgpuRenderState`, above.
 
 Otherwise the North stars hold well: no subject imports in runtime source, strong `enable*`/`register*` opt-in gating (capture, blend support, shader binding, color-adjustment fold all cost nothing un-opted), and file-level symmetry with `render-gl` (Background/Draw/Element/FullscreenPass/MaterialRegistry/RenderState/RenderTarget(+Pool)/Shader/ShaderBinding/ShaderRegistry line up 1:1).

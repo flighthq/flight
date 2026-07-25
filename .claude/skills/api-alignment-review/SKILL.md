@@ -67,7 +67,7 @@ TS `@flighthq/<name>` is authoritative; Rust `flighthq-<name>` conforms.
 - `out`/sentinel/teardown conventions carry across (`&mut`, `Option`, `dispose_`/`destroy_`…).
 - Every difference must be a **recorded divergence** with rationale — flag silent drift; note stale map entries.
 - **`-rs` wasm drop-ins are the most important target.** A TS `X-rs` package (e.g. `surface-rs`) must export the _same_ public API as its base TS `X` (`surface`), backed by the `X-wasm` crate — substitutable at the seam. The workflow runs a dedicated mixing-conformance agent per `-rs` package; the machine gate is `npm run mixing:conformance` (diffs `X-rs` vs `X` signatures; allows only wasm `init*` extras).
-- Known TS-only (no crate): `displayobject-canvas`, `displayobject-dom`, `effects-canvas`, `filters-canvas`, `filters-css`, `host-electron`, `surface-rs`, `textshaper-canvas`. Known Rust-only (no package): `capture`, `displayobject-skia`, `functional`, `host-sdl`, `host-web`, `host-winit`, `surface-wasm`. Each `-rs`/`-wasm` is a matched mixing pair. The synthesis verifies each is documented.
+- Known TS-only (no crate): `scene2d-canvas`, `scene2d-dom`, `effects-canvas`, `filters-canvas`, `filters-css`, `host-electron`, `surface-rs`, `textshaper-canvas`. Known Rust-only (no package): `capture`, `scene2d-skia`, `functional`, `host-sdl`, `host-web`, `host-winit`, `surface-wasm`. Each `-rs`/`-wasm` is a matched mixing pair. The synthesis verifies each is documented.
 
 ## Maintaining this review
 

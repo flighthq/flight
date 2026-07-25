@@ -1,4 +1,4 @@
-import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/displayobject';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d';
 import {
   addTimelineFrameScript,
   createTimeline,

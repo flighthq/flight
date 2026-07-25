@@ -19,7 +19,7 @@
       "path": "../color"
     },
     {
-      "path": "../displayobject"
+      "path": "../scene2d"
     },
     {
       "path": "../entity"

@@ -19,7 +19,7 @@ This package is the entity layer, not the text engine. The engine is a layered s
 - **`@flighthq/textlayout`** — glyph layout, line breaking, line/paragraph metrics, hit testing, selection geometry.
 - **`@flighthq/textinput`** — caret, selection, interactive editing, keyboard/IME handling. Makes `RichText` editable via the `input` slot on `RichTextRuntime`.
 - **`@flighthq/textshaper`** — shaping/measure provider seam (kerning, ligatures, bidi, complex scripts).
-- **Renderer packages** — per-backend rasterization (`displayobject-canvas`, `displayobject-gl`, etc.).
+- **Renderer packages** — per-backend rasterization (`scene2d-canvas`, `scene2d-gl`, etc.).
 
 The `text` package name is broad relative to its charter. A reader importing `@flighthq/text` expecting a text _engine_ will find the layout/shaping/editing surface is elsewhere. This is the intended split — the package owns the display objects, and the map documents the delegation.
 

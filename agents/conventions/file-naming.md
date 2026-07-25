@@ -26,6 +26,6 @@ A source file is named for the **concept** it holds, not for a verb.
 
 Non-routine source basenames are unique SDK-wide, so both the Haxe module and a `grep` land on exactly one file.
 
-- A concept that appears in a **base** and a **derived/backend** package is disambiguated by a package prefix: `displayObject.ts` (`displayobject`) vs `glDisplayObject.ts` (`displayobject-gl`). Backend prefixes are `gl` / `wgpu` / `dom` / `canvas`.
+- A concept that appears in a **base** and a **derived/backend** package is disambiguated by a package prefix: `displayObject.ts` (`scene2d`) vs `glDisplayObject.ts` (`scene2d-gl`). Backend prefixes are `gl` / `wgpu` / `dom` / `canvas`.
 - **Routine files are exempt** — `index.ts`, test helpers, `vitest.config.ts`.
 - **Generic names are disallowed** for exported source — `shared.ts`, `internal.ts`, `utils.ts`, `helpers.ts` name nothing. Name the concept. (Note: rule 1 dissolves most `internal.ts` files anyway — their types move to `@flighthq/types`.)

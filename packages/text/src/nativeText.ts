@@ -1,5 +1,5 @@
-import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/displayobject';
 import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d';
 import type {
   MethodsOf,
   NativeText,
@@ -18,7 +18,7 @@ import { NativeTextKind } from '@flighthq/types';
 // and textLabel.ts (create/runtime/defaultMethods shape). NativeText opts out of the TextLayout spine,
 // so there is no ensureTextLayout / buildTextLayoutParams here.
 
-// Bounds come from the platform engine's measurement, not the TextLayout spine. To keep displayobject
+// Bounds come from the platform engine's measurement, not the TextLayout spine. To keep scene2d
 // DOM-free (it must never call getBoundingClientRect), the DOM renderer writes the measured size back
 // onto the runtime and this reads those numbers. Under autoSize 'none' the field is the fixed user box;
 // otherwise it tracks the last measured element size, falling back to the user box until first measured.

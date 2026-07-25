@@ -10,7 +10,7 @@ import {
   createCanvasRenderTarget,
   endCanvasRenderPass,
   resizeCanvasRenderTarget,
-} from '@flighthq/displayobject-canvas';
+} from '@flighthq/scene2d-canvas';
 import type {
   Adjustment,
   CanvasRenderEffectPipeline,

@@ -81,11 +81,11 @@ The current source exports only 8 functions across `transformVelocity.ts` and `v
 
 The depth review noted `@flighthq/velocity` is absent from `agents/index.md`. Adding a Package Map entry was deferred because the instruction is to not reach across package boundaries autonomously — the Package Map is in a root-level doc that is effectively shared infrastructure. **Suggestion:** add the following entry to the Package Map under the rendering/effects area:
 
-> `@flighthq/velocity`: generic per-node velocity-field seam between motion sources (transform delta, tween, physics, camera, manual edit) and GPU motion-blur velocity-buffer writers (`displayobject-gl`/`-wgpu` `*Velocity` writers, `effects-gl`/`-wgpu` motion blur). Consumers: `contributeAffineVelocity` or `contributeTransformVelocity` once per frame, then read via `getVelocity` or `getVelocitySampleAt`.
+> `@flighthq/velocity`: generic per-node velocity-field seam between motion sources (transform delta, tween, physics, camera, manual edit) and GPU motion-blur velocity-buffer writers (`scene2d-gl`/`-wgpu` `*Velocity` writers, `effects-gl`/`-wgpu` motion blur). Consumers: `contributeAffineVelocity` or `contributeTransformVelocity` once per frame, then read via `getVelocity` or `getVelocitySampleAt`.
 
 ### Cross-package: GL/Wgpu velocity writer adoption of affine reprojection
 
-The GL and Wgpu velocity writers in `displayobject-gl`/`displayobject-wgpu` currently consume only translation delta. Switching them to call `getVelocitySampleAt` would be the payoff of the affine work, but touches other packages. Surface as a suggestion for a cross-package session.
+The GL and Wgpu velocity writers in `scene2d-gl`/`scene2d-wgpu` currently consume only translation delta. Switching them to call `getVelocitySampleAt` would be the payoff of the affine work, but touches other packages. Surface as a suggestion for a cross-package session.
 
 ### Cross-package: Transform-trait hardening
 
@@ -135,7 +135,7 @@ A `tests/functional/velocity-*` scene exercising translation, rotation, and scal
 
 ## Suggestions for future sessions
 
-1. **Adopt `contributeAffineVelocity` in `displayobject-gl` and `displayobject-wgpu`** — the payoff of this session's biggest addition. The GL/Wgpu writers currently read only `velocity.x/y`; switching to `getVelocitySampleAt` for nodes with rotation/scale would produce correct motion blur at rotating pivots.
+1. **Adopt `contributeAffineVelocity` in `scene2d-gl` and `scene2d-wgpu`** — the payoff of this session's biggest addition. The GL/Wgpu writers currently read only `velocity.x/y`; switching to `getVelocitySampleAt` for nodes with rotation/scale would produce correct motion blur at rotating pivots.
 
 2. **Add Package Map entry** for `@flighthq/velocity` in `agents/index.md` (one-line addition, appropriate for a doc-only session or alongside a cross-package session).
 

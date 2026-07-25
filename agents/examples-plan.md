@@ -39,7 +39,7 @@ These exercise features no existing example covers.
 | `scene3d` | 3D scene with PBR materials and lighting | `scene` | Mesh primitives, standard PBR material, point/directional lights, camera orbit |
 | `effects` | Post-processing effect chain | `rendering` | Bloom + vignette + color grade chained on a 2D scene |
 | `adjustments` | Color adjustments (brightness, contrast, hue) | `rendering` | Color matrix composition, per-instance tint |
-| `pathboolean` | Path boolean operations visualized | `displayobject` | Union/intersect/difference of shapes rendered as filled paths |
+| `pathboolean` | Path boolean operations visualized | `scene2d` | Union/intersect/difference of shapes rendered as filled paths |
 | `collision` | 2D collision detection with manifolds | `game` | Circle, AABB, and polygon colliders with MTV visualization |
 | `spring` | Spring-physics animation | `animation` | Interactive spring with frequency/damping controls, comparison with tween |
 | `flowstates` | Screen/mode flow-state stack | `game` | Boot → menu → play → pause → game-over lifecycle |

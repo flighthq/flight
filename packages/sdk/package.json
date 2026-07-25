@@ -54,9 +54,9 @@
       "types": "./dist/resources.d.ts",
       "default": "./dist/resources.js"
     },
-    "./displayobject": {
-      "types": "./dist/displayobject.d.ts",
-      "default": "./dist/displayobject.js"
+    "./scene2d": {
+      "types": "./dist/scene2d.d.ts",
+      "default": "./dist/scene2d.js"
     },
     "./scene": {
       "types": "./dist/scene.d.ts",
@@ -107,12 +107,12 @@
     "@flighthq/debug": "*",
     "@flighthq/device": "*",
     "@flighthq/dialog": "*",
-    "@flighthq/displayobject": "*",
-    "@flighthq/displayobject-canvas": "*",
-    "@flighthq/displayobject-dom": "*",
-    "@flighthq/displayobject-formats": "*",
-    "@flighthq/displayobject-gl": "*",
-    "@flighthq/displayobject-wgpu": "*",
+    "@flighthq/scene2d": "*",
+    "@flighthq/scene2d-canvas": "*",
+    "@flighthq/scene2d-dom": "*",
+    "@flighthq/scene2d-formats": "*",
+    "@flighthq/scene2d-gl": "*",
+    "@flighthq/scene2d-wgpu": "*",
     "@flighthq/easing": "*",
     "@flighthq/effects": "*",
     "@flighthq/effects-canvas": "*",

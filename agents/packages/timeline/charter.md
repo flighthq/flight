@@ -56,13 +56,13 @@ It is **not** the MovieClip. The display-object-specific wrapper that consumes a
 
   **Why:** An alias that collapses two conceptually different things into one prevents future divergence and hides the boundary.
 
-- **[2026-07-02] Dependency direction.** `movieclip` → `timeline` + `types` (displayobject and spritesheet types-only). Timeline depends on nothing scene-graph-related.
+- **[2026-07-02] Dependency direction.** `movieclip` → `timeline` + `types` (scene2d and spritesheet types-only). Timeline depends on nothing scene-graph-related.
 
   **Why:** Timeline is the bedrock; it must not know about display objects or spritesheets.
 
 - **[2026-07-02] `createSpritesheetTimelineSource` moves to movieclip.** The spritesheet→timeline bridge drives a display object from spritesheet frames — that's movieclip's job, not timeline's.
 
-  **Why:** This function bridges three packages (timeline + spritesheet + displayobject). MovieClip is the composition layer that owns that bridging.
+  **Why:** This function bridges three packages (timeline + spritesheet + scene2d). MovieClip is the composition layer that owns that bridging.
 
 - **[2026-07-02] `timeline-spritesheet` package absorbed into movieclip.** No separate package needed. MovieClip is the natural home for spritesheet↔timeline integration.
 

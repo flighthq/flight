@@ -35,13 +35,13 @@ export interface NativeTextData extends Node2DData {
 }
 
 export interface NativeTextRuntime extends Node2DRuntime {
-  // The backing platform element, created and owned by the platform renderer (displayobject-dom). null until
-  // the node is first drawn, and on backends that do not composite a real element. displayobject only
+  // The backing platform element, created and owned by the platform renderer (scene2d-dom). null until
+  // the node is first drawn, and on backends that do not composite a real element. scene2d only
   // holds the slot and never touches the DOM, mirroring HtmlViewData.element.
   element: HTMLElement | null;
   // Measured content size the platform renderer writes back after laying the element out, so autoSize
   // bounds stay DOM-free: computeNativeTextLocalBoundsRectangle reads these numbers instead of calling
-  // getBoundingClientRect itself (which would pull a DOM dependency into displayobject). 0 until measured.
+  // getBoundingClientRect itself (which would pull a DOM dependency into scene2d). 0 until measured.
   measuredHeight: number;
   measuredWidth: number;
 }

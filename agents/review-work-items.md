@@ -496,7 +496,7 @@ Create a new package that bridges the `@flighthq/particles` simulation to the 3D
 
 ### Package Name
 
-**`@flighthq/sceneparticles`** (no dash -- follows the codebase's smashed compound-word convention: `particleemitter`, `displayobject`, `textureatlas`, `bitmaptext`). The package owns a `SceneParticleSystem` scene node, the 3D analog of `ParticleEmitter` in the display-object world.
+**`@flighthq/sceneparticles`** (no dash -- follows the codebase's smashed compound-word convention: `particleemitter`, `scene2d`, `textureatlas`, `bitmaptext`). The package owns a `SceneParticleSystem` scene node, the 3D analog of `ParticleEmitter` in the display-object world.
 
 Alternative considered: `particles-scene`. Rejected because the `-subpackage` suffix pattern is for codec/format neighbors of the base package (like `particles-formats`), not for scene-graph integration layers.
 
@@ -565,7 +565,7 @@ Recommendation: **CPU sort (Phase 2).** The sim already produces sorted index ar
 
 `@flighthq/sceneparticles` depends on: `particles` (sim), `scene` (SceneNode), `geometry`, `node`, `types`.
 
-It does NOT depend on: `displayobject`, `sprite`, `particleemitter` (those are the 2D path).
+It does NOT depend on: `scene2d`, `sprite`, `particleemitter` (those are the 2D path).
 
 ### Renderer Integration
 
@@ -916,7 +916,7 @@ This section maps common feature keywords to their implementing packages and bac
 | **Text (bitmap)** | `@flighthq/bitmaptext`, `@flighthq/bitmapfont` | canvas, gl, wgpu | |
 | **Text input** | `@flighthq/textinput` | n/a (headless) | Caret model, selection, undo/redo |
 | **Audio** | `@flighthq/audio` (descriptors), `@flighthq/media` (playback) | web | Web Audio mixer bus graph |
-| **Video** | `@flighthq/video`, `@flighthq/displayobject` (VideoDisplay) | canvas, dom, gl, wgpu | |
+| **Video** | `@flighthq/video`, `@flighthq/scene2d` (VideoDisplay) | canvas, dom, gl, wgpu | |
 | **Camera (2D)** | `@flighthq/camera2d` | n/a (headless) | Deadzone follow, parallax, zoom |
 | **Camera (3D)** | `@flighthq/camera` | gl, wgpu | Perspective/orthographic, frustum, picking |
 | **Tween** | `@flighthq/tween` | n/a (headless) | Duration-based property animation |

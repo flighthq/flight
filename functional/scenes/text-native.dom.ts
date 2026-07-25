@@ -38,7 +38,7 @@ registerFunctionalTarget({ kind: 'dom', state, width, height, scale, render });
 const root = createDisplayObject();
 
 // autoSize 'left': the field box tracks the measured element size (bounds come from the renderer's
-// measurement writeback, keeping displayobject DOM-free).
+// measurement writeback, keeping scene2d DOM-free).
 const heading = createNativeText({
   data: {
     autoSize: 'left',

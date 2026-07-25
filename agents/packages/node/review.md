@@ -64,7 +64,7 @@ Vs a textbook retained-mode scene-graph base (2D/3D node library tier):
 **Findings, docs side (candidate revisions, user's gate):**
 
 - The Package Map line — "`@flighthq/node` (graph hierarchy, transforms, bounds, appearance)" — still omits the traversal surface, lifecycle (`disposeNode`), the revision system (arguably the package's headline feature), and the viewport helpers. Prior review flagged this; still stale.
-- The charter's revision-channel prose ("seven-channel") predates the `localContentId` channel — the count still works out to seven if worldTransform is counted as derived, but the charter nowhere names the content channel; the What-it-is should mention content invalidation now that shape/text/displayobject build on it.
+- The charter's revision-channel prose ("seven-channel") predates the `localContentId` channel — the count still works out to seven if worldTransform is counted as derived, but the charter nowhere names the content channel; the What-it-is should mention content invalidation now that shape/text/scene2d build on it.
 - `NodeRuntime` now carries the adjustments-tier slots (`colorAdjustments`, `resolvedColorTransform`, `colorAdjustmentsChannelMixing` — commit `df810bf5`, well-commented in `types/src/Node.ts`). The codebase-map rule says `NodeRuntime` "should stay empty until a subsystem truly applies to every node kind"; placing a color-adjustment stack on the base runtime rather than a narrower tier is a deliberate cross-package choice that the node charter does not record. Worth a one-line ratification either way.
 
 ## Candidate open directions

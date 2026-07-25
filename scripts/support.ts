@@ -46,7 +46,7 @@ const AREA_LABELS: Record<string, string> = {
   camera: 'Camera',
   clip: 'Clipping',
   color: 'Color / Adjustments',
-  displayobject: 'Display Object',
+  scene2d: 'Display Object',
   effect: 'Effects',
   env: 'Environment / IBL',
   light: 'Lighting',

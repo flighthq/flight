@@ -1,5 +1,5 @@
-import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/displayobject';
 import { invalidateContent } from '@flighthq/node';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d';
 import type { BoundsNodeAny, PartialNode, Rectangle, Shape, ShapeData, ShapeRuntime } from '@flighthq/types';
 import { ShapeKind } from '@flighthq/types';
 

@@ -9,7 +9,7 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../displayobject" },
+    { "path": "../scene2d" },
     { "path": "../geometry" },
     { "path": "../node" },
     { "path": "../path" },

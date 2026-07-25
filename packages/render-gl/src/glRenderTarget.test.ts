@@ -1,6 +1,6 @@
-import { createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix } from '@flighthq/geometry';
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
+import { createDisplayObject } from '@flighthq/scene2d';
 
 import { beginGlRenderPass, endGlRenderPass } from './glRenderPass';
 import { getGlRenderStateRuntime } from './glRenderState';

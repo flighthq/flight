@@ -12,7 +12,7 @@ status: ./status.md
 
 ## What it is
 
-`@flighthq/image` is the **ImageResource lifecycle manager** — create, clone, dispose, invalidate, load, and query `ImageResource` entities. 18 exports across 2 source files. Dependencies: `entity`, `types`. The most-consumed shard of the old `@flighthq/resources` package — downstream consumers include surface, textureatlas, tileset, displayobject-canvas/dom, spritesheet, and surface-rs.
+`@flighthq/image` is the **ImageResource lifecycle manager** — create, clone, dispose, invalidate, load, and query `ImageResource` entities. 18 exports across 2 source files. Dependencies: `entity`, `types`. The most-consumed shard of the old `@flighthq/resources` package — downstream consumers include surface, textureatlas, tileset, scene2d-canvas/dom, spritesheet, and surface-rs.
 
 Two halves: `imageResource` (entity lifecycle — create, clone, dispose, invalidate, byte-size, source/data predicates) and `imageResourceFrom` (construction from DOM sources and async loading from URL/ArrayBuffer/Base64/Blob via `img.decode()`, plus MIME detection and same-origin check).
 

@@ -11,7 +11,7 @@
   "references": [
     { "path": "../geometry" },
     { "path": "../node" },
-    { "path": "../displayobject" },
+    { "path": "../scene2d" },
     { "path": "../log" },
     { "path": "../path" },
     { "path": "../shape" },

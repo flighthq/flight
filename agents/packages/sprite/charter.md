@@ -45,7 +45,7 @@ Where it ends: this package holds **node data and graph participation**, not the
 - Particle **simulation** / forces / lifetime → `@flighthq/particles`.
 - Atlas / tileset **construction** and loading → `@flighthq/textureatlas`, `@flighthq/tileset`.
 - Frame **animation** / timelines → `@flighthq/spritesheet`, `@flighthq/timeline`.
-- **Rendering** (GPU / canvas / dom draw) → the `displayobject-*` backend packages.
+- **Rendering** (GPU / canvas / dom draw) → the `scene2d-*` backend packages.
 - **Interaction** dispatch → `@flighthq/interaction` (this package provides hit-test _math_ only).
 
 ## Decisions
