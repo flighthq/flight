@@ -7,4 +7,5 @@ export * from './md5AnimParse';
 export * from './md5Parse';
 export * from './mtlParse';
 export * from './objParse';
+export * from './sceneSkeleton';
 export * from './threeDsParse';

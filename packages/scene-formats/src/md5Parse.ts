@@ -30,11 +30,11 @@ import type {
 import { MeshKind, SceneNodeKind } from '@flighthq/types';
 
 import { parseMd5Anim } from './md5AnimParse';
+import { findSceneSkeletonJoints } from './sceneSkeleton';
 import {
   convertPositionsZUpToYUp,
   convertQuaternionsZUpToYUp,
   createExternalTextureRef,
-  findSceneSkeletonJoints,
   MAX_SKIN_INFLUENCES,
   packSkinInfluences,
   reverseTriangleWinding,

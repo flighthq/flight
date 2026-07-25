@@ -18,7 +18,7 @@ import { BlinnPhongMaterialKind } from '@flighthq/types';
 
 import { parseMd5Anim } from './md5AnimParse';
 import { createSceneFromMd5Mesh, importMd5Mesh, parseMd5Mesh } from './md5Parse';
-import { findSceneSkeletonJoints } from './shared';
+import { findSceneSkeletonJoints } from './sceneSkeleton';
 
 // A one-joint .md5anim matching SINGLE_TRIANGLE's single "root" joint, translating it per frame.
 const SINGLE_JOINT_ANIM = [
