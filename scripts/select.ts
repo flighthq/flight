@@ -1,4 +1,4 @@
-import { readdirSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -65,6 +65,24 @@ export function matchesPackageName(name: string, selector: string): boolean {
   const pkg = toPackageToken(name);
   const token = toPackageToken(selector);
   return pkg.includes(token) || token.startsWith(`${pkg}/`);
+}
+
+// Resolves selectors to concrete filesystem path arguments, for the path-taking tools (oxlint/oxfmt/tsc)
+// the check/fix runners drive. A selector that is already an existing path is passed through as-is (so a
+// file path lints/formats exactly that file); a bare/name/scoped selector expands to the matching
+// `packages/<name>` directories. Empty selectors → empty (the caller supplies its own whole-tree default).
+export function resolvePaths(selectors: readonly string[]): string[] {
+  if (selectors.length === 0) return [];
+  const paths: string[] = [];
+  const nameSelectors: string[] = [];
+  for (const selector of selectors) {
+    if (selector.includes('/') || existsSync(join(repoRoot, selector))) paths.push(selector);
+    else nameSelectors.push(selector);
+  }
+  if (nameSelectors.length > 0) {
+    for (const name of selectPackages(nameSelectors)) paths.push(`packages/${name}`);
+  }
+  return [...new Set(paths)];
 }
 
 // Reduces any selector form to the token used for package-name matching: takes the segment after the last
