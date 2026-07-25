@@ -8,11 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [
-    { "path": "../scene2d" },
-    { "path": "../geometry" },
-    { "path": "../node" },
-    { "path": "../types" }
-  ],
+  "references": [{ "path": "../scene2d" }, { "path": "../geometry" }, { "path": "../node" }, { "path": "../types" }],
   "include": ["src"]
 }
