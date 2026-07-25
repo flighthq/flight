@@ -63,11 +63,13 @@ in vec2 v_uv;
 in vec4 v_color;
 
 uniform sampler2D u_texture;
+uniform bool u_straightTextureAlpha;
 
 out vec4 fragColor;
 
 void main() {
   vec4 tex = texture(u_texture, v_uv);
+  if (u_straightTextureAlpha) tex.rgb *= tex.a;
   fragColor = vec4(tex.rgb * v_color.rgb, tex.a) * v_color.a;
   if (fragColor.a <= 0.0) discard;
 }`;
@@ -85,6 +87,7 @@ function compileParticleShader(gl: WebGL2RenderingContext): GlParticleShader {
     locSize: 6,
     locWorldMatrix: gl.getUniformLocation(program, 'u_world')!,
     locTexture: gl.getUniformLocation(program, 'u_texture')!,
+    locStraightTextureAlpha: gl.getUniformLocation(program, 'u_straightTextureAlpha')!,
   };
 }
 
@@ -231,6 +234,7 @@ export function drawGlParticleEmitter2D(state: GlRenderState, renderProxy: Rende
   }
   gl.uniformMatrix3fv(shader.locWorldMatrix, false, m);
   gl.uniform1i(shader.locTexture, 0);
+  gl.uniform1i(shader.locStraightTextureAlpha, runtime.currentTextureStraightAlpha ? 1 : 0);
 
   // Per-vertex: corner buffer.
   gl.bindBuffer(gl.ARRAY_BUFFER, runtime.particleCornerBuffer!);

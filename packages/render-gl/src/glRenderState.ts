@@ -57,6 +57,7 @@ export function createGlRenderState(canvas: HTMLCanvasElement, options: GlRender
   runtime.currentProgram = null;
   runtime.currentScissorRect = null;
   runtime.currentTexture = null;
+  runtime.currentTextureStraightAlpha = false;
   runtime.renderTargetViewport = null;
   runtime.defaultBitmapShader = defaultBitmapShader;
   runtime.shaderLoc = shaderLoc;
@@ -159,5 +160,6 @@ export function invalidateGlRenderStateCache(state: GlRenderState): void {
   runtime.currentProgram = null;
   runtime.currentScissorRect = null;
   runtime.currentTexture = null;
+  runtime.currentTextureStraightAlpha = false;
   runtime.renderTargetViewport = null;
 }

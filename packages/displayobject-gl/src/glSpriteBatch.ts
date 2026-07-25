@@ -63,9 +63,12 @@ precision mediump float;
 in vec2 v_texCoord;
 in float v_alpha;
 uniform sampler2D u_texture;
+uniform bool u_straightTextureAlpha;
 out vec4 fragColor;
 void main() {
-  vec4 color = texture(u_texture, v_texCoord) * clamp(v_alpha, 0.0, 1.0);
+  vec4 color = texture(u_texture, v_texCoord);
+  if (u_straightTextureAlpha) color.rgb *= color.a;
+  color *= clamp(v_alpha, 0.0, 1.0);
   if (color.a <= 0.0) discard;
   fragColor = color;
 }`;
@@ -83,6 +86,7 @@ function compileSpriteBatchShader(gl: WebGL2RenderingContext): GlQuadBatchShader
     locAlpha: 6,
     locWorldMatrix: gl.getUniformLocation(program, 'u_world')!,
     locTexture: gl.getUniformLocation(program, 'u_texture')!,
+    locStraightTextureAlpha: gl.getUniformLocation(program, 'u_straightTextureAlpha')!,
   };
 }
 
@@ -291,6 +295,7 @@ export function setGlQuadBatchWorldAndTexture(
   state: GlRenderState,
   locWorldMatrix: WebGLUniformLocation,
   locTexture: WebGLUniformLocation,
+  locStraightTextureAlpha?: WebGLUniformLocation,
 ): void {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
@@ -309,6 +314,9 @@ export function setGlQuadBatchWorldAndTexture(
   m[8] = 1;
   gl.uniformMatrix3fv(locWorldMatrix, false, m);
   gl.uniform1i(locTexture, 0);
+  if (locStraightTextureAlpha !== undefined) {
+    gl.uniform1i(locStraightTextureAlpha, runtime.currentTextureStraightAlpha ? 1 : 0);
+  }
 }
 
 export function useGlQuadBatchProgram(state: GlRenderState, program: WebGLProgram): void {

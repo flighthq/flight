@@ -22,7 +22,7 @@ export const defaultGlMaterialRenderer: GlMaterialRenderer = {
   bind(state: GlRenderState): void {
     const shader = ensureGlQuadBatchShader(state);
     useGlQuadBatchProgram(state, shader.program);
-    setGlQuadBatchWorldAndTexture(state, shader.locWorldMatrix, shader.locTexture);
+    setGlQuadBatchWorldAndTexture(state, shader.locWorldMatrix, shader.locTexture, shader.locStraightTextureAlpha);
     bindGlQuadBatchBaseAttributes(state, shader.locCorner);
   },
 };

@@ -1,7 +1,8 @@
 import { createParticleEmitter2D } from '@flighthq/particleemitter';
 import { getRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
-import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
+import { getWgpuRenderStateRuntime, renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
+import type { ImageResource, RenderProxy2D } from '@flighthq/types';
 
 import { defaultWgpuParticleEmitter2DRenderer, drawWgpuParticleEmitter2D } from './wgpuParticleEmitter2D';
 
@@ -30,5 +31,55 @@ describe('drawWgpuParticleEmitter2D', () => {
 
     expect(() => drawWgpuParticleEmitter2D(state, renderProxy)).not.toThrow();
     submitWgpuRenderPass(state);
+  });
+
+  it('threads a native compressed atlas straight-alpha flag through the particle uniform', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const runtime = getWgpuRenderStateRuntime(state);
+    renderWgpuBackground(state);
+    const before = runtime.uniformOffset;
+    const image = {
+      alphaType: 'straight',
+      compressed: { container: {}, payload: new Uint8Array() },
+      data: null,
+      height: 4,
+      source: null,
+      version: 1,
+      width: 4,
+    } as unknown as ImageResource;
+    runtime.compressedTextureUpload = () => {
+      const texture = state.device.createTexture({
+        size: [4, 4],
+        format: 'bc3-rgba-unorm',
+        usage: GPUTextureUsage.TEXTURE_BINDING,
+      });
+      const view = texture.createView();
+      return {
+        bindGroup: state.device.createBindGroup({ layout: runtime.textureBindGroupLayout, entries: [] }),
+        straightAlpha: true,
+        texture,
+        view,
+      };
+    };
+    const renderProxy = {
+      alpha: 1,
+      blendMode: null,
+      source: {
+        data: {
+          alphas: new Float32Array([1]),
+          atlas: { image, regions: [{ height: 4, width: 4, x: 0, y: 0 }] },
+          colors: new Float32Array([1, 1, 1]),
+          ids: new Uint16Array([0]),
+          particleCount: 1,
+          transforms: new Float32Array([0, 0, 0, 1]),
+          worldSpace: false,
+        },
+      },
+      transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
+    } as unknown as RenderProxy2D;
+
+    drawWgpuParticleEmitter2D(state, renderProxy);
+
+    expect(runtime.uniformDataU32[(before >> 2) + 14]).toBe(1);
   });
 });

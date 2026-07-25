@@ -1,15 +1,9 @@
-// BACKEND CAVEAT: scoped to WebGL. GPU-native block-compressed texture upload is a GL-only feature
-// (render-gl's uploadGlCompressedTextureContainer); Canvas/DOM have no compressed-texture path and
-// wgpu's is spec-only. So this is a `.webgl.ts` scene with no Canvas/DOM/Wgpu twin.
-//
 // compressed-texture — validates that a block-`compressed` ImageResource renders through the real GL
 // display draw path. A Bitmap whose image carries ONLY a parsed TextureContainer (no element, no raw
 // data) is drawn via displayobject-gl → bindGlImageResourceTexture → uploadGlCompressedTextureContainer.
 //
-// The payload is a REAL, valid single-block BC1 (DXT1) that decodes to solid blue, so the result is the
-// same whether the headless adapter uploads it natively (its WEBGL_compressed_texture_s3tc path) or
-// falls back to the registered RGBA decode seam (which paints the same blue). Either way a blue quad
-// must appear where the bitmap sits — proving the compressed payload flowed to a real quad on screen.
+// Real BC1 opaque-blue and BC3 half-alpha-red blocks prove native upload plus the straight-to-premultiplied
+// display-shader bridge. The WebGPU twin uses the same blocks and pixel oracle.
 //
 // This is not observable from jsdom: it needs the real GL bind/upload path and rasterization of the
 // resulting compressed texture.
@@ -35,12 +29,16 @@ const TEX = 4;
 const SCALE = 40;
 const BITMAP_X = 320;
 const BITMAP_Y = 220;
+const ALPHA_BITMAP_X = 100;
 
 // A valid single 4×4 BC1 (DXT1) block that decodes to solid blue. Layout: color0 (RGB565, little-
 // endian), color1, then four 2-bit index rows. color0 = pure blue (R=0 G=0 B=31 → 0x001F); color1 =
 // color0 and all indices 0, so every texel resolves to color0 — an opaque solid-blue block on native
 // hardware. The RGBA decode seam below paints the same blue, so both upload paths agree.
 const BC1_BLUE_BLOCK = new Uint8Array([0x1f, 0x00, 0x1f, 0x00, 0x00, 0x00, 0x00, 0x00]);
+const BC3_HALF_RED_BLOCK = new Uint8Array([
+  0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf8, 0x00, 0xf8, 0x00, 0x00, 0x00, 0x00,
+]);
 
 const target = await createFunctionalTarget({
   width: WIDTH,
@@ -70,8 +68,8 @@ if (target.kind === 'webgl') {
 const { render, width } = target;
 
 // A single-mip BC1 4×4 container: one 8-byte block (BC1's 4×4 block is 8 bytes).
-const container: TextureContainer = {
-  format: 'bc1',
+const container = (format: 'bc1' | 'bc3', byteLength: number): TextureContainer => ({
+  format,
   width: TEX,
   height: TEX,
   depth: 1,
@@ -79,13 +77,13 @@ const container: TextureContainer = {
   layers: 1,
   faces: 1,
   supercompression: 'None',
-  levels: [{ byteOffset: 0, byteLength: 8, width: TEX, height: TEX }],
-};
+  levels: [{ byteOffset: 0, byteLength, width: TEX, height: TEX }],
+});
 
 const root = createDisplayContainer();
 
 const bitmap = createBitmap();
-bitmap.data.image = createCompressedImageResource({ container, payload: BC1_BLUE_BLOCK });
+bitmap.data.image = createCompressedImageResource({ container: container('bc1', 8), payload: BC1_BLUE_BLOCK });
 bitmap.data.smoothing = false; // nearest sampling keeps the block a crisp solid quad
 bitmap.x = BITMAP_X;
 bitmap.y = BITMAP_Y;
@@ -93,6 +91,19 @@ bitmap.scaleX = SCALE;
 bitmap.scaleY = SCALE;
 invalidateNodeLocalTransform(bitmap);
 addNodeChild(root, bitmap);
+
+const alphaBitmap = createBitmap();
+alphaBitmap.data.image = createCompressedImageResource({
+  container: container('bc3', 16),
+  payload: BC3_HALF_RED_BLOCK,
+});
+alphaBitmap.data.smoothing = false;
+alphaBitmap.x = ALPHA_BITMAP_X;
+alphaBitmap.y = BITMAP_Y;
+alphaBitmap.scaleX = SCALE;
+alphaBitmap.scaleY = SCALE;
+invalidateNodeLocalTransform(alphaBitmap);
+addNodeChild(root, alphaBitmap);
 
 render(root);
 
@@ -102,6 +113,7 @@ export function assertRender(frame: Readonly<Surface>): void {
 
   // The bitmap covers a 160×160 blue quad at (BITMAP_X, BITMAP_Y). Sample its center.
   const center = at(BITMAP_X + (TEX * SCALE) / 2, BITMAP_Y + (TEX * SCALE) / 2);
+  const alphaCenter = at(ALPHA_BITMAP_X + (TEX * SCALE) / 2, BITMAP_Y + (TEX * SCALE) / 2);
   if (!isBlue(center)) {
     throw new Error(
       `[compressed-texture] bitmap center not blue — compressed upload did not render — got #${hex(center)}`,
@@ -113,6 +125,11 @@ export function assertRender(frame: Readonly<Surface>): void {
   if (!isBackground(outside)) {
     throw new Error(`[compressed-texture] area outside the bitmap not background — got #${hex(outside)}`);
   }
+  if (!isHalfRed(alphaCenter)) {
+    throw new Error(
+      `[compressed-texture] native straight-alpha BC3 did not premultiply before blending — got #${hex(alphaCenter)}`,
+    );
+  }
 }
 
 function channel(rgb: number, shift: number): number {
@@ -123,6 +140,10 @@ function isBlue(rgb: number): boolean {
 }
 function isBackground(rgb: number): boolean {
   return channel(rgb, 16) < 60 && channel(rgb, 8) < 60 && channel(rgb, 0) < 60;
+}
+function isHalfRed(rgb: number): boolean {
+  const red = channel(rgb, 16);
+  return red >= 100 && red <= 160 && channel(rgb, 8) < 30 && channel(rgb, 0) < 30;
 }
 function hex(rgb: number): string {
   return (rgb & 0xffffff).toString(16).padStart(6, '0');

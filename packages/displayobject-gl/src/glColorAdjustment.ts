@@ -94,9 +94,12 @@ in float v_alpha;
 in vec4 v_ctMult;
 in vec4 v_ctOff;
 uniform sampler2D u_texture;
+uniform bool u_straightTextureAlpha;
 out vec4 fragColor;
 void main() {
-  vec4 color = texture(u_texture, v_texCoord) * clamp(v_alpha, 0.0, 1.0);
+  vec4 color = texture(u_texture, v_texCoord);
+  if (u_straightTextureAlpha) color.rgb *= color.a;
+  color *= clamp(v_alpha, 0.0, 1.0);
   if (color.a <= 0.0) discard;
   color = vec4(color.rgb / color.a, color.a);
   color = clamp(color * v_ctMult + v_ctOff, vec4(0.0), vec4(1.0));
@@ -111,11 +114,14 @@ precision mediump float;
 in vec2 v_texCoord;
 in float v_alpha;
 uniform sampler2D u_texture;
+uniform bool u_straightTextureAlpha;
 uniform vec4 u_ctMult;
 uniform vec4 u_ctOff;
 out vec4 fragColor;
 void main() {
-  vec4 color = texture(u_texture, v_texCoord) * clamp(v_alpha, 0.0, 1.0);
+  vec4 color = texture(u_texture, v_texCoord);
+  if (u_straightTextureAlpha) color.rgb *= color.a;
+  color *= clamp(v_alpha, 0.0, 1.0);
   if (color.a <= 0.0) discard;
   color = vec4(color.rgb / color.a, color.a);
   color = clamp(color * u_ctMult + u_ctOff, vec4(0.0), vec4(1.0));
@@ -127,7 +133,7 @@ void main() {
 function bindGlSpriteBatchUniformColorTransform(state: GlRenderState, colorTransform: Readonly<ColorTransform>): void {
   const shader = ensureGlUniformColorTransformShader(state);
   useGlQuadBatchProgram(state, shader.program);
-  setGlQuadBatchWorldAndTexture(state, shader.locWorldMatrix, shader.locTexture);
+  setGlQuadBatchWorldAndTexture(state, shader.locWorldMatrix, shader.locTexture, shader.locStraightTextureAlpha);
 
   const gl = state.gl;
   gl.uniform4f(
@@ -153,7 +159,7 @@ function bindGlSpriteBatchInstancedColorTransform(state: GlRenderState): void {
   const runtime = getGlRenderStateRuntime(state);
   const shader = ensureGlColorTransformInstancedShader(state);
   useGlQuadBatchProgram(state, shader.program);
-  setGlQuadBatchWorldAndTexture(state, shader.locWorldMatrix, shader.locTexture);
+  setGlQuadBatchWorldAndTexture(state, shader.locWorldMatrix, shader.locTexture, shader.locStraightTextureAlpha);
   bindGlQuadBatchBaseAttributes(state, shader.locCorner);
 
   const gl = state.gl;
@@ -177,6 +183,7 @@ function ensureGlColorTransformInstancedShader(state: GlRenderState): GlColorTra
     locCorner: 0,
     locWorldMatrix: gl.getUniformLocation(program, 'u_world')!,
     locTexture: gl.getUniformLocation(program, 'u_texture')!,
+    locStraightTextureAlpha: gl.getUniformLocation(program, 'u_straightTextureAlpha')!,
   };
   return runtime.colorTransformInstancedShader;
 }
@@ -192,6 +199,7 @@ function ensureGlUniformColorTransformShader(state: GlRenderState): GlUniformCol
     locCorner: 0,
     locWorldMatrix: gl.getUniformLocation(program, 'u_world')!,
     locTexture: gl.getUniformLocation(program, 'u_texture')!,
+    locStraightTextureAlpha: gl.getUniformLocation(program, 'u_straightTextureAlpha')!,
     locColorMultiplier: gl.getUniformLocation(program, 'u_ctMult')!,
     locColorOffset: gl.getUniformLocation(program, 'u_ctOff')!,
   };

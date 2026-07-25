@@ -198,6 +198,17 @@ describe('setGlQuadBatchWorldAndTexture', () => {
     expect(gl.uniformMatrix3fv).toHaveBeenCalled();
     expect(gl.uniform1i).toHaveBeenCalled();
   });
+
+  it('uploads the currently bound compressed texture alpha representation', () => {
+    const { state, gl } = createGlState();
+    const runtime = getGlRenderStateRuntime(state);
+    const straightAlphaLocation = {} as WebGLUniformLocation;
+    runtime.currentTextureStraightAlpha = true;
+
+    setGlQuadBatchWorldAndTexture(state, {} as WebGLUniformLocation, {} as WebGLUniformLocation, straightAlphaLocation);
+
+    expect(gl.uniform1i).toHaveBeenCalledWith(straightAlphaLocation, 1);
+  });
 });
 
 describe('useGlQuadBatchProgram', () => {

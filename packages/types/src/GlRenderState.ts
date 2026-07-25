@@ -61,6 +61,9 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   currentBlendMode: BlendMode | null;
   currentProgram: WebGLProgram | null;
   currentTexture: WebGLTexture | null;
+  // Whether the currently bound display texture stores straight RGB in compressed blocks. Built-in
+  // 2D shaders premultiply its sample before ONE/ONE_MINUS_SRC_ALPHA blending.
+  currentTextureStraightAlpha: boolean;
 
   // Open per-state registry mapping a BlendMode to its fixed-function realization. Null until the
   // first registration (registerGlBlendMode / registerDefaultGlBlendModes), so a state that never
@@ -207,6 +210,7 @@ export interface GlParticleShader {
   locSize: number;
   locWorldMatrix: WebGLUniformLocation;
   locTexture: WebGLUniformLocation;
+  locStraightTextureAlpha: WebGLUniformLocation;
 }
 
 export interface GlQuadBatchShader {
@@ -220,6 +224,7 @@ export interface GlQuadBatchShader {
   locAlpha: number;
   locWorldMatrix: WebGLUniformLocation;
   locTexture: WebGLUniformLocation;
+  locStraightTextureAlpha: WebGLUniformLocation;
 }
 
 // Per-instance color transform shader: the quad-batch base layout (locations 0-6) plus two
@@ -229,6 +234,7 @@ export interface GlColorTransformInstancedShader {
   locCorner: number;
   locWorldMatrix: WebGLUniformLocation;
   locTexture: WebGLUniformLocation;
+  locStraightTextureAlpha: WebGLUniformLocation;
 }
 
 // Per-batch color transform shader — the base quad-batch layout plus color-transform uniforms
@@ -239,6 +245,7 @@ export interface GlUniformColorTransformShader {
   locCorner: number;
   locWorldMatrix: WebGLUniformLocation;
   locTexture: WebGLUniformLocation;
+  locStraightTextureAlpha: WebGLUniformLocation;
   locColorMultiplier: WebGLUniformLocation;
   locColorOffset: WebGLUniformLocation;
 }

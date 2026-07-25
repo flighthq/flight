@@ -93,6 +93,7 @@ export function createGlCacheState(screenState: GlRenderState): GlRenderState {
   cacheRuntime.currentProgram = null;
   cacheRuntime.currentScissorRect = null;
   cacheRuntime.currentTexture = null;
+  cacheRuntime.currentTextureStraightAlpha = false;
   cacheRuntime.renderTargetViewport = null;
   cacheRuntime.scissorStack = [];
   cacheRuntime.spriteBatchBlendMode = null;
@@ -182,6 +183,7 @@ export function refreshGlRenderCache(
     // rebind and setting uniforms on the wrong program.
     cacheRuntime.currentProgram = null;
     cacheRuntime.currentTexture = null;
+    cacheRuntime.currentTextureStraightAlpha = false;
     cacheRuntime.currentBlendMode = null;
     cacheRuntime.currentScissorRect = null;
     cacheState.gl.clearColor(0, 0, 0, 0);
@@ -195,6 +197,7 @@ export function refreshGlRenderCache(
   screenRuntime.currentProgram = null;
   screenRuntime.currentScissorRect = null;
   screenRuntime.currentTexture = null;
+  screenRuntime.currentTextureStraightAlpha = false;
   return dirty || resized;
 }
 
