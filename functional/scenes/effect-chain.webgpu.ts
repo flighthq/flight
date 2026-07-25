@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -8,7 +8,7 @@ import {
   beginWgpuRenderEffectPipeline,
   createBloomEffect,
   createColorGradeAdjustment,
-  createDisplayContainer,
+  createDisplayObject,
   createShape,
   createVignetteEffect,
   createWgpuCanvasElement,
@@ -19,13 +19,13 @@ import {
   defaultWgpuShapeRenderer,
   defaultWgpuVignetteEffectRunner,
   endWgpuRenderEffectPipeline,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultWgpuMaterial,
   registerRenderer,
   registerWgpuRenderEffect,
   registerWgpuShapeCommands,
   renderWgpuBackground,
-  renderWgpuDisplayObject,
+  renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -50,11 +50,11 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+export function render(root: Node2D): void {
+  if (!prepareScene2DRender(state, root)) return;
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline);
-  renderWgpuDisplayObject(state, root);
+  renderWgpuScene2D(state, root);
   endWgpuRenderEffectPipeline(state, pipeline, [
     createBloomEffect({ threshold: 0.6, intensity: 1.2 }),
     createColorGradeAdjustment({ saturation: 1.4, contrast: 1.1 }),
@@ -69,7 +69,7 @@ registerWgpuFunctionalTarget(state, scale);
 // luminance crosses the bloom threshold for a glowing halo, the color grade pushes saturation and
 // contrast, and the vignette darkens the corners.
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 

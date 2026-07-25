@@ -1,4 +1,4 @@
-import type { DisplayObject, GlRenderEffectPipeline } from '@flighthq/sdk';
+import type { Node2D, GlRenderEffectPipeline } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -6,7 +6,7 @@ import {
   appendShapeEndFill,
   appendShapeRectangle,
   beginGlRenderEffectPipeline,
-  createDisplayContainer,
+  createDisplayObject,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
@@ -16,13 +16,13 @@ import {
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultGlMaterial,
   registerGlRenderEffect,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
-  renderGlDisplayObject,
+  renderGlScene2D,
 } from '@flighthq/sdk';
 
 // kuwahara: a full-frame stylization pass applied to the whole scene through a default rgba8 pipeline.
@@ -46,11 +46,11 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+export function render(root: Node2D): void {
+  if (!prepareScene2DRender(state, root)) return;
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
-  renderGlDisplayObject(state, root);
+  renderGlScene2D(state, root);
   endGlRenderEffectPipeline(state, pipeline, [createKuwaharaEffect({ radius: 4 })]);
 }
 
@@ -58,7 +58,7 @@ export function render(root: DisplayObject): void {
 // the kuwahara effect dense high-frequency content (edges, quantizable color, sample neighborhoods)
 // to act on.
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 

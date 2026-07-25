@@ -1,6 +1,6 @@
 import type {
-  DisplayObjectRenderBlankReason,
-  DisplayObjectRenderExplanation,
+  Scene2DRenderBlankReason,
+  Scene2DRenderExplanation,
   HasAppearance,
   Renderable,
   RenderState,
@@ -22,10 +22,10 @@ import { getRenderStateRuntime } from './renderState';
 // appearance gates for the same reason: nothing downstream matters until a proxy exists.
 //
 // Colocated with the render functions whose blank frame it explains — registerRenderer (renderer.ts),
-// prepareDisplayObjectRender (renderProxy.ts), and buildRenderQueue (renderQueue.ts). This is the
+// prepareScene2DRender (renderProxy.ts), and buildRenderQueue (renderQueue.ts). This is the
 // maintenance seam: a pull query duplicates the draw path's drop conditions, so if the draw path grows
 // a new blank-reason gate, this function must gain the matching check or it silently goes stale.
-export function explainDisplayObjectRender(state: RenderState, source: Renderable): DisplayObjectRenderExplanation {
+export function explainScene2DRender(state: RenderState, source: Renderable): Scene2DRenderExplanation {
   const kind = source.kind;
   const hasRenderer = getRenderStateRuntime(state).rendererMap.get(kind) !== undefined;
 
@@ -36,7 +36,7 @@ export function explainDisplayObjectRender(state: RenderState, source: Renderabl
   const visible = proxy !== undefined ? proxy.visible : appearance.visible;
   const effectiveAlpha = proxy !== undefined ? proxy.alpha : appearance.alpha;
 
-  let reason: DisplayObjectRenderBlankReason;
+  let reason: Scene2DRenderBlankReason;
   if (!hasRenderer) reason = 'no-renderer';
   else if (!prepared) reason = 'not-prepared';
   else if (!visible) reason = 'not-visible';

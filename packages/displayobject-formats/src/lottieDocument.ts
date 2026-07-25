@@ -7,7 +7,7 @@ import {
 } from '@flighthq/animation';
 import { createClipRegionFromPath } from '@flighthq/clip';
 import { packColor } from '@flighthq/color';
-import { applyAnimationClipToDisplayObject, createBitmap, createDisplayContainer } from '@flighthq/displayobject';
+import { applyAnimationClipToNode2D, createBitmap, createDisplayObject } from '@flighthq/displayobject';
 import { easeCubicBezier } from '@flighthq/easing';
 import { createGradientTransformMatrix } from '@flighthq/geometry';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
@@ -38,10 +38,10 @@ import { createTextLabel } from '@flighthq/text';
 import type {
   AnimationChannel,
   AnimationClip,
-  DisplayContainer,
   DisplayObject,
-  DisplayObjectAnimationPath,
-  DisplayObjectAnimationTarget,
+  Node2D,
+  Node2DAnimationPath,
+  Node2DAnimationTarget,
   EasingFunction,
   ImportDiagnostic,
   LottieAnimatable,
@@ -74,10 +74,10 @@ import type {
 } from '@flighthq/types';
 import { BlendMode, ImportDiagnosticSeverity } from '@flighthq/types';
 
-// Applies both the shared DisplayObjectAnimationTarget channels and the format-owned mutable-content
+// Applies both the shared Node2DAnimationTarget channels and the format-owned mutable-content
 // targets used by animated shape/paint/mask records.
 export function applyAnimationClipToLottieDocument(clip: Readonly<AnimationClip>, time: number): void {
-  applyAnimationClipToDisplayObject(clip, time);
+  applyAnimationClipToNode2D(clip, time);
   for (const channel of clip.channels) {
     const target = channel.targetRef as LottieMutableAnimationTarget | null;
     if (target === null || typeof target !== 'object' || target.lottieApply === undefined) continue;
@@ -90,19 +90,19 @@ export function applyAnimationClipToLottieDocument(clip: Readonly<AnimationClip>
  * Imports a Bodymovin/Lottie document into a display subtree and target-bound AnimationClip.
  * Playback remains explicit: call applyAnimationClipToLottieDocument with the returned clip.
  */
-export function createDisplayObjectFromLottieDocument(
+export function createScene2DFromLottieDocument(
   source: string | Readonly<LottieDocument>,
   diagnostics?: ImportDiagnostic[],
   options?: Readonly<LottieDocumentImportOptions>,
 ): LottieDocumentImportResult {
   const document = parseLottieDocument(source);
-  const root = createDisplayContainer();
+  const root = createDisplayObject();
   if (document === null || !isValidLottieDocument(document)) {
     reportImportDiagnostic(
       diagnostics,
       ImportDiagnosticSeverity.Reject,
       'lottie.invalid-document',
-      'createDisplayObjectFromLottieDocument',
+      'createScene2DFromLottieDocument',
     );
     return { clip: createAnimationClip([]), duration: 0, frameRate: 0, root };
   }
@@ -165,12 +165,12 @@ interface LottieShapeState {
 }
 
 function appendLottieLayers(
-  root: DisplayContainer,
+  root: DisplayObject,
   layers: readonly Readonly<LottieLayer>[],
   context: LottieImportContext,
 ): void {
-  const nodes = new Map<number, DisplayContainer>();
-  const ordered: Array<{ layer: Readonly<LottieLayer>; node: DisplayContainer }> = [];
+  const nodes = new Map<number, DisplayObject>();
+  const ordered: Array<{ layer: Readonly<LottieLayer>; node: DisplayObject }> = [];
   for (const layer of layers) {
     const node = createLottieLayerNode(layer, context);
     ordered.push({ layer, node });
@@ -185,8 +185,8 @@ function appendLottieLayers(
   }
 }
 
-function createLottieLayerNode(layer: Readonly<LottieLayer>, context: LottieImportContext): DisplayContainer {
-  const container = createDisplayContainer({ name: layer.nm ?? null });
+function createLottieLayerNode(layer: Readonly<LottieLayer>, context: LottieImportContext): DisplayObject {
+  const container = createDisplayObject({ name: layer.nm ?? null });
   applyLottieTransform(container, layer.ks, context);
   applyLottieLayerVisibility(container, layer, context);
   applyLottieBlendMode(container, layer, context);
@@ -212,7 +212,7 @@ function createLottieLayerNode(layer: Readonly<LottieLayer>, context: LottieImpo
 }
 
 function applyLottieTransform(
-  target: DisplayObject,
+  target: Node2D,
   transform: Readonly<LottieTransform> | undefined,
   context: LottieImportContext,
 ): void {
@@ -239,10 +239,10 @@ function applyLottieTransform(
 }
 
 function applyVectorProperty(
-  target: DisplayObject,
+  target: Node2D,
   property: Readonly<LottieAnimatable<number[]>> | undefined,
-  vectorPath: DisplayObjectAnimationPath,
-  scalarPaths: readonly DisplayObjectAnimationPath[],
+  vectorPath: Node2DAnimationPath,
+  scalarPaths: readonly Node2DAnimationPath[],
   components: number,
   convert: (value: number, component: number) => number,
   context: LottieImportContext,
@@ -258,16 +258,16 @@ function applyVectorProperty(
       ({
         node: target,
         path: component === null ? vectorPath : scalarPaths[component],
-      }) satisfies DisplayObjectAnimationTarget,
+      }) satisfies Node2DAnimationTarget,
     convert,
     context,
   );
 }
 
 function applyScalarProperty(
-  target: DisplayObject,
+  target: Node2D,
   property: Readonly<LottieAnimatable<number>> | undefined,
-  path: DisplayObjectAnimationPath,
+  path: Node2DAnimationPath,
   convert: (value: number) => number,
   context: LottieImportContext,
 ): void {
@@ -277,7 +277,7 @@ function applyScalarProperty(
   appendNumericPropertyChannels(
     property,
     1,
-    () => ({ node: target, path }) satisfies DisplayObjectAnimationTarget,
+    () => ({ node: target, path }) satisfies Node2DAnimationTarget,
     convert,
     context,
   );
@@ -397,7 +397,7 @@ function createLottieSegmentEasing(
   );
 }
 
-function appendLottieSolid(parent: DisplayContainer, layer: Readonly<LottieLayer>): void {
+function appendLottieSolid(parent: DisplayObject, layer: Readonly<LottieLayer>): void {
   const shape = createShape();
   const color = parseHexColor(layer.sc ?? '#000000');
   appendShapeBeginFill(shape, color, 1);
@@ -408,7 +408,7 @@ function appendLottieSolid(parent: DisplayContainer, layer: Readonly<LottieLayer
   addNodeChild(parent, shape);
 }
 
-function appendLottieImage(parent: DisplayContainer, layer: Readonly<LottieLayer>, context: LottieImportContext): void {
+function appendLottieImage(parent: DisplayObject, layer: Readonly<LottieLayer>, context: LottieImportContext): void {
   const asset = layer.refId === undefined ? undefined : context.assets.get(layer.refId);
   if (asset === undefined || !isImageAsset(asset)) {
     reportLottieDrop(context, 'lottie.unresolved-asset', { id: layer.refId ?? '' });
@@ -422,7 +422,7 @@ function appendLottieImage(parent: DisplayContainer, layer: Readonly<LottieLayer
   addNodeChild(parent, createBitmap({ data: { image, smoothing: true } }));
 }
 
-function appendLottieText(parent: DisplayContainer, layer: Readonly<LottieLayer>, context: LottieImportContext): void {
+function appendLottieText(parent: DisplayObject, layer: Readonly<LottieLayer>, context: LottieImportContext): void {
   const textData = layer.t;
   const first = textData?.d.k[0]?.s;
   if (first === undefined) {
@@ -448,7 +448,7 @@ function appendLottieText(parent: DisplayContainer, layer: Readonly<LottieLayer>
 }
 
 function appendLottiePrecomposition(
-  parent: DisplayContainer,
+  parent: DisplayObject,
   layer: Readonly<LottieLayer>,
   context: LottieImportContext,
 ): void {
@@ -472,11 +472,11 @@ function appendLottiePrecomposition(
 }
 
 function appendLottieShapeItems(
-  parent: DisplayContainer,
+  parent: DisplayObject,
   items: readonly Readonly<LottieShapeItem>[],
   context: LottieImportContext,
 ): void {
-  const group = createDisplayContainer();
+  const group = createDisplayObject();
   const transform = items.find((item) => item.ty === 'tr');
   if (transform?.ty === 'tr') applyLottieTransform(group, transform as Readonly<LottieTransform>, context);
   const state: LottieShapeState = {
@@ -938,11 +938,7 @@ function appendLottieGradientStroke(shape: Shape, state: NonNullable<LottieShape
   );
 }
 
-function applyLottieMasks(
-  target: DisplayObject,
-  masks: readonly Readonly<LottieMask>[],
-  context: LottieImportContext,
-): void {
+function applyLottieMasks(target: Node2D, masks: readonly Readonly<LottieMask>[], context: LottieImportContext): void {
   const active = masks.filter((mask) => mask.mode !== 'n');
   if (active.length === 0) return;
   const first = active[0];
@@ -972,11 +968,7 @@ function applyLottieMasks(
   }
 }
 
-function applyLottieLayerVisibility(
-  target: DisplayObject,
-  layer: Readonly<LottieLayer>,
-  context: LottieImportContext,
-): void {
+function applyLottieLayerVisibility(target: Node2D, layer: Readonly<LottieLayer>, context: LottieImportContext): void {
   const start = frameToSeconds(layer.ip ?? context.document.ip, context);
   const end = frameToSeconds(layer.op ?? context.document.op, context);
   target.visible = start <= 0 && end > 0;
@@ -990,11 +982,11 @@ function applyLottieLayerVisibility(
     createAnimationChannel(createAnimationTrack({ interpolation: 'Step', times, values }), {
       node: target,
       path: 'Visible',
-    } satisfies DisplayObjectAnimationTarget),
+    } satisfies Node2DAnimationTarget),
   );
 }
 
-function applyLottieBlendMode(target: DisplayObject, layer: Readonly<LottieLayer>, context: LottieImportContext): void {
+function applyLottieBlendMode(target: Node2D, layer: Readonly<LottieLayer>, context: LottieImportContext): void {
   const mode = layer.bm ?? 0;
   if (mode === 0) target.blendMode = BlendMode.Normal;
   else if (mode === 1) target.blendMode = BlendMode.Multiply;
@@ -1025,7 +1017,7 @@ function reportLottieExpression(value: unknown, context: LottieImportContext): v
   }
 }
 
-function applyDisplaySample(target: DisplayObject, path: DisplayObjectAnimationPath, sample: readonly number[]): void {
+function applyDisplaySample(target: Node2D, path: Node2DAnimationPath, sample: readonly number[]): void {
   if (path === 'Position') {
     target.x = sample[0];
     target.y = sample[1];

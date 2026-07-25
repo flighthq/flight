@@ -1,4 +1,4 @@
-import type { DisplayObject, GlRenderEffectPipeline } from '@flighthq/sdk';
+import type { Node2D, GlRenderEffectPipeline } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -6,7 +6,7 @@ import {
   appendShapeEndFill,
   appendShapeRectangle,
   beginGlRenderEffectPipeline,
-  createDisplayContainer,
+  createDisplayObject,
   createFilmGrainEffect,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
@@ -16,13 +16,13 @@ import {
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultGlMaterial,
   registerGlRenderEffect,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
-  renderGlDisplayObject,
+  renderGlScene2D,
 } from '@flighthq/sdk';
 
 // Film grain: per-pixel noise is mixed over the frame. A flat mid-gray fill is the cleanest backdrop —
@@ -48,18 +48,18 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+export function render(root: Node2D): void {
+  if (!prepareScene2DRender(state, root)) return;
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
-  renderGlDisplayObject(state, root);
+  renderGlScene2D(state, root);
   endGlRenderEffectPipeline(state, pipeline, [createFilmGrainEffect({ intensity: 0.3, size: 1.5, seed: 7 })]);
 }
 
 // A flat mid-gray fill covering the whole frame. The even tone is the ideal backdrop for film grain:
 // the noise speckle is the only structure in the image.
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 

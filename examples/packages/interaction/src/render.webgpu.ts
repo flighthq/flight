@@ -1,16 +1,16 @@
-import type { DisplayObject } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import {
   createWgpuCanvasElement,
   createWgpuRenderState,
   defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
   defaultWgpuTextLabelRenderer,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultWgpuMaterial,
   registerWgpuShapeCommands,
   registerRenderer,
   renderWgpuBackground,
-  renderWgpuDisplayObject,
+  renderWgpuScene2D,
   ShapeKind,
   TextLabelKind,
   submitWgpuRenderPass,
@@ -33,9 +33,9 @@ registerWgpuShapeCommands(defaultWgpuShapeCommands);
 
 export const scale = pixelRatio;
 
-export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+export function render(root: Node2D): void {
+  if (!prepareScene2DRender(state, root)) return;
   renderWgpuBackground(state);
-  renderWgpuDisplayObject(state, root);
+  renderWgpuScene2D(state, root);
   submitWgpuRenderPass(state);
 }

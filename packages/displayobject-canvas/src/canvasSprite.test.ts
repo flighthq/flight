@@ -1,6 +1,6 @@
 import { createImageResource } from '@flighthq/image';
 import { addNodeChild } from '@flighthq/node';
-import { getOrCreateRenderProxy2D, prepareDisplayObjectRender, registerRenderer } from '@flighthq/render';
+import { getOrCreateRenderProxy2D, prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import { createSprite } from '@flighthq/sprite';
 import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas';
 import { SpriteKind } from '@flighthq/types';
@@ -32,7 +32,7 @@ describe('drawCanvasSprite', () => {
     const sprite = createSprite();
     sprite.data.atlas = atlas;
     sprite.data.id = 0;
-    prepareDisplayObjectRender(state, sprite);
+    prepareScene2DRender(state, sprite);
     const renderProxy = getOrCreateRenderProxy2D(state, sprite);
     const spy = vi.spyOn(state.context, 'drawImage');
     drawCanvasSprite(state, renderProxy);
@@ -42,7 +42,7 @@ describe('drawCanvasSprite', () => {
   it('skips draw when atlas is null', () => {
     const state = makeState();
     const sprite = createSprite();
-    prepareDisplayObjectRender(state, sprite);
+    prepareScene2DRender(state, sprite);
     const renderProxy = getOrCreateRenderProxy2D(state, sprite);
     const spy = vi.spyOn(state.context, 'drawImage');
     drawCanvasSprite(state, renderProxy);
@@ -56,7 +56,7 @@ describe('drawCanvasSprite', () => {
     const state = makeState();
     const sprite = createSprite();
     sprite.data.atlas = atlas;
-    prepareDisplayObjectRender(state, sprite);
+    prepareScene2DRender(state, sprite);
     const renderProxy = getOrCreateRenderProxy2D(state, sprite);
     const spy = vi.spyOn(state.context, 'drawImage');
 
@@ -70,7 +70,7 @@ describe('renderCanvasSprite', () => {
   it('does not throw for an empty sprite', () => {
     const state = makeState();
     const sprite = createSprite();
-    prepareDisplayObjectRender(state, sprite);
+    prepareScene2DRender(state, sprite);
     expect(() => renderCanvasSprite(state, sprite)).not.toThrow();
   });
 
@@ -80,7 +80,7 @@ describe('renderCanvasSprite', () => {
     const sprite = createSprite();
     sprite.data.atlas = atlas;
     sprite.data.id = 0;
-    prepareDisplayObjectRender(state, sprite);
+    prepareScene2DRender(state, sprite);
     const spy = vi.spyOn(state.context, 'drawImage');
 
     renderCanvasSprite(state, sprite);
@@ -96,7 +96,7 @@ describe('renderCanvasSprite', () => {
     child.data.atlas = atlas;
     child.data.id = 0;
     addNodeChild(parent, child);
-    prepareDisplayObjectRender(state, parent);
+    prepareScene2DRender(state, parent);
     const spy = vi.spyOn(state.context, 'drawImage');
 
     renderCanvasSprite(state, parent);

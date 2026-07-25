@@ -1,5 +1,5 @@
-import type { DisplayObject } from './DisplayObject';
 import type { Entity, EntityRuntime } from './Entity';
+import type { Node2D } from './Node2D';
 import type { StageSignals } from './StageSignals';
 import type { ViewportAlign } from './ViewportAlign';
 import type { ViewportScaleMode } from './ViewportScaleMode';
@@ -11,11 +11,11 @@ import type { ViewportScaleMode } from './ViewportScaleMode';
 // directly rather than being one. Because it is an Entity rather than a Node it cannot be nested as a child
 // anywhere — root-ness is unrepresentable-as-nestable by construction. The stage a display object belongs to
 // is resolved by walking to its root and reading the root runtime's stage back-pointer, so
-// `getDisplayObjectStage` stays a cheap lazy walk with no per-node propagation.
+// `getScene2DRoot` stays a cheap lazy walk with no per-node propagation.
 export interface Stage extends Entity {
   align: ViewportAlign;
   color: number | null;
-  root: DisplayObject;
+  root: Node2D;
   scaleMode: ViewportScaleMode;
   stageHeight: number;
   stageWidth: number;

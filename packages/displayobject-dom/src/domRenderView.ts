@@ -1,5 +1,5 @@
 import { noopRendererData } from '@flighthq/render';
-import type { DisplayObjectRenderer, DomRenderState, RenderProxy2D, RenderView } from '@flighthq/types';
+import type { Scene2DRenderer, DomRenderState, RenderProxy2D, RenderView } from '@flighthq/types';
 
 import { applyDomStyle, setDomRendererElement } from './domStyle';
 
@@ -23,7 +23,7 @@ export function drawDomRenderView(state: DomRenderState, renderProxy: RenderProx
   setDomRendererElement(state, canvas);
 }
 
-export const defaultDomRenderViewRenderer: DisplayObjectRenderer = {
+export const defaultDomRenderViewRenderer: Scene2DRenderer = {
   createData: noopRendererData,
   submit: drawDomRenderView,
 };

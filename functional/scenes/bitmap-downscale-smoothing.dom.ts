@@ -19,7 +19,7 @@ import {
   addNodeChild,
   BitmapKind,
   createBitmap,
-  createDisplayContainer,
+  createDisplayObject,
   createImageResourceFromCanvas,
   getSurfacePixelRgb,
   invalidateNodeLocalTransform,
@@ -71,7 +71,7 @@ const { render, width } = await createFunctionalTarget({
   kinds: [BitmapKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 function placeChecker(x: number, y: number, smoothing: boolean): void {
   const bmp = createBitmap();

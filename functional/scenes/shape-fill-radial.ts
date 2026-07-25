@@ -13,7 +13,7 @@ import {
   appendShapeBeginGradientFill,
   appendShapeCircle,
   appendShapeEndFill,
-  createDisplayContainer,
+  createDisplayObject,
   createGradientTransformMatrix,
   createShape,
   getSurfacePixelRgb,
@@ -38,7 +38,7 @@ const { render, width } = await createFunctionalTarget({
   kinds: [ShapeKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 // createGradientTransformMatrix(width, height, rotation, tx, ty) maps the unit gradient box onto a box
 // of the given size with origin (tx, ty). Passing the circle's bounding box (2*r square at cx-r, cy-r)

@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -6,7 +6,7 @@ import {
   appendShapeEndFill,
   appendShapeRectangle,
   beginWgpuRenderEffectPipeline,
-  createDisplayContainer,
+  createDisplayObject,
   createShape,
   createVignetteEffect,
   createWgpuCanvasElement,
@@ -16,13 +16,13 @@ import {
   defaultWgpuShapeRenderer,
   defaultWgpuVignetteEffectRunner,
   endWgpuRenderEffectPipeline,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultWgpuMaterial,
   registerRenderer,
   registerWgpuRenderEffect,
   registerWgpuShapeCommands,
   renderWgpuBackground,
-  renderWgpuDisplayObject,
+  renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -45,11 +45,11 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+export function render(root: Node2D): void {
+  if (!prepareScene2DRender(state, root)) return;
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline);
-  renderWgpuDisplayObject(state, root);
+  renderWgpuScene2D(state, root);
   endWgpuRenderEffectPipeline(state, pipeline, [createVignetteEffect({ intensity: 1, radius: 0.7, softness: 0.5 })]);
   submitWgpuRenderPass(state);
 }
@@ -59,7 +59,7 @@ registerWgpuFunctionalTarget(state, scale);
 // A single full-bleed bright fill covering the whole frame. With a flat, even color the vignette's
 // corner darkening is the only variation in the image.
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 

@@ -3,7 +3,7 @@ import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@fligh
 import { createWgpuTextureEntry, drawWgpuQuadWithTransform, updateWgpuTextureEntry } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import type {
-  DisplayObjectRenderer,
+  Scene2DRenderer,
   Renderable,
   RendererData,
   RenderProxy2D,
@@ -164,7 +164,7 @@ export function remapWgpuScale9Commands(
   }
 }
 
-export const defaultWgpuScale9ShapeRenderer: DisplayObjectRenderer = {
+export const defaultWgpuScale9ShapeRenderer: Scene2DRenderer = {
   createData: createWgpuScale9ShapeData,
   destroyData: destroyWgpuScale9ShapeData,
   submit: drawWgpuScale9Shape,

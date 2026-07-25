@@ -1,4 +1,4 @@
-import type { DisplayObject } from './DisplayObject';
+import type { Node2D } from './Node2D';
 import type { TimelineLabel } from './TimelineLabel';
 
 // What a Timeline plays. A `TimelineSource` is the output of a "format" — hand-authored keyframes
@@ -16,5 +16,5 @@ export interface TimelineSource {
   // same frame must be idempotent — so random-access gotoAndStop works. The source may lazily create and
   // cache per-target content (e.g. a child bitmap) keyed off `target`, which keeps a source shareable
   // across many MovieClips.
-  constructFrame(target: DisplayObject, frame: number): void;
+  constructFrame(target: Node2D, frame: number): void;
 }

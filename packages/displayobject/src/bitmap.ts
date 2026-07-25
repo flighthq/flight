@@ -2,7 +2,7 @@ import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq
 import type { Bitmap, BitmapData, BitmapRuntime, MethodsOf, Node, PartialNode, Rectangle } from '@flighthq/types';
 import { BitmapKind } from '@flighthq/types';
 
-import { createDisplayObjectGeneric, createDisplayObjectRuntime, getDisplayObjectRuntime } from './displayObject';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from './displayObject';
 
 export function computeBitmapLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
   const bitmapData: BitmapData = source.data as BitmapData;
@@ -16,7 +16,7 @@ export function computeBitmapLocalBoundsRectangle(out: Rectangle, source: Readon
 }
 
 export function createBitmap(obj?: Readonly<PartialNode<Bitmap>>): Bitmap {
-  return createDisplayObjectGeneric(BitmapKind, obj, createBitmapData, createBitmapRuntime) as Bitmap;
+  return createNode2D(BitmapKind, obj, createBitmapData, createBitmapRuntime) as Bitmap;
 }
 
 export function createBitmapData(data?: Readonly<Partial<BitmapData>>): BitmapData {
@@ -28,11 +28,11 @@ export function createBitmapData(data?: Readonly<Partial<BitmapData>>): BitmapDa
 }
 
 export function createBitmapRuntime(): BitmapRuntime {
-  return createDisplayObjectRuntime(defaultMethods) as BitmapRuntime;
+  return createNode2DRuntime(defaultMethods) as BitmapRuntime;
 }
 
 export function getBitmapRuntime(source: Readonly<Bitmap>): Readonly<BitmapRuntime> {
-  return getDisplayObjectRuntime(source) as BitmapRuntime;
+  return getNode2DRuntime(source) as BitmapRuntime;
 }
 
 export function setBitmapImage(source: Bitmap, value: BitmapData['image']): void {

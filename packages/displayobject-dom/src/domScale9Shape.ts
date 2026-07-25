@@ -2,7 +2,7 @@
 import { createEntity } from '@flighthq/entity';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node';
 import type {
-  DisplayObjectRenderer,
+  Scene2DRenderer,
   DomRenderState,
   MatrixLike,
   Renderable,
@@ -68,7 +68,7 @@ export function drawDomScale9Shape(state: DomRenderState, renderProxy: RenderPro
   setDomRendererElement(state, data.canvas);
 }
 
-export const defaultDomScale9ShapeRenderer: DisplayObjectRenderer = {
+export const defaultDomScale9ShapeRenderer: Scene2DRenderer = {
   createData: createDomScale9ShapeData,
   submit: drawDomScale9Shape,
 };

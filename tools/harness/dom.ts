@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import {
   BitmapKind,
   createDomRenderState,
@@ -13,11 +13,11 @@ import {
   enableDomClipSupport,
   enableDomRenderCache,
   invalidateNodeLocalTransform,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerCanvasShapeCommands,
   registerRenderer,
   renderDomBackground,
-  renderDomDisplayObject,
+  renderDomScene2D,
   RichTextKind,
   Scale9ShapeKind,
   ShapeKind,
@@ -73,12 +73,12 @@ export function createDomTarget(options: Readonly<FunctionalTargetOptions>): Fun
     width,
     height,
     scale: 1,
-    render(root: DisplayObject): void {
-      if (!prepareDisplayObjectRender(state, root)) return;
+    render(root: Node2D): void {
+      if (!prepareScene2DRender(state, root)) return;
       renderDomBackground(state);
-      renderDomDisplayObject(state, root);
+      renderDomScene2D(state, root);
     },
-    benchmark(root: DisplayObject): void {
+    benchmark(root: Node2D): void {
       invalidateNodeLocalTransform(root);
       this.render(root);
     },

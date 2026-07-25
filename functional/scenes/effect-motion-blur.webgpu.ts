@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -8,7 +8,7 @@ import {
   beginVelocityFrame,
   beginWgpuRenderEffectPipeline,
   contributeVelocity,
-  createDisplayContainer,
+  createDisplayObject,
   createMotionBlurEffect,
   createShape,
   createVelocityField,
@@ -16,21 +16,21 @@ import {
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   createWgpuVelocityTarget,
-  defaultWgpuDisplayObjectVelocityWriter,
+  defaultWgpuNode2DVelocityWriter,
   defaultWgpuMotionBlurEffectRunner,
   defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
   getNodeChildAt,
   getNodeChildCount,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultWgpuMaterial,
   registerRenderer,
   registerWgpuRenderEffect,
   registerWgpuShapeCommands,
   registerWgpuVelocityWriter,
   renderWgpuBackground,
-  renderWgpuDisplayObject,
+  renderWgpuScene2D,
   renderWgpuVelocity,
   setWgpuRenderEffectVelocityTexture,
   submitWgpuRenderPass,
@@ -52,7 +52,7 @@ registerWgpuShapeCommands(defaultWgpuShapeCommands);
 registerDefaultWgpuMaterial(state);
 registerWgpuRenderEffect(state, 'MotionBlurEffect', defaultWgpuMotionBlurEffectRunner);
 // The velocity writer rasterizes each shape's contributed velocity into the velocity target.
-registerWgpuVelocityWriter(state, ShapeKind, defaultWgpuDisplayObjectVelocityWriter);
+registerWgpuVelocityWriter(state, ShapeKind, defaultWgpuNode2DVelocityWriter);
 
 const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 1 });
 
@@ -64,8 +64,8 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+export function render(root: Node2D): void {
+  if (!prepareScene2DRender(state, root)) return;
 
   // One frame of contributions: give every top-level child a fixed horizontal screen-space velocity so
   // the motion-blur pass has direction/length to smear, even with no prior frame.
@@ -81,7 +81,7 @@ export function render(root: DisplayObject): void {
   setWgpuRenderEffectVelocityTexture(pipeline, velocityTarget.texture);
 
   beginWgpuRenderEffectPipeline(state, pipeline);
-  renderWgpuDisplayObject(state, root);
+  renderWgpuScene2D(state, root);
   endWgpuRenderEffectPipeline(state, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
   submitWgpuRenderPass(state);
 }
@@ -91,7 +91,7 @@ registerWgpuFunctionalTarget(state, scale);
 // A few solid shapes spread across the frame. Velocity is contributed in render.webgl.ts (one static
 // frame has no transform delta to derive motion from), so the scene here is just the geometry to smear.
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 

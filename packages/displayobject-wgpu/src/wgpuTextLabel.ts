@@ -7,7 +7,7 @@ import { computeTextFormatFontString } from '@flighthq/text';
 import { getTextLabelRuntime } from '@flighthq/text';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout';
 import type {
-  DisplayObjectRenderer,
+  Scene2DRenderer,
   ImageResource,
   Renderable,
   RendererData,
@@ -185,7 +185,7 @@ export function drawWgpuTextLabel(state: WgpuRenderState, renderProxy: RenderPro
   runtime.spriteBatchCount++;
 }
 
-export const defaultWgpuTextLabelRenderer: DisplayObjectRenderer = {
+export const defaultWgpuTextLabelRenderer: Scene2DRenderer = {
   format: BatchFormat.Quad,
   createData: createWgpuTextLabelData,
   destroyData: destroyWgpuTextLabelData,

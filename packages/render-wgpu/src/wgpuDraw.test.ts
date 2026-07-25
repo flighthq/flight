@@ -1,5 +1,5 @@
 import { createBitmap } from '@flighthq/displayobject';
-import { getOrCreateRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
+import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render';
 import type { ImageResource, VideoTexture } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
@@ -215,7 +215,7 @@ describe('drawWgpuQuad', () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
     const bitmap = createBitmap();
-    prepareDisplayObjectRender(state, bitmap);
+    prepareScene2DRender(state, bitmap);
     const renderProxy = getOrCreateRenderProxy2D(state, bitmap);
     const canvas = document.createElement('canvas');
     canvas.width = 4;
@@ -231,7 +231,7 @@ describe('drawWgpuQuadWithTransform', () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
     const bitmap = createBitmap();
-    prepareDisplayObjectRender(state, bitmap);
+    prepareScene2DRender(state, bitmap);
     const renderProxy = getOrCreateRenderProxy2D(state, bitmap);
     const canvas = document.createElement('canvas');
     canvas.width = 4;

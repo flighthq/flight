@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import {
   ParticleEmitter2DKind,
   addNodeChild,
@@ -20,12 +20,12 @@ import {
   defaultWgpuParticleEmitter2DVelocityWriter,
   endWgpuRenderEffectPipeline,
   invalidateNodeLocalTransform,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerRenderer,
   registerWgpuRenderEffect,
   registerWgpuVelocityWriter,
   renderWgpuBackground,
-  renderWgpuDisplayObject,
+  renderWgpuScene2D,
   renderWgpuVelocity,
   reserveParticleEmitter2D,
   setWgpuRenderEffectVelocityTexture,
@@ -52,8 +52,8 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+export function render(root: Node2D): void {
+  if (!prepareScene2DRender(state, root)) return;
 
   beginVelocityFrame(velocityField);
   renderWgpuBackground(state);
@@ -61,7 +61,7 @@ export function render(root: DisplayObject): void {
   setWgpuRenderEffectVelocityTexture(pipeline, velocityTarget.texture);
 
   beginWgpuRenderEffectPipeline(state, pipeline);
-  renderWgpuDisplayObject(state, root);
+  renderWgpuScene2D(state, root);
   endWgpuRenderEffectPipeline(state, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
   submitWgpuRenderPass(state);
 }

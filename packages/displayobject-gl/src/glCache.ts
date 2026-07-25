@@ -1,14 +1,14 @@
 import { createMatrix, createRectangle } from '@flighthq/geometry';
 import { computeNodeBoundsRectangle } from '@flighthq/node';
 import {
-  computeDisplayObjectRenderTargetTransform,
+  computeScene2DRenderTargetTransform,
   computeRenderCacheTransform,
   computeRenderTargetSize,
   copyAllRenderersFromRenderState,
   createRenderState,
   getRenderProxyCache,
   noopRendererData,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerRenderCacheRenderer,
 } from '@flighthq/render';
 import { createGlRenderStateRuntime, getGlRenderStateRuntime } from '@flighthq/render-gl';
@@ -22,8 +22,8 @@ import {
   setGlRenderTransform2D,
 } from '@flighthq/render-gl';
 import type {
-  DisplayObject,
-  DisplayObjectRenderer,
+  Node2D,
+  Scene2DRenderer,
   GlRenderState,
   GlRenderTarget,
   Matrix,
@@ -33,7 +33,7 @@ import type {
 } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
-import { renderGlDisplayObject } from './glDisplayObject';
+import { renderGlScene2D } from './glNode2D';
 import { flushGlSpriteBatch } from './glSpriteBatch';
 
 /**
@@ -152,7 +152,7 @@ export function getGlRenderCacheTarget(state: GlRenderState, cache: RenderCache)
 export function refreshGlRenderCache(
   cacheState: GlRenderState,
   cache: RenderCache,
-  source: DisplayObject,
+  source: Node2D,
   options?: Readonly<RenderCacheRefreshOptions>,
 ): boolean {
   const screenState = _cacheStateScreen.get(cacheState) ?? cacheState;
@@ -167,7 +167,7 @@ export function refreshGlRenderCache(
   const resized = existing === null || existing.width !== width || existing.height !== height;
   const target = ensureGlRenderCacheTarget(screenState, cache, width, height);
 
-  computeDisplayObjectRenderTargetTransform(_renderTransform, source, _bounds, padding, padding);
+  computeScene2DRenderTargetTransform(_renderTransform, source, _bounds, padding, padding);
   computeRenderCacheTransform(cache.transform, _bounds, padding, padding);
 
   // Preserve on begin — the bake below clears and redraws only when dirty; clearing here would wipe the
@@ -175,7 +175,7 @@ export function refreshGlRenderCache(
   // since a pass no longer carries one.
   beginGlRenderPass(cacheState, target, { preserveColor: true, preserveDepth: true });
   setGlRenderTransform2D(cacheState, _renderTransform);
-  const dirty = prepareDisplayObjectRender(cacheState, source);
+  const dirty = prepareScene2DRender(cacheState, source);
   if (dirty || resized) {
     const cacheRuntime = getGlRenderStateRuntime(cacheState);
     // The cache state shares the screen's GL context, so the actual GL program/blend/scissor are
@@ -189,7 +189,7 @@ export function refreshGlRenderCache(
     cacheRuntime.currentScissorRect = null;
     cacheState.gl.clearColor(0, 0, 0, 0);
     cacheState.gl.clear(cacheState.gl.COLOR_BUFFER_BIT);
-    renderGlDisplayObject(cacheState, source);
+    renderGlScene2D(cacheState, source);
   }
   endGlRenderPass(cacheState);
 
@@ -235,7 +235,7 @@ function getTargets(state: GlRenderState): WeakMap<RenderCache, GlRenderTarget> 
   return targets;
 }
 
-export const defaultGlRenderCacheRenderer: DisplayObjectRenderer = {
+export const defaultGlRenderCacheRenderer: Scene2DRenderer = {
   createData: noopRendererData,
   submit: drawGlRenderCache,
 };

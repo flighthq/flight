@@ -1,4 +1,4 @@
-import { getOrCreateRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
+import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render';
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
 import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape';
@@ -50,7 +50,7 @@ describe('drawWgpuScale9Shape', () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
     const shape = createScale9Shape(grid);
-    prepareDisplayObjectRender(state, shape);
+    prepareScene2DRender(state, shape);
     const renderProxy = getOrCreateRenderProxy2D(state, shape);
 
     expect(() => drawWgpuScale9Shape(state, renderProxy)).not.toThrow();
@@ -63,7 +63,7 @@ describe('drawWgpuScale9Shape', () => {
     const shape = createScale9Shape(grid);
     appendShapeBeginFill(shape, 0xff0000);
     appendShapeRectangle(shape, 0, 0, 100, 100);
-    prepareDisplayObjectRender(state, shape);
+    prepareScene2DRender(state, shape);
     const renderProxy = getOrCreateRenderProxy2D(state, shape);
 
     expect(() => drawWgpuScale9Shape(state, renderProxy)).not.toThrow();
@@ -76,7 +76,7 @@ describe('drawWgpuScale9ShapeMask', () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
     const shape = createScale9Shape(grid);
-    prepareDisplayObjectRender(state, shape);
+    prepareScene2DRender(state, shape);
     const renderProxy = getOrCreateRenderProxy2D(state, shape);
 
     expect(() => drawWgpuScale9ShapeMask(state, renderProxy)).not.toThrow();

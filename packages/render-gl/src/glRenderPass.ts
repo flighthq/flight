@@ -91,7 +91,7 @@ export function endGlRenderPass(state: GlRenderState): void {
   if (ended !== null) resolveGlRenderTarget(state, ended);
 }
 
-// Sets the 2D root device transform the display-object update pass (prepareDisplayObjectRender) reads to
+// Sets the 2D root device transform the display-object update pass (prepareScene2DRender) reads to
 // place nodes with no scene parent. Call after beginGlRenderPass when a 2D pass renders into a target
 // with its own coordinate system (the render cache); the value is restored by the matching
 // endGlRenderPass. A fresh matrix is allocated rather than mutating in place, because the begin/end

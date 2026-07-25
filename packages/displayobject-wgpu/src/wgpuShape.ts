@@ -6,7 +6,7 @@ import { resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import { getShapeFillRegions, getShapeStrokeRegions, hasShapeFill } from '@flighthq/shape';
 import type {
-  DisplayObjectRenderer,
+  Scene2DRenderer,
   ImageResource,
   Renderable,
   RendererData,
@@ -203,7 +203,7 @@ export function drawWgpuShape(state: WgpuRenderState, renderProxy: RenderProxy2D
   runtime.spriteBatchCount++;
 }
 
-export const defaultWgpuShapeRenderer: DisplayObjectRenderer = {
+export const defaultWgpuShapeRenderer: Scene2DRenderer = {
   format: BatchFormat.Quad,
   createData: createWgpuShapeData,
   destroyData: destroyWgpuShapeData,

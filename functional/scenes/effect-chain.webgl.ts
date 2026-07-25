@@ -1,4 +1,4 @@
-import type { DisplayObject, GlRenderEffectPipeline } from '@flighthq/sdk';
+import type { Node2D, GlRenderEffectPipeline } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -8,7 +8,7 @@ import {
   beginGlRenderEffectPipeline,
   createBloomEffect,
   createColorGradeAdjustment,
-  createDisplayContainer,
+  createDisplayObject,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
@@ -19,13 +19,13 @@ import {
   defaultGlShapeRenderer,
   defaultGlVignetteEffectRunner,
   endGlRenderEffectPipeline,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultGlMaterial,
   registerGlRenderEffect,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
-  renderGlDisplayObject,
+  renderGlScene2D,
 } from '@flighthq/sdk';
 
 // Effect chain: a STACK of three effects runs in one pipeline — bloom, then color grade, then
@@ -55,11 +55,11 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+export function render(root: Node2D): void {
+  if (!prepareScene2DRender(state, root)) return;
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
-  renderGlDisplayObject(state, root);
+  renderGlScene2D(state, root);
   endGlRenderEffectPipeline(state, pipeline, [
     createBloomEffect({ threshold: 0.6, intensity: 1.2 }),
     createColorGradeAdjustment({ saturation: 1.4, contrast: 1.1 }),
@@ -71,7 +71,7 @@ export function render(root: DisplayObject): void {
 // luminance crosses the bloom threshold for a glowing halo, the color grade pushes saturation and
 // contrast, and the vignette darkens the corners.
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 

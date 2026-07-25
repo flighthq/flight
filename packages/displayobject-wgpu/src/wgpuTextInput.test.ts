@@ -1,4 +1,4 @@
-import { getOrCreateRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
+import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render';
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
 import { createRichText } from '@flighthq/text';
@@ -22,7 +22,7 @@ describe('drawWgpuTextInputOverlay', () => {
     renderWgpuBackground(state);
     const input = createRichText({ data: { height: 40, text: 'hi', width: 100 } });
     enableTextInput(input).focused = true;
-    prepareDisplayObjectRender(state, input);
+    prepareScene2DRender(state, input);
     const renderProxy = getOrCreateRenderProxy2D(state, input);
 
     expect(() => drawWgpuRichText(state, renderProxy)).not.toThrow();

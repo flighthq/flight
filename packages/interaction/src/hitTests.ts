@@ -8,7 +8,7 @@ import {
 } from '@flighthq/node';
 import { containsPathPoint } from '@flighthq/path';
 import type {
-  DisplayObject,
+  Node2D,
   HitArea,
   HitTestFunction,
   HitTestPreciseFunction,
@@ -30,7 +30,7 @@ import { getNodeInteractionState } from './nodeInteractionState';
  **/
 export function describeGraphHit(node: NodeAny, x: number, y: number, out: HitTestResult): void {
   out.node = node;
-  inverseMatrixTransformPointXY(hitTestScratchPoint, getNodeWorldMatrix(node as DisplayObject), x, y);
+  inverseMatrixTransformPointXY(hitTestScratchPoint, getNodeWorldMatrix(node as Node2D), x, y);
   out.localX = hitTestScratchPoint.x;
   out.localY = hitTestScratchPoint.y;
   const exact = hitTestExactRegistry.get(node.kind);
@@ -91,24 +91,13 @@ export function findGraphHitTargetsPrecise<Traits extends object>(
 }
 
 /**
- * Evaluates the world bounding box of one node to see if it overlaps or
- * intersects the world bounding box of another.
- **/
-export function hitTestDisplayObjects(source: DisplayObject, other: DisplayObject): boolean {
-  if (getNodeParent(source) !== null && getNodeParent(other) !== null) {
-    return intersectsRectangle(getNodeWorldBoundsRectangle(source), getNodeWorldBoundsRectangle(other));
-  }
-  return false;
-}
-
-/**
  * Tests whether world-space (x, y) falls within the node's local bounds rect,
  * after inverting through the node's world transform.
  **/
 export function hitTestGraphLocalBounds<Traits extends object>(source: Node<Traits>, x: number, y: number): boolean {
-  inverseMatrixTransformPointXY(hitTestScratchPoint, getNodeWorldMatrix(source as DisplayObject), x, y);
+  inverseMatrixTransformPointXY(hitTestScratchPoint, getNodeWorldMatrix(source as Node2D), x, y);
   return containsRectanglePointXY(
-    getNodeLocalBoundsRectangle(source as DisplayObject),
+    getNodeLocalBoundsRectangle(source as Node2D),
     hitTestScratchPoint.x,
     hitTestScratchPoint.y,
   );
@@ -122,6 +111,17 @@ export function hitTestGraphPoint<Traits extends object>(source: Node<Traits>, x
 /** Precise any-hit query: `hitTestGraphPoint` using exact geometry per kind (bounds fallback where none). */
 export function hitTestGraphPointPrecise<Traits extends object>(source: Node<Traits>, x: number, y: number): boolean {
   return anyHit(source as NodeAny, x, y, true);
+}
+
+/**
+ * Evaluates the world bounding box of one node to see if it overlaps or
+ * intersects the world bounding box of another.
+ **/
+export function hitTestNode2Ds(source: Node2D, other: Node2D): boolean {
+  if (getNodeParent(source) !== null && getNodeParent(other) !== null) {
+    return intersectsRectangle(getNodeWorldBoundsRectangle(source), getNodeWorldBoundsRectangle(other));
+  }
+  return false;
 }
 
 /**
@@ -241,7 +241,7 @@ function hitAreaContainsPoint(node: NodeAny, hitArea: HitArea, x: number, y: num
     return proxyHit ? proxyHit(proxy, x, y) : hitTestGraphLocalBounds(proxy, x, y);
   }
 
-  inverseMatrixTransformPointXY(hitTestScratchPoint, getNodeWorldMatrix(node as DisplayObject), x, y);
+  inverseMatrixTransformPointXY(hitTestScratchPoint, getNodeWorldMatrix(node as Node2D), x, y);
   const lx = hitTestScratchPoint.x;
   const ly = hitTestScratchPoint.y;
   if ('commands' in hitArea) return containsPathPoint(hitArea as Readonly<Path>, lx, ly);

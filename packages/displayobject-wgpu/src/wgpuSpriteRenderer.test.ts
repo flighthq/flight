@@ -1,5 +1,5 @@
 import { createImageResource } from '@flighthq/image';
-import { getRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
+import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render';
 import { getWgpuRenderStateRuntime, renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
 import { createSprite } from '@flighthq/sprite';
@@ -29,7 +29,7 @@ describe('defaultWgpuSpriteRenderer.submit', () => {
     renderWgpuBackground(state);
 
     const sprite = createSprite();
-    prepareDisplayObjectRender(state, sprite);
+    prepareScene2DRender(state, sprite);
     const renderProxy = getRenderProxy2D(state, sprite)!;
 
     expect(() => {
@@ -49,7 +49,7 @@ describe('defaultWgpuSpriteRenderer.submit', () => {
     };
     const sprite = createSprite();
     sprite.data.atlas = atlas as unknown as TextureAtlas;
-    prepareDisplayObjectRender(state, sprite);
+    prepareScene2DRender(state, sprite);
     const renderProxy = getRenderProxy2D(state, sprite)!;
     Object.assign(renderProxy.transform2D, { a: 2, b: 3, c: 4, d: 5, tx: 100, ty: 200 });
 

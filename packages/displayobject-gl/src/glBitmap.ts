@@ -3,7 +3,7 @@ import { resolveGlMaterialRenderer } from '@flighthq/render-gl';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import type {
   Bitmap,
-  DisplayObjectRenderer,
+  Scene2DRenderer,
   GlRenderState,
   ImageResource,
   Renderable,
@@ -28,7 +28,7 @@ function createGlBitmapData(_state: GlRenderState, _source: Renderable): Rendere
 }
 
 // Deletes the cached GPU texture when this bitmap is torn down. Prevents textures from leaking when
-// a bitmap is removed from the scene via disposeDisplayObjectRender. Content-change re-upload is handled
+// a bitmap is removed from the scene via disposeScene2DRender. Content-change re-upload is handled
 // by bindGlTexture's version-aware cache, so this only frees on teardown.
 function destroyGlBitmapData(state: GlRenderState, data: RendererData): void {
   const runtime = getGlRenderStateRuntime(state);
@@ -115,7 +115,7 @@ export function drawGlBitmap(state: GlRenderState, renderProxy: RenderProxy2D): 
   runtime.spriteBatchCount++;
 }
 
-export const defaultGlBitmapRenderer: DisplayObjectRenderer = {
+export const defaultGlBitmapRenderer: Scene2DRenderer = {
   format: BatchFormat.Quad,
   createData: createGlBitmapData,
   destroyData: destroyGlBitmapData,

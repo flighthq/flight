@@ -1,4 +1,4 @@
-import type { DisplayObject, GlRenderEffectPipeline } from '@flighthq/sdk';
+import type { Node2D, GlRenderEffectPipeline } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -6,7 +6,7 @@ import {
   appendShapeEndFill,
   appendShapeRectangle,
   beginGlRenderEffectPipeline,
-  createDisplayContainer,
+  createDisplayObject,
   createFxaaEffect,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
@@ -16,13 +16,13 @@ import {
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultGlMaterial,
   registerGlRenderEffect,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
-  renderGlDisplayObject,
+  renderGlScene2D,
 } from '@flighthq/sdk';
 
 // FXAA antialiases the whole frame: a full-frame edge-detect/blend pass smooths the jagged diagonal
@@ -50,18 +50,18 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+export function render(root: Node2D): void {
+  if (!prepareScene2DRender(state, root)) return;
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
-  renderGlDisplayObject(state, root);
+  renderGlScene2D(state, root);
   endGlRenderEffectPipeline(state, pipeline, [createFxaaEffect({ edgeThreshold: 0.0312, subpixel: 0.75 })]);
 }
 
 // FXAA antialiases the whole frame. Rotated, high-contrast rectangles present jagged diagonal edges
 // (the worst case for aliasing), so a full-frame edge-detect/blend pass has stair-stepping to smooth.
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 

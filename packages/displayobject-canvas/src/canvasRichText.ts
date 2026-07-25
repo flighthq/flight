@@ -15,7 +15,7 @@ import type { TextSelectionRectangle } from '@flighthq/types';
 import type {
   CanvasRenderState,
   CanvasTextInputOverlay,
-  DisplayObjectRenderer,
+  Scene2DRenderer,
   RenderProxy2D,
   RichText,
   RichTextRuntime,
@@ -23,7 +23,7 @@ import type {
   TextLabelRuntime,
 } from '@flighthq/types';
 
-import { drawCanvasDisplayObject } from './canvasDisplayObject';
+import { drawCanvasScene2D } from './canvasNode2D';
 import { setCanvasTransform } from './canvasTransform';
 
 export function drawCanvasRichText(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
@@ -38,11 +38,11 @@ export function drawCanvasRichText(state: CanvasRenderState, renderProxy: Render
 }
 
 export function drawCanvasRichTextMask(state: CanvasRenderState, data: RenderProxy2D): void {
-  drawCanvasDisplayObject(state, data);
+  drawCanvasScene2D(state, data);
 }
 
 function drawCanvasRichTextField(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
-  drawCanvasDisplayObject(state, renderProxy);
+  drawCanvasScene2D(state, renderProxy);
 
   const source = renderProxy.source as RichText;
   const data = source.data;
@@ -168,7 +168,7 @@ const SELECTION_COLOR = '#0078d7';
 const _richTextSelectionRectangles: TextSelectionRectangle[] = [];
 let _canvasTextInputOverlay: CanvasTextInputOverlay | null = null;
 
-export const defaultCanvasRichTextRenderer: DisplayObjectRenderer = {
+export const defaultCanvasRichTextRenderer: Scene2DRenderer = {
   createData: noopRendererData,
   submit: drawCanvasRichText,
 };

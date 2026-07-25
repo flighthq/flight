@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import {
   addNodeChild,
   createDisplayObject,
@@ -132,7 +132,7 @@ invalidateNodeAppearance(tilemap);
 addNodeChild(root, tilemap);
 
 function enterFrame(): void {
-  render(root as DisplayObject);
+  render(root as Node2D);
   requestAnimationFrame(enterFrame);
 }
 

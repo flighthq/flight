@@ -1,4 +1,4 @@
-import type { DisplayObject, DisplayObjectData, DisplayObjectRuntime } from './DisplayObject';
+import type { Node2D, Node2DData, Node2DRuntime } from './Node2D';
 import type { TextAutoSize } from './TextAutoSize';
 import type { TextFormatAlign } from './TextFormat';
 import type { TextVerticalAlign } from './TextVerticalAlign';
@@ -21,7 +21,7 @@ export interface NativeTextStyle {
   size?: number;
 }
 
-export interface NativeTextData extends DisplayObjectData {
+export interface NativeTextData extends Node2DData {
   autoSize: TextAutoSize;
   height: number;
   style: NativeTextStyle;
@@ -34,7 +34,7 @@ export interface NativeTextData extends DisplayObjectData {
   width: number;
 }
 
-export interface NativeTextRuntime extends DisplayObjectRuntime {
+export interface NativeTextRuntime extends Node2DRuntime {
   // The backing platform element, created and owned by the platform renderer (displayobject-dom). null until
   // the node is first drawn, and on backends that do not composite a real element. displayobject only
   // holds the slot and never touches the DOM, mirroring HtmlViewData.element.
@@ -46,7 +46,7 @@ export interface NativeTextRuntime extends DisplayObjectRuntime {
   measuredWidth: number;
 }
 
-export interface NativeText extends DisplayObject {
+export interface NativeText extends Node2D {
   data: NativeTextData;
 }
 

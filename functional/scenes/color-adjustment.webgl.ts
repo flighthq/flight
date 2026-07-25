@@ -3,7 +3,7 @@
 // the fold reads the resolved stack and applies it in the batch draw.
 //
 // This is the generic off-entity replacement for the old HasColorTransform trait: the adjustment lives on
-// the node's runtime slot (setDisplayObjectColorAdjustments), the set-accessor fuses it once into the affine
+// the node's runtime slot (setNode2DColorAdjustments), the set-accessor fuses it once into the affine
 // ColorTransform the fold consumes, and enableGlColorAdjustment installs the opt-in inline fold that turns
 // the white source red. Without enableGlColorAdjustment the tint would be skipped (drawn white).
 //
@@ -16,14 +16,14 @@ import {
   addTextureAtlasRegion,
   createColorTransform,
   createColorTransformAdjustment,
-  createDisplayContainer,
+  createDisplayObject,
   createImageResource,
   createSprite,
   createTextureAtlas,
   enableGlColorAdjustment,
   getSurfacePixelRgb,
   invalidateNodeLocalTransform,
-  setDisplayObjectColorAdjustments,
+  setNode2DColorAdjustments,
   SpriteKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -58,7 +58,7 @@ function makeWhiteCanvas(): HTMLCanvasElement {
 const atlas = createTextureAtlas({ image: createImageResource(makeWhiteCanvas()) });
 addTextureAtlasRegion(atlas, 0, 0, REGION, REGION);
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const sprite = createSprite();
 sprite.data.atlas = atlas;
@@ -66,7 +66,7 @@ sprite.data.id = 0;
 sprite.x = SPRITE_X;
 sprite.y = SPRITE_Y;
 // Red tint as a color-adjustment stack on the node runtime slot: keep red, zero green/blue, keep alpha.
-setDisplayObjectColorAdjustments(sprite, [
+setNode2DColorAdjustments(sprite, [
   createColorTransformAdjustment(
     createColorTransform({ redMultiplier: 1, greenMultiplier: 0, blueMultiplier: 0, alphaMultiplier: 1 }),
   ),

@@ -1,5 +1,5 @@
 ﻿import { createImageResource } from '@flighthq/image';
-import { getOrCreateRenderProxy2D, prepareDisplayObjectRender, registerRenderer } from '@flighthq/render';
+import { getOrCreateRenderProxy2D, prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import { createQuadBatch, reserveQuadBatch } from '@flighthq/sprite';
 import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas';
 import { QuadBatchKind } from '@flighthq/types';
@@ -43,7 +43,7 @@ describe('drawCanvasQuadBatch', () => {
     qb.data.instanceCount = 1;
     qb.data.atlas = null;
 
-    prepareDisplayObjectRender(state, qb);
+    prepareScene2DRender(state, qb);
     const renderProxy = getOrCreateRenderProxy2D(state, qb);
     const spy = vi.spyOn(state.context, 'drawImage');
 
@@ -66,7 +66,7 @@ describe('drawCanvasQuadBatch', () => {
     qb.data.transforms[2] = 30;
     qb.data.transforms[3] = 40;
 
-    prepareDisplayObjectRender(state, qb);
+    prepareScene2DRender(state, qb);
     const renderProxy = getOrCreateRenderProxy2D(state, qb);
     const spy = vi.spyOn(state.context, 'drawImage');
 
@@ -84,7 +84,7 @@ describe('drawCanvasQuadBatch', () => {
     qb.data.instanceCount = 1;
     qb.data.ids[0] = 99; // out of range
 
-    prepareDisplayObjectRender(state, qb);
+    prepareScene2DRender(state, qb);
     const renderProxy = getOrCreateRenderProxy2D(state, qb);
     const spy = vi.spyOn(state.context, 'drawImage');
 
@@ -108,7 +108,7 @@ describe('drawCanvasQuadBatch', () => {
     qb.data.instanceCount = 1;
     qb.data.ids[0] = 0;
 
-    prepareDisplayObjectRender(state, qb);
+    prepareScene2DRender(state, qb);
     const renderProxy = getOrCreateRenderProxy2D(state, qb);
     const spy = vi.spyOn(state.context, 'drawImage');
 

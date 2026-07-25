@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -7,7 +7,7 @@ import {
   appendShapeRectangle,
   beginWgpuRenderEffectPipeline,
   createDisplacementEffect,
-  createDisplayContainer,
+  createDisplayObject,
   createShape,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
@@ -16,13 +16,13 @@ import {
   defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultWgpuMaterial,
   registerRenderer,
   registerWgpuRenderEffect,
   registerWgpuShapeCommands,
   renderWgpuBackground,
-  renderWgpuDisplayObject,
+  renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -44,11 +44,11 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+export function render(root: Node2D): void {
+  if (!prepareScene2DRender(state, root)) return;
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline);
-  renderWgpuDisplayObject(state, root);
+  renderWgpuScene2D(state, root);
   endWgpuRenderEffectPipeline(state, pipeline, [createDisplacementEffect({ intensity: 10, frequency: 14, seed: 2 })]);
   submitWgpuRenderPass(state);
 }
@@ -58,7 +58,7 @@ registerWgpuFunctionalTarget(state, scale);
 // Sharp colour bars with crisp horizontal/vertical edges — the structure the displacement warp bends.
 // The animated sine field wobbles the sample position, so the straight bar edges become wavy.
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 

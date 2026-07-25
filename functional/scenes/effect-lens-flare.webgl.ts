@@ -1,4 +1,4 @@
-import type { DisplayObject, GlRenderEffectPipeline } from '@flighthq/sdk';
+import type { Node2D, GlRenderEffectPipeline } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -6,7 +6,7 @@ import {
   appendShapeEndFill,
   appendShapeRectangle,
   beginGlRenderEffectPipeline,
-  createDisplayContainer,
+  createDisplayObject,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
@@ -16,13 +16,13 @@ import {
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultGlMaterial,
   registerGlRenderEffect,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
-  renderGlDisplayObject,
+  renderGlScene2D,
 } from '@flighthq/sdk';
 
 // Lens flare [HDR]: bright shapes above the threshold seed ghosts and a halo mirrored through the
@@ -50,11 +50,11 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+export function render(root: Node2D): void {
+  if (!prepareScene2DRender(state, root)) return;
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
-  renderGlDisplayObject(state, root);
+  renderGlScene2D(state, root);
   endGlRenderEffectPipeline(state, pipeline, [
     createLensFlareEffect({ threshold: 0.7, intensity: 1.6, ghosts: 5, halo: 0.4 }),
   ]);
@@ -62,7 +62,7 @@ export function render(root: DisplayObject): void {
 
 // Bright, saturated shapes on a near-black field — high luminance to seed lens-flare ghosts and halo.
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 

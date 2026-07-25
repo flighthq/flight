@@ -1,8 +1,4 @@
-import {
-  createDisplayObjectGeneric,
-  createDisplayObjectRuntime,
-  getDisplayObjectRuntime,
-} from '@flighthq/displayobject';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/displayobject';
 import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node';
 import type {
   MethodsOf,
@@ -42,7 +38,7 @@ export function computeNativeTextLocalBoundsRectangle(out: Rectangle, source: Re
 }
 
 export function createNativeText(obj?: Readonly<PartialNode<NativeText>>): NativeText {
-  return createDisplayObjectGeneric(NativeTextKind, obj, createNativeTextData, createNativeTextRuntime) as NativeText;
+  return createNode2D(NativeTextKind, obj, createNativeTextData, createNativeTextRuntime) as NativeText;
 }
 
 export function createNativeTextData(data?: Readonly<Partial<NativeTextData>>): NativeTextData {
@@ -57,7 +53,7 @@ export function createNativeTextData(data?: Readonly<Partial<NativeTextData>>): 
 }
 
 export function createNativeTextRuntime(): NativeTextRuntime {
-  const out = createDisplayObjectRuntime(defaultMethods) as NativeTextRuntime;
+  const out = createNode2DRuntime(defaultMethods) as NativeTextRuntime;
   out.element = null;
   out.measuredHeight = 0;
   out.measuredWidth = 0;
@@ -65,15 +61,15 @@ export function createNativeTextRuntime(): NativeTextRuntime {
 }
 
 export function getNativeTextMeasuredHeight(source: Readonly<NativeText>): number {
-  return (getDisplayObjectRuntime(source) as NativeTextRuntime).measuredHeight;
+  return (getNode2DRuntime(source) as NativeTextRuntime).measuredHeight;
 }
 
 export function getNativeTextMeasuredWidth(source: Readonly<NativeText>): number {
-  return (getDisplayObjectRuntime(source) as NativeTextRuntime).measuredWidth;
+  return (getNode2DRuntime(source) as NativeTextRuntime).measuredWidth;
 }
 
 export function getNativeTextRuntime(source: Readonly<NativeText>): Readonly<NativeTextRuntime> {
-  return getDisplayObjectRuntime(source) as NativeTextRuntime;
+  return getNode2DRuntime(source) as NativeTextRuntime;
 }
 
 export function getNativeTextString(source: Readonly<NativeText>): string {

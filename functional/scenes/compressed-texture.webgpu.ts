@@ -1,19 +1,19 @@
-import type { DisplayObject, Surface, TextureContainer } from '@flighthq/sdk';
+import type { Node2D, Surface, TextureContainer } from '@flighthq/sdk';
 import {
   addNodeChild,
   createBitmap,
   createCompressedImageResource,
-  createDisplayContainer,
+  createDisplayObject,
   createWgpuCanvasElement,
   createWgpuRenderState,
   getSurfacePixelRgb,
   invalidateNodeLocalTransform,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerWgpuCompressedTextureDecoder,
   registerWgpuCompressedTextureUpload,
-  registerWgpuDisplayObjectRenderers,
+  registerWgpuScene2DRenderers,
   renderWgpuBackground,
-  renderWgpuDisplayObject,
+  renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -42,7 +42,7 @@ if (!state.device.features.has('texture-compression-bc')) {
 export const scale = pixelRatio;
 export const width = WIDTH;
 export const height = HEIGHT;
-registerWgpuDisplayObjectRenderers(state);
+registerWgpuScene2DRenderers(state);
 registerWgpuCompressedTextureUpload(state);
 registerWgpuCompressedTextureDecoder(state, (_format, w, h) => {
   const rgba = new Uint8ClampedArray(w * h * 4);
@@ -54,10 +54,10 @@ registerWgpuCompressedTextureDecoder(state, (_format, w, h) => {
 });
 registerWgpuFunctionalTarget(state, scale);
 
-export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+export function render(root: Node2D): void {
+  if (!prepareScene2DRender(state, root)) return;
   renderWgpuBackground(state);
-  renderWgpuDisplayObject(state, root);
+  renderWgpuScene2D(state, root);
   submitWgpuRenderPass(state);
 }
 
@@ -72,7 +72,7 @@ const container = (format: 'bc1' | 'bc3', byteLength: number): TextureContainer 
   supercompression: 'None',
   width: TEX,
 });
-const root = createDisplayContainer();
+const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 const bitmap = createBitmap();

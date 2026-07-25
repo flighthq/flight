@@ -3,7 +3,7 @@ import { createMatrix, createRectangle } from '@flighthq/geometry';
 import { addNodeChild, getNodeRuntime, invalidateNodeLocalBounds, invalidateNodeLocalTransform } from '@flighthq/node';
 import type { HasBoundsRectangleRuntime, RenderProxy2D, RenderViewport2D } from '@flighthq/types';
 
-import { createRenderProxy2D, prepareDisplayObjectRender } from './renderProxy';
+import { createRenderProxy2D, prepareScene2DRender } from './renderProxy';
 import { createRenderState } from './renderState';
 import {
   computeRenderProxyWorldBounds,
@@ -44,7 +44,7 @@ describe('computeRenderProxyWorldBounds', () => {
     expect(result).toBe(false);
   });
 
-  it('returns true and writes world bounds for a DisplayObject', () => {
+  it('returns true and writes world bounds for a Node2D', () => {
     const obj = makeObjectWithBounds(10, 20, 50, 30);
     const out = createRectangle();
     const result = computeRenderProxyWorldBounds(out, obj);
@@ -176,10 +176,10 @@ describe('isRenderProxyInViewport', () => {
     expect(isRenderProxyInViewport(proxy, vp)).toBe(true);
   });
 
-  it('returns true for a proxy backed by a DisplayObject within the viewport', () => {
+  it('returns true for a proxy backed by a Node2D within the viewport', () => {
     const state = createRenderState();
     const obj = makeObjectWithBounds(10, 10, 50, 50);
-    prepareDisplayObjectRender(state, obj);
+    prepareScene2DRender(state, obj);
     const proxy = createRenderProxy2D(state, obj);
     const vp: RenderViewport2D = { x: 0, y: 0, width: 800, height: 600 };
     expect(isRenderProxyInViewport(proxy, vp)).toBe(true);

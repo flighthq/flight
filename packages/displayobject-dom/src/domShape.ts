@@ -2,7 +2,7 @@
 import { createEntity } from '@flighthq/entity';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node';
 import type {
-  DisplayObjectRenderer,
+  Scene2DRenderer,
   DomRenderState,
   Renderable,
   RendererData,
@@ -62,7 +62,7 @@ export function drawDomShape(state: DomRenderState, renderProxy: RenderProxy2D):
   setDomRendererElement(state, data.canvas);
 }
 
-export const defaultDomShapeRenderer: DisplayObjectRenderer = {
+export const defaultDomShapeRenderer: Scene2DRenderer = {
   createData: createDomShapeData,
   submit: drawDomShape,
 };

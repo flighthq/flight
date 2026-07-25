@@ -9,7 +9,7 @@ import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   addTextureAtlasRegion,
-  createDisplayContainer,
+  createDisplayObject,
   createImageResource,
   createSprite,
   createTextureAtlas,
@@ -46,7 +46,7 @@ function makeRedCanvas(): HTMLCanvasElement {
 const atlas = createTextureAtlas({ image: createImageResource(makeRedCanvas()) });
 addTextureAtlasRegion(atlas, 0, 0, REGION, REGION);
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const sprite = createSprite();
 sprite.data.atlas = atlas;

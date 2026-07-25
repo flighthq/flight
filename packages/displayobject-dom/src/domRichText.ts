@@ -13,7 +13,7 @@ import {
   getTextLayoutResult,
 } from '@flighthq/textlayout';
 import type {
-  DisplayObjectRenderer,
+  Scene2DRenderer,
   DomRenderState,
   DomTextInputOverlay,
   Renderable,
@@ -232,7 +232,7 @@ export function registerDomTextInputOverlay(overlay: DomTextInputOverlay): void 
   _domTextInputOverlay = overlay;
 }
 
-export const defaultDomRichTextRenderer: DisplayObjectRenderer = {
+export const defaultDomRichTextRenderer: Scene2DRenderer = {
   createData: createDomRichTextData,
   submit: drawDomRichText,
 };

@@ -28,7 +28,7 @@ import { getVelocity } from '@flighthq/velocity';
 
 // Gl velocity-buffer production. Velocity is tied to the draw, so production is per-kind: the velocity
 // pass walks the scene and dispatches a registered GlVelocityWriter for each node's kind, which draws
-// that kind's velocity into the bound rgba16f target. The DisplayObject writer covers a node's world
+// that kind's velocity into the bound rgba16f target. The Node2D writer covers a node's world
 // bounds with its (single) velocity; batched kinds register their own writer to emit per-instance
 // velocity. The generic velocity DATA comes from a render-agnostic VelocityField (@flighthq/velocity);
 // this module is only the render-side hook.
@@ -45,7 +45,7 @@ export function createGlVelocityTarget(state: GlRenderState, width: number, heig
 
 // The default writer for plain display-object nodes: cover the node's world bounds with its velocity.
 // Batched/instanced kinds (QuadBatch, particles) register a writer that emits per-instance velocity.
-export const defaultGlDisplayObjectVelocityWriter: GlVelocityWriter = (ctx, node) => {
+export const defaultGlNode2DVelocityWriter: GlVelocityWriter = (ctx, node) => {
   getVelocity(ctx.field, node, _scratchVelocity);
   if (_scratchVelocity.x === 0 && _scratchVelocity.y === 0) return;
   const spatial = node as unknown as Spatial2DNode;
@@ -56,7 +56,7 @@ export const defaultGlDisplayObjectVelocityWriter: GlVelocityWriter = (ctx, node
 
 // The ParticleEmitter2D writer emits PER-PARTICLE velocity: each particle moves on its own vector (a
 // fountain fans outward), so one emitter-wide vector would be wrong — a user who wants the whole emitter
-// to share a velocity attaches it to a parent node instead, which the DisplayObject writer covers. The
+// to share a velocity attaches it to a parent node instead, which the Node2D writer covers. The
 // per-particle world rect is reconstructed exactly as the particle renderer composes its quad: a [0,1]
 // corner scaled by the atlas region, rotated/scaled by the particle's (cos,sin)·scale and offset by its
 // position, then mapped by the emitter world transform (skipped when worldSpace puts particles in world
@@ -132,12 +132,12 @@ export const defaultGlParticleEmitter2DVelocityWriter: GlVelocityWriter = (ctx, 
 // whatever drives the quads) we draw one velocity quad per instance, each over that instance's own
 // world-space region. Each instance's world rect is reconstructed exactly as the Gl batch renderer
 // composes it: the batch's world transform (transform2D) applied to the per-instance local transform, then
-// the axis-aligned bounds of the transformed region. This is the same world space the DisplayObject writer
+// the axis-aligned bounds of the transformed region. This is the same world space the Node2D writer
 // passes (the node's logical world bounds), so drawGlVelocityQuad maps both consistently. Velocity stays
 // in node units; the helper applies pixelRatio.
 //
 // Fallback: when no per-instance velocity array is present, cover the batch's world bounds with one coarse
-// velocity read from the field, exactly like the DisplayObject writer. The per-instance path above is the
+// velocity read from the field, exactly like the Node2D writer. The per-instance path above is the
 // precise one; this coarse path exists so a batch without tracked instance velocity still contributes.
 export const defaultGlQuadBatchVelocityWriter: GlVelocityWriter = (ctx, node) => {
   const batch = node as unknown as QuadBatch;
@@ -220,7 +220,7 @@ export const defaultGlQuadBatchVelocityWriter: GlVelocityWriter = (ctx, node) =>
     return;
   }
 
-  // Coarse fallback: one velocity over the whole batch's world bounds, matching the DisplayObject writer.
+  // Coarse fallback: one velocity over the whole batch's world bounds, matching the Node2D writer.
   getVelocity(ctx.field, node, _scratchVelocity);
   if (_scratchVelocity.x === 0 && _scratchVelocity.y === 0) return;
   const spatial = node as unknown as Spatial2DNode;

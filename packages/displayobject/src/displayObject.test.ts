@@ -1,34 +1,27 @@
 import { getEntityRuntime } from '@flighthq/entity';
 import { createColorTransform } from '@flighthq/materials';
-import type {
-  BoundsNode,
-  DisplayObject,
-  DisplayObjectData,
-  DisplayObjectRuntime,
-  PartialNode,
-  Rectangle,
-} from '@flighthq/types';
-import { BlendMode, DisplayObjectKind, DisplayObjectTraitsKey } from '@flighthq/types';
+import type { BoundsNode, Node2D, Node2DData, Node2DRuntime, PartialNode, Rectangle } from '@flighthq/types';
+import { BlendMode, DisplayObjectKind, Node2DTraitsKey } from '@flighthq/types';
 
 import {
-  addDisplayObjectColorAdjustment,
+  addNode2DColorAdjustment,
   createDisplayObject,
-  createDisplayObjectGeneric,
-  createDisplayObjectRuntime,
-  getDisplayObjectColorAdjustments,
-  getDisplayObjectRuntime,
-  isDisplayObject,
-  setDisplayObjectClip,
-  setDisplayObjectColorAdjustments,
-  setDisplayObjectColorTransform,
+  createNode2D,
+  createNode2DRuntime,
+  getNode2DColorAdjustments,
+  getNode2DRuntime,
+  isNode2D,
+  setNode2DClip,
+  setNode2DColorAdjustments,
+  setNode2DColorTransform,
 } from './displayObject';
 
-function getRuntime_(obj: DisplayObject): DisplayObjectRuntime {
-  return getEntityRuntime(obj) as DisplayObjectRuntime;
+function getRuntime_(obj: Node2D): Node2DRuntime {
+  return getEntityRuntime(obj) as Node2DRuntime;
 }
 
-describe('addDisplayObjectColorAdjustment', () => {
-  let obj: DisplayObject;
+describe('addNode2DColorAdjustment', () => {
+  let obj: Node2D;
   beforeEach(() => {
     obj = createDisplayObject();
   });
@@ -36,24 +29,24 @@ describe('addDisplayObjectColorAdjustment', () => {
   it('appends to a fresh (null) stack and invalidates appearance', () => {
     const idBefore = getRuntime_(obj).appearanceId;
     const adjustment = { kind: 'ColorTransformAdjustment' } as never;
-    addDisplayObjectColorAdjustment(obj, adjustment);
-    expect(getDisplayObjectColorAdjustments(obj)).toEqual([adjustment]);
+    addNode2DColorAdjustment(obj, adjustment);
+    expect(getNode2DColorAdjustments(obj)).toEqual([adjustment]);
     expect(getRuntime_(obj).appearanceId).not.toBe(idBefore);
   });
 
   it('appends to an existing stack without mutating the previous array', () => {
     const a = { kind: 'A' } as never;
     const b = { kind: 'B' } as never;
-    addDisplayObjectColorAdjustment(obj, a);
-    const first = getDisplayObjectColorAdjustments(obj);
-    addDisplayObjectColorAdjustment(obj, b);
-    expect(getDisplayObjectColorAdjustments(obj)).toEqual([a, b]);
+    addNode2DColorAdjustment(obj, a);
+    const first = getNode2DColorAdjustments(obj);
+    addNode2DColorAdjustment(obj, b);
+    expect(getNode2DColorAdjustments(obj)).toEqual([a, b]);
     expect(first).toEqual([a]); // the earlier array was not mutated
   });
 });
 
 describe('createDisplayObject', () => {
-  let displayObject: DisplayObject;
+  let displayObject: Node2D;
 
   beforeEach(() => {
     displayObject = createDisplayObject();
@@ -98,73 +91,73 @@ describe('createDisplayObject', () => {
   });
 });
 
-describe('createDisplayObjectGeneric', () => {
+describe('createNode2D', () => {
   it('allows creation of a type without a data field', () => {
-    const displayObject = createDisplayObjectGeneric(DisplayObjectKind);
+    const displayObject = createNode2D(DisplayObjectKind);
     expect(displayObject).not.toBeNull();
   });
 
   it('allows a custom type', () => {
-    const data: PartialNode<DisplayObjectTest> = {
+    const data: PartialNode<Node2DTest> = {
       x: 100,
     };
-    const displayObject = createDisplayObjectGeneric(DisplayObjectKind, data);
+    const displayObject = createNode2D(DisplayObjectKind, data);
     expect(displayObject.x).toBe(data.x);
   });
 
   it('returns a new object', () => {
-    const data: PartialNode<DisplayObjectTest> = {};
-    const displayObject = createDisplayObjectGeneric(DisplayObjectKind, data);
+    const data: PartialNode<Node2DTest> = {};
+    const displayObject = createNode2D(DisplayObjectKind, data);
     expect(displayObject).not.toStrictEqual(data);
   });
 
   it('allows use of a data initializer', () => {
-    const data: PartialNode<DisplayObjectTest> = {};
-    const displayObject = createDisplayObjectGeneric(DisplayObjectKind, data, createDisplayObjectTestData);
-    expect((displayObject.data as DisplayObjectTestData).foo).toBe('bar');
+    const data: PartialNode<Node2DTest> = {};
+    const displayObject = createNode2D(DisplayObjectKind, data, createNode2DTestData);
+    expect((displayObject.data as Node2DTestData).foo).toBe('bar');
   });
 });
 
-describe('createDisplayObjectRuntime', () => {
+describe('createNode2DRuntime', () => {
   it('returns a graph runtime object', () => {
-    const runtime = createDisplayObjectRuntime();
+    const runtime = createNode2DRuntime();
     expect(runtime).not.toBeNull();
   });
 
-  it('sets traits to DisplayObjectTraitsKey', () => {
-    const runtime = createDisplayObjectRuntime();
-    expect(runtime.traits).toBe(DisplayObjectTraitsKey);
+  it('sets traits to Node2DTraitsKey', () => {
+    const runtime = createNode2DRuntime();
+    expect(runtime.traits).toBe(Node2DTraitsKey);
   });
 
   it('allows a custom bounds calculation', () => {
     const func = (_out: Rectangle, _source: Readonly<BoundsNode<any>>) => {};
-    const runtime = createDisplayObjectRuntime({ computeLocalBoundsRectangle: func });
+    const runtime = createNode2DRuntime({ computeLocalBoundsRectangle: func });
     expect(runtime.computeLocalBoundsRectangle).toStrictEqual(func);
   });
 });
 
-describe('getDisplayObjectColorAdjustments', () => {
+describe('getNode2DColorAdjustments', () => {
   it('defaults to null on a fresh node', () => {
-    expect(getDisplayObjectColorAdjustments(createDisplayObject())).toBeNull();
+    expect(getNode2DColorAdjustments(createDisplayObject())).toBeNull();
   });
 });
 
-describe('getDisplayObjectRuntime', () => {
-  it('returns the runtime for a DisplayObject', () => {
+describe('getNode2DRuntime', () => {
+  it('returns the runtime for a Node2D', () => {
     const obj = createDisplayObject();
-    const runtime = getDisplayObjectRuntime(obj);
+    const runtime = getNode2DRuntime(obj);
     expect(runtime).not.toBeNull();
   });
 });
 
-describe('isDisplayObject', () => {
+describe('isNode2D', () => {
   it('returns true for display objects', () => {
-    expect(isDisplayObject(createDisplayObject())).toBe(true);
+    expect(isNode2D(createDisplayObject())).toBe(true);
   });
 });
 
-describe('setDisplayObjectClip', () => {
-  let obj: DisplayObject;
+describe('setNode2DClip', () => {
+  let obj: Node2D;
   beforeEach(() => {
     obj = createDisplayObject();
   });
@@ -176,18 +169,18 @@ describe('setDisplayObjectClip', () => {
       winding: 'nonZero' as const,
       version: 0,
     };
-    setDisplayObjectClip(obj, clip);
+    setNode2DClip(obj, clip);
     expect(obj.clip).toBe(clip);
   });
 
   it('accepts null', () => {
-    setDisplayObjectClip(obj, null);
+    setNode2DClip(obj, null);
     expect(obj.clip).toBeNull();
   });
 
   it('invalidates appearance', () => {
     const idBefore = getRuntime_(obj).appearanceId;
-    setDisplayObjectClip(obj, {
+    setNode2DClip(obj, {
       contours: null,
       rect: { x: 0, y: 0, width: 10, height: 10 } as Rectangle,
       winding: 'nonZero',
@@ -197,8 +190,8 @@ describe('setDisplayObjectClip', () => {
   });
 });
 
-describe('setDisplayObjectColorAdjustments', () => {
-  let obj: DisplayObject;
+describe('setNode2DColorAdjustments', () => {
+  let obj: Node2D;
   beforeEach(() => {
     obj = createDisplayObject();
   });
@@ -206,42 +199,42 @@ describe('setDisplayObjectColorAdjustments', () => {
   it('sets the stack and invalidates appearance', () => {
     const idBefore = getRuntime_(obj).appearanceId;
     const stack = [{ kind: 'ColorTransformAdjustment' }] as never;
-    setDisplayObjectColorAdjustments(obj, stack);
-    expect(getDisplayObjectColorAdjustments(obj)).toBe(stack);
+    setNode2DColorAdjustments(obj, stack);
+    expect(getNode2DColorAdjustments(obj)).toBe(stack);
     expect(getRuntime_(obj).appearanceId).not.toBe(idBefore);
   });
 
   it('accepts null', () => {
-    setDisplayObjectColorAdjustments(obj, [{ kind: 'ColorTransformAdjustment' }] as never);
-    setDisplayObjectColorAdjustments(obj, null);
-    expect(getDisplayObjectColorAdjustments(obj)).toBeNull();
+    setNode2DColorAdjustments(obj, [{ kind: 'ColorTransformAdjustment' }] as never);
+    setNode2DColorAdjustments(obj, null);
+    expect(getNode2DColorAdjustments(obj)).toBeNull();
   });
 });
 
-describe('setDisplayObjectColorTransform', () => {
+describe('setNode2DColorTransform', () => {
   it('wraps a color transform as one ColorTransformAdjustment on the stack', () => {
     const obj = createDisplayObject();
-    setDisplayObjectColorTransform(obj, createColorTransform({ redMultiplier: 0.5 }));
-    const stack = getDisplayObjectColorAdjustments(obj);
+    setNode2DColorTransform(obj, createColorTransform({ redMultiplier: 0.5 }));
+    const stack = getNode2DColorAdjustments(obj);
     expect(stack?.length).toBe(1);
     expect(stack?.[0].kind).toBe('ColorTransformAdjustment');
   });
 
   it('clears with null', () => {
     const obj = createDisplayObject();
-    setDisplayObjectColorTransform(obj, createColorTransform({ redMultiplier: 0.5 }));
-    setDisplayObjectColorTransform(obj, null);
-    expect(getDisplayObjectColorAdjustments(obj)).toBeNull();
+    setNode2DColorTransform(obj, createColorTransform({ redMultiplier: 0.5 }));
+    setNode2DColorTransform(obj, null);
+    expect(getNode2DColorAdjustments(obj)).toBeNull();
   });
 });
 
-interface DisplayObjectTest extends DisplayObject {}
+interface Node2DTest extends Node2D {}
 
-interface DisplayObjectTestData extends DisplayObjectData {
+interface Node2DTestData extends Node2DData {
   foo: string;
 }
 
-function createDisplayObjectTestData(data?: Partial<DisplayObjectTestData>): DisplayObjectTestData {
+function createNode2DTestData(data?: Partial<Node2DTestData>): Node2DTestData {
   return {
     foo: data?.foo ?? 'bar',
   };

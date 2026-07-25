@@ -1,8 +1,4 @@
-import {
-  createDisplayObjectGeneric,
-  createDisplayObjectRuntime,
-  getDisplayObjectRuntime,
-} from '@flighthq/displayobject';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/displayobject';
 import { copyRectangle, createRectangle } from '@flighthq/geometry';
 import { addNodeChild } from '@flighthq/node';
 import { createQuadBatch, reserveQuadBatch } from '@flighthq/sprite';
@@ -27,7 +23,7 @@ const BITMAP_TEXT_DEFAULT_COLOR = 0xffffffff;
 // Writes the laid-out text extent (cached by `updateBitmapText`) into `out`, or a zero rectangle when
 // the text has not been laid out yet. Alias-safe: `out` may be the cached rectangle.
 export function computeBitmapTextLocalBoundsRectangle(out: Rectangle, source: Readonly<BitmapText>): void {
-  const runtime = getDisplayObjectRuntime(source) as BitmapTextRuntime;
+  const runtime = getNode2DRuntime(source) as BitmapTextRuntime;
   const bounds = runtime.localBoundsRectangle;
   if (bounds === null) {
     out.x = 0;
@@ -46,7 +42,7 @@ export function computeBitmapTextLocalBoundsRectangle(out: Rectangle, source: Re
 // yields exactly one (page 0), created eagerly here. Call `updateBitmapText` to lay out the current
 // `text`, which sets each page batch's atlas image and grows the set for a multi-page source.
 export function createBitmapText(glyphSource: GlyphSource | null, options?: Readonly<BitmapTextOptions>): BitmapText {
-  const bitmapText = createDisplayObjectGeneric(
+  const bitmapText = createNode2D(
     BitmapTextKind,
     undefined,
     createBitmapTextData,
@@ -56,7 +52,7 @@ export function createBitmapText(glyphSource: GlyphSource | null, options?: Read
   data.glyphSource = glyphSource;
   if (options !== undefined) applyBitmapTextOptions(data, options);
   const quadBatch = createQuadBatch({ data: { atlas: createTextureAtlas() } });
-  const runtime = getDisplayObjectRuntime(bitmapText) as BitmapTextRuntime;
+  const runtime = getNode2DRuntime(bitmapText) as BitmapTextRuntime;
   runtime.quadBatches.push(quadBatch);
   addNodeChild(bitmapText, quadBatch);
   return bitmapText;
@@ -75,7 +71,7 @@ export function createBitmapTextData(data?: Readonly<Partial<BitmapTextData>>): 
 }
 
 export function createBitmapTextRuntime(): BitmapTextRuntime {
-  const runtime = createDisplayObjectRuntime(defaultMethods) as BitmapTextRuntime;
+  const runtime = createNode2DRuntime(defaultMethods) as BitmapTextRuntime;
   runtime.localBoundsRectangle = null;
   runtime.quadBatches = [];
   return runtime;
@@ -92,14 +88,14 @@ export function getBitmapTextBounds(source: Readonly<BitmapText>): Rectangle {
 // The backing QuadBatches the node lays glyph quads into — the renderable children, one per
 // glyph-atlas page in page order. A single-page source yields exactly one; empty before construction.
 export function getBitmapTextQuadBatches(source: Readonly<BitmapText>): QuadBatch[] {
-  return (getDisplayObjectRuntime(source) as BitmapTextRuntime).quadBatches;
+  return (getNode2DRuntime(source) as BitmapTextRuntime).quadBatches;
 }
 
 // Grows each backing page QuadBatch to hold at least `glyphCapacity` glyph quads without reallocating
 // during layout. Optional — `updateBitmapText` auto-grows — but avoids incremental reallocation for
 // large strings. Reserving every page's batch over-allocates for multi-page text but never under-sizes.
 export function reserveBitmapText(target: BitmapText, glyphCapacity: number): void {
-  const runtime = getDisplayObjectRuntime(target) as BitmapTextRuntime;
+  const runtime = getNode2DRuntime(target) as BitmapTextRuntime;
   for (const quadBatch of runtime.quadBatches) reserveQuadBatch(quadBatch, glyphCapacity);
 }
 
@@ -142,7 +138,7 @@ function applyBitmapTextOptions(data: BitmapTextData, options: Readonly<BitmapTe
 }
 
 function copyLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
-  const runtime = getDisplayObjectRuntime(source as BitmapText) as BitmapTextRuntime;
+  const runtime = getNode2DRuntime(source as BitmapText) as BitmapTextRuntime;
   if (runtime.localBoundsRectangle !== null) copyRectangle(out, runtime.localBoundsRectangle);
 }
 

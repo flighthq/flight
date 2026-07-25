@@ -1,5 +1,5 @@
 // displayobject-clip-rect — validates rectangular clipping: a large filled shape is clipped to a SMALLER axis-aligned
-// rectangle via setDisplayObjectClip(node, createClipRegionFromRectangle(...)). The clip window keeps only
+// rectangle via setNode2DClip(node, createClipRegionFromRectangle(...)). The clip window keeps only
 // the pixels inside it; everything outside the window is removed even though the shape covers it.
 //
 // Clipping is a core compositional primitive (the substrate of scroll rects and viewports) and is the kind
@@ -15,10 +15,10 @@ import {
   appendShapeEndFill,
   appendShapeRectangle,
   createClipRegionFromRectangle,
-  createDisplayContainer,
+  createDisplayObject,
   createShape,
   getSurfacePixelRgb,
-  setDisplayObjectClip,
+  setNode2DClip,
   ShapeKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -46,16 +46,13 @@ const { render, width } = await createFunctionalTarget({
   clip: true,
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const shape = createShape();
 appendShapeBeginFill(shape, SHAPE_COLOR, 1);
 appendShapeRectangle(shape, SHAPE_X, SHAPE_Y, SHAPE_SIZE, SHAPE_SIZE);
 appendShapeEndFill(shape);
-setDisplayObjectClip(
-  shape,
-  createClipRegionFromRectangle({ x: CLIP_X, y: CLIP_Y, width: CLIP_SIZE, height: CLIP_SIZE }),
-);
+setNode2DClip(shape, createClipRegionFromRectangle({ x: CLIP_X, y: CLIP_Y, width: CLIP_SIZE, height: CLIP_SIZE }));
 addNodeChild(root, shape);
 
 render(root);

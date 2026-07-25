@@ -8,7 +8,7 @@ import {
   resumeClock,
   setClockScale,
 } from '@flighthq/clock';
-import type { DisplayObject } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -118,7 +118,7 @@ appendShapeLineTo(hierarchyLines, CHILD_B_X, CHILD_B_Y - 40);
 addNodeChild(root, hierarchyLines);
 
 // HUD labels.
-function createLabel(text: string, x: number, y: number, size: number, color: number): DisplayObject {
+function createLabel(text: string, x: number, y: number, size: number, color: number): Node2D {
   const label = createTextLabel();
   label.data.text = text;
   label.data.textFormat = { size, color };
@@ -128,7 +128,7 @@ function createLabel(text: string, x: number, y: number, size: number, color: nu
   return label;
 }
 
-function updateLabel(label: DisplayObject, text: string): void {
+function updateLabel(label: Node2D, text: string): void {
   (label as ReturnType<typeof createTextLabel>).data.text = text;
   invalidateNodeAppearance(label);
 }

@@ -1,4 +1,4 @@
-import { createDisplayObject, setDisplayObjectClip } from '@flighthq/displayobject';
+import { createDisplayObject, setNode2DClip } from '@flighthq/displayobject';
 import { createMatrix, createRectangle } from '@flighthq/geometry';
 import {
   addNodeChild,
@@ -15,14 +15,14 @@ import { registerRenderer } from './renderer';
 import {
   createRenderProxy,
   createRenderProxy2D,
-  disposeDisplayObjectRender,
+  disposeScene2DRender,
   disposeRenderProxy,
   getOrCreateRenderProxy2D,
   getRenderProxy2D,
   installRenderAdaptHook,
   isRenderProxyDirty,
   isRenderProxyVisible,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   updateNodeClip,
   updateRenderProxy2D,
   updateRenderProxyRenderer,
@@ -108,70 +108,6 @@ describe('createRenderProxy2D', () => {
   });
 });
 
-describe('disposeDisplayObjectRender', () => {
-  it('disposes the root and all descendants', () => {
-    const state = createRenderState();
-    const root = createDisplayObject();
-    const child = createDisplayObject();
-    const grandchild = createDisplayObject();
-    addNodeChild(root, child);
-    addNodeChild(child, grandchild);
-    prepareDisplayObjectRender(state, root);
-
-    disposeDisplayObjectRender(state, root);
-
-    expect(getRenderProxy2D(state, root)).toBeUndefined();
-    expect(getRenderProxy2D(state, child)).toBeUndefined();
-    expect(getRenderProxy2D(state, grandchild)).toBeUndefined();
-  });
-
-  it('disposes a sprite subtree the same way', () => {
-    const state = createRenderState();
-    const root = createSprite();
-    const child = createSprite();
-    const grandchild = createSprite();
-    addNodeChild(root, child);
-    addNodeChild(child, grandchild);
-    prepareDisplayObjectRender(state, root);
-
-    disposeDisplayObjectRender(state, root);
-
-    expect(getRenderProxy2D(state, root)).toBeUndefined();
-    expect(getRenderProxy2D(state, child)).toBeUndefined();
-    expect(getRenderProxy2D(state, grandchild)).toBeUndefined();
-  });
-
-  it('calls destroyData on renderer data for each disposed node', () => {
-    const state = createRenderState();
-    const root = createDisplayObject();
-    const child = createDisplayObject();
-    addNodeChild(root, child);
-    const destroyData = vi.fn();
-    registerRenderer(state, root.kind, { createData: () => ({ tag: 'data' }), destroyData, submit: vi.fn() } as any);
-    getOrCreateRenderProxy2D(state, root);
-    getOrCreateRenderProxy2D(state, child);
-
-    disposeDisplayObjectRender(state, root);
-
-    expect(destroyData).toHaveBeenCalledTimes(2);
-  });
-
-  it('visits disabled nodes that were never prepared', () => {
-    const state = createRenderState();
-    const root = createDisplayObject();
-    const child = createDisplayObject();
-    addNodeChild(root, child);
-    child.enabled = false;
-    prepareDisplayObjectRender(state, root);
-    // prepareDisplayObjectRender skips disabled nodes, but disposeDisplayObjectRender should not
-    getOrCreateRenderProxy2D(state, child);
-
-    disposeDisplayObjectRender(state, root);
-
-    expect(getRenderProxy2D(state, child)).toBeUndefined();
-  });
-});
-
 describe('disposeRenderProxy', () => {
   it('cascades to the renderer destroyData and removes the proxy', () => {
     const state = createRenderState();
@@ -190,6 +126,70 @@ describe('disposeRenderProxy', () => {
   it('is a no-op when no proxy exists', () => {
     const state = createRenderState();
     expect(() => disposeRenderProxy(state, createSprite())).not.toThrow();
+  });
+});
+
+describe('disposeScene2DRender', () => {
+  it('disposes the root and all descendants', () => {
+    const state = createRenderState();
+    const root = createDisplayObject();
+    const child = createDisplayObject();
+    const grandchild = createDisplayObject();
+    addNodeChild(root, child);
+    addNodeChild(child, grandchild);
+    prepareScene2DRender(state, root);
+
+    disposeScene2DRender(state, root);
+
+    expect(getRenderProxy2D(state, root)).toBeUndefined();
+    expect(getRenderProxy2D(state, child)).toBeUndefined();
+    expect(getRenderProxy2D(state, grandchild)).toBeUndefined();
+  });
+
+  it('disposes a sprite subtree the same way', () => {
+    const state = createRenderState();
+    const root = createSprite();
+    const child = createSprite();
+    const grandchild = createSprite();
+    addNodeChild(root, child);
+    addNodeChild(child, grandchild);
+    prepareScene2DRender(state, root);
+
+    disposeScene2DRender(state, root);
+
+    expect(getRenderProxy2D(state, root)).toBeUndefined();
+    expect(getRenderProxy2D(state, child)).toBeUndefined();
+    expect(getRenderProxy2D(state, grandchild)).toBeUndefined();
+  });
+
+  it('calls destroyData on renderer data for each disposed node', () => {
+    const state = createRenderState();
+    const root = createDisplayObject();
+    const child = createDisplayObject();
+    addNodeChild(root, child);
+    const destroyData = vi.fn();
+    registerRenderer(state, root.kind, { createData: () => ({ tag: 'data' }), destroyData, submit: vi.fn() } as any);
+    getOrCreateRenderProxy2D(state, root);
+    getOrCreateRenderProxy2D(state, child);
+
+    disposeScene2DRender(state, root);
+
+    expect(destroyData).toHaveBeenCalledTimes(2);
+  });
+
+  it('visits disabled nodes that were never prepared', () => {
+    const state = createRenderState();
+    const root = createDisplayObject();
+    const child = createDisplayObject();
+    addNodeChild(root, child);
+    child.enabled = false;
+    prepareScene2DRender(state, root);
+    // prepareScene2DRender skips disabled nodes, but disposeScene2DRender should not
+    getOrCreateRenderProxy2D(state, child);
+
+    disposeScene2DRender(state, root);
+
+    expect(getRenderProxy2D(state, child)).toBeUndefined();
   });
 });
 
@@ -336,14 +336,14 @@ describe('isRenderProxyVisible', () => {
   });
 });
 
-describe('prepareDisplayObjectRender', () => {
+describe('prepareScene2DRender', () => {
   it('creates render nodes for all enabled nodes in the tree', () => {
     const state = createRenderState();
     const root = createDisplayObject();
     const child = createDisplayObject();
     addNodeChild(root, child);
 
-    prepareDisplayObjectRender(state, root);
+    prepareScene2DRender(state, root);
 
     expect(getRenderStateRuntime(state).renderProxyMap.get(root)).toBeDefined();
     expect(getRenderStateRuntime(state).renderProxyMap.get(child)).toBeDefined();
@@ -355,7 +355,7 @@ describe('prepareDisplayObjectRender', () => {
     const child = createSprite();
     addNodeChild(root, child);
 
-    prepareDisplayObjectRender(state, root);
+    prepareScene2DRender(state, root);
 
     expect(getRenderStateRuntime(state).renderProxyMap.get(root)).toBeDefined();
     expect(getRenderStateRuntime(state).renderProxyMap.get(child)).toBeDefined();
@@ -368,7 +368,7 @@ describe('prepareDisplayObjectRender', () => {
     addNodeChild(root, child);
     child.enabled = false;
 
-    prepareDisplayObjectRender(state, root);
+    prepareScene2DRender(state, root);
 
     expect(getRenderStateRuntime(state).renderProxyMap.get(root)).toBeDefined();
     expect(getRenderStateRuntime(state).renderProxyMap.get(child)).toBeUndefined();
@@ -378,15 +378,15 @@ describe('prepareDisplayObjectRender', () => {
     const state = createRenderState();
     const root = createDisplayObject();
 
-    expect(prepareDisplayObjectRender(state, root)).toBe(true);
+    expect(prepareScene2DRender(state, root)).toBe(true);
   });
 
   it('returns false when tree is clean', () => {
     const state = createRenderState({ sceneGraphSyncPolicy: 'requiresInvalidation' });
     const root = createDisplayObject();
-    prepareDisplayObjectRender(state, root);
+    prepareScene2DRender(state, root);
 
-    expect(prepareDisplayObjectRender(state, root)).toBe(false);
+    expect(prepareScene2DRender(state, root)).toBe(false);
   });
 
   it('accumulates clip depth down a clipped subtree', () => {
@@ -396,10 +396,10 @@ describe('prepareDisplayObjectRender', () => {
     const grandchild = createDisplayObject();
     addNodeChild(root, child);
     addNodeChild(child, grandchild);
-    setDisplayObjectClip(root, makeClipRegion());
-    setDisplayObjectClip(child, makeClipRegion());
+    setNode2DClip(root, makeClipRegion());
+    setNode2DClip(child, makeClipRegion());
 
-    prepareDisplayObjectRender(state, root);
+    prepareScene2DRender(state, root);
 
     expect(getOrCreateRenderProxy2D(state, root).clipDepth).toBe(1);
     expect(getOrCreateRenderProxy2D(state, child).clipDepth).toBe(2);
@@ -411,7 +411,7 @@ describe('updateNodeClip', () => {
   it('adds one to the parent depth when the node has a clip', () => {
     const state = createRenderState();
     const node = createDisplayObject();
-    setDisplayObjectClip(node, makeClipRegion());
+    setNode2DClip(node, makeClipRegion());
     const data = getOrCreateRenderProxy2D(state, node);
     updateNodeClip(state, node, data, undefined);
     expect(data.clipDepth).toBe(1);
@@ -456,7 +456,7 @@ describe('updateRenderProxy2D', () => {
   it('sets clip depth from the parent through the same visitor', () => {
     const state = createRenderState();
     const root = createDisplayObject();
-    setDisplayObjectClip(root, makeClipRegion());
+    setNode2DClip(root, makeClipRegion());
     const data = getOrCreateRenderProxy2D(state, root);
     updateRenderProxy2D(state, root, data, undefined);
     expect(data.clipDepth).toBe(1);

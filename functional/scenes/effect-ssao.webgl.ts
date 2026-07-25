@@ -1,4 +1,4 @@
-import type { DisplayObject, GlRenderEffectPipeline } from '@flighthq/sdk';
+import type { Node2D, GlRenderEffectPipeline } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -6,7 +6,7 @@ import {
   appendShapeEndFill,
   appendShapeRectangle,
   beginGlRenderEffectPipeline,
-  createDisplayContainer,
+  createDisplayObject,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
@@ -16,13 +16,13 @@ import {
   defaultGlShapeRenderer,
   defaultGlSsaoEffectRunner,
   endGlRenderEffectPipeline,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultGlMaterial,
   registerGlRenderEffect,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
-  renderGlDisplayObject,
+  renderGlScene2D,
 } from '@flighthq/sdk';
 
 // ssao is depth-driven [DEPTH]. With no sampleable depth buffer in this test, the Gl recipe is a
@@ -50,11 +50,11 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+export function render(root: Node2D): void {
+  if (!prepareScene2DRender(state, root)) return;
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
-  renderGlDisplayObject(state, root);
+  renderGlScene2D(state, root);
   endGlRenderEffectPipeline(state, pipeline, [
     createSsaoEffect({ radius: 0.5, intensity: 1, bias: 0.025, samples: 16 }),
   ]);
@@ -64,7 +64,7 @@ export function render(root: DisplayObject): void {
 // have no depth buffer, so the recipe is a color-only fallback (the scene passes through unoccluded),
 // but the scene gives it real content to operate on.
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 

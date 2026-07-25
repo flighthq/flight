@@ -1,4 +1,4 @@
-import { getOrCreateRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
+import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render';
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
 import { createRichText } from '@flighthq/text';
@@ -49,7 +49,7 @@ describe('drawWgpuRichText', () => {
     renderWgpuBackground(state);
 
     const richText = createRichText();
-    prepareDisplayObjectRender(state, richText);
+    prepareScene2DRender(state, richText);
     const renderProxy = getOrCreateRenderProxy2D(state, richText);
 
     expect(() => drawWgpuRichText(state, renderProxy)).not.toThrow();
@@ -59,7 +59,7 @@ describe('drawWgpuRichText', () => {
   it('does not throw when renderPass is null', async () => {
     const state = await createWgpuRenderStateForTest();
     const richText = createRichText();
-    prepareDisplayObjectRender(state, richText);
+    prepareScene2DRender(state, richText);
     const renderProxy = getOrCreateRenderProxy2D(state, richText);
 
     expect(() => drawWgpuRichText(state, renderProxy)).not.toThrow();
@@ -71,7 +71,7 @@ describe('drawWgpuRichTextWithOverlay', () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
     const richText = createRichText();
-    prepareDisplayObjectRender(state, richText);
+    prepareScene2DRender(state, richText);
     const renderProxy = getOrCreateRenderProxy2D(state, richText);
     expect(() => drawWgpuRichTextWithOverlay(state, renderProxy)).not.toThrow();
     submitWgpuRenderPass(state);
@@ -86,13 +86,13 @@ describe('registerWgpuTextInputOverlay', () => {
     renderWgpuBackground(state);
 
     const plain = createRichText({ data: { height: 40, text: 'x', width: 100 } });
-    prepareDisplayObjectRender(state, plain);
+    prepareScene2DRender(state, plain);
     drawWgpuRichText(state, getOrCreateRenderProxy2D(state, plain));
     expect(overlay).not.toHaveBeenCalled();
 
     const editable = createRichText({ data: { height: 40, text: 'x', width: 100 } });
     enableTextInput(editable);
-    prepareDisplayObjectRender(state, editable);
+    prepareScene2DRender(state, editable);
     drawWgpuRichText(state, getOrCreateRenderProxy2D(state, editable));
     expect(overlay).toHaveBeenCalled();
     submitWgpuRenderPass(state);

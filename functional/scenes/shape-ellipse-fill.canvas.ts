@@ -15,7 +15,7 @@ import {
   appendShapeBeginFill,
   appendShapeEllipse,
   appendShapeEndFill,
-  createDisplayContainer,
+  createDisplayObject,
   createShape,
   getSurfacePixelRgb,
   invalidateNodeAppearance,
@@ -39,7 +39,7 @@ const { render, width } = await createFunctionalTarget({
   kinds: [ShapeKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const ellipse = createShape();
 appendShapeBeginFill(ellipse, 0xcccc00, 1);

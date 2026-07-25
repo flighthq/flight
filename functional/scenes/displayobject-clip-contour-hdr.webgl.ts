@@ -1,4 +1,4 @@
-import type { DisplayObject, GlRenderEffectPipeline } from '@flighthq/sdk';
+import type { Node2D, GlRenderEffectPipeline } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -10,7 +10,7 @@ import {
   beginGlRenderEffectPipeline,
   createBloomEffect,
   createClipRegionFromPath,
-  createDisplayContainer,
+  createDisplayObject,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
@@ -21,14 +21,14 @@ import {
   defaultGlShapeRenderer,
   enableGlClipSupport,
   endGlRenderEffectPipeline,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultGlMaterial,
   registerGlRenderEffect,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
-  renderGlDisplayObject,
-  setDisplayObjectClip,
+  renderGlScene2D,
+  setNode2DClip,
 } from '@flighthq/sdk';
 
 // Gl parity column: the same triangular contour clip inside an HDR (rgba16f) bloom pipeline. The
@@ -59,11 +59,11 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+export function render(root: Node2D): void {
+  if (!prepareScene2DRender(state, root)) return;
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
-  renderGlDisplayObject(state, root);
+  renderGlScene2D(state, root);
   endGlRenderEffectPipeline(state, pipeline, [createBloomEffect({ threshold: 0.4, intensity: 1.3 })]);
 }
 
@@ -73,7 +73,7 @@ export function render(root: DisplayObject): void {
 // pipeline being keyed on the current color format (otherwise the stencil pipeline, built for the canvas
 // rgba8 format, mismatches the rgba16float scene target and the frame is blank/invalid).
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 
@@ -95,7 +95,7 @@ appendPathMoveTo(clipPath, -HALF, HALF);
 appendPathLineTo(clipPath, HALF, HALF);
 appendPathLineTo(clipPath, 0, -HALF);
 appendPathLineTo(clipPath, -HALF, HALF);
-setDisplayObjectClip(shape, createClipRegionFromPath(clipPath));
+setNode2DClip(shape, createClipRegionFromPath(clipPath));
 
 addNodeChild(root, shape);
 render(root);

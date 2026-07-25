@@ -1,13 +1,13 @@
 import { sampleAnimationTrack } from '@flighthq/animation';
 import { invalidateNodeAppearance, invalidateNodeLocalTransform } from '@flighthq/node';
-import type { AnimationClip, DisplayObjectAnimationTarget } from '@flighthq/types';
+import type { AnimationClip, Node2DAnimationTarget } from '@flighthq/types';
 
-// Samples a target-free clip and applies channels carrying DisplayObjectAnimationTarget descriptors.
+// Samples a target-free clip and applies channels carrying Node2DAnimationTarget descriptors.
 // Unknown target refs and paths are ignored, matching the scene/skeleton binding layers. Transform
 // paths invalidate local matrices; alpha/visibility paths invalidate appearance.
-export function applyAnimationClipToDisplayObject(clip: Readonly<AnimationClip>, time: number): void {
+export function applyAnimationClipToNode2D(clip: Readonly<AnimationClip>, time: number): void {
   for (const channel of clip.channels) {
-    const target = channel.targetRef as DisplayObjectAnimationTarget | null;
+    const target = channel.targetRef as Node2DAnimationTarget | null;
     if (target === null || typeof target !== 'object' || target.node === undefined) continue;
     sampleAnimationTrack(_scratch, channel.track, time);
     const node = target.node;

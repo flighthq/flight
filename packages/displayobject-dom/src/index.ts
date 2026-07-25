@@ -4,7 +4,7 @@ export * from './domCache';
 export * from './domClip';
 export * from './domClipRectangle';
 export * from './domCSSFilterBinding';
-export * from './domDisplayObject';
+export * from './domNode2D';
 export { invalidateDomFontResource } from './domFontSource';
 export * from './domImageSource';
 export * from './domMaterials';

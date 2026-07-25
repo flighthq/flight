@@ -1,6 +1,6 @@
 import { getNodeRuntime, getNodeWorldBoundsRectangle } from '@flighthq/node';
 import { clearSpatialIndex, insertSpatialObject, querySpatialPoint } from '@flighthq/spatial';
-import type { DisplayObject, InteractionManager, NodeAny, SpatialAabb, SpatialObjectId } from '@flighthq/types';
+import type { Node2D, InteractionManager, NodeAny, SpatialAabb, SpatialObjectId } from '@flighthq/types';
 
 import { hitTestNodeRegion } from './hitTests';
 import { getNodeInteractionState } from './nodeInteractionState';
@@ -54,7 +54,7 @@ export function refreshInteractionSpatialIndex<N extends NodeAny>(manager: Inter
 
   clearSpatialIndex(index);
   for (let rank = 0; rank < nodes.length; rank++) {
-    const bounds = getNodeWorldBoundsRectangle(nodes[rank] as DisplayObject);
+    const bounds = getNodeWorldBoundsRectangle(nodes[rank] as Node2D);
     spatialInsertAabb.minX = bounds.x;
     spatialInsertAabb.minY = bounds.y;
     spatialInsertAabb.maxX = bounds.x + bounds.width;

@@ -1,5 +1,5 @@
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
-import type { DisplayObject, DomRenderState, RenderProxy2D } from '@flighthq/types';
+import type { Node2D, DomRenderState, RenderProxy2D } from '@flighthq/types';
 
 /**
  * Enables CSS filter support for the render state by installing the resolver the
@@ -23,7 +23,7 @@ export function getDomCssFilter(renderProxy: RenderProxy2D): string | undefined 
  * different filter (or none) in different render states. The filter is applied via
  * the element's `style.filter` while CSS filter support is enabled.
  */
-export function setDomCssFilter(state: DomRenderState, node: DisplayObject, filter: string | null): void {
+export function setDomCssFilter(state: DomRenderState, node: Node2D, filter: string | null): void {
   const renderProxy = getOrCreateRenderProxy2D(state, node);
   if (filter === null) {
     _cssFilterBindings.delete(renderProxy);

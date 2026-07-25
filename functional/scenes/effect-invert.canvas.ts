@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -9,17 +9,17 @@ import {
   createCanvasElement,
   createCanvasRenderEffectPipeline,
   createCanvasRenderState,
-  createDisplayContainer,
+  createDisplayObject,
   createInvertAdjustment,
   createShape,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   endCanvasRenderEffectPipeline,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
-  renderCanvasDisplayObject,
+  renderCanvasScene2D,
 } from '@flighthq/sdk';
 
 // Canvas parity column for the same full-frame invert grade as render.webgl.ts: fully inverts every channel,
@@ -38,18 +38,18 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+export function render(root: Node2D): void {
+  if (!prepareScene2DRender(state, root)) return;
   beginCanvasRenderEffectPipeline(state, pipeline);
   renderCanvasBackground(state);
-  renderCanvasDisplayObject(state, root);
+  renderCanvasScene2D(state, root);
   endCanvasRenderEffectPipeline(state, pipeline, [createInvertAdjustment({ intensity: 1 })]);
 }
 
 // Distinct saturated-color shapes filling the frame, suited to showing a full-frame color grade:
 // fully inverts every channel.
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 

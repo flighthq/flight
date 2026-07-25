@@ -10,11 +10,11 @@ import {
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   invalidateNodeLocalTransform,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
-  renderCanvasDisplayObject,
+  renderCanvasScene2D,
   ShapeKind,
 } from '@flighthq/sdk';
 
@@ -55,9 +55,9 @@ dot.y = 160;
 invalidateNodeLocalTransform(dot);
 addNodeChild(root, dot);
 
-if (prepareDisplayObjectRender(state, root)) {
+if (prepareScene2DRender(state, root)) {
   renderCanvasBackground(state);
-  renderCanvasDisplayObject(state, root);
+  renderCanvasScene2D(state, root);
 }
 
 // ── OS-capability buttons (routed to the main process via the preload bridge) ──

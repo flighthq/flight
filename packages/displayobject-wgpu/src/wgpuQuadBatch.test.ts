@@ -1,4 +1,4 @@
-import { getRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
+import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render';
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
 import { createQuadBatch } from '@flighthq/sprite';
@@ -26,7 +26,7 @@ describe('defaultWgpuQuadBatchRenderer.submit', () => {
     renderWgpuBackground(state);
 
     const batch = createQuadBatch();
-    prepareDisplayObjectRender(state, batch);
+    prepareScene2DRender(state, batch);
     const renderProxy = getRenderProxy2D(state, batch)!;
 
     expect(() => {

@@ -1,12 +1,8 @@
-import {
-  createDisplayObjectGeneric,
-  createDisplayObjectRuntime,
-  getDisplayObjectRuntime,
-} from '@flighthq/displayobject';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/displayobject';
 import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry';
 import { invalidateNodeLocalBounds } from '@flighthq/node';
 import type {
-  DisplayObject,
+  Node2D,
   MethodsOf,
   Node,
   PartialNode,
@@ -27,7 +23,7 @@ const PARTICLE_VELOCITY_STRIDE = 2; // [vx, vy] per particle
 export const PARTICLE_EMITTER_DELETED_ID = 0xffff;
 
 function copyLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
-  const runtime = getDisplayObjectRuntime(source as DisplayObject) as ParticleEmitter2DRuntime;
+  const runtime = getNode2DRuntime(source as Node2D) as ParticleEmitter2DRuntime;
   if (runtime.localBoundsRectangle !== null) copyRectangle(out, runtime.localBoundsRectangle);
 }
 
@@ -199,7 +195,7 @@ export function computeParticleEmitter2DLocalBoundsRectangle(
 }
 
 export function createParticleEmitter2D(obj?: Readonly<PartialNode<ParticleEmitter2D>>): ParticleEmitter2D {
-  return createDisplayObjectGeneric(
+  return createNode2D(
     ParticleEmitter2DKind,
     obj,
     createParticleEmitterData,
@@ -208,7 +204,7 @@ export function createParticleEmitter2D(obj?: Readonly<PartialNode<ParticleEmitt
 }
 
 export function createParticleEmitter2DRuntime(): ParticleEmitter2DRuntime {
-  const runtime = createDisplayObjectRuntime(defaultMethods) as ParticleEmitter2DRuntime;
+  const runtime = createNode2DRuntime(defaultMethods) as ParticleEmitter2DRuntime;
   runtime.localBoundsRectangle = null;
   return runtime;
 }
@@ -268,7 +264,7 @@ export function getParticleEmitter2DParticleVelocity(
 }
 
 export function getParticleEmitter2DRuntime(source: Readonly<ParticleEmitter2D>): Readonly<ParticleEmitter2DRuntime> {
-  return getDisplayObjectRuntime(source) as ParticleEmitter2DRuntime;
+  return getNode2DRuntime(source) as ParticleEmitter2DRuntime;
 }
 
 /**
@@ -316,7 +312,7 @@ export function reserveParticleEmitter2D(target: ParticleEmitter2D, capacity: nu
 }
 
 export function setParticleEmitter2DLocalBoundsRectangle(target: ParticleEmitter2D, rect: Readonly<Rectangle>): void {
-  const runtime = getDisplayObjectRuntime(target) as ParticleEmitter2DRuntime;
+  const runtime = getNode2DRuntime(target) as ParticleEmitter2DRuntime;
   if (runtime.localBoundsRectangle === null) runtime.localBoundsRectangle = createRectangle();
   copyRectangle(runtime.localBoundsRectangle, rect);
   invalidateNodeLocalBounds(target);

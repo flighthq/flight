@@ -6,12 +6,12 @@ import type { GlRenderState, GlRenderTarget } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
 import type * as GlCacheModule from './glCache';
-import type * as GlDisplayObjectModule from './glDisplayObject';
+import type * as GlNode2DModule from './glNode2D';
 import type * as GlSpriteBatchModule from './glSpriteBatch';
 import { scopeModuleMocks } from './moduleMockTestHelper';
 
 // The GL render-target lifecycle (@flighthq/render-gl) and the two local collaborators
-// ./glSpriteBatch and ./glDisplayObject are stubbed so cache orchestration can be unit-tested
+// ./glSpriteBatch and ./glNode2D are stubbed so cache orchestration can be unit-tested
 // without a real GL pipeline: createGlRenderTarget returns a plain descriptor, and the composite,
 // batch-flush, and subtree-render calls become spies for the call and ordering assertions below.
 // The mocks are scoped to this file's dynamic import of ./glCache and unmocked in afterAll, so under
@@ -29,14 +29,14 @@ let createGlRenderStateRuntime: typeof GlRenderGlModule.createGlRenderStateRunti
 let getGlRenderStateRuntime: typeof GlRenderGlModule.getGlRenderStateRuntime;
 let destroyGlRenderTarget: typeof GlRenderGlModule.destroyGlRenderTarget;
 let drawGlRenderTargetResult: typeof GlRenderGlModule.drawGlRenderTargetResult;
-let renderGlDisplayObject: typeof GlDisplayObjectModule.renderGlDisplayObject;
+let renderGlScene2D: typeof GlNode2DModule.renderGlScene2D;
 let flushGlSpriteBatch: typeof GlSpriteBatchModule.flushGlSpriteBatch;
 
 // EntityRuntimeKey (Symbol.for) and RenderCacheKind (a string) are identity-stable across the
 // registry reset scopeModuleMocks performs, and cache adapters are stored on the state, not module-
 // level, so the statically-imported @flighthq/render still interoperates with the re-evaluated
 // subject even though the subject re-imports @flighthq/render under the reset.
-scopeModuleMocks(['./glSpriteBatch', '@flighthq/render-gl', './glDisplayObject']);
+scopeModuleMocks(['./glSpriteBatch', '@flighthq/render-gl', './glNode2D']);
 
 beforeAll(async () => {
   vi.doMock('./glSpriteBatch', async (importOriginal) => {
@@ -77,15 +77,15 @@ beforeAll(async () => {
       }),
     };
   });
-  vi.doMock('./glDisplayObject', async (importOriginal) => {
-    const actual = await importOriginal<typeof GlDisplayObjectModule>();
-    return { ...actual, renderGlDisplayObject: vi.fn() };
+  vi.doMock('./glNode2D', async (importOriginal) => {
+    const actual = await importOriginal<typeof GlNode2DModule>();
+    return { ...actual, renderGlScene2D: vi.fn() };
   });
 
   ({ createGlRenderStateRuntime, getGlRenderStateRuntime, destroyGlRenderTarget, drawGlRenderTargetResult } =
     await import('@flighthq/render-gl'));
   ({ flushGlSpriteBatch } = await import('./glSpriteBatch'));
-  ({ renderGlDisplayObject } = await import('./glDisplayObject'));
+  ({ renderGlScene2D } = await import('./glNode2D'));
   ({
     createGlCacheState,
     defaultGlRenderCacheRenderer,
@@ -206,7 +206,7 @@ describe('refreshGlRenderCache', () => {
     const obj = createDisplayObject();
     const rebaked = refreshGlRenderCache(cacheState, cache, obj, { padding: 5 });
     expect(rebaked).toBe(true);
-    expect(renderGlDisplayObject).toHaveBeenCalled();
+    expect(renderGlScene2D).toHaveBeenCalled();
     const target = getGlRenderCacheTarget(screen, cache);
     expect(target).not.toBeNull();
     expect(target!.width).toBe(10);

@@ -1,7 +1,7 @@
 import { drawWgpuQuad } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import type {
-  DisplayObjectRenderer,
+  Scene2DRenderer,
   Renderable,
   RendererData,
   RenderProxy2D,
@@ -26,7 +26,7 @@ export function createWgpuVideoData(_state: RenderState, _source: Renderable): R
   return createWgpuRendererData<WgpuVideoData>({ entry: null, h: 0, w: 0 });
 }
 
-// Destroys the GPU texture this video node owns when it is torn down via disposeDisplayObjectRender.
+// Destroys the GPU texture this video node owns when it is torn down via disposeScene2DRender.
 export function destroyWgpuVideoData(_state: RenderState, data: RendererData): void {
   const videoData = getWgpuRendererData<WgpuVideoData>(data);
   if (videoData === null) return;
@@ -83,7 +83,7 @@ export function drawWgpuVideo(state: WgpuRenderState, renderProxy: RenderProxy2D
   drawWgpuQuad(state, renderProxy, entry, 0, 0, vw, vh, 0, 0, 1, 1);
 }
 
-export const defaultWgpuVideoRenderer: DisplayObjectRenderer = {
+export const defaultWgpuVideoRenderer: Scene2DRenderer = {
   createData: createWgpuVideoData,
   destroyData: destroyWgpuVideoData,
   submit: drawWgpuVideo,

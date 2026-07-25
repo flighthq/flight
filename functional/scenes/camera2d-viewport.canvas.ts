@@ -17,7 +17,7 @@ import {
   appendShapeCircle,
   appendShapeEndFill,
   createCamera2D,
-  createDisplayContainer,
+  createDisplayObject,
   createShape,
   getSurfacePixelRgb,
   invalidateNodeLocalTransform,
@@ -41,7 +41,7 @@ camera.x = 200;
 camera.y = 200;
 camera.zoom = 2;
 
-const cameraRoot = createDisplayContainer();
+const cameraRoot = createDisplayObject();
 cameraRoot.pivotX = camera.x;
 cameraRoot.pivotY = camera.y;
 cameraRoot.x = WIDTH / 2;
@@ -50,7 +50,7 @@ cameraRoot.scaleX = camera.zoom;
 cameraRoot.scaleY = camera.zoom;
 invalidateNodeLocalTransform(cameraRoot);
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 addNodeChild(root, cameraRoot);
 
 const redCircle = createShape();

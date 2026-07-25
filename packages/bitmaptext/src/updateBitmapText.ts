@@ -1,5 +1,5 @@
 import { createColorTransformAdjustment } from '@flighthq/adjustments';
-import { getDisplayObjectRuntime, setDisplayObjectColorAdjustments } from '@flighthq/displayobject';
+import { getNode2DRuntime, setNode2DColorAdjustments } from '@flighthq/displayobject';
 import { createRectangle } from '@flighthq/geometry';
 import { createColorTransform } from '@flighthq/materials';
 import { addNodeChild, invalidateNodeLocalBounds } from '@flighthq/node';
@@ -33,7 +33,7 @@ const SPACE = 0x20;
 // span every drawn glyph across all pages.
 export function updateBitmapText(bitmapText: BitmapText): void {
   const data = bitmapText.data;
-  const runtime = getDisplayObjectRuntime(bitmapText) as BitmapTextRuntime;
+  const runtime = getNode2DRuntime(bitmapText) as BitmapTextRuntime;
   const bounds = ensureBoundsRectangle(runtime);
 
   // Clear and recolor every existing page batch; pages with glyphs this layout are refilled below,
@@ -115,7 +115,7 @@ export function updateBitmapText(bitmapText: BitmapText): void {
 // glyph draw as a single whole-batch color-transform uniform.
 function applyBitmapTextColor(quadBatch: QuadBatch, color: number): void {
   if (color === BITMAP_TEXT_DEFAULT_COLOR) {
-    setDisplayObjectColorAdjustments(quadBatch, null);
+    setNode2DColorAdjustments(quadBatch, null);
     return;
   }
   const colorTransform = createColorTransform({
@@ -124,7 +124,7 @@ function applyBitmapTextColor(quadBatch: QuadBatch, color: number): void {
     blueMultiplier: ((color >>> 8) & 0xff) / 255,
     alphaMultiplier: (color & 0xff) / 255,
   });
-  setDisplayObjectColorAdjustments(quadBatch, [createColorTransformAdjustment(colorTransform)]);
+  setNode2DColorAdjustments(quadBatch, [createColorTransformAdjustment(colorTransform)]);
 }
 
 // Measures one paragraph (a newline-free run) into words separated by whitespace gaps. Intra-word

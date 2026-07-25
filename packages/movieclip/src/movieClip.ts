@@ -1,8 +1,4 @@
-import {
-  createDisplayObjectGeneric,
-  createDisplayObjectRuntime,
-  getDisplayObjectRuntime,
-} from '@flighthq/displayobject';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/displayobject';
 import {
   addTimelineFrameScript,
   createTimeline,
@@ -31,7 +27,7 @@ import type {
 } from '@flighthq/types';
 import { EntityRuntimeKey, MovieClipKind } from '@flighthq/types';
 
-// The MovieClip display node lives here, with its playback engine — a MovieClip is a DisplayObject whose
+// The MovieClip display node lives here, with its playback engine — a MovieClip is a Node2D whose
 // content is driven by a timeline, so the node and the engine that constructs its frames are one feature.
 export function addMovieClipFrameScript(clip: MovieClip, frame: number | string, script: FrameScript): void {
   if (clip.data.timeline === null) return;
@@ -39,7 +35,7 @@ export function addMovieClipFrameScript(clip: MovieClip, frame: number | string,
 }
 
 export function createMovieClip(obj?: Readonly<PartialNode<MovieClip>>): MovieClip {
-  return createDisplayObjectGeneric(MovieClipKind, obj, createMovieClipData, createMovieClipRuntime) as MovieClip;
+  return createNode2D(MovieClipKind, obj, createMovieClipData, createMovieClipRuntime) as MovieClip;
 }
 
 export function createMovieClipData(data?: Readonly<Partial<MovieClipData>>): MovieClipData {
@@ -49,7 +45,7 @@ export function createMovieClipData(data?: Readonly<Partial<MovieClipData>>): Mo
 }
 
 export function createMovieClipRuntime(): MovieClipRuntime {
-  const out = createDisplayObjectRuntime() as MovieClipRuntime;
+  const out = createNode2DRuntime() as MovieClipRuntime;
   out.movieClipSignals = null;
   return out;
 }
@@ -88,7 +84,7 @@ export function getMovieClipFrameScript(clip: MovieClip, frame: number | string)
 }
 
 export function getMovieClipRuntime(source: Readonly<MovieClip>): Readonly<MovieClipRuntime> {
-  return getDisplayObjectRuntime(source) as MovieClipRuntime;
+  return getNode2DRuntime(source) as MovieClipRuntime;
 }
 
 export function getMovieClipSignals(clip: MovieClip): MovieClipSignals | null {

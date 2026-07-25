@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -9,19 +9,19 @@ import {
   createCanvasElement,
   createCanvasRenderEffectPipeline,
   createCanvasRenderState,
-  createDisplayContainer,
+  createDisplayObject,
   createShape,
   createVignetteEffect,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   defaultCanvasVignetteEffectRunner,
   endCanvasRenderEffectPipeline,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerCanvasRenderEffect,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
-  renderCanvasDisplayObject,
+  renderCanvasScene2D,
 } from '@flighthq/sdk';
 
 // Canvas parity column for the same vignette intent as render.webgl.ts: a full-bleed bright fill
@@ -42,18 +42,18 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+export function render(root: Node2D): void {
+  if (!prepareScene2DRender(state, root)) return;
   beginCanvasRenderEffectPipeline(state, pipeline);
   renderCanvasBackground(state);
-  renderCanvasDisplayObject(state, root);
+  renderCanvasScene2D(state, root);
   endCanvasRenderEffectPipeline(state, pipeline, [createVignetteEffect({ intensity: 1, radius: 0.7, softness: 0.5 })]);
 }
 
 // A single full-bleed bright fill covering the whole frame. With a flat, even color the vignette's
 // corner darkening is the only variation in the image.
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 

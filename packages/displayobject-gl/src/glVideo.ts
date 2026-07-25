@@ -7,7 +7,7 @@ import {
 } from '@flighthq/render-gl';
 import { advanceVideoTexture, createVideoTexture } from '@flighthq/texture';
 import type {
-  DisplayObjectRenderer,
+  Scene2DRenderer,
   GlRenderState,
   Renderable,
   RendererData,
@@ -33,7 +33,7 @@ export function createGlVideoData(_state: GlRenderState, _source: Renderable): R
 }
 
 // Frees the GPU texture the VideoTexture uploaded through when the node is torn down via
-// disposeDisplayObjectRender. The VideoTexture-keyed videoTextureCache entry would otherwise leak.
+// disposeScene2DRender. The VideoTexture-keyed videoTextureCache entry would otherwise leak.
 export function destroyGlVideoData(state: GlRenderState, data: RendererData): void {
   const runtime = getGlRenderStateRuntime(state);
   const { videoTexture } = data as unknown as GlVideoData;
@@ -85,7 +85,7 @@ export function drawGlVideo(state: GlRenderState, renderProxy: RenderProxy2D): v
   drawGlQuad(state, 0, 0, vw, vh, 0, 0, 1, 1);
 }
 
-export const defaultGlVideoRenderer: DisplayObjectRenderer = {
+export const defaultGlVideoRenderer: Scene2DRenderer = {
   createData: createGlVideoData,
   destroyData: destroyGlVideoData,
   submit: drawGlVideo,

@@ -1,7 +1,7 @@
 import { createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix, createRectangle } from '@flighthq/geometry';
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
-import type { CanvasRenderState, DisplayObject, Matrix, Rectangle, RenderProxy2D } from '@flighthq/types';
+import type { CanvasRenderState, Node2D, Matrix, Rectangle, RenderProxy2D } from '@flighthq/types';
 
 import { popCanvasClipRectangle, pushCanvasClipContours, pushCanvasClipRectangle } from './canvasClipRectangle';
 import { createCanvasRenderState } from './canvasRenderState';
@@ -11,7 +11,7 @@ describe('Clip Rectangle Functions', () => {
   let state: CanvasRenderState;
   let rect: Rectangle;
   let transform2D: Matrix;
-  let source: DisplayObject;
+  let source: Node2D;
   let data: RenderProxy2D;
 
   beforeEach(() => {

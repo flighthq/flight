@@ -13,7 +13,7 @@ import {
   appendShapeBeginGradientFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  createDisplayContainer,
+  createDisplayObject,
   createGradientTransformMatrix,
   createShape,
   getSurfacePixelRgb,
@@ -37,7 +37,7 @@ const { render, width } = await createFunctionalTarget({
   kinds: [ShapeKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const rect = createShape();
 // createGradientTransformMatrix(width, height, rotation, tx, ty) maps the unit gradient box onto a

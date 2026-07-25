@@ -10,7 +10,7 @@ import type {
 } from '@flighthq/types';
 import { RenderViewKind } from '@flighthq/types';
 
-import { createDisplayObjectGeneric, createDisplayObjectRuntime, getDisplayObjectRuntime } from './displayObject';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from './displayObject';
 
 export function computeRenderViewLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
   const data = (source as RenderView).data;
@@ -19,7 +19,7 @@ export function computeRenderViewLocalBoundsRectangle(out: Rectangle, source: Re
 }
 
 export function createRenderView(obj?: Readonly<PartialNode<RenderView>>): RenderView {
-  return createDisplayObjectGeneric(RenderViewKind, obj, createRenderViewData, createRenderViewRuntime) as RenderView;
+  return createNode2D(RenderViewKind, obj, createRenderViewData, createRenderViewRuntime) as RenderView;
 }
 
 export function createRenderViewData(data?: Readonly<Partial<RenderViewData>>): RenderViewData {
@@ -31,11 +31,11 @@ export function createRenderViewData(data?: Readonly<Partial<RenderViewData>>): 
 }
 
 export function createRenderViewRuntime(): RenderViewRuntime {
-  return createDisplayObjectRuntime(defaultMethods) as RenderViewRuntime;
+  return createNode2DRuntime(defaultMethods) as RenderViewRuntime;
 }
 
 export function getRenderViewRuntime(source: Readonly<RenderView>): Readonly<RenderViewRuntime> {
-  return getDisplayObjectRuntime(source) as RenderViewRuntime;
+  return getNode2DRuntime(source) as RenderViewRuntime;
 }
 
 export function setRenderViewSize(source: RenderView, width: number, height: number): void {

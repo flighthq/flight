@@ -1,4 +1,4 @@
-import type { CollisionAabb, CollisionManifold, DisplayObject, Shape } from '@flighthq/sdk';
+import type { CollisionAabb, CollisionManifold, Node2D, Shape } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -249,7 +249,7 @@ function enterFrame(time: number): void {
     updateGame(dt);
   }
 
-  render(root as DisplayObject);
+  render(root as Node2D);
   requestAnimationFrame(enterFrame);
 }
 

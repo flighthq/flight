@@ -6,10 +6,6 @@ export function defaultBitmapHitTestHandler(source: NodeAny, x: number, y: numbe
   return hitTestGraphLocalBounds(source, x, y);
 }
 
-export function defaultDisplayObjectHitTestHandler(_source: NodeAny, _x: number, _y: number): boolean {
-  return false;
-}
-
 export function defaultHtmlViewHitTestHandler(_source: NodeAny, _x: number, _y: number): boolean {
   // HtmlView elements handle pointer events through the browser — not the canvas interaction system.
   return false;
@@ -17,6 +13,10 @@ export function defaultHtmlViewHitTestHandler(_source: NodeAny, _x: number, _y: 
 
 export function defaultMovieClipHitTestHandler(_source: NodeAny, _x: number, _y: number): boolean {
   // Containers have no self hit area — findGraphHitTarget traverses children separately.
+  return false;
+}
+
+export function defaultNode2DHitTestHandler(_source: NodeAny, _x: number, _y: number): boolean {
   return false;
 }
 

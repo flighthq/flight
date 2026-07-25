@@ -1,11 +1,11 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation';
 import { getNodeLocalTransformRevision } from '@flighthq/node';
-import type { DisplayObjectAnimationPath, DisplayObjectAnimationTarget } from '@flighthq/types';
+import type { Node2DAnimationPath, Node2DAnimationTarget } from '@flighthq/types';
 
 import { createDisplayObject } from './displayObject';
-import { applyAnimationClipToDisplayObject } from './displayObjectAnimation';
+import { applyAnimationClipToNode2D } from './displayObjectAnimation';
 
-describe('applyAnimationClipToDisplayObject', () => {
+describe('applyAnimationClipToNode2D', () => {
   it.each([
     { expected: { x: 5, y: 10 }, path: 'Position', values: [0, 0, 10, 20] },
     { expected: { pivotX: 5, pivotY: 10 }, path: 'Pivot', values: [0, 0, 10, 20] },
@@ -16,7 +16,7 @@ describe('applyAnimationClipToDisplayObject', () => {
     const before = getNodeLocalTransformRevision(node);
     const clip = createBoundClip(node, path, 2, values);
 
-    applyAnimationClipToDisplayObject(clip, 0.5);
+    applyAnimationClipToNode2D(clip, 0.5);
 
     expect(node).toMatchObject(expected);
     expect(getNodeLocalTransformRevision(node)).toBeGreaterThan(before);
@@ -28,18 +28,18 @@ describe('applyAnimationClipToDisplayObject', () => {
       createAnimationChannel(createAnimationTrack({ times: [0, 1], values: [0, 2] }), {
         node,
         path: 'Rotation',
-      } satisfies DisplayObjectAnimationTarget),
+      } satisfies Node2DAnimationTarget),
       createAnimationChannel(createAnimationTrack({ times: [0, 1], values: [1, 0.5] }), {
         node,
         path: 'Alpha',
-      } satisfies DisplayObjectAnimationTarget),
+      } satisfies Node2DAnimationTarget),
       createAnimationChannel(createAnimationTrack({ interpolation: 'Step', times: [0, 1], values: [0, 1] }), {
         node,
         path: 'Visible',
-      } satisfies DisplayObjectAnimationTarget),
+      } satisfies Node2DAnimationTarget),
     ]);
 
-    applyAnimationClipToDisplayObject(clip, 0.5);
+    applyAnimationClipToNode2D(clip, 0.5);
 
     expect(node.rotation).toBe(1);
     expect(node.alpha).toBe(0.75);
@@ -50,13 +50,13 @@ describe('applyAnimationClipToDisplayObject', () => {
     const clip = createAnimationClip([
       createAnimationChannel(createAnimationTrack({ times: [0, 1], values: [0, 1] }), {}),
     ]);
-    expect(() => applyAnimationClipToDisplayObject(clip, 0.5)).not.toThrow();
+    expect(() => applyAnimationClipToNode2D(clip, 0.5)).not.toThrow();
   });
 });
 
 function createBoundClip(
   node: ReturnType<typeof createDisplayObject>,
-  path: DisplayObjectAnimationPath,
+  path: Node2DAnimationPath,
   components: number,
   values: ReadonlyArray<number>,
 ) {
@@ -64,6 +64,6 @@ function createBoundClip(
     createAnimationChannel(createAnimationTrack({ components, times: [0, 1], values }), {
       node,
       path,
-    } satisfies DisplayObjectAnimationTarget),
+    } satisfies Node2DAnimationTarget),
   ]);
 }

@@ -1,7 +1,7 @@
 import { createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix, createRectangle } from '@flighthq/geometry';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import type { ClipRegion, DisplayObject, RenderProxy2D } from '@flighthq/types';
+import type { ClipRegion, Node2D, RenderProxy2D } from '@flighthq/types';
 
 import { enableGlClipSupport } from './glClip';
 import { createGlState } from './glTestHelper';
@@ -19,7 +19,7 @@ function makeContourClip(): ClipRegion {
   };
 }
 
-function makeProxy(source: DisplayObject, clipDepth: number): RenderProxy2D {
+function makeProxy(source: Node2D, clipDepth: number): RenderProxy2D {
   return { source, transform2D: createMatrix(), clipDepth } as unknown as RenderProxy2D;
 }
 

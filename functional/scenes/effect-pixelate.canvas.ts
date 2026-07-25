@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -9,19 +9,19 @@ import {
   createCanvasElement,
   createCanvasRenderEffectPipeline,
   createCanvasRenderState,
-  createDisplayContainer,
+  createDisplayObject,
   createPixelateEffect,
   createShape,
   defaultCanvasPixelateEffectRunner,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   endCanvasRenderEffectPipeline,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerCanvasRenderEffect,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
-  renderCanvasDisplayObject,
+  renderCanvasScene2D,
 } from '@flighthq/sdk';
 
 // Canvas parity column for the same pixelate intent as render.webgl.ts: the frame is quantized into
@@ -42,18 +42,18 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+export function render(root: Node2D): void {
+  if (!prepareScene2DRender(state, root)) return;
   beginCanvasRenderEffectPipeline(state, pipeline);
   renderCanvasBackground(state);
-  renderCanvasDisplayObject(state, root);
+  renderCanvasScene2D(state, root);
   endCanvasRenderEffectPipeline(state, pipeline, [createPixelateEffect({ size: 24 })]);
 }
 
 // Many small, rotated, overlapping shapes pack the frame with fine detail and diagonal edges, so the
 // pixelate block quantization is strongly visible against the high-frequency content.
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 

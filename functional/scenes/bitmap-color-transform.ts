@@ -25,7 +25,7 @@ import {
   BitmapKind,
   createBitmap,
   createColorTransform,
-  createDisplayContainer,
+  createDisplayObject,
   createImageResourceFromCanvas,
   createSurface,
   createSurfaceRegion,
@@ -63,7 +63,7 @@ const { render, width } = await createFunctionalTarget({
   kinds: [BitmapKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 function blit(surface: Readonly<Surface>, x: number): void {
   const canvas = document.createElement('canvas');

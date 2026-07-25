@@ -11,7 +11,7 @@ import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   addTextureAtlasRegion,
-  createDisplayContainer,
+  createDisplayObject,
   createImageResource,
   createQuadBatch,
   createRectangle,
@@ -62,7 +62,7 @@ function makeBlueCanvas(): HTMLCanvasElement {
 const atlas = createTextureAtlas({ image: createImageResource(makeBlueCanvas()) });
 addTextureAtlasRegion(atlas, 0, 0, QUAD, QUAD); // region id 0 — blue
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const batch = createQuadBatch();
 batch.data.atlas = atlas;

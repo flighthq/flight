@@ -13,7 +13,7 @@ import {
   addNodeChild,
   BitmapKind,
   createBitmap,
-  createDisplayContainer,
+  createDisplayObject,
   createImageResource,
   getSurfacePixelRgb,
   invalidateNodeAppearance,
@@ -41,7 +41,7 @@ ctx.fillRect(0, 0, SIZE, SIZE);
 
 const imageResource = createImageResource(canvas);
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const bitmap = createBitmap();
 bitmap.data.image = imageResource;

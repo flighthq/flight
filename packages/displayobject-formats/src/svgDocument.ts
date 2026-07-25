@@ -1,6 +1,6 @@
 import { createClipRegionFromPath, intersectClipRegions, transformClipRegion, unionClipRegions } from '@flighthq/clip';
 import { packColor } from '@flighthq/color';
-import { createBitmap, createDisplayContainer } from '@flighthq/displayobject';
+import { createBitmap, createDisplayObject } from '@flighthq/displayobject';
 import {
   createGradientTransformMatrix,
   createMatrix,
@@ -46,8 +46,8 @@ import { createRichText, createTextLabel } from '@flighthq/text';
 import { createTextFormatRange } from '@flighthq/textlayout';
 import type {
   ClipRegion,
-  DisplayContainer,
   DisplayObject,
+  Node2D,
   ImportDiagnostic,
   Matrix,
   Path,
@@ -75,19 +75,19 @@ import { parseXmlDocument } from '@flighthq/xml';
  * and live DOM behavior are deliberately not retained. Pass an `ImportDiagnostic[]` collector to
  * observe every recognized feature that was skipped or recovered.
  */
-export function createDisplayObjectFromSvgDocument(
+export function createScene2DFromSvgDocument(
   source: string,
   diagnostics?: ImportDiagnostic[],
   options?: Readonly<SvgDocumentImportOptions>,
-): DisplayContainer {
-  const out = createDisplayContainer();
+): DisplayObject {
+  const out = createDisplayObject();
   const document = parseXmlDocument(source);
   if (document === null || localName(document.name) !== 'svg') {
     reportImportDiagnostic(
       diagnostics,
       ImportDiagnosticSeverity.Reject,
       'svg.invalid-document',
-      'createDisplayObjectFromSvgDocument',
+      'createScene2DFromSvgDocument',
     );
     return out;
   }
@@ -111,7 +111,7 @@ export function createDisplayObjectFromSvgDocument(
   const viewport = createSvgViewportMatrix(document);
   const rootStyle = applySvgElementAppearance(out, document, defaultSvgStyle, context, viewport, true);
   appendSvgChildren(out, document, rootStyle, context);
-  applySvgElementClip(out, document, context, createSvgDisplayObjectBounds(out));
+  applySvgElementClip(out, document, context, createSvgNode2DBounds(out));
   reportRemainingUnsupportedSvgElements(document, context);
   return out;
 }
@@ -227,7 +227,7 @@ const defaultSvgStyle: SvgStyle = {
 };
 
 function appendSvgChildren(
-  parent: DisplayContainer,
+  parent: DisplayObject,
   element: Readonly<XmlElement>,
   parentStyle: Readonly<SvgStyle>,
   context: SvgImportContext,
@@ -239,7 +239,7 @@ function appendSvgChildren(
 }
 
 function applySvgElementAppearance(
-  target: DisplayObject,
+  target: Node2D,
   element: Readonly<XmlElement>,
   parentStyle: Readonly<SvgStyle>,
   context: SvgImportContext,
@@ -274,7 +274,7 @@ function applySvgElementAppearance(
 }
 
 function applySvgElementClip(
-  target: DisplayObject,
+  target: Node2D,
   element: Readonly<XmlElement>,
   context: SvgImportContext,
   targetBounds: Readonly<Rectangle> | null,
@@ -316,14 +316,14 @@ function applySvgElementClip(
   }
 }
 
-function applySvgTransform(target: DisplayObject, matrix: Readonly<Matrix> | null): void {
+function applySvgTransform(target: Node2D, matrix: Readonly<Matrix> | null): void {
   if (matrix === null) return;
   const transform = createTransform2D();
   decomposeMatrixToTransform2D(transform, matrix);
   assignSvgTransform(target, transform);
 }
 
-function assignSvgTransform(target: DisplayObject, transform: Readonly<Transform2D>): void {
+function assignSvgTransform(target: Node2D, transform: Readonly<Transform2D>): void {
   target.pivotX = transform.pivotX;
   target.pivotY = transform.pivotY;
   target.rotation = transform.rotation;
@@ -358,16 +358,16 @@ function collectCssRules(root: Readonly<XmlElement>): SvgCssRule[] {
   return rules;
 }
 
-function createSvgDisplayObjectBounds(target: DisplayObject): Rectangle | null {
+function createSvgNode2DBounds(target: Node2D): Rectangle | null {
   if (target.kind === TextLabelKind || target.kind === RichTextKind) return null;
   const out = createRectangle();
   let hasBounds = copyNonEmptySvgBounds(out, getNodeLocalBoundsRectangle(target), false);
   let hasUnresolvedChildBounds = false;
   const childCount = getNodeChildCount(target);
   for (let index = 0; index < childCount; index++) {
-    const child = getNodeChildAt(target, index) as DisplayObject | null;
+    const child = getNodeChildAt(target, index) as Node2D | null;
     if (child === null) continue;
-    const childBounds = createSvgDisplayObjectBounds(child);
+    const childBounds = createSvgNode2DBounds(child);
     if (childBounds === null) {
       hasUnresolvedChildBounds = true;
       continue;
@@ -619,7 +619,7 @@ function createSvgElementNode(
   element: Readonly<XmlElement>,
   parentStyle: Readonly<SvgStyle>,
   context: SvgImportContext,
-): DisplayObject | null {
+): Node2D | null {
   const name = localName(element.name);
   if (name === 'defs' || name === 'style' || name === 'title' || name === 'desc' || name === 'metadata') return null;
   if (
@@ -633,11 +633,11 @@ function createSvgElementNode(
   }
 
   if (name === 'g' || name === 'a' || name === 'switch' || name === 'svg') {
-    const container = createDisplayContainer();
+    const container = createDisplayObject();
     const viewport = name === 'svg' ? createSvgViewportMatrix(element) : null;
     const style = applySvgElementAppearance(container, element, parentStyle, context, viewport, true);
     appendSvgChildren(container, element, style, context);
-    applySvgElementClip(container, element, context, createSvgDisplayObjectBounds(container));
+    applySvgElementClip(container, element, context, createSvgNode2DBounds(container));
     return container;
   }
 
@@ -673,7 +673,7 @@ function createSvgImageNode(
   element: Readonly<XmlElement>,
   parentStyle: Readonly<SvgStyle>,
   context: SvgImportContext,
-): DisplayObject | null {
+): Node2D | null {
   const href = attribute(element, 'href');
   const image = href === null ? null : (context.options?.resolveImageResource?.(href) ?? null);
   if (href === null || image === null) {
@@ -762,7 +762,7 @@ function createSvgTextNode(
   element: Readonly<XmlElement>,
   parentStyle: Readonly<SvgStyle>,
   context: SvgImportContext,
-): DisplayObject {
+): Node2D {
   const style = resolveSvgStyle(element, parentStyle, context);
   const format = createSvgTextFormat(style);
   const directTspans = element.children.filter((child) => localName(child.name) === 'tspan');
@@ -849,7 +849,7 @@ function createSvgUseNode(
   element: Readonly<XmlElement>,
   parentStyle: Readonly<SvgStyle>,
   context: SvgImportContext,
-): DisplayObject | null {
+): Node2D | null {
   const href = attribute(element, 'href');
   const id = href?.startsWith('#') === true ? href.slice(1) : null;
   if (id === null || context.resolvingUses.has(id)) {
@@ -876,7 +876,7 @@ function createSvgUseNode(
 
   context.resolvingUses.add(id);
   reportRemainingUnsupportedSvgElements(referenced, context);
-  const container = createDisplayContainer();
+  const container = createDisplayObject();
   const placement = createMatrix(1, 0, 0, 1, numberAttribute(element, 'x', 0), numberAttribute(element, 'y', 0));
   const style = applySvgElementAppearance(container, element, parentStyle, context, placement, true);
   const referencedNode =
@@ -884,7 +884,7 @@ function createSvgUseNode(
       ? createSvgSymbolNode(referenced, element, style, context)
       : createSvgElementNode(referenced, style, context);
   if (referencedNode !== null) addNodeChild(container, referencedNode);
-  applySvgElementClip(container, element, context, createSvgDisplayObjectBounds(container));
+  applySvgElementClip(container, element, context, createSvgNode2DBounds(container));
   context.resolvingUses.delete(id);
   return container;
 }
@@ -894,8 +894,8 @@ function createSvgSymbolNode(
   useElement: Readonly<XmlElement>,
   parentStyle: Readonly<SvgStyle>,
   context: SvgImportContext,
-): DisplayContainer {
-  const container = createDisplayContainer({ name: attribute(element, 'id') });
+): DisplayObject {
+  const container = createDisplayObject({ name: attribute(element, 'id') });
   const useWidth = optionalNumberAttribute(useElement, 'width');
   const useHeight = optionalNumberAttribute(useElement, 'height');
   const viewport = createSvgViewportMatrix(element, {
@@ -906,7 +906,7 @@ function createSvgSymbolNode(
   });
   const style = applySvgElementAppearance(container, element, parentStyle, context, viewport, true);
   appendSvgChildren(container, element, style, context);
-  applySvgElementClip(container, element, context, createSvgDisplayObjectBounds(container));
+  applySvgElementClip(container, element, context, createSvgNode2DBounds(container));
   return container;
 }
 

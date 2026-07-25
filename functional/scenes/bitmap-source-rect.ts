@@ -15,7 +15,7 @@ import {
   addNodeChild,
   BitmapKind,
   createBitmap,
-  createDisplayContainer,
+  createDisplayObject,
   createImageResourceFromCanvas,
   createRectangle,
   getSurfacePixelRgb,
@@ -59,7 +59,7 @@ const { render, width } = await createFunctionalTarget({
   kinds: [BitmapKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 // Full image — reference that the quadrants are laid out as expected.
 const full = createBitmap();

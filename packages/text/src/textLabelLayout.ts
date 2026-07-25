@@ -1,4 +1,4 @@
-import { getDisplayObjectRuntime } from '@flighthq/displayobject';
+import { getNode2DRuntime } from '@flighthq/displayobject';
 import { getNodeLocalContentRevision } from '@flighthq/node';
 import {
   computeTextLayout,
@@ -18,7 +18,7 @@ import type { TextLabel, TextLabelRuntime, TextLayoutResult, TextMetrics } from 
 // as-is (null or stale) until setTextLayoutMeasureProvider is called, after which the next ensure
 // refreshes it.
 export function ensureTextLayout(source: Readonly<TextLabel>): void {
-  const runtime = getDisplayObjectRuntime(source) as TextLabelRuntime;
+  const runtime = getNode2DRuntime(source) as TextLabelRuntime;
   const contentId = getNodeLocalContentRevision(source);
   if (runtime.textLayout !== null && runtime.textLayoutUsingContentId === contentId) return;
 
@@ -35,7 +35,7 @@ export function ensureTextLayout(source: Readonly<TextLabel>): void {
 // yet (so a caller can distinguish "no text" from "not yet measurable").
 export function getTextLayout(source: Readonly<TextLabel>): TextLayoutResult | null {
   ensureTextLayout(source);
-  return (getDisplayObjectRuntime(source) as TextLabelRuntime).textLayout;
+  return (getNode2DRuntime(source) as TextLabelRuntime).textLayout;
 }
 
 // Ensures the layout is current and fills `out` with the measured content size (Flash

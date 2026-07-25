@@ -1,5 +1,5 @@
 import { createColorTransformAdjustment, createSaturationColorMatrix } from '@flighthq/adjustments';
-import { createDisplayObject, setDisplayObjectColorAdjustments } from '@flighthq/displayobject';
+import { createDisplayObject, setNode2DColorAdjustments } from '@flighthq/displayobject';
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log';
 import { createColorTransform } from '@flighthq/materials';
 import type { Adjustment, Renderable } from '@flighthq/types';
@@ -24,7 +24,7 @@ describe('enableColorAdjustmentGuards', () => {
     enableColorAdjustmentGuards(state);
     const node = createDisplayObject();
     const saturation: Adjustment = { kind: 'Saturation', colorMatrix: createSaturationColorMatrix(0) } as Adjustment;
-    setDisplayObjectColorAdjustments(node, [saturation]);
+    setNode2DColorAdjustments(node, [saturation]);
     const data = createRenderProxy(state, node as unknown as Renderable);
     const sink = createMemoryLogSink(8);
     addLogSink(sink.sink);
@@ -42,9 +42,7 @@ describe('enableColorAdjustmentGuards', () => {
     const state = createRenderState();
     enableColorAdjustmentGuards(state);
     const node = createDisplayObject();
-    setDisplayObjectColorAdjustments(node, [
-      createColorTransformAdjustment(createColorTransform({ redMultiplier: 0.5 })),
-    ]);
+    setNode2DColorAdjustments(node, [createColorTransformAdjustment(createColorTransform({ redMultiplier: 0.5 }))]);
     const data = createRenderProxy(state, node as unknown as Renderable);
     const sink = createMemoryLogSink(8);
     addLogSink(sink.sink);

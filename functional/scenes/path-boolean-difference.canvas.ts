@@ -14,7 +14,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapePath,
-  createDisplayContainer,
+  createDisplayObject,
   createPath,
   createShape,
   differencePaths,
@@ -42,7 +42,7 @@ appendPathRectangle(pathB, 100, 100, 100, 100);
 
 const result = differencePaths(pathA, pathB);
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 const shape = createShape();
 appendShapeBeginFill(shape, 0xcc6600, 1);
 appendShapePath(shape, result.commands, result.data, result.winding);

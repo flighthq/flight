@@ -4,7 +4,7 @@ import { computeTextFormatFontString } from '@flighthq/text';
 import { getTextLabelRuntime } from '@flighthq/text';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout';
 import type {
-  DisplayObjectRenderer,
+  Scene2DRenderer,
   DomRenderState,
   Renderable,
   RendererData,
@@ -95,7 +95,7 @@ export function drawDomTextLabel(state: DomRenderState, renderProxy: RenderProxy
   setDomRendererElement(state, data.div);
 }
 
-export const defaultDomTextLabelRenderer: DisplayObjectRenderer = {
+export const defaultDomTextLabelRenderer: Scene2DRenderer = {
   createData: createDomTextData,
   submit: drawDomTextLabel,
 };

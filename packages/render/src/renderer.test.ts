@@ -1,4 +1,4 @@
-import type { DisplayObjectClipHooks, Renderer, RenderState } from '@flighthq/types';
+import type { Scene2DClipHooks, Renderer, RenderState } from '@flighthq/types';
 
 import {
   copyAllRenderersFromRenderState,
@@ -18,7 +18,7 @@ describe('copyAllRenderersFromRenderState', () => {
       finalize: vi.fn(),
       popClip: vi.fn(),
       pushClip: vi.fn(),
-    } as unknown as DisplayObjectClipHooks;
+    } as unknown as Scene2DClipHooks;
     registerRenderer(source, kind, renderer);
     source.displayObjectClipHooks = hooks;
 

@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import {
   BitmapKind,
   createMatrix,
@@ -21,13 +21,13 @@ import {
   enableWgpuRenderCache,
   invalidateNodeLocalTransform,
   ParticleEmitter2DKind,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   QuadBatchKind,
   registerDefaultWgpuMaterial,
   registerRenderer,
   registerWgpuShapeCommands,
   renderWgpuBackground,
-  renderWgpuDisplayObject,
+  renderWgpuScene2D,
   RichTextKind,
   Scale9ShapeKind,
   ShapeKind,
@@ -96,13 +96,13 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
     width,
     height,
     scale: pixelRatio,
-    render(root: DisplayObject): void {
-      if (!prepareDisplayObjectRender(state, root)) return;
+    render(root: Node2D): void {
+      if (!prepareScene2DRender(state, root)) return;
       renderWgpuBackground(state);
-      renderWgpuDisplayObject(state, root);
+      renderWgpuScene2D(state, root);
       submitWgpuRenderPass(state);
     },
-    benchmark(root: DisplayObject): void {
+    benchmark(root: Node2D): void {
       invalidateNodeLocalTransform(root);
       this.render(root);
     },

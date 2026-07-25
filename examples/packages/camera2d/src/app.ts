@@ -19,7 +19,7 @@ import {
   appendShapePolygon,
   appendShapeRectangle,
   clearShapeCommands,
-  createDisplayContainer,
+  createDisplayObject,
   createRectangle,
   createShape,
   createTextLabel,
@@ -179,23 +179,23 @@ for (let i = 0; i < 8; i++) {
 
 const parallaxOffset = createVector2();
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 
-const starsContainer = createDisplayContainer();
+const starsContainer = createDisplayObject();
 addNodeChild(root, starsContainer);
 
-const mountainsContainer = createDisplayContainer();
+const mountainsContainer = createDisplayObject();
 addNodeChild(root, mountainsContainer);
 
-const cloudsContainer = createDisplayContainer();
+const cloudsContainer = createDisplayObject();
 addNodeChild(root, cloudsContainer);
 
-const worldContainer = createDisplayContainer();
+const worldContainer = createDisplayObject();
 addNodeChild(root, worldContainer);
 
-const hudContainer = createDisplayContainer();
+const hudContainer = createDisplayObject();
 addNodeChild(root, hudContainer);
 
 const starsShape = createShape();

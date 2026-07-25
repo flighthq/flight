@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -9,19 +9,19 @@ import {
   createCanvasElement,
   createCanvasRenderEffectPipeline,
   createCanvasRenderState,
-  createDisplayContainer,
+  createDisplayObject,
   createShape,
   createTiltShiftEffect,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   defaultCanvasTiltShiftEffectRunner,
   endCanvasRenderEffectPipeline,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerCanvasRenderEffect,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
-  renderCanvasDisplayObject,
+  renderCanvasScene2D,
 } from '@flighthq/sdk';
 
 // Canvas parity column for the same tilt-shift intent as render.webgl.ts.
@@ -40,18 +40,18 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+export function render(root: Node2D): void {
+  if (!prepareScene2DRender(state, root)) return;
   beginCanvasRenderEffectPipeline(state, pipeline);
   renderCanvasBackground(state);
-  renderCanvasDisplayObject(state, root);
+  renderCanvasScene2D(state, root);
   endCanvasRenderEffectPipeline(state, pipeline, [createTiltShiftEffect({ center: 0.5, width: 0.25, blur: 6 })]);
 }
 
 // Off-center shapes pushed toward the frame edges, so lens curvature and out-of-focus falloff away
 // from the center are clearly visible against the straight rectangle edges.
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 

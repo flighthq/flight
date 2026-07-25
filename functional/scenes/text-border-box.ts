@@ -17,7 +17,7 @@
 // border color, so the stroke is confined to the edge. Counts/tolerances are generous because we cannot run
 // a browser and the stroke is one device-pixel thin.
 import type { Surface } from '@flighthq/sdk';
-import { addNodeChild, createDisplayContainer, createRichText, getSurfacePixelRgb, RichTextKind } from '@flighthq/sdk';
+import { addNodeChild, createDisplayObject, createRichText, getSurfacePixelRgb, RichTextKind } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
 const WIDTH = 800;
@@ -39,7 +39,7 @@ const { render, width } = await createFunctionalTarget({
   kinds: [RichTextKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 // Empty text: the border (and background, if any) still draws on every backend even with no glyphs. Keeping
 // the field text-free guarantees the interior gap sample cannot accidentally hit glyph ink.

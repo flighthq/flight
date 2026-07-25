@@ -1,11 +1,11 @@
 ﻿import { noopRendererData } from '@flighthq/render';
-import type { CanvasRenderState, DisplayObjectRenderer, RenderProxy2D, Video } from '@flighthq/types';
+import type { CanvasRenderState, Scene2DRenderer, RenderProxy2D, Video } from '@flighthq/types';
 
-import { drawCanvasDisplayObject } from './canvasDisplayObject';
+import { drawCanvasScene2D } from './canvasNode2D';
 import { setCanvasTransform } from './canvasTransform';
 
 export function drawCanvasVideo(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
-  drawCanvasDisplayObject(state, renderProxy);
+  drawCanvasScene2D(state, renderProxy);
   const source = renderProxy.source as Video;
   const element = source.data.source?.element;
   if (element !== undefined && element !== null && element.readyState >= 2) {
@@ -23,7 +23,7 @@ export function drawCanvasVideo(state: CanvasRenderState, renderProxy: RenderPro
   }
 }
 
-export const defaultCanvasVideoRenderer: DisplayObjectRenderer = {
+export const defaultCanvasVideoRenderer: Scene2DRenderer = {
   createData: noopRendererData,
   submit: drawCanvasVideo,
 };

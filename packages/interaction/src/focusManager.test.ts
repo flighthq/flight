@@ -2,7 +2,7 @@ import { createDisplayObject } from '@flighthq/displayobject';
 import { setRectangle } from '@flighthq/geometry';
 import { addNodeChild, getNodeLocalBoundsRectangle, invalidateNodeLocalTransform } from '@flighthq/node';
 import { connectSignal, createSignal, emitSignal } from '@flighthq/signals';
-import type { DisplayObject, FocusEventData, InputKeyboardData } from '@flighthq/types';
+import type { Node2D, FocusEventData, InputKeyboardData } from '@flighthq/types';
 
 import {
   clearFocus,
@@ -19,7 +19,7 @@ import {
 import { enableInteractionSignals } from './interactionManager';
 import { setNodeFocusable, setNodeTabIndex } from './nodeInteractionState';
 
-function focusable(tabIndex: number = -1): DisplayObject {
+function focusable(tabIndex: number = -1): Node2D {
   const node = createDisplayObject();
   setNodeFocusable(node, true);
   if (tabIndex !== -1) setNodeTabIndex(node, tabIndex);
@@ -27,7 +27,7 @@ function focusable(tabIndex: number = -1): DisplayObject {
 }
 
 // A focusable node positioned in world space, so directional navigation can compare bounds centers.
-function placed(x: number, y: number): DisplayObject {
+function placed(x: number, y: number): Node2D {
   const node = focusable();
   node.x = x;
   node.y = y;
@@ -58,7 +58,7 @@ function keyData(key: string, shiftKey: boolean = false): InputKeyboardData {
   };
 }
 
-function sceneOf(...nodes: readonly DisplayObject[]): DisplayObject {
+function sceneOf(...nodes: readonly Node2D[]): Node2D {
   const root = createDisplayObject();
   for (const node of nodes) addNodeChild(root, node);
   return root;

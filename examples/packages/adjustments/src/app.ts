@@ -7,7 +7,7 @@ import {
   createSaturationColorMatrix,
   fuseColorMatrices,
 } from '@flighthq/adjustments';
-import type { DisplayObject, Shape } from '@flighthq/sdk';
+import type { Node2D, Shape } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -112,9 +112,9 @@ const hueSlider = createSlider('Hue Rotate', -180, 180, 1, hueRotation, 20, 80);
 const saturationSlider = createSlider('Saturation', 0, 3, 0.01, saturation, 20, 110);
 
 // Matrix display: 4 rows x 5 columns of text labels showing the fused matrix values.
-const matrixLabels: DisplayObject[] = [];
+const matrixLabels: Node2D[] = [];
 
-function createLabel(text: string, x: number, y: number, size: number, color: number): DisplayObject {
+function createLabel(text: string, x: number, y: number, size: number, color: number): Node2D {
   const label = createTextLabel();
   label.data.text = text;
   label.data.textFormat = { size, color };
@@ -124,7 +124,7 @@ function createLabel(text: string, x: number, y: number, size: number, color: nu
   return label;
 }
 
-function updateLabel(label: DisplayObject, text: string): void {
+function updateLabel(label: Node2D, text: string): void {
   (label as ReturnType<typeof createTextLabel>).data.text = text;
   invalidateNodeAppearance(label);
 }
@@ -177,7 +177,7 @@ for (let i = 0; i < SAMPLE_COLORS.length; i++) {
 }
 
 // Hex value labels below each after-swatch.
-const afterHexLabels: DisplayObject[] = [];
+const afterHexLabels: Node2D[] = [];
 for (let i = 0; i < SAMPLE_COLORS.length; i++) {
   const x = SWATCHES_X + i * (SWATCH_SIZE + SWATCH_GAP);
   const hexLabel = createLabel('', x, SWATCHES_AFTER_Y + SWATCH_SIZE + 4, 9, 0x888888);

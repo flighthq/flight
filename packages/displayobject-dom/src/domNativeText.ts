@@ -1,7 +1,7 @@
 import { computeRgbHexString } from '@flighthq/color';
 import { getNativeTextRuntime } from '@flighthq/text';
 import type {
-  DisplayObjectRenderer,
+  Scene2DRenderer,
   DomRenderState,
   NativeText,
   NativeTextRuntime,
@@ -77,7 +77,7 @@ export function drawDomNativeTextMask(state: DomRenderState, renderProxy: Render
   drawDomNativeText(state, renderProxy);
 }
 
-export const defaultDomNativeTextRenderer: DisplayObjectRenderer = {
+export const defaultDomNativeTextRenderer: Scene2DRenderer = {
   createData: createDomNativeTextData,
   submit: drawDomNativeText,
 };

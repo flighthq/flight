@@ -1,14 +1,14 @@
-import type { DisplayObject } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import {
   createCanvasElement,
   createCanvasRenderState,
   defaultCanvasQuadBatchRenderer,
   defaultCanvasTextLabelRenderer,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   QuadBatchKind,
   registerRenderer,
   renderCanvasBackground,
-  renderCanvasDisplayObject,
+  renderCanvasScene2D,
   TextLabelKind,
 } from '@flighthq/sdk';
 
@@ -24,8 +24,8 @@ registerRenderer(state, QuadBatchKind, defaultCanvasQuadBatchRenderer);
 registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);
 export const scale = pixelRatio;
 
-export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+export function render(root: Node2D): void {
+  if (!prepareScene2DRender(state, root)) return;
   renderCanvasBackground(state);
-  renderCanvasDisplayObject(state, root);
+  renderCanvasScene2D(state, root);
 }

@@ -15,7 +15,7 @@
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
-  createDisplayContainer,
+  createDisplayObject,
   createRichText,
   getSurfacePixelRgb,
   RichTextKind,
@@ -47,7 +47,7 @@ const { render, width } = await createFunctionalTarget({
   kinds: [RichTextKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const field = createRichText();
 field.data.defaultTextFormat = { font: 'sans-serif', size: FONT_SIZE, bold: true };

@@ -11,7 +11,7 @@ import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   addTextureAtlasRegion,
-  createDisplayContainer,
+  createDisplayObject,
   createImageResource,
   createSprite,
   createTextureAtlas,
@@ -57,7 +57,7 @@ const atlas = createTextureAtlas({ image: createImageResource(makeAtlasCanvas())
 addTextureAtlasRegion(atlas, 0, 0, REGION, REGION); // region id 0 — red
 addTextureAtlasRegion(atlas, REGION, 0, REGION, REGION, REGION / 2, REGION / 2); // region id 1 — green, center pivot
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const spriteA = createSprite();
 spriteA.data.atlas = atlas;

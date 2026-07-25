@@ -2,40 +2,10 @@ import { createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix, createRectangle } from '@flighthq/geometry';
 
 import {
-  computeDisplayObjectRenderTargetTransform,
+  computeScene2DRenderTargetTransform,
   computeRenderCacheTransform,
   computeRenderTargetSize,
 } from './renderTarget';
-
-describe('computeDisplayObjectRenderTargetTransform', () => {
-  it('writes an identity-based transform for an unrotated object at origin', () => {
-    const obj = createDisplayObject();
-    const bounds = createRectangle(0, 0, 100, 80);
-    const out = createMatrix();
-    computeDisplayObjectRenderTargetTransform(out, obj, bounds);
-    expect(typeof out.a).toBe('number');
-    expect(typeof out.tx).toBe('number');
-  });
-
-  it('offsets by contentX and contentY', () => {
-    const obj = createDisplayObject();
-    const bounds = createRectangle(10, 20, 100, 80);
-    const out1 = createMatrix();
-    const out2 = createMatrix();
-    computeDisplayObjectRenderTargetTransform(out1, obj, bounds, 0, 0);
-    computeDisplayObjectRenderTargetTransform(out2, obj, bounds, 5, 10);
-    expect(out2.tx).not.toBe(out1.tx);
-  });
-
-  it('does not throw for a non-identity local transform', () => {
-    const obj = createDisplayObject();
-    obj.x = 50;
-    obj.y = 30;
-    const bounds = createRectangle(50, 30, 100, 80);
-    const out = createMatrix();
-    expect(() => computeDisplayObjectRenderTargetTransform(out, obj, bounds)).not.toThrow();
-  });
-});
 
 describe('computeRenderCacheTransform', () => {
   it('produces a pure translation from bounds origin', () => {
@@ -80,5 +50,35 @@ describe('computeRenderTargetSize', () => {
     const result = computeRenderTargetSize({ x: 0, y: 0, width: 0, height: 0 });
     expect(result.width).toBe(1);
     expect(result.height).toBe(1);
+  });
+});
+
+describe('computeScene2DRenderTargetTransform', () => {
+  it('writes an identity-based transform for an unrotated object at origin', () => {
+    const obj = createDisplayObject();
+    const bounds = createRectangle(0, 0, 100, 80);
+    const out = createMatrix();
+    computeScene2DRenderTargetTransform(out, obj, bounds);
+    expect(typeof out.a).toBe('number');
+    expect(typeof out.tx).toBe('number');
+  });
+
+  it('offsets by contentX and contentY', () => {
+    const obj = createDisplayObject();
+    const bounds = createRectangle(10, 20, 100, 80);
+    const out1 = createMatrix();
+    const out2 = createMatrix();
+    computeScene2DRenderTargetTransform(out1, obj, bounds, 0, 0);
+    computeScene2DRenderTargetTransform(out2, obj, bounds, 5, 10);
+    expect(out2.tx).not.toBe(out1.tx);
+  });
+
+  it('does not throw for a non-identity local transform', () => {
+    const obj = createDisplayObject();
+    obj.x = 50;
+    obj.y = 30;
+    const bounds = createRectangle(50, 30, 100, 80);
+    const out = createMatrix();
+    expect(() => computeScene2DRenderTargetTransform(out, obj, bounds)).not.toThrow();
   });
 });

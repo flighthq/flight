@@ -1,4 +1,4 @@
-import type { Bitmap, DisplayObject, Spritesheet, SpritesheetPlayer } from '@flighthq/sdk';
+import type { Bitmap, Node2D, Spritesheet, SpritesheetPlayer } from '@flighthq/sdk';
 import {
   addNodeChild,
   createBitmap,
@@ -197,7 +197,7 @@ function enterFrame(now: number): void {
   applyFrameToBitmap(player2, spritesheet, bitmap2);
   applyFrameToBitmap(player3, spritesheet, bitmap3);
 
-  render(root as DisplayObject);
+  render(root as Node2D);
   if (!captureMode) requestAnimationFrame(enterFrame);
 }
 

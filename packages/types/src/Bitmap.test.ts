@@ -1,6 +1,6 @@
 import type { Bitmap, BitmapData, BitmapRuntime } from './Bitmap';
 import { BitmapKind } from './Bitmap';
-import type { DisplayObject, DisplayObjectData, DisplayObjectRuntime } from './DisplayObject';
+import type { Node2D, Node2DData, Node2DRuntime } from './Node2D';
 
 describe('Bitmap', () => {
   describe('BitmapKind', () => {
@@ -35,15 +35,15 @@ describe('Bitmap', () => {
   });
 });
 
-// Compile-time quartet law: the Bitmap entity quartet extends the DisplayObject quartet.
-type _BitmapExtendsDisplayObject = Bitmap extends DisplayObject ? true : false;
+// Compile-time quartet law: the Bitmap entity quartet extends the Node2D quartet.
+type _BitmapExtendsDisplayObject = Bitmap extends Node2D ? true : false;
 const _bitmapIsDisplayObject: _BitmapExtendsDisplayObject = true;
 void _bitmapIsDisplayObject;
 
-type _BitmapDataExtendsDisplayObjectData = BitmapData extends DisplayObjectData ? true : false;
+type _BitmapDataExtendsDisplayObjectData = BitmapData extends Node2DData ? true : false;
 const _bitmapDataIsDisplayObjectData: _BitmapDataExtendsDisplayObjectData = true;
 void _bitmapDataIsDisplayObjectData;
 
-type _BitmapRuntimeExtendsDisplayObjectRuntime = BitmapRuntime extends DisplayObjectRuntime ? true : false;
+type _BitmapRuntimeExtendsDisplayObjectRuntime = BitmapRuntime extends Node2DRuntime ? true : false;
 const _bitmapRuntimeIsDisplayObjectRuntime: _BitmapRuntimeExtendsDisplayObjectRuntime = true;
 void _bitmapRuntimeIsDisplayObjectRuntime;

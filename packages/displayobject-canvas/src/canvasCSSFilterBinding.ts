@@ -1,5 +1,5 @@
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
-import type { CanvasRenderState, DisplayObject, RenderProxy2D } from '@flighthq/types';
+import type { CanvasRenderState, Node2D, RenderProxy2D } from '@flighthq/types';
 
 // Per-state canvas CSS filter bindings, keyed by the render node. Render nodes are
 // per-state (state.renderProxyMap), so a module-level map keyed by render node is
@@ -38,7 +38,7 @@ export function resolveCanvasCssFilter(_state: CanvasRenderState, renderProxy: R
  * different filter (or none) in different render states. The filter is applied via
  * `context.filter` around the object's own draw.
  */
-export function setCanvasCssFilter(state: CanvasRenderState, node: DisplayObject, filter: string | null): void {
+export function setCanvasCssFilter(state: CanvasRenderState, node: Node2D, filter: string | null): void {
   const renderProxy = getOrCreateRenderProxy2D(state, node);
   if (filter === null) {
     _cssFilterBindings.delete(renderProxy);

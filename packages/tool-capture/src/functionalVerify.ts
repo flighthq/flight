@@ -9,7 +9,7 @@ import {
 } from '@flighthq/surface';
 import type {
   CanvasRenderState,
-  DisplayObject,
+  Node2D,
   DomRenderState,
   GlRenderState,
   Surface,
@@ -33,8 +33,8 @@ export interface FunctionalCanvasTarget {
   width: number;
   height: number;
   scale: number;
-  render(root: DisplayObject): void;
-  benchmark?(root: DisplayObject): void | Promise<void>;
+  render(root: Node2D): void;
+  benchmark?(root: Node2D): void | Promise<void>;
 }
 
 export interface FunctionalDomTarget {
@@ -43,8 +43,8 @@ export interface FunctionalDomTarget {
   width: number;
   height: number;
   scale: number;
-  render(root: DisplayObject): void;
-  benchmark?(root: DisplayObject): void | Promise<void>;
+  render(root: Node2D): void;
+  benchmark?(root: Node2D): void | Promise<void>;
 }
 
 export interface FunctionalGlTarget {
@@ -53,8 +53,8 @@ export interface FunctionalGlTarget {
   width: number;
   height: number;
   scale: number;
-  render(root: DisplayObject): void;
-  benchmark?(root: DisplayObject): void | Promise<void>;
+  render(root: Node2D): void;
+  benchmark?(root: Node2D): void | Promise<void>;
 }
 
 export interface FunctionalTestModule {
@@ -71,8 +71,8 @@ export interface FunctionalWgpuTarget {
   width: number;
   height: number;
   scale: number;
-  render(root: DisplayObject): void;
-  benchmark?(root: DisplayObject): void | Promise<void>;
+  render(root: Node2D): void;
+  benchmark?(root: Node2D): void | Promise<void>;
 }
 
 export type FunctionalTarget = FunctionalCanvasTarget | FunctionalDomTarget | FunctionalGlTarget | FunctionalWgpuTarget;
@@ -115,7 +115,7 @@ export function publishFunctionalRenderSync(render: string): boolean {
 export function registerFunctionalTarget<T extends FunctionalTarget>(target: T): T {
   const captureWindow = window as VerificationWindow;
   const render = target.render.bind(target);
-  let lastRoot: DisplayObject | undefined;
+  let lastRoot: Node2D | undefined;
   const benchmarkTarget: CaptureBenchmarkTarget = {
     protocolVersion: CAPTURE_PROTOCOL_VERSION,
     ready: false,
@@ -135,7 +135,7 @@ export function registerFunctionalTarget<T extends FunctionalTarget>(target: T):
       }
     },
   };
-  target.render = (root: DisplayObject): void => {
+  target.render = (root: Node2D): void => {
     lastRoot = root;
     benchmarkTarget.ready = true;
     render(root);

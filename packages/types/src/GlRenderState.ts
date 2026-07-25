@@ -84,7 +84,7 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   uniformColorTransformShader?: GlUniformColorTransformShader;
   shapeMeshColorTransformShader?: GlShapeMeshColorTransformShader;
   // The opt-in color-adjustment fold and its guard, both null until enableGlColorAdjustment /
-  // enableDisplayObjectGlGuards installs them. recordGlSpriteBatchColorTransform reaches the fold only
+  // enableNode2DGlGuards installs them. recordGlSpriteBatchColorTransform reaches the fold only
   // through this slot, so the base batch statically references neither the fold's code nor a message.
   glColorAdjustmentFold?: GlColorAdjustmentFold | null;
   glColorAdjustmentGuard?: ((state: GlRenderState, colorTransform: Readonly<ColorTransform>) => void) | null;

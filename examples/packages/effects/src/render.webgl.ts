@@ -1,4 +1,4 @@
-import type { DisplayObject, RenderEffect } from '@flighthq/sdk';
+import type { Node2D, RenderEffect } from '@flighthq/sdk';
 import {
   ShapeKind,
   beginGlRenderEffectPipeline,
@@ -8,13 +8,13 @@ import {
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultGlMaterial,
   registerGlShapeCommands,
   registerRenderer,
   registerStandardGlRenderEffects,
   renderGlBackground,
-  renderGlDisplayObject,
+  renderGlScene2D,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -36,10 +36,10 @@ const pipeline = createGlRenderEffectPipeline(state);
 
 export const scale = pixelRatio;
 
-export function render(root: DisplayObject, effects: readonly RenderEffect[]): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+export function render(root: Node2D, effects: readonly RenderEffect[]): void {
+  if (!prepareScene2DRender(state, root)) return;
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
-  renderGlDisplayObject(state, root);
+  renderGlScene2D(state, root);
   endGlRenderEffectPipeline(state, pipeline, effects);
 }

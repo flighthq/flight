@@ -1,5 +1,5 @@
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { DisplayObject, DisplayObjectClipHooks, RenderProxy2D, WgpuRenderState } from '@flighthq/types';
+import type { Node2D, Scene2DClipHooks, RenderProxy2D, WgpuRenderState } from '@flighthq/types';
 
 import { popWgpuClipContours, pushWgpuClipContours } from './wgpuClipContours';
 import { popWgpuClipRectangle, pushWgpuClipRectangle } from './wgpuClipRectangle';
@@ -17,17 +17,17 @@ function popOneWgpuClip(state: WgpuRenderState): void {
   else popWgpuClipRectangle(state); // pops its own scissor stack; clipForms tracks the count
 }
 
-const webgpuClipHooks: DisplayObjectClipHooks = {
+const webgpuClipHooks: Scene2DClipHooks = {
   finalize(state: WgpuRenderState): void {
     const runtime = getWgpuRenderStateRuntime(state);
     while (runtime.clipForms.length > 0) popOneWgpuClip(state);
   },
-  popClip(state: WgpuRenderState, data: RenderProxy2D, source: DisplayObject): void {
+  popClip(state: WgpuRenderState, data: RenderProxy2D, source: Node2D): void {
     const runtime = getWgpuRenderStateRuntime(state);
     const target = data.clipDepth - (source.clip != null ? 1 : 0);
     while (runtime.clipForms.length > target) popOneWgpuClip(state);
   },
-  pushClip(state: WgpuRenderState, data: RenderProxy2D, source: DisplayObject): void {
+  pushClip(state: WgpuRenderState, data: RenderProxy2D, source: Node2D): void {
     const runtime = getWgpuRenderStateRuntime(state);
     const clip = source.clip;
     if (clip === null) return;

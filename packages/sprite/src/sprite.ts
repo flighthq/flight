@@ -1,8 +1,4 @@
-import {
-  createDisplayObjectGeneric,
-  createDisplayObjectRuntime,
-  getDisplayObjectRuntime,
-} from '@flighthq/displayobject';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/displayobject';
 import { createSignal } from '@flighthq/signals';
 import type {
   MethodsOf,
@@ -59,7 +55,7 @@ export function computeSpriteLocalBoundsRectangle(out: Rectangle, source: Readon
 }
 
 export function createSprite(obj?: Readonly<PartialNode<Sprite>>): Sprite {
-  return createDisplayObjectGeneric(SpriteKind, obj, createSpriteData, createSpriteRuntime) as Sprite;
+  return createNode2D(SpriteKind, obj, createSpriteData, createSpriteRuntime) as Sprite;
 }
 
 export function createSpriteData(data?: Readonly<Partial<SpriteData>>): SpriteData {
@@ -71,7 +67,7 @@ export function createSpriteData(data?: Readonly<Partial<SpriteData>>): SpriteDa
 }
 
 export function createSpriteRuntime(): SpriteRuntime {
-  return createDisplayObjectRuntime(defaultMethods) as SpriteRuntime;
+  return createNode2DRuntime(defaultMethods) as SpriteRuntime;
 }
 
 export function createSpriteSignals(): SpriteSignals {
@@ -115,7 +111,7 @@ export function getSpriteRegion(source: Readonly<Sprite>): TextureAtlasRegion | 
 }
 
 export function getSpriteRuntime(source: Readonly<Sprite>): Readonly<SpriteRuntime> {
-  return getDisplayObjectRuntime(source) as SpriteRuntime;
+  return getNode2DRuntime(source) as SpriteRuntime;
 }
 
 /** Returns the {@link SpriteSignals} attached to `source`, or `null` if not yet enabled. */

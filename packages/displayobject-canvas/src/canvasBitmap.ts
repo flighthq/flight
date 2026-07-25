@@ -1,12 +1,12 @@
 ﻿import { noopRendererData } from '@flighthq/render';
-import type { Bitmap, CanvasRenderState, DisplayObjectRenderer, RenderProxy2D } from '@flighthq/types';
+import type { Bitmap, CanvasRenderState, Scene2DRenderer, RenderProxy2D } from '@flighthq/types';
 
-import { drawCanvasDisplayObject } from './canvasDisplayObject';
 import { resolveCanvasImageSource } from './canvasImageSource';
+import { drawCanvasScene2D } from './canvasNode2D';
 import { setCanvasTransform } from './canvasTransform';
 
 export function drawCanvasBitmap(state: CanvasRenderState, bitmap: RenderProxy2D): void {
-  drawCanvasDisplayObject(state, bitmap);
+  drawCanvasScene2D(state, bitmap);
   const source = bitmap.source as Bitmap;
   const imageSource = source.data.image;
   // Resolve to a drawable element, materializing one from raw pixels for a data-only Surface so it
@@ -48,7 +48,7 @@ export function drawCanvasBitmap(state: CanvasRenderState, bitmap: RenderProxy2D
   }
 }
 
-export const defaultCanvasBitmapRenderer: DisplayObjectRenderer = {
+export const defaultCanvasBitmapRenderer: Scene2DRenderer = {
   createData: noopRendererData,
   submit: drawCanvasBitmap,
 };

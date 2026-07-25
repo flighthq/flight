@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import {
   createCanvasElement,
   createCanvasRenderState,
@@ -7,11 +7,11 @@ import {
   defaultCanvasEndFill,
   defaultCanvasShapeRenderer,
   defaultCanvasTextLabelRenderer,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
-  renderCanvasDisplayObject,
+  renderCanvasScene2D,
   ShapeKind,
   TextLabelKind,
 } from '@flighthq/sdk';
@@ -31,8 +31,8 @@ registerCanvasShapeCommands([defaultCanvasBeginFill, defaultCanvasDrawRectangle,
 
 export const scale = pixelRatio;
 
-export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+export function render(root: Node2D): void {
+  if (!prepareScene2DRender(state, root)) return;
   renderCanvasBackground(state);
-  renderCanvasDisplayObject(state, root);
+  renderCanvasScene2D(state, root);
 }

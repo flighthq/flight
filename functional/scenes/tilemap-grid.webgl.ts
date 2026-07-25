@@ -11,7 +11,7 @@
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
-  createDisplayContainer,
+  createDisplayObject,
   createImageResourceFromCanvas,
   createTilemap,
   createTilesetFromImageResource,
@@ -56,7 +56,7 @@ ctx.fillRect(TILE_W, 0, TILE_W, TILE_H);
 // Slice the atlas into a Tileset: TILE_W×TILE_H grid → tile 0 (red), tile 1 (green).
 const tileset = createTilesetFromImageResource(createImageResourceFromCanvas(atlasCanvas), TILE_W, TILE_H);
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const tilemap = createTilemap({ data: { columns: COLS, rows: ROWS, tileset } });
 tilemap.x = MAP_X;

@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import {
   BitmapKind,
   createGlCanvasElement,
@@ -20,13 +20,13 @@ import {
   enableGlRenderCache,
   invalidateNodeLocalTransform,
   ParticleEmitter2DKind,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   QuadBatchKind,
   registerDefaultGlMaterial,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
-  renderGlDisplayObject,
+  renderGlScene2D,
   RichTextKind,
   Scale9ShapeKind,
   ShapeKind,
@@ -96,12 +96,12 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
     width,
     height,
     scale: pixelRatio,
-    render(root: DisplayObject): void {
-      if (!prepareDisplayObjectRender(state, root)) return;
+    render(root: Node2D): void {
+      if (!prepareScene2DRender(state, root)) return;
       renderGlBackground(state);
-      renderGlDisplayObject(state, root);
+      renderGlScene2D(state, root);
     },
-    benchmark(root: DisplayObject): void {
+    benchmark(root: Node2D): void {
       invalidateNodeLocalTransform(root);
       this.render(root);
     },

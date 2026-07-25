@@ -1,8 +1,4 @@
-import {
-  createDisplayObjectGeneric,
-  createDisplayObjectRuntime,
-  getDisplayObjectRuntime,
-} from '@flighthq/displayobject';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/displayobject';
 import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry';
 import { invalidateNodeLocalBounds } from '@flighthq/node';
 import { createSignal } from '@flighthq/signals';
@@ -73,7 +69,7 @@ export function cloneQuadBatch(source: Readonly<QuadBatch>): QuadBatch {
 }
 
 function copyLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
-  const runtime = getDisplayObjectRuntime(source as QuadBatch) as QuadBatchRuntime;
+  const runtime = getNode2DRuntime(source as QuadBatch) as QuadBatchRuntime;
   if (runtime.localBoundsRectangle !== null) copyRectangle(out, runtime.localBoundsRectangle);
 }
 
@@ -191,7 +187,7 @@ export function computeQuadBatchLocalBoundsRectangle(out: Rectangle, source: Rea
 }
 
 export function createQuadBatch(obj?: Readonly<PartialNode<QuadBatch>>): QuadBatch {
-  return createDisplayObjectGeneric(QuadBatchKind, obj, createQuadBatchData, createQuadBatchRuntime) as QuadBatch;
+  return createNode2D(QuadBatchKind, obj, createQuadBatchData, createQuadBatchRuntime) as QuadBatch;
 }
 
 export function createQuadBatchData(data?: Readonly<Partial<QuadBatchData>>): QuadBatchData {
@@ -206,7 +202,7 @@ export function createQuadBatchData(data?: Readonly<Partial<QuadBatchData>>): Qu
 }
 
 export function createQuadBatchRuntime(): QuadBatchRuntime {
-  const runtime = createDisplayObjectRuntime(defaultMethods) as QuadBatchRuntime;
+  const runtime = createNode2DRuntime(defaultMethods) as QuadBatchRuntime;
   runtime.localBoundsRectangle = null;
   runtime.instanceVelocities = null;
   return runtime;
@@ -268,7 +264,7 @@ export function getQuadBatchInstanceTransform(out: Vector2Like, source: Readonly
 }
 
 export function getQuadBatchRuntime(source: Readonly<QuadBatch>): Readonly<QuadBatchRuntime> {
-  return getDisplayObjectRuntime(source) as QuadBatchRuntime;
+  return getNode2DRuntime(source) as QuadBatchRuntime;
 }
 
 /** Returns the {@link QuadBatchSignals} attached to `source`, or `null` if not yet enabled. */
@@ -532,7 +528,7 @@ export function setQuadBatchInstanceRange(
 }
 
 export function setQuadBatchLocalBoundsRectangle(target: QuadBatch, rect: Readonly<Rectangle>): void {
-  const runtime = getDisplayObjectRuntime(target) as QuadBatchRuntime;
+  const runtime = getNode2DRuntime(target) as QuadBatchRuntime;
   if (runtime.localBoundsRectangle === null) runtime.localBoundsRectangle = createRectangle();
   copyRectangle(runtime.localBoundsRectangle, rect);
   invalidateNodeLocalBounds(target);

@@ -4,7 +4,7 @@ export * from './canvasCache';
 export * from './canvasClip';
 export * from './canvasClipRectangle';
 export * from './canvasCSSFilterBinding';
-export * from './canvasDisplayObject';
+export * from './canvasNode2D';
 export * from './canvasElement';
 export * from './canvasFillPattern';
 export * from './canvasImageSource';

@@ -1,8 +1,4 @@
-import {
-  createDisplayObjectGeneric,
-  createDisplayObjectRuntime,
-  getDisplayObjectRuntime,
-} from '@flighthq/displayobject';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/displayobject';
 import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node';
 import { computeTextBoundsRectangle, createTextFormatRange } from '@flighthq/textlayout';
 import type {
@@ -76,7 +72,7 @@ export function computeTextLabelLocalBoundsRectangle(out: Rectangle, source: Rea
 }
 
 export function createTextLabel(obj?: Readonly<PartialNode<TextLabel>>): TextLabel {
-  return createDisplayObjectGeneric(TextLabelKind, obj, createTextLabelData, createTextLabelRuntime) as TextLabel;
+  return createNode2D(TextLabelKind, obj, createTextLabelData, createTextLabelRuntime) as TextLabel;
 }
 
 export function createTextLabelData(data?: Readonly<Partial<TextLabelData>>): TextLabelData {
@@ -91,7 +87,7 @@ export function createTextLabelData(data?: Readonly<Partial<TextLabelData>>): Te
 }
 
 export function createTextLabelRuntime(): TextLabelRuntime {
-  const out = createDisplayObjectRuntime(defaultMethods) as TextLabelRuntime;
+  const out = createNode2DRuntime(defaultMethods) as TextLabelRuntime;
   // buildTextLayoutParams is a text-specific per-kind seam, not a display-object trait, so no
   // trait-init copies it off defaultMethods — assign it onto the runtime directly.
   out.buildTextLayoutParams = buildTextLabelLayoutParams;
@@ -105,7 +101,7 @@ export function getTextLabelFormat(source: Readonly<TextLabel>): Readonly<TextFo
 }
 
 export function getTextLabelRuntime(source: Readonly<TextLabel>): Readonly<TextLabelRuntime> {
-  return getDisplayObjectRuntime(source) as TextLabelRuntime;
+  return getNode2DRuntime(source) as TextLabelRuntime;
 }
 
 export function getTextLabelString(source: Readonly<TextLabel>): string {

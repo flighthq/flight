@@ -1,18 +1,12 @@
 ﻿import { noopRendererData } from '@flighthq/render';
-import type {
-  CanvasRenderState,
-  CanvasShapeDrawState,
-  DisplayObjectRenderer,
-  RenderProxy2D,
-  Shape,
-} from '@flighthq/types';
+import type { CanvasRenderState, CanvasShapeDrawState, Scene2DRenderer, RenderProxy2D, Shape } from '@flighthq/types';
 
-import { drawCanvasDisplayObject } from './canvasDisplayObject';
+import { drawCanvasScene2D } from './canvasNode2D';
 import { getCanvasShapeCommand } from './canvasShapeRegistry';
 import { setCanvasTransform } from './canvasTransform';
 
 export function drawCanvasShape(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
-  drawCanvasDisplayObject(state, renderProxy);
+  drawCanvasScene2D(state, renderProxy);
 
   const source = renderProxy.source as Shape;
   const { commands } = source.data;
@@ -42,7 +36,7 @@ export function renderCanvasShapeCommands(context: CanvasRenderingContext2D, com
   }
 }
 
-export const defaultCanvasShapeRenderer: DisplayObjectRenderer = {
+export const defaultCanvasShapeRenderer: Scene2DRenderer = {
   createData: noopRendererData,
   submit: drawCanvasShape,
 };

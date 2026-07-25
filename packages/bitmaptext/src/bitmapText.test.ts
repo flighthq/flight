@@ -1,4 +1,4 @@
-import { getDisplayObjectRuntime } from '@flighthq/displayobject';
+import { getNode2DRuntime } from '@flighthq/displayobject';
 import { createRectangle } from '@flighthq/geometry';
 import { getQuadBatchCapacity } from '@flighthq/sprite';
 import type { BitmapTextRuntime, GlyphEntry, GlyphSource, ImageResource } from '@flighthq/types';
@@ -56,7 +56,7 @@ describe('computeBitmapTextLocalBoundsRectangle', () => {
   it('is safe when out aliases the cached bounds rectangle', () => {
     const text = createBitmapText(createTestGlyphSource(), { text: 'A' });
     updateBitmapText(text);
-    const cached = (getDisplayObjectRuntime(text) as BitmapTextRuntime).localBoundsRectangle;
+    const cached = (getNode2DRuntime(text) as BitmapTextRuntime).localBoundsRectangle;
     expect(cached).not.toBeNull();
     computeBitmapTextLocalBoundsRectangle(cached!, text);
     expect(cached!.width).toBe(6);
@@ -78,7 +78,7 @@ describe('createBitmapText', () => {
     expect(text.kind).toBe(BitmapTextKind);
     const batches = getBitmapTextQuadBatches(text);
     expect(batches).toHaveLength(1);
-    expect(getDisplayObjectRuntime(text).children).toContain(batches[0]);
+    expect(getNode2DRuntime(text).children).toContain(batches[0]);
   });
 
   it('applies construction options to node data', () => {
@@ -150,7 +150,7 @@ describe('getBitmapTextQuadBatches', () => {
     const text = createBitmapText(createTestGlyphSource());
     const batches = getBitmapTextQuadBatches(text);
     expect(batches).toHaveLength(1);
-    expect(batches[0]).toBe(getDisplayObjectRuntime(text).children![0]);
+    expect(batches[0]).toBe(getNode2DRuntime(text).children![0]);
   });
 });
 

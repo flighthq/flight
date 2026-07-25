@@ -1,5 +1,4 @@
 import type { BlendMode } from './BlendMode';
-import type { DisplayObjectClipHooks } from './DisplayObjectRenderer';
 import type { Entity, EntityRuntime, Kind } from './Entity';
 import type { Matrix } from './Matrix';
 import type { Renderable } from './Renderable';
@@ -7,6 +6,7 @@ import type { Renderer } from './Renderer';
 import type { RenderProxy } from './RenderProxy';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderProxyAdapter } from './RenderProxyAdapter';
+import type { Scene2DClipHooks } from './Scene2DRenderer';
 
 /**
  * Controls whether a subsystem refreshes derived scene graph state from raw
@@ -25,7 +25,7 @@ export interface RenderState extends Entity {
   // Active clip nesting depth (rect + path). Masks were retired into clips, so the mask pass / renderer
   // map / currentMaskDepth are gone. Backends additionally keep their own per-form unwind stack.
   currentClipDepth: number;
-  displayObjectClipHooks: DisplayObjectClipHooks | null;
+  displayObjectClipHooks: Scene2DClipHooks | null;
   pixelRatio: number;
   renderAlpha: number;
   renderBlendMode: BlendMode | null;

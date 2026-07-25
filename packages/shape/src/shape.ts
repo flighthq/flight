@@ -1,8 +1,4 @@
-import {
-  createDisplayObjectGeneric,
-  createDisplayObjectRuntime,
-  getDisplayObjectRuntime,
-} from '@flighthq/displayobject';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/displayobject';
 import { invalidateContent } from '@flighthq/node';
 import type { BoundsNodeAny, PartialNode, Rectangle, Shape, ShapeData, ShapeRuntime } from '@flighthq/types';
 import { ShapeKind } from '@flighthq/types';
@@ -281,7 +277,7 @@ export function copyShapeCommands(out: Shape, source: Readonly<Shape>): void {
 }
 
 export function createShape(obj?: Readonly<PartialNode<Shape>>): Shape {
-  return createDisplayObjectGeneric(ShapeKind, obj, createShapeData, createShapeRuntime) as Shape;
+  return createNode2D(ShapeKind, obj, createShapeData, createShapeRuntime) as Shape;
 }
 
 export function createShapeData(data?: Readonly<Partial<ShapeData>>): ShapeData {
@@ -291,7 +287,7 @@ export function createShapeData(data?: Readonly<Partial<ShapeData>>): ShapeData 
 }
 
 export function createShapeRuntime(): ShapeRuntime {
-  return createDisplayObjectRuntime({ computeLocalBoundsRectangle: computeShapeLocalBoundsRectangle }) as ShapeRuntime;
+  return createNode2DRuntime({ computeLocalBoundsRectangle: computeShapeLocalBoundsRectangle }) as ShapeRuntime;
 }
 
 export function getShapeBounds(out: Rectangle, source: Readonly<Shape>): void {
@@ -312,7 +308,7 @@ export function getShapeCommandCount(source: Readonly<Shape>): number {
 }
 
 export function getShapeRuntime(source: Readonly<Shape>): Readonly<ShapeRuntime> {
-  return getDisplayObjectRuntime(source) as ShapeRuntime;
+  return getNode2DRuntime(source) as ShapeRuntime;
 }
 
 // True when the shape has no drawing commands in its command stream.

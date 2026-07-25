@@ -1,15 +1,15 @@
-import type { DisplayObject } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import {
   NativeTextKind,
   addNodeChild,
-  createDisplayContainer,
+  createDisplayObject,
   createDomRenderState,
   createNativeText,
   defaultDomNativeTextRenderer,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerRenderer,
   renderDomBackground,
-  renderDomDisplayObject,
+  renderDomScene2D,
 } from '@flighthq/sdk';
 import { registerFunctionalTarget } from '@ft/verify';
 
@@ -27,15 +27,15 @@ export const scale = 1;
 export const width = 800;
 export const height = 600;
 
-export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+export function render(root: Node2D): void {
+  if (!prepareScene2DRender(state, root)) return;
   renderDomBackground(state);
-  renderDomDisplayObject(state, root);
+  renderDomScene2D(state, root);
 }
 
 registerFunctionalTarget({ kind: 'dom', state, width, height, scale, render });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 // autoSize 'left': the field box tracks the measured element size (bounds come from the renderer's
 // measurement writeback, keeping displayobject DOM-free).

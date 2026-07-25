@@ -15,7 +15,7 @@ import {
   appendShapeBeginFill,
   appendShapeCircle,
   appendShapeEndFill,
-  createDisplayContainer,
+  createDisplayObject,
   createShape,
   getSurfacePixelRgb,
   invalidateNodeAppearance,
@@ -33,7 +33,7 @@ const { render, width } = await createFunctionalTarget({
   kinds: [ShapeKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const redCircle = createShape();
 appendShapeBeginFill(redCircle, 0xff0000, 1);
