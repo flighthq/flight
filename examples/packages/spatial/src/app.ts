@@ -41,6 +41,8 @@ const COLOR_GRID = 0x263954;
 const OBJECT_COUNT = 20;
 const MOVING_COUNT = 5;
 const GRID_SIZE = 100;
+const captureMode = (window as typeof window & { __flightCapture?: boolean }).__flightCapture === true;
+let captureRandomState = 0x5a17_1a1;
 
 const root = createDisplayObject();
 root.scaleX = scale;
@@ -73,7 +75,9 @@ for (let y = GRID_SIZE; y < CANVAS_HEIGHT; y += GRID_SIZE) {
 addNodeChild(root, gridShape);
 
 function randomRange(min: number, max: number): number {
-  return min + Math.random() * (max - min);
+  if (!captureMode) return min + Math.random() * (max - min);
+  captureRandomState = (Math.imul(captureRandomState, 1_664_525) + 1_013_904_223) | 0;
+  return min + ((captureRandomState >>> 0) / 0x1_0000_0000) * (max - min);
 }
 
 for (let i = 0; i < OBJECT_COUNT; i++) {
@@ -126,8 +130,7 @@ let mouseX = CANVAS_WIDTH / 2;
 let mouseY = CANVAS_HEIGHT / 2;
 
 type QueryMode = 'pairs' | 'point' | 'ray' | 'region';
-const captureWindow = window as typeof window & { __flightCapture?: boolean };
-let activeMode: QueryMode = captureWindow.__flightCapture ? 'region' : 'pairs';
+let activeMode: QueryMode = captureMode ? 'region' : 'pairs';
 
 const canvasElement = canvas;
 
@@ -223,7 +226,7 @@ let lastTime = performance.now();
 
 function enterFrame(): void {
   const now = performance.now();
-  const dt = Math.min((now - lastTime) / 1000, 0.05);
+  const dt = captureMode ? 1 / 60 : Math.min((now - lastTime) / 1000, 0.05);
   lastTime = now;
 
   // Move the first few objects and bounce them off the edges.
@@ -318,7 +321,7 @@ function enterFrame(): void {
   updateModeLabel(resultCount);
 
   render(root);
-  requestAnimationFrame(enterFrame);
+  if (!captureMode) requestAnimationFrame(enterFrame);
 }
 
 requestAnimationFrame(enterFrame);

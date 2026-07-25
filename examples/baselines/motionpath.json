@@ -1,14 +1,14 @@
 {
   "canvas": {
-    "sha256": "7fbcd665662807e21e734e56d078a2beacf4ed8e4b18f56c06ca2f6782008ee6"
+    "sha256": "5eca938ae936d7fac0d2f0e59d75b8752589661ddda3ea77692ab2324a702667"
   },
   "dom": {
-    "sha256": "849efbdf7c2b9f1c2d37c02c3cafbffb0578f1d4544a9ecf47f68be9449a4dc5"
+    "sha256": "7a23a20727ca90b9d035ce4299b40641eec50cc8ddb9a1d9ff002cede68c8538"
   },
   "webgl": {
-    "sha256": "7d628466b2c70cb269e5c7da9a5d827d8e3b50a61313abae5ab2a9ab53f7169f"
+    "sha256": "d00454dc6d3ea2757cb9c76b89201b6387debbf3e38b635fdd439b674d90a8a5"
   },
   "webgpu": {
-    "sha256": "41a9271113332995896df6c27fa22e03c832de08680cb0ce1ed2e2ca3301ac61"
+    "sha256": "a45a901252c4bd7fc15fb07d05fa8afdc85539f0384340c6fdbb37c36e8c7405"
   }
 }

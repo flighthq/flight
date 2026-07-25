@@ -24,6 +24,15 @@ import { canvas, render, scale } from './render';
 
 const WIDTH = 800;
 const HEIGHT = 500;
+const captureMode = (window as typeof window & { __flightCapture?: boolean }).__flightCapture === true;
+
+function createCaptureRandom(seed: number): () => number {
+  let state = seed | 0;
+  return () => {
+    state = (Math.imul(state, 1_664_525) + 1_013_904_223) | 0;
+    return (state >>> 0) / 0x1_0000_0000;
+  };
+}
 
 // Root container holds both emitters and the HUD label.
 const root = createDisplayObject();
@@ -108,7 +117,7 @@ const fireForces: readonly ParticleForce[] = [
   { kind: 'TurbulenceForce', strength: 90 * scale, scale: 0.01 },
 ];
 
-const fireSimState = createParticleEmitterState();
+const fireSimState = createParticleEmitterState(captureMode ? createCaptureRandom(0xf1_2e) : Math.random);
 
 // Snow emitter: normal blend, fixed position at top-right, gentle downward drift.
 const snowEmitter = createParticleEmitter2D();
@@ -170,7 +179,7 @@ const snowForces: readonly ParticleForce[] = [
   { kind: 'WindForce', x: 15 * scale, y: 0 },
 ];
 
-const snowSimState = createParticleEmitterState();
+const snowSimState = createParticleEmitterState(captureMode ? createCaptureRandom(0x5a_0b) : Math.random);
 
 // Particle count HUD label.
 const countLabel = createTextLabel();
@@ -200,7 +209,7 @@ let lastTime = performance.now();
 
 function enterFrame(): void {
   const now = performance.now();
-  const dt = Math.min((now - lastTime) / 1000, 0.05);
+  const dt = captureMode ? 1 / 60 : Math.min((now - lastTime) / 1000, 0.05);
   lastTime = now;
 
   // Spring-follow the mouse for the fire emitter.
@@ -226,7 +235,7 @@ function enterFrame(): void {
   invalidateNodeAppearance(countLabel);
 
   render(root);
-  requestAnimationFrame(enterFrame);
+  if (!captureMode) requestAnimationFrame(enterFrame);
 }
 
 invalidateNodeLocalTransform(fireEmitter);

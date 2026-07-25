@@ -177,9 +177,10 @@ let previousTime = performance.now();
 let earthAngle = 0;
 let cloudAngle = 0;
 const axialTilt = -0.28;
+const captureMode = (window as typeof window & { __flightCapture?: boolean }).__flightCapture === true;
 
 function enterFrame(now: number): void {
-  const deltaTime = Math.min((now - previousTime) / 1000, 0.05);
+  const deltaTime = captureMode ? 1 / 60 : Math.min((now - previousTime) / 1000, 0.05);
   previousTime = now;
 
   rotateOrbitCameraController(cameraController, deltaTime * 0.045, 0);
@@ -193,7 +194,7 @@ function enterFrame(now: number): void {
   invalidateNodeLocalTransform(clouds);
 
   render(scene, camera, lights, environment);
-  requestAnimationFrame(enterFrame);
+  if (!captureMode) requestAnimationFrame(enterFrame);
 }
 
 requestAnimationFrame(enterFrame);

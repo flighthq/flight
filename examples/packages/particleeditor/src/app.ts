@@ -22,6 +22,15 @@ import { canvas, render, scale } from './render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
+const captureMode = (window as typeof window & { __flightCapture?: boolean }).__flightCapture === true;
+
+function createCaptureRandom(seed: number): () => number {
+  let state = seed | 0;
+  return () => {
+    state = (Math.imul(state, 1_664_525) + 1_013_904_223) | 0;
+    return (state >>> 0) / 0x1_0000_0000;
+  };
+}
 
 const root = createDisplayObject();
 
@@ -134,7 +143,7 @@ function rebuildForces(): readonly ParticleForce[] {
 
 let config = rebuildConfig();
 let forces = rebuildForces();
-const simState = createParticleEmitterState();
+const simState = createParticleEmitterState(captureMode ? createCaptureRandom(0x5045) : Math.random);
 
 // Control panel construction.
 interface SliderDef {
@@ -353,7 +362,7 @@ let lastTime = performance.now();
 
 function enterFrame(): void {
   const now = performance.now();
-  const dt = Math.min((now - lastTime) / 1000, 0.05);
+  const dt = captureMode ? 1 / 60 : Math.min((now - lastTime) / 1000, 0.05);
   lastTime = now;
 
   // Snap emitter to mouse position.
@@ -370,7 +379,7 @@ function enterFrame(): void {
   invalidateNodeAppearance(countLabel);
 
   render(root);
-  requestAnimationFrame(enterFrame);
+  if (!captureMode) requestAnimationFrame(enterFrame);
 }
 
 invalidateNodeLocalTransform(emitter);
