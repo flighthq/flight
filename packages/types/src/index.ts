@@ -706,6 +706,8 @@ export * from './HueSaturationAdjustment';
 export * from './LiftGammaGainAdjustment';
 export * from './ColorGradeAdjustment';
 export * from './LookupTableGradeAdjustment';
+export * from './LottieDocument';
+export * from './LottieDocumentImport';
 export * from './AmbientLightOptions';
 export * from './AreaLightOptions';
 export * from './DirectionalLightOptions';
