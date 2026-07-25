@@ -29,9 +29,9 @@ Target-free animation core -- keyframe sampling, clip/channel bundling, playback
 - **2026-07-03 — Animation events/markers/callbacks at specific times in scope.** Why: footstep sounds, VFX triggers, and gameplay events are standard animation features.
 - **2026-07-03 — Animation graph / state machine in scope (long-term).** Why: state machines are the industry-standard way to manage complex animation transitions (walk/run/jump).
 - **2026-07-03 — TS-leads, Rust conforms later.** Why: standard project posture.
+- **2026-07-25 — State conditions stay external and transitions are imperative.** Why: gameplay already owns its parameters and conditions; explicitly requesting a named transition avoids a hidden predicate scheduler while the state machine still owns target correspondence, timing, and pose blending.
+- **2026-07-25 — Blend trees are flat weighted player sets with ordered additive leaves.** Why: the irreducible operation is N-way per-target accumulation; hierarchy is composition by named state and shared players, without a recursive closed node union or implicit evaluator registry.
 
 ## Open directions
 
-- Mixer/layer system design: how do layers compose (additive, override, blend)?
-- State machine API shape: declarative graph definition vs imperative builder.
 - Weight/influence per channel: partial-body animation (upper body attack + lower body walk).

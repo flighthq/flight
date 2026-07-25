@@ -11,6 +11,17 @@ by: null
 
 <!-- newest entry on top -->
 
+## 2026-07-25 — N-way blend tree and explicit state machine
+
+Added the crossfade successor as two composed target-free layers. `AnimationBlendTree` normalizes any
+number of positive-weight override players per target, then applies ordered additive players through
+the existing accumulate/add/finish primitives; player identity is advanced once even when shared by
+multiple leaves. `AnimationStateMachine` owns named blend-tree states and one explicit timed transition,
+with precomputed target correspondence and reusable scratch so sampling stays allocation-free.
+Gameplay conditions remain caller-owned: the caller requests a transition by name rather than the core
+polling hidden predicates. The crossfade example now demonstrates idle transitioning into a 70/30
+walk/run blend tree.
+
 ## 2026-07-24 — two-player crossfade controller
 
 Added an explicit `AnimationCrossfade` controller over two players: caller-driven advancement, a plain
