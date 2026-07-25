@@ -825,6 +825,21 @@ describe('createSceneFromMd5Mesh', () => {
     expect(crumb!.origin).toBe('parseMd5Mesh');
   });
 
+  it('recovers and reports md5mesh.shader-unquoted for a shader directive with no quoted name', () => {
+    // Real .md5mesh files sometimes write the shader path unquoted; the mesh is then emitted with no
+    // material. The geometry survives, so this is a Recover.
+    const source = SINGLE_TRIANGLE.replace('shader "textures/default"', 'shader textures/default');
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFromMd5Mesh(source, diagnostics);
+    const mesh = getNodeChildren(scene.root)[1] as unknown as Mesh;
+    expect(mesh.materials).toHaveLength(0); // material binding was lost
+    const crumb = findDiagnostic(diagnostics, 'md5mesh.shader-unquoted');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('parseMd5Mesh');
+    expect(crumb!.detail?.count).toBe(1);
+  });
+
   it('drops and reports md5mesh.mesh-empty for a mesh that yields no triangles', () => {
     const source = [
       'MD5Version 10',

@@ -1016,4 +1016,51 @@ describe('parse3ds diagnostics', () => {
     // Exercising the crumb paths without a sink must not throw and must be side-effect-free.
     expect(() => parse3ds(bytes)).not.toThrow();
   });
+
+  it('drops and reports 3ds.mesh-empty for a parsed trimesh with zero vertices/faces', () => {
+    const bytes = wrapTrimesh('Empty', concatBytes(writeVertices([]), writeFaces([])));
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createSceneFrom3ds(bytes, diagnostics);
+    expect(getNodeChildren(scene.root)).toHaveLength(0);
+    const crumb = findDiagnostic(diagnostics, '3ds.mesh-empty');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('parse3ds');
+    expect(crumb!.detail?.count).toBe(1);
+    expect(crumb!.detail?.firstName).toBe('Empty');
+  });
+
+  it('drops and reports 3ds.material-missing for a FACE_MATERIAL group naming an unknown material', () => {
+    const bytes = buildScene3ds({
+      facesChunk: writeFacesWithGroups([0, 1, 2], { groups: [{ faces: [0], name: 'Ghost' }] }),
+      meshName: 'MM',
+      positions: [0, 0, 0, 1, 0, 0, 0, 1, 0],
+    });
+    const diagnostics: ImportDiagnostic[] = [];
+    parse3ds(bytes, diagnostics);
+    const crumb = findDiagnostic(diagnostics, '3ds.material-missing');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.origin).toBe('parse3ds');
+    expect(crumb!.detail?.count).toBe(1);
+    expect(crumb!.detail?.firstName).toBe('Ghost');
+  });
+
+  it('recovers and reports 3ds.face-subchunk-exceeds for a face sub-chunk declaring length past the chunk', () => {
+    // A FACE_MATERIAL sub-chunk header inside the FACES chunk whose declared length runs past the chunk end.
+    const faceArray = new Uint8Array(2 + 1 * 4 * 2);
+    new DataView(faceArray.buffer).setUint16(0, 1, true); // one face
+    const badSub = new Uint8Array(THREE_DS_CHUNK_HEADER_BYTES);
+    const badView = new DataView(badSub.buffer);
+    badView.setUint16(0, THREE_DS_FACE_MATERIAL, true);
+    badView.setUint32(2, 10000, true); // length far past the faces chunk
+    const facesChunk = writeChunk(THREE_DS_FACES, concatBytes(faceArray, badSub));
+    const bytes = buildScene3ds({ facesChunk, meshName: 'FS', positions: [0, 0, 0, 1, 0, 0, 0, 1, 0] });
+    const diagnostics: ImportDiagnostic[] = [];
+    parse3ds(bytes, diagnostics);
+    const crumb = findDiagnostic(diagnostics, '3ds.face-subchunk-exceeds');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('parse3ds');
+  });
 });

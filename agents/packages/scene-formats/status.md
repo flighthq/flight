@@ -1,6 +1,6 @@
 ---
 package: "@flighthq/scene-formats"
-updated: "2026-07-24"
+updated: "2026-07-25"
 by: builder
 ---
 
@@ -10,6 +10,27 @@ by: builder
 > watch next. Incoming status documents land here.
 
 <!-- newest entry on top -->
+
+## 2026-07-25 — Diagnostics honesty capstone: uniformity audit + sweep-safe silent-drop batch (builder, review-directed)
+
+Capstone on top of the completed structured-diagnostics rollout (all 9 *-formats parsers converted). A
+uniformity audit (4 parallel scans) confirmed the conversion is consistent: origins are the physical
+emitter everywhere (zero mismatches), the Reject/Drop/Recover/Skip axis is applied the same way, and the
+severity vocabulary is uniform. Cross-format confirmation: awd2 `block-length-past-end` (Recover+break) is
+the SAME convention as gltf `glb.chunk-past-end` (a break that keeps already-parsed elements is a partial
+recovery, not a Drop). Then a sweep-safe fix batch closed silent-drop gaps that had a sibling precedent:
+`3ds.face-subchunk-exceeds`/`3ds.mesh-empty`/`3ds.material-missing`, `md5mesh.shader-unquoted`,
+`gltf.node-child-out-of-range`/`gltf.animation-target-unresolved`, `md2.skin-empty-path`,
+`awd2.geometry-truncated`/`awd2.submesh-truncated`. Remaining sequenced honesty work (review-ruled, all
+through review2): C = thread the collector through the gltf material/image/texture subtree; B-diag = a
+Skip-crumb sweep so every parser crumbs its recognized-but-unmodeled features; D = gltf primitive/accessor
+Drop-vs-Recover (no-POSITION primitive should actually drop the empty mesh).
+
+**AWD skeleton-binding / multi-skeleton — DECIDED DEFERRED NON-GOAL (user-pinned 2026-07-25).** Not
+"blocked awaiting a multi-skeleton .awd + animator-block spec" — it is deferred because AWD is a legacy
+format and there is no multi-skeleton AWD corpus to hold an implementation honest. A multi-skeleton file
+binds all skinned meshes to the first skeleton (see the 2026-07-17 entry). Revisit ONLY if a real
+multi-skeleton asset appears; do not resurrect it speculatively.
 
 ## 2026-07-24 — AWD2 materials import as ShadedMaterial (builder, user-directed review-bed46182/7062769f)
 

@@ -227,6 +227,10 @@ export function parseMd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagno
   // first to the mesh's single subset. MD2's own shading is diffuse-textured.
   const document = emptyMd2Document();
   const meshMaterials: number[] = [];
+  // Empty (all-null path) skin records are counted in numSkins but yield no material; tally them and flush
+  // one crumb after the loop rather than reporting per skin (aggregate-once).
+  let emptySkinCount = 0;
+  let firstEmptySkin = -1;
   for (let s = 0; s < numSkins; s++) {
     const skinOffset = offSkins + s * MD2_SKIN_SIZE;
     if (skinOffset + MD2_SKIN_SIZE > bytes.length) {
@@ -236,7 +240,11 @@ export function parseMd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagno
       break;
     }
     const skinName = readMd2SkinName(bytes, skinOffset);
-    if (skinName.length === 0) continue;
+    if (skinName.length === 0) {
+      if (emptySkinCount === 0) firstEmptySkin = s;
+      emptySkinCount++;
+      continue;
+    }
     const material = createBlinnPhongMaterial({
       diffuseMap: createExternalTextureRef(skinName, null, document.resources),
     }) as unknown as Material;
@@ -246,6 +254,12 @@ export function parseMd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagno
     document.materials.push(material as unknown as MaterialLike);
     // Bind the first non-empty skin to the mesh; the rest stay available as alternates.
     if (meshMaterials.length === 0) meshMaterials.push(index);
+  }
+  if (emptySkinCount > 0) {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'md2.skin-empty-path', 'parseMd2', {
+      count: emptySkinCount,
+      firstSkin: firstEmptySkin,
+    });
   }
 
   const vertices = new Float32Array(interleavedVertices);
