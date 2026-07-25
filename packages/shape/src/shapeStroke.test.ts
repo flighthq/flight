@@ -4,8 +4,15 @@ import { PathCommand } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { createShape } from './shape';
-import { appendShapeLineStyle, appendShapeLineTo, appendShapeMoveTo, appendShapeRectangle } from './shapeCommands';
-import { getShapeStrokeRegions, hasClosedShapeStroke, hasNonSolidShapeStroke } from './shapeStroke';
+import {
+  appendShapeLineStyle,
+  appendShapeLineTo,
+  appendShapeMoveTo,
+  appendShapePath,
+  appendShapePolygon,
+  appendShapeRectangle,
+} from './shapeCommands';
+import { getShapeStrokeRegions, hasNonSolidShapeStroke } from './shapeStroke';
 
 // A 90° corner stroked with the given join, as one span.
 function strokedCorner(join: 'bevel' | 'miter' | 'round', thickness = 20) {
@@ -81,24 +88,40 @@ describe('getShapeStrokeRegions', () => {
     expect(getShapeStrokeRegions(shape.data.commands)).toBeNull();
   });
 
+  it('defers a stroked drawPath carrying a CLOSE verb (null)', () => {
+    const shape = createShape();
+    appendShapeLineStyle(shape, 6, 0x0000ff, 1, false, 'normal', 'none', 'miter', 4);
+    // A triangle subpath closed by an explicit CLOSE verb — a ring, not an open stroke.
+    const verbs = [PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO, PathCommand.CLOSE];
+    appendShapePath(shape, verbs, [0, 0, 40, 0, 20, 30], 'nonZero');
+    expect(getShapeStrokeRegions(shape.data.commands)).toBeNull();
+  });
+
+  it('defers a stroked return-to-start polygon (appendShapePolygon) even without a CLOSE verb (null)', () => {
+    const shape = createShape();
+    appendShapeLineStyle(shape, 6, 0x0000ff, 1, false, 'normal', 'none', 'miter', 4);
+    // appendShapePolygon re-emits the first point as a trailing lineTo (return-to-start), no CLOSE verb.
+    appendShapePolygon(shape, [0, 0, 50, 0, 25, 40]);
+    expect(getShapeStrokeRegions(shape.data.commands)).toBeNull();
+  });
+
+  it('ignores an UNSTROKED closed primitive and still strokes a later open line (span-aware)', () => {
+    const shape = createShape();
+    // Rectangle drawn with no active lineStyle — it never reaches a centerline, so it must NOT force the
+    // whole shape to the raster fallback. The later open stroked line still yields one region.
+    appendShapeRectangle(shape, 0, 0, 100, 50);
+    appendShapeLineStyle(shape, 6, 0xff0000, 1, false, 'normal', 'none', 'miter', 4);
+    appendShapeMoveTo(shape, 10, 80);
+    appendShapeLineTo(shape, 90, 80);
+    const regions = getShapeStrokeRegions(shape.data.commands);
+    expect(regions).not.toBeNull();
+    expect(regions!.length).toBe(1);
+    expect(regions![0].color).toBe(0xff0000);
+  });
+
   it('defers a gradient/bitmap stroke to the raster path (null)', () => {
     const gradientStroke: ShapeCommandToken[] = ['lineGradientStyle', 1, 0, 'moveTo', 2, 0, 0, 'lineTo', 2, 50, 0];
     expect(getShapeStrokeRegions(gradientStroke)).toBeNull();
-  });
-});
-
-describe('hasClosedShapeStroke', () => {
-  it('is true for a self-closing primitive and false for an open polyline', () => {
-    const rect = createShape();
-    appendShapeLineStyle(rect, 4, 0);
-    appendShapeRectangle(rect, 0, 0, 10, 10);
-    expect(hasClosedShapeStroke(rect.data.commands)).toBe(true);
-
-    const open = createShape();
-    appendShapeLineStyle(open, 4, 0);
-    appendShapeMoveTo(open, 0, 0);
-    appendShapeLineTo(open, 10, 0);
-    expect(hasClosedShapeStroke(open.data.commands)).toBe(false);
   });
 });
 
