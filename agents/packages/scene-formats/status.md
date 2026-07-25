@@ -50,6 +50,20 @@ mesh with zeroed normals; index/mode-fail drop the mesh). **Output-shape change*
 no-POSITION/failed-mandatory primitive means fewer mesh nodes, so a consumer assuming glTF-primitive-index↔
 child-node alignment would shift; relabel-only fallback if ever needed. No such consumer today.
 
+**D second re-gate (review2-a8b72928 FAIL) — five role-semantics edge cases, all fixed.** The output blockers
+were fixed but count-mismatch and index-correspondence cases slipped through. Applied the same usable-survivor
+rule to each: (1) an optional attribute whose count ≠ the primitive's vertex count is now Recover-crumbed
+(`gltf.accessor-count-mismatch`, detail accessor/expected/actual) before zero-filling, not silently dropped;
+(2) a present-but-short `inverseBindMatrices` accessor (count < joints) now recovers to identity for ALL joints
+(`gltf.skin-ibm-count-mismatch` Recover) instead of zero-filling missing joints (which collapsed the mesh);
+(3) `buildGltfMorph` now takes the base vertex count and drops a target whose POSITION-delta count ≠ base
+(`gltf.morph-target-count-mismatch` Drop); (4) because dropping ONE morph target renumbers survivors and
+desyncs target↔weight↔animation indexing, ANY invalid target now drops the WHOLE morph set (return null), so
+indexing stays honest — weights index-align 1:1 with the surviving targets; (5) an animation sampler with an
+empty or ragged (values not a whole multiple of times) accessor pair now drops the channel
+(`gltf.animation-sampler-empty` Drop) so no empty-channel animation is created. Five probe regressions added.
+scene-formats 497/497 (gltfParse 116/116), npm run check exit 0.
+
 **AWD skeleton-binding / multi-skeleton — DECIDED DEFERRED NON-GOAL (user-pinned 2026-07-25).** Not
 "blocked awaiting a multi-skeleton .awd + animator-block spec" — it is deferred because AWD is a legacy
 format and there is no multi-skeleton AWD corpus to hold an implementation honest. A multi-skeleton file
