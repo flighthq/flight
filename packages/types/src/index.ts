@@ -31,6 +31,7 @@ export * from './AnimationInterpolation';
 export * from './AnimationLayerStack';
 export * from './AnimationLoopMode';
 export * from './AnimationPlayer';
+export * from './AnimationRootMotionExtractor';
 export * from './AnimationSampleAccumulator';
 export * from './AnimationStateMachine';
 export * from './AnimationTrack';

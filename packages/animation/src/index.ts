@@ -4,5 +4,6 @@ export * from './animationBlendTree';
 export * from './animationCrossfade';
 export * from './animationLayerStack';
 export * from './animationPlayer';
+export * from './animationRootMotion';
 export * from './animationStateMachine';
 export * from './animationTrack';
