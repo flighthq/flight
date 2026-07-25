@@ -10,9 +10,11 @@
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
+    { "path": "../animation" },
     { "path": "../clip" },
     { "path": "../color" },
     { "path": "../displayobject" },
+    { "path": "../easing" },
     { "path": "../geometry" },
     { "path": "../image" },
     { "path": "../importdiagnostics" },

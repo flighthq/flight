@@ -21,6 +21,14 @@ export function applyAnimationClipToDisplayObject(clip: Readonly<AnimationClip>,
         node.pivotY = _scratch[1];
         invalidateNodeLocalTransform(node);
         break;
+      case 'PivotX':
+        node.pivotX = _scratch[0];
+        invalidateNodeLocalTransform(node);
+        break;
+      case 'PivotY':
+        node.pivotY = _scratch[0];
+        invalidateNodeLocalTransform(node);
+        break;
       case 'Position':
         node.x = _scratch[0];
         node.y = _scratch[1];
@@ -35,14 +43,38 @@ export function applyAnimationClipToDisplayObject(clip: Readonly<AnimationClip>,
         node.scaleY = _scratch[1];
         invalidateNodeLocalTransform(node);
         break;
+      case 'ScaleX':
+        node.scaleX = _scratch[0];
+        invalidateNodeLocalTransform(node);
+        break;
+      case 'ScaleY':
+        node.scaleY = _scratch[0];
+        invalidateNodeLocalTransform(node);
+        break;
       case 'Skew':
         node.skewX = _scratch[0];
         node.skewY = _scratch[1];
         invalidateNodeLocalTransform(node);
         break;
+      case 'SkewX':
+        node.skewX = _scratch[0];
+        invalidateNodeLocalTransform(node);
+        break;
+      case 'SkewY':
+        node.skewY = _scratch[0];
+        invalidateNodeLocalTransform(node);
+        break;
       case 'Visible':
         node.visible = _scratch[0] >= 0.5;
         invalidateNodeAppearance(node);
+        break;
+      case 'X':
+        node.x = _scratch[0];
+        invalidateNodeLocalTransform(node);
+        break;
+      case 'Y':
+        node.y = _scratch[0];
+        invalidateNodeLocalTransform(node);
         break;
     }
   }

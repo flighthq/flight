@@ -58,7 +58,7 @@ function createBoundClip(
   node: ReturnType<typeof createDisplayObject>,
   path: DisplayObjectAnimationPath,
   components: number,
-  values: number[],
+  values: ReadonlyArray<number>,
 ) {
   return createAnimationClip([
     createAnimationChannel(createAnimationTrack({ components, times: [0, 1], values }), {
