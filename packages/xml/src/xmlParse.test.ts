@@ -136,6 +136,15 @@ describe('parseXmlDocument', () => {
     expect(doc?.children[0]?.text).toBe('hello');
   });
 
+  it('preserves the order of mixed text and child elements', () => {
+    const doc = parseXmlDocument('<text>A<tspan>B</tspan>C</text>');
+
+    expect(doc?.content[0]).toBe('A');
+    expect((doc?.content[1] as { name: string } | undefined)?.name).toBe('tspan');
+    expect(doc?.content[2]).toBe('C');
+    expect(doc?.text).toBe('AC');
+  });
+
   it('keeps a > inside a quoted attribute value as data, not tag-end', () => {
     const root = parseXmlDocument('<node attr="a>b"/>');
     expect(root?.name).toBe('node');

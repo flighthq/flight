@@ -103,6 +103,7 @@ function parseElement(src: string, state: ParseState): XmlElement | null {
 
   const attributes = parseXmlAttributes(attrsStr);
   const children: XmlElement[] = [];
+  const content: Array<string | XmlElement> = [];
   let text = '';
 
   if (!selfClosing) {
@@ -115,7 +116,9 @@ function parseElement(src: string, state: ParseState): XmlElement | null {
         // Text node
         const textStart = state.pos;
         while (state.pos < src.length && src[state.pos] !== '<') state.pos++;
-        text += decodeXmlEntities(src.slice(textStart, state.pos).trim());
+        const decoded = decodeXmlEntities(src.slice(textStart, state.pos).trim());
+        text += decoded;
+        if (decoded !== '') content.push(decoded);
         continue;
       }
 
@@ -128,11 +131,14 @@ function parseElement(src: string, state: ParseState): XmlElement | null {
       }
 
       const child = parseElement(src, state);
-      if (child) children.push(child);
+      if (child) {
+        children.push(child);
+        content.push(child);
+      }
     }
   }
 
-  return { attributes, children, name, text };
+  return { attributes, children, content, name, text };
 }
 
 function skipWhitespace(src: string, state: ParseState): void {
