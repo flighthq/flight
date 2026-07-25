@@ -155,6 +155,19 @@ export function hasNonSolidShapeFill(commands: readonly ShapeCommandToken[]): bo
   return false;
 }
 
+// True if the command stream declares any fill (solid, gradient, or bitmap). Lets the GPU stroke path
+// tell a STROKE-ONLY shape (renderable as outline meshes) from a filled-and-stroked one (which still
+// needs the raster fallback until the GPU fill + stroke paths compose).
+export function hasShapeFill(commands: readonly ShapeCommandToken[]): boolean {
+  let i = 0;
+  while (i < commands.length) {
+    const name = commands[i] as string;
+    if (name === 'beginFill' || name === 'beginGradientFill' || name === 'beginBitmapFill') return true;
+    i += 2 + (commands[i + 1] as number);
+  }
+  return false;
+}
+
 const KAPPA = 0.5522847498307936;
 
 function appendEllipseToPath(path: Path, cx: number, cy: number, rx: number, ry: number): void {
