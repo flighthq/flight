@@ -5,7 +5,7 @@ export interface XmlElement {
   attributes: Record<string, string>;
   /** Direct child elements. Text content and comments are discarded as elements. */
   children: XmlElement[];
-  /** Direct text nodes and child elements in source order. */
+  /** Raw direct text nodes and child elements in source order. */
   content: Array<string | XmlElement>;
   name: string;
   /** Raw text content (trimmed), concatenation of text nodes. */

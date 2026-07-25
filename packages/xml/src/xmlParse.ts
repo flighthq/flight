@@ -109,15 +109,14 @@ function parseElement(src: string, state: ParseState): XmlElement | null {
   if (!selfClosing) {
     // Parse children until closing tag
     while (state.pos < src.length) {
-      skipWhitespace(src, state);
       if (state.pos >= src.length) break;
 
       if (src[state.pos] !== '<') {
         // Text node
         const textStart = state.pos;
         while (state.pos < src.length && src[state.pos] !== '<') state.pos++;
-        const decoded = decodeXmlEntities(src.slice(textStart, state.pos).trim());
-        text += decoded;
+        const decoded = decodeXmlEntities(src.slice(textStart, state.pos));
+        text += decoded.trim();
         if (decoded !== '') content.push(decoded);
         continue;
       }

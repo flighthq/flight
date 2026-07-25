@@ -1,5 +1,7 @@
+import { createRectangle } from '@flighthq/geometry';
 import { createImageResource } from '@flighthq/image';
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node';
+import { getShapeBounds } from '@flighthq/shape';
 import type { Bitmap, ImportDiagnostic, RichText, Shape, TextLabel } from '@flighthq/types';
 import { BitmapKind, DisplayObjectKind, RichTextKind, ShapeKind, TextLabelKind } from '@flighthq/types';
 
@@ -28,6 +30,47 @@ describe('createDisplayObjectFromSvgDocument', () => {
     expect(masked.clip?.rect).toMatchObject({ height: 100, width: 100, x: 50, y: 0 });
   });
 
+  it('applies object-bounding-box clips in image-local geometry', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const image = createImageResource();
+    image.width = 20;
+    image.height = 10;
+    const root = createDisplayObjectFromSvgDocument(
+      `
+        <svg>
+          <defs>
+            <clipPath id="half" clipPathUnits="objectBoundingBox">
+              <rect width="0.5" height="1"/>
+            </clipPath>
+            <symbol id="panel" viewBox="0 0 20 10" preserveAspectRatio="none">
+              <rect width="20" height="10"/>
+            </symbol>
+          </defs>
+          <image href="asset.png" width="200" height="100" clip-path="url(#half)"/>
+          <g clip-path="url(#half)"><rect width="200" height="100"/></g>
+          <use href="#panel" width="200" height="100" clip-path="url(#half)"/>
+          <text font-size="10" clip-path="url(#half)">Unmeasured</text>
+        </svg>
+      `,
+      diagnostics,
+      { resolveImageResource: () => image },
+    );
+
+    const bitmap = getNodeChildAt(root, 0) as Bitmap;
+    expect(bitmap.clip?.rect).toMatchObject({ height: 10, width: 10, x: 0, y: 0 });
+    expect(bitmap.scaleX * (bitmap.clip?.rect.width ?? 0)).toBe(100);
+    expect(bitmap.scaleY * (bitmap.clip?.rect.height ?? 0)).toBe(100);
+    expect(getNodeChildAt(root, 1)?.clip?.rect).toMatchObject({ height: 100, width: 100, x: 0, y: 0 });
+    expect(getNodeChildAt(root, 2)?.clip?.rect).toMatchObject({ height: 100, width: 100, x: 0, y: 0 });
+    expect(getNodeChildAt(root, 3)?.clip).toBeNull();
+    expect(diagnostics).toContainEqual({
+      detail: { id: 'half' },
+      kind: 'svg.object-bounding-box-clip-without-bounds',
+      origin: 'applySvgElementClip',
+      severity: 'Skip',
+    });
+  });
+
   it('applies root presentation to descendants', () => {
     const root = createDisplayObjectFromSvgDocument('<svg fill="red"><rect width="10" height="10"/></svg>');
     const shape = getNodeChildAt(root, 0) as Shape;
@@ -50,6 +93,33 @@ describe('createDisplayObjectFromSvgDocument', () => {
     expect(bitmap.y).toBe(24);
     expect(bitmap.scaleX).toBe(2);
     expect(bitmap.scaleY).toBe(3);
+  });
+
+  it('composes authored geometry before transforms uniformly across element types', () => {
+    const image = createImageResource();
+    image.width = 10;
+    image.height = 10;
+    const root = createDisplayObjectFromSvgDocument(
+      `
+        <svg>
+          <defs><g id="mark"><rect width="1" height="1"/></g></defs>
+          <rect x="3" width="10" height="10" transform="translate(10 5)"/>
+          <image href="asset.png" x="3" width="10" height="10" transform="translate(10 5)"/>
+          <use href="#mark" x="3" transform="translate(10 5)"/>
+          <text x="3" y="15" font-size="10" transform="translate(10 5)">T</text>
+        </svg>
+      `,
+      undefined,
+      { resolveImageResource: () => image },
+    );
+
+    const shape = getNodeChildAt(root, 0) as Shape;
+    const shapeBounds = createRectangle();
+    getShapeBounds(shapeBounds, shape);
+    expect(shape.x + shapeBounds.x).toBe(13);
+    expect((getNodeChildAt(root, 1) as Bitmap).x).toBe(13);
+    expect(getNodeChildAt(root, 2)?.x).toBe(13);
+    expect((getNodeChildAt(root, 3) as TextLabel).x).toBe(13);
   });
 
   it('composes use placement before its SVG transform', () => {
@@ -98,6 +168,36 @@ describe('createDisplayObjectFromSvgDocument', () => {
     expect(shape.data.commands[drawPathIndex + 4]).toBe('evenOdd');
   });
 
+  it('honors clip-rule winding and diagnoses mixed clip child winding', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const root = createDisplayObjectFromSvgDocument(
+      `
+        <svg>
+          <defs>
+            <clipPath id="hole" clip-rule="evenodd">
+              <g><path d="M0 0 H20 V20 H0 Z M5 5 H15 V15 H5 Z"/></g>
+            </clipPath>
+            <clipPath id="mixed">
+              <rect width="10" height="10" clip-rule="evenodd"/>
+              <circle cx="5" cy="5" r="2" clip-rule="nonzero"/>
+            </clipPath>
+          </defs>
+          <rect width="20" height="20" clip-path="url(#hole)"/>
+          <rect width="20" height="20" clip-path="url(#mixed)"/>
+        </svg>
+      `,
+      diagnostics,
+    );
+
+    expect(getNodeChildAt(root, 0)?.clip?.winding).toBe('evenOdd');
+    expect(diagnostics).toContainEqual({
+      detail: { id: 'mixed' },
+      kind: 'svg.mixed-clip-rule',
+      origin: 'createSvgClipPath',
+      severity: 'Recover',
+    });
+  });
+
   it('lets author CSS outrank presentation attributes by specificity and source order', () => {
     const root = createDisplayObjectFromSvgDocument(`
       <svg>
@@ -125,6 +225,16 @@ describe('createDisplayObjectFromSvgDocument', () => {
     expect(text.data.textFormatRanges).toHaveLength(1);
     expect(text.data.textFormatRanges[0]).toMatchObject({ end: 2, start: 1 });
     expect(text.data.textFormatRanges[0].format.color).toBe(0xff0000ff);
+  });
+
+  it('preserves meaningful collapsed whitespace across mixed text runs', () => {
+    const root = createDisplayObjectFromSvgDocument(
+      '<svg><text font-size="12">Hello <tspan fill="red">world</tspan>!</text></svg>',
+    );
+    const text = getNodeChildAt(root, 0) as RichText;
+
+    expect(text.data.text).toBe('Hello world!');
+    expect(text.data.textFormatRanges[0]).toMatchObject({ end: 11, start: 6 });
   });
 
   it('returns an empty tree and a structured diagnostic for non-SVG input', () => {
@@ -218,7 +328,7 @@ describe('createDisplayObjectFromSvgDocument', () => {
     expect(diagnostics).toContainEqual({
       detail: { id: 'matte' },
       kind: 'svg.mask-as-hard-clip',
-      origin: 'applySvgElementAppearance',
+      origin: 'applySvgElementClip',
       severity: 'Recover',
     });
   });
@@ -284,7 +394,7 @@ describe('createDisplayObjectFromSvgDocument', () => {
 
     const text = getNodeChildAt(root, 0) as RichText;
     expect(text.kind).toBe(RichTextKind);
-    expect(text.data.text).toBe('RedBlue');
+    expect(text.data.text).toBe('Red Blue');
     expect(text.data.textFormatRanges).toHaveLength(2);
     expect(text.data.textFormatRanges[0].format.color).toBe(0xff0000ff);
     expect(text.data.textFormatRanges[1].format.color).toBe(0x0000ffff);
@@ -297,6 +407,16 @@ describe('createDisplayObjectFromSvgDocument', () => {
       origin: 'createSvgTextNode',
       severity: 'Recover',
     });
+  });
+
+  it('composes text placement and baseline before its SVG transform', () => {
+    const root = createDisplayObjectFromSvgDocument(
+      '<svg><text x="3" y="20" font-size="10" transform="translate(10 5)">Hello</text></svg>',
+    );
+    const text = getNodeChildAt(root, 0) as TextLabel;
+
+    expect(text.x).toBe(13);
+    expect(text.y).toBe(15);
   });
 
   it('honors preserveAspectRatio and forward gradient inheritance', () => {
@@ -344,5 +464,31 @@ describe('createDisplayObjectFromSvgDocument', () => {
     const symbol = getNodeChildAt(use, 0)!;
     expect(symbol.scaleX).toBe(2);
     expect(symbol.scaleY).toBe(3);
+  });
+
+  it('reports unsupported animation inside an instantiated symbol', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    createDisplayObjectFromSvgDocument(
+      `
+        <svg>
+          <defs>
+            <symbol id="animated">
+              <rect width="10" height="10">
+                <animate attributeName="x" from="0" to="10"/>
+              </rect>
+            </symbol>
+          </defs>
+          <use href="#animated"/>
+        </svg>
+      `,
+      diagnostics,
+    );
+
+    expect(diagnostics).toContainEqual({
+      detail: { element: 'animate' },
+      kind: 'svg.unsupported-animate',
+      origin: 'createSvgElementNode',
+      severity: 'Skip',
+    });
   });
 });
