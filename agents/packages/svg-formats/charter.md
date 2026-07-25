@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/svg-formats'
+absorbed: displayobject-formats
 draft: true
 lastDirection: 2026-07-12
 review: ./review.md
@@ -31,6 +32,9 @@ Path *data* (`d="…"`) already lands in `@flighthq/path-formats` (`parseSvgPath
 _Append-only, dated, blessed rulings._
 
 - **[2026-07-12] Chartered as a candidate; not built.** Part of the visual-authoring-import arc (fork I). Static-vector scope only; path data delegates to `path-formats`; output is `shape`/display data. Bless-to-build is the user's. User-directed 2026-07-12 ("SVG to a point, in scope as a `-formats` member").
+- **[2026-07-25] Superseded before build by `@flighthq/displayobject-formats`.** The user-directed
+  animation follow-on queue broadened the subject home and explicitly named `displayobject-formats`;
+  the static SVG scope moved there unchanged. This reserved package was never built.
 
 ## Open directions
 

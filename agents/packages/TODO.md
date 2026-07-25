@@ -1,6 +1,6 @@
 # Package TODO Index
 
-_Generated 2026-07-24 by `node agents/packages/todo.mjs` — do not edit by hand. Sources: each cell's `review.md` (status/score), `assessment.md` (Directed, Recommended, and Depth gaps), `charter.md` (chartered-unbuilt detection), and `register.md › Build queue`. Regenerate after assessments or the register change._
+_Generated 2026-07-25 by `node agents/packages/todo.mjs` — do not edit by hand. Sources: each cell's `review.md` (status/score), `assessment.md` (Directed, Recommended, and Depth gaps), `charter.md` (chartered-unbuilt detection), and `register.md › Build queue`. Regenerate after assessments or the register change._
 
 One line per tracked item. For detail, read only the named package's cell: `agents/packages/<name>/assessment.md` (and its `charter.md` for the rules). `Directed` is user-approved program work, `Recommended` is sweep-safe but **not yet approved**, and `Depth gaps` is surveyed domain depth awaiting prioritization.
 
@@ -14,7 +14,6 @@ Blessed charters with no code behind them. Start from the charter; add a registe
 - **`physics3d`** — 3D rigid-body dynamics: a constraint solver over 3D collision shapes (sphere, box, capsule, convex hull, triangle mesh), producing contact resolution, friction, restitution, joints, and sleeping in three dimensions. The 3D physics engine — Bullet/Rapier/PhysX territory — as a plain-data simulation with explicit step.
 - **`rive-formats`** — `@flighthq/rive-formats` is the reserved home for **Rive `.riv` import** — parsing Rive's runtime format into Flight's primitives. It is the richest importer in the visual-authoring-artifact arc ([structural-forks](../structural-forks.md#i-visual-authoring-artifacts-import-as--formats-not-as-a-code-layout-dsl)): on top of the vector + keyframe animation that `lottie-formats` covers, Rive adds **meshes**, **bones/skinning**, and **state machines**.
 - **`skeleton2d`** — 2D skeletal animation: bone hierarchies with 2D transforms (translate/rotate/scale), mesh deformation (weighted vertices over a 2D polygon mesh), slot-based draw order, and 2D IK constraints. The domain Spine, DragonBones, and Creature occupy — skeletal character animation for 2D games.
-- **`svg-formats`** — `@flighthq/svg-formats` is the reserved home for **static SVG import** — parsing an SVG document into Flight's vector primitives: `@flighthq/shape` command streams and a display subtree. It is the vector-graphic importer in the visual-authoring-artifact arc ([structural-forks](../structural-forks.md#i-visual-authoring-artifacts-import-as--formats-not-as-a-code-layout-dsl)), the static sibling of `lottie-formats` (animated vector) and `rive-formats` (vector + state machines).
 
 ## External — spun out to another repo (not built here)
 
@@ -28,6 +27,7 @@ These cells retain their direction/review history, but are not packages to recre
 
 - **`camera2d`** → `@flighthq/camera`
 - **`skeleton`** → `@flighthq/skeleton3d`
+- **`svg-formats`** → `displayobject-formats`
 
 ## Rust-intended — designated for a Rust impl elsewhere (this repo names + scopes; built there)
 
@@ -457,11 +457,6 @@ Design calls to settle before building the affected entries:
 - Add deterministic skybox teardown
 - Fix the nonexistent invalidation contract
 
-### skeleton3d (solid 75)
-
-- Resolve the morph/skin deformer layering inversion
-- Dirty-gate the per-frame bounds recompute
-
 ### bitmapfont (solid 76)
 
 - Supplementary-plane-safe kerning key
@@ -880,7 +875,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ### animation (solid 62)
 
-- Compose target-free samples into mixer/layer policy
+- Keep mixing policy decoupled from bindings
 - Complete playback semantics
 - Add authoring/runtime utilities without a kitchen sink
 
@@ -1016,14 +1011,14 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene` · `particleemitter` · `scene-resources` · `camera-controls` · `debug` · `lifecycle` · `adjustments` · `camera` · `platform` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `shading`
+`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene` · `particleemitter` · `skeleton3d` · `scene-resources` · `camera-controls` · `debug` · `lifecycle` · `adjustments` · `camera` · `platform` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `displayobject-formats` · `host-capacitor` · `intl` · `movieclip` · `shading`
 
 ## Liveness — which stage each stale cell needs next
 
 Computed from cell front matter (dates are `updated:`/`lastDirection:` fields). The review loop works this list to keep everything above trustworthy; it can be ignored when simply orienting in a package.
 
 - **Needs a direction session (charter stub or never directed):** `textshaper-canvas` · `textureatlas-formats` · `xml`
-- **Needs a first review (built, no review.md):** `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `shading`
-- **Needs re-review (work landed after the survey):** `displayobject-wgpu (review 2026-06-24 < status 2026-06-25)` · `glyphatlas (review 2026-07-13 < status 2026-07-17)` · `render-gl (review 2026-07-21 < status 2026-07-22)` · `texture (review 2026-06-25 < status 2026-07-22)`
+- **Needs a first review (built, no review.md):** `accessibility` · `clock` · `displayobject-formats` · `host-capacitor` · `intl` · `movieclip` · `shading`
+- **Needs re-review (work landed after the survey):** `displayobject-wgpu (review 2026-06-24 < status 2026-06-25)` · `glyphatlas (review 2026-07-13 < status 2026-07-17)` · `render-gl (review 2026-07-21 < status 2026-07-22)` · `scene-formats (review 2026-07-09 < status 2026-07-24)` · `texture (review 2026-06-25 < status 2026-07-22)`
 - **Needs assess refresh (review newer than assessment):** `assets (assessment 2026-07-21 < review 2026-07-22)` · `audio (assessment 2026-07-03 < review 2026-07-13)` · `log (assessment 2026-07-02 < review 2026-07-13)` · `spritesheet (assessment 2026-07-02 < review 2026-07-13)` · `tileset (assessment 2026-07-03 < review 2026-07-09)` · `tween (assessment 2026-07-02 < review 2026-07-13)` · `video (assessment 2026-07-03 < review 2026-07-09)` · `xml (assessment 2026-07-03 < review 2026-07-09)`
-- **Open directions awaiting the user:** 593 across 133 charters — most-loaded: `scene` (13) · `displayobject-gl` (12) · `render-gl` (12) · `displayobject` (11) · `displayobject-dom` (10) · `effects-wgpu` (10) · `lighting` (10) · `scene-gl` (10) · `spritesheet-formats` (10) · `displayobject-canvas` (9) · `mesh` (9) · `render-wgpu` (9) · `skeleton3d` (9) · `displayobject-wgpu` (8) · `effects-gl` (8) · `geometry` (8) · `materials` (8) · `particles-formats` (8) · `scene-wgpu` (8) · `render` (7) · `scene-resources` (7) · `timeline` (7) · `camera` (6) · `capture` (6) · `color` (6) · `effects-canvas` (6) · `loader` (6) · `texture-formats` (6) · `tween` (6). Each charter's `## Open directions` section holds the questions; a direction session drains them.
+- **Open directions awaiting the user:** 590 across 132 charters — most-loaded: `scene` (13) · `displayobject-gl` (12) · `render-gl` (12) · `displayobject` (11) · `displayobject-dom` (10) · `effects-wgpu` (10) · `lighting` (10) · `scene-gl` (10) · `spritesheet-formats` (10) · `displayobject-canvas` (9) · `mesh` (9) · `render-wgpu` (9) · `skeleton3d` (9) · `displayobject-wgpu` (8) · `effects-gl` (8) · `geometry` (8) · `materials` (8) · `particles-formats` (8) · `scene-wgpu` (8) · `render` (7) · `scene-resources` (7) · `timeline` (7) · `camera` (6) · `capture` (6) · `color` (6) · `effects-canvas` (6) · `loader` (6) · `texture-formats` (6) · `tween` (6). Each charter's `## Open directions` section holds the questions; a direction session drains them.

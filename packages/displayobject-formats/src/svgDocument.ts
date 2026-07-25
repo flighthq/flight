@@ -89,13 +89,18 @@ export function createDisplayObjectFromSvgDocument(
     elementsById: new Map(),
     gradientsById: new Map(),
     options,
+    resolvingGradients: new Set(),
     resolvingUses: new Set(),
   };
   indexSvgDefinitions(document, context);
 
   out.name = attribute(document, 'id');
   applySvgElementAppearance(out, document, defaultSvgStyle, context);
-  applySvgTransform(out, createSvgViewportMatrix(document));
+  const viewport = createSvgViewportMatrix(document);
+  if (viewport !== null) {
+    const own = parseSvgTransform(attribute(document, 'transform'));
+    applySvgTransform(out, own === null ? viewport : multiplySvgMatrices(own, viewport));
+  }
   appendSvgChildren(out, document, defaultSvgStyle, context);
   return out;
 }
@@ -139,6 +144,7 @@ interface SvgImportContext {
   elementsById: Map<string, XmlElement>;
   gradientsById: Map<string, SvgGradient>;
   options: Readonly<SvgDocumentImportOptions> | undefined;
+  resolvingGradients: Set<string>;
   resolvingUses: Set<string>;
 }
 
@@ -719,9 +725,24 @@ function createSvgViewportMatrix(element: Readonly<XmlElement>): Matrix | null {
   if (viewBox.length < 4) return x === 0 && y === 0 ? null : createMatrix(1, 0, 0, 1, x, y);
   const width = parseSvgLength(attribute(element, 'width'), viewBox[2]);
   const height = parseSvgLength(attribute(element, 'height'), viewBox[3]);
-  const sx = viewBox[2] === 0 ? 1 : width / viewBox[2];
-  const sy = viewBox[3] === 0 ? 1 : height / viewBox[3];
-  return createMatrix(sx, 0, 0, sy, x - viewBox[0] * sx, y - viewBox[1] * sy);
+  let sx = viewBox[2] === 0 ? 1 : width / viewBox[2];
+  let sy = viewBox[3] === 0 ? 1 : height / viewBox[3];
+  const preserveAspectRatio = (attribute(element, 'preserveAspectRatio') ?? 'xMidYMid meet').trim();
+  if (preserveAspectRatio === 'none') {
+    return createMatrix(sx, 0, 0, sy, x - viewBox[0] * sx, y - viewBox[1] * sy);
+  }
+
+  const parts = preserveAspectRatio.split(/\s+/);
+  const alignment = parts[0] === 'defer' ? (parts[1] ?? 'xMidYMid') : parts[0];
+  const mode = parts.includes('slice') ? 'slice' : 'meet';
+  const uniformScale = mode === 'slice' ? Math.max(sx, sy) : Math.min(sx, sy);
+  sx = uniformScale;
+  sy = uniformScale;
+  const spareX = width - viewBox[2] * sx;
+  const spareY = height - viewBox[3] * sy;
+  const alignX = alignment.includes('xMax') ? spareX : alignment.includes('xMid') ? spareX / 2 : 0;
+  const alignY = alignment.includes('YMax') ? spareY : alignment.includes('YMid') ? spareY / 2 : 0;
+  return createMatrix(sx, 0, 0, sy, x + alignX - viewBox[0] * sx, y + alignY - viewBox[1] * sy);
 }
 
 function getCssSelectorSpecificity(selector: string): number {
@@ -839,7 +860,29 @@ function parseSvgColor(value: string): SvgColor | null {
 function parseSvgGradient(element: Readonly<XmlElement>, context: SvgImportContext): SvgGradient | null {
   const kind = localName(element.name) === 'linearGradient' ? 'linear' : 'radial';
   const href = attribute(element, 'href');
-  const inherited = href?.startsWith('#') === true ? context.gradientsById.get(href.slice(1)) : undefined;
+  const inheritedId = href?.startsWith('#') === true ? href.slice(1) : null;
+  let inherited = inheritedId === null ? undefined : context.gradientsById.get(inheritedId);
+  if (inherited === undefined && inheritedId !== null && !context.resolvingGradients.has(inheritedId)) {
+    const inheritedElement = context.elementsById.get(inheritedId);
+    if (
+      inheritedElement !== undefined &&
+      (localName(inheritedElement.name) === 'linearGradient' || localName(inheritedElement.name) === 'radialGradient')
+    ) {
+      context.resolvingGradients.add(inheritedId);
+      inherited = parseSvgGradient(inheritedElement, context) ?? undefined;
+      context.resolvingGradients.delete(inheritedId);
+      if (inherited !== undefined) context.gradientsById.set(inheritedId, inherited);
+    }
+  }
+  if (inheritedId !== null && inherited === undefined) {
+    reportImportDiagnostic(
+      context.diagnostics,
+      context.resolvingGradients.has(inheritedId) ? ImportDiagnosticSeverity.Reject : ImportDiagnosticSeverity.Drop,
+      context.resolvingGradients.has(inheritedId) ? 'svg.recursive-gradient' : 'svg.unresolved-gradient-reference',
+      'parseSvgGradient',
+      { id: inheritedId },
+    );
+  }
   const stops: SvgGradientStop[] = [];
   for (const child of element.children) {
     if (localName(child.name) !== 'stop') continue;
