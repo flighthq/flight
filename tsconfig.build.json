@@ -24,6 +24,7 @@
     { "path": "./packages/device" },
     { "path": "./packages/dialog" },
     { "path": "./packages/displayobject" },
+    { "path": "./packages/displayobject-formats" },
     { "path": "./packages/displayobject-canvas" },
     { "path": "./packages/displayobject-dom" },
     { "path": "./packages/displayobject-gl" },
