@@ -1,0 +1,96 @@
+---
+package: '@flighthq/swf'
+draft: true
+lastDirection: 2026-07-25
+review: ./review.md
+assessment: ./assessment.md
+status: ./status.md
+---
+
+# swf — Charter (reserved home)
+
+## What it is
+
+`@flighthq/swf` is the reserved home for **SWF (Flash) import** — parsing Adobe/Macromedia Flash
+`.swf` bytes into Flight data. It is a **domain package**, not a `-formats` codec: SWF is a large,
+distinct domain (shapes, bitmaps, text, fonts, MovieClip timelines, named instances, symbol linkage,
+sounds, video, filters, morph, tag versions), so it graduates to its own greppable cell — exactly as
+`movieclip`, `sprite`, and `particleemitter` are their own packages despite being leaf node types in
+the `scene2d` graph. A shared contract does not force one package; a huge domain earns its own.
+
+SWF is the **archetypal named-graph source** — the format the "named 2D node graph" contract (#3) was
+modeled on. Its MovieClip symbols (nested timelines), named instances, and `SymbolClass` linkage *are*
+the slot + linkage model. Importing SWF delivers the large archive of existing Flash content and
+**validates #3 against the format it descends from**.
+
+## Peer, not a child (the dependency shape)
+
+`swf` is a **peer** of `scene2d-formats`, not a codec inside it and not `scene2d-formats-swf`. It
+depends on the **shared lower layer** directly — `@flighthq/types` (`Scene2DDocument`, options),
+`@flighthq/importdiagnostics`, and the output primitives (`shape`, `scene2d`, `movieclip`, `timeline`,
+`image`, `text`, `path`, `clip`) — the same layer `scene2d-formats` uses. It does **not** depend on
+`scene2d-formats`, and `scene2d-formats` does not consume it. Entry: `createScene2DFromSwf(bytes,
+options) → Scene2DDocument`. It optionally registers into the `scene2d-resources` import registry (an
+open registry it registers *into*; the registry depends on no codec — see that charter).
+
+## Scope
+
+`.swf` **structure** → Flight data: shapes (`DefineShape*` → `shape`), bitmaps (`DefineBits*` →
+`image`), text (`DefineText`/`DefineEditText` → `text`), MovieClip symbols (`DefineSprite` + timelines
+→ `movieclip`/`timeline`), placed named instances with transforms/color-transforms/blend/masks
+(`PlaceObject*` → `Node2D`), and `SymbolClass`/`ExportAssets` **linkage** → a `Scene2DDocument` whose
+slots come from named instances and whose linkage types come from the symbol→class-name mapping.
+
+## Two things SWF *carries* but this cell does not own
+
+SWF is a container. Two formats ride inside it and are **separate concerns**, handled the same way —
+exposed, not owned:
+
+- **Compression (`CWS` zlib / `ZWS` LZMA).** The compressed-body format is general, not SWF's display
+  domain. `swf` decompresses through a **registered seam** (the `registerAwd2DeflateDecompressor`
+  precedent in `scene3d-formats`); it does not vendor a compression library.
+- **ABC / AVM2 bytecode (`DoABC`).** ABC is its **own bytecode format** (also used standalone in
+  `.abc` files) that SWF merely carries — the same relationship SWF has to LZMA. So it is **out of
+  `swf`'s scope**: `swf` exposes the `DoABC` payload as an **opaque blob** (via a seam), and does not
+  parse it. Note the load-bearing #3 need — **linkage names — comes from `SymbolClass`, a display-tag
+  that gives class-name strings directly, with no ABC parsing at all.** Disassembling ABC into
+  structured data (an AS→read migration aid) is a **distinct concern** — a separate `abc`/AVM-format
+  parser behind that seam, never inside `swf`. **Executing** it is never in scope anywhere (a VM is an
+  emulator — Ruffle's domain, external; see [anti-goals](../../anti-goals.md)).
+
+## Boundaries (for when it is built)
+
+- **Codec, not a Flash player.** Output is Flight `shape`/`movieclip`/`timeline`/bitmap/text data + a
+  `Scene2DDocument` with slots/linkage. No SWF runtime is retained; Flight's `movieclip`/`timeline`
+  *is* the MovieClip runtime — the importer produces their data, it does not embed a player.
+- **Well-homed outputs only.** Every display-tag maps onto an existing Flight subject; no new
+  primitive. Streaming sound → `@flighthq/audio` references; morph shapes (`DefineMorphShape`) → an
+  honest Skip until a 2D-morph home exists.
+
+## Decisions
+
+_Append-only, dated, blessed rulings._
+
+- **[2026-07-25] Standalone domain package, not a codec and not `-formats`-suffixed.** SWF is a huge,
+  distinct domain → its own `@flighthq/swf` cell (the `movieclip`/`sprite` graduation pattern), a peer
+  that produces `Scene2DDocument` over the shared layer. Not `swf-formats` (source-named `-formats` is
+  reserved for target-named cells) and not `scene2d-formats-swf` (it doesn't depend on
+  `scene2d-formats`). Bless-to-build is the user's. User-directed 2026-07-25.
+- **[2026-07-25] ABC is a carried format, not SWF's domain.** Like LZMA, ABC bytecode is exposed as an
+  opaque blob and handled by a separate concern, never parsed or executed inside `swf`. Linkage comes
+  from `SymbolClass` with no ABC parsing. Execution is never in scope (emulator). User-directed
+  2026-07-25.
+- **[2026-07-25] Legacy-import framing.** SWF is chartered for preservation and #3 validation, not
+  forward authoring (Rive owns that). A deliberate archive capability, not a demo blocker.
+
+## Open directions
+
+1. **Reference implementation / byte-reader home.** The tag/format spec is well-documented and open
+   parsers exist (OpenFL's `swf`, Ruffle's Rust `swf`); decide TS vs a `rust:` backend (like
+   `surface-rs`) given the binary + decompression weight.
+2. **Version + tag baseline.** Which SWF versions and tag set form the AAA core (vector + MovieClip +
+   text + bitmap + linkage), with filters/morph/streaming-video as deepening.
+3. **Fonts** — `DefineFont*` glyph outlines vs Flight's font/glyph stack; embedded-font recovery.
+4. **The separate `abc` parser** — if an AS→read migration aid is ever wanted, a distinct
+   AVM-format cell consuming the `DoABC` blob (never a VM). Ranks low; the #3 contract needs none of
+   it.
