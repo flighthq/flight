@@ -110,6 +110,7 @@
     "@flighthq/displayobject": "*",
     "@flighthq/displayobject-canvas": "*",
     "@flighthq/displayobject-dom": "*",
+    "@flighthq/displayobject-formats": "*",
     "@flighthq/displayobject-gl": "*",
     "@flighthq/displayobject-wgpu": "*",
     "@flighthq/easing": "*",

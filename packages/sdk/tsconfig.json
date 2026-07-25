@@ -88,6 +88,9 @@
       "path": "../displayobject-dom"
     },
     {
+      "path": "../displayobject-formats"
+    },
+    {
       "path": "../displayobject-gl"
     },
     {

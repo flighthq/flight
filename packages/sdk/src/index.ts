@@ -24,6 +24,7 @@ export * from '@flighthq/dialog';
 export * from '@flighthq/displayobject';
 export * from '@flighthq/displayobject-canvas';
 export * from '@flighthq/displayobject-dom';
+export * from '@flighthq/displayobject-formats';
 export * from '@flighthq/displayobject-gl';
 export * from '@flighthq/displayobject-wgpu';
 export * from '@flighthq/easing';
