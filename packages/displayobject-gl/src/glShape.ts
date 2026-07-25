@@ -4,7 +4,7 @@ import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@fligh
 import { tessellatePath } from '@flighthq/path';
 import { resolveGlMaterialRenderer } from '@flighthq/render-gl';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import { getShapeFillRegions } from '@flighthq/shape';
+import { getShapeFillRegions, getShapeStrokeRegions, hasShapeFill } from '@flighthq/shape';
 import type {
   DisplayObjectRenderer,
   GlRenderState,
@@ -14,6 +14,8 @@ import type {
   RendererData,
   RenderProxy2D,
   Shape,
+  ShapeCommandToken,
+  ShapeFillRegion,
 } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
@@ -43,6 +45,19 @@ interface GlShapeData {
   // populated only for solid-fill shapes (getShapeFillRegions != null), otherwise the raster path runs.
   meshVersion: number;
   meshes: GlShapeMesh[] | null;
+}
+
+// Chooses the fillable regions to tessellate into GPU meshes for a shape: its solid-fill regions when it
+// is fill-only, or its stroke-outline regions (via getShapeStrokeRegions → strokePath) when it is
+// stroke-only. Returns null when the shape must use the raster fallback — a gradient/bitmap fill or
+// stroke, or a shape that BOTH fills and strokes (the fill + stroke mesh paths do not compose yet).
+function resolveGlShapeMeshRegions(commands: readonly ShapeCommandToken[]): ShapeFillRegion[] | null {
+  const fillRegions = getShapeFillRegions(commands);
+  if (fillRegions !== null) return fillRegions.length > 0 ? fillRegions : null;
+  // getShapeFillRegions bailed: a gradient/bitmap fill, or any stroke is present. A stroke-ONLY shape can
+  // still render its strokes as outline meshes; a filled-and-stroked shape stays on the raster path.
+  if (hasShapeFill(commands)) return null;
+  return getShapeStrokeRegions(commands);
 }
 
 function getGlShapeData(data: RendererData): GlShapeData {
@@ -90,9 +105,12 @@ export function drawGlShape(state: GlRenderState, renderProxy: RenderProxy2D): v
   if (commands.length === 0) return;
   if (renderProxy.rendererData === null) return;
 
-  // GPU fill path: solid-fill shapes tessellate to colored meshes (crisp at any zoom). Falls through to
-  // the canvas-raster path for gradient/bitmap fills and strokes (getShapeFillRegions returns null).
-  const regions = getShapeFillRegions(commands);
+  // GPU mesh path: solid-fill shapes tessellate to colored meshes (crisp at any zoom), and a STROKE-ONLY
+  // shape offsets its strokes to fillable outlines via getShapeStrokeRegions (real joins/caps/dashing,
+  // resolution-independent — no offscreen-canvas raster). Falls through to the canvas-raster path for
+  // gradient/bitmap fills/strokes and filled-and-stroked shapes (the fill + stroke mesh paths don't
+  // compose yet).
+  const regions = resolveGlShapeMeshRegions(commands);
   if (regions !== null && regions.length > 0) {
     const meshData = getGlShapeData(renderProxy.rendererData);
     if (meshData.meshVersion !== version) {
