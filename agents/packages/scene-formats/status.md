@@ -24,15 +24,31 @@ recovery, not a Drop). Then a sweep-safe fix batch closed silent-drop gaps that 
 `awd2.geometry-truncated`/`awd2.submesh-truncated`. The sequenced honesty work is now COMPLETE (review-ruled,
 all through review2): A = the sweep-safe silent-drop batch above; C = threaded the collector through the gltf
 material/image/texture subtree; B-diag = a Skip-crumb sweep so every parser crumbs its recognized-but-unmodeled
-features; D = gltf primitive/accessor Drop-vs-Recover. D's rulings: a no-POSITION (or 0-vertex-POSITION)
-primitive is now DROPPED — `primitiveToGeometry` returns null and the mesh loop `continue`s, so an empty-shell
-mesh is never emitted (`gltf.primitive-no-position` Drop, matching `md5mesh.mesh-empty`); a NON-position accessor
-fault (normals/uv/indices) where POSITION survives leaves a degraded-but-usable mesh = Recover, so
-`gltf.accessor-not-found`/`-buffer-not-found`/`-past-buffer`/`-bufferview-not-found` and
-`gltf.primitive-unsupported-mode` are all Recover. **Output-shape change flagged to review2**: dropping the
-no-POSITION primitive means fewer mesh nodes, so a consumer assuming glTF-primitive-index↔child-node alignment
-would shift; if that alignment is ever needed we relabel-only (keep the empty mesh, Recover) instead. No such
-consumer exists today.
+features; D = gltf primitive/accessor Drop-vs-Recover.
+
+**D's SHARPENED principle (first D attempt FAILED review2, reworked):** the first attempt blanket-relabeled
+`readAccessor`'s faults Drop→Recover, which was context-blind — review2 caught four output-level lies and
+review sharpened the rule: **Recover requires a USABLE SURVIVOR (a non-empty, non-NaN, drawable element);
+otherwise Drop and actually drop.** The fix makes `readAccessor` classification-free — it returns a structured
+`{count, data, fault}` (fault = kind + detail, no severity) and each caller decides severity by the accessor's
+ROLE via `reportGltfAccessorFault`:
+- POSITION accessor fault (mandatory) → the primitive is unusable → `gltf.primitive-no-position` **Drop** +
+  drop the primitive; the subsuming accessor fault is NOT emitted as a contradictory Recover.
+- optional attribute fault (normal/tangent/uv/joints/weights) where POSITION survives → treated as ABSENT
+  (`readOptionalGltfAttribute` returns null → vertex loop zero-fills finite defaults, never NaN) + the fault
+  kind **Recover**. A count mismatch is likewise treated as absent.
+- indices accessor fault (or empty indices) → topology is lost, storage order is not a sane triangle list →
+  **Drop** + drop the primitive (`gltf.primitive-empty-indices` for the valid-but-empty case).
+- unsupported primitive mode → no sane drawable interpretation → `buildGltfPrimitiveElements` returns null →
+  `gltf.primitive-unsupported-mode` **Drop** + drop the primitive (was wrongly Recover-with-empty-geometry).
+- collateral call sites the blunt relabel had touched, now fixed too: skin `inverseBindMatrices` fault →
+  identity IBM per joint (bind pose, not a zero-matrix collapse) **Recover**; animation sampler input/output
+  fault → drop the channel **Drop** (matches sibling channel drops); morph target POSITION-delta fault → drop
+  the target **Drop**, optional NORMAL/TANGENT deltas → absent **Recover**.
+Per-mode geometry-output regressions added (position-fail drops mesh; optional-fail keeps a finite drawable
+mesh with zeroed normals; index/mode-fail drop the mesh). **Output-shape change** still stands: dropping the
+no-POSITION/failed-mandatory primitive means fewer mesh nodes, so a consumer assuming glTF-primitive-index↔
+child-node alignment would shift; relabel-only fallback if ever needed. No such consumer today.
 
 **AWD skeleton-binding / multi-skeleton — DECIDED DEFERRED NON-GOAL (user-pinned 2026-07-25).** Not
 "blocked awaiting a multi-skeleton .awd + animator-block spec" — it is deferred because AWD is a legacy
