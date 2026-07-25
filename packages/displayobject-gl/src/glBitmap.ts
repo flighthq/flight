@@ -84,7 +84,17 @@ export function drawGlBitmap(state: GlRenderState, renderProxy: RenderProxy2D): 
   }
 
   const startCount = runtime.spriteBatchCount;
-  const base = prepareGlSpriteBatchWrite(state, imageSource, renderProxy.blendMode, material, materialRenderer, 1);
+  // Per-bitmap smoothing keys the batch so a NEAREST bitmap never inherits a LINEAR neighbor's filter
+  // (and vice versa); the flush binds the texture with this filter instead of the global default.
+  const base = prepareGlSpriteBatchWrite(
+    state,
+    imageSource,
+    renderProxy.blendMode,
+    material,
+    materialRenderer,
+    1,
+    source.data.smoothing,
+  );
   const d = runtime.spriteBatchInstanceData;
   const t = renderProxy.transform2D;
   d[base] = t.a;
