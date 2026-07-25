@@ -5,7 +5,7 @@ import { pushDomClipRectangle, setDomClipHooks } from './domClipRectangle';
 import { getDomRenderStateRuntime } from './domRenderState';
 
 // Masks RETIRED — a former mask is a path ClipRegion realized as a CSS clip-path. The DOM clip stack now
-// holds rect entries (DomStageRectangle) and contour entries (DomClipContourEntry); applyDomClipRectangles
+// holds rect entries (DomScene2DRectangle) and contour entries (DomClipContourEntry); applyDomClipRectangles
 // must emit a clip-path for either (see domClipContours.ts). Unwind by truncating the stack.
 export function enableDomClipSupport(state: DomRenderState): void {
   state.displayObjectClipHooks = domScene2DClipHooks;

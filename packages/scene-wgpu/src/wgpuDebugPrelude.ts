@@ -134,7 +134,7 @@ struct DebugMaterial {
 @fragment fn fs_main(in : VertexOutput, @builtin(front_facing) frontFacing : bool) -> @location(0) vec4f {
   if (MODE == DEPTH_MODE) {
     // Linear view-space distance is the perspective w: in.clipPosition is the @builtin(position), whose
-    // .w in the fragment stage is 1 / w_clip, so 1 / in.clipPosition.w == w_clip == eye distance. This
+    // .w in the fragment scene2d is 1 / w_clip, so 1 / in.clipPosition.w == w_clip == eye distance. This
     // is camera-agnostic (no camera near/far needed); map it across the material's [near, far]
     // visualization window to grayscale [0, 1].
     let near = material.params.x;

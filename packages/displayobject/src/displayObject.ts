@@ -70,7 +70,7 @@ export function createNode2D<R extends Node2DRuntime>(
 export function createNode2DRuntime(methods?: Readonly<Partial<MethodsOf<Node2DRuntime>>>): Node2DRuntime {
   const out = createNodeRuntime(methods) as Node2DRuntime;
   out.traits = Node2DTraitsKey;
-  out.stage = null;
+  out.scene2d = null;
   initTransform2DRuntimeTrait(out, methods);
   initBoundsRectangleRuntimeTrait(out, methods);
   return out;

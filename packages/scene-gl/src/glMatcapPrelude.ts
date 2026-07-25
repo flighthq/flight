@@ -82,7 +82,7 @@ out vec3 v_viewNormal;
 
 void main() {
   // u_normalMatrix takes the object normal into world space (handles model rotation/scale);
-  // mat3(u_view) rotates it into view space. Normalized in the fragment stage.
+  // mat3(u_view) rotates it into view space. Normalized in the fragment scene2d.
   v_viewNormal = mat3(u_view) * (u_normalMatrix * a_normal);
   gl_Position = u_viewProjection * u_model * vec4(a_position, 1.0);
 }

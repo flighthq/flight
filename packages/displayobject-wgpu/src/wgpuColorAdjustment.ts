@@ -10,7 +10,7 @@ import type {
 import { getWgpuQuadBatchPreludeWGSL } from './wgpuSpriteBatch';
 
 // Enables the opt-in inline color-adjustment fold on a WebGPU render state: the fused-color-matrix
-// stage the sprite/quad batch draws through so a color transform (and, later, other pointwise
+// scene2d the sprite/quad batch draws through so a color transform (and, later, other pointwise
 // adjustments) folds into the batch as per-instance storage data at @group(3) — replicated across the
 // batch for a whole-batch tint, or varied per instance — without ever splitting the batch. Until a
 // state calls this, its batch renderer carries none of this module's WGSL (it tree-shakes out) and
@@ -131,7 +131,7 @@ function fillWgpuSpriteBatchUniformColorTransform(
 }
 
 // The folded per-instance color-transform shader module (cached per device): the base sprite-batch
-// prelude plus a stage that reads 8 per-instance floats from the material storage buffer (@group(3))
+// prelude plus a scene2d that reads 8 per-instance floats from the material storage buffer (@group(3))
 // and applies `color * mult + offset` in unpremultiplied space. Reused verbatim from the former
 // color-transform material so premultiplied-alpha handling is unchanged.
 function getWgpuSpriteBatchColorTransformModule(state: WgpuRenderState): GPUShaderModule {

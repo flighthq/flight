@@ -26,7 +26,7 @@ import {
 } from '@flighthq/sdk';
 
 // MSAA + bloom together: the pipeline uses a multisampled HDR (rgba16f) target with sampleCount 4 and
-// also runs a bloom stage. This proves the MSAA-resolve and the effect-compose paths cooperate — the
+// also runs a bloom scene2d. This proves the MSAA-resolve and the effect-compose paths cooperate — the
 // rotated shapes' edges resolve smooth while their bright interiors still bloom a soft halo.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);

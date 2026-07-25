@@ -554,7 +554,7 @@ export function ensureWgpuPlaceholderTextureView(state: WgpuRenderState): GPUTex
 
 // Resolves the shared group(0) Frame + group(1) Draw bind-group layouts, creating them once per state.
 // group(0) is a single uniform visible to both stages (camera + lights); group(1) is a dynamic-offset
-// uniform visible to the vertex stage (per-draw world + normal matrix).
+// uniform visible to the vertex scene2d (per-draw world + normal matrix).
 export function ensureWgpuSceneLayouts(state: WgpuRenderState): WgpuSceneLayouts {
   const scene = getWgpuSceneRuntime(state);
   if (scene.frameBindGroupLayout === null || scene.drawBindGroupLayout === null) {

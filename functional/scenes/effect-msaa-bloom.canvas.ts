@@ -25,7 +25,7 @@ import {
 } from '@flighthq/sdk';
 
 // Canvas parity column for the MSAA + bloom scene. Canvas 2D antialiases edges natively, so there is
-// no explicit sampleCount seam here; the column still runs the bloom stage over the scene so the same
+// no explicit sampleCount seam here; the column still runs the bloom scene2d over the scene so the same
 // bright shapes pick up a glowing halo for visual comparison against the Gl MSAA + bloom result.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(800, 600, pixelRatio);

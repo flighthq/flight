@@ -92,7 +92,7 @@ export function drawGlMeshSubset(
   if (program.locNormalMatrix !== null) gl.uniformMatrix3fv(program.locNormalMatrix, false, proxy.normalMatrix.m);
 
   // Resolve u_objectAlpha once per program (undefined until first draw), then upload the resolved
-  // per-object opacity when the shader declares it. A program whose fragment stage lacks the uniform
+  // per-object opacity when the shader declares it. A program whose fragment scene2d lacks the uniform
   // caches a null location and skips silently, so families without it cost nothing beyond one lookup.
   let locObjectAlpha = program.locObjectAlpha;
   if (locObjectAlpha === undefined) {
@@ -157,7 +157,7 @@ export function hasGlUvTransform(texture: Readonly<TextureLike | VideoTexture> |
 
 // Uploads the camera world position (the translation of the inverse view matrix) to a lit family's
 // u_cameraPosition. Lighting-independent families (unlit/debug) skip this — only families whose
-// fragment stage needs a view vector resolve and bind a camera-position location.
+// fragment scene2d needs a view vector resolve and bind a camera-position location.
 export function setGlMeshCameraPosition(
   gl: WebGL2RenderingContext,
   locCameraPosition: WebGLUniformLocation | null,
@@ -169,7 +169,7 @@ export function setGlMeshCameraPosition(
 }
 
 // Uploads the camera view-projection matrix to a program's u_viewProjection. Every family's vertex
-// stage shares this transform; the perspective aspect falls back to 1 when zero (degenerate camera)
+// scene2d shares this transform; the perspective aspect falls back to 1 when zero (degenerate camera)
 // so a malformed projection never divides by zero.
 export function setGlMeshViewProjection(
   gl: WebGL2RenderingContext,
@@ -181,7 +181,7 @@ export function setGlMeshViewProjection(
   gl.uniformMatrix4fv(locViewProjection, false, scratchViewProjection.m);
 }
 
-// Vertex-stage GLSL every map-sampling family interpolates into its vertex body ahead of `main`: the
+// Vertex-scene2d GLSL every map-sampling family interpolates into its vertex body ahead of `main`: the
 // guarded u_uvTransform uniform and an applyUvTransform() the body calls on a_uv0 instead of passing
 // it through. HAS_UV_TRANSFORM — set by a family's define block only when its primary texture carries a
 // non-identity transform (see hasTextureUvTransform) — gates both the uniform and the mat3 multiply, so
@@ -201,7 +201,7 @@ vec2 applyUvTransform(vec2 uv) { return uv; }
 // them. drawGlMeshSubset binds the palette texture here and sets u_jointTexture to this unit.
 export const SKIN_PALETTE_TEXTURE_UNIT = 12;
 
-// Vertex-stage GLSL the HAS_SKIN variant prepends before the family's vertex body: the joints0/weights0
+// Vertex-scene2d GLSL the HAS_SKIN variant prepends before the family's vertex body: the joints0/weights0
 // influence attributes (locations 6/7, wired by ensureGlMeshUpload), the bone-palette DATA TEXTURE, and
 // the linear-blend `skinMatrix()` the body applies to position/normal/tangent. The palette is an RGBA32F
 // texture read with texelFetch (GLSL ES 3.0 core — no float-filter extension), one mat4 packed as four

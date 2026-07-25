@@ -19,7 +19,7 @@ import { beginWgpuMeshDraw, drawWgpuMeshSubset, writeWgpuFrameUniform } from './
 // of depthGlMeshMaterialRenderer. A lighting-independent debug/utility pass material: bind selects the
 // debug pipeline in depth mode for the color format, writes the shared Frame uniform (lights ignored),
 // and binds the material's [near, far] linearization range; draw issues the indexed draw. The fragment
-// stage linearizes window-space depth into eye space and writes it as grayscale LINEAR color. See
+// scene2d linearizes window-space depth into eye space and writes it as grayscale LINEAR color. See
 // registerDepthWgpuMaterial to install it.
 export const depthWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
   bind(

@@ -3,7 +3,7 @@ import type {
   DomClipEntry,
   DomClipHooks,
   DomRenderState,
-  DomStageRectangle,
+  DomScene2DRectangle,
   MatrixLike,
   RectangleLike,
   RenderProxy2D,
@@ -32,14 +32,14 @@ export function applyDomClipRectangles(
     }
   }
   if (contour !== null) {
-    const mapPoint = createStageToElementPointMapper(element);
+    const mapPoint = createScene2DToElementPointMapper(element);
     const clipPath = buildDomContourClipPath(contour, mapPoint);
     element.style.clipPath = clipPath;
     (element.style as CSSStyleDeclaration & { webkitClipPath: string }).webkitClipPath = clipPath;
     return;
   }
 
-  const rect = intersectDomStageRectangles(entries as readonly DomStageRectangle[]);
+  const rect = intersectDomScene2DRectangles(entries as readonly DomScene2DRectangle[]);
   if (rect === null) {
     element.style.clipPath = '';
     (element.style as CSSStyleDeclaration & { webkitClipPath: string }).webkitClipPath = '';
@@ -52,16 +52,16 @@ export function applyDomClipRectangles(
     return;
   }
 
-  const local = mapStageRectangleToElement(rect, element);
+  const local = mapScene2DRectangleToElement(rect, element);
   const clipPath = `polygon(${local.left}px ${local.top}px, ${local.right}px ${local.top}px, ${local.right}px ${local.bottom}px, ${local.left}px ${local.bottom}px)`;
   element.style.clipPath = clipPath;
   (element.style as CSSStyleDeclaration & { webkitClipPath: string }).webkitClipPath = clipPath;
 }
 
-export function createDomStageRectangle(
+export function createDomScene2DRectangle(
   rect: Readonly<RectangleLike>,
   transform: Readonly<MatrixLike>,
-): DomStageRectangle {
+): DomScene2DRectangle {
   const x0 = transform.a * rect.x + transform.c * rect.y + transform.tx;
   const y0 = transform.b * rect.x + transform.d * rect.y + transform.ty;
   const x1 = transform.a * (rect.x + rect.width) + transform.c * rect.y + transform.tx;
@@ -84,7 +84,7 @@ export function pushDomClipRectangle(
   rect: Readonly<RectangleLike>,
   transform: Readonly<MatrixLike>,
 ): void {
-  stack.push(createDomStageRectangle(rect, transform));
+  stack.push(createDomScene2DRectangle(rect, transform));
 }
 
 export function setDomClipHooks(state: DomRenderState): void {
@@ -92,10 +92,10 @@ export function setDomClipHooks(state: DomRenderState): void {
   if (runtime.domClipHooks === null) runtime.domClipHooks = domClipHooksImpl;
 }
 
-// Returns a closure mapping a stage-space point into `element`'s local space (the inverse of the
-// element's CSS matrix), for placing contour clip-path points. Mirrors mapStageRectangleToElement's
+// Returns a closure mapping a scene2d-space point into `element`'s local space (the inverse of the
+// element's CSS matrix), for placing contour clip-path points. Mirrors mapScene2DRectangleToElement's
 // inverse but per-point, which contour clips need.
-function createStageToElementPointMapper(element: HTMLElement): (x: number, y: number) => readonly [number, number] {
+function createScene2DToElementPointMapper(element: HTMLElement): (x: number, y: number) => readonly [number, number] {
   const matrix = getElementMatrix(element);
   const det = matrix.a * matrix.d - matrix.b * matrix.c;
   if (det === 0) return () => [0, 0] as const;
@@ -128,7 +128,7 @@ function getElementMatrix(element: HTMLElement): MatrixLike {
   };
 }
 
-function intersectDomStageRectangles(rectangles: readonly DomStageRectangle[]): DomStageRectangle | null {
+function intersectDomScene2DRectangles(rectangles: readonly DomScene2DRectangle[]): DomScene2DRectangle | null {
   if (rectangles.length === 0) return null;
 
   let left = -Infinity;
@@ -146,7 +146,7 @@ function intersectDomStageRectangles(rectangles: readonly DomStageRectangle[]): 
   return { bottom, left, right, top };
 }
 
-function mapStageRectangleToElement(rect: DomStageRectangle, element: HTMLElement): DomStageRectangle {
+function mapScene2DRectangleToElement(rect: DomScene2DRectangle, element: HTMLElement): DomScene2DRectangle {
   const matrix = getElementMatrix(element);
   const det = matrix.a * matrix.d - matrix.b * matrix.c;
   if (det === 0) return { bottom: 0, left: 0, right: 0, top: 0 };

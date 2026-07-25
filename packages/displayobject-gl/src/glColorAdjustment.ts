@@ -22,7 +22,7 @@ import {
 } from './glSpriteBatch';
 
 // Enables the opt-in inline color-adjustment fold on a WebGL render state: the fused-color-matrix
-// stage the sprite/quad batch draws through so a color transform (and, later, other pointwise
+// scene2d the sprite/quad batch draws through so a color transform (and, later, other pointwise
 // adjustments) folds into the batch as data — a whole-batch uniform tint or per-instance
 // a_ctMult/a_ctOff attributes, chosen by data cardinality — without ever splitting the batch. Until a
 // state calls this, its batch renderer carries none of this module's shader code (it tree-shakes out)
@@ -51,7 +51,7 @@ const CT_MODE_UNIFORM = 1;
 const CT_MODE_PER_INSTANCE = 2;
 
 // Per-instance color-transform program: the base quad-batch vertex work plus two vec4 instance
-// attributes (a_ctMult / a_ctOff) carried through to the fragment stage. The color-transform math is
+// attributes (a_ctMult / a_ctOff) carried through to the fragment scene2d. The color-transform math is
 // applied in unpremultiplied space, matching the whole-batch uniform program byte for byte.
 const CT_INSTANCED_VS = `#version 300 es
 precision mediump float;
@@ -419,7 +419,7 @@ void main() {
 }
 `;
 
-// The tint fragment stage. u_color arrives premultiplied (the driver uploads color·alpha), so the math
+// The tint fragment scene2d. u_color arrives premultiplied (the driver uploads color·alpha), so the math
 // un-premultiplies, applies the color transform (multiplier then /255-normalized offset), clamps, and
 // re-premultiplies — byte-for-byte with the quad-batch uniform/instanced color-transform shaders.
 const SHAPE_MESH_CT_FS = `

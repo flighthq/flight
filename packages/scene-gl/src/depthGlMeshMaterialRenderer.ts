@@ -18,7 +18,7 @@ import { getGlSceneRuntime } from './glSceneRuntime';
 // The built-in Depth forward renderer (GlMeshMaterialRenderer for DepthMaterialKind). A lighting-
 // independent debug/utility pass material: bind selects the debug program in depth mode, uploads the
 // camera view-projection, and sets the material's [near, far] linearization range; draw issues the
-// indexed draw. The fragment stage linearizes window-space depth into eye space and writes it as
+// indexed draw. The fragment scene2d linearizes window-space depth into eye space and writes it as
 // grayscale LINEAR color. Lights are ignored. See registerDepthGlMaterial to install it.
 export const depthGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(

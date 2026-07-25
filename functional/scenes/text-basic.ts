@@ -56,7 +56,7 @@ export function assertRender(frame: Readonly<Surface>): void {
     throw new Error(`[text-basic] too few text-colored pixels in field region — got ${hits}, expected >= 12`);
   }
 
-  // A clearly-empty band along the bottom of the stage must contain NO text-colored pixels.
+  // A clearly-empty band along the bottom of the scene2d must contain NO text-colored pixels.
   const stray = countTextColorPixels(at, 0, HEIGHT - 60, WIDTH, 50);
   if (stray > 0) {
     throw new Error(`[text-basic] text color found in empty bottom region — got ${stray}, expected 0`);

@@ -2,12 +2,12 @@
 // compiles/selects the family's program (extending this base with its own material uniform
 // locations) and stores it on the scene runtime's activeMeshProgram slot; draw reads it back to set
 // the per-draw model/normal matrices and issue the indexed draw. The three locations here are the
-// ones every family's vertex stage needs (model + normal matrix + view-projection); a family program
+// ones every family's vertex scene2d needs (model + normal matrix + view-projection); a family program
 // interface extends GlMeshProgram with whatever fragment/material uniforms it additionally binds.
 export interface GlMeshProgram {
   // The per-object opacity uniform location, resolved lazily on first draw and cached: undefined = not
   // yet resolved, null = this program's fragment shader has no u_objectAlpha (silent no-op), a location
-  // = present (drawGlMeshSubset uploads proxy.alpha to it). Lazy so any family whose fragment stage
+  // = present (drawGlMeshSubset uploads proxy.alpha to it). Lazy so any family whose fragment scene2d
   // declares u_objectAlpha honors node opacity with no per-family factory edit.
   locObjectAlpha?: WebGLUniformLocation | null;
   // The u_jointTexture bone-palette sampler location — present (and non-null) only on a HAS_SKIN

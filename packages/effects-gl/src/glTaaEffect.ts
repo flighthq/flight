@@ -5,7 +5,7 @@ import { getGlEffectProgram } from './glEffectProgramCache';
 
 // TAA: passthrough copy of source → dest. Real temporal AA needs a history buffer + motion vectors to
 // reproject and accumulate prior frames; neither is available in the single-frame effect context, so
-// this is a placeholder that preserves the pipeline stage without altering the image.
+// this is a placeholder that preserves the pipeline scene2d without altering the image.
 export function applyTaaEffectToGl(
   state: GlRenderState,
   source: Readonly<GlRenderTarget>,

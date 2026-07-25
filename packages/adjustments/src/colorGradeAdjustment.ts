@@ -1,7 +1,7 @@
 import type { ColorGradeAdjustment, ColorTransformFunction } from '@flighthq/types';
 
 // The full color grade as one LUT-tier adjustment. The exposure/brightness/temperature/tint/saturation/
-// contrast stage is ported faithfully from the old colorGradeEffect shader; a lift/gamma/gain stage
+// contrast scene2d is ported faithfully from the old colorGradeEffect shader; a lift/gamma/gain scene2d
 // (shadows/midtones/highlights) follows it, all defaulting to neutral so a grade setting only some
 // fields leaves the rest unchanged. Gamma makes the composite nonlinear, so the whole grade bakes to one
 // LUT. Note: the old colorGradeEffect default had contrast 0 (its shader read `contrast ?? 1`); the
@@ -34,7 +34,7 @@ export function createColorGradeAdjustment(
     cr = (cr - 0.5) * contrast + 0.5;
     cg = (cg - 0.5) * contrast + 0.5;
     cb = (cb - 0.5) * contrast + 0.5;
-    // Lift/gamma/gain stage (neutral by default).
+    // Lift/gamma/gain scene2d (neutral by default).
     cr = Math.pow(Math.max(cr * gain[0] + lift[0] * (1 - cr), 0), gammaExp[0]);
     cg = Math.pow(Math.max(cg * gain[1] + lift[1] * (1 - cg), 0), gammaExp[1]);
     cb = Math.pow(Math.max(cb * gain[2] + lift[2] * (1 - cb), 0), gammaExp[2]);

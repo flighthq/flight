@@ -33,7 +33,7 @@ import { ensureGlToonProgram } from './glToonPrelude';
 // ToonMaterialKind). bind selects the uber-shader variant for the material's base-color map / ramp /
 // alpha mode, uploads the shared per-run uniforms (camera view-projection + position, the packed
 // light block), and the material's base color, step count, cutoff, and textures. The diffuse N·L is
-// quantized into stepped cel bands in the fragment stage (ramp lookup when a ramp is bound, else a
+// quantized into stepped cel bands in the fragment scene2d (ramp lookup when a ramp is bound, else a
 // stepped floor over `steps`); output is LINEAR color for the rgba16f scene target. draw uploads the
 // geometry's GPU buffers lazily (cached by geometry.version), sets the per-draw model + normal
 // matrices from the proxy, and issues the indexed draw over the proxy's subset with depth-test LESS +

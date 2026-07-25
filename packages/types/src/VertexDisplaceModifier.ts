@@ -16,9 +16,9 @@ export type VertexDisplaceModifierSource =
   (typeof VertexDisplaceModifierSource)[keyof typeof VertexDisplaceModifierSource];
 
 // Displaces each vertex along its normal (or a fixed axis) before the model transform (slot: Vertex).
-// This is the one built-in VERTEX-stage modifier: its GLSL runs in the vertex shader, moving the
+// This is the one built-in VERTEX-scene2d modifier: its GLSL runs in the vertex shader, moving the
 // local position (and re-deriving the normal for `Sine`), where every other modifier injects into the
-// fragment stage. Generalizes waving flags, ocean swell, jelly wobble, and heightmap terrain extrude.
+// fragment scene2d. Generalizes waving flags, ocean swell, jelly wobble, and heightmap terrain extrude.
 //
 // `amplitude` scales the offset; `axis` (omitted = the surface normal) is the fixed direction to push
 // along when set (a Vector3Like value pair, not the Vector3 entity — it carries no runtime identity).

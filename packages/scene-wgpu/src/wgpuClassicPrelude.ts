@@ -70,7 +70,7 @@ export function bindWgpuClassicSurface(
   _scratch[10] = 0;
   _scratch[11] = 0;
   state.device.queue.writeBuffer(binding.buffer, 0, _scratch.buffer, 0, CLASSIC_UNIFORM_BYTES);
-  // The diffuse map's uv transform drives the shared vertex-stage uv the classic maps sample.
+  // The diffuse map's uv transform drives the shared vertex-scene2d uv the classic maps sample.
   stashWgpuUvTransform(state, diffuseMap);
   return binding.bindGroup;
 }

@@ -4,9 +4,9 @@
 // contributions run before shading, Effect after) so a feature-set produces one stable compiled
 // variant.
 //
-// Vertex is the one VERTEX-stage slot: its contribution is spliced into the vertex shader (it moves
+// Vertex is the one VERTEX-scene2d slot: its contribution is spliced into the vertex shader (it moves
 // the local `position`/`normal` before the model transform — the vertex-displacement case), where
-// every other slot injects into the fragment stage. It therefore sorts before Normal in the
+// every other slot injects into the fragment scene2d. It therefore sorts before Normal in the
 // pipeline, and a backend compiler routes it to the vertex program rather than the fragment one.
 //
 // Open family: the built-in vocabulary below is canonical PascalCase, simultaneously the registry

@@ -116,7 +116,7 @@ function computeMartinezBoolean(
   return traceRings(kept);
 }
 
-// Stage 1: the sweep. Returns every final (non-crossing, non-overlapping) segment of the combined
+// Scene2D 1: the sweep. Returns every final (non-crossing, non-overlapping) segment of the combined
 // subject+clip arrangement.
 function buildArrangement(
   subject: readonly PathBooleanContour[],
@@ -404,7 +404,7 @@ function segmentIntersection(
   ];
 }
 
-// Stage 2a: fold coincident final segments into one, summing each operand's winding contribution. The
+// Scene2D 2a: fold coincident final segments into one, summing each operand's winding contribution. The
 // key normalizes endpoints to lexicographic order, matching the way `addEdge` measures windingDelta, so
 // deltas from opposite-direction coincident edges cancel.
 function mergeCoincidentSegments(segments: readonly ArrangementSegment[]): UniqueSegment[] {
@@ -432,7 +432,7 @@ function mergeCoincidentSegments(segments: readonly ArrangementSegment[]): Uniqu
   return [...map.values()];
 }
 
-// Stage 2b: classify each unique segment by the boundary test, orienting kept segments so the retained
+// Scene2D 2b: classify each unique segment by the boundary test, orienting kept segments so the retained
 // region sits on the segment's left. Returns directed edges [fromX, fromY, toX, toY].
 //
 // Membership is sampled at two points a hair off each side of the segment's midpoint, perpendicular to
@@ -515,7 +515,7 @@ function isInside(winding: number, fillRule: PathBooleanFillRule): boolean {
   }
 }
 
-// Stage 2c: chain the directed, fill-on-left edges into closed rings. At a vertex shared by several
+// Scene2D 2c: chain the directed, fill-on-left edges into closed rings. At a vertex shared by several
 // rings, the next edge is the one turning most clockwise from the reversed incoming direction, which
 // keeps the retained region continuously on the left.
 function traceRings(edges: readonly number[][]): PathBooleanContour[] {

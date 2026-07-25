@@ -1,6 +1,6 @@
 import type { Signal } from './Signal';
 
-export interface StageSignals {
+export interface Scene2DSignals {
   onFullscreenChanged: Signal<() => void>;
   onOrientationChanged: Signal<() => void>;
   onResize: Signal<() => void>;

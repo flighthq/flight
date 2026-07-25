@@ -1,5 +1,5 @@
 import type { BlendMode } from './BlendMode';
-import type { DomStageRectangle } from './DomStageRectangle';
+import type { DomScene2DRectangle } from './DomScene2DRectangle';
 import type { ImageResource } from './ImageResource';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
@@ -47,16 +47,16 @@ export interface DomRenderStateRuntime extends RenderStateRuntime {
 // `clip-path` on the masked element(s). Crisp (vector), honors winding via `clip-rule`. Replaces the
 // former domMask bounding-rectangle approximation for path clips.
 export interface DomClipContourEntry {
-  // Contour points already transformed to stage space (apply() then maps to each element's local space).
+  // Contour points already transformed to scene2d space (apply() then maps to each element's local space).
   contours: number[][];
   kind: 'contour';
   winding: PathWinding;
 }
 
-// A clip stack entry is either a stage-space rectangle (scissor/scroll-rect clip) or a contour entry
+// A clip stack entry is either a scene2d-space rectangle (scissor/scroll-rect clip) or a contour entry
 // (path clip). applyDomClipRectangles emits a clip-path for whichever is present; a bare
-// DomStageRectangle (no `kind` tag) is the rect case, a DomClipContourEntry the contour case.
-export type DomClipEntry = DomClipContourEntry | DomStageRectangle;
+// DomScene2DRectangle (no `kind` tag) is the rect case, a DomClipContourEntry the contour case.
+export type DomClipEntry = DomClipContourEntry | DomScene2DRectangle;
 
 // Per-element clip application hook for the DOM backend. Installed on the runtime tier by
 // enableDomClipSupport; the render loop invokes apply after each draw to emit the element's clip-path

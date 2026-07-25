@@ -104,7 +104,7 @@ describe('compileGlShadedProgram', () => {
     expect(vertex).toContain('texelFetch');
     expect(vertex).toContain('mat4 skinMatrix()');
     expect(vertex).toContain('a_joints0');
-    // Skinning is vertex-only — the fragment stage never sees the skin attributes.
+    // Skinning is vertex-only — the fragment scene2d never sees the skin attributes.
     expect(fragmentSourceFrom(gl.calls)).not.toContain('a_joints0');
   });
 

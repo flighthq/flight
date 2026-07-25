@@ -1,7 +1,7 @@
 import type { ColorLutAdjustment } from './ColorLutAdjustment';
 
 // The full pointwise color grade as one LUT-tier adjustment: exposure/brightness/contrast/saturation/
-// temperature/tint (the linear-ish tone controls) plus a lift/gamma/gain stage (shadows/midtones/
+// temperature/tint (the linear-ish tone controls) plus a lift/gamma/gain scene2d (shadows/midtones/
 // highlights). All fields default to neutral, so a grade setting only some fields leaves the rest
 // unchanged. Because gamma makes the composite nonlinear, the whole grade bakes into one ColorLut.
 export interface ColorGradeAdjustment extends ColorLutAdjustment {

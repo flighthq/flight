@@ -6,7 +6,7 @@ import { getGlEffectProgram } from './glEffectProgramCache';
 // SSR: screen-space reflections. The real recipe ray-marches reflected rays against a sampleable DEPTH
 // buffer using view-space normals, walking `steps` increments up to `maxDistance` at the given
 // `resolution`; depth and normals are absent in the color-only context, so this is a passthrough copy
-// that preserves the pipeline stage. maxDistance/resolution/steps are reserved for the depth-driven recipe.
+// that preserves the pipeline scene2d. maxDistance/resolution/steps are reserved for the depth-driven recipe.
 export function applySsrEffectToGl(
   state: GlRenderState,
   source: Readonly<GlRenderTarget>,

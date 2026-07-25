@@ -714,7 +714,7 @@ describe('WGPU_MESH_PRELUDE_WGSL', () => {
     expect(WGPU_MESH_PRELUDE_WGSL).toContain('srgbToLinear');
   });
 
-  it('applies the uv transform in the shared vertex stage', () => {
+  it('applies the uv transform in the shared vertex scene2d', () => {
     expect(WGPU_MESH_PRELUDE_WGSL).toContain('uvTransform : mat3x3f');
     expect(WGPU_MESH_PRELUDE_WGSL).toContain('draw.uvTransform * vec3f(uv, 1.0)');
   });

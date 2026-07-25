@@ -369,7 +369,7 @@ export const toonGlModifierSnippet: GlModifierSnippet = {
   },
 };
 
-// The one VERTEX-stage snippet: displaces the local vertex along its normal (or a fixed axis) before
+// The one VERTEX-scene2d snippet: displaces the local vertex along its normal (or a fixed axis) before
 // the model transform. Signature `s` (Sine procedural wave, animated by u_time) or `h` (HeightMap red
 // channel), optionally `+a` when a fixed push axis replaces the surface normal.
 export const vertexDisplaceGlModifierSnippet: GlModifierSnippet = {

@@ -10,7 +10,7 @@ import { createWgpuDualSourceEffectPipeline, drawWgpuDualSourceEffectPass } from
 // spread along that vector centered on the fragment, smearing every object by its own motion. The
 // velocity texture binds as the second source via drawWgpuDualSourceEffectPass (@group(2)). When velocity is
 // absent (the scene did not write the buffer), u_hasVelocity=0 and it is a passthrough copy (sentinel
-// path), preserving the pipeline stage without altering the image. Demonstrates the
+// path), preserving the pipeline scene2d without altering the image. Demonstrates the
 // ctx.sceneVelocityTexture seam: real velocity path when present, sentinel copy when null.
 export function applyMotionBlurEffectToWgpu(
   state: WgpuRenderState,

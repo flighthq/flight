@@ -126,8 +126,8 @@ const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 
-const stage = createShape();
-addNodeChild(root, stage);
+const scene2d = createShape();
+addNodeChild(root, scene2d);
 
 function label(text: string, x: number, y: number, size: number, color: number): TextLabel {
   const result = createTextLabel();
@@ -173,11 +173,11 @@ function drawCharacter(shape: Shape, x: number, y: number, leftAngle: number, ri
   appendShapeLineTo(shape, rightKnee[0] + 12, rightKnee[1] + 38);
 }
 
-appendShapeLineStyle(stage, 2, 0x34405a);
-appendShapeMoveTo(stage, 30, 366);
-appendShapeLineTo(stage, 770, 366);
-drawCharacter(stage, 115, 265, -3, 3, 0x7086ad);
-drawCharacter(stage, 685, 259, -28, 28, 0xf0a85b);
+appendShapeLineStyle(scene2d, 2, 0x34405a);
+appendShapeMoveTo(scene2d, 30, 366);
+appendShapeLineTo(scene2d, 770, 366);
+drawCharacter(scene2d, 115, 265, -3, 3, 0x7086ad);
+drawCharacter(scene2d, 685, 259, -28, 28, 0xf0a85b);
 
 function drawUpperBody(shape: Shape): void {
   appendShapeBeginFill(shape, 0x63e6be);

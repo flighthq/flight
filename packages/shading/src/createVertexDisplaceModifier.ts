@@ -7,7 +7,7 @@ import type { VertexDisplaceModifier } from '@flighthq/types';
 // compile-time structural — they drive the define-key signature — while `amplitude`/`frequency`/
 // `speed` are uniform-fed.
 
-// Builds a VertexDisplaceModifier (slot: Vertex) — the one built-in VERTEX-stage modifier, displacing
+// Builds a VertexDisplaceModifier (slot: Vertex) — the one built-in VERTEX-scene2d modifier, displacing
 // each vertex along its normal (or a fixed `axis`) before the model transform. `Sine` is a procedural
 // traveling wave animated by the shading tier's per-frame `time` (using `frequency` default 1, `speed`
 // default 1, `direction` default +X); `HeightMap` reads the amount from `map`'s red channel. `axis`,

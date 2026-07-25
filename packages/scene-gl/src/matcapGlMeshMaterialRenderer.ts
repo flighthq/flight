@@ -21,7 +21,7 @@ import { getGlSceneRuntime } from './glSceneRuntime';
 // The built-in Matcap forward renderer (GlMeshMaterialRenderer for MatcapMaterialKind). Lighting-
 // independent material-capture shading: bind selects the matcap variant for the material's matcap
 // texture / alpha mode, uploads the camera view-projection plus the camera view matrix (u_view, which
-// the vertex stage uses to rotate the world-space normal into view space), and the linear tint; draw
+// the vertex scene2d uses to rotate the world-space normal into view space), and the linear tint; draw
 // issues the indexed draw. Lights are ignored — the matcap texture is the prebaked lighting. See
 // registerMatcapGlMaterial to install it.
 export const matcapGlMeshMaterialRenderer: GlMeshMaterialRenderer = {

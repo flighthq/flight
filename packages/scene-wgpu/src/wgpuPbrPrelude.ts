@@ -14,7 +14,7 @@ import type { WgpuSkinningAdapter } from '@flighthq/types';
 // The lighting model is Cook-Torrance: GGX normal distribution, Smith height-correlated visibility,
 // and a Fresnel-Schlick approximation, evaluated over the interpolated world-space normal/tangent/uv
 // for one directional + one ambient light, up to MAX_FORWARD_LIGHTS (4) each of point, spot, and
-// hemisphere lights, read from the Frame uniform. The fragment stage outputs LINEAR HDR radiance (no
+// hemisphere lights, read from the Frame uniform. The fragment scene2d outputs LINEAR HDR radiance (no
 // tonemap / gamma here — the effect pipeline's resolve/tonemap pass owns that), matching the
 // rgba16float scene target.
 //

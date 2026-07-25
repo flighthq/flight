@@ -6,7 +6,7 @@ import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 // SSR: screen-space reflections. The real recipe ray-marches reflected rays against a sampleable DEPTH
 // buffer using view-space normals, walking `steps` increments up to `maxDistance` at the given
 // `resolution`; Wgpu has neither depth nor a normals attachment yet, so this is a passthrough copy
-// that preserves the pipeline stage. maxDistance/resolution/steps are reserved for the depth-driven recipe.
+// that preserves the pipeline scene2d. maxDistance/resolution/steps are reserved for the depth-driven recipe.
 export function applySsrEffectToWgpu(
   state: WgpuRenderState,
   source: Readonly<WgpuRenderTarget>,

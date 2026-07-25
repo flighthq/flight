@@ -18,7 +18,7 @@ import { getGlSceneRuntime } from './glSceneRuntime';
 // The built-in Normal forward renderer (GlMeshMaterialRenderer for NormalMaterialKind). A lighting-
 // independent debug/utility pass material: bind selects the debug program in normal mode (with the
 // normal-map variant when the material binds one), uploads the camera view-projection, and binds the
-// optional tangent-space normal map plus its scale; draw issues the indexed draw. The fragment stage
+// optional tangent-space normal map plus its scale; draw issues the indexed draw. The fragment scene2d
 // transforms the geometric normal by the normal matrix (so the visualized normal is WORLD-space),
 // optionally perturbs it through a TBN-built normal map, and encodes it as `n * 0.5 + 0.5` LINEAR
 // color. Lights are ignored. See registerNormalGlMaterial to install it.

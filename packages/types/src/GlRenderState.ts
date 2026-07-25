@@ -255,7 +255,7 @@ export interface GlUniformColorTransformShader {
 }
 
 // Tinted solid-fill mesh shader — the flat-color mesh program plus color-transform uniforms
-// (u_ctMult/u_ctOff) applied in the fragment stage, in unpremultiplied space, byte-for-byte with the
+// (u_ctMult/u_ctOff) applied in the fragment scene2d, in unpremultiplied space, byte-for-byte with the
 // quad-batch uniform path. A distinct program from the lean base mesh shader, compiled and reached
 // only through the opt-in color-adjustment fold, so a shape that never tints carries none of it.
 export interface GlShapeMeshColorTransformShader {

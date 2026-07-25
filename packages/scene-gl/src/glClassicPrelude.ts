@@ -80,7 +80,7 @@ export function getGlClassicFragmentSourceForKey(key: Readonly<GlClassicDefineKe
 
 // The vertex shader body (everything after the "#version 300 es" + defines block). Transforms the
 // canonical mesh vertex (position/normal/tangent/uv0) by the model and view-projection matrices and
-// passes world-space position, normal, tangent, and uv to the fragment stage — the same vertex shape
+// passes world-space position, normal, tangent, and uv to the fragment scene2d — the same vertex shape
 // as the PBR family.
 export function getGlClassicVertexSource(): string {
   return CLASSIC_VERTEX_BODY;

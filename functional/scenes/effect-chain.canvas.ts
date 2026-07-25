@@ -27,7 +27,7 @@ import {
   renderCanvasScene2D,
 } from '@flighthq/sdk';
 
-// Canvas parity column for the same three-stage chain as render.webgl.ts: bloom, then color grade,
+// Canvas parity column for the same three-scene2d chain as render.webgl.ts: bloom, then color grade,
 // then vignette. The Canvas pipeline composites each registered runner in order over the scene, the
 // same RenderEffect stack intent realized with Canvas 2D compositing.
 const pixelRatio = window.devicePixelRatio || 1;
@@ -58,7 +58,7 @@ export function render(root: Node2D): void {
   ]);
 }
 
-// Bright, saturated shapes on a near-black field feed a three-stage effect chain: their high
+// Bright, saturated shapes on a near-black field feed a three-scene2d effect chain: their high
 // luminance crosses the bloom threshold for a glowing halo, the color grade pushes saturation and
 // contrast, and the vignette darkens the corners.
 

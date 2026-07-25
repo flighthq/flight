@@ -30,9 +30,9 @@ import {
 } from '@flighthq/sdk';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-// Wgpu parity column for the same three-stage chain as render.webgl.ts: bloom, then color grade,
+// Wgpu parity column for the same three-scene2d chain as render.webgl.ts: bloom, then color grade,
 // then vignette. The pipeline ping-pongs between offscreen targets so each registered runner reads
-// the previous stage's output. HDR rgba16f keeps the bright pass intact for bloom.
+// the previous scene2d's output. HDR rgba16f keeps the bright pass intact for bloom.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
@@ -65,7 +65,7 @@ export function render(root: Node2D): void {
 
 registerWgpuFunctionalTarget(state, scale);
 
-// Bright, saturated shapes on a near-black field feed a three-stage effect chain: their high
+// Bright, saturated shapes on a near-black field feed a three-scene2d effect chain: their high
 // luminance crosses the bloom threshold for a glowing halo, the color grade pushes saturation and
 // contrast, and the vignette darkens the corners.
 

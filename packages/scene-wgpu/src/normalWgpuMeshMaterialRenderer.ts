@@ -19,7 +19,7 @@ import { beginWgpuMeshDraw, drawWgpuMeshSubset, writeWgpuFrameUniform } from './
 // mirror of normalGlMeshMaterialRenderer. A lighting-independent debug/utility pass material: bind
 // selects the debug pipeline in normal mode for the color format, writes the shared Frame uniform
 // (lights ignored), and binds the material's normalScale; draw issues the indexed draw. The fragment
-// stage transforms the geometric normal by the normal matrix (so the visualized normal is WORLD-space)
+// scene2d transforms the geometric normal by the normal matrix (so the visualized normal is WORLD-space)
 // and encodes it as `n * 0.5 + 0.5` LINEAR color. The tangent-space normal map is NOT sampled on wgpu
 // yet — hasNormalMap stays false and the shared placeholder texture is bound (mirrors the documented map
 // gap on the rest of the wgpu side; see wgpuDebugPrelude). See registerNormalWgpuMaterial to install it.
