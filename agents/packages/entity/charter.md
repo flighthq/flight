@@ -12,7 +12,7 @@ status: ./status.md
 
 ## What it is
 
-Core entity/runtime/binding data-model primitives — the foundational seam that pairs a plain public data object (the **entity**) with an opaque, package-private **runtime** object, plus the **binding** hook that lets higher layers (OOP wrappers, host adapters) attach to an entity. It is the bedrock the whole entity/runtime split in the SDK rests on: every higher package (`node`, `displayobject`, `sprite`, …) builds its own runtime tier on top of this primitive.
+Core entity/runtime/binding data-model primitives — the foundational seam that pairs a plain public data object (the **entity**) with an opaque, package-private **runtime** object, plus the **binding** hook that lets higher layers (OOP wrappers, host adapters) attach to an entity. It is the bedrock the whole entity/runtime split in the SDK rests on: every higher package (`node`, `scene2d`, `sprite`, …) builds its own runtime tier on top of this primitive.
 
 The package owns exactly the entity↔runtime↔binding triad — construction (`createEntity`), the lazy runtime slot (`createEntityRuntime`/`getEntityRuntime`/`hasEntityRuntime`), the binding hook (`attachEntityBinding`/`getEntityBinding`/`getEntityBindingAs<T>`), clone/serialization helpers (`cloneEntity`/`stripEntityRuntime`), and an opt-in dev guard mode. It ends where `@flighthq/node` begins: this package knows nothing about scene-graph nodes, hierarchy, transforms, component storage, or kind registries.
 

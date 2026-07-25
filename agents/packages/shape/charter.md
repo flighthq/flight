@@ -14,7 +14,7 @@ status: ./status.md
 
 `@flighthq/shape` is the **retained command recorder** for vector drawing — the retained-mode vector `Graphics`-style display node. It owns a flat command vocabulary (moveTo/lineTo/quadratic + cubic curves, arcs, primitives circle/ellipse/rectangle/round-rect/polygon/polyline, raw path injection, indexed `drawTriangles`), solid/gradient/bitmap fills and strokes, exact analytic local-bounds measurement, a solid-fill region resolver (`getShapeFillRegions`, with a raster-fallback sentinel), an opt-in per-command hit-test registry with built-in primitive handlers, a typed round-trip surface (planned: `getShapeGraphicsData` / `forEachShapeCommand` / `appendShapeGraphicsData`), and a data-only `Scale9Shape` entity carrying a `scale9Grid`.
 
-Shape is the "what to draw" recorder, not the geometry kernel. General path tessellation, curve flattening, stroke-to-geometry expansion, and boolean operations belong to `@flighthq/path`. Rendering optimization is delegated to `displayobject-<backend>`. Format-specific serialization (SVG `<path d>`, Canvas2D replay, stable JSON) belongs in `@flighthq/shape-formats`.
+Shape is the "what to draw" recorder, not the geometry kernel. General path tessellation, curve flattening, stroke-to-geometry expansion, and boolean operations belong to `@flighthq/path`. Rendering optimization is delegated to `scene2d-<backend>`. Format-specific serialization (SVG `<path d>`, Canvas2D replay, stable JSON) belongs in `@flighthq/shape-formats`.
 
 ## North star
 
@@ -40,7 +40,7 @@ Shape is the "what to draw" recorder, not the geometry kernel. General path tess
 
 - General path tessellation / boolean ops (→ `@flighthq/path`).
 - Stroke-to-geometry expansion — converting a stroke centerline + style into a filled outline path (→ `@flighthq/path`).
-- Rasterization of any fill or stroke (→ `displayobject-<backend>`).
+- Rasterization of any fill or stroke (→ `scene2d-<backend>`).
 - Quad/tile batch drawing — `drawQuads`/`drawTiles` (→ `@flighthq/sprite`).
 - Format-specific serialization — SVG, Canvas2D replay, JSON (→ `@flighthq/shape-formats`).
 - Shader fills — `beginShaderFill`/`lineShaderStyle` (cross-package, deferred).

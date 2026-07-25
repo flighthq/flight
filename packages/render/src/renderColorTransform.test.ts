@@ -1,6 +1,6 @@
 import { createColorTransformAdjustment } from '@flighthq/adjustments';
-import { createDisplayObject, getNode2DRuntime, setNode2DColorAdjustments } from '@flighthq/displayobject';
 import { createColorTransform } from '@flighthq/materials';
+import { createDisplayObject, getNode2DRuntime, setNode2DColorAdjustments } from '@flighthq/scene2d';
 import type { Renderable } from '@flighthq/types';
 
 import { updateRenderProxyColorTransform } from './renderColorTransform';

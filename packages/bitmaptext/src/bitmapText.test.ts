@@ -1,5 +1,5 @@
-import { getNode2DRuntime } from '@flighthq/displayobject';
 import { createRectangle } from '@flighthq/geometry';
+import { getNode2DRuntime } from '@flighthq/scene2d';
 import { getQuadBatchCapacity } from '@flighthq/sprite';
 import type { BitmapTextRuntime, GlyphEntry, GlyphSource, ImageResource } from '@flighthq/types';
 import { BitmapTextKind } from '@flighthq/types';

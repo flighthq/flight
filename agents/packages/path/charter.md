@@ -16,7 +16,7 @@ status: ./status.md
 
 It is a **value-typed leaf**: plain `Path` data in, plain contours/meshes/scalars out. It owns the _shape_, not the _pixels_. Its primary in-SDK consumers are `@flighthq/clip` (builds clip regions from `Path`), `@flighthq/shape` (uses path as its geometry kernel — curve constants, flattening), and `@flighthq/interaction` (uses `containsPathPoint` for shape-accurate picking). Dependencies: `@flighthq/types` only.
 
-Where it ends: rendering, GPU upload, and stencil/cover orchestration belong to `displayobject-<backend>`. Boolean path operations (union/intersect/difference/XOR) belong in the `@flighthq/path-boolean` neighbor. Path-string codecs (SVG `d` attribute parse/serialize) belong in `@flighthq/path-formats`.
+Where it ends: rendering, GPU upload, and stencil/cover orchestration belong to `scene2d-<backend>`. Boolean path operations (union/intersect/difference/XOR) belong in the `@flighthq/path-boolean` neighbor. Path-string codecs (SVG `d` attribute parse/serialize) belong in `@flighthq/path-formats`.
 
 ## North star
 
@@ -40,7 +40,7 @@ Where it ends: rendering, GPU upload, and stencil/cover orchestration belong to 
 
 **Non-goals:**
 
-- Rendering / GPU upload / stencil-then-cover orchestration (→ `displayobject-<backend>`).
+- Rendering / GPU upload / stencil-then-cover orchestration (→ `scene2d-<backend>`).
 - Boolean path operations — union/intersect/difference/XOR (→ `@flighthq/path-boolean`).
 - SVG path-string parse/serialize (→ `@flighthq/path-formats`).
 - The SVG DOM / SVG document model.

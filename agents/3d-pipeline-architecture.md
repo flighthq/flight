@@ -6,7 +6,7 @@
 
 A 2D app pays **nothing** for 3D. This is the hard gate every decision below respects:
 
-- No 3D code in a 2D bundle — the 2D/3D split is a hard tree-shake boundary; `scene` never imports from `displayobject`; the mesh-material registry is a **separate** `WeakMap` from the 2D quad-material registry.
+- No 3D code in a 2D bundle — the 2D/3D split is a hard tree-shake boundary; `scene` never imports from `scene2d`; the mesh-material registry is a **separate** `WeakMap` from the 2D quad-material registry.
 - **Enforced, not promised:** a 2D example's `npm run size` baseline must not move when a 3D package is added. That size gate is the acceptance test for every 3D package.
 
 ## Carried-forward settled decisions (from render-architecture)
@@ -73,7 +73,7 @@ glTF (`.gltf`/`.glb`) is the standard 3D interchange format and is effectively a
 ## Build sequencing
 
 1. **`picking`** (consumes Phase-1 raycasting; smallest, immediately useful).
-2. **`scene` core-lit** — promote from stub: `Scene` root + `Mesh` node (`geometry` + `materials[]`) + transform-only `SceneNode` group, `prepareSceneRender` (world matrices, frustum cull via Phase-1 frustum helpers, pack light block). Mirrors the 2D `node`/`displayobject` split.
+2. **`scene` core-lit** — promote from stub: `Scene` root + `Mesh` node (`geometry` + `materials[]`) + transform-only `SceneNode` group, `prepareSceneRender` (world matrices, frustum cull via Phase-1 frustum helpers, pack light block). Mirrors the 2D `node`/`scene2d` split.
 3. **shadows** (recipe; directional first).
 4. **environment / IBL** (bake + skybox).
 5. **animation core + `skeleton`**.

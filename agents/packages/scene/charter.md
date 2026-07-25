@@ -21,7 +21,7 @@ Where it ends and a neighbor begins:
 
 - **vs `mesh`** — `mesh` owns vertex data (layouts, primitive builders, normals/tangents/bounds); `scene` owns the _node_ that references a mesh and its place in the spatial hierarchy.
 - **vs `render` / `scene-gl` / `scene-wgpu`** — `scene` is render-free and side-effect-free. It _describes_ the world and _builds query results_ (e.g. a cull list); the GPU backends draw it. `scene` never imports render — the cull/draw seam is caller-driven and acyclic.
-- **vs `node`** — `scene` is one graph family over the shared `@flighthq/node` hierarchy spine (the 3D counterpart to `displayobject`/`sprite`'s 2D graphs); it adds the `HasTransform3D` trait and 3D-specific queries, delegating generic hierarchy/signal plumbing to `node`.
+- **vs `node`** — `scene` is one graph family over the shared `@flighthq/node` hierarchy spine (the 3D counterpart to `scene2d`/`sprite`'s 2D graphs); it adds the `HasTransform3D` trait and 3D-specific queries, delegating generic hierarchy/signal plumbing to `node`.
 
 It is the 3D family's spatial substrate — the spine that `scene-gl`/`scene-wgpu`, and future 3D features (lighting, environment, instancing draw, picking, skeleton/animation), compose against.
 

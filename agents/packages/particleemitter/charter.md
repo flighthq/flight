@@ -33,22 +33,22 @@ The scene-graph face of the particle system: a `ParticleEmitter` display object 
 - The particle *simulation* — spawn rules, lifetime, forces, colliders, curves, emitter config/state/signals — stays in `@flighthq/particles` (the pure sim). particleemitter consumes it.
 - Rendering itself — renderers consume the node; the concrete draw lives in the `render-*`/`sprite` batch layers.
 
-**Dependencies:** `particles` (sim: curve sampling, emitter state/signals/config) + `displayobject` + `geometry` + `node` + `types`.
+**Dependencies:** `particles` (sim: curve sampling, emitter state/signals/config) + `scene2d` + `geometry` + `node` + `types`.
 
 ## Decisions
 
 _Append-only, dated, blessed rulings._
 
-- **[2026-07-10] Name is `@flighthq/particleemitter`** (no dash, no plural-mismatch). The composition-layer package is named the lowercased form of the type it owns — `particleemitter` ← `ParticleEmitter`, exactly as `movieclip` ← `MovieClip`. A dash (`particle-emitter`) would wrongly imply a `particle` singular base package; `particles-emitter` (the `-subpackage` neighbor form) is for codec/format neighbors like `particles-formats`, not a first-level display domain. The SDK's first-level compound domains are smashed no-dash (`displayobject`, `textureatlas`, `textinput`, `spritesheet`, `movieclip`), so this joins that family. User-directed 2026-07-10.
+- **[2026-07-10] Name is `@flighthq/particleemitter`** (no dash, no plural-mismatch). The composition-layer package is named the lowercased form of the type it owns — `particleemitter` ← `ParticleEmitter`, exactly as `movieclip` ← `MovieClip`. A dash (`particle-emitter`) would wrongly imply a `particle` singular base package; `particles-emitter` (the `-subpackage` neighbor form) is for codec/format neighbors like `particles-formats`, not a first-level display domain. The SDK's first-level compound domains are smashed no-dash (`scene2d`, `textureatlas`, `textinput`, `spritesheet`, `movieclip`), so this joins that family. User-directed 2026-07-10.
 
-- **[2026-07-10] Full scope: relocate the `ParticleEmitter` node out of `@flighthq/sprite`.** Not just the two glue files — the node itself (`packages/sprite/src/particleEmitter.ts`, which is self-contained: it imports only displayobject/geometry/node/types and nothing else in sprite consumes it) moves here, making particleemitter the node's real home per the charter. `@flighthq/particles` keeps the sim (curves, `ParticleEmitterState`/`ensureParticleEmitterStateCapacity`, `ParticleEmitterSignals`/`getParticleEmitterSignals`, config), exposing whatever the node needs through its barrel, and **drops its `@flighthq/sprite` dependency** — restoring the pure-leaf charter. User-directed 2026-07-10.
+- **[2026-07-10] Full scope: relocate the `ParticleEmitter` node out of `@flighthq/sprite`.** Not just the two glue files — the node itself (`packages/sprite/src/particleEmitter.ts`, which is self-contained: it imports only scene2d/geometry/node/types and nothing else in sprite consumes it) moves here, making particleemitter the node's real home per the charter. `@flighthq/particles` keeps the sim (curves, `ParticleEmitterState`/`ensureParticleEmitterStateCapacity`, `ParticleEmitterSignals`/`getParticleEmitterSignals`, config), exposing whatever the node needs through its barrel, and **drops its `@flighthq/sprite` dependency** — restoring the pure-leaf charter. User-directed 2026-07-10.
 
 ### Origin decisions (from particles charter)
 
 - **[2026-07-02 · particles charter]** Sim/node split. Particles is the pure sim; the emitter node is the display-object wrapper.
 - **[2026-07-02 · particles charter]** Own package (historically lived in sprite).
 
-- **[2026-07-15] Unified 2D+3D package.** `ParticleEmitter` renames to `ParticleEmitter2D`. A new `ParticleEmitter3D` (scene-graph node backed by `@flighthq/scene`) joins the package. The package accepts a dual dependency on both `@flighthq/displayobject` and `@flighthq/scene` — a deliberate compromise on the dependency graph for a benefit in cognition. Tree-shaking zeroes the bundle cost for single-graph users. The principle: the dimension changes the node wrapper (thin glue over the shared `@flighthq/particles` sim), not the mathematical model. User-directed.
+- **[2026-07-15] Unified 2D+3D package.** `ParticleEmitter` renames to `ParticleEmitter2D`. A new `ParticleEmitter3D` (scene-graph node backed by `@flighthq/scene`) joins the package. The package accepts a dual dependency on both `@flighthq/scene2d` and `@flighthq/scene` — a deliberate compromise on the dependency graph for a benefit in cognition. Tree-shaking zeroes the bundle cost for single-graph users. The principle: the dimension changes the node wrapper (thin glue over the shared `@flighthq/particles` sim), not the mathematical model. User-directed.
 
 ## Open directions (maturation)
 

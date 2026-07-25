@@ -12,7 +12,7 @@ ingested:
 
 # adjustments — Review
 
-First review of the package born from the fork-H filters dissolution. Evidence is the live tree (`packages/adjustments/src/`, 18 modules + `index.ts`, 18 colocated test files, ~116 tests) plus its consumers (`effects-gl`/`effects-wgpu`/`effects-canvas` pipelines, `displayobject`/`node` runtime slot per status).
+First review of the package born from the fork-H filters dissolution. Evidence is the live tree (`packages/adjustments/src/`, 18 modules + `index.ts`, 18 colocated test files, ~116 tests) plus its consumers (`effects-gl`/`effects-wgpu`/`effects-canvas` pipelines, `scene2d`/`node` runtime slot per status).
 
 ## Verdict
 

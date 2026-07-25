@@ -37,7 +37,7 @@ _Append-only, dated, blessed rulings._
 
 ## Open directions
 
-1. **Whole-map compose-down convenience.** `buildTiledScene(doc, options) → container` — a separately-importable assembly that stacks the projected tile layers (+ image layers as `Bitmap`s) into one display container, so the convenience never taxes the per-layer primitive. Pulls in `@flighthq/displayobject`.
+1. **Whole-map compose-down convenience.** `buildTiledScene(doc, options) → container` — a separately-importable assembly that stacks the projected tile layers (+ image layers as `Bitmap`s) into one display container, so the convenience never taxes the per-layer primitive. Pulls in `@flighthq/scene2d`.
 2. **Non-tile-layer projections.** `buildCollidersFromTiledObjectGroup` (→ `@flighthq/collision` shapes + property bag), `buildBitmapFromTiledImageLayer`, and `mergeTiledTilesetsToAtlas` (`binpack`+`textureatlas` merge for layers that must be a single batch).
 3. **LDtk importer** — the modern Tiled alternative; its own `.ldtk` JSON shape over the same `TilemapData[]` projection target.
 4. **Infinite/chunked maps** — Tiled's chunked layer data for large worlds.

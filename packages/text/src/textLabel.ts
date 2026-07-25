@@ -1,5 +1,5 @@
-import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/displayobject';
 import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d';
 import { computeTextBoundsRectangle, createTextFormatRange } from '@flighthq/textlayout';
 import type {
   MethodsOf,

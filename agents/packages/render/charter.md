@@ -16,7 +16,7 @@ status: ./status.md
 
 It owns renderer registration (the `*Kind`→renderer registry), render state, the scene-graph→render-proxy update/prepare pipeline, the render-cache seam, render-target geometry math, viewport culling, a retained sortable render queue, the 3D scene-prepare (cull/light-pack) pass, and a counter-level stats snapshot. Every public type lives in `@flighthq/types` first; this package implements against that header.
 
-Where it ends: the concrete per-backend draw loops, batching, target pools, and shaders live in the sibling backend packages (`displayobject-canvas`, `displayobject-dom`, `displayobject-gl`, `displayobject-wgpu`, and the `scene-<backend>` leaves). `render` is the seam those backends register into and the preparation they all draw from. It is also distinct from the scene-graph packages it reads (`node`, `displayobject`, `sprite`, `scene`): it consumes prepared graph state, it does not define node types.
+Where it ends: the concrete per-backend draw loops, batching, target pools, and shaders live in the sibling backend packages (`scene2d-canvas`, `scene2d-dom`, `scene2d-gl`, `scene2d-wgpu`, and the `scene-<backend>` leaves). `render` is the seam those backends register into and the preparation they all draw from. It is also distinct from the scene-graph packages it reads (`node`, `scene2d`, `sprite`, `scene`): it consumes prepared graph state, it does not define node types.
 
 ## North star
 
@@ -42,7 +42,7 @@ Where it ends: the concrete per-backend draw loops, batching, target pools, and 
 **Non-goals:**
 
 - Concrete per-backend draw loops, batching internals, GPU target pools, and shaders — those are the backend packages.
-- Node-type definitions — those belong to `node` / `displayobject` / `sprite` / `scene`.
+- Node-type definitions — those belong to `node` / `scene2d` / `sprite` / `scene`.
 - CSS / platform font-string building — `computeTextFormatFontString` moves to `@flighthq/text` (Decision #3).
 - The objective definition of lighting (light types, light descriptors) — that belongs to `@flighthq/lighting`. This package consumes lighting descriptors and composes them for the GPU.
 
@@ -50,13 +50,13 @@ Where it ends: the concrete per-backend draw loops, batching, target pools, and 
 
 - **[2026-07-02] The core owns a shared draw driver — backends contribute leaf `submit` calls.** `render` owns the walk-and-flush loop: `drawRenderProxy(state, root)` walks prepared proxies, dispatches `renderer.submit(state, proxy)`, and auto-flushes on batch-key change via `registerRenderBatchFlush(state, format, flush)`. Backends implement the leaf `submit` on their `Renderer` and register a flush callback; they do not re-implement the walk. The `Renderer.submit`/`format` contract already implies this — the driver is the missing implementation. **Resolves Open direction #1.**
 
-  **Why:** Four backends each re-deriving the walk is pure duplication. The `submit`/`format` contract on `Renderer` was designed for a shared driver; building it is completing the design, not adding abstraction. The `displayobject-gl`/`displayobject-wgpu` leaf renderers should be built against this driver, not before it.
+  **Why:** Four backends each re-deriving the walk is pure duplication. The `submit`/`format` contract on `Renderer` was designed for a shared driver; building it is completing the design, not adding abstraction. The `scene2d-gl`/`scene2d-wgpu` leaf renderers should be built against this driver, not before it.
 
 - **[2026-07-02] Render-pass / render-graph is in scope for `render`, as an optional abstraction.** The SDK is large enough that custom backend authors will look for a render graph. With WebGL and WebGPU backends, a backend-agnostic pass/target descriptor carries real weight. Whether the default backends use it is a separate question — the abstraction should exist for those who want it. Not a separate package. **Resolves Open directions #2 and #3.**
 
   **Why:** A render graph is a natural extension of the render core's "what to draw and in what order" identity. Splitting it into `render-graph` would force an artificial seam — the graph needs intimate access to render state, the queue, and the target math that already live here. Keeping it in `render` keeps it composable and optional (tree-shaking ensures a 2D app that doesn't import graph functions pays nothing).
 
-- **[2026-07-02] `computeTextFormatFontString` moves to `@flighthq/text`.** It is a CSS font-string builder — a scope leak in the render core. The move touches ~14 import sites across `displayobject-canvas`, `displayobject-dom`, `displayobject-gl`, `displayobject-wgpu`, and `textshaper-canvas`. **Resolves Open direction #5.**
+- **[2026-07-02] `computeTextFormatFontString` moves to `@flighthq/text`.** It is a CSS font-string builder — a scope leak in the render core. The move touches ~14 import sites across `scene2d-canvas`, `scene2d-dom`, `scene2d-gl`, `scene2d-wgpu`, and `textshaper-canvas`. **Resolves Open direction #5.**
 
   **Why:** Font-string building is text-domain logic. The render core has no business knowing CSS font syntax. Every consumer already imports from backend packages that can depend on `@flighthq/text`.
 

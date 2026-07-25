@@ -24,8 +24,8 @@ Note for the charter (not self-applied): the Boundaries sentence claiming a `@fl
 - **Infinite/chunked map data** (`<chunk>`/`chunks[]` decoding) — parked: charter Open direction 4; needs a ruling on how chunks land in the DTO (stitched into one grid vs. preserved as chunks for faithful re-emit — a fidelity-vs-convenience fork).
 - **Wang sets / terrain metadata** — parked: charter Open direction 5.
 - **LDtk importer** — parked: charter Open direction 3; likely its own format family within this package, sized as its own work.
-- **`buildTiledScene` compose-down convenience** — parked: charter Open direction 1; cross-package (pulls in `@flighthq/displayobject`).
-- **Non-tile-layer projections** (`buildCollidersFromTiledObjectGroup`, `buildBitmapFromTiledImageLayer`, `mergeTiledTilesetsToAtlas`) — parked: charter Open direction 2; cross-package (`collision`, `displayobject`, `binpack`+`textureatlas`).
+- **`buildTiledScene` compose-down convenience** — parked: charter Open direction 1; cross-package (pulls in `@flighthq/scene2d`).
+- **Non-tile-layer projections** (`buildCollidersFromTiledObjectGroup`, `buildBitmapFromTiledImageLayer`, `mergeTiledTilesetsToAtlas`) — parked: charter Open direction 2; cross-package (`collision`, `scene2d`, `binpack`+`textureatlas`).
 - **Carry flip flags through projection** — parked: requires a per-tile flip slot on `TilemapData` in `@flighthq/sprite` (cross-package, fork-A adjacent); today flips survive only in the document, as `tiledProject.ts` documents.
 - **Class-typed custom properties and `propertytype` enums** — parked: changes `TiledProperty.value`'s shared type (review.md › Candidate open direction 4); needs the design call first.
 - **Text objects and object `template` references** — parked: text objects are a sizeable modeling addition (font/wrap/align field cluster) and templates need a caller-supplied resolver seam design, both wanting a fidelity-bar ruling (review.md › Candidate open direction 1).

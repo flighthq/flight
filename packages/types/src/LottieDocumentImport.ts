@@ -14,7 +14,7 @@ export interface LottieDocumentImportOptions {
 /**
  * The two well-homed outputs of a Bodymovin document: its display subtree and one domain-bound clip.
  * Marker records become clip events. The clip's opaque targetRef descriptor remains a charter-scene2d
- * fork until the displayobject-owned versus importer-owned binding boundary is blessed.
+ * fork until the scene2d-owned versus importer-owned binding boundary is blessed.
  */
 export interface LottieDocumentImportResult {
   clip: AnimationClip;

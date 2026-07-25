@@ -45,7 +45,7 @@
   "devDependencies": {
     "@flighthq/adjustments": "*",
     "@flighthq/camera": "*",
-    "@flighthq/displayobject": "*",
+    "@flighthq/scene2d": "*",
     "@flighthq/lighting": "*",
     "@flighthq/scene": "*",
     "@flighthq/sprite": "*",

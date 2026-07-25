@@ -15,7 +15,7 @@ Executed the sweep-safe items from `assessment.md` `## Recommended`. The committ
 Done:
 
 - **Barrel exports (Recommended #2).** Added the eight Silver functions — `canRedoTextInput`, `canUndoTextInput`, `clearTextInputHistory`, `moveTextInputCaretToLineEnd`, `moveTextInputCaretToLineStart`, `redoTextInput`, `scrollTextInputCaretIntoView`, `undoTextInput` — to `src/index.ts`, kept alphabetized within the `textInputEditing` re-export block. They were already `export function` in source but unreachable from `@flighthq/textinput`.
-- **Dependency hygiene (Recommended #5).** Dropped the stale `@flighthq/displayobject` dependency from `package.json`; no `src/` file imports it (verified by grep — the used deps are `node`, `signals`, `text`, `textlayout`, `types`).
+- **Dependency hygiene (Recommended #5).** Dropped the stale `@flighthq/scene2d` dependency from `package.json`; no `src/` file imports it (verified by grep — the used deps are `node`, `signals`, `text`, `textlayout`, `types`).
 
 Already satisfied in the committed tree (Recommended #1 and #3): the five private helpers compile and the colocated Silver tests exist. No source/test edits were needed for those beyond confirming them.
 
@@ -86,7 +86,7 @@ Parked:
 
 **Undo / redo** (Silver, medium effort): `TextInputEditRecord` must land in `@flighthq/types` first. Foundational and hard to retrofit, but it is an additive self-contained addition that does not require coordination with other packages in flight. Deferred to a follow-up session to keep this session focused on Bronze completeness.
 
-**Caret-into-view auto-scroll** (Silver, medium/cross-package): The vertical path can reuse `setRichTextScrollV` from `@flighthq/text`. The horizontal path needs a new `setRichTextScrollH` / `scrollH` field in `@flighthq/text`, plus the four `displayobject-*` renderer-overlay packages to honor `scrollH` when drawing caret/selection. This is a multi-package change that should be coordinated rather than done unilaterally.
+**Caret-into-view auto-scroll** (Silver, medium/cross-package): The vertical path can reuse `setRichTextScrollV` from `@flighthq/text`. The horizontal path needs a new `setRichTextScrollH` / `scrollH` field in `@flighthq/text`, plus the four `scene2d-*` renderer-overlay packages to honor `scrollH` when drawing caret/selection. This is a multi-package change that should be coordinated rather than done unilaterally.
 
 **Drag-select auto-scroll** (Silver): Depends on the same `scrollH` addition above, plus a viewport-bounds parameter on the pointer-move dispatchers. Depends on the auto-scroll work.
 
@@ -96,7 +96,7 @@ Parked:
 
 **Home/End line-relative semantics** (Silver): Currently `home` moves to index 0 and `end` moves to `text.length`. In a multiline field these should go to the start/end of the current line, with Ctrl+Home/Ctrl+End for document extremes. This touches `getKeyboardCommand` and `handleTextInputKeyboard`; needs a layout to resolve the current line, so `HandleTextInputKeyboardOptions.layout` (added in this session) is the prerequisite. Deferred to Silver — the layout plumbing is now in place.
 
-**IME / composition seam** (Gold, high effort): `TextInputComposition` in `@flighthq/types`, composition lifecycle functions, event wiring in `@flighthq/input` (`compositionstart`/`update`/`end`), and marked-text rendering in `displayobject-*` overlays. The largest remaining gap. Recording as "deferred pending explicit posture decision" per the roadmap guidance — building the seam vs documenting as deferred should be surfaced to the user.
+**IME / composition seam** (Gold, high effort): `TextInputComposition` in `@flighthq/types`, composition lifecycle functions, event wiring in `@flighthq/input` (`compositionstart`/`update`/`end`), and marked-text rendering in `scene2d-*` overlays. The largest remaining gap. Recording as "deferred pending explicit posture decision" per the roadmap guidance — building the seam vs documenting as deferred should be surfaced to the user.
 
 **Grapheme-cluster correctness** (Gold): Move caret motion, deletion, and hit-testing from UTF-16 code-unit indexing to extended-grapheme-cluster boundaries. Depends on `@flighthq/textlayout` exposing grapheme boundaries or adding them there first. Requires TS + Rust simultaneous alignment on the index-semantics contract.
 

@@ -11,7 +11,7 @@ Dispatched review of unit test depth across 78 packages. 12 parallel review agen
 
 ### Solid (52)
 
-geometry, math, node, signals, displayobject, sprite, clip, text, textlayout, textshaper, textsegment, bitmapfont, bitmaptext, glyphatlas, text-markup, tween, spring, animation, timeline, movieclip, spritesheet, clock, motionpath, application, log, flow, debug, useragent, scene, mesh, materials, lighting, camera, texture, skeleton, picking, binpack, collision, camera2d, particles, particleemitter, path-boolean, render, adjustments, velocity, input, loader, audio, video, font, textureatlas, tileset, texture-formats, particles-formats, bitmapfont-formats, image, image-codec.
+geometry, math, node, signals, scene2d, sprite, clip, text, textlayout, textshaper, textsegment, bitmapfont, bitmaptext, glyphatlas, text-markup, tween, spring, animation, timeline, movieclip, spritesheet, clock, motionpath, application, log, flow, debug, useragent, scene, mesh, materials, lighting, camera, texture, skeleton, picking, binpack, collision, camera2d, particles, particleemitter, path-boolean, render, adjustments, velocity, input, loader, audio, video, font, textureatlas, tileset, texture-formats, particles-formats, bitmapfont-formats, image, image-codec.
 
 ### Adequate (21)
 

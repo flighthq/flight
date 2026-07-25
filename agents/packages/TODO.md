@@ -27,7 +27,7 @@ These cells retain their direction/review history, but are not packages to recre
 
 - **`camera2d`** → `@flighthq/camera`
 - **`skeleton`** → `@flighthq/skeleton3d`
-- **`svg-formats`** → `displayobject-formats`
+- **`svg-formats`** → `scene2d-formats`
 
 ## Rust-intended — designated for a Rust impl elsewhere (this repo names + scopes; built there)
 
@@ -507,7 +507,7 @@ Design calls to settle before building the affected entries:
 - Remove the dead branch and redundant runtime fetch in `drawWgpuFullscreenPass`
 - Guard the timestamp readback against its multi-frame `mapAsync` hazard
 - Add `generateWgpuTextureMipmaps` and mip/anisotropy sampler support
-- Move `@flighthq/displayobject` from `dependencies` to `devDependencies` (after confirming it is test-only)
+- Move `@flighthq/scene2d` from `dependencies` to `devDependencies` (after confirming it is test-only)
 
 ### scene-wgpu (solid 78)
 
@@ -530,7 +530,7 @@ Design calls to settle before building the affected entries:
 - Boundary-helper allocation trim
 - Conformance fixtures (light)
 
-### displayobject (solid 80)
+### scene2d (solid 80)
 
 - Delete the dead `internal.ts` module
 - Drop the unused `@flighthq/geometry` dependency
@@ -645,7 +645,7 @@ Design calls to settle before building the affected entries:
 - Honor unsubscribe in the `subscribeReady` web fill
 - Alphabetize `getLoginItem` in `createWebAppBackend`
 
-### displayobject-gl (solid 84)
+### scene2d-gl (solid 84)
 
 - Fix the inaccurate word in the new `glTestHelper.ts` docstring
 - Replace the `as unknown as` casts in `createGlShapeData` / `createGlTextLabelData` with a typed runtime-slot accessor
@@ -678,7 +678,7 @@ Design calls to settle before building the affected entries:
 
 - Fold the triplicated `onError` emit guard into one internal helper
 
-### displayobject-canvas (solid 88)
+### scene2d-canvas (solid 88)
 
 - `LineScaleMode 'horizontal'` / `'vertical'`
 - Image-smoothing parity audit
@@ -716,7 +716,7 @@ Design calls to settle before building the affected entries:
 - Document `glyphCount` on `ShapedRun`
 - Rename `ViewportAlign`/`ViewportScaleMode` → `StageAlign`/`StageScaleMode`
 
-### displayobject-dom (solid 89)
+### scene2d-dom (solid 89)
 
 - HiDPI follow-up for `drawDomBitmap`
 - Wire `enableDomRasterFilterSupport(state)`
@@ -730,7 +730,7 @@ Design calls to settle before building the affected entries:
 - Unify the early-out callback convention
 - Type the `computeViewportRenderTransform` casts
 
-### displayobject-wgpu (solid 90)
+### scene2d-wgpu (solid 90)
 
 - Stats integration test
 - Degenerate-input sentinel hardening
@@ -1011,14 +1011,14 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene` · `particleemitter` · `skeleton3d` · `scene-resources` · `camera-controls` · `debug` · `lifecycle` · `adjustments` · `camera` · `platform` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `displayobject-formats` · `host-capacitor` · `intl` · `movieclip` · `shading`
+`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene` · `particleemitter` · `skeleton3d` · `scene-resources` · `camera-controls` · `debug` · `lifecycle` · `adjustments` · `camera` · `platform` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `scene2d-formats` · `host-capacitor` · `intl` · `movieclip` · `shading`
 
 ## Liveness — which stage each stale cell needs next
 
 Computed from cell front matter (dates are `updated:`/`lastDirection:` fields). The review loop works this list to keep everything above trustworthy; it can be ignored when simply orienting in a package.
 
 - **Needs a direction session (charter stub or never directed):** `textshaper-canvas` · `textureatlas-formats` · `xml`
-- **Needs a first review (built, no review.md):** `accessibility` · `clock` · `displayobject-formats` · `host-capacitor` · `intl` · `movieclip` · `shading`
-- **Needs re-review (work landed after the survey):** `displayobject-wgpu (review 2026-06-24 < status 2026-06-25)` · `glyphatlas (review 2026-07-13 < status 2026-07-17)` · `render-gl (review 2026-07-21 < status 2026-07-22)` · `scene-formats (review 2026-07-09 < status 2026-07-24)` · `texture (review 2026-06-25 < status 2026-07-22)`
+- **Needs a first review (built, no review.md):** `accessibility` · `clock` · `scene2d-formats` · `host-capacitor` · `intl` · `movieclip` · `shading`
+- **Needs re-review (work landed after the survey):** `scene2d-wgpu (review 2026-06-24 < status 2026-06-25)` · `glyphatlas (review 2026-07-13 < status 2026-07-17)` · `render-gl (review 2026-07-21 < status 2026-07-22)` · `scene-formats (review 2026-07-09 < status 2026-07-24)` · `texture (review 2026-06-25 < status 2026-07-22)`
 - **Needs assess refresh (review newer than assessment):** `assets (assessment 2026-07-21 < review 2026-07-22)` · `audio (assessment 2026-07-03 < review 2026-07-13)` · `log (assessment 2026-07-02 < review 2026-07-13)` · `spritesheet (assessment 2026-07-02 < review 2026-07-13)` · `tileset (assessment 2026-07-03 < review 2026-07-09)` · `tween (assessment 2026-07-02 < review 2026-07-13)` · `video (assessment 2026-07-03 < review 2026-07-09)` · `xml (assessment 2026-07-03 < review 2026-07-09)`
-- **Open directions awaiting the user:** 590 across 132 charters — most-loaded: `scene` (13) · `displayobject-gl` (12) · `render-gl` (12) · `displayobject` (11) · `displayobject-dom` (10) · `effects-wgpu` (10) · `lighting` (10) · `scene-gl` (10) · `spritesheet-formats` (10) · `displayobject-canvas` (9) · `mesh` (9) · `render-wgpu` (9) · `skeleton3d` (9) · `displayobject-wgpu` (8) · `effects-gl` (8) · `geometry` (8) · `materials` (8) · `particles-formats` (8) · `scene-wgpu` (8) · `render` (7) · `scene-resources` (7) · `timeline` (7) · `camera` (6) · `capture` (6) · `color` (6) · `effects-canvas` (6) · `loader` (6) · `texture-formats` (6) · `tween` (6). Each charter's `## Open directions` section holds the questions; a direction session drains them.
+- **Open directions awaiting the user:** 590 across 132 charters — most-loaded: `scene` (13) · `scene2d-gl` (12) · `render-gl` (12) · `scene2d` (11) · `scene2d-dom` (10) · `effects-wgpu` (10) · `lighting` (10) · `scene-gl` (10) · `spritesheet-formats` (10) · `scene2d-canvas` (9) · `mesh` (9) · `render-wgpu` (9) · `skeleton3d` (9) · `scene2d-wgpu` (8) · `effects-gl` (8) · `geometry` (8) · `materials` (8) · `particles-formats` (8) · `scene-wgpu` (8) · `render` (7) · `scene-resources` (7) · `timeline` (7) · `camera` (6) · `capture` (6) · `color` (6) · `effects-canvas` (6) · `loader` (6) · `texture-formats` (6) · `tween` (6). Each charter's `## Open directions` section holds the questions; a direction session drains them.

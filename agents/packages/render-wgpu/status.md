@@ -131,13 +131,13 @@ existing GL capture byte-for-byte.
 
 **Separable Photoshop blend modes via read-back (Silver)** Overlay, Hardlight, Difference, Invert need a destination-texture sample path in WGSL. Predicate `requiresWgpuBlendReadback` is implemented. The actual read-back pass is deferred: a cross-backend conformance decision (pixel-matching tolerance vs Canvas `globalCompositeOperation`) must be made first.
 
-**Batched/instanced core draw primitive (Gold)** `WgpuQuadBatch` with a growable instance buffer. This is a joint design decision with `displayobject-wgpu` and `scene-wgpu`. Surfaced as a design decision: the instance buffer layout must be agreed before the core ships one.
+**Batched/instanced core draw primitive (Gold)** `WgpuQuadBatch` with a growable instance buffer. This is a joint design decision with `scene2d-wgpu` and `scene-wgpu`. Surfaced as a design decision: the instance buffer layout must be agreed before the core ships one.
 
 **Full warm-set completeness across MSAA×format×blend (Gold)** `warmWgpuPipelines` now warms 18 combinations (3 stencil × 6 blend, sampleCount=1, canvas format). HDR format (`rgba16float`), MSAA (sampleCount=4), and depth-write variants are lazily compiled. A full warm-set requires the caller to know which combinations will be used and call a proposed `warmWgpuPipelinesForScene(state, { formats, blendModes, sampleCounts })` ahead of rendering — not yet implemented.
 
-**Wire `applyWgpuScissorRect` into the render walk** `applyWgpuScissorRect` is exported and functional, but `displayobject-wgpu` does not yet call it when a rect clip is active. This is a `displayobject-wgpu` concern, not `render-wgpu`.
+**Wire `applyWgpuScissorRect` into the render walk** `applyWgpuScissorRect` is exported and functional, but `scene2d-wgpu` does not yet call it when a rect clip is active. This is a `scene2d-wgpu` concern, not `render-wgpu`.
 
-**Wire fullscreen pass into `filters-wgpu`/`effects-wgpu`** `createWgpuFullscreenPipeline` + `drawWgpuFullscreenPass` are ready; the leaf packages haven't been updated. `displayobject-wgpu` concern.
+**Wire fullscreen pass into `filters-wgpu`/`effects-wgpu`** `createWgpuFullscreenPipeline` + `drawWgpuFullscreenPass` are ready; the leaf packages haven't been updated. `scene2d-wgpu` concern.
 
 **Rust parity pass (Gold)** `flighthq-render-wgpu` in the Rust crate should reflect new functions. New pass-2 additions: feature negotiation (map `WgpuAdapterCapabilities` to Rust struct queried from `wgpu::Adapter`), MSAA (resolve texture, multisample pipeline), timestamp queries (wgpu's `Timestamp` feature), z-ordered pipeline, expanded warm pipelines, device-lost signal (wgpu's `device.poll` / device-lost callback). Deferred to a Rust session. Divergences for the conformance map: `enableWgpuRenderStateSignals` closure wiring → Rust callback/channel; async timestamp readback → Rust futures or polling.
 
@@ -159,7 +159,7 @@ existing GL capture byte-for-byte.
 
 1. **Cross-backend tolerance for separable blend modes** — Implementing Overlay/Hardlight/Difference/Invert via a WGSL read-back pass may not pixel-match Canvas `globalCompositeOperation` or WebGL's implementation. Is "close enough" acceptable or does the parity spec require bit-exact matching? This gate the implementation of the read-back path.
 
-2. **`WgpuQuadBatch` instance buffer layout** — The core could own a generic growable instance buffer for sprite/particle batches, but the instance data layout must be agreed with `displayobject-wgpu` and `scene-wgpu` consumers. What fields go in the shared base layout vs per-material extension data?
+2. **`WgpuQuadBatch` instance buffer layout** — The core could own a generic growable instance buffer for sprite/particle batches, but the instance data layout must be agreed with `scene2d-wgpu` and `scene-wgpu` consumers. What fields go in the shared base layout vs per-material extension data?
 
 3. **`createWgpuRenderTarget` sampleCount option** — Should offscreen render targets support MSAA? If so, the pool must match on `(format, width, height, sampleCount)` and callers need to know to request the right sample count. This would enable antialiased filter targets (e.g. blur on a rotated element).
 
@@ -170,7 +170,7 @@ existing GL capture byte-for-byte.
 1. **Mipmaps** — High-visibility quality gap. Add `generateWgpuTextureMipmaps` as a compute-pass blit chain. This is self-contained and does not cross package boundaries.
 2. **Device-loss recovery** — Coordinate with the application/lifecycle seam. The `onDeviceLost` signal is now wired; the host can re-create the state when it fires. Add the recovery pattern to the host documentation.
 3. **Fullscreen pass in `filters-wgpu`/`effects-wgpu`** — The primitives are ready. `filters-wgpu` needs to use `createWgpuFullscreenPipeline` for its per-filter passes.
-4. **Wire `applyWgpuScissorRect` in `displayobject-wgpu`** — The function works; it just needs to be called when a rect clip node is active in the render walk.
+4. **Wire `applyWgpuScissorRect` in `scene2d-wgpu`** — The function works; it just needs to be called when a rect clip node is active in the render walk.
 5. **Rust parity pass** — Every function added in passes 1 and 2 needs porting. The MSAA resolve and feature negotiation are the most interesting divergences to document in the conformance map.
 
 ## Updated score estimate

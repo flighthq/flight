@@ -12,7 +12,7 @@
   },
   "references": [
     { "path": "../color" },
-    { "path": "../displayobject" },
+    { "path": "../scene2d" },
     { "path": "../geometry" },
     { "path": "../render" },
     { "path": "../surface" },

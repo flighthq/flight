@@ -1,5 +1,5 @@
-import { createDisplayObject } from '@flighthq/displayobject';
 import { invalidateNodeLocalTransform } from '@flighthq/node';
+import { createDisplayObject } from '@flighthq/scene2d';
 
 import { contributeTransformVelocity } from './transformVelocity';
 import { beginVelocityFrame, contributeVelocity, createVelocityField, getVelocity } from './velocityField';

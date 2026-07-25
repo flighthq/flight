@@ -1,6 +1,6 @@
 # Flight Render & Scene Architecture
 
-The render-layer and 3D-scene architecture, settled across the 2026-06-22 design sessions. This is the **target** state — a migration is in progress (a repo-wide acronym sweep, then a render-package split), so where this names packages that do not exist on disk yet (`render-gl`, `displayobject-gl`, `scene-gl`), those are the post-migration names. Read this before working the render or scene layers.
+The render-layer and 3D-scene architecture, settled across the 2026-06-22 design sessions. This is the **target** state — a migration is in progress (a repo-wide acronym sweep, then a render-package split), so where this names packages that do not exist on disk yet (`render-gl`, `scene2d-gl`, `scene-gl`), those are the post-migration names. Read this before working the render or scene layers.
 
 ## Naming conventions (codebase-wide)
 
@@ -13,16 +13,16 @@ The render-layer and 3D-scene architecture, settled across the 2026-06-22 design
 
 ```
 node                                 a thing with hierarchy
-displayobject  /  scene              a graph of nodes (a node FAMILY)
+scene2d  /  scene              a graph of nodes (a node FAMILY)
 render                               how you render a node           (backend-agnostic core)
 render-{canvas,dom,gl,wgpu}          how you render on a BACKEND      (per-backend core: state/context/targets)
-displayobject-{canvas,dom,gl,wgpu}   how you render THIS family ON that backend  (2D renderers)
+scene2d-{canvas,dom,gl,wgpu}   how you render THIS family ON that backend  (2D renderers)
 scene-{gl,wgpu}                      how you render THIS family ON that backend  (3D renderers)
 effects / effects-{backend}          spatial/composite ops — post-process pipeline (sibling cell; depends on render-{backend})
 adjustments                          pointwise value remaps — fold into the draw as data (no per-backend pass cell; realization is inline)
 ```
 
-A renderer is the per-backend realization of a node family — its name says _what_ it renders and _on what_. The per-backend **core** (`render-gl`/`render-wgpu`: the context, render targets, texture upload, fullscreen pass, shader plumbing) is a distinct cell from the per-family **renderers** — so `scene-gl` and `displayobject-gl` (and `effects-gl`) all sit on the lean `render-gl` core without 3D pulling in 2D or vice-versa. 3D rendering is its own cell, exactly as effects is — never blobbed into the 2D renderer. (Canvas/DOM have no 3D sibling, so their core-vs-renderer split is optional; `displayobject-canvas` /`displayobject-dom` may just be the renamed `render-canvas`/`render-dom`.)
+A renderer is the per-backend realization of a node family — its name says _what_ it renders and _on what_. The per-backend **core** (`render-gl`/`render-wgpu`: the context, render targets, texture upload, fullscreen pass, shader plumbing) is a distinct cell from the per-family **renderers** — so `scene-gl` and `scene2d-gl` (and `effects-gl`) all sit on the lean `render-gl` core without 3D pulling in 2D or vice-versa. 3D rendering is its own cell, exactly as effects is — never blobbed into the 2D renderer. (Canvas/DOM have no 3D sibling, so their core-vs-renderer split is optional; `scene2d-canvas` /`scene2d-dom` may just be the renamed `render-canvas`/`render-dom`.)
 
 ## Data atoms (built, pure data — types in `@flighthq/types`)
 
@@ -48,8 +48,8 @@ endGlRenderEffectPipeline(state, pipeline, fx)     // resolve + tonemap/bloom ov
 
 ### Color space & gamma (decided 2026-07-17)
 
-3D `scene-*` writes **linear HDR**; 2D `displayobject-*` renders in **sRGB** (no linear decode). The
-single `linear→sRGB` OETF encode happens **once, at present, never in a material shader** (`glLinearToSrgbPass` in `render-gl`; `linearChannelToSrgb` in `@flighthq/color` is the reference). Two facts made this non-trivial: (1) for a long time *nobody* encoded — the earlier "the resolve pass owns gamma" claim was unimplemented, so all 3D output was silently dark; (2) the effect pipeline's present is **shared by 2D-sRGB and 3D-linear content** and the target *format* is not a signal (`displayobject-clip-contour-hdr` is 2D-sRGB in rgba16f), so a blanket encode double-gammas the 2D majority (51 2D-sRGB vs 39 3D-linear effect scenes).
+3D `scene-*` writes **linear HDR**; 2D `scene2d-*` renders in **sRGB** (no linear decode). The
+single `linear→sRGB` OETF encode happens **once, at present, never in a material shader** (`glLinearToSrgbPass` in `render-gl`; `linearChannelToSrgb` in `@flighthq/color` is the reference). Two facts made this non-trivial: (1) for a long time *nobody* encoded — the earlier "the resolve pass owns gamma" claim was unimplemented, so all 3D output was silently dark; (2) the effect pipeline's present is **shared by 2D-sRGB and 3D-linear content** and the target *format* is not a signal (`scene2d-clip-contour-hdr` is 2D-sRGB in rgba16f), so a blanket encode double-gammas the 2D majority (51 2D-sRGB vs 39 3D-linear effect scenes).
 
 **Decision — color space is a declared property of the render TARGET; the present adapts.** A render
 target carries `colorSpace: 'linear' | 'srgb'` (declared at creation — a reliable signal, unlike

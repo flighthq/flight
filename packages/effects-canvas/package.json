@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@flighthq/adjustments": "*",
-    "@flighthq/displayobject-canvas": "*",
+    "@flighthq/scene2d-canvas": "*",
     "@flighthq/effects": "*",
     "@flighthq/geometry": "*",
     "@flighthq/types": "*"

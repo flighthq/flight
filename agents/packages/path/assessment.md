@@ -36,7 +36,7 @@ Parked — each with the reason it is not sweep-safe.
 - **Path interpolation / morphing** (`interpolatePaths`). Home undecided (path vs. animation/tween binding layer). Candidate open direction #2.
 - **PathMeasure entity.** Open direction #1 in the charter — stateful cached measure vs. pure re-flattening. Unchanged.
 - **Stroke dash-phase semantics + alignment.** Open direction #2 — per-subpath vs. global (SVG/Skia) vs. configurable; inner/outer alignment. Unchanged.
-- **Package Map + charter consumer-list staleness.** The map line and charter "What it is" say `shape`/`interaction` consume path; actual importers are clip, displayobject-gl/wgpu, motionpath, path-boolean, path-formats. Docs/admin edits outside the package cell — user's gate.
+- **Package Map + charter consumer-list staleness.** The map line and charter "What it is" say `shape`/`interaction` consume path; actual importers are clip, scene2d-gl/wgpu, motionpath, path-boolean, path-formats. Docs/admin edits outside the package cell — user's gate.
 - **Rust `flighthq-path` crate.** Open direction #4; cross-worktree. Still the prime first conformance target.
 
 ## Approved

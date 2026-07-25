@@ -5,7 +5,7 @@
     "rootDir": "./src"
   },
   "references": [
-    { "path": "../../../packages/displayobject-canvas" },
+    { "path": "../../../packages/scene2d-canvas" },
     { "path": "../../../packages/particles" },
     { "path": "../../../packages/sdk" }
   ],

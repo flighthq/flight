@@ -169,11 +169,11 @@
       ]
     },
     {
-      "key": "displayobject",
+      "key": "scene2d",
       "label": "Display Object",
       "scenes": [
         {
-          "scene": "displayobject-cache",
+          "scene": "scene2d-cache",
           "backends": {
             "canvas": true,
             "dom": true,
@@ -182,7 +182,7 @@
           }
         },
         {
-          "scene": "displayobject-clip-contour",
+          "scene": "scene2d-clip-contour",
           "backends": {
             "canvas": true,
             "dom": true,
@@ -191,7 +191,7 @@
           }
         },
         {
-          "scene": "displayobject-clip-contour-hdr",
+          "scene": "scene2d-clip-contour-hdr",
           "backends": {
             "canvas": false,
             "dom": false,
@@ -200,7 +200,7 @@
           }
         },
         {
-          "scene": "displayobject-clip-rect",
+          "scene": "scene2d-clip-rect",
           "backends": {
             "canvas": true,
             "dom": true,

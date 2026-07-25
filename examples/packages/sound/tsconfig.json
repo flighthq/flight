@@ -6,7 +6,7 @@
   },
   "references": [
     { "path": "../../../packages/audio" },
-    { "path": "../../../packages/displayobject-canvas" },
+    { "path": "../../../packages/scene2d-canvas" },
     { "path": "../../../packages/media" },
     { "path": "../../../packages/sdk" }
   ],

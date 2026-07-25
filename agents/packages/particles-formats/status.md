@@ -14,7 +14,7 @@ The structured-diagnostics capstone's B-diagnostics pass now CRUMBS every recogn
 below (Skip when the feature is dropped, Recover when it is approximated), so the drops are no longer silent
 and the parsers agree. The FEATURE-modeling work — actually importing these features instead of dropping
 them — is a separate particles-formats DEEPENING pass, QUEUED by the user behind the current next-wave
-(skeleton2d / skeleton2d-formats / displayobject-formats). Do NOT implement now; this is the work-list for it:
+(skeleton2d / skeleton2d-formats / scene2d-formats). Do NOT implement now; this is the work-list for it:
 
 - **libGDX**: map the `Emission` section onto `spawnRate` (currently dropped on EVERY import — the one feature
   NOT crumbed, since an always-firing crumb would break the clean-import contract; modeling it closes the gap

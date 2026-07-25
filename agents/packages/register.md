@@ -39,7 +39,7 @@ Plus the triad **plurality guard**: a `-formats`/`-backend` cell only when the s
 
 ## Landed candidates (recommended → built, as of 2026-07-03)
 
-Eight June candidates are now real: `animation`, `skeleton3d` (originally `skeleton`), `picking` (3D build-out), `gltf` (landed as **`scene-formats`**, a glTF import proving-slice), `font` and `audio`-the-subject (from the `resources` dissolution), `displayobject-skia` (Rust-only crate), and the `audio`-mixer candidate (folded into **`media`** — bus graph, per-bus gain/pan/mute/routing; the naming collision below is thereby resolved). Each has a blessed cell under `packages/` with its review in `<name>/review.md`.
+Eight June candidates are now real: `animation`, `skeleton3d` (originally `skeleton`), `picking` (3D build-out), `gltf` (landed as **`scene-formats`**, a glTF import proving-slice), `font` and `audio`-the-subject (from the `resources` dissolution), `scene2d-skia` (Rust-only crate), and the `audio`-mixer candidate (folded into **`media`** — bus graph, per-bus gain/pan/mute/routing; the naming collision below is thereby resolved). Each has a blessed cell under `packages/` with its review in `<name>/review.md`.
 
 **Chartered, not yet built** — eight cells carry a blessed charter with no code behind them, the ready-to-build queue: `capture`, `clock`, `image-codec`, `movieclip`, `particleemitter`, `path-boolean`, `path-formats`, `shape-formats`. (This list is computed live in [`TODO.md`](TODO.md).)
 
@@ -89,7 +89,7 @@ The standing rule for packages that span two and three dimensions. The test: **"
 | Package | 2D type | 3D type | Status | Notes |
 | --- | --- | --- | --- | --- |
 | `camera` | `Camera2D` | `Camera3D` | unified; `camera2d` absorbed | Both pure math (matrix producers), no graph dep |
-| `particleemitter` | `ParticleEmitter2D` | `ParticleEmitter3D` | add 3D, rename existing | Dual `displayobject`+`scene` dep accepted; tree-shaking zeroes cost |
+| `particleemitter` | `ParticleEmitter2D` | `ParticleEmitter3D` | add 3D, rename existing | Dual `scene2d`+`scene` dep accepted; tree-shaking zeroes cost |
 | `collision` | 2D shapes (existing) | 3D shapes (future) | add 3D when built | GJK/EPA joins same package; vocabulary-distinct names (Circle/Sphere) need no suffix |
 | `spatial` | 2D backends (existing) | 3D backends (future) | add 3D when built | BVH/octree behind same `SpatialIndexBackend` seam |
 | `velocity` | `Velocity2D` (existing) | `Velocity3D` (future) | add 3D when built | Same concept: position delta / dt |
@@ -103,7 +103,7 @@ The standing rule for packages that span two and three dimensions. The test: **"
 
 ### Inherently single-dimension (no counterpart)
 
-Display graph families (`displayobject`=2D, `scene`=3D), 2D geometry primitives (`path`, `shape`, `clip`, `motionpath`), 3D geometry (`mesh`), 3D rendering (`lighting`, `materials`), 2D animation (`movieclip`, `spritesheet`), 2D input (`interaction`), 3D selection (`picking`).
+Display graph families (`scene2d`=2D, `scene`=3D), 2D geometry primitives (`path`, `shape`, `clip`, `motionpath`), 3D geometry (`mesh`), 3D rendering (`lighting`, `materials`), 2D animation (`movieclip`, `spritesheet`), 2D input (`interaction`), 3D selection (`picking`).
 
 ### Naming convention
 
@@ -144,7 +144,7 @@ The visual-authoring-artifact arc ([structural-forks fork I](structural-forks.md
 
 | Candidate          | Subject · layer                       | Verdict                                                                                   |
 | ------------------ | ------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `displayobject-formats` | display · `-formats`              | ✅ landed — static SVG document import first; path data delegates to `path-formats`; output is a display subtree |
+| `scene2d-formats` | display · `-formats`              | ✅ landed — static SVG document import first; path data delegates to `path-formats`; output is a display subtree |
 | `lottie-formats`   | shape + animation · `-formats`        | **bedrock** — Bodymovin JSON → `shape` + `@flighthq/animation` tracks; static-vector path shared with `svg-formats` |
 | `rive-formats`     | shape/mesh/skeleton/anim · `-formats` | **bedrock**, with a parse/runtime split — `.riv` → Flight data here; the state-machine *runtime* is a distinct future cell (à la `particles`/`particleemitter`) |
 | `markup-tokenizer` | text · lenient lexer                  | **reserved** — extract `text-markup`'s inline lenient lexer at the 2nd consumer; the rich-text runs inside the importers above are that trigger |
@@ -180,7 +180,7 @@ The 2D↔3D boundary the binding constraint demands already has a home in `rende
 
 ### Infra / cross-cutting
 
-`assets` (id-keyed library above resources/loader), `atlas-packer` (→ `textureatlas`/`tileset`), `intl`, `devtools`, `testing`, `accessibility` — **bedrock**. `displayobject-skia` (Rust-only, already planned in rust docs), `host-tauri` / `host-capacitor` (planned host siblings) — **bedrock**.
+`assets` (id-keyed library above resources/loader), `atlas-packer` (→ `textureatlas`/`tileset`), `intl`, `devtools`, `testing`, `accessibility` — **bedrock**. `scene2d-skia` (Rust-only, already planned in rust docs), `host-tauri` / `host-capacitor` (planned host siblings) — **bedrock**.
 
 ### Flag — naming collision
 

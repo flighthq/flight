@@ -1,5 +1,5 @@
 /**
- * Bodymovin/Lottie JSON schema types used by `@flighthq/displayobject-formats`. The schema is
+ * Bodymovin/Lottie JSON schema types used by `@flighthq/scene2d-formats`. The schema is
  * intentionally data-only: numeric codes and abbreviated field names match the interchange format
  * so parsing does not allocate a duplicate normalized document before it creates Flight nodes.
  */

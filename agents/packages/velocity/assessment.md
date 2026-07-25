@@ -26,7 +26,7 @@ Sweep-safe: within `@flighthq/velocity` (and its own header lines in `@flighthq/
 
 Parked — each with the reason it is not sweep-safe.
 
-- **GL/Wgpu velocity-writer adoption of `getVelocitySampleAt`.** _Parked — cross-package._ The payoff of the affine sample (correct per-pixel velocity on rotating/scaling nodes); today the writers read only coarse per-node `getVelocity`. Touches `displayobject-gl`/`displayobject-wgpu`; sequencing is a candidate Open direction.
+- **GL/Wgpu velocity-writer adoption of `getVelocitySampleAt`.** _Parked — cross-package._ The payoff of the affine sample (correct per-pixel velocity on rotating/scaling nodes); today the writers read only coarse per-node `getVelocity`. Touches `scene2d-gl`/`scene2d-wgpu`; sequencing is a candidate Open direction.
 
 - **Velocity-pass row in `render-backend-support.md` (+ architecture mention).** _Parked — admin-doc revision, user's gate._ The shipped gl/wgpu velocity pass appears in neither render doc; the backend gap matrix should carry it (gl+wgpu yes, canvas/dom no).
 

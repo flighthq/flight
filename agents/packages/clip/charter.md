@@ -16,7 +16,7 @@ status: ./status.md
 
 Two API stratifications coexist by design: **conservative** operations (the common, fast path — bounds-only for contour forms, always bundled) and **exact** operations (true polygon algebra, separately importable, arriving with the polygon kernel). A consumer knows which contract they opted into by the function name.
 
-Where it ends: clip produces and operates on the region _descriptor_ only. Rasterization (scissor / stencil pixels) is the job of per-backend `displayobject-<backend>` clip modules. Soft/feathered masking is the matte's domain (MatteFilter). Per-node `HasClip` trait wiring lives in `node` / `displayobject`. Path _flattening_ and _winding conversion_ are borrowed from / belong to `@flighthq/path`; clip consumes `flattenPath` and carries the winding rule as metadata but does not own winding helpers.
+Where it ends: clip produces and operates on the region _descriptor_ only. Rasterization (scissor / stencil pixels) is the job of per-backend `scene2d-<backend>` clip modules. Soft/feathered masking is the matte's domain (MatteFilter). Per-node `HasClip` trait wiring lives in `node` / `scene2d`. Path _flattening_ and _winding conversion_ are borrowed from / belong to `@flighthq/path`; clip consumes `flattenPath` and carries the winding rule as metadata but does not own winding helpers.
 
 ## North star
 
@@ -37,9 +37,9 @@ Where it ends: clip produces and operates on the region _descriptor_ only. Raste
 
 **Non-goals:**
 
-- **Rasterization** — scissor / stencil pixel realization belongs to `displayobject-<backend>` clip modules.
+- **Rasterization** — scissor / stencil pixel realization belongs to `scene2d-<backend>` clip modules.
 - **Soft / feathered masking** — MatteFilter's domain; `clip` is hard-edged only.
-- **Per-node trait wiring** — attaching `HasClip` to a scene node lives in `node` / `displayobject`.
+- **Per-node trait wiring** — attaching `HasClip` to a scene node lives in `node` / `scene2d`.
 - **Path internals** — path flattening and tessellation are borrowed from `@flighthq/path`.
 - **Winding conversion** — even-odd↔non-zero conversion and winding helpers belong in `@flighthq/path`. Clip carries the winding rule as metadata and consumes it in `clipRegionContainsPoint` but does not own conversion.
 
@@ -57,7 +57,7 @@ Where it ends: clip produces and operates on the region _descriptor_ only. Raste
 
   **Why:** Clip is the consumer of winding, not the owner. Path defines paths and their fill rules; clip applies them to a region descriptor. Keeping conversion in path avoids splitting fill-rule knowledge across packages.
 
-- **[2026-07-02] Boundaries confirmed.** Rasterization → backends. Soft/feathered masking → MatteFilter. Per-node trait wiring → node/displayobject. Path internals and winding conversion → `@flighthq/path`.
+- **[2026-07-02] Boundaries confirmed.** Rasterization → backends. Soft/feathered masking → MatteFilter. Per-node trait wiring → node/scene2d. Path internals and winding conversion → `@flighthq/path`.
 
   **Why:** The live code already respects all of these cleanly. Making them explicit prevents future drift.
 

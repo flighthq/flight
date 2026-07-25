@@ -14,7 +14,7 @@ Executed the sweep-safe items from `assessment.md` `## Recommended` that are str
 
 Done:
 
-- **Added the missing `@flighthq/signals` workspace dependency** to `packages/text/package.json` (`richText.ts:7` imports `createSignal` from it; the manifest only declared `displayobject`/`entity`/`geometry`/`node`/`textlayout`/`types`). Manifest-only change, placed alphabetically.
+- **Added the missing `@flighthq/signals` workspace dependency** to `packages/text/package.json` (`richText.ts:7` imports `createSignal` from it; the manifest only declared `scene2d`/`entity`/`geometry`/`node`/`textlayout`/`types`). Manifest-only change, placed alphabetically.
 - **Homed `getRichTextFormatRangeByIndex`'s `out` type in `@flighthq/types`.** Swapped the inline structural literal `{ start; end; format }` for the named `TextFormatRange` import (one-line annotation swap, no behavior change). The field set is identical, so the existing tests still pass.
 - **Added `getRichTextFormatRangesIn(out, source, beginIndex, endIndex)`** — the symmetric range _read_ partner to `removeRichTextFormatRangesIn`. Same half-open overlap test (`range.start < endIndex && range.end > beginIndex`), out-array convention (`out.length = 0` then push by reference, mirroring `getTextLineBreaks`), alphabetized between `getRichTextFormatRangeCount` and `getRichTextHtml`. Added a colocated `describe` covering no-overlap clearing, in-order collection, half-open boundary exclusion, and push-by-reference.
 

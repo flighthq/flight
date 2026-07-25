@@ -95,7 +95,7 @@ All `disconnectAllSignals` callers outside the signals package have been migrate
 - `packages/media/src/videoChannel.ts` — updated
 - `packages/node/src/node.ts` — updated
 - `packages/loader/src/resourceLoader.ts` — updated
-- `packages/displayobject/src/loader.ts` — updated
+- `packages/scene2d/src/loader.ts` — updated
 
 The deprecated alias remains in place for any future unknown callers but has no remaining uses in this codebase.
 

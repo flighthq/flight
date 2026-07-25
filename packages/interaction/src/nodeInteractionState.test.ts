@@ -1,5 +1,5 @@
-import { createDisplayObject } from '@flighthq/displayobject';
 import { createRectangle } from '@flighthq/geometry';
+import { createDisplayObject } from '@flighthq/scene2d';
 
 import {
   createNodeInteractionState,

@@ -20,7 +20,7 @@ Executed the sweep-safe items from `assessment.md` › Recommended. The package 
 
 - **Fix `equalsMaterial`'s shallow `standard` sub-block compare** — does not apply to the live code. The current `material.ts › equalsMaterial` has no generic `aFields[key] !== bFields[key]` loop; it special-cases only `UniformColorTransformMaterialKind` (deep-comparing its `colorTransform`) and returns `true` for every other same-kind material, including PBR extension materials. There is no `cloneMaterial` / `copyMaterial` at the material level. Deciding whether `equalsMaterial` should now deep-compare `standard` blocks for extension kinds (vs. its current deliberate "same-kind, no comparable fields → equal" contract, which has a passing test) is a behavioral-contract design decision, not a mechanical bug-fix — parked for a direction call.
 - **Repair the stale `hslToRgb` doc comment (`color.ts:57-60`)** — does not apply to the live code. `color.ts` was refactored to the linear-color seam (`LinearColor`, `computeRgbHexString`, `createLinearColor`, `unpackColorToLinear`, `srgbChannelToLinear`); there is no `hslToRgb` / `rgbToHsl` / `HslColor` / `HsvColor` in the package, and no stale comment at those lines.
-- **Settle the `compute*` vs `get*` verb split (`computeRgbHexString`)** — cross-boundary. `computeRgbHexString` is consumed by 13 files across `displayobject-dom`, `displayobject-canvas`, `displayobject-gl`, and `displayobject-wgpu`; renaming the export would require editing those packages, which is outside this package's boundary. (Verb choice — `get*` per the accessor convention — is also a public-API rename, not purely mechanical.)
+- **Settle the `compute*` vs `get*` verb split (`computeRgbHexString`)** — cross-boundary. `computeRgbHexString` is consumed by 13 files across `scene2d-dom`, `scene2d-canvas`, `scene2d-gl`, and `scene2d-wgpu`; renaming the export would require editing those packages, which is outside this package's boundary. (Verb choice — `get*` per the accessor convention — is also a public-API rename, not purely mechanical.)
 
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
@@ -133,7 +133,7 @@ All deferred Silver items from the first pass were implemented: HSL/HSV conversi
 
 ### Gold — pending design decisions
 
-- **Material math primitives** (the gating design call) — bring BRDF/Fresnel/GGX/IBL into `materials` (making it the shading source of truth for both GPU shaders and `displayobject-skia`) or keep them in renderer backends with a shared tested reference module here. **Do not build until user rules on package boundary** — it has direct Rust conformance implications.
+- **Material math primitives** (the gating design call) — bring BRDF/Fresnel/GGX/IBL into `materials` (making it the shading source of truth for both GPU shaders and `scene2d-skia`) or keep them in renderer backends with a shared tested reference module here. **Do not build until user rules on package boundary** — it has direct Rust conformance implications.
 - **Full model-conversion matrix** (beyond spec→metallic) — `convertStandardPbrToSpecularGlossiness`, `convertPhongToStandardPbr`, shininess↔roughness helpers. Low complexity, medium effort.
 - **Exhaustive KHR extension parity** — `KHR_materials_dispersion`, `KHR_materials_diffuse_transmission`, `KHR_materials_emissive_strength` as a first-class field, `KHR_materials_unlit` round-trip.
 - **OKLab/OKLCH color tier** — `rgbToOklab`, `oklabToRgb`, `rgbToOklch`, `oklchToRgb`, perceptual `mixColorOklab`. Modern perceptual-uniform color space. Low-risk pure in-package math.
@@ -174,12 +174,12 @@ All deferred Silver items from the first pass were implemented: HSL/HSV conversi
 ## Concerns / surprises
 
 - `hslToRgb` writes to `out[0..2]` but does not touch `out[3]`. This is by design (RGBA scratch reuse) but is different from the conventional API where you pass three separate scalars and get three back. The signature `(out: [number, number, number, number], h, s, l)` is intentionally a 4-component buffer to match the SDK's RGBA scratch convention.
-- `LinearColor`, `HslColor`, and `HsvColor` are all file-local to `color.ts`. If other packages (render-gl, scene-wgpu, displayobject-skia) need to share these types, they should be moved to `@flighthq/types` (one file each). The depth review did not flag this as a blocker, and moving them would require a `@flighthq/types` change.
+- `LinearColor`, `HslColor`, and `HsvColor` are all file-local to `color.ts`. If other packages (render-gl, scene-wgpu, scene2d-skia) need to share these types, they should be moved to `@flighthq/types` (one file each). The depth review did not flag this as a blocker, and moving them would require a `@flighthq/types` change.
 - The `clampStandardPbrMaterialProperties` does NOT clamp `alphaCutoff` (in [0, 1] per glTF) because `StandardPbrMaterialProperties` is the PBR block without the surface trailer — `alphaCutoff` lives on `SurfaceMaterial`. Callers who want to clamp surface trailer fields can clamp `material.alphaCutoff` directly.
 
 ## Design decisions still needing user input
 
-1. **Material-math package boundary** — bring BRDF/Fresnel/GGX/IBL math into `@flighthq/materials` or keep it in renderers with a shared tested reference module here. This is the single biggest scope decision for Gold and gates the `displayobject-skia` conformance reference.
+1. **Material-math package boundary** — bring BRDF/Fresnel/GGX/IBL math into `@flighthq/materials` or keep it in renderers with a shared tested reference module here. This is the single biggest scope decision for Gold and gates the `scene2d-skia` conformance reference.
 2. **`KHR_texture_transform`** — adding per-map `TextureTransform?` fields to material map descriptors touches the types the GPU renderer crates read. Needs sign-off before acting.
 3. **Serialization map-handle seam** — materials should not import resource loading; the resource-id ↔ handle resolver belongs to the caller. Confirm the seam shape with `resources`/`loader` owners before building.
 4. **OKLab / OKLCH color tier** — pure in-package math, could go in `@flighthq/materials` or in a dedicated neighbor (`@flighthq/color`). No blocker except scope choice.

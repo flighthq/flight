@@ -12,7 +12,7 @@ New package `@flighthq/textureatlas`, extracted from `@flighthq/resources`. Hold
 
 **Why tileset moved too:** atlas-only extraction would have created a `resources ↔ textureatlas` dependency cycle — `textureatlas` builds on `imageResource` (resources), and `tileset` (which would have stayed in resources) builds on `textureAtlas`. The clean layering is `imageResource → textureAtlas → tileset`, so tileset belongs here. Flagged for review in `_QUESTIONS.md` (tileset's public import path moved `resources` → `textureatlas`; SDK barrel unaffected).
 
-**Deps:** `@flighthq/entity`, `@flighthq/geometry`, `@flighthq/resources`, `@flighthq/types`. Repointed consumers (test files in `displayobject-canvas`, `spritesheet`); examples/functional use the SDK barrel and needed no change. 84 tests pass; `npm run check` green; 89 packages valid.
+**Deps:** `@flighthq/entity`, `@flighthq/geometry`, `@flighthq/resources`, `@flighthq/types`. Repointed consumers (test files in `scene2d-canvas`, `spritesheet`); examples/functional use the SDK barrel and needed no change. 84 tests pass; `npm run check` green; 89 packages valid.
 
 **Deferred:** `textureatlas-formats` sibling — content undecided (see `_QUESTIONS.md`); not created.
 

@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@flighthq/displayobject-canvas": "*",
+    "@flighthq/scene2d-canvas": "*",
     "@flighthq/particles": "*",
     "@flighthq/sdk": "*"
   },

@@ -39,7 +39,7 @@ The display-object composition layer over `@flighthq/timeline`: a `MovieClip` is
 - The timeline engine itself — that stays in `@flighthq/timeline`
 - Rendering — renderers consume display objects
 
-**Dependencies:** `timeline` + `displayobject` + `node` + `types`. (Corrected 2026-07-10: a `MovieClip` *is* a `DisplayObject`, so displayobject is a real value dependency, not types-only; the spritesheet bridge uses `node` + displayobject and only `Spritesheet`/`SpritesheetAnimation` *types* from `@flighthq/types`, so no `spritesheet` value dependency. `@flighthq/spritesheet` is a test-only devDependency for fixtures.)
+**Dependencies:** `timeline` + `scene2d` + `node` + `types`. (Corrected 2026-07-10: a `MovieClip` *is* a `DisplayObject`, so scene2d is a real value dependency, not types-only; the spritesheet bridge uses `node` + scene2d and only `Spritesheet`/`SpritesheetAnimation` *types* from `@flighthq/types`, so no `spritesheet` value dependency. `@flighthq/spritesheet` is a test-only devDependency for fixtures.)
 
 ## Decisions
 

@@ -1,6 +1,6 @@
-import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/displayobject';
 import { copyRectangle, createRectangle } from '@flighthq/geometry';
 import { addNodeChild } from '@flighthq/node';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d';
 import { createQuadBatch, reserveQuadBatch } from '@flighthq/sprite';
 import { createTextureAtlas } from '@flighthq/textureatlas';
 import type {

@@ -68,7 +68,7 @@ It is also the SDK's primary **wasm-mixing beachhead** — value-in/value-out ov
 
 - **[2026-07-02] Room for both CPU pixel ops and GPU-parity software rendering.** Surface serves both user-facing CPU pixel manipulation and SDK infrastructure (fingerprinting, test baselines, the Rust tiny-skia software-render path reads Surface buffers). Neither role is secondary.
 
-  **Why:** The Rust port's `displayobject-skia` renders into `flighthq-surface` buffers. Surface is simultaneously a user API and an infrastructure seam. Both uses inform the API shape.
+  **Why:** The Rust port's `scene2d-skia` renders into `flighthq-surface` buffers. Surface is simultaneously a user API and an infrastructure seam. Both uses inform the API shape.
 
 - **[2026-07-02] Wasm-mixing awareness is standing context.** API shape decisions across the SDK bear in mind that surface is a wasm-mixing target. This is already established in the Rust port docs and doesn't change the TS API — it reinforces existing constraints (pure functions, explicit allocation, no hidden state).
 

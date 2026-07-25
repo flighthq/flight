@@ -1,5 +1,5 @@
-import { createDisplayObject, getNode2DRuntime } from '@flighthq/displayobject';
 import { createImageResource } from '@flighthq/image';
+import { createDisplayObject, getNode2DRuntime } from '@flighthq/scene2d';
 import { createSpritesheet, createSpritesheetAnimation, createSpritesheetFrame } from '@flighthq/spritesheet';
 import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas';
 import type { Node2D } from '@flighthq/types';

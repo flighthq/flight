@@ -1,7 +1,7 @@
 import { createColorTransformAdjustment, createSaturationColorMatrix } from '@flighthq/adjustments';
-import { createDisplayObject, setNode2DColorAdjustments } from '@flighthq/displayobject';
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log';
 import { createColorTransform } from '@flighthq/materials';
+import { createDisplayObject, setNode2DColorAdjustments } from '@flighthq/scene2d';
 import type { Adjustment, Renderable } from '@flighthq/types';
 
 import { areColorAdjustmentGuardsEnabled, enableColorAdjustmentGuards } from './enableColorAdjustmentGuards';

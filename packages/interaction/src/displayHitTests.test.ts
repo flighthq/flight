@@ -1,6 +1,6 @@
-import { createDisplayObject } from '@flighthq/displayobject';
 import { setRectangle } from '@flighthq/geometry';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node';
+import { createDisplayObject } from '@flighthq/scene2d';
 
 import {
   defaultBitmapHitTestHandler,

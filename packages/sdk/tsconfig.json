@@ -79,22 +79,22 @@
       "path": "../dialog"
     },
     {
-      "path": "../displayobject"
+      "path": "../scene2d"
     },
     {
-      "path": "../displayobject-canvas"
+      "path": "../scene2d-canvas"
     },
     {
-      "path": "../displayobject-dom"
+      "path": "../scene2d-dom"
     },
     {
-      "path": "../displayobject-formats"
+      "path": "../scene2d-formats"
     },
     {
-      "path": "../displayobject-gl"
+      "path": "../scene2d-gl"
     },
     {
-      "path": "../displayobject-wgpu"
+      "path": "../scene2d-wgpu"
     },
     {
       "path": "../easing"

@@ -1,4 +1,4 @@
-import { enableCanvasTextInput } from '@flighthq/displayobject-canvas';
+import { enableCanvasTextInput } from '@flighthq/scene2d-canvas';
 import type { Node2D } from '@flighthq/sdk';
 import {
   createCanvasElement,

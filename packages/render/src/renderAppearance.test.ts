@@ -1,5 +1,5 @@
-import { createDisplayObject } from '@flighthq/displayobject';
 import { invalidateNodeAppearance } from '@flighthq/node';
+import { createDisplayObject } from '@flighthq/scene2d';
 import { BlendMode } from '@flighthq/types';
 
 import { updateRenderProxyAppearance } from './renderAppearance';

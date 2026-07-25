@@ -60,7 +60,7 @@ One live contradiction: **North star #5 / Decision #5 require the bounds fallbac
 
 **Candidate revisions:**
 
-- **`@flighthq/displayobject` is a runtime dependency but only tests import it** — should move to `devDependencies` (source imports only geometry/node/signals/types).
+- **`@flighthq/scene2d` is a runtime dependency but only tests import it** — should move to `devDependencies` (source imports only geometry/node/signals/types).
 - **Orphaned header types**: `HitTestResult`, `HitArea` (`NodeInteraction.ts`), and `Cursor`/`CursorBackend` are exported from `@flighthq/types` with doc comments naming functions that don't exist anywhere (`findGraphHitTargetDetailed`, `setNodeHitArea`, `setCursorBackend`). Acceptable as design-surface-ahead-of-implementation while the rebuild is Approved; the `CursorBackend` doc additionally still claims "returns a disposer" against a `void` signature — the exact mismatch the prior review flagged.
 - **`hitTests.ts` doc slip**: `hitTestGraphPoint`'s comment says handlers are "registered via `registerHitTest`" — the function is `registerHitTest`.
 - **`package.json` description** ("Hit testing: point-in-node tests and object overlap detection") omits the pointer-dispatch layer, which is most of the package.

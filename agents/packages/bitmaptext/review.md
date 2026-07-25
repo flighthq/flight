@@ -33,7 +33,7 @@ solid — 78/100. The North star's coverage list is essentially delivered: a `Gl
 
 ## Charter contradictions
 
-None. The decisions hold: own package (not in `text`), consumes the seam and depends on neither producer (verified: deps are `types`/`sprite`/`node`/`geometry`/`displayobject`/`textureatlas` + `adjustments`/`materials`), QuadBatch substrate with no new renderer kind, self-contained advance-driven layout with **no `textlayout` dependency** — exactly the boundary's preference. The `adjustments` + `materials` deps for the tint fold go beyond the charter's enumerated dep list; justified in-code, worth a charter footnote.
+None. The decisions hold: own package (not in `text`), consumes the seam and depends on neither producer (verified: deps are `types`/`sprite`/`node`/`geometry`/`scene2d`/`textureatlas` + `adjustments`/`materials`), QuadBatch substrate with no new renderer kind, self-contained advance-driven layout with **no `textlayout` dependency** — exactly the boundary's preference. The `adjustments` + `materials` deps for the tint fold go beyond the charter's enumerated dep list; justified in-code, worth a charter footnote.
 
 ## Contract & docs fit
 

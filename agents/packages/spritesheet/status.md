@@ -103,7 +103,7 @@ All 108 tests pass (up from 64). New test coverage includes:
 ### Silver tier (partially addressed)
 
 - **Finite loop counts** (`loopCount: number`, `-1` = infinite): the roadmap suggested adding this during the Bronze type pass to avoid churn. The current `loop: boolean` stays — changing to `loopCount` would be a breaking change. Deferring until there is a concrete use case. `loop: boolean` is clear and idiomatic for the common case. **Surface to user** before acting.
-- **Direct Bitmap binding** (`bindSpritesheetPlayerToBitmap`): the roadmap flagged this as a cross-package ownership question (spritesheet vs. displayobject). `createSpritesheetTimelineSource` already covers the MovieClip path. The lightweight direct binding belongs here but should be surfaced to user before implementing, since it parallels the timeline source and the ownership is clear.
+- **Direct Bitmap binding** (`bindSpritesheetPlayerToBitmap`): the roadmap flagged this as a cross-package ownership question (spritesheet vs. scene2d). `createSpritesheetTimelineSource` already covers the MovieClip path. The lightweight direct binding belongs here but should be surfaced to user before implementing, since it parallels the timeline source and the ownership is clear.
 - **Frame events / tags** via `enableSpritesheetPlayerFrameSignals`: requires a `SpritesheetFrameEvent` payload type in `@flighthq/types` and coordination with `spritesheet-formats` on the Aseprite tag/event data shape. Cross-package design item.
 - **`createSpritesheetAnimationData` event fields**: `SpritesheetAnimationData` has no `events` / `frameEvents` field yet. This is a data-schema extension needed for frame events but touched by the formats sibling.
 
@@ -122,7 +122,7 @@ All 108 tests pass (up from 64). New test coverage includes:
 ## Suggestions for future sessions
 
 1. **Finite loop counts**: decide `loop: boolean` vs `loopCount: number` before the next type-touching session. The current `loop: boolean` is simpler; adding `loopCount` would subsume it but changes the API surface.
-2. **Direct Bitmap binding**: confirm ownership (spritesheet vs. displayobject) and implement `bindSpritesheetPlayerToBitmap` / the simpler variant that just returns `{ sourceRectangle, offsetX, offsetY }` from the current frame.
+2. **Direct Bitmap binding**: confirm ownership (spritesheet vs. scene2d) and implement `bindSpritesheetPlayerToBitmap` / the simpler variant that just returns `{ sourceRectangle, offsetX, offsetY }` from the current frame.
 3. **Frame events**: define `SpritesheetFrameEvent` in `@flighthq/types`, coordinate the Aseprite tag shape with `spritesheet-formats`, then add `enableSpritesheetPlayerFrameSignals`.
 4. **Allocation-free hot path**: precompute a `cumulativeDurations: Float32Array` on `SpritesheetAnimation` at hydration/creation time to make `resolveVirtualIndexFromTime` O(1) instead of O(n). Store it in a runtime slot (`SpritesheetAnimationRuntime`) rather than on the public entity.
 5. **Functional test**: add a functional test scene for spritesheet animation across raster backends (Canvas/DOM/WebGL), exercising rotated regions, pingpong direction, and pivot offsets. This would lock in rendering correctness across backends and serve as a Rust conformance target.

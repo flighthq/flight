@@ -28,7 +28,7 @@ The `Skeleton` type lives in `@flighthq/types` with a strong doc comment explain
 
 ## Gaps vs an authoritative skinning / skeletal-animation library
 
-- **CPU skinning is absent entirely.** No `applySkeletonToMeshGeometry` / linear-blend-skinning of positions and normals given per-vertex `joints`/`weights` attributes. Every skinning library has the CPU path — it is what software renderers (`displayobject-skia` in the Rust port), skinned picking, and skinned bounds all sit on. Nothing in the repo consumes `jointMatrices` on the CPU today.
+- **CPU skinning is absent entirely.** No `applySkeletonToMeshGeometry` / linear-blend-skinning of positions and normals given per-vertex `joints`/`weights` attributes. Every skinning library has the CPU path — it is what software renderers (`scene2d-skia` in the Rust port), skinned picking, and skinned bounds all sit on. Nothing in the repo consumes `jointMatrices` on the CPU today.
 - **Dual-quaternion skinning:** no DQS palette or blend path (the standard fix for LBS candy-wrapper collapse; ozz and every engine offer it as a sibling mode).
 - **Pose operations:** no pose type at all — no local-pose buffer, no `copySkeletonPose`/`lerpSkeletonPose`/`blendSkeletonPose` (per-joint weighted blend, additive layers — ozz's `BlendingJob`), no rest-pose reset. Pose blending may end up owned by `@flighthq/animation`'s future mixer (the flagged animation/skeleton/tween boundary), but *someone* must own per-joint masked blending, and the joint mask is inherently a skeleton concept.
 - **IK:** no two-bone IK, no aim/look-at constraint solver (ozz ships both as core jobs; Spine has IK constraints). Foot placement and head tracking are table stakes for a skeletal package.

@@ -1,8 +1,8 @@
 import { createColorTransformAdjustment } from '@flighthq/adjustments';
-import { getNode2DRuntime, setNode2DColorAdjustments } from '@flighthq/displayobject';
 import { createRectangle } from '@flighthq/geometry';
 import { createColorTransform } from '@flighthq/materials';
 import { addNodeChild, invalidateNodeLocalBounds } from '@flighthq/node';
+import { getNode2DRuntime, setNode2DColorAdjustments } from '@flighthq/scene2d';
 import { appendQuadBatchInstance, clearQuadBatch, createQuadBatch } from '@flighthq/sprite';
 import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas';
 import type {

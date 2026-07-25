@@ -14,7 +14,7 @@ status: ./status.md
 
 `@flighthq/spritesheet` is the **runtime + authoring half** of sprite/atlas-based frame animation: defining named animations over a `TextureAtlas`, advancing a playback head over time, and resolving the current frame's atlas region + offset for consumption by display objects and timelines. It owns three things — the entity model (`Spritesheet`, `SpritesheetAnimation`, `SpritesheetFrame`), the playback runtime (`SpritesheetPlayer`: direction-aware advance, per-frame durations, speed, seek, pause/resume/stop, pooling, signals, frame events), and the authoring builders (grid/strip slicer, name-pattern animation builder, hydration from `*Data`).
 
-Where it ends: it is the **runtime member of a triad** with `@flighthq/spritesheet-formats` (file codecs — Aseprite, TexturePacker, etc.). Pixel-level rendering of a resolved frame belongs to the renderer (`displayobject-<backend>`). The time primitive will come from `@flighthq/clock` once it exists.
+Where it ends: it is the **runtime member of a triad** with `@flighthq/spritesheet-formats` (file codecs — Aseprite, TexturePacker, etc.). Pixel-level rendering of a resolved frame belongs to the renderer (`scene2d-<backend>`). The time primitive will come from `@flighthq/clock` once it exists.
 
 ## North star
 
@@ -40,7 +40,7 @@ Where it ends: it is the **runtime member of a triad** with `@flighthq/spriteshe
 **Non-goals:**
 
 - File codecs (Aseprite, TexturePacker, JSON-hash/array) — `@flighthq/spritesheet-formats`.
-- Pixel rendering of a resolved frame — `displayobject-<backend>`.
+- Pixel rendering of a resolved frame — `scene2d-<backend>`.
 - Resource/loader orchestration — cross-package, not owned here.
 - Atlas packing — separate concern.
 
@@ -58,9 +58,9 @@ Where it ends: it is the **runtime member of a triad** with `@flighthq/spriteshe
 
   **Why:** `loopCount`/`repeatCount` with `-1` for infinite is the universal standard. `loop: boolean` is simpler but can't express "loop 3 times then stop" — a common game requirement. Pre-release is the time to make the breaking change.
 
-- **[2026-07-02] Direct `Bitmap` binding lives in spritesheet.** `bindSpritesheetPlayerToBitmap` lives here, not in `displayobject`. The dependency model is clean: `Bitmap` is defined in `@flighthq/types`, so no `displayobject` dependency is needed. The function applies the current frame's atlas region, offset, pivot, and rotation to the bitmap entity.
+- **[2026-07-02] Direct `Bitmap` binding lives in spritesheet.** `bindSpritesheetPlayerToBitmap` lives here, not in `scene2d`. The dependency model is clean: `Bitmap` is defined in `@flighthq/types`, so no `scene2d` dependency is needed. The function applies the current frame's atlas region, offset, pivot, and rotation to the bitmap entity.
 
-  **Why:** "bindSpritesheetPlayer" is a spritesheet verb. The dependency is types-only — no coupling to displayobject internals.
+  **Why:** "bindSpritesheetPlayer" is a spritesheet verb. The dependency is types-only — no coupling to scene2d internals.
 
 - **[2026-07-02] Pivot/rotation consumption is spritesheet's job.** The player implementation applies pivot/rotation/offset to the bound target (bitmap or timeline source). This is not a renderer responsibility — the player knows the frame data and drives the target's properties accordingly.
 

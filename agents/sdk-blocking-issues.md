@@ -32,7 +32,7 @@ The AwayJS globe uses `CompositeDiffuseMethod` with a separate night-side textur
 
 ## 5. ColorTransform does not work on GPU-tessellated solid fills (Shape Path A)
 
-**Package:** `@flighthq/displayobject-gl` — `glShape.ts` / `glShapeMesh.ts`
+**Package:** `@flighthq/scene2d-gl` — `glShape.ts` / `glShapeMesh.ts`
 **Impact:** `graphics-drawing` (required workaround: rewrote example to use direct fill colors instead of colorTransform)
 
 Shape rendering has two paths: Path A (solid fills → GPU tessellated mesh via `glShapeMesh.ts`, only applies `u_color` uniform, ignores colorTransform) and Path B (gradients/bitmaps → raster to canvas, uploads texture, uses quad batch which respects colorTransform). `enableGlColorAdjustment(state)` only affects Path B. This means `createColorTransform` cannot be used to tint solid-fill shapes.

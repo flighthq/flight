@@ -8,7 +8,7 @@ ingested:
   - charter.md (2026-07-09 decisions)
   - prior review.md (2026-06-24) + assessment.md (2026-07-02)
   - source (packages/path/src, all 22 source files + 22 test files)
-  - consumer grep (clip, displayobject-gl/wgpu, motionpath, path-boolean, path-formats)
+  - consumer grep (clip, scene2d-gl/wgpu, motionpath, path-boolean, path-formats)
 ---
 
 # path — Review
@@ -52,7 +52,7 @@ Vs. a textbook path library (Skia/Cairo/paper.js), excluding codec/boolean gaps 
 **(b) Docs stale against the work — three candidate revisions:**
 
 1. **`package.json` description** still reads "curve flattening and tessellation of GraphicsPath outlines" — pre-dates the whole surface and names a type (`GraphicsPath`) that no longer exists. Open direction #3 already flags this; it remains unfixed.
-2. **Package Map line** (`agents/index.md`) omits the editing family (decimate/clean/fit/dash/nearest-point) and says "consumed by clip/shape/interaction" — but source grep shows the actual consumers are `clip`, `displayobject-gl/wgpu`, `motionpath`, `path-boolean`, `path-formats`; `shape` and `interaction` no longer import `@flighthq/path` (shape shares only types via `@flighthq/types`).
+2. **Package Map line** (`agents/index.md`) omits the editing family (decimate/clean/fit/dash/nearest-point) and says "consumed by clip/shape/interaction" — but source grep shows the actual consumers are `clip`, `scene2d-gl/wgpu`, `motionpath`, `path-boolean`, `path-formats`; `shape` and `interaction` no longer import `@flighthq/path` (shape shares only types via `@flighthq/types`).
 3. **Charter "What it is"** repeats the same shape/interaction consumer claim — same staleness, user's gate to amend.
 
 ## Candidate open directions

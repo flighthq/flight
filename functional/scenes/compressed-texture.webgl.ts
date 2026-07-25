@@ -1,6 +1,6 @@
 // compressed-texture — validates that a block-`compressed` ImageResource renders through the real GL
 // display draw path. A Bitmap whose image carries ONLY a parsed TextureContainer (no element, no raw
-// data) is drawn via displayobject-gl → bindGlImageResourceTexture → uploadGlCompressedTextureContainer.
+// data) is drawn via scene2d-gl → bindGlImageResourceTexture → uploadGlCompressedTextureContainer.
 //
 // Real BC1 opaque-blue and BC3 half-alpha-red blocks prove native upload plus the straight-to-premultiplied
 // display-shader bridge. The WebGPU twin uses the same blocks and pixel oracle.

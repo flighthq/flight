@@ -1,10 +1,10 @@
-import { getNode2DColorAdjustments } from '@flighthq/displayobject';
 import {
   createGlyphAtlas,
   createGlyphSourceFromGlyphAtlas,
   createStubGlyphRasterizerBackend,
   setGlyphRasterizerBackend,
 } from '@flighthq/glyphatlas';
+import { getNode2DColorAdjustments } from '@flighthq/scene2d';
 import type { ColorTransformAdjustment, GlyphEntry, GlyphSource, ImageResource } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 

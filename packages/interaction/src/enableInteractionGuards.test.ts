@@ -1,6 +1,6 @@
-import { createDisplayObject } from '@flighthq/displayobject';
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log';
 import { addNodeChild } from '@flighthq/node';
+import { createDisplayObject } from '@flighthq/scene2d';
 
 import {
   disableInteractionGuards,

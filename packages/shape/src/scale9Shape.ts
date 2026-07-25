@@ -1,4 +1,4 @@
-import { createNode2D, getNode2DRuntime } from '@flighthq/displayobject';
+import { createNode2D, getNode2DRuntime } from '@flighthq/scene2d';
 import type { PartialNode, RectangleLike, Scale9Shape, Scale9ShapeData, Scale9ShapeRuntime } from '@flighthq/types';
 import { Scale9ShapeKind } from '@flighthq/types';
 

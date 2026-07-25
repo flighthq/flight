@@ -127,6 +127,6 @@ is "no operation hides its cost *class*," not "the API predicts nanoseconds."
   the GL runner (`glCompositeEffect`, premultiplied Porter-Duff pass) registered in the effects-gl composite
   band. Additive — the legacy `BlendMode` enum is untouched.
 - **Pending**: Canvas `CompositeEffect` runner (`globalCompositeOperation` 1:1) and wgpu runner; the
-  `BlendMode` enum cleanup (the re-filings above) across `render-gl`/`render-wgpu`/`displayobject-canvas`/
-  `displayobject-dom` + serialization + tests; DOM `Add` → `plus-lighter` capability gate; `Invert` as a
+  `BlendMode` enum cleanup (the re-filings above) across `render-gl`/`render-wgpu`/`scene2d-canvas`/
+  `scene2d-dom` + serialization + tests; DOM `Add` → `plus-lighter` capability gate; `Invert` as a
   `BlendEffect` mode. The enum cleanup is a breaking cross-package reshape — run `npm run ci`.

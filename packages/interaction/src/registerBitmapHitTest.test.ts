@@ -1,6 +1,6 @@
-import { createBitmap } from '@flighthq/displayobject';
 import { setRectangle } from '@flighthq/geometry';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node';
+import { createBitmap } from '@flighthq/scene2d';
 
 import { findGraphHitTargetPrecise } from './hitTests';
 import { setNodeHitTestEnabled } from './nodeInteractionState';
