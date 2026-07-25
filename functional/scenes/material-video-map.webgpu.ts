@@ -1,0 +1,93 @@
+import { createScene } from '@flighthq/scene';
+import { drawWgpuScene } from '@flighthq/scene-wgpu';
+import type { Surface } from '@flighthq/sdk';
+import {
+  addNodeChild,
+  advanceVideoTexture,
+  createAmbientLight,
+  createCamera3D,
+  createDirectionalLight,
+  createMesh,
+  createOrthographicProjection,
+  createPlaneMeshGeometry,
+  createUnlitMaterial,
+  createVideoResource,
+  createVideoTexture,
+  createVector3,
+  createWgpuCanvasElement,
+  createWgpuRenderState,
+  getSurfacePixelRgb,
+  prepareSceneRender,
+  registerUnlitWgpuMaterial,
+  renderWgpuBackground,
+  setCamera3DViewMatrix4FromLookAt,
+  submitWgpuRenderPass,
+} from '@flighthq/sdk';
+import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+const pixelRatio = window.devicePixelRatio || 1;
+const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
+document.body.appendChild(canvas);
+export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x000000ff });
+registerUnlitWgpuMaterial(state);
+export const scale = pixelRatio;
+export const width = 800;
+export const height = 600;
+registerWgpuFunctionalTarget(state, scale);
+
+const frame = document.createElement('canvas');
+frame.width = 2;
+frame.height = 1;
+const context = frame.getContext('2d')!;
+context.fillStyle = '#ff0000';
+context.fillRect(0, 0, 1, 1);
+context.fillStyle = '#0000ff';
+context.fillRect(1, 0, 1, 1);
+Object.defineProperties(frame, {
+  readyState: { value: 4 },
+  videoHeight: { value: 1 },
+  videoWidth: { value: 2 },
+});
+
+const videoMap = createVideoTexture(createVideoResource(frame as unknown as HTMLVideoElement));
+videoMap.sampler.magFilter = 'nearest';
+videoMap.sampler.minFilter = 'nearest';
+advanceVideoTexture(videoMap);
+
+const scene = createScene().root;
+addNodeChild(
+  scene,
+  createMesh(createPlaneMeshGeometry(2, 1), [
+    createUnlitMaterial({ baseColor: 0xffffffff, baseColorVideoMap: videoMap }),
+  ]),
+);
+const camera = createCamera3D({
+  far: 10,
+  near: 0.1,
+  projection: createOrthographicProjection({ halfHeight: 0.75, halfWidth: 1.25 }),
+});
+setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 2, 0), createVector3(0, 0, 0), createVector3(0, 0, -1));
+const lights = {
+  ambient: createAmbientLight({ color: 0xffffffff, intensity: 1 }),
+  directional: createDirectionalLight({ color: 0xffffffff, direction: createVector3(0, -1, 0), intensity: 0 }),
+};
+
+renderWgpuBackground(state);
+prepareSceneRender(state, scene, camera, lights);
+drawWgpuScene(state, scene, camera, lights);
+submitWgpuRenderPass(state);
+
+export function assertRender(surface: Readonly<Surface>): void {
+  const sample = (x: number): number =>
+    getSurfacePixelRgb(surface, Math.floor(surface.width * x), Math.floor(surface.height * 0.5));
+  const left = sample(0.35);
+  const right = sample(0.65);
+  const red = (rgb: number): boolean => ((rgb >> 16) & 255) > 180 && ((rgb >> 8) & 255) < 70 && (rgb & 255) < 70;
+  const blue = (rgb: number): boolean => (rgb & 255) > 180 && ((rgb >> 16) & 255) < 70 && ((rgb >> 8) & 255) < 70;
+  if (!((red(left) && blue(right)) || (blue(left) && red(right)))) {
+    const hex = (rgb: number): string => (rgb & 0xffffff).toString(16).padStart(6, '0');
+    throw new Error(
+      `[material-video-map] expected distinct red/blue live-video halves, got #${hex(left)} and #${hex(right)}`,
+    );
+  }
+}

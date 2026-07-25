@@ -1,6 +1,8 @@
+import { bindWgpuVideoTexture } from '@flighthq/render-wgpu';
 import type {
   LinearColor,
   Texture,
+  VideoTexture,
   WgpuMaterialBinding,
   WgpuRenderState,
   WgpuUnlitDefineKey,
@@ -13,6 +15,7 @@ import {
   ensureWgpuScenePipeline,
   getWgpuMeshPreludeWgsl,
   getWgpuMaterialSampler,
+  ensureWgpuPlaceholderTextureView,
   resolveWgpuMaterialTextureView,
   stashWgpuUvTransform,
 } from './wgpuMeshPipeline';
@@ -30,25 +33,90 @@ export function bindWgpuUnlitSurface(
   alphaCutoff: number,
   colorMap: Readonly<Texture> | null,
 ): GPUBindGroup {
+  const sampler = getWgpuMaterialSampler(state, colorMap);
+  const view = resolveWgpuMaterialTextureView(state, colorMap);
+  const binding = ensureWgpuUnlitBinding(state, pipeline, materialKey, sampler, view);
+  writeWgpuUnlitUniform(state, binding, color, intensity, alphaCutoff);
+  stashWgpuUvTransform(state, colorMap);
+  return binding.bindGroup;
+}
+
+// Dynamic-video sibling of bindWgpuUnlitSurface. The VideoTexture uploader preserves one GPU texture
+// per stream, copies only when frameId advances, and replaces the material bind group when a resolution
+// change yields a new view. It shares the still-image shader/layout and UV-transform path.
+export function bindWgpuUnlitVideoSurface(
+  state: WgpuRenderState,
+  pipeline: Readonly<WgpuUnlitPipeline>,
+  materialKey: object,
+  color: Readonly<LinearColor>,
+  intensity: number,
+  alphaCutoff: number,
+  colorMap: Readonly<VideoTexture>,
+): GPUBindGroup {
+  const entry = bindWgpuVideoTexture(state, colorMap);
+  const sampler = getWgpuMaterialSampler(state, colorMap);
+  const view = entry?.view ?? ensureWgpuPlaceholderTextureView(state);
+  const binding = ensureWgpuUnlitBinding(state, pipeline, materialKey, sampler, view);
+  writeWgpuUnlitUniform(state, binding, color, intensity, alphaCutoff);
+  stashWgpuUvTransform(state, colorMap);
+  return binding.bindGroup;
+}
+
+function ensureWgpuUnlitBinding(
+  state: WgpuRenderState,
+  pipeline: Readonly<WgpuUnlitPipeline>,
+  materialKey: object,
+  sampler: GPUSampler,
+  view: GPUTextureView,
+): WgpuMaterialBinding {
   const scene = getWgpuSceneRuntime(state);
-  let binding: WgpuMaterialBinding | undefined = scene.materialBindGroups.get(materialKey);
+  let binding = scene.materialBindGroups.get(materialKey);
   if (binding === undefined) {
     const buffer = state.device.createBuffer({
       size: UNLIT_UNIFORM_BYTES,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
-    const bindGroup = state.device.createBindGroup({
-      layout: pipeline.materialBindGroupLayout,
-      entries: [
-        { binding: 0, resource: { buffer } },
-        { binding: 1, resource: getWgpuMaterialSampler(state, colorMap) },
-        { binding: 2, resource: resolveWgpuMaterialTextureView(state, colorMap) },
-      ],
-    });
-    binding = { bindGroup, buffer };
+    binding = {
+      bindGroup: createWgpuUnlitBindGroup(state, pipeline, buffer, sampler, view),
+      buffer,
+      sampler,
+      views: [view],
+    };
     scene.materialBindGroups.set(materialKey, binding);
+  } else if (binding.sampler !== sampler || binding.views?.[0] !== view || (binding.views?.length ?? 0) !== 1) {
+    binding.bindGroup = createWgpuUnlitBindGroup(state, pipeline, binding.buffer, sampler, view);
+    binding.sampler = sampler;
+    binding.views ??= [view];
+    binding.views[0] = view;
+    binding.views.length = 1;
   }
+  return binding;
+}
 
+function createWgpuUnlitBindGroup(
+  state: WgpuRenderState,
+  pipeline: Readonly<WgpuUnlitPipeline>,
+  buffer: GPUBuffer,
+  sampler: GPUSampler,
+  view: GPUTextureView,
+): GPUBindGroup {
+  return state.device.createBindGroup({
+    layout: pipeline.materialBindGroupLayout,
+    entries: [
+      { binding: 0, resource: { buffer } },
+      { binding: 1, resource: sampler },
+      { binding: 2, resource: view },
+    ],
+  });
+}
+
+function writeWgpuUnlitUniform(
+  state: WgpuRenderState,
+  binding: Readonly<WgpuMaterialBinding>,
+  color: Readonly<LinearColor>,
+  intensity: number,
+  alphaCutoff: number,
+): void {
   _scratch[0] = color[0];
   _scratch[1] = color[1];
   _scratch[2] = color[2];
@@ -58,9 +126,6 @@ export function bindWgpuUnlitSurface(
   _scratch[6] = 0;
   _scratch[7] = 0;
   state.device.queue.writeBuffer(binding.buffer, 0, _scratch.buffer, 0, UNLIT_UNIFORM_BYTES);
-  // The color map's uv transform drives the shared vertex-stage uv the fragment samples.
-  stashWgpuUvTransform(state, colorMap);
-  return binding.bindGroup;
 }
 
 // A short, stable, order-independent string identity for an unlit define key, used as the pipeline-

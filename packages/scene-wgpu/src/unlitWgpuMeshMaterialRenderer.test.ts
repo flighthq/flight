@@ -2,7 +2,7 @@ import { createCamera3D } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createUnlitMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
-import type { Camera3D, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
+import type { Camera3D, SceneLightBlock, SceneRenderProxy, VideoTexture } from '@flighthq/types';
 import { UnlitMaterialKind } from '@flighthq/types';
 
 import { registerUnlitWgpuMaterial, unlitWgpuMeshMaterialRenderer } from './unlitWgpuMeshMaterialRenderer';
@@ -48,6 +48,32 @@ describe('unlitWgpuMeshMaterialRenderer', () => {
     expect(fake.calls.some((c) => c.name === 'createRenderPipeline')).toBe(true);
     expect(fake.calls.some((c) => c.name === 'setPipeline')).toBe(true);
     expect(fake.calls.filter((c) => c.name === 'setBindGroup').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('uploads a ready dynamic video map into the color-map slot', () => {
+    const { fake, state } = makeWgpuSceneState();
+    const material = createUnlitMaterial();
+    material.baseColorVideoMap = {
+      frameId: 1,
+      sampler: {
+        anisotropy: 1,
+        magFilter: 'linear',
+        minFilter: 'linear',
+        mipmaps: false,
+        wrapU: 'clamp-to-edge',
+        wrapV: 'clamp-to-edge',
+      },
+      source: {
+        element: { readyState: 4, videoHeight: 120, videoWidth: 160 } as HTMLVideoElement,
+      },
+      flipX: false,
+      flipY: false,
+      uvOffset: { x: 0, y: 0 },
+      uvRotation: 0,
+      uvScale: { x: 1, y: 1 },
+    } as unknown as VideoTexture;
+    unlitWgpuMeshMaterialRenderer.bind(state, material, NO_LIGHTS, makeCamera());
+    expect(fake.calls.some((c) => c.name === 'copyExternalImageToTexture')).toBe(true);
   });
 
   it('draw issues an indexed draw over the subset after bind', () => {

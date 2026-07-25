@@ -1,5 +1,6 @@
 import { unpackColorToLinear } from '@flighthq/color';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
+import { isVideoTextureFrameReady } from '@flighthq/texture';
 import type {
   LinearColor,
   Camera3D,
@@ -16,7 +17,7 @@ import { UnlitMaterialKind } from '@flighthq/types';
 
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { beginWgpuMeshDraw, drawWgpuMeshSubset, isWgpuTextureReady, writeWgpuFrameUniform } from './wgpuMeshPipeline';
-import { bindWgpuUnlitSurface, ensureWgpuUnlitPipeline } from './wgpuUnlitPrelude';
+import { bindWgpuUnlitSurface, bindWgpuUnlitVideoSurface, ensureWgpuUnlitPipeline } from './wgpuUnlitPrelude';
 
 // The built-in Unlit forward renderer (WgpuMeshMaterialRenderer for UnlitMaterialKind) — the WGSL
 // mirror of unlitGlMeshMaterialRenderer. Lighting-independent flat color: bind selects the unlit
@@ -43,7 +44,10 @@ export const unlitWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
       group = bindWgpuUnlitSurface(state, pipeline, FALLBACK_MATERIAL, WHITE, 1, 0.5, null);
     } else {
       unpackColorToLinear(_scratch, unlit.baseColor);
-      group = bindWgpuUnlitSurface(state, pipeline, unlit, _scratch, 1, unlit.alphaCutoff, unlit.baseColorMap);
+      group =
+        unlit.baseColorVideoMap !== null && isVideoTextureFrameReady(unlit.baseColorVideoMap)
+          ? bindWgpuUnlitVideoSurface(state, pipeline, unlit, _scratch, 1, unlit.alphaCutoff, unlit.baseColorVideoMap)
+          : bindWgpuUnlitSurface(state, pipeline, unlit, _scratch, 1, unlit.alphaCutoff, unlit.baseColorMap);
     }
 
     beginWgpuMeshDraw(state, pipeline);
@@ -65,7 +69,10 @@ function defineKeyForMaterial(material: Readonly<UnlitMaterial> | null): WgpuUnl
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
     doubleSided: material !== null && material.doubleSided,
-    hasColorMap: material !== null && isWgpuTextureReady(material.baseColorMap),
+    hasColorMap:
+      material !== null &&
+      ((material.baseColorVideoMap !== null && isVideoTextureFrameReady(material.baseColorVideoMap)) ||
+        isWgpuTextureReady(material.baseColorMap)),
   };
 }
 

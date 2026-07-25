@@ -13,6 +13,7 @@ import type {
   SceneRenderProxy,
   Texture,
   TextureLike,
+  VideoTexture,
   WgpuRenderState,
 } from '@flighthq/types';
 import {
@@ -639,7 +640,10 @@ export function ensureWgpuShadowSampleLayout(state: WgpuRenderState): GPUBindGro
 // invalidation cache tracks this one sampler accordingly (see wgpuMaterialBindGroupNeedsRebuild).
 // Because a GPUSampler is immutable and baked into the cached bind group, this reads the descriptor at
 // bind-group creation — the same lifetime as the resolved texture views.
-export function getWgpuMaterialSampler(state: WgpuRenderState, texture: Readonly<Texture> | null): GPUSampler {
+export function getWgpuMaterialSampler(
+  state: WgpuRenderState,
+  texture: Readonly<Texture | VideoTexture> | null,
+): GPUSampler {
   if (texture === null) return getWgpuRenderStateRuntime(state).linearSampler;
   const sampler = texture.sampler;
   const filter: GPUFilterMode = sampler.magFilter.startsWith('nearest') ? 'nearest' : 'linear';
@@ -693,9 +697,12 @@ export function resolveWgpuMaterialTextureView(
 // @flighthq/texture composes the KHR transform column-major, the layout WGSL reads, matching the CPU
 // transformTextureUv reference. A null / identity / unbound texture leaves the stash at identity (the
 // vs_main multiply then reproduces the raw uv).
-export function stashWgpuUvTransform(state: WgpuRenderState, texture: Readonly<TextureLike> | null): void {
+export function stashWgpuUvTransform(
+  state: WgpuRenderState,
+  texture: Readonly<TextureLike | VideoTexture> | null,
+): void {
   const out = getWgpuSceneRuntime(state).pendingUvTransform;
-  if (texture === null || texture.image === null || !hasTextureUvTransform(texture)) {
+  if (texture === null || ('image' in texture && texture.image === null) || !hasTextureUvTransform(texture)) {
     resetWgpuUvTransformStash(out);
     return;
   }

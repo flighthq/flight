@@ -10,7 +10,7 @@ import type { VideoTexture } from './VideoTexture';
 // slot rather than a union in `baseColorMap` so the still-image and video paths stay separately
 // typed — a renderer branches on which slot is set. When both are set the video map wins (it is the
 // more specific, dynamic source); a backend without a video path ignores it and falls back to
-// `baseColorMap`. Only wired on the GL backend today (see scene-gl bindGlUnlitVideoSurface).
+// `baseColorMap`. GL and WebGPU upload it through their dynamic frameId-gated texture paths.
 export interface UnlitMaterial extends SurfaceMaterial {
   baseColor: number;
   baseColorMap: Texture | null;

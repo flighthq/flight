@@ -6,6 +6,7 @@ import type { Material } from './Material';
 import type { Matrix } from './Matrix';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
+import type { VideoTexture } from './VideoTexture';
 import type { WgpuMaterialRenderer } from './WgpuMaterialRenderer';
 import type { WgpuMeshMaterialRenderer } from './WgpuMeshMaterialRenderer';
 
@@ -90,6 +91,9 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // a data-only generated Surface. Keyed by the resource entity so a data-only Surface caches too, with the
   // uploaded `version` tracked so bindWgpuImageResourceTexture re-uploads when the pixels change.
   imageResourceTextureCache: WeakMap<ImageResource, WgpuImageResourceTextureEntry>;
+  // Dynamic VideoTexture cache. The GPU texture persists across frames; uploadedFrameId gates the
+  // expensive external-image copy, while width/height detect mid-stream resolution changes.
+  videoTextureCache?: WeakMap<VideoTexture, WgpuVideoTextureEntry>;
 
   // Custom shader (default bitmap shader; can be replaced via registerWgpuBitmapShader)
   defaultBitmapShader: WgpuBitmapShader | null;
@@ -320,4 +324,11 @@ export interface WgpuTextureEntry {
 // bindWgpuImageResourceTexture re-uploads (recreating the GPU texture) when the pixels change.
 export interface WgpuImageResourceTextureEntry extends WgpuTextureEntry {
   version: number;
+}
+
+export interface WgpuVideoTextureEntry extends WgpuTextureEntry {
+  height: number;
+  sampler: GPUSampler;
+  uploadedFrameId: number;
+  width: number;
 }

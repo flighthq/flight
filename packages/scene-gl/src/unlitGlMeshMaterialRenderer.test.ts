@@ -2,7 +2,7 @@ import { createCamera3D } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createUnlitMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
-import type { Camera3D, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
+import type { Camera3D, SceneLightBlock, SceneRenderProxy, VideoTexture } from '@flighthq/types';
 import { UnlitMaterialKind } from '@flighthq/types';
 
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
@@ -49,6 +49,25 @@ describe('unlitGlMeshMaterialRenderer', () => {
     expect(gl.calls.some((c) => c.name === 'enable' && c.args[0] === gl.DEPTH_TEST)).toBe(true);
     expect(gl.calls.some((c) => c.name === 'uniformMatrix4fv')).toBe(true);
     expect(gl.calls.some((c) => c.name === 'uniform4f')).toBe(true);
+  });
+
+  it('binds a ready dynamic video map into the color-map slot', () => {
+    const { state, gl } = makeGlSceneState();
+    const material = createUnlitMaterial();
+    material.baseColorVideoMap = {
+      frameId: 1,
+      flipX: false,
+      flipY: false,
+      sampler: null,
+      source: {
+        element: { readyState: 4, videoHeight: 120, videoWidth: 160 } as HTMLVideoElement,
+      },
+      uvOffset: { x: 0, y: 0 },
+      uvRotation: 0,
+      uvScale: { x: 1, y: 1 },
+    } as unknown as VideoTexture;
+    unlitGlMeshMaterialRenderer.bind(state, material, NO_LIGHTS, makeCamera());
+    expect(gl.calls.some((c) => c.name === 'texImage2D')).toBe(true);
   });
 
   it('draw issues an indexed draw over the subset after bind', () => {
