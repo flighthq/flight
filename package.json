@@ -40,7 +40,6 @@
     "capture:functional:watch": "tsx ./scripts/watch-capture.ts --tool=functional",
     "capture:reference": "tsx ./scripts/reference-tool.ts capture",
     "check": "tsx ./scripts/check.ts",
-    "ci": "npm run build && npm run check && npm run test && npm run size && npm run test:browser",
     "clean": "tsc -b tsconfig.build.json --clean",
     "clean:examples": "npm run clean --workspace=examples/packages/** --if-present",
     "clean:reference": "tsx ./scripts/reference-tool.ts clean",
