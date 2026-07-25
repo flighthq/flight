@@ -494,13 +494,21 @@ describe('createScene3DFrom3ds', () => {
 
     // Same smoothing group → the shared edge is smoothed, so v1/v2 stay merged: 4 output vertices.
     const smooth = createScene3DFrom3ds(
-      buildScene3D3ds({ facesChunk: writeFacesWithGroups(indices, { smoothing: [1, 1] }), meshName: 'Fold', positions }),
+      buildScene3D3ds({
+        facesChunk: writeFacesWithGroups(indices, { smoothing: [1, 1] }),
+        meshName: 'Fold',
+        positions,
+      }),
     );
     expect(getMeshGeometryVertexCount((getNodeChildren(smooth.root)[0] as Mesh).geometry)).toBe(4);
 
     // Different smoothing groups → the shared edge is a hard crease, so v1/v2 split: 6 output vertices.
     const hard = createScene3DFrom3ds(
-      buildScene3D3ds({ facesChunk: writeFacesWithGroups(indices, { smoothing: [1, 2] }), meshName: 'Fold', positions }),
+      buildScene3D3ds({
+        facesChunk: writeFacesWithGroups(indices, { smoothing: [1, 2] }),
+        meshName: 'Fold',
+        positions,
+      }),
     );
     const hardGeom = (getNodeChildren(hard.root)[0] as Mesh).geometry;
     expect(getMeshGeometryVertexCount(hardGeom)).toBe(6);

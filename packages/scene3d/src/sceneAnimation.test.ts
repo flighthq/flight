@@ -75,7 +75,9 @@ describe('applyAnimationClipToScene3D', () => {
     mesh.morph = morph;
     // A 2-wide weights track: at t=0.5 it interpolates halfway between [0,0] and [1,0.5].
     const track = createAnimationTrack({ components: 2, times: [0, 1], values: [0, 0, 1, 0.5] });
-    const clip = createAnimationClip([createAnimationChannel(track, { node: mesh, path: Scene3DAnimationPathWeights })]);
+    const clip = createAnimationClip([
+      createAnimationChannel(track, { node: mesh, path: Scene3DAnimationPathWeights }),
+    ]);
 
     applyAnimationClipToScene3D(clip, 0.5);
 
@@ -86,7 +88,9 @@ describe('applyAnimationClipToScene3D', () => {
   it('skips a Weights channel whose target mesh carries no morph', () => {
     const mesh = createMesh(createBoxMeshGeometry(), []);
     const track = createAnimationTrack({ components: 1, times: [0, 1], values: [0, 1] });
-    const clip = createAnimationClip([createAnimationChannel(track, { node: mesh, path: Scene3DAnimationPathWeights })]);
+    const clip = createAnimationClip([
+      createAnimationChannel(track, { node: mesh, path: Scene3DAnimationPathWeights }),
+    ]);
     // No morph on the mesh — the channel is skipped without throwing.
     expect(() => applyAnimationClipToScene3D(clip, 1)).not.toThrow();
   });

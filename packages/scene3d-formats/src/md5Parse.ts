@@ -66,7 +66,11 @@ export function createScene3DFromMd5Mesh(source: string, diagnostics?: ImportDia
 // `.md5anim` carries no name of its own, so the clip is keyed 'default'; a caller loading several
 // animations against one mesh uses parseMd5Anim directly and keys each as it likes. Warns (and skips the
 // animation) when `animSource` is given but the mesh carries no skeleton to bind it to.
-export function importMd5Mesh(meshSource: string, animSource?: string | null, diagnostics?: ImportDiagnostic[]): Scene3D {
+export function importMd5Mesh(
+  meshSource: string,
+  animSource?: string | null,
+  diagnostics?: ImportDiagnostic[],
+): Scene3D {
   const scene = createScene3DFromMd5Mesh(meshSource, diagnostics);
   if (animSource == null) return scene;
 

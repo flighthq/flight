@@ -237,15 +237,6 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 | --- | :-: | :-: | :-: | :-: |
 | `scale9-stretch` | ✓ | ✓ | ✓ | ✓ |
 
-### Scene
-
-| Scene | Canvas | DOM | WebGL | WebGPU |
-| --- | :-: | :-: | :-: | :-: |
-| `scene-morph` | · | · | ✓ | ✓ |
-| `scene-skin-morph-compose` | · | · | ✓ | ✓ |
-| `scene-skinning` | · | · | ✓ | ✓ |
-| `scene-transparent` | · | · | · | ✓ |
-
 ### Scene Node
 
 | Scene | Canvas | DOM | WebGL | WebGPU |
@@ -258,6 +249,15 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 | `node-visibility` | ✓ | ✓ | ✓ | ✓ |
 | `node-visibility-inheritance` | ✓ | ✓ | ✓ | ✓ |
 | `node-z-order` | ✓ | · | · | · |
+
+### Scene3d
+
+| Scene | Canvas | DOM | WebGL | WebGPU |
+| --- | :-: | :-: | :-: | :-: |
+| `scene3d-morph` | · | · | ✓ | ✓ |
+| `scene3d-skin-morph-compose` | · | · | ✓ | ✓ |
+| `scene3d-skinning` | · | · | ✓ | ✓ |
+| `scene3d-transparent` | · | · | · | ✓ |
 
 ### Shading
 

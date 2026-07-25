@@ -1,5 +1,9 @@
 import { createScene3D } from '@flighthq/scene3d';
-import { drawWgpuScene3D, registerBuiltInWgpuModifierSnippets, registerShadedWgpuMaterial } from '@flighthq/scene3d-wgpu';
+import {
+  drawWgpuScene3D,
+  registerBuiltInWgpuModifierSnippets,
+  registerShadedWgpuMaterial,
+} from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

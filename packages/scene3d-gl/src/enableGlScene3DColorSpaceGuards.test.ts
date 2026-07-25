@@ -9,7 +9,10 @@ import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d';
 import type { Camera3D, Scene3DLightsLike } from '@flighthq/types';
 
 import { drawGlScene3D } from './drawGlScene3D';
-import { areGlScene3DColorSpaceGuardsEnabled, enableGlScene3DColorSpaceGuards } from './enableGlScene3DColorSpaceGuards';
+import {
+  areGlScene3DColorSpaceGuardsEnabled,
+  enableGlScene3DColorSpaceGuards,
+} from './enableGlScene3DColorSpaceGuards';
 import { makeGlScene3DState } from './glScene3DTestHelper';
 import { registerStandardPbrGlMaterial } from './registerStandardPbrGlMaterial';
 

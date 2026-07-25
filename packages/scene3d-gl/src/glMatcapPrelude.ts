@@ -49,7 +49,9 @@ export function compileGlMatcapProgram(gl: WebGL2RenderingContext, key: Readonly
 // Resolves the matcap program for a define key, compiling and caching it on first use through the
 // shared scene program cache under the `matcap:` family namespace.
 export function ensureGlMatcapProgram(state: GlRenderState, key: Readonly<GlMatcapDefineKey>): GlMatcapProgram {
-  return ensureGlScene3DProgram(state, `matcap:${buildGlMatcapDefineKey(key)}`, (gl) => compileGlMatcapProgram(gl, key));
+  return ensureGlScene3DProgram(state, `matcap:${buildGlMatcapDefineKey(key)}`, (gl) =>
+    compileGlMatcapProgram(gl, key),
+  );
 }
 
 // The full fragment source for a define key (define block + body), ready to hand to the GL compiler.

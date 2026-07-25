@@ -389,7 +389,8 @@ describe('createScene3DFromObj', () => {
     const lib = parseObjMaterialLibrary(mtl);
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'usemtl Shiny', 'f 1 2 3'].join('\n');
 
-    const material = (getNodeChildren(createScene3DFromObj(obj, lib).root)[0] as Mesh).materials[0] as BlinnPhongMaterial;
+    const material = (getNodeChildren(createScene3DFromObj(obj, lib).root)[0] as Mesh)
+      .materials[0] as BlinnPhongMaterial;
     expect(material.kind).toBe(BlinnPhongMaterialKind);
     expect(material.diffuse).toBe(0xcc6633_80 >>> 0); // Kd 0.8,0.4,0.2 with d=0.5 alpha
     expect(material.specular).toBe(0xffffffff); // Ks 1,1,1 opaque
