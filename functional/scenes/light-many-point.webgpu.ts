@@ -1,5 +1,5 @@
-import { createScene3D } from '@flighthq/scene';
-import { drawWgpuScene3D, prepareWgpuScene3DForwardLights } from '@flighthq/scene-wgpu';
+import { createScene3D } from '@flighthq/scene3d';
+import { drawWgpuScene3D, prepareWgpuScene3DForwardLights } from '@flighthq/scene3d-wgpu';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

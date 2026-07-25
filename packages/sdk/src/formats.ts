@@ -3,7 +3,7 @@ export * from '@flighthq/scene2d-formats';
 export * from '@flighthq/importdiagnostics';
 export * from '@flighthq/particles-formats';
 export * from '@flighthq/path-formats';
-export * from '@flighthq/scene-formats';
+export * from '@flighthq/scene3d-formats';
 export * from '@flighthq/shape-formats';
 export * from '@flighthq/spritesheet-formats';
 export * from '@flighthq/texture-formats';

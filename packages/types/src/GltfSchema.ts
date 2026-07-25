@@ -1,4 +1,4 @@
-// glTF 2.0 JSON wire-format schema — the subset @flighthq/scene-formats imports today: node hierarchy,
+// glTF 2.0 JSON wire-format schema — the subset @flighthq/scene3d-formats imports today: node hierarchy,
 // mesh geometry, PBR materials, textures (sampler + KHR_texture_transform), skins, morph targets, and
 // TRS/weights animation, over embedded base64, GLB-binary, or caller-supplied external buffers. Field
 // names match the glTF 2.0 spec exactly. Indices into the document's parallel arrays are the spec's

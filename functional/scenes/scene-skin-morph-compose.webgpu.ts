@@ -1,4 +1,4 @@
-import { drawWgpuScene3D, registerWgpuGpuSkinning } from '@flighthq/scene-wgpu';
+import { drawWgpuScene3D, registerWgpuGpuSkinning } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,

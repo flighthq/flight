@@ -1,4 +1,4 @@
-import { drawGlScene3D, drawGlScene3DShadowMap } from '@flighthq/scene-gl';
+import { drawGlScene3D, drawGlScene3DShadowMap } from '@flighthq/scene3d-gl';
 import type { Camera3D, GlRenderEffectPipeline, Scene3DLightsLike, Node3D } from '@flighthq/sdk';
 import {
   beginGlRenderEffectPipeline,
@@ -11,7 +11,7 @@ import {
   renderGlBackground,
 } from '@flighthq/sdk';
 
-// drawGlScene3D is imported from @flighthq/scene-gl directly because it collides in the
+// drawGlScene3D is imported from @flighthq/scene3d-gl directly because it collides in the
 // @flighthq/sdk barrel (both scene-gl and scene-wgpu re-export a drawScene3D function).
 
 const pixelRatio = window.devicePixelRatio || 1;

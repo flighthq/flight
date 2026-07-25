@@ -1,4 +1,4 @@
-import { drawGlScene3D, registerBuiltInGlModifierSnippets, registerShadedGlMaterial } from '@flighthq/scene-gl';
+import { drawGlScene3D, registerBuiltInGlModifierSnippets, registerShadedGlMaterial } from '@flighthq/scene3d-gl';
 import type { Camera3D, GlRenderEffectPipeline, Scene3DLightsLike, Node3D } from '@flighthq/sdk';
 import {
   beginGlRenderEffectPipeline,

@@ -1,5 +1,5 @@
-import { createScene3D } from '@flighthq/scene';
-import { drawGlScene3D } from '@flighthq/scene-gl';
+import { createScene3D } from '@flighthq/scene3d';
+import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -81,9 +81,9 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
 // per-backend implementation lives in render.webgl.ts / render.webgpu.ts. It imports render from
 // ./render (the local TS stub); the functional vite harness routes ./render to the active backend's
 // render.<renderer>.ts at runtime.
-// createScene3D exists on both @flighthq/node and @flighthq/scene, so it collides in the @flighthq/sdk
+// createScene3D exists on both @flighthq/node and @flighthq/scene3d, so it collides in the @flighthq/sdk
 // barrel (conflicting star exports) and is unavailable there — import the 3D scene one directly. The
-// Mesh added to it is a @flighthq/scene Node3D, so this is the type-correct source too.
+// Mesh added to it is a @flighthq/scene3d Node3D, so this is the type-correct source too.
 
 const logicalWidth = width / scale;
 const logicalHeight = height / scale;

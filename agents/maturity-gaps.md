@@ -162,7 +162,7 @@ unsupported cases is largely unbuilt for the gaps that most need it.
 
 ## 3. By area
 
-### 3D Model Import (`@flighthq/scene-formats`)
+### 3D Model Import (`@flighthq/scene3d-formats`)
 
 | What a user assumes works | Reality + cite | Backends | Bite |
 | --- | --- | --- | --- |

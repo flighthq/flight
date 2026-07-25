@@ -29,7 +29,7 @@ Executed the sweep-safe items from `assessment.md › Recommended` that are stri
 
 ### Done
 
-- **Removed the stale `@flighthq/scene` dependency.** Dropped `@flighthq/scene` from `package.json` dependencies and the `../scene` entry from `tsconfig.json` references. No source or test imported it (only "scene graph" appears in a comment). No behavior change.
+- **Removed the stale `@flighthq/scene3d` dependency.** Dropped `@flighthq/scene3d` from `package.json` dependencies and the `../scene` entry from `tsconfig.json` references. No source or test imported it (only "scene graph" appears in a comment). No behavior change.
 - **Widened `hitTestDisplayObjects` to the `Spatial2DNode` graph-feature alias.** Both params went from concrete `DisplayObject` to `Spatial2DNode` (the only member of the named overlap family that exists in this tree). The body only uses `getNodeParent` + `getNodeWorldBoundsRectangle`, so the wider type is exact and existing `DisplayObject` callers still satisfy it — non-breaking, no test change required. Doc-comment updated to describe world-bounds overlap over any spatial 2D node.
 
 ### Parked

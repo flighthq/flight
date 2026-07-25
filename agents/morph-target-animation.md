@@ -2,7 +2,7 @@
 feature: "morph-target animation"
 draft: false
 lastDirection: 2026-07-18
-spans: ["@flighthq/types", "@flighthq/mesh", "@flighthq/scene", "@flighthq/animation", "@flighthq/scene-gl", "@flighthq/scene-wgpu", "@flighthq/scene-formats"]
+spans: ["@flighthq/types", "@flighthq/mesh", "@flighthq/scene3d", "@flighthq/animation", "@flighthq/scene3d-gl", "@flighthq/scene3d-wgpu", "@flighthq/scene3d-formats"]
 ---
 
 # Morph-Target Animation — Charter
@@ -10,7 +10,7 @@ spans: ["@flighthq/types", "@flighthq/mesh", "@flighthq/scene", "@flighthq/anima
 > **Blessed design of record; BUILT (GL path).** The architecture below is approved and implemented on
 > the GL backend: `Weights` is a `SceneAnimationPath`; `Mesh.morph` carries a `MeshMorph` (targets +
 > weight array); `@flighthq/mesh` blends base + Σ wᵢ·targetᵢ (`blendMeshGeometryMorph`/
-> `captureMeshMorphBindPose`); `@flighthq/scene` routes `Weights` channels into the weight array
+> `captureMeshMorphBindPose`); `@flighthq/scene3d` routes `Weights` channels into the weight array
 > (`applyAnimationClipToScene`) and drives the deform (`updateMeshMorph`), with `getMeshDeformer`
 > naming the `none`/`skeletal`/`morph` tag; `scene-gl` runs the morph in `drawGlScene` via
 > CPU-blend-then-upload; and `importGltf`/`importMd2` now emit morph (glTF `primitives[].targets` +
@@ -44,7 +44,7 @@ tail; it is the *validation case*, not the driver.
 
 1. **glTF morph targets — the prize, and an existing gap.** glTF has first-class morph targets
    (`mesh.primitives[].targets`, per-mesh `weights`, and animation `channel.target.path = "weights"`).
-   `@flighthq/scene-formats`'s `importGltf` **currently drops this twice**: `buildGltfAnimationClip`
+   `@flighthq/scene3d-formats`'s `importGltf` **currently drops this twice**: `buildGltfAnimationClip`
    skips `weights` channels, and `primitiveToGeometry` never reads `primitives[].targets`. Facial
    animation, lip-sync/visemes, and expression blending ship in glTF constantly — this is mainstream,
    spec-native, and already half-specified in the importer.
@@ -112,7 +112,7 @@ MD2, keep the generic `weights` path for real blend shapes.** Same abstraction, 
 ## Boundaries
 
 - **In scope:** a `weights` `SceneAnimationPath`; a morph-target set + weight array on `Mesh`; a
-  deformer abstraction (`none`/`skeletal`/`morph`) in `@flighthq/scene`; the morph sink in
+  deformer abstraction (`none`/`skeletal`/`morph`) in `@flighthq/scene3d`; the morph sink in
   `sceneAnimation.ts`; generic additive blend-shape evaluation; the MD2 specialized two-frame evaluator;
   CPU morph blend (and the GPU morph path in `scene-gl`/`scene-wgpu`); wiring `importGltf` to read
   `primitives[].targets` + `weights` channels, and `importMd2` to emit its morph sequence.
@@ -126,15 +126,15 @@ MD2, keep the generic `weights` path for real blend shapes.** Same abstraction, 
 | --- | --- |
 | `@flighthq/types` | Add `'weights'` to `SceneAnimationPath`; a `SceneAnimationTarget` variant (or sibling) that targets a mesh's weight array, not a node TRS; morph-target + weight-array fields on the `Mesh`/geometry types; a `MeshDeformer` tag (`none`/`skeletal`/`morph`). |
 | `@flighthq/mesh` | Morph-target storage (base + per-target position/normal/tangent deltas) and the CPU blend that produces a deformed `MeshGeometry` from base + weights (sibling of `skinMeshGeometry`). |
-| `@flighthq/scene` | The deformer abstraction; the morph sink in `sceneAnimation.ts` (`applyAnimationClipToScene` must route `weights` channels into the mesh weight array); the MD2 specialized evaluator hook. |
+| `@flighthq/scene3d` | The deformer abstraction; the morph sink in `sceneAnimation.ts` (`applyAnimationClipToScene` must route `weights` channels into the mesh weight array); the MD2 specialized evaluator hook. |
 | `@flighthq/animation` | Likely nothing structural — `Sampler`/`AnimationTrack` already carry the curve. Confirm `weights` (variable-width value) samples cleanly. |
-| `@flighthq/scene-gl` / `-wgpu` | GPU morph blend in the mesh shaders (or CPU-blend upload), beside the existing skinning path. |
-| `@flighthq/scene-formats` | `importGltf`: read `primitives[].targets` + emit `weights` channels (close the double gap). `importMd2`: dequantize frames, build the morph sequence + normal-LUT decode, emit the specialized evaluator clip. |
+| `@flighthq/scene3d-gl` / `-wgpu` | GPU morph blend in the mesh shaders (or CPU-blend upload), beside the existing skinning path. |
+| `@flighthq/scene3d-formats` | `importGltf`: read `primitives[].targets` + emit `weights` channels (close the double gap). `importMd2`: dequantize frames, build the morph sequence + normal-LUT decode, emit the specialized evaluator clip. |
 
 ## Decisions
 
 - **2026-07-18 — Charter this as its own feature, not an MD2-importer tail.** Why: it reshapes
-  `SceneAnimationPath`/`SceneAnimationTarget` and adds a deformer tier to `@flighthq/scene` —
+  `SceneAnimationPath`/`SceneAnimationTarget` and adds a deformer tier to `@flighthq/scene3d` —
   foundational animation surface that should be designed deliberately, not as a side effect of a format
   importer. Building it under the MD2 task would smuggle a cross-package design decision into a leaf.
 - **2026-07-18 — glTF morph + blend shapes are the primary consumers; MD2 is validation.** Why: MD2 is

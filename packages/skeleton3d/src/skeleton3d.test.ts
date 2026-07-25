@@ -1,6 +1,6 @@
 import { createMatrix4, getMatrix4Element, setVector3 } from '@flighthq/geometry';
 import { addNodeChild, getNodeParent, invalidateNodeLocalTransform, setNodeTransform3D } from '@flighthq/node';
-import { createNode3D } from '@flighthq/scene';
+import { createNode3D } from '@flighthq/scene3d';
 import { EntityRuntimeKey } from '@flighthq/types';
 
 import {

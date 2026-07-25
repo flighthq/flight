@@ -1,4 +1,4 @@
-import { drawWgpuEnvironmentSkybox, drawWgpuScene3D } from '@flighthq/scene-wgpu';
+import { drawWgpuEnvironmentSkybox, drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Environment, Scene3DLightsLike, Node3D, WgpuRenderEffectPipeline } from '@flighthq/sdk';
 import {
   beginWgpuRenderEffectPipeline,

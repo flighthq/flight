@@ -1,0 +1,57 @@
+{
+  "name": "@flighthq/scene3d-wgpu",
+  "version": "0.2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flighthq/flight.git",
+    "directory": "packages/scene3d-wgpu"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src/**/*.test.ts",
+    "!dist/**/*.test.js",
+    "!dist/**/*.test.d.ts",
+    "!dist/**/*.test.js.map",
+    "!dist/**/*.test.d.ts.map"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "test": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest --watch --config vitest.config.ts",
+    "prepack": "npm run clean && npm run clean:dist && npm run build",
+    "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
+  },
+  "dependencies": {
+    "@flighthq/camera": "*",
+    "@flighthq/color": "*",
+    "@flighthq/geometry": "*",
+    "@flighthq/image": "*",
+    "@flighthq/lighting": "*",
+    "@flighthq/log": "*",
+    "@flighthq/materials": "*",
+    "@flighthq/node": "*",
+    "@flighthq/render": "*",
+    "@flighthq/render-wgpu": "*",
+    "@flighthq/scene3d": "*",
+    "@flighthq/shading": "*",
+    "@flighthq/texture": "*",
+    "@flighthq/types": "*"
+  },
+  "devDependencies": {
+    "@flighthq/mesh": "*",
+    "@flighthq/particleemitter": "*",
+    "typescript": "^5.3.0"
+  },
+  "description": "WebGPU 3D scene renderer",
+  "sideEffects": false
+}

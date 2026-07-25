@@ -6,8 +6,8 @@
   "include": ["src/**/*.ts", "vite.config.ts"],
   "references": [
     { "path": "../../../packages/camera-controls" },
-    { "path": "../../../packages/scene-gl" },
-    { "path": "../../../packages/scene-wgpu" },
+    { "path": "../../../packages/scene3d-gl" },
+    { "path": "../../../packages/scene3d-wgpu" },
     { "path": "../../../packages/sdk" }
   ]
 }

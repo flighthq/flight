@@ -1,5 +1,5 @@
-import { createScene3D } from '@flighthq/scene';
-import { drawGlScene3D } from '@flighthq/scene-gl';
+import { createScene3D } from '@flighthq/scene3d';
+import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

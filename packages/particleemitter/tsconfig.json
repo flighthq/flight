@@ -14,7 +14,7 @@
     { "path": "../math" },
     { "path": "../node" },
     { "path": "../particles" },
-    { "path": "../scene" },
+    { "path": "../scene3d" },
     { "path": "../types" }
   ],
   "include": ["src"]

@@ -12,7 +12,7 @@ status: ./status.md
 
 ## What it is
 
-Retained-mode scene-graph core — the shared base graph that display objects, sprite graphs, and future graph families build on. Its concerns are: parent/child hierarchy and z-ordering, traversal, 2D/3D transform composition (local→world), 2D/3D bounds propagation, a seven-channel invalidation/revision system, lifecycle (`createNode`/`disposeNode`), opt-in cross-family traits (appearance, clip, material, boundsRectangle, transform2d, transform3d), hierarchy change signals, and a viewport scale/align transform. This is the "node library" tier of an engine (analogous to `Node` / `Spatial` / `Object3D` in Godot, Cocos, three.js) — explicitly _not_ concrete primitives, which live in `@flighthq/scene2d`, `@flighthq/sprite`, and `@flighthq/scene`.
+Retained-mode scene-graph core — the shared base graph that display objects, sprite graphs, and future graph families build on. Its concerns are: parent/child hierarchy and z-ordering, traversal, 2D/3D transform composition (local→world), 2D/3D bounds propagation, a seven-channel invalidation/revision system, lifecycle (`createNode`/`disposeNode`), opt-in cross-family traits (appearance, clip, material, boundsRectangle, transform2d, transform3d), hierarchy change signals, and a viewport scale/align transform. This is the "node library" tier of an engine (analogous to `Node` / `Spatial` / `Object3D` in Godot, Cocos, three.js) — explicitly _not_ concrete primitives, which live in `@flighthq/scene2d`, `@flighthq/sprite`, and `@flighthq/scene3d`.
 
 Where it ends and a neighbor begins: `node` owns the shared graph machinery — anything generic across graph families. A concrete primitive (bitmap, sprite, 3D mesh) belongs to its owning package. Traits on `node` are the ones that cross graph families; entity-specific properties belong on the entity package.
 
@@ -54,7 +54,7 @@ Where it ends and a neighbor begins: `node` owns the shared graph machinery — 
 
   **Why:** 3D rotation representation (quaternion vs Euler vs axis-angle) is a user choice that varies by domain. Committing to one at the node level would impose a convention that doesn't serve everyone. The matrix is the universal representation; geometry provides the composition helpers.
 
-- **[2026-07-01] 3D bounds are node-level — same tier as 2D bounds.** AABB bounds for 3D nodes (`getNodeLocalBoundsBox`/`getNodeWorldBoundsBox`) belong on `@flighthq/node`, not on `@flighthq/scene`. Bounds propagation is a graph concern, and the revision/invalidation system already has the channels. **Resolves Open direction #4 (bounds ownership).**
+- **[2026-07-01] 3D bounds are node-level — same tier as 2D bounds.** AABB bounds for 3D nodes (`getNodeLocalBoundsBox`/`getNodeWorldBoundsBox`) belong on `@flighthq/node`, not on `@flighthq/scene3d`. Bounds propagation is a graph concern, and the revision/invalidation system already has the channels. **Resolves Open direction #4 (bounds ownership).**
 
   **Why:** 2D bounds live here; 3D bounds are the same abstraction in a different dimension. Scene owns concrete 3D primitives, not the graph plumbing they participate in.
 

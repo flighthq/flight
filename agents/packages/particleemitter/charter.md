@@ -48,7 +48,7 @@ _Append-only, dated, blessed rulings._
 - **[2026-07-02 · particles charter]** Sim/node split. Particles is the pure sim; the emitter node is the display-object wrapper.
 - **[2026-07-02 · particles charter]** Own package (historically lived in sprite).
 
-- **[2026-07-15] Unified 2D+3D package.** `ParticleEmitter` renames to `ParticleEmitter2D`. A new `ParticleEmitter3D` (scene-graph node backed by `@flighthq/scene`) joins the package. The package accepts a dual dependency on both `@flighthq/scene2d` and `@flighthq/scene` — a deliberate compromise on the dependency graph for a benefit in cognition. Tree-shaking zeroes the bundle cost for single-graph users. The principle: the dimension changes the node wrapper (thin glue over the shared `@flighthq/particles` sim), not the mathematical model. User-directed.
+- **[2026-07-15] Unified 2D+3D package.** `ParticleEmitter` renames to `ParticleEmitter2D`. A new `ParticleEmitter3D` (scene-graph node backed by `@flighthq/scene3d`) joins the package. The package accepts a dual dependency on both `@flighthq/scene2d` and `@flighthq/scene3d` — a deliberate compromise on the dependency graph for a benefit in cognition. Tree-shaking zeroes the bundle cost for single-graph users. The principle: the dimension changes the node wrapper (thin glue over the shared `@flighthq/particles` sim), not the mathematical model. User-directed.
 
 ## Open directions (maturation)
 

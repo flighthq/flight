@@ -1,5 +1,5 @@
-import { createScene3D } from '@flighthq/scene';
-import { drawGlEnvironmentSkybox, drawGlScene3D } from '@flighthq/scene-gl';
+import { createScene3D } from '@flighthq/scene3d';
+import { drawGlEnvironmentSkybox, drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, Environment, GlRenderEffectPipeline, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

@@ -130,10 +130,10 @@
     { "path": "./packages/updater" },
     { "path": "./packages/useragent" },
     { "path": "./packages/velocity" },
-    { "path": "./packages/scene" },
-    { "path": "./packages/scene-formats" },
-    { "path": "./packages/scene-gl" },
-    { "path": "./packages/scene-resources" },
-    { "path": "./packages/scene-wgpu" }
+    { "path": "./packages/scene3d" },
+    { "path": "./packages/scene3d-formats" },
+    { "path": "./packages/scene3d-gl" },
+    { "path": "./packages/scene3d-resources" },
+    { "path": "./packages/scene3d-wgpu" }
   ]
 }

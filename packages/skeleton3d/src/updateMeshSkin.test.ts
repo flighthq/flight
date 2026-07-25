@@ -6,7 +6,7 @@ import {
   getMeshGeometrySkinBindPose,
 } from '@flighthq/mesh';
 import { invalidateNodeLocalTransform } from '@flighthq/node';
-import { createMesh, createNode3D } from '@flighthq/scene';
+import { createMesh, createNode3D } from '@flighthq/scene3d';
 import { describe, expect, it } from 'vitest';
 
 import { createSkeleton3D } from './skeleton3d';

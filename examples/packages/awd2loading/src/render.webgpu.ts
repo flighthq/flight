@@ -1,4 +1,4 @@
-import { drawWgpuScene3D, registerBuiltInWgpuModifierSnippets, registerShadedWgpuMaterial } from '@flighthq/scene-wgpu';
+import { drawWgpuScene3D, registerBuiltInWgpuModifierSnippets, registerShadedWgpuMaterial } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Scene3DLightsLike, Node3D, WgpuRenderEffectPipeline } from '@flighthq/sdk';
 import {
   beginWgpuRenderEffectPipeline,

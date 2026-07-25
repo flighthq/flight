@@ -43,7 +43,7 @@
       "path": "../node"
     },
     {
-      "path": "../scene"
+      "path": "../scene3d"
     },
     {
       "path": "../signals"

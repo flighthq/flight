@@ -131,7 +131,7 @@ export async function runReferenceCapture(options: Readonly<ReferenceCaptureOpti
 // FLIGHT_REPO points its @flighthq/* aliases at the Flight source. FLIGHT_SDK_WATCH keeps the SDK barrel
 // on the same raw-source module graph as direct package imports. Pre-bundling only @flighthq/sdk creates
 // a second copy of stateful renderer registries: a reference app can register a material through the SDK
-// copy, then draw through a direct @flighthq/scene-gl import whose registry remains empty. That split made
+// copy, then draw through a direct @flighthq/scene3d-gl import whose registry remains empty. That split made
 // the OpenFL Stage3D Flight versions render correctly in host dev mode but capture as blank canvases.
 export function startReferenceDevServer(
   checkoutDir: string,

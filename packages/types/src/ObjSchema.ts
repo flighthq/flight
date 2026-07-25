@@ -1,4 +1,4 @@
-// Wavefront OBJ/MTL wire-format types — the subset @flighthq/scene-formats imports. These are
+// Wavefront OBJ/MTL wire-format types — the subset @flighthq/scene3d-formats imports. These are
 // format-internal: only `ObjMaterialLibrary` is re-exported from the package barrel (it is the
 // public input shape of `createScene3DFromObj`); the rest stay module-internal.
 

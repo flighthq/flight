@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@flighthq/scene": "*",
-    "@flighthq/scene-gl": "*",
-    "@flighthq/scene-wgpu": "*",
+    "@flighthq/scene3d": "*",
+    "@flighthq/scene3d-gl": "*",
+    "@flighthq/scene3d-wgpu": "*",
     "@flighthq/sdk": "*"
   },
   "scripts": {

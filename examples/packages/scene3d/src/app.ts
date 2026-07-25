@@ -1,4 +1,4 @@
-import { createNode3D } from '@flighthq/scene';
+import { createNode3D } from '@flighthq/scene3d';
 import type { Camera3D, Scene3DLightsLike } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -29,7 +29,7 @@ import {
 import { canvas, render, scale } from './render';
 
 // The scene root is a bare Node3D (createScene3D now allocates a Scene3D *document* that owns a root);
-// createNode3D is imported from @flighthq/scene directly to sidestep the @flighthq/sdk barrel.
+// createNode3D is imported from @flighthq/scene3d directly to sidestep the @flighthq/sdk barrel.
 
 const logicalWidth = 800 / scale;
 const logicalHeight = 600 / scale;

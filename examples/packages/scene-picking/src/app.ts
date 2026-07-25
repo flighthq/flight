@@ -4,7 +4,7 @@ import {
   updateOrbitCameraController,
 } from '@flighthq/camera-controls';
 import { createScene3DHit, pickScene3D } from '@flighthq/picking';
-import { createNode3D } from '@flighthq/scene';
+import { createNode3D } from '@flighthq/scene3d';
 import type { Camera3D, Mesh, Scene3DLightsLike, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,

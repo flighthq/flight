@@ -21,13 +21,13 @@ Additionally: smoke test fix already committed (favicon 404), orphaned baselines
 
 ## Context
 
-`@flighthq/scene-formats` currently implements glTF 2.0 JSON and GLB parsing (`createSceneFromGltf`, `createSceneFromGlb`). The charter names OBJ and USD as future targets; the user has expanded scope to include legacy formats (AWD, 3DS, MD5, MD2, FBX) under the "whole hardware store" directive. All parsers live in this package, not separate ones (charter Decision 2026-07-03: "mesh-formats is NOT a separate package").
+`@flighthq/scene3d-formats` currently implements glTF 2.0 JSON and GLB parsing (`createSceneFromGltf`, `createSceneFromGlb`). The charter names OBJ and USD as future targets; the user has expanded scope to include legacy formats (AWD, 3DS, MD5, MD2, FBX) under the "whole hardware store" directive. All parsers live in this package, not separate ones (charter Decision 2026-07-03: "mesh-formats is NOT a separate package").
 
 Current package score: 46/100 (partial). The existing glTF parser is well-shaped: accessor decoding across all component types, strided/normalized attributes, GLB container, multi-primitive meshes, TRS+matrix transforms, sentinel-plus-warnings degradation. Materials/textures and animations are not imported yet (cross-package gaps, tracked in assessment).
 
 ## Scope
 
-Six formats to add, in priority order. Each gets its own parse file + schema file, exports a `createSceneFrom{Format}` function, and returns a `Scene` node hierarchy through the same `@flighthq/scene` + `@flighthq/mesh` primitives the glTF parser uses.
+Six formats to add, in priority order. Each gets its own parse file + schema file, exports a `createSceneFrom{Format}` function, and returns a `Scene` node hierarchy through the same `@flighthq/scene3d` + `@flighthq/mesh` primitives the glTF parser uses.
 
 ### Priority 1: OBJ/MTL
 
@@ -167,7 +167,7 @@ Text formats take `string`; binary formats take `Readonly<Uint8Array>`. FBX take
 
 ### Output shape
 
-All parsers return `Scene` (from `@flighthq/scene`). Geometry is interleaved into the canonical PBR vertex layout (position/normal/tangent/uv0, stride 48) via `createMeshGeometry` from `@flighthq/mesh`. Node hierarchy uses `createSceneNode`, `createMesh`, `addNodeChild`, `setSceneNodeTransform` from `@flighthq/scene` and `@flighthq/node`. This is the exact same pipeline the glTF parser uses.
+All parsers return `Scene` (from `@flighthq/scene3d`). Geometry is interleaved into the canonical PBR vertex layout (position/normal/tangent/uv0, stride 48) via `createMeshGeometry` from `@flighthq/mesh`. Node hierarchy uses `createSceneNode`, `createMesh`, `addNodeChild`, `setSceneNodeTransform` from `@flighthq/scene3d` and `@flighthq/node`. This is the exact same pipeline the glTF parser uses.
 
 ### Shared utilities
 
@@ -183,7 +183,7 @@ Each parser's public function and input-shape type are re-exported from `index.t
 
 ### Dependencies
 
-No new package dependencies. All parsers use the same dependency set as glTF: `@flighthq/mesh`, `@flighthq/node`, `@flighthq/scene`, `@flighthq/types`. No external parsing libraries — all format decoding is hand-written (portable, tree-shakable, C/C++ portable idiom).
+No new package dependencies. All parsers use the same dependency set as glTF: `@flighthq/mesh`, `@flighthq/node`, `@flighthq/scene3d`, `@flighthq/types`. No external parsing libraries — all format decoding is hand-written (portable, tree-shakable, C/C++ portable idiom).
 
 ## Acceptance criteria
 
@@ -378,7 +378,7 @@ The particle system today is purely 2D. The simulation core (`@flighthq/particle
 
 **Scene-node integration (`@flighthq/particleemitter`):** `ParticleEmitter` extends `DisplayObject` (2D graph). `ParticleEmitterData` stores typed arrays: `transforms` (stride 4: x, y, rotation, scale), `alphas`, `colors` (stride 3), `ids`, `velocities` (stride 2). `updateParticleEmitter` handles spawn, age, compact, and position integration. `stepParticleEmitter` is the convenience wrapper: forces -> update -> collisions.
 
-**3D scene graph (`@flighthq/scene`):** `SceneNode` is the 3D hierarchy node with a `localMatrix: Matrix4`. `Mesh` extends `SceneNode` with `geometry: MeshGeometry` and `materials`. Scene rendering uses `prepareSceneRender` + `drawGlScene`/`drawWgpuScene`, with per-material renderers registered via `GlMeshMaterialRenderer`. Meshes are drawn in opaque/blended passes.
+**3D scene graph (`@flighthq/scene3d`):** `SceneNode` is the 3D hierarchy node with a `localMatrix: Matrix4`. `Mesh` extends `SceneNode` with `geometry: MeshGeometry` and `materials`. Scene rendering uses `prepareSceneRender` + `drawGlScene`/`drawWgpuScene`, with per-material renderers registered via `GlMeshMaterialRenderer`. Meshes are drawn in opaque/blended passes.
 
 ---
 
@@ -492,7 +492,7 @@ The `resolveColliders` scratch changes from 4-element `[px, py, vx, vy]` to 6-el
 
 ### Goal
 
-Create a new package that bridges the `@flighthq/particles` simulation to the 3D scene graph (`@flighthq/scene`), following the same sim/node decomposition as `particles`/`particleemitter` but for `SceneNode` instead of `DisplayObject`.
+Create a new package that bridges the `@flighthq/particles` simulation to the 3D scene graph (`@flighthq/scene3d`), following the same sim/node decomposition as `particles`/`particleemitter` but for `SceneNode` instead of `DisplayObject`.
 
 ### Package Name
 
@@ -529,7 +529,7 @@ The data layout is similar to `ParticleEmitterData` but with 3D positions (strid
 
 ### Rendering Approach
 
-The scene-node package itself does not render. Following the existing pattern (scene defines nodes, scene-gl/scene-wgpu draw them), rendering lives in new modules within `@flighthq/scene-gl` and `@flighthq/scene-wgpu`.
+The scene-node package itself does not render. Following the existing pattern (scene defines nodes, scene-gl/scene-wgpu draw them), rendering lives in new modules within `@flighthq/scene3d-gl` and `@flighthq/scene3d-wgpu`.
 
 #### Architecture Decisions Needed
 
@@ -835,8 +835,8 @@ Compile errors: Thrown at bind time (the first frame the material is drawn), sam
 
 - **Type definitions** (`CustomShaderMaterial`, `CustomSurfaceMaterial`, their kinds): `@flighthq/types`
 - **Constructor functions** (`createCustomShaderMaterial`, `createCustomSurfaceMaterial`): `@flighthq/materials`
-- **GL renderers and registration**: `@flighthq/scene-gl` (alongside the existing material renderers)
-- **WGPU renderers and registration**: `@flighthq/scene-wgpu`
+- **GL renderers and registration**: `@flighthq/scene3d-gl` (alongside the existing material renderers)
+- **WGPU renderers and registration**: `@flighthq/scene3d-wgpu`
 
 No new packages are needed. The feature slots naturally into the existing material renderer architecture.
 
@@ -929,7 +929,7 @@ This section maps common feature keywords to their implementing packages and bac
 | **Hit testing** | `@flighthq/interaction` | n/a (runtime) | |
 | **Tilemap** | `@flighthq/sprite`, `@flighthq/tilemap-formats` | canvas, gl, wgpu | Tiled TMX/TMJ |
 | **Asset loading** | `@flighthq/assets`, `@flighthq/loader` | n/a (runtime) | Ref-counted, concurrent |
-| **glTF import** | `@flighthq/scene-formats` | n/a (parser) | JSON + GLB |
+| **glTF import** | `@flighthq/scene3d-formats` | n/a (parser) | JSON + GLB |
 | **OBJ/3DS/FBX import** | — | — | Chartered but not yet implemented |
 | **Flow / game states** | `@flighthq/flow` | n/a (headless) | Push/pop/replace screen-state stack |
 | **Snapshot / undo** | `@flighthq/snapshot` | n/a (headless) | Deep-clone + restore + interpolate |
