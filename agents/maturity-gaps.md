@@ -11,7 +11,7 @@ Companion docs: [quality-plan](quality-plan.md), [test-depth-review](test-depth-
 [wgpu-3d-parity-spec](wgpu-3d-parity-spec.md) (the un-postpone plan for every WebGPU 3D gap this doc marks open).
 
 **2026-07 update:** the AAA workflow closed many gaps below (GPU skinning across all material families on
-both GPU backends, morph on gl, ShadedMaterial + modifiers on both GPU backends, advanced blend on gl/wgpu,
+both GPU backends, morph on gl/wgpu, ShadedMaterial + modifiers on both GPU backends, advanced blend on gl/wgpu,
 glTF/OBJ/3DS/MD5/AWD import, and video + compressed textures on gl). Rows it closed are marked
 RESOLVED/RESOLVED (gl); remaining WebGPU counterparts are specced in
 [wgpu-3d-parity-spec](wgpu-3d-parity-spec.md).
@@ -97,10 +97,10 @@ boxes — `glyphatlas/status.md`), particle emitters, and camera2d view-matrix a
 (`test-depth-review.md:126-128`). "Tests pass" systematically overstates readiness for anything GPU-rendered.
 
 ### B. WebGPU is a second-class citizen everywhere
-wgpu still lags gl in several audited domains, though GPU skinning, ShadedMaterial modifier stacks, and
-advanced-blend `BlendEffect` now render on both GPU backends. Remaining gaps include **no morph deformation**
-(gl CPU-blends), **no video/compressed-texture upload** (gl-only), plus the pre-existing **no custom-shader
-material/effect**, **no 3D-particle renderer** (wait — 3D particles *do* render on wgpu via host capture; see
+wgpu still lags gl in several audited domains, though GPU skinning, morph deformation, ShadedMaterial
+modifier stacks, and advanced-blend `BlendEffect` now render on both GPU backends. Remaining gaps include
+the pre-existing **no custom-shader material/effect**, **no 3D-particle renderer** (wait — 3D particles *do*
+render on wgpu via host capture; see
 that row), and **no `.webgpu.ts` functional baseline** for several light/shadow/IBL scenes — so the punctual-lighting parity that
 `render-backend-support.md` gap #8 marks "DONE on both gl and wgpu" is claimed by inspection, never by
 evidence. The "four co-equal backends" framing is false; treat wgpu 3D as partial. The concrete un-postpone
@@ -187,7 +187,7 @@ unsupported cases is largely unbuilt for the gaps that most need it.
 | Feature Lookup "gl, wgpu" for skeletal | GPU skinning spans the same five material families on both GPU backends. | gl, wgpu | RESOLVED |
 | Animated character culls/picks correctly | Skinned bounds stay bind-pose (AABB never recomputed); frustum cull + raycast test rest bounds → mis-cull/mis-pick | all | MAJOR |
 | >64-joint rig works | Both GPU backends use an RGBA32F data texture (`texelFetch` / `textureLoad`), so joint count is texture-dimension-bound rather than uniform-budget-bound. The WebGPU functional proof uses 80 joints. | gl, wgpu | RESOLVED |
-| Morph targets / IK / blend trees / DQS | Morph/blend-shape deformer now built on gl (mesh CPU-blends base + Σ wᵢ·targetᵢ, `updateMeshMorph`; glTF/MD2 import emit morph); wgpu morph unbuilt. IK / blend trees / DQS still absent; LBS-only; no retargeting | gl (morph); all (rest) | RESOLVED (morph, gl) |
+| Morph targets / IK / blend trees / DQS | Morph/blend-shape deformation works on gl/wgpu: the mesh CPU-blends base + Σ wᵢ·targetᵢ through `updateMeshMorph`, and each backend version-reuploads the result; WebGPU also composes that result with GPU skinning. glTF/MD2 import emit morph targets. IK / blend trees / DQS remain absent; LBS-only; no retargeting | gl/wgpu (morph); all (rest) | RESOLVED (morph, gl/wgpu) |
 | >4 influences | Fixed 4; glTF reads only JOINTS_0/WEIGHTS_0, JOINTS_1 dropped (renormalized, silent) | all | MINOR |
 
 ### Resource Loading, Streaming & Lifecycle
