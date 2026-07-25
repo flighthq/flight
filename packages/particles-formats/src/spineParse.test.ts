@@ -255,6 +255,16 @@ describe('parseSpineParticleDocument', () => {
       expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
       expect(crumb!.origin).toBe('collectSpineDiagnostics');
     });
+
+    it('reports spine.premultiplied-informational (Skip) when premultiplied is set (matches libgdx)', () => {
+      const json = JSON.stringify({ ...JSON.parse(SPARK_JSON), premultiplied: true });
+      const crumb = parseSpineParticleDocument(json).diagnostics.find(
+        (d) => d.kind === 'spine.premultiplied-informational',
+      );
+      expect(crumb).toBeDefined();
+      expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+      expect(crumb!.origin).toBe('collectSpineDiagnostics');
+    });
   });
 });
 

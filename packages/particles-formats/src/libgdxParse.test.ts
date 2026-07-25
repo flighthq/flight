@@ -340,4 +340,33 @@ describe('parseLibgdxParticleDocument', () => {
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
     expect(crumb!.origin).toBe('collectLibgdxDiagnostics');
   });
+  it('reports libgdx.tint-reduced (Recover) for a multi-stop tint (>2 colors)', () => {
+    const { diagnostics } = parseLibgdxParticleDocument(
+      SPARK_P.replace('colors: ffaa00,ff0000', 'colors: ff0000,00ff00,0000ff'),
+    );
+    const crumb = diagnostics.find((d) => d.kind === 'libgdx.tint-reduced');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('collectLibgdxDiagnostics');
+  });
+  it('reports libgdx.transparency-reduced (Recover) for a multi-stop transparency (>2 stops)', () => {
+    const { diagnostics } = parseLibgdxParticleDocument(
+      // highMax: 1 is unique to the Transparency section (Scale's is 32), so this targets its scaling block.
+      SPARK_P.replace(
+        'highMax: 1\nrelative: false\nscalingCount: 2\nscaling0: 1\nscaling1: 0',
+        'highMax: 1\nrelative: false\nscalingCount: 3\nscaling0: 1\nscaling1: 0.5\nscaling2: 0',
+      ),
+    );
+    const crumb = diagnostics.find((d) => d.kind === 'libgdx.transparency-reduced');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb!.origin).toBe('collectLibgdxDiagnostics');
+  });
+  it('reports libgdx.spawn-edges-unsupported (Skip) when edge spawning is enabled', () => {
+    const { diagnostics } = parseLibgdxParticleDocument(SPARK_P.replace('shape: point', 'shape: point\nedges: true'));
+    const crumb = diagnostics.find((d) => d.kind === 'libgdx.spawn-edges-unsupported');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+    expect(crumb!.origin).toBe('collectLibgdxDiagnostics');
+  });
 });

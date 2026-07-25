@@ -170,4 +170,27 @@ describe('parseStarlingPexDocument', () => {
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
     expect(crumb!.origin).toBe('collectStarlingPexDiagnostics');
   });
+
+  it('reports starlingpex.finish-size-variance-unsupported (Skip)', () => {
+    const pex = FIRE_PEX_ATTR.replace('finishParticleSizeVariance" value="0"', 'finishParticleSizeVariance" value="4"');
+    const crumb = parseStarlingPexDocument(pex).diagnostics.find(
+      (d) => d.kind === 'starlingpex.finish-size-variance-unsupported',
+    );
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+    expect(crumb!.origin).toBe('collectStarlingPexDiagnostics');
+  });
+
+  it('reports starlingpex.alpha-variance-unsupported (Skip)', () => {
+    const pex = FIRE_PEX_ATTR.replace(
+      'startColorVariance" red="0" green="0" blue="0" alpha="0"',
+      'startColorVariance" red="0" green="0" blue="0" alpha="0.5"',
+    );
+    const crumb = parseStarlingPexDocument(pex).diagnostics.find(
+      (d) => d.kind === 'starlingpex.alpha-variance-unsupported',
+    );
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+    expect(crumb!.origin).toBe('collectStarlingPexDiagnostics');
+  });
 });

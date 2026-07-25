@@ -182,6 +182,16 @@ function collectSpineDiagnostics(raw: Record<string, unknown>): ImportDiagnostic
       'collectSpineDiagnostics',
     );
   }
+  if (raw.premultiplied === true) {
+    // The premultiplied-alpha flag is read but not acted on (blending behavior may differ) — matches the
+    // libgdx.premultiplied-alpha-informational crumb, so the two parsers agree.
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'spine.premultiplied-informational',
+      'collectSpineDiagnostics',
+    );
+  }
   return diagnostics;
 }
 

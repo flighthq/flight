@@ -253,9 +253,49 @@ function collectUnityDiagnostics(raw: Record<string, unknown>): ImportDiagnostic
     );
   }
 
+  // An enabled shape whose shapeType is none Flight maps falls through to a point emitter (substituted) → Recover.
+  const shape = raw.shape as Record<string, unknown> | undefined;
+  if (shape != null && typeof shape === 'object' && rb(shape.enabled, false)) {
+    const shapeType = rs(shape.shapeType, 'Cone');
+    if (!KNOWN_UNITY_SHAPES.has(shapeType)) {
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Recover,
+        'unity.shape-unsupported',
+        'collectUnityDiagnostics',
+        {
+          shapeType,
+        },
+      );
+    }
+  }
+
+  // prewarm is read into the document but not honored (Flight has no prewarm) — recognized-but-unmodeled.
+  if (rb(raw.prewarm, false)) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'unity.prewarm-unsupported',
+      'collectUnityDiagnostics',
+    );
+  }
+
+  // startRotation is read but rotation is derived only from rotationOverLifetime, so an initial rotation is dropped.
+  const startRotation = readMinMax(raw.startRotation, 0);
+  if (startRotation.constant !== 0 || startRotation.constantMin !== 0 || startRotation.constantMax !== 0) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'unity.start-rotation-unsupported',
+      'collectUnityDiagnostics',
+    );
+  }
+
   // Multi-stop color gradients are now baked into a colorCurve, so they no longer report.
   return diagnostics;
 }
+
+const KNOWN_UNITY_SHAPES = new Set(['Sphere', 'Hemisphere', 'Circle', 'Box', 'Rectangle', 'Cone']);
 
 // Unity gradient colorKeys → baked color curve, but only for genuine multi-stop
 // gradients (≤2 stops are exactly the linear start→end path already handled).

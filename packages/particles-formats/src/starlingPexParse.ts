@@ -77,6 +77,24 @@ function collectStarlingPexDiagnostics(doc: Readonly<StarlingPexDocument>): Impo
       'collectStarlingPexDiagnostics',
     );
   }
+  if (doc.finishParticleSizeVariance !== 0) {
+    // Flight's scaleEnd is a single ratio with no end-size variance — recognized but not modeled.
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'starlingpex.finish-size-variance-unsupported',
+      'collectStarlingPexDiagnostics',
+    );
+  }
+  if (doc.startColorVariance.alpha !== 0 || doc.finishColorVariance.alpha !== 0) {
+    // The config carries only RGB color variance, so alpha-channel color variance is dropped.
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'starlingpex.alpha-variance-unsupported',
+      'collectStarlingPexDiagnostics',
+    );
+  }
   return diagnostics;
 }
 

@@ -281,6 +281,33 @@ describe('parseUnityParticleDocument', () => {
       expect(crumb!.origin).toBe('collectUnityDiagnostics');
       expect(crumb!.detail?.burstCount).toBe(2);
     });
+
+    it('recovers and reports unity.shape-unsupported for an enabled shape Flight does not map', () => {
+      const json = JSON.stringify({ ...JSON.parse(SMOKE_JSON), shape: { enabled: true, shapeType: 'Donut' } });
+      const crumb = parseUnityParticleDocument(json).diagnostics.find((d) => d.kind === 'unity.shape-unsupported');
+      expect(crumb).toBeDefined();
+      expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+      expect(crumb!.origin).toBe('collectUnityDiagnostics');
+      expect(crumb!.detail?.shapeType).toBe('Donut');
+    });
+
+    it('reports unity.prewarm-unsupported (Skip) when prewarm is true', () => {
+      const json = JSON.stringify({ ...JSON.parse(SMOKE_JSON), prewarm: true });
+      const crumb = parseUnityParticleDocument(json).diagnostics.find((d) => d.kind === 'unity.prewarm-unsupported');
+      expect(crumb).toBeDefined();
+      expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+      expect(crumb!.origin).toBe('collectUnityDiagnostics');
+    });
+
+    it('reports unity.start-rotation-unsupported (Skip) for a non-zero startRotation', () => {
+      const json = JSON.stringify({ ...JSON.parse(SMOKE_JSON), startRotation: { mode: 'constant', constant: 45 } });
+      const crumb = parseUnityParticleDocument(json).diagnostics.find(
+        (d) => d.kind === 'unity.start-rotation-unsupported',
+      );
+      expect(crumb).toBeDefined();
+      expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+      expect(crumb!.origin).toBe('collectUnityDiagnostics');
+    });
   });
 });
 

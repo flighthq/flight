@@ -97,6 +97,38 @@ function collectLibgdxDiagnostics(doc: LibgdxParticleDocument): ImportDiagnostic
       'collectLibgdxDiagnostics',
     );
   }
+  // NOTE: libGDX's Emission rate is dropped (spawnRate is never set) on EVERY file, so a crumb here would
+  // fire on every import and break the clean-import contract. That is a systemic unmodeled-feature gap best
+  // closed by MODELING spawnRate (logged as feature-half deepening in particles-formats/status.md), not by an
+  // always-firing diagnostic. The conditional drops below only crumb when the specific feature is present.
+  if (doc.tint.colors.length > 2) {
+    // Only the first and last tint stops are imported (no colorCurve is built), so intermediate stops of a
+    // multi-color tint are approximated away — a substituted 2-stop gradient.
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'libgdx.tint-reduced',
+      'collectLibgdxDiagnostics',
+    );
+  }
+  if (doc.transparency.scaling.length > 2) {
+    // Same as tint: only the first/last transparency stops are imported (no alphaCurve is built).
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'libgdx.transparency-reduced',
+      'collectLibgdxDiagnostics',
+    );
+  }
+  if (doc.spawnShape.edges || doc.spawnShape.side !== 'both') {
+    // Edge-only spawning and a single spawn side (top/bottom) are shape modifiers Flight does not model.
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'libgdx.spawn-edges-unsupported',
+      'collectLibgdxDiagnostics',
+    );
+  }
   return diagnostics;
 }
 
