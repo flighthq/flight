@@ -21,10 +21,18 @@ the SAME convention as gltf `glb.chunk-past-end` (a break that keeps already-par
 recovery, not a Drop). Then a sweep-safe fix batch closed silent-drop gaps that had a sibling precedent:
 `3ds.face-subchunk-exceeds`/`3ds.mesh-empty`/`3ds.material-missing`, `md5mesh.shader-unquoted`,
 `gltf.node-child-out-of-range`/`gltf.animation-target-unresolved`, `md2.skin-empty-path`,
-`awd2.geometry-truncated`/`awd2.submesh-truncated`. Remaining sequenced honesty work (review-ruled, all
-through review2): C = thread the collector through the gltf material/image/texture subtree; B-diag = a
-Skip-crumb sweep so every parser crumbs its recognized-but-unmodeled features; D = gltf primitive/accessor
-Drop-vs-Recover (no-POSITION primitive should actually drop the empty mesh).
+`awd2.geometry-truncated`/`awd2.submesh-truncated`. The sequenced honesty work is now COMPLETE (review-ruled,
+all through review2): A = the sweep-safe silent-drop batch above; C = threaded the collector through the gltf
+material/image/texture subtree; B-diag = a Skip-crumb sweep so every parser crumbs its recognized-but-unmodeled
+features; D = gltf primitive/accessor Drop-vs-Recover. D's rulings: a no-POSITION (or 0-vertex-POSITION)
+primitive is now DROPPED — `primitiveToGeometry` returns null and the mesh loop `continue`s, so an empty-shell
+mesh is never emitted (`gltf.primitive-no-position` Drop, matching `md5mesh.mesh-empty`); a NON-position accessor
+fault (normals/uv/indices) where POSITION survives leaves a degraded-but-usable mesh = Recover, so
+`gltf.accessor-not-found`/`-buffer-not-found`/`-past-buffer`/`-bufferview-not-found` and
+`gltf.primitive-unsupported-mode` are all Recover. **Output-shape change flagged to review2**: dropping the
+no-POSITION primitive means fewer mesh nodes, so a consumer assuming glTF-primitive-index↔child-node alignment
+would shift; if that alignment is ever needed we relabel-only (keep the empty mesh, Recover) instead. No such
+consumer exists today.
 
 **AWD skeleton-binding / multi-skeleton — DECIDED DEFERRED NON-GOAL (user-pinned 2026-07-25).** Not
 "blocked awaiting a multi-skeleton .awd + animator-block spec" — it is deferred because AWD is a legacy
