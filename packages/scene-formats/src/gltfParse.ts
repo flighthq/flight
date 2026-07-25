@@ -8,6 +8,7 @@ import {
   multiplyMatrix4,
 } from '@flighthq/geometry';
 import { detectImageMimeType } from '@flighthq/image-codec';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh';
 import { createSceneFromDocument, createScenesFromDocument } from '@flighthq/scene';
@@ -16,6 +17,7 @@ import type { Scene } from '@flighthq/types';
 import type {
   AnimationInterpolation,
   ImageResourceReference,
+  ImportDiagnostic,
   Material,
   MaterialLike,
   MeshGeometry,
@@ -51,6 +53,7 @@ import type {
   GltfTextureInfo,
 } from '@flighthq/types';
 import {
+  ImportDiagnosticSeverity,
   MeshKind,
   SceneAnimationPathRotation,
   SceneAnimationPathScale,
@@ -64,13 +67,13 @@ import {
 // empty Scene.
 export function createSceneFromGlb(
   bytes: Readonly<Uint8Array>,
-  warnings?: string[],
+  diagnostics?: ImportDiagnostic[],
   options?: Readonly<GltfImportOptions>,
 ): Scene {
-  const container = readGlbContainer(bytes, warnings);
+  const container = readGlbContainer(bytes, diagnostics);
   if (container === null) return createSceneFromDocument(createEmptyGltfDocument());
   return createSceneFromDocument(
-    buildGltfDocument(container.document, container.binary, options, warnings),
+    buildGltfDocument(container.document, container.binary, options, diagnostics),
     container.document.scene ?? 0,
   );
 }
@@ -80,12 +83,12 @@ export function createSceneFromGlb(
 // JSON string returns an empty Scene.
 export function createSceneFromGltf(
   source: GltfDocument | string,
-  warnings?: string[],
+  diagnostics?: ImportDiagnostic[],
   options?: Readonly<GltfImportOptions>,
 ): Scene {
-  const doc = parseGltfSource(source, warnings);
+  const doc = parseGltfSource(source, diagnostics);
   if (doc === null) return createSceneFromDocument(createEmptyGltfDocument());
-  return createSceneFromDocument(buildGltfDocument(doc, null, options, warnings), doc.scene ?? 0);
+  return createSceneFromDocument(buildGltfDocument(doc, null, options, diagnostics), doc.scene ?? 0);
 }
 
 // Parses a binary glTF (`.glb`) container into every scene it declares (`Scene[]`), each carrying its
@@ -93,10 +96,10 @@ export function createSceneFromGltf(
 // empty array.
 export function createScenesFromGlb(
   bytes: Readonly<Uint8Array>,
-  warnings?: string[],
+  diagnostics?: ImportDiagnostic[],
   options?: Readonly<GltfImportOptions>,
 ): Scene[] {
-  return createScenesFromDocument(parseGlb(bytes, warnings, options));
+  return createScenesFromDocument(parseGlb(bytes, diagnostics, options));
 }
 
 // Parses a glTF 2.0 document into every scene it declares (`Scene[]`), each carrying its geometry; the
@@ -104,10 +107,10 @@ export function createScenesFromGlb(
 // file declares multiple scenes. A malformed JSON string returns an empty array.
 export function createScenesFromGltf(
   source: GltfDocument | string,
-  warnings?: string[],
+  diagnostics?: ImportDiagnostic[],
   options?: Readonly<GltfImportOptions>,
 ): Scene[] {
-  return createScenesFromDocument(parseGltf(source, warnings, options));
+  return createScenesFromDocument(parseGltf(source, diagnostics, options));
 }
 
 // Parses a binary glTF (`.glb`) container into a format-neutral SceneDocument. The 12-byte header (magic
@@ -118,12 +121,12 @@ export function createScenesFromGltf(
 // `createSceneFromDocument`.
 export function parseGlb(
   bytes: Readonly<Uint8Array>,
-  warnings?: string[],
+  diagnostics?: ImportDiagnostic[],
   options?: Readonly<GltfImportOptions>,
 ): SceneDocument {
-  const container = readGlbContainer(bytes, warnings);
+  const container = readGlbContainer(bytes, diagnostics);
   if (container === null) return createEmptyGltfDocument();
-  return buildGltfDocument(container.document, container.binary, options, warnings);
+  return buildGltfDocument(container.document, container.binary, options, diagnostics);
 }
 
 // Parses a glTF 2.0 document (JSON string or already-parsed object) into a format-neutral SceneDocument:
@@ -141,30 +144,30 @@ export function parseGlb(
 // (`.bin`) buffers via `options.externalBuffers`.
 export function parseGltf(
   source: GltfDocument | string,
-  warnings?: string[],
+  diagnostics?: ImportDiagnostic[],
   options?: Readonly<GltfImportOptions>,
 ): SceneDocument {
-  const doc = parseGltfSource(source, warnings);
+  const doc = parseGltfSource(source, diagnostics);
   if (doc === null) return createEmptyGltfDocument();
-  return buildGltfDocument(doc, null, options, warnings);
+  return buildGltfDocument(doc, null, options, diagnostics);
 }
 
 // Parses the JSON string or accepts the already-parsed object, returning null (with a warning) on invalid
 // JSON or a non-object document.
-function parseGltfSource(source: GltfDocument | string, warnings?: string[]): GltfDocument | null {
+function parseGltfSource(source: GltfDocument | string, diagnostics?: ImportDiagnostic[]): GltfDocument | null {
   let doc: GltfDocument;
   if (typeof source === 'string') {
     try {
       doc = JSON.parse(source) as GltfDocument;
     } catch {
-      warnings?.push('parseGltf: source is not valid JSON; returning empty document');
+      reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'gltf.invalid-json', 'parseGltfSource');
       return null;
     }
   } else {
     doc = source;
   }
   if (doc === null || typeof doc !== 'object') {
-    warnings?.push('parseGltf: document is not an object; returning empty document');
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'gltf.not-an-object', 'parseGltfSource');
     return null;
   }
   return doc;
@@ -196,20 +199,29 @@ function buildGltfDocument(
   doc: Readonly<GltfDocument>,
   binary: Readonly<Uint8Array> | null,
   options: Readonly<GltfImportOptions> | undefined,
-  warnings?: string[],
+  diagnostics?: ImportDiagnostic[],
 ): SceneDocument {
+  // buildGltfDocument is the single physical emitter for every aggregated document-build crumb (hence the
+  // origin); the tallies store no origin. Every per-node/per-primitive/per-accessor fault it fans out to
+  // aggregates here and flushes once at the end. The pre-parse gates (parseGltfSource/readGlbContainer)
+  // report their whole-input Rejects directly with their own origins.
+  const gltfDrops = diagnostics ? new Map<string, GltfDropTally>() : null;
   const version = doc.asset?.version;
   if (version === undefined || !isSupportedGltfVersion(version)) {
-    warnings?.push(`parseGltf: unsupported glTF asset.version '${version ?? '(missing)'}' (expected 2.x)`);
+    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.unsupported-version', '', {
+      version: version ?? '(missing)',
+    });
   }
   if (doc.extensionsRequired !== undefined) {
     for (const extension of doc.extensionsRequired) {
       if (isSupportedGltfExtension(extension, options?.extensionHandlers)) continue;
-      warnings?.push(`parseGltf: required extension '${extension}' is not supported and was ignored`);
+      tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Skip, 'gltf.unsupported-required-extension', '', {
+        firstExtension: extension,
+      });
     }
   }
 
-  const buffers = (doc.buffers ?? []).map((buffer) => decodeGltfBuffer(buffer, binary, options, warnings));
+  const buffers = (doc.buffers ?? []).map((buffer) => decodeGltfBuffer(buffer, binary, options, gltfDrops));
   const imageResources = (doc.images ?? []).map((image) =>
     buildGltfImageResourceReference(doc, buffers, image, options),
   );
@@ -225,9 +237,9 @@ function buildGltfDocument(
     const docMeshIndices: number[] = [];
     for (let p = 0; p < gltfMesh.primitives.length; p++) {
       const primitive = gltfMesh.primitives[p];
-      const morph = buildGltfMorph(doc, buffers, primitive, gltfMesh.weights, warnings);
+      const morph = buildGltfMorph(doc, buffers, primitive, gltfMesh.weights, gltfDrops);
       const documentMesh: SceneDocumentMesh = {
-        geometry: primitiveToGeometry(doc, buffers, primitive, warnings),
+        geometry: primitiveToGeometry(doc, buffers, primitive, gltfDrops),
         materials: primitive.material !== undefined ? [primitive.material] : [],
       };
       if (morph !== null) documentMesh.morph = morph;
@@ -277,7 +289,7 @@ function buildGltfDocument(
     for (let c = 0; c < children.length; c++) parent.children.push(gltfNodeToDocNode[children[c]]);
   }
 
-  const skins = buildGltfSkins(doc, buffers, gltfNodeToDocNode, warnings);
+  const skins = buildGltfSkins(doc, buffers, gltfNodeToDocNode, gltfDrops);
   // Bind each glTF node's skin onto the document mesh(es) it produced (mesh.skin = skin index).
   for (let i = 0; i < gltfNodes.length; i++) {
     const skinIndex = gltfNodes[i].skin;
@@ -298,10 +310,10 @@ function buildGltfDocument(
     gltfNodePrimitiveNodes,
     nodes,
     meshes,
-    warnings,
+    gltfDrops,
   );
-  const nodeWorldTransforms = buildGltfNodeWorldTransforms(gltfNodes, warnings);
-  const cameras = buildGltfCameras(doc, gltfNodes, gltfNodeToDocNode, nodeWorldTransforms, warnings);
+  const nodeWorldTransforms = buildGltfNodeWorldTransforms(gltfNodes, gltfDrops);
+  const cameras = buildGltfCameras(doc, gltfNodes, gltfNodeToDocNode, nodeWorldTransforms, gltfDrops);
   const document: SceneDocument = {
     animations,
     cameras,
@@ -320,8 +332,18 @@ function buildGltfDocument(
     gltfNodeToDocNode,
     nodeWorldTransforms,
     options?.extensionHandlers,
-    warnings,
+    gltfDrops,
+    diagnostics,
   );
+
+  if (gltfDrops !== null) {
+    for (const tally of gltfDrops.values()) {
+      reportImportDiagnostic(diagnostics, tally.severity, tally.kind, 'buildGltfDocument', {
+        ...tally.detail,
+        count: tally.count,
+      });
+    }
+  }
   return document;
 }
 
@@ -333,7 +355,7 @@ function buildGltfCameras(
   nodes: readonly GltfNode[],
   nodeIndices: readonly number[],
   nodeWorldTransforms: readonly Transform3D[],
-  warnings?: string[],
+  gltfDrops: Map<string, GltfDropTally> | null,
 ): SceneDocumentCamera[] {
   const cameras: SceneDocumentCamera[] = [];
   const definitions = doc.cameras ?? [];
@@ -342,7 +364,10 @@ function buildGltfCameras(
     if (cameraIndex === undefined) continue;
     const definition = definitions[cameraIndex];
     if (definition === undefined) {
-      warnings?.push(`parseGltf: node ${node} references missing camera ${cameraIndex}`);
+      tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.camera-missing', '', {
+        firstCamera: cameraIndex,
+        firstNode: node,
+      });
       continue;
     }
     if (definition.type === 'perspective' && definition.perspective !== undefined) {
@@ -354,7 +379,9 @@ function buildGltfCameras(
         (perspective.zfar !== undefined && !(perspective.zfar > perspective.znear)) ||
         (perspective.aspectRatio !== undefined && !(perspective.aspectRatio > 0))
       ) {
-        warnings?.push(`parseGltf: camera ${cameraIndex} has an invalid perspective view volume`);
+        tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.camera-invalid-perspective', '', {
+          firstCamera: cameraIndex,
+        });
         continue;
       }
       cameras.push({
@@ -379,7 +406,9 @@ function buildGltfCameras(
         !(orthographic.znear >= 0) ||
         !(orthographic.zfar > orthographic.znear)
       ) {
-        warnings?.push(`parseGltf: camera ${cameraIndex} has an invalid orthographic view volume`);
+        tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.camera-invalid-orthographic', '', {
+          firstCamera: cameraIndex,
+        });
         continue;
       }
       cameras.push({
@@ -396,7 +425,10 @@ function buildGltfCameras(
       });
       continue;
     }
-    warnings?.push(`parseGltf: camera ${cameraIndex} is missing its '${definition.type}' descriptor`);
+    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.camera-missing-descriptor', '', {
+      firstCamera: cameraIndex,
+      firstType: definition.type,
+    });
   }
   return cameras;
 }
@@ -407,22 +439,30 @@ function applyGltfExtensionHandlers(
   nodeIndices: readonly number[],
   nodeWorldTransforms: readonly Transform3D[],
   handlers: readonly GltfExtensionHandler[] | undefined,
-  warnings?: string[],
+  gltfDrops: Map<string, GltfDropTally> | null,
+  diagnostics: ImportDiagnostic[] | undefined,
 ): void {
   if (handlers === undefined || handlers.length === 0) return;
   const selected = new Map<string, GltfExtensionHandler>();
   for (const handler of handlers) {
-    if (selected.has(handler.kind)) warnings?.push(`parseGltf: duplicate '${handler.kind}' handler; using the last`);
+    if (selected.has(handler.kind)) {
+      tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.duplicate-extension-handler', '', {
+        firstKind: handler.kind,
+      });
+    }
     selected.set(handler.kind, handler);
   }
+  // Handlers push structured crumbs straight onto the raw diagnostics array (aggregating their own
+  // per-element faults, as the built-in punctual-lights handler does); this is why the context carries the
+  // array, not the parser-private tally.
   const context: GltfExtensionContext = {
     buildNodeTransform(node) {
       return cloneGltfTransform(nodeWorldTransforms[node] ?? createIdentityTransform());
     },
+    diagnostics,
     document,
     nodeIndices,
     source,
-    warnings,
   };
   for (const handler of selected.values()) handler.apply(context);
 }
@@ -431,14 +471,20 @@ function applyGltfExtensionHandlers(
 // document tables are standalone placements, so their transform must remain useful even before a caller
 // binds the optional node index. A malformed cycle or second parent degrades deterministically with a
 // warning instead of recursing forever.
-function buildGltfNodeWorldTransforms(nodes: readonly GltfNode[], warnings?: string[]): Transform3D[] {
+function buildGltfNodeWorldTransforms(
+  nodes: readonly GltfNode[],
+  gltfDrops: Map<string, GltfDropTally> | null,
+): Transform3D[] {
   const parents = new Int32Array(nodes.length);
   parents.fill(-1);
   for (let parent = 0; parent < nodes.length; parent++) {
     for (const child of nodes[parent].children ?? []) {
       if (child < 0 || child >= nodes.length) continue;
       if (parents[child] !== -1) {
-        warnings?.push(`parseGltf: node ${child} has multiple parents; using ${parents[child]}`);
+        tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.node-multiple-parents', '', {
+          firstChild: child,
+          firstParent: parents[child],
+        });
         continue;
       }
       parents[child] = parent;
@@ -460,7 +506,9 @@ function buildGltfNodeWorldTransforms(nodes: readonly GltfNode[], warnings?: str
       let cycle = false;
       while (node >= 0 && state[node] !== 2) {
         if (state[node] === 1) {
-          warnings?.push(`parseGltf: node hierarchy cycle reaches node ${node}; treating it as a root`);
+          tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.node-hierarchy-cycle', '', {
+            firstNode: node,
+          });
           parents[node] = -1;
           for (let i = 0; i < stack.length; i++) state[stack[i]] = 0;
           cycle = true;
@@ -513,13 +561,13 @@ function buildGltfSkins(
   doc: Readonly<GltfDocument>,
   buffers: readonly Uint8Array[],
   gltfNodeToDocNode: readonly number[],
-  warnings?: string[],
+  gltfDrops: Map<string, GltfDropTally> | null,
 ): SceneDocumentSkin[] {
   return (doc.skins ?? []).map((gltfSkin) => {
     const joints = gltfSkin.joints.map((jointNodeIndex) => gltfNodeToDocNode[jointNodeIndex]);
     const inverseBind: { m: Float32Array }[] = [];
     if (gltfSkin.inverseBindMatrices !== undefined) {
-      const flat = readAccessor(doc, buffers, gltfSkin.inverseBindMatrices, warnings).data;
+      const flat = readAccessor(doc, buffers, gltfSkin.inverseBindMatrices, gltfDrops).data;
       for (let j = 0; j < joints.length; j++) {
         inverseBind.push({ m: Float32Array.from({ length: 16 }, (_, k) => flat[j * 16 + k] ?? 0) });
       }
@@ -541,7 +589,7 @@ function buildGltfAnimations(
   gltfNodePrimitiveNodes: readonly number[][],
   nodes: readonly SceneDocumentNode[],
   meshes: readonly SceneDocumentMesh[],
-  warnings?: string[],
+  gltfDrops: Map<string, GltfDropTally> | null,
 ): SceneDocumentAnimation[] {
   const animations: SceneDocumentAnimation[] = [];
   const gltfAnimations = doc.animations ?? [];
@@ -554,11 +602,13 @@ function buildGltfAnimations(
       if (targetNodeIndex === undefined || gltfNodeToDocNode[targetNodeIndex] === undefined) continue;
       const sampler = animation.samplers[channel.sampler];
       if (sampler === undefined) {
-        warnings?.push(`parseGltf: animation channel references missing sampler ${channel.sampler}`);
+        tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.animation-missing-sampler', '', {
+          firstSampler: channel.sampler,
+        });
         continue;
       }
-      const times = readAccessor(doc, buffers, sampler.input, warnings).data;
-      const values = readAccessor(doc, buffers, sampler.output, warnings).data;
+      const times = readAccessor(doc, buffers, sampler.input, gltfDrops).data;
+      const values = readAccessor(doc, buffers, sampler.output, gltfDrops).data;
       duration = Math.max(duration, times.length > 0 ? times[times.length - 1] : 0);
 
       if (channel.target.path === 'weights') {
@@ -576,13 +626,15 @@ function buildGltfAnimations(
           times,
           values,
           sampler.interpolation,
-          warnings,
+          gltfDrops,
         );
         continue;
       }
       const path = GLTF_ANIMATION_PATHS[channel.target.path];
       if (path === undefined) {
-        warnings?.push(`parseGltf: unsupported animation target path '${channel.target.path}'`);
+        tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Skip, 'gltf.animation-unsupported-path', '', {
+          firstPath: channel.target.path,
+        });
         continue;
       }
       const quaternion = path === SceneAnimationPathRotation;
@@ -613,7 +665,7 @@ function appendGltfWeightsChannels(
   times: ArrayLike<number>,
   values: ArrayLike<number>,
   interpolation: string | undefined,
-  warnings?: string[],
+  gltfDrops: Map<string, GltfDropTally> | null,
 ): void {
   let bound = 0;
   for (let i = 0; i < meshNodeIndices.length; i++) {
@@ -630,7 +682,7 @@ function appendGltfWeightsChannels(
     bound++;
   }
   if (bound === 0) {
-    warnings?.push('parseGltf: weights channel targets a node with no morphable mesh; skipped');
+    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.weights-no-morphable-mesh', '', {});
   }
 }
 
@@ -829,12 +881,14 @@ function decodeGltfBuffer(
   buffer: Readonly<GltfBuffer>,
   binary: Readonly<Uint8Array> | null,
   options: Readonly<GltfImportOptions> | undefined,
-  warnings?: string[],
+  gltfDrops: Map<string, GltfDropTally> | null,
 ): Uint8Array {
   const uri = buffer.uri;
   if (uri === undefined) {
     if (binary !== null) return binary as Uint8Array;
-    warnings?.push('decodeGltfBuffer: buffer has no uri and no GLB binary chunk; returning empty buffer');
+    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.buffer-empty', 'no-uri', {
+      reason: 'no-uri-no-binary',
+    });
     return new Uint8Array(0);
   }
   const comma = uri.indexOf(',');
@@ -843,9 +897,10 @@ function decodeGltfBuffer(
   }
   const supplied = options?.externalBuffers?.[uri];
   if (supplied !== undefined) return Uint8Array.from(supplied);
-  warnings?.push(
-    `decodeGltfBuffer: external buffer '${uri}' was not supplied via options.externalBuffers; returning empty buffer`,
-  );
+  tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.buffer-empty', 'external-missing', {
+    firstUri: uri,
+    reason: 'external-not-supplied',
+  });
   return new Uint8Array(0);
 }
 
@@ -906,26 +961,26 @@ function primitiveToGeometry(
   doc: Readonly<GltfDocument>,
   buffers: readonly Uint8Array[],
   primitive: Readonly<GltfPrimitive>,
-  warnings?: string[],
+  gltfDrops: Map<string, GltfDropTally> | null,
 ): MeshGeometry {
   const positionIndex = primitive.attributes.POSITION;
   if (positionIndex === undefined) {
-    warnings?.push('primitiveToGeometry: primitive has no POSITION attribute; returning empty geometry');
+    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.primitive-no-position', '', {});
     return createMeshGeometry({ layout: CANONICAL_LAYOUT, vertices: new Float32Array(0) });
   }
-  const position = readAccessor(doc, buffers, positionIndex, warnings);
+  const position = readAccessor(doc, buffers, positionIndex, gltfDrops);
   const vertexCount = position.count;
   const normal =
     primitive.attributes.NORMAL !== undefined
-      ? readAccessor(doc, buffers, primitive.attributes.NORMAL, warnings)
+      ? readAccessor(doc, buffers, primitive.attributes.NORMAL, gltfDrops)
       : null;
   const tangent =
     primitive.attributes.TANGENT !== undefined
-      ? readAccessor(doc, buffers, primitive.attributes.TANGENT, warnings)
+      ? readAccessor(doc, buffers, primitive.attributes.TANGENT, gltfDrops)
       : null;
   const uv =
     primitive.attributes.TEXCOORD_0 !== undefined
-      ? readAccessor(doc, buffers, primitive.attributes.TEXCOORD_0, warnings)
+      ? readAccessor(doc, buffers, primitive.attributes.TEXCOORD_0, gltfDrops)
       : null;
 
   // A primitive is skinned when it carries both influence channels; it then emits the skinned layout
@@ -933,11 +988,11 @@ function primitiveToGeometry(
   // float or normalized-integer weights, renormalized per vertex so any quantization drift still sums 1.
   const joints =
     primitive.attributes.JOINTS_0 !== undefined
-      ? readAccessor(doc, buffers, primitive.attributes.JOINTS_0, warnings)
+      ? readAccessor(doc, buffers, primitive.attributes.JOINTS_0, gltfDrops)
       : null;
   const weights =
     primitive.attributes.WEIGHTS_0 !== undefined
-      ? readAccessor(doc, buffers, primitive.attributes.WEIGHTS_0, warnings)
+      ? readAccessor(doc, buffers, primitive.attributes.WEIGHTS_0, gltfDrops)
       : null;
   const skinned = joints !== null && weights !== null;
 
@@ -985,9 +1040,9 @@ function primitiveToGeometry(
   // accepts 16- or 32-bit index buffers).
   const sourceIndices =
     primitive.indices !== undefined
-      ? Uint32Array.from(readAccessor(doc, buffers, primitive.indices, warnings).data)
+      ? Uint32Array.from(readAccessor(doc, buffers, primitive.indices, gltfDrops).data)
       : undefined;
-  const primitiveElements = buildGltfPrimitiveElements(primitive.mode ?? 4, sourceIndices, vertexCount, warnings);
+  const primitiveElements = buildGltfPrimitiveElements(primitive.mode ?? 4, sourceIndices, vertexCount, gltfDrops);
   return createMeshGeometry({
     indices: primitiveElements.indices,
     layout: skinned ? CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT : CANONICAL_LAYOUT,
@@ -1000,7 +1055,7 @@ function buildGltfPrimitiveElements(
   mode: number,
   source: Uint32Array<ArrayBuffer> | undefined,
   vertexCount: number,
-  warnings?: string[],
+  gltfDrops: Map<string, GltfDropTally> | null,
 ): { indices: Uint32Array<ArrayBuffer> | undefined; topology: PrimitiveTopology } {
   switch (mode) {
     case 0:
@@ -1018,7 +1073,9 @@ function buildGltfPrimitiveElements(
     case 6:
       return { indices: buildGltfTriangleFanIndices(source, vertexCount), topology: 'triangle-list' };
     default:
-      warnings?.push(`primitiveToGeometry: primitive mode ${mode} is not a glTF 2.0 mode; primitive omitted`);
+      tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.primitive-unsupported-mode', '', {
+        firstMode: mode,
+      });
       return { indices: new Uint32Array(0), topology: 'triangle-list' };
   }
 }
@@ -1066,7 +1123,7 @@ function buildGltfMorph(
   buffers: readonly Uint8Array[],
   primitive: Readonly<GltfPrimitive>,
   meshWeights: readonly number[] | undefined,
-  warnings?: string[],
+  gltfDrops: Map<string, GltfDropTally> | null,
 ): MeshMorph | null {
   const gltfTargets = primitive.targets;
   if (gltfTargets === undefined || gltfTargets.length === 0) return null;
@@ -1075,15 +1132,17 @@ function buildGltfMorph(
   for (let t = 0; t < gltfTargets.length; t++) {
     const target: Readonly<GltfMorphTarget> = gltfTargets[t];
     if (target.POSITION === undefined) {
-      warnings?.push(`buildGltfMorph: morph target ${t} has no POSITION delta; skipped`);
+      tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.morph-target-no-position', '', {
+        firstTarget: t,
+      });
       continue;
     }
-    const positionDeltas = Float32Array.from(readAccessor(doc, buffers, target.POSITION, warnings).data);
+    const positionDeltas = Float32Array.from(readAccessor(doc, buffers, target.POSITION, gltfDrops).data);
     const normalDeltas =
-      target.NORMAL !== undefined ? Float32Array.from(readAccessor(doc, buffers, target.NORMAL, warnings).data) : null;
+      target.NORMAL !== undefined ? Float32Array.from(readAccessor(doc, buffers, target.NORMAL, gltfDrops).data) : null;
     const tangentDeltas =
       target.TANGENT !== undefined
-        ? Float32Array.from(readAccessor(doc, buffers, target.TANGENT, warnings).data)
+        ? Float32Array.from(readAccessor(doc, buffers, target.TANGENT, gltfDrops).data)
         : null;
     targets.push({ normalDeltas, positionDeltas, tangentDeltas });
   }
@@ -1105,11 +1164,13 @@ function readAccessor(
   doc: Readonly<GltfDocument>,
   buffers: readonly Uint8Array[],
   accessorIndex: number,
-  warnings?: string[],
+  gltfDrops: Map<string, GltfDropTally> | null,
 ): { count: number; data: ArrayLike<number> } {
   const accessor = doc.accessors?.[accessorIndex];
   if (accessor === undefined) {
-    warnings?.push(`readAccessor: accessor ${accessorIndex} not found in document`);
+    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.accessor-not-found', '', {
+      firstAccessor: accessorIndex,
+    });
     return { count: 0, data: new Float32Array(0) };
   }
 
@@ -1126,7 +1187,10 @@ function readAccessor(
   if (view !== undefined) {
     const bytes = buffers[view.buffer];
     if (bytes === undefined) {
-      warnings?.push(`readAccessor: buffer ${view.buffer} not found for accessor ${accessorIndex}`);
+      tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.accessor-buffer-not-found', '', {
+        firstAccessor: accessorIndex,
+        firstBuffer: view.buffer,
+      });
       return { count: 0, data: new Float32Array(0) };
     }
     const elementByteSize = componentCount * componentByteSize;
@@ -1136,7 +1200,9 @@ function readAccessor(
     // component's end against the buffer's real length and bail with empty rather than throwing.
     const lastByteEnd = accessor.count > 0 ? baseOffset + (accessor.count - 1) * stride + elementByteSize : baseOffset;
     if (lastByteEnd > bytes.byteOffset + bytes.byteLength) {
-      warnings?.push(`readAccessor: accessor ${accessorIndex} runs past its buffer; returning empty`);
+      tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.accessor-past-buffer', '', {
+        firstAccessor: accessorIndex,
+      });
       return { count: 0, data: new Float32Array(0) };
     }
     const dataView = new DataView(bytes.buffer);
@@ -1148,7 +1214,10 @@ function readAccessor(
       }
     }
   } else if (accessor.sparse === undefined) {
-    warnings?.push(`readAccessor: bufferView ${bufferViewIndex} not found for accessor ${accessorIndex}`);
+    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.accessor-bufferview-not-found', '', {
+      firstAccessor: accessorIndex,
+      firstBufferView: bufferViewIndex,
+    });
     return { count: 0, data: new Float32Array(0) };
   }
 
@@ -1161,7 +1230,7 @@ function readAccessor(
       componentCount,
       normalize,
       out,
-      warnings,
+      gltfDrops,
     );
   }
 
@@ -1179,18 +1248,18 @@ function applyAccessorSparse(
   componentCount: number,
   normalize: boolean,
   out: { [index: number]: number },
-  warnings?: string[],
+  gltfDrops: Map<string, GltfDropTally> | null,
 ): void {
   const indicesView = doc.bufferViews?.[sparse.indices.bufferView];
   const valuesView = doc.bufferViews?.[sparse.values.bufferView];
   if (indicesView === undefined || valuesView === undefined) {
-    warnings?.push('applyAccessorSparse: sparse indices or values bufferView not found; sparse override skipped');
+    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.sparse-bufferview-not-found', '', {});
     return;
   }
   const indexBytes = buffers[indicesView.buffer];
   const valueBytes = buffers[valuesView.buffer];
   if (indexBytes === undefined || valueBytes === undefined) {
-    warnings?.push('applyAccessorSparse: sparse indices or values buffer not found; sparse override skipped');
+    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.sparse-buffer-not-found', '', {});
     return;
   }
   const indexView = new DataView(indexBytes.buffer);
@@ -1231,21 +1300,29 @@ function readComponent(view: Readonly<DataView>, componentType: GltfComponentTyp
 // optional BIN chunk. Returns null (with a warning) on any malformed header or chunk.
 function readGlbContainer(
   bytes: Readonly<Uint8Array>,
-  warnings?: string[],
+  diagnostics?: ImportDiagnostic[],
 ): { binary: Uint8Array | null; document: GltfDocument } | null {
   if (bytes.byteLength < GLB_HEADER_BYTES) {
-    warnings?.push('createSceneFromGlb: byte length is smaller than the 12-byte GLB header');
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'glb.header-too-small', 'readGlbContainer');
     return null;
   }
   const source = bytes as Uint8Array;
   const view = new DataView(source.buffer, source.byteOffset, source.byteLength);
   if (view.getUint32(0, true) !== GLB_MAGIC) {
-    warnings?.push("createSceneFromGlb: magic is not 'glTF'; not a GLB container");
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'glb.wrong-magic', 'readGlbContainer');
     return null;
   }
   const version = view.getUint32(4, true);
   if (version !== 2) {
-    warnings?.push(`createSceneFromGlb: unsupported GLB container version ${version} (expected 2)`);
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'glb.unsupported-version',
+      'readGlbContainer',
+      {
+        version,
+      },
+    );
     return null;
   }
   const declaredLength = view.getUint32(8, true);
@@ -1259,7 +1336,10 @@ function readGlbContainer(
     const chunkType = view.getUint32(offset + 4, true);
     const dataStart = offset + GLB_CHUNK_HEADER_BYTES;
     if (dataStart + chunkLength > end) {
-      warnings?.push('createSceneFromGlb: chunk length runs past the end of the container');
+      // Recover, not Reject: this stops the chunk walk and keeps whatever chunks parsed before it. If a valid
+      // JSON chunk was already read, the container is still usable and returned; if none was, the whole-input
+      // refusal is the separate glb.no-json-chunk Reject below (which returns the null sentinel).
+      reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Recover, 'glb.chunk-past-end', 'readGlbContainer');
       break;
     }
     const chunkData = source.subarray(dataStart, dataStart + chunkLength);
@@ -1268,7 +1348,12 @@ function readGlbContainer(
       try {
         document = JSON.parse(json) as GltfDocument;
       } catch {
-        warnings?.push('createSceneFromGlb: JSON chunk is not valid JSON');
+        reportImportDiagnostic(
+          diagnostics,
+          ImportDiagnosticSeverity.Reject,
+          'glb.json-chunk-invalid',
+          'readGlbContainer',
+        );
         return null;
       }
     } else if (chunkType === GLB_BIN_CHUNK && binary === null) {
@@ -1278,7 +1363,7 @@ function readGlbContainer(
   }
 
   if (document === null) {
-    warnings?.push('createSceneFromGlb: no JSON chunk found in the container');
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'glb.no-json-chunk', 'readGlbContainer');
     return null;
   }
   return { binary, document };
@@ -1383,3 +1468,34 @@ import {
   CANONICAL_LAYOUT,
   SKINNED_FLOATS_PER_VERTEX,
 } from './shared';
+
+// One accumulated glTF document-build drop: a total occurrence `count` plus the first offender's `detail`,
+// keyed by kind + discriminator. No origin is stored — buildGltfDocument flushes (physically reports) every
+// aggregated crumb, so it is their origin per the collector's emitting-function contract; `kind` carries the
+// drop-site granularity. The pre-parse gates (parseGltfSource/readGlbContainer) report their whole-input
+// Rejects directly and are not tallied.
+interface GltfDropTally {
+  count: number;
+  detail: Record<string, boolean | number | string>;
+  kind: string;
+  severity: ImportDiagnosticSeverity;
+}
+
+// Records one offender against its (kind, discriminator) tally — the aggregate-once alternative to a
+// per-node/per-primitive/per-accessor `reportImportDiagnostic` (readAccessor alone runs once per attribute
+// per primitive). No-op (never allocates) when no collector is engaged. `firstDetail` is kept from the FIRST
+// offender; later ones only bump the count. The discriminator is the categorical sub-reason (never an
+// instance index/uri), so faults of the same kind across many elements collapse to one crumb.
+function tallyGltfDrop(
+  tallies: Map<string, GltfDropTally> | null,
+  severity: ImportDiagnosticSeverity,
+  kind: string,
+  discriminator: string,
+  firstDetail: Record<string, boolean | number | string>,
+): void {
+  if (tallies === null) return;
+  const key = `${kind}|${discriminator}`;
+  const existing = tallies.get(key);
+  if (existing === undefined) tallies.set(key, { count: 1, detail: firstDetail, kind, severity });
+  else existing.count++;
+}
