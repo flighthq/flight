@@ -1,6 +1,5 @@
 import { createRectangle } from '@flighthq/geometry';
 import { getNode2DRuntime } from '@flighthq/scene2d';
-import { getQuadBatchCapacity } from '@flighthq/sprite';
 import type { BitmapTextRuntime, GlyphEntry, GlyphSource, ImageResource } from '@flighthq/types';
 import { BitmapTextKind } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
@@ -11,10 +10,9 @@ import {
   createBitmapTextData,
   createBitmapTextRuntime,
   getBitmapTextBounds,
-  getBitmapTextQuadBatches,
+  getBitmapTextPages,
   reserveBitmapText,
   setBitmapTextAlign,
-  setBitmapTextColor,
   setBitmapTextGlyphSource,
   setBitmapTextLetterSpacing,
   setBitmapTextLineHeight,
@@ -73,25 +71,23 @@ describe('computeBitmapTextLocalBoundsRectangle', () => {
 });
 
 describe('createBitmapText', () => {
-  it('creates a BitmapText node with a backing QuadBatch child', () => {
+  it('creates a BitmapText leaf owning one page and no child nodes', () => {
     const text = createBitmapText(createTestGlyphSource());
     expect(text.kind).toBe(BitmapTextKind);
-    const batches = getBitmapTextQuadBatches(text);
-    expect(batches).toHaveLength(1);
-    expect(getNode2DRuntime(text).children).toContain(batches[0]);
+    expect(getBitmapTextPages(text)).toHaveLength(1);
+    const children = getNode2DRuntime(text).children;
+    expect(children == null || children.length === 0).toBe(true);
   });
 
   it('applies construction options to node data', () => {
     const text = createBitmapText(createTestGlyphSource(), {
       align: 'center',
-      color: 0xff0000ff,
       letterSpacing: 2,
       lineHeight: 1.5,
       text: 'Hi',
       wrapWidth: 120,
     });
     expect(text.data.align).toBe('center');
-    expect(text.data.color).toBe(0xff0000ff);
     expect(text.data.letterSpacing).toBe(2);
     expect(text.data.lineHeight).toBe(1.5);
     expect(text.data.text).toBe('Hi');
@@ -106,10 +102,9 @@ describe('createBitmapText', () => {
 });
 
 describe('createBitmapTextData', () => {
-  it('defaults to left-aligned white empty unwrapped text', () => {
+  it('defaults to left-aligned empty unwrapped text', () => {
     const data = createBitmapTextData();
     expect(data.align).toBe('left');
-    expect(data.color).toBe(0xffffffff);
     expect(data.glyphSource).toBeNull();
     expect(data.letterSpacing).toBe(0);
     expect(data.lineHeight).toBe(1);
@@ -126,10 +121,10 @@ describe('createBitmapTextData', () => {
 });
 
 describe('createBitmapTextRuntime', () => {
-  it('starts with null bounds and no page batches', () => {
+  it('starts with null bounds and no pages', () => {
     const runtime = createBitmapTextRuntime();
     expect(runtime.localBoundsRectangle).toBeNull();
-    expect(runtime.quadBatches).toEqual([]);
+    expect(runtime.pages).toEqual([]);
   });
 });
 
@@ -145,20 +140,22 @@ describe('getBitmapTextBounds', () => {
   });
 });
 
-describe('getBitmapTextQuadBatches', () => {
-  it('returns the backing batches in page order, matching the node children', () => {
+describe('getBitmapTextPages', () => {
+  it('returns the owned pages in page order', () => {
     const text = createBitmapText(createTestGlyphSource());
-    const batches = getBitmapTextQuadBatches(text);
-    expect(batches).toHaveLength(1);
-    expect(batches[0]).toBe(getNode2DRuntime(text).children![0]);
+    const pages = getBitmapTextPages(text);
+    expect(pages).toHaveLength(1);
+    expect(pages[0].instanceCount).toBe(0);
   });
 });
 
 describe('reserveBitmapText', () => {
-  it('grows the backing quad batch capacity', () => {
+  it('grows each page quad-array capacity', () => {
     const text = createBitmapText(createTestGlyphSource());
     reserveBitmapText(text, 64);
-    expect(getQuadBatchCapacity(getBitmapTextQuadBatches(text)[0]!)).toBeGreaterThanOrEqual(64);
+    const page = getBitmapTextPages(text)[0];
+    expect(page.ids.length).toBeGreaterThanOrEqual(64);
+    expect(page.transforms.length).toBeGreaterThanOrEqual(128);
   });
 });
 
@@ -167,14 +164,6 @@ describe('setBitmapTextAlign', () => {
     const text = createBitmapText(createTestGlyphSource());
     setBitmapTextAlign(text, 'justify');
     expect(text.data.align).toBe('justify');
-  });
-});
-
-describe('setBitmapTextColor', () => {
-  it('mutates the color field', () => {
-    const text = createBitmapText(createTestGlyphSource());
-    setBitmapTextColor(text, 0x00ff00ff);
-    expect(text.data.color).toBe(0x00ff00ff);
   });
 });
 

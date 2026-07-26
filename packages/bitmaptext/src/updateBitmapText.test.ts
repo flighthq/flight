@@ -4,11 +4,10 @@ import {
   createStubGlyphRasterizerBackend,
   setGlyphRasterizerBackend,
 } from '@flighthq/glyphatlas';
-import { getNode2DColorAdjustments } from '@flighthq/scene2d';
-import type { ColorTransformAdjustment, GlyphEntry, GlyphSource, ImageResource } from '@flighthq/types';
+import type { GlyphEntry, GlyphSource, ImageResource } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
-import { createBitmapText, getBitmapTextBounds, getBitmapTextQuadBatches, setBitmapTextColor } from './bitmapText';
+import { createBitmapText, getBitmapTextBounds, getBitmapTextPages } from './bitmapText';
 import { updateBitmapText } from './updateBitmapText';
 
 // A deterministic single-page glyph source: every visible glyph is 6x8 with advance 10 and bearingY 8
@@ -59,9 +58,9 @@ describe('updateBitmapText', () => {
       const atlas = createGlyphAtlas({ fontFamily: 'unavailable', fontSize: 24, height: 256, width: 256 });
       const text = createBitmapText(createGlyphSourceFromGlyphAtlas(atlas), { text: 'Hi' });
       updateBitmapText(text);
-      const batches = getBitmapTextQuadBatches(text);
-      expect(batches.length).toBeGreaterThan(0);
-      expect(batches[0]!.data.instanceCount).toBe(2);
+      const pages = getBitmapTextPages(text);
+      expect(pages.length).toBeGreaterThan(0);
+      expect(pages[0]!.instanceCount).toBe(2);
     } finally {
       setGlyphRasterizerBackend(null);
     }
@@ -70,63 +69,63 @@ describe('updateBitmapText', () => {
   it('places each glyph at its cumulative advance, applying kerning', () => {
     const text = createBitmapText(createTestGlyphSource(), { text: 'AB' });
     updateBitmapText(text);
-    const data = getBitmapTextQuadBatches(text)[0]!.data;
-    expect(data.instanceCount).toBe(2);
-    expect(data.transforms[0]).toBe(0); // A.x
-    expect(data.transforms[1]).toBe(0); // A.y
-    expect(data.transforms[2]).toBe(8); // B.x = 10 (advance) - 2 (kerning)
-    expect(data.transforms[3]).toBe(0); // B.y
+    const page = getBitmapTextPages(text)[0]!;
+    expect(page.instanceCount).toBe(2);
+    expect(page.transforms[0]).toBe(0); // A.x
+    expect(page.transforms[1]).toBe(0); // A.y
+    expect(page.transforms[2]).toBe(8); // B.x = 10 (advance) - 2 (kerning)
+    expect(page.transforms[3]).toBe(0); // B.y
   });
 
   it('builds one atlas region per distinct glyph and references it by id', () => {
     const text = createBitmapText(createTestGlyphSource(), { text: 'AB' });
     updateBitmapText(text);
-    const data = getBitmapTextQuadBatches(text)[0]!.data;
-    expect(data.atlas!.regions).toHaveLength(2);
-    expect(data.ids[0]).toBe(0);
-    expect(data.ids[1]).toBe(1);
-    expect(data.atlas!.regions[0].x).toBe(0); // A rect
-    expect(data.atlas!.regions[1].x).toBe(6); // B rect
+    const page = getBitmapTextPages(text)[0]!;
+    expect(page.atlas.regions).toHaveLength(2);
+    expect(page.ids[0]).toBe(0);
+    expect(page.ids[1]).toBe(1);
+    expect(page.atlas.regions[0].x).toBe(0); // A rect
+    expect(page.atlas.regions[1].x).toBe(6); // B rect
   });
 
   it('reuses one region for repeated codepoints', () => {
     const text = createBitmapText(createTestGlyphSource(), { text: 'AA' });
     updateBitmapText(text);
-    const data = getBitmapTextQuadBatches(text)[0]!.data;
-    expect(data.instanceCount).toBe(2);
-    expect(data.atlas!.regions).toHaveLength(1);
-    expect(data.ids[0]).toBe(0);
-    expect(data.ids[1]).toBe(0);
+    const page = getBitmapTextPages(text)[0]!;
+    expect(page.instanceCount).toBe(2);
+    expect(page.atlas.regions).toHaveLength(1);
+    expect(page.ids[0]).toBe(0);
+    expect(page.ids[1]).toBe(0);
   });
 
   it('starts a new line at the metric line advance on an explicit newline', () => {
     const text = createBitmapText(createTestGlyphSource(), { text: 'A\nB' });
     updateBitmapText(text);
-    const data = getBitmapTextQuadBatches(text)[0]!.data;
-    expect(data.instanceCount).toBe(2);
-    expect(data.transforms[0]).toBe(0); // line 0 A.x
-    expect(data.transforms[1]).toBe(0); // line 0 A.y
-    expect(data.transforms[2]).toBe(0); // line 1 B.x
-    expect(data.transforms[3]).toBe(10); // line 1 B.y = 1 * (8 + 2 + 0)
+    const page = getBitmapTextPages(text)[0]!;
+    expect(page.instanceCount).toBe(2);
+    expect(page.transforms[0]).toBe(0); // line 0 A.x
+    expect(page.transforms[1]).toBe(0); // line 0 A.y
+    expect(page.transforms[2]).toBe(0); // line 1 B.x
+    expect(page.transforms[3]).toBe(10); // line 1 B.y = 1 * (8 + 2 + 0)
   });
 
   it('scales the line advance by lineHeight', () => {
     const text = createBitmapText(createTestGlyphSource(), { text: 'A\nB', lineHeight: 2 });
     updateBitmapText(text);
-    const data = getBitmapTextQuadBatches(text)[0]!.data;
-    expect(data.transforms[3]).toBe(20); // 2 * (8 + 2 + 0)
+    const page = getBitmapTextPages(text)[0]!;
+    expect(page.transforms[3]).toBe(20); // 2 * (8 + 2 + 0)
   });
 
   it('word-wraps at a word boundary when the width is exceeded', () => {
     const text = createBitmapText(createTestGlyphSource(), { text: 'AA AA', wrapWidth: 30 });
     updateBitmapText(text);
-    const data = getBitmapTextQuadBatches(text)[0]!.data;
-    expect(data.instanceCount).toBe(4);
+    const page = getBitmapTextPages(text)[0]!;
+    expect(page.instanceCount).toBe(4);
     let firstLine = 0;
     let secondLine = 0;
-    for (let i = 0; i < data.instanceCount; i++) {
-      if (data.transforms[i * 2 + 1] === 0) firstLine++;
-      else if (data.transforms[i * 2 + 1] === 10) secondLine++;
+    for (let i = 0; i < page.instanceCount; i++) {
+      if (page.transforms[i * 2 + 1] === 0) firstLine++;
+      else if (page.transforms[i * 2 + 1] === 10) secondLine++;
     }
     expect(firstLine).toBe(2);
     expect(secondLine).toBe(2);
@@ -135,62 +134,62 @@ describe('updateBitmapText', () => {
   it('keeps words on one line and honors space advance when no wrap is set', () => {
     const text = createBitmapText(createTestGlyphSource(), { text: 'AA AA' });
     updateBitmapText(text);
-    const data = getBitmapTextQuadBatches(text)[0]!.data;
-    expect(data.instanceCount).toBe(4);
-    for (let i = 0; i < data.instanceCount; i++) expect(data.transforms[i * 2 + 1]).toBe(0);
-    expect(data.transforms[4]).toBe(25); // third glyph: word1 width 20 + space 5
-    expect(data.transforms[6]).toBe(35);
+    const page = getBitmapTextPages(text)[0]!;
+    expect(page.instanceCount).toBe(4);
+    for (let i = 0; i < page.instanceCount; i++) expect(page.transforms[i * 2 + 1]).toBe(0);
+    expect(page.transforms[4]).toBe(25); // third glyph: word1 width 20 + space 5
+    expect(page.transforms[6]).toBe(35);
   });
 
   it('offsets a line for center alignment', () => {
     const text = createBitmapText(createTestGlyphSource(), { text: 'AB', wrapWidth: 100, align: 'center' });
     updateBitmapText(text);
-    const data = getBitmapTextQuadBatches(text)[0]!.data;
-    expect(data.transforms[0]).toBe(41); // (100 - 18) / 2
-    expect(data.transforms[2]).toBe(49); // 41 + 8
+    const page = getBitmapTextPages(text)[0]!;
+    expect(page.transforms[0]).toBe(41); // (100 - 18) / 2
+    expect(page.transforms[2]).toBe(49); // 41 + 8
   });
 
   it('offsets a line for right alignment', () => {
     const text = createBitmapText(createTestGlyphSource(), { text: 'AB', wrapWidth: 100, align: 'right' });
     updateBitmapText(text);
-    const data = getBitmapTextQuadBatches(text)[0]!.data;
-    expect(data.transforms[0]).toBe(82); // 100 - 18
+    const page = getBitmapTextPages(text)[0]!;
+    expect(page.transforms[0]).toBe(82); // 100 - 18
   });
 
   it('stretches inter-word gaps for justify on non-final lines', () => {
     const text = createBitmapText(createTestGlyphSource(), { text: 'AA AA AA', wrapWidth: 50, align: 'justify' });
     updateBitmapText(text);
-    const data = getBitmapTextQuadBatches(text)[0]!.data;
+    const page = getBitmapTextPages(text)[0]!;
     // Line 0 = "AA AA" justified to 50: gap 5 grows by (50 - 45) / 1 = 5, so word 2 starts at 30.
-    expect(data.transforms[4]).toBe(30);
-    expect(data.transforms[6]).toBe(40);
+    expect(page.transforms[4]).toBe(30);
+    expect(page.transforms[6]).toBe(40);
     // Line 1 = trailing "AA" (paragraph end) stays left.
     const line1 = [];
-    for (let i = 0; i < data.instanceCount; i++)
-      if (data.transforms[i * 2 + 1] === 10) line1.push(data.transforms[i * 2]);
+    for (let i = 0; i < page.instanceCount; i++)
+      if (page.transforms[i * 2 + 1] === 10) line1.push(page.transforms[i * 2]);
     expect(line1).toEqual([0, 10]);
   });
 
   it('omits a missing glyph with no quad and no advance', () => {
     const text = createBitmapText(createTestGlyphSource(), { text: 'A?B' });
     updateBitmapText(text);
-    const data = getBitmapTextQuadBatches(text)[0]!.data;
-    expect(data.instanceCount).toBe(2);
-    expect(data.transforms[0]).toBe(0); // A
-    expect(data.transforms[2]).toBe(8); // B placed as if '?' were absent (10 - 2 kerning)
+    const page = getBitmapTextPages(text)[0]!;
+    expect(page.instanceCount).toBe(2);
+    expect(page.transforms[0]).toBe(0); // A
+    expect(page.transforms[2]).toBe(8); // B placed as if '?' were absent (10 - 2 kerning)
   });
 
   it('adds letterSpacing after each glyph advance', () => {
     const text = createBitmapText(createTestGlyphSource(), { text: 'AB', letterSpacing: 1 });
     updateBitmapText(text);
-    const data = getBitmapTextQuadBatches(text)[0]!.data;
-    expect(data.transforms[2]).toBe(9); // 10 + 1 (spacing) - 2 (kerning)
+    const page = getBitmapTextPages(text)[0]!;
+    expect(page.transforms[2]).toBe(9); // 10 + 1 (spacing) - 2 (kerning)
   });
 
-  it('lays out an empty string as an empty batch without throwing', () => {
+  it('lays out an empty string as an empty page without throwing', () => {
     const text = createBitmapText(createTestGlyphSource(), { text: '' });
     expect(() => updateBitmapText(text)).not.toThrow();
-    expect(getBitmapTextQuadBatches(text)[0]!.data.instanceCount).toBe(0);
+    expect(getBitmapTextPages(text)[0]!.instanceCount).toBe(0);
     const bounds = getBitmapTextBounds(text);
     expect(bounds.width).toBe(0);
     expect(bounds.height).toBe(0);
@@ -206,47 +205,32 @@ describe('updateBitmapText', () => {
     expect(bounds.height).toBe(8);
   });
 
-  it('sets a whole-batch color-transform tint only for non-white colors', () => {
-    const text = createBitmapText(createTestGlyphSource(), { text: 'AB' });
-    updateBitmapText(text);
-    expect(getNode2DColorAdjustments(getBitmapTextQuadBatches(text)[0]!)).toBeNull();
-    setBitmapTextColor(text, 0xff0000ff);
-    updateBitmapText(text);
-    // One color-transform adjustment on the batch's runtime slot — a single whole-batch tint, not per-glyph.
-    const adjustments = getNode2DColorAdjustments(getBitmapTextQuadBatches(text)[0]!);
-    expect(adjustments).not.toBeNull();
-    expect(adjustments!).toHaveLength(1);
-    const colorTransform = (adjustments![0] as ColorTransformAdjustment).colorTransform;
-    expect(colorTransform.redMultiplier).toBe(1);
-    expect(colorTransform.greenMultiplier).toBe(0);
-  });
-
-  it('produces exactly one batch bound to the page-0 image for a single-page source', () => {
+  it('produces exactly one page bound to the page-0 image for a single-page source', () => {
     const source = createTestGlyphSource();
     const text = createBitmapText(source, { text: 'AB' });
     updateBitmapText(text);
-    const batches = getBitmapTextQuadBatches(text);
-    expect(batches).toHaveLength(1);
-    expect(batches[0].data.instanceCount).toBe(2);
-    expect(batches[0].data.atlas!.image).toBe(source.getGlyphAtlasImage(0));
+    const pages = getBitmapTextPages(text);
+    expect(pages).toHaveLength(1);
+    expect(pages[0].instanceCount).toBe(2);
+    expect(pages[0].atlas.image).toBe(source.getGlyphAtlasImage(0));
   });
 
-  it('partitions glyphs into one QuadBatch per page, each bound to its own page image', () => {
+  it('partitions glyphs into one page per glyph-atlas page, each bound to its own page image', () => {
     const { source, page0Image, page1Image } = createTwoPageGlyphSource();
     const text = createBitmapText(source, { text: 'AB' });
     updateBitmapText(text);
-    const batches = getBitmapTextQuadBatches(text);
-    expect(batches).toHaveLength(2);
+    const pages = getBitmapTextPages(text);
+    expect(pages).toHaveLength(2);
 
     // Page 0 holds 'A' only, sampling page0Image; page 1 holds 'B' only, sampling page1Image.
-    const page0 = batches[0].data;
-    const page1 = batches[1].data;
+    const page0 = pages[0];
+    const page1 = pages[1];
     expect(page0.instanceCount).toBe(1);
     expect(page1.instanceCount).toBe(1);
-    expect(page0.atlas!.image).toBe(page0Image);
-    expect(page1.atlas!.image).toBe(page1Image);
-    expect(page0.atlas!.regions[0].x).toBe(0); // A's rect on page 0
-    expect(page1.atlas!.regions[0].x).toBe(3); // B's rect on page 1
+    expect(page0.atlas.image).toBe(page0Image);
+    expect(page1.atlas.image).toBe(page1Image);
+    expect(page0.atlas.regions[0].x).toBe(0); // A's rect on page 0
+    expect(page1.atlas.regions[0].x).toBe(3); // B's rect on page 1
     expect(page0.transforms[0]).toBe(0); // A at pen origin
     expect(page1.transforms[0]).toBe(10); // B after A's advance (no kerning)
   });
