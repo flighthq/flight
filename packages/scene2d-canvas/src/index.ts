@@ -1,20 +1,11 @@
-export { renderCanvasBackground } from './canvasBackground';
-export { defaultCanvasBitmapRenderer } from './canvasBitmap';
-export { defaultCanvasBitmapTextRenderer } from './canvasBitmapText';
-export { createCanvasCacheState, enableCanvasRenderCache, refreshCanvasRenderCache } from './canvasCache';
-export { enableCanvasClip } from './canvasClip';
-export { createCanvasElement } from './canvasElement';
-export { enableCanvasBlendMode } from './canvasMaterials';
-export { renderCanvasScene2D } from './canvasNode2D';
-export { defaultCanvasParticleEmitter2DRenderer } from './canvasParticleEmitter2D';
-export { defaultCanvasQuadBatchRenderer } from './canvasQuadBatch';
-export { createCanvasRenderState } from './canvasRenderState';
-export { defaultCanvasRichTextRenderer } from './canvasRichText';
-export { defaultCanvasScale9ShapeRenderer } from './canvasScale9Shape';
-export { defaultCanvasShapeRenderer } from './canvasShape';
 export {
+  createCanvasCacheState,
+  createCanvasElement,
+  createCanvasRenderState,
   defaultCanvasBeginFill,
   defaultCanvasBeginGradientFill,
+  defaultCanvasBitmapRenderer,
+  defaultCanvasBitmapTextRenderer,
   defaultCanvasCubicCurveTo,
   defaultCanvasCurveTo,
   defaultCanvasDrawCircle,
@@ -27,11 +18,22 @@ export {
   defaultCanvasLineStyle,
   defaultCanvasLineTo,
   defaultCanvasMoveTo,
+  defaultCanvasParticleEmitter2DRenderer,
+  defaultCanvasQuadBatchRenderer,
+  defaultCanvasRichTextRenderer,
+  defaultCanvasScale9ShapeRenderer,
   defaultCanvasShapeCommands,
-} from './canvasShapeCommands';
-export { registerCanvasShapeCommands } from './canvasShapeRegistry';
-export { defaultCanvasSpriteRenderer } from './canvasSprite';
-export { enableCanvasTextInput } from './canvasTextInput';
-export { defaultCanvasTextLabelRenderer } from './canvasTextLabel';
-export { defaultCanvasTilemapRenderer } from './canvasTilemap';
-export { defaultCanvasVideoRenderer } from './canvasVideo';
+  defaultCanvasShapeRenderer,
+  defaultCanvasSpriteRenderer,
+  defaultCanvasTextLabelRenderer,
+  defaultCanvasTilemapRenderer,
+  defaultCanvasVideoRenderer,
+  enableCanvasBlendMode,
+  enableCanvasClip,
+  enableCanvasRenderCache,
+  enableCanvasTextInput,
+  refreshCanvasRenderCache,
+  registerCanvasShapeCommands,
+  renderCanvasBackground,
+  renderCanvasScene2D,
+} from './contract';
