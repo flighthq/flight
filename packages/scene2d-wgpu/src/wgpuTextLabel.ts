@@ -68,10 +68,10 @@ function destroyWgpuTextLabelData(state: WgpuRenderState, data: RendererData): v
   const runtime = getWgpuRenderStateRuntime(state);
   const textLabelData = getWgpuRendererData<WgpuTextLabelData>(data);
   if (textLabelData === null) return;
-  const entry = runtime.imageResourceTextureCache.get(textLabelData.image);
+  const entry = runtime.imageResourcePremultipliedTextureCache.get(textLabelData.image);
   if (entry !== undefined) {
     entry.texture.destroy();
-    runtime.imageResourceTextureCache.delete(textLabelData.image);
+    runtime.imageResourcePremultipliedTextureCache.delete(textLabelData.image);
   }
 }
 

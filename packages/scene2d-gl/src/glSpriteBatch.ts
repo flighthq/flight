@@ -170,7 +170,7 @@ export function flushGlSpriteBatch(state: GlRenderState): void {
   gl.bufferSubData(gl.ARRAY_BUFFER, 0, runtime.spriteBatchInstanceData, 0, count * SPRITE_INSTANCE_FLOATS);
 
   state.applyBlendMode?.(state, blendMode);
-  bindGlImageResourceTexture(state, texture, null, smoothing);
+  bindGlImageResourceTexture(state, texture, null, smoothing, true);
 
   // The color-adjustment fold is opt-in (enableGlColorAdjustment): when installed it selects and binds
   // its program for a tinted batch, returning true; when absent, or for an untinted batch, the lean

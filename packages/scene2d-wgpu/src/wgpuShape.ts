@@ -79,10 +79,10 @@ function destroyWgpuShapeData(state: WgpuRenderState, data: RendererData): void 
   const runtime = getWgpuRenderStateRuntime(state);
   const shapeData = getWgpuRendererData<WgpuShapeData>(data);
   if (shapeData === null) return;
-  const entry = runtime.imageResourceTextureCache.get(shapeData.image);
+  const entry = runtime.imageResourcePremultipliedTextureCache.get(shapeData.image);
   if (entry !== undefined) {
     entry.texture.destroy();
-    runtime.imageResourceTextureCache.delete(shapeData.image);
+    runtime.imageResourcePremultipliedTextureCache.delete(shapeData.image);
   }
   const b = shapeData.meshBuffers;
   b.vertexBuffer?.destroy();

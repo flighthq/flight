@@ -34,10 +34,10 @@ function destroyGlBitmapData(state: GlRenderState, data: RendererData): void {
   const runtime = getGlRenderStateRuntime(state);
   const { image } = data as unknown as GlBitmapData;
   if (image === null) return;
-  const entry = runtime.imageResourceTextureCache.get(image);
+  const entry = runtime.imageResourcePremultipliedTextureCache.get(image);
   if (entry !== undefined) {
     state.gl.deleteTexture(entry.texture);
-    runtime.imageResourceTextureCache.delete(image);
+    runtime.imageResourcePremultipliedTextureCache.delete(image);
   }
 }
 

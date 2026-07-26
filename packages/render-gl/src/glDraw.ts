@@ -34,19 +34,34 @@ export function applyGlBlendMode(state: GlRenderState, blendMode: BlendMode | nu
 // Binds (uploading + caching on first use, re-uploading when the pixels change) the GL texture for an
 // ImageResource — a bitmap, sprite atlas, or material map — and applies the sampler's full state. The
 // resource-level sibling of bindGlTexture (which takes a raw element): it accepts an element-backed OR a
-// data-only generated Surface (source-or-data upload via uploadGlDisplayTexture), and caches by the
-// resource entity in imageResourceTextureCache, keyed with the uploaded `version` so an in-place Surface
+// data-only generated Surface (source-or-data upload via uploadGlBoundImageResource), and caches by the
+// resource entity in imageResourcePremultipliedTextureCache, keyed with the uploaded `version` so an in-place Surface
 // edit (which bumps version) re-uploads without the caller tracking it. Sampler state is re-applied every
 // bind so a resource reused by two materials with different samplers follows the current draw.
+//
+// `premultiply` states whether the caller wants a premultiplied GPU texture — bind never premultiplies on
+// its own. The 2D display and particle pipelines blend premultiplied (ONE, ONE_MINUS_SRC_ALPHA) and pass
+// true; the 3D forward path blends straight (SRC_ALPHA) and reads baseColor.rgb as un-premultiplied
+// albedo, so it leaves the default false. The request is honest about the data's declared alphaType: the
+// premultiply is applied on upload only when the pixels are not already premultiplied
+// (`premultiply && alphaType !== 'premultiplied'`), so an already-premultiplied resource uploads as-is
+// instead of double-premultiplying, and false never transforms. The two request modes cache separate GL
+// textures (imageResourcePremultipliedTextureCache for premultiply, imageResourceStraightTextureCache otherwise), keyed
+// by the request so one ImageResource bound by both a premultiplied 2D sprite and a straight 3D material
+// keeps a correct texture for each — and the 2D teardown paths that reach imageResourcePremultipliedTextureCache
+// directly always find their (premultiply-requested) texture there.
 export function bindGlImageResourceTexture(
   state: GlRenderState,
   image: Readonly<ImageResource>,
   sampler?: Readonly<SamplerLike> | null,
   smoothingOverride?: boolean | null,
+  premultiply = false,
 ): WebGLTexture {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
-  const cache = runtime.imageResourceTextureCache;
+  const cache = premultiply
+    ? runtime.imageResourcePremultipliedTextureCache
+    : runtime.imageResourceStraightTextureCache;
   let entry = cache.get(image);
   if (entry === undefined) {
     entry = { texture: gl.createTexture()!, version: -1 };
@@ -56,7 +71,7 @@ export function bindGlImageResourceTexture(
   runtime.currentTexture = entry.texture;
   runtime.currentTextureStraightAlpha = image.compressed !== null && image.alphaType === 'straight';
   if (entry.version !== image.version) {
-    uploadGlDisplayTexture(state, image);
+    uploadGlBoundImageResource(state, image, premultiply && image.alphaType !== 'premultiplied');
     entry.version = image.version;
   }
   applyGlSamplerState(state, runtime, entry.texture, sampler ?? null, smoothingOverride ?? null);
@@ -278,18 +293,20 @@ export function useGlProgram(state: GlRenderState, shader?: GlBitmapShader): voi
   }
 }
 
-// Uploads an ImageResource into the currently-bound texture for the 2D display pipeline. The element
-// fast-path premultiplies via UNPACK_PREMULTIPLY_ALPHA_WEBGL (straight-alpha element under a premultiplied
-// (ONE, ONE_MINUS_SRC_ALPHA) blend would otherwise blow a 40%-white shape to opaque white). That flag is
-// ignored for raw-data (ArrayBufferView) uploads, so straight-alpha `data` is premultiplied on the CPU
-// first; opaque data (alpha 255, e.g. a normal/roughness map) premultiplies to itself, so this is a no-op
-// there. The data path is what makes a memory-generated Surface a first-class 2D texture. A resource that
-// carries only a block-`compressed` payload (no element or data) uploads through the GPU-native compressed
-// path — falling back to the state's registered RGBA decoder when the device lacks the block format.
-function uploadGlDisplayTexture(state: GlRenderState, image: Readonly<ImageResource>): void {
+// Uploads an ImageResource into the currently-bound TEXTURE_2D. `premultiply` is the caller's already
+// alphaType-resolved decision (see bindGlImageResourceTexture) to produce a premultiplied GPU texture:
+// when set, the element fast-path premultiplies via UNPACK_PREMULTIPLY_ALPHA_WEBGL and raw `data` (for
+// which that flag is ignored) is premultiplied on the CPU. When clear, both upload the pixels as-is, so
+// the straight-blend 3D forward path gets its albedo untouched and no data map (normal/roughness) is
+// corrupted. The data path is what makes a memory-generated Surface a first-class texture. A resource
+// that carries only a block-`compressed` payload (no element or data) uploads through the GPU-native
+// compressed path — falling back to the state's registered RGBA decoder when the device lacks the block
+// format; compressed blocks are never premultiplied here (the display shader premultiplies a straight
+// sample at draw time instead).
+function uploadGlBoundImageResource(state: GlRenderState, image: Readonly<ImageResource>, premultiply: boolean): void {
   const gl = state.gl;
   if (image.source !== null) {
-    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, premultiply);
     uploadGlTextureElement(gl, gl.TEXTURE_2D, image.source as TexImageSource);
     return;
   }
@@ -301,7 +318,7 @@ function uploadGlDisplayTexture(state: GlRenderState, image: Readonly<ImageResou
     runtime.compressedTextureUpload?.(gl, image, runtime.compressedTextureDecoder ?? null);
     return;
   }
-  const data = image.alphaType === 'straight' ? premultiplyStraightRgba8(image.data!) : image.data!;
+  const data = premultiply ? premultiplyStraightRgba8(image.data!) : image.data!;
   uploadGlTextureData(gl, gl.TEXTURE_2D, image.width, image.height, data);
 }
 

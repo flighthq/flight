@@ -93,7 +93,12 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // ImageResource texture cache: content-backed images (bitmaps, atlases, material maps), element-backed OR
   // a data-only generated Surface. Keyed by the resource entity so a data-only Surface caches too, with the
   // uploaded `version` tracked so bindWgpuImageResourceTexture re-uploads when the pixels change.
-  imageResourceTextureCache: WeakMap<ImageResource, WgpuImageResourceTextureEntry>;
+  imageResourcePremultipliedTextureCache: WeakMap<ImageResource, WgpuImageResourceTextureEntry>;
+  // Straight (upload-as-is) sibling of imageResourcePremultipliedTextureCache: the GPU texture for an ImageResource bound
+  // WITHOUT a premultiply request, used by the straight-blend 3D forward path (and any caller passing
+  // premultiply=false). Split from the premultiplied cache — same keying and version tracking — so one
+  // ImageResource bound both premultiplied (2D) and straight (3D) keeps a correct texture for each.
+  imageResourceStraightTextureCache: WeakMap<ImageResource, WgpuImageResourceTextureEntry>;
   // Optional block-compressed upload and CPU-decode seams. The uploader is installed explicitly so
   // ordinary bitmap bundles do not retain the format table; the decoder is consulted only when the
   // device lacks the container's native family.

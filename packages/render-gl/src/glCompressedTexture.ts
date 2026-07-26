@@ -207,7 +207,7 @@ export function registerGlCompressedTextureDecoder(
 
 // Installs the block-compressed upload seam on a render state, opting the ~40-format
 // uploadGlCompressedTextureContainer path into the bundle only for a state that actually draws a
-// compressed texture. The 2D display draw path (uploadGlDisplayTexture) reads the installed handler off
+// compressed texture. The 2D display draw path (uploadGlBoundImageResource) reads the installed handler off
 // the runtime and skips a compressed-only resource when none is registered, so a plain element/data
 // bitmap never carries the compression enum table. Opt-in and last-write-wins; pass null to clear a
 // previously installed uploader. The installed handler bridges a compressed ImageResource to

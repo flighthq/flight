@@ -23,21 +23,38 @@ export function applyWgpuBlendMode(state: WgpuRenderState, blendMode: BlendMode 
 
 // The resource-level sibling of bindWgpuTexture: uploads and caches the GPU texture for an ImageResource
 // — a bitmap, sprite atlas, or material map — accepting an element-backed OR a data-only generated Surface.
-// Keyed by the resource entity in imageResourceTextureCache with the uploaded content version, so an
-// in-place Surface edit (which bumps version) re-uploads (recreating the GPU texture). Textures are stored
-// premultiplied to match the premultiplied (ONE, ONE_MINUS_SRC_ALPHA) blend: an element copies with
-// premultipliedAlpha, and straight-alpha `data` is premultiplied on the CPU (writeTexture does no alpha
-// conversion). Returns the texture, view, and 2D bind group.
+// Keyed by the resource entity with the uploaded content version, so an in-place Surface edit (which bumps
+// version) re-uploads (recreating the GPU texture). `premultiply` states whether the caller wants a
+// premultiplied GPU texture — bind never premultiplies on its own. The 2D display and particle pipelines
+// blend premultiplied (ONE, ONE_MINUS_SRC_ALPHA) and pass true; the 3D forward path blends straight
+// (SRC_ALPHA) and reads baseColor.rgb as un-premultiplied albedo, so it leaves the default false. The
+// request honors the data's declared alphaType: the premultiply is applied on upload only when the pixels
+// are not already premultiplied (an element copies with premultipliedAlpha, straight `data` is
+// premultiplied on the CPU since writeTexture does no alpha conversion), so already-premultiplied data
+// uploads as-is instead of double-premultiplying. The two request modes cache separate textures
+// (imageResourcePremultipliedTextureCache for premultiply, imageResourceStraightTextureCache otherwise), keyed by the
+// request so one ImageResource bound both premultiplied (2D) and straight (3D) keeps a correct texture for
+// each, and the 2D teardown paths that reach imageResourcePremultipliedTextureCache directly always find theirs there.
+// Returns the texture, view, and 2D bind group.
 export function bindWgpuImageResourceTexture(
   state: WgpuRenderState,
   image: Readonly<ImageResource>,
   generateMips = false,
+  premultiply = false,
 ): WgpuTextureEntry {
-  const cache = getWgpuRenderStateRuntime(state).imageResourceTextureCache;
+  const runtime = getWgpuRenderStateRuntime(state);
+  const cache = premultiply
+    ? runtime.imageResourcePremultipliedTextureCache
+    : runtime.imageResourceStraightTextureCache;
   const cached = cache.get(image);
   if (cached !== undefined && cached.version === image.version) return cached;
 
-  const built = uploadWgpuImageResourceEntry(state, image, generateMips);
+  const built = uploadWgpuImageResourceEntry(
+    state,
+    image,
+    generateMips,
+    premultiply && image.alphaType !== 'premultiplied',
+  );
   if (cached !== undefined) {
     cached.texture.destroy();
     cached.texture = built.texture;
@@ -426,13 +443,17 @@ function premultiplyStraightRgba8(data: Readonly<Uint8ClampedArray<ArrayBuffer>>
 }
 
 // Allocates a GPU texture for an ImageResource and uploads its pixels through whichever representation it
-// carries — an element via copyExternalImageToTexture (premultipliedAlpha) or data via writeTexture (CPU
-// premultiply for straight alpha) — then builds the view + 2D bind group. The per-upload half of
-// bindWgpuImageResourceTexture, split out so the cache/version bracket stays legible.
+// carries — an element via copyExternalImageToTexture or data via writeTexture — then builds the view + 2D
+// bind group. `premultiply` is the caller's already alphaType-resolved decision (see
+// bindWgpuImageResourceTexture): when set, the element copies with premultipliedAlpha and straight `data`
+// is premultiplied on the CPU; when clear, both upload the pixels as-is so the straight-blend 3D path
+// keeps its albedo and data maps untouched. The per-upload half of bindWgpuImageResourceTexture, split out
+// so the cache/version bracket stays legible.
 function uploadWgpuImageResourceEntry(
   state: WgpuRenderState,
   image: Readonly<ImageResource>,
   generateMips: boolean,
+  premultiply: boolean,
 ): WgpuTextureEntry {
   const runtime = getWgpuRenderStateRuntime(state);
   const { device } = state;
@@ -452,11 +473,11 @@ function uploadWgpuImageResourceEntry(
   if (image.source !== null) {
     device.queue.copyExternalImageToTexture(
       { source: image.source as GPUCopyExternalImageSource, flipY: false },
-      { texture, premultipliedAlpha: true },
+      { texture, premultipliedAlpha: premultiply },
       [width, height],
     );
   } else if (image.data !== null) {
-    const data = image.alphaType === 'straight' ? premultiplyStraightRgba8(image.data!) : image.data!;
+    const data = premultiply ? premultiplyStraightRgba8(image.data!) : image.data!;
     device.queue.writeTexture({ texture }, data, { bytesPerRow: width * 4, rowsPerImage: height }, [width, height, 1]);
   }
   if (mipLevelCount > 1) generateWgpuMipmaps(state, texture, width, height, 'rgba8unorm');
