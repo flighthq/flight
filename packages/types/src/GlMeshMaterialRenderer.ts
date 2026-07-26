@@ -26,7 +26,7 @@ export interface GlMeshMaterialRenderer {
   // Bind the program and upload the per-run shared uniforms: the camera's view/projection matrices
   // and the packed light block. `material` carries this run's material uniforms and textures and is
   // null only for the default material renderer (a mesh subset whose material kind has no registered
-  // 3D renderer falls back to DefaultMaterialKind). Called once per contiguous run of subsets sharing
+  // 3D renderer falls back to StandardMaterialKind). Called once per contiguous run of subsets sharing
   // this material.
   bind(
     state: GlRenderState,

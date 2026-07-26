@@ -37,6 +37,7 @@ export interface GlScene3DIbl {
 export interface GlScene3DDrawEntry {
   alpha: number;
   clipW: number;
+  colorTransform: object | null;
   lightBlock: Scene3DLightBlock;
   material: object;
   mesh: object;

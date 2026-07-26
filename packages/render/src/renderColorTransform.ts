@@ -1,5 +1,5 @@
 import { getNodeRuntime } from '@flighthq/node';
-import type { Node, Renderable, RenderProxy, RenderState } from '@flighthq/types';
+import type { ColorAdjustmentRuntime, Node, Renderable, RenderProxy, RenderState } from '@flighthq/types';
 
 import { getRenderStateRuntime } from './renderState';
 
@@ -19,7 +19,7 @@ export function updateRenderProxyColorTransform(
   data: RenderProxy,
   _parentData?: RenderProxy,
 ): void {
-  const runtime = getNodeRuntime(data.source as Node);
+  const runtime = getNodeRuntime(data.source as Node) as Readonly<Partial<ColorAdjustmentRuntime>>;
   data.colorTransform = runtime.resolvedColorTransform ?? null;
   if (runtime.colorAdjustmentsChannelMixing) {
     getRenderStateRuntime(state).colorAdjustmentChannelMixingGuard?.(state, data.source as Renderable);

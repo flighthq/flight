@@ -2,9 +2,10 @@ import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flig
 import { getNodeWorldMatrix4 } from '@flighthq/node';
 import { prepareScene3DRender } from '@flighthq/render';
 import { declareWgpuRenderTargetColorSpace } from '@flighthq/render-wgpu';
-import { getNode3DWorldAlpha } from '@flighthq/scene3d';
+import { getNode3DRuntime, getNode3DWorldAlpha } from '@flighthq/scene3d';
 import type {
   Camera3D,
+  ColorTransform,
   Material,
   Matrix3,
   Matrix4,
@@ -20,7 +21,7 @@ import type {
   WgpuScene3DDrawEntry,
   WgpuScene3DForwardLightList,
 } from '@flighthq/types';
-import { DefaultMaterialKind, MAX_FORWARD_LIGHTS } from '@flighthq/types';
+import { StandardMaterialKind, MAX_FORWARD_LIGHTS } from '@flighthq/types';
 import type { WgpuSkinningAdapter } from '@flighthq/types';
 
 import { resolveWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
@@ -41,7 +42,7 @@ import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 // Subsets sharing the same resolved renderer + material are drawn under a single bind (the seam's
 // "contiguous run" contract): bind uploads the shared camera + light + material state once, then draw
 // issues the per-subset indexed draw. A subset whose material resolves to no renderer (and no
-// DefaultMaterialKind fallback) is skipped — no built-in fallback. Depth/cull state is owned by the
+// StandardMaterialKind fallback) is skipped — no built-in fallback. Depth/cull state is owned by the
 // material renderer's pipeline; the surrounding rgba16float scene render pass + depth attachment is
 // the effect pipeline's, not drawWgpuScene3D's. Must run inside an open render pass.
 export function drawWgpuScene3D(
@@ -74,6 +75,7 @@ export function drawWgpuScene3D(
     const clipW = vp[3] * wx + vp[7] * wy + vp[11] * wz + vp[15];
     const clipZ = vp[2] * wx + vp[6] * wy + vp[10] * wz + vp[14];
     const objectAlpha = getNode3DWorldAlpha(mesh);
+    const colorTransform = getNode3DRuntime(mesh).resolvedColorTransform;
 
     for (let s = 0; s < subsets.length; s++) {
       const material = resolveSubsetMaterial(mesh, s);
@@ -85,6 +87,7 @@ export function drawWgpuScene3D(
       const entry = acquireDrawEntry(blended ? runtime.blendedPool : runtime.opaquePool);
       entry.alpha = objectAlpha;
       entry.depth = clipZ / clipW;
+      entry.colorTransform = colorTransform;
       entry.lightBlock = hasPreparedForwardLights ? forwardLights.meshLightBlocks[m] : lightBlock;
       entry.material = resolvedMaterial;
       entry.mesh = mesh;
@@ -151,6 +154,7 @@ function drawEntries(
     }
 
     proxy.alpha = entry.alpha;
+    proxy.colorTransform = entry.colorTransform;
     proxy.jointMatrices = skinned ? entry.mesh.skin!.skeleton.jointMatrices : null;
     proxy.material = entry.material;
     proxy.normalMatrix = scratchNormalMatrix;
@@ -169,7 +173,7 @@ function hasExcessForwardLights(lights: Readonly<Scene3DLightsLike>): boolean {
 }
 
 // Resolves the Material for a subset index: the positional materials[i] entry, or null when the
-// slot is absent/null (the registry then falls back to DefaultMaterialKind, or skips the subset).
+// slot is absent/null (the registry then falls back to StandardMaterialKind, or skips the subset).
 function resolveSubsetMaterial(mesh: Readonly<Mesh>, subsetIndex: number): Readonly<Material> | null {
   const materials = mesh.materials;
   return subsetIndex < materials.length ? materials[subsetIndex] : null;
@@ -181,6 +185,7 @@ function compareBlendedEntriesDescending(a: WgpuScene3DDrawEntry, b: WgpuScene3D
 
 interface DrawEntry {
   alpha: number;
+  colorTransform: Readonly<ColorTransform> | null;
   depth: number;
   lightBlock: Readonly<Scene3DLightBlock>;
   material: Readonly<Material>;
@@ -202,6 +207,7 @@ function recycleDrawEntries(entries: WgpuScene3DDrawEntry[], pool: WgpuScene3DDr
 function createDrawEntry(): WgpuScene3DDrawEntry {
   return {
     alpha: 1,
+    colorTransform: null,
     depth: 0,
     lightBlock: null!,
     material: DEFAULT_MATERIAL,
@@ -216,8 +222,9 @@ function createDrawEntry(): WgpuScene3DDrawEntry {
 // duration of the draw call it is passed to; renderers must not retain it.
 const proxy: Scene3DRenderProxy = {
   alpha: 1,
+  colorTransform: null,
   jointMatrices: null,
-  material: { kind: DefaultMaterialKind } as Material,
+  material: { kind: StandardMaterialKind } as Material,
   normalMatrix: createMatrix3() as Matrix3,
   subset: { indexCount: 0, indexOffset: 0 },
   worldMatrix: createMatrix4() as Matrix4,
@@ -225,6 +232,6 @@ const proxy: Scene3DRenderProxy = {
 
 // Placeholder material for proxy.material when a subset resolved to the default-kind fallback with
 // no concrete material; the renderer treats a default/null material as its untextured defaults.
-const DEFAULT_MATERIAL = { kind: DefaultMaterialKind } as Material;
+const DEFAULT_MATERIAL = { kind: StandardMaterialKind } as Material;
 
 const scratchNormalMatrix = createMatrix3() as Matrix3;

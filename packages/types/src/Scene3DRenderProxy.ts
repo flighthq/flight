@@ -1,3 +1,4 @@
+import type { ColorTransform } from './ColorTransform';
 import type { Material } from './Material';
 import type { Matrix3 } from './Matrix3';
 import type { Matrix4 } from './Matrix4';
@@ -29,6 +30,9 @@ export interface Scene3DRenderProxy {
   // opaque (= 1); a honoring renderer multiplies its output alpha by this. Optional so existing proxy
   // literals stay valid.
   alpha?: number;
+  // Fused pointwise color adjustment for this object. Null keeps the lean base material variant;
+  // presence promotes the material renderer to its registered post-shade adjustment variant.
+  colorTransform?: Readonly<ColorTransform> | null;
   jointMatrices?: Readonly<Float32Array> | null;
   material: Readonly<Material>;
   normalMatrix: Readonly<Matrix3>;

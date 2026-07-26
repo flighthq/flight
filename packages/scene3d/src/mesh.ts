@@ -44,7 +44,7 @@ export function cloneMesh(source: Readonly<Mesh>): Mesh {
 
 // Allocates a renderable Mesh node: a Node3D (so it shares the scene hierarchy with group nodes
 // and other meshes) carrying `geometry` and one `materials` entry per geometry subset (indexed
-// positionally; a missing or null slot resolves to DefaultMaterialKind at draw time). The node has
+// positionally; a missing or null slot resolves to StandardMaterialKind at draw time). The node has
 // an identity localMatrix — its model matrix once placed in the hierarchy — and no children.
 // `geometry` and `materials` are stored by reference, not copied.
 export function createMesh(

@@ -4,8 +4,8 @@
 //
 // This is the generic off-entity replacement for the old HasColorTransform trait: the adjustment lives on
 // the node's runtime slot (setNode2DColorAdjustments), the set-accessor fuses it once into the affine
-// ColorTransform the fold consumes, and enableGlColorAdjustment installs the opt-in inline fold that turns
-// the white source red. Without enableGlColorAdjustment the tint would be skipped (drawn white).
+// ColorTransform the fold consumes, and registerGlColorAdjustmentMaterialFeature installs the opt-in inline fold that turns
+// the white source red. Without registerGlColorAdjustmentMaterialFeature the tint would be skipped (drawn white).
 //
 // Cross-backend parity: the fold is a GL/WGPU capability. The Canvas sibling (color-adjustment.canvas.ts)
 // has no fold, so it blits an already-red source to render the same red square — every backend draws the
@@ -14,13 +14,12 @@ import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   addTextureAtlasRegion,
-  createColorTransform,
-  createColorTransformAdjustment,
+  createTintAdjustment,
   createDisplayObject,
   createImageResource,
   createSprite,
   createTextureAtlas,
-  enableGlColorAdjustment,
+  registerGlColorAdjustmentMaterialFeature,
   getSurfacePixelRgb,
   invalidateNodeLocalTransform,
   setNode2DColorAdjustments,
@@ -41,7 +40,7 @@ const target = await createFunctionalTarget({
   kinds: [SpriteKind],
 });
 // Opt into the inline color-adjustment fold on this GL state (the tint would be skipped otherwise).
-if (target.kind === 'webgl') enableGlColorAdjustment(target.state);
+if (target.kind === 'webgl') registerGlColorAdjustmentMaterialFeature(target.state);
 const { render, width } = target;
 
 // Solid WHITE source — the fold tints it red at draw time.
@@ -66,11 +65,7 @@ sprite.data.id = 0;
 sprite.x = SPRITE_X;
 sprite.y = SPRITE_Y;
 // Red tint as a color-adjustment stack on the node runtime slot: keep red, zero green/blue, keep alpha.
-setNode2DColorAdjustments(sprite, [
-  createColorTransformAdjustment(
-    createColorTransform({ redMultiplier: 1, greenMultiplier: 0, blueMultiplier: 0, alphaMultiplier: 1 }),
-  ),
-]);
+setNode2DColorAdjustments(sprite, [createTintAdjustment(0xff0000ff)]);
 addNodeChild(root, sprite);
 invalidateNodeLocalTransform(sprite);
 

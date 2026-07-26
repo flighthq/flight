@@ -1,7 +1,6 @@
 import type { Entity } from './Entity';
 import { EntityRuntimeKey } from './Entity';
 import type { Material, MaterialData, MaterialLike } from './Material';
-import { DefaultMaterialKind } from './Material';
 
 describe('Material', () => {
   describe('Material base contract', () => {
@@ -62,18 +61,6 @@ describe('Material', () => {
     it('accepts any plain object', () => {
       const data: MaterialData = { color: 0xff0000ff, opacity: 1 };
       expect(data).toBeTruthy();
-    });
-  });
-
-  describe('DefaultMaterialKind', () => {
-    it('is the string DefaultMaterial', () => {
-      expect(DefaultMaterialKind).toBe('DefaultMaterial');
-    });
-
-    it('satisfies the Kind type constraint', () => {
-      // Compile-time assertion: DefaultMaterialKind is the literal type 'DefaultMaterial'
-      const kindLiteral: 'DefaultMaterial' = DefaultMaterialKind;
-      expect(kindLiteral).toBe('DefaultMaterial');
     });
   });
 });

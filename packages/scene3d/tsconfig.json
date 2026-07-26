@@ -9,6 +9,7 @@
     "sourceMap": true
   },
   "references": [
+    { "path": "../adjustments" },
     { "path": "../animation" },
     { "path": "../camera" },
     { "path": "../entity" },

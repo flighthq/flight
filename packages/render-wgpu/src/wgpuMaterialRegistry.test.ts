@@ -1,5 +1,5 @@
 import type { Material, WgpuMaterialRenderer, WgpuRenderState } from '@flighthq/types';
-import { DefaultMaterialKind, EntityRuntimeKey } from '@flighthq/types';
+import { StandardMaterialKind, EntityRuntimeKey } from '@flighthq/types';
 
 import {
   getWgpuMaterialRenderer,
@@ -47,9 +47,9 @@ describe('resolveWgpuMaterialRenderer', () => {
     expect(resolveWgpuMaterialRenderer(state, makeMaterial(TestKind))).toBe(testRenderer);
   });
 
-  it('falls back to the renderer registered for DefaultMaterialKind', () => {
+  it('falls back to the renderer registered for StandardMaterialKind', () => {
     const state = makeState();
-    registerWgpuMaterialRenderer(state, DefaultMaterialKind, testRenderer);
+    registerWgpuMaterialRenderer(state, StandardMaterialKind, testRenderer);
     expect(resolveWgpuMaterialRenderer(state, makeMaterial('Other'))).toBe(testRenderer);
     expect(resolveWgpuMaterialRenderer(state, null)).toBe(testRenderer);
   });

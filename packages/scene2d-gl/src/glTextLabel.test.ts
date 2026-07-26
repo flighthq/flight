@@ -4,8 +4,8 @@ import { createTextLabel, setTextLabelString } from '@flighthq/text';
 import type { RenderProxy2D, TextLabel } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
-import { registerDefaultGlMaterial } from './glDefaultMaterial';
 import { flushGlSpriteBatch } from './glSpriteBatch';
+import { registerStandardGlMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 import type * as GlTextLabelModule from './glTextLabel';
 import { scopeModuleMocks } from './moduleMockTestHelper';
@@ -83,14 +83,14 @@ describe('defaultGlTextLabelRenderer', () => {
 describe('drawGlTextLabel', () => {
   it('returns early without writing to batch when text is empty', () => {
     const { state } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     drawGlTextLabel(state, makeTextProxy('', makeTextData()));
     expect(getGlRenderStateRuntime(state).spriteBatchCount).toBe(0);
   });
 
   it('returns early without writing to batch when rendererData is null', () => {
     const { state } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     drawGlTextLabel(state, makeTextProxy('hello', null));
     expect(getGlRenderStateRuntime(state).spriteBatchCount).toBe(0);
   });
@@ -103,14 +103,14 @@ describe('drawGlTextLabel', () => {
 
   it('writes one instance to the sprite batch when text has content', () => {
     const { state } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     drawGlTextLabel(state, makeTextProxy('hello', makeTextData()));
     expect(getGlRenderStateRuntime(state).spriteBatchCount).toBe(1);
   });
 
   it('draws via drawElementsInstanced after flush', () => {
     const { state, gl } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     drawGlTextLabel(state, makeTextProxy('hello', makeTextData()));
     flushGlSpriteBatch(state);
     expect(gl.drawElementsInstanced).toHaveBeenCalled();
@@ -118,7 +118,7 @@ describe('drawGlTextLabel', () => {
 
   it('skips layout and rasterization on repeated calls when the content version is unchanged', () => {
     const { state } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     const data = makeTextData();
     const proxy = makeTextProxy('hello', data);
     drawGlTextLabel(state, proxy);
@@ -131,7 +131,7 @@ describe('drawGlTextLabel', () => {
 
   it('re-rasterizes when the content version is bumped', () => {
     const { state } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     const data = makeTextData();
     const proxy = makeTextProxy('hello', data);
     drawGlTextLabel(state, proxy);
@@ -143,7 +143,7 @@ describe('drawGlTextLabel', () => {
 
   it('does not re-rasterize when only alpha changes (version unchanged)', () => {
     const { state } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     const data = makeTextData();
     const proxy = makeTextProxy('hello', data);
     drawGlTextLabel(state, proxy);

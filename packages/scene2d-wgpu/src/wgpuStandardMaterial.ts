@@ -1,32 +1,32 @@
 import { registerWgpuMaterialRenderer } from '@flighthq/render-wgpu';
 import type { WgpuMaterialRenderer, WgpuRenderState } from '@flighthq/types';
-import { DefaultMaterialKind } from '@flighthq/types';
+import { StandardMaterialKind } from '@flighthq/types';
 
 import { getWgpuQuadBatchPreludeWGSL } from './wgpuSpriteBatch';
 
-// Registers the bundled default material under DefaultMaterialKind. It is a bundled material like any
+// Registers the bundled default material under StandardMaterialKind. It is a bundled material like any
 // other — no privileged status in the render path; a node with no material renders only if a renderer
-// is registered for DefaultMaterialKind. A user can copy this file and register their own default.
-export function registerDefaultWgpuMaterial(state: WgpuRenderState): void {
-  registerWgpuMaterialRenderer(state, DefaultMaterialKind, defaultWgpuMaterialRenderer);
+// is registered for StandardMaterialKind. A user can copy this file and register their own default.
+export function registerStandardWgpuMaterial(state: WgpuRenderState): void {
+  registerWgpuMaterialRenderer(state, StandardMaterialKind, standardWgpuMaterialRenderer);
 }
 
 // Textured quad with per-instance alpha and no other effect. The batch holds no shader of its own, so
 // even the plain path is just a registered material — this module IS the base sprite-batch shader.
-export const defaultWgpuMaterialRenderer: WgpuMaterialRenderer = {
+export const standardWgpuMaterialRenderer: WgpuMaterialRenderer = {
   instanceFloatCount: 0,
   getShaderModule(state: WgpuRenderState): GPUShaderModule {
     const cached = _modules.get(state.device);
     if (cached !== undefined) return cached;
     const module = state.device.createShaderModule({
-      code: getWgpuQuadBatchPreludeWGSL() + DEFAULT_MATERIAL_WGSL,
+      code: getWgpuQuadBatchPreludeWGSL() + STANDARD_MATERIAL_WGSL,
     });
     _modules.set(state.device, module);
     return module;
   },
 };
 
-const DEFAULT_MATERIAL_WGSL = /* wgsl */ `
+const STANDARD_MATERIAL_WGSL = /* wgsl */ `
 struct VertexOut {
   @builtin(position) position : vec4f,
   @location(0) uv : vec2f,

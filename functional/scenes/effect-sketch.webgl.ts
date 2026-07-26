@@ -17,7 +17,7 @@ import {
   defaultGlSketchEffectRunner,
   endGlRenderEffectPipeline,
   prepareScene2DRender,
-  registerDefaultGlMaterial,
+  registerStandardGlMaterial,
   registerGlRenderEffect,
   registerGlShapeCommands,
   registerRenderer,
@@ -37,7 +37,7 @@ export const state = createGlRenderState(canvas, {
 });
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
-registerDefaultGlMaterial(state);
+registerStandardGlMaterial(state);
 registerGlRenderEffect(state, 'SketchEffect', defaultGlSketchEffectRunner);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 4 });

@@ -36,7 +36,7 @@ by: ingest:builder-67dc46d64
 Deleted the `missing.test.ts` placeholder (which was a single `assert(true)`) and created eight colocated test files:
 
 - **`Entity.test.ts`** — asserts `EntityRuntimeKey` is `Symbol.for('EntityRuntime')`, `EntityWithoutRuntime<T>` strips the runtime key, round-trips structurally, `Kind` is a plain string
-- **`Material.test.ts`** — asserts `Material` is an open contract (foreign `acme.Shimmer` kind is assignable to base), narrows on `kind` discriminant, `MaterialLike` strips the runtime key and accepts plain objects, `DefaultMaterialKind` is the literal string `'DefaultMaterial'`, compile-time proof that `Material extends Entity` and `MaterialLike` has no runtime key
+- **`Material.test.ts`** — asserts `Material` is an open contract (foreign `acme.Shimmer` kind is assignable to base), narrows on `kind` discriminant, `MaterialLike` strips the runtime key and accepts plain objects, `StandardMaterialKind` is the literal string `'DefaultMaterial'`, compile-time proof that `Material extends Entity` and `MaterialLike` has no runtime key
 - **`RenderEffect.test.ts`** — asserts `RenderEffect` is an open contract (foreign `acme.Sparkle` kind accepted), narrows on `kind`, optional `enabled`/`intensity` fields are absent by default
 - **`BitmapFilter.test.ts`** — asserts `BitmapFilter` is an open contract (foreign `acme.Scanlines` kind accepted), narrows on `kind`, accepts any string kind
 - **`MethodsOf.test.ts`** — asserts only method keys are preserved (data properties excluded), empty result for data-only objects, method signatures are preserved accurately
@@ -90,7 +90,7 @@ Audited all display object entity files. Added `*DataFactory` and `*RuntimeFacto
 
 **`missing.test.ts` used `assert` (bare Node assert) not Vitest's `expect`.** The placeholder was written for a different test environment. The new tests use `expect` and `expectTypeOf` consistently with the rest of the codebase.
 
-**`expectTypeOf(...).toEqualTypeOf<'DefaultMaterial'>()` fails TypeScript at `tsc` level** even though it passes at runtime (Vitest). The Vitest `expectTypeOf` generic shape does not always infer const-string literals correctly when the source is a module-level `const`. Replaced with a direct compile-time assignment assertion (`const kindLiteral: 'DefaultMaterial' = DefaultMaterialKind`) which is cleaner and equally expressive.
+**`expectTypeOf(...).toEqualTypeOf<'DefaultMaterial'>()` fails TypeScript at `tsc` level** even though it passes at runtime (Vitest). The Vitest `expectTypeOf` generic shape does not always infer const-string literals correctly when the source is a module-level `const`. Replaced with a direct compile-time assignment assertion (`const kindLiteral: 'DefaultMaterial' = StandardMaterialKind`) which is cleaner and equally expressive.
 
 **No `*TraitsKey` gaps were found.** The depth review mentioned `*TraitsKey` alongside `*Factory` as potentially missing. Only `DisplayObject.ts` needed `DisplayObjectTraitsKey`, and it already exports it. Child entities (`Sprite`, `Shape`, etc.) do not need their own `*TraitsKey` because they share the parent's traits shape.
 

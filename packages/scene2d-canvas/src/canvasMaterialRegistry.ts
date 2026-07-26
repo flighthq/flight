@@ -1,5 +1,5 @@
 import type { CanvasMaterialRenderer, CanvasRenderState, Kind, Material } from '@flighthq/types';
-import { DefaultMaterialKind } from '@flighthq/types';
+import { StandardMaterialKind } from '@flighthq/types';
 
 import { getCanvasRenderStateRuntime } from './canvasRenderState';
 
@@ -44,5 +44,5 @@ export function resolveCanvasMaterialRenderer(
     const renderer = map.get(material.kind);
     if (renderer !== undefined) return renderer;
   }
-  return map.get(DefaultMaterialKind) ?? null;
+  return map.get(StandardMaterialKind) ?? null;
 }

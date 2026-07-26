@@ -22,13 +22,13 @@ export interface WgpuRenderState extends RenderState {
 }
 
 // The opt-in inline color-adjustment fold for the WebGPU sprite/quad batch. Installed on the runtime
-// by enableWgpuColorAdjustment; absent (null) on a state that never opted in, so the base batch — which
+// by registerWgpuColorAdjustmentMaterialFeature; absent (null) on a state that never opted in, so the base batch — which
 // only ever reaches this through the nullable runtime slot — carries none of the fold's WGSL and
 // tree-shakes it out. `record` folds one instance's color transform into the active batch's
 // promote-not-split state machine; `resolveFlush` returns the group-3 storage data + folded shader
 // module for a tinted batch (or null when the batch has no adjustment, so the caller runs the lean
 // material path). This is the generic capability seam — color transform is its first consumer.
-export interface WgpuColorAdjustmentFold {
+export interface WgpuColorAdjustmentMaterialFeature {
   record(
     runtime: WgpuRenderStateRuntime,
     colorTransform: ColorTransform | null | undefined,
@@ -39,7 +39,7 @@ export interface WgpuColorAdjustmentFold {
 
 // The per-flush realization of a tinted batch: the per-instance storage data (`data`, `floats` floats
 // each) and the folded shader `module` the batch binds at @group(3), returned by
-// WgpuColorAdjustmentFold.resolveFlush.
+// WgpuColorAdjustmentMaterialFeature.resolveFlush.
 export interface WgpuColorAdjustmentFlush {
   data: Float32Array;
   floats: number;
@@ -140,7 +140,7 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // the group(1) bind group.
   spriteBatchSmoothing: boolean | null;
   // Color-adjustment fold state for the active sprite batch, owned by the opt-in
-  // enableWgpuColorAdjustment (absent until then, so a state that never tints allocates none of it).
+  // registerWgpuColorAdjustmentMaterialFeature (absent until then, so a state that never tints allocates none of it).
   // Orthogonal to the material and never a flush key, so tinted and untinted nodes with the same
   // texture+blend share one batch. Mode 0 = no tint (base module), 2 = per-instance tints. A batch
   // promotes to 2 when any member is tinted, back-filling untinted members with identity — attaching a
@@ -152,11 +152,13 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   spriteBatchColorTransformMode?: number;
   spriteBatchUniformColorTransform?: ColorTransform | null;
   spriteBatchColorTransformData?: Float32Array;
-  // The opt-in color-adjustment fold and its guard, both null until enableWgpuColorAdjustment /
+  // The opt-in color-adjustment fold and its guard, both null until registerWgpuColorAdjustmentMaterialFeature /
   // enableWgpuColorAdjustmentGuards installs them. recordWgpuSpriteBatchColorTransform reaches the fold
   // only through this slot, so the base batch statically references neither its WGSL nor a message.
-  wgpuColorAdjustmentFold?: WgpuColorAdjustmentFold | null;
-  wgpuColorAdjustmentGuard?: ((state: WgpuRenderState, colorTransform: Readonly<ColorTransform>) => void) | null;
+  wgpuColorAdjustmentMaterialFeature?: WgpuColorAdjustmentMaterialFeature | null;
+  wgpuColorAdjustmentMaterialFeatureGuard?:
+    | ((state: WgpuRenderState, colorTransform: Readonly<ColorTransform>) => void)
+    | null;
   // Per-frame pool of GPU storage buffers, one slot claimed per flush. The batch records draws into
   // the canvas pass, but the pass is submitted once at end of frame, so every flush's draw reads its
   // buffers at submit time. Reusing a single buffer across flushes would leave them all reading the

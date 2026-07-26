@@ -5,7 +5,7 @@ import {
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   prepareScene2DRender,
-  registerDefaultGlMaterial,
+  registerStandardGlMaterial,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
@@ -24,7 +24,7 @@ export const state = createGlRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 
-registerDefaultGlMaterial(state);
+registerStandardGlMaterial(state);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
 

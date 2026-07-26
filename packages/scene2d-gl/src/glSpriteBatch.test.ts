@@ -2,8 +2,7 @@ import { createImageResource } from '@flighthq/image';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import type { ColorTransform, ImageResource, Material } from '@flighthq/types';
 
-import { enableGlColorAdjustment } from './glColorAdjustment';
-import { defaultGlMaterialRenderer } from './glDefaultMaterial';
+import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature';
 import {
   bindGlQuadBatchBaseAttributes,
   ensureGlQuadBatchShader,
@@ -14,6 +13,7 @@ import {
   setGlQuadBatchWorldAndTexture,
   useGlQuadBatchProgram,
 } from './glSpriteBatch';
+import { standardGlMaterialRenderer } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 
 function makeTexture(): ImageResource {
@@ -89,7 +89,7 @@ describe('flushGlSpriteBatch', () => {
     const runtime = getGlRenderStateRuntime(state);
     const tex = makeTexture();
 
-    prepareGlSpriteBatchWrite(state, tex, null, null, defaultGlMaterialRenderer, 1);
+    prepareGlSpriteBatchWrite(state, tex, null, null, standardGlMaterialRenderer, 1);
     runtime.spriteBatchCount = 1;
     flushGlSpriteBatch(state);
 
@@ -114,7 +114,7 @@ describe('prepareGlSpriteBatchWrite', () => {
     const { state } = createGlState();
     const tex = makeTexture();
 
-    const base = prepareGlSpriteBatchWrite(state, tex, null, null, defaultGlMaterialRenderer, 2);
+    const base = prepareGlSpriteBatchWrite(state, tex, null, null, standardGlMaterialRenderer, 2);
     expect(base).toBe(0);
   });
 
@@ -124,10 +124,10 @@ describe('prepareGlSpriteBatchWrite', () => {
     const tex1 = makeTexture();
     const tex2 = makeTexture();
 
-    prepareGlSpriteBatchWrite(state, tex1, null, null, defaultGlMaterialRenderer, 1);
+    prepareGlSpriteBatchWrite(state, tex1, null, null, standardGlMaterialRenderer, 1);
     runtime.spriteBatchCount = 1;
 
-    prepareGlSpriteBatchWrite(state, tex2, null, null, defaultGlMaterialRenderer, 1);
+    prepareGlSpriteBatchWrite(state, tex2, null, null, standardGlMaterialRenderer, 1);
 
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
     expect(runtime.spriteBatchTexture).toBe(tex2);
@@ -140,10 +140,10 @@ describe('prepareGlSpriteBatchWrite', () => {
     const materialA = makeMaterial();
     const materialB = makeMaterial();
 
-    prepareGlSpriteBatchWrite(state, tex, null, materialA, defaultGlMaterialRenderer, 1);
+    prepareGlSpriteBatchWrite(state, tex, null, materialA, standardGlMaterialRenderer, 1);
     runtime.spriteBatchCount = 1;
 
-    prepareGlSpriteBatchWrite(state, tex, null, materialB, defaultGlMaterialRenderer, 1);
+    prepareGlSpriteBatchWrite(state, tex, null, materialB, standardGlMaterialRenderer, 1);
 
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
     expect(runtime.spriteBatchMaterial).toBe(materialB);
@@ -155,7 +155,7 @@ describe('prepareGlSpriteBatchWrite', () => {
     const tex = makeTexture();
     const initialFloats = runtime.spriteBatchInstanceData.length;
 
-    prepareGlSpriteBatchWrite(state, tex, null, null, defaultGlMaterialRenderer, initialFloats + 100);
+    prepareGlSpriteBatchWrite(state, tex, null, null, standardGlMaterialRenderer, initialFloats + 100);
 
     expect(runtime.spriteBatchInstanceData.length).toBeGreaterThan(initialFloats);
   });
@@ -166,10 +166,10 @@ describe('prepareGlSpriteBatchWrite', () => {
     const tex = makeTexture();
 
     // Same texture/blend/material, but a NEAREST bitmap must not share a bind with a LINEAR one.
-    prepareGlSpriteBatchWrite(state, tex, null, null, defaultGlMaterialRenderer, 1, false);
+    prepareGlSpriteBatchWrite(state, tex, null, null, standardGlMaterialRenderer, 1, false);
     runtime.spriteBatchCount = 1;
 
-    prepareGlSpriteBatchWrite(state, tex, null, null, defaultGlMaterialRenderer, 1, true);
+    prepareGlSpriteBatchWrite(state, tex, null, null, standardGlMaterialRenderer, 1, true);
 
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
     expect(runtime.spriteBatchSmoothing).toBe(true);
@@ -180,9 +180,9 @@ describe('prepareGlSpriteBatchWrite', () => {
     const runtime = getGlRenderStateRuntime(state);
     const tex = makeTexture();
 
-    prepareGlSpriteBatchWrite(state, tex, null, null, defaultGlMaterialRenderer, 1, true);
+    prepareGlSpriteBatchWrite(state, tex, null, null, standardGlMaterialRenderer, 1, true);
     runtime.spriteBatchCount = 1;
-    prepareGlSpriteBatchWrite(state, tex, null, null, defaultGlMaterialRenderer, 1, true);
+    prepareGlSpriteBatchWrite(state, tex, null, null, standardGlMaterialRenderer, 1, true);
 
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
@@ -192,7 +192,7 @@ describe('recordGlSpriteBatchColorTransform', () => {
   it('skips the tint (draws untinted) and records no fold state when color adjustment is not enabled', () => {
     const { state, gl } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    prepareGlSpriteBatchWrite(state, makeTexture(), null, null, defaultGlMaterialRenderer, 1);
+    prepareGlSpriteBatchWrite(state, makeTexture(), null, null, standardGlMaterialRenderer, 1);
     recordGlSpriteBatchColorTransform(state, ct(0.5), 0);
     runtime.spriteBatchCount = 1;
     // No fold installed → the CT mode stays uninitialized and no CT program is bound.
@@ -212,7 +212,7 @@ describe('recordGlSpriteBatchColorTransform', () => {
   it('delegates to the installed fold when color adjustment is enabled', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    enableGlColorAdjustment(state);
+    registerGlColorAdjustmentMaterialFeature(state);
     recordGlSpriteBatchColorTransform(state, ct(0.5), 0);
     expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_UNIFORM);
   });

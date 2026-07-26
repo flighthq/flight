@@ -120,8 +120,8 @@ export function createWgpuCacheState(screenState: WgpuRenderState): WgpuRenderSt
   cacheRuntime.spriteBatchSmoothing = null;
   // Propagate the opt-in color-adjustment fold + guard so tinted nodes inside a cached subtree fold the
   // same way when baked offscreen. Their per-batch CT data lives on cacheRuntime, lazily grown.
-  cacheRuntime.wgpuColorAdjustmentFold = screenRuntime.wgpuColorAdjustmentFold;
-  cacheRuntime.wgpuColorAdjustmentGuard = screenRuntime.wgpuColorAdjustmentGuard;
+  cacheRuntime.wgpuColorAdjustmentMaterialFeature = screenRuntime.wgpuColorAdjustmentMaterialFeature;
+  cacheRuntime.wgpuColorAdjustmentMaterialFeatureGuard = screenRuntime.wgpuColorAdjustmentMaterialFeatureGuard;
   // The bake state owns its own buffer pool (its flushes record into the same frame, so they must
   // not share slots with the screen's batch either).
   cacheRuntime.spriteBatchBufferPool = [];

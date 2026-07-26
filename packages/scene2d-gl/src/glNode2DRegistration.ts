@@ -36,7 +36,7 @@ import { defaultGlVideoRenderer } from './glVideo';
  * This is the convenience path — the tree-shakable golden path is registering each
  * `default*Renderer` descriptor individually via `registerRenderer`. Call this when you
  * want all renderers registered in one step and do not need to tree-shake individual leaf
- * types. The default material must be separately registered via `registerDefaultGlMaterial`.
+ * types. The default material must be separately registered via `registerStandardGlMaterial`.
  *
  * Registered renderers:
  * - `BitmapKind`         → `defaultGlBitmapRenderer`

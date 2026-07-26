@@ -7,7 +7,7 @@ import {
   defaultWgpuBitmapRenderer,
   defaultWgpuTilemapRenderer,
   prepareScene2DRender,
-  registerDefaultWgpuMaterial,
+  registerStandardWgpuMaterial,
   registerRenderer,
   renderWgpuBackground,
   renderWgpuScene2D,
@@ -24,7 +24,7 @@ export const state = await createWgpuRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 
-registerDefaultWgpuMaterial(state);
+registerStandardWgpuMaterial(state);
 registerRenderer(state, BitmapKind, defaultWgpuBitmapRenderer);
 registerRenderer(state, TilemapKind, defaultWgpuTilemapRenderer);
 

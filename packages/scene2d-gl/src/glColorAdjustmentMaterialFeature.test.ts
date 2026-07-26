@@ -2,9 +2,9 @@ import { createImageResource } from '@flighthq/image';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import type { ColorTransform, ImageResource } from '@flighthq/types';
 
-import { enableGlColorAdjustment } from './glColorAdjustment';
-import { defaultGlMaterialRenderer } from './glDefaultMaterial';
+import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature';
 import { flushGlSpriteBatch, prepareGlSpriteBatchWrite, recordGlSpriteBatchColorTransform } from './glSpriteBatch';
+import { standardGlMaterialRenderer } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 
 function makeTexture(): ImageResource {
@@ -37,28 +37,28 @@ const CT_MODE_NONE = 0;
 const CT_MODE_UNIFORM = 1;
 const CT_MODE_PER_INSTANCE = 2;
 
-describe('enableGlColorAdjustment', () => {
+describe('registerGlColorAdjustmentMaterialFeature', () => {
   it('installs the fold so recorded tints drive the color-adjustment state machine', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    enableGlColorAdjustment(state);
-    expect(runtime.glColorAdjustmentFold).not.toBeNull();
-    expect(runtime.glColorAdjustmentFold).toBeDefined();
+    registerGlColorAdjustmentMaterialFeature(state);
+    expect(runtime.glColorAdjustmentMaterialFeature).not.toBeNull();
+    expect(runtime.glColorAdjustmentMaterialFeature).toBeDefined();
   });
 
   it('is idempotent', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    enableGlColorAdjustment(state);
-    const fold = runtime.glColorAdjustmentFold;
-    enableGlColorAdjustment(state);
-    expect(runtime.glColorAdjustmentFold).toBe(fold);
+    registerGlColorAdjustmentMaterialFeature(state);
+    const fold = runtime.glColorAdjustmentMaterialFeature;
+    registerGlColorAdjustmentMaterialFeature(state);
+    expect(runtime.glColorAdjustmentMaterialFeature).toBe(fold);
   });
 
   it('stays untinted (mode NONE) when no instance carries a color transform', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    enableGlColorAdjustment(state);
+    registerGlColorAdjustmentMaterialFeature(state);
     recordGlSpriteBatchColorTransform(state, null, 0);
     recordGlSpriteBatchColorTransform(state, null, 1);
     expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_NONE);
@@ -67,7 +67,7 @@ describe('enableGlColorAdjustment', () => {
   it('uses one whole-batch uniform when every instance shares one tint', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    enableGlColorAdjustment(state);
+    registerGlColorAdjustmentMaterialFeature(state);
     const tint = ct(0.5);
     recordGlSpriteBatchColorTransform(state, tint, 0);
     recordGlSpriteBatchColorTransform(state, tint, 1);
@@ -79,7 +79,7 @@ describe('enableGlColorAdjustment', () => {
   it('keeps the uniform path for a distinct-but-equal tint', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    enableGlColorAdjustment(state);
+    registerGlColorAdjustmentMaterialFeature(state);
     recordGlSpriteBatchColorTransform(state, ct(0.5), 0);
     recordGlSpriteBatchColorTransform(state, ct(0.5), 1);
     expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_UNIFORM);
@@ -88,7 +88,7 @@ describe('enableGlColorAdjustment', () => {
   it('promotes to per-instance (never splits) when tints diverge, back-filling the earlier tint', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    enableGlColorAdjustment(state);
+    registerGlColorAdjustmentMaterialFeature(state);
     recordGlSpriteBatchColorTransform(state, ct(0.5), 0);
     recordGlSpriteBatchColorTransform(state, ct(0.25), 1);
     expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_PER_INSTANCE);
@@ -99,7 +99,7 @@ describe('enableGlColorAdjustment', () => {
   it('promotes with identity fill when a tinted instance follows an untinted one', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    enableGlColorAdjustment(state);
+    registerGlColorAdjustmentMaterialFeature(state);
     recordGlSpriteBatchColorTransform(state, null, 0);
     recordGlSpriteBatchColorTransform(state, ct(0.5), 1);
     expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_PER_INSTANCE);
@@ -110,7 +110,7 @@ describe('enableGlColorAdjustment', () => {
   it('writes identity for an untinted instance once the batch is per-instance', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    enableGlColorAdjustment(state);
+    registerGlColorAdjustmentMaterialFeature(state);
     recordGlSpriteBatchColorTransform(state, ct(0.5), 0);
     recordGlSpriteBatchColorTransform(state, ct(0.25), 1);
     recordGlSpriteBatchColorTransform(state, null, 2);
@@ -121,7 +121,7 @@ describe('enableGlColorAdjustment', () => {
   it('normalizes color offsets by 255', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    enableGlColorAdjustment(state);
+    registerGlColorAdjustmentMaterialFeature(state);
     recordGlSpriteBatchColorTransform(state, ct(1, 1, 1, 1, 255, 0, 0, 0), 0);
     recordGlSpriteBatchColorTransform(state, ct(0.5), 1);
     expect(runtime.spriteBatchColorTransformData![4]).toBe(1);
@@ -130,8 +130,8 @@ describe('enableGlColorAdjustment', () => {
   it('drives the uniform color-transform shader on flush', () => {
     const { state, gl } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    enableGlColorAdjustment(state);
-    prepareGlSpriteBatchWrite(state, makeTexture(), null, null, defaultGlMaterialRenderer, 1);
+    registerGlColorAdjustmentMaterialFeature(state);
+    prepareGlSpriteBatchWrite(state, makeTexture(), null, null, standardGlMaterialRenderer, 1);
     recordGlSpriteBatchColorTransform(state, ct(0.5), 0);
     runtime.spriteBatchCount = 1;
     flushGlSpriteBatch(state);
@@ -142,8 +142,8 @@ describe('enableGlColorAdjustment', () => {
   it('uploads a per-instance color-transform buffer on flush when tints vary', () => {
     const { state, gl } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    enableGlColorAdjustment(state);
-    prepareGlSpriteBatchWrite(state, makeTexture(), null, null, defaultGlMaterialRenderer, 2);
+    registerGlColorAdjustmentMaterialFeature(state);
+    prepareGlSpriteBatchWrite(state, makeTexture(), null, null, standardGlMaterialRenderer, 2);
     recordGlSpriteBatchColorTransform(state, ct(0.5), 0);
     recordGlSpriteBatchColorTransform(state, ct(0.25), 1);
     runtime.spriteBatchCount = 2;
@@ -155,8 +155,8 @@ describe('enableGlColorAdjustment', () => {
   it('leaves the lean base shader untouched for an untinted batch on flush', () => {
     const { state, gl } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    enableGlColorAdjustment(state);
-    prepareGlSpriteBatchWrite(state, makeTexture(), null, null, defaultGlMaterialRenderer, 1);
+    registerGlColorAdjustmentMaterialFeature(state);
+    prepareGlSpriteBatchWrite(state, makeTexture(), null, null, standardGlMaterialRenderer, 1);
     recordGlSpriteBatchColorTransform(state, null, 0);
     runtime.spriteBatchCount = 1;
     flushGlSpriteBatch(state);

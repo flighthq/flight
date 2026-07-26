@@ -17,7 +17,7 @@ import {
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
   prepareScene2DRender,
-  registerDefaultWgpuMaterial,
+  registerStandardWgpuMaterial,
   registerRenderer,
   registerWgpuRenderEffect,
   registerWgpuShapeCommands,
@@ -35,7 +35,7 @@ document.body.appendChild(canvas);
 export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x101014ff });
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
-registerDefaultWgpuMaterial(state);
+registerStandardWgpuMaterial(state);
 registerWgpuRenderEffect(state, 'DisplacementEffect', defaultWgpuDisplacementEffectRunner);
 
 const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 1 });

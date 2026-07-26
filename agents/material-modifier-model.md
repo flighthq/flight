@@ -16,7 +16,7 @@ What is **shipped** (the groundwork this note builds on):
   absent `enableCanvasColorAdjustment`).
 
 What is **proposed** (this note): relocate the color-adjustment fold out of the bespoke
-`glColorAdjustment`/`wgpuColorAdjustment` path and into a **material feature** carried by the shading
+`glColorAdjustmentMaterialFeature`/`wgpuColorAdjustmentMaterialFeature` path and into a **material feature** carried by the shading
 families, unifying 2D tint and 3D per-object color under one model. Not yet implemented — needs the
 user's go-ahead and is a material-compiler-scoped change on gl and wgpu.
 
@@ -64,7 +64,7 @@ an untinted node with the same texture and blend batch together").
 Split on the axis where it helps, unify on the axis where it hurts:
 
 - **Definition / bundle: separate.** The color-adjustment chunk is its own tree-shakable, *registered*
-  feature module (the successor to `enableGlColorAdjustment`). Absent from a bundle that never tints.
+  feature module (the successor to `registerGlColorAdjustmentMaterialFeature`). Absent from a bundle that never tints.
 - **Batch identity: unified.** When present, the chunk composes *onto* the standard family as a
   **promotable variant**, not a distinct key. A mixed batch promotes to the adjustment variant
   (untinted members run it with an identity matrix); tinted + untinted still co-batch.
@@ -127,7 +127,7 @@ particles cost 4 bytes each, not 32.
 - **Realization becomes the material feature:** the node's resolved color transform (or per-item datum)
   flows into StandardMaterial's adjustment feature; the shared batch path selects the variant by
   presence. One implementation of "apply a color matrix" per backend, in the material compiler, reused
-  by every family — retiring the parallel `glColorAdjustment` / `wgpuColorAdjustment` folds.
+  by every family — retiring the parallel `glColorAdjustmentMaterialFeature` / `wgpuColorAdjustmentMaterialFeature` folds.
 
 ## What this direction resolves
 
@@ -152,7 +152,7 @@ Items deferred across the arc, all closed by this one consolidation:
 3. Route the shared sprite-batch path's resolved-color-transform (node uniform) and per-item
    `materialData` (per-instance attribute) into the feature; select base vs variant by presence.
 4. Extend 3D families (Phong/PBR/Shaded) to opt the same chunk in post-shade.
-5. Retire the standalone `glColorAdjustment` / `wgpuColorAdjustment` folds and, once nothing authors it,
+5. Retire the standalone `glColorAdjustmentMaterialFeature` / `wgpuColorAdjustmentMaterialFeature` folds and, once nothing authors it,
    `ColorTransformAdjustment`.
 
 ## Invariants any implementation must not cross

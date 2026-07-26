@@ -46,7 +46,7 @@ describe('enableWgpuColorAdjustmentGuards', () => {
       const entries = getMemoryLogSinkEntries(sink);
       expect(entries.length).toBe(1);
       const data = entries[0].data as Record<string, unknown>;
-      expect(String(data.message)).toContain('enableWgpuColorAdjustment');
+      expect(String(data.message)).toContain('registerWgpuColorAdjustmentMaterialFeature');
     } finally {
       removeLogSink(sink.sink);
     }
@@ -72,7 +72,7 @@ describe('enableWgpuColorAdjustmentGuards', () => {
     addLogSink(sink.sink);
     try {
       enableWgpuColorAdjustmentGuards(state);
-      runtime.wgpuColorAdjustmentFold = { record: () => {}, resolveFlush: () => null };
+      runtime.wgpuColorAdjustmentMaterialFeature = { record: () => {}, resolveFlush: () => null };
       recordWgpuSpriteBatchColorTransform(state, ct(), 0);
       expect(getMemoryLogSinkEntries(sink).length).toBe(0);
     } finally {

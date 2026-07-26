@@ -227,7 +227,7 @@ export const standardPbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 };
 
 // A StandardPbrMaterial-shaped stand-in used as the material-bind-group cache key when bind is called
-// with a null material (the DefaultMaterialKind fallback). Plain neutral PBR defaults; only used for
+// with a null material (the StandardMaterialKind fallback). Plain neutral PBR defaults; only used for
 // identity in the WeakMap.
 const FALLBACK_MATERIAL = {} as Readonly<StandardPbrMaterial>;
 

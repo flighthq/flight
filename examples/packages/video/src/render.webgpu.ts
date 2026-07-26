@@ -5,7 +5,7 @@ import {
   createWgpuRenderState,
   defaultWgpuVideoRenderer,
   prepareScene2DRender,
-  registerDefaultWgpuMaterial,
+  registerStandardWgpuMaterial,
   registerRenderer,
   renderWgpuBackground,
   renderWgpuScene2D,
@@ -22,7 +22,7 @@ export const state = await createWgpuRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 
-registerDefaultWgpuMaterial(state);
+registerStandardWgpuMaterial(state);
 registerRenderer(state, VideoKind, defaultWgpuVideoRenderer);
 
 export const scale = pixelRatio;

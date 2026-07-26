@@ -8,7 +8,7 @@ import {
   defaultGlTextLabelRenderer,
   enableGlTextInput,
   prepareScene2DRender,
-  registerDefaultGlMaterial,
+  registerStandardGlMaterial,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
@@ -30,7 +30,7 @@ export const state = createGlRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 
-registerDefaultGlMaterial(state);
+registerStandardGlMaterial(state);
 registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);

@@ -38,7 +38,7 @@ export function isAffineColorMatrix(matrix: Readonly<number[]>): boolean {
 //                                     8-float fold cannot represent yet. `out` holds only the affine part
 //                                     (diagonal + offset); the caller routes this to the deferral guard.
 //
-// A single ColorTransformAdjustment (the common per-object case) resolves exactly with no matrix multiply.
+// A single TintAdjustment or generic affine color matrix resolves through the same fused matrix path.
 // Matrix-tier ops fuse order-preserving via concatColorMatrix; a non-matrix op marks the stack non-affine.
 export function resolveColorAdjustmentsColorTransform(
   adjustments: readonly Adjustment[] | null,

@@ -7,8 +7,8 @@ import {
   isAffineColorMatrix,
   resolveColorAdjustmentsColorTransform,
 } from './colorAdjustmentResolution';
+import { createColorMatrixAdjustment } from './colorMatrixAdjustment';
 import { createIdentityColorMatrix, createSaturationColorMatrix } from './colorMatrixMath';
-import { createColorTransformAdjustment } from './colorTransformAdjustment';
 
 function makeColorTransform(fields: Partial<ColorTransform> = {}): ColorTransform {
   return {
@@ -41,10 +41,8 @@ describe('resolveColorAdjustmentsColorTransform', () => {
     expect(resolveColorAdjustmentsColorTransform([], out)).toBe(COLOR_ADJUSTMENT_NONE);
   });
 
-  it('resolves a single ColorTransformAdjustment exactly (affine)', () => {
-    const adjustment = createColorTransformAdjustment(
-      makeColorTransform({ redMultiplier: 0.5, greenMultiplier: 0, redOffset: 40 }),
-    );
+  it('resolves a single generic affine matrix exactly', () => {
+    const adjustment = createColorMatrixAdjustment([0.5, 0, 0, 0, 40, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0]);
     const out = makeColorTransform();
     expect(resolveColorAdjustmentsColorTransform([adjustment], out)).toBe(COLOR_ADJUSTMENT_AFFINE);
     expect(out.redMultiplier).toBe(0.5);
@@ -54,8 +52,8 @@ describe('resolveColorAdjustmentsColorTransform', () => {
   });
 
   it('fuses two affine adjustments (multipliers compose)', () => {
-    const a = createColorTransformAdjustment(makeColorTransform({ redMultiplier: 0.5 }));
-    const b = createColorTransformAdjustment(makeColorTransform({ redMultiplier: 0.5 }));
+    const a = createColorMatrixAdjustment([0.5, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0]);
+    const b = createColorMatrixAdjustment([0.5, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0]);
     const out = makeColorTransform();
     expect(resolveColorAdjustmentsColorTransform([a, b], out)).toBe(COLOR_ADJUSTMENT_AFFINE);
     expect(out.redMultiplier).toBe(0.25);

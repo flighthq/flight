@@ -9,7 +9,7 @@ import type { Skin } from './Skin';
 // hierarchy as group Node3Ds and other Meshes — addNodeChild accepts both) and adds the two
 // own fields that make it drawable: the `geometry` to draw and one `materials` entry per geometry
 // subset, indexed positionally (subset i is drawn with materials[i]). A subset whose index is past
-// the end of `materials`, or whose slot is null, resolves to DefaultMaterialKind at draw time. The
+// the end of `materials`, or whose slot is null, resolves to StandardMaterialKind at draw time. The
 // node's world transform (from HasTransform3D) is the model matrix for every subset. A bare
 // Node3D (no geometry) is a transform-only group; the presence of `geometry` is what makes a
 // node a Mesh (isMesh).

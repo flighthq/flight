@@ -7,7 +7,7 @@ import {
   enableWgpuBlendModeSupport,
   ParticleEmitter2DKind,
   prepareScene2DRender,
-  registerDefaultWgpuMaterial,
+  registerStandardWgpuMaterial,
   registerRenderer,
   renderWgpuBackground,
   renderWgpuScene2D,
@@ -25,7 +25,7 @@ export const state = await createWgpuRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 
-registerDefaultWgpuMaterial(state);
+registerStandardWgpuMaterial(state);
 registerRenderer(state, ParticleEmitter2DKind, defaultWgpuParticleEmitter2DRenderer);
 registerRenderer(state, TextLabelKind, defaultWgpuTextLabelRenderer);
 enableWgpuBlendModeSupport(state);

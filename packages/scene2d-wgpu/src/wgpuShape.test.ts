@@ -7,8 +7,8 @@ import type { RenderProxy2D } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
 import { scopeModuleMocks } from './moduleMockTestHelper';
-import { registerDefaultWgpuMaterial } from './wgpuDefaultMaterial';
 import type * as WgpuShapeModule from './wgpuShape';
+import { registerStandardWgpuMaterial } from './wgpuStandardMaterial';
 
 // @flighthq/node's bounds/revision queries expect a real BoundsNode; these tests drive drawWgpuShape
 // with lightweight fake proxies, so the two queries are stubbed. scopeModuleMocks scopes the stub to
@@ -65,7 +65,7 @@ describe('drawWgpuShape', () => {
   it('returns early without writing to batch when commands are empty', async () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
-    registerDefaultWgpuMaterial(state);
+    registerStandardWgpuMaterial(state);
     drawWgpuShape(state, makeShapeProxy({ commands: [] }, makeShapeData()));
     expect(getWgpuRenderStateRuntime(state).spriteBatchCount).toBe(0);
     submitWgpuRenderPass(state);
@@ -74,7 +74,7 @@ describe('drawWgpuShape', () => {
   it('returns early without writing to batch when rendererData is null', async () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
-    registerDefaultWgpuMaterial(state);
+    registerStandardWgpuMaterial(state);
     drawWgpuShape(state, makeShapeProxy({ commands: [{}] }, null));
     expect(getWgpuRenderStateRuntime(state).spriteBatchCount).toBe(0);
     submitWgpuRenderPass(state);
@@ -88,7 +88,7 @@ describe('drawWgpuShape', () => {
   it('writes one instance to the sprite batch when shape has valid commands and bounds', async () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
-    registerDefaultWgpuMaterial(state);
+    registerStandardWgpuMaterial(state);
     drawWgpuShape(state, makeShapeProxy({ commands: [{}], version: 1 }, makeShapeData()));
     expect(getWgpuRenderStateRuntime(state).spriteBatchCount).toBe(1);
     submitWgpuRenderPass(state);

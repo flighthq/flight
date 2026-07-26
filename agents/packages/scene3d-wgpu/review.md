@@ -28,7 +28,7 @@ Grounded in `67dc46d64:packages/scene-wgpu/src/`.
 
 **Renderer plumbing** — properly factored:
 
-- A kind-keyed mesh-material registry (`wgpuMeshMaterialRegistry.ts`: `registerWgpuMeshMaterialRenderer` / `resolveWgpuMeshMaterialRenderer`, `DefaultMaterialKind` fallback) — an open registry, not a closed switch (fork B compliant; see Contract & docs fit).
+- A kind-keyed mesh-material registry (`wgpuMeshMaterialRegistry.ts`: `registerWgpuMeshMaterialRenderer` / `resolveWgpuMeshMaterialRenderer`, `StandardMaterialKind` fallback) — an open registry, not a closed switch (fork B compliant; see Contract & docs fit).
 - A define-key → pipeline cache (`wgpuPbrPipelineCache.ts`, format-aware), per-geometry upload caches with version invalidation (`wgpuMeshUpload.ts`, `wgpuWireframeUpload.ts`), group(0)/group(1)/group(2) Frame/Draw/Material bind-group layouts, dynamic-offset per-draw uniforms, a 1×1 placeholder texture.
 
 **New this pass — transparent pipeline + sort** (`drawWgpuScene.ts`, `wgpuMeshPipeline.ts`): the draw loop is now two passes — an opaque pass in scene-graph order followed by a transparent pass that collects `alphaMode === 'blend'` subsets (`isBlendMaterial`), sorts them back-to-front by clip-space W depth (`compareTransparentEntryDepth`), and re-draws them. `createWgpuMeshPipeline` gained a `blendMode` parameter: `'blend'` → premultiplied src-alpha + `depthWriteEnabled: false`; `'opaque'`/`'mask'` → no blend + depth-write. The `blendMode` is threaded through `WgpuPbrDefineKey` and `buildWgpuPbrStandardDefineKey` (reads `surface.alphaMode`). `doubleSided` is now wired to `cullMode`. **This path is complete and reachable** — a blend material does composite correctly.

@@ -1,9 +1,9 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import type { RenderProxy2D } from '@flighthq/types';
 
-import { registerDefaultGlMaterial } from './glDefaultMaterial';
 import { flushGlSpriteBatch } from './glSpriteBatch';
 import { defaultGlSpriteRenderer } from './glSpriteRenderer';
+import { registerStandardGlMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 
 function makeAtlas(regionWidth = 32, regionHeight = 32, pivotX: number | null = null, pivotY: number | null = null) {
@@ -68,7 +68,7 @@ describe('defaultGlSpriteRenderer.submit', () => {
 
   it('draws a quad when the atlas region is valid', () => {
     const { state, gl } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     defaultGlSpriteRenderer.submit(state, makeSpriteNode({ atlas: makeAtlas(), id: 0 }));
     flushGlSpriteBatch(state);
     expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 1);
@@ -76,7 +76,7 @@ describe('defaultGlSpriteRenderer.submit', () => {
 
   it('folds the region pivot through the sprite transform into batch translation', () => {
     const { state } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     const node = makeSpriteNode({ atlas: makeAtlas(32, 32, 7, 9), id: 0 });
     Object.assign(node.transform2D, { a: 2, b: 3, c: 4, d: 5, tx: 100, ty: 200 });
 
