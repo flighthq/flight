@@ -2,7 +2,14 @@ import { hasImageResourcePixels } from '@flighthq/image';
 import { noopRendererData } from '@flighthq/render';
 import { resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { ColorTransform, RenderProxy2D, SpriteRenderer, Tilemap, WgpuRenderState } from '@flighthq/types';
+import type {
+  ColorTransform,
+  RenderProxy2D,
+  SpriteRenderer,
+  Tilemap,
+  TintMaterialData,
+  WgpuRenderState,
+} from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
 import {
@@ -86,7 +93,8 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
       packWgpuSpriteBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
       // Per-tile tint overrides the node-level tint (null → the node's, itself possibly null → untinted).
       const colorTransform =
-        (perTileColorTransform?.[row * columns + col] as ColorTransform | null) ?? nodeColorTransform;
+        (perTileColorTransform?.[row * columns + col] as ColorTransform | TintMaterialData | null) ??
+        nodeColorTransform;
       recordWgpuSpriteBatchColorTransform(state, colorTransform, startCount + drawCount);
       writeBase += INSTANCE_STRIDE_FLOATS;
       drawCount++;

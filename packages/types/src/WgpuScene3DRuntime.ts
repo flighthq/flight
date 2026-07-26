@@ -74,6 +74,7 @@ export interface WgpuScene3DRuntime {
   // Whether the run currently being bound uses the blended pipeline variant. drawWgpuScene3D sets this
   // before bind(); each family's ensure function folds it into the immutable pipeline state/cache key.
   activeBlendedRun: boolean;
+  activeColorAdjustmentRun: boolean;
   activeSkinnedRun: boolean;
   activeMeshPipeline: WgpuMeshPipeline | null;
   blendedDrawList: WgpuScene3DDrawEntry[];

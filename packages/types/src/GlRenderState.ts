@@ -12,6 +12,7 @@ import type { ImageResource } from './ImageResource';
 import type { Material } from './Material';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
+import type { TintMaterialData } from './TintMaterialData';
 import type { VideoTexture } from './VideoTexture';
 
 export interface GlRenderState extends RenderState {
@@ -46,9 +47,18 @@ export type GlBlendEquation = 'FUNC_ADD' | 'FUNC_REVERSE_SUBTRACT' | 'MAX' | 'MI
 // through this nullable slot when a node carries a color transform, so the base flat-color mesh shader
 // stays free of any tint branch and the tinted mesh program tree-shakes out with the rest of the fold.
 export interface GlColorAdjustmentMaterialFeature {
+  // The one backend-authored pointwise color-remap implementation. Material-family compilers splice
+  // this function into a promoted shader variant only when resolved adjustment data is present.
+  // Keeping the source on the registered feature (rather than importing it from the base compiler)
+  // preserves compile-time shake-out for applications that never register color adjustment.
+  readonly fragmentShaderChunk: string;
   drawShapeMeshes(state: GlRenderState, renderProxy: RenderProxy2D, meshes: readonly GlShapeMesh[]): void;
   flush(state: GlRenderState, count: number): boolean;
-  record(runtime: GlRenderStateRuntime, colorTransform: ColorTransform | null | undefined, instanceIndex: number): void;
+  record(
+    runtime: GlRenderStateRuntime,
+    colorTransform: ColorTransform | TintMaterialData | null | undefined,
+    instanceIndex: number,
+  ): void;
 }
 
 // Package-private GPU state for a GlRenderState entity. Lives in the runtime tier (not on the
@@ -81,6 +91,7 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // Compiled color-adjustment programs, owned by the opt-in fold (registerGlColorAdjustmentMaterialFeature). Absent
   // until the first folded flush; a state that never enables color adjustment carries neither.
   colorTransformInstancedShader?: GlColorTransformInstancedShader;
+  colorTintInstancedShader?: GlColorTransformInstancedShader;
   uniformColorTransformShader?: GlUniformColorTransformShader;
   shapeMeshColorTransformShader?: GlShapeMeshColorTransformShader;
   // The opt-in color-adjustment fold and its guard, both null until registerGlColorAdjustmentMaterialFeature /
@@ -88,7 +99,7 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // through this slot, so the base batch statically references neither the fold's code nor a message.
   glColorAdjustmentMaterialFeature?: GlColorAdjustmentMaterialFeature | null;
   glColorAdjustmentMaterialFeatureGuard?:
-    | ((state: GlRenderState, colorTransform: Readonly<ColorTransform>) => void)
+    | ((state: GlRenderState, colorTransform: Readonly<ColorTransform | TintMaterialData>) => void)
     | null;
   materialRendererMap?: Map<Kind, GlMaterialRenderer>;
   // 3D scene mesh-material seam, owned by scene-gl (filled lazily by registerGlMeshMaterialRenderer).
@@ -131,9 +142,10 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // tints diverge, so attaching a tint only ever promotes a batch, never splits it.
   // spriteBatchColorTransformData/Buffer hold the per-instance floats (8 per instance) for mode 2;
   // spriteBatchUniformColorTransform holds the shared value for mode 1.
-  spriteBatchColorTransformMode: number;
-  spriteBatchUniformColorTransform: ColorTransform | null;
-  spriteBatchColorTransformData: Float32Array;
+  spriteBatchColorTransformMode?: number;
+  spriteBatchUniformColorTransform?: ColorTransform | TintMaterialData | null;
+  spriteBatchColorTransformData?: Float32Array;
+  spriteBatchColorTintData?: Uint32Array;
   spriteBatchColorTransformBuffer: WebGLBuffer | null;
   // Per-clip unwind stack: the form of each pushed clip (scissor vs stencil contour) so popClip
   // un-installs the right gate.

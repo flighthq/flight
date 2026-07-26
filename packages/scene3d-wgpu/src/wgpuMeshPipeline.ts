@@ -6,6 +6,7 @@ import { getTextureUvMatrix, hasTextureUvTransform } from '@flighthq/texture';
 import type {
   WgpuMaterialBinding,
   WgpuMeshPipeline,
+  WgpuColorAdjustmentMaterialFeature,
   WgpuScene3DLayouts,
   Camera3D,
   MeshGeometry,
@@ -565,7 +566,13 @@ export function ensureWgpuScene3DLayouts(state: WgpuRenderState): WgpuScene3DLay
       ],
     });
     scene.drawBindGroupLayout = device.createBindGroupLayout({
-      entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX, buffer: { type: 'uniform', hasDynamicOffset: true } }],
+      entries: [
+        {
+          binding: 0,
+          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+          buffer: { type: 'uniform', hasDynamicOffset: true },
+        },
+      ],
     });
   }
   return { drawBindGroupLayout: scene.drawBindGroupLayout, frameBindGroupLayout: scene.frameBindGroupLayout };
@@ -766,6 +773,24 @@ export function resolveWgpuMaterialTextureView(
   return ensureWgpuPlaceholderTextureView(state);
 }
 
+// Splices the registered backend chunk and its two affine vectors into a promoted 3D Draw uniform.
+// Family compilers call this only for presence-selected variants; base source never imports or owns
+// the feature chunk. The widened 208-byte struct still fits the existing 256-byte Draw ring slot.
+export function spliceWgpuColorAdjustmentPrelude(
+  source: string,
+  feature: Readonly<WgpuColorAdjustmentMaterialFeature>,
+): string {
+  return (
+    feature.fragmentShaderChunk +
+    source.replace(
+      '  params : vec4f,          // x = resolved object alpha',
+      `  params : vec4f,          // x = resolved object alpha
+  flightColorMultiplier : vec4f,
+  flightColorOffset : vec4f,`,
+    )
+  );
+}
+
 // Stashes a material's primary-texture uv transform for the next writeWgpuDrawUniform to fold into the
 // shared Draw uniform. A family's bind() calls this with its base/diffuse map; writeWgpuDrawUniform
 // consumes and resets the stash so a following draw whose family does not stash gets the untiled uv.
@@ -882,6 +907,21 @@ export function writeWgpuDrawUniform(state: WgpuRenderState, proxy: Readonly<Sce
   u[floatOffset + 41] = 0;
   u[floatOffset + 42] = 0;
   u[floatOffset + 43] = 0;
+
+  // The registered adjustment feature reuses the otherwise 256-byte-aligned Draw ring slot: a
+  // promoted shader widens its Draw struct by these two vec4s, while an untinted draw performs no
+  // writes and its lean shader does not declare or read them.
+  const colorTransform = proxy.colorTransform;
+  if (colorTransform != null) {
+    u[floatOffset + 44] = colorTransform.redMultiplier;
+    u[floatOffset + 45] = colorTransform.greenMultiplier;
+    u[floatOffset + 46] = colorTransform.blueMultiplier;
+    u[floatOffset + 47] = colorTransform.alphaMultiplier;
+    u[floatOffset + 48] = colorTransform.redOffset / 255;
+    u[floatOffset + 49] = colorTransform.greenOffset / 255;
+    u[floatOffset + 50] = colorTransform.blueOffset / 255;
+    u[floatOffset + 51] = colorTransform.alphaOffset / 255;
+  }
 
   scene.pendingDrawOffset = offset;
   stateRuntime.uniformOffset += stateRuntime.uniformStride;
@@ -1080,7 +1120,9 @@ const FRAME_UNIFORM_BYTES = (FRAME_COUNTS_OFFSET + 4) * 4;
 // Draw uniform: mat4x4f world (64) + mat3x3f normalMatrix as 3 padded vec4 (48) + mat3x3f uvTransform as
 // 3 padded vec4 (48) + vec4f params (16, x = resolved object alpha) = 176; the ring buffer rounds the
 // per-slot stride up to the device's minUniformBufferOffsetAlignment.
-const DRAW_UNIFORM_BYTES = 176;
+// Base Draw occupies 176 bytes; the promoted color-adjustment variant uses 208. Both fit the same
+// 256-byte-aligned ring slot, so the base path allocates no additional per-draw storage.
+const DRAW_UNIFORM_BYTES = 208;
 
 // Writes the column-major identity mat3 into a uv-transform stash buffer, the untiled default.
 function resetWgpuUvTransformStash(out: Float32Array): void {

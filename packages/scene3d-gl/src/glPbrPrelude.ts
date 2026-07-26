@@ -1,4 +1,4 @@
-import type { GlPbrDefineKey } from '@flighthq/types';
+import type { GlColorAdjustmentMaterialFeature, GlPbrDefineKey } from '@flighthq/types';
 // The shared Gl PBR prelude: the GLSL 300 es vertex + fragment uber-shader for the StandardPbr
 // forward-lit path and every PBR-extension variant. One source string is specialized per material
 // at compile time by prepending a define block (see GlPbrDefineKey / buildGlPbrDefineSource), so
@@ -48,7 +48,8 @@ export function buildGlPbrDefineKey(key: Readonly<GlPbrDefineKey>): string {
     `${key.specularEnabled ? 'P' : '-'}` +
     `${key.subsurfaceEnabled ? 'U' : '-'}` +
     `${key.transmissionEnabled ? 'T' : '-'}` +
-    `${key.hasSkin ? 'k' : '-'}`
+    `${key.hasSkin ? 'k' : '-'}` +
+    `${key.hasColorAdjustment ? 'c' : ''}`
   );
 }
 
@@ -73,6 +74,7 @@ export function buildGlPbrDefineSource(key: Readonly<GlPbrDefineKey>): string {
   if (key.subsurfaceEnabled) defines += '#define SUBSURFACE\n';
   if (key.transmissionEnabled) defines += '#define TRANSMISSION\n';
   if (key.hasSkin) defines += '#define HAS_SKIN\n';
+  if (key.hasColorAdjustment) defines += '#define HAS_COLOR_ADJUSTMENT\n';
   return defines;
 }
 
@@ -85,8 +87,18 @@ export function getGlPbrFragmentSource(): string {
 
 // The full fragment source for a define key (define block + body), ready to hand to the GL
 // compiler. Convenience over buildGlPbrDefineSource + getGlPbrFragmentSource.
-export function getGlPbrFragmentSourceForKey(key: Readonly<GlPbrDefineKey>): string {
-  return buildGlPbrDefineSource(key) + PBR_FRAGMENT_BODY;
+export function getGlPbrFragmentSourceForKey(
+  key: Readonly<GlPbrDefineKey>,
+  colorAdjustmentFeature: Readonly<GlColorAdjustmentMaterialFeature> | null = null,
+): string {
+  let body = PBR_FRAGMENT_BODY;
+  if (key.hasColorAdjustment && colorAdjustmentFeature !== null) {
+    body = body.replace(
+      'precision highp float;',
+      `precision highp float;\n${colorAdjustmentFeature.fragmentShaderChunk}`,
+    );
+  }
+  return buildGlPbrDefineSource(key) + body;
 }
 
 // The vertex shader body (everything after the "#version 300 es" + defines block). Transforms the
@@ -147,6 +159,10 @@ in vec4 v_tangent;
 in vec2 v_uv0;
 
 uniform vec4 u_baseColor;
+#ifdef HAS_COLOR_ADJUSTMENT
+uniform vec4 u_flightColorMultiplier;
+uniform vec4 u_flightColorOffset;
+#endif
 uniform float u_metallic;
 uniform float u_roughness;
 uniform float u_normalScale;
@@ -559,6 +575,9 @@ void main() {
 #endif
 
   fragColor = vec4(radiance, alpha);
+#ifdef HAS_COLOR_ADJUSTMENT
+  fragColor = applyFlightColorAdjustment(fragColor, u_flightColorMultiplier, u_flightColorOffset);
+#endif
   fragColor.a *= u_objectAlpha;
 }
 `;

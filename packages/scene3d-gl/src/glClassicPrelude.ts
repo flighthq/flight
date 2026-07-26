@@ -1,4 +1,10 @@
-import type { GlClassicDefineKey, GlClassicProgram, GlRenderState } from '@flighthq/types';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl';
+import type {
+  GlClassicDefineKey,
+  GlClassicProgram,
+  GlColorAdjustmentMaterialFeature,
+  GlRenderState,
+} from '@flighthq/types';
 import { MAX_FORWARD_LIGHTS } from '@flighthq/types';
 
 import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram';
@@ -19,7 +25,7 @@ export function buildGlClassicDefineKey(key: Readonly<GlClassicDefineKey>): stri
     key.hasSpecularMap ? 's' : '-'
   }${key.hasNormalMap ? 'n' : '-'}${key.hasAlphaMap ? 'a' : '-'}${key.hasUvTransform ? 'u' : '-'}${
     key.hasSkin ? 'k' : '-'
-  }`;
+  }${key.hasColorAdjustment ? 'c' : ''}`;
 }
 
 // Compiles the classic uber-shader for a define key, links it, and resolves its uniform locations.
@@ -28,9 +34,10 @@ export function buildGlClassicDefineKey(key: Readonly<GlClassicDefineKey>): stri
 export function compileGlClassicProgram(
   gl: WebGL2RenderingContext,
   key: Readonly<GlClassicDefineKey>,
+  colorAdjustmentFeature: Readonly<GlColorAdjustmentMaterialFeature> | null = null,
 ): GlClassicProgram {
   const vertexSource = getGlClassicVertexSourceForKey(key);
-  const fragmentSource = getGlClassicFragmentSourceForKey(key);
+  const fragmentSource = getGlClassicFragmentSourceForKey(key, colorAdjustmentFeature);
   const program = compileGlProgram(gl, vertexSource, fragmentSource);
   return {
     ...resolveGlLitLocations(gl, program),
@@ -59,10 +66,11 @@ export function ensureGlClassicProgram(state: GlRenderState, key: Readonly<GlCla
   // material compiles + caches its own HAS_SKIN program, without the material renderer knowing.
   const fullKey: GlClassicDefineKey = {
     ...key,
+    hasColorAdjustment: getGlScene3DRuntime(state).activeColorAdjustmentRun,
     hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
   };
   return ensureGlScene3DProgram(state, `classic:${buildGlClassicDefineKey(fullKey)}`, (gl) =>
-    compileGlClassicProgram(gl, fullKey),
+    compileGlClassicProgram(gl, fullKey, getGlRenderStateRuntime(state).glColorAdjustmentMaterialFeature ?? null),
   );
 }
 
@@ -74,8 +82,18 @@ export function getGlClassicFragmentSource(): string {
 }
 
 // The full fragment source for a define key (define block + body), ready to hand to the GL compiler.
-export function getGlClassicFragmentSourceForKey(key: Readonly<GlClassicDefineKey>): string {
-  return buildGlClassicDefineSource(key) + CLASSIC_FRAGMENT_BODY;
+export function getGlClassicFragmentSourceForKey(
+  key: Readonly<GlClassicDefineKey>,
+  colorAdjustmentFeature: Readonly<GlColorAdjustmentMaterialFeature> | null = null,
+): string {
+  let body = CLASSIC_FRAGMENT_BODY;
+  if (key.hasColorAdjustment && colorAdjustmentFeature !== null) {
+    body = body.replace(
+      'precision highp float;',
+      `precision highp float;\n${colorAdjustmentFeature.fragmentShaderChunk}`,
+    );
+  }
+  return buildGlClassicDefineSource(key) + body;
 }
 
 // The vertex shader body (everything after the "#version 300 es" + defines block). Transforms the
@@ -108,6 +126,7 @@ function buildGlClassicDefineSource(key: Readonly<GlClassicDefineKey>): string {
   if (key.hasAlphaMap) defines += '#define HAS_ALPHA_MAP\n';
   if (key.hasUvTransform) defines += '#define HAS_UV_TRANSFORM\n';
   if (key.hasSkin) defines += '#define HAS_SKIN\n';
+  if (key.hasColorAdjustment) defines += '#define HAS_COLOR_ADJUSTMENT\n';
   return defines;
 }
 
@@ -159,6 +178,10 @@ in vec2 v_uv0;
 
 uniform vec4 u_diffuse;
 uniform float u_alphaCutoff;
+#ifdef HAS_COLOR_ADJUSTMENT
+uniform vec4 u_flightColorMultiplier;
+uniform vec4 u_flightColorOffset;
+#endif
 ${GL_MESH_LIGHT_BLOCK_GLSL}
 #if defined(LIGHTING_PHONG) || defined(LIGHTING_BLINNPHONG)
 uniform vec4 u_specular;
@@ -298,6 +321,9 @@ void main() {
   }
 
   fragColor = vec4(radiance, diffuse.a);
+#ifdef HAS_COLOR_ADJUSTMENT
+  fragColor = applyFlightColorAdjustment(fragColor, u_flightColorMultiplier, u_flightColorOffset);
+#endif
   fragColor.a *= u_objectAlpha;
 }
 `;

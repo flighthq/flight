@@ -7,6 +7,8 @@ import type { GlLitProgram } from './GlLitProgram';
 // surface, the modifiers inject at the slot hooks.
 export interface GlShadedDefineKey {
   alphaMaskEnabled: boolean;
+  // Promoted post-shade color-adjustment variant, selected from draw-data presence.
+  hasColorAdjustment?: boolean;
   hasDiffuseMap: boolean;
   hasNormalMap: boolean;
   // Set by ensureGlShadedProgram from the render-state skinned-run flag, not the material renderer —

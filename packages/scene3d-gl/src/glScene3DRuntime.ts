@@ -76,6 +76,7 @@ export function getGlScene3DRuntime(state: GlRenderState): GlScene3DRuntime {
   let scene = sceneRuntimes.get(state);
   if (scene === undefined) {
     scene = {
+      activeColorAdjustmentRun: false,
       activeMeshProgram: null,
       activeSkinnedRun: false,
       blendedDrawList: [],

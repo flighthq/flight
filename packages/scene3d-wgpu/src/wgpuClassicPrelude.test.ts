@@ -1,5 +1,10 @@
 import { createTexture } from '@flighthq/texture';
-import type { ImageResource, WgpuClassicDefineKey, WgpuClassicLightingModel } from '@flighthq/types';
+import type {
+  ImageResource,
+  WgpuClassicDefineKey,
+  WgpuClassicLightingModel,
+  WgpuColorAdjustmentMaterialFeature,
+} from '@flighthq/types';
 
 import {
   bindWgpuClassicSurface,
@@ -23,6 +28,11 @@ function makeKey(lightingModel: WgpuClassicLightingModel): WgpuClassicDefineKey 
     lightingModel,
   };
 }
+const COLOR_FEATURE: WgpuColorAdjustmentMaterialFeature = {
+  fragmentShaderChunk: 'fn applyFlightColorAdjustment(c : vec4f, m : vec4f, o : vec4f) -> vec4f { return c; }',
+  record: () => {},
+  resolveFlush: () => null,
+};
 
 describe('bindWgpuClassicSurface', () => {
   it('creates a material bind group + buffer once per key and rewrites the uniform each call', () => {
@@ -82,6 +92,13 @@ describe('buildWgpuClassicDefineKey', () => {
     const withAlpha = { ...makeKey('blinnphong'), hasAlphaMap: true };
     expect(buildWgpuClassicDefineKey(withAlpha)).not.toBe(buildWgpuClassicDefineKey(makeKey('blinnphong')));
   });
+
+  it('keeps the base key stable and appends color adjustment only for promotion', () => {
+    const base = makeKey('phong');
+    expect(buildWgpuClassicDefineKey({ ...base, hasColorAdjustment: true })).toBe(
+      `${buildWgpuClassicDefineKey(base)}c`,
+    );
+  });
 });
 
 describe('compileWgpuClassicPipeline', () => {
@@ -112,6 +129,19 @@ describe('ensureWgpuClassicPipeline', () => {
 });
 
 describe('getWgpuClassicModuleSourceForKey', () => {
+  it('splices the registered post-shade chunk only into the promoted variant', () => {
+    const base = getWgpuClassicModuleSourceForKey(makeKey('phong'), false, null, COLOR_FEATURE);
+    const adjusted = getWgpuClassicModuleSourceForKey(
+      { ...makeKey('phong'), hasColorAdjustment: true },
+      false,
+      null,
+      COLOR_FEATURE,
+    );
+    expect(base).not.toContain(COLOR_FEATURE.fragmentShaderChunk);
+    expect(adjusted).toContain(COLOR_FEATURE.fragmentShaderChunk);
+    expect(adjusted).toContain('draw.flightColorMultiplier');
+  });
+
   it('gates the alpha-map const + coverage multiply off the alpha-map flag', () => {
     const none = getWgpuClassicModuleSourceForKey(makeKey('blinnphong'));
     expect(none).toContain('const HAS_ALPHA_MAP : bool = false;');

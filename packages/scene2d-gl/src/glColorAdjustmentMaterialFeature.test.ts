@@ -35,7 +35,8 @@ function ct(
 
 const CT_MODE_NONE = 0;
 const CT_MODE_UNIFORM = 1;
-const CT_MODE_PER_INSTANCE = 2;
+const CT_MODE_PACKED_TINT = 2;
+const CT_MODE_PER_INSTANCE = 3;
 
 describe('registerGlColorAdjustmentMaterialFeature', () => {
   it('installs the fold so recorded tints drive the color-adjustment state machine', () => {
@@ -62,6 +63,8 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     recordGlSpriteBatchColorTransform(state, null, 0);
     recordGlSpriteBatchColorTransform(state, null, 1);
     expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_NONE);
+    expect(runtime.spriteBatchColorTintData).toBeUndefined();
+    expect(runtime.spriteBatchColorTransformData).toBeUndefined();
   });
 
   it('uses one whole-batch uniform when every instance shares one tint', () => {
@@ -85,15 +88,17 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_UNIFORM);
   });
 
-  it('promotes to per-instance (never splits) when tints diverge, back-filling the earlier tint', () => {
+  it('promotes varying multiply-only tints to packed RGBA8 without splitting', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     registerGlColorAdjustmentMaterialFeature(state);
     recordGlSpriteBatchColorTransform(state, ct(0.5), 0);
     recordGlSpriteBatchColorTransform(state, ct(0.25), 1);
-    expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_PER_INSTANCE);
-    expect(runtime.spriteBatchColorTransformData![0]).toBe(0.5);
-    expect(runtime.spriteBatchColorTransformData![8]).toBe(0.25);
+    expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_PACKED_TINT);
+    expect(Array.from(new Uint8Array(runtime.spriteBatchColorTintData!.buffer, 0, 8))).toEqual([
+      128, 255, 255, 255, 64, 255, 255, 255,
+    ]);
+    expect(runtime.spriteBatchColorTransformData).toBeUndefined();
   });
 
   it('promotes with identity fill when a tinted instance follows an untinted one', () => {
@@ -102,9 +107,10 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     registerGlColorAdjustmentMaterialFeature(state);
     recordGlSpriteBatchColorTransform(state, null, 0);
     recordGlSpriteBatchColorTransform(state, ct(0.5), 1);
-    expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_PER_INSTANCE);
-    expect(runtime.spriteBatchColorTransformData![0]).toBe(1);
-    expect(runtime.spriteBatchColorTransformData![8]).toBe(0.5);
+    expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_PACKED_TINT);
+    expect(Array.from(new Uint8Array(runtime.spriteBatchColorTintData!.buffer, 0, 8))).toEqual([
+      255, 255, 255, 255, 128, 255, 255, 255,
+    ]);
   });
 
   it('writes identity for an untinted instance once the batch is per-instance', () => {
@@ -114,8 +120,7 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     recordGlSpriteBatchColorTransform(state, ct(0.5), 0);
     recordGlSpriteBatchColorTransform(state, ct(0.25), 1);
     recordGlSpriteBatchColorTransform(state, null, 2);
-    expect(runtime.spriteBatchColorTransformData![16]).toBe(1);
-    expect(runtime.spriteBatchColorTransformData![20]).toBe(0);
+    expect(Array.from(new Uint8Array(runtime.spriteBatchColorTintData!.buffer, 8, 4))).toEqual([255, 255, 255, 255]);
   });
 
   it('normalizes color offsets by 255', () => {
@@ -125,6 +130,19 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     recordGlSpriteBatchColorTransform(state, ct(1, 1, 1, 1, 255, 0, 0, 0), 0);
     recordGlSpriteBatchColorTransform(state, ct(0.5), 1);
     expect(runtime.spriteBatchColorTransformData![4]).toBe(1);
+    expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_PER_INSTANCE);
+  });
+
+  it('records compact per-item tint data directly as four bytes', () => {
+    const { state } = createGlState();
+    const runtime = getGlRenderStateRuntime(state);
+    registerGlColorAdjustmentMaterialFeature(state);
+    recordGlSpriteBatchColorTransform(state, null, 0);
+    recordGlSpriteBatchColorTransform(state, { tint: 0x12345678 }, 1);
+    expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_PACKED_TINT);
+    expect(Array.from(new Uint8Array(runtime.spriteBatchColorTintData!.buffer, 4, 4))).toEqual([
+      0x12, 0x34, 0x56, 0x78,
+    ]);
   });
 
   it('drives the uniform color-transform shader on flush', () => {
@@ -139,7 +157,7 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     expect(gl.drawElementsInstanced).toHaveBeenCalled();
   });
 
-  it('uploads a per-instance color-transform buffer on flush when tints vary', () => {
+  it('uploads a four-byte per-instance tint buffer on flush when tints vary', () => {
     const { state, gl } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     registerGlColorAdjustmentMaterialFeature(state);
@@ -149,6 +167,7 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     runtime.spriteBatchCount = 2;
     flushGlSpriteBatch(state);
     expect(runtime.spriteBatchColorTransformBuffer).not.toBeNull();
+    expect(gl.vertexAttribPointer).toHaveBeenCalledWith(7, 4, gl.UNSIGNED_BYTE, true, 4, 0);
     expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 2);
   });
 

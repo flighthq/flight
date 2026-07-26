@@ -10,6 +10,7 @@ import type {
   Scene3DLightBlock,
   Scene3DRenderProxy,
   Texture,
+  WgpuColorAdjustmentMaterialFeature,
   WgpuMaterialBinding,
 } from '@flighthq/types';
 import { SCENE_LIGHT_BLOCK_FLOATS } from '@flighthq/types';
@@ -36,6 +37,7 @@ import {
   getWgpuMeshPreludeWgsl,
   isWgpuTextureReady,
   resolveWgpuMaterialTextureView,
+  spliceWgpuColorAdjustmentPrelude,
   stashWgpuUvTransform,
   isWgpuMaterialBindGroupRebuildNeeded,
   wgpuPerMapMaterialBindGroupNeedsRebuild,
@@ -59,6 +61,39 @@ function makeLights(): Scene3DLightBlock {
   data[8] = 0.1;
   return { ambientCount: 1, data, directionalCount: 1, hemisphereCount: 0, pointCount: 0, spotCount: 0, version: 1 };
 }
+
+describe('beginWgpuMeshDraw', () => {
+  it('stores the active pipeline, sets it, and binds the frame group', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    ensureWgpuFrameBindGroup(state);
+    const pipeline = makePipeline(state);
+    beginWgpuMeshDraw(state, pipeline);
+    expect(getWgpuScene3DRuntime(state).activeMeshPipeline).toBe(pipeline);
+    expect(fake.calls.some((c) => c.name === 'setPipeline')).toBe(true);
+    expect(fake.calls.some((c) => c.name === 'setBindGroup' && c.args[0] === 0)).toBe(true);
+  });
+
+  it('does not bind group(3) for a pipeline without a shadow layout', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    ensureWgpuFrameBindGroup(state);
+    beginWgpuMeshDraw(state, makePipeline(state));
+    expect(fake.calls.some((c) => c.name === 'setBindGroup' && c.args[0] === 3)).toBe(false);
+  });
+
+  it('binds the shared shadow group at group(3) for a shadow pipeline', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    ensureWgpuFrameBindGroup(state);
+    beginWgpuMeshDraw(state, makeShadowPipeline(state));
+    expect(fake.calls.some((c) => c.name === 'setBindGroup' && c.args[0] === 3)).toBe(true);
+  });
+
+  it('binds the combined PBR sample group at group(3)', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    ensureWgpuFrameBindGroup(state);
+    beginWgpuMeshDraw(state, makePbrSamplePipeline(state));
+    expect(fake.calls.some((c) => c.name === 'setBindGroup' && c.args[0] === 3)).toBe(true);
+  });
+});
 
 function makeProxy(): Scene3DRenderProxy {
   const geometry = createBoxMeshGeometry();
@@ -99,39 +134,6 @@ function makePbrSamplePipeline(state: ReturnType<typeof makeWgpuScene3DState>['s
     pbrSampleBindGroupLayout: ensureWgpuPbrSampleLayout(state),
   });
 }
-
-describe('beginWgpuMeshDraw', () => {
-  it('stores the active pipeline, sets it, and binds the frame group', () => {
-    const { fake, state } = makeWgpuScene3DState();
-    ensureWgpuFrameBindGroup(state);
-    const pipeline = makePipeline(state);
-    beginWgpuMeshDraw(state, pipeline);
-    expect(getWgpuScene3DRuntime(state).activeMeshPipeline).toBe(pipeline);
-    expect(fake.calls.some((c) => c.name === 'setPipeline')).toBe(true);
-    expect(fake.calls.some((c) => c.name === 'setBindGroup' && c.args[0] === 0)).toBe(true);
-  });
-
-  it('does not bind group(3) for a pipeline without a shadow layout', () => {
-    const { fake, state } = makeWgpuScene3DState();
-    ensureWgpuFrameBindGroup(state);
-    beginWgpuMeshDraw(state, makePipeline(state));
-    expect(fake.calls.some((c) => c.name === 'setBindGroup' && c.args[0] === 3)).toBe(false);
-  });
-
-  it('binds the shared shadow group at group(3) for a shadow pipeline', () => {
-    const { fake, state } = makeWgpuScene3DState();
-    ensureWgpuFrameBindGroup(state);
-    beginWgpuMeshDraw(state, makeShadowPipeline(state));
-    expect(fake.calls.some((c) => c.name === 'setBindGroup' && c.args[0] === 3)).toBe(true);
-  });
-
-  it('binds the combined PBR sample group at group(3)', () => {
-    const { fake, state } = makeWgpuScene3DState();
-    ensureWgpuFrameBindGroup(state);
-    beginWgpuMeshDraw(state, makePbrSamplePipeline(state));
-    expect(fake.calls.some((c) => c.name === 'setBindGroup' && c.args[0] === 3)).toBe(true);
-  });
-});
 
 describe('buildWgpuMaterialBindGroup', () => {
   it('emits the uniform buffer at 0, the sampler at 1, and each map view at 2 + i', () => {
@@ -669,6 +671,20 @@ describe('resolveWgpuMaterialTextureView', () => {
     const placeholder = ensureWgpuPlaceholderTextureView(state);
     expect(resolveWgpuMaterialTextureView(state, null)).toBe(placeholder);
     expect(resolveWgpuMaterialTextureView(state, { image: null } as unknown as Texture)).toBe(placeholder);
+  });
+});
+
+describe('spliceWgpuColorAdjustmentPrelude', () => {
+  it('widens Draw and injects only the registered backend chunk', () => {
+    const feature: WgpuColorAdjustmentMaterialFeature = {
+      fragmentShaderChunk: 'fn applyFlightColorAdjustment() {}',
+      record: () => {},
+      resolveFlush: () => null,
+    };
+    const source = spliceWgpuColorAdjustmentPrelude(WGPU_MESH_PRELUDE_WGSL, feature);
+    expect(source).toContain(feature.fragmentShaderChunk);
+    expect(source).toContain('flightColorMultiplier : vec4f');
+    expect(source).toContain('flightColorOffset : vec4f');
   });
 });
 

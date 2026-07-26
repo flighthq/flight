@@ -1,5 +1,7 @@
-import type { WgpuPbrDefineKey } from '@flighthq/types';
+import type { WgpuColorAdjustmentMaterialFeature, WgpuPbrDefineKey } from '@flighthq/types';
 import type { WgpuSkinningAdapter } from '@flighthq/types';
+
+import { spliceWgpuColorAdjustmentPrelude } from './wgpuMeshPipeline';
 // The shared Wgpu PBR prelude: the WGSL vertex + fragment uber-shader for the StandardPbr forward-lit
 // path AND every PBR-extension variant — the WGSL mirror of scene-gl's glPbrPrelude. One module source
 // is specialized per material at compile time by prepending a const-flag block (see WgpuPbrDefineKey /
@@ -53,7 +55,8 @@ export function buildWgpuPbrDefineKey(key: Readonly<WgpuPbrDefineKey>): string {
     `${key.iridescenceEnabled ? 'I' : '-'}` +
     `${key.specularEnabled ? 'P' : '-'}` +
     `${key.subsurfaceEnabled ? 'U' : '-'}` +
-    `${key.transmissionEnabled ? 'T' : '-'}`
+    `${key.transmissionEnabled ? 'T' : '-'}` +
+    `${key.hasColorAdjustment ? 'c' : ''}`
   );
 }
 
@@ -93,11 +96,21 @@ export function getWgpuPbrModuleSourceForKey(
   key: Readonly<WgpuPbrDefineKey>,
   skinned = false,
   skinning: Readonly<WgpuSkinningAdapter> | null = null,
+  colorAdjustmentFeature: Readonly<WgpuColorAdjustmentMaterialFeature> | null = null,
 ): string {
-  return (
+  let source =
     buildWgpuPbrDefineSource(key) +
-    (skinned && skinning !== null ? skinning.extendMeshPrelude(PBR_WGSL_BODY) : PBR_WGSL_BODY)
-  );
+    (skinned && skinning !== null ? skinning.extendMeshPrelude(PBR_WGSL_BODY) : PBR_WGSL_BODY);
+  if (key.hasColorAdjustment && colorAdjustmentFeature !== null) {
+    source = spliceWgpuColorAdjustmentPrelude(source, colorAdjustmentFeature).replace(
+      '  return vec4f(radiance, alpha * in.objectAlpha);',
+      `  var flightColor = vec4f(radiance, alpha);
+  flightColor = applyFlightColorAdjustment(flightColor, draw.flightColorMultiplier, draw.flightColorOffset);
+  flightColor.a = flightColor.a * in.objectAlpha;
+  return flightColor;`,
+    );
+  }
+  return source;
 }
 
 const PBR_WGSL_BODY = /* wgsl */ `

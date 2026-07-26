@@ -6,6 +6,7 @@ import type { Material } from './Material';
 import type { Matrix } from './Matrix';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
+import type { TintMaterialData } from './TintMaterialData';
 import type { VideoTexture } from './VideoTexture';
 import type { WgpuCompressedTextureDecoder } from './WgpuCompressedTextureDecoder';
 import type { WgpuCompressedTextureUploader } from './WgpuCompressedTextureUploader';
@@ -29,9 +30,12 @@ export interface WgpuRenderState extends RenderState {
 // module for a tinted batch (or null when the batch has no adjustment, so the caller runs the lean
 // material path). This is the generic capability seam — color transform is its first consumer.
 export interface WgpuColorAdjustmentMaterialFeature {
+  // The one backend-authored pointwise color-remap implementation, spliced only into promoted
+  // material-family variants. It lives on the registered feature to preserve bundle shake-out.
+  readonly fragmentShaderChunk: string;
   record(
     runtime: WgpuRenderStateRuntime,
-    colorTransform: ColorTransform | null | undefined,
+    colorTransform: ColorTransform | TintMaterialData | null | undefined,
     instanceIndex: number,
   ): void;
   resolveFlush(state: WgpuRenderState, count: number): WgpuColorAdjustmentFlush | null;
@@ -41,7 +45,7 @@ export interface WgpuColorAdjustmentMaterialFeature {
 // each) and the folded shader `module` the batch binds at @group(3), returned by
 // WgpuColorAdjustmentMaterialFeature.resolveFlush.
 export interface WgpuColorAdjustmentFlush {
-  data: Float32Array;
+  data: Float32Array | Uint32Array;
   floats: number;
   module: GPUShaderModule;
 }
@@ -150,14 +154,15 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // spriteBatchUniformColorTransform holds the shared value while a batch stays whole-batch uniform,
   // deferring the per-instance fill until (and if) tints diverge.
   spriteBatchColorTransformMode?: number;
-  spriteBatchUniformColorTransform?: ColorTransform | null;
+  spriteBatchUniformColorTransform?: ColorTransform | TintMaterialData | null;
   spriteBatchColorTransformData?: Float32Array;
+  spriteBatchColorTintData?: Uint32Array;
   // The opt-in color-adjustment fold and its guard, both null until registerWgpuColorAdjustmentMaterialFeature /
   // enableWgpuColorAdjustmentGuards installs them. recordWgpuSpriteBatchColorTransform reaches the fold
   // only through this slot, so the base batch statically references neither its WGSL nor a message.
   wgpuColorAdjustmentMaterialFeature?: WgpuColorAdjustmentMaterialFeature | null;
   wgpuColorAdjustmentMaterialFeatureGuard?:
-    | ((state: WgpuRenderState, colorTransform: Readonly<ColorTransform>) => void)
+    | ((state: WgpuRenderState, colorTransform: Readonly<ColorTransform | TintMaterialData>) => void)
     | null;
   // Per-frame pool of GPU storage buffers, one slot claimed per flush. The batch records draws into
   // the canvas pass, but the pass is submitted once at end of frame, so every flush's draw reads its

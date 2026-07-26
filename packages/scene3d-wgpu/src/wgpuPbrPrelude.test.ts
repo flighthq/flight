@@ -1,4 +1,4 @@
-import type { WgpuPbrDefineKey } from '@flighthq/types';
+import type { WgpuColorAdjustmentMaterialFeature, WgpuPbrDefineKey } from '@flighthq/types';
 
 import {
   buildWgpuPbrDefineKey,
@@ -49,6 +49,11 @@ const ALL = key({
   subsurfaceEnabled: true,
   transmissionEnabled: true,
 });
+const COLOR_FEATURE: WgpuColorAdjustmentMaterialFeature = {
+  fragmentShaderChunk: 'fn applyFlightColorAdjustment(c : vec4f, m : vec4f, o : vec4f) -> vec4f { return c; }',
+  record: () => {},
+  resolveFlush: () => null,
+};
 
 describe('buildWgpuPbrDefineKey', () => {
   it('produces a stable, distinct string per flag set', () => {
@@ -69,6 +74,10 @@ describe('buildWgpuPbrDefineKey', () => {
 
   it('is identical for identical flags (cache soundness)', () => {
     expect(buildWgpuPbrDefineKey(key(ALL))).toBe(buildWgpuPbrDefineKey(key(ALL)));
+  });
+
+  it('keeps the base key stable and appends color adjustment only for promotion', () => {
+    expect(buildWgpuPbrDefineKey(key({ hasColorAdjustment: true }))).toBe(`${buildWgpuPbrDefineKey(NONE)}c`);
   });
 });
 
@@ -149,6 +158,14 @@ describe('getWgpuPbrModuleBody', () => {
 });
 
 describe('getWgpuPbrModuleSourceForKey', () => {
+  it('splices the registered post-shade chunk only into the promoted variant', () => {
+    const base = getWgpuPbrModuleSourceForKey(NONE, false, null, COLOR_FEATURE);
+    const adjusted = getWgpuPbrModuleSourceForKey(key({ hasColorAdjustment: true }), false, null, COLOR_FEATURE);
+    expect(base).not.toContain(COLOR_FEATURE.fragmentShaderChunk);
+    expect(adjusted).toContain(COLOR_FEATURE.fragmentShaderChunk);
+    expect(adjusted).toContain('draw.flightColorMultiplier');
+  });
+
   it('prepends the flag block to the module body', () => {
     const k = key({ hasNormalMap: true });
     const source = getWgpuPbrModuleSourceForKey(k);

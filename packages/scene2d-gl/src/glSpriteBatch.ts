@@ -4,6 +4,7 @@ import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import type {
   BlendMode,
   ColorTransform,
+  TintMaterialData,
   GlMaterialRenderer,
   GlQuadBatchShader,
   GlRenderState,
@@ -286,7 +287,7 @@ export function prepareGlSpriteBatchWrite(
 // untinted instance, which is a no-op whether or not the fold is enabled.
 export function recordGlSpriteBatchColorTransform(
   state: GlRenderState,
-  colorTransform: ColorTransform | null | undefined,
+  colorTransform: ColorTransform | TintMaterialData | null | undefined,
   instanceIndex: number,
 ): void {
   const runtime = getGlRenderStateRuntime(state);

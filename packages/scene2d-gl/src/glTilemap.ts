@@ -2,7 +2,14 @@ import { hasImageResourcePixels } from '@flighthq/image';
 import { noopRendererData } from '@flighthq/render';
 import { resolveGlMaterialRenderer } from '@flighthq/render-gl';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import type { ColorTransform, GlRenderState, RenderProxy2D, SpriteRenderer, Tilemap } from '@flighthq/types';
+import type {
+  ColorTransform,
+  GlRenderState,
+  RenderProxy2D,
+  SpriteRenderer,
+  Tilemap,
+  TintMaterialData,
+} from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
 import {
@@ -85,7 +92,8 @@ function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void
       packGlSpriteBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
       // Per-tile tint overrides the node-level tint (null → the node's, itself possibly null → untinted).
       const colorTransform =
-        (perTileColorTransform?.[row * columns + col] as ColorTransform | null) ?? nodeColorTransform;
+        (perTileColorTransform?.[row * columns + col] as ColorTransform | TintMaterialData | null) ??
+        nodeColorTransform;
       recordGlSpriteBatchColorTransform(state, colorTransform, startCount + drawCount);
       writeBase += INSTANCE_FLOATS;
       drawCount++;

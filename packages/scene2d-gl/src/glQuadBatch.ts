@@ -2,7 +2,14 @@ import { hasImageResourcePixels } from '@flighthq/image';
 import { noopRendererData } from '@flighthq/render';
 import { resolveGlMaterialRenderer } from '@flighthq/render-gl';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import type { ColorTransform, GlRenderState, QuadBatch, RenderProxy2D, SpriteRenderer } from '@flighthq/types';
+import type {
+  ColorTransform,
+  GlRenderState,
+  QuadBatch,
+  RenderProxy2D,
+  SpriteRenderer,
+  TintMaterialData,
+} from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
 import {
@@ -102,7 +109,8 @@ function submitGlQuadBatch(state: GlRenderState, quadBatch: RenderProxy2D): void
     instanceData[writeBase + 12] = alpha;
     packGlSpriteBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
     // Per-quad tint overrides the node-level tint (null → the node's, itself possibly null → untinted).
-    const colorTransform = (perQuadColorTransform?.[i] as ColorTransform | null) ?? nodeColorTransform;
+    const colorTransform =
+      (perQuadColorTransform?.[i] as ColorTransform | TintMaterialData | null) ?? nodeColorTransform;
     recordGlSpriteBatchColorTransform(state, colorTransform, startCount + drawCount);
     writeBase += INSTANCE_FLOATS;
     drawCount++;

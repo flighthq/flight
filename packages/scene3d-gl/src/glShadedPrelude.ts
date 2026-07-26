@@ -1,5 +1,7 @@
+import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import { createModifierRegistry, getModifierDefineKey, orderModifierStack, resolveModifier } from '@flighthq/shading';
 import type {
+  GlColorAdjustmentMaterialFeature,
   GlShadedDefineKey,
   GlShadedProgram,
   ModifierRegistry,
@@ -25,7 +27,7 @@ import { getGlScene3DRuntime } from './glScene3DRuntime';
 export function buildGlShadedCacheKey(key: Readonly<GlShadedDefineKey>, modifierDefineKey: string): string {
   const base = `${key.alphaMaskEnabled ? 'm' : '-'}${key.hasDiffuseMap ? 'd' : '-'}${key.hasSpecularMap ? 's' : '-'}${
     key.hasNormalMap ? 'n' : '-'
-  }${key.hasUvTransform ? 'u' : '-'}${key.hasSkin ? 'k' : '-'}`;
+  }${key.hasUvTransform ? 'u' : '-'}${key.hasSkin ? 'k' : '-'}${key.hasColorAdjustment ? 'c' : ''}`;
   return `shaded:${base}|${modifierDefineKey}`;
 }
 
@@ -39,6 +41,7 @@ export function compileGlShadedProgram(
   key: Readonly<GlShadedDefineKey>,
   orderedModifiers: readonly Modifier[],
   registry: Readonly<ModifierRegistry>,
+  colorAdjustmentFeature: Readonly<GlColorAdjustmentMaterialFeature> | null = null,
 ): GlShadedProgram {
   const defineSource = buildGlShadedDefineSource(key);
   // The skin GLSL is vertex-only (its `in` attributes are illegal in a fragment shader), so it is
@@ -48,7 +51,14 @@ export function compileGlShadedProgram(
     defineSource +
     (key.hasSkin ? GL_SKIN_VERTEX_DECLARATIONS_GLSL : '') +
     assembleGlShadedVertexBody(orderedModifiers, registry);
-  const fragmentSource = defineSource + assembleGlShadedFragmentBody(orderedModifiers, registry);
+  let fragmentBody = assembleGlShadedFragmentBody(orderedModifiers, registry);
+  if (key.hasColorAdjustment && colorAdjustmentFeature !== null) {
+    fragmentBody = fragmentBody.replace(
+      'precision highp float;',
+      `precision highp float;\n${colorAdjustmentFeature.fragmentShaderChunk}`,
+    );
+  }
+  const fragmentSource = defineSource + fragmentBody;
   const program = compileGlProgram(gl, vertexSource, fragmentSource);
   return {
     ...resolveGlLitLocations(gl, program),
@@ -88,10 +98,19 @@ export function ensureGlShadedProgram(
   // material compiles + caches its own HAS_SKIN program, without the material renderer knowing.
   const fullKey: GlShadedDefineKey = {
     ...key,
+    hasColorAdjustment: getGlScene3DRuntime(state).activeColorAdjustmentRun,
     hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
   };
   const cacheKey = buildGlShadedCacheKey(fullKey, getModifierDefineKey(modifiers, registry));
-  return ensureGlScene3DProgram(state, cacheKey, (gl) => compileGlShadedProgram(gl, fullKey, ordered, registry));
+  return ensureGlScene3DProgram(state, cacheKey, (gl) =>
+    compileGlShadedProgram(
+      gl,
+      fullKey,
+      ordered,
+      registry,
+      getGlRenderStateRuntime(state).glColorAdjustmentMaterialFeature ?? null,
+    ),
+  );
 }
 
 // Assembles the ShadedMaterial fragment body for an ordered modifier stack: each FRAGMENT-slot
@@ -189,6 +208,7 @@ function buildGlShadedDefineSource(key: Readonly<GlShadedDefineKey>): string {
   if (key.hasNormalMap) defines += '#define HAS_NORMAL_MAP\n';
   if (key.hasUvTransform) defines += '#define HAS_UV_TRANSFORM\n';
   if (key.hasSkin) defines += '#define HAS_SKIN\n';
+  if (key.hasColorAdjustment) defines += '#define HAS_COLOR_ADJUSTMENT\n';
   return defines;
 }
 
@@ -250,6 +270,10 @@ in vec4 v_tangent;
 in vec2 v_uv0;
 
 uniform vec4 u_diffuse;
+#ifdef HAS_COLOR_ADJUSTMENT
+uniform vec4 u_flightColorMultiplier;
+uniform vec4 u_flightColorOffset;
+#endif
 uniform vec4 u_specular;
 uniform float u_shininess;
 uniform float u_normalScale;
@@ -411,6 +435,9 @@ void main() {
   //@EFFECT
 
   fragColor = vec4(radiance, diffuse.a);
+#ifdef HAS_COLOR_ADJUSTMENT
+  fragColor = applyFlightColorAdjustment(fragColor, u_flightColorMultiplier, u_flightColorOffset);
+#endif
   fragColor.a *= u_objectAlpha;
 }
 `;

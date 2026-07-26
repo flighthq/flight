@@ -108,6 +108,7 @@ export * from './CocosPlistSchema';
 export * from './Collision';
 export * from './CollisionResponse';
 export * from './ColorTransform';
+export * from './TintMaterialData';
 export * from './ColorAdjustmentRuntime';
 export * from './CompositeEffect';
 export * from './CompositeOperator';

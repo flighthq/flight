@@ -5,6 +5,10 @@
 // ones every family's vertex scene2d needs (model + normal matrix + view-projection); a family program
 // interface extends GlMeshProgram with whatever fragment/material uniforms it additionally binds.
 export interface GlMeshProgram {
+  // Resolved lazily by drawGlMeshSubset only for a promoted HAS_COLOR_ADJUSTMENT variant. Undefined
+  // means unresolved; null means the lean base program omitted the feature uniform.
+  locColorMultiplier?: WebGLUniformLocation | null;
+  locColorOffset?: WebGLUniformLocation | null;
   // The per-object opacity uniform location, resolved lazily on first draw and cached: undefined = not
   // yet resolved, null = this program's fragment shader has no u_objectAlpha (silent no-op), a location
   // = present (drawGlMeshSubset uploads proxy.alpha to it). Lazy so any family whose fragment scene2d

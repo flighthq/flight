@@ -62,6 +62,9 @@ export interface GlScene3DDrawEntry {
 // `time` is the per-frame `time` uniform value animated modifiers scroll by (set by setGlScene3DTime).
 // One GlScene3DRuntime is created lazily per state by getGlScene3DRuntime.
 export interface GlScene3DRuntime {
+  // Whether the draw run currently being bound carries resolved color-adjustment data and the
+  // tree-shakable feature is registered. Material-family compilers fold this into their program key.
+  activeColorAdjustmentRun: boolean;
   activeMeshProgram: GlMeshProgram | null;
   // Whether the draw run currently being bound is skinned. drawGlScene3D sets it before each bind()
   // so ensureGl*Program folds HAS_SKIN into the selected program variant without every material

@@ -11,6 +11,7 @@ export function getWgpuScene3DRuntime(state: WgpuRenderState): WgpuScene3DRuntim
   if (scene === undefined) {
     scene = {
       activeBlendedRun: false,
+      activeColorAdjustmentRun: false,
       activeSkinnedRun: false,
       activeMeshPipeline: null,
       blendedDrawList: [],
