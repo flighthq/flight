@@ -32,12 +32,9 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
-    "@flighthq/adjustments": "*",
     "@flighthq/scene2d": "*",
     "@flighthq/geometry": "*",
-    "@flighthq/materials": "*",
     "@flighthq/node": "*",
-    "@flighthq/sprite": "*",
     "@flighthq/textureatlas": "*",
     "@flighthq/types": "*"
   },

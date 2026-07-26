@@ -1,28 +1,21 @@
 import type { GlyphSource } from './GlyphSource';
 import type { Node2D, Node2DData, Node2DRuntime } from './Node2D';
-import type { QuadBatch } from './QuadBatch';
 import type { Rectangle } from './Rectangle';
+import type { TextureAtlas } from './TextureAtlas';
 
 // Horizontal alignment of each laid-out line within the text block. `justify` stretches inter-word
 // gaps to fill the wrap width (the last line of a paragraph stays left-aligned); it degrades to
 // `left` when no `wrapWidth` is set, since there is no target width to justify to.
 export type BitmapTextAlign = 'center' | 'justify' | 'left' | 'right';
 
-// The QuadBatch-backed bitmap text display node. It lays out a string's glyphs from a `GlyphSource`
-// (per-glyph atlas rect, advance, bearing, kerning, line metrics) and emits one glyph quad per
-// visible glyph into a backing `@flighthq/sprite` QuadBatch — one batched draw per glyph-atlas page.
-// It is the composition-layer sibling of `MovieClip` (over a timeline) and `ParticleEmitter2D` (over a
-// particle sim): a display node assembled from lower primitives.
-//
-// The node registers no GPU renderer. Its backing QuadBatches (on `BitmapTextRuntime.quadBatches`,
-// one per glyph-atlas page) are real children in the display hierarchy, so the existing QuadBatch
-// renderer draws them — the same way a `MovieClip` renders through its child display objects.
+// The QuadBatch-batched bitmap text display node — a first-class leaf that owns its glyph quads (one
+// `BitmapTextPage` per glyph-atlas page) and draws them through its own per-backend renderer, the same
+// shape as `Tilemap`. It lays out a string's glyphs from a `GlyphSource` (per-glyph atlas rect, advance,
+// bearing, kerning, line metrics) and emits one glyph quad per visible glyph into the page whose
+// `GlyphEntry.page` it belongs to. Tint is not a bitmap-text concern: it is the node's generic
+// color-adjustment stack (`setNode2DColorAdjustmentTint`), folded on the backends that realize adjustments.
 export interface BitmapTextData extends Node2DData {
   align: BitmapTextAlign;
-  // Packed RGBA tint (`0xRRGGBBAA`) multiplied over the glyph pixels. `0xffffffff` (white) is the
-  // untinted default and leaves the backing batch tint-free; any other value sets the batch's
-  // HasColorTransform trait, folded into the glyph draw as one whole-batch color-transform uniform.
-  color: number;
   // The bound glyph source supplying per-glyph atlas rects, advances, kerning, and line metrics. A
   // live runtime binding (a method object), NOT serializable — a scene serialized with a BitmapText
   // must re-bind this on load, the same way `ParticleEmitterData.atlas` and `MovieClipData.timeline`
@@ -37,16 +30,27 @@ export interface BitmapTextData extends Node2DData {
   wrapWidth: number | null;
 }
 
+// One glyph-atlas page's drawable quad data owned directly by a BitmapText node (page-indexed in
+// `BitmapTextRuntime.pages`). `atlas` binds the page's image and holds its glyph rects (rebuilt each
+// layout); `ids` indexes those regions per quad; `transforms` holds the vector2 (translation-only) pen
+// position of each glyph quad, two floats per quad; `instanceCount` is the live glyph count (capacity is
+// retained across layouts). The per-backend BitmapText renderer draws each page as one batched pass.
+export interface BitmapTextPage {
+  atlas: TextureAtlas;
+  ids: Uint16Array;
+  instanceCount: number;
+  transforms: Float32Array;
+}
+
 export interface BitmapTextRuntime extends Node2DRuntime {
   // Cached local bounds of the laid-out text, written by `updateBitmapText` and copied out by
   // `computeBitmapTextLocalBoundsRectangle`. Null before the first layout.
   localBoundsRectangle: Rectangle | null;
-  // The backing QuadBatches `updateBitmapText` fills — one per glyph-atlas page, page-indexed. Each
-  // holds the quads of glyphs whose `GlyphEntry.page` matches its index, sampling that page's atlas
-  // image (from `getGlyphAtlasImage(page)`) through the batch's own `TextureAtlas` (whose regions are
-  // the page's glyph rects). All are this node's children so the standard QuadBatch renderer draws
-  // them. A single-page source yields exactly one batch (page 0). Empty until `createBitmapText`.
-  quadBatches: QuadBatch[];
+  // The glyph-quad pages `updateBitmapText` fills — one per glyph-atlas page, page-indexed. Each holds
+  // the quads of glyphs whose `GlyphEntry.page` matches its index, sampling that page's atlas image
+  // (from `getGlyphAtlasImage(page)`) through its own `TextureAtlas`. A single-page source yields exactly
+  // one page. Created by `createBitmapText` (page 0) and grown by `updateBitmapText`.
+  pages: BitmapTextPage[];
 }
 
 export interface BitmapText extends Node2D {
@@ -54,10 +58,9 @@ export interface BitmapText extends Node2D {
 }
 
 // Construction/mutation options for a BitmapText. Every field is optional; omitted fields take the
-// node's defaults (`left` align, white tint, no wrap, no letter spacing, 1× line height, empty text).
+// node's defaults (`left` align, no wrap, no letter spacing, 1× line height, empty text).
 export interface BitmapTextOptions {
   align?: BitmapTextAlign;
-  color?: number;
   letterSpacing?: number;
   lineHeight?: number;
   text?: string;

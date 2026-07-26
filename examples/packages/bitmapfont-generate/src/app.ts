@@ -1,4 +1,4 @@
-import { createBitmapText, getBitmapTextQuadBatches, updateBitmapText } from '@flighthq/bitmaptext';
+import { createBitmapText, getBitmapTextPages, updateBitmapText } from '@flighthq/bitmaptext';
 import {
   createGlyphAtlas,
   createGlyphSourceFromGlyphAtlas,
@@ -14,6 +14,7 @@ import {
   createDisplayObject,
   createImageResourceFromSurface,
   invalidateNodeLocalTransform,
+  setNode2DColorAdjustmentTint,
 } from '@flighthq/sdk';
 
 import { render, scale } from './render';
@@ -48,12 +49,13 @@ function addText(
   options?: Readonly<{ letterSpacing?: number; lineHeight?: number; wrapWidth?: number }>,
 ): BitmapText {
   const bitmapText = createBitmapText(glyphSource, {
-    color,
     letterSpacing: options?.letterSpacing,
     lineHeight: options?.lineHeight,
     text,
     wrapWidth: options?.wrapWidth,
   });
+  // Tint is the node's generic color adjustment, folded on backends that realize adjustments (gl/wgpu).
+  setNode2DColorAdjustmentTint(bitmapText, color);
   bitmapText.x = x;
   bitmapText.y = y;
   invalidateNodeLocalTransform(bitmapText);
@@ -76,8 +78,8 @@ addText('0123456789  Lazy • Packed • Reused', 36, 318, 0x06d6a0ff, {
 // The atlas remains the source of glyph metrics and regions; only its finalized pixels are adapted.
 const atlasImage = createImageResourceFromSurface(getGlyphAtlasSurface(atlas));
 for (const bitmapText of bitmapTexts) {
-  for (const quadBatch of getBitmapTextQuadBatches(bitmapText)) {
-    if (quadBatch.data.atlas !== null) quadBatch.data.atlas.image = atlasImage;
+  for (const page of getBitmapTextPages(bitmapText)) {
+    page.atlas.image = atlasImage;
   }
 }
 
