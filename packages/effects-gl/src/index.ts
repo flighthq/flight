@@ -39,6 +39,5 @@ export {
   endGlRenderEffectPipeline,
   registerGlBlendEffectBackdrop,
   registerGlRenderEffect,
-  registerStandardGlRenderEffects,
   setGlRenderEffectVelocityTexture,
 } from './contract';

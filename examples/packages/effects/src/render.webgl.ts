@@ -9,10 +9,14 @@ import {
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
   prepareScene2DRender,
+  defaultGlBloomEffectRunner,
+  defaultGlToneMapEffectRunner,
+  defaultGlVignetteEffectRunner,
+  defaultGlWhiteBalanceEffectRunner,
+  registerGlRenderEffect,
   registerStandardGlMaterial,
   registerGlShapeCommands,
   registerRenderer,
-  registerStandardGlRenderEffects,
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
@@ -30,7 +34,10 @@ export const state = createGlRenderState(canvas, {
 registerStandardGlMaterial(state);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
-registerStandardGlRenderEffects(state);
+registerGlRenderEffect(state, 'BloomEffect', defaultGlBloomEffectRunner);
+registerGlRenderEffect(state, 'VignetteEffect', defaultGlVignetteEffectRunner);
+registerGlRenderEffect(state, 'ToneMapEffect', defaultGlToneMapEffectRunner);
+registerGlRenderEffect(state, 'WhiteBalanceEffect', defaultGlWhiteBalanceEffectRunner);
 
 const pipeline = createGlRenderEffectPipeline(state);
 

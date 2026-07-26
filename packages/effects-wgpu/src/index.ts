@@ -38,7 +38,6 @@ export {
   defaultWgpuVignetteEffectRunner,
   defaultWgpuWhiteBalanceEffectRunner,
   endWgpuRenderEffectPipeline,
-  registerStandardWgpuRenderEffects,
   registerWgpuBlendEffectBackdrop,
   registerWgpuRenderEffect,
   setWgpuRenderEffectVelocityTexture,
