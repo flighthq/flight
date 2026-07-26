@@ -9,13 +9,10 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../adjustments" },
     { "path": "../scene2d" },
     { "path": "../geometry" },
     { "path": "../glyphatlas" },
-    { "path": "../materials" },
     { "path": "../node" },
-    { "path": "../sprite" },
     { "path": "../textureatlas" },
     { "path": "../types" }
   ],
