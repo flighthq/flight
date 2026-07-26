@@ -8,7 +8,6 @@ export * from './glClipRectangle';
 export * from './glColorAdjustmentMaterialFeature';
 export * from './glStandardMaterial';
 export * from './glNode2D';
-export * from './glNode2DRegistration';
 export * from './glParticleEmitter2D';
 export * from './glQuadBatch';
 export * from './glRichText';

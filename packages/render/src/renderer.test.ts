@@ -5,6 +5,7 @@ import {
   copyRenderersFromRenderState,
   noopRendererData,
   registerRenderer,
+  registerRenderers,
 } from './renderer';
 import { createRenderState, getRenderStateRuntime } from './renderState';
 
@@ -124,5 +125,28 @@ describe('registerRenderer', () => {
     getRenderStateRuntime(state).rendererMapId = 0xffffffff;
     registerRenderer(state, kindA, renderer1);
     expect(getRenderStateRuntime(state).rendererMapId).toBe(0);
+  });
+});
+
+describe('registerRenderers', () => {
+  it('should register every [kind, renderer] pair in the supplied set', () => {
+    const state = createRenderState();
+    const kindA = 'A';
+    const kindB = 'B';
+    const rendererA = {} as Renderer;
+    const rendererB = {} as Renderer;
+    registerRenderers(state, [
+      [kindA, rendererA],
+      [kindB, rendererB],
+    ]);
+    expect(getRenderStateRuntime(state).rendererMap.get(kindA)).toBe(rendererA);
+    expect(getRenderStateRuntime(state).rendererMap.get(kindB)).toBe(rendererB);
+  });
+
+  it('should register nothing for an empty set', () => {
+    const state = createRenderState();
+    const idBefore = getRenderStateRuntime(state).rendererMapId;
+    registerRenderers(state, []);
+    expect(getRenderStateRuntime(state).rendererMapId).toBe(idBefore);
   });
 });

@@ -7,11 +7,16 @@ import {
   createWgpuCanvasElement,
   createWgpuRenderState,
   getSurfacePixelRgb,
+  BitmapKind,
+  defaultWgpuBitmapRenderer,
+  defaultWgpuScene2DRenderer,
+  DisplayObjectKind,
   invalidateNodeLocalTransform,
   prepareScene2DRender,
+  registerRenderer,
+  registerStandardWgpuMaterial,
   registerWgpuCompressedTextureDecoder,
   registerWgpuCompressedTextureUpload,
-  registerWgpuScene2DRenderers,
   renderWgpuBackground,
   renderWgpuScene2D,
   submitWgpuRenderPass,
@@ -42,7 +47,9 @@ if (!state.device.features.has('texture-compression-bc')) {
 export const scale = pixelRatio;
 export const width = WIDTH;
 export const height = HEIGHT;
-registerWgpuScene2DRenderers(state);
+registerStandardWgpuMaterial(state);
+registerRenderer(state, DisplayObjectKind, defaultWgpuScene2DRenderer);
+registerRenderer(state, BitmapKind, defaultWgpuBitmapRenderer);
 registerWgpuCompressedTextureUpload(state);
 registerWgpuCompressedTextureDecoder(state, (_format, w, h) => {
   const rgba = new Uint8ClampedArray(w * h * 4);
