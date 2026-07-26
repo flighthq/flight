@@ -1,5 +1,4 @@
 import { getEntityRuntime } from '@flighthq/entity';
-import { createColorTransform } from '@flighthq/materials';
 import type { BoundsNode, Node2D, Node2DData, Node2DRuntime, PartialNode, Rectangle } from '@flighthq/types';
 import { BlendMode, DisplayObjectKind, Node2DTraitsKey } from '@flighthq/types';
 
@@ -13,7 +12,7 @@ import {
   isNode2D,
   setNode2DClip,
   setNode2DColorAdjustments,
-  setNode2DColorTransform,
+  setNode2DColorAdjustmentTint,
 } from './displayObject';
 
 function getRuntime_(obj: Node2D): Node2DRuntime {
@@ -211,20 +210,21 @@ describe('setNode2DColorAdjustments', () => {
   });
 });
 
-describe('setNode2DColorTransform', () => {
-  it('wraps a color transform as one ColorTransformAdjustment on the stack', () => {
+describe('setNode2DColorAdjustmentTint', () => {
+  it('replaces the stack with one TintAdjustment built from the packed color', () => {
     const obj = createDisplayObject();
-    setNode2DColorTransform(obj, createColorTransform({ redMultiplier: 0.5 }));
+    setNode2DColorAdjustmentTint(obj, 0xff0000ff);
     const stack = getNode2DColorAdjustments(obj);
     expect(stack?.length).toBe(1);
-    expect(stack?.[0].kind).toBe('ColorTransformAdjustment');
+    expect(stack?.[0].kind).toBe('TintAdjustment');
   });
 
-  it('clears with null', () => {
+  it('replaces any prior adjustments rather than layering', () => {
     const obj = createDisplayObject();
-    setNode2DColorTransform(obj, createColorTransform({ redMultiplier: 0.5 }));
-    setNode2DColorTransform(obj, null);
-    expect(getNode2DColorAdjustments(obj)).toBeNull();
+    setNode2DColorAdjustmentTint(obj, 0xff0000ff);
+    setNode2DColorAdjustmentTint(obj, 0x00ff00ff);
+    const stack = getNode2DColorAdjustments(obj);
+    expect(stack?.length).toBe(1);
   });
 });
 

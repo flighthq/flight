@@ -16,3 +16,4 @@ export * from './invertAdjustment';
 export * from './liftGammaGainAdjustment';
 export * from './lookupTableGradeAdjustment';
 export * from './sepiaAdjustment';
+export * from './tintAdjustment';

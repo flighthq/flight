@@ -1,7 +1,7 @@
 import {
   COLOR_ADJUSTMENT_CHANNEL_MIXING,
   COLOR_ADJUSTMENT_NONE,
-  createColorTransformAdjustment,
+  createTintAdjustment,
   resolveColorAdjustmentsColorTransform,
 } from '@flighthq/adjustments';
 import { createColorTransform } from '@flighthq/materials';
@@ -22,7 +22,6 @@ import {
 import type {
   Adjustment,
   ClipRegion,
-  ColorTransform,
   Node2D,
   Node2DDataFactory,
   Node2DRuntime,
@@ -106,11 +105,13 @@ export function setNode2DColorAdjustments(source: Node2D, value: readonly Adjust
   invalidateNodeAppearance(source);
 }
 
-// Convenience for the common single-tint path (the color-transform an agent looks for): sets this object's
-// adjustment stack to one `ColorTransformAdjustment`, or clears it with null. Thin wrapper over
-// `setNode2DColorAdjustments` — a color transform is just one adjustment in the generic stack.
-export function setNode2DColorTransform(source: Node2D, colorTransform: Readonly<ColorTransform> | null): void {
-  setNode2DColorAdjustments(source, colorTransform === null ? null : [createColorTransformAdjustment(colorTransform)]);
+// Convenience for the common single-tint path: replaces this object's adjustment stack with one
+// `TintAdjustment` built from a packed `0xRRGGBBAA` color. Replace-semantics, matching the `set` verb —
+// use `addNode2DColorAdjustment` to layer a tint over existing adjustments, or `setNode2DColorAdjustments`
+// with null to clear. Named `…ColorAdjustmentTint` so it sorts beside the stack API and its name signals
+// the adjustment subsystem it needs enabled (gl/wgpu) to render.
+export function setNode2DColorAdjustmentTint(source: Node2D, tint: number): void {
+  setNode2DColorAdjustments(source, [createTintAdjustment(tint)]);
 }
 
 // Fuses the runtime's color-adjustment stack once into its cached affine `resolvedColorTransform`, setting
