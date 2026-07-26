@@ -1,5 +1,6 @@
 export * from './enableGlColorAdjustmentGuards';
 export * from './glBitmap';
+export * from './glBitmapText';
 export * from './glCache';
 export * from './glClip';
 export * from './glClipContours';

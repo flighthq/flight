@@ -2,6 +2,7 @@ import { registerRenderer } from '@flighthq/render';
 import type { GlRenderState } from '@flighthq/types';
 import {
   BitmapKind,
+  BitmapTextKind,
   DisplayObjectKind,
   ParticleEmitter2DKind,
   QuadBatchKind,
@@ -16,6 +17,7 @@ import {
 } from '@flighthq/types';
 
 import { defaultGlBitmapRenderer } from './glBitmap';
+import { defaultGlBitmapTextRenderer } from './glBitmapText';
 import { defaultGlRenderCacheRenderer } from './glCache';
 import { defaultGlScene2DRenderer } from './glNode2D';
 import { defaultGlParticleEmitter2DRenderer } from './glParticleEmitter2D';
@@ -38,6 +40,7 @@ import { defaultGlVideoRenderer } from './glVideo';
  *
  * Registered renderers:
  * - `BitmapKind`         → `defaultGlBitmapRenderer`
+ * - `BitmapTextKind`     → `defaultGlBitmapTextRenderer`
  * - `DisplayObjectKind`  → `defaultGlScene2DRenderer`
  * - `ParticleEmitter2DKind`→ `defaultGlParticleEmitter2DRenderer`
  * - `QuadBatchKind`      → `defaultGlQuadBatchRenderer`
@@ -52,6 +55,7 @@ import { defaultGlVideoRenderer } from './glVideo';
  */
 export function registerGlScene2DRenderers(state: GlRenderState): void {
   registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
+  registerRenderer(state, BitmapTextKind, defaultGlBitmapTextRenderer);
   registerRenderer(state, DisplayObjectKind, defaultGlScene2DRenderer);
   registerRenderer(state, ParticleEmitter2DKind, defaultGlParticleEmitter2DRenderer);
   registerRenderer(state, QuadBatchKind, defaultGlQuadBatchRenderer);
