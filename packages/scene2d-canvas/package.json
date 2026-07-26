@@ -47,6 +47,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
+    "@flighthq/bitmaptext": "*",
     "@flighthq/sprite": "*",
     "typescript": "^5.3.0"
   },

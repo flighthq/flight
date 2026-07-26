@@ -2,6 +2,7 @@ import { registerRenderer } from '@flighthq/render';
 import type { CanvasRenderState, Kind, Renderer } from '@flighthq/types';
 import {
   BitmapKind,
+  BitmapTextKind,
   DisplayObjectKind,
   ParticleEmitter2DKind,
   QuadBatchKind,
@@ -15,6 +16,7 @@ import {
 } from '@flighthq/types';
 
 import { defaultCanvasBitmapRenderer } from './canvasBitmap';
+import { defaultCanvasBitmapTextRenderer } from './canvasBitmapText';
 import { defaultCanvasScene2DRenderer } from './canvasNode2D';
 import { defaultCanvasParticleEmitter2DRenderer } from './canvasParticleEmitter2D';
 import { defaultCanvasQuadBatchRenderer } from './canvasQuadBatch';
@@ -31,6 +33,7 @@ import { defaultCanvasVideoRenderer } from './canvasVideo';
 // hardcoding the full kind list independently.
 export const canvasScene2DRendererEntries: ReadonlyArray<readonly [Kind, Renderer]> = [
   [BitmapKind, defaultCanvasBitmapRenderer],
+  [BitmapTextKind, defaultCanvasBitmapTextRenderer],
   [DisplayObjectKind, defaultCanvasScene2DRenderer],
   [ParticleEmitter2DKind, defaultCanvasParticleEmitter2DRenderer],
   [QuadBatchKind, defaultCanvasQuadBatchRenderer],

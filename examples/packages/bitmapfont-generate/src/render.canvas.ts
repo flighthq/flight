@@ -1,12 +1,12 @@
 import type { Node2D } from '@flighthq/sdk';
 import {
   BitmapKind,
+  BitmapTextKind,
   createCanvasElement,
   createCanvasRenderState,
   defaultCanvasBitmapRenderer,
-  defaultCanvasQuadBatchRenderer,
+  defaultCanvasBitmapTextRenderer,
   prepareScene2DRender,
-  QuadBatchKind,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasScene2D,
@@ -22,7 +22,7 @@ export const state = createCanvasRenderState(canvas, {
 });
 
 registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
-registerRenderer(state, QuadBatchKind, defaultCanvasQuadBatchRenderer);
+registerRenderer(state, BitmapTextKind, defaultCanvasBitmapTextRenderer);
 
 export const scale = pixelRatio;
 
