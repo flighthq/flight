@@ -2,6 +2,7 @@ import { bindWgpuImageResourceTexture, getWgpuBlendState, resolveWgpuSmoothingBi
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import type {
   ColorTransform,
+  TintMaterialData,
   ImageResource,
   Material,
   MaterialData,
@@ -334,7 +335,7 @@ export function prepareWgpuSpriteBatchWrite(
 // is null/undefined for an untinted instance, which is a no-op whether or not the fold is enabled.
 export function recordWgpuSpriteBatchColorTransform(
   state: WgpuRenderState,
-  colorTransform: ColorTransform | null | undefined,
+  colorTransform: ColorTransform | TintMaterialData | null | undefined,
   instanceIndex: number,
 ): void {
   const runtime = getWgpuRenderStateRuntime(state);

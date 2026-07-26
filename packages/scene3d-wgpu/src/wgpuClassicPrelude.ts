@@ -1,8 +1,10 @@
+import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import type {
   LinearColor,
   Texture,
   WgpuClassicDefineKey,
   WgpuClassicPipeline,
+  WgpuColorAdjustmentMaterialFeature,
   WgpuRenderState,
   WgpuSkinningAdapter,
 } from '@flighthq/types';
@@ -15,9 +17,10 @@ import {
   getWgpuMeshPreludeWgsl,
   getWgpuMaterialSampler,
   resolveWgpuMaterialTextureView,
+  spliceWgpuColorAdjustmentPrelude,
   stashWgpuUvTransform,
 } from './wgpuMeshPipeline';
-import { getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
+import { getWgpuScene3DRuntime, getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
 // Ensures (and caches per material reference) the classic Material bind group — a uniform buffer + the
 // shared sampler + the placeholder diffuse/specular/normal textures — and rewrites its uniform with
 // this surface's linear diffuse + specular colors, shininess, and alpha cutoff. Mirrors scene-gl's
@@ -83,7 +86,7 @@ export function buildWgpuClassicDefineKey(key: Readonly<WgpuClassicDefineKey>): 
   const model = key.lightingModel === 'phong' ? 'p' : key.lightingModel === 'blinnphong' ? 'b' : 'l';
   return `${model}${key.alphaMaskEnabled ? 'm' : '-'}${key.doubleSided ? 'd' : '-'}${key.hasDiffuseMap ? 'd' : '-'}${
     key.hasSpecularMap ? 's' : '-'
-  }${key.hasNormalMap ? 'n' : '-'}${key.hasAlphaMap ? 'a' : '-'}`;
+  }${key.hasNormalMap ? 'n' : '-'}${key.hasAlphaMap ? 'a' : '-'}${key.hasColorAdjustment ? 'c' : ''}`;
 }
 
 // Compiles the classic module for a define key and builds the render pipeline for the given color
@@ -96,10 +99,11 @@ export function compileWgpuClassicPipeline(
   format: GPUTextureFormat,
   blended = false,
   skinned = false,
+  colorAdjustmentFeature: Readonly<WgpuColorAdjustmentMaterialFeature> | null = null,
 ): WgpuClassicPipeline {
   const device = state.device;
   const module = device.createShaderModule({
-    code: getWgpuClassicModuleSourceForKey(key, skinned, getWgpuSkinningAdapter(state)),
+    code: getWgpuClassicModuleSourceForKey(key, skinned, getWgpuSkinningAdapter(state), colorAdjustmentFeature),
   });
   const materialBindGroupLayout = device.createBindGroupLayout({
     entries: [
@@ -136,8 +140,22 @@ export function ensureWgpuClassicPipeline(
   key: Readonly<WgpuClassicDefineKey>,
   format: GPUTextureFormat,
 ): WgpuClassicPipeline {
-  return ensureWgpuScene3DPipeline(state, `classic:${format}|${buildWgpuClassicDefineKey(key)}`, (blended, skinned) =>
-    compileWgpuClassicPipeline(state, key, format, blended, skinned),
+  const fullKey: WgpuClassicDefineKey = {
+    ...key,
+    hasColorAdjustment: getWgpuScene3DRuntime(state).activeColorAdjustmentRun,
+  };
+  return ensureWgpuScene3DPipeline(
+    state,
+    `classic:${format}|${buildWgpuClassicDefineKey(fullKey)}`,
+    (blended, skinned) =>
+      compileWgpuClassicPipeline(
+        state,
+        fullKey,
+        format,
+        blended,
+        skinned,
+        getWgpuRenderStateRuntime(state).wgpuColorAdjustmentMaterialFeature ?? null,
+      ),
   );
 }
 
@@ -147,8 +165,19 @@ export function getWgpuClassicModuleSourceForKey(
   key: Readonly<WgpuClassicDefineKey>,
   skinned = false,
   skinning: Readonly<WgpuSkinningAdapter> | null = null,
+  colorAdjustmentFeature: Readonly<WgpuColorAdjustmentMaterialFeature> | null = null,
 ): string {
-  return assembleWgpuClassicModuleSource(key, skinned, skinning, CLASSIC_WGSL_BODY);
+  let source = assembleWgpuClassicModuleSource(key, skinned, skinning, CLASSIC_WGSL_BODY);
+  if (key.hasColorAdjustment && colorAdjustmentFeature !== null) {
+    source = spliceWgpuColorAdjustmentPrelude(source, colorAdjustmentFeature).replace(
+      '  return vec4f(radiance, diffuse.a * in.objectAlpha);',
+      `  var flightColor = vec4f(radiance, diffuse.a);
+  flightColor = applyFlightColorAdjustment(flightColor, draw.flightColorMultiplier, draw.flightColorOffset);
+  flightColor.a = flightColor.a * in.objectAlpha;
+  return flightColor;`,
+    );
+  }
+  return source;
 }
 
 // ShadedMaterial composes modifier declarations and contributions into the classic WGSL, but retains

@@ -18,6 +18,8 @@ export interface WgpuClassicPipeline extends WgpuMeshPipeline {}
 export interface WgpuClassicDefineKey {
   alphaMaskEnabled: boolean;
   doubleSided: boolean;
+  // Promoted post-shade color-adjustment variant, selected from draw-data presence.
+  hasColorAdjustment?: boolean;
   hasAlphaMap?: boolean;
   hasDiffuseMap: boolean;
   hasNormalMap: boolean;

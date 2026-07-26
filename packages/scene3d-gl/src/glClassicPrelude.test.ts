@@ -1,4 +1,4 @@
-import type { GlClassicDefineKey } from '@flighthq/types';
+import type { GlClassicDefineKey, GlColorAdjustmentMaterialFeature } from '@flighthq/types';
 
 import {
   buildGlClassicDefineKey,
@@ -23,6 +23,12 @@ const LAMBERT: GlClassicDefineKey = {
 };
 const PHONG: GlClassicDefineKey = { ...LAMBERT, lightingModel: 'phong' };
 const BLINNPHONG: GlClassicDefineKey = { ...LAMBERT, lightingModel: 'blinnphong' };
+const COLOR_FEATURE: GlColorAdjustmentMaterialFeature = {
+  fragmentShaderChunk: 'vec4 applyFlightColorAdjustment(vec4 c, vec4 m, vec4 o) { return c * m + o; }',
+  drawShapeMeshes: () => {},
+  flush: () => false,
+  record: () => {},
+};
 
 describe('buildGlClassicDefineKey', () => {
   it('encodes the lighting model first, then the feature flags', () => {
@@ -50,6 +56,11 @@ describe('buildGlClassicDefineKey', () => {
   it('sets the trailing skin flag so a skinned variant keys distinctly', () => {
     expect(buildGlClassicDefineKey({ ...LAMBERT, hasSkin: true })).toBe('l------k');
     expect(buildGlClassicDefineKey({ ...LAMBERT, hasSkin: true })).not.toBe(buildGlClassicDefineKey(LAMBERT));
+  });
+
+  it('keeps the base identity stable and appends a promoted color-adjustment marker', () => {
+    expect(buildGlClassicDefineKey(LAMBERT)).toBe('l-------');
+    expect(buildGlClassicDefineKey({ ...LAMBERT, hasColorAdjustment: true })).toBe('l-------c');
   });
 
   it('produces distinct strings per lighting model so they never collide', () => {
@@ -122,6 +133,14 @@ describe('getGlClassicFragmentSource', () => {
 });
 
 describe('getGlClassicFragmentSourceForKey', () => {
+  it('splices the registered post-shade chunk only into the presence-selected variant', () => {
+    const base = getGlClassicFragmentSourceForKey(LAMBERT, COLOR_FEATURE);
+    const adjusted = getGlClassicFragmentSourceForKey({ ...LAMBERT, hasColorAdjustment: true }, COLOR_FEATURE);
+    expect(base).not.toContain('vec4 applyFlightColorAdjustment');
+    expect(adjusted).toContain(COLOR_FEATURE.fragmentShaderChunk);
+    expect(adjusted).toContain('fragColor = applyFlightColorAdjustment');
+  });
+
   it('includes the lighting-model and feature defines only when set', () => {
     expect(getGlClassicFragmentSourceForKey(LAMBERT)).not.toContain('#define LIGHTING_PHONG');
     expect(getGlClassicFragmentSourceForKey(LAMBERT)).not.toContain('#define LIGHTING_BLINNPHONG');

@@ -72,7 +72,11 @@ describe('enableWgpuColorAdjustmentGuards', () => {
     addLogSink(sink.sink);
     try {
       enableWgpuColorAdjustmentGuards(state);
-      runtime.wgpuColorAdjustmentMaterialFeature = { record: () => {}, resolveFlush: () => null };
+      runtime.wgpuColorAdjustmentMaterialFeature = {
+        fragmentShaderChunk: '',
+        record: () => {},
+        resolveFlush: () => null,
+      };
       recordWgpuSpriteBatchColorTransform(state, ct(), 0);
       expect(getMemoryLogSinkEntries(sink).length).toBe(0);
     } finally {

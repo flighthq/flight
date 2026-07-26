@@ -54,6 +54,8 @@ export interface GlPbrDefineKey {
   clearcoatEnabled: boolean;
   hasAlphaMap: boolean;
   hasBaseColorMap: boolean;
+  // Promoted post-shade color-adjustment variant, selected from draw-data presence.
+  hasColorAdjustment?: boolean;
   hasEmissiveMap: boolean;
   hasMetallicRoughnessMap: boolean;
   hasNormalMap: boolean;

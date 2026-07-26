@@ -40,7 +40,8 @@ function ct(
 
 const CT_MODE_NONE = 0;
 const CT_MODE_UNIFORM = 1;
-const CT_MODE_PER_INSTANCE = 2;
+const CT_MODE_PACKED_TINT = 2;
+const CT_MODE_PER_INSTANCE = 3;
 
 describe('registerWgpuColorAdjustmentMaterialFeature', () => {
   it('installs the fold so recorded tints drive the color-adjustment state machine', async () => {
@@ -67,6 +68,8 @@ describe('registerWgpuColorAdjustmentMaterialFeature', () => {
     recordWgpuSpriteBatchColorTransform(state, null, 0);
     recordWgpuSpriteBatchColorTransform(state, null, 1);
     expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_NONE);
+    expect(runtime.spriteBatchColorTintData).toBeUndefined();
+    expect(runtime.spriteBatchColorTransformData).toBeUndefined();
   });
 
   it('uses one whole-batch uniform when every instance shares one tint', async () => {
@@ -80,15 +83,17 @@ describe('registerWgpuColorAdjustmentMaterialFeature', () => {
     expect(runtime.spriteBatchUniformColorTransform).toBe(tint);
   });
 
-  it('promotes to per-instance (never splits) when tints diverge, back-filling the earlier tint', async () => {
+  it('promotes varying multiply-only tints to packed RGBA8 without splitting', async () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
     registerWgpuColorAdjustmentMaterialFeature(state);
     recordWgpuSpriteBatchColorTransform(state, ct(0.5), 0);
     recordWgpuSpriteBatchColorTransform(state, ct(0.25), 1);
-    expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_PER_INSTANCE);
-    expect(runtime.spriteBatchColorTransformData![0]).toBe(0.5);
-    expect(runtime.spriteBatchColorTransformData![8]).toBe(0.25);
+    expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_PACKED_TINT);
+    expect(Array.from(new Uint8Array(runtime.spriteBatchColorTintData!.buffer, 0, 8))).toEqual([
+      128, 255, 255, 255, 64, 255, 255, 255,
+    ]);
+    expect(runtime.spriteBatchColorTransformData).toBeUndefined();
   });
 
   it('promotes with identity fill when a tinted instance follows an untinted one', async () => {
@@ -97,12 +102,13 @@ describe('registerWgpuColorAdjustmentMaterialFeature', () => {
     registerWgpuColorAdjustmentMaterialFeature(state);
     recordWgpuSpriteBatchColorTransform(state, null, 0);
     recordWgpuSpriteBatchColorTransform(state, ct(0.5), 1);
-    expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_PER_INSTANCE);
-    expect(runtime.spriteBatchColorTransformData![0]).toBe(1);
-    expect(runtime.spriteBatchColorTransformData![8]).toBe(0.5);
+    expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_PACKED_TINT);
+    expect(Array.from(new Uint8Array(runtime.spriteBatchColorTintData!.buffer, 0, 8))).toEqual([
+      255, 255, 255, 255, 128, 255, 255, 255,
+    ]);
   });
 
-  it('replicates the uniform tint per instance on flush', async () => {
+  it('replicates a uniform tint as four bytes per instance on flush', async () => {
     const state = await createWgpuRenderStateForTest();
     registerWgpuColorAdjustmentMaterialFeature(state);
     renderWgpuBackground(state);
@@ -113,8 +119,32 @@ describe('registerWgpuColorAdjustmentMaterialFeature', () => {
     recordWgpuSpriteBatchColorTransform(state, ct(0.5), 1);
     runtime.spriteBatchCount = 2;
     flushWgpuSpriteBatch(state);
-    expect(runtime.spriteBatchColorTransformData![0]).toBe(0.5);
-    expect(runtime.spriteBatchColorTransformData![8]).toBe(0.5);
+    expect(Array.from(new Uint8Array(runtime.spriteBatchColorTintData!.buffer, 0, 8))).toEqual([
+      128, 255, 255, 255, 128, 255, 255, 255,
+    ]);
     submitWgpuRenderPass(state);
+  });
+
+  it('records compact per-item tint data directly as one storage word', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const runtime = getWgpuRenderStateRuntime(state);
+    registerWgpuColorAdjustmentMaterialFeature(state);
+    recordWgpuSpriteBatchColorTransform(state, null, 0);
+    recordWgpuSpriteBatchColorTransform(state, { tint: 0x12345678 }, 1);
+    expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_PACKED_TINT);
+    expect(Array.from(new Uint8Array(runtime.spriteBatchColorTintData!.buffer, 4, 4))).toEqual([
+      0x12, 0x34, 0x56, 0x78,
+    ]);
+  });
+
+  it('widens to the affine stream only when an offset appears', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const runtime = getWgpuRenderStateRuntime(state);
+    registerWgpuColorAdjustmentMaterialFeature(state);
+    recordWgpuSpriteBatchColorTransform(state, { tint: 0x808080ff }, 0);
+    recordWgpuSpriteBatchColorTransform(state, ct(1, 1, 1, 1, 255), 1);
+    expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_PER_INSTANCE);
+    expect(runtime.spriteBatchColorTransformData![0]).toBeCloseTo(128 / 255);
+    expect(runtime.spriteBatchColorTransformData![12]).toBe(1);
   });
 });

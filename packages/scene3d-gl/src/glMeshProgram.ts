@@ -101,6 +101,37 @@ export function drawGlMeshSubset(
   }
   if (locObjectAlpha !== null) gl.uniform1f(locObjectAlpha, proxy.alpha ?? 1);
 
+  // A resolved per-object transform promotes only this draw run to the registered material-feature
+  // variant. Resolve and cache its locations lazily so an untinted/base program performs no lookups
+  // or uploads; the promoted Shaded/Phong/PBR fragments consume the same two affine vectors.
+  const colorTransform = proxy.colorTransform;
+  if (colorTransform != null) {
+    let locColorMultiplier = program.locColorMultiplier;
+    let locColorOffset = program.locColorOffset;
+    if (locColorMultiplier === undefined) {
+      locColorMultiplier = gl.getUniformLocation(program.program, 'u_flightColorMultiplier');
+      locColorOffset = gl.getUniformLocation(program.program, 'u_flightColorOffset');
+      (program as GlMeshProgram).locColorMultiplier = locColorMultiplier;
+      (program as GlMeshProgram).locColorOffset = locColorOffset;
+    }
+    if (locColorMultiplier !== null && locColorOffset != null) {
+      gl.uniform4f(
+        locColorMultiplier,
+        colorTransform.redMultiplier,
+        colorTransform.greenMultiplier,
+        colorTransform.blueMultiplier,
+        colorTransform.alphaMultiplier,
+      );
+      gl.uniform4f(
+        locColorOffset,
+        colorTransform.redOffset / 255,
+        colorTransform.greenOffset / 255,
+        colorTransform.blueOffset / 255,
+        colorTransform.alphaOffset / 255,
+      );
+    }
+  }
+
   // GPU skinning: upload the mesh's bone palette into the per-state RGBA32F data texture and bind it on
   // the skin-palette texture unit for the HAS_SKIN variant. Only a skinned program has the location, and
   // only a skinned mesh carries a palette; a mismatch (one without the other) simply skips the upload and

@@ -31,6 +31,7 @@ import {
   reserveQuadBatch,
   resizeQuadBatch,
   setQuadBatchInstance,
+  setQuadBatchInstanceTint,
   setQuadBatchInstanceMatrix,
   setQuadBatchInstanceRange,
   setQuadBatchLocalBoundsRectangle,
@@ -795,6 +796,21 @@ describe('setQuadBatchInstanceRange', () => {
     setQuadBatchInstanceRange(qb, 0, 0, new Float32Array([1, 2]));
     setQuadBatchInstanceRange(qb, -1, 1, new Float32Array([1, 2]));
     expect(qb.data.transforms[0]).toBe(0);
+  });
+});
+
+describe('setQuadBatchInstanceTint', () => {
+  it('lazily allocates per-item data and stores packed RGBA', () => {
+    const batch = createQuadBatch({ data: { instanceCount: 3 } });
+    expect(batch.data.materialData).toBeNull();
+    setQuadBatchInstanceTint(batch, 1, 0x12345678);
+    expect(batch.data.materialData).toEqual([null, { tint: 0x12345678 }, null]);
+  });
+
+  it('ignores an out-of-range instance without allocating', () => {
+    const batch = createQuadBatch({ data: { instanceCount: 1 } });
+    setQuadBatchInstanceTint(batch, 2, 0xffffffff);
+    expect(batch.data.materialData).toBeNull();
   });
 });
 

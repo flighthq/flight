@@ -10,6 +10,7 @@ import type {
   GlShapeMeshColorTransformShader,
   GlUniformColorTransformShader,
   RenderProxy2D,
+  TintMaterialData,
 } from '@flighthq/types';
 import type { GlShapeMeshBinding } from '@flighthq/types';
 
@@ -31,9 +32,6 @@ export function registerGlColorAdjustmentMaterialFeature(state: GlRenderState): 
   const runtime = getGlRenderStateRuntime(state);
   runtime.glColorAdjustmentMaterialFeature = glColorAdjustmentMaterialFeature;
   if (runtime.spriteBatchColorTransformMode === undefined) runtime.spriteBatchColorTransformMode = CT_MODE_NONE;
-  if (runtime.spriteBatchColorTransformData === undefined) {
-    runtime.spriteBatchColorTransformData = new Float32Array(COLOR_TRANSFORM_FLOATS * 256);
-  }
 }
 
 // Per-instance color-transform layout (8 floats = 32 bytes): 4 multiplier + 4 offset, at attribute
@@ -48,7 +46,17 @@ const COLOR_TRANSFORM_STRIDE = COLOR_TRANSFORM_FLOATS * 4;
 // splits it.
 const CT_MODE_NONE = 0;
 const CT_MODE_UNIFORM = 1;
-const CT_MODE_PER_INSTANCE = 2;
+const CT_MODE_PACKED_TINT = 2;
+const CT_MODE_PER_INSTANCE = 3;
+
+// The backend's single color-adjustment shader chunk. The registered feature carries this source to
+// every participating material compiler (Standard 2D and the promoted 3D family variants), so the
+// color math has one implementation without making the lean base compilers statically import it.
+const GL_COLOR_ADJUSTMENT_FRAGMENT_CHUNK = `
+vec4 applyFlightColorAdjustment(vec4 color, vec4 multiplier, vec4 offset) {
+  return clamp(color * multiplier + offset, vec4(0.0), vec4(1.0));
+}
+`;
 
 // Per-instance color-transform program: the base quad-batch vertex work plus two vec4 instance
 // attributes (a_ctMult / a_ctOff) carried through to the fragment scene2d. The color-transform math is
@@ -87,6 +95,58 @@ void main() {
   v_ctOff = a_ctOff;
 }`;
 
+// The common varying-tint path: one normalized RGBA8 multiplier (4 bytes per instance), with no
+// offset stream. It is widened to CT_INSTANCED_VS only if an affine transform with offsets appears.
+const CT_PACKED_TINT_VS = `#version 300 es
+precision mediump float;
+
+layout(location = 0) in vec2 a_corner;
+layout(location = 1) in vec2 a_matAB;
+layout(location = 2) in vec2 a_matCD;
+layout(location = 3) in vec2 a_matTXTY;
+layout(location = 4) in vec2 a_size;
+layout(location = 5) in vec4 a_uvRect;
+layout(location = 6) in float a_alpha;
+layout(location = 7) in vec4 a_ctMult;
+
+uniform mat3 u_world;
+
+out vec2 v_texCoord;
+out float v_alpha;
+out vec4 v_ctMult;
+
+void main() {
+  vec2 local = a_corner * a_size;
+  vec2 worldPos = vec2(
+    a_matAB.x * local.x + a_matCD.x * local.y + a_matTXTY.x,
+    a_matAB.y * local.x + a_matCD.y * local.y + a_matTXTY.y
+  );
+  vec3 clip = u_world * vec3(worldPos, 1.0);
+  gl_Position = vec4(clip.xy, 0.0, 1.0);
+  v_texCoord = mix(a_uvRect.xy, a_uvRect.zw, a_corner);
+  v_alpha = a_alpha;
+  v_ctMult = a_ctMult;
+}`;
+
+const CT_PACKED_TINT_FS = `#version 300 es
+precision mediump float;
+in vec2 v_texCoord;
+in float v_alpha;
+in vec4 v_ctMult;
+uniform sampler2D u_texture;
+uniform bool u_straightTextureAlpha;
+out vec4 fragColor;
+${GL_COLOR_ADJUSTMENT_FRAGMENT_CHUNK}
+void main() {
+  vec4 color = texture(u_texture, v_texCoord);
+  if (u_straightTextureAlpha) color.rgb *= color.a;
+  color *= clamp(v_alpha, 0.0, 1.0);
+  if (color.a <= 0.0) discard;
+  color = vec4(color.rgb / color.a, color.a);
+  color = applyFlightColorAdjustment(color, v_ctMult, vec4(0.0));
+  fragColor = vec4(color.rgb * color.a, color.a);
+}`;
+
 const CT_INSTANCED_FS = `#version 300 es
 precision mediump float;
 in vec2 v_texCoord;
@@ -96,13 +156,14 @@ in vec4 v_ctOff;
 uniform sampler2D u_texture;
 uniform bool u_straightTextureAlpha;
 out vec4 fragColor;
+${GL_COLOR_ADJUSTMENT_FRAGMENT_CHUNK}
 void main() {
   vec4 color = texture(u_texture, v_texCoord);
   if (u_straightTextureAlpha) color.rgb *= color.a;
   color *= clamp(v_alpha, 0.0, 1.0);
   if (color.a <= 0.0) discard;
   color = vec4(color.rgb / color.a, color.a);
-  color = clamp(color * v_ctMult + v_ctOff, vec4(0.0), vec4(1.0));
+  color = applyFlightColorAdjustment(color, v_ctMult, v_ctOff);
   fragColor = vec4(color.rgb * color.a, color.a);
 }`;
 
@@ -118,19 +179,23 @@ uniform bool u_straightTextureAlpha;
 uniform vec4 u_ctMult;
 uniform vec4 u_ctOff;
 out vec4 fragColor;
+${GL_COLOR_ADJUSTMENT_FRAGMENT_CHUNK}
 void main() {
   vec4 color = texture(u_texture, v_texCoord);
   if (u_straightTextureAlpha) color.rgb *= color.a;
   color *= clamp(v_alpha, 0.0, 1.0);
   if (color.a <= 0.0) discard;
   color = vec4(color.rgb / color.a, color.a);
-  color = clamp(color * u_ctMult + u_ctOff, vec4(0.0), vec4(1.0));
+  color = applyFlightColorAdjustment(color, u_ctMult, u_ctOff);
   fragColor = vec4(color.rgb * color.a, color.a);
 }`;
 
 // Binds the whole-batch (uniform) color-transform program and uploads the shared tint. Base
 // attributes come from the standard instance buffer; there is no per-instance tint data.
-function bindGlSpriteBatchUniformColorTransform(state: GlRenderState, colorTransform: Readonly<ColorTransform>): void {
+function bindGlSpriteBatchUniformColorTransform(
+  state: GlRenderState,
+  colorTransform: Readonly<ColorTransform | TintMaterialData>,
+): void {
   const shader = ensureGlUniformColorTransformShader(state);
   useGlQuadBatchProgram(state, shader.program);
   setGlQuadBatchWorldAndTexture(state, shader.locWorldMatrix, shader.locTexture, shader.locStraightTextureAlpha);
@@ -138,17 +203,17 @@ function bindGlSpriteBatchUniformColorTransform(state: GlRenderState, colorTrans
   const gl = state.gl;
   gl.uniform4f(
     shader.locColorMultiplier,
-    colorTransform.redMultiplier,
-    colorTransform.greenMultiplier,
-    colorTransform.blueMultiplier,
-    colorTransform.alphaMultiplier,
+    getColorMultiplier(colorTransform, 0),
+    getColorMultiplier(colorTransform, 1),
+    getColorMultiplier(colorTransform, 2),
+    getColorMultiplier(colorTransform, 3),
   );
   gl.uniform4f(
     shader.locColorOffset,
-    colorTransform.redOffset / 255,
-    colorTransform.greenOffset / 255,
-    colorTransform.blueOffset / 255,
-    colorTransform.alphaOffset / 255,
+    getColorOffset(colorTransform, 0),
+    getColorOffset(colorTransform, 1),
+    getColorOffset(colorTransform, 2),
+    getColorOffset(colorTransform, 3),
   );
   bindGlQuadBatchBaseAttributes(state, shader.locCorner);
 }
@@ -172,6 +237,20 @@ function bindGlSpriteBatchInstancedColorTransform(state: GlRenderState): void {
   gl.vertexAttribDivisor(8, 1);
 }
 
+function bindGlSpriteBatchPackedTint(state: GlRenderState): void {
+  const runtime = getGlRenderStateRuntime(state);
+  const shader = ensureGlColorTintInstancedShader(state);
+  useGlQuadBatchProgram(state, shader.program);
+  setGlQuadBatchWorldAndTexture(state, shader.locWorldMatrix, shader.locTexture, shader.locStraightTextureAlpha);
+  bindGlQuadBatchBaseAttributes(state, shader.locCorner);
+
+  const gl = state.gl;
+  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchColorTransformBuffer!);
+  gl.enableVertexAttribArray(7);
+  gl.vertexAttribPointer(7, 4, gl.UNSIGNED_BYTE, true, 4, 0);
+  gl.vertexAttribDivisor(7, 1);
+}
+
 function ensureGlColorTransformInstancedShader(state: GlRenderState): GlColorTransformInstancedShader {
   const runtime = getGlRenderStateRuntime(state);
   if (runtime.colorTransformInstancedShader) return runtime.colorTransformInstancedShader;
@@ -186,6 +265,22 @@ function ensureGlColorTransformInstancedShader(state: GlRenderState): GlColorTra
     locStraightTextureAlpha: gl.getUniformLocation(program, 'u_straightTextureAlpha')!,
   };
   return runtime.colorTransformInstancedShader;
+}
+
+function ensureGlColorTintInstancedShader(state: GlRenderState): GlColorTransformInstancedShader {
+  const runtime = getGlRenderStateRuntime(state);
+  if (runtime.colorTintInstancedShader) return runtime.colorTintInstancedShader;
+
+  const gl = state.gl;
+  const program = createGlProgram(gl, CT_PACKED_TINT_VS, CT_PACKED_TINT_FS, 'Sprite-batch tint (RGBA8)');
+  runtime.colorTintInstancedShader = {
+    program,
+    locCorner: 0,
+    locWorldMatrix: gl.getUniformLocation(program, 'u_world')!,
+    locTexture: gl.getUniformLocation(program, 'u_texture')!,
+    locStraightTextureAlpha: gl.getUniformLocation(program, 'u_straightTextureAlpha')!,
+  };
+  return runtime.colorTintInstancedShader;
 }
 
 function ensureGlUniformColorTransformShader(state: GlRenderState): GlUniformColorTransformShader {
@@ -209,19 +304,21 @@ function ensureGlUniformColorTransformShader(state: GlRenderState): GlUniformCol
 // Value equality for the whole-batch uniform check: reference-equal short-circuits (the common case —
 // every glyph of a bitmap-text node shares one node-level tint), else compares all eight fields so a
 // distinct-but-equal tint still keeps the batch on the cheaper uniform path.
-function equalsRecordedColorTransform(a: Readonly<ColorTransform> | null, b: Readonly<ColorTransform> | null): boolean {
+function equalsRecordedColorTransform(
+  a: Readonly<ColorTransform | TintMaterialData> | null,
+  b: Readonly<ColorTransform | TintMaterialData> | null,
+): boolean {
   if (a === b) return true;
   if (a === null || b === null) return false;
-  return (
-    a.redMultiplier === b.redMultiplier &&
-    a.greenMultiplier === b.greenMultiplier &&
-    a.blueMultiplier === b.blueMultiplier &&
-    a.alphaMultiplier === b.alphaMultiplier &&
-    a.redOffset === b.redOffset &&
-    a.greenOffset === b.greenOffset &&
-    a.blueOffset === b.blueOffset &&
-    a.alphaOffset === b.alphaOffset
-  );
+  for (let channel = 0; channel < 4; channel++) {
+    if (
+      getColorMultiplier(a, channel) !== getColorMultiplier(b, channel) ||
+      getColorOffset(a, channel) !== getColorOffset(b, channel)
+    ) {
+      return false;
+    }
+  }
+  return true;
 }
 
 // Uploads the active batch's per-instance color-transform buffer, selects the fold program (uniform or
@@ -235,6 +332,17 @@ function flushGlColorAdjustmentMaterialFeature(state: GlRenderState, count: numb
   const uniformColorTransform = runtime.spriteBatchUniformColorTransform ?? null;
   runtime.spriteBatchColorTransformMode = CT_MODE_NONE;
   runtime.spriteBatchUniformColorTransform = null;
+
+  if (ctMode === CT_MODE_PACKED_TINT) {
+    const gl = state.gl;
+    if (runtime.spriteBatchColorTransformBuffer == null) {
+      runtime.spriteBatchColorTransformBuffer = gl.createBuffer()!;
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchColorTransformBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, runtime.spriteBatchColorTintData!.subarray(0, count), gl.DYNAMIC_DRAW);
+    bindGlSpriteBatchPackedTint(state);
+    return true;
+  }
 
   if (ctMode === CT_MODE_PER_INSTANCE) {
     const gl = state.gl;
@@ -264,22 +372,34 @@ function flushGlColorAdjustmentMaterialFeature(state: GlRenderState, count: numb
 function promoteGlSpriteBatchColorTransformToPerInstance(
   runtime: GlRenderStateRuntime,
   instanceCount: number,
-  fill: Readonly<ColorTransform> | null,
+  fill: Readonly<ColorTransform | TintMaterialData> | null,
 ): void {
   runtime.spriteBatchColorTransformMode = CT_MODE_PER_INSTANCE;
   for (let i = 0; i < instanceCount; i++) writeGlColorTransformInstance(runtime, fill, i);
+}
+
+function promoteGlSpriteBatchColorTransformToPackedTint(
+  runtime: GlRenderStateRuntime,
+  instanceCount: number,
+  fill: Readonly<ColorTransform | TintMaterialData> | null,
+): void {
+  runtime.spriteBatchColorTransformMode = CT_MODE_PACKED_TINT;
+  for (let i = 0; i < instanceCount; i++) writeGlPackedTintInstance(runtime, getPackedTint(fill)!, i);
+}
+
+function promoteGlPackedTintToColorTransform(runtime: GlRenderStateRuntime, instanceCount: number): void {
+  runtime.spriteBatchColorTransformMode = CT_MODE_PER_INSTANCE;
+  const packed = runtime.spriteBatchColorTintData!;
+  for (let i = 0; i < instanceCount; i++) writeGlNativePackedTintAsColorTransform(runtime, packed[i], i);
 }
 
 // Folds instance `instanceIndex`'s effective color transform into the active batch. See the fold-mode
 // constants for the promotion rules. `colorTransform` is null for an untinted instance.
 function recordGlColorAdjustment(
   runtime: GlRenderStateRuntime,
-  colorTransform: ColorTransform | null | undefined,
+  colorTransform: ColorTransform | TintMaterialData | null | undefined,
   instanceIndex: number,
 ): void {
-  if (runtime.spriteBatchColorTransformData === undefined) {
-    runtime.spriteBatchColorTransformData = new Float32Array(COLOR_TRANSFORM_FLOATS * 256);
-  }
   const mode = runtime.spriteBatchColorTransformMode ?? CT_MODE_NONE;
   const tint = colorTransform ?? null;
 
@@ -290,16 +410,38 @@ function recordGlColorAdjustment(
       runtime.spriteBatchUniformColorTransform = tint;
       return;
     }
-    promoteGlSpriteBatchColorTransformToPerInstance(runtime, instanceIndex, null);
-    writeGlColorTransformInstance(runtime, tint, instanceIndex);
+    if (getPackedTint(tint) !== null) {
+      promoteGlSpriteBatchColorTransformToPackedTint(runtime, instanceIndex, null);
+      writeGlPackedTintInstance(runtime, getPackedTint(tint)!, instanceIndex);
+    } else {
+      promoteGlSpriteBatchColorTransformToPerInstance(runtime, instanceIndex, null);
+      writeGlColorTransformInstance(runtime, tint, instanceIndex);
+    }
     return;
   }
 
   if (mode === CT_MODE_UNIFORM) {
     const uniform = runtime.spriteBatchUniformColorTransform ?? null;
     if (equalsRecordedColorTransform(tint, uniform)) return;
-    promoteGlSpriteBatchColorTransformToPerInstance(runtime, instanceIndex, uniform);
-    writeGlColorTransformInstance(runtime, tint, instanceIndex);
+    const packedTint = getPackedTint(tint);
+    if (getPackedTint(uniform) !== null && packedTint !== null) {
+      promoteGlSpriteBatchColorTransformToPackedTint(runtime, instanceIndex, uniform);
+      writeGlPackedTintInstance(runtime, packedTint, instanceIndex);
+    } else {
+      promoteGlSpriteBatchColorTransformToPerInstance(runtime, instanceIndex, uniform);
+      writeGlColorTransformInstance(runtime, tint, instanceIndex);
+    }
+    return;
+  }
+
+  if (mode === CT_MODE_PACKED_TINT) {
+    const packedTint = getPackedTint(tint);
+    if (packedTint !== null) {
+      writeGlPackedTintInstance(runtime, packedTint, instanceIndex);
+    } else {
+      promoteGlPackedTintToColorTransform(runtime, instanceIndex);
+      writeGlColorTransformInstance(runtime, tint, instanceIndex);
+    }
     return;
   }
 
@@ -311,11 +453,15 @@ function recordGlColorAdjustment(
 // writes the identity (multiply by 1, add 0).
 function writeGlColorTransformInstance(
   runtime: GlRenderStateRuntime,
-  colorTransform: Readonly<ColorTransform> | null,
+  colorTransform: Readonly<ColorTransform | TintMaterialData> | null,
   instanceIndex: number,
 ): void {
   const offset = instanceIndex * COLOR_TRANSFORM_FLOATS;
-  let data = runtime.spriteBatchColorTransformData!;
+  let data = runtime.spriteBatchColorTransformData;
+  if (data === undefined) {
+    data = new Float32Array(COLOR_TRANSFORM_FLOATS * 256);
+    runtime.spriteBatchColorTransformData = data;
+  }
   if (offset + COLOR_TRANSFORM_FLOATS > data.length) {
     const newSize = Math.max(offset + COLOR_TRANSFORM_FLOATS, data.length * 2);
     const grown = new Float32Array(newSize);
@@ -324,14 +470,10 @@ function writeGlColorTransformInstance(
     data = grown;
   }
   if (colorTransform !== null) {
-    data[offset] = colorTransform.redMultiplier;
-    data[offset + 1] = colorTransform.greenMultiplier;
-    data[offset + 2] = colorTransform.blueMultiplier;
-    data[offset + 3] = colorTransform.alphaMultiplier;
-    data[offset + 4] = colorTransform.redOffset / 255;
-    data[offset + 5] = colorTransform.greenOffset / 255;
-    data[offset + 6] = colorTransform.blueOffset / 255;
-    data[offset + 7] = colorTransform.alphaOffset / 255;
+    for (let channel = 0; channel < 4; channel++) {
+      data[offset + channel] = getColorMultiplier(colorTransform, channel);
+      data[offset + 4 + channel] = getColorOffset(colorTransform, channel);
+    }
   } else {
     data[offset] = 1;
     data[offset + 1] = 1;
@@ -342,6 +484,89 @@ function writeGlColorTransformInstance(
     data[offset + 6] = 0;
     data[offset + 7] = 0;
   }
+}
+
+function writeGlPackedTintInstance(runtime: GlRenderStateRuntime, rgba: number, instanceIndex: number): void {
+  let data = runtime.spriteBatchColorTintData;
+  if (data === undefined) {
+    data = new Uint32Array(256);
+    runtime.spriteBatchColorTintData = data;
+  } else if (instanceIndex >= data.length) {
+    const grown = new Uint32Array(Math.max(instanceIndex + 1, data.length * 2));
+    grown.set(data);
+    runtime.spriteBatchColorTintData = grown;
+    data = grown;
+  }
+  data[instanceIndex] = rgbaToNativeByteWord(rgba);
+}
+
+function writeGlNativePackedTintAsColorTransform(
+  runtime: GlRenderStateRuntime,
+  nativeWord: number,
+  instanceIndex: number,
+): void {
+  const offset = instanceIndex * COLOR_TRANSFORM_FLOATS;
+  writeGlColorTransformInstance(runtime, null, instanceIndex);
+  const data = runtime.spriteBatchColorTransformData!;
+  data[offset] = (nativeWord & 0xff) / 255;
+  data[offset + 1] = ((nativeWord >>> 8) & 0xff) / 255;
+  data[offset + 2] = ((nativeWord >>> 16) & 0xff) / 255;
+  data[offset + 3] = ((nativeWord >>> 24) & 0xff) / 255;
+}
+
+function getPackedTint(value: Readonly<ColorTransform | TintMaterialData> | null): number | null {
+  if (value === null) return 0xffffffff;
+  if (isTintMaterialData(value)) return value.tint >>> 0;
+  if (
+    value.redOffset !== 0 ||
+    value.greenOffset !== 0 ||
+    value.blueOffset !== 0 ||
+    value.alphaOffset !== 0 ||
+    value.redMultiplier < 0 ||
+    value.redMultiplier > 1 ||
+    value.greenMultiplier < 0 ||
+    value.greenMultiplier > 1 ||
+    value.blueMultiplier < 0 ||
+    value.blueMultiplier > 1 ||
+    value.alphaMultiplier < 0 ||
+    value.alphaMultiplier > 1
+  ) {
+    return null;
+  }
+  return (
+    ((Math.round(value.redMultiplier * 255) << 24) |
+      (Math.round(value.greenMultiplier * 255) << 16) |
+      (Math.round(value.blueMultiplier * 255) << 8) |
+      Math.round(value.alphaMultiplier * 255)) >>>
+    0
+  );
+}
+
+function rgbaToNativeByteWord(rgba: number): number {
+  return (
+    (((rgba >>> 24) & 0xff) | (((rgba >>> 16) & 0xff) << 8) | (((rgba >>> 8) & 0xff) << 16) | ((rgba & 0xff) << 24)) >>>
+    0
+  );
+}
+
+function isTintMaterialData(value: Readonly<ColorTransform | TintMaterialData>): value is Readonly<TintMaterialData> {
+  return 'tint' in value;
+}
+
+function getColorMultiplier(value: Readonly<ColorTransform | TintMaterialData>, channel: number): number {
+  if (isTintMaterialData(value)) return ((value.tint >>> (24 - channel * 8)) & 0xff) / 255;
+  if (channel === 0) return value.redMultiplier;
+  if (channel === 1) return value.greenMultiplier;
+  if (channel === 2) return value.blueMultiplier;
+  return value.alphaMultiplier;
+}
+
+function getColorOffset(value: Readonly<ColorTransform | TintMaterialData>, channel: number): number {
+  if (isTintMaterialData(value)) return 0;
+  if (channel === 0) return value.redOffset / 255;
+  if (channel === 1) return value.greenOffset / 255;
+  if (channel === 2) return value.blueOffset / 255;
+  return value.alphaOffset / 255;
 }
 
 // Draws the GPU-tessellated solid-fill meshes tinted by the node's color transform. A single mesh is
@@ -427,16 +652,18 @@ precision mediump float;
 uniform vec4 u_color;
 uniform vec4 u_ctMult;
 uniform vec4 u_ctOff;
+${GL_COLOR_ADJUSTMENT_FRAGMENT_CHUNK}
 void main() {
   vec4 color = u_color;
   if (color.a <= 0.0) discard;
   color = vec4(color.rgb / color.a, color.a);
-  color = clamp(color * u_ctMult + u_ctOff, vec4(0.0), vec4(1.0));
+  color = applyFlightColorAdjustment(color, u_ctMult, u_ctOff);
   gl_FragColor = vec4(color.rgb * color.a, color.a);
 }
 `;
 
 const glColorAdjustmentMaterialFeature: GlColorAdjustmentMaterialFeature = {
+  fragmentShaderChunk: GL_COLOR_ADJUSTMENT_FRAGMENT_CHUNK,
   drawShapeMeshes: drawGlShapeMeshesColorTransform,
   flush: flushGlColorAdjustmentMaterialFeature,
   record: recordGlColorAdjustment,

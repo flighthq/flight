@@ -1,7 +1,7 @@
 import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flighthq/geometry';
 import { getNodeWorldMatrix4 } from '@flighthq/node';
 import { prepareScene3DRender } from '@flighthq/render';
-import { declareWgpuRenderTargetColorSpace } from '@flighthq/render-wgpu';
+import { declareWgpuRenderTargetColorSpace, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import { getNode3DRuntime, getNode3DWorldAlpha } from '@flighthq/scene3d';
 import type {
   Camera3D,
@@ -112,6 +112,7 @@ export function drawWgpuScene3D(
   // this still-open render pass (it reads the pass off the render-state runtime).
   drawWgpuScene3DParticleEmitter3Ds(state, scene, camera, lights);
   runtime.activeBlendedRun = false;
+  runtime.activeColorAdjustmentRun = false;
   runtime.activeSkinnedRun = false;
 }
 
@@ -132,29 +133,35 @@ function drawEntries(
   let boundLightBlock: Readonly<Scene3DLightBlock> | null = null;
   let boundRenderer: WgpuMeshMaterialRenderer | null = null;
   let boundSkinned: boolean | undefined;
+  let boundColorAdjustment: boolean | undefined;
+  const colorAdjustmentFeatureEnabled = getWgpuRenderStateRuntime(state).wgpuColorAdjustmentMaterialFeature != null;
 
   for (let i = 0; i < entries.length; i++) {
     const entry = entries[i] as DrawEntry;
     const worldMatrix = entry.worldMatrix as Matrix4;
     setMatrix3NormalFromMatrix4(scratchNormalMatrix, worldMatrix);
     const skinned = isWgpuMeshGpuSkinned(state, entry.mesh);
+    const colorAdjusted = colorAdjustmentFeatureEnabled && entry.colorTransform !== null;
 
     if (
       entry.renderer !== boundRenderer ||
       entry.material !== boundMaterial ||
       entry.lightBlock !== boundLightBlock ||
-      skinned !== boundSkinned
+      skinned !== boundSkinned ||
+      colorAdjusted !== boundColorAdjustment
     ) {
+      runtime.activeColorAdjustmentRun = colorAdjusted;
       runtime.activeSkinnedRun = skinned;
       entry.renderer.bind(state, entry.material, entry.lightBlock, camera);
       boundRenderer = entry.renderer;
       boundMaterial = entry.material;
       boundLightBlock = entry.lightBlock;
       boundSkinned = skinned;
+      boundColorAdjustment = colorAdjusted;
     }
 
     proxy.alpha = entry.alpha;
-    proxy.colorTransform = entry.colorTransform;
+    proxy.colorTransform = colorAdjusted ? entry.colorTransform : null;
     proxy.jointMatrices = skinned ? entry.mesh.skin!.skeleton.jointMatrices : null;
     proxy.material = entry.material;
     proxy.normalMatrix = scratchNormalMatrix;

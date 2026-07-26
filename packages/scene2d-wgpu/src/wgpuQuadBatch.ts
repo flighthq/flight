@@ -2,7 +2,14 @@ import { hasImageResourcePixels } from '@flighthq/image';
 import { noopRendererData } from '@flighthq/render';
 import { resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { ColorTransform, QuadBatch, RenderProxy2D, SpriteRenderer, WgpuRenderState } from '@flighthq/types';
+import type {
+  ColorTransform,
+  QuadBatch,
+  RenderProxy2D,
+  SpriteRenderer,
+  TintMaterialData,
+  WgpuRenderState,
+} from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
 import {
@@ -102,7 +109,8 @@ function submitWgpuQuadBatch(state: WgpuRenderState, quadBatch: RenderProxy2D): 
     instanceData[writeBase + 12] = alpha;
     packWgpuSpriteBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
     // Per-quad tint overrides the node-level tint (null → the node's, itself possibly null → untinted).
-    const colorTransform = (perQuadColorTransform?.[i] as ColorTransform | null) ?? nodeColorTransform;
+    const colorTransform =
+      (perQuadColorTransform?.[i] as ColorTransform | TintMaterialData | null) ?? nodeColorTransform;
     recordWgpuSpriteBatchColorTransform(state, colorTransform, startCount + drawCount);
     writeBase += INSTANCE_STRIDE_FLOATS;
     drawCount++;

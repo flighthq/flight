@@ -2,7 +2,11 @@ import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flig
 import { hasMeshGeometrySkin } from '@flighthq/mesh';
 import { getNodeWorldMatrix4 } from '@flighthq/node';
 import { prepareScene3DRender } from '@flighthq/render';
-import { declareGlRenderTargetColorSpace, invalidateGlRenderStateCache } from '@flighthq/render-gl';
+import {
+  declareGlRenderTargetColorSpace,
+  getGlRenderStateRuntime,
+  invalidateGlRenderStateCache,
+} from '@flighthq/render-gl';
 import { getNode3DRuntime, getNode3DWorldAlpha } from '@flighthq/scene3d';
 import type {
   Camera3D,
@@ -147,6 +151,8 @@ export function drawGlScene3D(
   let boundLightBlock: Readonly<Scene3DLightBlock> | null = null;
   let boundRenderer: GlMeshMaterialRenderer | null = null;
   let boundSkinned: boolean | undefined = undefined;
+  let boundColorAdjustment: boolean | undefined = undefined;
+  const colorAdjustmentFeatureEnabled = getGlRenderStateRuntime(state).glColorAdjustmentMaterialFeature != null;
 
   for (let i = 0; i < opaqueDrawList.length; i++) {
     const entry = opaqueDrawList[i] as DrawEntry;
@@ -156,22 +162,26 @@ export function drawGlScene3D(
     // A skinned run selects the HAS_SKIN program variant; split runs on it (a rigid and a skinned mesh
     // sharing a material need different programs). Set the flag before bind so ensureGl*Program folds it in.
     const skinned = isGpuSkinnedDraw(entry.mesh);
+    const colorAdjusted = colorAdjustmentFeatureEnabled && entry.colorTransform !== null;
     if (
       entry.renderer !== boundRenderer ||
       entry.material !== boundMaterial ||
       entry.lightBlock !== boundLightBlock ||
-      skinned !== boundSkinned
+      skinned !== boundSkinned ||
+      colorAdjusted !== boundColorAdjustment
     ) {
+      runtime.activeColorAdjustmentRun = colorAdjusted;
       runtime.activeSkinnedRun = skinned;
       entry.renderer.bind(state, entry.material, entry.lightBlock, camera);
       boundRenderer = entry.renderer;
       boundMaterial = entry.material;
       boundLightBlock = entry.lightBlock;
       boundSkinned = skinned;
+      boundColorAdjustment = colorAdjusted;
     }
 
     proxy.alpha = entry.alpha;
-    proxy.colorTransform = entry.colorTransform;
+    proxy.colorTransform = colorAdjusted ? entry.colorTransform : null;
     proxy.jointMatrices = skinned ? entry.mesh.skin!.skeleton.jointMatrices : null;
     proxy.material = entry.material;
     proxy.normalMatrix = scratchNormalMatrix;
@@ -193,6 +203,7 @@ export function drawGlScene3D(
     boundLightBlock = null;
     boundRenderer = null;
     boundSkinned = undefined;
+    boundColorAdjustment = undefined;
 
     for (let i = 0; i < blendedDrawList.length; i++) {
       const entry = blendedDrawList[i] as DrawEntry;
@@ -200,22 +211,26 @@ export function drawGlScene3D(
       setMatrix3NormalFromMatrix4(scratchNormalMatrix, worldMatrix);
 
       const skinned = isGpuSkinnedDraw(entry.mesh);
+      const colorAdjusted = colorAdjustmentFeatureEnabled && entry.colorTransform !== null;
       if (
         entry.renderer !== boundRenderer ||
         entry.material !== boundMaterial ||
         entry.lightBlock !== boundLightBlock ||
-        skinned !== boundSkinned
+        skinned !== boundSkinned ||
+        colorAdjusted !== boundColorAdjustment
       ) {
+        runtime.activeColorAdjustmentRun = colorAdjusted;
         runtime.activeSkinnedRun = skinned;
         entry.renderer.bind(state, entry.material, entry.lightBlock, camera);
         boundRenderer = entry.renderer;
         boundMaterial = entry.material;
         boundLightBlock = entry.lightBlock;
         boundSkinned = skinned;
+        boundColorAdjustment = colorAdjusted;
       }
 
       proxy.alpha = entry.alpha;
-      proxy.colorTransform = entry.colorTransform;
+      proxy.colorTransform = colorAdjusted ? entry.colorTransform : null;
       proxy.jointMatrices = skinned ? entry.mesh.skin!.skeleton.jointMatrices : null;
       proxy.material = entry.material;
       proxy.normalMatrix = scratchNormalMatrix;

@@ -1,8 +1,15 @@
-import type { WgpuPbrPipeline, WgpuRenderState, WgpuPbrDefineKey } from '@flighthq/types';
+import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
+import type {
+  WgpuColorAdjustmentMaterialFeature,
+  WgpuPbrPipeline,
+  WgpuRenderState,
+  WgpuPbrDefineKey,
+} from '@flighthq/types';
 
 import { createWgpuMeshPipeline, ensureWgpuPbrSampleLayout, ensureWgpuScene3DPipeline } from './wgpuMeshPipeline';
 import { buildWgpuPbrDefineKey, getWgpuPbrModuleSourceForKey } from './wgpuPbrPrelude';
 import { getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 // Compiles the PBR uber-shader module for a define key and builds the render pipeline for the given
 // color-attachment format. Pure GPU work — no caching — used by ensureWgpuPbrPipeline. The group(2)
 // material layout is a uniform (the MaterialBlock) + one filtering sampler per standard map + six
@@ -17,10 +24,11 @@ export function compileWgpuPbrPipeline(
   format: GPUTextureFormat,
   blended = false,
   skinned = false,
+  colorAdjustmentFeature: Readonly<WgpuColorAdjustmentMaterialFeature> | null = null,
 ): WgpuPbrPipeline {
   const device = state.device;
   const module = device.createShaderModule({
-    code: getWgpuPbrModuleSourceForKey(key, skinned, getWgpuSkinningAdapter(state)),
+    code: getWgpuPbrModuleSourceForKey(key, skinned, getWgpuSkinningAdapter(state), colorAdjustmentFeature),
   });
   const materialBindGroupLayout = device.createBindGroupLayout({
     entries: [
@@ -60,7 +68,18 @@ export function ensureWgpuPbrPipeline(
   key: Readonly<WgpuPbrDefineKey>,
   format: GPUTextureFormat,
 ): WgpuPbrPipeline {
-  return ensureWgpuScene3DPipeline(state, `pbr:${format}|${buildWgpuPbrDefineKey(key)}`, (blended, skinned) =>
-    compileWgpuPbrPipeline(state, key, format, blended, skinned),
+  const fullKey: WgpuPbrDefineKey = {
+    ...key,
+    hasColorAdjustment: getWgpuScene3DRuntime(state).activeColorAdjustmentRun,
+  };
+  return ensureWgpuScene3DPipeline(state, `pbr:${format}|${buildWgpuPbrDefineKey(fullKey)}`, (blended, skinned) =>
+    compileWgpuPbrPipeline(
+      state,
+      fullKey,
+      format,
+      blended,
+      skinned,
+      getWgpuRenderStateRuntime(state).wgpuColorAdjustmentMaterialFeature ?? null,
+    ),
   );
 }

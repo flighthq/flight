@@ -1,4 +1,5 @@
-import type { GlPbrProgram, GlRenderState, GlPbrDefineKey } from '@flighthq/types';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl';
+import type { GlColorAdjustmentMaterialFeature, GlPbrProgram, GlRenderState, GlPbrDefineKey } from '@flighthq/types';
 
 import { resolveGlLitLocations } from './glLitProgram';
 import { compileGlProgram, ensureGlScene3DProgram } from './glMeshProgram';
@@ -7,9 +8,13 @@ import { getGlScene3DRuntime } from './glScene3DRuntime';
 // Compiles the StandardPbr uber-shader for a define key, links it, and resolves its uniform
 // locations. Pure GL work — no caching — used by ensureGlPbrProgram. Throws on a compile/link
 // failure, which is a programmer error (a malformed prelude), not an expected runtime condition.
-export function compileGlPbrProgram(gl: WebGL2RenderingContext, key: Readonly<GlPbrDefineKey>): GlPbrProgram {
+export function compileGlPbrProgram(
+  gl: WebGL2RenderingContext,
+  key: Readonly<GlPbrDefineKey>,
+  colorAdjustmentFeature: Readonly<GlColorAdjustmentMaterialFeature> | null = null,
+): GlPbrProgram {
   const vertexSource = getGlPbrVertexSourceForKey(key);
-  const fragmentSource = getGlPbrFragmentSourceForKey(key);
+  const fragmentSource = getGlPbrFragmentSourceForKey(key, colorAdjustmentFeature);
   const program = compileGlProgram(gl, vertexSource, fragmentSource);
   return {
     ...resolveGlLitLocations(gl, program),
@@ -59,7 +64,10 @@ export function ensureGlPbrProgram(state: GlRenderState, key: Readonly<GlPbrDefi
   // material compiles + caches its own HAS_SKIN program, without the material renderer knowing.
   const fullKey: GlPbrDefineKey = {
     ...key,
+    hasColorAdjustment: getGlScene3DRuntime(state).activeColorAdjustmentRun,
     hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
   };
-  return ensureGlScene3DProgram(state, `pbr:${buildGlPbrDefineKey(fullKey)}`, (gl) => compileGlPbrProgram(gl, fullKey));
+  return ensureGlScene3DProgram(state, `pbr:${buildGlPbrDefineKey(fullKey)}`, (gl) =>
+    compileGlPbrProgram(gl, fullKey, getGlRenderStateRuntime(state).glColorAdjustmentMaterialFeature ?? null),
+  );
 }

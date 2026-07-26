@@ -10,7 +10,13 @@ import {
   createVertexDisplaceModifier,
 } from '@flighthq/shading';
 import { createTexture } from '@flighthq/texture';
-import type { ImageResource, Modifier, Texture, WgpuModifierSnippet } from '@flighthq/types';
+import type {
+  ImageResource,
+  Modifier,
+  Texture,
+  WgpuColorAdjustmentMaterialFeature,
+  WgpuModifierSnippet,
+} from '@flighthq/types';
 import { FogModifierMode, ModifierSlot, VertexDisplaceModifierSource } from '@flighthq/types';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
@@ -31,6 +37,12 @@ import {
   toonWgpuModifierSnippet,
   vertexDisplaceWgpuModifierSnippet,
 } from './wgpuShadedPrelude';
+
+const COLOR_FEATURE: WgpuColorAdjustmentMaterialFeature = {
+  fragmentShaderChunk: 'fn applyFlightColorAdjustment(c : vec4f, m : vec4f, o : vec4f) -> vec4f { return c; }',
+  record: () => {},
+  resolveFlush: () => null,
+};
 
 describe('bindWgpuShadedSurface', () => {
   it('uploads the base and modifier uniform block and binds group resources', () => {
@@ -113,6 +125,15 @@ describe('ensureWgpuShadedPipeline', () => {
 });
 
 describe('getWgpuShadedModuleSource', () => {
+  it('splices the registered feature after the shaded result only for an opted-in variant', () => {
+    const material = createShadedMaterial();
+    const base = getWgpuShadedModuleSource(material);
+    const adjusted = getWgpuShadedModuleSource(material, undefined, false, null, COLOR_FEATURE);
+    expect(base).not.toContain(COLOR_FEATURE.fragmentShaderChunk);
+    expect(adjusted).toContain(COLOR_FEATURE.fragmentShaderChunk);
+    expect(adjusted).toContain('draw.flightColorMultiplier');
+  });
+
   it('threads the HAS_SKIN palette variant through the composed classic base', () => {
     const material = createShadedMaterial();
     expect(getWgpuShadedModuleSource(material)).not.toContain('jointTexture');

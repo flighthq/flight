@@ -24,6 +24,7 @@ import {
   getTilemapTileRect,
   resizeTilemap,
   setTilemapTile,
+  setTilemapTileTint,
   setTilemapTiles,
 } from './tilemap';
 
@@ -477,5 +478,20 @@ describe('setTilemapTiles', () => {
     expect(getTilemapTile(tilemap, 1, 0)).toBe(60);
     expect(getTilemapTile(tilemap, 0, 1)).toBe(80);
     expect(getTilemapTile(tilemap, 1, 1)).toBe(90);
+  });
+});
+
+describe('setTilemapTileTint', () => {
+  it('lazily allocates row-major per-tile data and stores packed RGBA', () => {
+    const tilemap = createTilemap({ data: { columns: 3, rows: 2 } });
+    expect(tilemap.data.materialData).toBeNull();
+    setTilemapTileTint(tilemap, 1, 1, 0x12345678);
+    expect(tilemap.data.materialData).toEqual([null, null, null, null, { tint: 0x12345678 }, null]);
+  });
+
+  it('ignores out-of-range coordinates without allocating', () => {
+    const tilemap = createTilemap({ data: { columns: 1, rows: 1 } });
+    setTilemapTileTint(tilemap, 1, 0, 0xffffffff);
+    expect(tilemap.data.materialData).toBeNull();
   });
 });

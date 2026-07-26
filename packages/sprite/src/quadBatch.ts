@@ -527,6 +527,15 @@ export function setQuadBatchInstanceRange(
   for (let k = 0; k < len; k++) data.transforms[dst + k] = source[k];
 }
 
+// Sets one instance's compact multiply-only tint. The material-data array is allocated on first use,
+// so an untinted batch carries no per-item array or datum. Invalid indices are ignored.
+export function setQuadBatchInstanceTint(target: QuadBatch, index: number, rgba: number): void {
+  const data = target.data;
+  if (index < 0 || index >= data.instanceCount) return;
+  if (data.materialData === null) data.materialData = new Array(data.instanceCount).fill(null);
+  data.materialData[index] = { tint: rgba >>> 0 };
+}
+
 export function setQuadBatchLocalBoundsRectangle(target: QuadBatch, rect: Readonly<Rectangle>): void {
   const runtime = getNode2DRuntime(target) as QuadBatchRuntime;
   if (runtime.localBoundsRectangle === null) runtime.localBoundsRectangle = createRectangle();

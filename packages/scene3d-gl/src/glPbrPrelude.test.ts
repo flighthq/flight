@@ -1,4 +1,4 @@
-import type { GlPbrDefineKey } from '@flighthq/types';
+import type { GlColorAdjustmentMaterialFeature, GlPbrDefineKey } from '@flighthq/types';
 
 import {
   buildGlPbrDefineKey,
@@ -49,6 +49,12 @@ const ALL = makeKey({
   subsurfaceEnabled: true,
   transmissionEnabled: true,
 });
+const COLOR_FEATURE: GlColorAdjustmentMaterialFeature = {
+  fragmentShaderChunk: 'vec4 applyFlightColorAdjustment(vec4 c, vec4 m, vec4 o) { return c * m + o; }',
+  drawShapeMeshes: () => {},
+  flush: () => false,
+  record: () => {},
+};
 
 describe('buildGlPbrDefineKey', () => {
   it('produces a stable, distinct string per flag set', () => {
@@ -68,6 +74,11 @@ describe('buildGlPbrDefineKey', () => {
   it('encodes the HAS_SKIN variant as a distinct trailing slot', () => {
     expect(buildGlPbrDefineKey(makeKey({ hasSkin: true }))).toBe('--------:-------k');
     expect(buildGlPbrDefineKey(makeKey({ hasSkin: true }))).not.toBe(buildGlPbrDefineKey(NONE));
+  });
+
+  it('appends color adjustment only for the promoted variant', () => {
+    expect(buildGlPbrDefineKey(NONE)).toBe('--------:--------');
+    expect(buildGlPbrDefineKey(makeKey({ hasColorAdjustment: true }))).toBe('--------:--------c');
   });
 
   it('is identical for equal flag sets', () => {
@@ -123,6 +134,14 @@ describe('getGlPbrFragmentSource', () => {
 });
 
 describe('getGlPbrFragmentSourceForKey', () => {
+  it('splices the registered post-shade chunk only into the promoted variant', () => {
+    const base = getGlPbrFragmentSourceForKey(NONE, COLOR_FEATURE);
+    const adjusted = getGlPbrFragmentSourceForKey(makeKey({ hasColorAdjustment: true }), COLOR_FEATURE);
+    expect(base).not.toContain('vec4 applyFlightColorAdjustment');
+    expect(adjusted).toContain(COLOR_FEATURE.fragmentShaderChunk);
+    expect(adjusted).toContain('fragColor = applyFlightColorAdjustment');
+  });
+
   it('prepends the define block to the fragment body', () => {
     const src = getGlPbrFragmentSourceForKey(STANDARD_ALL);
     expect(src.startsWith('#version 300 es')).toBe(true);

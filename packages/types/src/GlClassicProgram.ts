@@ -12,6 +12,9 @@ export type GlClassicLightingModel = 'blinnphong' | 'lambert' | 'phong';
 // `hasAlphaMap` (it has no such fields).
 export interface GlClassicDefineKey {
   alphaMaskEnabled: boolean;
+  // Promoted post-shade color-adjustment variant. Set by ensureGlClassicProgram from resolved draw
+  // data plus feature registration, never by the material itself.
+  hasColorAdjustment?: boolean;
   hasAlphaMap: boolean;
   hasDiffuseMap: boolean;
   hasNormalMap: boolean;

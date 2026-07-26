@@ -227,6 +227,15 @@ export function setTilemapTiles(
   if (signals !== null) signals.onTilesChanged.emit(offsetColumn, offsetRow, width, height);
 }
 
+// Sets one tile's compact multiply-only tint. The material-data array is allocated on first use, so
+// an untinted tilemap remains allocation-free. Invalid coordinates are ignored.
+export function setTilemapTileTint(tilemap: Tilemap, column: number, row: number, rgba: number): void {
+  const data = tilemap.data;
+  if (column < 0 || column >= data.columns || row < 0 || row >= data.rows) return;
+  if (data.materialData === null) data.materialData = new Array(data.columns * data.rows).fill(null);
+  data.materialData[row * data.columns + column] = { tint: rgba >>> 0 };
+}
+
 const defaultMethods: Partial<MethodsOf<TilemapRuntime>> = {
   computeLocalBoundsRectangle: computeTilemapLocalBoundsRectangle,
 };

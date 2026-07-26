@@ -5,7 +5,7 @@ import {
   createVertexDisplaceModifier,
   registerModifier,
 } from '@flighthq/shading';
-import type { Modifier, GlShadedDefineKey } from '@flighthq/types';
+import type { GlColorAdjustmentMaterialFeature, Modifier, GlShadedDefineKey } from '@flighthq/types';
 import { VertexDisplaceModifierSource } from '@flighthq/types';
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';
@@ -20,6 +20,12 @@ const BASE_KEY: GlShadedDefineKey = {
   hasNormalMap: false,
   hasSpecularMap: false,
   hasUvTransform: false,
+};
+const COLOR_FEATURE: GlColorAdjustmentMaterialFeature = {
+  fragmentShaderChunk: 'vec4 applyFlightColorAdjustment(vec4 c, vec4 m, vec4 o) { return c * m + o; }',
+  drawShapeMeshes: () => {},
+  flush: () => false,
+  record: () => {},
 };
 
 function fragmentSourceFrom(calls: { name: string; args: unknown[] }[]): string {
@@ -115,6 +121,24 @@ describe('compileGlShadedProgram', () => {
     expect(vertex).not.toContain('#define HAS_SKIN');
     expect(vertex).not.toContain('a_joints0');
     expect(fragmentSourceFrom(gl.calls)).not.toContain('a_joints0');
+  });
+
+  it('splices color adjustment after shading only for the promoted variant', () => {
+    const baseGl = makeFakeGl2();
+    compileGlShadedProgram(baseGl, BASE_KEY, [], createModifierRegistry(), COLOR_FEATURE);
+    expect(fragmentSourceFrom(baseGl.calls)).not.toContain('vec4 applyFlightColorAdjustment');
+
+    const adjustedGl = makeFakeGl2();
+    compileGlShadedProgram(
+      adjustedGl,
+      { ...BASE_KEY, hasColorAdjustment: true },
+      [],
+      createModifierRegistry(),
+      COLOR_FEATURE,
+    );
+    const adjusted = fragmentSourceFrom(adjustedGl.calls);
+    expect(adjusted).toContain(COLOR_FEATURE.fragmentShaderChunk);
+    expect(adjusted).toContain('fragColor = applyFlightColorAdjustment');
   });
 
   it('injects a Vertex-slot modifier into the vertex source, never the fragment', () => {
