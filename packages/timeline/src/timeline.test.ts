@@ -1,4 +1,4 @@
-import type { Node2D, Timeline } from '@flighthq/types';
+import type { Node2D, Timeline } from '@flighthq/types/contract';
 
 import {
   addTimelineFrameScript,

@@ -1,6 +1,6 @@
-import { createEntity } from '@flighthq/entity';
-import { createTextureAtlasRegion, setTextureAtlasRegion } from '@flighthq/textureatlas';
-import type { Tileset } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import { createTextureAtlasRegion, setTextureAtlasRegion } from '@flighthq/textureatlas/contract';
+import type { Tileset } from '@flighthq/types/contract';
 
 // Fills or refreshes the atlas region array with one region per tile in the grid, using the
 // tileset's tileWidth/tileHeight, margin (border padding), and spacing (inter-tile gap).

@@ -1,4 +1,4 @@
-import { CompositeOperator } from '@flighthq/types';
+import { CompositeOperator } from '@flighthq/types/contract';
 
 // Premultiplied Porter-Duff coverage factors — the substrate-agnostic ground truth for how an isolated
 // layer (`source`) merges into its backdrop. The composited pixel is `Fa*source + Fb*backdrop` applied to

@@ -1,11 +1,11 @@
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
+import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type {
   WgpuDualSourceEffectPipeline,
   WgpuEffectBlendMode,
   WgpuEffectPipeline,
   WgpuRenderState,
   WgpuRenderTarget,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Shared vertex shader: full-screen quad via vertex_index, no vertex buffer needed.
 // UV convention: y=0 = texture top, y=1 = texture bottom (Wgpu top-left origin).

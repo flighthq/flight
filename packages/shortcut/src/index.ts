@@ -1,1 +1,1 @@
-export * from './shortcut';
+export * from './contract';

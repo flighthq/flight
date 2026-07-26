@@ -1,5 +1,5 @@
-import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas';
-import { buildTilesetRegions, createTileset } from '@flighthq/tileset';
+import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
+import { buildTilesetRegions, createTileset } from '@flighthq/tileset/contract';
 
 import { createSpritesheetAnimationData, createSpritesheetData, createSpritesheetFrameData } from './spritesheetData';
 import { createSpritesheetFromData, createSpritesheetFromGrid, createSpritesheetFromTileset } from './spritesheetFrom';

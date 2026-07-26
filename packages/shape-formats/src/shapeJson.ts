@@ -1,4 +1,4 @@
-import { createMatrix } from '@flighthq/geometry';
+import { createMatrix } from '@flighthq/geometry/contract';
 import {
   appendShapeBeginBitmapFill,
   appendShapeBeginFill,
@@ -18,8 +18,8 @@ import {
   appendShapeRectangle,
   appendShapeRoundRectangle,
   createShape,
-} from '@flighthq/shape';
-import type { Shape, ShapeJsonFormatOptions, ShapeJsonParseOptions } from '@flighthq/types';
+} from '@flighthq/shape/contract';
+import type { Shape, ShapeJsonFormatOptions, ShapeJsonParseOptions } from '@flighthq/types/contract';
 
 // Serializes a shape's full drawing-command stream to a native JSON string that `parseShapeJson`
 // restores losslessly. Every non-bitmap command round-trips exactly; `beginBitmapFill`/

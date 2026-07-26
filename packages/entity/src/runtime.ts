@@ -1,5 +1,5 @@
-import type { Entity, EntityRuntime } from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
+import type { Entity, EntityRuntime } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 export function createEntityRuntime(): EntityRuntime {
   return {

@@ -1,4 +1,4 @@
-import { applyParticleCollisions, applyParticleForces } from '@flighthq/particles';
+import { applyParticleCollisions, applyParticleForces } from '@flighthq/particles/contract';
 import type {
   ParticleCollider,
   ParticleEmitter2D,
@@ -6,7 +6,7 @@ import type {
   ParticleEmitterConfig,
   ParticleEmitterState,
   ParticleForce,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { updateParticleEmitter2D } from './updateParticleEmitter2D';
 

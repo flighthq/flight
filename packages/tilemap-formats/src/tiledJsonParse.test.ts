@@ -1,4 +1,4 @@
-import type { TiledParseOptions } from '@flighthq/types';
+import type { TiledParseOptions } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { parseTiledTilesetJson, parseTiledTmj } from './tiledJsonParse';

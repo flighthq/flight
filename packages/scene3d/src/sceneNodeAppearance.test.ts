@@ -1,4 +1,4 @@
-import { addNodeChild, invalidateNodeAppearance } from '@flighthq/node';
+import { addNodeChild, invalidateNodeAppearance } from '@flighthq/node/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createNode3D } from './sceneNode';

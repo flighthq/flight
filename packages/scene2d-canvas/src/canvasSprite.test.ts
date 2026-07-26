@@ -1,8 +1,8 @@
-import { createImageResource } from '@flighthq/image';
-import { addNodeChild } from '@flighthq/node';
+import { createImageResource } from '@flighthq/image/contract';
+import { addNodeChild } from '@flighthq/node/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender, registerRenderer } from '@flighthq/render/contract';
-import { createSprite } from '@flighthq/sprite';
-import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas';
+import { createSprite } from '@flighthq/sprite/contract';
+import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas/contract';
 import { SpriteKind } from '@flighthq/types/contract';
 
 import { createCanvasRenderState } from './canvasRenderState';

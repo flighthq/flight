@@ -1,5 +1,5 @@
-import { createVector2 } from '@flighthq/geometry';
-import type { Camera2D } from '@flighthq/types';
+import { createVector2 } from '@flighthq/geometry/contract';
+import type { Camera2D } from '@flighthq/types/contract';
 
 import { unprojectCamera2DPoint } from './projection2d';
 

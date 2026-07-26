@@ -1,4 +1,4 @@
-import { getWgpuBlendState, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
+import { getWgpuBlendState, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type {
   RenderProxy2D,
   WgpuRenderState,

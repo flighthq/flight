@@ -1,5 +1,5 @@
-import { createVector3 } from '@flighthq/geometry';
-import { AreaLightKind } from '@flighthq/types';
+import { createVector3 } from '@flighthq/geometry/contract';
+import { AreaLightKind } from '@flighthq/types/contract';
 
 import { cloneAreaLight, createAreaLight, setAreaLightOrientation } from './areaLight';
 

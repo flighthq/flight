@@ -1,4 +1,4 @@
-import type { BrightnessContrastAdjustment } from '@flighthq/types';
+import type { BrightnessContrastAdjustment } from '@flighthq/types/contract';
 
 // Brightness/contrast as a matrix-tier adjustment. Reproduces the prior full-frame shader
 // `rgb = (rgb + brightness − 0.5)·contrast + 0.5` (a shift by brightness, then scale about mid-grey 0.5).

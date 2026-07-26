@@ -1,4 +1,4 @@
-import { ModifierSlot } from '@flighthq/types';
+import { ModifierSlot } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { isBuiltInModifierSlot } from './isBuiltInModifierSlot';

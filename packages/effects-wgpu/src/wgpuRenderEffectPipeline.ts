@@ -4,7 +4,7 @@ import {
   fuseColorMatrices,
   getAdjustmentColorMatrix,
   isColorLutAdjustment,
-} from '@flighthq/adjustments';
+} from '@flighthq/adjustments/contract';
 import {
   acquireWgpuRenderTarget,
   beginWgpuRenderPass,
@@ -16,7 +16,7 @@ import {
   getWgpuRenderStateRuntime,
   releaseWgpuRenderTarget,
   resizeWgpuRenderTarget,
-} from '@flighthq/render-wgpu';
+} from '@flighthq/render-wgpu/contract';
 import type {
   Adjustment,
   RenderEffect,
@@ -25,7 +25,7 @@ import type {
   WgpuRenderEffectPipeline,
   WgpuRenderState,
   WgpuRenderTarget,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { applyColorLutPassToWgpu } from './wgpuColorLutPass';
 import { applyColorMatrixPassToWgpu } from './wgpuColorMatrixPass';

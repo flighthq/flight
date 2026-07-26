@@ -1,4 +1,4 @@
-import type { TauriApi, TauriDialogOpenOptions } from '@flighthq/types';
+import type { TauriApi, TauriDialogOpenOptions } from '@flighthq/types/contract';
 
 import { createTauriDialogBackend } from './tauriDialog';
 

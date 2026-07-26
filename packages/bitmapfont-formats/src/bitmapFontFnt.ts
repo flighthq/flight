@@ -1,4 +1,4 @@
-import { getBitmapFontMetrics } from '@flighthq/bitmapfont';
+import { getBitmapFontMetrics } from '@flighthq/bitmapfont/contract';
 import type {
   BitmapFont,
   BitmapFontCharRecord,
@@ -7,7 +7,7 @@ import type {
   BitmapFontParseOptions,
   BitmapFontRecord,
   GlyphEntry,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { buildBitmapFontFromRecord } from './bitmapFontRecord';
 

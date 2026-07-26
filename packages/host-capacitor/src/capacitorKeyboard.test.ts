@@ -1,5 +1,5 @@
-import type { CapacitorApi, SoftKeyboardInfo } from '@flighthq/types';
-import { SoftKeyboardResizeBodyKind } from '@flighthq/types';
+import type { CapacitorApi, SoftKeyboardInfo } from '@flighthq/types/contract';
+import { SoftKeyboardResizeBodyKind } from '@flighthq/types/contract';
 
 import { createCapacitorKeyboardBackend } from './capacitorKeyboard';
 

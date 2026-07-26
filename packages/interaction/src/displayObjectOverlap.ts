@@ -3,9 +3,9 @@ import {
   containsRectanglePointXY,
   enclosesRectangle,
   intersectsRectangle,
-} from '@flighthq/geometry';
-import { getNodeWorldBoundsRectangle } from '@flighthq/node';
-import type { Node2D, Rectangle } from '@flighthq/types';
+} from '@flighthq/geometry/contract';
+import { getNodeWorldBoundsRectangle } from '@flighthq/node/contract';
+import type { Node2D, Rectangle } from '@flighthq/types/contract';
 
 export function containsNode2D(outer: Node2D, inner: Node2D): boolean {
   return enclosesRectangle(getNodeWorldBoundsRectangle(outer), getNodeWorldBoundsRectangle(inner));

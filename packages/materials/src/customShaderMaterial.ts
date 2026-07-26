@@ -1,5 +1,5 @@
-import type { CustomShaderMaterial } from '@flighthq/types';
-import { CustomShaderMaterialKind } from '@flighthq/types';
+import type { CustomShaderMaterial } from '@flighthq/types/contract';
+import { CustomShaderMaterialKind } from '@flighthq/types/contract';
 
 import { createSurfaceMaterial } from './surfaceMaterial';
 

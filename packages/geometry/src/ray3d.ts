@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity';
-import type { AabbLike, BoundingSphereLike, PlaneLike, Ray3D, Ray3DLike, Vector3Like } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import type { AabbLike, BoundingSphereLike, PlaneLike, Ray3D, Ray3DLike, Vector3Like } from '@flighthq/types/contract';
 
 import { createVector3 } from './vector3';
 

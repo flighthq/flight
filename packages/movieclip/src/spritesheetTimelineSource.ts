@@ -1,6 +1,6 @@
-import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
-import { createBitmap } from '@flighthq/scene2d';
-import type { Bitmap, Node2D, Spritesheet, SpritesheetAnimation, TimelineSource } from '@flighthq/types';
+import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
+import { createBitmap } from '@flighthq/scene2d/contract';
+import type { Bitmap, Node2D, Spritesheet, SpritesheetAnimation, TimelineSource } from '@flighthq/types/contract';
 
 // Exposes a spritesheet animation as a TimelineSource so a MovieClip can play it (the spritesheet side of
 // the timeline frame-source contract — `@flighthq/timeline` consumes `TimelineSource`, this produces one,

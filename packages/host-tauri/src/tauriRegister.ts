@@ -1,14 +1,14 @@
-import { setAppBackend } from '@flighthq/app';
-import { setWindowBackend } from '@flighthq/application';
-import { setClipboardBackend } from '@flighthq/clipboard';
-import { setDialogBackend } from '@flighthq/dialog';
-import { setMenuBackend } from '@flighthq/menu';
-import { setNotificationBackend } from '@flighthq/notification';
-import { setPlatformBackend } from '@flighthq/platform';
-import { setShellBackend } from '@flighthq/shell';
-import { setShortcutBackend } from '@flighthq/shortcut';
-import { setTrayBackend } from '@flighthq/tray';
-import type { TauriApi } from '@flighthq/types';
+import { setAppBackend } from '@flighthq/app/contract';
+import { setWindowBackend } from '@flighthq/application/contract';
+import { setClipboardBackend } from '@flighthq/clipboard/contract';
+import { setDialogBackend } from '@flighthq/dialog/contract';
+import { setMenuBackend } from '@flighthq/menu/contract';
+import { setNotificationBackend } from '@flighthq/notification/contract';
+import { setPlatformBackend } from '@flighthq/platform/contract';
+import { setShellBackend } from '@flighthq/shell/contract';
+import { setShortcutBackend } from '@flighthq/shortcut/contract';
+import { setTrayBackend } from '@flighthq/tray/contract';
+import type { TauriApi } from '@flighthq/types/contract';
 
 import { createTauriAppBackend } from './tauriApp';
 import { createTauriClipboardBackend } from './tauriClipboard';

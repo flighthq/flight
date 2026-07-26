@@ -1,10 +1,14 @@
-import { createUnlitMaterial } from '@flighthq/materials';
-import { createBoxMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild } from '@flighthq/node';
-import { createMesh, createScene3D } from '@flighthq/scene3d';
-import { createTexture } from '@flighthq/texture';
-import type { ImageResource, ImageResourceReference } from '@flighthq/types';
-import { ImageResourceFailureKind, ImageResourceReferenceKind, ResourceResolutionState } from '@flighthq/types';
+import { createUnlitMaterial } from '@flighthq/materials/contract';
+import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
+import { addNodeChild } from '@flighthq/node/contract';
+import { createMesh, createScene3D } from '@flighthq/scene3d/contract';
+import { createTexture } from '@flighthq/texture/contract';
+import type { ImageResource, ImageResourceReference } from '@flighthq/types/contract';
+import {
+  ImageResourceFailureKind,
+  ImageResourceReferenceKind,
+  ResourceResolutionState,
+} from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import { loadScene3DResources } from './resolveScene3DResourcesAndWait';

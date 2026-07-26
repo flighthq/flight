@@ -1,4 +1,4 @@
-import type { MediaSessionActionDetails, MediaSessionBackend } from '@flighthq/types';
+import type { MediaSessionActionDetails, MediaSessionBackend } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {

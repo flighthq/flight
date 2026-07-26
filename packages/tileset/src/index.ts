@@ -1,2 +1,1 @@
-export * from './tileset';
-export * from './tilesetFrom';
+export * from './contract';

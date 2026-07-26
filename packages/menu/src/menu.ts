@@ -1,5 +1,5 @@
-import { createSignal, emitSignal } from '@flighthq/signals';
-import type { MenuBackend, MenuItemTemplate, MenuSignals } from '@flighthq/types';
+import { createSignal, emitSignal } from '@flighthq/signals/contract';
+import type { MenuBackend, MenuItemTemplate, MenuSignals } from '@flighthq/types/contract';
 
 // Deep-clones a MenuItemTemplate tree. The returned tree has the same shape and values. Safe to call
 // with a template carrying a submenu — children are cloned recursively.

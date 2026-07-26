@@ -1,4 +1,4 @@
-import type { CanvasRenderEffectRunner, CanvasRenderTarget, ScanlinesEffect } from '@flighthq/types';
+import type { CanvasRenderEffectRunner, CanvasRenderTarget, ScanlinesEffect } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
 

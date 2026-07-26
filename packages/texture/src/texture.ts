@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity';
-import { cloneVector2, copyVector2, createVector2, inverseMatrix3 } from '@flighthq/geometry';
+import { createEntity } from '@flighthq/entity/contract';
+import { cloneVector2, copyVector2, createVector2, inverseMatrix3 } from '@flighthq/geometry/contract';
 import type {
   ImageResource,
   Matrix3Like,
@@ -7,7 +7,7 @@ import type {
   TextureLike,
   TextureUvTransform,
   Vector2Like,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { cloneSampler, copySampler, createSampler, equalsSampler } from './sampler';
 

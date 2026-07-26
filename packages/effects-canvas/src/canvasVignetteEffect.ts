@@ -1,4 +1,4 @@
-import type { CanvasRenderEffectRunner, CanvasRenderTarget, VignetteEffect } from '@flighthq/types';
+import type { CanvasRenderEffectRunner, CanvasRenderTarget, VignetteEffect } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
 

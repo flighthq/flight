@@ -1,6 +1,6 @@
-import { hasImageResourcePixels } from '@flighthq/image';
-import { getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node';
-import { bindGlTexture, createGlProgram, invalidateGlRenderStateCache } from '@flighthq/render-gl';
+import { hasImageResourcePixels } from '@flighthq/image/contract';
+import { getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node/contract';
+import { bindGlTexture, createGlProgram, invalidateGlRenderStateCache } from '@flighthq/render-gl/contract';
 import { prepareScene3DRender } from '@flighthq/render/contract';
 import type {
   Camera3D,

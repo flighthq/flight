@@ -1,4 +1,4 @@
-﻿import { createMatrix } from '@flighthq/geometry';
+﻿import { createMatrix } from '@flighthq/geometry/contract';
 import { registerRenderer } from '@flighthq/render/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import {
@@ -10,7 +10,7 @@ import {
   appendShapeMoveTo,
   appendShapeRectangle,
   createShape,
-} from '@flighthq/shape';
+} from '@flighthq/shape/contract';
 import { ShapeKind } from '@flighthq/types/contract';
 
 import { createCanvasRenderState } from './canvasRenderState';

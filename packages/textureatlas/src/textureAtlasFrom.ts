@@ -6,8 +6,8 @@ import {
   loadImageResourceFromBlob,
   loadImageResourceFromBytes,
   loadImageResourceFromUrl,
-} from '@flighthq/image';
-import type { ImageResource, TextureAtlas } from '@flighthq/types';
+} from '@flighthq/image/contract';
+import type { ImageResource, TextureAtlas } from '@flighthq/types/contract';
 
 import { createTextureAtlas } from './textureAtlas';
 

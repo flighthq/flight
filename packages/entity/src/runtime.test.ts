@@ -1,5 +1,5 @@
-import type { EntityRuntime } from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
+import type { EntityRuntime } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { attachEntityBinding } from './binding';
 import { createEntity } from './entity';

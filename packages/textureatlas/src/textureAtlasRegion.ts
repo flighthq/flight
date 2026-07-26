@@ -1,11 +1,11 @@
-import { createEntity } from '@flighthq/entity';
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   RectangleLike,
   TextureAtlas,
   TextureAtlasRegion,
   TextureAtlasRegionLike,
   Vector2Like,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 export function addTextureAtlasRegion(
   target: TextureAtlas,

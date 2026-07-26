@@ -1,6 +1,6 @@
-import { getGlRenderStateRuntime } from '@flighthq/render-gl';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render/contract';
-import { getNode2DRuntime } from '@flighthq/scene2d';
+import { getNode2DRuntime } from '@flighthq/scene2d/contract';
 import type { Node2D, Scene2DRenderer, GlRenderState, RenderProxy2D } from '@flighthq/types/contract';
 
 import { flushGlSpriteBatch } from './glSpriteBatch';

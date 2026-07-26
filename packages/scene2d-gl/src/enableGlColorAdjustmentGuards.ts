@@ -1,5 +1,5 @@
-import { logOnce } from '@flighthq/log';
-import { getGlRenderStateRuntime } from '@flighthq/render-gl';
+import { logOnce } from '@flighthq/log/contract';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { GlRenderState } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 

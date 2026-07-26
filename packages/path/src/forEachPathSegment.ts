@@ -1,5 +1,5 @@
-import type { Path, PathSegment } from '@flighthq/types';
-import { PathCommand } from '@flighthq/types';
+import type { Path, PathSegment } from '@flighthq/types/contract';
+import { PathCommand } from '@flighthq/types/contract';
 
 // Iterates over all segments in `path`, calling `visitor` once for each decoded segment. Each call
 // receives a `PathSegment` value describing the verb and its coordinates. The visitor receives

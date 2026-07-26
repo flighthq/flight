@@ -1,7 +1,7 @@
-import { createRectangle } from '@flighthq/geometry';
-import { getNode2DRuntime } from '@flighthq/scene2d';
-import type { BitmapTextRuntime, GlyphEntry, GlyphSource, ImageResource } from '@flighthq/types';
-import { BitmapTextKind } from '@flighthq/types';
+import { createRectangle } from '@flighthq/geometry/contract';
+import { getNode2DRuntime } from '@flighthq/scene2d/contract';
+import type { BitmapTextRuntime, GlyphEntry, GlyphSource, ImageResource } from '@flighthq/types/contract';
+import { BitmapTextKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {

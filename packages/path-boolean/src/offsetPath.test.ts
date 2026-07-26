@@ -1,5 +1,5 @@
-import { createPath, appendPathClose, appendPathLineTo, appendPathMoveTo, flattenPath } from '@flighthq/path';
-import type { Path } from '@flighthq/types';
+import { createPath, appendPathClose, appendPathLineTo, appendPathMoveTo, flattenPath } from '@flighthq/path/contract';
+import type { Path } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { offsetPath } from './offsetPath';

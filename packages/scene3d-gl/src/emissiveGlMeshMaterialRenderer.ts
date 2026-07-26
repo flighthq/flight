@@ -1,4 +1,4 @@
-import { unpackColorToLinear } from '@flighthq/color';
+import { unpackColorToLinear } from '@flighthq/color/contract';
 import type {
   LinearColor,
   Camera3D,

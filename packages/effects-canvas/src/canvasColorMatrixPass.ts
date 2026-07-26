@@ -1,4 +1,4 @@
-import type { CanvasRenderTarget } from '@flighthq/types';
+import type { CanvasRenderTarget } from '@flighthq/types/contract';
 
 import { drawCanvasImageDataPass } from './canvasEffectCompositing';
 

@@ -4,7 +4,7 @@ import type {
   DeviceInfo,
   SafeAreaInsets,
   CapacitorApi,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { createCapacitorDeviceBackend } from './capacitorDevice';
 

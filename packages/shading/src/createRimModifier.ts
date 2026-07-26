@@ -1,5 +1,5 @@
-import type { RimModifier, RimModifierOptions } from '@flighthq/types';
-import { ModifierSlot, RimModifierKind } from '@flighthq/types';
+import type { RimModifier, RimModifierOptions } from '@flighthq/types/contract';
+import { ModifierSlot, RimModifierKind } from '@flighthq/types/contract';
 
 // The options for `createRimModifier`. Only `color` is required; `power`/`intensity`/`bias` carry
 // documented defaults. All three are uniform-fed scalars — they do not change the emitted program,

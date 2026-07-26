@@ -1,4 +1,4 @@
-import type { Adjustment, ColorScaleBias } from '@flighthq/types';
+import type { Adjustment, ColorScaleBias } from '@flighthq/types/contract';
 
 import { getAdjustmentColorMatrix } from './colorMatrixAdjustment';
 import { fuseColorMatrices } from './colorMatrixMath';

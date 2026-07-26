@@ -1,4 +1,4 @@
-import type { RenderEffect, RenderEffectInput } from '@flighthq/types';
+import type { RenderEffect, RenderEffectInput } from '@flighthq/types/contract';
 
 // Returns the required render-target inputs for the given effect. Effects with no requirements
 // (they only need the color buffer) return an empty array. This is the data form of the

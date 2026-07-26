@@ -1,4 +1,10 @@
-import { createMatrix4, createVector3, inverseMatrix4, multiplyMatrix4, setMatrix4LookAt } from '@flighthq/geometry';
+import {
+  createMatrix4,
+  createVector3,
+  inverseMatrix4,
+  multiplyMatrix4,
+  setMatrix4LookAt,
+} from '@flighthq/geometry/contract';
 
 import {
   createCamera3D,

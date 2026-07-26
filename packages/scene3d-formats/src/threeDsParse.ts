@@ -1,8 +1,8 @@
-import { createTransform3D } from '@flighthq/geometry';
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
-import { createBlinnPhongMaterial } from '@flighthq/materials';
-import { createMeshGeometry } from '@flighthq/mesh';
-import { createScene3DFromDocument } from '@flighthq/scene3d';
+import { createTransform3D } from '@flighthq/geometry/contract';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { createBlinnPhongMaterial } from '@flighthq/materials/contract';
+import { createMeshGeometry } from '@flighthq/mesh/contract';
+import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
 import type {
   ImportDiagnostic,
   Material,
@@ -15,8 +15,8 @@ import type {
   ThreeDsMaterial,
   ThreeDsMaterialGroup,
   ThreeDsMesh,
-} from '@flighthq/types';
-import { ImportDiagnosticSeverity, MeshKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, MeshKind } from '@flighthq/types/contract';
 import {
   THREE_DS_CHUNK_HEADER_BYTES,
   THREE_DS_COLOR_BYTE,
@@ -42,7 +42,7 @@ import {
   THREE_DS_TRIMESH,
   THREE_DS_UV_COORDS,
   THREE_DS_VERTICES,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import {
   CANONICAL_FLOATS_PER_VERTEX,

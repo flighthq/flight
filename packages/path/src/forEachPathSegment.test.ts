@@ -1,5 +1,5 @@
-import type { PathSegment } from '@flighthq/types';
-import { PathCommand } from '@flighthq/types';
+import type { PathSegment } from '@flighthq/types/contract';
+import { PathCommand } from '@flighthq/types/contract';
 
 import { forEachPathSegment } from './forEachPathSegment';
 import {

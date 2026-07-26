@@ -1,4 +1,4 @@
-import type { WgpuRenderEffectRunner, WgpuRenderState } from '@flighthq/types';
+import type { WgpuRenderEffectRunner, WgpuRenderState } from '@flighthq/types/contract';
 
 // Per-state registry mapping an effect `kind` string to its Wgpu runner — the material-renderer
 // pattern one tier up. Registration is opt-in (import a runner only to register it) and dispatch is a

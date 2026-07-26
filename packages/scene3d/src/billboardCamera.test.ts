@@ -1,8 +1,12 @@
-import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
-import { copyQuaternion, createQuaternion, setQuaternionFromAxisAngle, setVector3 } from '@flighthq/geometry';
-import { createPlaneMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild, getNodeWorldMatrix4, invalidateNodeLocalTransform } from '@flighthq/node';
-import type { Camera3D } from '@flighthq/types';
+import {
+  createCamera3D,
+  createPerspectiveProjection,
+  setCamera3DViewMatrix4FromLookAt,
+} from '@flighthq/camera/contract';
+import { copyQuaternion, createQuaternion, setQuaternionFromAxisAngle, setVector3 } from '@flighthq/geometry/contract';
+import { createPlaneMeshGeometry } from '@flighthq/mesh/contract';
+import { addNodeChild, getNodeWorldMatrix4, invalidateNodeLocalTransform } from '@flighthq/node/contract';
+import type { Camera3D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createBillboard } from './billboard';

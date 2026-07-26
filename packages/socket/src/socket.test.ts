@@ -1,5 +1,11 @@
-import { connectSignal } from '@flighthq/signals';
-import type { SocketBackend, SocketCloseInfo, SocketConnection, SocketEventSink, SocketMessage } from '@flighthq/types';
+import { connectSignal } from '@flighthq/signals/contract';
+import type {
+  SocketBackend,
+  SocketCloseInfo,
+  SocketConnection,
+  SocketEventSink,
+  SocketMessage,
+} from '@flighthq/types/contract';
 
 import {
   attachSocket,

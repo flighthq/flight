@@ -1,13 +1,13 @@
-import { sampleAnimationTrack } from '@flighthq/animation';
+import { sampleAnimationTrack } from '@flighthq/animation/contract';
 import {
   getMeshGeometryIndexCount,
   getMeshGeometryVertexCount,
   getMeshGeometryVertexNormal,
   getMeshGeometryVertexPosition,
   getMeshGeometryVertexUv0,
-} from '@flighthq/mesh';
-import { getNodeChildren, getNodeLocalMatrix4, getNodeParent } from '@flighthq/node';
-import { createNode3D, isMesh } from '@flighthq/scene3d';
+} from '@flighthq/mesh/contract';
+import { getNodeChildren, getNodeLocalMatrix4, getNodeParent } from '@flighthq/node/contract';
+import { createNode3D, isMesh } from '@flighthq/scene3d/contract';
 import type {
   AnimationClip,
   AwdDecompressor,
@@ -18,8 +18,8 @@ import type {
   Scene3DAnimationTarget,
   Node3D,
   ShadedMaterial,
-} from '@flighthq/types';
-import { ResourceResolutionState, ShadedMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { ResourceResolutionState, ShadedMaterialKind } from '@flighthq/types/contract';
 
 import { registerAwd2DeflateDecompressor } from './awd2Inflate';
 import { createScene3DFromAwd2, parseAwd2, parseAwd2SkeletonAnimations, registerAwd2Decompressor } from './awd2Parse';

@@ -1,8 +1,8 @@
-import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
-import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
+import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu/contract';
+import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
-import { createRichText } from '@flighthq/text';
-import { enableTextInput } from '@flighthq/textinput';
+import { createRichText } from '@flighthq/text/contract';
+import { enableTextInput } from '@flighthq/textinput/contract';
 
 import { drawWgpuRichText } from './wgpuRichText';
 import { drawWgpuTextInputOverlay, enableWgpuTextInput } from './wgpuTextInput';

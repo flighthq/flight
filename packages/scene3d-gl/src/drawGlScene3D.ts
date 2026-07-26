@@ -1,13 +1,13 @@
-import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flighthq/geometry';
-import { hasMeshGeometrySkin } from '@flighthq/mesh';
-import { getNodeWorldMatrix4 } from '@flighthq/node';
+import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flighthq/geometry/contract';
+import { hasMeshGeometrySkin } from '@flighthq/mesh/contract';
+import { getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import {
   declareGlRenderTargetColorSpace,
   getGlRenderStateRuntime,
   invalidateGlRenderStateCache,
-} from '@flighthq/render-gl';
+} from '@flighthq/render-gl/contract';
 import { prepareScene3DRender } from '@flighthq/render/contract';
-import { getNode3DRuntime, getNode3DWorldAlpha } from '@flighthq/scene3d';
+import { getNode3DRuntime, getNode3DWorldAlpha } from '@flighthq/scene3d/contract';
 import type {
   Camera3D,
   ColorScaleBias,

@@ -1,4 +1,4 @@
-import type { Font, FontUrl } from '@flighthq/types';
+import type { Font, FontUrl } from '@flighthq/types/contract';
 
 import { createFont } from './font';
 import { inferFontFormatFromUrl } from './fontFormat';

@@ -1,4 +1,4 @@
-import { addNodeChild, getNodeChildCount, getNodeParent } from '@flighthq/node';
+import { addNodeChild, getNodeChildCount, getNodeParent } from '@flighthq/node/contract';
 
 import { createNode3D, enableNode3DSignals, getNode3DRuntime } from './sceneNode';
 import { disposeNode3D } from './sceneNodeDispose';

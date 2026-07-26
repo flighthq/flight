@@ -1,5 +1,5 @@
-import { invalidateImageResource } from '@flighthq/image';
-import type { Surface, SurfaceRegion } from '@flighthq/types';
+import { invalidateImageResource } from '@flighthq/image/contract';
+import type { Surface, SurfaceRegion } from '@flighthq/types/contract';
 
 let _floodFillVisited: Uint8Array | null = null;
 

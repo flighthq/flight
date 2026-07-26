@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity';
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   Kind,
   Material,
@@ -7,8 +7,8 @@ import type {
   StandardPbrMaterial,
   Texture,
   UnlitMaterial,
-} from '@flighthq/types';
-import { StandardPbrMaterialKind, UnlitMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { StandardPbrMaterialKind, UnlitMaterialKind } from '@flighthq/types/contract';
 
 export function createScene3DMaterialTextureRegistry(): Scene3DMaterialTextureRegistry {
   return createEntity({ listers: new Map() });

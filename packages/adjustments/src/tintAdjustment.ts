@@ -1,4 +1,4 @@
-import type { TintAdjustment } from '@flighthq/types';
+import type { TintAdjustment } from '@flighthq/types/contract';
 
 // Builds a diagonal-affine tint from a packed `0xRRGGBBAA` color: each channel scale is that byte
 // divided by 255, with zero bias and no channel mixing. Matrix-tier, so it fuses with other adjustments

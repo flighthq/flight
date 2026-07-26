@@ -1,5 +1,5 @@
-import type { Path } from '@flighthq/types';
-import { PathCommand } from '@flighthq/types';
+import type { Path } from '@flighthq/types/contract';
+import { PathCommand } from '@flighthq/types/contract';
 
 /**
  * Tests whether point (px, py) lies inside the path using the path's winding rule

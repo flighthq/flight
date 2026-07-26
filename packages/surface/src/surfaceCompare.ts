@@ -1,4 +1,4 @@
-import type { Surface, SurfaceMismatch } from '@flighthq/types';
+import type { Surface, SurfaceMismatch } from '@flighthq/types/contract';
 
 import { createSurface } from './surface';
 

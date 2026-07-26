@@ -4,8 +4,8 @@ import type {
   Scene3DForwardLightSelection,
   Scene3DLightsLike,
   SpotLight,
-} from '@flighthq/types';
-import { MAX_FORWARD_LIGHTS } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
 
 import { getLightContributionAtBoundingSphere } from './lightAnalysis';
 

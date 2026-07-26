@@ -1,4 +1,4 @@
-import type { VideoResourceUrl } from '@flighthq/types';
+import type { VideoResourceUrl } from '@flighthq/types/contract';
 
 // True when the current environment claims it can play the given MIME type (a non-empty canPlayType
 // result — 'maybe' or 'probably'). Returns false in headless environments (jsdom) where no codecs

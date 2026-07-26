@@ -1,4 +1,4 @@
-import type { CanvasEffectSourceMode, CanvasRenderTarget } from '@flighthq/types';
+import type { CanvasEffectSourceMode, CanvasRenderTarget } from '@flighthq/types/contract';
 
 export function clearCanvasTarget(dest: Readonly<CanvasRenderTarget>): void {
   const ctx = dest.context;

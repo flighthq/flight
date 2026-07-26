@@ -1,6 +1,6 @@
-import { createEntity } from '@flighthq/entity';
-import { invalidateImageResource } from '@flighthq/image';
-import type { AlphaType, Surface } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import { invalidateImageResource } from '@flighthq/image/contract';
+import type { AlphaType, Surface } from '@flighthq/types/contract';
 
 export function cloneSurface(source: Readonly<Surface>): Surface {
   return createEntity({

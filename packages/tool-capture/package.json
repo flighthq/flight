@@ -14,6 +14,10 @@
       "types": "./dist/index.d.ts",
       "browser": "./dist/browser.js",
       "default": "./dist/index.js"
+    },
+    "./contract": {
+      "types": "./dist/contract.d.ts",
+      "default": "./dist/contract.js"
     }
   },
   "bin": {

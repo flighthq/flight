@@ -6,7 +6,7 @@ import type {
   TrayEventData,
   TrayEventType,
   TrayIconOptions,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import {
   createTrayIcon,

@@ -1,10 +1,14 @@
-import { getEntityRuntime } from '@flighthq/entity';
-import { createRectangle } from '@flighthq/geometry';
-import { getNodeLocalBoundsRevision, getNodeLocalContentRevision, getNodeLocalTransformRevision } from '@flighthq/node';
-import { connectSignal } from '@flighthq/signals';
-import { setTextLayoutMeasureProvider } from '@flighthq/textlayout';
-import type { Node, RichText, RichTextRuntime, TextFormatRange } from '@flighthq/types';
-import { RichTextKind } from '@flighthq/types';
+import { getEntityRuntime } from '@flighthq/entity/contract';
+import { createRectangle } from '@flighthq/geometry/contract';
+import {
+  getNodeLocalBoundsRevision,
+  getNodeLocalContentRevision,
+  getNodeLocalTransformRevision,
+} from '@flighthq/node/contract';
+import { connectSignal } from '@flighthq/signals/contract';
+import { setTextLayoutMeasureProvider } from '@flighthq/textlayout/contract';
+import type { Node, RichText, RichTextRuntime, TextFormatRange } from '@flighthq/types/contract';
+import { RichTextKind } from '@flighthq/types/contract';
 
 import {
   appendRichTextString,

@@ -1,4 +1,4 @@
-import type { TextFormat, TextLayoutGroup } from '@flighthq/types';
+import type { TextFormat, TextLayoutGroup } from '@flighthq/types/contract';
 
 export function createTextLayoutGroup(format: TextFormat, startIndex: number, endIndex: number): TextLayoutGroup {
   return {

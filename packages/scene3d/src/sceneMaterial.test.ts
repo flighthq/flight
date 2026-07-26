@@ -1,8 +1,8 @@
-import { createBlinnPhongMaterial, createStandardPbrMaterial } from '@flighthq/materials';
-import { createBoxMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild } from '@flighthq/node';
-import type { Material } from '@flighthq/types';
-import { Node3DKind } from '@flighthq/types';
+import { createBlinnPhongMaterial, createStandardPbrMaterial } from '@flighthq/materials/contract';
+import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
+import { addNodeChild } from '@flighthq/node/contract';
+import type { Material } from '@flighthq/types/contract';
+import { Node3DKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createMesh } from './mesh';

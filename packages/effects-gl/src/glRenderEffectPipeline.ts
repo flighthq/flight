@@ -4,7 +4,7 @@ import {
   fuseColorMatrices,
   getAdjustmentColorMatrix,
   isColorLutAdjustment,
-} from '@flighthq/adjustments';
+} from '@flighthq/adjustments/contract';
 import {
   acquireGlRenderTarget,
   beginGlRenderPass,
@@ -18,7 +18,7 @@ import {
   endGlRenderPass,
   releaseGlRenderTarget,
   resizeGlRenderTarget,
-} from '@flighthq/render-gl';
+} from '@flighthq/render-gl/contract';
 import type {
   Adjustment,
   GlRenderEffectPipeline,
@@ -26,7 +26,7 @@ import type {
   GlRenderTarget,
   RenderEffect,
   RenderEffectPipelineOptions,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { applyColorLutPassToGl } from './glColorLutPass';
 import { applyColorMatrixPassToGl } from './glColorMatrixPass';

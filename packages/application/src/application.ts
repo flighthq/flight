@@ -1,5 +1,5 @@
-import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals';
-import type { Application, ApplicationLoopOptions, ApplicationWindow, LoopBackend } from '@flighthq/types';
+import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals/contract';
+import type { Application, ApplicationLoopOptions, ApplicationWindow, LoopBackend } from '@flighthq/types/contract';
 
 const DEFAULT_BACKGROUND_FRAME_RATE = 0; // 0 = disabled; use same rate when in background
 const DEFAULT_FIXED_TIMESTEP = 0; // 0 = disabled; pure variable mode

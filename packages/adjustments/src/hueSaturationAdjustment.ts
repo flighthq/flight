@@ -1,4 +1,4 @@
-import type { ColorTransformFunction, HueSaturationAdjustment } from '@flighthq/types';
+import type { ColorTransformFunction, HueSaturationAdjustment } from '@flighthq/types/contract';
 
 // Hue/saturation/lightness as a LUT-tier adjustment. The transform is the exact HSL round-trip the old
 // hueSaturationEffect shader did — convert to HSL, rotate hue, scale saturation, offset lightness,

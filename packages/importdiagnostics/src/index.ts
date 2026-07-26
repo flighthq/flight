@@ -1,2 +1,1 @@
-export * from './importDiagnosticCollector';
-export * from './importDiagnosticText';
+export * from './contract';

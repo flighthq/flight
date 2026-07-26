@@ -1,4 +1,4 @@
-import { createSignal, emitSignal } from '@flighthq/signals';
+import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   AmbientLightReading,
   MotionReading,
@@ -11,7 +11,7 @@ import type {
   SensorsBackend,
   SensorsPermissionState,
   SensorSubscribeOptions,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Begins delivering sensor readings to `sensors`'s signals by subscribing to the active backend's
 // streams. Idempotent: a prior subscription is torn down first. Pair with detachSensors/disposeSensors.

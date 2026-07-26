@@ -1,4 +1,4 @@
-import { getNodeLocalContentRevision } from '@flighthq/node';
+import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 
 import { createShape } from './shape';
 import {

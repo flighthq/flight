@@ -1,4 +1,4 @@
-import type { HasMaterial } from '@flighthq/types';
+import type { HasMaterial } from '@flighthq/types/contract';
 
 import { initMaterialTrait } from './hasMaterial';
 import { createNode } from './node';

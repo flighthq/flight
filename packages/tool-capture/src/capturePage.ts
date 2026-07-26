@@ -2,7 +2,13 @@
 // registers the readable target before drawing, invokes the optional draw callback, and performs the
 // complete versioned verification handshake only when tool-capture is driving the page.
 
-import type { CanvasRenderState, DomRenderState, GlRenderState, Surface, WgpuRenderState } from '@flighthq/types';
+import type {
+  CanvasRenderState,
+  DomRenderState,
+  GlRenderState,
+  Surface,
+  WgpuRenderState,
+} from '@flighthq/types/contract';
 
 import type { CaptureBenchmarkTarget, CaptureVerification } from './captureProtocol.js';
 import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.js';

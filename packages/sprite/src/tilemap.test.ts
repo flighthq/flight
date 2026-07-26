@@ -1,7 +1,7 @@
-import { createRectangle, createVector2 } from '@flighthq/geometry';
-import { connectSignal } from '@flighthq/signals';
-import type { Node, Tileset } from '@flighthq/types';
-import { TilemapKind } from '@flighthq/types';
+import { createRectangle, createVector2 } from '@flighthq/geometry/contract';
+import { connectSignal } from '@flighthq/signals/contract';
+import type { Node, Tileset } from '@flighthq/types/contract';
+import { TilemapKind } from '@flighthq/types/contract';
 
 import {
   clearTilemap,

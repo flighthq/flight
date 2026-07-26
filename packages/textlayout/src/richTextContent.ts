@@ -1,4 +1,10 @@
-import type { RichTextContent, RichTextData, RichTextRuntime, TextFormat, TextFormatRange } from '@flighthq/types';
+import type {
+  RichTextContent,
+  RichTextData,
+  RichTextRuntime,
+  TextFormat,
+  TextFormatRange,
+} from '@flighthq/types/contract';
 
 import { mergeTextFormat } from './textFormat';
 

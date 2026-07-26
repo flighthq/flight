@@ -4,7 +4,7 @@ import {
   compileGlFullscreenProgram,
   drawGlFullscreenPass,
   releaseGlRenderTarget,
-} from '@flighthq/render-gl';
+} from '@flighthq/render-gl/contract';
 import type {
   InnerGlowEffect,
   GlFullscreenProgram,
@@ -12,7 +12,7 @@ import type {
   GlRenderState,
   GlRenderTarget,
   GlRenderTargetPool,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { applyGlEffectBlitPass } from './glEffectBlitShader';
 import { applyGlEffectBoxBlur } from './glEffectBoxBlur';

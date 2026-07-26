@@ -1,4 +1,4 @@
-import type { MeshGeometry } from '@flighthq/types';
+import type { MeshGeometry } from '@flighthq/types/contract';
 
 import { getVertexAttributeFloatOffset } from './meshGeometryAttributes';
 

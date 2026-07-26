@@ -1,5 +1,5 @@
-import type { Entity, EntityWithoutRuntime } from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
+import type { Entity, EntityWithoutRuntime } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createEntity } from './entity';
 

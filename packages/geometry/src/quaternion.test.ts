@@ -24,7 +24,7 @@ import {
   setQuaternionLookRotation,
   slerpQuaternion,
 } from '@flighthq/geometry';
-import type { Quaternion } from '@flighthq/types';
+import type { Quaternion } from '@flighthq/types/contract';
 
 function expectQuaternionClose(q: Readonly<Quaternion>, x: number, y: number, z: number, w: number): void {
   expect(q.x).toBeCloseTo(x, 6);

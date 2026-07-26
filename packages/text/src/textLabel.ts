@@ -1,6 +1,6 @@
-import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node';
-import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d';
-import { computeTextBoundsRectangle, createTextFormatRange } from '@flighthq/textlayout';
+import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node/contract';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
+import { computeTextBoundsRectangle, createTextFormatRange } from '@flighthq/textlayout/contract';
 import type {
   MethodsOf,
   Node,
@@ -14,8 +14,8 @@ import type {
   TextLayoutParams,
   TextMeasureFunction,
   TextVerticalAlign,
-} from '@flighthq/types';
-import { TextLabelKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { TextLabelKind } from '@flighthq/types/contract';
 
 import { ensureTextLayout, getTextLayout } from './textLabelLayout';
 

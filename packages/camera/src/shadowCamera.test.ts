@@ -1,5 +1,5 @@
-import { createAabb } from '@flighthq/geometry';
-import type { OrthographicProjection } from '@flighthq/types';
+import { createAabb } from '@flighthq/geometry/contract';
+import type { OrthographicProjection } from '@flighthq/types/contract';
 
 import { createCamera3D } from './camera';
 import { createPerspectiveProjection } from './projection';

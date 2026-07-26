@@ -1,4 +1,4 @@
-import type { TextureContainer } from '@flighthq/types';
+import type { TextureContainer } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { parseAtf } from './parseAtf';

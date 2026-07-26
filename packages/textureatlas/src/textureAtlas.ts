@@ -1,6 +1,6 @@
-import { createEntity } from '@flighthq/entity';
-import { getImageResourceByteSize } from '@flighthq/image';
-import type { TextureAtlas } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import { getImageResourceByteSize } from '@flighthq/image/contract';
+import type { TextureAtlas } from '@flighthq/types/contract';
 
 export function createTextureAtlas(obj?: Partial<TextureAtlas>): TextureAtlas {
   return createEntity({

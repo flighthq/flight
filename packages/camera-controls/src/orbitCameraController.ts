@@ -1,8 +1,8 @@
-import { setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
-import { createEntity } from '@flighthq/entity';
-import { createVector3 } from '@flighthq/geometry';
-import { clamp, damp, deltaAngle } from '@flighthq/math';
-import type { Camera3D, OrbitCameraController, OrbitCameraControllerOptions } from '@flighthq/types';
+import { setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import { createVector3 } from '@flighthq/geometry/contract';
+import { clamp, damp, deltaAngle } from '@flighthq/math/contract';
+import type { Camera3D, OrbitCameraController, OrbitCameraControllerOptions } from '@flighthq/types/contract';
 
 // Allocates an independent Entity containing the same controller value state.
 export function cloneOrbitCameraController(source: Readonly<OrbitCameraController>): OrbitCameraController {

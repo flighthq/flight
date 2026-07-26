@@ -1,4 +1,4 @@
-import { createBitmapFont } from '@flighthq/bitmapfont';
+import { createBitmapFont } from '@flighthq/bitmapfont/contract';
 import type {
   BitmapFont,
   BitmapFontData,
@@ -7,7 +7,7 @@ import type {
   BitmapFontParseOptions,
   BitmapFontRecord,
   TextureAtlas,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Maps a parsed `BitmapFontRecord` onto a `BitmapFont` via `createBitmapFont`, resolving every atlas
 // page the record declares through `options.resolvePage` (called once per page id). The resolved

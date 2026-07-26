@@ -1,6 +1,6 @@
-import { createEntity } from '@flighthq/entity';
-import type { CubeTexture, Sampler } from '@flighthq/types';
-import { EnvironmentKind } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import type { CubeTexture, Sampler } from '@flighthq/types/contract';
+import { EnvironmentKind } from '@flighthq/types/contract';
 
 import { cloneEnvironment, createEnvironment } from './environment';
 

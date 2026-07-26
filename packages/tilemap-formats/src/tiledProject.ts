@@ -1,5 +1,5 @@
-import { createTilemapData } from '@flighthq/sprite';
-import type { TiledMap, TiledTilesetResolver, TilemapData, Tileset } from '@flighthq/types';
+import { createTilemapData } from '@flighthq/sprite/contract';
+import type { TiledMap, TiledTilesetResolver, TilemapData, Tileset } from '@flighthq/types/contract';
 
 import { decodeTiledGid, getTiledTilesetRefForGid } from './tiledGid';
 

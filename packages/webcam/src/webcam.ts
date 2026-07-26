@@ -1,4 +1,4 @@
-import type { WebcamBackend, WebcamCaptureOptions, WebcamPhoto, WebcamVideo } from '@flighthq/types';
+import type { WebcamBackend, WebcamCaptureOptions, WebcamPhoto, WebcamVideo } from '@flighthq/types/contract';
 
 // Builds the default web backend over a transient <input type="file">. capture resolves to null when
 // the document is absent (jsdom), the user cancels, or the file cannot be read — capture is not

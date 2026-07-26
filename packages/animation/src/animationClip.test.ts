@@ -120,4 +120,4 @@ describe('sampleAnimationClip', () => {
     expect(calls).toBe(0);
   });
 });
-import { EntityRuntimeKey } from '@flighthq/types';
+import { EntityRuntimeKey } from '@flighthq/types/contract';

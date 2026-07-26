@@ -1,7 +1,7 @@
-import { createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry';
-import { invalidateNodeLocalBounds } from '@flighthq/node';
-import { getNode2DRuntime } from '@flighthq/scene2d';
-import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas';
+import { createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry/contract';
+import { invalidateNodeLocalBounds } from '@flighthq/node/contract';
+import { getNode2DRuntime } from '@flighthq/scene2d/contract';
+import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas/contract';
 import type {
   BitmapText,
   BitmapTextData,
@@ -10,7 +10,7 @@ import type {
   GlyphEntry,
   GlyphSource,
   Rectangle,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 const BITMAP_TEXT_TRANSFORM_STRIDE = 2;
 const CARRIAGE_RETURN = 0x0d;

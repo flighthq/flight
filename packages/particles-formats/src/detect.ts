@@ -1,4 +1,4 @@
-import type { ParticleFormatKind } from '@flighthq/types';
+import type { ParticleFormatKind } from '@flighthq/types/contract';
 import {
   LibgdxParticleFormatKind,
   ParticleDesignerFormatKind,
@@ -6,7 +6,7 @@ import {
   SpineParticleFormatKind,
   StarlingPexFormatKind,
   UnityParticleFormatKind,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 /** Sniff the text content of a particle file and return the format kind, or `null`
  *  when no supported format is recognisable.

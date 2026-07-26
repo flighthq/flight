@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity';
-import type { EulerOrder, Matrix4Like, Quaternion, QuaternionLike, Vector3Like } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import type { EulerOrder, Matrix4Like, Quaternion, QuaternionLike, Vector3Like } from '@flighthq/types/contract';
 
 export function cloneQuaternion(source: Readonly<QuaternionLike>): Quaternion {
   return createQuaternion(source.x, source.y, source.z, source.w);

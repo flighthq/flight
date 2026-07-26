@@ -1,4 +1,4 @@
-import type { FlowState } from '@flighthq/types';
+import type { FlowState } from '@flighthq/types/contract';
 
 import {
   clearFlowStack,

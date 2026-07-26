@@ -1,4 +1,4 @@
-import { createStandardPbrMaterial } from '@flighthq/materials';
+import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import type { WgpuMeshMaterialRenderer } from '@flighthq/types/contract';
 import { StandardMaterialKind, StandardPbrMaterialKind } from '@flighthq/types/contract';
 

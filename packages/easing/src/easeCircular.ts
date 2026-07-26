@@ -1,4 +1,4 @@
-import type { EasingFunction } from '@flighthq/types';
+import type { EasingFunction } from '@flighthq/types/contract';
 
 export const easeInCircular: EasingFunction = (t) => 1 - Math.sqrt(1 - t * t);
 

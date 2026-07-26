@@ -1,4 +1,4 @@
-import type { TauriApi, TauriShortcutEvent } from '@flighthq/types';
+import type { TauriApi, TauriShortcutEvent } from '@flighthq/types/contract';
 
 import { createTauriShortcutBackend } from './tauriShortcut';
 

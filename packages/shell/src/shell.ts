@@ -4,7 +4,7 @@ import type {
   ShellOpenPathOptions,
   ShellShortcutLink,
   ShellShortcutWriteOperation,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Builds the default web backend. Only openExternal is achievable on the web (window.open); revealing
 // items, opening arbitrary local paths, trashing, shortcut links, and batch operations require a native

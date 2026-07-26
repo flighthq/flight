@@ -1,11 +1,11 @@
-import { clamp } from '@flighthq/math';
+import { clamp } from '@flighthq/math/contract';
 import type {
   BoundingSphereLike,
   OrbitCameraController,
   OrthographicProjection,
   PerspectiveProjection,
   Projection,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Frames a non-empty sphere with an orbit controller and active viewport aspect. The target moves to
 // the sphere center immediately. Perspective framing changes only `goalDistance`; orthographic

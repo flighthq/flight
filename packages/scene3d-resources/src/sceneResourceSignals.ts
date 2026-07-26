@@ -1,8 +1,8 @@
-import { createEntity } from '@flighthq/entity';
-import { createSignal } from '@flighthq/signals';
-import type { Scene3DResourceResolver, Scene3DResourceSignals } from '@flighthq/types';
-import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types';
-import type { Scene3DResourceResolverWithRuntime } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import { createSignal } from '@flighthq/signals/contract';
+import type { Scene3DResourceResolver, Scene3DResourceSignals } from '@flighthq/types/contract';
+import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
+import type { Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
 
 export function createScene3DResourceSignals(): Scene3DResourceSignals {
   return createEntity({ onResourceFailed: createSignal(), onResourceResolved: createSignal() });

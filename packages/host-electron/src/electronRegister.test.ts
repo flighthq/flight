@@ -1,7 +1,7 @@
-import { getAppName, setAppBackend } from '@flighthq/app';
-import { readClipboardText, setClipboardBackend } from '@flighthq/clipboard';
-import { setStorageBackend } from '@flighthq/storage';
-import type { ElectronApi } from '@flighthq/types';
+import { getAppName, setAppBackend } from '@flighthq/app/contract';
+import { readClipboardText, setClipboardBackend } from '@flighthq/clipboard/contract';
+import { setStorageBackend } from '@flighthq/storage/contract';
+import type { ElectronApi } from '@flighthq/types/contract';
 
 import { registerElectronBackends } from './electronRegister';
 

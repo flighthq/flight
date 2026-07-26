@@ -1,5 +1,5 @@
-import { createCamera3D } from '@flighthq/camera';
-import { createShadedMaterial } from '@flighthq/shading';
+import { createCamera3D } from '@flighthq/camera/contract';
+import { createShadedMaterial } from '@flighthq/shading/contract';
 import type { Scene3DLightBlock } from '@flighthq/types/contract';
 import { ShadedMaterialKind } from '@flighthq/types/contract';
 

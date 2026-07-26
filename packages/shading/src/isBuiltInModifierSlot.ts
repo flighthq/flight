@@ -1,4 +1,4 @@
-import { ModifierSlot } from '@flighthq/types';
+import { ModifierSlot } from '@flighthq/types/contract';
 
 // Returns true when `value` is one of the built-in slot names (Vertex/Normal/Diffuse/Specular/
 // Emissive/Effect). A sentinel-returning guard, not a throw: it reports membership in the canonical

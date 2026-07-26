@@ -1,4 +1,4 @@
-import type { Path, Vector2Like } from '@flighthq/types';
+import type { Path, Vector2Like } from '@flighthq/types/contract';
 
 import { flattenPath } from './flattenPath';
 

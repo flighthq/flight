@@ -4,7 +4,7 @@
 // (&amp; &lt; &gt; &quot; &apos; plus numeric references), XML comments (<!-- -->),
 // CDATA sections (<![CDATA[...]]>), the XML declaration, and DOCTYPE.
 
-import type { XmlElement } from '@flighthq/types';
+import type { XmlElement } from '@flighthq/types/contract';
 
 /** Parse all attributes from an element's attribute string.
  *  Supports double-quoted and single-quoted values and XML entity escapes. */

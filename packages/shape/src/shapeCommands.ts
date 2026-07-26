@@ -1,4 +1,4 @@
-import { invalidateContent } from '@flighthq/node';
+import { invalidateContent } from '@flighthq/node/contract';
 import type {
   CapsStyle,
   GradientType,
@@ -12,11 +12,11 @@ import type {
   ShapeCommandToken,
   SpreadMethod,
   TriangleCulling,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Canonical definition now lives in @flighthq/types (shared with @flighthq/path); re-exported here so
 // shape authoring keeps a single import surface.
-export { PathCommand } from '@flighthq/types';
+export { PathCommand } from '@flighthq/types/contract';
 
 // Appends an arc to the shape's command stream, expanding it into a moveTo followed by
 // cubicCurveTo commands using the standard cubic bezier circle approximation. The arc is drawn

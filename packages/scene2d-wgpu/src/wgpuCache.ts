@@ -1,6 +1,6 @@
-import { createMatrix, createRectangle, multiplyMatrix } from '@flighthq/geometry';
-import { computeNodeBoundsRectangle } from '@flighthq/node';
-import { createWgpuRenderStateRuntime, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
+import { createMatrix, createRectangle, multiplyMatrix } from '@flighthq/geometry/contract';
+import { computeNodeBoundsRectangle } from '@flighthq/node/contract';
+import { createWgpuRenderStateRuntime, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import {
   beginWgpuFrame,
   beginWgpuRenderPass,
@@ -11,7 +11,7 @@ import {
   resizeWgpuRenderTarget,
   setWgpuRenderTransform2D,
   submitWgpuRenderPass,
-} from '@flighthq/render-wgpu';
+} from '@flighthq/render-wgpu/contract';
 import {
   computeScene2DRenderTargetTransform,
   computeRenderCacheTransform,

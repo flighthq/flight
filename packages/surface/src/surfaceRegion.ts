@@ -1,4 +1,4 @@
-import type { Surface, SurfaceRegion } from '@flighthq/types';
+import type { Surface, SurfaceRegion } from '@flighthq/types/contract';
 
 /**
  * Allocates a `SurfaceRegion`. With no bounds it covers the whole surface, so

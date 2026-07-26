@@ -7,11 +7,11 @@ import {
   initAppearanceTrait,
   initTransform3DRuntimeTrait,
   initTransform3DTrait,
-} from '@flighthq/node';
-import type { Kind, NodeSignals, Node3D, Node3DRuntime, Node3DTraits } from '@flighthq/types';
-import { Node3DKind, Node3DTraitsKey } from '@flighthq/types';
+} from '@flighthq/node/contract';
+import type { Kind, NodeSignals, Node3D, Node3DRuntime, Node3DTraits } from '@flighthq/types/contract';
+import { Node3DKind, Node3DTraitsKey } from '@flighthq/types/contract';
 
-export { Node3DKind } from '@flighthq/types';
+export { Node3DKind } from '@flighthq/types/contract';
 
 export function createNode3D(
   kind: Kind = Node3DKind,

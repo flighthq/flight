@@ -8,9 +8,15 @@ import {
   isEmptyRectangle,
   matrixTransformRectangle,
   mergeRectangle,
-} from '@flighthq/geometry';
-import { appendPathCubicCurveTo, appendPathLineTo, appendPathMoveTo, createPath, flattenPath } from '@flighthq/path';
-import type { ClipRegion, MatrixLike, Path, PathWinding, RectangleLike } from '@flighthq/types';
+} from '@flighthq/geometry/contract';
+import {
+  appendPathCubicCurveTo,
+  appendPathLineTo,
+  appendPathMoveTo,
+  createPath,
+  flattenPath,
+} from '@flighthq/path/contract';
+import type { ClipRegion, MatrixLike, Path, PathWinding, RectangleLike } from '@flighthq/types/contract';
 
 // Returns a ClipRegion from the pool (as an empty rectangular region at the origin).
 // Every acquireClipRegion must have a matching releaseClipRegion — treat them as paired brackets.

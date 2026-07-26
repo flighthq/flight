@@ -1,4 +1,4 @@
-import type { Adjustment, ColorScaleBias } from '@flighthq/types';
+import type { Adjustment, ColorScaleBias } from '@flighthq/types/contract';
 
 import {
   COLOR_ADJUSTMENT_AFFINE,

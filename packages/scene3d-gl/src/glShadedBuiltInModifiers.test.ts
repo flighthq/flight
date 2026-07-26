@@ -7,7 +7,7 @@ import {
   createRimModifier,
   createToonModifier,
   createVertexDisplaceModifier,
-} from '@flighthq/shading';
+} from '@flighthq/shading/contract';
 import type { Texture, GlModifierBindContext } from '@flighthq/types/contract';
 import {
   AnimatedNormalModifierKind,

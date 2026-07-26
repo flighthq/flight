@@ -1,4 +1,4 @@
-import { createRichTextContent, createTextFormatRange } from '@flighthq/textlayout';
+import { createRichTextContent, createTextFormatRange } from '@flighthq/textlayout/contract';
 import type {
   MarkupTagEffect,
   MarkupTagHandler,
@@ -7,7 +7,7 @@ import type {
   RichTextContent,
   TextFormat,
   TextFormatRange,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { createMarkupTagRegistry, registerStandardMarkupTags } from './markupTagRegistry';
 

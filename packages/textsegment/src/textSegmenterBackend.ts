@@ -1,4 +1,4 @@
-import type { TextSegment, TextSegmentGranularity, TextSegmenterBackend } from '@flighthq/types';
+import type { TextSegment, TextSegmentGranularity, TextSegmenterBackend } from '@flighthq/types/contract';
 
 // Builds the default web backend: a wrapper over the browser-native Intl.Segmenter. It ships no
 // Unicode tables — the engine already carries them — so the common path costs nothing in bundle

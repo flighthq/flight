@@ -1,2 +1,1 @@
-export * from './clock';
-export * from './clockSignals';
+export * from './contract';

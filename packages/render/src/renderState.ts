@@ -1,4 +1,4 @@
-import { createEntity, createEntityRuntime } from '@flighthq/entity';
+import { createEntity, createEntityRuntime } from '@flighthq/entity/contract';
 import type { RenderState, RenderStateRuntime } from '@flighthq/types/contract';
 import { BlendMode, EntityRuntimeKey } from '@flighthq/types/contract';
 

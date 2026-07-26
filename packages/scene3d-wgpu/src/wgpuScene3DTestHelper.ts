@@ -1,4 +1,4 @@
-import { createWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
+import { createWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createRenderState } from '@flighthq/render/contract';
 import type { WgpuRenderState, WgpuRenderStateRuntime } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';

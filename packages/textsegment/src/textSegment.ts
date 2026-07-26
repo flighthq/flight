@@ -1,4 +1,4 @@
-import type { TextSegment } from '@flighthq/types';
+import type { TextSegment } from '@flighthq/types/contract';
 
 import { getTextSegmenterBackend } from './textSegmenterBackend';
 

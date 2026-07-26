@@ -1,7 +1,7 @@
-import { invalidateContent } from '@flighthq/node';
-import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d';
-import type { BoundsNodeAny, PartialNode, Rectangle, Shape, ShapeData, ShapeRuntime } from '@flighthq/types';
-import { ShapeKind } from '@flighthq/types';
+import { invalidateContent } from '@flighthq/node/contract';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
+import type { BoundsNodeAny, PartialNode, Rectangle, Shape, ShapeData, ShapeRuntime } from '@flighthq/types/contract';
+import { ShapeKind } from '@flighthq/types/contract';
 
 export function clearShapeCommands(shape: Shape): void {
   shape.data.commands.length = 0;

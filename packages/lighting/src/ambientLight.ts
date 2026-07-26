@@ -1,6 +1,6 @@
-import { createEntity } from '@flighthq/entity';
-import type { AmbientLight, AmbientLightOptions } from '@flighthq/types';
-import { AmbientLightKind } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import type { AmbientLight, AmbientLightOptions } from '@flighthq/types/contract';
+import { AmbientLightKind } from '@flighthq/types/contract';
 
 // Independent copy of an ambient light's data. The `kind` discriminant is carried over.
 export function cloneAmbientLight(source: Readonly<AmbientLight>): AmbientLight {

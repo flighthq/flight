@@ -1,4 +1,4 @@
-import type { MeshGeometry, VertexAttribute, VertexAttributeLayout, VertexSemantic } from '@flighthq/types';
+import type { MeshGeometry, VertexAttribute, VertexAttributeLayout, VertexSemantic } from '@flighthq/types/contract';
 
 // Attribute introspection and typed per-vertex read/write accessors for interleaved mesh geometry.
 // Every accessor resolves float offsets through getVertexAttributeFloatOffset, so they work on any

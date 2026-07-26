@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity';
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   AabbLike,
   BoundingSphereLike,
@@ -7,7 +7,7 @@ import type {
   Matrix4Like,
   PlaneLike,
   Vector3Like,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { createPlane } from './plane';
 

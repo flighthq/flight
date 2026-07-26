@@ -1,4 +1,4 @@
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
+import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { MatrixLike, RectangleLike, WgpuRenderState, WgpuScissorRect } from '@flighthq/types/contract';
 
 import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';

@@ -1,4 +1,4 @@
-import type { SurfaceDisplacementMapOptions, SurfaceEdgeMode, SurfaceRegion } from '@flighthq/types';
+import type { SurfaceDisplacementMapOptions, SurfaceEdgeMode, SurfaceRegion } from '@flighthq/types/contract';
 
 /**
  * Warps `source` by sampling each output pixel from a displaced source position,

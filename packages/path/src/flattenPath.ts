@@ -1,5 +1,5 @@
-import type { Path } from '@flighthq/types';
-import { PathCommand } from '@flighthq/types';
+import type { Path } from '@flighthq/types/contract';
+import { PathCommand } from '@flighthq/types/contract';
 
 // Flattens a Path's curves into straight-line contours. Each contour is a flat
 // [x0, y0, x1, y1, ...] polyline in the path's own coordinate space; quadratic and cubic segments are

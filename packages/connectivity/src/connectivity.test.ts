@@ -1,5 +1,5 @@
-import { connectSignal } from '@flighthq/signals';
-import type { ConnectivityBackend, ConnectivityReachability, ConnectivityStatus } from '@flighthq/types';
+import { connectSignal } from '@flighthq/signals/contract';
+import type { ConnectivityBackend, ConnectivityReachability, ConnectivityStatus } from '@flighthq/types/contract';
 
 import {
   attachConnectivity,

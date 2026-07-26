@@ -1,4 +1,4 @@
-import type { Tween } from '@flighthq/types';
+import type { Tween } from '@flighthq/types/contract';
 
 export function initializeTween<T extends object>(tween: Tween<T>): void {
   const target = tween.target as Record<string, number>;

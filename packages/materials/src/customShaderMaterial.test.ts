@@ -1,4 +1,4 @@
-import { CustomShaderMaterialKind } from '@flighthq/types';
+import { CustomShaderMaterialKind } from '@flighthq/types/contract';
 
 import { createCustomShaderMaterial } from './customShaderMaterial';
 

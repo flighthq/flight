@@ -1,4 +1,4 @@
-import type { CanvasRenderEffectRunner, CanvasRenderTarget, LensDirtEffect } from '@flighthq/types';
+import type { CanvasRenderEffectRunner, CanvasRenderTarget, LensDirtEffect } from '@flighthq/types/contract';
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 

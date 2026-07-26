@@ -1,4 +1,4 @@
-import { invalidateNodeLocalBounds } from '@flighthq/node';
+import { invalidateNodeLocalBounds } from '@flighthq/node/contract';
 import type {
   MethodsOf,
   Node,
@@ -7,8 +7,8 @@ import type {
   RenderView,
   RenderViewData,
   RenderViewRuntime,
-} from '@flighthq/types';
-import { RenderViewKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { RenderViewKind } from '@flighthq/types/contract';
 
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from './displayObject';
 

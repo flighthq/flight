@@ -1,4 +1,4 @@
-import type { OutlineEffect, SketchEffect } from '@flighthq/types';
+import type { OutlineEffect, SketchEffect } from '@flighthq/types/contract';
 
 // Edge detection recipe math. Shared by OutlineEffect (color silhouette) and SketchEffect
 // (pencil-line stylize) backends. Both use Sobel/Prewitt edge detection internally; this module

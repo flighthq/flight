@@ -1,4 +1,4 @@
-import { computeTextFormatFontString } from '@flighthq/text';
+import { computeTextFormatFontString } from '@flighthq/text/contract';
 import type { TextFormat, TextMeasureFunction } from '@flighthq/types/contract';
 
 // Builds a TextMeasureFunction backed by a private offscreen 2D canvas — the measurement battery for

@@ -1,4 +1,4 @@
-import type { ParticleConfigIssue, ParticleEmitterConfig } from '@flighthq/types';
+import type { ParticleConfigIssue, ParticleEmitterConfig } from '@flighthq/types/contract';
 
 import { createParticleEmitterConfig } from './particleEmitterConfig';
 

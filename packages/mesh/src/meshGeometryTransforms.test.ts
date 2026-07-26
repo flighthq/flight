@@ -1,5 +1,5 @@
-import { createMatrix4, setMatrix4Identity } from '@flighthq/geometry';
-import type { Aabb, VertexAttributeLayout } from '@flighthq/types';
+import { createMatrix4, setMatrix4Identity } from '@flighthq/geometry/contract';
+import type { Aabb, VertexAttributeLayout } from '@flighthq/types/contract';
 
 import { createMeshGeometry } from './meshGeometry';
 import { computeMeshGeometryBounds } from './meshGeometryCompute';

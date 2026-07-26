@@ -1,4 +1,4 @@
-import type { RandomSource } from '@flighthq/types';
+import type { RandomSource } from '@flighthq/types/contract';
 
 export type { RandomSource };
 

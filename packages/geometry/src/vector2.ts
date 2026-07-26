@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity';
-import type { Vector2, Vector2Like, Vector3Like } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import type { Vector2, Vector2Like, Vector3Like } from '@flighthq/types/contract';
 
 export function addVector2(out: Vector2Like, a: Readonly<Vector2Like>, b: Readonly<Vector2Like>): void {
   out.x = a.x + b.x;

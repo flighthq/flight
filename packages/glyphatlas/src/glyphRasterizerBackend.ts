@@ -1,4 +1,4 @@
-import type { GlyphRasterizedBitmap, GlyphRasterizeOptions, GlyphRasterizerBackend } from '@flighthq/types';
+import type { GlyphRasterizedBitmap, GlyphRasterizeOptions, GlyphRasterizerBackend } from '@flighthq/types/contract';
 
 // Builds a deterministic, font-independent rasterizer backend for headless/jsdom use. Every codepoint
 // rasterizes to a solid opaque-white box sized from the requested `fontSize` (never a font lookup, never

@@ -1,4 +1,4 @@
-import { createBoxMeshGeometry } from '@flighthq/mesh';
+import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 import { ensureWgpuWireframeUpload } from './wgpuWireframeUpload';

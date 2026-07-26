@@ -1,4 +1,4 @@
-import type { ColorLut, ColorLutCache, ColorTransformFunction } from '@flighthq/types';
+import type { ColorLut, ColorLutCache, ColorTransformFunction } from '@flighthq/types/contract';
 
 import { bakeColorLut, COLOR_LUT_DEFAULT_SIZE } from './colorLut';
 import { getAdjustmentColorTransform } from './colorLutAdjustment';

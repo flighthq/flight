@@ -1,4 +1,4 @@
-import { createSignal, emitSignal } from '@flighthq/signals';
+import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   BufferedLogSink,
   FileLogSink,
@@ -14,8 +14,8 @@ import type {
   LogTransportBackend,
   MemoryLogSink,
   RateLimitedLogSink,
-} from '@flighthq/types';
-import { LogLevel } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { LogLevel } from '@flighthq/types/contract';
 
 // Logging is split into two faces of one contract so each consumer tree-shakes its half:
 //

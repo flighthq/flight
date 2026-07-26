@@ -1,4 +1,4 @@
-import type { BlurEffect, CanvasRenderEffectRunner, CanvasRenderTarget } from '@flighthq/types';
+import type { BlurEffect, CanvasRenderEffectRunner, CanvasRenderTarget } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
 

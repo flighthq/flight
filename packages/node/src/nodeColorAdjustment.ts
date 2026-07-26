@@ -4,9 +4,9 @@ import {
   createTintAdjustment,
   resolveColorAdjustmentsColorMatrix,
   resolveColorAdjustmentsColorScaleBias,
-} from '@flighthq/adjustments';
-import { createColorScaleBias } from '@flighthq/materials';
-import type { Adjustment, ColorAdjustmentRuntime, Node, NodeRuntime } from '@flighthq/types';
+} from '@flighthq/adjustments/contract';
+import { createColorScaleBias } from '@flighthq/materials/contract';
+import type { Adjustment, ColorAdjustmentRuntime, Node, NodeRuntime } from '@flighthq/types/contract';
 
 import { getNodeRuntime } from './node';
 import { invalidateNodeAppearance } from './revision';

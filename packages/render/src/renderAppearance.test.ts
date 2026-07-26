@@ -1,5 +1,5 @@
-import { invalidateNodeAppearance } from '@flighthq/node';
-import { createDisplayObject } from '@flighthq/scene2d';
+import { invalidateNodeAppearance } from '@flighthq/node/contract';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
 import { updateRenderProxyAppearance } from './renderAppearance';

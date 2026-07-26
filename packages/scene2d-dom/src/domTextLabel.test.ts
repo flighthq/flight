@@ -1,6 +1,6 @@
 ﻿import { registerRenderer } from '@flighthq/render/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
-import { createTextLabel } from '@flighthq/text';
+import { createTextLabel } from '@flighthq/text/contract';
 import { TextLabelKind } from '@flighthq/types/contract';
 
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';

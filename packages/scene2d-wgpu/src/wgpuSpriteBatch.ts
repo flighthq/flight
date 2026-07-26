@@ -1,5 +1,9 @@
-import { bindWgpuImageResourceTexture, getWgpuBlendState, resolveWgpuSmoothingBindGroup } from '@flighthq/render-wgpu';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
+import {
+  bindWgpuImageResourceTexture,
+  getWgpuBlendState,
+  resolveWgpuSmoothingBindGroup,
+} from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type {
   ColorScaleBias,
   TintMaterialData,

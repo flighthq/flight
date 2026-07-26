@@ -1,4 +1,4 @@
-import { copyMatrix, createMatrix } from '@flighthq/geometry';
+import { copyMatrix, createMatrix } from '@flighthq/geometry/contract';
 import type { GlRenderState, GlRenderTarget, Matrix, RenderPassPreserve } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';

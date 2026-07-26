@@ -1,4 +1,4 @@
-import type { EasingFunction, StepPosition } from '@flighthq/types';
+import type { EasingFunction, StepPosition } from '@flighthq/types/contract';
 
 // Returns a stepped easing function that quantizes [0,1] into `count` equal
 // intervals, jumping at the position(s) selected by `position`:

@@ -1,4 +1,4 @@
-import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation';
+import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
 import {
   copyMatrix4,
   createMatrix4,
@@ -6,18 +6,18 @@ import {
   decomposeMatrix4ToTransform3D,
   inverseMatrix4,
   multiplyMatrix4,
-} from '@flighthq/geometry';
-import { detectImageMimeType } from '@flighthq/image-codec';
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
+} from '@flighthq/geometry/contract';
+import { detectImageMimeType } from '@flighthq/image-codec/contract';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   computeMeshGeometryNormals,
   computeMeshGeometryTangents,
   createMeshGeometry,
-} from '@flighthq/mesh';
-import { createScene3DFromDocument } from '@flighthq/scene3d';
-import { createShadedMaterial } from '@flighthq/shading';
-import type { Scene3D } from '@flighthq/types';
+} from '@flighthq/mesh/contract';
+import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
+import { createShadedMaterial } from '@flighthq/shading/contract';
+import type { Scene3D } from '@flighthq/types/contract';
 import type {
   AnimationClip,
   AnimationTrack,
@@ -37,7 +37,7 @@ import type {
   Texture,
   Transform3D,
   SkinInfluence,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 import {
   ImportDiagnosticSeverity,
   MeshKind,
@@ -45,7 +45,7 @@ import {
   Scene3DAnimationPathScale,
   Scene3DAnimationPathTranslation,
   Node3DKind,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import {
   AWD2_BLOCK_CONTAINER,

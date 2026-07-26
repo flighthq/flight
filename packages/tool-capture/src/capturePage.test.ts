@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { DomRenderState } from '@flighthq/types';
+import type { DomRenderState } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {

@@ -1,11 +1,11 @@
-import { acquireWgpuRenderTarget, releaseWgpuRenderTarget } from '@flighthq/render-wgpu';
+import { acquireWgpuRenderTarget, releaseWgpuRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
   InnerShadowEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
   WgpuRenderTarget,
   WgpuRenderTargetPool,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { applyWgpuEffectBlitOffsetPass, applyWgpuEffectBlitPass } from './wgpuEffectBlitShader';
 import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';

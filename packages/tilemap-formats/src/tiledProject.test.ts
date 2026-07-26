@@ -1,5 +1,5 @@
-import { createTileset } from '@flighthq/tileset';
-import type { TiledTilesetResolver } from '@flighthq/types';
+import { createTileset } from '@flighthq/tileset/contract';
+import type { TiledTilesetResolver } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { buildTilemapLayersFromTiled } from './tiledProject';

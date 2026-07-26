@@ -1,4 +1,4 @@
-import type { StatusBar, StatusBarBackend, StatusBarInfo, StatusBarStyle } from '@flighthq/types';
+import type { StatusBar, StatusBarBackend, StatusBarInfo, StatusBarStyle } from '@flighthq/types/contract';
 
 import {
   attachStatusBar,

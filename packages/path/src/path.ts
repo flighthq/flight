@@ -1,5 +1,5 @@
-import type { Path, PathWinding } from '@flighthq/types';
-import { PathCommand } from '@flighthq/types';
+import type { Path, PathWinding } from '@flighthq/types/contract';
+import { PathCommand } from '@flighthq/types/contract';
 
 // Approximates an arc centered at (cx, cy) from `startAngle` to `endAngle` (radians) with the given
 // `radius`, using one or more cubic bezier segments. Each cubic segment spans at most π/2 (90°) to

@@ -7,7 +7,7 @@ import {
   UnlitMaterialKind,
   VertexColorMaterialKind,
   WireframeMaterialKind,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import {
   createDepthMaterial,

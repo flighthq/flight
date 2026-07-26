@@ -1,4 +1,4 @@
-import type { Velocity2D, VelocityField, VelocitySample } from '@flighthq/types';
+import type { Velocity2D, VelocityField, VelocitySample } from '@flighthq/types/contract';
 
 // The VelocityField is the generic seam: any system (physics, tween, camera, manual edit) contributes a
 // source object's screen-space velocity for the current frame, and any consumer reads it. The accessors

@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity';
-import type { CubeTexture, CubeTextureLike, ImageResource } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import type { CubeTexture, CubeTextureLike, ImageResource } from '@flighthq/types/contract';
 
 import { cloneSampler, copySampler, createSampler, equalsSampler } from './sampler';
 

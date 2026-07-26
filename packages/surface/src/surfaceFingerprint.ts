@@ -1,4 +1,4 @@
-import type { Surface, SurfaceFingerprint } from '@flighthq/types';
+import type { Surface, SurfaceFingerprint } from '@flighthq/types/contract';
 
 // A coarse downscaled RGB fingerprint: the surface is averaged into a gridSize × gridSize grid, so
 // antialiasing jitter that breaks an exact hash washes out while gross changes still register. The

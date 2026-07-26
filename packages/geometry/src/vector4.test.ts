@@ -34,7 +34,7 @@ import {
   VECTOR4_Z_AXIS,
   writeVector4ToFloat32Array,
 } from '@flighthq/geometry';
-import type { Vector4 } from '@flighthq/types';
+import type { Vector4 } from '@flighthq/types/contract';
 
 describe('addVector4', () => {
   it('returns a new vector when no target is passed', () => {

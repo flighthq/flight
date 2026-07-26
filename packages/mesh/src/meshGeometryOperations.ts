@@ -4,7 +4,7 @@ import type {
   MeshSubset,
   MeshTriangleVertexIndices,
   VertexAttributeLayout,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { createMeshGeometry, getMeshGeometryVertexCount } from './meshGeometry';
 import {

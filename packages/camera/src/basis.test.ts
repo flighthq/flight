@@ -1,4 +1,4 @@
-import { createVector3 } from '@flighthq/geometry';
+import { createVector3 } from '@flighthq/geometry/contract';
 
 import { getCamera3DForward, getCamera3DPosition, getCamera3DRight, getCamera3DUp } from './basis';
 import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from './camera';

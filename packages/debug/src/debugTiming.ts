@@ -1,5 +1,5 @@
-import { endLogTimer, logDebug, startLogTimer } from '@flighthq/log';
-import type { LogTimer } from '@flighthq/types';
+import { endLogTimer, logDebug, startLogTimer } from '@flighthq/log/contract';
+import type { LogTimer } from '@flighthq/types/contract';
 
 import { isDebugEnabled } from './debug';
 

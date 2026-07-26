@@ -1,4 +1,4 @@
-import type { Surface } from '@flighthq/types';
+import type { Surface } from '@flighthq/types/contract';
 
 /**
  * Returns the fraction of pixels (0..1) that differ from `backgroundColor` by more than

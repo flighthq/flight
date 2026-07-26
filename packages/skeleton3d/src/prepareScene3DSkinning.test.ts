@@ -1,12 +1,12 @@
-import { setVector3 } from '@flighthq/geometry';
+import { setVector3 } from '@flighthq/geometry/contract';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   createMeshGeometry,
   getMeshGeometrySkinBindPose,
-} from '@flighthq/mesh';
-import { addNodeChild, getNodeRuntime, invalidateNodeLocalTransform } from '@flighthq/node';
-import { createMesh, createNode3D } from '@flighthq/scene3d';
-import type { MeshRuntime } from '@flighthq/types';
+} from '@flighthq/mesh/contract';
+import { addNodeChild, getNodeRuntime, invalidateNodeLocalTransform } from '@flighthq/node/contract';
+import { createMesh, createNode3D } from '@flighthq/scene3d/contract';
+import type { MeshRuntime } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { prepareMeshSkinning, prepareScene3DSkinning } from './prepareScene3DSkinning';

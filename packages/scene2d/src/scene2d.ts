@@ -1,8 +1,8 @@
-import { createEntity } from '@flighthq/entity';
-import { getNodeRoot, getNodeRuntime } from '@flighthq/node';
-import { createSignal, emitSignal } from '@flighthq/signals';
-import type { Node2D, Node2DRuntime, Scene2D, Scene2DRuntime, Scene2DSignals } from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import { getNodeRoot, getNodeRuntime } from '@flighthq/node/contract';
+import { createSignal, emitSignal } from '@flighthq/signals/contract';
+import type { Node2D, Node2DRuntime, Scene2D, Scene2DRuntime, Scene2DSignals } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createDisplayObject } from './displayObject';
 

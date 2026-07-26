@@ -12,9 +12,9 @@ import {
   invalidateNodeParentReference,
   removeNodeChild,
   setNodeLocalMatrix4,
-} from '@flighthq/node';
-import type { Matrix4, Node3D } from '@flighthq/types';
-import type { Node3DRuntime } from '@flighthq/types';
+} from '@flighthq/node/contract';
+import type { Matrix4, Node3D } from '@flighthq/types/contract';
+import type { Node3DRuntime } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {

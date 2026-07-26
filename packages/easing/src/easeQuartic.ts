@@ -1,4 +1,4 @@
-import type { EasingFunction } from '@flighthq/types';
+import type { EasingFunction } from '@flighthq/types/contract';
 
 export const easeInOutQuartic: EasingFunction = (t) => (t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2);
 

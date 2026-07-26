@@ -1,4 +1,4 @@
-import type { ShapedRun } from '@flighthq/types';
+import type { ShapedRun } from '@flighthq/types/contract';
 
 // Returns the per-grapheme caret x-positions for the run, in visual order. Each position is the
 // x-coordinate of the caret insertion point before the corresponding glyph, measured in pixels

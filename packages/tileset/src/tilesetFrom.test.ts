@@ -1,5 +1,5 @@
-import { createImageResourceFromImageElement } from '@flighthq/image';
-import { createTextureAtlas } from '@flighthq/textureatlas';
+import { createImageResourceFromImageElement } from '@flighthq/image/contract';
+import { createTextureAtlas } from '@flighthq/textureatlas/contract';
 
 import {
   createTilesetFromAtlas,

@@ -1,5 +1,5 @@
-import { createBitmapText, getBitmapTextPages, updateBitmapText } from '@flighthq/bitmaptext';
-import { setNodeColorAdjustmentsTint } from '@flighthq/node';
+import { createBitmapText, getBitmapTextPages, updateBitmapText } from '@flighthq/bitmaptext/contract';
+import { setNodeColorAdjustmentsTint } from '@flighthq/node/contract';
 import type { BitmapText, GlyphEntry, GlyphSource, ImageResource, RenderProxy2D } from '@flighthq/types/contract';
 
 import { defaultGlBitmapTextRenderer } from './glBitmapText';

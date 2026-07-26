@@ -1,4 +1,4 @@
-import type { DialogBackend, FileDialogHandle, MessageDialogResult } from '@flighthq/types';
+import type { DialogBackend, FileDialogHandle, MessageDialogResult } from '@flighthq/types/contract';
 
 import {
   createWebDialogBackend,

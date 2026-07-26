@@ -1,5 +1,5 @@
-import { computeRgbHexString } from '@flighthq/color';
-import { getNativeTextRuntime } from '@flighthq/text';
+import { computeRgbHexString } from '@flighthq/color/contract';
+import { getNativeTextRuntime } from '@flighthq/text/contract';
 import type {
   Scene2DRenderer,
   DomRenderState,

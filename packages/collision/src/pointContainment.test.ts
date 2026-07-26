@@ -1,4 +1,4 @@
-import type { CollisionShape } from '@flighthq/types';
+import type { CollisionShape } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { getCollisionShapeContainsPoint } from './pointContainment';

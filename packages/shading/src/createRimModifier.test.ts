@@ -1,4 +1,4 @@
-import { ModifierSlot, RimModifierKind } from '@flighthq/types';
+import { ModifierSlot, RimModifierKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createRimModifier } from './createRimModifier';

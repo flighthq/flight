@@ -1,12 +1,12 @@
-import { computeBloomBlurRadius, computeBloomIntensity, computeBloomThreshold } from '@flighthq/effects';
-import { acquireGlRenderTarget, drawGlFullscreenPass, releaseGlRenderTarget } from '@flighthq/render-gl';
+import { computeBloomBlurRadius, computeBloomIntensity, computeBloomThreshold } from '@flighthq/effects/contract';
+import { acquireGlRenderTarget, drawGlFullscreenPass, releaseGlRenderTarget } from '@flighthq/render-gl/contract';
 import type {
   BloomEffect,
   GlRenderEffectRunner,
   GlRenderState,
   GlRenderTarget,
   GlRenderTargetPool,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { applyGaussianBlurToGl } from './glBlurEffect';
 import { getGlEffectProgram } from './glEffectProgramCache';

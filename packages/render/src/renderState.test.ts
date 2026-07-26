@@ -1,4 +1,4 @@
-import { createMatrix } from '@flighthq/geometry';
+import { createMatrix } from '@flighthq/geometry/contract';
 import type { RenderState } from '@flighthq/types/contract';
 import { BlendMode, EntityRuntimeKey } from '@flighthq/types/contract';
 

@@ -1,4 +1,4 @@
-import type { PowerBackend, PowerIdleState, ElectronApi } from '@flighthq/types';
+import type { PowerBackend, PowerIdleState, ElectronApi } from '@flighthq/types/contract';
 
 // Maps Flight's PowerBackend onto Electron's powerMonitor and powerSaveBlocker. The main process has
 // no battery-level reading, so getStatus reports batteryLevel -1 and infers charging from the AC/

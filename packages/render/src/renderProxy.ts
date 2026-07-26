@@ -1,12 +1,12 @@
-import { createEntity } from '@flighthq/entity';
-import { createMatrix } from '@flighthq/geometry';
+import { createEntity } from '@flighthq/entity/contract';
+import { createMatrix } from '@flighthq/geometry/contract';
 import {
   getNodeAppearanceRevision,
   getNodeLocalContentRevision,
   getNodeLocalTransformRevision,
   getNodeParent,
   getNodeRuntime,
-} from '@flighthq/node';
+} from '@flighthq/node/contract';
 import type {
   Node2D,
   HasBoundsRectangle,

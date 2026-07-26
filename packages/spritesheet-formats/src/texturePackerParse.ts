@@ -1,18 +1,18 @@
-import type { SpritesheetAnimationData, SpritesheetData, SpritesheetFrameData } from '@flighthq/spritesheet';
+import type { SpritesheetAnimationData, SpritesheetData, SpritesheetFrameData } from '@flighthq/spritesheet/contract';
 import {
   createSpritesheetAnimationData,
   createSpritesheetData,
   createSpritesheetFrameData,
-} from '@flighthq/spritesheet';
-import { createTextureAtlas } from '@flighthq/textureatlas';
-import { parseTextureAtlasPackerDocument } from '@flighthq/textureatlas-formats';
+} from '@flighthq/spritesheet/contract';
+import { parseTextureAtlasPackerDocument } from '@flighthq/textureatlas-formats/contract';
+import { createTextureAtlas } from '@flighthq/textureatlas/contract';
 import type {
   TextureAtlasRegion,
   TexturePackerDocument,
   TexturePackerFrameTag,
   TexturePackerMeta,
   TexturePackerParsed,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
 

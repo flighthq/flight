@@ -12,7 +12,7 @@ import {
   TextLabelKind,
   TilemapKind,
   VideoKind,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import {
   defaultBitmapHitTestHandler,

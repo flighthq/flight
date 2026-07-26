@@ -1,4 +1,4 @@
-import type { ByteReader } from '@flighthq/types';
+import type { ByteReader } from '@flighthq/types/contract';
 
 // The container parsers here share the `ByteReader` cursor. KTX2, DDS, and the Basis container are
 // little-endian (the `read*U16`/`U32`/`U64` helpers); ATF stores its block and header lengths

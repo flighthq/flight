@@ -1,5 +1,5 @@
-import type { ParticleEmitter2D } from '@flighthq/types';
-import type { ParticleEmitterConfig, ParticleEmitterState } from '@flighthq/types';
+import type { ParticleEmitter2D } from '@flighthq/types/contract';
+import type { ParticleEmitterConfig, ParticleEmitterState } from '@flighthq/types/contract';
 
 import type { ParticleEmitterCallbacks } from './updateParticleEmitter2D';
 import { updateParticleEmitter2D } from './updateParticleEmitter2D';

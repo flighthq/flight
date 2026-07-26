@@ -1,4 +1,4 @@
-import type { Spring2D, SpringConfig } from '@flighthq/types';
+import type { Spring2D, SpringConfig } from '@flighthq/types/contract';
 
 import { createSpring, isSpringSettled, updateSpring } from './spring';
 

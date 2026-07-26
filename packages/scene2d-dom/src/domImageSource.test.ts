@@ -1,4 +1,4 @@
-import { createImageResource, invalidateImageResource } from '@flighthq/image';
+import { createImageResource, invalidateImageResource } from '@flighthq/image/contract';
 import type { ImageResource } from '@flighthq/types/contract';
 
 import { explainDomImageSource, resolveDomImageSource } from './domImageSource';

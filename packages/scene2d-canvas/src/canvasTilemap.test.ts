@@ -1,8 +1,8 @@
-﻿import { createImageResource } from '@flighthq/image';
+﻿import { createImageResource } from '@flighthq/image/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
-import { createTilemap, setTilemapTile } from '@flighthq/sprite';
-import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas';
-import { buildTilesetRegions, createTileset } from '@flighthq/tileset';
+import { createTilemap, setTilemapTile } from '@flighthq/sprite/contract';
+import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas/contract';
+import { buildTilesetRegions, createTileset } from '@flighthq/tileset/contract';
 
 import { createCanvasRenderState } from './canvasRenderState';
 import { drawCanvasTilemap } from './canvasTilemap';

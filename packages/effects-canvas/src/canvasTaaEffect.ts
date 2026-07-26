@@ -1,4 +1,4 @@
-import type { CanvasRenderEffectRunner, CanvasRenderTarget, TaaEffect } from '@flighthq/types';
+import type { CanvasRenderEffectRunner, CanvasRenderTarget, TaaEffect } from '@flighthq/types/contract';
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 

@@ -1,6 +1,6 @@
-import { createMatrix, createRectangle } from '@flighthq/geometry';
-import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import { createDisplayObject } from '@flighthq/scene2d';
+import { createMatrix, createRectangle } from '@flighthq/geometry/contract';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { ClipRegion, Node2D, RenderProxy2D } from '@flighthq/types/contract';
 
 import { enableGlClipSupport } from './glClip';

@@ -1,7 +1,13 @@
-import { getNodeAppearanceRevision } from '@flighthq/node';
-import { createRichText, setRichTextFormatRange } from '@flighthq/text';
-import type { KeyboardEventData, RichText, RichTextData, TextInputOptions, TextLayoutResult } from '@flighthq/types';
-import { KeyCode } from '@flighthq/types';
+import { getNodeAppearanceRevision } from '@flighthq/node/contract';
+import { createRichText, setRichTextFormatRange } from '@flighthq/text/contract';
+import type {
+  KeyboardEventData,
+  RichText,
+  RichTextData,
+  TextInputOptions,
+  TextLayoutResult,
+} from '@flighthq/types/contract';
+import { KeyCode } from '@flighthq/types/contract';
 
 import { enableTextInput, getTextInputState } from './textInput';
 import {

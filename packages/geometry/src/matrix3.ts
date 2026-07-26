@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity';
-import type { Matrix3, Matrix3Like, Matrix4Like, MatrixLike, Vector3Like } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import type { Matrix3, Matrix3Like, Matrix4Like, MatrixLike, Vector3Like } from '@flighthq/types/contract';
 
 import { acquireMatrix3, releaseMatrix3 } from './matrix3Pool';
 

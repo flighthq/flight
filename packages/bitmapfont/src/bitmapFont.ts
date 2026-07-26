@@ -1,4 +1,4 @@
-import type { BitmapFont, BitmapFontData, GlyphEntry, GlyphMetrics, TextureAtlas } from '@flighthq/types';
+import type { BitmapFont, BitmapFontData, GlyphEntry, GlyphMetrics, TextureAtlas } from '@flighthq/types/contract';
 
 // Builds an immutable static bitmap font from plain data: the glyph list becomes a
 // `codepoint → GlyphEntry` map, the kerning pairs become a `(left << 16) | right → amount` map, and

@@ -1,4 +1,4 @@
-import { createMatrix } from '@flighthq/geometry';
+import { createMatrix } from '@flighthq/geometry/contract';
 import {
   appendShapeBeginBitmapFill,
   appendShapeBeginFill,
@@ -12,8 +12,8 @@ import {
   appendShapePath,
   createShape,
   getShapeCommandCount,
-} from '@flighthq/shape';
-import type { ImageResource } from '@flighthq/types';
+} from '@flighthq/shape/contract';
+import type { ImageResource } from '@flighthq/types/contract';
 
 import { formatShapeJson, parseShapeJson } from './shapeJson';
 

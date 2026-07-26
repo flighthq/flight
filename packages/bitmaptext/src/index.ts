@@ -1,2 +1,1 @@
-export * from './bitmapText';
-export * from './updateBitmapText';
+export * from './contract';

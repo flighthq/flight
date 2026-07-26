@@ -1,4 +1,4 @@
-import type { ImportDiagnostic } from '@flighthq/types';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
 
 // The human-text side of an import diagnostic — kept in its own concept module so a production bundle
 // that records crumbs (or never engages diagnostics at all) sheds every byte of the text machinery.

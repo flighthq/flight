@@ -1,5 +1,5 @@
-import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d';
-import { createSignal } from '@flighthq/signals';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
+import { createSignal } from '@flighthq/signals/contract';
 import type {
   MethodsOf,
   Node,
@@ -11,8 +11,8 @@ import type {
   SpriteSignals,
   TextureAtlasRegion,
   Vector2,
-} from '@flighthq/types';
-import { SpriteKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { SpriteKind } from '@flighthq/types/contract';
 
 /**
  * Deep-copies `source` into a new `Sprite` with a fresh runtime and the same `data` fields.

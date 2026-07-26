@@ -1,4 +1,4 @@
-import type { TextLayoutParams, TextLayoutResult } from '@flighthq/types';
+import type { TextLayoutParams, TextLayoutResult } from '@flighthq/types/contract';
 
 import { createTextFormatRange } from './textFormatRange';
 import { computeTextLayout, createTextLayoutResult, isTextLayoutTruncated, TEXT_LAYOUT_GUTTER } from './textLayout';

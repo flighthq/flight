@@ -1,4 +1,4 @@
-import type { Spritesheet, SpritesheetValidationDiagnostic } from '@flighthq/types';
+import type { Spritesheet, SpritesheetValidationDiagnostic } from '@flighthq/types/contract';
 
 import type { SpritesheetData } from './spritesheetData';
 

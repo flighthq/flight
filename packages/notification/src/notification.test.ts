@@ -6,7 +6,7 @@ import type {
   NotificationRequest,
   NotificationSchedule,
   ScheduledNotification,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import {
   cancelScheduledNotification,

@@ -1,12 +1,12 @@
-import { acquireWgpuRenderTarget, releaseWgpuRenderTarget } from '@flighthq/render-wgpu';
+import { acquireWgpuRenderTarget, releaseWgpuRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
   GradientBevelEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
   WgpuRenderTarget,
   WgpuRenderTargetPool,
-} from '@flighthq/types';
-import type { WgpuEffectPipeline } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import type { WgpuEffectPipeline } from '@flighthq/types/contract';
 
 import { applyWgpuEffectBlitPass, applyWgpuEffectErasePass } from './wgpuEffectBlitShader';
 import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';

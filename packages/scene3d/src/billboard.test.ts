@@ -1,5 +1,5 @@
-import { createStandardPbrMaterial } from '@flighthq/materials';
-import { createPlaneMeshGeometry } from '@flighthq/mesh';
+import { createStandardPbrMaterial } from '@flighthq/materials/contract';
+import { createPlaneMeshGeometry } from '@flighthq/mesh/contract';
 import { describe, expect, it } from 'vitest';
 
 import {

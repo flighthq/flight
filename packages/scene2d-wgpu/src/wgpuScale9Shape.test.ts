@@ -1,7 +1,7 @@
-import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
-import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
+import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu/contract';
+import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
-import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape';
+import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape/contract';
 
 import {
   createWgpuScale9ShapeData,

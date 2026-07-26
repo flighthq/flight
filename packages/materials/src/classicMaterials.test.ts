@@ -1,4 +1,4 @@
-import { BlinnPhongMaterialKind, LambertMaterialKind, PhongMaterialKind } from '@flighthq/types';
+import { BlinnPhongMaterialKind, LambertMaterialKind, PhongMaterialKind } from '@flighthq/types/contract';
 
 import { createBlinnPhongMaterial, createLambertMaterial, createPhongMaterial } from './classicMaterials';
 

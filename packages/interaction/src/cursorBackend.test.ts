@@ -1,4 +1,4 @@
-import type { Cursor } from '@flighthq/types';
+import type { Cursor } from '@flighthq/types/contract';
 
 import { createWebCursorBackend } from './cursorBackend';
 

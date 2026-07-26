@@ -1,11 +1,15 @@
-import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
-import { createVector3 } from '@flighthq/geometry';
-import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting';
-import { createStandardPbrMaterial } from '@flighthq/materials';
-import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, createBoxMeshGeometry, createMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
-import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter';
-import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d';
+import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera/contract';
+import { createVector3 } from '@flighthq/geometry/contract';
+import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting/contract';
+import { createStandardPbrMaterial } from '@flighthq/materials/contract';
+import {
+  CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
+  createBoxMeshGeometry,
+  createMeshGeometry,
+} from '@flighthq/mesh/contract';
+import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
+import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter/contract';
+import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
 import type { Camera3D, ParticleEmitter3D, Scene3DLightsLike, Skeleton3D } from '@flighthq/types/contract';
 
 import { drawWgpuScene3D, isWgpuMeshGpuSkinned } from './drawWgpuScene3D';

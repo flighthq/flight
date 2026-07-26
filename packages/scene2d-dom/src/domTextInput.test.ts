@@ -1,6 +1,6 @@
 import { getOrCreateRenderProxy2D, registerRenderer } from '@flighthq/render/contract';
-import { createRichText } from '@flighthq/text';
-import { enableTextInput, setTextInputSelection } from '@flighthq/textinput';
+import { createRichText } from '@flighthq/text/contract';
+import { enableTextInput, setTextInputSelection } from '@flighthq/textinput/contract';
 import type { RichText } from '@flighthq/types/contract';
 import { RichTextKind } from '@flighthq/types/contract';
 

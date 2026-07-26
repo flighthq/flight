@@ -1,12 +1,16 @@
-import type * as ImageModule from '@flighthq/image';
-import { createUnlitMaterial } from '@flighthq/materials';
-import { createBoxMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild } from '@flighthq/node';
-import { createMesh, createScene3D } from '@flighthq/scene3d';
-import { connectSignal } from '@flighthq/signals';
-import { createTexture } from '@flighthq/texture';
-import type { ImageResource, ImageResourceReference, Scene3DResourceResolver, Texture } from '@flighthq/types';
-import { ImageResourceFailureKind, ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
+import type * as ImageModule from '@flighthq/image/contract';
+import { createUnlitMaterial } from '@flighthq/materials/contract';
+import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
+import { addNodeChild } from '@flighthq/node/contract';
+import { createMesh, createScene3D } from '@flighthq/scene3d/contract';
+import { connectSignal } from '@flighthq/signals/contract';
+import { createTexture } from '@flighthq/texture/contract';
+import type { ImageResource, ImageResourceReference, Scene3DResourceResolver, Texture } from '@flighthq/types/contract';
+import {
+  ImageResourceFailureKind,
+  ResourceResolutionState,
+  ImageResourceReferenceKind,
+} from '@flighthq/types/contract';
 import type { Mock } from 'vitest';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 

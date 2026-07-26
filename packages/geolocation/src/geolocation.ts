@@ -5,7 +5,7 @@ import type {
   GeolocationRequestOptions,
   GeoPosition,
   GeoPositionResult,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Cancels an active position watch. No-op when the id is unknown or the backend lacks watching.
 export function clearGeolocationWatch(id: number): void {

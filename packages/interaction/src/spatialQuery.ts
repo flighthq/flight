@@ -1,6 +1,6 @@
-import { intersectsRectangle } from '@flighthq/geometry';
-import { getNodeRuntime, getNodeWorldBoundsRectangle } from '@flighthq/node';
-import type { Node2D, Rectangle } from '@flighthq/types';
+import { intersectsRectangle } from '@flighthq/geometry/contract';
+import { getNodeRuntime, getNodeWorldBoundsRectangle } from '@flighthq/node/contract';
+import type { Node2D, Rectangle } from '@flighthq/types/contract';
 
 export function hitTestAreaQuery(root: Node2D, rect: Readonly<Rectangle>, out: Node2D[] = []): Node2D[] {
   if (!root.enabled) return out;

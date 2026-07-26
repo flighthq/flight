@@ -1,4 +1,4 @@
-import type { CanvasRenderEffectRunner, CanvasRenderTarget, DitherEffect } from '@flighthq/types';
+import type { CanvasRenderEffectRunner, CanvasRenderTarget, DitherEffect } from '@flighthq/types/contract';
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 

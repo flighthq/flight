@@ -1,6 +1,6 @@
-import { setRectangle } from '@flighthq/geometry';
-import { getNodeLocalBoundsRectangle } from '@flighthq/node';
-import { createDisplayObject } from '@flighthq/scene2d';
+import { setRectangle } from '@flighthq/geometry/contract';
+import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
 
 import {
   defaultBitmapHitTestHandler,

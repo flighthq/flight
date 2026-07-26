@@ -1,4 +1,4 @@
-import type { CapacitorApi } from '@flighthq/types';
+import type { CapacitorApi } from '@flighthq/types/contract';
 
 import { createCapacitorNotificationBackend } from './capacitorNotification';
 

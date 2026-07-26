@@ -1,6 +1,6 @@
-import { invalidateNodeAppearance } from '@flighthq/node';
-import { setRichTextScrollH, setRichTextScrollV } from '@flighthq/text';
-import { getRichTextSelectionRectangles, TEXT_BOUNDS_GUTTER } from '@flighthq/textlayout';
+import { invalidateNodeAppearance } from '@flighthq/node/contract';
+import { setRichTextScrollH, setRichTextScrollV } from '@flighthq/text/contract';
+import { getRichTextSelectionRectangles, TEXT_BOUNDS_GUTTER } from '@flighthq/textlayout/contract';
 import type {
   HandleTextInputKeyboardOptions,
   KeyboardEventData,
@@ -12,8 +12,8 @@ import type {
   TextLayoutGroup,
   TextLayoutResult,
   TextSelectionRectangle,
-} from '@flighthq/types';
-import { KeyCode } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { KeyCode } from '@flighthq/types/contract';
 
 import { getTextInputState } from './textInput';
 

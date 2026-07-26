@@ -1,6 +1,6 @@
-import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation';
-import type { Bone2D } from '@flighthq/types';
-import { AnimationInterpolationLinear, Skeleton2DAnimationPath, TransformMode2D } from '@flighthq/types';
+import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
+import type { Bone2D } from '@flighthq/types/contract';
+import { AnimationInterpolationLinear, Skeleton2DAnimationPath, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { applyAnimationClipToSkeleton2D } from './applyAnimationClipToSkeleton2D';

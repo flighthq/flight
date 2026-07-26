@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity';
-import type { Kind, Material } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import type { Kind, Material } from '@flighthq/types/contract';
 
 // Structural shallow clone of any material entity. Scalar fields and kind are copied by
 // value; Texture/map handle references are shared (they are not owned by the material).

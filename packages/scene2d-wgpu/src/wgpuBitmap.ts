@@ -1,8 +1,8 @@
-import { hasImageResourcePixels } from '@flighthq/image';
-import { bindWgpuImageResourceTexture } from '@flighthq/render-wgpu';
-import { resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import { resolveWgpuShader } from '@flighthq/render-wgpu';
+import { hasImageResourcePixels } from '@flighthq/image/contract';
+import { bindWgpuImageResourceTexture } from '@flighthq/render-wgpu/contract';
+import { resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { resolveWgpuShader } from '@flighthq/render-wgpu/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import type { Bitmap, Scene2DRenderer, RenderProxy2D, WgpuRenderState } from '@flighthq/types/contract';
 import { BatchFormat } from '@flighthq/types/contract';

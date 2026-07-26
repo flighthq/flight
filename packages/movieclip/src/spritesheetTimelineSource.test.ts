@@ -1,8 +1,8 @@
-import { createImageResource } from '@flighthq/image';
-import { createDisplayObject, getNode2DRuntime } from '@flighthq/scene2d';
-import { createSpritesheet, createSpritesheetAnimation, createSpritesheetFrame } from '@flighthq/spritesheet';
-import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas';
-import type { Node2D } from '@flighthq/types';
+import { createImageResource } from '@flighthq/image/contract';
+import { createDisplayObject, getNode2DRuntime } from '@flighthq/scene2d/contract';
+import { createSpritesheet, createSpritesheetAnimation, createSpritesheetFrame } from '@flighthq/spritesheet/contract';
+import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas/contract';
+import type { Node2D } from '@flighthq/types/contract';
 
 import { createSpritesheetTimelineSource } from './spritesheetTimelineSource';
 

@@ -1,4 +1,4 @@
-import type { HasAppearance } from '@flighthq/types';
+import type { HasAppearance } from '@flighthq/types/contract';
 
 import { initAppearanceTrait } from './hasAppearance';
 import { createNode } from './node';

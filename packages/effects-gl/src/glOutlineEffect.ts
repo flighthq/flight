@@ -1,5 +1,5 @@
-import { drawGlFullscreenPass } from '@flighthq/render-gl';
-import type { GlRenderEffectRunner, GlRenderState, GlRenderTarget, OutlineEffect } from '@flighthq/types';
+import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
+import type { GlRenderEffectRunner, GlRenderState, GlRenderTarget, OutlineEffect } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
 

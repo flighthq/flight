@@ -4,7 +4,7 @@ import type {
   TextLayoutResult,
   TextLineMetrics,
   TextSelectionRectangle,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { TEXT_LAYOUT_GUTTER } from './textLayout';
 

@@ -1,5 +1,5 @@
-import { createSignal, emitSignal } from '@flighthq/signals';
-import type { AudioChannel, AudioPlayOptions, AudioResource } from '@flighthq/types';
+import { createSignal, emitSignal } from '@flighthq/signals/contract';
+import type { AudioChannel, AudioPlayOptions, AudioResource } from '@flighthq/types/contract';
 
 export function connectAudioChannelToNode(channel: AudioChannel, destinationNode: AudioNode): void {
   const runtime = channelRuntime.get(channel);

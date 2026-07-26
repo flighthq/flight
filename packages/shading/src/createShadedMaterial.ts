@@ -1,6 +1,6 @@
-import { createEntity } from '@flighthq/entity';
-import type { ShadedMaterial, ShadedMaterialOptions } from '@flighthq/types';
-import { BlendMode, ShadedMaterialKind } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import type { ShadedMaterial, ShadedMaterialOptions } from '@flighthq/types/contract';
+import { BlendMode, ShadedMaterialKind } from '@flighthq/types/contract';
 
 // The options for `createShadedMaterial`. Every field is optional and defaults to the classic lit
 // base at neutral values (white diffuse/specular, shininess 32, no maps, an empty modifier stack);

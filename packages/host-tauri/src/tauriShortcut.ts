@@ -1,4 +1,4 @@
-import type { ShortcutBackend, TauriApi } from '@flighthq/types';
+import type { ShortcutBackend, TauriApi } from '@flighthq/types/contract';
 
 // Maps Flight's ShortcutBackend onto Tauri's `@tauri-apps/plugin-global-shortcut`. The seam is
 // synchronous (register returns a boolean now) while every Tauri call is async, so the adapter fires

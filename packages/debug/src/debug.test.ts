@@ -7,9 +7,9 @@ import {
   getMemoryLogSinkEntries,
   log,
   setLogLevel,
-} from '@flighthq/log';
-import type { MemoryLogSink } from '@flighthq/types';
-import { LogLevel } from '@flighthq/types';
+} from '@flighthq/log/contract';
+import type { MemoryLogSink } from '@flighthq/types/contract';
+import { LogLevel } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { disableDebug, enableDebug, isDebugEnabled, registerDebugSubsystem, unregisterDebugSubsystem } from './debug';

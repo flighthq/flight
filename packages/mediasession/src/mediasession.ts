@@ -5,7 +5,7 @@ import type {
   MediaSessionMetadata,
   MediaSessionPlaybackState,
   MediaSessionPositionState,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Clears the handler for a transport action; the OS drops the corresponding button.
 export function clearMediaSessionActionHandler(action: MediaSessionAction): void {

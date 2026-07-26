@@ -1,4 +1,4 @@
-import { clearSignal, createSignal, emitSignal } from '@flighthq/signals';
+import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   ResourceLoader,
   ResourceLoaderItemSignals,
@@ -7,7 +7,7 @@ import type {
   ResourceLoadItem,
   ResourceLoadItemStatus,
   ResourceLoadReport,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Internal key prefix for auto-assigned keys
 const AUTO_KEY_PREFIX = '__item_';

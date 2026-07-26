@@ -1,5 +1,11 @@
-import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas';
-import type { GridSliceOptions, Spritesheet, SpritesheetAnimation, TextureAtlas, Tileset } from '@flighthq/types';
+import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
+import type {
+  GridSliceOptions,
+  Spritesheet,
+  SpritesheetAnimation,
+  TextureAtlas,
+  Tileset,
+} from '@flighthq/types/contract';
 
 import { createSpritesheet } from './spritesheet';
 import { createSpritesheetAnimation } from './spritesheetAnimation';

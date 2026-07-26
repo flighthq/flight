@@ -1,4 +1,4 @@
-import { createPointLight } from '@flighthq/lighting';
+import { createPointLight } from '@flighthq/lighting/contract';
 
 import { explainWgpuScene3DForwardLightSelection } from './explainWgpuScene3DForwardLightSelection';
 

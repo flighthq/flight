@@ -1,4 +1,4 @@
-import type { EasingFunction, EasingSegment } from '@flighthq/types';
+import type { EasingFunction, EasingSegment } from '@flighthq/types/contract';
 
 // Returns an easing function that splices multiple EasingFunctions across the
 // [0,1] input range. Each segment is allocated a proportional slice of the

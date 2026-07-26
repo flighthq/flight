@@ -1,9 +1,9 @@
-import { inverseMatrixTransformPointXY } from '@flighthq/geometry';
-import { getNodeWorldMatrix } from '@flighthq/node';
-import { containsPathPoint } from '@flighthq/path';
-import { getShapeFillRegions } from '@flighthq/shape';
-import type { Node2D, NodeAny, Shape } from '@flighthq/types';
-import { Scale9ShapeKind, ShapeKind } from '@flighthq/types';
+import { inverseMatrixTransformPointXY } from '@flighthq/geometry/contract';
+import { getNodeWorldMatrix } from '@flighthq/node/contract';
+import { containsPathPoint } from '@flighthq/path/contract';
+import { getShapeFillRegions } from '@flighthq/shape/contract';
+import type { Node2D, NodeAny, Shape } from '@flighthq/types/contract';
+import { Scale9ShapeKind, ShapeKind } from '@flighthq/types/contract';
 
 import { registerHitTestPrecise } from './hitTests';
 

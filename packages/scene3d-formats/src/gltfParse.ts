@@ -1,19 +1,23 @@
-import { createAnimationTrack } from '@flighthq/animation';
-import { packLinearToColor } from '@flighthq/color';
+import { createAnimationTrack } from '@flighthq/animation/contract';
+import { packLinearToColor } from '@flighthq/color/contract';
 import {
   composeMatrix4FromTransform3D,
   createMatrix4,
   createTransform3D,
   decomposeMatrix4ToTransform3D,
   multiplyMatrix4,
-} from '@flighthq/geometry';
-import { detectImageMimeType } from '@flighthq/image-codec';
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
-import { createStandardPbrMaterial } from '@flighthq/materials';
-import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, createMeshGeometry, getMeshGeometryVertexCount } from '@flighthq/mesh';
-import { createScene3DFromDocument, createScene3DsFromDocument } from '@flighthq/scene3d';
-import { createTexture } from '@flighthq/texture';
-import type { Scene3D } from '@flighthq/types';
+} from '@flighthq/geometry/contract';
+import { detectImageMimeType } from '@flighthq/image-codec/contract';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { createStandardPbrMaterial } from '@flighthq/materials/contract';
+import {
+  CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
+  createMeshGeometry,
+  getMeshGeometryVertexCount,
+} from '@flighthq/mesh/contract';
+import { createScene3DFromDocument, createScene3DsFromDocument } from '@flighthq/scene3d/contract';
+import { createTexture } from '@flighthq/texture/contract';
+import type { Scene3D } from '@flighthq/types/contract';
 import type {
   AnimationInterpolation,
   ImageResourceReference,
@@ -51,7 +55,7 @@ import type {
   GltfPrimitive,
   GltfSampler,
   GltfTextureInfo,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 import {
   ImportDiagnosticSeverity,
   MeshKind,
@@ -60,7 +64,7 @@ import {
   Scene3DAnimationPathTranslation,
   Scene3DAnimationPathWeights,
   Node3DKind,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Parses a binary glTF (`.glb`) container into a Scene3D — the file's default scene (`doc.scene`).
 // Convenience over `createScene3DFromDocument(parseGlb(bytes), defaultScene3D)`; malformed containers return an

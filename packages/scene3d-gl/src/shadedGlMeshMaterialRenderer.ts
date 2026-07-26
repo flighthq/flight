@@ -1,7 +1,7 @@
-import { unpackColorToLinear } from '@flighthq/color';
-import { hasImageResourcePixels } from '@flighthq/image';
-import { bindGlImageResourceTexture } from '@flighthq/render-gl';
-import { orderModifierStack, resolveModifier } from '@flighthq/shading';
+import { unpackColorToLinear } from '@flighthq/color/contract';
+import { hasImageResourcePixels } from '@flighthq/image/contract';
+import { bindGlImageResourceTexture } from '@flighthq/render-gl/contract';
+import { orderModifierStack, resolveModifier } from '@flighthq/shading/contract';
 import type {
   ModifierRegistry,
   LinearColor,

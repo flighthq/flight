@@ -1,4 +1,4 @@
-import type { MenuBackend } from '@flighthq/types';
+import type { MenuBackend } from '@flighthq/types/contract';
 
 import {
   cloneMenuTemplate,

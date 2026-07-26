@@ -6,8 +6,14 @@ import {
   createVector3,
   multiplyMatrix4,
   setQuaternionFromAxisAngle,
-} from '@flighthq/geometry';
-import type { HasTransform3D, HasTransform3DRuntime, NodeRuntime, Transform3DNode, Vector3Like } from '@flighthq/types';
+} from '@flighthq/geometry/contract';
+import type {
+  HasTransform3D,
+  HasTransform3DRuntime,
+  NodeRuntime,
+  Transform3DNode,
+  Vector3Like,
+} from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { initTransform3DRuntimeTrait, initTransform3DTrait } from './hasTransform3d';

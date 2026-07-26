@@ -1,6 +1,6 @@
-import { createEntity } from '@flighthq/entity';
-import type { Scene3D, Node3D } from '@flighthq/types';
-import { Node3DKind } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import type { Scene3D, Node3D } from '@flighthq/types/contract';
+import { Node3DKind } from '@flighthq/types/contract';
 
 import { createNode3D } from './sceneNode';
 

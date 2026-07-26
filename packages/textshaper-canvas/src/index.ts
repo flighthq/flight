@@ -1,1 +1,1 @@
-export * from './canvasTextShaper';
+export * from './contract';

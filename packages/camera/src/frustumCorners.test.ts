@@ -1,5 +1,5 @@
-import { createVector3 } from '@flighthq/geometry';
-import type { Vector3Like } from '@flighthq/types';
+import { createVector3 } from '@flighthq/geometry/contract';
+import type { Vector3Like } from '@flighthq/types/contract';
 
 import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from './camera';
 import { getCamera3DFrustumCorners } from './frustumCorners';

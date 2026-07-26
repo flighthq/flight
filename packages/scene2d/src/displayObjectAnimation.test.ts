@@ -1,6 +1,6 @@
-import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation';
-import { getNodeLocalTransformRevision } from '@flighthq/node';
-import type { Node2DAnimationPath, Node2DAnimationTarget } from '@flighthq/types';
+import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
+import { getNodeLocalTransformRevision } from '@flighthq/node/contract';
+import type { Node2DAnimationPath, Node2DAnimationTarget } from '@flighthq/types/contract';
 
 import { createDisplayObject } from './displayObject';
 import { applyAnimationClipToNode2D } from './displayObjectAnimation';

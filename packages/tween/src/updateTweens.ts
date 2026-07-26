@@ -1,5 +1,5 @@
-import { emitSignal } from '@flighthq/signals';
-import type { Tween, TweenManager } from '@flighthq/types';
+import { emitSignal } from '@flighthq/signals/contract';
+import type { Tween, TweenManager } from '@flighthq/types/contract';
 
 import { initializeTween } from './internal';
 

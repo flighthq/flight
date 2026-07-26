@@ -1,5 +1,5 @@
-import { createEntityRuntime, getEntityRuntime } from '@flighthq/entity';
-import { clearSignal, createSignal } from '@flighthq/signals';
+import { createEntityRuntime, getEntityRuntime } from '@flighthq/entity/contract';
+import { clearSignal, createSignal } from '@flighthq/signals/contract';
 import type {
   Kind,
   MethodsOf,
@@ -11,8 +11,8 @@ import type {
   NodeSignals,
   NodeTraits,
   PartialNode,
-} from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { removeNodeChild } from './hierarchy';
 import { invalidateNode } from './revision';

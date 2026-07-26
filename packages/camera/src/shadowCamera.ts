@@ -1,4 +1,4 @@
-import type { AabbLike, Camera3D, Vector3Like } from '@flighthq/types';
+import type { AabbLike, Camera3D, Vector3Like } from '@flighthq/types/contract';
 
 import { setCamera3DViewMatrix4FromLookAt } from './camera';
 import { createOrthographicProjection } from './projection';

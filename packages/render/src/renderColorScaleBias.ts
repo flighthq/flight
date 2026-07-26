@@ -1,4 +1,4 @@
-import { getNodeRuntime } from '@flighthq/node';
+import { getNodeRuntime } from '@flighthq/node/contract';
 import type { ColorAdjustmentRuntime, Node, Renderable, RenderProxy, RenderState } from '@flighthq/types/contract';
 
 import { getRenderStateRuntime } from './renderState';

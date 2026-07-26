@@ -1,5 +1,5 @@
-import type { Entity, EntityRuntime } from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
+import type { Entity, EntityRuntime } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 // Returns true if entity runtime guards have been enabled via enableEntityRuntimeGuards.
 export function areEntityRuntimeGuardsEnabled(): boolean {

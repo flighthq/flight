@@ -1,11 +1,11 @@
-import type { ClipboardBackend, ClipboardBookmark } from '@flighthq/types';
+import type { ClipboardBackend, ClipboardBookmark } from '@flighthq/types/contract';
 import {
   ClipboardFormatBookmark,
   ClipboardFormatHtml,
   ClipboardFormatImage,
   ClipboardFormatRtf,
   ClipboardFormatText,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import {
   attachClipboardWatch,

@@ -1,4 +1,4 @@
-import { createRectangle, createVector2 } from '@flighthq/geometry';
+import { createRectangle, createVector2 } from '@flighthq/geometry/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createCamera2D } from './camera2d';

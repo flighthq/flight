@@ -1,6 +1,6 @@
-import { createRectangle, setRectangle } from '@flighthq/geometry';
-import { addNodeChild, getNodeLocalBoundsRectangle } from '@flighthq/node';
-import { createDisplayObject } from '@flighthq/scene2d';
+import { createRectangle, setRectangle } from '@flighthq/geometry/contract';
+import { addNodeChild, getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
 
 import { hitTestAreaQuery, hitTestAreaQueryCircle } from './spatialQuery';
 

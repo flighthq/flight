@@ -1,9 +1,9 @@
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import {
   createParticleEmitterConfig,
   particleColorCurveFromKeyframes,
   particleCurveFromKeyframes,
-} from '@flighthq/particles';
+} from '@flighthq/particles/contract';
 import type {
   ImportDiagnostic,
   UnityParseOptions,
@@ -21,8 +21,8 @@ import type {
   UnityRotationOverLifetime,
   UnityShape,
   UnitySizeOverLifetime,
-} from '@flighthq/types';
-import { ImportDiagnosticSeverity } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 const DEG2RAD = Math.PI / 180;
 const DEFAULT_PPU = 100;

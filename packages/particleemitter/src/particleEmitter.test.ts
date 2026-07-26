@@ -1,7 +1,7 @@
-import { createRectangle } from '@flighthq/geometry';
-import { getNodeLocalBoundsRectangle, getNodeLocalBoundsRevision } from '@flighthq/node';
-import type { ParticleEmitter2D, TextureAtlas, TextureAtlasRegion } from '@flighthq/types';
-import { ParticleEmitter2DKind } from '@flighthq/types';
+import { createRectangle } from '@flighthq/geometry/contract';
+import { getNodeLocalBoundsRectangle, getNodeLocalBoundsRevision } from '@flighthq/node/contract';
+import type { ParticleEmitter2D, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
+import { ParticleEmitter2DKind } from '@flighthq/types/contract';
 
 import {
   appendParticleEmitter2DParticle,

@@ -1,5 +1,5 @@
-import { createSignal } from '@flighthq/signals';
-import type { NetBackend, NetProgress, NetRequest, NetResponse } from '@flighthq/types';
+import { createSignal } from '@flighthq/signals/contract';
+import type { NetBackend, NetProgress, NetRequest, NetResponse } from '@flighthq/types/contract';
 
 import { createWebNetBackend, getNetBackend, sendNetRequest, setNetBackend } from './net';
 

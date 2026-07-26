@@ -1,4 +1,4 @@
-import { createSignal, emitSignal, hasSignalSlots } from '@flighthq/signals';
+import { createSignal, emitSignal, hasSignalSlots } from '@flighthq/signals/contract';
 import type {
   Power,
   PowerBackend,
@@ -7,7 +7,7 @@ import type {
   PowerKeepAwakeMode,
   PowerStatus,
   PowerThermalState,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Begins delivering power changes to `power`'s signals by subscribing to the active backend. On each
 // change it reads a fresh status and emits onChange plus onCharging/onDischarging on charging

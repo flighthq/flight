@@ -1,16 +1,16 @@
-import { getAppBackend, setAppBackend } from '@flighthq/app';
-import { readClipboardText, setClipboardBackend } from '@flighthq/clipboard';
-import { getConnectivityBackend, setConnectivityBackend } from '@flighthq/connectivity';
-import { getDeviceBackend, setDeviceBackend } from '@flighthq/device';
-import { setDialogBackend } from '@flighthq/dialog';
-import { getFileSystemBackend, setFileSystemBackend } from '@flighthq/filesystem';
-import { getGeolocationBackend, setGeolocationBackend } from '@flighthq/geolocation';
-import { getHapticsBackend, setHapticsBackend } from '@flighthq/haptics';
-import { getSoftKeyboardBackend, setSoftKeyboardBackend } from '@flighthq/keyboard';
-import { getNotificationBackend, setNotificationBackend } from '@flighthq/notification';
-import { getShareBackend, setShareBackend } from '@flighthq/share';
-import { getStatusBarBackend, setStatusBarBackend } from '@flighthq/statusbar';
-import type { CapacitorApi } from '@flighthq/types';
+import { getAppBackend, setAppBackend } from '@flighthq/app/contract';
+import { readClipboardText, setClipboardBackend } from '@flighthq/clipboard/contract';
+import { getConnectivityBackend, setConnectivityBackend } from '@flighthq/connectivity/contract';
+import { getDeviceBackend, setDeviceBackend } from '@flighthq/device/contract';
+import { setDialogBackend } from '@flighthq/dialog/contract';
+import { getFileSystemBackend, setFileSystemBackend } from '@flighthq/filesystem/contract';
+import { getGeolocationBackend, setGeolocationBackend } from '@flighthq/geolocation/contract';
+import { getHapticsBackend, setHapticsBackend } from '@flighthq/haptics/contract';
+import { getSoftKeyboardBackend, setSoftKeyboardBackend } from '@flighthq/keyboard/contract';
+import { getNotificationBackend, setNotificationBackend } from '@flighthq/notification/contract';
+import { getShareBackend, setShareBackend } from '@flighthq/share/contract';
+import { getStatusBarBackend, setStatusBarBackend } from '@flighthq/statusbar/contract';
+import type { CapacitorApi } from '@flighthq/types/contract';
 
 import { registerCapacitorBackends } from './capacitorRegister';
 

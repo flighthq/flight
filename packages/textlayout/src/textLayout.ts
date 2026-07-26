@@ -8,7 +8,7 @@ import type {
   TextLayoutResult,
   TextMeasureFunction,
   TextVerticalAlign,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { getTextFormatAscent, getTextFormatDescent, getTextFormatLeading, mergeTextFormat } from './textFormat';
 import { createTextLayoutGroup } from './textLayoutGroup';

@@ -1,5 +1,5 @@
-import { hasImageResourcePixels } from '@flighthq/image';
-import { bindGlImageResourceTexture } from '@flighthq/render-gl';
+import { hasImageResourcePixels } from '@flighthq/image/contract';
+import { bindGlImageResourceTexture } from '@flighthq/render-gl/contract';
 import type { GlDebugProgram, GlDebugDefineKey, GlRenderState, Texture } from '@flighthq/types/contract';
 
 import { compileGlProgram, ensureGlScene3DProgram } from './glMeshProgram';

@@ -1,4 +1,4 @@
-import { createDisplayObject } from '@flighthq/scene2d';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
 
 import { createRenderProxy2D } from './renderProxy';
 import { createRenderState, getRenderStateRuntime } from './renderState';

@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity';
-import type { ColorScaleBias, ColorScaleBiasLike } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import type { ColorScaleBias, ColorScaleBiasLike } from '@flighthq/types/contract';
 
 export function cloneColorScaleBias(source: Readonly<ColorScaleBiasLike>): ColorScaleBias {
   return createColorScaleBias(source);

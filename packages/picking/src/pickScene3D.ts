@@ -1,5 +1,5 @@
-import { getCamera3DScreenToWorldRay } from '@flighthq/camera';
-import { createEntity } from '@flighthq/entity';
+import { getCamera3DScreenToWorldRay } from '@flighthq/camera/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import {
   createAabb,
   createMatrix4,
@@ -10,14 +10,14 @@ import {
   intersectRay3DTriangle,
   inverseMatrix4,
   transformAabbByMatrix4,
-} from '@flighthq/geometry';
+} from '@flighthq/geometry/contract';
 import {
   getMeshGeometryTriangleCount,
   getMeshGeometryTriangleVertexIndices,
   getMeshGeometryVertexPosition,
-} from '@flighthq/mesh';
-import { ensureNodeWorldMatrix4, getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node';
-import { getNode3DWorldBounds, isMesh } from '@flighthq/scene3d';
+} from '@flighthq/mesh/contract';
+import { ensureNodeWorldMatrix4, getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node/contract';
+import { getNode3DWorldBounds, isMesh } from '@flighthq/scene3d/contract';
 import type {
   Camera3D,
   Mesh,
@@ -28,7 +28,7 @@ import type {
   Node3D,
   Scene3DPickOptions,
   Vector3,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Allocates a zeroed Scene3DHit. Handy for the `out` of `pickScene3D`/`pickScene3DWithRay3D` and for
 // growing the `outArray` of the multi-hit queries. `node` is null until a pick fills it.

@@ -1,6 +1,6 @@
-import { createEntity } from '@flighthq/entity';
-import type { WebcamFacingMode, WebcamStream, WebcamStreamRuntime } from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import type { WebcamFacingMode, WebcamStream, WebcamStreamRuntime } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 // Allocates a WebcamStream entity with an attached runtime slot holding the MediaStream.
 // The fields in data become the entity's public fields; the runtime is initialized with a

@@ -1,4 +1,4 @@
-import type { Modifier } from '@flighthq/types';
+import type { Modifier } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createModifierRegistry, registerModifier, resolveModifier } from './modifierRegistry';

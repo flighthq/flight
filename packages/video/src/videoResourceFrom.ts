@@ -1,4 +1,4 @@
-import type { VideoResource, VideoResourceLoadOptions, VideoResourceUrl } from '@flighthq/types';
+import type { VideoResource, VideoResourceLoadOptions, VideoResourceUrl } from '@flighthq/types/contract';
 
 import { selectVideoResourceUrl } from './videoFormat';
 import { createVideoResource } from './videoResource';

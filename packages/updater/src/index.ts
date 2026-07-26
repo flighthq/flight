@@ -1,1 +1,1 @@
-export * from './updater';
+export * from './contract';

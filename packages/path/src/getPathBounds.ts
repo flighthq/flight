@@ -1,5 +1,5 @@
-import type { Path, RectangleLike } from '@flighthq/types';
-import { PathCommand } from '@flighthq/types';
+import type { Path, RectangleLike } from '@flighthq/types/contract';
+import { PathCommand } from '@flighthq/types/contract';
 
 // Computes the axis-aligned bounding rectangle of `path` including true bezier extrema (not just
 // control-point hull). Writes the result into `out`. Returns `true` if the path contains any

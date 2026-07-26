@@ -1,6 +1,6 @@
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
-import type { ImportDiagnostic, ObjMaterial, ObjMaterialLibrary } from '@flighthq/types';
-import { ImportDiagnosticSeverity } from '@flighthq/types';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic, ObjMaterial, ObjMaterialLibrary } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 // Parses a Wavefront MTL material library from its text source. Every recognized directive
 // (`newmtl`, `Ka`, `Kd`, `Ks`, `Ns`, `d`, `Tr`, `illum`, `map_Kd`, `map_Ka`, `map_Ks`,

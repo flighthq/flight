@@ -1,5 +1,5 @@
-import type { Modifier, ModifierKind } from '@flighthq/types';
-import type { ModifierRegistry } from '@flighthq/types';
+import type { Modifier, ModifierKind } from '@flighthq/types/contract';
+import type { ModifierRegistry } from '@flighthq/types/contract';
 
 import { resolveModifier } from './modifierRegistry';
 

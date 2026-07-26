@@ -1,4 +1,4 @@
-import type { Node, NodeDescendantVisitor, NodeOf, NodeTraits } from '@flighthq/types';
+import type { Node, NodeDescendantVisitor, NodeOf, NodeTraits } from '@flighthq/types/contract';
 
 import { getNodeParent } from './hierarchy';
 import { getNodeRuntime } from './node';

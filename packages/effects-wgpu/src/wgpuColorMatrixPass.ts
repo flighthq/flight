@@ -1,4 +1,4 @@
-import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
+import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';

@@ -3,9 +3,9 @@ import {
   ensureParticleEmitterStateCapacity,
   sampleParticleColorCurve,
   sampleParticleCurve,
-} from '@flighthq/particles';
-import type { ParticleEmitter3D } from '@flighthq/types';
-import type { ParticleEmitterConfig, ParticleEmitterState } from '@flighthq/types';
+} from '@flighthq/particles/contract';
+import type { ParticleEmitter3D } from '@flighthq/types/contract';
+import type { ParticleEmitterConfig, ParticleEmitterState } from '@flighthq/types/contract';
 
 import { reserveParticleEmitter3D } from './particleEmitter3D';
 

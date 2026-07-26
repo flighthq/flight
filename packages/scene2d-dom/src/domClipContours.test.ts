@@ -1,4 +1,4 @@
-import { createMatrix } from '@flighthq/geometry';
+import { createMatrix } from '@flighthq/geometry/contract';
 import type { DomClipContourEntry } from '@flighthq/types/contract';
 
 import { buildDomContourClipPath, pushDomClipContours } from './domClipContours';

@@ -1,9 +1,14 @@
-import { setRectangle } from '@flighthq/geometry';
-import { addNodeChild, createNode, getNodeLocalBoundsRectangle, invalidateNodeLocalTransform } from '@flighthq/node';
-import { createDisplayObject } from '@flighthq/scene2d';
-import { connectSignal, createSignal, emitSignal } from '@flighthq/signals';
-import type { Cursor, InputKeyboardData, InputPointerData, InputSignals } from '@flighthq/types';
-import { DisplayObjectKind } from '@flighthq/types';
+import { setRectangle } from '@flighthq/geometry/contract';
+import {
+  addNodeChild,
+  createNode,
+  getNodeLocalBoundsRectangle,
+  invalidateNodeLocalTransform,
+} from '@flighthq/node/contract';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
+import { connectSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
+import type { Cursor, InputKeyboardData, InputPointerData, InputSignals } from '@flighthq/types/contract';
+import { DisplayObjectKind } from '@flighthq/types/contract';
 
 import { hitTestGraphLocalBounds } from './hitTests';
 import { registerHitTest } from './hitTests';

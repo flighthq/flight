@@ -1,5 +1,5 @@
-import { reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry';
-import { createNode3D, getNode3DRuntime } from '@flighthq/scene3d';
+import { reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry/contract';
+import { createNode3D, getNode3DRuntime } from '@flighthq/scene3d/contract';
 import type {
   AabbLike,
   Matrix4Like,
@@ -9,8 +9,8 @@ import type {
   PartialNode,
   Node3D,
   Vector3Like,
-} from '@flighthq/types';
-import { ParticleEmitter3DKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { ParticleEmitter3DKind } from '@flighthq/types/contract';
 
 import { createParticleEmitterData } from './particleEmitter';
 

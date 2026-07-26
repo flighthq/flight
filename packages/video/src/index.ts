@@ -1,3 +1,1 @@
-export * from './videoFormat';
-export * from './videoResource';
-export * from './videoResourceFrom';
+export * from './contract';

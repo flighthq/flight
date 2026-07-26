@@ -1,7 +1,7 @@
-import { hasImageResourcePixels } from '@flighthq/image';
-import { bindGlImageResourceTexture } from '@flighthq/render-gl';
-import { createGlProgram } from '@flighthq/render-gl';
-import { getGlRenderStateRuntime } from '@flighthq/render-gl';
+import { hasImageResourcePixels } from '@flighthq/image/contract';
+import { bindGlImageResourceTexture } from '@flighthq/render-gl/contract';
+import { createGlProgram } from '@flighthq/render-gl/contract';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import type { GlRenderState, ParticleEmitter2D, RenderProxy2D, SpriteRenderer } from '@flighthq/types/contract';
 import type { GlParticleShader } from '@flighthq/types/contract';

@@ -1,5 +1,5 @@
-import { connectSignal } from '@flighthq/signals';
-import type { UpdateInfo, UpdateProgress, UpdaterBackend, UpdaterError } from '@flighthq/types';
+import { connectSignal } from '@flighthq/signals/contract';
+import type { UpdateInfo, UpdateProgress, UpdaterBackend, UpdaterError } from '@flighthq/types/contract';
 
 import {
   attachAppUpdater,

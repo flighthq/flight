@@ -1,7 +1,11 @@
-import { createRectangle } from '@flighthq/geometry';
-import { getNodeLocalBoundsRevision, getNodeLocalContentRevision, getNodeLocalTransformRevision } from '@flighthq/node';
-import type { NativeText, NativeTextRuntime, Node, PartialNode } from '@flighthq/types';
-import { NativeTextKind } from '@flighthq/types';
+import { createRectangle } from '@flighthq/geometry/contract';
+import {
+  getNodeLocalBoundsRevision,
+  getNodeLocalContentRevision,
+  getNodeLocalTransformRevision,
+} from '@flighthq/node/contract';
+import type { NativeText, NativeTextRuntime, Node, PartialNode } from '@flighthq/types/contract';
+import { NativeTextKind } from '@flighthq/types/contract';
 
 import {
   computeNativeTextLocalBoundsRectangle,

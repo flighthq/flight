@@ -1,4 +1,4 @@
-import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas';
+import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
 
 import { createSpritesheet } from './spritesheet';
 import { createSpritesheetAnimation, createSpritesheetAnimationFromFrameNames } from './spritesheetAnimation';

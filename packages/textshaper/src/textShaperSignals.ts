@@ -1,5 +1,5 @@
-import { clearSignal, createSignal } from '@flighthq/signals';
-import type { TextShaperBackend, TextShaperSignals } from '@flighthq/types';
+import { clearSignal, createSignal } from '@flighthq/signals/contract';
+import type { TextShaperBackend, TextShaperSignals } from '@flighthq/types/contract';
 
 import { _setTextShaperBackendHook } from './_textShaperHooks';
 

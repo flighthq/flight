@@ -1,4 +1,4 @@
-import type { ColorScaleBiasAdjustment, ColorScaleBiasLike } from '@flighthq/types';
+import type { ColorScaleBiasAdjustment, ColorScaleBiasLike } from '@flighthq/types/contract';
 
 export function createColorScaleBiasAdjustment(colorScaleBias: Readonly<ColorScaleBiasLike>): ColorScaleBiasAdjustment {
   const value = { ...colorScaleBias };

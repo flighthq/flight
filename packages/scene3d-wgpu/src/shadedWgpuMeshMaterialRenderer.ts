@@ -1,5 +1,5 @@
-import { unpackColorToLinear } from '@flighthq/color';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
+import { unpackColorToLinear } from '@flighthq/color/contract';
+import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type {
   Camera3D,
   LinearColor,

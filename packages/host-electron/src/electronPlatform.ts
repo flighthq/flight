@@ -1,4 +1,4 @@
-import type { PlatformBackend, PlatformName, ElectronApi } from '@flighthq/types';
+import type { PlatformBackend, PlatformName, ElectronApi } from '@flighthq/types/contract';
 
 // Maps Flight's PlatformBackend onto the Node `process` running the Electron main process, with the
 // locale sourced from Electron's `app`. `process` is accessed defensively (it may be absent and is not

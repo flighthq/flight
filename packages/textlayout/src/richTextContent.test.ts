@@ -1,4 +1,4 @@
-import type { RichTextData, RichTextRuntime } from '@flighthq/types';
+import type { RichTextData, RichTextRuntime } from '@flighthq/types/contract';
 
 import {
   clearRichTextContent,

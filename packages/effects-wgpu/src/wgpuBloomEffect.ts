@@ -1,13 +1,13 @@
-import { computeBloomBlurRadius, computeBloomIntensity, computeBloomThreshold } from '@flighthq/effects';
-import { acquireWgpuRenderTarget, releaseWgpuRenderTarget } from '@flighthq/render-wgpu';
+import { computeBloomBlurRadius, computeBloomIntensity, computeBloomThreshold } from '@flighthq/effects/contract';
+import { acquireWgpuRenderTarget, releaseWgpuRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
   BloomEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
   WgpuRenderTarget,
   WgpuRenderTargetPool,
-} from '@flighthq/types';
-import type { WgpuDualSourceEffectPipeline } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import type { WgpuDualSourceEffectPipeline } from '@flighthq/types/contract';
 
 import { applyGaussianBlurToWgpu } from './wgpuBlurEffect';
 import { createWgpuDualSourceEffectPipeline, drawWgpuDualSourceEffectPass, drawWgpuEffectPass } from './wgpuEffectPass';

@@ -1,11 +1,11 @@
-import { createEntity } from '@flighthq/entity';
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   AnimationChannel,
   AnimationCrossfade,
   AnimationCrossfadeChannel,
   AnimationCrossfadeOptions,
   AnimationPlayer,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { blendAnimationSamples } from './animationBlend';
 import { advanceAnimationPlayer } from './animationPlayer';

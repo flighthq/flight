@@ -1,4 +1,4 @@
-import type { TauriApi } from '@flighthq/types';
+import type { TauriApi } from '@flighthq/types/contract';
 
 import { createTauriClipboardBackend } from './tauriClipboard';
 

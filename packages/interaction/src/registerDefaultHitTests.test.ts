@@ -1,7 +1,7 @@
-import { setRectangle } from '@flighthq/geometry';
-import { getNodeLocalBoundsRectangle } from '@flighthq/node';
-import { createBitmap, createScene2D } from '@flighthq/scene2d';
-import { createShape } from '@flighthq/shape';
+import { setRectangle } from '@flighthq/geometry/contract';
+import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
+import { createBitmap, createScene2D } from '@flighthq/scene2d/contract';
+import { createShape } from '@flighthq/shape/contract';
 
 import { findGraphHitTarget } from './hitTests';
 import { setNodeHitTestEnabled } from './nodeInteractionState';

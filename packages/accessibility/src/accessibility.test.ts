@@ -1,4 +1,4 @@
-import type { AccessibilityBackend, AccessibilityLiveness, AccessibilityNode } from '@flighthq/types';
+import type { AccessibilityBackend, AccessibilityLiveness, AccessibilityNode } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {

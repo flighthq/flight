@@ -1,7 +1,12 @@
-import { sendNetRequest } from '@flighthq/net';
-import { connectSignal, createSignal, emitSignal } from '@flighthq/signals';
-import type { NetProgress, NetRequestOptions, Scene3DDocument, Scene3DDocumentLoadOptions } from '@flighthq/types';
-import { ImageResourceReferenceKind } from '@flighthq/types';
+import { sendNetRequest } from '@flighthq/net/contract';
+import { connectSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
+import type {
+  NetProgress,
+  NetRequestOptions,
+  Scene3DDocument,
+  Scene3DDocumentLoadOptions,
+} from '@flighthq/types/contract';
+import { ImageResourceReferenceKind } from '@flighthq/types/contract';
 
 export function getScene3DDocumentBasePathFromUrl(url: string): string | null {
   const query = url.search(/[?#]/);

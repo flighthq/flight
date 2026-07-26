@@ -3,7 +3,7 @@ import type {
   ParticleEmitterConfig,
   ParticleDesignerDocument,
   ParticleSerializeResult,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 const RAD2DEG = 180 / Math.PI;
 

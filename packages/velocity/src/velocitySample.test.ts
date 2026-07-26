@@ -1,4 +1,4 @@
-import { createMatrix } from '@flighthq/geometry';
+import { createMatrix } from '@flighthq/geometry/contract';
 
 import { createVelocityField, ensureVelocitySample } from './velocityField';
 import { getVelocitySampleAt } from './velocitySample';

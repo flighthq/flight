@@ -1,6 +1,6 @@
-import { createEntity } from '@flighthq/entity';
-import { createAabb } from '@flighthq/geometry';
-import type { MeshSkinBindPose, Skeleton3D } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import { createAabb } from '@flighthq/geometry/contract';
+import type { MeshSkinBindPose, Skeleton3D } from '@flighthq/types/contract';
 
 import { getMeshSkinConservativeBounds, getMeshSkinExactBounds } from './getMeshSkinBounds';
 

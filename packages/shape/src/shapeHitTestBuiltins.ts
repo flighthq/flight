@@ -1,4 +1,4 @@
-import type { ShapeCommandToken } from '@flighthq/types';
+import type { ShapeCommandToken } from '@flighthq/types/contract';
 
 import { registerShapeHitTestCommand } from './shapeHitTestRegistry';
 

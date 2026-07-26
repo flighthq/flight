@@ -1,7 +1,7 @@
-import { createEntity } from '@flighthq/entity';
-import { cloneVector3, createVector3 } from '@flighthq/geometry';
-import type { PointLight, PointLightOptions } from '@flighthq/types';
-import { PointLightKind } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import { cloneVector3, createVector3 } from '@flighthq/geometry/contract';
+import type { PointLight, PointLightOptions } from '@flighthq/types/contract';
+import { PointLightKind } from '@flighthq/types/contract';
 
 // Independent copy of a point light's data, including a fresh `position` vector.
 export function clonePointLight(source: Readonly<PointLight>): PointLight {

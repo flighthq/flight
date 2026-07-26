@@ -1,4 +1,4 @@
-import { createSignal, emitSignal } from '@flighthq/signals';
+import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   Connectivity,
   ConnectivityBackend,
@@ -6,7 +6,7 @@ import type {
   ConnectivityReachability,
   ConnectivityReachabilityOptions,
   ConnectivityStatus,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Begins delivering connectivity changes to `net`'s signals by subscribing to the active backend. On
 // each change it reads a fresh status and emits onChange plus edge-triggered signals. Idempotent: a

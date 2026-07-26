@@ -1,4 +1,4 @@
-import type { CompositeEffect, CompositeOperator } from '@flighthq/types';
+import type { CompositeEffect, CompositeOperator } from '@flighthq/types/contract';
 
 // Porter-Duff composite effect: merges the incoming pipeline layer over a registered backdrop with a
 // coverage operator (the CompositeOperator vocabulary — Erase = DestinationOut, Alpha = DestinationIn,

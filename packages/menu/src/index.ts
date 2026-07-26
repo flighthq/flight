@@ -1,2 +1,1 @@
-export * from './menu';
-export * from './menu-templates';
+export * from './contract';

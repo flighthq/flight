@@ -1,6 +1,6 @@
-import { createRectangle } from '@flighthq/geometry';
-import type { HtmlView, Node } from '@flighthq/types';
-import { HtmlViewKind } from '@flighthq/types';
+import { createRectangle } from '@flighthq/geometry/contract';
+import type { HtmlView, Node } from '@flighthq/types/contract';
+import { HtmlViewKind } from '@flighthq/types/contract';
 
 import {
   computeHtmlViewLocalBoundsRectangle,

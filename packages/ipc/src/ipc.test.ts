@@ -1,5 +1,5 @@
-import type { IpcBackend, IpcBackendCapabilities, IpcChannel, IpcSignals } from '@flighthq/types';
-import { IpcTimeoutError } from '@flighthq/types';
+import type { IpcBackend, IpcBackendCapabilities, IpcChannel, IpcSignals } from '@flighthq/types/contract';
+import { IpcTimeoutError } from '@flighthq/types/contract';
 
 import {
   createIpcChannel,

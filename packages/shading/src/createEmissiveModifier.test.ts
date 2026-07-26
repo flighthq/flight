@@ -1,5 +1,5 @@
-import type { Texture } from '@flighthq/types';
-import { EmissiveModifierFacing, EmissiveModifierKind, ModifierSlot } from '@flighthq/types';
+import type { Texture } from '@flighthq/types/contract';
+import { EmissiveModifierFacing, EmissiveModifierKind, ModifierSlot } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createEmissiveModifier } from './createEmissiveModifier';

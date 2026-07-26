@@ -1,5 +1,5 @@
-import { createGlProgram } from '@flighthq/render-gl';
-import { getGlRenderStateRuntime } from '@flighthq/render-gl';
+import { createGlProgram } from '@flighthq/render-gl/contract';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlShapeMesh, GlShapeMeshBinding, RenderProxy2D } from '@flighthq/types/contract';
 
 import { flushGlSpriteBatch } from './glSpriteBatch';

@@ -14,6 +14,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./contract": {
+      "types": "./dist/contract.d.ts",
+      "default": "./dist/contract.js"
+    },
     "./animation": {
       "types": "./dist/animation.d.ts",
       "default": "./dist/animation.js"

@@ -1,4 +1,4 @@
-import type { RectangleLike, TextBoundsSpec, TextLayoutResult } from '@flighthq/types';
+import type { RectangleLike, TextBoundsSpec, TextLayoutResult } from '@flighthq/types/contract';
 
 import { TEXT_LAYOUT_GUTTER } from './textLayout';
 

@@ -1,11 +1,11 @@
-import { createVector2, normalizeVector2 } from '@flighthq/geometry';
+import { createVector2, normalizeVector2 } from '@flighthq/geometry/contract';
 import type {
   CollisionAabb,
   CollisionCircle,
   CollisionManifold,
   CollisionObb,
   CollisionPolygon,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { clearCollisionManifold } from './manifold';
 

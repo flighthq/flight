@@ -1,5 +1,5 @@
-import { invalidateImageResource } from '@flighthq/image';
-import type { SurfaceRegion } from '@flighthq/types';
+import { invalidateImageResource } from '@flighthq/image/contract';
+import type { SurfaceRegion } from '@flighthq/types/contract';
 
 /**
  * Copies only the alpha channel from the `source` region into the `dest`

@@ -1,4 +1,4 @@
-import { createParticleEmitterConfig } from '@flighthq/particles';
+import { createParticleEmitterConfig } from '@flighthq/particles/contract';
 
 import { parseStarlingPex, parseStarlingPexDocument } from './starlingPexParse';
 import { serializeStarlingPex, serializeStarlingPexDocument } from './starlingPexSerialize';

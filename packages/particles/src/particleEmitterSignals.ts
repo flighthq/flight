@@ -1,5 +1,5 @@
-import { createSignal } from '@flighthq/signals';
-import type { ParticleEmitterSignals } from '@flighthq/types';
+import { createSignal } from '@flighthq/signals/contract';
+import type { ParticleEmitterSignals } from '@flighthq/types/contract';
 
 /** Create a fresh {@link ParticleEmitterSignals} group. Called by
  *  {@link enableParticleEmitterSignals} on first use; exported for unit testing. */

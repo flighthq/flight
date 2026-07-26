@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity';
-import type { ImageResource, ImageResourceCompressed } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import type { ImageResource, ImageResourceCompressed } from '@flighthq/types/contract';
 
 // Allocates a new resource identity over the SAME underlying pixels. The element, the `data` array, and
 // the `compressed` payload are shared by reference, not duplicated — clone gives you an independent

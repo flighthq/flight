@@ -1,8 +1,8 @@
-import { inverseMatrixTransformPointXY } from '@flighthq/geometry';
-import { getNodeWorldMatrix } from '@flighthq/node';
-import { createSurfaceFromImageResource, getSurfacePixelChannel } from '@flighthq/surface';
-import type { Bitmap, Node2D, ImageResource, NodeAny, Surface } from '@flighthq/types';
-import { BitmapKind, ImageChannel } from '@flighthq/types';
+import { inverseMatrixTransformPointXY } from '@flighthq/geometry/contract';
+import { getNodeWorldMatrix } from '@flighthq/node/contract';
+import { createSurfaceFromImageResource, getSurfacePixelChannel } from '@flighthq/surface/contract';
+import type { Bitmap, Node2D, ImageResource, NodeAny, Surface } from '@flighthq/types/contract';
+import { BitmapKind, ImageChannel } from '@flighthq/types/contract';
 
 import { hitTestGraphLocalBounds, registerHitTestPrecise } from './hitTests';
 

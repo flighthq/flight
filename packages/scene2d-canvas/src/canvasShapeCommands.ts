@@ -1,4 +1,4 @@
-import { createMatrix, inverseMatrix } from '@flighthq/geometry';
+import { createMatrix, inverseMatrix } from '@flighthq/geometry/contract';
 import type { CanvasShapeCommand, ImageResource, Matrix } from '@flighthq/types/contract';
 
 const _fillMatrixInverse: Matrix = createMatrix();

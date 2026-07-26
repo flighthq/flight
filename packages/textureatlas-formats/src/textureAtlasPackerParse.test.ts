@@ -1,5 +1,5 @@
-import { createTextureAtlas } from '@flighthq/textureatlas';
-import type { TextureAtlasPackerArrayDocument, TextureAtlasPackerHashDocument } from '@flighthq/types';
+import { createTextureAtlas } from '@flighthq/textureatlas/contract';
+import type { TextureAtlasPackerArrayDocument, TextureAtlasPackerHashDocument } from '@flighthq/types/contract';
 
 import { parseTextureAtlasPackerDocument, parseTextureAtlasPackerJson } from './textureAtlasPackerParse';
 

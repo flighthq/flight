@@ -1,4 +1,4 @@
-import type { Rectangle } from '@flighthq/types';
+import type { Rectangle } from '@flighthq/types/contract';
 
 import { acquireEmptyRectangle, acquireRectangle, clearRectanglePool, releaseRectangle } from './rectanglePool';
 

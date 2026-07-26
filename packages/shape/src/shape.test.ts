@@ -1,7 +1,11 @@
-import { createRectangle } from '@flighthq/geometry';
-import { getNodeLocalBoundsRevision, getNodeLocalContentRevision, getNodeLocalTransformRevision } from '@flighthq/node';
-import type { ShapeCommandToken } from '@flighthq/types';
-import { ShapeKind } from '@flighthq/types';
+import { createRectangle } from '@flighthq/geometry/contract';
+import {
+  getNodeLocalBoundsRevision,
+  getNodeLocalContentRevision,
+  getNodeLocalTransformRevision,
+} from '@flighthq/node/contract';
+import type { ShapeCommandToken } from '@flighthq/types/contract';
+import { ShapeKind } from '@flighthq/types/contract';
 
 import {
   clearShapeCommands,

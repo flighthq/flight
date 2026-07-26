@@ -1,4 +1,10 @@
-import type { SpatialAabb, SpatialIndex, SpatialIndexBackend, SpatialObjectId, SpatialPair } from '@flighthq/types';
+import type {
+  SpatialAabb,
+  SpatialIndex,
+  SpatialIndexBackend,
+  SpatialObjectId,
+  SpatialPair,
+} from '@flighthq/types/contract';
 
 import { createUniformGridSpatialBackend } from './uniformGrid';
 

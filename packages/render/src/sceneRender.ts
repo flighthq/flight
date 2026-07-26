@@ -1,4 +1,4 @@
-import { unpackColorToLinear } from '@flighthq/color';
+import { unpackColorToLinear } from '@flighthq/color/contract';
 import {
   createAabb,
   createFrustum,
@@ -9,14 +9,14 @@ import {
   setOrthographicMatrix4,
   setPerspectiveMatrix4,
   transformAabbByMatrix4,
-} from '@flighthq/geometry';
-import { ensureMeshGeometryBounds } from '@flighthq/mesh';
+} from '@flighthq/geometry/contract';
+import { ensureMeshGeometryBounds } from '@flighthq/mesh/contract';
 import {
   getNodeRuntime,
   getNodeWorldMatrix4,
   invalidateNodeLocalTransform,
   isNodeLocalMatrix4Detached,
-} from '@flighthq/node';
+} from '@flighthq/node/contract';
 import type { LinearColor } from '@flighthq/types/contract';
 import type {
   Aabb,

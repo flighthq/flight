@@ -1,4 +1,4 @@
-import type { ElectronApi, ElectronMenu, ElectronMenuItemOptions } from '@flighthq/types';
+import type { ElectronApi, ElectronMenu, ElectronMenuItemOptions } from '@flighthq/types/contract';
 
 import { createElectronMenuBackend } from './electronMenu';
 

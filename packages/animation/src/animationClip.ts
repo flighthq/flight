@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity';
-import type { AnimationChannel, AnimationClip, AnimationClipEvent, AnimationTrack } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import type { AnimationChannel, AnimationClip, AnimationClipEvent, AnimationTrack } from '@flighthq/types/contract';
 
 import { cloneAnimationTrack, sampleAnimationTrack } from './animationTrack';
 

@@ -1,4 +1,4 @@
-import type { TextFormat } from '@flighthq/types';
+import type { TextFormat } from '@flighthq/types/contract';
 
 export function computeTextFormatFontString(format: TextFormat): string {
   const style = format.italic ? 'italic' : 'normal';

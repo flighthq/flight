@@ -1,5 +1,5 @@
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
-import { createParticleEmitterConfig } from '@flighthq/particles';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { createParticleEmitterConfig } from '@flighthq/particles/contract';
 import type {
   ImportDiagnostic,
   ParticleDesignerParseOptions,
@@ -8,8 +8,8 @@ import type {
   ParticleEmitterConfig,
   ParticleDesignerDocument,
   ParticleDesignerRawDict,
-} from '@flighthq/types';
-import { ImportDiagnosticSeverity } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 const DEG2RAD = Math.PI / 180;
 

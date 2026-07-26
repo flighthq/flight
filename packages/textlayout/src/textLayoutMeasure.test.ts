@@ -1,4 +1,4 @@
-import { measureText, setTextShaperBackend } from '@flighthq/textshaper';
+import { measureText, setTextShaperBackend } from '@flighthq/textshaper/contract';
 
 import { getTextLayoutMeasureProvider, setTextLayoutMeasureProvider } from './textLayoutMeasure';
 

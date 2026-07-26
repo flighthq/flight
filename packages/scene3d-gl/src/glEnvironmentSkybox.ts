@@ -1,6 +1,6 @@
-import { getCamera3DInverseViewProjectionMatrix4 } from '@flighthq/camera';
-import { createMatrix4 } from '@flighthq/geometry';
-import { createGlProgram } from '@flighthq/render-gl';
+import { getCamera3DInverseViewProjectionMatrix4 } from '@flighthq/camera/contract';
+import { createMatrix4 } from '@flighthq/geometry/contract';
+import { createGlProgram } from '@flighthq/render-gl/contract';
 import type { Camera3D, Environment, GlRenderState, Matrix4 } from '@flighthq/types/contract';
 
 import { ensureGlEnvironmentSourceCube } from './glEnvironmentCube';

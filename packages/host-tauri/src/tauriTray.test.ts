@@ -1,4 +1,4 @@
-import type { TauriApi, TauriTrayIconEvent, TauriTrayIconOptions } from '@flighthq/types';
+import type { TauriApi, TauriTrayIconEvent, TauriTrayIconOptions } from '@flighthq/types/contract';
 
 import { createTauriTrayBackend } from './tauriTray';
 

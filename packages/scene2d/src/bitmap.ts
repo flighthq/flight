@@ -1,6 +1,14 @@
-import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node';
-import type { Bitmap, BitmapData, BitmapRuntime, MethodsOf, Node, PartialNode, Rectangle } from '@flighthq/types';
-import { BitmapKind } from '@flighthq/types';
+import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node/contract';
+import type {
+  Bitmap,
+  BitmapData,
+  BitmapRuntime,
+  MethodsOf,
+  Node,
+  PartialNode,
+  Rectangle,
+} from '@flighthq/types/contract';
+import { BitmapKind } from '@flighthq/types/contract';
 
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from './displayObject';
 

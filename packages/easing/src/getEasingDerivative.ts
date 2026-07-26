@@ -1,4 +1,4 @@
-import type { EasingFunction } from '@flighthq/types';
+import type { EasingFunction } from '@flighthq/types/contract';
 
 // Returns the numerical derivative (instantaneous velocity) of `ease` at the
 // given `t` using a centered finite-difference approximation:

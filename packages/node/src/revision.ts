@@ -1,4 +1,4 @@
-import type { Node, NodeRuntime } from '@flighthq/types';
+import type { Node, NodeRuntime } from '@flighthq/types/contract';
 
 import { getNodeRuntime } from './node';
 

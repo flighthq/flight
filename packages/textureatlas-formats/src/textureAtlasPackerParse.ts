@@ -1,11 +1,11 @@
-import { createTextureAtlasRegion } from '@flighthq/textureatlas';
+import { createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
 import type {
   TextureAtlas,
   TextureAtlasPackerArrayFrame,
   TextureAtlasPackerDocument,
   TextureAtlasPackerHashFrame,
   TextureAtlasPackerParseOptions,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Convenience variant that accepts an already-parsed object (avoids a redundant JSON.parse).
 export function parseTextureAtlasPackerDocument(

@@ -1,5 +1,5 @@
-import { createMatrix4, createPerspectiveMatrix4, setOrthographicMatrix4 } from '@flighthq/geometry';
-import type { OrthographicProjection, PerspectiveProjection } from '@flighthq/types';
+import { createMatrix4, createPerspectiveMatrix4, setOrthographicMatrix4 } from '@flighthq/geometry/contract';
+import type { OrthographicProjection, PerspectiveProjection } from '@flighthq/types/contract';
 
 import {
   createOrthographicProjection,

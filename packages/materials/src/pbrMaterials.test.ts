@@ -1,5 +1,5 @@
-import type { Texture } from '@flighthq/types';
-import { SpecularGlossinessPbrMaterialKind, StandardPbrMaterialKind } from '@flighthq/types';
+import type { Texture } from '@flighthq/types/contract';
+import { SpecularGlossinessPbrMaterialKind, StandardPbrMaterialKind } from '@flighthq/types/contract';
 
 import {
   convertSpecularGlossinessToStandardPbr,

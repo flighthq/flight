@@ -1,6 +1,6 @@
-import { createMatrix, createRectangle } from '@flighthq/geometry';
+import { createMatrix, createRectangle } from '@flighthq/geometry/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
-import { createDisplayObject } from '@flighthq/scene2d';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { CanvasRenderState, Node2D, Matrix, Rectangle, RenderProxy2D } from '@flighthq/types/contract';
 
 import { popCanvasClipRectangle, pushCanvasClipContours, pushCanvasClipRectangle } from './canvasClipRectangle';

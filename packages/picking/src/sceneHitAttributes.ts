@@ -1,13 +1,13 @@
-import { createMatrix4, createVector3, inverseMatrix4 } from '@flighthq/geometry';
+import { createMatrix4, createVector3, inverseMatrix4 } from '@flighthq/geometry/contract';
 import {
   getMeshGeometryTriangleSubsetIndex,
   getMeshGeometryTriangleVertexIndices,
   getMeshGeometryVertexNormal,
   getMeshGeometryVertexTangent,
   getMeshGeometryVertexUv0,
-} from '@flighthq/mesh';
-import { ensureNodeWorldMatrix4, getNodeWorldMatrix4 } from '@flighthq/node';
-import type { Material, Ray3D, Scene3DHit, Vector2Like, Vector3Like } from '@flighthq/types';
+} from '@flighthq/mesh/contract';
+import { ensureNodeWorldMatrix4, getNodeWorldMatrix4 } from '@flighthq/node/contract';
+import type { Material, Ray3D, Scene3DHit, Vector2Like, Vector3Like } from '@flighthq/types/contract';
 
 // Returns the authored material at the hit subset, or null for an absent/out-of-range/default slot.
 export function getScene3DHitMaterial(hit: Readonly<Scene3DHit>): Material | null {

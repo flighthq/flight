@@ -1,4 +1,4 @@
-import { ImportDiagnosticSeverity } from '@flighthq/types';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { parseParticleDesignerPlist, parseParticleDesignerPlistDocument } from './particleDesignerParse';
 import { serializeParticleDesignerPlist } from './particleDesignerSerialize';

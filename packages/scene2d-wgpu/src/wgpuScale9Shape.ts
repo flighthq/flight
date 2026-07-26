@@ -1,7 +1,11 @@
-import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node';
-import { createWgpuTextureEntry, drawWgpuQuadWithTransform, updateWgpuTextureEntry } from '@flighthq/render-wgpu';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import { mapCanvasScale9ShapeCommands, renderCanvasShapeCommands } from '@flighthq/scene2d-canvas';
+import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node/contract';
+import {
+  createWgpuTextureEntry,
+  drawWgpuQuadWithTransform,
+  updateWgpuTextureEntry,
+} from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { mapCanvasScale9ShapeCommands, renderCanvasShapeCommands } from '@flighthq/scene2d-canvas/contract';
 import type {
   Scene2DRenderer,
   Renderable,

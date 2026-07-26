@@ -1,1 +1,1 @@
-export * from './motionPath';
+export * from './contract';

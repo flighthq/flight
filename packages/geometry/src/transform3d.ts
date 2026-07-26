@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity';
-import type { Matrix4Like, Transform3D, Transform3DLike } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import type { Matrix4Like, Transform3D, Transform3DLike } from '@flighthq/types/contract';
 
 import { composeMatrix4, decomposeMatrix4 } from './matrix4';
 import { createQuaternion } from './quaternion';

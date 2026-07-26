@@ -1,4 +1,4 @@
-import { PathCommand } from '@flighthq/types';
+import { PathCommand } from '@flighthq/types/contract';
 
 import { dashPath } from './dashPath';
 import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath } from './path';

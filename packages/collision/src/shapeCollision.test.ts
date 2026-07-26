@@ -1,4 +1,4 @@
-import type { CollisionAabb, CollisionCircle, CollisionObb, CollisionPolygon } from '@flighthq/types';
+import type { CollisionAabb, CollisionCircle, CollisionObb, CollisionPolygon } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createCollisionManifold } from './manifold';

@@ -5,7 +5,7 @@ import type {
   ScreenInfo,
   ElectronApi,
   ElectronDisplay,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Maps Flight's ScreenBackend onto Electron's `screen` module. Enumeration writes into caller-owned
 // `out` values so hot paths allocate nothing. subscribe wires all three of Electron's display change

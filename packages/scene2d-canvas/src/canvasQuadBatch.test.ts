@@ -1,7 +1,7 @@
-﻿import { createImageResource } from '@flighthq/image';
+﻿import { createImageResource } from '@flighthq/image/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender, registerRenderer } from '@flighthq/render/contract';
-import { createQuadBatch, reserveQuadBatch } from '@flighthq/sprite';
-import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas';
+import { createQuadBatch, reserveQuadBatch } from '@flighthq/sprite/contract';
+import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas/contract';
 import { QuadBatchKind } from '@flighthq/types/contract';
 
 import { defaultCanvasQuadBatchRenderer, drawCanvasQuadBatch } from './canvasQuadBatch';

@@ -1,5 +1,5 @@
-import { invalidateImageResource } from '@flighthq/image';
-import type { SurfaceRegion } from '@flighthq/types';
+import { invalidateImageResource } from '@flighthq/image/contract';
+import type { SurfaceRegion } from '@flighthq/types/contract';
 
 /**
  * Applies a 256-entry per-channel lookup table (LUT) to `out`. The LUT maps

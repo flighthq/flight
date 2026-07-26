@@ -1,4 +1,4 @@
-import { createMatrix, createRectangle } from '@flighthq/geometry';
+import { createMatrix, createRectangle } from '@flighthq/geometry/contract';
 import {
   addNodeChild,
   getNodeAppearanceRevision,
@@ -6,9 +6,9 @@ import {
   getNodeLocalTransformRevision,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
-} from '@flighthq/node';
-import { createDisplayObject, setNode2DClip } from '@flighthq/scene2d';
-import { createSprite } from '@flighthq/sprite';
+} from '@flighthq/node/contract';
+import { createDisplayObject, setNode2DClip } from '@flighthq/scene2d/contract';
+import { createSprite } from '@flighthq/sprite/contract';
 import type { ClipRegion } from '@flighthq/types/contract';
 
 import { registerRenderer } from './renderer';

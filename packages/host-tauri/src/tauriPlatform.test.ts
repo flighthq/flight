@@ -1,4 +1,4 @@
-import type { PlatformInfo, TauriApi } from '@flighthq/types';
+import type { PlatformInfo, TauriApi } from '@flighthq/types/contract';
 
 import { createTauriPlatformBackend } from './tauriPlatform';
 

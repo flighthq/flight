@@ -1,6 +1,6 @@
-import { connectSignal } from '@flighthq/signals';
-import type { Node, NodeData, NodeRuntime, PartialNode } from '@flighthq/types';
-import { NodeKind } from '@flighthq/types';
+import { connectSignal } from '@flighthq/signals/contract';
+import type { Node, NodeData, NodeRuntime, PartialNode } from '@flighthq/types/contract';
+import { NodeKind } from '@flighthq/types/contract';
 
 import { addNodeChild, getNodeChildCount, getNodeParent } from './hierarchy';
 import {

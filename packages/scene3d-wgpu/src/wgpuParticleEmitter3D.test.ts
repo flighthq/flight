@@ -1,8 +1,8 @@
-import { createCamera3D } from '@flighthq/camera';
-import { createMatrix4, setVector3 } from '@flighthq/geometry';
-import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
-import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter';
-import { createNode3D, Node3DKind } from '@flighthq/scene3d';
+import { createCamera3D } from '@flighthq/camera/contract';
+import { createMatrix4, setVector3 } from '@flighthq/geometry/contract';
+import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
+import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter/contract';
+import { createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
 import type { Camera3D, ParticleEmitter3D, Scene3DLightsLike } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 

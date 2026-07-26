@@ -1,5 +1,5 @@
-import type { ParticleEmitter2D, ParticleEmitterData } from '@flighthq/types';
-import type { ParticleObject } from '@flighthq/types';
+import type { ParticleEmitter2D, ParticleEmitterData } from '@flighthq/types/contract';
+import type { ParticleObject } from '@flighthq/types/contract';
 
 import { applyParticleCollisions, applyParticleObjectCollisions } from './applyParticleCollisions';
 import { createParticleEmitterState, ensureParticleEmitterStateCapacity } from './particleEmitterState';

@@ -1,4 +1,10 @@
-import type { TrayEventType, ElectronApi, ElectronMenu, ElectronMenuItemOptions, ElectronTray } from '@flighthq/types';
+import type {
+  TrayEventType,
+  ElectronApi,
+  ElectronMenu,
+  ElectronMenuItemOptions,
+  ElectronTray,
+} from '@flighthq/types/contract';
 
 import { createElectronTrayBackend } from './electronTray';
 

@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity';
-import type { Viewport, ViewportLike } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import type { Viewport, ViewportLike } from '@flighthq/types/contract';
 
 // Allocates a Viewport — the bedrock drawable rectangle a scene renders into. Defaults to a zero-origin
 // rect at unit device-pixel ratio; pass fields to override. Passive plain data: a Viewport does not own a

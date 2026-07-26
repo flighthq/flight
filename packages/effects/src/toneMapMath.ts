@@ -3,8 +3,8 @@
 // or RGB value (per-channel application is the caller's responsibility). All matrix functions write
 // into caller-provided arrays. All functions are alias-safe.
 
-import type { AgxToneMapOptions } from '@flighthq/types';
-import type { FilmicToneMapOptions } from '@flighthq/types';
+import type { AgxToneMapOptions } from '@flighthq/types/contract';
+import type { FilmicToneMapOptions } from '@flighthq/types/contract';
 
 // Narkowicz ACES filmic approximation — a fast sigmoid fit to the full ACES RRT+ODT.
 // Reference: Narkowicz 2015, "ACES Filmic Tone Mapping Curve".

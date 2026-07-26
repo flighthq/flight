@@ -1,9 +1,9 @@
-import { setRectangle } from '@flighthq/geometry';
-import { getNodeLocalBoundsRectangle } from '@flighthq/node';
-import { createTextLabel, setTextLabelString } from '@flighthq/text';
-import { setTextLayoutMeasureProvider } from '@flighthq/textlayout';
-import type { HitTestResult, TextLabel } from '@flighthq/types';
-import { TextLabelKind } from '@flighthq/types';
+import { setRectangle } from '@flighthq/geometry/contract';
+import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
+import { createTextLabel, setTextLabelString } from '@flighthq/text/contract';
+import { setTextLayoutMeasureProvider } from '@flighthq/textlayout/contract';
+import type { HitTestResult, TextLabel } from '@flighthq/types/contract';
+import { TextLabelKind } from '@flighthq/types/contract';
 
 import { describeGraphHit, findGraphHitTargetPrecise, hitTestGraphLocalBounds, registerHitTest } from './hitTests';
 import { setNodeHitTestEnabled } from './nodeInteractionState';

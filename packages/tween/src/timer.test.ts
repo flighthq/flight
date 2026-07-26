@@ -1,4 +1,4 @@
-import { connectSignal } from '@flighthq/signals';
+import { connectSignal } from '@flighthq/signals/contract';
 
 import { createTweenTimer } from './timer';
 import { createTweenManager } from './tweenManager';

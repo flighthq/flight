@@ -1,6 +1,6 @@
-import { createMatrix } from '@flighthq/geometry';
-import type { Bone2D } from '@flighthq/types';
-import { TransformMode2D } from '@flighthq/types';
+import { createMatrix } from '@flighthq/geometry/contract';
+import type { Bone2D } from '@flighthq/types/contract';
+import { TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {

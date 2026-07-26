@@ -1,8 +1,12 @@
-import { getEntityRuntime } from '@flighthq/entity';
-import { createRectangle } from '@flighthq/geometry';
-import { getNodeLocalBoundsRevision, getNodeLocalContentRevision, getNodeLocalTransformRevision } from '@flighthq/node';
-import type { Bitmap, BitmapRuntime, ImageResource, Node } from '@flighthq/types';
-import { BitmapKind } from '@flighthq/types';
+import { getEntityRuntime } from '@flighthq/entity/contract';
+import { createRectangle } from '@flighthq/geometry/contract';
+import {
+  getNodeLocalBoundsRevision,
+  getNodeLocalContentRevision,
+  getNodeLocalTransformRevision,
+} from '@flighthq/node/contract';
+import type { Bitmap, BitmapRuntime, ImageResource, Node } from '@flighthq/types/contract';
+import { BitmapKind } from '@flighthq/types/contract';
 
 import {
   computeBitmapLocalBoundsRectangle,

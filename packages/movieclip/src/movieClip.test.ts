@@ -1,6 +1,6 @@
-import { createTimeline, createTimelineSource, playTimeline } from '@flighthq/timeline';
-import type { MovieClip, Timeline } from '@flighthq/types';
-import { MovieClipKind } from '@flighthq/types';
+import { createTimeline, createTimelineSource, playTimeline } from '@flighthq/timeline/contract';
+import type { MovieClip, Timeline } from '@flighthq/types/contract';
+import { MovieClipKind } from '@flighthq/types/contract';
 
 import {
   addMovieClipFrameScript,

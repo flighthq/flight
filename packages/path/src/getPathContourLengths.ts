@@ -1,4 +1,4 @@
-import type { Path } from '@flighthq/types';
+import type { Path } from '@flighthq/types/contract';
 
 import { flattenPath } from './flattenPath';
 

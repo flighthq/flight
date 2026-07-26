@@ -1,4 +1,4 @@
-import { TAU } from '@flighthq/math';
+import { TAU } from '@flighthq/math/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createSpringConfig, createSpringConfigFromPhysical } from './springConfig';

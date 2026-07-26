@@ -1,6 +1,6 @@
-﻿import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import { createRichText } from '@flighthq/text';
-import { enableTextInput } from '@flighthq/textinput';
+﻿import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { createRichText } from '@flighthq/text/contract';
+import { enableTextInput } from '@flighthq/textinput/contract';
 import type { RendererData, RenderProxy2D, RichText } from '@flighthq/types/contract';
 
 import {

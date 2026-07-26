@@ -1,5 +1,5 @@
-import type { DisplayObject } from '@flighthq/types';
-import { DisplayObjectKind } from '@flighthq/types';
+import type { DisplayObject } from '@flighthq/types/contract';
+import { DisplayObjectKind } from '@flighthq/types/contract';
 
 import { createDisplayObject, createDisplayObjectRuntime, getDisplayObjectRuntime } from './displayContainer';
 

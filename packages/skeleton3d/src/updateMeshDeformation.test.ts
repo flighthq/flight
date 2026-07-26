@@ -1,8 +1,8 @@
-import { setVector3 } from '@flighthq/geometry';
-import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh';
-import { invalidateNodeLocalTransform } from '@flighthq/node';
-import { createMesh, createNode3D } from '@flighthq/scene3d';
-import type { MeshMorph } from '@flighthq/types';
+import { setVector3 } from '@flighthq/geometry/contract';
+import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh/contract';
+import { invalidateNodeLocalTransform } from '@flighthq/node/contract';
+import { createMesh, createNode3D } from '@flighthq/scene3d/contract';
+import type { MeshMorph } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createSkeleton3D } from './skeleton3d';

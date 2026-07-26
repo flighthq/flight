@@ -1,4 +1,4 @@
-import type { Cursor, CursorBackend } from '@flighthq/types';
+import type { Cursor, CursorBackend } from '@flighthq/types/contract';
 
 /**
  * Web cursor backend: applies the resolved rollover cursor to a DOM element's `style.cursor`

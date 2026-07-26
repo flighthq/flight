@@ -6,7 +6,7 @@ import type {
   TextFormat,
   TextFormatAlign,
   TextFormatListMarker,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 /**
  * Creates an empty markup tag registry — the meaning layer `parseTextMarkup` composes over the parse

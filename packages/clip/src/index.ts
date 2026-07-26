@@ -1,1 +1,1 @@
-export * from './clipRegion';
+export * from './contract';

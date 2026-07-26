@@ -1,6 +1,6 @@
-import type { Vector3Like, VertexDisplaceModifierOptions } from '@flighthq/types';
-import { ModifierSlot, VertexDisplaceModifierKind } from '@flighthq/types';
-import type { VertexDisplaceModifier } from '@flighthq/types';
+import type { Vector3Like, VertexDisplaceModifierOptions } from '@flighthq/types/contract';
+import { ModifierSlot, VertexDisplaceModifierKind } from '@flighthq/types/contract';
+import type { VertexDisplaceModifier } from '@flighthq/types/contract';
 
 // The options for `createVertexDisplaceModifier`. `source` and `amplitude` are required; the rest
 // carry documented defaults. `source`, `axis` presence, and (for HeightMap) `map` presence are

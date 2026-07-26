@@ -1,4 +1,4 @@
-import type { TextFormat } from '@flighthq/types';
+import type { TextFormat } from '@flighthq/types/contract';
 
 const DEFAULT_SIZE = 12;
 

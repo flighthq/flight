@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity';
-import type { BoundingSphereLike, Capsule, CapsuleLike, Ray3DLike, Vector3Like } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import type { BoundingSphereLike, Capsule, CapsuleLike, Ray3DLike, Vector3Like } from '@flighthq/types/contract';
 
 /**
  * Creates a capsule from a start point, end point, and radius. A negative radius conventionally

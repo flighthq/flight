@@ -1,5 +1,11 @@
-import type { AlphaType, Kind, MaterialAlphaMode, SurfaceMaterial, SurfaceMaterialOptions } from '@flighthq/types';
-import { BlendMode } from '@flighthq/types';
+import type {
+  AlphaType,
+  Kind,
+  MaterialAlphaMode,
+  SurfaceMaterial,
+  SurfaceMaterialOptions,
+} from '@flighthq/types/contract';
+import { BlendMode } from '@flighthq/types/contract';
 
 import { createMaterial } from './material';
 

@@ -1,4 +1,4 @@
-import type { BidiClass, BidiClassBackend } from '@flighthq/types';
+import type { BidiClass, BidiClassBackend } from '@flighthq/types/contract';
 
 // Builds the compact bundled bidi-class backend: a from-scratch UAX #9 class lookup over a sorted
 // range table (binary search), covering the COMMON scripts — Basic Latin + Latin-1, the combining

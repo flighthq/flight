@@ -1,4 +1,4 @@
-import type { AnimationPlayer, AnimationStateMachine } from '@flighthq/types';
+import type { AnimationPlayer, AnimationStateMachine } from '@flighthq/types/contract';
 
 import { advanceAnimationPlayers } from './animationAdvance';
 

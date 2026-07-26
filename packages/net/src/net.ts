@@ -1,4 +1,4 @@
-import { emitSignal } from '@flighthq/signals';
+import { emitSignal } from '@flighthq/signals/contract';
 import type {
   NetBackend,
   NetProgress,
@@ -8,7 +8,7 @@ import type {
   NetResponseBody,
   NetResponseType,
   Signal,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Builds the default web backend over fetch + AbortController. Created lazily by getNetBackend — no
 // fetch binding happens at import time, so importing the package has no side effect. Expected

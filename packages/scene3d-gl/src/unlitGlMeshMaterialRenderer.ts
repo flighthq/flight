@@ -1,5 +1,5 @@
-import { unpackColorToLinear } from '@flighthq/color';
-import { isVideoTextureFrameReady } from '@flighthq/texture';
+import { unpackColorToLinear } from '@flighthq/color/contract';
+import { isVideoTextureFrameReady } from '@flighthq/texture/contract';
 import type {
   LinearColor,
   Camera3D,

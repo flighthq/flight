@@ -1,5 +1,5 @@
-import { copyMatrix, multiplyMatrix } from '@flighthq/geometry';
-import { getNodeLocalMatrix, getNodeLocalTransformRevision } from '@flighthq/node';
+import { copyMatrix, multiplyMatrix } from '@flighthq/geometry/contract';
+import { getNodeLocalMatrix, getNodeLocalTransformRevision } from '@flighthq/node/contract';
 import type { HasTransform2D, Node, RenderProxy2D, RenderState } from '@flighthq/types/contract';
 
 import { getRenderStateRuntime } from './renderState';

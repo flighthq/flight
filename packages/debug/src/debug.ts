@@ -6,9 +6,15 @@ import {
   removeLogSink,
   setLogChannelLevel,
   setLogLevel,
-} from '@flighthq/log';
-import type { DebugOptions, DebugSubsystemHooks, DebugSubsystemName, LogEntry, LogSink } from '@flighthq/types';
-import { LogLevel } from '@flighthq/types';
+} from '@flighthq/log/contract';
+import type {
+  DebugOptions,
+  DebugSubsystemHooks,
+  DebugSubsystemName,
+  LogEntry,
+  LogSink,
+} from '@flighthq/types/contract';
+import { LogLevel } from '@flighthq/types/contract';
 
 // The one call that returns Flight to the zero-debug baseline: removes the sink enableDebug
 // installed, restores the log levels it raised, and runs the disable-guards binding of every

@@ -1,1 +1,1 @@
-export * from './tray';
+export * from './contract';

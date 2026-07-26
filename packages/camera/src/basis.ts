@@ -1,4 +1,4 @@
-import type { Camera3D, Vector3Like } from '@flighthq/types';
+import type { Camera3D, Vector3Like } from '@flighthq/types/contract';
 
 // Extracts the camera's world-space forward direction (-Z of the camera frame) from the view
 // matrix and writes it into `out`. In a right-handed camera frame the forward vector points

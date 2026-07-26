@@ -1,6 +1,6 @@
-import { forEachNodeDescendant } from '@flighthq/node';
-import { isMesh } from '@flighthq/scene3d';
-import type { Material, Scene3DMaterialTextureRegistry, Node3D, Texture } from '@flighthq/types';
+import { forEachNodeDescendant } from '@flighthq/node/contract';
+import { isMesh } from '@flighthq/scene3d/contract';
+import type { Material, Scene3DMaterialTextureRegistry, Node3D, Texture } from '@flighthq/types/contract';
 
 import { getScene3DMaterialTextures } from './sceneMaterialTextureRegistry';
 

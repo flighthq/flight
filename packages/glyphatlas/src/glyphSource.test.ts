@@ -1,4 +1,4 @@
-import type { GlyphRasterizerBackend } from '@flighthq/types';
+import type { GlyphRasterizerBackend } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { createGlyphAtlas, getGlyphAtlasSurface } from './glyphAtlas';

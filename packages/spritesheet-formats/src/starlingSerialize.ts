@@ -1,5 +1,5 @@
-import type { SpritesheetData } from '@flighthq/spritesheet';
-import type { StarlingDocument, StarlingSubTexture } from '@flighthq/types';
+import type { SpritesheetData } from '@flighthq/spritesheet/contract';
+import type { StarlingDocument, StarlingSubTexture } from '@flighthq/types/contract';
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
 

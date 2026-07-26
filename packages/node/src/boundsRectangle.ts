@@ -1,4 +1,4 @@
-import { getEntityRuntime } from '@flighthq/entity';
+import { getEntityRuntime } from '@flighthq/entity/contract';
 import {
   acquireMatrix,
   copyRectangle,
@@ -7,7 +7,7 @@ import {
   matrixTransformRectangle,
   mergeRectangle,
   releaseMatrix,
-} from '@flighthq/geometry';
+} from '@flighthq/geometry/contract';
 import type {
   BoundsNode,
   HasBoundsRectangleRuntime,
@@ -16,7 +16,7 @@ import type {
   Rectangle,
   RectangleLike,
   Spatial2DNode,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { getNodeChildCount, getNodeParent } from './hierarchy';
 import { getNodeRuntime } from './node';

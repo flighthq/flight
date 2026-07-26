@@ -1,4 +1,4 @@
-import { connectSignal } from '@flighthq/signals';
+import { connectSignal } from '@flighthq/signals/contract';
 
 import { createSpritesheet } from './spritesheet';
 import { createSpritesheetAnimation } from './spritesheetAnimation';

@@ -1,13 +1,13 @@
-import { createColorMatrixAdjustment, createTintAdjustment } from '@flighthq/adjustments';
-import { getEntityRuntime } from '@flighthq/entity';
+import { createColorMatrixAdjustment, createTintAdjustment } from '@flighthq/adjustments/contract';
+import { getEntityRuntime } from '@flighthq/entity/contract';
 import {
   addNodeColorAdjustment,
   getNodeColorAdjustments,
   setNodeColorAdjustments,
   setNodeColorAdjustmentsTint,
-} from '@flighthq/node';
-import type { BoundsNode, Node2D, Node2DData, Node2DRuntime, PartialNode, Rectangle } from '@flighthq/types';
-import { BlendMode, DisplayObjectKind, Node2DTraitsKey } from '@flighthq/types';
+} from '@flighthq/node/contract';
+import type { BoundsNode, Node2D, Node2DData, Node2DRuntime, PartialNode, Rectangle } from '@flighthq/types/contract';
+import { BlendMode, DisplayObjectKind, Node2DTraitsKey } from '@flighthq/types/contract';
 
 import {
   createDisplayObject,

@@ -1,5 +1,5 @@
-import type { WgpuRenderState } from '@flighthq/types';
-import type { WgpuEffectPipeline } from '@flighthq/types';
+import type { WgpuRenderState } from '@flighthq/types/contract';
+import type { WgpuEffectPipeline } from '@flighthq/types/contract';
 
 import { createWgpuEffectPipeline } from './wgpuEffectPass';
 

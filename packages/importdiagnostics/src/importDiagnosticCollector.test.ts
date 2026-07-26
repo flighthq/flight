@@ -1,5 +1,5 @@
-import type { ImportDiagnostic } from '@flighthq/types';
-import { ImportDiagnosticSeverity } from '@flighthq/types';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { collectImportDiagnostics, reportImportDiagnostic } from './importDiagnosticCollector';

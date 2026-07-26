@@ -30,7 +30,7 @@ vi.mock('./glEffectTintShader', () => ({
   applyGlEffectInvertTintPass: vi.fn(),
 }));
 
-import { drawGlFullscreenPass } from '@flighthq/render-gl';
+import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 
 import { applyGlEffectBlitPass } from './glEffectBlitShader';
 import { applyGlEffectBoxBlur } from './glEffectBoxBlur';

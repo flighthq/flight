@@ -1,4 +1,4 @@
-import type { ClipboardBackend, CapacitorApi } from '@flighthq/types';
+import type { ClipboardBackend, CapacitorApi } from '@flighthq/types/contract';
 
 // Maps Flight's ClipboardBackend onto Capacitor's async `@capacitor/clipboard`. Text round-trips through
 // read/write; an image crosses as a data URL (Capacitor's `read` reports an `image/*` type, `write`

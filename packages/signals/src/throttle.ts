@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import type { Signal, SignalThrottleOptions } from '@flighthq/types';
+import type { Signal, SignalThrottleOptions } from '@flighthq/types/contract';
 
 import { connectSignal, disconnectSignal } from './slot';
 

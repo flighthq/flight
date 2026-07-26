@@ -1,1 +1,1 @@
-export * from './statusbar';
+export * from './contract';

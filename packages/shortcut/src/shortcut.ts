@@ -1,4 +1,4 @@
-import { createSignal, emitSignal } from '@flighthq/signals';
+import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   Accelerator,
   AcceleratorParseError,
@@ -7,7 +7,7 @@ import type {
   ShortcutEvent,
   ShortcutModifier,
   ShortcutSignals,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Allocates a zeroed ParsedAccelerator for use as an `out` argument to parseAccelerator.
 export function createParsedAccelerator(): ParsedAccelerator {

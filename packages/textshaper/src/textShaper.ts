@@ -1,4 +1,4 @@
-import type { TextFormat, TextShaperBackend } from '@flighthq/types';
+import type { TextFormat, TextShaperBackend } from '@flighthq/types/contract';
 
 import { _textShaperBackendHook } from './_textShaperHooks';
 

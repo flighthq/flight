@@ -1,4 +1,4 @@
-import type { ColorKeyframe, CurveKeyframe, ParticleCurve } from '@flighthq/types';
+import type { ColorKeyframe, CurveKeyframe, ParticleCurve } from '@flighthq/types/contract';
 
 /** Bake an RGB function f:[0,1]→[r,g,b] into an interleaved curve LUT (length N×3). */
 export function buildParticleColorCurve(f: (t: number) => readonly [number, number, number], samples = 33): number[] {

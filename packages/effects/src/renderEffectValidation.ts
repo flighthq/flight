@@ -1,4 +1,4 @@
-import type { RenderEffect, RenderEffectInput } from '@flighthq/types';
+import type { RenderEffect, RenderEffectInput } from '@flighthq/types/contract';
 
 import { getRenderEffectInputs } from './renderEffectInputs';
 

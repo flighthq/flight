@@ -5,7 +5,7 @@ import type {
   PlatformKind,
   PlatformName,
   PlatformRuntime,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 import {
   detectEndianness,
   parseUserAgentArch,
@@ -16,7 +16,7 @@ import {
   parseUserAgentPointerWidth,
   parseUserAgentRuntime,
   parseUserAgentVersion,
-} from '@flighthq/useragent';
+} from '@flighthq/useragent/contract';
 
 // Compares two dotted version strings numerically, segment by segment. Returns -1, 0, or 1.
 // Non-numeric trailing segments are ignored; '' sorts lowest. '' compared with '' returns 0.

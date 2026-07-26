@@ -1,6 +1,6 @@
-import { tessellatePath } from '@flighthq/path';
-import type { ShapeCommandToken } from '@flighthq/types';
-import { PathCommand } from '@flighthq/types';
+import { tessellatePath } from '@flighthq/path/contract';
+import type { ShapeCommandToken } from '@flighthq/types/contract';
+import { PathCommand } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createShape } from './shape';

@@ -8,8 +8,8 @@ import {
   createShadedMaterial,
   createToonModifier,
   createVertexDisplaceModifier,
-} from '@flighthq/shading';
-import { createTexture } from '@flighthq/texture';
+} from '@flighthq/shading/contract';
+import { createTexture } from '@flighthq/texture/contract';
 import type {
   ImageResource,
   Modifier,

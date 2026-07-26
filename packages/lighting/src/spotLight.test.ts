@@ -1,5 +1,5 @@
-import { createVector3 } from '@flighthq/geometry';
-import { SpotLightKind } from '@flighthq/types';
+import { createVector3 } from '@flighthq/geometry/contract';
+import { SpotLightKind } from '@flighthq/types/contract';
 
 import {
   cloneSpotLight,

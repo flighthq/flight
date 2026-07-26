@@ -1,4 +1,4 @@
-import type { SpatialIndex, SpatialObjectId, SpatialPair } from '@flighthq/types';
+import type { SpatialIndex, SpatialObjectId, SpatialPair } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {

@@ -1,4 +1,4 @@
-import { createImageResourceFromImageElement } from '@flighthq/image';
+import { createImageResourceFromImageElement } from '@flighthq/image/contract';
 
 import {
   createTextureAtlasFromCanvas,

@@ -1,7 +1,7 @@
-import { computeRgbHexString } from '@flighthq/color';
-import { createEntity } from '@flighthq/entity';
-import { computeTextFormatFontString } from '@flighthq/text';
-import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text';
+import { computeRgbHexString } from '@flighthq/color/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import { computeTextFormatFontString } from '@flighthq/text/contract';
+import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text/contract';
 import {
   computeRichTextContent,
   computeTextBoundsHeight,
@@ -11,7 +11,7 @@ import {
   getRichTextScrollYOffset,
   getRichTextSelectionRectangles,
   getTextLayoutResult,
-} from '@flighthq/textlayout';
+} from '@flighthq/textlayout/contract';
 import type {
   Scene2DRenderer,
   DomRenderState,

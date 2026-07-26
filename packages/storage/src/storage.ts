@@ -1,4 +1,4 @@
-import { clearSignal, createSignal, emitSignal } from '@flighthq/signals';
+import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   StorageBackend,
   StorageChange,
@@ -6,7 +6,7 @@ import type {
   StorageNamespace,
   StorageQuota,
   StorageSignals,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Removes every key. Returns false when the host denies access. Sentinel, not throw.
 export function clearStorage(): boolean {

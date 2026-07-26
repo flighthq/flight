@@ -1,6 +1,6 @@
-import { createEntity } from '@flighthq/entity';
-import { createImageResourceFromCanvas } from '@flighthq/image';
-import type { ImageResource, Surface } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import { createImageResourceFromCanvas } from '@flighthq/image/contract';
+import type { ImageResource, Surface } from '@flighthq/types/contract';
 
 export function createImageResourceFromSurface(surface: Readonly<Surface>): ImageResource {
   const canvas = document.createElement('canvas');

@@ -1,5 +1,5 @@
-import type { Bone2D, RegionAttachment2D } from '@flighthq/types';
-import { RegionAttachment2DKind, TransformMode2D } from '@flighthq/types';
+import type { Bone2D, RegionAttachment2D } from '@flighthq/types/contract';
+import { RegionAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { computeSkeleton2DRegionAttachmentVertices } from './regionAttachment2D';

@@ -1,6 +1,6 @@
-import { createVector2 } from '@flighthq/geometry';
-import { getPathLength, getPathPositionAtDistance, getPathTangentAtDistance } from '@flighthq/path';
-import type { MotionPath, MotionPathLoopMode, Path, Vector2Like } from '@flighthq/types';
+import { createVector2 } from '@flighthq/geometry/contract';
+import { getPathLength, getPathPositionAtDistance, getPathTangentAtDistance } from '@flighthq/path/contract';
+import type { MotionPath, MotionPathLoopMode, Path, Vector2Like } from '@flighthq/types/contract';
 
 // Allocate a `MotionPath` marker at the start of `path` (`distance` 0, `direction` forward).
 // `speed` is the traversal rate in path units per second (a magnitude; default 0 = stationary),

@@ -1,4 +1,4 @@
-import type { AwdDecompressor } from '@flighthq/types';
+import type { AwdDecompressor } from '@flighthq/types/contract';
 
 import { registerAwd2Decompressor } from './awd2Parse';
 import { AWD2_COMPRESSION_DEFLATE } from './awd2Schema';

@@ -1,5 +1,5 @@
-import { createMatrix, createRectangle } from '@flighthq/geometry';
-import { computeNodeBoundsRectangle } from '@flighthq/node';
+import { createMatrix, createRectangle } from '@flighthq/geometry/contract';
+import { computeNodeBoundsRectangle } from '@flighthq/node/contract';
 import {
   computeScene2DRenderTargetTransform,
   computeRenderCacheTransform,

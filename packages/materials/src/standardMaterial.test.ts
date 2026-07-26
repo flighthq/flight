@@ -1,4 +1,4 @@
-import { StandardMaterialKind } from '@flighthq/types';
+import { StandardMaterialKind } from '@flighthq/types/contract';
 
 import { createStandardMaterial } from './standardMaterial';
 

@@ -1,4 +1,4 @@
-import { getNodeAppearanceRevision } from '@flighthq/node';
+import { getNodeAppearanceRevision } from '@flighthq/node/contract';
 import type { HasAppearance, HasBlendMode, Node, RenderProxy, RenderState } from '@flighthq/types/contract';
 
 import { getRenderStateRuntime } from './renderState';

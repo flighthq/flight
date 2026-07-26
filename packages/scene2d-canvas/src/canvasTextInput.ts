@@ -1,13 +1,17 @@
-import { computeRgbHexString } from '@flighthq/color';
-import { getRichTextRuntime } from '@flighthq/text';
+import { computeRgbHexString } from '@flighthq/color/contract';
+import { getRichTextRuntime } from '@flighthq/text/contract';
 import {
   getTextInputCaretRectangle,
   getTextInputSelectionBeginIndex,
   getTextInputSelectionEndIndex,
   getTextInputSelectionRectangles,
   getTextInputState,
-} from '@flighthq/textinput';
-import { computeTextBoundsHeight, computeTextBoundsWidth, getRichTextScrollYOffset } from '@flighthq/textlayout';
+} from '@flighthq/textinput/contract';
+import {
+  computeTextBoundsHeight,
+  computeTextBoundsWidth,
+  getRichTextScrollYOffset,
+} from '@flighthq/textlayout/contract';
 import type { CanvasRenderState, RenderProxy2D, RichText, TextSelectionRectangle } from '@flighthq/types/contract';
 
 import { registerCanvasTextInputOverlay } from './canvasRichText';

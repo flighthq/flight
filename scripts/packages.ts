@@ -231,9 +231,9 @@ function scanFlightImports(files: string[]): Set<string> {
   return imports;
 }
 
-const convertedContractLanePackages = new Set(['@flighthq/render', '@flighthq/types']);
+const convertedContractLanePackages = new Set<string>();
 
-function scanContractLaneImports(files: string[]): Map<string, string[]> {
+function scanContractLaneImports(files: string[], importingPackage: string): Map<string, string[]> {
   const violations = new Map<string, string[]>();
 
   for (const filePath of files) {
@@ -272,7 +272,12 @@ function scanContractLaneImports(files: string[]): Map<string, string[]> {
 
     for (const specifier of specifiers) {
       const packageName = specifier.split('/').slice(0, 2).join('/');
-      if (!convertedContractLanePackages.has(packageName) || specifier === `${packageName}/contract`) continue;
+      if (
+        packageName === importingPackage ||
+        !convertedContractLanePackages.has(packageName) ||
+        specifier === `${packageName}/contract`
+      )
+        continue;
       const filesForPackage = violations.get(packageName);
       const path = relative(root, filePath).replaceAll('\\', '/');
       if (filesForPackage === undefined) violations.set(packageName, [path]);
@@ -370,6 +375,13 @@ const packageDirs = readdirSync(packagesDir, { withFileTypes: true })
   .filter((e) => e.isDirectory())
   .map((e) => join(packagesDir, e.name));
 
+for (const pkgDir of packageDirs) {
+  const pkg = readJson<PackageJson>(join(pkgDir, 'package.json'));
+  if (pkg?.name !== undefined && existsSync(join(pkgDir, 'src', 'contract.ts'))) {
+    convertedContractLanePackages.add(pkg.name);
+  }
+}
+
 const laneBarrelPaths = packageDirs.flatMap((pkgDir) =>
   ['index.ts', 'contract.ts'].map((file) => join(pkgDir, 'src', file)).filter((path) => existsSync(path)),
 );
@@ -423,7 +435,7 @@ for (const pkgDir of packageDirs) {
   const errors: CheckError[] = [];
   const warnings: CheckWarning[] = [];
 
-  for (const rel of ['vitest.config.ts', 'tsconfig.json', 'src/index.ts']) {
+  for (const rel of ['vitest.config.ts', 'tsconfig.json', 'src/index.ts', 'src/contract.ts']) {
     check(errors, `${rel} exists`, existsSync(join(pkgDir, rel)));
   }
 
@@ -504,6 +516,12 @@ for (const pkgDir of packageDirs) {
   checkPackageTargetPaths(errors, pkgDir, packageTargets);
 
   if (pkg.exports !== undefined && typeof pkg.exports === 'object' && !Array.isArray(pkg.exports)) {
+    check(
+      errors,
+      './contract is exported',
+      Object.hasOwn(pkg.exports, './contract'),
+      'add the public/contract package lane',
+    );
     for (const subpath of Object.keys(pkg.exports).filter((key) => key.startsWith('.'))) {
       if (subpath === '.' || subpath === './contract' || name === '@flighthq/sdk') continue;
       if (name === '@flighthq/surface' && subpath === './surfaceFingerprint') {
@@ -525,7 +543,7 @@ for (const pkgDir of packageDirs) {
   const testImports = scanFlightImports(testFiles);
 
   if (name !== '@flighthq/sdk') {
-    const contractLaneViolations = scanContractLaneImports([...srcFiles, ...testFiles]);
+    const contractLaneViolations = scanContractLaneImports([...srcFiles, ...testFiles], name);
     for (const [dependency, files] of [...contractLaneViolations].sort(([a], [b]) => a.localeCompare(b))) {
       const shown = files.slice(0, 5);
       const remainder = files.length - shown.length;
@@ -689,7 +707,7 @@ function checkSdkBarrelSync(): BarrelSyncError[] {
 
   const sdkSrcDir = join(sdkDir, 'src');
   const groupFiles = readdirSync(sdkSrcDir)
-    .filter((f) => f.endsWith('.ts') && f !== 'index.ts' && !f.endsWith('.test.ts'))
+    .filter((f) => f.endsWith('.ts') && f !== 'index.ts' && f !== 'contract.ts' && !f.endsWith('.test.ts'))
     .sort();
 
   const groupExports = new Map<string, string[]>();
@@ -860,10 +878,12 @@ const packagesWithContractLanes = results.filter((r) =>
 );
 if (packagesWithContractLanes.length > 0) {
   console.log(`\n${pc.bold('Un-promoted contract exports')}`);
-  for (const { name, unpromotedExports } of packagesWithContractLanes) {
-    const detail = unpromotedExports.length === 0 ? pc.dim('none') : unpromotedExports.join(', ');
-    console.log(`  ${pc.cyan(name)} ${pc.dim(`(${unpromotedExports.length})`)} ${detail}`);
+  const splitPackages = packagesWithContractLanes.filter((result) => result.unpromotedExports.length > 0);
+  for (const { name, unpromotedExports } of splitPackages) {
+    console.log(`  ${pc.cyan(name)} ${pc.dim(`(${unpromotedExports.length})`)} ${unpromotedExports.join(', ')}`);
   }
+  const fullyPromotedCount = packagesWithContractLanes.length - splitPackages.length;
+  console.log(`  ${pc.dim(`${fullyPromotedCount} fully promoted package${fullyPromotedCount === 1 ? '' : 's'} (0)`)}`);
 }
 
 if (totalErrors === 0) {

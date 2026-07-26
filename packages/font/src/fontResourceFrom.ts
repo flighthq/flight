@@ -1,4 +1,4 @@
-import type { FontResource, FontUrl } from '@flighthq/types';
+import type { FontResource, FontUrl } from '@flighthq/types/contract';
 
 import { inferFontFormatFromUrl } from './fontFormat';
 import { getFontShorthand } from './fontShorthand';

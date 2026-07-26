@@ -1,4 +1,4 @@
-import type { BlurEffect } from '@flighthq/types';
+import type { BlurEffect } from '@flighthq/types/contract';
 
 // Plain separable Gaussian blur intent. `blurX`/`blurY` are the per-axis Gaussian standard deviations
 // in pixels; the backends realize them as a two-pass separable blur bouncing through an offscreen

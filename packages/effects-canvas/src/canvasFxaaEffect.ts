@@ -1,4 +1,4 @@
-import type { CanvasRenderEffectRunner, CanvasRenderTarget, FxaaEffect } from '@flighthq/types';
+import type { CanvasRenderEffectRunner, CanvasRenderTarget, FxaaEffect } from '@flighthq/types/contract';
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 

@@ -1,4 +1,4 @@
-import type { BoundingSphereLike, Camera3D, PlaneLike, Ray3DLike, Vector3Like } from '@flighthq/types';
+import type { BoundingSphereLike, Camera3D, PlaneLike, Ray3DLike, Vector3Like } from '@flighthq/types/contract';
 
 import { getCamera3DScreenToWorldRay, getCamera3DWorldToScreen } from './picking';
 

@@ -1,4 +1,4 @@
-import type { SurfaceConvolutionOptions, SurfaceRegion } from '@flighthq/types';
+import type { SurfaceConvolutionOptions, SurfaceRegion } from '@flighthq/types/contract';
 
 /**
  * Applies a convolution kernel to `source` and writes into `out`.

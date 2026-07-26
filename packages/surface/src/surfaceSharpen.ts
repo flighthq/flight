@@ -1,4 +1,4 @@
-import type { SurfaceRegion, SurfaceSharpenOptions } from '@flighthq/types';
+import type { SurfaceRegion, SurfaceSharpenOptions } from '@flighthq/types/contract';
 
 import { boxBlurSurface } from './surfaceBlur';
 

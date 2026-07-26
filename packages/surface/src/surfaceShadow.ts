@@ -5,7 +5,7 @@ import type {
   SurfaceInnerShadowOptions,
   SurfaceRegion,
   SurfaceShadowBlurOptions,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { blurSurfacePixelsHorizontal, blurSurfacePixelsVertical } from './surfaceBlur';
 

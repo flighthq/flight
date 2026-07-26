@@ -1,5 +1,5 @@
 import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render/contract';
-import { getNode2DRuntime } from '@flighthq/scene2d';
+import { getNode2DRuntime } from '@flighthq/scene2d/contract';
 import type { Node2D, Scene2DRenderer, DomRenderState, RenderProxy2D } from '@flighthq/types/contract';
 
 import { hasDomStructureChanged, processDomNode, reconcileDomContainer, swapDomOrderLists } from './domReconcile';

@@ -1,18 +1,18 @@
-import { getNodeLocalMatrix4, getNodeWorldMatrix4 } from '@flighthq/node';
+import { getNodeLocalMatrix4, getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import {
   PARTICLE_VELOCITY_STRIDE,
   ensureParticleEmitterStateCapacity,
   getParticleEmitterSignals,
   sampleParticleColorCurve,
   sampleParticleCurve,
-} from '@flighthq/particles';
+} from '@flighthq/particles/contract';
 import type {
   ParticleEmitter3D,
   ParticleEmitterCallbacks,
   ParticleEmitterConfig,
   ParticleEmitterState,
   Node3D,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { reserveParticleEmitter3D } from './particleEmitter3D';
 

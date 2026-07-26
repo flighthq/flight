@@ -3,7 +3,7 @@ import {
   TextureAtlasFormatKindLibgdxAtlas,
   TextureAtlasFormatKindStarling,
   TextureAtlasFormatKindTexturePacker,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { detectTextureAtlasFormat } from './textureAtlasDetect';

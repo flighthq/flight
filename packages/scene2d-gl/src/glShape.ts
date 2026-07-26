@@ -1,10 +1,10 @@
-import { createImageResource, setImageResourceSource } from '@flighthq/image';
-import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node';
-import { tessellatePath } from '@flighthq/path';
-import { resolveGlMaterialRenderer } from '@flighthq/render-gl';
-import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import { renderCanvasShapeCommands } from '@flighthq/scene2d-canvas';
-import { getShapeFillRegions, getShapeStrokeRegions, hasShapeFill } from '@flighthq/shape';
+import { createImageResource, setImageResourceSource } from '@flighthq/image/contract';
+import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node/contract';
+import { tessellatePath } from '@flighthq/path/contract';
+import { resolveGlMaterialRenderer } from '@flighthq/render-gl/contract';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { renderCanvasShapeCommands } from '@flighthq/scene2d-canvas/contract';
+import { getShapeFillRegions, getShapeStrokeRegions, hasShapeFill } from '@flighthq/shape/contract';
 import type {
   Scene2DRenderer,
   GlRenderState,

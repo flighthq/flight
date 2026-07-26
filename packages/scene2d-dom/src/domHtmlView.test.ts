@@ -1,6 +1,6 @@
 ﻿import { registerRenderer } from '@flighthq/render/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
-import { createHtmlView } from '@flighthq/scene2d';
+import { createHtmlView } from '@flighthq/scene2d/contract';
 import { HtmlViewKind } from '@flighthq/types/contract';
 
 import { defaultHtmlViewRenderer, drawDomHtmlView } from './domHtmlView';

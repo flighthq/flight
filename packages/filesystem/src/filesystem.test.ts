@@ -1,4 +1,4 @@
-import { setDialogBackend } from '@flighthq/dialog';
+import { setDialogBackend } from '@flighthq/dialog/contract';
 import type {
   FileDialogHandle,
   FileEntry,
@@ -6,7 +6,7 @@ import type {
   FileStat,
   FileSystemBackend,
   FileSystemUsage,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import {
   appendTextFile,

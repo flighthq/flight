@@ -1,4 +1,4 @@
-import type { MarkupTagRegistry } from '@flighthq/types';
+import type { MarkupTagRegistry } from '@flighthq/types/contract';
 
 import { resolveMarkupHexColor } from './markupTagRegistry';
 

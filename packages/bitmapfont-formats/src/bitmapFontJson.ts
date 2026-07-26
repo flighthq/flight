@@ -6,7 +6,7 @@ import type {
   BitmapFontPageRecord,
   BitmapFontParseOptions,
   BitmapFontRecord,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { buildBitmapFontFromRecord } from './bitmapFontRecord';
 

@@ -1,4 +1,9 @@
-import type { WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget, WhiteBalanceEffect } from '@flighthq/types';
+import type {
+  WgpuRenderEffectRunner,
+  WgpuRenderState,
+  WgpuRenderTarget,
+  WhiteBalanceEffect,
+} from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';

@@ -1,5 +1,5 @@
-import { invalidateImageResource } from '@flighthq/image';
-import type { SurfaceRegion } from '@flighthq/types';
+import { invalidateImageResource } from '@flighthq/image/contract';
+import type { SurfaceRegion } from '@flighthq/types/contract';
 
 import type { ImageChannel } from './surfaceImageChannel';
 

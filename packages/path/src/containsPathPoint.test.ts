@@ -1,4 +1,4 @@
-import { PathCommand } from '@flighthq/types';
+import { PathCommand } from '@flighthq/types/contract';
 
 import { containsPathPoint } from './containsPathPoint';
 import { appendPathCubicCurveTo, appendPathCurveTo, appendPathLineTo, appendPathMoveTo, createPath } from './path';

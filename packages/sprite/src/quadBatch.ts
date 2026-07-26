@@ -1,7 +1,7 @@
-import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry';
-import { invalidateNodeLocalBounds } from '@flighthq/node';
-import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d';
-import { createSignal } from '@flighthq/signals';
+import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry/contract';
+import { invalidateNodeLocalBounds } from '@flighthq/node/contract';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
+import { createSignal } from '@flighthq/signals/contract';
 import type {
   MethodsOf,
   Node,
@@ -13,8 +13,8 @@ import type {
   QuadTransformType,
   Rectangle,
   Vector2Like,
-} from '@flighthq/types';
-import { QuadBatchKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { QuadBatchKind } from '@flighthq/types/contract';
 
 // Per-instance stride constants. The stride layout is intentionally internal to this
 // module so callers never hand-write i*2 or i*6.

@@ -1,5 +1,5 @@
-import { cancelSignal, connectSignal } from '@flighthq/signals';
-import type { AppBackend, AppLoginItem, AppLoginItemLike, MenuItemTemplate } from '@flighthq/types';
+import { cancelSignal, connectSignal } from '@flighthq/signals/contract';
+import type { AppBackend, AppLoginItem, AppLoginItemLike, MenuItemTemplate } from '@flighthq/types/contract';
 
 import {
   addAppRecentDocument,

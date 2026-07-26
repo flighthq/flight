@@ -1,4 +1,4 @@
-import { createBoundingSphere } from '@flighthq/geometry';
+import { createBoundingSphere } from '@flighthq/geometry/contract';
 
 import { createAmbientLight } from './ambientLight';
 import { createAreaLight } from './areaLight';

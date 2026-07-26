@@ -1,4 +1,4 @@
-import { createModifierRegistry, registerModifier, resolveModifier } from '@flighthq/shading';
+import { createModifierRegistry, registerModifier, resolveModifier } from '@flighthq/shading/contract';
 import type { ModifierKind, WgpuModifierSnippet, WgpuRenderState } from '@flighthq/types/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';

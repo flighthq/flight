@@ -11,7 +11,7 @@ import {
   initTransform2DRuntimeTrait,
   initTransform2DTrait,
   invalidateNodeAppearance,
-} from '@flighthq/node';
+} from '@flighthq/node/contract';
 import type {
   ClipRegion,
   Node2D,
@@ -23,8 +23,8 @@ import type {
   NodeAny,
   NodeRuntimeFactory,
   PartialNode,
-} from '@flighthq/types';
-import { Node2DTraitsKey } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { Node2DTraitsKey } from '@flighthq/types/contract';
 
 export function createNode2D<R extends Node2DRuntime>(
   kind: Kind,

@@ -1,4 +1,4 @@
-import type { RichTextContent, TextFormat } from '@flighthq/types';
+import type { RichTextContent, TextFormat } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { registerMarkupNamedColors } from './markupNamedColors';

@@ -41,7 +41,7 @@ import {
   translateMatrixByVectorXY,
   writeMatrixToFloat32Array,
 } from '@flighthq/geometry';
-import type { Matrix, Matrix3Like, Matrix4Like } from '@flighthq/types';
+import type { Matrix, Matrix3Like, Matrix4Like } from '@flighthq/types/contract';
 
 describe('cloneMatrix', () => {
   it('should clone the matrix3x2 correctly', () => {

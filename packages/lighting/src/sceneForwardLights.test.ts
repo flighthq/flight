@@ -1,5 +1,5 @@
-import { createBoundingSphere } from '@flighthq/geometry';
-import type { Scene3DForwardLightSelection, Scene3DLightsLike } from '@flighthq/types';
+import { createBoundingSphere } from '@flighthq/geometry/contract';
+import type { Scene3DForwardLightSelection, Scene3DLightsLike } from '@flighthq/types/contract';
 
 import { createPointLight } from './pointLight';
 import { selectScene3DForwardLights } from './sceneForwardLights';

@@ -1,8 +1,12 @@
-import { getCamera3DViewProjectionMatrix4 } from '@flighthq/camera';
-import { createMatrix3, createMatrix4, getMatrix4Position, inverseMatrix4 } from '@flighthq/geometry';
-import { hasImageResourcePixels } from '@flighthq/image';
-import { bindWgpuImageResourceTexture, getWgpuRenderStateRuntime, getWgpuSampler } from '@flighthq/render-wgpu';
-import { getTextureUvMatrix, hasTextureUvTransform } from '@flighthq/texture';
+import { getCamera3DViewProjectionMatrix4 } from '@flighthq/camera/contract';
+import { createMatrix3, createMatrix4, getMatrix4Position, inverseMatrix4 } from '@flighthq/geometry/contract';
+import { hasImageResourcePixels } from '@flighthq/image/contract';
+import {
+  bindWgpuImageResourceTexture,
+  getWgpuRenderStateRuntime,
+  getWgpuSampler,
+} from '@flighthq/render-wgpu/contract';
+import { getTextureUvMatrix, hasTextureUvTransform } from '@flighthq/texture/contract';
 import type {
   WgpuMaterialBinding,
   WgpuMeshPipeline,

@@ -1,4 +1,4 @@
-import type { HapticsCapabilities, CapacitorApi } from '@flighthq/types';
+import type { HapticsCapabilities, CapacitorApi } from '@flighthq/types/contract';
 
 import { createCapacitorHapticsBackend } from './capacitorHaptics';
 

@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity';
-import type { AabbLike, Matrix4Like, Obb, ObbLike, Ray3DLike, Vector3Like } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import type { AabbLike, Matrix4Like, Obb, ObbLike, Ray3DLike, Vector3Like } from '@flighthq/types/contract';
 
 /**
  * Creates an oriented bounding box from a center, half-extents, and an orientation quaternion

@@ -1,4 +1,4 @@
-import { CompositeOperator } from '@flighthq/types';
+import { CompositeOperator } from '@flighthq/types/contract';
 
 import { createCompositeEffect } from './compositeEffect';
 

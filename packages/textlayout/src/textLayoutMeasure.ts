@@ -1,5 +1,5 @@
-import { getTextShaperBackend, measureText } from '@flighthq/textshaper';
-import type { TextMeasureFunction } from '@flighthq/types';
+import { getTextShaperBackend, measureText } from '@flighthq/textshaper/contract';
+import type { TextMeasureFunction } from '@flighthq/types/contract';
 
 // Resolves the text-measurement provider text-layout uses to turn characters into advances. Shaping
 // is now owned by the @flighthq/textshaper seam: when a shaper backend is registered (the canvas

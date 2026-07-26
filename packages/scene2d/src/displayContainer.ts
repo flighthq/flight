@@ -1,5 +1,5 @@
-import type { DisplayObject, DisplayObjectRuntime, PartialNode } from '@flighthq/types';
-import { DisplayObjectKind } from '@flighthq/types';
+import type { DisplayObject, DisplayObjectRuntime, PartialNode } from '@flighthq/types/contract';
+import { DisplayObjectKind } from '@flighthq/types/contract';
 
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from './displayObject';
 

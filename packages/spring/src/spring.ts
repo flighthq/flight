@@ -1,5 +1,5 @@
-import { approxEqual, approxZero, TAU } from '@flighthq/math';
-import type { Spring, SpringConfig } from '@flighthq/types';
+import { approxEqual, approxZero, TAU } from '@flighthq/math/contract';
+import type { Spring, SpringConfig } from '@flighthq/types/contract';
 
 // Allocate a scalar spring at `value` (default 0) with `velocity` (default 0). This is the only
 // allocating function for scalar springs; `updateSpring`, `resetSpring`, and the settle query all

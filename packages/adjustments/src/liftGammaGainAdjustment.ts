@@ -1,4 +1,4 @@
-import type { ColorTransformFunction, LiftGammaGainAdjustment } from '@flighthq/types';
+import type { ColorTransformFunction, LiftGammaGainAdjustment } from '@flighthq/types/contract';
 
 // Lift/gamma/gain as a LUT-tier adjustment (gamma is the nonlinear part). Ported faithfully from the old
 // liftGammaGainEffect shader: gain multiplies, lift offsets toward the packed neutral, gamma applies a

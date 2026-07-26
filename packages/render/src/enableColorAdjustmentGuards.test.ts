@@ -1,7 +1,7 @@
-import { createTintAdjustment } from '@flighthq/adjustments';
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log';
-import { setNodeColorAdjustments } from '@flighthq/node';
-import { createDisplayObject } from '@flighthq/scene2d';
+import { createTintAdjustment } from '@flighthq/adjustments/contract';
+import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import { setNodeColorAdjustments } from '@flighthq/node/contract';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { Adjustment, Renderable } from '@flighthq/types/contract';
 
 import { areColorAdjustmentGuardsEnabled, enableColorAdjustmentGuards } from './enableColorAdjustmentGuards';

@@ -1,9 +1,9 @@
-import type { Path, StrokeStyle } from '@flighthq/types';
-import { PathCommand } from '@flighthq/types';
+import type { Path, StrokeStyle } from '@flighthq/types/contract';
+import { PathCommand } from '@flighthq/types/contract';
 
 import { appendPathClose } from './path';
 
-export type { StrokeStyle } from '@flighthq/types';
+export type { StrokeStyle } from '@flighthq/types/contract';
 
 // Converts the centerline `path` into a fillable outline `Path` by offsetting both sides by
 // half the stroke width, joining corners per `style.join`, and capping open endpoints per

@@ -1,4 +1,4 @@
-import type { VideoResource } from '@flighthq/types';
+import type { VideoResource } from '@flighthq/types/contract';
 
 // No cloneVideoResource: a VideoResource is a thin carrier over a single HTMLVideoElement, and an
 // element cannot be duplicated (each carries its own decoder and playback position). Wrap the same

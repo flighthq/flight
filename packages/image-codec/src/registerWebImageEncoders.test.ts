@@ -1,4 +1,4 @@
-import type { DecodedImage } from '@flighthq/types';
+import type { DecodedImage } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
 import { clearImageEncoders, getImageEncoder, hasImageEncoder } from './imageEncoderRegistry';

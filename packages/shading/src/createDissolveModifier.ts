@@ -1,5 +1,5 @@
-import type { DissolveModifier, DissolveModifierOptions } from '@flighthq/types';
-import { DissolveModifierKind, ModifierSlot } from '@flighthq/types';
+import type { DissolveModifier, DissolveModifierOptions } from '@flighthq/types/contract';
+import { DissolveModifierKind, ModifierSlot } from '@flighthq/types/contract';
 
 // The options for `createDissolveModifier`. Only `threshold` is required; the rest carry documented
 // defaults. `map` presence is compile-time structural (sampled mask vs procedural noise, driving the

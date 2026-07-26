@@ -1,6 +1,6 @@
-import { strokePath } from '@flighthq/path';
-import type { Path, ShapeCommandToken, ShapeFillRegion, StrokeStyle } from '@flighthq/types';
-import { PathCommand } from '@flighthq/types';
+import { strokePath } from '@flighthq/path/contract';
+import type { Path, ShapeCommandToken, ShapeFillRegion, StrokeStyle } from '@flighthq/types/contract';
+import { PathCommand } from '@flighthq/types/contract';
 
 import { appendShapeGeometryCommand, getPathCommandOperandCount } from './shapeFill';
 

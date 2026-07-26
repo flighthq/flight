@@ -1,5 +1,5 @@
-import { findNode, forEachNodeDescendant } from '@flighthq/node';
-import type { Material, Mesh, Node3D } from '@flighthq/types';
+import { findNode, forEachNodeDescendant } from '@flighthq/node/contract';
+import type { Material, Mesh, Node3D } from '@flighthq/types/contract';
 
 // Finds the first material named `name` in the scene subtree rooted at `root` (depth-first
 // pre-order, `root` included), scanning each mesh node's `materials` array. Returns `null` when no

@@ -1,6 +1,6 @@
 ﻿import { registerRenderer } from '@flighthq/render/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
-import { createVideo } from '@flighthq/scene2d';
+import { createVideo } from '@flighthq/scene2d/contract';
 import { VideoKind } from '@flighthq/types/contract';
 
 import { createDomRenderState } from './domRenderState';

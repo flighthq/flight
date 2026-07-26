@@ -1,4 +1,4 @@
-import { enableNodeSignals, getNodeSignals } from '@flighthq/node';
+import { enableNodeSignals, getNodeSignals } from '@flighthq/node/contract';
 import type {
   Billboard,
   BillboardMode,
@@ -8,12 +8,12 @@ import type {
   MeshGeometry,
   NodeSignals,
   Node3D,
-} from '@flighthq/types';
-import { BillboardKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { BillboardKind } from '@flighthq/types/contract';
 
 import { createNode3D, getNode3DRuntime } from './sceneNode';
 
-export { BillboardKind } from '@flighthq/types';
+export { BillboardKind } from '@flighthq/types/contract';
 
 // Allocates a camera-facing Billboard node: a Node3D (so it shares the scene hierarchy with mesh
 // and group nodes) carrying `geometry`, one `materials` entry per geometry subset (positional; a

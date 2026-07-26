@@ -1,5 +1,5 @@
-import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d';
-import { createSignal } from '@flighthq/signals';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
+import { createSignal } from '@flighthq/signals/contract';
 import type {
   MethodsOf,
   Node,
@@ -10,8 +10,8 @@ import type {
   TilemapRuntime,
   TilemapSignals,
   Vector2Like,
-} from '@flighthq/types';
-import { TilemapKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { TilemapKind } from '@flighthq/types/contract';
 
 /** Fills all cells with -1 (empty). Equivalent to `fillTilemapTiles(tilemap, -1)`. Fires `onCleared` when signals are enabled. */
 export function clearTilemap(tilemap: Tilemap): void {

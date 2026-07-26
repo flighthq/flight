@@ -4,7 +4,7 @@ import {
   createModifierRegistry,
   createVertexDisplaceModifier,
   registerModifier,
-} from '@flighthq/shading';
+} from '@flighthq/shading/contract';
 import type { GlColorAdjustmentMaterialFeature, Modifier, GlShadedDefineKey } from '@flighthq/types/contract';
 import { VertexDisplaceModifierSource } from '@flighthq/types/contract';
 

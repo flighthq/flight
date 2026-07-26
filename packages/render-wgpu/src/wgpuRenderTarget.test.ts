@@ -1,4 +1,4 @@
-import { createMatrix } from '@flighthq/geometry';
+import { createMatrix } from '@flighthq/geometry/contract';
 
 import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';

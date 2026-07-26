@@ -1,4 +1,4 @@
-import { uploadGlTextureImageResource } from '@flighthq/render-gl';
+import { uploadGlTextureImageResource } from '@flighthq/render-gl/contract';
 import type { CubeTexture, Environment, GlRenderState, ImageResource } from '@flighthq/types/contract';
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';

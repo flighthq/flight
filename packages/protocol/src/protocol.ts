@@ -1,5 +1,5 @@
-import { createSignal, emitSignal } from '@flighthq/signals';
-import type { ParsedProtocolUrl, ProtocolBackend, ProtocolHandler } from '@flighthq/types';
+import { createSignal, emitSignal } from '@flighthq/signals/contract';
+import type { ParsedProtocolUrl, ProtocolBackend, ProtocolHandler } from '@flighthq/types/contract';
 
 // Begins delivering deep-link opens to `handler`'s signal by subscribing to the active backend. Wires
 // subscribe→onOpenUrl. Idempotent: a prior subscription is torn down first. Drains any URLs that

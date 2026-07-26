@@ -1,4 +1,4 @@
-import type { GlRenderEffectRunner, GlRenderState } from '@flighthq/types';
+import type { GlRenderEffectRunner, GlRenderState } from '@flighthq/types/contract';
 
 // Per-state registry mapping an effect `kind` string to its Gl runner — the material-renderer
 // pattern one tier up. Registration is opt-in (import a runner only to register it) and dispatch is a

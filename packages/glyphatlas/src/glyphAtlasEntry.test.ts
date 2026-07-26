@@ -1,5 +1,5 @@
-import { getSurfacePixel } from '@flighthq/surface';
-import type { GlyphEntry, GlyphRasterizedBitmap, GlyphRasterizerBackend } from '@flighthq/types';
+import { getSurfacePixel } from '@flighthq/surface/contract';
+import type { GlyphEntry, GlyphRasterizedBitmap, GlyphRasterizerBackend } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { createGlyphAtlas, getGlyphAtlasSurface } from './glyphAtlas';

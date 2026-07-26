@@ -1,4 +1,4 @@
-import type { RichTextData, TextLayoutResult } from '@flighthq/types';
+import type { RichTextData, TextLayoutResult } from '@flighthq/types/contract';
 
 import { computeTextBoundsHeight, computeTextBoundsWidth, TEXT_BOUNDS_GUTTER } from './textBounds';
 

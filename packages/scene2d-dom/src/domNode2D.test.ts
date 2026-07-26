@@ -1,7 +1,7 @@
-import { createRectangle } from '@flighthq/geometry';
-import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
+import { createRectangle } from '@flighthq/geometry/contract';
+import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender, registerRenderer } from '@flighthq/render/contract';
-import { createDisplayObject, setNode2DClip } from '@flighthq/scene2d';
+import { createDisplayObject, setNode2DClip } from '@flighthq/scene2d/contract';
 import type { ClipRegion, Rectangle } from '@flighthq/types/contract';
 import { DisplayObjectKind } from '@flighthq/types/contract';
 

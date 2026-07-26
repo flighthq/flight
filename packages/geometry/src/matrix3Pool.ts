@@ -1,4 +1,4 @@
-import type { Matrix3 } from '@flighthq/types';
+import type { Matrix3 } from '@flighthq/types/contract';
 
 import { createMatrix3, setMatrix3Identity } from './matrix3';
 

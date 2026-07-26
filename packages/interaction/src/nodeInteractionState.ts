@@ -1,5 +1,5 @@
-import { getNodeRuntime } from '@flighthq/node';
-import type { Cursor, HitArea, NodeAny, NodeInteractionState, NodeRuntime } from '@flighthq/types';
+import { getNodeRuntime } from '@flighthq/node/contract';
+import type { Cursor, HitArea, NodeAny, NodeInteractionState, NodeRuntime } from '@flighthq/types/contract';
 
 /**
  * Allocates a `NodeInteractionState` with all fields at their defaults: NOT a hit candidate (hit

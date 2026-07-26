@@ -1,4 +1,4 @@
-import type { PowerStatus, ElectronApi } from '@flighthq/types';
+import type { PowerStatus, ElectronApi } from '@flighthq/types/contract';
 
 import { createElectronPowerBackend } from './electronPower';
 

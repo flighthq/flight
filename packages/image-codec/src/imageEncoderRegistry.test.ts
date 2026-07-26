@@ -1,4 +1,4 @@
-import type { ImageEncoder } from '@flighthq/types';
+import type { ImageEncoder } from '@flighthq/types/contract';
 
 import {
   clearImageEncoders,

@@ -3,7 +3,7 @@ import type {
   CanvasRenderTarget,
   CanvasRenderTargetPool,
   FilmGrainEffect,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
 import { acquireCanvasRenderTarget, releaseCanvasRenderTarget } from './canvasRenderEffectPipeline';

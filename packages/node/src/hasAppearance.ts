@@ -1,4 +1,4 @@
-import type { HasAppearance } from '@flighthq/types';
+import type { HasAppearance } from '@flighthq/types/contract';
 
 export function initAppearanceTrait(target: HasAppearance, obj?: Readonly<Partial<HasAppearance>>): void {
   target.alpha = obj?.alpha ?? 1;

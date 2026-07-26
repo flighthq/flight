@@ -1,5 +1,5 @@
-import { createOrthographicProjection, createPerspectiveProjection } from '@flighthq/camera';
-import { createBoundingSphere } from '@flighthq/geometry';
+import { createOrthographicProjection, createPerspectiveProjection } from '@flighthq/camera/contract';
+import { createBoundingSphere } from '@flighthq/geometry/contract';
 import { describe, expect, it } from 'vitest';
 
 import {

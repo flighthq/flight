@@ -1,4 +1,4 @@
-import { createAabb, createBoundingSphere, createFrustum, createVector3 } from '@flighthq/geometry';
+import { createAabb, createBoundingSphere, createFrustum, createVector3 } from '@flighthq/geometry/contract';
 
 import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from './camera';
 import {

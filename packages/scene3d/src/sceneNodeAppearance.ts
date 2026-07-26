@@ -1,5 +1,5 @@
-import { getNodeAppearanceRevision, invalidateNodeAppearance } from '@flighthq/node';
-import type { Node3D } from '@flighthq/types';
+import { getNodeAppearanceRevision, invalidateNodeAppearance } from '@flighthq/node/contract';
+import type { Node3D } from '@flighthq/types/contract';
 
 import { getNode3DRuntime } from './sceneNode';
 

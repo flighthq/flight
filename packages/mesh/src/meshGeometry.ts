@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity';
-import { createAabb } from '@flighthq/geometry';
+import { createEntity } from '@flighthq/entity/contract';
+import { createAabb } from '@flighthq/geometry/contract';
 import type {
   MeshGeometry,
   MeshGeometryOptions,
@@ -8,8 +8,8 @@ import type {
   MeshSkinBindPose,
   MeshSubset,
   VertexAttributeLayout,
-} from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 // Deep-copies a MeshGeometry: fresh vertex/index typed arrays, a cloned bounds (or null), and a
 // fresh single subset list mirroring the source. The clone carries its own runtime, so GPU

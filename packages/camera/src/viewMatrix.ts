@@ -1,5 +1,5 @@
-import { setTransformMatrix, translateMatrixByVectorXY } from '@flighthq/geometry';
-import type { Camera2D, MatrixLike } from '@flighthq/types';
+import { setTransformMatrix, translateMatrixByVectorXY } from '@flighthq/geometry/contract';
+import type { Camera2D, MatrixLike } from '@flighthq/types/contract';
 
 // Writes the camera's world->screen affine into `out`.
 //

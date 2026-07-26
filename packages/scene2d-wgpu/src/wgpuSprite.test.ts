@@ -1,6 +1,6 @@
-import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
-import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
-import { createSprite } from '@flighthq/sprite';
+import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu/contract';
+import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
+import { createSprite } from '@flighthq/sprite/contract';
 
 import { renderWgpuSprite } from './wgpuSprite';
 

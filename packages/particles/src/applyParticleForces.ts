@@ -5,7 +5,7 @@ import type {
   ParticleForce,
   ParticleObject,
   ParticleObjectsState,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { PARTICLE_VELOCITY_STRIDE } from './particleEmitterState';
 

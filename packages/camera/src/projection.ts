@@ -1,12 +1,12 @@
-import { setOrthographicMatrix4, setPerspectiveMatrix4 } from '@flighthq/geometry';
-import type { Matrix4Like } from '@flighthq/types';
+import { setOrthographicMatrix4, setPerspectiveMatrix4 } from '@flighthq/geometry/contract';
+import type { Matrix4Like } from '@flighthq/types/contract';
 import type {
   OrthographicProjection,
   OrthographicProjectionOptions,
   PerspectiveProjection,
   PerspectiveProjectionOptions,
   Projection,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Builds an orthographic projection descriptor from explicit view-volume half-extents (in
 // view-space units). The full visible width is 2*halfWidth and height 2*halfHeight; the

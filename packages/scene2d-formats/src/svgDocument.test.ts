@@ -1,9 +1,9 @@
-import { createRectangle } from '@flighthq/geometry';
-import { createImageResource } from '@flighthq/image';
-import { getNodeChildAt, getNodeChildCount } from '@flighthq/node';
-import { getShapeBounds } from '@flighthq/shape';
-import type { Bitmap, ImportDiagnostic, RichText, Shape, TextLabel } from '@flighthq/types';
-import { BitmapKind, DisplayObjectKind, RichTextKind, ShapeKind, TextLabelKind } from '@flighthq/types';
+import { createRectangle } from '@flighthq/geometry/contract';
+import { createImageResource } from '@flighthq/image/contract';
+import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
+import { getShapeBounds } from '@flighthq/shape/contract';
+import type { Bitmap, ImportDiagnostic, RichText, Shape, TextLabel } from '@flighthq/types/contract';
+import { BitmapKind, DisplayObjectKind, RichTextKind, ShapeKind, TextLabelKind } from '@flighthq/types/contract';
 
 import { createScene2DFromSvgDocument } from './svgDocument';
 

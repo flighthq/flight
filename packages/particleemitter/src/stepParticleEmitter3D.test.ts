@@ -1,5 +1,5 @@
-import { createParticleEmitterConfig, createParticleEmitterState } from '@flighthq/particles';
-import type { ParticleForce, PlaneCollider } from '@flighthq/types';
+import { createParticleEmitterConfig, createParticleEmitterState } from '@flighthq/particles/contract';
+import type { ParticleForce, PlaneCollider } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createParticleEmitter3D } from './particleEmitter3D';

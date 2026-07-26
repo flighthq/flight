@@ -1,6 +1,6 @@
-import { matrixTransformPointXY, multiplyMatrix, setTransformMatrix } from '@flighthq/geometry';
-import { DEG_TO_RAD } from '@flighthq/math';
-import type { MatrixLike, RegionAttachment2D, Skeleton2D } from '@flighthq/types';
+import { matrixTransformPointXY, multiplyMatrix, setTransformMatrix } from '@flighthq/geometry/contract';
+import { DEG_TO_RAD } from '@flighthq/math/contract';
+import type { MatrixLike, RegionAttachment2D, Skeleton2D } from '@flighthq/types/contract';
 
 // 6 floats per bone in the flat world-transform buffer (a, b, c, d, tx, ty).
 const MATRIX_STRIDE = 6;

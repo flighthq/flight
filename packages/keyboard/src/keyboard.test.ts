@@ -1,17 +1,17 @@
-import { cancelSignal, connectSignal } from '@flighthq/signals';
+import { cancelSignal, connectSignal } from '@flighthq/signals/contract';
 import type {
   SoftKeyboardBackend,
   SoftKeyboardInfo,
   SoftKeyboardPhase,
   SoftKeyboardResizeMode,
   SoftKeyboardTransition,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 import {
   SoftKeyboardResizeBodyKind,
   SoftKeyboardResizeNoneKind,
   SoftKeyboardStyleDarkKind,
   SoftKeyboardStyleDefaultKind,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import {
   attachSoftKeyboard,

@@ -1,7 +1,7 @@
 ﻿import { registerRenderer } from '@flighthq/render/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
-import { defaultCanvasShapeCommands, registerCanvasShapeCommands } from '@flighthq/scene2d-canvas';
-import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape';
+import { defaultCanvasShapeCommands, registerCanvasShapeCommands } from '@flighthq/scene2d-canvas/contract';
+import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape/contract';
 import { ShapeKind } from '@flighthq/types/contract';
 
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';

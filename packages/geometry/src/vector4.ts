@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity';
-import type { Vector3Like, Vector4, Vector4Like } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import type { Vector3Like, Vector4, Vector4Like } from '@flighthq/types/contract';
 
 /**
  * Adds the x, y, z and w components of two vector objects

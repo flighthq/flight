@@ -1,5 +1,5 @@
-import { createTextureAtlas } from '@flighthq/textureatlas';
-import type { BitmapFontData } from '@flighthq/types';
+import { createTextureAtlas } from '@flighthq/textureatlas/contract';
+import type { BitmapFontData } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {

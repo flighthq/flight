@@ -1,4 +1,4 @@
-import { CandelaLightUnit, LumenLightUnit, LuxLightUnit, UnitlessLightUnit } from '@flighthq/types';
+import { CandelaLightUnit, LumenLightUnit, LuxLightUnit, UnitlessLightUnit } from '@flighthq/types/contract';
 
 import { applyLightExposure, convertLightIntensity, getLightLinearIntensity } from './lightIntensity';
 

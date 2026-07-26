@@ -1,18 +1,18 @@
-import { getNodeWorldMatrix, invalidateNodeLocalBounds } from '@flighthq/node';
+import { getNodeWorldMatrix, invalidateNodeLocalBounds } from '@flighthq/node/contract';
 import {
   PARTICLE_VELOCITY_STRIDE,
   ensureParticleEmitterStateCapacity,
   getParticleEmitterSignals,
   sampleParticleColorCurve,
   sampleParticleCurve,
-} from '@flighthq/particles';
+} from '@flighthq/particles/contract';
 import type {
   Node2D,
   ParticleEmitter2D,
   ParticleEmitterCallbacks,
   ParticleEmitterConfig,
   ParticleEmitterState,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { reserveParticleEmitter2D } from './particleEmitter';
 

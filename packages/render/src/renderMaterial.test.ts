@@ -1,4 +1,4 @@
-import { createMaterial } from '@flighthq/materials';
+import { createMaterial } from '@flighthq/materials/contract';
 import type { Renderable } from '@flighthq/types/contract';
 
 import { updateRenderProxyMaterial } from './renderMaterial';

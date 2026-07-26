@@ -1,8 +1,8 @@
-import { createImageResource } from '@flighthq/image';
-import type * as FlightNodeModule from '@flighthq/node';
-import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
+import { createImageResource } from '@flighthq/image/contract';
+import type * as FlightNodeModule from '@flighthq/node/contract';
+import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import type { RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat } from '@flighthq/types/contract';
 

@@ -1,4 +1,4 @@
-import { getGlRenderStateRuntime } from '@flighthq/render-gl';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { RendererData, RenderProxy2D, VideoTexture } from '@flighthq/types/contract';
 
 import { createGlState } from './glTestHelper';

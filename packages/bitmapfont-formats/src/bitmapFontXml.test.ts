@@ -3,8 +3,8 @@ import {
   getBitmapFontKerning,
   getBitmapFontMetrics,
   getBitmapFontPage,
-} from '@flighthq/bitmapfont';
-import { createTextureAtlas } from '@flighthq/textureatlas';
+} from '@flighthq/bitmapfont/contract';
+import { createTextureAtlas } from '@flighthq/textureatlas/contract';
 import { describe, expect, it } from 'vitest';
 
 import { parseBitmapFontXml } from './bitmapFontXml';

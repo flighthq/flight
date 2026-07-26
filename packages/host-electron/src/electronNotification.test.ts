@@ -1,4 +1,4 @@
-import type { ElectronApi, ElectronNotificationOptions } from '@flighthq/types';
+import type { ElectronApi, ElectronNotificationOptions } from '@flighthq/types/contract';
 
 import { createElectronNotificationBackend } from './electronNotification';
 

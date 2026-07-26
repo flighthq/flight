@@ -1,4 +1,4 @@
-import type { PathBooleanBackend } from '@flighthq/types';
+import type { PathBooleanBackend } from '@flighthq/types/contract';
 
 import { createMartinezPathBooleanBackend } from './martinezKernel';
 

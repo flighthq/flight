@@ -4,13 +4,13 @@ import {
   createAnimationClipEvent,
   createAnimationTrack,
   sampleAnimationTrack,
-} from '@flighthq/animation';
-import { createClipRegionFromPath } from '@flighthq/clip';
-import { packColor } from '@flighthq/color';
-import { easeCubicBezier } from '@flighthq/easing';
-import { createGradientTransformMatrix } from '@flighthq/geometry';
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
-import { addNodeChild } from '@flighthq/node';
+} from '@flighthq/animation/contract';
+import { createClipRegionFromPath } from '@flighthq/clip/contract';
+import { packColor } from '@flighthq/color/contract';
+import { easeCubicBezier } from '@flighthq/easing/contract';
+import { createGradientTransformMatrix } from '@flighthq/geometry/contract';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { addNodeChild } from '@flighthq/node/contract';
 import {
   appendPathCubicCurveTo,
   appendPathEllipse,
@@ -22,8 +22,8 @@ import {
   createPath,
   dashPath,
   getPathLength,
-} from '@flighthq/path';
-import { applyAnimationClipToNode2D, createBitmap, createDisplayObject } from '@flighthq/scene2d';
+} from '@flighthq/path/contract';
+import { applyAnimationClipToNode2D, createBitmap, createDisplayObject } from '@flighthq/scene2d/contract';
 import {
   appendShapeBeginFill,
   appendShapeBeginGradientFill,
@@ -33,8 +33,8 @@ import {
   appendShapePath,
   clearShapeCommands,
   createShape,
-} from '@flighthq/shape';
-import { createTextLabel } from '@flighthq/text';
+} from '@flighthq/shape/contract';
+import { createTextLabel } from '@flighthq/text/contract';
 import type {
   AnimationChannel,
   AnimationClip,
@@ -71,8 +71,8 @@ import type {
   LottieTransform,
   Path,
   Shape,
-} from '@flighthq/types';
-import { BlendMode, ImportDiagnosticSeverity } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 // Applies both the shared Node2DAnimationTarget channels and the format-owned mutable-content
 // targets used by animated shape/paint/mask records.

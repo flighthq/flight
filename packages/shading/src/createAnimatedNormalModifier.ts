@@ -1,5 +1,5 @@
-import type { AnimatedNormalModifier, AnimatedNormalModifierOptions } from '@flighthq/types';
-import { AnimatedNormalModifierKind, ModifierSlot } from '@flighthq/types';
+import type { AnimatedNormalModifier, AnimatedNormalModifierOptions } from '@flighthq/types/contract';
+import { AnimatedNormalModifierKind, ModifierSlot } from '@flighthq/types/contract';
 
 // The options for `createAnimatedNormalModifier`. `map` (nullable) and `scroll` are required; the
 // optional second layer and `strength` carry documented defaults. `map` presence and `secondaryMap`

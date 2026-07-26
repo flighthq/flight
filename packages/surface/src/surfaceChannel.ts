@@ -1,6 +1,6 @@
-import { createEntity } from '@flighthq/entity';
-import { invalidateImageResource } from '@flighthq/image';
-import type { Surface, SurfaceRegion } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import { invalidateImageResource } from '@flighthq/image/contract';
+import type { Surface, SurfaceRegion } from '@flighthq/types/contract';
 
 /**
  * Merges four single-channel surfaces (or any full-RGBA surfaces) into `out`

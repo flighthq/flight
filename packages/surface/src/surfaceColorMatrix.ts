@@ -1,4 +1,4 @@
-import type { SurfaceRegion } from '@flighthq/types';
+import type { SurfaceRegion } from '@flighthq/types/contract';
 
 // 4×5 color matrices are row-major: 4 rows (R, G, B, A output), each with 5
 // columns (R, G, B, A multipliers + a constant offset in 0..255 units).

@@ -1,4 +1,4 @@
-import { EntityRuntimeKey, ShadedMaterialKind } from '@flighthq/types';
+import { EntityRuntimeKey, ShadedMaterialKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createEmissiveModifier } from './createEmissiveModifier';

@@ -1,5 +1,5 @@
-import type { ImageResource } from '@flighthq/types';
-import { CubeFaceNegativeX, CubeFacePositiveX, CubeFacePositiveY } from '@flighthq/types';
+import type { ImageResource } from '@flighthq/types/contract';
+import { CubeFaceNegativeX, CubeFacePositiveX, CubeFacePositiveY } from '@flighthq/types/contract';
 
 import {
   cloneCubeTexture,

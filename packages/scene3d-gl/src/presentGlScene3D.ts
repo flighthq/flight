@@ -1,4 +1,4 @@
-import { beginGlRenderPass, endGlRenderPass, presentGlRenderTarget } from '@flighthq/render-gl';
+import { beginGlRenderPass, endGlRenderPass, presentGlRenderTarget } from '@flighthq/render-gl/contract';
 import type { Camera3D, GlRenderState, GlRenderTarget, Scene3DLightsLike, Node3D } from '@flighthq/types/contract';
 
 import { drawGlScene3D } from './drawGlScene3D';

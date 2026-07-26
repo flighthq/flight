@@ -1,4 +1,4 @@
-import type { ColorTransformFunction, LookupTableGradeAdjustment } from '@flighthq/types';
+import type { ColorTransformFunction, LookupTableGradeAdjustment } from '@flighthq/types/contract';
 
 import { sampleColorLut } from './colorLut';
 

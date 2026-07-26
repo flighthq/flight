@@ -1,8 +1,13 @@
-import { createEntity } from '@flighthq/entity';
-import { cancelResourceLoad, createResourceLoader, disposeResourceLoader, startResourceLoad } from '@flighthq/loader';
-import type { Scene3DResourceResolver, Scene3DResourceResolverOptions } from '@flighthq/types';
-import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types';
-import type { Scene3DResourceResolverWithRuntime } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import {
+  cancelResourceLoad,
+  createResourceLoader,
+  disposeResourceLoader,
+  startResourceLoad,
+} from '@flighthq/loader/contract';
+import type { Scene3DResourceResolver, Scene3DResourceResolverOptions } from '@flighthq/types/contract';
+import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
+import type { Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
 
 import { fetchWebImageResource } from './imageResourceFetch';
 import {

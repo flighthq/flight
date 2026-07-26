@@ -1,5 +1,5 @@
-import { createAabb } from '@flighthq/geometry';
-import type { MeshGeometry, MeshMorphBindPose, MeshSkinBindPose } from '@flighthq/types';
+import { createAabb } from '@flighthq/geometry/contract';
+import type { MeshGeometry, MeshMorphBindPose, MeshSkinBindPose } from '@flighthq/types/contract';
 
 import { cloneMeshGeometry, getMeshGeometryMorphBindPose, getMeshGeometrySkinBindPose } from './meshGeometry';
 import { getVertexAttributeFloatOffset } from './meshGeometryAttributes';

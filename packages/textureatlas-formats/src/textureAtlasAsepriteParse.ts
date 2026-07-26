@@ -1,10 +1,10 @@
-import { createTextureAtlasRegion } from '@flighthq/textureatlas';
+import { createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
 import type {
   TextureAtlas,
   TextureAtlasAsepriteArrayFrame,
   TextureAtlasAsepriteBaseFrame,
   TextureAtlasAsepriteDocument,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Convenience variant that accepts an already-parsed Aseprite document object.
 export function parseTextureAtlasAsepriteDocument(

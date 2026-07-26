@@ -1,4 +1,4 @@
-import type { ColorLutAdjustment, ColorTransformFunction } from '@flighthq/types';
+import type { ColorLutAdjustment, ColorTransformFunction } from '@flighthq/types/contract';
 
 import { getAdjustmentColorMatrix } from './colorMatrixAdjustment';
 

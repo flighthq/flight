@@ -1,6 +1,11 @@
-import { createMatrix, createRectangle } from '@flighthq/geometry';
-import { addNodeChild, getNodeRuntime, invalidateNodeLocalBounds, invalidateNodeLocalTransform } from '@flighthq/node';
-import { createBitmap, createDisplayObject } from '@flighthq/scene2d';
+import { createMatrix, createRectangle } from '@flighthq/geometry/contract';
+import {
+  addNodeChild,
+  getNodeRuntime,
+  invalidateNodeLocalBounds,
+  invalidateNodeLocalTransform,
+} from '@flighthq/node/contract';
+import { createBitmap, createDisplayObject } from '@flighthq/scene2d/contract';
 import type { HasBoundsRectangleRuntime, RenderProxy2D, RenderViewport2D } from '@flighthq/types/contract';
 
 import { createRenderProxy2D, prepareScene2DRender } from './renderProxy';

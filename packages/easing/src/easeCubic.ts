@@ -1,4 +1,4 @@
-import type { EasingFunction } from '@flighthq/types';
+import type { EasingFunction } from '@flighthq/types/contract';
 
 export const easeInCubic: EasingFunction = (t) => t * t * t;
 

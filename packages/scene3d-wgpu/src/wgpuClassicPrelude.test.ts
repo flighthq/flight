@@ -1,4 +1,4 @@
-import { createTexture } from '@flighthq/texture';
+import { createTexture } from '@flighthq/texture/contract';
 import type {
   ImageResource,
   WgpuClassicDefineKey,

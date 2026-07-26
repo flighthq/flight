@@ -1,5 +1,5 @@
-import { getTextShaperBackend, setTextShaperBackend } from '@flighthq/textshaper';
-import type { CanvasTextShaperBackend } from '@flighthq/types';
+import { getTextShaperBackend, setTextShaperBackend } from '@flighthq/textshaper/contract';
+import type { CanvasTextShaperBackend } from '@flighthq/types/contract';
 
 import { clearCanvasTextShaperBackendCache, createCanvasTextShaperBackend } from './canvasTextShaper';
 

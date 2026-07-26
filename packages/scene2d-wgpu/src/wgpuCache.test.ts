@@ -1,7 +1,7 @@
-import { createMatrix } from '@flighthq/geometry';
-import type * as WgpuRenderWgpuModule from '@flighthq/render-wgpu';
+import { createMatrix } from '@flighthq/geometry/contract';
+import type * as WgpuRenderWgpuModule from '@flighthq/render-wgpu/contract';
 import { createRenderCache, createRenderState, RenderCacheKind, useRenderCache } from '@flighthq/render/contract';
-import { createDisplayObject } from '@flighthq/scene2d';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
@@ -93,7 +93,7 @@ beforeAll(async () => {
     drawWgpuRenderTargetResult,
     getWgpuRenderStateRuntime,
     submitWgpuRenderPass,
-  } = await import('@flighthq/render-wgpu'));
+  } = await import('@flighthq/render-wgpu/contract'));
   ({ flushWgpuSpriteBatch } = await import('./wgpuSpriteBatch'));
   ({ renderWgpuScene2D } = await import('./wgpuNode2D'));
   ({

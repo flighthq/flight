@@ -1,5 +1,5 @@
-import { logOnce } from '@flighthq/log';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
+import { logOnce } from '@flighthq/log/contract';
+import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { WgpuRenderState } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 

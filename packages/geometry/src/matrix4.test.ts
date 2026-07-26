@@ -53,7 +53,7 @@ import {
   transposeMatrix4,
   writeMatrix4ToFloat32Array,
 } from '@flighthq/geometry';
-import type { Matrix, Matrix4 } from '@flighthq/types';
+import type { Matrix, Matrix4 } from '@flighthq/types/contract';
 
 const X_AXIS = { x: 1, y: 0, z: 0, w: 0 };
 const Y_AXIS = { x: 0, y: 1, z: 0, w: 0 };

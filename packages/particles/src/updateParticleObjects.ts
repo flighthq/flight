@@ -3,7 +3,7 @@ import type {
   ParticleObject,
   ParticleObjectsState,
   ParticleObjectsUpdateOptions,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { sampleParticleCurve } from './curve';
 import { ensureParticleObjectsStateCapacity } from './particleObjectsState';

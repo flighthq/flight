@@ -1,6 +1,6 @@
-import { invalidateImageResource } from '@flighthq/image';
-import type { SurfaceRegion } from '@flighthq/types';
-import { SurfaceCompositeMode } from '@flighthq/types';
+import { invalidateImageResource } from '@flighthq/image/contract';
+import type { SurfaceRegion } from '@flighthq/types/contract';
+import { SurfaceCompositeMode } from '@flighthq/types/contract';
 
 /**
  * Alpha-composites `pixels` over `dest`. `pixels` must be at least

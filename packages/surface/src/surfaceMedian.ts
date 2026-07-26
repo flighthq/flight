@@ -1,4 +1,4 @@
-import type { SurfaceRegion } from '@flighthq/types';
+import type { SurfaceRegion } from '@flighthq/types/contract';
 
 /**
  * Applies a median filter to `source`, writing into `out`. Each output channel

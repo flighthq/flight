@@ -1,6 +1,6 @@
-import { createRandomSource } from '@flighthq/math';
-import { createParticleEmitterConfig, createParticleEmitterState } from '@flighthq/particles';
-import type { TextureAtlas } from '@flighthq/types';
+import { createRandomSource } from '@flighthq/math/contract';
+import { createParticleEmitterConfig, createParticleEmitterState } from '@flighthq/particles/contract';
+import type { TextureAtlas } from '@flighthq/types/contract';
 
 import { emitParticleBurst2D } from './emitParticleBurst2D';
 import { createParticleEmitter2D } from './particleEmitter';

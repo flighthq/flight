@@ -1,4 +1,4 @@
-import { StandardPbrMaterialKind } from '@flighthq/types';
+import { StandardPbrMaterialKind } from '@flighthq/types/contract';
 
 import { createPhongMaterial } from './classicMaterials';
 import {

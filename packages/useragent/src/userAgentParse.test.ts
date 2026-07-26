@@ -6,7 +6,7 @@ import {
   DeviceFormFactorTV,
   DeviceFormFactorUnknown,
   DeviceFormFactorWatch,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { parseUserAgentFormFactor, parseUserAgentOsName, parseUserAgentOsVersion } from './userAgentParse';
 

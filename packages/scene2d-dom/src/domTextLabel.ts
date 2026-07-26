@@ -1,8 +1,8 @@
-import { computeRgbHexString } from '@flighthq/color';
-import { createEntity } from '@flighthq/entity';
-import { computeTextFormatFontString } from '@flighthq/text';
-import { getTextLabelRuntime } from '@flighthq/text';
-import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout';
+import { computeRgbHexString } from '@flighthq/color/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import { computeTextFormatFontString } from '@flighthq/text/contract';
+import { getTextLabelRuntime } from '@flighthq/text/contract';
+import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout/contract';
 import type {
   Scene2DRenderer,
   DomRenderState,

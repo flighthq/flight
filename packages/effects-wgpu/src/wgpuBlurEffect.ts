@@ -1,5 +1,5 @@
-import { acquireWgpuRenderTarget, releaseWgpuRenderTarget } from '@flighthq/render-wgpu';
-import type { BlurEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
+import { acquireWgpuRenderTarget, releaseWgpuRenderTarget } from '@flighthq/render-wgpu/contract';
+import type { BlurEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';

@@ -1,4 +1,4 @@
-import type { EasingFunction } from '@flighthq/types';
+import type { EasingFunction } from '@flighthq/types/contract';
 
 export const easeInExponential: EasingFunction = (t) => (t === 0 ? 0 : Math.pow(2, 10 * t - 10));
 

@@ -1,4 +1,4 @@
-import type { TextLayoutResult, TextSelectionRectangle } from '@flighthq/types';
+import type { TextLayoutResult, TextSelectionRectangle } from '@flighthq/types/contract';
 
 import {
   computeRichTextCharIndexAtPoint,

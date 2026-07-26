@@ -1,4 +1,4 @@
-import type { EasingFunction } from '@flighthq/types';
+import type { EasingFunction } from '@flighthq/types/contract';
 
 // Samples `ease` at `count` uniformly-spaced values of t in [0,1] and writes
 // the results into `out`. When `out` is omitted, a new Float32Array of length

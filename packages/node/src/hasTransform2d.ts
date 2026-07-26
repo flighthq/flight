@@ -1,4 +1,4 @@
-import type { HasTransform2D, HasTransform2DRuntime, MethodsOf } from '@flighthq/types';
+import type { HasTransform2D, HasTransform2DRuntime, MethodsOf } from '@flighthq/types/contract';
 
 export function initTransform2DRuntimeTrait(
   target: HasTransform2DRuntime,

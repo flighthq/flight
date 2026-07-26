@@ -1,11 +1,11 @@
-import { createSignal, emitSignal } from '@flighthq/signals';
+import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   AppLaunchKind,
   AppLifecycle,
   AppLifecycleState,
   AppMemoryPressure,
   LifecycleBackend,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Begins delivering lifecycle changes to `app`'s signals by subscribing to the active backend. On
 // each change it reads the current state and emits onStateChange plus onResume when transitioning

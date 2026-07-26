@@ -1,5 +1,5 @@
-import { EntityRuntimeKey } from '@flighthq/types';
-import type { AnimationBlendTree, AnimationChannel, AnimationPlayer } from '@flighthq/types';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
+import type { AnimationBlendTree, AnimationChannel, AnimationPlayer } from '@flighthq/types/contract';
 
 import { createAnimationBlendTree, createAnimationBlendTreeInput } from './animationBlendTree';
 import { createAnimationChannel, createAnimationClip } from './animationClip';

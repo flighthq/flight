@@ -1,6 +1,6 @@
-﻿import { computeRgbHexString } from '@flighthq/color';
+﻿import { computeRgbHexString } from '@flighthq/color/contract';
 import { noopRendererData } from '@flighthq/render/contract';
-import { computeTextFormatFontString, getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text';
+import { computeTextFormatFontString, getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text/contract';
 import {
   computeRichTextContent,
   computeTextBoundsHeight,
@@ -10,7 +10,7 @@ import {
   getRichTextScrollYOffset,
   getRichTextSelectionRectangles,
   getTextLayoutResult,
-} from '@flighthq/textlayout';
+} from '@flighthq/textlayout/contract';
 import type { TextSelectionRectangle } from '@flighthq/types/contract';
 import type {
   CanvasRenderState,

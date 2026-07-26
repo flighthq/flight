@@ -1,5 +1,5 @@
-import { TAU } from '@flighthq/math';
-import type { SpringConfig } from '@flighthq/types';
+import { TAU } from '@flighthq/math/contract';
+import type { SpringConfig } from '@flighthq/types/contract';
 
 // Allocate a `SpringConfig` from the designer-intuitive `frequency` (Hz) and `dampingRatio`
 // (0 undamped, <1 underdamped/overshoots, 1 critical/fastest-no-overshoot, >1 overdamped). This is

@@ -1,4 +1,4 @@
-import type { EasingFunction } from '@flighthq/types';
+import type { EasingFunction } from '@flighthq/types/contract';
 
 // Easing combinators: each function takes one or more EasingFunctions and
 // returns a new EasingFunction. These allocate a closure — treat them as

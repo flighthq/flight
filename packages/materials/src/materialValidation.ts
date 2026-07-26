@@ -1,4 +1,4 @@
-import type { StandardPbrMaterialProperties } from '@flighthq/types';
+import type { StandardPbrMaterialProperties } from '@flighthq/types/contract';
 
 // Clamps all metallic-roughness scalar fields of a StandardPbrMaterialProperties block to
 // their physically-valid ranges in place. Writes directly to `out`:

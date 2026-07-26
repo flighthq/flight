@@ -1,5 +1,5 @@
-import type { ToonModifier, ToonModifierOptions } from '@flighthq/types';
-import { ModifierSlot, ToonModifierKind } from '@flighthq/types';
+import type { ToonModifier, ToonModifierOptions } from '@flighthq/types/contract';
+import { ModifierSlot, ToonModifierKind } from '@flighthq/types/contract';
 
 // The options for `createToonModifier`. Only `steps` is required; `smoothness` carries a documented
 // default. Both are uniform-fed scalars — they do not change the emitted program, so a toon modifier

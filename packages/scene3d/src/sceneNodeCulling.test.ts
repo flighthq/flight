@@ -1,7 +1,7 @@
-import { createFrustum, createMatrix4, setVector3 } from '@flighthq/geometry';
-import { createMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
-import { Node3DKind } from '@flighthq/types';
+import { createFrustum, createMatrix4, setVector3 } from '@flighthq/geometry/contract';
+import { createMeshGeometry } from '@flighthq/mesh/contract';
+import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
+import { Node3DKind } from '@flighthq/types/contract';
 
 import { createMesh } from './mesh';
 import { createNode3D } from './sceneNode';

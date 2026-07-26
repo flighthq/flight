@@ -1,5 +1,5 @@
-import type { MenuItemTemplate } from '@flighthq/types';
-import { WellKnownMenuItemRole } from '@flighthq/types';
+import type { MenuItemTemplate } from '@flighthq/types/contract';
+import { WellKnownMenuItemRole } from '@flighthq/types/contract';
 
 // Returns a standard macOS-style application menu (the first menu, labeled with the app name).
 // On Windows/Linux this menu is typically omitted; native backends handle that automatically when

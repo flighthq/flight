@@ -1,5 +1,5 @@
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
-import { createParticleEmitterConfig } from '@flighthq/particles';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { createParticleEmitterConfig } from '@flighthq/particles/contract';
 import type {
   ImportDiagnostic,
   LibgdxParseOptions,
@@ -7,8 +7,8 @@ import type {
   ParticleEmitterConfig,
   LibgdxParticleDocument,
   LibgdxRangeValue,
-} from '@flighthq/types';
-import { ImportDiagnosticSeverity } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 /** @deprecated Use `LibgdxParseResult`. */
 /** Parse a libGDX 2D Particle Editor `.p` file string directly to a ParticleEmitterConfig.

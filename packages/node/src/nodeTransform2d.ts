@@ -1,4 +1,4 @@
-import { getEntityRuntime } from '@flighthq/entity';
+import { getEntityRuntime } from '@flighthq/entity/contract';
 import {
   copyMatrix,
   createMatrix,
@@ -6,7 +6,7 @@ import {
   inverseMatrixTransformPointXY,
   matrixTransformPointXY,
   multiplyMatrix,
-} from '@flighthq/geometry';
+} from '@flighthq/geometry/contract';
 import { computeNodeWorldTransformRevision } from '@flighthq/node';
 import type {
   HasTransform2DRuntime,
@@ -16,7 +16,7 @@ import type {
   Transform2DLike,
   Transform2DNode,
   Vector2Like,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { invalidateNodeLocalTransform } from './revision';
 

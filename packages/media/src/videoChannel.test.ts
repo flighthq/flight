@@ -1,4 +1,4 @@
-import { createVideoResource } from '@flighthq/video';
+import { createVideoResource } from '@flighthq/video/contract';
 
 import {
   getVideoChannelCurrentTime,

@@ -3,10 +3,10 @@ import {
   isFrustumIntersectingAabb,
   setFrustumFromMatrix4,
   transformAabbByMatrix4,
-} from '@flighthq/geometry';
-import { computeMeshGeometryBounds } from '@flighthq/mesh';
-import { ensureNodeWorldMatrix4, getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node';
-import type { FrustumLike, Matrix4Like, Node3D } from '@flighthq/types';
+} from '@flighthq/geometry/contract';
+import { computeMeshGeometryBounds } from '@flighthq/mesh/contract';
+import { ensureNodeWorldMatrix4, getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node/contract';
+import type { FrustumLike, Matrix4Like, Node3D } from '@flighthq/types/contract';
 
 import { isMesh } from './mesh';
 

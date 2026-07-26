@@ -5,7 +5,7 @@ import type {
   ParticleObject,
   ParticleObjectsState,
   ParticleObjectsUpdateOptions,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { applyParticleObjectCollisions } from './applyParticleCollisions';
 import { applyParticleObjectForces } from './applyParticleForces';
