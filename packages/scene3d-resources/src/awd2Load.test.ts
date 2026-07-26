@@ -33,8 +33,8 @@ beforeAll(async () => {
   vi.resetModules();
   parseAwd2 = vi.fn<typeof Scene3DFormatsModule.parseAwd2>();
   sendNetRequest = vi.fn<typeof NetModule.sendNetRequest>();
-  vi.doMock('@flighthq/net', () => ({ sendNetRequest }));
-  vi.doMock('@flighthq/scene3d-formats', () => ({ parseAwd2 }));
+  vi.doMock('@flighthq/net/contract', () => ({ sendNetRequest }));
+  vi.doMock('@flighthq/scene3d-formats/contract', () => ({ parseAwd2 }));
   ({ loadScene3DDocumentFromAwd2Url } = await import('./awd2Load'));
 });
 

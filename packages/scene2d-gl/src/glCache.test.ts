@@ -43,7 +43,7 @@ beforeAll(async () => {
     const actual = await importOriginal<typeof GlSpriteBatchModule>();
     return { ...actual, flushGlSpriteBatch: vi.fn() };
   });
-  vi.doMock('@flighthq/render-gl', async (importOriginal) => {
+  vi.doMock('@flighthq/render-gl/contract', async (importOriginal) => {
     const actual = await importOriginal<typeof GlRenderGlModule>();
     return {
       ...actual,

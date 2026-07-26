@@ -21,7 +21,7 @@ let drawWgpuShape: typeof WgpuShapeModule.drawWgpuShape;
 scopeModuleMocks(['@flighthq/node']);
 
 beforeAll(async () => {
-  vi.doMock('@flighthq/node', async (importOriginal) => ({
+  vi.doMock('@flighthq/node/contract', async (importOriginal) => ({
     ...(await importOriginal<typeof FlightNodeModule>()),
     getNodeLocalBoundsRectangle: () => ({ x: 0, y: 0, width: 64, height: 48 }),
     getNodeLocalContentRevision: (source: any) => source?.data?.version ?? 0,
