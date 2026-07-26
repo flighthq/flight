@@ -618,6 +618,7 @@ export * from './TimelineLabel';
 export * from './TimelinePlayMode';
 export * from './TimelineSignals';
 export * from './TimelineSource';
+export * from './TintAdjustment';
 export * from './ToneMapEffect';
 export * from './ToonMaterial';
 export * from './ToonModifier';
