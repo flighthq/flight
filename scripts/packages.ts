@@ -524,13 +524,6 @@ for (const pkgDir of packageDirs) {
     );
     for (const subpath of Object.keys(pkg.exports).filter((key) => key.startsWith('.'))) {
       if (subpath === '.' || subpath === './contract' || name === '@flighthq/sdk') continue;
-      if (name === '@flighthq/surface' && subpath === './surfaceFingerprint') {
-        warnings.push({
-          label: `${subpath} is a legacy package export`,
-          detail: 'retire it into the public/contract lanes during the Stage-2 sweep',
-        });
-        continue;
-      }
       check(errors, `${subpath} is a blessed package export`, false, 'only "." and "./contract" are allowed');
     }
   }
@@ -547,12 +540,14 @@ for (const pkgDir of packageDirs) {
     for (const [dependency, files] of [...contractLaneViolations].sort(([a], [b]) => a.localeCompare(b))) {
       const shown = files.slice(0, 5);
       const remainder = files.length - shown.length;
-      warnings.push({
-        label: `${dependency} imports must use ${dependency}/contract`,
-        detail: `${files.length} file${files.length === 1 ? '' : 's'}: ${shown.join(', ')}${
+      check(
+        errors,
+        `${dependency} imports must use ${dependency}/contract`,
+        false,
+        `${files.length} file${files.length === 1 ? '' : 's'}: ${shown.join(', ')}${
           remainder === 0 ? '' : `, +${remainder} more`
         }`,
-      });
+      );
     }
   }
 

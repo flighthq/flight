@@ -17,10 +17,6 @@
     "./contract": {
       "types": "./dist/contract.d.ts",
       "default": "./dist/contract.js"
-    },
-    "./surfaceFingerprint": {
-      "types": "./dist/surfaceFingerprint.d.ts",
-      "default": "./dist/surfaceFingerprint.js"
     }
   },
   "files": [
