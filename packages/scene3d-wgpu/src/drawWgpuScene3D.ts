@@ -1,7 +1,7 @@
 import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flighthq/geometry';
 import { getNodeWorldMatrix4 } from '@flighthq/node';
-import { prepareScene3DRender } from '@flighthq/render';
 import { declareWgpuRenderTargetColorSpace, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
+import { prepareScene3DRender } from '@flighthq/render/contract';
 import { getNode3DRuntime, getNode3DWorldAlpha } from '@flighthq/scene3d';
 import type {
   Camera3D,
@@ -20,9 +20,9 @@ import type {
   WgpuRenderState,
   WgpuScene3DDrawEntry,
   WgpuScene3DForwardLightList,
-} from '@flighthq/types';
-import { StandardMaterialKind, MAX_FORWARD_LIGHTS } from '@flighthq/types';
-import type { WgpuSkinningAdapter } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { StandardMaterialKind, MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
+import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
 import { resolveWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { drawWgpuScene3DParticleEmitter3Ds } from './wgpuParticleEmitter3D';

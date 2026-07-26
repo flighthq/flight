@@ -12,7 +12,7 @@ import type {
   Node3DTraits,
   Scene3DRenderProxy,
   WgpuRenderState,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { ensureWgpuScene3DLayouts, SHADOW_DEPTH_FORMAT, writeWgpuDrawUniform } from './wgpuMeshPipeline';
 import { ensureWgpuMeshUpload } from './wgpuMeshUpload';

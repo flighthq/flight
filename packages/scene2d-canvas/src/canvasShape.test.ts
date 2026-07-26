@@ -1,6 +1,6 @@
 ﻿import { createMatrix } from '@flighthq/geometry';
-import { registerRenderer } from '@flighthq/render';
-import { getOrCreateRenderProxy2D } from '@flighthq/render';
+import { registerRenderer } from '@flighthq/render/contract';
+import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import {
   appendShapeBeginBitmapFill,
   appendShapeBeginFill,
@@ -11,7 +11,7 @@ import {
   appendShapeRectangle,
   createShape,
 } from '@flighthq/shape';
-import { ShapeKind } from '@flighthq/types';
+import { ShapeKind } from '@flighthq/types/contract';
 
 import { createCanvasRenderState } from './canvasRenderState';
 import { defaultCanvasShapeRenderer, drawCanvasShape, renderCanvasShapeCommands } from './canvasShape';

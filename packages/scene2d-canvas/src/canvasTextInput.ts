@@ -8,7 +8,7 @@ import {
   getTextInputState,
 } from '@flighthq/textinput';
 import { computeTextBoundsHeight, computeTextBoundsWidth, getRichTextScrollYOffset } from '@flighthq/textlayout';
-import type { CanvasRenderState, RenderProxy2D, RichText, TextSelectionRectangle } from '@flighthq/types';
+import type { CanvasRenderState, RenderProxy2D, RichText, TextSelectionRectangle } from '@flighthq/types/contract';
 
 import { registerCanvasTextInputOverlay } from './canvasRichText';
 import { setCanvasTransform } from './canvasTransform';

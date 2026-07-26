@@ -13,7 +13,7 @@ import type {
   TextFormat,
   TextLabel,
   TextLabelRuntime,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle';
 import { escapeDomHtmlString } from './domTextHelpers';

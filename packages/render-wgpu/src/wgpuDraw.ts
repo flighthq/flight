@@ -10,8 +10,8 @@ import type {
   WgpuRenderStateRuntime,
   WgpuTextureEntry,
   WgpuVideoTextureEntry,
-} from '@flighthq/types';
-import { BlendMode } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { BlendMode } from '@flighthq/types/contract';
 
 import { generateWgpuMipmaps, getWgpuMipLevelCount } from './wgpuMipmap';
 import { getWgpuRenderStateRuntime, getWgpuSampler } from './wgpuRenderState';

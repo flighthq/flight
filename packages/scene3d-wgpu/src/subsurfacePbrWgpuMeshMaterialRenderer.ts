@@ -10,8 +10,8 @@ import type {
   SubsurfacePbrMaterial,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
-} from '@flighthq/types';
-import { SubsurfacePbrMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { SubsurfacePbrMaterialKind } from '@flighthq/types/contract';
 
 import {
   buildWgpuPbrStandardDefineKey,

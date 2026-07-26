@@ -11,7 +11,7 @@ import type {
   ImageResource,
   Material,
   MaterialData,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Base per-instance layout (13 floats = 52 bytes, world-space transforms + per-instance alpha):
 // [0-1]  a, b         — world-space 2D matrix column 1

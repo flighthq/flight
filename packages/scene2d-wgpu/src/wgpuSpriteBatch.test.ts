@@ -2,8 +2,8 @@ import { createImageResource } from '@flighthq/image';
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
-import type { ColorScaleBias, Material } from '@flighthq/types';
-import { BlendMode } from '@flighthq/types';
+import type { ColorScaleBias, Material } from '@flighthq/types/contract';
+import { BlendMode } from '@flighthq/types/contract';
 
 import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature';
 import {

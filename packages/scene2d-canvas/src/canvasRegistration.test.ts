@@ -10,7 +10,7 @@ import {
   TextLabelKind,
   TilemapKind,
   VideoKind,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { canvasScene2DRendererEntries, registerCanvasScene2DRenderers } from './canvasRegistration';
 import { createCanvasRenderState, getCanvasRenderStateRuntime } from './canvasRenderState';

@@ -1,4 +1,4 @@
-import type { GlSkinPaletteTexture } from '@flighthq/types';
+import type { GlSkinPaletteTexture } from '@flighthq/types/contract';
 
 import {
   createGlSkinPaletteTexture,

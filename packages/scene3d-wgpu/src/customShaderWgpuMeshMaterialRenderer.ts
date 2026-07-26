@@ -10,8 +10,8 @@ import type {
   WgpuMeshMaterialRenderer,
   WgpuMeshPipeline,
   WgpuRenderState,
-} from '@flighthq/types';
-import { CustomShaderMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { CustomShaderMaterialKind } from '@flighthq/types/contract';
 
 import { WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY, WGPU_CUSTOM_SHADER_USER_VEC4_CAPACITY } from './wgpuCustomMaterialAbi';
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';

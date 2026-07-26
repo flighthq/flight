@@ -3,8 +3,8 @@ import { renderWgpuBackground } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { createQuadBatch, getQuadBatchRuntime } from '@flighthq/sprite';
-import type { QuadBatchRuntime, TextureAtlas, TextureAtlasRegion } from '@flighthq/types';
-import { QuadBatchKind } from '@flighthq/types';
+import type { QuadBatchRuntime, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
+import { QuadBatchKind } from '@flighthq/types/contract';
 import { beginVelocityFrame, contributeVelocity, createVelocityField } from '@flighthq/velocity';
 import { beforeAll, describe, expect, it } from 'vitest';
 

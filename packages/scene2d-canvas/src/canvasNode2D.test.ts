@@ -1,7 +1,7 @@
 ﻿import { addNodeChild } from '@flighthq/node';
-import { getOrCreateRenderProxy2D, prepareScene2DRender, registerRenderer } from '@flighthq/render';
+import { getOrCreateRenderProxy2D, prepareScene2DRender, registerRenderer } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d';
-import { DisplayObjectKind } from '@flighthq/types';
+import { DisplayObjectKind } from '@flighthq/types/contract';
 
 import { enableCanvasCssFilter, setCanvasCssFilter } from './canvasCSSFilterBinding';
 import { defaultCanvasScene2DRenderer, drawCanvasScene2D, renderCanvasScene2D } from './canvasNode2D';

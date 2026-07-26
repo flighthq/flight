@@ -1,5 +1,5 @@
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { Matrix, PathWinding, WgpuClipContourPipelines, WgpuRenderState } from '@flighthq/types';
+import type { Matrix, PathWinding, WgpuClipContourPipelines, WgpuRenderState } from '@flighthq/types/contract';
 
 import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
 

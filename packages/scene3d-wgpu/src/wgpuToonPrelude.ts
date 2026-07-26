@@ -1,6 +1,11 @@
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { WgpuToonDefineKey, WgpuToonPipeline, WgpuRenderState, WgpuMaterialBinding } from '@flighthq/types';
-import type { WgpuSkinningAdapter } from '@flighthq/types';
+import type {
+  WgpuToonDefineKey,
+  WgpuToonPipeline,
+  WgpuRenderState,
+  WgpuMaterialBinding,
+} from '@flighthq/types/contract';
+import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
 import {
   createWgpuMeshPipeline,

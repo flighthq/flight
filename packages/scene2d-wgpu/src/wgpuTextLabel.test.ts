@@ -3,8 +3,8 @@ import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgp
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
 import { createTextLabel } from '@flighthq/text';
-import type { RenderProxy2D } from '@flighthq/types';
-import { BatchFormat } from '@flighthq/types';
+import type { RenderProxy2D } from '@flighthq/types/contract';
+import { BatchFormat } from '@flighthq/types/contract';
 
 import { scopeModuleMocks } from './moduleMockTestHelper';
 import { registerStandardWgpuMaterial } from './wgpuStandardMaterial';

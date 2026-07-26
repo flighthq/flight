@@ -1,4 +1,4 @@
-import type { WgpuRenderState } from '@flighthq/types';
+import type { WgpuRenderState } from '@flighthq/types/contract';
 
 // Resolves the scene-scoped time uploaded by ShadedMaterial's animated modifiers. The default is zero,
 // making an unset scene deterministic. Kept per state so independent canvases do not share animation.

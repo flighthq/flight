@@ -1,5 +1,5 @@
 import { invalidateNodeAppearance } from '@flighthq/node';
-import type { Node, Renderable, RenderProxy2D, RenderProxyAdapter, RenderState } from '@flighthq/types';
+import type { Node, Renderable, RenderProxy2D, RenderProxyAdapter, RenderState } from '@flighthq/types/contract';
 
 import { installRenderAdaptHook, updateRenderProxyRenderer } from './renderProxy';
 import { getRenderStateRuntime } from './renderState';

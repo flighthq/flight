@@ -1,7 +1,7 @@
 import { createCamera3D } from '@flighthq/camera';
 import { createShadedMaterial } from '@flighthq/shading';
-import type { Scene3DLightBlock } from '@flighthq/types';
-import { ShadedMaterialKind } from '@flighthq/types';
+import type { Scene3DLightBlock } from '@flighthq/types/contract';
+import { ShadedMaterialKind } from '@flighthq/types/contract';
 
 import {
   getWgpuShadedBaseFlags,

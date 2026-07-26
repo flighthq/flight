@@ -1,5 +1,5 @@
 import { createCanvasFromImageResource } from '@flighthq/image';
-import type { CanvasImageSourceKind, CanvasRenderState, ImageResource } from '@flighthq/types';
+import type { CanvasImageSourceKind, CanvasRenderState, ImageResource } from '@flighthq/types/contract';
 
 import { getCanvasRenderStateRuntime } from './canvasRenderState';
 

@@ -1,4 +1,4 @@
-import type { RendererData } from '@flighthq/types';
+import type { RendererData } from '@flighthq/types/contract';
 
 /**
  * Casts `data` to `RendererData` for storage in a renderer's `createData` return value.

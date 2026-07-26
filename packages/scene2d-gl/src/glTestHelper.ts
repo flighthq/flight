@@ -1,5 +1,5 @@
 import { createGlRenderState } from '@flighthq/render-gl';
-import type { GlRenderState } from '@flighthq/types';
+import type { GlRenderState } from '@flighthq/types/contract';
 
 // Local test helper for scene2d-gl unit tests. Mirrors render-gl's own private
 // glTestHelper pattern but builds the state through render-gl's PUBLIC createGlRenderState

@@ -7,7 +7,7 @@ import type {
   WgpuColorAdjustmentMaterialFeature,
   WgpuRenderState,
   WgpuSkinningAdapter,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import {
   createWgpuMeshPipeline,

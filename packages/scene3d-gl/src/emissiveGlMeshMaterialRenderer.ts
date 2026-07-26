@@ -10,8 +10,8 @@ import type {
   Scene3DLightBlock,
   Scene3DRenderProxy,
   GlUnlitDefineKey,
-} from '@flighthq/types';
-import { EmissiveMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { EmissiveMaterialKind } from '@flighthq/types/contract';
 
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import {

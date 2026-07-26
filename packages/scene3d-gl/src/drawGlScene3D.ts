@@ -1,12 +1,12 @@
 import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flighthq/geometry';
 import { hasMeshGeometrySkin } from '@flighthq/mesh';
 import { getNodeWorldMatrix4 } from '@flighthq/node';
-import { prepareScene3DRender } from '@flighthq/render';
 import {
   declareGlRenderTargetColorSpace,
   getGlRenderStateRuntime,
   invalidateGlRenderStateCache,
 } from '@flighthq/render-gl';
+import { prepareScene3DRender } from '@flighthq/render/contract';
 import { getNode3DRuntime, getNode3DWorldAlpha } from '@flighthq/scene3d';
 import type {
   Camera3D,
@@ -25,8 +25,8 @@ import type {
   Scene3DRenderProxy,
   SurfaceMaterial,
   GlScene3DDrawEntry,
-} from '@flighthq/types';
-import { StandardMaterialKind, MAX_FORWARD_LIGHTS } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { StandardMaterialKind, MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
 
 import { resolveGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { drawGlScene3DParticleEmitter3Ds } from './glParticleEmitter3D';

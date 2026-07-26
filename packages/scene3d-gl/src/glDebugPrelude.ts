@@ -1,6 +1,6 @@
 import { hasImageResourcePixels } from '@flighthq/image';
 import { bindGlImageResourceTexture } from '@flighthq/render-gl';
-import type { GlDebugProgram, GlDebugDefineKey, GlRenderState, Texture } from '@flighthq/types';
+import type { GlDebugProgram, GlDebugDefineKey, GlRenderState, Texture } from '@flighthq/types/contract';
 
 import { compileGlProgram, ensureGlScene3DProgram } from './glMeshProgram';
 // Binds the optional tangent-space normal map (on texture unit 0) and its scale for the normal-mode

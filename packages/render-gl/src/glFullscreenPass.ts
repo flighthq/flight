@@ -1,4 +1,4 @@
-import type { GlFullscreenProgram, GlRenderState, GlRenderTarget } from '@flighthq/types';
+import type { GlFullscreenProgram, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 
 import { createGlProgram } from './glProgram';
 import { getGlRenderStateRuntime } from './glRenderState';

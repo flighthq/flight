@@ -1,5 +1,5 @@
-import { getOrCreateRenderProxy2D } from '@flighthq/render';
-import type { Node2D, Kind } from '@flighthq/types';
+import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
+import type { Node2D, Kind } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
 import {

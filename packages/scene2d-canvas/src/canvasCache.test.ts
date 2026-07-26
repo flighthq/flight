@@ -1,5 +1,5 @@
 import { createMatrix } from '@flighthq/geometry';
-import { createRenderCache, getRenderProxy2D, RenderCacheKind, useRenderCache } from '@flighthq/render';
+import { createRenderCache, getRenderProxy2D, RenderCacheKind, useRenderCache } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d';
 
 import {

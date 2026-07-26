@@ -1,4 +1,9 @@
-import type { GlRenderState, GlRenderTarget, GlRenderTargetPool, RenderTargetDescriptor } from '@flighthq/types';
+import type {
+  GlRenderState,
+  GlRenderTarget,
+  GlRenderTargetPool,
+  RenderTargetDescriptor,
+} from '@flighthq/types/contract';
 
 import { clearGlRenderTarget } from './glFullscreenPass';
 import { createGlRenderTarget, destroyGlRenderTarget } from './glRenderTarget';

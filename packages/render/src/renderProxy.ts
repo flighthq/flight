@@ -17,8 +17,8 @@ import type {
   RenderProxy2D,
   RenderProxyVisitor,
   RenderState,
-} from '@flighthq/types';
-import { BlendMode } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { BlendMode } from '@flighthq/types/contract';
 
 import { updateRenderProxyAppearance } from './renderAppearance';
 import { updateRenderProxyColorScaleBias } from './renderColorScaleBias';

@@ -1,4 +1,4 @@
-import type { CanvasRenderState, Matrix } from '@flighthq/types';
+import type { CanvasRenderState, Matrix } from '@flighthq/types/contract';
 
 export function setCanvasTransform(
   state: CanvasRenderState,

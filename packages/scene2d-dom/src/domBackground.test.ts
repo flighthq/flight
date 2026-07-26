@@ -1,4 +1,4 @@
-import { setRenderStateBackgroundColor } from '@flighthq/render';
+import { setRenderStateBackgroundColor } from '@flighthq/render/contract';
 
 import { renderDomBackground } from './domBackground';
 import { createDomRenderState } from './domRenderState';

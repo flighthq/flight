@@ -26,8 +26,8 @@ import type {
   VertexDisplaceModifier,
   GlModifierBindContext,
   GlModifierSnippet,
-} from '@flighthq/types';
-import { EmissiveModifierFacing, FogModifierMode, VertexDisplaceModifierSource } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { EmissiveModifierFacing, FogModifierMode, VertexDisplaceModifierSource } from '@flighthq/types/contract';
 
 import { registerGlModifierSnippet } from './glShadedModifierSnippet';
 

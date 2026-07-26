@@ -1,5 +1,5 @@
 import { copyMatrix, createMatrix } from '@flighthq/geometry';
-import type { CanvasRenderState, CanvasRenderTarget, Matrix, RenderPassPreserve } from '@flighthq/types';
+import type { CanvasRenderState, CanvasRenderTarget, Matrix, RenderPassPreserve } from '@flighthq/types/contract';
 
 import { getCanvasRenderStateRuntime } from './canvasRenderState';
 

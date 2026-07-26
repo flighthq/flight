@@ -1,9 +1,9 @@
 import { createImageResource } from '@flighthq/image';
-import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render';
 import { getWgpuRenderStateRuntime, renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
+import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { createSprite } from '@flighthq/sprite';
-import type { TextureAtlas } from '@flighthq/types';
+import type { TextureAtlas } from '@flighthq/types/contract';
 
 import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
 import { defaultWgpuSpriteRenderer } from './wgpuSpriteRenderer';

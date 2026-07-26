@@ -1,6 +1,6 @@
 import { createRectangle, matrixTransformRectangle } from '@flighthq/geometry';
 import { getNodeWorldBoundsRectangle } from '@flighthq/node';
-import type { Matrix, Rectangle, RenderProxy2D, RenderViewport2D, Spatial2DNode } from '@flighthq/types';
+import type { Matrix, Rectangle, RenderProxy2D, RenderViewport2D, Spatial2DNode } from '@flighthq/types/contract';
 
 // Writes the world-space axis-aligned bounding box of `source` into `out`. Returns true when
 // `source` is a Spatial2DNode and the bounds were written; returns false and leaves `out`

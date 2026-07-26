@@ -1,5 +1,5 @@
-import type { GlRenderState, GlLitProgram } from '@flighthq/types';
-import { EntityRuntimeKey, SCENE_LIGHT_BLOCK_FLOATS } from '@flighthq/types';
+import type { GlRenderState, GlLitProgram } from '@flighthq/types/contract';
+import { EntityRuntimeKey, SCENE_LIGHT_BLOCK_FLOATS } from '@flighthq/types/contract';
 
 import { bindGlMeshLightBlock, GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram';
 import { makeFakeGl2 } from './glScene3DTestHelper';

@@ -1,7 +1,7 @@
-﻿import { registerRenderer } from '@flighthq/render';
-import { getOrCreateRenderProxy2D } from '@flighthq/render';
+﻿import { registerRenderer } from '@flighthq/render/contract';
+import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createHtmlView } from '@flighthq/scene2d';
-import { HtmlViewKind } from '@flighthq/types';
+import { HtmlViewKind } from '@flighthq/types/contract';
 
 import { defaultHtmlViewRenderer, drawDomHtmlView } from './domHtmlView';
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';

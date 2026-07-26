@@ -3,8 +3,8 @@ import { createVector3 } from '@flighthq/geometry';
 import { createMeshGeometry, updateMeshMorph } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
 import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d';
-import type { Skin, VertexAttributeLayout } from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
+import type { Skin, VertexAttributeLayout } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeGlScene3DState } from './glScene3DTestHelper';

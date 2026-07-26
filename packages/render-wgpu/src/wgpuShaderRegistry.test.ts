@@ -1,4 +1,4 @@
-import type { WgpuBitmapShader } from '@flighthq/types';
+import type { WgpuBitmapShader } from '@flighthq/types/contract';
 
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import { registerWgpuBitmapShader } from './wgpuShaderRegistry';

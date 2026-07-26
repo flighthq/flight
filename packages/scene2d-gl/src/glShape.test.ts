@@ -1,8 +1,8 @@
 import { createImageResource } from '@flighthq/image';
 import type * as FlightNodeModule from '@flighthq/node';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import type { RenderProxy2D } from '@flighthq/types';
-import { BatchFormat } from '@flighthq/types';
+import type { RenderProxy2D } from '@flighthq/types/contract';
+import { BatchFormat } from '@flighthq/types/contract';
 
 import type * as GlShapeModule from './glShape';
 import { flushGlSpriteBatch } from './glSpriteBatch';

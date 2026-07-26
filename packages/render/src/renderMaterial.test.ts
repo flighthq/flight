@@ -1,5 +1,5 @@
 import { createMaterial } from '@flighthq/materials';
-import type { Renderable } from '@flighthq/types';
+import type { Renderable } from '@flighthq/types/contract';
 
 import { updateRenderProxyMaterial } from './renderMaterial';
 import { createRenderProxy } from './renderProxy';

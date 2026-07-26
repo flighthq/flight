@@ -1,6 +1,6 @@
-import { getRenderStateRuntime } from '@flighthq/render';
 import { createGlRenderState } from '@flighthq/render-gl';
-import type { GlRenderState } from '@flighthq/types';
+import { getRenderStateRuntime } from '@flighthq/render/contract';
+import type { GlRenderState } from '@flighthq/types/contract';
 import {
   BitmapKind,
   DisplayObjectKind,
@@ -14,7 +14,7 @@ import {
   TextLabelKind,
   TilemapKind,
   VideoKind,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { defaultGlBitmapRenderer } from './glBitmap';
 import { defaultGlRenderCacheRenderer } from './glCache';

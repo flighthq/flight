@@ -1,4 +1,4 @@
-import { getRenderProxyCache, noopRendererData, registerRenderCacheRenderer } from '@flighthq/render';
+import { getRenderProxyCache, noopRendererData, registerRenderCacheRenderer } from '@flighthq/render/contract';
 import { createCanvasRenderTarget, resizeCanvasRenderTarget } from '@flighthq/scene2d-canvas';
 import type {
   CanvasRenderTarget,
@@ -7,7 +7,7 @@ import type {
   RenderCache,
   RenderProxy2D,
   RenderState,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { prepareDomElement, setDomRendererElement } from './domStyle';
 import { setDomTransformWithOffset } from './domTransform';

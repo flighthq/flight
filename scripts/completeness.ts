@@ -133,7 +133,7 @@ function collectSourceFiles(srcDir: string, dir: string, out: SourceFile[]): voi
     if (!entry.isFile()) continue;
     const name = entry.name;
     if (!name.endsWith('.ts') || name.endsWith('.test.ts') || name.endsWith('.d.ts')) continue;
-    if (name === 'index.ts' || name === 'internal.ts') continue;
+    if (name === 'index.ts' || name === 'contract.ts' || name === 'internal.ts') continue;
     if (name.toLowerCase().endsWith('testhelper.ts')) continue;
 
     out.push({

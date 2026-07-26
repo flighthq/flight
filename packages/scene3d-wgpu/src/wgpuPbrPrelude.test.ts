@@ -1,4 +1,4 @@
-import type { WgpuColorAdjustmentMaterialFeature, WgpuPbrDefineKey } from '@flighthq/types';
+import type { WgpuColorAdjustmentMaterialFeature, WgpuPbrDefineKey } from '@flighthq/types/contract';
 
 import {
   buildWgpuPbrDefineKey,

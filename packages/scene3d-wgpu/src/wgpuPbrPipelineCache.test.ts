@@ -1,4 +1,4 @@
-import type { WgpuPbrDefineKey } from '@flighthq/types';
+import type { WgpuPbrDefineKey } from '@flighthq/types/contract';
 
 import { compileWgpuPbrPipeline, ensureWgpuPbrPipeline } from './wgpuPbrPipelineCache';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';

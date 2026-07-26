@@ -1,5 +1,5 @@
 import { createSurface } from '@flighthq/surface';
-import type { Surface, WgpuRenderState } from '@flighthq/types';
+import type { Surface, WgpuRenderState } from '@flighthq/types/contract';
 
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 

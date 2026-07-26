@@ -17,9 +17,9 @@ import type {
   ShapeFillRegion,
   WgpuRenderState,
   WgpuShapeMeshBuffers,
-} from '@flighthq/types';
-import { BatchFormat } from '@flighthq/types';
-import type { WgpuShapeMesh } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { BatchFormat } from '@flighthq/types/contract';
+import type { WgpuShapeMesh } from '@flighthq/types/contract';
 
 import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
 import { drawWgpuShapeMeshes } from './wgpuShapeMesh';

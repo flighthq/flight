@@ -10,8 +10,8 @@ import type {
   WgpuQuadBatchResources,
   WgpuRenderState,
   WgpuSpriteBatchBufferSlot,
-} from '@flighthq/types';
-import type { BlendMode } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import type { BlendMode } from '@flighthq/types/contract';
 
 // Base per-instance layout (13 floats = 52 bytes). This is a fixed contract material shaders read
 // from the instance storage buffer; it carries no material concern (no color adjustment). A material

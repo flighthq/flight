@@ -1,5 +1,5 @@
-import type { DomBlendModeFidelity, DomRenderState } from '@flighthq/types';
-import { AdvancedBlendMode, BlendMode } from '@flighthq/types';
+import type { DomBlendModeFidelity, DomRenderState } from '@flighthq/types/contract';
+import { AdvancedBlendMode, BlendMode } from '@flighthq/types/contract';
 
 // Auditable map from a blend-mode intent to the CSS mix-blend-mode value that realizes
 // it. `null` means there is no faithful CSS equivalent, so the mode degrades to normal

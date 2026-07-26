@@ -1,4 +1,4 @@
-﻿import { getOrCreateRenderProxy2D } from '@flighthq/render';
+﻿import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape';
 
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';

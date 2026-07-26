@@ -1,5 +1,5 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import type { RenderProxy2D } from '@flighthq/types';
+import type { RenderProxy2D } from '@flighthq/types/contract';
 
 import { defaultGlParticleEmitter2DRenderer, drawGlParticleEmitter2D } from './glParticleEmitter2D';
 import { createGlState } from './glTestHelper';

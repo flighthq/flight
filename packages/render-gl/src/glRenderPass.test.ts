@@ -1,5 +1,5 @@
 import { createMatrix } from '@flighthq/geometry';
-import type { GlRenderTarget } from '@flighthq/types';
+import type { GlRenderTarget } from '@flighthq/types/contract';
 
 import { beginGlRenderPass, endGlRenderPass, setGlRenderTransform2D } from './glRenderPass';
 import { getGlRenderStateRuntime } from './glRenderState';

@@ -2,8 +2,8 @@ import type {
   GlScene3DForwardLightList,
   Scene3DForwardLightSelectionExplanation,
   Scene3DLightsLike,
-} from '@flighthq/types';
-import { MAX_FORWARD_LIGHTS } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
 
 // Explains whether drawing `lights` through the fixed forward budget needs an explicit per-object
 // selection list. This pure, separately importable query retains and mutates nothing.

@@ -3,9 +3,9 @@ import {
   createRenderState as _createRenderState,
   createRenderStateRuntime,
   setRenderStateBackgroundColor,
-} from '@flighthq/render';
-import type { CanvasRenderOptions, CanvasRenderState, CanvasRenderStateRuntime } from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
+} from '@flighthq/render/contract';
+import type { CanvasRenderOptions, CanvasRenderState, CanvasRenderStateRuntime } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 export function createCanvasRenderState(
   canvas: HTMLCanvasElement,

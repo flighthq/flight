@@ -1,16 +1,5 @@
 import { createMatrix, createRectangle } from '@flighthq/geometry';
 import { computeNodeBoundsRectangle } from '@flighthq/node';
-import {
-  computeScene2DRenderTargetTransform,
-  computeRenderCacheTransform,
-  computeRenderTargetSize,
-  copyAllRenderersFromRenderState,
-  createRenderState,
-  getRenderProxyCache,
-  noopRendererData,
-  prepareScene2DRender,
-  registerRenderCacheRenderer,
-} from '@flighthq/render';
 import { createGlRenderStateRuntime, getGlRenderStateRuntime } from '@flighthq/render-gl';
 import {
   beginGlRenderPass,
@@ -21,6 +10,17 @@ import {
   resizeGlRenderTarget,
   setGlRenderTransform2D,
 } from '@flighthq/render-gl';
+import {
+  computeScene2DRenderTargetTransform,
+  computeRenderCacheTransform,
+  computeRenderTargetSize,
+  copyAllRenderersFromRenderState,
+  createRenderState,
+  getRenderProxyCache,
+  noopRendererData,
+  prepareScene2DRender,
+  registerRenderCacheRenderer,
+} from '@flighthq/render/contract';
 import type {
   Node2D,
   Scene2DRenderer,
@@ -30,8 +30,8 @@ import type {
   RenderCache,
   RenderCacheRefreshOptions,
   RenderProxy2D,
-} from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { renderGlScene2D } from './glNode2D';
 import { flushGlSpriteBatch } from './glSpriteBatch';

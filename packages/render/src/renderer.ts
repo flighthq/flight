@@ -1,4 +1,4 @@
-import type { Kind, Renderable, Renderer, RendererData, RenderState } from '@flighthq/types';
+import type { Kind, Renderable, Renderer, RendererData, RenderState } from '@flighthq/types/contract';
 
 import { getRenderStateRuntime } from './renderState';
 

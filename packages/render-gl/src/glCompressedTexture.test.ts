@@ -1,4 +1,4 @@
-import type { GlCompressedTextureSupport, ImageResource, TextureContainer } from '@flighthq/types';
+import type { GlCompressedTextureSupport, ImageResource, TextureContainer } from '@flighthq/types/contract';
 
 import {
   detectGlCompressedTextureSupport,

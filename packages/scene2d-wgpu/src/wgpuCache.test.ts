@@ -1,9 +1,9 @@
 import { createMatrix } from '@flighthq/geometry';
-import { createRenderCache, createRenderState, RenderCacheKind, useRenderCache } from '@flighthq/render';
 import type * as WgpuRenderWgpuModule from '@flighthq/render-wgpu';
+import { createRenderCache, createRenderState, RenderCacheKind, useRenderCache } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d';
-import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
+import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { scopeModuleMocks } from './moduleMockTestHelper';
 import type * as WgpuCacheModule from './wgpuCache';

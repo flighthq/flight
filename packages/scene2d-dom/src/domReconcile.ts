@@ -1,4 +1,4 @@
-import type { DomRenderStateRuntime, RenderProxy2D } from '@flighthq/types';
+import type { DomRenderStateRuntime, RenderProxy2D } from '@flighthq/types/contract';
 
 export function hasDomStructureChanged(
   runtime: DomRenderStateRuntime,

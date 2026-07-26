@@ -4,7 +4,7 @@ import type {
   WgpuClassicDefineKey,
   WgpuClassicLightingModel,
   WgpuColorAdjustmentMaterialFeature,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import {
   bindWgpuClassicSurface,

@@ -1,5 +1,5 @@
-import type { GlMeshMaterialRenderer, Material } from '@flighthq/types';
-import { StandardMaterialKind } from '@flighthq/types';
+import type { GlMeshMaterialRenderer, Material } from '@flighthq/types/contract';
+import { StandardMaterialKind } from '@flighthq/types/contract';
 
 import {
   getGlMeshMaterialRenderer,

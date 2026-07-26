@@ -1,6 +1,6 @@
-import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render';
+import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d';
-import type { CanvasRenderState, Node2D, RenderProxy2D, Sprite, SpriteRenderer } from '@flighthq/types';
+import type { CanvasRenderState, Node2D, RenderProxy2D, Sprite, SpriteRenderer } from '@flighthq/types/contract';
 
 import { applyCanvasMaterial } from './canvasMaterialRegistry';
 import { getCanvasRenderStateRuntime } from './canvasRenderState';

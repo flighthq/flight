@@ -1,4 +1,4 @@
-import type { CubeTexture, Environment, ImageResource } from '@flighthq/types';
+import type { CubeTexture, Environment, ImageResource } from '@flighthq/types/contract';
 
 import { ensureGlEnvironmentSourceCube, getGlCubeFaceTarget, updateGlEnvironmentCubeFace } from './glEnvironmentCube';
 import { makeGlScene3DState } from './glScene3DTestHelper';

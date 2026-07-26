@@ -10,8 +10,8 @@ import type {
   ShadedMaterial,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
-} from '@flighthq/types';
-import { ShadedMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { ShadedMaterialKind } from '@flighthq/types/contract';
 
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { beginWgpuMeshDraw, drawWgpuMeshSubset, isWgpuTextureReady, writeWgpuFrameUniform } from './wgpuMeshPipeline';

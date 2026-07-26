@@ -1,6 +1,11 @@
 import { createGlSkinPaletteTexture, destroyGlRenderTarget, destroyGlSkinPaletteTexture } from '@flighthq/render-gl';
-import type { GlScene3DRuntime, GlRenderState, GlRenderStateRuntime, GlSkinPaletteTexture } from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
+import type {
+  GlScene3DRuntime,
+  GlRenderState,
+  GlRenderStateRuntime,
+  GlSkinPaletteTexture,
+} from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { destroyGlEnvironmentIblBakePrograms } from './glEnvironmentIblBake';
 // Frees every state-scoped GPU resource scene-gl created for `state`: all cached mesh-material and PBR

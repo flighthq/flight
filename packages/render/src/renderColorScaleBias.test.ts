@@ -1,7 +1,7 @@
 import { createColorMatrixAdjustment, createTintAdjustment } from '@flighthq/adjustments';
 import { setNodeColorAdjustments } from '@flighthq/node';
 import { createDisplayObject, getNode2DRuntime } from '@flighthq/scene2d';
-import type { Renderable } from '@flighthq/types';
+import type { Renderable } from '@flighthq/types/contract';
 
 import { updateRenderProxyColorScaleBias } from './renderColorScaleBias';
 import { createRenderProxy } from './renderProxy';

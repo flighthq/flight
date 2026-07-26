@@ -1,4 +1,9 @@
-import type { LinearColor, WgpuMaterialBinding, WgpuRenderState, WgpuWireframePipeline } from '@flighthq/types';
+import type {
+  LinearColor,
+  WgpuMaterialBinding,
+  WgpuRenderState,
+  WgpuWireframePipeline,
+} from '@flighthq/types/contract';
 
 import {
   createWgpuMeshPipeline,

@@ -7,7 +7,7 @@ import type {
   RenderTargetColorSpace,
   WgpuRenderState,
   WgpuRenderTarget,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { buildWgpuRenderTargetBindGroup, drawWgpuQuadWithTransform } from './wgpuDraw';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';

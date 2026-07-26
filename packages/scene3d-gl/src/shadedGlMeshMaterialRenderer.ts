@@ -18,8 +18,8 @@ import type {
   GlModifierSnippet,
   GlShadedDefineKey,
   GlShadedProgram,
-} from '@flighthq/types';
-import { ShadedMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { ShadedMaterialKind } from '@flighthq/types/contract';
 
 import { bindGlMeshLightBlock } from './glLitProgram';
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';

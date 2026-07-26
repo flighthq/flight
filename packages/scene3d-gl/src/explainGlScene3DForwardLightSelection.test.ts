@@ -1,5 +1,5 @@
 import { createPointLight } from '@flighthq/lighting';
-import type { GlScene3DForwardLightList, Scene3DLightsLike } from '@flighthq/types';
+import type { GlScene3DForwardLightList, Scene3DLightsLike } from '@flighthq/types/contract';
 
 import { explainGlScene3DForwardLightSelection } from './explainGlScene3DForwardLightSelection';
 

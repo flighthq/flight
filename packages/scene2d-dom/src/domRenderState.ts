@@ -3,9 +3,9 @@ import {
   createRenderState as _createRenderState,
   createRenderStateRuntime,
   setRenderStateBackgroundColor,
-} from '@flighthq/render';
-import type { DomRenderOptions, DomRenderState, DomRenderStateRuntime } from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
+} from '@flighthq/render/contract';
+import type { DomRenderOptions, DomRenderState, DomRenderStateRuntime } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 export function createDomRenderState(element: HTMLElement, options: Partial<DomRenderOptions> = {}): DomRenderState {
   const state = _createRenderState({

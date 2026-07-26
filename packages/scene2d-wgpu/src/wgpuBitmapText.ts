@@ -1,9 +1,15 @@
 import { hasImageResourcePixels } from '@flighthq/image';
-import { noopRendererData } from '@flighthq/render';
 import { getWgpuRenderStateRuntime, resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu';
+import { noopRendererData } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d';
-import type { BitmapText, BitmapTextRuntime, RenderProxy2D, SpriteRenderer, WgpuRenderState } from '@flighthq/types';
-import { BatchFormat } from '@flighthq/types';
+import type {
+  BitmapText,
+  BitmapTextRuntime,
+  RenderProxy2D,
+  SpriteRenderer,
+  WgpuRenderState,
+} from '@flighthq/types/contract';
+import { BatchFormat } from '@flighthq/types/contract';
 
 import {
   packWgpuSpriteBatchMaterialInstance,

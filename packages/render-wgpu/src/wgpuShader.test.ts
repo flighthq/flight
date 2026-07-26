@@ -1,4 +1,4 @@
-import { AdvancedBlendMode, BlendMode } from '@flighthq/types';
+import { AdvancedBlendMode, BlendMode } from '@flighthq/types/contract';
 
 import { renderWgpuBackground } from './wgpuBackground';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';

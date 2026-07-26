@@ -1,4 +1,4 @@
-import type { HasMaterial, RenderProxy, RenderState } from '@flighthq/types';
+import type { HasMaterial, RenderProxy, RenderState } from '@flighthq/types/contract';
 
 // Resolves a node's material and its per-node material data onto the render node. Non-inheriting: a
 // node uses its own material (or none → the default pipeline). Called for every node in the render

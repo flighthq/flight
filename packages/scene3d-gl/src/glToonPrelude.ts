@@ -1,5 +1,5 @@
-import type { GlToonDefineKey, GlToonProgram, GlRenderState } from '@flighthq/types';
-import { MAX_FORWARD_LIGHTS } from '@flighthq/types';
+import type { GlToonDefineKey, GlToonProgram, GlRenderState } from '@flighthq/types/contract';
+import { MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
 
 import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram';
 import {

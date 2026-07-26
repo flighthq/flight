@@ -1,4 +1,4 @@
-import type { VideoTexture } from '@flighthq/types';
+import type { VideoTexture } from '@flighthq/types/contract';
 
 import { uploadGlTextureElement } from './glTextureUpload';
 

@@ -1,4 +1,4 @@
-import type { RenderProxy2D } from '@flighthq/types';
+import type { RenderProxy2D } from '@flighthq/types/contract';
 
 import { drawCanvasParticleEmitter2D } from './canvasParticleEmitter2D';
 import { createCanvasRenderState } from './canvasRenderState';

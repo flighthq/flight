@@ -1,5 +1,5 @@
-import type { WgpuColorAdjustmentMaterialFeature, WgpuPbrDefineKey } from '@flighthq/types';
-import type { WgpuSkinningAdapter } from '@flighthq/types';
+import type { WgpuColorAdjustmentMaterialFeature, WgpuPbrDefineKey } from '@flighthq/types/contract';
+import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
 import { spliceWgpuColorAdjustmentPrelude } from './wgpuMeshPipeline';
 // The shared Wgpu PBR prelude: the WGSL vertex + fragment uber-shader for the StandardPbr forward-lit

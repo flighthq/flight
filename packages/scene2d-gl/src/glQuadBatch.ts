@@ -1,7 +1,7 @@
 import { hasImageResourcePixels } from '@flighthq/image';
-import { noopRendererData } from '@flighthq/render';
 import { resolveGlMaterialRenderer } from '@flighthq/render-gl';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
+import { noopRendererData } from '@flighthq/render/contract';
 import type {
   ColorScaleBias,
   GlRenderState,
@@ -9,8 +9,8 @@ import type {
   RenderProxy2D,
   SpriteRenderer,
   TintMaterialData,
-} from '@flighthq/types';
-import { BatchFormat } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { BatchFormat } from '@flighthq/types/contract';
 
 import {
   ensureGlQuadBatchShader,

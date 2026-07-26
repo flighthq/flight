@@ -11,7 +11,7 @@ import type {
   RenderProxy2D,
   RenderState,
   TextVerticalAlign,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle';
 

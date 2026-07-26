@@ -1,8 +1,8 @@
 import { logOnce } from '@flighthq/log';
 import { getMeshGeometryMorphBindPose, hasMeshGeometrySkin } from '@flighthq/mesh';
 import { getNodeRuntime } from '@flighthq/node';
-import type { GlRenderState, Mesh, MeshRuntime, NodeAny } from '@flighthq/types';
-import { LogLevel } from '@flighthq/types';
+import type { GlRenderState, Mesh, MeshRuntime, NodeAny } from '@flighthq/types/contract';
+import { LogLevel } from '@flighthq/types/contract';
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 

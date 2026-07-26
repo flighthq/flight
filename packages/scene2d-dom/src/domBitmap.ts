@@ -7,7 +7,7 @@ import type {
   RendererData,
   RenderProxy2D,
   RenderState,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { resolveDomImageSource } from './domImageSource';
 import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle';

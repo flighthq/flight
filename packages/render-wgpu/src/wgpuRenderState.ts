@@ -3,9 +3,9 @@ import {
   createRenderState as _createRenderState,
   createRenderStateRuntime,
   setRenderStateBackgroundColor,
-} from '@flighthq/render';
-import type { TextureWrap, WgpuRenderOptions, WgpuRenderState, WgpuRenderStateRuntime } from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
+} from '@flighthq/render/contract';
+import type { TextureWrap, WgpuRenderOptions, WgpuRenderState, WgpuRenderStateRuntime } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { warmWgpuPipelines } from './wgpuDraw';
 import { createWgpuBindGroupLayouts, UNIFORM_BYTE_SIZE } from './wgpuShader';

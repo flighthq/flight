@@ -17,7 +17,7 @@ import {
   invalidateNodeLocalTransform,
   isNodeLocalMatrix4Detached,
 } from '@flighthq/node';
-import type { LinearColor } from '@flighthq/types';
+import type { LinearColor } from '@flighthq/types/contract';
 import type {
   Aabb,
   AmbientLight,
@@ -38,7 +38,7 @@ import type {
   Scene3DRenderList,
   SpotLight,
   Transform3DNode,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 import {
   MAX_FORWARD_LIGHTS,
   SCENE_LIGHT_AMBIENT_RADIANCE_OFFSET,
@@ -51,7 +51,7 @@ import {
   SCENE_LIGHT_POINT_STRIDE,
   SCENE_LIGHT_SPOT_OFFSET,
   SCENE_LIGHT_SPOT_STRIDE,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Packs the directional + ambient + punctual (point/spot/hemisphere) draw-arg lights into `out` (the
 // GPU-ready light block), converting each packed sRgb color to linear, premultiplied radiance

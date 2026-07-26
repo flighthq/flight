@@ -1,7 +1,7 @@
-import { getOrCreateRenderProxy2D, registerRenderer } from '@flighthq/render';
+import { getOrCreateRenderProxy2D, registerRenderer } from '@flighthq/render/contract';
 import { createRenderView } from '@flighthq/scene2d';
-import type { RenderViewRenderer } from '@flighthq/types';
-import { RenderViewKind } from '@flighthq/types';
+import type { RenderViewRenderer } from '@flighthq/types/contract';
+import { RenderViewKind } from '@flighthq/types/contract';
 
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
 import { defaultDomRenderViewRenderer, drawDomRenderView } from './domRenderView';

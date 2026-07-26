@@ -1,6 +1,6 @@
 import { logOnce } from '@flighthq/log';
-import type { CustomShaderMaterial, WgpuCustomMaterialShaderSource, WgpuRenderState } from '@flighthq/types';
-import { LogLevel } from '@flighthq/types';
+import type { CustomShaderMaterial, WgpuCustomMaterialShaderSource, WgpuRenderState } from '@flighthq/types/contract';
+import { LogLevel } from '@flighthq/types/contract';
 
 import { WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY, WGPU_CUSTOM_SHADER_USER_VEC4_CAPACITY } from './wgpuCustomMaterialAbi';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';

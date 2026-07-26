@@ -6,7 +6,7 @@ import type {
   Matrix,
   MatrixLike,
   SpreadMethod,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Flash's gradient box is normalized to ±819.2 units.
 const GRADIENT_HALF = 819.2;

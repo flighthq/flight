@@ -1,5 +1,5 @@
-import type { GlRenderState } from '@flighthq/types';
-import type { GlBitmapShader } from '@flighthq/types';
+import type { GlRenderState } from '@flighthq/types/contract';
+import type { GlBitmapShader } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
 

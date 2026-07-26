@@ -1,6 +1,6 @@
-import { getOrCreateRenderProxy2D } from '@flighthq/render';
-import type { Node2D, GlRenderState, Kind, RenderProxy2D } from '@flighthq/types';
-import type { GlBitmapShader } from '@flighthq/types';
+import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
+import type { Node2D, GlRenderState, Kind, RenderProxy2D } from '@flighthq/types/contract';
+import type { GlBitmapShader } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
 

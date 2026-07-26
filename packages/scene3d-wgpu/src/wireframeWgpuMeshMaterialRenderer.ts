@@ -10,8 +10,8 @@ import type {
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
   WireframeMaterial,
-} from '@flighthq/types';
-import { WireframeMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { WireframeMaterialKind } from '@flighthq/types/contract';
 
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { beginWgpuMeshDraw, writeWgpuDrawUniform, writeWgpuFrameUniform } from './wgpuMeshPipeline';

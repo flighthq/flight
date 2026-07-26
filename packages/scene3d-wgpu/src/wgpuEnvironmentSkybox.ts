@@ -1,7 +1,7 @@
 import { getCamera3DInverseViewProjectionMatrix4 } from '@flighthq/camera';
 import { createMatrix4 } from '@flighthq/geometry';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { Camera3D, Environment, Matrix4, WgpuRenderState } from '@flighthq/types';
+import type { Camera3D, Environment, Matrix4, WgpuRenderState } from '@flighthq/types/contract';
 
 import { ensureWgpuEnvironmentSourceCube } from './wgpuEnvironmentCube';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';

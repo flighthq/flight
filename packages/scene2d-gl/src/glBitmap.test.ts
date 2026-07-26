@@ -1,6 +1,6 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import type { RenderProxy2D } from '@flighthq/types';
-import { BatchFormat } from '@flighthq/types';
+import type { RenderProxy2D } from '@flighthq/types/contract';
+import { BatchFormat } from '@flighthq/types/contract';
 
 import { defaultGlBitmapRenderer, drawGlBitmap } from './glBitmap';
 import { flushGlSpriteBatch } from './glSpriteBatch';

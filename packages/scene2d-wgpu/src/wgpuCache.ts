@@ -1,16 +1,5 @@
 import { createMatrix, createRectangle, multiplyMatrix } from '@flighthq/geometry';
 import { computeNodeBoundsRectangle } from '@flighthq/node';
-import {
-  computeScene2DRenderTargetTransform,
-  computeRenderCacheTransform,
-  computeRenderTargetSize,
-  copyAllRenderersFromRenderState,
-  createRenderState,
-  getRenderProxyCache,
-  noopRendererData,
-  prepareScene2DRender,
-  registerRenderCacheRenderer,
-} from '@flighthq/render';
 import { createWgpuRenderStateRuntime, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import {
   beginWgpuFrame,
@@ -23,6 +12,17 @@ import {
   setWgpuRenderTransform2D,
   submitWgpuRenderPass,
 } from '@flighthq/render-wgpu';
+import {
+  computeScene2DRenderTargetTransform,
+  computeRenderCacheTransform,
+  computeRenderTargetSize,
+  copyAllRenderersFromRenderState,
+  createRenderState,
+  getRenderProxyCache,
+  noopRendererData,
+  prepareScene2DRender,
+  registerRenderCacheRenderer,
+} from '@flighthq/render/contract';
 import type {
   Node2D,
   Scene2DRenderer,
@@ -32,8 +32,8 @@ import type {
   RenderProxy2D,
   WgpuRenderState,
   WgpuRenderTarget,
-} from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { renderWgpuScene2D } from './wgpuNode2D';
 import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';

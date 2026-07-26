@@ -4,7 +4,7 @@ import type {
   WgpuPbrPipeline,
   WgpuRenderState,
   WgpuPbrDefineKey,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { createWgpuMeshPipeline, ensureWgpuPbrSampleLayout, ensureWgpuScene3DPipeline } from './wgpuMeshPipeline';
 import { buildWgpuPbrDefineKey, getWgpuPbrModuleSourceForKey } from './wgpuPbrPrelude';

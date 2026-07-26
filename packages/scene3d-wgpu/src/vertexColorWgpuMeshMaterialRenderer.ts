@@ -11,8 +11,8 @@ import type {
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
   WgpuUnlitDefineKey,
-} from '@flighthq/types';
-import { VertexColorMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { VertexColorMaterialKind } from '@flighthq/types/contract';
 
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { beginWgpuMeshDraw, drawWgpuMeshSubset, writeWgpuFrameUniform } from './wgpuMeshPipeline';

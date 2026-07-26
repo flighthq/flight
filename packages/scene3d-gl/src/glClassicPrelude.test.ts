@@ -1,4 +1,4 @@
-import type { GlClassicDefineKey, GlColorAdjustmentMaterialFeature } from '@flighthq/types';
+import type { GlClassicDefineKey, GlColorAdjustmentMaterialFeature } from '@flighthq/types/contract';
 
 import {
   buildGlClassicDefineKey,

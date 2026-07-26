@@ -3,8 +3,8 @@ import type * as FlightNodeModule from '@flighthq/node';
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
-import type { RenderProxy2D } from '@flighthq/types';
-import { BatchFormat } from '@flighthq/types';
+import type { RenderProxy2D } from '@flighthq/types/contract';
+import { BatchFormat } from '@flighthq/types/contract';
 
 import { scopeModuleMocks } from './moduleMockTestHelper';
 import type * as WgpuShapeModule from './wgpuShape';

@@ -1,5 +1,5 @@
-import type { CanvasMaterialRenderer, Material } from '@flighthq/types';
-import { StandardMaterialKind } from '@flighthq/types';
+import type { CanvasMaterialRenderer, Material } from '@flighthq/types/contract';
+import { StandardMaterialKind } from '@flighthq/types/contract';
 
 import {
   applyCanvasMaterial,

@@ -1,7 +1,7 @@
-import { createRenderState } from '@flighthq/render';
 import { createGlRenderStateRuntime } from '@flighthq/render-gl';
-import type { GlRenderState, GlRenderStateRuntime } from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
+import { createRenderState } from '@flighthq/render/contract';
+import type { GlRenderState, GlRenderStateRuntime } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 // A minimal fake WebGL2 context for scene-gl unit tests. vitest-webgl-canvas-mock only mocks the
 // WebGL1 contexts, so 3D tests that exercise the program cache / upload / draw path drive this

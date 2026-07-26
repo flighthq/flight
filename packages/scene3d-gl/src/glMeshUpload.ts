@@ -6,7 +6,7 @@ import type {
   PrimitiveTopology,
   VertexAttribute,
   GlMeshUpload,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 

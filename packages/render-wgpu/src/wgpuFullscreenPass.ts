@@ -1,4 +1,4 @@
-import type { WgpuFullscreenPipeline, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
+import type { WgpuFullscreenPipeline, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
 
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 

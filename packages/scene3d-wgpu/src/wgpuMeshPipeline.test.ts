@@ -12,8 +12,8 @@ import type {
   Texture,
   WgpuColorAdjustmentMaterialFeature,
   WgpuMaterialBinding,
-} from '@flighthq/types';
-import { SCENE_LIGHT_BLOCK_FLOATS } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { SCENE_LIGHT_BLOCK_FLOATS } from '@flighthq/types/contract';
 
 import {
   beginWgpuMeshDraw,

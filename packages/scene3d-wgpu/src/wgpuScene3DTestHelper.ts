@@ -1,8 +1,8 @@
-import { createRenderState } from '@flighthq/render';
 import { createWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { WgpuRenderState, WgpuRenderStateRuntime } from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
-import type { WgpuSkinningAdapter } from '@flighthq/types';
+import { createRenderState } from '@flighthq/render/contract';
+import type { WgpuRenderState, WgpuRenderStateRuntime } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
+import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
 import { getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
 import { registerWgpuGpuSkinning } from './wgpuSkinPalette';

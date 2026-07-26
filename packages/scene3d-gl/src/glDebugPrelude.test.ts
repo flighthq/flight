@@ -1,4 +1,4 @@
-import type { GlDebugDefineKey } from '@flighthq/types';
+import type { GlDebugDefineKey } from '@flighthq/types/contract';
 
 import {
   bindGlDebugNormalMap,

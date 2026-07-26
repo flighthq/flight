@@ -1,4 +1,4 @@
-import { BlendMode } from '@flighthq/types';
+import { BlendMode } from '@flighthq/types/contract';
 
 import { renderGlBackground } from './glBackground';
 import { getGlRenderStateRuntime } from './glRenderState';

@@ -13,8 +13,8 @@ import type {
   Scene3DRenderProxy,
   GlClassicDefineKey,
   GlClassicProgram,
-} from '@flighthq/types';
-import { LambertMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { LambertMaterialKind } from '@flighthq/types/contract';
 
 import { ensureGlClassicProgram } from './glClassicPrelude';
 import { bindGlMeshLightBlock } from './glLitProgram';

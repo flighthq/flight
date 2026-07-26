@@ -1,8 +1,8 @@
 import { createImageResource } from '@flighthq/image';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import { createTextLabel, setTextLabelString } from '@flighthq/text';
-import type { RenderProxy2D, TextLabel } from '@flighthq/types';
-import { BatchFormat } from '@flighthq/types';
+import type { RenderProxy2D, TextLabel } from '@flighthq/types/contract';
+import { BatchFormat } from '@flighthq/types/contract';
 
 import { flushGlSpriteBatch } from './glSpriteBatch';
 import { registerStandardGlMaterial } from './glStandardMaterial';

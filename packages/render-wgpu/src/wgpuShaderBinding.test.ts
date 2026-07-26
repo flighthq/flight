@@ -1,6 +1,6 @@
-import { getOrCreateRenderProxy2D } from '@flighthq/render';
+import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createBitmap } from '@flighthq/scene2d';
-import type { WgpuBitmapShader } from '@flighthq/types';
+import type { WgpuBitmapShader } from '@flighthq/types/contract';
 
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import { getWgpuShader, resolveWgpuShader, setWgpuShader } from './wgpuShaderBinding';

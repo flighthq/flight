@@ -1,6 +1,6 @@
 import { createMatrix } from '@flighthq/geometry';
-import type { CanvasRenderOptions } from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
+import type { CanvasRenderOptions } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   createCanvasRenderState,

@@ -10,8 +10,8 @@ import type {
   SpecularPbrMaterial,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
-} from '@flighthq/types';
-import { SpecularPbrMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { SpecularPbrMaterialKind } from '@flighthq/types/contract';
 
 import {
   buildWgpuPbrStandardDefineKey,

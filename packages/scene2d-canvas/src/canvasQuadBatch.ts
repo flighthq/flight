@@ -1,6 +1,6 @@
 ﻿import { acquireMatrix, multiplyMatrix, releaseMatrix, setMatrixFromFloat32Array } from '@flighthq/geometry';
-import { noopRendererData } from '@flighthq/render';
-import type { CanvasRenderState, QuadBatch, RenderProxy2D, SpriteRenderer } from '@flighthq/types';
+import { noopRendererData } from '@flighthq/render/contract';
+import type { CanvasRenderState, QuadBatch, RenderProxy2D, SpriteRenderer } from '@flighthq/types/contract';
 
 import { applyCanvasMaterial } from './canvasMaterialRegistry';
 

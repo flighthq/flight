@@ -2,8 +2,8 @@ import { createCamera3D } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createMatcapMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
-import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types';
-import { MatcapMaterialKind } from '@flighthq/types';
+import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
+import { MatcapMaterialKind } from '@flighthq/types/contract';
 
 import { matcapWgpuMeshMaterialRenderer, registerMatcapWgpuMaterial } from './matcapWgpuMeshMaterialRenderer';
 import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';

@@ -1,4 +1,4 @@
-import type { GlRenderTarget } from '@flighthq/types';
+import type { GlRenderTarget } from '@flighthq/types/contract';
 
 import { drawGlLinearToSrgbPass, LINEAR_TO_SRGB_FRAGMENT_SRC } from './glLinearToSrgbPass';
 import { createGlState } from './glTestHelper';

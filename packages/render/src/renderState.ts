@@ -1,6 +1,6 @@
 import { createEntity, createEntityRuntime } from '@flighthq/entity';
-import type { RenderState, RenderStateRuntime } from '@flighthq/types';
-import { BlendMode, EntityRuntimeKey } from '@flighthq/types';
+import type { RenderState, RenderStateRuntime } from '@flighthq/types/contract';
+import { BlendMode, EntityRuntimeKey } from '@flighthq/types/contract';
 
 export function createRenderState(obj?: Partial<RenderState>): RenderState {
   const state = createEntity({

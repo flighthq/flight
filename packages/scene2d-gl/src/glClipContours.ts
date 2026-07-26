@@ -1,6 +1,6 @@
 import { createGlProgram } from '@flighthq/render-gl';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import type { GlRenderState, Matrix, PathWinding } from '@flighthq/types';
+import type { GlRenderState, Matrix, PathWinding } from '@flighthq/types/contract';
 
 import { flushGlSpriteBatch } from './glSpriteBatch';
 

@@ -1,5 +1,5 @@
 ﻿import { computeRgbHexString } from '@flighthq/color';
-import { noopRendererData } from '@flighthq/render';
+import { noopRendererData } from '@flighthq/render/contract';
 import { computeTextFormatFontString, getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text';
 import {
   computeRichTextContent,
@@ -11,7 +11,7 @@ import {
   getRichTextSelectionRectangles,
   getTextLayoutResult,
 } from '@flighthq/textlayout';
-import type { TextSelectionRectangle } from '@flighthq/types';
+import type { TextSelectionRectangle } from '@flighthq/types/contract';
 import type {
   CanvasRenderState,
   CanvasTextInputOverlay,
@@ -21,7 +21,7 @@ import type {
   RichTextRuntime,
   TextFormat,
   TextLabelRuntime,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { drawCanvasScene2D } from './canvasNode2D';
 import { setCanvasTransform } from './canvasTransform';

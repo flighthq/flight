@@ -1,4 +1,4 @@
-import type { GlFullscreenProgram, GlRenderState, GlRenderTarget } from '@flighthq/types';
+import type { GlFullscreenProgram, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 
 import { compileGlFullscreenProgram, drawGlFullscreenPass } from './glFullscreenPass';
 import { drawGlLinearToSrgbPass } from './glLinearToSrgbPass';

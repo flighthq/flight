@@ -1,5 +1,5 @@
-import type { ImageResource, SamplerLike, VideoTexture } from '@flighthq/types';
-import { AdvancedBlendMode, BlendMode } from '@flighthq/types';
+import type { ImageResource, SamplerLike, VideoTexture } from '@flighthq/types/contract';
+import { AdvancedBlendMode, BlendMode } from '@flighthq/types/contract';
 
 import { registerGlCompressedTextureDecoder, registerGlCompressedTextureUpload } from './glCompressedTexture';
 import {

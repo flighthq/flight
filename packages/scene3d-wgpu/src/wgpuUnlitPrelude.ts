@@ -7,8 +7,8 @@ import type {
   WgpuRenderState,
   WgpuUnlitDefineKey,
   WgpuUnlitPipeline,
-} from '@flighthq/types';
-import type { WgpuSkinningAdapter } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
 import {
   createWgpuMeshPipeline,

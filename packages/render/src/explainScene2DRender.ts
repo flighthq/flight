@@ -4,7 +4,7 @@ import type {
   HasAppearance,
   Renderable,
   RenderState,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { getRenderProxy2D } from './renderProxy';
 import { getRenderStateRuntime } from './renderState';

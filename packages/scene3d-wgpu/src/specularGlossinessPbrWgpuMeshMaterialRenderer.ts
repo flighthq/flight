@@ -11,8 +11,8 @@ import type {
   StandardPbrMaterialProperties,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
-} from '@flighthq/types';
-import { SpecularGlossinessPbrMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { SpecularGlossinessPbrMaterialKind } from '@flighthq/types/contract';
 
 import {
   buildWgpuPbrStandardDefineKey,

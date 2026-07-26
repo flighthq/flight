@@ -1,4 +1,4 @@
-import type { GlSkinPaletteTexture } from '@flighthq/types';
+import type { GlSkinPaletteTexture } from '@flighthq/types/contract';
 
 // The GPU skinning bone-palette data texture: the per-mesh joint-matrix palette in an RGBA32F texture
 // the vertex shader reads with texelFetch (GLSL ES 3.0 core), one mat4 packed as four consecutive

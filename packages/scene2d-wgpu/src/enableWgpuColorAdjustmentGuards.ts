@@ -1,7 +1,7 @@
 import { logOnce } from '@flighthq/log';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { WgpuRenderState } from '@flighthq/types';
-import { LogLevel } from '@flighthq/types';
+import type { WgpuRenderState } from '@flighthq/types/contract';
+import { LogLevel } from '@flighthq/types/contract';
 
 // Returns whether color-adjustment guards are installed on `state` (enableWgpuColorAdjustmentGuards).
 export function areWgpuColorAdjustmentGuardsEnabled(state: WgpuRenderState): boolean {

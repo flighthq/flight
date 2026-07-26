@@ -1,5 +1,5 @@
-import { registerRenderer } from '@flighthq/render';
-import type { CanvasRenderState, Kind, Renderer } from '@flighthq/types';
+import { registerRenderer } from '@flighthq/render/contract';
+import type { CanvasRenderState, Kind, Renderer } from '@flighthq/types/contract';
 import {
   BitmapKind,
   BitmapTextKind,
@@ -13,7 +13,7 @@ import {
   TextLabelKind,
   TilemapKind,
   VideoKind,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { defaultCanvasBitmapRenderer } from './canvasBitmap';
 import { defaultCanvasBitmapTextRenderer } from './canvasBitmapText';

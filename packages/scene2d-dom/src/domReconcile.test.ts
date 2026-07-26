@@ -1,4 +1,4 @@
-import type { DomRenderStateRuntime } from '@flighthq/types';
+import type { DomRenderStateRuntime } from '@flighthq/types/contract';
 
 import { hasDomStructureChanged, processDomNode, reconcileDomContainer, swapDomOrderLists } from './domReconcile';
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';

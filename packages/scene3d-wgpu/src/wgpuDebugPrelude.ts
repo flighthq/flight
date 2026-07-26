@@ -1,5 +1,10 @@
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { WgpuDebugDefineKey, WgpuDebugPipeline, WgpuRenderState, WgpuMaterialBinding } from '@flighthq/types';
+import type {
+  WgpuDebugDefineKey,
+  WgpuDebugPipeline,
+  WgpuRenderState,
+  WgpuMaterialBinding,
+} from '@flighthq/types/contract';
 
 import {
   createWgpuMeshPipeline,

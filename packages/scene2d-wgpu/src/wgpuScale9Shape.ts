@@ -11,7 +11,7 @@ import type {
   Scale9Shape,
   WgpuRenderState,
   WgpuTextureEntry,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
 import { buildWgpuScale9Mapper } from './wgpuScale9Mapper';

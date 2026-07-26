@@ -1,8 +1,8 @@
 import { createParticleEmitter2D, reserveParticleEmitter2D } from '@flighthq/particleemitter';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { createQuadBatch, getQuadBatchRuntime } from '@flighthq/sprite';
-import type { QuadBatchRuntime, TextureAtlas, TextureAtlasRegion } from '@flighthq/types';
-import { QuadBatchKind } from '@flighthq/types';
+import type { QuadBatchRuntime, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
+import { QuadBatchKind } from '@flighthq/types/contract';
 import { beginVelocityFrame, contributeVelocity, createVelocityField } from '@flighthq/velocity';
 
 import { createGlState } from './glTestHelper';

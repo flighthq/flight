@@ -1,4 +1,4 @@
-import type { LinearColor, WgpuMatcapDefineKey } from '@flighthq/types';
+import type { LinearColor, WgpuMatcapDefineKey } from '@flighthq/types/contract';
 
 import {
   bindWgpuMatcapSurface,

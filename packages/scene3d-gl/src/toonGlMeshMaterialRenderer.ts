@@ -13,8 +13,8 @@ import type {
   ToonMaterial,
   GlToonDefineKey,
   GlToonProgram,
-} from '@flighthq/types';
-import { ToonMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { ToonMaterialKind } from '@flighthq/types/contract';
 
 import { bindGlMeshLightBlock } from './glLitProgram';
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';

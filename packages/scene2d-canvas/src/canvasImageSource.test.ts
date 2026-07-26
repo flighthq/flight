@@ -1,5 +1,5 @@
 import { createImageResource, invalidateImageResource } from '@flighthq/image';
-import type { ImageResource } from '@flighthq/types';
+import type { ImageResource } from '@flighthq/types/contract';
 
 import { explainCanvasImageSource, resolveCanvasImageSource } from './canvasImageSource';
 import { createCanvasRenderState } from './canvasRenderState';

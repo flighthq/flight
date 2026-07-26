@@ -1,5 +1,5 @@
-import { ModifierSlot } from '@flighthq/types';
-import type { GlModifierSnippet } from '@flighthq/types';
+import { ModifierSlot } from '@flighthq/types/contract';
+import type { GlModifierSnippet } from '@flighthq/types/contract';
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeGlScene3DState } from './glScene3DTestHelper';

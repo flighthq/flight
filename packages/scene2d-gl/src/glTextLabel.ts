@@ -16,8 +16,8 @@ import type {
   TextFormat,
   TextLabel,
   TextLabelRuntime,
-} from '@flighthq/types';
-import { BatchFormat } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { BatchFormat } from '@flighthq/types/contract';
 
 import {
   ensureGlQuadBatchShader,

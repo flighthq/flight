@@ -1,6 +1,6 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import type { ColorScaleBias } from '@flighthq/types';
+import type { ColorScaleBias } from '@flighthq/types/contract';
 
 import { areGlColorAdjustmentGuardsEnabled, enableGlColorAdjustmentGuards } from './enableGlColorAdjustmentGuards';
 import { recordGlSpriteBatchColorScaleBias } from './glSpriteBatch';

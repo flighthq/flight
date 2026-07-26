@@ -1,4 +1,4 @@
-import type { CanvasRenderState, Node2D, Scene2DClipHooks, RenderProxy2D, RenderState } from '@flighthq/types';
+import type { CanvasRenderState, Node2D, Scene2DClipHooks, RenderProxy2D, RenderState } from '@flighthq/types/contract';
 
 import { popCanvasClipRectangle, pushCanvasClipContours, pushCanvasClipRectangle } from './canvasClipRectangle';
 

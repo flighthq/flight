@@ -21,7 +21,7 @@ import type {
   WgpuModifierContribution,
   WgpuModifierSnippet,
   WgpuRenderState,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 import {
   AnimatedNormalModifierKind,
   DissolveModifierKind,
@@ -35,8 +35,8 @@ import {
   ToonModifierKind,
   VertexDisplaceModifierKind,
   VertexDisplaceModifierSource,
-} from '@flighthq/types';
-import type { WgpuSkinningAdapter } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
 import { getWgpuShadedBaseFlags } from './shadedWgpuMeshMaterialRenderer';
 import { getWgpuClassicSharedSamplerModuleSourceForKey } from './wgpuClassicPrelude';

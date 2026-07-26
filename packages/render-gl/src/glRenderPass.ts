@@ -1,5 +1,5 @@
 import { copyMatrix, createMatrix } from '@flighthq/geometry';
-import type { GlRenderState, GlRenderTarget, Matrix, RenderPassPreserve } from '@flighthq/types';
+import type { GlRenderState, GlRenderTarget, Matrix, RenderPassPreserve } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
 import { resolveGlRenderTarget } from './glRenderTarget';

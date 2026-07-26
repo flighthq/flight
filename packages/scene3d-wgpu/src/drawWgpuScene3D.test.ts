@@ -6,7 +6,7 @@ import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, createBoxMeshGeometry, createMe
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter';
 import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d';
-import type { Camera3D, ParticleEmitter3D, Scene3DLightsLike, Skeleton3D } from '@flighthq/types';
+import type { Camera3D, ParticleEmitter3D, Scene3DLightsLike, Skeleton3D } from '@flighthq/types/contract';
 
 import { drawWgpuScene3D, isWgpuMeshGpuSkinned } from './drawWgpuScene3D';
 import { registerStandardPbrWgpuMaterial } from './registerStandardPbrWgpuMaterial';

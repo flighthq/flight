@@ -11,8 +11,8 @@ import type {
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
   WgpuClassicDefineKey,
-} from '@flighthq/types';
-import { LambertMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { LambertMaterialKind } from '@flighthq/types/contract';
 
 import { bindWgpuClassicSurface, ensureWgpuClassicPipeline } from './wgpuClassicPrelude';
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';

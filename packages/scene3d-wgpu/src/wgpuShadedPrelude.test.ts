@@ -16,8 +16,8 @@ import type {
   Texture,
   WgpuColorAdjustmentMaterialFeature,
   WgpuModifierSnippet,
-} from '@flighthq/types';
-import { FogModifierMode, ModifierSlot, VertexDisplaceModifierSource } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { FogModifierMode, ModifierSlot, VertexDisplaceModifierSource } from '@flighthq/types/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper';

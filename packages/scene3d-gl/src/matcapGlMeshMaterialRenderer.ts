@@ -10,8 +10,8 @@ import type {
   Scene3DLightBlock,
   Scene3DRenderProxy,
   GlMatcapDefineKey,
-} from '@flighthq/types';
-import { MatcapMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { MatcapMaterialKind } from '@flighthq/types/contract';
 
 import { bindGlMatcapSurface, ensureGlMatcapProgram } from './glMatcapPrelude';
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';

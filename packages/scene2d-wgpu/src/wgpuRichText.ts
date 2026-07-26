@@ -26,7 +26,7 @@ import type {
   WgpuRenderState,
   WgpuRichTextOverlay,
   WgpuTextureEntry,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
 import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';

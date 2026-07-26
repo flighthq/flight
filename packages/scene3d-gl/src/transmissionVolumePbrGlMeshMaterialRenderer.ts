@@ -9,8 +9,8 @@ import type {
   Scene3DLightBlock,
   Scene3DRenderProxy,
   TransmissionVolumePbrMaterial,
-} from '@flighthq/types';
-import { TransmissionVolumePbrMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { TransmissionVolumePbrMaterialKind } from '@flighthq/types/contract';
 
 import { bindGlMeshLightBlock } from './glLitProgram';
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';

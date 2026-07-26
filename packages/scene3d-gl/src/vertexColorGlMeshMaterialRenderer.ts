@@ -10,8 +10,8 @@ import type {
   Scene3DRenderProxy,
   VertexColorMaterial,
   GlUnlitDefineKey,
-} from '@flighthq/types';
-import { VertexColorMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { VertexColorMaterialKind } from '@flighthq/types/contract';
 
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshViewProjection } from './glMeshProgram';

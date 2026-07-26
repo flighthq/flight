@@ -1,7 +1,7 @@
 import { createMatrix } from '@flighthq/geometry';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
-import type { WgpuRenderState } from '@flighthq/types';
+import type { WgpuRenderState } from '@flighthq/types/contract';
 
 import { popWgpuClipContours, pushWgpuClipContours } from './wgpuClipContours';
 

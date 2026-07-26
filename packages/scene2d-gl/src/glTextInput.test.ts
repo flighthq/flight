@@ -1,6 +1,6 @@
 import { createRichText } from '@flighthq/text';
 import { enableTextInput, setTextInputSelection } from '@flighthq/textinput';
-import type { RenderProxy2D, RichText } from '@flighthq/types';
+import type { RenderProxy2D, RichText } from '@flighthq/types/contract';
 
 import { drawGlRichText } from './glRichText';
 import { createGlState } from './glTestHelper';

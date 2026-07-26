@@ -6,7 +6,7 @@ import type {
   WgpuCompressedTextureSupport,
   WgpuRenderState,
   WgpuTextureEntry,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 

@@ -1,4 +1,4 @@
-import { AdvancedBlendMode, BlendMode } from '@flighthq/types';
+import { AdvancedBlendMode, BlendMode } from '@flighthq/types/contract';
 
 import { applyDomBlendMode, enableDomBlendModeSupport, getDomBlendModeFidelity } from './domMaterials';
 import { createDomRenderState } from './domRenderState';

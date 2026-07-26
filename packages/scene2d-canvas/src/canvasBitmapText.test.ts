@@ -1,6 +1,6 @@
 import { createBitmapText, updateBitmapText } from '@flighthq/bitmaptext';
 import { createImageResource } from '@flighthq/image';
-import type { BitmapText, GlyphEntry, GlyphSource, ImageResource, RenderProxy2D } from '@flighthq/types';
+import type { BitmapText, GlyphEntry, GlyphSource, ImageResource, RenderProxy2D } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
 import { defaultCanvasBitmapTextRenderer, drawCanvasBitmapText } from './canvasBitmapText';

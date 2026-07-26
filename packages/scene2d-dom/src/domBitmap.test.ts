@@ -1,8 +1,8 @@
 ﻿import { createImageResource, createImageResourceFromCanvas } from '@flighthq/image';
-import { registerRenderer } from '@flighthq/render';
-import { getOrCreateRenderProxy2D } from '@flighthq/render';
+import { registerRenderer } from '@flighthq/render/contract';
+import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createBitmap } from '@flighthq/scene2d';
-import { BitmapKind } from '@flighthq/types';
+import { BitmapKind } from '@flighthq/types/contract';
 
 import { defaultDomBitmapRenderer, drawDomBitmap } from './domBitmap';
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';

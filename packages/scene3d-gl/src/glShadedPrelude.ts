@@ -8,8 +8,8 @@ import type {
   GlRenderState,
   Modifier,
   GlModifierSnippet,
-} from '@flighthq/types';
-import { MAX_FORWARD_LIGHTS, ModifierSlot } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { MAX_FORWARD_LIGHTS, ModifierSlot } from '@flighthq/types/contract';
 
 import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram';
 import {

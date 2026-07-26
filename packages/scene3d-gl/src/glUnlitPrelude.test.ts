@@ -1,4 +1,4 @@
-import type { LinearColor, VideoTexture, GlUnlitDefineKey } from '@flighthq/types';
+import type { LinearColor, VideoTexture, GlUnlitDefineKey } from '@flighthq/types/contract';
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';

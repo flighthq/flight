@@ -17,8 +17,8 @@ import type {
   TextLabel,
   TextLabelRuntime,
   WgpuRenderState,
-} from '@flighthq/types';
-import { BatchFormat } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { BatchFormat } from '@flighthq/types/contract';
 
 import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
 import {

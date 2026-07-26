@@ -10,7 +10,7 @@ import type {
   Scene3DRenderProxy,
   TextureLike,
   VideoTexture,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { ensureGlMeshUpload } from './glMeshUpload';
 import { ensureGlSkinPalette, getGlScene3DRuntime } from './glScene3DRuntime';

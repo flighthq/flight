@@ -7,7 +7,7 @@ import type {
   MatrixLike,
   RectangleLike,
   RenderProxy2D,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { buildDomContourClipPath } from './domClipContours';
 import { getDomRenderStateRuntime } from './domRenderState';

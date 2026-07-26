@@ -1,4 +1,9 @@
-import type { RenderTargetColorSpace, WgpuRenderState, WgpuRenderTarget, WgpuRenderTargetPool } from '@flighthq/types';
+import type {
+  RenderTargetColorSpace,
+  WgpuRenderState,
+  WgpuRenderTarget,
+  WgpuRenderTargetPool,
+} from '@flighthq/types/contract';
 
 import { createWgpuRenderTarget, destroyWgpuRenderTarget } from './wgpuRenderTarget';
 

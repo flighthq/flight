@@ -1,4 +1,4 @@
-import type { GlColorAdjustmentMaterialFeature, GlPbrDefineKey } from '@flighthq/types';
+import type { GlColorAdjustmentMaterialFeature, GlPbrDefineKey } from '@flighthq/types/contract';
 
 import {
   buildGlPbrDefineKey,
