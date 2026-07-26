@@ -20,7 +20,7 @@ let drawGlTextLabel: typeof GlTextLabelModule.drawGlTextLabel;
 scopeModuleMocks(['@flighthq/textlayout']);
 
 beforeAll(async () => {
-  vi.doMock('@flighthq/textlayout', async (importOriginal) => {
+  vi.doMock('@flighthq/textlayout/contract', async (importOriginal) => {
     const actual = (await importOriginal()) as Record<string, unknown>;
     return {
       ...actual,

@@ -11,7 +11,7 @@ vi.hoisted(() => {
   vi.resetModules();
 });
 
-vi.mock('@flighthq/render-gl', () => ({
+vi.mock('@flighthq/render-gl/contract', () => ({
   compileGlFullscreenProgram: vi.fn(() => ({ program: {}, vao: {} })),
   drawGlFullscreenPass: vi.fn((_state, _loc, _textures, _dest, setUniforms) => {
     setUniforms(glMock as never, {} as never);

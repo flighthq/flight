@@ -36,8 +36,8 @@ beforeAll(async () => {
   parseGlb = vi.fn<typeof Scene3DFormatsModule.parseGlb>();
   parseGltf = vi.fn<typeof Scene3DFormatsModule.parseGltf>();
   sendNetRequest = vi.fn<typeof NetModule.sendNetRequest>();
-  vi.doMock('@flighthq/net', () => ({ sendNetRequest }));
-  vi.doMock('@flighthq/scene3d-formats', () => ({ parseGlb, parseGltf }));
+  vi.doMock('@flighthq/net/contract', () => ({ sendNetRequest }));
+  vi.doMock('@flighthq/scene3d-formats/contract', () => ({ parseGlb, parseGltf }));
   ({ loadScene3DDocumentFromGlbUrl, loadScene3DDocumentFromGltfUrl } = await import('./gltfLoad'));
 });
 

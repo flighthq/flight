@@ -2,7 +2,7 @@ vi.hoisted(() => {
   vi.resetModules();
 });
 
-vi.mock('@flighthq/render-wgpu', () => {
+vi.mock('@flighthq/render-wgpu/contract', () => {
   let nextTargetId = 0;
   return {
     acquireWgpuRenderTarget: vi.fn((_state, _pool, descriptor) => ({

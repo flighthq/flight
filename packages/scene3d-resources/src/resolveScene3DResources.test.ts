@@ -70,7 +70,7 @@ async function settle(resolver: Scene3DResourceResolver): Promise<void> {
 beforeAll(async () => {
   vi.resetModules();
   loadFromBytes = vi.fn<LoadImageResourceFromBytes>();
-  vi.doMock('@flighthq/image', () => ({
+  vi.doMock('@flighthq/image/contract', () => ({
     loadImageResourceFromBytes: loadFromBytes,
     loadImageResourceFromUrl: vi.fn(),
   }));

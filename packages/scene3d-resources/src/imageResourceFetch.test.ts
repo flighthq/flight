@@ -27,7 +27,7 @@ function externalRef(uri: string, basePath: string | null): ExternalImageResourc
 beforeAll(async () => {
   vi.resetModules();
   loadFromUrl = vi.fn<LoadImageResourceFromUrl>();
-  vi.doMock('@flighthq/image', () => ({
+  vi.doMock('@flighthq/image/contract', () => ({
     loadImageResourceFromBytes: vi.fn(),
     loadImageResourceFromUrl: loadFromUrl,
   }));

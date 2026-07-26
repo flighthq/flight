@@ -33,8 +33,8 @@ beforeAll(async () => {
   vi.resetModules();
   parseMd5Mesh = vi.fn<typeof Scene3DFormatsModule.parseMd5Mesh>();
   sendNetRequest = vi.fn<typeof NetModule.sendNetRequest>();
-  vi.doMock('@flighthq/net', () => ({ sendNetRequest }));
-  vi.doMock('@flighthq/scene3d-formats', () => ({ parseMd5Mesh }));
+  vi.doMock('@flighthq/net/contract', () => ({ sendNetRequest }));
+  vi.doMock('@flighthq/scene3d-formats/contract', () => ({ parseMd5Mesh }));
   ({ loadScene3DDocumentFromMd5MeshUrl } = await import('./md5Load'));
 });
 

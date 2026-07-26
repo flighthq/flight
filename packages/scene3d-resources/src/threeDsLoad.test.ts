@@ -33,8 +33,8 @@ beforeAll(async () => {
   vi.resetModules();
   parse3ds = vi.fn<typeof Scene3DFormatsModule.parse3ds>();
   sendNetRequest = vi.fn<typeof NetModule.sendNetRequest>();
-  vi.doMock('@flighthq/net', () => ({ sendNetRequest }));
-  vi.doMock('@flighthq/scene3d-formats', () => ({ parse3ds }));
+  vi.doMock('@flighthq/net/contract', () => ({ sendNetRequest }));
+  vi.doMock('@flighthq/scene3d-formats/contract', () => ({ parse3ds }));
   ({ loadScene3DDocumentFrom3dsUrl } = await import('./threeDsLoad'));
 });
 

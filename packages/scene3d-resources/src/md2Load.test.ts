@@ -33,8 +33,8 @@ beforeAll(async () => {
   vi.resetModules();
   parseMd2 = vi.fn<typeof Scene3DFormatsModule.parseMd2>();
   sendNetRequest = vi.fn<typeof NetModule.sendNetRequest>();
-  vi.doMock('@flighthq/net', () => ({ sendNetRequest }));
-  vi.doMock('@flighthq/scene3d-formats', () => ({ parseMd2 }));
+  vi.doMock('@flighthq/net/contract', () => ({ sendNetRequest }));
+  vi.doMock('@flighthq/scene3d-formats/contract', () => ({ parseMd2 }));
   ({ loadScene3DDocumentFromMd2Url } = await import('./md2Load'));
 });
 

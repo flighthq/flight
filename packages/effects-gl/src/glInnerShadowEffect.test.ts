@@ -2,7 +2,7 @@ vi.hoisted(() => {
   vi.resetModules();
 });
 
-vi.mock('@flighthq/render-gl', () => {
+vi.mock('@flighthq/render-gl/contract', () => {
   let nextTargetId = 0;
   return {
     acquireGlRenderTarget: vi.fn((_state, _pool, descriptor) => ({

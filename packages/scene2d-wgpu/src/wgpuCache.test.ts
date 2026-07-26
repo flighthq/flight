@@ -45,7 +45,7 @@ beforeAll(async () => {
     const actual = await importOriginal<typeof WgpuSpriteBatchModule>();
     return { ...actual, flushWgpuSpriteBatch: vi.fn() };
   });
-  vi.doMock('@flighthq/render-wgpu', async (importOriginal) => {
+  vi.doMock('@flighthq/render-wgpu/contract', async (importOriginal) => {
     const actual = await importOriginal<typeof WgpuRenderWgpuModule>();
     return {
       ...actual,
