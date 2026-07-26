@@ -1,24 +1,49 @@
 # Material Modifier Model — tinting, adjustments, and shading as one axis
 
-**Status: proposed direction, not yet built.** This note records the design arc that unifies 2D
-adjustments and 3D material modifiers into one model. It refines
+**Status: IMPLEMENTED** — commits `71875e9e0`…`842689fa2`, on top of the BitmapText-leaf reshape
+(`c88bf5ca2`…`3c4ad62aa`). This note records the design arc and the shipped result: 2D adjustments and
+3D per-object color unified under one material-feature model. It refines
 [effect-adjustment-architecture](effect-adjustment-architecture.md); read that first for the
-Material / Adjustment / Effect tiers as they exist today.
+Material / Adjustment / Effect tiers.
 
-What is **shipped** (the groundwork this note builds on):
+What shipped:
 
-- `BitmapText` is a first-class leaf that owns its per-page glyph quads and draws through its own
-  per-backend renderer (`gl`/`canvas`/`wgpu`), the Tilemap pattern — no child `QuadBatch` nodes, no
-  `color` field.
-- Tint is authored with `setNode2DColorAdjustmentTint(node, rgba)` over `createTintAdjustment(rgba)`
-  (a diagonal `ColorMatrixAdjustment`); the orphan `setNode2DColorTransform` is gone. Tint round-trips
-  as scene data and is realized by the gl/wgpu color-adjustment fold; canvas has no fold (honest by the
-  absent `enableCanvasColorAdjustment`).
+- **`BitmapText` is a first-class leaf** — owns its per-page glyph quads, draws through its own
+  per-backend renderer (`gl`/`canvas`/`wgpu`), the Tilemap pattern. No child `QuadBatch` nodes, no `color` field.
+- **Tint is a dimension-agnostic node capability** — `setNodeColorAdjustmentsTint(node, rgba)` on base
+  `Node` (full API below). Golden path; round-trips as scene data.
+- **Color adjustment is a registered material feature**, not a per-backend fold —
+  `glColorAdjustmentMaterialFeature` / `wgpuColorAdjustmentMaterialFeature` carry one shader chunk to the
+  Standard-2D and promoted 3D-family compilers. Variant-by-presence (`CT_MODE_NONE` lean base shader /
+  whole-batch uniform / per-instance `a_colorScale`+`a_colorBias`), chosen by data cardinality, **never
+  splits the batch**, tree-shakes when unregistered. `glStandardMaterial` is the promoted `DefaultMaterial`.
 
-What is **proposed** (this note): relocate the color-adjustment fold out of the bespoke
-`glColorAdjustmentMaterialFeature`/`wgpuColorAdjustmentMaterialFeature` path and into a **material feature** carried by the shading
-families, unifying 2D tint and 3D per-object color under one model. Not yet implemented — needs the
-user's go-ahead and is a material-compiler-scoped change on gl and wgpu.
+## Shipped API & naming (final, decided)
+
+- **Authoring is dimension-agnostic on base `Node`** (the `colorAdjustments` slot always lived there):
+  `getNodeColorAdjustments` / `setNodeColorAdjustments(…|null)` / `addNodeColorAdjustment` /
+  `setNodeColorAdjustmentsTint`. **Plural = whole-stack** (get/set/clear/tint-clobber), **singular =
+  single-item** (add) — so the plural in `…ColorAdjustmentsTint` is the clobber signal. No `setNode2D…`
+  or `setNode3D…` twins.
+- **The 8-value affine type is `ColorScaleBias`** — flat `redScale…alphaScale` + `redBias…alphaBias`,
+  `out = in*scale + bias` per channel (no mixing). Operational name chosen over `ColorAffine` (which
+  names a category, not an action, and mis-signals generality) and over Flash's `ColorTransform` (five
+  overloaded meanings). **Bias is unbounded normalized-linear** (not 0–255); the old `/255` at the shader
+  bind is gone, byte-domain consumers convert at their own boundary.
+- **Representation hierarchy:** `ColorScaleBias` (per-channel scale+bias) ⊂ `ColorMatrix` (channel mixing)
+  ⊂ `ColorLut`/`ColorTransformFunction` (arbitrary). "Resolved" lives in **slot names**
+  (`resolvedColorScaleBias` fast path; `resolvedColorMatrix` when a stack mixes channels — the full 4×5
+  path is realized, not deferred), never a separate `ResolvedColorAdjustment` type.
+- **Tint is golden; `ColorScaleBias` is the Flight-native bridge, not co-equal vocabulary.** Golden:
+  `setNodeColorAdjustmentsTint(rgba)`. Semantic ops (brightness/saturation/…) via
+  `addNodeColorAdjustment(node, create…)`. Escape hatch: `createColorMatrixAdjustment(matrix)`. Bridge:
+  `createColorScaleBiasAdjustment(scaleBias)` — a per-channel constructor with no Flash in it.
+- **No compat aliases, no Flash/OpenFL in core docs.** A pre-release, from-scratch SDK does not keep a
+  `@deprecated` alias for a name it never shipped (that reintroduces the overload the rename removed and
+  keeps callers in the old mental model), and core primitive/API docs describe Flight's own model without
+  naming the frameworks it deliberately doesn't mirror. Porting hints, if ever wanted, live in a separate
+  porting guide — never welded into a primitive's doc comment. (Discoverability comes from the
+  self-descriptive names, not from an alias.)
 
 ## The principle: one modifier axis, 2D and 3D
 
@@ -58,8 +83,8 @@ Do **not** mint a distinct `ColorAdjustmentMaterial` family you switch to. In 2D
 (painter's order, transparency) — you cannot reorder to group tinted sprites — so a distinct tinted
 material would split z-interleaved batches. Scattered tint (damage flash, selection, team color at
 arbitrary depths) is the common case and fragments worst. Preserving co-batching is exactly why tint
-was pulled out of materials into a per-node fold in the first place (`HasColorTransform`: "a tinted and
-an untinted node with the same texture and blend batch together").
+was pulled out of materials into a per-node capability in the first place: a tinted and an untinted node
+with the same texture and blend must still batch together.
 
 Split on the axis where it helps, unify on the axis where it hurts:
 
@@ -84,7 +109,7 @@ bunnies must not each carry a color matrix. Two independent guarantees, both req
    the *base* program — no matrix uniform, no per-instance attribute, no multiply. Variant selection is
    driven by **data presence (cardinality), never by the material statically declaring a matrix field.**
 
-The resolved color transform defaults to `null`; `null` is free. Cost scales by cardinality:
+The resolved color adjustment defaults to `null`; `null` is free. Cost scales by cardinality:
 
 | Batch content | Data | Cost |
 | --- | --- | --- |
@@ -95,7 +120,7 @@ The resolved color transform defaults to `null`; `null` is free. Cost scales by 
 Design rule for the note's readers:
 
 > The color-adjustment chunk is a **registered, tree-shakable feature** of the shading families, **not**
-> a field they carry. Variant selection is driven by **presence of a resolved color transform in the
+> a field they carry. Variant selection is driven by **presence of a resolved color adjustment in the
 > batch** — an all-untinted batch compiles and runs the base program with zero adjustment data or code.
 > Default resolved tint is `null`; `null` is free at both bundle and runtime.
 
@@ -103,13 +128,13 @@ Design rule for the note's readers:
 
 There is no per-container opt-in. A Sprite is a 1-quad batch, a QuadBatch an N-quad batch, a Tilemap an
 N-tile batch, a BitmapText an N-glyph batch — all four go through the shared sprite-batch write path
-(`prepareSpriteBatchWrite` / `recordSpriteBatchColorTransform`). Tinting is uniform across them and
+(`prepareSpriteBatchWrite` / `recordSpriteBatchColorScaleBias`). Tinting is uniform across them and
 driven by *which data slot is filled*. QuadBatch/Tilemap already implement this ladder today
 (`materialData` per item, node-level fallback):
 
 - **Untinted** → node tint `null` + `materialData` array `null` → base program (the 300k-quad case
   never touches the feature).
-- **Whole-container** → `setNode2DColorAdjustmentTint(container, rgba)` → one uniform for the draw.
+- **Whole-container** → `setNodeColorAdjustmentsTint(container, rgba)` → one uniform for the draw.
 - **Per-item** → a per-instance setter (`setQuadBatchInstanceTint(batch, i, rgba)` /
   `setTilemapTileTint(map, col, row, rgba)`) writes the `materialData` slot, **lazily allocating** the
   per-item array on first use so an untinted container never carries it.
@@ -121,45 +146,49 @@ particles cost 4 bytes each, not 32.
 
 ## Authoring vs realization
 
-- **Authoring stays node-level:** `setNode2DColorAdjustmentTint(node, rgba)` (whole) and the per-item
-  setters. Tint-any-node ergonomics, per-instance, batch-friendly. Do **not** move authoring onto the
-  material (`setMaterialTint`) — it fights per-instance batching and is worse ergonomically.
-- **Realization becomes the material feature:** the node's resolved color transform (or per-item datum)
-  flows into StandardMaterial's adjustment feature; the shared batch path selects the variant by
-  presence. One implementation of "apply a color matrix" per backend, in the material compiler, reused
-  by every family — retiring the parallel `glColorAdjustmentMaterialFeature` / `wgpuColorAdjustmentMaterialFeature` folds.
+- **Authoring stays node-level:** `setNodeColorAdjustmentsTint(node, rgba)` (whole) and the per-item
+  setters. Tint-any-node ergonomics, per-instance, batch-friendly. Authoring is **not** on the material
+  (`setMaterialTint`) — that would fight per-instance batching and read worse.
+- **Realization is the material feature:** the node's `resolvedColorScaleBias` (or per-item datum) flows
+  into the Standard material's registered adjustment feature; the shared batch path selects the variant
+  by presence. One implementation of "apply scale+bias / a color matrix" per backend, in the material
+  compiler, reused by every family — replacing what would have been parallel per-renderer folds.
 
-## What this direction resolves
+## What this direction resolved
 
 Items deferred across the arc, all closed by this one consolidation:
 
-- **3D per-object tint** — 3D families opt the adjustment feature in, applied post-shade as a color
-  matrix (uniform per draw). The same fold 2D uses, not a bespoke `tint`/`baseColor` special case.
-- **`ColorTransformAdjustment` / offsets** — subsumed. The chunk consumes a 4×5 matrix (or the 8-float
-  affine fast path); offsets are entries in that matrix. No separate authored kind; the fold produces
-  the matrix, the feature applies it. (This is the parked Commit-4 retire, re-homed.)
+- **3D per-object tint** — the promoted 3D families opt the same adjustment feature in, applied
+  post-shade. The same chunk 2D uses, not a bespoke `tint`/`baseColor` special case.
+- **`ColorScaleBiasAdjustment` / offsets** — the parked "retire `ColorTransformAdjustment`" resolved by
+  *rename, not removal*: the kind became `ColorScaleBiasAdjustment` and the constructor
+  `createColorScaleBiasAdjustment`, kept as the Flight-native bridge (offsets are the `bias` half). The
+  full 4×5 mixing path is realized via `resolvedColorMatrix`, not deferred.
 - **The 2D/3D asymmetry** — gone; both are material-driven, differing only in whether the feature is
   expected-on (2D Standard) or opt-in (3D families).
-- **Per-backend duplication** — the parallel color folds collapse into one material feature.
-- **`colorAdjustments` `Node` → `Node2D` demotion** — moot; authoring can stay node-level, realization
-  is the material feature, so the node trait's home stops mattering the way it did.
+- **Per-backend duplication** — one registered feature, no parallel per-renderer folds.
+- **`colorAdjustments` `Node` → `Node2D` demotion** — moot; authoring is dimension-agnostic on base
+  `Node`, realization is the material feature, so the trait's home stopped mattering.
 
-## Migration sketch (high level, not code)
+## As shipped (structure)
 
-1. Promote `DefaultMaterial` → a real `StandardMaterial` (unlit textured), the shared 2D default.
-2. Author the color-adjustment shader chunk once per backend in the material compiler; register it as a
-   tree-shakable feature (successor to `enableGl/WgpuColorAdjustment`).
-3. Route the shared sprite-batch path's resolved-color-transform (node uniform) and per-item
-   `materialData` (per-instance attribute) into the feature; select base vs variant by presence.
-4. Extend 3D families (Phong/PBR/Shaded) to opt the same chunk in post-shade.
-5. Retire the standalone `glColorAdjustmentMaterialFeature` / `wgpuColorAdjustmentMaterialFeature` folds and, once nothing authors it,
-   `ColorTransformAdjustment`.
+1. `DefaultMaterial` promoted to a real `StandardMaterial` (`glStandardMaterial` / wgpu twin), the shared default.
+2. One color-adjustment shader chunk per backend in the material compiler, registered as a tree-shakable
+   feature (`glColorAdjustmentMaterialFeature` / `wgpuColorAdjustmentMaterialFeature`) — the base compilers
+   never statically import it.
+3. The shared sprite-batch path routes the node's `resolvedColorScaleBias` (uniform) and per-item data
+   (per-instance `a_colorScale`/`a_colorBias`) into the feature; `CT_MODE_NONE`/uniform/per-instance
+   selected by cardinality, never splitting the batch.
+4. The 3D families opt the same chunk in post-shade; the 3D proxy carries `colorScaleBias`.
+5. `ColorTransform` → `ColorScaleBias` (value + bind), `createColorTransformAdjustment` →
+   `createColorScaleBiasAdjustment` (bridge kept), `ColorTransformAdjustment` → `ColorScaleBiasAdjustment`.
+   No compat aliases retained (`842689fa2`).
 
-## Invariants any implementation must not cross
+## Invariants (confirmed held in the shipped code)
 
-1. **Untinted pays nothing** — bundle (feature unregistered → no code) *and* runtime (no tint in batch →
-   base program, no matrix data). The 300k-bunny test is the gate.
-2. **Tint never becomes a batch key** — it stays a per-instance/post-shade fold or a promotable variant,
-   never a distinct material identity that forks z-interleaved batches.
+1. **Untinted pays nothing** — bundle (feature unregistered → no chunk) *and* runtime (`CT_MODE_NONE` →
+   lean base shader, no scale/bias data). The 300k-bunny gate holds.
+2. **Tint never becomes a batch key** — it stays a per-instance attribute or promotable uniform variant;
+   cardinality promotion fills with identity so it never forks z-interleaved batches.
 3. **fuse vs splice stays visible** — a color-matrix modifier (data fold) and a fresnel modifier (code
-   splice) realize incompatibly; don't let them share a stack that implies they compose the same way.
+   splice) realize incompatibly; they don't share a stack that implies they compose the same way.
