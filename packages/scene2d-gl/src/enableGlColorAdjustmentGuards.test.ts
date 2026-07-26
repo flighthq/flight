@@ -39,7 +39,7 @@ describe('enableGlColorAdjustmentGuards', () => {
       const entries = getMemoryLogSinkEntries(sink);
       expect(entries.length).toBe(1);
       const data = entries[0].data as Record<string, unknown>;
-      expect(String(data.message)).toContain('enableGlColorAdjustment');
+      expect(String(data.message)).toContain('registerGlColorAdjustmentMaterialFeature');
     } finally {
       removeLogSink(sink.sink);
     }
@@ -66,7 +66,7 @@ describe('enableGlColorAdjustmentGuards', () => {
     try {
       enableGlColorAdjustmentGuards(state);
       // Simulate the fold being installed so the dispatcher never reaches the guard branch.
-      runtime.glColorAdjustmentFold = { drawShapeMeshes: () => {}, flush: () => false, record: () => {} };
+      runtime.glColorAdjustmentMaterialFeature = { drawShapeMeshes: () => {}, flush: () => false, record: () => {} };
       recordGlSpriteBatchColorTransform(state, ct(), 0);
       expect(getMemoryLogSinkEntries(sink).length).toBe(0);
     } finally {

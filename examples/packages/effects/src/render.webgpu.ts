@@ -9,7 +9,7 @@ import {
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
   prepareScene2DRender,
-  registerDefaultWgpuMaterial,
+  registerStandardWgpuMaterial,
   registerStandardWgpuRenderEffects,
   registerWgpuShapeCommands,
   registerRenderer,
@@ -27,7 +27,7 @@ export const state = await createWgpuRenderState(canvas, {
   backgroundColor: 0x0a0c14ff,
 });
 
-registerDefaultWgpuMaterial(state);
+registerStandardWgpuMaterial(state);
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
 registerStandardWgpuRenderEffects(state);

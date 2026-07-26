@@ -9,7 +9,7 @@ import {
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
   prepareScene2DRender,
-  registerDefaultGlMaterial,
+  registerStandardGlMaterial,
   registerGlShapeCommands,
   registerRenderer,
   registerStandardGlRenderEffects,
@@ -27,7 +27,7 @@ export const state = createGlRenderState(canvas, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
 
-registerDefaultGlMaterial(state);
+registerStandardGlMaterial(state);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
 registerStandardGlRenderEffects(state);

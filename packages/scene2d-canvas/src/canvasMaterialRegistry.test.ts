@@ -1,5 +1,5 @@
 import type { CanvasMaterialRenderer, Material } from '@flighthq/types';
-import { DefaultMaterialKind } from '@flighthq/types';
+import { StandardMaterialKind } from '@flighthq/types';
 
 import {
   applyCanvasMaterial,
@@ -63,7 +63,7 @@ describe('resolveCanvasMaterialRenderer', () => {
 
   it('falls back to the registered default for an unregistered kind', () => {
     const state = makeState();
-    registerCanvasMaterialRenderer(state, DefaultMaterialKind, testRenderer);
+    registerCanvasMaterialRenderer(state, StandardMaterialKind, testRenderer);
     expect(resolveCanvasMaterialRenderer(state, makeMaterial('Other'))).toBe(testRenderer);
   });
 });

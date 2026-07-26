@@ -1,6 +1,6 @@
 import { registerGlMaterialRenderer } from '@flighthq/render-gl';
 import type { GlMaterialRenderer, GlRenderState } from '@flighthq/types';
-import { DefaultMaterialKind } from '@flighthq/types';
+import { StandardMaterialKind } from '@flighthq/types';
 
 import {
   bindGlQuadBatchBaseAttributes,
@@ -9,15 +9,15 @@ import {
   useGlQuadBatchProgram,
 } from './glSpriteBatch';
 
-// Registers the bundled default material (the plain textured-quad pipeline) under DefaultMaterialKind.
+// Registers the bundled default material (the plain textured-quad pipeline) under StandardMaterialKind.
 // It is a bundled material like any other — it has no privileged status in the render path; a node
-// with no material renders only if a renderer is registered for DefaultMaterialKind. A user can copy
+// with no material renders only if a renderer is registered for StandardMaterialKind. A user can copy
 // this file, swap the shader, and register their own default the same way.
-export function registerDefaultGlMaterial(state: GlRenderState): void {
-  registerGlMaterialRenderer(state, DefaultMaterialKind, defaultGlMaterialRenderer);
+export function registerStandardGlMaterial(state: GlRenderState): void {
+  registerGlMaterialRenderer(state, StandardMaterialKind, standardGlMaterialRenderer);
 }
 
-export const defaultGlMaterialRenderer: GlMaterialRenderer = {
+export const standardGlMaterialRenderer: GlMaterialRenderer = {
   instanceFloatCount: 0,
   bind(state: GlRenderState): void {
     const shader = ensureGlQuadBatchShader(state);

@@ -32,16 +32,17 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/adjustments": "*",
     "@flighthq/animation": "*",
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
+    "@flighthq/materials": "*",
     "@flighthq/mesh": "*",
     "@flighthq/node": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
     "@flighthq/camera": "*",
-    "@flighthq/materials": "*",
     "typescript": "^5.3.0"
   },
   "description": "3D scene graph and spatial node hierarchy",

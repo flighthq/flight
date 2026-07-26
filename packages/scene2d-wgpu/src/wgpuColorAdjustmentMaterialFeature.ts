@@ -2,7 +2,7 @@ import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import type {
   ColorTransform,
   WgpuColorAdjustmentFlush,
-  WgpuColorAdjustmentFold,
+  WgpuColorAdjustmentMaterialFeature,
   WgpuRenderState,
   WgpuRenderStateRuntime,
 } from '@flighthq/types';
@@ -15,9 +15,9 @@ import { getWgpuQuadBatchPreludeWGSL } from './wgpuSpriteBatch';
 // batch for a whole-batch tint, or varied per instance — without ever splitting the batch. Until a
 // state calls this, its batch renderer carries none of this module's WGSL (it tree-shakes out) and
 // recordWgpuSpriteBatchColorTransform silently skips every tint. Idempotent; safe to call per state.
-export function enableWgpuColorAdjustment(state: WgpuRenderState): void {
+export function registerWgpuColorAdjustmentMaterialFeature(state: WgpuRenderState): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  runtime.wgpuColorAdjustmentFold = wgpuColorAdjustmentFold;
+  runtime.wgpuColorAdjustmentMaterialFeature = wgpuColorAdjustmentMaterialFeature;
   if (runtime.spriteBatchColorTransformMode === undefined) runtime.spriteBatchColorTransformMode = CT_MODE_NONE;
   if (runtime.spriteBatchColorTransformData === undefined) {
     runtime.spriteBatchColorTransformData = new Float32Array(COLOR_TRANSFORM_FLOATS * 256);
@@ -225,7 +225,7 @@ fn fs_main(in : VertexOut) -> @location(0) vec4f {
 
 const _colorTransformModules = new WeakMap<GPUDevice, GPUShaderModule>();
 
-const wgpuColorAdjustmentFold: WgpuColorAdjustmentFold = {
+const wgpuColorAdjustmentMaterialFeature: WgpuColorAdjustmentMaterialFeature = {
   record: recordWgpuColorAdjustment,
   resolveFlush: resolveWgpuColorAdjustmentFlush,
 };

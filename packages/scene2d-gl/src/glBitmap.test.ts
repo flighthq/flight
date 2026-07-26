@@ -3,8 +3,8 @@ import type { RenderProxy2D } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
 import { defaultGlBitmapRenderer, drawGlBitmap } from './glBitmap';
-import { registerDefaultGlMaterial } from './glDefaultMaterial';
 import { flushGlSpriteBatch } from './glSpriteBatch';
+import { registerStandardGlMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 
 function makeBitmapData() {
@@ -48,21 +48,21 @@ describe('defaultGlBitmapRenderer', () => {
 describe('drawGlBitmap', () => {
   it('returns early without writing to batch when image is null', () => {
     const { state } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     drawGlBitmap(state, makeRenderProxy(null));
     expect(getGlRenderStateRuntime(state).spriteBatchCount).toBe(0);
   });
 
   it('returns early without writing to batch when the image has neither source nor data', () => {
     const { state } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     drawGlBitmap(state, makeRenderProxy(makeImageResource(null)));
     expect(getGlRenderStateRuntime(state).spriteBatchCount).toBe(0);
   });
 
   it('writes one instance for a data-only image (a generated Surface with no element)', () => {
     const { state } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     const data = new Uint8ClampedArray(32 * 32 * 4);
     drawGlBitmap(state, makeRenderProxy(makeImageResource(null, 32, 32, data)));
     expect(getGlRenderStateRuntime(state).spriteBatchCount).toBe(1);
@@ -70,7 +70,7 @@ describe('drawGlBitmap', () => {
 
   it('writes one instance to the sprite batch when image is valid', () => {
     const { state } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     const img = document.createElement('img');
     drawGlBitmap(state, makeRenderProxy(makeImageResource(img, 32, 32)));
     expect(getGlRenderStateRuntime(state).spriteBatchCount).toBe(1);
@@ -78,7 +78,7 @@ describe('drawGlBitmap', () => {
 
   it('draws via drawElementsInstanced after flush', () => {
     const { state, gl } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     const img = document.createElement('img');
     drawGlBitmap(state, makeRenderProxy(makeImageResource(img)));
     flushGlSpriteBatch(state as any);
@@ -87,7 +87,7 @@ describe('drawGlBitmap', () => {
 
   it('writes correct transform and size into instance data', () => {
     const { state } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     const img = document.createElement('img');
     drawGlBitmap(state, makeRenderProxy(makeImageResource(img, 64, 48)));
     const d = getGlRenderStateRuntime(state).spriteBatchInstanceData;
@@ -108,7 +108,7 @@ describe('drawGlBitmap', () => {
 
   it('writes source-rectangle UVs when sourceRectangle is set', () => {
     const { state } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     const img = document.createElement('img');
     const proxy = {
       ...makeRenderProxy({

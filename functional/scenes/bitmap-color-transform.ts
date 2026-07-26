@@ -9,8 +9,8 @@
 //
 // API note: Flight models a color transform as the node-level HasColorTransform trait
 // (packages/types/src/HasColorTransform.ts), an Adjustment folded into the GL/WGPU batch draw through
-// the opt-in color-adjustment capability (enableGlColorAdjustment / enableWgpuColorAdjustment;
-// packages/scene2d-gl/src/glColorAdjustment.ts and the WGPU sibling). The Canvas and DOM bitmap
+// the opt-in color-adjustment capability (registerGlColorAdjustmentMaterialFeature / registerWgpuColorAdjustmentMaterialFeature;
+// packages/scene2d-gl/src/glColorAdjustmentMaterialFeature.ts and the WGPU sibling). The Canvas and DOM bitmap
 // renderers do not yet realize that trait, so a node-attached color transform draws untinted there —
 // diverging across backends. Functional tests must agree byte-for-byte across Canvas/DOM/GL, so this
 // test instead applies the transform to the source PIXELS in JS via the genuine

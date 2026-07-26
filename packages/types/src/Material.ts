@@ -7,7 +7,7 @@ import type { Entity, EntityWithoutRuntime, Kind } from './Entity';
 //
 // A material `kind` is a shared registry key, not a backend-specific resource. Not every
 // backend registers a renderer for every kind: a Gl-only material has no Canvas
-// renderer and degrades to DefaultMaterialKind there rather than erroring.
+// renderer and degrades to StandardMaterialKind there rather than erroring.
 //
 // Batching keys on the material by reference — sharing one material instance across nodes
 // batches them; a different material always breaks the batch (different program, different
@@ -31,7 +31,3 @@ export type MaterialLike = EntityWithoutRuntime<Material>;
 // data a material consumes per node. Its concrete shape is defined by the material kind that reads
 // it.
 export type MaterialData = object;
-
-// Resolved when a node carries no material, or its material kind has no renderer on the
-// render state. The built-in default renderer draws the node with the standard pipeline.
-export const DefaultMaterialKind = 'DefaultMaterial';

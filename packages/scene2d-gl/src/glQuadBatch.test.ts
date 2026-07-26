@@ -1,8 +1,8 @@
 import type { RenderProxy2D } from '@flighthq/types';
 
-import { registerDefaultGlMaterial } from './glDefaultMaterial';
 import { defaultGlQuadBatchRenderer } from './glQuadBatch';
 import { flushGlSpriteBatch } from './glSpriteBatch';
+import { registerStandardGlMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 
 function makeAtlas() {
@@ -48,7 +48,7 @@ describe('defaultGlQuadBatchRenderer', () => {
 describe('defaultGlQuadBatchRenderer.submit', () => {
   it('returns early without drawing when atlas is null', () => {
     const { state, gl } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     defaultGlQuadBatchRenderer.submit(state, makeQuadBatchNode({ atlas: null }));
     flushGlSpriteBatch(state as any);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
@@ -56,7 +56,7 @@ describe('defaultGlQuadBatchRenderer.submit', () => {
 
   it('returns early without drawing when atlas.image is null', () => {
     const { state, gl } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     defaultGlQuadBatchRenderer.submit(state, makeQuadBatchNode({ atlas: { image: null, regions: [] } }));
     flushGlSpriteBatch(state as any);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
@@ -64,7 +64,7 @@ describe('defaultGlQuadBatchRenderer.submit', () => {
 
   it('returns early without drawing when atlas.image.source is null', () => {
     const { state, gl } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     defaultGlQuadBatchRenderer.submit(state, makeQuadBatchNode({ atlas: { image: { source: null }, regions: [] } }));
     flushGlSpriteBatch(state as any);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
@@ -72,7 +72,7 @@ describe('defaultGlQuadBatchRenderer.submit', () => {
 
   it('returns early without drawing when instanceCount is 0', () => {
     const { state, gl } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     defaultGlQuadBatchRenderer.submit(state, makeQuadBatchNode({ instanceCount: 0 }));
     flushGlSpriteBatch(state as any);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
@@ -80,7 +80,7 @@ describe('defaultGlQuadBatchRenderer.submit', () => {
 
   it('draws all valid instances in a single instanced call with vector2 transform type', () => {
     const { state, gl } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     defaultGlQuadBatchRenderer.submit(
       state,
       makeQuadBatchNode({
@@ -97,7 +97,7 @@ describe('defaultGlQuadBatchRenderer.submit', () => {
 
   it('excludes out-of-range ids from the instanced draw count', () => {
     const { state, gl } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     defaultGlQuadBatchRenderer.submit(
       state,
       makeQuadBatchNode({
@@ -114,7 +114,7 @@ describe('defaultGlQuadBatchRenderer.submit', () => {
 
   it('draws all valid instances in a single instanced call with full matrix transform type', () => {
     const { state, gl } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     const transforms = new Float32Array([1, 0, 0, 1, 0, 0]);
     defaultGlQuadBatchRenderer.submit(
       state,

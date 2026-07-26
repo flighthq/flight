@@ -19,7 +19,7 @@ const INSTANCE_FLOATS = 13;
 // Draws a BitmapText leaf: one batched sprite pass per glyph-atlas page (each page binds its own atlas
 // image, so a multi-page source issues one draw per page). The node's resolved color transform folds in
 // as a whole-node tint on every glyph — the same `recordGlSpriteBatchColorTransform` path a tinted
-// QuadBatch uses — realized only when `enableGlColorAdjustment` has installed the fold. Mirrors
+// QuadBatch uses — realized only when `registerGlColorAdjustmentMaterialFeature` has installed the fold. Mirrors
 // `submitGlQuadBatch`'s vector2 inner loop, sourced from the page's own `ids`/`transforms` arrays.
 function submitGlBitmapText(state: GlRenderState, node: RenderProxy2D): void {
   const runtime = getGlRenderStateRuntime(state);

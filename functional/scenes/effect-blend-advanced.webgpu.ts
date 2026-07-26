@@ -22,7 +22,7 @@ import {
   endWgpuRenderPass,
   getSurfacePixelRgb,
   prepareScene2DRender,
-  registerDefaultWgpuMaterial,
+  registerStandardWgpuMaterial,
   registerRenderer,
   registerWgpuBlendEffectBackdrop,
   registerWgpuRenderEffect,
@@ -43,7 +43,7 @@ export const state = await createWgpuRenderState(canvas, {
 });
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
-registerDefaultWgpuMaterial(state);
+registerStandardWgpuMaterial(state);
 registerWgpuRenderEffect(state, 'BlendEffect', defaultWgpuBlendEffectRunner);
 
 const pipeline = createWgpuRenderEffectPipeline(state, {

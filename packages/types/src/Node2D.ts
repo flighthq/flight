@@ -1,3 +1,4 @@
+import type { ColorAdjustmentRuntime } from './ColorAdjustmentRuntime';
 import type { HasAppearance } from './HasAppearance';
 import type { HasBlendMode } from './HasBlendMode';
 import type { HasBoundsRectangle, HasBoundsRectangleRuntime } from './HasBoundsRectangle';
@@ -20,6 +21,7 @@ export const Node2DTraitsKey = Symbol('Node2DTraits');
 // `scene2d` is a back-pointer set on a display root by createScene2D (null on every other node). getScene2DRoot
 // walks to the root and reads it, so scene2d membership needs no per-node propagation.
 export type Node2DRuntime = NodeRuntime<Node2DTraits> &
+  ColorAdjustmentRuntime &
   HasTransform2DRuntime &
   HasBoundsRectangleRuntime & { scene2d: Scene2D | null };
 export type Node2DDataFactory = NodeDataFactory<Node2DData>;

@@ -1,5 +1,5 @@
 import type { GlMeshMaterialRenderer, Material } from '@flighthq/types';
-import { DefaultMaterialKind } from '@flighthq/types';
+import { StandardMaterialKind } from '@flighthq/types';
 
 import {
   getGlMeshMaterialRenderer,
@@ -43,9 +43,9 @@ describe('resolveGlMeshMaterialRenderer', () => {
     expect(resolveGlMeshMaterialRenderer(state, makeMaterial(TestKind))).toBe(renderer);
   });
 
-  it('falls back to the DefaultMaterialKind renderer', () => {
+  it('falls back to the StandardMaterialKind renderer', () => {
     const { state } = makeGlScene3DState();
-    registerGlMeshMaterialRenderer(state, DefaultMaterialKind, renderer);
+    registerGlMeshMaterialRenderer(state, StandardMaterialKind, renderer);
     expect(resolveGlMeshMaterialRenderer(state, makeMaterial('Other'))).toBe(renderer);
     expect(resolveGlMeshMaterialRenderer(state, null)).toBe(renderer);
   });

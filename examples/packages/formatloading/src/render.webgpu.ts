@@ -8,7 +8,7 @@ import {
   defaultWgpuShapeRenderer,
   defaultWgpuTextLabelRenderer,
   prepareScene2DRender,
-  registerDefaultWgpuMaterial,
+  registerStandardWgpuMaterial,
   registerRenderer,
   registerWgpuShapeCommands,
   renderWgpuBackground,
@@ -27,7 +27,7 @@ export const state = await createWgpuRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 
-registerDefaultWgpuMaterial(state);
+registerStandardWgpuMaterial(state);
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerRenderer(state, TextLabelKind, defaultWgpuTextLabelRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);

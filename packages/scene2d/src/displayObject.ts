@@ -68,6 +68,9 @@ export function createNode2D<R extends Node2DRuntime>(
 
 export function createNode2DRuntime(methods?: Readonly<Partial<MethodsOf<Node2DRuntime>>>): Node2DRuntime {
   const out = createNodeRuntime(methods) as Node2DRuntime;
+  out.colorAdjustments = null;
+  out.colorAdjustmentsChannelMixing = false;
+  out.resolvedColorTransform = null;
   out.traits = Node2DTraitsKey;
   out.scene2d = null;
   initTransform2DRuntimeTrait(out, methods);
@@ -78,7 +81,7 @@ export function createNode2DRuntime(methods?: Readonly<Partial<MethodsOf<Node2DR
 // Returns this object's pointwise color-adjustment stack (the source of truth on the node runtime), or
 // null when it carries none.
 export function getNode2DColorAdjustments(source: Readonly<Node2D>): readonly Adjustment[] | null {
-  return getNodeRuntime(source).colorAdjustments;
+  return (getNodeRuntime(source) as Node2DRuntime).colorAdjustments;
 }
 
 export function getNode2DRuntime(source: Readonly<Node2D>): Readonly<Node2DRuntime> {
@@ -95,7 +98,7 @@ export function setNode2DClip(source: Node2D, value: ClipRegion | null): void {
 }
 
 // Sets (or clears with null) this object's pointwise color-adjustment stack — the generic replacement for
-// the removed color-transform trait. A color transform is one member: `createColorTransformAdjustment`.
+// the removed color-transform trait. TintAdjustment is the common packed-color member.
 // Re-fuses the resolved cache once here (not per frame) and invalidates appearance so the render walk
 // hands the fold the affine ColorTransform the stack resolves to. Null is the untinted default.
 export function setNode2DColorAdjustments(source: Node2D, value: readonly Adjustment[] | null): void {

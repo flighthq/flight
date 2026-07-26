@@ -39,7 +39,7 @@ export function createScene3DFromObj(
 // library referenced by `mtllib`/`usemtl`; each named material becomes a BlinnPhongMaterial (MTL's own
 // Kd/Ks/Ns shading model) in the document's materials table, deduped by name. Without the library,
 // material directives are acknowledged but the subset's material index stays absent (resolving to
-// DefaultMaterialKind at draw time). Assemble into a live Scene3D with `createScene3DFromDocument`.
+// StandardMaterialKind at draw time). Assemble into a live Scene3D with `createScene3DFromDocument`.
 //
 // Supported directives: `v`, `vn`, `vt`, `f`, `g`, `o`, `mtllib`, `usemtl`. Faces may be
 // triangles, quads, or N-gons (fan-triangulated). Face vertex references support independent
@@ -394,7 +394,7 @@ function parseFaceVertex(
 // with one MeshSubset per non-empty bucket addressing that material's contiguous index range. The
 // Mesh's positional `materials` array carries one entry per subset — the Flight material the
 // bucket's `usemtl` name resolves to, or null when the name is unknown or no library was supplied
-// (a null slot resolves to DefaultMaterialKind at draw time). A single-material group is one Mesh
+// (a null slot resolves to StandardMaterialKind at draw time). A single-material group is one Mesh
 // with one subset spanning the whole buffer; a multi-material group is one Mesh with several
 // subsets, never a wrapper over per-material child meshes. A group with no faces adds nothing.
 function flushGroup(
@@ -483,7 +483,7 @@ function clampChannel(value: number): number {
 
 // Resolves an MTL material name to a document material INDEX, memoizing so a name shared across meshes
 // registers one material entry. Empty name (no `usemtl`) or unknown name → -1 (no material; the assembler
-// resolves an out-of-range index to null, DefaultMaterialKind at draw time). A resolved material is
+// resolves an out-of-range index to null, StandardMaterialKind at draw time). A resolved material is
 // appended to the document's materials table and its index cached by name.
 //
 // A `usemtl` name absent from a SUPPLIED library drops that subset's authored material assignment — a

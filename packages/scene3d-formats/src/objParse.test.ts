@@ -408,7 +408,7 @@ describe('createScene3DFromObj', () => {
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'usemtl Missing', 'f 1 2 3'].join('\n');
 
     const mesh = getNodeChildren(createScene3DFromObj(obj, lib).root)[0] as Mesh;
-    // One subset, one positional slot — null (resolves to DefaultMaterialKind at draw time).
+    // One subset, one positional slot — null (resolves to StandardMaterialKind at draw time).
     expect(mesh.materials).toEqual([null]);
   });
 

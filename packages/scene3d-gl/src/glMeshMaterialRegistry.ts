@@ -1,5 +1,5 @@
 import type { GlMeshMaterialRenderer, GlRenderState, Kind, Material } from '@flighthq/types';
-import { DefaultMaterialKind } from '@flighthq/types';
+import { StandardMaterialKind } from '@flighthq/types';
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 
@@ -11,7 +11,7 @@ export function getGlMeshMaterialRenderer(state: GlRenderState, kind: Kind): GlM
 }
 
 // Registers a 3D mesh-material renderer against a material kind on this state. Opt-in: drawScene3D
-// only draws subsets whose material kind (or DefaultMaterialKind) has a renderer here. Call
+// only draws subsets whose material kind (or StandardMaterialKind) has a renderer here. Call
 // registerStandardPbrGlMaterial for the built-in StandardPbr path. Mirrors registerGlMaterialRenderer
 // but writes scene-gl's separate 3D registry.
 export function registerGlMeshMaterialRenderer(
@@ -23,7 +23,7 @@ export function registerGlMeshMaterialRenderer(
 }
 
 // Resolves a mesh subset's material to its registered 3D renderer: by the material's kind, else the
-// renderer registered for DefaultMaterialKind, else null. drawScene3D skips a subset whose material
+// renderer registered for StandardMaterialKind, else null. drawScene3D skips a subset whose material
 // resolves to null (no built-in fallback — every material, including the default, enters only
 // through registration). Mirrors resolveGlMaterialRenderer over the 3D registry.
 export function resolveGlMeshMaterialRenderer(
@@ -35,5 +35,5 @@ export function resolveGlMeshMaterialRenderer(
     const renderer = registry.get(material.kind);
     if (renderer !== undefined) return renderer;
   }
-  return registry.get(DefaultMaterialKind) ?? null;
+  return registry.get(StandardMaterialKind) ?? null;
 }

@@ -19,7 +19,6 @@ import {
 import { defaultWgpuBitmapRenderer } from './wgpuBitmap';
 import { defaultWgpuBitmapTextRenderer } from './wgpuBitmapText';
 import { defaultWgpuRenderCacheRenderer } from './wgpuCache';
-import { registerDefaultWgpuMaterial } from './wgpuDefaultMaterial';
 import { defaultWgpuScene2DRenderer } from './wgpuNode2D';
 import { defaultWgpuParticleEmitter2DRenderer } from './wgpuParticleEmitter2D';
 import { defaultWgpuQuadBatchRenderer } from './wgpuQuadBatch';
@@ -27,6 +26,7 @@ import { defaultWgpuRichTextRenderer } from './wgpuRichText';
 import { defaultWgpuScale9ShapeRenderer } from './wgpuScale9Shape';
 import { defaultWgpuShapeRenderer } from './wgpuShape';
 import { defaultWgpuSpriteRenderer } from './wgpuSpriteRenderer';
+import { registerStandardWgpuMaterial } from './wgpuStandardMaterial';
 import { defaultWgpuTextLabelRenderer } from './wgpuTextLabel';
 import { defaultWgpuTilemapRenderer } from './wgpuTilemap';
 import { defaultWgpuVideoRenderer } from './wgpuVideo';
@@ -35,14 +35,14 @@ import { defaultWgpuVideoRenderer } from './wgpuVideo';
  * Registers all built-in display-object kind renderers and the default material on `state` in one
  * call. Registers: bitmap, shape, scale9shape, quadbatch, tilemap, particle emitter, text label,
  * rich text, video, display object (plain container), and the render-cache renderer. Also calls
- * `registerDefaultWgpuMaterial` so the batch pipeline resolves the default material immediately.
+ * `registerStandardWgpuMaterial` so the batch pipeline resolves the default material immediately.
  *
  * This is a thin convenience wrapper around the individual `registerRenderer` calls — tree-shaking
  * is unchanged: apps that import only one kind's renderer still pull no extra weight. The function
  * itself can be tree-shaken when not called.
  */
 export function registerWgpuScene2DRenderers(state: WgpuRenderState): void {
-  registerDefaultWgpuMaterial(state);
+  registerStandardWgpuMaterial(state);
   registerRenderer(state, BitmapKind, defaultWgpuBitmapRenderer);
   registerRenderer(state, BitmapTextKind, defaultWgpuBitmapTextRenderer);
   registerRenderer(state, DisplayObjectKind, defaultWgpuScene2DRenderer);
@@ -61,10 +61,10 @@ export function registerWgpuScene2DRenderers(state: WgpuRenderState): void {
 /**
  * Registers all built-in sprite-graph kind renderers and the default material on `state` in one
  * call. Registers: sprite, quad-batch, tilemap, and particle emitter. Also calls
- * `registerDefaultWgpuMaterial`. Use this when only drawing sprite-graph nodes, not display objects.
+ * `registerStandardWgpuMaterial`. Use this when only drawing sprite-graph nodes, not display objects.
  */
 export function registerWgpuSpriteRenderers(state: WgpuRenderState): void {
-  registerDefaultWgpuMaterial(state);
+  registerStandardWgpuMaterial(state);
   registerRenderer(state, ParticleEmitter2DKind, defaultWgpuParticleEmitter2DRenderer);
   registerRenderer(state, QuadBatchKind, defaultWgpuQuadBatchRenderer);
   registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);

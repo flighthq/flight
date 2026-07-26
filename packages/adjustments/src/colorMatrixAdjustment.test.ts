@@ -1,5 +1,20 @@
-import { getAdjustmentColorMatrix, isColorMatrixAdjustment } from './colorMatrixAdjustment';
+import {
+  createColorMatrixAdjustment,
+  getAdjustmentColorMatrix,
+  isColorMatrixAdjustment,
+} from './colorMatrixAdjustment';
+import { createIdentityColorMatrix } from './colorMatrixMath';
 import { createInvertAdjustment } from './invertAdjustment';
+
+describe('createColorMatrixAdjustment', () => {
+  it('creates an authored generic matrix adjustment without a parallel transform payload', () => {
+    const matrix = createIdentityColorMatrix();
+    const adjustment = createColorMatrixAdjustment(matrix);
+    expect(adjustment.kind).toBe('ColorMatrixAdjustment');
+    expect(adjustment.colorMatrix).toEqual(matrix);
+    expect(adjustment.colorMatrix).not.toBe(matrix);
+  });
+});
 
 describe('getAdjustmentColorMatrix', () => {
   it('returns the matrix for a matrix-tier adjustment', () => {
@@ -15,7 +30,6 @@ describe('getAdjustmentColorMatrix', () => {
     expect(getAdjustmentColorMatrix({ kind: 'acme.Bad', colorMatrix: [1, 2, 3] } as never)).toBeNull();
   });
 });
-
 describe('isColorMatrixAdjustment', () => {
   it('is true for a matrix-tier adjustment and false for an effect', () => {
     expect(isColorMatrixAdjustment(createInvertAdjustment())).toBe(true);

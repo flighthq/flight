@@ -172,10 +172,10 @@ export function flushGlSpriteBatch(state: GlRenderState): void {
   state.applyBlendMode?.(state, blendMode);
   bindGlImageResourceTexture(state, texture, null, smoothing, true);
 
-  // The color-adjustment fold is opt-in (enableGlColorAdjustment): when installed it selects and binds
+  // The color-adjustment fold is opt-in (registerGlColorAdjustmentMaterialFeature): when installed it selects and binds
   // its program for a tinted batch, returning true; when absent, or for an untinted batch, the lean
   // material path runs and no fold code is linked into this module.
-  const ctHandled = runtime.glColorAdjustmentFold?.flush(state, count) ?? false;
+  const ctHandled = runtime.glColorAdjustmentMaterialFeature?.flush(state, count) ?? false;
   if (!ctHandled) {
     if (floats > 0) {
       if (runtime.spriteBatchMaterialBuffer === null) {
@@ -281,7 +281,7 @@ export function prepareGlSpriteBatchWrite(
 
 // Folds instance `instanceIndex`'s effective color transform into the active batch through the opt-in
 // color-adjustment fold, without ever splitting the batch. When the capability was not enabled
-// (enableGlColorAdjustment), the fold slot is null and the tint is skipped — the batch draws untinted
+// (registerGlColorAdjustmentMaterialFeature), the fold slot is null and the tint is skipped — the batch draws untinted
 // (the sentinel behavior); an installed guard reports the miss. `colorTransform` is null for an
 // untinted instance, which is a no-op whether or not the fold is enabled.
 export function recordGlSpriteBatchColorTransform(
@@ -290,12 +290,12 @@ export function recordGlSpriteBatchColorTransform(
   instanceIndex: number,
 ): void {
   const runtime = getGlRenderStateRuntime(state);
-  const fold = runtime.glColorAdjustmentFold;
+  const fold = runtime.glColorAdjustmentMaterialFeature;
   if (fold != null) {
     fold.record(runtime, colorTransform, instanceIndex);
     return;
   }
-  if (colorTransform != null) runtime.glColorAdjustmentGuard?.(state, colorTransform);
+  if (colorTransform != null) runtime.glColorAdjustmentMaterialFeatureGuard?.(state, colorTransform);
 }
 
 export function setGlQuadBatchWorldAndTexture(

@@ -22,7 +22,7 @@ import {
   enableGlClipSupport,
   endGlRenderEffectPipeline,
   prepareScene2DRender,
-  registerDefaultGlMaterial,
+  registerStandardGlMaterial,
   registerGlRenderEffect,
   registerGlShapeCommands,
   registerRenderer,
@@ -45,7 +45,7 @@ export const state = createGlRenderState(canvas, {
 });
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
-registerDefaultGlMaterial(state);
+registerStandardGlMaterial(state);
 enableGlClipSupport(state);
 registerGlRenderEffect(state, 'BloomEffect', defaultGlBloomEffectRunner);
 

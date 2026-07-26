@@ -3,9 +3,9 @@ import { setNode2DColorAdjustmentTint } from '@flighthq/scene2d';
 import type { BitmapText, GlyphEntry, GlyphSource, ImageResource, RenderProxy2D } from '@flighthq/types';
 
 import { defaultGlBitmapTextRenderer } from './glBitmapText';
-import { enableGlColorAdjustment } from './glColorAdjustment';
-import { registerDefaultGlMaterial } from './glDefaultMaterial';
+import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature';
 import { flushGlSpriteBatch } from './glSpriteBatch';
+import { registerStandardGlMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 
 // A single-page stub glyph source whose page-0 image carries a `source` (so hasImageResourcePixels is true).
@@ -57,7 +57,7 @@ describe('defaultGlBitmapTextRenderer.submit', () => {
     expect(getBitmapTextPages(text)[0].instanceCount).toBe(2);
 
     const { state, gl } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     defaultGlBitmapTextRenderer.submit(state, makeProxy(text));
     flushGlSpriteBatch(state as never);
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
@@ -68,7 +68,7 @@ describe('defaultGlBitmapTextRenderer.submit', () => {
     const text = createBitmapText(createTestGlyphSource(), { text: '' });
     updateBitmapText(text);
     const { state, gl } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     defaultGlBitmapTextRenderer.submit(state, makeProxy(text));
     flushGlSpriteBatch(state as never);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
@@ -80,8 +80,8 @@ describe('defaultGlBitmapTextRenderer.submit', () => {
     updateBitmapText(text);
 
     const { state, gl } = createGlState();
-    registerDefaultGlMaterial(state);
-    enableGlColorAdjustment(state);
+    registerStandardGlMaterial(state);
+    registerGlColorAdjustmentMaterialFeature(state);
     // The resolved color transform arrives on the proxy; submit must draw without throwing through the fold.
     defaultGlBitmapTextRenderer.submit(
       state,

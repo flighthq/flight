@@ -1,7 +1,7 @@
 import type { RenderProxy2D } from '@flighthq/types';
 
-import { registerDefaultGlMaterial } from './glDefaultMaterial';
 import { flushGlSpriteBatch } from './glSpriteBatch';
+import { registerStandardGlMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 import { defaultGlTilemapRenderer } from './glTilemap';
 
@@ -55,7 +55,7 @@ describe('defaultGlTilemapRenderer', () => {
 describe('defaultGlTilemapRenderer.submit', () => {
   it('returns early without drawing when tileset is null', () => {
     const { state, gl } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     defaultGlTilemapRenderer.submit(state, makeTilemapNode({ tileset: null }));
     flushGlSpriteBatch(state);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
@@ -63,7 +63,7 @@ describe('defaultGlTilemapRenderer.submit', () => {
 
   it('returns early without drawing when atlas is null', () => {
     const { state, gl } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     defaultGlTilemapRenderer.submit(state, makeTilemapNode({ tileset: makeTileset(null) }));
     flushGlSpriteBatch(state);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
@@ -71,7 +71,7 @@ describe('defaultGlTilemapRenderer.submit', () => {
 
   it('returns early without drawing when atlas.image is null', () => {
     const { state, gl } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     defaultGlTilemapRenderer.submit(
       state,
       makeTilemapNode({ tileset: { atlas: { image: null, regions: [] }, tileWidth: 16, tileHeight: 16 } }),
@@ -82,7 +82,7 @@ describe('defaultGlTilemapRenderer.submit', () => {
 
   it('returns early without drawing when atlas.image.source is null', () => {
     const { state, gl } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     defaultGlTilemapRenderer.submit(
       state,
       makeTilemapNode({ tileset: { atlas: { image: { source: null }, regions: [] }, tileWidth: 16, tileHeight: 16 } }),
@@ -93,7 +93,7 @@ describe('defaultGlTilemapRenderer.submit', () => {
 
   it('returns early without drawing when columns is 0', () => {
     const { state, gl } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     defaultGlTilemapRenderer.submit(state, makeTilemapNode({ columns: 0 }));
     flushGlSpriteBatch(state);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
@@ -101,7 +101,7 @@ describe('defaultGlTilemapRenderer.submit', () => {
 
   it('returns early without drawing when rows is 0', () => {
     const { state, gl } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     defaultGlTilemapRenderer.submit(state, makeTilemapNode({ rows: 0 }));
     flushGlSpriteBatch(state);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
@@ -109,7 +109,7 @@ describe('defaultGlTilemapRenderer.submit', () => {
 
   it('draws all valid tiles in a single instanced call', () => {
     const { state, gl } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     defaultGlTilemapRenderer.submit(state, makeTilemapNode());
     flushGlSpriteBatch(state);
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
@@ -118,7 +118,7 @@ describe('defaultGlTilemapRenderer.submit', () => {
 
   it('excludes out-of-range tile ids from the instanced draw count', () => {
     const { state, gl } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     defaultGlTilemapRenderer.submit(state, makeTilemapNode({ tiles: [0, 99, 99, 0] }));
     flushGlSpriteBatch(state);
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);

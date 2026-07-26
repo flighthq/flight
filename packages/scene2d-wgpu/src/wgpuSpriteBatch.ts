@@ -127,12 +127,12 @@ export function flushWgpuSpriteBatch(state: WgpuRenderState): void {
   const blendMode = runtime.spriteBatchBlendMode;
   const smoothing = runtime.spriteBatchSmoothing;
   const renderer = runtime.spriteBatchMaterialRenderer!;
-  // The color-adjustment fold is opt-in (enableWgpuColorAdjustment): when installed it resolves a
+  // The color-adjustment fold is opt-in (registerWgpuColorAdjustmentMaterialFeature): when installed it resolves a
   // tinted batch to its per-instance @group(3) storage data + folded module; an untinted batch (or an
   // un-enabled state) falls back to the resolved material's own per-instance data, and no fold WGSL is
   // linked into this module. CT and material per-instance data never mix in a built-in batch (built-in
   // materials have no per-instance floats).
-  const ctFlush = runtime.wgpuColorAdjustmentFold?.resolveFlush(state, count) ?? null;
+  const ctFlush = runtime.wgpuColorAdjustmentMaterialFeature?.resolveFlush(state, count) ?? null;
   const group3Floats = ctFlush !== null ? ctFlush.floats : runtime.spriteBatchMaterialFloats;
   const group3Data = ctFlush !== null ? ctFlush.data : runtime.spriteBatchMaterialData;
   resetWgpuSpriteBatch(state);
@@ -329,7 +329,7 @@ export function prepareWgpuSpriteBatchWrite(
 
 // Folds instance `instanceIndex`'s effective color transform into the active batch through the opt-in
 // color-adjustment fold, without ever splitting the batch. When the capability was not enabled
-// (enableWgpuColorAdjustment), the fold slot is null and the tint is skipped — the batch draws
+// (registerWgpuColorAdjustmentMaterialFeature), the fold slot is null and the tint is skipped — the batch draws
 // untinted (the sentinel behavior, never a throw); an installed guard reports the miss. `colorTransform`
 // is null/undefined for an untinted instance, which is a no-op whether or not the fold is enabled.
 export function recordWgpuSpriteBatchColorTransform(
@@ -338,12 +338,12 @@ export function recordWgpuSpriteBatchColorTransform(
   instanceIndex: number,
 ): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  const fold = runtime.wgpuColorAdjustmentFold;
+  const fold = runtime.wgpuColorAdjustmentMaterialFeature;
   if (fold != null) {
     fold.record(runtime, colorTransform, instanceIndex);
     return;
   }
-  if (colorTransform != null) runtime.wgpuColorAdjustmentGuard?.(state, colorTransform);
+  if (colorTransform != null) runtime.wgpuColorAdjustmentMaterialFeatureGuard?.(state, colorTransform);
 }
 
 // Resets the per-frame buffer-pool cursor so the next frame reclaims slots from the start. Must be

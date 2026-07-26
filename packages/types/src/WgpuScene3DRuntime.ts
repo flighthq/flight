@@ -49,6 +49,7 @@ export interface WgpuScene3DFrameBinding {
 // WgpuScene3DRuntime so rebuilding the two passes does not allocate each frame.
 export interface WgpuScene3DDrawEntry {
   alpha: number;
+  colorTransform: object | null;
   depth: number;
   lightBlock: object;
   material: object;

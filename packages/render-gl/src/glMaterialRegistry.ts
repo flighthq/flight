@@ -1,5 +1,5 @@
 import type { GlMaterialRenderer, GlRenderState, Kind, Material } from '@flighthq/types';
-import { DefaultMaterialKind } from '@flighthq/types';
+import { StandardMaterialKind } from '@flighthq/types';
 
 import { getGlRenderStateRuntime } from './glRenderState';
 
@@ -13,7 +13,7 @@ export function registerGlMaterialRenderer(state: GlRenderState, kind: Kind, ren
 }
 
 // Resolves a node's material to its registered renderer: by the material's kind, else the renderer
-// registered for DefaultMaterialKind, else null. The render path knows nothing about which materials
+// registered for StandardMaterialKind, else null. The render path knows nothing about which materials
 // exist — every material (including the default) enters only through user registration, and an
 // unresolved material is a no-op (the node does not render), never a built-in fallback.
 export function resolveGlMaterialRenderer(state: GlRenderState, material: Material | null): GlMaterialRenderer | null {
@@ -23,5 +23,5 @@ export function resolveGlMaterialRenderer(state: GlRenderState, material: Materi
     const renderer = map.get(material.kind);
     if (renderer !== undefined) return renderer;
   }
-  return map.get(DefaultMaterialKind) ?? null;
+  return map.get(StandardMaterialKind) ?? null;
 }

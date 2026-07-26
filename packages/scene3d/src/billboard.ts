@@ -17,7 +17,7 @@ export { BillboardKind } from '@flighthq/types';
 
 // Allocates a camera-facing Billboard node: a Node3D (so it shares the scene hierarchy with mesh
 // and group nodes) carrying `geometry`, one `materials` entry per geometry subset (positional; a
-// missing or null slot resolves to DefaultMaterialKind at draw time), and a facing `mode`. Because a
+// missing or null slot resolves to StandardMaterialKind at draw time), and a facing `mode`. Because a
 // Billboard carries geometry it is structurally a drawable leaf (isMesh) and is drawn by the same
 // per-material mesh renderers as a Mesh on every backend — the only billboard-specific step is the
 // per-frame facing pass (orientBillboardToCamera / orientScene3DBillboardsToCamera), which rewrites

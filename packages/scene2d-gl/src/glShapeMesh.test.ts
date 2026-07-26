@@ -1,7 +1,7 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import type { ColorTransform, RenderProxy2D } from '@flighthq/types';
 
-import { enableGlColorAdjustment } from './glColorAdjustment';
+import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature';
 import { drawGlShapeMeshBatch, drawGlShapeMeshes, ensureGlShapeMeshProgram } from './glShapeMesh';
 import { createGlState } from './glTestHelper';
 
@@ -117,7 +117,7 @@ describe('drawGlShapeMeshes', () => {
 
   it('tints solid-fill meshes through the fold with the same uniforms as the quad-batch path', () => {
     const { state, gl } = createGlState();
-    enableGlColorAdjustment(state);
+    registerGlColorAdjustmentMaterialFeature(state);
 
     // White fill, half-brightness multiplier, +128 red offset — mirrors the Path-B uniform upload.
     drawGlShapeMeshes(state, makeProxy({ colorTransform: ct(0.5, 0.5, 0.5, 1, 128, 0, 0, 0) }), [
@@ -126,7 +126,7 @@ describe('drawGlShapeMeshes', () => {
 
     const shader = getGlRenderStateRuntime(state).shapeMeshColorTransformShader!;
     expect(shader).toBeDefined();
-    // Multiplier uploaded verbatim; offsets normalized by 255 — identical to glColorAdjustment's
+    // Multiplier uploaded verbatim; offsets normalized by 255 — identical to glColorAdjustmentMaterialFeature's
     // bindGlSpriteBatchUniformColorTransform.
     expect(gl.uniform4f).toHaveBeenCalledWith(shader.colorMultiplierLocation, 0.5, 0.5, 0.5, 1);
     expect(gl.uniform4f).toHaveBeenCalledWith(shader.colorOffsetLocation, 128 / 255, 0, 0, 0);
@@ -137,7 +137,7 @@ describe('drawGlShapeMeshes', () => {
 
   it('falls back to the lean path through the fold when the node carries no transform', () => {
     const { state } = createGlState();
-    enableGlColorAdjustment(state);
+    registerGlColorAdjustmentMaterialFeature(state);
 
     drawGlShapeMeshes(state, makeProxy({ colorTransform: null }), [TRIANGLE]);
 

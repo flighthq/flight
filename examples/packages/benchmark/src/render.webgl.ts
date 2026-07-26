@@ -7,7 +7,7 @@ import {
   defaultGlQuadBatchRenderer,
   defaultGlTextLabelRenderer,
   prepareScene2DRender,
-  registerDefaultGlMaterial,
+  registerStandardGlMaterial,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
@@ -24,7 +24,7 @@ export const state = createGlRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 
-registerDefaultGlMaterial(state);
+registerStandardGlMaterial(state);
 registerRenderer(state, QuadBatchKind, defaultGlQuadBatchRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 

@@ -5,9 +5,9 @@ import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-
 import { createSprite } from '@flighthq/sprite';
 import type { TextureAtlas } from '@flighthq/types';
 
-import { registerDefaultWgpuMaterial } from './wgpuDefaultMaterial';
 import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
 import { defaultWgpuSpriteRenderer } from './wgpuSpriteRenderer';
+import { registerStandardWgpuMaterial } from './wgpuStandardMaterial';
 
 beforeAll(() => {
   installWgpuMock();
@@ -42,7 +42,7 @@ describe('defaultWgpuSpriteRenderer.submit', () => {
   it('folds the region pivot through the sprite transform into batch translation', async () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
-    registerDefaultWgpuMaterial(state);
+    registerStandardWgpuMaterial(state);
     const atlas = {
       image: createImageResource(document.createElement('img')),
       regions: [{ height: 32, id: 0, name: null, pivotX: 7, pivotY: 9, width: 32, x: 0, y: 0 }],

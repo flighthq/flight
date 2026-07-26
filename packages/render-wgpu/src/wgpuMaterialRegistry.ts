@@ -1,5 +1,5 @@
 import type { Kind, Material, WgpuMaterialRenderer, WgpuRenderState } from '@flighthq/types';
-import { DefaultMaterialKind } from '@flighthq/types';
+import { StandardMaterialKind } from '@flighthq/types';
 
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 
@@ -14,7 +14,7 @@ export function registerWgpuMaterialRenderer(state: WgpuRenderState, kind: Kind,
 }
 
 // Resolves a node's material to its registered renderer: by the material's kind, else the renderer
-// registered for DefaultMaterialKind, else null. The render path knows nothing about which materials
+// registered for StandardMaterialKind, else null. The render path knows nothing about which materials
 // exist — every material (including the default) enters only through user registration, and an
 // unresolved material is a no-op (the node does not render), never a built-in fallback.
 export function resolveWgpuMaterialRenderer(
@@ -28,5 +28,5 @@ export function resolveWgpuMaterialRenderer(
     const renderer = map.get(material.kind);
     if (renderer !== undefined) return renderer;
   }
-  return map.get(DefaultMaterialKind) ?? null;
+  return map.get(StandardMaterialKind) ?? null;
 }

@@ -1,6 +1,6 @@
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import type { WgpuMeshMaterialRenderer } from '@flighthq/types';
-import { DefaultMaterialKind, StandardPbrMaterialKind } from '@flighthq/types';
+import { StandardMaterialKind, StandardPbrMaterialKind } from '@flighthq/types';
 
 import {
   getWgpuMeshMaterialRenderer,
@@ -40,10 +40,10 @@ describe('resolveWgpuMeshMaterialRenderer', () => {
     expect(resolveWgpuMeshMaterialRenderer(state, createStandardPbrMaterial())).toBe(renderer);
   });
 
-  it('falls back to DefaultMaterialKind for an unregistered kind or null material', () => {
+  it('falls back to StandardMaterialKind for an unregistered kind or null material', () => {
     const { state } = makeWgpuScene3DState();
     const fallback = makeRenderer();
-    registerWgpuMeshMaterialRenderer(state, DefaultMaterialKind, fallback);
+    registerWgpuMeshMaterialRenderer(state, StandardMaterialKind, fallback);
     expect(resolveWgpuMeshMaterialRenderer(state, createStandardPbrMaterial())).toBe(fallback);
     expect(resolveWgpuMeshMaterialRenderer(state, null)).toBe(fallback);
   });

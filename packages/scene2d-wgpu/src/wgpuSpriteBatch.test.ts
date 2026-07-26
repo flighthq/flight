@@ -5,8 +5,7 @@ import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-
 import type { ColorTransform, Material } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
-import { enableWgpuColorAdjustment } from './wgpuColorAdjustment';
-import { defaultWgpuMaterialRenderer } from './wgpuDefaultMaterial';
+import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature';
 import {
   ensureWgpuQuadBatchResources,
   flushWgpuSpriteBatch,
@@ -17,6 +16,7 @@ import {
   recordWgpuSpriteBatchColorTransform,
   resetWgpuSpriteBatchBufferPool,
 } from './wgpuSpriteBatch';
+import { standardWgpuMaterialRenderer } from './wgpuStandardMaterial';
 
 beforeAll(() => {
   installWgpuMock();
@@ -84,7 +84,7 @@ describe('flushWgpuSpriteBatch', () => {
     const runtime = getWgpuRenderStateRuntime(state);
     const tex = createImageResource(document.createElement('img'));
 
-    prepareWgpuSpriteBatchWrite(state, tex, null, null, defaultWgpuMaterialRenderer, 1);
+    prepareWgpuSpriteBatchWrite(state, tex, null, null, standardWgpuMaterialRenderer, 1);
     runtime.spriteBatchCount = 1;
     flushWgpuSpriteBatch(state);
 
@@ -104,11 +104,11 @@ describe('flushWgpuSpriteBatch', () => {
     const tex1 = createImageResource(document.createElement('img'));
     const tex2 = createImageResource(document.createElement('img'));
 
-    prepareWgpuSpriteBatchWrite(state, tex1, null, null, defaultWgpuMaterialRenderer, 1);
+    prepareWgpuSpriteBatchWrite(state, tex1, null, null, standardWgpuMaterialRenderer, 1);
     runtime.spriteBatchCount = 1;
     flushWgpuSpriteBatch(state);
 
-    prepareWgpuSpriteBatchWrite(state, tex2, null, null, defaultWgpuMaterialRenderer, 1);
+    prepareWgpuSpriteBatchWrite(state, tex2, null, null, standardWgpuMaterialRenderer, 1);
     runtime.spriteBatchCount = 1;
     flushWgpuSpriteBatch(state);
 
@@ -178,7 +178,7 @@ describe('prepareWgpuSpriteBatchWrite', () => {
     const state = await createWgpuRenderStateForTest();
     const tex = createImageResource(document.createElement('img'));
 
-    const base = prepareWgpuSpriteBatchWrite(state, tex, null, null, defaultWgpuMaterialRenderer, 1);
+    const base = prepareWgpuSpriteBatchWrite(state, tex, null, null, standardWgpuMaterialRenderer, 1);
     expect(base).toBe(0);
   });
 
@@ -189,9 +189,9 @@ describe('prepareWgpuSpriteBatchWrite', () => {
     const tex1 = createImageResource(document.createElement('img'));
     const tex2 = createImageResource(document.createElement('img'));
 
-    prepareWgpuSpriteBatchWrite(state, tex1, null, null, defaultWgpuMaterialRenderer, 1);
+    prepareWgpuSpriteBatchWrite(state, tex1, null, null, standardWgpuMaterialRenderer, 1);
     runtime.spriteBatchCount = 1;
-    prepareWgpuSpriteBatchWrite(state, tex2, null, null, defaultWgpuMaterialRenderer, 1);
+    prepareWgpuSpriteBatchWrite(state, tex2, null, null, standardWgpuMaterialRenderer, 1);
 
     expect(runtime.spriteBatchTexture).toBe(tex2);
     expect(runtime.spriteBatchCount).toBe(0);
@@ -206,9 +206,9 @@ describe('prepareWgpuSpriteBatchWrite', () => {
     const materialA = makeMaterial();
     const materialB = makeMaterial();
 
-    prepareWgpuSpriteBatchWrite(state, tex, null, materialA, defaultWgpuMaterialRenderer, 1);
+    prepareWgpuSpriteBatchWrite(state, tex, null, materialA, standardWgpuMaterialRenderer, 1);
     runtime.spriteBatchCount = 1;
-    prepareWgpuSpriteBatchWrite(state, tex, null, materialB, defaultWgpuMaterialRenderer, 1);
+    prepareWgpuSpriteBatchWrite(state, tex, null, materialB, standardWgpuMaterialRenderer, 1);
 
     expect(runtime.spriteBatchMaterial).toBe(materialB);
     expect(runtime.spriteBatchCount).toBe(0);
@@ -234,18 +234,18 @@ describe('recordWgpuSpriteBatchColorTransform', () => {
   it('delegates to the installed fold when color adjustment is enabled', async () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
-    enableWgpuColorAdjustment(state);
+    registerWgpuColorAdjustmentMaterialFeature(state);
     recordWgpuSpriteBatchColorTransform(state, ct(0.5), 0);
     expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_UNIFORM);
   });
 
   it('an untinted batch on flush uses the lean material module (no fold)', async () => {
     const state = await createWgpuRenderStateForTest();
-    enableWgpuColorAdjustment(state);
+    registerWgpuColorAdjustmentMaterialFeature(state);
     renderWgpuBackground(state);
     const runtime = getWgpuRenderStateRuntime(state);
     const tex = createImageResource(document.createElement('img'));
-    prepareWgpuSpriteBatchWrite(state, tex, null, null, defaultWgpuMaterialRenderer, 1);
+    prepareWgpuSpriteBatchWrite(state, tex, null, null, standardWgpuMaterialRenderer, 1);
     recordWgpuSpriteBatchColorTransform(state, null, 0);
     runtime.spriteBatchCount = 1;
     expect(() => flushWgpuSpriteBatch(state)).not.toThrow();
@@ -260,7 +260,7 @@ describe('resetWgpuSpriteBatchBufferPool', () => {
     const runtime = getWgpuRenderStateRuntime(state);
     const tex = createImageResource(document.createElement('img'));
 
-    prepareWgpuSpriteBatchWrite(state, tex, null, null, defaultWgpuMaterialRenderer, 1);
+    prepareWgpuSpriteBatchWrite(state, tex, null, null, standardWgpuMaterialRenderer, 1);
     runtime.spriteBatchCount = 1;
     flushWgpuSpriteBatch(state);
     expect(runtime.spriteBatchBufferCursor).toBe(1);

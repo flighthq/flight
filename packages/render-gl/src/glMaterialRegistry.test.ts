@@ -1,5 +1,5 @@
 import type { GlMaterialRenderer, Material } from '@flighthq/types';
-import { DefaultMaterialKind } from '@flighthq/types';
+import { StandardMaterialKind } from '@flighthq/types';
 
 import { getGlMaterialRenderer, registerGlMaterialRenderer, resolveGlMaterialRenderer } from './glMaterialRegistry';
 import { createGlState } from './glTestHelper';
@@ -39,9 +39,9 @@ describe('resolveGlMaterialRenderer', () => {
     expect(resolveGlMaterialRenderer(state, makeMaterial(TestKind))).toBe(testRenderer);
   });
 
-  it('falls back to the renderer registered for DefaultMaterialKind', () => {
+  it('falls back to the renderer registered for StandardMaterialKind', () => {
     const { state } = createGlState();
-    registerGlMaterialRenderer(state, DefaultMaterialKind, testRenderer);
+    registerGlMaterialRenderer(state, StandardMaterialKind, testRenderer);
     expect(resolveGlMaterialRenderer(state, makeMaterial('Other'))).toBe(testRenderer);
     expect(resolveGlMaterialRenderer(state, null)).toBe(testRenderer);
   });

@@ -2,7 +2,7 @@ import { createGlProgram } from '@flighthq/render-gl';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import type {
   ColorTransform,
-  GlColorAdjustmentFold,
+  GlColorAdjustmentMaterialFeature,
   GlColorTransformInstancedShader,
   GlRenderState,
   GlRenderStateRuntime,
@@ -27,9 +27,9 @@ import {
 // a_ctMult/a_ctOff attributes, chosen by data cardinality — without ever splitting the batch. Until a
 // state calls this, its batch renderer carries none of this module's shader code (it tree-shakes out)
 // and recordGlSpriteBatchColorTransform silently skips every tint. Idempotent; safe to call per state.
-export function enableGlColorAdjustment(state: GlRenderState): void {
+export function registerGlColorAdjustmentMaterialFeature(state: GlRenderState): void {
   const runtime = getGlRenderStateRuntime(state);
-  runtime.glColorAdjustmentFold = glColorAdjustmentFold;
+  runtime.glColorAdjustmentMaterialFeature = glColorAdjustmentMaterialFeature;
   if (runtime.spriteBatchColorTransformMode === undefined) runtime.spriteBatchColorTransformMode = CT_MODE_NONE;
   if (runtime.spriteBatchColorTransformData === undefined) {
     runtime.spriteBatchColorTransformData = new Float32Array(COLOR_TRANSFORM_FLOATS * 256);
@@ -228,7 +228,7 @@ function equalsRecordedColorTransform(a: Readonly<ColorTransform> | null, b: Rea
 // per-instance), and binds it. Returns true when it drew a folded batch; false when the batch carried
 // no tint, so flushGlSpriteBatch runs the lean material path instead. Resets the fold mode for the
 // next batch.
-function flushGlColorAdjustmentFold(state: GlRenderState, count: number): boolean {
+function flushGlColorAdjustmentMaterialFeature(state: GlRenderState, count: number): boolean {
   const runtime = getGlRenderStateRuntime(state);
   const ctMode = runtime.spriteBatchColorTransformMode ?? CT_MODE_NONE;
   if (ctMode === CT_MODE_NONE) return false;
@@ -436,8 +436,8 @@ void main() {
 }
 `;
 
-const glColorAdjustmentFold: GlColorAdjustmentFold = {
+const glColorAdjustmentMaterialFeature: GlColorAdjustmentMaterialFeature = {
   drawShapeMeshes: drawGlShapeMeshesColorTransform,
-  flush: flushGlColorAdjustmentFold,
+  flush: flushGlColorAdjustmentMaterialFeature,
   record: recordGlColorAdjustment,
 };

@@ -5,7 +5,7 @@ import {
   createGlRenderState,
   defaultGlVideoRenderer,
   prepareScene2DRender,
-  registerDefaultGlMaterial,
+  registerStandardGlMaterial,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
@@ -22,7 +22,7 @@ export const state = createGlRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 
-registerDefaultGlMaterial(state);
+registerStandardGlMaterial(state);
 registerRenderer(state, VideoKind, defaultGlVideoRenderer);
 
 export const scale = pixelRatio;

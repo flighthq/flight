@@ -1,5 +1,5 @@
 import type { Kind, Material, WgpuMeshMaterialRenderer, WgpuRenderState } from '@flighthq/types';
-import { DefaultMaterialKind } from '@flighthq/types';
+import { StandardMaterialKind } from '@flighthq/types';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 
@@ -11,7 +11,7 @@ export function getWgpuMeshMaterialRenderer(state: WgpuRenderState, kind: Kind):
 }
 
 // Registers a 3D mesh-material renderer against a material kind on this state. Opt-in: drawScene3D only
-// draws subsets whose material kind (or DefaultMaterialKind) has a renderer here. Call
+// draws subsets whose material kind (or StandardMaterialKind) has a renderer here. Call
 // registerStandardPbrWgpuMaterial for the built-in StandardPbr path. Mirrors registerWgpuMaterialRenderer
 // but writes scene-wgpu's separate 3D registry.
 export function registerWgpuMeshMaterialRenderer(
@@ -23,7 +23,7 @@ export function registerWgpuMeshMaterialRenderer(
 }
 
 // Resolves a mesh subset's material to its registered 3D renderer: by the material's kind, else the
-// renderer registered for DefaultMaterialKind, else null. drawScene3D skips a subset whose material
+// renderer registered for StandardMaterialKind, else null. drawScene3D skips a subset whose material
 // resolves to null (no built-in fallback — every material, including the default, enters only through
 // registration). Mirrors resolveWgpuMaterialRenderer over the 3D registry.
 export function resolveWgpuMeshMaterialRenderer(
@@ -35,5 +35,5 @@ export function resolveWgpuMeshMaterialRenderer(
     const renderer = registry.get(material.kind);
     if (renderer !== undefined) return renderer;
   }
-  return registry.get(DefaultMaterialKind) ?? null;
+  return registry.get(StandardMaterialKind) ?? null;
 }

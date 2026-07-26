@@ -4,13 +4,13 @@ import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
 import type { ColorTransform } from '@flighthq/types';
 
-import { enableWgpuColorAdjustment } from './wgpuColorAdjustment';
-import { defaultWgpuMaterialRenderer } from './wgpuDefaultMaterial';
+import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature';
 import {
   flushWgpuSpriteBatch,
   prepareWgpuSpriteBatchWrite,
   recordWgpuSpriteBatchColorTransform,
 } from './wgpuSpriteBatch';
+import { standardWgpuMaterialRenderer } from './wgpuStandardMaterial';
 
 beforeAll(() => {
   installWgpuMock();
@@ -42,28 +42,28 @@ const CT_MODE_NONE = 0;
 const CT_MODE_UNIFORM = 1;
 const CT_MODE_PER_INSTANCE = 2;
 
-describe('enableWgpuColorAdjustment', () => {
+describe('registerWgpuColorAdjustmentMaterialFeature', () => {
   it('installs the fold so recorded tints drive the color-adjustment state machine', async () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
-    enableWgpuColorAdjustment(state);
-    expect(runtime.wgpuColorAdjustmentFold).toBeDefined();
-    expect(runtime.wgpuColorAdjustmentFold).not.toBeNull();
+    registerWgpuColorAdjustmentMaterialFeature(state);
+    expect(runtime.wgpuColorAdjustmentMaterialFeature).toBeDefined();
+    expect(runtime.wgpuColorAdjustmentMaterialFeature).not.toBeNull();
   });
 
   it('is idempotent', async () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
-    enableWgpuColorAdjustment(state);
-    const fold = runtime.wgpuColorAdjustmentFold;
-    enableWgpuColorAdjustment(state);
-    expect(runtime.wgpuColorAdjustmentFold).toBe(fold);
+    registerWgpuColorAdjustmentMaterialFeature(state);
+    const fold = runtime.wgpuColorAdjustmentMaterialFeature;
+    registerWgpuColorAdjustmentMaterialFeature(state);
+    expect(runtime.wgpuColorAdjustmentMaterialFeature).toBe(fold);
   });
 
   it('stays untinted (mode NONE) when no instance carries a color transform', async () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
-    enableWgpuColorAdjustment(state);
+    registerWgpuColorAdjustmentMaterialFeature(state);
     recordWgpuSpriteBatchColorTransform(state, null, 0);
     recordWgpuSpriteBatchColorTransform(state, null, 1);
     expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_NONE);
@@ -72,7 +72,7 @@ describe('enableWgpuColorAdjustment', () => {
   it('uses one whole-batch uniform when every instance shares one tint', async () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
-    enableWgpuColorAdjustment(state);
+    registerWgpuColorAdjustmentMaterialFeature(state);
     const tint = ct(0.5);
     recordWgpuSpriteBatchColorTransform(state, tint, 0);
     recordWgpuSpriteBatchColorTransform(state, tint, 1);
@@ -83,7 +83,7 @@ describe('enableWgpuColorAdjustment', () => {
   it('promotes to per-instance (never splits) when tints diverge, back-filling the earlier tint', async () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
-    enableWgpuColorAdjustment(state);
+    registerWgpuColorAdjustmentMaterialFeature(state);
     recordWgpuSpriteBatchColorTransform(state, ct(0.5), 0);
     recordWgpuSpriteBatchColorTransform(state, ct(0.25), 1);
     expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_PER_INSTANCE);
@@ -94,7 +94,7 @@ describe('enableWgpuColorAdjustment', () => {
   it('promotes with identity fill when a tinted instance follows an untinted one', async () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
-    enableWgpuColorAdjustment(state);
+    registerWgpuColorAdjustmentMaterialFeature(state);
     recordWgpuSpriteBatchColorTransform(state, null, 0);
     recordWgpuSpriteBatchColorTransform(state, ct(0.5), 1);
     expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_PER_INSTANCE);
@@ -104,11 +104,11 @@ describe('enableWgpuColorAdjustment', () => {
 
   it('replicates the uniform tint per instance on flush', async () => {
     const state = await createWgpuRenderStateForTest();
-    enableWgpuColorAdjustment(state);
+    registerWgpuColorAdjustmentMaterialFeature(state);
     renderWgpuBackground(state);
     const runtime = getWgpuRenderStateRuntime(state);
     const tex = createImageResource(document.createElement('img'));
-    prepareWgpuSpriteBatchWrite(state, tex, null, null, defaultWgpuMaterialRenderer, 2);
+    prepareWgpuSpriteBatchWrite(state, tex, null, null, standardWgpuMaterialRenderer, 2);
     recordWgpuSpriteBatchColorTransform(state, ct(0.5), 0);
     recordWgpuSpriteBatchColorTransform(state, ct(0.5), 1);
     runtime.spriteBatchCount = 2;

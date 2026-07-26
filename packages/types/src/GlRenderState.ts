@@ -35,7 +35,7 @@ export type GlBlendFactor = 'DST_COLOR' | 'ONE' | 'ONE_MINUS_SRC_ALPHA' | 'ONE_M
 export type GlBlendEquation = 'FUNC_ADD' | 'FUNC_REVERSE_SUBTRACT' | 'MAX' | 'MIN';
 
 // The opt-in inline color-adjustment fold for the WebGL sprite/quad batch. Installed on the runtime
-// by enableGlColorAdjustment; absent (null) on a state that never opted in, so the base batch — which
+// by registerGlColorAdjustmentMaterialFeature; absent (null) on a state that never opted in, so the base batch — which
 // only ever reaches this through the nullable runtime slot — carries none of the fold's shader code
 // and tree-shakes it out. `record` folds one instance's color transform into the active batch's
 // promote-not-split state machine; `flush` uploads that state, selects the color-adjustment program,
@@ -45,7 +45,7 @@ export type GlBlendEquation = 'FUNC_ADD' | 'FUNC_REVERSE_SUBTRACT' | 'MAX' | 'MI
 // `drawShapeMeshes` is the shape substrate's hook: the GPU-tessellated solid-fill path reaches it only
 // through this nullable slot when a node carries a color transform, so the base flat-color mesh shader
 // stays free of any tint branch and the tinted mesh program tree-shakes out with the rest of the fold.
-export interface GlColorAdjustmentFold {
+export interface GlColorAdjustmentMaterialFeature {
   drawShapeMeshes(state: GlRenderState, renderProxy: RenderProxy2D, meshes: readonly GlShapeMesh[]): void;
   flush(state: GlRenderState, count: number): boolean;
   record(runtime: GlRenderStateRuntime, colorTransform: ColorTransform | null | undefined, instanceIndex: number): void;
@@ -78,16 +78,18 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   particleInstanceData?: Float32Array;
   quadBatchShader?: GlQuadBatchShader;
   quadBatchCornerBuffer?: WebGLBuffer;
-  // Compiled color-adjustment programs, owned by the opt-in fold (enableGlColorAdjustment). Absent
+  // Compiled color-adjustment programs, owned by the opt-in fold (registerGlColorAdjustmentMaterialFeature). Absent
   // until the first folded flush; a state that never enables color adjustment carries neither.
   colorTransformInstancedShader?: GlColorTransformInstancedShader;
   uniformColorTransformShader?: GlUniformColorTransformShader;
   shapeMeshColorTransformShader?: GlShapeMeshColorTransformShader;
-  // The opt-in color-adjustment fold and its guard, both null until enableGlColorAdjustment /
+  // The opt-in color-adjustment fold and its guard, both null until registerGlColorAdjustmentMaterialFeature /
   // enableNode2DGlGuards installs them. recordGlSpriteBatchColorTransform reaches the fold only
   // through this slot, so the base batch statically references neither the fold's code nor a message.
-  glColorAdjustmentFold?: GlColorAdjustmentFold | null;
-  glColorAdjustmentGuard?: ((state: GlRenderState, colorTransform: Readonly<ColorTransform>) => void) | null;
+  glColorAdjustmentMaterialFeature?: GlColorAdjustmentMaterialFeature | null;
+  glColorAdjustmentMaterialFeatureGuard?:
+    | ((state: GlRenderState, colorTransform: Readonly<ColorTransform>) => void)
+    | null;
   materialRendererMap?: Map<Kind, GlMaterialRenderer>;
   // 3D scene mesh-material seam, owned by scene-gl (filled lazily by registerGlMeshMaterialRenderer).
   // The per-material-kind 3D draw behavior registry, kept separate from the 2D materialRendererMap

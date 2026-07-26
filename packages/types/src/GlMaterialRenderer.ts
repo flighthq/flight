@@ -21,7 +21,7 @@ export interface GlMaterialRenderer {
 
   // Bind the program, upload per-batch uniforms, and set up this material's vertex attributes.
   // Called once per flush — there is exactly one material per batch. `material` is null only for
-  // the default renderer (a node with no material resolved to DefaultMaterialKind).
+  // the default renderer (a node with no material resolved to StandardMaterialKind).
   bind(state: GlRenderState, material: Readonly<Material> | null): void;
 
   // Convert one instance's `materialData` value into instanceFloatCount floats written at

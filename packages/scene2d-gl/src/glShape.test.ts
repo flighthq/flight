@@ -4,9 +4,9 @@ import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import type { RenderProxy2D } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
-import { registerDefaultGlMaterial } from './glDefaultMaterial';
 import type * as GlShapeModule from './glShape';
 import { flushGlSpriteBatch } from './glSpriteBatch';
+import { registerStandardGlMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 import { scopeModuleMocks } from './moduleMockTestHelper';
 
@@ -72,14 +72,14 @@ describe('defaultGlShapeRenderer', () => {
 describe('drawGlShape', () => {
   it('returns early without writing to batch when commands array is empty', () => {
     const { state } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [] }, makeShapeData()));
     expect(getGlRenderStateRuntime(state).spriteBatchCount).toBe(0);
   });
 
   it('returns early without writing to batch when rendererData is null', () => {
     const { state } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [{}] }, null));
     expect(getGlRenderStateRuntime(state).spriteBatchCount).toBe(0);
   });
@@ -92,14 +92,14 @@ describe('drawGlShape', () => {
 
   it('writes one instance to the sprite batch when shape has valid commands and bounds', () => {
     const { state } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [{}], version: 1 }, makeShapeData()));
     expect(getGlRenderStateRuntime(state).spriteBatchCount).toBe(1);
   });
 
   it('draws via drawElementsInstanced after flush', () => {
     const { state, gl } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [{}], version: 1 }, makeShapeData()));
     flushGlSpriteBatch(state);
     expect(gl.drawElementsInstanced).toHaveBeenCalled();
@@ -107,7 +107,7 @@ describe('drawGlShape', () => {
 
   it('writes correct size into instance data', () => {
     const { state } = createGlState();
-    registerDefaultGlMaterial(state);
+    registerStandardGlMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [{}], version: 1 }, makeShapeData()));
     const d = getGlRenderStateRuntime(state).spriteBatchInstanceData;
     expect(d[6]).toBe(64); // width from mocked bounds

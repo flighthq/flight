@@ -1,6 +1,5 @@
-import { createColorTransformAdjustment, createSaturationColorMatrix } from '@flighthq/adjustments';
+import { createSaturationColorMatrix, createTintAdjustment } from '@flighthq/adjustments';
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log';
-import { createColorTransform } from '@flighthq/materials';
 import { createDisplayObject, setNode2DColorAdjustments } from '@flighthq/scene2d';
 import type { Adjustment, Renderable } from '@flighthq/types';
 
@@ -42,7 +41,7 @@ describe('enableColorAdjustmentGuards', () => {
     const state = createRenderState();
     enableColorAdjustmentGuards(state);
     const node = createDisplayObject();
-    setNode2DColorAdjustments(node, [createColorTransformAdjustment(createColorTransform({ redMultiplier: 0.5 }))]);
+    setNode2DColorAdjustments(node, [createTintAdjustment(0x7fffffff)]);
     const data = createRenderProxy(state, node as unknown as Renderable);
     const sink = createMemoryLogSink(8);
     addLogSink(sink.sink);

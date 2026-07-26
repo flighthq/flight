@@ -8,4 +8,5 @@ export * from './pbrExtensionMaterials';
 export * from './pbrMaterials';
 export * from './phongToPbr';
 export * from './surfaceMaterial';
+export * from './standardMaterial';
 export * from './unlitMaterials';
