@@ -1,4 +1,4 @@
-import { createNode, getNodeRuntime } from '@flighthq/node';
+import { createNode, getNodeRuntime } from '@flighthq/node/contract';
 import type { Node, NodeRuntime } from '@flighthq/types/contract';
 
 import {
