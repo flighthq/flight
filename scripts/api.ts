@@ -662,7 +662,9 @@ if (options.check) {
   runApiCheck(collectApi(project, topoSort(findPackages())));
 }
 
-const api = filterApi(collectApi(project, topoSort(findPackages())), options);
+const api = filterApi(collectApi(project, topoSort(findPackages())), options).sort((a, b) =>
+  a.name.localeCompare(b.name),
+);
 
 if (asJson) {
   console.log(JSON.stringify({ packages: api }, null, 2));
