@@ -106,9 +106,18 @@ untouched. `type-home:check` keeps enforcing "no exported types outside `@flight
 it only learns that `types` has two lanes. Contract types drop out of the public header
 because `.` no longer names them and `export *` in the SDK barrel skips the subpath.
 
-Hideability is **per-type**: a type may move to `types/contract` only if it appears in no
-_public_ signature anywhere. `RenderProxy` audits clean; each candidate gets a grep before
-it moves.
+Hideability is **per-type**, and the test is **audience, not raw signature reachability**:
+a type is contract-only when no _app_ needs to name it — only the package itself, a sibling,
+or an extension author acting as a backend does. A public type may legitimately reference a
+contract type in a method an app never implements. `Renderer` is public (apps register
+renderers), yet `Renderer.draw`/`submit` takes `RenderProxy`, which stays contract-only: a
+custom renderer's `draw` is backend work, so its author is a contract-tier consumer and names
+`RenderProxy` via `@flighthq/types/contract`. The emitted `.d.ts` referencing the contract
+lane is correct-by-design, not a leak — `contract` is a real published entry. The bar is that
+no _named_ SDK export leaks a contract symbol; transitive references from a public type into
+`/contract` are expected. `RenderProxy` passes the audience test cleanly — every
+`registerRenderer` call passes a pre-built renderer object; only the runner harness names the
+type.
 
 ## Where the public subset is highlighted — resolved
 
