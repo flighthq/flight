@@ -19,11 +19,11 @@ const PARTICLE_SHADER_SRC = /* wgsl */ `
 struct Uniforms {
   matrix : mat3x3f,
   alpha : f32,
-  hasColorTransform : u32,
+  hasColorScaleBias : u32,
   straightTextureAlpha : u32,
   _pad1 : f32,
-  colorMultiplier : vec4f,
-  colorOffset : vec4f,
+  colorScale : vec4f,
+  colorBias : vec4f,
   x0 : f32, y0 : f32, x1 : f32, y1 : f32,
   u0 : f32, v0 : f32, u1 : f32, v1 : f32,
 }

@@ -1,18 +1,18 @@
 import { invalidateImageResource } from '@flighthq/image';
-import type { ColorTransformLike, Surface, SurfaceRegion, ThresholdOperation } from '@flighthq/types';
+import type { ColorScaleBiasLike, Surface, SurfaceRegion, ThresholdOperation } from '@flighthq/types';
 
 let _scrollScratch: Uint8ClampedArray | null = null;
 
 /**
- * Applies a color transform to `source`, writing into `dest`. The transformed
+ * Applies normalized-linear color scale/bias to `source`, writing into `dest`. The transformed
  * size is the overlap of the two regions; pixels outside either surface are
  * skipped. Safe to pass the same surface and region in `dest` and `source` for
  * in-place modification (each pixel is read before it is written).
  */
-export function applySurfaceColorTransform(
+export function applySurfaceColorScaleBias(
   dest: Readonly<SurfaceRegion>,
   source: Readonly<SurfaceRegion>,
-  ct: Readonly<ColorTransformLike>,
+  ct: Readonly<ColorScaleBiasLike>,
 ): void {
   const w = Math.min(dest.width, source.width);
   const h = Math.min(dest.height, source.height);
@@ -30,10 +30,10 @@ export function applySurfaceColorTransform(
       const g = source.surface.data[si + 1];
       const b = source.surface.data[si + 2];
       const a = source.surface.data[si + 3];
-      dest.surface.data[di] = Math.max(0, Math.min(255, Math.round(r * ct.redMultiplier + ct.redOffset)));
-      dest.surface.data[di + 1] = Math.max(0, Math.min(255, Math.round(g * ct.greenMultiplier + ct.greenOffset)));
-      dest.surface.data[di + 2] = Math.max(0, Math.min(255, Math.round(b * ct.blueMultiplier + ct.blueOffset)));
-      dest.surface.data[di + 3] = Math.max(0, Math.min(255, Math.round(a * ct.alphaMultiplier + ct.alphaOffset)));
+      dest.surface.data[di] = Math.max(0, Math.min(255, Math.round(r * ct.redScale + ct.redBias * 255)));
+      dest.surface.data[di + 1] = Math.max(0, Math.min(255, Math.round(g * ct.greenScale + ct.greenBias * 255)));
+      dest.surface.data[di + 2] = Math.max(0, Math.min(255, Math.round(b * ct.blueScale + ct.blueBias * 255)));
+      dest.surface.data[di + 3] = Math.max(0, Math.min(255, Math.round(a * ct.alphaScale + ct.alphaBias * 255)));
     }
   }
   invalidateImageResource(dest.surface);
@@ -109,10 +109,10 @@ export function applySurfaceThreshold(
 export function mergeSurface(
   dest: Readonly<SurfaceRegion>,
   source: Readonly<SurfaceRegion>,
-  redMultiplier: number,
-  greenMultiplier: number,
-  blueMultiplier: number,
-  alphaMultiplier: number,
+  redScale: number,
+  greenScale: number,
+  blueScale: number,
+  alphaScale: number,
 ): void {
   const w = Math.min(dest.width, source.width);
   const h = Math.min(dest.height, source.height);
@@ -128,10 +128,10 @@ export function mergeSurface(
       if (sx < 0 || sx >= source.surface.width || dx < 0 || dx >= dest.surface.width) continue;
       const si = (sy * source.surface.width + sx) * 4;
       const di = (dy * dest.surface.width + dx) * 4;
-      dd[di] = Math.round(sd[si] * redMultiplier + dd[di] * (1 - redMultiplier));
-      dd[di + 1] = Math.round(sd[si + 1] * greenMultiplier + dd[di + 1] * (1 - greenMultiplier));
-      dd[di + 2] = Math.round(sd[si + 2] * blueMultiplier + dd[di + 2] * (1 - blueMultiplier));
-      dd[di + 3] = Math.round(sd[si + 3] * alphaMultiplier + dd[di + 3] * (1 - alphaMultiplier));
+      dd[di] = Math.round(sd[si] * redScale + dd[di] * (1 - redScale));
+      dd[di + 1] = Math.round(sd[si + 1] * greenScale + dd[di + 1] * (1 - greenScale));
+      dd[di + 2] = Math.round(sd[si + 2] * blueScale + dd[di + 2] * (1 - blueScale));
+      dd[di + 3] = Math.round(sd[si + 3] * alphaScale + dd[di + 3] * (1 - alphaScale));
     }
   }
   invalidateImageResource(dest.surface);

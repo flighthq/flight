@@ -7,8 +7,8 @@
 export interface GlMeshProgram {
   // Resolved lazily by drawGlMeshSubset only for a promoted HAS_COLOR_ADJUSTMENT variant. Undefined
   // means unresolved; null means the lean base program omitted the feature uniform.
-  locColorMultiplier?: WebGLUniformLocation | null;
-  locColorOffset?: WebGLUniformLocation | null;
+  locColorScale?: WebGLUniformLocation | null;
+  locColorBias?: WebGLUniformLocation | null;
   locColorMatrix0?: WebGLUniformLocation | null;
   locColorMatrix1?: WebGLUniformLocation | null;
   locColorMatrix2?: WebGLUniformLocation | null;

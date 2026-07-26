@@ -1,29 +1,29 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
-import type { ColorTransform } from '@flighthq/types';
+import type { ColorScaleBias } from '@flighthq/types';
 
 import {
   areWgpuColorAdjustmentGuardsEnabled,
   enableWgpuColorAdjustmentGuards,
 } from './enableWgpuColorAdjustmentGuards';
-import { recordWgpuSpriteBatchColorTransform } from './wgpuSpriteBatch';
+import { recordWgpuSpriteBatchColorScaleBias } from './wgpuSpriteBatch';
 
 beforeAll(() => {
   installWgpuMock();
 });
 
-function ct(): ColorTransform {
+function ct(): ColorScaleBias {
   return {
-    redMultiplier: 0.5,
-    greenMultiplier: 0.5,
-    blueMultiplier: 0.5,
-    alphaMultiplier: 1,
-    redOffset: 0,
-    greenOffset: 0,
-    blueOffset: 0,
-    alphaOffset: 0,
-  } as ColorTransform;
+    redScale: 0.5,
+    greenScale: 0.5,
+    blueScale: 0.5,
+    alphaScale: 1,
+    redBias: 0,
+    greenBias: 0,
+    blueBias: 0,
+    alphaBias: 0,
+  } as ColorScaleBias;
 }
 
 describe('areWgpuColorAdjustmentGuardsEnabled', () => {
@@ -36,13 +36,13 @@ describe('areWgpuColorAdjustmentGuardsEnabled', () => {
 });
 
 describe('enableWgpuColorAdjustmentGuards', () => {
-  it('warns once when a color transform is recorded but color adjustment was never enabled', async () => {
+  it('warns once when a color adjustment is recorded but color adjustment was never enabled', async () => {
     const state = await createWgpuRenderStateForTest();
     const sink = createMemoryLogSink(8);
     addLogSink(sink.sink);
     try {
       enableWgpuColorAdjustmentGuards(state);
-      recordWgpuSpriteBatchColorTransform(state, ct(), 0);
+      recordWgpuSpriteBatchColorScaleBias(state, ct(), 0);
       const entries = getMemoryLogSinkEntries(sink);
       expect(entries.length).toBe(1);
       const data = entries[0].data as Record<string, unknown>;
@@ -58,7 +58,7 @@ describe('enableWgpuColorAdjustmentGuards', () => {
     addLogSink(sink.sink);
     try {
       enableWgpuColorAdjustmentGuards(state);
-      recordWgpuSpriteBatchColorTransform(state, null, 0);
+      recordWgpuSpriteBatchColorScaleBias(state, null, 0);
       expect(getMemoryLogSinkEntries(sink).length).toBe(0);
     } finally {
       removeLogSink(sink.sink);
@@ -78,7 +78,7 @@ describe('enableWgpuColorAdjustmentGuards', () => {
         record: () => {},
         resolveFlush: () => null,
       };
-      recordWgpuSpriteBatchColorTransform(state, ct(), 0);
+      recordWgpuSpriteBatchColorScaleBias(state, ct(), 0);
       expect(getMemoryLogSinkEntries(sink).length).toBe(0);
     } finally {
       removeLogSink(sink.sink);

@@ -1,6 +1,6 @@
 import { createImageResource } from '@flighthq/image';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import type { ColorTransform, ImageResource, Material } from '@flighthq/types';
+import type { ColorScaleBias, ImageResource, Material } from '@flighthq/types';
 
 import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature';
 import {
@@ -9,7 +9,7 @@ import {
   flushGlSpriteBatch,
   packGlSpriteBatchMaterialInstance,
   prepareGlSpriteBatchWrite,
-  recordGlSpriteBatchColorTransform,
+  recordGlSpriteBatchColorScaleBias,
   setGlQuadBatchWorldAndTexture,
   useGlQuadBatchProgram,
 } from './glSpriteBatch';
@@ -25,25 +25,25 @@ function makeMaterial(): Material {
 }
 
 function ct(
-  redMultiplier = 1,
-  greenMultiplier = 1,
-  blueMultiplier = 1,
-  alphaMultiplier = 1,
-  redOffset = 0,
-  greenOffset = 0,
-  blueOffset = 0,
-  alphaOffset = 0,
-): ColorTransform {
+  redScale = 1,
+  greenScale = 1,
+  blueScale = 1,
+  alphaScale = 1,
+  redBias = 0,
+  greenBias = 0,
+  blueBias = 0,
+  alphaBias = 0,
+): ColorScaleBias {
   return {
-    redMultiplier,
-    greenMultiplier,
-    blueMultiplier,
-    alphaMultiplier,
-    redOffset,
-    greenOffset,
-    blueOffset,
-    alphaOffset,
-  } as ColorTransform;
+    redScale,
+    greenScale,
+    blueScale,
+    alphaScale,
+    redBias,
+    greenBias,
+    blueBias,
+    alphaBias,
+  } as ColorScaleBias;
 }
 
 const CT_MODE_NONE = 0;
@@ -188,15 +188,15 @@ describe('prepareGlSpriteBatchWrite', () => {
   });
 });
 
-describe('recordGlSpriteBatchColorTransform', () => {
+describe('recordGlSpriteBatchColorScaleBias', () => {
   it('skips the tint (draws untinted) and records no fold state when color adjustment is not enabled', () => {
     const { state, gl } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     prepareGlSpriteBatchWrite(state, makeTexture(), null, null, standardGlMaterialRenderer, 1);
-    recordGlSpriteBatchColorTransform(state, ct(0.5), 0);
+    recordGlSpriteBatchColorScaleBias(state, ct(0.5), 0);
     runtime.spriteBatchCount = 1;
     // No fold installed → the CT mode stays uninitialized and no CT program is bound.
-    expect(runtime.spriteBatchColorTransformMode ?? CT_MODE_NONE).toBe(CT_MODE_NONE);
+    expect(runtime.spriteBatchColorScaleBiasMode ?? CT_MODE_NONE).toBe(CT_MODE_NONE);
     flushGlSpriteBatch(state);
     expect(gl.uniform4f).not.toHaveBeenCalled();
     expect(gl.drawElementsInstanced).toHaveBeenCalled();
@@ -205,16 +205,16 @@ describe('recordGlSpriteBatchColorTransform', () => {
   it('is a no-op for an untinted instance whether or not the fold is enabled', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    expect(() => recordGlSpriteBatchColorTransform(state, null, 0)).not.toThrow();
-    expect(runtime.spriteBatchColorTransformMode ?? CT_MODE_NONE).toBe(CT_MODE_NONE);
+    expect(() => recordGlSpriteBatchColorScaleBias(state, null, 0)).not.toThrow();
+    expect(runtime.spriteBatchColorScaleBiasMode ?? CT_MODE_NONE).toBe(CT_MODE_NONE);
   });
 
   it('delegates to the installed fold when color adjustment is enabled', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     registerGlColorAdjustmentMaterialFeature(state);
-    recordGlSpriteBatchColorTransform(state, ct(0.5), 0);
-    expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_UNIFORM);
+    recordGlSpriteBatchColorScaleBias(state, ct(0.5), 0);
+    expect(runtime.spriteBatchColorScaleBiasMode).toBe(CT_MODE_UNIFORM);
   });
 });
 

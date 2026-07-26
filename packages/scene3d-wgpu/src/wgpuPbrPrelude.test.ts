@@ -165,7 +165,7 @@ describe('getWgpuPbrModuleSourceForKey', () => {
     const adjusted = getWgpuPbrModuleSourceForKey(key({ hasColorAdjustment: true }), false, null, COLOR_FEATURE);
     expect(base).not.toContain(COLOR_FEATURE.fragmentShaderChunk);
     expect(adjusted).toContain(COLOR_FEATURE.fragmentShaderChunk);
-    expect(adjusted).toContain('draw.flightColorMultiplier');
+    expect(adjusted).toContain('draw.flightColorScale');
   });
 
   it('splices the full-matrix post-shade chunk into its own variant', () => {

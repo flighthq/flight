@@ -684,8 +684,8 @@ describe('spliceWgpuColorAdjustmentPrelude', () => {
     };
     const source = spliceWgpuColorAdjustmentPrelude(WGPU_MESH_PRELUDE_WGSL, feature);
     expect(source).toContain(feature.fragmentShaderChunk);
-    expect(source).toContain('flightColorMultiplier : vec4f');
-    expect(source).toContain('flightColorOffset : vec4f');
+    expect(source).toContain('flightColorScale : vec4f');
+    expect(source).toContain('flightColorBias : vec4f');
   });
 
   it('widens Draw to five vec4 fields for the matrix variant', () => {
@@ -699,7 +699,7 @@ describe('spliceWgpuColorAdjustmentPrelude', () => {
     expect(source).toContain(feature.matrixFragmentShaderChunk);
     expect(source).toContain('flightColorMatrix0 : vec4f');
     expect(source).toContain('flightColorMatrixOffset : vec4f');
-    expect(source).not.toContain('flightColorMultiplier : vec4f');
+    expect(source).not.toContain('flightColorScale : vec4f');
   });
 });
 
@@ -834,12 +834,12 @@ describe('writeWgpuDrawUniform', () => {
   it('packs a full color matrix into the existing 256-byte draw slot', () => {
     const { state } = makeWgpuScene3DState();
     const proxy = makeProxy();
-    proxy.colorMatrix = [1, 0.5, 0, 0, 10, 0, 1, 0, 0, 20, 0, 0, 1, 0, 30, 0, 0, 0, 1, 40];
+    proxy.colorMatrix = [1, 0.5, 0, 0, 0.1, 0, 1, 0, 0, 0.2, 0, 0, 1, 0, 0.3, 0, 0, 0, 1, 0.4];
     writeWgpuDrawUniform(state, proxy);
     const u = getWgpuRenderStateRuntime(state).uniformData;
     expect(Array.from(u.slice(44, 48))).toEqual([1, 0.5, 0, 0]);
-    expect(u[60]).toBeCloseTo(10 / 255);
-    expect(u[63]).toBeCloseTo(40 / 255);
+    expect(u[60]).toBeCloseTo(0.1);
+    expect(u[63]).toBeCloseTo(0.4);
   });
 });
 

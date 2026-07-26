@@ -141,7 +141,7 @@ describe('getWgpuClassicModuleSourceForKey', () => {
     );
     expect(base).not.toContain(COLOR_FEATURE.fragmentShaderChunk);
     expect(adjusted).toContain(COLOR_FEATURE.fragmentShaderChunk);
-    expect(adjusted).toContain('draw.flightColorMultiplier');
+    expect(adjusted).toContain('draw.flightColorScale');
   });
 
   it('selects a distinct full-matrix post-shade variant', () => {

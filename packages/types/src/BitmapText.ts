@@ -13,7 +13,7 @@ export type BitmapTextAlign = 'center' | 'justify' | 'left' | 'right';
 // shape as `Tilemap`. It lays out a string's glyphs from a `GlyphSource` (per-glyph atlas rect, advance,
 // bearing, kerning, line metrics) and emits one glyph quad per visible glyph into the page whose
 // `GlyphEntry.page` it belongs to. Tint is not a bitmap-text concern: it is the node's generic
-// color-adjustment stack (`setNode2DColorAdjustmentTint`), folded on the backends that realize adjustments.
+// color-adjustment stack (`setNodeColorAdjustmentsTint`), folded on the backends that realize adjustments.
 export interface BitmapTextData extends Node2DData {
   align: BitmapTextAlign;
   // The bound glyph source supplying per-glyph atlas rects, advances, kerning, and line metrics. A

@@ -1,5 +1,5 @@
 import type { BlendMode } from './BlendMode';
-import type { ColorTransform } from './ColorTransform';
+import type { ColorScaleBias } from './ColorScaleBias';
 import type { Kind } from './Entity';
 import type { GlCompressedTextureDecoder } from './GlCompressedTextureDecoder';
 import type { GlCompressedTextureUploader } from './GlCompressedTextureUploader';
@@ -38,13 +38,13 @@ export type GlBlendEquation = 'FUNC_ADD' | 'FUNC_REVERSE_SUBTRACT' | 'MAX' | 'MI
 // The opt-in inline color-adjustment fold for the WebGL sprite/quad batch. Installed on the runtime
 // by registerGlColorAdjustmentMaterialFeature; absent (null) on a state that never opted in, so the base batch — which
 // only ever reaches this through the nullable runtime slot — carries none of the fold's shader code
-// and tree-shakes it out. `record` folds one instance's color transform into the active batch's
+// and tree-shakes it out. `record` folds one instance's color adjustment into the active batch's
 // promote-not-split state machine; `flush` uploads that state, selects the color-adjustment program,
 // and binds it, returning true when it drew a folded batch (false when the batch had no adjustment, so
-// the caller runs the lean material path). This is the generic capability seam — color transform is
+// the caller runs the lean material path). This is the generic capability seam — color adjustment is
 // its first consumer; later pointwise adjustments (brightness/hue/…) realize through the same fold.
 // `drawShapeMeshes` is the shape substrate's hook: the GPU-tessellated solid-fill path reaches it only
-// through this nullable slot when a node carries a color transform, so the base flat-color mesh shader
+// through this nullable slot when a node carries a color adjustment, so the base flat-color mesh shader
 // stays free of any tint branch and the tinted mesh program tree-shakes out with the rest of the fold.
 export interface GlColorAdjustmentMaterialFeature {
   // The one backend-authored pointwise color-remap implementation. Material-family compilers splice
@@ -57,7 +57,7 @@ export interface GlColorAdjustmentMaterialFeature {
   flush(state: GlRenderState, count: number): boolean;
   record(
     runtime: GlRenderStateRuntime,
-    colorTransform: ColorTransform | TintMaterialData | readonly number[] | null | undefined,
+    colorScaleBias: ColorScaleBias | TintMaterialData | readonly number[] | null | undefined,
     instanceIndex: number,
   ): void;
 }
@@ -91,18 +91,18 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   quadBatchCornerBuffer?: WebGLBuffer;
   // Compiled color-adjustment programs, owned by the opt-in fold (registerGlColorAdjustmentMaterialFeature). Absent
   // until the first folded flush; a state that never enables color adjustment carries neither.
-  colorTransformInstancedShader?: GlColorTransformInstancedShader;
-  colorMatrixInstancedShader?: GlColorTransformInstancedShader;
-  colorTintInstancedShader?: GlColorTransformInstancedShader;
-  uniformColorTransformShader?: GlUniformColorTransformShader;
-  shapeMeshColorTransformShader?: GlShapeMeshColorTransformShader;
-  shapeMeshColorMatrixShader?: GlShapeMeshColorTransformShader;
+  colorScaleBiasInstancedShader?: GlColorScaleBiasInstancedShader;
+  colorMatrixInstancedShader?: GlColorScaleBiasInstancedShader;
+  colorTintInstancedShader?: GlColorScaleBiasInstancedShader;
+  uniformColorScaleBiasShader?: GlUniformColorScaleBiasShader;
+  shapeMeshColorScaleBiasShader?: GlShapeMeshColorScaleBiasShader;
+  shapeMeshColorMatrixShader?: GlShapeMeshColorScaleBiasShader;
   // The opt-in color-adjustment fold and its guard, both null until registerGlColorAdjustmentMaterialFeature /
-  // enableNode2DGlGuards installs them. recordGlSpriteBatchColorTransform reaches the fold only
+  // enableNode2DGlGuards installs them. recordGlSpriteBatchColorScaleBias reaches the fold only
   // through this slot, so the base batch statically references neither the fold's code nor a message.
   glColorAdjustmentMaterialFeature?: GlColorAdjustmentMaterialFeature | null;
   glColorAdjustmentMaterialFeatureGuard?:
-    | ((state: GlRenderState, colorTransform: Readonly<ColorTransform | TintMaterialData | readonly number[]>) => void)
+    | ((state: GlRenderState, colorScaleBias: Readonly<ColorScaleBias | TintMaterialData | readonly number[]>) => void)
     | null;
   materialRendererMap?: Map<Kind, GlMaterialRenderer>;
   // 3D scene mesh-material seam, owned by scene-gl (filled lazily by registerGlMeshMaterialRenderer).
@@ -114,7 +114,7 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   sceneMeshMaterialRegistry?: Map<Kind, GlMeshMaterialRenderer> | null;
   sceneMeshUploadCache?: WeakMap<object, object> | null;
   // Per-material-kind bitmap shader for the immediate (display-object) path. resolveGlShader
-  // looks a node's shader up here by its material kind — the render path has no color-transform (or
+  // looks a node's shader up here by its material kind — the render path has no color-adjustment (or
   // any material-specific) knowledge; the material's shader and its registration own that.
   materialBitmapShaderMap?: Map<Kind, GlBitmapShader>;
   // Optional per-node shader-binding resolver. Installed by setGlShader; absent (and tree-shaken
@@ -139,18 +139,18 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   spriteBatchSmoothing: boolean | null;
   // Color-transform fold state for the active sprite batch. Orthogonal to the material and never a
   // flush key, so tinted and untinted nodes with the same texture+blend share one batch. Mode 0 =
-  // no tint (lean base shader), 1 = one uniform tint for the whole batch (u_ctMult/u_ctOff), 2 =
-  // per-instance tints (a_ctMult/a_ctOff). A batch starts at 0, rises to 1 on the first tint, and
+  // no tint (lean base shader), 1 = one uniform tint for the whole batch (u_colorScale/u_colorBias), 2 =
+  // per-instance tints (a_colorScale/a_colorBias). A batch starts at 0, rises to 1 on the first tint, and
   // promotes to 2 — back-filling already-written instances with the prior value/identity — when
   // tints diverge, so attaching a tint only ever promotes a batch, never splits it.
-  // spriteBatchColorTransformData/Buffer hold the per-instance floats (8 per instance) for mode 2;
-  // spriteBatchUniformColorTransform holds the shared value for mode 1.
-  spriteBatchColorTransformMode?: number;
-  spriteBatchUniformColorTransform?: ColorTransform | TintMaterialData | readonly number[] | null;
-  spriteBatchColorTransformData?: Float32Array;
+  // spriteBatchColorScaleBiasData/Buffer hold the per-instance floats (8 per instance) for mode 2;
+  // spriteBatchUniformColorScaleBias holds the shared value for mode 1.
+  spriteBatchColorScaleBiasMode?: number;
+  spriteBatchUniformColorScaleBias?: ColorScaleBias | TintMaterialData | readonly number[] | null;
+  spriteBatchColorScaleBiasData?: Float32Array;
   spriteBatchColorMatrixData?: Float32Array;
   spriteBatchColorTintData?: Uint32Array;
-  spriteBatchColorTransformBuffer: WebGLBuffer | null;
+  spriteBatchColorScaleBiasBuffer: WebGLBuffer | null;
   // Per-clip unwind stack: the form of each pushed clip (scissor vs stencil contour) so popClip
   // un-installs the right gate.
   clipForms: ('rect' | 'contour')[];
@@ -255,9 +255,9 @@ export interface GlQuadBatchShader {
   locStraightTextureAlpha: WebGLUniformLocation;
 }
 
-// Per-instance color transform shader: the quad-batch base layout (locations 0-6) plus two
-// vec4 instance attributes (a_ctMult at location 7, a_ctOff at location 8) applied per-vertex.
-export interface GlColorTransformInstancedShader {
+// Per-instance color adjustment shader: the quad-batch base layout (locations 0-6) plus two
+// vec4 instance attributes (a_colorScale at location 7, a_colorBias at location 8) applied per-vertex.
+export interface GlColorScaleBiasInstancedShader {
   program: WebGLProgram;
   locCorner: number;
   locWorldMatrix: WebGLUniformLocation;
@@ -265,30 +265,30 @@ export interface GlColorTransformInstancedShader {
   locStraightTextureAlpha: WebGLUniformLocation;
 }
 
-// Per-batch color transform shader — the base quad-batch layout plus color-transform uniforms
+// Per-batch color adjustment shader — the base quad-batch layout plus color-adjustment uniforms
 // applied in the fragment shader. A distinct program from the lean base shader, selected only when a
-// whole batch shares one tint, so the default pipeline carries no color-transform record.
-export interface GlUniformColorTransformShader {
+// whole batch shares one tint, so the default pipeline carries no color-adjustment record.
+export interface GlUniformColorScaleBiasShader {
   program: WebGLProgram;
   locCorner: number;
   locWorldMatrix: WebGLUniformLocation;
   locTexture: WebGLUniformLocation;
   locStraightTextureAlpha: WebGLUniformLocation;
-  locColorMultiplier: WebGLUniformLocation;
-  locColorOffset: WebGLUniformLocation;
+  locColorScale: WebGLUniformLocation;
+  locColorBias: WebGLUniformLocation;
 }
 
-// Tinted solid-fill mesh shader — the flat-color mesh program plus color-transform uniforms
-// (u_ctMult/u_ctOff) applied in the fragment scene2d, in unpremultiplied space, byte-for-byte with the
+// Tinted solid-fill mesh shader — the flat-color mesh program plus color-adjustment uniforms
+// (u_colorScale/u_colorBias) applied in the fragment scene2d, in unpremultiplied space, byte-for-byte with the
 // quad-batch uniform path. A distinct program from the lean base mesh shader, compiled and reached
 // only through the opt-in color-adjustment fold, so a shape that never tints carries none of it.
-export interface GlShapeMeshColorTransformShader {
+export interface GlShapeMeshColorScaleBiasShader {
   program: WebGLProgram;
   positionLocation: number;
   matrixLocation: WebGLUniformLocation | null;
   colorLocation: WebGLUniformLocation | null;
-  colorMultiplierLocation: WebGLUniformLocation | null;
-  colorOffsetLocation: WebGLUniformLocation | null;
+  colorScaleLocation: WebGLUniformLocation | null;
+  colorBiasLocation: WebGLUniformLocation | null;
   colorMatrixLocations?: readonly (WebGLUniformLocation | null)[];
 }
 

@@ -1,14 +1,14 @@
 import { createGlProgram } from '@flighthq/render-gl';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import type {
-  ColorTransform,
+  ColorScaleBias,
   GlColorAdjustmentMaterialFeature,
-  GlColorTransformInstancedShader,
+  GlColorScaleBiasInstancedShader,
   GlRenderState,
   GlRenderStateRuntime,
   GlShapeMesh,
-  GlShapeMeshColorTransformShader,
-  GlUniformColorTransformShader,
+  GlShapeMeshColorScaleBiasShader,
+  GlUniformColorScaleBiasShader,
   RenderProxy2D,
   TintMaterialData,
 } from '@flighthq/types';
@@ -23,21 +23,21 @@ import {
 } from './glSpriteBatch';
 
 // Enables the opt-in inline color-adjustment fold on a WebGL render state: the fused-color-matrix
-// scene2d the sprite/quad batch draws through so a color transform (and, later, other pointwise
+// scene2d the sprite/quad batch draws through so a color adjustment (and, later, other pointwise
 // adjustments) folds into the batch as data — a whole-batch uniform tint or per-instance
-// a_ctMult/a_ctOff attributes, chosen by data cardinality — without ever splitting the batch. Until a
+// a_colorScale/a_colorBias attributes, chosen by data cardinality — without ever splitting the batch. Until a
 // state calls this, its batch renderer carries none of this module's shader code (it tree-shakes out)
-// and recordGlSpriteBatchColorTransform silently skips every tint. Idempotent; safe to call per state.
+// and recordGlSpriteBatchColorScaleBias silently skips every tint. Idempotent; safe to call per state.
 export function registerGlColorAdjustmentMaterialFeature(state: GlRenderState): void {
   const runtime = getGlRenderStateRuntime(state);
   runtime.glColorAdjustmentMaterialFeature = glColorAdjustmentMaterialFeature;
-  if (runtime.spriteBatchColorTransformMode === undefined) runtime.spriteBatchColorTransformMode = CT_MODE_NONE;
+  if (runtime.spriteBatchColorScaleBiasMode === undefined) runtime.spriteBatchColorScaleBiasMode = CT_MODE_NONE;
 }
 
-// Per-instance color-transform layout (8 floats = 32 bytes): 4 multiplier + 4 offset, at attribute
-// locations 7 (a_ctMult) and 8 (a_ctOff). Used only when a batch carries varying tints (mode 2).
-const COLOR_TRANSFORM_FLOATS = 8;
-const COLOR_TRANSFORM_STRIDE = COLOR_TRANSFORM_FLOATS * 4;
+// Per-instance color-adjustment layout (8 floats = 32 bytes): 4 scale + 4 bias, at attribute
+// locations 7 (a_colorScale) and 8 (a_colorBias). Used only when a batch carries varying tints (mode 2).
+const COLOR_SCALE_BIAS_FLOATS = 8;
+const COLOR_SCALE_BIAS_STRIDE = COLOR_SCALE_BIAS_FLOATS * 4;
 const COLOR_MATRIX_FLOATS = 20;
 const COLOR_MATRIX_STRIDE = COLOR_MATRIX_FLOATS * 4;
 
@@ -52,7 +52,7 @@ const CT_MODE_PACKED_TINT = 2;
 const CT_MODE_PER_INSTANCE = 3;
 const CT_MODE_MATRIX = 4;
 
-type ColorAdjustmentData = ColorTransform | TintMaterialData | readonly number[];
+type ColorAdjustmentData = ColorScaleBias | TintMaterialData | readonly number[];
 
 // The backend's single color-adjustment shader chunk. The registered feature carries this source to
 // every participating material compiler (Standard 2D and the promoted 3D family variants), so the
@@ -76,8 +76,8 @@ vec4 applyFlightColorMatrix(
 }
 `;
 
-// Per-instance color-transform program: the base quad-batch vertex work plus two vec4 instance
-// attributes (a_ctMult / a_ctOff) carried through to the fragment scene2d. The color-transform math is
+// Per-instance color-adjustment program: the base quad-batch vertex work plus two vec4 instance
+// attributes (a_colorScale / a_colorBias) carried through to the fragment scene2d. The color-adjustment math is
 // applied in unpremultiplied space, matching the whole-batch uniform program byte for byte.
 const CT_INSTANCED_VS = `#version 300 es
 precision mediump float;
@@ -89,15 +89,15 @@ layout(location = 3) in vec2 a_matTXTY;
 layout(location = 4) in vec2 a_size;
 layout(location = 5) in vec4 a_uvRect;
 layout(location = 6) in float a_alpha;
-layout(location = 7) in vec4 a_ctMult;
-layout(location = 8) in vec4 a_ctOff;
+layout(location = 7) in vec4 a_colorScale;
+layout(location = 8) in vec4 a_colorBias;
 
 uniform mat3 u_world;
 
 out vec2 v_texCoord;
 out float v_alpha;
-out vec4 v_ctMult;
-out vec4 v_ctOff;
+out vec4 v_colorScale;
+out vec4 v_colorBias;
 
 void main() {
   vec2 local = a_corner * a_size;
@@ -109,8 +109,8 @@ void main() {
   gl_Position = vec4(clip.xy, 0.0, 1.0);
   v_texCoord = mix(a_uvRect.xy, a_uvRect.zw, a_corner);
   v_alpha = a_alpha;
-  v_ctMult = a_ctMult;
-  v_ctOff = a_ctOff;
+  v_colorScale = a_colorScale;
+  v_colorBias = a_colorBias;
 }`;
 
 // The common varying-tint path: one normalized RGBA8 multiplier (4 bytes per instance), with no
@@ -125,13 +125,13 @@ layout(location = 3) in vec2 a_matTXTY;
 layout(location = 4) in vec2 a_size;
 layout(location = 5) in vec4 a_uvRect;
 layout(location = 6) in float a_alpha;
-layout(location = 7) in vec4 a_ctMult;
+layout(location = 7) in vec4 a_colorScale;
 
 uniform mat3 u_world;
 
 out vec2 v_texCoord;
 out float v_alpha;
-out vec4 v_ctMult;
+out vec4 v_colorScale;
 
 void main() {
   vec2 local = a_corner * a_size;
@@ -143,14 +143,14 @@ void main() {
   gl_Position = vec4(clip.xy, 0.0, 1.0);
   v_texCoord = mix(a_uvRect.xy, a_uvRect.zw, a_corner);
   v_alpha = a_alpha;
-  v_ctMult = a_ctMult;
+  v_colorScale = a_colorScale;
 }`;
 
 const CT_PACKED_TINT_FS = `#version 300 es
 precision mediump float;
 in vec2 v_texCoord;
 in float v_alpha;
-in vec4 v_ctMult;
+in vec4 v_colorScale;
 uniform sampler2D u_texture;
 uniform bool u_straightTextureAlpha;
 out vec4 fragColor;
@@ -161,7 +161,7 @@ void main() {
   color *= clamp(v_alpha, 0.0, 1.0);
   if (color.a <= 0.0) discard;
   color = vec4(color.rgb / color.a, color.a);
-  color = applyFlightColorAdjustment(color, v_ctMult, vec4(0.0));
+  color = applyFlightColorAdjustment(color, v_colorScale, vec4(0.0));
   fragColor = vec4(color.rgb * color.a, color.a);
 }`;
 
@@ -169,8 +169,8 @@ const CT_INSTANCED_FS = `#version 300 es
 precision mediump float;
 in vec2 v_texCoord;
 in float v_alpha;
-in vec4 v_ctMult;
-in vec4 v_ctOff;
+in vec4 v_colorScale;
+in vec4 v_colorBias;
 uniform sampler2D u_texture;
 uniform bool u_straightTextureAlpha;
 out vec4 fragColor;
@@ -181,7 +181,7 @@ void main() {
   color *= clamp(v_alpha, 0.0, 1.0);
   if (color.a <= 0.0) discard;
   color = vec4(color.rgb / color.a, color.a);
-  color = applyFlightColorAdjustment(color, v_ctMult, v_ctOff);
+  color = applyFlightColorAdjustment(color, v_colorScale, v_colorBias);
   fragColor = vec4(color.rgb * color.a, color.a);
 }`;
 
@@ -198,7 +198,7 @@ layout(location = 7) in vec4 a_ctRow0;
 layout(location = 8) in vec4 a_ctRow1;
 layout(location = 9) in vec4 a_ctRow2;
 layout(location = 10) in vec4 a_ctRow3;
-layout(location = 11) in vec4 a_ctOff;
+layout(location = 11) in vec4 a_colorBias;
 uniform mat3 u_world;
 out vec2 v_texCoord;
 out float v_alpha;
@@ -206,7 +206,7 @@ out vec4 v_ctRow0;
 out vec4 v_ctRow1;
 out vec4 v_ctRow2;
 out vec4 v_ctRow3;
-out vec4 v_ctOff;
+out vec4 v_colorBias;
 void main() {
   vec2 local = a_corner * a_size;
   vec2 worldPos = vec2(
@@ -221,7 +221,7 @@ void main() {
   v_ctRow1 = a_ctRow1;
   v_ctRow2 = a_ctRow2;
   v_ctRow3 = a_ctRow3;
-  v_ctOff = a_ctOff;
+  v_colorBias = a_colorBias;
 }`;
 
 const CT_MATRIX_INSTANCED_FS = `#version 300 es
@@ -232,7 +232,7 @@ in vec4 v_ctRow0;
 in vec4 v_ctRow1;
 in vec4 v_ctRow2;
 in vec4 v_ctRow3;
-in vec4 v_ctOff;
+in vec4 v_colorBias;
 uniform sampler2D u_texture;
 uniform bool u_straightTextureAlpha;
 out vec4 fragColor;
@@ -243,12 +243,12 @@ void main() {
   color *= clamp(v_alpha, 0.0, 1.0);
   if (color.a <= 0.0) discard;
   color = vec4(color.rgb / color.a, color.a);
-  color = applyFlightColorMatrix(color, v_ctRow0, v_ctRow1, v_ctRow2, v_ctRow3, v_ctOff);
+  color = applyFlightColorMatrix(color, v_ctRow0, v_ctRow1, v_ctRow2, v_ctRow3, v_colorBias);
   fragColor = vec4(color.rgb * color.a, color.a);
 }`;
 
-// Whole-batch color-transform fragment shader (over the base vertex shader): one tint uploaded as
-// u_ctMult/u_ctOff uniforms and shared by every instance. This is the uniform path — a single tint on
+// Whole-batch color-adjustment fragment shader (over the base vertex shader): one tint uploaded as
+// u_colorScale/u_colorBias uniforms and shared by every instance. This is the uniform path — a single tint on
 // a whole batch (e.g. a bitmap-text node) costs no per-instance data.
 const UNIFORM_CT_FS = `#version 300 es
 precision mediump float;
@@ -256,8 +256,8 @@ in vec2 v_texCoord;
 in float v_alpha;
 uniform sampler2D u_texture;
 uniform bool u_straightTextureAlpha;
-uniform vec4 u_ctMult;
-uniform vec4 u_ctOff;
+uniform vec4 u_colorScale;
+uniform vec4 u_colorBias;
 out vec4 fragColor;
 ${GL_COLOR_ADJUSTMENT_FRAGMENT_CHUNK}
 void main() {
@@ -266,34 +266,34 @@ void main() {
   color *= clamp(v_alpha, 0.0, 1.0);
   if (color.a <= 0.0) discard;
   color = vec4(color.rgb / color.a, color.a);
-  color = applyFlightColorAdjustment(color, u_ctMult, u_ctOff);
+  color = applyFlightColorAdjustment(color, u_colorScale, u_colorBias);
   fragColor = vec4(color.rgb * color.a, color.a);
 }`;
 
-// Binds the whole-batch (uniform) color-transform program and uploads the shared tint. Base
+// Binds the whole-batch (uniform) color-adjustment program and uploads the shared tint. Base
 // attributes come from the standard instance buffer; there is no per-instance tint data.
-function bindGlSpriteBatchUniformColorTransform(
+function bindGlSpriteBatchUniformColorScaleBias(
   state: GlRenderState,
-  colorTransform: Readonly<ColorTransform | TintMaterialData>,
+  colorScaleBias: Readonly<ColorScaleBias | TintMaterialData>,
 ): void {
-  const shader = ensureGlUniformColorTransformShader(state);
+  const shader = ensureGlUniformColorScaleBiasShader(state);
   useGlQuadBatchProgram(state, shader.program);
   setGlQuadBatchWorldAndTexture(state, shader.locWorldMatrix, shader.locTexture, shader.locStraightTextureAlpha);
 
   const gl = state.gl;
   gl.uniform4f(
-    shader.locColorMultiplier,
-    getColorMultiplier(colorTransform, 0),
-    getColorMultiplier(colorTransform, 1),
-    getColorMultiplier(colorTransform, 2),
-    getColorMultiplier(colorTransform, 3),
+    shader.locColorScale,
+    getColorScale(colorScaleBias, 0),
+    getColorScale(colorScaleBias, 1),
+    getColorScale(colorScaleBias, 2),
+    getColorScale(colorScaleBias, 3),
   );
   gl.uniform4f(
-    shader.locColorOffset,
-    getColorOffset(colorTransform, 0),
-    getColorOffset(colorTransform, 1),
-    getColorOffset(colorTransform, 2),
-    getColorOffset(colorTransform, 3),
+    shader.locColorBias,
+    getColorBias(colorScaleBias, 0),
+    getColorBias(colorScaleBias, 1),
+    getColorBias(colorScaleBias, 2),
+    getColorBias(colorScaleBias, 3),
   );
   bindGlQuadBatchBaseAttributes(state, shader.locCorner);
 }
@@ -305,7 +305,7 @@ function bindGlSpriteBatchInstancedColorMatrix(state: GlRenderState): void {
   setGlQuadBatchWorldAndTexture(state, shader.locWorldMatrix, shader.locTexture, shader.locStraightTextureAlpha);
   bindGlQuadBatchBaseAttributes(state, shader.locCorner);
   const gl = state.gl;
-  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchColorTransformBuffer!);
+  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchColorScaleBiasBuffer!);
   for (let attribute = 0; attribute < 5; attribute++) {
     const location = 7 + attribute;
     gl.enableVertexAttribArray(location);
@@ -314,22 +314,22 @@ function bindGlSpriteBatchInstancedColorMatrix(state: GlRenderState): void {
   }
 }
 
-// Binds the per-instance color-transform program and the a_ctMult/a_ctOff attribute stream from the
-// batch's color-transform buffer, alongside the base instance attributes.
-function bindGlSpriteBatchInstancedColorTransform(state: GlRenderState): void {
+// Binds the per-instance color-adjustment program and the a_colorScale/a_colorBias attribute stream from the
+// batch's color-adjustment buffer, alongside the base instance attributes.
+function bindGlSpriteBatchInstancedColorScaleBias(state: GlRenderState): void {
   const runtime = getGlRenderStateRuntime(state);
-  const shader = ensureGlColorTransformInstancedShader(state);
+  const shader = ensureGlColorScaleBiasInstancedShader(state);
   useGlQuadBatchProgram(state, shader.program);
   setGlQuadBatchWorldAndTexture(state, shader.locWorldMatrix, shader.locTexture, shader.locStraightTextureAlpha);
   bindGlQuadBatchBaseAttributes(state, shader.locCorner);
 
   const gl = state.gl;
-  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchColorTransformBuffer!);
+  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchColorScaleBiasBuffer!);
   gl.enableVertexAttribArray(7);
-  gl.vertexAttribPointer(7, 4, gl.FLOAT, false, COLOR_TRANSFORM_STRIDE, 0);
+  gl.vertexAttribPointer(7, 4, gl.FLOAT, false, COLOR_SCALE_BIAS_STRIDE, 0);
   gl.vertexAttribDivisor(7, 1);
   gl.enableVertexAttribArray(8);
-  gl.vertexAttribPointer(8, 4, gl.FLOAT, false, COLOR_TRANSFORM_STRIDE, 16);
+  gl.vertexAttribPointer(8, 4, gl.FLOAT, false, COLOR_SCALE_BIAS_STRIDE, 16);
   gl.vertexAttribDivisor(8, 1);
 }
 
@@ -341,29 +341,29 @@ function bindGlSpriteBatchPackedTint(state: GlRenderState): void {
   bindGlQuadBatchBaseAttributes(state, shader.locCorner);
 
   const gl = state.gl;
-  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchColorTransformBuffer!);
+  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchColorScaleBiasBuffer!);
   gl.enableVertexAttribArray(7);
   gl.vertexAttribPointer(7, 4, gl.UNSIGNED_BYTE, true, 4, 0);
   gl.vertexAttribDivisor(7, 1);
 }
 
-function ensureGlColorTransformInstancedShader(state: GlRenderState): GlColorTransformInstancedShader {
+function ensureGlColorScaleBiasInstancedShader(state: GlRenderState): GlColorScaleBiasInstancedShader {
   const runtime = getGlRenderStateRuntime(state);
-  if (runtime.colorTransformInstancedShader) return runtime.colorTransformInstancedShader;
+  if (runtime.colorScaleBiasInstancedShader) return runtime.colorScaleBiasInstancedShader;
 
   const gl = state.gl;
-  const program = createGlProgram(gl, CT_INSTANCED_VS, CT_INSTANCED_FS, 'Sprite-batch color transform (per-instance)');
-  runtime.colorTransformInstancedShader = {
+  const program = createGlProgram(gl, CT_INSTANCED_VS, CT_INSTANCED_FS, 'Sprite-batch color adjustment (per-instance)');
+  runtime.colorScaleBiasInstancedShader = {
     program,
     locCorner: 0,
     locWorldMatrix: gl.getUniformLocation(program, 'u_world')!,
     locTexture: gl.getUniformLocation(program, 'u_texture')!,
     locStraightTextureAlpha: gl.getUniformLocation(program, 'u_straightTextureAlpha')!,
   };
-  return runtime.colorTransformInstancedShader;
+  return runtime.colorScaleBiasInstancedShader;
 }
 
-function ensureGlColorMatrixInstancedShader(state: GlRenderState): GlColorTransformInstancedShader {
+function ensureGlColorMatrixInstancedShader(state: GlRenderState): GlColorScaleBiasInstancedShader {
   const runtime = getGlRenderStateRuntime(state);
   if (runtime.colorMatrixInstancedShader) return runtime.colorMatrixInstancedShader;
   const gl = state.gl;
@@ -378,7 +378,7 @@ function ensureGlColorMatrixInstancedShader(state: GlRenderState): GlColorTransf
   return runtime.colorMatrixInstancedShader;
 }
 
-function ensureGlColorTintInstancedShader(state: GlRenderState): GlColorTransformInstancedShader {
+function ensureGlColorTintInstancedShader(state: GlRenderState): GlColorScaleBiasInstancedShader {
   const runtime = getGlRenderStateRuntime(state);
   if (runtime.colorTintInstancedShader) return runtime.colorTintInstancedShader;
 
@@ -394,28 +394,28 @@ function ensureGlColorTintInstancedShader(state: GlRenderState): GlColorTransfor
   return runtime.colorTintInstancedShader;
 }
 
-function ensureGlUniformColorTransformShader(state: GlRenderState): GlUniformColorTransformShader {
+function ensureGlUniformColorScaleBiasShader(state: GlRenderState): GlUniformColorScaleBiasShader {
   const runtime = getGlRenderStateRuntime(state);
-  if (runtime.uniformColorTransformShader) return runtime.uniformColorTransformShader;
+  if (runtime.uniformColorScaleBiasShader) return runtime.uniformColorScaleBiasShader;
 
   const gl = state.gl;
-  const program = createGlProgram(gl, QUAD_BATCH_VS, UNIFORM_CT_FS, 'Sprite-batch color transform (uniform)');
-  runtime.uniformColorTransformShader = {
+  const program = createGlProgram(gl, QUAD_BATCH_VS, UNIFORM_CT_FS, 'Sprite-batch color adjustment (uniform)');
+  runtime.uniformColorScaleBiasShader = {
     program,
     locCorner: 0,
     locWorldMatrix: gl.getUniformLocation(program, 'u_world')!,
     locTexture: gl.getUniformLocation(program, 'u_texture')!,
     locStraightTextureAlpha: gl.getUniformLocation(program, 'u_straightTextureAlpha')!,
-    locColorMultiplier: gl.getUniformLocation(program, 'u_ctMult')!,
-    locColorOffset: gl.getUniformLocation(program, 'u_ctOff')!,
+    locColorScale: gl.getUniformLocation(program, 'u_colorScale')!,
+    locColorBias: gl.getUniformLocation(program, 'u_colorBias')!,
   };
-  return runtime.uniformColorTransformShader;
+  return runtime.uniformColorScaleBiasShader;
 }
 
 // Value equality for the whole-batch uniform check: reference-equal short-circuits (the common case —
 // every glyph of a bitmap-text node shares one node-level tint), else compares all eight fields so a
 // distinct-but-equal tint still keeps the batch on the cheaper uniform path.
-function equalsRecordedColorTransform(
+function equalsRecordedColorScaleBias(
   a: Readonly<ColorAdjustmentData> | null,
   b: Readonly<ColorAdjustmentData> | null,
 ): boolean {
@@ -428,8 +428,8 @@ function equalsRecordedColorTransform(
   }
   for (let channel = 0; channel < 4; channel++) {
     if (
-      getColorMultiplier(a, channel) !== getColorMultiplier(b, channel) ||
-      getColorOffset(a, channel) !== getColorOffset(b, channel)
+      getColorScale(a, channel) !== getColorScale(b, channel) ||
+      getColorBias(a, channel) !== getColorBias(b, channel)
     ) {
       return false;
     }
@@ -437,24 +437,24 @@ function equalsRecordedColorTransform(
   return true;
 }
 
-// Uploads the active batch's per-instance color-transform buffer, selects the fold program (uniform or
+// Uploads the active batch's per-instance color-adjustment buffer, selects the fold program (uniform or
 // per-instance), and binds it. Returns true when it drew a folded batch; false when the batch carried
 // no tint, so flushGlSpriteBatch runs the lean material path instead. Resets the fold mode for the
 // next batch.
 function flushGlColorAdjustmentMaterialFeature(state: GlRenderState, count: number): boolean {
   const runtime = getGlRenderStateRuntime(state);
-  const ctMode = runtime.spriteBatchColorTransformMode ?? CT_MODE_NONE;
+  const ctMode = runtime.spriteBatchColorScaleBiasMode ?? CT_MODE_NONE;
   if (ctMode === CT_MODE_NONE) return false;
-  const uniformColorTransform = runtime.spriteBatchUniformColorTransform ?? null;
-  runtime.spriteBatchColorTransformMode = CT_MODE_NONE;
-  runtime.spriteBatchUniformColorTransform = null;
+  const uniformColorScaleBias = runtime.spriteBatchUniformColorScaleBias ?? null;
+  runtime.spriteBatchColorScaleBiasMode = CT_MODE_NONE;
+  runtime.spriteBatchUniformColorScaleBias = null;
 
   if (ctMode === CT_MODE_PACKED_TINT) {
     const gl = state.gl;
-    if (runtime.spriteBatchColorTransformBuffer == null) {
-      runtime.spriteBatchColorTransformBuffer = gl.createBuffer()!;
+    if (runtime.spriteBatchColorScaleBiasBuffer == null) {
+      runtime.spriteBatchColorScaleBiasBuffer = gl.createBuffer()!;
     }
-    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchColorTransformBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchColorScaleBiasBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, runtime.spriteBatchColorTintData!.subarray(0, count), gl.DYNAMIC_DRAW);
     bindGlSpriteBatchPackedTint(state);
     return true;
@@ -462,8 +462,8 @@ function flushGlColorAdjustmentMaterialFeature(state: GlRenderState, count: numb
 
   if (ctMode === CT_MODE_MATRIX) {
     const gl = state.gl;
-    if (runtime.spriteBatchColorTransformBuffer == null) runtime.spriteBatchColorTransformBuffer = gl.createBuffer()!;
-    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchColorTransformBuffer);
+    if (runtime.spriteBatchColorScaleBiasBuffer == null) runtime.spriteBatchColorScaleBiasBuffer = gl.createBuffer()!;
+    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchColorScaleBiasBuffer);
     gl.bufferData(
       gl.ARRAY_BUFFER,
       runtime.spriteBatchColorMatrixData!.subarray(0, count * COLOR_MATRIX_FLOATS),
@@ -475,28 +475,28 @@ function flushGlColorAdjustmentMaterialFeature(state: GlRenderState, count: numb
 
   if (ctMode === CT_MODE_PER_INSTANCE) {
     const gl = state.gl;
-    if (runtime.spriteBatchColorTransformBuffer == null) {
-      runtime.spriteBatchColorTransformBuffer = gl.createBuffer()!;
+    if (runtime.spriteBatchColorScaleBiasBuffer == null) {
+      runtime.spriteBatchColorScaleBiasBuffer = gl.createBuffer()!;
     }
-    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchColorTransformBuffer);
-    // Reallocate to exactly what is drawn: the color-transform data array grows lazily as tints are
+    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchColorScaleBiasBuffer);
+    // Reallocate to exactly what is drawn: the color-adjustment data array grows lazily as tints are
     // recorded, so a fixed subData offset could outrun a stale buffer. Only per-instance-tinted
     // batches pay this, and the untinted common path never allocates the buffer at all.
     gl.bufferData(
       gl.ARRAY_BUFFER,
-      runtime.spriteBatchColorTransformData!.subarray(0, count * COLOR_TRANSFORM_FLOATS),
+      runtime.spriteBatchColorScaleBiasData!.subarray(0, count * COLOR_SCALE_BIAS_FLOATS),
       gl.DYNAMIC_DRAW,
     );
-    bindGlSpriteBatchInstancedColorTransform(state);
+    bindGlSpriteBatchInstancedColorScaleBias(state);
     return true;
   }
 
-  if (isColorMatrixData(uniformColorTransform!)) {
-    promoteGlSpriteBatchColorTransformToMatrix(runtime, count, uniformColorTransform!);
-    runtime.spriteBatchColorTransformMode = CT_MODE_NONE;
+  if (isColorMatrixData(uniformColorScaleBias!)) {
+    promoteGlSpriteBatchColorScaleBiasToMatrix(runtime, count, uniformColorScaleBias!);
+    runtime.spriteBatchColorScaleBiasMode = CT_MODE_NONE;
     const gl = state.gl;
-    if (runtime.spriteBatchColorTransformBuffer == null) runtime.spriteBatchColorTransformBuffer = gl.createBuffer()!;
-    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchColorTransformBuffer);
+    if (runtime.spriteBatchColorScaleBiasBuffer == null) runtime.spriteBatchColorScaleBiasBuffer = gl.createBuffer()!;
+    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchColorScaleBiasBuffer);
     gl.bufferData(
       gl.ARRAY_BUFFER,
       runtime.spriteBatchColorMatrixData!.subarray(0, count * COLOR_MATRIX_FLOATS),
@@ -504,7 +504,7 @@ function flushGlColorAdjustmentMaterialFeature(state: GlRenderState, count: numb
     );
     bindGlSpriteBatchInstancedColorMatrix(state);
   } else {
-    bindGlSpriteBatchUniformColorTransform(state, uniformColorTransform!);
+    bindGlSpriteBatchUniformColorScaleBias(state, uniformColorScaleBias!);
   }
   return true;
 }
@@ -512,63 +512,63 @@ function flushGlColorAdjustmentMaterialFeature(state: GlRenderState, count: numb
 // Switches the batch to per-instance mode and back-fills every already-recorded instance
 // [0, instanceCount) with `fill` (a prior uniform value, or null → identity), so promotion never
 // changes the appearance of instances written before the divergence.
-function promoteGlSpriteBatchColorTransformToPerInstance(
+function promoteGlSpriteBatchColorScaleBiasToPerInstance(
   runtime: GlRenderStateRuntime,
   instanceCount: number,
-  fill: Readonly<ColorTransform | TintMaterialData> | null,
+  fill: Readonly<ColorScaleBias | TintMaterialData> | null,
 ): void {
-  runtime.spriteBatchColorTransformMode = CT_MODE_PER_INSTANCE;
-  for (let i = 0; i < instanceCount; i++) writeGlColorTransformInstance(runtime, fill, i);
+  runtime.spriteBatchColorScaleBiasMode = CT_MODE_PER_INSTANCE;
+  for (let i = 0; i < instanceCount; i++) writeGlColorScaleBiasInstance(runtime, fill, i);
 }
 
-function promoteGlSpriteBatchColorTransformToPackedTint(
+function promoteGlSpriteBatchColorScaleBiasToPackedTint(
   runtime: GlRenderStateRuntime,
   instanceCount: number,
-  fill: Readonly<ColorTransform | TintMaterialData> | null,
+  fill: Readonly<ColorScaleBias | TintMaterialData> | null,
 ): void {
-  runtime.spriteBatchColorTransformMode = CT_MODE_PACKED_TINT;
+  runtime.spriteBatchColorScaleBiasMode = CT_MODE_PACKED_TINT;
   for (let i = 0; i < instanceCount; i++) writeGlPackedTintInstance(runtime, getPackedTint(fill)!, i);
 }
 
-function promoteGlPackedTintToColorTransform(runtime: GlRenderStateRuntime, instanceCount: number): void {
-  runtime.spriteBatchColorTransformMode = CT_MODE_PER_INSTANCE;
+function promoteGlPackedTintToColorScaleBias(runtime: GlRenderStateRuntime, instanceCount: number): void {
+  runtime.spriteBatchColorScaleBiasMode = CT_MODE_PER_INSTANCE;
   const packed = runtime.spriteBatchColorTintData!;
-  for (let i = 0; i < instanceCount; i++) writeGlNativePackedTintAsColorTransform(runtime, packed[i], i);
+  for (let i = 0; i < instanceCount; i++) writeGlNativePackedTintAsColorScaleBias(runtime, packed[i], i);
 }
 
-function promoteGlSpriteBatchColorTransformToMatrix(
+function promoteGlSpriteBatchColorScaleBiasToMatrix(
   runtime: GlRenderStateRuntime,
   instanceCount: number,
   fill: Readonly<ColorAdjustmentData> | null,
 ): void {
-  runtime.spriteBatchColorTransformMode = CT_MODE_MATRIX;
+  runtime.spriteBatchColorScaleBiasMode = CT_MODE_MATRIX;
   for (let i = 0; i < instanceCount; i++) writeGlColorMatrixInstance(runtime, fill, i);
 }
 
 function promoteGlPackedTintToColorMatrix(runtime: GlRenderStateRuntime, instanceCount: number): void {
   const packed = runtime.spriteBatchColorTintData!;
-  runtime.spriteBatchColorTransformMode = CT_MODE_MATRIX;
+  runtime.spriteBatchColorScaleBiasMode = CT_MODE_MATRIX;
   for (let i = 0; i < instanceCount; i++) writeGlNativePackedTintAsColorMatrix(runtime, packed[i], i);
 }
 
-function promoteGlColorTransformToMatrix(runtime: GlRenderStateRuntime, instanceCount: number): void {
-  const affine = runtime.spriteBatchColorTransformData!;
-  runtime.spriteBatchColorTransformMode = CT_MODE_MATRIX;
+function promoteGlColorScaleBiasToMatrix(runtime: GlRenderStateRuntime, instanceCount: number): void {
+  const affine = runtime.spriteBatchColorScaleBiasData!;
+  runtime.spriteBatchColorScaleBiasMode = CT_MODE_MATRIX;
   for (let i = 0; i < instanceCount; i++) {
-    const base = i * COLOR_TRANSFORM_FLOATS;
+    const base = i * COLOR_SCALE_BIAS_FLOATS;
     writeGlAffineValuesAsColorMatrix(runtime, affine, base, i);
   }
 }
 
-// Folds instance `instanceIndex`'s effective color transform into the active batch. See the fold-mode
-// constants for the promotion rules. `colorTransform` is null for an untinted instance.
+// Folds instance `instanceIndex`'s effective color adjustment into the active batch. See the fold-mode
+// constants for the promotion rules. `colorScaleBias` is null for an untinted instance.
 function recordGlColorAdjustment(
   runtime: GlRenderStateRuntime,
-  colorTransform: ColorAdjustmentData | null | undefined,
+  colorScaleBias: ColorAdjustmentData | null | undefined,
   instanceIndex: number,
 ): void {
-  const mode = runtime.spriteBatchColorTransformMode ?? CT_MODE_NONE;
-  const tint = colorTransform ?? null;
+  const mode = runtime.spriteBatchColorScaleBiasMode ?? CT_MODE_NONE;
+  const tint = colorScaleBias ?? null;
 
   if (mode === CT_MODE_MATRIX) {
     writeGlColorMatrixInstance(runtime, tint, instanceIndex);
@@ -578,40 +578,40 @@ function recordGlColorAdjustment(
   if (mode === CT_MODE_NONE) {
     if (tint === null) return;
     if (instanceIndex === 0) {
-      runtime.spriteBatchColorTransformMode = CT_MODE_UNIFORM;
-      runtime.spriteBatchUniformColorTransform = tint;
+      runtime.spriteBatchColorScaleBiasMode = CT_MODE_UNIFORM;
+      runtime.spriteBatchUniformColorScaleBias = tint;
       return;
     }
     if (isColorMatrixData(tint)) {
-      promoteGlSpriteBatchColorTransformToMatrix(runtime, instanceIndex, null);
+      promoteGlSpriteBatchColorScaleBiasToMatrix(runtime, instanceIndex, null);
       writeGlColorMatrixInstance(runtime, tint, instanceIndex);
       return;
     }
     if (getPackedTint(tint) !== null) {
-      promoteGlSpriteBatchColorTransformToPackedTint(runtime, instanceIndex, null);
+      promoteGlSpriteBatchColorScaleBiasToPackedTint(runtime, instanceIndex, null);
       writeGlPackedTintInstance(runtime, getPackedTint(tint)!, instanceIndex);
     } else {
-      promoteGlSpriteBatchColorTransformToPerInstance(runtime, instanceIndex, null);
-      writeGlColorTransformInstance(runtime, tint, instanceIndex);
+      promoteGlSpriteBatchColorScaleBiasToPerInstance(runtime, instanceIndex, null);
+      writeGlColorScaleBiasInstance(runtime, tint, instanceIndex);
     }
     return;
   }
 
   if (mode === CT_MODE_UNIFORM) {
-    const uniform = runtime.spriteBatchUniformColorTransform ?? null;
-    if (equalsRecordedColorTransform(tint, uniform)) return;
+    const uniform = runtime.spriteBatchUniformColorScaleBias ?? null;
+    if (equalsRecordedColorScaleBias(tint, uniform)) return;
     if (isColorMatrixData(tint) || (uniform !== null && isColorMatrixData(uniform))) {
-      promoteGlSpriteBatchColorTransformToMatrix(runtime, instanceIndex, uniform);
+      promoteGlSpriteBatchColorScaleBiasToMatrix(runtime, instanceIndex, uniform);
       writeGlColorMatrixInstance(runtime, tint, instanceIndex);
       return;
     }
     const packedTint = getPackedTint(tint);
     if (getPackedTint(uniform) !== null && packedTint !== null) {
-      promoteGlSpriteBatchColorTransformToPackedTint(runtime, instanceIndex, uniform);
+      promoteGlSpriteBatchColorScaleBiasToPackedTint(runtime, instanceIndex, uniform);
       writeGlPackedTintInstance(runtime, packedTint, instanceIndex);
     } else {
-      promoteGlSpriteBatchColorTransformToPerInstance(runtime, instanceIndex, uniform);
-      writeGlColorTransformInstance(runtime, tint, instanceIndex);
+      promoteGlSpriteBatchColorScaleBiasToPerInstance(runtime, instanceIndex, uniform);
+      writeGlColorScaleBiasInstance(runtime, tint, instanceIndex);
     }
     return;
   }
@@ -626,18 +626,18 @@ function recordGlColorAdjustment(
     if (packedTint !== null) {
       writeGlPackedTintInstance(runtime, packedTint, instanceIndex);
     } else {
-      promoteGlPackedTintToColorTransform(runtime, instanceIndex);
-      writeGlColorTransformInstance(runtime, tint, instanceIndex);
+      promoteGlPackedTintToColorScaleBias(runtime, instanceIndex);
+      writeGlColorScaleBiasInstance(runtime, tint, instanceIndex);
     }
     return;
   }
 
   if (isColorMatrixData(tint)) {
-    promoteGlColorTransformToMatrix(runtime, instanceIndex);
+    promoteGlColorScaleBiasToMatrix(runtime, instanceIndex);
     writeGlColorMatrixInstance(runtime, tint, instanceIndex);
     return;
   }
-  writeGlColorTransformInstance(runtime, tint, instanceIndex);
+  writeGlColorScaleBiasInstance(runtime, tint, instanceIndex);
 }
 
 function writeGlColorMatrixInstance(
@@ -666,13 +666,13 @@ function writeGlColorMatrixInstance(
       data[target + 1] = adjustment[source + 1]!;
       data[target + 2] = adjustment[source + 2]!;
       data[target + 3] = adjustment[source + 3]!;
-      data[offset + 16 + row] = adjustment[source + 4]! / 255;
+      data[offset + 16 + row] = adjustment[source + 4]!;
     }
   } else {
     writeIdentityColorMatrix(data, offset);
     for (let channel = 0; channel < 4; channel++) {
-      data[offset + channel * 4 + channel] = getColorMultiplier(adjustment, channel);
-      data[offset + 16 + channel] = getColorOffset(adjustment, channel);
+      data[offset + channel * 4 + channel] = getColorScale(adjustment, channel);
+      data[offset + 16 + channel] = getColorBias(adjustment, channel);
     }
   }
 }
@@ -711,31 +711,30 @@ function writeGlAffineValuesAsColorMatrix(
   }
 }
 
-// Writes one instance's eight color-transform floats (multiplier rgba, then offset rgba normalized by
-// 255) at its slot in the batch's color-transform data, growing the array as needed. A null transform
-// writes the identity (multiply by 1, add 0).
-function writeGlColorTransformInstance(
+// Writes one instance's eight color scale/bias floats at its slot in the batch data, growing the array
+// as needed. Bias is already normalized-linear and is copied verbatim. A null value writes identity.
+function writeGlColorScaleBiasInstance(
   runtime: GlRenderStateRuntime,
-  colorTransform: Readonly<ColorTransform | TintMaterialData> | null,
+  colorScaleBias: Readonly<ColorScaleBias | TintMaterialData> | null,
   instanceIndex: number,
 ): void {
-  const offset = instanceIndex * COLOR_TRANSFORM_FLOATS;
-  let data = runtime.spriteBatchColorTransformData;
+  const offset = instanceIndex * COLOR_SCALE_BIAS_FLOATS;
+  let data = runtime.spriteBatchColorScaleBiasData;
   if (data === undefined) {
-    data = new Float32Array(COLOR_TRANSFORM_FLOATS * 256);
-    runtime.spriteBatchColorTransformData = data;
+    data = new Float32Array(COLOR_SCALE_BIAS_FLOATS * 256);
+    runtime.spriteBatchColorScaleBiasData = data;
   }
-  if (offset + COLOR_TRANSFORM_FLOATS > data.length) {
-    const newSize = Math.max(offset + COLOR_TRANSFORM_FLOATS, data.length * 2);
+  if (offset + COLOR_SCALE_BIAS_FLOATS > data.length) {
+    const newSize = Math.max(offset + COLOR_SCALE_BIAS_FLOATS, data.length * 2);
     const grown = new Float32Array(newSize);
     grown.set(data);
-    runtime.spriteBatchColorTransformData = grown;
+    runtime.spriteBatchColorScaleBiasData = grown;
     data = grown;
   }
-  if (colorTransform !== null) {
+  if (colorScaleBias !== null) {
     for (let channel = 0; channel < 4; channel++) {
-      data[offset + channel] = getColorMultiplier(colorTransform, channel);
-      data[offset + 4 + channel] = getColorOffset(colorTransform, channel);
+      data[offset + channel] = getColorScale(colorScaleBias, channel);
+      data[offset + 4 + channel] = getColorBias(colorScaleBias, channel);
     }
   } else {
     data[offset] = 1;
@@ -763,44 +762,44 @@ function writeGlPackedTintInstance(runtime: GlRenderStateRuntime, rgba: number, 
   data[instanceIndex] = rgbaToNativeByteWord(rgba);
 }
 
-function writeGlNativePackedTintAsColorTransform(
+function writeGlNativePackedTintAsColorScaleBias(
   runtime: GlRenderStateRuntime,
   nativeWord: number,
   instanceIndex: number,
 ): void {
-  const offset = instanceIndex * COLOR_TRANSFORM_FLOATS;
-  writeGlColorTransformInstance(runtime, null, instanceIndex);
-  const data = runtime.spriteBatchColorTransformData!;
+  const offset = instanceIndex * COLOR_SCALE_BIAS_FLOATS;
+  writeGlColorScaleBiasInstance(runtime, null, instanceIndex);
+  const data = runtime.spriteBatchColorScaleBiasData!;
   data[offset] = (nativeWord & 0xff) / 255;
   data[offset + 1] = ((nativeWord >>> 8) & 0xff) / 255;
   data[offset + 2] = ((nativeWord >>> 16) & 0xff) / 255;
   data[offset + 3] = ((nativeWord >>> 24) & 0xff) / 255;
 }
 
-function getPackedTint(value: Readonly<ColorTransform | TintMaterialData> | null): number | null {
+function getPackedTint(value: Readonly<ColorScaleBias | TintMaterialData> | null): number | null {
   if (value === null) return 0xffffffff;
   if (isTintMaterialData(value)) return value.tint >>> 0;
   if (
-    value.redOffset !== 0 ||
-    value.greenOffset !== 0 ||
-    value.blueOffset !== 0 ||
-    value.alphaOffset !== 0 ||
-    value.redMultiplier < 0 ||
-    value.redMultiplier > 1 ||
-    value.greenMultiplier < 0 ||
-    value.greenMultiplier > 1 ||
-    value.blueMultiplier < 0 ||
-    value.blueMultiplier > 1 ||
-    value.alphaMultiplier < 0 ||
-    value.alphaMultiplier > 1
+    value.redBias !== 0 ||
+    value.greenBias !== 0 ||
+    value.blueBias !== 0 ||
+    value.alphaBias !== 0 ||
+    value.redScale < 0 ||
+    value.redScale > 1 ||
+    value.greenScale < 0 ||
+    value.greenScale > 1 ||
+    value.blueScale < 0 ||
+    value.blueScale > 1 ||
+    value.alphaScale < 0 ||
+    value.alphaScale > 1
   ) {
     return null;
   }
   return (
-    ((Math.round(value.redMultiplier * 255) << 24) |
-      (Math.round(value.greenMultiplier * 255) << 16) |
-      (Math.round(value.blueMultiplier * 255) << 8) |
-      Math.round(value.alphaMultiplier * 255)) >>>
+    ((Math.round(value.redScale * 255) << 24) |
+      (Math.round(value.greenScale * 255) << 16) |
+      (Math.round(value.blueScale * 255) << 8) |
+      Math.round(value.alphaScale * 255)) >>>
     0
   );
 }
@@ -816,47 +815,47 @@ function rgbaToNativeByteWord(rgba: number): number {
   );
 }
 
-function isTintMaterialData(value: Readonly<ColorTransform | TintMaterialData>): value is Readonly<TintMaterialData> {
+function isTintMaterialData(value: Readonly<ColorScaleBias | TintMaterialData>): value is Readonly<TintMaterialData> {
   return 'tint' in value;
 }
 
-function getColorMultiplier(value: Readonly<ColorTransform | TintMaterialData>, channel: number): number {
+function getColorScale(value: Readonly<ColorScaleBias | TintMaterialData>, channel: number): number {
   if (isTintMaterialData(value)) return ((value.tint >>> (24 - channel * 8)) & 0xff) / 255;
-  if (channel === 0) return value.redMultiplier;
-  if (channel === 1) return value.greenMultiplier;
-  if (channel === 2) return value.blueMultiplier;
-  return value.alphaMultiplier;
+  if (channel === 0) return value.redScale;
+  if (channel === 1) return value.greenScale;
+  if (channel === 2) return value.blueScale;
+  return value.alphaScale;
 }
 
-function getColorOffset(value: Readonly<ColorTransform | TintMaterialData>, channel: number): number {
+function getColorBias(value: Readonly<ColorScaleBias | TintMaterialData>, channel: number): number {
   if (isTintMaterialData(value)) return 0;
-  if (channel === 0) return value.redOffset / 255;
-  if (channel === 1) return value.greenOffset / 255;
-  if (channel === 2) return value.blueOffset / 255;
-  return value.alphaOffset / 255;
+  if (channel === 0) return value.redBias;
+  if (channel === 1) return value.greenBias;
+  if (channel === 2) return value.blueBias;
+  return value.alphaBias;
 }
 
-// Draws the GPU-tessellated solid-fill meshes tinted by the node's color transform. A single mesh is
+// Draws the GPU-tessellated solid-fill meshes tinted by the node's color adjustment. A single mesh is
 // one flat color and a shape shares one whole-node transform, so this is the uniform path (CT_MODE_
-// UNIFORM's mesh analogue): u_ctMult/u_ctOff uploaded once, no per-vertex tint data. Reuses the base
+// UNIFORM's mesh analogue): u_colorScale/u_colorBias uploaded once, no per-vertex tint data. Reuses the base
 // mesh draw driver and its shared vertex/index buffers — only the fragment program differs, so the
 // projection and per-mesh premultiplied color stay identical to the untinted path. Falls back to the
 // lean program when the node happens to carry no transform (the caller gates on non-null, but the fold
 // stays correct if reached directly).
-function drawGlShapeMeshesColorTransform(
+function drawGlShapeMeshesColorScaleBias(
   state: GlRenderState,
   renderProxy: RenderProxy2D,
   meshes: readonly GlShapeMesh[],
 ): void {
   const colorMatrix = renderProxy.colorMatrix;
-  const colorTransform = renderProxy.colorTransform;
+  const colorScaleBias = renderProxy.colorScaleBias;
   const base = ensureGlShapeMeshProgram(state);
-  if (colorMatrix == null && colorTransform === null) {
+  if (colorMatrix == null && colorScaleBias === null) {
     drawGlShapeMeshBatch(state, renderProxy, meshes, base);
     return;
   }
   const shader =
-    colorMatrix == null ? ensureGlShapeMeshColorTransformShader(state) : ensureGlShapeMeshColorMatrixShader(state);
+    colorMatrix == null ? ensureGlShapeMeshColorScaleBiasShader(state) : ensureGlShapeMeshColorMatrixShader(state);
   const binding: GlShapeMeshBinding = {
     program: shader.program,
     vertexBuffer: base.vertexBuffer,
@@ -879,33 +878,27 @@ function drawGlShapeMeshesColorTransform(
           colorMatrix[source + 3]!,
         );
       }
-      gl.uniform4f(
-        locations[4]!,
-        colorMatrix[4]! / 255,
-        colorMatrix[9]! / 255,
-        colorMatrix[14]! / 255,
-        colorMatrix[19]! / 255,
-      );
+      gl.uniform4f(locations[4]!, colorMatrix[4]!, colorMatrix[9]!, colorMatrix[14]!, colorMatrix[19]!);
       return;
     }
     gl.uniform4f(
-      shader.colorMultiplierLocation,
-      colorTransform!.redMultiplier,
-      colorTransform!.greenMultiplier,
-      colorTransform!.blueMultiplier,
-      colorTransform!.alphaMultiplier,
+      shader.colorScaleLocation,
+      colorScaleBias!.redScale,
+      colorScaleBias!.greenScale,
+      colorScaleBias!.blueScale,
+      colorScaleBias!.alphaScale,
     );
     gl.uniform4f(
-      shader.colorOffsetLocation,
-      colorTransform!.redOffset / 255,
-      colorTransform!.greenOffset / 255,
-      colorTransform!.blueOffset / 255,
-      colorTransform!.alphaOffset / 255,
+      shader.colorBiasLocation,
+      colorScaleBias!.redBias,
+      colorScaleBias!.greenBias,
+      colorScaleBias!.blueBias,
+      colorScaleBias!.alphaBias,
     );
   });
 }
 
-function ensureGlShapeMeshColorMatrixShader(state: GlRenderState): GlShapeMeshColorTransformShader {
+function ensureGlShapeMeshColorMatrixShader(state: GlRenderState): GlShapeMeshColorScaleBiasShader {
   const runtime = getGlRenderStateRuntime(state);
   if (runtime.shapeMeshColorMatrixShader) return runtime.shapeMeshColorMatrixShader;
   const gl = state.gl;
@@ -915,34 +908,34 @@ function ensureGlShapeMeshColorMatrixShader(state: GlRenderState): GlShapeMeshCo
     positionLocation: gl.getAttribLocation(program, 'a_position'),
     matrixLocation: gl.getUniformLocation(program, 'u_matrix'),
     colorLocation: gl.getUniformLocation(program, 'u_color'),
-    colorMultiplierLocation: null,
-    colorOffsetLocation: null,
+    colorScaleLocation: null,
+    colorBiasLocation: null,
     colorMatrixLocations: [
       gl.getUniformLocation(program, 'u_ctRow0'),
       gl.getUniformLocation(program, 'u_ctRow1'),
       gl.getUniformLocation(program, 'u_ctRow2'),
       gl.getUniformLocation(program, 'u_ctRow3'),
-      gl.getUniformLocation(program, 'u_ctOff'),
+      gl.getUniformLocation(program, 'u_colorBias'),
     ],
   };
   return runtime.shapeMeshColorMatrixShader;
 }
 
-function ensureGlShapeMeshColorTransformShader(state: GlRenderState): GlShapeMeshColorTransformShader {
+function ensureGlShapeMeshColorScaleBiasShader(state: GlRenderState): GlShapeMeshColorScaleBiasShader {
   const runtime = getGlRenderStateRuntime(state);
-  if (runtime.shapeMeshColorTransformShader) return runtime.shapeMeshColorTransformShader;
+  if (runtime.shapeMeshColorScaleBiasShader) return runtime.shapeMeshColorScaleBiasShader;
 
   const gl = state.gl;
-  const program = createGlProgram(gl, SHAPE_MESH_CT_VS, SHAPE_MESH_CT_FS, 'Shape-mesh color transform');
-  runtime.shapeMeshColorTransformShader = {
+  const program = createGlProgram(gl, SHAPE_MESH_CT_VS, SHAPE_MESH_CT_FS, 'Shape-mesh color adjustment');
+  runtime.shapeMeshColorScaleBiasShader = {
     program,
     positionLocation: gl.getAttribLocation(program, 'a_position'),
     matrixLocation: gl.getUniformLocation(program, 'u_matrix'),
     colorLocation: gl.getUniformLocation(program, 'u_color'),
-    colorMultiplierLocation: gl.getUniformLocation(program, 'u_ctMult'),
-    colorOffsetLocation: gl.getUniformLocation(program, 'u_ctOff'),
+    colorScaleLocation: gl.getUniformLocation(program, 'u_colorScale'),
+    colorBiasLocation: gl.getUniformLocation(program, 'u_colorBias'),
   };
-  return runtime.shapeMeshColorTransformShader;
+  return runtime.shapeMeshColorScaleBiasShader;
 }
 
 // Mirrors the base flat-color mesh vertex shader (glShapeMesh's VERTEX_SOURCE): u_matrix is the shared
@@ -957,20 +950,20 @@ void main() {
 }
 `;
 
-// The tint fragment scene2d. u_color arrives premultiplied (the driver uploads color·alpha), so the math
-// un-premultiplies, applies the color transform (multiplier then /255-normalized offset), clamps, and
-// re-premultiplies — byte-for-byte with the quad-batch uniform/instanced color-transform shaders.
+// The tint fragment shader. u_color arrives premultiplied (the driver uploads color·alpha), so the math
+// un-premultiplies, applies normalized-linear scale/bias, clamps, and re-premultiplies — byte-for-byte
+// with the quad-batch uniform/instanced color-adjustment shaders.
 const SHAPE_MESH_CT_FS = `
 precision mediump float;
 uniform vec4 u_color;
-uniform vec4 u_ctMult;
-uniform vec4 u_ctOff;
+uniform vec4 u_colorScale;
+uniform vec4 u_colorBias;
 ${GL_COLOR_ADJUSTMENT_FRAGMENT_CHUNK}
 void main() {
   vec4 color = u_color;
   if (color.a <= 0.0) discard;
   color = vec4(color.rgb / color.a, color.a);
-  color = applyFlightColorAdjustment(color, u_ctMult, u_ctOff);
+  color = applyFlightColorAdjustment(color, u_colorScale, u_colorBias);
   gl_FragColor = vec4(color.rgb * color.a, color.a);
 }
 `;
@@ -982,13 +975,13 @@ uniform vec4 u_ctRow0;
 uniform vec4 u_ctRow1;
 uniform vec4 u_ctRow2;
 uniform vec4 u_ctRow3;
-uniform vec4 u_ctOff;
+uniform vec4 u_colorBias;
 ${GL_COLOR_MATRIX_FRAGMENT_CHUNK}
 void main() {
   vec4 color = u_color;
   if (color.a <= 0.0) discard;
   color = vec4(color.rgb / color.a, color.a);
-  color = applyFlightColorMatrix(color, u_ctRow0, u_ctRow1, u_ctRow2, u_ctRow3, u_ctOff);
+  color = applyFlightColorMatrix(color, u_ctRow0, u_ctRow1, u_ctRow2, u_ctRow3, u_colorBias);
   gl_FragColor = vec4(color.rgb * color.a, color.a);
 }
 `;
@@ -996,7 +989,7 @@ void main() {
 const glColorAdjustmentMaterialFeature: GlColorAdjustmentMaterialFeature = {
   fragmentShaderChunk: GL_COLOR_ADJUSTMENT_FRAGMENT_CHUNK,
   matrixFragmentShaderChunk: GL_COLOR_MATRIX_FRAGMENT_CHUNK,
-  drawShapeMeshes: drawGlShapeMeshesColorTransform,
+  drawShapeMeshes: drawGlShapeMeshesColorScaleBias,
   flush: flushGlColorAdjustmentMaterialFeature,
   record: recordGlColorAdjustment,
 };

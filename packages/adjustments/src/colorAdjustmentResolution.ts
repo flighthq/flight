@@ -1,16 +1,17 @@
-import type { Adjustment, ColorTransform } from '@flighthq/types';
+import type { Adjustment, ColorScaleBias } from '@flighthq/types';
 
 import { getAdjustmentColorMatrix } from './colorMatrixAdjustment';
 import { fuseColorMatrices } from './colorMatrixMath';
 
 // Resolution status of a node's color-adjustment stack against the affine inline fold.
 export const COLOR_ADJUSTMENT_NONE = 0; // empty stack — no tint (leave `out` untouched, use null)
-export const COLOR_ADJUSTMENT_AFFINE = 1; // fully representable as one 8-float ColorTransform
-export const COLOR_ADJUSTMENT_CHANNEL_MIXING = 2; // off-diagonal terms present — `out` holds only the affine part
+export const COLOR_ADJUSTMENT_AFFINE = 1; // fully representable as one 8-float ColorScaleBias
+export const COLOR_ADJUSTMENT_CHANNEL_MIXING = 2; // a full matrix or unsupported non-matrix op is present
 
-// True when `matrix` has no off-diagonal RGB/A coefficients, i.e. it is a per-channel scale + offset that
-// an 8-float ColorTransform can represent exactly. A diagonal-affine matrix is `[m0,·,·,·,off, ·,m6,·,·,off,
-// ·,·,m12,·,off, ·,·,·,m18,off]`. Fusing diagonal matrices stays diagonal, so this stays an exact zero check.
+// True when `matrix` has no off-diagonal RGB/A coefficients, i.e. it is a per-channel scale + bias that
+// an 8-float ColorScaleBias can represent exactly. A diagonal-affine matrix is `[m0,·,·,·,bias, ·,m6,·,·,
+// bias, ·,·,m12,·,bias, ·,·,·,m18,bias]`. Fusing diagonal matrices stays diagonal, so this stays an exact
+// zero check.
 export function isAffineColorMatrix(matrix: Readonly<number[]>): boolean {
   return (
     matrix[1] === 0 &&
@@ -41,21 +42,21 @@ export function resolveColorAdjustmentsColorMatrix(adjustments: readonly Adjustm
   return fuseColorMatrices(matrices);
 }
 
-// Fuses a node's color-adjustment stack into the single affine `ColorTransform` the inline fold consumes,
-// writing per-channel multiply + 0–255 offset into `out`, and returns the resolution status:
+// Fuses a node's color-adjustment stack into the single affine `ColorScaleBias` the inline fold consumes,
+// writing per-channel scale + normalized-linear bias into `out`, and returns the resolution status:
 //
 //   COLOR_ADJUSTMENT_NONE           — empty/null stack; `out` untouched (the caller uses null → no tint).
 //   COLOR_ADJUSTMENT_AFFINE         — the fused stack is diagonal-affine; `out` is exact.
 //   COLOR_ADJUSTMENT_CHANNEL_MIXING — the fused matrix carries off-diagonal channel-mixing terms
 //                                     (saturation/hue/sepia/channelMixer) or a non-matrix (LUT) op that the
 //                                     8-float fold cannot represent yet. `out` holds only the affine part
-//                                     (diagonal + offset); the caller routes this to the deferral guard.
+//                                     (diagonal + bias); the caller can resolve the complete matrix.
 //
 // A single TintAdjustment or generic affine color matrix resolves through the same fused matrix path.
 // Matrix-tier ops fuse order-preserving via concatColorMatrix; a non-matrix op marks the stack non-affine.
-export function resolveColorAdjustmentsColorTransform(
+export function resolveColorAdjustmentsColorScaleBias(
   adjustments: readonly Adjustment[] | null,
-  out: ColorTransform,
+  out: ColorScaleBias,
 ): number {
   if (adjustments === null || adjustments.length === 0) return COLOR_ADJUSTMENT_NONE;
 
@@ -68,14 +69,14 @@ export function resolveColorAdjustmentsColorTransform(
   }
 
   const fused = fuseColorMatrices(matrices);
-  out.redMultiplier = fused[0];
-  out.greenMultiplier = fused[6];
-  out.blueMultiplier = fused[12];
-  out.alphaMultiplier = fused[18];
-  out.redOffset = fused[4];
-  out.greenOffset = fused[9];
-  out.blueOffset = fused[14];
-  out.alphaOffset = fused[19];
+  out.redScale = fused[0];
+  out.greenScale = fused[6];
+  out.blueScale = fused[12];
+  out.alphaScale = fused[18];
+  out.redBias = fused[4];
+  out.greenBias = fused[9];
+  out.blueBias = fused[14];
+  out.alphaBias = fused[19];
 
   return inlineable && isAffineColorMatrix(fused) ? COLOR_ADJUSTMENT_AFFINE : COLOR_ADJUSTMENT_CHANNEL_MIXING;
 }

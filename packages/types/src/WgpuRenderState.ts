@@ -1,5 +1,5 @@
 import type { BlendMode } from './BlendMode';
-import type { ColorTransform } from './ColorTransform';
+import type { ColorScaleBias } from './ColorScaleBias';
 import type { Kind } from './Entity';
 import type { ImageResource } from './ImageResource';
 import type { Material } from './Material';
@@ -25,10 +25,10 @@ export interface WgpuRenderState extends RenderState {
 // The opt-in inline color-adjustment fold for the WebGPU sprite/quad batch. Installed on the runtime
 // by registerWgpuColorAdjustmentMaterialFeature; absent (null) on a state that never opted in, so the base batch — which
 // only ever reaches this through the nullable runtime slot — carries none of the fold's WGSL and
-// tree-shakes it out. `record` folds one instance's color transform into the active batch's
+// tree-shakes it out. `record` folds one instance's color adjustment into the active batch's
 // promote-not-split state machine; `resolveFlush` returns the group-3 storage data + folded shader
 // module for a tinted batch (or null when the batch has no adjustment, so the caller runs the lean
-// material path). This is the generic capability seam — color transform is its first consumer.
+// material path). This is the generic capability seam — color adjustment is its first consumer.
 export interface WgpuColorAdjustmentMaterialFeature {
   // The one backend-authored pointwise color-remap implementation, spliced only into promoted
   // material-family variants. It lives on the registered feature to preserve bundle shake-out.
@@ -36,7 +36,7 @@ export interface WgpuColorAdjustmentMaterialFeature {
   readonly matrixFragmentShaderChunk: string;
   record(
     runtime: WgpuRenderStateRuntime,
-    colorTransform: ColorTransform | TintMaterialData | readonly number[] | null | undefined,
+    colorScaleBias: ColorScaleBias | TintMaterialData | readonly number[] | null | undefined,
     instanceIndex: number,
   ): void;
   resolveFlush(state: WgpuRenderState, count: number): WgpuColorAdjustmentFlush | null;
@@ -75,7 +75,7 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // Scratch array for matrix building (9 floats, column-major)
   matrixArray: Float32Array;
 
-  // Pipeline cache keyed by blend mode + stencil mode + color transform flag
+  // Pipeline cache keyed by blend mode + stencil mode + color adjustment flag
   pipelineCache: Map<string, GPURenderPipeline>;
 
   // Samplers. linear/nearest are the clamp-to-edge defaults for the 2D bitmap path; material textures
@@ -150,23 +150,23 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // texture+blend share one batch. Mode 0 = no tint (base module), 2 = per-instance tints. A batch
   // promotes to 2 when any member is tinted, back-filling untinted members with identity — attaching a
   // tint only promotes a batch, never splits it. Wgpu realizes every tint through the per-instance
-  // storage buffer (spriteBatchColorTransformData, 8 floats per instance): a whole-batch tint is the
-  // same value on each instance; it has no separate hardware-uniform path (the GL u_ctMult path does).
-  // spriteBatchUniformColorTransform holds the shared value while a batch stays whole-batch uniform,
+  // storage buffer (spriteBatchColorScaleBiasData, 8 floats per instance): a whole-batch tint is the
+  // same value on each instance; it has no separate hardware-uniform path (the GL u_colorScale path does).
+  // spriteBatchUniformColorScaleBias holds the shared value while a batch stays whole-batch uniform,
   // deferring the per-instance fill until (and if) tints diverge.
-  spriteBatchColorTransformMode?: number;
-  spriteBatchUniformColorTransform?: ColorTransform | TintMaterialData | readonly number[] | null;
-  spriteBatchColorTransformData?: Float32Array;
+  spriteBatchColorScaleBiasMode?: number;
+  spriteBatchUniformColorScaleBias?: ColorScaleBias | TintMaterialData | readonly number[] | null;
+  spriteBatchColorScaleBiasData?: Float32Array;
   spriteBatchColorMatrixData?: Float32Array;
   spriteBatchColorTintData?: Uint32Array;
   // The opt-in color-adjustment fold and its guard, both null until registerWgpuColorAdjustmentMaterialFeature /
-  // enableWgpuColorAdjustmentGuards installs them. recordWgpuSpriteBatchColorTransform reaches the fold
+  // enableWgpuColorAdjustmentGuards installs them. recordWgpuSpriteBatchColorScaleBias reaches the fold
   // only through this slot, so the base batch statically references neither its WGSL nor a message.
   wgpuColorAdjustmentMaterialFeature?: WgpuColorAdjustmentMaterialFeature | null;
   wgpuColorAdjustmentMaterialFeatureGuard?:
     | ((
         state: WgpuRenderState,
-        colorTransform: Readonly<ColorTransform | TintMaterialData | readonly number[]>,
+        colorScaleBias: Readonly<ColorScaleBias | TintMaterialData | readonly number[]>,
       ) => void)
     | null;
   // Per-frame pool of GPU storage buffers, one slot claimed per flush. The batch records draws into
@@ -357,7 +357,7 @@ export interface WgpuTextureEntry {
   bindGroupLinear?: GPUBindGroup;
   bindGroupNearest?: GPUBindGroup;
   // True when sampled RGB is straight-alpha and the 2D display shader must premultiply it before
-  // applying color transforms/blending. Native compressed blocks cannot be premultiplied in place.
+  // applying color adjustments/blending. Native compressed blocks cannot be premultiplied in place.
   straightAlpha?: boolean;
   texture: GPUTexture;
   view: GPUTextureView;

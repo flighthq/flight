@@ -1,4 +1,4 @@
-import type { ColorTransform, RenderProxy, WgpuRenderState } from '@flighthq/types';
+import type { ColorScaleBias, RenderProxy, WgpuRenderState } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
@@ -8,11 +8,11 @@ import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 // Uniform buffer layout (per-draw slot in the ring, 256-byte aligned):
 //   offset  0–47 : mat3x3f matrix (3 columns × 16 bytes each due to vec3 padding)
 //   offset 48    : f32 alpha
-//   offset 52    : u32 hasColorTransform
+//   offset 52    : u32 hasColorScaleBias
 //   offset 56    : u32 straightTextureAlpha
 //   offset 60    : f32 padding
-//   offset 64–79 : vec4f colorMultiplier
-//   offset 80–95 : vec4f colorOffset
+//   offset 64–79 : vec4f colorScale
+//   offset 80–95 : vec4f colorBias
 //   offset 96–111: f32 x0, y0, x1, y1 (quad pixel-space corners)
 //   offset 112–127: f32 u0, v0, u1, v1 (texture coordinates)
 // Total used: 128 bytes; slot size: minUniformBufferOffsetAlignment (≥256)
@@ -22,11 +22,11 @@ const BITMAP_SHADER_SRC = /* wgsl */ `
 struct Uniforms {
   matrix : mat3x3f,
   alpha : f32,
-  hasColorTransform : u32,
+  hasColorScaleBias : u32,
   straightTextureAlpha : u32,
   _pad1 : f32,
-  colorMultiplier : vec4f,
-  colorOffset : vec4f,
+  colorScale : vec4f,
+  colorBias : vec4f,
   x0 : f32, y0 : f32, x1 : f32, y1 : f32,
   u0 : f32, v0 : f32, u1 : f32, v1 : f32,
 }
@@ -70,10 +70,10 @@ fn fs_main(in : VertexOut) -> @location(0) vec4f {
   if (uni.straightTextureAlpha != 0u) {
     color = vec4f(color.rgb * color.a, color.a);
   }
-  if (uni.hasColorTransform != 0u && color.a > 0.0) {
+  if (uni.hasColorScaleBias != 0u && color.a > 0.0) {
     // Unpremultiply, apply transform, repremultiply
     color = vec4f(color.rgb / color.a, color.a);
-    color = clamp(color * uni.colorMultiplier + uni.colorOffset, vec4f(0.0), vec4f(1.0));
+    color = clamp(color * uni.colorScale + uni.colorBias, vec4f(0.0), vec4f(1.0));
     color = vec4f(color.rgb * color.a, color.a);
   }
   return color * clamp(uni.alpha, 0.0, 1.0);
@@ -86,11 +86,11 @@ const MASK_FRAGMENT_SRC = /* wgsl */ `
 struct Uniforms {
   matrix : mat3x3f,
   alpha : f32,
-  hasColorTransform : u32,
+  hasColorScaleBias : u32,
   _pad0 : f32,
   _pad1 : f32,
-  colorMultiplier : vec4f,
-  colorOffset : vec4f,
+  colorScale : vec4f,
+  colorBias : vec4f,
   x0 : f32, y0 : f32, x1 : f32, y1 : f32,
   u0 : f32, v0 : f32, u1 : f32, v1 : f32,
 }
@@ -319,7 +319,7 @@ export function writeWgpuMatrixOnlyUniforms(
   );
 }
 
-// Writes the standard uniforms (matrix + alpha + color transform + quad coords) into
+// Writes the standard uniforms (matrix + alpha + color adjustment + quad coords) into
 // the ring buffer at the current uniformOffset, then advances the offset by uniformStride.
 // Returns the byte offset of the slot just written (for use as the dynamic offset in setBindGroup).
 export function writeWgpuQuadUniforms(
@@ -328,7 +328,7 @@ export function writeWgpuQuadUniforms(
     alpha: number;
     transform2D: { a: number; b: number; c: number; d: number; tx: number; ty: number };
   },
-  colorTransform: ColorTransform | null,
+  colorScaleBias: ColorScaleBias | null,
   x0: number,
   y0: number,
   x1: number,
@@ -362,24 +362,24 @@ export function writeWgpuQuadUniforms(
   uniformData[floatBase + 11] = 0;
   // alpha at float 12 (byte 48)
   uniformData[floatBase + 12] = renderProxy.alpha;
-  // hasColorTransform at float 13 (byte 52) — written as u32. The color transform comes from the
+  // hasColorScaleBias at float 13 (byte 52) — written as u32. The color adjustment comes from the
   // node's material (resolved by the caller); null → identity.
-  uniformDataU32[floatBase + 13] = colorTransform !== null ? 1 : 0;
+  uniformDataU32[floatBase + 13] = colorScaleBias !== null ? 1 : 0;
   // straightTextureAlpha at float 14 (byte 56) — native compressed blocks retain straight RGB and
-  // the display shader premultiplies their sample before color transforms and fixed-function blend.
+  // the display shader premultiplies their sample before color adjustments and fixed-function blend.
   uniformDataU32[floatBase + 14] = straightTextureAlpha ? 1 : 0;
   // padding float 15
   uniformData[floatBase + 15] = 0;
-  // colorMultiplier at float 16–19 (byte 64–79)
-  uniformData[floatBase + 16] = colorTransform?.redMultiplier ?? 1;
-  uniformData[floatBase + 17] = colorTransform?.greenMultiplier ?? 1;
-  uniformData[floatBase + 18] = colorTransform?.blueMultiplier ?? 1;
-  uniformData[floatBase + 19] = colorTransform?.alphaMultiplier ?? 1;
-  // colorOffset at float 20–23 (byte 80–95)
-  uniformData[floatBase + 20] = (colorTransform?.redOffset ?? 0) / 255;
-  uniformData[floatBase + 21] = (colorTransform?.greenOffset ?? 0) / 255;
-  uniformData[floatBase + 22] = (colorTransform?.blueOffset ?? 0) / 255;
-  uniformData[floatBase + 23] = (colorTransform?.alphaOffset ?? 0) / 255;
+  // colorScale at float 16–19 (byte 64–79)
+  uniformData[floatBase + 16] = colorScaleBias?.redScale ?? 1;
+  uniformData[floatBase + 17] = colorScaleBias?.greenScale ?? 1;
+  uniformData[floatBase + 18] = colorScaleBias?.blueScale ?? 1;
+  uniformData[floatBase + 19] = colorScaleBias?.alphaScale ?? 1;
+  // colorBias at float 20–23 (byte 80–95)
+  uniformData[floatBase + 20] = colorScaleBias?.redBias ?? 0;
+  uniformData[floatBase + 21] = colorScaleBias?.greenBias ?? 0;
+  uniformData[floatBase + 22] = colorScaleBias?.blueBias ?? 0;
+  uniformData[floatBase + 23] = colorScaleBias?.alphaBias ?? 0;
   // quad corners at float 24–31 (byte 96–127)
   uniformData[floatBase + 24] = x0;
   uniformData[floatBase + 25] = y0;

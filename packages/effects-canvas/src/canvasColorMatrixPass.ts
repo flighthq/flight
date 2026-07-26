@@ -4,9 +4,9 @@ import { drawCanvasImageDataPass } from './canvasEffectCompositing';
 
 // Generic pointwise color-matrix pass — the single fold-in realization for the whole matrix-tier
 // Adjustment family on Canvas 2D. A run of consecutive matrix-tier adjustments fuses to ONE 4×5 matrix
-// (in the adjustments colorMatrixMath convention: linear RGBA coefficients + a 0–255 offset column) and
-// runs through this one per-pixel pass instead of one pass per op. ImageData is straight-alpha 0–255 —
-// the same units the offset column is in — so the matrix applies directly, clamped per channel.
+// (in the adjustments colorMatrixMath convention: linear RGBA coefficients + normalized-linear bias
+// column) and runs through this one per-pixel pass instead of one pass per op. ImageData channels are
+// byte-domain, so only the normalized bias column is scaled by 255 before the clamped store.
 export function applyColorMatrixPassToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,
@@ -40,10 +40,10 @@ export function applyColorMatrixPassToCanvas(
       const b = data[p + 2];
       const a = data[p + 3];
       // Uint8ClampedArray clamps stores to 0–255, so an explicit clamp is unnecessary.
-      data[p] = m0 * r + m1 * g + m2 * b + m3 * a + m4;
-      data[p + 1] = m5 * r + m6 * g + m7 * b + m8 * a + m9;
-      data[p + 2] = m10 * r + m11 * g + m12 * b + m13 * a + m14;
-      data[p + 3] = m15 * r + m16 * g + m17 * b + m18 * a + m19;
+      data[p] = m0 * r + m1 * g + m2 * b + m3 * a + m4 * 255;
+      data[p + 1] = m5 * r + m6 * g + m7 * b + m8 * a + m9 * 255;
+      data[p + 2] = m10 * r + m11 * g + m12 * b + m13 * a + m14 * 255;
+      data[p + 3] = m15 * r + m16 * g + m17 * b + m18 * a + m19 * 255;
     }
   });
 }

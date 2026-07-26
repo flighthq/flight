@@ -8,9 +8,9 @@ export interface QuadBatchData extends Node2DData {
   atlas: TextureAtlas | null;
   ids: Uint16Array;
   instanceCount: number;
-  // Per-quad color transform, indexed by quad (a ColorTransform value, typed through the shared
+  // Per-quad color adjustment, indexed by quad (a ColorScaleBias value, typed through the shared
   // MaterialData alias). Null (or a null/absent element) falls back to the node-level
-  // HasColorTransform trait, so a whole-batch tint stays one uniform; per-quad values that vary
+  // HasColorScaleBias trait, so a whole-batch tint stays one uniform; per-quad values that vary
   // promote the batch to per-instance tints. Null array → no per-quad tints.
   materialData: (MaterialData | null)[] | null;
   transforms: Float32Array;

@@ -1,5 +1,5 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import type { ColorTransform, RenderProxy2D } from '@flighthq/types';
+import type { ColorScaleBias, RenderProxy2D } from '@flighthq/types';
 
 import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature';
 import { drawGlShapeMeshBatch, drawGlShapeMeshes, ensureGlShapeMeshProgram } from './glShapeMesh';
@@ -9,32 +9,32 @@ function makeProxy(overrides?: Partial<RenderProxy2D>): RenderProxy2D {
   return {
     alpha: 1,
     blendMode: null,
-    colorTransform: null,
+    colorScaleBias: null,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
     ...overrides,
   } as unknown as RenderProxy2D;
 }
 
 function ct(
-  redMultiplier = 1,
-  greenMultiplier = 1,
-  blueMultiplier = 1,
-  alphaMultiplier = 1,
-  redOffset = 0,
-  greenOffset = 0,
-  blueOffset = 0,
-  alphaOffset = 0,
-): ColorTransform {
+  redScale = 1,
+  greenScale = 1,
+  blueScale = 1,
+  alphaScale = 1,
+  redBias = 0,
+  greenBias = 0,
+  blueBias = 0,
+  alphaBias = 0,
+): ColorScaleBias {
   return {
-    redMultiplier,
-    greenMultiplier,
-    blueMultiplier,
-    alphaMultiplier,
-    redOffset,
-    greenOffset,
-    blueOffset,
-    alphaOffset,
-  } as ColorTransform;
+    redScale,
+    greenScale,
+    blueScale,
+    alphaScale,
+    redBias,
+    greenBias,
+    blueBias,
+    alphaBias,
+  } as ColorScaleBias;
 }
 
 const TRIANGLE = {
@@ -106,30 +106,30 @@ describe('drawGlShapeMeshes', () => {
     expect(gl.useProgram).not.toHaveBeenCalled();
   });
 
-  it('ignores a color transform when color adjustment is not enabled (default path pays nothing)', () => {
+  it('ignores a color adjustment when color adjustment is not enabled (default path pays nothing)', () => {
     const { state } = createGlState();
 
-    drawGlShapeMeshes(state, makeProxy({ colorTransform: ct(0.5) }), [TRIANGLE]);
+    drawGlShapeMeshes(state, makeProxy({ colorScaleBias: ct(0.5) }), [TRIANGLE]);
 
     // The tinted program is compiled only through the opt-in fold; the base path never touches it.
-    expect(getGlRenderStateRuntime(state).shapeMeshColorTransformShader).toBeUndefined();
+    expect(getGlRenderStateRuntime(state).shapeMeshColorScaleBiasShader).toBeUndefined();
   });
 
   it('tints solid-fill meshes through the fold with the same uniforms as the quad-batch path', () => {
     const { state, gl } = createGlState();
     registerGlColorAdjustmentMaterialFeature(state);
 
-    // White fill, half-brightness multiplier, +128 red offset — mirrors the Path-B uniform upload.
-    drawGlShapeMeshes(state, makeProxy({ colorTransform: ct(0.5, 0.5, 0.5, 1, 128, 0, 0, 0) }), [
+    // White fill, half-brightness scale, +0.5 normalized-linear red bias.
+    drawGlShapeMeshes(state, makeProxy({ colorScaleBias: ct(0.5, 0.5, 0.5, 1, 0.5, 0, 0, 0) }), [
       { ...TRIANGLE, color: 0xffffff, alpha: 1 },
     ]);
 
-    const shader = getGlRenderStateRuntime(state).shapeMeshColorTransformShader!;
+    const shader = getGlRenderStateRuntime(state).shapeMeshColorScaleBiasShader!;
     expect(shader).toBeDefined();
-    // Multiplier uploaded verbatim; offsets normalized by 255 — identical to glColorAdjustmentMaterialFeature's
-    // bindGlSpriteBatchUniformColorTransform.
-    expect(gl.uniform4f).toHaveBeenCalledWith(shader.colorMultiplierLocation, 0.5, 0.5, 0.5, 1);
-    expect(gl.uniform4f).toHaveBeenCalledWith(shader.colorOffsetLocation, 128 / 255, 0, 0, 0);
+    // Scale and bias are uploaded verbatim — identical to glColorAdjustmentMaterialFeature's
+    // bindGlSpriteBatchUniformColorScaleBias.
+    expect(gl.uniform4f).toHaveBeenCalledWith(shader.colorScaleLocation, 0.5, 0.5, 0.5, 1);
+    expect(gl.uniform4f).toHaveBeenCalledWith(shader.colorBiasLocation, 0.5, 0, 0, 0);
     // Flat mesh color still uploaded premultiplied (white, alpha 1); the shader un/re-premultiplies.
     expect(gl.uniform4f).toHaveBeenCalledWith(shader.colorLocation, 1, 1, 1, 1);
     expect(gl.drawElements).toHaveBeenCalled();
@@ -139,10 +139,10 @@ describe('drawGlShapeMeshes', () => {
     const { state } = createGlState();
     registerGlColorAdjustmentMaterialFeature(state);
 
-    drawGlShapeMeshes(state, makeProxy({ colorTransform: null }), [TRIANGLE]);
+    drawGlShapeMeshes(state, makeProxy({ colorScaleBias: null }), [TRIANGLE]);
 
     // No transform → the fold is not consulted (gated on non-null), so no tint shader is compiled.
-    expect(getGlRenderStateRuntime(state).shapeMeshColorTransformShader).toBeUndefined();
+    expect(getGlRenderStateRuntime(state).shapeMeshColorScaleBiasShader).toBeUndefined();
   });
 });
 

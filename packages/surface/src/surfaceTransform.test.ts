@@ -1,6 +1,6 @@
 import { createSurface } from './surface';
 import { getSurfacePixel, setSurfacePixel } from './surfacePixel';
-import { applySurfaceColorTransform, applySurfaceThreshold, mergeSurface, scrollSurface } from './surfaceTransform';
+import { applySurfaceColorScaleBias, applySurfaceThreshold, mergeSurface, scrollSurface } from './surfaceTransform';
 
 function region(
   surface: ReturnType<typeof createSurface>,
@@ -13,42 +13,42 @@ function region(
 }
 
 const identity = {
-  redMultiplier: 1,
-  greenMultiplier: 1,
-  blueMultiplier: 1,
-  alphaMultiplier: 1,
-  redOffset: 0,
-  greenOffset: 0,
-  blueOffset: 0,
-  alphaOffset: 0,
+  redScale: 1,
+  greenScale: 1,
+  blueScale: 1,
+  alphaScale: 1,
+  redBias: 0,
+  greenBias: 0,
+  blueBias: 0,
+  alphaBias: 0,
 };
 
-describe('applySurfaceColorTransform', () => {
-  it('applies multiplier', () => {
+describe('applySurfaceColorScaleBias', () => {
+  it('applies scale', () => {
     const img = createSurface(2, 2, 0x808080ff);
-    applySurfaceColorTransform(region(img), region(img), { ...identity, redMultiplier: 0 });
+    applySurfaceColorScaleBias(region(img), region(img), { ...identity, redScale: 0 });
     expect(img.data[0]).toBe(0);
     expect(img.data[1]).toBe(0x80);
   });
 
-  it('applies offset', () => {
+  it('applies normalized-linear bias', () => {
     const img = createSurface(1, 1);
     setSurfacePixel(img, 0, 0, 0x000000ff);
-    applySurfaceColorTransform(region(img), region(img), { ...identity, redOffset: 100 });
+    applySurfaceColorScaleBias(region(img), region(img), { ...identity, redBias: 100 / 255 });
     expect(img.data[0]).toBe(100);
   });
 
   it('clamps to 0-255', () => {
     const img = createSurface(1, 1, 0x808080ff);
-    applySurfaceColorTransform(region(img), region(img), { ...identity, redMultiplier: 10, redOffset: 100 });
+    applySurfaceColorScaleBias(region(img), region(img), { ...identity, redScale: 10, redBias: 100 / 255 });
     expect(img.data[0]).toBe(255);
-    applySurfaceColorTransform(region(img), region(img), { ...identity, redMultiplier: 0, redOffset: -100 });
+    applySurfaceColorScaleBias(region(img), region(img), { ...identity, redScale: 0, redBias: -100 / 255 });
     expect(img.data[0]).toBe(0);
   });
 
   it('only affects the specified rect', () => {
     const img = createSurface(2, 2, 0x808080ff);
-    applySurfaceColorTransform(region(img, 0, 0, 1, 1), region(img, 0, 0, 1, 1), { ...identity, redMultiplier: 0 });
+    applySurfaceColorScaleBias(region(img, 0, 0, 1, 1), region(img, 0, 0, 1, 1), { ...identity, redScale: 0 });
     expect(img.data[0]).toBe(0);
     expect(img.data[4]).toBe(0x80);
   });
@@ -56,7 +56,7 @@ describe('applySurfaceColorTransform', () => {
   it('can write to a separate output surface', () => {
     const source = createSurface(1, 1, 0x808080ff);
     const out = createSurface(1, 1);
-    applySurfaceColorTransform(region(out), region(source), { ...identity, redMultiplier: 0 });
+    applySurfaceColorScaleBias(region(out), region(source), { ...identity, redScale: 0 });
     expect(out.data[0]).toBe(0);
     expect(out.data[1]).toBe(0x80);
     expect(source.data[0]).toBe(0x80); // source unchanged

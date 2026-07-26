@@ -10,7 +10,7 @@ import {
 import { getNode3DRuntime, getNode3DWorldAlpha } from '@flighthq/scene3d';
 import type {
   Camera3D,
-  ColorTransform,
+  ColorScaleBias,
   GlScene3DForwardLightList,
   GlMeshMaterialRenderer,
   GlRenderState,
@@ -119,7 +119,7 @@ export function drawGlScene3D(
     // (alpha < 1) must route through the blended pass so it composites over what is behind it.
     const objectAlpha = getNode3DWorldAlpha(mesh);
     const nodeRuntime = getNode3DRuntime(mesh);
-    const colorTransform = nodeRuntime.resolvedColorTransform;
+    const colorScaleBias = nodeRuntime.resolvedColorScaleBias;
     const colorMatrix = nodeRuntime.resolvedColorMatrix;
 
     for (let s = 0; s < subsets.length; s++) {
@@ -133,7 +133,7 @@ export function drawGlScene3D(
       entry.alpha = objectAlpha;
       entry.clipW = clipW;
       entry.colorMatrix = colorMatrix;
-      entry.colorTransform = colorTransform;
+      entry.colorScaleBias = colorScaleBias;
       entry.lightBlock = hasPreparedForwardLights ? forwardLights.meshLightBlocks[m] : lightBlock;
       entry.mesh = mesh;
       entry.material = resolvedMaterial;
@@ -167,7 +167,7 @@ export function drawGlScene3D(
     // sharing a material need different programs). Set the flag before bind so ensureGl*Program folds it in.
     const skinned = isGpuSkinnedDraw(entry.mesh);
     const colorAdjusted =
-      colorAdjustmentFeatureEnabled && (entry.colorMatrix !== null || entry.colorTransform !== null);
+      colorAdjustmentFeatureEnabled && (entry.colorMatrix !== null || entry.colorScaleBias !== null);
     const colorMatrix = colorAdjusted && entry.colorMatrix !== null;
     if (
       entry.renderer !== boundRenderer ||
@@ -190,7 +190,7 @@ export function drawGlScene3D(
     }
 
     proxy.alpha = entry.alpha;
-    proxy.colorTransform = colorAdjusted ? entry.colorTransform : null;
+    proxy.colorScaleBias = colorAdjusted ? entry.colorScaleBias : null;
     proxy.colorMatrix = colorAdjusted ? entry.colorMatrix : null;
     proxy.jointMatrices = skinned ? entry.mesh.skin!.skeleton.jointMatrices : null;
     proxy.material = entry.material;
@@ -223,7 +223,7 @@ export function drawGlScene3D(
 
       const skinned = isGpuSkinnedDraw(entry.mesh);
       const colorAdjusted =
-        colorAdjustmentFeatureEnabled && (entry.colorMatrix !== null || entry.colorTransform !== null);
+        colorAdjustmentFeatureEnabled && (entry.colorMatrix !== null || entry.colorScaleBias !== null);
       const colorMatrix = colorAdjusted && entry.colorMatrix !== null;
       if (
         entry.renderer !== boundRenderer ||
@@ -246,7 +246,7 @@ export function drawGlScene3D(
       }
 
       proxy.alpha = entry.alpha;
-      proxy.colorTransform = colorAdjusted ? entry.colorTransform : null;
+      proxy.colorScaleBias = colorAdjusted ? entry.colorScaleBias : null;
       proxy.colorMatrix = colorAdjusted ? entry.colorMatrix : null;
       proxy.jointMatrices = skinned ? entry.mesh.skin!.skeleton.jointMatrices : null;
       proxy.material = entry.material;
@@ -304,7 +304,7 @@ interface DrawEntry {
   alpha: number;
   clipW: number;
   colorMatrix: readonly number[] | null;
-  colorTransform: Readonly<ColorTransform> | null;
+  colorScaleBias: Readonly<ColorScaleBias> | null;
   lightBlock: Readonly<Scene3DLightBlock>;
   material: Readonly<Material>;
   mesh: Mesh;
@@ -331,7 +331,7 @@ function createDrawEntry(): GlScene3DDrawEntry {
     alpha: 1,
     clipW: 0,
     colorMatrix: null,
-    colorTransform: null,
+    colorScaleBias: null,
     lightBlock: null!,
     material: DEFAULT_MATERIAL,
     mesh: null!,
@@ -345,7 +345,7 @@ function createDrawEntry(): GlScene3DDrawEntry {
 // duration of the draw call it is passed to; renderers must not retain it.
 const proxy: Scene3DRenderProxy = {
   colorMatrix: null,
-  colorTransform: null,
+  colorScaleBias: null,
   jointMatrices: null,
   material: { kind: StandardMaterialKind } as Material,
   normalMatrix: createMatrix3() as Matrix3,

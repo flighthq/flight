@@ -2,7 +2,7 @@ import { createImageResource } from '@flighthq/image';
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
-import type { ColorTransform, Material } from '@flighthq/types';
+import type { ColorScaleBias, Material } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature';
@@ -13,7 +13,7 @@ import {
   getWgpuQuadBatchPreludeWGSL,
   packWgpuSpriteBatchMaterialInstance,
   prepareWgpuSpriteBatchWrite,
-  recordWgpuSpriteBatchColorTransform,
+  recordWgpuSpriteBatchColorScaleBias,
   resetWgpuSpriteBatchBufferPool,
 } from './wgpuSpriteBatch';
 import { standardWgpuMaterialRenderer } from './wgpuStandardMaterial';
@@ -27,25 +27,25 @@ function makeMaterial(): Material {
 }
 
 function ct(
-  redMultiplier = 1,
-  greenMultiplier = 1,
-  blueMultiplier = 1,
-  alphaMultiplier = 1,
-  redOffset = 0,
-  greenOffset = 0,
-  blueOffset = 0,
-  alphaOffset = 0,
-): ColorTransform {
+  redScale = 1,
+  greenScale = 1,
+  blueScale = 1,
+  alphaScale = 1,
+  redBias = 0,
+  greenBias = 0,
+  blueBias = 0,
+  alphaBias = 0,
+): ColorScaleBias {
   return {
-    redMultiplier,
-    greenMultiplier,
-    blueMultiplier,
-    alphaMultiplier,
-    redOffset,
-    greenOffset,
-    blueOffset,
-    alphaOffset,
-  } as ColorTransform;
+    redScale,
+    greenScale,
+    blueScale,
+    alphaScale,
+    redBias,
+    greenBias,
+    blueBias,
+    alphaBias,
+  } as ColorScaleBias;
 }
 
 const CT_MODE_NONE = 0;
@@ -216,27 +216,27 @@ describe('prepareWgpuSpriteBatchWrite', () => {
   });
 });
 
-describe('recordWgpuSpriteBatchColorTransform', () => {
+describe('recordWgpuSpriteBatchColorScaleBias', () => {
   it('skips the tint and records no fold state when color adjustment is not enabled', async () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
-    recordWgpuSpriteBatchColorTransform(state, ct(0.5), 0);
-    expect(runtime.spriteBatchColorTransformMode ?? CT_MODE_NONE).toBe(CT_MODE_NONE);
+    recordWgpuSpriteBatchColorScaleBias(state, ct(0.5), 0);
+    expect(runtime.spriteBatchColorScaleBiasMode ?? CT_MODE_NONE).toBe(CT_MODE_NONE);
   });
 
   it('is a no-op for an untinted instance whether or not the fold is enabled', async () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
-    expect(() => recordWgpuSpriteBatchColorTransform(state, null, 0)).not.toThrow();
-    expect(runtime.spriteBatchColorTransformMode ?? CT_MODE_NONE).toBe(CT_MODE_NONE);
+    expect(() => recordWgpuSpriteBatchColorScaleBias(state, null, 0)).not.toThrow();
+    expect(runtime.spriteBatchColorScaleBiasMode ?? CT_MODE_NONE).toBe(CT_MODE_NONE);
   });
 
   it('delegates to the installed fold when color adjustment is enabled', async () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
     registerWgpuColorAdjustmentMaterialFeature(state);
-    recordWgpuSpriteBatchColorTransform(state, ct(0.5), 0);
-    expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_UNIFORM);
+    recordWgpuSpriteBatchColorScaleBias(state, ct(0.5), 0);
+    expect(runtime.spriteBatchColorScaleBiasMode).toBe(CT_MODE_UNIFORM);
   });
 
   it('an untinted batch on flush uses the lean material module (no fold)', async () => {
@@ -246,7 +246,7 @@ describe('recordWgpuSpriteBatchColorTransform', () => {
     const runtime = getWgpuRenderStateRuntime(state);
     const tex = createImageResource(document.createElement('img'));
     prepareWgpuSpriteBatchWrite(state, tex, null, null, standardWgpuMaterialRenderer, 1);
-    recordWgpuSpriteBatchColorTransform(state, null, 0);
+    recordWgpuSpriteBatchColorScaleBias(state, null, 0);
     runtime.spriteBatchCount = 1;
     expect(() => flushWgpuSpriteBatch(state)).not.toThrow();
     submitWgpuRenderPass(state);

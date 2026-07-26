@@ -3,7 +3,7 @@ import { noopRendererData } from '@flighthq/render';
 import { resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import type {
-  ColorTransform,
+  ColorScaleBias,
   RenderProxy2D,
   SpriteRenderer,
   Tilemap,
@@ -15,7 +15,7 @@ import { BatchFormat } from '@flighthq/types';
 import {
   packWgpuSpriteBatchMaterialInstance,
   prepareWgpuSpriteBatchWrite,
-  recordWgpuSpriteBatchColorTransform,
+  recordWgpuSpriteBatchColorScaleBias,
   SPRITE_INSTANCE_FLOATS,
 } from './wgpuSpriteBatch';
 
@@ -38,9 +38,9 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
   const materialRenderer = resolveWgpuMaterialRenderer(state, material);
   if (materialRenderer === null) return;
   const nodeMaterialData = tilemapNode.materialData;
-  // Per-tile color transforms, overriding the node-level tint for the tiles that carry one.
-  const perTileColorTransform = source.data.materialData;
-  const nodeColorTransform = tilemapNode.colorTransform;
+  // Per-tile color adjustments, overriding the node-level tint for the tiles that carry one.
+  const perTileColorScaleBias = source.data.materialData;
+  const nodeColorScaleBias = tilemapNode.colorScaleBias;
   const nodeColorMatrix = tilemapNode.colorMatrix;
   const startCount = runtime.spriteBatchCount;
   const base = prepareWgpuSpriteBatchWrite(
@@ -93,15 +93,15 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
       instanceData[writeBase + 12] = alpha;
       packWgpuSpriteBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
       // Per-tile tint overrides the node-level tint (null → the node's, itself possibly null → untinted).
-      const colorTransform =
-        (perTileColorTransform?.[row * columns + col] as
-          | ColorTransform
+      const colorScaleBias =
+        (perTileColorScaleBias?.[row * columns + col] as
+          | ColorScaleBias
           | TintMaterialData
           | readonly number[]
           | null) ??
         nodeColorMatrix ??
-        nodeColorTransform;
-      recordWgpuSpriteBatchColorTransform(state, colorTransform, startCount + drawCount);
+        nodeColorScaleBias;
+      recordWgpuSpriteBatchColorScaleBias(state, colorScaleBias, startCount + drawCount);
       writeBase += INSTANCE_STRIDE_FLOATS;
       drawCount++;
     }

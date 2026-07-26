@@ -3,7 +3,7 @@ export * from './explainScene2DRender';
 export * from './renderAppearance';
 export * from './renderCache';
 export * from './renderColor';
-export * from './renderColorTransform';
+export * from './renderColorScaleBias';
 export * from './renderer';
 export * from './renderMaterial';
 export * from './renderProxy';

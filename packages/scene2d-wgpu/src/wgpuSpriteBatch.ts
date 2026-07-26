@@ -1,7 +1,7 @@
 import { bindWgpuImageResourceTexture, getWgpuBlendState, resolveWgpuSmoothingBindGroup } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import type {
-  ColorTransform,
+  ColorScaleBias,
   TintMaterialData,
   ImageResource,
   Material,
@@ -14,7 +14,7 @@ import type {
 import type { BlendMode } from '@flighthq/types';
 
 // Base per-instance layout (13 floats = 52 bytes). This is a fixed contract material shaders read
-// from the instance storage buffer; it carries no material concern (no color transform). A material
+// from the instance storage buffer; it carries no material concern (no color adjustment). A material
 // that needs per-instance data writes it into a parallel material storage buffer instead.
 // [0-3]   a, b, c, d   — world-space 2D matrix
 // [4-5]   tx, ty       — world-space translation
@@ -29,7 +29,7 @@ const SPRITE_INSTANCE_STRIDE = SPRITE_INSTANCE_FLOATS * 4;
 // instances), and a quadBaseVertex helper that expands one instance corner into clip-space position,
 // UV, and alpha. A material module appends its own @group(3) material buffer (when it uses one), a
 // VertexOut struct, vs_main, and fs_main. The base path knows nothing about what a material does
-// with this — color transform and any other effect live entirely in the material's own module.
+// with this — color adjustment and any other effect live entirely in the material's own module.
 const QUAD_BATCH_PRELUDE_WGSL = /* wgsl */ `
 struct Uniforms {
   matrix : mat3x3f,
@@ -328,23 +328,23 @@ export function prepareWgpuSpriteBatchWrite(
   return runtime.spriteBatchCount * SPRITE_INSTANCE_FLOATS;
 }
 
-// Folds instance `instanceIndex`'s effective color transform into the active batch through the opt-in
+// Folds instance `instanceIndex`'s effective color adjustment into the active batch through the opt-in
 // color-adjustment fold, without ever splitting the batch. When the capability was not enabled
 // (registerWgpuColorAdjustmentMaterialFeature), the fold slot is null and the tint is skipped — the batch draws
-// untinted (the sentinel behavior, never a throw); an installed guard reports the miss. `colorTransform`
+// untinted (the sentinel behavior, never a throw); an installed guard reports the miss. `colorScaleBias`
 // is null/undefined for an untinted instance, which is a no-op whether or not the fold is enabled.
-export function recordWgpuSpriteBatchColorTransform(
+export function recordWgpuSpriteBatchColorScaleBias(
   state: WgpuRenderState,
-  colorTransform: ColorTransform | TintMaterialData | readonly number[] | null | undefined,
+  colorScaleBias: ColorScaleBias | TintMaterialData | readonly number[] | null | undefined,
   instanceIndex: number,
 ): void {
   const runtime = getWgpuRenderStateRuntime(state);
   const fold = runtime.wgpuColorAdjustmentMaterialFeature;
   if (fold != null) {
-    fold.record(runtime, colorTransform, instanceIndex);
+    fold.record(runtime, colorScaleBias, instanceIndex);
     return;
   }
-  if (colorTransform != null) runtime.wgpuColorAdjustmentMaterialFeatureGuard?.(state, colorTransform);
+  if (colorScaleBias != null) runtime.wgpuColorAdjustmentMaterialFeatureGuard?.(state, colorScaleBias);
 }
 
 // Resets the per-frame buffer-pool cursor so the next frame reclaims slots from the start. Must be

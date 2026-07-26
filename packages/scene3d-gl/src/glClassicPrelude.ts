@@ -191,8 +191,8 @@ uniform vec4 u_flightColorMatrix2;
 uniform vec4 u_flightColorMatrix3;
 uniform vec4 u_flightColorMatrixOffset;
 #elif defined(HAS_COLOR_ADJUSTMENT)
-uniform vec4 u_flightColorMultiplier;
-uniform vec4 u_flightColorOffset;
+uniform vec4 u_flightColorScale;
+uniform vec4 u_flightColorBias;
 #endif
 ${GL_MESH_LIGHT_BLOCK_GLSL}
 #if defined(LIGHTING_PHONG) || defined(LIGHTING_BLINNPHONG)
@@ -337,7 +337,7 @@ void main() {
   fragColor = applyFlightColorMatrix(fragColor, u_flightColorMatrix0, u_flightColorMatrix1,
     u_flightColorMatrix2, u_flightColorMatrix3, u_flightColorMatrixOffset);
 #elif defined(HAS_COLOR_ADJUSTMENT)
-  fragColor = applyFlightColorAdjustment(fragColor, u_flightColorMultiplier, u_flightColorOffset);
+  fragColor = applyFlightColorAdjustment(fragColor, u_flightColorScale, u_flightColorBias);
 #endif
   fragColor.a *= u_objectAlpha;
 }

@@ -1,5 +1,5 @@
 // color-adjustment — the Canvas sibling of the GL/WGPU color-adjustment fold scenes. The inline
-// color-adjustment fold (a node's ColorTransformAdjustment folded into the batch draw) is a GL/WGPU
+// color-adjustment fold (a base Node adjustment stack folded into the batch draw) is a GL/WGPU
 // capability; the Canvas 2D display renderers do not realize it, so a node-attached color adjustment draws
 // untinted here. To stay byte-for-byte in parity with the GL/WGPU siblings (which tint a WHITE source red
 // via the fold), this variant blits an already-RED source and attaches no adjustment — the same red square,

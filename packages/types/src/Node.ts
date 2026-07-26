@@ -1,3 +1,4 @@
+import type { ColorAdjustmentRuntime } from './ColorAdjustmentRuntime';
 import type { Entity, EntityRuntime, EntityRuntimeKey, Kind } from './Entity';
 import type { InteractionSignals } from './InteractionSignals';
 import type { NodeInteractionState } from './NodeInteractionState';
@@ -18,7 +19,7 @@ export interface NodeTraits {
 export interface Node<Traits extends object = NodeTraits> extends NodeTraits, Entity {
   [EntityRuntimeKey]: NodeRuntime<Traits> | undefined;
 }
-export interface NodeRuntime<Traits extends object = NodeTraits> extends EntityRuntime {
+export interface NodeRuntime<Traits extends object = NodeTraits> extends EntityRuntime, ColorAdjustmentRuntime {
   appearanceId: number;
   boundsUsingLocalBoundsId: number;
   boundsUsingLocalTransformId: number;

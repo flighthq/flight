@@ -3,7 +3,7 @@ import { createGlProgram } from '@flighthq/render-gl';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import type {
   BlendMode,
-  ColorTransform,
+  ColorScaleBias,
   TintMaterialData,
   GlMaterialRenderer,
   GlQuadBatchShader,
@@ -27,7 +27,7 @@ const SPRITE_INSTANCE_FLOATS = 13;
 const SPRITE_INSTANCE_STRIDE = SPRITE_INSTANCE_FLOATS * 4;
 
 // Highest per-instance attribute location any sprite-batch material or the opt-in color-adjustment
-// fold (a_ctMult/a_ctOff at 7/8) may use. Divisors for locations 1..this are reset after each flush so
+// fold (a_colorScale/a_colorBias at 7/8) may use. Divisors for locations 1..this are reset after each flush so
 // later non-instanced draws are not corrupted.
 const MAX_INSTANCE_ATTRIB_LOCATION = 8;
 
@@ -203,7 +203,7 @@ export function flushGlSpriteBatch(state: GlRenderState): void {
 // Writes one instance's per-instance material floats into the active material buffer at the given
 // instance index, converting the supplied per-instance materialData. No-op for uniform-only
 // materials (no packInstance / floats === 0). Color transform is folded separately by
-// recordGlSpriteBatchColorTransform — it is not a material.
+// recordGlSpriteBatchColorScaleBias — it is not a material.
 export function packGlSpriteBatchMaterialInstance(
   state: GlRenderState,
   materialData: MaterialData | null,
@@ -224,7 +224,7 @@ export function packGlSpriteBatchMaterialInstance(
 // blend mode, material, and smoothing. Flushes the current batch when any of the four changes (material
 // is compared by reference) or capacity is exceeded. `smoothing` is a per-bitmap sampling preference
 // (`true`/`false` force LINEAR/NEAREST, `null` uses the global `allowSmoothing` default); it keys the
-// batch because filtering is a per-texture-bind property. The color transform is orthogonal — it never
+// batch because filtering is a per-texture-bind property. The color adjustment is orthogonal — it never
 // keys the batch. Returns the float index in spriteBatchInstanceData where the caller should begin
 // writing base instance data; the caller increments state.spriteBatchCount and records per-instance data.
 export function prepareGlSpriteBatchWrite(
@@ -280,23 +280,23 @@ export function prepareGlSpriteBatchWrite(
   return runtime.spriteBatchCount * SPRITE_INSTANCE_FLOATS;
 }
 
-// Folds instance `instanceIndex`'s effective color transform into the active batch through the opt-in
+// Folds instance `instanceIndex`'s effective color adjustment into the active batch through the opt-in
 // color-adjustment fold, without ever splitting the batch. When the capability was not enabled
 // (registerGlColorAdjustmentMaterialFeature), the fold slot is null and the tint is skipped — the batch draws untinted
-// (the sentinel behavior); an installed guard reports the miss. `colorTransform` is null for an
+// (the sentinel behavior); an installed guard reports the miss. `colorScaleBias` is null for an
 // untinted instance, which is a no-op whether or not the fold is enabled.
-export function recordGlSpriteBatchColorTransform(
+export function recordGlSpriteBatchColorScaleBias(
   state: GlRenderState,
-  colorTransform: ColorTransform | TintMaterialData | readonly number[] | null | undefined,
+  colorScaleBias: ColorScaleBias | TintMaterialData | readonly number[] | null | undefined,
   instanceIndex: number,
 ): void {
   const runtime = getGlRenderStateRuntime(state);
   const fold = runtime.glColorAdjustmentMaterialFeature;
   if (fold != null) {
-    fold.record(runtime, colorTransform, instanceIndex);
+    fold.record(runtime, colorScaleBias, instanceIndex);
     return;
   }
-  if (colorTransform != null) runtime.glColorAdjustmentMaterialFeatureGuard?.(state, colorTransform);
+  if (colorScaleBias != null) runtime.glColorAdjustmentMaterialFeatureGuard?.(state, colorScaleBias);
 }
 
 export function setGlQuadBatchWorldAndTexture(

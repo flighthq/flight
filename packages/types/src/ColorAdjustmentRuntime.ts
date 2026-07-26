@@ -1,13 +1,13 @@
 import type { Adjustment } from './Adjustment';
-import type { ColorTransform } from './ColorTransform';
+import type { ColorScaleBias } from './ColorScaleBias';
 
-// Runtime-only pointwise color-adjustment state mixed into renderable node families that support the
-// material feature. It does not belong to the bedrock Node runtime: non-rendering nodes carry no
-// adjustment stack or resolved cache.
+// Pointwise color-adjustment authoring and its fused bind caches live on the base Node runtime so one
+// dimension-agnostic API serves 2D and 3D. Null is the allocation-free untinted default.
 export interface ColorAdjustmentRuntime {
   colorAdjustments: readonly Adjustment[] | null;
-  colorAdjustmentsChannelMixing: boolean;
+  // True only when the stack contains a non-matrix operation that neither compact nor 4×5 data can carry.
+  colorAdjustmentsUnsupported: boolean;
   // Full fused 4×5 matrix when the stack mixes channels; null for the common diagonal-affine path.
   resolvedColorMatrix: readonly number[] | null;
-  resolvedColorTransform: ColorTransform | null;
+  resolvedColorScaleBias: ColorScaleBias | null;
 }

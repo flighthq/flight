@@ -50,7 +50,7 @@ export interface WgpuScene3DFrameBinding {
 export interface WgpuScene3DDrawEntry {
   alpha: number;
   colorMatrix: object | null;
-  colorTransform: object | null;
+  colorScaleBias: object | null;
   depth: number;
   lightBlock: object;
   material: object;

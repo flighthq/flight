@@ -8,7 +8,7 @@ import { BatchFormat } from '@flighthq/types';
 import {
   packWgpuSpriteBatchMaterialInstance,
   prepareWgpuSpriteBatchWrite,
-  recordWgpuSpriteBatchColorTransform,
+  recordWgpuSpriteBatchColorScaleBias,
 } from './wgpuSpriteBatch';
 
 function submitWgpuSpriteNode(state: WgpuRenderState, spriteNode: RenderProxy2D): void {
@@ -51,7 +51,7 @@ function submitWgpuSpriteNode(state: WgpuRenderState, spriteNode: RenderProxy2D)
   d[base + 11] = (region.y + region.height) * ih;
   d[base + 12] = spriteNode.alpha;
   packWgpuSpriteBatchMaterialInstance(state, spriteNode.materialData, instanceIndex);
-  recordWgpuSpriteBatchColorTransform(state, spriteNode.colorMatrix ?? spriteNode.colorTransform, instanceIndex);
+  recordWgpuSpriteBatchColorScaleBias(state, spriteNode.colorMatrix ?? spriteNode.colorScaleBias, instanceIndex);
   runtime.spriteBatchCount++;
 }
 

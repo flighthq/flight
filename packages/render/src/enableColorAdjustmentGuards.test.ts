@@ -1,10 +1,11 @@
 import { createTintAdjustment } from '@flighthq/adjustments';
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log';
-import { createDisplayObject, setNode2DColorAdjustments } from '@flighthq/scene2d';
+import { setNodeColorAdjustments } from '@flighthq/node';
+import { createDisplayObject } from '@flighthq/scene2d';
 import type { Adjustment, Renderable } from '@flighthq/types';
 
 import { areColorAdjustmentGuardsEnabled, enableColorAdjustmentGuards } from './enableColorAdjustmentGuards';
-import { updateRenderProxyColorTransform } from './renderColorTransform';
+import { updateRenderProxyColorScaleBias } from './renderColorScaleBias';
 import { createRenderProxy } from './renderProxy';
 import { createRenderState } from './renderState';
 
@@ -23,12 +24,12 @@ describe('enableColorAdjustmentGuards', () => {
     enableColorAdjustmentGuards(state);
     const node = createDisplayObject();
     const lut: Adjustment = { kind: 'acme.Lut' };
-    setNode2DColorAdjustments(node, [lut]);
+    setNodeColorAdjustments(node, [lut]);
     const data = createRenderProxy(state, node as unknown as Renderable);
     const sink = createMemoryLogSink(8);
     addLogSink(sink.sink);
     try {
-      updateRenderProxyColorTransform(state, data);
+      updateRenderProxyColorScaleBias(state, data);
       const entries = getMemoryLogSinkEntries(sink);
       expect(entries.length).toBe(1);
       expect(String((entries[0].data as Record<string, unknown>).message)).toContain('not inline-able');
@@ -41,12 +42,12 @@ describe('enableColorAdjustmentGuards', () => {
     const state = createRenderState();
     enableColorAdjustmentGuards(state);
     const node = createDisplayObject();
-    setNode2DColorAdjustments(node, [createTintAdjustment(0x7fffffff)]);
+    setNodeColorAdjustments(node, [createTintAdjustment(0x7fffffff)]);
     const data = createRenderProxy(state, node as unknown as Renderable);
     const sink = createMemoryLogSink(8);
     addLogSink(sink.sink);
     try {
-      updateRenderProxyColorTransform(state, data);
+      updateRenderProxyColorScaleBias(state, data);
       expect(getMemoryLogSinkEntries(sink).length).toBe(0);
     } finally {
       removeLogSink(sink.sink);

@@ -3,7 +3,7 @@ import { noopRendererData } from '@flighthq/render';
 import { resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import type {
-  ColorTransform,
+  ColorScaleBias,
   QuadBatch,
   RenderProxy2D,
   SpriteRenderer,
@@ -17,7 +17,7 @@ import {
   getWgpuQuadBatchPipeline,
   packWgpuSpriteBatchMaterialInstance,
   prepareWgpuSpriteBatchWrite,
-  recordWgpuSpriteBatchColorTransform,
+  recordWgpuSpriteBatchColorScaleBias,
   SPRITE_INSTANCE_FLOATS,
 } from './wgpuSpriteBatch';
 
@@ -40,9 +40,9 @@ function submitWgpuQuadBatch(state: WgpuRenderState, quadBatch: RenderProxy2D): 
   const materialRenderer = resolveWgpuMaterialRenderer(state, material);
   if (materialRenderer === null) return;
   const nodeMaterialData = quadBatch.materialData;
-  // Per-quad color transforms, overriding the node-level tint for the quads that carry one.
-  const perQuadColorTransform = data.materialData;
-  const nodeColorTransform = quadBatch.colorTransform;
+  // Per-quad color adjustments, overriding the node-level tint for the quads that carry one.
+  const perQuadColorScaleBias = data.materialData;
+  const nodeColorScaleBias = quadBatch.colorScaleBias;
   const nodeColorMatrix = quadBatch.colorMatrix;
   const startCount = runtime.spriteBatchCount;
   const base = prepareWgpuSpriteBatchWrite(
@@ -110,11 +110,11 @@ function submitWgpuQuadBatch(state: WgpuRenderState, quadBatch: RenderProxy2D): 
     instanceData[writeBase + 12] = alpha;
     packWgpuSpriteBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
     // Per-quad tint overrides the node-level tint (null → the node's, itself possibly null → untinted).
-    const colorTransform =
-      (perQuadColorTransform?.[i] as ColorTransform | TintMaterialData | readonly number[] | null) ??
+    const colorScaleBias =
+      (perQuadColorScaleBias?.[i] as ColorScaleBias | TintMaterialData | readonly number[] | null) ??
       nodeColorMatrix ??
-      nodeColorTransform;
-    recordWgpuSpriteBatchColorTransform(state, colorTransform, startCount + drawCount);
+      nodeColorScaleBias;
+    recordWgpuSpriteBatchColorScaleBias(state, colorScaleBias, startCount + drawCount);
     writeBase += INSTANCE_STRIDE_FLOATS;
     drawCount++;
   }

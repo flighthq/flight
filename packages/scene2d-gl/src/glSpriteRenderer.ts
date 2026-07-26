@@ -9,7 +9,7 @@ import {
   ensureGlQuadBatchShader,
   packGlSpriteBatchMaterialInstance,
   prepareGlSpriteBatchWrite,
-  recordGlSpriteBatchColorTransform,
+  recordGlSpriteBatchColorScaleBias,
 } from './glSpriteBatch';
 
 function submitGlSpriteNode(state: GlRenderState, spriteNode: RenderProxy2D): void {
@@ -52,7 +52,7 @@ function submitGlSpriteNode(state: GlRenderState, spriteNode: RenderProxy2D): vo
   d[base + 11] = (region.y + region.height) * ih;
   d[base + 12] = spriteNode.alpha;
   packGlSpriteBatchMaterialInstance(state, spriteNode.materialData, instanceIndex);
-  recordGlSpriteBatchColorTransform(state, spriteNode.colorMatrix ?? spriteNode.colorTransform, instanceIndex);
+  recordGlSpriteBatchColorScaleBias(state, spriteNode.colorMatrix ?? spriteNode.colorScaleBias, instanceIndex);
   runtime.spriteBatchCount++;
 }
 
