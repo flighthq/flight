@@ -13,7 +13,6 @@ export * from './canvasMaterialRegistry';
 export * from './canvasMaterials';
 export * from './canvasParticleEmitter2D';
 export * from './canvasQuadBatch';
-export * from './canvasRegistration';
 export * from './canvasRenderState';
 export * from './canvasRenderTarget';
 export * from './canvasRichText';

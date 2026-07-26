@@ -25,3 +25,10 @@ export function registerRenderer(state: RenderState, kind: Kind, renderer: Rende
   runtime.rendererMapId = (runtime.rendererMapId + 1) >>> 0;
   runtime.rendererMap.set(kind, renderer);
 }
+
+// Batch form of registerRenderer over a caller-supplied set of [kind, renderer] pairs. The registry
+// stays open and tree-shakable: only the renderers the caller references are pulled in — there is no
+// "register all built-ins" set, which would force every renderer into the bundle.
+export function registerRenderers(state: RenderState, entries: ReadonlyArray<readonly [Kind, Renderer]>): void {
+  for (const [kind, renderer] of entries) registerRenderer(state, kind, renderer);
+}

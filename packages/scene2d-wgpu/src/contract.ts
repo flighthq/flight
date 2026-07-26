@@ -10,7 +10,6 @@ export * from './wgpuStandardMaterial';
 export * from './wgpuNode2D';
 export * from './wgpuParticleEmitter2D';
 export * from './wgpuQuadBatch';
-export * from './wgpuRegistration';
 export * from './wgpuRendererData';
 export * from './wgpuRenderStats';
 export * from './wgpuRichText';
