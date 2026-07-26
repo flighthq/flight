@@ -28,7 +28,7 @@ export function drawWgpuBitmap(state: WgpuRenderState, renderProxy: RenderProxy2
   if (shader !== null) {
     flushWgpuSpriteBatch(state);
     state.applyBlendMode?.(state, renderProxy.blendMode);
-    bindWgpuImageResourceTexture(state, imageSource);
+    bindWgpuImageResourceTexture(state, imageSource, false, true);
     shader.bind(state, renderProxy);
     return;
   }

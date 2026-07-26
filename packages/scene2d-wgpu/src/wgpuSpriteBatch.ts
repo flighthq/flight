@@ -163,7 +163,7 @@ export function flushWgpuSpriteBatch(state: WgpuRenderState): void {
   }
 
   state.applyBlendMode?.(state, blendMode);
-  const textureEntry = bindWgpuImageResourceTexture(state, texture);
+  const textureEntry = bindWgpuImageResourceTexture(state, texture, false, true);
 
   const uniformOffset = writeWgpuSpriteBatchUniforms(state, textureEntry.straightAlpha === true);
 

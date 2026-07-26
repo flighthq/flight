@@ -188,7 +188,8 @@ export function makeGlScene3DState(gl?: FakeGl2): { state: GlRenderState; gl: Fa
     currentTexture: null,
     renderTargetViewport: null,
     textureCache: new WeakMap<CanvasImageSource, WebGLTexture>(),
-    imageResourceTextureCache: new WeakMap(),
+    imageResourcePremultipliedTextureCache: new WeakMap(),
+    imageResourceStraightTextureCache: new WeakMap(),
     // Fullscreen-pass scratch, so tests can drive present/resolve passes (drawGlFullscreenPass) that
     // read the quad buffers and the default-shader slot alongside the mesh path.
     quadVertexBuffer: {} as WebGLBuffer,

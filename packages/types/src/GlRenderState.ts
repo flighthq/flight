@@ -168,7 +168,13 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // data-only Surface caches too, with the uploaded `version` tracked so bindGlImageResourceTexture
   // re-uploads in place when the pixels change — subsuming the per-node manual invalidation nodes used to
   // open-code. See bindGlImageResourceTexture.
-  imageResourceTextureCache: WeakMap<ImageResource, { texture: WebGLTexture; version: number }>;
+  imageResourcePremultipliedTextureCache: WeakMap<ImageResource, { texture: WebGLTexture; version: number }>;
+  // Straight (upload-as-is) sibling of imageResourcePremultipliedTextureCache: the GL texture for an ImageResource bound
+  // WITHOUT a premultiply request, used by the straight-blend 3D forward path (and any caller passing
+  // premultiply=false). Split from the premultiplied cache — and keyed by the same resource entity, with
+  // the same version tracking — so one ImageResource bound both premultiplied (2D) and straight (3D) keeps
+  // a correct GL texture for each. See bindGlImageResourceTexture.
+  imageResourceStraightTextureCache: WeakMap<ImageResource, { texture: WebGLTexture; version: number }>;
   // Optional RGBA fallback decoder for block-compressed textures the device cannot upload natively.
   // Installed per-state by registerGlCompressedTextureDecoder (opt-in), so a state that never draws a
   // compressed texture — or only draws formats the device supports — carries no decoder. Undefined
@@ -178,7 +184,7 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // (opt-in), so a state that only ever draws element- or data-backed bitmaps never pulls the
   // ~40-format compressed-container upload path into the bundle — the bundle-cost gate the runtime
   // compressedTextureDecoder branch alone cannot provide. Undefined until registered; when unset,
-  // uploadGlDisplayTexture skips a compressed-only resource (leaving its texture empty) rather than
+  // uploadGlBoundImageResource skips a compressed-only resource (leaving its texture empty) rather than
   // uploading garbage. See registerGlCompressedTextureUpload.
   compressedTextureUpload?: GlCompressedTextureUploader | null;
   // VideoTexture cache: a dynamic VideoResource-backed source (bindGlVideoTexture). Keyed by the

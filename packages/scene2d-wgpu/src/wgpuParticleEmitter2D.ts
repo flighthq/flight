@@ -196,7 +196,7 @@ export function drawWgpuParticleEmitter2D(state: WgpuRenderState, renderProxy: R
   ensureParticleInstanceBuffer(state, particleCount);
 
   state.applyBlendMode?.(state, renderProxy.blendMode);
-  const textureEntry = bindWgpuImageResourceTexture(state, atlas.image);
+  const textureEntry = bindWgpuImageResourceTexture(state, atlas.image, false, true);
 
   const regions = atlas.regions;
   const numRegions = regions.length;

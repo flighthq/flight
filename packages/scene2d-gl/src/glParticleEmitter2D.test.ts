@@ -56,7 +56,10 @@ describe('drawGlParticleEmitter2D', () => {
 
   it('returns early without drawing when atlas.image.source is null', () => {
     const { state, gl } = createGlState();
-    drawGlParticleEmitter2D(state, makeParticleEmitter2DNode({ atlas: { image: { source: null }, regions: [] } }));
+    drawGlParticleEmitter2D(
+      state,
+      makeParticleEmitter2DNode({ atlas: { image: { source: null, data: null, compressed: null }, regions: [] } }),
+    );
     expect(gl.drawElements).not.toHaveBeenCalled();
   });
 

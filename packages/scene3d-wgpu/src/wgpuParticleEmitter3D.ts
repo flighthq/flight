@@ -361,7 +361,7 @@ function drawParticleEmitter3DNode(
   // bound (never sampled — HAS_TEXTURE=0 gates it off). Both use the shared linear sampler.
   const runtime = getWgpuRenderStateRuntime(state);
   const textureView = hasAtlas
-    ? bindWgpuImageResourceTexture(state, atlas!.image!).view
+    ? bindWgpuImageResourceTexture(state, atlas!.image!, false, true).view
     : ensureDummyTextureView(state);
   const textureBindGroup = state.device.createBindGroup({
     layout: resources.textureLayout,
