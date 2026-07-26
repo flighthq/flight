@@ -1,5 +1,6 @@
 export * from './enableWgpuColorAdjustmentGuards';
 export * from './wgpuBitmap';
+export * from './wgpuBitmapText';
 export * from './wgpuCache';
 export * from './wgpuClip';
 export * from './wgpuClipContours';

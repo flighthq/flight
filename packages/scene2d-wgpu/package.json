@@ -50,6 +50,7 @@
     "@flighthq/velocity": "*"
   },
   "devDependencies": {
+    "@flighthq/bitmaptext": "*",
     "@flighthq/particleemitter": "*",
     "@flighthq/sprite": "*",
     "@webgpu/types": "*",

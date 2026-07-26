@@ -2,6 +2,7 @@ import { registerRenderer } from '@flighthq/render';
 import type { WgpuRenderState } from '@flighthq/types';
 import {
   BitmapKind,
+  BitmapTextKind,
   DisplayObjectKind,
   ParticleEmitter2DKind,
   QuadBatchKind,
@@ -16,6 +17,7 @@ import {
 } from '@flighthq/types';
 
 import { defaultWgpuBitmapRenderer } from './wgpuBitmap';
+import { defaultWgpuBitmapTextRenderer } from './wgpuBitmapText';
 import { defaultWgpuRenderCacheRenderer } from './wgpuCache';
 import { registerDefaultWgpuMaterial } from './wgpuDefaultMaterial';
 import { defaultWgpuScene2DRenderer } from './wgpuNode2D';
@@ -42,6 +44,7 @@ import { defaultWgpuVideoRenderer } from './wgpuVideo';
 export function registerWgpuScene2DRenderers(state: WgpuRenderState): void {
   registerDefaultWgpuMaterial(state);
   registerRenderer(state, BitmapKind, defaultWgpuBitmapRenderer);
+  registerRenderer(state, BitmapTextKind, defaultWgpuBitmapTextRenderer);
   registerRenderer(state, DisplayObjectKind, defaultWgpuScene2DRenderer);
   registerRenderer(state, ParticleEmitter2DKind, defaultWgpuParticleEmitter2DRenderer);
   registerRenderer(state, QuadBatchKind, defaultWgpuQuadBatchRenderer);
