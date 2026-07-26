@@ -167,8 +167,24 @@ package has a contract lane, so land it in two stages:
    repoint the direct consumers of render/types (`render-gl`, `render-wgpu`,
    `scene2d-{canvas,dom,gl,wgpu}`, `scene3d-{gl,wgpu}`) to `@flighthq/render/contract` and
    `@flighthq/types/contract`. Proves the mechanism end-to-end.
-2. **Sweep (follow-up):** codemod all remaining intra-SDK imports to `/contract`, give
+2. **Sweep:** codemod all remaining intra-SDK imports to `/contract`, give
    every package the two-lane split, and flip the invariant check from warn to gate.
+
+Status: **both stages landed.** Every package carries the two lanes; all intra-SDK imports
+resolve to `/contract`; the invariant is a hard `packages:check` gate. Public indexes are
+cultivated for the renderer/effect backends and the scene graph (runtime accessors moved to
+contract); genuinely-public leaf packages keep `index = export * from './contract'`.
+Remaining cultivation is incremental and non-blocking (the gate does not require it) — the
+public surface can be narrowed further per package over time using the audience test.
+
+Known follow-ups (tracked, non-blocking): the effects registration convenience layer
+(`registerDefaultGlRenderEffects` / `registerAllCanvasRenderEffects` and the per-category
+bundles) is the same closed-set-over-open-registry anti-goal as the retired renderer
+aggregates, but it is contract-only and its one external consumer is the effects showcase
+example — retire it into explicit `registerRenderEffects`-style batches in a focused pass. A
+self-import guard (a package file importing its own `@flighthq/<pkg>` barrel) would catch the
+class of circular-init bug fixed in `nodeTransform2d` and the test breakages cultivation
+exposed; worth adding to `packages:check`.
 
 ## Reconciliation
 
