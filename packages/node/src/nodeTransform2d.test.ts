@@ -8,7 +8,7 @@ import {
   multiplyMatrix,
   setMatrix,
 } from '@flighthq/geometry/contract';
-import { addNodeChild, createNode } from '@flighthq/node';
+import { addNodeChild, createNode } from '@flighthq/node/contract';
 import type { HasTransform2D, HasTransform2DRuntime, Matrix, Node, NodeRuntime } from '@flighthq/types/contract';
 
 import { initTransform2DRuntimeTrait, initTransform2DTrait } from './hasTransform2d';

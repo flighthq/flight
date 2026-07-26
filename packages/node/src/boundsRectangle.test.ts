@@ -13,7 +13,7 @@ import {
   initTransform2DRuntimeTrait,
   initTransform2DTrait,
   invalidateNodeLocalTransform,
-} from '@flighthq/node';
+} from '@flighthq/node/contract';
 import type {
   HasBoundsRectangle,
   HasBoundsRectangleRuntime,
