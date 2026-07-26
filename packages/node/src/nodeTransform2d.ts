@@ -7,7 +7,6 @@ import {
   matrixTransformPointXY,
   multiplyMatrix,
 } from '@flighthq/geometry/contract';
-import { computeNodeWorldTransformRevision } from '@flighthq/node';
 import type {
   HasTransform2DRuntime,
   Matrix,
@@ -18,6 +17,7 @@ import type {
   Vector2Like,
 } from '@flighthq/types/contract';
 
+import { computeNodeWorldTransformRevision } from './revision';
 import { invalidateNodeLocalTransform } from './revision';
 
 /**
