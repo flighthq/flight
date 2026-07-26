@@ -79,11 +79,11 @@ describe('concatColorMatrix', () => {
 
 describe('createBrightnessColorMatrix', () => {
   it('returns a 20-element array', () => {
-    expect(createBrightnessColorMatrix(50)).toHaveLength(COLOR_MATRIX_LENGTH);
+    expect(createBrightnessColorMatrix(0.25)).toHaveLength(COLOR_MATRIX_LENGTH);
   });
 
   it('brightens black to grey', () => {
-    const m = createBrightnessColorMatrix(128);
+    const m = createBrightnessColorMatrix(128 / 255);
     const result = applyColorMatrixToColor(m, BLACK);
     const r = (result >>> 24) & 0xff;
     expect(r).toBe(128);
@@ -129,8 +129,8 @@ describe('createColorBalanceColorMatrix', () => {
 
   it('positive red midtone raises red channel offset', () => {
     const m = createColorBalanceColorMatrix([0, 0, 0], [100, 0, 0], [0, 0, 0]);
-    // Red offset should be positive (midtone weight 0.5 * 255 = 127.5)
-    expect(m[4]).toBeCloseTo(127.5, 0);
+    // Red bias should be positive (midtone weight 0.5).
+    expect(m[4]).toBeCloseTo(0.5);
     expect(m[9]).toBeCloseTo(0, 5); // green unaffected
     expect(m[14]).toBeCloseTo(0, 5); // blue unaffected
   });
@@ -240,20 +240,20 @@ describe('createInvertColorMatrix', () => {
 
 describe('createLevelsColorMatrix', () => {
   it('returns a 20-element array', () => {
-    expect(createLevelsColorMatrix(0, 255, 0, 255)).toHaveLength(COLOR_MATRIX_LENGTH);
+    expect(createLevelsColorMatrix(0, 1, 0, 1)).toHaveLength(COLOR_MATRIX_LENGTH);
   });
 
   it('full range with gamma=1 is identity', () => {
-    const m = createLevelsColorMatrix(0, 255, 0, 255, 1);
+    const m = createLevelsColorMatrix(0, 1, 0, 1, 1);
     const identity = createIdentityColorMatrix();
     for (let i = 0; i < 20; i++) {
       expect(m[i]).toBeCloseTo(identity[i]);
     }
   });
 
-  it('clips blacks: inBlack=128 shifts scale', () => {
-    const m = createLevelsColorMatrix(128, 255, 0, 255);
-    // scale = 255 / (255-128) ≈ 2.008; offset = 0 - 128 * 2.008 ≈ -257
+  it('clips blacks: inBlack=128/255 shifts scale', () => {
+    const m = createLevelsColorMatrix(128 / 255, 1, 0, 1);
+    // scale = 1 / (1 - 128/255) ≈ 2.008; bias = 0 - (128/255) * 2.008 ≈ -1.008
     expect(m[0]).toBeGreaterThan(1); // amplified
   });
 });

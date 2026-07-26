@@ -25,10 +25,6 @@ export function createNode3D(
 
 export function createNode3DRuntime(): Node3DRuntime {
   const out = createNodeRuntime<Node3DTraits>() as Node3DRuntime;
-  out.colorAdjustments = null;
-  out.colorAdjustmentsChannelMixing = false;
-  out.resolvedColorMatrix = null;
-  out.resolvedColorTransform = null;
   out.traits = Node3DTraitsKey;
   out.worldAlpha = null;
   out.worldAlphaUsingAppearanceId = -1;

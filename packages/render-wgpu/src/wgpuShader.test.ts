@@ -159,7 +159,7 @@ describe('writeWgpuMatrixOnlyUniforms', () => {
     const runtime = getWgpuRenderStateRuntime(state);
     renderWgpuBackground(state);
     const before = runtime.uniformOffset;
-    const fakeNode = { alpha: 1, useColorTransform: false, colorTransform: null };
+    const fakeNode = { alpha: 1, useColorScaleBias: false, colorScaleBias: null };
     const t = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
     writeWgpuMatrixOnlyUniforms(state, fakeNode as never, t, 0, 0, 10, 10, 0, 0, 1, 1);
     expect(runtime.uniformOffset).toBe(before + runtime.uniformStride);
@@ -174,8 +174,8 @@ describe('writeWgpuQuadUniforms', () => {
     const before = runtime.uniformOffset;
     const fakeNode = {
       alpha: 1,
-      useColorTransform: false,
-      colorTransform: null,
+      useColorScaleBias: false,
+      colorScaleBias: null,
       transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
     };
     writeWgpuQuadUniforms(state, fakeNode, null, 0, 0, 100, 100, 0, 0, 1, 1);
@@ -188,8 +188,8 @@ describe('writeWgpuQuadUniforms', () => {
     renderWgpuBackground(state);
     const fakeNode = {
       alpha: 0.5,
-      useColorTransform: false,
-      colorTransform: null,
+      useColorScaleBias: false,
+      colorScaleBias: null,
       transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
     };
     const offset = writeWgpuQuadUniforms(state, fakeNode, null, 10, 20, 30, 40, 0.1, 0.2, 0.9, 0.8);
@@ -208,8 +208,8 @@ describe('writeWgpuQuadUniforms', () => {
     renderWgpuBackground(state);
     const fakeNode = {
       alpha: 1,
-      useColorTransform: false,
-      colorTransform: null,
+      useColorScaleBias: false,
+      colorScaleBias: null,
       transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
     };
 

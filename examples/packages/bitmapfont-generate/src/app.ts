@@ -14,7 +14,7 @@ import {
   createDisplayObject,
   createImageResourceFromSurface,
   invalidateNodeLocalTransform,
-  setNode2DColorAdjustmentTint,
+  setNodeColorAdjustmentsTint,
 } from '@flighthq/sdk';
 
 import { render, scale } from './render';
@@ -55,7 +55,7 @@ function addText(
     wrapWidth: options?.wrapWidth,
   });
   // Tint is the node's generic color adjustment, folded on backends that realize adjustments (gl/wgpu).
-  setNode2DColorAdjustmentTint(bitmapText, color);
+  setNodeColorAdjustmentsTint(bitmapText, color);
   bitmapText.x = x;
   bitmapText.y = y;
   invalidateNodeLocalTransform(bitmapText);

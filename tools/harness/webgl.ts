@@ -22,7 +22,7 @@ import {
   ParticleEmitter2DKind,
   prepareScene2DRender,
   QuadBatchKind,
-  registerDefaultGlMaterial,
+  registerStandardGlMaterial,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
@@ -59,7 +59,7 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
   // store here. See ../README.md for why this lives in renderTransform2D rather than the scene.
   state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
-  registerDefaultGlMaterial(state);
+  registerStandardGlMaterial(state);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
       registerRenderer(state, ShapeKind, defaultGlShapeRenderer);

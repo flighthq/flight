@@ -1,5 +1,5 @@
 export * from './classicMaterials';
-export * from './colorTransform';
+export * from './colorScaleBias';
 export * from './customShaderMaterial';
 export * from './material';
 export * from './materialPresets';

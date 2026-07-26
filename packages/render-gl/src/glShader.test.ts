@@ -89,12 +89,12 @@ describe('createDefaultGlBitmapShader', () => {
     expect(typeof shader.bind).toBe('function');
   });
 
-  it('does not bind color transform uniforms for the default shader', () => {
+  it('does not bind color adjustment uniforms for the default shader', () => {
     const gl = makeGL();
     const loc = makeShaderLoc();
-    loc.locColorMultiplier = undefined;
-    loc.locColorOffset = undefined;
-    loc.locHasColorTransform = undefined;
+    loc.locColorScale = undefined;
+    loc.locColorBias = undefined;
+    loc.locHasColorScaleBias = undefined;
     const m = new Float32Array(9);
     const canvas = document.createElement('canvas');
     canvas.width = 100;
@@ -102,18 +102,18 @@ describe('createDefaultGlBitmapShader', () => {
     const shader = createDefaultGlBitmapShader(loc, m);
     const renderProxy = {
       alpha: 0.75,
-      colorTransform: {
-        redMultiplier: 0.5,
-        greenMultiplier: 0.25,
-        blueMultiplier: 1.5,
-        alphaMultiplier: 0.8,
-        redOffset: 10,
-        greenOffset: 20,
-        blueOffset: 30,
-        alphaOffset: 40,
+      colorScaleBias: {
+        redScale: 0.5,
+        greenScale: 0.25,
+        blueScale: 1.5,
+        alphaScale: 0.8,
+        redBias: 10,
+        greenBias: 20,
+        blueBias: 30,
+        alphaBias: 40,
       },
       transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
-      useColorTransform: true,
+      useColorScaleBias: true,
     };
 
     shader.bind(gl, { canvas, [EntityRuntimeKey]: { renderTargetViewport: null } } as never, renderProxy as never);
@@ -213,17 +213,17 @@ describe('setGlBaseUniforms', () => {
     const loc = makeShaderLoc();
     const renderProxy = {
       alpha: 1,
-      colorTransform: {
-        redMultiplier: 0.2,
-        greenMultiplier: 0.4,
-        blueMultiplier: 0.6,
-        alphaMultiplier: 0.8,
-        redOffset: 25.5,
-        greenOffset: 51,
-        blueOffset: 76.5,
-        alphaOffset: 102,
+      colorScaleBias: {
+        redScale: 0.2,
+        greenScale: 0.4,
+        blueScale: 0.6,
+        alphaScale: 0.8,
+        redBias: 25.5,
+        greenBias: 51,
+        blueBias: 76.5,
+        alphaBias: 102,
       },
-      useColorTransform: true,
+      useColorScaleBias: true,
     };
 
     setGlBaseUniforms(gl, loc, renderProxy as never);

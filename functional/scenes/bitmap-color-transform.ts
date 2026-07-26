@@ -1,30 +1,22 @@
-// bitmap-color-transform — validates a ColorTransform applied to image pixels: a white source tinted by
-// a transform with red multiplier 1 and green/blue multipliers 0 renders pure red. The scene blits the
+// bitmap-color-transform — validates ColorScaleBias applied to image pixels: a white source tinted with
+// red scale 1 and green/blue scales 0 renders pure red. The scene blits the
 // untinted white source and the tinted result side by side; the oracle proves the source is white and
-// the transformed bitmap is red (high red, low green/blue) — i.e. the color transform's per-channel
-// multipliers were applied.
+// the transformed bitmap is red (high red, low green/blue) — i.e. the per-channel scales were applied.
 //
-// This is visual because a color transform's effect is per-pixel channel scaling — confirming it means
+// This is visual because color scale/bias is per-pixel channel math — confirming it means
 // reading the rasterized output and seeing white become red.
 //
-// API note: Flight models a color transform as the node-level HasColorTransform trait
-// (packages/types/src/HasColorTransform.ts), an Adjustment folded into the GL/WGPU batch draw through
-// the opt-in color-adjustment capability (registerGlColorAdjustmentMaterialFeature / registerWgpuColorAdjustmentMaterialFeature;
-// packages/scene2d-gl/src/glColorAdjustmentMaterialFeature.ts and the WGPU sibling). The Canvas and DOM bitmap
-// renderers do not yet realize that trait, so a node-attached color transform draws untinted there —
-// diverging across backends. Functional tests must agree byte-for-byte across Canvas/DOM/GL, so this
-// test instead applies the transform to the source PIXELS in JS via the genuine
-// `applySurfaceColorTransform` (the surface ColorTransform API) and a `createColorTransform`
-// descriptor, then blits the result. Every backend then draws identical bytes. The node-trait fold is
-// the GPU-batched form of the same descriptor; it is exercised by the GL/WGPU color-adjustment unit
-// tests, not here.
+// API note: Flight models draw-time color adjustment as a base-Node adjustment stack, folded through the
+// registered GL/WGPU material feature. Canvas and DOM do not realize that fold, so this cross-backend
+// fixture instead applies the same ColorScaleBias to source pixels via applySurfaceColorScaleBias before
+// blitting. The dedicated color-adjustment scenes exercise the GPU-batched node path.
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
-  applySurfaceColorTransform,
+  applySurfaceColorScaleBias,
   BitmapKind,
   createBitmap,
-  createColorTransform,
+  createColorScaleBias,
   createDisplayObject,
   createImageResourceFromCanvas,
   createSurface,
@@ -44,17 +36,17 @@ const TILE_Y = 200;
 // Opaque white source.
 const source = createSurface(TILE, TILE, 0xffffffff);
 
-// Red tint: keep red, zero out green and blue (multipliers), no offsets, keep alpha.
-const redTint = createColorTransform({
-  redMultiplier: 1,
-  greenMultiplier: 0,
-  blueMultiplier: 0,
-  alphaMultiplier: 1,
+// Red tint: keep red, zero green/blue, use zero bias, and keep alpha.
+const redTint = createColorScaleBias({
+  redScale: 1,
+  greenScale: 0,
+  blueScale: 0,
+  alphaScale: 1,
 });
 
 // Apply the transform into a separate destination surface (read-then-write per pixel).
 const result = createSurface(TILE, TILE, 0x000000ff);
-applySurfaceColorTransform(createSurfaceRegion(result), createSurfaceRegion(source), redTint);
+applySurfaceColorScaleBias(createSurfaceRegion(result), createSurfaceRegion(source), redTint);
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,

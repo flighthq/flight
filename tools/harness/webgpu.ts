@@ -23,7 +23,7 @@ import {
   ParticleEmitter2DKind,
   prepareScene2DRender,
   QuadBatchKind,
-  registerDefaultWgpuMaterial,
+  registerStandardWgpuMaterial,
   registerRenderer,
   registerWgpuShapeCommands,
   renderWgpuBackground,
@@ -56,7 +56,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
 
   state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
-  registerDefaultWgpuMaterial(state);
+  registerStandardWgpuMaterial(state);
   // Frame capture lets the verifier read the rendered frame back from the GPU; canvas presentation is
   // unavailable on the headless/software adapter, so this is the only path to the pixels.
   enableWgpuFrameCapture(state);

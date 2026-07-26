@@ -61,7 +61,7 @@ export function drawGlShapeMeshBatch(
 }
 
 // Draws the shape's tessellated fill meshes. Delegates to the opt-in color-adjustment fold when it is
-// installed AND the node carries a color transform, so solid-fill tint stays byte-for-byte with the
+// installed AND the node carries a color adjustment, so solid-fill tint stays byte-for-byte with the
 // quad-batch path; otherwise runs the lean flat-color program, which never references the tint shader
 // (it tree-shakes out with the fold until registerGlColorAdjustmentMaterialFeature is called).
 export function drawGlShapeMeshes(
@@ -71,7 +71,7 @@ export function drawGlShapeMeshes(
 ): void {
   if (meshes.length === 0) return;
   const fold = getGlRenderStateRuntime(state).glColorAdjustmentMaterialFeature;
-  if (fold != null && (renderProxy.colorMatrix != null || renderProxy.colorTransform != null)) {
+  if (fold != null && (renderProxy.colorMatrix != null || renderProxy.colorScaleBias != null)) {
     fold.drawShapeMeshes(state, renderProxy, meshes);
     return;
   }

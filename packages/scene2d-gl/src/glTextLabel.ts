@@ -23,7 +23,7 @@ import {
   ensureGlQuadBatchShader,
   packGlSpriteBatchMaterialInstance,
   prepareGlSpriteBatchWrite,
-  recordGlSpriteBatchColorTransform,
+  recordGlSpriteBatchColorScaleBias,
 } from './glSpriteBatch';
 
 // Renderer-private scratch state stored in the opaque RendererData slot. It is not an Entity (it
@@ -176,7 +176,7 @@ export function drawGlTextLabel(state: GlRenderState, renderProxy: RenderProxy2D
   d[base + 11] = 1;
   d[base + 12] = renderProxy.alpha;
   packGlSpriteBatchMaterialInstance(state, renderProxy.materialData, startCount);
-  recordGlSpriteBatchColorTransform(state, renderProxy.colorMatrix ?? renderProxy.colorTransform, startCount);
+  recordGlSpriteBatchColorScaleBias(state, renderProxy.colorMatrix ?? renderProxy.colorScaleBias, startCount);
   runtime.spriteBatchCount++;
 }
 

@@ -13,7 +13,7 @@
  * Row 2 = B output coefficients.
  * Row 3 = A output coefficients.
  *
- * The offset column (indices 4, 9, 14, 19) is in the range 0..255 (Flash convention).
+ * The bias column (indices 4, 9, 14, 19) uses normalized-linear, unbounded float units.
  */
 
 /** Required length of a valid color-matrix array. */
@@ -21,18 +21,18 @@ export const COLOR_MATRIX_LENGTH = 20;
 
 /**
  * Evaluates `matrix` against a packed `0xRRGGBBAA` color. Useful for previews and tests; pure
- * math, no surface operations. Offsets are in the Flash 0–255 range; result is clamped to 0–255
- * per channel and repacked as `0xRRGGBBAA`.
+ * math, no surface operations. Input bytes are normalized before applying the matrix; the result is
+ * clamped to 0–1 and repacked as `0xRRGGBBAA`.
  */
 export function applyColorMatrixToColor(matrix: Readonly<number[]>, packedRgba: number): number {
-  const r = (packedRgba >>> 24) & 0xff;
-  const g = (packedRgba >>> 16) & 0xff;
-  const b = (packedRgba >>> 8) & 0xff;
-  const a = packedRgba & 0xff;
-  const rOut = clampByte(matrix[0] * r + matrix[1] * g + matrix[2] * b + matrix[3] * a + matrix[4]);
-  const gOut = clampByte(matrix[5] * r + matrix[6] * g + matrix[7] * b + matrix[8] * a + matrix[9]);
-  const bOut = clampByte(matrix[10] * r + matrix[11] * g + matrix[12] * b + matrix[13] * a + matrix[14]);
-  const aOut = clampByte(matrix[15] * r + matrix[16] * g + matrix[17] * b + matrix[18] * a + matrix[19]);
+  const r = ((packedRgba >>> 24) & 0xff) / 255;
+  const g = ((packedRgba >>> 16) & 0xff) / 255;
+  const b = ((packedRgba >>> 8) & 0xff) / 255;
+  const a = (packedRgba & 0xff) / 255;
+  const rOut = clampNormalizedByte(matrix[0] * r + matrix[1] * g + matrix[2] * b + matrix[3] * a + matrix[4]);
+  const gOut = clampNormalizedByte(matrix[5] * r + matrix[6] * g + matrix[7] * b + matrix[8] * a + matrix[9]);
+  const bOut = clampNormalizedByte(matrix[10] * r + matrix[11] * g + matrix[12] * b + matrix[13] * a + matrix[14]);
+  const aOut = clampNormalizedByte(matrix[15] * r + matrix[16] * g + matrix[17] * b + matrix[18] * a + matrix[19]);
   return ((rOut << 24) | (gOut << 16) | (bOut << 8) | aOut) >>> 0;
 }
 
@@ -47,8 +47,7 @@ export function concatColorMatrix(target: number[], source: Readonly<number[]>):
 
 /**
  * Returns a color matrix that adds `amount` to the brightness offset of each channel. Positive
- * `amount` brightens; negative darkens. `amount` is in the Flash 0–255 offset range. Allocates a
- * new array.
+ * `amount` brightens; negative darkens. `amount` is normalized-linear. Allocates a new array.
  */
 export function createBrightnessColorMatrix(amount: number): number[] {
   // prettier-ignore
@@ -84,8 +83,8 @@ export function createChannelMixerColorMatrix(
 
 /**
  * Returns a color balance matrix that independently shifts highlights, midtones, and shadows.
- * Each parameter is a `[red, green, blue]` offset in the –100..100 range (Flash-style, mapped to
- * –255..255 offsets). Allocates a new array.
+ * Each parameter is a `[red, green, blue]` offset in the –100..100 range, mapped to normalized
+ * –1..1 biases. Allocates a new array.
  *
  * Implementation uses a three-range additive model: shadows affect dark pixels (luma < 85),
  * highlights affect bright pixels (luma > 170), and midtones are weighted by proximity to the
@@ -98,10 +97,10 @@ export function createColorBalanceColorMatrix(
   midtones: Readonly<[number, number, number]>,
   highlights: Readonly<[number, number, number]>,
 ): number[] {
-  // Map each band's [-100,100] range to Flash offsets [-255,255] and weight by band contribution.
+  // Map each band's [-100,100] range to normalized biases [-1,1] and weight by band contribution.
   // Shadows weight 0.25, midtones 0.5, highlights 0.25 — ensures the total offset range matches
   // a single-band full swing without clipping the combined result beyond ±255.
-  const scale = 255 / 100;
+  const scale = 1 / 100;
   const rOff = (shadows[0] * 0.25 + midtones[0] * 0.5 + highlights[0] * 0.25) * scale;
   const gOff = (shadows[1] * 0.25 + midtones[1] * 0.5 + highlights[1] * 0.25) * scale;
   const bOff = (shadows[2] * 0.25 + midtones[2] * 0.5 + highlights[2] * 0.25) * scale;
@@ -119,9 +118,9 @@ export function createColorBalanceColorMatrix(
  * 1 = solid tint color). Allocates a new array.
  */
 export function createColorMatrixFromTint(packedRgba: number, amount: number): number[] {
-  const tr = ((packedRgba >>> 24) & 0xff) * amount;
-  const tg = ((packedRgba >>> 16) & 0xff) * amount;
-  const tb = ((packedRgba >>> 8) & 0xff) * amount;
+  const tr = (((packedRgba >>> 24) & 0xff) / 255) * amount;
+  const tg = (((packedRgba >>> 16) & 0xff) / 255) * amount;
+  const tb = (((packedRgba >>> 8) & 0xff) / 255) * amount;
   const keep = 1 - amount;
   // prettier-ignore
   return [
@@ -137,8 +136,8 @@ export function createColorMatrixFromTint(packedRgba: number, amount: number): n
  * increased contrast). Allocates a new array.
  */
 export function createContrastColorMatrix(amount: number): number[] {
-  // Translate to midpoint, scale, translate back: offset = 128 * (1 - amount).
-  const offset = 128 * (1 - amount);
+  // Translate to midpoint, scale, translate back: bias = 0.5 * (1 - amount).
+  const offset = 0.5 * (1 - amount);
   // prettier-ignore
   return [
     amount, 0, 0, 0, offset,
@@ -209,22 +208,22 @@ export function createIdentityColorMatrix(): number[] {
 }
 
 /**
- * Returns an invert color matrix that produces `255 - channel` per RGB channel. Alpha is
+ * Returns an invert color matrix that produces `1 - channel` per RGB channel. Alpha is
  * unchanged. Allocates a new array.
  */
 export function createInvertColorMatrix(): number[] {
   // prettier-ignore
   return [
-    -1, 0, 0, 0, 255,
-    0, -1, 0, 0, 255,
-    0, 0, -1, 0, 255,
+    -1, 0, 0, 0, 1,
+    0, -1, 0, 0, 1,
+    0, 0, -1, 0, 1,
     0, 0, 0, 1, 0,
   ];
 }
 
 /**
  * Returns a levels color matrix that remaps the input range `[inBlack, inWhite]` to the output
- * range `[outBlack, outWhite]` with optional `gamma` correction. All values are in 0–255. `gamma`
+ * range `[outBlack, outWhite]` with optional `gamma` correction. All values are normalized 0–1. `gamma`
  * defaults to 1 (linear). Allocates a new array.
  *
  * The remapping function is:
@@ -278,9 +277,9 @@ export function createPolaroidColorMatrix(): number[] {
   // Warm highlight, slightly desaturated mid-tones, lifted blacks.
   // prettier-ignore
   return [
-    1.438, -0.062, -0.062, 0, -31.8,
-    -0.122, 1.378, -0.122, 0, 16.2,
-    -0.016, -0.016, 1.484, 0, -47.6,
+    1.438, -0.062, -0.062, 0, -31.8 / 255,
+    -0.122, 1.378, -0.122, 0, 16.2 / 255,
+    -0.016, -0.016, 1.484, 0, -47.6 / 255,
     0, 0, 0, 1, 0,
   ];
 }
@@ -324,9 +323,9 @@ export function createTechnicolorColorMatrix(): number[] {
   // Derived from the classic Technicolor look formula widely cited in colour grading literature.
   // prettier-ignore
   return [
-    1.9126, -0.8, -0.09, 0, 11.79,
-    -0.2, 1.7, -0.27, 0, -14.69,
-    -0.14, -0.21, 1.62, 0, -3.38,
+    1.9126, -0.8, -0.09, 0, 11.79 / 255,
+    -0.2, 1.7, -0.27, 0, -14.69 / 255,
+    -0.14, -0.21, 1.62, 0, -3.38 / 255,
     0, 0, 0, 1, 0,
   ];
 }
@@ -338,8 +337,8 @@ export function createTechnicolorColorMatrix(): number[] {
 export function createVintageColorMatrix(): number[] {
   // prettier-ignore
   return [
-    0.9, 0.05, 0.05, 0, 10,
-    0.0, 0.85, 0.0, 0, 5,
+    0.9, 0.05, 0.05, 0, 10 / 255,
+    0.0, 0.85, 0.0, 0, 5 / 255,
     0.0, 0.0, 0.75, 0, 0,
     0, 0, 0, 1, 0,
   ];
@@ -460,6 +459,6 @@ export function multiplyColorMatrix(a: Readonly<number[]>, b: Readonly<number[]>
   return result;
 }
 
-function clampByte(v: number): number {
-  return Math.max(0, Math.min(255, Math.round(v)));
+function clampNormalizedByte(v: number): number {
+  return Math.max(0, Math.min(255, Math.round(v * 255)));
 }

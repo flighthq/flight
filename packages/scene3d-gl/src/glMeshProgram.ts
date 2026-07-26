@@ -105,7 +105,7 @@ export function drawGlMeshSubset(
   // variant. Resolve and cache its locations lazily so an untinted/base program performs no lookups
   // or uploads; the promoted Shaded/Phong/PBR fragments consume the same two affine vectors.
   const colorMatrix = proxy.colorMatrix;
-  const colorTransform = proxy.colorTransform;
+  const colorScaleBias = proxy.colorScaleBias;
   if (colorMatrix != null) {
     let loc0 = program.locColorMatrix0;
     if (loc0 === undefined) {
@@ -124,37 +124,31 @@ export function drawGlMeshSubset(
       gl.uniform4f(program.locColorMatrix1!, colorMatrix[5], colorMatrix[6], colorMatrix[7], colorMatrix[8]);
       gl.uniform4f(program.locColorMatrix2!, colorMatrix[10], colorMatrix[11], colorMatrix[12], colorMatrix[13]);
       gl.uniform4f(program.locColorMatrix3!, colorMatrix[15], colorMatrix[16], colorMatrix[17], colorMatrix[18]);
-      gl.uniform4f(
-        program.locColorMatrixOffset!,
-        colorMatrix[4] / 255,
-        colorMatrix[9] / 255,
-        colorMatrix[14] / 255,
-        colorMatrix[19] / 255,
-      );
+      gl.uniform4f(program.locColorMatrixOffset!, colorMatrix[4], colorMatrix[9], colorMatrix[14], colorMatrix[19]);
     }
-  } else if (colorTransform != null) {
-    let locColorMultiplier = program.locColorMultiplier;
-    let locColorOffset = program.locColorOffset;
-    if (locColorMultiplier === undefined) {
-      locColorMultiplier = gl.getUniformLocation(program.program, 'u_flightColorMultiplier');
-      locColorOffset = gl.getUniformLocation(program.program, 'u_flightColorOffset');
-      (program as GlMeshProgram).locColorMultiplier = locColorMultiplier;
-      (program as GlMeshProgram).locColorOffset = locColorOffset;
+  } else if (colorScaleBias != null) {
+    let locColorScale = program.locColorScale;
+    let locColorBias = program.locColorBias;
+    if (locColorScale === undefined) {
+      locColorScale = gl.getUniformLocation(program.program, 'u_flightColorScale');
+      locColorBias = gl.getUniformLocation(program.program, 'u_flightColorBias');
+      (program as GlMeshProgram).locColorScale = locColorScale;
+      (program as GlMeshProgram).locColorBias = locColorBias;
     }
-    if (locColorMultiplier !== null && locColorOffset != null) {
+    if (locColorScale !== null && locColorBias != null) {
       gl.uniform4f(
-        locColorMultiplier,
-        colorTransform.redMultiplier,
-        colorTransform.greenMultiplier,
-        colorTransform.blueMultiplier,
-        colorTransform.alphaMultiplier,
+        locColorScale,
+        colorScaleBias.redScale,
+        colorScaleBias.greenScale,
+        colorScaleBias.blueScale,
+        colorScaleBias.alphaScale,
       );
       gl.uniform4f(
-        locColorOffset,
-        colorTransform.redOffset / 255,
-        colorTransform.greenOffset / 255,
-        colorTransform.blueOffset / 255,
-        colorTransform.alphaOffset / 255,
+        locColorBias,
+        colorScaleBias.redBias,
+        colorScaleBias.greenBias,
+        colorScaleBias.blueBias,
+        colorScaleBias.alphaBias,
       );
     }
   }

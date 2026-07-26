@@ -37,7 +37,7 @@ function makeProxy(source: BitmapText): RenderProxy2D {
     alpha: 1,
     material: null,
     materialData: null,
-    colorTransform: null,
+    colorScaleBias: null,
     renderer: null,
     traverseChildren: false,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },

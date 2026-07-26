@@ -32,8 +32,8 @@ describe('Adjustment', () => {
     });
 
     it('accepts any string kind', () => {
-      const adjustment: Adjustment = { kind: 'ColorTransform' };
-      expect(adjustment.kind).toBe('ColorTransform');
+      const adjustment: Adjustment = { kind: 'ColorScaleBiasAdjustment' };
+      expect(adjustment.kind).toBe('ColorScaleBiasAdjustment');
     });
   });
 });

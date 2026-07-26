@@ -1,26 +1,28 @@
 import { createColorMatrixAdjustment, createTintAdjustment } from '@flighthq/adjustments';
 import { getEntityRuntime } from '@flighthq/entity';
+import {
+  addNodeColorAdjustment,
+  getNodeColorAdjustments,
+  setNodeColorAdjustments,
+  setNodeColorAdjustmentsTint,
+} from '@flighthq/node';
 import type { BoundsNode, Node2D, Node2DData, Node2DRuntime, PartialNode, Rectangle } from '@flighthq/types';
 import { BlendMode, DisplayObjectKind, Node2DTraitsKey } from '@flighthq/types';
 
 import {
-  addNode2DColorAdjustment,
   createDisplayObject,
   createNode2D,
   createNode2DRuntime,
-  getNode2DColorAdjustments,
   getNode2DRuntime,
   isNode2D,
   setNode2DClip,
-  setNode2DColorAdjustments,
-  setNode2DColorAdjustmentTint,
 } from './displayObject';
 
 function getRuntime_(obj: Node2D): Node2DRuntime {
   return getEntityRuntime(obj) as Node2DRuntime;
 }
 
-describe('addNode2DColorAdjustment', () => {
+describe('addNodeColorAdjustment', () => {
   let obj: Node2D;
   beforeEach(() => {
     obj = createDisplayObject();
@@ -28,19 +30,19 @@ describe('addNode2DColorAdjustment', () => {
 
   it('appends to a fresh (null) stack and invalidates appearance', () => {
     const idBefore = getRuntime_(obj).appearanceId;
-    const adjustment = { kind: 'ColorTransformAdjustment' } as never;
-    addNode2DColorAdjustment(obj, adjustment);
-    expect(getNode2DColorAdjustments(obj)).toEqual([adjustment]);
+    const adjustment = { kind: 'ColorScaleBiasAdjustment' } as never;
+    addNodeColorAdjustment(obj, adjustment);
+    expect(getNodeColorAdjustments(obj)).toEqual([adjustment]);
     expect(getRuntime_(obj).appearanceId).not.toBe(idBefore);
   });
 
   it('appends to an existing stack without mutating the previous array', () => {
     const a = { kind: 'A' } as never;
     const b = { kind: 'B' } as never;
-    addNode2DColorAdjustment(obj, a);
-    const first = getNode2DColorAdjustments(obj);
-    addNode2DColorAdjustment(obj, b);
-    expect(getNode2DColorAdjustments(obj)).toEqual([a, b]);
+    addNodeColorAdjustment(obj, a);
+    const first = getNodeColorAdjustments(obj);
+    addNodeColorAdjustment(obj, b);
+    expect(getNodeColorAdjustments(obj)).toEqual([a, b]);
     expect(first).toEqual([a]); // the earlier array was not mutated
   });
 });
@@ -136,17 +138,17 @@ describe('createNode2DRuntime', () => {
   });
 });
 
-describe('getNode2DColorAdjustments', () => {
-  it('defaults to null on a fresh node', () => {
-    expect(getNode2DColorAdjustments(createDisplayObject())).toBeNull();
-  });
-});
-
 describe('getNode2DRuntime', () => {
   it('returns the runtime for a Node2D', () => {
     const obj = createDisplayObject();
     const runtime = getNode2DRuntime(obj);
     expect(runtime).not.toBeNull();
+  });
+});
+
+describe('getNodeColorAdjustments', () => {
+  it('defaults to null on a fresh node', () => {
+    expect(getNodeColorAdjustments(createDisplayObject())).toBeNull();
   });
 });
 
@@ -190,7 +192,7 @@ describe('setNode2DClip', () => {
   });
 });
 
-describe('setNode2DColorAdjustments', () => {
+describe('setNodeColorAdjustments', () => {
   let obj: Node2D;
   beforeEach(() => {
     obj = createDisplayObject();
@@ -199,39 +201,39 @@ describe('setNode2DColorAdjustments', () => {
   it('sets the stack and invalidates appearance', () => {
     const idBefore = getRuntime_(obj).appearanceId;
     const stack = [createTintAdjustment(0xffffffff)];
-    setNode2DColorAdjustments(obj, stack);
-    expect(getNode2DColorAdjustments(obj)).toBe(stack);
+    setNodeColorAdjustments(obj, stack);
+    expect(getNodeColorAdjustments(obj)).toBe(stack);
     expect(getRuntime_(obj).appearanceId).not.toBe(idBefore);
   });
 
   it('accepts null', () => {
-    setNode2DColorAdjustments(obj, [createTintAdjustment(0xffffffff)]);
-    setNode2DColorAdjustments(obj, null);
-    expect(getNode2DColorAdjustments(obj)).toBeNull();
+    setNodeColorAdjustments(obj, [createTintAdjustment(0xffffffff)]);
+    setNodeColorAdjustments(obj, null);
+    expect(getNodeColorAdjustments(obj)).toBeNull();
   });
 
   it('caches a complete channel-mixing matrix without marking it unsupported', () => {
-    const matrix = [1, 0.5, 0, 0, 10, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0];
-    setNode2DColorAdjustments(obj, [createColorMatrixAdjustment(matrix)]);
+    const matrix = [1, 0.5, 0, 0, 0.1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0];
+    setNodeColorAdjustments(obj, [createColorMatrixAdjustment(matrix)]);
     expect(getNode2DRuntime(obj).resolvedColorMatrix).toEqual(matrix);
-    expect(getNode2DRuntime(obj).colorAdjustmentsChannelMixing).toBe(false);
+    expect(getNode2DRuntime(obj).colorAdjustmentsUnsupported).toBe(false);
   });
 });
 
-describe('setNode2DColorAdjustmentTint', () => {
+describe('setNodeColorAdjustmentsTint', () => {
   it('replaces the stack with one TintAdjustment built from the packed color', () => {
     const obj = createDisplayObject();
-    setNode2DColorAdjustmentTint(obj, 0xff0000ff);
-    const stack = getNode2DColorAdjustments(obj);
+    setNodeColorAdjustmentsTint(obj, 0xff0000ff);
+    const stack = getNodeColorAdjustments(obj);
     expect(stack?.length).toBe(1);
     expect(stack?.[0].kind).toBe('TintAdjustment');
   });
 
   it('replaces any prior adjustments rather than layering', () => {
     const obj = createDisplayObject();
-    setNode2DColorAdjustmentTint(obj, 0xff0000ff);
-    setNode2DColorAdjustmentTint(obj, 0x00ff00ff);
-    const stack = getNode2DColorAdjustments(obj);
+    setNodeColorAdjustmentsTint(obj, 0xff0000ff);
+    setNodeColorAdjustmentsTint(obj, 0x00ff00ff);
+    const stack = getNodeColorAdjustments(obj);
     expect(stack?.length).toBe(1);
   });
 });

@@ -4,7 +4,7 @@
 // over the node's universal appearance (alpha maps to globalAlpha and is handled separately,
 // so it is intentionally absent here).
 //
-// Canvas materials are intentionally sparse: most appearance effects (color transform, blur)
+// Canvas materials are intentionally sparse: most appearance effects (color adjustment, blur)
 // are offscreen-filter territory on Canvas, not materials. Anything needing work around the
 // draw rather than draw-state is a filter pass, not a material.
 export interface CanvasMaterialState {

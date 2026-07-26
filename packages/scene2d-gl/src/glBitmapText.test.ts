@@ -1,5 +1,5 @@
 import { createBitmapText, getBitmapTextPages, updateBitmapText } from '@flighthq/bitmaptext';
-import { setNode2DColorAdjustmentTint } from '@flighthq/scene2d';
+import { setNodeColorAdjustmentsTint } from '@flighthq/node';
 import type { BitmapText, GlyphEntry, GlyphSource, ImageResource, RenderProxy2D } from '@flighthq/types';
 
 import { defaultGlBitmapTextRenderer } from './glBitmapText';
@@ -29,14 +29,14 @@ function createTestGlyphSource(): GlyphSource {
   };
 }
 
-function makeProxy(source: BitmapText, colorTransform: unknown = null): RenderProxy2D {
+function makeProxy(source: BitmapText, colorScaleBias: unknown = null): RenderProxy2D {
   return {
     source,
     blendMode: 0,
     alpha: 1,
     material: null,
     materialData: null,
-    colorTransform,
+    colorScaleBias,
     renderer: null,
     traverseChildren: false,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
@@ -74,26 +74,26 @@ describe('defaultGlBitmapTextRenderer.submit', () => {
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
-  it('folds the node color transform in when the adjustment fold is enabled', () => {
+  it('folds the node color adjustment in when the adjustment fold is enabled', () => {
     const text = createBitmapText(createTestGlyphSource(), { text: 'A' });
-    setNode2DColorAdjustmentTint(text, 0x000000ff);
+    setNodeColorAdjustmentsTint(text, 0x000000ff);
     updateBitmapText(text);
 
     const { state, gl } = createGlState();
     registerStandardGlMaterial(state);
     registerGlColorAdjustmentMaterialFeature(state);
-    // The resolved color transform arrives on the proxy; submit must draw without throwing through the fold.
+    // The resolved color adjustment arrives on the proxy; submit must draw without throwing through the fold.
     defaultGlBitmapTextRenderer.submit(
       state,
       makeProxy(text, {
-        redMultiplier: 0,
-        greenMultiplier: 0,
-        blueMultiplier: 0,
-        alphaMultiplier: 1,
-        redOffset: 0,
-        greenOffset: 0,
-        blueOffset: 0,
-        alphaOffset: 0,
+        redScale: 0,
+        greenScale: 0,
+        blueScale: 0,
+        alphaScale: 1,
+        redBias: 0,
+        greenBias: 0,
+        blueBias: 0,
+        alphaBias: 0,
       }),
     );
     flushGlSpriteBatch(state as never);

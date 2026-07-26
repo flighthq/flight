@@ -21,7 +21,7 @@ export function getGlShader(renderProxy: RenderProxy2D): GlBitmapShader | undefi
 
 // Registers the bitmap shader to draw nodes whose material has the given kind. Keeps the render path
 // generic: resolveGlShader looks shaders up by material kind and knows nothing about which kinds
-// mean what. Material-specific knowledge (e.g. color transform) lives in the shader + this call.
+// mean what. Material-specific knowledge (e.g. color adjustment) lives in the shader + this call.
 export function registerGlMaterialShader(state: GlRenderState, kind: Kind, shader: GlBitmapShader): void {
   const runtime = getGlRenderStateRuntime(state);
   (runtime.materialBitmapShaderMap ??= new Map()).set(kind, shader);

@@ -15,7 +15,7 @@ import {
   drawWgpuQuadWithTransform,
   destroyWgpuVideoTexture,
   enableWgpuBlendModeSupport,
-  getWgpuRenderProxyColorTransform,
+  getWgpuRenderProxyColorScaleBias,
   resolveWgpuSmoothingBindGroup,
   submitWgpuQuadDraw,
   updateWgpuTextureEntry,
@@ -251,15 +251,15 @@ describe('enableWgpuBlendModeSupport', () => {
   });
 });
 
-describe('getWgpuRenderProxyColorTransform', () => {
-  it('returns null when the node has no color transform', () => {
-    expect(getWgpuRenderProxyColorTransform({} as never)).toBeNull();
-    expect(getWgpuRenderProxyColorTransform({ colorTransform: null } as never)).toBeNull();
+describe('getWgpuRenderProxyColorScaleBias', () => {
+  it('returns null when the node has no color adjustment', () => {
+    expect(getWgpuRenderProxyColorScaleBias({} as never)).toBeNull();
+    expect(getWgpuRenderProxyColorScaleBias({ colorScaleBias: null } as never)).toBeNull();
   });
 
-  it('returns the resolved node-level color transform trait', () => {
-    const colorTransform = { redMultiplier: 0.5 };
-    expect(getWgpuRenderProxyColorTransform({ colorTransform } as never)).toBe(colorTransform);
+  it('returns the resolved node-level color adjustment trait', () => {
+    const colorScaleBias = { redScale: 0.5 };
+    expect(getWgpuRenderProxyColorScaleBias({ colorScaleBias } as never)).toBe(colorScaleBias);
   });
 });
 

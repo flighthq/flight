@@ -21,13 +21,13 @@ export function isColorLutAdjustment(operation: Readonly<{ kind: string }>): ope
   return typeof (operation as Readonly<Partial<ColorLutAdjustment>>).transform === 'function';
 }
 
-// Wraps a 4×5 color matrix (adjustments convention: linear RGBA coefficients + a 0–255 offset column) as
+// Wraps a 4×5 color matrix (linear RGBA coefficients + normalized-linear bias column) as
 // an rgb→rgb transform on normalized color. Alpha is assumed opaque (1) — the LUT is a 3D rgb cube, so a
 // matrix's alpha→rgb coupling is not represented; pure color matrices (the common case) bake exactly.
 function colorMatrixTransform(m: Readonly<number[]>): ColorTransformFunction {
   return (out, r, g, b) => {
-    out[0] = m[0] * r + m[1] * g + m[2] * b + m[3] + m[4] / 255;
-    out[1] = m[5] * r + m[6] * g + m[7] * b + m[8] + m[9] / 255;
-    out[2] = m[10] * r + m[11] * g + m[12] * b + m[13] + m[14] / 255;
+    out[0] = m[0] * r + m[1] * g + m[2] * b + m[3] + m[4];
+    out[1] = m[5] * r + m[6] * g + m[7] * b + m[8] + m[9];
+    out[2] = m[10] * r + m[11] * g + m[12] * b + m[13] + m[14];
   };
 }

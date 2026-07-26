@@ -8,6 +8,7 @@ export * from './colorLutAdjustment';
 export * from './colorLutCache';
 export * from './colorMatrixAdjustment';
 export * from './colorMatrixMath';
+export * from './colorScaleBiasAdjustment';
 export * from './exposureAdjustment';
 export * from './grayscaleAdjustment';
 export * from './hueSaturationAdjustment';

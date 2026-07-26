@@ -122,8 +122,8 @@ export function destroyGlRenderState(state: GlRenderState): void {
   if (runtime.defaultBitmapShader) programs.add(runtime.defaultBitmapShader.program);
   if (runtime.particleShader) programs.add(runtime.particleShader.program);
   if (runtime.quadBatchShader) programs.add(runtime.quadBatchShader.program);
-  if (runtime.colorTransformInstancedShader) programs.add(runtime.colorTransformInstancedShader.program);
-  if (runtime.uniformColorTransformShader) programs.add(runtime.uniformColorTransformShader.program);
+  if (runtime.colorScaleBiasInstancedShader) programs.add(runtime.colorScaleBiasInstancedShader.program);
+  if (runtime.uniformColorScaleBiasShader) programs.add(runtime.uniformColorScaleBiasShader.program);
   for (const program of programs) gl.deleteProgram(program);
 
   gl.deleteBuffer(runtime.quadVertexBuffer);
@@ -133,7 +133,7 @@ export function destroyGlRenderState(state: GlRenderState): void {
   if (runtime.quadBatchCornerBuffer) gl.deleteBuffer(runtime.quadBatchCornerBuffer);
   if (runtime.spriteBatchInstanceBuffer) gl.deleteBuffer(runtime.spriteBatchInstanceBuffer);
   if (runtime.spriteBatchMaterialBuffer) gl.deleteBuffer(runtime.spriteBatchMaterialBuffer);
-  if (runtime.spriteBatchColorTransformBuffer) gl.deleteBuffer(runtime.spriteBatchColorTransformBuffer);
+  if (runtime.spriteBatchColorScaleBiasBuffer) gl.deleteBuffer(runtime.spriteBatchColorScaleBiasBuffer);
 }
 
 // Resolves the package-private GPU runtime attached to a GlRenderState. Mutable by design: the

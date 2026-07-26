@@ -38,7 +38,7 @@ export interface GlScene3DDrawEntry {
   alpha: number;
   clipW: number;
   colorMatrix: object | null;
-  colorTransform: object | null;
+  colorScaleBias: object | null;
   lightBlock: Scene3DLightBlock;
   material: object;
   mesh: object;

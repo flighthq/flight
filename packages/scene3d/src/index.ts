@@ -8,7 +8,6 @@ export * from './sceneDocument';
 export * from './sceneMaterial';
 export * from './sceneNode';
 export * from './sceneNodeAppearance';
-export * from './sceneNodeColorAdjustment';
 export * from './sceneNodeBounds';
 export * from './sceneNodeCulling';
 export * from './sceneNodeDispose';

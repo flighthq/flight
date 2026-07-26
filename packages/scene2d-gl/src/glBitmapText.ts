@@ -9,7 +9,7 @@ import {
   ensureGlQuadBatchShader,
   packGlSpriteBatchMaterialInstance,
   prepareGlSpriteBatchWrite,
-  recordGlSpriteBatchColorTransform,
+  recordGlSpriteBatchColorScaleBias,
 } from './glSpriteBatch';
 
 // Per-instance stride, matching the QuadBatch/Tilemap sprite path (13 floats: world transform + region +
@@ -17,8 +17,8 @@ import {
 const INSTANCE_FLOATS = 13;
 
 // Draws a BitmapText leaf: one batched sprite pass per glyph-atlas page (each page binds its own atlas
-// image, so a multi-page source issues one draw per page). The node's resolved color transform folds in
-// as a whole-node tint on every glyph — the same `recordGlSpriteBatchColorTransform` path a tinted
+// image, so a multi-page source issues one draw per page). The node's resolved color adjustment folds in
+// as a whole-node tint on every glyph — the same `recordGlSpriteBatchColorScaleBias` path a tinted
 // QuadBatch uses — realized only when `registerGlColorAdjustmentMaterialFeature` has installed the fold. Mirrors
 // `submitGlQuadBatch`'s vector2 inner loop, sourced from the page's own `ids`/`transforms` arrays.
 function submitGlBitmapText(state: GlRenderState, node: RenderProxy2D): void {
@@ -30,7 +30,7 @@ function submitGlBitmapText(state: GlRenderState, node: RenderProxy2D): void {
   const materialRenderer = resolveGlMaterialRenderer(state, material);
   if (materialRenderer === null) return;
   const nodeMaterialData = node.materialData;
-  const nodeColorTransform = node.colorMatrix ?? node.colorTransform;
+  const nodeColorScaleBias = node.colorMatrix ?? node.colorScaleBias;
   const pt = node.transform2D;
   const pa = pt.a;
   const pb = pt.b;
@@ -47,7 +47,7 @@ function submitGlBitmapText(state: GlRenderState, node: RenderProxy2D): void {
 
     ensureGlQuadBatchShader(state);
     // prepareGlSpriteBatchWrite may flush the prior page's batch (each page binds a different image), so
-    // read the running instance count AFTER it so material/color-transform indices align with `base`.
+    // read the running instance count AFTER it so material/color-adjustment indices align with `base`.
     const base = prepareGlSpriteBatchWrite(
       state,
       image,
@@ -90,7 +90,7 @@ function submitGlBitmapText(state: GlRenderState, node: RenderProxy2D): void {
       instanceData[writeBase + 11] = (region.y + region.height) * ih;
       instanceData[writeBase + 12] = alpha;
       packGlSpriteBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
-      recordGlSpriteBatchColorTransform(state, nodeColorTransform, startCount + drawCount);
+      recordGlSpriteBatchColorScaleBias(state, nodeColorScaleBias, startCount + drawCount);
       writeBase += INSTANCE_FLOATS;
       drawCount++;
     }

@@ -1,5 +1,5 @@
 import type { BlendMode } from './BlendMode';
-import type { ColorTransform } from './ColorTransform';
+import type { ColorScaleBias } from './ColorScaleBias';
 import type { Entity, Kind } from './Entity';
 import type { Material, MaterialData } from './Material';
 import type { Renderable } from './Renderable';
@@ -15,16 +15,16 @@ export interface RenderProxy extends Entity {
   appearanceFrameId: number;
   blendMode: BlendMode | null;
   // The node's color-adjustment stack (NodeRuntime.colorAdjustments) resolved to a single affine
-  // ColorTransform — the form the inline fold consumes. Folded into the draw as an Adjustment: a uniform
+  // ColorScaleBias — the form the inline fold consumes. Folded into the draw as an Adjustment: a uniform
   // for a whole-batch tint, per-instance attributes when tints vary across a batch. Null → no tint.
-  // Populated by the color-transform hook during the render walk from the node's dirty-cached
-  // resolvedColorTransform (re-fused only when the stack changes). It is NOT a material and does not key
+  // Populated by the color-adjustment hook during the render walk from the node's dirty-cached
+  // resolvedColorScaleBias (re-fused only when the stack changes). It is NOT a material and does not key
   // the batch: a tinted and an untinted node with the same texture+blend batch together, the batch
-  // promoting to the color-transform shader variant when any member is tinted. Per-quad tints
+  // promoting to the color-adjustment shader variant when any member is tinted. Per-quad tints
   // (QuadBatch/Tilemap) come from the source's per-quad data, overriding this.
-  colorTransform: ColorTransform | null;
+  colorScaleBias: ColorScaleBias | null;
   // Full 4×5 pointwise matrix for the uncommon channel-mixing path. Mutually exclusive with
-  // colorTransform; presence widens only the promoted adjustment stream.
+  // colorScaleBias; presence widens only the promoted adjustment stream.
   colorMatrix?: readonly number[] | null;
   // Resolved material the backend renderer draws this node with, and its per-node data. Null →
   // default pipeline. Populated by the material hook during the render walk; the batcher keys on

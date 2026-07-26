@@ -412,7 +412,7 @@ struct Ibl {
   flightColor = ${
     colorMatrix
       ? 'applyFlightColorMatrix(flightColor, draw.flightColorMatrix0, draw.flightColorMatrix1, draw.flightColorMatrix2, draw.flightColorMatrix3, draw.flightColorMatrixOffset)'
-      : 'applyFlightColorAdjustment(flightColor, draw.flightColorMultiplier, draw.flightColorOffset)'
+      : 'applyFlightColorAdjustment(flightColor, draw.flightColorScale, draw.flightColorBias)'
   };
   flightColor.a = flightColor.a * in.objectAlpha;
   return flightColor;`,

@@ -78,9 +78,9 @@ export function makeShaderLoc(): GlShaderLocations {
     locTexCoord: 1,
     locMatrix: {} as WebGLUniformLocation,
     locAlpha: {} as WebGLUniformLocation,
-    locColorMultiplier: {} as WebGLUniformLocation,
-    locColorOffset: {} as WebGLUniformLocation,
-    locHasColorTransform: {} as WebGLUniformLocation,
+    locColorScale: {} as WebGLUniformLocation,
+    locColorBias: {} as WebGLUniformLocation,
+    locHasColorScaleBias: {} as WebGLUniformLocation,
     locTexture: {} as WebGLUniformLocation,
   };
 }

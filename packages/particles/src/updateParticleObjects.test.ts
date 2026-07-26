@@ -9,7 +9,7 @@ function makeObject(): ParticleObject {
   return {
     alpha: 1,
     blendMode: null,
-    colorTransform: null,
+    colorScaleBias: null,
     rotation: 0,
     scaleX: 1,
     scaleY: 1,

@@ -1,4 +1,4 @@
-import type { Adjustment, ColorTransform } from '@flighthq/types';
+import type { Adjustment, ColorScaleBias } from '@flighthq/types';
 
 import {
   COLOR_ADJUSTMENT_AFFINE,
@@ -6,23 +6,23 @@ import {
   COLOR_ADJUSTMENT_NONE,
   isAffineColorMatrix,
   resolveColorAdjustmentsColorMatrix,
-  resolveColorAdjustmentsColorTransform,
+  resolveColorAdjustmentsColorScaleBias,
 } from './colorAdjustmentResolution';
 import { createColorMatrixAdjustment } from './colorMatrixAdjustment';
 import { createIdentityColorMatrix, createSaturationColorMatrix } from './colorMatrixMath';
 
-function makeColorTransform(fields: Partial<ColorTransform> = {}): ColorTransform {
+function makeColorScaleBias(fields: Partial<ColorScaleBias> = {}): ColorScaleBias {
   return {
-    redMultiplier: 1,
-    greenMultiplier: 1,
-    blueMultiplier: 1,
-    alphaMultiplier: 1,
-    redOffset: 0,
-    greenOffset: 0,
-    blueOffset: 0,
-    alphaOffset: 0,
+    redScale: 1,
+    greenScale: 1,
+    blueScale: 1,
+    alphaScale: 1,
+    redBias: 0,
+    greenBias: 0,
+    blueBias: 0,
+    alphaBias: 0,
     ...fields,
-  } as ColorTransform;
+  } as ColorScaleBias;
 }
 
 describe('isAffineColorMatrix', () => {
@@ -48,42 +48,42 @@ describe('resolveColorAdjustmentsColorMatrix', () => {
   });
 });
 
-describe('resolveColorAdjustmentsColorTransform', () => {
+describe('resolveColorAdjustmentsColorScaleBias', () => {
   it('returns NONE for a null or empty stack', () => {
-    const out = makeColorTransform();
-    expect(resolveColorAdjustmentsColorTransform(null, out)).toBe(COLOR_ADJUSTMENT_NONE);
-    expect(resolveColorAdjustmentsColorTransform([], out)).toBe(COLOR_ADJUSTMENT_NONE);
+    const out = makeColorScaleBias();
+    expect(resolveColorAdjustmentsColorScaleBias(null, out)).toBe(COLOR_ADJUSTMENT_NONE);
+    expect(resolveColorAdjustmentsColorScaleBias([], out)).toBe(COLOR_ADJUSTMENT_NONE);
   });
 
   it('resolves a single generic affine matrix exactly', () => {
-    const adjustment = createColorMatrixAdjustment([0.5, 0, 0, 0, 40, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0]);
-    const out = makeColorTransform();
-    expect(resolveColorAdjustmentsColorTransform([adjustment], out)).toBe(COLOR_ADJUSTMENT_AFFINE);
-    expect(out.redMultiplier).toBe(0.5);
-    expect(out.greenMultiplier).toBe(0);
-    expect(out.redOffset).toBe(40);
-    expect(out.alphaMultiplier).toBe(1);
+    const adjustment = createColorMatrixAdjustment([0.5, 0, 0, 0, 0.4, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0]);
+    const out = makeColorScaleBias();
+    expect(resolveColorAdjustmentsColorScaleBias([adjustment], out)).toBe(COLOR_ADJUSTMENT_AFFINE);
+    expect(out.redScale).toBe(0.5);
+    expect(out.greenScale).toBe(0);
+    expect(out.redBias).toBe(0.4);
+    expect(out.alphaScale).toBe(1);
   });
 
   it('fuses two affine adjustments (multipliers compose)', () => {
     const a = createColorMatrixAdjustment([0.5, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0]);
     const b = createColorMatrixAdjustment([0.5, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0]);
-    const out = makeColorTransform();
-    expect(resolveColorAdjustmentsColorTransform([a, b], out)).toBe(COLOR_ADJUSTMENT_AFFINE);
-    expect(out.redMultiplier).toBe(0.25);
+    const out = makeColorScaleBias();
+    expect(resolveColorAdjustmentsColorScaleBias([a, b], out)).toBe(COLOR_ADJUSTMENT_AFFINE);
+    expect(out.redScale).toBe(0.25);
   });
 
   it('reports channel-mixing and writes only the affine part for an off-diagonal stack', () => {
     const saturation: Adjustment = { kind: 'Saturation', colorMatrix: createSaturationColorMatrix(0) } as Adjustment;
-    const out = makeColorTransform();
-    expect(resolveColorAdjustmentsColorTransform([saturation], out)).toBe(COLOR_ADJUSTMENT_CHANNEL_MIXING);
+    const out = makeColorScaleBias();
+    expect(resolveColorAdjustmentsColorScaleBias([saturation], out)).toBe(COLOR_ADJUSTMENT_CHANNEL_MIXING);
     // Only the diagonal (grayscale luma weight for red) is written; off-diagonal mix is dropped.
-    expect(out.redMultiplier).toBeCloseTo(0.299);
+    expect(out.redScale).toBeCloseTo(0.299);
   });
 
   it('reports channel-mixing when a non-matrix (LUT) op is present', () => {
     const lut: Adjustment = { kind: 'acme.Lut' };
-    const out = makeColorTransform();
-    expect(resolveColorAdjustmentsColorTransform([lut], out)).toBe(COLOR_ADJUSTMENT_CHANNEL_MIXING);
+    const out = makeColorScaleBias();
+    expect(resolveColorAdjustmentsColorScaleBias([lut], out)).toBe(COLOR_ADJUSTMENT_CHANNEL_MIXING);
   });
 });

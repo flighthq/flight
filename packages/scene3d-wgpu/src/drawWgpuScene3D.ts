@@ -5,7 +5,7 @@ import { declareWgpuRenderTargetColorSpace, getWgpuRenderStateRuntime } from '@f
 import { getNode3DRuntime, getNode3DWorldAlpha } from '@flighthq/scene3d';
 import type {
   Camera3D,
-  ColorTransform,
+  ColorScaleBias,
   Material,
   Matrix3,
   Matrix4,
@@ -76,7 +76,7 @@ export function drawWgpuScene3D(
     const clipZ = vp[2] * wx + vp[6] * wy + vp[10] * wz + vp[14];
     const objectAlpha = getNode3DWorldAlpha(mesh);
     const nodeRuntime = getNode3DRuntime(mesh);
-    const colorTransform = nodeRuntime.resolvedColorTransform;
+    const colorScaleBias = nodeRuntime.resolvedColorScaleBias;
     const colorMatrix = nodeRuntime.resolvedColorMatrix;
 
     for (let s = 0; s < subsets.length; s++) {
@@ -90,7 +90,7 @@ export function drawWgpuScene3D(
       entry.alpha = objectAlpha;
       entry.depth = clipZ / clipW;
       entry.colorMatrix = colorMatrix;
-      entry.colorTransform = colorTransform;
+      entry.colorScaleBias = colorScaleBias;
       entry.lightBlock = hasPreparedForwardLights ? forwardLights.meshLightBlocks[m] : lightBlock;
       entry.material = resolvedMaterial;
       entry.mesh = mesh;
@@ -147,7 +147,7 @@ function drawEntries(
     setMatrix3NormalFromMatrix4(scratchNormalMatrix, worldMatrix);
     const skinned = isWgpuMeshGpuSkinned(state, entry.mesh);
     const colorAdjusted =
-      colorAdjustmentFeatureEnabled && (entry.colorMatrix !== null || entry.colorTransform !== null);
+      colorAdjustmentFeatureEnabled && (entry.colorMatrix !== null || entry.colorScaleBias !== null);
     const colorMatrix = colorAdjusted && entry.colorMatrix !== null;
 
     if (
@@ -171,7 +171,7 @@ function drawEntries(
     }
 
     proxy.alpha = entry.alpha;
-    proxy.colorTransform = colorAdjusted ? entry.colorTransform : null;
+    proxy.colorScaleBias = colorAdjusted ? entry.colorScaleBias : null;
     proxy.colorMatrix = colorAdjusted ? entry.colorMatrix : null;
     proxy.jointMatrices = skinned ? entry.mesh.skin!.skeleton.jointMatrices : null;
     proxy.material = entry.material;
@@ -204,7 +204,7 @@ function compareBlendedEntriesDescending(a: WgpuScene3DDrawEntry, b: WgpuScene3D
 interface DrawEntry {
   alpha: number;
   colorMatrix: readonly number[] | null;
-  colorTransform: Readonly<ColorTransform> | null;
+  colorScaleBias: Readonly<ColorScaleBias> | null;
   depth: number;
   lightBlock: Readonly<Scene3DLightBlock>;
   material: Readonly<Material>;
@@ -227,7 +227,7 @@ function createDrawEntry(): WgpuScene3DDrawEntry {
   return {
     alpha: 1,
     colorMatrix: null,
-    colorTransform: null,
+    colorScaleBias: null,
     depth: 0,
     lightBlock: null!,
     material: DEFAULT_MATERIAL,
@@ -243,7 +243,7 @@ function createDrawEntry(): WgpuScene3DDrawEntry {
 const proxy: Scene3DRenderProxy = {
   alpha: 1,
   colorMatrix: null,
-  colorTransform: null,
+  colorScaleBias: null,
   jointMatrices: null,
   material: { kind: StandardMaterialKind } as Material,
   normalMatrix: createMatrix3() as Matrix3,

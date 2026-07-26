@@ -8,15 +8,15 @@ import { BatchFormat } from '@flighthq/types';
 import {
   packWgpuSpriteBatchMaterialInstance,
   prepareWgpuSpriteBatchWrite,
-  recordWgpuSpriteBatchColorTransform,
+  recordWgpuSpriteBatchColorScaleBias,
   SPRITE_INSTANCE_FLOATS,
 } from './wgpuSpriteBatch';
 
 const INSTANCE_STRIDE_FLOATS = SPRITE_INSTANCE_FLOATS;
 
 // Draws a BitmapText leaf on WebGPU: one batched sprite pass per glyph-atlas page. The node's resolved
-// color transform folds in as a whole-node tint on every glyph (the same
-// `recordWgpuSpriteBatchColorTransform` path a tinted QuadBatch uses). Mirrors `submitWgpuQuadBatch`'s
+// color adjustment folds in as a whole-node tint on every glyph (the same
+// `recordWgpuSpriteBatchColorScaleBias` path a tinted QuadBatch uses). Mirrors `submitWgpuQuadBatch`'s
 // vector2 inner loop, sourced from each page's own `ids`/`transforms` arrays.
 function submitWgpuBitmapText(state: WgpuRenderState, node: RenderProxy2D): void {
   const runtime = getWgpuRenderStateRuntime(state);
@@ -29,7 +29,7 @@ function submitWgpuBitmapText(state: WgpuRenderState, node: RenderProxy2D): void
   const materialRenderer = resolveWgpuMaterialRenderer(state, material);
   if (materialRenderer === null) return;
   const nodeMaterialData = node.materialData;
-  const nodeColorTransform = node.colorMatrix ?? node.colorTransform;
+  const nodeColorScaleBias = node.colorMatrix ?? node.colorScaleBias;
   const pt = node.transform2D;
   const pa = pt.a;
   const pb = pt.b;
@@ -45,7 +45,7 @@ function submitWgpuBitmapText(state: WgpuRenderState, node: RenderProxy2D): void
     if (image === null || !hasImageResourcePixels(image) || page.instanceCount === 0) continue;
 
     // prepareWgpuSpriteBatchWrite may flush the prior page's batch (each page binds a different image),
-    // so read the running instance count AFTER it so material/color-transform indices align with `base`.
+    // so read the running instance count AFTER it so material/color-adjustment indices align with `base`.
     const base = prepareWgpuSpriteBatchWrite(
       state,
       image,
@@ -88,7 +88,7 @@ function submitWgpuBitmapText(state: WgpuRenderState, node: RenderProxy2D): void
       instanceData[writeBase + 11] = (region.y + region.height) * ih;
       instanceData[writeBase + 12] = alpha;
       packWgpuSpriteBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
-      recordWgpuSpriteBatchColorTransform(state, nodeColorTransform, startCount + drawCount);
+      recordWgpuSpriteBatchColorScaleBias(state, nodeColorScaleBias, startCount + drawCount);
       writeBase += INSTANCE_STRIDE_FLOATS;
       drawCount++;
     }

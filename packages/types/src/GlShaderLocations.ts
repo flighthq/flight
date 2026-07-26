@@ -6,9 +6,9 @@ export interface GlShaderLocations {
   locTexCoord: number;
   locMatrix: WebGLUniformLocation;
   locAlpha: WebGLUniformLocation;
-  locColorMultiplier?: WebGLUniformLocation;
-  locColorOffset?: WebGLUniformLocation;
-  locHasColorTransform?: WebGLUniformLocation;
+  locColorScale?: WebGLUniformLocation;
+  locColorBias?: WebGLUniformLocation;
+  locHasColorScaleBias?: WebGLUniformLocation;
   locTexture: WebGLUniformLocation;
 }
 

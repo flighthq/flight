@@ -787,8 +787,8 @@ export function spliceWgpuColorAdjustmentPrelude(
   flightColorMatrix2 : vec4f,
   flightColorMatrix3 : vec4f,
   flightColorMatrixOffset : vec4f,`
-    : `  flightColorMultiplier : vec4f,
-  flightColorOffset : vec4f,`;
+    : `  flightColorScale : vec4f,
+  flightColorBias : vec4f,`;
   return (
     (matrix ? feature.matrixFragmentShaderChunk : feature.fragmentShaderChunk) +
     source.replace(
@@ -928,18 +928,18 @@ export function writeWgpuDrawUniform(state: WgpuRenderState, proxy: Readonly<Sce
       u[target + 1] = colorMatrix[source + 1]!;
       u[target + 2] = colorMatrix[source + 2]!;
       u[target + 3] = colorMatrix[source + 3]!;
-      u[floatOffset + 60 + row] = colorMatrix[source + 4]! / 255;
+      u[floatOffset + 60 + row] = colorMatrix[source + 4]!;
     }
-  } else if (proxy.colorTransform != null) {
-    const colorTransform = proxy.colorTransform;
-    u[floatOffset + 44] = colorTransform.redMultiplier;
-    u[floatOffset + 45] = colorTransform.greenMultiplier;
-    u[floatOffset + 46] = colorTransform.blueMultiplier;
-    u[floatOffset + 47] = colorTransform.alphaMultiplier;
-    u[floatOffset + 48] = colorTransform.redOffset / 255;
-    u[floatOffset + 49] = colorTransform.greenOffset / 255;
-    u[floatOffset + 50] = colorTransform.blueOffset / 255;
-    u[floatOffset + 51] = colorTransform.alphaOffset / 255;
+  } else if (proxy.colorScaleBias != null) {
+    const colorScaleBias = proxy.colorScaleBias;
+    u[floatOffset + 44] = colorScaleBias.redScale;
+    u[floatOffset + 45] = colorScaleBias.greenScale;
+    u[floatOffset + 46] = colorScaleBias.blueScale;
+    u[floatOffset + 47] = colorScaleBias.alphaScale;
+    u[floatOffset + 48] = colorScaleBias.redBias;
+    u[floatOffset + 49] = colorScaleBias.greenBias;
+    u[floatOffset + 50] = colorScaleBias.blueBias;
+    u[floatOffset + 51] = colorScaleBias.alphaBias;
   }
 
   scene.pendingDrawOffset = offset;

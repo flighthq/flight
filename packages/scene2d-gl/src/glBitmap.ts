@@ -16,7 +16,7 @@ import {
   ensureGlQuadBatchShader,
   packGlSpriteBatchMaterialInstance,
   prepareGlSpriteBatchWrite,
-  recordGlSpriteBatchColorTransform,
+  recordGlSpriteBatchColorScaleBias,
 } from './glSpriteBatch';
 
 interface GlBitmapData {
@@ -111,7 +111,7 @@ export function drawGlBitmap(state: GlRenderState, renderProxy: RenderProxy2D): 
   d[base + 11] = v1;
   d[base + 12] = renderProxy.alpha;
   packGlSpriteBatchMaterialInstance(state, renderProxy.materialData, startCount);
-  recordGlSpriteBatchColorTransform(state, renderProxy.colorMatrix ?? renderProxy.colorTransform, startCount);
+  recordGlSpriteBatchColorScaleBias(state, renderProxy.colorMatrix ?? renderProxy.colorScaleBias, startCount);
   runtime.spriteBatchCount++;
 }
 

@@ -6,7 +6,7 @@ import { getRenderStateRuntime } from './renderState';
 
 // Returns whether the color-adjustment deferral guard is installed on `state`.
 export function areColorAdjustmentGuardsEnabled(state: RenderState): boolean {
-  return getRenderStateRuntime(state).colorAdjustmentChannelMixingGuard != null;
+  return getRenderStateRuntime(state).colorAdjustmentUnsupportedGuard != null;
 }
 
 // Installs the shakeable color-adjustment guard on `state`: when a node's stack contains a non-matrix
@@ -15,16 +15,16 @@ export function areColorAdjustmentGuardsEnabled(state: RenderState): boolean {
 // default — costs the render walk nothing, since the message and @flighthq/log dependency live only in
 // this separately-imported module. Idempotent.
 export function enableColorAdjustmentGuards(state: RenderState): void {
-  getRenderStateRuntime(state).colorAdjustmentChannelMixingGuard = warnColorAdjustmentChannelMixingNotInlineable;
+  getRenderStateRuntime(state).colorAdjustmentUnsupportedGuard = warnUnsupportedColorAdjustment;
 }
 
-function warnColorAdjustmentChannelMixingNotInlineable(): void {
+function warnUnsupportedColorAdjustment(): void {
   logOnce(
-    'render:color-adjustment-channel-mixing-not-inlineable',
+    'render:unsupported-color-adjustment',
     LogLevel.Warn,
     {
       message:
-        'updateRenderProxyColorTransform: a per-object color adjustment is not inline-able because it has no 4×5 matrix representation. Use an Effect pass for the unsupported operation.',
+        'updateRenderProxyColorScaleBias: a per-object color adjustment is not inline-able because it has no 4×5 matrix representation. Use an Effect pass for the unsupported operation.',
     },
     'render',
   );

@@ -3,7 +3,7 @@ import { noopRendererData } from '@flighthq/render';
 import { resolveGlMaterialRenderer } from '@flighthq/render-gl';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import type {
-  ColorTransform,
+  ColorScaleBias,
   GlRenderState,
   QuadBatch,
   RenderProxy2D,
@@ -16,7 +16,7 @@ import {
   ensureGlQuadBatchShader,
   packGlSpriteBatchMaterialInstance,
   prepareGlSpriteBatchWrite,
-  recordGlSpriteBatchColorTransform,
+  recordGlSpriteBatchColorScaleBias,
 } from './glSpriteBatch';
 
 // Per-instance layout (13 floats = 52 bytes, world-space transforms + per-instance alpha):
@@ -40,9 +40,9 @@ function submitGlQuadBatch(state: GlRenderState, quadBatch: RenderProxy2D): void
   const materialRenderer = resolveGlMaterialRenderer(state, material);
   if (materialRenderer === null) return;
   const nodeMaterialData = quadBatch.materialData;
-  // Per-quad color transforms, overriding the node-level tint for the quads that carry one.
-  const perQuadColorTransform = data.materialData;
-  const nodeColorTransform = quadBatch.colorTransform;
+  // Per-quad color adjustments, overriding the node-level tint for the quads that carry one.
+  const perQuadColorScaleBias = data.materialData;
+  const nodeColorScaleBias = quadBatch.colorScaleBias;
   const nodeColorMatrix = quadBatch.colorMatrix;
   const startCount = runtime.spriteBatchCount;
   const base = prepareGlSpriteBatchWrite(
@@ -110,11 +110,11 @@ function submitGlQuadBatch(state: GlRenderState, quadBatch: RenderProxy2D): void
     instanceData[writeBase + 12] = alpha;
     packGlSpriteBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
     // Per-quad tint overrides the node-level tint (null → the node's, itself possibly null → untinted).
-    const colorTransform =
-      (perQuadColorTransform?.[i] as ColorTransform | TintMaterialData | readonly number[] | null) ??
+    const colorScaleBias =
+      (perQuadColorScaleBias?.[i] as ColorScaleBias | TintMaterialData | readonly number[] | null) ??
       nodeColorMatrix ??
-      nodeColorTransform;
-    recordGlSpriteBatchColorTransform(state, colorTransform, startCount + drawCount);
+      nodeColorScaleBias;
+    recordGlSpriteBatchColorScaleBias(state, colorScaleBias, startCount + drawCount);
     writeBase += INSTANCE_FLOATS;
     drawCount++;
   }

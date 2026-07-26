@@ -1,6 +1,6 @@
 import type {
-  ColorTransform,
-  HasColorTransform,
+  ColorScaleBias,
+  HasColorScaleBias,
   ImageResource,
   RenderProxy,
   RenderProxy2D,
@@ -313,7 +313,7 @@ export function drawWgpuQuad(
   const uniformOffset = writeWgpuQuadUniforms(
     state,
     renderProxy,
-    getWgpuRenderProxyColorTransform(renderProxy),
+    getWgpuRenderProxyColorScaleBias(renderProxy),
     x0,
     y0,
     x1,
@@ -347,7 +347,7 @@ export function drawWgpuQuadWithTransform(
   const uniformOffset = writeWgpuQuadUniforms(
     state,
     { alpha: renderProxy.alpha, transform2D: transform },
-    getWgpuRenderProxyColorTransform(renderProxy),
+    getWgpuRenderProxyColorScaleBias(renderProxy),
     x0,
     y0,
     x1,
@@ -365,10 +365,10 @@ export function enableWgpuBlendModeSupport(state: WgpuRenderState): void {
   state.applyBlendMode = applyWgpuBlendMode;
 }
 
-// Effective node-level color transform for a render node — the resolved HasColorTransform trait. Used
+// Effective node-level color adjustment for a render node — the resolved HasColorScaleBias trait. Used
 // by the immediate (display-object) draw path; the batch path folds it per-instance instead.
-export function getWgpuRenderProxyColorTransform(renderProxy: Readonly<RenderProxy>): ColorTransform | null {
-  return (renderProxy as Readonly<Partial<HasColorTransform>>).colorTransform ?? null;
+export function getWgpuRenderProxyColorScaleBias(renderProxy: Readonly<RenderProxy>): ColorScaleBias | null {
+  return (renderProxy as Readonly<Partial<HasColorScaleBias>>).colorScaleBias ?? null;
 }
 
 // The group(1) bind group a 2D bitmap should sample through for a per-bitmap `smoothing` preference:
