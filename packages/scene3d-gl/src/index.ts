@@ -1,30 +1,33 @@
-export { registerAnisotropyPbrGlMaterial } from './anisotropyPbrGlMeshMaterialRenderer';
-export { registerBlinnPhongGlMaterial } from './blinnPhongGlMeshMaterialRenderer';
-export { registerClearcoatPbrGlMaterial } from './clearcoatPbrGlMeshMaterialRenderer';
-export { registerCustomShaderGlMaterial, registerGlCustomMaterialShader } from './customShaderGlMeshMaterialRenderer';
-export { registerDepthGlMaterial } from './depthGlMeshMaterialRenderer';
-export { drawGlScene3D } from './drawGlScene3D';
-export { registerEmissiveGlMaterial } from './emissiveGlMeshMaterialRenderer';
-export { bakeGlEnvironmentIbl } from './glEnvironmentIblBake';
-export { drawGlEnvironmentSkybox } from './glEnvironmentSkybox';
-export { ensureGlMeshUpload } from './glMeshUpload';
-export { setGlScene3DTime } from './glScene3DTime';
-export { registerBuiltInGlModifierSnippets } from './glShadedBuiltInModifiers';
-export { drawGlScene3DShadowMap } from './glShadowMap';
-export { registerIridescencePbrGlMaterial } from './iridescencePbrGlMeshMaterialRenderer';
-export { registerLambertGlMaterial } from './lambertGlMeshMaterialRenderer';
-export { registerMatcapGlMaterial } from './matcapGlMeshMaterialRenderer';
-export { registerNormalGlMaterial } from './normalGlMeshMaterialRenderer';
-export { registerPhongGlMaterial } from './phongGlMeshMaterialRenderer';
-export { prepareGlScene3DForwardLights } from './prepareGlScene3DForwardLights';
-export { registerStandardPbrGlMaterial } from './registerStandardPbrGlMaterial';
-export { registerShadedGlMaterial } from './shadedGlMeshMaterialRenderer';
-export { registerSheenPbrGlMaterial } from './sheenPbrGlMeshMaterialRenderer';
-export { registerSpecularGlossinessPbrGlMaterial } from './specularGlossinessPbrGlMeshMaterialRenderer';
-export { registerSpecularPbrGlMaterial } from './specularPbrGlMeshMaterialRenderer';
-export { registerSubsurfacePbrGlMaterial } from './subsurfacePbrGlMeshMaterialRenderer';
-export { registerToonGlMaterial } from './toonGlMeshMaterialRenderer';
-export { registerTransmissionVolumePbrGlMaterial } from './transmissionVolumePbrGlMeshMaterialRenderer';
-export { registerUnlitGlMaterial } from './unlitGlMeshMaterialRenderer';
-export { registerVertexColorGlMaterial } from './vertexColorGlMeshMaterialRenderer';
-export { registerWireframeGlMaterial } from './wireframeGlMeshMaterialRenderer';
+export {
+  bakeGlEnvironmentIbl,
+  drawGlEnvironmentSkybox,
+  drawGlScene3D,
+  drawGlScene3DShadowMap,
+  ensureGlMeshUpload,
+  prepareGlScene3DForwardLights,
+  registerAnisotropyPbrGlMaterial,
+  registerBlinnPhongGlMaterial,
+  registerBuiltInGlModifierSnippets,
+  registerClearcoatPbrGlMaterial,
+  registerCustomShaderGlMaterial,
+  registerDepthGlMaterial,
+  registerEmissiveGlMaterial,
+  registerGlCustomMaterialShader,
+  registerIridescencePbrGlMaterial,
+  registerLambertGlMaterial,
+  registerMatcapGlMaterial,
+  registerNormalGlMaterial,
+  registerPhongGlMaterial,
+  registerShadedGlMaterial,
+  registerSheenPbrGlMaterial,
+  registerSpecularGlossinessPbrGlMaterial,
+  registerSpecularPbrGlMaterial,
+  registerStandardPbrGlMaterial,
+  registerSubsurfacePbrGlMaterial,
+  registerToonGlMaterial,
+  registerTransmissionVolumePbrGlMaterial,
+  registerUnlitGlMaterial,
+  registerVertexColorGlMaterial,
+  registerWireframeGlMaterial,
+  setGlScene3DTime,
+} from './contract';

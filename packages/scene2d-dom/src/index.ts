@@ -1,14 +1,16 @@
-export { renderDomBackground } from './domBackground';
-export { defaultDomBitmapRenderer } from './domBitmap';
-export { enableDomRenderCache } from './domCache';
-export { enableDomClipSupport } from './domClip';
-export { enableDomBlendModeSupport } from './domMaterials';
-export { defaultDomNativeTextRenderer } from './domNativeText';
-export { renderDomScene2D } from './domNode2D';
-export { createDomRenderState } from './domRenderState';
-export { defaultDomRichTextRenderer } from './domRichText';
-export { defaultDomScale9ShapeRenderer } from './domScale9Shape';
-export { defaultDomShapeRenderer } from './domShape';
-export { enableDomTextInput } from './domTextInput';
-export { defaultDomTextLabelRenderer } from './domTextLabel';
-export { defaultDomVideoRenderer } from './domVideo';
+export {
+  createDomRenderState,
+  defaultDomBitmapRenderer,
+  defaultDomNativeTextRenderer,
+  defaultDomRichTextRenderer,
+  defaultDomScale9ShapeRenderer,
+  defaultDomShapeRenderer,
+  defaultDomTextLabelRenderer,
+  defaultDomVideoRenderer,
+  enableDomBlendModeSupport,
+  enableDomClipSupport,
+  enableDomRenderCache,
+  enableDomTextInput,
+  renderDomBackground,
+  renderDomScene2D,
+} from './contract';
