@@ -1,12 +1,12 @@
-import { drawGlFullscreenPass } from '@flighthq/render-gl';
+import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type {
   AdvancedBlendMode,
   BlendEffect,
   GlRenderEffectRunner,
   GlRenderState,
   GlRenderTarget,
-} from '@flighthq/types';
-import { AdvancedBlendMode as AdvancedBlendModeValues } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { AdvancedBlendMode as AdvancedBlendModeValues } from '@flighthq/types/contract';
 
 import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache';
 

@@ -1,10 +1,10 @@
-import { createAnimationTrack } from '@flighthq/animation';
-import { createTransform3D } from '@flighthq/geometry';
-import { createStandardPbrMaterial } from '@flighthq/materials';
-import { CANONICAL_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh';
-import { getNodeChildren } from '@flighthq/node';
-import type { MaterialLike, Mesh, Scene3DDocument, Node3D } from '@flighthq/types';
-import { EntityRuntimeKey, Scene3DAnimationPathTranslation, Node3DKind, MeshKind } from '@flighthq/types';
+import { createAnimationTrack } from '@flighthq/animation/contract';
+import { createTransform3D } from '@flighthq/geometry/contract';
+import { createStandardPbrMaterial } from '@flighthq/materials/contract';
+import { CANONICAL_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh/contract';
+import { getNodeChildren } from '@flighthq/node/contract';
+import type { MaterialLike, Mesh, Scene3DDocument, Node3D } from '@flighthq/types/contract';
+import { EntityRuntimeKey, Scene3DAnimationPathTranslation, Node3DKind, MeshKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { isMesh } from './mesh';

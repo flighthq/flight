@@ -1,4 +1,4 @@
-import type { SurfaceGradientBevelOptions, SurfaceGradientGlowOptions, SurfaceRegion } from '@flighthq/types';
+import type { SurfaceGradientBevelOptions, SurfaceGradientGlowOptions, SurfaceRegion } from '@flighthq/types/contract';
 
 import { blurSurfacePixelsHorizontal, blurSurfacePixelsVertical } from './surfaceBlur';
 

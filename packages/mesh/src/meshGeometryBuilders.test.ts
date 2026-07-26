@@ -1,4 +1,4 @@
-import type { MeshGeometry } from '@flighthq/types';
+import type { MeshGeometry } from '@flighthq/types/contract';
 
 import { getMeshGeometryIndexCount, getMeshGeometryVertexCount } from './meshGeometry';
 import {

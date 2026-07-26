@@ -1,7 +1,7 @@
-import { createAabb } from '@flighthq/geometry';
-import { getMeshGeometrySkinBindPose, setMeshGeometrySkinBindPose } from '@flighthq/mesh';
-import { getNodeRuntime } from '@flighthq/node';
-import type { Mesh, MeshRuntime, NodeAny } from '@flighthq/types';
+import { createAabb } from '@flighthq/geometry/contract';
+import { getMeshGeometrySkinBindPose, setMeshGeometrySkinBindPose } from '@flighthq/mesh/contract';
+import { getNodeRuntime } from '@flighthq/node/contract';
+import type { Mesh, MeshRuntime, NodeAny } from '@flighthq/types/contract';
 
 import { getMeshSkinConservativeBounds } from './getMeshSkinBounds';
 import { computeSkeleton3DJointMatrices } from './skeleton3d';

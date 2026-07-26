@@ -1,5 +1,5 @@
-import { createRectangle } from '@flighthq/geometry';
-import { createDisplayObject } from '@flighthq/scene2d';
+import { createRectangle } from '@flighthq/geometry/contract';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
 
 import {
   createNodeInteractionState,

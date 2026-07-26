@@ -1,5 +1,5 @@
-import { hasImageResourcePixels } from '@flighthq/image';
-import { bindGlImageResourceTexture, bindGlVideoTexture } from '@flighthq/render-gl';
+import { hasImageResourcePixels } from '@flighthq/image/contract';
+import { bindGlImageResourceTexture, bindGlVideoTexture } from '@flighthq/render-gl/contract';
 import type {
   GlUnlitDefineKey,
   GlUnlitProgram,

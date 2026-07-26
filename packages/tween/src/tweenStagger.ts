@@ -5,7 +5,7 @@ import type {
   TweenManager,
   TweenOptions,
   TweenStaggerOptions,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { createTween } from './tween';
 

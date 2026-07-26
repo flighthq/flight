@@ -1,4 +1,4 @@
-import type { VolumetricLightEffect } from '@flighthq/types';
+import type { VolumetricLightEffect } from '@flighthq/types/contract';
 
 export function createVolumetricLightEffect(
   options: Readonly<Omit<VolumetricLightEffect, 'kind'>> = {},

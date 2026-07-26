@@ -1,7 +1,7 @@
-import { computeBoxBlurPassRadius } from '@flighthq/effects';
-import { compileGlFullscreenProgram, drawGlFullscreenPass } from '@flighthq/render-gl';
-import type { GlRenderTarget } from '@flighthq/types';
-import type { GlFullscreenProgram, GlRenderState } from '@flighthq/types';
+import { computeBoxBlurPassRadius } from '@flighthq/effects/contract';
+import { compileGlFullscreenProgram, drawGlFullscreenPass } from '@flighthq/render-gl/contract';
+import type { GlRenderTarget } from '@flighthq/types/contract';
+import type { GlFullscreenProgram, GlRenderState } from '@flighthq/types/contract';
 
 const BOX_BLUR_FRAGMENT_SRC = `#version 300 es
 precision mediump float;

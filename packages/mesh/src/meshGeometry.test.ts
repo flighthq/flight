@@ -1,5 +1,10 @@
-import type { MeshGeometryRuntime, MeshMorphBindPose, MeshSkinBindPose, VertexAttributeLayout } from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
+import type {
+  MeshGeometryRuntime,
+  MeshMorphBindPose,
+  MeshSkinBindPose,
+  VertexAttributeLayout,
+} from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   cloneMeshGeometry,

@@ -4,7 +4,7 @@ import type {
   HasBoundsRectangleRuntime,
   MethodsOf,
   Rectangle,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 export function defaultComputeLocalBoundsRectangle(_out: Rectangle, _source: Readonly<BoundsNodeAny>) {}
 

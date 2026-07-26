@@ -1,6 +1,12 @@
-import { connectSignal, disconnectSignal } from '@flighthq/signals';
-import { getRichTextRuntime, setRichTextScrollV } from '@flighthq/text';
-import type { InputKeyboardData, InputTextData, RichText, TextInputManager, TextInputSource } from '@flighthq/types';
+import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
+import { getRichTextRuntime, setRichTextScrollV } from '@flighthq/text/contract';
+import type {
+  InputKeyboardData,
+  InputTextData,
+  RichText,
+  TextInputManager,
+  TextInputSource,
+} from '@flighthq/types/contract';
 
 import { getTextInputState } from './textInput';
 import {

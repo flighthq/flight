@@ -13,8 +13,8 @@ import {
   getCaptureBaselineField,
   parseCaptureBaseline,
   setCaptureBaselineField,
-} from '@flighthq/capture';
-import type { CaptureBaseline } from '@flighthq/types';
+} from '@flighthq/capture/contract';
+import type { CaptureBaseline } from '@flighthq/types/contract';
 
 export type BaselineField = 'fingerprint' | 'sha256';
 

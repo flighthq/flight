@@ -1,4 +1,4 @@
-import { appendShapeRectangle, createShape } from '@flighthq/shape';
+import { appendShapeRectangle, createShape } from '@flighthq/shape/contract';
 
 import { buildScale9Mapper } from './canvasScale9Mapper';
 

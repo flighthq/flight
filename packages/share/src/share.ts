@@ -1,5 +1,5 @@
-import { createSignal, emitSignal } from '@flighthq/signals';
-import type { ShareBackend, ShareContent, ShareOptions, ShareResult, ShareSignals } from '@flighthq/types';
+import { createSignal, emitSignal } from '@flighthq/signals/contract';
+import type { ShareBackend, ShareContent, ShareOptions, ShareResult, ShareSignals } from '@flighthq/types/contract';
 
 // Attaches `signals` to receive share result events emitted by shareContentWithResult calls. A prior
 // subscription on this signals group is torn down first. Pair with detachShareSignals /

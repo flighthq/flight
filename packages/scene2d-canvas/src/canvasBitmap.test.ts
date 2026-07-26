@@ -1,8 +1,8 @@
-﻿import { createRectangle } from '@flighthq/geometry';
-import { createImageResource } from '@flighthq/image';
+﻿import { createRectangle } from '@flighthq/geometry/contract';
+import { createImageResource } from '@flighthq/image/contract';
 import { registerRenderer } from '@flighthq/render/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
-import { createBitmap } from '@flighthq/scene2d';
+import { createBitmap } from '@flighthq/scene2d/contract';
 import { BitmapKind } from '@flighthq/types/contract';
 
 import { defaultCanvasBitmapRenderer, drawCanvasBitmap } from './canvasBitmap';

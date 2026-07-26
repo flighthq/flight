@@ -1,5 +1,5 @@
 import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
-import { createBitmap } from '@flighthq/scene2d';
+import { createBitmap } from '@flighthq/scene2d/contract';
 import type { ImageResource, VideoTexture } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 

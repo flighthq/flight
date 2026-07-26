@@ -1,5 +1,5 @@
-import type { Texture } from '@flighthq/types';
-import { EmissiveModifierFacing } from '@flighthq/types';
+import type { Texture } from '@flighthq/types/contract';
+import { EmissiveModifierFacing } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createAnimatedNormalModifier } from './createAnimatedNormalModifier';

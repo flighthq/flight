@@ -1,4 +1,4 @@
-import type { RandomSource, Vector2Like, Vector3Like } from '@flighthq/types';
+import type { RandomSource, Vector2Like, Vector3Like } from '@flighthq/types/contract';
 
 /** Pick a random element from `items`, returning `undefined` for an empty array.
  *

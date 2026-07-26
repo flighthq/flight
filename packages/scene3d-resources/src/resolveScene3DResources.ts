@@ -1,6 +1,6 @@
-import { loadImageResourceFromBytes } from '@flighthq/image';
-import { queueResourceLoad } from '@flighthq/loader';
-import { emitSignal } from '@flighthq/signals';
+import { loadImageResourceFromBytes } from '@flighthq/image/contract';
+import { queueResourceLoad } from '@flighthq/loader/contract';
+import { emitSignal } from '@flighthq/signals/contract';
 import type {
   ImageResource,
   ImageResourceFailure,
@@ -9,10 +9,14 @@ import type {
   ResolveScene3DResourcesOptions,
   Scene3DResourceResolver,
   Texture,
-} from '@flighthq/types';
-import { ImageResourceFailureKind, ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
-import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types';
-import type { Scene3DResourceInFlight, Scene3DResourceResolverWithRuntime } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import {
+  ImageResourceFailureKind,
+  ResourceResolutionState,
+  ImageResourceReferenceKind,
+} from '@flighthq/types/contract';
+import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
+import type { Scene3DResourceInFlight, Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
 
 import { getScene3DResourceTextures } from './getScene3DResourceTextures';
 

@@ -1,6 +1,6 @@
-import { createCamera2D } from '@flighthq/camera';
-import { getCamera2DVisibleBounds } from '@flighthq/camera';
-import { createRectangle } from '@flighthq/geometry';
+import { createCamera2D } from '@flighthq/camera/contract';
+import { getCamera2DVisibleBounds } from '@flighthq/camera/contract';
+import { createRectangle } from '@flighthq/geometry/contract';
 import { describe, expect, it } from 'vitest';
 
 import { updateCamera2DFollow } from './follow';

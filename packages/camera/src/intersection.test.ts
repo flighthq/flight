@@ -1,4 +1,4 @@
-import { createBoundingSphere, createPlane, createRay3D, createVector3 } from '@flighthq/geometry';
+import { createBoundingSphere, createPlane, createRay3D, createVector3 } from '@flighthq/geometry/contract';
 
 import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from './camera';
 import { getCamera3DRayThroughBoundingSphere, intersectCamera3DRayWithPlane } from './intersection';

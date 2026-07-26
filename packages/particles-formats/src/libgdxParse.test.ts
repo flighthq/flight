@@ -1,4 +1,4 @@
-import { ImportDiagnosticSeverity } from '@flighthq/types';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { parseLibgdxParticle, parseLibgdxParticleDocument } from './libgdxParse';
 

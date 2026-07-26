@@ -1,4 +1,4 @@
-import type { WebcamBackend, WebcamCaptureOptions } from '@flighthq/types';
+import type { WebcamBackend, WebcamCaptureOptions } from '@flighthq/types/contract';
 
 import {
   createWebWebcamBackend,

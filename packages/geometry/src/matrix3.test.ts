@@ -28,7 +28,7 @@ import {
   transposeMatrix3,
   writeMatrix3ToFloat32Array,
 } from '@flighthq/geometry';
-import type { Matrix3 } from '@flighthq/types';
+import type { Matrix3 } from '@flighthq/types/contract';
 
 // Matrix3 storage is column-major: element (row r, column c) lives at m[3 * c + r], matching
 // Matrix4 and the GL/GLSL/WGSL uniform ABI. A matrix-like {m} built from a raw Float32Array below

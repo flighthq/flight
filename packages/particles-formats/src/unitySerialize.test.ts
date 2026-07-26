@@ -1,4 +1,4 @@
-import { createParticleEmitterConfig } from '@flighthq/particles';
+import { createParticleEmitterConfig } from '@flighthq/particles/contract';
 
 import { parseUnityParticle, parseUnityParticleDocument } from './unityParse';
 import { serializeUnityParticle, serializeUnityParticleDocument } from './unitySerialize';

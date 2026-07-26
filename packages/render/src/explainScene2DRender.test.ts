@@ -1,5 +1,5 @@
-import { addNodeChild } from '@flighthq/node';
-import { createDisplayObject } from '@flighthq/scene2d';
+import { addNodeChild } from '@flighthq/node/contract';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
 
 import { explainScene2DRender } from './explainScene2DRender';
 import { registerRenderer } from './renderer';

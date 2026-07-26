@@ -1,4 +1,4 @@
-import type { MenuItemTemplate, TauriApi, TauriMenuItemOptions } from '@flighthq/types';
+import type { MenuItemTemplate, TauriApi, TauriMenuItemOptions } from '@flighthq/types/contract';
 
 import { createTauriMenuBackend } from './tauriMenu';
 

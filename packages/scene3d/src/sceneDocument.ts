@@ -1,7 +1,7 @@
-import { createAnimationChannel, createAnimationClip } from '@flighthq/animation';
-import { createEntity } from '@flighthq/entity';
-import { setQuaternion, setVector3 } from '@flighthq/geometry';
-import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
+import { createAnimationChannel, createAnimationClip } from '@flighthq/animation/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import { setQuaternion, setVector3 } from '@flighthq/geometry/contract';
+import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import type {
   AnimationChannel,
   Material,
@@ -12,7 +12,7 @@ import type {
   Scene3DDocumentNode,
   Node3D,
   Skin,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { createMesh } from './mesh';
 import { createScene3D } from './scene';

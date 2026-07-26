@@ -1,5 +1,5 @@
-import type { HasBlendMode } from '@flighthq/types';
-import { BlendMode } from '@flighthq/types';
+import type { HasBlendMode } from '@flighthq/types/contract';
+import { BlendMode } from '@flighthq/types/contract';
 
 import { initBlendModeTrait } from './hasBlendMode';
 import { createNode } from './node';

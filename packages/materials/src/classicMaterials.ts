@@ -1,5 +1,5 @@
-import type { BlinnPhongMaterial, LambertMaterial, PhongMaterial } from '@flighthq/types';
-import { BlinnPhongMaterialKind, LambertMaterialKind, PhongMaterialKind } from '@flighthq/types';
+import type { BlinnPhongMaterial, LambertMaterial, PhongMaterial } from '@flighthq/types/contract';
+import { BlinnPhongMaterialKind, LambertMaterialKind, PhongMaterialKind } from '@flighthq/types/contract';
 
 import { createSurfaceMaterial } from './surfaceMaterial';
 

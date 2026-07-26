@@ -1,4 +1,4 @@
-import { createSignal, emitSignal } from '@flighthq/signals';
+import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   App,
   AppActivationPolicy,
@@ -7,7 +7,7 @@ import type {
   AppLoginItemLike,
   AppPathKind,
   MenuItemTemplate,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Adds a path to the system's recent-documents list (Jump List on Windows; macOS recents). No-op on
 // web and platforms without a recents list.

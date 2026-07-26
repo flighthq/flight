@@ -1,6 +1,10 @@
-import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
-import { createVector3 } from '@flighthq/geometry';
-import { EntityRuntimeKey } from '@flighthq/types';
+import {
+  createCamera3D,
+  createPerspectiveProjection,
+  setCamera3DViewMatrix4FromLookAt,
+} from '@flighthq/camera/contract';
+import { createVector3 } from '@flighthq/geometry/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {

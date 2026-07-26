@@ -1,5 +1,5 @@
-import { getColorLuminance } from '@flighthq/color';
-import type { PhongMaterial, StandardPbrMaterial, StandardPbrMaterialProperties } from '@flighthq/types';
+import { getColorLuminance } from '@flighthq/color/contract';
+import type { PhongMaterial, StandardPbrMaterial, StandardPbrMaterialProperties } from '@flighthq/types/contract';
 
 import { createStandardPbrMaterial } from './pbrMaterials';
 

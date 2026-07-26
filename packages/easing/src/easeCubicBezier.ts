@@ -1,4 +1,4 @@
-import type { EasingFunction } from '@flighthq/types';
+import type { EasingFunction } from '@flighthq/types/contract';
 
 // Returns an easing function for the CSS cubic-bézier curve whose control
 // points are P1=(x1,y1) and P2=(x2,y2); the endpoints are fixed at (0,0) and

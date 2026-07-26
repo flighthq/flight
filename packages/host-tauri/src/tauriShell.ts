@@ -1,4 +1,4 @@
-import type { ShellBackend, TauriApi } from '@flighthq/types';
+import type { ShellBackend, TauriApi } from '@flighthq/types/contract';
 
 // Maps Flight's ShellBackend onto Tauri's async `@tauri-apps/plugin-opener`. Opening a URL or path in
 // the OS default handler and revealing a file in the file manager map directly; async operations

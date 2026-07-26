@@ -5,7 +5,7 @@ import {
   SpineParticleFormatKind,
   StarlingPexFormatKind,
   UnityParticleFormatKind,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { detectParticleFormat } from './detect';
 

@@ -1,5 +1,5 @@
-import { connectSignal, emitSignal } from '@flighthq/signals';
-import type { LoopBackend } from '@flighthq/types';
+import { connectSignal, emitSignal } from '@flighthq/signals/contract';
+import type { LoopBackend } from '@flighthq/types/contract';
 
 import {
   attachApplicationExit,

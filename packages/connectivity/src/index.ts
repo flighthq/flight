@@ -1,1 +1,1 @@
-export * from './connectivity';
+export * from './contract';

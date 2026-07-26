@@ -1,4 +1,4 @@
-import type { SpritesheetData } from '@flighthq/spritesheet';
+import type { SpritesheetData } from '@flighthq/spritesheet/contract';
 import type {
   AsepriteArrayDocument,
   AsepriteArrayFrame,
@@ -7,7 +7,7 @@ import type {
   AsepriteHashDocument,
   AsepriteMeta,
   AsepriteSerializeOptions,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
 

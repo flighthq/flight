@@ -1,5 +1,5 @@
-import { connectSignal, createSignal } from '@flighthq/signals';
-import type { AssetDescriptor, AssetLoadProgress, AssetManifest } from '@flighthq/types';
+import { connectSignal, createSignal } from '@flighthq/signals/contract';
+import type { AssetDescriptor, AssetLoadProgress, AssetManifest } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {

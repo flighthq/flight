@@ -1,6 +1,6 @@
-import { createEntity } from '@flighthq/entity';
-import { createMatrix, multiplyMatrix } from '@flighthq/geometry';
-import { createSignal } from '@flighthq/signals';
+import { createEntity } from '@flighthq/entity/contract';
+import { createMatrix, multiplyMatrix } from '@flighthq/geometry/contract';
+import { createSignal } from '@flighthq/signals/contract';
 import type { Renderable, RenderCache, RenderCacheAdapter, Renderer, RenderState } from '@flighthq/types/contract';
 import { RenderCacheKind } from '@flighthq/types/contract';
 

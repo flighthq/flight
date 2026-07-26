@@ -6,9 +6,9 @@ import {
   decomposeMatrix4,
   inverseMatrix4,
   multiplyMatrix4,
-} from '@flighthq/geometry';
-import { getNodeParent, getNodeWorldMatrix4, setNodeLocalMatrix4 } from '@flighthq/node';
-import type { Billboard, BillboardMode, Camera3D, Matrix4, Node3D } from '@flighthq/types';
+} from '@flighthq/geometry/contract';
+import { getNodeParent, getNodeWorldMatrix4, setNodeLocalMatrix4 } from '@flighthq/node/contract';
+import type { Billboard, BillboardMode, Camera3D, Matrix4, Node3D } from '@flighthq/types/contract';
 
 import { isBillboard } from './billboard';
 import { getNode3DRuntime } from './sceneNode';

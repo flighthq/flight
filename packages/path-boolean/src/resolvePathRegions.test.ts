@@ -1,5 +1,5 @@
-import { flattenPath } from '@flighthq/path';
-import type { Path } from '@flighthq/types';
+import { flattenPath } from '@flighthq/path/contract';
+import type { Path } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { resolvePathRegions } from './resolvePathRegions';

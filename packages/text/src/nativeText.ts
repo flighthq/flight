@@ -1,5 +1,5 @@
-import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node';
-import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d';
+import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node/contract';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import type {
   MethodsOf,
   NativeText,
@@ -11,8 +11,8 @@ import type {
   Rectangle,
   TextAutoSize,
   TextVerticalAlign,
-} from '@flighthq/types';
-import { NativeTextKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { NativeTextKind } from '@flighthq/types/contract';
 
 // Mirrors htmlView.ts (DOM-backed display object whose bounds come from numbers, not DOM measurement)
 // and textLabel.ts (create/runtime/defaultMethods shape). NativeText opts out of the TextLayout spine,

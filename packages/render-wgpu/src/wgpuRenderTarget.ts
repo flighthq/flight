@@ -1,5 +1,5 @@
-import { srgbChannelToLinear } from '@flighthq/color';
-import { copyMatrix, createMatrix } from '@flighthq/geometry';
+import { srgbChannelToLinear } from '@flighthq/color/contract';
+import { copyMatrix, createMatrix } from '@flighthq/geometry/contract';
 import type {
   Material,
   Matrix,

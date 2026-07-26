@@ -1,4 +1,4 @@
-import type { CollisionManifold, CollisionShape, CollisionShapeKind } from '@flighthq/types';
+import type { CollisionManifold, CollisionShape, CollisionShapeKind } from '@flighthq/types/contract';
 
 import { clearCollisionManifold } from './manifold';
 import {

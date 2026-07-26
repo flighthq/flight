@@ -1,5 +1,11 @@
-import { intersectsRectangle } from '@flighthq/geometry';
-import type { BinPackOptions, PackableRectangle, PackedRectangle, PackResult, RectangleId } from '@flighthq/types';
+import { intersectsRectangle } from '@flighthq/geometry/contract';
+import type {
+  BinPackOptions,
+  PackableRectangle,
+  PackedRectangle,
+  PackResult,
+  RectangleId,
+} from '@flighthq/types/contract';
 
 // Places a set of rectangles without overlap into a bin using the MaxRects algorithm with the
 // Best-Short-Side-Fit (BSSF) heuristic, and reports each placement, the used bin extent, and any ids

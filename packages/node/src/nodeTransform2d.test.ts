@@ -1,4 +1,4 @@
-import { getEntityRuntime } from '@flighthq/entity';
+import { getEntityRuntime } from '@flighthq/entity/contract';
 import {
   cloneMatrix,
   createMatrix,
@@ -7,9 +7,9 @@ import {
   equalsMatrix,
   multiplyMatrix,
   setMatrix,
-} from '@flighthq/geometry';
+} from '@flighthq/geometry/contract';
 import { addNodeChild, createNode } from '@flighthq/node';
-import type { HasTransform2D, HasTransform2DRuntime, Matrix, Node, NodeRuntime } from '@flighthq/types';
+import type { HasTransform2D, HasTransform2DRuntime, Matrix, Node, NodeRuntime } from '@flighthq/types/contract';
 
 import { initTransform2DRuntimeTrait, initTransform2DTrait } from './hasTransform2d';
 import {

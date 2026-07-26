@@ -1,4 +1,4 @@
-import { createParticleEmitterConfig } from '@flighthq/particles';
+import { createParticleEmitterConfig } from '@flighthq/particles/contract';
 
 import { parseParticleDesignerPlist, parseParticleDesignerPlistDocument } from './particleDesignerParse';
 import { serializeParticleDesignerPlist, serializeParticleDesignerPlistDocument } from './particleDesignerSerialize';

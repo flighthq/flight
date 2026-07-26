@@ -1,4 +1,4 @@
-import { acquireMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry';
+import { acquireMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry/contract';
 import type {
   GlRenderState,
   GlRenderTarget,

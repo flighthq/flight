@@ -1,4 +1,4 @@
-import type { PixelOrder } from '@flighthq/types';
+import type { PixelOrder } from '@flighthq/types/contract';
 
 /**
  * Converts a packed pixel buffer from one channel order to another.

@@ -1,5 +1,5 @@
 import { getMatrix3Element } from '@flighthq/geometry';
-import type { Matrix3 } from '@flighthq/types';
+import type { Matrix3 } from '@flighthq/types/contract';
 
 import { acquireIdentityMatrix3, acquireMatrix3, clearMatrix3Pool, releaseMatrix3 } from './matrix3Pool';
 

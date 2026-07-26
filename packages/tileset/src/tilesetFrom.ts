@@ -3,9 +3,9 @@ import {
   loadImageResourceFromBlob,
   loadImageResourceFromBytes,
   loadImageResourceFromUrl,
-} from '@flighthq/image';
-import { createTextureAtlas } from '@flighthq/textureatlas';
-import type { ImageResource, TextureAtlas, Tileset } from '@flighthq/types';
+} from '@flighthq/image/contract';
+import { createTextureAtlas } from '@flighthq/textureatlas/contract';
+import type { ImageResource, TextureAtlas, Tileset } from '@flighthq/types/contract';
 
 import { buildTilesetRegions, createTileset } from './tileset';
 

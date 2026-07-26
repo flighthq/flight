@@ -1,7 +1,11 @@
-import { createRandomSource } from '@flighthq/math';
-import { invalidateNodeLocalTransform } from '@flighthq/node';
-import { PARTICLE_VELOCITY_STRIDE, createParticleEmitterConfig, createParticleEmitterState } from '@flighthq/particles';
-import type { TextureAtlas } from '@flighthq/types';
+import { createRandomSource } from '@flighthq/math/contract';
+import { invalidateNodeLocalTransform } from '@flighthq/node/contract';
+import {
+  PARTICLE_VELOCITY_STRIDE,
+  createParticleEmitterConfig,
+  createParticleEmitterState,
+} from '@flighthq/particles/contract';
+import type { TextureAtlas } from '@flighthq/types/contract';
 
 import { createParticleEmitter2D, reserveParticleEmitter2D } from './particleEmitter';
 import { prewarmParticleEmitter2D } from './prewarmParticleEmitter2D';

@@ -1,4 +1,4 @@
-import { createSignal, emitSignal } from '@flighthq/signals';
+import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   Node2D,
   FrameScript,
@@ -7,7 +7,7 @@ import type {
   TimelineLabel,
   TimelineSignals,
   TimelineSource,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 export function addTimelineFrameScript(timeline: Timeline, frame: number | string, script: FrameScript): void {
   const resolved = resolveFrame(timeline, frame);

@@ -1,11 +1,11 @@
-import { clearSignal, connectSignal } from '@flighthq/signals';
+import { clearSignal, connectSignal } from '@flighthq/signals/contract';
 import type {
   AcceleratorParseError,
   ParsedAccelerator,
   ShortcutBackend,
   ShortcutEvent,
   ShortcutModifier,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import {
   equalsAccelerator,

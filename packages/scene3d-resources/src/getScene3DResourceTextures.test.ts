@@ -1,10 +1,10 @@
-import { createStandardPbrMaterial, createUnlitMaterial } from '@flighthq/materials';
-import { createBoxMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild } from '@flighthq/node';
-import { createMesh, createScene3D } from '@flighthq/scene3d';
-import { createTexture } from '@flighthq/texture';
-import type { ImageResourceReference, Texture } from '@flighthq/types';
-import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
+import { createStandardPbrMaterial, createUnlitMaterial } from '@flighthq/materials/contract';
+import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
+import { addNodeChild } from '@flighthq/node/contract';
+import { createMesh, createScene3D } from '@flighthq/scene3d/contract';
+import { createTexture } from '@flighthq/texture/contract';
+import type { ImageResourceReference, Texture } from '@flighthq/types/contract';
+import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { getScene3DResourceTextures } from './getScene3DResourceTextures';

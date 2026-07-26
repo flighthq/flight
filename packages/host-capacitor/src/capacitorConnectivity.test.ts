@@ -1,4 +1,4 @@
-import type { ConnectivityStatus, CapacitorApi, CapacitorConnectionStatus } from '@flighthq/types';
+import type { ConnectivityStatus, CapacitorApi, CapacitorConnectionStatus } from '@flighthq/types/contract';
 
 import { createCapacitorConnectivityBackend } from './capacitorConnectivity';
 

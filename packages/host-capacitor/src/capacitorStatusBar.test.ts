@@ -1,4 +1,4 @@
-import type { StatusBarInfo, CapacitorApi } from '@flighthq/types';
+import type { StatusBarInfo, CapacitorApi } from '@flighthq/types/contract';
 
 import { createCapacitorStatusBarBackend } from './capacitorStatusBar';
 

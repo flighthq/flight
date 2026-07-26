@@ -1,4 +1,4 @@
-import type { StandardPbrMaterial, TransmissionVolumePbrMaterial } from '@flighthq/types';
+import type { StandardPbrMaterial, TransmissionVolumePbrMaterial } from '@flighthq/types/contract';
 
 import { createTransmissionVolumePbrMaterial } from './pbrExtensionMaterials';
 import { createStandardPbrMaterial } from './pbrMaterials';

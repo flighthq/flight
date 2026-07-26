@@ -4,8 +4,8 @@ import type {
   DeviceDisplayMetrics,
   DeviceInfo,
   SafeAreaInsets,
-} from '@flighthq/types';
-import { DeviceFormFactorDesktop, DeviceFormFactorPhone, DeviceFormFactorUnknown } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { DeviceFormFactorDesktop, DeviceFormFactorPhone, DeviceFormFactorUnknown } from '@flighthq/types/contract';
 
 import {
   createDeviceCapabilities,

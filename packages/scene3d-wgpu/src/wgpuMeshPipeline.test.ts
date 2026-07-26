@@ -1,9 +1,9 @@
-import { createCamera3D } from '@flighthq/camera';
-import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
-import { createStandardPbrMaterial } from '@flighthq/materials';
-import { createBoxMeshGeometry } from '@flighthq/mesh';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import { createTexture, setTextureUvOffset, setTextureUvScale } from '@flighthq/texture';
+import { createCamera3D } from '@flighthq/camera/contract';
+import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
+import { createStandardPbrMaterial } from '@flighthq/materials/contract';
+import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
+import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { createTexture, setTextureUvOffset, setTextureUvScale } from '@flighthq/texture/contract';
 import type {
   Camera3D,
   ImageResource,

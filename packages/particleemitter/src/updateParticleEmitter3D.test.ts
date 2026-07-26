@@ -1,11 +1,11 @@
-import { setVector3 } from '@flighthq/geometry';
-import { invalidateNodeLocalTransform } from '@flighthq/node';
+import { setVector3 } from '@flighthq/geometry/contract';
+import { invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import {
   createParticleEmitterConfig,
   createParticleEmitterState,
   enableParticleEmitterSignals,
-} from '@flighthq/particles';
-import type { ParticleEmitterCallbacks } from '@flighthq/types';
+} from '@flighthq/particles/contract';
+import type { ParticleEmitterCallbacks } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createParticleEmitter3D } from './particleEmitter3D';

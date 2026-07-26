@@ -1,5 +1,5 @@
-import { cancelSignal, connectSignal, emitSignal } from '@flighthq/signals';
-import type { Matrix, RenderState, WindowBackend } from '@flighthq/types';
+import { cancelSignal, connectSignal, emitSignal } from '@flighthq/signals/contract';
+import type { Matrix, RenderState, WindowBackend } from '@flighthq/types/contract';
 
 import {
   attachWindowClose,

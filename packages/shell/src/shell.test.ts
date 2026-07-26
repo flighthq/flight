@@ -1,4 +1,4 @@
-import type { ShellBackend, ShellOpenExternalOptions, ShellOpenPathOptions } from '@flighthq/types';
+import type { ShellBackend, ShellOpenExternalOptions, ShellOpenPathOptions } from '@flighthq/types/contract';
 
 import {
   createWebShellBackend,

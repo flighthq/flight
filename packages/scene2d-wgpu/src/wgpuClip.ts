@@ -1,4 +1,4 @@
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
+import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { Node2D, Scene2DClipHooks, RenderProxy2D, WgpuRenderState } from '@flighthq/types/contract';
 
 import { popWgpuClipContours, pushWgpuClipContours } from './wgpuClipContours';

@@ -1,4 +1,4 @@
-import { createModifierRegistry, registerModifier, resolveModifier } from '@flighthq/shading';
+import { createModifierRegistry, registerModifier, resolveModifier } from '@flighthq/shading/contract';
 import type { GlModifierSnippet, GlRenderState, ModifierKind } from '@flighthq/types/contract';
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';

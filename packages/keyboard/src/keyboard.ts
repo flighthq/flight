@@ -1,4 +1,4 @@
-import { createSignal, emitSignal } from '@flighthq/signals';
+import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   SoftKeyboard,
   SoftKeyboardBackend,
@@ -7,8 +7,8 @@ import type {
   SoftKeyboardResizeMode,
   SoftKeyboardStyleKind,
   SoftKeyboardTransition,
-} from '@flighthq/types';
-import { SoftKeyboardResizeNoneKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { SoftKeyboardResizeNoneKind } from '@flighthq/types/contract';
 
 // Begins delivering on-screen keyboard changes to `keyboard`'s signals by subscribing to the active
 // backend. On each change it reads fresh info, emits will/did signal pairs (with onShow/onHide/onResize

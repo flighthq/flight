@@ -1,4 +1,4 @@
-import { createSignal, emitSignal } from '@flighthq/signals';
+import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   AppUpdater,
   UpdateInfo,
@@ -6,7 +6,7 @@ import type {
   UpdaterConfig,
   UpdaterSignatureConfig,
   UpdaterState,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Begins delivering update lifecycle events to `updater`'s signals by subscribing to the active
 // backend. Each subscribe* is wired to its matching signal, and the phase state is updated on every

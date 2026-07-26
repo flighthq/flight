@@ -1,4 +1,4 @@
-import { createParticleEmitterConfig } from '@flighthq/particles';
+import { createParticleEmitterConfig } from '@flighthq/particles/contract';
 
 import { parseSpineParticle, parseSpineParticleDocument } from './spineParse';
 import { serializeSpineParticle, serializeSpineParticleDocument } from './spineSerialize';

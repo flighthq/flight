@@ -1,8 +1,8 @@
-import { getEntityRuntime as getRawEntityRuntime } from '@flighthq/entity';
-import { cloneMatrix } from '@flighthq/geometry';
-import { connectSignal } from '@flighthq/signals';
-import type { HasTransform2D, HasTransform2DRuntime, Node, NodeRuntime, NodeTraits } from '@flighthq/types';
-import { NodeKind } from '@flighthq/types';
+import { getEntityRuntime as getRawEntityRuntime } from '@flighthq/entity/contract';
+import { cloneMatrix } from '@flighthq/geometry/contract';
+import { connectSignal } from '@flighthq/signals/contract';
+import type { HasTransform2D, HasTransform2DRuntime, Node, NodeRuntime, NodeTraits } from '@flighthq/types/contract';
+import { NodeKind } from '@flighthq/types/contract';
 
 import { initTransform2DRuntimeTrait, initTransform2DTrait } from './hasTransform2d';
 import {

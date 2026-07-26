@@ -1,8 +1,8 @@
-﻿import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node';
-import { createGlTexture, drawGlQuad, updateGlTexture, useGlProgram } from '@flighthq/render-gl';
-import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import { setGlBaseUniforms, setGlMatrixFromValues } from '@flighthq/render-gl';
-import { mapCanvasScale9ShapeCommands, renderCanvasShapeCommands } from '@flighthq/scene2d-canvas';
+﻿import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node/contract';
+import { createGlTexture, drawGlQuad, updateGlTexture, useGlProgram } from '@flighthq/render-gl/contract';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { setGlBaseUniforms, setGlMatrixFromValues } from '@flighthq/render-gl/contract';
+import { mapCanvasScale9ShapeCommands, renderCanvasShapeCommands } from '@flighthq/scene2d-canvas/contract';
 import type {
   Scene2DRenderer,
   GlRenderState,

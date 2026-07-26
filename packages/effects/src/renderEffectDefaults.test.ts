@@ -1,4 +1,4 @@
-import type { BloomEffect, RenderEffect, ToneMapEffect, VignetteEffect } from '@flighthq/types';
+import type { BloomEffect, RenderEffect, ToneMapEffect, VignetteEffect } from '@flighthq/types/contract';
 
 import { createBloomEffect } from './bloomEffect';
 import { getRenderEffectDefaults, normalizeRenderEffect } from './renderEffectDefaults';

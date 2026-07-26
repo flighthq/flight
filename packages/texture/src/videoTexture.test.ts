@@ -1,5 +1,5 @@
-import { createMatrix3, createVector2 } from '@flighthq/geometry';
-import type { VideoResource } from '@flighthq/types';
+import { createMatrix3, createVector2 } from '@flighthq/geometry/contract';
+import type { VideoResource } from '@flighthq/types/contract';
 
 import {
   advanceVideoTexture,

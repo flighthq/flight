@@ -1,4 +1,4 @@
-import type { BitmapFont, GlyphSource } from '@flighthq/types';
+import type { BitmapFont, GlyphSource } from '@flighthq/types/contract';
 
 import { getBitmapFontGlyph, getBitmapFontKerning, getBitmapFontMetrics } from './bitmapFont';
 

@@ -4,7 +4,7 @@ import type {
   FogModifier,
   Modifier,
   VertexDisplaceModifier,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 import {
   AnimatedNormalModifierKind,
   DissolveModifierKind,
@@ -18,8 +18,8 @@ import {
   ToonModifierKind,
   VertexDisplaceModifierKind,
   VertexDisplaceModifierSource,
-} from '@flighthq/types';
-import type { ModifierDefinition, ModifierRegistry } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import type { ModifierDefinition, ModifierRegistry } from '@flighthq/types/contract';
 
 import { registerModifier } from './modifierRegistry';
 

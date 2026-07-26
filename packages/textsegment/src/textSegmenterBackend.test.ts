@@ -1,4 +1,4 @@
-import type { TextSegment, TextSegmentGranularity, TextSegmenterBackend } from '@flighthq/types';
+import type { TextSegment, TextSegmentGranularity, TextSegmenterBackend } from '@flighthq/types/contract';
 
 import {
   createWebTextSegmenterBackend,

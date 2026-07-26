@@ -1,6 +1,6 @@
-import { acquireMatrix, copyMatrix, inverseMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry';
-import { emitSignal } from '@flighthq/signals';
-import type { Node, NodeOf, NodeRuntime, Transform2DNode } from '@flighthq/types';
+import { acquireMatrix, copyMatrix, inverseMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry/contract';
+import { emitSignal } from '@flighthq/signals/contract';
+import type { Node, NodeOf, NodeRuntime, Transform2DNode } from '@flighthq/types/contract';
 
 import { getNodeRuntime } from './node';
 import { ensureNodeWorldMatrix, getNodeWorldMatrix } from './nodeTransform2d';

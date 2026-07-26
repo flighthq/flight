@@ -1,7 +1,7 @@
-import { createCamera3D } from '@flighthq/camera';
-import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
-import { createIridescencePbrMaterial } from '@flighthq/materials';
-import { createBoxMeshGeometry } from '@flighthq/mesh';
+import { createCamera3D } from '@flighthq/camera/contract';
+import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
+import { createIridescencePbrMaterial } from '@flighthq/materials/contract';
+import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import type { Camera3D, Matrix3, Matrix4, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { IridescencePbrMaterialKind } from '@flighthq/types/contract';
 

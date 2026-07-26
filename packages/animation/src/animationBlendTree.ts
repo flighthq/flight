@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity';
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   AnimationBlendTree,
   AnimationBlendTreeChannel,
@@ -6,7 +6,7 @@ import type {
   AnimationBlendTreeInput,
   AnimationChannel,
   AnimationPlayer,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import {
   accumulateAnimationSample,

@@ -1,4 +1,4 @@
-import type { ShapedRun, ShapeRunOptions, TextFormat, TextShaperCache } from '@flighthq/types';
+import type { ShapedRun, ShapeRunOptions, TextFormat, TextShaperCache } from '@flighthq/types/contract';
 
 import { shapeTextRun } from './textShaperRun';
 

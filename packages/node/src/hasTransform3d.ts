@@ -1,5 +1,5 @@
-import { createQuaternion, createVector3 } from '@flighthq/geometry';
-import type { HasTransform3D, HasTransform3DRuntime } from '@flighthq/types';
+import { createQuaternion, createVector3 } from '@flighthq/geometry/contract';
+import type { HasTransform3D, HasTransform3DRuntime } from '@flighthq/types/contract';
 
 export function initTransform3DRuntimeTrait(target: HasTransform3DRuntime): void {
   target.localMatrix4 = null;

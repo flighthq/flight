@@ -1,4 +1,4 @@
-import { StandardPbrMaterialKind, TransmissionVolumePbrMaterialKind } from '@flighthq/types';
+import { StandardPbrMaterialKind, TransmissionVolumePbrMaterialKind } from '@flighthq/types/contract';
 
 import {
   createAluminumStandardPbrMaterial,

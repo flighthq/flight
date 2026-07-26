@@ -1,4 +1,4 @@
-import type { KuwaharaEffect } from '@flighthq/types';
+import type { KuwaharaEffect } from '@flighthq/types/contract';
 
 // Kuwahara filter recipe math. The Kuwahara filter samples four overlapping sectors around each
 // pixel and picks the sector with the lowest variance as the output color, producing a smooth,

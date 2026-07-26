@@ -1,5 +1,5 @@
-import type { Modifier } from '@flighthq/types';
-import { ModifierSlot } from '@flighthq/types';
+import type { Modifier } from '@flighthq/types/contract';
+import { ModifierSlot } from '@flighthq/types/contract';
 
 // Orders a modifier stack into the deterministic feature-set the compile path assembles: modifiers
 // are grouped by the canonical slot pipeline order (Vertex deforms the geometry first, then Normal

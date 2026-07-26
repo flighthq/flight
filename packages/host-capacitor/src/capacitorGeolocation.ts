@@ -5,7 +5,7 @@ import type {
   GeoPositionResult,
   CapacitorApi,
   CapacitorPosition,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Maps Flight's GeolocationBackend onto Capacitor's `@capacitor/geolocation`. getCurrentPosition and the
 // permission calls are async and map directly. `watchPosition` is the one sync/async seam: the backend

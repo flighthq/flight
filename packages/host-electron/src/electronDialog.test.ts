@@ -3,7 +3,7 @@ import type {
   ElectronMessageBoxOptions,
   ElectronOpenDialogOptions,
   ElectronSaveDialogOptions,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { createElectronDialogBackend } from './electronDialog';
 

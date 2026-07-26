@@ -1,4 +1,4 @@
-import { SurfaceCompositeMode } from '@flighthq/types';
+import { SurfaceCompositeMode } from '@flighthq/types/contract';
 
 import { createSurface } from './surface';
 import {

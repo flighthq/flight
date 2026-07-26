@@ -1,18 +1,18 @@
-import type { SpritesheetAnimationData, SpritesheetData, SpritesheetFrameData } from '@flighthq/spritesheet';
+import type { SpritesheetAnimationData, SpritesheetData, SpritesheetFrameData } from '@flighthq/spritesheet/contract';
 import {
   createSpritesheetAnimationData,
   createSpritesheetData,
   createSpritesheetFrameData,
-} from '@flighthq/spritesheet';
-import { createTextureAtlas } from '@flighthq/textureatlas';
-import { parseTextureAtlasStarlingXml } from '@flighthq/textureatlas-formats';
+} from '@flighthq/spritesheet/contract';
+import { parseTextureAtlasStarlingXml } from '@flighthq/textureatlas-formats/contract';
+import { createTextureAtlas } from '@flighthq/textureatlas/contract';
 import type {
   TextureAtlasRegion,
   StarlingDocument,
   StarlingParseOptions,
   StarlingParsed,
   StarlingSubTexture,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // ─── Minimal XML attribute parser ────────────────────────────────────────────
 

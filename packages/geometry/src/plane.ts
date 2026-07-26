@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity';
-import type { Plane, PlaneLike, Vector3Like } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import type { Plane, PlaneLike, Vector3Like } from '@flighthq/types/contract';
 
 export function clonePlane(source: Readonly<PlaneLike>): Plane {
   return createPlane(source.a, source.b, source.c, source.d);

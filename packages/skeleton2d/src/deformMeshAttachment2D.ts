@@ -1,4 +1,4 @@
-import type { MeshAttachment2D, Skeleton2D } from '@flighthq/types';
+import type { MeshAttachment2D, Skeleton2D } from '@flighthq/types/contract';
 
 // 6 floats per bone in the flat world-transform buffer (a, b, c, d, tx, ty).
 const MATRIX_STRIDE = 6;

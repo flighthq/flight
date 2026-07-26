@@ -1,5 +1,10 @@
-import { createClipRegionFromPath, intersectClipRegions, transformClipRegion, unionClipRegions } from '@flighthq/clip';
-import { packColor } from '@flighthq/color';
+import {
+  createClipRegionFromPath,
+  intersectClipRegions,
+  transformClipRegion,
+  unionClipRegions,
+} from '@flighthq/clip/contract';
+import { packColor } from '@flighthq/color/contract';
 import {
   createGradientTransformMatrix,
   createMatrix,
@@ -8,15 +13,16 @@ import {
   decomposeMatrixToTransform2D,
   matrixTransformRectangle,
   multiplyMatrix,
-} from '@flighthq/geometry';
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
+} from '@flighthq/geometry/contract';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import {
   addNodeChild,
   getNodeChildAt,
   getNodeChildCount,
   getNodeLocalBoundsRectangle,
   getNodeLocalMatrix,
-} from '@flighthq/node';
+} from '@flighthq/node/contract';
+import { parseSvgPathData } from '@flighthq/path-formats/contract';
 import {
   appendPathCircle,
   appendPathEllipse,
@@ -30,9 +36,8 @@ import {
   dashPath,
   getPathBounds,
   transformPath,
-} from '@flighthq/path';
-import { parseSvgPathData } from '@flighthq/path-formats';
-import { createBitmap, createDisplayObject } from '@flighthq/scene2d';
+} from '@flighthq/path/contract';
+import { createBitmap, createDisplayObject } from '@flighthq/scene2d/contract';
 import {
   appendShapeBeginFill,
   appendShapeBeginGradientFill,
@@ -41,9 +46,9 @@ import {
   appendShapeLineStyle,
   appendShapePath,
   createShape,
-} from '@flighthq/shape';
-import { createRichText, createTextLabel } from '@flighthq/text';
-import { createTextFormatRange } from '@flighthq/textlayout';
+} from '@flighthq/shape/contract';
+import { createRichText, createTextLabel } from '@flighthq/text/contract';
+import { createTextFormatRange } from '@flighthq/textlayout/contract';
 import type {
   ClipRegion,
   DisplayObject,
@@ -60,9 +65,9 @@ import type {
   TextFormatRange,
   Transform2D,
   XmlElement,
-} from '@flighthq/types';
-import { ImportDiagnosticSeverity, RichTextKind, TextLabelKind } from '@flighthq/types';
-import { parseXmlDocument } from '@flighthq/xml';
+} from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, RichTextKind, TextLabelKind } from '@flighthq/types/contract';
+import { parseXmlDocument } from '@flighthq/xml/contract';
 
 /**
  * Imports a static SVG document into a Flight display-object subtree. The returned container is

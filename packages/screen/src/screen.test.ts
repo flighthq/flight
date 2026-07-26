@@ -1,4 +1,4 @@
-import type { ScreenBackend, ScreenChangeEvent, ScreenInfo, ScreenMode, ScreenSignals } from '@flighthq/types';
+import type { ScreenBackend, ScreenChangeEvent, ScreenInfo, ScreenMode, ScreenSignals } from '@flighthq/types/contract';
 
 import {
   attachScreenSignals,

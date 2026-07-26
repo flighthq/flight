@@ -1,9 +1,9 @@
-import { createTransform3D } from '@flighthq/geometry';
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
-import { createBlinnPhongMaterial } from '@flighthq/materials';
-import { createMeshGeometry } from '@flighthq/mesh';
-import { createScene3DFromDocument } from '@flighthq/scene3d';
-import type { Scene3D } from '@flighthq/types';
+import { createTransform3D } from '@flighthq/geometry/contract';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { createBlinnPhongMaterial } from '@flighthq/materials/contract';
+import { createMeshGeometry } from '@flighthq/mesh/contract';
+import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
+import type { Scene3D } from '@flighthq/types/contract';
 import type {
   BlinnPhongMaterial,
   ImportDiagnostic,
@@ -16,8 +16,8 @@ import type {
   Texture,
   ObjMaterial,
   ObjMaterialLibrary,
-} from '@flighthq/types';
-import { ImportDiagnosticSeverity, MeshKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, MeshKind } from '@flighthq/types/contract';
 
 import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, createExternalTextureRef } from './shared';
 

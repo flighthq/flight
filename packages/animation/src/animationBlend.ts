@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity';
-import type { AnimationSampleAccumulator } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import type { AnimationSampleAccumulator } from '@flighthq/types/contract';
 
 // Adds a non-negative weighted sample into caller-owned accumulation state. Quaternion samples are
 // sign-aligned with the current sum so equivalent q/-q inputs do not cancel. No target or clip state

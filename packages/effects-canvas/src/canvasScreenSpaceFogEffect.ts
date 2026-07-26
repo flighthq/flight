@@ -1,4 +1,4 @@
-import type { CanvasRenderEffectRunner, CanvasRenderTarget, ScreenSpaceFogEffect } from '@flighthq/types';
+import type { CanvasRenderEffectRunner, CanvasRenderTarget, ScreenSpaceFogEffect } from '@flighthq/types/contract';
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 

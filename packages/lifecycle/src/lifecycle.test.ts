@@ -1,5 +1,5 @@
-import { cancelSignal, connectSignal } from '@flighthq/signals';
-import type { AppLifecycleState, AppMemoryPressure, LifecycleBackend } from '@flighthq/types';
+import { cancelSignal, connectSignal } from '@flighthq/signals/contract';
+import type { AppLifecycleState, AppMemoryPressure, LifecycleBackend } from '@flighthq/types/contract';
 
 import {
   attachAppLifecycle,

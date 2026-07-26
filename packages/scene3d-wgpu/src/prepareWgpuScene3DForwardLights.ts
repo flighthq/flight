@@ -1,8 +1,8 @@
-import { createAabb, createBoundingSphere, setBoundingSphereFromAabb } from '@flighthq/geometry';
-import { selectScene3DForwardLights } from '@flighthq/lighting';
-import { getNodeWorldMatrix4 } from '@flighthq/node';
+import { createAabb, createBoundingSphere, setBoundingSphereFromAabb } from '@flighthq/geometry/contract';
+import { selectScene3DForwardLights } from '@flighthq/lighting/contract';
+import { getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import { packScene3DLightBlock } from '@flighthq/render/contract';
-import { getNode3DWorldBounds } from '@flighthq/scene3d';
+import { getNode3DWorldBounds } from '@flighthq/scene3d/contract';
 import type {
   Mesh,
   Scene3DForwardLightSelection,

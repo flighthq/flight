@@ -1,4 +1,4 @@
-import type { DeviceFormFactor } from '@flighthq/types';
+import type { DeviceFormFactor } from '@flighthq/types/contract';
 import {
   DeviceFormFactorCar,
   DeviceFormFactorDesktop,
@@ -7,7 +7,7 @@ import {
   DeviceFormFactorTV,
   DeviceFormFactorUnknown,
   DeviceFormFactorWatch,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // UA-string parsers for device identity fields.
 // All functions are pure and side-effect-free — no DOM access, no globals, no state.

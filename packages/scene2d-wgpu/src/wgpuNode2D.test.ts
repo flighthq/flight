@@ -1,6 +1,6 @@
-import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
-import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
-import { createDisplayObject } from '@flighthq/scene2d';
+import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu/contract';
+import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
 
 import { defaultWgpuScene2DRenderer, drawWgpuScene2D, renderWgpuScene2D } from './wgpuNode2D';
 

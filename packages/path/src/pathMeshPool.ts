@@ -1,4 +1,4 @@
-import type { Path, PathMesh, PathMeshTyped } from '@flighthq/types';
+import type { Path, PathMesh, PathMeshTyped } from '@flighthq/types/contract';
 
 import { tessellatePath } from './tessellatePath';
 import { tessellatePathTyped } from './tessellatePathTyped';

@@ -1,11 +1,11 @@
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
-import { createParticleEmitterConfig } from '@flighthq/particles';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { createParticleEmitterConfig } from '@flighthq/particles/contract';
 import type {
   ImportDiagnostic,
   ParseParticleConfigOptions,
   ParticleConfigParseResult,
   ParticleEmitterConfig,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 import {
   ImportDiagnosticSeverity,
   LibgdxParticleFormatKind,
@@ -14,7 +14,7 @@ import {
   SpineParticleFormatKind,
   StarlingPexFormatKind,
   UnityParticleFormatKind,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { detectParticleFormat } from './detect';
 import { parseLibgdxParticle, parseLibgdxParticleDocument } from './libgdxParse';

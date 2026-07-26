@@ -1,4 +1,4 @@
-import type { Path } from '@flighthq/types';
+import type { Path } from '@flighthq/types/contract';
 
 // Allocates a new `Path` that is a deep copy of `source`.
 // Use `copyPath(source, out)` to write into an existing path without allocating.

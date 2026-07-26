@@ -1,6 +1,6 @@
-import { unpackColorToLinear } from '@flighthq/color';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import { getModifierDefineKey, orderModifierStack, resolveModifier } from '@flighthq/shading';
+import { unpackColorToLinear } from '@flighthq/color/contract';
+import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { getModifierDefineKey, orderModifierStack, resolveModifier } from '@flighthq/shading/contract';
 import type {
   AnimatedNormalModifier,
   DissolveModifier,

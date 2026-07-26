@@ -1,5 +1,5 @@
-import type { WebcamStream } from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
+import type { WebcamStream } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createWebcamStreamEntity, getWebcamStreamRuntime } from './webcamStream';
 

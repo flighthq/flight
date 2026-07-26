@@ -1,2 +1,1 @@
-export * from './spatialIndex';
-export * from './uniformGrid';
+export * from './contract';

@@ -1,4 +1,4 @@
-import type { BokehDepthOfFieldEffect } from '@flighthq/types';
+import type { BokehDepthOfFieldEffect } from '@flighthq/types/contract';
 
 export function createBokehDepthOfFieldEffect(
   options: Readonly<Omit<BokehDepthOfFieldEffect, 'kind'>> = {},

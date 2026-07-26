@@ -1,4 +1,4 @@
-import type { RenderEffect } from '@flighthq/types';
+import type { RenderEffect } from '@flighthq/types/contract';
 
 // Animation-friendly interpolation for render-effect intents. Allows tween/timeline to animate
 // effect parameters smoothly across keyframes. All functions are alias-safe.

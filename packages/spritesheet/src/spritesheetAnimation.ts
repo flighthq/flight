@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity';
-import type { Spritesheet, SpritesheetAnimation } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import type { Spritesheet, SpritesheetAnimation } from '@flighthq/types/contract';
 
 export function createSpritesheetAnimation(obj?: Partial<SpritesheetAnimation>): SpritesheetAnimation {
   return createEntity({

@@ -1,6 +1,6 @@
-import { createSignal, emitSignal } from '@flighthq/signals';
-import type { ClipboardBackend, ClipboardBookmark, ClipboardWatch, ClipboardWriteItem } from '@flighthq/types';
-import { ClipboardFormatBookmark, ClipboardFormatHtml, ClipboardFormatRtf } from '@flighthq/types';
+import { createSignal, emitSignal } from '@flighthq/signals/contract';
+import type { ClipboardBackend, ClipboardBookmark, ClipboardWatch, ClipboardWriteItem } from '@flighthq/types/contract';
+import { ClipboardFormatBookmark, ClipboardFormatHtml, ClipboardFormatRtf } from '@flighthq/types/contract';
 
 // Attaches `watch` to the active backend's change subscription. Emits watch.onChange on each
 // clipboard change. Idempotent: a prior subscription is torn down first.

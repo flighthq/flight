@@ -4,7 +4,7 @@ import type {
   HapticsCapabilities,
   HapticNotificationType,
   CapacitorApi,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Maps Flight's HapticsBackend onto Capacitor's `@capacitor/haptics`. Every Capacitor call is an async
 // void, whereas the HapticsBackend triggers are synchronous booleans, so each adapter method fires the

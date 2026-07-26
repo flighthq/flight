@@ -1,5 +1,5 @@
-import { createQuaternion, createVector3 } from '@flighthq/geometry';
-import type { HasTransform3D, HasTransform3DRuntime } from '@flighthq/types';
+import { createQuaternion, createVector3 } from '@flighthq/geometry/contract';
+import type { HasTransform3D, HasTransform3DRuntime } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { initTransform3DRuntimeTrait, initTransform3DTrait } from './hasTransform3d';

@@ -1,8 +1,8 @@
-﻿import { computeRgbHexString } from '@flighthq/color';
-import { createGlTexture, drawGlQuad, updateGlTexture, useGlProgram } from '@flighthq/render-gl';
-import { resolveGlShader } from '@flighthq/render-gl';
-import { computeTextFormatFontString } from '@flighthq/text';
-import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text';
+﻿import { computeRgbHexString } from '@flighthq/color/contract';
+import { createGlTexture, drawGlQuad, updateGlTexture, useGlProgram } from '@flighthq/render-gl/contract';
+import { resolveGlShader } from '@flighthq/render-gl/contract';
+import { computeTextFormatFontString } from '@flighthq/text/contract';
+import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text/contract';
 import {
   computeRichTextContent,
   computeTextBoundsHeight,
@@ -12,7 +12,7 @@ import {
   getRichTextContent,
   getRichTextScrollYOffset,
   getTextLayoutResult,
-} from '@flighthq/textlayout';
+} from '@flighthq/textlayout/contract';
 import type {
   Scene2DRenderer,
   GlRenderState,

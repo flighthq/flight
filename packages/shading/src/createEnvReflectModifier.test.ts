@@ -1,4 +1,4 @@
-import { EnvReflectModifierKind, ModifierSlot } from '@flighthq/types';
+import { EnvReflectModifierKind, ModifierSlot } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createEnvReflectModifier } from './createEnvReflectModifier';

@@ -1,4 +1,4 @@
-import { AdvancedBlendMode } from '@flighthq/types';
+import { AdvancedBlendMode } from '@flighthq/types/contract';
 
 // Pure blend-mode math — the substrate-agnostic ground truth the GL (and any future) backend shaders
 // mirror, so the composite-recipe fragment source can be verified against plain numbers. All values are

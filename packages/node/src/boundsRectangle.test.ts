@@ -1,11 +1,11 @@
-import { getEntityRuntime as _getRuntime } from '@flighthq/entity';
+import { getEntityRuntime as _getRuntime } from '@flighthq/entity/contract';
 import {
   cloneRectangle,
   createRectangle,
   equalsRectangle,
   setEmptyRectangle as setEmpty,
   setRectangle,
-} from '@flighthq/geometry';
+} from '@flighthq/geometry/contract';
 import {
   addNodeChild,
   createNode,
@@ -22,7 +22,7 @@ import type {
   Node,
   NodeRuntime,
   Rectangle,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import {
   computeNodeBoundsRectangle,

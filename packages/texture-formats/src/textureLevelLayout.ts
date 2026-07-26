@@ -1,5 +1,5 @@
-import type { TextureContainerFormat } from '@flighthq/types';
-import type { TextureContainerLevel } from '@flighthq/types';
+import type { TextureContainerFormat } from '@flighthq/types/contract';
+import type { TextureContainerLevel } from '@flighthq/types/contract';
 
 // Block-size-aware mip-chain layout, shared by the container parsers. A `TextureContainerFormat` is
 // either uncompressed (a 1x1 "block" of N bytes per pixel) or block-compressed (a fixed WxH block of N

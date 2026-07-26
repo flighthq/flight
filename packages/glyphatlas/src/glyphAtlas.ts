@@ -1,5 +1,5 @@
-import { createSurface } from '@flighthq/surface';
-import type { GlyphAtlas, GlyphAtlasOptions, GlyphMetrics, Surface } from '@flighthq/types';
+import { createSurface } from '@flighthq/surface/contract';
+import type { GlyphAtlas, GlyphAtlasOptions, GlyphMetrics, Surface } from '@flighthq/types/contract';
 
 // Allocates a dynamic glyph atlas: an empty `width x height` atlas surface, an empty codepoint→entry
 // cache, and a fresh incremental shelf packer. Glyphs are added lazily by `getGlyphAtlasEntry`;

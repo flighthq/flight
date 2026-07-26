@@ -5,10 +5,10 @@ import {
   getNodeChildCount,
   getNodeWorldBoundsRectangle,
   getNodeWorldMatrix,
-} from '@flighthq/node';
-import { createGlProgram } from '@flighthq/render-gl';
-import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import { createGlRenderTarget } from '@flighthq/render-gl';
+} from '@flighthq/node/contract';
+import { createGlProgram } from '@flighthq/render-gl/contract';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { createGlRenderTarget } from '@flighthq/render-gl/contract';
 import type {
   GlRenderState,
   GlRenderTarget,
@@ -24,7 +24,7 @@ import type {
   VelocityField,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
-import { getVelocity } from '@flighthq/velocity';
+import { getVelocity } from '@flighthq/velocity/contract';
 
 // Gl velocity-buffer production. Velocity is tied to the draw, so production is per-kind: the velocity
 // pass walks the scene and dispatches a registered GlVelocityWriter for each node's kind, which draws

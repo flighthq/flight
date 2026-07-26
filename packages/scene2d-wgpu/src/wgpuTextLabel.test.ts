@@ -1,8 +1,8 @@
-import { createImageResource } from '@flighthq/image';
-import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
-import { createTextLabel } from '@flighthq/text';
+import { createImageResource } from '@flighthq/image/contract';
+import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
+import { createTextLabel } from '@flighthq/text/contract';
 import type { RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat } from '@flighthq/types/contract';
 

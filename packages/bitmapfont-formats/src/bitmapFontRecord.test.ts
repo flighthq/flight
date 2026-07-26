@@ -3,9 +3,9 @@ import {
   getBitmapFontKerning,
   getBitmapFontMetrics,
   getBitmapFontPage,
-} from '@flighthq/bitmapfont';
-import { createTextureAtlas } from '@flighthq/textureatlas';
-import type { BitmapFontRecord } from '@flighthq/types';
+} from '@flighthq/bitmapfont/contract';
+import { createTextureAtlas } from '@flighthq/textureatlas/contract';
+import type { BitmapFontRecord } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { buildBitmapFontFromRecord } from './bitmapFontRecord';

@@ -3,7 +3,7 @@ import type {
   CanvasRenderTarget,
   CanvasRenderTargetPool,
   OuterGlowEffect,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
 import { computeOuterGlowEffectCss } from './canvasEffectDropShadowCss';

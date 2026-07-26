@@ -1,4 +1,4 @@
-import type { ShapeCommandKey, ShapeCommandToken, ShapeHitTestCommand } from '@flighthq/types';
+import type { ShapeCommandKey, ShapeCommandToken, ShapeHitTestCommand } from '@flighthq/types/contract';
 
 type AnyHitTestFn = (x: number, y: number, buf: readonly ShapeCommandToken[], i: number) => boolean;
 

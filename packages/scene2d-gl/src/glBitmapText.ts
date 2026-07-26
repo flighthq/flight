@@ -1,7 +1,7 @@
-import { hasImageResourcePixels } from '@flighthq/image';
-import { getGlRenderStateRuntime, resolveGlMaterialRenderer } from '@flighthq/render-gl';
+import { hasImageResourcePixels } from '@flighthq/image/contract';
+import { getGlRenderStateRuntime, resolveGlMaterialRenderer } from '@flighthq/render-gl/contract';
 import { noopRendererData } from '@flighthq/render/contract';
-import { getNode2DRuntime } from '@flighthq/scene2d';
+import { getNode2DRuntime } from '@flighthq/scene2d/contract';
 import type {
   BitmapText,
   BitmapTextRuntime,

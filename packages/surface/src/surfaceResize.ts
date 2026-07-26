@@ -1,5 +1,5 @@
-import { invalidateImageResource } from '@flighthq/image';
-import type { SurfaceEdgeMode, SurfaceRegion, SurfaceResizeMode, SurfaceResizeOptions } from '@flighthq/types';
+import { invalidateImageResource } from '@flighthq/image/contract';
+import type { SurfaceEdgeMode, SurfaceRegion, SurfaceResizeMode, SurfaceResizeOptions } from '@flighthq/types/contract';
 
 /**
  * Resamples the `source` region into the `dest` region; `dest`'s dimensions

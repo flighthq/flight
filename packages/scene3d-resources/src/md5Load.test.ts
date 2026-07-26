@@ -1,6 +1,6 @@
-import type * as NetModule from '@flighthq/net';
-import type * as Scene3DFormatsModule from '@flighthq/scene3d-formats';
-import type { NetResponse, Scene3DDocument } from '@flighthq/types';
+import type * as NetModule from '@flighthq/net/contract';
+import type * as Scene3DFormatsModule from '@flighthq/scene3d-formats/contract';
+import type { NetResponse, Scene3DDocument } from '@flighthq/types/contract';
 import type { Mock } from 'vitest';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 

@@ -1,4 +1,10 @@
-import type { CollisionAabb, CollisionCircle, CollisionObb, CollisionPolygon, CollisionSegment } from '@flighthq/types';
+import type {
+  CollisionAabb,
+  CollisionCircle,
+  CollisionObb,
+  CollisionPolygon,
+  CollisionSegment,
+} from '@flighthq/types/contract';
 
 // Segment-vs-shape overlap queries. Segments are area-less, so these return a boolean rather than a
 // manifold (a swept/contact answer is a later phase). All are boundary-inclusive: a segment that

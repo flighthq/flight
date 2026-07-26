@@ -1,6 +1,6 @@
-﻿import { createEntity } from '@flighthq/entity';
-import { getNodeLocalBoundsRectangle } from '@flighthq/node';
-import { mapCanvasScale9ShapeCommands, renderCanvasShapeCommands } from '@flighthq/scene2d-canvas';
+﻿import { createEntity } from '@flighthq/entity/contract';
+import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
+import { mapCanvasScale9ShapeCommands, renderCanvasShapeCommands } from '@flighthq/scene2d-canvas/contract';
 import type {
   Scene2DRenderer,
   DomRenderState,

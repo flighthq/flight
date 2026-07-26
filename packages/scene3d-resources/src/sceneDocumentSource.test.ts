@@ -1,7 +1,7 @@
-import { setNetBackend } from '@flighthq/net';
-import { connectSignal, createSignal, emitSignal } from '@flighthq/signals';
-import type { NetResponse, Scene3DDocument, Scene3DDocumentLoadProgress } from '@flighthq/types';
-import { ImageResourceReferenceKind, ResourceResolutionState } from '@flighthq/types';
+import { setNetBackend } from '@flighthq/net/contract';
+import { connectSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
+import type { NetResponse, Scene3DDocument, Scene3DDocumentLoadProgress } from '@flighthq/types/contract';
+import { ImageResourceReferenceKind, ResourceResolutionState } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {

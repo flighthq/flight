@@ -1,4 +1,4 @@
-import type { CanvasRenderState } from '@flighthq/types';
+import type { CanvasRenderState } from '@flighthq/types/contract';
 
 import {
   registerAllCanvasRenderEffects,

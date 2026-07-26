@@ -1,6 +1,6 @@
-import { hasImageResourcePixels } from '@flighthq/image';
-import { resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
+import { hasImageResourcePixels } from '@flighthq/image/contract';
+import { resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import type {
   ColorScaleBias,

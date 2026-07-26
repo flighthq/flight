@@ -1,6 +1,6 @@
-import { createVector2 } from '@flighthq/geometry';
-import { appendPathLineTo, appendPathMoveTo, createPath } from '@flighthq/path';
-import type { Path } from '@flighthq/types';
+import { createVector2 } from '@flighthq/geometry/contract';
+import { appendPathLineTo, appendPathMoveTo, createPath } from '@flighthq/path/contract';
+import type { Path } from '@flighthq/types/contract';
 
 import {
   createMotionPath,

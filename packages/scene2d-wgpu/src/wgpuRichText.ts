@@ -1,8 +1,8 @@
-import { computeRgbHexString } from '@flighthq/color';
-import { createWgpuTextureEntry, drawWgpuQuad, updateWgpuTextureEntry } from '@flighthq/render-wgpu';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import { computeTextFormatFontString } from '@flighthq/text';
-import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text';
+import { computeRgbHexString } from '@flighthq/color/contract';
+import { createWgpuTextureEntry, drawWgpuQuad, updateWgpuTextureEntry } from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { computeTextFormatFontString } from '@flighthq/text/contract';
+import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text/contract';
 import {
   computeRichTextContent,
   computeTextBoundsHeight,
@@ -12,7 +12,7 @@ import {
   getRichTextContent,
   getRichTextScrollYOffset,
   getTextLayoutResult,
-} from '@flighthq/textlayout';
+} from '@flighthq/textlayout/contract';
 import type {
   Scene2DRenderer,
   Renderable,

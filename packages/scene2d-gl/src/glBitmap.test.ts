@@ -1,4 +1,4 @@
-import { getGlRenderStateRuntime } from '@flighthq/render-gl';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat } from '@flighthq/types/contract';
 

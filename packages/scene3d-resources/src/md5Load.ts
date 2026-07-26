@@ -1,5 +1,5 @@
-import { parseMd5Mesh } from '@flighthq/scene3d-formats';
-import type { Scene3DDocument, Scene3DDocumentLoadOptions } from '@flighthq/types';
+import { parseMd5Mesh } from '@flighthq/scene3d-formats/contract';
+import type { Scene3DDocument, Scene3DDocumentLoadOptions } from '@flighthq/types/contract';
 
 import { loadScene3DDocumentTextFromUrl, setScene3DDocumentResourceBasePathFromUrl } from './sceneDocumentSource';
 

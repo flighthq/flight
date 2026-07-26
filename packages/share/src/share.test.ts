@@ -1,5 +1,5 @@
-import { connectSignal } from '@flighthq/signals';
-import type { ShareBackend, ShareContent, ShareFile, ShareOptions, ShareResult } from '@flighthq/types';
+import { connectSignal } from '@flighthq/signals/contract';
+import type { ShareBackend, ShareContent, ShareFile, ShareOptions, ShareResult } from '@flighthq/types/contract';
 
 import {
   attachShareSignals,

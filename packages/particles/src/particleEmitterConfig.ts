@@ -1,4 +1,4 @@
-import type { ParticleEmitterConfig } from '@flighthq/types';
+import type { ParticleEmitterConfig } from '@flighthq/types/contract';
 
 export function createParticleEmitterConfig(config?: Partial<ParticleEmitterConfig>): ParticleEmitterConfig {
   return {

@@ -1,4 +1,4 @@
-﻿import { createEntity } from '@flighthq/entity';
+﻿import { createEntity } from '@flighthq/entity/contract';
 import type {
   Bitmap,
   Scene2DRenderer,

@@ -3,7 +3,7 @@ import {
   AnimationInterpolationLinear,
   AnimationInterpolationStep,
   EntityRuntimeKey,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import {
   cloneAnimationTrack,

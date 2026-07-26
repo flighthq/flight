@@ -7,8 +7,8 @@ import {
   appendPathMoveTo,
   createPath,
   forEachPathSegment,
-} from '@flighthq/path';
-import type { Path } from '@flighthq/types';
+} from '@flighthq/path/contract';
+import type { Path } from '@flighthq/types/contract';
 
 /**
  * Parses an SVG path `d` string into the end of an existing `path`, appending its contours via the

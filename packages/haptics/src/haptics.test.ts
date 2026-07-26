@@ -1,4 +1,9 @@
-import type { HapticImpactStyle, HapticNotificationType, HapticsBackend, HapticsCapabilities } from '@flighthq/types';
+import type {
+  HapticImpactStyle,
+  HapticNotificationType,
+  HapticsBackend,
+  HapticsCapabilities,
+} from '@flighthq/types/contract';
 
 import {
   cancelDeviceVibration,

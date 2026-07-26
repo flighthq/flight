@@ -1,6 +1,10 @@
-import { createEntity } from '@flighthq/entity';
-import type { AnimationInterpolation, AnimationTrack, AnimationTrackValidationDiagnostic } from '@flighthq/types';
-import { AnimationInterpolationLinear } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import type {
+  AnimationInterpolation,
+  AnimationTrack,
+  AnimationTrackValidationDiagnostic,
+} from '@flighthq/types/contract';
+import { AnimationInterpolationLinear } from '@flighthq/types/contract';
 
 // Deep-copies an AnimationTrack, allocating fresh `times` and `values` buffers (preserving Float32Array
 // vs number[] backing) so the clone shares no mutable state with the source. Easing functions are

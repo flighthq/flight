@@ -1,5 +1,5 @@
-import { createMatrix, createRectangle } from '@flighthq/geometry';
-import { getGlRenderStateRuntime } from '@flighthq/render-gl';
+import { createMatrix, createRectangle } from '@flighthq/geometry/contract';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 
 import { popGlClipRectangle, pushGlClipRectangle } from './glClipRectangle';
 import { createGlState } from './glTestHelper';

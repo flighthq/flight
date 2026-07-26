@@ -1,5 +1,5 @@
-import type { EmissiveModifier, EmissiveModifierOptions } from '@flighthq/types';
-import { EmissiveModifierFacing, EmissiveModifierKind, ModifierSlot } from '@flighthq/types';
+import type { EmissiveModifier, EmissiveModifierOptions } from '@flighthq/types/contract';
+import { EmissiveModifierFacing, EmissiveModifierKind, ModifierSlot } from '@flighthq/types/contract';
 
 // The options for `createEmissiveModifier`. Only `color` is required; every other field carries a
 // documented default so the returned descriptor is fully populated (the define-key signature reads

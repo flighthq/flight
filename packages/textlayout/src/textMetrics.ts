@@ -1,4 +1,4 @@
-import type { TextLayoutResult, TextMetrics } from '@flighthq/types';
+import type { TextLayoutResult, TextMetrics } from '@flighthq/types/contract';
 
 export function createTextMetrics(): TextMetrics {
   return { height: 0, numLines: 0, width: 0 };

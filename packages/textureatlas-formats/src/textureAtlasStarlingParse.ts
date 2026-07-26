@@ -1,6 +1,6 @@
-import { createTextureAtlasRegion } from '@flighthq/textureatlas';
-import type { TextureAtlas, TextureAtlasStarlingParseOptions } from '@flighthq/types';
-import { parseXmlDocument } from '@flighthq/xml';
+import { createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
+import type { TextureAtlas, TextureAtlasStarlingParseOptions } from '@flighthq/types/contract';
+import { parseXmlDocument } from '@flighthq/xml/contract';
 
 // Populates `atlas.regions` from a Starling / Sparrow XML string.
 // Existing regions are cleared before parsing. Returns `atlas` for convenience.

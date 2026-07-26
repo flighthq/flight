@@ -1,7 +1,7 @@
-import { logOnce } from '@flighthq/log';
-import { getNodeRuntime } from '@flighthq/node';
-import type { InteractionHitEligibility, InteractionSignalName, NodeAny } from '@flighthq/types';
-import { LogLevel } from '@flighthq/types';
+import { logOnce } from '@flighthq/log/contract';
+import { getNodeRuntime } from '@flighthq/node/contract';
+import type { InteractionHitEligibility, InteractionSignalName, NodeAny } from '@flighthq/types/contract';
+import { LogLevel } from '@flighthq/types/contract';
 
 import { setInteractionConnectGuard } from './interactionManager';
 import { isNodeFocusable, isNodeHitTestEnabled } from './nodeInteractionState';

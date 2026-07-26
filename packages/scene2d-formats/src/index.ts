@@ -1,2 +1,1 @@
-export * from './lottieDocument';
-export * from './svgDocument';
+export * from './contract';

@@ -1,7 +1,7 @@
-import { sampleAnimationTrack } from '@flighthq/animation';
-import { setQuaternion, setVector3 } from '@flighthq/geometry';
-import { invalidateNodeLocalTransform } from '@flighthq/node';
-import type { AnimationClip, Mesh, Scene3DAnimationTarget } from '@flighthq/types';
+import { sampleAnimationTrack } from '@flighthq/animation/contract';
+import { setQuaternion, setVector3 } from '@flighthq/geometry/contract';
+import { invalidateNodeLocalTransform } from '@flighthq/node/contract';
+import type { AnimationClip, Mesh, Scene3DAnimationTarget } from '@flighthq/types/contract';
 
 // Samples every channel of `clip` at `time` and applies it to its target's sink — the 3D binding layer
 // over the target-free @flighthq/animation core (the core samples values; this maps a channel's opaque

@@ -1,4 +1,4 @@
-import type { BidiClass, BidiDirection } from '@flighthq/types';
+import type { BidiClass, BidiDirection } from '@flighthq/types/contract';
 
 import { getBidiClassBackend } from './bidiClassBackend';
 

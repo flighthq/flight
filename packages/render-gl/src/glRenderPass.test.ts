@@ -1,4 +1,4 @@
-import { createMatrix } from '@flighthq/geometry';
+import { createMatrix } from '@flighthq/geometry/contract';
 import type { GlRenderTarget } from '@flighthq/types/contract';
 
 import { beginGlRenderPass, endGlRenderPass, setGlRenderTransform2D } from './glRenderPass';

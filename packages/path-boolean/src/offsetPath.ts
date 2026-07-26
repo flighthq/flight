@@ -1,5 +1,5 @@
-import { flattenPath } from '@flighthq/path';
-import type { Path, PathOffsetEnd, PathOffsetJoin, PathOffsetOptions } from '@flighthq/types';
+import { flattenPath } from '@flighthq/path/contract';
+import type { Path, PathOffsetEnd, PathOffsetJoin, PathOffsetOptions } from '@flighthq/types/contract';
 
 import { resolvePathRegions } from './resolvePathRegions';
 

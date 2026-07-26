@@ -1,5 +1,5 @@
-import type { Path, Vector2Like } from '@flighthq/types';
-import { PathCommand } from '@flighthq/types';
+import type { Path, Vector2Like } from '@flighthq/types/contract';
+import { PathCommand } from '@flighthq/types/contract';
 
 // Returns the point at parameter `t` (0..1) on a cubic bezier
 // P0 → C1 → C2 → P1 using de Casteljau. Writes into `out`.

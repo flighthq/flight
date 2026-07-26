@@ -1,8 +1,12 @@
-import { createCamera3D, createOrthographicProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
-import { createVector3 } from '@flighthq/geometry';
-import { createMeshGeometry, updateMeshMorph } from '@flighthq/mesh';
-import { addNodeChild } from '@flighthq/node';
-import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d';
+import {
+  createCamera3D,
+  createOrthographicProjection,
+  setCamera3DViewMatrix4FromLookAt,
+} from '@flighthq/camera/contract';
+import { createVector3 } from '@flighthq/geometry/contract';
+import { createMeshGeometry, updateMeshMorph } from '@flighthq/mesh/contract';
+import { addNodeChild } from '@flighthq/node/contract';
+import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
 import type { Skin, VertexAttributeLayout } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 

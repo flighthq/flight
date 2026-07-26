@@ -5,8 +5,8 @@ import type {
   WgpuRenderEffectRunner,
   WgpuRenderState,
   WgpuRenderTarget,
-} from '@flighthq/types';
-import { CompositeOperator as CompositeOperatorValues } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { CompositeOperator as CompositeOperatorValues } from '@flighthq/types/contract';
 
 import { getWgpuBlendEffectBackdrop } from './wgpuBlendEffect';
 import { createWgpuDualSourceEffectPipeline, drawWgpuDualSourceEffectPass } from './wgpuEffectPass';

@@ -1,4 +1,4 @@
-import type { DecodedImage, ImageDecodeOptions, ImageDecoder } from '@flighthq/types';
+import type { DecodedImage, ImageDecodeOptions, ImageDecoder } from '@flighthq/types/contract';
 
 import { registerImageDecoder } from './imageDecoderRegistry';
 

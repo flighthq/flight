@@ -1,11 +1,11 @@
-import { createParticleEmitter2D, reserveParticleEmitter2D } from '@flighthq/particleemitter';
-import { renderWgpuBackground } from '@flighthq/render-wgpu';
-import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
-import { createDisplayObject } from '@flighthq/scene2d';
-import { createQuadBatch, getQuadBatchRuntime } from '@flighthq/sprite';
+import { createParticleEmitter2D, reserveParticleEmitter2D } from '@flighthq/particleemitter/contract';
+import { renderWgpuBackground } from '@flighthq/render-wgpu/contract';
+import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
+import { createQuadBatch, getQuadBatchRuntime } from '@flighthq/sprite/contract';
 import type { QuadBatchRuntime, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
 import { QuadBatchKind } from '@flighthq/types/contract';
-import { beginVelocityFrame, contributeVelocity, createVelocityField } from '@flighthq/velocity';
+import { beginVelocityFrame, contributeVelocity, createVelocityField } from '@flighthq/velocity/contract';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import {

@@ -1,4 +1,4 @@
-import { AmbientLightKind } from '@flighthq/types';
+import { AmbientLightKind } from '@flighthq/types/contract';
 
 import { cloneAmbientLight, createAmbientLight } from './ambientLight';
 

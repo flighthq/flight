@@ -1,5 +1,5 @@
-import { createPointLight } from '@flighthq/lighting';
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log';
+import { createPointLight } from '@flighthq/lighting/contract';
+import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
 
 import {
   areWgpuScene3DForwardLightSelectionGuardsEnabled,

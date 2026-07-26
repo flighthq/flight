@@ -1,4 +1,4 @@
-import { createGlRenderStateRuntime } from '@flighthq/render-gl';
+import { createGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createRenderState } from '@flighthq/render/contract';
 import type { GlRenderState, GlRenderStateRuntime } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';

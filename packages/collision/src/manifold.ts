@@ -1,4 +1,4 @@
-import type { CollisionManifold } from '@flighthq/types';
+import type { CollisionManifold } from '@flighthq/types/contract';
 
 // Clears a manifold to the non-overlapping state: `overlapping` false, normal and depth zero. The
 // narrow-phase tests call this on their disjoint path, so a reused `out` never carries a stale

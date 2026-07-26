@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createSignal, emitSignal } from '@flighthq/signals';
+import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   EasingFunction,
   NumericProps,
@@ -9,7 +9,7 @@ import type {
   TweenManager,
   TweenOptions,
   TweenPropertyDetail,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { initializeTween } from './internal';
 import { defaultManager } from './tweenManager';

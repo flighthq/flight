@@ -1,5 +1,5 @@
-import { addNodeChild, getNodeChildCount, getNodeLocalMatrix4, getNodeRoot } from '@flighthq/node';
-import { Node3DKind } from '@flighthq/types';
+import { addNodeChild, getNodeChildCount, getNodeLocalMatrix4, getNodeRoot } from '@flighthq/node/contract';
+import { Node3DKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createScene3D } from './scene';

@@ -1,5 +1,5 @@
-import { connectSignal } from '@flighthq/signals';
-import type { PowerBackend, PowerBatteryHealth, PowerStatus } from '@flighthq/types';
+import { connectSignal } from '@flighthq/signals/contract';
+import type { PowerBackend, PowerBatteryHealth, PowerStatus } from '@flighthq/types/contract';
 
 import {
   attachPower,

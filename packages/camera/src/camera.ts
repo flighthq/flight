@@ -1,6 +1,12 @@
-import { createEntity } from '@flighthq/entity';
-import { createMatrix4, createVector2, inverseMatrix4, multiplyMatrix4, setMatrix4LookAt } from '@flighthq/geometry';
-import type { Camera3D, Camera3DOptions, Matrix4Like, Vector3Like } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import {
+  createMatrix4,
+  createVector2,
+  inverseMatrix4,
+  multiplyMatrix4,
+  setMatrix4LookAt,
+} from '@flighthq/geometry/contract';
+import type { Camera3D, Camera3DOptions, Matrix4Like, Vector3Like } from '@flighthq/types/contract';
 
 import { setProjectionMatrix4 } from './projection';
 

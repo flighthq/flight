@@ -3,8 +3,8 @@ import {
   createGlyphSourceFromGlyphAtlas,
   createStubGlyphRasterizerBackend,
   setGlyphRasterizerBackend,
-} from '@flighthq/glyphatlas';
-import type { GlyphEntry, GlyphSource, ImageResource } from '@flighthq/types';
+} from '@flighthq/glyphatlas/contract';
+import type { GlyphEntry, GlyphSource, ImageResource } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createBitmapText, getBitmapTextBounds, getBitmapTextPages } from './bitmapText';

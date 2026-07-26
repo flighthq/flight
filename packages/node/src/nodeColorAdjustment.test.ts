@@ -1,5 +1,5 @@
-import { createColorMatrixAdjustment, createTintAdjustment } from '@flighthq/adjustments';
-import { NodeKind } from '@flighthq/types';
+import { createColorMatrixAdjustment, createTintAdjustment } from '@flighthq/adjustments/contract';
+import { NodeKind } from '@flighthq/types/contract';
 
 import { createNode, getNodeRuntime } from './node';
 import {

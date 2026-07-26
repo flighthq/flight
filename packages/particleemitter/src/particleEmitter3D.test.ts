@@ -1,6 +1,6 @@
-import { createAabb, createMatrix4 } from '@flighthq/geometry';
-import { getNodeLocalMatrix4 } from '@flighthq/node';
-import { ParticleEmitter3DKind } from '@flighthq/types';
+import { createAabb, createMatrix4 } from '@flighthq/geometry/contract';
+import { getNodeLocalMatrix4 } from '@flighthq/node/contract';
+import { ParticleEmitter3DKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {

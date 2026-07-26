@@ -17,7 +17,7 @@ import {
   appendShapeRoundRectangle,
   createShape,
   PathCommand,
-} from '@flighthq/shape';
+} from '@flighthq/shape/contract';
 
 import { renderCanvasShapeCommands } from './canvasShape';
 import { defaultCanvasShapeCommands } from './canvasShapeCommands';

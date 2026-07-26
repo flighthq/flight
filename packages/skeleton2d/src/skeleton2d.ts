@@ -1,8 +1,8 @@
-import { createEntity } from '@flighthq/entity';
-import { inverseMatrix, multiplyMatrix } from '@flighthq/geometry';
-import { DEG_TO_RAD } from '@flighthq/math';
-import type { Bone2D, MatrixLike, Skeleton2D } from '@flighthq/types';
-import { TransformMode2D } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import { inverseMatrix, multiplyMatrix } from '@flighthq/geometry/contract';
+import { DEG_TO_RAD } from '@flighthq/math/contract';
+import type { Bone2D, MatrixLike, Skeleton2D } from '@flighthq/types/contract';
+import { TransformMode2D } from '@flighthq/types/contract';
 
 // 6 floats per bone in the flat 2×3 affine buffers (a, b, c, d, tx, ty), matching the Matrix field order.
 const MATRIX_STRIDE = 6;

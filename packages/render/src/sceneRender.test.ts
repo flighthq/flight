@@ -1,21 +1,30 @@
-import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
-import { unpackColorToLinear } from '@flighthq/color';
-import { createAabb, createMatrix4 } from '@flighthq/geometry';
+import {
+  createCamera3D,
+  createPerspectiveProjection,
+  setCamera3DViewMatrix4FromLookAt,
+} from '@flighthq/camera/contract';
+import { unpackColorToLinear } from '@flighthq/color/contract';
+import { createAabb, createMatrix4 } from '@flighthq/geometry/contract';
 import {
   createAmbientLight,
   createDirectionalLight,
   createHemisphereLight,
   createPointLight,
   createSpotLight,
-} from '@flighthq/lighting';
+} from '@flighthq/lighting/contract';
 import {
   CANONICAL_MESH_GEOMETRY_LAYOUT,
   computeMeshGeometryBounds,
   createBoxMeshGeometry,
   createMeshGeometry,
-} from '@flighthq/mesh';
-import { addNodeChild, getNodeWorldMatrix4, invalidateNodeLocalTransform, setNodeLocalMatrix4 } from '@flighthq/node';
-import { createMesh, createNode3D, Node3DKind, getNode3DWorldAlpha } from '@flighthq/scene3d';
+} from '@flighthq/mesh/contract';
+import {
+  addNodeChild,
+  getNodeWorldMatrix4,
+  invalidateNodeLocalTransform,
+  setNodeLocalMatrix4,
+} from '@flighthq/node/contract';
+import { createMesh, createNode3D, Node3DKind, getNode3DWorldAlpha } from '@flighthq/scene3d/contract';
 import type { Camera3D, Material, MeshGeometry, Scene3DLightBlock, Scene3DLightsLike } from '@flighthq/types/contract';
 import {
   SCENE_LIGHT_BLOCK_FLOATS,

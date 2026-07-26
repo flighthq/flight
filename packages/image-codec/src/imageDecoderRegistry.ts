@@ -1,4 +1,4 @@
-import type { ImageDecoder } from '@flighthq/types';
+import type { ImageDecoder } from '@flighthq/types/contract';
 
 export function clearImageDecoders(): void {
   decoders.clear();

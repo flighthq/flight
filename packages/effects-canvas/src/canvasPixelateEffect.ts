@@ -3,7 +3,7 @@ import type {
   CanvasRenderTarget,
   CanvasRenderTargetPool,
   PixelateEffect,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { acquireCanvasRenderTarget, releaseCanvasRenderTarget } from './canvasRenderEffectPipeline';
 

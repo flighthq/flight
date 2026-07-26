@@ -1,5 +1,5 @@
-import { createRectangle, createVector2 } from '@flighthq/geometry';
-import type { TextureAtlasRegion } from '@flighthq/types';
+import { createRectangle, createVector2 } from '@flighthq/geometry/contract';
+import type { TextureAtlasRegion } from '@flighthq/types/contract';
 
 import { createTextureAtlas } from './textureAtlas';
 import {

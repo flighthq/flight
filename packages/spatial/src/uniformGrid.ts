@@ -1,5 +1,11 @@
-import { containsRectanglePointXY, intersectsRectangle } from '@flighthq/geometry';
-import type { RectangleLike, SpatialAabb, SpatialIndexBackend, SpatialObjectId, SpatialPair } from '@flighthq/types';
+import { containsRectanglePointXY, intersectsRectangle } from '@flighthq/geometry/contract';
+import type {
+  RectangleLike,
+  SpatialAabb,
+  SpatialIndexBackend,
+  SpatialObjectId,
+  SpatialPair,
+} from '@flighthq/types/contract';
 
 // Builds a uniform-grid (spatial-hash) backend: an object's AABB is mapped to the rectangular block
 // of fixed-size cells it covers, and each cell holds the ids overlapping it. Co-located objects share

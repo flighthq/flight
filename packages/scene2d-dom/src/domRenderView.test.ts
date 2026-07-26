@@ -1,5 +1,5 @@
 import { getOrCreateRenderProxy2D, registerRenderer } from '@flighthq/render/contract';
-import { createRenderView } from '@flighthq/scene2d';
+import { createRenderView } from '@flighthq/scene2d/contract';
 import type { RenderViewRenderer } from '@flighthq/types/contract';
 import { RenderViewKind } from '@flighthq/types/contract';
 

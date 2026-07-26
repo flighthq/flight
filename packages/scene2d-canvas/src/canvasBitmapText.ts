@@ -1,5 +1,5 @@
 import { noopRendererData } from '@flighthq/render/contract';
-import { getNode2DRuntime } from '@flighthq/scene2d';
+import { getNode2DRuntime } from '@flighthq/scene2d/contract';
 import type {
   BitmapText,
   BitmapTextRuntime,

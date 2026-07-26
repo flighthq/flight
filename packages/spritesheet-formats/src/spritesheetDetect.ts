@@ -1,12 +1,12 @@
-import type { SpritesheetData } from '@flighthq/spritesheet';
-import type { SpritesheetFormatKind, SpritesheetParseOptions } from '@flighthq/types';
+import type { SpritesheetData } from '@flighthq/spritesheet/contract';
+import type { SpritesheetFormatKind, SpritesheetParseOptions } from '@flighthq/types/contract';
 import {
   SpritesheetFormatKindAseprite as ASEPRITE,
   SpritesheetFormatKindCocosPlist as COCOS_PLIST,
   SpritesheetFormatKindLibgdxAtlas as LIBGDX_ATLAS,
   SpritesheetFormatKindStarling as STARLING,
   SpritesheetFormatKindTexturePacker as TEXTURE_PACKER,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { parseAsepriteSpritesheet } from './asepriteParse';
 import { parseCocosPlistSpritesheet } from './cocosPlistParse';

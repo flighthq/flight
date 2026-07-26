@@ -1,4 +1,4 @@
-import type { AudioResource } from '@flighthq/types';
+import type { AudioResource } from '@flighthq/types/contract';
 
 // Allocates a new resource identity over the SAME underlying AudioBuffer. The buffer is shared by
 // reference, not duplicated — clone gives an independent resource object over the same decoded PCM,

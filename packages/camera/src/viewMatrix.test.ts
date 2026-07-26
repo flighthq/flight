@@ -1,4 +1,4 @@
-import { createMatrix, createVector2, matrixTransformPointXY } from '@flighthq/geometry';
+import { createMatrix, createVector2, matrixTransformPointXY } from '@flighthq/geometry/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createCamera2D } from './camera2d';

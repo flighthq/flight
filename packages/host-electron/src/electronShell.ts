@@ -1,4 +1,4 @@
-import type { ShellBackend, ShellShortcutLink, ElectronApi, ElectronShortcutDetails } from '@flighthq/types';
+import type { ShellBackend, ShellShortcutLink, ElectronApi, ElectronShortcutDetails } from '@flighthq/types/contract';
 
 // Maps Flight's ShellBackend onto Electron's main-process shell module. Async operations resolve to
 // false on failure rather than throwing — these are expected-failure surfaces, not programmer

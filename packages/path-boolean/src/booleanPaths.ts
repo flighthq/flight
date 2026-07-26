@@ -1,5 +1,5 @@
-import { createPath, appendPathClose, appendPathLineTo, appendPathMoveTo, flattenPath } from '@flighthq/path';
-import type { Path, PathBooleanOperation, PathBooleanOptions } from '@flighthq/types';
+import { createPath, appendPathClose, appendPathLineTo, appendPathMoveTo, flattenPath } from '@flighthq/path/contract';
+import type { Path, PathBooleanOperation, PathBooleanOptions } from '@flighthq/types/contract';
 
 import { getPathBooleanBackend } from './pathBooleanBackend';
 

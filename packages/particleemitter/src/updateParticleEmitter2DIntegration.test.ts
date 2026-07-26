@@ -1,4 +1,4 @@
-import { createRandomSource } from '@flighthq/math';
+import { createRandomSource } from '@flighthq/math/contract';
 import {
   applyParticleCollisions,
   applyParticleForces,
@@ -6,8 +6,8 @@ import {
   createParticleEmitterState,
   enableParticleEmitterSignals,
   normalizeParticleEmitterConfig,
-} from '@flighthq/particles';
-import type { TextureAtlas } from '@flighthq/types';
+} from '@flighthq/particles/contract';
+import type { TextureAtlas } from '@flighthq/types/contract';
 
 import { createParticleEmitter2D } from './particleEmitter';
 import { updateParticleEmitter2D } from './updateParticleEmitter2D';

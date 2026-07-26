@@ -1,19 +1,19 @@
-import { createStandardPbrMaterial } from '@flighthq/materials';
-import { createBoxMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild } from '@flighthq/node';
-import { createMesh, createScene3D } from '@flighthq/scene3d';
-import { emitSignal } from '@flighthq/signals';
-import { createTexture } from '@flighthq/texture';
-import { createTweenManager, hasTweensOf, updateTweens } from '@flighthq/tween';
-import type { Scene3D } from '@flighthq/types';
+import { createStandardPbrMaterial } from '@flighthq/materials/contract';
+import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
+import { addNodeChild } from '@flighthq/node/contract';
+import { createMesh, createScene3D } from '@flighthq/scene3d/contract';
+import { emitSignal } from '@flighthq/signals/contract';
+import { createTexture } from '@flighthq/texture/contract';
+import { createTweenManager, hasTweensOf, updateTweens } from '@flighthq/tween/contract';
+import type { Scene3D } from '@flighthq/types/contract';
 import type {
   EmbeddedImageResourceReference,
   ImageResource,
   Node3D,
   Scene3DResourceEvent,
   Texture,
-} from '@flighthq/types';
-import { ResourceResolutionState } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { ResourceResolutionState } from '@flighthq/types/contract';
 
 import { revealScene3DResourcesOnResolve } from './revealScene3DResourcesOnResolve';
 import { createBuiltInScene3DResourceResolver } from './sceneResourceResolver';

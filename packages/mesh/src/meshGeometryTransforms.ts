@@ -1,5 +1,5 @@
-import { createAabb } from '@flighthq/geometry';
-import type { Matrix4Like, MeshGeometry } from '@flighthq/types';
+import { createAabb } from '@flighthq/geometry/contract';
+import type { Matrix4Like, MeshGeometry } from '@flighthq/types/contract';
 
 import { getVertexAttributeFloatOffset } from './meshGeometryAttributes';
 import { computeMeshGeometryBounds } from './meshGeometryCompute';

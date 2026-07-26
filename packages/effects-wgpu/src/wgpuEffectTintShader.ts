@@ -1,5 +1,5 @@
-import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
-import type { WgpuDualSourceEffectPipeline, WgpuEffectPipeline } from '@flighthq/types';
+import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import type { WgpuDualSourceEffectPipeline, WgpuEffectPipeline } from '@flighthq/types/contract';
 
 import {
   createWgpuDualSourceEffectPipeline,

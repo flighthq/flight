@@ -4,7 +4,7 @@ import type {
   LibgdxParticleDocument,
   LibgdxRangeValue,
   ParticleSerializeResult,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 /** Serialise a ParticleEmitterConfig to a libGDX 2D Particle Editor `.p` file string.
  *

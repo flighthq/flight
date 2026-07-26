@@ -1,5 +1,5 @@
-import { reserveFloat32Array } from '@flighthq/geometry';
-import type { ParticleEmitterState, RandomSource } from '@flighthq/types';
+import { reserveFloat32Array } from '@flighthq/geometry/contract';
+import type { ParticleEmitterState, RandomSource } from '@flighthq/types/contract';
 
 // Velocity stride: [vx, vy, vz] per particle.
 export const PARTICLE_VELOCITY_STRIDE = 3;

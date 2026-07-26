@@ -1,12 +1,16 @@
-import { containsRectanglePointXY, intersectsRectangle, inverseMatrixTransformPointXY } from '@flighthq/geometry';
+import {
+  containsRectanglePointXY,
+  intersectsRectangle,
+  inverseMatrixTransformPointXY,
+} from '@flighthq/geometry/contract';
 import {
   getNodeLocalBoundsRectangle,
   getNodeParent,
   getNodeRuntime,
   getNodeWorldBoundsRectangle,
   getNodeWorldMatrix,
-} from '@flighthq/node';
-import { containsPathPoint } from '@flighthq/path';
+} from '@flighthq/node/contract';
+import { containsPathPoint } from '@flighthq/path/contract';
 import type {
   Node2D,
   HitArea,
@@ -18,7 +22,7 @@ import type {
   NodeAny,
   Path,
   Rectangle,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { getNodeInteractionState } from './nodeInteractionState';
 

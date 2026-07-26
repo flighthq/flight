@@ -1,5 +1,5 @@
-import { connectSignal } from '@flighthq/signals';
-import type { Tween, TweenManager, TweenOptions } from '@flighthq/types';
+import { connectSignal } from '@flighthq/signals/contract';
+import type { Tween, TweenManager, TweenOptions } from '@flighthq/types/contract';
 
 import { createTween } from './tween';
 

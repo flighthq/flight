@@ -1,12 +1,12 @@
-import { getMatrix4Position } from '@flighthq/geometry';
+import { getMatrix4Position } from '@flighthq/geometry/contract';
 import {
   getMeshGeometryIndexCount,
   getMeshGeometryVertexCount,
   getMeshGeometryVertexPosition,
   getMeshGeometryVertexUv0,
-} from '@flighthq/mesh';
-import { getNodeChildren, getNodeLocalMatrix4 } from '@flighthq/node';
-import { isMesh } from '@flighthq/scene3d';
+} from '@flighthq/mesh/contract';
+import { getNodeChildren, getNodeLocalMatrix4 } from '@flighthq/node/contract';
+import { isMesh } from '@flighthq/scene3d/contract';
 import type {
   BlinnPhongMaterial,
   ExternalImageResourceReference,
@@ -14,8 +14,8 @@ import type {
   Mesh,
   Scene3DAnimationTarget,
   Node3D,
-} from '@flighthq/types';
-import { BlinnPhongMaterialKind, ImportDiagnosticSeverity } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { BlinnPhongMaterialKind, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { parseMd5Anim } from './md5AnimParse';
 import { createScene3DFromMd5Mesh, importMd5Mesh, parseMd5Mesh } from './md5Parse';

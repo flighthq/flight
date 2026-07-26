@@ -1,4 +1,4 @@
-import type { Path, PathMesh } from '@flighthq/types';
+import type { Path, PathMesh } from '@flighthq/types/contract';
 
 import { flattenPath } from './flattenPath';
 

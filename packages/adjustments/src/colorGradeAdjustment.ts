@@ -1,4 +1,4 @@
-import type { ColorGradeAdjustment, ColorTransformFunction } from '@flighthq/types';
+import type { ColorGradeAdjustment, ColorTransformFunction } from '@flighthq/types/contract';
 
 // The full color grade as one LUT-tier adjustment. The exposure/brightness/temperature/tint/saturation/
 // contrast scene2d is ported faithfully from the old colorGradeEffect shader; a lift/gamma/gain scene2d

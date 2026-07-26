@@ -4,9 +4,9 @@ import {
   getMeshGeometryVertexNormal,
   getMeshGeometryVertexPosition,
   getMeshGeometryVertexUv0,
-} from '@flighthq/mesh';
-import { getNodeChildren } from '@flighthq/node';
-import { isMesh } from '@flighthq/scene3d';
+} from '@flighthq/mesh/contract';
+import { getNodeChildren } from '@flighthq/node/contract';
+import { isMesh } from '@flighthq/scene3d/contract';
 import type {
   BlinnPhongMaterial,
   ExternalImageResourceReference,
@@ -14,8 +14,8 @@ import type {
   Mesh,
   Scene3DAnimationTarget,
   Node3D,
-} from '@flighthq/types';
-import { BlinnPhongMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { BlinnPhongMaterialKind } from '@flighthq/types/contract';
 
 import { createScene3DFromMd2, parseMd2 } from './md2Parse';
 import { MD2_ANORMS } from './md2Schema';

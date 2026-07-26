@@ -1,4 +1,4 @@
-import type { ImportDiagnostic } from '@flighthq/types';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
 
 import { inflateAwdDeflate, registerAwd2DeflateDecompressor } from './awd2Inflate';
 import { parseAwd2, registerAwd2Decompressor } from './awd2Parse';

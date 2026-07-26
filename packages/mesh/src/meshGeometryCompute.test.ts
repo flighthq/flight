@@ -1,5 +1,5 @@
-import { createAabb, createBoundingSphere } from '@flighthq/geometry';
-import type { VertexAttributeLayout } from '@flighthq/types';
+import { createAabb, createBoundingSphere } from '@flighthq/geometry/contract';
+import type { VertexAttributeLayout } from '@flighthq/types/contract';
 
 import { createMeshGeometry } from './meshGeometry';
 import {

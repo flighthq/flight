@@ -1,4 +1,4 @@
-import type { Snapshot } from '@flighthq/types';
+import type { Snapshot } from '@flighthq/types/contract';
 
 /** Capture `source` into an immutable snapshot: a deep clone of the plain state, deep-frozen so
  *  nothing can mutate it afterward.

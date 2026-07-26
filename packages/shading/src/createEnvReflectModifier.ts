@@ -1,5 +1,5 @@
-import type { EnvReflectModifier, EnvReflectModifierOptions } from '@flighthq/types';
-import { EnvReflectModifierKind, ModifierSlot } from '@flighthq/types';
+import type { EnvReflectModifier, EnvReflectModifierOptions } from '@flighthq/types/contract';
+import { EnvReflectModifierKind, ModifierSlot } from '@flighthq/types/contract';
 
 // The options for `createEnvReflectModifier`. Every field is optional and carries a documented
 // default so the returned descriptor is fully populated (all four are uniform-fed scalars, so an

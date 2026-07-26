@@ -4,17 +4,17 @@ import {
   getMeshGeometryVertexNormal,
   getMeshGeometryVertexPosition,
   getMeshGeometryVertexUv0,
-} from '@flighthq/mesh';
-import { getNodeChildren } from '@flighthq/node';
-import { isMesh } from '@flighthq/scene3d';
+} from '@flighthq/mesh/contract';
+import { getNodeChildren } from '@flighthq/node/contract';
+import { isMesh } from '@flighthq/scene3d/contract';
 import type {
   BlinnPhongMaterial,
   ExternalImageResourceReference,
   ImportDiagnostic,
   Mesh,
   Node3D,
-} from '@flighthq/types';
-import { BlinnPhongMaterialKind, ImportDiagnosticSeverity } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { BlinnPhongMaterialKind, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import {
   THREE_DS_CHUNK_HEADER_BYTES,
   THREE_DS_COLOR_BYTE,
@@ -38,7 +38,7 @@ import {
   THREE_DS_TRIMESH,
   THREE_DS_UV_COORDS,
   THREE_DS_VERTICES,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { createScene3DFrom3ds, parse3ds } from './threeDsParse';
 

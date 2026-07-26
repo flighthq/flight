@@ -1,7 +1,14 @@
-import { createImageResource } from '@flighthq/image';
-import { getNodeChildAt, getNodeChildCount } from '@flighthq/node';
-import type { Node2D, ImportDiagnostic, LottieDocument, LottieLayer, LottieShapePath, Shape } from '@flighthq/types';
-import { BitmapKind, ShapeKind, TextLabelKind } from '@flighthq/types';
+import { createImageResource } from '@flighthq/image/contract';
+import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
+import type {
+  Node2D,
+  ImportDiagnostic,
+  LottieDocument,
+  LottieLayer,
+  LottieShapePath,
+  Shape,
+} from '@flighthq/types/contract';
+import { BitmapKind, ShapeKind, TextLabelKind } from '@flighthq/types/contract';
 
 import { applyAnimationClipToLottieDocument, createScene2DFromLottieDocument } from './lottieDocument';
 

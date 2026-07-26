@@ -1,4 +1,4 @@
-import type { Camera2D, Camera2DOptions } from '@flighthq/types';
+import type { Camera2D, Camera2DOptions } from '@flighthq/types/contract';
 
 // Allocates a plain-data 2D camera over a `viewportWidth` x `viewportHeight` surface. The camera
 // starts centered on world origin at zoom 1 with no rotation; `options` overrides any of `x`, `y`,

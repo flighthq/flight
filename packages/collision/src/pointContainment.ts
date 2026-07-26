@@ -1,4 +1,4 @@
-import type { CollisionShape } from '@flighthq/types';
+import type { CollisionShape } from '@flighthq/types/contract';
 
 const EPS = 1e-9;
 

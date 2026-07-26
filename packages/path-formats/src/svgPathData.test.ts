@@ -1,5 +1,5 @@
-import { createPath, forEachPathSegment } from '@flighthq/path';
-import type { Path, PathSegment } from '@flighthq/types';
+import { createPath, forEachPathSegment } from '@flighthq/path/contract';
+import type { Path, PathSegment } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { appendSvgPathData, formatSvgPathData, parseSvgPathData } from './svgPathData';

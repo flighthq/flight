@@ -1,8 +1,13 @@
-import type { SpritesheetData, SpritesheetFrameData } from '@flighthq/spritesheet';
-import { createSpritesheetData, createSpritesheetFrameData } from '@flighthq/spritesheet';
-import type { CocosPlistDocument, CocosPlistFrame, CocosPlistMetadata, CocosPlistParsed } from '@flighthq/types';
-import type { XmlElement } from '@flighthq/types';
-import { parseXmlDocument } from '@flighthq/xml';
+import type { SpritesheetData, SpritesheetFrameData } from '@flighthq/spritesheet/contract';
+import { createSpritesheetData, createSpritesheetFrameData } from '@flighthq/spritesheet/contract';
+import type {
+  CocosPlistDocument,
+  CocosPlistFrame,
+  CocosPlistMetadata,
+  CocosPlistParsed,
+} from '@flighthq/types/contract';
+import type { XmlElement } from '@flighthq/types/contract';
+import { parseXmlDocument } from '@flighthq/xml/contract';
 
 // ─── plist structural helpers ─────────────────────────────────────────────────
 

@@ -1,6 +1,6 @@
-import { createAabb } from '@flighthq/geometry';
-import type { Aabb, AabbLike, BoundingSphereLike, MeshGeometry, MeshGeometryRuntime } from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
+import { createAabb } from '@flighthq/geometry/contract';
+import type { Aabb, AabbLike, BoundingSphereLike, MeshGeometry, MeshGeometryRuntime } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 // Per-vertex compute over the canonical interleaved PBR record: position(3) + normal(3) +
 // tangent(4) + uv0(2) = 12 floats / 48 bytes, stride read from geometry.layout. These functions

@@ -1,5 +1,5 @@
-import { createMatrix, inverseMatrixTransformPointXY, matrixTransformPointXY } from '@flighthq/geometry';
-import type { Camera2D, Vector2Like } from '@flighthq/types';
+import { createMatrix, inverseMatrixTransformPointXY, matrixTransformPointXY } from '@flighthq/geometry/contract';
+import type { Camera2D, Vector2Like } from '@flighthq/types/contract';
 
 import { getCamera2DViewMatrix } from './viewMatrix';
 

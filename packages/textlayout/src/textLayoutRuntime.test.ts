@@ -1,4 +1,4 @@
-import type { TextLabelRuntime } from '@flighthq/types';
+import type { TextLabelRuntime } from '@flighthq/types/contract';
 
 import { clearTextLayoutResult, getTextLayoutResult } from './textLayoutRuntime';
 

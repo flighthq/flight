@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity';
-import type { AnimationClip, AnimationRootMotionExtractor } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import type { AnimationClip, AnimationRootMotionExtractor } from '@flighthq/types/contract';
 
 import { sampleAnimationTrack } from './animationTrack';
 

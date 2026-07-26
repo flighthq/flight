@@ -4,14 +4,14 @@ import type {
   DeviceDisplayMetrics,
   DeviceInfo,
   SafeAreaInsets,
-} from '@flighthq/types';
-import { DeviceFormFactorUnknown } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { DeviceFormFactorUnknown } from '@flighthq/types/contract';
 import {
   parseUserAgentArch,
   parseUserAgentFormFactor,
   parseUserAgentOsName,
   parseUserAgentOsVersion,
-} from '@flighthq/useragent';
+} from '@flighthq/useragent/contract';
 
 // Allocates a zeroed DeviceCapabilities; use as the `out` for getDeviceCapabilities.
 // All boolean fields default to false (unknown).

@@ -1,12 +1,12 @@
-import { drawGlFullscreenPass } from '@flighthq/render-gl';
+import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type {
   CompositeEffect,
   CompositeOperator,
   GlRenderEffectRunner,
   GlRenderState,
   GlRenderTarget,
-} from '@flighthq/types';
-import { CompositeOperator as CompositeOperatorValues } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { CompositeOperator as CompositeOperatorValues } from '@flighthq/types/contract';
 
 import { getGlBlendEffectBackdrop } from './glBlendEffect';
 import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache';

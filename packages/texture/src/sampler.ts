@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity';
-import type { Sampler, SamplerLike } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import type { Sampler, SamplerLike } from '@flighthq/types/contract';
 
 // Allocates an independent Sampler with the same sampling state. Sampler holds only plain values,
 // so the clone shares nothing mutable with its source.

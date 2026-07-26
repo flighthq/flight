@@ -1,4 +1,4 @@
-import type { ImageResourceCompressed } from '@flighthq/types';
+import type { ImageResourceCompressed } from '@flighthq/types/contract';
 
 import {
   cloneImageResource,

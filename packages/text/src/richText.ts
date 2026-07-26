@@ -1,6 +1,6 @@
-import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node';
-import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d';
-import { createSignal } from '@flighthq/signals';
+import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node/contract';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
+import { createSignal } from '@flighthq/signals/contract';
 import {
   computeRichTextBottomScrollV,
   computeRichTextCharIndexAtPoint,
@@ -15,7 +15,7 @@ import {
   getRichTextContent,
   getRichTextLinkAtPoint,
   mergeTextFormat,
-} from '@flighthq/textlayout';
+} from '@flighthq/textlayout/contract';
 import type {
   MethodsOf,
   Node,
@@ -37,8 +37,8 @@ import type {
   TextLineMetrics,
   TextMeasureFunction,
   TextVerticalAlign,
-} from '@flighthq/types';
-import { RichTextKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { RichTextKind } from '@flighthq/types/contract';
 
 import { createTextLabelData } from './textLabel';
 import { ensureTextLayout, getTextLayout } from './textLabelLayout';

@@ -1,7 +1,7 @@
-import { createRectangle, createVector2 } from '@flighthq/geometry';
-import { connectSignal } from '@flighthq/signals';
-import type { Node, Rectangle, Sprite, TextureAtlas, TextureAtlasRegion } from '@flighthq/types';
-import { SpriteKind } from '@flighthq/types';
+import { createRectangle, createVector2 } from '@flighthq/geometry/contract';
+import { connectSignal } from '@flighthq/signals/contract';
+import type { Node, Rectangle, Sprite, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
+import { SpriteKind } from '@flighthq/types/contract';
 
 import {
   cloneSprite,

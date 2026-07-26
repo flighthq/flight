@@ -1,11 +1,11 @@
-import { acquireGlRenderTarget, clearGlRenderTarget, releaseGlRenderTarget } from '@flighthq/render-gl';
+import { acquireGlRenderTarget, clearGlRenderTarget, releaseGlRenderTarget } from '@flighthq/render-gl/contract';
 import type {
   OuterGlowEffect,
   GlRenderEffectRunner,
   GlRenderState,
   GlRenderTarget,
   GlRenderTargetPool,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader';
 import { applyGlEffectBoxBlur } from './glEffectBoxBlur';

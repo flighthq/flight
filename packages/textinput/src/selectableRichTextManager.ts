@@ -1,7 +1,7 @@
-import { getRichTextRuntime, setRichTextScrollV } from '@flighthq/text';
-import { computeRichTextCharIndexAtPoint } from '@flighthq/textlayout';
-import type { InputKeyboardData, RichText, RichTextRuntime, SelectableRichTextManager } from '@flighthq/types';
-import { KeyCode } from '@flighthq/types';
+import { getRichTextRuntime, setRichTextScrollV } from '@flighthq/text/contract';
+import { computeRichTextCharIndexAtPoint } from '@flighthq/textlayout/contract';
+import type { InputKeyboardData, RichText, RichTextRuntime, SelectableRichTextManager } from '@flighthq/types/contract';
+import { KeyCode } from '@flighthq/types/contract';
 
 export function blurSelectableRichText(manager: SelectableRichTextManager): void {
   if (manager.focused !== null) {

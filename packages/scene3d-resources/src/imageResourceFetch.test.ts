@@ -1,6 +1,6 @@
-import type * as ImageModule from '@flighthq/image';
-import type { ExternalImageResourceReference, ImageResource } from '@flighthq/types';
-import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
+import type * as ImageModule from '@flighthq/image/contract';
+import type { ExternalImageResourceReference, ImageResource } from '@flighthq/types/contract';
+import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types/contract';
 import type { Mock } from 'vitest';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 

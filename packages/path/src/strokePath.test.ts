@@ -1,4 +1,4 @@
-import { PathCommand } from '@flighthq/types';
+import { PathCommand } from '@flighthq/types/contract';
 
 import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath } from './path';
 import { strokePath } from './strokePath';

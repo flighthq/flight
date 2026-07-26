@@ -1,4 +1,4 @@
-import type { ScreenInfo, ElectronApi, ElectronDisplay } from '@flighthq/types';
+import type { ScreenInfo, ElectronApi, ElectronDisplay } from '@flighthq/types/contract';
 
 import { createElectronScreenBackend } from './electronScreen';
 

@@ -3,7 +3,7 @@ import type {
   GeolocationErrorReason,
   GeolocationPermissionState,
   GeoPosition,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import {
   clearGeolocationWatch,

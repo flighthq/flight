@@ -1,5 +1,5 @@
-import { createMatrix4, inverseMatrix4 } from '@flighthq/geometry';
-import type { Camera3D, Vector3Like } from '@flighthq/types';
+import { createMatrix4, inverseMatrix4 } from '@flighthq/geometry/contract';
+import type { Camera3D, Vector3Like } from '@flighthq/types/contract';
 
 import { getCamera3DViewProjectionMatrix4 } from './camera';
 

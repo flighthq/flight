@@ -1,4 +1,4 @@
-import type { FileEntry, FileStat, FileSystemBackend, CapacitorApi } from '@flighthq/types';
+import type { FileEntry, FileStat, FileSystemBackend, CapacitorApi } from '@flighthq/types/contract';
 
 // Maps Flight's FileSystemBackend onto Capacitor's async `@capacitor/filesystem`. Both sides are
 // Promise-based, so the core surface maps cleanly: text via the `utf8` encoding, binary via Base64

@@ -1,5 +1,5 @@
-import { createMatrix3, createVector2, inverseMatrix3 } from '@flighthq/geometry';
-import type { ImageResource } from '@flighthq/types';
+import { createMatrix3, createVector2, inverseMatrix3 } from '@flighthq/geometry/contract';
+import type { ImageResource } from '@flighthq/types/contract';
 
 import { createSampler, equalsSampler } from './sampler';
 import {

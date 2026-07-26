@@ -1,6 +1,6 @@
-import { createMatrix } from '@flighthq/geometry';
+import { createMatrix } from '@flighthq/geometry/contract';
 import { createRenderCache, getRenderProxy2D, RenderCacheKind, useRenderCache } from '@flighthq/render/contract';
-import { createDisplayObject } from '@flighthq/scene2d';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
 
 import {
   createCanvasCacheState,

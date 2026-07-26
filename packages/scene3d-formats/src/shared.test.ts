@@ -1,5 +1,5 @@
-import type { EmbeddedImageResourceReference, ExternalImageResourceReference } from '@flighthq/types';
-import { ResourceResolutionState } from '@flighthq/types';
+import type { EmbeddedImageResourceReference, ExternalImageResourceReference } from '@flighthq/types/contract';
+import { ResourceResolutionState } from '@flighthq/types/contract';
 
 import {
   buildEmbeddedImageResourceReference,

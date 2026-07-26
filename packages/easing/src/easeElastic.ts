@@ -1,4 +1,4 @@
-import type { EasingFunction } from '@flighthq/types';
+import type { EasingFunction } from '@flighthq/types/contract';
 
 export const easeInElastic: EasingFunction = (t) => {
   if (t === 0 || t === 1) return t;

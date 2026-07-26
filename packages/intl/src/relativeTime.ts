@@ -1,4 +1,4 @@
-import type { LocaleInput } from '@flighthq/types';
+import type { LocaleInput } from '@flighthq/types/contract';
 
 import { getCacheKey, getCached } from './cache';
 

@@ -1,4 +1,4 @@
-import type { TiledGid, TiledMap, TiledTilesetRef } from '@flighthq/types';
+import type { TiledGid, TiledMap, TiledTilesetRef } from '@flighthq/types/contract';
 
 // Decodes a raw 32-bit Tiled global tile id into its tile id plus the three flip flags. Tiled packs
 // horizontal/vertical/anti-diagonal flip into the top three bits and the global tile id into the low

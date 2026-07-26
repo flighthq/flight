@@ -1,5 +1,5 @@
-import { createVector3 } from '@flighthq/geometry';
-import { getNodeLocalMatrix4 } from '@flighthq/node';
+import { createVector3 } from '@flighthq/geometry/contract';
+import { getNodeLocalMatrix4 } from '@flighthq/node/contract';
 
 import { createNode3D } from './sceneNode';
 import { setNode3DLookAt } from './sceneNodeTransform';

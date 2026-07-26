@@ -1,4 +1,4 @@
-import type { GodRaysEffect } from '@flighthq/types';
+import type { GodRaysEffect } from '@flighthq/types/contract';
 
 // God rays (light shaft / volumetric scatter) recipe math. The screen-space god rays algorithm
 // (Shafts of Light, Duda/Nunnally technique) marches samples along a ray from the light source

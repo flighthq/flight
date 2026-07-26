@@ -1,7 +1,7 @@
-import { setRectangle } from '@flighthq/geometry';
-import { getNodeLocalBoundsRectangle } from '@flighthq/node';
-import { appendShapeBeginFill, appendShapeCircle, appendShapeEndFill, createShape } from '@flighthq/shape';
-import { ShapeKind } from '@flighthq/types';
+import { setRectangle } from '@flighthq/geometry/contract';
+import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
+import { appendShapeBeginFill, appendShapeCircle, appendShapeEndFill, createShape } from '@flighthq/shape/contract';
+import { ShapeKind } from '@flighthq/types/contract';
 
 import { findGraphHitTargetPrecise, hitTestGraphLocalBounds, hitTestGraphPoint, registerHitTest } from './hitTests';
 import { setNodeHitTestEnabled } from './nodeInteractionState';

@@ -1,4 +1,4 @@
-import type { BloomEffect } from '@flighthq/types';
+import type { BloomEffect } from '@flighthq/types/contract';
 
 // HDR bloom intent and its shared recipe math. The parameter math is substrate-agnostic so the Gl and
 // Wgpu bloom recipes derive identical bright-pass cutoff, additive strength, and blur radius from the

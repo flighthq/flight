@@ -1,5 +1,5 @@
-import { compareSurfaceFingerprints, parseSurfaceFingerprint } from '@flighthq/surface/surfaceFingerprint';
-import type { CaptureCheckResult } from '@flighthq/types';
+import { compareSurfaceFingerprints, parseSurfaceFingerprint } from '@flighthq/surface/contract';
+import type { CaptureCheckResult } from '@flighthq/types/contract';
 
 // Default parity tolerance (mean absolute per-channel difference, 0..255). Cross-backend agreement is
 // ≤ ~6.5 even for antialiasing-heavy scenes, so real divergence between two backends is well over 15.

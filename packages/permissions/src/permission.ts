@@ -1,4 +1,4 @@
-import type { PermissionBackend, PermissionName, PermissionState } from '@flighthq/types';
+import type { PermissionBackend, PermissionName, PermissionState } from '@flighthq/types/contract';
 
 // Builds the default web backend. Query goes through navigator.permissions.query where supported;
 // request routes each name to its concrete web trigger (Notification.requestPermission, getUserMedia,

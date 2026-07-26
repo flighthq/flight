@@ -1,6 +1,10 @@
-import { createImageResourceFromImageElement } from '@flighthq/image';
-import { createTextureAtlas, createTextureAtlasRegion, getTextureAtlasRegionById } from '@flighthq/textureatlas';
-import type { TextureAtlas, Tileset } from '@flighthq/types';
+import { createImageResourceFromImageElement } from '@flighthq/image/contract';
+import {
+  createTextureAtlas,
+  createTextureAtlasRegion,
+  getTextureAtlasRegionById,
+} from '@flighthq/textureatlas/contract';
+import type { TextureAtlas, Tileset } from '@flighthq/types/contract';
 
 import { buildTilesetRegions, createTileset, disposeTileset } from './tileset';
 

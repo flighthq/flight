@@ -1,4 +1,4 @@
-import { createSignal, emitSignal } from '@flighthq/signals';
+import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   StatusBar,
   StatusBarAnimation,
@@ -7,7 +7,7 @@ import type {
   StatusBarStyle,
   StatusBarStyleEntry,
   StatusBarStyleEntryHandle,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Begins delivering OS-driven status bar changes to `bar`'s signals by subscribing to the active
 // backend. Idempotent: a prior subscription is torn down first. Pair with detachStatusBar /

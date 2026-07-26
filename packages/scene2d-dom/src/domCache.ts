@@ -1,5 +1,5 @@
 import { getRenderProxyCache, noopRendererData, registerRenderCacheRenderer } from '@flighthq/render/contract';
-import { createCanvasRenderTarget, resizeCanvasRenderTarget } from '@flighthq/scene2d-canvas';
+import { createCanvasRenderTarget, resizeCanvasRenderTarget } from '@flighthq/scene2d-canvas/contract';
 import type {
   CanvasRenderTarget,
   Scene2DRenderer,

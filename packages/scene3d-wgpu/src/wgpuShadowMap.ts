@@ -1,7 +1,7 @@
-import { getCamera3DViewProjectionMatrix4 } from '@flighthq/camera';
-import { createMatrix3, createMatrix4, multiplyMatrix4 } from '@flighthq/geometry';
-import { forEachNodeDescendant, getNodeWorldMatrix4 } from '@flighthq/node';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
+import { getCamera3DViewProjectionMatrix4 } from '@flighthq/camera/contract';
+import { createMatrix3, createMatrix4, multiplyMatrix4 } from '@flighthq/geometry/contract';
+import { forEachNodeDescendant, getNodeWorldMatrix4 } from '@flighthq/node/contract';
+import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type {
   Camera3D,
   Material,

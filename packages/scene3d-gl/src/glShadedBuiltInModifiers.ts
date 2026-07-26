@@ -1,6 +1,6 @@
-import { unpackColorToLinear } from '@flighthq/color';
-import { hasImageResourcePixels } from '@flighthq/image';
-import { bindGlImageResourceTexture } from '@flighthq/render-gl';
+import { unpackColorToLinear } from '@flighthq/color/contract';
+import { hasImageResourcePixels } from '@flighthq/image/contract';
+import { bindGlImageResourceTexture } from '@flighthq/render-gl/contract';
 import {
   animatedNormalModifierDefinition,
   dissolveModifierDefinition,
@@ -10,7 +10,7 @@ import {
   rimModifierDefinition,
   toonModifierDefinition,
   vertexDisplaceModifierDefinition,
-} from '@flighthq/shading';
+} from '@flighthq/shading/contract';
 import type {
   LinearColor,
   AnimatedNormalModifier,

@@ -1,7 +1,7 @@
-import { createMatrix } from '@flighthq/geometry';
-import type * as GlRenderGlModule from '@flighthq/render-gl';
+import { createMatrix } from '@flighthq/geometry/contract';
+import type * as GlRenderGlModule from '@flighthq/render-gl/contract';
 import { createRenderCache, createRenderState, RenderCacheKind, useRenderCache } from '@flighthq/render/contract';
-import { createDisplayObject } from '@flighthq/scene2d';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
@@ -83,7 +83,7 @@ beforeAll(async () => {
   });
 
   ({ createGlRenderStateRuntime, getGlRenderStateRuntime, destroyGlRenderTarget, drawGlRenderTargetResult } =
-    await import('@flighthq/render-gl'));
+    await import('@flighthq/render-gl/contract'));
   ({ flushGlSpriteBatch } = await import('./glSpriteBatch'));
   ({ renderGlScene2D } = await import('./glNode2D'));
   ({

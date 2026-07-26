@@ -1,7 +1,7 @@
-import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
-import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
+import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu/contract';
+import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
-import { createVideo } from '@flighthq/scene2d';
+import { createVideo } from '@flighthq/scene2d/contract';
 
 import { createWgpuVideoData, defaultWgpuVideoRenderer, destroyWgpuVideoData, drawWgpuVideo } from './wgpuVideo';
 

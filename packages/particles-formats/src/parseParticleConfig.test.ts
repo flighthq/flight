@@ -1,4 +1,4 @@
-import { ImportDiagnosticSeverity } from '@flighthq/types';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import {
   LibgdxParticleFormatKind,
   ParticleDesignerFormatKind,
@@ -6,7 +6,7 @@ import {
   SpineParticleFormatKind,
   StarlingPexFormatKind,
   UnityParticleFormatKind,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { parseParticleConfig, parseParticleConfigDocument } from './parseParticleConfig';
 

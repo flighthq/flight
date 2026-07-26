@@ -1,4 +1,4 @@
-import { registerWgpuMaterialRenderer } from '@flighthq/render-wgpu';
+import { registerWgpuMaterialRenderer } from '@flighthq/render-wgpu/contract';
 import type { WgpuMaterialRenderer, WgpuRenderState } from '@flighthq/types/contract';
 import { StandardMaterialKind } from '@flighthq/types/contract';
 

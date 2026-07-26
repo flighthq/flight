@@ -27,7 +27,7 @@ import {
   compareCaptureFingerprints,
   evaluateCaptureParity,
   evaluateCaptureRegression,
-} from '@flighthq/capture';
+} from '@flighthq/capture/contract';
 import type { BrowserContext, Page } from '@playwright/test';
 import pc from 'picocolors';
 

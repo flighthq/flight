@@ -1,6 +1,6 @@
-import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry';
-import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d';
-import { createTextureAtlas } from '@flighthq/textureatlas';
+import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry/contract';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
+import { createTextureAtlas } from '@flighthq/textureatlas/contract';
 import type {
   BitmapText,
   BitmapTextAlign,
@@ -12,8 +12,8 @@ import type {
   MethodsOf,
   Node,
   Rectangle,
-} from '@flighthq/types';
-import { BitmapTextKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { BitmapTextKind } from '@flighthq/types/contract';
 
 // Two floats (x, y) per glyph quad — the vector2 (translation-only) transform stride the BitmapText
 // renderer reads. Kept internal so callers never hand-write i*2.

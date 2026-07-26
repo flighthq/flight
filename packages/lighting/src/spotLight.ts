@@ -1,7 +1,7 @@
-import { createEntity } from '@flighthq/entity';
-import { cloneVector3, createVector3, setVector3 } from '@flighthq/geometry';
-import type { SpotLight, SpotLightConeAngles, SpotLightOptions } from '@flighthq/types';
-import { SpotLightKind } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import { cloneVector3, createVector3, setVector3 } from '@flighthq/geometry/contract';
+import type { SpotLight, SpotLightConeAngles, SpotLightOptions } from '@flighthq/types/contract';
+import { SpotLightKind } from '@flighthq/types/contract';
 
 // Independent copy of a spot light's data, including fresh `position`/`direction` vectors.
 export function cloneSpotLight(source: Readonly<SpotLight>): SpotLight {

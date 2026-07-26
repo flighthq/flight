@@ -3,7 +3,7 @@ import {
   createOrthographicProjection,
   createPerspectiveProjection,
   setCamera3DViewMatrix4FromLookAt,
-} from '@flighthq/camera';
+} from '@flighthq/camera/contract';
 import {
   copyQuaternion,
   createAabb,
@@ -13,13 +13,13 @@ import {
   setQuaternionFromAxisAngle,
   setRay3D,
   setVector3,
-} from '@flighthq/geometry';
-import { createBoxMeshGeometry, createMeshGeometryFromAttributes } from '@flighthq/mesh';
-import { ensureMeshGeometryBounds, updateMeshMorph } from '@flighthq/mesh';
-import { addNodeChild, getNodeRuntime, invalidateNodeLocalTransform } from '@flighthq/node';
-import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d';
-import type { Camera3D, Mesh, MeshMorph, MeshRuntime, Ray3D, Scene3DHit, Node3D } from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
+} from '@flighthq/geometry/contract';
+import { createBoxMeshGeometry, createMeshGeometryFromAttributes } from '@flighthq/mesh/contract';
+import { ensureMeshGeometryBounds, updateMeshMorph } from '@flighthq/mesh/contract';
+import { addNodeChild, getNodeRuntime, invalidateNodeLocalTransform } from '@flighthq/node/contract';
+import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
+import type { Camera3D, Mesh, MeshMorph, MeshRuntime, Ray3D, Scene3DHit, Node3D } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   createScene3DHit,

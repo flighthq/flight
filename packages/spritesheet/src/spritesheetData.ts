@@ -1,4 +1,4 @@
-import type { SpritesheetAnimationData, SpritesheetData, SpritesheetFrameData } from '@flighthq/types';
+import type { SpritesheetAnimationData, SpritesheetData, SpritesheetFrameData } from '@flighthq/types/contract';
 
 // Canonical definitions now live in @flighthq/types (the shared header layer); re-exported here so
 // spritesheet authoring keeps a single import surface alongside the constructors below.

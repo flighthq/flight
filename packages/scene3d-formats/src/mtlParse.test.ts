@@ -1,4 +1,4 @@
-import type { ImportDiagnostic } from '@flighthq/types';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
 
 import { parseObjMaterialLibrary } from './mtlParse';
 

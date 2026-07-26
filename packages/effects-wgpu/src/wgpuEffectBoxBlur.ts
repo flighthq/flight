@@ -1,6 +1,6 @@
-import { computeBoxBlurPassRadius } from '@flighthq/effects';
-import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
-import type { WgpuEffectPipeline } from '@flighthq/types';
+import { computeBoxBlurPassRadius } from '@flighthq/effects/contract';
+import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import type { WgpuEffectPipeline } from '@flighthq/types/contract';
 
 import { createWgpuEffectPipeline, drawWgpuEffectPass } from './wgpuEffectPass';
 

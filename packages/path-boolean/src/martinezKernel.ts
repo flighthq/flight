@@ -3,7 +3,7 @@ import type {
   PathBooleanContour,
   PathBooleanFillRule,
   PathBooleanOperation,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Builds the default boolean kernel: a from-scratch, floating-point Martinez–Rueda–Feito sweep-line.
 //

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import type { Signal } from '@flighthq/types';
+import type { Signal } from '@flighthq/types/contract';
 
 import { nullSignalEmit } from './internal';
 

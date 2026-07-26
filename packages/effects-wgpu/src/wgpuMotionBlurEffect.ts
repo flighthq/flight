@@ -1,5 +1,10 @@
-import type { MotionBlurEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
-import type { WgpuDualSourceEffectPipeline } from '@flighthq/types';
+import type {
+  MotionBlurEffect,
+  WgpuRenderEffectRunner,
+  WgpuRenderState,
+  WgpuRenderTarget,
+} from '@flighthq/types/contract';
+import type { WgpuDualSourceEffectPipeline } from '@flighthq/types/contract';
 
 import { createWgpuDualSourceEffectPipeline, drawWgpuDualSourceEffectPass } from './wgpuEffectPass';
 

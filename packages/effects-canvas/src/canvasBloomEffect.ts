@@ -1,10 +1,10 @@
-import { computeBloomBlurRadius } from '@flighthq/effects';
+import { computeBloomBlurRadius } from '@flighthq/effects/contract';
 import type {
   BloomEffect,
   CanvasRenderEffectRunner,
   CanvasRenderTarget,
   CanvasRenderTargetPool,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
 import { acquireCanvasRenderTarget, releaseCanvasRenderTarget } from './canvasRenderEffectPipeline';

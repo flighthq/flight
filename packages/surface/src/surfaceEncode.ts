@@ -1,4 +1,4 @@
-import type { ImageFormat, Surface } from '@flighthq/types';
+import type { ImageFormat, Surface } from '@flighthq/types/contract';
 
 export function encodeSurface(
   source: Readonly<Surface>,

@@ -1,4 +1,4 @@
-import type { CanvasRenderEffectRunner, CanvasRenderState } from '@flighthq/types';
+import type { CanvasRenderEffectRunner, CanvasRenderState } from '@flighthq/types/contract';
 
 import {
   getCanvasRenderEffectRunner,

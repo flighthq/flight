@@ -1,4 +1,4 @@
-import { FogModifierKind, FogModifierMode, ModifierSlot } from '@flighthq/types';
+import { FogModifierKind, FogModifierMode, ModifierSlot } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createFogModifier } from './createFogModifier';

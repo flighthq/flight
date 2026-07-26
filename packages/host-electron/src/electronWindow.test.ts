@@ -1,6 +1,6 @@
-import { createApplicationWindow } from '@flighthq/application';
-import { connectSignal } from '@flighthq/signals';
-import type { ElectronApi, ElectronBrowserWindowOptions, ElectronRectangle } from '@flighthq/types';
+import { createApplicationWindow } from '@flighthq/application/contract';
+import { connectSignal } from '@flighthq/signals/contract';
+import type { ElectronApi, ElectronBrowserWindowOptions, ElectronRectangle } from '@flighthq/types/contract';
 
 import {
   createElectronWindowBackend,

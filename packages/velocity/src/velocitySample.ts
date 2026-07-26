@@ -1,4 +1,4 @@
-import type { Matrix, Velocity2D, VelocitySample } from '@flighthq/types';
+import type { Matrix, Velocity2D, VelocitySample } from '@flighthq/types/contract';
 
 // Returns the per-pixel screen-space velocity at local-space point (`pointX`, `pointY`) by computing
 // `current·p − previous·p` using the sample's stored previousWorldTransform and the node's current world

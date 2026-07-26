@@ -1,6 +1,6 @@
-import { createImageResource } from '@flighthq/image';
-import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import { createTextLabel, setTextLabelString } from '@flighthq/text';
+import { createImageResource } from '@flighthq/image/contract';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { createTextLabel, setTextLabelString } from '@flighthq/text/contract';
 import type { RenderProxy2D, TextLabel } from '@flighthq/types/contract';
 import { BatchFormat } from '@flighthq/types/contract';
 

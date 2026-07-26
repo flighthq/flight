@@ -1,8 +1,12 @@
-import { createRectangle } from '@flighthq/geometry';
-import { getNodeLocalBoundsRevision, getNodeLocalContentRevision, getNodeLocalTransformRevision } from '@flighthq/node';
-import { setTextLayoutMeasureProvider } from '@flighthq/textlayout';
-import type { Node, PartialNode, TextLabel } from '@flighthq/types';
-import { TextLabelKind } from '@flighthq/types';
+import { createRectangle } from '@flighthq/geometry/contract';
+import {
+  getNodeLocalBoundsRevision,
+  getNodeLocalContentRevision,
+  getNodeLocalTransformRevision,
+} from '@flighthq/node/contract';
+import { setTextLayoutMeasureProvider } from '@flighthq/textlayout/contract';
+import type { Node, PartialNode, TextLabel } from '@flighthq/types/contract';
+import { TextLabelKind } from '@flighthq/types/contract';
 
 import {
   appendTextLabelString,

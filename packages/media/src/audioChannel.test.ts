@@ -1,4 +1,4 @@
-import { createAudioResource } from '@flighthq/audio';
+import { createAudioResource } from '@flighthq/audio/contract';
 
 import {
   connectAudioChannelToNode,

@@ -1,6 +1,6 @@
-import { hasImageResourcePixels } from '@flighthq/image';
-import { resolveGlMaterialRenderer } from '@flighthq/render-gl';
-import { getGlRenderStateRuntime } from '@flighthq/render-gl';
+import { hasImageResourcePixels } from '@flighthq/image/contract';
+import { resolveGlMaterialRenderer } from '@flighthq/render-gl/contract';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import type {
   ColorScaleBias,

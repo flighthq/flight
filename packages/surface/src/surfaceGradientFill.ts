@@ -1,5 +1,5 @@
-import { invalidateImageResource } from '@flighthq/image';
-import type { GradientSpread, SurfaceRegion } from '@flighthq/types';
+import { invalidateImageResource } from '@flighthq/image/contract';
+import type { GradientSpread, SurfaceRegion } from '@flighthq/types/contract';
 
 /**
  * Fills the `dest` region with a linear gradient defined by two points `(x0, y0)`

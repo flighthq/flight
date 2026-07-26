@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import type { Signal } from '@flighthq/types';
+import type { Signal } from '@flighthq/types/contract';
 
 export function cancelSignal<T extends (...args: any[]) => void>(signal: Signal<T>): void {
   if (signal.data !== null) signal.data.cancelled = true;

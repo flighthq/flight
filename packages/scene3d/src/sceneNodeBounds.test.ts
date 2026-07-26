@@ -1,6 +1,6 @@
-import { createAabb, setVector3 } from '@flighthq/geometry';
-import { createBoxMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
+import { createAabb, setVector3 } from '@flighthq/geometry/contract';
+import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
+import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 
 import { createMesh } from './mesh';
 import { createNode3D } from './sceneNode';

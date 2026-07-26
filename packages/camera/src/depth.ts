@@ -1,4 +1,4 @@
-import type { Camera3D } from '@flighthq/types';
+import type { Camera3D } from '@flighthq/types/contract';
 
 // Converts a raw NDC depth value (ndcZ ∈ [-1, 1]) from the camera's projection back to a linear
 // view-space Z value (distance from the camera along its -Z axis). Returns a negative value for a

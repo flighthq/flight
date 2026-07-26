@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { emitSignal } from '@flighthq/signals';
-import type { Tween } from '@flighthq/types';
+import { emitSignal } from '@flighthq/signals/contract';
+import type { Tween } from '@flighthq/types/contract';
 
 import { initializeTween } from './internal';
 

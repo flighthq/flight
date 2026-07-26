@@ -7,7 +7,7 @@ import type {
   UnlitMaterial,
   VertexColorMaterial,
   WireframeMaterial,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 import {
   DepthMaterialKind,
   EmissiveMaterialKind,
@@ -17,7 +17,7 @@ import {
   UnlitMaterialKind,
   VertexColorMaterialKind,
   WireframeMaterialKind,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { createSurfaceMaterial } from './surfaceMaterial';
 

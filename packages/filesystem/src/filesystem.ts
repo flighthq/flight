@@ -1,4 +1,4 @@
-import { getWebFileSystemHandle } from '@flighthq/dialog';
+import { getWebFileSystemHandle } from '@flighthq/dialog/contract';
 import type {
   FileDialogHandle,
   FileEntry,
@@ -9,7 +9,7 @@ import type {
   FileSystemUsage,
   FileWalkOptions,
   FileWatchEvent,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Appends text to a file, creating it when missing. Returns false when the host denies access.
 export function appendTextFile(path: string, data: string): Promise<boolean> {

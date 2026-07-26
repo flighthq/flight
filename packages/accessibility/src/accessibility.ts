@@ -3,7 +3,7 @@ import type {
   AccessibilityLiveness,
   AccessibilityNode,
   AccessibilityState,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Speaks a transient message through the platform's live region. `liveness` picks urgency: 'polite'
 // waits for current speech, 'assertive' interrupts. Defaults to 'polite'. No-op when no backend can

@@ -3,8 +3,8 @@ import {
   createMeshGeometry,
   setMeshGeometrySkinBindPose,
   updateMeshMorph,
-} from '@flighthq/mesh';
-import { createMesh } from '@flighthq/scene3d';
+} from '@flighthq/mesh/contract';
+import { createMesh } from '@flighthq/scene3d/contract';
 import type { Mesh, MeshMorph, MeshSkinBindPose, VertexAttributeLayout, GlMeshUpload } from '@flighthq/types/contract';
 
 import { destroyGlMeshUpload, ensureGlMeshUpload } from './glMeshUpload';

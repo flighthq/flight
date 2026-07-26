@@ -1,4 +1,4 @@
-import { invalidateNodeAppearance } from '@flighthq/node';
+import { invalidateNodeAppearance } from '@flighthq/node/contract';
 import type { Node, Renderable, RenderProxy2D, RenderProxyAdapter, RenderState } from '@flighthq/types/contract';
 
 import { installRenderAdaptHook, updateRenderProxyRenderer } from './renderProxy';

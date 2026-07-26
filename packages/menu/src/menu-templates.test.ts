@@ -1,4 +1,4 @@
-import type { MenuItemTemplate } from '@flighthq/types';
+import type { MenuItemTemplate } from '@flighthq/types/contract';
 
 import {
   createDefaultAppMenuTemplate,

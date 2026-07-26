@@ -1,1 +1,1 @@
-export { ImageChannel } from '@flighthq/types';
+export { ImageChannel } from '@flighthq/types/contract';

@@ -1,6 +1,6 @@
-import type { TextureContainer } from '@flighthq/types';
-import type { TextureContainerFormat } from '@flighthq/types';
-import type { TextureContainerLevel } from '@flighthq/types';
+import type { TextureContainer } from '@flighthq/types/contract';
+import type { TextureContainerFormat } from '@flighthq/types/contract';
+import type { TextureContainerLevel } from '@flighthq/types/contract';
 
 import {
   createByteReader,

@@ -1,1 +1,1 @@
-export * from './sensors';
+export * from './contract';

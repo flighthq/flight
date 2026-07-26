@@ -1,4 +1,4 @@
-import { createParticleEmitterConfig } from '@flighthq/particles';
+import { createParticleEmitterConfig } from '@flighthq/particles/contract';
 
 import { parseLibgdxParticle, parseLibgdxParticleDocument } from './libgdxParse';
 import { serializeLibgdxParticle, serializeLibgdxParticleDocument } from './libgdxSerialize';

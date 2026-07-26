@@ -1,3 +1,1 @@
-export * from './textureAtlas';
-export * from './textureAtlasFrom';
-export * from './textureAtlasRegion';
+export * from './contract';

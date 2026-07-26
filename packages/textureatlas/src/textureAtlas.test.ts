@@ -1,5 +1,5 @@
-import { createImageResource } from '@flighthq/image';
-import type { ImageResource, TextureAtlas, TextureAtlasRegion } from '@flighthq/types';
+import { createImageResource } from '@flighthq/image/contract';
+import type { ImageResource, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
 
 import { createTextureAtlas, getTextureAtlasByteSize } from './textureAtlas';
 

@@ -14,7 +14,7 @@ import {
   setFrustumFromMatrix4,
   setMatrix4LookAt,
 } from '@flighthq/geometry';
-import type { Matrix4 } from '@flighthq/types';
+import type { Matrix4 } from '@flighthq/types/contract';
 
 // View-projection for a camera at (0,0,5) looking toward the origin down -z.
 function createTestViewProjection(): Matrix4 {

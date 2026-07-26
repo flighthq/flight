@@ -1,5 +1,5 @@
-import { createPath, appendPathRectangle, flattenPath } from '@flighthq/path';
-import type { Path, PathWinding } from '@flighthq/types';
+import { createPath, appendPathRectangle, flattenPath } from '@flighthq/path/contract';
+import type { Path, PathWinding } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { booleanPaths, differencePaths, intersectPaths, unionPaths, xorPaths } from './booleanPaths';

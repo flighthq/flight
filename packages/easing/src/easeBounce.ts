@@ -1,4 +1,4 @@
-import type { EasingFunction } from '@flighthq/types';
+import type { EasingFunction } from '@flighthq/types/contract';
 
 export const easeInBounce: EasingFunction = (t) => 1 - bounceOut(1 - t);
 

@@ -1,4 +1,4 @@
-import type { LocaleInput } from '@flighthq/types';
+import type { LocaleInput } from '@flighthq/types/contract';
 
 /**
  * Return the cached value for `key`, building and storing it with `build` on a

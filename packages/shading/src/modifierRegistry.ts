@@ -1,4 +1,4 @@
-import type { ModifierDefinition, ModifierKind, ModifierRegistry } from '@flighthq/types';
+import type { ModifierDefinition, ModifierKind, ModifierRegistry } from '@flighthq/types/contract';
 
 // The substrate-agnostic registration record for one modifier kind: where it injects (`slot`) and
 // how its descriptor's compile-time structure contributes to the define-key (`getDefineSignature`).

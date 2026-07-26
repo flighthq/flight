@@ -1,5 +1,5 @@
-import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT } from '@flighthq/mesh';
-import { createTexture } from '@flighthq/texture';
+import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT } from '@flighthq/mesh/contract';
+import { createTexture } from '@flighthq/texture/contract';
 import type {
   EmbeddedImageResourceReference,
   ExternalImageResourceReference,
@@ -7,8 +7,8 @@ import type {
   SkinInfluence,
   Texture,
   VertexAttributeLayout,
-} from '@flighthq/types';
-import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types/contract';
 
 export const CANONICAL_FLOATS_PER_VERTEX = 12;
 export const CANONICAL_LAYOUT: VertexAttributeLayout = {

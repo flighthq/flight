@@ -1,4 +1,4 @@
-import type { TextSegment, TextSegmentRange } from '@flighthq/types';
+import type { TextSegment, TextSegmentRange } from '@flighthq/types/contract';
 
 import { segmentGraphemes, segmentWords } from './textSegment';
 

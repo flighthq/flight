@@ -1,5 +1,5 @@
-import { createMatrix } from '@flighthq/geometry';
-import { getGlRenderStateRuntime } from '@flighthq/render-gl';
+import { createMatrix } from '@flighthq/geometry/contract';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 
 import { popGlClipContours, pushGlClipContours } from './glClipContours';
 import { createGlState } from './glTestHelper';

@@ -5,7 +5,7 @@ import type {
   MessageDialogKind,
   TauriApi,
   TauriDialogFilter,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Maps Flight's DialogBackend onto Tauri's async `@tauri-apps/plugin-dialog`. Both sides are
 // Promise-based. Open/save resolve to sentinels ([] / null) on cancel. Tauri returns real host paths,

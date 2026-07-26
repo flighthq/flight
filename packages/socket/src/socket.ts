@@ -1,4 +1,4 @@
-import { createSignal, emitSignal } from '@flighthq/signals';
+import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   Socket,
   SocketBackend,
@@ -10,7 +10,7 @@ import type {
   SocketReadyState,
   SocketRuntime,
   SocketSignals,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Resumes delivery of backend events to the socket's signals (idempotent). Pair with detachSocket.
 // createSocket leaves a new socket attached, so this is only needed to resume after detachSocket.

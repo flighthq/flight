@@ -1,4 +1,4 @@
-import type { ElectronApi } from '@flighthq/types';
+import type { ElectronApi } from '@flighthq/types/contract';
 
 import { createElectronStorageBackend } from './electronStorage';
 

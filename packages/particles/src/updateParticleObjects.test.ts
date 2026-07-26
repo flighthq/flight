@@ -1,5 +1,5 @@
-import { createRandomSource } from '@flighthq/math';
-import type { ParticleObject } from '@flighthq/types';
+import { createRandomSource } from '@flighthq/math/contract';
+import type { ParticleObject } from '@flighthq/types/contract';
 
 import { createParticleEmitterConfig } from './particleEmitterConfig';
 import { createParticleObjectsState } from './particleObjectsState';

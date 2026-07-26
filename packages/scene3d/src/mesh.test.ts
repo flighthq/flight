@@ -1,14 +1,14 @@
-import { createStandardPbrMaterial } from '@flighthq/materials';
-import { createBoxMeshGeometry, getMeshGeometryVertexCount } from '@flighthq/mesh';
-import { updateMeshMorph } from '@flighthq/mesh';
+import { createStandardPbrMaterial } from '@flighthq/materials/contract';
+import { createBoxMeshGeometry, getMeshGeometryVertexCount } from '@flighthq/mesh/contract';
+import { updateMeshMorph } from '@flighthq/mesh/contract';
 import {
   addNodeChild,
   getNodeChildCount,
   getNodeLocalMatrix4,
   getNodeWorldMatrix4,
   invalidateNodeLocalTransform,
-} from '@flighthq/node';
-import type { MeshMorph, Skin } from '@flighthq/types';
+} from '@flighthq/node/contract';
+import type { MeshMorph, Skin } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {

@@ -6,7 +6,7 @@ import type {
   TiledTileset,
   TiledTilesetRef,
   TiledTilesetTile,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { formatTiledColor } from './tiledColor';
 

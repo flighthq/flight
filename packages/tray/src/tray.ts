@@ -7,8 +7,8 @@ import type {
   TrayEventData,
   TrayIcon,
   TrayIconOptions,
-} from '@flighthq/types';
-import type { Vector2Like } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import type { Vector2Like } from '@flighthq/types/contract';
 
 // Web tray capability constants. Web has no system tray — all capabilities are false.
 const WEB_CAPABILITIES: TrayCapabilities = {

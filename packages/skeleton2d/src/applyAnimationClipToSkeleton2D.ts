@@ -1,6 +1,6 @@
-import { sampleAnimationTrack } from '@flighthq/animation';
-import type { AnimationClip, Skeleton2D, Skeleton2DAnimationTarget } from '@flighthq/types';
-import { Skeleton2DAnimationPath } from '@flighthq/types';
+import { sampleAnimationTrack } from '@flighthq/animation/contract';
+import type { AnimationClip, Skeleton2D, Skeleton2DAnimationTarget } from '@flighthq/types/contract';
+import { Skeleton2DAnimationPath } from '@flighthq/types/contract';
 
 // Poses a Skeleton2D from an AnimationClip at `time`: for each channel whose `targetRef` is a
 // Skeleton2DAnimationTarget, samples the channel's track and writes the value into the target bone's local

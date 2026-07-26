@@ -1,4 +1,4 @@
-import type { CanvasRenderEffectRunner, CanvasRenderTarget, MedianEffect } from '@flighthq/types';
+import type { CanvasRenderEffectRunner, CanvasRenderTarget, MedianEffect } from '@flighthq/types/contract';
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 

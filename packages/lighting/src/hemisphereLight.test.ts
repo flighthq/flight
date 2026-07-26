@@ -1,4 +1,4 @@
-import { HemisphereLightKind } from '@flighthq/types';
+import { HemisphereLightKind } from '@flighthq/types/contract';
 
 import { cloneHemisphereLight, createHemisphereLight } from './hemisphereLight';
 

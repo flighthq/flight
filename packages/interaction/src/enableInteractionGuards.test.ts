@@ -1,6 +1,6 @@
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log';
-import { addNodeChild } from '@flighthq/node';
-import { createDisplayObject } from '@flighthq/scene2d';
+import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import { addNodeChild } from '@flighthq/node/contract';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
 
 import {
   disableInteractionGuards,

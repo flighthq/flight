@@ -1,4 +1,4 @@
-import type { AppBackend, AppLoginItem, TauriApi } from '@flighthq/types';
+import type { AppBackend, AppLoginItem, TauriApi } from '@flighthq/types/contract';
 
 // Maps Flight's AppBackend onto Tauri's `@tauri-apps/api/app` (identity + hide/show) and
 // `@tauri-apps/plugin-process` (quit/relaunch), with the locale sourced from `@tauri-apps/plugin-os`.

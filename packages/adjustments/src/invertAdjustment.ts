@@ -1,4 +1,4 @@
-import type { InvertAdjustment } from '@flighthq/types';
+import type { InvertAdjustment } from '@flighthq/types/contract';
 
 // Channel invert as a matrix-tier adjustment. `mix(rgb, 1 - rgb, intensity)` is affine per channel —
 // scale `1 - 2·intensity`, normalized-linear bias `intensity`. Alpha is unchanged. At intensity 1

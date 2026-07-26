@@ -1,5 +1,5 @@
-import { parseGlb, parseGltf } from '@flighthq/scene3d-formats';
-import type { GltfDocument, Scene3DDocument, Scene3DDocumentLoadOptions } from '@flighthq/types';
+import { parseGlb, parseGltf } from '@flighthq/scene3d-formats/contract';
+import type { GltfDocument, Scene3DDocument, Scene3DDocumentLoadOptions } from '@flighthq/types/contract';
 
 import {
   getScene3DDocumentBasePathFromUrl,

@@ -1,5 +1,5 @@
-import type { Node, NodeTraits } from '@flighthq/types';
-import { NodeKind } from '@flighthq/types';
+import type { Node, NodeTraits } from '@flighthq/types/contract';
+import { NodeKind } from '@flighthq/types/contract';
 
 import { addNodeChild } from './hierarchy';
 import { createNode } from './node';

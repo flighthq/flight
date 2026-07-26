@@ -1,5 +1,5 @@
-import type { Texture, Vector2Like } from '@flighthq/types';
-import { AnimatedNormalModifierKind, ModifierSlot } from '@flighthq/types';
+import type { Texture, Vector2Like } from '@flighthq/types/contract';
+import { AnimatedNormalModifierKind, ModifierSlot } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createAnimatedNormalModifier } from './createAnimatedNormalModifier';

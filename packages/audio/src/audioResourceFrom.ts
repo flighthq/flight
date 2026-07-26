@@ -1,4 +1,4 @@
-import type { AudioResource, AudioResourceUrl } from '@flighthq/types';
+import type { AudioResource, AudioResourceUrl } from '@flighthq/types/contract';
 
 import { canPlayAudioType, inferAudioMimeType } from './audioFormat';
 import { createAudioResource } from './audioResource';

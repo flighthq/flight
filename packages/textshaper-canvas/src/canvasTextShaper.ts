@@ -1,5 +1,5 @@
-import { computeTextFormatFontString } from '@flighthq/text';
-import type { CanvasTextShaperBackend, FontMetrics, TextFormat } from '@flighthq/types';
+import { computeTextFormatFontString } from '@flighthq/text/contract';
+import type { CanvasTextShaperBackend, FontMetrics, TextFormat } from '@flighthq/types/contract';
 
 // Clears the advance cache on a backend returned by createCanvasTextShaperBackend. Call this after
 // a webfont finishes loading — document.fonts.ready resolves, FontFaceObserver fires, etc. — so

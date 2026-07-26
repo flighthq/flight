@@ -4,8 +4,8 @@ import {
   SpritesheetFormatKindLibgdxAtlas,
   SpritesheetFormatKindStarling,
   SpritesheetFormatKindTexturePacker,
-} from '@flighthq/types';
-import type { SpritesheetParseOptions } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import type { SpritesheetParseOptions } from '@flighthq/types/contract';
 
 import {
   detectSpritesheetFormat,

@@ -1,5 +1,5 @@
-import { createImageResource } from '@flighthq/image';
-import { getGlRenderStateRuntime } from '@flighthq/render-gl';
+import { createImageResource } from '@flighthq/image/contract';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { ColorScaleBias, ImageResource } from '@flighthq/types/contract';
 
 import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature';

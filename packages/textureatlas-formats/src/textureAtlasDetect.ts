@@ -1,10 +1,10 @@
-import type { TextureAtlasFormatKind } from '@flighthq/types';
+import type { TextureAtlasFormatKind } from '@flighthq/types/contract';
 import {
   TextureAtlasFormatKindAseprite,
   TextureAtlasFormatKindLibgdxAtlas,
   TextureAtlasFormatKindStarling,
   TextureAtlasFormatKindTexturePacker,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 /** Sniff the text content of a texture-atlas descriptor and return its format kind, or
  *  `null` when no supported format is recognisable.

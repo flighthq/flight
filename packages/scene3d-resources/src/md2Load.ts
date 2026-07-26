@@ -1,5 +1,5 @@
-import { parseMd2 } from '@flighthq/scene3d-formats';
-import type { Scene3DDocument, Scene3DDocumentLoadOptions } from '@flighthq/types';
+import { parseMd2 } from '@flighthq/scene3d-formats/contract';
+import type { Scene3DDocument, Scene3DDocumentLoadOptions } from '@flighthq/types/contract';
 
 import { loadScene3DDocumentBytesFromUrl, setScene3DDocumentResourceBasePathFromUrl } from './sceneDocumentSource';
 

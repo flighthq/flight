@@ -1,5 +1,5 @@
-import { createDisplayObject } from '@flighthq/scene2d';
-import { connectSignal } from '@flighthq/signals';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
+import { connectSignal } from '@flighthq/signals/contract';
 
 import {
   createRenderCache,

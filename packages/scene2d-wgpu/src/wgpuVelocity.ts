@@ -5,9 +5,9 @@ import {
   getNodeChildCount,
   getNodeWorldBoundsRectangle,
   getNodeWorldMatrix,
-} from '@flighthq/node';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import { createWgpuRenderTarget } from '@flighthq/render-wgpu';
+} from '@flighthq/node/contract';
+import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { createWgpuRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
   Kind,
   ParticleEmitter2D,
@@ -23,7 +23,7 @@ import type {
   WgpuVelocityWriter,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
-import { getVelocity } from '@flighthq/velocity';
+import { getVelocity } from '@flighthq/velocity/contract';
 
 // Wgpu velocity-buffer production, the mirror of scene2d-gl's webglVelocity. Velocity is tied to the
 // draw, so production is per-kind: the velocity pass walks the scene and dispatches a registered

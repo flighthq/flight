@@ -1,4 +1,4 @@
-import type { Quaternion } from '@flighthq/types';
+import type { Quaternion } from '@flighthq/types/contract';
 
 import { createQuaternion } from './quaternion';
 

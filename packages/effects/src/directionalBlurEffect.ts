@@ -1,4 +1,4 @@
-import type { DirectionalBlurEffect } from '@flighthq/types';
+import type { DirectionalBlurEffect } from '@flighthq/types/contract';
 
 export function createDirectionalBlurEffect(
   options: Readonly<Omit<DirectionalBlurEffect, 'kind'>> = {},

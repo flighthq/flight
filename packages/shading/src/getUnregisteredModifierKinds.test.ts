@@ -1,5 +1,5 @@
-import type { Modifier } from '@flighthq/types';
-import { EmissiveModifierKind } from '@flighthq/types';
+import type { Modifier } from '@flighthq/types/contract';
+import { EmissiveModifierKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createEmissiveModifier } from './createEmissiveModifier';

@@ -1,13 +1,13 @@
-import { createTexture } from '@flighthq/texture';
+import { createTexture } from '@flighthq/texture/contract';
 import {
   ResourceResolutionState,
   EntityRuntimeKey,
   ImageResourceReferenceKind,
   StandardPbrMaterialKind,
   UnlitMaterialKind,
-} from '@flighthq/types';
-import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types';
-import type { Scene3DResourceInFlight, Scene3DResourceResolverWithRuntime } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
+import type { Scene3DResourceInFlight, Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createScene3DMaterialTextureRegistry } from './sceneMaterialTextureRegistry';

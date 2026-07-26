@@ -4,7 +4,7 @@ import type {
   StatusBarStyle,
   CapacitorApi,
   CapacitorStatusBarInfoResult,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Maps Flight's StatusBarBackend onto Capacitor's `@capacitor/status-bar`. The setters are async and fire
 // fire-and-forget: setStyle, setBackgroundColor (a packed RGBA int → a `#RRGGBB` hex string, dropping

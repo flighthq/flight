@@ -1,5 +1,5 @@
-import type { Texture } from '@flighthq/types';
-import { DissolveModifierKind, ModifierSlot } from '@flighthq/types';
+import type { Texture } from '@flighthq/types/contract';
+import { DissolveModifierKind, ModifierSlot } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createDissolveModifier } from './createDissolveModifier';

@@ -1,5 +1,11 @@
-import { createMatrix } from '@flighthq/geometry';
-import type { HasBoundsRectangleRuntime, Node, NodeTraits, ViewportAlign, ViewportScaleMode } from '@flighthq/types';
+import { createMatrix } from '@flighthq/geometry/contract';
+import type {
+  HasBoundsRectangleRuntime,
+  Node,
+  NodeTraits,
+  ViewportAlign,
+  ViewportScaleMode,
+} from '@flighthq/types/contract';
 
 import { createNode, getNodeRuntime } from './node';
 import {

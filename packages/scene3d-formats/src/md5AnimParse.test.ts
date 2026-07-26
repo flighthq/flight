@@ -1,11 +1,11 @@
-import { sampleAnimationTrack } from '@flighthq/animation';
-import { createNode3D } from '@flighthq/scene3d';
-import type { AnimationClip, ImportDiagnostic, Scene3DAnimationTarget, Node3D } from '@flighthq/types';
+import { sampleAnimationTrack } from '@flighthq/animation/contract';
+import { createNode3D } from '@flighthq/scene3d/contract';
+import type { AnimationClip, ImportDiagnostic, Scene3DAnimationTarget, Node3D } from '@flighthq/types/contract';
 import {
   ImportDiagnosticSeverity,
   Scene3DAnimationPathRotation,
   Scene3DAnimationPathTranslation,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { parseMd5Anim } from './md5AnimParse';
 

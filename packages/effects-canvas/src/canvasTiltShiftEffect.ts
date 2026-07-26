@@ -1,4 +1,4 @@
-import type { CanvasRenderEffectRunner, CanvasRenderTarget, TiltShiftEffect } from '@flighthq/types';
+import type { CanvasRenderEffectRunner, CanvasRenderTarget, TiltShiftEffect } from '@flighthq/types/contract';
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 

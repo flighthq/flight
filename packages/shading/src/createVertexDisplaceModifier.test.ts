@@ -1,5 +1,5 @@
-import type { Texture, Vector3Like } from '@flighthq/types';
-import { ModifierSlot, VertexDisplaceModifierKind, VertexDisplaceModifierSource } from '@flighthq/types';
+import type { Texture, Vector3Like } from '@flighthq/types/contract';
+import { ModifierSlot, VertexDisplaceModifierKind, VertexDisplaceModifierSource } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createVertexDisplaceModifier } from './createVertexDisplaceModifier';

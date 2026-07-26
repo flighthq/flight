@@ -5,8 +5,8 @@ import type {
   Node3D,
   Scene3DResourceResolver,
   Texture,
-} from '@flighthq/types';
-import { ResourceResolutionState } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { ResourceResolutionState } from '@flighthq/types/contract';
 
 import { getScene3DResourceTextures } from './getScene3DResourceTextures';
 import { resolveScene3DResources } from './resolveScene3DResources';

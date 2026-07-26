@@ -1,4 +1,4 @@
-import type { GlRenderState } from '@flighthq/types';
+import type { GlRenderState } from '@flighthq/types/contract';
 
 import { defaultGlBevelEffectRunner } from './glBevelEffect';
 import { defaultGlBlendEffectRunner } from './glBlendEffect';

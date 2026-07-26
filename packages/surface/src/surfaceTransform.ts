@@ -1,5 +1,5 @@
-import { invalidateImageResource } from '@flighthq/image';
-import type { ColorScaleBiasLike, Surface, SurfaceRegion, ThresholdOperation } from '@flighthq/types';
+import { invalidateImageResource } from '@flighthq/image/contract';
+import type { ColorScaleBiasLike, Surface, SurfaceRegion, ThresholdOperation } from '@flighthq/types/contract';
 
 let _scrollScratch: Uint8ClampedArray | null = null;
 

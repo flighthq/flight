@@ -1,4 +1,4 @@
-import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals';
+import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   ApplicationWindow,
   Matrix,
@@ -6,7 +6,7 @@ import type {
   WindowBackend,
   WindowBounds,
   WindowOptions,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 const kClose = Symbol();
 const kDropFile = Symbol();

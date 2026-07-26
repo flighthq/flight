@@ -1,5 +1,5 @@
-import { invalidateImageResource } from '@flighthq/image';
-import type { SurfaceEdgeMode, SurfaceRegion, SurfaceResizeMode } from '@flighthq/types';
+import { invalidateImageResource } from '@flighthq/image/contract';
+import type { SurfaceEdgeMode, SurfaceRegion, SurfaceResizeMode } from '@flighthq/types/contract';
 
 /**
  * Applies a full 2×3 affine transform to the `source` region, writing into

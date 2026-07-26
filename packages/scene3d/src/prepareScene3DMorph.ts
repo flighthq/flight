@@ -1,6 +1,6 @@
-import { updateMeshMorph } from '@flighthq/mesh';
-import { getNodeRuntime } from '@flighthq/node';
-import type { Mesh, NodeAny } from '@flighthq/types';
+import { updateMeshMorph } from '@flighthq/mesh/contract';
+import { getNodeRuntime } from '@flighthq/node/contract';
+import type { Mesh, NodeAny } from '@flighthq/types/contract';
 
 // Blends every enabled morphed mesh in the subtree rooted at `scene` for the current weights — the
 // per-frame morph-prep pass. Call it BEFORE prepareScene3DRender: the morph writes into geometry.vertices

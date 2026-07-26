@@ -4,13 +4,13 @@ import {
   fuseColorMatrices,
   getAdjustmentColorMatrix,
   isColorLutAdjustment,
-} from '@flighthq/adjustments';
+} from '@flighthq/adjustments/contract';
 import {
   beginCanvasRenderPass,
   createCanvasRenderTarget,
   endCanvasRenderPass,
   resizeCanvasRenderTarget,
-} from '@flighthq/scene2d-canvas';
+} from '@flighthq/scene2d-canvas/contract';
 import type {
   Adjustment,
   CanvasRenderEffectPipeline,
@@ -19,7 +19,7 @@ import type {
   CanvasRenderTargetPool,
   RenderEffect,
   RenderEffectPipelineOptions,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { applyColorLutPassToCanvas } from './canvasColorLutPass';
 import { applyColorMatrixPassToCanvas } from './canvasColorMatrixPass';

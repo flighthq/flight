@@ -1,12 +1,12 @@
-import { getNodeLocalContentRevision } from '@flighthq/node';
-import { getNode2DRuntime } from '@flighthq/scene2d';
+import { getNodeLocalContentRevision } from '@flighthq/node/contract';
+import { getNode2DRuntime } from '@flighthq/scene2d/contract';
 import {
   computeTextLayout,
   getTextLayoutMeasureProvider,
   getTextLayoutResult,
   getTextMetrics,
-} from '@flighthq/textlayout';
-import type { TextLabel, TextLabelRuntime, TextLayoutResult, TextMetrics } from '@flighthq/types';
+} from '@flighthq/textlayout/contract';
+import type { TextLabel, TextLabelRuntime, TextLayoutResult, TextMetrics } from '@flighthq/types/contract';
 
 // Lazily refreshes the cached text layout for `source` — TextLabel or RichText alike —
 // mirroring the node graph's ensure* pattern (e.g. ensureNodeLocalBoundsRectangle). If the

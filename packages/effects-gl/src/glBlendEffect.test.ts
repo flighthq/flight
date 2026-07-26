@@ -1,5 +1,5 @@
-import type { GlRenderState } from '@flighthq/types';
-import { AdvancedBlendMode } from '@flighthq/types';
+import type { GlRenderState } from '@flighthq/types/contract';
+import { AdvancedBlendMode } from '@flighthq/types/contract';
 
 import {
   applyBlendEffectToGl,

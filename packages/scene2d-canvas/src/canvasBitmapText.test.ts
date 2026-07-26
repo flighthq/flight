@@ -1,5 +1,5 @@
-import { createBitmapText, updateBitmapText } from '@flighthq/bitmaptext';
-import { createImageResource } from '@flighthq/image';
+import { createBitmapText, updateBitmapText } from '@flighthq/bitmaptext/contract';
+import { createImageResource } from '@flighthq/image/contract';
 import type { BitmapText, GlyphEntry, GlyphSource, ImageResource, RenderProxy2D } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 

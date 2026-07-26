@@ -1,4 +1,4 @@
-import type { AabbLike, MeshSkinBindPose, Skeleton3D } from '@flighthq/types';
+import type { AabbLike, MeshSkinBindPose, Skeleton3D } from '@flighthq/types/contract';
 
 import { skinVertices } from './skinVertices';
 

@@ -1,4 +1,4 @@
-import type { GrayscaleAdjustment } from '@flighthq/types';
+import type { GrayscaleAdjustment } from '@flighthq/types/contract';
 
 // Luma desaturation as a matrix-tier adjustment. `mix(rgb, vec3(luma), intensity)` with ITU-R BT.709
 // weights is a full affine 3×3 (no offset); alpha is unchanged. At intensity 1 every channel becomes

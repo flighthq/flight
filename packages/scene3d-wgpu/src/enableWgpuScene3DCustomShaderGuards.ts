@@ -1,4 +1,4 @@
-import { logOnce } from '@flighthq/log';
+import { logOnce } from '@flighthq/log/contract';
 import type { CustomShaderMaterial, WgpuCustomMaterialShaderSource, WgpuRenderState } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 

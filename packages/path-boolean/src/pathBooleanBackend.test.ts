@@ -1,4 +1,4 @@
-import type { PathBooleanBackend } from '@flighthq/types';
+import type { PathBooleanBackend } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { createDefaultPathBooleanBackend, getPathBooleanBackend, setPathBooleanBackend } from './pathBooleanBackend';

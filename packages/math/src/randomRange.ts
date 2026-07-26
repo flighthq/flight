@@ -1,4 +1,4 @@
-import type { RandomSource } from '@flighthq/types';
+import type { RandomSource } from '@flighthq/types/contract';
 
 /** Return a random boolean with the given `probability` of being `true`.
  *

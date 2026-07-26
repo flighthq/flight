@@ -1,4 +1,4 @@
-import type { MeshMorph, VertexAttributeLayout } from '@flighthq/types';
+import type { MeshMorph, VertexAttributeLayout } from '@flighthq/types/contract';
 
 import { createMeshGeometry } from './meshGeometry';
 import { blendMeshGeometryMorph, captureMeshMorphBindPose } from './morphMeshGeometry';

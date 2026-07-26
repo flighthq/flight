@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity';
-import type { Scene3DLights, Scene3DLightsLike } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import type { Scene3DLights, Scene3DLightsLike } from '@flighthq/types/contract';
 
 // Constructs a `Scene3DLights` draw-argument, filling every absent slot: the single ambient/directional
 // terms default to `null` and the punctual arrays to empty. Prefer this over a bare object literal —

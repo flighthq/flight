@@ -1,4 +1,4 @@
-import type { FlowState, FlowStack } from '@flighthq/types';
+import type { FlowState, FlowStack } from '@flighthq/types/contract';
 
 // Empty the stack, exiting every state top-to-bottom (`onExit` on the active top first, down to the
 // bottom) so each unwinds in reverse of the order it entered. No `onPause`/`onResume` fire — the

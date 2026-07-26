@@ -1,4 +1,4 @@
-import { createBoxMeshGeometry } from '@flighthq/mesh';
+import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 
 import { makeGlScene3DState } from './glScene3DTestHelper';
 import { destroyGlWireframeUpload, ensureGlWireframeUpload } from './glWireframeUpload';

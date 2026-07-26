@@ -1,5 +1,5 @@
-import { invalidateImageResource } from '@flighthq/image';
-import type { SurfaceEdgeMode, SurfaceRegion, SurfaceResizeMode } from '@flighthq/types';
+import { invalidateImageResource } from '@flighthq/image/contract';
+import type { SurfaceEdgeMode, SurfaceRegion, SurfaceResizeMode } from '@flighthq/types/contract';
 
 /**
  * Applies a full 3×3 projective (homography) warp to `source`, writing into

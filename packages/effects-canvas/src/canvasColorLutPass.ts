@@ -1,5 +1,5 @@
-import { sampleColorLut } from '@flighthq/adjustments';
-import type { CanvasRenderTarget, ColorLut } from '@flighthq/types';
+import { sampleColorLut } from '@flighthq/adjustments/contract';
+import type { CanvasRenderTarget, ColorLut } from '@flighthq/types/contract';
 
 import { drawCanvasImageDataPass } from './canvasEffectCompositing';
 

@@ -5,8 +5,8 @@ import type {
   WgpuRenderEffectRunner,
   WgpuRenderState,
   WgpuRenderTarget,
-} from '@flighthq/types';
-import { AdvancedBlendMode as AdvancedBlendModeValues } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { AdvancedBlendMode as AdvancedBlendModeValues } from '@flighthq/types/contract';
 
 import { createWgpuDualSourceEffectPipeline, drawWgpuDualSourceEffectPass } from './wgpuEffectPass';
 

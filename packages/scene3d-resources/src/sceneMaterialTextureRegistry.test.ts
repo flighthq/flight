@@ -1,7 +1,7 @@
-import { createStandardPbrMaterial, createUnlitMaterial } from '@flighthq/materials';
-import { createTexture } from '@flighthq/texture';
-import type { Material, Texture } from '@flighthq/types';
-import { EntityRuntimeKey, StandardPbrMaterialKind, UnlitMaterialKind } from '@flighthq/types';
+import { createStandardPbrMaterial, createUnlitMaterial } from '@flighthq/materials/contract';
+import { createTexture } from '@flighthq/texture/contract';
+import type { Material, Texture } from '@flighthq/types/contract';
+import { EntityRuntimeKey, StandardPbrMaterialKind, UnlitMaterialKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {

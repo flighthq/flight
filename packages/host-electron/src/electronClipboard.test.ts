@@ -1,4 +1,4 @@
-import type { ElectronApi, ElectronNativeImage } from '@flighthq/types';
+import type { ElectronApi, ElectronNativeImage } from '@flighthq/types/contract';
 
 import { createElectronClipboardBackend } from './electronClipboard';
 

@@ -1,4 +1,4 @@
-import { createSurface } from '@flighthq/surface';
+import { createSurface } from '@flighthq/surface/contract';
 import type { Surface, WgpuRenderState } from '@flighthq/types/contract';
 
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';

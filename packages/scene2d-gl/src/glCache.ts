@@ -1,6 +1,6 @@
-import { createMatrix, createRectangle } from '@flighthq/geometry';
-import { computeNodeBoundsRectangle } from '@flighthq/node';
-import { createGlRenderStateRuntime, getGlRenderStateRuntime } from '@flighthq/render-gl';
+import { createMatrix, createRectangle } from '@flighthq/geometry/contract';
+import { computeNodeBoundsRectangle } from '@flighthq/node/contract';
+import { createGlRenderStateRuntime, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import {
   beginGlRenderPass,
   createGlRenderTarget,
@@ -9,7 +9,7 @@ import {
   endGlRenderPass,
   resizeGlRenderTarget,
   setGlRenderTransform2D,
-} from '@flighthq/render-gl';
+} from '@flighthq/render-gl/contract';
 import {
   computeScene2DRenderTargetTransform,
   computeRenderCacheTransform,

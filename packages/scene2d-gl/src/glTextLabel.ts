@@ -1,11 +1,11 @@
-import { computeRgbHexString } from '@flighthq/color';
-import { createImageResource, setImageResourceSource } from '@flighthq/image';
-import { getNodeLocalContentRevision } from '@flighthq/node';
-import { resolveGlMaterialRenderer } from '@flighthq/render-gl';
-import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import { computeTextFormatFontString } from '@flighthq/text';
-import { getTextLabelRuntime } from '@flighthq/text';
-import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout';
+import { computeRgbHexString } from '@flighthq/color/contract';
+import { createImageResource, setImageResourceSource } from '@flighthq/image/contract';
+import { getNodeLocalContentRevision } from '@flighthq/node/contract';
+import { resolveGlMaterialRenderer } from '@flighthq/render-gl/contract';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { computeTextFormatFontString } from '@flighthq/text/contract';
+import { getTextLabelRuntime } from '@flighthq/text/contract';
+import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout/contract';
 import type {
   Scene2DRenderer,
   GlRenderState,

@@ -1,4 +1,4 @@
-import type { BokehDepthOfFieldEffect, CanvasRenderEffectRunner, CanvasRenderTarget } from '@flighthq/types';
+import type { BokehDepthOfFieldEffect, CanvasRenderEffectRunner, CanvasRenderTarget } from '@flighthq/types/contract';
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 

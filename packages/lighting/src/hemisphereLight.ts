@@ -1,6 +1,6 @@
-import { createEntity } from '@flighthq/entity';
-import type { HemisphereLight, HemisphereLightOptions } from '@flighthq/types';
-import { HemisphereLightKind } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import type { HemisphereLight, HemisphereLightOptions } from '@flighthq/types/contract';
+import { HemisphereLightKind } from '@flighthq/types/contract';
 
 // Independent copy of a hemisphere light's data. The `kind` discriminant is carried over.
 export function cloneHemisphereLight(source: Readonly<HemisphereLight>): HemisphereLight {

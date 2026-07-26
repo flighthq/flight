@@ -1,5 +1,5 @@
-import type { Mesh, MeshGeometry, MeshGeometryRuntime, MeshMorph } from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
+import type { Mesh, MeshGeometry, MeshGeometryRuntime, MeshMorph } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { getMeshGeometryMorphBindPose, setMeshGeometryMorphBindPose } from './meshGeometry';
 import { blendMeshGeometryMorph, captureMeshMorphBindPose } from './morphMeshGeometry';

@@ -1,4 +1,4 @@
-import type { CanvasRenderEffectRunner, CanvasRenderTarget, SsrEffect } from '@flighthq/types';
+import type { CanvasRenderEffectRunner, CanvasRenderTarget, SsrEffect } from '@flighthq/types/contract';
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 

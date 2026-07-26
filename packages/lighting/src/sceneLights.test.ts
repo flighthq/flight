@@ -1,4 +1,4 @@
-import { EntityRuntimeKey } from '@flighthq/types';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createAmbientLight } from './ambientLight';

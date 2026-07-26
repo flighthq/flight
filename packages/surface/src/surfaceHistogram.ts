@@ -1,5 +1,5 @@
-import { invalidateImageResource } from '@flighthq/image';
-import type { SurfaceHistogram, SurfaceRegion } from '@flighthq/types';
+import { invalidateImageResource } from '@flighthq/image/contract';
+import type { SurfaceHistogram, SurfaceRegion } from '@flighthq/types/contract';
 
 import { applySurfacePaletteMap } from './surfacePaletteMap';
 

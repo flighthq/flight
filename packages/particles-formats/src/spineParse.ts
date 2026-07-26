@@ -1,9 +1,9 @@
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import {
   createParticleEmitterConfig,
   particleColorCurveFromKeyframes,
   particleCurveFromKeyframes,
-} from '@flighthq/particles';
+} from '@flighthq/particles/contract';
 import type {
   ImportDiagnostic,
   SpineParsed,
@@ -15,8 +15,8 @@ import type {
   SpineAlphaKeyframe,
   SpineParticleDocument,
   SpineTintKeyframe,
-} from '@flighthq/types';
-import { ImportDiagnosticSeverity } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 const DEG2RAD = Math.PI / 180;
 

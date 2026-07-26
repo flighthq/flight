@@ -1,13 +1,13 @@
-import { computeRgbHexString } from '@flighthq/color';
-import { getRichTextRuntime } from '@flighthq/text';
+import { computeRgbHexString } from '@flighthq/color/contract';
+import { getRichTextRuntime } from '@flighthq/text/contract';
 import {
   getTextInputCaretRectangle,
   getTextInputSelectionBeginIndex,
   getTextInputSelectionEndIndex,
   getTextInputSelectionRectangles,
   getTextInputState,
-} from '@flighthq/textinput';
-import { getRichTextScrollYOffset } from '@flighthq/textlayout';
+} from '@flighthq/textinput/contract';
+import { getRichTextScrollYOffset } from '@flighthq/textlayout/contract';
 import type {
   DomRenderState,
   RendererData,

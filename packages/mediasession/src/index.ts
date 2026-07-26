@@ -1,1 +1,1 @@
-export * from './mediasession';
+export * from './contract';

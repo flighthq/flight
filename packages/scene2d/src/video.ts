@@ -1,6 +1,6 @@
-import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node';
-import type { MethodsOf, Node, PartialNode, Rectangle, Video, VideoData, VideoRuntime } from '@flighthq/types';
-import { VideoKind } from '@flighthq/types';
+import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node/contract';
+import type { MethodsOf, Node, PartialNode, Rectangle, Video, VideoData, VideoRuntime } from '@flighthq/types/contract';
+import { VideoKind } from '@flighthq/types/contract';
 
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from './displayObject';
 

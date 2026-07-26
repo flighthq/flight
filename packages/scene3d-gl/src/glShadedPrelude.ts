@@ -1,5 +1,10 @@
-import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import { createModifierRegistry, getModifierDefineKey, orderModifierStack, resolveModifier } from '@flighthq/shading';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import {
+  createModifierRegistry,
+  getModifierDefineKey,
+  orderModifierStack,
+  resolveModifier,
+} from '@flighthq/shading/contract';
 import type {
   GlColorAdjustmentMaterialFeature,
   GlShadedDefineKey,

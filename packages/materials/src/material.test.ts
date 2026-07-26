@@ -1,5 +1,5 @@
-import type { StandardPbrMaterial } from '@flighthq/types';
-import { StandardPbrMaterialKind } from '@flighthq/types';
+import type { StandardPbrMaterial } from '@flighthq/types/contract';
+import { StandardPbrMaterialKind } from '@flighthq/types/contract';
 
 import { cloneMaterial, copyMaterial, createMaterial, equalsMaterial, getMaterialOfKind } from './material';
 import { createStandardPbrMaterial } from './pbrMaterials';

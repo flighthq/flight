@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity';
-import type { MatrixLike, Transform2D, Transform2DLike } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import type { MatrixLike, Transform2D, Transform2DLike } from '@flighthq/types/contract';
 
 // Allocates a decomposed 2D transform carrier. Defaults are the identity transform (no translation,
 // no rotation, unit scale, no skew, pivot at origin).

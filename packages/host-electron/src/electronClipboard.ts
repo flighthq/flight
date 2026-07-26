@@ -1,4 +1,4 @@
-import type { ClipboardBackend, ClipboardBookmark, ElectronApi, ElectronClipboardData } from '@flighthq/types';
+import type { ClipboardBackend, ClipboardBookmark, ElectronApi, ElectronClipboardData } from '@flighthq/types/contract';
 
 // Maps Flight's ClipboardBackend onto Electron's synchronous clipboard module, adapting to the
 // async Promise contract. Images cross the seam as data URLs (Flight's convention), converted via

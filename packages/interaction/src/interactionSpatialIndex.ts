@@ -1,6 +1,6 @@
-import { getNodeRuntime, getNodeWorldBoundsRectangle } from '@flighthq/node';
-import { clearSpatialIndex, insertSpatialObject, querySpatialPoint } from '@flighthq/spatial';
-import type { Node2D, InteractionManager, NodeAny, SpatialAabb, SpatialObjectId } from '@flighthq/types';
+import { getNodeRuntime, getNodeWorldBoundsRectangle } from '@flighthq/node/contract';
+import { clearSpatialIndex, insertSpatialObject, querySpatialPoint } from '@flighthq/spatial/contract';
+import type { Node2D, InteractionManager, NodeAny, SpatialAabb, SpatialObjectId } from '@flighthq/types/contract';
 
 import { hitTestNodeRegion } from './hitTests';
 import { getNodeInteractionState } from './nodeInteractionState';

@@ -1,6 +1,14 @@
-import { invalidateNodeLocalBounds } from '@flighthq/node';
-import type { HtmlView, HtmlViewData, HtmlViewRuntime, MethodsOf, Node, PartialNode, Rectangle } from '@flighthq/types';
-import { HtmlViewKind } from '@flighthq/types';
+import { invalidateNodeLocalBounds } from '@flighthq/node/contract';
+import type {
+  HtmlView,
+  HtmlViewData,
+  HtmlViewRuntime,
+  MethodsOf,
+  Node,
+  PartialNode,
+  Rectangle,
+} from '@flighthq/types/contract';
+import { HtmlViewKind } from '@flighthq/types/contract';
 
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from './displayObject';
 

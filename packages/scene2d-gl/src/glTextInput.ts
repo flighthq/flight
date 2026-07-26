@@ -1,12 +1,12 @@
-import { computeRgbHexString } from '@flighthq/color';
+import { computeRgbHexString } from '@flighthq/color/contract';
 import {
   getTextInputCaretRectangle,
   getTextInputSelectionBeginIndex,
   getTextInputSelectionEndIndex,
   getTextInputSelectionRectangles,
   getTextInputState,
-} from '@flighthq/textinput';
-import { getRichTextScrollYOffset } from '@flighthq/textlayout';
+} from '@flighthq/textinput/contract';
+import { getRichTextScrollYOffset } from '@flighthq/textlayout/contract';
 import type { RichText, TextLayoutResult, TextSelectionRectangle } from '@flighthq/types/contract';
 
 import { registerGlTextInputOverlay } from './glRichText';

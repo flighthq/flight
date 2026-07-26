@@ -1,7 +1,7 @@
-import { createEntity } from '@flighthq/entity';
-import { createSignal, emitSignal } from '@flighthq/signals';
-import type { AnimationClip, AnimationLoopMode, AnimationPlayer } from '@flighthq/types';
-import { AnimationLoopModePingPong, AnimationLoopModeRepeat } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import { createSignal, emitSignal } from '@flighthq/signals/contract';
+import type { AnimationClip, AnimationLoopMode, AnimationPlayer } from '@flighthq/types/contract';
+import { AnimationLoopModePingPong, AnimationLoopModeRepeat } from '@flighthq/types/contract';
 
 // Advances the playhead by `dt` seconds (scaled by `speed`; negative plays backward). When `loop`,
 // time wraps at the clip duration per `loopMode` — 'Repeat' jumps end→start, 'PingPong' reflects and

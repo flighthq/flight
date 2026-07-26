@@ -1,4 +1,4 @@
-import type { PathBooleanContour, PathBooleanFillRule, PathBooleanOperation } from '@flighthq/types';
+import type { PathBooleanContour, PathBooleanFillRule, PathBooleanOperation } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createMartinezPathBooleanBackend } from './martinezKernel';

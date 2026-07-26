@@ -1,6 +1,6 @@
-import { addNodeChild } from '@flighthq/node';
-import { connectSignal } from '@flighthq/signals';
-import type { Scene2D } from '@flighthq/types';
+import { addNodeChild } from '@flighthq/node/contract';
+import { connectSignal } from '@flighthq/signals/contract';
+import type { Scene2D } from '@flighthq/types/contract';
 
 import { createDisplayObject } from './displayObject';
 import {

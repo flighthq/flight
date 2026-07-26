@@ -1,8 +1,8 @@
-import { createRectangle, createVector2 } from '@flighthq/geometry';
-import { getNodeLocalBoundsRectangle, getNodeLocalBoundsRevision } from '@flighthq/node';
-import { connectSignal } from '@flighthq/signals';
-import type { QuadBatch, QuadTransformType, TextureAtlas, TextureAtlasRegion } from '@flighthq/types';
-import { QuadBatchKind } from '@flighthq/types';
+import { createRectangle, createVector2 } from '@flighthq/geometry/contract';
+import { getNodeLocalBoundsRectangle, getNodeLocalBoundsRevision } from '@flighthq/node/contract';
+import { connectSignal } from '@flighthq/signals/contract';
+import type { QuadBatch, QuadTransformType, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
+import { QuadBatchKind } from '@flighthq/types/contract';
 
 import {
   appendQuadBatchInstance,

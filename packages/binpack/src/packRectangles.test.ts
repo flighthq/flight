@@ -1,4 +1,4 @@
-import type { PackableRectangle, PackedRectangle } from '@flighthq/types';
+import type { PackableRectangle, PackedRectangle } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { packRectangles } from './packRectangles';

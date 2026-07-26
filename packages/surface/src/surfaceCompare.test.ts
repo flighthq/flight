@@ -1,4 +1,4 @@
-import type { Surface } from '@flighthq/types';
+import type { Surface } from '@flighthq/types/contract';
 
 import { cloneSurface, createSurface } from './surface';
 import { compareSurface, getSurfaceMismatch } from './surfaceCompare';

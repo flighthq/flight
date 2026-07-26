@@ -1,7 +1,7 @@
-import { createEntity } from '@flighthq/entity';
-import { copyMatrix4, createMatrix4, inverseMatrix4, multiplyMatrix4 } from '@flighthq/geometry';
-import { addNodeChild, getNodeParent, getNodeWorldMatrix4 } from '@flighthq/node';
-import type { Matrix4Like, Node3D, Skeleton3D, Skeleton3DValidationDiagnostic } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import { copyMatrix4, createMatrix4, inverseMatrix4, multiplyMatrix4 } from '@flighthq/geometry/contract';
+import { addNodeChild, getNodeParent, getNodeWorldMatrix4 } from '@flighthq/node/contract';
+import type { Matrix4Like, Node3D, Skeleton3D, Skeleton3DValidationDiagnostic } from '@flighthq/types/contract';
 
 export function cloneSkeleton3D(skeleton: Readonly<Skeleton3D>): Skeleton3D {
   const clone = createEntity({

@@ -1,4 +1,4 @@
-import type { LensDistortionEffect } from '@flighthq/types';
+import type { LensDistortionEffect } from '@flighthq/types/contract';
 
 export function createLensDistortionEffect(
   options: Readonly<Omit<LensDistortionEffect, 'kind'>> = {},

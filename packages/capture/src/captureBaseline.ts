@@ -1,4 +1,4 @@
-import type { CaptureBaseline, CaptureColumnBaseline } from '@flighthq/types';
+import type { CaptureBaseline, CaptureColumnBaseline } from '@flighthq/types/contract';
 
 /** Allocates an empty baseline record. Columns are added via setCaptureBaselineField. */
 export function createCaptureBaseline(): CaptureBaseline {

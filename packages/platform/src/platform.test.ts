@@ -1,4 +1,4 @@
-import type { PlatformBackend, PlatformInfo } from '@flighthq/types';
+import type { PlatformBackend, PlatformInfo } from '@flighthq/types/contract';
 
 import {
   comparePlatformVersions,

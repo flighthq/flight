@@ -1,5 +1,5 @@
-import type { Bone2D, MeshAttachment2D, Skin2D } from '@flighthq/types';
-import { MeshAttachment2DKind, TransformMode2D } from '@flighthq/types';
+import type { Bone2D, MeshAttachment2D, Skin2D } from '@flighthq/types/contract';
+import { MeshAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { deformSkeleton2DMeshAttachment } from './deformMeshAttachment2D';

@@ -1,5 +1,5 @@
-import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath, flattenPath } from '@flighthq/path';
-import type { Path } from '@flighthq/types';
+import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath, flattenPath } from '@flighthq/path/contract';
+import type { Path } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { differencePaths, unionPaths } from './booleanPaths';

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity';
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   Matrix,
   Matrix3Like,
@@ -7,7 +7,7 @@ import type {
   RectangleLike,
   Vector2Like,
   Vector3Like,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 export function cloneMatrix(source: Readonly<MatrixLike>): Matrix {
   const m = createMatrix();

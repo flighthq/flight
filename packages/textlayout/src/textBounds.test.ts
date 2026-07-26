@@ -1,5 +1,5 @@
-import type { RectangleLike, TextLayoutResult } from '@flighthq/types';
-import type { TextBoundsSpec } from '@flighthq/types';
+import type { RectangleLike, TextLayoutResult } from '@flighthq/types/contract';
+import type { TextBoundsSpec } from '@flighthq/types/contract';
 
 import {
   computeTextBoundsHeight,

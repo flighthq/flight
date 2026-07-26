@@ -1,4 +1,4 @@
-import { createRectangle } from '@flighthq/geometry';
+import { createRectangle } from '@flighthq/geometry/contract';
 
 import { buildGlScale9Mapper } from './glScale9Mapper';
 

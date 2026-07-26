@@ -6,8 +6,8 @@ import type {
   DeviceDisplayMetrics,
   DeviceInfo,
   SafeAreaInsets,
-} from '@flighthq/types';
-import { DeviceFormFactorPhone, DeviceFormFactorUnknown } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { DeviceFormFactorPhone, DeviceFormFactorUnknown } from '@flighthq/types/contract';
 
 // Maps Flight's DeviceBackend onto Capacitor's `@capacitor/device`. DeviceBackend reads are synchronous
 // out-fills, whereas Capacitor's getInfo/getId are async, so the adapter prefetches both once at

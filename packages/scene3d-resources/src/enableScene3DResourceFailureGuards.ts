@@ -1,7 +1,7 @@
-import { logOnce } from '@flighthq/log';
-import { connectSignal, disconnectSignal } from '@flighthq/signals';
-import type { Scene3DResourceEvent, Scene3DResourceResolver } from '@flighthq/types';
-import { LogLevel } from '@flighthq/types';
+import { logOnce } from '@flighthq/log/contract';
+import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
+import type { Scene3DResourceEvent, Scene3DResourceResolver } from '@flighthq/types/contract';
+import { LogLevel } from '@flighthq/types/contract';
 
 import { explainImageResourceReferenceResolution } from './sceneResourceRecovery';
 import { enableScene3DResourceSignals } from './sceneResourceSignals';

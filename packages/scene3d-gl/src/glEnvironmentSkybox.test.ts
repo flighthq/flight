@@ -1,4 +1,4 @@
-import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera';
+import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
 import type { Environment } from '@flighthq/types/contract';
 
 import { drawGlEnvironmentSkybox } from './glEnvironmentSkybox';

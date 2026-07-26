@@ -1,4 +1,4 @@
-import type { SpritesheetFrame } from '@flighthq/types';
+import type { SpritesheetFrame } from '@flighthq/types/contract';
 
 export function createSpritesheetFrame(obj?: Partial<SpritesheetFrame>): SpritesheetFrame {
   return {

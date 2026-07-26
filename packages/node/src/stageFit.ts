@@ -1,4 +1,4 @@
-import { createRectangle } from '@flighthq/geometry';
+import { createRectangle } from '@flighthq/geometry/contract';
 import type {
   HasBoundsRectangleRuntime,
   MatrixLike,
@@ -6,7 +6,7 @@ import type {
   Rectangle,
   Scene2DFitContext,
   ViewportAlign,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { getNodeRuntime } from './node';
 

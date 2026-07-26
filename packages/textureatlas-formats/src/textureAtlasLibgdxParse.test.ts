@@ -1,4 +1,4 @@
-import { createTextureAtlas } from '@flighthq/textureatlas';
+import { createTextureAtlas } from '@flighthq/textureatlas/contract';
 
 import { parseTextureAtlasLibgdxAtlas } from './textureAtlasLibgdxParse';
 

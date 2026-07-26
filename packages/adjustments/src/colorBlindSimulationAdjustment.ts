@@ -1,4 +1,4 @@
-import type { ColorBlindSimulationAdjustment, ColorBlindType } from '@flighthq/types';
+import type { ColorBlindSimulationAdjustment, ColorBlindType } from '@flighthq/types/contract';
 
 // Color-vision-deficiency simulation as a matrix-tier adjustment — this op's FIRST backend realization
 // (it was previously a descriptor-only effect with no pass). Each type bakes a fixed linear 3×3 RGB→RGB

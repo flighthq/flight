@@ -1,4 +1,4 @@
-import type { ExposureAdjustment } from '@flighthq/types';
+import type { ExposureAdjustment } from '@flighthq/types/contract';
 
 // Linear exposure as a matrix-tier adjustment: RGB is scaled by `2^exposure` (a per-channel diagonal
 // multiply, no offset), reproducing the prior full-frame `rgb·2^exposure` shader. Alpha is unchanged.

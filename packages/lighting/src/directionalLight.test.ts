@@ -1,5 +1,5 @@
-import { createVector3 } from '@flighthq/geometry';
-import { DirectionalLightKind } from '@flighthq/types';
+import { createVector3 } from '@flighthq/geometry/contract';
+import { DirectionalLightKind } from '@flighthq/types/contract';
 
 import {
   cloneDirectionalLight,

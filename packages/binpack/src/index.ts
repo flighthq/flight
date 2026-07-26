@@ -1,1 +1,1 @@
-export * from './packRectangles';
+export * from './contract';

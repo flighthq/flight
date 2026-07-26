@@ -1,5 +1,5 @@
-import { createRichText } from '@flighthq/text';
-import { enableTextInput, setTextInputSelection } from '@flighthq/textinput';
+import { createRichText } from '@flighthq/text/contract';
+import { enableTextInput, setTextInputSelection } from '@flighthq/textinput/contract';
 import type { RenderProxy2D, RichText } from '@flighthq/types/contract';
 
 import { drawGlRichText } from './glRichText';

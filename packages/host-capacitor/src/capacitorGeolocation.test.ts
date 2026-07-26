@@ -1,4 +1,4 @@
-import type { CapacitorApi, CapacitorPosition } from '@flighthq/types';
+import type { CapacitorApi, CapacitorPosition } from '@flighthq/types/contract';
 
 import { createCapacitorGeolocationBackend } from './capacitorGeolocation';
 

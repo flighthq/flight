@@ -1,4 +1,4 @@
-import type { RichTextData, TextLayoutResult } from '@flighthq/types';
+import type { RichTextData, TextLayoutResult } from '@flighthq/types/contract';
 
 import {
   computeRichTextBottomScrollV,

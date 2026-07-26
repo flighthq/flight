@@ -1,4 +1,4 @@
-import type { DropShadowEffect, OuterGlowEffect } from '@flighthq/types';
+import type { DropShadowEffect, OuterGlowEffect } from '@flighthq/types/contract';
 
 // Drop-shadow composite effect as a CSS `drop-shadow()` string (the same string the DOM backend emits).
 // Only sourceMode 'draw' and isotropic blur can be represented by CSS-only drop-shadow().

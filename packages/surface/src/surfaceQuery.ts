@@ -1,4 +1,4 @@
-import type { RectangleLike, SurfaceRegion } from '@flighthq/types';
+import type { RectangleLike, SurfaceRegion } from '@flighthq/types/contract';
 
 /**
  * Scans the `source` region for pixels matching `color` under `mask`

@@ -1,4 +1,4 @@
-import { connectSignal, hasSignalSlots } from '@flighthq/signals';
+import { connectSignal, hasSignalSlots } from '@flighthq/signals/contract';
 
 import {
   addClockChild,

@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity';
-import type { RectangleLike, Surface, SurfaceEdgeMode } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import type { RectangleLike, Surface, SurfaceEdgeMode } from '@flighthq/types/contract';
 
 /**
  * Allocates a new `Surface` containing the pixels of `source` cropped to

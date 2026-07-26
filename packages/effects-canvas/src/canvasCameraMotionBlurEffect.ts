@@ -1,4 +1,4 @@
-import type { CameraMotionBlurEffect, CanvasRenderEffectRunner, CanvasRenderTarget } from '@flighthq/types';
+import type { CameraMotionBlurEffect, CanvasRenderEffectRunner, CanvasRenderTarget } from '@flighthq/types/contract';
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 

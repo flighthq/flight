@@ -5,15 +5,15 @@ import type {
   BitmapFontPageRecord,
   BitmapFontParseOptions,
   BitmapFontRecord,
-} from '@flighthq/types';
-import type { XmlElement } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import type { XmlElement } from '@flighthq/types/contract';
 import {
   getXmlElementAttribute,
   getXmlElementAttributeNumber,
   getXmlElementChildByName,
   getXmlElementChildrenByName,
   parseXmlDocument,
-} from '@flighthq/xml';
+} from '@flighthq/xml/contract';
 
 import { buildBitmapFontFromRecord } from './bitmapFontRecord';
 

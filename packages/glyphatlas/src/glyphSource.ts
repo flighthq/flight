@@ -1,4 +1,4 @@
-import type { GlyphAtlas, GlyphSource } from '@flighthq/types';
+import type { GlyphAtlas, GlyphSource } from '@flighthq/types/contract';
 
 import { getGlyphAtlasSurface } from './glyphAtlas';
 import { getGlyphAtlasEntry } from './glyphAtlasEntry';

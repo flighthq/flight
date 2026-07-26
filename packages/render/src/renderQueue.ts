@@ -1,4 +1,4 @@
-import { getNodeRuntime } from '@flighthq/node';
+import { getNodeRuntime } from '@flighthq/node/contract';
 import type {
   NodeAny,
   Renderable,

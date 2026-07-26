@@ -1,4 +1,4 @@
-import { createRay3D, createVector3 } from '@flighthq/geometry';
+import { createRay3D, createVector3 } from '@flighthq/geometry/contract';
 
 import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from './camera';
 import { getCamera3DScreenToWorldRay, getCamera3DWorldToScreen } from './picking';

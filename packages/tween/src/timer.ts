@@ -1,4 +1,4 @@
-import type { Tween, TweenManager, TweenOptions } from '@flighthq/types';
+import type { Tween, TweenManager, TweenOptions } from '@flighthq/types/contract';
 
 import { createTween } from './tween';
 

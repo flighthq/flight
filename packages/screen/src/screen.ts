@@ -1,4 +1,4 @@
-import { createSignal, emitSignal } from '@flighthq/signals';
+import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   RectangleLike,
   ScreenBackend,
@@ -10,7 +10,7 @@ import type {
   ScreenOrientation,
   ScreenSignals,
   Vector2Like,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Attaches the active backend's change subscription to `signals`, fanning out events to the
 // appropriate signal for each ScreenChangeKind. Idempotent: a prior subscription is torn down first.

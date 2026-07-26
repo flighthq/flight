@@ -1,5 +1,5 @@
-import { updateMeshMorph } from '@flighthq/mesh';
-import type { Mesh } from '@flighthq/types';
+import { updateMeshMorph } from '@flighthq/mesh/contract';
+import type { Mesh } from '@flighthq/types/contract';
 
 import { updateMeshSkin } from './updateMeshSkin';
 

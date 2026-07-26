@@ -1,4 +1,4 @@
-import type { Surface, SurfaceRegion } from '@flighthq/types';
+import type { Surface, SurfaceRegion } from '@flighthq/types/contract';
 
 import { createSurface } from './surface';
 import { getSurfacePixel, setSurfacePixel } from './surfacePixel';

@@ -5,7 +5,7 @@ import type {
   CapacitorApi,
   CapacitorLocalNotificationSchema,
   CapacitorPluginListenerHandle,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Maps Flight's NotificationBackend onto Capacitor's `@capacitor/local-notifications`. Capacitor ids are
 // numeric while Flight's are strings, so the adapter mints a monotonic numeric id per notification and

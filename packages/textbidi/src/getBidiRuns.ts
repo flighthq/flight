@@ -1,4 +1,4 @@
-import type { BidiDirection, BidiRun } from '@flighthq/types';
+import type { BidiDirection, BidiRun } from '@flighthq/types/contract';
 
 import { resolveBidiLevels } from './resolveBidiLevels';
 

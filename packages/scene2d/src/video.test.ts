@@ -1,6 +1,10 @@
-import { getNodeLocalBoundsRevision, getNodeLocalContentRevision, getNodeLocalTransformRevision } from '@flighthq/node';
-import type { Video } from '@flighthq/types';
-import { VideoKind } from '@flighthq/types';
+import {
+  getNodeLocalBoundsRevision,
+  getNodeLocalContentRevision,
+  getNodeLocalTransformRevision,
+} from '@flighthq/node/contract';
+import type { Video } from '@flighthq/types/contract';
+import { VideoKind } from '@flighthq/types/contract';
 
 import {
   computeVideoLocalBoundsRectangle,

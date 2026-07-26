@@ -1,4 +1,4 @@
-import { connectSignal } from '@flighthq/signals';
+import { connectSignal } from '@flighthq/signals/contract';
 import type {
   AmbientLightReading,
   MotionReading,
@@ -9,7 +9,7 @@ import type {
   RotationRateReading,
   SensorsBackend,
   SensorsPermissionState,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import {
   attachSensors,

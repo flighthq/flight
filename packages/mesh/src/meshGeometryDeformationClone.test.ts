@@ -1,4 +1,4 @@
-import type { MeshMorph } from '@flighthq/types';
+import type { MeshMorph } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {

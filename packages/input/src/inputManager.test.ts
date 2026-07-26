@@ -1,6 +1,6 @@
-import { connectSignal } from '@flighthq/signals';
-import type { InputGamepadButtonData, InputPointerData } from '@flighthq/types';
-import { GamepadAxisKind, GamepadButtonKind, KeyCode, KeyModifier } from '@flighthq/types';
+import { connectSignal } from '@flighthq/signals/contract';
+import type { InputGamepadButtonData, InputPointerData } from '@flighthq/types/contract';
+import { GamepadAxisKind, GamepadButtonKind, KeyCode, KeyModifier } from '@flighthq/types/contract';
 
 import {
   applyGamepadAxisDeadZone,

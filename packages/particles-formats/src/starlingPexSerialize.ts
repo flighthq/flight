@@ -4,7 +4,7 @@ import type {
   ParticleSerializeResult,
   StarlingPexColor,
   StarlingPexDocument,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 /** Serialise a ParticleEmitterConfig to a Starling / Sparrow PEX XML string
  *  (attribute style).

@@ -1,4 +1,4 @@
-import type { Vector3 } from '@flighthq/types';
+import type { Vector3 } from '@flighthq/types/contract';
 
 import { createVector3 } from './vector3';
 

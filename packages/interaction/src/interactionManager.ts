@@ -1,6 +1,6 @@
-import { inverseMatrixTransformPointXY } from '@flighthq/geometry';
-import { getNodeParent, getNodeRuntime, getNodeWorldMatrix } from '@flighthq/node';
-import { connectSignal, createSignal, disconnectSignal, emitSignal, isSlotConnected } from '@flighthq/signals';
+import { inverseMatrixTransformPointXY } from '@flighthq/geometry/contract';
+import { getNodeParent, getNodeRuntime, getNodeWorldMatrix } from '@flighthq/node/contract';
+import { connectSignal, createSignal, disconnectSignal, emitSignal, isSlotConnected } from '@flighthq/signals/contract';
 import type {
   AnyInteractionSignalSlot,
   Cursor,
@@ -22,7 +22,7 @@ import type {
   Signal,
   SignalConnectOptions,
   Transform2DNode,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { findGraphHitTarget, findGraphHitTargetPrecise } from './hitTests';
 import { findSpatialInteractionTarget } from './interactionSpatialIndex';

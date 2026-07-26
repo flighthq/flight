@@ -6,7 +6,7 @@ import type {
   SpecularPbrMaterial,
   SubsurfacePbrMaterial,
   TransmissionVolumePbrMaterial,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 import {
   AnisotropyPbrMaterialKind,
   ClearcoatPbrMaterialKind,
@@ -15,7 +15,7 @@ import {
   SpecularPbrMaterialKind,
   SubsurfacePbrMaterialKind,
   TransmissionVolumePbrMaterialKind,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { createStandardPbrMaterialProperties } from './pbrMaterials';
 import { createSurfaceMaterial } from './surfaceMaterial';

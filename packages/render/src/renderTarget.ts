@@ -1,5 +1,5 @@
-import { createMatrix, inverseMatrix, multiplyMatrix } from '@flighthq/geometry';
-import { getNodeLocalMatrix } from '@flighthq/node';
+import { createMatrix, inverseMatrix, multiplyMatrix } from '@flighthq/geometry/contract';
+import { getNodeLocalMatrix } from '@flighthq/node/contract';
 import type { Node2D, MatrixLike, RectangleLike } from '@flighthq/types/contract';
 
 /**

@@ -9,12 +9,16 @@ import {
   rotateVector3ByQuaternion,
   setQuaternion,
   setVector3,
-} from '@flighthq/geometry';
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
-import { createBlinnPhongMaterial } from '@flighthq/materials';
-import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, computeMeshGeometryNormals, createMeshGeometry } from '@flighthq/mesh';
-import { createScene3DFromDocument } from '@flighthq/scene3d';
-import type { Scene3D } from '@flighthq/types';
+} from '@flighthq/geometry/contract';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { createBlinnPhongMaterial } from '@flighthq/materials/contract';
+import {
+  CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
+  computeMeshGeometryNormals,
+  createMeshGeometry,
+} from '@flighthq/mesh/contract';
+import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
+import type { Scene3D } from '@flighthq/types/contract';
 import type {
   ImportDiagnostic,
   Material,
@@ -28,8 +32,8 @@ import type {
   Md5Vertex,
   Md5Weight,
   SkinInfluence,
-} from '@flighthq/types';
-import { ImportDiagnosticSeverity, MeshKind, Node3DKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, MeshKind, Node3DKind } from '@flighthq/types/contract';
 
 import { parseMd5Anim } from './md5AnimParse';
 import { findScene3DSkeletonJoints } from './sceneSkeleton';

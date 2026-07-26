@@ -1,5 +1,5 @@
-import { connectSignal } from '@flighthq/signals';
-import type { ResourceLoadHandle, ResourceLoadReport } from '@flighthq/types';
+import { connectSignal } from '@flighthq/signals/contract';
+import type { ResourceLoadHandle, ResourceLoadReport } from '@flighthq/types/contract';
 
 import {
   cancelResourceLoad,

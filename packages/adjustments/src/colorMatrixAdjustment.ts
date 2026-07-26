@@ -1,4 +1,4 @@
-import type { ColorMatrixAdjustment } from '@flighthq/types';
+import type { ColorMatrixAdjustment } from '@flighthq/types/contract';
 
 import { COLOR_MATRIX_LENGTH } from './colorMatrixMath';
 

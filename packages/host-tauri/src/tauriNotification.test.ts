@@ -1,4 +1,4 @@
-import type { TauriApi, TauriNotificationOptions, TauriNotificationPermission } from '@flighthq/types';
+import type { TauriApi, TauriNotificationOptions, TauriNotificationPermission } from '@flighthq/types/contract';
 
 import { createTauriNotificationBackend } from './tauriNotification';
 

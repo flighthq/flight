@@ -1,7 +1,7 @@
-import { createCamera3D } from '@flighthq/camera';
-import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
-import { createMatcapMaterial } from '@flighthq/materials';
-import { createBoxMeshGeometry } from '@flighthq/mesh';
+import { createCamera3D } from '@flighthq/camera/contract';
+import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
+import { createMatcapMaterial } from '@flighthq/materials/contract';
+import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { MatcapMaterialKind } from '@flighthq/types/contract';
 

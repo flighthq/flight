@@ -1,6 +1,6 @@
-import { createParticleEmitter2D } from '@flighthq/particleemitter';
-import { getWgpuRenderStateRuntime, renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
-import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
+import { createParticleEmitter2D } from '@flighthq/particleemitter/contract';
+import { getWgpuRenderStateRuntime, renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu/contract';
+import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import type { ImageResource, RenderProxy2D } from '@flighthq/types/contract';
 

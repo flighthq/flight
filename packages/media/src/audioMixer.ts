@@ -1,4 +1,4 @@
-import type { AudioBus, AudioBusOptions, AudioChannel, AudioMixer, AudioMixerOptions } from '@flighthq/types';
+import type { AudioBus, AudioBusOptions, AudioChannel, AudioMixer, AudioMixerOptions } from '@flighthq/types/contract';
 
 import { connectAudioChannelToNode, pauseAudioChannel, resumeAudioChannel, stopAudioChannel } from './audioChannel';
 

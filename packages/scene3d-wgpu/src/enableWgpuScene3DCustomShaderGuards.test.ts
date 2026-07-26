@@ -1,5 +1,5 @@
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log';
-import { createCustomShaderMaterial } from '@flighthq/materials';
+import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import { createCustomShaderMaterial } from '@flighthq/materials/contract';
 
 import {
   areWgpuScene3DCustomShaderGuardsEnabled,

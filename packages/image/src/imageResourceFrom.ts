@@ -1,6 +1,6 @@
-import { createEntity } from '@flighthq/entity';
-import { detectImageMimeType } from '@flighthq/image-codec';
-import type { ImageResource } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import { detectImageMimeType } from '@flighthq/image-codec/contract';
+import type { ImageResource } from '@flighthq/types/contract';
 
 // Materializes a data-backed ImageResource's raw pixels into a detached, drawable HTMLCanvasElement
 // via putImageData. The inverse of createImageResourceFromCanvas: it turns the portable `data`

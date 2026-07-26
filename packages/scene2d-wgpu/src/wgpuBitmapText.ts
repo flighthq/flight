@@ -1,7 +1,7 @@
-import { hasImageResourcePixels } from '@flighthq/image';
-import { getWgpuRenderStateRuntime, resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu';
+import { hasImageResourcePixels } from '@flighthq/image/contract';
+import { getWgpuRenderStateRuntime, resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu/contract';
 import { noopRendererData } from '@flighthq/render/contract';
-import { getNode2DRuntime } from '@flighthq/scene2d';
+import { getNode2DRuntime } from '@flighthq/scene2d/contract';
 import type {
   BitmapText,
   BitmapTextRuntime,

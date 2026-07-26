@@ -1,6 +1,6 @@
-import { createRichText, getRichTextRuntime } from '@flighthq/text';
-import type { InputKeyboardData, RichTextRuntime } from '@flighthq/types';
-import { KeyCode } from '@flighthq/types';
+import { createRichText, getRichTextRuntime } from '@flighthq/text/contract';
+import type { InputKeyboardData, RichTextRuntime } from '@flighthq/types/contract';
+import { KeyCode } from '@flighthq/types/contract';
 
 import {
   blurSelectableRichText,

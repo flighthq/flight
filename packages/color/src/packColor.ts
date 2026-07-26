@@ -1,4 +1,4 @@
-import type { LinearColor } from '@flighthq/types';
+import type { LinearColor } from '@flighthq/types/contract';
 
 import { linearChannelToSrgb, srgbChannelToLinear } from './srgbTransfer';
 

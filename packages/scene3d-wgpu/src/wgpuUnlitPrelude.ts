@@ -1,4 +1,4 @@
-import { bindWgpuVideoTexture } from '@flighthq/render-wgpu';
+import { bindWgpuVideoTexture } from '@flighthq/render-wgpu/contract';
 import type {
   LinearColor,
   Texture,

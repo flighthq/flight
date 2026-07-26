@@ -1,5 +1,5 @@
-import { createSignal, emitSignal } from '@flighthq/signals';
-import type { VideoChannel, VideoPlayOptions, VideoResource } from '@flighthq/types';
+import { createSignal, emitSignal } from '@flighthq/signals/contract';
+import type { VideoChannel, VideoPlayOptions, VideoResource } from '@flighthq/types/contract';
 
 export function getVideoChannelCurrentTime(channel: VideoChannel): number {
   const element = channel.source.element;

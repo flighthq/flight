@@ -1,7 +1,7 @@
-﻿import { computeRgbHexString } from '@flighthq/color';
+﻿import { computeRgbHexString } from '@flighthq/color/contract';
 import { noopRendererData } from '@flighthq/render/contract';
-import { computeTextFormatFontString, getTextLabelRuntime } from '@flighthq/text';
-import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout';
+import { computeTextFormatFontString, getTextLabelRuntime } from '@flighthq/text/contract';
+import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout/contract';
 import type {
   CanvasRenderState,
   Scene2DRenderer,

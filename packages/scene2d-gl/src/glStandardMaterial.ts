@@ -1,4 +1,4 @@
-import { registerGlMaterialRenderer } from '@flighthq/render-gl';
+import { registerGlMaterialRenderer } from '@flighthq/render-gl/contract';
 import type { GlMaterialRenderer, GlRenderState } from '@flighthq/types/contract';
 import { StandardMaterialKind } from '@flighthq/types/contract';
 

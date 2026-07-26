@@ -1,5 +1,5 @@
-import type { Path, PathWinding, ShapeCommandToken, ShapeFillRegion } from '@flighthq/types';
-import { PathCommand } from '@flighthq/types';
+import type { Path, PathWinding, ShapeCommandToken, ShapeFillRegion } from '@flighthq/types/contract';
+import { PathCommand } from '@flighthq/types/contract';
 
 // Appends one shape geometry command (moveTo/lineTo/curveTo/cubicCurveTo and the drawCircle/Ellipse/
 // Rectangle/RoundRectangle/Path primitives) onto `path`, expanding primitives into MOVE/LINE/CURVE

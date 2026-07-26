@@ -1,4 +1,4 @@
-import type { StorageBackend, StorageNamespace } from '@flighthq/types';
+import type { StorageBackend, StorageNamespace } from '@flighthq/types/contract';
 
 import {
   clearStorage,

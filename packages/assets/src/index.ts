@@ -1,1 +1,1 @@
-export * from './assetLibrary';
+export * from './contract';

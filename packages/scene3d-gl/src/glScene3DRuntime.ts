@@ -1,4 +1,8 @@
-import { createGlSkinPaletteTexture, destroyGlRenderTarget, destroyGlSkinPaletteTexture } from '@flighthq/render-gl';
+import {
+  createGlSkinPaletteTexture,
+  destroyGlRenderTarget,
+  destroyGlSkinPaletteTexture,
+} from '@flighthq/render-gl/contract';
 import type {
   GlScene3DRuntime,
   GlRenderState,

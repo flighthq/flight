@@ -1,13 +1,13 @@
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log';
-import { emitSignal } from '@flighthq/signals';
-import { createTexture } from '@flighthq/texture';
-import type { ImageResourceReference } from '@flighthq/types';
+import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import { emitSignal } from '@flighthq/signals/contract';
+import { createTexture } from '@flighthq/texture/contract';
+import type { ImageResourceReference } from '@flighthq/types/contract';
 import {
   ImageResourceFailureKind,
   ImageResourceReferenceKind,
   LogLevel,
   ResourceResolutionState,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {

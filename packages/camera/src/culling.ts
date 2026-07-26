@@ -5,8 +5,8 @@ import {
   isFrustumIntersectingAabb,
   isFrustumIntersectingSphere,
   setFrustumFromMatrix4,
-} from '@flighthq/geometry';
-import type { AabbLike, BoundingSphereLike, Camera3D, FrustumLike, Vector3Like } from '@flighthq/types';
+} from '@flighthq/geometry/contract';
+import type { AabbLike, BoundingSphereLike, Camera3D, FrustumLike, Vector3Like } from '@flighthq/types/contract';
 
 import { getCamera3DViewProjectionMatrix4 } from './camera';
 

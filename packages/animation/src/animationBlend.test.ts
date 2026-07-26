@@ -1,4 +1,4 @@
-import { EntityRuntimeKey } from '@flighthq/types';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   addAnimationSample,

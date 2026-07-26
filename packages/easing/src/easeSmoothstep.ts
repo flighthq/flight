@@ -1,4 +1,4 @@
-import type { EasingFunction, ScalarRemap } from '@flighthq/types';
+import type { EasingFunction, ScalarRemap } from '@flighthq/types/contract';
 
 // Perlin's smootherstep: a higher-order variant with zero first- and
 // second-derivatives at both endpoints, for a gentler approach to 0 and 1.

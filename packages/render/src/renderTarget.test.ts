@@ -1,5 +1,5 @@
-import { createMatrix, createRectangle } from '@flighthq/geometry';
-import { createDisplayObject } from '@flighthq/scene2d';
+import { createMatrix, createRectangle } from '@flighthq/geometry/contract';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
 
 import {
   computeScene2DRenderTargetTransform,

@@ -1,8 +1,8 @@
-import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flighthq/geometry';
-import { getNodeWorldMatrix4 } from '@flighthq/node';
-import { declareWgpuRenderTargetColorSpace, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
+import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flighthq/geometry/contract';
+import { getNodeWorldMatrix4 } from '@flighthq/node/contract';
+import { declareWgpuRenderTargetColorSpace, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { prepareScene3DRender } from '@flighthq/render/contract';
-import { getNode3DRuntime, getNode3DWorldAlpha } from '@flighthq/scene3d';
+import { getNode3DRuntime, getNode3DWorldAlpha } from '@flighthq/scene3d/contract';
 import type {
   Camera3D,
   ColorScaleBias,

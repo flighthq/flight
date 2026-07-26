@@ -1,12 +1,12 @@
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics';
-import { createParticleEmitterConfig } from '@flighthq/particles';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { createParticleEmitterConfig } from '@flighthq/particles/contract';
 import type {
   ImportDiagnostic,
   ParticleFormatCodec,
   ParticleFormatKind,
   ParticleConfigParseResult,
-} from '@flighthq/types';
-import { ImportDiagnosticSeverity } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 /** Contract for a particle format codec registered via `registerParticleFormat`.
  *

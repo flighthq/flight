@@ -1,9 +1,9 @@
-import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
-import { createPointLight, createSpotLight } from '@flighthq/lighting';
-import { createBoxMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild } from '@flighthq/node';
+import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera/contract';
+import { createPointLight, createSpotLight } from '@flighthq/lighting/contract';
+import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
+import { addNodeChild } from '@flighthq/node/contract';
 import { prepareScene3DRender } from '@flighthq/render/contract';
-import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d';
+import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
 import type { Camera3D, Scene3DLightsLike } from '@flighthq/types/contract';
 import { SCENE_LIGHT_POINT_OFFSET } from '@flighthq/types/contract';
 

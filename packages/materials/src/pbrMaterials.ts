@@ -1,10 +1,10 @@
-import { unpackColorToLinear } from '@flighthq/color';
+import { unpackColorToLinear } from '@flighthq/color/contract';
 import type {
   SpecularGlossinessPbrMaterial,
   StandardPbrMaterial,
   StandardPbrMaterialProperties,
-} from '@flighthq/types';
-import { SpecularGlossinessPbrMaterialKind, StandardPbrMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { SpecularGlossinessPbrMaterialKind, StandardPbrMaterialKind } from '@flighthq/types/contract';
 
 import { createSurfaceMaterial } from './surfaceMaterial';
 

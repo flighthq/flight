@@ -1,6 +1,6 @@
-import { connectSignal, emitSignal } from '@flighthq/signals';
-import type { ImageResourceReference, Texture } from '@flighthq/types';
-import { EntityRuntimeKey, ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
+import { connectSignal, emitSignal } from '@flighthq/signals/contract';
+import type { ImageResourceReference, Texture } from '@flighthq/types/contract';
+import { EntityRuntimeKey, ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createScene3DResourceResolver, disposeScene3DResourceResolver } from './sceneResourceResolver';

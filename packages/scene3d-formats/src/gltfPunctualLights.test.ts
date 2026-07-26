@@ -1,5 +1,10 @@
-import type { DirectionalLight, ImportDiagnostic, PointLight, SpotLight, GltfDocument } from '@flighthq/types';
-import { DirectionalLightKind, ImportDiagnosticSeverity, PointLightKind, SpotLightKind } from '@flighthq/types';
+import type { DirectionalLight, ImportDiagnostic, PointLight, SpotLight, GltfDocument } from '@flighthq/types/contract';
+import {
+  DirectionalLightKind,
+  ImportDiagnosticSeverity,
+  PointLightKind,
+  SpotLightKind,
+} from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { parseGltf } from './gltfParse';

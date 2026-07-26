@@ -1,5 +1,5 @@
-import { createVector3 } from '@flighthq/geometry';
-import { PointLightKind } from '@flighthq/types';
+import { createVector3 } from '@flighthq/geometry/contract';
+import { PointLightKind } from '@flighthq/types/contract';
 
 import { clonePointLight, createPointLight } from './pointLight';
 

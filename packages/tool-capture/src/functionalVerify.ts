@@ -1,4 +1,4 @@
-import { createSurfaceFromWgpuRenderState, enableWgpuFrameCapture } from '@flighthq/render-wgpu';
+import { createSurfaceFromWgpuRenderState, enableWgpuFrameCapture } from '@flighthq/render-wgpu/contract';
 import {
   createSurface,
   createSurfaceFingerprint,
@@ -6,7 +6,7 @@ import {
   formatSurfaceFingerprint,
   getSurfaceCoverage,
   getSurfacePixel,
-} from '@flighthq/surface';
+} from '@flighthq/surface/contract';
 import type {
   CanvasRenderState,
   Node2D,
@@ -14,7 +14,7 @@ import type {
   GlRenderState,
   Surface,
   WgpuRenderState,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.js';
 import type { CaptureBenchmarkTarget, CaptureVerification } from './captureProtocol.js';

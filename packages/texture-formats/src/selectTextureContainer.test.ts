@@ -1,5 +1,5 @@
-import type { TextureContainer } from '@flighthq/types';
-import type { TextureContainerFormat } from '@flighthq/types';
+import type { TextureContainer } from '@flighthq/types/contract';
+import type { TextureContainerFormat } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { selectTextureContainer } from './selectTextureContainer';

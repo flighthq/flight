@@ -1,4 +1,4 @@
-import { AdvancedBlendMode } from '@flighthq/types';
+import { AdvancedBlendMode } from '@flighthq/types/contract';
 
 import { createBlendEffect } from './blendEffect';
 

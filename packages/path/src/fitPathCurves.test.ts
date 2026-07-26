@@ -1,4 +1,4 @@
-import { PathCommand } from '@flighthq/types';
+import { PathCommand } from '@flighthq/types/contract';
 
 import { fitPathCurves } from './fitPathCurves';
 import { appendPathLineTo, appendPathMoveTo, createPath } from './path';

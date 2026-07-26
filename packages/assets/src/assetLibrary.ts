@@ -1,5 +1,10 @@
-import { createResourceLoader, disposeResourceLoader, queueResourceLoad, startResourceLoad } from '@flighthq/loader';
-import { connectSignal, emitSignal } from '@flighthq/signals';
+import {
+  createResourceLoader,
+  disposeResourceLoader,
+  queueResourceLoad,
+  startResourceLoad,
+} from '@flighthq/loader/contract';
+import { connectSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   AssetEntry,
   AssetDescriptor,
@@ -9,7 +14,7 @@ import type {
   AssetLoaderAdapter,
   AssetManifest,
   AssetType,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Increments the reference count for `id` and resolves its loaded value. If the asset is already
 // resident, resolves immediately. If a load is already in flight (a concurrent acquire), the same

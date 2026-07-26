@@ -1,4 +1,4 @@
-import { ModifierSlot, ToonModifierKind } from '@flighthq/types';
+import { ModifierSlot, ToonModifierKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createToonModifier } from './createToonModifier';

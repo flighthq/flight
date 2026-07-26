@@ -1,4 +1,4 @@
-import { createGlProgram } from '@flighthq/render-gl';
+import { createGlProgram } from '@flighthq/render-gl/contract';
 import type { Environment, GlRenderState } from '@flighthq/types/contract';
 
 import { ensureGlEnvironmentSourceCube, getGlCubeFaceTarget } from './glEnvironmentCube';

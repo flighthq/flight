@@ -1,5 +1,5 @@
-import { drawGlFullscreenPass } from '@flighthq/render-gl';
-import type { DitherEffect, GlRenderEffectRunner, GlRenderState, GlRenderTarget } from '@flighthq/types';
+import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
+import type { DitherEffect, GlRenderEffectRunner, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
 

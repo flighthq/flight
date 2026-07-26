@@ -1,6 +1,6 @@
-import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry';
-import { invalidateNodeLocalBounds } from '@flighthq/node';
-import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d';
+import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry/contract';
+import { invalidateNodeLocalBounds } from '@flighthq/node/contract';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import type {
   Node2D,
   MethodsOf,
@@ -11,8 +11,8 @@ import type {
   ParticleEmitter2DRuntime,
   Rectangle,
   Vector2Like,
-} from '@flighthq/types';
-import { ParticleEmitter2DKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { ParticleEmitter2DKind } from '@flighthq/types/contract';
 
 // Internal stride constants. Hidden from callers so no raw array index math leaks out.
 const PARTICLE_TRANSFORM_STRIDE = 4; // [x, y, rotation, scale] per particle

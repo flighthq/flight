@@ -1,12 +1,12 @@
-import type { SpritesheetAnimationData, SpritesheetData, SpritesheetFrameData } from '@flighthq/spritesheet';
+import type { SpritesheetAnimationData, SpritesheetData, SpritesheetFrameData } from '@flighthq/spritesheet/contract';
 import {
   createSpritesheetAnimationData,
   createSpritesheetData,
   createSpritesheetFrameData,
-} from '@flighthq/spritesheet';
-import { createTextureAtlas } from '@flighthq/textureatlas';
-import { parseTextureAtlasLibgdxAtlas } from '@flighthq/textureatlas-formats';
-import type { LibgdxAtlasParseOptions, TextureAtlasRegion } from '@flighthq/types';
+} from '@flighthq/spritesheet/contract';
+import { parseTextureAtlasLibgdxAtlas } from '@flighthq/textureatlas-formats/contract';
+import { createTextureAtlas } from '@flighthq/textureatlas/contract';
+import type { LibgdxAtlasParseOptions, TextureAtlasRegion } from '@flighthq/types/contract';
 
 // ─── Internal types ───────────────────────────────────────────────────────────
 

@@ -1,4 +1,4 @@
-import type { PanniniProjectionEffect } from '@flighthq/types';
+import type { PanniniProjectionEffect } from '@flighthq/types/contract';
 
 export function createPanniniProjectionEffect(
   options: Readonly<Omit<PanniniProjectionEffect, 'kind'>> = {},

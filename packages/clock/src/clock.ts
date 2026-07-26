@@ -1,5 +1,5 @@
-import { clearSignal, emitSignal } from '@flighthq/signals';
-import type { Clock, ClockOptions } from '@flighthq/types';
+import { clearSignal, emitSignal } from '@flighthq/signals/contract';
+import type { Clock, ClockOptions } from '@flighthq/types/contract';
 
 // Attaches `child` under `parent`, detaching it from any previous parent first (reparent-safe). After
 // this, advancing `parent` cascades into `child`. A no-op if `child` is already parented here.

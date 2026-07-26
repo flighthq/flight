@@ -4,8 +4,8 @@ import {
   particleCurveFromKeyframes,
   sampleParticleColorCurve,
   sampleParticleCurve,
-} from '@flighthq/particles';
-import { ImportDiagnosticSeverity } from '@flighthq/types';
+} from '@flighthq/particles/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { parseSpineParticle, parseSpineParticleDocument } from './spineParse';
 import { serializeSpineParticle } from './spineSerialize';

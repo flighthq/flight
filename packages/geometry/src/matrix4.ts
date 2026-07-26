@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity';
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   Matrix3Like,
   Matrix4,
@@ -7,7 +7,7 @@ import type {
   QuaternionLike,
   Vector3Like,
   Vector4Like,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { acquireIdentityMatrix4, acquireMatrix4, releaseMatrix4 } from './matrix4Pool';
 

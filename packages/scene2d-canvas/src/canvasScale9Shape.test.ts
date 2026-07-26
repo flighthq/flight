@@ -1,6 +1,6 @@
 ﻿import { registerRenderer } from '@flighthq/render/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
-import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape';
+import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape/contract';
 import { Scale9ShapeKind } from '@flighthq/types/contract';
 
 import { createCanvasRenderState } from './canvasRenderState';

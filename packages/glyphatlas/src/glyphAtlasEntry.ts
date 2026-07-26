@@ -1,5 +1,5 @@
-import { createSurfaceRegion, writeSurfacePixels } from '@flighthq/surface';
-import type { GlyphAtlas, GlyphAtlasRuntime, GlyphEntry, GlyphRasterizedBitmap } from '@flighthq/types';
+import { createSurfaceRegion, writeSurfacePixels } from '@flighthq/surface/contract';
+import type { GlyphAtlas, GlyphAtlasRuntime, GlyphEntry, GlyphRasterizedBitmap } from '@flighthq/types/contract';
 
 import { getGlyphRasterizerBackend } from './glyphRasterizerBackend';
 

@@ -1,4 +1,4 @@
-import { getEntityRuntime } from '@flighthq/entity';
+import { getEntityRuntime } from '@flighthq/entity/contract';
 import {
   acquireMatrix4,
   composeMatrix4,
@@ -11,7 +11,7 @@ import {
   matrix4TransformPoint,
   multiplyMatrix4,
   releaseMatrix4,
-} from '@flighthq/geometry';
+} from '@flighthq/geometry/contract';
 import type {
   HasTransform3DRuntime,
   Matrix4Like,
@@ -19,7 +19,7 @@ import type {
   Transform3DLike,
   Transform3DNode,
   Vector3Like,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { computeNodeWorldTransformRevision, invalidateNodeLocalTransform } from './revision';
 

@@ -1,6 +1,6 @@
-import { createImageResource } from '@flighthq/image';
-import type * as FlightNodeModule from '@flighthq/node';
-import { getGlRenderStateRuntime } from '@flighthq/render-gl';
+import { createImageResource } from '@flighthq/image/contract';
+import type * as FlightNodeModule from '@flighthq/node/contract';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat } from '@flighthq/types/contract';
 

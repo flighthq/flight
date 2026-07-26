@@ -1,6 +1,6 @@
-import { copyMatrix, createMatrix } from '@flighthq/geometry';
-import { ensureNodeWorldMatrix, getNodeChildAt, getNodeChildCount, getNodeWorldMatrix } from '@flighthq/node';
-import type { Transform2DNode, VelocityField } from '@flighthq/types';
+import { copyMatrix, createMatrix } from '@flighthq/geometry/contract';
+import { ensureNodeWorldMatrix, getNodeChildAt, getNodeChildCount, getNodeWorldMatrix } from '@flighthq/node/contract';
+import type { Transform2DNode, VelocityField } from '@flighthq/types/contract';
 
 import { ensureVelocitySample } from './velocityField';
 

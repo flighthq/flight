@@ -1,1 +1,1 @@
-export * from './svgPathData';
+export * from './contract';

@@ -1,4 +1,4 @@
-import type { SpritesheetData } from '@flighthq/spritesheet';
+import type { SpritesheetData } from '@flighthq/spritesheet/contract';
 import type {
   TexturePackerArrayDocument,
   TexturePackerArrayFrame,
@@ -7,7 +7,7 @@ import type {
   TexturePackerHashFrame,
   TexturePackerMeta,
   TexturePackerSerializeOptions,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
 

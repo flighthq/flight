@@ -1,5 +1,5 @@
-import { getRichTextRuntime } from '@flighthq/text';
-import type { RichText, RichTextRuntime, TextInputOptions, TextInputState } from '@flighthq/types';
+import { getRichTextRuntime } from '@flighthq/text/contract';
+import type { RichText, RichTextRuntime, TextInputOptions, TextInputState } from '@flighthq/types/contract';
 
 // The opt-in seam that turns a static RichText into an editable field. Importing it is what pulls
 // @flighthq/textinput into an app's bundle; a RichText that never calls enableTextInput stays free of

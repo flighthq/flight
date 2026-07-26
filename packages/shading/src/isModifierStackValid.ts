@@ -1,5 +1,5 @@
-import type { Modifier } from '@flighthq/types';
-import type { ModifierRegistry } from '@flighthq/types';
+import type { Modifier } from '@flighthq/types/contract';
+import type { ModifierRegistry } from '@flighthq/types/contract';
 
 import { getUnregisteredModifierKinds } from './getUnregisteredModifierKinds';
 

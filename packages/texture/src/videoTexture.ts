@@ -1,6 +1,6 @@
-import { createEntity } from '@flighthq/entity';
-import { cloneVector2, copyVector2, createVector2, inverseMatrix3 } from '@flighthq/geometry';
-import type { Matrix3Like, VideoResource, VideoTexture, VideoTextureLike } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity/contract';
+import { cloneVector2, copyVector2, createVector2, inverseMatrix3 } from '@flighthq/geometry/contract';
+import type { Matrix3Like, VideoResource, VideoTexture, VideoTextureLike } from '@flighthq/types/contract';
 
 import { cloneSampler, copySampler, createSampler } from './sampler';
 import { getTextureUvMatrix } from './texture';

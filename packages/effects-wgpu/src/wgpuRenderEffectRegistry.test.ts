@@ -1,4 +1,4 @@
-import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
+import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 
 import {
   getWgpuRenderEffectRunner,

@@ -1,14 +1,14 @@
-import { emitSignal } from '@flighthq/signals';
+import { emitSignal } from '@flighthq/signals/contract';
 import type {
   ImageResourceReference,
   LoadScene3DResourcesOptions,
   Node3D,
   Scene3DResourceResolver,
   Texture,
-} from '@flighthq/types';
-import { ResourceResolutionState } from '@flighthq/types';
-import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types';
-import type { Scene3DResourceResolverWithRuntime } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { ResourceResolutionState } from '@flighthq/types/contract';
+import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
+import type { Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
 
 import { getScene3DResourceTextures } from './getScene3DResourceTextures';
 import { resolveScene3DResources } from './resolveScene3DResources';

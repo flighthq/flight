@@ -1,4 +1,4 @@
-import type { SurfaceBevelOptions, SurfaceRegion } from '@flighthq/types';
+import type { SurfaceBevelOptions, SurfaceRegion } from '@flighthq/types/contract';
 
 import { blurSurfacePixelsHorizontal, blurSurfacePixelsVertical } from './surfaceBlur';
 

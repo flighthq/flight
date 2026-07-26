@@ -3,7 +3,7 @@ import type {
   CanvasRenderTarget,
   CanvasRenderTargetPool,
   DropShadowEffect,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
 import { computeDropShadowEffectCss } from './canvasEffectDropShadowCss';

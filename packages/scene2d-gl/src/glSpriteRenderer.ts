@@ -1,6 +1,6 @@
-import { hasImageResourcePixels } from '@flighthq/image';
-import { resolveGlMaterialRenderer } from '@flighthq/render-gl';
-import { getGlRenderStateRuntime } from '@flighthq/render-gl';
+import { hasImageResourcePixels } from '@flighthq/image/contract';
+import { resolveGlMaterialRenderer } from '@flighthq/render-gl/contract';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import type { GlRenderState, RenderProxy2D, Sprite, SpriteRenderer } from '@flighthq/types/contract';
 import { BatchFormat } from '@flighthq/types/contract';

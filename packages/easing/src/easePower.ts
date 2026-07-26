@@ -1,4 +1,4 @@
-import type { EasingFunction } from '@flighthq/types';
+import type { EasingFunction } from '@flighthq/types/contract';
 
 // Returns an InOut-Power easing function for an arbitrary exponent.
 // The inflection point is always at (0.5, 0.5) — symmetric by construction.

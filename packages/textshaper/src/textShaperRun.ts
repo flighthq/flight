@@ -1,4 +1,4 @@
-import type { FontMetrics, GlyphExtents, ShapedRun, ShapeRunOptions, TextFormat } from '@flighthq/types';
+import type { FontMetrics, GlyphExtents, ShapedRun, ShapeRunOptions, TextFormat } from '@flighthq/types/contract';
 
 import { getTextShaperBackend } from './textShaper';
 

@@ -1,4 +1,4 @@
-import type { ShapedRun, TextShaperBackend } from '@flighthq/types';
+import type { ShapedRun, TextShaperBackend } from '@flighthq/types/contract';
 
 import { setTextShaperBackend } from './textShaper';
 import {

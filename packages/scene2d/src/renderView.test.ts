@@ -1,6 +1,6 @@
-import { createRectangle } from '@flighthq/geometry';
-import type { Node, RenderView, RenderViewRenderer } from '@flighthq/types';
-import { RenderViewKind } from '@flighthq/types';
+import { createRectangle } from '@flighthq/geometry/contract';
+import type { Node, RenderView, RenderViewRenderer } from '@flighthq/types/contract';
+import { RenderViewKind } from '@flighthq/types/contract';
 
 import {
   computeRenderViewLocalBoundsRectangle,

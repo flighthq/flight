@@ -4,8 +4,8 @@ import {
   getGlRenderStateRuntime,
   resolveGlShader,
   useGlProgram,
-} from '@flighthq/render-gl';
-import { advanceVideoTexture, createVideoTexture } from '@flighthq/texture';
+} from '@flighthq/render-gl/contract';
+import { advanceVideoTexture, createVideoTexture } from '@flighthq/texture/contract';
 import type {
   Scene2DRenderer,
   GlRenderState,

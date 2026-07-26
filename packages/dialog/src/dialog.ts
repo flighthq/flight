@@ -8,7 +8,7 @@ import type {
   OpenFileDialogOptions,
   PromptDialogOptions,
   SaveFileDialogOptions,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Builds the default web backend over file inputs, window dialogs, and the File System Access API
 // where available. File pickers fall back to <input type=file> which cannot expose real host paths,

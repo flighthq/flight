@@ -1,5 +1,5 @@
-import { clearSignal, createSignal, emitSignal } from '@flighthq/signals';
-import type { Spritesheet, SpritesheetAnimation, SpritesheetFrame, SpritesheetPlayer } from '@flighthq/types';
+import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
+import type { Spritesheet, SpritesheetAnimation, SpritesheetFrame, SpritesheetPlayer } from '@flighthq/types/contract';
 
 export function acquireSpritesheetPlayer(): SpritesheetPlayer {
   if (playerPool.length > 0) {

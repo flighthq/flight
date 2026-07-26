@@ -1,4 +1,4 @@
-import type { HsvColor } from '@flighthq/types';
+import type { HsvColor } from '@flighthq/types/contract';
 
 // Allocates a fresh zeroed `HsvColor` for use as an `rgbToHsv` out parameter.
 export function allocateHsvColor(): HsvColor {

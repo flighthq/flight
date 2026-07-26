@@ -1,4 +1,4 @@
-import type { Vector2 } from '@flighthq/types';
+import type { Vector2 } from '@flighthq/types/contract';
 
 import { acquireEmptyVector2, acquireVector2, clearVector2Pool, releaseVector2 } from './vector2Pool';
 

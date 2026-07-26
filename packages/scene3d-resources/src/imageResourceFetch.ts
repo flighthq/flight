@@ -1,5 +1,5 @@
-import { loadImageResourceFromUrl } from '@flighthq/image';
-import type { ExternalImageResourceReference, ImageResource } from '@flighthq/types';
+import { loadImageResourceFromUrl } from '@flighthq/image/contract';
+import type { ExternalImageResourceReference, ImageResource } from '@flighthq/types/contract';
 
 // The web external-fetch seam: resolves the ref's `uri` against its `basePath`, then decodes it
 // through @flighthq/image. Returns `null` on any throw (an expected fetch/decode failure), except a

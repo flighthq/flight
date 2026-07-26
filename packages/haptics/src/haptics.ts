@@ -1,4 +1,9 @@
-import type { HapticImpactStyle, HapticNotificationType, HapticsBackend, HapticsCapabilities } from '@flighthq/types';
+import type {
+  HapticImpactStyle,
+  HapticNotificationType,
+  HapticsBackend,
+  HapticsCapabilities,
+} from '@flighthq/types/contract';
 
 // Cancels any in-progress device vibration. Returns false when haptics are unavailable.
 export function cancelDeviceVibration(): boolean {

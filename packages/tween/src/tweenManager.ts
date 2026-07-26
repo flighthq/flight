@@ -1,5 +1,5 @@
-import { easeOutExponential } from '@flighthq/easing';
-import type { TweenManager, TweenManagerOptions } from '@flighthq/types';
+import { easeOutExponential } from '@flighthq/easing/contract';
+import type { TweenManager, TweenManagerOptions } from '@flighthq/types/contract';
 
 export function createTweenManager(options?: Readonly<TweenManagerOptions>): TweenManager {
   return {

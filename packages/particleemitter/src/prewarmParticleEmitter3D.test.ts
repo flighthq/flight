@@ -1,4 +1,4 @@
-import { createParticleEmitterConfig, createParticleEmitterState } from '@flighthq/particles';
+import { createParticleEmitterConfig, createParticleEmitterState } from '@flighthq/particles/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createParticleEmitter3D } from './particleEmitter3D';

@@ -13,7 +13,7 @@ import type {
   TiledTilesetTile,
   TiledTilesetTileFrame,
   Vector2Like,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { parseTiledColor } from './tiledColor';
 import { decodeTiledBase64Layer, decodeTiledCsvLayer } from './tiledLayerData';

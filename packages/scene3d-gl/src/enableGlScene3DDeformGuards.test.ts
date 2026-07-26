@@ -1,11 +1,15 @@
-import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
-import { createVector3 } from '@flighthq/geometry';
-import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting';
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log';
-import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, createMeshGeometry, createBoxMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild } from '@flighthq/node';
-import { createMesh, createNode3D, prepareScene3DMorph, Node3DKind } from '@flighthq/scene3d';
-import { createSkeleton3D, prepareScene3DSkinning } from '@flighthq/skeleton3d';
+import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera/contract';
+import { createVector3 } from '@flighthq/geometry/contract';
+import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting/contract';
+import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import {
+  CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
+  createMeshGeometry,
+  createBoxMeshGeometry,
+} from '@flighthq/mesh/contract';
+import { addNodeChild } from '@flighthq/node/contract';
+import { createMesh, createNode3D, prepareScene3DMorph, Node3DKind } from '@flighthq/scene3d/contract';
+import { createSkeleton3D, prepareScene3DSkinning } from '@flighthq/skeleton3d/contract';
 import type { Camera3D, MeshMorph, Scene3DLightsLike } from '@flighthq/types/contract';
 
 import { drawGlScene3D } from './drawGlScene3D';

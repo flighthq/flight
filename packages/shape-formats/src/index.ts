@@ -1,1 +1,1 @@
-export * from './shapeJson';
+export * from './contract';

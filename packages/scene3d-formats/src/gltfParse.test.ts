@@ -1,5 +1,5 @@
-import { sampleAnimationTrack } from '@flighthq/animation';
-import { linearChannelToSrgb } from '@flighthq/color';
+import { sampleAnimationTrack } from '@flighthq/animation/contract';
+import { linearChannelToSrgb } from '@flighthq/color/contract';
 import {
   getMeshGeometryIndexCount,
   getMeshGeometryVertexCount,
@@ -7,9 +7,9 @@ import {
   getMeshGeometryVertexPosition,
   getMeshGeometryVertexTangent,
   getMeshGeometryVertexUv0,
-} from '@flighthq/mesh';
-import { getNodeChildren, getNodeLocalMatrix4 } from '@flighthq/node';
-import { isMesh } from '@flighthq/scene3d';
+} from '@flighthq/mesh/contract';
+import { getNodeChildren, getNodeLocalMatrix4 } from '@flighthq/node/contract';
+import { isMesh } from '@flighthq/scene3d/contract';
 import type {
   EmbeddedImageResourceReference,
   ExternalImageResourceReference,
@@ -19,8 +19,8 @@ import type {
   Node3D,
   StandardPbrMaterial,
   GltfDocument,
-} from '@flighthq/types';
-import { ImportDiagnosticSeverity, StandardPbrMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, StandardPbrMaterialKind } from '@flighthq/types/contract';
 
 import {
   createScene3DFromGlb,

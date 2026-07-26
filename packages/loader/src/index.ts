@@ -1,1 +1,1 @@
-export * from './resourceLoader';
+export * from './contract';

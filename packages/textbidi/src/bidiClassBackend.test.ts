@@ -1,4 +1,4 @@
-import type { BidiClassBackend } from '@flighthq/types';
+import type { BidiClassBackend } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { createCompactBidiClassBackend, getBidiClassBackend, setBidiClassBackend } from './bidiClassBackend';

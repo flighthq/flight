@@ -1,5 +1,5 @@
-import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
-import { AdvancedBlendMode } from '@flighthq/types';
+import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import { AdvancedBlendMode } from '@flighthq/types/contract';
 
 import {
   applyBlendEffectToWgpu,

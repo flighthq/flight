@@ -1,4 +1,4 @@
-import type { BevelEffect } from '@flighthq/types';
+import type { BevelEffect } from '@flighthq/types/contract';
 
 // Bevel composite effect: the directional gradient of the blurred silhouette drives a highlight/shadow edge band, clipped by bevelType, then applies sourceMode compositing.
 export function createBevelEffect(options: Readonly<Omit<BevelEffect, 'kind'>> = {}): BevelEffect {

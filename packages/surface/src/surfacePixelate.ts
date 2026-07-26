@@ -1,4 +1,4 @@
-import type { SurfaceRegion } from '@flighthq/types';
+import type { SurfaceRegion } from '@flighthq/types/contract';
 
 /**
  * Pixelates (mosaics) `source` into `out`: the region is divided into

@@ -1,4 +1,4 @@
-import type { DecodedImage, ImageDecodeOptions } from '@flighthq/types';
+import type { DecodedImage, ImageDecodeOptions } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
 import { decodeImage, decodeImagePremultiplied } from './decodeImage';

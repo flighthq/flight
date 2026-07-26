@@ -1,5 +1,5 @@
-import { reserveFloat32Array } from '@flighthq/geometry';
-import type { ParticleObjectsState, RandomSource } from '@flighthq/types';
+import { reserveFloat32Array } from '@flighthq/geometry/contract';
+import type { ParticleObjectsState, RandomSource } from '@flighthq/types/contract';
 
 export function createParticleObjectsState(capacity: number, random: RandomSource = Math.random): ParticleObjectsState {
   return {

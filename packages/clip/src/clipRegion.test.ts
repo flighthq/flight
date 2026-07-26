@@ -1,5 +1,5 @@
-import { createMatrix, createRectangle } from '@flighthq/geometry';
-import { appendPathLineTo, appendPathMoveTo, createPath } from '@flighthq/path';
+import { createMatrix, createRectangle } from '@flighthq/geometry/contract';
+import { appendPathLineTo, appendPathMoveTo, createPath } from '@flighthq/path/contract';
 
 import {
   acquireClipRegion,

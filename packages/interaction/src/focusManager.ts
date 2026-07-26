@@ -1,5 +1,5 @@
-import { getNodeParent, getNodeRuntime, getNodeWorldBoundsRectangle } from '@flighthq/node';
-import { connectSignal, disconnectSignal, emitSignal } from '@flighthq/signals';
+import { getNodeParent, getNodeRuntime, getNodeWorldBoundsRectangle } from '@flighthq/node/contract';
+import { connectSignal, disconnectSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   FocusDirection,
   FocusEventData,
@@ -11,7 +11,7 @@ import type {
   NodeAny,
   Signal,
   Spatial2DNode,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { getInteractionSignals } from './interactionManager';
 import { getNodeTabIndex, isNodeFocusable } from './nodeInteractionState';

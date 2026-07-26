@@ -1,6 +1,6 @@
-import { createParticleEmitterConfig } from '@flighthq/particles';
-import { ImportDiagnosticSeverity } from '@flighthq/types';
-import type { ParticleFormatCodec } from '@flighthq/types';
+import { createParticleEmitterConfig } from '@flighthq/particles/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { ParticleFormatCodec } from '@flighthq/types/contract';
 
 import {
   detectRegisteredParticleFormat,

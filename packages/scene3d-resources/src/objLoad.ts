@@ -1,5 +1,5 @@
-import { parseObj } from '@flighthq/scene3d-formats';
-import type { ObjMaterialLibrary, Scene3DDocument, Scene3DDocumentLoadOptions } from '@flighthq/types';
+import { parseObj } from '@flighthq/scene3d-formats/contract';
+import type { ObjMaterialLibrary, Scene3DDocument, Scene3DDocumentLoadOptions } from '@flighthq/types/contract';
 
 import { loadScene3DDocumentTextFromUrl, setScene3DDocumentResourceBasePathFromUrl } from './sceneDocumentSource';
 

@@ -1,5 +1,5 @@
-import { connectSignal } from '@flighthq/signals';
-import type { ProtocolBackend } from '@flighthq/types';
+import { connectSignal } from '@flighthq/signals/contract';
+import type { ProtocolBackend } from '@flighthq/types/contract';
 
 import {
   attachProtocolHandler,

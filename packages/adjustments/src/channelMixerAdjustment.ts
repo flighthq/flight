@@ -1,4 +1,4 @@
-import type { ChannelMixerAdjustment } from '@flighthq/types';
+import type { ChannelMixerAdjustment } from '@flighthq/types/contract';
 
 import { createChannelMixerColorMatrix } from './colorMatrixMath';
 

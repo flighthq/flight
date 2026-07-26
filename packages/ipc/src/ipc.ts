@@ -1,4 +1,4 @@
-import { createSignal, emitSignal } from '@flighthq/signals';
+import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   IpcBackend,
   IpcBackendCapabilities,
@@ -6,8 +6,8 @@ import type {
   IpcMessageEvent,
   IpcSignals,
   IpcTarget,
-} from '@flighthq/types';
-import { IpcTimeoutError } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { IpcTimeoutError } from '@flighthq/types/contract';
 
 // Resolves a channel argument that may be either a string or an IpcChannel descriptor.
 function resolveChannel(channel: string | Readonly<IpcChannel>): string {

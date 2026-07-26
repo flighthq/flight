@@ -1,4 +1,10 @@
-import type { CollisionAabb, CollisionCircle, CollisionObb, CollisionPolygon, CollisionSegment } from '@flighthq/types';
+import type {
+  CollisionAabb,
+  CollisionCircle,
+  CollisionObb,
+  CollisionPolygon,
+  CollisionSegment,
+} from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {

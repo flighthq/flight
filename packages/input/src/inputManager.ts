@@ -1,4 +1,4 @@
-import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals';
+import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   AttachInputOptions,
   GamepadAxisKind,
@@ -16,13 +16,13 @@ import type {
   InputState,
   InputTextData,
   MouseWheelMode,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 import {
   GamepadAxisKind as GamepadAxisKindValues,
   GamepadButtonKind as GamepadButtonKindValues,
   KeyCode,
   KeyModifier,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 // Maximum axis and button counts used for the compact gamepad-state encoding in InputState.
 // Encoded key: gamepadIndex * MAX_GAMEPAD_AXES + axisIndex (axes) or

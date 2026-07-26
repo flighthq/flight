@@ -1,4 +1,4 @@
-import type { CanvasRenderEffectRunner, CanvasRenderState } from '@flighthq/types';
+import type { CanvasRenderEffectRunner, CanvasRenderState } from '@flighthq/types/contract';
 
 // Per-state registry mapping an effect `kind` string to its Canvas 2D runner — the material-renderer
 // pattern one tier up, and the Canvas parallel of registerGlRenderEffect. Registration is opt-in
