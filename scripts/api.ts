@@ -196,21 +196,27 @@ const PALETTE: Array<{ bg: ColorFn; fg: ColorFn }> = [
   { bg: colors.bgYellow, fg: colors.yellow },
 ];
 
-function printConsole(packages: ApiPackage[]): void {
+// Default view lists a package's public API (index barrel) and summarizes the contract-only
+// remainder dimmed beneath it. `showFullContract` flips to the underlying full contract surface:
+// public + contract-only merged into one primary listing — what a sibling package may consume.
+function printConsole(packages: ApiPackage[], showFullContract: boolean): void {
   let colorIndex = 0;
   for (const pkg of packages) {
-    if (pkg.functions.length === 0 && pkg.contractOnlyFunctions.length === 0) continue;
+    const fullContract = [...pkg.functions, ...pkg.contractOnlyFunctions].sort((a, b) => a.name.localeCompare(b.name));
+    const displayFunctions = showFullContract ? fullContract : pkg.functions;
+    if (displayFunctions.length === 0 && (showFullContract || pkg.contractOnlyFunctions.length === 0)) continue;
 
     const color = PALETTE[colorIndex % PALETTE.length];
     colorIndex++;
 
-    console.log(color.bg(` ${pkg.name} `));
-    for (const fn of pkg.functions) {
+    const label = showFullContract ? `${pkg.name} · contract` : pkg.name;
+    console.log(color.bg(` ${label} `));
+    for (const fn of displayFunctions) {
       for (const signature of fn.signatures) {
         console.log(` ${colors.bold(color.fg('-'))} ${colorSignature(signature, color.fg)}`);
       }
     }
-    if (pkg.contractOnlyFunctions.length > 0) {
+    if (!showFullContract && pkg.contractOnlyFunctions.length > 0) {
       console.log(` ${colors.dim(`contract-only (${pkg.contractOnlyFunctions.length})`)}`);
       for (const fn of pkg.contractOnlyFunctions) {
         for (const signature of fn.signatures) {
@@ -326,6 +332,7 @@ function findMatchingParen(source: string, openIndex: number): number {
 interface ParsedArgs {
   json: boolean;
   check: boolean;
+  contract: boolean;
   noColor: boolean;
   packageFilters: string[];
   functionFilters: string[];
@@ -337,6 +344,7 @@ function parseArgs(args: string[]): ParsedArgs {
   const parsed: ParsedArgs = {
     json: false,
     check: false,
+    contract: false,
     noColor: false,
     packageFilters: [],
     functionFilters: [],
@@ -351,6 +359,8 @@ function parseArgs(args: string[]): ParsedArgs {
       parsed.json = true;
     } else if (arg === '--check') {
       parsed.check = true;
+    } else if (arg === '--contract') {
+      parsed.contract = true;
     } else if (arg === '--no-color') {
       parsed.noColor = true;
     } else if (arg === '--help' || arg === '-h') {
@@ -411,6 +421,7 @@ function printUsage(): void {
   console.log('Options:');
   console.log('  --json        output API data as JSON');
   console.log('  --check       fail on duplicate exported names and accessor-prefix violations');
+  console.log('  --contract    show the full contract surface (public + contract-only) instead of just public');
   console.log('  --no-color    disable colorized output');
   console.log('  --package     only include matching package names');
   console.log('  --function    only include matching exported functions');
@@ -656,5 +667,5 @@ const api = filterApi(collectApi(project, topoSort(findPackages())), options);
 if (asJson) {
   console.log(JSON.stringify({ packages: api }, null, 2));
 } else {
-  printConsole(api);
+  printConsole(api, options.contract);
 }
