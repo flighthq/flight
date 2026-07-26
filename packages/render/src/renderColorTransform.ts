@@ -10,10 +10,9 @@ import { getRenderStateRuntime } from './renderState';
 // none → null). The value is the Adjustment-tier fold input; it is not a material and does not key the
 // batch.
 //
-// When the fused stack carries off-diagonal channel-mixing terms the 8-float inline fold cannot represent
-// yet (the 4×5 path is deferred), the node is flagged `colorAdjustmentsChannelMixing`: only the affine
-// part is applied, and the render state's shakeable guard (enableColorAdjustmentGuards) is invoked so the
-// deferral is reported rather than silent.
+// Matrix-tier channel mixing travels through `resolvedColorMatrix`. A non-matrix operation that cannot
+// be represented by either path leaves `colorAdjustmentsChannelMixing` set, invoking the shakeable guard
+// so unsupported adjustment data is reported rather than silently discarded.
 export function updateRenderProxyColorTransform(
   state: RenderState,
   data: RenderProxy,

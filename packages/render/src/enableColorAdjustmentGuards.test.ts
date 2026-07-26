@@ -1,4 +1,4 @@
-import { createSaturationColorMatrix, createTintAdjustment } from '@flighthq/adjustments';
+import { createTintAdjustment } from '@flighthq/adjustments';
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log';
 import { createDisplayObject, setNode2DColorAdjustments } from '@flighthq/scene2d';
 import type { Adjustment, Renderable } from '@flighthq/types';
@@ -18,12 +18,12 @@ describe('areColorAdjustmentGuardsEnabled', () => {
 });
 
 describe('enableColorAdjustmentGuards', () => {
-  it('warns once when a node carries a non-inline-able channel-mixing adjustment', () => {
+  it('warns once when a node carries a non-inline-able non-matrix adjustment', () => {
     const state = createRenderState();
     enableColorAdjustmentGuards(state);
     const node = createDisplayObject();
-    const saturation: Adjustment = { kind: 'Saturation', colorMatrix: createSaturationColorMatrix(0) } as Adjustment;
-    setNode2DColorAdjustments(node, [saturation]);
+    const lut: Adjustment = { kind: 'acme.Lut' };
+    setNode2DColorAdjustments(node, [lut]);
     const data = createRenderProxy(state, node as unknown as Renderable);
     const sink = createMemoryLogSink(8);
     addLogSink(sink.sink);
@@ -31,7 +31,7 @@ describe('enableColorAdjustmentGuards', () => {
       updateRenderProxyColorTransform(state, data);
       const entries = getMemoryLogSinkEntries(sink);
       expect(entries.length).toBe(1);
-      expect(String((entries[0].data as Record<string, unknown>).message)).toContain('channel-mixing');
+      expect(String((entries[0].data as Record<string, unknown>).message)).toContain('not inline-able');
     } finally {
       removeLogSink(sink.sink);
     }

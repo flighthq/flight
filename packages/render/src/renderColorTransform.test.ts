@@ -1,4 +1,4 @@
-import { createTintAdjustment } from '@flighthq/adjustments';
+import { createColorMatrixAdjustment, createTintAdjustment } from '@flighthq/adjustments';
 import { createDisplayObject, getNode2DRuntime, setNode2DColorAdjustments } from '@flighthq/scene2d';
 import type { Renderable } from '@flighthq/types';
 
@@ -14,8 +14,18 @@ describe('updateRenderProxyColorTransform', () => {
     const data = createRenderProxy(state, node as unknown as Renderable);
     updateRenderProxyColorTransform(state, data);
     expect(data.colorTransform).not.toBeNull();
-    expect(data.colorTransform!.redMultiplier).toBe(0.5);
+    expect(data.colorTransform!.redMultiplier).toBeCloseTo(0x7f / 255);
     expect(data.colorTransform!.greenMultiplier).toBe(0);
+  });
+
+  it('resolves channel mixing onto the render node as a complete matrix', () => {
+    const state = createRenderState();
+    const node = createDisplayObject();
+    const matrix = [1, 0.5, 0, 0, 10, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0];
+    setNode2DColorAdjustments(node, [createColorMatrixAdjustment(matrix)]);
+    const data = createRenderProxy(state, node as unknown as Renderable);
+    updateRenderProxyColorTransform(state, data);
+    expect(data.colorMatrix).toEqual(matrix);
   });
 
   it('resolves to null when the node carries no adjustments', () => {
