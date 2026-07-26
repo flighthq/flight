@@ -25,6 +25,7 @@ export interface WgpuPbrDefineKey {
   hasBaseColorMap: boolean;
   // Promoted post-shade color-adjustment variant, selected from draw-data presence.
   hasColorAdjustment?: boolean;
+  hasColorMatrix?: boolean;
   hasEmissiveMap: boolean;
   hasMetallicRoughnessMap: boolean;
   hasNormalMap: boolean;

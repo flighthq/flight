@@ -56,7 +56,7 @@ export function buildWgpuPbrDefineKey(key: Readonly<WgpuPbrDefineKey>): string {
     `${key.specularEnabled ? 'P' : '-'}` +
     `${key.subsurfaceEnabled ? 'U' : '-'}` +
     `${key.transmissionEnabled ? 'T' : '-'}` +
-    `${key.hasColorAdjustment ? 'c' : ''}`
+    `${key.hasColorMatrix ? 'x' : key.hasColorAdjustment ? 'c' : ''}`
   );
 }
 
@@ -101,11 +101,15 @@ export function getWgpuPbrModuleSourceForKey(
   let source =
     buildWgpuPbrDefineSource(key) +
     (skinned && skinning !== null ? skinning.extendMeshPrelude(PBR_WGSL_BODY) : PBR_WGSL_BODY);
-  if (key.hasColorAdjustment && colorAdjustmentFeature !== null) {
-    source = spliceWgpuColorAdjustmentPrelude(source, colorAdjustmentFeature).replace(
+  if ((key.hasColorAdjustment || key.hasColorMatrix) && colorAdjustmentFeature !== null) {
+    source = spliceWgpuColorAdjustmentPrelude(source, colorAdjustmentFeature, key.hasColorMatrix).replace(
       '  return vec4f(radiance, alpha * in.objectAlpha);',
       `  var flightColor = vec4f(radiance, alpha);
-  flightColor = applyFlightColorAdjustment(flightColor, draw.flightColorMultiplier, draw.flightColorOffset);
+  flightColor = ${
+    key.hasColorMatrix
+      ? 'applyFlightColorMatrix(flightColor, draw.flightColorMatrix0, draw.flightColorMatrix1, draw.flightColorMatrix2, draw.flightColorMatrix3, draw.flightColorMatrixOffset)'
+      : 'applyFlightColorAdjustment(flightColor, draw.flightColorMultiplier, draw.flightColorOffset)'
+  };
   flightColor.a = flightColor.a * in.objectAlpha;
   return flightColor;`,
     );

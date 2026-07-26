@@ -28,6 +28,19 @@ export function isAffineColorMatrix(matrix: Readonly<number[]>): boolean {
   );
 }
 
+// Resolves a stack to its complete fused 4×5 matrix when every member is matrix-tier. Returns null
+// for an empty stack or when a non-matrix operation (for example a LUT) prevents exact inline fusion.
+export function resolveColorAdjustmentsColorMatrix(adjustments: readonly Adjustment[] | null): number[] | null {
+  if (adjustments === null || adjustments.length === 0) return null;
+  const matrices: Readonly<number[]>[] = [];
+  for (let i = 0; i < adjustments.length; i++) {
+    const matrix = getAdjustmentColorMatrix(adjustments[i]);
+    if (matrix === null) return null;
+    matrices.push(matrix);
+  }
+  return fuseColorMatrices(matrices);
+}
+
 // Fuses a node's color-adjustment stack into the single affine `ColorTransform` the inline fold consumes,
 // writing per-channel multiply + 0–255 offset into `out`, and returns the resolution status:
 //

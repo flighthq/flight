@@ -49,6 +49,7 @@ export interface WgpuScene3DFrameBinding {
 // WgpuScene3DRuntime so rebuilding the two passes does not allocate each frame.
 export interface WgpuScene3DDrawEntry {
   alpha: number;
+  colorMatrix: object | null;
   colorTransform: object | null;
   depth: number;
   lightBlock: object;
@@ -75,6 +76,7 @@ export interface WgpuScene3DRuntime {
   // before bind(); each family's ensure function folds it into the immutable pipeline state/cache key.
   activeBlendedRun: boolean;
   activeColorAdjustmentRun: boolean;
+  activeColorMatrixRun: boolean;
   activeSkinnedRun: boolean;
   activeMeshPipeline: WgpuMeshPipeline | null;
   blendedDrawList: WgpuScene3DDrawEntry[];

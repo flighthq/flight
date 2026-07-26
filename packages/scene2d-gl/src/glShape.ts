@@ -179,7 +179,7 @@ export function drawGlShape(state: GlRenderState, renderProxy: RenderProxy2D): v
   d[base + 11] = 1;
   d[base + 12] = renderProxy.alpha;
   packGlSpriteBatchMaterialInstance(state, renderProxy.materialData, startCount);
-  recordGlSpriteBatchColorTransform(state, renderProxy.colorTransform, startCount);
+  recordGlSpriteBatchColorTransform(state, renderProxy.colorMatrix ?? renderProxy.colorTransform, startCount);
   runtime.spriteBatchCount++;
 }
 

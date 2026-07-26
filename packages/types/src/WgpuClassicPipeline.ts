@@ -20,6 +20,7 @@ export interface WgpuClassicDefineKey {
   doubleSided: boolean;
   // Promoted post-shade color-adjustment variant, selected from draw-data presence.
   hasColorAdjustment?: boolean;
+  hasColorMatrix?: boolean;
   hasAlphaMap?: boolean;
   hasDiffuseMap: boolean;
   hasNormalMap: boolean;

@@ -86,7 +86,7 @@ export function buildWgpuClassicDefineKey(key: Readonly<WgpuClassicDefineKey>): 
   const model = key.lightingModel === 'phong' ? 'p' : key.lightingModel === 'blinnphong' ? 'b' : 'l';
   return `${model}${key.alphaMaskEnabled ? 'm' : '-'}${key.doubleSided ? 'd' : '-'}${key.hasDiffuseMap ? 'd' : '-'}${
     key.hasSpecularMap ? 's' : '-'
-  }${key.hasNormalMap ? 'n' : '-'}${key.hasAlphaMap ? 'a' : '-'}${key.hasColorAdjustment ? 'c' : ''}`;
+  }${key.hasNormalMap ? 'n' : '-'}${key.hasAlphaMap ? 'a' : '-'}${key.hasColorMatrix ? 'x' : key.hasColorAdjustment ? 'c' : ''}`;
 }
 
 // Compiles the classic module for a define key and builds the render pipeline for the given color
@@ -143,6 +143,7 @@ export function ensureWgpuClassicPipeline(
   const fullKey: WgpuClassicDefineKey = {
     ...key,
     hasColorAdjustment: getWgpuScene3DRuntime(state).activeColorAdjustmentRun,
+    hasColorMatrix: getWgpuScene3DRuntime(state).activeColorMatrixRun,
   };
   return ensureWgpuScene3DPipeline(
     state,
@@ -168,11 +169,15 @@ export function getWgpuClassicModuleSourceForKey(
   colorAdjustmentFeature: Readonly<WgpuColorAdjustmentMaterialFeature> | null = null,
 ): string {
   let source = assembleWgpuClassicModuleSource(key, skinned, skinning, CLASSIC_WGSL_BODY);
-  if (key.hasColorAdjustment && colorAdjustmentFeature !== null) {
-    source = spliceWgpuColorAdjustmentPrelude(source, colorAdjustmentFeature).replace(
+  if ((key.hasColorAdjustment || key.hasColorMatrix) && colorAdjustmentFeature !== null) {
+    source = spliceWgpuColorAdjustmentPrelude(source, colorAdjustmentFeature, key.hasColorMatrix).replace(
       '  return vec4f(radiance, diffuse.a * in.objectAlpha);',
       `  var flightColor = vec4f(radiance, diffuse.a);
-  flightColor = applyFlightColorAdjustment(flightColor, draw.flightColorMultiplier, draw.flightColorOffset);
+  flightColor = ${
+    key.hasColorMatrix
+      ? 'applyFlightColorMatrix(flightColor, draw.flightColorMatrix0, draw.flightColorMatrix1, draw.flightColorMatrix2, draw.flightColorMatrix3, draw.flightColorMatrixOffset)'
+      : 'applyFlightColorAdjustment(flightColor, draw.flightColorMultiplier, draw.flightColorOffset)'
+  };
   flightColor.a = flightColor.a * in.objectAlpha;
   return flightColor;`,
     );

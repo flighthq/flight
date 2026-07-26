@@ -52,11 +52,12 @@ export interface GlColorAdjustmentMaterialFeature {
   // Keeping the source on the registered feature (rather than importing it from the base compiler)
   // preserves compile-time shake-out for applications that never register color adjustment.
   readonly fragmentShaderChunk: string;
+  readonly matrixFragmentShaderChunk: string;
   drawShapeMeshes(state: GlRenderState, renderProxy: RenderProxy2D, meshes: readonly GlShapeMesh[]): void;
   flush(state: GlRenderState, count: number): boolean;
   record(
     runtime: GlRenderStateRuntime,
-    colorTransform: ColorTransform | TintMaterialData | null | undefined,
+    colorTransform: ColorTransform | TintMaterialData | readonly number[] | null | undefined,
     instanceIndex: number,
   ): void;
 }
@@ -91,15 +92,17 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // Compiled color-adjustment programs, owned by the opt-in fold (registerGlColorAdjustmentMaterialFeature). Absent
   // until the first folded flush; a state that never enables color adjustment carries neither.
   colorTransformInstancedShader?: GlColorTransformInstancedShader;
+  colorMatrixInstancedShader?: GlColorTransformInstancedShader;
   colorTintInstancedShader?: GlColorTransformInstancedShader;
   uniformColorTransformShader?: GlUniformColorTransformShader;
   shapeMeshColorTransformShader?: GlShapeMeshColorTransformShader;
+  shapeMeshColorMatrixShader?: GlShapeMeshColorTransformShader;
   // The opt-in color-adjustment fold and its guard, both null until registerGlColorAdjustmentMaterialFeature /
   // enableNode2DGlGuards installs them. recordGlSpriteBatchColorTransform reaches the fold only
   // through this slot, so the base batch statically references neither the fold's code nor a message.
   glColorAdjustmentMaterialFeature?: GlColorAdjustmentMaterialFeature | null;
   glColorAdjustmentMaterialFeatureGuard?:
-    | ((state: GlRenderState, colorTransform: Readonly<ColorTransform | TintMaterialData>) => void)
+    | ((state: GlRenderState, colorTransform: Readonly<ColorTransform | TintMaterialData | readonly number[]>) => void)
     | null;
   materialRendererMap?: Map<Kind, GlMaterialRenderer>;
   // 3D scene mesh-material seam, owned by scene-gl (filled lazily by registerGlMeshMaterialRenderer).
@@ -143,8 +146,9 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // spriteBatchColorTransformData/Buffer hold the per-instance floats (8 per instance) for mode 2;
   // spriteBatchUniformColorTransform holds the shared value for mode 1.
   spriteBatchColorTransformMode?: number;
-  spriteBatchUniformColorTransform?: ColorTransform | TintMaterialData | null;
+  spriteBatchUniformColorTransform?: ColorTransform | TintMaterialData | readonly number[] | null;
   spriteBatchColorTransformData?: Float32Array;
+  spriteBatchColorMatrixData?: Float32Array;
   spriteBatchColorTintData?: Uint32Array;
   spriteBatchColorTransformBuffer: WebGLBuffer | null;
   // Per-clip unwind stack: the form of each pushed clip (scissor vs stencil contour) so popClip
@@ -285,6 +289,7 @@ export interface GlShapeMeshColorTransformShader {
   colorLocation: WebGLUniformLocation | null;
   colorMultiplierLocation: WebGLUniformLocation | null;
   colorOffsetLocation: WebGLUniformLocation | null;
+  colorMatrixLocations?: readonly (WebGLUniformLocation | null)[];
 }
 
 export interface GlScissorRect {

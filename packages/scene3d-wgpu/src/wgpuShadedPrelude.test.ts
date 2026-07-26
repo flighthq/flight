@@ -40,6 +40,8 @@ import {
 
 const COLOR_FEATURE: WgpuColorAdjustmentMaterialFeature = {
   fragmentShaderChunk: 'fn applyFlightColorAdjustment(c : vec4f, m : vec4f, o : vec4f) -> vec4f { return c; }',
+  matrixFragmentShaderChunk:
+    'fn applyFlightColorMatrix(c : vec4f, a : vec4f, b : vec4f, d : vec4f, e : vec4f, o : vec4f) -> vec4f { return c; }',
   record: () => {},
   resolveFlush: () => null,
 };
@@ -132,6 +134,12 @@ describe('getWgpuShadedModuleSource', () => {
     expect(base).not.toContain(COLOR_FEATURE.fragmentShaderChunk);
     expect(adjusted).toContain(COLOR_FEATURE.fragmentShaderChunk);
     expect(adjusted).toContain('draw.flightColorMultiplier');
+  });
+
+  it('splices the full-matrix feature after the shaded result', () => {
+    const matrix = getWgpuShadedModuleSource(createShadedMaterial(), undefined, false, null, COLOR_FEATURE, true);
+    expect(matrix).toContain(COLOR_FEATURE.matrixFragmentShaderChunk);
+    expect(matrix).toContain('draw.flightColorMatrix0');
   });
 
   it('threads the HAS_SKIN palette variant through the composed classic base', () => {

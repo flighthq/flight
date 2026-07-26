@@ -33,9 +33,10 @@ export interface WgpuColorAdjustmentMaterialFeature {
   // The one backend-authored pointwise color-remap implementation, spliced only into promoted
   // material-family variants. It lives on the registered feature to preserve bundle shake-out.
   readonly fragmentShaderChunk: string;
+  readonly matrixFragmentShaderChunk: string;
   record(
     runtime: WgpuRenderStateRuntime,
-    colorTransform: ColorTransform | TintMaterialData | null | undefined,
+    colorTransform: ColorTransform | TintMaterialData | readonly number[] | null | undefined,
     instanceIndex: number,
   ): void;
   resolveFlush(state: WgpuRenderState, count: number): WgpuColorAdjustmentFlush | null;
@@ -154,15 +155,19 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // spriteBatchUniformColorTransform holds the shared value while a batch stays whole-batch uniform,
   // deferring the per-instance fill until (and if) tints diverge.
   spriteBatchColorTransformMode?: number;
-  spriteBatchUniformColorTransform?: ColorTransform | TintMaterialData | null;
+  spriteBatchUniformColorTransform?: ColorTransform | TintMaterialData | readonly number[] | null;
   spriteBatchColorTransformData?: Float32Array;
+  spriteBatchColorMatrixData?: Float32Array;
   spriteBatchColorTintData?: Uint32Array;
   // The opt-in color-adjustment fold and its guard, both null until registerWgpuColorAdjustmentMaterialFeature /
   // enableWgpuColorAdjustmentGuards installs them. recordWgpuSpriteBatchColorTransform reaches the fold
   // only through this slot, so the base batch statically references neither its WGSL nor a message.
   wgpuColorAdjustmentMaterialFeature?: WgpuColorAdjustmentMaterialFeature | null;
   wgpuColorAdjustmentMaterialFeatureGuard?:
-    | ((state: WgpuRenderState, colorTransform: Readonly<ColorTransform | TintMaterialData>) => void)
+    | ((
+        state: WgpuRenderState,
+        colorTransform: Readonly<ColorTransform | TintMaterialData | readonly number[]>,
+      ) => void)
     | null;
   // Per-frame pool of GPU storage buffers, one slot claimed per flush. The batch records draws into
   // the canvas pass, but the pass is submitted once at end of frame, so every flush's draw reads its

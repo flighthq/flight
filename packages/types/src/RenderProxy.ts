@@ -23,6 +23,9 @@ export interface RenderProxy extends Entity {
   // promoting to the color-transform shader variant when any member is tinted. Per-quad tints
   // (QuadBatch/Tilemap) come from the source's per-quad data, overriding this.
   colorTransform: ColorTransform | null;
+  // Full 4×5 pointwise matrix for the uncommon channel-mixing path. Mutually exclusive with
+  // colorTransform; presence widens only the promoted adjustment stream.
+  colorMatrix?: readonly number[] | null;
   // Resolved material the backend renderer draws this node with, and its per-node data. Null →
   // default pipeline. Populated by the material hook during the render walk; the batcher keys on
   // `material` by reference, and material renderers read `materialData`.

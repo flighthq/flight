@@ -74,6 +74,7 @@ describe('enableWgpuColorAdjustmentGuards', () => {
       enableWgpuColorAdjustmentGuards(state);
       runtime.wgpuColorAdjustmentMaterialFeature = {
         fragmentShaderChunk: '',
+        matrixFragmentShaderChunk: '',
         record: () => {},
         resolveFlush: () => null,
       };

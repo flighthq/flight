@@ -9,6 +9,11 @@ export interface GlMeshProgram {
   // means unresolved; null means the lean base program omitted the feature uniform.
   locColorMultiplier?: WebGLUniformLocation | null;
   locColorOffset?: WebGLUniformLocation | null;
+  locColorMatrix0?: WebGLUniformLocation | null;
+  locColorMatrix1?: WebGLUniformLocation | null;
+  locColorMatrix2?: WebGLUniformLocation | null;
+  locColorMatrix3?: WebGLUniformLocation | null;
+  locColorMatrixOffset?: WebGLUniformLocation | null;
   // The per-object opacity uniform location, resolved lazily on first draw and cached: undefined = not
   // yet resolved, null = this program's fragment shader has no u_objectAlpha (silent no-op), a location
   // = present (drawGlMeshSubset uploads proxy.alpha to it). Lazy so any family whose fragment scene2d

@@ -39,6 +39,7 @@ export function createRenderProxy(state: RenderState, source: Renderable): Rende
     appearanceFrameId: -1,
     blendMode: BlendMode.Normal,
     colorTransform: null,
+    colorMatrix: null,
     material: null,
     materialData: null,
     lastAppearanceId: -1,

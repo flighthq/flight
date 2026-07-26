@@ -9,6 +9,7 @@ export interface GlShadedDefineKey {
   alphaMaskEnabled: boolean;
   // Promoted post-shade color-adjustment variant, selected from draw-data presence.
   hasColorAdjustment?: boolean;
+  hasColorMatrix?: boolean;
   hasDiffuseMap: boolean;
   hasNormalMap: boolean;
   // Set by ensureGlShadedProgram from the render-state skinned-run flag, not the material renderer —

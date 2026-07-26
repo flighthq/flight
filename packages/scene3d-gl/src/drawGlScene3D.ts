@@ -118,7 +118,9 @@ export function drawGlScene3D(
     // Resolved per-object opacity (parent×self), constant across a mesh's subsets. A fading object
     // (alpha < 1) must route through the blended pass so it composites over what is behind it.
     const objectAlpha = getNode3DWorldAlpha(mesh);
-    const colorTransform = getNode3DRuntime(mesh).resolvedColorTransform;
+    const nodeRuntime = getNode3DRuntime(mesh);
+    const colorTransform = nodeRuntime.resolvedColorTransform;
+    const colorMatrix = nodeRuntime.resolvedColorMatrix;
 
     for (let s = 0; s < subsets.length; s++) {
       const material = resolveSubsetMaterial(mesh, s);
@@ -130,6 +132,7 @@ export function drawGlScene3D(
       const entry = acquireDrawEntry(isBlended ? runtime.blendedPool : runtime.opaquePool);
       entry.alpha = objectAlpha;
       entry.clipW = clipW;
+      entry.colorMatrix = colorMatrix;
       entry.colorTransform = colorTransform;
       entry.lightBlock = hasPreparedForwardLights ? forwardLights.meshLightBlocks[m] : lightBlock;
       entry.mesh = mesh;
@@ -152,6 +155,7 @@ export function drawGlScene3D(
   let boundRenderer: GlMeshMaterialRenderer | null = null;
   let boundSkinned: boolean | undefined = undefined;
   let boundColorAdjustment: boolean | undefined = undefined;
+  let boundColorMatrix: boolean | undefined = undefined;
   const colorAdjustmentFeatureEnabled = getGlRenderStateRuntime(state).glColorAdjustmentMaterialFeature != null;
 
   for (let i = 0; i < opaqueDrawList.length; i++) {
@@ -162,15 +166,19 @@ export function drawGlScene3D(
     // A skinned run selects the HAS_SKIN program variant; split runs on it (a rigid and a skinned mesh
     // sharing a material need different programs). Set the flag before bind so ensureGl*Program folds it in.
     const skinned = isGpuSkinnedDraw(entry.mesh);
-    const colorAdjusted = colorAdjustmentFeatureEnabled && entry.colorTransform !== null;
+    const colorAdjusted =
+      colorAdjustmentFeatureEnabled && (entry.colorMatrix !== null || entry.colorTransform !== null);
+    const colorMatrix = colorAdjusted && entry.colorMatrix !== null;
     if (
       entry.renderer !== boundRenderer ||
       entry.material !== boundMaterial ||
       entry.lightBlock !== boundLightBlock ||
       skinned !== boundSkinned ||
-      colorAdjusted !== boundColorAdjustment
+      colorAdjusted !== boundColorAdjustment ||
+      colorMatrix !== boundColorMatrix
     ) {
       runtime.activeColorAdjustmentRun = colorAdjusted;
+      runtime.activeColorMatrixRun = colorMatrix;
       runtime.activeSkinnedRun = skinned;
       entry.renderer.bind(state, entry.material, entry.lightBlock, camera);
       boundRenderer = entry.renderer;
@@ -178,10 +186,12 @@ export function drawGlScene3D(
       boundLightBlock = entry.lightBlock;
       boundSkinned = skinned;
       boundColorAdjustment = colorAdjusted;
+      boundColorMatrix = colorMatrix;
     }
 
     proxy.alpha = entry.alpha;
     proxy.colorTransform = colorAdjusted ? entry.colorTransform : null;
+    proxy.colorMatrix = colorAdjusted ? entry.colorMatrix : null;
     proxy.jointMatrices = skinned ? entry.mesh.skin!.skeleton.jointMatrices : null;
     proxy.material = entry.material;
     proxy.normalMatrix = scratchNormalMatrix;
@@ -204,6 +214,7 @@ export function drawGlScene3D(
     boundRenderer = null;
     boundSkinned = undefined;
     boundColorAdjustment = undefined;
+    boundColorMatrix = undefined;
 
     for (let i = 0; i < blendedDrawList.length; i++) {
       const entry = blendedDrawList[i] as DrawEntry;
@@ -211,15 +222,19 @@ export function drawGlScene3D(
       setMatrix3NormalFromMatrix4(scratchNormalMatrix, worldMatrix);
 
       const skinned = isGpuSkinnedDraw(entry.mesh);
-      const colorAdjusted = colorAdjustmentFeatureEnabled && entry.colorTransform !== null;
+      const colorAdjusted =
+        colorAdjustmentFeatureEnabled && (entry.colorMatrix !== null || entry.colorTransform !== null);
+      const colorMatrix = colorAdjusted && entry.colorMatrix !== null;
       if (
         entry.renderer !== boundRenderer ||
         entry.material !== boundMaterial ||
         entry.lightBlock !== boundLightBlock ||
         skinned !== boundSkinned ||
-        colorAdjusted !== boundColorAdjustment
+        colorAdjusted !== boundColorAdjustment ||
+        colorMatrix !== boundColorMatrix
       ) {
         runtime.activeColorAdjustmentRun = colorAdjusted;
+        runtime.activeColorMatrixRun = colorMatrix;
         runtime.activeSkinnedRun = skinned;
         entry.renderer.bind(state, entry.material, entry.lightBlock, camera);
         boundRenderer = entry.renderer;
@@ -227,10 +242,12 @@ export function drawGlScene3D(
         boundLightBlock = entry.lightBlock;
         boundSkinned = skinned;
         boundColorAdjustment = colorAdjusted;
+        boundColorMatrix = colorMatrix;
       }
 
       proxy.alpha = entry.alpha;
       proxy.colorTransform = colorAdjusted ? entry.colorTransform : null;
+      proxy.colorMatrix = colorAdjusted ? entry.colorMatrix : null;
       proxy.jointMatrices = skinned ? entry.mesh.skin!.skeleton.jointMatrices : null;
       proxy.material = entry.material;
       proxy.normalMatrix = scratchNormalMatrix;
@@ -286,6 +303,7 @@ function compareBlendedEntriesDescending(a: GlScene3DDrawEntry, b: GlScene3DDraw
 interface DrawEntry {
   alpha: number;
   clipW: number;
+  colorMatrix: readonly number[] | null;
   colorTransform: Readonly<ColorTransform> | null;
   lightBlock: Readonly<Scene3DLightBlock>;
   material: Readonly<Material>;
@@ -312,6 +330,7 @@ function createDrawEntry(): GlScene3DDrawEntry {
   return {
     alpha: 1,
     clipW: 0,
+    colorMatrix: null,
     colorTransform: null,
     lightBlock: null!,
     material: DEFAULT_MATERIAL,
@@ -325,6 +344,7 @@ function createDrawEntry(): GlScene3DDrawEntry {
 // The reused per-draw proxy handed to a renderer's draw. Owned by drawGlScene3D, valid only for the
 // duration of the draw call it is passed to; renderers must not retain it.
 const proxy: Scene3DRenderProxy = {
+  colorMatrix: null,
   colorTransform: null,
   jointMatrices: null,
   material: { kind: StandardMaterialKind } as Material,

@@ -1,3 +1,4 @@
+import { createColorMatrixAdjustment, createTintAdjustment } from '@flighthq/adjustments';
 import { getEntityRuntime } from '@flighthq/entity';
 import type { BoundsNode, Node2D, Node2DData, Node2DRuntime, PartialNode, Rectangle } from '@flighthq/types';
 import { BlendMode, DisplayObjectKind, Node2DTraitsKey } from '@flighthq/types';
@@ -197,16 +198,23 @@ describe('setNode2DColorAdjustments', () => {
 
   it('sets the stack and invalidates appearance', () => {
     const idBefore = getRuntime_(obj).appearanceId;
-    const stack = [{ kind: 'ColorTransformAdjustment' }] as never;
+    const stack = [createTintAdjustment(0xffffffff)];
     setNode2DColorAdjustments(obj, stack);
     expect(getNode2DColorAdjustments(obj)).toBe(stack);
     expect(getRuntime_(obj).appearanceId).not.toBe(idBefore);
   });
 
   it('accepts null', () => {
-    setNode2DColorAdjustments(obj, [{ kind: 'ColorTransformAdjustment' }] as never);
+    setNode2DColorAdjustments(obj, [createTintAdjustment(0xffffffff)]);
     setNode2DColorAdjustments(obj, null);
     expect(getNode2DColorAdjustments(obj)).toBeNull();
+  });
+
+  it('caches a complete channel-mixing matrix without marking it unsupported', () => {
+    const matrix = [1, 0.5, 0, 0, 10, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0];
+    setNode2DColorAdjustments(obj, [createColorMatrixAdjustment(matrix)]);
+    expect(getNode2DRuntime(obj).resolvedColorMatrix).toEqual(matrix);
+    expect(getNode2DRuntime(obj).colorAdjustmentsChannelMixing).toBe(false);
   });
 });
 

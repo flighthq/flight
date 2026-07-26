@@ -29,7 +29,7 @@ function submitWgpuBitmapText(state: WgpuRenderState, node: RenderProxy2D): void
   const materialRenderer = resolveWgpuMaterialRenderer(state, material);
   if (materialRenderer === null) return;
   const nodeMaterialData = node.materialData;
-  const nodeColorTransform = node.colorTransform;
+  const nodeColorTransform = node.colorMatrix ?? node.colorTransform;
   const pt = node.transform2D;
   const pa = pt.a;
   const pb = pt.b;

@@ -5,6 +5,7 @@ import {
   COLOR_ADJUSTMENT_CHANNEL_MIXING,
   COLOR_ADJUSTMENT_NONE,
   isAffineColorMatrix,
+  resolveColorAdjustmentsColorMatrix,
   resolveColorAdjustmentsColorTransform,
 } from './colorAdjustmentResolution';
 import { createColorMatrixAdjustment } from './colorMatrixAdjustment';
@@ -31,6 +32,19 @@ describe('isAffineColorMatrix', () => {
 
   it('is false when off-diagonal channel-mixing terms are present', () => {
     expect(isAffineColorMatrix(createSaturationColorMatrix(0))).toBe(false);
+  });
+});
+
+describe('resolveColorAdjustmentsColorMatrix', () => {
+  it('returns the complete fused matrix for matrix-tier adjustments', () => {
+    const saturation = createSaturationColorMatrix(0);
+    const adjustment = { kind: 'Saturation', colorMatrix: saturation } as Adjustment;
+    expect(resolveColorAdjustmentsColorMatrix([adjustment])).toEqual(saturation);
+  });
+
+  it('returns null for empty stacks and non-matrix adjustments', () => {
+    expect(resolveColorAdjustmentsColorMatrix([])).toBeNull();
+    expect(resolveColorAdjustmentsColorMatrix([{ kind: 'acme.Lut' } as Adjustment])).toBeNull();
   });
 });
 

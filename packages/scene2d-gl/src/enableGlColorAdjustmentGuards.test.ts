@@ -68,6 +68,7 @@ describe('enableGlColorAdjustmentGuards', () => {
       // Simulate the fold being installed so the dispatcher never reaches the guard branch.
       runtime.glColorAdjustmentMaterialFeature = {
         fragmentShaderChunk: '',
+        matrixFragmentShaderChunk: '',
         drawShapeMeshes: () => {},
         flush: () => false,
         record: () => {},

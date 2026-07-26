@@ -51,6 +51,8 @@ const ALL = key({
 });
 const COLOR_FEATURE: WgpuColorAdjustmentMaterialFeature = {
   fragmentShaderChunk: 'fn applyFlightColorAdjustment(c : vec4f, m : vec4f, o : vec4f) -> vec4f { return c; }',
+  matrixFragmentShaderChunk:
+    'fn applyFlightColorMatrix(c : vec4f, a : vec4f, b : vec4f, d : vec4f, e : vec4f, o : vec4f) -> vec4f { return c; }',
   record: () => {},
   resolveFlush: () => null,
 };
@@ -164,6 +166,12 @@ describe('getWgpuPbrModuleSourceForKey', () => {
     expect(base).not.toContain(COLOR_FEATURE.fragmentShaderChunk);
     expect(adjusted).toContain(COLOR_FEATURE.fragmentShaderChunk);
     expect(adjusted).toContain('draw.flightColorMultiplier');
+  });
+
+  it('splices the full-matrix post-shade chunk into its own variant', () => {
+    const matrix = getWgpuPbrModuleSourceForKey(key({ hasColorMatrix: true }), false, null, COLOR_FEATURE);
+    expect(matrix).toContain(COLOR_FEATURE.matrixFragmentShaderChunk);
+    expect(matrix).toContain('draw.flightColorMatrix0');
   });
 
   it('prepends the flag block to the module body', () => {

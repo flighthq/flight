@@ -41,6 +41,7 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
   // Per-tile color transforms, overriding the node-level tint for the tiles that carry one.
   const perTileColorTransform = source.data.materialData;
   const nodeColorTransform = tilemapNode.colorTransform;
+  const nodeColorMatrix = tilemapNode.colorMatrix;
   const startCount = runtime.spriteBatchCount;
   const base = prepareWgpuSpriteBatchWrite(
     state,
@@ -93,7 +94,12 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
       packWgpuSpriteBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
       // Per-tile tint overrides the node-level tint (null → the node's, itself possibly null → untinted).
       const colorTransform =
-        (perTileColorTransform?.[row * columns + col] as ColorTransform | TintMaterialData | null) ??
+        (perTileColorTransform?.[row * columns + col] as
+          | ColorTransform
+          | TintMaterialData
+          | readonly number[]
+          | null) ??
+        nodeColorMatrix ??
         nodeColorTransform;
       recordWgpuSpriteBatchColorTransform(state, colorTransform, startCount + drawCount);
       writeBase += INSTANCE_STRIDE_FLOATS;

@@ -7,5 +7,7 @@ import type { ColorTransform } from './ColorTransform';
 export interface ColorAdjustmentRuntime {
   colorAdjustments: readonly Adjustment[] | null;
   colorAdjustmentsChannelMixing: boolean;
+  // Full fused 4×5 matrix when the stack mixes channels; null for the common diagonal-affine path.
+  resolvedColorMatrix: readonly number[] | null;
   resolvedColorTransform: ColorTransform | null;
 }

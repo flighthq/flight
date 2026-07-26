@@ -27,7 +27,9 @@ import { getGlScene3DRuntime } from './glScene3DRuntime';
 export function buildGlShadedCacheKey(key: Readonly<GlShadedDefineKey>, modifierDefineKey: string): string {
   const base = `${key.alphaMaskEnabled ? 'm' : '-'}${key.hasDiffuseMap ? 'd' : '-'}${key.hasSpecularMap ? 's' : '-'}${
     key.hasNormalMap ? 'n' : '-'
-  }${key.hasUvTransform ? 'u' : '-'}${key.hasSkin ? 'k' : '-'}${key.hasColorAdjustment ? 'c' : ''}`;
+  }${key.hasUvTransform ? 'u' : '-'}${key.hasSkin ? 'k' : '-'}${
+    key.hasColorMatrix ? 'x' : key.hasColorAdjustment ? 'c' : ''
+  }`;
   return `shaded:${base}|${modifierDefineKey}`;
 }
 
@@ -52,10 +54,14 @@ export function compileGlShadedProgram(
     (key.hasSkin ? GL_SKIN_VERTEX_DECLARATIONS_GLSL : '') +
     assembleGlShadedVertexBody(orderedModifiers, registry);
   let fragmentBody = assembleGlShadedFragmentBody(orderedModifiers, registry);
-  if (key.hasColorAdjustment && colorAdjustmentFeature !== null) {
+  if ((key.hasColorAdjustment || key.hasColorMatrix) && colorAdjustmentFeature !== null) {
     fragmentBody = fragmentBody.replace(
       'precision highp float;',
-      `precision highp float;\n${colorAdjustmentFeature.fragmentShaderChunk}`,
+      `precision highp float;\n${
+        key.hasColorMatrix
+          ? colorAdjustmentFeature.matrixFragmentShaderChunk
+          : colorAdjustmentFeature.fragmentShaderChunk
+      }`,
     );
   }
   const fragmentSource = defineSource + fragmentBody;
@@ -99,6 +105,7 @@ export function ensureGlShadedProgram(
   const fullKey: GlShadedDefineKey = {
     ...key,
     hasColorAdjustment: getGlScene3DRuntime(state).activeColorAdjustmentRun,
+    hasColorMatrix: getGlScene3DRuntime(state).activeColorMatrixRun,
     hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
   };
   const cacheKey = buildGlShadedCacheKey(fullKey, getModifierDefineKey(modifiers, registry));
@@ -208,7 +215,8 @@ function buildGlShadedDefineSource(key: Readonly<GlShadedDefineKey>): string {
   if (key.hasNormalMap) defines += '#define HAS_NORMAL_MAP\n';
   if (key.hasUvTransform) defines += '#define HAS_UV_TRANSFORM\n';
   if (key.hasSkin) defines += '#define HAS_SKIN\n';
-  if (key.hasColorAdjustment) defines += '#define HAS_COLOR_ADJUSTMENT\n';
+  if (key.hasColorMatrix) defines += '#define HAS_COLOR_MATRIX\n';
+  else if (key.hasColorAdjustment) defines += '#define HAS_COLOR_ADJUSTMENT\n';
   return defines;
 }
 
@@ -270,7 +278,13 @@ in vec4 v_tangent;
 in vec2 v_uv0;
 
 uniform vec4 u_diffuse;
-#ifdef HAS_COLOR_ADJUSTMENT
+#ifdef HAS_COLOR_MATRIX
+uniform vec4 u_flightColorMatrix0;
+uniform vec4 u_flightColorMatrix1;
+uniform vec4 u_flightColorMatrix2;
+uniform vec4 u_flightColorMatrix3;
+uniform vec4 u_flightColorMatrixOffset;
+#elif defined(HAS_COLOR_ADJUSTMENT)
 uniform vec4 u_flightColorMultiplier;
 uniform vec4 u_flightColorOffset;
 #endif
@@ -435,7 +449,10 @@ void main() {
   //@EFFECT
 
   fragColor = vec4(radiance, diffuse.a);
-#ifdef HAS_COLOR_ADJUSTMENT
+#ifdef HAS_COLOR_MATRIX
+  fragColor = applyFlightColorMatrix(fragColor, u_flightColorMatrix0, u_flightColorMatrix1,
+    u_flightColorMatrix2, u_flightColorMatrix3, u_flightColorMatrixOffset);
+#elif defined(HAS_COLOR_ADJUSTMENT)
   fragColor = applyFlightColorAdjustment(fragColor, u_flightColorMultiplier, u_flightColorOffset);
 #endif
   fragColor.a *= u_objectAlpha;

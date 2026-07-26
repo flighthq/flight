@@ -37,6 +37,8 @@ const CT_MODE_NONE = 0;
 const CT_MODE_UNIFORM = 1;
 const CT_MODE_PACKED_TINT = 2;
 const CT_MODE_PER_INSTANCE = 3;
+const CT_MODE_MATRIX = 4;
+const MIX_RED_GREEN = [1, 0.5, 0, 0, 10, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0] as const;
 
 describe('registerGlColorAdjustmentMaterialFeature', () => {
   it('installs the fold so recorded tints drive the color-adjustment state machine', () => {
@@ -133,6 +135,19 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_PER_INSTANCE);
   });
 
+  it('widens to a full matrix stream only when channel mixing appears', () => {
+    const { state } = createGlState();
+    const runtime = getGlRenderStateRuntime(state);
+    registerGlColorAdjustmentMaterialFeature(state);
+    recordGlSpriteBatchColorTransform(state, { tint: 0x808080ff }, 0);
+    recordGlSpriteBatchColorTransform(state, MIX_RED_GREEN, 1);
+    expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_MATRIX);
+    expect(runtime.spriteBatchColorMatrixData![0]).toBeCloseTo(128 / 255);
+    expect(runtime.spriteBatchColorMatrixData![20]).toBe(1);
+    expect(runtime.spriteBatchColorMatrixData![21]).toBe(0.5);
+    expect(runtime.spriteBatchColorMatrixData![36]).toBeCloseTo(10 / 255);
+  });
+
   it('records compact per-item tint data directly as four bytes', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
@@ -169,6 +184,30 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     expect(runtime.spriteBatchColorTransformBuffer).not.toBeNull();
     expect(gl.vertexAttribPointer).toHaveBeenCalledWith(7, 4, gl.UNSIGNED_BYTE, true, 4, 0);
     expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 2);
+  });
+
+  it('binds five vec4 instance attributes for a full color matrix', () => {
+    const { state, gl } = createGlState();
+    const runtime = getGlRenderStateRuntime(state);
+    registerGlColorAdjustmentMaterialFeature(state);
+    prepareGlSpriteBatchWrite(state, makeTexture(), null, null, standardGlMaterialRenderer, 2);
+    recordGlSpriteBatchColorTransform(state, null, 0);
+    recordGlSpriteBatchColorTransform(state, MIX_RED_GREEN, 1);
+    runtime.spriteBatchCount = 2;
+    flushGlSpriteBatch(state);
+    expect(gl.vertexAttribPointer).toHaveBeenCalledWith(7, 4, gl.FLOAT, false, 80, 0);
+    expect(gl.vertexAttribPointer).toHaveBeenCalledWith(11, 4, gl.FLOAT, false, 80, 64);
+  });
+
+  it('resets the batch mode after flushing one uniform matrix', () => {
+    const { state } = createGlState();
+    const runtime = getGlRenderStateRuntime(state);
+    registerGlColorAdjustmentMaterialFeature(state);
+    prepareGlSpriteBatchWrite(state, makeTexture(), null, null, standardGlMaterialRenderer, 1);
+    recordGlSpriteBatchColorTransform(state, MIX_RED_GREEN, 0);
+    runtime.spriteBatchCount = 1;
+    flushGlSpriteBatch(state);
+    expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_NONE);
   });
 
   it('leaves the lean base shader untouched for an untinted batch on flush', () => {

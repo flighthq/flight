@@ -40,6 +40,7 @@ function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void
   // Per-tile color transforms, overriding the node-level tint for the tiles that carry one.
   const perTileColorTransform = source.data.materialData;
   const nodeColorTransform = tilemapNode.colorTransform;
+  const nodeColorMatrix = tilemapNode.colorMatrix;
   const startCount = runtime.spriteBatchCount;
   const base = prepareGlSpriteBatchWrite(
     state,
@@ -92,7 +93,12 @@ function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void
       packGlSpriteBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
       // Per-tile tint overrides the node-level tint (null → the node's, itself possibly null → untinted).
       const colorTransform =
-        (perTileColorTransform?.[row * columns + col] as ColorTransform | TintMaterialData | null) ??
+        (perTileColorTransform?.[row * columns + col] as
+          | ColorTransform
+          | TintMaterialData
+          | readonly number[]
+          | null) ??
+        nodeColorMatrix ??
         nodeColorTransform;
       recordGlSpriteBatchColorTransform(state, colorTransform, startCount + drawCount);
       writeBase += INSTANCE_FLOATS;

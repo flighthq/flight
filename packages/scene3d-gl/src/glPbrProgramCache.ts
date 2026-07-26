@@ -65,6 +65,7 @@ export function ensureGlPbrProgram(state: GlRenderState, key: Readonly<GlPbrDefi
   const fullKey: GlPbrDefineKey = {
     ...key,
     hasColorAdjustment: getGlScene3DRuntime(state).activeColorAdjustmentRun,
+    hasColorMatrix: getGlScene3DRuntime(state).activeColorMatrixRun,
     hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
   };
   return ensureGlScene3DProgram(state, `pbr:${buildGlPbrDefineKey(fullKey)}`, (gl) =>

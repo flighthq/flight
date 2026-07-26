@@ -2,6 +2,7 @@ import {
   COLOR_ADJUSTMENT_CHANNEL_MIXING,
   COLOR_ADJUSTMENT_NONE,
   createTintAdjustment,
+  resolveColorAdjustmentsColorMatrix,
   resolveColorAdjustmentsColorTransform,
 } from '@flighthq/adjustments';
 import { createColorTransform } from '@flighthq/materials';
@@ -70,6 +71,7 @@ export function createNode2DRuntime(methods?: Readonly<Partial<MethodsOf<Node2DR
   const out = createNodeRuntime(methods) as Node2DRuntime;
   out.colorAdjustments = null;
   out.colorAdjustmentsChannelMixing = false;
+  out.resolvedColorMatrix = null;
   out.resolvedColorTransform = null;
   out.traits = Node2DTraitsKey;
   out.scene2d = null;
@@ -126,6 +128,7 @@ function resolveNode2DColorAdjustments(runtime: Node2DRuntime): void {
   const adjustments = runtime.colorAdjustments;
   if (adjustments === null || adjustments.length === 0) {
     runtime.resolvedColorTransform = null;
+    runtime.resolvedColorMatrix = null;
     runtime.colorAdjustmentsChannelMixing = false;
     return;
   }
@@ -133,11 +136,15 @@ function resolveNode2DColorAdjustments(runtime: Node2DRuntime): void {
   const status = resolveColorAdjustmentsColorTransform(adjustments, out);
   if (status === COLOR_ADJUSTMENT_NONE) {
     runtime.resolvedColorTransform = null;
+    runtime.resolvedColorMatrix = null;
     runtime.colorAdjustmentsChannelMixing = false;
     return;
   }
   runtime.resolvedColorTransform = out;
-  runtime.colorAdjustmentsChannelMixing = status === COLOR_ADJUSTMENT_CHANNEL_MIXING;
+  runtime.resolvedColorMatrix =
+    status === COLOR_ADJUSTMENT_CHANNEL_MIXING ? resolveColorAdjustmentsColorMatrix(adjustments) : null;
+  runtime.colorAdjustmentsChannelMixing =
+    status === COLOR_ADJUSTMENT_CHANNEL_MIXING && runtime.resolvedColorMatrix === null;
 }
 
 export { createDisplayObject } from './displayContainer';

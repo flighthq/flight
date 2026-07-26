@@ -26,6 +26,7 @@ export function registerWgpuColorAdjustmentMaterialFeature(state: WgpuRenderStat
 // through the per-instance storage buffer, so a whole-batch (uniform) tint is the same value on each
 // instance — there is no separate hardware-uniform path.
 const COLOR_TRANSFORM_FLOATS = 8;
+const COLOR_MATRIX_FLOATS = 20;
 
 // Color-adjustment fold modes for the active sprite batch. NONE keeps the base module; UNIFORM defers
 // per-instance fill while one tint covers the whole batch; PER_INSTANCE packs a tint per instance.
@@ -33,6 +34,9 @@ const CT_MODE_NONE = 0;
 const CT_MODE_UNIFORM = 1;
 const CT_MODE_PACKED_TINT = 2;
 const CT_MODE_PER_INSTANCE = 3;
+const CT_MODE_MATRIX = 4;
+
+type ColorAdjustmentData = ColorTransform | TintMaterialData | readonly number[];
 
 // The backend's single color-adjustment shader chunk. The registered feature carries it to Standard
 // 2D and promoted 3D family variants without making their lean compilers statically own the code.
@@ -41,22 +45,45 @@ fn applyFlightColorAdjustment(color : vec4f, multiplier : vec4f, offset : vec4f)
   return clamp(color * multiplier + offset, vec4f(0.0), vec4f(1.0));
 }
 `;
+const WGPU_COLOR_MATRIX_FRAGMENT_CHUNK = /* wgsl */ `
+fn applyFlightColorMatrix(
+  color : vec4f,
+  row0 : vec4f,
+  row1 : vec4f,
+  row2 : vec4f,
+  row3 : vec4f,
+  offset : vec4f,
+) -> vec4f {
+  return clamp(vec4f(dot(row0, color), dot(row1, color), dot(row2, color), dot(row3, color)) + offset,
+    vec4f(0.0), vec4f(1.0));
+}
+`;
 
 // Folds instance `instanceIndex`'s effective color transform into the active batch. See the fold-mode
 // constants for the promotion rules. `colorTransform` is null for an untinted instance.
 function recordWgpuColorAdjustment(
   runtime: WgpuRenderStateRuntime,
-  colorTransform: ColorTransform | TintMaterialData | null | undefined,
+  colorTransform: ColorAdjustmentData | null | undefined,
   instanceIndex: number,
 ): void {
   const mode = runtime.spriteBatchColorTransformMode ?? CT_MODE_NONE;
   const tint = colorTransform ?? null;
+
+  if (mode === CT_MODE_MATRIX) {
+    writeWgpuColorMatrixInstance(runtime, tint, instanceIndex);
+    return;
+  }
 
   if (mode === CT_MODE_NONE) {
     if (tint === null) return;
     if (instanceIndex === 0) {
       runtime.spriteBatchColorTransformMode = CT_MODE_UNIFORM;
       runtime.spriteBatchUniformColorTransform = tint;
+      return;
+    }
+    if (isColorMatrixData(tint)) {
+      promoteWgpuSpriteBatchColorTransformToMatrix(runtime, instanceIndex, null);
+      writeWgpuColorMatrixInstance(runtime, tint, instanceIndex);
       return;
     }
     const packedTint = getPackedTint(tint);
@@ -73,6 +100,11 @@ function recordWgpuColorAdjustment(
   if (mode === CT_MODE_UNIFORM) {
     const uniform = runtime.spriteBatchUniformColorTransform ?? null;
     if (equalsRecordedColorTransform(tint, uniform)) return;
+    if (isColorMatrixData(tint) || (uniform !== null && isColorMatrixData(uniform))) {
+      promoteWgpuSpriteBatchColorTransformToMatrix(runtime, instanceIndex, uniform);
+      writeWgpuColorMatrixInstance(runtime, tint, instanceIndex);
+      return;
+    }
     const packedTint = getPackedTint(tint);
     if (getPackedTint(uniform) !== null && packedTint !== null) {
       promoteWgpuSpriteBatchColorTransformToPackedTint(runtime, instanceIndex, uniform);
@@ -85,6 +117,11 @@ function recordWgpuColorAdjustment(
   }
 
   if (mode === CT_MODE_PACKED_TINT) {
+    if (isColorMatrixData(tint)) {
+      promoteWgpuPackedTintToColorMatrix(runtime, instanceIndex);
+      writeWgpuColorMatrixInstance(runtime, tint, instanceIndex);
+      return;
+    }
     const packedTint = getPackedTint(tint);
     if (packedTint !== null) {
       writeWgpuPackedTintInstance(runtime, packedTint, instanceIndex);
@@ -95,6 +132,11 @@ function recordWgpuColorAdjustment(
     return;
   }
 
+  if (isColorMatrixData(tint)) {
+    promoteWgpuColorTransformToMatrix(runtime, instanceIndex);
+    writeWgpuColorMatrixInstance(runtime, tint, instanceIndex);
+    return;
+  }
   writeWgpuColorTransformInstance(runtime, tint, instanceIndex);
 }
 
@@ -108,13 +150,18 @@ function resolveWgpuColorAdjustmentFlush(state: WgpuRenderState, count: number):
   if (ctMode === CT_MODE_NONE) return null;
   if (ctMode === CT_MODE_UNIFORM) {
     const uniform = runtime.spriteBatchUniformColorTransform!;
-    const packedTint = getPackedTint(uniform);
-    if (packedTint !== null) {
-      runtime.spriteBatchColorTransformMode = CT_MODE_PACKED_TINT;
-      fillWgpuSpriteBatchUniformPackedTint(runtime, packedTint, count);
+    if (isColorMatrixData(uniform)) {
+      runtime.spriteBatchColorTransformMode = CT_MODE_MATRIX;
+      fillWgpuSpriteBatchUniformColorMatrix(runtime, uniform, count);
     } else {
-      runtime.spriteBatchColorTransformMode = CT_MODE_PER_INSTANCE;
-      fillWgpuSpriteBatchUniformColorTransform(runtime, uniform, count);
+      const packedTint = getPackedTint(uniform);
+      if (packedTint !== null) {
+        runtime.spriteBatchColorTransformMode = CT_MODE_PACKED_TINT;
+        fillWgpuSpriteBatchUniformPackedTint(runtime, packedTint, count);
+      } else {
+        runtime.spriteBatchColorTransformMode = CT_MODE_PER_INSTANCE;
+        fillWgpuSpriteBatchUniformColorTransform(runtime, uniform, count);
+      }
     }
   }
   const resolvedMode = runtime.spriteBatchColorTransformMode;
@@ -127,6 +174,13 @@ function resolveWgpuColorAdjustmentFlush(state: WgpuRenderState, count: number):
       module: getWgpuSpriteBatchPackedTintModule(state),
     };
   }
+  if (resolvedMode === CT_MODE_MATRIX) {
+    return {
+      data: runtime.spriteBatchColorMatrixData!,
+      floats: COLOR_MATRIX_FLOATS,
+      module: getWgpuSpriteBatchColorMatrixModule(state),
+    };
+  }
   return {
     data: runtime.spriteBatchColorTransformData!,
     floats: COLOR_TRANSFORM_FLOATS,
@@ -137,11 +191,16 @@ function resolveWgpuColorAdjustmentFlush(state: WgpuRenderState, count: number):
 // Value equality for the whole-batch uniform check: reference-equal short-circuits (every glyph of a
 // bitmap-text node shares one node-level tint), else compares all eight fields.
 function equalsRecordedColorTransform(
-  a: Readonly<ColorTransform | TintMaterialData> | null,
-  b: Readonly<ColorTransform | TintMaterialData> | null,
+  a: Readonly<ColorAdjustmentData> | null,
+  b: Readonly<ColorAdjustmentData> | null,
 ): boolean {
   if (a === b) return true;
   if (a === null || b === null) return false;
+  if (isColorMatrixData(a) || isColorMatrixData(b)) {
+    if (!isColorMatrixData(a) || !isColorMatrixData(b)) return false;
+    for (let i = 0; i < COLOR_MATRIX_FLOATS; i++) if (a[i] !== b[i]) return false;
+    return true;
+  }
   for (let channel = 0; channel < 4; channel++) {
     if (
       getColorMultiplier(a, channel) !== getColorMultiplier(b, channel) ||
@@ -179,6 +238,14 @@ function fillWgpuSpriteBatchUniformPackedTint(runtime: WgpuRenderStateRuntime, r
   for (let i = 0; i < count; i++) writeWgpuPackedTintInstance(runtime, rgba, i);
 }
 
+function fillWgpuSpriteBatchUniformColorMatrix(
+  runtime: WgpuRenderStateRuntime,
+  matrix: readonly number[],
+  count: number,
+): void {
+  for (let i = 0; i < count; i++) writeWgpuColorMatrixInstance(runtime, matrix, i);
+}
+
 // The folded per-instance color-transform shader module (cached per device): the base sprite-batch
 // prelude plus a scene2d that reads 8 per-instance floats from the material storage buffer (@group(3))
 // and applies `color * mult + offset` in unpremultiplied space. Reused verbatim from the former
@@ -200,6 +267,16 @@ function getWgpuSpriteBatchPackedTintModule(state: WgpuRenderState): GPUShaderMo
     code: getWgpuQuadBatchPreludeWGSL() + PACKED_TINT_WGSL,
   });
   _packedTintModules.set(state.device, module);
+  return module;
+}
+
+function getWgpuSpriteBatchColorMatrixModule(state: WgpuRenderState): GPUShaderModule {
+  const cached = _colorMatrixModules.get(state.device);
+  if (cached !== undefined) return cached;
+  const module = state.device.createShaderModule({
+    code: getWgpuQuadBatchPreludeWGSL() + COLOR_MATRIX_WGSL,
+  });
+  _colorMatrixModules.set(state.device, module);
   return module;
 }
 
@@ -229,6 +306,29 @@ function promoteWgpuPackedTintToColorTransform(runtime: WgpuRenderStateRuntime, 
   for (let i = 0; i < instanceCount; i++) writeWgpuNativePackedTintAsColorTransform(runtime, packed[i], i);
 }
 
+function promoteWgpuSpriteBatchColorTransformToMatrix(
+  runtime: WgpuRenderStateRuntime,
+  instanceCount: number,
+  fill: Readonly<ColorAdjustmentData> | null,
+): void {
+  runtime.spriteBatchColorTransformMode = CT_MODE_MATRIX;
+  for (let i = 0; i < instanceCount; i++) writeWgpuColorMatrixInstance(runtime, fill, i);
+}
+
+function promoteWgpuPackedTintToColorMatrix(runtime: WgpuRenderStateRuntime, instanceCount: number): void {
+  const packed = runtime.spriteBatchColorTintData!;
+  runtime.spriteBatchColorTransformMode = CT_MODE_MATRIX;
+  for (let i = 0; i < instanceCount; i++) writeWgpuNativePackedTintAsColorMatrix(runtime, packed[i], i);
+}
+
+function promoteWgpuColorTransformToMatrix(runtime: WgpuRenderStateRuntime, instanceCount: number): void {
+  const affine = runtime.spriteBatchColorTransformData!;
+  runtime.spriteBatchColorTransformMode = CT_MODE_MATRIX;
+  for (let i = 0; i < instanceCount; i++) {
+    writeWgpuAffineValuesAsColorMatrix(runtime, affine, i * COLOR_TRANSFORM_FLOATS, i);
+  }
+}
+
 // Writes one instance's eight color-transform floats (multiplier rgba, then offset rgba normalized by
 // 255) at its slot, growing the array as needed. A null transform writes the identity.
 function writeWgpuColorTransformInstance(
@@ -253,6 +353,77 @@ function writeWgpuColorTransformInstance(
     out[offset + 5] = 0;
     out[offset + 6] = 0;
     out[offset + 7] = 0;
+  }
+}
+
+function writeWgpuColorMatrixInstance(
+  runtime: WgpuRenderStateRuntime,
+  adjustment: Readonly<ColorAdjustmentData> | null,
+  instanceIndex: number,
+): void {
+  const offset = instanceIndex * COLOR_MATRIX_FLOATS;
+  let out = runtime.spriteBatchColorMatrixData;
+  if (out === undefined) {
+    out = new Float32Array(COLOR_MATRIX_FLOATS * 256);
+    runtime.spriteBatchColorMatrixData = out;
+  } else if (offset + COLOR_MATRIX_FLOATS > out.length) {
+    const grown = new Float32Array(Math.max(offset + COLOR_MATRIX_FLOATS, out.length * 2));
+    grown.set(out);
+    runtime.spriteBatchColorMatrixData = grown;
+    out = grown;
+  }
+  if (adjustment === null) {
+    writeIdentityColorMatrix(out, offset);
+  } else if (isColorMatrixData(adjustment)) {
+    for (let row = 0; row < 4; row++) {
+      const source = row * 5;
+      const target = offset + row * 4;
+      out[target] = adjustment[source]!;
+      out[target + 1] = adjustment[source + 1]!;
+      out[target + 2] = adjustment[source + 2]!;
+      out[target + 3] = adjustment[source + 3]!;
+      out[offset + 16 + row] = adjustment[source + 4]! / 255;
+    }
+  } else {
+    writeIdentityColorMatrix(out, offset);
+    for (let channel = 0; channel < 4; channel++) {
+      out[offset + channel * 4 + channel] = getColorMultiplier(adjustment, channel);
+      out[offset + 16 + channel] = getColorOffset(adjustment, channel);
+    }
+  }
+}
+
+function writeIdentityColorMatrix(out: Float32Array, offset: number): void {
+  out.fill(0, offset, offset + COLOR_MATRIX_FLOATS);
+  out[offset] = out[offset + 5] = out[offset + 10] = out[offset + 15] = 1;
+}
+
+function writeWgpuNativePackedTintAsColorMatrix(
+  runtime: WgpuRenderStateRuntime,
+  nativeWord: number,
+  instanceIndex: number,
+): void {
+  writeWgpuColorMatrixInstance(runtime, null, instanceIndex);
+  const out = runtime.spriteBatchColorMatrixData!;
+  const offset = instanceIndex * COLOR_MATRIX_FLOATS;
+  out[offset] = (nativeWord & 0xff) / 255;
+  out[offset + 5] = ((nativeWord >>> 8) & 0xff) / 255;
+  out[offset + 10] = ((nativeWord >>> 16) & 0xff) / 255;
+  out[offset + 15] = ((nativeWord >>> 24) & 0xff) / 255;
+}
+
+function writeWgpuAffineValuesAsColorMatrix(
+  runtime: WgpuRenderStateRuntime,
+  affine: Float32Array,
+  affineOffset: number,
+  instanceIndex: number,
+): void {
+  writeWgpuColorMatrixInstance(runtime, null, instanceIndex);
+  const out = runtime.spriteBatchColorMatrixData!;
+  const offset = instanceIndex * COLOR_MATRIX_FLOATS;
+  for (let channel = 0; channel < 4; channel++) {
+    out[offset + channel * 4 + channel] = affine[affineOffset + channel]!;
+    out[offset + 16 + channel] = affine[affineOffset + 4 + channel]!;
   }
 }
 
@@ -310,6 +481,10 @@ function getPackedTint(value: Readonly<ColorTransform | TintMaterialData> | null
       Math.round(value.alphaMultiplier * 255)) >>>
     0
   );
+}
+
+function isColorMatrixData(value: Readonly<ColorAdjustmentData> | null): value is readonly number[] {
+  return Array.isArray(value);
 }
 
 function rgbaToNativeByteWord(rgba: number): number {
@@ -411,11 +586,54 @@ fn fs_main(in : VertexOut) -> @location(0) vec4f {
 }
 `;
 
+const COLOR_MATRIX_WGSL = /* wgsl */ `
+${WGPU_COLOR_MATRIX_FRAGMENT_CHUNK}
+@group(3) @binding(0) var<storage, read> ctData : array<f32>;
+struct VertexOut {
+  @builtin(position) position : vec4f,
+  @location(0) uv : vec2f,
+  @location(1) alpha : f32,
+  @location(2) row0 : vec4f,
+  @location(3) row1 : vec4f,
+  @location(4) row2 : vec4f,
+  @location(5) row3 : vec4f,
+  @location(6) offset : vec4f,
+}
+@vertex
+fn vs_main(@builtin(vertex_index) vi : u32, @builtin(instance_index) ii : u32) -> VertexOut {
+  let bv = quadBaseVertex(vi, ii);
+  let b = ii * 20u;
+  return VertexOut(
+    bv.position, bv.uv, bv.alpha,
+    vec4f(ctData[b], ctData[b + 1u], ctData[b + 2u], ctData[b + 3u]),
+    vec4f(ctData[b + 4u], ctData[b + 5u], ctData[b + 6u], ctData[b + 7u]),
+    vec4f(ctData[b + 8u], ctData[b + 9u], ctData[b + 10u], ctData[b + 11u]),
+    vec4f(ctData[b + 12u], ctData[b + 13u], ctData[b + 14u], ctData[b + 15u]),
+    vec4f(ctData[b + 16u], ctData[b + 17u], ctData[b + 18u], ctData[b + 19u]),
+  );
+}
+@fragment
+fn fs_main(in : VertexOut) -> @location(0) vec4f {
+  var color = textureSample(tex, smp, in.uv);
+  if (color.a <= 0.0) { discard; }
+  if (uni.straightTextureAlpha != 0u) { color = vec4f(color.rgb * color.a, color.a); }
+  color = color * clamp(in.alpha, 0.0, 1.0);
+  if (color.a > 0.0) {
+    color = vec4f(color.rgb / color.a, color.a);
+    color = applyFlightColorMatrix(color, in.row0, in.row1, in.row2, in.row3, in.offset);
+    color = vec4f(color.rgb * color.a, color.a);
+  }
+  return color;
+}
+`;
+
 const _colorTransformModules = new WeakMap<GPUDevice, GPUShaderModule>();
 const _packedTintModules = new WeakMap<GPUDevice, GPUShaderModule>();
+const _colorMatrixModules = new WeakMap<GPUDevice, GPUShaderModule>();
 
 const wgpuColorAdjustmentMaterialFeature: WgpuColorAdjustmentMaterialFeature = {
   fragmentShaderChunk: WGPU_COLOR_ADJUSTMENT_FRAGMENT_CHUNK,
+  matrixFragmentShaderChunk: WGPU_COLOR_MATRIX_FRAGMENT_CHUNK,
   record: recordWgpuColorAdjustment,
   resolveFlush: resolveWgpuColorAdjustmentFlush,
 };
