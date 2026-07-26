@@ -1,4 +1,4 @@
-import type { ImageResource, TextureContainer, WgpuCompressedTextureSupport } from '@flighthq/types';
+import type { ImageResource, TextureContainer, WgpuCompressedTextureSupport } from '@flighthq/types/contract';
 
 import {
   detectWgpuCompressedTextureSupport,

@@ -6,7 +6,7 @@ import type {
   WgpuRenderState,
   WgpuRenderStateRuntime,
   TintMaterialData,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { getWgpuQuadBatchPreludeWGSL } from './wgpuSpriteBatch';
 

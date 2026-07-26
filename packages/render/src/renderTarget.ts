@@ -1,6 +1,6 @@
 import { createMatrix, inverseMatrix, multiplyMatrix } from '@flighthq/geometry';
 import { getNodeLocalMatrix } from '@flighthq/node';
-import type { Node2D, MatrixLike, RectangleLike } from '@flighthq/types';
+import type { Node2D, MatrixLike, RectangleLike } from '@flighthq/types/contract';
 
 /**
  * Writes into outCacheTransform the transform to pass to the cache resolver so the

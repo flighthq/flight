@@ -1,6 +1,6 @@
 import { logOnce } from '@flighthq/log';
-import type { RenderState } from '@flighthq/types';
-import { LogLevel } from '@flighthq/types';
+import type { RenderState } from '@flighthq/types/contract';
+import { LogLevel } from '@flighthq/types/contract';
 
 import { getRenderStateRuntime } from './renderState';
 

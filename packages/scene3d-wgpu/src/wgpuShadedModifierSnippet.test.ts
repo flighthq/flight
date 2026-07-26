@@ -1,5 +1,5 @@
-import type { WgpuModifierSnippet } from '@flighthq/types';
-import { ModifierSlot } from '@flighthq/types';
+import type { WgpuModifierSnippet } from '@flighthq/types/contract';
+import { ModifierSlot } from '@flighthq/types/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';

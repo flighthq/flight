@@ -7,7 +7,7 @@ import type {
   RenderQueueEntry,
   RenderSortKey,
   RenderState,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { getRenderStateRuntime } from './renderState';
 

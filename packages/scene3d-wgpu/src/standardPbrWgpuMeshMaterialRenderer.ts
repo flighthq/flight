@@ -15,7 +15,7 @@ import type {
   WgpuPbrPipeline,
   WgpuPbrDefineKey,
   WgpuMaterialBinding,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import {
   beginWgpuMeshDraw,

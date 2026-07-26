@@ -1,4 +1,4 @@
-import type { GlRenderState, GlRenderTarget } from '@flighthq/types';
+import type { GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
 

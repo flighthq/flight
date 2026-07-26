@@ -5,7 +5,7 @@ import {
   updateMeshMorph,
 } from '@flighthq/mesh';
 import { createMesh } from '@flighthq/scene3d';
-import type { Mesh, MeshMorph, MeshSkinBindPose, VertexAttributeLayout, GlMeshUpload } from '@flighthq/types';
+import type { Mesh, MeshMorph, MeshSkinBindPose, VertexAttributeLayout, GlMeshUpload } from '@flighthq/types/contract';
 
 import { destroyGlMeshUpload, ensureGlMeshUpload } from './glMeshUpload';
 import { getGlScene3DRuntime } from './glScene3DRuntime';

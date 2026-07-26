@@ -1,5 +1,5 @@
-import type { GlMaterialRenderer, Material } from '@flighthq/types';
-import { StandardMaterialKind } from '@flighthq/types';
+import type { GlMaterialRenderer, Material } from '@flighthq/types/contract';
+import { StandardMaterialKind } from '@flighthq/types/contract';
 
 import { getGlMaterialRenderer, registerGlMaterialRenderer, resolveGlMaterialRenderer } from './glMaterialRegistry';
 import { createGlState } from './glTestHelper';

@@ -8,8 +8,8 @@ import type {
   Scene3DRenderProxy,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
-} from '@flighthq/types';
-import { NormalMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { NormalMaterialKind } from '@flighthq/types/contract';
 
 import { bindWgpuDebugSurface, ensureWgpuDebugPipeline } from './wgpuDebugPrelude';
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';

@@ -1,4 +1,4 @@
-import type { Scene2DClipHooks, Renderer, RenderState } from '@flighthq/types';
+import type { Scene2DClipHooks, Renderer, RenderState } from '@flighthq/types/contract';
 
 import {
   copyAllRenderersFromRenderState,

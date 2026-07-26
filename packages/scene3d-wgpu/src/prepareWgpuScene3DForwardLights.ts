@@ -1,7 +1,7 @@
 import { createAabb, createBoundingSphere, setBoundingSphereFromAabb } from '@flighthq/geometry';
 import { selectScene3DForwardLights } from '@flighthq/lighting';
 import { getNodeWorldMatrix4 } from '@flighthq/node';
-import { packScene3DLightBlock } from '@flighthq/render';
+import { packScene3DLightBlock } from '@flighthq/render/contract';
 import { getNode3DWorldBounds } from '@flighthq/scene3d';
 import type {
   Mesh,
@@ -11,8 +11,8 @@ import type {
   Scene3DRenderList,
   WgpuRenderState,
   WgpuScene3DForwardLightList,
-} from '@flighthq/types';
-import { SCENE_LIGHT_BLOCK_FLOATS } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { SCENE_LIGHT_BLOCK_FLOATS } from '@flighthq/types/contract';
 
 // WebGPU twin of prepareGlScene3DForwardLights: rank point and spot lights at each visible mesh's
 // world-space bounding sphere, pack the nearest/contributing four of each family, and deduplicate

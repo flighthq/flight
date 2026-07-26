@@ -1,6 +1,6 @@
 import { logOnce } from '@flighthq/log';
-import type { Scene3DLightsLike, WgpuRenderState } from '@flighthq/types';
-import { LogLevel } from '@flighthq/types';
+import type { Scene3DLightsLike, WgpuRenderState } from '@flighthq/types/contract';
+import { LogLevel } from '@flighthq/types/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 

@@ -1,8 +1,8 @@
 import { hasImageResourcePixels } from '@flighthq/image';
-import { noopRendererData } from '@flighthq/render';
 import { bindWgpuImageResourceTexture } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { ParticleEmitter2D, RenderProxy2D, SpriteRenderer, WgpuRenderState } from '@flighthq/types';
+import { noopRendererData } from '@flighthq/render/contract';
+import type { ParticleEmitter2D, RenderProxy2D, SpriteRenderer, WgpuRenderState } from '@flighthq/types/contract';
 
 import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
 

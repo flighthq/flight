@@ -7,7 +7,7 @@ import {
   getTextInputState,
 } from '@flighthq/textinput';
 import { getRichTextScrollYOffset } from '@flighthq/textlayout';
-import type { RichText, TextLayoutResult, TextSelectionRectangle } from '@flighthq/types';
+import type { RichText, TextLayoutResult, TextSelectionRectangle } from '@flighthq/types/contract';
 
 import { registerGlTextInputOverlay } from './glRichText';
 

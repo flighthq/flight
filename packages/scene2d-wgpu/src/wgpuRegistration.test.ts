@@ -1,5 +1,5 @@
-import { getRenderStateRuntime } from '@flighthq/render';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
+import { getRenderStateRuntime } from '@flighthq/render/contract';
 import {
   BitmapKind,
   DisplayObjectKind,
@@ -12,7 +12,7 @@ import {
   TextLabelKind,
   TilemapKind,
   VideoKind,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { registerWgpuScene2DRenderers, registerWgpuSpriteRenderers } from './wgpuRegistration';
 

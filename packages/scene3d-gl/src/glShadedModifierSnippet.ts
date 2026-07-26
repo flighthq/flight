@@ -1,5 +1,5 @@
 import { createModifierRegistry, registerModifier, resolveModifier } from '@flighthq/shading';
-import type { GlModifierSnippet, GlRenderState, ModifierKind } from '@flighthq/types';
+import type { GlModifierSnippet, GlRenderState, ModifierKind } from '@flighthq/types/contract';
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 // Registers (or replaces) the GL snippet for a modifier kind on this state's scene runtime. Opt-in

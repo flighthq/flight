@@ -1,4 +1,4 @@
-import type { DomRenderState } from '@flighthq/types';
+import type { DomRenderState } from '@flighthq/types/contract';
 
 export function renderDomBackground(state: DomRenderState): void {
   if ((state.backgroundColor & 0xff) !== 0) {

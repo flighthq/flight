@@ -1,7 +1,7 @@
 ﻿import { setMatrix } from '@flighthq/geometry';
-import { getOrCreateRenderProxy2D } from '@flighthq/render';
+import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d';
-import { BlendMode } from '@flighthq/types';
+import { BlendMode } from '@flighthq/types/contract';
 
 import { enableDomCssFilterSupport, setDomCssFilter } from './domCSSFilterBinding';
 import { enableDomBlendModeSupport } from './domMaterials';

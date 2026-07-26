@@ -1,5 +1,5 @@
-import type { CanvasRenderState } from '@flighthq/types';
-import { AdvancedBlendMode, BlendMode } from '@flighthq/types';
+import type { CanvasRenderState } from '@flighthq/types/contract';
+import { AdvancedBlendMode, BlendMode } from '@flighthq/types/contract';
 
 import { applyCanvasBlendMode, enableCanvasBlendMode } from './canvasMaterials';
 import { createCanvasRenderState, getCanvasRenderStateRuntime } from './canvasRenderState';

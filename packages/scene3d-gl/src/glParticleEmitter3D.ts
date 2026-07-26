@@ -1,7 +1,7 @@
 import { hasImageResourcePixels } from '@flighthq/image';
 import { getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node';
-import { prepareScene3DRender } from '@flighthq/render';
 import { bindGlTexture, createGlProgram, invalidateGlRenderStateCache } from '@flighthq/render-gl';
+import { prepareScene3DRender } from '@flighthq/render/contract';
 import type {
   Camera3D,
   GlRenderState,
@@ -12,8 +12,8 @@ import type {
   ParticleEmitterData,
   Scene3DLightsLike,
   Node3D,
-} from '@flighthq/types';
-import { ParticleEmitter3DKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { ParticleEmitter3DKind } from '@flighthq/types/contract';
 
 // Per-instance layout (16 floats = 64 bytes):
 // [0]  px         float   world x

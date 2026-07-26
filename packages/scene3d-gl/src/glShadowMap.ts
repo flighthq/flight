@@ -3,7 +3,7 @@ import { createMatrix4 } from '@flighthq/geometry';
 import { hasMeshGeometrySkin } from '@flighthq/mesh';
 import { forEachNodeDescendant, getNodeWorldMatrix4 } from '@flighthq/node';
 import { createGlRenderTarget, uploadGlSkinPaletteTexture } from '@flighthq/render-gl';
-import type { Camera3D, GlRenderState, Mesh, Node3D, Node3DTraits, GlMeshProgram } from '@flighthq/types';
+import type { Camera3D, GlRenderState, Mesh, Node3D, Node3DTraits, GlMeshProgram } from '@flighthq/types/contract';
 
 import {
   compileGlProgram,

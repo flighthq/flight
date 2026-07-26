@@ -1,7 +1,7 @@
 import { addNodeChild } from '@flighthq/node';
-import { getOrCreateRenderProxy2D, prepareScene2DRender, registerRenderer } from '@flighthq/render';
+import { getOrCreateRenderProxy2D, prepareScene2DRender, registerRenderer } from '@flighthq/render/contract';
 import { createSprite } from '@flighthq/sprite';
-import { SpriteKind } from '@flighthq/types';
+import { SpriteKind } from '@flighthq/types/contract';
 
 import { renderGlSprite } from './glSprite';
 import { createGlState } from './glTestHelper';

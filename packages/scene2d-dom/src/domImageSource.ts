@@ -1,5 +1,5 @@
 import { createCanvasFromImageResource } from '@flighthq/image';
-import type { DomImageSourceKind, DomRenderState, ImageResource } from '@flighthq/types';
+import type { DomImageSourceKind, DomRenderState, ImageResource } from '@flighthq/types/contract';
 
 import { getDomRenderStateRuntime } from './domRenderState';
 

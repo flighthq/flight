@@ -1,6 +1,6 @@
 import { createBitmapText, getBitmapTextPages, updateBitmapText } from '@flighthq/bitmaptext';
 import { setNodeColorAdjustmentsTint } from '@flighthq/node';
-import type { BitmapText, GlyphEntry, GlyphSource, ImageResource, RenderProxy2D } from '@flighthq/types';
+import type { BitmapText, GlyphEntry, GlyphSource, ImageResource, RenderProxy2D } from '@flighthq/types/contract';
 
 import { defaultGlBitmapTextRenderer } from './glBitmapText';
 import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature';

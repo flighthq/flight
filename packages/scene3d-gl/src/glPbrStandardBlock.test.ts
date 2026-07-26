@@ -1,5 +1,5 @@
 import { createStandardPbrMaterial, createStandardPbrMaterialProperties } from '@flighthq/materials';
-import type { StandardPbrMaterialProperties, Texture } from '@flighthq/types';
+import type { StandardPbrMaterialProperties, Texture } from '@flighthq/types/contract';
 
 import { compileGlPbrProgram } from './glPbrProgramCache';
 import {

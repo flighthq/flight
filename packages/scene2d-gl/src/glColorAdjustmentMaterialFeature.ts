@@ -11,8 +11,8 @@ import type {
   GlUniformColorScaleBiasShader,
   RenderProxy2D,
   TintMaterialData,
-} from '@flighthq/types';
-import type { GlShapeMeshBinding } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import type { GlShapeMeshBinding } from '@flighthq/types/contract';
 
 import { drawGlShapeMeshBatch, ensureGlShapeMeshProgram } from './glShapeMesh';
 import {

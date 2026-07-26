@@ -1,4 +1,4 @@
-import type { WgpuRenderState, WgpuRenderStats } from '@flighthq/types';
+import type { WgpuRenderState, WgpuRenderStats } from '@flighthq/types/contract';
 
 /**
  * Returns a snapshot of the current frame's GPU draw statistics for `state`. The returned object

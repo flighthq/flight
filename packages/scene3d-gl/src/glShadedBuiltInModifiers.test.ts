@@ -8,7 +8,7 @@ import {
   createToonModifier,
   createVertexDisplaceModifier,
 } from '@flighthq/shading';
-import type { Texture, GlModifierBindContext } from '@flighthq/types';
+import type { Texture, GlModifierBindContext } from '@flighthq/types/contract';
 import {
   AnimatedNormalModifierKind,
   DissolveModifierKind,
@@ -21,7 +21,7 @@ import {
   ToonModifierKind,
   VertexDisplaceModifierKind,
   VertexDisplaceModifierSource,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import type { FakeGl2 } from './glScene3DTestHelper';
 import { makeGlScene3DState } from './glScene3DTestHelper';

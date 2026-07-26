@@ -12,8 +12,8 @@ import type {
   Scene3DRenderProxy,
   Texture,
   GlMeshProgram,
-} from '@flighthq/types';
-import { CustomShaderMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { CustomShaderMaterialKind } from '@flighthq/types/contract';
 
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import {

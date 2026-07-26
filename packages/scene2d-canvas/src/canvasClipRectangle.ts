@@ -1,4 +1,4 @@
-import type { CanvasRenderState, Matrix, PathWinding, RectangleLike } from '@flighthq/types';
+import type { CanvasRenderState, Matrix, PathWinding, RectangleLike } from '@flighthq/types/contract';
 
 import { setCanvasTransform } from './canvasTransform';
 

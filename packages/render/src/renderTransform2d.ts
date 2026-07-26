@@ -1,6 +1,6 @@
 import { copyMatrix, multiplyMatrix } from '@flighthq/geometry';
 import { getNodeLocalMatrix, getNodeLocalTransformRevision } from '@flighthq/node';
-import type { HasTransform2D, Node, RenderProxy2D, RenderState } from '@flighthq/types';
+import type { HasTransform2D, Node, RenderProxy2D, RenderState } from '@flighthq/types/contract';
 
 import { getRenderStateRuntime } from './renderState';
 

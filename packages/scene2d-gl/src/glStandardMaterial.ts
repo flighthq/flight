@@ -1,6 +1,6 @@
 import { registerGlMaterialRenderer } from '@flighthq/render-gl';
-import type { GlMaterialRenderer, GlRenderState } from '@flighthq/types';
-import { StandardMaterialKind } from '@flighthq/types';
+import type { GlMaterialRenderer, GlRenderState } from '@flighthq/types/contract';
+import { StandardMaterialKind } from '@flighthq/types/contract';
 
 import {
   bindGlQuadBatchBaseAttributes,

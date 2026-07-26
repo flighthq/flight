@@ -8,8 +8,8 @@ import type {
   Scene3DRenderProxy,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
-} from '@flighthq/types';
-import { IridescencePbrMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { IridescencePbrMaterialKind } from '@flighthq/types/contract';
 
 import {
   buildWgpuPbrStandardDefineKey,

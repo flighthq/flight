@@ -22,8 +22,8 @@ import type {
   Transform2DNode,
   Velocity2D,
   VelocityField,
-} from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { getVelocity } from '@flighthq/velocity';
 
 // Gl velocity-buffer production. Velocity is tied to the draw, so production is per-kind: the velocity

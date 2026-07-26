@@ -1,5 +1,5 @@
-import { noopRendererData } from '@flighthq/render';
-import type { Scene2DRenderer, DomRenderState, RenderProxy2D, RenderView } from '@flighthq/types';
+import { noopRendererData } from '@flighthq/render/contract';
+import type { Scene2DRenderer, DomRenderState, RenderProxy2D, RenderView } from '@flighthq/types/contract';
 
 import { applyDomStyle, setDomRendererElement } from './domStyle';
 

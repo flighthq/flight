@@ -1,5 +1,5 @@
-import type { CanvasMaterialRenderer, CanvasRenderState, Kind, Material } from '@flighthq/types';
-import { StandardMaterialKind } from '@flighthq/types';
+import type { CanvasMaterialRenderer, CanvasRenderState, Kind, Material } from '@flighthq/types/contract';
+import { StandardMaterialKind } from '@flighthq/types/contract';
 
 import { getCanvasRenderStateRuntime } from './canvasRenderState';
 

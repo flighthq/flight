@@ -1,4 +1,4 @@
-import type { Node2D, Scene2DClipHooks, DomRenderState, RenderProxy2D, RenderState } from '@flighthq/types';
+import type { Node2D, Scene2DClipHooks, DomRenderState, RenderProxy2D, RenderState } from '@flighthq/types/contract';
 
 import { pushDomClipContours } from './domClipContours';
 import { pushDomClipRectangle, setDomClipHooks } from './domClipRectangle';

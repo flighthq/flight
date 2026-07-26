@@ -1,4 +1,4 @@
-import type { GlPbrDefineKey } from '@flighthq/types';
+import type { GlPbrDefineKey } from '@flighthq/types/contract';
 
 import { compileGlPbrProgram, ensureGlPbrProgram } from './glPbrProgramCache';
 import { getGlScene3DRuntime } from './glScene3DRuntime';

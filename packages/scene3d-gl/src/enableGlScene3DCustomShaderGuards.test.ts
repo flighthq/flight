@@ -1,7 +1,7 @@
 import { createCamera3D } from '@flighthq/camera';
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log';
 import { createCustomShaderMaterial } from '@flighthq/materials';
-import type { Camera3D, Scene3DLightBlock } from '@flighthq/types';
+import type { Camera3D, Scene3DLightBlock } from '@flighthq/types/contract';
 
 import {
   customShaderGlMeshMaterialRenderer,

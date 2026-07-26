@@ -11,8 +11,8 @@ import type {
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
   WgpuUnlitDefineKey,
-} from '@flighthq/types';
-import { EmissiveMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { EmissiveMaterialKind } from '@flighthq/types/contract';
 
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { beginWgpuMeshDraw, drawWgpuMeshSubset, isWgpuTextureReady, writeWgpuFrameUniform } from './wgpuMeshPipeline';

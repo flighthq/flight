@@ -5,7 +5,7 @@ import type {
   WgpuShapeMesh,
   WgpuShapeMeshBuffers,
   WgpuShapeMeshPipeline,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
 

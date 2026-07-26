@@ -1,5 +1,5 @@
 ﻿import { createImageResource } from '@flighthq/image';
-import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render';
+import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { createTilemap, setTilemapTile } from '@flighthq/sprite';
 import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas';
 import { buildTilesetRegions, createTileset } from '@flighthq/tileset';

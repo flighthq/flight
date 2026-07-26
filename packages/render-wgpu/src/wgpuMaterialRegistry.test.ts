@@ -1,5 +1,5 @@
-import type { Material, WgpuMaterialRenderer, WgpuRenderState } from '@flighthq/types';
-import { StandardMaterialKind, EntityRuntimeKey } from '@flighthq/types';
+import type { Material, WgpuMaterialRenderer, WgpuRenderState } from '@flighthq/types/contract';
+import { StandardMaterialKind, EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   getWgpuMaterialRenderer,

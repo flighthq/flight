@@ -1,4 +1,4 @@
-import type { Matrix } from '@flighthq/types';
+import type { Matrix } from '@flighthq/types/contract';
 
 export function setDomTransform(element: HTMLElement, transform: Readonly<Matrix>, roundPixels: boolean): void {
   const tx = roundPixels ? Math.fround(transform.tx) : transform.tx;

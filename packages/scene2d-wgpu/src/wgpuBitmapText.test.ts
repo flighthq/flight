@@ -1,7 +1,7 @@
 import { createBitmapText, updateBitmapText } from '@flighthq/bitmaptext';
-import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render';
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
+import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 
 import { defaultWgpuBitmapTextRenderer } from './wgpuBitmapText';
 import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';

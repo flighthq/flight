@@ -1,4 +1,4 @@
-import type { RectangleLike, Scale9Mapper } from '@flighthq/types';
+import type { RectangleLike, Scale9Mapper } from '@flighthq/types/contract';
 
 export function buildDomScale9Mapper(
   bounds: Readonly<RectangleLike>,

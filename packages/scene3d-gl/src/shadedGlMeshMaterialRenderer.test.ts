@@ -2,8 +2,8 @@ import { createCamera3D } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { createEmissiveModifier, createRimModifier, createShadedMaterial } from '@flighthq/shading';
-import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types';
-import { ShadedMaterialKind } from '@flighthq/types';
+import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
+import { ShadedMaterialKind } from '@flighthq/types/contract';
 
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { getGlScene3DRuntime } from './glScene3DRuntime';

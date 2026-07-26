@@ -9,7 +9,7 @@ import type {
   RenderProxy2D,
   RenderState,
   Shape,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { prepareDomElement, setDomRendererElement } from './domStyle';
 import { setDomTransformWithOffset } from './domTransform';

@@ -1,4 +1,4 @@
-import { StandardPbrMaterialKind } from '@flighthq/types';
+import { StandardPbrMaterialKind } from '@flighthq/types/contract';
 
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { makeGlScene3DState } from './glScene3DTestHelper';

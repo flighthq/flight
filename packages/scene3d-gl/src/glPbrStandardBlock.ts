@@ -10,7 +10,7 @@ import type {
   Texture,
   GlPbrDefineKey,
   GlPbrProgram,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { bindGlUvTransform } from './glMeshProgram';
 

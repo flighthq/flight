@@ -1,4 +1,4 @@
-import type { Environment } from '@flighthq/types';
+import type { Environment } from '@flighthq/types/contract';
 
 import { bakeGlEnvironmentIbl, destroyGlEnvironmentIblBakePrograms } from './glEnvironmentIblBake';
 import { getGlScene3DRuntime } from './glScene3DRuntime';

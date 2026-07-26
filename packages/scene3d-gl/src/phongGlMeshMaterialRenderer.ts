@@ -13,8 +13,8 @@ import type {
   Scene3DRenderProxy,
   GlClassicDefineKey,
   GlClassicProgram,
-} from '@flighthq/types';
-import { PhongMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { PhongMaterialKind } from '@flighthq/types/contract';
 
 import { ensureGlClassicProgram } from './glClassicPrelude';
 import { bindGlMeshLightBlock } from './glLitProgram';

@@ -1,7 +1,7 @@
-import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render';
+import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { createBitmap } from '@flighthq/scene2d';
-import type { ImageResource, VideoTexture } from '@flighthq/types';
-import { BlendMode } from '@flighthq/types';
+import type { ImageResource, VideoTexture } from '@flighthq/types/contract';
+import { BlendMode } from '@flighthq/types/contract';
 
 import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
 import {

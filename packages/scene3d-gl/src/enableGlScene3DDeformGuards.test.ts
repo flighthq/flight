@@ -6,7 +6,7 @@ import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, createMeshGeometry, createBoxMe
 import { addNodeChild } from '@flighthq/node';
 import { createMesh, createNode3D, prepareScene3DMorph, Node3DKind } from '@flighthq/scene3d';
 import { createSkeleton3D, prepareScene3DSkinning } from '@flighthq/skeleton3d';
-import type { Camera3D, MeshMorph, Scene3DLightsLike } from '@flighthq/types';
+import type { Camera3D, MeshMorph, Scene3DLightsLike } from '@flighthq/types/contract';
 
 import { drawGlScene3D } from './drawGlScene3D';
 import { areGlScene3DDeformGuardsEnabled, enableGlScene3DDeformGuards } from './enableGlScene3DDeformGuards';

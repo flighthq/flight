@@ -1,4 +1,4 @@
-import type { ImageResource } from '@flighthq/types';
+import type { ImageResource } from '@flighthq/types/contract';
 
 import { uploadWgpuTextureData, uploadWgpuTextureElement, uploadWgpuTextureImageResource } from './wgpuTextureUpload';
 

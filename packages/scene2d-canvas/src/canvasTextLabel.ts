@@ -1,5 +1,5 @@
 ﻿import { computeRgbHexString } from '@flighthq/color';
-import { noopRendererData } from '@flighthq/render';
+import { noopRendererData } from '@flighthq/render/contract';
 import { computeTextFormatFontString, getTextLabelRuntime } from '@flighthq/text';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout';
 import type {
@@ -9,7 +9,7 @@ import type {
   TextFormat,
   TextLabel,
   TextLabelRuntime,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { drawCanvasScene2D } from './canvasNode2D';
 import { setCanvasTransform } from './canvasTransform';

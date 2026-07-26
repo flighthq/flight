@@ -1,4 +1,4 @@
-import type { RenderState } from '@flighthq/types';
+import type { RenderState } from '@flighthq/types/contract';
 
 export function setRenderStateBackgroundColor(state: RenderState, color: number): void {
   // backgroundColor/RGBA/String are readonly on the entity but owned and written here; narrow

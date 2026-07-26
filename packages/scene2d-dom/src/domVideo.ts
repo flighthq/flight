@@ -7,7 +7,7 @@ import type {
   RenderProxy2D,
   RenderState,
   Video,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle';
 

@@ -1,4 +1,4 @@
-import type { CanvasShapeCommand, ShapeCommandKey } from '@flighthq/types';
+import type { CanvasShapeCommand, ShapeCommandKey } from '@flighthq/types/contract';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const registry = new Map<string, CanvasShapeCommand<any>>();

@@ -1,5 +1,5 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import type { RendererData, RenderProxy2D, VideoTexture } from '@flighthq/types';
+import type { RendererData, RenderProxy2D, VideoTexture } from '@flighthq/types/contract';
 
 import { createGlState } from './glTestHelper';
 import { createGlVideoData, defaultGlVideoRenderer, destroyGlVideoData, drawGlVideo } from './glVideo';

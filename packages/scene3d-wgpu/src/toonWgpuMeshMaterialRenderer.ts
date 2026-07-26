@@ -11,8 +11,8 @@ import type {
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
   WgpuToonDefineKey,
-} from '@flighthq/types';
-import { ToonMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { ToonMaterialKind } from '@flighthq/types/contract';
 
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { beginWgpuMeshDraw, drawWgpuMeshSubset, writeWgpuFrameUniform } from './wgpuMeshPipeline';

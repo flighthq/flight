@@ -1,5 +1,5 @@
 import { uploadWgpuTextureImageResource } from '@flighthq/render-wgpu';
-import type { CubeTexture, Environment, ImageResource, WgpuRenderState } from '@flighthq/types';
+import type { CubeTexture, Environment, ImageResource, WgpuRenderState } from '@flighthq/types/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 

@@ -1,4 +1,4 @@
-import type { LinearColor, WgpuToonDefineKey } from '@flighthq/types';
+import type { LinearColor, WgpuToonDefineKey } from '@flighthq/types/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper';

@@ -1,5 +1,5 @@
-﻿import { noopRendererData } from '@flighthq/render';
-import type { CanvasRenderState, RenderProxy2D, SpriteRenderer, Tilemap } from '@flighthq/types';
+﻿import { noopRendererData } from '@flighthq/render/contract';
+import type { CanvasRenderState, RenderProxy2D, SpriteRenderer, Tilemap } from '@flighthq/types/contract';
 
 import { applyCanvasMaterial } from './canvasMaterialRegistry';
 

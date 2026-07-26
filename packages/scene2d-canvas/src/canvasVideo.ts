@@ -1,5 +1,5 @@
-﻿import { noopRendererData } from '@flighthq/render';
-import type { CanvasRenderState, Scene2DRenderer, RenderProxy2D, Video } from '@flighthq/types';
+﻿import { noopRendererData } from '@flighthq/render/contract';
+import type { CanvasRenderState, Scene2DRenderer, RenderProxy2D, Video } from '@flighthq/types/contract';
 
 import { drawCanvasScene2D } from './canvasNode2D';
 import { setCanvasTransform } from './canvasTransform';

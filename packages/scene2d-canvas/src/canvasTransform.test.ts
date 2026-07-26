@@ -1,5 +1,5 @@
 import { createMatrix } from '@flighthq/geometry';
-import type { CanvasRenderState, Matrix } from '@flighthq/types';
+import type { CanvasRenderState, Matrix } from '@flighthq/types/contract';
 
 import { createCanvasRenderState } from './canvasRenderState';
 import { setCanvasTransform } from './canvasTransform';

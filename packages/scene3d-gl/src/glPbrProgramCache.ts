@@ -1,5 +1,10 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import type { GlColorAdjustmentMaterialFeature, GlPbrProgram, GlRenderState, GlPbrDefineKey } from '@flighthq/types';
+import type {
+  GlColorAdjustmentMaterialFeature,
+  GlPbrProgram,
+  GlRenderState,
+  GlPbrDefineKey,
+} from '@flighthq/types/contract';
 
 import { resolveGlLitLocations } from './glLitProgram';
 import { compileGlProgram, ensureGlScene3DProgram } from './glMeshProgram';

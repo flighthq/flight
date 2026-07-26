@@ -9,8 +9,8 @@ import type {
   Scene3DLightBlock,
   Scene3DRenderProxy,
   WireframeMaterial,
-} from '@flighthq/types';
-import { WireframeMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { WireframeMaterialKind } from '@flighthq/types/contract';
 
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { beginGlMeshDraw, setGlMeshViewProjection } from './glMeshProgram';

@@ -1,7 +1,7 @@
-import { getOrCreateRenderProxy2D } from '@flighthq/render';
+import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createRichText } from '@flighthq/text';
 import { enableTextInput, setTextInputSelection } from '@flighthq/textinput';
-import type { RichText } from '@flighthq/types';
+import type { RichText } from '@flighthq/types/contract';
 
 import { createCanvasRenderState } from './canvasRenderState';
 import { drawCanvasRichText } from './canvasRichText';

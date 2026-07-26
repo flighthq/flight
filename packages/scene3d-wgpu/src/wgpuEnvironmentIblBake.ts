@@ -1,4 +1,4 @@
-import type { Environment, WgpuRenderState, WgpuScene3DIbl } from '@flighthq/types';
+import type { Environment, WgpuRenderState, WgpuScene3DIbl } from '@flighthq/types/contract';
 
 import { ensureWgpuEnvironmentSourceCube } from './wgpuEnvironmentCube';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';

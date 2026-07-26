@@ -1,7 +1,7 @@
-import { getRenderProxy2D, isRenderProxyVisible } from '@flighthq/render';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
+import { getRenderProxy2D, isRenderProxyVisible } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d';
-import type { Node2D, WgpuRenderState } from '@flighthq/types';
+import type { Node2D, WgpuRenderState } from '@flighthq/types/contract';
 
 import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
 

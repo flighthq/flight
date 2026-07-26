@@ -1,4 +1,4 @@
-import type { CubeTexture, Environment, ImageResource } from '@flighthq/types';
+import type { CubeTexture, Environment, ImageResource } from '@flighthq/types/contract';
 
 import { bakeWgpuEnvironmentIbl, destroyWgpuScene3DIbl } from './wgpuEnvironmentIblBake';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';

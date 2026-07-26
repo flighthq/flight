@@ -2,8 +2,8 @@ import { createCamera3D } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
-import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types';
-import { BlinnPhongMaterialKind } from '@flighthq/types';
+import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
+import { BlinnPhongMaterialKind } from '@flighthq/types/contract';
 
 import { blinnPhongGlMeshMaterialRenderer, registerBlinnPhongGlMaterial } from './blinnPhongGlMeshMaterialRenderer';
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';

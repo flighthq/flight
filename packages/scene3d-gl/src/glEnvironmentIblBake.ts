@@ -1,5 +1,5 @@
 import { createGlProgram } from '@flighthq/render-gl';
-import type { Environment, GlRenderState } from '@flighthq/types';
+import type { Environment, GlRenderState } from '@flighthq/types/contract';
 
 import { ensureGlEnvironmentSourceCube, getGlCubeFaceTarget } from './glEnvironmentCube';
 import { getGlScene3DRuntime } from './glScene3DRuntime';

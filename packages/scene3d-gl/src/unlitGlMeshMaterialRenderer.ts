@@ -11,8 +11,8 @@ import type {
   Scene3DRenderProxy,
   UnlitMaterial,
   GlUnlitDefineKey,
-} from '@flighthq/types';
-import { UnlitMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { UnlitMaterialKind } from '@flighthq/types/contract';
 
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import {

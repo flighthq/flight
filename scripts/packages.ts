@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import pc from 'picocolors';
@@ -64,6 +64,11 @@ interface PackageTsConfig {
 }
 
 interface CheckError {
+  label: string;
+  detail?: string;
+}
+
+interface CheckWarning {
   label: string;
   detail?: string;
 }
@@ -226,6 +231,58 @@ function scanFlightImports(files: string[]): Set<string> {
   return imports;
 }
 
+const convertedContractLanePackages = new Set(['@flighthq/render', '@flighthq/types']);
+
+function scanContractLaneImports(files: string[]): Map<string, string[]> {
+  const violations = new Map<string, string[]>();
+
+  for (const filePath of files) {
+    const sourceFile = ts.createSourceFile(filePath, readFileSync(filePath, 'utf-8'), ts.ScriptTarget.Latest, true);
+    const specifiers = new Set<string>();
+
+    function visit(node: ts.Node): void {
+      let specifier: string | undefined;
+      if (
+        (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
+        node.moduleSpecifier &&
+        ts.isStringLiteral(node.moduleSpecifier)
+      ) {
+        specifier = node.moduleSpecifier.text;
+      } else if (
+        ts.isImportEqualsDeclaration(node) &&
+        ts.isExternalModuleReference(node.moduleReference) &&
+        node.moduleReference.expression &&
+        ts.isStringLiteral(node.moduleReference.expression)
+      ) {
+        specifier = node.moduleReference.expression.text;
+      } else if (
+        ts.isCallExpression(node) &&
+        node.expression.kind === ts.SyntaxKind.ImportKeyword &&
+        node.arguments.length === 1 &&
+        ts.isStringLiteral(node.arguments[0])
+      ) {
+        specifier = node.arguments[0].text;
+      }
+
+      if (specifier !== undefined) specifiers.add(specifier);
+      ts.forEachChild(node, visit);
+    }
+
+    visit(sourceFile);
+
+    for (const specifier of specifiers) {
+      const packageName = specifier.split('/').slice(0, 2).join('/');
+      if (!convertedContractLanePackages.has(packageName) || specifier === `${packageName}/contract`) continue;
+      const filesForPackage = violations.get(packageName);
+      const path = relative(root, filePath).replaceAll('\\', '/');
+      if (filesForPackage === undefined) violations.set(packageName, [path]);
+      else filesForPackage.push(path);
+    }
+  }
+
+  return violations;
+}
+
 function skipOuterExpressions(expression: ts.Expression): ts.Expression {
   let e: ts.Expression = expression;
   while (true) {
@@ -313,6 +370,26 @@ const packageDirs = readdirSync(packagesDir, { withFileTypes: true })
   .filter((e) => e.isDirectory())
   .map((e) => join(packagesDir, e.name));
 
+const laneBarrelPaths = packageDirs.flatMap((pkgDir) =>
+  ['index.ts', 'contract.ts'].map((file) => join(pkgDir, 'src', file)).filter((path) => existsSync(path)),
+);
+const parsedTsConfig = ts.parseJsonConfigFileContent(tsconfig ?? {}, ts.sys, root, undefined, tsconfigBasePath);
+const laneProgram = ts.createProgram(laneBarrelPaths, parsedTsConfig.options);
+const laneTypeChecker = laneProgram.getTypeChecker();
+
+function getBarrelExports(path: string): Set<string> {
+  const sourceFile = laneProgram.getSourceFile(path);
+  if (sourceFile === undefined) return new Set();
+  const symbol = laneTypeChecker.getSymbolAtLocation(sourceFile);
+  if (symbol === undefined) return new Set();
+  return new Set(
+    laneTypeChecker
+      .getExportsOfModule(symbol)
+      .map((exported) => exported.getName())
+      .filter((name) => name !== 'default'),
+  );
+}
+
 const expectedPackageFiles = [
   'dist',
   'src/**/*.test.ts',
@@ -331,6 +408,8 @@ const expectedPrepackScript = 'npm run clean && npm run clean:dist && npm run bu
 interface PackageResult {
   name: string;
   errors: CheckError[];
+  unpromotedExports: string[];
+  warnings: CheckWarning[];
 }
 
 const results: PackageResult[] = [];
@@ -342,6 +421,7 @@ for (const pkgDir of packageDirs) {
 
   const name = pkg.name;
   const errors: CheckError[] = [];
+  const warnings: CheckWarning[] = [];
 
   for (const rel of ['vitest.config.ts', 'tsconfig.json', 'src/index.ts']) {
     check(errors, `${rel} exists`, existsSync(join(pkgDir, rel)));
@@ -423,12 +503,40 @@ for (const pkgDir of packageDirs) {
   collectPackageTargetPaths(pkg.exports, packageTargets);
   checkPackageTargetPaths(errors, pkgDir, packageTargets);
 
+  if (pkg.exports !== undefined && typeof pkg.exports === 'object' && !Array.isArray(pkg.exports)) {
+    for (const subpath of Object.keys(pkg.exports).filter((key) => key.startsWith('.'))) {
+      if (subpath === '.' || subpath === './contract' || name === '@flighthq/sdk') continue;
+      if (name === '@flighthq/surface' && subpath === './surfaceFingerprint') {
+        warnings.push({
+          label: `${subpath} is a legacy package export`,
+          detail: 'retire it into the public/contract lanes during the Stage-2 sweep',
+        });
+        continue;
+      }
+      check(errors, `${subpath} is a blessed package export`, false, 'only "." and "./contract" are allowed');
+    }
+  }
+
   // --- import → dependency wiring ---
 
   const srcDir = join(pkgDir, 'src');
   const { source: srcFiles, test: testFiles } = getAllTsFiles(srcDir);
   const sourceImports = scanFlightImports(srcFiles);
   const testImports = scanFlightImports(testFiles);
+
+  if (name !== '@flighthq/sdk') {
+    const contractLaneViolations = scanContractLaneImports([...srcFiles, ...testFiles]);
+    for (const [dependency, files] of [...contractLaneViolations].sort(([a], [b]) => a.localeCompare(b))) {
+      const shown = files.slice(0, 5);
+      const remainder = files.length - shown.length;
+      warnings.push({
+        label: `${dependency} imports must use ${dependency}/contract`,
+        detail: `${files.length} file${files.length === 1 ? '' : 's'}: ${shown.join(', ')}${
+          remainder === 0 ? '' : `, +${remainder} more`
+        }`,
+      });
+    }
+  }
 
   const prodDeps = new Set<string>(
     [...Object.keys(pkg.dependencies ?? {}), ...Object.keys(pkg.peerDependencies ?? {})].filter((d) =>
@@ -477,7 +585,14 @@ for (const pkgDir of packageDirs) {
     );
   }
 
-  results.push({ name, errors });
+  const contractPath = join(pkgDir, 'src', 'contract.ts');
+  const indexPath = join(pkgDir, 'src', 'index.ts');
+  const publicExports = getBarrelExports(indexPath);
+  const unpromotedExports = existsSync(contractPath)
+    ? [...getBarrelExports(contractPath)].filter((symbol) => !publicExports.has(symbol)).sort()
+    : [];
+
+  results.push({ name, errors, unpromotedExports, warnings });
 }
 
 // --- check @flighthq/sdk barrel sync ---
@@ -628,7 +743,7 @@ const exampleDirs = readdirSync(examplesDir, { withFileTypes: true })
   .filter((e) => e.isDirectory())
   .map((e) => join(examplesDir, e.name));
 
-const exampleResults: PackageResult[] = [];
+const exampleResults: Array<{ name: string; errors: CheckError[] }> = [];
 
 for (const exampleDir of exampleDirs) {
   const pkg = readJson<ExamplePackageJson>(join(exampleDir, 'package.json'));
@@ -695,7 +810,12 @@ if (jsonMode) {
     JSON.stringify(
       {
         passed: totalErrors === 0,
-        packages: results.map((r) => ({ name: r.name, errors: r.errors })),
+        packages: results.map((r) => ({
+          name: r.name,
+          errors: r.errors,
+          warnings: r.warnings,
+          unpromotedExports: r.unpromotedExports,
+        })),
         examples: exampleResults.map((r) => ({ name: r.name, errors: r.errors })),
         barrelSync: { errors: barrelSyncErrors },
       },
@@ -724,6 +844,25 @@ if (barrelSyncErrors.length > 0) {
   console.log(`\n${pc.bold('@flighthq/sdk barrel sync')}`);
   for (const { label, detail } of barrelSyncErrors) {
     console.log(`  ${pc.red('✗')} ${label}${detail ? pc.dim(` — ${detail}`) : ''}`);
+  }
+}
+
+const warnedPackages = results.filter((r) => r.warnings.length > 0);
+for (const { name, warnings } of warnedPackages) {
+  console.log(`\n${pc.bold(name)}`);
+  for (const { label, detail } of warnings) {
+    console.log(`  ${pc.yellow('!')} ${label}${detail ? pc.dim(` — ${detail}`) : ''}`);
+  }
+}
+
+const packagesWithContractLanes = results.filter((r) =>
+  existsSync(join(packagesDir, r.name.slice('@flighthq/'.length), 'src', 'contract.ts')),
+);
+if (packagesWithContractLanes.length > 0) {
+  console.log(`\n${pc.bold('Un-promoted contract exports')}`);
+  for (const { name, unpromotedExports } of packagesWithContractLanes) {
+    const detail = unpromotedExports.length === 0 ? pc.dim('none') : unpromotedExports.join(', ');
+    console.log(`  ${pc.cyan(name)} ${pc.dim(`(${unpromotedExports.length})`)} ${detail}`);
   }
 }
 

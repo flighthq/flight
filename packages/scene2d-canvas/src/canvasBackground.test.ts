@@ -1,6 +1,6 @@
-import { setRenderStateBackgroundColor } from '@flighthq/render';
-import type { CanvasRenderState } from '@flighthq/types';
-import { BlendMode } from '@flighthq/types';
+import { setRenderStateBackgroundColor } from '@flighthq/render/contract';
+import type { CanvasRenderState } from '@flighthq/types/contract';
+import { BlendMode } from '@flighthq/types/contract';
 
 import { renderCanvasBackground } from './canvasBackground';
 import { createCanvasRenderState, getCanvasRenderStateRuntime } from './canvasRenderState';

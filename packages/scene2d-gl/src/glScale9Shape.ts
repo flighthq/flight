@@ -11,7 +11,7 @@ import type {
   RendererData,
   RenderProxy2D,
   Scale9Shape,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { buildGlScale9Mapper } from './glScale9Mapper';
 import { drawGlShape } from './glShape';

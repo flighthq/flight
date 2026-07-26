@@ -8,8 +8,8 @@ import type {
   Scene3DRenderProxy,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
-} from '@flighthq/types';
-import { ClearcoatPbrMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { ClearcoatPbrMaterialKind } from '@flighthq/types/contract';
 
 import {
   buildWgpuPbrStandardDefineKey,

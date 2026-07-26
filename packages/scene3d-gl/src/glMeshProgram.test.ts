@@ -3,7 +3,13 @@ import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry, createMeshGeometry } from '@flighthq/mesh';
 import { createTexture, setTextureUvOffset, setTextureUvScale } from '@flighthq/texture';
-import type { Camera3D, ImageResource, PrimitiveTopology, VertexAttributeLayout, GlMeshProgram } from '@flighthq/types';
+import type {
+  Camera3D,
+  ImageResource,
+  PrimitiveTopology,
+  VertexAttributeLayout,
+  GlMeshProgram,
+} from '@flighthq/types/contract';
 
 import {
   SKIN_PALETTE_TEXTURE_UNIT,

@@ -5,7 +5,7 @@ import type {
   WgpuMatcapPipeline,
   WgpuMaterialBinding,
   WgpuRenderState,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import {
   createWgpuMeshPipeline,

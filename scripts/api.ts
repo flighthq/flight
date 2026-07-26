@@ -21,6 +21,7 @@ interface PackageInfo {
   description: string;
   dir: string;
   indexPath: string;
+  contractPath: string | null;
   deps: string[];
 }
 
@@ -34,6 +35,7 @@ interface ApiPackage {
   name: string;
   description: string;
   functions: ApiFunction[];
+  contractOnlyFunctions: ApiFunction[];
 }
 
 function findPackages(): Map<string, PackageInfo> {
@@ -45,6 +47,7 @@ function findPackages(): Map<string, PackageInfo> {
     const pkgDir = join(packagesDir, entry.name);
     const pkgPath = join(pkgDir, 'package.json');
     const indexPath = join(pkgDir, 'src', 'index.ts');
+    const candidateContractPath = join(pkgDir, 'src', 'contract.ts');
     if (!existsSync(pkgPath) || !existsSync(indexPath)) continue;
 
     const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8')) as {
@@ -58,7 +61,14 @@ function findPackages(): Map<string, PackageInfo> {
 
     const allDeps = { ...pkg.dependencies, ...pkg.peerDependencies };
     const deps = Object.keys(allDeps).filter((dep) => dep.startsWith('@flighthq/') && dep !== '@flighthq/sdk');
-    found.set(pkg.name, { name: pkg.name, description: pkg.description ?? '', dir: pkgDir, indexPath, deps });
+    found.set(pkg.name, {
+      name: pkg.name,
+      description: pkg.description ?? '',
+      dir: pkgDir,
+      indexPath,
+      contractPath: existsSync(candidateContractPath) ? candidateContractPath : null,
+      deps,
+    });
   }
 
   return found;
@@ -133,12 +143,25 @@ function collectApi(project: Project, packages: readonly PackageInfo[]): ApiPack
   // marks the TypeScript program dirty, so adding-then-querying per package (the
   // old shape) rebuilt and rebound the whole growing program once per package —
   // quadratic. Adding all barrels up front lets the program build a single time.
-  for (const pkg of packages) project.addSourceFileAtPath(pkg.indexPath);
+  for (const pkg of packages) {
+    project.addSourceFileAtPath(pkg.indexPath);
+    if (pkg.contractPath !== null) project.addSourceFileAtPath(pkg.contractPath);
+  }
   return packages.map((pkg) => collectPackageApi(project, pkg));
 }
 
 function collectPackageApi(project: Project, pkg: PackageInfo): ApiPackage {
-  const sourceFile = project.addSourceFileAtPathIfExists(pkg.indexPath) ?? project.addSourceFileAtPath(pkg.indexPath);
+  const functions = collectBarrelFunctions(project, pkg.indexPath);
+  const publicNames = new Set(functions.map((fn) => fn.name));
+  const contractOnlyFunctions =
+    pkg.contractPath === null
+      ? []
+      : collectBarrelFunctions(project, pkg.contractPath).filter((fn) => !publicNames.has(fn.name));
+  return { name: pkg.name, description: pkg.description, functions, contractOnlyFunctions };
+}
+
+function collectBarrelFunctions(project: Project, barrelPath: string): ApiFunction[] {
+  const sourceFile = project.addSourceFileAtPathIfExists(barrelPath) ?? project.addSourceFileAtPath(barrelPath);
   const functions: ApiFunction[] = [];
   const seen = new Set<string>();
 
@@ -160,7 +183,7 @@ function collectPackageApi(project: Project, pkg: PackageInfo): ApiPackage {
   }
 
   functions.sort((a, b) => a.name.localeCompare(b.name));
-  return { name: pkg.name, description: pkg.description, functions };
+  return functions;
 }
 
 type ColorFn = (s: string) => string;
@@ -176,7 +199,7 @@ const PALETTE: Array<{ bg: ColorFn; fg: ColorFn }> = [
 function printConsole(packages: ApiPackage[]): void {
   let colorIndex = 0;
   for (const pkg of packages) {
-    if (pkg.functions.length === 0) continue;
+    if (pkg.functions.length === 0 && pkg.contractOnlyFunctions.length === 0) continue;
 
     const color = PALETTE[colorIndex % PALETTE.length];
     colorIndex++;
@@ -185,6 +208,14 @@ function printConsole(packages: ApiPackage[]): void {
     for (const fn of pkg.functions) {
       for (const signature of fn.signatures) {
         console.log(` ${colors.bold(color.fg('-'))} ${colorSignature(signature, color.fg)}`);
+      }
+    }
+    if (pkg.contractOnlyFunctions.length > 0) {
+      console.log(` ${colors.dim(`contract-only (${pkg.contractOnlyFunctions.length})`)}`);
+      for (const fn of pkg.contractOnlyFunctions) {
+        for (const signature of fn.signatures) {
+          console.log(` ${colors.dim('-')} ${colors.dim(colorSignature(signature, color.fg))}`);
+        }
       }
     }
     console.log('');
@@ -420,16 +451,19 @@ function filterApi(packages: ApiPackage[], options: ParsedArgs): ApiPackage[] {
     .map((pkg) => {
       const packageMatches = packageQueries.some((query) => matchPackage(pkg, query));
       const functions = pkg.functions.filter((fn) => functionQueries.some((query) => matchFunction(fn, query)));
+      const contractOnlyFunctions = pkg.contractOnlyFunctions.filter((fn) =>
+        functionQueries.some((query) => matchFunction(fn, query)),
+      );
 
       if (packageMatches && options.functionFilters.length === 0) {
         return pkg;
       }
 
-      if (functions.length === 0) {
+      if (functions.length === 0 && contractOnlyFunctions.length === 0) {
         return null;
       }
 
-      return { ...pkg, functions };
+      return { ...pkg, functions, contractOnlyFunctions };
     })
     .filter((pkg): pkg is ApiPackage => pkg !== null);
 }
@@ -459,7 +493,7 @@ function collectAccessorIssues(packages: readonly ApiPackage[]): ApiCheckIssue[]
   const issues: ApiCheckIssue[] = [];
 
   for (const pkg of packages) {
-    for (const fn of pkg.functions) {
+    for (const fn of [...pkg.functions, ...pkg.contractOnlyFunctions]) {
       if (ACCESSOR_ALLOWLIST.has(`${pkg.name} ${fn.name}`)) continue;
 
       if (/^(?:is|has)[A-Z0-9]/.test(fn.name)) {
@@ -577,12 +611,13 @@ function isBooleanShapedType(returnType: string): boolean {
 
 function runApiCheck(packages: readonly ApiPackage[]): never {
   const issues = [...collectDuplicateNameIssues(packages), ...collectAccessorIssues(packages)];
-  const functionCount = packages.reduce((sum, pkg) => sum + pkg.functions.length, 0);
+  const publicFunctionCount = packages.reduce((sum, pkg) => sum + pkg.functions.length, 0);
+  const contractOnlyFunctionCount = packages.reduce((sum, pkg) => sum + pkg.contractOnlyFunctions.length, 0);
 
   if (issues.length === 0) {
     console.log(
       `${colors.green('OK')} ${colors.bold(`API names valid`)} ${colors.dim(
-        `(${functionCount} exported functions across ${packages.length} packages)`,
+        `(${publicFunctionCount} public + ${contractOnlyFunctionCount} contract-only functions across ${packages.length} packages)`,
       )}`,
     );
     process.exit(0);

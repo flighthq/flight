@@ -1,5 +1,5 @@
-import type { ColorScaleBias, RenderProxy, WgpuRenderState } from '@flighthq/types';
-import { BlendMode } from '@flighthq/types';
+import type { ColorScaleBias, RenderProxy, WgpuRenderState } from '@flighthq/types/contract';
+import { BlendMode } from '@flighthq/types/contract';
 
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 

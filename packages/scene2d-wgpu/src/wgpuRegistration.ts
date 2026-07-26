@@ -1,5 +1,5 @@
-import { registerRenderer } from '@flighthq/render';
-import type { WgpuRenderState } from '@flighthq/types';
+import { registerRenderer } from '@flighthq/render/contract';
+import type { WgpuRenderState } from '@flighthq/types/contract';
 import {
   BitmapKind,
   BitmapTextKind,
@@ -14,7 +14,7 @@ import {
   TextLabelKind,
   TilemapKind,
   VideoKind,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { defaultWgpuBitmapRenderer } from './wgpuBitmap';
 import { defaultWgpuBitmapTextRenderer } from './wgpuBitmapText';

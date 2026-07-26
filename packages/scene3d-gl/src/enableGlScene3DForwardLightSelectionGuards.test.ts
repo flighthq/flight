@@ -4,9 +4,9 @@ import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
-import { prepareScene3DRender } from '@flighthq/render';
+import { prepareScene3DRender } from '@flighthq/render/contract';
 import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d';
-import type { Camera3D, Scene3DLightsLike } from '@flighthq/types';
+import type { Camera3D, Scene3DLightsLike } from '@flighthq/types/contract';
 
 import { drawGlScene3D } from './drawGlScene3D';
 import {

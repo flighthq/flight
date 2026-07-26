@@ -1,4 +1,4 @@
-import type { RectangleLike, Scale9Mapper } from '@flighthq/types';
+import type { RectangleLike, Scale9Mapper } from '@flighthq/types/contract';
 
 // Pure 9-slice coordinate mapping (no GPU calls): builds a Scale9Mapper that maps unscaled shape
 // coordinates into the scaled field, leaving the grid corners fixed and stretching the center. This

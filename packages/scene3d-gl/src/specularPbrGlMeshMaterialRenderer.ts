@@ -9,8 +9,8 @@ import type {
   Scene3DLightBlock,
   Scene3DRenderProxy,
   SpecularPbrMaterial,
-} from '@flighthq/types';
-import { SpecularPbrMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { SpecularPbrMaterialKind } from '@flighthq/types/contract';
 
 import { bindGlMeshLightBlock } from './glLitProgram';
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';

@@ -10,7 +10,7 @@ import type {
   RenderProxy2D,
   RenderState,
   Scale9Shape,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { buildDomScale9Mapper } from './domScale9Mapper';
 import { drawDomShape } from './domShape';

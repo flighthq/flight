@@ -1,5 +1,5 @@
-import type { GlMeshMaterialRenderer, GlRenderState, Kind, Material } from '@flighthq/types';
-import { StandardMaterialKind } from '@flighthq/types';
+import type { GlMeshMaterialRenderer, GlRenderState, Kind, Material } from '@flighthq/types/contract';
+import { StandardMaterialKind } from '@flighthq/types/contract';
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 

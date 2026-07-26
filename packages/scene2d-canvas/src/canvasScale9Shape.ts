@@ -1,4 +1,4 @@
-﻿import { noopRendererData } from '@flighthq/render';
+﻿import { noopRendererData } from '@flighthq/render/contract';
 import type {
   CanvasRenderState,
   Scene2DRenderer,
@@ -6,7 +6,7 @@ import type {
   RenderProxy2D,
   Scale9Mapper,
   Scale9Shape,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { drawCanvasScene2D } from './canvasNode2D';
 import { buildScale9Mapper } from './canvasScale9Mapper';

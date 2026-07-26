@@ -6,8 +6,8 @@ import {
   updateMeshMorph,
 } from '@flighthq/mesh';
 import { createMesh } from '@flighthq/scene3d';
-import type { MeshGeometryRuntime, MeshMorph, VertexAttributeLayout } from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
+import type { MeshGeometryRuntime, MeshMorph, VertexAttributeLayout } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { ensureWgpuMeshUpload } from './wgpuMeshUpload';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';

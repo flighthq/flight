@@ -1,4 +1,4 @@
-﻿import { getOrCreateRenderProxy2D } from '@flighthq/render';
+﻿import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createRichText } from '@flighthq/text';
 import { enableTextInput } from '@flighthq/textinput';
 

@@ -1,5 +1,5 @@
-﻿import { noopRendererData } from '@flighthq/render';
-import type { Bitmap, CanvasRenderState, Scene2DRenderer, RenderProxy2D } from '@flighthq/types';
+﻿import { noopRendererData } from '@flighthq/render/contract';
+import type { Bitmap, CanvasRenderState, Scene2DRenderer, RenderProxy2D } from '@flighthq/types/contract';
 
 import { resolveCanvasImageSource } from './canvasImageSource';
 import { drawCanvasScene2D } from './canvasNode2D';

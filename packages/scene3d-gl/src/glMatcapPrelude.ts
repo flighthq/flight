@@ -1,6 +1,6 @@
 import { hasImageResourcePixels } from '@flighthq/image';
 import { bindGlImageResourceTexture } from '@flighthq/render-gl';
-import type { GlMatcapDefineKey, GlMatcapProgram, LinearColor, GlRenderState, Texture } from '@flighthq/types';
+import type { GlMatcapDefineKey, GlMatcapProgram, LinearColor, GlRenderState, Texture } from '@flighthq/types/contract';
 
 import { compileGlProgram, ensureGlScene3DProgram } from './glMeshProgram';
 // Uploads the resolved matcap surface uniforms: the linear tint (already sRgb-decoded on the CPU),

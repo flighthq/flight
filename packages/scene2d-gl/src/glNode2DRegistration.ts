@@ -1,5 +1,5 @@
-import { registerRenderer } from '@flighthq/render';
-import type { GlRenderState } from '@flighthq/types';
+import { registerRenderer } from '@flighthq/render/contract';
+import type { GlRenderState } from '@flighthq/types/contract';
 import {
   BitmapKind,
   BitmapTextKind,
@@ -14,7 +14,7 @@ import {
   TextLabelKind,
   TilemapKind,
   VideoKind,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { defaultGlBitmapRenderer } from './glBitmap';
 import { defaultGlBitmapTextRenderer } from './glBitmapText';

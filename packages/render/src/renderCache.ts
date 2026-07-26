@@ -1,8 +1,8 @@
 import { createEntity } from '@flighthq/entity';
 import { createMatrix, multiplyMatrix } from '@flighthq/geometry';
 import { createSignal } from '@flighthq/signals';
-import type { Renderable, RenderCache, RenderCacheAdapter, Renderer, RenderState } from '@flighthq/types';
-import { RenderCacheKind } from '@flighthq/types';
+import type { Renderable, RenderCache, RenderCacheAdapter, Renderer, RenderState } from '@flighthq/types/contract';
+import { RenderCacheKind } from '@flighthq/types/contract';
 
 import { registerRenderer } from './renderer';
 import { getRenderProxyAdapter, setRenderProxyAdapter } from './renderProxyAdapter';

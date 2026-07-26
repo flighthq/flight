@@ -1,9 +1,9 @@
 import { createMatrix } from '@flighthq/geometry';
-import { createRenderCache, createRenderState, RenderCacheKind, useRenderCache } from '@flighthq/render';
 import type * as GlRenderGlModule from '@flighthq/render-gl';
+import { createRenderCache, createRenderState, RenderCacheKind, useRenderCache } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d';
-import type { GlRenderState, GlRenderTarget } from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
+import type { GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import type * as GlCacheModule from './glCache';
 import type * as GlNode2DModule from './glNode2D';

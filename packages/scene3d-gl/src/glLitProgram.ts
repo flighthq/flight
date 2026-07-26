@@ -1,4 +1,4 @@
-import type { GlLitProgram, GlRenderState, Scene3DLightBlock, GlMeshProgram } from '@flighthq/types';
+import type { GlLitProgram, GlRenderState, Scene3DLightBlock, GlMeshProgram } from '@flighthq/types/contract';
 import {
   MAX_FORWARD_LIGHTS,
   SCENE_LIGHT_HEMISPHERE_OFFSET,
@@ -7,7 +7,7 @@ import {
   SCENE_LIGHT_POINT_STRIDE,
   SCENE_LIGHT_SPOT_OFFSET,
   SCENE_LIGHT_SPOT_STRIDE,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 // The texture unit the directional shadow map binds to — above the material texture units (a material

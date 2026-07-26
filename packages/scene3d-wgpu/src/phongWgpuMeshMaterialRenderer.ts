@@ -11,8 +11,8 @@ import type {
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
   WgpuClassicDefineKey,
-} from '@flighthq/types';
-import { PhongMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { PhongMaterialKind } from '@flighthq/types/contract';
 
 import { bindWgpuClassicSurface, ensureWgpuClassicPipeline } from './wgpuClassicPrelude';
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';

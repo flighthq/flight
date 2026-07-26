@@ -1,5 +1,5 @@
-﻿import type { GlRenderState, RenderProxy, RenderProxy2D } from '@flighthq/types';
-import type { GlBitmapShader, GlShaderLocations } from '@flighthq/types';
+﻿import type { GlRenderState, RenderProxy, RenderProxy2D } from '@flighthq/types/contract';
+import type { GlBitmapShader, GlShaderLocations } from '@flighthq/types/contract';
 
 import { createGlProgram } from './glProgram';
 import { getGlRenderStateRuntime } from './glRenderState';

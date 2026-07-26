@@ -1,6 +1,6 @@
 import { registerWgpuMaterialRenderer } from '@flighthq/render-wgpu';
-import type { WgpuMaterialRenderer, WgpuRenderState } from '@flighthq/types';
-import { StandardMaterialKind } from '@flighthq/types';
+import type { WgpuMaterialRenderer, WgpuRenderState } from '@flighthq/types/contract';
+import { StandardMaterialKind } from '@flighthq/types/contract';
 
 import { getWgpuQuadBatchPreludeWGSL } from './wgpuSpriteBatch';
 

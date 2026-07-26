@@ -1,4 +1,4 @@
-import type { WgpuWireframeUpload, MeshGeometry, WgpuRenderState } from '@flighthq/types';
+import type { WgpuWireframeUpload, MeshGeometry, WgpuRenderState } from '@flighthq/types/contract';
 
 import { ensureWgpuMeshUpload } from './wgpuMeshUpload';
 // Lazily derives + uploads the wireframe line-index buffer for a geometry on this state, caching it

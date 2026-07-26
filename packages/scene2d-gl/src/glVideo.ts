@@ -15,7 +15,7 @@ import type {
   Video,
   VideoResource,
   VideoTexture,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { flushGlSpriteBatch } from './glSpriteBatch';
 

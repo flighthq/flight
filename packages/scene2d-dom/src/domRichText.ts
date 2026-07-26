@@ -24,7 +24,7 @@ import type {
   RichTextRuntime,
   TextFormat,
   TextLabelRuntime,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { getDomFontAscentCached, setDomFontAscentCached } from './domFontSource';
 import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle';

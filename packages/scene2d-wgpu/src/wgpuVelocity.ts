@@ -21,8 +21,8 @@ import type {
   WgpuRenderTarget,
   WgpuVelocityContext,
   WgpuVelocityWriter,
-} from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { getVelocity } from '@flighthq/velocity';
 
 // Wgpu velocity-buffer production, the mirror of scene2d-gl's webglVelocity. Velocity is tied to the

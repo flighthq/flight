@@ -7,8 +7,8 @@ import type {
   MeshGeometry,
   Scene3DLightBlock,
   Scene3DRenderProxy,
-} from '@flighthq/types';
-import { DepthMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { DepthMaterialKind } from '@flighthq/types/contract';
 
 import { bindGlDebugRange, ensureGlDebugProgram } from './glDebugPrelude';
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';

@@ -7,8 +7,8 @@ import type {
   NormalMaterial,
   Scene3DLightBlock,
   Scene3DRenderProxy,
-} from '@flighthq/types';
-import { NormalMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { NormalMaterialKind } from '@flighthq/types/contract';
 
 import { bindGlDebugNormalMap, ensureGlDebugProgram } from './glDebugPrelude';
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';

@@ -1,6 +1,6 @@
-import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render';
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
+import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { createTilemap } from '@flighthq/sprite';
 
 import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';

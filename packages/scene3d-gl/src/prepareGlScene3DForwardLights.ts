@@ -1,7 +1,7 @@
 import { createAabb, createBoundingSphere, setBoundingSphereFromAabb } from '@flighthq/geometry';
 import { selectScene3DForwardLights } from '@flighthq/lighting';
 import { getNodeWorldMatrix4 } from '@flighthq/node';
-import { packScene3DLightBlock } from '@flighthq/render';
+import { packScene3DLightBlock } from '@flighthq/render/contract';
 import { getNode3DWorldBounds } from '@flighthq/scene3d';
 import type {
   GlRenderState,
@@ -11,8 +11,8 @@ import type {
   Scene3DLightBlock,
   Scene3DLightsLike,
   Scene3DRenderList,
-} from '@flighthq/types';
-import { SCENE_LIGHT_BLOCK_FLOATS } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { SCENE_LIGHT_BLOCK_FLOATS } from '@flighthq/types/contract';
 
 // Prepares one punctual-light block for each visible mesh after prepareScene3DRender. The selection is
 // opt-in and explicit: scenes within each family's forward budget need not import or run it. Point

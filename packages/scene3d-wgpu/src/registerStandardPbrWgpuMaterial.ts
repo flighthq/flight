@@ -1,5 +1,5 @@
-import type { WgpuRenderState } from '@flighthq/types';
-import { StandardPbrMaterialKind } from '@flighthq/types';
+import type { WgpuRenderState } from '@flighthq/types/contract';
+import { StandardPbrMaterialKind } from '@flighthq/types/contract';
 
 import { standardPbrWgpuMeshMaterialRenderer } from './standardPbrWgpuMeshMaterialRenderer';
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';

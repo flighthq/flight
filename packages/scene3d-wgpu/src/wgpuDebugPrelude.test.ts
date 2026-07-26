@@ -1,4 +1,4 @@
-import type { WgpuDebugDefineKey } from '@flighthq/types';
+import type { WgpuDebugDefineKey } from '@flighthq/types/contract';
 
 import {
   bindWgpuDebugSurface,

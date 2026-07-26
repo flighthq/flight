@@ -2,7 +2,7 @@ import { createTintAdjustment } from '@flighthq/adjustments';
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log';
 import { setNodeColorAdjustments } from '@flighthq/node';
 import { createDisplayObject } from '@flighthq/scene2d';
-import type { Adjustment, Renderable } from '@flighthq/types';
+import type { Adjustment, Renderable } from '@flighthq/types/contract';
 
 import { areColorAdjustmentGuardsEnabled, enableColorAdjustmentGuards } from './enableColorAdjustmentGuards';
 import { updateRenderProxyColorScaleBias } from './renderColorScaleBias';

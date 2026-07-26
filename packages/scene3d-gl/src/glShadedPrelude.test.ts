@@ -5,8 +5,8 @@ import {
   createVertexDisplaceModifier,
   registerModifier,
 } from '@flighthq/shading';
-import type { GlColorAdjustmentMaterialFeature, Modifier, GlShadedDefineKey } from '@flighthq/types';
-import { VertexDisplaceModifierSource } from '@flighthq/types';
+import type { GlColorAdjustmentMaterialFeature, Modifier, GlShadedDefineKey } from '@flighthq/types/contract';
+import { VertexDisplaceModifierSource } from '@flighthq/types/contract';
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';

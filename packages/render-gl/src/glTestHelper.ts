@@ -1,7 +1,7 @@
-import { createRenderState } from '@flighthq/render';
-import type { GlRenderState, GlRenderStateRuntime } from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
-import type { GlShaderLocations } from '@flighthq/types';
+import { createRenderState } from '@flighthq/render/contract';
+import type { GlRenderState, GlRenderStateRuntime } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
+import type { GlShaderLocations } from '@flighthq/types/contract';
 
 import { createGlRenderStateRuntime } from './glRenderState';
 

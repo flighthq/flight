@@ -1,5 +1,5 @@
-import type { GlRenderTarget } from '@flighthq/types';
-import { BlendMode } from '@flighthq/types';
+import type { GlRenderTarget } from '@flighthq/types/contract';
+import { BlendMode } from '@flighthq/types/contract';
 
 import { clearGlRenderTarget, compileGlFullscreenProgram, drawGlFullscreenPass } from './glFullscreenPass';
 import { getGlRenderStateRuntime } from './glRenderState';

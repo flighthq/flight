@@ -8,8 +8,8 @@ import type {
   TextureFilter,
   TextureWrap,
   VideoTexture,
-} from '@flighthq/types';
-import { BlendMode } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { BlendMode } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
 import { setGlAttributes, setGlMatrixFromValues } from './glShader';

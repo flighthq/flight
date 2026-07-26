@@ -1,4 +1,4 @@
-import type { GlWireframeProgram, GlRenderState } from '@flighthq/types';
+import type { GlWireframeProgram, GlRenderState } from '@flighthq/types/contract';
 
 import { compileGlProgram, ensureGlScene3DProgram } from './glMeshProgram';
 

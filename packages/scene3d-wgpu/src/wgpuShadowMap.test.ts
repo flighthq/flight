@@ -6,7 +6,7 @@ import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d';
-import type { Camera3D, Scene3DLightsLike, Node3D } from '@flighthq/types';
+import type { Camera3D, Scene3DLightsLike, Node3D } from '@flighthq/types/contract';
 
 import { drawWgpuScene3D } from './drawWgpuScene3D';
 import { registerStandardPbrWgpuMaterial } from './registerStandardPbrWgpuMaterial';

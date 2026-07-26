@@ -9,8 +9,8 @@ import type {
   Scene3DLightBlock,
   Scene3DRenderProxy,
   SheenPbrMaterial,
-} from '@flighthq/types';
-import { SheenPbrMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { SheenPbrMaterialKind } from '@flighthq/types/contract';
 
 import { bindGlMeshLightBlock } from './glLitProgram';
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';

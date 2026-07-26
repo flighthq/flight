@@ -1,4 +1,4 @@
-import type { WgpuRenderState, WgpuScissorRect } from '@flighthq/types';
+import type { WgpuRenderState, WgpuScissorRect } from '@flighthq/types/contract';
 
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 

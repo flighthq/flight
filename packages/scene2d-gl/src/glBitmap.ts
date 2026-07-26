@@ -9,8 +9,8 @@ import type {
   Renderable,
   RendererData,
   RenderProxy2D,
-} from '@flighthq/types';
-import { BatchFormat } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { BatchFormat } from '@flighthq/types/contract';
 
 import {
   ensureGlQuadBatchShader,

@@ -1,7 +1,7 @@
 import { logOnce } from '@flighthq/log';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import type { GlRenderState } from '@flighthq/types';
-import { LogLevel } from '@flighthq/types';
+import type { GlRenderState } from '@flighthq/types/contract';
+import { LogLevel } from '@flighthq/types/contract';
 
 // Returns whether color-adjustment guards are installed on `state` (enableGlColorAdjustmentGuards).
 export function areGlColorAdjustmentGuardsEnabled(state: GlRenderState): boolean {

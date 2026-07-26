@@ -1,4 +1,4 @@
-import type { GlRenderTarget } from '@flighthq/types';
+import type { GlRenderTarget } from '@flighthq/types/contract';
 
 import { presentGlRenderTarget } from './glPresentRenderTarget';
 import { createGlState } from './glTestHelper';

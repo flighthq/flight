@@ -1,6 +1,6 @@
-import type { WgpuScene3DRuntime, WgpuRenderState, WgpuRenderStateRuntime } from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
-import type { WgpuSkinningAdapter } from '@flighthq/types';
+import type { WgpuScene3DRuntime, WgpuRenderState, WgpuRenderStateRuntime } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
+import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
 // Resolves scene-wgpu's private runtime for a WgpuRenderState, allocating it (and wiring the header
 // runtime slots to its registry and upload cache) on first use. Mutable by design: the draw path

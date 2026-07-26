@@ -5,7 +5,7 @@ import type {
   ImageResource,
   TextureContainer,
   TextureContainerFormat,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
 

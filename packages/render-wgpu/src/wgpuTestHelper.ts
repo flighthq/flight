@@ -1,4 +1,4 @@
-import type { WgpuRenderState } from '@flighthq/types';
+import type { WgpuRenderState } from '@flighthq/types/contract';
 
 import { createWgpuRenderState } from './wgpuRenderState';
 

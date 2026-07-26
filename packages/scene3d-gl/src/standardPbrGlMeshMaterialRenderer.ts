@@ -7,7 +7,7 @@ import type {
   Scene3DLightBlock,
   Scene3DRenderProxy,
   StandardPbrMaterial,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { bindGlMeshLightBlock } from './glLitProgram';
 import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshCameraPosition, setGlMeshViewProjection } from './glMeshProgram';

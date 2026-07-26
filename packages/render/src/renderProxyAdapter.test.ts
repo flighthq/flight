@@ -1,5 +1,5 @@
 import { createDisplayObject } from '@flighthq/scene2d';
-import type { RenderProxyAdapter } from '@flighthq/types';
+import type { RenderProxyAdapter } from '@flighthq/types/contract';
 
 import { registerRenderer } from './renderer';
 import { createRenderProxy2D } from './renderProxy';

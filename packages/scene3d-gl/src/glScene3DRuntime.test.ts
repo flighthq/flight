@@ -1,5 +1,11 @@
-import type { GlRenderStateRuntime, GlRenderTarget, Matrix4, GlMeshProgram, GlScene3DIbl } from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
+import type {
+  GlRenderStateRuntime,
+  GlRenderTarget,
+  Matrix4,
+  GlMeshProgram,
+  GlScene3DIbl,
+} from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { destroyGlScene3DRuntime, ensureGlSkinPalette, getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeGlScene3DState } from './glScene3DTestHelper';

@@ -1,6 +1,6 @@
 import { logOnce } from '@flighthq/log';
-import type { GlRenderState } from '@flighthq/types';
-import { LogLevel } from '@flighthq/types';
+import type { GlRenderState } from '@flighthq/types/contract';
+import { LogLevel } from '@flighthq/types/contract';
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 

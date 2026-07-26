@@ -1,5 +1,5 @@
-import type { Kind, Material, WgpuMeshMaterialRenderer, WgpuRenderState } from '@flighthq/types';
-import { StandardMaterialKind } from '@flighthq/types';
+import type { Kind, Material, WgpuMeshMaterialRenderer, WgpuRenderState } from '@flighthq/types/contract';
+import { StandardMaterialKind } from '@flighthq/types/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 

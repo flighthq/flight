@@ -1,4 +1,4 @@
-import type { GlColorAdjustmentMaterialFeature, GlPbrDefineKey } from '@flighthq/types';
+import type { GlColorAdjustmentMaterialFeature, GlPbrDefineKey } from '@flighthq/types/contract';
 // The shared Gl PBR prelude: the GLSL 300 es vertex + fragment uber-shader for the StandardPbr
 // forward-lit path and every PBR-extension variant. One source string is specialized per material
 // at compile time by prepending a define block (see GlPbrDefineKey / buildGlPbrDefineSource), so
@@ -25,7 +25,7 @@ import type { GlColorAdjustmentMaterialFeature, GlPbrDefineKey } from '@flighthq
 // transmission) are linear and read raw. Packed material colors are decoded to linear on the CPU
 // with unpackColorToLinear before upload, so the shader never double-decodes them.
 
-import { MAX_FORWARD_LIGHTS } from '@flighthq/types';
+import { MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
 
 import { GL_SKIN_VERTEX_DECLARATIONS_GLSL, GL_UV_TRANSFORM_VERTEX_GLSL } from './glMeshProgram';
 // A short, stable, order-independent string identity for a define key, used as the program-cache

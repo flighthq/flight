@@ -8,8 +8,8 @@ import type {
   Scene3DRenderProxy,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
-} from '@flighthq/types';
-import { AnisotropyPbrMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { AnisotropyPbrMaterialKind } from '@flighthq/types/contract';
 
 import {
   buildWgpuPbrStandardDefineKey,

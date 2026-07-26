@@ -1,4 +1,4 @@
-import type { GlWireframeUpload, GlRenderState, MeshGeometry } from '@flighthq/types';
+import type { GlWireframeUpload, GlRenderState, MeshGeometry } from '@flighthq/types/contract';
 
 import { ensureGlMeshUpload } from './glMeshUpload';
 // Lazily derives and uploads the wireframe line-index VAO for a geometry on this state, caching it

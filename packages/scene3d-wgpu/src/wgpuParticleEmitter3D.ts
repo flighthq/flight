@@ -1,7 +1,7 @@
 import { hasImageResourcePixels } from '@flighthq/image';
 import { getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node';
-import { prepareScene3DRender } from '@flighthq/render';
 import { bindWgpuImageResourceTexture, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
+import { prepareScene3DRender } from '@flighthq/render/contract';
 import type {
   Camera3D,
   Matrix4,
@@ -12,8 +12,8 @@ import type {
   Scene3DLightsLike,
   Node3D,
   WgpuRenderState,
-} from '@flighthq/types';
-import { ParticleEmitter3DKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { ParticleEmitter3DKind } from '@flighthq/types/contract';
 
 // Per-instance layout (16 floats = 64 bytes), identical to scene-gl's glParticleEmitter3D:
 // [0..2] px/py/pz world position, [3] cos(rotation)*scale, [4] sin(rotation)*scale, [5..7] rgb,

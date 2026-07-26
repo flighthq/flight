@@ -9,7 +9,7 @@ import {
 } from '@flighthq/node';
 import { createDisplayObject, setNode2DClip } from '@flighthq/scene2d';
 import { createSprite } from '@flighthq/sprite';
-import type { ClipRegion } from '@flighthq/types';
+import type { ClipRegion } from '@flighthq/types/contract';
 
 import { registerRenderer } from './renderer';
 import {

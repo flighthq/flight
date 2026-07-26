@@ -7,7 +7,7 @@ import type {
   GlRenderState,
   Texture,
   VideoTexture,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import {
   GL_SKIN_VERTEX_DECLARATIONS_GLSL,

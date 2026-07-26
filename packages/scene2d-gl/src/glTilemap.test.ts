@@ -1,4 +1,4 @@
-import type { RenderProxy2D } from '@flighthq/types';
+import type { RenderProxy2D } from '@flighthq/types/contract';
 
 import { flushGlSpriteBatch } from './glSpriteBatch';
 import { registerStandardGlMaterial } from './glStandardMaterial';

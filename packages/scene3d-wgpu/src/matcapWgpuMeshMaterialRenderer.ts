@@ -11,8 +11,8 @@ import type {
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
   WgpuMatcapDefineKey,
-} from '@flighthq/types';
-import { MatcapMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { MatcapMaterialKind } from '@flighthq/types/contract';
 
 import { bindWgpuMatcapSurface, ensureWgpuMatcapPipeline } from './wgpuMatcapPrelude';
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';

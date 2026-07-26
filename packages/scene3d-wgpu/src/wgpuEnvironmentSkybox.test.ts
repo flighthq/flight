@@ -1,5 +1,5 @@
 import { createCamera3D } from '@flighthq/camera';
-import type { Camera3D, CubeTexture, Environment, ImageResource } from '@flighthq/types';
+import type { Camera3D, CubeTexture, Environment, ImageResource } from '@flighthq/types/contract';
 
 import { drawWgpuEnvironmentSkybox } from './wgpuEnvironmentSkybox';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';

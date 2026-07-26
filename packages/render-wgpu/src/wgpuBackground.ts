@@ -1,4 +1,4 @@
-import type { WgpuRenderState } from '@flighthq/types';
+import type { WgpuRenderState } from '@flighthq/types/contract';
 
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import { acquireWgpuFrameCaptureTexture, encodeWgpuFrameCapture } from './wgpuSurface';

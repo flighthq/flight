@@ -3,7 +3,7 @@ import { createMatrix4, setVector3 } from '@flighthq/geometry';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter';
 import { createNode3D, Node3DKind } from '@flighthq/scene3d';
-import type { ParticleEmitter3D, Scene3DLightsLike } from '@flighthq/types';
+import type { ParticleEmitter3D, Scene3DLightsLike } from '@flighthq/types/contract';
 
 import { destroyGlParticleEmitter3DShader, drawGlScene3DParticleEmitter3Ds } from './glParticleEmitter3D';
 import { makeGlScene3DState } from './glScene3DTestHelper';

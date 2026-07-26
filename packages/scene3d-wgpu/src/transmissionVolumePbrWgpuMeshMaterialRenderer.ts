@@ -10,8 +10,8 @@ import type {
   TransmissionVolumePbrMaterial,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
-} from '@flighthq/types';
-import { TransmissionVolumePbrMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { TransmissionVolumePbrMaterialKind } from '@flighthq/types/contract';
 
 import {
   buildWgpuPbrStandardDefineKey,

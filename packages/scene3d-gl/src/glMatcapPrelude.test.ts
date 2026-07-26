@@ -1,4 +1,4 @@
-import type { LinearColor, GlMatcapDefineKey } from '@flighthq/types';
+import type { LinearColor, GlMatcapDefineKey } from '@flighthq/types/contract';
 
 import {
   bindGlMatcapSurface,

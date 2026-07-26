@@ -1,5 +1,5 @@
-import type { GlRenderState } from '@flighthq/types';
-import { StandardPbrMaterialKind } from '@flighthq/types';
+import type { GlRenderState } from '@flighthq/types/contract';
+import { StandardPbrMaterialKind } from '@flighthq/types/contract';
 
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { standardPbrGlMeshMaterialRenderer } from './standardPbrGlMeshMaterialRenderer';

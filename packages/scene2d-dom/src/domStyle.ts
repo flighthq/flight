@@ -1,4 +1,4 @@
-﻿import type { DomRenderState, RenderProxy2D } from '@flighthq/types';
+﻿import type { DomRenderState, RenderProxy2D } from '@flighthq/types/contract';
 
 import { getDomRenderStateRuntime } from './domRenderState';
 import { setDomTransform } from './domTransform';

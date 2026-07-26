@@ -9,7 +9,7 @@ import {
   noopRendererData,
   prepareScene2DRender,
   registerRenderCacheRenderer,
-} from '@flighthq/render';
+} from '@flighthq/render/contract';
 import type {
   CanvasRenderState,
   CanvasRenderTarget,
@@ -20,7 +20,7 @@ import type {
   RenderCacheRefreshOptions,
   RenderProxy2D,
   RenderState,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { renderCanvasScene2D } from './canvasNode2D';
 import { createCanvasRenderState, getCanvasRenderStateRuntime } from './canvasRenderState';

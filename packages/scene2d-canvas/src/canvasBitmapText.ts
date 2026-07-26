@@ -1,6 +1,12 @@
-import { noopRendererData } from '@flighthq/render';
+import { noopRendererData } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d';
-import type { BitmapText, BitmapTextRuntime, CanvasRenderState, RenderProxy2D, SpriteRenderer } from '@flighthq/types';
+import type {
+  BitmapText,
+  BitmapTextRuntime,
+  CanvasRenderState,
+  RenderProxy2D,
+  SpriteRenderer,
+} from '@flighthq/types/contract';
 
 import { applyCanvasMaterial } from './canvasMaterialRegistry';
 

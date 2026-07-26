@@ -7,7 +7,7 @@ import type {
   RenderTargetColorSpace,
   RenderTargetDescriptor,
   RenderTargetFormat,
-} from '@flighthq/types';
+} from '@flighthq/types/contract';
 
 import { drawGlQuad, useGlProgram } from './glDraw';
 import { getGlRenderStateRuntime } from './glRenderState';

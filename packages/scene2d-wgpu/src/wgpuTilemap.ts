@@ -1,7 +1,7 @@
 import { hasImageResourcePixels } from '@flighthq/image';
-import { noopRendererData } from '@flighthq/render';
 import { resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
+import { noopRendererData } from '@flighthq/render/contract';
 import type {
   ColorScaleBias,
   RenderProxy2D,
@@ -9,8 +9,8 @@ import type {
   Tilemap,
   TintMaterialData,
   WgpuRenderState,
-} from '@flighthq/types';
-import { BatchFormat } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { BatchFormat } from '@flighthq/types/contract';
 
 import {
   packWgpuSpriteBatchMaterialInstance,

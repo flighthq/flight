@@ -7,8 +7,8 @@ import type {
   MeshGeometry,
   Scene3DLightBlock,
   Scene3DRenderProxy,
-} from '@flighthq/types';
-import { AnisotropyPbrMaterialKind } from '@flighthq/types';
+} from '@flighthq/types/contract';
+import { AnisotropyPbrMaterialKind } from '@flighthq/types/contract';
 
 import { bindGlMeshLightBlock } from './glLitProgram';
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';

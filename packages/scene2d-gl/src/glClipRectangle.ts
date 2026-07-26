@@ -1,6 +1,6 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import type { GlRenderState, MatrixLike, RectangleLike } from '@flighthq/types';
-import type { GlScissorRect } from '@flighthq/types';
+import type { GlRenderState, MatrixLike, RectangleLike } from '@flighthq/types/contract';
+import type { GlScissorRect } from '@flighthq/types/contract';
 
 import { flushGlSpriteBatch } from './glSpriteBatch';
 
