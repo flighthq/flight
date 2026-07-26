@@ -14,7 +14,7 @@ import { invalidateNodeAppearance } from './revision';
 /**
  * Appends one pointwise adjustment without replacing the existing stack.
  *
- * For Flash-style per-channel scale/bias authoring, use
+ * For explicit per-channel scale/bias authoring, use
  * `createColorScaleBiasAdjustment` from `@flighthq/adjustments`.
  */
 export function addNodeColorAdjustment<Traits extends object>(source: Node<Traits>, adjustment: Adjustment): void {
@@ -35,8 +35,8 @@ export function getNodeColorAdjustments<Traits extends object>(
 /**
  * Replaces the complete pointwise adjustment stack; null clears it.
  *
- * Tint's golden path is `setNodeColorAdjustmentsTint`. Flash/OpenFL `ColorTransform` values map to
- * Flight's normalized-linear `ColorScaleBias`; author them with `createColorScaleBiasAdjustment`.
+ * Tint's golden path is `setNodeColorAdjustmentsTint`. Use `createColorScaleBiasAdjustment` for
+ * explicit per-channel `out = in * scale + bias` values with normalized-linear bias.
  */
 export function setNodeColorAdjustments<Traits extends object>(
   source: Node<Traits>,
