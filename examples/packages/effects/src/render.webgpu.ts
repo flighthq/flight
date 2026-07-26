@@ -9,8 +9,12 @@ import {
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
   prepareScene2DRender,
+  defaultWgpuBloomEffectRunner,
+  defaultWgpuToneMapEffectRunner,
+  defaultWgpuVignetteEffectRunner,
+  defaultWgpuWhiteBalanceEffectRunner,
   registerStandardWgpuMaterial,
-  registerStandardWgpuRenderEffects,
+  registerWgpuRenderEffect,
   registerWgpuShapeCommands,
   registerRenderer,
   renderWgpuBackground,
@@ -30,7 +34,10 @@ export const state = await createWgpuRenderState(canvas, {
 registerStandardWgpuMaterial(state);
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
-registerStandardWgpuRenderEffects(state);
+registerWgpuRenderEffect(state, 'BloomEffect', defaultWgpuBloomEffectRunner);
+registerWgpuRenderEffect(state, 'VignetteEffect', defaultWgpuVignetteEffectRunner);
+registerWgpuRenderEffect(state, 'ToneMapEffect', defaultWgpuToneMapEffectRunner);
+registerWgpuRenderEffect(state, 'WhiteBalanceEffect', defaultWgpuWhiteBalanceEffectRunner);
 
 const pipeline = createWgpuRenderEffectPipeline(state);
 
