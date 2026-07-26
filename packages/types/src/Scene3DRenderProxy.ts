@@ -33,6 +33,7 @@ export interface Scene3DRenderProxy {
   // Fused pointwise color adjustment for this object. Null keeps the lean base material variant;
   // presence promotes the material renderer to its registered post-shade adjustment variant.
   colorTransform?: Readonly<ColorTransform> | null;
+  colorMatrix?: readonly number[] | null;
   jointMatrices?: Readonly<Float32Array> | null;
   material: Readonly<Material>;
   normalMatrix: Readonly<Matrix3>;

@@ -23,6 +23,8 @@ const BASE_KEY: GlShadedDefineKey = {
 };
 const COLOR_FEATURE: GlColorAdjustmentMaterialFeature = {
   fragmentShaderChunk: 'vec4 applyFlightColorAdjustment(vec4 c, vec4 m, vec4 o) { return c * m + o; }',
+  matrixFragmentShaderChunk:
+    'vec4 applyFlightColorMatrix(vec4 c, vec4 a, vec4 b, vec4 d, vec4 e, vec4 o) { return c; }',
   drawShapeMeshes: () => {},
   flush: () => false,
   record: () => {},
@@ -139,6 +141,14 @@ describe('compileGlShadedProgram', () => {
     const adjusted = fragmentSourceFrom(adjustedGl.calls);
     expect(adjusted).toContain(COLOR_FEATURE.fragmentShaderChunk);
     expect(adjusted).toContain('fragColor = applyFlightColorAdjustment');
+  });
+
+  it('splices the full-matrix adjustment after shading', () => {
+    const gl = makeFakeGl2();
+    compileGlShadedProgram(gl, { ...BASE_KEY, hasColorMatrix: true }, [], createModifierRegistry(), COLOR_FEATURE);
+    const source = fragmentSourceFrom(gl.calls);
+    expect(source).toContain(COLOR_FEATURE.matrixFragmentShaderChunk);
+    expect(source).toContain('fragColor = applyFlightColorMatrix');
   });
 
   it('injects a Vertex-slot modifier into the vertex source, never the fragment', () => {

@@ -30,6 +30,8 @@ function makeKey(lightingModel: WgpuClassicLightingModel): WgpuClassicDefineKey 
 }
 const COLOR_FEATURE: WgpuColorAdjustmentMaterialFeature = {
   fragmentShaderChunk: 'fn applyFlightColorAdjustment(c : vec4f, m : vec4f, o : vec4f) -> vec4f { return c; }',
+  matrixFragmentShaderChunk:
+    'fn applyFlightColorMatrix(c : vec4f, a : vec4f, b : vec4f, d : vec4f, e : vec4f, o : vec4f) -> vec4f { return c; }',
   record: () => {},
   resolveFlush: () => null,
 };
@@ -140,6 +142,21 @@ describe('getWgpuClassicModuleSourceForKey', () => {
     expect(base).not.toContain(COLOR_FEATURE.fragmentShaderChunk);
     expect(adjusted).toContain(COLOR_FEATURE.fragmentShaderChunk);
     expect(adjusted).toContain('draw.flightColorMultiplier');
+  });
+
+  it('selects a distinct full-matrix post-shade variant', () => {
+    const matrix = getWgpuClassicModuleSourceForKey(
+      { ...makeKey('phong'), hasColorMatrix: true },
+      false,
+      null,
+      COLOR_FEATURE,
+    );
+    expect(buildWgpuClassicDefineKey({ ...makeKey('phong'), hasColorMatrix: true })).toBe(
+      `${buildWgpuClassicDefineKey(makeKey('phong'))}x`,
+    );
+    expect(matrix).toContain(COLOR_FEATURE.matrixFragmentShaderChunk);
+    expect(matrix).toContain('draw.flightColorMatrix0');
+    expect(matrix).not.toContain(COLOR_FEATURE.fragmentShaderChunk);
   });
 
   it('gates the alpha-map const + coverage multiply off the alpha-map flag', () => {

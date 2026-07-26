@@ -71,6 +71,7 @@ export function ensureWgpuPbrPipeline(
   const fullKey: WgpuPbrDefineKey = {
     ...key,
     hasColorAdjustment: getWgpuScene3DRuntime(state).activeColorAdjustmentRun,
+    hasColorMatrix: getWgpuScene3DRuntime(state).activeColorMatrixRun,
   };
   return ensureWgpuScene3DPipeline(state, `pbr:${format}|${buildWgpuPbrDefineKey(fullKey)}`, (blended, skinned) =>
     compileWgpuPbrPipeline(

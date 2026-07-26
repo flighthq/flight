@@ -43,6 +43,7 @@ function submitGlQuadBatch(state: GlRenderState, quadBatch: RenderProxy2D): void
   // Per-quad color transforms, overriding the node-level tint for the quads that carry one.
   const perQuadColorTransform = data.materialData;
   const nodeColorTransform = quadBatch.colorTransform;
+  const nodeColorMatrix = quadBatch.colorMatrix;
   const startCount = runtime.spriteBatchCount;
   const base = prepareGlSpriteBatchWrite(
     state,
@@ -110,7 +111,9 @@ function submitGlQuadBatch(state: GlRenderState, quadBatch: RenderProxy2D): void
     packGlSpriteBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
     // Per-quad tint overrides the node-level tint (null → the node's, itself possibly null → untinted).
     const colorTransform =
-      (perQuadColorTransform?.[i] as ColorTransform | TintMaterialData | null) ?? nodeColorTransform;
+      (perQuadColorTransform?.[i] as ColorTransform | TintMaterialData | readonly number[] | null) ??
+      nodeColorMatrix ??
+      nodeColorTransform;
     recordGlSpriteBatchColorTransform(state, colorTransform, startCount + drawCount);
     writeBase += INSTANCE_FLOATS;
     drawCount++;

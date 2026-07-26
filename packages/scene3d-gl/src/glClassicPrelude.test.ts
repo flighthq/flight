@@ -25,6 +25,8 @@ const PHONG: GlClassicDefineKey = { ...LAMBERT, lightingModel: 'phong' };
 const BLINNPHONG: GlClassicDefineKey = { ...LAMBERT, lightingModel: 'blinnphong' };
 const COLOR_FEATURE: GlColorAdjustmentMaterialFeature = {
   fragmentShaderChunk: 'vec4 applyFlightColorAdjustment(vec4 c, vec4 m, vec4 o) { return c * m + o; }',
+  matrixFragmentShaderChunk:
+    'vec4 applyFlightColorMatrix(vec4 c, vec4 a, vec4 b, vec4 d, vec4 e, vec4 o) { return c; }',
   drawShapeMeshes: () => {},
   flush: () => false,
   record: () => {},
@@ -139,6 +141,14 @@ describe('getGlClassicFragmentSourceForKey', () => {
     expect(base).not.toContain('vec4 applyFlightColorAdjustment');
     expect(adjusted).toContain(COLOR_FEATURE.fragmentShaderChunk);
     expect(adjusted).toContain('fragColor = applyFlightColorAdjustment');
+  });
+
+  it('selects a distinct full-matrix post-shade variant', () => {
+    const matrix = getGlClassicFragmentSourceForKey({ ...LAMBERT, hasColorMatrix: true }, COLOR_FEATURE);
+    expect(buildGlClassicDefineKey({ ...LAMBERT, hasColorMatrix: true })).toBe(`${buildGlClassicDefineKey(LAMBERT)}x`);
+    expect(matrix).toContain(COLOR_FEATURE.matrixFragmentShaderChunk);
+    expect(matrix).toContain('fragColor = applyFlightColorMatrix');
+    expect(matrix).not.toContain(COLOR_FEATURE.fragmentShaderChunk);
   });
 
   it('includes the lighting-model and feature defines only when set', () => {

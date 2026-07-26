@@ -21,6 +21,7 @@ export function updateRenderProxyColorTransform(
 ): void {
   const runtime = getNodeRuntime(data.source as Node) as Readonly<Partial<ColorAdjustmentRuntime>>;
   data.colorTransform = runtime.resolvedColorTransform ?? null;
+  data.colorMatrix = runtime.resolvedColorMatrix ?? null;
   if (runtime.colorAdjustmentsChannelMixing) {
     getRenderStateRuntime(state).colorAdjustmentChannelMixingGuard?.(state, data.source as Renderable);
   }

@@ -42,6 +42,8 @@ const CT_MODE_NONE = 0;
 const CT_MODE_UNIFORM = 1;
 const CT_MODE_PACKED_TINT = 2;
 const CT_MODE_PER_INSTANCE = 3;
+const CT_MODE_MATRIX = 4;
+const MIX_RED_GREEN = [1, 0.5, 0, 0, 10, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0] as const;
 
 describe('registerWgpuColorAdjustmentMaterialFeature', () => {
   it('installs the fold so recorded tints drive the color-adjustment state machine', async () => {
@@ -146,5 +148,18 @@ describe('registerWgpuColorAdjustmentMaterialFeature', () => {
     expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_PER_INSTANCE);
     expect(runtime.spriteBatchColorTransformData![0]).toBeCloseTo(128 / 255);
     expect(runtime.spriteBatchColorTransformData![12]).toBe(1);
+  });
+
+  it('widens to a 20-float matrix stream only when channel mixing appears', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const runtime = getWgpuRenderStateRuntime(state);
+    registerWgpuColorAdjustmentMaterialFeature(state);
+    recordWgpuSpriteBatchColorTransform(state, { tint: 0x808080ff }, 0);
+    recordWgpuSpriteBatchColorTransform(state, MIX_RED_GREEN, 1);
+    expect(runtime.spriteBatchColorTransformMode).toBe(CT_MODE_MATRIX);
+    expect(runtime.spriteBatchColorMatrixData![0]).toBeCloseTo(128 / 255);
+    expect(runtime.spriteBatchColorMatrixData![20]).toBe(1);
+    expect(runtime.spriteBatchColorMatrixData![21]).toBe(0.5);
+    expect(runtime.spriteBatchColorMatrixData![36]).toBeCloseTo(10 / 255);
   });
 });

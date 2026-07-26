@@ -51,7 +51,7 @@ function submitWgpuSpriteNode(state: WgpuRenderState, spriteNode: RenderProxy2D)
   d[base + 11] = (region.y + region.height) * ih;
   d[base + 12] = spriteNode.alpha;
   packWgpuSpriteBatchMaterialInstance(state, spriteNode.materialData, instanceIndex);
-  recordWgpuSpriteBatchColorTransform(state, spriteNode.colorTransform, instanceIndex);
+  recordWgpuSpriteBatchColorTransform(state, spriteNode.colorMatrix ?? spriteNode.colorTransform, instanceIndex);
   runtime.spriteBatchCount++;
 }
 

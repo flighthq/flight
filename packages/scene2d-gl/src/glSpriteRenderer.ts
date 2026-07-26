@@ -52,7 +52,7 @@ function submitGlSpriteNode(state: GlRenderState, spriteNode: RenderProxy2D): vo
   d[base + 11] = (region.y + region.height) * ih;
   d[base + 12] = spriteNode.alpha;
   packGlSpriteBatchMaterialInstance(state, spriteNode.materialData, instanceIndex);
-  recordGlSpriteBatchColorTransform(state, spriteNode.colorTransform, instanceIndex);
+  recordGlSpriteBatchColorTransform(state, spriteNode.colorMatrix ?? spriteNode.colorTransform, instanceIndex);
   runtime.spriteBatchCount++;
 }
 

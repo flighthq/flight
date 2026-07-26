@@ -37,6 +37,7 @@ export interface GlScene3DIbl {
 export interface GlScene3DDrawEntry {
   alpha: number;
   clipW: number;
+  colorMatrix: object | null;
   colorTransform: object | null;
   lightBlock: Scene3DLightBlock;
   material: object;
@@ -65,6 +66,7 @@ export interface GlScene3DRuntime {
   // Whether the draw run currently being bound carries resolved color-adjustment data and the
   // tree-shakable feature is registered. Material-family compilers fold this into their program key.
   activeColorAdjustmentRun: boolean;
+  activeColorMatrixRun: boolean;
   activeMeshProgram: GlMeshProgram | null;
   // Whether the draw run currently being bound is skinned. drawGlScene3D sets it before each bind()
   // so ensureGl*Program folds HAS_SKIN into the selected program variant without every material

@@ -181,7 +181,7 @@ export function drawWgpuTextLabel(state: WgpuRenderState, renderProxy: RenderPro
   d[base + 11] = 1;
   d[base + 12] = renderProxy.alpha;
   packWgpuSpriteBatchMaterialInstance(state, renderProxy.materialData, startCount);
-  recordWgpuSpriteBatchColorTransform(state, renderProxy.colorTransform, startCount);
+  recordWgpuSpriteBatchColorTransform(state, renderProxy.colorMatrix ?? renderProxy.colorTransform, startCount);
   runtime.spriteBatchCount++;
 }
 

@@ -287,7 +287,7 @@ export function prepareGlSpriteBatchWrite(
 // untinted instance, which is a no-op whether or not the fold is enabled.
 export function recordGlSpriteBatchColorTransform(
   state: GlRenderState,
-  colorTransform: ColorTransform | TintMaterialData | null | undefined,
+  colorTransform: ColorTransform | TintMaterialData | readonly number[] | null | undefined,
   instanceIndex: number,
 ): void {
   const runtime = getGlRenderStateRuntime(state);

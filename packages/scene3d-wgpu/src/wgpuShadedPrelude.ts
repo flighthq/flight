@@ -225,9 +225,10 @@ export function ensureWgpuShadedPipeline(
   const defineKey = buildWgpuShadedCacheKey(material, registry);
   const plan = getCachedModifierPlan(state, material, registry, defineKey);
   const colorAdjusted = getWgpuScene3DRuntime(state).activeColorAdjustmentRun;
+  const colorMatrix = getWgpuScene3DRuntime(state).activeColorMatrixRun;
   const key = `${defineKey}|registry:${
     getWgpuScene3DRuntime(state).modifierSnippetRevision
-  }|${format}|${colorAdjusted ? 'color-adjusted' : 'base'}`;
+  }|${format}|${colorMatrix ? 'color-matrix' : colorAdjusted ? 'color-adjusted' : 'base'}`;
   return ensureWgpuScene3DPipeline(state, key, (blended, skinned) => {
     const entries: GPUBindGroupLayoutEntry[] = [
       {
@@ -267,7 +268,10 @@ export function ensureWgpuShadedPipeline(
         plan,
         skinned,
         getWgpuSkinningAdapter(state),
-        colorAdjusted ? (getWgpuRenderStateRuntime(state).wgpuColorAdjustmentMaterialFeature ?? null) : null,
+        colorAdjusted || colorMatrix
+          ? (getWgpuRenderStateRuntime(state).wgpuColorAdjustmentMaterialFeature ?? null)
+          : null,
+        colorMatrix,
       ),
     });
     return createWgpuMeshPipeline(state, {
@@ -291,9 +295,10 @@ export function getWgpuShadedModuleSource(
   skinned = false,
   skinning: Readonly<WgpuSkinningAdapter> | null = null,
   colorAdjustmentFeature: Readonly<WgpuColorAdjustmentMaterialFeature> | null = null,
+  colorMatrix = false,
 ): string {
   const plan = buildModifierPlan(material.modifiers, registry);
-  return assembleWgpuShadedModuleSource(material, plan, skinned, skinning, colorAdjustmentFeature);
+  return assembleWgpuShadedModuleSource(material, plan, skinned, skinning, colorAdjustmentFeature, colorMatrix);
 }
 
 function assembleWgpuShadedModuleSource(
@@ -302,6 +307,7 @@ function assembleWgpuShadedModuleSource(
   skinned: boolean,
   skinning: Readonly<WgpuSkinningAdapter> | null,
   colorAdjustmentFeature: Readonly<WgpuColorAdjustmentMaterialFeature> | null,
+  colorMatrix: boolean,
 ): string {
   const flags = getWgpuShadedBaseFlags(material);
   const defineKey = {
@@ -400,10 +406,14 @@ struct Ibl {
 @group(3) @binding(7) var iblSampler : sampler;`,
   );
   if (colorAdjustmentFeature !== null) {
-    source = spliceWgpuColorAdjustmentPrelude(source, colorAdjustmentFeature).replace(
+    source = spliceWgpuColorAdjustmentPrelude(source, colorAdjustmentFeature, colorMatrix).replace(
       '  return vec4f(radiance, diffuse.a * in.objectAlpha);',
       `  var flightColor = vec4f(radiance, diffuse.a);
-  flightColor = applyFlightColorAdjustment(flightColor, draw.flightColorMultiplier, draw.flightColorOffset);
+  flightColor = ${
+    colorMatrix
+      ? 'applyFlightColorMatrix(flightColor, draw.flightColorMatrix0, draw.flightColorMatrix1, draw.flightColorMatrix2, draw.flightColorMatrix3, draw.flightColorMatrixOffset)'
+      : 'applyFlightColorAdjustment(flightColor, draw.flightColorMultiplier, draw.flightColorOffset)'
+  };
   flightColor.a = flightColor.a * in.objectAlpha;
   return flightColor;`,
     );

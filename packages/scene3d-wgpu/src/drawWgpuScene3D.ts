@@ -75,7 +75,9 @@ export function drawWgpuScene3D(
     const clipW = vp[3] * wx + vp[7] * wy + vp[11] * wz + vp[15];
     const clipZ = vp[2] * wx + vp[6] * wy + vp[10] * wz + vp[14];
     const objectAlpha = getNode3DWorldAlpha(mesh);
-    const colorTransform = getNode3DRuntime(mesh).resolvedColorTransform;
+    const nodeRuntime = getNode3DRuntime(mesh);
+    const colorTransform = nodeRuntime.resolvedColorTransform;
+    const colorMatrix = nodeRuntime.resolvedColorMatrix;
 
     for (let s = 0; s < subsets.length; s++) {
       const material = resolveSubsetMaterial(mesh, s);
@@ -87,6 +89,7 @@ export function drawWgpuScene3D(
       const entry = acquireDrawEntry(blended ? runtime.blendedPool : runtime.opaquePool);
       entry.alpha = objectAlpha;
       entry.depth = clipZ / clipW;
+      entry.colorMatrix = colorMatrix;
       entry.colorTransform = colorTransform;
       entry.lightBlock = hasPreparedForwardLights ? forwardLights.meshLightBlocks[m] : lightBlock;
       entry.material = resolvedMaterial;
@@ -113,6 +116,7 @@ export function drawWgpuScene3D(
   drawWgpuScene3DParticleEmitter3Ds(state, scene, camera, lights);
   runtime.activeBlendedRun = false;
   runtime.activeColorAdjustmentRun = false;
+  runtime.activeColorMatrixRun = false;
   runtime.activeSkinnedRun = false;
 }
 
@@ -134,6 +138,7 @@ function drawEntries(
   let boundRenderer: WgpuMeshMaterialRenderer | null = null;
   let boundSkinned: boolean | undefined;
   let boundColorAdjustment: boolean | undefined;
+  let boundColorMatrix: boolean | undefined;
   const colorAdjustmentFeatureEnabled = getWgpuRenderStateRuntime(state).wgpuColorAdjustmentMaterialFeature != null;
 
   for (let i = 0; i < entries.length; i++) {
@@ -141,16 +146,20 @@ function drawEntries(
     const worldMatrix = entry.worldMatrix as Matrix4;
     setMatrix3NormalFromMatrix4(scratchNormalMatrix, worldMatrix);
     const skinned = isWgpuMeshGpuSkinned(state, entry.mesh);
-    const colorAdjusted = colorAdjustmentFeatureEnabled && entry.colorTransform !== null;
+    const colorAdjusted =
+      colorAdjustmentFeatureEnabled && (entry.colorMatrix !== null || entry.colorTransform !== null);
+    const colorMatrix = colorAdjusted && entry.colorMatrix !== null;
 
     if (
       entry.renderer !== boundRenderer ||
       entry.material !== boundMaterial ||
       entry.lightBlock !== boundLightBlock ||
       skinned !== boundSkinned ||
-      colorAdjusted !== boundColorAdjustment
+      colorAdjusted !== boundColorAdjustment ||
+      colorMatrix !== boundColorMatrix
     ) {
       runtime.activeColorAdjustmentRun = colorAdjusted;
+      runtime.activeColorMatrixRun = colorMatrix;
       runtime.activeSkinnedRun = skinned;
       entry.renderer.bind(state, entry.material, entry.lightBlock, camera);
       boundRenderer = entry.renderer;
@@ -158,10 +167,12 @@ function drawEntries(
       boundLightBlock = entry.lightBlock;
       boundSkinned = skinned;
       boundColorAdjustment = colorAdjusted;
+      boundColorMatrix = colorMatrix;
     }
 
     proxy.alpha = entry.alpha;
     proxy.colorTransform = colorAdjusted ? entry.colorTransform : null;
+    proxy.colorMatrix = colorAdjusted ? entry.colorMatrix : null;
     proxy.jointMatrices = skinned ? entry.mesh.skin!.skeleton.jointMatrices : null;
     proxy.material = entry.material;
     proxy.normalMatrix = scratchNormalMatrix;
@@ -192,6 +203,7 @@ function compareBlendedEntriesDescending(a: WgpuScene3DDrawEntry, b: WgpuScene3D
 
 interface DrawEntry {
   alpha: number;
+  colorMatrix: readonly number[] | null;
   colorTransform: Readonly<ColorTransform> | null;
   depth: number;
   lightBlock: Readonly<Scene3DLightBlock>;
@@ -214,6 +226,7 @@ function recycleDrawEntries(entries: WgpuScene3DDrawEntry[], pool: WgpuScene3DDr
 function createDrawEntry(): WgpuScene3DDrawEntry {
   return {
     alpha: 1,
+    colorMatrix: null,
     colorTransform: null,
     depth: 0,
     lightBlock: null!,
@@ -229,6 +242,7 @@ function createDrawEntry(): WgpuScene3DDrawEntry {
 // duration of the draw call it is passed to; renderers must not retain it.
 const proxy: Scene3DRenderProxy = {
   alpha: 1,
+  colorMatrix: null,
   colorTransform: null,
   jointMatrices: null,
   material: { kind: StandardMaterialKind } as Material,

@@ -15,6 +15,7 @@ export interface GlClassicDefineKey {
   // Promoted post-shade color-adjustment variant. Set by ensureGlClassicProgram from resolved draw
   // data plus feature registration, never by the material itself.
   hasColorAdjustment?: boolean;
+  hasColorMatrix?: boolean;
   hasAlphaMap: boolean;
   hasDiffuseMap: boolean;
   hasNormalMap: boolean;

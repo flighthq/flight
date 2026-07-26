@@ -71,7 +71,7 @@ export function drawGlShapeMeshes(
 ): void {
   if (meshes.length === 0) return;
   const fold = getGlRenderStateRuntime(state).glColorAdjustmentMaterialFeature;
-  if (fold != null && renderProxy.colorTransform != null) {
+  if (fold != null && (renderProxy.colorMatrix != null || renderProxy.colorTransform != null)) {
     fold.drawShapeMeshes(state, renderProxy, meshes);
     return;
   }

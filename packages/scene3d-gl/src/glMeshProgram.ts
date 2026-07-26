@@ -104,8 +104,35 @@ export function drawGlMeshSubset(
   // A resolved per-object transform promotes only this draw run to the registered material-feature
   // variant. Resolve and cache its locations lazily so an untinted/base program performs no lookups
   // or uploads; the promoted Shaded/Phong/PBR fragments consume the same two affine vectors.
+  const colorMatrix = proxy.colorMatrix;
   const colorTransform = proxy.colorTransform;
-  if (colorTransform != null) {
+  if (colorMatrix != null) {
+    let loc0 = program.locColorMatrix0;
+    if (loc0 === undefined) {
+      loc0 = gl.getUniformLocation(program.program, 'u_flightColorMatrix0');
+      (program as GlMeshProgram).locColorMatrix0 = loc0;
+      (program as GlMeshProgram).locColorMatrix1 = gl.getUniformLocation(program.program, 'u_flightColorMatrix1');
+      (program as GlMeshProgram).locColorMatrix2 = gl.getUniformLocation(program.program, 'u_flightColorMatrix2');
+      (program as GlMeshProgram).locColorMatrix3 = gl.getUniformLocation(program.program, 'u_flightColorMatrix3');
+      (program as GlMeshProgram).locColorMatrixOffset = gl.getUniformLocation(
+        program.program,
+        'u_flightColorMatrixOffset',
+      );
+    }
+    if (loc0 !== null) {
+      gl.uniform4f(loc0, colorMatrix[0], colorMatrix[1], colorMatrix[2], colorMatrix[3]);
+      gl.uniform4f(program.locColorMatrix1!, colorMatrix[5], colorMatrix[6], colorMatrix[7], colorMatrix[8]);
+      gl.uniform4f(program.locColorMatrix2!, colorMatrix[10], colorMatrix[11], colorMatrix[12], colorMatrix[13]);
+      gl.uniform4f(program.locColorMatrix3!, colorMatrix[15], colorMatrix[16], colorMatrix[17], colorMatrix[18]);
+      gl.uniform4f(
+        program.locColorMatrixOffset!,
+        colorMatrix[4] / 255,
+        colorMatrix[9] / 255,
+        colorMatrix[14] / 255,
+        colorMatrix[19] / 255,
+      );
+    }
+  } else if (colorTransform != null) {
     let locColorMultiplier = program.locColorMultiplier;
     let locColorOffset = program.locColorOffset;
     if (locColorMultiplier === undefined) {

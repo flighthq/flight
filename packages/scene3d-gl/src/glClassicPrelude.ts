@@ -25,7 +25,7 @@ export function buildGlClassicDefineKey(key: Readonly<GlClassicDefineKey>): stri
     key.hasSpecularMap ? 's' : '-'
   }${key.hasNormalMap ? 'n' : '-'}${key.hasAlphaMap ? 'a' : '-'}${key.hasUvTransform ? 'u' : '-'}${
     key.hasSkin ? 'k' : '-'
-  }${key.hasColorAdjustment ? 'c' : ''}`;
+  }${key.hasColorMatrix ? 'x' : key.hasColorAdjustment ? 'c' : ''}`;
 }
 
 // Compiles the classic uber-shader for a define key, links it, and resolves its uniform locations.
@@ -67,6 +67,7 @@ export function ensureGlClassicProgram(state: GlRenderState, key: Readonly<GlCla
   const fullKey: GlClassicDefineKey = {
     ...key,
     hasColorAdjustment: getGlScene3DRuntime(state).activeColorAdjustmentRun,
+    hasColorMatrix: getGlScene3DRuntime(state).activeColorMatrixRun,
     hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
   };
   return ensureGlScene3DProgram(state, `classic:${buildGlClassicDefineKey(fullKey)}`, (gl) =>
@@ -87,10 +88,14 @@ export function getGlClassicFragmentSourceForKey(
   colorAdjustmentFeature: Readonly<GlColorAdjustmentMaterialFeature> | null = null,
 ): string {
   let body = CLASSIC_FRAGMENT_BODY;
-  if (key.hasColorAdjustment && colorAdjustmentFeature !== null) {
+  if ((key.hasColorAdjustment || key.hasColorMatrix) && colorAdjustmentFeature !== null) {
     body = body.replace(
       'precision highp float;',
-      `precision highp float;\n${colorAdjustmentFeature.fragmentShaderChunk}`,
+      `precision highp float;\n${
+        key.hasColorMatrix
+          ? colorAdjustmentFeature.matrixFragmentShaderChunk
+          : colorAdjustmentFeature.fragmentShaderChunk
+      }`,
     );
   }
   return buildGlClassicDefineSource(key) + body;
@@ -126,7 +131,8 @@ function buildGlClassicDefineSource(key: Readonly<GlClassicDefineKey>): string {
   if (key.hasAlphaMap) defines += '#define HAS_ALPHA_MAP\n';
   if (key.hasUvTransform) defines += '#define HAS_UV_TRANSFORM\n';
   if (key.hasSkin) defines += '#define HAS_SKIN\n';
-  if (key.hasColorAdjustment) defines += '#define HAS_COLOR_ADJUSTMENT\n';
+  if (key.hasColorMatrix) defines += '#define HAS_COLOR_MATRIX\n';
+  else if (key.hasColorAdjustment) defines += '#define HAS_COLOR_ADJUSTMENT\n';
   return defines;
 }
 
@@ -178,7 +184,13 @@ in vec2 v_uv0;
 
 uniform vec4 u_diffuse;
 uniform float u_alphaCutoff;
-#ifdef HAS_COLOR_ADJUSTMENT
+#ifdef HAS_COLOR_MATRIX
+uniform vec4 u_flightColorMatrix0;
+uniform vec4 u_flightColorMatrix1;
+uniform vec4 u_flightColorMatrix2;
+uniform vec4 u_flightColorMatrix3;
+uniform vec4 u_flightColorMatrixOffset;
+#elif defined(HAS_COLOR_ADJUSTMENT)
 uniform vec4 u_flightColorMultiplier;
 uniform vec4 u_flightColorOffset;
 #endif
@@ -321,7 +333,10 @@ void main() {
   }
 
   fragColor = vec4(radiance, diffuse.a);
-#ifdef HAS_COLOR_ADJUSTMENT
+#ifdef HAS_COLOR_MATRIX
+  fragColor = applyFlightColorMatrix(fragColor, u_flightColorMatrix0, u_flightColorMatrix1,
+    u_flightColorMatrix2, u_flightColorMatrix3, u_flightColorMatrixOffset);
+#elif defined(HAS_COLOR_ADJUSTMENT)
   fragColor = applyFlightColorAdjustment(fragColor, u_flightColorMultiplier, u_flightColorOffset);
 #endif
   fragColor.a *= u_objectAlpha;

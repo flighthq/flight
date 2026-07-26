@@ -2,6 +2,7 @@ import {
   COLOR_ADJUSTMENT_CHANNEL_MIXING,
   COLOR_ADJUSTMENT_NONE,
   createTintAdjustment,
+  resolveColorAdjustmentsColorMatrix,
   resolveColorAdjustmentsColorTransform,
 } from '@flighthq/adjustments';
 import { createColorTransform } from '@flighthq/materials';
@@ -37,6 +38,7 @@ function resolveNode3DColorAdjustments(runtime: Node3DRuntime): void {
   const adjustments = runtime.colorAdjustments;
   if (adjustments === null || adjustments.length === 0) {
     runtime.resolvedColorTransform = null;
+    runtime.resolvedColorMatrix = null;
     runtime.colorAdjustmentsChannelMixing = false;
     return;
   }
@@ -44,9 +46,13 @@ function resolveNode3DColorAdjustments(runtime: Node3DRuntime): void {
   const status = resolveColorAdjustmentsColorTransform(adjustments, out);
   if (status === COLOR_ADJUSTMENT_NONE) {
     runtime.resolvedColorTransform = null;
+    runtime.resolvedColorMatrix = null;
     runtime.colorAdjustmentsChannelMixing = false;
     return;
   }
   runtime.resolvedColorTransform = out;
-  runtime.colorAdjustmentsChannelMixing = status === COLOR_ADJUSTMENT_CHANNEL_MIXING;
+  runtime.resolvedColorMatrix =
+    status === COLOR_ADJUSTMENT_CHANNEL_MIXING ? resolveColorAdjustmentsColorMatrix(adjustments) : null;
+  runtime.colorAdjustmentsChannelMixing =
+    status === COLOR_ADJUSTMENT_CHANNEL_MIXING && runtime.resolvedColorMatrix === null;
 }
