@@ -1,1 +1,16 @@
-export * from './contract';
+export {
+  addMovieClipFrameScript,
+  createMovieClip,
+  getMovieClipCurrentFrame,
+  getMovieClipCurrentLabel,
+  getMovieClipTotalFrames,
+  gotoAndPlayMovieClip,
+  gotoAndStopMovieClip,
+  isMovieClipPlaying,
+  nextFrameMovieClip,
+  playMovieClip,
+  prevFrameMovieClip,
+  setMovieClipSource,
+  stopMovieClip,
+  updateMovieClip,
+} from './contract';

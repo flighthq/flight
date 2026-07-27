@@ -1,1 +1,18 @@
-export * from './contract';
+export {
+  copyQuaternion,
+  createAabb,
+  createGradientTransformMatrix,
+  createMatrix,
+  createMatrix4,
+  createQuaternion,
+  createRectangle,
+  createVector2,
+  createVector3,
+  normalizeVector3,
+  rotateMatrix4,
+  scaleMatrix4,
+  setQuaternionFromAxisAngle,
+  setQuaternionFromEuler,
+  setVector3,
+  translateMatrix4,
+} from './contract';

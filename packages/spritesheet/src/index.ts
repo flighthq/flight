@@ -1,1 +1,8 @@
-export * from './contract';
+export {
+  createSpritesheetAnimation,
+  createSpritesheetFromGrid,
+  createSpritesheetPlayer,
+  getSpritesheetPlayerFrame,
+  playSpritesheetAnimation,
+  updateSpritesheetPlayer,
+} from './contract';

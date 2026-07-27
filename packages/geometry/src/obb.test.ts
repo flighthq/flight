@@ -11,7 +11,7 @@ import {
   setMatrix4Position,
   setObb,
   transformObbByMatrix4,
-} from '@flighthq/geometry';
+} from '@flighthq/geometry/contract';
 
 describe('createObb', () => {
   it('stores center, half-extents, and orientation', () => {

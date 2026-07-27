@@ -1,1 +1,1 @@
-export * from './contract';
+export { packColor } from './contract';

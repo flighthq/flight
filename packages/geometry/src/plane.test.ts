@@ -11,7 +11,7 @@ import {
   setPlane,
   setPlaneFromNormalAndPoint,
   setPlaneFromPoints,
-} from '@flighthq/geometry';
+} from '@flighthq/geometry/contract';
 
 describe('clonePlane', () => {
   it('creates an independent copy', () => {

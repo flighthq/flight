@@ -1,1 +1,8 @@
-export * from './contract';
+export {
+  createGlyphAtlas,
+  createGlyphSourceFromGlyphAtlas,
+  createStubGlyphRasterizerBackend,
+  createWebGlyphRasterizerBackend,
+  getGlyphAtlasSurface,
+  setGlyphRasterizerBackend,
+} from './contract';

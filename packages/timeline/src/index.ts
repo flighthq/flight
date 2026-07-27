@@ -1,1 +1,1 @@
-export * from './contract';
+export { createTimelineSource } from './contract';

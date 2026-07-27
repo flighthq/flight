@@ -1,1 +1,1 @@
-export * from './contract';
+export { createTween, createTweenManager, updateTweens } from './contract';

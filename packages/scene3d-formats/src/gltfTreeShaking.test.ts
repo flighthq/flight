@@ -13,7 +13,7 @@ async function bundleRootExport(name: string): Promise<string> {
     minify: true,
     packages: 'external',
     stdin: {
-      contents: `export { ${name} } from './index.ts';`,
+      contents: `export { ${name} } from './contract.ts';`,
       resolveDir,
       sourcefile: `${name}.ts`,
     },

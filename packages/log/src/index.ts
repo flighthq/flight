@@ -1,1 +1,1 @@
-export * from './contract';
+export { createConsoleCaptureSink, log, logError, setLogSink } from './contract';

@@ -1,5 +1,7 @@
 export {
+  GL_MESH_LIGHT_BLOCK_GLSL,
   bakeGlEnvironmentIbl,
+  blinnPhongGlMeshMaterialRenderer,
   drawGlEnvironmentSkybox,
   drawGlScene3D,
   drawGlScene3DShadowMap,
@@ -30,4 +32,5 @@ export {
   registerVertexColorGlMaterial,
   registerWireframeGlMaterial,
   setGlScene3DTime,
+  unlitGlMeshMaterialRenderer,
 } from './contract';

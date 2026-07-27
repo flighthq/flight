@@ -1,1 +1,1 @@
-export * from './contract';
+export { watchPath } from './contract';

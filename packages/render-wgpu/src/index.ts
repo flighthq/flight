@@ -1,6 +1,7 @@
 export {
   beginWgpuFrame,
   beginWgpuRenderPass,
+  createSurfaceFromWgpuRenderState,
   createWgpuCanvasElement,
   createWgpuRenderState,
   createWgpuRenderTarget,

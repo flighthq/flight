@@ -1,1 +1,1 @@
-export * from './contract';
+export { createClipRegionFromPath, createClipRegionFromRectangle } from './contract';

@@ -1,1 +1,1 @@
-export * from './contract';
+export { showOpenFileDialog } from './contract';

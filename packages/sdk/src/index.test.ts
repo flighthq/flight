@@ -51,12 +51,6 @@ describe('package exports', () => {
     });
   });
 
-  describe('loader domain', () => {
-    it('exports createResourceLoader', () => {
-      expect(sdk.createResourceLoader).toBeTypeOf('function');
-    });
-  });
-
   describe('particles domain', () => {
     it('exports createParticleEmitterConfig', () => {
       expect(sdk.createParticleEmitterConfig).toBeTypeOf('function');
@@ -67,15 +61,9 @@ describe('package exports', () => {
     });
   });
 
-  describe('platform domain', () => {
-    it('exports getPlatformName', () => {
-      expect(sdk.getPlatformName).toBeTypeOf('function');
-    });
-  });
-
   describe('render domain', () => {
-    it('exports createRenderState', () => {
-      expect(sdk.createRenderState).toBeTypeOf('function');
+    it('exports createGlRenderState', () => {
+      expect(sdk.createGlRenderState).toBeTypeOf('function');
     });
 
     it('exports registerRenderer', () => {

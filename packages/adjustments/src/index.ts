@@ -1,1 +1,19 @@
-export * from './contract';
+export {
+  applyColorMatrixToColor,
+  createBrightnessColorMatrix,
+  createBrightnessContrastAdjustment,
+  createChannelMixerAdjustment,
+  createColorGradeAdjustment,
+  createContrastColorMatrix,
+  createExposureAdjustment,
+  createGrayscaleAdjustment,
+  createHueRotateColorMatrix,
+  createHueSaturationAdjustment,
+  createIdentityColorMatrix,
+  createInvertAdjustment,
+  createLiftGammaGainAdjustment,
+  createLookupTableGradeAdjustment,
+  createSaturationColorMatrix,
+  createSepiaAdjustment,
+  fuseColorMatrices,
+} from './contract';

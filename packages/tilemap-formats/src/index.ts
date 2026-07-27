@@ -1,1 +1,1 @@
-export * from './contract';
+export { parseTiledTmj } from './contract';

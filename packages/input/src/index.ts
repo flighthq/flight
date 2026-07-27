@@ -1,1 +1,1 @@
-export * from './contract';
+export { attachPointerInput, createInputManager, getCoalescedInputPointerEvents } from './contract';

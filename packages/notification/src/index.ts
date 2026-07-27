@@ -1,1 +1,1 @@
-export * from './contract';
+export { showNotification } from './contract';

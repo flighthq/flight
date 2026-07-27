@@ -1,1 +1,1 @@
-export * from './contract';
+export { getAppLocale, getAppName, getAppVersion, setAppBadgeCount } from './contract';

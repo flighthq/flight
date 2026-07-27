@@ -52,7 +52,7 @@ import {
   translateMatrix4,
   transposeMatrix4,
   writeMatrix4ToFloat32Array,
-} from '@flighthq/geometry';
+} from '@flighthq/geometry/contract';
 import type { Matrix, Matrix4 } from '@flighthq/types/contract';
 
 const X_AXIS = { x: 1, y: 0, z: 0, w: 0 };

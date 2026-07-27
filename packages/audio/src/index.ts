@@ -1,1 +1,1 @@
-export * from './contract';
+export { createAudioResourceFromSamples } from './contract';

@@ -13,7 +13,7 @@ import {
   multiplyMatrix4,
   setFrustumFromMatrix4,
   setMatrix4LookAt,
-} from '@flighthq/geometry';
+} from '@flighthq/geometry/contract';
 import type { Matrix4 } from '@flighthq/types/contract';
 
 // View-projection for a camera at (0,0,5) looking toward the origin down -z.

@@ -3,7 +3,7 @@ import {
   acquireQuaternion,
   clearQuaternionPool,
   releaseQuaternion,
-} from '@flighthq/geometry';
+} from '@flighthq/geometry/contract';
 
 describe('acquireIdentityQuaternion', () => {
   it('returns an identity quaternion', () => {
