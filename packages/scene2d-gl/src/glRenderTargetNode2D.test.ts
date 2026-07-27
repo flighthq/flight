@@ -1,9 +1,16 @@
 import type * as GlRenderGlModule from '@flighthq/render-gl/contract';
-import { createRenderState } from '@flighthq/render/contract';
-import { createRenderTargetNode2D } from '@flighthq/scene2d/contract';
-import type { GlRenderState, GlRenderTarget, RenderProxy2D, RenderTargetNode2D } from '@flighthq/types/contract';
+import { createRenderCache, createRenderState } from '@flighthq/render/contract';
+import { createDisplayObject, createRenderTargetNode2D } from '@flighthq/scene2d/contract';
+import type {
+  GlRenderState,
+  GlRenderStateRuntime,
+  GlRenderTarget,
+  RenderProxy2D,
+  RenderTargetNode2D,
+} from '@flighthq/types/contract';
 import { EntityRuntimeKey, RenderTargetNode2DKind } from '@flighthq/types/contract';
 
+import type * as GlCacheModule from './glCache';
 import type * as GlRenderTargetNode2DModule from './glRenderTargetNode2D';
 import type * as GlSpriteBatchModule from './glSpriteBatch';
 import { scopeModuleMocks } from './moduleMockTestHelper';
@@ -11,6 +18,7 @@ import { scopeModuleMocks } from './moduleMockTestHelper';
 let beginGlRenderPass: typeof GlRenderGlModule.beginGlRenderPass;
 let createGlRenderStateRuntime: typeof GlRenderGlModule.createGlRenderStateRuntime;
 let createGlRenderTarget: typeof GlRenderGlModule.createGlRenderTarget;
+let createGlCacheState: typeof GlCacheModule.createGlCacheState;
 let defaultGlRenderTargetNode2DRenderer: typeof GlRenderTargetNode2DModule.defaultGlRenderTargetNode2DRenderer;
 let drawGlRenderTargetResult: typeof GlRenderGlModule.drawGlRenderTargetResult;
 let enableGlRenderTargetNode2D: typeof GlRenderTargetNode2DModule.enableGlRenderTargetNode2D;
@@ -20,9 +28,10 @@ let getGlRenderStateRuntime: typeof GlRenderGlModule.getGlRenderStateRuntime;
 let popGlRenderState: typeof GlRenderGlModule.popGlRenderState;
 let pushGlRenderState: typeof GlRenderGlModule.pushGlRenderState;
 let renderIntoGlRenderTargetNode2D: typeof GlRenderTargetNode2DModule.renderIntoGlRenderTargetNode2D;
+let refreshGlRenderCache: typeof GlCacheModule.refreshGlRenderCache;
 let resizeGlRenderTarget: typeof GlRenderGlModule.resizeGlRenderTarget;
 
-scopeModuleMocks(['./glSpriteBatch', '@flighthq/render-gl']);
+scopeModuleMocks(['./glCache', './glSpriteBatch', '@flighthq/render-gl']);
 
 beforeAll(async () => {
   vi.doMock('./glSpriteBatch', async (importOriginal) => {
@@ -77,6 +86,7 @@ beforeAll(async () => {
     pushGlRenderState,
     resizeGlRenderTarget,
   } = await import('@flighthq/render-gl/contract'));
+  ({ createGlCacheState, refreshGlRenderCache } = await import('./glCache'));
   ({ flushGlSpriteBatch } = await import('./glSpriteBatch'));
   ({ defaultGlRenderTargetNode2DRenderer, enableGlRenderTargetNode2D, renderIntoGlRenderTargetNode2D } =
     await import('./glRenderTargetNode2D'));
@@ -112,6 +122,20 @@ describe('defaultGlRenderTargetNode2DRenderer', () => {
     expect(vi.mocked(flushGlSpriteBatch).mock.invocationCallOrder[0]).toBeLessThan(
       vi.mocked(drawGlRenderTargetResult).mock.invocationCallOrder[0],
     );
+  });
+
+  it('composites a screen-owned target while a cache state walks the node', () => {
+    const screenState = createState();
+    const cacheState = createGlCacheState(screenState);
+    const node = createRenderTargetNode2D({ width: 32, height: 16 });
+    renderIntoGlRenderTargetNode2D(screenState, node, () => {});
+    const target = vi.mocked(createGlRenderTarget).mock.results.at(-1)?.value as GlRenderTarget;
+    vi.mocked(drawGlRenderTargetResult).mockClear();
+
+    const renderProxy = createRenderProxy(node);
+    defaultGlRenderTargetNode2DRenderer.submit(cacheState, renderProxy);
+
+    expect(drawGlRenderTargetResult).toHaveBeenCalledWith(cacheState, renderProxy, target, expect.anything());
   });
 });
 
@@ -194,6 +218,60 @@ describe('renderIntoGlRenderTargetNode2D', () => {
 
     expect(createGlRenderTarget).toHaveBeenCalledTimes(2);
   });
+
+  it('keeps tracked GL state clean across a cache bake and node population in one frame', () => {
+    const screenState = createState();
+    const cacheState = createGlCacheState(screenState);
+    const runtime = getGlRenderStateRuntime(screenState);
+    runtime.currentProgram = { id: 'stale-program' } as unknown as WebGLProgram;
+    runtime.currentTexture = { id: 'stale-texture' } as unknown as WebGLTexture;
+    runtime.currentBlendMode = 'Add';
+    runtime.currentScissorRect = { height: 4, width: 3, x: 1, y: 2 };
+
+    refreshGlRenderCache(cacheState, createRenderCache(), createDisplayObject(), { padding: 1 });
+    expectTrackedStateToBeClean(screenState);
+
+    let saved:
+      | {
+          blendMode: GlRenderStateRuntime['currentBlendMode'];
+          program: GlRenderStateRuntime['currentProgram'];
+          scissorRect: GlRenderStateRuntime['currentScissorRect'];
+          texture: GlRenderStateRuntime['currentTexture'];
+        }
+      | undefined;
+    vi.mocked(pushGlRenderState).mockImplementationOnce((state) => {
+      const current = getGlRenderStateRuntime(state);
+      saved = {
+        blendMode: current.currentBlendMode,
+        program: current.currentProgram,
+        scissorRect: current.currentScissorRect,
+        texture: current.currentTexture,
+      };
+    });
+    vi.mocked(popGlRenderState).mockImplementationOnce((state) => {
+      const current = getGlRenderStateRuntime(state);
+      current.currentBlendMode = saved!.blendMode;
+      current.currentProgram = saved!.program;
+      current.currentScissorRect = saved!.scissorRect;
+      current.currentTexture = saved!.texture;
+    });
+
+    const node = createRenderTargetNode2D({ width: 16, height: 16 });
+    renderIntoGlRenderTargetNode2D(screenState, node, (state) => {
+      const current = getGlRenderStateRuntime(state);
+      current.currentProgram = { id: 'foreign-program' } as unknown as WebGLProgram;
+      current.currentTexture = { id: 'foreign-texture' } as unknown as WebGLTexture;
+      current.currentBlendMode = 'Multiply';
+      current.currentScissorRect = { height: 8, width: 7, x: 5, y: 6 };
+    });
+    expectTrackedStateToBeClean(screenState);
+
+    vi.mocked(drawGlRenderTargetResult).mockImplementationOnce((state) => {
+      expectTrackedStateToBeClean(state);
+    });
+    defaultGlRenderTargetNode2DRenderer.submit(screenState, createRenderProxy(node));
+    expect(drawGlRenderTargetResult).toHaveBeenCalled();
+  });
 });
 
 function createRenderProxy(source: RenderTargetNode2D): RenderProxy2D {
@@ -207,6 +285,19 @@ function createRenderProxy(source: RenderTargetNode2D): RenderProxy2D {
 
 function createState(): GlRenderState {
   const state = createRenderState() as GlRenderState;
+  (state as { gl: Partial<WebGL2RenderingContext> }).gl = {
+    clear: vi.fn(),
+    clearColor: vi.fn(),
+    COLOR_BUFFER_BIT: 0x4000,
+  };
   state[EntityRuntimeKey] = createGlRenderStateRuntime();
   return state;
+}
+
+function expectTrackedStateToBeClean(state: GlRenderState): void {
+  const runtime = getGlRenderStateRuntime(state);
+  expect(runtime.currentBlendMode).toBeNull();
+  expect(runtime.currentProgram).toBeNull();
+  expect(runtime.currentScissorRect).toBeNull();
+  expect(runtime.currentTexture).toBeNull();
 }

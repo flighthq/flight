@@ -139,6 +139,12 @@ export function ensureGlRenderCacheTarget(
   return target;
 }
 
+// Cache rendering uses a second render state over the screen state's GL context. Backend resources
+// that must remain visible while that cache state walks a subtree are owned by the screen state.
+export function getGlRenderCacheScreenState(state: GlRenderState): GlRenderState {
+  return _cacheStateScreen.get(state) ?? state;
+}
+
 export function getGlRenderCacheTarget(state: GlRenderState, cache: RenderCache): GlRenderTarget | null {
   return getTargets(state).get(cache) ?? null;
 }
@@ -156,7 +162,7 @@ export function refreshGlRenderCache(
   source: Node2D,
   options?: Readonly<RenderCacheRefreshOptions>,
 ): boolean {
-  const screenState = _cacheStateScreen.get(cacheState) ?? cacheState;
+  const screenState = getGlRenderCacheScreenState(cacheState);
   const padding = options?.padding ?? 0;
   const minWidth = options?.minWidth ?? 1;
   const minHeight = options?.minHeight ?? 1;

@@ -22,6 +22,7 @@ let createGlCacheState: typeof GlCacheModule.createGlCacheState;
 let defaultGlRenderCacheRenderer: typeof GlCacheModule.defaultGlRenderCacheRenderer;
 let enableGlRenderCache: typeof GlCacheModule.enableGlRenderCache;
 let ensureGlRenderCacheTarget: typeof GlCacheModule.ensureGlRenderCacheTarget;
+let getGlRenderCacheScreenState: typeof GlCacheModule.getGlRenderCacheScreenState;
 let getGlRenderCacheTarget: typeof GlCacheModule.getGlRenderCacheTarget;
 let refreshGlRenderCache: typeof GlCacheModule.refreshGlRenderCache;
 let releaseGlRenderCache: typeof GlCacheModule.releaseGlRenderCache;
@@ -91,6 +92,7 @@ beforeAll(async () => {
     defaultGlRenderCacheRenderer,
     enableGlRenderCache,
     ensureGlRenderCacheTarget,
+    getGlRenderCacheScreenState,
     getGlRenderCacheTarget,
     refreshGlRenderCache,
     releaseGlRenderCache,
@@ -182,6 +184,16 @@ describe('ensureGlRenderCacheTarget', () => {
     const stateB = fakeScreen();
     const cache = createRenderCache();
     expect(ensureGlRenderCacheTarget(stateA, cache, 8, 8)).not.toBe(ensureGlRenderCacheTarget(stateB, cache, 8, 8));
+  });
+});
+
+describe('getGlRenderCacheScreenState', () => {
+  it('resolves a cache render state to the screen state that owns shared GL resources', () => {
+    const screen = fakeScreen();
+    const cacheState = createGlCacheState(screen);
+
+    expect(getGlRenderCacheScreenState(cacheState)).toBe(screen);
+    expect(getGlRenderCacheScreenState(screen)).toBe(screen);
   });
 });
 
