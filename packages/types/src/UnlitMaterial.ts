@@ -1,3 +1,4 @@
+import type { RenderTexture } from './RenderTexture';
 import type { SurfaceMaterial } from './SurfaceMaterial';
 import type { Texture } from './Texture';
 import type { VideoTexture } from './VideoTexture';
@@ -11,9 +12,15 @@ import type { VideoTexture } from './VideoTexture';
 // typed — a renderer branches on which slot is set. When both are set the video map wins (it is the
 // more specific, dynamic source); a backend without a video path ignores it and falls back to
 // `baseColorMap`. GL and WebGPU upload it through their dynamic frameId-gated texture paths.
+//
+// `baseColorRenderMap` is the render-first sibling: a backend target whose resolved attachment is
+// sampled directly without a CPU upload. It remains a distinct slot for the same reason as video,
+// keeping ordinary still-image materials independent from render-to-texture support. A ready render
+// map wins video and still maps; an unavailable one falls back through those existing slots.
 export interface UnlitMaterial extends SurfaceMaterial {
   baseColor: number;
   baseColorMap: Texture | null;
+  baseColorRenderMap: RenderTexture | null;
   baseColorVideoMap: VideoTexture | null;
 }
 

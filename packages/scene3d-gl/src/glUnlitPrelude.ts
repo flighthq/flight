@@ -1,10 +1,11 @@
 import { hasImageResourcePixels } from '@flighthq/image/contract';
-import { bindGlImageResourceTexture, bindGlVideoTexture } from '@flighthq/render-gl/contract';
+import { bindGlImageResourceTexture, bindGlRenderTexture, bindGlVideoTexture } from '@flighthq/render-gl/contract';
 import type {
   GlUnlitDefineKey,
   GlUnlitProgram,
   LinearColor,
   GlRenderState,
+  RenderTexture,
   Texture,
   VideoTexture,
 } from '@flighthq/types/contract';
@@ -16,6 +17,25 @@ import {
   ensureGlScene3DProgram,
 } from './glMeshProgram';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
+// Render-to-texture sibling of the still/video binders. The target's resolved attachment is already
+// resident on this GL context, so bindGlRenderTexture only references it and applies sampling state.
+export function bindGlUnlitRenderSurface(
+  state: GlRenderState,
+  program: Readonly<GlUnlitProgram>,
+  color: Readonly<LinearColor>,
+  intensity: number,
+  renderMap: Readonly<RenderTexture>,
+  alphaCutoff: number,
+): void {
+  const gl = state.gl;
+  gl.uniform4f(program.locColor, color[0], color[1], color[2], color[3]);
+  gl.uniform1f(program.locIntensity, intensity);
+  gl.uniform1f(program.locAlphaCutoff, alphaCutoff);
+  gl.activeTexture(gl.TEXTURE0);
+  bindGlRenderTexture(state, renderMap);
+  gl.uniform1i(program.locColorMap, 0);
+}
+
 // Uploads the resolved unlit surface uniforms shared by all three unlit materials: the linear color
 // (already sRgb-decoded on the CPU), the intensity scale (1 for Unlit/VertexColor, emissiveStrength
 // for Emissive), the optional color map on texture unit 0, and the alpha-mask cutoff. The caller has
@@ -66,9 +86,9 @@ export function bindGlUnlitVideoSurface(
 // A short, stable, order-independent string identity for an unlit define key, used as the program-
 // cache key. Two keys with the same flags produce the same string and so share a compiled program.
 export function buildGlUnlitDefineKey(key: Readonly<GlUnlitDefineKey>): string {
-  return `${key.alphaMaskEnabled ? 'm' : '-'}${key.hasColorMap ? 'c' : '-'}${key.vertexColor ? 'v' : '-'}${
-    key.hasUvTransform ? 'u' : '-'
-  }${key.hasSkin ? 'k' : '-'}`;
+  return `${key.alphaMaskEnabled ? 'm' : '-'}${key.hasColorMap ? 'c' : '-'}${key.colorMapLinear ? 'l' : '-'}${
+    key.vertexColor ? 'v' : '-'
+  }${key.hasUvTransform ? 'u' : '-'}${key.hasSkin ? 'k' : '-'}`;
 }
 
 // Compiles the unlit shader for a define key, links it, and resolves its uniform locations. Pure GL
@@ -116,6 +136,7 @@ function buildDefineSource(key: Readonly<GlUnlitDefineKey>): string {
   let defines = '#version 300 es\n';
   if (key.alphaMaskEnabled) defines += '#define ALPHA_MASK\n';
   if (key.hasColorMap) defines += '#define HAS_COLOR_MAP\n';
+  if (key.colorMapLinear) defines += '#define COLOR_MAP_LINEAR\n';
   if (key.hasUvTransform) defines += '#define HAS_UV_TRANSFORM\n';
   if (key.vertexColor) defines += '#define VERTEX_COLOR\n';
   if (key.hasSkin) defines += '#define HAS_SKIN\n';
@@ -184,7 +205,11 @@ void main() {
 #endif
 #ifdef HAS_COLOR_MAP
   vec4 sampled = texture(u_colorMap, v_uv0);
+#ifdef COLOR_MAP_LINEAR
+  color.rgb *= sampled.rgb;
+#else
   color.rgb *= srgbToLinear(sampled.rgb);
+#endif
   color.a *= sampled.a;
 #endif
 #ifdef ALPHA_MASK

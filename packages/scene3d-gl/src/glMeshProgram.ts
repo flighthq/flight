@@ -9,6 +9,7 @@ import type {
   MeshGeometry,
   Scene3DRenderProxy,
   TextureLike,
+  RenderTexture,
   VideoTexture,
 } from '@flighthq/types/contract';
 
@@ -46,7 +47,7 @@ export function beginGlMeshDraw(state: GlRenderState, program: Readonly<GlMeshPr
 export function bindGlUvTransform(
   gl: WebGL2RenderingContext,
   program: Readonly<GlMeshProgram>,
-  texture: Readonly<TextureLike | VideoTexture> | null,
+  texture: Readonly<RenderTexture | TextureLike | VideoTexture> | null,
 ): void {
   let loc = program.locUvTransform;
   if (loc === undefined) {
@@ -203,7 +204,7 @@ export function ensureGlScene3DProgram<T extends GlMeshProgram>(
 // material's primary map is bound (an image is present, so it is actually sampled) AND carries a
 // non-identity uv transform. Gating on both keeps an untiled or unbound surface on the identity shader
 // variant, so it never pays for the uv-transform uniform or the extra vertex multiply.
-export function hasGlUvTransform(texture: Readonly<TextureLike | VideoTexture> | null): boolean {
+export function hasGlUvTransform(texture: Readonly<RenderTexture | TextureLike | VideoTexture> | null): boolean {
   return texture !== null && (!('image' in texture) || texture.image !== null) && hasTextureUvTransform(texture);
 }
 

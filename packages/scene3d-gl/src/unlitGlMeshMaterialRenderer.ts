@@ -1,4 +1,5 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
+import { getGlRenderTextureColorSpace, isGlRenderTextureReady } from '@flighthq/render-gl/contract';
 import { isVideoTextureFrameReady } from '@flighthq/texture/contract';
 import type {
   LinearColor,
@@ -23,7 +24,12 @@ import {
   setGlMeshViewProjection,
 } from './glMeshProgram';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { bindGlUnlitSurface, bindGlUnlitVideoSurface, ensureGlUnlitProgram } from './glUnlitPrelude';
+import {
+  bindGlUnlitRenderSurface,
+  bindGlUnlitSurface,
+  bindGlUnlitVideoSurface,
+  ensureGlUnlitProgram,
+} from './glUnlitPrelude';
 
 // The built-in Unlit forward renderer (GlMeshMaterialRenderer for UnlitMaterialKind). Lighting-
 // independent flat color: bind selects the unlit variant for the material's base-color map / alpha
@@ -38,7 +44,7 @@ export const unlitGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   ): void {
     const gl = state.gl;
     const unlit = material as Readonly<UnlitMaterial> | null;
-    const program = ensureGlUnlitProgram(state, defineKeyForMaterial(unlit));
+    const program = ensureGlUnlitProgram(state, defineKeyForMaterial(state, unlit));
     beginGlMeshDraw(state, program, unlit !== null && unlit.doubleSided);
     setGlMeshViewProjection(gl, program.locViewProjection, camera);
 
@@ -47,8 +53,12 @@ export const unlitGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
       return;
     }
     unpackColorToLinear(scratchRgba, unlit.baseColor);
+    const renderMap = unlit.baseColorRenderMap;
     const videoMap = unlit.baseColorVideoMap;
-    if (videoMap !== null && isVideoTextureFrameReady(videoMap)) {
+    if (renderMap !== null && isGlRenderTextureReady(state, renderMap)) {
+      bindGlUnlitRenderSurface(state, program, scratchRgba, 1, renderMap, unlit.alphaCutoff);
+      bindGlUvTransform(gl, program, renderMap);
+    } else if (videoMap !== null && isVideoTextureFrameReady(videoMap)) {
       bindGlUnlitVideoSurface(state, program, scratchRgba, 1, videoMap, unlit.alphaCutoff);
       bindGlUvTransform(gl, program, videoMap);
     } else {
@@ -70,19 +80,25 @@ export function registerUnlitGlMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, UnlitMaterialKind, unlitGlMeshMaterialRenderer);
 }
 
-function defineKeyForMaterial(material: Readonly<UnlitMaterial> | null): GlUnlitDefineKey {
+function defineKeyForMaterial(state: GlRenderState, material: Readonly<UnlitMaterial> | null): GlUnlitDefineKey {
+  const renderMap = material?.baseColorRenderMap ?? null;
+  const renderMapReady = renderMap !== null && isGlRenderTextureReady(state, renderMap);
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
+    colorMapLinear: renderMapReady && getGlRenderTextureColorSpace(state, renderMap) === 'linear',
     hasColorMap:
       material !== null &&
-      ((material.baseColorVideoMap !== null && isVideoTextureFrameReady(material.baseColorVideoMap)) ||
+      (renderMapReady ||
+        (material.baseColorVideoMap !== null && isVideoTextureFrameReady(material.baseColorVideoMap)) ||
         (material.baseColorMap !== null && material.baseColorMap.image !== null)),
     hasUvTransform:
       material !== null &&
       hasGlUvTransform(
-        material.baseColorVideoMap !== null && isVideoTextureFrameReady(material.baseColorVideoMap)
-          ? material.baseColorVideoMap
-          : material.baseColorMap,
+        renderMapReady
+          ? material.baseColorRenderMap
+          : material.baseColorVideoMap !== null && isVideoTextureFrameReady(material.baseColorVideoMap)
+            ? material.baseColorVideoMap
+            : material.baseColorMap,
       ),
     vertexColor: false,
   };
