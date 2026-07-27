@@ -98,6 +98,12 @@ export function ensureCanvasRenderCacheTarget(
   return target;
 }
 
+// Cache rendering uses a second render state over a target owned by the screen state. Backend
+// resources that must remain visible while that cache state walks a subtree use the same owner.
+export function getCanvasRenderCacheScreenState(state: CanvasRenderState): CanvasRenderState {
+  return _cacheStateScreen.get(state) ?? state;
+}
+
 export function getCanvasRenderCacheTarget(state: CanvasRenderState, cache: RenderCache): CanvasRenderTarget | null {
   return getTargets(state).get(cache) ?? null;
 }
@@ -119,7 +125,7 @@ export function refreshCanvasRenderCache(
   source: Node2D,
   options?: Readonly<RenderCacheRefreshOptions>,
 ): boolean {
-  const screenState = _cacheStateScreen.get(cacheState) ?? cacheState;
+  const screenState = getCanvasRenderCacheScreenState(cacheState);
   const padding = options?.padding ?? 0;
   const minWidth = options?.minWidth ?? 1;
   const minHeight = options?.minHeight ?? 1;

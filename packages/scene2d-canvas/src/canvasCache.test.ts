@@ -8,6 +8,7 @@ import {
   destroyCanvasRenderCacheTarget,
   enableCanvasRenderCache,
   ensureCanvasRenderCacheTarget,
+  getCanvasRenderCacheScreenState,
   getCanvasRenderCacheTarget,
   refreshCanvasRenderCache,
   releaseCanvasRenderCache,
@@ -119,6 +120,16 @@ describe('ensureCanvasRenderCacheTarget', () => {
     const targetA = ensureCanvasRenderCacheTarget(stateA, cache, 8, 8);
     const targetB = ensureCanvasRenderCacheTarget(stateB, cache, 8, 8);
     expect(targetA).not.toBe(targetB);
+  });
+});
+
+describe('getCanvasRenderCacheScreenState', () => {
+  it('resolves a cache render state to the screen state that owns shared targets', () => {
+    const screen = makeCanvasState();
+    const cacheState = createCanvasCacheState(screen);
+
+    expect(getCanvasRenderCacheScreenState(cacheState)).toBe(screen);
+    expect(getCanvasRenderCacheScreenState(screen)).toBe(screen);
   });
 });
 
