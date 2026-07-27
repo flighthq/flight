@@ -38,7 +38,9 @@ export function bindGlRenderTexture(
   if (entry === undefined || entry.status !== 'ready') {
     notifyGuard(state, renderTexture);
     state.gl.bindTexture(state.gl.TEXTURE_2D, null);
-    getGlRenderStateRuntime(state).currentTexture = null;
+    const runtime = getGlRenderStateRuntime(state);
+    runtime.currentTexture = null;
+    runtime.currentTextureStraightAlpha = false;
     return null;
   }
 
@@ -94,7 +96,6 @@ export function renderIntoGlRenderTexture(
   callback: (state: GlRenderState) => void,
 ): void {
   const entry = ensureEntry(state, renderTexture);
-  const previousStatus = entry.status;
   entry.status = 'writing';
   let rendered = false;
   pushGlRenderState(state);
@@ -108,7 +109,7 @@ export function renderIntoGlRenderTexture(
     }
   } finally {
     popGlRenderState(state);
-    entry.status = rendered ? 'ready' : previousStatus;
+    entry.status = rendered ? 'ready' : 'unrendered';
     if (rendered) renderTexture.colorSpace = entry.target.colorSpace;
   }
 }
