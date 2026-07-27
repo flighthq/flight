@@ -39,6 +39,7 @@ export function createGlState(options?: { allowSmoothing?: boolean; backgroundCo
     currentScissorRect: null,
     currentTexture: null,
     currentTextureStraightAlpha: false,
+    flushPendingDraws: null,
     renderTargetViewport: null,
     textureCache: new WeakMap<CanvasImageSource, WebGLTexture>(),
     imageResourcePremultipliedTextureCache: new WeakMap(),

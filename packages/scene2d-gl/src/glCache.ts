@@ -94,6 +94,7 @@ export function createGlCacheState(screenState: GlRenderState): GlRenderState {
   cacheRuntime.currentScissorRect = null;
   cacheRuntime.currentTexture = null;
   cacheRuntime.currentTextureStraightAlpha = false;
+  cacheRuntime.flushPendingDraws = null;
   cacheRuntime.renderTargetViewport = null;
   cacheRuntime.scissorStack = [];
   cacheRuntime.spriteBatchBlendMode = null;

@@ -1,0 +1,293 @@
+import type { BlendMode as BlendModeType, GlRenderStateRuntime, GlScissorRect } from '@flighthq/types/contract';
+import { BlendMode } from '@flighthq/types/contract';
+
+import { getGlRenderStateRuntime } from './glRenderState';
+import { popGlRenderState, pushGlRenderState, withGlRenderState } from './glRenderStateBracket';
+import { createGlState } from './glTestHelper';
+
+type TestGlState = {
+  activeTexture: number;
+  blend: boolean;
+  blendDstAlpha: number;
+  blendDstRgb: number;
+  blendEquationAlpha: number;
+  blendEquationRgb: number;
+  blendMode: BlendModeType | null;
+  blendSrcAlpha: number;
+  blendSrcRgb: number;
+  cullFace: boolean;
+  cullFaceMode: number;
+  depthFunc: number;
+  depthMask: boolean;
+  depthTest: boolean;
+  program: WebGLProgram | null;
+  scissorBox: [number, number, number, number];
+  scissorRect: GlScissorRect | null;
+  scissorTest: boolean;
+  straightAlpha: boolean;
+  texture: WebGLTexture | null;
+  vertexArray: WebGLVertexArrayObject | null;
+  viewport: [number, number, number, number];
+};
+
+type StatefulGl = {
+  gl: WebGL2RenderingContext;
+  parameters: Map<number, unknown>;
+  runtime: GlRenderStateRuntime;
+};
+
+const OUTER_STATE: TestGlState = {
+  activeTexture: 0x84c1,
+  blend: true,
+  blendDstAlpha: 0x0303,
+  blendDstRgb: 0x0303,
+  blendEquationAlpha: 0x8006,
+  blendEquationRgb: 0x8006,
+  blendMode: BlendMode.Add,
+  blendSrcAlpha: 1,
+  blendSrcRgb: 1,
+  cullFace: false,
+  cullFaceMode: 0x0405,
+  depthFunc: 0x0203,
+  depthMask: false,
+  depthTest: true,
+  program: { name: 'outer-program' } as unknown as WebGLProgram,
+  scissorBox: [2, 3, 40, 50],
+  scissorRect: { x: 2, y: 3, width: 40, height: 50 },
+  scissorTest: true,
+  straightAlpha: true,
+  texture: { name: 'outer-texture' } as unknown as WebGLTexture,
+  vertexArray: { name: 'outer-vao' } as unknown as WebGLVertexArrayObject,
+  viewport: [4, 5, 320, 240],
+};
+
+const MIDDLE_STATE: TestGlState = {
+  activeTexture: 0x84c2,
+  blend: false,
+  blendDstAlpha: 0,
+  blendDstRgb: 0,
+  blendEquationAlpha: 0x800b,
+  blendEquationRgb: 0x800b,
+  blendMode: BlendMode.Multiply,
+  blendSrcAlpha: 1,
+  blendSrcRgb: 1,
+  cullFace: true,
+  cullFaceMode: 0x0404,
+  depthFunc: 0x0201,
+  depthMask: true,
+  depthTest: false,
+  program: { name: 'middle-program' } as unknown as WebGLProgram,
+  scissorBox: [6, 7, 80, 90],
+  scissorRect: { x: 6, y: 7, width: 80, height: 90 },
+  scissorTest: false,
+  straightAlpha: false,
+  texture: { name: 'middle-texture' } as unknown as WebGLTexture,
+  vertexArray: { name: 'middle-vao' } as unknown as WebGLVertexArrayObject,
+  viewport: [8, 9, 640, 480],
+};
+
+const INNER_STATE: TestGlState = {
+  ...OUTER_STATE,
+  activeTexture: 0x84c3,
+  blendMode: BlendMode.Screen,
+  program: { name: 'inner-program' } as unknown as WebGLProgram,
+  scissorRect: { x: 10, y: 11, width: 12, height: 13 },
+  texture: { name: 'inner-texture' } as unknown as WebGLTexture,
+  vertexArray: { name: 'inner-vao' } as unknown as WebGLVertexArrayObject,
+};
+
+describe('popGlRenderState', () => {
+  it('is a no-op when there is no matching push', () => {
+    const { state, gl } = createGlState();
+
+    popGlRenderState(state);
+
+    expect(gl.enable).not.toHaveBeenCalled();
+    expect(gl.disable).not.toHaveBeenCalled();
+  });
+
+  it('restores every guarded fixed-function binding and tracked runtime field', () => {
+    const fixture = createStatefulGl();
+    applyTestGlState(fixture, OUTER_STATE);
+    pushGlRenderState(fixture.state);
+
+    applyTestGlState(fixture, MIDDLE_STATE);
+    popGlRenderState(fixture.state);
+
+    expectTestGlState(fixture, OUTER_STATE);
+  });
+
+  it('restores nested pushes in last-in-first-out order', () => {
+    const fixture = createStatefulGl();
+    applyTestGlState(fixture, OUTER_STATE);
+    pushGlRenderState(fixture.state);
+    applyTestGlState(fixture, MIDDLE_STATE);
+    pushGlRenderState(fixture.state);
+    applyTestGlState(fixture, INNER_STATE);
+
+    popGlRenderState(fixture.state);
+    expectTestGlState(fixture, MIDDLE_STATE);
+    popGlRenderState(fixture.state);
+    expectTestGlState(fixture, OUTER_STATE);
+  });
+});
+
+describe('pushGlRenderState', () => {
+  it('flushes pending owner draws before taking the snapshot', () => {
+    const fixture = createStatefulGl();
+    applyTestGlState(fixture, OUTER_STATE);
+    const flush = vi.fn();
+    fixture.runtime.flushPendingDraws = flush;
+
+    pushGlRenderState(fixture.state);
+
+    expect(flush).toHaveBeenCalledWith(fixture.state);
+    popGlRenderState(fixture.state);
+  });
+});
+
+describe('withGlRenderState', () => {
+  it('restores state in finally when the foreign callback throws', () => {
+    const fixture = createStatefulGl();
+    applyTestGlState(fixture, OUTER_STATE);
+
+    expect(() =>
+      withGlRenderState(fixture.state, () => {
+        applyTestGlState(fixture, INNER_STATE);
+        throw new Error('foreign draw failed');
+      }),
+    ).toThrow('foreign draw failed');
+
+    expectTestGlState(fixture, OUTER_STATE);
+  });
+});
+
+function applyTestGlState(fixture: StatefulGl, values: Readonly<TestGlState>): void {
+  const { gl, runtime } = fixture;
+  setCapability(gl, gl.DEPTH_TEST, values.depthTest);
+  gl.depthMask(values.depthMask);
+  gl.depthFunc(values.depthFunc);
+  setCapability(gl, gl.CULL_FACE, values.cullFace);
+  gl.cullFace(values.cullFaceMode);
+  setCapability(gl, gl.BLEND, values.blend);
+  gl.blendFuncSeparate(values.blendSrcRgb, values.blendDstRgb, values.blendSrcAlpha, values.blendDstAlpha);
+  gl.blendEquationSeparate(values.blendEquationRgb, values.blendEquationAlpha);
+  gl.bindVertexArray(values.vertexArray);
+  gl.useProgram(values.program);
+  gl.activeTexture(values.activeTexture);
+  gl.bindTexture(gl.TEXTURE_2D, values.texture);
+  setCapability(gl, gl.SCISSOR_TEST, values.scissorTest);
+  gl.scissor(values.scissorBox[0], values.scissorBox[1], values.scissorBox[2], values.scissorBox[3]);
+  gl.viewport(values.viewport[0], values.viewport[1], values.viewport[2], values.viewport[3]);
+  runtime.currentBlendMode = values.blendMode;
+  runtime.currentProgram = values.program;
+  runtime.currentScissorRect = values.scissorRect;
+  runtime.currentTexture = values.texture;
+  runtime.currentTextureStraightAlpha = values.straightAlpha;
+}
+
+function createStatefulGl(): StatefulGl & ReturnType<typeof createGlState> {
+  const fixture = createGlState();
+  const { gl, state } = fixture;
+  Object.assign(gl, {
+    ACTIVE_TEXTURE: 0x84e0,
+    BLEND_DST_ALPHA: 0x80ca,
+    BLEND_DST_RGB: 0x80c8,
+    BLEND_EQUATION_ALPHA: 0x883d,
+    BLEND_EQUATION_RGB: 0x8009,
+    BLEND_SRC_ALPHA: 0x80cb,
+    BLEND_SRC_RGB: 0x80c9,
+    CULL_FACE_MODE: 0x0b45,
+    CURRENT_PROGRAM: 0x8b8d,
+    DEPTH_FUNC: 0x0b74,
+    DEPTH_WRITEMASK: 0x0b72,
+    SCISSOR_BOX: 0x0c10,
+    TEXTURE_BINDING_2D: 0x8069,
+    VERTEX_ARRAY_BINDING: 0x85b5,
+    VIEWPORT: 0x0ba2,
+  });
+
+  const enabled = new Set<number>();
+  const parameters = new Map<number, unknown>();
+  (gl.isEnabled as ReturnType<typeof vi.fn>).mockImplementation((capability: number) => enabled.has(capability));
+  (gl.getParameter as ReturnType<typeof vi.fn>).mockImplementation((parameter: number) => parameters.get(parameter));
+  (gl.enable as ReturnType<typeof vi.fn>).mockImplementation((capability: number) => enabled.add(capability));
+  (gl.disable as ReturnType<typeof vi.fn>).mockImplementation((capability: number) => enabled.delete(capability));
+  (gl.depthMask as ReturnType<typeof vi.fn>).mockImplementation((value: boolean) =>
+    parameters.set(gl.DEPTH_WRITEMASK, value),
+  );
+  (gl.depthFunc as ReturnType<typeof vi.fn>).mockImplementation((value: number) =>
+    parameters.set(gl.DEPTH_FUNC, value),
+  );
+  (gl.cullFace as ReturnType<typeof vi.fn>).mockImplementation((value: number) =>
+    parameters.set(gl.CULL_FACE_MODE, value),
+  );
+  (gl.blendFuncSeparate as ReturnType<typeof vi.fn>).mockImplementation(
+    (srcRgb: number, dstRgb: number, srcAlpha: number, dstAlpha: number) => {
+      parameters.set(gl.BLEND_SRC_RGB, srcRgb);
+      parameters.set(gl.BLEND_DST_RGB, dstRgb);
+      parameters.set(gl.BLEND_SRC_ALPHA, srcAlpha);
+      parameters.set(gl.BLEND_DST_ALPHA, dstAlpha);
+    },
+  );
+  (gl.blendEquationSeparate as ReturnType<typeof vi.fn>).mockImplementation((rgb: number, alpha: number) => {
+    parameters.set(gl.BLEND_EQUATION_RGB, rgb);
+    parameters.set(gl.BLEND_EQUATION_ALPHA, alpha);
+  });
+  (gl.bindVertexArray as ReturnType<typeof vi.fn>).mockImplementation((value: WebGLVertexArrayObject | null) =>
+    parameters.set(gl.VERTEX_ARRAY_BINDING, value),
+  );
+  (gl.useProgram as ReturnType<typeof vi.fn>).mockImplementation((value: WebGLProgram | null) =>
+    parameters.set(gl.CURRENT_PROGRAM, value),
+  );
+  (gl.activeTexture as ReturnType<typeof vi.fn>).mockImplementation((value: number) =>
+    parameters.set(gl.ACTIVE_TEXTURE, value),
+  );
+  (gl.bindTexture as ReturnType<typeof vi.fn>).mockImplementation((_target: number, value: WebGLTexture | null) =>
+    parameters.set(gl.TEXTURE_BINDING_2D, value),
+  );
+  (gl.scissor as ReturnType<typeof vi.fn>).mockImplementation((x: number, y: number, width: number, height: number) =>
+    parameters.set(gl.SCISSOR_BOX, [x, y, width, height]),
+  );
+  (gl.viewport as ReturnType<typeof vi.fn>).mockImplementation((x: number, y: number, width: number, height: number) =>
+    parameters.set(gl.VIEWPORT, [x, y, width, height]),
+  );
+
+  return { ...fixture, parameters, runtime: getGlRenderStateRuntime(state) };
+}
+
+function expectTestGlState(fixture: StatefulGl, expected: Readonly<TestGlState>): void {
+  const { gl, parameters, runtime } = fixture;
+  expect(gl.isEnabled(gl.DEPTH_TEST)).toBe(expected.depthTest);
+  expect(parameters.get(gl.DEPTH_WRITEMASK)).toBe(expected.depthMask);
+  expect(parameters.get(gl.DEPTH_FUNC)).toBe(expected.depthFunc);
+  expect(gl.isEnabled(gl.CULL_FACE)).toBe(expected.cullFace);
+  expect(parameters.get(gl.CULL_FACE_MODE)).toBe(expected.cullFaceMode);
+  expect(gl.isEnabled(gl.BLEND)).toBe(expected.blend);
+  expect(parameters.get(gl.BLEND_SRC_RGB)).toBe(expected.blendSrcRgb);
+  expect(parameters.get(gl.BLEND_DST_RGB)).toBe(expected.blendDstRgb);
+  expect(parameters.get(gl.BLEND_SRC_ALPHA)).toBe(expected.blendSrcAlpha);
+  expect(parameters.get(gl.BLEND_DST_ALPHA)).toBe(expected.blendDstAlpha);
+  expect(parameters.get(gl.BLEND_EQUATION_RGB)).toBe(expected.blendEquationRgb);
+  expect(parameters.get(gl.BLEND_EQUATION_ALPHA)).toBe(expected.blendEquationAlpha);
+  expect(parameters.get(gl.VERTEX_ARRAY_BINDING)).toBe(expected.vertexArray);
+  expect(parameters.get(gl.CURRENT_PROGRAM)).toBe(expected.program);
+  expect(parameters.get(gl.ACTIVE_TEXTURE)).toBe(expected.activeTexture);
+  expect(parameters.get(gl.TEXTURE_BINDING_2D)).toBe(expected.texture);
+  expect(gl.isEnabled(gl.SCISSOR_TEST)).toBe(expected.scissorTest);
+  expect(parameters.get(gl.SCISSOR_BOX)).toEqual(expected.scissorBox);
+  expect(parameters.get(gl.VIEWPORT)).toEqual(expected.viewport);
+  expect(runtime.currentBlendMode).toBe(expected.blendMode);
+  expect(runtime.currentProgram).toBe(expected.program);
+  expect(runtime.currentScissorRect).toBe(expected.scissorRect);
+  expect(runtime.currentTexture).toBe(expected.texture);
+  expect(runtime.currentTextureStraightAlpha).toBe(expected.straightAlpha);
+}
+
+function setCapability(gl: WebGL2RenderingContext, capability: number, enabled: boolean): void {
+  if (enabled) {
+    gl.enable(capability);
+  } else {
+    gl.disable(capability);
+  }
+}

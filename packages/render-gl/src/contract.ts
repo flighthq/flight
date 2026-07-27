@@ -10,6 +10,7 @@ export * from './glProgram';
 export * from './glReadback';
 export * from './glRenderPass';
 export * from './glRenderState';
+export * from './glRenderStateBracket';
 export * from './glRenderTarget';
 export * from './glRenderTargetPool';
 export * from './glShader';

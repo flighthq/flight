@@ -110,6 +110,16 @@ describe('packGlSpriteBatchMaterialInstance', () => {
 });
 
 describe('prepareGlSpriteBatchWrite', () => {
+  it('installs the pending-draw flush seam on the render state runtime', () => {
+    const { state } = createGlState();
+    const runtime = getGlRenderStateRuntime(state);
+
+    expect(runtime.flushPendingDraws).toBeNull();
+    prepareGlSpriteBatchWrite(state, makeTexture(), null, null, standardGlMaterialRenderer, 1);
+
+    expect(runtime.flushPendingDraws).toBe(flushGlSpriteBatch);
+  });
+
   it('returns float index 0 for an empty batch', () => {
     const { state } = createGlState();
     const tex = makeTexture();

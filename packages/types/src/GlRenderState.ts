@@ -75,6 +75,10 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // Whether the currently bound display texture stores straight RGB in compressed blocks. Built-in
   // 2D shaders premultiply its sample before ONE/ONE_MINUS_SRC_ALPHA blending.
   currentTextureStraightAlpha: boolean;
+  // Optional owner-installed seam that drains queued draws before render-gl hands the context to a
+  // foreign renderer. scene2d-gl installs its sprite-batch flush lazily when a batch is first prepared;
+  // render-gl reaches it only through this contract slot and therefore does not depend on scene2d-gl.
+  flushPendingDraws?: ((state: GlRenderState) => void) | null;
 
   // Open per-state registry mapping a BlendMode to its fixed-function realization. Null until the
   // first registration (registerGlBlendMode / registerDefaultGlBlendModes), so a state that never
