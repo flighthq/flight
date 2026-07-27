@@ -16,6 +16,7 @@
     "api:check": "tsx ./scripts/api.ts --check",
     "api:json": "tsx ./scripts/api.ts --json",
     "api:contract": "tsx ./scripts/api.ts --contract",
+    "api:curate": "tsx ./scripts/curate-public-api.ts",
     "assets": "tsx ./scripts/warm-assets.ts",
     "build": "tsc -b tsconfig.build.json",
     "build:check": "npm run packages:check && npm run typecheck",
