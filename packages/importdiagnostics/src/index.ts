@@ -1,1 +1,1 @@
-export {} from './contract';
+export { collectImportDiagnostics, formatImportDiagnostic, reportImportDiagnostic } from './contract';

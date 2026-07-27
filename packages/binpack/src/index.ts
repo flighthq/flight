@@ -1,1 +1,1 @@
-export {} from './contract';
+export { packRectangles } from './contract';

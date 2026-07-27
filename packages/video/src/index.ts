@@ -1,1 +1,18 @@
-export { createVideoResource, loadVideoResourceFromBlob } from './contract';
+export {
+  canPlayVideoType,
+  createVideoResource,
+  createVideoResourceFromMediaStream,
+  detectVideoMimeType,
+  disposeVideoResource,
+  getVideoResourceDuration,
+  getVideoResourceHeight,
+  getVideoResourceWidth,
+  hasVideoResourceElement,
+  inferVideoMimeType,
+  isVideoResourceEmpty,
+  isVideoResourceReady,
+  loadVideoResourceFromBlob,
+  loadVideoResourceFromUrl,
+  loadVideoResourceFromUrls,
+  selectVideoResourceUrl,
+} from './contract';

@@ -1,1 +1,18 @@
-export { createTimelineSource } from './contract';
+export {
+  addTimelineFrameScript,
+  createTimeline,
+  createTimelineSource,
+  disposeTimelineSignals,
+  enableTimelineSignals,
+  findTimelineLabel,
+  getTimelineCurrentLabel,
+  getTimelineFrameScript,
+  gotoAndPlayTimeline,
+  gotoAndStopTimeline,
+  nextFrameTimeline,
+  playTimeline,
+  prevFrameTimeline,
+  removeTimelineFrameScript,
+  stopTimeline,
+  updateTimeline,
+} from './contract';

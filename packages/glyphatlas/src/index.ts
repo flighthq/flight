@@ -1,8 +1,15 @@
 export {
+  clearGlyphAtlasDirty,
   createGlyphAtlas,
   createGlyphSourceFromGlyphAtlas,
   createStubGlyphRasterizerBackend,
   createWebGlyphRasterizerBackend,
+  deriveGlyphMetricsFromFontSize,
+  disposeGlyphAtlas,
+  getGlyphAtlasDirtyRegion,
+  getGlyphAtlasEntry,
+  getGlyphAtlasKerning,
+  getGlyphAtlasMetrics,
   getGlyphAtlasSurface,
   setGlyphRasterizerBackend,
 } from './contract';

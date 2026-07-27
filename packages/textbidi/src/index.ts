@@ -1,1 +1,1 @@
-export {} from './contract';
+export { getBidiRuns, reorderBidiLine, resolveBidiLevels } from './contract';

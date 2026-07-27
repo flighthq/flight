@@ -1,1 +1,16 @@
-export { formatList, formatTime } from './contract';
+export {
+  compareStrings,
+  formatCompactNumber,
+  formatCurrency,
+  formatDate,
+  formatDateTime,
+  formatList,
+  formatNumber,
+  formatPercent,
+  formatRelativeTime,
+  formatTime,
+  formatUnit,
+  selectOrdinalCategory,
+  selectPluralCategory,
+  sortStrings,
+} from './contract';

@@ -1,1 +1,21 @@
-export { beginVelocityFrame, contributeVelocity, createVelocityField } from './contract';
+export {
+  addVelocity,
+  beginVelocityFrame,
+  clampVelocity,
+  contributeTransformVelocity,
+  contributeVelocity,
+  copyVelocity,
+  createVelocityField,
+  dampVelocity,
+  getVelocity,
+  getVelocitySampleAt,
+  hasVelocity,
+  isVelocityZero,
+  lengthOfVelocity,
+  lerpVelocity,
+  normalizeVelocity,
+  scaleVelocity,
+  subtractVelocity,
+  suppressVelocity,
+  zeroVelocity,
+} from './contract';

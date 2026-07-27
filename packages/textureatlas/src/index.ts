@@ -1,1 +1,22 @@
-export { addTextureAtlasRegion, createTextureAtlas, getTextureAtlasRegionById } from './contract';
+export {
+  addTextureAtlasRegion,
+  addTextureAtlasRegionRectangle,
+  addTextureAtlasRegionRectangleXY,
+  addTextureAtlasRegionVector2,
+  createTextureAtlas,
+  createTextureAtlasFromCanvas,
+  createTextureAtlasFromImageBitmap,
+  createTextureAtlasFromImageElement,
+  createTextureAtlasFromImageResource,
+  createTextureAtlasRegion,
+  getTextureAtlasByteSize,
+  getTextureAtlasRegionById,
+  getTextureAtlasRegionByName,
+  getTextureAtlasRegionSequence,
+  getTextureAtlasRegionUv,
+  loadTextureAtlasFromBase64,
+  loadTextureAtlasFromBlob,
+  loadTextureAtlasFromBytes,
+  loadTextureAtlasFromUrl,
+  setTextureAtlasRegion,
+} from './contract';
