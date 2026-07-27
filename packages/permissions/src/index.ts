@@ -1,1 +1,1 @@
-export {} from './contract';
+export { getPermissionState, requestPermission } from './contract';

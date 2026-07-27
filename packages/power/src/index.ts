@@ -1,1 +1,16 @@
-export {} from './contract';
+export {
+  attachPower,
+  createPower,
+  detachPower,
+  disposePower,
+  enablePowerSignals,
+  getPowerBatteryHealth,
+  getPowerIdlePollingIntervalMs,
+  getPowerStatus,
+  getPowerSystemIdleState,
+  getPowerSystemIdleTime,
+  getPowerThermalState,
+  hasPowerKeepAwake,
+  setPowerIdlePollingIntervalMs,
+  setPowerKeepAwake,
+} from './contract';

@@ -1,1 +1,16 @@
-export { createMenuItemTemplate, onMenuSelect, setApplicationMenu } from './contract';
+export {
+  cloneMenuTemplate,
+  createDefaultAppMenuTemplate,
+  createDefaultEditMenuTemplate,
+  createDefaultFileMenuTemplate,
+  createDefaultHelpMenuTemplate,
+  createDefaultViewMenuTemplate,
+  createDefaultWindowMenuTemplate,
+  createMenuItemTemplate,
+  enableMenuSignals,
+  getMenuSignals,
+  onMenuSelect,
+  setApplicationMenu,
+  showContextMenu,
+  validateMenuItemTemplate,
+} from './contract';

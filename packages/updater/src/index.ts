@@ -1,1 +1,22 @@
-export {} from './contract';
+export {
+  attachAppUpdater,
+  cancelAppUpdateDownload,
+  checkAndDownloadAppUpdate,
+  checkForAppUpdate,
+  createAppUpdater,
+  createUpdaterConfig,
+  createUpdaterState,
+  detachAppUpdater,
+  disposeAppUpdater,
+  downloadAppUpdate,
+  getAppUpdaterState,
+  getUpdaterChannel,
+  getUpdaterConfig,
+  isAppUpdateEligible,
+  quitAndInstallUpdate,
+  rollbackAppUpdate,
+  setUpdaterChannel,
+  setUpdaterConfig,
+  setUpdaterFeedUrl,
+  setUpdaterSignatureConfig,
+} from './contract';
