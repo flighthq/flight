@@ -34,6 +34,7 @@ type StatefulGl = {
   gl: WebGL2RenderingContext;
   parameters: Map<number, unknown>;
   runtime: GlRenderStateRuntime;
+  textureBindings: Map<number, WebGLTexture | null>;
 };
 
 const OUTER_STATE: TestGlState = {
@@ -115,6 +116,25 @@ describe('popGlRenderState', () => {
     popGlRenderState(fixture.state);
 
     expectTestGlState(fixture, OUTER_STATE);
+  });
+
+  it('restores a non-active texture unit binding', () => {
+    const fixture = createStatefulGl();
+    applyTestGlState(fixture, OUTER_STATE);
+    const savedActiveTexture = fixture.parameters.get(fixture.gl.ACTIVE_TEXTURE);
+    const texture = { name: 'unit-two-texture' } as unknown as WebGLTexture;
+    const textureUnit = fixture.gl.TEXTURE0 + 2;
+    fixture.gl.activeTexture(textureUnit);
+    fixture.gl.bindTexture(fixture.gl.TEXTURE_2D, texture);
+    fixture.gl.activeTexture(savedActiveTexture as number);
+    pushGlRenderState(fixture.state);
+
+    fixture.gl.activeTexture(textureUnit);
+    fixture.gl.bindTexture(fixture.gl.TEXTURE_2D, null);
+    popGlRenderState(fixture.state);
+
+    expect(fixture.textureBindings.get(textureUnit)).toBe(texture);
+    expect(fixture.parameters.get(fixture.gl.ACTIVE_TEXTURE)).toBe(savedActiveTexture);
   });
 
   it('restores nested pushes in last-in-first-out order', () => {
@@ -209,8 +229,14 @@ function createStatefulGl(): StatefulGl & ReturnType<typeof createGlState> {
 
   const enabled = new Set<number>();
   const parameters = new Map<number, unknown>();
+  const textureBindings = new Map<number, WebGLTexture | null>();
   (gl.isEnabled as ReturnType<typeof vi.fn>).mockImplementation((capability: number) => enabled.has(capability));
-  (gl.getParameter as ReturnType<typeof vi.fn>).mockImplementation((parameter: number) => parameters.get(parameter));
+  (gl.getParameter as ReturnType<typeof vi.fn>).mockImplementation((parameter: number) => {
+    if (parameter === gl.TEXTURE_BINDING_2D) {
+      return textureBindings.get(parameters.get(gl.ACTIVE_TEXTURE) as number) ?? null;
+    }
+    return parameters.get(parameter);
+  });
   (gl.enable as ReturnType<typeof vi.fn>).mockImplementation((capability: number) => enabled.add(capability));
   (gl.disable as ReturnType<typeof vi.fn>).mockImplementation((capability: number) => enabled.delete(capability));
   (gl.depthMask as ReturnType<typeof vi.fn>).mockImplementation((value: boolean) =>
@@ -243,9 +269,9 @@ function createStatefulGl(): StatefulGl & ReturnType<typeof createGlState> {
   (gl.activeTexture as ReturnType<typeof vi.fn>).mockImplementation((value: number) =>
     parameters.set(gl.ACTIVE_TEXTURE, value),
   );
-  (gl.bindTexture as ReturnType<typeof vi.fn>).mockImplementation((_target: number, value: WebGLTexture | null) =>
-    parameters.set(gl.TEXTURE_BINDING_2D, value),
-  );
+  (gl.bindTexture as ReturnType<typeof vi.fn>).mockImplementation((_target: number, value: WebGLTexture | null) => {
+    textureBindings.set(parameters.get(gl.ACTIVE_TEXTURE) as number, value);
+  });
   (gl.scissor as ReturnType<typeof vi.fn>).mockImplementation((x: number, y: number, width: number, height: number) =>
     parameters.set(gl.SCISSOR_BOX, [x, y, width, height]),
   );
@@ -253,7 +279,7 @@ function createStatefulGl(): StatefulGl & ReturnType<typeof createGlState> {
     parameters.set(gl.VIEWPORT, [x, y, width, height]),
   );
 
-  return { ...fixture, parameters, runtime: getGlRenderStateRuntime(state) };
+  return { ...fixture, parameters, runtime: getGlRenderStateRuntime(state), textureBindings };
 }
 
 function expectTestGlState(fixture: StatefulGl, expected: Readonly<TestGlState>): void {
@@ -273,7 +299,7 @@ function expectTestGlState(fixture: StatefulGl, expected: Readonly<TestGlState>)
   expect(parameters.get(gl.VERTEX_ARRAY_BINDING)).toBe(expected.vertexArray);
   expect(parameters.get(gl.CURRENT_PROGRAM)).toBe(expected.program);
   expect(parameters.get(gl.ACTIVE_TEXTURE)).toBe(expected.activeTexture);
-  expect(parameters.get(gl.TEXTURE_BINDING_2D)).toBe(expected.texture);
+  expect(fixture.textureBindings.get(expected.activeTexture)).toBe(expected.texture);
   expect(gl.isEnabled(gl.SCISSOR_TEST)).toBe(expected.scissorTest);
   expect(parameters.get(gl.SCISSOR_BOX)).toEqual(expected.scissorBox);
   expect(parameters.get(gl.VIEWPORT)).toEqual(expected.viewport);

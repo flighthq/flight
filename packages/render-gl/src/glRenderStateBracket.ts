@@ -26,7 +26,7 @@ type SavedGlRenderState = {
   program: WebGLProgram | null;
   scissorBox: GlBox;
   scissorTest: boolean;
-  texture2D: WebGLTexture | null;
+  texture2DByUnit: (WebGLTexture | null)[];
   vertexArray: WebGLVertexArrayObject | null;
   viewport: GlBox;
 };
@@ -53,8 +53,11 @@ export function popGlRenderState(state: GlRenderState): void {
 
   gl.bindVertexArray(saved.vertexArray);
   gl.useProgram(saved.program);
+  for (let i = 0; i < saved.texture2DByUnit.length; i++) {
+    gl.activeTexture(gl.TEXTURE0 + i);
+    gl.bindTexture(gl.TEXTURE_2D, saved.texture2DByUnit[i]);
+  }
   gl.activeTexture(saved.activeTexture);
-  gl.bindTexture(gl.TEXTURE_2D, saved.texture2D);
 
   restoreGlCapability(gl, gl.SCISSOR_TEST, saved.scissorTest);
   gl.scissor(saved.scissorBox[0], saved.scissorBox[1], saved.scissorBox[2], saved.scissorBox[3]);
@@ -76,13 +79,21 @@ export function pushGlRenderState(state: GlRenderState): void {
   runtime.flushPendingDraws?.(state);
 
   const gl = state.gl;
+  const activeTexture = gl.getParameter(gl.ACTIVE_TEXTURE) as number;
+  const texture2DByUnit: (WebGLTexture | null)[] = [];
+  for (let i = 0; i < GL_RENDER_STATE_TEXTURE_UNIT_COUNT; i++) {
+    gl.activeTexture(gl.TEXTURE0 + i);
+    texture2DByUnit.push(gl.getParameter(gl.TEXTURE_BINDING_2D) as WebGLTexture | null);
+  }
+  gl.activeTexture(activeTexture);
+
   let stack = _renderStateStack.get(state);
   if (stack === undefined) {
     stack = [];
     _renderStateStack.set(state, stack);
   }
   stack.push({
-    activeTexture: gl.getParameter(gl.ACTIVE_TEXTURE) as number,
+    activeTexture,
     blend: gl.isEnabled(gl.BLEND),
     blendDstAlpha: gl.getParameter(gl.BLEND_DST_ALPHA) as number,
     blendDstRgb: gl.getParameter(gl.BLEND_DST_RGB) as number,
@@ -103,7 +114,7 @@ export function pushGlRenderState(state: GlRenderState): void {
     program: gl.getParameter(gl.CURRENT_PROGRAM) as WebGLProgram | null,
     scissorBox: readGlBox(gl, gl.SCISSOR_BOX),
     scissorTest: gl.isEnabled(gl.SCISSOR_TEST),
-    texture2D: gl.getParameter(gl.TEXTURE_BINDING_2D) as WebGLTexture | null,
+    texture2DByUnit,
     vertexArray: gl.getParameter(gl.VERTEX_ARRAY_BINDING) as WebGLVertexArrayObject | null,
     viewport: readGlBox(gl, gl.VIEWPORT),
   });
@@ -137,3 +148,5 @@ function restoreGlCapability(gl: WebGL2RenderingContext, capability: GLenum, ena
 // The fixed-function state stack is keyed by render state, matching the render-pass bracket: two
 // render states sharing a GL context still have independent ownership/nesting scopes.
 const _renderStateStack = new WeakMap<GlRenderState, SavedGlRenderState[]>();
+// The 2D GL pipelines use units 0-2: the primary image plus two auxiliary effect inputs.
+const GL_RENDER_STATE_TEXTURE_UNIT_COUNT = 3;
