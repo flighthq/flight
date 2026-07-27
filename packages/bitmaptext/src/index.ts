@@ -1,1 +1,15 @@
-export { createBitmapText, getBitmapTextPages, updateBitmapText } from './contract';
+export {
+  computeBitmapTextLocalBoundsRectangle,
+  createBitmapText,
+  createBitmapTextData,
+  getBitmapTextBounds,
+  getBitmapTextPages,
+  reserveBitmapText,
+  setBitmapTextAlign,
+  setBitmapTextGlyphSource,
+  setBitmapTextLetterSpacing,
+  setBitmapTextLineHeight,
+  setBitmapTextText,
+  setBitmapTextWrapWidth,
+  updateBitmapText,
+} from './contract';

@@ -1,1 +1,15 @@
-export {} from './contract';
+export {
+  applyAnimationClipToSkeleton2D,
+  cloneSkeleton2D,
+  computeSkeleton2DBoneMatrices,
+  computeSkeleton2DRegionAttachmentVertices,
+  computeSkeleton2DWorldTransforms,
+  createSkeleton2D,
+  deformSkeleton2DMeshAttachment,
+  disposeSkeleton2D,
+  equalsSkeleton2D,
+  getSkeleton2DBoneIndexByName,
+  getSkeleton2DBoneWorldMatrix,
+  setSkeleton2DBindPose,
+  validateSkeleton2D,
+} from './contract';

@@ -1,1 +1,18 @@
-export {} from './contract';
+export {
+  clearImageDecoders,
+  clearImageEncoders,
+  decodeImage,
+  decodeImagePremultiplied,
+  detectImageMimeType,
+  encodeImage,
+  getImageDecoder,
+  getImageEncoder,
+  hasImageDecoder,
+  hasImageEncoder,
+  registerImageDecoder,
+  registerImageEncoder,
+  registerWebImageDecoders,
+  registerWebImageEncoders,
+  unregisterImageDecoder,
+  unregisterImageEncoder,
+} from './contract';

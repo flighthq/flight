@@ -1,1 +1,9 @@
-export {} from './contract';
+export {
+  createBitmapFont,
+  createGlyphSourceFromBitmapFont,
+  getBitmapFontGlyph,
+  getBitmapFontKerning,
+  getBitmapFontMetrics,
+  getBitmapFontPage,
+  getBitmapFontPages,
+} from './contract';

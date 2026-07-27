@@ -1,1 +1,22 @@
-export { createAudioResourceFromSamples } from './contract';
+export {
+  canPlayAudioType,
+  cloneAudioResource,
+  createAudioResource,
+  createAudioResourceFromSamples,
+  detectAudioMimeType,
+  disposeAudioResource,
+  getAudioResourceByteSize,
+  getAudioResourceChannelCount,
+  getAudioResourceChannelData,
+  getAudioResourceDuration,
+  getAudioResourceSampleRate,
+  hasAudioResourceBuffer,
+  inferAudioMimeType,
+  isAudioResourceEmpty,
+  loadAudioResourceFromBase64,
+  loadAudioResourceFromBlob,
+  loadAudioResourceFromBytes,
+  loadAudioResourceFromUrl,
+  loadAudioResourceFromUrls,
+  selectAudioResourceUrl,
+} from './contract';

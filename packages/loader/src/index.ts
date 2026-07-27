@@ -1,1 +1,15 @@
-export {} from './contract';
+export {
+  cancelResourceLoad,
+  createResourceLoader,
+  disposeResourceLoader,
+  enableResourceLoaderItemSignals,
+  getResourceLoadItemStatus,
+  getResourceLoadProgress,
+  pauseResourceLoad,
+  queueResourceLoad,
+  resetResourceLoader,
+  resumeResourceLoad,
+  setResourceLoadPriority,
+  setResourceLoaderConcurrency,
+  startResourceLoad,
+} from './contract';

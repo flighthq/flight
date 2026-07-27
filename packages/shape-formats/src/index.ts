@@ -1,1 +1,1 @@
-export {} from './contract';
+export { formatShapeJson, parseShapeJson } from './contract';

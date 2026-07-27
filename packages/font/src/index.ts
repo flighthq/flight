@@ -1,1 +1,17 @@
-export {} from './contract';
+export {
+  createFont,
+  createFontResource,
+  detectFontFormat,
+  getFontShorthand,
+  inferFontFormatFromUrl,
+  isFontLoaded,
+  loadFontFromBytes,
+  loadFontFromName,
+  loadFontFromUrl,
+  loadFontFromUrls,
+  loadFontResourceFromBytes,
+  loadFontResourceFromName,
+  loadFontResourceFromUrl,
+  loadFontResourceFromUrls,
+  whenFontsReady,
+} from './contract';

@@ -1,1 +1,21 @@
-export { createCompressedImageResource, createImageResource, createImageResourceFromCanvas } from './contract';
+export {
+  cloneImageResource,
+  createCanvasFromImageResource,
+  createCompressedImageResource,
+  createImageResource,
+  createImageResourceFromCanvas,
+  createImageResourceFromImageBitmap,
+  createImageResourceFromImageElement,
+  disposeImageResource,
+  getImageResourceByteSize,
+  hasImageResourceData,
+  hasImageResourcePixels,
+  hasImageResourceSource,
+  isImageResourceEmpty,
+  isImageResourceSameOrigin,
+  loadImageResourceFromBase64,
+  loadImageResourceFromBlob,
+  loadImageResourceFromBytes,
+  loadImageResourceFromUrl,
+  setImageResourceSource,
+} from './contract';

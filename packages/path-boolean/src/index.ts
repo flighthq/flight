@@ -1,1 +1,10 @@
-export { booleanPaths, differencePaths, intersectPaths, unionPaths, xorPaths } from './contract';
+export {
+  booleanPaths,
+  differencePaths,
+  intersectPaths,
+  offsetPath,
+  simplifyPath,
+  unionAllPaths,
+  unionPaths,
+  xorPaths,
+} from './contract';
