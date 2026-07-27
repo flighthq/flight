@@ -5,15 +5,14 @@ import type { RenderTexture, RenderTextureOptions } from '@flighthq/types/contra
 import { cloneSampler, createSampler } from './sampler';
 
 // Creates the backend-neutral identity for a render target. The GL backing is allocated lazily by
-// renderIntoGlRenderTexture, so constructing one has no GPU or DOM side effects. flipY defaults true:
-// GL framebuffer textures use a bottom-left origin, while material UVs expect the image-oriented
-// top-left convention used by Texture and VideoTexture.
+// renderIntoGlRenderTexture, so constructing one has no GPU or DOM side effects. Its uv transform
+// defaults to identity: GL mesh UVs and framebuffer textures share the same bottom-left convention.
 export function createRenderTexture(options: Readonly<RenderTextureOptions>): RenderTexture {
   return createEntity({
     colorSpace: options.colorSpace ?? 'linear',
     depth: options.depth ?? false,
     flipX: options.flipX ?? false,
-    flipY: options.flipY ?? true,
+    flipY: options.flipY ?? false,
     height: options.height,
     sampler: options.sampler ? cloneSampler(options.sampler) : createSampler(),
     uvOffset: options.uvOffset ? cloneVector2(options.uvOffset) : createVector2(0, 0),

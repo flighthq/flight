@@ -2,14 +2,14 @@ import { createRenderTexture } from './renderTexture';
 import { createSampler } from './sampler';
 
 describe('createRenderTexture', () => {
-  it('creates a linear, upright render target with no depth by default', () => {
+  it('creates a linear render target with identity UVs and no depth by default', () => {
     const texture = createRenderTexture({ height: 32, width: 64 });
 
     expect(texture).toMatchObject({
       colorSpace: 'linear',
       depth: false,
       flipX: false,
-      flipY: true,
+      flipY: false,
       height: 32,
       uvOffset: { x: 0, y: 0 },
       uvRotation: 0,
