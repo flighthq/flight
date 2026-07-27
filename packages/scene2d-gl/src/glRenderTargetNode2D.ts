@@ -18,6 +18,7 @@ import type {
 } from '@flighthq/types/contract';
 import { RenderTargetNode2DKind } from '@flighthq/types/contract';
 
+import { getGlRenderCacheScreenState } from './glCache';
 import { flushGlSpriteBatch } from './glSpriteBatch';
 
 export const defaultGlRenderTargetNode2DRenderer: Scene2DRenderer = {
@@ -54,14 +55,14 @@ export function renderIntoGlRenderTargetNode2D(
 }
 
 function drawGlRenderTargetNode2D(state: GlRenderState, renderProxy: RenderProxy2D): void {
-  const target = getTargets(state).get(renderProxy.source as RenderTargetNode2D);
+  const target = getTargets(getGlRenderCacheScreenState(state)).get(renderProxy.source as RenderTargetNode2D);
   if (target === undefined) return;
   flushGlSpriteBatch(state);
   drawGlRenderTargetResult(state, renderProxy, target, _identity);
 }
 
 function ensureTarget(state: GlRenderState, node: RenderTargetNode2D): GlRenderTarget {
-  const targets = getTargets(state);
+  const targets = getTargets(getGlRenderCacheScreenState(state));
   let target = targets.get(node);
   if (target === undefined) {
     target = createGlRenderTarget(state, {
