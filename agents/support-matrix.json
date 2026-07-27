@@ -1150,6 +1150,21 @@
       ]
     },
     {
+      "key": "render",
+      "label": "Render",
+      "scenes": [
+        {
+          "scene": "render-target-node-2d",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": false
+          }
+        }
+      ]
+    },
+    {
       "key": "scale9",
       "label": "Scale9",
       "scenes": [
