@@ -1,6 +1,4 @@
 export {
-  TEXT_BOUNDS_GUTTER,
-  TEXT_LAYOUT_GUTTER,
   clearRichTextContent,
   clearTextLayoutResult,
   computeRichTextBottomScrollV,

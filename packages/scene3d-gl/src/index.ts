@@ -1,5 +1,4 @@
 export {
-  GL_MESH_LIGHT_BLOCK_GLSL,
   bakeGlEnvironmentIbl,
   blinnPhongGlMeshMaterialRenderer,
   drawGlEnvironmentSkybox,
