@@ -1,1 +1,1 @@
-export * from './contract';
+export { createCompressedImageResource, createImageResource, createImageResourceFromCanvas } from './contract';

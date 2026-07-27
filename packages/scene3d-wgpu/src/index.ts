@@ -1,8 +1,10 @@
 export {
   bakeWgpuEnvironmentIbl,
+  beginWgpuMeshDraw,
   drawWgpuEnvironmentSkybox,
   drawWgpuScene3D,
   drawWgpuScene3DShadowMap,
+  ensureWgpuShadowSampleLayout,
   prepareWgpuScene3DForwardLights,
   registerAnisotropyPbrWgpuMaterial,
   registerBlinnPhongWgpuMaterial,
@@ -30,4 +32,7 @@ export {
   registerWgpuGpuSkinning,
   registerWireframeWgpuMaterial,
   setWgpuScene3DTime,
+  standardPbrWgpuMeshMaterialRenderer,
+  unlitWgpuMeshMaterialRenderer,
+  writeWgpuDrawUniform,
 } from './contract';

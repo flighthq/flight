@@ -1,1 +1,1 @@
-export * from './contract';
+export { getScreens } from './contract';

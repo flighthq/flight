@@ -1,1 +1,1 @@
-export * from './contract';
+export { createSpring2D, createSpringConfig, updateSpring2D } from './contract';

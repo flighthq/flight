@@ -1,1 +1,1 @@
-export * from './contract';
+export { createVideoResource, loadVideoResourceFromBlob } from './contract';

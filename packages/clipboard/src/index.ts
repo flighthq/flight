@@ -1,1 +1,1 @@
-export * from './contract';
+export { readClipboard, readClipboardText, writeClipboard, writeClipboardText } from './contract';

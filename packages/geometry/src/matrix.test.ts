@@ -40,7 +40,7 @@ import {
   translateMatrixByVector,
   translateMatrixByVectorXY,
   writeMatrixToFloat32Array,
-} from '@flighthq/geometry';
+} from '@flighthq/geometry/contract';
 import type { Matrix, Matrix3Like, Matrix4Like } from '@flighthq/types/contract';
 
 describe('cloneMatrix', () => {

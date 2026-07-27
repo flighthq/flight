@@ -1,1 +1,1 @@
-export * from './contract';
+export { beginVelocityFrame, contributeVelocity, createVelocityField } from './contract';

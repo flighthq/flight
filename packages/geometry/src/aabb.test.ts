@@ -19,7 +19,7 @@ import {
   setMatrix4Position,
   transformAabbByMatrix4,
   unionAabb,
-} from '@flighthq/geometry';
+} from '@flighthq/geometry/contract';
 
 describe('cloneAabb', () => {
   it('creates an independent copy with independent corner vectors', () => {

@@ -13,7 +13,7 @@ async function bundleScene3DResourceResolverExport(name: string): Promise<string
     minify: true,
     packages: 'external',
     stdin: {
-      contents: `export { ${name} } from './index.ts';`,
+      contents: `export { ${name} } from './contract.ts';`,
       resolveDir,
       sourcefile: `tree-shake-${name}.ts`,
     },

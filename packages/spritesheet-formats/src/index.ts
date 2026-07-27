@@ -1,1 +1,1 @@
-export * from './contract';
+export { parseTexturePackerSpritesheet } from './contract';

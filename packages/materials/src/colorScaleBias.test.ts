@@ -15,7 +15,7 @@ import {
   setColorScaleBiasIdentity,
   setColorScaleBiasBiasRgb,
   setColorScaleBiasBiasRgba,
-} from '@flighthq/materials';
+} from '@flighthq/materials/contract';
 
 describe('cloneColorScaleBias', () => {
   it('returns a new object with identical values', () => {

@@ -40,7 +40,7 @@ import {
   setRectangleSize,
   setRectangleTop,
   setRectangleTopLeft,
-} from '@flighthq/geometry';
+} from '@flighthq/geometry/contract';
 import type { Rectangle } from '@flighthq/types/contract';
 
 let r: Rectangle;

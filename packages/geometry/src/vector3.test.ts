@@ -36,7 +36,7 @@ import {
   VECTOR3_Y_AXIS,
   VECTOR3_Z_AXIS,
   writeVector3ToFloat32Array,
-} from '@flighthq/geometry';
+} from '@flighthq/geometry/contract';
 import type { Vector3 } from '@flighthq/types/contract';
 
 describe('addVector3', () => {

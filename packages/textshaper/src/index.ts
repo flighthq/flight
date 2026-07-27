@@ -1,1 +1,1 @@
-export * from './contract';
+export { measureText } from './contract';

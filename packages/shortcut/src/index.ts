@@ -1,1 +1,1 @@
-export * from './contract';
+export { registerGlobalShortcut } from './contract';

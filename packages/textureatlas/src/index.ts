@@ -1,1 +1,1 @@
-export * from './contract';
+export { addTextureAtlasRegion, createTextureAtlas, getTextureAtlasRegionById } from './contract';

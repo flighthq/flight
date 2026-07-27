@@ -1,1 +1,17 @@
-export * from './contract';
+export {
+  advanceAnimationLayerStack,
+  createAnimationBlendTree,
+  createAnimationBlendTreeInput,
+  createAnimationBlendTreeLayer,
+  createAnimationChannel,
+  createAnimationClip,
+  createAnimationLayerStack,
+  createAnimationPlayer,
+  createAnimationStateMachine,
+  createAnimationStateMachineLayer,
+  createAnimationStateMachineState,
+  createAnimationTrack,
+  isAnimationStateMachineTransitioning,
+  sampleAnimationLayerStack,
+  transitionAnimationStateMachine,
+} from './contract';

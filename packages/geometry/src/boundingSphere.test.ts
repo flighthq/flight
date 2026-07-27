@@ -13,7 +13,7 @@ import {
   setBoundingSphereFromAabb,
   setMatrix4Position,
   transformBoundingSphereByMatrix4,
-} from '@flighthq/geometry';
+} from '@flighthq/geometry/contract';
 
 describe('cloneBoundingSphere', () => {
   it('creates an independent copy with an independent center', () => {

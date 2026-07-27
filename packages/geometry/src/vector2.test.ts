@@ -30,7 +30,7 @@ import {
   setVector2FromVector3,
   subtractVector2,
   writeVector2ToFloat32Array,
-} from '@flighthq/geometry';
+} from '@flighthq/geometry/contract';
 import type { Vector2 } from '@flighthq/types/contract';
 
 let pt: Vector2;

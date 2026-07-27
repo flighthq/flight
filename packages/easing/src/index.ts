@@ -1,1 +1,17 @@
-export * from './contract';
+export {
+  easeInCubic,
+  easeInElastic,
+  easeInExponential,
+  easeInOutCubic,
+  easeInOutExponential,
+  easeInOutQuadratic,
+  easeInOutSine,
+  easeInQuadratic,
+  easeInSine,
+  easeOutBounce,
+  easeOutCubic,
+  easeOutElastic,
+  easeOutExponential,
+  easeOutQuadratic,
+  easeOutSine,
+} from './contract';

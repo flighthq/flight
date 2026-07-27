@@ -23,7 +23,7 @@ import {
   setQuaternionIdentity,
   setQuaternionLookRotation,
   slerpQuaternion,
-} from '@flighthq/geometry';
+} from '@flighthq/geometry/contract';
 import type { Quaternion } from '@flighthq/types/contract';
 
 function expectQuaternionClose(q: Readonly<Quaternion>, x: number, y: number, z: number, w: number): void {

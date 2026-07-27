@@ -1,1 +1,1 @@
-export * from './contract';
+export { createBitmapText, getBitmapTextPages, updateBitmapText } from './contract';

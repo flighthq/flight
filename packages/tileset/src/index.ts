@@ -1,1 +1,1 @@
-export * from './contract';
+export { createTilesetFromImageResource } from './contract';

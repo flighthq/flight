@@ -1,1 +1,1 @@
-export * from './contract';
+export { connectSignal } from './contract';

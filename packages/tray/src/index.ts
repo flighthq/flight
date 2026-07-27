@@ -1,1 +1,1 @@
-export * from './contract';
+export { createTrayIcon, onTrayEvent, setTrayIconTooltip } from './contract';

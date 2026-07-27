@@ -8,7 +8,7 @@ import {
   isCapsuleIntersectingCapsule,
   isCapsuleIntersectingSphere,
   setCapsule,
-} from '@flighthq/geometry';
+} from '@flighthq/geometry/contract';
 
 describe('createCapsule', () => {
   it('stores all fields', () => {

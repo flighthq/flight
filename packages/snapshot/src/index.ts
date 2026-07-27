@@ -1,1 +1,1 @@
-export * from './contract';
+export { captureSnapshot, equalsSnapshot, interpolateSnapshots, restoreSnapshot } from './contract';

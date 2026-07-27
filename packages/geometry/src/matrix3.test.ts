@@ -27,7 +27,7 @@ import {
   translateMatrix3,
   transposeMatrix3,
   writeMatrix3ToFloat32Array,
-} from '@flighthq/geometry';
+} from '@flighthq/geometry/contract';
 import type { Matrix3 } from '@flighthq/types/contract';
 
 // Matrix3 storage is column-major: element (row r, column c) lives at m[3 * c + r], matching
