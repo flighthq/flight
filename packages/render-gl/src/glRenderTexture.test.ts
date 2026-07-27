@@ -7,7 +7,10 @@ import {
   bindGlRenderTexture,
   destroyGlRenderTexture,
   explainGlRenderTexture,
+  getGlRenderTextureColorSpace,
+  isGlRenderTextureReady,
   renderIntoGlRenderTexture,
+  setGlRenderTextureGuard,
 } from './glRenderTexture';
 import { createGlState } from './glTestHelper';
 
@@ -65,6 +68,41 @@ describe('enableGlRenderTextureGuards', () => {
     } finally {
       removeLogSink(sink.sink);
     }
+  });
+});
+
+describe('explainGlRenderTexture', () => {
+  it('reports source dimensions and lifecycle status', () => {
+    const { state } = createRenderTextureState();
+    const renderTexture = createRenderTexture({ height: 12, width: 20 });
+
+    expect(explainGlRenderTexture(state, renderTexture)).toEqual({
+      height: 12,
+      status: 'unrendered',
+      width: 20,
+    });
+  });
+});
+
+describe('getGlRenderTextureColorSpace', () => {
+  it('reports the source color space before allocation and target color space after rendering', () => {
+    const { state } = createRenderTextureState();
+    const renderTexture = createRenderTexture({ height: 8, width: 8 });
+
+    expect(getGlRenderTextureColorSpace(state, renderTexture)).toBe('linear');
+    renderIntoGlRenderTexture(state, renderTexture, () => {});
+    expect(getGlRenderTextureColorSpace(state, renderTexture)).toBe('linear');
+  });
+});
+
+describe('isGlRenderTextureReady', () => {
+  it('becomes true only after a completed render', () => {
+    const { state } = createRenderTextureState();
+    const renderTexture = createRenderTexture({ height: 8, width: 8 });
+
+    expect(isGlRenderTextureReady(state, renderTexture)).toBe(false);
+    renderIntoGlRenderTexture(state, renderTexture, () => {});
+    expect(isGlRenderTextureReady(state, renderTexture)).toBe(true);
   });
 });
 
@@ -150,6 +188,22 @@ describe('renderIntoGlRenderTexture', () => {
 
     expect(whileWriting).toBeNull();
     expect(bindGlRenderTexture(state, renderTexture)).not.toBeNull();
+  });
+});
+
+describe('setGlRenderTextureGuard', () => {
+  it('installs and removes a sentinel diagnostic callback', () => {
+    const { state } = createRenderTextureState();
+    const renderTexture = createRenderTexture({ height: 8, width: 8 });
+    const guard = vi.fn();
+
+    setGlRenderTextureGuard(state, guard);
+    bindGlRenderTexture(state, renderTexture);
+    expect(guard).toHaveBeenCalledOnce();
+
+    setGlRenderTextureGuard(state, null);
+    bindGlRenderTexture(state, renderTexture);
+    expect(guard).toHaveBeenCalledOnce();
   });
 });
 

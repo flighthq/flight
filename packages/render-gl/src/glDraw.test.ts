@@ -4,6 +4,7 @@ import { AdvancedBlendMode, BlendMode } from '@flighthq/types/contract';
 import { registerGlCompressedTextureDecoder, registerGlCompressedTextureUpload } from './glCompressedTexture';
 import {
   applyGlBlendMode,
+  applyGlSamplerState,
   bindGlImageResourceTexture,
   bindGlTexture,
   bindGlVideoTexture,
@@ -158,6 +159,20 @@ describe('applyGlBlendMode', () => {
     applyGlBlendMode(state, BlendMode.Normal);
     applyGlBlendMode(state, BlendMode.Add);
     expect(gl.blendFunc).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('applyGlSamplerState', () => {
+  it('applies sampler state to an existing texture without uploading it', () => {
+    const { state, gl } = createGlState();
+    const runtime = getGlRenderStateRuntime(state);
+    const texture = gl.createTexture()!;
+    const uploads = vi.mocked(gl.texImage2D).mock.calls.length;
+
+    applyGlSamplerState(state, runtime, texture, makeSampler({ mipmaps: false, wrapU: 'repeat' }));
+
+    expect(gl.texParameteri).toHaveBeenCalledWith(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    expect(gl.texImage2D).toHaveBeenCalledTimes(uploads);
   });
 });
 
