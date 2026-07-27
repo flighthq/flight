@@ -1161,6 +1161,15 @@
             "webgl": true,
             "webgpu": true
           }
+        },
+        {
+          "scene": "render-texture",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": false
+          }
         }
       ]
     },
