@@ -68,13 +68,14 @@ export function createToonMaterial(opts?: Readonly<Partial<ToonMaterial>>): Toon
   return material;
 }
 
-// Lighting-independent flat-color material. `baseColor` defaults to white, `baseColorMap` and
-// `baseColorVideoMap` to null. A bound live video stream is sampled by the GL and WebGPU mesh
-// renderers; backends without that dynamic texture path fall back to `baseColorMap`.
+// Lighting-independent flat-color material. `baseColor` defaults to white; the still, render, and
+// video map slots default to null. The specialized slots remain separate so their backend paths are
+// independently discoverable and tree-shakeable.
 export function createUnlitMaterial(opts?: Readonly<Partial<UnlitMaterial>>): UnlitMaterial {
   const material = createSurfaceMaterial(UnlitMaterialKind, opts) as UnlitMaterial;
   material.baseColor = opts?.baseColor ?? 0xffffffff;
   material.baseColorMap = opts?.baseColorMap ?? null;
+  material.baseColorRenderMap = opts?.baseColorRenderMap ?? null;
   material.baseColorVideoMap = opts?.baseColorVideoMap ?? null;
   return material;
 }

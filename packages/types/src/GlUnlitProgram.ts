@@ -5,6 +5,9 @@ import type { GlMeshProgram } from './GlMeshProgram';
 // `alphaMaskEnabled` enables the alpha-cutoff discard for 'mask' materials.
 export interface GlUnlitDefineKey {
   alphaMaskEnabled: boolean;
+  // RenderTexture content may already be linear, unlike uploaded albedo/video pixels. This skips the
+  // sRGB decode in that one variant.
+  colorMapLinear?: boolean;
   hasColorMap: boolean;
   // Whether this variant deforms the vertex by a bone palette (HAS_SKIN). Set by ensureGlUnlitProgram
   // from the render-state skinned-run flag, not the material renderer — skinning keys off geometry.
