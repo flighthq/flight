@@ -31,6 +31,52 @@ export function applyGlBlendMode(state: GlRenderState, blendMode: BlendMode | nu
   gl.blendFunc(gl[realization.src], gl[realization.dst]);
 }
 
+// Applies a sampler's wrap, filtering, anisotropy, and mip chain to the currently-bound TEXTURE_2D.
+// Without a sampler it falls back to the clamp-to-edge, no-mips 2D bitmap/sprite default, filtered by
+// `smoothingOverride` when the caller supplies one (a per-bitmap `smoothing` flag) and otherwise by the
+// state's global `allowSmoothing`. With a sampler, every field comes from the descriptor. The mip chain
+// is generated once per texture (tracked in runtime.mipmappedTextures) the first time a mip-sampling
+// filter asks for it, so a shared texture first bound without mips and later with them still generates
+// its chain. Filtering and wrap are set every bind (cheap) so a texture shared across samplers follows
+// the current draw; only the one-time mip generation is gated.
+export function applyGlSamplerState(
+  state: GlRenderState,
+  runtime: GlRenderStateRuntime,
+  texture: WebGLTexture,
+  sampler: Readonly<SamplerLike> | null,
+  smoothingOverride: boolean | null = null,
+): void {
+  const gl = state.gl;
+  if (!sampler) {
+    const smooth = smoothingOverride ?? state.allowSmoothing;
+    const filter = smooth ? gl.LINEAR : gl.NEAREST;
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    return;
+  }
+  const useMips = sampler.mipmaps && isGlMipmapFilter(sampler.minFilter);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, glMinFilterValue(gl, sampler.minFilter, useMips));
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, glMagFilterValue(gl, sampler.magFilter));
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, glTextureWrapValue(gl, sampler.wrapU));
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, glTextureWrapValue(gl, sampler.wrapV));
+  const ext = ensureGlAnisotropyExt(state, runtime);
+  if (ext) {
+    // Clamp the requested level to [1, hardware max]; 1 disables anisotropy and also resets a texture
+    // that a previous anisotropic sampler left elevated.
+    const level = Math.max(1, Math.min(sampler.anisotropy, runtime.maxAnisotropy ?? 1));
+    gl.texParameterf(gl.TEXTURE_2D, ext.TEXTURE_MAX_ANISOTROPY_EXT, level);
+  }
+  if (useMips) {
+    const mipped = (runtime.mipmappedTextures ??= new WeakSet<WebGLTexture>());
+    if (!mipped.has(texture)) {
+      gl.generateMipmap(gl.TEXTURE_2D);
+      mipped.add(texture);
+    }
+  }
+}
+
 // Binds (uploading + caching on first use, re-uploading when the pixels change) the GL texture for an
 // ImageResource — a bitmap, sprite atlas, or material map — and applies the sampler's full state. The
 // resource-level sibling of bindGlTexture (which takes a raw element): it accepts an element-backed OR a
@@ -282,17 +328,6 @@ export function updateGlTexture(state: GlRenderState, texture: WebGLTexture, can
   if (runtime.mipmappedTextures?.has(texture)) gl.generateMipmap(gl.TEXTURE_2D);
 }
 
-export function useGlProgram(state: GlRenderState, shader?: GlBitmapShader): void {
-  const runtime = getGlRenderStateRuntime(state);
-  const resolved = shader ?? runtime.defaultBitmapShader;
-  runtime.shaderLoc = resolved.locations;
-  const program = resolved.program;
-  if (runtime.currentProgram !== program) {
-    state.gl.useProgram(program);
-    runtime.currentProgram = program;
-  }
-}
-
 // Uploads an ImageResource into the currently-bound TEXTURE_2D. `premultiply` is the caller's already
 // alphaType-resolved decision (see bindGlImageResourceTexture) to produce a premultiplied GPU texture:
 // when set, the element fast-path premultiplies via UNPACK_PREMULTIPLY_ALPHA_WEBGL and raw `data` (for
@@ -336,49 +371,14 @@ function premultiplyStraightRgba8(data: Readonly<Uint8ClampedArray<ArrayBuffer>>
   return out;
 }
 
-// Applies a sampler's wrap, filtering, anisotropy, and mip chain to the currently-bound TEXTURE_2D.
-// Without a sampler it falls back to the clamp-to-edge, no-mips 2D bitmap/sprite default, filtered by
-// `smoothingOverride` when the caller supplies one (a per-bitmap `smoothing` flag) and otherwise by the
-// state's global `allowSmoothing`. With a sampler, every field comes from the descriptor. The mip chain
-// is generated once per texture (tracked in runtime.mipmappedTextures) the first time a mip-sampling
-// filter asks for it, so a shared texture first bound without mips and later with them still generates
-// its chain. Filtering and wrap are set every bind (cheap) so a texture shared across samplers follows
-// the current draw; only the one-time mip generation is gated.
-function applyGlSamplerState(
-  state: GlRenderState,
-  runtime: GlRenderStateRuntime,
-  texture: WebGLTexture,
-  sampler: Readonly<SamplerLike> | null,
-  smoothingOverride: boolean | null = null,
-): void {
-  const gl = state.gl;
-  if (!sampler) {
-    const smooth = smoothingOverride ?? state.allowSmoothing;
-    const filter = smooth ? gl.LINEAR : gl.NEAREST;
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    return;
-  }
-  const useMips = sampler.mipmaps && isGlMipmapFilter(sampler.minFilter);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, glMinFilterValue(gl, sampler.minFilter, useMips));
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, glMagFilterValue(gl, sampler.magFilter));
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, glTextureWrapValue(gl, sampler.wrapU));
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, glTextureWrapValue(gl, sampler.wrapV));
-  const ext = ensureGlAnisotropyExt(state, runtime);
-  if (ext) {
-    // Clamp the requested level to [1, hardware max]; 1 disables anisotropy and also resets a texture
-    // that a previous anisotropic sampler left elevated.
-    const level = Math.max(1, Math.min(sampler.anisotropy, runtime.maxAnisotropy ?? 1));
-    gl.texParameterf(gl.TEXTURE_2D, ext.TEXTURE_MAX_ANISOTROPY_EXT, level);
-  }
-  if (useMips) {
-    const mipped = (runtime.mipmappedTextures ??= new WeakSet<WebGLTexture>());
-    if (!mipped.has(texture)) {
-      gl.generateMipmap(gl.TEXTURE_2D);
-      mipped.add(texture);
-    }
+export function useGlProgram(state: GlRenderState, shader?: GlBitmapShader): void {
+  const runtime = getGlRenderStateRuntime(state);
+  const resolved = shader ?? runtime.defaultBitmapShader;
+  runtime.shaderLoc = resolved.locations;
+  const program = resolved.program;
+  if (runtime.currentProgram !== program) {
+    state.gl.useProgram(program);
+    runtime.currentProgram = program;
   }
 }
 
