@@ -1156,10 +1156,10 @@
         {
           "scene": "render-target-node-2d",
           "backends": {
-            "canvas": false,
+            "canvas": true,
             "dom": false,
             "webgl": true,
-            "webgpu": false
+            "webgpu": true
           }
         }
       ]
