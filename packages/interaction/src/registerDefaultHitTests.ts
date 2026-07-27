@@ -4,7 +4,7 @@ import {
   HtmlViewKind,
   MovieClipKind,
   QuadBatchKind,
-  RenderViewKind,
+  RenderTargetNode2DKind,
   RichTextKind,
   Scale9ShapeKind,
   ShapeKind,
@@ -19,7 +19,7 @@ import {
   defaultNode2DHitTestHandler,
   defaultHtmlViewHitTestHandler,
   defaultMovieClipHitTestHandler,
-  defaultRenderViewHitTestHandler,
+  defaultRenderTargetNode2DHitTestHandler,
   defaultRichTextHitTestHandler,
   defaultShapeHitTestHandler,
   defaultTextHitTestHandler,
@@ -38,7 +38,7 @@ export function registerDefaultHitTests(): void {
   registerHitTest(HtmlViewKind, defaultHtmlViewHitTestHandler);
   registerHitTest(MovieClipKind, defaultMovieClipHitTestHandler);
   registerHitTest(QuadBatchKind, defaultQuadBatchHitTestHandler);
-  registerHitTest(RenderViewKind, defaultRenderViewHitTestHandler);
+  registerHitTest(RenderTargetNode2DKind, defaultRenderTargetNode2DHitTestHandler);
   registerHitTest(RichTextKind, defaultRichTextHitTestHandler);
   registerHitTest(Scale9ShapeKind, defaultShapeHitTestHandler);
   registerHitTest(ShapeKind, defaultShapeHitTestHandler);
