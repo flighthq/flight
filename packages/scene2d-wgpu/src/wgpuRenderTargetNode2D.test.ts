@@ -1,5 +1,5 @@
 import type * as WgpuRenderWgpuModule from '@flighthq/render-wgpu/contract';
-import { createRenderProxy2D, createRenderState } from '@flighthq/render/contract';
+import { createRenderProxy2D, createRenderState, setRenderStateBackgroundColor } from '@flighthq/render/contract';
 import { createRenderTargetNode2D } from '@flighthq/scene2d/contract';
 import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
 import { EntityRuntimeKey, RenderTargetNode2DKind } from '@flighthq/types/contract';
@@ -158,6 +158,16 @@ describe('enableWgpuRenderTargetNode2D', () => {
 });
 
 describe('renderIntoWgpuRenderTargetNode2D', () => {
+  it('clears the target with the owning screen state background', () => {
+    const state = createState();
+    setRenderStateBackgroundColor(state, 0x101018ff);
+
+    renderIntoWgpuRenderTargetNode2D(state, createRenderTargetNode2D({ height: 16, width: 32 }), () => {});
+
+    const target = vi.mocked(createWgpuRenderTarget).mock.results.at(-1)?.value as WgpuRenderTarget;
+    expect(target.clearColors[0]).toBe(0x101018ff);
+  });
+
   it('hands the live frame and uniform cursor through a cache render state', () => {
     const screenState = createState();
     const screenRuntime = getWgpuRenderStateRuntime(screenState);

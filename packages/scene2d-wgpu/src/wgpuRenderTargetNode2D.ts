@@ -60,6 +60,9 @@ export function renderIntoWgpuRenderTargetNode2D(
   syncWgpuRenderTargetNode2DState(runtime, screenRuntime);
 
   const target = ensureTarget(screenState, node);
+  // GL render passes fall back to the state's background when a target has no explicit clear color.
+  // Wgpu targets default to transparent instead, so carry the same screen background explicitly.
+  target.clearColors[0] = screenState.backgroundColor;
   beginWgpuRenderPass(state, target);
   try {
     callback(state);
