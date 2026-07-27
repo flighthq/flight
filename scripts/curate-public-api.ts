@@ -128,7 +128,9 @@ function render(): void {
       `${C.dim}view:${C.reset}${C.yellow}${view}${C.reset}  ` +
       (dirty ? `${C.yellow}${dirty} pkg unsaved${C.reset}` : `${C.dim}saved${C.reset}`),
   );
-  out.push(`${C.dim}↑↓ move · space toggle · a all-in-pkg · v view · / filter · s save · q quit${C.reset}`);
+  out.push(
+    `${C.dim}↑↓ move · space toggle · a all-in-pkg · t all-visible · v view · / filter · s save · q quit${C.reset}`,
+  );
 
   for (let i = top; i < Math.min(rows.length, top + height); i++) {
     const r = rows[i];
@@ -216,6 +218,14 @@ function onKey(str: string, key: readline.Key): void {
     default:
       if (str === '/') {
         filtering = true;
+      } else if (str === 't') {
+        // Bulk-toggle every symbol currently visible (respects the active filter + view) across all
+        // packages: filter a pattern (e.g. "Data"), then flip the whole matching set in one keypress.
+        const visible = buildRows().filter((row) => !row.header);
+        const allOn = visible.every((row) => row.pkg.pub.has(row.name!));
+        for (const row of visible)
+          if (allOn) row.pkg.pub.delete(row.name!);
+          else row.pkg.pub.add(row.name!);
       } else if (str === 's') {
         for (const p of pkgs)
           if (p.pub.size !== p.orig.size || [...p.pub].some((s) => !p.orig.has(s))) {
