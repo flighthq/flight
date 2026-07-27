@@ -1,0 +1,42 @@
+import { createRenderTexture } from './renderTexture';
+import { createSampler } from './sampler';
+
+describe('createRenderTexture', () => {
+  it('creates a linear, upright render target with no depth by default', () => {
+    const texture = createRenderTexture({ height: 32, width: 64 });
+
+    expect(texture).toMatchObject({
+      colorSpace: 'linear',
+      depth: false,
+      flipX: false,
+      flipY: true,
+      height: 32,
+      uvOffset: { x: 0, y: 0 },
+      uvRotation: 0,
+      uvScale: { x: 1, y: 1 },
+      width: 64,
+    });
+  });
+
+  it('applies sampling, depth, color-space, and uv overrides without aliasing mutable values', () => {
+    const sampler = createSampler({ magFilter: 'nearest' });
+    const uvOffset = { x: 0.25, y: 0.5 };
+    const texture = createRenderTexture({
+      colorSpace: 'srgb',
+      depth: true,
+      flipY: false,
+      height: 16,
+      sampler,
+      uvOffset,
+      width: 8,
+    });
+
+    expect(texture.colorSpace).toBe('srgb');
+    expect(texture.depth).toBe(true);
+    expect(texture.flipY).toBe(false);
+    expect(texture.sampler.magFilter).toBe('nearest');
+    expect(texture.sampler).not.toBe(sampler);
+    expect(texture.uvOffset).toMatchObject(uvOffset);
+    expect(texture.uvOffset).not.toBe(uvOffset);
+  });
+});

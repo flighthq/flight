@@ -12,6 +12,7 @@ export {
   createClampLinearSampler,
   createCubeTexture,
   createPixelArtSampler,
+  createRenderTexture,
   createSampler,
   createTexture,
   createTilingSampler,

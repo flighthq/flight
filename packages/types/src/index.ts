@@ -425,6 +425,7 @@ export * from './RenderPassPreserve';
 export * from './RenderState';
 export * from './RenderTarget';
 export * from './RenderTargetNode2D';
+export * from './RenderTexture';
 export * from './RenderViewport2D';
 export * from './ResourceLoader';
 export * from './ResourceLoaderItemSignals';
