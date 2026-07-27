@@ -1,5 +1,4 @@
 export {
-  QUAD_BATCH_DELETED_ID,
   appendQuadBatchInstance,
   clearQuadBatch,
   clearTilemap,

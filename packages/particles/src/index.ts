@@ -1,5 +1,4 @@
 export {
-  PARTICLE_VELOCITY_STRIDE,
   applyParticleCollisions,
   applyParticleForces,
   applyParticleObjectCollisions,

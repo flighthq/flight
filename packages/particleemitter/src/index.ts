@@ -1,6 +1,4 @@
 export {
-  PARTICLE_EMITTER_3D_DELETED_ID,
-  PARTICLE_EMITTER_DELETED_ID,
   ParticleEmitterCallbacks,
   appendParticleEmitter2DParticle,
   appendParticleEmitter3DParticle,
