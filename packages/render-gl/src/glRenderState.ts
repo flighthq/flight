@@ -58,6 +58,7 @@ export function createGlRenderState(canvas: HTMLCanvasElement, options: GlRender
   runtime.currentScissorRect = null;
   runtime.currentTexture = null;
   runtime.currentTextureStraightAlpha = false;
+  runtime.flushPendingDraws = null;
   runtime.renderTargetViewport = null;
   runtime.defaultBitmapShader = defaultBitmapShader;
   runtime.shaderLoc = shaderLoc;

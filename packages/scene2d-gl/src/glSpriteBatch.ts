@@ -237,6 +237,7 @@ export function prepareGlSpriteBatchWrite(
   smoothing: boolean | null = null,
 ): number {
   const runtime = getGlRenderStateRuntime(state);
+  runtime.flushPendingDraws = flushGlSpriteBatch;
   if (
     texture !== runtime.spriteBatchTexture ||
     blendMode !== runtime.spriteBatchBlendMode ||
