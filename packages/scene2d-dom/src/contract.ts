@@ -10,7 +10,6 @@ export * from './domImageSource';
 export * from './domMaterials';
 export * from './domNativeText';
 export * from './domRenderState';
-export * from './domRenderView';
 export * from './domRichText';
 export * from './domScale9Shape';
 export * from './domShape';

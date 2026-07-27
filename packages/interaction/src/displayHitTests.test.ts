@@ -7,7 +7,7 @@ import {
   defaultNode2DHitTestHandler,
   defaultHtmlViewHitTestHandler,
   defaultMovieClipHitTestHandler,
-  defaultRenderViewHitTestHandler,
+  defaultRenderTargetNode2DHitTestHandler,
   defaultRichTextHitTestHandler,
   defaultShapeHitTestHandler,
   defaultTextHitTestHandler,
@@ -56,15 +56,15 @@ describe('defaultNode2DHitTestHandler', () => {
   });
 });
 
-describe('defaultRenderViewHitTestHandler', () => {
+describe('defaultRenderTargetNode2DHitTestHandler', () => {
   it('returns true when point is within local bounds', () => {
     const obj = makeNode2D();
-    expect(defaultRenderViewHitTestHandler(obj, 50, 50)).toBe(true);
+    expect(defaultRenderTargetNode2DHitTestHandler(obj, 50, 50)).toBe(true);
   });
 
   it('returns false when point is outside local bounds', () => {
     const obj = makeNode2D();
-    expect(defaultRenderViewHitTestHandler(obj, 200, 200)).toBe(false);
+    expect(defaultRenderTargetNode2DHitTestHandler(obj, 200, 200)).toBe(false);
   });
 });
 
