@@ -1,6 +1,9 @@
 import type {
   GlRenderState,
   GlRenderTarget,
+  GlRenderTextureExplanation,
+  GlRenderTextureGuard,
+  GlRenderTextureStatus,
   RenderTexture,
   SamplerLike,
   TextureColorSpace,
@@ -11,20 +14,6 @@ import { beginGlRenderPass, endGlRenderPass } from './glRenderPass';
 import { getGlRenderStateRuntime } from './glRenderState';
 import { popGlRenderState, pushGlRenderState } from './glRenderStateBracket';
 import { createGlRenderTarget, destroyGlRenderTarget, resizeGlRenderTarget } from './glRenderTarget';
-
-export type GlRenderTextureStatus = 'ready' | 'unrendered' | 'writing';
-
-export interface GlRenderTextureExplanation {
-  readonly height: number;
-  readonly status: GlRenderTextureStatus;
-  readonly width: number;
-}
-
-export type GlRenderTextureGuard = (
-  state: GlRenderState,
-  renderTexture: Readonly<RenderTexture>,
-  explanation: Readonly<GlRenderTextureExplanation>,
-) => void;
 
 // Binds a populated RenderTexture's resolved color attachment directly. No pixels cross the CPU and
 // no upload occurs. An unrendered or currently-written texture binds the null sentinel and returns

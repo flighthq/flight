@@ -1,8 +1,7 @@
 import { logOnce } from '@flighthq/log/contract';
-import type { GlRenderState, RenderTexture } from '@flighthq/types/contract';
+import type { GlRenderState, GlRenderTextureExplanation, RenderTexture } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import type { GlRenderTextureExplanation } from './glRenderTexture';
 import { setGlRenderTextureGuard } from './glRenderTexture';
 
 export function areGlRenderTextureGuardsEnabled(state: GlRenderState): boolean {

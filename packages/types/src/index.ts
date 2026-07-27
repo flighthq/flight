@@ -212,6 +212,7 @@ export * from './GlRenderState';
 export * from './GlRichTextOverlay';
 export * from './GlRenderStats';
 export * from './GlRenderTarget';
+export * from './GlRenderTexture';
 export * from './GlScene3DRuntime';
 export * from './GlScene3DForwardLightList';
 export * from './GlShadedProgram';
