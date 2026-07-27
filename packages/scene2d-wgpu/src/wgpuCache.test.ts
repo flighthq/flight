@@ -22,6 +22,7 @@ let createWgpuCacheState: typeof WgpuCacheModule.createWgpuCacheState;
 let defaultWgpuRenderCacheRenderer: typeof WgpuCacheModule.defaultWgpuRenderCacheRenderer;
 let enableWgpuRenderCache: typeof WgpuCacheModule.enableWgpuRenderCache;
 let ensureWgpuRenderCacheTarget: typeof WgpuCacheModule.ensureWgpuRenderCacheTarget;
+let getWgpuRenderCacheScreenState: typeof WgpuCacheModule.getWgpuRenderCacheScreenState;
 let getWgpuRenderCacheTarget: typeof WgpuCacheModule.getWgpuRenderCacheTarget;
 let refreshWgpuRenderCache: typeof WgpuCacheModule.refreshWgpuRenderCache;
 let releaseWgpuRenderCache: typeof WgpuCacheModule.releaseWgpuRenderCache;
@@ -101,6 +102,7 @@ beforeAll(async () => {
     defaultWgpuRenderCacheRenderer,
     enableWgpuRenderCache,
     ensureWgpuRenderCacheTarget,
+    getWgpuRenderCacheScreenState,
     getWgpuRenderCacheTarget,
     refreshWgpuRenderCache,
     releaseWgpuRenderCache,
@@ -198,6 +200,16 @@ describe('ensureWgpuRenderCacheTarget', () => {
     const stateB = fakeScreen();
     const cache = createRenderCache();
     expect(ensureWgpuRenderCacheTarget(stateA, cache, 8, 8)).not.toBe(ensureWgpuRenderCacheTarget(stateB, cache, 8, 8));
+  });
+});
+
+describe('getWgpuRenderCacheScreenState', () => {
+  it('resolves a cache render state to the screen state that owns shared GPU resources', () => {
+    const screen = fakeScreen();
+    const cacheState = createWgpuCacheState(screen);
+
+    expect(getWgpuRenderCacheScreenState(cacheState)).toBe(screen);
+    expect(getWgpuRenderCacheScreenState(screen)).toBe(screen);
   });
 });
 

@@ -162,6 +162,12 @@ export function ensureWgpuRenderCacheTarget(
   return target;
 }
 
+// Cache rendering uses a second render state over the screen state's GPU device. Backend resources
+// that must remain visible while that cache state walks a subtree are owned by the screen state.
+export function getWgpuRenderCacheScreenState(state: WgpuRenderState): WgpuRenderState {
+  return _cacheStateScreen.get(state) ?? state;
+}
+
 export function getWgpuRenderCacheTarget(state: WgpuRenderState, cache: RenderCache): WgpuRenderTarget | null {
   return getTargets(state).get(cache) ?? null;
 }
@@ -179,7 +185,7 @@ export function refreshWgpuRenderCache(
   source: Node2D,
   options?: Readonly<RenderCacheRefreshOptions>,
 ): boolean {
-  const screenState = _cacheStateScreen.get(cacheState) ?? cacheState;
+  const screenState = getWgpuRenderCacheScreenState(cacheState);
   const cacheRuntime = getWgpuRenderStateRuntime(cacheState);
   const screenRuntime = getWgpuRenderStateRuntime(screenState);
   const ownsFrame = screenRuntime.commandEncoder === null;
