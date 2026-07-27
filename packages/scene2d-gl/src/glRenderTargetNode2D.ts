@@ -2,6 +2,7 @@ import { createMatrix } from '@flighthq/geometry/contract';
 import {
   beginGlRenderPass,
   createGlRenderTarget,
+  destroyGlRenderTarget,
   drawGlRenderTargetResult,
   endGlRenderPass,
   popGlRenderState,
@@ -25,6 +26,15 @@ export const defaultGlRenderTargetNode2DRenderer: Scene2DRenderer = {
   createData: noopRendererData,
   submit: drawGlRenderTargetNode2D,
 };
+
+export function destroyGlRenderTargetNode2D(state: GlRenderState, node: RenderTargetNode2D): void {
+  const screenState = getGlRenderCacheScreenState(state);
+  const targets = getTargets(screenState);
+  const target = targets.get(node);
+  if (target === undefined) return;
+  destroyGlRenderTarget(screenState, target);
+  targets.delete(node);
+}
 
 export function enableGlRenderTargetNode2D(state: GlRenderState): void {
   registerRenderer(state, RenderTargetNode2DKind, defaultGlRenderTargetNode2DRenderer);

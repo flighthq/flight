@@ -20,6 +20,8 @@ let createGlRenderStateRuntime: typeof GlRenderGlModule.createGlRenderStateRunti
 let createGlRenderTarget: typeof GlRenderGlModule.createGlRenderTarget;
 let createGlCacheState: typeof GlCacheModule.createGlCacheState;
 let defaultGlRenderTargetNode2DRenderer: typeof GlRenderTargetNode2DModule.defaultGlRenderTargetNode2DRenderer;
+let destroyGlRenderTarget: typeof GlRenderGlModule.destroyGlRenderTarget;
+let destroyGlRenderTargetNode2D: typeof GlRenderTargetNode2DModule.destroyGlRenderTargetNode2D;
 let drawGlRenderTargetResult: typeof GlRenderGlModule.drawGlRenderTargetResult;
 let enableGlRenderTargetNode2D: typeof GlRenderTargetNode2DModule.enableGlRenderTargetNode2D;
 let endGlRenderPass: typeof GlRenderGlModule.endGlRenderPass;
@@ -64,6 +66,7 @@ beforeAll(async () => {
           };
         },
       ),
+      destroyGlRenderTarget: vi.fn(),
       drawGlRenderTargetResult: vi.fn(),
       endGlRenderPass: vi.fn(),
       popGlRenderState: vi.fn(),
@@ -79,6 +82,7 @@ beforeAll(async () => {
     beginGlRenderPass,
     createGlRenderStateRuntime,
     createGlRenderTarget,
+    destroyGlRenderTarget,
     drawGlRenderTargetResult,
     endGlRenderPass,
     getGlRenderStateRuntime,
@@ -88,8 +92,12 @@ beforeAll(async () => {
   } = await import('@flighthq/render-gl/contract'));
   ({ createGlCacheState, refreshGlRenderCache } = await import('./glCache'));
   ({ flushGlSpriteBatch } = await import('./glSpriteBatch'));
-  ({ defaultGlRenderTargetNode2DRenderer, enableGlRenderTargetNode2D, renderIntoGlRenderTargetNode2D } =
-    await import('./glRenderTargetNode2D'));
+  ({
+    defaultGlRenderTargetNode2DRenderer,
+    destroyGlRenderTargetNode2D,
+    enableGlRenderTargetNode2D,
+    renderIntoGlRenderTargetNode2D,
+  } = await import('./glRenderTargetNode2D'));
 });
 
 beforeEach(() => {
@@ -136,6 +144,23 @@ describe('defaultGlRenderTargetNode2DRenderer', () => {
     defaultGlRenderTargetNode2DRenderer.submit(cacheState, renderProxy);
 
     expect(drawGlRenderTargetResult).toHaveBeenCalledWith(cacheState, renderProxy, target, expect.anything());
+  });
+});
+
+describe('destroyGlRenderTargetNode2D', () => {
+  it('frees the screen-owned target and recreates it on the next population', () => {
+    const screenState = createState();
+    const cacheState = createGlCacheState(screenState);
+    const node = createRenderTargetNode2D({ width: 32, height: 16 });
+    renderIntoGlRenderTargetNode2D(screenState, node, () => {});
+    const target = vi.mocked(createGlRenderTarget).mock.results.at(-1)?.value as GlRenderTarget;
+
+    destroyGlRenderTargetNode2D(cacheState, node);
+
+    expect(destroyGlRenderTarget).toHaveBeenCalledWith(screenState, target);
+
+    renderIntoGlRenderTargetNode2D(screenState, node, () => {});
+    expect(createGlRenderTarget).toHaveBeenCalledTimes(2);
   });
 });
 
