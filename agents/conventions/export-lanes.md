@@ -131,6 +131,11 @@ This is consistent with how the codebase already treats types (one navigable hea
 keeps promotion to public an explicit, reviewable one-line diff — exactly the "every
 exported name is worth keeping" discipline the pre-release philosophy asks for.
 
+Curation is interactive: **`npm run api:curate`** opens a terminal UI over every package's
+contract surface — scroll, press space to toggle a symbol public/contract (or `a` for a whole
+package), `s` to write the touched `index.ts` files. It only edits the allowlists, so the
+endorsement record stays the resulting `git diff`. `--list` dumps `pkg public/total` non-interactively.
+
 The hazard of a hand-maintained allowlist is **drift**: a new public function is added but
 never named in `index`, so it is silently contract-only and an app cannot see it. Intent
 cannot be auto-inferred (contract-only is legitimate and common), so the mitigation is
