@@ -1,1 +1,19 @@
-export {} from './contract';
+export {
+  attachProtocolHandler,
+  createProtocolHandler,
+  createProtocolUrl,
+  detachProtocolHandler,
+  disposeProtocolHandler,
+  getProtocolLaunchUrl,
+  getRegisteredProtocolSchemes,
+  isProtocolSchemeDefault,
+  isProtocolSchemeRegistered,
+  isValidProtocolScheme,
+  parseProtocolUrl,
+  registerProtocolScheme,
+  registerProtocolSchemes,
+  removeProtocolSchemeAsDefault,
+  setProtocolSchemeAsDefault,
+  unregisterProtocolScheme,
+  unregisterProtocolSchemes,
+} from './contract';

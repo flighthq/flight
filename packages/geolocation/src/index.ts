@@ -1,1 +1,11 @@
-export {} from './contract';
+export {
+  clearGeolocationWatch,
+  createGeoPosition,
+  getCurrentGeoPosition,
+  getCurrentGeoPositionResult,
+  getGeolocationPermission,
+  isGeolocationAvailable,
+  onGeolocationPermissionChange,
+  requestGeolocationPermission,
+  watchGeolocationPosition,
+} from './contract';

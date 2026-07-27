@@ -1,1 +1,22 @@
-export { createTrayIcon, onTrayEvent, setTrayIconTooltip } from './contract';
+export {
+  createTrayIcon,
+  destroyTrayIcon,
+  displayTrayBalloon,
+  getTrayCapabilities,
+  getTrayIconBounds,
+  getTrayIconTitle,
+  getTrayIconTooltip,
+  getTrayIcons,
+  isTrayDestroyed,
+  onTrayEvent,
+  popupTrayContextMenu,
+  removeTrayBalloon,
+  setTrayIcon,
+  setTrayIconContextMenu,
+  setTrayIconTemplate,
+  setTrayIconTitle,
+  setTrayIconTooltip,
+  setTrayIgnoreDoubleClickEvents,
+  setTrayPressedIcon,
+  startTrayIconAnimation,
+} from './contract';

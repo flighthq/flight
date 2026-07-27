@@ -1,1 +1,18 @@
-export {} from './contract';
+export {
+  attachSoftKeyboard,
+  createSoftKeyboard,
+  createSoftKeyboardTransition,
+  detachSoftKeyboard,
+  disposeSoftKeyboard,
+  getSoftKeyboardHeight,
+  getSoftKeyboardInfo,
+  getSoftKeyboardResizeMode,
+  hideSoftKeyboard,
+  isSoftKeyboardAccessoryBarVisible,
+  isSoftKeyboardScrollAssistEnabled,
+  setSoftKeyboardAccessoryBarVisible,
+  setSoftKeyboardResizeMode,
+  setSoftKeyboardScrollAssistEnabled,
+  setSoftKeyboardStyle,
+  showSoftKeyboard,
+} from './contract';
