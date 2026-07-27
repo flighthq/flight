@@ -14,7 +14,6 @@ export {
   computeParticleEmitter3DLocalBoundsAabb,
   createParticleEmitter2D,
   createParticleEmitter3D,
-  createParticleEmitterData,
   emitParticleBurst2D,
   emitParticleBurst3D,
   getParticleEmitter2DCapacity,

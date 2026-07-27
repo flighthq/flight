@@ -1,7 +1,6 @@
 export {
   computeBitmapTextLocalBoundsRectangle,
   createBitmapText,
-  createBitmapTextData,
   getBitmapTextBounds,
   getBitmapTextPages,
   reserveBitmapText,

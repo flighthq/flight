@@ -1,7 +1,6 @@
 export {
   addMovieClipFrameScript,
   createMovieClip,
-  createMovieClipData,
   createSpritesheetTimelineSource,
   disposeMovieClipSignals,
   enableMovieClipSignals,
