@@ -1,0 +1,149 @@
+import type { Surface } from '@flighthq/sdk';
+import {
+  addNodeChild,
+  appendShapeBeginFill,
+  appendShapeEndFill,
+  appendShapeRectangle,
+  createDisplayObject,
+  createRenderTargetNode2D,
+  createShape,
+  enableCanvasRenderTargetNode2D,
+  getSurfacePixelLuminance,
+  getSurfacePixelRgb,
+  invalidateNodeLocalTransform,
+  renderIntoCanvasRenderTargetNode2D,
+  ShapeKind,
+} from '@flighthq/sdk';
+import { createFunctionalTarget } from '@ft/render';
+
+const WIDTH = 800;
+const HEIGHT = 600;
+const NODE_X = 220;
+const NODE_Y = 160;
+const NODE_WIDTH = 360;
+const NODE_HEIGHT = 280;
+
+const target = await createFunctionalTarget({
+  width: WIDTH,
+  height: HEIGHT,
+  background: 0x101018ff,
+  kinds: [ShapeKind],
+});
+if (target.kind !== 'canvas') throw new Error('render-target-node-2d requires Canvas');
+const { render, state, width } = target;
+
+enableCanvasRenderTargetNode2D(state);
+
+const root = createDisplayObject();
+
+const backing = createShape();
+appendShapeBeginFill(backing, 0x175d6b, 1);
+appendShapeRectangle(backing, 160, 100, 480, 400);
+appendShapeEndFill(backing);
+addNodeChild(root, backing);
+
+const renderTargetNode = createRenderTargetNode2D({
+  width: NODE_WIDTH,
+  height: NODE_HEIGHT,
+});
+renderTargetNode.x = NODE_X;
+renderTargetNode.y = NODE_Y;
+invalidateNodeLocalTransform(renderTargetNode);
+addNodeChild(root, renderTargetNode);
+
+const foreground = createShape();
+appendShapeBeginFill(foreground, 0xffc928, 1);
+appendShapeRectangle(foreground, 520, 400, 120, 50);
+appendShapeEndFill(foreground);
+addNodeChild(root, foreground);
+
+renderIntoCanvasRenderTargetNode2D(state, renderTargetNode, (canvasState) => {
+  const context = canvasState.context;
+  context.fillStyle = '#05070d';
+  context.fillRect(0, 0, NODE_WIDTH, NODE_HEIGHT);
+
+  context.beginPath();
+  context.moveTo(180, 55);
+  context.lineTo(280, 105);
+  context.lineTo(180, 155);
+  context.lineTo(80, 105);
+  context.closePath();
+  context.fillStyle = '#8ddcff';
+  context.fill();
+
+  context.beginPath();
+  context.moveTo(80, 105);
+  context.lineTo(180, 155);
+  context.lineTo(180, 250);
+  context.lineTo(80, 200);
+  context.closePath();
+  context.fillStyle = '#247caf';
+  context.fill();
+
+  context.beginPath();
+  context.moveTo(180, 155);
+  context.lineTo(280, 105);
+  context.lineTo(280, 200);
+  context.lineTo(180, 250);
+  context.closePath();
+  context.fillStyle = '#3ca8e8';
+  context.fill();
+});
+render(root);
+
+export function assertRender(frame: Readonly<Surface>): void {
+  const scale = frame.width / width;
+  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * scale), Math.round(y * scale));
+
+  const cubeCenter = at(NODE_X + NODE_WIDTH / 2, NODE_Y + NODE_HEIGHT / 2);
+  if (
+    getSurfacePixelLuminance(
+      frame,
+      Math.round((NODE_X + NODE_WIDTH / 2) * scale),
+      Math.round((NODE_Y + NODE_HEIGHT / 2) * scale),
+    ) < 35
+  ) {
+    throw new Error(`[render-target-node-2d] offscreen 2D fill center is blank — got #${hex(cubeCenter)}`);
+  }
+
+  const targetCorner = at(NODE_X + 15, NODE_Y + 15);
+  if (!isBackground(targetCorner)) {
+    throw new Error(
+      `[render-target-node-2d] node target did not cover the backing shape at its corner — got #${hex(targetCorner)}`,
+    );
+  }
+
+  const backingOnly = at(180, 120);
+  if (!isTeal(backingOnly)) {
+    throw new Error(
+      `[render-target-node-2d] earlier sibling did not render around the target — got #${hex(backingOnly)}`,
+    );
+  }
+
+  const foregroundOverlap = at(540, 420);
+  if (!isYellow(foregroundOverlap)) {
+    throw new Error(
+      `[render-target-node-2d] later sibling did not composite above the target — got #${hex(foregroundOverlap)}`,
+    );
+  }
+}
+
+function channel(rgb: number, shift: number): number {
+  return (rgb >> shift) & 255;
+}
+
+function hex(rgb: number): string {
+  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+}
+
+function isBackground(rgb: number): boolean {
+  return channel(rgb, 16) < 45 && channel(rgb, 8) < 45 && channel(rgb, 0) < 55;
+}
+
+function isTeal(rgb: number): boolean {
+  return channel(rgb, 8) > 65 && channel(rgb, 0) > 75 && channel(rgb, 16) < 65;
+}
+
+function isYellow(rgb: number): boolean {
+  return channel(rgb, 16) > 180 && channel(rgb, 8) > 140 && channel(rgb, 0) < 90;
+}
