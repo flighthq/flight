@@ -108,6 +108,21 @@ describe('renderIntoGlRenderTexture', () => {
     expect(getGlRenderStateRuntime(state).currentRenderTarget).toBeNull();
   });
 
+  it('invalidates a previously-ready target when a replacement render throws', () => {
+    const { state } = createRenderTextureState();
+    const renderTexture = createRenderTexture({ height: 8, width: 8 });
+    renderIntoGlRenderTexture(state, renderTexture, () => {});
+
+    expect(() =>
+      renderIntoGlRenderTexture(state, renderTexture, () => {
+        throw new Error('replacement failed');
+      }),
+    ).toThrow('replacement failed');
+
+    expect(explainGlRenderTexture(state, renderTexture).status).toBe('unrendered');
+    expect(bindGlRenderTexture(state, renderTexture)).toBeNull();
+  });
+
   it('resizes the retained target when the source dimensions change', () => {
     const { state } = createRenderTextureState();
     const renderTexture = createRenderTexture({ height: 16, width: 32 });
