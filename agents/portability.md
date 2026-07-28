@@ -55,7 +55,7 @@ Measured against the tree (2026-07): closures (`=>` in **573 of ~2000** source f
 
 GC (TS) → manual (C) → ownership/borrow (Rust) is the real design work, and it is the same problem under *any* IR. Flight has paid the down-payment: the explicit-allocation discipline exists *so that* this lowering is expressible. Two things bound it:
 
-- **The native seam.** Hot, ownership-heavy paths are hand-written per target as native crates (`flight-rs` / `surface-rs`), behind registered seams. The codegen carries the **bulk** (the cellular, portable subset); it never has to solve the hardest ownership paths — those are hand-owned per language.
+- **The native seam.** Hot, ownership-heavy paths are hand-written per target as native crates (`flight-rs` / `surface-rs`; the coordinated `bitmap-rs` rename is pending in `flight-rs`), behind registered seams. The codegen carries the **bulk** (the cellular, portable subset); it never has to solve the hardest ownership paths — those are hand-owned per language.
 - **The subset.** Because allocation and ownership are already explicit in the source, the lowering has data to work with rather than GC magic to reverse-engineer.
 
 ## `flight-hx` is the R&D, not the port

@@ -180,7 +180,7 @@ New coverage added in pass 2:
 
 ### Not implemented
 
-**Bitmap alpha-threshold hit testing** — `defaultBitmapHitTestPoint` still ignores `shapeFlag` and returns bounds-only. Requires `getImageSourcePixelAlpha(source, px, py)` in `@flighthq/surface`. Gate is the surface package, not interaction. The design question (per-node threshold vs. a hard-coded default) should be settled when `@flighthq/surface` exposes the accessor.
+**Bitmap alpha-threshold hit testing** — `defaultBitmapHitTestPoint` still ignores `shapeFlag` and returns bounds-only. Requires `getImageSourcePixelAlpha(source, px, py)` in `@flighthq/bitmap`. Gate is the bitmap package, not interaction. The design question (per-node threshold vs. a hard-coded default) should be settled when `@flighthq/bitmap` exposes the accessor.
 
 **`@flighthq/interaction-gesture` neighbor package** — drag, pan, pinch, swipe, tap, long-press recognizers. The maturation roadmap calls this Gold. Explicitly a design decision: gesture should be a separate `@flighthq/interaction-gesture` package (the `-subpackage` pattern) so the base package stays a pure router and gestures tree-shake independently. Not started; blocked by design approval for the new package.
 
@@ -248,7 +248,7 @@ Recorded in `agents/rust/conformance.md` under "Intentional value-type seam dive
 
 **Remaining to reach 100:**
 
-- Bitmap alpha-threshold (gate: `@flighthq/surface` pixel accessor) → +3
+- Bitmap alpha-threshold (gate: `@flighthq/bitmap` pixel accessor) → +3
 - `@flighthq/interaction-gesture` neighbor package → +4 (requires design approval)
 - Spatial index broadphase → +2 (requires `SpatialIndex` types)
 - Glyph-box text hit-testing + caret index (gate: `@flighthq/textlayout`) → +1

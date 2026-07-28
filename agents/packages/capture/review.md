@@ -16,10 +16,10 @@ ingested:
 
 Two source files under `packages/capture/src/`, types header-first in `@flighthq/types` (`CaptureBaseline`, `CaptureColumnBaseline`, `CaptureCheckTier`, `CaptureCheckResult`):
 
-- **Comparison policy** (`captureComparison.ts`): `CAPTURE_REGRESSION_TOLERANCE` (5) / `CAPTURE_PARITY_TOLERANCE` (15) with rationale comments grounded in measured backend agreement; `compareCaptureFingerprints(a, b)` parsing both strings via surface's `parseSurfaceFingerprint` and returning `Number.POSITIVE_INFINITY` when either is unparseable **or grid sizes differ** (Infinity fails any finite tolerance — corrupt baseline reads as a failing check, not a crash); `evaluateCaptureRegression` / `evaluateCaptureParity` producing a `CaptureCheckResult` `{ pass, difference, tolerance }`.
+- **Comparison policy** (`captureComparison.ts`): `CAPTURE_REGRESSION_TOLERANCE` (5) / `CAPTURE_PARITY_TOLERANCE` (15) with rationale comments grounded in measured backend agreement; `compareCaptureFingerprints(a, b)` parsing both strings via surface's `parseBitmapFingerprint` and returning `Number.POSITIVE_INFINITY` when either is unparseable **or grid sizes differ** (Infinity fails any finite tolerance — corrupt baseline reads as a failing check, not a crash); `evaluateCaptureRegression` / `evaluateCaptureParity` producing a `CaptureCheckResult` `{ pass, difference, tolerance }`.
 - **Baseline record ops** (`captureBaseline.ts`): `createCaptureBaseline`, `getCaptureBaselineField` (null sentinel), `setCaptureBaselineField`, `formatCaptureBaseline` (sorted columns, canonical field order, 2-space indent, trailing newline — byte-for-byte the tooling's on-disk format), `parseCaptureBaseline` (null on malformed/non-object JSON).
 - **Tier vocabulary** — `CaptureCheckTier = 'regression' | 'parity' | 'smoke'` in types; smoke deliberately has no evaluator (charter: it stays in the tools).
-- **Boundary hygiene** — deps exactly `@flighthq/surface` + `@flighthq/types`; no re-export of surface's fingerprint math (per the 2026-07-09 Decision); 25 tests across both files including round-trip, corrupt-input, and grid-mismatch cases.
+- **Boundary hygiene** — deps exactly `@flighthq/bitmap` + `@flighthq/types`; no re-export of surface's fingerprint math (per the 2026-07-09 Decision); 25 tests across both files including round-trip, corrupt-input, and grid-mismatch cases.
 
 ## Gaps
 

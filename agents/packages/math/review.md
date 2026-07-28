@@ -92,5 +92,5 @@ The charter's silence forces these assumptions; each should become a real Open d
 2. **`randomColor` home: `math` or `materials`?** Packed-RGBA output pulls toward `materials`; the randomness machinery lives here. A cross-package ownership call.
 3. **Rust `flighthq-math` priority.** It is the cleanest port target in the codebase and a mixing leaf; should it be prioritized as the first conformance/mixing proof?
 4. **Particle-emitter consolidation.** `@flighthq/particles` inlines spawn geometry (`spawnShape.ts`) and a local `clamp01` in `updateParticleEmitter.ts` that now duplicate `randomInsideUnitDisc`, `randomOnUnitCircle`, `randomWeighted`, and `saturate`. Adopting the `math` helpers is a cleanup, not a bug fix — and a cross-package coordination, so it is a direction question, not a sweep item.
-5. **Is `math` a Wasm-mixable leaf (fork D)?** It plainly is (pure value-typed, deterministic, no GPU). Worth recording on the mixing-candidate list alongside `surface`/`geometry`/`path`.
+5. **Is `math` a Wasm-mixable leaf (fork D)?** It plainly is (pure value-typed, deterministic, no GPU). Worth recording on the mixing-candidate list alongside `bitmap`/`geometry`/`path`.
 6. **NaN-contract policy for hot helpers.** Whether `saturate`/`clamp` should propagate NaN or sanitize it — a small but real consistency decision for the interpolation/clamp family.

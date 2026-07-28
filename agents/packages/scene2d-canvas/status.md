@@ -125,7 +125,7 @@ These require decomposing the canvas 2D matrix into per-axis scale factors and a
 
 ### Render-target readback
 
-`getCanvasRenderTargetImageData` / `readCanvasRenderTargetPixels` — ownership boundary with `@flighthq/surface` unresolved. The decision (does canvas expose raw `ImageData`, or a `CanvasRenderTarget → ImageSource` bridge?) must be made before implementing. Deferred.
+`getCanvasRenderTargetImageData` / `readCanvasRenderTargetPixels` — ownership boundary with `@flighthq/bitmap` unresolved. The decision (does canvas expose raw `ImageData`, or a `CanvasRenderTarget → ImageSource` bridge?) must be made before implementing. Deferred.
 
 ### Cross-backend conformance scenes
 
@@ -179,9 +179,9 @@ These are now distinct and documented:
 1. **Dashed strokes** — add `dashPattern: number[] | null` and `dashOffset: number` to the `lineStyle` command tuple in `ShapeCommand.ts`; read them in `defaultCanvasLineStyle`; call `context.setLineDash`/`lineDashOffset` in `flushCanvasShapePath`. Requires coordinated changes to `@flighthq/shape`.
 2. **`LineScaleMode 'horizontal'` and `'vertical'`** — implement per-axis scale decomposition (`scaleX = Math.sqrt(a²+b²)`, `scaleY = Math.sqrt(c²+d²)`) in `flushCanvasShapePath` for the `'horizontal'` and `'vertical'` cases.
 3. **Functional conformance scenes** — add `tests/functional/blend-erase`, `tests/functional/blend-alpha`, `tests/functional/line-scale-none` scenes to verify these features render correctly across Canvas/DOM/GL backends.
-4. **Render-target readback** — decide ownership with `@flighthq/surface` and implement `getCanvasRenderTargetImageData`/`readCanvasRenderTargetPixels`.
+4. **Render-target readback** — decide ownership with `@flighthq/bitmap` and implement `getCanvasRenderTargetImageData`/`readCanvasRenderTargetPixels`.
 5. **Image-smoothing parity in patterns and scale-9** — audit `drawCanvasScale9Shape`, tilemap, and bitmap fills to ensure `imageSmoothingEnabled`/`imageSmoothingQuality` overrides are honored consistently, not just in `drawCanvasBitmap`.
-6. **`BitmapFillRepeat` surface as a first-class type** — first-class `repeat`/`no-repeat`/`repeat-x`/`repeat-y` on `beginBitmapFill`/`lineBitmapStyle`, requiring a `BitmapFillRepeat` union in `@flighthq/types`.
+6. **`BitmapFillRepeat` surface as a first-class type** — first-class `repeat`/`no-repeat`/`repeat-x`/`repeat-y` on `beginTextureFill`/`lineTextureStyle`, requiring a `BitmapFillRepeat` union in `@flighthq/types`.
 
 ## Score estimate
 

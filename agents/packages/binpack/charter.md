@@ -22,7 +22,7 @@ The complete rectangle-packing toolkit: a strong heuristic packer (MaxRects fami
 
 ## Boundaries
 
-- **Depends on `@flighthq/geometry` (Rectangle) + `@flighthq/types`.** No image pixels, no atlas, no display. It computes *where* rectangles go; it does not read or composite any bitmap — the caller (or a `textureatlas-packer` neighbor) blits sub-images into the packed layout via `@flighthq/surface`.
+- **Depends on `@flighthq/geometry` (Rectangle) + `@flighthq/types`.** No image pixels, no atlas, no display. It computes *where* rectangles go; it does not read or composite any bitmap — the caller (or a `textureatlas-packer` neighbor) blits sub-images into the packed layout via `@flighthq/bitmap`.
 - **Layout, not compositing or resources.** Input is `{ id, width, height }`; output is placements `{ id, x, y, width, height, rotated }` + the used bin size + `unpacked` ids. Turning that into a `TextureAtlas`/`Tileset` or drawing the pixels is the consumer's job.
 - **Offline/build-time packing.** It's a one-shot layout solver, not an incremental runtime allocator (a dynamic add/remove atlas allocator is a separate future concern).
 
@@ -36,6 +36,6 @@ _Append-only, dated, blessed rulings._
 
 ## Open directions
 
-1. **`@flighthq/textureatlas-packer` neighbor.** The atlas-specific layer: take image sources, pack via `binpack`, composite into an atlas bitmap (`@flighthq/surface`), and emit a `TextureAtlas` with named regions/UVs. The register's original "atlas-packer" intent, built as a composition over this bedrock.
+1. **`@flighthq/textureatlas-packer` neighbor.** The atlas-specific layer: take image sources, pack via `binpack`, composite into an atlas bitmap (`@flighthq/bitmap`), and emit a `TextureAtlas` with named regions/UVs. The register's original "atlas-packer" intent, built as a composition over this bedrock.
 2. **Alternate heuristics + skyline/guillotine backends.** A pluggable placement strategy (skyline, guillotine) selectable by workload, behind the same `packRectangles` vocabulary.
 3. **Incremental/online allocator.** A runtime atlas allocator supporting add/free of rectangles over time (dynamic glyph/texture atlases), distinct from this one-shot solver.

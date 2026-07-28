@@ -25,7 +25,7 @@ Where it ends: it does **not** own the scene graph (`@flighthq/node`), signal ma
 2. **Registry by default, never a closed `switch(kind)`.** Per-kind hit tests are open string-keyed registries so a new node kind is added without taxing every interaction user, and a user can override a built-in.
 3. **Zero-config linear by default; acceleration is opt-in.** Picking and area queries are honest full-graph linear DFS with no hidden index. A spatial broadphase, if it lands, is something the caller opts into — the default never silently allocates or maintains an index.
 4. **`DisplayObject` is the user-facing type.** Graph-feature aliases like `Spatial2DNode` are implementation details. Public API surfaces that users interact with are typed on `DisplayObject`.
-5. **Honest capability surface.** A hit test honors `shapeFlag` for the kinds that can (shapes via path-fill containment), falls back to bounds where the precise test is gated on a neighbor (bitmap alpha → `surface`, glyph caret → `textlayout`), and documents that fallback rather than pretending. Sentinels (`null`, `-1`) for expected misses; throws only for misuse.
+5. **Honest capability surface.** A hit test honors `shapeFlag` for the kinds that can (shapes via path-fill containment), falls back to bounds where the precise test is gated on a neighbor (bitmap alpha → `bitmap`, glyph caret → `textlayout`), and documents that fallback rather than pretending. Sentinels (`null`, `-1`) for expected misses; throws only for misuse.
 
 ## Boundaries
 
@@ -65,7 +65,7 @@ Where it ends: it does **not** own the scene graph (`@flighthq/node`), signal ma
 
   **Why:** A clipped node that reports hits outside its visible region is a user-visible bug, not a missing feature. Now that `@flighthq/clip` has `clipRegionContainsPoint` with exact winding support, the dependency is clean.
 
-- **[2026-07-02] `shapeFlag` stays on the public surface even for kinds that don't yet honor it.** Bitmap and text hit tests currently fall back to bounds when `shapeFlag=true`. The parameter stays for signature consistency; the fallback is documented, not hidden. Implementations land as gated packages mature (`@flighthq/surface` for bitmap alpha, `@flighthq/textlayout` for glyph rects).
+- **[2026-07-02] `shapeFlag` stays on the public surface even for kinds that don't yet honor it.** Bitmap and text hit tests currently fall back to bounds when `shapeFlag=true`. The parameter stays for signature consistency; the fallback is documented, not hidden. Implementations land as gated packages mature (`@flighthq/bitmap` for bitmap alpha, `@flighthq/textlayout` for glyph rects).
 
   **Why:** Removing and re-adding the parameter is churn. Keeping it with an honest bounds fallback is the same pattern as "conservative by default, exact when available" — consistent with clip's two-API-path decision.
 

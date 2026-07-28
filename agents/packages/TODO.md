@@ -20,7 +20,7 @@ Blessed charters with no code behind them. Start from the charter; add a registe
 
 Charter kept here for reference; the code and its crate live in the named repo. Not local work.
 
-- **`surface-rs`** — built in `flight-rs`
+- **`surface-rs`** — built in `flight-rs`; rename to `bitmap-rs` pending there
 
 ## Absorbed — historical cells folded into another package
 
@@ -362,12 +362,12 @@ Design calls to settle before building the affected entries:
 - Extract the shared listener-registry + best-effort `setTimeout` scheduler primitive from the two ~95%-duplicated backend factories, leavi…
 - Remove the `// ----` structural divider comments in `notification.ts` and `notification.test.ts` (codebase-map style rule); the test-file…
 
-### surface (solid 72)
+### bitmap (solid 72)
 
-- Collapse `SurfaceConvolutionEdge` into `SurfaceEdgeMode`
-- Add `SurfaceEdgeMode` parameter to geometric ops missing it
-- Add `SurfaceResizeMode` parameter to geometric ops missing it
-- Update Package Map description for surface
+- Collapse `BitmapConvolutionEdge` into `BitmapEdgeMode`
+- Add `BitmapEdgeMode` parameter to geometric ops missing it
+- Add `BitmapResizeMode` parameter to geometric ops missing it
+- Update Package Map description for bitmap
 
 ### textbidi (solid 72)
 

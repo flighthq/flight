@@ -32,7 +32,7 @@ Parked — each with why:
 
 - **Cursor management rebuild.** _Parked — design unsettled._ Charter Open direction #1 (module singleton vs per-manager, multi-canvas). Do not rebuild the singleton until directed; the orphaned `Cursor`/`CursorBackend` types wait on the same call.
 - **Default registrar coverage for `NativeText`/`BitmapText`/`ParticleEmitter`.** _Parked — design decision._ Whether interaction's registrar owns every renderable kind or composition packages register their own is a boundary question (new Open direction; bundle-invariant implications).
-- **Bitmap alpha-threshold picking.** _Parked — gated on `@flighthq/surface`_ exposing a pixel-alpha accessor.
+- **Bitmap alpha-threshold picking.** _Parked — gated on `@flighthq/bitmap`_ exposing a pixel-alpha accessor.
 - **Glyph-box text picking + caret index.** _Parked — gated on `@flighthq/textlayout`_ per-glyph rects.
 - **True SAT overlap for `hitTestDisplayObjectsShape`.** _Parked — precision ceiling unsettled_ (Open direction #3).
 - **`getDisplayObjectOverlapRectangle` disjoint contract (empty rect vs boolean).** _Parked — small API design fork_ (new Open direction; the lost implementation returned `boolean`).

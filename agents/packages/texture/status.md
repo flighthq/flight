@@ -155,7 +155,7 @@ This is the largest remaining item and should be tracked in the conformance map.
 
 - **`faces` mutability casting.** The `CubeTexture.faces` field is typed `readonly (ImageResource | null)[]` in the interface, requiring `as (ImageResource | null)[]` casts in `copyCubeTexture` and `setCubeTextureFace`. At runtime the array is always mutable (it is `slice()`d or created fresh in `createCubeTexture`/`cloneCubeTexture`). The cast is correct but relies on this invariant.
 
-- **Pre-existing type errors in other packages.** The root `npm run check` reports errors in `scene-wgpu`, `share`, `statusbar`, `surface-rs`, `surface`, `tween`, `types` (Entity/Material/Node tests). None of these are regressions from this session — they were present before.
+- **Pre-existing type errors in other packages.** The root `npm run check` reports errors in `scene-wgpu`, `share`, `statusbar`, `surface-rs`, `bitmap`, `tween`, `types` (Entity/Material/Node tests). None of these are regressions from this session — they were present before.
 
 ## Suggestions for future sessions
 

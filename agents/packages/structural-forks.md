@@ -48,7 +48,7 @@ Not one fork but the theme: the whole project is monolith decomposition. The act
 Two different axes, often conflated:
 
 1. **Runtime backend seam** — swap an implementation behind a `*Backend` trait. Established: render (multi-backend), text-shaping, `host-*`.
-2. **Wasm `-rs` mixing seam** — ship a _single Rust crate as a wasm NPM drop-in_ inside an otherwise-TS app. A different dimension. **Question:** which packages are good Wasm-mixable leaves? **Lead:** `surface` (value-in/value-out pixel buffers — near-zero-copy). Candidates: geometry, path, filters/effects (data descriptors), particles (deterministic buffer-in/out), color/material math. The mixable set is the **value-typed leaves**; stateful graph packages are all-or-nothing.
+2. **Wasm `-rs` mixing seam** — ship a _single Rust crate as a wasm NPM drop-in_ inside an otherwise-TS app. A different dimension. **Question:** which packages are good Wasm-mixable leaves? **Lead:** `bitmap` (value-in/value-out pixel buffers — near-zero-copy). Candidates: geometry, path, filters/effects (data descriptors), particles (deterministic buffer-in/out), color/material math. The mixable set is the **value-typed leaves**; stateful graph packages are all-or-nothing.
 
 ## E. The breadth/depth system — bedrock + recommended-vs-blessed _(to build)_
 

@@ -84,7 +84,7 @@ Added `@flighthq/signals` as a runtime dependency (previously only `@flighthq/ty
 
 ### `@flighthq/share-formats` neighbor package
 
-A helper like `createShareFileFromImageSource(image, name): ShareFile` to convert a rendered `Surface`/screenshot into a `ShareFile` would pull `@flighthq/surface` or `@flighthq/resources` into the `share` cell's dependency tree. Per the maturation roadmap, this is a design decision for the user to approve before proceeding: the split into a `-formats` sibling is only warranted if the helper is non-trivial. Surface as a suggestion, not acted on here.
+A helper like `createShareFileFromImageSource(image, name): ShareFile` to convert a rendered `Bitmap`/screenshot into a `ShareFile` would pull `@flighthq/bitmap` or `@flighthq/resources` into the `share` cell's dependency tree. Per the maturation roadmap, this is a design decision for the user to approve before proceeding: the split into a `-formats` sibling is only warranted if the helper is non-trivial. Surface as a suggestion, not acted on here.
 
 ### `flighthq-share` Rust crate
 
@@ -102,7 +102,7 @@ The Silver/Gold fields (`parentWindow`, `sourceRect`, `activityType`, `excludedA
 
 ## Suggestions for future sessions
 
-1. **`createShareFileFromImageSource` in `@flighthq/share-formats`** — a convenience to share a rendered screenshot directly from a `Surface`/`ImageSource`. Requires user approval of the `-formats` split first.
+1. **`createShareFileFromImageSource` in `@flighthq/share-formats`** — a convenience to share a rendered screenshot directly from a `Bitmap`/`ImageSource`. Requires user approval of the `-formats` split first.
 2. **Rust crate `flighthq-share`** — now straightforward to port since the TS field set is stable.
 3. **Host adapter share backends** — `createElectronShareBackend(electron)` in `@flighthq/host-electron` realizing `parentWindow`, file-path sharing, and `activityType`/`dismissed` from Electron's `shell.openExternal`/dialog/custom IPC.
 4. **`shareContentWithResult` + `shareText`/`shareUrl` with result variants** — `shareTextWithResult(text, options?)`, `shareUrlWithResult(url, options?)` convenience wrappers for the full-result path. Currently not added to keep the surface minimal; they are trivial to add if demand arises.

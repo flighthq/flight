@@ -58,9 +58,9 @@ Item-by-item against the actual source:
 - `applyWebcamStreamConstraints(stream, constraints): Promise<boolean>` — applies torch/zoom/focus/exposure/white-balance constraints via `applyConstraints({ advanced: [...] })`
 - `destroyWebcamStream(stream): void` — stops all MediaStream tracks, marks stream inactive
 - `getWebcamPermissionState(): Promise<WebcamPermissionState>` — real 4-state permission query (distinct from the boolean `requestWebcamPermission`)
-- `getWebcamPhotoSurface(photo, out: Surface): Promise<boolean>` — decodes dataUrl into caller-provided Surface via OffscreenCanvas or HTMLCanvasElement; resolves false in 500ms if jsdom never fires onload/onerror
+- `getWebcamPhotoBitmap(photo, out: Bitmap): Promise<boolean>` — decodes dataUrl into caller-provided Bitmap via OffscreenCanvas or HTMLCanvasElement; resolves false in 500ms if jsdom never fires onload/onerror
 - `getWebcamStreamCapabilities(stream): WebcamCapabilities | null` — reads `MediaTrackCapabilities` from the live stream's video track
-- `grabWebcamFrame(stream, out: Surface): boolean` — writes current video frame into Surface via OffscreenCanvas or HTMLCanvasElement
+- `grabWebcamFrame(stream, out: Bitmap): boolean` — writes current video frame into Bitmap via OffscreenCanvas or HTMLCanvasElement
 - `startWebcamStream(options?): Promise<WebcamStream | null>` — opens live camera via `getUserMedia`; populates stream entity from negotiated track settings
 - `takeWebcamStreamPhoto(stream): Promise<WebcamPhoto | null>` — captures still from live stream via ImageCapture API (with canvas fallback)
 - Updated `createWebWebcamBackend`: full implementation of all `WebcamBackend` methods; capture now decodes real image dimensions via `Image` element; video capture decodes real duration via `<video>` element; `WebcamVideo` now includes `hasAudio`/`size`
@@ -106,7 +106,7 @@ Item-by-item against the actual source:
 - **Convenience setters** — `setWebcamTorch(stream, on)`, `setWebcamZoom(stream, v)`, `setWebcamFocus(stream, v)`, `setWebcamExposure(stream, v)`, `setWebcamWhiteBalance(stream, mode)`. These are thin wrappers over `applyWebcamStreamConstraints`; deferred because the general `applyWebcamStreamConstraints` already covers the use case and adding 5 tiny wrappers without tests would be noise. Add them when user demand is clear.
 - **Rust parity (`flighthq-webcam` crate)** — requires a `host-web` wasm path and a native nokhwa backend; cross-worktree effort, deferred to the Rust worktree session.
 - **`host-electron` webcam backend** — requires the Electron camera APIs; deferred to the `host-electron` package session.
-- **Functional test scene** — a scene rendering a grabbed frame into a `Surface` for visual proof; deferred per `functional-test` skill scope (separate session).
+- **Functional test scene** — a scene rendering a grabbed frame into a `Bitmap` for visual proof; deferred per `functional-test` skill scope (separate session).
 
 ### Design decisions surfaced
 
@@ -119,7 +119,7 @@ Item-by-item against the actual source:
 ## Concerns / surprises
 
 - **`MediaStream` absent in jsdom:** `new MediaStream()` in `createWebcamStreamEntity` would throw in jsdom since jsdom does not implement the Media Capture API. Fixed by using `null as any as MediaStream` as a placeholder (always overwritten before use by `startStream`). The recording/stream tests work because they test the sentinel path (no MediaRecorder in jsdom → returns null).
-- **`Image.onerror` not firing in jsdom:** For invalid `data:image/png;base64,xx` URLs, jsdom's `Image` never fires `onload` or `onerror`, causing `getWebcamPhotoSurface` to hang. Fixed with a 500ms timeout fallback that resolves `false`. The test has a 2000ms budget.
+- **`Image.onerror` not firing in jsdom:** For invalid `data:image/png;base64,xx` URLs, jsdom's `Image` never fires `onload` or `onerror`, causing `getWebcamPhotoBitmap` to hang. Fixed with a 500ms timeout fallback that resolves `false`. The test has a 2000ms budget.
 - **`WebcamVideo.hasAudio`** is always `false` in the file-input web backend (the `<input type="file">` path cannot introspect audio tracks). This is documented in the type; native hosts report the real value.
 - **`WebcamBackend` interface is now larger:** Native host backends need to implement all 11 methods. This is correct for a complete seam but could be a friction point for minimal adapter authors. Consider splitting into a required core and optional extension in a future session.
 
@@ -131,6 +131,6 @@ Item-by-item against the actual source:
 2. **Zero-copy frame loop** (`startWebcamFrameLoop(stream, onFrame): () => void`) using `requestVideoFrameCallback` for continuous capture without per-frame canvas allocation.
 3. **`getWebcamStreamSettings(stream): WebcamStreamSettings`** — reports the actual negotiated resolution/frame-rate/facing/torch (capabilities are ranges; settings are the live truth).
 4. **`webcam-formats` neighbor package** — EXIF orientation parsing and HEIC decode, triggered when the metadata weight justifies a separate entry point. Analogous to `spritesheet-formats`.
-5. **Functional test** — a `tests/functional/webcam-frame-grab/` scene that mocks a fake `WebcamBackend` returning test pixels, grabs a frame into a Surface, and renders it; proves the `grabWebcamFrame` → `Surface` → render pipeline visually.
+5. **Functional test** — a `tests/functional/webcam-frame-grab/` scene that mocks a fake `WebcamBackend` returning test pixels, grabs a frame into a Bitmap, and renders it; proves the `grabWebcamFrame` → `Bitmap` → render pipeline visually.
 6. **Permission-state unification across the platform suite** — `WebcamPermissionState` introduced here matches `GeolocationPermissionState` but is a separate type. A suite-wide `PermissionState = 'denied' | 'granted' | 'prompt' | 'unknown'` in `@flighthq/types` would unify all capabilities; worth suggesting as a future types-layer pass.
 7. **`host-electron` webcam backend** — `createElectronWebcamBackend(electron)` implementing device enumeration, real permission prompt, torch/zoom via Electron's `desktopCapturer`/native modules.

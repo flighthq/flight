@@ -18,7 +18,7 @@ Two exported functions in `shapeJson.ts`:
 
 Exported types: `ShapeTextureReference` (`{ index }`), `ShapeJsonFormatOptions`, `ShapeJsonParseOptions`.
 
-**Texture reference:** a `Texture` has no stable serializable id, so the reference is the zero-based ordinal of the texture-bearing command within the shape, assigned in command order during format. The caller maps ordinal → texture via `resolveTexture`. Without a resolver (or when it returns `null`), the `beginBitmapFill`/`lineBitmapStyle` command is dropped and the rest parses intact — the one documented place the "lossless" claim needs a caller-supplied seam.
+**Texture reference:** a `Texture` has no stable serializable id, so the reference is the zero-based ordinal of the texture-bearing command within the shape, assigned in command order during format. The caller maps ordinal → texture via `resolveTexture`. Without a resolver (or when it returns `null`), the `beginTextureFill`/`lineTextureStyle` command is dropped and the rest parses intact — the one documented place the "lossless" claim needs a caller-supplied seam.
 
 **Matrix vs bitmap discrimination on serialize:** the only two object-typed args across the entire `ShapeCommandRegistry` are `Matrix | null` and `ImageResource`, so a non-null object is a matrix iff it has numeric `a,b,c,d,tx,ty` fields; otherwise it is the bitmap. Documented inline.
 

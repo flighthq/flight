@@ -94,7 +94,7 @@ Only tests `t=0`. Missing `t=1` and `t=0.5` verification.
 | shape | `appendShapePath` | No test for cross-package bridge from `@flighthq/path` Path into shape commands |
 | shape | `appendShapeDrawTriangles` | No test for triangle drawing with indices/vertices/uvs arrays |
 | geometry | `transposeMatrix4` | Out-parameter aliasing test missing (transpose is a classic aliasing hazard) |
-| surface | `drawSurface` | All 3 tests only assert does-not-throw, no pixel verification |
+| bitmap | `drawBitmap` | All 3 tests only assert does-not-throw, no pixel verification |
 | materials | `concatColorTransform` | Test claims alias coverage but uses a fresh out object (`out===a` and `out===b` untested) |
 | tween | `updateTweens` | Zero-duration tweens (division by zero) and negative deltaTime untested |
 | textinput | `selectWordAtTextInputIndex` | Only 1 test case; missing whitespace, punctuation, boundaries, empty text |
@@ -106,8 +106,8 @@ Only tests `t=0`. Missing `t=1` and `t=0.5` verification.
 | scene | `applyAnimationClipToScene` | Rotation (quaternion) channel path untested |
 | clock | `advanceClock` | No test for negative deltaTime, negative scale, or 3+ level hierarchy |
 | easing | `easeSmoothstepRange` | Degenerate `edge0 === edge1` not tested (division by zero) |
-| surface | `getSurfacePixel` | Never tests last pixel at `(width-1, height-1)` |
-| surface | `setSurfacePixel` | Same boundary gap: no test writes to the last pixel |
+| bitmap | `getBitmapPixel` | Never tests last pixel at `(width-1, height-1)` |
+| bitmap | `setBitmapPixel` | Same boundary gap: no test writes to the last pixel |
 | tilemap-formats | `buildTilemapLayersFromTiled` | Missing multi-tileset, group layers, image layers, object groups with polygon/ellipse |
 
 ## Functional Test Candidates

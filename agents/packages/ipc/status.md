@@ -100,7 +100,7 @@ Also updated:
 
 3. **`IpcSerializer` seam** — Gold-tier. The maturation roadmap asks: confirm that a swappable serializer (for non-structured-clone wire formats needed by a C/C++ shell) is wanted before building. Deferred.
 
-4. **`ImageSource`/surface-buffer transfer semantics** — The `IpcTransferable` Gold type and `sendIpcMessageWithTransfer` function cross into `@flighthq/surface` expectations. Deferred pending surface-team confirmation of zero-copy transfer scope.
+4. **`ImageSource`/surface-buffer transfer semantics** — The `IpcTransferable` Gold type and `sendIpcMessageWithTransfer` function cross into `@flighthq/bitmap` expectations. Deferred pending surface-team confirmation of zero-copy transfer scope.
 
 ### Gold-tier items not yet implemented
 

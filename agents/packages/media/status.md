@@ -136,7 +136,7 @@ Swept the `## Recommended` section of `assessment.md`. It contained exactly one 
 
 ### Cross-package / requires user input
 
-- **Video-frame → `ImageSource` bridge** — `getVideoChannelImageSource(channel)` / `copyVideoChannelFrame(channel, out)` for renderer compositing. Touches `@flighthq/surface`, `@flighthq/scene2d`, and the renderer image-cache contracts. Do not proceed autonomously.
+- **Video-frame → `ImageSource` bridge** — `getVideoChannelImageSource(channel)` / `copyVideoChannelFrame(channel, out)` for renderer compositing. Touches `@flighthq/bitmap`, `@flighthq/scene2d`, and the renderer image-cache contracts. Do not proceed autonomously.
 - **`@flighthq/media-formats` neighbor package** — creating a new package; raise with user before proceeding.
 
 ## Design Choices Made
@@ -172,6 +172,6 @@ Swept the `## Recommended` section of `assessment.md`. It contained exactly one 
 3. Implement `crossfadeAudioChannels(from, to, durationMs): void` in `audioMixer.ts`.
 4. Add a `readyState: MediaReadyState` field to `AudioChannel` and `VideoChannel` in `@flighthq/types`, updated by the channel when buffering/ready/error transitions occur.
 5. Implement 3D spatial audio (`PannerNode` + `AudioListener`) — the headline Gold feature.
-6. Resolve the video-frame `ImageSource` bridge design with the user (touches `@flighthq/surface` and `@flighthq/scene2d`).
+6. Resolve the video-frame `ImageSource` bridge design with the user (touches `@flighthq/bitmap` and `@flighthq/scene2d`).
 7. Consider `@flighthq/media-formats` (raise with user first).
 8. Define `AudioBackend`/`VideoBackend` seam in `@flighthq/types` once Silver API is stable.

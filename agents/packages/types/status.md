@@ -94,7 +94,7 @@ Audited all display object entity files. Added `*DataFactory` and `*RuntimeFacto
 
 **No `*TraitsKey` gaps were found.** The depth review mentioned `*TraitsKey` alongside `*Factory` as potentially missing. Only `DisplayObject.ts` needed `DisplayObjectTraitsKey`, and it already exports it. Child entities (`Sprite`, `Shape`, etc.) do not need their own `*TraitsKey` because they share the parent's traits shape.
 
-**Pre-existing type errors in other packages** — several unrelated packages (`statusbar`, `surface`, `velocity`, `webcam`) have pre-existing type errors that appeared in `npm run check` output. These are not introduced by this session's changes and were present before.
+**Pre-existing type errors in other packages** — several unrelated packages (`statusbar`, `bitmap`, `velocity`, `webcam`) have pre-existing type errors that appeared in `npm run check` output. These are not introduced by this session's changes and were present before.
 
 ## Suggestions for Future Sessions
 

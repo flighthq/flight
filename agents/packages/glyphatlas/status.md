@@ -15,7 +15,7 @@ by: builder2
 New API (`packages/glyphatlas/src/glyphRasterizerBackend.ts`):
 - `createStubGlyphRasterizerBackend()` — a font- and canvas-independent `GlyphRasterizerBackend`. Every codepoint rasterizes to a solid opaque-white box sized from the requested `fontSize` (width ≈ 0.6·size, height ≈ 0.7·size, advance = width + ≈0.1·size). Install via `setGlyphRasterizerBackend(createStubGlyphRasterizerBackend())`. This is the test/CI sibling of the web backend over the same swappable seam a native host replaces — it gives BitmapText/glyphatlas deterministic **non-blank** output in jsdom/headless with no `FontFace` loaded. It is not a production text renderer (every glyph is the same box, no real outlines).
 
-Tests: colocated backend tests (`glyphRasterizerBackend.test.ts`), a stub→atlas integration test proving a non-blank atlas surface (`glyphAtlasEntry.test.ts`), and an end-to-end glyphatlas→GlyphSource→bitmaptext test asserting non-empty glyph quads (`packages/bitmaptext/src/updateBitmapText.test.ts`; glyphatlas added as a bitmaptext **devDependency** + tsconfig reference — test-only, no published-graph or bundle impact).
+Tests: colocated backend tests (`glyphRasterizerBackend.test.ts`), a stub→atlas integration test proving a non-blank atlas bitmap (`glyphAtlasEntry.test.ts`), and an end-to-end glyphatlas→GlyphSource→bitmaptext test asserting non-empty glyph quads (`packages/bitmaptext/src/updateBitmapText.test.ts`; glyphatlas added as a bitmaptext **devDependency** + tsconfig reference — test-only, no published-graph or bundle impact).
 
 ### Web-backend font-readiness contract (authoring requirement)
 

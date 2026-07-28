@@ -14,4 +14,4 @@ Sweep-safe changes. Builder-ready.
 
 ## Backlog
 
-- **Image format (data-URL vs surface)** — open direction on whether clipboard image reads/writes should use a typed `Surface` (`out`-param, type-only `@flighthq/types` dependency) or keep data-URL strings as the permanent web-convenience layer.
+- **Image format (data-URL vs surface)** — open direction on whether clipboard image reads/writes should use a typed `Bitmap` (`out`-param, type-only `@flighthq/types` dependency) or keep data-URL strings as the permanent web-convenience layer.

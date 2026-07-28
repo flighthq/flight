@@ -193,8 +193,8 @@ exposed; worth adding to `packages:check`.
 
 ## Reconciliation
 
-- `@flighthq/surface` already ships a `./surfaceFingerprint` file-subpath export — a
+- `@flighthq/bitmap` already ships a `./surfaceFingerprint` file-subpath export — a
   pre-existing exception to the old ground rule. Fold it into this model: either it is a
-  genuine second public entry (rare; justify it) or its symbols belong in `surface`'s
+  genuine second public entry (rare; justify it) or its symbols belong in `bitmap`'s
   `contract`/`index` lanes and the file-subpath is retired. Reconcile during the sweep,
   not the pattern stage.

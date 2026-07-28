@@ -90,7 +90,7 @@ them everywhere (that would tax the mesh/GPU hot paths). It is:
 
 1. a **consistency rule** — all binary data is ArrayBuffer-backed typed views, never `number[]`; and
 2. a clear **byte-buffer boundary type** at the seams where raw bytes flow — parsing
-   (`scene-formats`), pixels (`surface` / `image-codec`), GPU upload (`render-gl` / `render-wgpu`).
+   (`scene-formats`), pixels (`bitmap` / `image-codec`), GPU upload (`render-gl` / `render-wgpu`).
 
 That gives the port *one* thing to back with `haxe.io.Bytes` / Lime buffers (and native GL /
 DataPointer interop) instead of mapping five typed-array types onto Haxe arrays. The port already
@@ -169,7 +169,7 @@ overloaded by GPU/vertex buffers.)
 
 `cancel` is its own package (not folded into `future`) so `net` can cancel without importing the
 async layer. `bytes` + `cancel` are the new bedrock leaves; `bytes` becomes the widest new
-foundational dependency (`scene-formats`, `surface`, `mesh`, `render-*` all gain it) — appropriate
+foundational dependency (`scene-formats`, `bitmap`, `mesh`, `render-*` all gain it) — appropriate
 for the binary bedrock.
 
 ## The minimal portable foundation

@@ -6,7 +6,7 @@ _2026-07-13. Raw breadth analysis — which execution environments Flight needs 
 
 ### Server / Headless
 
-The DOM-free chain (`image-codec` → `surface` → `capture` → `tool-capture`) is real and functional, BUT `surface` leaks DOM in two files (`surfaceFrom.ts`, `surfaceEncode.ts` — 4x `document.createElement('canvas')`). These need routing through `image-codec`'s seam.
+The DOM-free chain (`image-codec` → `bitmap` → `capture` → `tool-capture`) is real and functional, BUT `bitmap` leaks DOM in two files (`bitmapFrom.ts`, `bitmapEncode.ts` — 4x `document.createElement('canvas')`). These need routing through `image-codec`'s seam.
 
 Missing: a headless app-layer host (`host-node`).
 
@@ -55,7 +55,7 @@ Mostly covered by existing platform suite. Service Worker registration is margin
 
 - **`input`** — no focus concept; snapshot serialization; TV remote keys.
 - **`accessibility`** — must share one focus model with the `focus` candidate.
-- **`surface`** — the 2 DOM-leak files need routing through `image-codec`'s seam.
+- **`bitmap`** — the 2 DOM-leak files need routing through `image-codec`'s seam.
 - **`image-codec`** — needs Node registrars for headless.
 - **`ipc`** — worker boundary call; its unbuilt `IpcSerializer` seam should BE `serialize`, not a second codec.
 - **`entity` / `node`** — serialization contract ("entity crosses, runtime rebuilds") needs documenting + guard.

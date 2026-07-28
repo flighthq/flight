@@ -12,7 +12,7 @@ status: ./status.md
 
 ## What it is
 
-GPU texture bindings — the data descriptors that tell a renderer _how_ to read an image as a texture: sampling state (wrap, filter, anisotropy), color space, UV transform (offset/rotation/scale), and the cubemap aggregate. Sits between `@flighthq/image` (the pixel source) and the material/renderer layer (the backend that uploads and samples). The package owns the texture **descriptor** and its CPU-side composition; it does not own pixel manipulation (`@flighthq/surface`) or GPU upload (`render-gl` / `render-wgpu`'s texture entries).
+GPU texture bindings — the data descriptors that tell a renderer _how_ to read an image as a texture: sampling state (wrap, filter, anisotropy), color space, UV transform (offset/rotation/scale), and the cubemap aggregate. Sits between `@flighthq/image` (the pixel source) and the material/renderer layer (the backend that uploads and samples). The package owns the texture **descriptor** and its CPU-side composition; it does not own pixel manipulation (`@flighthq/bitmap`) or GPU upload (`render-gl` / `render-wgpu`'s texture entries).
 
 Within the 3D family it sits beside `mesh` / `lighting` / `camera` / `materials` as the texture-binding half of the pipeline, but its descriptors are dimension-agnostic — a 2D display object with a UV-transformed bitmap consumes the same `Texture` and `Sampler` as a 3D PBR material.
 
@@ -37,7 +37,7 @@ Within the 3D family it sits beside `mesh` / `lighting` / `camera` / `materials`
 
 **Out of scope (non-goals)**
 
-- Pixel manipulation and image processing — `@flighthq/surface`.
+- Pixel manipulation and image processing — `@flighthq/bitmap`.
 - Image resource loading and lifecycle — `@flighthq/image`.
 - GPU texture upload, mip generation, format transcoding — `render-gl` / `render-wgpu`.
 - Compressed-texture file formats (KTX2/Basis) — a future `@flighthq/texture-formats` neighbor or `scene-formats`.

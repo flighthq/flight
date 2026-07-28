@@ -32,7 +32,7 @@ _Append-only, dated, blessed rulings._
 
 - **[2026-07-09] First-build scope = SVG path data (`d`).** `parseSvgPathData(d): Path | null` and `formatSvgPathData(path, options?): string`, supporting the full SVG path grammar (`M/L/H/V/C/S/Q/T/A/Z` + relative lowercase + implicit repeated commands + the `S`/`T` smooth shorthands). Serialization emits absolute commands; `formatSvgPathData` takes optional coordinate precision. Canvas2D recording and other formats are deferred.
   **Why:** SVG path data is the canonical, highest-demand interchange format and round-trips cleanly against the `Path` builders; other formats are additive later with no design change.
-- **[2026-07-09] `format*`/`parse*` naming pair** (matching `formatSurfaceFingerprint`/`parseSurfaceFingerprint`), keyed by the format in the name (`*SvgPathData`), not a generic `serialize`.
+- **[2026-07-09] `format*`/`parse*` naming pair** (matching `formatBitmapFingerprint`/`parseBitmapFingerprint`), keyed by the format in the name (`*SvgPathData`), not a generic `serialize`.
 - **[2026-07-09] Parse returns a sentinel `null` on malformed input** (not a throw, not a silent partial) — a structurally invalid `d` (bad command letter, missing required coordinates) yields `null`; well-formed input parses fully.
 
 ### Origin decisions (from path charter)

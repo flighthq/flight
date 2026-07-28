@@ -42,11 +42,11 @@ Verification: `npm run test --workspace=packages/shape` → 5 files, 61 tests, a
 
 **`shapeCommands.ts`** — full append vocabulary
 
-- `appendShapeBeginBitmapFill`, `appendShapeBeginFill`, `appendShapeBeginGradientFill` — fill styles
+- `appendShapeBeginTextureFill`, `appendShapeBeginFill`, `appendShapeBeginGradientFill` — fill styles
 - `appendShapeCircle`, `appendShapeEllipse`, `appendShapeRectangle`, `appendShapeRoundRectangle` — primitives
 - `appendShapeRoundRectangleVarying` — four independent corner radii, expanded inline to moveTo/lineTo/curveTo (renamed from `appendShapeRoundRectanglePath` pass 1)
 - `appendShapeLineTo`, `appendShapeMoveTo`, `appendShapeCurveTo`, `appendShapeCubicCurveTo` — pen path
-- `appendShapeLineStyle`, `appendShapeLineGradientStyle`, `appendShapeLineBitmapStyle` — stroke styles
+- `appendShapeLineStyle`, `appendShapeLineGradientStyle`, `appendShapeLineTextureStyle` — stroke styles
 - `appendShapeEndFill`, `appendShapePath` — fill close and raw path injection
 - `appendShapeDrawTriangles` — indexed triangle mesh command (pass 1)
 - **`appendShapeArc(shape, cx, cy, radius, startAngle, endAngle, anticlockwise?)`** — arc expanded into moveTo + cubicCurveTo segments using the standard 4/3·tan(θ/4) cubic approximation. Splits into ≤4 quarter-circle segments for <0.06% maximum error. (pass 2)
