@@ -79,6 +79,7 @@ export {
   gradientGlowBitmap,
   innerGlowBitmap,
   innerShadowBitmap,
+  invalidateBitmap,
   medianBitmap,
   mergeBitmap,
   mergeBitmapChannels,

@@ -5,5 +5,5 @@ import { BitmapTextureBackingKind } from '@flighthq/types/contract';
 // performs the conversion; registerDomBitmapTextureResolver is the explicit opt-in that does.
 export function explainDomImageSource(image: Readonly<ImageResource> | Readonly<Bitmap>): DomImageSourceKind {
   if (image.kind === BitmapTextureBackingKind) return 'data';
-  return image.source !== null ? 'element' : 'none';
+  return 'element';
 }

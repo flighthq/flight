@@ -6,6 +6,7 @@ import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createTexture, setTextureUvOffset, setTextureUvScale } from '@flighthq/texture/contract';
 import type {
   Camera3D,
+  Bitmap,
   ImageResource,
   Scene3DLightBlock,
   Scene3DRenderProxy,
@@ -13,7 +14,7 @@ import type {
   WgpuColorAdjustmentMaterialFeature,
   WgpuMaterialBinding,
 } from '@flighthq/types/contract';
-import { ImageTextureBackingKind, SCENE_LIGHT_BLOCK_FLOATS } from '@flighthq/types/contract';
+import { BitmapTextureBackingKind, ImageTextureBackingKind, SCENE_LIGHT_BLOCK_FLOATS } from '@flighthq/types/contract';
 
 import {
   beginWgpuMeshDraw,
@@ -661,20 +662,21 @@ describe('isWgpuTextureReady', () => {
       isWgpuTextureReady({
         storage: {
           dimension: '2d',
-          image: { compressed: null, data: null, kind: ImageTextureBackingKind, source: null },
+          image: { height: 1, kind: ImageTextureBackingKind, source: {}, version: 0, width: 1 } as ImageResource,
         },
-      } as unknown as Texture),
-    ).toBe(true);
-    expect(
-      isWgpuTextureReady({
-        storage: { dimension: '2d', image: { kind: ImageTextureBackingKind, source: {} } },
       } as unknown as Texture),
     ).toBe(true);
     expect(
       isWgpuTextureReady({
         storage: {
           dimension: '2d',
-          image: { data: new Uint8ClampedArray(4), kind: ImageTextureBackingKind, source: null },
+          image: {
+            data: new Uint8ClampedArray(4),
+            height: 1,
+            kind: BitmapTextureBackingKind,
+            version: 0,
+            width: 1,
+          } as Bitmap,
         },
       } as unknown as Texture),
     ).toBe(true);

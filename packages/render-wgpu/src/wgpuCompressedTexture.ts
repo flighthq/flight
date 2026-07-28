@@ -1,5 +1,5 @@
 import type {
-  ImageResource,
+  CompressedImage,
   TextureContainer,
   TextureContainerFormat,
   WgpuCompressedTextureDecoder,
@@ -55,8 +55,7 @@ export function registerWgpuCompressedTextureDecoder(
 }
 
 export function registerWgpuCompressedTextureUpload(state: WgpuRenderState, uploader?: null): void {
-  getWgpuRenderStateRuntime(state).compressedTextureUpload =
-    uploader === null ? null : uploadWgpuCompressedImageResource;
+  getWgpuRenderStateRuntime(state).compressedTextureUpload = uploader === null ? null : uploadWgpuCompressedImage;
 }
 
 // Creates and fills a WebGPU texture from a parsed block-compressed container. Native uploads cover
@@ -138,13 +137,12 @@ export function uploadWgpuCompressedTextureContainer(
   return texture;
 }
 
-function uploadWgpuCompressedImageResource(
+function uploadWgpuCompressedImage(
   state: WgpuRenderState,
-  image: Readonly<ImageResource>,
+  image: Readonly<CompressedImage>,
   decode: WgpuCompressedTextureDecoder | null,
 ): WgpuTextureEntry | null {
   const compressed = image.compressed;
-  if (compressed === null) return null;
   const container = compressed.container;
   if (container.depth !== 1 || container.faces !== 1 || container.layers !== 1) return null;
   const native = getWgpuCompressedTextureFormat(state.device, container.format) !== null;
@@ -153,7 +151,7 @@ function uploadWgpuCompressedImageResource(
       ? undefined
       : (format: TextureContainerFormat, width: number, height: number, data: Readonly<Uint8Array>) => {
           const rgba = decode(format, width, height, data);
-          return rgba !== null && image.alphaType === 'straight' ? premultiplyRgba8(rgba) : rgba;
+          return rgba !== null ? premultiplyRgba8(rgba) : null;
         };
   const texture = uploadWgpuCompressedTextureContainer(state, container, compressed.payload, fallback);
   if (texture === null) return null;
@@ -167,7 +165,7 @@ function uploadWgpuCompressedImageResource(
       { binding: 1, resource: sampler },
     ],
   });
-  return { bindGroup, straightAlpha: native && image.alphaType === 'straight', texture, view };
+  return { bindGroup, straightAlpha: native, texture, view };
 }
 
 function premultiplyRgba8(data: Readonly<Uint8ClampedArray<ArrayBuffer>>): Uint8ClampedArray<ArrayBuffer> {

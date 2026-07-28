@@ -1,10 +1,18 @@
-import type { ImageResource, SamplerLike, Texture } from '@flighthq/types/contract';
-import { AdvancedBlendMode, BlendMode } from '@flighthq/types/contract';
+import type { Bitmap, CompressedImage, ImageResource, SamplerLike, Texture } from '@flighthq/types/contract';
+import {
+  AdvancedBlendMode,
+  BitmapTextureBackingKind,
+  BlendMode,
+  CompressedImageTextureBackingKind,
+  ImageTextureBackingKind,
+} from '@flighthq/types/contract';
 
 import { registerGlCompressedTextureDecoder, registerGlCompressedTextureUpload } from './glCompressedTexture';
 import {
   applyGlBlendMode,
   applyGlSamplerState,
+  bindGlBitmapTexture,
+  bindGlCompressedImageTexture,
   bindGlImageResourceTexture,
   bindGlTexture,
   bindGlVideoTexture,
@@ -22,12 +30,9 @@ import { getGlRenderStateRuntime } from './glRenderState';
 import { registerGlBitmapShader } from './glShaderRegistry';
 import { createGlState } from './glTestHelper';
 
-// A compressed-only ImageResource (single 4×4 bc3 level, no element/data) for exercising the opt-in
-// compressed upload seam.
-function compressedBc3ImageResource(): ImageResource {
+// A single 4×4 bc3 level for exercising the opt-in compressed upload seam.
+function compressedBc3Image(): CompressedImage {
   return {
-    source: null,
-    data: null,
     compressed: {
       container: {
         format: 'bc3',
@@ -45,8 +50,21 @@ function compressedBc3ImageResource(): ImageResource {
     width: 4,
     height: 4,
     version: 1,
+    kind: CompressedImageTextureBackingKind,
+  } as unknown as CompressedImage;
+}
+
+function bitmap(size: number, version: number): Bitmap {
+  return {
     alphaType: 'straight',
-  } as unknown as ImageResource;
+    colorSpace: 'srgb',
+    data: new Uint8ClampedArray(size * size * 4),
+    format: 'rgba8unorm',
+    height: size,
+    kind: BitmapTextureBackingKind,
+    version,
+    width: size,
+  } as unknown as Bitmap;
 }
 
 // A plain SamplerLike with the AAA sampling defaults (clamp/linear/trilinear/mips, anisotropy off),
@@ -176,82 +194,30 @@ describe('applyGlSamplerState', () => {
   });
 });
 
-describe('bindGlImageResourceTexture', () => {
-  function dataResource(size: number, version: number): ImageResource {
-    return {
-      source: null,
-      data: new Uint8ClampedArray(size * size * 4),
-      width: size,
-      height: size,
-      version,
-      alphaType: 'straight',
-    } as unknown as ImageResource;
-  }
-
-  it('uploads a data-only ImageResource (a generated Bitmap) via the raw-pixel path', () => {
+describe('bindGlBitmapTexture', () => {
+  it('uploads CPU-readable pixels via the raw-pixel path', () => {
     const { state, gl } = createGlState();
-    bindGlImageResourceTexture(state, dataResource(4, 1));
+    bindGlBitmapTexture(state, bitmap(4, 1));
     expect(gl.createTexture).toHaveBeenCalled();
-    expect(gl.texImage2D).toHaveBeenCalled();
-  });
-
-  it('uploads an element-backed ImageResource via the element path', () => {
-    const { state, gl } = createGlState();
-    const image = {
-      source: document.createElement('img'),
-      data: null,
-      width: 1,
-      height: 1,
-      version: 1,
-      alphaType: 'straight',
-    } as unknown as ImageResource;
-    bindGlImageResourceTexture(state, image);
     expect(gl.texImage2D).toHaveBeenCalled();
   });
 
   it('caches by resource identity and re-uploads only when the version changes', () => {
     const { state, gl } = createGlState();
-    const image = dataResource(1, 1);
-    const t1 = bindGlImageResourceTexture(state, image);
+    const image = bitmap(1, 1);
+    const t1 = bindGlBitmapTexture(state, image);
     const uploads = (gl.texImage2D as ReturnType<typeof vi.fn>).mock.calls.length;
-    const t2 = bindGlImageResourceTexture(state, image);
+    const t2 = bindGlBitmapTexture(state, image);
     expect(t2).toBe(t1);
     expect((gl.texImage2D as ReturnType<typeof vi.fn>).mock.calls.length).toBe(uploads);
     image.version = 2;
-    bindGlImageResourceTexture(state, image);
+    bindGlBitmapTexture(state, image);
     expect((gl.texImage2D as ReturnType<typeof vi.fn>).mock.calls.length).toBe(uploads + 1);
   });
 
-  it('routes a compressed-only ImageResource through the registered compressed upload seam (decode fallback)', () => {
-    // The device mock exposes no block extension, so the compressed container falls back to the
-    // registered RGBA decoder and uploads via texImage2D — proving the real bind/draw path reaches the
-    // installed compressed uploader, not just the raw data/element branches.
-    const { state, gl } = createGlState();
-    const rgba = new Uint8ClampedArray(4 * 4 * 4);
-    const decode = vi.fn(() => rgba);
-    registerGlCompressedTextureUpload(state);
-    registerGlCompressedTextureDecoder(state, decode);
-    const image = compressedBc3ImageResource();
-    bindGlImageResourceTexture(state, image);
-    expect(decode).toHaveBeenCalledWith('bc3', 4, 4, expect.any(Uint8Array));
-    expect(gl.texImage2D).toHaveBeenCalled();
-    expect(getGlRenderStateRuntime(state).currentTextureStraightAlpha).toBe(true);
-  });
-
-  it('skips a compressed-only ImageResource when no compressed uploader is registered', () => {
-    // The compressed path is an opt-in seam: without registerGlCompressedTextureUpload, a compressed
-    // resource uploads nothing (the enum table tree-shakes out of a bitmap-only bundle) rather than
-    // reaching texImage2D.
-    const { state, gl } = createGlState();
-    bindGlImageResourceTexture(state, compressedBc3ImageResource());
-    expect(gl.texImage2D).not.toHaveBeenCalled();
-    expect(gl.compressedTexImage2D).not.toHaveBeenCalled();
-  });
-
-  it('a per-bitmap smoothingOverride=false forces NEAREST even when allowSmoothing is true', () => {
-    // A non-smoothed bitmap must sample NEAREST regardless of the global allowSmoothing default.
+  it('a smoothingOverride=false forces NEAREST even when allowSmoothing is true', () => {
     const { state, gl } = createGlState({ allowSmoothing: true });
-    bindGlImageResourceTexture(state, dataResource(4, 1), null, false);
+    bindGlBitmapTexture(state, bitmap(4, 1), null, false);
     const g = gl as unknown as {
       TEXTURE_2D: number;
       TEXTURE_MIN_FILTER: number;
@@ -262,9 +228,9 @@ describe('bindGlImageResourceTexture', () => {
     expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_MAG_FILTER, g.NEAREST);
   });
 
-  it('a per-bitmap smoothingOverride=true forces LINEAR even when allowSmoothing is false', () => {
+  it('a smoothingOverride=true forces LINEAR even when allowSmoothing is false', () => {
     const { state, gl } = createGlState({ allowSmoothing: false });
-    bindGlImageResourceTexture(state, dataResource(4, 1), null, true);
+    bindGlBitmapTexture(state, bitmap(4, 1), null, true);
     const g = gl as unknown as {
       TEXTURE_2D: number;
       TEXTURE_MIN_FILTER: number;
@@ -273,6 +239,63 @@ describe('bindGlImageResourceTexture', () => {
     };
     expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_MIN_FILTER, g.LINEAR);
     expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_MAG_FILTER, g.LINEAR);
+  });
+});
+
+describe('bindGlCompressedImageTexture', () => {
+  it('routes through the registered compressed upload seam (decode fallback)', () => {
+    // The device mock exposes no block extension, so the compressed container falls back to the
+    // registered RGBA decoder and uploads via texImage2D — proving the real bind/draw path reaches the
+    // installed compressed uploader.
+    const { state, gl } = createGlState();
+    const rgba = new Uint8ClampedArray(4 * 4 * 4);
+    const decode = vi.fn(() => rgba);
+    registerGlCompressedTextureUpload(state);
+    registerGlCompressedTextureDecoder(state, decode);
+    const image = compressedBc3Image();
+    bindGlCompressedImageTexture(state, image);
+    expect(decode).toHaveBeenCalledWith('bc3', 4, 4, expect.any(Uint8Array));
+    expect(gl.texImage2D).toHaveBeenCalled();
+    expect(getGlRenderStateRuntime(state).currentTextureStraightAlpha).toBe(true);
+  });
+
+  it('preserves straight-alpha sampling on a cache hit', () => {
+    const { state } = createGlState();
+    registerGlCompressedTextureUpload(state);
+    registerGlCompressedTextureDecoder(
+      state,
+      vi.fn(() => new Uint8ClampedArray(4 * 4 * 4)),
+    );
+    const image = compressedBc3Image();
+    bindGlCompressedImageTexture(state, image);
+    getGlRenderStateRuntime(state).currentTextureStraightAlpha = false;
+    bindGlCompressedImageTexture(state, image);
+    expect(getGlRenderStateRuntime(state).currentTextureStraightAlpha).toBe(true);
+  });
+
+  it('skips the image when no compressed uploader is registered', () => {
+    // The compressed path is an opt-in seam: without registerGlCompressedTextureUpload, a compressed
+    // image uploads nothing (the enum table tree-shakes out of a bitmap-only bundle) rather than
+    // reaching texImage2D.
+    const { state, gl } = createGlState();
+    bindGlCompressedImageTexture(state, compressedBc3Image());
+    expect(gl.texImage2D).not.toHaveBeenCalled();
+    expect(gl.compressedTexImage2D).not.toHaveBeenCalled();
+  });
+});
+
+describe('bindGlImageResourceTexture', () => {
+  it('uploads a host-backed image via the element path', () => {
+    const { state, gl } = createGlState();
+    const image = {
+      source: document.createElement('img'),
+      width: 1,
+      height: 1,
+      kind: ImageTextureBackingKind,
+      version: 1,
+    } as unknown as ImageResource;
+    bindGlImageResourceTexture(state, image);
+    expect(gl.texImage2D).toHaveBeenCalled();
   });
 });
 
@@ -515,7 +538,7 @@ describe('bindGlVideoTexture', () => {
       gl.RGBA,
       gl.RGBA,
       gl.UNSIGNED_BYTE,
-      vt.storage.image!.source,
+      (vt.storage.image as ImageResource).source,
     );
     const t2 = bindGlVideoTexture(state, vt);
     expect(t2).toBe(t1);

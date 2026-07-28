@@ -5,5 +5,5 @@ import { BitmapTextureBackingKind } from '@flighthq/types/contract';
 // performs the conversion; registerCanvasBitmapTextureResolver is the explicit opt-in that does.
 export function explainCanvasImageSource(image: Readonly<ImageResource> | Readonly<Bitmap>): CanvasImageSourceKind {
   if (image.kind === BitmapTextureBackingKind) return 'data';
-  return image.source !== null ? 'element' : 'none';
+  return 'element';
 }

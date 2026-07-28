@@ -1,7 +1,7 @@
-import { getGlRenderStateRuntime, registerGlImageTextureResolver } from '@flighthq/render-gl/contract';
+import { getGlRenderStateRuntime, registerGlBitmapTextureResolver } from '@flighthq/render-gl/contract';
 import { createTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
-import type { ImageResource, RenderProxy2D, Sprite } from '@flighthq/types/contract';
-import { BatchFormat, ImageTextureBackingKind } from '@flighthq/types/contract';
+import type { Bitmap, RenderProxy2D, Sprite } from '@flighthq/types/contract';
+import { BatchFormat, BitmapTextureBackingKind } from '@flighthq/types/contract';
 
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 import { defaultGlSpriteRenderer, drawGlSprite } from './glSprite';
@@ -11,14 +11,14 @@ import { createGlState } from './glTestHelper';
 function makeSprite(width = 64, height = 48): Sprite {
   const image = {
     alphaType: 'straight',
-    compressed: null,
+    colorSpace: 'srgb',
     data: new Uint8ClampedArray(width * height * 4),
+    format: 'rgba8unorm',
     height,
-    kind: ImageTextureBackingKind,
-    source: null,
+    kind: BitmapTextureBackingKind,
     version: 1,
     width,
-  } as ImageResource;
+  } as unknown as Bitmap;
   return {
     data: { texture: createTexture({ storage: { dimension: '2d', image } }) },
   } as Sprite;
@@ -47,7 +47,7 @@ describe('defaultGlSpriteRenderer', () => {
 describe('drawGlSprite', () => {
   it('writes natural size and uv window into the shared batch', () => {
     const { state } = createGlState();
-    registerGlImageTextureResolver(state);
+    registerGlBitmapTextureResolver(state);
     registerStandardGlMaterial(state);
     const sprite = makeSprite(128, 64);
     setTextureUvFromPixelRect(sprite.data.texture!, 16, 8, 32, 16);
@@ -58,7 +58,7 @@ describe('drawGlSprite', () => {
 
   it('resolves and draws the texture on flush', () => {
     const { gl, state } = createGlState();
-    registerGlImageTextureResolver(state);
+    registerGlBitmapTextureResolver(state);
     registerStandardGlMaterial(state);
     drawGlSprite(state, makeRenderProxy(makeSprite()));
     flushGlQuadBatchWriter(state);

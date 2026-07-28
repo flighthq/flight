@@ -1,6 +1,6 @@
 import type {
   CreateCubeTextureOptions,
-  ImageResource,
+  ImageBacking,
   Texture,
   TextureCubeImages,
   TextureLike,
@@ -62,9 +62,9 @@ export function isCubeTextureComplete(cube: Readonly<TextureLike>): boolean {
   return getCubeImages(cube).every((face) => face !== null);
 }
 
-export function setCubeTextureFace(cube: TextureLike, faceIndex: number, image: ImageResource | null): void {
+export function setCubeTextureFace(cube: TextureLike, faceIndex: number, image: ImageBacking | null): void {
   const images = getCubeImages(cube);
   if (images[faceIndex] === image) return;
-  (images as unknown as (ImageResource | null)[])[faceIndex] = image;
+  (images as unknown as (ImageBacking | null)[])[faceIndex] = image;
   cube.version = (cube.version + 1) >>> 0;
 }

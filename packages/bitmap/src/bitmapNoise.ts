@@ -1,5 +1,6 @@
-import { invalidateImageResource } from '@flighthq/image/contract';
 import type { BitmapRegion } from '@flighthq/types/contract';
+
+import { invalidateBitmap } from './bitmap';
 
 /**
  * Fills the `dest` region with uniform random noise in `[low, high]`, derived
@@ -46,7 +47,7 @@ export function fillBitmapNoise(
       data[i + 3] = 255;
     }
   }
-  invalidateImageResource(dest.bitmap);
+  invalidateBitmap(dest.bitmap);
 }
 
 /**
@@ -122,7 +123,7 @@ export function fillBitmapPerlinNoise(
       }
     }
   }
-  invalidateImageResource(dest.bitmap);
+  invalidateBitmap(dest.bitmap);
 }
 
 /**
@@ -187,7 +188,7 @@ export function fillBitmapTurbulence(
       }
     }
   }
-  invalidateImageResource(dest.bitmap);
+  invalidateBitmap(dest.bitmap);
 }
 
 export const BITMAP_NOISE_CHANNEL_A = 0x8;

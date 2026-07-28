@@ -1,5 +1,8 @@
 import { getTextureBackingKind } from '@flighthq/texture/contract';
 import type {
+  Bitmap,
+  CompressedImage,
+  ImageResource,
   Texture,
   TextureBackingKind,
   TextureLike,
@@ -15,16 +18,21 @@ import {
   VideoTextureBackingKind,
 } from '@flighthq/types/contract';
 
-import { bindWgpuImageResourceTexture, bindWgpuVideoTexture } from './wgpuDraw';
+import {
+  bindWgpuBitmapTexture,
+  bindWgpuCompressedImageTexture,
+  bindWgpuImageResourceTexture,
+  bindWgpuVideoTexture,
+} from './wgpuDraw';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import { bindWgpuRenderTexture } from './wgpuRenderTexture';
 
 export function registerWgpuBitmapTextureResolver(state: WgpuRenderState): void {
-  registerWgpuTextureResolver(state, BitmapTextureBackingKind, resolveWgpuImageTexture);
+  registerWgpuTextureResolver(state, BitmapTextureBackingKind, resolveWgpuBitmapTexture);
 }
 
 export function registerWgpuCompressedImageTextureResolver(state: WgpuRenderState): void {
-  registerWgpuTextureResolver(state, CompressedImageTextureBackingKind, resolveWgpuImageTexture);
+  registerWgpuTextureResolver(state, CompressedImageTextureBackingKind, resolveWgpuCompressedImageTexture);
 }
 
 export function registerWgpuImageTextureResolver(state: WgpuRenderState): void {
@@ -65,14 +73,30 @@ export function resolveWgpuTexture(
   return registry.get(backingKind)?.(state, texture, premultiply) ?? null;
 }
 
+function resolveWgpuBitmapTexture(
+  state: WgpuRenderState,
+  texture: Readonly<TextureLike>,
+  premultiply: boolean,
+): WgpuTextureEntry | null {
+  const bitmap = texture.storage.image as Readonly<Bitmap> | null;
+  return bitmap === null ? null : bindWgpuBitmapTexture(state, bitmap, texture.sampler.mipmaps, premultiply);
+}
+
+function resolveWgpuCompressedImageTexture(
+  state: WgpuRenderState,
+  texture: Readonly<TextureLike>,
+): WgpuTextureEntry | null {
+  const image = texture.storage.image as Readonly<CompressedImage> | null;
+  return image === null ? null : bindWgpuCompressedImageTexture(state, image);
+}
+
 function resolveWgpuImageTexture(
   state: WgpuRenderState,
   texture: Readonly<TextureLike>,
   premultiply: boolean,
 ): WgpuTextureEntry | null {
-  const image = texture.storage.image;
-  if (image == null || (image.source === null && image.data === null && image.compressed === null)) return null;
-  return bindWgpuImageResourceTexture(state, image, texture.sampler.mipmaps, premultiply);
+  const image = texture.storage.image as Readonly<ImageResource> | null;
+  return image === null ? null : bindWgpuImageResourceTexture(state, image, texture.sampler.mipmaps, premultiply);
 }
 
 function resolveWgpuRenderTexture(state: WgpuRenderState, texture: Readonly<TextureLike>): WgpuTextureEntry | null {

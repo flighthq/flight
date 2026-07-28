@@ -1,6 +1,7 @@
 import type { BlendMode } from './BlendMode';
 import type { ColorScaleBias } from './ColorScaleBias';
 import type { Kind } from './Entity';
+import type { ImageBacking } from './ImageBacking';
 import type { ImageResource } from './ImageResource';
 import type { Material } from './Material';
 import type { Matrix } from './Matrix';
@@ -99,15 +100,11 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
 
   // Raw-element texture cache: a canvas/video/image element uploaded directly, keyed by the element.
   textureCache: WeakMap<CanvasImageSource, WgpuTextureEntry>;
-  // ImageResource texture cache: content-backed images (bitmaps, atlases, material maps), element-backed OR
-  // a data-only generated Bitmap. Keyed by the resource entity so a data-only Bitmap caches too, with the
-  // uploaded `version` tracked so bindWgpuImageResourceTexture re-uploads when the pixels change.
-  imageResourcePremultipliedTextureCache: WeakMap<ImageResource, WgpuImageResourceTextureEntry>;
-  // Straight (upload-as-is) sibling of imageResourcePremultipliedTextureCache: the GPU texture for an ImageResource bound
-  // WITHOUT a premultiply request, used by the straight-blend 3D forward path (and any caller passing
-  // premultiply=false). Split from the premultiplied cache — same keying and version tracking — so one
-  // ImageResource bound both premultiplied (2D) and straight (3D) keeps a correct texture for each.
-  imageResourceStraightTextureCache: WeakMap<ImageResource, WgpuImageResourceTextureEntry>;
+  // Premultiplied texture realizations for ImageBacking siblings. Keyed by stable entity identity and
+  // guarded by content version so mutable Bitmaps re-upload in place.
+  imageBackingPremultipliedTextureCache: WeakMap<ImageBacking, WgpuImageBackingTextureEntry>;
+  // Straight (upload-as-is) sibling used by the straight-blend 3D path and native compressed images.
+  imageBackingStraightTextureCache: WeakMap<ImageBacking, WgpuImageBackingTextureEntry>;
   // Optional block-compressed upload and CPU-decode seams. The uploader is installed explicitly so
   // ordinary bitmap bundles do not retain the format table; the decoder is consulted only when the
   // device lacks the container's native family.
@@ -374,9 +371,8 @@ export interface WgpuTextureEntry {
   view: GPUTextureView;
 }
 
-// A WgpuTextureEntry cached per ImageResource, carrying the uploaded content `version` so
-// bindWgpuImageResourceTexture re-uploads (recreating the GPU texture) when the pixels change.
-export interface WgpuImageResourceTextureEntry extends WgpuTextureEntry {
+// A WgpuTextureEntry cached per ImageBacking, carrying the uploaded content `version`.
+export interface WgpuImageBackingTextureEntry extends WgpuTextureEntry {
   version: number;
 }
 

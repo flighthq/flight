@@ -32,7 +32,7 @@ describe('createScene2DFromSvgDocument', () => {
 
   it('applies object-bounding-box clips in image-local geometry', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    const image = createImageResource();
+    const image = createImageResource(globalThis.document.createElement('canvas'));
     image.width = 20;
     image.height = 10;
     const root = createScene2DFromSvgDocument(
@@ -79,7 +79,7 @@ describe('createScene2DFromSvgDocument', () => {
   });
 
   it('composes image geometry before its SVG transform', () => {
-    const image = createImageResource();
+    const image = createImageResource(globalThis.document.createElement('canvas'));
     image.width = 20;
     image.height = 10;
     const root = createScene2DFromSvgDocument(
@@ -96,7 +96,7 @@ describe('createScene2DFromSvgDocument', () => {
   });
 
   it('composes authored geometry before transforms uniformly across element types', () => {
-    const image = createImageResource();
+    const image = createImageResource(globalThis.document.createElement('canvas'));
     image.width = 10;
     image.height = 10;
     const root = createScene2DFromSvgDocument(
@@ -400,7 +400,7 @@ describe('createScene2DFromSvgDocument', () => {
   });
 
   it('resolves image resources through an explicit no-I/O seam', () => {
-    const image = createImageResource();
+    const image = createImageResource(globalThis.document.createElement('canvas'));
     image.width = 20;
     image.height = 10;
     const root = createScene2DFromSvgDocument(

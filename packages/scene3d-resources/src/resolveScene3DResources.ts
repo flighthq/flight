@@ -12,6 +12,7 @@ import type {
 } from '@flighthq/types/contract';
 import {
   ImageResourceFailureKind,
+  ImageTextureBackingKind,
   ResourceResolutionState,
   ImageResourceReferenceKind,
 } from '@flighthq/types/contract';
@@ -59,8 +60,8 @@ export function resolveScene3DResources(
     const ref = getScene3DTextureResourceReference(scene, texture);
     if (ref == null) continue;
     const image = texture.storage.image;
-    if (image != null) {
-      runtime.resolved.set(ref, image);
+    if (image?.kind === ImageTextureBackingKind) {
+      runtime.resolved.set(ref, image as ImageResource);
       ref.failure = null;
       ref.state = ResourceResolutionState.Resolved;
     }

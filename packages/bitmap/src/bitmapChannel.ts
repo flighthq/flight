@@ -1,7 +1,8 @@
 import { createEntity } from '@flighthq/entity/contract';
-import { invalidateImageResource } from '@flighthq/image/contract';
 import type { Bitmap, BitmapRegion } from '@flighthq/types/contract';
 import { BitmapTextureBackingKind } from '@flighthq/types/contract';
+
+import { invalidateBitmap } from './bitmap';
 
 /**
  * Merges four single-channel bitmaps (or any full-RGBA bitmaps) into `out`
@@ -73,7 +74,7 @@ export function mergeBitmapChannels(
       od[di + 3] = ad[(ay * a.bitmap.width + ax) * 4 + 3];
     }
   }
-  invalidateImageResource(out.bitmap);
+  invalidateBitmap(out.bitmap);
 }
 
 /**
@@ -135,12 +136,10 @@ function makeBitmap(
   return createEntity({
     alphaType: source.alphaType,
     colorSpace: source.colorSpace,
-    compressed: null,
     data,
     format: source.format,
     height,
     kind: BitmapTextureBackingKind,
-    source: null,
     version: 0,
     width,
   });

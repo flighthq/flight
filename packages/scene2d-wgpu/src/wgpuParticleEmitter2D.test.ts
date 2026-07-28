@@ -1,15 +1,15 @@
 import { createParticleEmitter2D } from '@flighthq/particleemitter/contract';
 import {
   getWgpuRenderStateRuntime,
-  registerWgpuImageTextureResolver,
+  registerWgpuCompressedImageTextureResolver,
   renderWgpuBackground,
   submitWgpuRenderPass,
 } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { ImageResource, RenderProxy2D } from '@flighthq/types/contract';
-import { ImageTextureBackingKind } from '@flighthq/types/contract';
+import type { CompressedImage, RenderProxy2D } from '@flighthq/types/contract';
+import { CompressedImageTextureBackingKind } from '@flighthq/types/contract';
 
 import { defaultWgpuParticleEmitter2DRenderer, drawWgpuParticleEmitter2D } from './wgpuParticleEmitter2D';
 
@@ -43,19 +43,16 @@ describe('drawWgpuParticleEmitter2D', () => {
   it('threads a native compressed atlas straight-alpha flag through the particle uniform', async () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
-    registerWgpuImageTextureResolver(state);
+    registerWgpuCompressedImageTextureResolver(state);
     renderWgpuBackground(state);
     const before = runtime.uniformOffset;
     const image = {
-      alphaType: 'straight',
       compressed: { container: {}, payload: new Uint8Array() },
-      data: null,
       height: 4,
-      kind: ImageTextureBackingKind,
-      source: null,
+      kind: CompressedImageTextureBackingKind,
       version: 1,
       width: 4,
-    } as unknown as ImageResource;
+    } as unknown as CompressedImage;
     runtime.compressedTextureUpload = () => {
       const texture = state.device.createTexture({
         size: [4, 4],

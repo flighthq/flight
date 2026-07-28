@@ -25,21 +25,17 @@ beforeAll(() => {
   installWgpuMock();
 });
 
-function imageResource(kind = ImageTextureBackingKind): ImageResource {
-  const canvas = document.createElement('canvas');
-  canvas.width = 4;
-  canvas.height = 4;
+function imageResource(
+  kind = ImageTextureBackingKind,
+  source: CanvasImageSource = document.createElement('canvas'),
+): ImageResource {
   return {
-    alphaType: 'straight',
-    compressed: null,
-    data: null,
-    format: 'rgba8unorm',
     height: 4,
     kind,
-    source: canvas,
+    source,
     version: 0,
     width: 4,
-  } as ImageResource;
+  } as unknown as ImageResource;
 }
 
 function textureWithImage(image: ImageResource | null): Texture {
@@ -141,8 +137,11 @@ describe('registerWgpuTextureResolver', () => {
 describe('registerWgpuVideoTextureResolver', () => {
   it('resolves a ready declared video backing without structural dispatch', async () => {
     const state = await createWgpuRenderStateForTest();
-    const image = imageResource(VideoTextureBackingKind);
-    image.source = { readyState: 4, videoHeight: 8, videoWidth: 8 } as HTMLVideoElement;
+    const image = imageResource(VideoTextureBackingKind, {
+      readyState: 4,
+      videoHeight: 8,
+      videoWidth: 8,
+    } as HTMLVideoElement);
     const texture = textureWithImage(image);
     registerWgpuVideoTextureResolver(state);
     expect(resolveWgpuTexture(state, texture)).not.toBeNull();

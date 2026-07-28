@@ -1,4 +1,5 @@
-import type { Texture, Environment, ImageResource } from '@flighthq/types/contract';
+import type { Bitmap, Environment, Texture } from '@flighthq/types/contract';
+import { BitmapTextureBackingKind } from '@flighthq/types/contract';
 
 import { ensureGlEnvironmentSourceCube, getGlCubeFaceTarget, updateGlEnvironmentCubeFace } from './glEnvironmentCube';
 import { makeGlScene3DState } from './glScene3DTestHelper';
@@ -7,8 +8,13 @@ import { makeGlScene3DState } from './glScene3DTestHelper';
 // WebGL2 cubemap). These cover the CPU-side guards: the face-target arithmetic, the "no complete
 // cube" sentinel path that callers depend on to no-op, and the data-only face upload path.
 
-function dataFace(size: number): ImageResource {
-  return { source: null, data: new Uint8ClampedArray(size * size * 4), width: size, height: size } as ImageResource;
+function dataFace(size: number): Bitmap {
+  return {
+    data: new Uint8ClampedArray(size * size * 4),
+    height: size,
+    kind: BitmapTextureBackingKind,
+    width: size,
+  } as Bitmap;
 }
 
 function dataOnlyEnvironment(size: number): Environment {

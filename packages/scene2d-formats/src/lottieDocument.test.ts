@@ -41,7 +41,7 @@ describe('Lottie document conformance census', () => {
   });
 
   it('imports the common layer families and resolves explicit images', () => {
-    const image = createImageResource();
+    const image = createImageResource(globalThis.document.createElement('canvas'));
     image.width = 12;
     image.height = 8;
     const document = createDocument([

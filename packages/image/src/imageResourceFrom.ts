@@ -3,23 +3,6 @@ import { detectImageMimeType } from '@flighthq/image-codec/contract';
 import type { Bitmap, ImageResource } from '@flighthq/types/contract';
 import { ImageTextureBackingKind } from '@flighthq/types/contract';
 
-// Materializes a data-backed ImageResource's raw pixels into a detached, drawable HTMLCanvasElement
-// via putImageData. The inverse of createImageResourceFromCanvas: it turns the portable `data`
-// representation of a generated Bitmap into the host element that Canvas/DOM `drawImage` needs.
-// Returns null for an element-only resource (no `data` to transcode). Straight-alpha in, straight-alpha
-// out — the drawn canvas matches the source's `alphaType`. Callers that draw data-only resources cache
-// the result keyed on `version`; this primitive allocates a fresh canvas on every call.
-export function createCanvasFromImageResource(image: Readonly<ImageResource>): HTMLCanvasElement | null {
-  if (image.data === null) return null;
-  const canvas = document.createElement('canvas');
-  canvas.width = image.width;
-  canvas.height = image.height;
-  const imageData = new globalThis.ImageData(image.width, image.height);
-  imageData.data.set(image.data);
-  canvas.getContext('2d')!.putImageData(imageData, 0, 0);
-  return canvas;
-}
-
 // Transcodes a Bitmap's raw pixels into an element-backed ImageResource, via a detached canvas.
 // The inverse of captureBitmapFromImageResource. Lives here rather than in @flighthq/bitmap because a
 // conversion belongs with the type it PRODUCES: you look for it under what you want to end up with.
@@ -36,10 +19,6 @@ export function createImageResourceFromBitmap(bitmap: Readonly<Bitmap>): ImageRe
 
 export function createImageResourceFromCanvas(canvas: HTMLCanvasElement): ImageResource {
   return createEntity({
-    alphaType: 'straight',
-    compressed: null,
-    data: null,
-    format: 'rgba8unorm',
     height: canvas.height,
     kind: ImageTextureBackingKind,
     source: canvas,
@@ -50,10 +29,6 @@ export function createImageResourceFromCanvas(canvas: HTMLCanvasElement): ImageR
 
 export function createImageResourceFromImageBitmap(bitmap: ImageBitmap): ImageResource {
   return createEntity({
-    alphaType: 'straight',
-    compressed: null,
-    data: null,
-    format: 'rgba8unorm',
     height: bitmap.height,
     kind: ImageTextureBackingKind,
     source: bitmap,
@@ -64,10 +39,6 @@ export function createImageResourceFromImageBitmap(bitmap: ImageBitmap): ImageRe
 
 export function createImageResourceFromImageElement(img: HTMLImageElement): ImageResource {
   return createEntity({
-    alphaType: 'straight',
-    compressed: null,
-    data: null,
-    format: 'rgba8unorm',
     height: img.height,
     kind: ImageTextureBackingKind,
     source: img,

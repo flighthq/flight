@@ -1,6 +1,6 @@
-import { invalidateImageResource } from '@flighthq/image/contract';
 import type { BitmapEdgeMode, BitmapRegion, BitmapResizeMode } from '@flighthq/types/contract';
 
+import { invalidateBitmap } from './bitmap';
 import { transformBitmap } from './bitmapAffine';
 
 /**
@@ -69,7 +69,7 @@ export function rotateBitmap180(dest: Readonly<BitmapRegion>, source: Readonly<B
       copyPixel(dd, (dy * dStride + dx) * 4, sd, (sy * sStride + sx) * 4);
     }
   }
-  invalidateImageResource(dest.bitmap);
+  invalidateBitmap(dest.bitmap);
 }
 
 /**
@@ -96,7 +96,7 @@ export function rotateBitmapClockwise(dest: Readonly<BitmapRegion>, source: Read
       copyPixel(dd, (dy * dStride + dx) * 4, sd, (sy * sStride + sx) * 4);
     }
   }
-  invalidateImageResource(dest.bitmap);
+  invalidateBitmap(dest.bitmap);
 }
 
 /**
@@ -124,7 +124,7 @@ export function rotateBitmapCounterClockwise(dest: Readonly<BitmapRegion>, sourc
       copyPixel(dd, (dy * dStride + dx) * 4, sd, (sy * sStride + sx) * 4);
     }
   }
-  invalidateImageResource(dest.bitmap);
+  invalidateBitmap(dest.bitmap);
 }
 
 function copyPixel(dest: Uint8ClampedArray, di: number, source: Readonly<Uint8ClampedArray>, si: number): void {

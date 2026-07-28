@@ -1,5 +1,4 @@
 import { createEntity } from '@flighthq/entity/contract';
-import { invalidateImageResource } from '@flighthq/image/contract';
 import type { AlphaType, Bitmap } from '@flighthq/types/contract';
 import { BitmapTextureBackingKind } from '@flighthq/types/contract';
 
@@ -7,12 +6,10 @@ export function cloneBitmap(source: Readonly<Bitmap>): Bitmap {
   return createEntity({
     alphaType: source.alphaType,
     colorSpace: source.colorSpace,
-    compressed: null,
     data: new Uint8ClampedArray(source.data),
     format: source.format,
     height: source.height,
     kind: source.kind,
-    source: null,
     version: 0,
     width: source.width,
   });
@@ -57,7 +54,7 @@ export function convertBitmapAlphaType(out: Bitmap, target: AlphaType): void {
   }
   // Mutate the alphaType metadata field.
   out.alphaType = target;
-  invalidateImageResource(out);
+  invalidateBitmap(out);
 }
 
 export function createBitmap(width: number, height: number, color: number = 0): Bitmap {
@@ -77,13 +74,15 @@ export function createBitmap(width: number, height: number, color: number = 0): 
   return createEntity({
     alphaType: 'straight',
     colorSpace: 'srgb' as const,
-    compressed: null,
     data,
     format: 'rgba8unorm',
     height,
     kind: BitmapTextureBackingKind,
-    source: null,
     version: 0,
     width,
   });
+}
+
+export function invalidateBitmap(bitmap: Bitmap): void {
+  bitmap.version = (bitmap.version + 1) >>> 0;
 }

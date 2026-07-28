@@ -1,5 +1,13 @@
-import { uploadWgpuTextureImageResource } from '@flighthq/render-wgpu/contract';
-import type { Texture, Environment, ImageResource, WgpuRenderState } from '@flighthq/types/contract';
+import { uploadWgpuTextureData, uploadWgpuTextureImageResource } from '@flighthq/render-wgpu/contract';
+import type {
+  Bitmap,
+  Environment,
+  ImageBacking,
+  ImageResource,
+  Texture,
+  WgpuRenderState,
+} from '@flighthq/types/contract';
+import { BitmapTextureBackingKind, ImageTextureBackingKind } from '@flighthq/types/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 
@@ -37,7 +45,7 @@ export function ensureWgpuEnvironmentSourceCube(
   // Each face uploads into its array layer, in the canonical +X, -X, +Y, -Y, +Z, -Z order (the array-layer
   // index IS the face index — the wgpu counterpart of GL's CUBE_MAP_POSITIVE_X + face).
   for (let face = 0; face < 6; face++) {
-    uploadWgpuTextureImageResource(device, texture, [0, 0, face], images[face]!);
+    uploadWgpuEnvironmentImage(device, texture, face, images[face]!);
   }
 
   const view = texture.createView({ dimension: 'cube' });
@@ -55,11 +63,11 @@ export function ensureWgpuEnvironmentSourceCube(
 export function updateWgpuEnvironmentCubeFace(
   state: WgpuRenderState,
   face: number,
-  image: Readonly<ImageResource>,
+  image: Readonly<ImageBacking>,
 ): boolean {
   const texture = getWgpuScene3DRuntime(state).environmentSourceCube;
   if (texture === null) return false;
-  uploadWgpuTextureImageResource(state.device, texture, [0, 0, face], image);
+  uploadWgpuEnvironmentImage(state.device, texture, face, image);
   return true;
 }
 
@@ -69,9 +77,25 @@ function hasWgpuCubeFacePixels(cube: Readonly<Texture>): boolean {
   if (cube.storage.dimension !== 'cube') return false;
   for (let face = 0; face < 6; face++) {
     const image = cube.storage.images[face];
-    if (image == null || (image.source == null && image.data == null)) return false;
+    if (image === null || (image.kind !== ImageTextureBackingKind && image.kind !== BitmapTextureBackingKind)) {
+      return false;
+    }
   }
   return true;
+}
+
+function uploadWgpuEnvironmentImage(
+  device: GPUDevice,
+  texture: GPUTexture,
+  face: number,
+  image: Readonly<ImageBacking>,
+): void {
+  if (image.kind === BitmapTextureBackingKind) {
+    const bitmap = image as Readonly<Bitmap>;
+    uploadWgpuTextureData(device, texture, [0, 0, face], bitmap.width, bitmap.height, bitmap.data);
+  } else {
+    uploadWgpuTextureImageResource(device, texture, [0, 0, face], image as Readonly<ImageResource>);
+  }
 }
 
 // The source radiance cube is stored sRGB-encoded (not rgba8unorm-srgb): the bake/skybox shaders decode it

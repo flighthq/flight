@@ -1,211 +1,86 @@
-import type { ImageResourceCompressed } from '@flighthq/types/contract';
+import type { CompressedImageData } from '@flighthq/types/contract';
+import { CompressedImageTextureBackingKind, ImageTextureBackingKind } from '@flighthq/types/contract';
 
 import {
   cloneImageResource,
-  createCompressedImageResource,
+  createCompressedImage,
   createImageResource,
-  disposeImageResource,
-  getImageResourceByteSize,
-  hasImageResourceData,
-  hasImageResourceSource,
   invalidateImageResource,
   isImageResourceEmpty,
-  setImageResourceSource,
 } from './imageResource';
 
-// A minimal single-mip bc3 4x4 compressed payload stand-in for the resource wrapper tests.
-function makeCompressed(): ImageResourceCompressed {
+function makeCompressed(): CompressedImageData {
   return {
     container: {
-      format: 'bc3',
-      width: 4,
-      height: 4,
       depth: 1,
-      mipLevels: 1,
-      layers: 1,
       faces: 1,
+      format: 'bc3',
+      height: 4,
+      layers: 1,
+      levels: [{ byteLength: 16, byteOffset: 0, height: 4, width: 4 }],
+      mipLevels: 1,
       supercompression: 'None',
-      levels: [{ byteOffset: 0, byteLength: 16, width: 4, height: 4 }],
+      width: 4,
     },
     payload: new Uint8Array(16),
   };
 }
 
 describe('cloneImageResource', () => {
-  it('copies fields, shares the element, and gives an independent identity', () => {
-    const element = { width: 4, height: 5 } as HTMLImageElement;
-    const resource = createImageResource(element);
+  it('shares the host source under an independent identity and version', () => {
+    const source = document.createElement('canvas');
+    source.width = 4;
+    source.height = 5;
+    const resource = createImageResource(source);
     resource.version = 3;
-
     const copy = cloneImageResource(resource);
-
     expect(copy).not.toBe(resource);
-    expect(copy.source).toBe(element);
-    expect(copy.width).toStrictEqual(4);
-    expect(copy.height).toStrictEqual(5);
-    expect(copy.version).toStrictEqual(3);
-
+    expect(copy.source).toBe(source);
+    expect(copy.version).toBe(3);
     copy.version++;
-    expect(resource.version).toStrictEqual(3);
-  });
-
-  it('shares the data buffer by reference and copies the format and alphaType', () => {
-    const resource = createImageResource();
-    resource.data = new Uint8ClampedArray([1, 2, 3, 4]);
-    resource.format = 'bgra8unorm';
-    resource.alphaType = 'premultiplied';
-
-    const copy = cloneImageResource(resource);
-
-    expect(copy.data).toBe(resource.data);
-    expect(copy.format).toStrictEqual('bgra8unorm');
-    expect(copy.alphaType).toStrictEqual('premultiplied');
-  });
-
-  it('shares the compressed payload by reference', () => {
-    const resource = createCompressedImageResource(makeCompressed());
-    const copy = cloneImageResource(resource);
-    expect(copy.compressed).toBe(resource.compressed);
+    expect(resource.version).toBe(3);
   });
 });
 
-describe('createCompressedImageResource', () => {
-  it('wraps the container, mirrors its base dimensions, and leaves source/data null', () => {
+describe('createCompressedImage', () => {
+  it('wraps the compressed payload as a distinct backing', () => {
     const compressed = makeCompressed();
-    const resource = createCompressedImageResource(compressed);
-    expect(resource.compressed).toBe(compressed);
-    expect(resource.width).toStrictEqual(4);
-    expect(resource.height).toStrictEqual(4);
-    expect(resource.source).toBeNull();
-    expect(resource.data).toBeNull();
-    expect(resource.version).toStrictEqual(0);
+    const image = createCompressedImage(compressed);
+    expect(image.kind).toBe(CompressedImageTextureBackingKind);
+    expect(image.compressed).toBe(compressed);
+    expect(image.width).toBe(4);
+    expect(image.height).toBe(4);
   });
 });
 
 describe('createImageResource', () => {
-  it('returns an object', () => {
-    const resource = createImageResource();
-    expect(resource).not.toBeNull();
-  });
-
-  it('sets source, width and height if you pass in a source element', () => {
-    const element = { width: 100, height: 100 } as HTMLImageElement;
-    const resource = createImageResource(element);
-    expect(resource.source).toStrictEqual(element);
-    expect(resource.width).toStrictEqual(element.width);
-    expect(resource.height).toStrictEqual(element.height);
-  });
-
-  it('starts at version 0', () => {
-    expect(createImageResource().version).toBe(0);
-  });
-
-  it('defaults to null data, rgba8unorm format, and straight alphaType', () => {
-    const resource = createImageResource();
-    expect(resource.data).toBeNull();
-    expect(resource.format).toStrictEqual('rgba8unorm');
-    expect(resource.alphaType).toStrictEqual('straight');
-  });
-});
-
-describe('disposeImageResource', () => {
-  it('releases the element, data, and compressed payload and marks the resource changed', () => {
-    const resource = createImageResource({ width: 4, height: 5 } as HTMLImageElement);
-    resource.data = new Uint8ClampedArray(4 * 5 * 4);
-    resource.compressed = makeCompressed();
-    const before = resource.version;
-
-    disposeImageResource(resource);
-
-    expect(resource.source).toBeNull();
-    expect(resource.data).toBeNull();
-    expect(resource.compressed).toBeNull();
-    expect(resource.version).toStrictEqual(before + 1);
-  });
-});
-
-describe('getImageResourceByteSize', () => {
-  it('returns 0 when data is null (element-only resource)', () => {
-    const resource = createImageResource();
-    expect(getImageResourceByteSize(resource)).toBe(0);
-  });
-
-  it('returns the byteLength of the data array when present', () => {
-    const resource = createImageResource();
-    resource.data = new Uint8ClampedArray(100);
-    expect(getImageResourceByteSize(resource)).toBe(100);
-  });
-
-  it('reflects width × height × 4 for a typical rgba8unorm resource', () => {
-    const resource = createImageResource();
-    resource.width = 4;
-    resource.height = 4;
-    resource.data = new Uint8ClampedArray(4 * 4 * 4);
-    expect(getImageResourceByteSize(resource)).toBe(64);
-  });
-});
-
-describe('hasImageResourceData', () => {
-  it('is false without data and true with it', () => {
-    const resource = createImageResource();
-    expect(hasImageResourceData(resource)).toStrictEqual(false);
-    resource.data = new Uint8ClampedArray(4);
-    expect(hasImageResourceData(resource)).toStrictEqual(true);
-  });
-});
-
-describe('hasImageResourceSource', () => {
-  it('is false without an element and true with one', () => {
-    expect(hasImageResourceSource(createImageResource())).toStrictEqual(false);
-    expect(hasImageResourceSource(createImageResource({ width: 1, height: 1 } as HTMLImageElement))).toStrictEqual(
-      true,
-    );
+  it('wraps one host source with its dimensions and declared kind', () => {
+    const source = document.createElement('canvas');
+    source.width = 8;
+    source.height = 6;
+    const resource = createImageResource(source);
+    expect(resource.kind).toBe(ImageTextureBackingKind);
+    expect(resource.source).toBe(source);
+    expect(resource.width).toBe(8);
+    expect(resource.height).toBe(6);
   });
 });
 
 describe('invalidateImageResource', () => {
-  it('increments the version', () => {
-    const resource = createImageResource();
+  it('refreshes host dimensions and advances the version', () => {
+    const source = document.createElement('canvas');
+    const resource = createImageResource(source);
+    source.width = 12;
+    source.height = 9;
     invalidateImageResource(resource);
+    expect(resource.width).toBe(12);
+    expect(resource.height).toBe(9);
     expect(resource.version).toBe(1);
-    invalidateImageResource(resource);
-    expect(resource.version).toBe(2);
-  });
-
-  it('wraps around with >>> 0', () => {
-    const resource = createImageResource();
-    resource.version = 0xffffffff;
-    invalidateImageResource(resource);
-    expect(resource.version).toBe(0);
   });
 });
 
 describe('isImageResourceEmpty', () => {
-  it('is true with no dimensions and false once sized', () => {
-    expect(isImageResourceEmpty(createImageResource())).toStrictEqual(true);
-    expect(isImageResourceEmpty(createImageResource({ width: 2, height: 2 } as HTMLImageElement))).toStrictEqual(false);
-  });
-});
-
-describe('setImageResourceSource', () => {
-  it('swaps the element, re-reads dimensions, and marks the resource changed', () => {
-    const resource = createImageResource();
-    const before = resource.version;
-    const element = { width: 8, height: 6 } as HTMLImageElement;
-
-    setImageResourceSource(resource, element);
-
-    expect(resource.source).toBe(element);
-    expect(resource.width).toStrictEqual(8);
-    expect(resource.height).toStrictEqual(6);
-    expect(resource.version).toStrictEqual(before + 1);
-  });
-
-  it('clears the element when passed null', () => {
-    const resource = createImageResource({ width: 8, height: 6 } as HTMLImageElement);
-
-    setImageResourceSource(resource, null);
-
-    expect(resource.source).toBeNull();
+  it('reports a zero-sized host image', () => {
+    expect(isImageResourceEmpty(createImageResource(globalThis.document.createElement('img')))).toBe(true);
   });
 });

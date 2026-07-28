@@ -1,4 +1,3 @@
-// Which representation Canvas will draw for a backing: the host `element` when the
-// resource carries one (zero copy), the `data`-materialized canvas (a transcode on first resolve /
-// version bump), or `none` when the resource has neither pixels form yet.
-export type CanvasImageSourceKind = 'data' | 'element' | 'none';
+// Which representation Canvas will draw for a backing: a host `element` (zero copy), or the
+// `data`-materialized canvas produced for a Bitmap.
+export type CanvasImageSourceKind = 'data' | 'element';

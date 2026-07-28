@@ -1,5 +1,5 @@
+import type { CompressedImageData } from './CompressedImageData';
 import type { ImageBacking } from './ImageBacking';
-import type { ImageResourceCompressed } from './ImageResourceCompressed';
 import type { CompressedImageTextureBackingKind } from './TextureBackingKind';
 
 /**
@@ -7,6 +7,6 @@ import type { CompressedImageTextureBackingKind } from './TextureBackingKind';
  * neither directly drawable by Canvas/DOM nor readable through the Bitmap pixel API.
  */
 export interface CompressedImage extends ImageBacking {
-  readonly compressed: ImageResourceCompressed;
+  readonly compressed: CompressedImageData;
   readonly kind: typeof CompressedImageTextureBackingKind;
 }

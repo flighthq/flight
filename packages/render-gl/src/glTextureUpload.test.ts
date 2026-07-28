@@ -34,16 +34,8 @@ describe('uploadGlTextureImageResource', () => {
   it('takes the element path when the resource carries a source', () => {
     const gl = makeGl();
     const source = {} as TexImageSource;
-    const image = { source, data: null, width: 4, height: 4 } as ImageResource;
+    const image = { source, width: 4, height: 4 } as unknown as ImageResource;
     uploadGlTextureImageResource(gl, gl.TEXTURE_2D, image);
     expect(gl.texImage2D).toHaveBeenCalledWith(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
-  });
-
-  it('takes the raw-pixel path when the resource is data-only', () => {
-    const gl = makeGl();
-    const data = new Uint8ClampedArray(4 * 4 * 4);
-    const image = { source: null, data, width: 4, height: 4 } as ImageResource;
-    uploadGlTextureImageResource(gl, gl.TEXTURE_2D, image);
-    expect(gl.texImage2D).toHaveBeenCalledWith(gl.TEXTURE_2D, 0, gl.RGBA, 4, 4, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
   });
 });

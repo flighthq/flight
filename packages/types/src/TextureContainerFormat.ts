@@ -1,9 +1,8 @@
 // The GPU texture format carried by a texture container (KTX2 / DDS / Basis / ATF). This is the format the
 // level byte ranges are already encoded in — what a GL/WGPU backend hands to `texImage2D` /
 // `copyExternalImageToTexture` as an internal format, or what a transcoder reads as its source. It is
-// deliberately distinct from `PixelFormat` (the 8-bit RGBA layout of a decoded `ImageResource`): a
-// container carries block-compressed data GPUs consume directly, which never lands in an
-// `ImageResource.data` buffer.
+// deliberately distinct from `PixelFormat` (the 8-bit RGBA layout of a decoded `Bitmap`): a container
+// carries block-compressed data GPUs consume directly.
 //
 // Names are canonical, backend-neutral, and shared across `image-codec`, the renderers, and a
 // `flight-rs` transcoder so vkFormat / DXGI / FourCC codes all normalize to one vocabulary. `Srgb`

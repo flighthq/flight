@@ -1,8 +1,12 @@
 import { createImageResource } from '@flighthq/image/contract';
-import { getGlRenderStateRuntime, registerGlImageTextureResolver } from '@flighthq/render-gl/contract';
+import {
+  getGlRenderStateRuntime,
+  registerGlCompressedImageTextureResolver,
+  registerGlImageTextureResolver,
+} from '@flighthq/render-gl/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { ImageResource, RenderProxy2D } from '@flighthq/types/contract';
-import { ImageTextureBackingKind } from '@flighthq/types/contract';
+import type { CompressedImage, RenderProxy2D } from '@flighthq/types/contract';
+import { CompressedImageTextureBackingKind } from '@flighthq/types/contract';
 
 import { defaultGlParticleEmitter2DRenderer, drawGlParticleEmitter2D } from './glParticleEmitter2D';
 import { createGlState } from './glTestHelper';
@@ -111,16 +115,15 @@ describe('drawGlParticleEmitter2D', () => {
 
   it('uploads the straight-alpha flag for a compressed particle atlas', () => {
     const { state, gl } = createAtlasGlState();
+    registerGlCompressedImageTextureResolver(state);
+    getGlRenderStateRuntime(state).compressedTextureUpload = () => true;
     const image = {
-      alphaType: 'straight',
       compressed: { container: {}, payload: new Uint8Array() },
-      data: null,
       height: 4,
-      kind: ImageTextureBackingKind,
-      source: null,
+      kind: CompressedImageTextureBackingKind,
       version: 1,
       width: 4,
-    } as unknown as ImageResource;
+    } as unknown as CompressedImage;
 
     drawGlParticleEmitter2D(
       state,

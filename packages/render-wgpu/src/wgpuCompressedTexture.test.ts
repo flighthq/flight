@@ -1,4 +1,5 @@
-import type { ImageResource, TextureContainer, WgpuCompressedTextureSupport } from '@flighthq/types/contract';
+import type { CompressedImage, TextureContainer, WgpuCompressedTextureSupport } from '@flighthq/types/contract';
+import { CompressedImageTextureBackingKind } from '@flighthq/types/contract';
 
 import {
   detectWgpuCompressedTextureSupport,
@@ -8,7 +9,7 @@ import {
   registerWgpuCompressedTextureUpload,
   uploadWgpuCompressedTextureContainer,
 } from './wgpuCompressedTexture';
-import { bindWgpuImageResourceTexture } from './wgpuDraw';
+import { bindWgpuCompressedImageTexture } from './wgpuDraw';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
 
@@ -27,6 +28,16 @@ function container(overrides: Partial<TextureContainer> = {}): TextureContainer 
     width: 4,
     ...overrides,
   };
+}
+
+function compressedImage(): CompressedImage {
+  return {
+    compressed: { container: container(), payload: new Uint8Array(8) },
+    height: 4,
+    kind: CompressedImageTextureBackingKind,
+    version: 1,
+    width: 4,
+  } as unknown as CompressedImage;
 }
 
 describe('detectWgpuCompressedTextureSupport', () => {
@@ -69,7 +80,7 @@ describe('registerWgpuCompressedTextureDecoder', () => {
 });
 
 describe('registerWgpuCompressedTextureUpload', () => {
-  it('installs and clears the ImageResource upload seam', async () => {
+  it('installs and clears the CompressedImage upload seam', async () => {
     const state = await createWgpuRenderStateForTest();
     registerWgpuCompressedTextureUpload(state);
     expect(getWgpuRenderStateRuntime(state).compressedTextureUpload).toBeTypeOf('function');
@@ -77,23 +88,14 @@ describe('registerWgpuCompressedTextureUpload', () => {
     expect(getWgpuRenderStateRuntime(state).compressedTextureUpload).toBeNull();
   });
 
-  it('lets the normal image binder consume a compressed-only resource', async () => {
+  it('lets the compressed-image binder consume its backing', async () => {
     const state = await createWgpuRenderStateForTest();
     registerWgpuCompressedTextureUpload(state);
     registerWgpuCompressedTextureDecoder(state, (_format, width, height) => {
       return new Uint8ClampedArray(width * height * 4);
     });
-    const image = {
-      alphaType: 'straight',
-      compressed: { container: container(), payload: new Uint8Array(8) },
-      data: null,
-      height: 4,
-      source: null,
-      version: 1,
-      width: 4,
-    } as unknown as ImageResource;
     const writeTexture = vi.spyOn(state.device.queue, 'writeTexture');
-    expect(bindWgpuImageResourceTexture(state, image).view).toBeDefined();
+    expect(bindWgpuCompressedImageTexture(state, compressedImage())?.view).toBeDefined();
     expect(writeTexture).toHaveBeenCalledTimes(1);
   });
 
@@ -109,18 +111,9 @@ describe('registerWgpuCompressedTextureUpload', () => {
       }
       return rgba;
     });
-    const image = {
-      alphaType: 'straight',
-      compressed: { container: container(), payload: new Uint8Array(8) },
-      data: null,
-      height: 4,
-      source: null,
-      version: 1,
-      width: 4,
-    } as unknown as ImageResource;
     const writeTexture = vi.spyOn(state.device.queue, 'writeTexture');
 
-    const entry = bindWgpuImageResourceTexture(state, image);
+    const entry = bindWgpuCompressedImageTexture(state, compressedImage())!;
 
     expect(entry.straightAlpha).toBe(false);
     expect(Array.from(writeTexture.mock.calls[0][1] as Uint8ClampedArray).slice(0, 4)).toEqual([128, 32, 0, 128]);
@@ -130,17 +123,7 @@ describe('registerWgpuCompressedTextureUpload', () => {
     const state = await createWgpuRenderStateForTest();
     (state.device.features as Set<GPUFeatureName>).add('texture-compression-bc');
     registerWgpuCompressedTextureUpload(state);
-    const image = {
-      alphaType: 'straight',
-      compressed: { container: container(), payload: new Uint8Array(8) },
-      data: null,
-      height: 4,
-      source: null,
-      version: 1,
-      width: 4,
-    } as unknown as ImageResource;
-
-    expect(bindWgpuImageResourceTexture(state, image).straightAlpha).toBe(true);
+    expect(bindWgpuCompressedImageTexture(state, compressedImage())?.straightAlpha).toBe(true);
   });
 });
 

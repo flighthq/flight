@@ -42,18 +42,17 @@ function textureWithImage(image: ImageResource | null): TextureLike {
   } as unknown as TextureLike;
 }
 
-function imageResource(): ImageResource {
+function imageResource(
+  source: CanvasImageSource = document.createElement('img'),
+  kind = ImageTextureBackingKind,
+): ImageResource {
   return {
-    alphaType: 'straight',
-    compressed: null,
-    data: null,
-    format: 'rgba8unorm',
     height: 1,
-    kind: ImageTextureBackingKind,
-    source: document.createElement('img'),
+    kind,
+    source,
     version: 0,
     width: 1,
-  } as ImageResource;
+  } as unknown as ImageResource;
 }
 
 function textureWithTarget(): TextureLike {
@@ -95,13 +94,10 @@ describe('registerGlImageTextureResolver', () => {
     expect(gl.texImage2D).toHaveBeenCalledOnce();
   });
 
-  it('returns null for an unbound or pixel-empty image backing', () => {
+  it('returns null for an unbound image backing', () => {
     const { state } = createGlState();
     registerGlImageTextureResolver(state);
     expect(resolveGlTexture(state, textureWithImage(null))).toBeNull();
-    const empty = imageResource();
-    empty.source = null;
-    expect(resolveGlTexture(state, textureWithImage(empty))).toBeNull();
   });
 });
 
@@ -159,9 +155,10 @@ describe('registerGlTextureResolver', () => {
 describe('registerGlVideoTextureResolver', () => {
   it('specializes the general image resolver and gates uploads by backing version', () => {
     const { state, gl } = createGlState();
-    const video = imageResource();
-    video.kind = VideoTextureBackingKind;
-    video.source = { readyState: 4, videoHeight: 240, videoWidth: 320 } as HTMLVideoElement;
+    const video = imageResource(
+      { readyState: 4, videoHeight: 240, videoWidth: 320 } as HTMLVideoElement,
+      VideoTextureBackingKind,
+    );
     const texture = textureWithImage(video);
     registerGlImageTextureResolver(state);
     registerGlVideoTextureResolver(state);

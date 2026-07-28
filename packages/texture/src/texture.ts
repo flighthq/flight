@@ -1,8 +1,8 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { cloneVector2, copyVector2, createVector2, inverseMatrix3 } from '@flighthq/geometry/contract';
 import type {
-  ImageResource,
   CreateTextureOptions,
+  ImageBacking,
   Matrix3Like,
   Texture,
   TextureBackingKind,
@@ -32,7 +32,7 @@ function cloneTextureStorage(storage: Readonly<TextureStorage>): TextureStorage 
   }
 }
 
-function getTextureStorageImage(storage: Readonly<TextureStorage>): ImageResource | null {
+function getTextureStorageImage(storage: Readonly<TextureStorage>): ImageBacking | null {
   switch (storage.dimension) {
     case '2d':
       return storage.image;
@@ -246,7 +246,7 @@ export function setTextureFlip(texture: TextureLike, flipX: boolean, flipY: bool
 
 // Binds (or clears, with null) the texture's image source in place and advances the u32 dirty-bit.
 // Does not touch sampling state or the uv-transform.
-export function setTextureImage(texture: TextureLike, image: ImageResource | null): void {
+export function setTextureImage(texture: TextureLike, image: ImageBacking | null): void {
   if (texture.storage.dimension !== '2d') throw new Error('setTextureImage requires 2d texture storage');
   if (texture.storage.image === image) return;
   texture.storage.image = image;

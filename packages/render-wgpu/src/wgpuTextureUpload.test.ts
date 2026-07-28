@@ -42,19 +42,9 @@ describe('uploadWgpuTextureImageResource', () => {
   it('takes the element path when the resource carries a source', () => {
     const device = makeDevice();
     const texture = {} as GPUTexture;
-    const image = { source: {} as CanvasImageSource, data: null, width: 4, height: 4 } as ImageResource;
+    const image = { source: {} as CanvasImageSource, width: 4, height: 4 } as unknown as ImageResource;
     uploadWgpuTextureImageResource(device, texture, [0, 0, 0], image);
     expect(device.queue.copyExternalImageToTexture).toHaveBeenCalledTimes(1);
     expect(device.queue.writeTexture).not.toHaveBeenCalled();
-  });
-
-  it('takes the raw-pixel path when the resource is data-only', () => {
-    const device = makeDevice();
-    const texture = {} as GPUTexture;
-    const data = new Uint8ClampedArray(4 * 4 * 4);
-    const image = { source: null, data, width: 4, height: 4 } as ImageResource;
-    uploadWgpuTextureImageResource(device, texture, [0, 0, 0], image);
-    expect(device.queue.writeTexture).toHaveBeenCalledTimes(1);
-    expect(device.queue.copyExternalImageToTexture).not.toHaveBeenCalled();
   });
 });

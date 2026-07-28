@@ -1,5 +1,6 @@
-import { invalidateImageResource } from '@flighthq/image/contract';
 import type { BitmapEdgeMode, BitmapRegion, BitmapResizeMode } from '@flighthq/types/contract';
+
+import { invalidateBitmap } from './bitmap';
 
 /**
  * Applies a full 2×3 affine transform to the `source` region, writing into
@@ -55,7 +56,7 @@ export function transformBitmap(
       sampleBitmap(dd, di, sd, sw, sh, source.x, source.y, sStride, source.bitmap.height, sx, sy, sampleMode, edgeMode);
     }
   }
-  invalidateImageResource(dest.bitmap);
+  invalidateBitmap(dest.bitmap);
 }
 
 /**

@@ -1,5 +1,6 @@
-import { invalidateImageResource } from '@flighthq/image/contract';
 import type { BitmapRegion } from '@flighthq/types/contract';
+
+import { invalidateBitmap } from './bitmap';
 
 /**
  * Remaps each color channel of `source` independently through a 256-entry
@@ -47,5 +48,5 @@ export function applyBitmapPaletteMap(
       dd[di + 3] = alphaMap ? alphaMap[a] : a;
     }
   }
-  invalidateImageResource(dest.bitmap);
+  invalidateBitmap(dest.bitmap);
 }

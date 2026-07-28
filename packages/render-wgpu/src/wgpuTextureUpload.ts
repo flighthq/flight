@@ -36,24 +36,19 @@ export function uploadWgpuTextureElement(
   device.queue.copyExternalImageToTexture({ source }, { texture, origin }, [width, height, 1]);
 }
 
-// Dispatches an ImageResource to the element fast-path when a decoded `source` is present, else the
-// portable `data` path (a generated Bitmap). Assumes the resource has pixels in at least one form.
+// Uploads a host-backed ImageResource through the decoded-element fast path.
 export function uploadWgpuTextureImageResource(
   device: GPUDevice,
   texture: GPUTexture,
   origin: GPUOrigin3D,
   image: Readonly<ImageResource>,
 ): void {
-  if (image.source !== null) {
-    uploadWgpuTextureElement(
-      device,
-      texture,
-      origin,
-      image.width,
-      image.height,
-      image.source as GPUCopyExternalImageSource,
-    );
-  } else {
-    uploadWgpuTextureData(device, texture, origin, image.width, image.height, image.data!);
-  }
+  uploadWgpuTextureElement(
+    device,
+    texture,
+    origin,
+    image.width,
+    image.height,
+    image.source as GPUCopyExternalImageSource,
+  );
 }

@@ -1,6 +1,6 @@
-import { invalidateImageResource } from '@flighthq/image/contract';
 import type { BitmapRegion } from '@flighthq/types/contract';
 
+import { invalidateBitmap } from './bitmap';
 import type { ImageChannel } from './bitmapImageChannel';
 
 /**
@@ -32,7 +32,7 @@ export function copyBitmapChannel(
       dest.bitmap.data[di + destChannel] = source.bitmap.data[si + sourceChannel];
     }
   }
-  invalidateImageResource(dest.bitmap);
+  invalidateBitmap(dest.bitmap);
 }
 
 /**
@@ -82,5 +82,5 @@ export function copyBitmapPixels(
       }
     }
   }
-  invalidateImageResource(dest.bitmap);
+  invalidateBitmap(dest.bitmap);
 }

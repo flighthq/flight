@@ -279,7 +279,17 @@ Order: `Bitmap`→`Sprite` reshape (texture + sampler fold) → fold `Video` →
 - **`RenderCache`** is also a produced surface underneath. It should *share* the produced-backing mechanism but stay a distinct concept — it is an implicit automatic optimization, whereas a produced `Texture` is explicit and user-invoked, and the anti-magic posture keeps those apart at the API even when the machinery is common.
 - **Natural size** now derives from texture dimensions × uv window rather than a stored `sourceRectangle`; a pixel-space authoring helper (`setTextureUvFromPixelRect`) and an atlas-region helper returning a cached per-region `Texture` cover the ergonomics.
 
-## Next: decompose the backing (chartered 2026-07-28, not started)
+## Backing decomposition (chartered and implemented 2026-07-28)
+
+The five migration stages below are complete. `TextureStorage` now holds an `ImageBacking`; the concrete
+siblings are host-backed `ImageResource`, CPU-readable `Bitmap`, and GPU-only `CompressedImage`.
+Representation-specific fields no longer coexist on one nullable shape. The explicit conversions are
+`createImageResourceFromBitmap` and `captureBitmapFromImageResource`, and GL/WebGPU/Canvas/DOM dispatch
+through separately registered backing resolvers.
+
+The resolver split reduced every affected measured example without changing the size baseline. Canvas
+improvements ranged from -0.1% to -3.2% (largest: bitmap -3.2%, video -3.0%, tilemap -2.9%);
+DOM improvements ranged from -0.8% to -1.2% for affected entries, with unaffected entries flat.
 
 **The unifying job moved up a layer, so the backing union is now vestigial.** `ImageSource` (later `ImageResource`) fused three representations into one type with three nullable fields *because nothing above it could dispatch* — it had to be the unifying layer. `Texture` + the state-scoped backing registry now hold that role. The union is still doing a job that has been superseded, and it should decompose.
 
@@ -335,7 +345,7 @@ Caller-owned caching replaces a hidden per-state `WeakMap`, per the explicit-all
 ```ts
 registerCanvasImageTextureResolver(state)    // host-backed: return .source. ~2 lines, no imports.
 registerCanvasBitmapTextureResolver(state)   // byte-backed: transcode + WeakMap + version gate.
-registerCanvasProducedTextureResolver(state) // offscreen canvas.
+registerCanvasRenderTextureResolver(state)   // offscreen canvas.
 ```
 
 Note the inversion this exposes: **the host-backed resolver barely earns the name** — a single property read, no state, no cache — while the *bitmap* case carries all the machinery. The `(state, texture)` resolver signature is shaped entirely by the bitmap case; the host case does not need `state` at all.

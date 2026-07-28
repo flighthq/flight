@@ -1,7 +1,10 @@
 import { getTextureBackingKind } from '@flighthq/texture/contract';
 import type {
+  Bitmap,
+  CompressedImage,
   GlRenderState,
   GlTextureResolver,
+  ImageResource,
   Texture,
   TextureBackingKind,
   TextureLike,
@@ -14,16 +17,21 @@ import {
   VideoTextureBackingKind,
 } from '@flighthq/types/contract';
 
-import { bindGlImageResourceTexture, bindGlVideoTexture } from './glDraw';
+import {
+  bindGlBitmapTexture,
+  bindGlCompressedImageTexture,
+  bindGlImageResourceTexture,
+  bindGlVideoTexture,
+} from './glDraw';
 import { getGlRenderStateRuntime } from './glRenderState';
 import { bindGlRenderTexture } from './glRenderTexture';
 
 export function registerGlBitmapTextureResolver(state: GlRenderState): void {
-  registerGlTextureResolver(state, BitmapTextureBackingKind, resolveGlImageTexture);
+  registerGlTextureResolver(state, BitmapTextureBackingKind, resolveGlBitmapTexture);
 }
 
 export function registerGlCompressedImageTextureResolver(state: GlRenderState): void {
-  registerGlTextureResolver(state, CompressedImageTextureBackingKind, resolveGlImageTexture);
+  registerGlTextureResolver(state, CompressedImageTextureBackingKind, resolveGlCompressedImageTexture);
 }
 
 export function registerGlImageTextureResolver(state: GlRenderState): void {
@@ -67,14 +75,27 @@ export function resolveGlTexture(
   return registry.get(backingKind)?.(state, texture, premultiply) ?? null;
 }
 
+function resolveGlBitmapTexture(
+  state: GlRenderState,
+  texture: Readonly<TextureLike>,
+  premultiply: boolean,
+): WebGLTexture | null {
+  const bitmap = texture.storage.image as Readonly<Bitmap> | null;
+  return bitmap === null ? null : bindGlBitmapTexture(state, bitmap, texture.sampler, null, premultiply);
+}
+
+function resolveGlCompressedImageTexture(state: GlRenderState, texture: Readonly<TextureLike>): WebGLTexture | null {
+  const image = texture.storage.image as Readonly<CompressedImage> | null;
+  return image === null ? null : bindGlCompressedImageTexture(state, image, texture.sampler);
+}
+
 function resolveGlImageTexture(
   state: GlRenderState,
   texture: Readonly<TextureLike>,
   premultiply: boolean,
 ): WebGLTexture | null {
-  const image = texture.storage.image;
-  if (image == null || (image.source === null && image.data === null && image.compressed === null)) return null;
-  return bindGlImageResourceTexture(state, image, texture.sampler, null, premultiply);
+  const image = texture.storage.image as Readonly<ImageResource> | null;
+  return image === null ? null : bindGlImageResourceTexture(state, image, texture.sampler, null, premultiply);
 }
 
 function resolveGlRenderTexture(state: GlRenderState, texture: Readonly<TextureLike>): WebGLTexture | null {
@@ -82,7 +103,10 @@ function resolveGlRenderTexture(state: GlRenderState, texture: Readonly<TextureL
 }
 
 function resolveGlVideoTexture(state: GlRenderState, texture: Readonly<TextureLike>): WebGLTexture | null {
-  const source = texture.storage.image?.source as HTMLVideoElement | null | undefined;
+  const source = (texture.storage.image as Readonly<ImageResource> | null)?.source as
+    | HTMLVideoElement
+    | null
+    | undefined;
   if (source == null || source.readyState < 2 || source.videoWidth <= 0 || source.videoHeight <= 0) return null;
   return bindGlVideoTexture(state, texture);
 }

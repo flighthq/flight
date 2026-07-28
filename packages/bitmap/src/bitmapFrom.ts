@@ -5,44 +5,21 @@ import { BitmapTextureBackingKind } from '@flighthq/types/contract';
 /**
  * Reads a host-backed ImageResource into a newly allocated, CPU-readable Bitmap. The readback draws
  * through a detached canvas; callers that need both representations should retain both objects.
- *
- * The data-only branch is transitional support for the fused ImageResource shape and disappears
- * once ImageResource is source-total in Stage 5.
  */
 export function captureBitmapFromImageResource(resource: Readonly<ImageResource>): Bitmap {
   const canvas = document.createElement('canvas');
   canvas.width = resource.width;
   canvas.height = resource.height;
-  if (resource.source === null) {
-    // Data-only resource: copy its existing pixels when present, otherwise allocate a transparent buffer.
-    return createEntity({
-      alphaType: resource.alphaType,
-      colorSpace: 'srgb' as const,
-      compressed: null,
-      data:
-        resource.data !== null
-          ? new Uint8ClampedArray(resource.data)
-          : new Uint8ClampedArray(resource.width * resource.height * 4),
-      format: resource.format,
-      height: resource.height,
-      kind: BitmapTextureBackingKind,
-      source: null,
-      version: 0,
-      width: resource.width,
-    });
-  }
   const ctx = canvas.getContext('2d')!;
   ctx.drawImage(resource.source, 0, 0);
   const raw = ctx.getImageData(0, 0, resource.width, resource.height);
   return createEntity({
     alphaType: 'straight',
     colorSpace: raw.colorSpace as 'srgb' | 'display-p3',
-    compressed: null,
     data: raw.data,
     format: 'rgba8unorm',
     height: resource.height,
     kind: BitmapTextureBackingKind,
-    source: null,
     version: 0,
     width: resource.width,
   });
@@ -62,12 +39,10 @@ export function createBitmapFromCanvas(
   return createEntity({
     alphaType: 'straight',
     colorSpace: raw.colorSpace as 'srgb' | 'display-p3',
-    compressed: null,
     data: raw.data,
     format: 'rgba8unorm',
     height: raw.height,
     kind: BitmapTextureBackingKind,
-    source: null,
     version: 0,
     width: raw.width,
   });
@@ -91,12 +66,10 @@ export function createBitmapFromImageSource(source: CanvasImageSource, width: nu
   return createEntity({
     alphaType: 'straight',
     colorSpace: raw.colorSpace as 'srgb' | 'display-p3',
-    compressed: null,
     data: raw.data,
     format: 'rgba8unorm',
     height,
     kind: BitmapTextureBackingKind,
-    source: null,
     version: 0,
     width,
   });

@@ -1,8 +1,8 @@
 import type {
+  CompressedImage,
   GlCompressedTextureDecoder,
   GlCompressedTextureSupport,
   GlRenderState,
-  ImageResource,
   TextureContainer,
   TextureContainerFormat,
 } from '@flighthq/types/contract';
@@ -207,13 +207,11 @@ export function registerGlCompressedTextureDecoder(
 
 // Installs the block-compressed upload seam on a render state, opting the ~40-format
 // uploadGlCompressedTextureContainer path into the bundle only for a state that actually draws a
-// compressed texture. The 2D display draw path (uploadGlBoundImageResource) reads the installed handler off
-// the runtime and skips a compressed-only resource when none is registered, so a plain element/data
-// bitmap never carries the compression enum table. Opt-in and last-write-wins; pass null to clear a
-// previously installed uploader. The installed handler bridges a compressed ImageResource to
-// uploadGlCompressedTextureContainer, threading through any registered RGBA decode fallback.
+// CompressedImage. The 2D display draw path reads the installed handler off the runtime and skips the
+// backing when none is registered, so ImageResource/Bitmap bundles do not carry the compression enum
+// table. Opt-in and last-write-wins; pass null to clear a previously installed uploader.
 export function registerGlCompressedTextureUpload(state: GlRenderState, uploader?: null): void {
-  getGlRenderStateRuntime(state).compressedTextureUpload = uploader === null ? null : uploadGlCompressedImageResource;
+  getGlRenderStateRuntime(state).compressedTextureUpload = uploader === null ? null : uploadGlCompressedImage;
 }
 
 // Uploads every stored sub-image of a compressed container to the texture the caller has bound. Takes
@@ -312,18 +310,16 @@ function isSupportedGlCompressedTextureContainerShape(container: Readonly<Textur
   return container.faces === 6 && container.layers === 1;
 }
 
-// The installed GlCompressedTextureUploader: bridges a compressed ImageResource to the container upload,
-// threading through any registered RGBA decode fallback. Returns false when the resource carries no
-// compressed payload so the display path leaves the texture as-is rather than uploading garbage.
-function uploadGlCompressedImageResource(
+// The installed GlCompressedTextureUploader bridges a CompressedImage to the container upload while
+// threading through any registered RGBA decode fallback.
+function uploadGlCompressedImage(
   gl: WebGL2RenderingContext,
-  image: Readonly<ImageResource>,
+  image: Readonly<CompressedImage>,
   decode: GlCompressedTextureDecoder | null,
 ): boolean {
   const compressed = image.compressed;
-  if (compressed === null) return false;
   const container = compressed.container;
-  // bindGlImageResourceTexture installs this bridge while TEXTURE_2D is bound. Cube, array, and volume
+  // bindGlCompressedImageTexture calls this bridge while TEXTURE_2D is bound. Cube, array, and volume
   // resources require their own entity/binder families; forwarding one here would address an unbound
   // target even though the low-level container uploader supports caller-bound cube and 2D-array targets.
   if (container.depth !== 1 || container.faces !== 1 || container.layers !== 1) return false;

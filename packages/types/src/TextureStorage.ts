@@ -1,4 +1,4 @@
-import type { ImageResource } from './ImageResource';
+import type { ImageBacking } from './ImageBacking';
 import type { TextureTargetBacking } from './TextureTargetBacking';
 import type { TextureVolume } from './TextureVolume';
 
@@ -6,18 +6,18 @@ import type { TextureVolume } from './TextureVolume';
 // CPU-origin content uses `image`; GPU-origin rendered content uses `target` with no image. Backend
 // resolver registries own realization and can distinguish these fields without a texture subtype.
 export type TextureCubeImages = readonly [
-  ImageResource | null,
-  ImageResource | null,
-  ImageResource | null,
-  ImageResource | null,
-  ImageResource | null,
-  ImageResource | null,
+  ImageBacking | null,
+  ImageBacking | null,
+  ImageBacking | null,
+  ImageBacking | null,
+  ImageBacking | null,
+  ImageBacking | null,
 ];
 
 export type TextureStorage =
   | {
       dimension: '2d';
-      image: ImageResource | null;
+      image: ImageBacking | null;
       images?: never;
       target?: TextureTargetBacking;
       volume?: never;
@@ -25,7 +25,7 @@ export type TextureStorage =
   | {
       dimension: '2d-array';
       image?: never;
-      images: readonly (ImageResource | null)[];
+      images: readonly (ImageBacking | null)[];
       target?: TextureTargetBacking;
       volume?: never;
     }

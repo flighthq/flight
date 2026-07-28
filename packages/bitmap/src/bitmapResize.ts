@@ -1,5 +1,6 @@
-import { invalidateImageResource } from '@flighthq/image/contract';
 import type { BitmapEdgeMode, BitmapRegion, BitmapResizeMode, BitmapResizeOptions } from '@flighthq/types/contract';
+
+import { invalidateBitmap } from './bitmap';
 
 /**
  * Resamples the `source` region into the `dest` region; `dest`'s dimensions
@@ -160,7 +161,7 @@ export function resizeBitmap(
       }
     }
   }
-  invalidateImageResource(dest.bitmap);
+  invalidateBitmap(dest.bitmap);
 }
 
 function catmullRomWeight(t: number): number {

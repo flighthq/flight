@@ -1,4 +1,4 @@
-import { createImageResource, setImageResourceSource } from '@flighthq/image/contract';
+import { createImageResource, invalidateImageResource } from '@flighthq/image/contract';
 import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { tessellatePath } from '@flighthq/path/contract';
 import { bindGlImageResourceTexture, resolveGlMaterialRenderer } from '@flighthq/render-gl/contract';
@@ -36,7 +36,7 @@ interface GlShapeData {
   ctx: CanvasRenderingContext2D;
   // The canvas wrapped as an ImageResource (its `source`), so the shared quad-batch writer treats a
   // canvas-backed shape uniformly with bitmaps and atlases. Re-rendering the canvas bumps the resource's
-  // version (setImageResourceSource), which the batch's version-aware cache uses to re-upload.
+  // version (invalidateImageResource), which the batch's version-aware cache uses to re-upload.
   image: ImageResource;
   lastContentId: number;
   lastW: number;
@@ -90,10 +90,10 @@ function createGlShapeData(_state: GlRenderState, _source: Renderable): Renderer
 function destroyGlShapeData(state: GlRenderState, data: RendererData): void {
   const runtime = getGlRenderStateRuntime(state);
   const { image } = getGlShapeData(data);
-  const entry = runtime.imageResourcePremultipliedTextureCache.get(image);
+  const entry = runtime.imageBackingPremultipliedTextureCache.get(image);
   if (entry !== undefined) {
     state.gl.deleteTexture(entry.texture);
-    runtime.imageResourcePremultipliedTextureCache.delete(image);
+    runtime.imageBackingPremultipliedTextureCache.delete(image);
   }
 }
 
@@ -150,7 +150,7 @@ export function drawGlShape(state: GlRenderState, renderProxy: RenderProxy2D): v
     ctx.restore();
     // Re-reads the canvas dimensions and bumps the resource version so the batch's version-aware cache
     // re-uploads from the updated canvas.
-    setImageResourceSource(shapeData.image, shapeData.canvas);
+    invalidateImageResource(shapeData.image);
     shapeData.lastContentId = version;
     shapeData.lastW = w;
     shapeData.lastH = h;
