@@ -21,7 +21,7 @@ export function cloneTexture(source: Readonly<TextureLike>): Texture {
     flipY: source.flipY,
     resource: source.resource ?? null,
     sampler: cloneSampler(source.sampler),
-    storage: { dimension: '2d', image: source.storage.image },
+    storage: { dimension: '2d', image: source.storage.image, target: source.storage.target },
     uvOffset: cloneVector2(source.uvOffset),
     uvRotation: source.uvRotation,
     uvScale: cloneVector2(source.uvScale),
@@ -37,6 +37,7 @@ export function copyTexture(out: TextureLike, source: Readonly<TextureLike>): vo
   const flipX = source.flipX;
   const flipY = source.flipY;
   const image = source.storage.image;
+  const target = source.storage.target;
   const resource = source.resource ?? null;
   const uvRotation = source.uvRotation;
   const version = source.version >>> 0;
@@ -48,6 +49,7 @@ export function copyTexture(out: TextureLike, source: Readonly<TextureLike>): vo
   out.flipY = flipY;
   out.resource = resource;
   out.storage.image = image;
+  out.storage.target = target;
   out.uvRotation = uvRotation;
   out.version = version;
 }
@@ -62,7 +64,9 @@ export function createTexture(opts?: Readonly<Partial<TextureLike>>): Texture {
     flipY: opts?.flipY ?? false,
     resource: opts?.resource ?? null,
     sampler: opts?.sampler ? cloneSampler(opts.sampler) : createSampler(),
-    storage: opts?.storage ? { dimension: '2d', image: opts.storage.image } : { dimension: '2d', image: null },
+    storage: opts?.storage
+      ? { dimension: '2d', image: opts.storage.image, target: opts.storage.target }
+      : { dimension: '2d', image: null },
     uvOffset: opts?.uvOffset ? cloneVector2(opts.uvOffset) : createVector2(0, 0),
     uvRotation: opts?.uvRotation ?? 0,
     uvScale: opts?.uvScale ? cloneVector2(opts.uvScale) : createVector2(1, 1),
@@ -83,6 +87,7 @@ export function equalsTexture(
     a.flipX === b.flipX &&
     a.flipY === b.flipY &&
     a.storage.image === b.storage.image &&
+    a.storage.target === b.storage.target &&
     a.uvRotation === b.uvRotation &&
     a.uvOffset.x === b.uvOffset.x &&
     a.uvOffset.y === b.uvOffset.y &&
@@ -93,9 +98,9 @@ export function equalsTexture(
   );
 }
 
-// Returns the pixel height of the texture's bound image, or -1 when no image is bound.
+// Returns the height declared by the CPU image or produced target backing, or -1 when unbound.
 export function getTextureHeight(texture: Readonly<TextureLike>): number {
-  return texture.storage.image !== null ? texture.storage.image.height : -1;
+  return texture.storage.image?.height ?? texture.storage.target?.height ?? -1;
 }
 
 // Composes the KHR_texture_transform fields and inverts the result, producing the matrix that maps
@@ -143,9 +148,9 @@ export function getTextureUvMatrix(out: Matrix3Like, texture: Readonly<TextureUv
   m[8] = 1; // (2,2)
 }
 
-// Returns the pixel width of the texture's bound image, or -1 when no image is bound.
+// Returns the width declared by the CPU image or produced target backing, or -1 when unbound.
 export function getTextureWidth(texture: Readonly<TextureLike>): number {
-  return texture.storage.image !== null ? texture.storage.image.width : -1;
+  return texture.storage.image?.width ?? texture.storage.target?.width ?? -1;
 }
 
 // True when the texture carries a non-identity KHR_texture_transform — any non-unit scale, non-zero

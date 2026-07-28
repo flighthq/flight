@@ -1,8 +1,11 @@
 import type { ImageResource } from './ImageResource';
+import type { RenderTargetDescriptor } from './RenderTarget';
 
-// Step-one storage shape: a two-dimensional texture backed by a broad ImageResource. Later storage
-// variants add cube, array, volume, and produced backings without widening Surface itself.
+// Two-dimensional texture storage composes the closed sampling dimension with an open backing.
+// CPU-origin content uses `image`; GPU-origin produced content uses `target` with no image. Backend
+// resolver registries own realization and can distinguish these fields without a texture subtype.
 export interface TextureStorage {
   dimension: '2d';
   image: ImageResource | null;
+  target?: RenderTargetDescriptor;
 }

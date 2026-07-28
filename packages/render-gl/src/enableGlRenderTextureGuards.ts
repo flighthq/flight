@@ -1,5 +1,5 @@
 import { logOnce } from '@flighthq/log/contract';
-import type { GlRenderState, GlRenderTextureExplanation, RenderTexture } from '@flighthq/types/contract';
+import type { GlRenderState, GlRenderTextureExplanation, Texture } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
 import { setGlRenderTextureGuard } from './glRenderTexture';
@@ -25,7 +25,7 @@ function setGlRenderTextureGuardProbe(state: GlRenderState, onEnabled: () => voi
 
 function warnGlRenderTextureUnavailable(
   _state: GlRenderState,
-  renderTexture: Readonly<RenderTexture>,
+  renderTexture: Readonly<Texture>,
   explanation: Readonly<GlRenderTextureExplanation>,
 ): void {
   const writing = explanation.status === 'writing';
@@ -35,8 +35,8 @@ function warnGlRenderTextureUnavailable(
     {
       height: explanation.height,
       message: writing
-        ? 'bindGlRenderTexture: the RenderTexture is still bound for writing; sampling it would be a read-after-write feedback hazard.'
-        : 'bindGlRenderTexture: the RenderTexture has not completed renderIntoGlRenderTexture; sampling uses the empty sentinel.',
+        ? 'bindGlRenderTexture: the produced Texture is still bound for writing; sampling it would be a read-after-write feedback hazard.'
+        : 'bindGlRenderTexture: the produced Texture has not completed renderIntoGlRenderTexture; sampling uses the empty sentinel.',
       renderTexture,
       status: explanation.status,
       width: explanation.width,

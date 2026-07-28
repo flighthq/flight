@@ -1,5 +1,5 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
-import type { RenderTexture } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/types/contract';
 
 import { enableGlRenderTextureGuards } from './enableGlRenderTextureGuards';
 import { getGlRenderStateRuntime } from './glRenderState';
@@ -120,10 +120,12 @@ describe('renderIntoGlRenderTexture', () => {
       status: 'unrendered',
       width: 32,
     });
+    expect(renderTexture.version).toBe(0);
 
     renderIntoGlRenderTexture(state, renderTexture, callback);
 
     expect(callback).toHaveBeenCalledOnce();
+    expect(renderTexture.version).toBe(1);
     expect(explainGlRenderTexture(state, renderTexture)).toEqual({
       height: 24,
       status: 'ready',
@@ -166,8 +168,8 @@ describe('renderIntoGlRenderTexture', () => {
     const renderTexture = createRenderTexture({ height: 16, width: 32 });
     renderIntoGlRenderTexture(state, renderTexture, () => {});
 
-    renderTexture.width = 12;
-    renderTexture.height = 10;
+    renderTexture.storage.target!.width = 12;
+    renderTexture.storage.target!.height = 10;
     renderIntoGlRenderTexture(state, renderTexture, () => {});
 
     expect(explainGlRenderTexture(state, renderTexture)).toEqual({
@@ -218,13 +220,12 @@ function createRenderTextureState(): ReturnType<typeof createGlState> {
   return fixture;
 }
 
-function createRenderTexture(options: { depth?: boolean; height: number; width: number }): RenderTexture {
+function createRenderTexture(options: { depth?: boolean; height: number; width: number }): Texture {
   return {
     colorSpace: 'linear',
-    depth: options.depth ?? false,
     flipX: false,
     flipY: true,
-    height: options.height,
+    resource: null,
     sampler: {
       anisotropy: 1,
       magFilter: 'linear',
@@ -236,6 +237,16 @@ function createRenderTexture(options: { depth?: boolean; height: number; width: 
     uvOffset: { x: 0, y: 0 },
     uvRotation: 0,
     uvScale: { x: 1, y: 1 },
-    width: options.width,
-  } as unknown as RenderTexture;
+    storage: {
+      dimension: '2d',
+      image: null,
+      target: {
+        colorSpace: 'linear',
+        depth: options.depth ? 'depth-stencil' : 'none',
+        height: options.height,
+        width: options.width,
+      },
+    },
+    version: 0,
+  } as unknown as Texture;
 }

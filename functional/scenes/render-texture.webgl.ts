@@ -71,7 +71,7 @@ setCamera3DViewMatrix4FromLookAt(
   createVector3(0, 1, 0),
 );
 
-const renderMap = createRenderTexture({ depth: true, height: 256, width: 256 });
+const renderMap = createRenderTexture({ depth: 'depth-stencil', height: 256, width: 256 });
 renderIntoGlRenderTexture(state, renderMap, (glState) => {
   prepareScene3DRender(glState, producerScene, producerCamera, lights);
   drawGlScene3D(glState, producerScene, producerCamera, lights);
@@ -82,7 +82,7 @@ const consumerScene = createScene3D().root;
 addNodeChild(
   consumerScene,
   createMesh(createBoxMeshGeometry(1.8, 1.8, 1.8), [
-    createUnlitMaterial({ baseColor: 0xffffffff, baseColorRenderMap: renderMap }),
+    createUnlitMaterial({ baseColor: 0xffffffff, baseColorMap: renderMap }),
   ]),
 );
 const consumerCamera = createCamera3D({

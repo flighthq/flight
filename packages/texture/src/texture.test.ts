@@ -57,6 +57,17 @@ describe('cloneTexture', () => {
     copy.uvOffset.x = 0.9;
     expect(source.uvOffset.x).toStrictEqual(0.25);
   });
+
+  it('preserves a produced descriptor while cloning sampling state', () => {
+    const target = { colorSpace: 'linear' as const, height: 32, width: 64 };
+    const source = createTexture({ storage: { dimension: '2d', image: null, target } });
+
+    const copy = cloneTexture(source);
+
+    expect(copy.storage.target).toBe(target);
+    expect(copy.storage).not.toBe(source.storage);
+    expect(copy.sampler).not.toBe(source.sampler);
+  });
 });
 
 describe('copyTexture', () => {
@@ -200,6 +211,14 @@ describe('getTextureHeight', () => {
 
     expect(getTextureHeight(texture)).toStrictEqual(-1);
   });
+
+  it('returns the produced target height when there is no CPU image', () => {
+    const texture = createTexture({
+      storage: { dimension: '2d', image: null, target: { height: 48, width: 96 } },
+    });
+
+    expect(getTextureHeight(texture)).toStrictEqual(48);
+  });
 });
 
 describe('getTextureInverseUvMatrix', () => {
@@ -342,6 +361,14 @@ describe('getTextureWidth', () => {
     const texture = createTexture();
 
     expect(getTextureWidth(texture)).toStrictEqual(-1);
+  });
+
+  it('returns the produced target width when there is no CPU image', () => {
+    const texture = createTexture({
+      storage: { dimension: '2d', image: null, target: { height: 48, width: 96 } },
+    });
+
+    expect(getTextureWidth(texture)).toStrictEqual(96);
   });
 });
 

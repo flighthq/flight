@@ -2,6 +2,7 @@ import { createImageResource } from '@flighthq/image/contract';
 import {
   getGlRenderStateRuntime,
   registerGlImageTextureResolver,
+  registerGlProducedTextureResolver,
   registerGlVideoTextureResolver,
 } from '@flighthq/render-gl/contract';
 import {
@@ -15,7 +16,6 @@ import type { GlUnlitDefineKey, LinearColor } from '@flighthq/types/contract';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
 import {
-  bindGlUnlitRenderSurface,
   bindGlUnlitSurface,
   buildGlUnlitDefineKey,
   compileGlUnlitProgram,
@@ -31,18 +31,6 @@ const FLAT: GlUnlitDefineKey = {
   vertexColor: false,
 };
 const COLOR: LinearColor = [0.5, 0.25, 0.1, 1];
-
-describe('bindGlUnlitRenderSurface', () => {
-  it('routes the render map through the reference-only color-map binder', () => {
-    const { state, gl } = makeGlScene3DState();
-    const program = compileGlUnlitProgram(gl, { ...FLAT, hasColorMap: true });
-
-    bindGlUnlitRenderSurface(state, program, COLOR, 1, createRenderTexture({ height: 16, width: 16 }), 0.5);
-
-    expect(gl.calls.some((call) => call.name === 'bindTexture' && call.args[1] === null)).toBe(true);
-    expect(gl.calls.some((call) => call.name === 'texImage2D')).toBe(false);
-  });
-});
 
 describe('bindGlUnlitSurface', () => {
   it('uploads the color, intensity, and alpha cutoff', () => {
@@ -70,6 +58,22 @@ describe('bindGlUnlitSurface', () => {
 
     expect(gl.calls.some((call) => call.name === 'texImage2D')).toBe(true);
     expect(gl.calls.some((call) => call.name === 'uniform1i')).toBe(true);
+  });
+
+  it('routes an unrendered produced Texture to the null sentinel without a CPU upload', () => {
+    const { state, gl } = makeGlScene3DState();
+    const program = compileGlUnlitProgram(gl, { ...FLAT, hasColorMap: true });
+    const texture = createRenderTexture({ height: 16, width: 16 });
+    texture.sampler.mipmaps = false;
+    registerGlProducedTextureResolver(state);
+    getGlRenderStateRuntime(state).anisotropyExt = null;
+    const uploads = gl.calls.filter((call) => call.name === 'texImage2D').length;
+
+    bindGlUnlitSurface(state, program, COLOR, 1, texture, 0.5);
+
+    expect(gl.calls.some((call) => call.name === 'bindTexture' && call.args[1] === null)).toBe(true);
+    expect(gl.calls.filter((call) => call.name === 'texImage2D')).toHaveLength(uploads);
+    expect(gl.calls.some((call) => call.name === 'uniform1i')).toBe(false);
   });
 
   it('routes a video-backed Texture through the registered Texture resolver', () => {
