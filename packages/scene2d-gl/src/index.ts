@@ -12,7 +12,6 @@ export {
   defaultGlSpriteRenderer,
   defaultGlTextLabelRenderer,
   defaultGlTilemapRenderer,
-  defaultGlVideoRenderer,
   destroyGlRenderTargetNode2D,
   drawGlSprite,
   enableGlClipSupport,

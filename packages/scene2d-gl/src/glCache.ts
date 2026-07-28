@@ -226,7 +226,7 @@ function drawGlRenderCache(state: GlRenderState, renderProxy: RenderProxy2D): vo
   const target = getTargets(state).get(cache);
   if (target === undefined) return;
   // Drain pending batched geometry before the immediate composite quad. Like every other
-  // immediate-draw renderer (RichText, Video, Scale9), this bypasses the sprite batch; without the
+  // immediate-draw renderer (RichText, Scale9), this bypasses the sprite batch; without the
   // flush the cached result draws ahead of geometry submitted earlier in the walk, which only
   // flushes at the end — producing out-of-order replay (a doubled image on Gl).
   flushGlSpriteBatch(state);

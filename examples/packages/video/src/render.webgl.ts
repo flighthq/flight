@@ -1,12 +1,13 @@
 import type { Node2D } from '@flighthq/sdk';
 import {
-  VideoKind,
+  SpriteKind,
   createGlCanvasElement,
   createGlRenderState,
-  defaultGlVideoRenderer,
+  defaultGlSpriteRenderer,
   prepareScene2DRender,
   registerStandardGlMaterial,
   registerRenderer,
+  registerGlVideoTextureResolver,
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
@@ -23,7 +24,8 @@ export const state = createGlRenderState(canvas, {
 });
 
 registerStandardGlMaterial(state);
-registerRenderer(state, VideoKind, defaultGlVideoRenderer);
+registerGlVideoTextureResolver(state);
+registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 
 export const scale = pixelRatio;
 

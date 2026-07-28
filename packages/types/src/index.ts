@@ -643,7 +643,6 @@ export * from './Vector4';
 export * from './Velocity';
 export * from './VertexColorMaterial';
 export * from './VertexDisplaceModifier';
-export * from './Video';
 export * from './VideoResource';
 export * from './Viewport';
 export * from './ViewportAlign';

@@ -37,7 +37,3 @@ export function defaultTextHitTestHandler(source: NodeAny, x: number, y: number)
 export function defaultTextInputHitTestHandler(source: NodeAny, x: number, y: number): boolean {
   return hitTestGraphLocalBounds(source, x, y);
 }
-
-export function defaultVideoHitTestHandler(source: NodeAny, x: number, y: number): boolean {
-  return hitTestGraphLocalBounds(source, x, y);
-}

@@ -6,7 +6,6 @@ export {
   defaultDomScale9ShapeRenderer,
   defaultDomShapeRenderer,
   defaultDomTextLabelRenderer,
-  defaultDomVideoRenderer,
   enableDomBlendModeSupport,
   enableDomClipSupport,
   enableDomRenderCache,
