@@ -12,17 +12,17 @@ import type {
 import { BatchFormat } from '@flighthq/types/contract';
 
 import {
-  packWgpuSpriteBatchMaterialInstance,
-  prepareWgpuSpriteBatchWrite,
-  recordWgpuSpriteBatchColorScaleBias,
-  SPRITE_INSTANCE_FLOATS,
-} from './wgpuSpriteBatch';
+  packWgpuQuadBatchMaterialInstance,
+  prepareWgpuQuadBatchWrite,
+  recordWgpuQuadBatchColorScaleBias,
+  QUAD_BATCH_INSTANCE_FLOATS,
+} from './wgpuQuadBatchWriter';
 
-const INSTANCE_STRIDE_FLOATS = SPRITE_INSTANCE_FLOATS;
+const INSTANCE_STRIDE_FLOATS = QUAD_BATCH_INSTANCE_FLOATS;
 
 // Draws a BitmapText leaf on WebGPU: one batched sprite pass per glyph-atlas page. The node's resolved
 // color adjustment folds in as a whole-node tint on every glyph (the same
-// `recordWgpuSpriteBatchColorScaleBias` path a tinted QuadBatch uses). Mirrors `submitWgpuQuadBatch`'s
+// `recordWgpuQuadBatchColorScaleBias` path a tinted QuadBatch uses). Mirrors `submitWgpuQuadBatch`'s
 // vector2 inner loop, sourced from each page's own `ids`/`transforms` arrays.
 function submitWgpuBitmapText(state: WgpuRenderState, node: RenderProxy2D): void {
   const runtime = getWgpuRenderStateRuntime(state);
@@ -50,9 +50,9 @@ function submitWgpuBitmapText(state: WgpuRenderState, node: RenderProxy2D): void
     const texture = atlas.texture;
     if (texture === null || !hasTextureBacking(texture) || page.instanceCount === 0) continue;
 
-    // prepareWgpuSpriteBatchWrite may flush the prior page's batch (each page binds a different image),
+    // prepareWgpuQuadBatchWrite may flush the prior page's batch (each page binds a different image),
     // so read the running instance count AFTER it so material/color-adjustment indices align with `base`.
-    const base = prepareWgpuSpriteBatchWrite(
+    const base = prepareWgpuQuadBatchWrite(
       state,
       texture,
       node.blendMode,
@@ -60,13 +60,13 @@ function submitWgpuBitmapText(state: WgpuRenderState, node: RenderProxy2D): void
       materialRenderer,
       page.instanceCount,
     );
-    const startCount = runtime.spriteBatchCount;
+    const startCount = runtime.quadBatchWriterCount;
 
     const regions = atlas.regions;
     const numRegions = regions.length;
     const iw = 1 / Math.max(1, getTextureWidth(texture));
     const ih = 1 / Math.max(1, getTextureHeight(texture));
-    const instanceData = runtime.spriteBatchInstanceData;
+    const instanceData = runtime.quadBatchWriterInstanceData;
     const ids = page.ids;
     const transforms = page.transforms;
 
@@ -93,13 +93,13 @@ function submitWgpuBitmapText(state: WgpuRenderState, node: RenderProxy2D): void
       instanceData[writeBase + 10] = (region.x + region.width) * iw;
       instanceData[writeBase + 11] = (region.y + region.height) * ih;
       instanceData[writeBase + 12] = alpha;
-      packWgpuSpriteBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
-      recordWgpuSpriteBatchColorScaleBias(state, nodeColorScaleBias, startCount + drawCount);
+      packWgpuQuadBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
+      recordWgpuQuadBatchColorScaleBias(state, nodeColorScaleBias, startCount + drawCount);
       writeBase += INSTANCE_STRIDE_FLOATS;
       drawCount++;
     }
 
-    runtime.spriteBatchCount += drawCount;
+    runtime.quadBatchWriterCount += drawCount;
   }
 }
 

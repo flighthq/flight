@@ -13,14 +13,14 @@ import type {
 import { BatchFormat } from '@flighthq/types/contract';
 
 import {
-  packWgpuSpriteBatchMaterialInstance,
-  prepareWgpuSpriteBatchWrite,
-  recordWgpuSpriteBatchColorScaleBias,
-  SPRITE_INSTANCE_FLOATS,
-} from './wgpuSpriteBatch';
+  packWgpuQuadBatchMaterialInstance,
+  prepareWgpuQuadBatchWrite,
+  recordWgpuQuadBatchColorScaleBias,
+  QUAD_BATCH_INSTANCE_FLOATS,
+} from './wgpuQuadBatchWriter';
 
 // Each tile writes the 13 base instance floats; any material packs its own per-instance data.
-const INSTANCE_STRIDE_FLOATS = SPRITE_INSTANCE_FLOATS;
+const INSTANCE_STRIDE_FLOATS = QUAD_BATCH_INSTANCE_FLOATS;
 
 function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): void {
   const runtime = getWgpuRenderStateRuntime(state);
@@ -40,8 +40,8 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
   const perTileColorScaleBias = source.data.materialData;
   const nodeColorScaleBias = tilemapNode.colorScaleBias;
   const nodeColorMatrix = tilemapNode.colorMatrix;
-  const startCount = runtime.spriteBatchCount;
-  const base = prepareWgpuSpriteBatchWrite(
+  const startCount = runtime.quadBatchWriterCount;
+  const base = prepareWgpuQuadBatchWrite(
     state,
     atlas.texture,
     tilemapNode.blendMode,
@@ -54,7 +54,7 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
   const numRegions = regions.length;
   const iw = 1 / Math.max(1, getTextureWidth(atlas.texture));
   const ih = 1 / Math.max(1, getTextureHeight(atlas.texture));
-  const instanceData = runtime.spriteBatchInstanceData;
+  const instanceData = runtime.quadBatchWriterInstanceData;
   const pt = tilemapNode.transform2D;
   const pa = pt.a,
     pb = pt.b,
@@ -88,7 +88,7 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
       instanceData[writeBase + 10] = (region.x + region.width) * iw;
       instanceData[writeBase + 11] = (region.y + region.height) * ih;
       instanceData[writeBase + 12] = alpha;
-      packWgpuSpriteBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
+      packWgpuQuadBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
       // Per-tile tint overrides the node-level tint (null → the node's, itself possibly null → untinted).
       const colorScaleBias =
         (perTileColorScaleBias?.[row * columns + col] as
@@ -98,13 +98,13 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
           | null) ??
         nodeColorMatrix ??
         nodeColorScaleBias;
-      recordWgpuSpriteBatchColorScaleBias(state, colorScaleBias, startCount + drawCount);
+      recordWgpuQuadBatchColorScaleBias(state, colorScaleBias, startCount + drawCount);
       writeBase += INSTANCE_STRIDE_FLOATS;
       drawCount++;
     }
   }
 
-  runtime.spriteBatchCount += drawCount;
+  runtime.quadBatchWriterCount += drawCount;
 }
 
 export const defaultWgpuTilemapRenderer: SpriteRenderer = {

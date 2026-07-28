@@ -7,7 +7,7 @@ import type {
   WgpuShapeMeshPipeline,
 } from '@flighthq/types/contract';
 
-import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
+import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
 
 // Wgpu tessellated solid-fill path for Shape — the counterpart to webglShapeMesh, replacing the
 // canvas-raster-to-texture shortcut (resolution-bound, so circles go jagged when scaled up). Each fill
@@ -25,7 +25,7 @@ import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
 // call shape against the mock device. Mirror this against the verified webgl result when a GPU is
 // available.
 
-// Draws the shape's tessellated fill meshes. Flushes the sprite batch first (these go through a separate
+// Draws the shape's tessellated fill meshes. Flushes the quad-batch writer first (these go through a separate
 // pipeline). Uploads each mesh's geometry and premultiplied color into the shape's reusable per-shape
 // buffers (grown by recreating when a mesh needs more room) and issues one indexed draw per mesh, gated
 // by the active contour-clip stencil. The shared `matrix` (projection · worldTransform) is identical for
@@ -38,7 +38,7 @@ export function drawWgpuShapeMeshes(
 ): void {
   if (meshes.length === 0) return;
   const runtime = getWgpuRenderStateRuntime(state);
-  flushWgpuSpriteBatch(state);
+  flushWgpuQuadBatchWriter(state);
 
   const pass = runtime.renderPass;
   if (pass === null) return;

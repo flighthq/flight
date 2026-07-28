@@ -7,7 +7,7 @@ import {
   areWgpuColorAdjustmentGuardsEnabled,
   enableWgpuColorAdjustmentGuards,
 } from './enableWgpuColorAdjustmentGuards';
-import { recordWgpuSpriteBatchColorScaleBias } from './wgpuSpriteBatch';
+import { recordWgpuQuadBatchColorScaleBias } from './wgpuQuadBatchWriter';
 
 beforeAll(() => {
   installWgpuMock();
@@ -42,7 +42,7 @@ describe('enableWgpuColorAdjustmentGuards', () => {
     addLogSink(sink.sink);
     try {
       enableWgpuColorAdjustmentGuards(state);
-      recordWgpuSpriteBatchColorScaleBias(state, ct(), 0);
+      recordWgpuQuadBatchColorScaleBias(state, ct(), 0);
       const entries = getMemoryLogSinkEntries(sink);
       expect(entries.length).toBe(1);
       const data = entries[0].data as Record<string, unknown>;
@@ -58,7 +58,7 @@ describe('enableWgpuColorAdjustmentGuards', () => {
     addLogSink(sink.sink);
     try {
       enableWgpuColorAdjustmentGuards(state);
-      recordWgpuSpriteBatchColorScaleBias(state, null, 0);
+      recordWgpuQuadBatchColorScaleBias(state, null, 0);
       expect(getMemoryLogSinkEntries(sink).length).toBe(0);
     } finally {
       removeLogSink(sink.sink);
@@ -78,7 +78,7 @@ describe('enableWgpuColorAdjustmentGuards', () => {
         record: () => {},
         resolveFlush: () => null,
       };
-      recordWgpuSpriteBatchColorScaleBias(state, ct(), 0);
+      recordWgpuQuadBatchColorScaleBias(state, ct(), 0);
       expect(getMemoryLogSinkEntries(sink).length).toBe(0);
     } finally {
       removeLogSink(sink.sink);

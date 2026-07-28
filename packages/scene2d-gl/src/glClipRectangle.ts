@@ -2,7 +2,7 @@ import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { GlRenderState, MatrixLike, RectangleLike } from '@flighthq/types/contract';
 import type { GlScissorRect } from '@flighthq/types/contract';
 
-import { flushGlSpriteBatch } from './glSpriteBatch';
+import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 
 export function popGlClipRectangle(state: GlRenderState): void {
   const runtime = getGlRenderStateRuntime(state);
@@ -10,7 +10,7 @@ export function popGlClipRectangle(state: GlRenderState): void {
   stack.pop();
   const previous = stack.length > 0 ? stack[stack.length - 1] : null;
   runtime.currentScissorRect = previous;
-  flushGlSpriteBatch(state);
+  flushGlQuadBatchWriter(state);
 
   const gl = state.gl;
   if (previous === null) {
@@ -29,7 +29,7 @@ export function pushGlClipRectangle(
   const next = intersectScissorRect(runtime.currentScissorRect ?? null, computeScissorRect(state, rect, transform));
   runtime.currentScissorRect = next;
   getScissorStack(state).push(next);
-  flushGlSpriteBatch(state);
+  flushGlQuadBatchWriter(state);
 
   const gl = state.gl;
   gl.enable(gl.SCISSOR_TEST);

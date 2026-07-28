@@ -62,17 +62,17 @@ export function createGlRenderState(canvas: HTMLCanvasElement, options: GlRender
   runtime.renderTargetViewport = null;
   runtime.defaultBitmapShader = defaultBitmapShader;
   runtime.shaderLoc = shaderLoc;
-  runtime.spriteBatchBlendMode = null;
-  runtime.spriteBatchMaterial = null;
-  runtime.spriteBatchMaterialRenderer = null;
-  runtime.spriteBatchMaterialFloats = 0;
-  runtime.spriteBatchMaterialData = new Float32Array(8 * 256);
-  runtime.spriteBatchMaterialBuffer = null;
-  runtime.spriteBatchCount = 0;
-  runtime.spriteBatchInstanceBuffer = null;
-  runtime.spriteBatchInstanceData = new Float32Array(13 * 256);
-  runtime.spriteBatchTexture = null;
-  runtime.spriteBatchSmoothing = null;
+  runtime.quadBatchWriterBlendMode = null;
+  runtime.quadBatchWriterMaterial = null;
+  runtime.quadBatchWriterMaterialRenderer = null;
+  runtime.quadBatchWriterMaterialFloats = 0;
+  runtime.quadBatchWriterMaterialData = new Float32Array(8 * 256);
+  runtime.quadBatchWriterMaterialBuffer = null;
+  runtime.quadBatchWriterCount = 0;
+  runtime.quadBatchWriterInstanceBuffer = null;
+  runtime.quadBatchWriterInstanceData = new Float32Array(13 * 256);
+  runtime.quadBatchWriterTexture = null;
+  runtime.quadBatchWriterSmoothing = null;
   // Color-adjustment fold state (mode/data/buffer + the compiled programs) is not allocated here: it
   // is owned by the opt-in registerGlColorAdjustmentMaterialFeature, so a state that never tints carries none of it.
   runtime.textureCache = new WeakMap();
@@ -132,9 +132,9 @@ export function destroyGlRenderState(state: GlRenderState): void {
   if (runtime.particleCornerBuffer) gl.deleteBuffer(runtime.particleCornerBuffer);
   if (runtime.particleInstanceBuffer) gl.deleteBuffer(runtime.particleInstanceBuffer);
   if (runtime.quadBatchCornerBuffer) gl.deleteBuffer(runtime.quadBatchCornerBuffer);
-  if (runtime.spriteBatchInstanceBuffer) gl.deleteBuffer(runtime.spriteBatchInstanceBuffer);
-  if (runtime.spriteBatchMaterialBuffer) gl.deleteBuffer(runtime.spriteBatchMaterialBuffer);
-  if (runtime.spriteBatchColorScaleBiasBuffer) gl.deleteBuffer(runtime.spriteBatchColorScaleBiasBuffer);
+  if (runtime.quadBatchWriterInstanceBuffer) gl.deleteBuffer(runtime.quadBatchWriterInstanceBuffer);
+  if (runtime.quadBatchWriterMaterialBuffer) gl.deleteBuffer(runtime.quadBatchWriterMaterialBuffer);
+  if (runtime.quadBatchWriterColorScaleBiasBuffer) gl.deleteBuffer(runtime.quadBatchWriterColorScaleBiasBuffer);
 }
 
 // Resolves the package-private GPU runtime attached to a GlRenderState. Mutable by design: the

@@ -3,7 +3,7 @@ import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { ColorScaleBias, ImageResource } from '@flighthq/types/contract';
 
 import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature';
-import { flushGlSpriteBatch, prepareGlSpriteBatchWrite, recordGlSpriteBatchColorScaleBias } from './glSpriteBatch';
+import { flushGlQuadBatchWriter, prepareGlQuadBatchWrite, recordGlQuadBatchColorScaleBias } from './glQuadBatchWriter';
 import { standardGlMaterialRenderer } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 
@@ -62,11 +62,11 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     registerGlColorAdjustmentMaterialFeature(state);
-    recordGlSpriteBatchColorScaleBias(state, null, 0);
-    recordGlSpriteBatchColorScaleBias(state, null, 1);
-    expect(runtime.spriteBatchColorScaleBiasMode).toBe(CT_MODE_NONE);
-    expect(runtime.spriteBatchColorTintData).toBeUndefined();
-    expect(runtime.spriteBatchColorScaleBiasData).toBeUndefined();
+    recordGlQuadBatchColorScaleBias(state, null, 0);
+    recordGlQuadBatchColorScaleBias(state, null, 1);
+    expect(runtime.quadBatchWriterColorScaleBiasMode).toBe(CT_MODE_NONE);
+    expect(runtime.quadBatchWriterColorTintData).toBeUndefined();
+    expect(runtime.quadBatchWriterColorScaleBiasData).toBeUndefined();
   });
 
   it('uses one whole-batch uniform when every instance shares one tint', () => {
@@ -74,43 +74,43 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     const runtime = getGlRenderStateRuntime(state);
     registerGlColorAdjustmentMaterialFeature(state);
     const tint = ct(0.5);
-    recordGlSpriteBatchColorScaleBias(state, tint, 0);
-    recordGlSpriteBatchColorScaleBias(state, tint, 1);
-    recordGlSpriteBatchColorScaleBias(state, tint, 2);
-    expect(runtime.spriteBatchColorScaleBiasMode).toBe(CT_MODE_UNIFORM);
-    expect(runtime.spriteBatchUniformColorScaleBias).toBe(tint);
+    recordGlQuadBatchColorScaleBias(state, tint, 0);
+    recordGlQuadBatchColorScaleBias(state, tint, 1);
+    recordGlQuadBatchColorScaleBias(state, tint, 2);
+    expect(runtime.quadBatchWriterColorScaleBiasMode).toBe(CT_MODE_UNIFORM);
+    expect(runtime.quadBatchWriterUniformColorScaleBias).toBe(tint);
   });
 
   it('keeps the uniform path for a distinct-but-equal tint', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     registerGlColorAdjustmentMaterialFeature(state);
-    recordGlSpriteBatchColorScaleBias(state, ct(0.5), 0);
-    recordGlSpriteBatchColorScaleBias(state, ct(0.5), 1);
-    expect(runtime.spriteBatchColorScaleBiasMode).toBe(CT_MODE_UNIFORM);
+    recordGlQuadBatchColorScaleBias(state, ct(0.5), 0);
+    recordGlQuadBatchColorScaleBias(state, ct(0.5), 1);
+    expect(runtime.quadBatchWriterColorScaleBiasMode).toBe(CT_MODE_UNIFORM);
   });
 
   it('promotes varying multiply-only tints to packed RGBA8 without splitting', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     registerGlColorAdjustmentMaterialFeature(state);
-    recordGlSpriteBatchColorScaleBias(state, ct(0.5), 0);
-    recordGlSpriteBatchColorScaleBias(state, ct(0.25), 1);
-    expect(runtime.spriteBatchColorScaleBiasMode).toBe(CT_MODE_PACKED_TINT);
-    expect(Array.from(new Uint8Array(runtime.spriteBatchColorTintData!.buffer, 0, 8))).toEqual([
+    recordGlQuadBatchColorScaleBias(state, ct(0.5), 0);
+    recordGlQuadBatchColorScaleBias(state, ct(0.25), 1);
+    expect(runtime.quadBatchWriterColorScaleBiasMode).toBe(CT_MODE_PACKED_TINT);
+    expect(Array.from(new Uint8Array(runtime.quadBatchWriterColorTintData!.buffer, 0, 8))).toEqual([
       128, 255, 255, 255, 64, 255, 255, 255,
     ]);
-    expect(runtime.spriteBatchColorScaleBiasData).toBeUndefined();
+    expect(runtime.quadBatchWriterColorScaleBiasData).toBeUndefined();
   });
 
   it('promotes with identity fill when a tinted instance follows an untinted one', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     registerGlColorAdjustmentMaterialFeature(state);
-    recordGlSpriteBatchColorScaleBias(state, null, 0);
-    recordGlSpriteBatchColorScaleBias(state, ct(0.5), 1);
-    expect(runtime.spriteBatchColorScaleBiasMode).toBe(CT_MODE_PACKED_TINT);
-    expect(Array.from(new Uint8Array(runtime.spriteBatchColorTintData!.buffer, 0, 8))).toEqual([
+    recordGlQuadBatchColorScaleBias(state, null, 0);
+    recordGlQuadBatchColorScaleBias(state, ct(0.5), 1);
+    expect(runtime.quadBatchWriterColorScaleBiasMode).toBe(CT_MODE_PACKED_TINT);
+    expect(Array.from(new Uint8Array(runtime.quadBatchWriterColorTintData!.buffer, 0, 8))).toEqual([
       255, 255, 255, 255, 128, 255, 255, 255,
     ]);
   });
@@ -119,43 +119,45 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     registerGlColorAdjustmentMaterialFeature(state);
-    recordGlSpriteBatchColorScaleBias(state, ct(0.5), 0);
-    recordGlSpriteBatchColorScaleBias(state, ct(0.25), 1);
-    recordGlSpriteBatchColorScaleBias(state, null, 2);
-    expect(Array.from(new Uint8Array(runtime.spriteBatchColorTintData!.buffer, 8, 4))).toEqual([255, 255, 255, 255]);
+    recordGlQuadBatchColorScaleBias(state, ct(0.5), 0);
+    recordGlQuadBatchColorScaleBias(state, ct(0.25), 1);
+    recordGlQuadBatchColorScaleBias(state, null, 2);
+    expect(Array.from(new Uint8Array(runtime.quadBatchWriterColorTintData!.buffer, 8, 4))).toEqual([
+      255, 255, 255, 255,
+    ]);
   });
 
   it('stores normalized-linear color biases without conversion', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     registerGlColorAdjustmentMaterialFeature(state);
-    recordGlSpriteBatchColorScaleBias(state, ct(1, 1, 1, 1, 1, 0, 0, 0), 0);
-    recordGlSpriteBatchColorScaleBias(state, ct(0.5), 1);
-    expect(runtime.spriteBatchColorScaleBiasData![4]).toBe(1);
-    expect(runtime.spriteBatchColorScaleBiasMode).toBe(CT_MODE_PER_INSTANCE);
+    recordGlQuadBatchColorScaleBias(state, ct(1, 1, 1, 1, 1, 0, 0, 0), 0);
+    recordGlQuadBatchColorScaleBias(state, ct(0.5), 1);
+    expect(runtime.quadBatchWriterColorScaleBiasData![4]).toBe(1);
+    expect(runtime.quadBatchWriterColorScaleBiasMode).toBe(CT_MODE_PER_INSTANCE);
   });
 
   it('widens to a full matrix stream only when channel mixing appears', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     registerGlColorAdjustmentMaterialFeature(state);
-    recordGlSpriteBatchColorScaleBias(state, { tint: 0x808080ff }, 0);
-    recordGlSpriteBatchColorScaleBias(state, MIX_RED_GREEN, 1);
-    expect(runtime.spriteBatchColorScaleBiasMode).toBe(CT_MODE_MATRIX);
-    expect(runtime.spriteBatchColorMatrixData![0]).toBeCloseTo(128 / 255);
-    expect(runtime.spriteBatchColorMatrixData![20]).toBe(1);
-    expect(runtime.spriteBatchColorMatrixData![21]).toBe(0.5);
-    expect(runtime.spriteBatchColorMatrixData![36]).toBe(0.25);
+    recordGlQuadBatchColorScaleBias(state, { tint: 0x808080ff }, 0);
+    recordGlQuadBatchColorScaleBias(state, MIX_RED_GREEN, 1);
+    expect(runtime.quadBatchWriterColorScaleBiasMode).toBe(CT_MODE_MATRIX);
+    expect(runtime.quadBatchWriterColorMatrixData![0]).toBeCloseTo(128 / 255);
+    expect(runtime.quadBatchWriterColorMatrixData![20]).toBe(1);
+    expect(runtime.quadBatchWriterColorMatrixData![21]).toBe(0.5);
+    expect(runtime.quadBatchWriterColorMatrixData![36]).toBe(0.25);
   });
 
   it('records compact per-item tint data directly as four bytes', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     registerGlColorAdjustmentMaterialFeature(state);
-    recordGlSpriteBatchColorScaleBias(state, null, 0);
-    recordGlSpriteBatchColorScaleBias(state, { tint: 0x12345678 }, 1);
-    expect(runtime.spriteBatchColorScaleBiasMode).toBe(CT_MODE_PACKED_TINT);
-    expect(Array.from(new Uint8Array(runtime.spriteBatchColorTintData!.buffer, 4, 4))).toEqual([
+    recordGlQuadBatchColorScaleBias(state, null, 0);
+    recordGlQuadBatchColorScaleBias(state, { tint: 0x12345678 }, 1);
+    expect(runtime.quadBatchWriterColorScaleBiasMode).toBe(CT_MODE_PACKED_TINT);
+    expect(Array.from(new Uint8Array(runtime.quadBatchWriterColorTintData!.buffer, 4, 4))).toEqual([
       0x12, 0x34, 0x56, 0x78,
     ]);
   });
@@ -164,10 +166,10 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     const { state, gl } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     registerGlColorAdjustmentMaterialFeature(state);
-    prepareGlSpriteBatchWrite(state, makeTexture(), null, null, standardGlMaterialRenderer, 1);
-    recordGlSpriteBatchColorScaleBias(state, ct(0.5), 0);
-    runtime.spriteBatchCount = 1;
-    flushGlSpriteBatch(state);
+    prepareGlQuadBatchWrite(state, makeTexture(), null, null, standardGlMaterialRenderer, 1);
+    recordGlQuadBatchColorScaleBias(state, ct(0.5), 0);
+    runtime.quadBatchWriterCount = 1;
+    flushGlQuadBatchWriter(state);
     expect(gl.uniform4f).toHaveBeenCalled();
     expect(gl.drawElementsInstanced).toHaveBeenCalled();
   });
@@ -176,12 +178,12 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     const { state, gl } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     registerGlColorAdjustmentMaterialFeature(state);
-    prepareGlSpriteBatchWrite(state, makeTexture(), null, null, standardGlMaterialRenderer, 2);
-    recordGlSpriteBatchColorScaleBias(state, ct(0.5), 0);
-    recordGlSpriteBatchColorScaleBias(state, ct(0.25), 1);
-    runtime.spriteBatchCount = 2;
-    flushGlSpriteBatch(state);
-    expect(runtime.spriteBatchColorScaleBiasBuffer).not.toBeNull();
+    prepareGlQuadBatchWrite(state, makeTexture(), null, null, standardGlMaterialRenderer, 2);
+    recordGlQuadBatchColorScaleBias(state, ct(0.5), 0);
+    recordGlQuadBatchColorScaleBias(state, ct(0.25), 1);
+    runtime.quadBatchWriterCount = 2;
+    flushGlQuadBatchWriter(state);
+    expect(runtime.quadBatchWriterColorScaleBiasBuffer).not.toBeNull();
     expect(gl.vertexAttribPointer).toHaveBeenCalledWith(7, 4, gl.UNSIGNED_BYTE, true, 4, 0);
     expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 2);
   });
@@ -190,11 +192,11 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     const { state, gl } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     registerGlColorAdjustmentMaterialFeature(state);
-    prepareGlSpriteBatchWrite(state, makeTexture(), null, null, standardGlMaterialRenderer, 2);
-    recordGlSpriteBatchColorScaleBias(state, null, 0);
-    recordGlSpriteBatchColorScaleBias(state, MIX_RED_GREEN, 1);
-    runtime.spriteBatchCount = 2;
-    flushGlSpriteBatch(state);
+    prepareGlQuadBatchWrite(state, makeTexture(), null, null, standardGlMaterialRenderer, 2);
+    recordGlQuadBatchColorScaleBias(state, null, 0);
+    recordGlQuadBatchColorScaleBias(state, MIX_RED_GREEN, 1);
+    runtime.quadBatchWriterCount = 2;
+    flushGlQuadBatchWriter(state);
     expect(gl.vertexAttribPointer).toHaveBeenCalledWith(7, 4, gl.FLOAT, false, 80, 0);
     expect(gl.vertexAttribPointer).toHaveBeenCalledWith(11, 4, gl.FLOAT, false, 80, 64);
   });
@@ -203,22 +205,22 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     registerGlColorAdjustmentMaterialFeature(state);
-    prepareGlSpriteBatchWrite(state, makeTexture(), null, null, standardGlMaterialRenderer, 1);
-    recordGlSpriteBatchColorScaleBias(state, MIX_RED_GREEN, 0);
-    runtime.spriteBatchCount = 1;
-    flushGlSpriteBatch(state);
-    expect(runtime.spriteBatchColorScaleBiasMode).toBe(CT_MODE_NONE);
+    prepareGlQuadBatchWrite(state, makeTexture(), null, null, standardGlMaterialRenderer, 1);
+    recordGlQuadBatchColorScaleBias(state, MIX_RED_GREEN, 0);
+    runtime.quadBatchWriterCount = 1;
+    flushGlQuadBatchWriter(state);
+    expect(runtime.quadBatchWriterColorScaleBiasMode).toBe(CT_MODE_NONE);
   });
 
   it('leaves the lean base shader untouched for an untinted batch on flush', () => {
     const { state, gl } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     registerGlColorAdjustmentMaterialFeature(state);
-    prepareGlSpriteBatchWrite(state, makeTexture(), null, null, standardGlMaterialRenderer, 1);
-    recordGlSpriteBatchColorScaleBias(state, null, 0);
-    runtime.spriteBatchCount = 1;
-    flushGlSpriteBatch(state);
-    expect(runtime.spriteBatchColorScaleBiasBuffer ?? null).toBeNull();
+    prepareGlQuadBatchWrite(state, makeTexture(), null, null, standardGlMaterialRenderer, 1);
+    recordGlQuadBatchColorScaleBias(state, null, 0);
+    runtime.quadBatchWriterCount = 1;
+    flushGlQuadBatchWriter(state);
+    expect(runtime.quadBatchWriterColorScaleBiasBuffer ?? null).toBeNull();
     expect(gl.drawElementsInstanced).toHaveBeenCalled();
   });
 });

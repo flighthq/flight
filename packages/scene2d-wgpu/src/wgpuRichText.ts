@@ -28,8 +28,8 @@ import type {
   WgpuTextureEntry,
 } from '@flighthq/types/contract';
 
+import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
 import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
-import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
 
 let _offscreenCanvas: HTMLCanvasElement | null = null;
 let _offscreenCtx: CanvasRenderingContext2D | null = null;
@@ -72,7 +72,7 @@ export function drawWgpuRichTextWithOverlay(
 ): void {
   const runtime = getWgpuRenderStateRuntime(state);
   if (runtime.renderPass === null) return;
-  flushWgpuSpriteBatch(state);
+  flushWgpuQuadBatchWriter(state);
 
   const source = renderProxy.source as RichText;
   const data = source.data;

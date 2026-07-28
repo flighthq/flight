@@ -16,7 +16,7 @@ import type {
   WgpuMaterialRenderer,
   WgpuQuadBatchResources,
   WgpuRenderState,
-  WgpuSpriteBatchBufferSlot,
+  WgpuQuadBatchWriterBufferSlot,
 } from '@flighthq/types/contract';
 import type { BlendMode } from '@flighthq/types/contract';
 
@@ -28,10 +28,10 @@ import type { BlendMode } from '@flighthq/types/contract';
 // [6-7]   width, height — region size in pixels
 // [8-11]  u0,v0,u1,v1  — atlas UV rect
 // [12]    alpha        — per-instance alpha
-export const SPRITE_INSTANCE_FLOATS = 13;
-const SPRITE_INSTANCE_STRIDE = SPRITE_INSTANCE_FLOATS * 4;
+export const QUAD_BATCH_INSTANCE_FLOATS = 13;
+const QUAD_BATCH_INSTANCE_STRIDE = QUAD_BATCH_INSTANCE_FLOATS * 4;
 
-// Shared WGSL prelude for sprite-batch material shaders: the base Uniforms and InstanceData structs,
+// Shared WGSL prelude for quad-batch writer material shaders: the base Uniforms and InstanceData structs,
 // the standard bind-group bindings (@group(0) uniform, @group(1) texture/sampler, @group(2)
 // instances), and a quadBaseVertex helper that expands one instance corner into clip-space position,
 // UV, and alpha. A material module appends its own @group(3) material buffer (when it uses one), a
@@ -123,48 +123,48 @@ export function ensureWgpuQuadBatchResources(state: WgpuRenderState): WgpuQuadBa
 
 const _quadBatchResources = new WeakMap<GPUDevice, WgpuQuadBatchResources>();
 
-export function flushWgpuSpriteBatch(state: WgpuRenderState): void {
+export function flushWgpuQuadBatchWriter(state: WgpuRenderState): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  const count = runtime.spriteBatchCount;
+  const count = runtime.quadBatchWriterCount;
   if (count === 0 || runtime.renderPass === null) {
-    resetWgpuSpriteBatch(state);
+    resetWgpuQuadBatchWriter(state);
     return;
   }
 
-  const texture = runtime.spriteBatchTexture!;
-  const blendMode = runtime.spriteBatchBlendMode;
-  const smoothing = runtime.spriteBatchSmoothing;
-  const renderer = runtime.spriteBatchMaterialRenderer!;
+  const texture = runtime.quadBatchWriterTexture!;
+  const blendMode = runtime.quadBatchWriterBlendMode;
+  const smoothing = runtime.quadBatchWriterSmoothing;
+  const renderer = runtime.quadBatchWriterMaterialRenderer!;
   // The color-adjustment fold is opt-in (registerWgpuColorAdjustmentMaterialFeature): when installed it resolves a
   // tinted batch to its per-instance @group(3) storage data + folded module; an untinted batch (or an
   // un-enabled state) falls back to the resolved material's own per-instance data, and no fold WGSL is
   // linked into this module. CT and material per-instance data never mix in a built-in batch (built-in
   // materials have no per-instance floats).
   const ctFlush = runtime.wgpuColorAdjustmentMaterialFeature?.resolveFlush(state, count) ?? null;
-  const group3Floats = ctFlush !== null ? ctFlush.floats : runtime.spriteBatchMaterialFloats;
-  const group3Data = ctFlush !== null ? ctFlush.data : runtime.spriteBatchMaterialData;
-  resetWgpuSpriteBatch(state);
+  const group3Floats = ctFlush !== null ? ctFlush.floats : runtime.quadBatchWriterMaterialFloats;
+  const group3Data = ctFlush !== null ? ctFlush.data : runtime.quadBatchWriterMaterialData;
+  resetWgpuQuadBatchWriter(state);
 
   const resources = ensureWgpuQuadBatchResources(state);
 
   // Claim a distinct pool slot for this flush. The canvas pass is submitted once at end of frame, so
   // a buffer shared across flushes would be rewritten before any draw reads it, leaving every draw
   // reading the last flush's data. A per-flush slot keeps each draw's instances intact until submit.
-  const slot = acquireWgpuSpriteBatchBufferSlot(state);
+  const slot = acquireWgpuQuadBatchWriterBufferSlot(state);
 
-  const instanceBytes = count * SPRITE_INSTANCE_STRIDE;
+  const instanceBytes = count * QUAD_BATCH_INSTANCE_STRIDE;
   if (slot.instanceBuffer === null || slot.instanceCapacity < instanceBytes) {
-    const capacity = Math.max(instanceBytes, slot.instanceCapacity * 2, SPRITE_INSTANCE_STRIDE * 256);
-    slot.instanceBuffer = createWgpuSpriteBatchBuffer(state, capacity);
+    const capacity = Math.max(instanceBytes, slot.instanceCapacity * 2, QUAD_BATCH_INSTANCE_STRIDE * 256);
+    slot.instanceBuffer = createWgpuQuadBatchWriterBuffer(state, capacity);
     slot.instanceCapacity = capacity;
   }
-  state.device.queue.writeBuffer(slot.instanceBuffer, 0, runtime.spriteBatchInstanceData.buffer, 0, instanceBytes);
+  state.device.queue.writeBuffer(slot.instanceBuffer, 0, runtime.quadBatchWriterInstanceData.buffer, 0, instanceBytes);
 
   if (group3Floats > 0) {
     const group3Bytes = count * group3Floats * 4;
     if (slot.materialBuffer === null || slot.materialCapacity < group3Bytes) {
       const capacity = Math.max(group3Bytes, slot.materialCapacity * 2, group3Floats * 4 * 256);
-      slot.materialBuffer = createWgpuSpriteBatchBuffer(state, capacity);
+      slot.materialBuffer = createWgpuQuadBatchWriterBuffer(state, capacity);
       slot.materialCapacity = capacity;
     }
     state.device.queue.writeBuffer(slot.materialBuffer, 0, group3Data.buffer, 0, group3Bytes);
@@ -181,7 +181,7 @@ export function flushWgpuSpriteBatch(state: WgpuRenderState): void {
       ? createWgpuTextureSamplerBindGroup(state, textureEntry.view, texture)
       : resolveWgpuSmoothingBindGroup(state, textureEntry, smoothing);
 
-  const uniformOffset = writeWgpuSpriteBatchUniforms(state, textureEntry.straightAlpha === true);
+  const uniformOffset = writeWgpuQuadBatchWriterUniforms(state, textureEntry.straightAlpha === true);
 
   const instanceBindGroup = state.device.createBindGroup({
     layout: resources.instanceBindGroupLayout,
@@ -276,31 +276,31 @@ export function getWgpuQuadBatchPreludeWGSL(): string {
 // Writes one instance's per-instance material floats into the parallel material buffer at the
 // instance's slot. No-op for materials with no per-instance data (floats === 0 / no packInstance),
 // so the base path never assumes any particular material contributes here.
-export function packWgpuSpriteBatchMaterialInstance(
+export function packWgpuQuadBatchMaterialInstance(
   state: WgpuRenderState,
   materialData: MaterialData | null,
   instanceIndex: number,
 ): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  const floats = runtime.spriteBatchMaterialFloats;
+  const floats = runtime.quadBatchWriterMaterialFloats;
   if (floats === 0) return;
-  const renderer = runtime.spriteBatchMaterialRenderer;
+  const renderer = runtime.quadBatchWriterMaterialRenderer;
   if (renderer === null || renderer.packInstance === undefined) return;
   renderer.packInstance(
     state,
-    runtime.spriteBatchMaterial,
+    runtime.quadBatchWriterMaterial,
     materialData,
-    runtime.spriteBatchMaterialData,
+    runtime.quadBatchWriterMaterialData,
     instanceIndex * floats,
   );
 }
 
-// Ensures the sprite batch can accept up to `maxInstances` more instances for the given texture,
+// Ensures the quad-batch writer can accept up to `maxInstances` more instances for the given texture,
 // blend mode, and material. Flushes when any of the three changes (material by reference) or
-// capacity is exceeded. Returns the float index in spriteBatchInstanceData where the caller writes
-// base instance data; the caller increments the runtime's spriteBatchCount and calls
-// packWgpuSpriteBatchMaterialInstance per instance.
-export function prepareWgpuSpriteBatchWrite(
+// capacity is exceeded. Returns the float index in quadBatchWriterInstanceData where the caller writes
+// base instance data; the caller increments the runtime's quadBatchWriterCount and calls
+// packWgpuQuadBatchMaterialInstance per instance.
+export function prepareWgpuQuadBatchWrite(
   state: WgpuRenderState,
   texture: Readonly<ImageResource | Texture>,
   blendMode: BlendMode | null,
@@ -311,36 +311,36 @@ export function prepareWgpuSpriteBatchWrite(
 ): number {
   const runtime = getWgpuRenderStateRuntime(state);
   if (
-    texture !== runtime.spriteBatchTexture ||
-    blendMode !== runtime.spriteBatchBlendMode ||
-    material !== runtime.spriteBatchMaterial ||
-    smoothing !== runtime.spriteBatchSmoothing
+    texture !== runtime.quadBatchWriterTexture ||
+    blendMode !== runtime.quadBatchWriterBlendMode ||
+    material !== runtime.quadBatchWriterMaterial ||
+    smoothing !== runtime.quadBatchWriterSmoothing
   ) {
-    flushWgpuSpriteBatch(state);
+    flushWgpuQuadBatchWriter(state);
   }
-  runtime.spriteBatchTexture = texture;
-  runtime.spriteBatchSmoothing = smoothing;
-  runtime.spriteBatchBlendMode = blendMode;
-  runtime.spriteBatchMaterial = material;
-  runtime.spriteBatchMaterialRenderer = materialRenderer;
+  runtime.quadBatchWriterTexture = texture;
+  runtime.quadBatchWriterSmoothing = smoothing;
+  runtime.quadBatchWriterBlendMode = blendMode;
+  runtime.quadBatchWriterMaterial = material;
+  runtime.quadBatchWriterMaterialRenderer = materialRenderer;
   const floats = materialRenderer.instanceFloatCount;
-  runtime.spriteBatchMaterialFloats = floats;
+  runtime.quadBatchWriterMaterialFloats = floats;
 
-  const needed = (runtime.spriteBatchCount + maxInstances) * SPRITE_INSTANCE_FLOATS;
-  if (needed > runtime.spriteBatchInstanceData.length) {
-    const newSize = Math.max(needed, runtime.spriteBatchInstanceData.length * 2, SPRITE_INSTANCE_FLOATS * 256);
-    runtime.spriteBatchInstanceData = new Float32Array(newSize);
+  const needed = (runtime.quadBatchWriterCount + maxInstances) * QUAD_BATCH_INSTANCE_FLOATS;
+  if (needed > runtime.quadBatchWriterInstanceData.length) {
+    const newSize = Math.max(needed, runtime.quadBatchWriterInstanceData.length * 2, QUAD_BATCH_INSTANCE_FLOATS * 256);
+    runtime.quadBatchWriterInstanceData = new Float32Array(newSize);
   }
 
   if (floats > 0) {
-    const materialNeeded = (runtime.spriteBatchCount + maxInstances) * floats;
-    if (materialNeeded > runtime.spriteBatchMaterialData.length) {
-      const newSize = Math.max(materialNeeded, runtime.spriteBatchMaterialData.length * 2, floats * 256);
-      runtime.spriteBatchMaterialData = new Float32Array(newSize);
+    const materialNeeded = (runtime.quadBatchWriterCount + maxInstances) * floats;
+    if (materialNeeded > runtime.quadBatchWriterMaterialData.length) {
+      const newSize = Math.max(materialNeeded, runtime.quadBatchWriterMaterialData.length * 2, floats * 256);
+      runtime.quadBatchWriterMaterialData = new Float32Array(newSize);
     }
   }
 
-  return runtime.spriteBatchCount * SPRITE_INSTANCE_FLOATS;
+  return runtime.quadBatchWriterCount * QUAD_BATCH_INSTANCE_FLOATS;
 }
 
 // Folds instance `instanceIndex`'s effective color adjustment into the active batch through the opt-in
@@ -348,7 +348,7 @@ export function prepareWgpuSpriteBatchWrite(
 // (registerWgpuColorAdjustmentMaterialFeature), the fold slot is null and the tint is skipped — the batch draws
 // untinted (the sentinel behavior, never a throw); an installed guard reports the miss. `colorScaleBias`
 // is null/undefined for an untinted instance, which is a no-op whether or not the fold is enabled.
-export function recordWgpuSpriteBatchColorScaleBias(
+export function recordWgpuQuadBatchColorScaleBias(
   state: WgpuRenderState,
   colorScaleBias: ColorScaleBias | TintMaterialData | readonly number[] | null | undefined,
   instanceIndex: number,
@@ -365,37 +365,37 @@ export function recordWgpuSpriteBatchColorScaleBias(
 // Resets the per-frame buffer-pool cursor so the next frame reclaims slots from the start. Must be
 // called once at the start of each frame's batch work — the screen frame via renderWgpuBackground,
 // and the offscreen cache bake via refreshWgpuRenderCache (the bake flushes on its own state).
-export function resetWgpuSpriteBatchBufferPool(state: WgpuRenderState): void {
-  getWgpuRenderStateRuntime(state).spriteBatchBufferCursor = 0;
+export function resetWgpuQuadBatchWriterBufferPool(state: WgpuRenderState): void {
+  getWgpuRenderStateRuntime(state).quadBatchWriterBufferCursor = 0;
 }
 
 // Claims the next per-frame pool slot, allocating one if the frame has more flushes than any prior
-// frame. The cursor is reset to 0 each frame by resetWgpuSpriteBatchBufferPool.
-function acquireWgpuSpriteBatchBufferSlot(state: WgpuRenderState): WgpuSpriteBatchBufferSlot {
+// frame. The cursor is reset to 0 each frame by resetWgpuQuadBatchWriterBufferPool.
+function acquireWgpuQuadBatchWriterBufferSlot(state: WgpuRenderState): WgpuQuadBatchWriterBufferSlot {
   const runtime = getWgpuRenderStateRuntime(state);
-  const pool = runtime.spriteBatchBufferPool;
-  let slot = pool[runtime.spriteBatchBufferCursor];
+  const pool = runtime.quadBatchWriterBufferPool;
+  let slot = pool[runtime.quadBatchWriterBufferCursor];
   if (slot === undefined) {
     slot = { instanceBuffer: null, instanceCapacity: 0, materialBuffer: null, materialCapacity: 0 };
-    pool[runtime.spriteBatchBufferCursor] = slot;
+    pool[runtime.quadBatchWriterBufferCursor] = slot;
   }
-  runtime.spriteBatchBufferCursor++;
+  runtime.quadBatchWriterBufferCursor++;
   return slot;
 }
 
-function createWgpuSpriteBatchBuffer(state: WgpuRenderState, size: number): GPUBuffer {
+function createWgpuQuadBatchWriterBuffer(state: WgpuRenderState, size: number): GPUBuffer {
   return state.device.createBuffer({ size, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
 }
 
-function resetWgpuSpriteBatch(state: WgpuRenderState): void {
+function resetWgpuQuadBatchWriter(state: WgpuRenderState): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  runtime.spriteBatchCount = 0;
-  runtime.spriteBatchTexture = null;
-  runtime.spriteBatchSmoothing = null;
-  runtime.spriteBatchBlendMode = null;
-  runtime.spriteBatchMaterial = null;
-  runtime.spriteBatchMaterialRenderer = null;
-  runtime.spriteBatchMaterialFloats = 0;
+  runtime.quadBatchWriterCount = 0;
+  runtime.quadBatchWriterTexture = null;
+  runtime.quadBatchWriterSmoothing = null;
+  runtime.quadBatchWriterBlendMode = null;
+  runtime.quadBatchWriterMaterial = null;
+  runtime.quadBatchWriterMaterialRenderer = null;
+  runtime.quadBatchWriterMaterialFloats = 0;
 }
 
 function createWgpuTextureSamplerBindGroup(
@@ -425,7 +425,7 @@ function createWgpuTextureSamplerBindGroup(
 
 // Writes the NDC viewport matrix and the shared texture's alpha representation into the uniform ring,
 // then advances the ring offset. Returns the byte offset for the dynamic bind-group binding.
-function writeWgpuSpriteBatchUniforms(state: WgpuRenderState, straightTextureAlpha: boolean): number {
+function writeWgpuQuadBatchWriterUniforms(state: WgpuRenderState, straightTextureAlpha: boolean): number {
   const runtime = getWgpuRenderStateRuntime(state);
   const uniformOffset = runtime.uniformOffset;
   const floatBase = uniformOffset >> 2;

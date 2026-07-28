@@ -20,18 +20,18 @@ import type {
 } from '@flighthq/types/contract';
 import { BatchFormat } from '@flighthq/types/contract';
 
-import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
 import {
   ensureWgpuQuadBatchResources,
-  packWgpuSpriteBatchMaterialInstance,
-  prepareWgpuSpriteBatchWrite,
-  recordWgpuSpriteBatchColorScaleBias,
-} from './wgpuSpriteBatch';
+  packWgpuQuadBatchMaterialInstance,
+  prepareWgpuQuadBatchWrite,
+  recordWgpuQuadBatchColorScaleBias,
+} from './wgpuQuadBatchWriter';
+import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
 
 interface WgpuTextLabelData {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
-  // The canvas wrapped as an ImageResource (its `source`) so the shared sprite batch treats canvas-backed
+  // The canvas wrapped as an ImageResource (its `source`) so the shared quad-batch writer treats canvas-backed
   // text uniformly with bitmaps; re-rasterizing bumps the version, which the batch cache re-uploads on.
   image: ImageResource;
   // Content revision and pixel ratio at last rasterization. Re-rasterization is driven by the
@@ -163,9 +163,9 @@ export function drawWgpuTextLabel(state: WgpuRenderState, renderProxy: RenderPro
 
   ensureWgpuQuadBatchResources(state);
 
-  const startCount = runtime.spriteBatchCount;
-  const base = prepareWgpuSpriteBatchWrite(state, textData.image, renderProxy.blendMode, material, materialRenderer, 1);
-  const d = runtime.spriteBatchInstanceData;
+  const startCount = runtime.quadBatchWriterCount;
+  const base = prepareWgpuQuadBatchWrite(state, textData.image, renderProxy.blendMode, material, materialRenderer, 1);
+  const d = runtime.quadBatchWriterInstanceData;
   const t = renderProxy.transform2D;
   d[base] = t.a;
   d[base + 1] = t.b;
@@ -180,9 +180,9 @@ export function drawWgpuTextLabel(state: WgpuRenderState, renderProxy: RenderPro
   d[base + 10] = 1;
   d[base + 11] = 1;
   d[base + 12] = renderProxy.alpha;
-  packWgpuSpriteBatchMaterialInstance(state, renderProxy.materialData, startCount);
-  recordWgpuSpriteBatchColorScaleBias(state, renderProxy.colorMatrix ?? renderProxy.colorScaleBias, startCount);
-  runtime.spriteBatchCount++;
+  packWgpuQuadBatchMaterialInstance(state, renderProxy.materialData, startCount);
+  recordWgpuQuadBatchColorScaleBias(state, renderProxy.colorMatrix ?? renderProxy.colorScaleBias, startCount);
+  runtime.quadBatchWriterCount++;
 }
 
 export const defaultWgpuTextLabelRenderer: Scene2DRenderer = {

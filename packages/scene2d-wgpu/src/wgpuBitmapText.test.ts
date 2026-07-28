@@ -4,7 +4,7 @@ import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-
 import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 
 import { defaultWgpuBitmapTextRenderer } from './wgpuBitmapText';
-import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
+import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
 
 beforeAll(() => {
   installWgpuMock();
@@ -29,7 +29,7 @@ describe('defaultWgpuBitmapTextRenderer.submit', () => {
 
     expect(() => {
       defaultWgpuBitmapTextRenderer.submit(state, renderProxy);
-      flushWgpuSpriteBatch(state as never);
+      flushWgpuQuadBatchWriter(state as never);
     }).not.toThrow();
     submitWgpuRenderPass(state);
   });

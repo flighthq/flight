@@ -6,10 +6,10 @@ import type { ColorScaleBias } from '@flighthq/types/contract';
 
 import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature';
 import {
-  flushWgpuSpriteBatch,
-  prepareWgpuSpriteBatchWrite,
-  recordWgpuSpriteBatchColorScaleBias,
-} from './wgpuSpriteBatch';
+  flushWgpuQuadBatchWriter,
+  prepareWgpuQuadBatchWrite,
+  recordWgpuQuadBatchColorScaleBias,
+} from './wgpuQuadBatchWriter';
 import { standardWgpuMaterialRenderer } from './wgpuStandardMaterial';
 
 beforeAll(() => {
@@ -67,11 +67,11 @@ describe('registerWgpuColorAdjustmentMaterialFeature', () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
     registerWgpuColorAdjustmentMaterialFeature(state);
-    recordWgpuSpriteBatchColorScaleBias(state, null, 0);
-    recordWgpuSpriteBatchColorScaleBias(state, null, 1);
-    expect(runtime.spriteBatchColorScaleBiasMode).toBe(CT_MODE_NONE);
-    expect(runtime.spriteBatchColorTintData).toBeUndefined();
-    expect(runtime.spriteBatchColorScaleBiasData).toBeUndefined();
+    recordWgpuQuadBatchColorScaleBias(state, null, 0);
+    recordWgpuQuadBatchColorScaleBias(state, null, 1);
+    expect(runtime.quadBatchWriterColorScaleBiasMode).toBe(CT_MODE_NONE);
+    expect(runtime.quadBatchWriterColorTintData).toBeUndefined();
+    expect(runtime.quadBatchWriterColorScaleBiasData).toBeUndefined();
   });
 
   it('uses one whole-batch uniform when every instance shares one tint', async () => {
@@ -79,33 +79,33 @@ describe('registerWgpuColorAdjustmentMaterialFeature', () => {
     const runtime = getWgpuRenderStateRuntime(state);
     registerWgpuColorAdjustmentMaterialFeature(state);
     const tint = ct(0.5);
-    recordWgpuSpriteBatchColorScaleBias(state, tint, 0);
-    recordWgpuSpriteBatchColorScaleBias(state, tint, 1);
-    expect(runtime.spriteBatchColorScaleBiasMode).toBe(CT_MODE_UNIFORM);
-    expect(runtime.spriteBatchUniformColorScaleBias).toBe(tint);
+    recordWgpuQuadBatchColorScaleBias(state, tint, 0);
+    recordWgpuQuadBatchColorScaleBias(state, tint, 1);
+    expect(runtime.quadBatchWriterColorScaleBiasMode).toBe(CT_MODE_UNIFORM);
+    expect(runtime.quadBatchWriterUniformColorScaleBias).toBe(tint);
   });
 
   it('promotes varying multiply-only tints to packed RGBA8 without splitting', async () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
     registerWgpuColorAdjustmentMaterialFeature(state);
-    recordWgpuSpriteBatchColorScaleBias(state, ct(0.5), 0);
-    recordWgpuSpriteBatchColorScaleBias(state, ct(0.25), 1);
-    expect(runtime.spriteBatchColorScaleBiasMode).toBe(CT_MODE_PACKED_TINT);
-    expect(Array.from(new Uint8Array(runtime.spriteBatchColorTintData!.buffer, 0, 8))).toEqual([
+    recordWgpuQuadBatchColorScaleBias(state, ct(0.5), 0);
+    recordWgpuQuadBatchColorScaleBias(state, ct(0.25), 1);
+    expect(runtime.quadBatchWriterColorScaleBiasMode).toBe(CT_MODE_PACKED_TINT);
+    expect(Array.from(new Uint8Array(runtime.quadBatchWriterColorTintData!.buffer, 0, 8))).toEqual([
       128, 255, 255, 255, 64, 255, 255, 255,
     ]);
-    expect(runtime.spriteBatchColorScaleBiasData).toBeUndefined();
+    expect(runtime.quadBatchWriterColorScaleBiasData).toBeUndefined();
   });
 
   it('promotes with identity fill when a tinted instance follows an untinted one', async () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
     registerWgpuColorAdjustmentMaterialFeature(state);
-    recordWgpuSpriteBatchColorScaleBias(state, null, 0);
-    recordWgpuSpriteBatchColorScaleBias(state, ct(0.5), 1);
-    expect(runtime.spriteBatchColorScaleBiasMode).toBe(CT_MODE_PACKED_TINT);
-    expect(Array.from(new Uint8Array(runtime.spriteBatchColorTintData!.buffer, 0, 8))).toEqual([
+    recordWgpuQuadBatchColorScaleBias(state, null, 0);
+    recordWgpuQuadBatchColorScaleBias(state, ct(0.5), 1);
+    expect(runtime.quadBatchWriterColorScaleBiasMode).toBe(CT_MODE_PACKED_TINT);
+    expect(Array.from(new Uint8Array(runtime.quadBatchWriterColorTintData!.buffer, 0, 8))).toEqual([
       255, 255, 255, 255, 128, 255, 255, 255,
     ]);
   });
@@ -116,12 +116,12 @@ describe('registerWgpuColorAdjustmentMaterialFeature', () => {
     renderWgpuBackground(state);
     const runtime = getWgpuRenderStateRuntime(state);
     const tex = createImageResource(document.createElement('img'));
-    prepareWgpuSpriteBatchWrite(state, tex, null, null, standardWgpuMaterialRenderer, 2);
-    recordWgpuSpriteBatchColorScaleBias(state, ct(0.5), 0);
-    recordWgpuSpriteBatchColorScaleBias(state, ct(0.5), 1);
-    runtime.spriteBatchCount = 2;
-    flushWgpuSpriteBatch(state);
-    expect(Array.from(new Uint8Array(runtime.spriteBatchColorTintData!.buffer, 0, 8))).toEqual([
+    prepareWgpuQuadBatchWrite(state, tex, null, null, standardWgpuMaterialRenderer, 2);
+    recordWgpuQuadBatchColorScaleBias(state, ct(0.5), 0);
+    recordWgpuQuadBatchColorScaleBias(state, ct(0.5), 1);
+    runtime.quadBatchWriterCount = 2;
+    flushWgpuQuadBatchWriter(state);
+    expect(Array.from(new Uint8Array(runtime.quadBatchWriterColorTintData!.buffer, 0, 8))).toEqual([
       128, 255, 255, 255, 128, 255, 255, 255,
     ]);
     submitWgpuRenderPass(state);
@@ -131,10 +131,10 @@ describe('registerWgpuColorAdjustmentMaterialFeature', () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
     registerWgpuColorAdjustmentMaterialFeature(state);
-    recordWgpuSpriteBatchColorScaleBias(state, null, 0);
-    recordWgpuSpriteBatchColorScaleBias(state, { tint: 0x12345678 }, 1);
-    expect(runtime.spriteBatchColorScaleBiasMode).toBe(CT_MODE_PACKED_TINT);
-    expect(Array.from(new Uint8Array(runtime.spriteBatchColorTintData!.buffer, 4, 4))).toEqual([
+    recordWgpuQuadBatchColorScaleBias(state, null, 0);
+    recordWgpuQuadBatchColorScaleBias(state, { tint: 0x12345678 }, 1);
+    expect(runtime.quadBatchWriterColorScaleBiasMode).toBe(CT_MODE_PACKED_TINT);
+    expect(Array.from(new Uint8Array(runtime.quadBatchWriterColorTintData!.buffer, 4, 4))).toEqual([
       0x12, 0x34, 0x56, 0x78,
     ]);
   });
@@ -143,23 +143,23 @@ describe('registerWgpuColorAdjustmentMaterialFeature', () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
     registerWgpuColorAdjustmentMaterialFeature(state);
-    recordWgpuSpriteBatchColorScaleBias(state, { tint: 0x808080ff }, 0);
-    recordWgpuSpriteBatchColorScaleBias(state, ct(1, 1, 1, 1, 1), 1);
-    expect(runtime.spriteBatchColorScaleBiasMode).toBe(CT_MODE_PER_INSTANCE);
-    expect(runtime.spriteBatchColorScaleBiasData![0]).toBeCloseTo(128 / 255);
-    expect(runtime.spriteBatchColorScaleBiasData![12]).toBe(1);
+    recordWgpuQuadBatchColorScaleBias(state, { tint: 0x808080ff }, 0);
+    recordWgpuQuadBatchColorScaleBias(state, ct(1, 1, 1, 1, 1), 1);
+    expect(runtime.quadBatchWriterColorScaleBiasMode).toBe(CT_MODE_PER_INSTANCE);
+    expect(runtime.quadBatchWriterColorScaleBiasData![0]).toBeCloseTo(128 / 255);
+    expect(runtime.quadBatchWriterColorScaleBiasData![12]).toBe(1);
   });
 
   it('widens to a 20-float matrix stream only when channel mixing appears', async () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
     registerWgpuColorAdjustmentMaterialFeature(state);
-    recordWgpuSpriteBatchColorScaleBias(state, { tint: 0x808080ff }, 0);
-    recordWgpuSpriteBatchColorScaleBias(state, MIX_RED_GREEN, 1);
-    expect(runtime.spriteBatchColorScaleBiasMode).toBe(CT_MODE_MATRIX);
-    expect(runtime.spriteBatchColorMatrixData![0]).toBeCloseTo(128 / 255);
-    expect(runtime.spriteBatchColorMatrixData![20]).toBe(1);
-    expect(runtime.spriteBatchColorMatrixData![21]).toBe(0.5);
-    expect(runtime.spriteBatchColorMatrixData![36]).toBe(0.25);
+    recordWgpuQuadBatchColorScaleBias(state, { tint: 0x808080ff }, 0);
+    recordWgpuQuadBatchColorScaleBias(state, MIX_RED_GREEN, 1);
+    expect(runtime.quadBatchWriterColorScaleBiasMode).toBe(CT_MODE_MATRIX);
+    expect(runtime.quadBatchWriterColorMatrixData![0]).toBeCloseTo(128 / 255);
+    expect(runtime.quadBatchWriterColorMatrixData![20]).toBe(1);
+    expect(runtime.quadBatchWriterColorMatrixData![21]).toBe(0.5);
+    expect(runtime.quadBatchWriterColorMatrixData![36]).toBe(0.25);
   });
 });

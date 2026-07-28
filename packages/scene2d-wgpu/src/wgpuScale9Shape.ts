@@ -17,10 +17,10 @@ import type {
   WgpuTextureEntry,
 } from '@flighthq/types/contract';
 
+import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
 import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
 import { buildWgpuScale9Mapper } from './wgpuScale9Mapper';
 import { drawWgpuShape } from './wgpuShape';
-import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
 
 // Scale9 rasterizes its remapped shape commands to a 2D canvas at the scaled size, uploads that as a
 // per-node GPU texture, and draws a quad with the scale stripped from the transform (the size is
@@ -64,7 +64,7 @@ export function destroyWgpuScale9ShapeData(_state: RenderState, data: RendererDa
 export function drawWgpuScale9Shape(state: WgpuRenderState, renderProxy: RenderProxy2D): void {
   const runtime = getWgpuRenderStateRuntime(state);
   if (runtime.renderPass === null) return;
-  flushWgpuSpriteBatch(state);
+  flushWgpuQuadBatchWriter(state);
 
   const source = renderProxy.source as Scale9Shape;
   const { commands, scale9Grid } = source.data;

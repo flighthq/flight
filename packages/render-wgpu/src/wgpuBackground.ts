@@ -40,9 +40,9 @@ export function beginWgpuFrame(state: WgpuRenderState): void {
 
   runtime.commandEncoder = state.device.createCommandEncoder();
   runtime.uniformOffset = 0;
-  // Reclaim the sprite-batch buffer pool from the start of the frame; last frame's submit has been
+  // Reclaim the quad-batch writer buffer pool from the start of the frame; last frame's submit has been
   // queued, so its slots are safe to overwrite.
-  runtime.spriteBatchBufferCursor = 0;
+  runtime.quadBatchWriterBufferCursor = 0;
   runtime.currentBlendMode = null;
   runtime.currentRenderTarget = null;
   runtime.currentMaskDepth = 0;

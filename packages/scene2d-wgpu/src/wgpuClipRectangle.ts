@@ -1,11 +1,11 @@
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { MatrixLike, RectangleLike, WgpuRenderState, WgpuScissorRect } from '@flighthq/types/contract';
 
-import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
+import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
 
 export function popWgpuClipRectangle(state: WgpuRenderState): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  flushWgpuSpriteBatch(state);
+  flushWgpuQuadBatchWriter(state);
   const stack = runtime.scissorStack;
   stack.pop();
   const previous = stack.length > 0 ? stack[stack.length - 1] : null;
@@ -31,7 +31,7 @@ export function pushWgpuClipRectangle(
   transform: Readonly<MatrixLike>,
 ): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  flushWgpuSpriteBatch(state);
+  flushWgpuQuadBatchWriter(state);
   const next = intersectWgpuScissorRect(
     runtime.currentScissorRect ?? null,
     computeWgpuScissorRect(state, rect, transform),

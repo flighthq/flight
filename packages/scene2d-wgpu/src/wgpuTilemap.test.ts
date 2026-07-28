@@ -3,7 +3,7 @@ import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-
 import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { createTilemap } from '@flighthq/tilemap/contract';
 
-import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
+import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
 import { defaultWgpuTilemapRenderer } from './wgpuTilemap';
 
 beforeAll(() => {
@@ -31,7 +31,7 @@ describe('defaultWgpuTilemapRenderer.submit', () => {
 
     expect(() => {
       defaultWgpuTilemapRenderer.submit(state, renderProxy);
-      flushWgpuSpriteBatch(state as any);
+      flushWgpuQuadBatchWriter(state as any);
     }).not.toThrow();
     submitWgpuRenderPass(state);
   });

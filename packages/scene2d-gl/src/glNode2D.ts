@@ -3,7 +3,7 @@ import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@fligh
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
 import type { Node2D, Scene2DRenderer, GlRenderState, RenderProxy2D } from '@flighthq/types/contract';
 
-import { flushGlSpriteBatch } from './glSpriteBatch';
+import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 
 export function drawGlScene2D(_state: GlRenderState, _renderProxy: RenderProxy2D): void {
   // Plain display objects have no visual geometry of their own.
@@ -40,7 +40,7 @@ export function renderGlScene2D(state: GlRenderState, source: Node2D): void {
     }
   }
 
-  flushGlSpriteBatch(state);
+  flushGlQuadBatchWriter(state);
   clipHooks?.finalize(state);
 }
 

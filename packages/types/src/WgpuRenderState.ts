@@ -134,39 +134,39 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   particleInstanceData: Float32Array | null;
   particleInstanceCapacity: number;
 
-  // Universal sprite batch (cross-node batching for Sprite/QuadBatch/Tilemap). The flush key is the
+  // Universal quad-batch writer (cross-node batching for Sprite/QuadBatch/Tilemap). The flush key is the
   // material (by reference); the resolved renderer appends its per-instance floats into the material
   // storage buffer.
-  spriteBatchBlendMode: BlendMode | null;
-  spriteBatchMaterial: Material | null;
-  spriteBatchMaterialRenderer: WgpuMaterialRenderer | null;
-  spriteBatchMaterialFloats: number;
-  spriteBatchCount: number;
-  spriteBatchInstanceData: Float32Array;
+  quadBatchWriterBlendMode: BlendMode | null;
+  quadBatchWriterMaterial: Material | null;
+  quadBatchWriterMaterialRenderer: WgpuMaterialRenderer | null;
+  quadBatchWriterMaterialFloats: number;
+  quadBatchWriterCount: number;
+  quadBatchWriterInstanceData: Float32Array;
   // Parallel per-instance material data (instanceFloatCount floats per instance), written by the
   // active material's packInstance. Separate from the base instance data so the base layout carries
   // no material concern.
-  spriteBatchMaterialData: Float32Array;
-  spriteBatchTexture: ImageResource | Texture | null;
+  quadBatchWriterMaterialData: Float32Array;
+  quadBatchWriterTexture: ImageResource | Texture | null;
   // Transitional sampling key for legacy atlas/image writers. A Texture carries its sampler directly.
-  spriteBatchSmoothing: boolean | null;
-  // Color-adjustment fold state for the active sprite batch, owned by the opt-in
+  quadBatchWriterSmoothing: boolean | null;
+  // Color-adjustment fold state for the active quad-batch writer, owned by the opt-in
   // registerWgpuColorAdjustmentMaterialFeature (absent until then, so a state that never tints allocates none of it).
   // Orthogonal to the material and never a flush key, so tinted and untinted nodes with the same
   // texture+blend share one batch. Mode 0 = no tint (base module), 2 = per-instance tints. A batch
   // promotes to 2 when any member is tinted, back-filling untinted members with identity — attaching a
   // tint only promotes a batch, never splits it. Wgpu realizes every tint through the per-instance
-  // storage buffer (spriteBatchColorScaleBiasData, 8 floats per instance): a whole-batch tint is the
+  // storage buffer (quadBatchWriterColorScaleBiasData, 8 floats per instance): a whole-batch tint is the
   // same value on each instance; it has no separate hardware-uniform path (the GL u_colorScale path does).
-  // spriteBatchUniformColorScaleBias holds the shared value while a batch stays whole-batch uniform,
+  // quadBatchWriterUniformColorScaleBias holds the shared value while a batch stays whole-batch uniform,
   // deferring the per-instance fill until (and if) tints diverge.
-  spriteBatchColorScaleBiasMode?: number;
-  spriteBatchUniformColorScaleBias?: ColorScaleBias | TintMaterialData | readonly number[] | null;
-  spriteBatchColorScaleBiasData?: Float32Array;
-  spriteBatchColorMatrixData?: Float32Array;
-  spriteBatchColorTintData?: Uint32Array;
+  quadBatchWriterColorScaleBiasMode?: number;
+  quadBatchWriterUniformColorScaleBias?: ColorScaleBias | TintMaterialData | readonly number[] | null;
+  quadBatchWriterColorScaleBiasData?: Float32Array;
+  quadBatchWriterColorMatrixData?: Float32Array;
+  quadBatchWriterColorTintData?: Uint32Array;
   // The opt-in color-adjustment fold and its guard, both null until registerWgpuColorAdjustmentMaterialFeature /
-  // enableWgpuColorAdjustmentGuards installs them. recordWgpuSpriteBatchColorScaleBias reaches the fold
+  // enableWgpuColorAdjustmentGuards installs them. recordWgpuQuadBatchColorScaleBias reaches the fold
   // only through this slot, so the base batch statically references neither its WGSL nor a message.
   wgpuColorAdjustmentMaterialFeature?: WgpuColorAdjustmentMaterialFeature | null;
   wgpuColorAdjustmentMaterialFeatureGuard?:
@@ -181,8 +181,8 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // last flush's data — the whole batch collapsing onto one position. Each flush claims a distinct
   // slot instead; the cursor resets per frame and slots are reused across frames, which is safe
   // because a frame's writeBuffer is queued after the previous frame's submit completes.
-  spriteBatchBufferPool: WgpuSpriteBatchBufferSlot[];
-  spriteBatchBufferCursor: number;
+  quadBatchWriterBufferPool: WgpuQuadBatchWriterBufferSlot[];
+  quadBatchWriterBufferCursor: number;
   materialRendererMap?: Map<Kind, WgpuMaterialRenderer>;
 
   // 3D scene mesh-material seam, owned by scene-wgpu (filled lazily by
@@ -345,7 +345,7 @@ export interface WgpuShapeMeshPipeline {
 // One pool slot's GPU buffers, sized lazily and grown by allocating a replacement (the superseded
 // buffer is released to GC, never destroyed mid-life, since a prior frame's submit may still
 // reference it). materialBuffer stays null until a flush with per-instance material data uses it.
-export interface WgpuSpriteBatchBufferSlot {
+export interface WgpuQuadBatchWriterBufferSlot {
   instanceBuffer: GPUBuffer | null;
   instanceCapacity: number;
   materialBuffer: GPUBuffer | null;

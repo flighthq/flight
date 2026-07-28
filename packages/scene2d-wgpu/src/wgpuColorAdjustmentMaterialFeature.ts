@@ -8,18 +8,18 @@ import type {
   TintMaterialData,
 } from '@flighthq/types/contract';
 
-import { getWgpuQuadBatchPreludeWGSL } from './wgpuSpriteBatch';
+import { getWgpuQuadBatchPreludeWGSL } from './wgpuQuadBatchWriter';
 
 // Enables the opt-in inline color-adjustment fold on a WebGPU render state: the fused-color-matrix
 // scene2d the sprite/quad batch draws through so a color adjustment (and, later, other pointwise
 // adjustments) folds into the batch as per-instance storage data at @group(3) — replicated across the
 // batch for a whole-batch tint, or varied per instance — without ever splitting the batch. Until a
 // state calls this, its batch renderer carries none of this module's WGSL (it tree-shakes out) and
-// recordWgpuSpriteBatchColorScaleBias silently skips every tint. Idempotent; safe to call per state.
+// recordWgpuQuadBatchColorScaleBias silently skips every tint. Idempotent; safe to call per state.
 export function registerWgpuColorAdjustmentMaterialFeature(state: WgpuRenderState): void {
   const runtime = getWgpuRenderStateRuntime(state);
   runtime.wgpuColorAdjustmentMaterialFeature = wgpuColorAdjustmentMaterialFeature;
-  if (runtime.spriteBatchColorScaleBiasMode === undefined) runtime.spriteBatchColorScaleBiasMode = CT_MODE_NONE;
+  if (runtime.quadBatchWriterColorScaleBiasMode === undefined) runtime.quadBatchWriterColorScaleBiasMode = CT_MODE_NONE;
 }
 
 // Per-instance color-adjustment data (8 floats = 4 scale + 4 bias). Wgpu carries every tint
@@ -28,7 +28,7 @@ export function registerWgpuColorAdjustmentMaterialFeature(state: WgpuRenderStat
 const COLOR_SCALE_BIAS_FLOATS = 8;
 const COLOR_MATRIX_FLOATS = 20;
 
-// Color-adjustment fold modes for the active sprite batch. NONE keeps the base module; UNIFORM defers
+// Color-adjustment fold modes for the active quad-batch writer. NONE keeps the base module; UNIFORM defers
 // per-instance fill while one tint covers the whole batch; PER_INSTANCE packs a tint per instance.
 const CT_MODE_NONE = 0;
 const CT_MODE_UNIFORM = 1;
@@ -66,7 +66,7 @@ function recordWgpuColorAdjustment(
   colorScaleBias: ColorAdjustmentData | null | undefined,
   instanceIndex: number,
 ): void {
-  const mode = runtime.spriteBatchColorScaleBiasMode ?? CT_MODE_NONE;
+  const mode = runtime.quadBatchWriterColorScaleBiasMode ?? CT_MODE_NONE;
   const tint = colorScaleBias ?? null;
 
   if (mode === CT_MODE_MATRIX) {
@@ -77,40 +77,40 @@ function recordWgpuColorAdjustment(
   if (mode === CT_MODE_NONE) {
     if (tint === null) return;
     if (instanceIndex === 0) {
-      runtime.spriteBatchColorScaleBiasMode = CT_MODE_UNIFORM;
-      runtime.spriteBatchUniformColorScaleBias = tint;
+      runtime.quadBatchWriterColorScaleBiasMode = CT_MODE_UNIFORM;
+      runtime.quadBatchWriterUniformColorScaleBias = tint;
       return;
     }
     if (isColorMatrixData(tint)) {
-      promoteWgpuSpriteBatchColorScaleBiasToMatrix(runtime, instanceIndex, null);
+      promoteWgpuQuadBatchWriterColorScaleBiasToMatrix(runtime, instanceIndex, null);
       writeWgpuColorMatrixInstance(runtime, tint, instanceIndex);
       return;
     }
     const packedTint = getPackedTint(tint);
     if (packedTint !== null) {
-      promoteWgpuSpriteBatchColorScaleBiasToPackedTint(runtime, instanceIndex, null);
+      promoteWgpuQuadBatchWriterColorScaleBiasToPackedTint(runtime, instanceIndex, null);
       writeWgpuPackedTintInstance(runtime, packedTint, instanceIndex);
     } else {
-      promoteWgpuSpriteBatchColorScaleBiasToPerInstance(runtime, instanceIndex, null);
+      promoteWgpuQuadBatchWriterColorScaleBiasToPerInstance(runtime, instanceIndex, null);
       writeWgpuColorScaleBiasInstance(runtime, tint, instanceIndex);
     }
     return;
   }
 
   if (mode === CT_MODE_UNIFORM) {
-    const uniform = runtime.spriteBatchUniformColorScaleBias ?? null;
+    const uniform = runtime.quadBatchWriterUniformColorScaleBias ?? null;
     if (equalsRecordedColorScaleBias(tint, uniform)) return;
     if (isColorMatrixData(tint) || (uniform !== null && isColorMatrixData(uniform))) {
-      promoteWgpuSpriteBatchColorScaleBiasToMatrix(runtime, instanceIndex, uniform);
+      promoteWgpuQuadBatchWriterColorScaleBiasToMatrix(runtime, instanceIndex, uniform);
       writeWgpuColorMatrixInstance(runtime, tint, instanceIndex);
       return;
     }
     const packedTint = getPackedTint(tint);
     if (getPackedTint(uniform) !== null && packedTint !== null) {
-      promoteWgpuSpriteBatchColorScaleBiasToPackedTint(runtime, instanceIndex, uniform);
+      promoteWgpuQuadBatchWriterColorScaleBiasToPackedTint(runtime, instanceIndex, uniform);
       writeWgpuPackedTintInstance(runtime, packedTint, instanceIndex);
     } else {
-      promoteWgpuSpriteBatchColorScaleBiasToPerInstance(runtime, instanceIndex, uniform);
+      promoteWgpuQuadBatchWriterColorScaleBiasToPerInstance(runtime, instanceIndex, uniform);
       writeWgpuColorScaleBiasInstance(runtime, tint, instanceIndex);
     }
     return;
@@ -142,49 +142,49 @@ function recordWgpuColorAdjustment(
 
 // Resolves the active batch's folded realization: replicates a whole-batch uniform tint across the
 // batch, then returns the per-instance storage data + the folded shader module. Returns null when the
-// batch carried no tint, so flushWgpuSpriteBatch runs the lean material path. Resets the fold mode for
+// batch carried no tint, so flushWgpuQuadBatchWriter runs the lean material path. Resets the fold mode for
 // the next batch.
 function resolveWgpuColorAdjustmentFlush(state: WgpuRenderState, count: number): WgpuColorAdjustmentFlush | null {
   const runtime = getWgpuRenderStateRuntime(state);
-  const ctMode = runtime.spriteBatchColorScaleBiasMode ?? CT_MODE_NONE;
+  const ctMode = runtime.quadBatchWriterColorScaleBiasMode ?? CT_MODE_NONE;
   if (ctMode === CT_MODE_NONE) return null;
   if (ctMode === CT_MODE_UNIFORM) {
-    const uniform = runtime.spriteBatchUniformColorScaleBias!;
+    const uniform = runtime.quadBatchWriterUniformColorScaleBias!;
     if (isColorMatrixData(uniform)) {
-      runtime.spriteBatchColorScaleBiasMode = CT_MODE_MATRIX;
-      fillWgpuSpriteBatchUniformColorMatrix(runtime, uniform, count);
+      runtime.quadBatchWriterColorScaleBiasMode = CT_MODE_MATRIX;
+      fillWgpuQuadBatchWriterUniformColorMatrix(runtime, uniform, count);
     } else {
       const packedTint = getPackedTint(uniform);
       if (packedTint !== null) {
-        runtime.spriteBatchColorScaleBiasMode = CT_MODE_PACKED_TINT;
-        fillWgpuSpriteBatchUniformPackedTint(runtime, packedTint, count);
+        runtime.quadBatchWriterColorScaleBiasMode = CT_MODE_PACKED_TINT;
+        fillWgpuQuadBatchWriterUniformPackedTint(runtime, packedTint, count);
       } else {
-        runtime.spriteBatchColorScaleBiasMode = CT_MODE_PER_INSTANCE;
-        fillWgpuSpriteBatchUniformColorScaleBias(runtime, uniform, count);
+        runtime.quadBatchWriterColorScaleBiasMode = CT_MODE_PER_INSTANCE;
+        fillWgpuQuadBatchWriterUniformColorScaleBias(runtime, uniform, count);
       }
     }
   }
-  const resolvedMode = runtime.spriteBatchColorScaleBiasMode;
-  runtime.spriteBatchColorScaleBiasMode = CT_MODE_NONE;
-  runtime.spriteBatchUniformColorScaleBias = null;
+  const resolvedMode = runtime.quadBatchWriterColorScaleBiasMode;
+  runtime.quadBatchWriterColorScaleBiasMode = CT_MODE_NONE;
+  runtime.quadBatchWriterUniformColorScaleBias = null;
   if (resolvedMode === CT_MODE_PACKED_TINT) {
     return {
-      data: runtime.spriteBatchColorTintData!,
+      data: runtime.quadBatchWriterColorTintData!,
       floats: 1,
-      module: getWgpuSpriteBatchPackedTintModule(state),
+      module: getWgpuQuadBatchWriterPackedTintModule(state),
     };
   }
   if (resolvedMode === CT_MODE_MATRIX) {
     return {
-      data: runtime.spriteBatchColorMatrixData!,
+      data: runtime.quadBatchWriterColorMatrixData!,
       floats: COLOR_MATRIX_FLOATS,
-      module: getWgpuSpriteBatchColorMatrixModule(state),
+      module: getWgpuQuadBatchWriterColorMatrixModule(state),
     };
   }
   return {
-    data: runtime.spriteBatchColorScaleBiasData!,
+    data: runtime.quadBatchWriterColorScaleBiasData!,
     floats: COLOR_SCALE_BIAS_FLOATS,
-    module: getWgpuSpriteBatchColorScaleBiasModule(state),
+    module: getWgpuQuadBatchWriterColorScaleBiasModule(state),
   };
 }
 
@@ -215,17 +215,17 @@ function equalsRecordedColorScaleBias(
 // Grows the color-adjustment data array to hold `floatsNeeded` floats, preserving already-recorded
 // per-instance data.
 function ensureWgpuColorScaleBiasCapacity(runtime: WgpuRenderStateRuntime, floatsNeeded: number): void {
-  const existing = runtime.spriteBatchColorScaleBiasData;
+  const existing = runtime.quadBatchWriterColorScaleBiasData;
   if (existing !== undefined && floatsNeeded <= existing.length) return;
   const newSize = Math.max(floatsNeeded, (existing?.length ?? 0) * 2, COLOR_SCALE_BIAS_FLOATS * 256);
   const grown = new Float32Array(newSize);
   if (existing !== undefined) grown.set(existing);
-  runtime.spriteBatchColorScaleBiasData = grown;
+  runtime.quadBatchWriterColorScaleBiasData = grown;
 }
 
 // Replicates a whole-batch uniform tint across `count` instances at flush time — Wgpu has no separate
 // hardware-uniform tint path, so a uniform is the same value on every instance of the storage buffer.
-function fillWgpuSpriteBatchUniformColorScaleBias(
+function fillWgpuQuadBatchWriterUniformColorScaleBias(
   runtime: WgpuRenderStateRuntime,
   colorScaleBias: Readonly<ColorScaleBias | TintMaterialData>,
   count: number,
@@ -234,11 +234,11 @@ function fillWgpuSpriteBatchUniformColorScaleBias(
   for (let i = 0; i < count; i++) writeWgpuColorScaleBiasInstance(runtime, colorScaleBias, i);
 }
 
-function fillWgpuSpriteBatchUniformPackedTint(runtime: WgpuRenderStateRuntime, rgba: number, count: number): void {
+function fillWgpuQuadBatchWriterUniformPackedTint(runtime: WgpuRenderStateRuntime, rgba: number, count: number): void {
   for (let i = 0; i < count; i++) writeWgpuPackedTintInstance(runtime, rgba, i);
 }
 
-function fillWgpuSpriteBatchUniformColorMatrix(
+function fillWgpuQuadBatchWriterUniformColorMatrix(
   runtime: WgpuRenderStateRuntime,
   matrix: readonly number[],
   count: number,
@@ -246,11 +246,11 @@ function fillWgpuSpriteBatchUniformColorMatrix(
   for (let i = 0; i < count; i++) writeWgpuColorMatrixInstance(runtime, matrix, i);
 }
 
-// The folded per-instance color-adjustment shader module (cached per device): the base sprite-batch
+// The folded per-instance color-adjustment shader module (cached per device): the base quad-batch writer
 // prelude plus a scene2d that reads 8 per-instance floats from the material storage buffer (@group(3))
 // and applies `color * mult + offset` in unpremultiplied space. Reused verbatim from the former
 // color-adjustment material so premultiplied-alpha handling is unchanged.
-function getWgpuSpriteBatchColorScaleBiasModule(state: WgpuRenderState): GPUShaderModule {
+function getWgpuQuadBatchWriterColorScaleBiasModule(state: WgpuRenderState): GPUShaderModule {
   const cached = _colorScaleBiasModules.get(state.device);
   if (cached !== undefined) return cached;
   const module = state.device.createShaderModule({
@@ -260,7 +260,7 @@ function getWgpuSpriteBatchColorScaleBiasModule(state: WgpuRenderState): GPUShad
   return module;
 }
 
-function getWgpuSpriteBatchPackedTintModule(state: WgpuRenderState): GPUShaderModule {
+function getWgpuQuadBatchWriterPackedTintModule(state: WgpuRenderState): GPUShaderModule {
   const cached = _packedTintModules.get(state.device);
   if (cached !== undefined) return cached;
   const module = state.device.createShaderModule({
@@ -270,7 +270,7 @@ function getWgpuSpriteBatchPackedTintModule(state: WgpuRenderState): GPUShaderMo
   return module;
 }
 
-function getWgpuSpriteBatchColorMatrixModule(state: WgpuRenderState): GPUShaderModule {
+function getWgpuQuadBatchWriterColorMatrixModule(state: WgpuRenderState): GPUShaderModule {
   const cached = _colorMatrixModules.get(state.device);
   if (cached !== undefined) return cached;
   const module = state.device.createShaderModule({
@@ -282,48 +282,48 @@ function getWgpuSpriteBatchColorMatrixModule(state: WgpuRenderState): GPUShaderM
 
 // Switches the batch to per-instance mode and back-fills every already-recorded instance
 // [0, instanceCount) with `fill` (a prior uniform value, or null → identity).
-function promoteWgpuSpriteBatchColorScaleBiasToPerInstance(
+function promoteWgpuQuadBatchWriterColorScaleBiasToPerInstance(
   runtime: WgpuRenderStateRuntime,
   instanceCount: number,
   fill: Readonly<ColorScaleBias | TintMaterialData> | null,
 ): void {
-  runtime.spriteBatchColorScaleBiasMode = CT_MODE_PER_INSTANCE;
+  runtime.quadBatchWriterColorScaleBiasMode = CT_MODE_PER_INSTANCE;
   for (let i = 0; i < instanceCount; i++) writeWgpuColorScaleBiasInstance(runtime, fill, i);
 }
 
-function promoteWgpuSpriteBatchColorScaleBiasToPackedTint(
+function promoteWgpuQuadBatchWriterColorScaleBiasToPackedTint(
   runtime: WgpuRenderStateRuntime,
   instanceCount: number,
   fill: Readonly<ColorScaleBias | TintMaterialData> | null,
 ): void {
-  runtime.spriteBatchColorScaleBiasMode = CT_MODE_PACKED_TINT;
+  runtime.quadBatchWriterColorScaleBiasMode = CT_MODE_PACKED_TINT;
   for (let i = 0; i < instanceCount; i++) writeWgpuPackedTintInstance(runtime, getPackedTint(fill)!, i);
 }
 
 function promoteWgpuPackedTintToColorScaleBias(runtime: WgpuRenderStateRuntime, instanceCount: number): void {
-  runtime.spriteBatchColorScaleBiasMode = CT_MODE_PER_INSTANCE;
-  const packed = runtime.spriteBatchColorTintData!;
+  runtime.quadBatchWriterColorScaleBiasMode = CT_MODE_PER_INSTANCE;
+  const packed = runtime.quadBatchWriterColorTintData!;
   for (let i = 0; i < instanceCount; i++) writeWgpuNativePackedTintAsColorScaleBias(runtime, packed[i], i);
 }
 
-function promoteWgpuSpriteBatchColorScaleBiasToMatrix(
+function promoteWgpuQuadBatchWriterColorScaleBiasToMatrix(
   runtime: WgpuRenderStateRuntime,
   instanceCount: number,
   fill: Readonly<ColorAdjustmentData> | null,
 ): void {
-  runtime.spriteBatchColorScaleBiasMode = CT_MODE_MATRIX;
+  runtime.quadBatchWriterColorScaleBiasMode = CT_MODE_MATRIX;
   for (let i = 0; i < instanceCount; i++) writeWgpuColorMatrixInstance(runtime, fill, i);
 }
 
 function promoteWgpuPackedTintToColorMatrix(runtime: WgpuRenderStateRuntime, instanceCount: number): void {
-  const packed = runtime.spriteBatchColorTintData!;
-  runtime.spriteBatchColorScaleBiasMode = CT_MODE_MATRIX;
+  const packed = runtime.quadBatchWriterColorTintData!;
+  runtime.quadBatchWriterColorScaleBiasMode = CT_MODE_MATRIX;
   for (let i = 0; i < instanceCount; i++) writeWgpuNativePackedTintAsColorMatrix(runtime, packed[i], i);
 }
 
 function promoteWgpuColorScaleBiasToMatrix(runtime: WgpuRenderStateRuntime, instanceCount: number): void {
-  const affine = runtime.spriteBatchColorScaleBiasData!;
-  runtime.spriteBatchColorScaleBiasMode = CT_MODE_MATRIX;
+  const affine = runtime.quadBatchWriterColorScaleBiasData!;
+  runtime.quadBatchWriterColorScaleBiasMode = CT_MODE_MATRIX;
   for (let i = 0; i < instanceCount; i++) {
     writeWgpuAffineValuesAsColorMatrix(runtime, affine, i * COLOR_SCALE_BIAS_FLOATS, i);
   }
@@ -338,7 +338,7 @@ function writeWgpuColorScaleBiasInstance(
 ): void {
   const offset = instanceIndex * COLOR_SCALE_BIAS_FLOATS;
   ensureWgpuColorScaleBiasCapacity(runtime, offset + COLOR_SCALE_BIAS_FLOATS);
-  const out = runtime.spriteBatchColorScaleBiasData!;
+  const out = runtime.quadBatchWriterColorScaleBiasData!;
   if (colorScaleBias !== null) {
     for (let channel = 0; channel < 4; channel++) {
       out[offset + channel] = getColorScale(colorScaleBias, channel);
@@ -362,14 +362,14 @@ function writeWgpuColorMatrixInstance(
   instanceIndex: number,
 ): void {
   const offset = instanceIndex * COLOR_MATRIX_FLOATS;
-  let out = runtime.spriteBatchColorMatrixData;
+  let out = runtime.quadBatchWriterColorMatrixData;
   if (out === undefined) {
     out = new Float32Array(COLOR_MATRIX_FLOATS * 256);
-    runtime.spriteBatchColorMatrixData = out;
+    runtime.quadBatchWriterColorMatrixData = out;
   } else if (offset + COLOR_MATRIX_FLOATS > out.length) {
     const grown = new Float32Array(Math.max(offset + COLOR_MATRIX_FLOATS, out.length * 2));
     grown.set(out);
-    runtime.spriteBatchColorMatrixData = grown;
+    runtime.quadBatchWriterColorMatrixData = grown;
     out = grown;
   }
   if (adjustment === null) {
@@ -404,7 +404,7 @@ function writeWgpuNativePackedTintAsColorMatrix(
   instanceIndex: number,
 ): void {
   writeWgpuColorMatrixInstance(runtime, null, instanceIndex);
-  const out = runtime.spriteBatchColorMatrixData!;
+  const out = runtime.quadBatchWriterColorMatrixData!;
   const offset = instanceIndex * COLOR_MATRIX_FLOATS;
   out[offset] = (nativeWord & 0xff) / 255;
   out[offset + 5] = ((nativeWord >>> 8) & 0xff) / 255;
@@ -419,7 +419,7 @@ function writeWgpuAffineValuesAsColorMatrix(
   instanceIndex: number,
 ): void {
   writeWgpuColorMatrixInstance(runtime, null, instanceIndex);
-  const out = runtime.spriteBatchColorMatrixData!;
+  const out = runtime.quadBatchWriterColorMatrixData!;
   const offset = instanceIndex * COLOR_MATRIX_FLOATS;
   for (let channel = 0; channel < 4; channel++) {
     out[offset + channel * 4 + channel] = affine[affineOffset + channel]!;
@@ -428,14 +428,14 @@ function writeWgpuAffineValuesAsColorMatrix(
 }
 
 function writeWgpuPackedTintInstance(runtime: WgpuRenderStateRuntime, rgba: number, instanceIndex: number): void {
-  let data = runtime.spriteBatchColorTintData;
+  let data = runtime.quadBatchWriterColorTintData;
   if (data === undefined) {
     data = new Uint32Array(256);
-    runtime.spriteBatchColorTintData = data;
+    runtime.quadBatchWriterColorTintData = data;
   } else if (instanceIndex >= data.length) {
     const grown = new Uint32Array(Math.max(instanceIndex + 1, data.length * 2));
     grown.set(data);
-    runtime.spriteBatchColorTintData = grown;
+    runtime.quadBatchWriterColorTintData = grown;
     data = grown;
   }
   data[instanceIndex] = rgbaToNativeByteWord(rgba);
@@ -448,7 +448,7 @@ function writeWgpuNativePackedTintAsColorScaleBias(
 ): void {
   const offset = instanceIndex * COLOR_SCALE_BIAS_FLOATS;
   writeWgpuColorScaleBiasInstance(runtime, null, instanceIndex);
-  const data = runtime.spriteBatchColorScaleBiasData!;
+  const data = runtime.quadBatchWriterColorScaleBiasData!;
   data[offset] = (nativeWord & 0xff) / 255;
   data[offset + 1] = ((nativeWord >>> 8) & 0xff) / 255;
   data[offset + 2] = ((nativeWord >>> 16) & 0xff) / 255;

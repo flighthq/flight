@@ -4,7 +4,7 @@ import type { BitmapText, GlyphEntry, GlyphSource, ImageResource, RenderProxy2D 
 
 import { defaultGlBitmapTextRenderer } from './glBitmapText';
 import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature';
-import { flushGlSpriteBatch } from './glSpriteBatch';
+import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 import { registerStandardGlMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 
@@ -59,7 +59,7 @@ describe('defaultGlBitmapTextRenderer.submit', () => {
     const { state, gl } = createGlState();
     registerStandardGlMaterial(state);
     defaultGlBitmapTextRenderer.submit(state, makeProxy(text));
-    flushGlSpriteBatch(state as never);
+    flushGlQuadBatchWriter(state as never);
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
     expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 2);
   });
@@ -70,7 +70,7 @@ describe('defaultGlBitmapTextRenderer.submit', () => {
     const { state, gl } = createGlState();
     registerStandardGlMaterial(state);
     defaultGlBitmapTextRenderer.submit(state, makeProxy(text));
-    flushGlSpriteBatch(state as never);
+    flushGlQuadBatchWriter(state as never);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
@@ -96,7 +96,7 @@ describe('defaultGlBitmapTextRenderer.submit', () => {
         alphaBias: 0,
       }),
     );
-    flushGlSpriteBatch(state as never);
+    flushGlQuadBatchWriter(state as never);
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
   });
 });

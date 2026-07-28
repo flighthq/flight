@@ -14,24 +14,24 @@ import type {
 } from '@flighthq/types/contract';
 import type { GlShapeMeshBinding } from '@flighthq/types/contract';
 
-import { drawGlShapeMeshBatch, ensureGlShapeMeshProgram } from './glShapeMesh';
 import {
   bindGlQuadBatchBaseAttributes,
   QUAD_BATCH_VS,
   setGlQuadBatchWorldAndTexture,
   useGlQuadBatchProgram,
-} from './glSpriteBatch';
+} from './glQuadBatchWriter';
+import { drawGlShapeMeshBatch, ensureGlShapeMeshProgram } from './glShapeMesh';
 
 // Enables the opt-in inline color-adjustment fold on a WebGL render state: the fused-color-matrix
 // scene2d the sprite/quad batch draws through so a color adjustment (and, later, other pointwise
 // adjustments) folds into the batch as data — a whole-batch uniform tint or per-instance
 // a_colorScale/a_colorBias attributes, chosen by data cardinality — without ever splitting the batch. Until a
 // state calls this, its batch renderer carries none of this module's shader code (it tree-shakes out)
-// and recordGlSpriteBatchColorScaleBias silently skips every tint. Idempotent; safe to call per state.
+// and recordGlQuadBatchColorScaleBias silently skips every tint. Idempotent; safe to call per state.
 export function registerGlColorAdjustmentMaterialFeature(state: GlRenderState): void {
   const runtime = getGlRenderStateRuntime(state);
   runtime.glColorAdjustmentMaterialFeature = glColorAdjustmentMaterialFeature;
-  if (runtime.spriteBatchColorScaleBiasMode === undefined) runtime.spriteBatchColorScaleBiasMode = CT_MODE_NONE;
+  if (runtime.quadBatchWriterColorScaleBiasMode === undefined) runtime.quadBatchWriterColorScaleBiasMode = CT_MODE_NONE;
 }
 
 // Per-instance color-adjustment layout (8 floats = 32 bytes): 4 scale + 4 bias, at attribute
@@ -41,7 +41,7 @@ const COLOR_SCALE_BIAS_STRIDE = COLOR_SCALE_BIAS_FLOATS * 4;
 const COLOR_MATRIX_FLOATS = 20;
 const COLOR_MATRIX_STRIDE = COLOR_MATRIX_FLOATS * 4;
 
-// Color-adjustment fold modes for the active sprite batch. NONE keeps the lean base shader; UNIFORM
+// Color-adjustment fold modes for the active quad-batch writer. NONE keeps the lean base shader; UNIFORM
 // binds one whole-batch tint; PER_INSTANCE packs a tint per instance. A batch starts at NONE, rises to
 // UNIFORM on the first tint, and promotes to PER_INSTANCE — back-filling already-written instances
 // with the prior value/identity — when tints diverge, so a tint only ever promotes a batch, never
@@ -272,7 +272,7 @@ void main() {
 
 // Binds the whole-batch (uniform) color-adjustment program and uploads the shared tint. Base
 // attributes come from the standard instance buffer; there is no per-instance tint data.
-function bindGlSpriteBatchUniformColorScaleBias(
+function bindGlQuadBatchWriterUniformColorScaleBias(
   state: GlRenderState,
   colorScaleBias: Readonly<ColorScaleBias | TintMaterialData>,
 ): void {
@@ -298,14 +298,14 @@ function bindGlSpriteBatchUniformColorScaleBias(
   bindGlQuadBatchBaseAttributes(state, shader.locCorner);
 }
 
-function bindGlSpriteBatchInstancedColorMatrix(state: GlRenderState): void {
+function bindGlQuadBatchWriterInstancedColorMatrix(state: GlRenderState): void {
   const runtime = getGlRenderStateRuntime(state);
   const shader = ensureGlColorMatrixInstancedShader(state);
   useGlQuadBatchProgram(state, shader.program);
   setGlQuadBatchWorldAndTexture(state, shader.locWorldMatrix, shader.locTexture, shader.locStraightTextureAlpha);
   bindGlQuadBatchBaseAttributes(state, shader.locCorner);
   const gl = state.gl;
-  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchColorScaleBiasBuffer!);
+  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchWriterColorScaleBiasBuffer!);
   for (let attribute = 0; attribute < 5; attribute++) {
     const location = 7 + attribute;
     gl.enableVertexAttribArray(location);
@@ -316,7 +316,7 @@ function bindGlSpriteBatchInstancedColorMatrix(state: GlRenderState): void {
 
 // Binds the per-instance color-adjustment program and the a_colorScale/a_colorBias attribute stream from the
 // batch's color-adjustment buffer, alongside the base instance attributes.
-function bindGlSpriteBatchInstancedColorScaleBias(state: GlRenderState): void {
+function bindGlQuadBatchWriterInstancedColorScaleBias(state: GlRenderState): void {
   const runtime = getGlRenderStateRuntime(state);
   const shader = ensureGlColorScaleBiasInstancedShader(state);
   useGlQuadBatchProgram(state, shader.program);
@@ -324,7 +324,7 @@ function bindGlSpriteBatchInstancedColorScaleBias(state: GlRenderState): void {
   bindGlQuadBatchBaseAttributes(state, shader.locCorner);
 
   const gl = state.gl;
-  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchColorScaleBiasBuffer!);
+  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchWriterColorScaleBiasBuffer!);
   gl.enableVertexAttribArray(7);
   gl.vertexAttribPointer(7, 4, gl.FLOAT, false, COLOR_SCALE_BIAS_STRIDE, 0);
   gl.vertexAttribDivisor(7, 1);
@@ -333,7 +333,7 @@ function bindGlSpriteBatchInstancedColorScaleBias(state: GlRenderState): void {
   gl.vertexAttribDivisor(8, 1);
 }
 
-function bindGlSpriteBatchPackedTint(state: GlRenderState): void {
+function bindGlQuadBatchWriterPackedTint(state: GlRenderState): void {
   const runtime = getGlRenderStateRuntime(state);
   const shader = ensureGlColorTintInstancedShader(state);
   useGlQuadBatchProgram(state, shader.program);
@@ -341,7 +341,7 @@ function bindGlSpriteBatchPackedTint(state: GlRenderState): void {
   bindGlQuadBatchBaseAttributes(state, shader.locCorner);
 
   const gl = state.gl;
-  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchColorScaleBiasBuffer!);
+  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchWriterColorScaleBiasBuffer!);
   gl.enableVertexAttribArray(7);
   gl.vertexAttribPointer(7, 4, gl.UNSIGNED_BYTE, true, 4, 0);
   gl.vertexAttribDivisor(7, 1);
@@ -439,72 +439,74 @@ function equalsRecordedColorScaleBias(
 
 // Uploads the active batch's per-instance color-adjustment buffer, selects the fold program (uniform or
 // per-instance), and binds it. Returns true when it drew a folded batch; false when the batch carried
-// no tint, so flushGlSpriteBatch runs the lean material path instead. Resets the fold mode for the
+// no tint, so flushGlQuadBatchWriter runs the lean material path instead. Resets the fold mode for the
 // next batch.
 function flushGlColorAdjustmentMaterialFeature(state: GlRenderState, count: number): boolean {
   const runtime = getGlRenderStateRuntime(state);
-  const ctMode = runtime.spriteBatchColorScaleBiasMode ?? CT_MODE_NONE;
+  const ctMode = runtime.quadBatchWriterColorScaleBiasMode ?? CT_MODE_NONE;
   if (ctMode === CT_MODE_NONE) return false;
-  const uniformColorScaleBias = runtime.spriteBatchUniformColorScaleBias ?? null;
-  runtime.spriteBatchColorScaleBiasMode = CT_MODE_NONE;
-  runtime.spriteBatchUniformColorScaleBias = null;
+  const uniformColorScaleBias = runtime.quadBatchWriterUniformColorScaleBias ?? null;
+  runtime.quadBatchWriterColorScaleBiasMode = CT_MODE_NONE;
+  runtime.quadBatchWriterUniformColorScaleBias = null;
 
   if (ctMode === CT_MODE_PACKED_TINT) {
     const gl = state.gl;
-    if (runtime.spriteBatchColorScaleBiasBuffer == null) {
-      runtime.spriteBatchColorScaleBiasBuffer = gl.createBuffer()!;
+    if (runtime.quadBatchWriterColorScaleBiasBuffer == null) {
+      runtime.quadBatchWriterColorScaleBiasBuffer = gl.createBuffer()!;
     }
-    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchColorScaleBiasBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, runtime.spriteBatchColorTintData!.subarray(0, count), gl.DYNAMIC_DRAW);
-    bindGlSpriteBatchPackedTint(state);
+    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchWriterColorScaleBiasBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, runtime.quadBatchWriterColorTintData!.subarray(0, count), gl.DYNAMIC_DRAW);
+    bindGlQuadBatchWriterPackedTint(state);
     return true;
   }
 
   if (ctMode === CT_MODE_MATRIX) {
     const gl = state.gl;
-    if (runtime.spriteBatchColorScaleBiasBuffer == null) runtime.spriteBatchColorScaleBiasBuffer = gl.createBuffer()!;
-    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchColorScaleBiasBuffer);
+    if (runtime.quadBatchWriterColorScaleBiasBuffer == null)
+      runtime.quadBatchWriterColorScaleBiasBuffer = gl.createBuffer()!;
+    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchWriterColorScaleBiasBuffer);
     gl.bufferData(
       gl.ARRAY_BUFFER,
-      runtime.spriteBatchColorMatrixData!.subarray(0, count * COLOR_MATRIX_FLOATS),
+      runtime.quadBatchWriterColorMatrixData!.subarray(0, count * COLOR_MATRIX_FLOATS),
       gl.DYNAMIC_DRAW,
     );
-    bindGlSpriteBatchInstancedColorMatrix(state);
+    bindGlQuadBatchWriterInstancedColorMatrix(state);
     return true;
   }
 
   if (ctMode === CT_MODE_PER_INSTANCE) {
     const gl = state.gl;
-    if (runtime.spriteBatchColorScaleBiasBuffer == null) {
-      runtime.spriteBatchColorScaleBiasBuffer = gl.createBuffer()!;
+    if (runtime.quadBatchWriterColorScaleBiasBuffer == null) {
+      runtime.quadBatchWriterColorScaleBiasBuffer = gl.createBuffer()!;
     }
-    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchColorScaleBiasBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchWriterColorScaleBiasBuffer);
     // Reallocate to exactly what is drawn: the color-adjustment data array grows lazily as tints are
     // recorded, so a fixed subData offset could outrun a stale buffer. Only per-instance-tinted
     // batches pay this, and the untinted common path never allocates the buffer at all.
     gl.bufferData(
       gl.ARRAY_BUFFER,
-      runtime.spriteBatchColorScaleBiasData!.subarray(0, count * COLOR_SCALE_BIAS_FLOATS),
+      runtime.quadBatchWriterColorScaleBiasData!.subarray(0, count * COLOR_SCALE_BIAS_FLOATS),
       gl.DYNAMIC_DRAW,
     );
-    bindGlSpriteBatchInstancedColorScaleBias(state);
+    bindGlQuadBatchWriterInstancedColorScaleBias(state);
     return true;
   }
 
   if (isColorMatrixData(uniformColorScaleBias!)) {
-    promoteGlSpriteBatchColorScaleBiasToMatrix(runtime, count, uniformColorScaleBias!);
-    runtime.spriteBatchColorScaleBiasMode = CT_MODE_NONE;
+    promoteGlQuadBatchWriterColorScaleBiasToMatrix(runtime, count, uniformColorScaleBias!);
+    runtime.quadBatchWriterColorScaleBiasMode = CT_MODE_NONE;
     const gl = state.gl;
-    if (runtime.spriteBatchColorScaleBiasBuffer == null) runtime.spriteBatchColorScaleBiasBuffer = gl.createBuffer()!;
-    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchColorScaleBiasBuffer);
+    if (runtime.quadBatchWriterColorScaleBiasBuffer == null)
+      runtime.quadBatchWriterColorScaleBiasBuffer = gl.createBuffer()!;
+    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchWriterColorScaleBiasBuffer);
     gl.bufferData(
       gl.ARRAY_BUFFER,
-      runtime.spriteBatchColorMatrixData!.subarray(0, count * COLOR_MATRIX_FLOATS),
+      runtime.quadBatchWriterColorMatrixData!.subarray(0, count * COLOR_MATRIX_FLOATS),
       gl.DYNAMIC_DRAW,
     );
-    bindGlSpriteBatchInstancedColorMatrix(state);
+    bindGlQuadBatchWriterInstancedColorMatrix(state);
   } else {
-    bindGlSpriteBatchUniformColorScaleBias(state, uniformColorScaleBias!);
+    bindGlQuadBatchWriterUniformColorScaleBias(state, uniformColorScaleBias!);
   }
   return true;
 }
@@ -512,48 +514,48 @@ function flushGlColorAdjustmentMaterialFeature(state: GlRenderState, count: numb
 // Switches the batch to per-instance mode and back-fills every already-recorded instance
 // [0, instanceCount) with `fill` (a prior uniform value, or null → identity), so promotion never
 // changes the appearance of instances written before the divergence.
-function promoteGlSpriteBatchColorScaleBiasToPerInstance(
+function promoteGlQuadBatchWriterColorScaleBiasToPerInstance(
   runtime: GlRenderStateRuntime,
   instanceCount: number,
   fill: Readonly<ColorScaleBias | TintMaterialData> | null,
 ): void {
-  runtime.spriteBatchColorScaleBiasMode = CT_MODE_PER_INSTANCE;
+  runtime.quadBatchWriterColorScaleBiasMode = CT_MODE_PER_INSTANCE;
   for (let i = 0; i < instanceCount; i++) writeGlColorScaleBiasInstance(runtime, fill, i);
 }
 
-function promoteGlSpriteBatchColorScaleBiasToPackedTint(
+function promoteGlQuadBatchWriterColorScaleBiasToPackedTint(
   runtime: GlRenderStateRuntime,
   instanceCount: number,
   fill: Readonly<ColorScaleBias | TintMaterialData> | null,
 ): void {
-  runtime.spriteBatchColorScaleBiasMode = CT_MODE_PACKED_TINT;
+  runtime.quadBatchWriterColorScaleBiasMode = CT_MODE_PACKED_TINT;
   for (let i = 0; i < instanceCount; i++) writeGlPackedTintInstance(runtime, getPackedTint(fill)!, i);
 }
 
 function promoteGlPackedTintToColorScaleBias(runtime: GlRenderStateRuntime, instanceCount: number): void {
-  runtime.spriteBatchColorScaleBiasMode = CT_MODE_PER_INSTANCE;
-  const packed = runtime.spriteBatchColorTintData!;
+  runtime.quadBatchWriterColorScaleBiasMode = CT_MODE_PER_INSTANCE;
+  const packed = runtime.quadBatchWriterColorTintData!;
   for (let i = 0; i < instanceCount; i++) writeGlNativePackedTintAsColorScaleBias(runtime, packed[i], i);
 }
 
-function promoteGlSpriteBatchColorScaleBiasToMatrix(
+function promoteGlQuadBatchWriterColorScaleBiasToMatrix(
   runtime: GlRenderStateRuntime,
   instanceCount: number,
   fill: Readonly<ColorAdjustmentData> | null,
 ): void {
-  runtime.spriteBatchColorScaleBiasMode = CT_MODE_MATRIX;
+  runtime.quadBatchWriterColorScaleBiasMode = CT_MODE_MATRIX;
   for (let i = 0; i < instanceCount; i++) writeGlColorMatrixInstance(runtime, fill, i);
 }
 
 function promoteGlPackedTintToColorMatrix(runtime: GlRenderStateRuntime, instanceCount: number): void {
-  const packed = runtime.spriteBatchColorTintData!;
-  runtime.spriteBatchColorScaleBiasMode = CT_MODE_MATRIX;
+  const packed = runtime.quadBatchWriterColorTintData!;
+  runtime.quadBatchWriterColorScaleBiasMode = CT_MODE_MATRIX;
   for (let i = 0; i < instanceCount; i++) writeGlNativePackedTintAsColorMatrix(runtime, packed[i], i);
 }
 
 function promoteGlColorScaleBiasToMatrix(runtime: GlRenderStateRuntime, instanceCount: number): void {
-  const affine = runtime.spriteBatchColorScaleBiasData!;
-  runtime.spriteBatchColorScaleBiasMode = CT_MODE_MATRIX;
+  const affine = runtime.quadBatchWriterColorScaleBiasData!;
+  runtime.quadBatchWriterColorScaleBiasMode = CT_MODE_MATRIX;
   for (let i = 0; i < instanceCount; i++) {
     const base = i * COLOR_SCALE_BIAS_FLOATS;
     writeGlAffineValuesAsColorMatrix(runtime, affine, base, i);
@@ -567,7 +569,7 @@ function recordGlColorAdjustment(
   colorScaleBias: ColorAdjustmentData | null | undefined,
   instanceIndex: number,
 ): void {
-  const mode = runtime.spriteBatchColorScaleBiasMode ?? CT_MODE_NONE;
+  const mode = runtime.quadBatchWriterColorScaleBiasMode ?? CT_MODE_NONE;
   const tint = colorScaleBias ?? null;
 
   if (mode === CT_MODE_MATRIX) {
@@ -578,39 +580,39 @@ function recordGlColorAdjustment(
   if (mode === CT_MODE_NONE) {
     if (tint === null) return;
     if (instanceIndex === 0) {
-      runtime.spriteBatchColorScaleBiasMode = CT_MODE_UNIFORM;
-      runtime.spriteBatchUniformColorScaleBias = tint;
+      runtime.quadBatchWriterColorScaleBiasMode = CT_MODE_UNIFORM;
+      runtime.quadBatchWriterUniformColorScaleBias = tint;
       return;
     }
     if (isColorMatrixData(tint)) {
-      promoteGlSpriteBatchColorScaleBiasToMatrix(runtime, instanceIndex, null);
+      promoteGlQuadBatchWriterColorScaleBiasToMatrix(runtime, instanceIndex, null);
       writeGlColorMatrixInstance(runtime, tint, instanceIndex);
       return;
     }
     if (getPackedTint(tint) !== null) {
-      promoteGlSpriteBatchColorScaleBiasToPackedTint(runtime, instanceIndex, null);
+      promoteGlQuadBatchWriterColorScaleBiasToPackedTint(runtime, instanceIndex, null);
       writeGlPackedTintInstance(runtime, getPackedTint(tint)!, instanceIndex);
     } else {
-      promoteGlSpriteBatchColorScaleBiasToPerInstance(runtime, instanceIndex, null);
+      promoteGlQuadBatchWriterColorScaleBiasToPerInstance(runtime, instanceIndex, null);
       writeGlColorScaleBiasInstance(runtime, tint, instanceIndex);
     }
     return;
   }
 
   if (mode === CT_MODE_UNIFORM) {
-    const uniform = runtime.spriteBatchUniformColorScaleBias ?? null;
+    const uniform = runtime.quadBatchWriterUniformColorScaleBias ?? null;
     if (equalsRecordedColorScaleBias(tint, uniform)) return;
     if (isColorMatrixData(tint) || (uniform !== null && isColorMatrixData(uniform))) {
-      promoteGlSpriteBatchColorScaleBiasToMatrix(runtime, instanceIndex, uniform);
+      promoteGlQuadBatchWriterColorScaleBiasToMatrix(runtime, instanceIndex, uniform);
       writeGlColorMatrixInstance(runtime, tint, instanceIndex);
       return;
     }
     const packedTint = getPackedTint(tint);
     if (getPackedTint(uniform) !== null && packedTint !== null) {
-      promoteGlSpriteBatchColorScaleBiasToPackedTint(runtime, instanceIndex, uniform);
+      promoteGlQuadBatchWriterColorScaleBiasToPackedTint(runtime, instanceIndex, uniform);
       writeGlPackedTintInstance(runtime, packedTint, instanceIndex);
     } else {
-      promoteGlSpriteBatchColorScaleBiasToPerInstance(runtime, instanceIndex, uniform);
+      promoteGlQuadBatchWriterColorScaleBiasToPerInstance(runtime, instanceIndex, uniform);
       writeGlColorScaleBiasInstance(runtime, tint, instanceIndex);
     }
     return;
@@ -646,14 +648,14 @@ function writeGlColorMatrixInstance(
   instanceIndex: number,
 ): void {
   const offset = instanceIndex * COLOR_MATRIX_FLOATS;
-  let data = runtime.spriteBatchColorMatrixData;
+  let data = runtime.quadBatchWriterColorMatrixData;
   if (data === undefined) {
     data = new Float32Array(COLOR_MATRIX_FLOATS * 256);
-    runtime.spriteBatchColorMatrixData = data;
+    runtime.quadBatchWriterColorMatrixData = data;
   } else if (offset + COLOR_MATRIX_FLOATS > data.length) {
     const grown = new Float32Array(Math.max(offset + COLOR_MATRIX_FLOATS, data.length * 2));
     grown.set(data);
-    runtime.spriteBatchColorMatrixData = grown;
+    runtime.quadBatchWriterColorMatrixData = grown;
     data = grown;
   }
   if (adjustment === null) {
@@ -688,7 +690,7 @@ function writeGlNativePackedTintAsColorMatrix(
   instanceIndex: number,
 ): void {
   writeGlColorMatrixInstance(runtime, null, instanceIndex);
-  const out = runtime.spriteBatchColorMatrixData!;
+  const out = runtime.quadBatchWriterColorMatrixData!;
   const offset = instanceIndex * COLOR_MATRIX_FLOATS;
   out[offset] = (nativeWord & 0xff) / 255;
   out[offset + 5] = ((nativeWord >>> 8) & 0xff) / 255;
@@ -703,7 +705,7 @@ function writeGlAffineValuesAsColorMatrix(
   instanceIndex: number,
 ): void {
   writeGlColorMatrixInstance(runtime, null, instanceIndex);
-  const out = runtime.spriteBatchColorMatrixData!;
+  const out = runtime.quadBatchWriterColorMatrixData!;
   const offset = instanceIndex * COLOR_MATRIX_FLOATS;
   for (let channel = 0; channel < 4; channel++) {
     out[offset + channel * 4 + channel] = affine[affineOffset + channel]!;
@@ -719,16 +721,16 @@ function writeGlColorScaleBiasInstance(
   instanceIndex: number,
 ): void {
   const offset = instanceIndex * COLOR_SCALE_BIAS_FLOATS;
-  let data = runtime.spriteBatchColorScaleBiasData;
+  let data = runtime.quadBatchWriterColorScaleBiasData;
   if (data === undefined) {
     data = new Float32Array(COLOR_SCALE_BIAS_FLOATS * 256);
-    runtime.spriteBatchColorScaleBiasData = data;
+    runtime.quadBatchWriterColorScaleBiasData = data;
   }
   if (offset + COLOR_SCALE_BIAS_FLOATS > data.length) {
     const newSize = Math.max(offset + COLOR_SCALE_BIAS_FLOATS, data.length * 2);
     const grown = new Float32Array(newSize);
     grown.set(data);
-    runtime.spriteBatchColorScaleBiasData = grown;
+    runtime.quadBatchWriterColorScaleBiasData = grown;
     data = grown;
   }
   if (colorScaleBias !== null) {
@@ -749,14 +751,14 @@ function writeGlColorScaleBiasInstance(
 }
 
 function writeGlPackedTintInstance(runtime: GlRenderStateRuntime, rgba: number, instanceIndex: number): void {
-  let data = runtime.spriteBatchColorTintData;
+  let data = runtime.quadBatchWriterColorTintData;
   if (data === undefined) {
     data = new Uint32Array(256);
-    runtime.spriteBatchColorTintData = data;
+    runtime.quadBatchWriterColorTintData = data;
   } else if (instanceIndex >= data.length) {
     const grown = new Uint32Array(Math.max(instanceIndex + 1, data.length * 2));
     grown.set(data);
-    runtime.spriteBatchColorTintData = grown;
+    runtime.quadBatchWriterColorTintData = grown;
     data = grown;
   }
   data[instanceIndex] = rgbaToNativeByteWord(rgba);
@@ -769,7 +771,7 @@ function writeGlNativePackedTintAsColorScaleBias(
 ): void {
   const offset = instanceIndex * COLOR_SCALE_BIAS_FLOATS;
   writeGlColorScaleBiasInstance(runtime, null, instanceIndex);
-  const data = runtime.spriteBatchColorScaleBiasData!;
+  const data = runtime.quadBatchWriterColorScaleBiasData!;
   data[offset] = (nativeWord & 0xff) / 255;
   data[offset + 1] = ((nativeWord >>> 8) & 0xff) / 255;
   data[offset + 2] = ((nativeWord >>> 16) & 0xff) / 255;

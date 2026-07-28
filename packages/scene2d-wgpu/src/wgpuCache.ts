@@ -36,7 +36,7 @@ import type {
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { renderWgpuScene2D } from './wgpuNode2D';
-import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
+import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
 
 /**
  * Creates an offscreen render state for baking render caches consumed by `screenState`.
@@ -109,23 +109,23 @@ export function createWgpuCacheState(screenState: WgpuRenderState): WgpuRenderSt
   cacheRuntime.clipForms = [];
   // The flat-color shape-fill pipelines can be lazily rebuilt against the (shared) device on first use.
   cacheRuntime.shapeMeshPipelines = undefined;
-  cacheRuntime.spriteBatchBlendMode = null;
-  cacheRuntime.spriteBatchMaterial = null;
-  cacheRuntime.spriteBatchMaterialRenderer = null;
-  cacheRuntime.spriteBatchMaterialFloats = 0;
-  cacheRuntime.spriteBatchCount = 0;
-  cacheRuntime.spriteBatchInstanceData = new Float32Array(0);
-  cacheRuntime.spriteBatchMaterialData = new Float32Array(0);
-  cacheRuntime.spriteBatchTexture = null;
-  cacheRuntime.spriteBatchSmoothing = null;
+  cacheRuntime.quadBatchWriterBlendMode = null;
+  cacheRuntime.quadBatchWriterMaterial = null;
+  cacheRuntime.quadBatchWriterMaterialRenderer = null;
+  cacheRuntime.quadBatchWriterMaterialFloats = 0;
+  cacheRuntime.quadBatchWriterCount = 0;
+  cacheRuntime.quadBatchWriterInstanceData = new Float32Array(0);
+  cacheRuntime.quadBatchWriterMaterialData = new Float32Array(0);
+  cacheRuntime.quadBatchWriterTexture = null;
+  cacheRuntime.quadBatchWriterSmoothing = null;
   // Propagate the opt-in color-adjustment fold + guard so tinted nodes inside a cached subtree fold the
   // same way when baked offscreen. Their per-batch CT data lives on cacheRuntime, lazily grown.
   cacheRuntime.wgpuColorAdjustmentMaterialFeature = screenRuntime.wgpuColorAdjustmentMaterialFeature;
   cacheRuntime.wgpuColorAdjustmentMaterialFeatureGuard = screenRuntime.wgpuColorAdjustmentMaterialFeatureGuard;
   // The bake state owns its own buffer pool (its flushes record into the same frame, so they must
   // not share slots with the screen's batch either).
-  cacheRuntime.spriteBatchBufferPool = [];
-  cacheRuntime.spriteBatchBufferCursor = 0;
+  cacheRuntime.quadBatchWriterBufferPool = [];
+  cacheRuntime.quadBatchWriterBufferCursor = 0;
   cacheRuntime.maskWriteMode = false;
   cacheRuntime.currentScissorRect = null;
   cacheRuntime.scissorStack = [];
@@ -232,7 +232,7 @@ export function refreshWgpuRenderCache(
 
   // Reclaim the bake state's buffer pool from the start of this bake; the previous bake's submit
   // has been queued, so its slots are safe to reuse.
-  cacheRuntime.spriteBatchBufferCursor = 0;
+  cacheRuntime.quadBatchWriterBufferCursor = 0;
   // The pass clears to transparent by default (target.clearColors is empty); the Y-inverted bake
   // transform is a display-object draw concern, set explicitly rather than carried by the pass.
   beginWgpuRenderPass(cacheState, target);
@@ -272,10 +272,10 @@ function drawWgpuRenderCache(state: WgpuRenderState, renderProxy: RenderProxy2D)
   const target = getTargets(state).get(cache);
   if (target === undefined) return;
   // Drain pending batched geometry before the immediate composite quad. Like every other
-  // immediate-draw renderer (RichText), this bypasses the sprite batch; without the flush the
+  // immediate-draw renderer (RichText), this bypasses the quad-batch writer; without the flush the
   // immediate quad interleaves with the un-flushed batch's instance buffer and bind-group state,
   // corrupting the pending batch rather than merely reordering it.
-  flushWgpuSpriteBatch(state);
+  flushWgpuQuadBatchWriter(state);
   // renderProxy.transform2D already carries the cache placement transform (folded in by the
   // adapter), so the target composites with an identity offset.
   drawWgpuRenderTargetResult(state, renderProxy, target, _identity);

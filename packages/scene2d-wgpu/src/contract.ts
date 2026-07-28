@@ -18,7 +18,7 @@ export * from './wgpuScale9Shape';
 export * from './wgpuShape';
 export * from './wgpuShapeMesh';
 export * from './wgpuSprite';
-export * from './wgpuSpriteBatch';
+export * from './wgpuQuadBatchWriter';
 export * from './wgpuTextInput';
 export * from './wgpuTextLabel';
 export * from './wgpuTilemap';

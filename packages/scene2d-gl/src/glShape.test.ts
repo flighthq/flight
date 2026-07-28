@@ -4,8 +4,8 @@ import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat } from '@flighthq/types/contract';
 
+import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 import type * as GlShapeModule from './glShape';
-import { flushGlSpriteBatch } from './glSpriteBatch';
 import { registerStandardGlMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 import { scopeModuleMocks } from './moduleMockTestHelper';
@@ -74,34 +74,34 @@ describe('drawGlShape', () => {
     const { state } = createGlState();
     registerStandardGlMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [] }, makeShapeData()));
-    expect(getGlRenderStateRuntime(state).spriteBatchCount).toBe(0);
+    expect(getGlRenderStateRuntime(state).quadBatchWriterCount).toBe(0);
   });
 
   it('returns early without writing to batch when rendererData is null', () => {
     const { state } = createGlState();
     registerStandardGlMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [{}] }, null));
-    expect(getGlRenderStateRuntime(state).spriteBatchCount).toBe(0);
+    expect(getGlRenderStateRuntime(state).quadBatchWriterCount).toBe(0);
   });
 
   it('returns early without writing to batch when no material renderer is registered', () => {
     const { state } = createGlState();
     drawGlShape(state, makeShapeNode({ commands: [{}] }, makeShapeData()));
-    expect(getGlRenderStateRuntime(state).spriteBatchCount).toBe(0);
+    expect(getGlRenderStateRuntime(state).quadBatchWriterCount).toBe(0);
   });
 
-  it('writes one instance to the sprite batch when shape has valid commands and bounds', () => {
+  it('writes one instance to the quad-batch writer when shape has valid commands and bounds', () => {
     const { state } = createGlState();
     registerStandardGlMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [{}], version: 1 }, makeShapeData()));
-    expect(getGlRenderStateRuntime(state).spriteBatchCount).toBe(1);
+    expect(getGlRenderStateRuntime(state).quadBatchWriterCount).toBe(1);
   });
 
   it('draws via drawElementsInstanced after flush', () => {
     const { state, gl } = createGlState();
     registerStandardGlMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [{}], version: 1 }, makeShapeData()));
-    flushGlSpriteBatch(state);
+    flushGlQuadBatchWriter(state);
     expect(gl.drawElementsInstanced).toHaveBeenCalled();
   });
 
@@ -109,7 +109,7 @@ describe('drawGlShape', () => {
     const { state } = createGlState();
     registerStandardGlMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [{}], version: 1 }, makeShapeData()));
-    const d = getGlRenderStateRuntime(state).spriteBatchInstanceData;
+    const d = getGlRenderStateRuntime(state).quadBatchWriterInstanceData;
     expect(d[6]).toBe(64); // width from mocked bounds
     expect(d[7]).toBe(48); // height from mocked bounds
   });

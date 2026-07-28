@@ -2,7 +2,7 @@ import { registerWgpuMaterialRenderer } from '@flighthq/render-wgpu/contract';
 import type { WgpuMaterialRenderer, WgpuRenderState } from '@flighthq/types/contract';
 import { StandardMaterialKind } from '@flighthq/types/contract';
 
-import { getWgpuQuadBatchPreludeWGSL } from './wgpuSpriteBatch';
+import { getWgpuQuadBatchPreludeWGSL } from './wgpuQuadBatchWriter';
 
 // Registers the bundled default material under StandardMaterialKind. It is a bundled material like any
 // other — no privileged status in the render path; a node with no material renders only if a renderer
@@ -12,7 +12,7 @@ export function registerStandardWgpuMaterial(state: WgpuRenderState): void {
 }
 
 // Textured quad with per-instance alpha and no other effect. The batch holds no shader of its own, so
-// even the plain path is just a registered material — this module IS the base sprite-batch shader.
+// even the plain path is just a registered material — this module IS the base quad-batch writer shader.
 export const standardWgpuMaterialRenderer: WgpuMaterialRenderer = {
   instanceFloatCount: 0,
   getShaderModule(state: WgpuRenderState): GPUShaderModule {

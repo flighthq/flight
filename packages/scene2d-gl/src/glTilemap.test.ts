@@ -1,6 +1,6 @@
 import type { RenderProxy2D } from '@flighthq/types/contract';
 
-import { flushGlSpriteBatch } from './glSpriteBatch';
+import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 import { registerStandardGlMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 import { defaultGlTilemapRenderer } from './glTilemap';
@@ -60,7 +60,7 @@ describe('defaultGlTilemapRenderer.submit', () => {
     const { state, gl } = createAtlasGlState();
     registerStandardGlMaterial(state);
     defaultGlTilemapRenderer.submit(state, makeTilemapNode({ atlas: null }));
-    flushGlSpriteBatch(state);
+    flushGlQuadBatchWriter(state);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
@@ -68,7 +68,7 @@ describe('defaultGlTilemapRenderer.submit', () => {
     const { state, gl } = createAtlasGlState();
     registerStandardGlMaterial(state);
     defaultGlTilemapRenderer.submit(state, makeTilemapNode({ atlas: { regions: [], texture: null } }));
-    flushGlSpriteBatch(state);
+    flushGlQuadBatchWriter(state);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
@@ -81,7 +81,7 @@ describe('defaultGlTilemapRenderer.submit', () => {
         atlas: { regions: [], texture: createTexture() },
       }),
     );
-    flushGlSpriteBatch(state);
+    flushGlQuadBatchWriter(state);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
@@ -89,7 +89,7 @@ describe('defaultGlTilemapRenderer.submit', () => {
     const { state, gl } = createAtlasGlState();
     registerStandardGlMaterial(state);
     defaultGlTilemapRenderer.submit(state, makeTilemapNode({ columns: 0 }));
-    flushGlSpriteBatch(state);
+    flushGlQuadBatchWriter(state);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
@@ -97,7 +97,7 @@ describe('defaultGlTilemapRenderer.submit', () => {
     const { state, gl } = createAtlasGlState();
     registerStandardGlMaterial(state);
     defaultGlTilemapRenderer.submit(state, makeTilemapNode({ rows: 0 }));
-    flushGlSpriteBatch(state);
+    flushGlQuadBatchWriter(state);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
@@ -105,7 +105,7 @@ describe('defaultGlTilemapRenderer.submit', () => {
     const { state, gl } = createAtlasGlState();
     registerStandardGlMaterial(state);
     defaultGlTilemapRenderer.submit(state, makeTilemapNode());
-    flushGlSpriteBatch(state);
+    flushGlQuadBatchWriter(state);
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
     expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 4);
   });
@@ -114,7 +114,7 @@ describe('defaultGlTilemapRenderer.submit', () => {
     const { state, gl } = createAtlasGlState();
     registerStandardGlMaterial(state);
     defaultGlTilemapRenderer.submit(state, makeTilemapNode({ tiles: [0, 99, 99, 0] }));
-    flushGlSpriteBatch(state);
+    flushGlQuadBatchWriter(state);
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
     expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 2);
   });

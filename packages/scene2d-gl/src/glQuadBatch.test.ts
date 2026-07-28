@@ -1,7 +1,7 @@
 import type { RenderProxy2D } from '@flighthq/types/contract';
 
 import { defaultGlQuadBatchRenderer } from './glQuadBatch';
-import { flushGlSpriteBatch } from './glSpriteBatch';
+import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 import { registerStandardGlMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 
@@ -59,7 +59,7 @@ describe('defaultGlQuadBatchRenderer.submit', () => {
     const { state, gl } = createAtlasGlState();
     registerStandardGlMaterial(state);
     defaultGlQuadBatchRenderer.submit(state, makeQuadBatchNode({ atlas: null }));
-    flushGlSpriteBatch(state as any);
+    flushGlQuadBatchWriter(state as any);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
@@ -67,7 +67,7 @@ describe('defaultGlQuadBatchRenderer.submit', () => {
     const { state, gl } = createAtlasGlState();
     registerStandardGlMaterial(state);
     defaultGlQuadBatchRenderer.submit(state, makeQuadBatchNode({ atlas: { regions: [], texture: null } }));
-    flushGlSpriteBatch(state as any);
+    flushGlQuadBatchWriter(state as any);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
@@ -75,7 +75,7 @@ describe('defaultGlQuadBatchRenderer.submit', () => {
     const { state, gl } = createAtlasGlState();
     registerStandardGlMaterial(state);
     defaultGlQuadBatchRenderer.submit(state, makeQuadBatchNode({ atlas: { regions: [], texture: createTexture() } }));
-    flushGlSpriteBatch(state as any);
+    flushGlQuadBatchWriter(state as any);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
@@ -83,7 +83,7 @@ describe('defaultGlQuadBatchRenderer.submit', () => {
     const { state, gl } = createAtlasGlState();
     registerStandardGlMaterial(state);
     defaultGlQuadBatchRenderer.submit(state, makeQuadBatchNode({ instanceCount: 0 }));
-    flushGlSpriteBatch(state as any);
+    flushGlQuadBatchWriter(state as any);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
@@ -99,7 +99,7 @@ describe('defaultGlQuadBatchRenderer.submit', () => {
         transformType: 'vector2',
       }),
     );
-    flushGlSpriteBatch(state as any);
+    flushGlQuadBatchWriter(state as any);
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
     expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 2);
   });
@@ -116,7 +116,7 @@ describe('defaultGlQuadBatchRenderer.submit', () => {
         transformType: 'vector2',
       }),
     );
-    flushGlSpriteBatch(state as any);
+    flushGlQuadBatchWriter(state as any);
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
     expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 2);
   });
@@ -134,7 +134,7 @@ describe('defaultGlQuadBatchRenderer.submit', () => {
         transformType: 'matrix',
       }),
     );
-    flushGlSpriteBatch(state as any);
+    flushGlQuadBatchWriter(state as any);
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
     expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 1);
   });

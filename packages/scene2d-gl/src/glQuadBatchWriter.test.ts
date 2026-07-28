@@ -6,13 +6,13 @@ import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMat
 import {
   bindGlQuadBatchBaseAttributes,
   ensureGlQuadBatchShader,
-  flushGlSpriteBatch,
-  packGlSpriteBatchMaterialInstance,
-  prepareGlSpriteBatchWrite,
-  recordGlSpriteBatchColorScaleBias,
+  flushGlQuadBatchWriter,
+  packGlQuadBatchMaterialInstance,
+  prepareGlQuadBatchWrite,
+  recordGlQuadBatchColorScaleBias,
   setGlQuadBatchWorldAndTexture,
   useGlQuadBatchProgram,
-} from './glSpriteBatch';
+} from './glQuadBatchWriter';
 import { standardGlMaterialRenderer } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 
@@ -77,10 +77,10 @@ describe('ensureGlQuadBatchShader', () => {
   });
 });
 
-describe('flushGlSpriteBatch', () => {
+describe('flushGlQuadBatchWriter', () => {
   it('does nothing when batch count is zero', () => {
     const { state, gl } = createGlState();
-    flushGlSpriteBatch(state);
+    flushGlQuadBatchWriter(state);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
@@ -89,42 +89,42 @@ describe('flushGlSpriteBatch', () => {
     const runtime = getGlRenderStateRuntime(state);
     const tex = makeTexture();
 
-    prepareGlSpriteBatchWrite(state, tex, null, null, standardGlMaterialRenderer, 1);
-    runtime.spriteBatchCount = 1;
-    flushGlSpriteBatch(state);
+    prepareGlQuadBatchWrite(state, tex, null, null, standardGlMaterialRenderer, 1);
+    runtime.quadBatchWriterCount = 1;
+    flushGlQuadBatchWriter(state);
 
     expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 1);
-    expect(runtime.spriteBatchCount).toBe(0);
-    expect(runtime.spriteBatchTexture).toBeNull();
-    expect(runtime.spriteBatchBlendMode).toBeNull();
-    expect(runtime.spriteBatchMaterial).toBeNull();
+    expect(runtime.quadBatchWriterCount).toBe(0);
+    expect(runtime.quadBatchWriterTexture).toBeNull();
+    expect(runtime.quadBatchWriterBlendMode).toBeNull();
+    expect(runtime.quadBatchWriterMaterial).toBeNull();
   });
 });
 
-describe('packGlSpriteBatchMaterialInstance', () => {
+describe('packGlQuadBatchMaterialInstance', () => {
   it('is a no-op when no per-instance material renderer is active', () => {
     const { state } = createGlState();
-    getGlRenderStateRuntime(state).spriteBatchMaterialRenderer = null;
-    expect(() => packGlSpriteBatchMaterialInstance(state, null, 0)).not.toThrow();
+    getGlRenderStateRuntime(state).quadBatchWriterMaterialRenderer = null;
+    expect(() => packGlQuadBatchMaterialInstance(state, null, 0)).not.toThrow();
   });
 });
 
-describe('prepareGlSpriteBatchWrite', () => {
+describe('prepareGlQuadBatchWrite', () => {
   it('installs the pending-draw flush seam on the render state runtime', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
 
     expect(runtime.flushPendingDraws).toBeNull();
-    prepareGlSpriteBatchWrite(state, makeTexture(), null, null, standardGlMaterialRenderer, 1);
+    prepareGlQuadBatchWrite(state, makeTexture(), null, null, standardGlMaterialRenderer, 1);
 
-    expect(runtime.flushPendingDraws).toBe(flushGlSpriteBatch);
+    expect(runtime.flushPendingDraws).toBe(flushGlQuadBatchWriter);
   });
 
   it('returns float index 0 for an empty batch', () => {
     const { state } = createGlState();
     const tex = makeTexture();
 
-    const base = prepareGlSpriteBatchWrite(state, tex, null, null, standardGlMaterialRenderer, 2);
+    const base = prepareGlQuadBatchWrite(state, tex, null, null, standardGlMaterialRenderer, 2);
     expect(base).toBe(0);
   });
 
@@ -134,13 +134,13 @@ describe('prepareGlSpriteBatchWrite', () => {
     const tex1 = makeTexture();
     const tex2 = makeTexture();
 
-    prepareGlSpriteBatchWrite(state, tex1, null, null, standardGlMaterialRenderer, 1);
-    runtime.spriteBatchCount = 1;
+    prepareGlQuadBatchWrite(state, tex1, null, null, standardGlMaterialRenderer, 1);
+    runtime.quadBatchWriterCount = 1;
 
-    prepareGlSpriteBatchWrite(state, tex2, null, null, standardGlMaterialRenderer, 1);
+    prepareGlQuadBatchWrite(state, tex2, null, null, standardGlMaterialRenderer, 1);
 
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
-    expect(runtime.spriteBatchTexture).toBe(tex2);
+    expect(runtime.quadBatchWriterTexture).toBe(tex2);
   });
 
   it('flushes when material changes', () => {
@@ -150,24 +150,24 @@ describe('prepareGlSpriteBatchWrite', () => {
     const materialA = makeMaterial();
     const materialB = makeMaterial();
 
-    prepareGlSpriteBatchWrite(state, tex, null, materialA, standardGlMaterialRenderer, 1);
-    runtime.spriteBatchCount = 1;
+    prepareGlQuadBatchWrite(state, tex, null, materialA, standardGlMaterialRenderer, 1);
+    runtime.quadBatchWriterCount = 1;
 
-    prepareGlSpriteBatchWrite(state, tex, null, materialB, standardGlMaterialRenderer, 1);
+    prepareGlQuadBatchWrite(state, tex, null, materialB, standardGlMaterialRenderer, 1);
 
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
-    expect(runtime.spriteBatchMaterial).toBe(materialB);
+    expect(runtime.quadBatchWriterMaterial).toBe(materialB);
   });
 
   it('grows instance data when capacity is exceeded', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     const tex = makeTexture();
-    const initialFloats = runtime.spriteBatchInstanceData.length;
+    const initialFloats = runtime.quadBatchWriterInstanceData.length;
 
-    prepareGlSpriteBatchWrite(state, tex, null, null, standardGlMaterialRenderer, initialFloats + 100);
+    prepareGlQuadBatchWrite(state, tex, null, null, standardGlMaterialRenderer, initialFloats + 100);
 
-    expect(runtime.spriteBatchInstanceData.length).toBeGreaterThan(initialFloats);
+    expect(runtime.quadBatchWriterInstanceData.length).toBeGreaterThan(initialFloats);
   });
 
   it('flushes when per-bitmap smoothing changes on the same texture', () => {
@@ -176,13 +176,13 @@ describe('prepareGlSpriteBatchWrite', () => {
     const tex = makeTexture();
 
     // Same texture/blend/material, but a NEAREST bitmap must not share a bind with a LINEAR one.
-    prepareGlSpriteBatchWrite(state, tex, null, null, standardGlMaterialRenderer, 1, false);
-    runtime.spriteBatchCount = 1;
+    prepareGlQuadBatchWrite(state, tex, null, null, standardGlMaterialRenderer, 1, false);
+    runtime.quadBatchWriterCount = 1;
 
-    prepareGlSpriteBatchWrite(state, tex, null, null, standardGlMaterialRenderer, 1, true);
+    prepareGlQuadBatchWrite(state, tex, null, null, standardGlMaterialRenderer, 1, true);
 
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
-    expect(runtime.spriteBatchSmoothing).toBe(true);
+    expect(runtime.quadBatchWriterSmoothing).toBe(true);
   });
 
   it('keeps same-smoothing bitmaps in one batch (no spurious flush)', () => {
@@ -190,24 +190,24 @@ describe('prepareGlSpriteBatchWrite', () => {
     const runtime = getGlRenderStateRuntime(state);
     const tex = makeTexture();
 
-    prepareGlSpriteBatchWrite(state, tex, null, null, standardGlMaterialRenderer, 1, true);
-    runtime.spriteBatchCount = 1;
-    prepareGlSpriteBatchWrite(state, tex, null, null, standardGlMaterialRenderer, 1, true);
+    prepareGlQuadBatchWrite(state, tex, null, null, standardGlMaterialRenderer, 1, true);
+    runtime.quadBatchWriterCount = 1;
+    prepareGlQuadBatchWrite(state, tex, null, null, standardGlMaterialRenderer, 1, true);
 
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 });
 
-describe('recordGlSpriteBatchColorScaleBias', () => {
+describe('recordGlQuadBatchColorScaleBias', () => {
   it('skips the tint (draws untinted) and records no fold state when color adjustment is not enabled', () => {
     const { state, gl } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    prepareGlSpriteBatchWrite(state, makeTexture(), null, null, standardGlMaterialRenderer, 1);
-    recordGlSpriteBatchColorScaleBias(state, ct(0.5), 0);
-    runtime.spriteBatchCount = 1;
+    prepareGlQuadBatchWrite(state, makeTexture(), null, null, standardGlMaterialRenderer, 1);
+    recordGlQuadBatchColorScaleBias(state, ct(0.5), 0);
+    runtime.quadBatchWriterCount = 1;
     // No fold installed → the CT mode stays uninitialized and no CT program is bound.
-    expect(runtime.spriteBatchColorScaleBiasMode ?? CT_MODE_NONE).toBe(CT_MODE_NONE);
-    flushGlSpriteBatch(state);
+    expect(runtime.quadBatchWriterColorScaleBiasMode ?? CT_MODE_NONE).toBe(CT_MODE_NONE);
+    flushGlQuadBatchWriter(state);
     expect(gl.uniform4f).not.toHaveBeenCalled();
     expect(gl.drawElementsInstanced).toHaveBeenCalled();
   });
@@ -215,16 +215,16 @@ describe('recordGlSpriteBatchColorScaleBias', () => {
   it('is a no-op for an untinted instance whether or not the fold is enabled', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    expect(() => recordGlSpriteBatchColorScaleBias(state, null, 0)).not.toThrow();
-    expect(runtime.spriteBatchColorScaleBiasMode ?? CT_MODE_NONE).toBe(CT_MODE_NONE);
+    expect(() => recordGlQuadBatchColorScaleBias(state, null, 0)).not.toThrow();
+    expect(runtime.quadBatchWriterColorScaleBiasMode ?? CT_MODE_NONE).toBe(CT_MODE_NONE);
   });
 
   it('delegates to the installed fold when color adjustment is enabled', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     registerGlColorAdjustmentMaterialFeature(state);
-    recordGlSpriteBatchColorScaleBias(state, ct(0.5), 0);
-    expect(runtime.spriteBatchColorScaleBiasMode).toBe(CT_MODE_UNIFORM);
+    recordGlQuadBatchColorScaleBias(state, ct(0.5), 0);
+    expect(runtime.quadBatchWriterColorScaleBiasMode).toBe(CT_MODE_UNIFORM);
   });
 });
 

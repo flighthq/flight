@@ -127,7 +127,7 @@ describe('drawGlShapeMeshes', () => {
     const shader = getGlRenderStateRuntime(state).shapeMeshColorScaleBiasShader!;
     expect(shader).toBeDefined();
     // Scale and bias are uploaded verbatim — identical to glColorAdjustmentMaterialFeature's
-    // bindGlSpriteBatchUniformColorScaleBias.
+    // bindGlQuadBatchWriterUniformColorScaleBias.
     expect(gl.uniform4f).toHaveBeenCalledWith(shader.colorScaleLocation, 0.5, 0.5, 0.5, 1);
     expect(gl.uniform4f).toHaveBeenCalledWith(shader.colorBiasLocation, 0.5, 0, 0, 0);
     // Flat mesh color still uploaded premultiplied (white, alpha 1); the shader un/re-premultiplies.
