@@ -2,6 +2,7 @@
 // third-party backing families use a vendor-prefixed value such as `acme.camera`.
 export type TextureBackingKind = string;
 
+export const ExternalTextureBackingKind: TextureBackingKind = 'external';
 export const ImageTextureBackingKind: TextureBackingKind = 'image';
 export const ProducedTextureBackingKind: TextureBackingKind = 'produced';
 export const VideoTextureBackingKind: TextureBackingKind = 'video';
