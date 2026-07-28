@@ -1,4 +1,5 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
+import { registerGlImageTextureResolver } from '@flighthq/render-gl/contract';
 import type {
   LinearColor,
   Camera3D,
@@ -38,7 +39,7 @@ export const subsurfacePbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     const gl = state.gl;
     const subsurface = material as Readonly<SubsurfacePbrMaterial> | null;
     const standard = subsurface !== null ? subsurface.standard : null;
-    const key = buildGlPbrStandardDefineKey(standard, subsurface);
+    const key = buildGlPbrStandardDefineKey(state, standard, subsurface);
     key.subsurfaceEnabled = true;
     const program = ensureGlPbrProgram(state, key);
     beginGlMeshDraw(state, program, subsurface !== null && subsurface.doubleSided);
@@ -71,6 +72,7 @@ export const subsurfacePbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 // Installs the built-in Subsurface renderer for SubsurfacePbrMaterialKind on this state. Opt-in (no
 // top-level side effect): drawScene3D only draws Subsurface subsets once this is called.
 export function registerSubsurfacePbrGlMaterial(state: GlRenderState): void {
+  registerGlImageTextureResolver(state);
   registerGlMeshMaterialRenderer(state, SubsurfacePbrMaterialKind, subsurfacePbrGlMeshMaterialRenderer);
 }
 

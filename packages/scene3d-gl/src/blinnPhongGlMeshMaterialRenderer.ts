@@ -1,6 +1,5 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
-import { hasImageResourcePixels } from '@flighthq/image/contract';
-import { bindGlImageResourceTexture } from '@flighthq/render-gl/contract';
+import { registerGlImageTextureResolver, resolveGlTexture } from '@flighthq/render-gl/contract';
 import type {
   LinearColor,
   BlinnPhongMaterial,
@@ -46,7 +45,7 @@ export const blinnPhongGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   ): void {
     const gl = state.gl;
     const blinnPhong = material as Readonly<BlinnPhongMaterial> | null;
-    const program = ensureGlClassicProgram(state, defineKeyForMaterial(blinnPhong));
+    const program = ensureGlClassicProgram(state, defineKeyForMaterial(state, blinnPhong));
     beginGlMeshDraw(state, program, blinnPhong !== null && blinnPhong.doubleSided);
 
     setGlMeshViewProjection(gl, program.locViewProjection, camera);
@@ -66,6 +65,7 @@ export const blinnPhongGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 // top-level side effect); call once per GlRenderState before drawScene3D so meshes with BlinnPhong
 // materials draw.
 export function registerBlinnPhongGlMaterial(state: GlRenderState): void {
+  registerGlImageTextureResolver(state);
   registerGlMeshMaterialRenderer(state, BlinnPhongMaterialKind, blinnPhongGlMeshMaterialRenderer);
 }
 
@@ -93,31 +93,27 @@ function bindGlBlinnPhongMaterialUniforms(
   gl.uniform1f(program.locAlphaCutoff, material.alphaCutoff);
 
   const diffuseMap = material.diffuseMap;
-  if (diffuseMap !== null && diffuseMap.storage.image !== null && hasImageResourcePixels(diffuseMap.storage.image)) {
+  if (diffuseMap !== null) {
     gl.activeTexture(gl.TEXTURE0);
-    bindGlImageResourceTexture(state, diffuseMap.storage.image, diffuseMap.sampler);
-    gl.uniform1i(program.locDiffuseMap, 0);
+    if (resolveGlTexture(state, diffuseMap) !== null) gl.uniform1i(program.locDiffuseMap, 0);
   }
 
   const specularMap = material.specularMap;
-  if (specularMap !== null && specularMap.storage.image !== null && hasImageResourcePixels(specularMap.storage.image)) {
+  if (specularMap !== null) {
     gl.activeTexture(gl.TEXTURE1);
-    bindGlImageResourceTexture(state, specularMap.storage.image, specularMap.sampler);
-    gl.uniform1i(program.locSpecularMap, 1);
+    if (resolveGlTexture(state, specularMap) !== null) gl.uniform1i(program.locSpecularMap, 1);
   }
 
   const normalMap = material.normalMap;
-  if (normalMap !== null && normalMap.storage.image !== null && hasImageResourcePixels(normalMap.storage.image)) {
+  if (normalMap !== null) {
     gl.activeTexture(gl.TEXTURE2);
-    bindGlImageResourceTexture(state, normalMap.storage.image, normalMap.sampler);
-    gl.uniform1i(program.locNormalMap, 2);
+    if (resolveGlTexture(state, normalMap) !== null) gl.uniform1i(program.locNormalMap, 2);
   }
 
   const alphaMap = material.alphaMap;
-  if (alphaMap !== null && alphaMap.storage.image !== null && hasImageResourcePixels(alphaMap.storage.image)) {
+  if (alphaMap !== null) {
     gl.activeTexture(gl.TEXTURE3);
-    bindGlImageResourceTexture(state, alphaMap.storage.image, alphaMap.sampler);
-    gl.uniform1i(program.locAlphaMap, 3);
+    if (resolveGlTexture(state, alphaMap) !== null) gl.uniform1i(program.locAlphaMap, 3);
   }
 
   bindGlUvTransform(gl, program, diffuseMap);
@@ -125,16 +121,16 @@ function bindGlBlinnPhongMaterialUniforms(
 
 // The feature define key for a BlinnPhong material: the fixed `blinnphong` lighting model plus which
 // optional maps are present and whether alpha-mask cutoff is active.
-function defineKeyForMaterial(material: Readonly<BlinnPhongMaterial> | null): GlClassicDefineKey {
+function defineKeyForMaterial(state: GlRenderState, material: Readonly<BlinnPhongMaterial> | null): GlClassicDefineKey {
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
-    // Match the bind's readiness test (isGlTextureReady, incl. hasImageResourcePixels) so the compiled
-    // HAS_ALPHA_MAP variant and the bound texture never disagree. Gated off 'opaque' — an opaque
+    // Match the bind's resolver readiness so the compiled HAS_ALPHA_MAP variant and bound texture
+    // never disagree. Gated off 'opaque' — an opaque
     // material ignores coverage (SurfaceMaterial contract), so it must not sample the alpha map.
-    hasAlphaMap: material !== null && material.alphaMode !== 'opaque' && isGlTextureReady(material.alphaMap),
-    hasDiffuseMap: material !== null && material.diffuseMap !== null && material.diffuseMap.storage.image !== null,
-    hasNormalMap: material !== null && material.normalMap !== null && material.normalMap.storage.image !== null,
-    hasSpecularMap: material !== null && material.specularMap !== null && material.specularMap.storage.image !== null,
+    hasAlphaMap: material !== null && material.alphaMode !== 'opaque' && isGlTextureReady(state, material.alphaMap),
+    hasDiffuseMap: material !== null && isGlTextureReady(state, material.diffuseMap),
+    hasNormalMap: material !== null && isGlTextureReady(state, material.normalMap),
+    hasSpecularMap: material !== null && isGlTextureReady(state, material.specularMap),
     hasUvTransform: hasGlUvTransform(material !== null ? material.diffuseMap : null),
     lightingModel: 'blinnphong',
   };

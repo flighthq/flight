@@ -1,4 +1,5 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
+import { registerGlImageTextureResolver, resolveGlTexture } from '@flighthq/render-gl/contract';
 import type {
   LinearColor,
   Camera3D,
@@ -37,7 +38,7 @@ export const emissiveGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   ): void {
     const gl = state.gl;
     const emissive = material as Readonly<EmissiveMaterial> | null;
-    const program = ensureGlUnlitProgram(state, defineKeyForMaterial(emissive));
+    const program = ensureGlUnlitProgram(state, defineKeyForMaterial(state, emissive));
     beginGlMeshDraw(state, program, emissive !== null && emissive.doubleSided);
     setGlMeshViewProjection(gl, program.locViewProjection, camera);
 
@@ -68,13 +69,15 @@ export const emissiveGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 // level side effect); call once per GlRenderState before drawScene3D so meshes with EmissiveMaterials
 // draw.
 export function registerEmissiveGlMaterial(state: GlRenderState): void {
+  registerGlImageTextureResolver(state);
   registerGlMeshMaterialRenderer(state, EmissiveMaterialKind, emissiveGlMeshMaterialRenderer);
 }
 
-function defineKeyForMaterial(material: Readonly<EmissiveMaterial> | null): GlUnlitDefineKey {
+function defineKeyForMaterial(state: GlRenderState, material: Readonly<EmissiveMaterial> | null): GlUnlitDefineKey {
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
-    hasColorMap: material !== null && material.emissiveMap !== null && material.emissiveMap.storage.image !== null,
+    hasColorMap:
+      material !== null && material.emissiveMap !== null && resolveGlTexture(state, material.emissiveMap) !== null,
     hasUvTransform: hasGlUvTransform(material !== null ? material.emissiveMap : null),
     vertexColor: false,
   };

@@ -1,6 +1,5 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
-import { hasImageResourcePixels } from '@flighthq/image/contract';
-import { bindGlImageResourceTexture } from '@flighthq/render-gl/contract';
+import { registerGlImageTextureResolver, resolveGlTexture } from '@flighthq/render-gl/contract';
 import type {
   LinearColor,
   Camera3D,
@@ -44,7 +43,7 @@ export const phongGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   ): void {
     const gl = state.gl;
     const phong = material as Readonly<PhongMaterial> | null;
-    const program = ensureGlClassicProgram(state, defineKeyForMaterial(phong));
+    const program = ensureGlClassicProgram(state, defineKeyForMaterial(state, phong));
     beginGlMeshDraw(state, program, phong !== null && phong.doubleSided);
 
     setGlMeshViewProjection(gl, program.locViewProjection, camera);
@@ -63,6 +62,7 @@ export const phongGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 // Registers the built-in Phong renderer for PhongMaterialKind on this state. Opt-in (no top-level
 // side effect); call once per GlRenderState before drawScene3D so meshes with PhongMaterials draw.
 export function registerPhongGlMaterial(state: GlRenderState): void {
+  registerGlImageTextureResolver(state);
   registerGlMeshMaterialRenderer(state, PhongMaterialKind, phongGlMeshMaterialRenderer);
 }
 
@@ -90,24 +90,21 @@ function bindGlPhongMaterialUniforms(
   gl.uniform1f(program.locAlphaCutoff, material.alphaCutoff);
 
   const diffuseMap = material.diffuseMap;
-  if (diffuseMap !== null && diffuseMap.storage.image !== null && hasImageResourcePixels(diffuseMap.storage.image)) {
+  if (diffuseMap !== null) {
     gl.activeTexture(gl.TEXTURE0);
-    bindGlImageResourceTexture(state, diffuseMap.storage.image, diffuseMap.sampler);
-    gl.uniform1i(program.locDiffuseMap, 0);
+    if (resolveGlTexture(state, diffuseMap) !== null) gl.uniform1i(program.locDiffuseMap, 0);
   }
 
   const specularMap = material.specularMap;
-  if (specularMap !== null && specularMap.storage.image !== null && hasImageResourcePixels(specularMap.storage.image)) {
+  if (specularMap !== null) {
     gl.activeTexture(gl.TEXTURE1);
-    bindGlImageResourceTexture(state, specularMap.storage.image, specularMap.sampler);
-    gl.uniform1i(program.locSpecularMap, 1);
+    if (resolveGlTexture(state, specularMap) !== null) gl.uniform1i(program.locSpecularMap, 1);
   }
 
   const normalMap = material.normalMap;
-  if (normalMap !== null && normalMap.storage.image !== null && hasImageResourcePixels(normalMap.storage.image)) {
+  if (normalMap !== null) {
     gl.activeTexture(gl.TEXTURE2);
-    bindGlImageResourceTexture(state, normalMap.storage.image, normalMap.sampler);
-    gl.uniform1i(program.locNormalMap, 2);
+    if (resolveGlTexture(state, normalMap) !== null) gl.uniform1i(program.locNormalMap, 2);
   }
 
   bindGlUvTransform(gl, program, diffuseMap);
@@ -115,13 +112,16 @@ function bindGlPhongMaterialUniforms(
 
 // The feature define key for a Phong material: the fixed `phong` lighting model plus which optional
 // maps are present and whether alpha-mask cutoff is active.
-function defineKeyForMaterial(material: Readonly<PhongMaterial> | null): GlClassicDefineKey {
+function defineKeyForMaterial(state: GlRenderState, material: Readonly<PhongMaterial> | null): GlClassicDefineKey {
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
     hasAlphaMap: false,
-    hasDiffuseMap: material !== null && material.diffuseMap !== null && material.diffuseMap.storage.image !== null,
-    hasNormalMap: material !== null && material.normalMap !== null && material.normalMap.storage.image !== null,
-    hasSpecularMap: material !== null && material.specularMap !== null && material.specularMap.storage.image !== null,
+    hasDiffuseMap:
+      material !== null && material.diffuseMap !== null && resolveGlTexture(state, material.diffuseMap) !== null,
+    hasNormalMap:
+      material !== null && material.normalMap !== null && resolveGlTexture(state, material.normalMap) !== null,
+    hasSpecularMap:
+      material !== null && material.specularMap !== null && resolveGlTexture(state, material.specularMap) !== null,
     hasUvTransform: hasGlUvTransform(material !== null ? material.diffuseMap : null),
     lightingModel: 'phong',
   };

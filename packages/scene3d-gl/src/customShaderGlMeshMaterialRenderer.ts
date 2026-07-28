@@ -1,5 +1,4 @@
-import { hasImageResourcePixels } from '@flighthq/image/contract';
-import { bindGlImageResourceTexture } from '@flighthq/render-gl/contract';
+import { registerGlImageTextureResolver, resolveGlTexture } from '@flighthq/render-gl/contract';
 import type {
   GlCustomMaterialShaderSource,
   Camera3D,
@@ -88,6 +87,7 @@ export function getGlCustomMaterialShaderSource(
 // state. Opt-in (no top-level side effect); call once per GlRenderState before drawScene3D so
 // meshes carrying CustomShaderMaterials draw.
 export function registerCustomShaderGlMaterial(state: GlRenderState): void {
+  registerGlImageTextureResolver(state);
   registerGlMeshMaterialRenderer(state, CustomShaderMaterialKind, customShaderGlMeshMaterialRenderer);
 }
 
@@ -183,11 +183,10 @@ function uploadCustomShaderMaterialTextures(
   let unit = 0;
   for (const name of Object.keys(textures)) {
     const texture: Readonly<Texture> = textures[name];
-    if (texture.storage.image === null || !hasImageResourcePixels(texture.storage.image)) continue;
     const location = gl.getUniformLocation(program, name);
     if (location === null) continue;
     gl.activeTexture(gl.TEXTURE0 + unit);
-    bindGlImageResourceTexture(state, texture.storage.image, texture.sampler);
+    if (resolveGlTexture(state, texture) === null) continue;
     gl.uniform1i(location, unit);
     unit++;
   }

@@ -1,6 +1,5 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
-import { hasImageResourcePixels } from '@flighthq/image/contract';
-import { bindGlImageResourceTexture } from '@flighthq/render-gl/contract';
+import { registerGlImageTextureResolver, resolveGlTexture } from '@flighthq/render-gl/contract';
 import type {
   LinearColor,
   Camera3D,
@@ -43,7 +42,7 @@ export const lambertGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   ): void {
     const gl = state.gl;
     const lambert = material as Readonly<LambertMaterial> | null;
-    const program = ensureGlClassicProgram(state, defineKeyForMaterial(lambert));
+    const program = ensureGlClassicProgram(state, defineKeyForMaterial(state, lambert));
     beginGlMeshDraw(state, program, lambert !== null && lambert.doubleSided);
 
     setGlMeshViewProjection(gl, program.locViewProjection, camera);
@@ -61,6 +60,7 @@ export const lambertGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 // Registers the built-in Lambert renderer for LambertMaterialKind on this state. Opt-in (no top-level
 // side effect); call once per GlRenderState before drawScene3D so meshes with LambertMaterials draw.
 export function registerLambertGlMaterial(state: GlRenderState): void {
+  registerGlImageTextureResolver(state);
   registerGlMeshMaterialRenderer(state, LambertMaterialKind, lambertGlMeshMaterialRenderer);
 }
 
@@ -81,21 +81,21 @@ function bindGlLambertMaterialUniforms(
   gl.uniform1f(program.locAlphaCutoff, material.alphaCutoff);
 
   const diffuseMap = material.diffuseMap;
-  if (diffuseMap !== null && diffuseMap.storage.image !== null && hasImageResourcePixels(diffuseMap.storage.image)) {
+  if (diffuseMap !== null) {
     gl.activeTexture(gl.TEXTURE0);
-    bindGlImageResourceTexture(state, diffuseMap.storage.image, diffuseMap.sampler);
-    gl.uniform1i(program.locDiffuseMap, 0);
+    if (resolveGlTexture(state, diffuseMap) !== null) gl.uniform1i(program.locDiffuseMap, 0);
   }
   bindGlUvTransform(gl, program, diffuseMap);
 }
 
 // The feature define key for a Lambert material: the fixed `lambert` lighting model plus which optional
 // maps are present and whether alpha-mask cutoff is active. Lambert never has specular or normal maps.
-function defineKeyForMaterial(material: Readonly<LambertMaterial> | null): GlClassicDefineKey {
+function defineKeyForMaterial(state: GlRenderState, material: Readonly<LambertMaterial> | null): GlClassicDefineKey {
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
     hasAlphaMap: false,
-    hasDiffuseMap: material !== null && material.diffuseMap !== null && material.diffuseMap.storage.image !== null,
+    hasDiffuseMap:
+      material !== null && material.diffuseMap !== null && resolveGlTexture(state, material.diffuseMap) !== null,
     hasNormalMap: false,
     hasSpecularMap: false,
     hasUvTransform: hasGlUvTransform(material !== null ? material.diffuseMap : null),

@@ -1,4 +1,5 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
+import { registerGlImageTextureResolver } from '@flighthq/render-gl/contract';
 import type {
   LinearColor,
   Camera3D,
@@ -44,7 +45,7 @@ export const transmissionVolumePbrGlMeshMaterialRenderer: GlMeshMaterialRenderer
     const gl = state.gl;
     const transmission = material as Readonly<TransmissionVolumePbrMaterial> | null;
     const standard = transmission !== null ? transmission.standard : null;
-    const key = buildGlPbrStandardDefineKey(standard, transmission);
+    const key = buildGlPbrStandardDefineKey(state, standard, transmission);
     key.transmissionEnabled = true;
     const program = ensureGlPbrProgram(state, key);
     beginGlMeshDraw(state, program, transmission !== null && transmission.doubleSided);
@@ -76,6 +77,7 @@ export const transmissionVolumePbrGlMeshMaterialRenderer: GlMeshMaterialRenderer
 // state. Opt-in (no top-level side effect): drawScene3D only draws TransmissionVolume subsets once
 // this is called.
 export function registerTransmissionVolumePbrGlMaterial(state: GlRenderState): void {
+  registerGlImageTextureResolver(state);
   registerGlMeshMaterialRenderer(state, TransmissionVolumePbrMaterialKind, transmissionVolumePbrGlMeshMaterialRenderer);
 }
 
