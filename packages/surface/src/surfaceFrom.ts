@@ -1,6 +1,7 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { createImageResourceFromCanvas } from '@flighthq/image/contract';
 import type { ImageResource, Surface } from '@flighthq/types/contract';
+import { ImageTextureBackingKind } from '@flighthq/types/contract';
 
 export function createImageResourceFromSurface(surface: Readonly<Surface>): ImageResource {
   const canvas = document.createElement('canvas');
@@ -30,6 +31,7 @@ export function createSurfaceFromCanvas(
     data: raw.data,
     format: 'rgba8unorm',
     height: raw.height,
+    kind: ImageTextureBackingKind,
     source: null,
     version: 0,
     width: raw.width,
@@ -52,6 +54,7 @@ export function createSurfaceFromImageResource(resource: Readonly<ImageResource>
           : new Uint8ClampedArray(resource.width * resource.height * 4),
       format: resource.format,
       height: resource.height,
+      kind: ImageTextureBackingKind,
       source: null,
       version: 0,
       width: resource.width,
@@ -67,6 +70,7 @@ export function createSurfaceFromImageResource(resource: Readonly<ImageResource>
     data: raw.data,
     format: 'rgba8unorm',
     height: resource.height,
+    kind: ImageTextureBackingKind,
     source: null,
     version: 0,
     width: resource.width,
@@ -95,6 +99,7 @@ export function createSurfaceFromImageSource(source: CanvasImageSource, width: n
     data: raw.data,
     format: 'rgba8unorm',
     height,
+    kind: ImageTextureBackingKind,
     source: null,
     version: 0,
     width,

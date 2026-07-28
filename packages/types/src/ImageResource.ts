@@ -3,6 +3,7 @@ import type { Entity } from './Entity';
 import type { HostImageSource } from './HostImageSource';
 import type { ImageResourceCompressed } from './ImageResourceCompressed';
 import type { PixelFormat } from './PixelFormat';
+import type { TextureBackingKind } from './TextureBackingKind';
 
 /**
  * A backend-agnostic image resource: pixel dimensions, a monotonically increasing version, and up to
@@ -40,6 +41,12 @@ export interface ImageResource extends Entity {
   format: PixelFormat;
   /** Pixel height. 0 until an element or data sets it. */
   height: number;
+  /**
+   * Open Texture resolver-registry key declared by the loader that owns this backing. Ordinary
+   * images and generated surfaces use `image`; streaming video uses `video`; vendor families prefix
+   * their values. Dispatch never inspects the opaque host source to infer this value.
+   */
+  kind: TextureBackingKind;
   /**
    * Element representation the GPU/Canvas backends upload or draw directly (image, canvas,
    * ImageBitmap, …). Null for data-only resources such as a freshly generated `Surface`.

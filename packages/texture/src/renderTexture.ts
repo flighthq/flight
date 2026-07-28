@@ -1,4 +1,5 @@
 import type { CreateRenderTextureOptions, Texture } from '@flighthq/types/contract';
+import { ProducedTextureBackingKind } from '@flighthq/types/contract';
 
 import { copySampler } from './sampler';
 import { createTexture } from './texture';
@@ -24,6 +25,7 @@ export function createRenderTexture(options: Readonly<CreateRenderTextureOptions
         depth: options.depth,
         format: options.format,
         height: options.height,
+        kind: ProducedTextureBackingKind,
         sampleCount: options.sampleCount,
         width: options.width,
       },

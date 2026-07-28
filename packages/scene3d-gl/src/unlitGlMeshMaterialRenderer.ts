@@ -78,8 +78,9 @@ export function registerUnlitGlMaterial(state: GlRenderState): void {
 
 function defineKeyForMaterial(state: GlRenderState, material: Readonly<UnlitMaterial> | null): GlUnlitDefineKey {
   const colorMap = material?.baseColorMap ?? null;
-  const produced = colorMap !== null && glProducedTextureBackingKind(colorMap.storage);
-  const video = colorMap !== null && glVideoTextureBackingKind(colorMap.storage);
+  const backingKind = colorMap?.storage.image?.kind ?? colorMap?.storage.target?.kind;
+  const produced = backingKind === glProducedTextureBackingKind;
+  const video = backingKind === glVideoTextureBackingKind;
   const colorMapReady =
     colorMap !== null &&
     (produced

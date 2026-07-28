@@ -1,6 +1,7 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { invalidateImageResource } from '@flighthq/image/contract';
 import type { AlphaType, Surface } from '@flighthq/types/contract';
+import { ImageTextureBackingKind } from '@flighthq/types/contract';
 
 export function cloneSurface(source: Readonly<Surface>): Surface {
   return createEntity({
@@ -10,6 +11,7 @@ export function cloneSurface(source: Readonly<Surface>): Surface {
     data: new Uint8ClampedArray(source.data),
     format: source.format,
     height: source.height,
+    kind: source.kind,
     source: null,
     version: 0,
     width: source.width,
@@ -79,6 +81,7 @@ export function createSurface(width: number, height: number, color: number = 0):
     data,
     format: 'rgba8unorm',
     height,
+    kind: ImageTextureBackingKind,
     source: null,
     version: 0,
     width,

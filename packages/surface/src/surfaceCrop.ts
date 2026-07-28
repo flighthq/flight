@@ -1,5 +1,6 @@
 import { createEntity } from '@flighthq/entity/contract';
 import type { RectangleLike, Surface, SurfaceEdgeMode } from '@flighthq/types/contract';
+import { ImageTextureBackingKind } from '@flighthq/types/contract';
 
 /**
  * Allocates a new `Surface` containing the pixels of `source` cropped to
@@ -40,6 +41,7 @@ export function cropSurface(source: Readonly<Surface>, rect: Readonly<RectangleL
     data,
     format: source.format,
     height: rh,
+    kind: ImageTextureBackingKind,
     source: null,
     version: 0,
     width: rw,
@@ -114,6 +116,7 @@ export function extendSurface(
     data,
     format: source.format,
     height: dh,
+    kind: ImageTextureBackingKind,
     source: null,
     version: 0,
     width: dw,
@@ -153,6 +156,7 @@ export function trimSurface(source: Readonly<Surface>): Surface {
       data: new Uint8ClampedArray(4),
       format: source.format,
       height: 1,
+      kind: ImageTextureBackingKind,
       source: null,
       version: 0,
       width: 1,
