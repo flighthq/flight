@@ -41,6 +41,7 @@ export {
   setTextureFlip,
   setTextureImage,
   setTextureUvOffset,
+  setTextureUvFromPixelRect,
   setTextureUvRotation,
   setTextureUvScale,
   setVideoTextureSource,

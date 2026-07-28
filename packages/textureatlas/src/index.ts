@@ -13,6 +13,7 @@ export {
   getTextureAtlasRegionById,
   getTextureAtlasRegionByName,
   getTextureAtlasRegionSequence,
+  getTextureAtlasRegionTexture,
   getTextureAtlasRegionUv,
   loadTextureAtlasFromBase64,
   loadTextureAtlasFromBlob,

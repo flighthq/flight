@@ -1,6 +1,7 @@
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
-import { createBitmap } from '@flighthq/scene2d/contract';
-import type { Bitmap, Node2D, Spritesheet, SpritesheetAnimation, TimelineSource } from '@flighthq/types/contract';
+import { createSprite } from '@flighthq/scene2d/contract';
+import { getTextureAtlasRegionTexture } from '@flighthq/textureatlas/contract';
+import type { Sprite, Node2D, Spritesheet, SpritesheetAnimation, TimelineSource } from '@flighthq/types/contract';
 
 // Exposes a spritesheet animation as a TimelineSource so a MovieClip can play it (the spritesheet side of
 // the timeline frame-source contract — `@flighthq/timeline` consumes `TimelineSource`, this produces one,
@@ -14,7 +15,7 @@ export function createSpritesheetTimelineSource(
   spritesheet: Readonly<Spritesheet>,
   animation: Readonly<SpritesheetAnimation>,
 ): TimelineSource {
-  const bitmaps = new WeakMap<Node2D, Bitmap>();
+  const bitmaps = new WeakMap<Node2D, Sprite>();
   return {
     totalFrames: animation.frames.length,
     labels: [],
@@ -25,15 +26,14 @@ export function createSpritesheetTimelineSource(
 
       let bitmap = bitmaps.get(target);
       if (bitmap === undefined) {
-        bitmap = createBitmap();
-        bitmap.data.image = atlas.image;
+        bitmap = createSprite();
         addNodeChild(target, bitmap);
         bitmaps.set(target, bitmap);
       }
 
       const sheetFrame = spritesheet.frames[animation.frames[frame - 1]];
       if (sheetFrame === undefined) return;
-      bitmap.data.sourceRectangle = atlas.regions[sheetFrame.id];
+      bitmap.data.texture = getTextureAtlasRegionTexture(atlas, sheetFrame.id);
       bitmap.x = sheetFrame.offsetX - animation.originX;
       bitmap.y = sheetFrame.offsetY - animation.originY;
       invalidateNodeLocalTransform(bitmap);

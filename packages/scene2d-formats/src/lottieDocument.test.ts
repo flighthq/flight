@@ -8,7 +8,7 @@ import type {
   LottieShapePath,
   Shape,
 } from '@flighthq/types/contract';
-import { BitmapKind, ShapeKind, TextLabelKind } from '@flighthq/types/contract';
+import { SpriteKind, ShapeKind, TextLabelKind } from '@flighthq/types/contract';
 
 import { applyAnimationClipToLottieDocument, createScene2DFromLottieDocument } from './lottieDocument';
 
@@ -71,7 +71,7 @@ describe('Lottie document conformance census', () => {
     expect(findByName(result.root, 'shape')).not.toBeNull();
     expect(findFirstKind(findByName(result.root, 'shape')!, ShapeKind)).not.toBeNull();
     expect(findFirstKind(findByName(result.root, 'solid')!, ShapeKind)).not.toBeNull();
-    expect(findFirstKind(findByName(result.root, 'image')!, BitmapKind)).not.toBeNull();
+    expect(findFirstKind(findByName(result.root, 'image')!, SpriteKind)).not.toBeNull();
     expect(findByName(result.root, 'null')).not.toBeNull();
     expect(findFirstKind(findByName(result.root, 'text')!, TextLabelKind)).not.toBeNull();
     expect(findByName(result.root, 'nested')).not.toBeNull();

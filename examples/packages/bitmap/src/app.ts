@@ -1,5 +1,5 @@
 import type { Node2D } from '@flighthq/sdk';
-import { addNodeChild, createBitmap, createDisplayObject, createImageResource } from '@flighthq/sdk';
+import { addNodeChild, createSprite, createDisplayObject, createImageResource, createTexture } from '@flighthq/sdk';
 
 import { render, scale } from './render';
 
@@ -9,16 +9,16 @@ root.scaleY = scale;
 
 // Gradient square: a colorful linear gradient from top-left to bottom-right.
 
-const gradientBitmap = createBitmap();
-gradientBitmap.data.image = createImageResource(createGradientImage(128, 128));
+const gradientBitmap = createSprite();
+gradientBitmap.data.texture = createImageTexture(createGradientImage(128, 128));
 gradientBitmap.x = 60;
 gradientBitmap.y = 60;
 addNodeChild(root, gradientBitmap);
 
 // Checkerboard pattern: demonstrates procedural pattern generation.
 
-const checkerBitmap = createBitmap();
-checkerBitmap.data.image = createImageResource(createCheckerboardImage(128, 128));
+const checkerBitmap = createSprite();
+checkerBitmap.data.texture = createImageTexture(createCheckerboardImage(128, 128));
 checkerBitmap.x = 340;
 checkerBitmap.y = 60;
 checkerBitmap.alpha = 0.5;
@@ -26,8 +26,8 @@ addNodeChild(root, checkerBitmap);
 
 // Circle with radial gradient: scaled to 2x.
 
-const circleBitmap = createBitmap();
-circleBitmap.data.image = createImageResource(createRadialGradientImage(128, 128));
+const circleBitmap = createSprite();
+circleBitmap.data.texture = createImageTexture(createRadialGradientImage(128, 128));
 circleBitmap.x = 620;
 circleBitmap.y = 60;
 circleBitmap.scaleX = 2;
@@ -36,8 +36,8 @@ addNodeChild(root, circleBitmap);
 
 // Rotated gradient square: the same gradient image rotated 30 degrees.
 
-const rotatedBitmap = createBitmap();
-rotatedBitmap.data.image = createImageResource(createGradientImage(96, 96));
+const rotatedBitmap = createSprite();
+rotatedBitmap.data.texture = createImageTexture(createGradientImage(96, 96));
 rotatedBitmap.x = 200;
 rotatedBitmap.y = 340;
 rotatedBitmap.rotation = 30;
@@ -45,8 +45,8 @@ addNodeChild(root, rotatedBitmap);
 
 // Combined properties: scaled, semi-transparent, and rotated checkerboard.
 
-const combinedBitmap = createBitmap();
-combinedBitmap.data.image = createImageResource(createCheckerboardImage(80, 80));
+const combinedBitmap = createSprite();
+combinedBitmap.data.texture = createImageTexture(createCheckerboardImage(80, 80));
 combinedBitmap.x = 500;
 combinedBitmap.y = 340;
 combinedBitmap.scaleX = 1.5;
@@ -61,6 +61,10 @@ function enterFrame(): void {
 }
 
 requestAnimationFrame(enterFrame);
+
+function createImageTexture(source: HTMLCanvasElement) {
+  return createTexture({ storage: { dimension: '2d', image: createImageResource(source) } });
+}
 
 function createGradientImage(width: number, height: number): HTMLCanvasElement {
   const c = document.createElement('canvas');

@@ -8,4 +8,8 @@ export type WgpuTextureBackingKind = TextureBackingKind;
 
 // Synchronously realizes a Texture for one render state. GPU handles stay in state-owned caches;
 // null is the not-ready/unsupported sentinel.
-export type WgpuTextureResolver = (state: WgpuRenderState, texture: Readonly<TextureLike>) => WgpuTextureEntry | null;
+export type WgpuTextureResolver = (
+  state: WgpuRenderState,
+  texture: Readonly<TextureLike>,
+  premultiply: boolean,
+) => WgpuTextureEntry | null;

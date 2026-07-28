@@ -1,5 +1,5 @@
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
-import { createBitmap } from '@flighthq/scene2d/contract';
+import { createSprite } from '@flighthq/scene2d/contract';
 import type { WgpuBitmapShader } from '@flighthq/types/contract';
 
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
@@ -13,7 +13,7 @@ beforeAll(() => {
 describe('getWgpuShader', () => {
   it('returns undefined when no shader is bound', async () => {
     const state = await createWgpuRenderStateForTest();
-    const bitmap = createBitmap();
+    const bitmap = createSprite();
     const renderProxy = getOrCreateRenderProxy2D(state, bitmap);
     expect(getWgpuShader(renderProxy)).toBeUndefined();
   });
@@ -22,7 +22,7 @@ describe('getWgpuShader', () => {
 describe('resolveWgpuShader', () => {
   it('returns null when no shader feature is enabled', async () => {
     const state = await createWgpuRenderStateForTest();
-    const bitmap = createBitmap();
+    const bitmap = createSprite();
     const renderProxy = getOrCreateRenderProxy2D(state, bitmap);
     expect(resolveWgpuShader(state, renderProxy)).toBeNull();
   });
@@ -31,7 +31,7 @@ describe('resolveWgpuShader', () => {
 describe('setWgpuShader', () => {
   it('binds a shader to a display object', async () => {
     const state = await createWgpuRenderStateForTest();
-    const bitmap = createBitmap();
+    const bitmap = createSprite();
     const fakeShader: WgpuBitmapShader = { pipeline: {} as never, bind: () => {} };
 
     setWgpuShader(state, bitmap, fakeShader);
@@ -43,7 +43,7 @@ describe('setWgpuShader', () => {
   it('installs the per-node shader binding resolver', async () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
-    const bitmap = createBitmap();
+    const bitmap = createSprite();
     const fakeShader: WgpuBitmapShader = { pipeline: {} as never, bind: () => {} };
     expect(runtime.webgpuShaderBindingResolver).toBeUndefined();
     setWgpuShader(state, bitmap, fakeShader);
@@ -52,7 +52,7 @@ describe('setWgpuShader', () => {
 
   it('removes the binding when shader is null', async () => {
     const state = await createWgpuRenderStateForTest();
-    const bitmap = createBitmap();
+    const bitmap = createSprite();
     const fakeShader: WgpuBitmapShader = { pipeline: {} as never, bind: () => {} };
     setWgpuShader(state, bitmap, fakeShader);
     setWgpuShader(state, bitmap, null);

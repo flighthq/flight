@@ -1,11 +1,8 @@
 import type { Node2D, Node2DData, Node2DRuntime } from './Node2D';
-import type { Rectangle } from './Rectangle';
-import type { TextureAtlas } from './TextureAtlas';
+import type { Texture } from './Texture';
 
 export interface SpriteData extends Node2DData {
-  atlas: TextureAtlas | null;
-  id: number;
-  rect: Rectangle | null;
+  texture: Texture | null;
 }
 
 export interface SpriteRuntime extends Node2DRuntime {}

@@ -147,11 +147,8 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // active material's packInstance. Separate from the base instance data so the base layout carries
   // no material concern.
   spriteBatchMaterialData: Float32Array;
-  spriteBatchTexture: ImageResource | null;
-  // Per-bitmap smoothing for the active batch (a flush key, mirroring the gl sprite batch). `true`/`false`
-  // force LINEAR/NEAREST sampling; `null` uses the global `state.allowSmoothing` default (sprites/text/
-  // shapes). A bitmap whose `smoothing` differs from the batch's flushes, since the sampler is baked into
-  // the group(1) bind group.
+  spriteBatchTexture: ImageResource | Texture | null;
+  // Transitional sampling key for legacy atlas/image writers. A Texture carries its sampler directly.
   spriteBatchSmoothing: boolean | null;
   // Color-adjustment fold state for the active sprite batch, owned by the opt-in
   // registerWgpuColorAdjustmentMaterialFeature (absent until then, so a state that never tints allocates none of it).

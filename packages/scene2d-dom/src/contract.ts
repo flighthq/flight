@@ -1,5 +1,5 @@
 export * from './domBackground';
-export * from './domBitmap';
+export * from './domSprite';
 export * from './domCache';
 export * from './domClip';
 export * from './domClipRectangle';

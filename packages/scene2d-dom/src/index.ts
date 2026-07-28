@@ -1,6 +1,6 @@
 export {
   createDomRenderState,
-  defaultDomBitmapRenderer,
+  defaultDomSpriteRenderer,
   defaultDomNativeTextRenderer,
   defaultDomRichTextRenderer,
   defaultDomScale9ShapeRenderer,

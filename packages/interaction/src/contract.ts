@@ -7,7 +7,7 @@ export * from './hitTests';
 export * from './interactionManager';
 export * from './interactionSpatialIndex';
 export * from './nodeInteractionState';
-export * from './registerBitmapHitTest';
+export * from './registerSpriteHitTest';
 export * from './registerShapeHitTest';
 export * from './registerTextHitTest';
 export * from './registerDefaultHitTests';

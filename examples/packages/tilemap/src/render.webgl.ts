@@ -1,10 +1,10 @@
 import type { Node2D } from '@flighthq/sdk';
 import {
-  BitmapKind,
+  SpriteKind,
   TilemapKind,
   createGlCanvasElement,
   createGlRenderState,
-  defaultGlBitmapRenderer,
+  defaultGlSpriteRenderer,
   defaultGlTilemapRenderer,
   prepareScene2DRender,
   registerStandardGlMaterial,
@@ -25,7 +25,7 @@ export const state = createGlRenderState(canvas, {
 });
 
 registerStandardGlMaterial(state);
-registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
+registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, TilemapKind, defaultGlTilemapRenderer);
 
 export const scale = pixelRatio;

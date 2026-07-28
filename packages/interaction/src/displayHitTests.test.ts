@@ -3,7 +3,6 @@ import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 
 import {
-  defaultBitmapHitTestHandler,
   defaultNode2DHitTestHandler,
   defaultHtmlViewHitTestHandler,
   defaultMovieClipHitTestHandler,
@@ -20,18 +19,6 @@ function makeNode2D() {
   setRectangle(getNodeLocalBoundsRectangle(obj), 0, 0, 100, 100);
   return obj;
 }
-
-describe('defaultBitmapHitTestHandler', () => {
-  it('returns true when point is within local bounds', () => {
-    const obj = makeNode2D();
-    expect(defaultBitmapHitTestHandler(obj, 50, 50)).toBe(true);
-  });
-
-  it('returns false when point is outside local bounds', () => {
-    const obj = makeNode2D();
-    expect(defaultBitmapHitTestHandler(obj, 200, 200)).toBe(false);
-  });
-});
 
 describe('defaultHtmlViewHitTestHandler', () => {
   it('always returns false â€” browser manages HtmlView hit testing', () => {

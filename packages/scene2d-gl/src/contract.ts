@@ -1,5 +1,5 @@
 export * from './enableGlColorAdjustmentGuards';
-export * from './glBitmap';
+export * from './glSprite';
 export * from './glBitmapText';
 export * from './glCache';
 export * from './glClip';
@@ -18,7 +18,6 @@ export * from './glShape';
 export * from './glShapeMesh';
 export * from './glSprite';
 export * from './glSpriteBatch';
-export * from './glSpriteRenderer';
 export * from './glTextInput';
 export * from './glTextLabel';
 export * from './glTilemap';

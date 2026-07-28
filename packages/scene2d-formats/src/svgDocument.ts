@@ -37,7 +37,7 @@ import {
   getPathBounds,
   transformPath,
 } from '@flighthq/path/contract';
-import { createBitmap, createDisplayObject } from '@flighthq/scene2d/contract';
+import { createSprite, createDisplayObject } from '@flighthq/scene2d/contract';
 import {
   appendShapeBeginFill,
   appendShapeBeginGradientFill,
@@ -49,6 +49,7 @@ import {
 } from '@flighthq/shape/contract';
 import { createRichText, createTextLabel } from '@flighthq/text/contract';
 import { createTextFormatRange } from '@flighthq/textlayout/contract';
+import { createTexture } from '@flighthq/texture/contract';
 import type {
   ClipRegion,
   DisplayObject,
@@ -698,8 +699,8 @@ function createSvgImageNode(
   const y = numberAttribute(element, 'y', 0);
   const scaleX = image.width > 0 && width >= 0 ? width / image.width : 1;
   const scaleY = image.height > 0 && height >= 0 ? height / image.height : 1;
-  const bitmap = createBitmap({
-    data: { image, smoothing: true },
+  const bitmap = createSprite({
+    data: { texture: createTexture({ storage: { dimension: '2d', image } }) },
   });
   const geometry = createMatrix(scaleX, 0, 0, scaleY, x, y);
   applySvgElementAppearance(bitmap, element, parentStyle, context, geometry);

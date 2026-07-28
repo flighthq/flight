@@ -1,9 +1,11 @@
 import { createEntity } from '@flighthq/entity/contract';
+import { createTexture, setTextureImage, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
 import type {
   RectangleLike,
   TextureAtlas,
   TextureAtlasRegion,
   TextureAtlasRegionLike,
+  Texture,
   Vector2Like,
 } from '@flighthq/types/contract';
 
@@ -128,6 +130,27 @@ export function getTextureAtlasRegionSequence(atlas: Readonly<TextureAtlas>, pre
   return result;
 }
 
+// Returns one shared Texture per distinct atlas region. Region textures keep independent sampling
+// and uv state while sharing the atlas ImageResource, so every sprite using a frame shares one upload.
+export function getTextureAtlasRegionTexture(atlas: Readonly<TextureAtlas>, regionId: number): Texture | null {
+  const region = getTextureAtlasRegionById(atlas, regionId);
+  if (region === null || atlas.image === null) return null;
+  let textures = regionTextureCache.get(atlas);
+  if (textures === undefined) {
+    textures = new WeakMap();
+    regionTextureCache.set(atlas, textures);
+  }
+  let texture = textures.get(region);
+  if (texture === undefined) {
+    texture = createTexture({ storage: { dimension: '2d', image: atlas.image } });
+    textures.set(region, texture);
+  } else {
+    setTextureImage(texture, atlas.image);
+  }
+  setTextureUvFromPixelRect(texture, region.x, region.y, region.width, region.height);
+  return texture;
+}
+
 // Writes normalized UV coordinates (0–1) for the region into `out`.
 // Accounts for the atlas image dimensions: `out.x = region.x / imageWidth`, etc.
 // When `region.rotated` is true the packed rectangle is transposed — the UV rect still
@@ -175,3 +198,5 @@ export function setTextureAtlasRegion(
   out.pivotX = pivotX;
   out.pivotY = pivotY;
 }
+
+const regionTextureCache = new WeakMap<Readonly<TextureAtlas>, WeakMap<TextureAtlasRegion, Texture>>();

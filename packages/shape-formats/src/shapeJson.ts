@@ -61,7 +61,7 @@ export function formatShapeJson(shape: Readonly<Shape>, options?: Readonly<Shape
 // Restores a `Shape` from a `formatShapeJson` string by replaying each command through the matching
 // `appendShape*` builder. Returns `null` for malformed JSON, a missing/mismatched `shapeFormat`
 // version tag, a non-array `commands` field, a malformed command entry, an unknown command key, or a
-// malformed argument. Bitmap-bearing commands whose reference cannot be resolved are dropped.
+// malformed argument. Texture-bearing commands whose reference cannot be resolved are dropped.
 export function parseShapeJson(text: string, options?: Readonly<ShapeJsonParseOptions>): Shape | null {
   let root: unknown;
   try {

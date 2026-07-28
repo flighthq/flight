@@ -1,5 +1,5 @@
 import { createRectangle, createVector2 } from '@flighthq/geometry/contract';
-import type { TextureAtlasRegion } from '@flighthq/types/contract';
+import type { ImageResource, TextureAtlasRegion } from '@flighthq/types/contract';
 
 import { createTextureAtlas } from './textureAtlas';
 import {
@@ -11,6 +11,7 @@ import {
   getTextureAtlasRegionById,
   getTextureAtlasRegionByName,
   getTextureAtlasRegionSequence,
+  getTextureAtlasRegionTexture,
   getTextureAtlasRegionUv,
   setTextureAtlasRegion,
 } from './textureAtlasRegion';
@@ -301,6 +302,33 @@ describe('getTextureAtlasRegionSequence', () => {
     const atlas = createTextureAtlas();
     addTextureAtlasRegion(atlas, 0, 0, 10, 10, undefined, undefined, 'idle_01');
     expect(getTextureAtlasRegionSequence(atlas, 'walk')).toEqual([]);
+  });
+});
+
+describe('getTextureAtlasRegionTexture', () => {
+  it('returns one cached texture per distinct region over the shared atlas image', () => {
+    const image = { height: 50, width: 100 } as ImageResource;
+    const atlas = createTextureAtlas({ image });
+    addTextureAtlasRegion(atlas, 10, 5, 20, 15);
+    addTextureAtlasRegion(atlas, 30, 5, 20, 15);
+
+    const first = getTextureAtlasRegionTexture(atlas, 0);
+    const again = getTextureAtlasRegionTexture(atlas, 0);
+    const second = getTextureAtlasRegionTexture(atlas, 1);
+
+    expect(first).toBe(again);
+    expect(second).not.toBe(first);
+    expect(first?.storage.image).toBe(image);
+    expect(first?.uvOffset).toMatchObject({ x: 0.1, y: 0.1 });
+    expect(first?.uvScale).toMatchObject({ x: 0.2, y: 0.3 });
+  });
+
+  it('returns null without an image or matching region', () => {
+    const atlas = createTextureAtlas();
+    addTextureAtlasRegion(atlas, 0, 0, 10, 10);
+    expect(getTextureAtlasRegionTexture(atlas, 0)).toBeNull();
+    atlas.image = { height: 10, width: 10 } as ImageResource;
+    expect(getTextureAtlasRegionTexture(atlas, 99)).toBeNull();
   });
 });
 

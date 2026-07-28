@@ -4,7 +4,6 @@ export {
   createCanvasRenderState,
   defaultCanvasBeginFill,
   defaultCanvasBeginGradientFill,
-  defaultCanvasBitmapRenderer,
   defaultCanvasBitmapTextRenderer,
   defaultCanvasCubicCurveTo,
   defaultCanvasCurveTo,

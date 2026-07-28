@@ -20,6 +20,7 @@ import {
   setTextureFlip,
   setTextureImage,
   setTextureUvOffset,
+  setTextureUvFromPixelRect,
   setTextureUvRotation,
   setTextureUvScale,
   transformTextureUv,
@@ -525,6 +526,26 @@ describe('setTextureImage', () => {
     setTextureImage(texture, null);
     expect(texture.storage.image).toBeNull();
     expect(texture.version).toStrictEqual(2);
+  });
+});
+
+describe('setTextureUvFromPixelRect', () => {
+  it('normalizes a pixel rectangle against the texture dimensions', () => {
+    const texture = createTexture({
+      storage: { dimension: '2d', image: { height: 100, width: 200 } as ImageResource },
+    });
+    setTextureUvFromPixelRect(texture, 20, 10, 50, 25);
+    expect(texture.uvOffset.x).toBeCloseTo(0.1);
+    expect(texture.uvOffset.y).toBeCloseTo(0.1);
+    expect(texture.uvScale.x).toBeCloseTo(0.25);
+    expect(texture.uvScale.y).toBeCloseTo(0.25);
+  });
+
+  it('sets an empty window when the texture has no dimensions', () => {
+    const texture = createTexture();
+    setTextureUvFromPixelRect(texture, 20, 10, 50, 25);
+    expect(texture.uvOffset).toMatchObject({ x: 0, y: 0 });
+    expect(texture.uvScale).toMatchObject({ x: 0, y: 0 });
   });
 });
 

@@ -270,6 +270,30 @@ function equalsTextureStorage(a: Readonly<TextureStorage>, b: Readonly<TextureSt
   }
 }
 
+// Maps a pixel-space rectangle in the texture's backing to its normalized uv window. An unbound
+// texture has no pixel extent, so it receives an empty window rather than dividing by a sentinel.
+export function setTextureUvFromPixelRect(
+  texture: TextureLike,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+): void {
+  const textureWidth = getTextureWidth(texture);
+  const textureHeight = getTextureHeight(texture);
+  if (textureWidth <= 0 || textureHeight <= 0) {
+    texture.uvOffset.x = 0;
+    texture.uvOffset.y = 0;
+    texture.uvScale.x = 0;
+    texture.uvScale.y = 0;
+    return;
+  }
+  texture.uvOffset.x = x / textureWidth;
+  texture.uvOffset.y = y / textureHeight;
+  texture.uvScale.x = width / textureWidth;
+  texture.uvScale.y = height / textureHeight;
+}
+
 // Sets the uv offset (scroll/translation) in place. Equivalent to assigning texture.uvOffset
 // directly but provides a named mutator for the KHR_texture_transform model.
 export function setTextureUvOffset(texture: TextureLike, x: number, y: number): void {

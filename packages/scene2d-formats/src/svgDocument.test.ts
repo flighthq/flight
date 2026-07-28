@@ -2,8 +2,8 @@ import { createRectangle } from '@flighthq/geometry/contract';
 import { createImageResource } from '@flighthq/image/contract';
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
 import { getShapeBounds } from '@flighthq/shape/contract';
-import type { Bitmap, ImportDiagnostic, RichText, Shape, TextLabel } from '@flighthq/types/contract';
-import { BitmapKind, DisplayObjectKind, RichTextKind, ShapeKind, TextLabelKind } from '@flighthq/types/contract';
+import type { Sprite, ImportDiagnostic, RichText, Shape, TextLabel } from '@flighthq/types/contract';
+import { SpriteKind, DisplayObjectKind, RichTextKind, ShapeKind, TextLabelKind } from '@flighthq/types/contract';
 
 import { createScene2DFromSvgDocument } from './svgDocument';
 
@@ -56,7 +56,7 @@ describe('createScene2DFromSvgDocument', () => {
       { resolveImageResource: () => image },
     );
 
-    const bitmap = getNodeChildAt(root, 0) as Bitmap;
+    const bitmap = getNodeChildAt(root, 0) as Sprite;
     expect(bitmap.clip?.rect).toMatchObject({ height: 10, width: 10, x: 0, y: 0 });
     expect(bitmap.scaleX * (bitmap.clip?.rect.width ?? 0)).toBe(100);
     expect(bitmap.scaleY * (bitmap.clip?.rect.height ?? 0)).toBe(100);
@@ -88,7 +88,7 @@ describe('createScene2DFromSvgDocument', () => {
       { resolveImageResource: () => image },
     );
 
-    const bitmap = getNodeChildAt(root, 0) as Bitmap;
+    const bitmap = getNodeChildAt(root, 0) as Sprite;
     expect(bitmap.x).toBe(13);
     expect(bitmap.y).toBe(24);
     expect(bitmap.scaleX).toBe(2);
@@ -117,7 +117,7 @@ describe('createScene2DFromSvgDocument', () => {
     const shapeBounds = createRectangle();
     getShapeBounds(shapeBounds, shape);
     expect(shape.x + shapeBounds.x).toBe(13);
-    expect((getNodeChildAt(root, 1) as Bitmap).x).toBe(13);
+    expect((getNodeChildAt(root, 1) as Sprite).x).toBe(13);
     expect(getNodeChildAt(root, 2)?.x).toBe(13);
     expect((getNodeChildAt(root, 3) as TextLabel).x).toBe(13);
   });
@@ -409,10 +409,10 @@ describe('createScene2DFromSvgDocument', () => {
       { resolveImageResource: (href) => (href === 'asset.png' ? image : null) },
     );
 
-    const bitmap = getNodeChildAt(root, 0) as Bitmap;
-    expect(bitmap.kind).toBe(BitmapKind);
+    const bitmap = getNodeChildAt(root, 0) as Sprite;
+    expect(bitmap.kind).toBe(SpriteKind);
     expect(bitmap.name).toBe('photo');
-    expect(bitmap.data.image).toBe(image);
+    expect(bitmap.data.texture?.storage.image).toBe(image);
     expect(bitmap.x).toBe(3);
     expect(bitmap.y).toBe(4);
     expect(bitmap.scaleX).toBe(2);

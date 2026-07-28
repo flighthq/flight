@@ -1,5 +1,5 @@
 export * from './enableWgpuColorAdjustmentGuards';
-export * from './wgpuBitmap';
+export * from './wgpuSprite';
 export * from './wgpuBitmapText';
 export * from './wgpuCache';
 export * from './wgpuClip';
@@ -20,7 +20,6 @@ export * from './wgpuShape';
 export * from './wgpuShapeMesh';
 export * from './wgpuSprite';
 export * from './wgpuSpriteBatch';
-export * from './wgpuSpriteRenderer';
 export * from './wgpuTextInput';
 export * from './wgpuTextLabel';
 export * from './wgpuTilemap';

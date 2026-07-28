@@ -1,9 +1,9 @@
 import type { Node2D } from '@flighthq/sdk';
 import {
-  BitmapKind,
+  SpriteKind,
   createCanvasElement,
   createCanvasRenderState,
-  defaultCanvasBitmapRenderer,
+  defaultCanvasSpriteRenderer,
   prepareScene2DRender,
   registerRenderer,
   renderCanvasBackground,
@@ -19,7 +19,7 @@ export const state = createCanvasRenderState(canvas, {
   backgroundColor: 0xf0f0f0ff,
 });
 
-registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
+registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
 
 export const scale = pixelRatio;
 
