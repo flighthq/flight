@@ -11,7 +11,6 @@ export * from './glNode2D';
 export * from './glParticleEmitter2D';
 export * from './glQuadBatch';
 export * from './glRichText';
-export * from './glRenderTargetNode2D';
 export * from './glScale9Mapper';
 export * from './glScale9Shape';
 export * from './glShape';

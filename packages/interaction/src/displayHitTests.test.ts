@@ -6,7 +6,6 @@ import {
   defaultNode2DHitTestHandler,
   defaultHtmlViewHitTestHandler,
   defaultMovieClipHitTestHandler,
-  defaultRenderTargetNode2DHitTestHandler,
   defaultRichTextHitTestHandler,
   defaultShapeHitTestHandler,
   defaultTextHitTestHandler,
@@ -39,18 +38,6 @@ describe('defaultNode2DHitTestHandler', () => {
     expect(defaultNode2DHitTestHandler(obj, 50, 50)).toBe(false);
     expect(defaultNode2DHitTestHandler(obj, 0, 0)).toBe(false);
     expect(defaultNode2DHitTestHandler(obj, 200, 200)).toBe(false);
-  });
-});
-
-describe('defaultRenderTargetNode2DHitTestHandler', () => {
-  it('returns true when point is within local bounds', () => {
-    const obj = makeNode2D();
-    expect(defaultRenderTargetNode2DHitTestHandler(obj, 50, 50)).toBe(true);
-  });
-
-  it('returns false when point is outside local bounds', () => {
-    const obj = makeNode2D();
-    expect(defaultRenderTargetNode2DHitTestHandler(obj, 200, 200)).toBe(false);
   });
 });
 

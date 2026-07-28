@@ -15,7 +15,7 @@ export * from './canvasParticleEmitter2D';
 export * from './canvasQuadBatch';
 export * from './canvasRenderState';
 export * from './canvasRenderTarget';
-export * from './canvasRenderTargetNode2D';
+export * from './canvasRenderTexture';
 export * from './canvasRichText';
 export * from './canvasScale9Mapper';
 export * from './canvasScale9Shape';
