@@ -56,7 +56,7 @@ Exactly one cell is expensive — **bytes → software** — which is the whole 
 - **`beginBitmapFill` took a `Texture`, not a `Bitmap`** — it is now `beginTextureFill`. The rename is a clarity gain because “bitmap fill” now means CPU pixels.
 - **`createBitmap` previously meant the scene node constructor.** The new one allocates pixels. Pre-release, so acceptable — but it will confuse anyone reading git history.
 - **"Surface" also means the *shading* surface** in `scene3d-gl` (`bindGlUnlitSurface`). Different domain (3D shading vs 2D raster targets); accepted rather than churning the material layer. The nine `bind*Surface` functions across `scene3d-gl`/`scene3d-wgpu` are all shading and deliberately **did not** rename.
-- **DOM `ImageBitmap` now sounds like Flight `Bitmap`.** `createImageResourceFromBitmap` (Flight's CPU pixel type, in `@flighthq/bitmap`) sits one word away from `createImageResourceFromImageBitmap` (the DOM `ImageBitmap`, in `@flighthq/image`) — same prefix, different source type, different package. A real discoverability hazard created by this rename. Accepted for now since both names are individually accurate; revisit if it bites.
+- **DOM `ImageBitmap` now sounds like Flight `Bitmap`.** `createImageResourceFromBitmap` (Flight's CPU pixel type) sits one word away from `createImageResourceFromImageBitmap` (the DOM `ImageBitmap`), both in `@flighthq/image`. A real discoverability hazard created by this rename. Accepted for now since both names are individually accurate; revisit if it bites.
 
 ## The Texture shape
 
@@ -323,8 +323,8 @@ Two accepted wrinkles: the transcode result (`createImageResourceFromBitmap`) yi
 
 Today bytes→element happens **invisibly** inside `resolveCanvasImageSource`, cached in a hidden per-render-state `WeakMap`, with `explainCanvasImageSource` existing to make the cost legible. **A diagnostic that exists to explain an implicit conversion is a missing explicit primitive.** Decomposed, they are named, allocating, and caller-owned:
 
-- `createImageResourceFromBitmap(bitmap)` — the transcode (already exists, in `@flighthq/bitmap`)
-- `captureBitmapFromImageResource(resource)` — the readback, currently not expressible at all
+- `createImageResourceFromBitmap(bitmap)` — the transcode, in `@flighthq/image`
+- `captureBitmapFromImageResource(resource)` — the readback, in `@flighthq/bitmap`
 
 Caller-owned caching replaces a hidden per-state `WeakMap`, per the explicit-allocation posture. The per-frame transcode cache does not disappear — it moves into the *bitmap-backing resolver*, which is exactly what makes a PNG-only bundle lighter.
 

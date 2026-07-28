@@ -1,4 +1,4 @@
-import { createBitmapFromImageResource, getBitmapPixelChannel } from '@flighthq/bitmap/contract';
+import { captureBitmapFromImageResource, getBitmapPixelChannel } from '@flighthq/bitmap/contract';
 import { inverseMatrixTransformPointXY } from '@flighthq/geometry/contract';
 import { getNodeWorldMatrix } from '@flighthq/node/contract';
 import type { Sprite, Node2D, ImageResource, NodeAny, Bitmap } from '@flighthq/types/contract';
@@ -44,7 +44,7 @@ function bitmapForImage(image: ImageResource): Bitmap | null {
   if (cached !== undefined) return cached;
   let bitmap: Bitmap | null = null;
   try {
-    bitmap = createBitmapFromImageResource(image);
+    bitmap = captureBitmapFromImageResource(image);
   } catch {
     bitmap = null;
   }
