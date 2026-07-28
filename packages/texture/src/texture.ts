@@ -138,7 +138,7 @@ export function getTextureBackingKind(texture: Readonly<TextureLike>): TextureBa
   return getTextureStorageImage(storage)?.kind ?? storage.target?.kind ?? null;
 }
 
-// Returns the height declared by the CPU image or produced target backing, or -1 when unbound.
+// Returns the height declared by the CPU image or render target backing, or -1 when unbound.
 export function getTextureHeight(texture: Readonly<TextureLike>): number {
   const storage = texture.storage;
   if (storage.dimension === '3d') return storage.volume?.height ?? storage.target?.height ?? -1;
@@ -190,7 +190,7 @@ export function getTextureUvMatrix(out: Matrix3Like, texture: Readonly<TextureUv
   m[8] = 1; // (2,2)
 }
 
-// Returns the width declared by the CPU image or produced target backing, or -1 when unbound.
+// Returns the width declared by the CPU image or render target backing, or -1 when unbound.
 export function getTextureWidth(texture: Readonly<TextureLike>): number {
   const storage = texture.storage;
   if (storage.dimension === '3d') return storage.volume?.width ?? storage.target?.width ?? -1;

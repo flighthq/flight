@@ -2,7 +2,7 @@ import type { SamplerLike } from './Sampler';
 import type { TextureColorSpace } from './Texture';
 import type { Vector2Like } from './Vector2';
 
-// Construction options for a produced 2D Texture. Target allocation stays lazy and backend-owned;
+// Construction options for a render-target 2D Texture. Target allocation stays lazy and backend-owned;
 // sampling and UV fields remain ordinary Texture state.
 export interface CreateRenderTextureOptions {
   readonly colorSpace?: TextureColorSpace;

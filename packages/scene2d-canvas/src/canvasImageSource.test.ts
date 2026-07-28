@@ -5,11 +5,11 @@ import type { ImageResource } from '@flighthq/types/contract';
 import {
   explainCanvasImageSource,
   registerCanvasImageTextureResolver,
-  registerCanvasProducedTextureResolver,
+  registerCanvasRenderTextureResolver,
   registerCanvasTextureResolver,
   registerCanvasVideoTextureResolver,
   resolveCanvasImageSource,
-  resolveCanvasTextureSource,
+  resolveCanvasTexture,
   resolveCanvasTextureWindowSource,
 } from './canvasImageSource';
 import { createCanvasRenderState } from './canvasRenderState';
@@ -50,21 +50,21 @@ describe('registerCanvasImageTextureResolver', () => {
     const state = makeState();
     const image = createImageResource(document.createElement('img'));
     const texture = createTexture({ storage: { dimension: '2d', image } });
-    expect(resolveCanvasTextureSource(state, texture)).toBeNull();
+    expect(resolveCanvasTexture(state, texture)).toBeNull();
     registerCanvasImageTextureResolver(state);
-    expect(resolveCanvasTextureSource(state, texture)).toBe(image.source);
+    expect(resolveCanvasTexture(state, texture)).toBe(image.source);
   });
 });
 
-describe('registerCanvasProducedTextureResolver', () => {
-  it('installs produced-target resolution without affecting unregistered states', () => {
+describe('registerCanvasRenderTextureResolver', () => {
+  it('installs render-target resolution without affecting unregistered states', () => {
     const state = makeState();
     const other = makeState();
     const texture = createRenderTexture({ height: 8, width: 8 });
     renderIntoCanvasRenderTexture(state, texture, () => {});
-    registerCanvasProducedTextureResolver(state);
-    expect(resolveCanvasTextureSource(state, texture)).toBeInstanceOf(HTMLCanvasElement);
-    expect(resolveCanvasTextureSource(other, texture)).toBeNull();
+    registerCanvasRenderTextureResolver(state);
+    expect(resolveCanvasTexture(state, texture)).toBeInstanceOf(HTMLCanvasElement);
+    expect(resolveCanvasTexture(other, texture)).toBeNull();
   });
 });
 
@@ -77,11 +77,11 @@ describe('registerCanvasTextureResolver', () => {
     const first = document.createElement('canvas');
     const second = document.createElement('canvas');
     registerCanvasTextureResolver(state, 'acme.image', () => first);
-    expect(resolveCanvasTextureSource(state, texture)).toBe(first);
+    expect(resolveCanvasTexture(state, texture)).toBe(first);
     registerCanvasTextureResolver(state, 'acme.image', () => second);
-    expect(resolveCanvasTextureSource(state, texture)).toBe(second);
+    expect(resolveCanvasTexture(state, texture)).toBe(second);
     registerCanvasTextureResolver(state, 'acme.image', null);
-    expect(resolveCanvasTextureSource(state, texture)).toBeNull();
+    expect(resolveCanvasTexture(state, texture)).toBeNull();
   });
 });
 
@@ -93,7 +93,7 @@ describe('registerCanvasVideoTextureResolver', () => {
     (image as { kind: string }).kind = 'video';
     const texture = createTexture({ storage: { dimension: '2d', image } });
     registerCanvasVideoTextureResolver(state);
-    expect(resolveCanvasTextureSource(state, texture)).toBe(video);
+    expect(resolveCanvasTexture(state, texture)).toBe(video);
   });
 });
 
@@ -141,20 +141,18 @@ describe('resolveCanvasImageSource', () => {
   });
 });
 
-describe('resolveCanvasTextureSource', () => {
-  it('resolves both image and populated produced Texture backings', () => {
+describe('resolveCanvasTexture', () => {
+  it('resolves both image and populated render Texture backings', () => {
     const state = makeState();
     registerCanvasImageTextureResolver(state);
-    registerCanvasProducedTextureResolver(state);
+    registerCanvasRenderTextureResolver(state);
     const image = createImageResource(document.createElement('img'));
-    expect(resolveCanvasTextureSource(state, createTexture({ storage: { dimension: '2d', image } }))).toBe(
-      image.source,
-    );
+    expect(resolveCanvasTexture(state, createTexture({ storage: { dimension: '2d', image } }))).toBe(image.source);
 
-    const produced = createRenderTexture({ height: 8, width: 8 });
-    expect(resolveCanvasTextureSource(state, produced)).toBeNull();
-    renderIntoCanvasRenderTexture(state, produced, () => {});
-    expect(resolveCanvasTextureSource(state, produced)).toBeInstanceOf(HTMLCanvasElement);
+    const renderTexture = createRenderTexture({ height: 8, width: 8 });
+    expect(resolveCanvasTexture(state, renderTexture)).toBeNull();
+    renderIntoCanvasRenderTexture(state, renderTexture, () => {});
+    expect(resolveCanvasTexture(state, renderTexture)).toBeInstanceOf(HTMLCanvasElement);
   });
 });
 

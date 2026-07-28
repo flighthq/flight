@@ -9,13 +9,14 @@ import type { GlRenderTarget } from './GlRenderTarget';
 import type { GlRenderTextureEntry, GlRenderTextureGuard } from './GlRenderTexture';
 import type { GlBitmapShader, GlShaderLocations } from './GlShaderLocations';
 import type { GlShapeMesh } from './GlShapeMesh';
-import type { GlTextureBackingKind, GlTextureResolver } from './GlTextureResolver';
+import type { GlTextureResolver } from './GlTextureResolver';
 import type { ImageResource } from './ImageResource';
 import type { Material } from './Material';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
 import type { SamplerLike } from './Sampler';
 import type { Texture } from './Texture';
+import type { TextureBackingKind } from './TextureBackingKind';
 import type { TintMaterialData } from './TintMaterialData';
 
 export interface GlRenderState extends RenderState {
@@ -204,7 +205,7 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   imageResourceStraightTextureCache: WeakMap<ImageResource, { texture: WebGLTexture; version: number }>;
   // Open, state-scoped Texture backing registry keyed by the backing's declared string kind.
   // Map.set is last-write-wins; undefined until first registration. Texture carries no backend state.
-  glTextureResolverRegistry?: Map<GlTextureBackingKind, GlTextureResolver> | null;
+  glTextureResolverRegistry?: Map<TextureBackingKind, GlTextureResolver> | null;
   // Borrowed native handles registered by createExternalGlTexture. Disposing forgets these entries;
   // the caller retains allocation ownership.
   glExternalTextureCache?: WeakMap<Texture, WebGLTexture>;

@@ -3,7 +3,7 @@ import type { TextureTargetBacking } from './TextureTargetBacking';
 import type { TextureVolume } from './TextureVolume';
 
 // Two-dimensional texture storage composes the closed sampling dimension with an open backing.
-// CPU-origin content uses `image`; GPU-origin produced content uses `target` with no image. Backend
+// CPU-origin content uses `image`; GPU-origin rendered content uses `target` with no image. Backend
 // resolver registries own realization and can distinguish these fields without a texture subtype.
 export type TextureCubeImages = readonly [
   ImageResource | null,

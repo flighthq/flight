@@ -1,6 +1,6 @@
 import { createMatrix3, createVector2, inverseMatrix3 } from '@flighthq/geometry/contract';
 import type { ImageResource } from '@flighthq/types/contract';
-import { ImageTextureBackingKind, ProducedTextureBackingKind } from '@flighthq/types/contract';
+import { ImageTextureBackingKind, RenderTextureBackingKind } from '@flighthq/types/contract';
 
 import { createSampler, equalsSampler } from './sampler';
 import {
@@ -62,11 +62,11 @@ describe('cloneTexture', () => {
     expect(source.uvOffset.x).toStrictEqual(0.25);
   });
 
-  it('preserves a produced descriptor while cloning sampling state', () => {
+  it('preserves a render-target descriptor while cloning sampling state', () => {
     const target = {
       colorSpace: 'linear' as const,
       height: 32,
-      kind: ProducedTextureBackingKind,
+      kind: RenderTextureBackingKind,
       width: 64,
     };
     const source = createTexture({ storage: { dimension: '2d', image: null, target } });
@@ -220,11 +220,11 @@ describe('getTextureBackingKind', () => {
           storage: {
             dimension: '2d',
             image: null,
-            target: { height: 8, kind: ProducedTextureBackingKind, width: 8 },
+            target: { height: 8, kind: RenderTextureBackingKind, width: 8 },
           },
         }),
       ),
-    ).toBe(ProducedTextureBackingKind);
+    ).toBe(RenderTextureBackingKind);
   });
 });
 
@@ -241,12 +241,12 @@ describe('getTextureHeight', () => {
     expect(getTextureHeight(texture)).toStrictEqual(-1);
   });
 
-  it('returns the produced target height when there is no CPU image', () => {
+  it('returns the render target height when there is no CPU image', () => {
     const texture = createTexture({
       storage: {
         dimension: '2d',
         image: null,
-        target: { height: 48, kind: ProducedTextureBackingKind, width: 96 },
+        target: { height: 48, kind: RenderTextureBackingKind, width: 96 },
       },
     });
 
@@ -396,12 +396,12 @@ describe('getTextureWidth', () => {
     expect(getTextureWidth(texture)).toStrictEqual(-1);
   });
 
-  it('returns the produced target width when there is no CPU image', () => {
+  it('returns the render target width when there is no CPU image', () => {
     const texture = createTexture({
       storage: {
         dimension: '2d',
         image: null,
-        target: { height: 48, kind: ProducedTextureBackingKind, width: 96 },
+        target: { height: 48, kind: RenderTextureBackingKind, width: 96 },
       },
     });
 
@@ -419,7 +419,7 @@ describe('hasTextureBacking', () => {
           storage: {
             dimension: '2d',
             image: null,
-            target: { height: 8, kind: ProducedTextureBackingKind, width: 8 },
+            target: { height: 8, kind: RenderTextureBackingKind, width: 8 },
           },
         }),
       ),

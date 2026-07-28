@@ -27,7 +27,7 @@ export function copyVideoTexture(out: TextureLike, source: Readonly<TextureLike>
 }
 
 // Wraps a VideoResource's borrowed host element in an ImageResource backing and returns the same
-// universal Texture type used by still images and produced targets. The all-ones initial revision
+// universal Texture type used by still images and render targets. The all-ones initial revision
 // preserves the former first advanceVideoTexture result of 0 after u32 wrap.
 export function createVideoTexture(source: VideoResource, opts?: Readonly<Partial<TextureLike>>): Texture {
   const image = createVideoImageResource(source);

@@ -744,7 +744,7 @@ export function isWgpuMaterialBindGroupRebuildNeeded(
 }
 
 // True when a material map declares a backing. Resolution may still yield null while an image,
-// dynamic, or produced backing is not ready; bind helpers substitute the shared placeholder then.
+// dynamic, or render-target backing is not ready; bind helpers substitute the shared placeholder then.
 export function isWgpuTextureReady(texture: Readonly<Texture> | null): boolean {
   return texture !== null && hasTextureBacking(texture);
 }

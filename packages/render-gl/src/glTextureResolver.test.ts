@@ -1,15 +1,12 @@
 import type { ImageResource, Texture, TextureLike } from '@flighthq/types/contract';
-import { ImageTextureBackingKind, ProducedTextureBackingKind, VideoTextureBackingKind } from '@flighthq/types/contract';
+import { ImageTextureBackingKind, RenderTextureBackingKind, VideoTextureBackingKind } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
 import { renderIntoGlRenderTexture } from './glRenderTexture';
 import { createGlState } from './glTestHelper';
 import {
-  glImageTextureBackingKind,
-  glProducedTextureBackingKind,
-  glVideoTextureBackingKind,
   registerGlImageTextureResolver,
-  registerGlProducedTextureResolver,
+  registerGlRenderTextureResolver,
   registerGlTextureResolver,
   registerGlVideoTextureResolver,
   resolveGlTexture,
@@ -54,27 +51,9 @@ function imageResource(): ImageResource {
 function textureWithTarget(): TextureLike {
   const texture = textureWithImage(null);
   texture.colorSpace = 'linear';
-  texture.storage.target = { colorSpace: 'linear', height: 8, kind: ProducedTextureBackingKind, width: 8 };
+  texture.storage.target = { colorSpace: 'linear', height: 8, kind: RenderTextureBackingKind, width: 8 };
   return texture;
 }
-
-describe('glImageTextureBackingKind', () => {
-  it('is the declared still-image registry key', () => {
-    expect(glImageTextureBackingKind).toBe(ImageTextureBackingKind);
-  });
-});
-
-describe('glProducedTextureBackingKind', () => {
-  it('is the declared produced registry key', () => {
-    expect(glProducedTextureBackingKind).toBe(ProducedTextureBackingKind);
-  });
-});
-
-describe('glVideoTextureBackingKind', () => {
-  it('is the declared video registry key', () => {
-    expect(glVideoTextureBackingKind).toBe(VideoTextureBackingKind);
-  });
-});
 
 describe('registerGlImageTextureResolver', () => {
   it('registers the 2D image matcher and resolves through the backing-keyed upload cache', () => {
@@ -100,7 +79,7 @@ describe('registerGlImageTextureResolver', () => {
   });
 });
 
-describe('registerGlProducedTextureResolver', () => {
+describe('registerGlRenderTextureResolver', () => {
   it('returns the hidden color attachment without uploading CPU pixels', () => {
     const { state, gl } = createGlState();
     const previous = vi.mocked(gl.getParameter).getMockImplementation();
@@ -110,7 +89,7 @@ describe('registerGlProducedTextureResolver', () => {
     });
     const texture = textureWithTarget();
     renderIntoGlRenderTexture(state, texture as Texture, () => {});
-    registerGlProducedTextureResolver(state);
+    registerGlRenderTextureResolver(state);
     const uploads = vi.mocked(gl.texImage2D).mock.calls.length;
 
     expect(resolveGlTexture(state, texture)).not.toBeNull();

@@ -14,7 +14,7 @@ import { getGlRenderStateRuntime } from './glRenderState';
 import { popGlRenderState, pushGlRenderState } from './glRenderStateBracket';
 import { createGlRenderTarget, destroyGlRenderTarget, resizeGlRenderTarget } from './glRenderTarget';
 
-// Binds a populated produced Texture's resolved color attachment directly. No pixels cross the CPU and
+// Binds a populated render texture's resolved color attachment directly. No pixels cross the CPU and
 // no upload occurs. An unrendered or currently-written texture binds the null sentinel and returns
 // null; optional guards can explain that otherwise silent fallback.
 export function bindGlRenderTexture(
@@ -76,7 +76,7 @@ export function isGlRenderTextureReady(state: GlRenderState, renderTexture: Read
 }
 
 /**
- * Clears and populates a produced Texture's hidden GL target. The callback may issue any GL-backed
+ * Clears and populates a render texture's hidden GL target. The callback may issue any GL-backed
  * rendering commands; framebuffer and fixed-function state are restored even when it throws.
  */
 export function renderIntoGlRenderTexture(
@@ -112,7 +112,9 @@ export function setGlRenderTextureGuard(state: GlRenderState, guard: GlRenderTex
 
 function ensureEntry(state: GlRenderState, renderTexture: Readonly<Texture>): GlRenderTextureEntry {
   const descriptor = renderTexture.storage.target;
-  if (descriptor === undefined) throw new Error('renderIntoGlRenderTexture requires a produced Texture');
+  if (descriptor === undefined) {
+    throw new Error('renderIntoGlRenderTexture requires a Texture with a render-target backing');
+  }
   const entries = getEntries(state);
   let entry = entries.get(renderTexture);
   if (entry === undefined) {

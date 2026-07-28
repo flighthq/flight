@@ -1,5 +1,5 @@
 import type { Texture } from '@flighthq/types/contract';
-import { ProducedTextureBackingKind } from '@flighthq/types/contract';
+import { RenderTextureBackingKind } from '@flighthq/types/contract';
 
 import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
@@ -15,7 +15,7 @@ beforeAll(() => {
   installWgpuMock();
 });
 
-function texture(produced = true): Texture {
+function texture(hasRenderTarget = true): Texture {
   return {
     colorSpace: 'linear',
     flipX: false,
@@ -31,7 +31,7 @@ function texture(produced = true): Texture {
     storage: {
       dimension: '2d',
       image: null,
-      target: produced ? { height: 8, kind: ProducedTextureBackingKind, width: 8 } : undefined,
+      target: hasRenderTarget ? { height: 8, kind: RenderTextureBackingKind, width: 8 } : undefined,
     },
     uvOffset: { x: 0, y: 0 },
     uvRotation: 0,
@@ -70,7 +70,7 @@ describe('destroyWgpuRenderTexture', () => {
 });
 
 describe('isWgpuRenderTextureReady', () => {
-  it('tracks the successful produced-content transition', async () => {
+  it('tracks the successful rendered-content transition', async () => {
     const state = await createWgpuRenderStateForTest();
     const renderTexture = texture();
     expect(isWgpuRenderTextureReady(state, renderTexture)).toBe(false);
@@ -82,10 +82,10 @@ describe('isWgpuRenderTextureReady', () => {
 });
 
 describe('renderIntoWgpuRenderTexture', () => {
-  it('requires a produced Texture', async () => {
+  it('requires a Texture with a render-target backing', async () => {
     const state = await createWgpuRenderStateForTest();
     expect(() => renderIntoWgpuRenderTexture(state, texture(false), () => {})).toThrow(
-      'renderIntoWgpuRenderTexture requires a produced Texture',
+      'renderIntoWgpuRenderTexture requires a Texture with a render-target backing',
     );
   });
 

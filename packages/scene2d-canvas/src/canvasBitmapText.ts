@@ -8,7 +8,7 @@ import type {
   SpriteRenderer,
 } from '@flighthq/types/contract';
 
-import { resolveCanvasTextureSource } from './canvasImageSource';
+import { resolveCanvasTexture } from './canvasImageSource';
 import { applyCanvasMaterial } from './canvasMaterialRegistry';
 
 // Draws a BitmapText leaf on Canvas 2D: one `drawImage` per glyph, per glyph-atlas page. Canvas realizes
@@ -33,7 +33,7 @@ export function drawCanvasSpriteText(state: CanvasRenderState, node: RenderProxy
     const atlas = page.atlas;
     const texture = atlas.texture;
     if (texture === null || page.instanceCount === 0) continue;
-    const domImage = resolveCanvasTextureSource(state, texture);
+    const domImage = resolveCanvasTexture(state, texture);
     if (domImage === null) continue;
     const regions = atlas.regions;
     const numRegions = regions.length;

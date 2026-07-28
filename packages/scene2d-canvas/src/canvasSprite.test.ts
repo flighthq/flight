@@ -9,7 +9,7 @@ import {
 } from '@flighthq/texture/contract';
 import { SpriteKind } from '@flighthq/types/contract';
 
-import { registerCanvasImageTextureResolver, registerCanvasProducedTextureResolver } from './canvasImageSource';
+import { registerCanvasImageTextureResolver, registerCanvasRenderTextureResolver } from './canvasImageSource';
 import { createCanvasRenderState } from './canvasRenderState';
 import { renderIntoCanvasRenderTexture } from './canvasRenderTexture';
 import { defaultCanvasSpriteRenderer, drawCanvasSprite } from './canvasSprite';
@@ -17,7 +17,7 @@ import { defaultCanvasSpriteRenderer, drawCanvasSprite } from './canvasSprite';
 function makeState() {
   const state = createCanvasRenderState(document.createElement('canvas'));
   registerCanvasImageTextureResolver(state);
-  registerCanvasProducedTextureResolver(state);
+  registerCanvasRenderTextureResolver(state);
   registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
   return state;
 }
@@ -56,7 +56,7 @@ describe('drawCanvasSprite', () => {
     expect(state.context.imageSmoothingEnabled).toBe(true);
   });
 
-  it('draws a populated produced Texture through the same Sprite path', () => {
+  it('draws a populated render Texture through the same Sprite path', () => {
     const state = makeState();
     const texture = createRenderTexture({ height: 24, width: 48 });
     renderIntoCanvasRenderTexture(state, texture, () => {});

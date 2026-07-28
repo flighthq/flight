@@ -6,6 +6,6 @@ export const BitmapTextureBackingKind = 'bitmap';
 export const CompressedImageTextureBackingKind = 'compressedImage';
 export const ExternalTextureBackingKind = 'external';
 export const ImageTextureBackingKind = 'image';
-export const ProducedTextureBackingKind = 'produced';
+export const RenderTextureBackingKind = 'renderTexture';
 export const VideoTextureBackingKind = 'video';
 export const VolumeTextureBackingKind = 'volume';

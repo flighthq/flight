@@ -16,7 +16,7 @@ export {
   registerGlCompressedTextureDecoder,
   registerGlCompressedTextureUpload,
   registerGlImageTextureResolver,
-  registerGlProducedTextureResolver,
+  registerGlRenderTextureResolver,
   registerGlTextureResolver,
   registerGlVideoTextureResolver,
   renderGlBackground,
