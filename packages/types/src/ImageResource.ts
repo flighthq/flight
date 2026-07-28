@@ -1,23 +1,19 @@
 import type { AlphaType } from './AlphaType';
-import type { Entity } from './Entity';
 import type { HostImageSource } from './HostImageSource';
+import type { ImageBacking } from './ImageBacking';
 import type { ImageResourceCompressed } from './ImageResourceCompressed';
 import type { PixelFormat } from './PixelFormat';
 import type { TextureBackingKind } from './TextureBackingKind';
 
 /**
- * A backend-agnostic image resource: pixel dimensions, a monotonically increasing version, and up to
- * three interchangeable representations of the same pixels — an `source` element the GPU/Canvas
- * backends draw or upload directly, raw CPU `data` for the portable / generated path, and a
- * `compressed` block-compressed payload a GPU backend uploads to a compressed texture. Any may be
- * null; a freshly loaded image is element-only, a freshly generated `Bitmap` is data-only, a parsed
- * KTX2/DDS/Basis container is compressed-only, and a resource may carry more than one once one is
- * derived from another. Renderers own the GPU texture derived from this resource (keyed per render
- * state); the resource itself holds no GPU handle. After the underlying pixels change, bump `version`
- * (see `invalidateImageResource`) so backends know to re-upload. `Bitmap` narrows `data` to non-null
- * and adds `colorSpace` plus the pixel-manipulation API.
+ * A host-drawable image asset. ImageResource, Bitmap, and CompressedImage are sibling ImageBacking
+ * variants; renderers dispatch them by `kind` and own any derived GPU texture per render state.
+ *
+ * The nullable `data` and `compressed` fields remain temporarily while existing consumers migrate
+ * from inspecting the fused representation to kind-based dispatch. New code must treat `source` as
+ * the ImageResource payload; Stage 5 removes the transitional fields.
  */
-export interface ImageResource extends Entity {
+export interface ImageResource extends ImageBacking {
   /**
    * How `data` (and the element on read-back) encodes alpha. Defaults to `straight`, which is what
    * browsers and the surface pixel API produce; renderers premultiply on GPU upload. See `AlphaType`.
@@ -39,8 +35,6 @@ export interface ImageResource extends Entity {
    * on read-back. Defaults to `rgba8unorm` (what browsers produce). See `PixelFormat`.
    */
   format: PixelFormat;
-  /** Pixel height. 0 until an element or data sets it. */
-  height: number;
   /**
    * Open Texture resolver-registry key declared by the loader that owns this backing. Ordinary
    * images and generated surfaces use `image`; streaming video uses `video`; vendor families prefix
@@ -52,8 +46,4 @@ export interface ImageResource extends Entity {
    * ImageBitmap, …). Null for data-only resources such as a freshly generated `Bitmap`.
    */
   source: HostImageSource | null;
-  /** Bumped whenever the pixels change; backends compare it to decide when to re-upload. */
-  version: number;
-  /** Pixel width. 0 until an element or data sets it. */
-  width: number;
 }
