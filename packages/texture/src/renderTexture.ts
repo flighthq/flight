@@ -1,10 +1,10 @@
 import type { CreateRenderTextureOptions, Texture } from '@flighthq/types/contract';
-import { ProducedTextureBackingKind } from '@flighthq/types/contract';
+import { RenderTextureBackingKind } from '@flighthq/types/contract';
 
 import { copySampler } from './sampler';
 import { createTexture } from './texture';
 
-// Creates a universal Texture with a GPU-origin produced backing. Backend allocation stays lazy;
+// Creates a universal Texture with a GPU-origin render-target backing. Backend allocation stays lazy;
 // renderIntoGlRenderTexture realizes the target in one state and resolveGlTexture later returns its
 // color attachment without a CPU upload.
 export function createRenderTexture(options: Readonly<CreateRenderTextureOptions>): Texture {
@@ -25,7 +25,7 @@ export function createRenderTexture(options: Readonly<CreateRenderTextureOptions
         depth: options.depth,
         format: options.format,
         height: options.height,
-        kind: ProducedTextureBackingKind,
+        kind: RenderTextureBackingKind,
         sampleCount: options.sampleCount,
         width: options.width,
       },

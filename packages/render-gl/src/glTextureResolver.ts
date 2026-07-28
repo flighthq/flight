@@ -1,16 +1,16 @@
 import { getTextureBackingKind } from '@flighthq/texture/contract';
 import type {
   GlRenderState,
-  GlTextureBackingKind,
   GlTextureResolver,
   Texture,
+  TextureBackingKind,
   TextureLike,
 } from '@flighthq/types/contract';
 import {
   BitmapTextureBackingKind,
   CompressedImageTextureBackingKind,
   ImageTextureBackingKind,
-  ProducedTextureBackingKind,
+  RenderTextureBackingKind,
   VideoTextureBackingKind,
 } from '@flighthq/types/contract';
 
@@ -18,32 +18,24 @@ import { bindGlImageResourceTexture, bindGlVideoTexture } from './glDraw';
 import { getGlRenderStateRuntime } from './glRenderState';
 import { bindGlRenderTexture } from './glRenderTexture';
 
-// Built-in declared backing keys. These aliases keep GL call sites self-identifying while the string
-// values are shared with other backends.
-export const glImageTextureBackingKind: GlTextureBackingKind = ImageTextureBackingKind;
-
-export const glProducedTextureBackingKind: GlTextureBackingKind = ProducedTextureBackingKind;
-
-export const glVideoTextureBackingKind: GlTextureBackingKind = VideoTextureBackingKind;
-
 // Installs the ordinary ImageResource realization. It delegates upload/version caching to the
 // existing backing-keyed bindGlImageResourceTexture seam and keeps Texture.sampler off that key.
 export function registerGlImageTextureResolver(state: GlRenderState): void {
-  registerGlTextureResolver(state, glImageTextureBackingKind, resolveGlImageTexture);
+  registerGlTextureResolver(state, ImageTextureBackingKind, resolveGlImageTexture);
   registerGlTextureResolver(state, BitmapTextureBackingKind, resolveGlImageTexture);
   registerGlTextureResolver(state, CompressedImageTextureBackingKind, resolveGlImageTexture);
 }
 
-// Installs the produced-target realization.
-export function registerGlProducedTextureResolver(state: GlRenderState): void {
-  registerGlTextureResolver(state, glProducedTextureBackingKind, resolveGlProducedTexture);
+// Installs the render-target realization.
+export function registerGlRenderTextureResolver(state: GlRenderState): void {
+  registerGlTextureResolver(state, RenderTextureBackingKind, resolveGlRenderTexture);
 }
 
 // Registers or replaces one declared backing-kind resolver on this render state. Map.set is
 // last-write-wins; passing null removes the key. No registration ordering or matcher scan exists.
 export function registerGlTextureResolver(
   state: GlRenderState,
-  backingKind: GlTextureBackingKind,
+  backingKind: TextureBackingKind,
   resolver: GlTextureResolver | null,
 ): void {
   const runtime = getGlRenderStateRuntime(state);
@@ -54,7 +46,7 @@ export function registerGlTextureResolver(
 
 // Installs the dynamic host-video specialization.
 export function registerGlVideoTextureResolver(state: GlRenderState): void {
-  registerGlTextureResolver(state, glVideoTextureBackingKind, resolveGlVideoTexture);
+  registerGlTextureResolver(state, VideoTextureBackingKind, resolveGlVideoTexture);
 }
 
 // Resolves through one keyed lookup using the backing's declared kind. The CPU backing owns its kind;
@@ -81,7 +73,7 @@ function resolveGlImageTexture(
   return bindGlImageResourceTexture(state, image, texture.sampler, null, premultiply);
 }
 
-function resolveGlProducedTexture(state: GlRenderState, texture: Readonly<TextureLike>): WebGLTexture | null {
+function resolveGlRenderTexture(state: GlRenderState, texture: Readonly<TextureLike>): WebGLTexture | null {
   return bindGlRenderTexture(state, texture as Readonly<Texture>);
 }
 

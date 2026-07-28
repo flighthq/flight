@@ -14,7 +14,7 @@ export {
   endWgpuRenderPass,
   isWgpuRenderTextureReady,
   registerWgpuImageTextureResolver,
-  registerWgpuProducedTextureResolver,
+  registerWgpuRenderTextureResolver,
   registerWgpuTextureResolver,
   registerWgpuVideoTextureResolver,
   registerWgpuCompressedTextureDecoder,

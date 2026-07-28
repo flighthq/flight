@@ -35,7 +35,7 @@ export {
   enableCanvasTextInput,
   refreshCanvasRenderCache,
   registerCanvasImageTextureResolver,
-  registerCanvasProducedTextureResolver,
+  registerCanvasRenderTextureResolver,
   registerCanvasShapeCommands,
   registerCanvasTextureResolver,
   registerCanvasVideoTextureResolver,

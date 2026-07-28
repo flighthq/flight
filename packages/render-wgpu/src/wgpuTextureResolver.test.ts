@@ -1,18 +1,15 @@
 import type { ImageResource, Texture } from '@flighthq/types/contract';
-import { ImageTextureBackingKind, ProducedTextureBackingKind, VideoTextureBackingKind } from '@flighthq/types/contract';
+import { ImageTextureBackingKind, RenderTextureBackingKind, VideoTextureBackingKind } from '@flighthq/types/contract';
 
 import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
 import { renderIntoWgpuRenderTexture } from './wgpuRenderTexture';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
 import {
   registerWgpuImageTextureResolver,
-  registerWgpuProducedTextureResolver,
+  registerWgpuRenderTextureResolver,
   registerWgpuTextureResolver,
   registerWgpuVideoTextureResolver,
   resolveWgpuTexture,
-  wgpuImageTextureBackingKind,
-  wgpuProducedTextureBackingKind,
-  wgpuVideoTextureBackingKind,
 } from './wgpuTextureResolver';
 
 beforeAll(() => {
@@ -57,10 +54,10 @@ function textureWithImage(image: ImageResource | null): Texture {
   } as Texture;
 }
 
-function producedTexture(): Texture {
+function renderTexture(): Texture {
   const texture = textureWithImage(null);
   texture.colorSpace = 'linear';
-  texture.storage.target = { height: 8, kind: ProducedTextureBackingKind, width: 8 };
+  texture.storage.target = { height: 8, kind: RenderTextureBackingKind, width: 8 };
   return texture;
 }
 
@@ -76,11 +73,11 @@ describe('registerWgpuImageTextureResolver', () => {
   });
 });
 
-describe('registerWgpuProducedTextureResolver', () => {
-  it('returns a produced target only after it has been rendered', async () => {
+describe('registerWgpuRenderTextureResolver', () => {
+  it('returns a render target only after it has been rendered', async () => {
     const state = await createWgpuRenderStateForTest();
-    const texture = producedTexture();
-    registerWgpuProducedTextureResolver(state);
+    const texture = renderTexture();
+    registerWgpuRenderTextureResolver(state);
     expect(resolveWgpuTexture(state, texture)).toBeNull();
 
     renderWgpuBackground(state);
@@ -127,23 +124,5 @@ describe('resolveWgpuTexture', () => {
   it('returns null without an exact registered backing kind', async () => {
     const state = await createWgpuRenderStateForTest();
     expect(resolveWgpuTexture(state, textureWithImage(null))).toBeNull();
-  });
-});
-
-describe('wgpuImageTextureBackingKind', () => {
-  it('is the shared still-image key', () => {
-    expect(wgpuImageTextureBackingKind).toBe(ImageTextureBackingKind);
-  });
-});
-
-describe('wgpuProducedTextureBackingKind', () => {
-  it('is the shared produced key', () => {
-    expect(wgpuProducedTextureBackingKind).toBe(ProducedTextureBackingKind);
-  });
-});
-
-describe('wgpuVideoTextureBackingKind', () => {
-  it('is the shared video key', () => {
-    expect(wgpuVideoTextureBackingKind).toBe(VideoTextureBackingKind);
   });
 });

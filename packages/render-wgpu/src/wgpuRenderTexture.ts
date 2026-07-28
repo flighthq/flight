@@ -15,7 +15,7 @@ import {
   resizeWgpuRenderTarget,
 } from './wgpuRenderTarget';
 
-// Returns a populated produced Texture's state-owned allocation without copying pixels through the
+// Returns a populated render texture's state-owned allocation without copying pixels through the
 // CPU. An unrendered or currently-written Texture returns null.
 export function bindWgpuRenderTexture(
   state: WgpuRenderState,
@@ -38,7 +38,7 @@ export function isWgpuRenderTextureReady(state: WgpuRenderState, renderTexture: 
 }
 
 /**
- * Clears and populates a produced Texture's hidden WebGPU target. The caller must have opened the
+ * Clears and populates a render texture's hidden WebGPU target. The caller must have opened the
  * frame command encoder; the enclosing render pass is restored even when the callback throws.
  */
 export function renderIntoWgpuRenderTexture(
@@ -71,7 +71,9 @@ function ensureWgpuRenderTextureEntry(
   renderTexture: Readonly<Texture>,
 ): WgpuRenderTextureEntry {
   const descriptor = renderTexture.storage.target;
-  if (descriptor === undefined) throw new Error('renderIntoWgpuRenderTexture requires a produced Texture');
+  if (descriptor === undefined) {
+    throw new Error('renderIntoWgpuRenderTexture requires a Texture with a render-target backing');
+  }
   const runtime = getWgpuRenderStateRuntime(state);
   const entries = (runtime.wgpuRenderTextureCache ??= new WeakMap());
   let entry = entries.get(renderTexture);

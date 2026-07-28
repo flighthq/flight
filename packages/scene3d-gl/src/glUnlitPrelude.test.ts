@@ -2,7 +2,7 @@ import { createImageResource } from '@flighthq/image/contract';
 import {
   getGlRenderStateRuntime,
   registerGlImageTextureResolver,
-  registerGlProducedTextureResolver,
+  registerGlRenderTextureResolver,
   registerGlVideoTextureResolver,
 } from '@flighthq/render-gl/contract';
 import {
@@ -60,12 +60,12 @@ describe('bindGlUnlitSurface', () => {
     expect(gl.calls.some((call) => call.name === 'uniform1i')).toBe(true);
   });
 
-  it('routes an unrendered produced Texture to the null sentinel without a CPU upload', () => {
+  it('routes an unrendered render Texture to the null sentinel without a CPU upload', () => {
     const { state, gl } = makeGlScene3DState();
     const program = compileGlUnlitProgram(gl, { ...FLAT, hasColorMap: true });
     const texture = createRenderTexture({ height: 16, width: 16 });
     texture.sampler.mipmaps = false;
-    registerGlProducedTextureResolver(state);
+    registerGlRenderTextureResolver(state);
     getGlRenderStateRuntime(state).anisotropyExt = null;
     const uploads = gl.calls.filter((call) => call.name === 'texImage2D').length;
 

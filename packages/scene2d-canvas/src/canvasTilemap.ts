@@ -1,7 +1,7 @@
 ﻿import { noopRendererData } from '@flighthq/render/contract';
 import type { CanvasRenderState, RenderProxy2D, SpriteRenderer, Tilemap } from '@flighthq/types/contract';
 
-import { resolveCanvasTextureSource } from './canvasImageSource';
+import { resolveCanvasTexture } from './canvasImageSource';
 import { applyCanvasMaterial } from './canvasMaterialRegistry';
 
 export function drawCanvasTilemap(state: CanvasRenderState, tilemapNode: RenderProxy2D): void {
@@ -9,7 +9,7 @@ export function drawCanvasTilemap(state: CanvasRenderState, tilemapNode: RenderP
   const { atlas, columns, rows, tileHeight, tileWidth, tiles } = source.data;
 
   if (atlas === null || atlas.texture === null) return;
-  const image = resolveCanvasTextureSource(state, atlas.texture);
+  const image = resolveCanvasTexture(state, atlas.texture);
   if (image === null) return;
   if (columns === 0 || rows === 0) return;
 

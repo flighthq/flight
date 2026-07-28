@@ -35,8 +35,8 @@ function warnGlRenderTextureUnavailable(
     {
       height: explanation.height,
       message: writing
-        ? 'bindGlRenderTexture: the produced Texture is still bound for writing; sampling it would be a read-after-write feedback hazard.'
-        : 'bindGlRenderTexture: the produced Texture has not completed renderIntoGlRenderTexture; sampling uses the empty sentinel.',
+        ? 'bindGlRenderTexture: the render Texture is still bound for writing; sampling it would be a read-after-write feedback hazard.'
+        : 'bindGlRenderTexture: the render Texture has not completed renderIntoGlRenderTexture; sampling uses the empty sentinel.',
       renderTexture,
       status: explanation.status,
       width: explanation.width,

@@ -14,7 +14,7 @@ interface CanvasRenderTextureEntry {
   target: CanvasRenderTarget;
 }
 
-// Returns a populated produced Texture's state-owned canvas without copying pixels.
+// Returns a populated render texture's state-owned canvas without copying pixels.
 export function bindCanvasRenderTexture(
   state: CanvasRenderState,
   renderTexture: Readonly<Texture>,
@@ -32,7 +32,7 @@ export function destroyCanvasRenderTexture(state: CanvasRenderState, renderTextu
 }
 
 /**
- * Clears and populates a produced Texture's hidden Canvas target. The callback is synchronous and
+ * Clears and populates a render texture's hidden Canvas target. The callback is synchronous and
  * draws through the supplied state's redirected offscreen context.
  */
 export function renderIntoCanvasRenderTexture(
@@ -56,7 +56,9 @@ export function renderIntoCanvasRenderTexture(
 
 function ensureEntry(state: CanvasRenderState, renderTexture: Readonly<Texture>): CanvasRenderTextureEntry {
   const descriptor = renderTexture.storage.target;
-  if (descriptor === undefined) throw new Error('renderIntoCanvasRenderTexture requires a produced Texture');
+  if (descriptor === undefined) {
+    throw new Error('renderIntoCanvasRenderTexture requires a Texture with a render-target backing');
+  }
   const targets = getTargets(getCanvasRenderCacheScreenState(state));
   let entry = targets.get(renderTexture);
   if (entry === undefined) {

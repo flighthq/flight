@@ -1,9 +1,8 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
 import {
   getGlRenderTextureColorSpace,
-  glProducedTextureBackingKind,
   registerGlImageTextureResolver,
-  registerGlProducedTextureResolver,
+  registerGlRenderTextureResolver,
   registerGlVideoTextureResolver,
   resolveGlTexture,
 } from '@flighthq/render-gl/contract';
@@ -20,7 +19,7 @@ import type {
   UnlitMaterial,
   GlUnlitDefineKey,
 } from '@flighthq/types/contract';
-import { UnlitMaterialKind } from '@flighthq/types/contract';
+import { RenderTextureBackingKind, UnlitMaterialKind } from '@flighthq/types/contract';
 
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import {
@@ -71,18 +70,18 @@ export const unlitGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 export function registerUnlitGlMaterial(state: GlRenderState): void {
   registerGlImageTextureResolver(state);
   registerGlVideoTextureResolver(state);
-  registerGlProducedTextureResolver(state);
+  registerGlRenderTextureResolver(state);
   registerGlMeshMaterialRenderer(state, UnlitMaterialKind, unlitGlMeshMaterialRenderer);
 }
 
 function defineKeyForMaterial(state: GlRenderState, material: Readonly<UnlitMaterial> | null): GlUnlitDefineKey {
   const colorMap = material?.baseColorMap ?? null;
   const backingKind = colorMap === null ? null : getTextureBackingKind(colorMap);
-  const produced = backingKind === glProducedTextureBackingKind;
+  const renderTexture = backingKind === RenderTextureBackingKind;
   const colorMapReady = colorMap !== null && resolveGlTexture(state, colorMap) !== null;
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
-    colorMapLinear: produced && colorMapReady && getGlRenderTextureColorSpace(state, colorMap) === 'linear',
+    colorMapLinear: renderTexture && colorMapReady && getGlRenderTextureColorSpace(state, colorMap) === 'linear',
     hasColorMap: colorMapReady,
     hasUvTransform: colorMapReady && hasGlUvTransform(colorMap),
     vertexColor: false,

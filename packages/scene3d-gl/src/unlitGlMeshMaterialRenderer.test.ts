@@ -67,7 +67,7 @@ describe('unlitGlMeshMaterialRenderer', () => {
     expect(gl.calls.some((c) => c.name === 'texImage2D')).toBe(true);
   });
 
-  it('handles an unrendered produced Texture in the same color-map slot without an upload', () => {
+  it('handles an unrendered render Texture in the same color-map slot without an upload', () => {
     const { state, gl } = makeGlScene3DState();
     const material = createUnlitMaterial();
     material.baseColorMap = createRenderTexture({ height: 16, width: 16 });
