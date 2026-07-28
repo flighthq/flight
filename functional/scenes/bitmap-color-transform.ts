@@ -14,13 +14,15 @@ import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   applySurfaceColorScaleBias,
-  BitmapKind,
-  createBitmap,
+  SpriteKind,
+  createSprite,
   createColorScaleBias,
   createDisplayObject,
   createImageResourceFromCanvas,
+  createPixelArtSampler,
   createSurface,
   createSurfaceRegion,
+  createTexture,
   getSurfacePixelRgb,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -52,7 +54,7 @@ const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)
-  kinds: [BitmapKind],
+  kinds: [SpriteKind],
 });
 
 const root = createDisplayObject();
@@ -62,9 +64,11 @@ function blit(surface: Readonly<Surface>, x: number): void {
   canvas.width = TILE;
   canvas.height = TILE;
   canvas.getContext('2d')!.putImageData(new ImageData(surface.data, TILE, TILE), 0, 0);
-  const bmp = createBitmap();
-  bmp.data.image = createImageResourceFromCanvas(canvas);
-  bmp.data.smoothing = false;
+  const bmp = createSprite();
+  bmp.data.texture = createTexture({
+    sampler: createPixelArtSampler(),
+    storage: { dimension: '2d', image: createImageResourceFromCanvas(canvas) },
+  });
   bmp.x = x;
   bmp.y = TILE_Y;
   addNodeChild(root, bmp);

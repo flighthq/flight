@@ -1,10 +1,8 @@
 import type { Node2D } from '@flighthq/sdk';
 import {
-  BitmapKind,
   createCanvasElement,
   createCanvasRenderState,
   createMatrix,
-  defaultCanvasBitmapRenderer,
   defaultCanvasParticleEmitter2DRenderer,
   defaultCanvasQuadBatchRenderer,
   defaultCanvasRichTextRenderer,
@@ -14,7 +12,6 @@ import {
   defaultCanvasSpriteRenderer,
   defaultCanvasTextLabelRenderer,
   defaultCanvasTilemapRenderer,
-  defaultCanvasVideoRenderer,
   enableCanvasBlendMode,
   enableCanvasClip,
   enableCanvasRenderCache,
@@ -32,7 +29,6 @@ import {
   SpriteKind,
   TextLabelKind,
   TilemapKind,
-  VideoKind,
 } from '@flighthq/sdk';
 import { registerFunctionalTarget } from '@ft/verify';
 
@@ -60,8 +56,6 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
     if (kind === ShapeKind) {
       registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
       registerCanvasShapeCommands(defaultCanvasShapeCommands);
-    } else if (kind === BitmapKind) {
-      registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
     } else if (kind === RichTextKind) {
       registerRenderer(state, RichTextKind, defaultCanvasRichTextRenderer);
     } else if (kind === TextLabelKind) {
@@ -78,8 +72,6 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
       registerRenderer(state, Scale9ShapeKind, defaultCanvasScale9ShapeRenderer);
       // Scale9 rasterizes its nine patches through the same canvas shape commands as Shape.
       registerCanvasShapeCommands(defaultCanvasShapeCommands);
-    } else if (kind === VideoKind) {
-      registerRenderer(state, VideoKind, defaultCanvasVideoRenderer);
     }
   }
 

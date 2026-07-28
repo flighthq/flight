@@ -20,6 +20,7 @@ import {
   createDisplayObject,
   createImageResource,
   createParticleEmitter2D,
+  createTexture,
   createTextureAtlas,
   getSurfacePixelRgb,
   invalidateNodeAppearance,
@@ -77,7 +78,9 @@ function makeAtlasCanvas(): HTMLCanvasElement {
   return c;
 }
 
-const atlas = createTextureAtlas({ image: createImageResource(makeAtlasCanvas()) });
+const atlas = createTextureAtlas({
+  texture: createTexture({ storage: { dimension: '2d', image: createImageResource(makeAtlasCanvas()) } }),
+});
 for (let i = 0; i < SWATCHES.length; i++) addTextureAtlasRegion(atlas, i * REGION, 0, REGION, REGION);
 
 const root = createDisplayObject();

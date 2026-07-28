@@ -13,6 +13,7 @@ import {
   createMotionBlurEffect,
   createParticleEmitter2D,
   createSprite,
+  createTexture,
   createTextureAtlas,
   createVelocityField,
   defaultGlMotionBlurEffectRunner,
@@ -21,6 +22,7 @@ import {
   endGlRenderEffectPipeline,
   invalidateNodeLocalTransform,
   prepareScene2DRender,
+  registerGlImageTextureResolver,
   registerGlRenderEffect,
   registerGlVelocityWriter,
   registerRenderer,
@@ -42,6 +44,7 @@ export const state = createGlRenderState(canvas, {
   pixelRatio,
   backgroundColor: 0x101014ff,
 });
+registerGlImageTextureResolver(state);
 registerRenderer(state, ParticleEmitter2DKind, defaultGlParticleEmitter2DRenderer);
 registerGlRenderEffect(state, 'MotionBlurEffect', defaultGlMotionBlurEffectRunner);
 registerGlVelocityWriter(state, ParticleEmitter2DKind, defaultGlParticleEmitter2DVelocityWriter);
@@ -88,7 +91,9 @@ function makeGlowCanvas(): HTMLCanvasElement {
   return c;
 }
 
-const atlas = createTextureAtlas({ image: createImageResource(makeGlowCanvas()) });
+const atlas = createTextureAtlas({
+  texture: createTexture({ storage: { dimension: '2d', image: createImageResource(makeGlowCanvas()) } }),
+});
 addTextureAtlasRegion(atlas, 0, 0, 32, 32);
 
 const root = createSprite();

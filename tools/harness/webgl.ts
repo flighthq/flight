@@ -1,10 +1,8 @@
 import type { Node2D } from '@flighthq/sdk';
 import {
-  BitmapKind,
   createGlCanvasElement,
   createGlRenderState,
   createMatrix,
-  defaultGlBitmapRenderer,
   defaultGlParticleEmitter2DRenderer,
   defaultGlQuadBatchRenderer,
   defaultGlRichTextRenderer,
@@ -14,7 +12,6 @@ import {
   defaultGlSpriteRenderer,
   defaultGlTextLabelRenderer,
   defaultGlTilemapRenderer,
-  defaultGlVideoRenderer,
   enableGlBlendModeSupport,
   enableGlClipSupport,
   enableGlRenderCache,
@@ -22,9 +19,12 @@ import {
   ParticleEmitter2DKind,
   prepareScene2DRender,
   QuadBatchKind,
-  registerStandardGlMaterial,
+  registerGlImageTextureResolver,
+  registerGlProducedTextureResolver,
   registerGlShapeCommands,
+  registerGlVideoTextureResolver,
   registerRenderer,
+  registerStandardGlMaterial,
   renderGlBackground,
   renderGlScene2D,
   RichTextKind,
@@ -33,7 +33,6 @@ import {
   SpriteKind,
   TextLabelKind,
   TilemapKind,
-  VideoKind,
 } from '@flighthq/sdk';
 import { registerFunctionalTarget } from '@ft/verify';
 
@@ -59,13 +58,14 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
   // store here. See ../README.md for why this lives in renderTransform2D rather than the scene.
   state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
+  registerGlImageTextureResolver(state);
+  registerGlProducedTextureResolver(state);
+  registerGlVideoTextureResolver(state);
   registerStandardGlMaterial(state);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
       registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
       registerGlShapeCommands(defaultGlShapeCommands);
-    } else if (kind === BitmapKind) {
-      registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
     } else if (kind === RichTextKind) {
       registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
     } else if (kind === TextLabelKind) {
@@ -81,8 +81,6 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
     } else if (kind === Scale9ShapeKind) {
       registerRenderer(state, Scale9ShapeKind, defaultGlScale9ShapeRenderer);
       registerGlShapeCommands(defaultGlShapeCommands);
-    } else if (kind === VideoKind) {
-      registerRenderer(state, VideoKind, defaultGlVideoRenderer);
     }
   }
 

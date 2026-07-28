@@ -17,10 +17,11 @@
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
-  BitmapKind,
-  createBitmap,
+  SpriteKind,
+  createSprite,
   createDisplayObject,
   createImageResourceFromCanvas,
+  createTexture,
   getSurfacePixelRgb,
   invalidateNodeAppearance,
 } from '@flighthq/sdk';
@@ -60,15 +61,16 @@ const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x0000ffff, // opaque blue (packed RGBA, low byte = alpha)
-  kinds: [BitmapKind],
+  kinds: [SpriteKind],
 });
 
 const root = createDisplayObject();
 
 function placeRamp(x: number, y: number, alpha: number): void {
-  const bmp = createBitmap();
-  bmp.data.image = createImageResourceFromCanvas(buildAlphaRampCanvas());
-  bmp.data.smoothing = true;
+  const bmp = createSprite();
+  bmp.data.texture = createTexture({
+    storage: { dimension: '2d', image: createImageResourceFromCanvas(buildAlphaRampCanvas()) },
+  });
   bmp.x = x;
   bmp.y = y;
   bmp.alpha = alpha;

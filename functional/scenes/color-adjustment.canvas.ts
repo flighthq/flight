@@ -12,7 +12,9 @@ import {
   createDisplayObject,
   createImageResource,
   createSprite,
+  createTexture,
   createTextureAtlas,
+  getTextureAtlasRegionTexture,
   getSurfacePixelRgb,
   invalidateNodeLocalTransform,
   SpriteKind,
@@ -43,14 +45,15 @@ function makeRedCanvas(): HTMLCanvasElement {
   return c;
 }
 
-const atlas = createTextureAtlas({ image: createImageResource(makeRedCanvas()) });
+const atlas = createTextureAtlas({
+  texture: createTexture({ storage: { dimension: '2d', image: createImageResource(makeRedCanvas()) } }),
+});
 addTextureAtlasRegion(atlas, 0, 0, REGION, REGION);
 
 const root = createDisplayObject();
 
 const sprite = createSprite();
-sprite.data.atlas = atlas;
-sprite.data.id = 0;
+sprite.data.texture = getTextureAtlasRegionTexture(atlas, 0);
 sprite.x = SPRITE_X;
 sprite.y = SPRITE_Y;
 addNodeChild(root, sprite);

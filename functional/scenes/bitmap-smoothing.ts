@@ -10,10 +10,12 @@
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
-  BitmapKind,
-  createBitmap,
+  SpriteKind,
+  createSprite,
   createDisplayObject,
   createImageResourceFromCanvas,
+  createPixelArtSampler,
+  createTexture,
   getSurfacePixelRgb,
   invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
@@ -50,15 +52,17 @@ const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)
-  kinds: [BitmapKind],
+  kinds: [SpriteKind],
 });
 
 const root = createDisplayObject();
 
 function placeChecker(x: number, y: number, smoothing: boolean): void {
-  const bmp = createBitmap();
-  bmp.data.image = createImageResourceFromCanvas(buildCheckerCanvas());
-  bmp.data.smoothing = smoothing;
+  const bmp = createSprite();
+  bmp.data.texture = createTexture({
+    sampler: smoothing ? undefined : createPixelArtSampler(),
+    storage: { dimension: '2d', image: createImageResourceFromCanvas(buildCheckerCanvas()) },
+  });
   bmp.x = x;
   bmp.y = y;
   bmp.scaleX = SCALE;

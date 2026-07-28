@@ -23,6 +23,7 @@ import {
   normalizeVector3,
   prepareScene3DRender,
   registerBlinnPhongWgpuMaterial,
+  registerWgpuImageTextureResolver,
   renderWgpuBackground,
   setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
@@ -40,6 +41,7 @@ const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x002850ff });
+registerWgpuImageTextureResolver(state);
 registerBlinnPhongWgpuMaterial(state);
 
 const pipeline = createWgpuRenderEffectPipeline(state, {
@@ -83,7 +85,10 @@ const geometry = createQuadMeshGeometry(3.4, 2.6);
 
 const material = createBlinnPhongMaterial({
   alphaCutoff: 0.5,
-  alphaMap: createTexture({ colorSpace: 'linear', image: createImageResourceFromCanvas(alphaSplitCanvas()) }),
+  alphaMap: createTexture({
+    colorSpace: 'linear',
+    storage: { dimension: '2d', image: createImageResourceFromCanvas(alphaSplitCanvas()) },
+  }),
   alphaMode: 'mask',
   diffuse: 0xcc5522ff,
   specular: 0x000000ff,

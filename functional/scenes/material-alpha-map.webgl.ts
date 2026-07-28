@@ -23,6 +23,7 @@ import {
   normalizeVector3,
   prepareScene3DRender,
   registerBlinnPhongGlMaterial,
+  registerGlImageTextureResolver,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
@@ -41,6 +42,7 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0x002850ff,
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
+registerGlImageTextureResolver(state);
 registerBlinnPhongGlMaterial(state);
 
 const pipeline = createGlRenderEffectPipeline(state, {
@@ -85,7 +87,10 @@ const geometry = createQuadMeshGeometry(3.4, 2.6);
 
 const material = createBlinnPhongMaterial({
   alphaCutoff: 0.5,
-  alphaMap: createTexture({ colorSpace: 'linear', image: createImageResourceFromCanvas(alphaSplitCanvas()) }),
+  alphaMap: createTexture({
+    colorSpace: 'linear',
+    storage: { dimension: '2d', image: createImageResourceFromCanvas(alphaSplitCanvas()) },
+  }),
   alphaMode: 'mask',
   diffuse: 0xcc5522ff,
   specular: 0x000000ff,

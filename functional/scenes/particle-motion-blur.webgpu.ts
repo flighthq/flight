@@ -9,6 +9,7 @@ import {
   createMotionBlurEffect,
   createParticleEmitter2D,
   createSprite,
+  createTexture,
   createTextureAtlas,
   createVelocityField,
   createWgpuCanvasElement,
@@ -22,6 +23,7 @@ import {
   invalidateNodeLocalTransform,
   prepareScene2DRender,
   registerRenderer,
+  registerWgpuImageTextureResolver,
   registerWgpuRenderEffect,
   registerWgpuVelocityWriter,
   renderWgpuBackground,
@@ -40,6 +42,7 @@ const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x101014ff });
+registerWgpuImageTextureResolver(state);
 registerRenderer(state, ParticleEmitter2DKind, defaultWgpuParticleEmitter2DRenderer);
 registerWgpuRenderEffect(state, 'MotionBlurEffect', defaultWgpuMotionBlurEffectRunner);
 registerWgpuVelocityWriter(state, ParticleEmitter2DKind, defaultWgpuParticleEmitter2DVelocityWriter);
@@ -87,7 +90,9 @@ function makeGlowCanvas(): HTMLCanvasElement {
   return c;
 }
 
-const atlas = createTextureAtlas({ image: createImageResource(makeGlowCanvas()) });
+const atlas = createTextureAtlas({
+  texture: createTexture({ storage: { dimension: '2d', image: createImageResource(makeGlowCanvas()) } }),
+});
 addTextureAtlasRegion(atlas, 0, 0, 32, 32);
 
 const root = createSprite();

@@ -14,7 +14,9 @@ import {
   appendShapeRectangle,
   createDisplayObject,
   createImageResourceFromCanvas,
+  createSampler,
   createShape,
+  createTexture,
   getSurfacePixelRgb,
   ShapeKind,
 } from '@flighthq/sdk';
@@ -57,10 +59,19 @@ const { render, width } = await createFunctionalTarget({
 const root = createDisplayObject();
 
 const shape = createShape();
-const checker = createImageResourceFromCanvas(buildCheckerCanvas());
+const checker = createTexture({
+  sampler: createSampler({
+    magFilter: 'nearest',
+    minFilter: 'nearest',
+    mipmaps: false,
+    wrapU: 'repeat',
+    wrapV: 'repeat',
+  }),
+  storage: { dimension: '2d', image: createImageResourceFromCanvas(buildCheckerCanvas()) },
+});
 // matrix=null maps the image at its native pixel size; repeat=true tiles it across the rect; smooth=false
 // keeps cell edges hard (nearest-neighbor sampling).
-appendShapeBeginBitmapFill(shape, checker, null, true, false);
+appendShapeBeginBitmapFill(shape, checker);
 appendShapeRectangle(shape, RECT_X, RECT_Y, RECT_SIZE, RECT_SIZE);
 appendShapeEndFill(shape);
 addNodeChild(root, shape);

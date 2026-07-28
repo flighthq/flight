@@ -5,14 +5,15 @@ import {
   appendShapeEndFill,
   appendShapeRectangle,
   createDisplayObject,
-  createRenderTargetNode2D,
+  createRenderTexture,
   createShape,
-  enableCanvasRenderTargetNode2D,
+  createSprite,
   getSurfacePixelLuminance,
   getSurfacePixelRgb,
   invalidateNodeLocalTransform,
-  renderIntoCanvasRenderTargetNode2D,
+  renderIntoCanvasRenderTexture,
   ShapeKind,
+  SpriteKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -27,12 +28,10 @@ const target = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x101018ff,
-  kinds: [ShapeKind],
+  kinds: [ShapeKind, SpriteKind],
 });
 if (target.kind !== 'canvas') throw new Error('render-target-node-2d requires Canvas');
 const { render, state, width } = target;
-
-enableCanvasRenderTargetNode2D(state);
 
 const root = createDisplayObject();
 
@@ -42,10 +41,11 @@ appendShapeRectangle(backing, 160, 100, 480, 400);
 appendShapeEndFill(backing);
 addNodeChild(root, backing);
 
-const renderTargetNode = createRenderTargetNode2D({
+const renderTexture = createRenderTexture({
   width: NODE_WIDTH,
   height: NODE_HEIGHT,
 });
+const renderTargetNode = createSprite({ data: { texture: renderTexture } });
 renderTargetNode.x = NODE_X;
 renderTargetNode.y = NODE_Y;
 invalidateNodeLocalTransform(renderTargetNode);
@@ -57,7 +57,7 @@ appendShapeRectangle(foreground, 520, 400, 120, 50);
 appendShapeEndFill(foreground);
 addNodeChild(root, foreground);
 
-renderIntoCanvasRenderTargetNode2D(state, renderTargetNode, (canvasState) => {
+renderIntoCanvasRenderTexture(state, renderTexture, (canvasState) => {
   const context = canvasState.context;
   context.fillStyle = '#05070d';
   context.fillRect(0, 0, NODE_WIDTH, NODE_HEIGHT);

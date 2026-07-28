@@ -4,12 +4,13 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  BitmapKind,
+  SpriteKind,
   BlendMode,
-  createBitmap,
+  createSprite,
   createDisplayObject,
   createImageResourceFromCanvas,
   createShape,
+  createTexture,
   getSurfacePixelRgb,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
@@ -41,7 +42,7 @@ const { render, width } = await createFunctionalTarget({
   width: 800,
   height: 600,
   background: 0x000000ff,
-  kinds: [BitmapKind, ShapeKind],
+  kinds: [SpriteKind, ShapeKind],
   blend: true,
 });
 
@@ -72,8 +73,10 @@ function addMultiplyBitmap(): void {
   const context = source.getContext('2d')!;
   context.fillStyle = '#808080';
   context.fillRect(0, 0, source.width, source.height);
-  const bitmap = createBitmap();
-  bitmap.data.image = createImageResourceFromCanvas(source);
+  const bitmap = createSprite();
+  bitmap.data.texture = createTexture({
+    storage: { dimension: '2d', image: createImageResourceFromCanvas(source) },
+  });
   bitmap.blendMode = BlendMode.Multiply;
   bitmap.x = BITMAP_X;
   bitmap.y = BITMAP_Y;

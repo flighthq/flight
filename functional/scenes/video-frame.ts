@@ -11,11 +11,13 @@ import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   createDisplayObject,
-  createVideo,
+  createPixelArtSampler,
+  createSprite,
   createVideoResource,
+  createVideoTexture,
   getSurfacePixelRgb,
   invalidateNodeLocalTransform,
-  VideoKind,
+  SpriteKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -31,7 +33,7 @@ const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)
-  kinds: [VideoKind],
+  kinds: [SpriteKind],
 });
 
 // A canvas painted with a known frame (left half red, right half blue), standing in as the video element:
@@ -51,9 +53,10 @@ Object.defineProperty(frame, 'readyState', { value: 2 }); // HAVE_CURRENT_DATA â
 
 const root = createDisplayObject();
 
-const videoNode = createVideo();
-videoNode.data.source = createVideoResource(frame as unknown as HTMLVideoElement);
-videoNode.data.smoothing = false;
+const videoNode = createSprite();
+videoNode.data.texture = createVideoTexture(createVideoResource(frame as unknown as HTMLVideoElement), {
+  sampler: createPixelArtSampler(),
+});
 videoNode.x = VIDEO_X;
 videoNode.y = VIDEO_Y;
 invalidateNodeLocalTransform(videoNode);

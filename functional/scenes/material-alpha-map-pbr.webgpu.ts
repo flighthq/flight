@@ -23,6 +23,7 @@ import {
   normalizeVector3,
   prepareScene3DRender,
   registerStandardPbrWgpuMaterial,
+  registerWgpuImageTextureResolver,
   renderWgpuBackground,
   setTextureUvScale,
   setCamera3DViewMatrix4FromLookAt,
@@ -38,6 +39,7 @@ const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x002850ff });
+registerWgpuImageTextureResolver(state);
 registerStandardPbrWgpuMaterial(state);
 
 const pipeline = createWgpuRenderEffectPipeline(state, {
@@ -75,10 +77,15 @@ const logicalHeight = height / scale;
 // A camera-facing quad slightly larger than the view so all three sample points land on it.
 const geometry = createQuadMeshGeometry(3.4, 2.6);
 
-const baseColorMap = createTexture({ image: createImageResourceFromCanvas(baseColorCanvas()) });
+const baseColorMap = createTexture({
+  storage: { dimension: '2d', image: createImageResourceFromCanvas(baseColorCanvas()) },
+});
 baseColorMap.sampler.wrapU = 'repeat';
 setTextureUvScale(baseColorMap, 3, 1);
-const alphaMap = createTexture({ colorSpace: 'linear', image: createImageResourceFromCanvas(alphaGradientCanvas()) });
+const alphaMap = createTexture({
+  colorSpace: 'linear',
+  storage: { dimension: '2d', image: createImageResourceFromCanvas(alphaGradientCanvas()) },
+});
 alphaMap.sampler.wrapU = 'clamp-to-edge';
 const material = createStandardPbrMaterial({
   alphaMap,

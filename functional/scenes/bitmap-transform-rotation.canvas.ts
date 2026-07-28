@@ -11,10 +11,11 @@
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
-  BitmapKind,
-  createBitmap,
+  SpriteKind,
+  createSprite,
   createDisplayObject,
   createImageResource,
+  createTexture,
   getSurfacePixelRgb,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
@@ -29,7 +30,7 @@ const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff,
-  kinds: [BitmapKind],
+  kinds: [SpriteKind],
 });
 
 const canvas = document.createElement('canvas');
@@ -43,8 +44,8 @@ const imageResource = createImageResource(canvas);
 
 const root = createDisplayObject();
 
-const bitmap = createBitmap();
-bitmap.data.image = imageResource;
+const bitmap = createSprite();
+bitmap.data.texture = createTexture({ storage: { dimension: '2d', image: imageResource } });
 bitmap.x = 200;
 bitmap.y = 150;
 bitmap.rotation = 45;

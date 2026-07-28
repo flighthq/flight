@@ -30,6 +30,7 @@ import {
   getSurfacePixelLuminance,
   normalizeVector3,
   prepareScene3DRender,
+  registerWgpuImageTextureResolver,
   renderWgpuBackground,
   setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
@@ -45,6 +46,7 @@ export const state = await createWgpuRenderState(canvas, {
   pixelRatio,
   backgroundColor: 0x080b12ff,
 });
+registerWgpuImageTextureResolver(state);
 registerShadedWgpuMaterial(state);
 registerBuiltInWgpuModifierSnippets(state);
 
@@ -82,7 +84,7 @@ const material = createShadedMaterial({
   diffuse: 0xb0c8e0ff,
   normalMap: createTexture({
     colorSpace: 'linear',
-    image: createImageResourceFromCanvas(normalSource),
+    storage: { dimension: '2d', image: createImageResourceFromCanvas(normalSource) },
   }),
   normalScale: 1,
   modifiers: [

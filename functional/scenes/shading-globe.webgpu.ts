@@ -32,6 +32,7 @@ import {
   getSurfacePixelLuminance,
   normalizeVector3,
   prepareScene3DRender,
+  registerWgpuImageTextureResolver,
   renderWgpuBackground,
   setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
@@ -46,6 +47,7 @@ export const state = await createWgpuRenderState(canvas, {
   pixelRatio,
   backgroundColor: 0x05070cff,
 });
+registerWgpuImageTextureResolver(state);
 registerShadedWgpuMaterial(state);
 registerBuiltInWgpuModifierSnippets(state);
 
@@ -78,14 +80,20 @@ const material = createShadedMaterial({
   shininess: 24,
   modifiers: [
     createAnimatedNormalModifier({
-      map: createTexture({ colorSpace: 'linear', image: createImageResourceFromCanvas(oceanNormalCanvas()) }),
+      map: createTexture({
+        colorSpace: 'linear',
+        storage: { dimension: '2d', image: createImageResourceFromCanvas(oceanNormalCanvas()) },
+      }),
       scroll: createVector2(0.05, 0.02),
       strength: 0.6,
     }),
     createEmissiveModifier({
       color: 0xffd27fff,
       strength: 3,
-      mask: createTexture({ colorSpace: 'linear', image: createImageResourceFromCanvas(cityLightsCanvas()) }),
+      mask: createTexture({
+        colorSpace: 'linear',
+        storage: { dimension: '2d', image: createImageResourceFromCanvas(cityLightsCanvas()) },
+      }),
       facing: EmissiveModifierFacing.AwayFromLight,
       facingSoftness: 0.25,
     }),

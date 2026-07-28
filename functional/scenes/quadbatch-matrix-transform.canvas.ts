@@ -19,6 +19,7 @@ import {
   createImageResource,
   createQuadBatch,
   createRectangle,
+  createTexture,
   createTextureAtlas,
   getSurfacePixelRgb,
   invalidateNodeLocalTransform,
@@ -66,7 +67,9 @@ function makeRedCanvas(): HTMLCanvasElement {
   return c;
 }
 
-const atlas = createTextureAtlas({ image: createImageResource(makeRedCanvas()) });
+const atlas = createTextureAtlas({
+  texture: createTexture({ storage: { dimension: '2d', image: createImageResource(makeRedCanvas()) } }),
+});
 addTextureAtlasRegion(atlas, 0, 0, QUAD, QUAD); // region id 0 — red
 
 // Quad A matrix: rotate 45° about the region center, then place that center at (A_CENTER_X, A_CENTER_Y).
