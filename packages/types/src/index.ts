@@ -609,7 +609,6 @@ export * from './TiledProperty';
 export * from './TiledTileset';
 export * from './Tilemap';
 export * from './TilemapSignals';
-export * from './Tileset';
 export * from './TiltShiftEffect';
 export * from './Timeline';
 export * from './TimelineFrameEvent';

@@ -22,29 +22,31 @@ export function clearTilemap(tilemap: Tilemap): void {
 
 /**
  * Deep-copies `source` into a new `Tilemap` with an independent `Int16Array` tiles buffer and a
- * fresh runtime. The new tilemap has the same `columns`, `rows`, `tileset`, and `materialData`
+ * fresh runtime. The new tilemap has the same atlas, cell layout, grid, and `materialData`
  * (shallow copy of the materialData array), but its `tiles` are a cloned typed array.
  */
 export function cloneTilemap(source: Readonly<Tilemap>): Tilemap {
   const src = source.data;
   return createTilemap({
     data: {
+      atlas: src.atlas,
       columns: src.columns,
       materialData: src.materialData !== null ? src.materialData.slice() : null,
       rows: src.rows,
+      tileHeight: src.tileHeight,
+      tileWidth: src.tileWidth,
       tiles: src.tiles.slice(),
-      tileset: src.tileset,
     },
   });
 }
 
 export function computeTilemapLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
   const tilemap = source as Tilemap;
-  const { tileset, columns, rows } = tilemap.data;
+  const { atlas, columns, rows, tileHeight, tileWidth } = tilemap.data;
   out.x = 0;
   out.y = 0;
-  out.width = tileset !== null ? columns * tileset.tileWidth : 0;
-  out.height = tileset !== null ? rows * tileset.tileHeight : 0;
+  out.width = atlas !== null ? columns * tileWidth : 0;
+  out.height = atlas !== null ? rows * tileHeight : 0;
 }
 
 export function createTilemap(obj?: Readonly<PartialNode<Tilemap>>): Tilemap {
@@ -55,11 +57,13 @@ export function createTilemapData(data?: Readonly<Partial<TilemapData>>): Tilema
   const columns = data?.columns ?? 0;
   const rows = data?.rows ?? 0;
   return {
+    atlas: data?.atlas ?? null,
     columns,
-    rows,
     materialData: data?.materialData ?? null,
+    rows,
+    tileHeight: data?.tileHeight ?? 0,
+    tileWidth: data?.tileWidth ?? 0,
     tiles: data?.tiles ?? new Int16Array(columns * rows).fill(-1),
-    tileset: data?.tileset ?? null,
   };
 }
 
@@ -90,20 +94,20 @@ export function fillTilemapTiles(tilemap: Tilemap, id: number): void {
 }
 
 /**
- * Returns the column index for a local-space x coordinate, or -1 when the tileset is null or
+ * Returns the column index for a local-space x coordinate, or -1 when the atlas is null or
  * `x` is outside the tilemap bounds. The result is a floored column index.
  */
 export function getTilemapColumnAtX(source: Readonly<Tilemap>, x: number): number {
-  const { tileset, columns } = source.data;
-  if (tileset === null || tileset.tileWidth <= 0) return -1;
-  const col = Math.floor(x / tileset.tileWidth);
+  const { atlas, columns, tileWidth } = source.data;
+  if (atlas === null || tileWidth <= 0) return -1;
+  const col = Math.floor(x / tileWidth);
   if (col < 0 || col >= columns) return -1;
   return col;
 }
 
 /**
  * Writes the column and row for a local-space point `(x, y)` into `out.x`/`out.y`.
- * Returns false when the tileset is null or the point is outside the tilemap bounds.
+ * Returns false when the atlas is null or the point is outside the tilemap bounds.
  * On a false return, `out` is not modified.
  */
 export function getTilemapColumnRowAtPoint(out: Vector2Like, source: Readonly<Tilemap>, x: number, y: number): boolean {
@@ -116,13 +120,13 @@ export function getTilemapColumnRowAtPoint(out: Vector2Like, source: Readonly<Ti
 }
 
 /**
- * Returns the row index for a local-space y coordinate, or -1 when the tileset is null or
+ * Returns the row index for a local-space y coordinate, or -1 when the atlas is null or
  * `y` is outside the tilemap bounds. The result is a floored row index.
  */
 export function getTilemapRowAtY(source: Readonly<Tilemap>, y: number): number {
-  const { tileset, rows } = source.data;
-  if (tileset === null || tileset.tileHeight <= 0) return -1;
-  const row = Math.floor(y / tileset.tileHeight);
+  const { atlas, rows, tileHeight } = source.data;
+  if (atlas === null || tileHeight <= 0) return -1;
+  const row = Math.floor(y / tileHeight);
   if (row < 0 || row >= rows) return -1;
   return row;
 }
@@ -143,7 +147,7 @@ export function getTilemapTile(tilemap: Readonly<Tilemap>, column: number, row: 
 }
 
 /**
- * Returns the cell value at local-space point `(x, y)`, or -1 when the tileset is null, the
+ * Returns the cell value at local-space point `(x, y)`, or -1 when the atlas is null, the
  * point is outside the tilemap, or the cell is empty. Delegates to `getTilemapColumnAtX`,
  * `getTilemapRowAtY`, and `getTilemapTile`.
  */
@@ -163,15 +167,15 @@ export function getTilemapTileAtPointXY(source: Readonly<Tilemap>, x: number, y:
 
 /**
  * Writes the local-space rectangle for the cell at `(column, row)` into `out`.
- * Returns false and does not modify `out` when the tileset is null or the column/row is out of bounds.
+ * Returns false and does not modify `out` when the atlas is null or the column/row is out of bounds.
  */
 export function getTilemapTileRect(out: Rectangle, source: Readonly<Tilemap>, column: number, row: number): boolean {
-  const { tileset, columns, rows } = source.data;
-  if (tileset === null || column < 0 || column >= columns || row < 0 || row >= rows) return false;
-  out.x = column * tileset.tileWidth;
-  out.y = row * tileset.tileHeight;
-  out.width = tileset.tileWidth;
-  out.height = tileset.tileHeight;
+  const { atlas, columns, rows, tileHeight, tileWidth } = source.data;
+  if (atlas === null || column < 0 || column >= columns || row < 0 || row >= rows) return false;
+  out.x = column * tileWidth;
+  out.y = row * tileHeight;
+  out.width = tileWidth;
+  out.height = tileHeight;
   return true;
 }
 

@@ -50,7 +50,8 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "@flighthq/sprite": "*",
+    "@flighthq/quadbatch": "*",
+    "@flighthq/tilemap": "*",
     "typescript": "^5.3.0"
   },
   "description": "Hit testing: point-in-node tests and object overlap detection",

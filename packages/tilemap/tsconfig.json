@@ -9,11 +9,24 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../entity" },
-    { "path": "../image" },
-    { "path": "../texture" },
-    { "path": "../textureatlas" },
-    { "path": "../types" }
+    {
+      "path": "../geometry"
+    },
+    {
+      "path": "../node"
+    },
+    {
+      "path": "../quadbatch"
+    },
+    {
+      "path": "../scene2d"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../types"
+    }
   ],
   "include": ["src"]
 }

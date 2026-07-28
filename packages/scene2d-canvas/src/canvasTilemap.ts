@@ -6,10 +6,8 @@ import { applyCanvasMaterial } from './canvasMaterialRegistry';
 
 export function drawCanvasTilemap(state: CanvasRenderState, tilemapNode: RenderProxy2D): void {
   const source = tilemapNode.source as Tilemap;
-  const { tileset, columns, rows, tiles } = source.data;
+  const { atlas, columns, rows, tileHeight, tileWidth, tiles } = source.data;
 
-  if (tileset === null) return;
-  const atlas = tileset.atlas;
   if (atlas === null || atlas.texture === null) return;
   const image = resolveCanvasTextureSource(state, atlas.texture);
   if (image === null) return;
@@ -22,8 +20,6 @@ export function drawCanvasTilemap(state: CanvasRenderState, tilemapNode: RenderP
   const numRegions = regions.length;
   const transform = tilemapNode.transform2D;
   const roundPixels = state.roundPixels;
-  const { tileWidth, tileHeight } = tileset;
-
   context.globalAlpha = tilemapNode.alpha;
   const smoothing = state.allowSmoothing && !atlas.texture.sampler.magFilter.startsWith('nearest');
   if (!smoothing) context.imageSmoothingEnabled = false;

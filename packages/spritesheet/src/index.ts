@@ -14,7 +14,6 @@ export {
   createSpritesheetFrameData,
   createSpritesheetFromData,
   createSpritesheetFromGrid,
-  createSpritesheetFromTileset,
   createSpritesheetPlayer,
   disposeSpritesheetPlayer,
   getSpritesheetAnimation,

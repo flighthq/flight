@@ -6,5 +6,4 @@ export * from '@flighthq/image';
 export * from '@flighthq/image-codec';
 export * from '@flighthq/loader';
 export * from '@flighthq/textureatlas';
-export * from '@flighthq/tileset';
 export * from '@flighthq/video';

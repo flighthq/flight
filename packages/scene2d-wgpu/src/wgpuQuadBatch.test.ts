@@ -1,7 +1,7 @@
+import { createQuadBatch } from '@flighthq/quadbatch/contract';
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
-import { createQuadBatch } from '@flighthq/sprite/contract';
 
 import { defaultWgpuQuadBatchRenderer, ensureWgpuQuadBatchResources, getWgpuQuadBatchPipeline } from './wgpuQuadBatch';
 import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';

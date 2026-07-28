@@ -1,5 +1,5 @@
 import type { TiledTilesetRef } from './TiledTileset';
-import type { Tileset } from './Tileset';
+import type { TilemapData } from './Tilemap';
 
 // Compression applied to a base64-encoded tile-layer payload. Tiled emits `gzip`/`zlib` (and,
 // recently, `zstd`); the codec never bundles a decompressor, so the caller decodes these through a
@@ -17,7 +17,9 @@ export interface TiledParseOptions {
   inflate?: TiledInflate;
 }
 
-// Resolves a document's tileset reference to a runtime `Tileset` during projection. The caller owns
-// atlas loading and external TSX/TSJ resolution; returning null means the tileset is unavailable and
-// its tiles are treated as empty. See `buildTilemapLayersFromTiled`.
-export type TiledTilesetResolver = (ref: Readonly<TiledTilesetRef>) => Tileset | null;
+// Resolves a document's tileset reference to the atlas and placement dimensions a runtime Tilemap
+// needs during projection. The caller owns atlas loading and external TSX/TSJ resolution; returning
+// null means the tileset is unavailable and its tiles are treated as empty.
+export type TiledTilesetResolver = (
+  ref: Readonly<TiledTilesetRef>,
+) => Readonly<Pick<TilemapData, 'atlas' | 'tileHeight' | 'tileWidth'>> | null;

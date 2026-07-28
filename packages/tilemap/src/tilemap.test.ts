@@ -1,6 +1,6 @@
 import { createRectangle, createVector2 } from '@flighthq/geometry/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import type { Node, Tileset } from '@flighthq/types/contract';
+import type { Node, TextureAtlas } from '@flighthq/types/contract';
 import { TilemapKind } from '@flighthq/types/contract';
 
 import {
@@ -38,15 +38,15 @@ describe('clearTilemap', () => {
 });
 
 describe('cloneTilemap', () => {
-  it('copies grid, tileset, and tiles into a new tilemap', () => {
-    const tileset = { tileWidth: 32, tileHeight: 16 } as Tileset;
-    const source = createTilemap({ data: { columns: 3, rows: 2, tileset } });
+  it('copies grid, atlas, and tiles into a new tilemap', () => {
+    const atlas = {} as TextureAtlas;
+    const source = createTilemap({ data: { atlas, columns: 3, rows: 2, tileHeight: 16, tileWidth: 32 } });
     setTilemapTile(source, 1, 1, 9);
     const clone = cloneTilemap(source);
     expect(clone).not.toBe(source);
     expect(clone.data.columns).toBe(3);
     expect(clone.data.rows).toBe(2);
-    expect(clone.data.tileset).toBe(tileset);
+    expect(clone.data.atlas).toBe(atlas);
     expect(getTilemapTile(clone, 1, 1)).toBe(9);
     expect(clone.kind).toBe(TilemapKind);
   });
@@ -61,16 +61,16 @@ describe('cloneTilemap', () => {
 });
 
 describe('computeTilemapLocalBoundsRectangle', () => {
-  it('sets out dimensions from tileset and grid size', () => {
-    const tileset = { tileWidth: 32, tileHeight: 16 } as Tileset;
-    const tilemap = createTilemap({ data: { columns: 5, rows: 4, tileset } });
+  it('sets out dimensions from atlas and grid size', () => {
+    const atlas = {} as TextureAtlas;
+    const tilemap = createTilemap({ data: { atlas, columns: 5, rows: 4, tileHeight: 16, tileWidth: 32 } });
     const out = createRectangle();
     computeTilemapLocalBoundsRectangle(out, tilemap as unknown as Node);
     expect(out.width).toBe(160);
     expect(out.height).toBe(64);
   });
 
-  it('sets zero dimensions when tileset is null', () => {
+  it('sets zero dimensions when atlas is null', () => {
     const tilemap = createTilemap({ data: { columns: 5, rows: 4 } });
     const out = createRectangle(0, 0, 99, 99);
     computeTilemapLocalBoundsRectangle(out, tilemap as unknown as Node);
@@ -84,7 +84,7 @@ describe('createTilemap', () => {
     const tilemap = createTilemap();
     expect(tilemap.data.columns).toBe(0);
     expect(tilemap.data.rows).toBe(0);
-    expect(tilemap.data.tileset).toBeNull();
+    expect(tilemap.data.atlas).toBeNull();
     expect(tilemap.data.tiles).toBeInstanceOf(Int16Array);
     expect(tilemap.kind).toBe(TilemapKind);
   });
@@ -96,11 +96,11 @@ describe('createTilemap', () => {
   });
 
   it('allows pre-defined values', () => {
-    const base = { data: { columns: 10, rows: 5, tileset: {} as Tileset } };
+    const base = { data: { columns: 10, rows: 5, atlas: {} as TextureAtlas, tileHeight: 16, tileWidth: 16 } };
     const obj = createTilemap(base);
     expect(obj.data.columns).toBe(10);
     expect(obj.data.rows).toBe(5);
-    expect(obj.data.tileset).toBe(base.data.tileset);
+    expect(obj.data.atlas).toBe(base.data.atlas);
   });
 
   it('returns a new object for better hidden-class performance', () => {
@@ -115,7 +115,7 @@ describe('createTilemapData', () => {
     const data = createTilemapData();
     expect(data.columns).toBe(0);
     expect(data.rows).toBe(0);
-    expect(data.tileset).toBeNull();
+    expect(data.atlas).toBeNull();
     expect(data.tiles).toBeInstanceOf(Int16Array);
   });
 
@@ -208,22 +208,22 @@ describe('fillTilemapTiles', () => {
 });
 
 describe('getTilemapColumnAtX', () => {
-  it('returns -1 when tileset is null', () => {
+  it('returns -1 when atlas is null', () => {
     const tilemap = createTilemap({ data: { columns: 4, rows: 4 } });
     expect(getTilemapColumnAtX(tilemap, 10)).toBe(-1);
   });
 
   it('returns the floored column for an in-bounds x', () => {
-    const tileset = { tileWidth: 16, tileHeight: 16 } as Tileset;
-    const tilemap = createTilemap({ data: { columns: 4, rows: 4, tileset } });
+    const atlas = {} as TextureAtlas;
+    const tilemap = createTilemap({ data: { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 } });
     expect(getTilemapColumnAtX(tilemap, 0)).toBe(0);
     expect(getTilemapColumnAtX(tilemap, 31)).toBe(1);
     expect(getTilemapColumnAtX(tilemap, 48)).toBe(3);
   });
 
   it('returns -1 for x outside the grid', () => {
-    const tileset = { tileWidth: 16, tileHeight: 16 } as Tileset;
-    const tilemap = createTilemap({ data: { columns: 4, rows: 4, tileset } });
+    const atlas = {} as TextureAtlas;
+    const tilemap = createTilemap({ data: { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 } });
     expect(getTilemapColumnAtX(tilemap, -1)).toBe(-1);
     expect(getTilemapColumnAtX(tilemap, 64)).toBe(-1);
   });
@@ -231,8 +231,8 @@ describe('getTilemapColumnAtX', () => {
 
 describe('getTilemapColumnRowAtPoint', () => {
   it('writes column and row for an in-bounds point', () => {
-    const tileset = { tileWidth: 16, tileHeight: 16 } as Tileset;
-    const tilemap = createTilemap({ data: { columns: 4, rows: 4, tileset } });
+    const atlas = {} as TextureAtlas;
+    const tilemap = createTilemap({ data: { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 } });
     const out = createVector2(99, 99);
     expect(getTilemapColumnRowAtPoint(out, tilemap, 33, 17)).toBe(true);
     expect(out.x).toBe(2);
@@ -240,8 +240,8 @@ describe('getTilemapColumnRowAtPoint', () => {
   });
 
   it('returns false and does not modify out for an out-of-bounds point', () => {
-    const tileset = { tileWidth: 16, tileHeight: 16 } as Tileset;
-    const tilemap = createTilemap({ data: { columns: 4, rows: 4, tileset } });
+    const atlas = {} as TextureAtlas;
+    const tilemap = createTilemap({ data: { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 } });
     const out = createVector2(7, 8);
     expect(getTilemapColumnRowAtPoint(out, tilemap, -1, 0)).toBe(false);
     expect(out.x).toBe(7);
@@ -250,21 +250,21 @@ describe('getTilemapColumnRowAtPoint', () => {
 });
 
 describe('getTilemapRowAtY', () => {
-  it('returns -1 when tileset is null', () => {
+  it('returns -1 when atlas is null', () => {
     const tilemap = createTilemap({ data: { columns: 4, rows: 4 } });
     expect(getTilemapRowAtY(tilemap, 10)).toBe(-1);
   });
 
   it('returns the floored row for an in-bounds y', () => {
-    const tileset = { tileWidth: 16, tileHeight: 16 } as Tileset;
-    const tilemap = createTilemap({ data: { columns: 4, rows: 4, tileset } });
+    const atlas = {} as TextureAtlas;
+    const tilemap = createTilemap({ data: { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 } });
     expect(getTilemapRowAtY(tilemap, 0)).toBe(0);
     expect(getTilemapRowAtY(tilemap, 31)).toBe(1);
   });
 
   it('returns -1 for y outside the grid', () => {
-    const tileset = { tileWidth: 16, tileHeight: 16 } as Tileset;
-    const tilemap = createTilemap({ data: { columns: 4, rows: 4, tileset } });
+    const atlas = {} as TextureAtlas;
+    const tilemap = createTilemap({ data: { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 } });
     expect(getTilemapRowAtY(tilemap, -1)).toBe(-1);
     expect(getTilemapRowAtY(tilemap, 64)).toBe(-1);
   });
@@ -314,28 +314,28 @@ describe('getTilemapTile', () => {
 
 describe('getTilemapTileAtPoint', () => {
   it('returns the cell value at a local-space point', () => {
-    const tileset = { tileWidth: 16, tileHeight: 16 } as Tileset;
-    const tilemap = createTilemap({ data: { columns: 4, rows: 4, tileset } });
+    const atlas = {} as TextureAtlas;
+    const tilemap = createTilemap({ data: { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 } });
     setTilemapTile(tilemap, 2, 1, 8);
     expect(getTilemapTileAtPoint(tilemap, createVector2(33, 17))).toBe(8);
   });
 
   it('returns -1 for an out-of-bounds point', () => {
-    const tileset = { tileWidth: 16, tileHeight: 16 } as Tileset;
-    const tilemap = createTilemap({ data: { columns: 4, rows: 4, tileset } });
+    const atlas = {} as TextureAtlas;
+    const tilemap = createTilemap({ data: { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 } });
     expect(getTilemapTileAtPoint(tilemap, createVector2(-5, 0))).toBe(-1);
   });
 });
 
 describe('getTilemapTileAtPointXY', () => {
   it('returns the cell value at (x, y)', () => {
-    const tileset = { tileWidth: 16, tileHeight: 16 } as Tileset;
-    const tilemap = createTilemap({ data: { columns: 4, rows: 4, tileset } });
+    const atlas = {} as TextureAtlas;
+    const tilemap = createTilemap({ data: { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 } });
     setTilemapTile(tilemap, 0, 0, 3);
     expect(getTilemapTileAtPointXY(tilemap, 5, 5)).toBe(3);
   });
 
-  it('returns -1 when tileset is null', () => {
+  it('returns -1 when atlas is null', () => {
     const tilemap = createTilemap({ data: { columns: 4, rows: 4 } });
     expect(getTilemapTileAtPointXY(tilemap, 5, 5)).toBe(-1);
   });
@@ -343,8 +343,8 @@ describe('getTilemapTileAtPointXY', () => {
 
 describe('getTilemapTileRect', () => {
   it('writes the cell rectangle for an in-bounds cell', () => {
-    const tileset = { tileWidth: 16, tileHeight: 24 } as Tileset;
-    const tilemap = createTilemap({ data: { columns: 4, rows: 4, tileset } });
+    const atlas = {} as TextureAtlas;
+    const tilemap = createTilemap({ data: { atlas, columns: 4, rows: 4, tileHeight: 24, tileWidth: 16 } });
     const out = createRectangle();
     expect(getTilemapTileRect(out, tilemap, 2, 1)).toBe(true);
     expect(out.x).toBe(32);
@@ -354,8 +354,8 @@ describe('getTilemapTileRect', () => {
   });
 
   it('returns false and does not modify out for an out-of-bounds cell', () => {
-    const tileset = { tileWidth: 16, tileHeight: 16 } as Tileset;
-    const tilemap = createTilemap({ data: { columns: 4, rows: 4, tileset } });
+    const atlas = {} as TextureAtlas;
+    const tilemap = createTilemap({ data: { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 } });
     const out = createRectangle(1, 2, 3, 4);
     expect(getTilemapTileRect(out, tilemap, 5, 0)).toBe(false);
     expect(out.x).toBe(1);
@@ -364,7 +364,7 @@ describe('getTilemapTileRect', () => {
     expect(out.height).toBe(4);
   });
 
-  it('returns false when tileset is null', () => {
+  it('returns false when atlas is null', () => {
     const tilemap = createTilemap({ data: { columns: 4, rows: 4 } });
     const out = createRectangle();
     expect(getTilemapTileRect(out, tilemap, 0, 0)).toBe(false);

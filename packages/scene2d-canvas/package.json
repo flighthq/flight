@@ -48,12 +48,12 @@
     "@flighthq/textlayout": "*",
     "@flighthq/texture": "*",
     "@flighthq/textureatlas": "*",
-    "@flighthq/tileset": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
     "@flighthq/bitmaptext": "*",
-    "@flighthq/sprite": "*",
+    "@flighthq/quadbatch": "*",
+    "@flighthq/tilemap": "*",
     "typescript": "^5.3.0"
   },
   "description": "Canvas 2D renderer implementation",

@@ -307,7 +307,7 @@
       "path": "../spring"
     },
     {
-      "path": "../sprite"
+      "path": "../quadbatch"
     },
     {
       "path": "../spritesheet"
@@ -364,7 +364,7 @@
       "path": "../tilemap-formats"
     },
     {
-      "path": "../tileset"
+      "path": "../tilemap"
     },
     {
       "path": "../timeline"

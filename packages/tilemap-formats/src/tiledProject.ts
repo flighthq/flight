@@ -1,5 +1,5 @@
-import { createTilemapData } from '@flighthq/sprite/contract';
-import type { TiledMap, TiledTilesetResolver, TilemapData, Tileset } from '@flighthq/types/contract';
+import { createTilemapData } from '@flighthq/tilemap/contract';
+import type { TiledMap, TiledTilesetResolver, TilemapData } from '@flighthq/types/contract';
 
 import { decodeTiledGid, getTiledTilesetRefForGid } from './tiledGid';
 
@@ -10,7 +10,7 @@ import { decodeTiledGid, getTiledTilesetRefForGid } from './tiledGid';
 // 1-element array.
 //
 // Each cell's raw GID is decoded to a global tile id; its owning `TiledTilesetRef` is found by
-// firstGid range and resolved to a runtime `Tileset` via `resolveTileset`. The stored tile is the
+// firstGid range and resolved to runtime atlas/layout data via `resolveTileset`. The stored tile is the
 // local id (`globalTileId - firstGid`). Flip flags are decoded for range/identity purposes but are
 // NOT carried into the grid: `TilemapData` has no per-tile flip slot, so flips survive only in the
 // faithful `TiledMap` document, not in the projected tilemap.
@@ -42,14 +42,14 @@ export function buildTilemapLayersFromTiled(
 
     let group = byFirstGid.get(ref.firstGid);
     if (group === undefined) {
-      const tileset = resolveTileset(ref);
-      if (tileset === null) {
+      const layout = resolveTileset(ref);
+      if (layout === null) {
         // Remember the failure so its tiles stay empty without re-resolving each cell.
         byFirstGid.set(ref.firstGid, null);
         group = null;
       } else {
         anyResolved = true;
-        group = { firstGid: ref.firstGid, tiles: new Int16Array(cellCount).fill(-1), tileset };
+        group = { firstGid: ref.firstGid, layout, tiles: new Int16Array(cellCount).fill(-1) };
         byFirstGid.set(ref.firstGid, group);
         groups.push(group);
       }
@@ -61,12 +61,19 @@ export function buildTilemapLayersFromTiled(
   if (!anyResolved) return null;
 
   return groups.map((group) =>
-    createTilemapData({ columns: width, rows: height, tiles: group.tiles, tileset: group.tileset }),
+    createTilemapData({
+      atlas: group.layout.atlas,
+      columns: width,
+      rows: height,
+      tileHeight: group.layout.tileHeight,
+      tileWidth: group.layout.tileWidth,
+      tiles: group.tiles,
+    }),
   );
 }
 
 interface TilesetGroup {
   firstGid: number;
+  layout: NonNullable<ReturnType<TiledTilesetResolver>>;
   tiles: Int16Array;
-  tileset: Tileset;
 }

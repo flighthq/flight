@@ -57,7 +57,8 @@
   "devDependencies": {
     "@flighthq/bitmaptext": "*",
     "@flighthq/particleemitter": "*",
-    "@flighthq/sprite": "*",
+    "@flighthq/quadbatch": "*",
+    "@flighthq/tilemap": "*",
     "@webgpu/types": "*",
     "typescript": "^5.3.0"
   },

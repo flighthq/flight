@@ -8,6 +8,7 @@ export {
   createTextureAtlasFromImageBitmap,
   createTextureAtlasFromImageElement,
   createTextureAtlasFromImageResource,
+  createTextureAtlasFromGrid,
   createTextureAtlasRegion,
   getTextureAtlasByteSize,
   getTextureAtlasRegionById,

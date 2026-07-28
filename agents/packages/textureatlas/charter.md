@@ -35,7 +35,7 @@ This package describes the atlas — what image it wraps and where the regions a
 
 - Atlas packing / bin-layout / sprite sheet generation — separate package.
 - Atlas metadata parsing (TexturePacker, Aseprite, Starling, libgdx, Cocos) — `@flighthq/textureatlas-formats`.
-- Tileset semantics — `@flighthq/tileset`.
+- Tile placement semantics — `@flighthq/tilemap`; this package owns only uniform grid slicing into atlas regions.
 
 ## Decisions
 

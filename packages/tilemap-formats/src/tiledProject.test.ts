@@ -1,4 +1,3 @@
-import { createTileset } from '@flighthq/tileset/contract';
 import type { TiledTilesetResolver } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -16,8 +15,8 @@ function mapWithLayerData(data: string): ReturnType<typeof parseTiledTmx> {
   );
 }
 
-const tilesetA = createTileset({ columns: 2, rows: 2, tileHeight: 16, tileWidth: 16 });
-const tilesetB = createTileset({ columns: 2, rows: 2, tileHeight: 16, tileWidth: 16 });
+const tilesetA = { atlas: null, tileHeight: 16, tileWidth: 16 };
+const tilesetB = { atlas: null, tileHeight: 16, tileWidth: 16 };
 
 const resolve: TiledTilesetResolver = (ref) => {
   if (ref.firstGid === 1) return tilesetA;
@@ -31,11 +30,11 @@ describe('buildTilemapLayersFromTiled', () => {
     const result = buildTilemapLayersFromTiled(map, 0, resolve)!;
     expect(result).toHaveLength(2);
 
-    expect(result[0].tileset).toBe(tilesetA);
+    expect(result[0]).toMatchObject(tilesetA);
     // Cell 2's GID has the flip bit set; its tile id (1) still resolves to tileset A as local id 0.
     expect(Array.from(result[0].tiles)).toEqual([0, -1, 0, -1]);
 
-    expect(result[1].tileset).toBe(tilesetB);
+    expect(result[1]).toMatchObject(tilesetB);
     expect(Array.from(result[1].tiles)).toEqual([-1, 0, -1, 1]);
     expect(result[1].columns).toBe(2);
     expect(result[1].rows).toBe(2);
@@ -45,7 +44,7 @@ describe('buildTilemapLayersFromTiled', () => {
     const map = mapWithLayerData('1,2,1,2')!;
     const result = buildTilemapLayersFromTiled(map, 0, resolve)!;
     expect(result).toHaveLength(1);
-    expect(result[0].tileset).toBe(tilesetA);
+    expect(result[0]).toMatchObject(tilesetA);
     expect(Array.from(result[0].tiles)).toEqual([0, 1, 0, 1]);
   });
 
@@ -54,7 +53,7 @@ describe('buildTilemapLayersFromTiled', () => {
     const onlyA: TiledTilesetResolver = (ref) => (ref.firstGid === 1 ? tilesetA : null);
     const result = buildTilemapLayersFromTiled(map, 0, onlyA)!;
     expect(result).toHaveLength(1);
-    expect(result[0].tileset).toBe(tilesetA);
+    expect(result[0]).toMatchObject(tilesetA);
     expect(Array.from(result[0].tiles)).toEqual([0, -1, 0, -1]);
   });
 

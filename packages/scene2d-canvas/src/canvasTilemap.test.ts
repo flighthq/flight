@@ -1,12 +1,7 @@
 ﻿import { createImageResource } from '@flighthq/image/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
-import { createTilemap, setTilemapTile } from '@flighthq/sprite/contract';
-import {
-  addTextureAtlasRegion,
-  createTextureAtlas,
-  createTextureAtlasFromImageResource,
-} from '@flighthq/textureatlas/contract';
-import { buildTilesetRegions, createTileset } from '@flighthq/tileset/contract';
+import { addTextureAtlasRegion, createTextureAtlasFromImageResource } from '@flighthq/textureatlas/contract';
+import { createTilemap, setTilemapTile } from '@flighthq/tilemap/contract';
 
 import { createCanvasRenderState } from './canvasRenderState';
 import { drawCanvasTilemap } from './canvasTilemap';
@@ -29,13 +24,11 @@ function makeTilesetAtlas(tileWidth = 32, tileHeight = 32, cols = 2, rows = 1) {
       addTextureAtlasRegion(atlas, c * tileWidth, r * tileHeight, tileWidth, tileHeight);
     }
   }
-  const tileset = createTileset({ atlas, tileWidth, tileHeight, columns: cols, rows });
-  buildTilesetRegions(tileset);
-  return tileset;
+  return { atlas, tileHeight, tileWidth };
 }
 
 describe('drawCanvasTilemap', () => {
-  it('does not draw when tileset is null', () => {
+  it('does not draw when atlas is null', () => {
     const state = makeState();
     const tilemap = createTilemap();
     prepareScene2DRender(state, tilemap);
@@ -47,8 +40,8 @@ describe('drawCanvasTilemap', () => {
 
   it('draws each non-empty tile with drawImage', () => {
     const state = makeState();
-    const tileset = makeTilesetAtlas(32, 32, 2, 1);
-    const tilemap = createTilemap({ data: { columns: 2, rows: 1, tileset } });
+    const layout = makeTilesetAtlas(32, 32, 2, 1);
+    const tilemap = createTilemap({ data: { columns: 2, rows: 1, ...layout } });
     setTilemapTile(tilemap, 0, 0, 0);
     setTilemapTile(tilemap, 1, 0, 1);
     prepareScene2DRender(state, tilemap);
@@ -60,8 +53,8 @@ describe('drawCanvasTilemap', () => {
 
   it('skips cells with id -1', () => {
     const state = makeState();
-    const tileset = makeTilesetAtlas(32, 32, 2, 1);
-    const tilemap = createTilemap({ data: { columns: 2, rows: 1, tileset } });
+    const layout = makeTilesetAtlas(32, 32, 2, 1);
+    const tilemap = createTilemap({ data: { columns: 2, rows: 1, ...layout } });
     setTilemapTile(tilemap, 0, 0, 0);
     // cell (1,0) remains -1
     prepareScene2DRender(state, tilemap);

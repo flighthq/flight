@@ -6,8 +6,7 @@
   },
   "references": [
     { "path": "../../../packages/scene2d-canvas" },
-    { "path": "../../../packages/sprite" },
-    { "path": "../../../packages/tileset" },
+    { "path": "../../../packages/tilemap" },
     { "path": "../../../packages/sdk" }
   ],
   "include": ["src/**/*"],

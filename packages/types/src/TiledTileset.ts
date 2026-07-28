@@ -24,8 +24,8 @@ export interface TiledTilesetTile {
 
 // A tileset definition — either embedded in a map or standalone in a TSX/TSJ sidecar. `image` is the
 // atlas image path for a single-image tileset (null for an image-collection tileset, where each tile
-// carries its own `image`). Sizes/margin/spacing describe the grid the codec resolves into a runtime
-// `Tileset` at projection time.
+// carries its own `image`). Sizes/margin/spacing describe the grid the codec resolves into runtime
+// Tilemap atlas/layout data at projection time.
 export interface TiledTileset {
   name: string;
   tileWidth: number;

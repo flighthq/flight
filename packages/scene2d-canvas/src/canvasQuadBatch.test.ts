@@ -1,6 +1,6 @@
 ﻿import { createImageResource } from '@flighthq/image/contract';
+import { createQuadBatch, reserveQuadBatch } from '@flighthq/quadbatch/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender, registerRenderer } from '@flighthq/render/contract';
-import { createQuadBatch, reserveQuadBatch } from '@flighthq/sprite/contract';
 import {
   addTextureAtlasRegion,
   createTextureAtlas,

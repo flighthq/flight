@@ -4,8 +4,7 @@
   "type": "module",
   "dependencies": {
     "@flighthq/scene2d-canvas": "*",
-    "@flighthq/sprite": "*",
-    "@flighthq/tileset": "*",
+    "@flighthq/tilemap": "*",
     "@flighthq/sdk": "*"
   },
   "scripts": {

@@ -1,7 +1,7 @@
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
-import { createTilemap } from '@flighthq/sprite/contract';
+import { createTilemap } from '@flighthq/tilemap/contract';
 
 import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
 import { defaultWgpuTilemapRenderer } from './wgpuTilemap';
@@ -21,7 +21,7 @@ describe('defaultWgpuTilemapRenderer', () => {
 });
 
 describe('defaultWgpuTilemapRenderer.submit', () => {
-  it('does not throw when tileset is null', async () => {
+  it('does not throw when atlas is null', async () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
 

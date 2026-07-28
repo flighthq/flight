@@ -4,7 +4,8 @@ import {
   createDisplayObject,
   createImageResource,
   createTilemap,
-  createTilesetFromImageResource,
+  createTexture,
+  createTextureAtlasFromGrid,
   invalidateNodeAppearance,
   resizeTilemap,
   setTilemapTile,
@@ -92,11 +93,21 @@ function createTilesetCanvas(): HTMLCanvasElement {
 
 const tilesetCanvas = createTilesetCanvas();
 const imageResource = createImageResource(tilesetCanvas);
-const tileset = createTilesetFromImageResource(imageResource, TILE_SIZE, TILE_SIZE);
+const atlas = createTextureAtlasFromGrid(
+  {
+    columns: TILE_COUNT,
+    frameHeight: TILE_SIZE,
+    frameWidth: TILE_SIZE,
+    imageFile: '',
+    imageHeight: TILE_SIZE,
+    imageWidth: TILE_SIZE * TILE_COUNT,
+    rows: 1,
+  },
+  createTexture({ storage: { dimension: '2d', image: imageResource } }),
+);
 
-const tilemap = createTilemap();
+const tilemap = createTilemap({ data: { atlas, tileHeight: TILE_SIZE, tileWidth: TILE_SIZE } });
 resizeTilemap(tilemap, MAP_COLUMNS, MAP_ROWS);
-tilemap.data.tileset = tileset;
 
 // Procedural landscape: snow peaks at top, stone mountains, grass plains, sand shore, water.
 for (let row = 0; row < MAP_ROWS; row++) {
