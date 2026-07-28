@@ -1,3 +1,4 @@
+import { registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
 import {
   createAnimatedNormalModifier,
   createDissolveModifier,
@@ -17,7 +18,12 @@ import type {
   WgpuColorAdjustmentMaterialFeature,
   WgpuModifierSnippet,
 } from '@flighthq/types/contract';
-import { FogModifierMode, ModifierSlot, VertexDisplaceModifierSource } from '@flighthq/types/contract';
+import {
+  FogModifierMode,
+  ImageTextureBackingKind,
+  ModifierSlot,
+  VertexDisplaceModifierSource,
+} from '@flighthq/types/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper';
@@ -49,6 +55,7 @@ const COLOR_FEATURE: WgpuColorAdjustmentMaterialFeature = {
 describe('bindWgpuShadedSurface', () => {
   it('uploads the base and modifier uniform block and binds group resources', () => {
     const { fake, state } = makeWgpuScene3DState();
+    registerWgpuImageTextureResolver(state);
     registerBuiltInWgpuModifierSnippets(state);
     const material = createShadedMaterial({ modifiers: [createRimModifier({ color: 0xffffffff })] });
     const pipeline = ensureWgpuShadedPipeline(state, material, 'bgra8unorm');
@@ -88,6 +95,7 @@ describe('ensureWgpuShadedPipeline', () => {
 
   it('reserves alpha-map binding 5 and starts modifier textures at binding 6', () => {
     const { fake, state } = makeWgpuScene3DState();
+    registerWgpuImageTextureResolver(state);
     registerBuiltInWgpuModifierSnippets(state);
     const mask = createTexture();
     const material = createShadedMaterial({
@@ -326,9 +334,10 @@ describe('shaded binding cache', () => {
 
   it('reuses its uniform allocation while rebuilding for texture identity and readiness changes', () => {
     const { fake, state } = makeWgpuScene3DState();
+    registerWgpuImageTextureResolver(state);
     registerBuiltInWgpuModifierSnippets(state);
     const first = createTexture({
-      storage: { dimension: '2d', image: { source: {} } as ImageResource },
+      storage: { dimension: '2d', image: makeImageResource() },
     });
     const material = createShadedMaterial({ diffuseMap: first });
     const pipeline = ensureWgpuShadedPipeline(state, material, 'bgra8unorm');
@@ -341,7 +350,7 @@ describe('shaded binding cache', () => {
     expect(fake.calls.filter((call) => call.name === 'createBindGroup')).toHaveLength(groups);
 
     material.diffuseMap = createTexture({
-      storage: { dimension: '2d', image: { source: {} } as ImageResource },
+      storage: { dimension: '2d', image: makeImageResource() },
     });
     bindWgpuShadedSurface(state, pipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
     expect(fake.calls.filter((call) => call.name === 'createBindGroup').length).toBeGreaterThan(groups);
@@ -362,13 +371,14 @@ describe('shaded binding cache', () => {
     const beforeReady = fake.calls.filter((call) => call.name === 'createBindGroup').length;
     const readyingTexture = emissive.mask;
     expect(readyingTexture).toBeDefined();
-    readyingTexture!.storage.image = { source: {} } as ImageResource;
+    readyingTexture!.storage.image = makeImageResource();
     bindWgpuShadedSurface(state, modifierPipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
     expect(fake.calls.filter((call) => call.name === 'createBindGroup').length).toBeGreaterThan(beforeReady);
   });
 
   it('rebinds when a ready image swaps or its version changes', () => {
     const { fake, state } = makeWgpuScene3DState();
+    registerWgpuImageTextureResolver(state);
     registerBuiltInWgpuModifierSnippets(state);
     const firstImage = makeImageResource();
     const texture = createTexture({ storage: { dimension: '2d', image: firstImage } });
@@ -420,6 +430,7 @@ function makeImageResource(): ImageResource {
     data: null,
     format: 'rgba8unorm',
     height: 1,
+    kind: ImageTextureBackingKind,
     source: {} as CanvasImageSource,
     version: 0,
     width: 1,

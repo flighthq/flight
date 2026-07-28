@@ -2,6 +2,7 @@ import { createCamera3D } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import { createUnlitMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
+import { registerWgpuVideoTextureResolver } from '@flighthq/render-wgpu/contract';
 import { advanceVideoTexture, createVideoTexture } from '@flighthq/texture/contract';
 import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { UnlitMaterialKind } from '@flighthq/types/contract';
@@ -58,6 +59,7 @@ describe('unlitWgpuMeshMaterialRenderer', () => {
       element: { readyState: 4, videoHeight: 120, videoWidth: 160 } as HTMLVideoElement,
     });
     advanceVideoTexture(material.baseColorMap);
+    registerWgpuVideoTextureResolver(state);
     unlitWgpuMeshMaterialRenderer.bind(state, material, NO_LIGHTS, makeCamera());
     expect(fake.calls.some((c) => c.name === 'copyExternalImageToTexture')).toBe(true);
   });
