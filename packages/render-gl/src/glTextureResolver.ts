@@ -61,8 +61,11 @@ export function registerGlVideoTextureResolver(state: GlRenderState): void {
   registerGlTextureResolver(state, VideoTextureBackingKind, resolveGlVideoTexture);
 }
 
-// Resolves through one keyed lookup using the backing's declared kind. The CPU backing owns its kind;
-// a GPU-origin target owns its own. An unbound or undeclared backing is the null sentinel.
+// Resolves through one keyed lookup using the backing's declared kind. Resolution is deliberately not
+// pure: each built-in resolver leaves its result bound to TEXTURE_2D on the active texture unit because
+// GL upload and sampler application require that binding. Callers must not reorder this call across
+// activeTexture/bind operations as though it only returned a handle. The CPU backing owns its kind; a
+// GPU-origin target owns its own. An unbound or undeclared backing is the null sentinel.
 export function resolveGlTexture(
   state: GlRenderState,
   texture: Readonly<TextureLike>,
