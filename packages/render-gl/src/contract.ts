@@ -19,4 +19,5 @@ export * from './glShader';
 export * from './glShaderBinding';
 export * from './glSkinPaletteTexture';
 export * from './glTextureUpload';
+export * from './glTextureResolver';
 export * from './glTextureVideoUpload';

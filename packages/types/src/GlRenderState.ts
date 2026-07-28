@@ -8,6 +8,7 @@ import type { GlMeshMaterialRenderer } from './GlMeshMaterialRenderer';
 import type { GlRenderTarget } from './GlRenderTarget';
 import type { GlBitmapShader, GlShaderLocations } from './GlShaderLocations';
 import type { GlShapeMesh } from './GlShapeMesh';
+import type { GlTextureResolverRegistration } from './GlTextureResolver';
 import type { ImageResource } from './ImageResource';
 import type { Material } from './Material';
 import type { RenderProxy2D } from './RenderProxy2D';
@@ -197,6 +198,10 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // the same version tracking — so one ImageResource bound both premultiplied (2D) and straight (3D) keeps
   // a correct GL texture for each. See bindGlImageResourceTexture.
   imageResourceStraightTextureCache: WeakMap<ImageResource, { texture: WebGLTexture; version: number }>;
+  // Open, state-scoped Texture backing registry. Registrations are evaluated newest-first so an
+  // opt-in specific backing can override the general ImageResource matcher. Undefined until the
+  // first resolver registration; Texture itself carries no backend state.
+  glTextureResolverRegistry?: GlTextureResolverRegistration[] | null;
   // Optional RGBA fallback decoder for block-compressed textures the device cannot upload natively.
   // Installed per-state by registerGlCompressedTextureDecoder (opt-in), so a state that never draws a
   // compressed texture — or only draws formats the device supports — carries no decoder. Undefined
