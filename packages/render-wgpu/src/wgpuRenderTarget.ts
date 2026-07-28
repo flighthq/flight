@@ -247,6 +247,8 @@ export function resizeWgpuRenderTarget(
   const format = target.format;
   const w = Math.max(1, Math.ceil(width));
   const h = Math.max(1, Math.ceil(height));
+  if (w === target.width && h === target.height) return;
+
   target.width = w;
   target.height = h;
 

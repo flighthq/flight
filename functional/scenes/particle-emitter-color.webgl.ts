@@ -19,6 +19,7 @@ import {
   createDisplayObject,
   createImageResource,
   createParticleEmitter2D,
+  createTexture,
   createTextureAtlas,
   getSurfacePixelRgb,
   invalidateNodeAppearance,
@@ -61,7 +62,9 @@ function makeWhiteCanvas(): HTMLCanvasElement {
   return c;
 }
 
-const atlas = createTextureAtlas({ image: createImageResource(makeWhiteCanvas()) });
+const atlas = createTextureAtlas({
+  texture: createTexture({ storage: { dimension: '2d', image: createImageResource(makeWhiteCanvas()) } }),
+});
 addTextureAtlasRegion(atlas, 0, 0, REGION, REGION);
 
 const root = createDisplayObject();

@@ -14,7 +14,9 @@ import {
   createDisplayObject,
   createImageResource,
   createSprite,
+  createTexture,
   createTextureAtlas,
+  getTextureAtlasRegionTexture,
   getSurfacePixelRgb,
   invalidateNodeLocalTransform,
   SpriteKind,
@@ -53,23 +55,25 @@ function makeAtlasCanvas(): HTMLCanvasElement {
   return c;
 }
 
-const atlas = createTextureAtlas({ image: createImageResource(makeAtlasCanvas()) });
+const atlas = createTextureAtlas({
+  texture: createTexture({ storage: { dimension: '2d', image: createImageResource(makeAtlasCanvas()) } }),
+});
 addTextureAtlasRegion(atlas, 0, 0, REGION, REGION); // region id 0 — red
 addTextureAtlasRegion(atlas, REGION, 0, REGION, REGION, REGION / 2, REGION / 2); // region id 1 — green, center pivot
 
 const root = createDisplayObject();
 
 const spriteA = createSprite();
-spriteA.data.atlas = atlas;
-spriteA.data.id = 0; // red region
+spriteA.data.texture = getTextureAtlasRegionTexture(atlas, 0); // red region
 spriteA.x = A_X;
 spriteA.y = A_Y;
 addNodeChild(root, spriteA);
 invalidateNodeLocalTransform(spriteA);
 
 const spriteB = createSprite();
-spriteB.data.atlas = atlas;
-spriteB.data.id = 1; // green region
+spriteB.data.texture = getTextureAtlasRegionTexture(atlas, 1); // green region
+spriteB.pivotX = REGION / 2;
+spriteB.pivotY = REGION / 2;
 spriteB.x = B_X;
 spriteB.y = B_Y;
 addNodeChild(root, spriteB);

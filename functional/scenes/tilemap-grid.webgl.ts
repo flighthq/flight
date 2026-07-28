@@ -14,7 +14,8 @@ import {
   createDisplayObject,
   createImageResourceFromCanvas,
   createTilemap,
-  createTilesetFromImageResource,
+  createTexture,
+  createTextureAtlasFromGrid,
   getSurfacePixelRgb,
   invalidateNodeLocalTransform,
   setTilemapTile,
@@ -54,11 +55,24 @@ ctx.fillStyle = '#00ff00';
 ctx.fillRect(TILE_W, 0, TILE_W, TILE_H);
 
 // Slice the atlas into a Tileset: TILE_W×TILE_H grid → tile 0 (red), tile 1 (green).
-const tileset = createTilesetFromImageResource(createImageResourceFromCanvas(atlasCanvas), TILE_W, TILE_H);
+const atlas = createTextureAtlasFromGrid(
+  {
+    columns: 2,
+    frameHeight: TILE_H,
+    frameWidth: TILE_W,
+    imageFile: '',
+    imageHeight: TILE_H,
+    imageWidth: TILE_W * 2,
+    rows: 1,
+  },
+  createTexture({ storage: { dimension: '2d', image: createImageResourceFromCanvas(atlasCanvas) } }),
+);
 
 const root = createDisplayObject();
 
-const tilemap = createTilemap({ data: { columns: COLS, rows: ROWS, tileset } });
+const tilemap = createTilemap({
+  data: { atlas, columns: COLS, rows: ROWS, tileHeight: TILE_H, tileWidth: TILE_W },
+});
 tilemap.x = MAP_X;
 tilemap.y = MAP_Y;
 invalidateNodeLocalTransform(tilemap);

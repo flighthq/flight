@@ -15,6 +15,7 @@ import {
   createImageResource,
   createQuadBatch,
   createRectangle,
+  createTexture,
   createTextureAtlas,
   getSurfacePixelRgb,
   invalidateNodeLocalTransform,
@@ -59,7 +60,9 @@ function makeBlueCanvas(): HTMLCanvasElement {
   return c;
 }
 
-const atlas = createTextureAtlas({ image: createImageResource(makeBlueCanvas()) });
+const atlas = createTextureAtlas({
+  texture: createTexture({ storage: { dimension: '2d', image: createImageResource(makeBlueCanvas()) } }),
+});
 addTextureAtlasRegion(atlas, 0, 0, QUAD, QUAD); // region id 0 — blue
 
 const root = createDisplayObject();

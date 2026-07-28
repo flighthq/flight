@@ -13,12 +13,14 @@
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
-  BitmapKind,
-  createBitmap,
+  SpriteKind,
+  createSprite,
   createDisplayObject,
   createImageResourceFromCanvas,
-  createRectangle,
+  createPixelArtSampler,
+  createTexture,
   getSurfacePixelRgb,
+  setTextureUvFromPixelRect,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -56,25 +58,29 @@ const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)
-  kinds: [BitmapKind],
+  kinds: [SpriteKind],
 });
 
 const root = createDisplayObject();
 
 // Full image — reference that the quadrants are laid out as expected.
-const full = createBitmap();
-full.data.image = createImageResourceFromCanvas(buildQuadrantCanvas());
-full.data.smoothing = false;
+const full = createSprite();
+full.data.texture = createTexture({
+  sampler: createPixelArtSampler(),
+  storage: { dimension: '2d', image: createImageResourceFromCanvas(buildQuadrantCanvas()) },
+});
 full.x = FULL_X;
 full.y = FULL_Y;
 addNodeChild(root, full);
 
 // Cropped image — only the green TR quadrant (x=QUAD, y=0, w=QUAD, h=QUAD). It draws at the bitmap
 // origin at QUAD×QUAD size.
-const crop = createBitmap();
-crop.data.image = createImageResourceFromCanvas(buildQuadrantCanvas());
-crop.data.smoothing = false;
-crop.data.sourceRectangle = createRectangle(QUAD, 0, QUAD, QUAD);
+const crop = createSprite();
+crop.data.texture = createTexture({
+  sampler: createPixelArtSampler(),
+  storage: { dimension: '2d', image: createImageResourceFromCanvas(buildQuadrantCanvas()) },
+});
+setTextureUvFromPixelRect(crop.data.texture, QUAD, 0, QUAD, QUAD);
 crop.x = CROP_X;
 crop.y = CROP_Y;
 addNodeChild(root, crop);

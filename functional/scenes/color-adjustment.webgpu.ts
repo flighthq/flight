@@ -14,7 +14,9 @@ import {
   createDisplayObject,
   createImageResource,
   createSprite,
+  createTexture,
   createTextureAtlas,
+  getTextureAtlasRegionTexture,
   registerWgpuColorAdjustmentMaterialFeature,
   getSurfacePixelRgb,
   invalidateNodeLocalTransform,
@@ -50,14 +52,15 @@ function makeWhiteCanvas(): HTMLCanvasElement {
   return c;
 }
 
-const atlas = createTextureAtlas({ image: createImageResource(makeWhiteCanvas()) });
+const atlas = createTextureAtlas({
+  texture: createTexture({ storage: { dimension: '2d', image: createImageResource(makeWhiteCanvas()) } }),
+});
 addTextureAtlasRegion(atlas, 0, 0, REGION, REGION);
 
 const root = createDisplayObject();
 
 const sprite = createSprite();
-sprite.data.atlas = atlas;
-sprite.data.id = 0;
+sprite.data.texture = getTextureAtlasRegionTexture(atlas, 0);
 sprite.x = SPRITE_X;
 sprite.y = SPRITE_Y;
 // Red tint as a color-adjustment stack on the node runtime slot: keep red, zero green/blue, keep alpha.

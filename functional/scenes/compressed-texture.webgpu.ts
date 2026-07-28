@@ -1,15 +1,17 @@
 import type { Node2D, Surface, TextureContainer } from '@flighthq/sdk';
 import {
   addNodeChild,
-  createBitmap,
+  createSprite,
   createCompressedImageResource,
   createDisplayObject,
+  createPixelArtSampler,
+  createTexture,
   createWgpuCanvasElement,
   createWgpuRenderState,
   getSurfacePixelRgb,
-  BitmapKind,
-  defaultWgpuBitmapRenderer,
+  SpriteKind,
   defaultWgpuScene2DRenderer,
+  defaultWgpuSpriteRenderer,
   DisplayObjectKind,
   invalidateNodeLocalTransform,
   prepareScene2DRender,
@@ -17,6 +19,7 @@ import {
   registerStandardWgpuMaterial,
   registerWgpuCompressedTextureDecoder,
   registerWgpuCompressedTextureUpload,
+  registerWgpuImageTextureResolver,
   renderWgpuBackground,
   renderWgpuScene2D,
   submitWgpuRenderPass,
@@ -48,8 +51,9 @@ export const scale = pixelRatio;
 export const width = WIDTH;
 export const height = HEIGHT;
 registerStandardWgpuMaterial(state);
+registerWgpuImageTextureResolver(state);
 registerRenderer(state, DisplayObjectKind, defaultWgpuScene2DRenderer);
-registerRenderer(state, BitmapKind, defaultWgpuBitmapRenderer);
+registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);
 registerWgpuCompressedTextureUpload(state);
 registerWgpuCompressedTextureDecoder(state, (_format, w, h) => {
   const rgba = new Uint8ClampedArray(w * h * 4);
@@ -82,9 +86,14 @@ const container = (format: 'bc1' | 'bc3', byteLength: number): TextureContainer 
 const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
-const bitmap = createBitmap();
-bitmap.data.image = createCompressedImageResource({ container: container('bc1', 8), payload: BC1_BLUE_BLOCK });
-bitmap.data.smoothing = false;
+const bitmap = createSprite();
+bitmap.data.texture = createTexture({
+  sampler: createPixelArtSampler(),
+  storage: {
+    dimension: '2d',
+    image: createCompressedImageResource({ container: container('bc1', 8), payload: BC1_BLUE_BLOCK }),
+  },
+});
 bitmap.x = BITMAP_X;
 bitmap.y = BITMAP_Y;
 bitmap.scaleX = SCALE;
@@ -92,12 +101,17 @@ bitmap.scaleY = SCALE;
 invalidateNodeLocalTransform(bitmap);
 addNodeChild(root, bitmap);
 
-const alphaBitmap = createBitmap();
-alphaBitmap.data.image = createCompressedImageResource({
-  container: container('bc3', 16),
-  payload: BC3_HALF_RED_BLOCK,
+const alphaBitmap = createSprite();
+alphaBitmap.data.texture = createTexture({
+  sampler: createPixelArtSampler(),
+  storage: {
+    dimension: '2d',
+    image: createCompressedImageResource({
+      container: container('bc3', 16),
+      payload: BC3_HALF_RED_BLOCK,
+    }),
+  },
 });
-alphaBitmap.data.smoothing = false;
 alphaBitmap.x = ALPHA_BITMAP_X;
 alphaBitmap.y = BITMAP_Y;
 alphaBitmap.scaleX = SCALE;

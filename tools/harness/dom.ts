@@ -1,14 +1,12 @@
 import type { Node2D } from '@flighthq/sdk';
 import {
-  BitmapKind,
   createDomRenderState,
   defaultCanvasShapeCommands,
-  defaultDomBitmapRenderer,
   defaultDomRichTextRenderer,
   defaultDomScale9ShapeRenderer,
   defaultDomShapeRenderer,
+  defaultDomSpriteRenderer,
   defaultDomTextLabelRenderer,
-  defaultDomVideoRenderer,
   enableDomBlendModeSupport,
   enableDomClipSupport,
   enableDomRenderCache,
@@ -21,8 +19,8 @@ import {
   RichTextKind,
   Scale9ShapeKind,
   ShapeKind,
+  SpriteKind,
   TextLabelKind,
-  VideoKind,
 } from '@flighthq/sdk';
 import { registerFunctionalTarget } from '@ft/verify';
 
@@ -49,17 +47,15 @@ export function createDomTarget(options: Readonly<FunctionalTargetOptions>): Fun
       registerRenderer(state, ShapeKind, defaultDomShapeRenderer);
       // The DOM shape renderer rasterizes paths through the canvas shape commands.
       registerCanvasShapeCommands(defaultCanvasShapeCommands);
-    } else if (kind === BitmapKind) {
-      registerRenderer(state, BitmapKind, defaultDomBitmapRenderer);
     } else if (kind === RichTextKind) {
       registerRenderer(state, RichTextKind, defaultDomRichTextRenderer);
     } else if (kind === TextLabelKind) {
       registerRenderer(state, TextLabelKind, defaultDomTextLabelRenderer);
+    } else if (kind === SpriteKind) {
+      registerRenderer(state, SpriteKind, defaultDomSpriteRenderer);
     } else if (kind === Scale9ShapeKind) {
       registerRenderer(state, Scale9ShapeKind, defaultDomScale9ShapeRenderer);
       registerCanvasShapeCommands(defaultCanvasShapeCommands);
-    } else if (kind === VideoKind) {
-      registerRenderer(state, VideoKind, defaultDomVideoRenderer);
     }
   }
 

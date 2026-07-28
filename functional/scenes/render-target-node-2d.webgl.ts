@@ -14,19 +14,20 @@ import {
   createMesh,
   createPerspectiveProjection,
   createPhongMaterial,
-  createRenderTargetNode2D,
+  createRenderTexture,
   createShape,
+  createSprite,
   createVector3,
-  enableGlRenderTargetNode2D,
   getSurfacePixelLuminance,
   getSurfacePixelRgb,
   invalidateNodeLocalTransform,
   normalizeVector3,
   prepareScene3DRender,
   registerPhongGlMaterial,
-  renderIntoGlRenderTargetNode2D,
+  renderIntoGlRenderTexture,
   setCamera3DViewMatrix4FromLookAt,
   ShapeKind,
+  SpriteKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -41,12 +42,11 @@ const target = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x101018ff,
-  kinds: [ShapeKind],
+  kinds: [ShapeKind, SpriteKind],
 });
 if (target.kind !== 'webgl') throw new Error('render-target-node-2d requires WebGL');
 const { render, state, width } = target;
 
-enableGlRenderTargetNode2D(state);
 registerPhongGlMaterial(state);
 
 const scene = createScene3D().root;
@@ -84,11 +84,13 @@ appendShapeRectangle(backing, 160, 100, 480, 400);
 appendShapeEndFill(backing);
 addNodeChild(root, backing);
 
-const renderTargetNode = createRenderTargetNode2D({
-  width: NODE_WIDTH,
+const renderTexture = createRenderTexture({
+  clearColors: [0x05070dff],
+  depth: 'depth-stencil',
   height: NODE_HEIGHT,
-  depth: true,
+  width: NODE_WIDTH,
 });
+const renderTargetNode = createSprite({ data: { texture: renderTexture } });
 renderTargetNode.x = NODE_X;
 renderTargetNode.y = NODE_Y;
 invalidateNodeLocalTransform(renderTargetNode);
@@ -100,7 +102,7 @@ appendShapeRectangle(foreground, 520, 400, 120, 50);
 appendShapeEndFill(foreground);
 addNodeChild(root, foreground);
 
-renderIntoGlRenderTargetNode2D(state, renderTargetNode, (glState) => {
+renderIntoGlRenderTexture(state, renderTexture, (glState) => {
   prepareScene3DRender(glState, scene, camera, lights);
   drawGlScene3D(glState, scene, camera, lights);
 });

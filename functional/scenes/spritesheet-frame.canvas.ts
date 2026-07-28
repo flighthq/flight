@@ -9,16 +9,18 @@
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
-  BitmapKind,
-  createBitmap,
+  SpriteKind,
+  cloneTexture,
+  createSprite,
   createDisplayObject,
   createImageResource,
-  createRectangle,
+  createTexture,
   createSpritesheetFromGrid,
   getSurfacePixelRgb,
   getTextureAtlasRegionById,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
+  setTextureUvFromPixelRect,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -33,7 +35,7 @@ const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff,
-  kinds: [BitmapKind],
+  kinds: [SpriteKind],
 });
 
 const stripCanvas = document.createElement('canvas');
@@ -46,6 +48,7 @@ for (let i = 0; i < FRAME_COUNT; i++) {
 }
 
 const imageResource = createImageResource(stripCanvas);
+const atlasTexture = createTexture({ storage: { dimension: '2d', image: imageResource } });
 const spritesheet = createSpritesheetFromGrid({
   columns: FRAME_COUNT,
   imageFile: '',
@@ -53,13 +56,13 @@ const spritesheet = createSpritesheetFromGrid({
   imageWidth: FRAME_SIZE * FRAME_COUNT,
   rows: 1,
 });
-spritesheet.atlas!.image = imageResource;
+spritesheet.atlas!.texture = atlasTexture;
 
 const root = createDisplayObject();
 
 for (let i = 0; i < FRAME_COUNT; i++) {
-  const bitmap = createBitmap();
-  bitmap.data.image = imageResource;
+  const bitmap = createSprite();
+  bitmap.data.texture = cloneTexture(atlasTexture);
   bitmap.x = 20 + i * (FRAME_SIZE + 20);
   bitmap.y = 60;
   invalidateNodeLocalTransform(bitmap);
@@ -68,7 +71,7 @@ for (let i = 0; i < FRAME_COUNT; i++) {
   if (frame !== undefined && spritesheet.atlas !== null) {
     const region = getTextureAtlasRegionById(spritesheet.atlas, frame.id);
     if (region !== null) {
-      bitmap.data.sourceRectangle = createRectangle(region.x, region.y, region.width, region.height);
+      setTextureUvFromPixelRect(bitmap.data.texture, region.x, region.y, region.width, region.height);
     }
   }
   invalidateNodeAppearance(bitmap);

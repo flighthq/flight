@@ -10,10 +10,12 @@
 import type { Surface, TextureContainer } from '@flighthq/sdk';
 import {
   addNodeChild,
-  BitmapKind,
-  createBitmap,
+  SpriteKind,
+  createSprite,
   createCompressedImageResource,
   createDisplayObject,
+  createPixelArtSampler,
+  createTexture,
   getSurfacePixelRgb,
   invalidateNodeLocalTransform,
   registerGlCompressedTextureDecoder,
@@ -44,7 +46,7 @@ const target = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black
-  kinds: [BitmapKind],
+  kinds: [SpriteKind],
 });
 
 // The compressed upload path is an opt-in seam (so a plain-bitmap GL bundle never carries its
@@ -82,9 +84,14 @@ const container = (format: 'bc1' | 'bc3', byteLength: number): TextureContainer 
 
 const root = createDisplayObject();
 
-const bitmap = createBitmap();
-bitmap.data.image = createCompressedImageResource({ container: container('bc1', 8), payload: BC1_BLUE_BLOCK });
-bitmap.data.smoothing = false; // nearest sampling keeps the block a crisp solid quad
+const bitmap = createSprite();
+bitmap.data.texture = createTexture({
+  sampler: createPixelArtSampler(),
+  storage: {
+    dimension: '2d',
+    image: createCompressedImageResource({ container: container('bc1', 8), payload: BC1_BLUE_BLOCK }),
+  },
+}); // nearest sampling keeps the block a crisp solid quad
 bitmap.x = BITMAP_X;
 bitmap.y = BITMAP_Y;
 bitmap.scaleX = SCALE;
@@ -92,12 +99,17 @@ bitmap.scaleY = SCALE;
 invalidateNodeLocalTransform(bitmap);
 addNodeChild(root, bitmap);
 
-const alphaBitmap = createBitmap();
-alphaBitmap.data.image = createCompressedImageResource({
-  container: container('bc3', 16),
-  payload: BC3_HALF_RED_BLOCK,
+const alphaBitmap = createSprite();
+alphaBitmap.data.texture = createTexture({
+  sampler: createPixelArtSampler(),
+  storage: {
+    dimension: '2d',
+    image: createCompressedImageResource({
+      container: container('bc3', 16),
+      payload: BC3_HALF_RED_BLOCK,
+    }),
+  },
 });
-alphaBitmap.data.smoothing = false;
 alphaBitmap.x = ALPHA_BITMAP_X;
 alphaBitmap.y = BITMAP_Y;
 alphaBitmap.scaleX = SCALE;

@@ -155,6 +155,20 @@ describe('endWgpuRenderPass', () => {
 });
 
 describe('resizeWgpuRenderTarget', () => {
+  it('preserves the allocation when dimensions are unchanged', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const target = createWgpuRenderTarget(state, 64, 64);
+    const texture = target.texture;
+    const depthStencilTexture = target.depthStencilTexture;
+    const bindGroup = target.bindGroup;
+
+    resizeWgpuRenderTarget(state, target, 64, 64);
+
+    expect(target.texture).toBe(texture);
+    expect(target.depthStencilTexture).toBe(depthStencilTexture);
+    expect(target.bindGroup).toBe(bindGroup);
+  });
+
   it('updates width, height, and bind group', async () => {
     const state = await createWgpuRenderStateForTest();
     const target = createWgpuRenderTarget(state, 64, 64);
