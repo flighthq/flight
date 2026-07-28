@@ -36,7 +36,7 @@ Tests are colocated, cover the abort paths (unusually good for a stub), and the 
 - **No inspection.** No `getVideoResourceWidth` / `Height` (`videoWidth`/`videoHeight` — needed by every consumer that sizes a `Video` display object or allocates a texture), `getVideoResourceDuration`, or `isVideoResourceReady` (readyState). Consumers currently must reach through `.element`, making the carrier type pure ceremony.
 - **No byte-level format identification.** Only extension inference; no magic-byte `detectVideoMimeType` (`ftyp` boxes, EBML/Matroska, `OggS`). The MIME table is also missing the streaming-era entries a source-selection library carries: `m3u8` (`application/vnd.apple.mpegurl`), `mpd` (`application/dash+xml`), `mkv`, `3gp`.
 - **Selection primitive not exported.** As in audio, the negotiation inside `loadVideoResourceFromUrls` is unavailable standalone (`selectVideoResourceUrl` / `canPlayVideoType`), so capability probing without loading requires reimplementation.
-- **No frame-capture seam.** Grabbing a frame into pixels (`drawImage`/`ImageBitmap` from the element) is the standard bridge to `@flighthq/surface`/`@flighthq/image`. Cross-package, so a design decision rather than a within-package miss — but no seam exists on either side.
+- **No frame-capture seam.** Grabbing a frame into pixels (`drawImage`/`ImageBitmap` from the element) is the standard bridge to `@flighthq/bitmap`/`@flighthq/image`. Cross-package, so a design decision rather than a within-package miss — but no seam exists on either side.
 
 ## Naming / API-shape notes
 
@@ -54,7 +54,7 @@ Treat this as the seed of the video subject. Priorities, in order of leverage:
 2. **Lifecycle + inspection** — `disposeVideoResource` (with the decoder-releasing `removeAttribute('src')` + `load()` sequence), `hasVideoResourceElement` / `isVideoResourceEmpty` / `isVideoResourceReady`, and `getVideoResourceWidth` / `Height` / `Duration`, so consumers stop reaching through `.element`.
 3. **Non-URL sources** — `loadVideoResourceFromBlob` (owning and revoking the object URL) and `createVideoResourceFromMediaStream` (the webcam seam).
 4. **Format family symmetry** — rename to `inferVideoMimeType`, add magic-byte `detectVideoMimeType`, and extend the MIME table with the streaming entries (`m3u8`, `mpd`, `mkv`).
-5. **Export the negotiation primitive** (`selectVideoResourceUrl`) and raise the frame-capture seam (video → `ImageResource`/`Surface`) to the user as a cross-package design question.
+5. **Export the negotiation primitive** (`selectVideoResourceUrl`) and raise the frame-capture seam (video → `ImageResource`/`Bitmap`) to the user as a cross-package design question.
 
 The abort handling shows the right instincts; the package now needs the other four-fifths of its layer.
 

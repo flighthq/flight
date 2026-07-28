@@ -28,7 +28,7 @@ Sweep-safe: within `@flighthq/video`, no cross-package coupling, no open design 
 
 Parked — each with the reason it is not sweep-safe.
 
-- **Frame-capture seam (video → `ImageResource` / `Surface`).** _Parked — design decision / cross-package; candidate Open direction for the charter._ Grabbing a frame into pixels is the standard bridge to `@flighthq/surface`/`@flighthq/image`, but no seam exists on either side — the review explicitly raises it as a cross-package design question.
+- **Frame-capture seam (video → `ImageResource` / `Bitmap`).** _Parked — design decision / cross-package; candidate Open direction for the charter._ Grabbing a frame into pixels is the standard bridge to `@flighthq/bitmap`/`@flighthq/image`, but no seam exists on either side — the review explicitly raises it as a cross-package design question.
 - **Unify the `*FromUrl` (reject) vs `*FromUrls` (empty-resource sentinel) failure convention.** _Parked — design decision._ Same family-wide fork as audio; needs one ruling across the resource family rather than a per-package fix.
 - **Split playback types out of `VideoResource.ts` in `@flighthq/types`.** _Parked — cross-package._ `VideoChannel`, `VideoChannelState`, and `VideoPlayOptions` cohabit with the resource type (and `VideoChannel.gain` vs the element's `volume` shows the resource/media blur persisting in the header layer); a types-package edit for when that file is next touched.
 - **Sync `createVideoResource(element?)` wrapper — keep or drop.** _Parked — charter Open direction #2._ Whether a `{ element: element ?? null }` literal wrapper earns a function is a direction question.

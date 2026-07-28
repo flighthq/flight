@@ -22,7 +22,7 @@ All current load paths are DOM-bound (`HTMLImageElement.decode()`). The DOM-free
 
 1. **Entity lifecycle, not pixel manipulation.** Image owns creation, cloning, disposal, invalidation, and version-tracking of `ImageResource` entities. Pixel operations are surface's domain; decode/encode is image-codec's domain.
 2. **Dependency bottleneck — stay small.** Many packages depend on image. Keep the API surface minimal and the dependency footprint light (entity + types only).
-3. **`Uint8Array` for byte input seams.** Standardize on `Uint8Array` for byte-level input (matches Rust `&[u8]`, more ergonomic than `ArrayBuffer`). `Uint8ClampedArray` for pixel output (matches `ImageData.data`, `Surface.data`).
+3. **`Uint8Array` for byte input seams.** Standardize on `Uint8Array` for byte-level input (matches Rust `&[u8]`, more ergonomic than `ArrayBuffer`). `Uint8ClampedArray` for pixel output (matches `ImageData.data`, `Bitmap.data`).
 
 ## Boundaries
 
@@ -37,7 +37,7 @@ All current load paths are DOM-bound (`HTMLImageElement.decode()`). The DOM-free
 
 **Non-goals:**
 
-- Pixel manipulation — `@flighthq/surface`.
+- Pixel manipulation — `@flighthq/bitmap`.
 - DOM-free decode/encode — `@flighthq/image-codec` (neighbor, not yet built).
 - GPU texture upload — render backends.
 - Format-specific encode/decode — `@flighthq/image-codec` per-format backends.

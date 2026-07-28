@@ -31,7 +31,7 @@ The one place in the SDK where compressed image bytes become raw RGBA pixels and
 
 ## Boundaries
 
-- **Bytes ↔ pixels only.** `image-codec` owns `Uint8Array` (encoded) ↔ `Uint8ClampedArray` (raw RGBA). It does not own the `ImageResource` entity (that is `@flighthq/image`), GPU upload, or pixel editing (that is `@flighthq/surface`).
+- **Bytes ↔ pixels only.** `image-codec` owns `Uint8Array` (encoded) ↔ `Uint8ClampedArray` (raw RGBA). It does not own the `ImageResource` entity (that is `@flighthq/image`), GPU upload, or pixel editing (that is `@flighthq/bitmap`).
 - **DOM is a backend, not the contract.** The decoder/encoder types are DOM-free; the web registrars (`registerWeb*`) are the opt-in DOM implementation, importing no DOM types into the public type surface.
 - **Registry is opt-in.** Empty at import; only explicit `register*` populates it. No import side effects.
 - **Depends only on `@flighthq/types`.** Browser globals are used ambiently by the web registrars, not as package deps.
@@ -42,7 +42,7 @@ _Append-only, dated, blessed rulings._
 
 - **[2026-07-09] Registry keyed by MIME type string; per-format.** `registerImageDecoder(mimeType, decoder)` / `registerImageEncoder(mimeType, encoder)` over a global registry, plus `getImageDecoder`/`hasImageDecoder`/`unregisterImageDecoder`/`clearImageDecoders` (and encoder twins), and dispatchers `decodeImage(bytes, mimeType?)` / `encodeImage(image, mimeType, options?)` returning `null` sentinels when no codec is registered. `decodeImage` auto-detects the MIME via `detectImageMimeType` when omitted.
   **Why:** detection yields a MIME type, so a MIME-keyed registry dispatches with no mime↔kind mapping layer; matches the web/HTTP vocabulary and the existing `detect*MimeType` family.
-- **[2026-07-09] Straight-alpha default, opt-in premultiplied path.** `decodeImage` returns straight (non-premultiplied) RGBA matching `@flighthq/surface` and `getImageData`. `decodeImagePremultiplied` returns premultiplied, backed by an `ImageDecodeOptions.premultiplyAlpha` flag on the `ImageDecoder` contract so a capable decoder produces premultiplied in one pass; the web/canvas decoder falls back to a JS premultiply (`getImageData` is always straight).
+- **[2026-07-09] Straight-alpha default, opt-in premultiplied path.** `decodeImage` returns straight (non-premultiplied) RGBA matching `@flighthq/bitmap` and `getImageData`. `decodeImagePremultiplied` returns premultiplied, backed by an `ImageDecodeOptions.premultiplyAlpha` flag on the `ImageDecoder` contract so a capable decoder produces premultiplied in one pass; the web/canvas decoder falls back to a JS premultiply (`getImageData` is always straight).
   **Why:** the pixel-manipulation layer is straight-alpha, so that is the honest default; but premultiplied-in-one-pass is a real decoder capability (e.g. `createImageBitmap({premultiplyAlpha:'premultiply'})` for GPU consumers), so the contract exposes it rather than forcing every caller to premultiply after.
 - **[2026-07-09] `detectImageMimeType` migrates here from `@flighthq/image`.** `image` gains an `image-codec` dependency and imports it internally (at `loadImageResourceFromBytes`). It is NOT re-exported from `@flighthq/image` — there were no consumers importing it from there, so the single canonical export lives in `image-codec` (and reaches users via the SDK barrel), keeping `api:check`'s no-duplicate-export rule satisfied.
   **Why:** the origin decision (image charter #2) blessed the move; MIME detection is a codec concern, and centralizing it lets `decodeImage` auto-detect.

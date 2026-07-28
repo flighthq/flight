@@ -11,12 +11,12 @@ The deferred TypeScript tooling adoption is complete. `@flighthq/tool-capture` n
 
 ## 2026-07-09 — standalone policy/format layer shipped (first build)
 
-Built the pure, importable-in-isolation first layer per the 2026-07-09 charter decision. No Playwright, no Node `fs`, no DOM — depends only on `@flighthq/surface` (fingerprint math) and `@flighthq/types` (header types).
+Built the pure, importable-in-isolation first layer per the 2026-07-09 charter decision. No Playwright, no Node `fs`, no DOM — depends only on `@flighthq/bitmap` (fingerprint math) and `@flighthq/types` (header types).
 
 Shipped:
 
 - Types (in `@flighthq/types`): `CaptureBaseline` (= `Record<string, CaptureColumnBaseline>`), `CaptureColumnBaseline` (`{ fingerprint?, sha256? }`), `CaptureCheckTier` (`'regression' | 'parity' | 'smoke'`), `CaptureCheckResult` (`{ pass, difference, tolerance }`).
-- Comparison policy (`packages/capture/src/captureComparison.ts`): constants `CAPTURE_REGRESSION_TOLERANCE` (5) / `CAPTURE_PARITY_TOLERANCE` (15); `compareCaptureFingerprints(a, b)` — parses both via surface's `parseSurfaceFingerprint`, returns `Number.POSITIVE_INFINITY` when either is unparseable **or the grid sizes differ** (so any downstream tolerance check fails), else `compareSurfaceFingerprints`; `evaluateCaptureRegression` and `evaluateCaptureParity` returning a `CaptureCheckResult`.
+- Comparison policy (`packages/capture/src/captureComparison.ts`): constants `CAPTURE_REGRESSION_TOLERANCE` (5) / `CAPTURE_PARITY_TOLERANCE` (15); `compareCaptureFingerprints(a, b)` — parses both via surface's `parseBitmapFingerprint`, returns `Number.POSITIVE_INFINITY` when either is unparseable **or the grid sizes differ** (so any downstream tolerance check fails), else `compareBitmapFingerprints`; `evaluateCaptureRegression` and `evaluateCaptureParity` returning a `CaptureCheckResult`.
 - Baseline record ops (`packages/capture/src/captureBaseline.ts`): `createCaptureBaseline`, `getCaptureBaselineField`, `setCaptureBaselineField`, `formatCaptureBaseline` (sorted keys, 2-space indent, trailing newline — byte-for-byte matching the tooling's `writeBaseline`), `parseCaptureBaseline` (`null` sentinel on malformed / non-object JSON).
 
 Registered in `tsconfig.base.json`, `tsconfig.build.json`, and the `@flighthq/sdk` barrel (export + dep + tsconfig reference). Green: package tests (25), `packages:check`, `typecheck`, `lint`, `format`, `order:check`, `exports:check`, `api:check`.
@@ -25,4 +25,4 @@ Registered in `tsconfig.base.json`, `tsconfig.build.json`, and the `@flighthq/sd
 
 ## 2026-07-03 — chartered from the render-verification direction session
 
-Package blessed as the SDK-side home for deterministic render capture and verification (fingerprints, baseline formats, comparison policy), with the Rust `flighthq-capture` crate as its parity twin and the capture tools as future importers. No source yet — the capability currently lives in `scripts/capture-core.ts` / `scripts/compare-render.ts` / `scripts/baseline-store.ts` and `@flighthq/surface`'s fingerprint functions. Four items approved for the current tooling home (see assessment.md › Approved): per-test tolerance overrides, raw-RGBA hashing, fingerprint-capture acceleration, and clock pinning in the harness.
+Package blessed as the SDK-side home for deterministic render capture and verification (fingerprints, baseline formats, comparison policy), with the Rust `flighthq-capture` crate as its parity twin and the capture tools as future importers. No source yet — the capability currently lives in `scripts/capture-core.ts` / `scripts/compare-render.ts` / `scripts/baseline-store.ts` and `@flighthq/bitmap`'s fingerprint functions. Four items approved for the current tooling home (see assessment.md › Approved): per-test tolerance overrides, raw-RGBA hashing, fingerprint-capture acceleration, and clock pinning in the harness.

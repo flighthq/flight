@@ -77,7 +77,7 @@ Existing packages that gain new pressure from adjacent use-cases:
 - **`intl`** — tick formatting.
 - **`camera2d`** — axis-locked zoom.
 - **`snapshot`** — undo cost per keystroke (structural sharing?).
-- **`surface`** — photo-editing depth.
+- **`bitmap`** — photo-editing depth.
 - **gl/wgpu blend modes** — gate motion graphics more than any new package.
 - **`accessibility`** — charts and kiosks.
 - **`updater` / `power` / `lifecycle`** — kiosk robustness.

@@ -22,5 +22,5 @@ Invoking the system share sheet — handing a content payload (title, text, url,
 
 ## Open directions
 
-1. **Payload construction helpers.** The obvious graphics-SDK use case is "share a rendered screenshot," which wants a `createShareFileFromImageSource`-style helper — but that pulls `@flighthq/surface` into the dep tree. Does a `@flighthq/share-formats` neighbor earn its place, or does `share` stay a thin invoker?
+1. **Payload construction helpers.** The obvious graphics-SDK use case is "share a rendered screenshot," which wants a `createShareFileFromImageSource`-style helper — but that pulls `@flighthq/bitmap` into the dep tree. Does a `@flighthq/share-formats` neighbor earn its place, or does `share` stay a thin invoker?
 2. **Result-variant symmetry.** `shareText`/`shareUrl` return `boolean` only; there is no `shareTextWithResult`/`shareUrlWithResult`. Is the boolean path the golden one, or should every convenience entry point have a `*WithResult` twin?

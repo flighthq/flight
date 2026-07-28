@@ -77,4 +77,4 @@ Where it ends vs. a neighbor:
 
 1. **Rust `flighthq-math` crate priority.** The charter front matter asserts `crate: flighthq-math` and the Rust conformance map mandates 1:1 conformance, but the crate does not exist. This is the cleanest port target in the codebase (pure free functions, deterministic, value-typed mixing leaf). Should it be prioritized as the first conformance/mixing proof? _(Was #3.)_
 
-2. **Wasm mixing candidate tracking.** `math` is plainly a mixable leaf (pure value-typed, deterministic, no GPU). Worth recording on the mixing-candidate list alongside `surface` / `geometry` / `path`. _(Was #4.)_
+2. **Wasm mixing candidate tracking.** `math` is plainly a mixable leaf (pure value-typed, deterministic, no GPU). Worth recording on the mixing-candidate list alongside `bitmap` / `geometry` / `path`. _(Was #4.)_

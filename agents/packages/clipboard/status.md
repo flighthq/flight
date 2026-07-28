@@ -94,14 +94,14 @@ Silver (atomic write, files, change-event capability):
 
 4. **`getClipboardCapabilities()`** introspection — what flavor/scope each backend supports. Good for documentation but lower priority.
 
-5. **Typed image flavor over `Surface`** (`readClipboardSurface(out) / writeClipboardSurface(surface)`). The roadmap flags this as a design decision: introduces a `@flighthq/surface` / `Surface` dependency into `@flighthq/clipboard`. Recommend type-only from `@flighthq/types` with caller-supplied `out: Surface`, verified by `npm run size`. Deferred pending that design confirmation.
+5. **Typed image flavor over `Bitmap`** (`readClipboardBitmap(out) / writeClipboardBitmap(bitmap)`). The roadmap flags this as a design decision: introduces a `@flighthq/bitmap` / `Bitmap` dependency into `@flighthq/clipboard`. Recommend type-only from `@flighthq/types` with caller-supplied `out: Bitmap`, verified by `npm run size`. Deferred pending that design confirmation.
 
 6. **Rust port** (`flighthq-clipboard`). Should track after Silver settles to avoid re-porting a moving contract. The seam is now stable enough to port Bronze+Silver. Native default backend would use `arboard` or `copypasta`.
 
 ### Design questions (surface to user before acting)
 
-- **`Surface`/`ImageSource` clipboard-image dependency**: Should `readClipboardSurface`/`writeClipboardSurface` depend on the `Surface` type from `@flighthq/types` (type-only, safe) or require a runtime `@flighthq/surface` import? Confirm before adding.
-- **Data-URL image functions deprecation**: Keep `readClipboardImage`/`writeClipboardImage` as a permanent web-convenience layer, or deprecate them once a `Surface` path exists?
+- **`Bitmap`/`ImageSource` clipboard-image dependency**: Should `readClipboardBitmap`/`writeClipboardBitmap` depend on the `Bitmap` type from `@flighthq/types` (type-only, safe) or require a runtime `@flighthq/bitmap` import? Confirm before adding.
+- **Data-URL image functions deprecation**: Keep `readClipboardImage`/`writeClipboardImage` as a permanent web-convenience layer, or deprecate them once a `Bitmap` path exists?
 - **`writeClipboard` / Electron atomic write**: The current Electron backend falls back to sequential per-format writes (not truly atomic). Electron's `clipboard.write({ text, html, rtf, ... })` can do it in one call; decide whether to add `write()` to `ElectronClipboard` for a proper atomic Electron path.
 - **File-list on Electron**: Electron supports reading file paths via `clipboard.readBuffer('FileNameW')` (Windows) and `readBuffer('public.file-url')` (macOS). This is platform-specific string wrangling and should be implemented in a dedicated Electron-side pass rather than generically.
 

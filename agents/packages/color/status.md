@@ -28,13 +28,13 @@ PBR materials — specifically **setting the intensity when migrating Phong mate
 discoverable home. Root cause: the color primitive already exists but is **mis-homed** inside
 `@flighthq/materials/src/color.ts` (~25 exports) and **duplicated** in
 `@flighthq/effects/src/colorScienceMath.ts` (second sRGB↔linear + HSL + OkLab + luminance weights),
-with more scatter in `lighting`/`particles`/`surface`.
+with more scatter in `lighting`/`particles`/`bitmap`.
 
 ### Blessed decisions (see charter › Decisions)
 
 - Extract a bedrock leaf `@flighthq/color`: move `materials/color.ts`, fold in the `effects`
   color-science duplication, re-point consumers (`scene-gl`, `materials`, `effects`, `lighting`,
-  `particles`, `surface`). `LinearColor` stays in `@flighthq/types`.
+  `particles`, `bitmap`). `LinearColor` stays in `@flighthq/types`.
 - Dedicated package, NOT folded into `@flighthq/math` (distinct domain, 2D+3D reach).
 - **Boundary:** the Phong→PBR intensity/appearance migration is a `@flighthq/materials` helper
   (`convertPhongToStandardPbrMaterial`, working name) built ON `color` + the `@flighthq/lighting`
@@ -52,6 +52,6 @@ with more scatter in `lighting`/`particles`/`surface`.
 
 - Kelvin/blackbody split (pure spectral→RGB math → color?).
 - Migration-helper signature + coupling to the #7 lighting-intensity helper (build together).
-- Whether to fold `particles`/`surface` color math in now or later.
+- Whether to fold `particles`/`bitmap` color math in now or later.
 
 ## No code exists yet. This is a scoped extraction, not greenfield — lift `materials/color.ts` intact, then de-dup and re-point.

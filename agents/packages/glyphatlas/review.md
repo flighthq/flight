@@ -16,8 +16,8 @@ solid — 68/100. The orchestration core the charter calls "the tested core" is 
 
 ## Present capabilities
 
-- **Entity + lifecycle** (`packages/glyphatlas/src/glyphAtlas.ts`) — `createGlyphAtlas(options)` (surface, empty cache, fresh shelf packer, padding default 1, `maxGlyphs` LRU budget), `disposeGlyphAtlas` (correctly `dispose*`, with the GPU-texture ownership note), `getGlyphAtlasSurface`, and the `deriveGlyphMetricsFromFontSize` 0.8/0.2 placeholder.
-- **Rasterize-on-miss** (`glyphAtlasEntry.ts`) — `getGlyphAtlasEntry`: cache hit touches LRU; miss rasterizes via the active backend, rejects glyphs larger than the usable atlas, evicts past the glyph budget, places via best-height-fit shelf packing (`_placeGlyphOnShelf`), falls back to evict+repack loops on exhaustion, blits via `@flighthq/surface` (`createSurfaceRegion`/`writeSurfacePixels`), unions the dirty rect, and stamps `page: 0`. `_repackGlyphAtlas` re-places survivors tallest-first, re-blits from retained source bitmaps, and full-dirties the atlas.
+- **Entity + lifecycle** (`packages/glyphatlas/src/glyphAtlas.ts`) — `createGlyphAtlas(options)` (surface, empty cache, fresh shelf packer, padding default 1, `maxGlyphs` LRU budget), `disposeGlyphAtlas` (correctly `dispose*`, with the GPU-texture ownership note), `getGlyphAtlasBitmap`, and the `deriveGlyphMetricsFromFontSize` 0.8/0.2 placeholder.
+- **Rasterize-on-miss** (`glyphAtlasEntry.ts`) — `getGlyphAtlasEntry`: cache hit touches LRU; miss rasterizes via the active backend, rejects glyphs larger than the usable atlas, evicts past the glyph budget, places via best-height-fit shelf packing (`_placeGlyphOnShelf`), falls back to evict+repack loops on exhaustion, blits via `@flighthq/bitmap` (`createBitmapRegion`/`writeBitmapPixels`), unions the dirty rect, and stamps `page: 0`. `_repackGlyphAtlas` re-places survivors tallest-first, re-blits from retained source bitmaps, and full-dirties the atlas.
 - **Dirty region** (`glyphAtlasDirty.ts`) — `getGlyphAtlasDirtyRegion` (fresh `Rectangle` or null) + `clearGlyphAtlasDirty`, the incremental-upload bracket.
 - **Rasterizer seam** (`glyphRasterizerBackend.ts`) — `get`/`set`/`createWebGlyphRasterizerBackend`; the web backend lazily acquires `OffscreenCanvas`-then-DOM-canvas, measures with `actualBoundingBox*`, fills white-on-transparent at the baseline with a 1px AA guard, returns straight-alpha RGBA; null sentinels for no-context, zero-ink, and thrown `getContext`.
 - **`GlyphSource` adapter** (`glyphSource.ts`) — `createGlyphSourceFromGlyphAtlas` binding entry/kerning/metrics/`getGlyphAtlasImage(page)` (page 0 = the surface, else null), per the page-aware seam decision.
@@ -41,7 +41,7 @@ solid — 68/100. The orchestration core the charter calls "the tested core" is 
 
 ## Contract & docs fit
 
-- Deps exactly `surface` + `geometry` + `types` per the charter boundary (binpack correctly deferred); `sideEffects: false` with lazy backend/context; sentinels not throws; seam types (`GlyphSource`, `GlyphEntry`, `GlyphMetrics`, `GlyphRasterizerBackend`, `GlyphAtlasRuntime`) in `@flighthq/types`.
+- Deps exactly `bitmap` + `geometry` + `types` per the charter boundary (binpack correctly deferred); `sideEffects: false` with lazy backend/context; sentinels not throws; seam types (`GlyphSource`, `GlyphEntry`, `GlyphMetrics`, `GlyphRasterizerBackend`, `GlyphAtlasRuntime`) in `@flighthq/types`.
 - `agents/index.md` Package Map describes "`@flighthq/binpack`-backed batch repack on eviction" — **stale**: repack is the self-contained shelf packer; binpack is not a dependency. Candidate revision (or the code grows into the map's claim).
 
 ## Candidate open directions

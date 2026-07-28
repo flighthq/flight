@@ -46,7 +46,7 @@ Versus a mature scene-graph hit-testing/pointer-dispatch library (raw-input norm
 - **No touch-vs-mouse semantics.** `suppressTouchHover` is chartered in-scope and Approved but absent from both the manager and `InteractionManagerOptions`.
 - **No clip/mask-aware picking** (Decision #4, in scope, Approved) — a clipped node reports hits across its full bounds.
 - **Default registrar kind coverage is incomplete**: `NativeTextKind`, `BitmapTextKind`, `ParticleEmitterKind` exist in types but have no default handler; `defaultTextInputHitTestHandler` is exported but never registered.
-- **Bitmap alpha picking** (gated on a `@flighthq/surface` pixel-alpha accessor) and **glyph-box text picking / caret index** (gated on `@flighthq/textlayout`) remain neighbor-gated.
+- **Bitmap alpha picking** (gated on a `@flighthq/bitmap` pixel-alpha accessor) and **glyph-box text picking / caret index** (gated on `@flighthq/textlayout`) remain neighbor-gated.
 - **`hitTestDisplayObjectsShape` is an undocumented approximation** — the cross-center heuristic carries no doc comment in this tree explaining its limits or pointing to the exact path; `getDisplayObjectOverlapRectangle`'s empty-rect-on-disjoint contract is also undocumented.
 - **No spatial broadphase** (opt-in per Decision #6, future) and **no gestures** (separate `@flighthq/gestures` per Decision #1) — both deferred by blessed design, listed for completeness.
 

@@ -1,22 +1,61 @@
 # Texture / Surface / Resource
 
-**Working design — core decisions settled 2026-07-28 (design consult).** The load-bearing calls below are **decided** and are the spec the migration implements against. Three items remain genuinely open (see [Remaining open questions](#remaining-open-questions)): the exact `TextureStorage` encoding, whether `Bitmap` holds a full `Texture`, and a few entry-point names. This supersedes the earlier "add a `RenderTexture` type as a `VideoTexture` sibling" and "`Texture` base + `ImageTexture` rename" sketches (see [What this dissolves](#what-this-dissolves-and-why)).
+**Working design — Texture model SHIPPED through Scene2D (attested 2026-07-28); backing decomposition CHARTERED, not started.** The load-bearing calls below are **decided** and are the spec the migration implements against. See [Remaining open questions](#remaining-open-questions) for what is still live. This supersedes the earlier "add a `RenderTexture` type as a `VideoTexture` sibling" and "`Texture` base + `ImageTexture` rename" sketches (see [What this dissolves](#what-this-dissolves-and-why)).
 
 > **Read this first — the one idea.** The honest seam is the **resource layer**, not the texture *type*. A texture has a **CPU side** — a *backing* (`ImageResource`: bytes, compressed bytes, or an opaque host handle), a context-neutral field — and a **GPU side** — a backend handle, context-bound, reached through `resolveTexture(state, texture)` and cached in the state, **never a field**. That asymmetry *is* the ownership model. Everything else — dimensionality, render targets, video, loading, foreign handles — hangs off that split. There is **one** public `Texture` type; "which kind" is expressed by data (`storage.dimension`, backing family), never by subtypes.
 
-## The three words
+## The vocabulary
 
-Three nouns, one per layer. **"Source" is rejected as a *layer* name** — it names provenance, true for the loaded case and misleading for procedural and produced textures. (The word "source" survives where it legitimately means a drawable or a generator — `resolveCanvasImageSource`, `RandomSource`; the ban is on a `TextureSource` *layer type*.)
+Four nouns, one per role. **"Source" is rejected as a *layer* name** — it names provenance, true for the loaded case and misleading for procedural and rendered content. (The word survives where it legitimately means a drawable or a generator — `RandomSource`; the ban is on a `TextureSource` *layer type*.)
 
-| word | layer | what it is | package(s) today |
+| word | role | what it is | Skia analogue |
 |---|---|---|---|
-| **Resource** | loading / provenance | the loadable identity (URL, asset, lifecycle) that *fills* a backing. A render target never touches this layer. | `@flighthq/image` (`ImageResource`), `@flighthq/video` (`VideoResource`) |
-| **Surface** | CPU / software | the 2D **pixel buffer** — bytes + pixel-manipulation API. The `@flighthq/surface` type. **Stays narrow.** | `@flighthq/surface` |
-| **Texture** | GPU-facing / sampled | what a material or bitmap references: `storage` + sampling + `version`. Realized to a GPU handle per render state. | `@flighthq/types` (type) + `@flighthq/texture` (functions) |
+| **`Bitmap`** | CPU pixels | pixels you own and manipulate — `floodFill`, blur, `getBitmapPixel`. Mutable; the pixel API is **total** on it. Ports to `bitmap-rs`. | `SkBitmap` |
+| **`ImageResource`** | loaded asset | a flat, immutable, ready-to-draw asset (an opaque `HostImageSource`). Drawable, **not** pixel-readable. | `SkImage` |
+| **`Surface`** | backend realization | **reserved** — the backend-realized drawable handle (canvas / cairo / skia). Not yet a type; see below. | `SkSurface` |
+| **`Texture`** | the unifying descriptor | substrate-neutral: `storage` + sampling + `version`. **Not** a GPU handle — it *resolves* to one per render state. | — |
 
-The three words are **already the package graph** — no package renames.
+Pipeline: a **loader** fills a backing (`ImageResource` / `Bitmap` / compressed) → held by `Texture.storage` → **resolved** per render state to a realization (a `WebGLTexture` on GPU, a `Surface` on software).
 
-Pipeline: `Resource` → fills → a **backing** → held by → `Texture.storage` → resolved to → GPU handle (per-state, cached).
+### `Surface` → `Bitmap`, and `Surface` reserved
+
+Flight's `Surface` historically meant *raw bytes*, which collides with the whole rest of the graphics world: in Skia and Cairo a **surface is a drawable target**, not a pixel buffer. Dissolving the `Bitmap` scene node (see [Scene2D realignment](#scene2d-realignment-approved-2026-07-28)) freed the correct word, so:
+
+- **`Surface` → `Bitmap`** for the pixel-manipulation layer. `@flighthq/surface` → `@flighthq/bitmap`; 43 files, 103 exported functions, 23 pixel-layer `Surface*` types; the separate `surface-rs` → `bitmap-rs` crate rename is pending and coordinated in `flight-rs`. Mechanical, and pre-release so there are no consumers.
+- **`Surface` is reserved, not introduced.** The software-realized drawable handle is real but currently anonymous — it lives as `target.canvas` inside `CanvasRenderTarget` and as the bytes→canvas transcode result. Reserving the word costs nothing and prevents re-squatting; the *type* should arrive when a backend or the cairo/skia port genuinely demands it, not be speculated into existence now.
+- **`Surface` is a per-backend realization, NOT a package.** It is implemented by whatever system draws — canvas today, cairo or skia in a native port — so it lives inside each backend package (`scene2d-canvas`, a future `scene2d-cairo`, …), the way `GlRenderTarget` lives in the GL backend. The freed `@flighthq/surface` package name is **retired, not recycled**: do not create an `@flighthq/surface` package for this concept.
+
+This rename is not a relabel — it **names a previously unnameable concept**. The realization matrix below had an empty cell, and `Surface` fills it.
+
+### `Surface` vs `RenderTarget` — keep these distinct
+
+`RenderTarget` already exists (`RenderTargetDescriptor`, plus `Canvas`/`Gl`/`Wgpu` variants). The split, so the reserved word does not become a second name for the same thing:
+
+- **`RenderTargetDescriptor`** = *what you asked for* — width, height, format, MSAA, depth. Substrate-neutral data.
+- **`Surface`** = the **software realization** of it (canvas / cairo surface / `SkSurface`).
+- **GL framebuffer + texture** = the **hardware realization**.
+
+One descriptor, two realizations.
+
+### Realization cost matrix
+
+What each backing costs to realize on each substrate. This is why the resolvers are shaped the way they are:
+
+| backing | → software (canvas) | → GPU |
+|---|---|---|
+| **`Bitmap`** (bytes) | **transcode to a canvas** ← the only allocating cell | `texImage2D(bytes)` — native |
+| **`ImageResource`** | direct — it *is* drawable | `texImage2D(element)` — native |
+| **compressed** | ✗ not drawable | native compressed upload |
+| **`RenderTexture`** | it *is* a canvas | it *is* a framebuffer texture |
+| **external** | n/a | the caller's handle |
+
+Exactly one cell is expensive — **bytes → software** — which is the whole reason the transcode, its cache, and its separate registration exist.
+
+### Known residual ambiguities (accepted)
+
+- **`beginBitmapFill` took a `Texture`, not a `Bitmap`** — it is now `beginTextureFill`. The rename is a clarity gain because “bitmap fill” now means CPU pixels.
+- **`createBitmap` previously meant the scene node constructor.** The new one allocates pixels. Pre-release, so acceptable — but it will confuse anyone reading git history.
+- **"Surface" also means the *shading* surface** in `scene3d-gl` (`bindGlUnlitSurface`). Different domain (3D shading vs 2D raster targets); accepted rather than churning the material layer.
 
 ## The Texture shape
 
@@ -50,8 +89,8 @@ type TextureStorage =
   | { dimension: '3d';       volume:   TextureVolume | null;                       target?: RenderTargetDescriptor };
 ```
 
-- **The CPU-side field is `image: ImageResource | null`, NOT `surface: Surface | null`.** `ImageResource` is the multi-representation CPU backing that already exists (`data` bytes ∪ `compressed` ∪ a host handle, + `version`); `Surface` is its bytes-guaranteed narrowing for the pixel-manipulation path. The storage holds the *broad* backing; `Surface` stays the narrow view. Naming it `image` matches today's `Texture.image` field and the actual type — a field named `surface` typed `ImageResource` would be exactly the name↔type drift we are avoiding.
-- **`Surface` is inherently 2D — and that is principled.** The software backend (canvas) is inherently 2D; it cannot sample a volume/cube/array, so non-2D textures are hardware-only by nature. A `3d` texture's CPU backing is a `TextureVolume` (bytes + `PixelFormat`, mirroring `ImageResource` — **not** `ArrayBufferView`); cube/array are `ImageResource[]`.
+- **The CPU-side field is `image: ImageResource | null`.** As shipped, `ImageResource` is still the multi-representation CPU backing (`data` bytes ∪ `compressed` ∪ a host handle, + `version`), and the pixel type is its bytes-guaranteed narrowing. The field is named `image` because it matches the actual type — naming it for one representation would be exactly the name↔type drift we are avoiding. The [backing decomposition](#next-decompose-the-backing-chartered-2026-07-28-not-started) splits this into sibling `ImageResource` / `Bitmap` / compressed backings.
+- **The CPU pixel type is inherently 2D — and that is principled.** The software backend (canvas) is inherently 2D; it cannot sample a volume/cube/array, so non-2D textures are hardware-only by nature. A `3d` texture's CPU backing is a `TextureVolume` (bytes + `PixelFormat`, mirroring `ImageResource` — **not** `ArrayBufferView`); cube/array are `ImageResource[]`.
 
 ## The two backing families: CPU-origin vs GPU-origin
 
@@ -153,7 +192,7 @@ Flight lowers via the TS AST + thin per-target backends, with memory bounded by 
 4. **`Texture` carries no runtime state** — a plain shared reference; the port allocates no companion per texture. The backing (`ImageResource`) keeps the Entity/`dispose`/`version` machinery.
 5. **`TextureVolume.data` = bytes + `PixelFormat`**, not `ArrayBufferView`; **counters (`version`) are integer (`u32`) monotonic**, not `f64`; **resolver registries are state-scoped, never module-global** (also dodges C++ static-init-order).
 6. **Sync/async boundary stays clean:** the loader layer (`loadTexture`) is async; `resolveTexture` + backing dispatch stay synchronous and allocation-explicit. No lazy-async upload inside resolve.
-7. **`Surface` staying narrow is itself a port requirement.** `Surface` = bytes + pixel math *is* `surface-rs`, the one crate that must stay DOM-free portable arithmetic. A `Surface` polymorphic over `CanvasImageSource` would drag DOM types into it.
+7. **The pixel type staying narrow is itself a port requirement.** `Bitmap` = bytes + pixel math *is* `bitmap-rs`, the one crate that must stay DOM-free portable arithmetic. A pixel type polymorphic over `CanvasImageSource` would drag DOM types into it.
 
 ## Migration sequence — Scene3D-first pilot
 
@@ -198,7 +237,7 @@ Five fields across two nodes collapse to one. `atlas`+`id`, `sourceRectangle`, a
 
 **Region addressing survives only where it is load-bearing.** An atlas region id is an *optimization of a sub-section*, not the convenient user API. A `Uint16Array` of ids cannot hold `Texture` entities, so index-addressing is structurally required in `QuadBatch`/`Tilemap` and merely incidental for a single quad. Allocation works out: a `Texture` is per *distinct region*, not per instance — a 50-region atlas is 50 shared `Texture`s over **one** backing and **one** upload (the sampling-off-the-key rule), and frame animation becomes a pointer swap (`sprite.data.texture = frames[i]`) rather than uv mutation. The 300k-instance gate should hold.
 
-**Capability falls out, not just cleanup.** Today video and produced pixels can appear *only* through their one dedicated node. After the fold every texture consumer accepts them: a `Shape` **filled with live video or a rendered subtree** (`beginBitmapFill` goes from `[bitmap, matrix, repeat, smooth]` to `[texture, matrix]` — `repeat`/`smooth` are the sampler), a **dynamic `TextureAtlas`** whose backing is a produced texture (render into your atlas at runtime — currently inexpressible), and Tilemap/QuadBatch/BitmapText inheriting the same reach for free.
+**Capability falls out, not just cleanup.** Today video and produced pixels can appear *only* through their one dedicated node. After the fold every texture consumer accepts them: a `Shape` **filled with live video or a rendered subtree** (`beginTextureFill` goes from `[bitmap, matrix, repeat, smooth]` to `[texture, matrix]` — `repeat`/`smooth` are the sampler), a **dynamic `TextureAtlas`** whose backing is a produced texture (render into your atlas at runtime — currently inexpressible), and Tilemap/QuadBatch/BitmapText inheriting the same reach for free.
 
 ### Package moves
 
@@ -239,6 +278,105 @@ Order: `Bitmap`→`Sprite` reshape (texture + sampler fold) → fold `Video` →
 - **`RenderCache`** is also a produced surface underneath. It should *share* the produced-backing mechanism but stay a distinct concept — it is an implicit automatic optimization, whereas a produced `Texture` is explicit and user-invoked, and the anti-magic posture keeps those apart at the API even when the machinery is common.
 - **Natural size** now derives from texture dimensions × uv window rather than a stored `sourceRectangle`; a pixel-space authoring helper (`setTextureUvFromPixelRect`) and an atlas-region helper returning a cached per-region `Texture` cover the ergonomics.
 
+## Next: decompose the backing (chartered 2026-07-28, not started)
+
+**The unifying job moved up a layer, so the backing union is now vestigial.** `ImageSource` (later `ImageResource`) fused three representations into one type with three nullable fields *because nothing above it could dispatch* — it had to be the unifying layer. `Texture` + the state-scoped backing registry now hold that role. The union is still doing a job that has been superseded, and it should decompose.
+
+The three-word table already says these are different layers; the types do not. `Surface extends ImageResource`, so a procedurally-generated noise buffer that was never loaded from anywhere is structurally a *Resource* carrying a null host handle, a null compressed payload, and an `alphaType` it has no use for — while a loaded PNG carries `data: null`, a field promising pixels it does not have.
+
+The leak is visible in the API: `hasImageResourcePixels` is literally `source !== null || data !== null || compressed !== null`. A predicate whose job is "does this have *any* of its three representations" means consumers cannot know what they will get, so they ask "is there anything?" and branch — ~34 such sites across non-test source (19 on `.source`, 15 on `.data`).
+
+### Host-backed and byte-backed differ on four axes
+
+| | host-backed (loaded PNG, `<canvas>`, `ImageBitmap`) | byte-backed (in-memory pixels) |
+|---|---|---|
+| pixels readable | **no** — requires a readback | **yes** — that *is* the thing |
+| mutable | no | yes, that is the point |
+| canvas draw | direct, zero copy | **requires a transcode to an element** |
+| GL upload | `texImage2D(element)` | `texImage2D(bytes)` |
+| **C/C++ port** | **opaque native handle — the seam** | **plain byte buffer — `surface-rs`** |
+
+The last row is decisive: **one struct currently has one portable field and one non-portable field.** `HostImageSource` fixed this at the *field* level, but the type still straddles the seam. Decomposing puts the native seam on a **type boundary** — `Bitmap` is bedrock-portable, the host-backed type is a seam object, and neither pretends to be the other.
+
+### Shape — names decided
+
+**`ImageResource` keeps its name; the pixel type (renamed `Surface` → `Bitmap`) becomes its sibling rather than its subtype.** The defect was never the name — it was `Surface extends ImageResource`. `ImageSource` covered both representations and *had* to be a union; `ImageResource` is a **flat asset** and should not be.
+
+- **`ImageResource`** — a flat, immutable, ready-to-draw asset: an opaque `HostImageSource` + dimensions. Not pixel-readable; zero-copy draw/upload. Covers `<img>` and `ImageBitmap`.
+- **`Bitmap`** — a mutable pixel buffer: bytes + `PixelFormat` + colorSpace. The pixel API is **total** on it; ports to `bitmap-rs`.
+- **`CompressedImage`** — block-compressed payload + container metadata. GPU-only; neither canvas-drawable nor pixel-readable.
+
+They share a header (`width`, `height`, `version`, `kind`) so `getTextureWidth`, uv math, and version dirty-gating stay uniform — a base plus **open** payload variants (backings are open; only `dimension` is closed), the same shape as `TextureStorage`.
+
+**Why not `HostImage`** (considered and rejected): the argument for it was that a `<canvas>`/`OffscreenCanvas` is not "loaded," so "Resource" would be wrong. But the canvas-element case is the **RenderTexture backing** — `canvasRenderTexture.ts` returns the state-owned `target.canvas` — never the loaded-asset backing. Remove that case and nothing strains "Resource." Second tell: `HostImage.source: HostImageSource` **stutters**, while `ImageResource.source: HostImageSource` reads correctly — the entity is the asset, the field is the handle it carries. The already-shipped `HostImageSource` typedef works *because* the entity is not called `HostImage`.
+
+**Provenance is not the distinguishing axis — representation is.** A KTX2 payload is equally "loaded"; it differs by holding compressed bytes rather than a host handle. `ImageResource` earns the plain unqualified name because the host-handle case is the canonical image asset; `CompressedImage` qualifies itself. Same pattern as `Texture` keeping the plain name while its variants dissolved.
+
+Two accepted wrinkles: the transcode result (`createImageResourceFromBitmap`) yields an `ImageResource` whose handle is a runtime `<canvas>` — acceptable, since after an *explicit* conversion the caller holds a flat immutable drawable. And `<video>` is not an `ImageResource`: it is already its own backing kind (`VideoResource`).
+
+### Naming: `RenderTexture`, not `produced`
+
+`produced` is category jargon that only reads next to `external`. `RenderTexture` is the concrete noun users actually type (`createRenderTexture`), and the function vocabulary already says it everywhere (`bindGlRenderTexture`, `destroyGlRenderTexture`, `explainGlRenderTexture`, `bindCanvasRenderTexture`). Rename the kind to match — `RenderTextureBackingKind = 'renderTexture'` — and keep "produced / GPU-origin" as **prose category** language in this document only, paired with "external", never as an identifier.
+
+### The implicit conversions become explicit primitives
+
+Today bytes→element happens **invisibly** inside `resolveCanvasImageSource`, cached in a hidden per-render-state `WeakMap`, with `explainCanvasImageSource` existing to make the cost legible. **A diagnostic that exists to explain an implicit conversion is a missing explicit primitive.** Decomposed, they are named, allocating, and caller-owned:
+
+- `createImageResourceFromBitmap(bitmap)` — the transcode (half-built today as `createImageResourceFromBitmap`)
+- `captureBitmapFromImageResource(resource)` — the readback, currently not expressible at all
+
+Caller-owned caching replaces a hidden per-state `WeakMap`, per the explicit-allocation posture. The per-frame transcode cache does not disappear — it moves into the *bitmap-backing resolver*, which is exactly what makes a PNG-only bundle lighter.
+
+### Canvas/DOM resolver split — decided
+
+`resolveCanvasImageSource` (the fused helper) **dissolves**. It has *zero* external callers — every reference outside its own file is a comment — so this is internal restructuring, not an API change. `resolveCanvasTextureSource` stays as the single dispatch entry (5 callers: sprite, quad-batch, tilemap, bitmap-text, particle-emitter). It splits into separately-registered backings:
+
+```ts
+registerCanvasImageTextureResolver(state)    // host-backed: return .source. ~2 lines, no imports.
+registerCanvasBitmapTextureResolver(state)   // byte-backed: transcode + WeakMap + version gate.
+registerCanvasProducedTextureResolver(state) // offscreen canvas.
+```
+
+Note the inversion this exposes: **the host-backed resolver barely earns the name** — a single property read, no state, no cache — while the *bitmap* case carries all the machinery. The `(state, texture)` resolver signature is shaped entirely by the bitmap case; the host case does not need `state` at all.
+
+**Canvas keeps a bitmap resolver rather than refusing byte-backed textures.** The purist alternative — return a sentinel and make the caller convert — was rejected because **GL uploads bytes natively** (`texImage2D(bytes)` is the native path, not a conversion). Refusing them on canvas would manufacture an *artificial* backend gap, unlike the gaps the design already accepts: a cube or volume texture is hardware-only **by nature** (canvas genuinely cannot sample a volume), whereas a byte buffer is the most *software* thing there is. Canvas needing an element is an artifact of the Canvas2D API, not a property of the backend.
+
+What makes this not-magic: **the registration is the explicit request.** Calling `registerCanvasBitmapTextureResolver` by name *is* the caller asking for the transcode, and `explainCanvasImageSource` is the transparent cost — the anti-goals test (explicit invocation + transparent cost) is satisfied by the named opt-in, not defeated by it.
+
+And the convenience stays genuinely optional, because **the primitive underneath is public**. Two honest routes:
+
+1. **Register the bitmap resolver** — automatic, version-gated, cached per render state.
+2. **Convert once with `createImageResourceFromBitmap`** and hold a host-backed texture — no resolver registered, no transcode code in the bundle at all.
+
+A guard on the unregistered case should name *both* routes, not just the registration. Same treatment applies verbatim to `domImageSource`/`domSprite`.
+
+Net default: **showing a loaded image is the cheapest path and needs no opt-in; procedural pixels on canvas are the specialized case that pays for themselves.** That is the hardware-store rule landing the right way round.
+
+### What it buys
+
+- **Bundle** — a PNG-loading app contains no transcode and no byte handling; a procedural app contains no element handling. The registry shakes them apart because they are genuinely different backings, not one resolver with a branch. This **subsumes the canvas-lightweighting item**, which should therefore not be done first.
+- **Port** — the seam lands between types instead of inside one: `Bitmap` is bedrock-portable (`bitmap-rs`), `ImageResource` is a seam object.
+- **Capability honesty** — `getBitmapPixel` is total on `Bitmap`, not "total on the narrowing, meaningless on the base."
+- **Ambiguity dies** — no more "both `source` and `data` are populated; which is authoritative?"
+
+### Known counter-case
+
+You sometimes legitimately want both representations behind one identity — a generated atlas you upload *and* keep for CPU hit-testing, or a `Bitmap` mutated per frame and drawn on canvas. Decomposed, that is two objects (a `Bitmap` plus a derived `ImageResource`) held by the caller. This is judged **better** — both things genuinely exist and the cost is visible — but it means `Texture.storage` points at exactly one backing, so "same texture, bytes on GL, element on canvas" becomes an explicit caller decision rather than silent field population.
+
+### Staged migration (types-first, mirroring the pilot)
+
+1. Define the header + three backings in `@flighthq/types`; keep the fused shape working while the sibling types land.
+2. Add the two explicit conversion primitives; leave the implicit transcode in place.
+3. Migrate the ~34 representation branches mechanically to the declared kind.
+4. Split the canvas + GL/WGPU resolvers per backing; move the transcode cache into the bitmap resolver. **Re-run `size` here — this is where the win lands.**
+5. Retire the fused type and `hasImageResourcePixels`; make the pixel API total on `Bitmap`.
+
+### Open questions
+
+1. ~~**Naming**~~ — **DECIDED**: `ImageResource` keeps its name as the flat asset; `Bitmap` becomes a sibling, not a subtype; `RenderTexture` replaces `produced` in identifiers. See "Shape — names decided" above.
+2. **Does a separate loading-identity entity survive** (url + load state), or do loaders simply return a backing directly? `ImageResourceReference` and the `assets`/`loader` packages may already cover it — do not invent a fourth type without evidence.
+3. **Where `CompressedImage` lives** — `@flighthq/image` beside `ImageResource`, or with `@flighthq/texture-formats` which already parses the containers.
+
 ## What this dissolves (and why)
 
 | retired / never-built | becomes |
@@ -250,7 +388,7 @@ Order: `Bitmap`→`Sprite` reshape (texture + sampler fold) → fold `Video` →
 | `Bitmap` (node) | renamed **`Sprite`** — the one raster-quad node, holding a `Texture` |
 | `Video` (node) | a `Sprite` whose texture has a video backing |
 | `Sprite`'s `atlas` + `id` (single-quad) | the texture's uv window; index-addressing survives only in `QuadBatch`/`Tilemap` |
-| `Bitmap.smoothing`, `beginBitmapFill`'s `repeat`/`smooth` | `Sampler` fields (`magFilter`/`minFilter`, `wrapU`/`wrapV`) |
+| `Bitmap.smoothing`, `beginTextureFill`'s `repeat`/`smooth` | `Sampler` fields (`magFilter`/`minFilter`, `wrapU`/`wrapV`) |
 | `@flighthq/sprite` (package) | `@flighthq/quadbatch` + `@flighthq/tilemap` |
 | `@flighthq/tileset` (package) | grid slicing → `textureatlas` (`createTextureAtlasFromGrid`); layout params → `tilemap` |
 | `CubeTexture` / `Texture2D` / `Texture3D` types | `storage.dimension` values (+ `TextureVolume` for the 3D CPU backing) |

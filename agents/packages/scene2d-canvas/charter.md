@@ -38,7 +38,7 @@ Non-goals:
 - Registration, render state/queue, the update pipeline, or the draw contract itself — those are `@flighthq/render`.
 - The display-object node types and their data — those are `@flighthq/scene2d` / `@flighthq/shape` / `@flighthq/text`.
 - A Rust crate — host-web-only by design; software-render parity is `scene2d-skia`.
-- Pixel-buffer manipulation / surface ownership — `@flighthq/surface` (the render-target readback ownership line is an open direction below, not a settled in-scope feature).
+- Pixel-buffer manipulation / surface ownership — `@flighthq/bitmap` (the render-target readback ownership line is an open direction below, not a settled in-scope feature).
 
 ## Decisions
 
@@ -52,7 +52,7 @@ Non-goals:
 Every item below is a question for the direction pass to settle, not an assumption an agent should make:
 
 1. **Scope of the Canvas backend vs. `scene2d-skia`.** Is `scene2d-canvas` the _primary_ 2D software path (richest fidelity, owns the 2D feature target), or the _thin host-web_ path with `skia` as the conformance reference? This decides how hard to push canvas-specific fidelity (dashed strokes, per-axis scale modes) vs. deferring to the shared rasterizer.
-2. **Render-target readback ownership.** Does canvas expose raw `ImageData` (`getCanvasRenderTargetImageData` / `readCanvasRenderTargetPixels`), or only a `CanvasRenderTarget → ImageSource` bridge into `@flighthq/surface`? A real API fork that blocks the readback feature and should not be decided silently.
+2. **Render-target readback ownership.** Does canvas expose raw `ImageData` (`getCanvasRenderTargetImageData` / `readCanvasRenderTargetPixels`), or only a `CanvasRenderTarget → ImageSource` bridge into `@flighthq/bitmap`? A real API fork that blocks the readback feature and should not be decided silently.
 3. **Fidelity floor for unsupported blend modes.** Is "degrade to normal, document it" the accepted posture for `Invert`/`Shader`/`Subtract`, or should canvas gain a pixel-readback path for at least `Invert`? Today it is documented degradation; the charter should bless or reject it.
 4. **Where cross-backend conformance scenes live and which backends they target.** Blend/scale-mode features are unverified visually (no functional scenes for Erase/Alpha blend, scale-mode `'none'`, scale-9 smoothing). The charter should name the expectation — canvas ↔ dom ↔ gl parity scenes, plus the `rust:skia ~ ts:canvas` cross-impl pairing — this being the single largest gap to authoritative.
 5. **The line between "Canvas command" extensibility and `@flighthq/shape`.** The open `canvasShapeRegistry` lets users add stroke/fill commands; several deferred features (dashed strokes, `BitmapFillRepeat`, pixel-snapping/`pixelSnapping`) are blocked on upstream `lineStyle` tuple changes in `@flighthq/types` + `@flighthq/shape`. Is the command tuple the right extension surface, or should bitmap-fill/dash be first-class typed fields? A boundary question worth a ruling.

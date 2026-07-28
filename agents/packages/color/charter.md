@@ -34,7 +34,7 @@ reads as missing:
   `computeSrgbToLinear`/`computeLinearToSrgb`, a second HSL pair, plus OkLab and Rec709/Rec2020
   luminance weights.
 - More color scatter: `lighting` (`colorFromKelvin`), `particles` (HSV interpolation in `curve.ts`),
-  `surface` (pixel ops).
+  `bitmap` (pixel ops).
 
 That is the textbook decomposition smell from AGENTS.md (*Composition and Complexity*): a bedrock
 primitive bundled inside a larger unit and re-implemented elsewhere. Extracting `@flighthq/color`
@@ -55,7 +55,7 @@ migration helper — see the boundary below).
    `effects` consumes it. (Effect-domain math — `toneMapMath`, `colorTemperatureMath` as an *effect* —
    stays in `effects`; `color` provides the primitives they compose.)
 3. **Re-point consumers** to import from `@flighthq/color`: `scene-gl`, `materials`, `effects`,
-   `lighting`, `particles`, `surface`. Pre-release, no back-compat obligations → clean import cut, no
+   `lighting`, `particles`, `bitmap`. Pre-release, no back-compat obligations → clean import cut, no
    long-lived re-export shim unless a transition step is genuinely easier.
 4. Allocation discipline (`create*` allocates; conversions write to `out`), `Readonly<>` inputs,
    alphabetized exports, one colocated test per source file. Run `packages:check` / `exports:check`.
@@ -118,7 +118,7 @@ _Append-only, dated, blessed rulings._
    `materials`, and how it couples to the #7 `@flighthq/lighting` intensity helper (build them together).
 3. **Rust candidacy** — the transfer/space math is a strong `rust:` backend candidate once stable.
 4. **Name** — confirm `@flighthq/color`.
-5. **`particles`/`surface` color reuse** — fold their HSV/pixel color math onto `color` too, or leave
+5. **`particles`/`bitmap` color reuse** — fold their HSV/pixel color math onto `color` too, or leave
    as domain-local until it demonstrably duplicates. Decide during the consumer re-point.
 6. ~~How to resolve the `create*`-returns-bare-value conflict~~ — **RESOLVED 2026-07-23 (direction
    session): exit (a), rename to `allocate*` + plain conversion.** See Decisions. Implementation

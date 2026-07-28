@@ -32,7 +32,7 @@ That is the whole list. If a word you want is not here, it is almost certainly a
 
 ## Scope — where the change lives
 
-Use the **short package/crate name** — the same identity the codebase map uses. TS `@flighthq/surface` and Rust `flighthq-surface` both reduce to `surface`. Cross-cutting buckets take the area as scope:
+Use the **short package/crate name** — the same identity the codebase map uses. TS `@flighthq/bitmap` reduces to `bitmap`; the not-yet-renamed Rust `flighthq-surface` crate still reduces to `surface`. Cross-cutting buckets take the area as scope:
 
 ```
 feat(surface): …          fix(render-wgpu): …       refactor(node): …

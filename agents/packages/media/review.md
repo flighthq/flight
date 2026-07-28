@@ -76,6 +76,6 @@ The charter is silent on everything below; each is a question for the user to se
 2. **Spatial/3D audio — in `media`, or a `spatial-audio` neighbor?** It is the headline Gold feature and a natural fit for a graphics SDK; confirm scope before building the large `PannerNode` surface.
 3. **Backend seam timing.** The Rust crate already has one; the TS package does not. Decide when to stabilize `AudioBackend`/`VideoBackend` in `@flighthq/types` (the status doc wants the Silver API frozen first) so TS↔Rust conformance has a shared seam.
 4. **`@flighthq/media-formats` neighbor** (duration/metadata probing, ID3/cue, caption parsing) — the triad `-formats` cell. Apply the plurality guard before creating it (status doc already flags "raise with user").
-5. **Video-frame → `ImageSource` bridge** — cross-package (surface/scene2d/render-cache); needs a design decision, not autonomous work.
+5. **Video-frame → `ImageSource` bridge** — cross-package (bitmap/scene2d/render-cache); needs a design decision, not autonomous work.
 6. **Audio `MediaChannelSignals` semantics** — should the channel itself emit `onReady`/`onError`/ `onBuffering` and carry a `readyState: MediaReadyState`, or remain caller-populated hooks? The type exists; the wiring does not. Settle the contract so audio and video signals are symmetric.
 7. **`clamp`/scalar-math policy** — bless `@flighthq/math` as the shared home for these helpers across leaf packages (resolves the triplication here and similar duplication elsewhere).

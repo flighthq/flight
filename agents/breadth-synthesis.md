@@ -30,7 +30,7 @@ Several deepening items should be prioritized ahead of new package creation:
 
 - gl/wgpu blend modes (gate motion graphics)
 - Per-instance tint everywhere (gate data-viz scatter)
-- `surface`'s 2 DOM-leak files (gate headless)
+- `bitmap`'s 2 DOM-leak files (gate headless)
 - `snapshot` delta (gate cloud + undo + replay)
 - `storage` async backend (gate cloud)
 - `socket` reconnect layer (gate multiplayer)
