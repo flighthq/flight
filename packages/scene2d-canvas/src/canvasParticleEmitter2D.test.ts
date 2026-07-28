@@ -1,3 +1,5 @@
+import { createImageResource } from '@flighthq/image/contract';
+import { createTexture } from '@flighthq/texture/contract';
 import type { RenderProxy2D } from '@flighthq/types/contract';
 
 import { drawCanvasParticleEmitter2D } from './canvasParticleEmitter2D';
@@ -5,9 +7,12 @@ import { createCanvasRenderState } from './canvasRenderState';
 
 function makeAtlas() {
   const img = document.createElement('img') as HTMLImageElement;
+  const image = createImageResource(img);
+  image.width = 64;
+  image.height = 64;
   return {
-    image: { source: img, width: 64, height: 64 },
     regions: [{ id: 0, x: 0, y: 0, width: 32, height: 32 }],
+    texture: createTexture({ storage: { dimension: '2d', image } }),
   };
 }
 

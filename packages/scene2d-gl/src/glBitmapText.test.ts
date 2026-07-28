@@ -1,6 +1,8 @@
 import { createBitmapText, getBitmapTextPages, updateBitmapText } from '@flighthq/bitmaptext/contract';
+import { createImageResource } from '@flighthq/image/contract';
 import { setNodeColorAdjustmentsTint } from '@flighthq/node/contract';
-import type { BitmapText, GlyphEntry, GlyphSource, ImageResource, RenderProxy2D } from '@flighthq/types/contract';
+import { registerGlImageTextureResolver } from '@flighthq/render-gl/contract';
+import type { BitmapText, GlyphEntry, GlyphSource, RenderProxy2D } from '@flighthq/types/contract';
 
 import { defaultGlBitmapTextRenderer } from './glBitmapText';
 import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature';
@@ -14,13 +16,9 @@ function createTestGlyphSource(): GlyphSource {
     [0x41, { advance: 10, bearingX: 0, bearingY: 8, height: 8, page: 0, width: 6, x: 0, y: 0 }],
     [0x42, { advance: 10, bearingX: 0, bearingY: 8, height: 8, page: 0, width: 6, x: 6, y: 0 }],
   ]);
-  const image = {
-    source: document.createElement('img'),
-    data: null,
-    compressed: null,
-    width: 64,
-    height: 64,
-  } as unknown as ImageResource;
+  const image = createImageResource(document.createElement('img'));
+  image.width = 64;
+  image.height = 64;
   return {
     getGlyphAtlasImage: (page = 0) => (page === 0 ? image : null),
     getGlyphEntry: (cp) => entries.get(cp) ?? null,
@@ -57,6 +55,7 @@ describe('defaultGlBitmapTextRenderer.submit', () => {
     expect(getBitmapTextPages(text)[0].instanceCount).toBe(2);
 
     const { state, gl } = createGlState();
+    registerGlImageTextureResolver(state);
     registerStandardGlMaterial(state);
     defaultGlBitmapTextRenderer.submit(state, makeProxy(text));
     flushGlQuadBatchWriter(state as never);
@@ -68,6 +67,7 @@ describe('defaultGlBitmapTextRenderer.submit', () => {
     const text = createBitmapText(createTestGlyphSource(), { text: '' });
     updateBitmapText(text);
     const { state, gl } = createGlState();
+    registerGlImageTextureResolver(state);
     registerStandardGlMaterial(state);
     defaultGlBitmapTextRenderer.submit(state, makeProxy(text));
     flushGlQuadBatchWriter(state as never);
@@ -80,6 +80,7 @@ describe('defaultGlBitmapTextRenderer.submit', () => {
     updateBitmapText(text);
 
     const { state, gl } = createGlState();
+    registerGlImageTextureResolver(state);
     registerStandardGlMaterial(state);
     registerGlColorAdjustmentMaterialFeature(state);
     // The resolved color adjustment arrives on the proxy; submit must draw without throwing through the fold.
