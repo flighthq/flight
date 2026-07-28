@@ -1,5 +1,5 @@
 export * from './canvasBackground';
-export * from './canvasBitmap';
+export * from './canvasSprite';
 export * from './canvasBitmapText';
 export * from './canvasCache';
 export * from './canvasClip';
@@ -22,7 +22,6 @@ export * from './canvasScale9Shape';
 export * from './canvasShape';
 export * from './canvasShapeCommands';
 export * from './canvasShapeRegistry';
-export * from './canvasSprite';
 export * from './canvasTextInput';
 export * from './canvasTextLabel';
 export * from './canvasTextMeasure';

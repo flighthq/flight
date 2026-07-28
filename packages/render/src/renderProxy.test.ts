@@ -8,7 +8,7 @@ import {
   invalidateNodeLocalTransform,
 } from '@flighthq/node/contract';
 import { createDisplayObject, setNode2DClip } from '@flighthq/scene2d/contract';
-import { createSprite } from '@flighthq/sprite/contract';
+import { createSprite } from '@flighthq/scene2d/contract';
 import type { ClipRegion } from '@flighthq/types/contract';
 
 import { registerRenderer } from './renderer';

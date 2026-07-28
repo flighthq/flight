@@ -8,4 +8,8 @@ export type GlTextureBackingKind = TextureBackingKind;
 
 // Synchronously realizes and binds a Texture for one render state. GPU handles stay entirely in the
 // state-owned caches reached by the resolver; null is the not-ready/unsupported sentinel.
-export type GlTextureResolver = (state: GlRenderState, texture: Readonly<TextureLike>) => WebGLTexture | null;
+export type GlTextureResolver = (
+  state: GlRenderState,
+  texture: Readonly<TextureLike>,
+  premultiply: boolean,
+) => WebGLTexture | null;

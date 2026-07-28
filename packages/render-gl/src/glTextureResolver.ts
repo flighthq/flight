@@ -51,18 +51,26 @@ export function registerGlVideoTextureResolver(state: GlRenderState): void {
 
 // Resolves through one keyed lookup using the backing's declared kind. The CPU backing owns its kind;
 // a GPU-origin target owns its own. An unbound or undeclared backing is the null sentinel.
-export function resolveGlTexture(state: GlRenderState, texture: Readonly<TextureLike>): WebGLTexture | null {
+export function resolveGlTexture(
+  state: GlRenderState,
+  texture: Readonly<TextureLike>,
+  premultiply = false,
+): WebGLTexture | null {
   const registry = getGlRenderStateRuntime(state).glTextureResolverRegistry;
   if (registry == null) return null;
   const backingKind = getTextureBackingKind(texture);
   if (backingKind === null) return null;
-  return registry.get(backingKind)?.(state, texture) ?? null;
+  return registry.get(backingKind)?.(state, texture, premultiply) ?? null;
 }
 
-function resolveGlImageTexture(state: GlRenderState, texture: Readonly<TextureLike>): WebGLTexture | null {
+function resolveGlImageTexture(
+  state: GlRenderState,
+  texture: Readonly<TextureLike>,
+  premultiply: boolean,
+): WebGLTexture | null {
   const image = texture.storage.image;
   if (image == null || (image.source === null && image.data === null && image.compressed === null)) return null;
-  return bindGlImageResourceTexture(state, image, texture.sampler);
+  return bindGlImageResourceTexture(state, image, texture.sampler, null, premultiply);
 }
 
 function resolveGlProducedTexture(state: GlRenderState, texture: Readonly<TextureLike>): WebGLTexture | null {

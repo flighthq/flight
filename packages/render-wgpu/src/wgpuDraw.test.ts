@@ -1,5 +1,5 @@
 import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
-import { createBitmap } from '@flighthq/scene2d/contract';
+import { createSprite } from '@flighthq/scene2d/contract';
 import type { ImageResource, Texture } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
@@ -220,7 +220,7 @@ describe('drawWgpuQuad', () => {
   it('does not throw when render pass is open', async () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
-    const bitmap = createBitmap();
+    const bitmap = createSprite();
     prepareScene2DRender(state, bitmap);
     const renderProxy = getOrCreateRenderProxy2D(state, bitmap);
     const canvas = document.createElement('canvas');
@@ -236,7 +236,7 @@ describe('drawWgpuQuadWithTransform', () => {
   it('does not throw when render pass is open', async () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
-    const bitmap = createBitmap();
+    const bitmap = createSprite();
     prepareScene2DRender(state, bitmap);
     const renderProxy = getOrCreateRenderProxy2D(state, bitmap);
     const canvas = document.createElement('canvas');

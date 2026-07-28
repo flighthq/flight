@@ -1,81 +1,39 @@
-import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render/contract';
-import { getNode2DRuntime } from '@flighthq/scene2d/contract';
-import type { CanvasRenderState, Node2D, RenderProxy2D, Sprite, SpriteRenderer } from '@flighthq/types/contract';
+import { noopRendererData } from '@flighthq/render/contract';
+import { getTextureHeight, getTextureWidth } from '@flighthq/texture/contract';
+import type { CanvasRenderState, RenderProxy2D, Scene2DRenderer, Sprite } from '@flighthq/types/contract';
 
-import { applyCanvasMaterial } from './canvasMaterialRegistry';
-import { getCanvasRenderStateRuntime } from './canvasRenderState';
+import { resolveCanvasImageSource } from './canvasImageSource';
+import { drawCanvasScene2D } from './canvasNode2D';
+import { setCanvasTransform } from './canvasTransform';
 
-export function drawCanvasSprite(state: CanvasRenderState, spriteNode: RenderProxy2D): void {
-  const source = spriteNode.source as Sprite;
-  const { atlas, id } = source.data;
-  if (atlas === null || atlas.image === null || atlas.image.source === null) return;
+export function drawCanvasSprite(state: CanvasRenderState, sprite: RenderProxy2D): void {
+  drawCanvasScene2D(state, sprite);
+  const texture = (sprite.source as Sprite).data.texture;
+  if (texture === null || texture.storage.dimension !== '2d') return;
+  const image = texture.storage.image;
+  const drawable = image !== null ? resolveCanvasImageSource(state, image) : null;
+  if (drawable === null) return;
 
-  const regions = atlas.regions;
-  if (id < 0 || id >= regions.length) return;
-
-  const region = regions[id];
-  if (region.width <= 0 || region.height <= 0) return;
-
-  state.applyBlendMode?.(state, spriteNode.blendMode);
+  const textureWidth = getTextureWidth(texture);
+  const textureHeight = getTextureHeight(texture);
+  const sourceX = texture.uvOffset.x * textureWidth;
+  const sourceY = texture.uvOffset.y * textureHeight;
+  const sourceWidth = Math.abs(texture.uvScale.x * textureWidth);
+  const sourceHeight = Math.abs(texture.uvScale.y * textureHeight);
+  if (sourceWidth <= 0 || sourceHeight <= 0) return;
 
   const context = state.context;
-  const transform = spriteNode.transform2D;
+  state.applyBlendMode?.(state, sprite.blendMode);
+  context.globalAlpha = sprite.alpha;
+  setCanvasTransform(state, context, sprite.transform2D);
 
-  context.globalAlpha = spriteNode.alpha;
-
-  if (!state.allowSmoothing) {
-    context.imageSmoothingEnabled = false;
-  }
-
-  const restoreMaterial = applyCanvasMaterial(state, spriteNode.material);
-  const originX = -(region.pivotX ?? 0);
-  const originY = -(region.pivotY ?? 0);
-
-  context.setTransform(transform.a, transform.b, transform.c, transform.d, transform.tx, transform.ty);
-  context.drawImage(
-    atlas.image.source,
-    region.x,
-    region.y,
-    region.width,
-    region.height,
-    originX,
-    originY,
-    region.width,
-    region.height,
-  );
-
-  if (restoreMaterial) context.restore();
-
-  if (!state.allowSmoothing) {
-    context.imageSmoothingEnabled = true;
-  }
+  const smoothing = state.allowSmoothing && !texture.sampler.magFilter.startsWith('nearest');
+  if (!smoothing) context.imageSmoothingEnabled = false;
+  context.drawImage(drawable, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, sourceWidth, sourceHeight);
+  if (!smoothing) context.imageSmoothingEnabled = true;
 }
 
-export const defaultCanvasSpriteRenderer: SpriteRenderer = {
+export const defaultCanvasSpriteRenderer: Scene2DRenderer = {
   createData: noopRendererData,
   submit: drawCanvasSprite,
 };
-
-export function renderCanvasSprite(state: CanvasRenderState, source: Node2D): void {
-  const tempStack = getCanvasRenderStateRuntime(state).tempStack;
-  let stackLength = 1;
-  tempStack[0] = source;
-
-  while (stackLength > 0) {
-    const current = tempStack[--stackLength] as Node2D;
-    if (!current.enabled) continue;
-    const data = getRenderProxy2D(state, current);
-    if (data === undefined || !isRenderProxyVisible(data)) continue;
-
-    if (data.renderer !== null) data.renderer.submit(state, data);
-
-    if (data.traverseChildren) {
-      const children = getNode2DRuntime(current).children;
-      if (children !== null) {
-        for (let i = children.length - 1; i >= 0; i--) {
-          tempStack[stackLength++] = children[i] as Node2D;
-        }
-      }
-    }
-  }
-}

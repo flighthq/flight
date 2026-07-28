@@ -52,7 +52,7 @@ export {
   isNodeFocused,
   isNodeHitTestEnabled,
   refreshInteractionSpatialIndex,
-  registerBitmapHitTest,
+  registerSpriteHitTest,
   registerDefaultHitTests,
   registerHitTest,
   registerHitTestPrecise,

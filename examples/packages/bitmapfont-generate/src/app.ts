@@ -10,9 +10,10 @@ import {
 import type { BitmapText } from '@flighthq/sdk';
 import {
   addNodeChild,
-  createBitmap,
+  createSprite,
   createDisplayObject,
   createImageResourceFromSurface,
+  createTexture,
   invalidateNodeLocalTransform,
   setNodeColorAdjustmentsTint,
 } from '@flighthq/sdk';
@@ -84,7 +85,9 @@ for (const bitmapText of bitmapTexts) {
 }
 
 // Preview the exact finalized atlas image sampled by every BitmapText quad batch.
-const atlasPreview = createBitmap({ data: { image: atlasImage } });
+const atlasPreview = createSprite({
+  data: { texture: createTexture({ storage: { dimension: '2d', image: atlasImage } }) },
+});
 atlasPreview.x = 536;
 atlasPreview.y = 438;
 atlasPreview.scaleX = 0.42;

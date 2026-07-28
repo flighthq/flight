@@ -1,5 +1,4 @@
 import {
-  BitmapKind,
   DisplayObjectKind,
   HtmlViewKind,
   MovieClipKind,
@@ -15,7 +14,6 @@ import {
 } from '@flighthq/types/contract';
 
 import {
-  defaultBitmapHitTestHandler,
   defaultNode2DHitTestHandler,
   defaultHtmlViewHitTestHandler,
   defaultMovieClipHitTestHandler,
@@ -33,7 +31,6 @@ import {
 } from './spriteHitTests';
 
 export function registerDefaultHitTests(): void {
-  registerHitTest(BitmapKind, defaultBitmapHitTestHandler);
   registerHitTest(DisplayObjectKind, defaultNode2DHitTestHandler);
   registerHitTest(HtmlViewKind, defaultHtmlViewHitTestHandler);
   registerHitTest(MovieClipKind, defaultMovieClipHitTestHandler);

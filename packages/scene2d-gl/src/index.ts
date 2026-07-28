@@ -1,7 +1,6 @@
 export {
   createGlCacheState,
   createGlVelocityTarget,
-  defaultGlBitmapRenderer,
   defaultGlNode2DVelocityWriter,
   defaultGlParticleEmitter2DRenderer,
   defaultGlParticleEmitter2DVelocityWriter,
@@ -15,7 +14,7 @@ export {
   defaultGlTilemapRenderer,
   defaultGlVideoRenderer,
   destroyGlRenderTargetNode2D,
-  drawGlBitmap,
+  drawGlSprite,
   enableGlClipSupport,
   enableGlRenderCache,
   enableGlRenderTargetNode2D,

@@ -18,12 +18,12 @@ describe('package exports', () => {
   });
 
   describe('display object domain', () => {
-    it('exports BitmapKind with expected value', () => {
-      expect(sdk.BitmapKind).toBe('Bitmap');
+    it('exports SpriteKind with expected value', () => {
+      expect(sdk.SpriteKind).toBe('Sprite');
     });
 
-    it('exports createBitmap', () => {
-      expect(sdk.createBitmap).toBeTypeOf('function');
+    it('exports createSprite', () => {
+      expect(sdk.createSprite).toBeTypeOf('function');
     });
 
     it('exports createDisplayObject', () => {

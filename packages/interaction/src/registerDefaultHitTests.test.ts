@@ -1,6 +1,6 @@
 import { setRectangle } from '@flighthq/geometry/contract';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
-import { createBitmap, createScene2D } from '@flighthq/scene2d/contract';
+import { createSprite, createScene2D } from '@flighthq/scene2d/contract';
 import { createShape } from '@flighthq/shape/contract';
 
 import { findGraphHitTarget } from './hitTests';
@@ -11,7 +11,7 @@ describe('registerDefaultHitTests', () => {
   it('registers all built-in kinds so findGraphHitTarget resolves them', () => {
     registerDefaultHitTests();
 
-    const bitmap = createBitmap();
+    const bitmap = createSprite();
     setRectangle(getNodeLocalBoundsRectangle(bitmap), 0, 0, 100, 100);
     setNodeHitTestEnabled(bitmap, true);
     expect(findGraphHitTarget(bitmap, 50, 50)).toBe(bitmap);

@@ -14,7 +14,7 @@ import { applyCanvasMaterial } from './canvasMaterialRegistry';
 // no color-adjustment fold, so a node tint is not applied here (honest — the missing
 // `enableCanvasColorAdjustment` is the signal). Mirrors `drawCanvasQuadBatch`'s vector2 path, one page at
 // a time.
-export function drawCanvasBitmapText(state: CanvasRenderState, node: RenderProxy2D): void {
+export function drawCanvasSpriteText(state: CanvasRenderState, node: RenderProxy2D): void {
   const source = node.source as BitmapText;
   const pages = (getNode2DRuntime(source) as BitmapTextRuntime).pages;
 
@@ -66,5 +66,5 @@ export function drawCanvasBitmapText(state: CanvasRenderState, node: RenderProxy
 
 export const defaultCanvasBitmapTextRenderer: SpriteRenderer = {
   createData: noopRendererData,
-  submit: drawCanvasBitmapText,
+  submit: drawCanvasSpriteText,
 };

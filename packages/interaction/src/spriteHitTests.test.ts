@@ -1,6 +1,7 @@
 import { setRectangle } from '@flighthq/geometry/contract';
 import { addNodeChild, getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
-import { createQuadBatch, createSprite, createTilemap } from '@flighthq/sprite/contract';
+import { createSprite } from '@flighthq/scene2d/contract';
+import { createQuadBatch, createTilemap } from '@flighthq/sprite/contract';
 
 import {
   defaultQuadBatchHitTestHandler,

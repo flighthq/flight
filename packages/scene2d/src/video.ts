@@ -33,7 +33,7 @@ export function getVideoRuntime(source: Readonly<Video>): Readonly<VideoRuntime>
 
 export function setVideoSmoothing(source: Video, value: boolean): void {
   // Sampler filter mode is a content-rasterization concern, not a compositing one — same tier as a
-  // new image on a Bitmap, and it does not change the node's bounds.
+  // new image on a Sprite, and it does not change the node's bounds.
   source.data.smoothing = value;
   invalidateNodeLocalContent(source);
 }

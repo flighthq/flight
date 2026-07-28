@@ -1,4 +1,4 @@
-export * from './bitmap';
+export * from './sprite';
 export * from './displayContainer';
 export * from './displayObject';
 export * from './displayObjectAnimation';

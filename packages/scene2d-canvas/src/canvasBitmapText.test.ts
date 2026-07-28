@@ -3,7 +3,7 @@ import { createImageResource } from '@flighthq/image/contract';
 import type { BitmapText, GlyphEntry, GlyphSource, ImageResource, RenderProxy2D } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
-import { defaultCanvasBitmapTextRenderer, drawCanvasBitmapText } from './canvasBitmapText';
+import { defaultCanvasBitmapTextRenderer, drawCanvasSpriteText } from './canvasBitmapText';
 import { createCanvasRenderState } from './canvasRenderState';
 
 // Single-page stub glyph source whose page-0 image is a real ImageResource backed by a DOM <img>.
@@ -51,13 +51,13 @@ describe('defaultCanvasBitmapTextRenderer', () => {
   });
 });
 
-describe('drawCanvasBitmapText', () => {
+describe('drawCanvasSpriteText', () => {
   it('draws one image per laid-out glyph', () => {
     const text = createBitmapText(createTestGlyphSource(), { text: 'AB' });
     updateBitmapText(text);
     const state = makeState();
     const spy = vi.spyOn(state.context, 'drawImage');
-    drawCanvasBitmapText(state, makeProxy(text));
+    drawCanvasSpriteText(state, makeProxy(text));
     expect(spy).toHaveBeenCalledTimes(2);
   });
 
@@ -66,7 +66,7 @@ describe('drawCanvasBitmapText', () => {
     updateBitmapText(text);
     const state = makeState();
     const spy = vi.spyOn(state.context, 'drawImage');
-    drawCanvasBitmapText(state, makeProxy(text));
+    drawCanvasSpriteText(state, makeProxy(text));
     expect(spy).not.toHaveBeenCalled();
   });
 });

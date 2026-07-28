@@ -1,6 +1,8 @@
 import {
   bindWgpuImageResourceTexture,
   getWgpuBlendState,
+  getWgpuSampler,
+  resolveWgpuTexture,
   resolveWgpuSmoothingBindGroup,
 } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
@@ -10,6 +12,7 @@ import type {
   ImageResource,
   Material,
   MaterialData,
+  Texture,
   WgpuMaterialRenderer,
   WgpuQuadBatchResources,
   WgpuRenderState,
@@ -168,7 +171,15 @@ export function flushWgpuSpriteBatch(state: WgpuRenderState): void {
   }
 
   state.applyBlendMode?.(state, blendMode);
-  const textureEntry = bindWgpuImageResourceTexture(state, texture, false, true);
+  const textureEntry =
+    'storage' in texture
+      ? resolveWgpuTexture(state, texture, true)
+      : bindWgpuImageResourceTexture(state, texture, false, true);
+  if (textureEntry === null) return;
+  const textureBindGroup =
+    'storage' in texture
+      ? createWgpuTextureSamplerBindGroup(state, textureEntry.view, texture)
+      : resolveWgpuSmoothingBindGroup(state, textureEntry, smoothing);
 
   const uniformOffset = writeWgpuSpriteBatchUniforms(state, textureEntry.straightAlpha === true);
 
@@ -184,7 +195,7 @@ export function flushWgpuSpriteBatch(state: WgpuRenderState): void {
   pass.setBindGroup(0, runtime.uniformBindGroup, [uniformOffset]);
   // Per-bitmap smoothing selects the LINEAR/NEAREST variant bind group; a null key (sprites/text/shapes)
   // uses the entry's global-default bind group.
-  pass.setBindGroup(1, resolveWgpuSmoothingBindGroup(state, textureEntry, smoothing));
+  pass.setBindGroup(1, textureBindGroup);
   pass.setBindGroup(2, instanceBindGroup);
   if (group3Floats > 0) {
     const materialBindGroup = state.device.createBindGroup({
@@ -291,7 +302,7 @@ export function packWgpuSpriteBatchMaterialInstance(
 // packWgpuSpriteBatchMaterialInstance per instance.
 export function prepareWgpuSpriteBatchWrite(
   state: WgpuRenderState,
-  texture: Readonly<ImageResource>,
+  texture: Readonly<ImageResource | Texture>,
   blendMode: BlendMode | null,
   material: Material | null,
   materialRenderer: WgpuMaterialRenderer,
@@ -385,6 +396,31 @@ function resetWgpuSpriteBatch(state: WgpuRenderState): void {
   runtime.spriteBatchMaterial = null;
   runtime.spriteBatchMaterialRenderer = null;
   runtime.spriteBatchMaterialFloats = 0;
+}
+
+function createWgpuTextureSamplerBindGroup(
+  state: WgpuRenderState,
+  view: GPUTextureView,
+  texture: Readonly<Texture>,
+): GPUBindGroup {
+  const sampler = texture.sampler;
+  const filter: GPUFilterMode = sampler.magFilter.startsWith('nearest') ? 'nearest' : 'linear';
+  const mipmapFilter: GPUFilterMode | undefined =
+    sampler.mipmaps && sampler.minFilter.includes('mipmap')
+      ? sampler.minFilter.endsWith('nearest')
+        ? 'nearest'
+        : 'linear'
+      : undefined;
+  return state.device.createBindGroup({
+    layout: getWgpuRenderStateRuntime(state).textureBindGroupLayout,
+    entries: [
+      { binding: 0, resource: view },
+      {
+        binding: 1,
+        resource: getWgpuSampler(state, filter, sampler.wrapU, sampler.wrapV, mipmapFilter, sampler.anisotropy),
+      },
+    ],
+  });
 }
 
 // Writes the NDC viewport matrix and the shared texture's alpha representation into the uniform ring,

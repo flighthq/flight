@@ -1,17 +1,17 @@
 import { setRectangle } from '@flighthq/geometry/contract';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
-import { createBitmap } from '@flighthq/scene2d/contract';
+import { createSprite } from '@flighthq/scene2d/contract';
 
 import { findGraphHitTargetPrecise } from './hitTests';
 import { setNodeHitTestEnabled } from './nodeInteractionState';
-import { registerBitmapHitTest } from './registerBitmapHitTest';
+import { registerSpriteHitTest } from './registerSpriteHitTest';
 
-describe('registerBitmapHitTest', () => {
+describe('registerSpriteHitTest', () => {
   // Positive alpha-accuracy is exercised by the functional suite (jsdom cannot rasterize pixels); this
   // covers the wiring and the documented bounds fallback when no readable image is present.
-  it('installs a precise Bitmap provider with a no-image bounds fallback', () => {
-    registerBitmapHitTest();
-    const bitmap = createBitmap();
+  it('installs a precise Sprite provider with a no-image bounds fallback', () => {
+    registerSpriteHitTest();
+    const bitmap = createSprite();
     setRectangle(getNodeLocalBoundsRectangle(bitmap), 0, 0, 100, 100);
     setNodeHitTestEnabled(bitmap, true);
 

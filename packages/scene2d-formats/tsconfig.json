@@ -24,6 +24,7 @@
     { "path": "../shape" },
     { "path": "../text" },
     { "path": "../textlayout" },
+    { "path": "../texture" },
     { "path": "../types" },
     { "path": "../xml" }
   ],

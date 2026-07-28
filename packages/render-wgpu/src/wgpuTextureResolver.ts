@@ -47,18 +47,26 @@ export function registerWgpuVideoTextureResolver(state: WgpuRenderState): void {
 }
 
 // Resolves through one keyed lookup using the backing's declared kind.
-export function resolveWgpuTexture(state: WgpuRenderState, texture: Readonly<TextureLike>): WgpuTextureEntry | null {
+export function resolveWgpuTexture(
+  state: WgpuRenderState,
+  texture: Readonly<TextureLike>,
+  premultiply = false,
+): WgpuTextureEntry | null {
   const registry = getWgpuRenderStateRuntime(state).wgpuTextureResolverRegistry;
   if (registry == null) return null;
   const backingKind = getTextureBackingKind(texture);
   if (backingKind === null) return null;
-  return registry.get(backingKind)?.(state, texture) ?? null;
+  return registry.get(backingKind)?.(state, texture, premultiply) ?? null;
 }
 
-function resolveWgpuImageTexture(state: WgpuRenderState, texture: Readonly<TextureLike>): WgpuTextureEntry | null {
+function resolveWgpuImageTexture(
+  state: WgpuRenderState,
+  texture: Readonly<TextureLike>,
+  premultiply: boolean,
+): WgpuTextureEntry | null {
   const image = texture.storage.image;
   if (image == null || (image.source === null && image.data === null && image.compressed === null)) return null;
-  return bindWgpuImageResourceTexture(state, image, texture.sampler.mipmaps);
+  return bindWgpuImageResourceTexture(state, image, texture.sampler.mipmaps, premultiply);
 }
 
 function resolveWgpuProducedTexture(state: WgpuRenderState, texture: Readonly<TextureLike>): WgpuTextureEntry | null {

@@ -1,16 +1,14 @@
-import type { Bitmap, Node2D, Spritesheet, SpritesheetPlayer } from '@flighthq/sdk';
+import type { Sprite, Node2D, Spritesheet, SpritesheetPlayer } from '@flighthq/sdk';
 import {
   addNodeChild,
-  createBitmap,
+  createSprite,
   createDisplayObject,
   createImageResource,
-  createRectangle,
   createSpritesheetAnimation,
   createSpritesheetFromGrid,
   createSpritesheetPlayer,
   getSpritesheetPlayerFrame,
-  getTextureAtlasRegionById,
-  invalidateNodeAppearance,
+  getTextureAtlasRegionTexture,
   invalidateNodeLocalTransform,
   playSpritesheetAnimation,
   updateSpritesheetPlayer,
@@ -116,28 +114,17 @@ const pingpongAnimation = createSpritesheetAnimation({
   loop: true,
 });
 
-// Applies the current player frame's atlas region to a Bitmap's sourceRectangle.
+// Applies the current player frame's atlas region to a Sprite's sourceRectangle.
 
-function applyFrameToBitmap(player: Readonly<SpritesheetPlayer>, sheet: Readonly<Spritesheet>, bitmap: Bitmap): void {
+function applyFrameToBitmap(player: Readonly<SpritesheetPlayer>, sheet: Readonly<Spritesheet>, bitmap: Sprite): void {
   const frame = getSpritesheetPlayerFrame(player, sheet);
   if (frame === null || sheet.atlas === null) return;
-  const region = getTextureAtlasRegionById(sheet.atlas, frame.id);
-  if (region === null) return;
-  if (bitmap.data.sourceRectangle === null) {
-    bitmap.data.sourceRectangle = createRectangle(region.x, region.y, region.width, region.height);
-  } else {
-    bitmap.data.sourceRectangle.x = region.x;
-    bitmap.data.sourceRectangle.y = region.y;
-    bitmap.data.sourceRectangle.width = region.width;
-    bitmap.data.sourceRectangle.height = region.height;
-  }
-  invalidateNodeAppearance(bitmap);
+  bitmap.data.texture = getTextureAtlasRegionTexture(sheet.atlas, frame.id);
 }
 
 // Instance 1: spinning star at normal speed (1x).
 
-const bitmap1 = createBitmap();
-bitmap1.data.image = imageResource;
+const bitmap1 = createSprite();
 bitmap1.x = 120;
 bitmap1.y = 140;
 bitmap1.scaleX = DISPLAY_SCALE;
@@ -150,8 +137,7 @@ playSpritesheetAnimation(player1, spinAnimation);
 
 // Instance 2: spinning star at double speed (2x).
 
-const bitmap2 = createBitmap();
-bitmap2.data.image = imageResource;
+const bitmap2 = createSprite();
 bitmap2.x = 370;
 bitmap2.y = 140;
 bitmap2.scaleX = DISPLAY_SCALE;
@@ -165,8 +151,7 @@ playSpritesheetAnimation(player2, spinAnimation);
 
 // Instance 3: pingpong animation.
 
-const bitmap3 = createBitmap();
-bitmap3.data.image = imageResource;
+const bitmap3 = createSprite();
 bitmap3.x = 620;
 bitmap3.y = 140;
 bitmap3.scaleX = DISPLAY_SCALE;

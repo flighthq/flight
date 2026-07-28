@@ -1,7 +1,6 @@
 export {
   createWgpuCacheState,
   createWgpuVelocityTarget,
-  defaultWgpuBitmapRenderer,
   defaultWgpuNode2DVelocityWriter,
   defaultWgpuParticleEmitter2DRenderer,
   defaultWgpuParticleEmitter2DVelocityWriter,
@@ -16,7 +15,7 @@ export {
   defaultWgpuTilemapRenderer,
   defaultWgpuVideoRenderer,
   destroyWgpuRenderTargetNode2D,
-  drawWgpuBitmap,
+  drawWgpuSprite,
   enableWgpuClipSupport,
   enableWgpuRenderCache,
   enableWgpuRenderTargetNode2D,

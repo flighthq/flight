@@ -23,7 +23,7 @@ import {
   dashPath,
   getPathLength,
 } from '@flighthq/path/contract';
-import { applyAnimationClipToNode2D, createBitmap, createDisplayObject } from '@flighthq/scene2d/contract';
+import { applyAnimationClipToNode2D, createSprite, createDisplayObject } from '@flighthq/scene2d/contract';
 import {
   appendShapeBeginFill,
   appendShapeBeginGradientFill,
@@ -35,6 +35,7 @@ import {
   createShape,
 } from '@flighthq/shape/contract';
 import { createTextLabel } from '@flighthq/text/contract';
+import { createTexture } from '@flighthq/texture/contract';
 import type {
   AnimationChannel,
   AnimationClip,
@@ -419,7 +420,7 @@ function appendLottieImage(parent: DisplayObject, layer: Readonly<LottieLayer>, 
     reportLottieSkip(context, 'lottie.unresolved-image', { id: asset.id });
     return;
   }
-  addNodeChild(parent, createBitmap({ data: { image, smoothing: true } }));
+  addNodeChild(parent, createSprite({ data: { texture: createTexture({ storage: { dimension: '2d', image } }) } }));
 }
 
 function appendLottieText(parent: DisplayObject, layer: Readonly<LottieLayer>, context: LottieImportContext): void {
