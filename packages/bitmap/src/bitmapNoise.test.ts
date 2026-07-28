@@ -3,8 +3,8 @@ import {
   fillBitmapNoise,
   fillBitmapPerlinNoise,
   fillBitmapTurbulence,
-  SURFACE_NOISE_CHANNEL_A,
-  SURFACE_NOISE_CHANNEL_R,
+  BITMAP_NOISE_CHANNEL_A,
+  BITMAP_NOISE_CHANNEL_R,
 } from './bitmapNoise';
 
 function region(bitmap: ReturnType<typeof createBitmap>, x = 0, y = 0, width = bitmap.width, height = bitmap.height) {
@@ -95,7 +95,7 @@ describe('fillBitmapPerlinNoise', () => {
 
   it('fills selected channels only and leaves alpha opaque by default', () => {
     const bitmap = createBitmap(8, 8, 0x000000ff);
-    fillBitmapPerlinNoise(region(bitmap), 8, 8, 2, 5, false, false, SURFACE_NOISE_CHANNEL_R);
+    fillBitmapPerlinNoise(region(bitmap), 8, 8, 2, 5, false, false, BITMAP_NOISE_CHANNEL_R);
     for (let i = 0; i < bitmap.data.length; i += 4) {
       // G and B were not selected, so they stay at their initial 0.
       expect(bitmap.data[i + 1]).toBe(0);
@@ -136,7 +136,7 @@ describe('fillBitmapTurbulence', () => {
 
   it('writes noise into alpha when the A channel is selected', () => {
     const bitmap = createBitmap(8, 8, 0x000000ff);
-    fillBitmapTurbulence(region(bitmap), 4, 4, 3, 9, false, false, SURFACE_NOISE_CHANNEL_A);
+    fillBitmapTurbulence(region(bitmap), 4, 4, 3, 9, false, false, BITMAP_NOISE_CHANNEL_A);
     let sawNonOpaque = false;
     for (let i = 0; i < bitmap.data.length; i += 4) {
       if (bitmap.data[i + 3] !== 255) sawNonOpaque = true;
