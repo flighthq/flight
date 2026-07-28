@@ -1,4 +1,5 @@
 import { createImageResourceFromImageElement } from '@flighthq/image/contract';
+import type { ImageResource } from '@flighthq/types/contract';
 
 import {
   createTextureAtlasFromCanvas,
@@ -28,7 +29,7 @@ describe('createTextureAtlasFromCanvas', () => {
     canvas.height = 240;
     const atlas = createTextureAtlasFromCanvas(canvas);
 
-    expect(atlas.texture?.storage.image?.source).toBe(canvas);
+    expect((atlas.texture?.storage.image as ImageResource | null)?.source).toBe(canvas);
     expect(atlas.texture?.storage.image?.width).toBe(320);
     expect(atlas.texture?.storage.image?.height).toBe(240);
   });
@@ -49,7 +50,7 @@ describe('createTextureAtlasFromImageBitmap', () => {
     const bitmap = { width: 64, height: 128, close: () => {} } as ImageBitmap;
     const atlas = createTextureAtlasFromImageBitmap(bitmap);
 
-    expect(atlas.texture?.storage.image?.source).toBe(bitmap);
+    expect((atlas.texture?.storage.image as ImageResource | null)?.source).toBe(bitmap);
     expect(atlas.texture?.storage.image?.width).toBe(64);
     expect(atlas.texture?.storage.image?.height).toBe(128);
   });
@@ -65,7 +66,7 @@ describe('createTextureAtlasFromImageElement', () => {
     const img = { width: 200, height: 100 } as HTMLImageElement;
     const atlas = createTextureAtlasFromImageElement(img);
 
-    expect(atlas.texture?.storage.image?.source).toBe(img);
+    expect((atlas.texture?.storage.image as ImageResource | null)?.source).toBe(img);
     expect(atlas.texture?.storage.image?.width).toBe(200);
     expect(atlas.texture?.storage.image?.height).toBe(100);
   });
@@ -100,7 +101,7 @@ describe('createTextureAtlasFromImageResource', () => {
 describe('loadTextureAtlasFromBase64', () => {
   it('resolves to a TextureAtlas with a non-null image', async () => {
     const atlas = await loadTextureAtlasFromBase64('abc123', 'image/png');
-    expect(atlas.texture?.storage.image?.source).toBeInstanceOf(HTMLImageElement);
+    expect((atlas.texture?.storage.image as ImageResource | null)?.source).toBeInstanceOf(HTMLImageElement);
   });
 });
 
@@ -108,7 +109,7 @@ describe('loadTextureAtlasFromBlob', () => {
   it('resolves to a TextureAtlas with a non-null image', async () => {
     const blob = new Blob([], { type: 'image/png' });
     const atlas = await loadTextureAtlasFromBlob(blob);
-    expect(atlas.texture?.storage.image?.source).toBeInstanceOf(HTMLImageElement);
+    expect((atlas.texture?.storage.image as ImageResource | null)?.source).toBeInstanceOf(HTMLImageElement);
   });
 });
 
@@ -118,7 +119,7 @@ describe('loadTextureAtlasFromBytes', () => {
     const atlas = await loadTextureAtlasFromBytes(bytes);
 
     expect(atlas.texture?.storage.image).not.toBeNull();
-    expect(atlas.texture?.storage.image?.source).toBeInstanceOf(HTMLImageElement);
+    expect((atlas.texture?.storage.image as ImageResource | null)?.source).toBeInstanceOf(HTMLImageElement);
   });
 
   it('starts with an empty regions array', async () => {
@@ -137,6 +138,6 @@ describe('loadTextureAtlasFromBytes', () => {
 describe('loadTextureAtlasFromUrl', () => {
   it('resolves to a TextureAtlas whose image src is an HTMLImageElement', async () => {
     const atlas = await loadTextureAtlasFromUrl('data:image/png;base64,abc');
-    expect(atlas.texture?.storage.image?.source).toBeInstanceOf(HTMLImageElement);
+    expect((atlas.texture?.storage.image as ImageResource | null)?.source).toBeInstanceOf(HTMLImageElement);
   });
 });

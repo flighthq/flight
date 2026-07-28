@@ -1,6 +1,7 @@
-import { invalidateImageResource } from '@flighthq/image/contract';
 import type { BitmapRegion } from '@flighthq/types/contract';
 import { BitmapCompositeMode } from '@flighthq/types/contract';
+
+import { invalidateBitmap } from './bitmap';
 
 /**
  * Alpha-composites `pixels` over `dest`. `pixels` must be at least
@@ -36,7 +37,7 @@ export function compositeBitmapPixels(
       );
     }
   }
-  invalidateImageResource(dest.bitmap);
+  invalidateBitmap(dest.bitmap);
 }
 
 /**
@@ -70,7 +71,7 @@ export function compositeBitmapRegion(
       );
     }
   }
-  invalidateImageResource(dest.bitmap);
+  invalidateBitmap(dest.bitmap);
 }
 
 /**
@@ -147,7 +148,7 @@ export function writeBitmapPixels(dest: Readonly<BitmapRegion>, pixels: Readonly
       dest.bitmap.data[di + 3] = pixels[si + 3];
     }
   }
-  invalidateImageResource(dest.bitmap);
+  invalidateBitmap(dest.bitmap);
 }
 
 /**
@@ -171,7 +172,7 @@ export function writeBitmapPixels32(dest: Readonly<BitmapRegion>, pixels: Readon
       dest.bitmap.data[di + 3] = color & 0xff;
     }
   }
-  invalidateImageResource(dest.bitmap);
+  invalidateBitmap(dest.bitmap);
 }
 
 // Premultiplied-free Porter-Duff coverage factors [Fa, Fb] for a BitmapCompositeMode, applied to the

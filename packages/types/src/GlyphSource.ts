@@ -1,5 +1,5 @@
 import type { Bitmap } from './Bitmap';
-import type { ImageResource } from './ImageResource';
+import type { ImageBacking } from './ImageBacking';
 
 // The shared seam a text renderer consumes to draw glyphs, independent of how those glyphs are
 // produced. `@flighthq/glyphatlas` implements it dynamically (rasterize-on-miss into a growing
@@ -16,7 +16,7 @@ export interface GlyphSource {
   // The atlas image a same-page `getGlyphEntry` rect samples from — the pixels paired with the
   // geometry seam. `page` selects which atlas image (default 0); returns null when the page does not
   // exist. Single-page sources hold everything on page 0 and return null for any other page.
-  getGlyphAtlasImage(page?: number): ImageResource | null;
+  getGlyphAtlasImage(page?: number): ImageBacking | null;
   // Returns the glyph's atlas region + metrics, ensuring it is rasterized and cached first. Returns
   // null when the glyph cannot be produced (no rasterizer, or a glyph larger than the whole atlas).
   getGlyphEntry(codepoint: number): GlyphEntry | null;

@@ -1,6 +1,6 @@
-import { invalidateImageResource } from '@flighthq/image/contract';
 import type { Bitmap } from '@flighthq/types/contract';
 
+import { invalidateBitmap } from './bitmap';
 import type { ImageChannel } from './bitmapImageChannel';
 
 // W3C luma coefficients for perceptual luminance (same as CSS saturate/grayscale).
@@ -33,7 +33,7 @@ export function setBitmapPixel(out: Bitmap, x: number, y: number, color: number)
   out.data[i + 1] = (color >> 16) & 0xff;
   out.data[i + 2] = (color >> 8) & 0xff;
   out.data[i + 3] = color & 0xff;
-  invalidateImageResource(out);
+  invalidateBitmap(out);
 }
 
 export function setBitmapPixelRgb(out: Bitmap, x: number, y: number, color: number): void {
@@ -41,5 +41,5 @@ export function setBitmapPixelRgb(out: Bitmap, x: number, y: number, color: numb
   out.data[i] = (color >> 16) & 0xff;
   out.data[i + 1] = (color >> 8) & 0xff;
   out.data[i + 2] = color & 0xff;
-  invalidateImageResource(out);
+  invalidateBitmap(out);
 }

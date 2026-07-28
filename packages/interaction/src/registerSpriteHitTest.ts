@@ -1,8 +1,8 @@
 import { captureBitmapFromImageResource, getBitmapPixelChannel } from '@flighthq/bitmap/contract';
 import { inverseMatrixTransformPointXY } from '@flighthq/geometry/contract';
 import { getNodeWorldMatrix } from '@flighthq/node/contract';
-import type { Sprite, Node2D, ImageResource, NodeAny, Bitmap } from '@flighthq/types/contract';
-import { SpriteKind, ImageChannel } from '@flighthq/types/contract';
+import type { Bitmap, ImageBacking, ImageResource, Node2D, NodeAny, Sprite } from '@flighthq/types/contract';
+import { BitmapTextureBackingKind, ImageChannel, ImageTextureBackingKind, SpriteKind } from '@flighthq/types/contract';
 
 import { hitTestGraphLocalBounds, registerHitTestPrecise } from './hitTests';
 
@@ -39,17 +39,20 @@ function hitTestSpriteAlpha(source: NodeAny, x: number, y: number, alphaThreshol
   return getBitmapPixelChannel(bitmap, px, py, ImageChannel.Alpha) >= alphaThreshold ? 0 : -1;
 }
 
-function bitmapForImage(image: ImageResource): Bitmap | null {
-  const cached = bitmapCache.get(image);
+function bitmapForImage(image: ImageBacking): Bitmap | null {
+  if (image.kind === BitmapTextureBackingKind) return image as Bitmap;
+  if (image.kind !== ImageTextureBackingKind) return null;
+  const resource = image as ImageResource;
+  const cached = bitmapCache.get(resource);
   if (cached !== undefined) return cached;
   let bitmap: Bitmap | null = null;
   try {
-    bitmap = captureBitmapFromImageResource(image);
+    bitmap = captureBitmapFromImageResource(resource);
   } catch {
     bitmap = null;
   }
   // Cache only successes so an image that is not yet readable is retried later.
-  if (bitmap !== null) bitmapCache.set(image, bitmap);
+  if (bitmap !== null) bitmapCache.set(resource, bitmap);
   return bitmap;
 }
 

@@ -1,5 +1,5 @@
 import { computeRgbHexString } from '@flighthq/color/contract';
-import { createImageResource, setImageResourceSource } from '@flighthq/image/contract';
+import { createImageResource, invalidateImageResource } from '@flighthq/image/contract';
 import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { bindWgpuImageResourceTexture, resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
@@ -68,10 +68,10 @@ function destroyWgpuTextLabelData(state: WgpuRenderState, data: RendererData): v
   const runtime = getWgpuRenderStateRuntime(state);
   const textLabelData = getWgpuRendererData<WgpuTextLabelData>(data);
   if (textLabelData === null) return;
-  const entry = runtime.imageResourcePremultipliedTextureCache.get(textLabelData.image);
+  const entry = runtime.imageBackingPremultipliedTextureCache.get(textLabelData.image);
   if (entry !== undefined) {
     entry.texture.destroy();
-    runtime.imageResourcePremultipliedTextureCache.delete(textLabelData.image);
+    runtime.imageBackingPremultipliedTextureCache.delete(textLabelData.image);
   }
 }
 
@@ -151,7 +151,7 @@ export function drawWgpuTextLabel(state: WgpuRenderState, renderProxy: RenderPro
 
     // Bump the resource version so the batch's version-aware cache re-uploads (recreating the GPU texture,
     // which covers a physical-size change too).
-    setImageResourceSource(textData.image, textData.canvas);
+    invalidateImageResource(textData.image);
 
     textData.logW = w;
     textData.logH = h;

@@ -122,7 +122,7 @@ describe('drawGlTextLabel', () => {
     const data = makeTextData();
     const proxy = makeTextProxy('hello', data);
     drawGlTextLabel(state, proxy);
-    // Rasterization bumps the canvas resource's version (setImageResourceSource); a skipped raster leaves
+    // Rasterization bumps the canvas resource's version (invalidateImageResource); a skipped raster leaves
     // it untouched. First draw rasterizes (version → 1); the repeat is skipped.
     const rasterized = data.image.version;
     drawGlTextLabel(state, proxy);

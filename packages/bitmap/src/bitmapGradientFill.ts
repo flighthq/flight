@@ -1,5 +1,6 @@
-import { invalidateImageResource } from '@flighthq/image/contract';
 import type { GradientSpread, BitmapRegion } from '@flighthq/types/contract';
+
+import { invalidateBitmap } from './bitmap';
 
 /**
  * Fills the `dest` region with a linear gradient defined by two points `(x0, y0)`
@@ -49,7 +50,7 @@ export function fillBitmapLinearGradient(
       data[i + 3] = ramp[ri + 3];
     }
   }
-  invalidateImageResource(dest.bitmap);
+  invalidateBitmap(dest.bitmap);
 }
 
 /**
@@ -107,7 +108,7 @@ export function fillBitmapRadialGradient(
       data[i + 3] = ramp[ri + 3];
     }
   }
-  invalidateImageResource(dest.bitmap);
+  invalidateBitmap(dest.bitmap);
 }
 
 /**

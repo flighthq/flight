@@ -1,17 +1,11 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { ImageBacking, ImageResource, ImageResourceCompressed } from '@flighthq/types/contract';
+import type { CompressedImage, CompressedImageData, ImageResource } from '@flighthq/types/contract';
 import { CompressedImageTextureBackingKind, ImageTextureBackingKind } from '@flighthq/types/contract';
 
-// Allocates a new resource identity over the SAME underlying pixels. The element, the `data` array, and
-// the `compressed` payload are shared by reference, not duplicated — clone gives you an independent
-// version counter and entity identity over the same pixels, e.g. to upload one image into two render
-// states with separate invalidation. Use a Bitmap copy when you need the pixels themselves duplicated.
+// Allocates a new resource identity over the same borrowed host image. The host handle is shared by
+// reference; the clone owns an independent version counter for renderer cache invalidation.
 export function cloneImageResource(resource: Readonly<ImageResource>): ImageResource {
   return createEntity({
-    alphaType: resource.alphaType,
-    compressed: resource.compressed,
-    data: resource.data,
-    format: resource.format,
     height: resource.height,
     kind: resource.kind,
     source: resource.source,
@@ -20,71 +14,33 @@ export function cloneImageResource(resource: Readonly<ImageResource>): ImageReso
   });
 }
 
-// Wraps a parsed block-compressed (KTX2/DDS/Basis) payload as an ImageResource. `width`/`height` mirror
-// the container's base-mip dimensions so the same 2D draw path sizes the quad; `source`/`data` stay null
-// (a GPU backend uploads the `compressed` payload instead, and a Canvas/DOM backend ignores it). The
-// caller owns the payload bytes the container's level ranges index into.
-export function createCompressedImageResource(compressed: Readonly<ImageResourceCompressed>): ImageResource {
+// Wraps a parsed block-compressed payload as its own GPU-only backing. The caller owns the payload
+// bytes indexed by the container's level ranges.
+export function createCompressedImage(compressed: Readonly<CompressedImageData>): CompressedImage {
   return createEntity({
-    alphaType: 'straight',
     compressed,
-    data: null,
-    format: 'rgba8unorm',
     height: compressed.container.height,
     kind: CompressedImageTextureBackingKind,
-    source: null,
     version: 0,
     width: compressed.container.width,
   });
 }
 
-export function createImageResource(image?: CanvasImageSource): ImageResource {
+export function createImageResource(image: CanvasImageSource): ImageResource {
   const resource: ImageResource = createEntity({
-    alphaType: 'straight',
-    compressed: null,
-    data: null,
-    format: 'rgba8unorm',
     height: 0,
     kind: ImageTextureBackingKind,
-    source: image ?? null,
+    source: image,
     version: 0,
     width: 0,
   });
-  if (resource.source !== null) updateImageResourceSize(resource);
+  updateImageResourceSize(resource);
   return resource;
 }
 
-// Releases the element and raw-data references so they become eligible for GC, and marks the resource
-// changed. This does NOT free the backend GPU texture (that is owned per render state — call the
-// backend's destroy*Texture) and does NOT close an owned ImageBitmap (ownership is ambiguous; close it
-// explicitly if you own it). Dimensions are left intact; setImageResourceSource repopulates the resource.
-export function disposeImageResource(resource: ImageResource): void {
-  resource.compressed = null;
-  resource.data = null;
-  resource.source = null;
-  invalidateImageResource(resource);
-}
-
-// Returns the byte footprint of the CPU-side pixel data (`data` array). Returns 0 when `data` is
-// null (element-only resource — the GPU texture footprint is tracked by the render state, not here).
-// For `rgba8unorm` (the default) the result equals width × height × 4; other formats are not yet
-// exercised but the formula still applies (byteLength of the actual buffer is authoritative).
-export function getImageResourceByteSize(resource: Readonly<ImageResource>): number {
-  return resource.data !== null ? resource.data.byteLength : 0;
-}
-
-export function hasImageResourceData(resource: Readonly<ImageResource>): boolean {
-  return resource.data !== null;
-}
-
-export function hasImageResourceSource(resource: Readonly<ImageResource>): boolean {
-  return resource.source !== null;
-}
-
-// Bumps the resource content revision so consumers (renderer texture caches) know the pixels behind
-// this image changed even though the object identity is the same. Call after mutating the backing
-// pixels in place; the Bitmap API calls it for you. Resource-tier analog of invalidateNodeLocalContent.
-export function invalidateImageResource(resource: ImageBacking): void {
+// Marks changed pixels behind the same borrowed host handle. The handle itself remains immutable.
+export function invalidateImageResource(resource: ImageResource): void {
+  updateImageResourceSize(resource);
   resource.version = (resource.version + 1) >>> 0;
 }
 
@@ -92,18 +48,11 @@ export function isImageResourceEmpty(resource: Readonly<ImageResource>): boolean
   return resource.width <= 0 || resource.height <= 0;
 }
 
-// Swaps the element representation, re-reads its dimensions, and marks the resource changed. Pass
-// null to clear the element (dimensions are left intact; use disposeImageResource to release for GC).
-export function setImageResourceSource(resource: ImageResource, element: CanvasImageSource | null): void {
-  resource.source = element;
-  if (element !== null) updateImageResourceSize(resource);
-  invalidateImageResource(resource);
-}
-
-// Reads pixel dimensions from the current (non-null) element. Video sources carry their size on
+// Reads pixel dimensions from the current host element. Video sources carry their size on
 // videoWidth/videoHeight; every other CanvasImageSource exposes width/height directly.
 function updateImageResourceSize(resource: ImageResource): void {
-  const element = resource.source!;
+  const element = resource.source;
+  if (element === null) return;
   if (element instanceof HTMLVideoElement) {
     resource.width = element.videoWidth;
     resource.height = element.videoHeight;

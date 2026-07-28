@@ -1,5 +1,6 @@
-import { invalidateImageResource } from '@flighthq/image/contract';
 import type { BitmapRegion } from '@flighthq/types/contract';
+
+import { invalidateBitmap } from './bitmap';
 
 /**
  * Copies only the alpha channel from the `source` region into the `dest`
@@ -29,7 +30,7 @@ export function copyBitmapAlpha(dest: Readonly<BitmapRegion>, source: Readonly<B
       dd[di + 3] = alpha;
     }
   }
-  invalidateImageResource(dest.bitmap);
+  invalidateBitmap(dest.bitmap);
 }
 
 /**
@@ -53,7 +54,7 @@ export function multiplyBitmapAlpha(out: Readonly<BitmapRegion>, factor: number)
       data[i] = Math.round(data[i] * f);
     }
   }
-  invalidateImageResource(out.bitmap);
+  invalidateBitmap(out.bitmap);
 }
 
 /**
@@ -76,5 +77,5 @@ export function setBitmapAlpha(out: Readonly<BitmapRegion>, alpha: number): void
       data[(y * bitmapWidth + x) * 4 + 3] = a;
     }
   }
-  invalidateImageResource(out.bitmap);
+  invalidateBitmap(out.bitmap);
 }

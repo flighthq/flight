@@ -1,5 +1,6 @@
-import { invalidateImageResource } from '@flighthq/image/contract';
 import type { Bitmap, BitmapRegion } from '@flighthq/types/contract';
+
+import { invalidateBitmap } from './bitmap';
 
 let _floodFillVisited: Uint8Array | null = null;
 
@@ -25,7 +26,7 @@ export function fillBitmapRectangle(dest: Readonly<BitmapRegion>, color: number)
       dest.bitmap.data[i + 3] = a;
     }
   }
-  invalidateImageResource(dest.bitmap);
+  invalidateBitmap(dest.bitmap);
 }
 
 /**
@@ -86,5 +87,5 @@ export function floodFillBitmap(out: Bitmap, x: number, y: number, color: number
     if (py > 0) stack.push(idx - out.width);
     if (py < out.height - 1) stack.push(idx + out.width);
   }
-  invalidateImageResource(out);
+  invalidateBitmap(out);
 }

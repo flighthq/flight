@@ -37,12 +37,10 @@ export function cropBitmap(source: Readonly<Bitmap>, rect: Readonly<RectangleLik
   return createEntity({
     alphaType: source.alphaType,
     colorSpace: source.colorSpace,
-    compressed: null,
     data,
     format: source.format,
     height: rh,
     kind: BitmapTextureBackingKind,
-    source: null,
     version: 0,
     width: rw,
   });
@@ -112,12 +110,10 @@ export function extendBitmap(
   return createEntity({
     alphaType: source.alphaType,
     colorSpace: source.colorSpace,
-    compressed: null,
     data,
     format: source.format,
     height: dh,
     kind: BitmapTextureBackingKind,
-    source: null,
     version: 0,
     width: dw,
   });
@@ -152,12 +148,10 @@ export function trimBitmap(source: Readonly<Bitmap>): Bitmap {
     return createEntity({
       alphaType: source.alphaType,
       colorSpace: source.colorSpace,
-      compressed: null,
       data: new Uint8ClampedArray(4),
       format: source.format,
       height: 1,
       kind: BitmapTextureBackingKind,
-      source: null,
       version: 0,
       width: 1,
     });

@@ -1,5 +1,6 @@
-import { invalidateImageResource } from '@flighthq/image/contract';
 import type { BitmapRegion } from '@flighthq/types/contract';
+
+import { invalidateBitmap } from './bitmap';
 
 /**
  * Mirrors the `source` region left-to-right into the `dest` region. The mirror
@@ -27,7 +28,7 @@ export function flipBitmapHorizontal(dest: Readonly<BitmapRegion>, source: Reado
     return;
   }
   copyMirrored(dest, source, w, h, true, false);
-  invalidateImageResource(dest.bitmap);
+  invalidateBitmap(dest.bitmap);
 }
 
 /**
@@ -56,7 +57,7 @@ export function flipBitmapVertical(dest: Readonly<BitmapRegion>, source: Readonl
     return;
   }
   copyMirrored(dest, source, w, h, false, true);
-  invalidateImageResource(dest.bitmap);
+  invalidateBitmap(dest.bitmap);
 }
 
 // Copies source -> dest with optional per-axis mirroring. Used for the

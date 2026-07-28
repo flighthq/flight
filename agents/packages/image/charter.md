@@ -12,15 +12,22 @@ status: ./status.md
 
 ## What it is
 
-`@flighthq/image` is the **ImageResource lifecycle manager** — create, clone, dispose, invalidate, load, and query `ImageResource` entities. 18 exports across 2 source files. Dependencies: `entity`, `types`. The most-consumed shard of the old `@flighthq/resources` package — downstream consumers include surface, textureatlas, tileset, scene2d-canvas/dom, spritesheet, and surface-rs.
+`@flighthq/image` owns host-backed `ImageResource` construction/loading and `CompressedImage`
+construction. `ImageResource`, `Bitmap`, and `CompressedImage` are sibling `ImageBacking` variants,
+not nullable representations on one entity. Dependencies: `entity`, `image-codec`, `types`.
 
-Two halves: `imageResource` (entity lifecycle — create, clone, dispose, invalidate, byte-size, source/data predicates) and `imageResourceFrom` (construction from DOM sources and async loading from URL/ArrayBuffer/Base64/Blob via `img.decode()`, plus MIME detection and same-origin check).
+Two halves: `imageResource` (host-resource creation/cloning/invalidation plus compressed-image
+construction) and `imageResourceFrom` (explicit Bitmap transcode, construction from DOM sources, and
+async loading from URL/bytes/Base64/Blob via `img.decode()`).
 
 All current load paths are DOM-bound (`HTMLImageElement.decode()`). The DOM-free decode/encode seam is the responsibility of a neighbor package (`@flighthq/image-codec`) — this package stays focused on entity lifecycle and DOM-based loading.
 
 ## North star
 
-1. **Entity lifecycle, not pixel manipulation.** Image owns creation, cloning, disposal, invalidation, and version-tracking of `ImageResource` entities. Pixel operations are surface's domain; decode/encode is image-codec's domain.
+1. **Host resource and compressed backing construction, not pixel manipulation.** Image owns
+   `ImageResource` creation/loading and the explicit `Bitmap` → `ImageResource` transcode.
+   CPU-pixel operations and readback belong to `@flighthq/bitmap`; decode/encode belongs to
+   `@flighthq/image-codec`.
 2. **Dependency bottleneck — stay small.** Many packages depend on image. Keep the API surface minimal and the dependency footprint light (entity + types only).
 3. **`Uint8Array` for byte input seams.** Standardize on `Uint8Array` for byte-level input (matches Rust `&[u8]`, more ergonomic than `ArrayBuffer`). `Uint8ClampedArray` for pixel output (matches `ImageData.data`, `Bitmap.data`).
 
@@ -28,9 +35,10 @@ All current load paths are DOM-bound (`HTMLImageElement.decode()`). The DOM-free
 
 **In scope:**
 
-- ImageResource entity lifecycle: `createImageResource`, `cloneImageResource`, `disposeImageResource`, `invalidateImageResource`.
-- Source management: `setImageResourceSource` (swap backing DOM element).
-- Predicates and queries: `hasImageResourceData`, `hasImageResourceSource`, `isImageResourceEmpty`, `getImageResourceByteSize`.
+- ImageResource entity lifecycle: `createImageResource`, `cloneImageResource`, `invalidateImageResource`,
+  `isImageResourceEmpty`.
+- Compressed backing construction: `createCompressedImage`.
+- Explicit byte-backed conversion: `createImageResourceFromBitmap`.
 - DOM-based construction: `createImageResourceFromCanvas`, `createImageResourceFromImageBitmap`, `createImageResourceFromImageElement`.
 - Async loading (DOM-bound): `loadImageResourceFromUrl`, `loadImageResourceFromArrayBuffer`, `loadImageResourceFromBlob`, `loadImageResourceFromBase64`.
 - Utility: `detectImageMimeType` (magic-byte sniffing — stays here until image-codec exists, then migrates), `isImageResourceSameOrigin`.
@@ -42,6 +50,7 @@ All current load paths are DOM-bound (`HTMLImageElement.decode()`). The DOM-free
 - GPU texture upload — render backends.
 - Format-specific encode/decode — `@flighthq/image-codec` per-format backends.
 - Image metadata/EXIF — `@flighthq/image-codec`.
+- CPU-readable pixel ownership and host-image readback — `@flighthq/bitmap`.
 
 ## Decisions
 

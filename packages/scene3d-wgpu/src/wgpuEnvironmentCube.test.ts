@@ -1,4 +1,5 @@
-import type { Texture, Environment, ImageResource } from '@flighthq/types/contract';
+import type { Bitmap, Environment, ImageResource, Texture } from '@flighthq/types/contract';
+import { BitmapTextureBackingKind, ImageTextureBackingKind } from '@flighthq/types/contract';
 
 import { ensureWgpuEnvironmentSourceCube, updateWgpuEnvironmentCubeFace } from './wgpuEnvironmentCube';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
@@ -9,7 +10,12 @@ import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 // and the "no complete cube" sentinel path callers depend on to no-op — mirroring scene-gl's cube test.
 
 function completeEnvironment(): Environment {
-  const face = { source: {} as CanvasImageSource, data: null, width: 4, height: 4 } as ImageResource;
+  const face = {
+    height: 4,
+    kind: ImageTextureBackingKind,
+    source: {} as CanvasImageSource,
+    width: 4,
+  } as unknown as ImageResource;
   const cube = {
     colorSpace: 'srgb',
     sampler: {},
@@ -18,8 +24,13 @@ function completeEnvironment(): Environment {
   return { environment: cube, intensity: 1 } as Environment;
 }
 
-function dataFace(): ImageResource {
-  return { source: null, data: new Uint8ClampedArray(4 * 4 * 4), width: 4, height: 4 } as ImageResource;
+function dataFace(): Bitmap {
+  return {
+    data: new Uint8ClampedArray(4 * 4 * 4),
+    height: 4,
+    kind: BitmapTextureBackingKind,
+    width: 4,
+  } as Bitmap;
 }
 
 function dataOnlyEnvironment(): Environment {

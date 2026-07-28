@@ -1,4 +1,4 @@
-import { cloneBitmap, convertBitmapAlphaType, createBitmap } from './bitmap';
+import { cloneBitmap, convertBitmapAlphaType, createBitmap, invalidateBitmap } from './bitmap';
 
 describe('cloneBitmap', () => {
   it('produces identical values', () => {
@@ -74,5 +74,15 @@ describe('createBitmap', () => {
     expect(img.data[1]).toBe(0x22);
     expect(img.data[2]).toBe(0x33);
     expect(img.data[3]).toBe(0xff);
+  });
+});
+
+describe('invalidateBitmap', () => {
+  it('bumps the content version without replacing the pixel storage', () => {
+    const bitmap = createBitmap(1, 1);
+    const data = bitmap.data;
+    invalidateBitmap(bitmap);
+    expect(bitmap.version).toBe(1);
+    expect(bitmap.data).toBe(data);
   });
 });

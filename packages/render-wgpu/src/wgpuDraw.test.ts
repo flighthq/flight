@@ -1,11 +1,19 @@
 import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
-import type { ImageResource, Texture } from '@flighthq/types/contract';
-import { BlendMode } from '@flighthq/types/contract';
+import type { Bitmap, CompressedImage, ImageResource, Texture } from '@flighthq/types/contract';
+import {
+  BitmapTextureBackingKind,
+  BlendMode,
+  CompressedImageTextureBackingKind,
+  ImageTextureBackingKind,
+} from '@flighthq/types/contract';
 
 import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
+import { registerWgpuCompressedTextureDecoder, registerWgpuCompressedTextureUpload } from './wgpuCompressedTexture';
 import {
   applyWgpuBlendMode,
+  bindWgpuBitmapTexture,
+  bindWgpuCompressedImageTexture,
   bindWgpuImageResourceTexture,
   bindWgpuTexture,
   bindWgpuVideoTexture,
@@ -28,6 +36,42 @@ beforeAll(() => {
   installWgpuMock();
 });
 
+function bitmap(size: number, version: number): Bitmap {
+  return {
+    alphaType: 'straight',
+    colorSpace: 'srgb',
+    data: new Uint8ClampedArray(size * size * 4),
+    format: 'rgba8unorm',
+    height: size,
+    kind: BitmapTextureBackingKind,
+    version,
+    width: size,
+  } as unknown as Bitmap;
+}
+
+function compressedBc3Image(): CompressedImage {
+  return {
+    compressed: {
+      container: {
+        depth: 1,
+        faces: 1,
+        format: 'bc3',
+        height: 4,
+        layers: 1,
+        levels: [{ byteLength: 16, byteOffset: 0, height: 4, width: 4 }],
+        mipLevels: 1,
+        supercompression: 'None',
+        width: 4,
+      },
+      payload: new Uint8Array(16),
+    },
+    height: 4,
+    kind: CompressedImageTextureBackingKind,
+    version: 1,
+    width: 4,
+  } as unknown as CompressedImage;
+}
+
 describe('applyWgpuBlendMode', () => {
   it('updates currentBlendMode on the state', async () => {
     const state = await createWgpuRenderStateForTest();
@@ -42,27 +86,46 @@ describe('applyWgpuBlendMode', () => {
   });
 });
 
-describe('bindWgpuImageResourceTexture', () => {
-  function dataResource(size: number, version: number): ImageResource {
-    return {
-      source: null,
-      data: new Uint8ClampedArray(size * size * 4),
-      width: size,
-      height: size,
-      version,
-      alphaType: 'straight',
-    } as unknown as ImageResource;
-  }
-
-  it('uploads a data-only ImageResource (a generated Bitmap) via writeTexture', async () => {
+describe('bindWgpuBitmapTexture', () => {
+  it('uploads CPU-readable pixels via writeTexture', async () => {
     const state = await createWgpuRenderStateForTest();
     const writeTexture = vi.spyOn(state.device.queue, 'writeTexture');
-    const entry = bindWgpuImageResourceTexture(state, dataResource(4, 1));
+    const entry = bindWgpuBitmapTexture(state, bitmap(4, 1));
     expect(entry.texture).toBeDefined();
     expect(writeTexture).toHaveBeenCalled();
   });
 
-  it('uploads an element-backed ImageResource via copyExternalImageToTexture', async () => {
+  it('caches by resource identity and re-uploads only when the version changes', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const image = bitmap(2, 1);
+    const first = bindWgpuBitmapTexture(state, image);
+    expect(bindWgpuBitmapTexture(state, image)).toBe(first);
+    const createTexture = vi.spyOn(state.device, 'createTexture');
+    image.version = 2;
+    bindWgpuBitmapTexture(state, image);
+    expect(createTexture).toHaveBeenCalled();
+  });
+});
+
+describe('bindWgpuCompressedImageTexture', () => {
+  it('routes through the registered compressed upload seam', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const decode = vi.fn(() => new Uint8ClampedArray(4 * 4 * 4));
+    registerWgpuCompressedTextureUpload(state);
+    registerWgpuCompressedTextureDecoder(state, decode);
+    const entry = bindWgpuCompressedImageTexture(state, compressedBc3Image());
+    expect(entry?.texture).toBeDefined();
+    expect(decode).toHaveBeenCalledWith('bc3', 4, 4, expect.any(Uint8Array));
+  });
+
+  it('returns null when no compressed uploader is registered', async () => {
+    const state = await createWgpuRenderStateForTest();
+    expect(bindWgpuCompressedImageTexture(state, compressedBc3Image())).toBeNull();
+  });
+});
+
+describe('bindWgpuImageResourceTexture', () => {
+  it('uploads a host-backed image via copyExternalImageToTexture', async () => {
     const state = await createWgpuRenderStateForTest();
     const copy = vi.spyOn(state.device.queue, 'copyExternalImageToTexture');
     const canvas = document.createElement('canvas');
@@ -70,25 +133,13 @@ describe('bindWgpuImageResourceTexture', () => {
     canvas.height = 4;
     const image = {
       source: canvas,
-      data: null,
       width: 4,
       height: 4,
+      kind: ImageTextureBackingKind,
       version: 1,
-      alphaType: 'straight',
     } as unknown as ImageResource;
     bindWgpuImageResourceTexture(state, image);
     expect(copy).toHaveBeenCalled();
-  });
-
-  it('caches by resource identity and re-uploads only when the version changes', async () => {
-    const state = await createWgpuRenderStateForTest();
-    const image = dataResource(2, 1);
-    const first = bindWgpuImageResourceTexture(state, image);
-    expect(bindWgpuImageResourceTexture(state, image)).toBe(first);
-    const createTexture = vi.spyOn(state.device, 'createTexture');
-    image.version = 2;
-    bindWgpuImageResourceTexture(state, image);
-    expect(createTexture).toHaveBeenCalled();
   });
 });
 
@@ -168,7 +219,7 @@ describe('bindWgpuVideoTexture', () => {
     const state = await createWgpuRenderStateForTest();
     const video = videoTexture(1, 1, 0, 0);
     expect(bindWgpuVideoTexture(state, video)).toBeNull();
-    const element = video.storage.image!.source as HTMLVideoElement;
+    const element = (video.storage.image as ImageResource).source as HTMLVideoElement;
     Object.assign(element, { readyState: 4, videoHeight: 120, videoWidth: 160 });
     const first = bindWgpuVideoTexture(state, video)!;
     const destroy = vi.spyOn(first.texture, 'destroy');
@@ -270,20 +321,9 @@ describe('getWgpuRenderProxyColorScaleBias', () => {
 });
 
 describe('resolveWgpuSmoothingBindGroup', () => {
-  function dataResource(size: number, version: number): ImageResource {
-    return {
-      source: null,
-      data: new Uint8ClampedArray(size * size * 4),
-      width: size,
-      height: size,
-      version,
-      alphaType: 'straight',
-    } as unknown as ImageResource;
-  }
-
   it('returns the default bind group for a null smoothing (no variant built)', async () => {
     const state = await createWgpuRenderStateForTest();
-    const entry = bindWgpuImageResourceTexture(state, dataResource(4, 1));
+    const entry = bindWgpuBitmapTexture(state, bitmap(4, 1));
     expect(resolveWgpuSmoothingBindGroup(state, entry, null)).toBe(entry.bindGroup);
     expect(entry.bindGroupLinear).toBeUndefined();
     expect(entry.bindGroupNearest).toBeUndefined();
@@ -291,7 +331,7 @@ describe('resolveWgpuSmoothingBindGroup', () => {
 
   it('builds and caches distinct LINEAR and NEAREST variants for true/false', async () => {
     const state = await createWgpuRenderStateForTest();
-    const entry = bindWgpuImageResourceTexture(state, dataResource(4, 1));
+    const entry = bindWgpuBitmapTexture(state, bitmap(4, 1));
     const createBindGroup = vi.spyOn(state.device, 'createBindGroup');
 
     resolveWgpuSmoothingBindGroup(state, entry, true);
@@ -310,13 +350,13 @@ describe('resolveWgpuSmoothingBindGroup', () => {
 
   it('drops the cached variants when the texture re-uploads (version bump)', async () => {
     const state = await createWgpuRenderStateForTest();
-    const image = dataResource(4, 1);
-    const entry = bindWgpuImageResourceTexture(state, image);
+    const image = bitmap(4, 1);
+    const entry = bindWgpuBitmapTexture(state, image);
     resolveWgpuSmoothingBindGroup(state, entry, true);
     resolveWgpuSmoothingBindGroup(state, entry, false);
     expect(entry.bindGroupLinear).toBeDefined();
     image.version = 2;
-    bindWgpuImageResourceTexture(state, image);
+    bindWgpuBitmapTexture(state, image);
     expect(entry.bindGroupLinear).toBeUndefined();
     expect(entry.bindGroupNearest).toBeUndefined();
   });

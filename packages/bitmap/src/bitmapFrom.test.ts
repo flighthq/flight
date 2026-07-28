@@ -15,10 +15,10 @@ describe('captureBitmapFromImageResource', () => {
   });
 
   it('returns Bitmap matching the resource dimensions', () => {
-    const resource = createImageResource();
-    resource.width = 4;
-    resource.height = 4;
-    resource.source = null;
+    const canvas = document.createElement('canvas');
+    canvas.width = 4;
+    canvas.height = 4;
+    const resource = createImageResource(canvas);
     const data = captureBitmapFromImageResource(resource);
     expect(data.width).toBe(4);
     expect(data.height).toBe(4);

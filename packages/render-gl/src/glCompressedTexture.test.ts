@@ -1,4 +1,5 @@
-import type { GlCompressedTextureSupport, ImageResource, TextureContainer } from '@flighthq/types/contract';
+import type { CompressedImage, GlCompressedTextureSupport, TextureContainer } from '@flighthq/types/contract';
+import { CompressedImageTextureBackingKind } from '@flighthq/types/contract';
 
 import {
   detectGlCompressedTextureSupport,
@@ -46,17 +47,14 @@ function makeContainer(): TextureContainer {
   };
 }
 
-// A compressed-only ImageResource wrapping makeContainer, for exercising the installed upload seam.
-function uploadableCompressedImage(containerOverrides?: Partial<TextureContainer>): ImageResource {
+function uploadableCompressedImage(containerOverrides?: Partial<TextureContainer>): CompressedImage {
   return {
-    source: null,
-    data: null,
     compressed: { container: { ...makeContainer(), ...containerOverrides }, payload: new Uint8Array(16) },
-    width: 4,
     height: 4,
+    kind: CompressedImageTextureBackingKind,
     version: 1,
-    alphaType: 'straight',
-  } as unknown as ImageResource;
+    width: 4,
+  } as unknown as CompressedImage;
 }
 
 describe('detectGlCompressedTextureSupport', () => {
@@ -140,7 +138,7 @@ describe('registerGlCompressedTextureUpload', () => {
     expect(getGlRenderStateRuntime(state).compressedTextureUpload).toBeNull();
   });
 
-  it('uploads a compressed-only ImageResource once installed, threading the registered decoder', () => {
+  it('uploads a CompressedImage once installed, threading the registered decoder', () => {
     const { state, gl } = createGlState();
     const rgba = new Uint8ClampedArray(4 * 4 * 4);
     const decode = vi.fn(() => rgba);
@@ -150,14 +148,6 @@ describe('registerGlCompressedTextureUpload', () => {
     const ok = uploader(gl, uploadableCompressedImage(), decode);
     expect(ok).toBe(true);
     expect(decode).toHaveBeenCalledWith('bc3', 4, 4, expect.any(Uint8Array));
-  });
-
-  it('reports false for a resource with no compressed payload', () => {
-    const { state, gl } = createGlState();
-    registerGlCompressedTextureUpload(state);
-    const uploader = getGlRenderStateRuntime(state).compressedTextureUpload!;
-    const plain = { source: null, data: null, compressed: null } as unknown as ImageResource;
-    expect(uploader(gl, plain, null)).toBe(false);
   });
 
   it('rejects non-2D containers because the installed image bridge is bound to TEXTURE_2D', () => {

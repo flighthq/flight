@@ -1,4 +1,4 @@
-import { createImageResource, setImageResourceSource } from '@flighthq/image/contract';
+import { createImageResource, invalidateImageResource } from '@flighthq/image/contract';
 import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { tessellatePath } from '@flighthq/path/contract';
 import { bindWgpuImageResourceTexture, resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu/contract';
@@ -79,10 +79,10 @@ function destroyWgpuShapeData(state: WgpuRenderState, data: RendererData): void 
   const runtime = getWgpuRenderStateRuntime(state);
   const shapeData = getWgpuRendererData<WgpuShapeData>(data);
   if (shapeData === null) return;
-  const entry = runtime.imageResourcePremultipliedTextureCache.get(shapeData.image);
+  const entry = runtime.imageBackingPremultipliedTextureCache.get(shapeData.image);
   if (entry !== undefined) {
     entry.texture.destroy();
-    runtime.imageResourcePremultipliedTextureCache.delete(shapeData.image);
+    runtime.imageBackingPremultipliedTextureCache.delete(shapeData.image);
   }
   const b = shapeData.meshBuffers;
   b.vertexBuffer?.destroy();
@@ -163,7 +163,7 @@ export function drawWgpuShape(state: WgpuRenderState, renderProxy: RenderProxy2D
     ctx.restore();
     // Re-read the canvas dimensions and bump the resource version so the batch's version-aware cache
     // re-uploads (recreating the GPU texture, which covers a size change too).
-    setImageResourceSource(shapeData.image, shapeData.canvas);
+    invalidateImageResource(shapeData.image);
     shapeData.lastContentId = version;
     shapeData.lastW = w;
     shapeData.lastH = h;

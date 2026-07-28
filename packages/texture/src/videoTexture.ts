@@ -8,7 +8,7 @@ import { cloneTexture, copyTexture, createTexture, getTextureUvMatrix } from './
 // Marks a fresh decoded frame on a video-backed Texture. The ImageResource is the shared CPU-origin
 // backing and owns the upload revision; Texture.version mirrors it as the sampled object's dirty-bit.
 export function advanceVideoTexture(texture: TextureLike): number {
-  const image = texture.storage.image;
+  const image = texture.storage.image as ImageResource | null;
   if (image == null) return texture.version;
   updateVideoImageSize(image);
   image.version = (image.version + 1) >>> 0;
@@ -34,7 +34,7 @@ export function createVideoTexture(source: VideoResource, opts?: Readonly<Partia
   return createTexture({
     ...opts,
     storage: { dimension: '2d', image },
-    version: image.version,
+    version: image?.version ?? INITIAL_VIDEO_VERSION,
   });
 }
 
@@ -71,34 +71,22 @@ export function isVideoTextureFrameReady(texture: Readonly<TextureLike>): boolea
 
 // Resets the shared backing revision so its next advance wraps to 0 and every state re-uploads.
 export function resetVideoTextureFrame(texture: TextureLike): void {
-  const image = texture.storage.image;
+  const image = texture.storage.image as ImageResource | null;
   if (image != null) image.version = INITIAL_VIDEO_VERSION;
   texture.version = INITIAL_VIDEO_VERSION;
 }
 
-// Replaces the borrowed host element in the existing ImageResource backing and resets its upload
-// revision. The VideoResource remains the loader/lifecycle object; Texture stores only its host handle.
+// Replaces the immutable host-backed identity and resets its upload revision. The VideoResource
+// remains the loader/lifecycle object; Texture stores only its current host handle.
 export function setVideoTextureSource(texture: TextureLike, source: VideoResource): void {
   if (texture.storage.dimension !== '2d') throw new Error('setVideoTextureSource requires 2d texture storage');
-  const image = texture.storage.image;
-  if (image === null) {
-    texture.storage.image = createVideoImageResource(source);
-  } else {
-    image.source = source.element;
-    image.width = 0;
-    image.height = 0;
-    updateVideoImageSize(image);
-    image.version = INITIAL_VIDEO_VERSION;
-  }
+  texture.storage.image = createVideoImageResource(source);
   texture.version = INITIAL_VIDEO_VERSION;
 }
 
-function createVideoImageResource(source: Readonly<VideoResource>): ImageResource {
+function createVideoImageResource(source: Readonly<VideoResource>): ImageResource | null {
+  if (source.element === null) return null;
   const image = createEntity({
-    alphaType: 'straight',
-    compressed: null,
-    data: null,
-    format: 'rgba8unorm',
     height: 0,
     kind: VideoTextureBackingKind,
     source: source.element,
@@ -110,12 +98,11 @@ function createVideoImageResource(source: Readonly<VideoResource>): ImageResourc
 }
 
 function getVideoElement(texture: Readonly<TextureLike>): HTMLVideoElement | null {
-  return (texture.storage.image?.source as HTMLVideoElement | null | undefined) ?? null;
+  return ((texture.storage.image as ImageResource | null)?.source as HTMLVideoElement | null | undefined) ?? null;
 }
 
 function updateVideoImageSize(image: ImageResource): void {
-  const element = image.source as HTMLVideoElement | null;
-  if (element === null) return;
+  const element = image.source as HTMLVideoElement;
   image.width = element.videoWidth || 0;
   image.height = element.videoHeight || 0;
 }

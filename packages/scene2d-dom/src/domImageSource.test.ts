@@ -1,5 +1,5 @@
-import { createBitmap } from '@flighthq/bitmap/contract';
-import { createImageResource, invalidateImageResource } from '@flighthq/image/contract';
+import { createBitmap, invalidateBitmap } from '@flighthq/bitmap/contract';
+import { createImageResource } from '@flighthq/image/contract';
 import { createTexture } from '@flighthq/texture/contract';
 
 import { registerDomBitmapTextureResolver } from './domBitmapTextureResolver';
@@ -13,10 +13,9 @@ function makeState() {
 }
 
 describe('explainDomImageSource', () => {
-  it('reports element, data, and none for the three representations', () => {
-    expect(explainDomImageSource(createImageResource(document.createElement('img')))).toBe('element');
+  it('reports element and data for the two drawable representations', () => {
+    expect(explainDomImageSource(createImageResource(globalThis.document.createElement('img')))).toBe('element');
     expect(explainDomImageSource(createBitmap(4, 4, 0xffffffff))).toBe('data');
-    expect(explainDomImageSource(createImageResource())).toBe('none');
   });
 });
 
@@ -29,7 +28,7 @@ describe('registerDomBitmapTextureResolver', () => {
     const first = resolveDomTexture(state, texture);
     expect(first).toBeInstanceOf(HTMLCanvasElement);
     expect(resolveDomTexture(state, texture)).toBe(first);
-    invalidateImageResource(bitmap);
+    invalidateBitmap(bitmap);
     expect(resolveDomTexture(state, texture)).not.toBe(first);
   });
 });
@@ -47,7 +46,7 @@ describe('registerDomImageTextureResolver', () => {
 describe('resolveDomTexture', () => {
   it('returns null when no matching backing resolver is registered', () => {
     const texture = createTexture({
-      storage: { dimension: '2d', image: createImageResource(document.createElement('img')) },
+      storage: { dimension: '2d', image: createImageResource(globalThis.document.createElement('img')) },
     });
     expect(resolveDomTexture(makeState(), texture)).toBeNull();
   });

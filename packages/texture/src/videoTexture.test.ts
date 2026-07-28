@@ -1,5 +1,5 @@
 import { createMatrix3, createVector2 } from '@flighthq/geometry/contract';
-import type { VideoResource } from '@flighthq/types/contract';
+import type { ImageResource, VideoResource } from '@flighthq/types/contract';
 
 import {
   advanceVideoTexture,
@@ -67,7 +67,7 @@ describe('createVideoTexture', () => {
     const source = makeVideoResource();
     const vt = createVideoTexture(source);
     expect(vt.colorSpace).toBe('srgb');
-    expect(vt.storage.image?.source).toBe(source.element);
+    expect((vt.storage.image as ImageResource).source).toBe(source.element);
     expect(vt.version).toBe(0xffffffff);
     expect(vt.uvOffset.x).toBe(0);
     expect(vt.uvScale.x).toBe(1);
@@ -152,7 +152,7 @@ describe('setVideoTextureSource', () => {
     advanceVideoTexture(vt);
     const next = makeVideoResource(4, 640, 480);
     setVideoTextureSource(vt, next);
-    expect(vt.storage.image?.source).toBe(next.element);
+    expect((vt.storage.image as ImageResource).source).toBe(next.element);
     expect(vt.version).toBe(0xffffffff);
     expect(getVideoTextureWidth(vt)).toBe(640);
   });

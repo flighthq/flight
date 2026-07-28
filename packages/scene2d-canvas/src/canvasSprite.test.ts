@@ -24,7 +24,7 @@ function makeState() {
 }
 
 function makeTexture() {
-  const image = createImageResource(document.createElement('img'));
+  const image = createImageResource(globalThis.document.createElement('img'));
   image.width = 64;
   image.height = 64;
   return createTexture({ storage: { dimension: '2d', image } });

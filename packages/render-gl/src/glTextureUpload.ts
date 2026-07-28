@@ -35,15 +35,11 @@ export function uploadGlTextureElement(gl: WebGL2RenderingContext, target: numbe
   gl.texImage2D(target, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
 }
 
-// Dispatches an ImageResource to whichever representation it carries: the element fast-path when a decoded
-// `source` is present, else the portable `data` path (a generated Bitmap). The seam that makes data-backed
-// resources first-class — the same texture uploads whether it was loaded (element) or generated in memory
-// (data). Assumes the resource has pixels in at least one form.
+// Uploads a host-backed ImageResource through the decoded-element fast path.
 export function uploadGlTextureImageResource(
   gl: WebGL2RenderingContext,
   target: number,
   image: Readonly<ImageResource>,
 ): void {
-  if (image.source !== null) uploadGlTextureElement(gl, target, image.source as TexImageSource);
-  else uploadGlTextureData(gl, target, image.width, image.height, image.data!);
+  uploadGlTextureElement(gl, target, image.source as TexImageSource);
 }

@@ -7,7 +7,7 @@ import { registerCanvasTextureResolver, resolveCanvasTexture } from './canvasTex
 describe('registerCanvasTextureResolver', () => {
   it('registers and removes one state-scoped resolver', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
-    const image = createImageResource(document.createElement('img'));
+    const image = createImageResource(globalThis.document.createElement('img'));
     image.kind = 'acme.test';
     const texture = createTexture({ storage: { dimension: '2d', image } });
     const source = document.createElement('canvas');
@@ -21,7 +21,7 @@ describe('registerCanvasTextureResolver', () => {
 describe('resolveCanvasTexture', () => {
   it('returns null without a matching resolver', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
-    const image = createImageResource(document.createElement('img'));
+    const image = createImageResource(globalThis.document.createElement('img'));
     expect(resolveCanvasTexture(state, createTexture({ storage: { dimension: '2d', image } }))).toBeNull();
   });
 });

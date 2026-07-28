@@ -1,5 +1,5 @@
 import { computeRgbHexString } from '@flighthq/color/contract';
-import { createImageResource, setImageResourceSource } from '@flighthq/image/contract';
+import { createImageResource, invalidateImageResource } from '@flighthq/image/contract';
 import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { bindGlImageResourceTexture, resolveGlMaterialRenderer } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
@@ -73,10 +73,10 @@ function createGlTextLabelData(_state: GlRenderState, _source: Renderable): Rend
 function destroyGlTextLabelData(state: GlRenderState, data: RendererData): void {
   const runtime = getGlRenderStateRuntime(state);
   const { image } = getGlTextLabelData(data);
-  const entry = runtime.imageResourcePremultipliedTextureCache.get(image);
+  const entry = runtime.imageBackingPremultipliedTextureCache.get(image);
   if (entry !== undefined) {
     state.gl.deleteTexture(entry.texture);
-    runtime.imageResourcePremultipliedTextureCache.delete(image);
+    runtime.imageBackingPremultipliedTextureCache.delete(image);
   }
 }
 
@@ -149,7 +149,7 @@ export function drawGlTextLabel(state: GlRenderState, renderProxy: RenderProxy2D
     }
 
     // Re-read canvas dimensions and bump the resource version so the batch's version-aware cache re-uploads.
-    setImageResourceSource(textData.image, textData.canvas);
+    invalidateImageResource(textData.image);
     textData.logW = w;
     textData.logH = h;
   }

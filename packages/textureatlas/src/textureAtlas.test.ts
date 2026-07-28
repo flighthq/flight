@@ -1,6 +1,7 @@
 import { createImageResource } from '@flighthq/image/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
+import type { Bitmap, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
+import { BitmapTextureBackingKind } from '@flighthq/types/contract';
 
 import { createTextureAtlas, getTextureAtlasByteSize } from './textureAtlas';
 
@@ -46,14 +47,22 @@ describe('getTextureAtlasByteSize', () => {
   });
 
   it('returns 0 when the atlas image has no data (element-only)', () => {
-    const image = createImageResource();
+    const image = createImageResource(globalThis.document.createElement('canvas'));
     const atlas = createTextureAtlas({ texture: createTexture({ storage: { dimension: '2d', image } }) });
     expect(getTextureAtlasByteSize(atlas)).toBe(0);
   });
 
   it('returns the image data byteLength when data is present', () => {
-    const image = createImageResource();
-    image.data = new Uint8ClampedArray(256);
+    const image = {
+      alphaType: 'straight',
+      colorSpace: 'srgb',
+      data: new Uint8ClampedArray(256),
+      format: 'rgba8unorm',
+      height: 8,
+      kind: BitmapTextureBackingKind,
+      version: 0,
+      width: 8,
+    } as unknown as Bitmap;
     const atlas = createTextureAtlas({ texture: createTexture({ storage: { dimension: '2d', image } }) });
     expect(getTextureAtlasByteSize(atlas)).toBe(256);
   });

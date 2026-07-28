@@ -1,5 +1,5 @@
-import { createBitmap } from '@flighthq/bitmap/contract';
-import { createImageResource, invalidateImageResource } from '@flighthq/image/contract';
+import { createBitmap, invalidateBitmap } from '@flighthq/bitmap/contract';
+import { createImageResource } from '@flighthq/image/contract';
 import { createRenderTexture, createTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
@@ -21,16 +21,12 @@ function makeState() {
 
 describe('explainCanvasImageSource', () => {
   it('reports element for a host-element-backed resource', () => {
-    const resource = createImageResource(document.createElement('img'));
+    const resource = createImageResource(globalThis.document.createElement('img'));
     expect(explainCanvasImageSource(resource)).toBe('element');
   });
 
   it('reports data for a data-only resource', () => {
     expect(explainCanvasImageSource(createBitmap(4, 4, 0xffffffff))).toBe('data');
-  });
-
-  it('reports none for a resource with neither representation', () => {
-    expect(explainCanvasImageSource(createImageResource())).toBe('none');
   });
 });
 
@@ -55,7 +51,7 @@ describe('registerCanvasBitmapTextureResolver', () => {
     const texture = createTexture({ storage: { dimension: '2d', image: bitmap } });
     registerCanvasBitmapTextureResolver(state);
     const first = resolveCanvasTexture(state, texture);
-    invalidateImageResource(bitmap);
+    invalidateBitmap(bitmap);
     expect(resolveCanvasTexture(state, texture)).not.toBe(first);
   });
 });
@@ -63,7 +59,7 @@ describe('registerCanvasBitmapTextureResolver', () => {
 describe('registerCanvasImageTextureResolver', () => {
   it('installs image-backed Texture resolution on one state', () => {
     const state = makeState();
-    const image = createImageResource(document.createElement('img'));
+    const image = createImageResource(globalThis.document.createElement('img'));
     const texture = createTexture({ storage: { dimension: '2d', image } });
     expect(resolveCanvasTexture(state, texture)).toBeNull();
     registerCanvasImageTextureResolver(state);
@@ -86,7 +82,7 @@ describe('registerCanvasRenderTextureResolver', () => {
 describe('registerCanvasTextureResolver', () => {
   it('replaces and removes a custom backing resolver', () => {
     const state = makeState();
-    const image = createImageResource(document.createElement('img'));
+    const image = createImageResource(globalThis.document.createElement('img'));
     (image as { kind: string }).kind = 'acme.image';
     const texture = createTexture({ storage: { dimension: '2d', image } });
     const first = document.createElement('canvas');
@@ -117,7 +113,7 @@ describe('resolveCanvasTexture', () => {
     const state = makeState();
     registerCanvasImageTextureResolver(state);
     registerCanvasRenderTextureResolver(state);
-    const image = createImageResource(document.createElement('img'));
+    const image = createImageResource(globalThis.document.createElement('img'));
     expect(resolveCanvasTexture(state, createTexture({ storage: { dimension: '2d', image } }))).toBe(image.source);
 
     const renderTexture = createRenderTexture({ height: 8, width: 8 });

@@ -10,11 +10,7 @@ import type { BitmapTextureBackingKind } from './TextureBackingKind';
 export interface Bitmap extends ImageBacking {
   alphaType: AlphaType;
   readonly colorSpace: 'srgb' | 'display-p3';
-  /** Transitional fused-shape field; always null and removed after resolver migration. */
-  readonly compressed: null;
   readonly data: Uint8ClampedArray<ArrayBuffer>;
   format: PixelFormat;
   readonly kind: typeof BitmapTextureBackingKind;
-  /** Transitional fused-shape field; always null and removed after resolver migration. */
-  readonly source: null;
 }

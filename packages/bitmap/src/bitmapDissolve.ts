@@ -1,5 +1,6 @@
-import { invalidateImageResource } from '@flighthq/image/contract';
 import type { BitmapRegion } from '@flighthq/types/contract';
+
+import { invalidateBitmap } from './bitmap';
 
 /**
  * Transitions `dest` toward `source` one batch of pixels at a time, in a
@@ -89,7 +90,7 @@ export function dissolveBitmapPixels(
     destData[di + 3] = sourceData[si + 3];
   }
 
-  invalidateImageResource(dest.bitmap);
+  invalidateBitmap(dest.bitmap);
   return cursor;
 }
 

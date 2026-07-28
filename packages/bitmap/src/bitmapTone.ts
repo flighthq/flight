@@ -1,5 +1,6 @@
-import { invalidateImageResource } from '@flighthq/image/contract';
 import type { BitmapRegion } from '@flighthq/types/contract';
+
+import { invalidateBitmap } from './bitmap';
 
 /**
  * Applies a 256-entry per-channel lookup table (LUT) to `out`. The LUT maps
@@ -46,7 +47,7 @@ export function applyBitmapCurve(
       od[oi + 3] = alphaLut !== null ? alphaLut[a] : a;
     }
   }
-  invalidateImageResource(out.bitmap);
+  invalidateBitmap(out.bitmap);
 }
 
 /**

@@ -16,7 +16,7 @@ function createTestGlyphSource(): GlyphSource {
     [0x41, { advance: 10, bearingX: 0, bearingY: 8, height: 8, page: 0, width: 6, x: 0, y: 0 }],
     [0x42, { advance: 10, bearingX: 0, bearingY: 8, height: 8, page: 0, width: 6, x: 6, y: 0 }],
   ]);
-  const image = createImageResource(document.createElement('img'));
+  const image = createImageResource(globalThis.document.createElement('img'));
   image.width = 64;
   image.height = 64;
   return {

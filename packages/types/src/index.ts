@@ -269,7 +269,7 @@ export * from './ImageEncodeOptions';
 export * from './ImageEncoder';
 export * from './ImageFormat';
 export * from './ImageResource';
-export * from './ImageResourceCompressed';
+export * from './CompressedImageData';
 export * from './ImportDiagnostic';
 export * from './InnerGlowEffect';
 export * from './InnerShadowEffect';

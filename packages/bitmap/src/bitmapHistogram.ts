@@ -1,6 +1,6 @@
-import { invalidateImageResource } from '@flighthq/image/contract';
 import type { BitmapHistogram, BitmapRegion } from '@flighthq/types/contract';
 
+import { invalidateBitmap } from './bitmap';
 import { applyBitmapPaletteMap } from './bitmapPaletteMap';
 
 /**
@@ -24,7 +24,7 @@ export function equalizeBitmapHistogram(dest: Readonly<BitmapRegion>, source: Re
     buildEqualizeMap(histogram.blue, total),
     null,
   );
-  invalidateImageResource(dest.bitmap);
+  invalidateBitmap(dest.bitmap);
 }
 
 /**

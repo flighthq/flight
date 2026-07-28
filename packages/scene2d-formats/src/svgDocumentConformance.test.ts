@@ -45,7 +45,7 @@ describe('SVG conformance matrix', () => {
       kind: 'nested-use',
     },
   ])('composes geometry before transforms for $kind', ({ element, expectedY, kind }) => {
-    const image = createImageResource();
+    const image = createImageResource(globalThis.document.createElement('canvas'));
     image.width = 10;
     image.height = 10;
     const root = createScene2DFromSvgDocument(
@@ -92,7 +92,7 @@ describe('SVG conformance matrix', () => {
       width: 100,
     },
   ])('maps objectBoundingBox clip units for $kind', ({ target, width }) => {
-    const image = createImageResource();
+    const image = createImageResource(globalThis.document.createElement('canvas'));
     image.width = 20;
     image.height = 10;
     const root = createScene2DFromSvgDocument(
@@ -173,7 +173,7 @@ describe('SVG conformance matrix', () => {
     },
   ])('maps objectBoundingBox mask content for $kind', ({ target, width }) => {
     const diagnostics: ImportDiagnostic[] = [];
-    const image = createImageResource();
+    const image = createImageResource(globalThis.document.createElement('canvas'));
     image.width = 20;
     image.height = 10;
     const root = createScene2DFromSvgDocument(
@@ -431,7 +431,7 @@ describe('SVG conformance matrix', () => {
     { kind: 'symbol', path: [0, 0], target: '<use href="#hiddenSymbol"/>' },
     { kind: 'nested-use', path: [0, 0], target: '<use href="#hiddenNested"/>' },
   ])('suppresses display none for $kind', ({ path, target }) => {
-    const image = createImageResource();
+    const image = createImageResource(globalThis.document.createElement('canvas'));
     image.width = 10;
     image.height = 10;
     const root = createScene2DFromSvgDocument(

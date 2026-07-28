@@ -425,14 +425,10 @@ describe('shaded binding cache', () => {
 
 function makeImageResource(): ImageResource {
   return {
-    alphaType: 'straight',
-    compressed: null,
-    data: null,
-    format: 'rgba8unorm',
     height: 1,
     kind: ImageTextureBackingKind,
     source: {} as CanvasImageSource,
     version: 0,
     width: 1,
-  } as ImageResource;
+  } as unknown as ImageResource;
 }

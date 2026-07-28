@@ -1,5 +1,6 @@
-import { invalidateImageResource } from '@flighthq/image/contract';
 import type { ColorScaleBiasLike, Bitmap, BitmapRegion, ThresholdOperation } from '@flighthq/types/contract';
+
+import { invalidateBitmap } from './bitmap';
 
 let _scrollScratch: Uint8ClampedArray | null = null;
 
@@ -36,7 +37,7 @@ export function applyBitmapColorScaleBias(
       dest.bitmap.data[di + 3] = Math.max(0, Math.min(255, Math.round(a * ct.alphaScale + ct.alphaBias * 255)));
     }
   }
-  invalidateImageResource(dest.bitmap);
+  invalidateBitmap(dest.bitmap);
 }
 
 /**
@@ -91,7 +92,7 @@ export function applyBitmapThreshold(
       }
     }
   }
-  invalidateImageResource(dest.bitmap);
+  invalidateBitmap(dest.bitmap);
   return changed;
 }
 
@@ -134,7 +135,7 @@ export function mergeBitmap(
       dd[di + 3] = Math.round(sd[si + 3] * alphaScale + dd[di + 3] * (1 - alphaScale));
     }
   }
-  invalidateImageResource(dest.bitmap);
+  invalidateBitmap(dest.bitmap);
 }
 
 /**
@@ -161,7 +162,7 @@ export function scrollBitmap(out: Bitmap, dx: number, dy: number): void {
       out.data[di + 3] = _scrollScratch[si + 3];
     }
   }
-  invalidateImageResource(out);
+  invalidateBitmap(out);
 }
 
 function compare(a: number, op: ThresholdOperation, b: number): boolean {

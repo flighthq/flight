@@ -10,6 +10,7 @@ import type { GlRenderTextureEntry, GlRenderTextureGuard } from './GlRenderTextu
 import type { GlBitmapShader, GlShaderLocations } from './GlShaderLocations';
 import type { GlShapeMesh } from './GlShapeMesh';
 import type { GlTextureResolver } from './GlTextureResolver';
+import type { ImageBacking } from './ImageBacking';
 import type { ImageResource } from './ImageResource';
 import type { Material } from './Material';
 import type { RenderProxy2D } from './RenderProxy2D';
@@ -191,18 +192,11 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // Raw-element texture cache: a canvas/video/image element uploaded directly (video frames, canvas-backed
   // shapes and text). Keyed by the element; the caller owns re-upload timing (video re-uploads every frame).
   textureCache: WeakMap<CanvasImageSource, WebGLTexture>;
-  // ImageResource texture cache: content-backed images (bitmaps, sprite atlases, material maps), which may
-  // be element-backed OR a data-only generated Bitmap. Keyed by the resource entity (stable identity) so a
-  // data-only Bitmap caches too, with the uploaded `version` tracked so bindGlImageResourceTexture
-  // re-uploads in place when the pixels change — subsuming the per-node manual invalidation nodes used to
-  // open-code. See bindGlImageResourceTexture.
-  imageResourcePremultipliedTextureCache: WeakMap<ImageResource, { texture: WebGLTexture; version: number }>;
-  // Straight (upload-as-is) sibling of imageResourcePremultipliedTextureCache: the GL texture for an ImageResource bound
-  // WITHOUT a premultiply request, used by the straight-blend 3D forward path (and any caller passing
-  // premultiply=false). Split from the premultiplied cache — and keyed by the same resource entity, with
-  // the same version tracking — so one ImageResource bound both premultiplied (2D) and straight (3D) keeps
-  // a correct GL texture for each. See bindGlImageResourceTexture.
-  imageResourceStraightTextureCache: WeakMap<ImageResource, { texture: WebGLTexture; version: number }>;
+  // Premultiplied texture realizations for ImageBacking siblings. Keyed by stable entity identity and
+  // guarded by content version so mutable Bitmaps re-upload in place.
+  imageBackingPremultipliedTextureCache: WeakMap<ImageBacking, { texture: WebGLTexture; version: number }>;
+  // Straight (upload-as-is) sibling used by the straight-blend 3D path and native compressed images.
+  imageBackingStraightTextureCache: WeakMap<ImageBacking, { texture: WebGLTexture; version: number }>;
   // Open, state-scoped Texture backing registry keyed by the backing's declared string kind.
   // Map.set is last-write-wins; undefined until first registration. Texture carries no backend state.
   glTextureResolverRegistry?: Map<TextureBackingKind, GlTextureResolver> | null;
@@ -214,14 +208,11 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // Optional RGBA fallback decoder for block-compressed textures the device cannot upload natively.
   // Installed per-state by registerGlCompressedTextureDecoder (opt-in), so a state that never draws a
   // compressed texture — or only draws formats the device supports — carries no decoder. Undefined
-  // until registered; the compressed uploader reads it as the decode seam for a compressed resource.
+  // until registered; the compressed uploader reads it as the decode seam for a CompressedImage.
   compressedTextureDecoder?: GlCompressedTextureDecoder | null;
   // Optional block-compressed upload seam. Installed per-state by registerGlCompressedTextureUpload
-  // (opt-in), so a state that only ever draws element- or data-backed bitmaps never pulls the
-  // ~40-format compressed-container upload path into the bundle — the bundle-cost gate the runtime
-  // compressedTextureDecoder branch alone cannot provide. Undefined until registered; when unset,
-  // uploadGlBoundImageResource skips a compressed-only resource (leaving its texture empty) rather than
-  // uploading garbage. See registerGlCompressedTextureUpload.
+  // (opt-in), so a state that only ever draws ImageResource/Bitmap backings never pulls the ~40-format
+  // compressed-container upload path into the bundle. Undefined until registered.
   compressedTextureUpload?: GlCompressedTextureUploader | null;
   // Dynamic host-video cache keyed by the shared ImageResource backing. `uploadedVersion` tracks the
   // last decoded frame copied to GL, so differently sampled Textures share one upload.

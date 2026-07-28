@@ -1,11 +1,14 @@
 import type {
+  Bitmap,
   ColorScaleBias,
+  CompressedImage,
   HasColorScaleBias,
+  ImageBacking,
   ImageResource,
   Texture,
   RenderProxy,
   RenderProxy2D,
-  WgpuImageResourceTextureEntry,
+  WgpuImageBackingTextureEntry,
   WgpuRenderState,
   WgpuRenderStateRuntime,
   WgpuTextureEntry,
@@ -21,40 +24,49 @@ export function applyWgpuBlendMode(state: WgpuRenderState, blendMode: BlendMode 
   getWgpuRenderStateRuntime(state).currentBlendMode = blendMode;
 }
 
-// The resource-level sibling of bindWgpuTexture: uploads and caches the GPU texture for an ImageResource
-// — a bitmap, sprite atlas, or material map — accepting an element-backed OR a data-only generated Bitmap.
-// Keyed by the resource entity with the uploaded content version, so an in-place Bitmap edit (which bumps
-// version) re-uploads (recreating the GPU texture). `premultiply` states whether the caller wants a
-// premultiplied GPU texture — bind never premultiplies on its own. The 2D display and particle pipelines
-// blend premultiplied (ONE, ONE_MINUS_SRC_ALPHA) and pass true; the 3D forward path blends straight
-// (SRC_ALPHA) and reads baseColor.rgb as un-premultiplied albedo, so it leaves the default false. The
-// request honors the data's declared alphaType: the premultiply is applied on upload only when the pixels
-// are not already premultiplied (an element copies with premultipliedAlpha, straight `data` is
-// premultiplied on the CPU since writeTexture does no alpha conversion), so already-premultiplied data
-// uploads as-is instead of double-premultiplying. The two request modes cache separate textures
-// (imageResourcePremultipliedTextureCache for premultiply, imageResourceStraightTextureCache otherwise), keyed by the
-// request so one ImageResource bound both premultiplied (2D) and straight (3D) keeps a correct texture for
-// each, and the 2D teardown paths that reach imageResourcePremultipliedTextureCache directly always find theirs there.
-// Returns the texture, view, and 2D bind group.
+export function bindWgpuBitmapTexture(
+  state: WgpuRenderState,
+  bitmap: Readonly<Bitmap>,
+  generateMips = false,
+  premultiply = false,
+): WgpuTextureEntry {
+  return bindWgpuImageBackingTexture(state, bitmap, generateMips, premultiply, uploadWgpuBitmapEntry)!;
+}
+
+export function bindWgpuCompressedImageTexture(
+  state: WgpuRenderState,
+  image: Readonly<CompressedImage>,
+): WgpuTextureEntry | null {
+  return bindWgpuImageBackingTexture(state, image, false, false, uploadWgpuCompressedImageEntry);
+}
+
+// Uploads and caches the WebGPU texture for an ImageResource. Bitmap and CompressedImage use sibling
+// entry points below; they share only the identity/version cache bracket and keep representation-specific
+// uploaders. Premultiplied and straight requests use separate caches so 2D and 3D sampling of one backing
+// cannot rewrite each other's realization. Returns the texture, view, and 2D bind group.
 export function bindWgpuImageResourceTexture(
   state: WgpuRenderState,
   image: Readonly<ImageResource>,
   generateMips = false,
   premultiply = false,
 ): WgpuTextureEntry {
+  return bindWgpuImageBackingTexture(state, image, generateMips, premultiply, uploadWgpuImageResourceEntry)!;
+}
+
+function bindWgpuImageBackingTexture(
+  state: WgpuRenderState,
+  image: Readonly<ImageBacking>,
+  generateMips: boolean,
+  premultiply: boolean,
+  upload: WgpuImageBackingUpload,
+): WgpuTextureEntry | null {
   const runtime = getWgpuRenderStateRuntime(state);
-  const cache = premultiply
-    ? runtime.imageResourcePremultipliedTextureCache
-    : runtime.imageResourceStraightTextureCache;
+  const cache = premultiply ? runtime.imageBackingPremultipliedTextureCache : runtime.imageBackingStraightTextureCache;
   const cached = cache.get(image);
   if (cached !== undefined && cached.version === image.version) return cached;
 
-  const built = uploadWgpuImageResourceEntry(
-    state,
-    image,
-    generateMips,
-    premultiply && image.alphaType !== 'premultiplied',
-  );
+  const built = upload(state, image, generateMips, premultiply);
+  if (built === null) return null;
   if (cached !== undefined) {
     cached.texture.destroy();
     cached.texture = built.texture;
@@ -67,7 +79,7 @@ export function bindWgpuImageResourceTexture(
     cached.version = image.version;
     return cached;
   }
-  const entry: WgpuImageResourceTextureEntry = { ...built, version: image.version };
+  const entry: WgpuImageBackingTextureEntry = { ...built, version: image.version };
   cache.set(image, entry);
   return entry;
 }
@@ -172,7 +184,7 @@ export function bindWgpuVideoTexture(
   state: WgpuRenderState,
   videoTexture: Readonly<Texture>,
 ): WgpuVideoTextureEntry | null {
-  const image = videoTexture.storage.image;
+  const image = videoTexture.storage.image as ImageResource | null;
   const element = (image?.source ?? null) as HTMLVideoElement | null;
   if (element === null || element.readyState < 2 || element.videoWidth <= 0 || element.videoHeight <= 0) return null;
 
@@ -267,7 +279,7 @@ export function createWgpuTextureEntry(
 }
 
 export function destroyWgpuVideoTexture(state: WgpuRenderState, videoTexture: Readonly<Texture>): boolean {
-  const image = videoTexture.storage.image;
+  const image = videoTexture.storage.image as ImageResource | null;
   if (image == null) return false;
   const cache = getWgpuRenderStateRuntime(state).videoTextureCache;
   const entry = cache?.get(image);
@@ -445,27 +457,19 @@ function premultiplyStraightRgba8(data: Readonly<Uint8ClampedArray<ArrayBuffer>>
   return out;
 }
 
-// Allocates a GPU texture for an ImageResource and uploads its pixels through whichever representation it
-// carries — an element via copyExternalImageToTexture or data via writeTexture — then builds the view + 2D
-// bind group. `premultiply` is the caller's already alphaType-resolved decision (see
-// bindWgpuImageResourceTexture): when set, the element copies with premultipliedAlpha and straight `data`
-// is premultiplied on the CPU; when clear, both upload the pixels as-is so the straight-blend 3D path
-// keeps its albedo and data maps untouched. The per-upload half of bindWgpuImageResourceTexture, split out
-// so the cache/version bracket stays legible.
-function uploadWgpuImageResourceEntry(
+// Allocates a GPU texture for a Bitmap and writes its CPU-readable pixels, premultiplying a straight
+// bitmap only when the caller requests a premultiplied realization.
+function uploadWgpuBitmapEntry(
   state: WgpuRenderState,
-  image: Readonly<ImageResource>,
+  image: Readonly<ImageBacking>,
   generateMips: boolean,
   premultiply: boolean,
 ): WgpuTextureEntry {
+  const bitmap = image as Readonly<Bitmap>;
   const runtime = getWgpuRenderStateRuntime(state);
   const { device } = state;
-  if (image.source === null && image.data === null && image.compressed !== null) {
-    const compressed = runtime.compressedTextureUpload?.(state, image, runtime.compressedTextureDecoder ?? null);
-    if (compressed != null) return compressed;
-  }
-  const width = image.width || 1;
-  const height = image.height || 1;
+  const width = bitmap.width || 1;
+  const height = bitmap.height || 1;
   const mipLevelCount = generateMips ? getWgpuMipLevelCount(width, height) : 1;
   const texture = device.createTexture({
     size: [width, height, 1],
@@ -473,16 +477,9 @@ function uploadWgpuImageResourceEntry(
     mipLevelCount,
     usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
   });
-  if (image.source !== null) {
-    device.queue.copyExternalImageToTexture(
-      { source: image.source as GPUCopyExternalImageSource, flipY: false },
-      { texture, premultipliedAlpha: premultiply },
-      [width, height],
-    );
-  } else if (image.data !== null) {
-    const data = premultiply ? premultiplyStraightRgba8(image.data!) : image.data!;
-    device.queue.writeTexture({ texture }, data, { bytesPerRow: width * 4, rowsPerImage: height }, [width, height, 1]);
-  }
+  const transform = premultiply && bitmap.alphaType !== 'premultiplied';
+  const data = transform ? premultiplyStraightRgba8(bitmap.data) : bitmap.data;
+  device.queue.writeTexture({ texture }, data, { bytesPerRow: width * 4, rowsPerImage: height }, [width, height, 1]);
   if (mipLevelCount > 1) generateWgpuMipmaps(state, texture, width, height, 'rgba8unorm');
   const view = texture.createView();
   const sampler = state.allowSmoothing ? runtime.linearSampler : runtime.nearestSampler;
@@ -495,3 +492,60 @@ function uploadWgpuImageResourceEntry(
   });
   return { texture, view, bindGroup };
 }
+
+function uploadWgpuCompressedImageEntry(
+  state: WgpuRenderState,
+  image: Readonly<ImageBacking>,
+): WgpuTextureEntry | null {
+  const runtime = getWgpuRenderStateRuntime(state);
+  return (
+    runtime.compressedTextureUpload?.(
+      state,
+      image as Readonly<CompressedImage>,
+      runtime.compressedTextureDecoder ?? null,
+    ) ?? null
+  );
+}
+
+function uploadWgpuImageResourceEntry(
+  state: WgpuRenderState,
+  image: Readonly<ImageBacking>,
+  generateMips: boolean,
+  premultiply: boolean,
+): WgpuTextureEntry {
+  const resource = image as Readonly<ImageResource>;
+  const runtime = getWgpuRenderStateRuntime(state);
+  const { device } = state;
+  const width = resource.width || 1;
+  const height = resource.height || 1;
+  const mipLevelCount = generateMips ? getWgpuMipLevelCount(width, height) : 1;
+  const texture = device.createTexture({
+    size: [width, height, 1],
+    format: 'rgba8unorm',
+    mipLevelCount,
+    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+  });
+  device.queue.copyExternalImageToTexture(
+    { source: resource.source as GPUCopyExternalImageSource, flipY: false },
+    { texture, premultipliedAlpha: premultiply },
+    [width, height],
+  );
+  if (mipLevelCount > 1) generateWgpuMipmaps(state, texture, width, height, 'rgba8unorm');
+  const view = texture.createView();
+  const sampler = state.allowSmoothing ? runtime.linearSampler : runtime.nearestSampler;
+  const bindGroup = device.createBindGroup({
+    layout: runtime.textureBindGroupLayout,
+    entries: [
+      { binding: 0, resource: view },
+      { binding: 1, resource: sampler },
+    ],
+  });
+  return { texture, view, bindGroup };
+}
+
+type WgpuImageBackingUpload = (
+  state: WgpuRenderState,
+  image: Readonly<ImageBacking>,
+  generateMips: boolean,
+  premultiply: boolean,
+) => WgpuTextureEntry | null;
