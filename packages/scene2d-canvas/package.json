@@ -51,6 +51,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
+    "@flighthq/bitmap": "*",
     "@flighthq/bitmaptext": "*",
     "@flighthq/quadbatch": "*",
     "@flighthq/tilemap": "*",
