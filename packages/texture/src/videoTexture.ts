@@ -1,128 +1,122 @@
 import { createEntity } from '@flighthq/entity/contract';
-import { cloneVector2, copyVector2, createVector2, inverseMatrix3 } from '@flighthq/geometry/contract';
-import type { Matrix3Like, VideoResource, VideoTexture, VideoTextureLike } from '@flighthq/types/contract';
+import { inverseMatrix3 } from '@flighthq/geometry/contract';
+import type { ImageResource, Matrix3Like, Texture, TextureLike, VideoResource } from '@flighthq/types/contract';
 
-import { cloneSampler, copySampler, createSampler } from './sampler';
-import { getTextureUvMatrix } from './texture';
+import { cloneTexture, copyTexture, createTexture, getTextureUvMatrix } from './texture';
 
-// Marks a fresh decoded frame as available for upload by bumping `frameId`. A driver calls this once
-// per rendered frame when the backing element reports new pixels (readyState advanced, or a
-// requestVideoFrameCallback fired); the GPU uploader compares the id against the one it last uploaded
-// and re-uploads only on a change, so a paused stream costs no upload. Returns the new id.
-export function advanceVideoTexture(videoTexture: VideoTextureLike): number {
-  videoTexture.frameId += 1;
-  return videoTexture.frameId;
+// Marks a fresh decoded frame on a video-backed Texture. The ImageResource is the shared CPU-origin
+// backing and owns the upload revision; Texture.version mirrors it as the sampled object's dirty-bit.
+export function advanceVideoTexture(texture: TextureLike): number {
+  const image = texture.storage.image;
+  if (image === null) return texture.version;
+  updateVideoImageSize(image);
+  image.version = (image.version + 1) >>> 0;
+  texture.version = image.version;
+  return texture.version;
 }
 
-// Allocates an independent VideoTexture over the SAME video stream: the VideoResource reference is
-// shared (an HTMLVideoElement cannot be duplicated), while the Sampler and uv-transform vectors are
-// deep-cloned so two textures over one stream sample independently. `frameId` resets to -1 so the
-// clone forces its own first upload.
-export function cloneVideoTexture(source: Readonly<VideoTextureLike>): VideoTexture {
-  return createEntity({
-    colorSpace: source.colorSpace,
-    flipX: source.flipX,
-    flipY: source.flipY,
-    frameId: -1,
-    sampler: cloneSampler(source.sampler),
-    source: source.source,
-    uvOffset: cloneVector2(source.uvOffset),
-    uvRotation: source.uvRotation,
-    uvScale: cloneVector2(source.uvScale),
+// Clones sampling/UV state while sharing the borrowed video ImageResource and its upload cache key.
+export function cloneVideoTexture(source: Readonly<TextureLike>): Texture {
+  return cloneTexture(source);
+}
+
+// Copies a video-backed Texture through the universal Texture field copier.
+export function copyVideoTexture(out: TextureLike, source: Readonly<TextureLike>): void {
+  copyTexture(out, source);
+}
+
+// Wraps a VideoResource's borrowed host element in an ImageResource backing and returns the same
+// universal Texture type used by still images and produced targets. The all-ones initial revision
+// preserves the former first advanceVideoTexture result of 0 after u32 wrap.
+export function createVideoTexture(source: VideoResource, opts?: Readonly<Partial<TextureLike>>): Texture {
+  const image = createVideoImageResource(source);
+  return createTexture({
+    ...opts,
+    storage: { dimension: '2d', image },
+    version: image.version,
   });
 }
 
-// Copies every VideoTexture field from source into out in place. The VideoResource reference is
-// shared; the Sampler and uv-transform vectors are copied into out's existing entities. Safe when out
-// aliases source.
-export function copyVideoTexture(out: VideoTextureLike, source: Readonly<VideoTextureLike>): void {
-  const colorSpace = source.colorSpace;
-  const flipX = source.flipX;
-  const flipY = source.flipY;
-  const frameId = source.frameId;
-  const src = source.source;
-  const uvRotation = source.uvRotation;
-  copySampler(out.sampler, source.sampler);
-  copyVector2(out.uvOffset, source.uvOffset);
-  copyVector2(out.uvScale, source.uvScale);
-  out.colorSpace = colorSpace;
-  out.flipX = flipX;
-  out.flipY = flipY;
-  out.frameId = frameId;
-  out.source = src;
-  out.uvRotation = uvRotation;
-}
-
-// Builds a VideoTexture over a VideoResource: a default Sampler, 'srgb' color space (video is
-// display-referred), an identity KHR_texture_transform, and `frameId` -1 (no frame uploaded yet).
-// Pass VideoTextureLike fields to override any of these.
-export function createVideoTexture(source: VideoResource, opts?: Readonly<Partial<VideoTextureLike>>): VideoTexture {
-  return createEntity({
-    colorSpace: opts?.colorSpace ?? 'srgb',
-    flipX: opts?.flipX ?? false,
-    flipY: opts?.flipY ?? false,
-    frameId: opts?.frameId ?? -1,
-    sampler: opts?.sampler ? cloneSampler(opts.sampler) : createSampler(),
-    source: opts?.source ?? source,
-    uvOffset: opts?.uvOffset ? cloneVector2(opts.uvOffset) : createVector2(0, 0),
-    uvRotation: opts?.uvRotation ?? 0,
-    uvScale: opts?.uvScale ? cloneVector2(opts.uvScale) : createVector2(1, 1),
-  });
-}
-
-// Returns the pixel height of the current video frame, or -1 when no element is attached or no frame
-// has decoded yet (videoHeight is 0). Reads the element directly, so the value tracks a resolution
-// change mid-stream.
-export function getVideoTextureHeight(videoTexture: Readonly<VideoTextureLike>): number {
-  const element = videoTexture.source.element as HTMLVideoElement | null;
+// Returns the decoded frame height, or -1 while the borrowed host element is absent/unready.
+export function getVideoTextureHeight(texture: Readonly<TextureLike>): number {
+  const element = getVideoElement(texture);
   return element !== null && element.videoHeight > 0 ? element.videoHeight : -1;
 }
 
-// Composes the KHR_texture_transform fields and inverts the result, producing the matrix that maps
-// already-transformed uv back to the unit-square source uv. A zero scale is singular, so inverseMatrix3
-// fills the matrix with NaN. Out-param form — write into a pre-allocated Matrix3.
-export function getVideoTextureInverseUvMatrix(out: Matrix3Like, videoTexture: Readonly<VideoTextureLike>): void {
-  getVideoTextureUvMatrix(out, videoTexture);
+// Video-named compatibility entry over the universal Texture UV transform.
+export function getVideoTextureInverseUvMatrix(out: Matrix3Like, texture: Readonly<TextureLike>): void {
+  getVideoTextureUvMatrix(out, texture);
   inverseMatrix3(out, out);
 }
 
-// Composes the KHR_texture_transform fields (flip, uvOffset, uvRotation, uvScale) into the column-major
-// 3×3 matrix a shader consumes at sample time. A VideoTexture is a TextureUvTransform, so this delegates
-// to getTextureUvMatrix — one uv-transform path (flip → scale → rotate → translate) for both texture
-// kinds. Out-param form.
-export function getVideoTextureUvMatrix(out: Matrix3Like, videoTexture: Readonly<VideoTextureLike>): void {
-  getTextureUvMatrix(out, videoTexture);
+// Video-named compatibility entry over the universal Texture UV transform.
+export function getVideoTextureUvMatrix(out: Matrix3Like, texture: Readonly<TextureLike>): void {
+  getTextureUvMatrix(out, texture);
 }
 
-// Returns the pixel width of the current video frame, or -1 when no element is attached or no frame
-// has decoded yet.
-export function getVideoTextureWidth(videoTexture: Readonly<VideoTextureLike>): number {
-  const element = videoTexture.source.element as HTMLVideoElement | null;
+// Returns the decoded frame width, or -1 while the borrowed host element is absent/unready.
+export function getVideoTextureWidth(texture: Readonly<TextureLike>): number {
+  const element = getVideoElement(texture);
   return element !== null && element.videoWidth > 0 ? element.videoWidth : -1;
 }
 
-// True when the backing element has decoded at least the current frame (readyState >=
-// HAVE_CURRENT_DATA) and its dimensions are known — the gate a material samples behind and a driver
-// checks before calling advanceVideoTexture. False while metadata/first-frame is still buffering.
-export function isVideoTextureFrameReady(videoTexture: Readonly<VideoTextureLike>): boolean {
-  const element = videoTexture.source.element as HTMLVideoElement | null;
+// True once the borrowed host element exposes a decoded current frame and non-zero dimensions.
+export function isVideoTextureFrameReady(texture: Readonly<TextureLike>): boolean {
+  const element = getVideoElement(texture);
   return (
     element !== null && element.readyState >= HAVE_CURRENT_DATA && element.videoWidth > 0 && element.videoHeight > 0
   );
 }
 
-// Resets `frameId` to -1 so the next upload re-sends the current frame regardless of history. Used
-// after a context loss (the GPU texture is gone) or a source swap to force a re-upload.
-export function resetVideoTextureFrame(videoTexture: VideoTextureLike): void {
-  videoTexture.frameId = -1;
+// Resets the shared backing revision so its next advance wraps to 0 and every state re-uploads.
+export function resetVideoTextureFrame(texture: TextureLike): void {
+  const image = texture.storage.image;
+  if (image !== null) image.version = INITIAL_VIDEO_VERSION;
+  texture.version = INITIAL_VIDEO_VERSION;
 }
 
-// Binds a different video stream and resets `frameId` to -1 so the new stream's first frame uploads.
-// Does not touch sampling state or the uv-transform.
-export function setVideoTextureSource(videoTexture: VideoTextureLike, source: VideoResource): void {
-  videoTexture.source = source;
-  videoTexture.frameId = -1;
+// Replaces the borrowed host element in the existing ImageResource backing and resets its upload
+// revision. The VideoResource remains the loader/lifecycle object; Texture stores only its host handle.
+export function setVideoTextureSource(texture: TextureLike, source: VideoResource): void {
+  const image = texture.storage.image;
+  if (image === null) {
+    texture.storage.image = createVideoImageResource(source);
+  } else {
+    image.source = source.element;
+    image.width = 0;
+    image.height = 0;
+    updateVideoImageSize(image);
+    image.version = INITIAL_VIDEO_VERSION;
+  }
+  texture.version = INITIAL_VIDEO_VERSION;
 }
 
-// HTMLMediaElement.HAVE_CURRENT_DATA — data for the current playback position is available.
+function createVideoImageResource(source: Readonly<VideoResource>): ImageResource {
+  const image = createEntity({
+    alphaType: 'straight',
+    compressed: null,
+    data: null,
+    format: 'rgba8unorm',
+    height: 0,
+    source: source.element,
+    version: INITIAL_VIDEO_VERSION,
+    width: 0,
+  }) as ImageResource;
+  updateVideoImageSize(image);
+  return image;
+}
+
+function getVideoElement(texture: Readonly<TextureLike>): HTMLVideoElement | null {
+  return (texture.storage.image?.source as HTMLVideoElement | null | undefined) ?? null;
+}
+
+function updateVideoImageSize(image: ImageResource): void {
+  const element = image.source as HTMLVideoElement | null;
+  if (element === null) return;
+  image.width = element.videoWidth || 0;
+  image.height = element.videoHeight || 0;
+}
+
+// HTMLMediaElement.HAVE_CURRENT_DATA and the u32 predecessor of the first public frame revision.
 const HAVE_CURRENT_DATA = 2;
+const INITIAL_VIDEO_VERSION = 0xffffffff;

@@ -1,5 +1,5 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type { RendererData, RenderProxy2D, VideoTexture } from '@flighthq/types/contract';
+import type { ImageResource, RendererData, RenderProxy2D, Texture } from '@flighthq/types/contract';
 
 import { createGlState } from './glTestHelper';
 import { createGlVideoData, defaultGlVideoRenderer, destroyGlVideoData, drawGlVideo } from './glVideo';
@@ -27,7 +27,7 @@ describe('createGlVideoData', () => {
     const { state } = createGlState();
     const data = createGlVideoData(state, {} as never) as unknown as {
       source: unknown;
-      videoTexture: VideoTexture | null;
+      videoTexture: Texture | null;
     };
     expect(data.source).toBeNull();
     expect(data.videoTexture).toBeNull();
@@ -42,20 +42,21 @@ describe('defaultGlVideoRenderer', () => {
 });
 
 describe('destroyGlVideoData', () => {
-  it('deletes the cached GPU texture for the recorded VideoTexture', () => {
+  it('deletes the cached GPU texture for the recorded video-backed Texture', () => {
     const { state, gl } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    const videoTexture = { frameId: -1 } as unknown as VideoTexture;
+    const backing = {} as ImageResource;
+    const videoTexture = { storage: { dimension: '2d', image: backing } } as Texture;
     const texture = gl.createTexture() as WebGLTexture;
     runtime.videoTextureCache = new WeakMap();
-    runtime.videoTextureCache.set(videoTexture, { texture, uploadedFrameId: -1 });
+    runtime.videoTextureCache.set(backing, { texture, uploadedVersion: -1 });
     const deleteSpy = vi.spyOn(gl, 'deleteTexture');
     destroyGlVideoData(state, { source: null, videoTexture } as unknown as RendererData);
     expect(deleteSpy).toHaveBeenCalledWith(texture);
-    expect(runtime.videoTextureCache.has(videoTexture)).toBe(false);
+    expect(runtime.videoTextureCache.has(backing)).toBe(false);
   });
 
-  it('is a no-op when no VideoTexture was recorded', () => {
+  it('is a no-op when no video-backed Texture was recorded', () => {
     const { state, gl } = createGlState();
     const deleteSpy = vi.spyOn(gl, 'deleteTexture');
     destroyGlVideoData(state, { source: null, videoTexture: null } as unknown as RendererData);
@@ -76,23 +77,23 @@ describe('drawGlVideo', () => {
     expect(gl.drawElements).not.toHaveBeenCalled();
   });
 
-  it('builds a VideoTexture and uploads the ready frame through the gated bind', () => {
+  it('builds a Texture and uploads the ready frame through the gated bind', () => {
     const { state, gl } = createGlState();
     const node = makeVideoNode(makeReadyElement());
     drawGlVideo(state, node);
-    const data = node.rendererData as unknown as { videoTexture: VideoTexture | null };
+    const data = node.rendererData as unknown as { videoTexture: Texture | null };
     expect(data.videoTexture).not.toBeNull();
     expect(gl.texImage2D).toHaveBeenCalled();
     expect(gl.drawElements).toHaveBeenCalled();
   });
 
-  it('reuses the VideoTexture across draws of the same stream', () => {
+  it('reuses the Texture across draws of the same stream', () => {
     const { state } = createGlState();
     const node = makeVideoNode(makeReadyElement());
     drawGlVideo(state, node);
-    const first = (node.rendererData as unknown as { videoTexture: VideoTexture | null }).videoTexture;
+    const first = (node.rendererData as unknown as { videoTexture: Texture | null }).videoTexture;
     drawGlVideo(state, node);
-    const second = (node.rendererData as unknown as { videoTexture: VideoTexture | null }).videoTexture;
+    const second = (node.rendererData as unknown as { videoTexture: Texture | null }).videoTexture;
     expect(second).toBe(first);
   });
 });

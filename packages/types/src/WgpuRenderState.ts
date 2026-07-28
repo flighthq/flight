@@ -7,7 +7,6 @@ import type { Matrix } from './Matrix';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
 import type { TintMaterialData } from './TintMaterialData';
-import type { VideoTexture } from './VideoTexture';
 import type { WgpuCompressedTextureDecoder } from './WgpuCompressedTextureDecoder';
 import type { WgpuCompressedTextureUploader } from './WgpuCompressedTextureUploader';
 import type { WgpuMaterialRenderer } from './WgpuMaterialRenderer';
@@ -109,9 +108,9 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // device lacks the container's native family.
   compressedTextureDecoder?: WgpuCompressedTextureDecoder | null;
   compressedTextureUpload?: WgpuCompressedTextureUploader | null;
-  // Dynamic VideoTexture cache. The GPU texture persists across frames; uploadedFrameId gates the
+  // Dynamic host-video cache. The GPU texture persists across frames; uploadedVersion gates the
   // expensive external-image copy, while width/height detect mid-stream resolution changes.
-  videoTextureCache?: WeakMap<VideoTexture, WgpuVideoTextureEntry>;
+  videoTextureCache?: WeakMap<ImageResource, WgpuVideoTextureEntry>;
 
   // Custom shader (default bitmap shader; can be replaced via registerWgpuBitmapShader)
   defaultBitmapShader: WgpuBitmapShader | null;
@@ -372,6 +371,6 @@ export interface WgpuImageResourceTextureEntry extends WgpuTextureEntry {
 export interface WgpuVideoTextureEntry extends WgpuTextureEntry {
   height: number;
   sampler: GPUSampler;
-  uploadedFrameId: number;
+  uploadedVersion: number;
   width: number;
 }

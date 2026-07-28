@@ -2,7 +2,8 @@ import { createCamera3D } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import { createUnlitMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
-import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy, VideoTexture } from '@flighthq/types/contract';
+import { advanceVideoTexture, createVideoTexture } from '@flighthq/texture/contract';
+import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { UnlitMaterialKind } from '@flighthq/types/contract';
 
 import { registerUnlitWgpuMaterial, unlitWgpuMeshMaterialRenderer } from './unlitWgpuMeshMaterialRenderer';
@@ -53,25 +54,10 @@ describe('unlitWgpuMeshMaterialRenderer', () => {
   it('uploads a ready dynamic video map into the color-map slot', () => {
     const { fake, state } = makeWgpuScene3DState();
     const material = createUnlitMaterial();
-    material.baseColorVideoMap = {
-      frameId: 1,
-      sampler: {
-        anisotropy: 1,
-        magFilter: 'linear',
-        minFilter: 'linear',
-        mipmaps: false,
-        wrapU: 'clamp-to-edge',
-        wrapV: 'clamp-to-edge',
-      },
-      source: {
-        element: { readyState: 4, videoHeight: 120, videoWidth: 160 } as HTMLVideoElement,
-      },
-      flipX: false,
-      flipY: false,
-      uvOffset: { x: 0, y: 0 },
-      uvRotation: 0,
-      uvScale: { x: 1, y: 1 },
-    } as unknown as VideoTexture;
+    material.baseColorMap = createVideoTexture({
+      element: { readyState: 4, videoHeight: 120, videoWidth: 160 } as HTMLVideoElement,
+    });
+    advanceVideoTexture(material.baseColorMap);
     unlitWgpuMeshMaterialRenderer.bind(state, material, NO_LIGHTS, makeCamera());
     expect(fake.calls.some((c) => c.name === 'copyExternalImageToTexture')).toBe(true);
   });

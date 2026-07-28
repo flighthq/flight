@@ -4,7 +4,7 @@ import type { TextureColorSpace } from './Texture';
 import type { TextureUvTransform } from './TextureUvTransform';
 import type { Vector2Like } from './Vector2';
 
-// A backend-neutral render-to-texture source. Unlike Texture and VideoTexture it owns no CPU pixel
+// A backend-neutral render-to-texture source. Unlike CPU-backed Texture storage it owns no CPU pixel
 // source: a renderer keeps the backing target hidden on its render state and binds that target's
 // resolved color attachment directly. The uv transform remains public because render-target storage
 // follows the backend's framebuffer orientation rather than an uploaded image's orientation.

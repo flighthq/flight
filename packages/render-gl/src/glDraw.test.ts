@@ -1,4 +1,4 @@
-import type { ImageResource, SamplerLike, VideoTexture } from '@flighthq/types/contract';
+import type { ImageResource, SamplerLike, Texture } from '@flighthq/types/contract';
 import { AdvancedBlendMode, BlendMode } from '@flighthq/types/contract';
 
 import { registerGlCompressedTextureDecoder, registerGlCompressedTextureUpload } from './glCompressedTexture';
@@ -490,32 +490,45 @@ describe('bindGlTexture', () => {
 });
 
 describe('bindGlVideoTexture', () => {
-  function videoTexture(frameId: number, readyState = 4, videoWidth = 320, videoHeight = 240): VideoTexture {
+  function videoTexture(version: number, readyState = 4, videoWidth = 320, videoHeight = 240): Texture {
     return {
-      frameId,
-      sampler: null,
-      source: { element: { readyState, videoWidth, videoHeight } as unknown as HTMLVideoElement },
-    } as unknown as VideoTexture;
+      sampler: makeSampler(),
+      storage: {
+        dimension: '2d',
+        image: {
+          source: { readyState, videoWidth, videoHeight } as unknown as HTMLVideoElement,
+          version,
+        },
+      },
+      version,
+    } as unknown as Texture;
   }
 
-  it('creates a texture, uploads the current frame, and caches by VideoTexture identity', () => {
+  it('creates a texture, uploads the current frame, and caches by backing identity', () => {
     const { state, gl } = createGlState();
     const vt = videoTexture(3);
     const t1 = bindGlVideoTexture(state, vt);
     expect(gl.createTexture).toHaveBeenCalled();
-    expect(gl.texImage2D).toHaveBeenCalledWith(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, vt.source.element);
+    expect(gl.texImage2D).toHaveBeenCalledWith(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      vt.storage.image!.source,
+    );
     const t2 = bindGlVideoTexture(state, vt);
     expect(t2).toBe(t1);
   });
 
-  it('re-uploads only when the frameId advances (the dirty-gate)', () => {
+  it('re-uploads only when the backing version advances (the dirty-gate)', () => {
     const { state, gl } = createGlState();
     const vt = videoTexture(1);
     bindGlVideoTexture(state, vt);
     const uploads = (gl.texImage2D as ReturnType<typeof vi.fn>).mock.calls.length;
     bindGlVideoTexture(state, vt);
     expect((gl.texImage2D as ReturnType<typeof vi.fn>).mock.calls.length).toBe(uploads);
-    vt.frameId = 2;
+    vt.storage.image!.version = 2;
     bindGlVideoTexture(state, vt);
     expect((gl.texImage2D as ReturnType<typeof vi.fn>).mock.calls.length).toBe(uploads + 1);
   });
@@ -526,7 +539,7 @@ describe('bindGlVideoTexture', () => {
     expect(gl.texImage2D).not.toHaveBeenCalled();
   });
 
-  it('applies the VideoTexture sampler when no explicit sampler is passed', () => {
+  it('applies the Texture sampler when no explicit sampler is passed', () => {
     const { state, gl } = createGlState();
     const vt = videoTexture(1);
     (vt as { sampler: SamplerLike }).sampler = makeSampler({ wrapU: 'repeat' });

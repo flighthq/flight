@@ -12,6 +12,7 @@ import type {
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
   WgpuUnlitDefineKey,
+  Texture,
 } from '@flighthq/types/contract';
 import { UnlitMaterialKind } from '@flighthq/types/contract';
 
@@ -45,8 +46,8 @@ export const unlitWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     } else {
       unpackColorToLinear(_scratch, unlit.baseColor);
       group =
-        unlit.baseColorVideoMap !== null && isVideoTextureFrameReady(unlit.baseColorVideoMap)
-          ? bindWgpuUnlitVideoSurface(state, pipeline, unlit, _scratch, 1, unlit.alphaCutoff, unlit.baseColorVideoMap)
+        unlit.baseColorMap !== null && hasVideoBacking(unlit.baseColorMap)
+          ? bindWgpuUnlitVideoSurface(state, pipeline, unlit, _scratch, 1, unlit.alphaCutoff, unlit.baseColorMap)
           : bindWgpuUnlitSurface(state, pipeline, unlit, _scratch, 1, unlit.alphaCutoff, unlit.baseColorMap);
     }
 
@@ -71,9 +72,23 @@ function defineKeyForMaterial(material: Readonly<UnlitMaterial> | null): WgpuUnl
     doubleSided: material !== null && material.doubleSided,
     hasColorMap:
       material !== null &&
-      ((material.baseColorVideoMap !== null && isVideoTextureFrameReady(material.baseColorVideoMap)) ||
+      ((material.baseColorMap !== null && isVideoTextureFrameReady(material.baseColorMap)) ||
         isWgpuTextureReady(material.baseColorMap)),
   };
+}
+
+function hasVideoBacking(texture: Readonly<Texture>): boolean {
+  const source = texture.storage.image?.source as {
+    readyState?: unknown;
+    videoHeight?: unknown;
+    videoWidth?: unknown;
+  } | null;
+  return (
+    source !== null &&
+    typeof source.readyState === 'number' &&
+    typeof source.videoHeight === 'number' &&
+    typeof source.videoWidth === 'number'
+  );
 }
 
 const _scratch: LinearColor = [0, 0, 0, 0];

@@ -57,9 +57,7 @@ advanceVideoTexture(videoMap);
 const scene = createScene3D().root;
 addNodeChild(
   scene,
-  createMesh(createPlaneMeshGeometry(2, 1), [
-    createUnlitMaterial({ baseColor: 0xffffffff, baseColorVideoMap: videoMap }),
-  ]),
+  createMesh(createPlaneMeshGeometry(2, 1), [createUnlitMaterial({ baseColor: 0xffffffff, baseColorMap: videoMap })]),
 );
 const camera = createCamera3D({
   far: 10,

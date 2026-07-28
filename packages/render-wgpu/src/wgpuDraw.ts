@@ -2,9 +2,9 @@ import type {
   ColorScaleBias,
   HasColorScaleBias,
   ImageResource,
+  Texture,
   RenderProxy,
   RenderProxy2D,
-  VideoTexture,
   WgpuImageResourceTextureEntry,
   WgpuRenderState,
   WgpuRenderStateRuntime,
@@ -165,14 +165,15 @@ function buildWgpuSmoothingBindGroup(
   });
 }
 
-// Dynamic VideoTexture upload. The texture is cached by VideoTexture identity and copied only when its
-// frameId advances; a resolution change recreates the allocation/view, and a sampler mutation rebuilds
+// Dynamic host-video upload. The texture is cached by ImageResource backing and copied only when its
+// version advances; a resolution change recreates the allocation/view, and a sampler mutation rebuilds
 // only the bind group. Returns null until the backing element has a decoded frame.
 export function bindWgpuVideoTexture(
   state: WgpuRenderState,
-  videoTexture: Readonly<VideoTexture>,
+  videoTexture: Readonly<Texture>,
 ): WgpuVideoTextureEntry | null {
-  const element = videoTexture.source.element as HTMLVideoElement | null;
+  const image = videoTexture.storage.image;
+  const element = (image?.source ?? null) as HTMLVideoElement | null;
   if (element === null || element.readyState < 2 || element.videoWidth <= 0 || element.videoHeight <= 0) return null;
 
   const runtime = getWgpuRenderStateRuntime(state);
@@ -180,7 +181,7 @@ export function bindWgpuVideoTexture(
   const width = element.videoWidth;
   const height = element.videoHeight;
   const sampler = getWgpuVideoSampler(state, videoTexture);
-  let entry = cache.get(videoTexture);
+  let entry = cache.get(image!);
   if (entry === undefined || entry.width !== width || entry.height !== height) {
     entry?.texture.destroy();
     const texture = state.device.createTexture({
@@ -194,23 +195,23 @@ export function bindWgpuVideoTexture(
       height,
       sampler,
       texture,
-      uploadedFrameId: -1,
+      uploadedVersion: -1,
       view,
       width,
     };
-    cache.set(videoTexture, entry);
+    cache.set(image!, entry);
   } else if (entry.sampler !== sampler) {
     entry.sampler = sampler;
     entry.bindGroup = buildWgpuTextureBindGroup(state, entry.view, sampler);
   }
 
-  if (entry.uploadedFrameId !== videoTexture.frameId) {
+  if (entry.uploadedVersion !== image!.version) {
     state.device.queue.copyExternalImageToTexture(
       { source: element, flipY: false },
       { texture: entry.texture, premultipliedAlpha: true },
       [width, height],
     );
-    entry.uploadedFrameId = videoTexture.frameId;
+    entry.uploadedVersion = image!.version;
   }
   return entry;
 }
@@ -265,12 +266,14 @@ export function createWgpuTextureEntry(
   return { texture, view, bindGroup };
 }
 
-export function destroyWgpuVideoTexture(state: WgpuRenderState, videoTexture: Readonly<VideoTexture>): boolean {
+export function destroyWgpuVideoTexture(state: WgpuRenderState, videoTexture: Readonly<Texture>): boolean {
+  const image = videoTexture.storage.image;
+  if (image === null) return false;
   const cache = getWgpuRenderStateRuntime(state).videoTextureCache;
-  const entry = cache?.get(videoTexture);
+  const entry = cache?.get(image);
   if (entry === undefined) return false;
   entry.texture.destroy();
-  cache!.delete(videoTexture);
+  cache!.delete(image);
   return true;
 }
 
@@ -284,7 +287,7 @@ function buildWgpuTextureBindGroup(state: WgpuRenderState, view: GPUTextureView,
   });
 }
 
-function getWgpuVideoSampler(state: WgpuRenderState, videoTexture: Readonly<VideoTexture>): GPUSampler {
+function getWgpuVideoSampler(state: WgpuRenderState, videoTexture: Readonly<Texture>): GPUSampler {
   const sampler = videoTexture.sampler;
   const filter: GPUFilterMode = sampler.magFilter.startsWith('nearest') ? 'nearest' : 'linear';
   // A live frame carries base level only; mip-aware filters collapse to their base filter rather than

@@ -1,28 +1,28 @@
 import { createImageResource } from '@flighthq/image/contract';
-import { getGlRenderStateRuntime, registerGlImageTextureResolver } from '@flighthq/render-gl/contract';
-import { createRenderTexture, createTexture } from '@flighthq/texture/contract';
-import type { GlUnlitDefineKey, LinearColor, VideoTexture } from '@flighthq/types/contract';
+import {
+  getGlRenderStateRuntime,
+  registerGlImageTextureResolver,
+  registerGlVideoTextureResolver,
+} from '@flighthq/render-gl/contract';
+import {
+  advanceVideoTexture,
+  createRenderTexture,
+  createTexture,
+  createVideoTexture,
+} from '@flighthq/texture/contract';
+import type { GlUnlitDefineKey, LinearColor } from '@flighthq/types/contract';
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
 import {
   bindGlUnlitRenderSurface,
   bindGlUnlitSurface,
-  bindGlUnlitVideoSurface,
   buildGlUnlitDefineKey,
   compileGlUnlitProgram,
   ensureGlUnlitProgram,
   getGlUnlitFragmentSourceForKey,
   getGlUnlitVertexSourceForKey,
 } from './glUnlitPrelude';
-
-function makeReadyVideoTexture(frameId: number): VideoTexture {
-  return {
-    frameId,
-    sampler: null,
-    source: { element: { readyState: 4, videoWidth: 320, videoHeight: 240 } as unknown as HTMLVideoElement },
-  } as unknown as VideoTexture;
-}
 
 const FLAT: GlUnlitDefineKey = {
   alphaMaskEnabled: false,
@@ -71,27 +71,41 @@ describe('bindGlUnlitSurface', () => {
     expect(gl.calls.some((call) => call.name === 'texImage2D')).toBe(true);
     expect(gl.calls.some((call) => call.name === 'uniform1i')).toBe(true);
   });
-});
 
-describe('bindGlUnlitVideoSurface', () => {
-  it('uploads the color/intensity/cutoff and binds the video map on unit 0', () => {
+  it('routes a video-backed Texture through the registered Texture resolver', () => {
     const { state, gl } = makeGlScene3DState();
     const program = compileGlUnlitProgram(gl, { ...FLAT, hasColorMap: true });
-    bindGlUnlitVideoSurface(state, program, COLOR, 1, makeReadyVideoTexture(2), 0.5);
+    const videoMap = createVideoTexture({
+      element: { readyState: 4, videoWidth: 320, videoHeight: 240 } as HTMLVideoElement,
+    });
+    videoMap.sampler.mipmaps = false;
+    advanceVideoTexture(videoMap);
+    registerGlImageTextureResolver(state);
+    registerGlVideoTextureResolver(state);
+    getGlRenderStateRuntime(state).anisotropyExt = null;
+
+    bindGlUnlitSurface(state, program, COLOR, 1, videoMap, 0.5);
+
     expect(gl.calls.some((c) => c.name === 'uniform4f')).toBe(true);
-    // Live frame uploaded and the map sampler set to unit 0.
     expect(gl.calls.some((c) => c.name === 'texImage2D')).toBe(true);
     expect(gl.calls.some((c) => c.name === 'bindTexture')).toBe(true);
     expect(gl.calls.some((c) => c.name === 'uniform1i')).toBe(true);
   });
 
-  it('does not upload a frame that has not advanced (the dirty-gate)', () => {
+  it('does not upload a video frame whose backing version has not advanced', () => {
     const { state, gl } = makeGlScene3DState();
     const program = compileGlUnlitProgram(gl, { ...FLAT, hasColorMap: true });
-    const videoMap = makeReadyVideoTexture(3);
-    bindGlUnlitVideoSurface(state, program, COLOR, 1, videoMap, 0.5);
+    const videoMap = createVideoTexture({
+      element: { readyState: 4, videoWidth: 320, videoHeight: 240 } as HTMLVideoElement,
+    });
+    videoMap.sampler.mipmaps = false;
+    advanceVideoTexture(videoMap);
+    registerGlImageTextureResolver(state);
+    registerGlVideoTextureResolver(state);
+    getGlRenderStateRuntime(state).anisotropyExt = null;
+    bindGlUnlitSurface(state, program, COLOR, 1, videoMap, 0.5);
     const uploads = gl.calls.filter((c) => c.name === 'texImage2D').length;
-    bindGlUnlitVideoSurface(state, program, COLOR, 1, videoMap, 0.5);
+    bindGlUnlitSurface(state, program, COLOR, 1, videoMap, 0.5);
     expect(gl.calls.filter((c) => c.name === 'texImage2D').length).toBe(uploads);
   });
 });

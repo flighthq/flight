@@ -1,4 +1,4 @@
-import { bindGlRenderTexture, bindGlVideoTexture, resolveGlTexture } from '@flighthq/render-gl/contract';
+import { bindGlRenderTexture, resolveGlTexture } from '@flighthq/render-gl/contract';
 import type {
   GlUnlitDefineKey,
   GlUnlitProgram,
@@ -6,7 +6,6 @@ import type {
   GlRenderState,
   RenderTexture,
   Texture,
-  VideoTexture,
 } from '@flighthq/types/contract';
 
 import {
@@ -56,29 +55,6 @@ export function bindGlUnlitSurface(
     gl.activeTexture(gl.TEXTURE0);
     if (resolveGlTexture(state, colorMap) !== null) gl.uniform1i(program.locColorMap, 0);
   }
-}
-
-// The dynamic-video sibling of bindGlUnlitSurface: binds a VideoTexture into the unlit color-map slot
-// (texture unit 0) so a mesh material samples a live video stream through the same HAS_COLOR_MAP path a
-// still Texture uses. bindGlVideoTexture applies the frameId dirty-gate — a paused stream re-uploads
-// nothing — and the VideoTexture's sampler. The color/intensity/alpha-cutoff uniforms are set exactly as
-// the still path; only the map binding differs. The caller has already selected the HAS_COLOR_MAP program
-// (beginGlMeshDraw) and set the view-projection.
-export function bindGlUnlitVideoSurface(
-  state: GlRenderState,
-  program: Readonly<GlUnlitProgram>,
-  color: Readonly<LinearColor>,
-  intensity: number,
-  videoMap: Readonly<VideoTexture>,
-  alphaCutoff: number,
-): void {
-  const gl = state.gl;
-  gl.uniform4f(program.locColor, color[0], color[1], color[2], color[3]);
-  gl.uniform1f(program.locIntensity, intensity);
-  gl.uniform1f(program.locAlphaCutoff, alphaCutoff);
-  gl.activeTexture(gl.TEXTURE0);
-  bindGlVideoTexture(state, videoMap);
-  gl.uniform1i(program.locColorMap, 0);
 }
 
 // A short, stable, order-independent string identity for an unlit define key, used as the program-

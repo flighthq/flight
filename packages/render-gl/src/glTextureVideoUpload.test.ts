@@ -1,4 +1,4 @@
-import type { VideoTexture } from '@flighthq/types/contract';
+import type { ImageResource } from '@flighthq/types/contract';
 
 import { uploadGlTextureVideoFrame } from './glTextureVideoUpload';
 
@@ -11,43 +11,43 @@ function makeGl(): WebGL2RenderingContext {
   } as unknown as WebGL2RenderingContext;
 }
 
-// A VideoTexture whose only relevant fields are frameId and the element carrier.
-function makeVideoTexture(frameId: number, readyState = 4, videoWidth = 320, videoHeight = 240): VideoTexture {
+// A video ImageResource whose only relevant fields are version and the borrowed host element.
+function makeVideoImage(version: number, readyState = 4, videoWidth = 320, videoHeight = 240): ImageResource {
   return {
-    frameId,
-    source: { element: { readyState, videoWidth, videoHeight } as unknown as HTMLVideoElement },
-  } as unknown as VideoTexture;
+    source: { readyState, videoWidth, videoHeight } as unknown as HTMLVideoElement,
+    version,
+  } as unknown as ImageResource;
 }
 
 describe('uploadGlTextureVideoFrame', () => {
   it('uploads the element and returns the new frame id when the frame advanced', () => {
     const gl = makeGl();
-    const vt = makeVideoTexture(3);
-    const uploaded = uploadGlTextureVideoFrame(gl, vt, -1);
+    const image = makeVideoImage(3);
+    const uploaded = uploadGlTextureVideoFrame(gl, image, -1);
     expect(uploaded).toBe(3);
-    expect(gl.texImage2D).toHaveBeenCalledWith(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, vt.source.element);
+    expect(gl.texImage2D).toHaveBeenCalledWith(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image.source);
   });
 
   it('skips the upload and returns the same id when the frame has not advanced', () => {
     const gl = makeGl();
-    const vt = makeVideoTexture(5);
-    const uploaded = uploadGlTextureVideoFrame(gl, vt, 5);
+    const image = makeVideoImage(5);
+    const uploaded = uploadGlTextureVideoFrame(gl, image, 5);
     expect(uploaded).toBe(5);
     expect(gl.texImage2D).not.toHaveBeenCalled();
   });
 
   it('skips and reports no upload when the element has no decoded frame yet', () => {
     const gl = makeGl();
-    const vt = makeVideoTexture(1, 1, 0, 0);
-    const uploaded = uploadGlTextureVideoFrame(gl, vt, -1);
+    const image = makeVideoImage(1, 1, 0, 0);
+    const uploaded = uploadGlTextureVideoFrame(gl, image, -1);
     expect(uploaded).toBe(-1);
     expect(gl.texImage2D).not.toHaveBeenCalled();
   });
 
   it('skips when the element is null', () => {
     const gl = makeGl();
-    const vt = { frameId: 2, source: { element: null } } as unknown as VideoTexture;
-    expect(uploadGlTextureVideoFrame(gl, vt, -1)).toBe(-1);
+    const image = { source: null, version: 2 } as unknown as ImageResource;
+    expect(uploadGlTextureVideoFrame(gl, image, -1)).toBe(-1);
     expect(gl.texImage2D).not.toHaveBeenCalled();
   });
 });
