@@ -1,5 +1,4 @@
-import { hasImageResourcePixels } from '@flighthq/image/contract';
-import { bindGlImageResourceTexture } from '@flighthq/render-gl/contract';
+import { resolveGlTexture } from '@flighthq/render-gl/contract';
 import type { GlMatcapDefineKey, GlMatcapProgram, LinearColor, GlRenderState, Texture } from '@flighthq/types/contract';
 
 import { compileGlProgram, ensureGlScene3DProgram } from './glMeshProgram';
@@ -17,10 +16,9 @@ export function bindGlMatcapSurface(
   gl.uniform4f(program.locTint, tint[0], tint[1], tint[2], tint[3]);
   gl.uniform1f(program.locAlphaCutoff, alphaCutoff);
 
-  if (matcap !== null && matcap.storage.image !== null && hasImageResourcePixels(matcap.storage.image)) {
+  if (matcap !== null) {
     gl.activeTexture(gl.TEXTURE0);
-    bindGlImageResourceTexture(state, matcap.storage.image, matcap.sampler);
-    gl.uniform1i(program.locMatcap, 0);
+    if (resolveGlTexture(state, matcap) !== null) gl.uniform1i(program.locMatcap, 0);
   }
 }
 

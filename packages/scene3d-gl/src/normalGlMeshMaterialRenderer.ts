@@ -1,3 +1,4 @@
+import { registerGlImageTextureResolver, resolveGlTexture } from '@flighthq/render-gl/contract';
 import type {
   Camera3D,
   GlMeshMaterialRenderer,
@@ -31,7 +32,8 @@ export const normalGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   ): void {
     const gl = state.gl;
     const normal = material as Readonly<NormalMaterial> | null;
-    const hasNormalMap = normal !== null && normal.normalMap !== null && normal.normalMap.storage.image !== null;
+    const hasNormalMap =
+      normal !== null && normal.normalMap !== null && resolveGlTexture(state, normal.normalMap) !== null;
     const program = ensureGlDebugProgram(state, { hasNormalMap, mode: 'normal' });
     beginGlMeshDraw(state, program, normal !== null && normal.doubleSided);
     setGlMeshViewProjection(gl, program.locViewProjection, camera);
@@ -53,5 +55,6 @@ export const normalGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 // Registers the built-in Normal renderer for NormalMaterialKind on this state. Opt-in (no top-level
 // side effect); call once per GlRenderState before drawScene3D so meshes with NormalMaterials draw.
 export function registerNormalGlMaterial(state: GlRenderState): void {
+  registerGlImageTextureResolver(state);
   registerGlMeshMaterialRenderer(state, NormalMaterialKind, normalGlMeshMaterialRenderer);
 }

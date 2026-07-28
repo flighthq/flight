@@ -1,6 +1,5 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
-import { hasImageResourcePixels } from '@flighthq/image/contract';
-import { bindGlImageResourceTexture } from '@flighthq/render-gl/contract';
+import { registerGlImageTextureResolver, resolveGlTexture } from '@flighthq/render-gl/contract';
 import type {
   LinearColor,
   Camera3D,
@@ -48,7 +47,7 @@ export const toonGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   ): void {
     const gl = state.gl;
     const toon = material as Readonly<ToonMaterial> | null;
-    const program = ensureGlToonProgram(state, defineKeyForMaterial(toon));
+    const program = ensureGlToonProgram(state, defineKeyForMaterial(state, toon));
     beginGlMeshDraw(state, program, toon !== null && toon.doubleSided);
 
     setGlMeshViewProjection(gl, program.locViewProjection, camera);
@@ -67,18 +66,19 @@ export const toonGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 // Registers the built-in Toon renderer for ToonMaterialKind on this state. Opt-in (no top-level side
 // effect); call once per GlRenderState before drawScene3D so meshes with ToonMaterials draw.
 export function registerToonGlMaterial(state: GlRenderState): void {
+  registerGlImageTextureResolver(state);
   registerGlMeshMaterialRenderer(state, ToonMaterialKind, toonGlMeshMaterialRenderer);
 }
 
 // The feature define key for a Toon material: which optional textures are present and whether alpha-
 // mask cutoff is active. Drives both the program-cache variant and the bound textures. The ramp
 // switches the fragment quantizer from a stepped floor to a 1D ramp lookup.
-function defineKeyForMaterial(material: Readonly<ToonMaterial> | null): GlToonDefineKey {
+function defineKeyForMaterial(state: GlRenderState, material: Readonly<ToonMaterial> | null): GlToonDefineKey {
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
     hasBaseColorMap:
-      material !== null && material.baseColorMap !== null && material.baseColorMap.storage.image !== null,
-    hasRamp: material !== null && material.ramp !== null && material.ramp.storage.image !== null,
+      material !== null && material.baseColorMap !== null && resolveGlTexture(state, material.baseColorMap) !== null,
+    hasRamp: material !== null && material.ramp !== null && resolveGlTexture(state, material.ramp) !== null,
     hasUvTransform: hasGlUvTransform(material !== null ? material.baseColorMap : null),
   };
 }
@@ -102,21 +102,15 @@ function bindGlToonMaterialUniforms(
   gl.uniform1f(program.locAlphaCutoff, material.alphaCutoff);
 
   const baseColorMap = material.baseColorMap;
-  if (
-    baseColorMap !== null &&
-    baseColorMap.storage.image !== null &&
-    hasImageResourcePixels(baseColorMap.storage.image)
-  ) {
+  if (baseColorMap !== null) {
     gl.activeTexture(gl.TEXTURE0);
-    bindGlImageResourceTexture(state, baseColorMap.storage.image, baseColorMap.sampler);
-    gl.uniform1i(program.locBaseColorMap, 0);
+    if (resolveGlTexture(state, baseColorMap) !== null) gl.uniform1i(program.locBaseColorMap, 0);
   }
 
   const ramp = material.ramp;
-  if (ramp !== null && ramp.storage.image !== null && hasImageResourcePixels(ramp.storage.image)) {
+  if (ramp !== null) {
     gl.activeTexture(gl.TEXTURE1);
-    bindGlImageResourceTexture(state, ramp.storage.image, ramp.sampler);
-    gl.uniform1i(program.locRamp, 1);
+    if (resolveGlTexture(state, ramp) !== null) gl.uniform1i(program.locRamp, 1);
   }
 
   bindGlUvTransform(gl, program, baseColorMap);

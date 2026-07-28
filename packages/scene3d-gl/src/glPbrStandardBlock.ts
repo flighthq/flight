@@ -1,6 +1,5 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
-import { hasImageResourcePixels } from '@flighthq/image/contract';
-import { bindGlImageResourceTexture } from '@flighthq/render-gl/contract';
+import { resolveGlTexture } from '@flighthq/render-gl/contract';
 import { hasTextureUvTransform } from '@flighthq/texture/contract';
 import type {
   LinearColor,
@@ -90,10 +89,10 @@ export function bindGlPbrStandardTexture(
   location: WebGLUniformLocation | null,
   unit: number,
 ): void {
-  if (!isGlTextureReady(texture)) return;
+  if (texture === null) return;
   const gl = state.gl;
   gl.activeTexture(gl.TEXTURE0 + unit);
-  bindGlImageResourceTexture(state, texture!.storage.image!, texture!.sampler);
+  if (resolveGlTexture(state, texture) === null) return;
   gl.uniform1i(location, unit);
 }
 
@@ -104,6 +103,7 @@ export function bindGlPbrStandardTexture(
 // Takes the whole surface material (mirrors buildWgpuPbrStandardDefineKey) so it can read `alphaMode`
 // for both the mask flag and the alpha-map gate.
 export function buildGlPbrStandardDefineKey(
+  state: GlRenderState,
   standard: Readonly<StandardPbrMaterialProperties> | null,
   surface: Readonly<SurfaceMaterial> | null,
 ): GlPbrDefineKey {
@@ -115,15 +115,16 @@ export function buildGlPbrStandardDefineKey(
     clearcoatEnabled: false,
     // An opaque material ignores coverage (SurfaceMaterial contract), so it must not sample the alpha
     // map; only 'mask'/'blend' do. Same isGlTextureReady predicate as the bind path.
-    hasAlphaMap: alphaMode !== 'opaque' && isGlTextureReady(standard?.alphaMap ?? null),
-    hasBaseColorMap: isGlTextureReady(baseColorMap),
-    hasEmissiveMap: isGlTextureReady(standard?.emissiveMap ?? null),
-    hasMetallicRoughnessMap: isGlTextureReady(standard?.metallicRoughnessMap ?? null),
-    hasNormalMap: isGlTextureReady(standard?.normalMap ?? null),
-    hasOcclusionMap: isGlTextureReady(standard?.occlusionMap ?? null),
+    hasAlphaMap: alphaMode !== 'opaque' && isGlTextureReady(state, standard?.alphaMap ?? null),
+    hasBaseColorMap: isGlTextureReady(state, baseColorMap),
+    hasEmissiveMap: isGlTextureReady(state, standard?.emissiveMap ?? null),
+    hasMetallicRoughnessMap: isGlTextureReady(state, standard?.metallicRoughnessMap ?? null),
+    hasNormalMap: isGlTextureReady(state, standard?.normalMap ?? null),
+    hasOcclusionMap: isGlTextureReady(state, standard?.occlusionMap ?? null),
     // Gated on the same readiness test as hasBaseColorMap so the transforming variant compiles only
     // when the base map is actually bound and carries a non-identity transform.
-    hasUvTransform: baseColorMap !== null && isGlTextureReady(baseColorMap) && hasTextureUvTransform(baseColorMap),
+    hasUvTransform:
+      baseColorMap !== null && isGlTextureReady(state, baseColorMap) && hasTextureUvTransform(baseColorMap),
     iridescenceEnabled: false,
     sheenEnabled: false,
     specularEnabled: false,
@@ -135,8 +136,8 @@ export function buildGlPbrStandardDefineKey(
 // True when a texture slot has bound, uploadable pixels (an image resource with a backing source).
 // The single predicate the define-key builder and the bind path share, so "map present" means the
 // same thing in both places.
-export function isGlTextureReady(texture: Readonly<Texture> | null): boolean {
-  return texture !== null && texture.storage.image !== null && hasImageResourcePixels(texture.storage.image);
+export function isGlTextureReady(state: GlRenderState, texture: Readonly<Texture> | null): boolean {
+  return texture !== null && resolveGlTexture(state, texture) !== null;
 }
 
 const scratchRgba: LinearColor = [0, 0, 0, 0];

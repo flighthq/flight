@@ -1,6 +1,5 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
-import { hasImageResourcePixels } from '@flighthq/image/contract';
-import { bindGlImageResourceTexture } from '@flighthq/render-gl/contract';
+import { registerGlImageTextureResolver, resolveGlTexture } from '@flighthq/render-gl/contract';
 import { orderModifierStack, resolveModifier } from '@flighthq/shading/contract';
 import type {
   ModifierRegistry,
@@ -53,7 +52,7 @@ export const shadedGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     const gl = state.gl;
     const shaded = material as Readonly<ShadedMaterial> | null;
     const modifiers = shaded !== null ? shaded.modifiers : EMPTY_MODIFIERS;
-    const program = ensureGlShadedProgram(state, defineKeyForMaterial(shaded), modifiers);
+    const program = ensureGlShadedProgram(state, defineKeyForMaterial(state, shaded), modifiers);
     beginGlMeshDraw(state, program, shaded !== null && shaded.doubleSided);
 
     setGlMeshViewProjection(gl, program.locViewProjection, camera);
@@ -76,6 +75,7 @@ export const shadedGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 // draw. Enable the built-in modifiers separately with registerBuiltInGlModifierSnippets — a plain
 // ShadedMaterial needs only this registration.
 export function registerShadedGlMaterial(state: GlRenderState): void {
+  registerGlImageTextureResolver(state);
   registerGlMeshMaterialRenderer(state, ShadedMaterialKind, shadedGlMeshMaterialRenderer);
 }
 
@@ -135,24 +135,21 @@ function bindGlShadedMaterialUniforms(
   gl.uniform1f(program.locAlphaCutoff, material.alphaCutoff);
 
   const diffuseMap = material.diffuseMap;
-  if (diffuseMap !== null && diffuseMap.storage.image !== null && hasImageResourcePixels(diffuseMap.storage.image)) {
+  if (diffuseMap !== null) {
     gl.activeTexture(gl.TEXTURE0);
-    bindGlImageResourceTexture(state, diffuseMap.storage.image, diffuseMap.sampler);
-    gl.uniform1i(program.locDiffuseMap, 0);
+    if (resolveGlTexture(state, diffuseMap) !== null) gl.uniform1i(program.locDiffuseMap, 0);
   }
 
   const specularMap = material.specularMap;
-  if (specularMap !== null && specularMap.storage.image !== null && hasImageResourcePixels(specularMap.storage.image)) {
+  if (specularMap !== null) {
     gl.activeTexture(gl.TEXTURE1);
-    bindGlImageResourceTexture(state, specularMap.storage.image, specularMap.sampler);
-    gl.uniform1i(program.locSpecularMap, 1);
+    if (resolveGlTexture(state, specularMap) !== null) gl.uniform1i(program.locSpecularMap, 1);
   }
 
   const normalMap = material.normalMap;
-  if (normalMap !== null && normalMap.storage.image !== null && hasImageResourcePixels(normalMap.storage.image)) {
+  if (normalMap !== null) {
     gl.activeTexture(gl.TEXTURE2);
-    bindGlImageResourceTexture(state, normalMap.storage.image, normalMap.sampler);
-    gl.uniform1i(program.locNormalMap, 2);
+    if (resolveGlTexture(state, normalMap) !== null) gl.uniform1i(program.locNormalMap, 2);
   }
 
   bindGlUvTransform(gl, program, diffuseMap);
@@ -161,12 +158,15 @@ function bindGlShadedMaterialUniforms(
 // The base-material feature flags for a ShadedMaterial: which optional maps are present and whether
 // alpha-mask cutoff is active. The modifier feature-set is keyed separately (in ensureGlShadedProgram)
 // from the material's modifier stack.
-function defineKeyForMaterial(material: Readonly<ShadedMaterial> | null): GlShadedDefineKey {
+function defineKeyForMaterial(state: GlRenderState, material: Readonly<ShadedMaterial> | null): GlShadedDefineKey {
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
-    hasDiffuseMap: material !== null && material.diffuseMap !== null && material.diffuseMap.storage.image !== null,
-    hasNormalMap: material !== null && material.normalMap !== null && material.normalMap.storage.image !== null,
-    hasSpecularMap: material !== null && material.specularMap !== null && material.specularMap.storage.image !== null,
+    hasDiffuseMap:
+      material !== null && material.diffuseMap !== null && resolveGlTexture(state, material.diffuseMap) !== null,
+    hasNormalMap:
+      material !== null && material.normalMap !== null && resolveGlTexture(state, material.normalMap) !== null,
+    hasSpecularMap:
+      material !== null && material.specularMap !== null && resolveGlTexture(state, material.specularMap) !== null,
     hasUvTransform: hasGlUvTransform(material !== null ? material.diffuseMap : null),
   };
 }

@@ -1,4 +1,5 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
+import { registerGlImageTextureResolver, resolveGlTexture } from '@flighthq/render-gl/contract';
 import type {
   LinearColor,
   Camera3D,
@@ -33,7 +34,7 @@ export const matcapGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   ): void {
     const gl = state.gl;
     const matcap = material as Readonly<MatcapMaterial> | null;
-    const program = ensureGlMatcapProgram(state, defineKeyForMaterial(matcap));
+    const program = ensureGlMatcapProgram(state, defineKeyForMaterial(state, matcap));
     beginGlMeshDraw(state, program, matcap !== null && matcap.doubleSided);
     setGlMeshViewProjection(gl, program.locViewProjection, camera);
     // u_view rotates the world-space normal into view space for the matcap lookup.
@@ -57,13 +58,14 @@ export const matcapGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 // Registers the built-in Matcap renderer for MatcapMaterialKind on this state. Opt-in (no top-level
 // side effect); call once per GlRenderState before drawScene3D so meshes with MatcapMaterials draw.
 export function registerMatcapGlMaterial(state: GlRenderState): void {
+  registerGlImageTextureResolver(state);
   registerGlMeshMaterialRenderer(state, MatcapMaterialKind, matcapGlMeshMaterialRenderer);
 }
 
-function defineKeyForMaterial(material: Readonly<MatcapMaterial> | null): GlMatcapDefineKey {
+function defineKeyForMaterial(state: GlRenderState, material: Readonly<MatcapMaterial> | null): GlMatcapDefineKey {
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
-    hasMatcap: material !== null && material.matcap !== null && material.matcap.storage.image !== null,
+    hasMatcap: material !== null && material.matcap !== null && resolveGlTexture(state, material.matcap) !== null,
   };
 }
 

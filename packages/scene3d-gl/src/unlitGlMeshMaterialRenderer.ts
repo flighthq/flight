@@ -2,13 +2,11 @@ import { unpackColorToLinear } from '@flighthq/color/contract';
 import {
   getGlRenderTextureColorSpace,
   glProducedTextureBackingKind,
-  glVideoTextureBackingKind,
-  isGlRenderTextureReady,
   registerGlImageTextureResolver,
   registerGlProducedTextureResolver,
   registerGlVideoTextureResolver,
+  resolveGlTexture,
 } from '@flighthq/render-gl/contract';
-import { isVideoTextureFrameReady } from '@flighthq/texture/contract';
 import type {
   LinearColor,
   Camera3D,
@@ -80,14 +78,7 @@ function defineKeyForMaterial(state: GlRenderState, material: Readonly<UnlitMate
   const colorMap = material?.baseColorMap ?? null;
   const backingKind = colorMap?.storage.image?.kind ?? colorMap?.storage.target?.kind;
   const produced = backingKind === glProducedTextureBackingKind;
-  const video = backingKind === glVideoTextureBackingKind;
-  const colorMapReady =
-    colorMap !== null &&
-    (produced
-      ? isGlRenderTextureReady(state, colorMap)
-      : video
-        ? isVideoTextureFrameReady(colorMap)
-        : colorMap.storage.image !== null);
+  const colorMapReady = colorMap !== null && resolveGlTexture(state, colorMap) !== null;
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
     colorMapLinear: produced && colorMapReady && getGlRenderTextureColorSpace(state, colorMap) === 'linear',

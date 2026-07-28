@@ -34,7 +34,7 @@ export const standardPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   ): void {
     const gl = state.gl;
     const pbr = material as Readonly<StandardPbrMaterial> | null;
-    const program = ensureGlPbrProgram(state, buildGlPbrStandardDefineKey(pbr, pbr));
+    const program = ensureGlPbrProgram(state, buildGlPbrStandardDefineKey(state, pbr, pbr));
     beginGlMeshDraw(state, program, pbr !== null && pbr.doubleSided);
 
     setGlMeshViewProjection(gl, program.locViewProjection, camera);

@@ -1,4 +1,5 @@
 import { createStandardPbrMaterial, createStandardPbrMaterialProperties } from '@flighthq/materials/contract';
+import { registerGlTextureResolver } from '@flighthq/render-gl/contract';
 import type { StandardPbrMaterialProperties, Texture } from '@flighthq/types/contract';
 
 import { compileGlPbrProgram } from './glPbrProgramCache';
@@ -11,13 +12,20 @@ import {
 import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
 
 function makeProgram() {
-  return compileGlPbrProgram(makeFakeGl2(), buildGlPbrStandardDefineKey(null, null));
+  const { state } = makeGlScene3DState();
+  return compileGlPbrProgram(makeFakeGl2(), buildGlPbrStandardDefineKey(state, null, null));
 }
 
 // A texture that reports pixels (isGlTextureReady === true) without a real upload.
 const READY_TEXTURE = {
-  storage: { dimension: '2d', image: { source: {}, data: null, compressed: null } },
+  storage: { dimension: '2d', image: { kind: 'test.ready' } },
 } as unknown as Texture;
+
+function makeTextureReadyState() {
+  const { state } = makeGlScene3DState();
+  registerGlTextureResolver(state, 'test.ready', () => ({}) as WebGLTexture);
+  return state;
+}
 
 describe('bindGlPbrStandardBlock', () => {
   it('uploads neutral defaults for a null block', () => {
@@ -49,26 +57,28 @@ describe('bindGlPbrStandardTexture', () => {
 
 describe('buildGlPbrStandardDefineKey', () => {
   it('propagates the alpha-mask flag from the surface material', () => {
-    expect(buildGlPbrStandardDefineKey(null, createStandardPbrMaterial({ alphaMode: 'mask' })).alphaMaskEnabled).toBe(
-      true,
-    );
+    const state = makeTextureReadyState();
+    expect(
+      buildGlPbrStandardDefineKey(state, null, createStandardPbrMaterial({ alphaMode: 'mask' })).alphaMaskEnabled,
+    ).toBe(true);
   });
 
   it('samples the alpha map for mask/blend but not for an opaque material', () => {
+    const state = makeTextureReadyState();
     const standard = { alphaMap: READY_TEXTURE } as unknown as StandardPbrMaterialProperties;
-    expect(buildGlPbrStandardDefineKey(standard, createStandardPbrMaterial({ alphaMode: 'mask' })).hasAlphaMap).toBe(
-      true,
-    );
-    expect(buildGlPbrStandardDefineKey(standard, createStandardPbrMaterial({ alphaMode: 'blend' })).hasAlphaMap).toBe(
-      true,
-    );
-    expect(buildGlPbrStandardDefineKey(standard, createStandardPbrMaterial({ alphaMode: 'opaque' })).hasAlphaMap).toBe(
-      false,
-    );
+    expect(
+      buildGlPbrStandardDefineKey(state, standard, createStandardPbrMaterial({ alphaMode: 'mask' })).hasAlphaMap,
+    ).toBe(true);
+    expect(
+      buildGlPbrStandardDefineKey(state, standard, createStandardPbrMaterial({ alphaMode: 'blend' })).hasAlphaMap,
+    ).toBe(true);
+    expect(
+      buildGlPbrStandardDefineKey(state, standard, createStandardPbrMaterial({ alphaMode: 'opaque' })).hasAlphaMap,
+    ).toBe(false);
   });
 
   it('returns all-false map and extension flags for a null block', () => {
-    const key = buildGlPbrStandardDefineKey(null, null);
+    const key = buildGlPbrStandardDefineKey(makeTextureReadyState(), null, null);
     expect(key.clearcoatEnabled).toBe(false);
     expect(key.hasAlphaMap).toBe(false);
     expect(key.hasBaseColorMap).toBe(false);
@@ -82,6 +92,6 @@ describe('buildGlPbrStandardDefineKey', () => {
 
 describe('isGlTextureReady', () => {
   it('is false for a null texture', () => {
-    expect(isGlTextureReady(null)).toBe(false);
+    expect(isGlTextureReady(makeTextureReadyState(), null)).toBe(false);
   });
 });

@@ -1,3 +1,4 @@
+import { registerGlImageTextureResolver } from '@flighthq/render-gl/contract';
 import type {
   AnisotropyPbrMaterial,
   Camera3D,
@@ -35,7 +36,7 @@ export const anisotropyPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     const gl = state.gl;
     const anisotropy = material as Readonly<AnisotropyPbrMaterial> | null;
     const standard = anisotropy !== null ? anisotropy.standard : null;
-    const key = buildGlPbrStandardDefineKey(standard, anisotropy);
+    const key = buildGlPbrStandardDefineKey(state, standard, anisotropy);
     key.anisotropyEnabled = true;
     const program = ensureGlPbrProgram(state, key);
     beginGlMeshDraw(state, program, anisotropy !== null && anisotropy.doubleSided);
@@ -60,5 +61,6 @@ export const anisotropyPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 // Installs the built-in Anisotropy renderer for AnisotropyPbrMaterialKind on this state. Opt-in (no
 // top-level side effect): drawScene3D only draws Anisotropy subsets once this is called.
 export function registerAnisotropyPbrGlMaterial(state: GlRenderState): void {
+  registerGlImageTextureResolver(state);
   registerGlMeshMaterialRenderer(state, AnisotropyPbrMaterialKind, anisotropyPbrGlMeshMaterialRenderer);
 }
