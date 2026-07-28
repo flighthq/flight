@@ -22,21 +22,15 @@ function createAtlasGlState() {
   return result;
 }
 
-function makeTileset(atlasOverride?: unknown) {
-  return {
-    atlas: atlasOverride !== undefined ? atlasOverride : makeAtlas(),
-    tileWidth: 16,
-    tileHeight: 16,
-  };
-}
-
 function makeTilemapNode(data: Record<string, unknown> = {}): RenderProxy2D {
   return {
     source: {
       data: {
-        tileset: makeTileset(),
+        atlas: makeAtlas(),
         columns: 2,
         rows: 2,
+        tileHeight: 16,
+        tileWidth: 16,
         tiles: [0, 0, 0, 0],
         ...data,
       },
@@ -62,18 +56,10 @@ describe('defaultGlTilemapRenderer', () => {
 });
 
 describe('defaultGlTilemapRenderer.submit', () => {
-  it('returns early without drawing when tileset is null', () => {
-    const { state, gl } = createAtlasGlState();
-    registerStandardGlMaterial(state);
-    defaultGlTilemapRenderer.submit(state, makeTilemapNode({ tileset: null }));
-    flushGlSpriteBatch(state);
-    expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
-  });
-
   it('returns early without drawing when atlas is null', () => {
     const { state, gl } = createAtlasGlState();
     registerStandardGlMaterial(state);
-    defaultGlTilemapRenderer.submit(state, makeTilemapNode({ tileset: makeTileset(null) }));
+    defaultGlTilemapRenderer.submit(state, makeTilemapNode({ atlas: null }));
     flushGlSpriteBatch(state);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
@@ -81,10 +67,7 @@ describe('defaultGlTilemapRenderer.submit', () => {
   it('returns early without drawing when atlas.texture is null', () => {
     const { state, gl } = createAtlasGlState();
     registerStandardGlMaterial(state);
-    defaultGlTilemapRenderer.submit(
-      state,
-      makeTilemapNode({ tileset: { atlas: { regions: [], texture: null }, tileWidth: 16, tileHeight: 16 } }),
-    );
+    defaultGlTilemapRenderer.submit(state, makeTilemapNode({ atlas: { regions: [], texture: null } }));
     flushGlSpriteBatch(state);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
@@ -95,7 +78,7 @@ describe('defaultGlTilemapRenderer.submit', () => {
     defaultGlTilemapRenderer.submit(
       state,
       makeTilemapNode({
-        tileset: { atlas: { regions: [], texture: createTexture() }, tileWidth: 16, tileHeight: 16 },
+        atlas: { regions: [], texture: createTexture() },
       }),
     );
     flushGlSpriteBatch(state);

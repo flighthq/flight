@@ -6,9 +6,8 @@ export default mergeConfig(
   baseConfig,
   defineConfig({
     test: {
-      environment: 'jsdom',
+      environment: 'node',
       include: ['src/**/*.test.ts'],
-      sequence: { groupOrder: 2 },
     },
   }),
 );

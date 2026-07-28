@@ -24,10 +24,8 @@ const INSTANCE_FLOATS = 13;
 function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void {
   const runtime = getGlRenderStateRuntime(state);
   const source = tilemapNode.source as Tilemap;
-  const { tileset, columns, rows, tiles } = source.data;
+  const { atlas, columns, rows, tileHeight, tileWidth, tiles } = source.data;
 
-  if (tileset === null) return;
-  const atlas = tileset.atlas;
   if (atlas === null || atlas.texture === null || !hasTextureBacking(atlas.texture)) return;
   if (columns === 0 || rows === 0) return;
 
@@ -53,7 +51,6 @@ function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void
 
   const regions = atlas.regions;
   const numRegions = regions.length;
-  const { tileWidth, tileHeight } = tileset;
   const iw = 1 / Math.max(1, getTextureWidth(atlas.texture));
   const ih = 1 / Math.max(1, getTextureHeight(atlas.texture));
   const instanceData = runtime.spriteBatchInstanceData;

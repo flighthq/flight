@@ -34,7 +34,10 @@
       "path": "../shape"
     },
     {
-      "path": "../sprite"
+      "path": "../quadbatch"
+    },
+    {
+      "path": "../tilemap"
     },
     {
       "path": "../text"
@@ -50,9 +53,6 @@
     },
     {
       "path": "../textureatlas"
-    },
-    {
-      "path": "../tileset"
     },
     {
       "path": "../types"

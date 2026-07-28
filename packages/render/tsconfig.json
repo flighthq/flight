@@ -49,7 +49,10 @@
       "path": "../signals"
     },
     {
-      "path": "../sprite"
+      "path": "../quadbatch"
+    },
+    {
+      "path": "../tilemap"
     },
     {
       "path": "../types"

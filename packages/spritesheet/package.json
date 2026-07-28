@@ -39,7 +39,6 @@
     "@flighthq/entity": "*",
     "@flighthq/signals": "*",
     "@flighthq/textureatlas": "*",
-    "@flighthq/tileset": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

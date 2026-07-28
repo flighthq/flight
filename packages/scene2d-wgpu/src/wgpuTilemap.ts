@@ -27,10 +27,8 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
   if (runtime.renderPass === null) return;
 
   const source = tilemapNode.source as Tilemap;
-  const { columns, rows, tileset, tiles } = source.data;
+  const { atlas, columns, rows, tileHeight, tileWidth, tiles } = source.data;
 
-  if (tileset === null) return;
-  const atlas = tileset.atlas;
   if (atlas === null || atlas.texture === null || !hasTextureBacking(atlas.texture)) return;
   if (columns === 0 || rows === 0) return;
 
@@ -54,7 +52,6 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
 
   const regions = atlas.regions;
   const numRegions = regions.length;
-  const { tileHeight, tileWidth } = tileset;
   const iw = 1 / Math.max(1, getTextureWidth(atlas.texture));
   const ih = 1 / Math.max(1, getTextureHeight(atlas.texture));
   const instanceData = runtime.spriteBatchInstanceData;
