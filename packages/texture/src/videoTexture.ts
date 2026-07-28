@@ -74,7 +74,7 @@ export function createVideoTexture(source: VideoResource, opts?: Readonly<Partia
 // has decoded yet (videoHeight is 0). Reads the element directly, so the value tracks a resolution
 // change mid-stream.
 export function getVideoTextureHeight(videoTexture: Readonly<VideoTextureLike>): number {
-  const element = videoTexture.source.element;
+  const element = videoTexture.source.element as HTMLVideoElement | null;
   return element !== null && element.videoHeight > 0 ? element.videoHeight : -1;
 }
 
@@ -97,7 +97,7 @@ export function getVideoTextureUvMatrix(out: Matrix3Like, videoTexture: Readonly
 // Returns the pixel width of the current video frame, or -1 when no element is attached or no frame
 // has decoded yet.
 export function getVideoTextureWidth(videoTexture: Readonly<VideoTextureLike>): number {
-  const element = videoTexture.source.element;
+  const element = videoTexture.source.element as HTMLVideoElement | null;
   return element !== null && element.videoWidth > 0 ? element.videoWidth : -1;
 }
 
@@ -105,7 +105,7 @@ export function getVideoTextureWidth(videoTexture: Readonly<VideoTextureLike>): 
 // HAVE_CURRENT_DATA) and its dimensions are known — the gate a material samples behind and a driver
 // checks before calling advanceVideoTexture. False while metadata/first-frame is still buffering.
 export function isVideoTextureFrameReady(videoTexture: Readonly<VideoTextureLike>): boolean {
-  const element = videoTexture.source.element;
+  const element = videoTexture.source.element as HTMLVideoElement | null;
   return (
     element !== null && element.readyState >= HAVE_CURRENT_DATA && element.videoWidth > 0 && element.videoHeight > 0
   );

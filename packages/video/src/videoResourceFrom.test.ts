@@ -31,7 +31,7 @@ describe('createVideoResourceFromMediaStream', () => {
     const stream = {} as MediaStream;
     const resource = createVideoResourceFromMediaStream(stream);
     expect(resource.element).not.toBeNull();
-    expect(resource.element!.srcObject).toBe(stream);
+    expect((resource.element as HTMLVideoElement).srcObject).toBe(stream);
   });
 });
 

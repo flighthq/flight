@@ -7,7 +7,7 @@ import { setCanvasTransform } from './canvasTransform';
 export function drawCanvasVideo(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
   drawCanvasScene2D(state, renderProxy);
   const source = renderProxy.source as Video;
-  const element = source.data.source?.element;
+  const element = source.data.source?.element as HTMLVideoElement | null | undefined;
   if (element !== undefined && element !== null && element.readyState >= 2) {
     const context = state.context;
     state.applyBlendMode?.(state, renderProxy.blendMode);

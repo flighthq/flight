@@ -39,7 +39,7 @@ export function drawWgpuVideo(state: WgpuRenderState, renderProxy: RenderProxy2D
   flushWgpuSpriteBatch(state);
 
   const source = renderProxy.source as Video;
-  const element = source.data.source?.element;
+  const element = source.data.source?.element as HTMLVideoElement | null | undefined;
   if (element === undefined || element === null || element.readyState < 2) return;
 
   const vw = element.videoWidth;

@@ -254,6 +254,7 @@ export * from './HemisphereLight';
 export * from './HitTestFunction';
 export * from './HitTestResult';
 export * from './HtmlView';
+export * from './HostImageSource';
 export * from './ImageChannel';
 export * from './ImageDecodeOptions';
 export * from './ImageDecoder';

@@ -172,7 +172,7 @@ export function bindWgpuVideoTexture(
   state: WgpuRenderState,
   videoTexture: Readonly<VideoTexture>,
 ): WgpuVideoTextureEntry | null {
-  const element = videoTexture.source.element;
+  const element = videoTexture.source.element as HTMLVideoElement | null;
   if (element === null || element.readyState < 2 || element.videoWidth <= 0 || element.videoHeight <= 0) return null;
 
   const runtime = getWgpuRenderStateRuntime(state);
