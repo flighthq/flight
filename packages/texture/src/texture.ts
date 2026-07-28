@@ -4,6 +4,7 @@ import type {
   ImageResource,
   Matrix3Like,
   Texture,
+  TextureBackingKind,
   TextureLike,
   TextureUvTransform,
   Vector2Like,
@@ -98,6 +99,13 @@ export function equalsTexture(
   );
 }
 
+// Returns the open resolver key declared by the texture's one active backing, or null when unbound.
+// CPU-origin images own their key; GPU-origin targets own theirs, so TextureStorage carries no duplicate
+// discriminant.
+export function getTextureBackingKind(texture: Readonly<TextureLike>): TextureBackingKind | null {
+  return texture.storage.image?.kind ?? texture.storage.target?.kind ?? null;
+}
+
 // Returns the height declared by the CPU image or produced target backing, or -1 when unbound.
 export function getTextureHeight(texture: Readonly<TextureLike>): number {
   return texture.storage.image?.height ?? texture.storage.target?.height ?? -1;
@@ -151,6 +159,11 @@ export function getTextureUvMatrix(out: Matrix3Like, texture: Readonly<TextureUv
 // Returns the width declared by the CPU image or produced target backing, or -1 when unbound.
 export function getTextureWidth(texture: Readonly<TextureLike>): number {
   return texture.storage.image?.width ?? texture.storage.target?.width ?? -1;
+}
+
+// True when the texture declares either a CPU-origin image or a GPU-origin target backing.
+export function hasTextureBacking(texture: Readonly<TextureLike>): boolean {
+  return getTextureBackingKind(texture) !== null;
 }
 
 // True when the texture carries a non-identity KHR_texture_transform — any non-unit scale, non-zero

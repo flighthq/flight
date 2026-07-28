@@ -1,7 +1,7 @@
 import { getCamera3DViewProjectionMatrix4 } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4, getMatrix4Position, inverseMatrix4 } from '@flighthq/geometry/contract';
 import { createGlProgram, uploadGlSkinPaletteTexture } from '@flighthq/render-gl/contract';
-import { getTextureUvMatrix, hasTextureUvTransform } from '@flighthq/texture/contract';
+import { getTextureUvMatrix, hasTextureBacking, hasTextureUvTransform } from '@flighthq/texture/contract';
 import type {
   GlMeshProgram,
   Camera3D,
@@ -203,11 +203,7 @@ export function ensureGlScene3DProgram<T extends GlMeshProgram>(
 // non-identity uv transform. Gating on both keeps an untiled or unbound surface on the identity shader
 // variant, so it never pays for the uv-transform uniform or the extra vertex multiply.
 export function hasGlUvTransform(texture: Readonly<TextureLike> | null): boolean {
-  return (
-    texture !== null &&
-    (texture.storage.image !== null || texture.storage.target !== undefined) &&
-    hasTextureUvTransform(texture)
-  );
+  return texture !== null && hasTextureBacking(texture) && hasTextureUvTransform(texture);
 }
 
 // Uploads the camera world position (the translation of the inverse view matrix) to a lit family's

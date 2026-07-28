@@ -1,3 +1,4 @@
+import { getTextureBackingKind } from '@flighthq/texture/contract';
 import type {
   Texture,
   TextureLike,
@@ -49,8 +50,8 @@ export function registerWgpuVideoTextureResolver(state: WgpuRenderState): void {
 export function resolveWgpuTexture(state: WgpuRenderState, texture: Readonly<TextureLike>): WgpuTextureEntry | null {
   const registry = getWgpuRenderStateRuntime(state).wgpuTextureResolverRegistry;
   if (registry == null) return null;
-  const backingKind = texture.storage.image?.kind ?? texture.storage.target?.kind;
-  if (backingKind === undefined) return null;
+  const backingKind = getTextureBackingKind(texture);
+  if (backingKind === null) return null;
   return registry.get(backingKind)?.(state, texture) ?? null;
 }
 

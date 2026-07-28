@@ -1,3 +1,4 @@
+import { getTextureBackingKind } from '@flighthq/texture/contract';
 import type {
   GlRenderState,
   GlTextureBackingKind,
@@ -53,8 +54,8 @@ export function registerGlVideoTextureResolver(state: GlRenderState): void {
 export function resolveGlTexture(state: GlRenderState, texture: Readonly<TextureLike>): WebGLTexture | null {
   const registry = getGlRenderStateRuntime(state).glTextureResolverRegistry;
   if (registry == null) return null;
-  const backingKind = texture.storage.image?.kind ?? texture.storage.target?.kind;
-  if (backingKind === undefined) return null;
+  const backingKind = getTextureBackingKind(texture);
+  if (backingKind === null) return null;
   return registry.get(backingKind)?.(state, texture) ?? null;
 }
 

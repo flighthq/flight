@@ -7,6 +7,7 @@ import {
   registerGlVideoTextureResolver,
   resolveGlTexture,
 } from '@flighthq/render-gl/contract';
+import { getTextureBackingKind } from '@flighthq/texture/contract';
 import type {
   LinearColor,
   Camera3D,
@@ -76,7 +77,7 @@ export function registerUnlitGlMaterial(state: GlRenderState): void {
 
 function defineKeyForMaterial(state: GlRenderState, material: Readonly<UnlitMaterial> | null): GlUnlitDefineKey {
   const colorMap = material?.baseColorMap ?? null;
-  const backingKind = colorMap?.storage.image?.kind ?? colorMap?.storage.target?.kind;
+  const backingKind = colorMap === null ? null : getTextureBackingKind(colorMap);
   const produced = backingKind === glProducedTextureBackingKind;
   const colorMapReady = colorMap !== null && resolveGlTexture(state, colorMap) !== null;
   return {

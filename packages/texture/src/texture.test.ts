@@ -1,6 +1,6 @@
 import { createMatrix3, createVector2, inverseMatrix3 } from '@flighthq/geometry/contract';
 import type { ImageResource } from '@flighthq/types/contract';
-import { ProducedTextureBackingKind } from '@flighthq/types/contract';
+import { ImageTextureBackingKind, ProducedTextureBackingKind } from '@flighthq/types/contract';
 
 import { createSampler, equalsSampler } from './sampler';
 import {
@@ -8,10 +8,12 @@ import {
   copyTexture,
   createTexture,
   equalsTexture,
+  getTextureBackingKind,
   getTextureHeight,
   getTextureInverseUvMatrix,
   getTextureUvMatrix,
   getTextureWidth,
+  hasTextureBacking,
   hasTextureUvTransform,
   isTextureReady,
   resetTextureUvTransform,
@@ -23,7 +25,7 @@ import {
   transformTextureUv,
 } from './texture';
 
-const fakeImage = { width: 32, height: 64 } as ImageResource;
+const fakeImage = { height: 64, kind: ImageTextureBackingKind, width: 32 } as ImageResource;
 
 // Applies a column-major 3×3 uv matrix to (u, v, 1), writing the transformed coordinate into out.
 function multiplyMatrix3Uv(out: { x: number; y: number }, matrix: { m: ArrayLike<number> }, u: number, v: number) {
@@ -205,6 +207,26 @@ describe('equalsTexture', () => {
   });
 });
 
+describe('getTextureBackingKind', () => {
+  it('reads the key from the active image or target backing', () => {
+    expect(getTextureBackingKind(createTexture())).toBeNull();
+    expect(getTextureBackingKind(createTexture({ storage: { dimension: '2d', image: fakeImage } }))).toBe(
+      ImageTextureBackingKind,
+    );
+    expect(
+      getTextureBackingKind(
+        createTexture({
+          storage: {
+            dimension: '2d',
+            image: null,
+            target: { height: 8, kind: ProducedTextureBackingKind, width: 8 },
+          },
+        }),
+      ),
+    ).toBe(ProducedTextureBackingKind);
+  });
+});
+
 describe('getTextureHeight', () => {
   it('returns the image height when an image is bound', () => {
     const texture = createTexture({ storage: { dimension: '2d', image: fakeImage } });
@@ -383,6 +405,24 @@ describe('getTextureWidth', () => {
     });
 
     expect(getTextureWidth(texture)).toStrictEqual(96);
+  });
+});
+
+describe('hasTextureBacking', () => {
+  it('detects image and target backings without duplicating their discriminant', () => {
+    expect(hasTextureBacking(createTexture())).toBe(false);
+    expect(hasTextureBacking(createTexture({ storage: { dimension: '2d', image: fakeImage } }))).toBe(true);
+    expect(
+      hasTextureBacking(
+        createTexture({
+          storage: {
+            dimension: '2d',
+            image: null,
+            target: { height: 8, kind: ProducedTextureBackingKind, width: 8 },
+          },
+        }),
+      ),
+    ).toBe(true);
   });
 });
 

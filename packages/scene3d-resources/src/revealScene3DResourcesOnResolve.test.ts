@@ -13,7 +13,7 @@ import type {
   Scene3DResourceEvent,
   Texture,
 } from '@flighthq/types/contract';
-import { ResourceResolutionState } from '@flighthq/types/contract';
+import { ImageTextureBackingKind, ResourceResolutionState } from '@flighthq/types/contract';
 
 import { revealScene3DResourcesOnResolve } from './revealScene3DResourcesOnResolve';
 import { createBuiltInScene3DResourceResolver } from './sceneResourceResolver';
@@ -110,7 +110,10 @@ describe('revealScene3DResourcesOnResolve', () => {
   it('does not hide an owner whose resource was already bound or had already failed', () => {
     const bound = createTexture({
       resource: pendingRef(),
-      storage: { dimension: '2d', image: { height: 1, width: 1 } as ImageResource },
+      storage: {
+        dimension: '2d',
+        image: { height: 1, kind: ImageTextureBackingKind, width: 1 } as ImageResource,
+      },
     });
     const failedRef = pendingRef();
     failedRef.state = ResourceResolutionState.Failed;

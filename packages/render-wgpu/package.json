@@ -41,6 +41,7 @@
     "@flighthq/geometry": "*",
     "@flighthq/render": "*",
     "@flighthq/surface": "*",
+    "@flighthq/texture": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
