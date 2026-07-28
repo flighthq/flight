@@ -7,8 +7,8 @@
 // counts text-colored pixels in a band near the FIRST line's baseline area and in a second band well
 // BELOW it. Hits in both bands prove the text occupied two lines, i.e. it wrapped. The vertical gap
 // between the bands is wide enough that a single line of this font size could not span both.
-import type { Surface } from '@flighthq/sdk';
-import { addNodeChild, createDisplayObject, createRichText, getSurfacePixelRgb, RichTextKind } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
+import { addNodeChild, createDisplayObject, createRichText, getBitmapPixelRgb, RichTextKind } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
 const WIDTH = 800;
@@ -52,9 +52,9 @@ addNodeChild(root, field);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   const band1 = countTextColorPixelsInBand(at, FIELD_X + 4, FIELD_W - 8, BAND1_Y);
   if (band1 < 8) {

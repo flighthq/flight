@@ -8,7 +8,7 @@
 //   - a point outside the arc sweep (in the opposite quadrant) is background black.
 //
 // Arc rendering exercises the Canvas arc() path construction, which jsdom cannot verify visually.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeArc,
@@ -18,7 +18,7 @@ import {
   appendShapeMoveTo,
   createDisplayObject,
   createShape,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeAppearance,
   ShapeKind,
 } from '@flighthq/sdk';
@@ -51,9 +51,9 @@ addNodeChild(root, arc);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width;
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   const insideArc = at(CX + 40, CY + 40);
   if (!isRed(insideArc)) {

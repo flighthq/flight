@@ -6,7 +6,7 @@
 // side. The oracle samples the center of each bitmap and verifies the expected solid color. This is
 // inherently visual — it exercises per-frame atlas region selection and bitmap source-rect rendering
 // that jsdom cannot confirm.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   SpriteKind,
@@ -16,7 +16,7 @@ import {
   createImageResource,
   createTexture,
   createSpritesheetFromGrid,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   getTextureAtlasRegionById,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
@@ -80,9 +80,9 @@ for (let i = 0; i < FRAME_COUNT; i++) {
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width;
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   const centerY = 60 + FRAME_SIZE / 2;
   for (let i = 0; i < FRAME_COUNT; i++) {

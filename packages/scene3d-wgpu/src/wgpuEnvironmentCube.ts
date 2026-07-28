@@ -8,7 +8,7 @@ import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 // bound with pixels, either a decoded `source` element or raw `data` — which callers treat as "no
 // environment this frame". Each face uploads through whichever representation it carries:
 // copyExternalImageToTexture for a `source`, or queue.writeTexture for a data-only face (a generated
-// Surface, e.g. the skybox's rotateSurface180 path, which never allocates a canvas). The WGSL mirror of
+// Bitmap, e.g. the skybox's rotateBitmap180 path, which never allocates a canvas). The WGSL mirror of
 // scene-gl's ensureGlEnvironmentSourceCube. The upload is keyed by identity: re-uploaded only when the
 // cached view is absent (a changed cube must drop the cache first via destroyWgpuScene3DIbl). The faces are
 // stored sRGB-encoded (rgba8unorm) and decoded to linear by the bake/skybox shaders that sample them,
@@ -64,7 +64,7 @@ export function updateWgpuEnvironmentCubeFace(
 }
 
 // A face is uploadable when it carries pixels in either representation: a decoded `source` element or
-// raw CPU `data` (a generated Surface). A cube is complete only when all six faces are uploadable.
+// raw CPU `data` (a generated Bitmap). A cube is complete only when all six faces are uploadable.
 function hasWgpuCubeFacePixels(cube: Readonly<Texture>): boolean {
   if (cube.storage.dimension !== 'cube') return false;
   for (let face = 0; face < 6; face++) {

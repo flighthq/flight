@@ -4,7 +4,7 @@ import {
   updateOrbitCameraController,
 } from '@flighthq/camera-controls';
 import { createNode3D } from '@flighthq/scene3d';
-import type { Camera3D, Scene3DLightsLike, Surface } from '@flighthq/sdk';
+import type { Camera3D, Scene3DLightsLike, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   createCamera3D,
@@ -13,7 +13,7 @@ import {
   createMesh,
   createPerspectiveProjection,
   createStandardPbrMaterial,
-  createSurface,
+  createBitmap,
   createTorusMeshGeometry,
   createVector3,
   invalidateNodeLocalTransform,
@@ -36,27 +36,27 @@ const facePalettes: readonly (readonly [number, number, number])[] = [
   [142, 54, 138],
 ];
 
-function createSkyFace(face: number): Surface {
-  const surface = createSurface(128, 128);
+function createSkyFace(face: number): Bitmap {
+  const bitmap = createBitmap(128, 128);
   const [baseR, baseG, baseB] = facePalettes[face];
-  for (let y = 0; y < surface.height; y++) {
-    const heightMix = y / (surface.height - 1);
-    for (let x = 0; x < surface.width; x++) {
-      const offset = (y * surface.width + x) * 4;
+  for (let y = 0; y < bitmap.height; y++) {
+    const heightMix = y / (bitmap.height - 1);
+    for (let x = 0; x < bitmap.width; x++) {
+      const offset = (y * bitmap.width + x) * 4;
       const horizonGlow = Math.max(0, 1 - Math.abs(heightMix - 0.58) * 5);
       const aurora = Math.max(0, Math.sin(x * 0.11 + face * 1.7) * Math.sin(y * 0.045 + face));
       const star = (x * 31 + y * 17 + face * 47) % 997 < 3 && y < 76;
-      surface.data[offset] = star ? 245 : Math.min(255, baseR * (0.45 + heightMix * 0.55) + horizonGlow * 58);
-      surface.data[offset + 1] = star
+      bitmap.data[offset] = star ? 245 : Math.min(255, baseR * (0.45 + heightMix * 0.55) + horizonGlow * 58);
+      bitmap.data[offset + 1] = star
         ? 250
         : Math.min(255, baseG * (0.42 + heightMix * 0.58) + horizonGlow * 42 + aurora * 44);
-      surface.data[offset + 2] = star
+      bitmap.data[offset + 2] = star
         ? 255
         : Math.min(255, baseB * (0.5 + heightMix * 0.5) + horizonGlow * 32 + aurora * 26);
-      surface.data[offset + 3] = 255;
+      bitmap.data[offset + 3] = 255;
     }
   }
-  return surface;
+  return bitmap;
 }
 
 const cubeTexture = createCubeTexture();

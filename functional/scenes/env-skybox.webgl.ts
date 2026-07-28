@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlEnvironmentSkybox, drawGlScene3D } from '@flighthq/scene3d-gl';
-import type { Camera3D, Environment, GlRenderEffectPipeline, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, Environment, GlRenderEffectPipeline, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -19,7 +19,7 @@ import {
   createStandardPbrMaterial,
   createVector3,
   endGlRenderEffectPipeline,
-  getSurfacePixel,
+  getBitmapPixel,
   prepareScene3DRender,
   registerStandardPbrGlMaterial,
   renderGlBackground,
@@ -122,12 +122,12 @@ const lights = {
 
 render(scene, camera, lights, environment);
 
-export function assertRender(surface: Readonly<Surface>): void {
-  const cx = Math.floor(surface.width / 2);
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const cx = Math.floor(bitmap.width / 2);
   // Sample the backdrop above the sphere (top), and the two flanks well outside the sphere silhouette.
-  const top = getSurfacePixel(surface, cx, Math.floor(surface.height * 0.12));
-  const left = getSurfacePixel(surface, Math.floor(surface.width * 0.08), Math.floor(surface.height * 0.5));
-  const right = getSurfacePixel(surface, Math.floor(surface.width * 0.92), Math.floor(surface.height * 0.5));
+  const top = getBitmapPixel(bitmap, cx, Math.floor(bitmap.height * 0.12));
+  const left = getBitmapPixel(bitmap, Math.floor(bitmap.width * 0.08), Math.floor(bitmap.height * 0.5));
+  const right = getBitmapPixel(bitmap, Math.floor(bitmap.width * 0.92), Math.floor(bitmap.height * 0.5));
 
   if (isBlank(top) && isBlank(left) && isBlank(right)) {
     throw new Error('[env-skybox] backdrop is blank — skybox did not render');

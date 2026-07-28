@@ -5,7 +5,7 @@
  * carry either, both, or — transiently — neither. Mirrors the on-disk baseline store's column shape.
  */
 export interface CaptureColumnBaseline {
-  /** Coarse render fingerprint in the `<gridSize>:<hex>` form (formatSurfaceFingerprint). */
+  /** Coarse render fingerprint in the `<gridSize>:<hex>` form (formatBitmapFingerprint). */
   fingerprint?: string;
   /** Exact screenshot hash of the raw decoded RGBA pixels. */
   sha256?: string;

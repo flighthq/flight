@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D, drawGlScene3DShadowMap } from '@flighthq/scene3d-gl';
-import type { GlRenderEffectPipeline, Surface } from '@flighthq/sdk';
+import type { GlRenderEffectPipeline, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -20,7 +20,7 @@ import {
   createVector3,
   endGlRenderEffectPipeline,
   getNode3DWorldBounds,
-  getSurfacePixelLuminance,
+  getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
   normalizeVector3,
   prepareScene3DRender,
@@ -103,14 +103,14 @@ prepareScene3DRender(state, scene, camera, lights);
 drawGlScene3D(state, scene, camera, lights);
 endGlRenderEffectPipeline(state, pipeline, []);
 
-export function assertRender(surface: Readonly<Surface>): void {
+export function assertRender(bitmap: Readonly<Bitmap>): void {
   // The centre occluder casts down-light along +X/+Z. Sample its separated shadow around world
   // (5,-5), and a lit ground patch at world (13,-5) on the same image row.
-  const shadowX = Math.round((0.5 + 5 / 90) * surface.width);
-  const litX = Math.round((0.5 + 13 / 90) * surface.width);
-  const sampleY = Math.round((0.5 - 5 / 68) * surface.height);
-  const shadowLuminance = getSurfacePixelLuminance(surface, shadowX, sampleY);
-  const litLuminance = getSurfacePixelLuminance(surface, litX, sampleY);
+  const shadowX = Math.round((0.5 + 5 / 90) * bitmap.width);
+  const litX = Math.round((0.5 + 13 / 90) * bitmap.width);
+  const sampleY = Math.round((0.5 - 5 / 68) * bitmap.height);
+  const shadowLuminance = getBitmapPixelLuminance(bitmap, shadowX, sampleY);
+  const litLuminance = getBitmapPixelLuminance(bitmap, litX, sampleY);
   if (litLuminance <= 32) {
     throw new Error(`[shadow-scene-scale] lit ground is blank (${litLuminance}) — scene did not render`);
   }

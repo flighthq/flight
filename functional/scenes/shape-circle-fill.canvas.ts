@@ -9,7 +9,7 @@
 //
 // Circle rendering involves arc-based path construction and triangulation — behavior that jsdom
 // cannot verify visually.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -17,7 +17,7 @@ import {
   appendShapeEndFill,
   createDisplayObject,
   createShape,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeAppearance,
   ShapeKind,
 } from '@flighthq/sdk';
@@ -51,9 +51,9 @@ addNodeChild(root, blueCircle);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width;
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   const redCenter = at(150, 150);
   if (!isRed(redCenter)) {

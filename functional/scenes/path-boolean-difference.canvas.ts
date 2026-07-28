@@ -7,7 +7,7 @@
 //   - the overlap center (125,125) is background black (subtracted out),
 //   - a point exclusive to B (175,175) is background black (not in A at all),
 //   - a point outside both (25,25) is background black.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendPathRectangle,
@@ -18,7 +18,7 @@ import {
   createPath,
   createShape,
   differencePaths,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeAppearance,
   ShapeKind,
 } from '@flighthq/sdk';
@@ -52,9 +52,9 @@ addNodeChild(root, shape);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width;
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   const exclusiveA = at(75, 75);
   if (!isOrange(exclusiveA)) {

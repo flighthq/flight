@@ -80,8 +80,8 @@ export function applyGlSamplerState(
 // Binds (uploading + caching on first use, re-uploading when the pixels change) the GL texture for an
 // ImageResource — a bitmap, sprite atlas, or material map — and applies the sampler's full state. The
 // resource-level sibling of bindGlTexture (which takes a raw element): it accepts an element-backed OR a
-// data-only generated Surface (source-or-data upload via uploadGlBoundImageResource), and caches by the
-// resource entity in imageResourcePremultipliedTextureCache, keyed with the uploaded `version` so an in-place Surface
+// data-only generated Bitmap (source-or-data upload via uploadGlBoundImageResource), and caches by the
+// resource entity in imageResourcePremultipliedTextureCache, keyed with the uploaded `version` so an in-place Bitmap
 // edit (which bumps version) re-uploads without the caller tracking it. Sampler state is re-applied every
 // bind so a resource reused by two materials with different samplers follows the current draw.
 //
@@ -333,7 +333,7 @@ export function updateGlTexture(state: GlRenderState, texture: WebGLTexture, can
 // when set, the element fast-path premultiplies via UNPACK_PREMULTIPLY_ALPHA_WEBGL and raw `data` (for
 // which that flag is ignored) is premultiplied on the CPU. When clear, both upload the pixels as-is, so
 // the straight-blend 3D forward path gets its albedo untouched and no data map (normal/roughness) is
-// corrupted. The data path is what makes a memory-generated Surface a first-class texture. A resource
+// corrupted. The data path is what makes a memory-generated Bitmap a first-class texture. A resource
 // that carries only a block-`compressed` payload (no element or data) uploads through the GPU-native
 // compressed path — falling back to the state's registered RGBA decoder when the device lacks the block
 // format; compressed blocks are never premultiplied here (the display shader premultiplies a straight

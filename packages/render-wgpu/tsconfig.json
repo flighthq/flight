@@ -15,7 +15,7 @@
     { "path": "../scene2d" },
     { "path": "../geometry" },
     { "path": "../render" },
-    { "path": "../surface" },
+    { "path": "../bitmap" },
     { "path": "../texture" },
     { "path": "../types" }
   ],

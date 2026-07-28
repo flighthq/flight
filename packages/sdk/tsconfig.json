@@ -322,7 +322,7 @@
       "path": "../storage"
     },
     {
-      "path": "../surface"
+      "path": "../bitmap"
     },
     {
       "path": "../text"

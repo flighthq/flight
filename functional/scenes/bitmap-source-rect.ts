@@ -10,7 +10,7 @@
 //
 // (Field confirmed in packages/types/src/Bitmap.ts: `sourceRectangle: Rectangle | null`, honored by the
 // canvas, dom, gl, and wgpu bitmap renderers.)
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   SpriteKind,
@@ -19,7 +19,7 @@ import {
   createImageResourceFromCanvas,
   createPixelArtSampler,
   createTexture,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   setTextureUvFromPixelRect,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -87,9 +87,9 @@ addNodeChild(root, crop);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // --- full image: confirm the four quadrants are where we expect ---
   if (!isRed(at(FULL_X + QUAD / 2, FULL_Y + QUAD / 2))) {

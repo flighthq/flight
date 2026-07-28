@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
-import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
@@ -17,8 +17,8 @@ import {
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   endWgpuRenderEffectPipeline,
-  getSurfacePixelLuminance,
-  getSurfacePixelRgb,
+  getBitmapPixelLuminance,
+  getBitmapPixelRgb,
   normalizeVector3,
   prepareScene3DRender,
   registerUnlitWgpuMaterial,
@@ -129,16 +129,16 @@ const lights = {
 
 render(scene, camera, lights);
 
-export function assertRender(surface: Readonly<Surface>): void {
-  const cx = Math.floor(surface.width / 2);
-  const cy = Math.floor(surface.height / 2);
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const cx = Math.floor(bitmap.width / 2);
+  const cy = Math.floor(bitmap.height / 2);
   // Flank offset lands inside each box's EXCLUSIVE region (the boxes are ~1 unit ≈ 0.18*width wide and
   // overlap at center, so each exclusive flank centre is ~0.09*width off-centre).
-  const off = Math.floor(surface.width * 0.09);
+  const off = Math.floor(bitmap.width * 0.09);
 
   // 1) The OVERLAP region (screen center) is the NEAR box's red — the near box occludes the far box.
   //    If depth occlusion is broken the far blue bleeds through here.
-  const center = getSurfacePixelRgb(surface, cx, cy);
+  const center = getBitmapPixelRgb(bitmap, cx, cy);
   if (!isRed(center)) {
     throw new Error(
       `[mesh-multiple-depth] overlap center not the near box red — got #${hex(center)} ` +
@@ -147,7 +147,7 @@ export function assertRender(surface: Readonly<Surface>): void {
   }
 
   // 2) The near box's exclusive flank (to the RIGHT of center) is red — the near box really is there.
-  const right = getSurfacePixelRgb(surface, cx + off, cy);
+  const right = getBitmapPixelRgb(bitmap, cx + off, cy);
   if (!isRed(right)) {
     throw new Error(
       `[mesh-multiple-depth] near-box flank (right) not red — got #${hex(right)} (near box missing/misplaced)`,
@@ -156,7 +156,7 @@ export function assertRender(surface: Readonly<Surface>): void {
 
   // 3) The far box's exclusive flank (to the LEFT of center, not covered by the near box) is blue —
   //    the far box is drawn, just occluded where the boxes overlap.
-  const left = getSurfacePixelRgb(surface, cx - off, cy);
+  const left = getBitmapPixelRgb(bitmap, cx - off, cy);
   if (!isBlue(left)) {
     throw new Error(
       `[mesh-multiple-depth] far-box flank (left) not blue — got #${hex(left)} (far box missing or fully hidden)`,
@@ -164,14 +164,14 @@ export function assertRender(surface: Readonly<Surface>): void {
   }
 
   // 4) The four frame corners are background — the boxes are bounded silhouettes, not a full clear.
-  const m = Math.floor(surface.width * 0.04);
+  const m = Math.floor(bitmap.width * 0.04);
   for (const [x, y] of [
     [m, m],
-    [surface.width - m, m],
-    [m, surface.height - m],
-    [surface.width - m, surface.height - m],
+    [bitmap.width - m, m],
+    [m, bitmap.height - m],
+    [bitmap.width - m, bitmap.height - m],
   ]) {
-    if (getSurfacePixelLuminance(surface, x, y) > 40) {
+    if (getBitmapPixelLuminance(bitmap, x, y) > 40) {
       throw new Error(`[mesh-multiple-depth] frame corner (${x},${y}) not background — silhouettes are not bounded`);
     }
   }

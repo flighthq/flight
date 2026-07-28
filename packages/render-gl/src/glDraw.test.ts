@@ -188,7 +188,7 @@ describe('bindGlImageResourceTexture', () => {
     } as unknown as ImageResource;
   }
 
-  it('uploads a data-only ImageResource (a generated Surface) via the raw-pixel path', () => {
+  it('uploads a data-only ImageResource (a generated Bitmap) via the raw-pixel path', () => {
     const { state, gl } = createGlState();
     bindGlImageResourceTexture(state, dataResource(4, 1));
     expect(gl.createTexture).toHaveBeenCalled();

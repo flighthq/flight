@@ -1,7 +1,7 @@
+import { createBitmapFromImageResource, getBitmapPixelChannel } from '@flighthq/bitmap/contract';
 import { inverseMatrixTransformPointXY } from '@flighthq/geometry/contract';
 import { getNodeWorldMatrix } from '@flighthq/node/contract';
-import { createSurfaceFromImageResource, getSurfacePixelChannel } from '@flighthq/surface/contract';
-import type { Sprite, Node2D, ImageResource, NodeAny, Surface } from '@flighthq/types/contract';
+import type { Sprite, Node2D, ImageResource, NodeAny, Bitmap } from '@flighthq/types/contract';
 import { SpriteKind, ImageChannel } from '@flighthq/types/contract';
 
 import { hitTestGraphLocalBounds, registerHitTestPrecise } from './hitTests';
@@ -12,7 +12,7 @@ import { hitTestGraphLocalBounds, registerHitTestPrecise } from './hitTests';
  * (no image, a GPU-only texture, or a headless environment that can't rasterize), it falls back to a
  * bounds hit rather than throwing — best-available precision for that instance.
  *
- * Importing this module is the opt-in — it pulls `@flighthq/surface`, so the base interaction bundle
+ * Importing this module is the opt-in — it pulls `@flighthq/bitmap`, so the base interaction bundle
  * stays free of it (tree-shaken unless referenced).
  */
 export function registerSpriteHitTest(alphaThreshold: number = 1): void {
@@ -29,29 +29,29 @@ function hitTestSpriteAlpha(source: NodeAny, x: number, y: number, alphaThreshol
   const image = texture.storage.image;
   if (image === null) return 0;
 
-  const surface = surfaceForImage(image);
-  if (surface === null) return 0;
+  const bitmap = bitmapForImage(image);
+  if (bitmap === null) return 0;
 
   inverseMatrixTransformPointXY(bitmapAlphaLocalPoint, getNodeWorldMatrix(source as Node2D), x, y);
   const px = Math.floor(texture.uvOffset.x * image.width + bitmapAlphaLocalPoint.x);
   const py = Math.floor(texture.uvOffset.y * image.height + bitmapAlphaLocalPoint.y);
-  if (px < 0 || py < 0 || px >= surface.width || py >= surface.height) return -1;
-  return getSurfacePixelChannel(surface, px, py, ImageChannel.Alpha) >= alphaThreshold ? 0 : -1;
+  if (px < 0 || py < 0 || px >= bitmap.width || py >= bitmap.height) return -1;
+  return getBitmapPixelChannel(bitmap, px, py, ImageChannel.Alpha) >= alphaThreshold ? 0 : -1;
 }
 
-function surfaceForImage(image: ImageResource): Surface | null {
-  const cached = surfaceCache.get(image);
+function bitmapForImage(image: ImageResource): Bitmap | null {
+  const cached = bitmapCache.get(image);
   if (cached !== undefined) return cached;
-  let surface: Surface | null = null;
+  let bitmap: Bitmap | null = null;
   try {
-    surface = createSurfaceFromImageResource(image);
+    bitmap = createBitmapFromImageResource(image);
   } catch {
-    surface = null;
+    bitmap = null;
   }
   // Cache only successes so an image that is not yet readable is retried later.
-  if (surface !== null) surfaceCache.set(image, surface);
-  return surface;
+  if (bitmap !== null) bitmapCache.set(image, bitmap);
+  return bitmap;
 }
 
 const bitmapAlphaLocalPoint = { x: 0, y: 0 };
-const surfaceCache = new WeakMap<ImageResource, Surface>();
+const bitmapCache = new WeakMap<ImageResource, Bitmap>();

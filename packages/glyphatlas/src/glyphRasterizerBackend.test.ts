@@ -49,7 +49,7 @@ describe('createWebGlyphRasterizerBackend', () => {
 
   it('sentinels to null when no 2D canvas context is available', () => {
     // jsdom's HTMLCanvasElement.getContext('2d') returns null without the canvas package installed,
-    // and OffscreenCanvas is undefined, so the web backend has no surface to rasterize onto.
+    // and OffscreenCanvas is undefined, so the web backend has no bitmap to rasterize onto.
     const backend = createWebGlyphRasterizerBackend();
     expect(backend.rasterize(65, { fontFamily: 'sans-serif', fontSize: 16 })).toBeNull();
   });

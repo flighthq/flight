@@ -5,7 +5,7 @@
 // via the fold), this variant blits an already-RED source and attaches no adjustment — the same red square,
 // same position. The fold itself is render-verified by the .webgl.ts / .webgpu.ts siblings; this file only
 // keeps the cross-backend parity image identical. (Same split as bitmap-color-transform.)
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   addTextureAtlasRegion,
@@ -15,7 +15,7 @@ import {
   createTexture,
   createTextureAtlas,
   getTextureAtlasRegionTexture,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeLocalTransform,
   SpriteKind,
 } from '@flighthq/sdk';
@@ -61,9 +61,9 @@ invalidateNodeLocalTransform(sprite);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width;
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   const center = at(SPRITE_X + REGION / 2, SPRITE_Y + REGION / 2);
   if (!isRed(center)) {

@@ -4,7 +4,7 @@ import {
   updateOrbitCameraController,
 } from '@flighthq/camera-controls';
 import { createNode3D } from '@flighthq/scene3d';
-import type { BlinnPhongMaterial, Camera3D, Scene3DLightsLike, Surface, Texture } from '@flighthq/sdk';
+import type { BlinnPhongMaterial, Camera3D, Scene3DLightsLike, Bitmap, Texture } from '@flighthq/sdk';
 import {
   addNodeChild,
   createAmbientLight,
@@ -18,7 +18,7 @@ import {
   createPointLight,
   createSampler,
   createSphereMeshGeometry,
-  createSurface,
+  createBitmap,
   createTexture,
   createTorusMeshGeometry,
   createVector2,
@@ -41,33 +41,33 @@ const logicalWidth = 800 / scale;
 const logicalHeight = 600 / scale;
 
 function createMaterialMaps(kind: 'stripe' | 'tile' | 'weave', repeat: number): MaterialMaps {
-  const diffuseSurface = createSurface(128, 128);
-  const normalSurface = createSurface(128, 128);
-  const specularSurface = createSurface(128, 128);
-  fillMaterialSurfaces(diffuseSurface, normalSurface, specularSurface, kind);
+  const diffuseBitmap = createBitmap(128, 128);
+  const normalBitmap = createBitmap(128, 128);
+  const specularBitmap = createBitmap(128, 128);
+  fillMaterialBitmaps(diffuseBitmap, normalBitmap, specularBitmap, kind);
   const sampler = createSampler({ anisotropy: 4, wrapU: 'repeat', wrapV: 'repeat' });
   const uvScale = createVector2(repeat, repeat);
   return {
-    diffuse: createTexture({ sampler, storage: { dimension: '2d', image: diffuseSurface }, uvScale }),
+    diffuse: createTexture({ sampler, storage: { dimension: '2d', image: diffuseBitmap }, uvScale }),
     normal: createTexture({
       colorSpace: 'linear',
       sampler,
-      storage: { dimension: '2d', image: normalSurface },
+      storage: { dimension: '2d', image: normalBitmap },
       uvScale,
     }),
     specular: createTexture({
       colorSpace: 'linear',
       sampler,
-      storage: { dimension: '2d', image: specularSurface },
+      storage: { dimension: '2d', image: specularBitmap },
       uvScale,
     }),
   };
 }
 
-function fillMaterialSurfaces(
-  diffuse: Surface,
-  normal: Surface,
-  specular: Surface,
+function fillMaterialBitmaps(
+  diffuse: Bitmap,
+  normal: Bitmap,
+  specular: Bitmap,
   kind: 'stripe' | 'tile' | 'weave',
 ): void {
   for (let y = 0; y < diffuse.height; y++) {
@@ -119,11 +119,11 @@ function fillMaterialSurfaces(
   }
 }
 
-function writePixel(surface: Surface, offset: number, r: number, g: number, b: number): void {
-  surface.data[offset] = r;
-  surface.data[offset + 1] = g;
-  surface.data[offset + 2] = b;
-  surface.data[offset + 3] = 255;
+function writePixel(bitmap: Bitmap, offset: number, r: number, g: number, b: number): void {
+  bitmap.data[offset] = r;
+  bitmap.data[offset + 1] = g;
+  bitmap.data[offset + 2] = b;
+  bitmap.data[offset + 3] = 255;
 }
 
 function createMappedMaterial(maps: Readonly<MaterialMaps>, shininess: number): BlinnPhongMaterial {

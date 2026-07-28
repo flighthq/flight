@@ -8,7 +8,7 @@
 // appearance field). The oracle samples (1) the visible shape's region (must read its color), (2) the
 // hidden shape's region (must read background — proof it did not draw), and (3) an untouched area (must
 // read background). jsdom unit tests cannot exercise this because there are no rendered pixels to gate.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -16,7 +16,7 @@ import {
   appendShapeRectangle,
   createDisplayObject,
   createShape,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeAppearance,
   ShapeKind,
 } from '@flighthq/sdk';
@@ -64,9 +64,9 @@ addNodeChild(root, hiddenShape);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // 1) Center of the visible shape: must read its red fill.
   const visibleCenter = at(VISIBLE_X + VISIBLE_W / 2, VISIBLE_Y + VISIBLE_H / 2);

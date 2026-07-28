@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
-import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -17,7 +17,7 @@ import {
   createSphereMeshGeometry,
   createVector3,
   endGlRenderEffectPipeline,
-  getSurfacePixelLuminance,
+  getBitmapPixelLuminance,
   prepareScene3DRender,
   registerBlinnPhongGlMaterial,
   renderGlBackground,
@@ -94,13 +94,13 @@ render(scene, camera, lights);
 
 // Oracle: not blank + shows point shading. The lit hemisphere faces the light at +x, so the
 // screen-right point is bright and the screen-left point is shadowed.
-export function assertRender(surface: Readonly<Surface>): void {
-  const cx = Math.floor(surface.width / 2);
-  const cy = Math.floor(surface.height / 2);
-  const offset = Math.floor(surface.width * 0.075);
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const cx = Math.floor(bitmap.width / 2);
+  const cy = Math.floor(bitmap.height / 2);
+  const offset = Math.floor(bitmap.width * 0.075);
 
-  const litLuminance = getSurfacePixelLuminance(surface, cx + offset, cy);
-  const shadowLuminance = getSurfacePixelLuminance(surface, cx - offset, cy);
+  const litLuminance = getBitmapPixelLuminance(bitmap, cx + offset, cy);
+  const shadowLuminance = getBitmapPixelLuminance(bitmap, cx - offset, cy);
 
   if (litLuminance <= 24) {
     throw new Error(`[light-point] lit side is blank (luminance ${litLuminance}) — point light did not shade the mesh`);

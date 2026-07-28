@@ -6,7 +6,7 @@ import type { ImageResource } from '@flighthq/types/contract';
 
 // Uploads rgba8 CPU pixels through queue.writeTexture — the portable bedrock upload, reimplemented 1:1 by
 // a native backend. `bytesPerRow` is width*4: a tightly-packed rgba8unorm (4 bytes/texel) region, which is
-// exactly what a Surface's `data` holds.
+// exactly what a Bitmap's `data` holds.
 export function uploadWgpuTextureData(
   device: GPUDevice,
   texture: GPUTexture,
@@ -37,7 +37,7 @@ export function uploadWgpuTextureElement(
 }
 
 // Dispatches an ImageResource to the element fast-path when a decoded `source` is present, else the
-// portable `data` path (a generated Surface). Assumes the resource has pixels in at least one form.
+// portable `data` path (a generated Bitmap). Assumes the resource has pixels in at least one form.
 export function uploadWgpuTextureImageResource(
   device: GPUDevice,
   texture: GPUTexture,

@@ -1,14 +1,14 @@
-import { createSurface } from '@flighthq/surface/contract';
-import type { Surface, WgpuRenderState } from '@flighthq/types/contract';
+import { createBitmap } from '@flighthq/bitmap/contract';
+import type { Bitmap, WgpuRenderState } from '@flighthq/types/contract';
 
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 
-// Opt-in capture of the rendered frame to a CPU Surface. Two environment facts drive the design:
+// Opt-in capture of the rendered frame to a CPU Bitmap. Two environment facts drive the design:
 // (1) headless/software adapters never present the swapchain, and its texture reads back as zeros, so
 // the frame is redirected into an offscreen COPY_SRC texture (acquireWgpuFrameCaptureTexture, used by
 // renderWgpuBackground); (2) GPU work queued in a later task than the frame is dropped on these
 // adapters, so submitWgpuRenderPass copies the capture texture into the retained capture buffer in the
-// same frame (encodeWgpuFrameCapture), and createSurfaceFromWgpuRenderState only maps that buffer.
+// same frame (encodeWgpuFrameCapture), and createBitmapFromWgpuRenderState only maps that buffer.
 
 // Returns the offscreen texture the frame should render into when capture is enabled, creating/resizing
 // it to the canvas on demand, or null when capture is off (the caller then renders to the swapchain).
@@ -34,17 +34,17 @@ export function acquireWgpuFrameCaptureTexture(state: Readonly<WgpuRenderState>)
   return texture;
 }
 
-// Reads the most recently captured frame into a CPU Surface. Requires enableWgpuFrameCapture(state)
+// Reads the most recently captured frame into a CPU Bitmap. Requires enableWgpuFrameCapture(state)
 // before rendering and at least one submitWgpuRenderPass since (which fills the capture buffer);
 // throws otherwise (calling it without enabling capture is API misuse). Only maps the retained buffer —
 // no GPU work is queued here, since later-task GPU work is unreliable on the adapters this exists for.
-// Allocates the returned Surface; the capture buffer is retained and reused across frames.
-export async function createSurfaceFromWgpuRenderState(state: Readonly<WgpuRenderState>): Promise<Surface> {
+// Allocates the returned Bitmap; the capture buffer is retained and reused across frames.
+export async function createBitmapFromWgpuRenderState(state: Readonly<WgpuRenderState>): Promise<Bitmap> {
   const runtime = getWgpuRenderStateRuntime(state);
   const buffer = runtime.frameCaptureBuffer;
   if (buffer === null || buffer === undefined) {
     throw new Error(
-      'createSurfaceFromWgpuRenderState requires enableWgpuFrameCapture(state) before rendering, then a submitWgpuRenderPass.',
+      'createBitmapFromWgpuRenderState requires enableWgpuFrameCapture(state) before rendering, then a submitWgpuRenderPass.',
     );
   }
 
@@ -55,10 +55,10 @@ export async function createSurfaceFromWgpuRenderState(state: Readonly<WgpuRende
   await buffer.mapAsync(GPUMapMode.READ);
   const mapped = new Uint8Array(buffer.getMappedRange());
 
-  const surface = createSurface(width, height);
-  const out = surface.data;
+  const bitmap = createBitmap(width, height);
+  const out = bitmap.data;
   // The preferred canvas format is BGRA on most platforms and RGBA on software adapters; normalize to
-  // the Surface's RGBA byte order so coverage/fingerprint and saved pixels read correctly either way.
+  // the Bitmap's RGBA byte order so coverage/fingerprint and saved pixels read correctly either way.
   // Pixels are left premultiplied (the texture's stored form): functional content renders over an opaque
   // background, so alpha is 255 and premultiplied == straight; do NOT un-premultiply here — dividing RGB
   // by an 8-bit alpha amplifies quantization and clamps, blowing out exactly the semi-transparent pixels
@@ -80,10 +80,10 @@ export async function createSurfaceFromWgpuRenderState(state: Readonly<WgpuRende
 
   // Unmap (not destroy) so the next frame's submit can copy into the retained buffer again.
   buffer.unmap();
-  return surface;
+  return bitmap;
 }
 
-// Enables opt-in frame capture on a render state so createSurfaceFromWgpuRenderState can read it back.
+// Enables opt-in frame capture on a render state so createBitmapFromWgpuRenderState can read it back.
 // The frame is then drawn into an offscreen texture instead of the swapchain (the only reliably
 // readable path on headless/software adapters); the canvas is not presented while capture is on. Leave
 // it off for normal on-screen rendering. The capture texture and buffer are allocated lazily.

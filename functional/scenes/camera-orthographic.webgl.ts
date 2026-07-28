@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
-import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -16,7 +16,7 @@ import {
   createUnlitMaterial,
   createVector3,
   endGlRenderEffectPipeline,
-  getSurfacePixelLuminance,
+  getBitmapPixelLuminance,
   normalizeVector3,
   prepareScene3DRender,
   registerUnlitGlMaterial,
@@ -137,18 +137,18 @@ const lights = {
 
 render(scene, camera, lights);
 
-export function assertRender(surface: Readonly<Surface>): void {
-  const cx = Math.floor(surface.width / 2);
-  const cy = Math.floor(surface.height / 2);
-  const backgroundLuminance = getSurfacePixelLuminance(surface, 0, 0);
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const cx = Math.floor(bitmap.width / 2);
+  const cy = Math.floor(bitmap.height / 2);
+  const backgroundLuminance = getBitmapPixelLuminance(bitmap, 0, 0);
 
   // Measure each box's on-screen silhouette width by the widest contiguous run of lit columns on the
   // center row, scanned within the left half [0, cx) and right half [cx, width) respectively.
-  const leftWidth = widestLitRun(surface, cy, 0, cx, backgroundLuminance);
-  const rightWidth = widestLitRun(surface, cy, cx, surface.width, backgroundLuminance);
+  const leftWidth = widestLitRun(bitmap, cy, 0, cx, backgroundLuminance);
+  const rightWidth = widestLitRun(bitmap, cy, cx, bitmap.width, backgroundLuminance);
 
   // Each box must actually be present (a real silhouette, not a sliver).
-  const minPixels = Math.floor(surface.width * 0.05);
+  const minPixels = Math.floor(bitmap.width * 0.05);
   if (leftWidth < minPixels) {
     throw new Error(
       `[camera-orthographic] left (near) box silhouette too small — ${leftWidth}px (box missing/mis-projected)`,
@@ -171,14 +171,14 @@ export function assertRender(surface: Readonly<Surface>): void {
   }
 
   // The frame corners are background — bounded silhouettes, not a full clear.
-  const m = Math.floor(surface.width * 0.04);
+  const m = Math.floor(bitmap.width * 0.04);
   for (const [x, y] of [
     [m, m],
-    [surface.width - m, m],
-    [m, surface.height - m],
-    [surface.width - m, surface.height - m],
+    [bitmap.width - m, m],
+    [m, bitmap.height - m],
+    [bitmap.width - m, bitmap.height - m],
   ]) {
-    if (Math.abs(getSurfacePixelLuminance(surface, x, y) - backgroundLuminance) > 10) {
+    if (Math.abs(getBitmapPixelLuminance(bitmap, x, y) - backgroundLuminance) > 10) {
       throw new Error(`[camera-orthographic] frame corner (${x},${y}) not background — silhouettes are not bounded`);
     }
   }
@@ -186,7 +186,7 @@ export function assertRender(surface: Readonly<Surface>): void {
 
 // Widest contiguous run of foreground (non-background) columns on row `y`, scanning x in [xStart, xEnd).
 function widestLitRun(
-  surface: Readonly<Surface>,
+  bitmap: Readonly<Bitmap>,
   y: number,
   xStart: number,
   xEnd: number,
@@ -195,7 +195,7 @@ function widestLitRun(
   let best = 0;
   let run = 0;
   for (let x = xStart; x < xEnd; x++) {
-    if (Math.abs(getSurfacePixelLuminance(surface, x, y) - backgroundLuminance) > 10) {
+    if (Math.abs(getBitmapPixelLuminance(bitmap, x, y) - backgroundLuminance) > 10) {
       run++;
       if (run > best) best = run;
     } else {

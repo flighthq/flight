@@ -1,5 +1,5 @@
 import { drawWgpuScene3D, registerWgpuGpuSkinning } from '@flighthq/scene3d-wgpu';
-import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   addNodeChild,
@@ -21,7 +21,7 @@ import {
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   endWgpuRenderEffectPipeline,
-  getSurfacePixelLuminance,
+  getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
   normalizeVector3,
   prepareScene3DMorph,
@@ -140,9 +140,9 @@ const lights = {
 };
 render(scene, camera, lights);
 
-export function assertRender(surface: Readonly<Surface>): void {
+export function assertRender(bitmap: Readonly<Bitmap>): void {
   const covered = (x: number, y: number): boolean =>
-    getSurfacePixelLuminance(surface, Math.floor(surface.width * x), Math.floor(surface.height * y)) > 90;
+    getBitmapPixelLuminance(bitmap, Math.floor(bitmap.width * x), Math.floor(bitmap.height * y)) > 90;
   if (!covered(0.5, 0.82)) throw new Error('[scene-skin-morph-compose] morph-extension probe is background');
   if (!covered(0.36, 0.42)) throw new Error('[scene-skin-morph-compose] leaned-arm probe is background');
   if (!covered(0.5, 0.65)) throw new Error('[scene-skin-morph-compose] base is background');

@@ -32,7 +32,7 @@ import {
   createStandardPbrMaterial,
   createStandardPbrMaterialProperties,
   createSubsurfacePbrMaterial,
-  createSurface,
+  createBitmap,
   createTexture,
   createToonMaterial,
   createTransmissionVolumePbrMaterial,
@@ -94,7 +94,7 @@ function createControl(
 
 function createMatcapTexture() {
   const size = 128;
-  const surface = createSurface(size, size);
+  const bitmap = createBitmap(size, size);
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const u = (x + 0.5) / size - 0.5;
@@ -103,18 +103,18 @@ function createMatcapTexture() {
       const highlight = Math.exp(-((u + 0.2) ** 2 + (v + 0.24) ** 2) * 46);
       const rim = Math.max(0, (radius - 0.58) / 0.42);
       const offset = (y * size + x) * 4;
-      surface.data[offset] = Math.round(38 + highlight * 208 + rim * 68);
-      surface.data[offset + 1] = Math.round(52 + highlight * 188 + rim * 24);
-      surface.data[offset + 2] = Math.round(96 + highlight * 150 + rim * 132);
-      surface.data[offset + 3] = 255;
+      bitmap.data[offset] = Math.round(38 + highlight * 208 + rim * 68);
+      bitmap.data[offset + 1] = Math.round(52 + highlight * 188 + rim * 24);
+      bitmap.data[offset + 2] = Math.round(96 + highlight * 150 + rim * 132);
+      bitmap.data[offset + 3] = 255;
     }
   }
-  return createTexture({ storage: { dimension: '2d', image: surface } });
+  return createTexture({ storage: { dimension: '2d', image: bitmap } });
 }
 
 function createNormalTexture() {
   const size = 64;
-  const surface = createSurface(size, size);
+  const bitmap = createBitmap(size, size);
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const u = ((x + 0.5) / size) * 2 - 1;
@@ -123,13 +123,13 @@ function createNormalTexture() {
       const ny = Math.cos(v * Math.PI * 4) * 0.36;
       const nz = Math.sqrt(Math.max(0, 1 - nx * nx - ny * ny));
       const offset = (y * size + x) * 4;
-      surface.data[offset] = Math.round((nx * 0.5 + 0.5) * 255);
-      surface.data[offset + 1] = Math.round((ny * 0.5 + 0.5) * 255);
-      surface.data[offset + 2] = Math.round((nz * 0.5 + 0.5) * 255);
-      surface.data[offset + 3] = 255;
+      bitmap.data[offset] = Math.round((nx * 0.5 + 0.5) * 255);
+      bitmap.data[offset + 1] = Math.round((ny * 0.5 + 0.5) * 255);
+      bitmap.data[offset + 2] = Math.round((nz * 0.5 + 0.5) * 255);
+      bitmap.data[offset + 3] = 255;
     }
   }
-  return createTexture({ colorSpace: 'linear', storage: { dimension: '2d', image: surface } });
+  return createTexture({ colorSpace: 'linear', storage: { dimension: '2d', image: bitmap } });
 }
 
 const standard = createStandardPbrMaterial({

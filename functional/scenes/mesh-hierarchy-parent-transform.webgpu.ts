@@ -1,6 +1,6 @@
 import { createScene3D, createNode3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
-import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
@@ -17,8 +17,8 @@ import {
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   endWgpuRenderEffectPipeline,
-  getSurfacePixelLuminance,
-  getSurfacePixelRgb,
+  getBitmapPixelLuminance,
+  getBitmapPixelRgb,
   normalizeVector3,
   prepareScene3DRender,
   registerUnlitWgpuMaterial,
@@ -119,12 +119,12 @@ const lights = {
 
 render(scene, camera, lights);
 
-export function assertRender(surface: Readonly<Surface>): void {
-  const cx = Math.floor(surface.width / 2);
-  const cy = Math.floor(surface.height / 2);
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const cx = Math.floor(bitmap.width / 2);
+  const cy = Math.floor(bitmap.height / 2);
 
   // 1) The frame CENTER is background. If the parent transform were ignored the child would be here.
-  if (getSurfacePixelLuminance(surface, cx, cy) > 40) {
+  if (getBitmapPixelLuminance(bitmap, cx, cy) > 40) {
     throw new Error(
       `[mesh-hierarchy-parent-transform] frame center is not background — child rendered at origin ` +
         `⇒ parent transform NOT composed onto child`,
@@ -133,9 +133,9 @@ export function assertRender(surface: Readonly<Surface>): void {
 
   // 2) The child sits in the UPPER-RIGHT quadrant, where the parent's (+x,+y) translation projects.
   //    Offsets are conservative fractions of the frame so the sample lands inside the projected box.
-  const ox = Math.floor(surface.width * 0.28);
-  const oy = Math.floor(surface.height * 0.22);
-  const childPoint = getSurfacePixelRgb(surface, cx + ox, cy - oy);
+  const ox = Math.floor(bitmap.width * 0.28);
+  const oy = Math.floor(bitmap.height * 0.22);
+  const childPoint = getBitmapPixelRgb(bitmap, cx + ox, cy - oy);
   if (!isGreen(childPoint)) {
     throw new Error(
       `[mesh-hierarchy-parent-transform] upper-right sample not the child green — got #${hex(childPoint)} ` +
@@ -145,7 +145,7 @@ export function assertRender(surface: Readonly<Surface>): void {
 
   // 3) The opposite (lower-left) quadrant is background — the child is a bounded silhouette up-right,
   //    not filling the frame.
-  if (getSurfacePixelLuminance(surface, cx - ox, cy + oy) > 40) {
+  if (getBitmapPixelLuminance(bitmap, cx - ox, cy + oy) > 40) {
     throw new Error(
       `[mesh-hierarchy-parent-transform] lower-left not background — child silhouette is not bounded/offset`,
     );

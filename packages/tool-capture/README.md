@@ -87,7 +87,7 @@ The adapter is inert outside a tool-capture browser. During capture it registers
 await verifyCaptureTarget(exampleModule, renderer);
 ```
 
-Fingerprints use the `<grid-size>:<rgb-hex>` format produced by `formatSurfaceFingerprint`. Once the page reaches a terminal verification state, validation is turn-key:
+Fingerprints use the `<grid-size>:<rgb-hex>` format produced by `formatBitmapFingerprint`. Once the page reaches a terminal verification state, validation is turn-key:
 
 ```sh
 tool-capture validate --dir dist --no-regression

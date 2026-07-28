@@ -22,8 +22,8 @@ export function applyWgpuBlendMode(state: WgpuRenderState, blendMode: BlendMode 
 }
 
 // The resource-level sibling of bindWgpuTexture: uploads and caches the GPU texture for an ImageResource
-// — a bitmap, sprite atlas, or material map — accepting an element-backed OR a data-only generated Surface.
-// Keyed by the resource entity with the uploaded content version, so an in-place Surface edit (which bumps
+// — a bitmap, sprite atlas, or material map — accepting an element-backed OR a data-only generated Bitmap.
+// Keyed by the resource entity with the uploaded content version, so an in-place Bitmap edit (which bumps
 // version) re-uploads (recreating the GPU texture). `premultiply` states whether the caller wants a
 // premultiplied GPU texture — bind never premultiplies on its own. The 2D display and particle pipelines
 // blend premultiplied (ONE, ONE_MINUS_SRC_ALPHA) and pass true; the 3D forward path blends straight

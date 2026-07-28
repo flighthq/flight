@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
-import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -17,8 +17,8 @@ import {
   createUnlitMaterial,
   createVector3,
   endGlRenderEffectPipeline,
-  getSurfacePixelLuminance,
-  getSurfacePixelRgb,
+  getBitmapPixelLuminance,
+  getBitmapPixelRgb,
   normalizeVector3,
   prepareScene3DRender,
   registerUnlitGlMaterial,
@@ -116,13 +116,13 @@ const lights = {
 
 render(scene, camera, lights);
 
-export function assertRender(surface: Readonly<Surface>): void {
-  const cx = Math.floor(surface.width / 2);
-  const cy = Math.floor(surface.height / 2);
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const cx = Math.floor(bitmap.width / 2);
+  const cy = Math.floor(bitmap.height / 2);
 
   // 1) The frame CENTER is background: the box was translated away from the origin, so the origin (which
   //    projects to screen center) no longer carries the cube.
-  if (getSurfacePixelLuminance(surface, cx, cy) > 40) {
+  if (getBitmapPixelLuminance(bitmap, cx, cy) > 40) {
     throw new Error(
       `[mesh-transform-position] frame center is not background — the box did not move off-center (localMatrix translation ignored)`,
     );
@@ -130,9 +130,9 @@ export function assertRender(surface: Readonly<Surface>): void {
 
   // 2) A point UP-AND-RIGHT of center is the cube color. The box center is at world (1.3, 0.7), which
   //    projects to the upper-right; sample solidly inside that projected silhouette.
-  const sx = cx + Math.floor(surface.width * 0.2);
-  const sy = cy - Math.floor(surface.width * 0.14);
-  const hit = getSurfacePixelRgb(surface, sx, sy);
+  const sx = cx + Math.floor(bitmap.width * 0.2);
+  const sy = cy - Math.floor(bitmap.width * 0.14);
+  const hit = getBitmapPixelRgb(bitmap, sx, sy);
   if (!isTeal(hit)) {
     throw new Error(
       `[mesh-transform-position] upper-right sample is not the cube teal — got #${hex(hit)} (box not translated up-and-right)`,
@@ -141,9 +141,9 @@ export function assertRender(surface: Readonly<Surface>): void {
 
   // 3) The lower-left of the frame stays background — the silhouette is bounded and only the upper-right
   //    moved, not a full-frame fill or a re-centered box.
-  const lx = cx - Math.floor(surface.width * 0.2);
-  const ly = cy + Math.floor(surface.width * 0.14);
-  if (getSurfacePixelLuminance(surface, lx, ly) > 40) {
+  const lx = cx - Math.floor(bitmap.width * 0.2);
+  const ly = cy + Math.floor(bitmap.width * 0.14);
+  if (getBitmapPixelLuminance(bitmap, lx, ly) > 40) {
     throw new Error(
       `[mesh-transform-position] lower-left sample is not background — silhouette is not bounded to the upper-right`,
     );

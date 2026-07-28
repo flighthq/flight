@@ -12,12 +12,12 @@
 // API used: TextFormat.bold (true | false) plus shared color/size, applied per character span via
 // setRichTextFormatRange(field, format, start, end). Both ranges set the same explicit color so weight is
 // the only difference.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   createDisplayObject,
   createRichText,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   RichTextKind,
   setRichTextFormatRange,
 } from '@flighthq/sdk';
@@ -76,9 +76,9 @@ addNodeChild(root, field);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   const boldInk = countInk(at, BOLD_BOX_X, FIELD_Y + 6, BOX_W, FIELD_H - 12);
   const regularInk = countInk(at, REGULAR_BOX_X, FIELD_Y + 6, BOX_W, FIELD_H - 12);

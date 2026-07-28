@@ -17,7 +17,7 @@
 // them — smoothing is the ONLY key that differs, forcing a flush. Give each bitmap its own resource and
 // the pre-existing texture key would flush regardless, and the scene would pass even with the smoothing
 // key removed; sharing the resource is what makes this genuinely gate the per-bitmap smoothing path.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   SpriteKind,
@@ -26,7 +26,7 @@ import {
   createImageResourceFromCanvas,
   createPixelArtSampler,
   createTexture,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -88,9 +88,9 @@ placeChecker(SMOOTH_X, SMOOTH_Y, true);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // Cell centers: ((col + 0.5) * SCALE). The white cell (0,0) center resolves pure on BOTH copies (a
   // blend far from any edge samples one texel) — a baseline that the batch drew each bitmap at all.

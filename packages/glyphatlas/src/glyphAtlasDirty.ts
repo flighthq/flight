@@ -9,7 +9,7 @@ export function clearGlyphAtlasDirty(atlas: Readonly<GlyphAtlas>): void {
 
 // Returns the union of every atlas rectangle written since the last `clearGlyphAtlasDirty` (a fresh
 // `Rectangle`), or null when nothing has changed. A renderer uploads only this sub-rect of the atlas
-// surface to its GPU texture, then clears it.
+// bitmap to its GPU texture, then clears it.
 export function getGlyphAtlasDirtyRegion(atlas: Readonly<GlyphAtlas>): Rectangle | null {
   const runtime = atlas.runtime;
   if (!runtime.dirty) return null;

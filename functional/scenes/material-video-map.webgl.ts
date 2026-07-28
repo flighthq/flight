@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   advanceVideoTexture,
@@ -16,7 +16,7 @@ import {
   createVideoResource,
   createVideoTexture,
   createVector3,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   prepareScene3DRender,
   registerUnlitGlMaterial,
   renderGlBackground,
@@ -75,9 +75,9 @@ renderGlBackground(state);
 prepareScene3DRender(state, scene, camera, lights);
 drawGlScene3D(state, scene, camera, lights);
 
-export function assertRender(surface: Readonly<Surface>): void {
+export function assertRender(bitmap: Readonly<Bitmap>): void {
   const sample = (x: number): number =>
-    getSurfacePixelRgb(surface, Math.floor(surface.width * x), Math.floor(surface.height * 0.5));
+    getBitmapPixelRgb(bitmap, Math.floor(bitmap.width * x), Math.floor(bitmap.height * 0.5));
   const left = sample(0.35);
   const right = sample(0.65);
   const red = (rgb: number): boolean => ((rgb >> 16) & 255) > 180 && ((rgb >> 8) & 255) < 70 && (rgb & 255) < 70;

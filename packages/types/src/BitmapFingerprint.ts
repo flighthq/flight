@@ -1,9 +1,9 @@
 /**
- * A coarse, downscaled RGB summary of a surface used for tolerant visual-regression checks (see
- * createSurfaceFingerprint). The surface is reduced to a gridSize × gridSize grid of averaged RGB
+ * A coarse, downscaled RGB summary of a bitmap used for tolerant visual-regression checks (see
+ * createBitmapFingerprint). The bitmap is reduced to a gridSize × gridSize grid of averaged RGB
  * cells, so sub-pixel antialiasing and minor jitter — which break an exact pixel hash — wash out,
  * while gross changes (blank output, wrong colour, large layout shifts) still register. Small enough
- * to commit as text instead of a PNG (see formatSurfaceFingerprint / parseSurfaceFingerprint).
+ * to commit as text instead of a PNG (see formatBitmapFingerprint / parseBitmapFingerprint).
  */
 export interface BitmapFingerprint {
   /** Cells per axis; the grid is gridSize × gridSize. */

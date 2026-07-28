@@ -7,7 +7,7 @@
 // Cross-backend parity: the fold is a GL/WGPU capability. The Canvas sibling (color-adjustment.canvas.ts)
 // has no fold, so it blits an already-red source to render the same red square — every backend draws the
 // same bytes, while GL/WGPU genuinely exercise the fold. (Same split as bitmap-color-transform.)
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   addTextureAtlasRegion,
@@ -18,7 +18,7 @@ import {
   createTextureAtlas,
   getTextureAtlasRegionTexture,
   registerWgpuColorAdjustmentMaterialFeature,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeLocalTransform,
   setNodeColorAdjustmentsTint,
   SpriteKind,
@@ -70,9 +70,9 @@ invalidateNodeLocalTransform(sprite);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width;
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   const center = at(SPRITE_X + REGION / 2, SPRITE_Y + REGION / 2);
   if (!isRed(center)) {

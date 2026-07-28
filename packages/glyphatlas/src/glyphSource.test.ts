@@ -1,7 +1,7 @@
 import type { GlyphRasterizerBackend } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { createGlyphAtlas, getGlyphAtlasSurface } from './glyphAtlas';
+import { createGlyphAtlas, getGlyphAtlasBitmap } from './glyphAtlas';
 import { getGlyphAtlasEntry } from './glyphAtlasEntry';
 import { setGlyphRasterizerBackend } from './glyphRasterizerBackend';
 import { createGlyphSourceFromGlyphAtlas } from './glyphSource';
@@ -32,12 +32,12 @@ describe('createGlyphSourceFromGlyphAtlas', () => {
     expect(source.getGlyphMetrics()).toEqual({ ascent: 16, descent: 4, lineGap: 0 });
   });
 
-  it('pairs page 0 with the atlas surface and has no other page', () => {
+  it('pairs page 0 with the atlas bitmap and has no other page', () => {
     const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 20, height: 128, width: 128 });
     const source = createGlyphSourceFromGlyphAtlas(atlas);
 
-    expect(source.getGlyphAtlasImage(0)).toBe(getGlyphAtlasSurface(atlas));
-    expect(source.getGlyphAtlasImage()).toBe(getGlyphAtlasSurface(atlas));
+    expect(source.getGlyphAtlasImage(0)).toBe(getGlyphAtlasBitmap(atlas));
+    expect(source.getGlyphAtlasImage()).toBe(getGlyphAtlasBitmap(atlas));
     expect(source.getGlyphAtlasImage(1)).toBeNull();
   });
 });

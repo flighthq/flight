@@ -7,7 +7,7 @@
 //
 // This is visual because the difference only exists at the magnified texel edges produced by scaling;
 // it cannot be observed without actually rasterizing the upscaled image.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   SpriteKind,
@@ -16,7 +16,7 @@ import {
   createImageResourceFromCanvas,
   createPixelArtSampler,
   createTexture,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -82,9 +82,9 @@ function cellCenter(col: number, row: number): readonly [number, number] {
   return [(col + 0.5) * SCALE, (row + 0.5) * SCALE];
 }
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // --- smoothing = FALSE: crisp cells, pure colors at centers ---
   // White cell (0,0).

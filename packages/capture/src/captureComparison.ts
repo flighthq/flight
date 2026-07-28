@@ -1,4 +1,4 @@
-import { compareSurfaceFingerprints, parseSurfaceFingerprint } from '@flighthq/surface/contract';
+import { compareBitmapFingerprints, parseBitmapFingerprint } from '@flighthq/bitmap/contract';
 import type { CaptureCheckResult } from '@flighthq/types/contract';
 
 // Default parity tolerance (mean absolute per-channel difference, 0..255). Cross-backend agreement is
@@ -12,17 +12,17 @@ export const CAPTURE_REGRESSION_TOLERANCE = 5;
 
 /**
  * The tolerant distance between two coarse render fingerprints in `<gridSize>:<hex>` text form (see
- * formatSurfaceFingerprint): the mean absolute per-channel difference (0..255), where ~0 is identical
+ * formatBitmapFingerprint): the mean absolute per-channel difference (0..255), where ~0 is identical
  * and larger values mean a real visual change. Returns `Number.POSITIVE_INFINITY` as a sentinel when
  * either string fails to parse, or when the two fingerprints use different grid sizes and so are not
  * comparable — Infinity fails any finite tolerance, so a corrupt or mismatched baseline reads as a
  * failing check rather than crashing.
  */
 export function compareCaptureFingerprints(a: string, b: string): number {
-  const fa = parseSurfaceFingerprint(a);
-  const fb = parseSurfaceFingerprint(b);
+  const fa = parseBitmapFingerprint(a);
+  const fb = parseBitmapFingerprint(b);
   if (fa === null || fb === null || fa.gridSize !== fb.gridSize) return Number.POSITIVE_INFINITY;
-  return compareSurfaceFingerprints(fa, fb);
+  return compareBitmapFingerprints(fa, fb);
 }
 
 /**

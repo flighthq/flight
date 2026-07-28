@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
-import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -16,7 +16,7 @@ import {
   createSphereMeshGeometry,
   createVector3,
   endGlRenderEffectPipeline,
-  getSurfacePixelLuminance,
+  getBitmapPixelLuminance,
   prepareScene3DRender,
   registerBlinnPhongGlMaterial,
   renderGlBackground,
@@ -91,13 +91,13 @@ render(scene, camera, lights);
 
 // Oracle: not blank + shows the sky/ground gradient. Sample above and below center (both inset so they
 // land on the sphere); the top (sky) must be clearly brighter than the bottom (ground).
-export function assertRender(surface: Readonly<Surface>): void {
-  const cx = Math.floor(surface.width / 2);
-  const cy = Math.floor(surface.height / 2);
-  const offset = Math.floor(surface.height * 0.1);
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const cx = Math.floor(bitmap.width / 2);
+  const cy = Math.floor(bitmap.height / 2);
+  const offset = Math.floor(bitmap.height * 0.1);
 
-  const skyLuminance = getSurfacePixelLuminance(surface, cx, cy - offset);
-  const groundLuminance = getSurfacePixelLuminance(surface, cx, cy + offset);
+  const skyLuminance = getBitmapPixelLuminance(bitmap, cx, cy - offset);
+  const groundLuminance = getBitmapPixelLuminance(bitmap, cx, cy + offset);
 
   if (skyLuminance <= 24) {
     throw new Error(`[light-hemisphere] top is blank (luminance ${skyLuminance}) — hemisphere light did not shade`);

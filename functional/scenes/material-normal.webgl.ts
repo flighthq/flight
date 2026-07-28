@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
-import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -16,8 +16,8 @@ import {
   createSphereMeshGeometry,
   createVector3,
   endGlRenderEffectPipeline,
-  getSurfacePixelLuminance,
-  getSurfacePixelRgb,
+  getBitmapPixelLuminance,
+  getBitmapPixelRgb,
   normalizeVector3,
   prepareScene3DRender,
   registerNormalGlMaterial,
@@ -123,19 +123,19 @@ render(scene, camera, lights);
 // on-sphere offset point (a tilted normal); assert the center is not blank and that the two differ in
 // RGB — proof that color tracks the world normal rather than being a flat fill. Luminance alone is too
 // weak here because hue shifts in encoded normals can preserve nearly the same perceived brightness.
-export function assertRender(surface: Readonly<Surface>): void {
-  const cx = Math.floor(surface.width / 2);
-  const cy = Math.floor(surface.height / 2);
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const cx = Math.floor(bitmap.width / 2);
+  const cy = Math.floor(bitmap.height / 2);
   // A small inset keeps the offset point on the sphere surface, where the normal tilts away from +z.
-  const offsetX = Math.floor(surface.width * 0.07);
+  const offsetX = Math.floor(bitmap.width * 0.07);
 
-  const center = getSurfacePixelLuminance(surface, cx, cy);
-  const centerRgb = getSurfacePixelRgb(surface, cx, cy);
-  const offsetRgb = getSurfacePixelRgb(surface, cx + offsetX, cy);
+  const center = getBitmapPixelLuminance(bitmap, cx, cy);
+  const centerRgb = getBitmapPixelRgb(bitmap, cx, cy);
+  const offsetRgb = getBitmapPixelRgb(bitmap, cx + offsetX, cy);
   const delta = maxRgbDelta(centerRgb, offsetRgb);
 
   if (center <= 16) {
-    throw new Error(`[material-normal] surface is blank (center luminance ${center}) — mesh did not render`);
+    throw new Error(`[material-normal] bitmap is blank (center luminance ${center}) — mesh did not render`);
   }
   if (delta <= 24) {
     throw new Error(

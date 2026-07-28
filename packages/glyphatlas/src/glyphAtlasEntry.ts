@@ -1,11 +1,11 @@
-import { createSurfaceRegion, writeSurfacePixels } from '@flighthq/surface/contract';
+import { createBitmapRegion, writeBitmapPixels } from '@flighthq/bitmap/contract';
 import type { GlyphAtlas, GlyphAtlasRuntime, GlyphEntry, GlyphRasterizedBitmap } from '@flighthq/types/contract';
 
 import { getGlyphRasterizerBackend } from './glyphRasterizerBackend';
 
 // Returns the cached entry for `codepoint`, or ensures it first on a miss: rasterize via the active
 // backend, pack the bitmap into the atlas (incremental shelf placement; on exhaustion, evict the
-// least-recently-used glyphs and repack), blit its pixels into the atlas surface, record the dirty
+// least-recently-used glyphs and repack), blit its pixels into the atlas bitmap, record the dirty
 // rect, and cache the entry. Returns null when the glyph cannot be produced — no rasterizer output,
 // or a single glyph larger than the whole atlas. This is the dynamic `GlyphSource.getGlyphEntry`.
 export function getGlyphAtlasEntry(atlas: Readonly<GlyphAtlas>, codepoint: number): GlyphEntry | null {
@@ -21,8 +21,8 @@ export function getGlyphAtlasEntry(atlas: Readonly<GlyphAtlas>, codepoint: numbe
 
   // A glyph larger than the usable atlas area can never be placed, however much is evicted.
   const padding = runtime.padding;
-  const usableWidth = runtime.surface.width - 2 * padding;
-  const usableHeight = runtime.surface.height - 2 * padding;
+  const usableWidth = runtime.bitmap.width - 2 * padding;
+  const usableHeight = runtime.bitmap.height - 2 * padding;
   if (bitmap.width > usableWidth || bitmap.height > usableHeight) return null;
 
   // Evicting for the glyph-count budget frees logical cache slots; the freed atlas space is reclaimed
@@ -52,7 +52,7 @@ export function getGlyphAtlasEntry(atlas: Readonly<GlyphAtlas>, codepoint: numbe
     bearingX: bitmap.bearingX,
     bearingY: bitmap.bearingY,
     height: bitmap.height,
-    page: 0, // The dynamic atlas is one growing surface — a single page.
+    page: 0, // The dynamic atlas is one growing bitmap — a single page.
     width: bitmap.width,
     x: placement.x,
     y: placement.y,
@@ -60,19 +60,19 @@ export function getGlyphAtlasEntry(atlas: Readonly<GlyphAtlas>, codepoint: numbe
   runtime.entries.set(codepoint, entry);
   runtime.bitmaps.set(codepoint, bitmap);
   runtime.lru.push(codepoint);
-  _blitGlyphIntoAtlasSurface(runtime, entry, bitmap);
+  _blitGlyphIntoAtlasBitmap(runtime, entry, bitmap);
   return entry;
 }
 
-// Writes the glyph's RGBA pixels into the atlas surface at the entry's rect and unions that rect into
+// Writes the glyph's RGBA pixels into the atlas bitmap at the entry's rect and unions that rect into
 // the dirty region for incremental upload.
-function _blitGlyphIntoAtlasSurface(
+function _blitGlyphIntoAtlasBitmap(
   runtime: GlyphAtlasRuntime,
   entry: Readonly<GlyphEntry>,
   bitmap: Readonly<GlyphRasterizedBitmap>,
 ): void {
-  const region = createSurfaceRegion(runtime.surface, entry.x, entry.y, entry.width, entry.height);
-  writeSurfacePixels(region, bitmap.pixels);
+  const region = createBitmapRegion(runtime.bitmap, entry.x, entry.y, entry.width, entry.height);
+  writeBitmapPixels(region, bitmap.pixels);
   _markGlyphAtlasDirtyRect(runtime, entry.x, entry.y, entry.width, entry.height);
 }
 
@@ -122,8 +122,8 @@ function _placeGlyphOnShelf(
   height: number,
 ): { x: number; y: number } | null {
   const padding = runtime.padding;
-  const surface = runtime.surface;
-  const rightLimit = surface.width - padding;
+  const bitmap = runtime.bitmap;
+  const rightLimit = bitmap.width - padding;
 
   let best: GlyphAtlasRuntime['shelves'][number] | null = null;
   let bestSlack = Number.POSITIVE_INFINITY;
@@ -143,7 +143,7 @@ function _placeGlyphOnShelf(
   }
 
   const y = runtime.packBottom;
-  if (y + height > surface.height - padding) return null;
+  if (y + height > bitmap.height - padding) return null;
   if (padding + width > rightLimit) return null;
   runtime.shelves.push({ cursorX: padding + width + padding, height, y });
   runtime.packBottom = y + height + padding;
@@ -151,13 +151,13 @@ function _placeGlyphOnShelf(
 }
 
 // Rebuilds the atlas from its surviving cached glyphs to reclaim the space freed by eviction: it
-// clears the surface and shelf state, re-places every survivor (tallest first, for tight shelf
+// clears the bitmap and shelf state, re-places every survivor (tallest first, for tight shelf
 // packing), re-blits its pixels, and updates its entry's position in place. A survivor that no
 // longer fits is dropped. The whole atlas is marked dirty since glyphs have moved.
 function _repackGlyphAtlas(runtime: GlyphAtlasRuntime): void {
   runtime.shelves.length = 0;
   runtime.packBottom = runtime.padding;
-  runtime.surface.data.fill(0);
+  runtime.bitmap.data.fill(0);
 
   const codepoints = [...runtime.entries.keys()].sort((a, b) => {
     const heightDelta = runtime.entries.get(b)!.height - runtime.entries.get(a)!.height;
@@ -176,10 +176,10 @@ function _repackGlyphAtlas(runtime: GlyphAtlasRuntime): void {
     }
     entry.x = placement.x;
     entry.y = placement.y;
-    const region = createSurfaceRegion(runtime.surface, entry.x, entry.y, entry.width, entry.height);
-    writeSurfacePixels(region, bitmap.pixels);
+    const region = createBitmapRegion(runtime.bitmap, entry.x, entry.y, entry.width, entry.height);
+    writeBitmapPixels(region, bitmap.pixels);
   }
-  _markGlyphAtlasDirtyRect(runtime, 0, 0, runtime.surface.width, runtime.surface.height);
+  _markGlyphAtlasDirtyRect(runtime, 0, 0, runtime.bitmap.width, runtime.bitmap.height);
 }
 
 // Moves `codepoint` to the most-recently-used end of the LRU list so eviction takes the oldest first.

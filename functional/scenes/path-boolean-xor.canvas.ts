@@ -8,7 +8,7 @@
 //   - a point exclusive to rect B (175,175) is filled (cyan),
 //   - the overlapping center (125,125) is background (XOR removes the intersection),
 //   - a point outside both (25,25) is background.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendPathRectangle,
@@ -18,7 +18,7 @@ import {
   createDisplayObject,
   createPath,
   createShape,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeAppearance,
   ShapeKind,
   xorPaths,
@@ -53,9 +53,9 @@ addNodeChild(root, shape);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width;
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   const exclusiveA = at(75, 75);
   const exclusiveB = at(175, 175);

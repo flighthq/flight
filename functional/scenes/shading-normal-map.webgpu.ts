@@ -4,7 +4,7 @@ import {
   registerBuiltInWgpuModifierSnippets,
   registerShadedWgpuMaterial,
 } from '@flighthq/scene3d-wgpu';
-import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
@@ -27,7 +27,7 @@ import {
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   endWgpuRenderEffectPipeline,
-  getSurfacePixelLuminance,
+  getBitmapPixelLuminance,
   normalizeVector3,
   prepareScene3DRender,
   registerWgpuImageTextureResolver,
@@ -120,10 +120,10 @@ const lights = {
 
 render(scene, camera, lights);
 
-export function assertRender(surface: Readonly<Surface>): void {
-  const y = Math.floor(surface.height / 2);
-  const left = getSurfacePixelLuminance(surface, Math.floor(surface.width * 0.43), y);
-  const right = getSurfacePixelLuminance(surface, Math.floor(surface.width * 0.57), y);
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const y = Math.floor(bitmap.height / 2);
+  const left = getBitmapPixelLuminance(bitmap, Math.floor(bitmap.width * 0.43), y);
+  const right = getBitmapPixelLuminance(bitmap, Math.floor(bitmap.width * 0.57), y);
   if (left <= right + 25) {
     throw new Error(`[shading-normal-map] tangent-space halves did not separate (left ${left}, right ${right})`);
   }

@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
-import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -18,7 +18,7 @@ import {
   createTexture,
   createVector3,
   endGlRenderEffectPipeline,
-  getSurfacePixelChannel,
+  getBitmapPixelChannel,
   ImageChannel,
   normalizeVector3,
   prepareScene3DRender,
@@ -121,13 +121,13 @@ render(scene, camera, lights);
 
 // Oracle: the opaque (left) half shows the warm quad (high red) and the cut-out (right) half shows the
 // cool background (near-zero red), proving the alpha map drove coverage rather than a uniform fill.
-export function assertRender(surface: Readonly<Surface>): void {
-  const cx = Math.floor(surface.width / 2);
-  const cy = Math.floor(surface.height / 2);
-  const offset = Math.floor(surface.width * 0.25);
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const cx = Math.floor(bitmap.width / 2);
+  const cy = Math.floor(bitmap.height / 2);
+  const offset = Math.floor(bitmap.width * 0.25);
 
-  const opaqueRed = getSurfacePixelChannel(surface, cx - offset, cy, ImageChannel.Red);
-  const cutoutRed = getSurfacePixelChannel(surface, cx + offset, cy, ImageChannel.Red);
+  const opaqueRed = getBitmapPixelChannel(bitmap, cx - offset, cy, ImageChannel.Red);
+  const cutoutRed = getBitmapPixelChannel(bitmap, cx + offset, cy, ImageChannel.Red);
 
   if (opaqueRed <= 40) {
     throw new Error(`[material-alpha-map] opaque half did not render the quad (red ${opaqueRed})`);

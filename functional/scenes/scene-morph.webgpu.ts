@@ -1,5 +1,5 @@
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
-import type { Camera3D, MeshMorph, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, MeshMorph, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   CANONICAL_MESH_GEOMETRY_LAYOUT,
   addNodeChild,
@@ -17,7 +17,7 @@ import {
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   endWgpuRenderEffectPipeline,
-  getSurfacePixelLuminance,
+  getBitmapPixelLuminance,
   normalizeVector3,
   prepareScene3DMorph,
   prepareScene3DRender,
@@ -104,9 +104,9 @@ const lights = {
 };
 render(scene, camera, lights);
 
-export function assertRender(surface: Readonly<Surface>): void {
+export function assertRender(bitmap: Readonly<Bitmap>): void {
   const covered = (x: number, y: number): boolean =>
-    getSurfacePixelLuminance(surface, Math.floor(surface.width * x), Math.floor(surface.height * y)) > 90;
+    getBitmapPixelLuminance(bitmap, Math.floor(bitmap.width * x), Math.floor(bitmap.height * y)) > 90;
   if (!covered(0.5, 0.5)) throw new Error('[scene-morph] quad center is background');
   if (!covered(0.8, 0.8)) throw new Error('[scene-morph] outer probe is background — morph upload was skipped');
   if (covered(0.98, 0.02)) throw new Error('[scene-morph] extreme corner is covered — silhouette is not bounded');

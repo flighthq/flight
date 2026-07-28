@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
-import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
@@ -16,8 +16,8 @@ import {
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   endWgpuRenderEffectPipeline,
-  getSurfacePixelLuminance,
-  getSurfacePixelRgb,
+  getBitmapPixelLuminance,
+  getBitmapPixelRgb,
   normalizeVector3,
   prepareScene3DRender,
   registerUnlitWgpuMaterial,
@@ -106,14 +106,14 @@ const lights = {
 
 render(scene, camera, lights);
 
-export function assertRender(surface: Readonly<Surface>): void {
-  const cx = Math.floor(surface.width / 2);
-  const cy = Math.floor(surface.height / 2);
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const cx = Math.floor(bitmap.width / 2);
+  const cy = Math.floor(bitmap.height / 2);
 
   // 1) The tilted plane covers the frame center with its flat teal surface (the front face rasterized
   //    where the projection places it). If this is background, the plane is single-sided/back-facing
   //    from above or failed to build — flip the camera below the plane or check winding.
-  const center = getSurfacePixelRgb(surface, cx, cy);
+  const center = getBitmapPixelRgb(bitmap, cx, cy);
   if (!isTeal(center)) {
     throw new Error(
       `[mesh-plane] plane center not the unlit teal — got #${hex(center)} (plane missing, mis-projected, or back-facing from above)`,
@@ -121,14 +121,14 @@ export function assertRender(surface: Readonly<Surface>): void {
   }
 
   // 2) A small ring around center is also on the plane (a filled quad, not a sliver/edge-on line).
-  const r = Math.floor(surface.width * 0.05);
+  const r = Math.floor(bitmap.width * 0.05);
   for (const [dx, dy] of [
     [r, 0],
     [-r, 0],
     [0, r],
     [0, -r],
   ]) {
-    if (getSurfacePixelLuminance(surface, cx + dx, cy + dy) <= 30) {
+    if (getBitmapPixelLuminance(bitmap, cx + dx, cy + dy) <= 30) {
       throw new Error(
         `[mesh-plane] plane does not fill around center at (${dx},${dy}) — quad too small/offset/edge-on`,
       );
@@ -137,14 +137,14 @@ export function assertRender(surface: Readonly<Surface>): void {
 
   // 3) The four frame corners are background (the tilted plane is bounded, not filling the whole
   //    frame) — proving a real projected quad rather than a full-screen clear or fallback.
-  const m = Math.floor(surface.width * 0.04);
+  const m = Math.floor(bitmap.width * 0.04);
   for (const [x, y] of [
     [m, m],
-    [surface.width - m, m],
-    [m, surface.height - m],
-    [surface.width - m, surface.height - m],
+    [bitmap.width - m, m],
+    [m, bitmap.height - m],
+    [bitmap.width - m, bitmap.height - m],
   ]) {
-    if (getSurfacePixelLuminance(surface, x, y) > 40) {
+    if (getBitmapPixelLuminance(bitmap, x, y) > 40) {
       throw new Error(`[mesh-plane] frame corner (${x},${y}) not background — plane silhouette is not bounded`);
     }
   }

@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
-import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
@@ -17,7 +17,7 @@ import {
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   endWgpuRenderEffectPipeline,
-  getSurfacePixelLuminance,
+  getBitmapPixelLuminance,
   normalizeVector3,
   prepareScene3DRender,
   registerTransmissionVolumePbrWgpuMaterial,
@@ -129,16 +129,16 @@ render(scene, camera, lights);
 // Oracle: not blank + shows directional shading. The sphere is centered; sample a pixel on the lit
 // (screen-right) hemisphere and one on the shadowed (screen-left) hemisphere, both inset from center
 // so they land on the sphere surface, and assert the lit side is clearly brighter.
-export function assertRender(surface: Readonly<Surface>): void {
-  const cx = Math.floor(surface.width / 2);
-  const cy = Math.floor(surface.height / 2);
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const cx = Math.floor(bitmap.width / 2);
+  const cy = Math.floor(bitmap.height / 2);
   // On-screen the sphere is ~120px in radius; sample ~60px either side of center so both points land
   // on its surface. The light faces +x, so the screen-right point is on the lit hemisphere and the
   // screen-left point is on the shadowed hemisphere.
-  const offset = Math.floor(surface.width * 0.075);
+  const offset = Math.floor(bitmap.width * 0.075);
 
-  const litLuminance = getSurfacePixelLuminance(surface, cx + offset, cy);
-  const shadowLuminance = getSurfacePixelLuminance(surface, cx - offset, cy);
+  const litLuminance = getBitmapPixelLuminance(bitmap, cx + offset, cy);
+  const shadowLuminance = getBitmapPixelLuminance(bitmap, cx - offset, cy);
 
   if (litLuminance <= 24) {
     throw new Error(

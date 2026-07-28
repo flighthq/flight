@@ -6,7 +6,7 @@ import type { ImageResource } from '@flighthq/types/contract';
 // the call, so one primitive serves both the premultiplied 2D sprite path and the raw-radiance cube path.
 // The caller owns creating and binding the texture and choosing the target.
 
-// Uploads raw CPU pixels (rgba8, straight from a Surface's `data`) through the ArrayBufferView overload.
+// Uploads raw CPU pixels (rgba8, straight from a Bitmap's `data`) through the ArrayBufferView overload.
 // The portable bedrock upload — no web types in the signature — so a native GL/Vulkan backend reimplements
 // it 1:1. `width`/`height` are the pixel dimensions the data fills.
 export function uploadGlTextureData(
@@ -36,7 +36,7 @@ export function uploadGlTextureElement(gl: WebGL2RenderingContext, target: numbe
 }
 
 // Dispatches an ImageResource to whichever representation it carries: the element fast-path when a decoded
-// `source` is present, else the portable `data` path (a generated Surface). The seam that makes data-backed
+// `source` is present, else the portable `data` path (a generated Bitmap). The seam that makes data-backed
 // resources first-class — the same texture uploads whether it was loaded (element) or generated in memory
 // (data). Assumes the resource has pixels in at least one form.
 export function uploadGlTextureImageResource(

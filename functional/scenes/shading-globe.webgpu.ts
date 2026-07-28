@@ -5,7 +5,7 @@ import {
   registerShadedWgpuMaterial,
   setWgpuScene3DTime,
 } from '@flighthq/scene3d-wgpu';
-import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
@@ -29,7 +29,7 @@ import {
   createWgpuRenderState,
   EmissiveModifierFacing,
   endWgpuRenderEffectPipeline,
-  getSurfacePixelLuminance,
+  getBitmapPixelLuminance,
   normalizeVector3,
   prepareScene3DRender,
   registerWgpuImageTextureResolver,
@@ -124,15 +124,15 @@ const lights = {
 
 render(scene, camera, lights);
 
-export function assertRender(surface: Readonly<Surface>): void {
-  const centerX = Math.floor(surface.width / 2);
-  const centerY = Math.floor(surface.height / 2);
-  const offset = Math.floor(surface.width * 0.06);
-  const dayLuminance = getSurfacePixelLuminance(surface, centerX + offset, centerY);
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const centerX = Math.floor(bitmap.width / 2);
+  const centerY = Math.floor(bitmap.height / 2);
+  const offset = Math.floor(bitmap.width * 0.06);
+  const dayLuminance = getBitmapPixelLuminance(bitmap, centerX + offset, centerY);
   let nightHighlight = 0;
-  for (let y = Math.floor(surface.height * 0.2); y < Math.floor(surface.height * 0.8); y += 4) {
-    for (let x = Math.floor(surface.width * 0.2); x < centerX; x += 4) {
-      nightHighlight = Math.max(nightHighlight, getSurfacePixelLuminance(surface, x, y));
+  for (let y = Math.floor(bitmap.height * 0.2); y < Math.floor(bitmap.height * 0.8); y += 4) {
+    for (let x = Math.floor(bitmap.width * 0.2); x < centerX; x += 4) {
+      nightHighlight = Math.max(nightHighlight, getBitmapPixelLuminance(bitmap, x, y));
     }
   }
 

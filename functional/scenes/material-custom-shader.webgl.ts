@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
-import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -14,8 +14,8 @@ import {
   createSphereMeshGeometry,
   createVector3,
   endGlRenderEffectPipeline,
-  getSurfacePixelLuminance,
-  getSurfacePixelRgb,
+  getBitmapPixelLuminance,
+  getBitmapPixelRgb,
   prepareScene3DRender,
   registerCustomShaderGlMaterial,
   registerGlCustomMaterialShader,
@@ -101,12 +101,12 @@ const camera = createCamera3D({
 setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 3), createVector3(), createVector3(0, 1, 0));
 render(scene, camera, { ambient: null, directional: null });
 
-export function assertRender(surface: Readonly<Surface>): void {
-  const cx = Math.floor(surface.width / 2);
-  const cy = Math.floor(surface.height / 2);
-  const center = getSurfacePixelLuminance(surface, cx, cy);
-  const centerRgb = getSurfacePixelRgb(surface, cx, cy);
-  const edgeRgb = getSurfacePixelRgb(surface, cx + Math.floor(surface.width * 0.07), cy);
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const cx = Math.floor(bitmap.width / 2);
+  const cy = Math.floor(bitmap.height / 2);
+  const center = getBitmapPixelLuminance(bitmap, cx, cy);
+  const centerRgb = getBitmapPixelRgb(bitmap, cx, cy);
+  const edgeRgb = getBitmapPixelRgb(bitmap, cx + Math.floor(bitmap.width * 0.07), cy);
   if (center <= 24) throw new Error(`[material-custom-shader] blank custom material (${center})`);
   if (centerRgb === edgeRgb) {
     throw new Error('[material-custom-shader] custom normal-matrix shading did not vary across the sphere');

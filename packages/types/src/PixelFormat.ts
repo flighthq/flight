@@ -4,7 +4,7 @@
  * Names follow Wgpu's `GPUTextureFormat` so a Wgpu backend maps a format 1:1 with no lookup table.
  *
  * Both variants are 8-bit unsigned-normalized RGBA in `Uint8ClampedArray` (4 bytes per pixel); they
- * differ only in channel order. `bgra8unorm` is reachable via `convertSurfacePixelOrder`. Wider
+ * differ only in channel order. `bgra8unorm` is reachable via `convertBitmapPixelOrder`. Wider
  * formats (float, single-channel R8, compressed KTX2/Basis) are out of scope until `data` can carry
  * them — compressed payloads are reserved for a separate `compressed` slot on `ImageResource`.
  */

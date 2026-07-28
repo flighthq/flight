@@ -1,5 +1,5 @@
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
-import type { Camera3D, GlRenderEffectPipeline, MeshMorph, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, GlRenderEffectPipeline, MeshMorph, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   CANONICAL_MESH_GEOMETRY_LAYOUT,
   addNodeChild,
@@ -17,7 +17,7 @@ import {
   createVector3,
   beginGlRenderEffectPipeline,
   endGlRenderEffectPipeline,
-  getSurfacePixelLuminance,
+  getBitmapPixelLuminance,
   normalizeVector3,
   prepareScene3DMorph,
   prepareScene3DRender,
@@ -136,11 +136,11 @@ const lights = {
 
 render(scene, camera, lights);
 
-export function assertRender(surface: Readonly<Surface>): void {
-  const w = surface.width;
-  const h = surface.height;
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const w = bitmap.width;
+  const h = bitmap.height;
   const covered = (fx: number, fy: number): boolean =>
-    getSurfacePixelLuminance(surface, Math.floor(w * fx), Math.floor(h * fy)) > 90;
+    getBitmapPixelLuminance(bitmap, Math.floor(w * fx), Math.floor(h * fy)) > 90;
 
   // Center is on the quad in both poses (sanity).
   if (!covered(0.5, 0.5)) {

@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   advanceVideoTexture,
@@ -16,7 +16,7 @@ import {
   createVector3,
   createWgpuCanvasElement,
   createWgpuRenderState,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   prepareScene3DRender,
   registerUnlitWgpuMaterial,
   renderWgpuBackground,
@@ -75,9 +75,9 @@ prepareScene3DRender(state, scene, camera, lights);
 drawWgpuScene3D(state, scene, camera, lights);
 submitWgpuRenderPass(state);
 
-export function assertRender(surface: Readonly<Surface>): void {
+export function assertRender(bitmap: Readonly<Bitmap>): void {
   const sample = (x: number): number =>
-    getSurfacePixelRgb(surface, Math.floor(surface.width * x), Math.floor(surface.height * 0.5));
+    getBitmapPixelRgb(bitmap, Math.floor(bitmap.width * x), Math.floor(bitmap.height * 0.5));
   const left = sample(0.35);
   const right = sample(0.65);
   const red = (rgb: number): boolean => ((rgb >> 16) & 255) > 180 && ((rgb >> 8) & 255) < 70 && (rgb & 255) < 70;

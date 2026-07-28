@@ -19,7 +19,7 @@
     { "path": "../spatial" },
     { "path": "../quadbatch" },
     { "path": "../tilemap" },
-    { "path": "../surface" },
+    { "path": "../bitmap" },
     { "path": "../text" },
     { "path": "../textlayout" },
     { "path": "../types" }

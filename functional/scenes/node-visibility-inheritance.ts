@@ -10,7 +10,7 @@
 // (2) the hidden container's child region (must read background). A pass proves visibility reaches
 // descendants, not just the node it is set on. jsdom unit tests cannot observe this gating because there
 // are no rendered pixels to suppress.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -18,7 +18,7 @@ import {
   appendShapeRectangle,
   createDisplayObject,
   createShape,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeAppearance,
   ShapeKind,
 } from '@flighthq/sdk';
@@ -75,9 +75,9 @@ addNodeChild(hiddenContainer, hiddenChild);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // 1) Center of the visible container's child: must read its red fill.
   const visibleCenter = at(VISIBLE_CHILD_X + SHAPE_W / 2, VISIBLE_CHILD_Y + SHAPE_H / 2);

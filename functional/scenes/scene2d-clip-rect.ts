@@ -8,7 +8,7 @@
 // top-left. The oracle proves (1) a point inside both the shape and the clip window is the shape color;
 // (2) a point inside the SHAPE but OUTSIDE the clip window is background — i.e. clipped away, not painted;
 // (3) a point outside both is background.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -17,7 +17,7 @@ import {
   createClipRegionFromRectangle,
   createDisplayObject,
   createShape,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   setNode2DClip,
   ShapeKind,
 } from '@flighthq/sdk';
@@ -57,9 +57,9 @@ addNodeChild(root, shape);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // 1) Inside the clip window AND inside the shape: shape color survives.
   const inside = at(CLIP_X + CLIP_SIZE / 2, CLIP_Y + CLIP_SIZE / 2);

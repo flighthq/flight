@@ -6,7 +6,7 @@
 //   Multiply(0.5, 0.5) = 0.25 → ~64   (darkens)
 //   Screen(0.5, 0.5)   = 0.75 → ~192  (brightens)
 // A backend that ignored the mode would leave both regions at the overlay's own gray (~128), failing.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -15,7 +15,7 @@ import {
   BlendMode,
   createDisplayObject,
   createShape,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeAppearance,
   ShapeKind,
 } from '@flighthq/sdk';
@@ -68,9 +68,9 @@ function addOverlay(x: number, blendMode: BlendMode): void {
   addNodeChild(root, overlay);
 }
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width;
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
   const cy = OVERLAY_Y + OVERLAY_H / 2;
 
   // Multiply darkens gray-on-gray toward ~64.

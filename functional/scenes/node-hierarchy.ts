@@ -7,7 +7,7 @@
 // half strength because the OUTER container's alpha (0.5) propagates down. The oracle samples the
 // compounded location (a green blended ~50% over black) and a far point (background), so it fails unless
 // both the transform composition and the alpha inheritance reached the drawn pixels.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -15,7 +15,7 @@ import {
   appendShapeRectangle,
   createDisplayObject,
   createShape,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   ShapeKind,
@@ -68,9 +68,9 @@ addNodeChild(inner, shape);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // 1) Well inside the compounded footprint: green blended ~50% over black. Full green channel is 0xcc
   //    (204); at half alpha over black it lands ~80–130. Red/blue stay low, so this also proves the

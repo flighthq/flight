@@ -12,7 +12,7 @@ export function explainDomImageSource(image: Readonly<ImageResource>): DomImageS
 
 // Resolves a (possibly data-only) ImageResource to a CanvasImageSource the DOM bitmap path can draw
 // into its per-node canvas. An element-backed resource returns its host `source` directly; a data-only
-// Surface materializes an HTMLCanvasElement from its pixels and caches it per render state, rebuilding
+// Bitmap materializes an HTMLCanvasElement from its pixels and caches it per render state, rebuilding
 // only on a `version` bump. The DOM twin of resolveCanvasImageSource — same renderer-owned,
 // version-keyed derived cache, never written back onto the shared resource. Returns null when the
 // resource has neither pixel form.

@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { bakeGlEnvironmentIbl, drawGlEnvironmentSkybox, drawGlScene3D } from '@flighthq/scene3d-gl';
-import type { Camera3D, Environment, GlRenderEffectPipeline, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, Environment, GlRenderEffectPipeline, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -17,8 +17,8 @@ import {
   createStandardPbrMaterial,
   createVector3,
   endGlRenderEffectPipeline,
-  getSurfacePixel,
-  getSurfacePixelLuminance,
+  getBitmapPixel,
+  getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
   prepareScene3DRender,
   registerStandardPbrGlMaterial,
@@ -131,13 +131,13 @@ const lights = { ambient: null, directional: null };
 
 render(scene, camera, lights, environment);
 
-export function assertRender(surface: Readonly<Surface>): void {
-  const metalX = Math.floor(surface.width * 0.32);
-  const roughX = Math.floor(surface.width * 0.68);
-  const cy = Math.floor(surface.height * 0.5);
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const metalX = Math.floor(bitmap.width * 0.32);
+  const roughX = Math.floor(bitmap.width * 0.68);
+  const cy = Math.floor(bitmap.height * 0.5);
 
-  const metalLum = getSurfacePixelLuminance(surface, metalX, cy);
-  const roughLum = getSurfacePixelLuminance(surface, roughX, cy);
+  const metalLum = getBitmapPixelLuminance(bitmap, metalX, cy);
+  const roughLum = getBitmapPixelLuminance(bitmap, roughX, cy);
 
   if (metalLum <= 24) {
     throw new Error(`[env-ibl] metal sphere is unlit (luminance ${metalLum}) — specular IBL not applied`);
@@ -148,8 +148,8 @@ export function assertRender(surface: Readonly<Surface>): void {
 
   // The mirror metal must show the reflected environment's color — sample a band across it and require
   // the reflected color to vary (a flat unlit/constant sphere would not).
-  const a = getSurfacePixel(surface, Math.floor(surface.width * 0.27), cy);
-  const b = getSurfacePixel(surface, Math.floor(surface.width * 0.37), Math.floor(surface.height * 0.4));
+  const a = getBitmapPixel(bitmap, Math.floor(bitmap.width * 0.27), cy);
+  const b = getBitmapPixel(bitmap, Math.floor(bitmap.width * 0.37), Math.floor(bitmap.height * 0.4));
   if (sameColor(a, b)) {
     throw new Error(`[env-ibl] metal sphere shows no reflection variation (${hex(a)} vs ${hex(b)})`);
   }

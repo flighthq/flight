@@ -4,7 +4,7 @@ import type { TextureContainerFormat } from '@flighthq/types/contract';
 import { createByteReader, hasByteReaderBytes, readByteReaderU32, skipByteReader } from './byteReader';
 import { computeTextureContainerLevels } from './textureLevelLayout';
 
-// Parses a DDS container (DirectDraw Surface) into a `TextureContainer`, or returns `null` if the bytes
+// Parses a DDS container (DirectDraw Bitmap) into a `TextureContainer`, or returns `null` if the bytes
 // are not DDS, are truncated, or carry a pixel format this package does not map (e.g. a legacy 16/24-bit
 // layout, a YUV/luminance format, or a volume texture).
 //

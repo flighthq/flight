@@ -5,7 +5,7 @@ import {
   registerShadedGlMaterial,
   setGlScene3DTime,
 } from '@flighthq/scene3d-gl';
-import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   createAmbientLight,
@@ -28,7 +28,7 @@ import {
   EmissiveModifierFacing,
   beginGlRenderEffectPipeline,
   endGlRenderEffectPipeline,
-  getSurfacePixelLuminance,
+  getBitmapPixelLuminance,
   normalizeVector3,
   prepareScene3DRender,
   registerGlImageTextureResolver,
@@ -161,13 +161,13 @@ render(scene, camera, lights);
 // EmissiveModifier's city lights. Both being clearly non-black is the signature that the base shading
 // AND the emissive modifier both contributed (a plain lit material would leave the night side near the
 // dim ambient floor). This is a shape/behaviour check, not a visual-parity assertion.
-export function assertRender(surface: Readonly<Surface>): void {
-  const cx = Math.floor(surface.width / 2);
-  const cy = Math.floor(surface.height / 2);
-  const offset = Math.floor(surface.width * 0.06);
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const cx = Math.floor(bitmap.width / 2);
+  const cy = Math.floor(bitmap.height / 2);
+  const offset = Math.floor(bitmap.width * 0.06);
 
-  const dayLuminance = getSurfacePixelLuminance(surface, cx + offset, cy);
-  const nightLuminance = getSurfacePixelLuminance(surface, cx - offset, cy);
+  const dayLuminance = getBitmapPixelLuminance(bitmap, cx + offset, cy);
+  const nightLuminance = getBitmapPixelLuminance(bitmap, cx - offset, cy);
 
   if (dayLuminance <= 24) {
     throw new Error(`[shading-globe] day side is blank (luminance ${dayLuminance}) — globe did not render`);

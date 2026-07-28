@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
-import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
@@ -16,7 +16,7 @@ import {
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   endWgpuRenderEffectPipeline,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeLocalTransform,
   prepareScene3DRender,
   registerUnlitWgpuMaterial,
@@ -96,8 +96,8 @@ const lights = {
 
 render(scene, camera, lights);
 
-export function assertRender(surface: Readonly<Surface>): void {
-  const rgb = getSurfacePixelRgb(surface, Math.floor(surface.width / 2), Math.floor(surface.height / 2));
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const rgb = getBitmapPixelRgb(bitmap, Math.floor(bitmap.width / 2), Math.floor(bitmap.height / 2));
   const red = (rgb >> 16) & 0xff;
   const green = (rgb >> 8) & 0xff;
   const blue = rgb & 0xff;

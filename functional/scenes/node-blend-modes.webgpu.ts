@@ -1,4 +1,4 @@
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -11,7 +11,7 @@ import {
   createImageResourceFromCanvas,
   createShape,
   createTexture,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   ShapeKind,
@@ -85,9 +85,9 @@ function addMultiplyBitmap(): void {
   addNodeChild(root, bitmap);
 }
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width;
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
   const baseLuma = luma(at(BAND_X + 20, BAND_Y + 20));
   if (baseLuma < 100 || baseLuma > 160) {
     throw new Error(`[node-blend-modes] base gray luma ${baseLuma.toFixed(0)} not near 128`);

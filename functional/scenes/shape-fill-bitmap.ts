@@ -6,7 +6,7 @@
 // (1) tiling — cell centers across more than two 8px periods alternate pure black/white at the 8px
 // pitch (a single un-tiled image could not cover 256px with that pitch) and (2) nearest sampling — a
 // sample on a cell boundary is still pure black or white, with no bilinear blend to gray.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginBitmapFill,
@@ -17,7 +17,7 @@ import {
   createSampler,
   createShape,
   createTexture,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   ShapeKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -78,9 +78,9 @@ addNodeChild(root, shape);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // 1) Tiling: a bitmap fill tiles from the SHAPE's local origin (0,0), so the cell phase at the rect's
   // corner is (RECT_X mod CELL) — the first cell may be black OR white. So we assert PARITY-AGNOSTICALLY:

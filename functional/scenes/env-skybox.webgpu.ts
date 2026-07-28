@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuEnvironmentSkybox, drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
-import type { Camera3D, Environment, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, Environment, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
@@ -19,7 +19,7 @@ import {
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   endWgpuRenderEffectPipeline,
-  getSurfacePixel,
+  getBitmapPixel,
   prepareScene3DRender,
   registerStandardPbrWgpuMaterial,
   renderWgpuBackground,
@@ -87,10 +87,10 @@ const lights = {
 };
 render(scene, camera, lights, environment);
 
-export function assertRender(surface: Readonly<Surface>): void {
-  const top = getSurfacePixel(surface, Math.floor(surface.width * 0.5), Math.floor(surface.height * 0.12));
-  const left = getSurfacePixel(surface, Math.floor(surface.width * 0.08), Math.floor(surface.height * 0.5));
-  const right = getSurfacePixel(surface, Math.floor(surface.width * 0.92), Math.floor(surface.height * 0.5));
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const top = getBitmapPixel(bitmap, Math.floor(bitmap.width * 0.5), Math.floor(bitmap.height * 0.12));
+  const left = getBitmapPixel(bitmap, Math.floor(bitmap.width * 0.08), Math.floor(bitmap.height * 0.5));
+  const right = getBitmapPixel(bitmap, Math.floor(bitmap.width * 0.92), Math.floor(bitmap.height * 0.5));
   if (blank(top) && blank(left) && blank(right)) throw new Error('[env-skybox] backdrop is blank');
   if (sameColor(top, left) && sameColor(left, right)) throw new Error('[env-skybox] backdrop is uniform');
 }

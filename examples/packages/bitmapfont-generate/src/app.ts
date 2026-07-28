@@ -4,7 +4,7 @@ import {
   createGlyphSourceFromGlyphAtlas,
   createStubGlyphRasterizerBackend,
   createWebGlyphRasterizerBackend,
-  getGlyphAtlasSurface,
+  getGlyphAtlasBitmap,
   setGlyphRasterizerBackend,
 } from '@flighthq/glyphatlas';
 import type { BitmapText } from '@flighthq/sdk';
@@ -12,7 +12,7 @@ import {
   addNodeChild,
   createSprite,
   createDisplayObject,
-  createImageResourceFromSurface,
+  createImageResourceFromBitmap,
   createTexture,
   invalidateNodeLocalTransform,
   setNodeColorAdjustmentsTint,
@@ -77,7 +77,7 @@ addText('0123456789  Lazy • Packed • Reused', 36, 318, 0x06d6a0ff, {
 
 // Materialize the completed CPU atlas once so every backend consumes the same uploadable image.
 // The atlas remains the source of glyph metrics and regions; only its finalized pixels are adapted.
-const atlasImage = createImageResourceFromSurface(getGlyphAtlasSurface(atlas));
+const atlasImage = createImageResourceFromBitmap(getGlyphAtlasBitmap(atlas));
 for (const bitmapText of bitmapTexts) {
   for (const page of getBitmapTextPages(bitmapText)) {
     page.atlas.texture = createTexture({ storage: { dimension: '2d', image: atlasImage } });

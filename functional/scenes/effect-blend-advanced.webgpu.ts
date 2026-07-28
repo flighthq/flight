@@ -1,4 +1,4 @@
-import type { Node2D, Surface, WgpuRenderTarget } from '@flighthq/sdk';
+import type { Node2D, Bitmap, WgpuRenderTarget } from '@flighthq/sdk';
 import {
   AdvancedBlendMode,
   ShapeKind,
@@ -20,7 +20,7 @@ import {
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
   endWgpuRenderPass,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   prepareScene2DRender,
   registerStandardWgpuMaterial,
   registerRenderer,
@@ -111,7 +111,7 @@ addNodeChild(layerRoot, fillRectangle(0xffffffff, 0, 0, logicalWidth, logicalHei
 
 render(backdropRoot, layerRoot);
 
-export function assertRender(surface: Readonly<Surface>): void {
+export function assertRender(bitmap: Readonly<Bitmap>): void {
   const isNear = (rgb: number, red: number, green: number, blue: number, tolerance: number): boolean => {
     const redDelta = ((rgb >> 16) & 255) - red;
     const greenDelta = ((rgb >> 8) & 255) - green;
@@ -119,10 +119,10 @@ export function assertRender(surface: Readonly<Surface>): void {
     return Math.abs(redDelta) <= tolerance && Math.abs(greenDelta) <= tolerance && Math.abs(blueDelta) <= tolerance;
   };
   const hex = (rgb: number): string => (rgb & 0xffffff).toString(16).padStart(6, '0');
-  const topLeft = getSurfacePixelRgb(surface, Math.floor(surface.width * 0.25), Math.floor(surface.height * 0.25));
-  const topRight = getSurfacePixelRgb(surface, Math.floor(surface.width * 0.75), Math.floor(surface.height * 0.25));
-  const bottomLeft = getSurfacePixelRgb(surface, Math.floor(surface.width * 0.25), Math.floor(surface.height * 0.75));
-  const bottomRight = getSurfacePixelRgb(surface, Math.floor(surface.width * 0.75), Math.floor(surface.height * 0.75));
+  const topLeft = getBitmapPixelRgb(bitmap, Math.floor(bitmap.width * 0.25), Math.floor(bitmap.height * 0.25));
+  const topRight = getBitmapPixelRgb(bitmap, Math.floor(bitmap.width * 0.75), Math.floor(bitmap.height * 0.25));
+  const bottomLeft = getBitmapPixelRgb(bitmap, Math.floor(bitmap.width * 0.25), Math.floor(bitmap.height * 0.75));
+  const bottomRight = getBitmapPixelRgb(bitmap, Math.floor(bitmap.width * 0.75), Math.floor(bitmap.height * 0.75));
 
   if (!isNear(topLeft, 0, 0, 0, 24)) {
     throw new Error(`[effect-blend-advanced] white overlap is #${hex(topLeft)}, expected Difference black`);

@@ -5,7 +5,7 @@ import { ImageTextureBackingKind } from '@flighthq/types/contract';
 
 // Materializes a data-backed ImageResource's raw pixels into a detached, drawable HTMLCanvasElement
 // via putImageData. The inverse of createImageResourceFromCanvas: it turns the portable `data`
-// representation of a generated Surface into the host element that Canvas/DOM `drawImage` needs.
+// representation of a generated Bitmap into the host element that Canvas/DOM `drawImage` needs.
 // Returns null for an element-only resource (no `data` to transcode). Straight-alpha in, straight-alpha
 // out — the drawn canvas matches the source's `alphaType`. Callers that draw data-only resources cache
 // the result keyed on `version`; this primitive allocates a fresh canvas on every call.

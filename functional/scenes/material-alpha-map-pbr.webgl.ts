@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
-import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -18,7 +18,7 @@ import {
   createTexture,
   createVector3,
   endGlRenderEffectPipeline,
-  getSurfacePixelChannel,
+  getBitmapPixelChannel,
   ImageChannel,
   normalizeVector3,
   prepareScene3DRender,
@@ -123,14 +123,14 @@ render(scene, camera, lights);
 // The primary base-color map repeats across 3 UV spans, while the non-primary alpha map clamps after
 // its first span. If a backend incorrectly shares the primary sampler, the alpha gradient repeats and
 // the middle/right samples reveal the quad. Per-map sampling leaves both at background.
-export function assertRender(surface: Readonly<Surface>): void {
-  const cx = Math.floor(surface.width / 2);
-  const cy = Math.floor(surface.height / 2);
-  const offset = Math.floor(surface.width * 0.3);
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const cx = Math.floor(bitmap.width / 2);
+  const cy = Math.floor(bitmap.height / 2);
+  const offset = Math.floor(bitmap.width * 0.3);
 
-  const leftRed = getSurfacePixelChannel(surface, cx - offset, cy, ImageChannel.Red);
-  const middleRed = getSurfacePixelChannel(surface, cx, cy, ImageChannel.Red);
-  const rightRed = getSurfacePixelChannel(surface, cx + offset, cy, ImageChannel.Red);
+  const leftRed = getBitmapPixelChannel(bitmap, cx - offset, cy, ImageChannel.Red);
+  const middleRed = getBitmapPixelChannel(bitmap, cx, cy, ImageChannel.Red);
+  const rightRed = getBitmapPixelChannel(bitmap, cx + offset, cy, ImageChannel.Red);
 
   if (leftRed <= 15) {
     throw new Error(`[material-alpha-map-pbr] opaque (left) edge did not render the PBR quad (red ${leftRed})`);
