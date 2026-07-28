@@ -1,4 +1,4 @@
-import { bindGlImageResourceTexture, resolveGlTexture } from '@flighthq/render-gl/contract';
+import { applyGlSamplerState } from '@flighthq/render-gl/contract';
 import { createGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type {
@@ -8,10 +8,9 @@ import type {
   GlMaterialRenderer,
   GlQuadBatchShader,
   GlRenderState,
-  ImageResource,
   Material,
   MaterialData,
-  Texture,
+  SamplerLike,
 } from '@flighthq/types/contract';
 
 // Base per-instance layout (13 floats = 52 bytes, world-space transforms + per-instance alpha):
@@ -147,6 +146,8 @@ export function flushGlQuadBatchWriter(state: GlRenderState): void {
   if (count === 0) return;
 
   const texture = runtime.quadBatchWriterTexture!;
+  const sampler = runtime.quadBatchWriterSampler;
+  const straightAlpha = runtime.quadBatchWriterStraightAlpha;
   const blendMode = runtime.quadBatchWriterBlendMode;
   const material = runtime.quadBatchWriterMaterial;
   const renderer = runtime.quadBatchWriterMaterialRenderer!;
@@ -154,6 +155,8 @@ export function flushGlQuadBatchWriter(state: GlRenderState): void {
   const smoothing = runtime.quadBatchWriterSmoothing;
   runtime.quadBatchWriterCount = 0;
   runtime.quadBatchWriterTexture = null;
+  runtime.quadBatchWriterSampler = null;
+  runtime.quadBatchWriterStraightAlpha = false;
   runtime.quadBatchWriterSmoothing = null;
   runtime.quadBatchWriterBlendMode = null;
   runtime.quadBatchWriterMaterial = null;
@@ -172,11 +175,10 @@ export function flushGlQuadBatchWriter(state: GlRenderState): void {
   gl.bufferSubData(gl.ARRAY_BUFFER, 0, runtime.quadBatchWriterInstanceData, 0, count * QUAD_BATCH_INSTANCE_FLOATS);
 
   state.applyBlendMode?.(state, blendMode);
-  const resolved =
-    'storage' in texture
-      ? resolveGlTexture(state, texture, true)
-      : bindGlImageResourceTexture(state, texture, null, smoothing, true);
-  if (resolved === null) return;
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  runtime.currentTexture = texture;
+  runtime.currentTextureStraightAlpha = straightAlpha;
+  applyGlSamplerState(state, runtime, texture, sampler, smoothing);
 
   // The color-adjustment fold is opt-in (registerGlColorAdjustmentMaterialFeature): when installed it selects and binds
   // its program for a tinted batch, returning true; when absent, or for an untinted batch, the lean
@@ -234,7 +236,9 @@ export function packGlQuadBatchMaterialInstance(
 // writing base instance data; the caller increments state.quadBatchWriterCount and records per-instance data.
 export function prepareGlQuadBatchWrite(
   state: GlRenderState,
-  texture: Readonly<ImageResource | Texture>,
+  texture: WebGLTexture,
+  straightAlpha: boolean,
+  sampler: Readonly<SamplerLike> | null,
   blendMode: BlendMode | null,
   material: Material | null,
   materialRenderer: GlMaterialRenderer,
@@ -245,6 +249,8 @@ export function prepareGlQuadBatchWrite(
   runtime.flushPendingDraws = flushGlQuadBatchWriter;
   if (
     texture !== runtime.quadBatchWriterTexture ||
+    straightAlpha !== runtime.quadBatchWriterStraightAlpha ||
+    sampler !== runtime.quadBatchWriterSampler ||
     blendMode !== runtime.quadBatchWriterBlendMode ||
     material !== runtime.quadBatchWriterMaterial ||
     smoothing !== runtime.quadBatchWriterSmoothing
@@ -252,6 +258,8 @@ export function prepareGlQuadBatchWrite(
     flushGlQuadBatchWriter(state);
   }
   runtime.quadBatchWriterTexture = texture;
+  runtime.quadBatchWriterSampler = sampler;
+  runtime.quadBatchWriterStraightAlpha = straightAlpha;
   runtime.quadBatchWriterSmoothing = smoothing;
   runtime.quadBatchWriterBlendMode = blendMode;
   runtime.quadBatchWriterMaterial = material;

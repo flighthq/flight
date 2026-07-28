@@ -12,6 +12,7 @@ export {
   defaultWgpuShapeRenderer,
   defaultWgpuSpriteRenderer,
   defaultWgpuTextLabelRenderer,
+  defaultWgpuTextureShapeCommands,
   defaultWgpuTilemapRenderer,
   drawWgpuSprite,
   enableWgpuClipSupport,

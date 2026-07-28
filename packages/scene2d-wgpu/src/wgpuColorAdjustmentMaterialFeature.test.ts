@@ -1,4 +1,3 @@
-import { createImageResource } from '@flighthq/image/contract';
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
@@ -115,8 +114,12 @@ describe('registerWgpuColorAdjustmentMaterialFeature', () => {
     registerWgpuColorAdjustmentMaterialFeature(state);
     renderWgpuBackground(state);
     const runtime = getWgpuRenderStateRuntime(state);
-    const tex = createImageResource(document.createElement('img'));
-    prepareWgpuQuadBatchWrite(state, tex, null, null, standardWgpuMaterialRenderer, 2);
+    const tex = {
+      bindGroup: {} as GPUBindGroup,
+      texture: {} as GPUTexture,
+      view: {} as GPUTextureView,
+    };
+    prepareWgpuQuadBatchWrite(state, tex, null, null, null, standardWgpuMaterialRenderer, 2);
     recordWgpuQuadBatchColorScaleBias(state, ct(0.5), 0);
     recordWgpuQuadBatchColorScaleBias(state, ct(0.5), 1);
     runtime.quadBatchWriterCount = 2;

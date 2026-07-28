@@ -22,11 +22,11 @@ import {
 import { createSampler, createTexture } from '@flighthq/texture/contract';
 
 import { renderCanvasShapeCommands } from './canvasShape';
-import { defaultCanvasShapeCommands } from './canvasShapeCommands';
+import { defaultCanvasShapeCommands, defaultCanvasTextureShapeCommands } from './canvasShapeCommands';
 import { registerCanvasShapeCommands } from './canvasShapeRegistry';
 
 beforeAll(() => {
-  registerCanvasShapeCommands(defaultCanvasShapeCommands);
+  registerCanvasShapeCommands([...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
 });
 
 function makeContext(): CanvasRenderingContext2D {
@@ -432,9 +432,8 @@ describe('defaultCanvasMoveTo', () => {
 });
 
 describe('defaultCanvasShapeCommands', () => {
-  it('contains handlers for all standard shape command keys', () => {
+  it('contains the texture-free standard shape command keys', () => {
     const keys = [
-      'beginBitmapFill',
       'beginFill',
       'beginGradientFill',
       'cubicCurveTo',
@@ -445,7 +444,6 @@ describe('defaultCanvasShapeCommands', () => {
       'drawRectangle',
       'drawRoundRectangle',
       'endFill',
-      'lineBitmapStyle',
       'lineGradientStyle',
       'lineTo',
       'lineStyle',
@@ -455,5 +453,14 @@ describe('defaultCanvasShapeCommands', () => {
     for (const key of keys) {
       expect(registeredKeys).toContain(key);
     }
+  });
+});
+
+describe('defaultCanvasTextureShapeCommands', () => {
+  it('contains the opt-in bitmap fill and stroke handlers', () => {
+    expect(defaultCanvasTextureShapeCommands.map((command) => command.key)).toEqual([
+      'beginBitmapFill',
+      'lineBitmapStyle',
+    ]);
   });
 });

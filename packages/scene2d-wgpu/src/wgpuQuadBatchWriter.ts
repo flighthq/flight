@@ -1,21 +1,15 @@
-import {
-  bindWgpuImageResourceTexture,
-  getWgpuBlendState,
-  getWgpuSampler,
-  resolveWgpuTexture,
-  resolveWgpuSmoothingBindGroup,
-} from '@flighthq/render-wgpu/contract';
+import { getWgpuBlendState, getWgpuSampler, resolveWgpuSmoothingBindGroup } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type {
   ColorScaleBias,
   TintMaterialData,
-  ImageResource,
   Material,
   MaterialData,
-  Texture,
+  SamplerLike,
   WgpuMaterialRenderer,
   WgpuQuadBatchResources,
   WgpuRenderState,
+  WgpuTextureEntry,
   WgpuQuadBatchWriterBufferSlot,
 } from '@flighthq/types/contract';
 import type { BlendMode } from '@flighthq/types/contract';
@@ -132,6 +126,7 @@ export function flushWgpuQuadBatchWriter(state: WgpuRenderState): void {
   }
 
   const texture = runtime.quadBatchWriterTexture!;
+  const sampler = runtime.quadBatchWriterSampler;
   const blendMode = runtime.quadBatchWriterBlendMode;
   const smoothing = runtime.quadBatchWriterSmoothing;
   const renderer = runtime.quadBatchWriterMaterialRenderer!;
@@ -171,17 +166,12 @@ export function flushWgpuQuadBatchWriter(state: WgpuRenderState): void {
   }
 
   state.applyBlendMode?.(state, blendMode);
-  const textureEntry =
-    'storage' in texture
-      ? resolveWgpuTexture(state, texture, true)
-      : bindWgpuImageResourceTexture(state, texture, false, true);
-  if (textureEntry === null) return;
   const textureBindGroup =
-    'storage' in texture
-      ? createWgpuTextureSamplerBindGroup(state, textureEntry.view, texture)
-      : resolveWgpuSmoothingBindGroup(state, textureEntry, smoothing);
+    sampler !== null
+      ? createWgpuTextureSamplerBindGroup(state, texture.view, sampler)
+      : resolveWgpuSmoothingBindGroup(state, texture, smoothing);
 
-  const uniformOffset = writeWgpuQuadBatchWriterUniforms(state, textureEntry.straightAlpha === true);
+  const uniformOffset = writeWgpuQuadBatchWriterUniforms(state, texture.straightAlpha === true);
 
   const instanceBindGroup = state.device.createBindGroup({
     layout: resources.instanceBindGroupLayout,
@@ -302,7 +292,8 @@ export function packWgpuQuadBatchMaterialInstance(
 // packWgpuQuadBatchMaterialInstance per instance.
 export function prepareWgpuQuadBatchWrite(
   state: WgpuRenderState,
-  texture: Readonly<ImageResource | Texture>,
+  texture: Readonly<WgpuTextureEntry>,
+  sampler: Readonly<SamplerLike> | null,
   blendMode: BlendMode | null,
   material: Material | null,
   materialRenderer: WgpuMaterialRenderer,
@@ -312,6 +303,7 @@ export function prepareWgpuQuadBatchWrite(
   const runtime = getWgpuRenderStateRuntime(state);
   if (
     texture !== runtime.quadBatchWriterTexture ||
+    sampler !== runtime.quadBatchWriterSampler ||
     blendMode !== runtime.quadBatchWriterBlendMode ||
     material !== runtime.quadBatchWriterMaterial ||
     smoothing !== runtime.quadBatchWriterSmoothing
@@ -319,6 +311,7 @@ export function prepareWgpuQuadBatchWrite(
     flushWgpuQuadBatchWriter(state);
   }
   runtime.quadBatchWriterTexture = texture;
+  runtime.quadBatchWriterSampler = sampler;
   runtime.quadBatchWriterSmoothing = smoothing;
   runtime.quadBatchWriterBlendMode = blendMode;
   runtime.quadBatchWriterMaterial = material;
@@ -391,6 +384,7 @@ function resetWgpuQuadBatchWriter(state: WgpuRenderState): void {
   const runtime = getWgpuRenderStateRuntime(state);
   runtime.quadBatchWriterCount = 0;
   runtime.quadBatchWriterTexture = null;
+  runtime.quadBatchWriterSampler = null;
   runtime.quadBatchWriterSmoothing = null;
   runtime.quadBatchWriterBlendMode = null;
   runtime.quadBatchWriterMaterial = null;
@@ -401,9 +395,8 @@ function resetWgpuQuadBatchWriter(state: WgpuRenderState): void {
 function createWgpuTextureSamplerBindGroup(
   state: WgpuRenderState,
   view: GPUTextureView,
-  texture: Readonly<Texture>,
+  sampler: Readonly<SamplerLike>,
 ): GPUBindGroup {
-  const sampler = texture.sampler;
   const filter: GPUFilterMode = sampler.magFilter.startsWith('nearest') ? 'nearest' : 'linear';
   const mipmapFilter: GPUFilterMode | undefined =
     sampler.mipmaps && sampler.minFilter.includes('mipmap')

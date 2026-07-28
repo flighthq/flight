@@ -40,6 +40,8 @@ export function drawWgpuSprite(state: WgpuRenderState, renderProxy: RenderProxy2
   const material = renderProxy.material;
   const materialRenderer = resolveWgpuMaterialRenderer(state, material);
   if (materialRenderer === null) return;
+  const textureEntry = resolveWgpuTexture(state, texture, true);
+  if (textureEntry === null) return;
   ensureWgpuQuadBatchResources(state);
 
   let u0 = texture.uvOffset.x;
@@ -50,7 +52,15 @@ export function drawWgpuSprite(state: WgpuRenderState, renderProxy: RenderProxy2
   if (texture.flipY) [v0, v1] = [v1, v0];
 
   const instanceIndex = runtime.quadBatchWriterCount;
-  const base = prepareWgpuQuadBatchWrite(state, texture, renderProxy.blendMode, material, materialRenderer, 1);
+  const base = prepareWgpuQuadBatchWrite(
+    state,
+    textureEntry,
+    texture.sampler,
+    renderProxy.blendMode,
+    material,
+    materialRenderer,
+    1,
+  );
   const data = runtime.quadBatchWriterInstanceData;
   const transform = renderProxy.transform2D;
   data[base] = transform.a;

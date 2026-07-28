@@ -4,6 +4,7 @@ import type { BitmapText, GlyphEntry, GlyphSource, ImageResource, RenderProxy2D 
 import { vi } from 'vitest';
 
 import { defaultCanvasBitmapTextRenderer, drawCanvasSpriteText } from './canvasBitmapText';
+import { registerCanvasImageTextureResolver } from './canvasImageSource';
 import { createCanvasRenderState } from './canvasRenderState';
 
 // Single-page stub glyph source whose page-0 image is a real ImageResource backed by a DOM <img>.
@@ -27,7 +28,9 @@ function makeState() {
   const canvas = document.createElement('canvas');
   canvas.width = 200;
   canvas.height = 200;
-  return createCanvasRenderState(canvas);
+  const state = createCanvasRenderState(canvas);
+  registerCanvasImageTextureResolver(state);
+  return state;
 }
 
 function makeProxy(source: BitmapText): RenderProxy2D {

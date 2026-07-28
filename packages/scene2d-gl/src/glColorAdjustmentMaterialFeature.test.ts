@@ -1,14 +1,13 @@
-import { createImageResource } from '@flighthq/image/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type { ColorScaleBias, ImageResource } from '@flighthq/types/contract';
+import type { ColorScaleBias } from '@flighthq/types/contract';
 
 import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature';
 import { flushGlQuadBatchWriter, prepareGlQuadBatchWrite, recordGlQuadBatchColorScaleBias } from './glQuadBatchWriter';
 import { standardGlMaterialRenderer } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 
-function makeTexture(): ImageResource {
-  return createImageResource(document.createElement('img'));
+function makeTexture(): WebGLTexture {
+  return {} as WebGLTexture;
 }
 
 function ct(
@@ -166,7 +165,7 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     const { state, gl } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     registerGlColorAdjustmentMaterialFeature(state);
-    prepareGlQuadBatchWrite(state, makeTexture(), null, null, standardGlMaterialRenderer, 1);
+    prepareGlQuadBatchWrite(state, makeTexture(), false, null, null, null, standardGlMaterialRenderer, 1);
     recordGlQuadBatchColorScaleBias(state, ct(0.5), 0);
     runtime.quadBatchWriterCount = 1;
     flushGlQuadBatchWriter(state);
@@ -178,7 +177,7 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     const { state, gl } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     registerGlColorAdjustmentMaterialFeature(state);
-    prepareGlQuadBatchWrite(state, makeTexture(), null, null, standardGlMaterialRenderer, 2);
+    prepareGlQuadBatchWrite(state, makeTexture(), false, null, null, null, standardGlMaterialRenderer, 2);
     recordGlQuadBatchColorScaleBias(state, ct(0.5), 0);
     recordGlQuadBatchColorScaleBias(state, ct(0.25), 1);
     runtime.quadBatchWriterCount = 2;
@@ -192,7 +191,7 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     const { state, gl } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     registerGlColorAdjustmentMaterialFeature(state);
-    prepareGlQuadBatchWrite(state, makeTexture(), null, null, standardGlMaterialRenderer, 2);
+    prepareGlQuadBatchWrite(state, makeTexture(), false, null, null, null, standardGlMaterialRenderer, 2);
     recordGlQuadBatchColorScaleBias(state, null, 0);
     recordGlQuadBatchColorScaleBias(state, MIX_RED_GREEN, 1);
     runtime.quadBatchWriterCount = 2;
@@ -205,7 +204,7 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     registerGlColorAdjustmentMaterialFeature(state);
-    prepareGlQuadBatchWrite(state, makeTexture(), null, null, standardGlMaterialRenderer, 1);
+    prepareGlQuadBatchWrite(state, makeTexture(), false, null, null, null, standardGlMaterialRenderer, 1);
     recordGlQuadBatchColorScaleBias(state, MIX_RED_GREEN, 0);
     runtime.quadBatchWriterCount = 1;
     flushGlQuadBatchWriter(state);
@@ -216,7 +215,7 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     const { state, gl } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     registerGlColorAdjustmentMaterialFeature(state);
-    prepareGlQuadBatchWrite(state, makeTexture(), null, null, standardGlMaterialRenderer, 1);
+    prepareGlQuadBatchWrite(state, makeTexture(), false, null, null, null, standardGlMaterialRenderer, 1);
     recordGlQuadBatchColorScaleBias(state, null, 0);
     runtime.quadBatchWriterCount = 1;
     flushGlQuadBatchWriter(state);

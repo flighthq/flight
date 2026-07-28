@@ -38,5 +38,6 @@ export {
   defaultCanvasLineTo as defaultGlLineTo,
   defaultCanvasMoveTo as defaultGlMoveTo,
   defaultCanvasShapeCommands as defaultGlShapeCommands,
+  defaultCanvasTextureShapeCommands as defaultGlTextureShapeCommands,
   registerCanvasShapeCommands as registerGlShapeCommands,
 } from '@flighthq/scene2d-canvas/contract';

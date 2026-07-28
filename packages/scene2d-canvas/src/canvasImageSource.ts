@@ -1,9 +1,23 @@
 import { createCanvasFromImageResource } from '@flighthq/image/contract';
-import { getTextureHeight, getTextureWidth } from '@flighthq/texture/contract';
-import type { CanvasImageSourceKind, CanvasRenderState, ImageResource, Texture } from '@flighthq/types/contract';
+import { getTextureBackingKind, getTextureHeight, getTextureWidth } from '@flighthq/texture/contract';
+import type {
+  CanvasImageSourceKind,
+  CanvasRenderState,
+  CanvasTextureBackingKind,
+  CanvasTextureResolver,
+  ImageResource,
+  Texture,
+} from '@flighthq/types/contract';
+import { ImageTextureBackingKind, ProducedTextureBackingKind, VideoTextureBackingKind } from '@flighthq/types/contract';
 
 import { getCanvasRenderStateRuntime } from './canvasRenderState';
 import { bindCanvasRenderTexture } from './canvasRenderTexture';
+
+export const canvasImageTextureBackingKind: CanvasTextureBackingKind = ImageTextureBackingKind;
+
+export const canvasProducedTextureBackingKind: CanvasTextureBackingKind = ProducedTextureBackingKind;
+
+export const canvasVideoTextureBackingKind: CanvasTextureBackingKind = VideoTextureBackingKind;
 
 // Reports how a resource will resolve on the Canvas backend without drawing or materializing anything
 // — the shakeable diagnostic for the otherwise-silent data→element transcode. `element` is free;
@@ -14,6 +28,29 @@ export function explainCanvasImageSource(image: Readonly<ImageResource>): Canvas
   if (image.source !== null) return 'element';
   if (image.data !== null) return 'data';
   return 'none';
+}
+
+export function registerCanvasImageTextureResolver(state: CanvasRenderState): void {
+  registerCanvasTextureResolver(state, canvasImageTextureBackingKind, resolveCanvasImageTexture);
+}
+
+export function registerCanvasProducedTextureResolver(state: CanvasRenderState): void {
+  registerCanvasTextureResolver(state, canvasProducedTextureBackingKind, resolveCanvasProducedTexture);
+}
+
+export function registerCanvasTextureResolver(
+  state: CanvasRenderState,
+  backingKind: CanvasTextureBackingKind,
+  resolver: CanvasTextureResolver | null,
+): void {
+  const runtime = getCanvasRenderStateRuntime(state);
+  const registry = (runtime.canvasTextureResolverRegistry ??= new Map());
+  if (resolver === null) registry.delete(backingKind);
+  else registry.set(backingKind, resolver);
+}
+
+export function registerCanvasVideoTextureResolver(state: CanvasRenderState): void {
+  registerCanvasTextureResolver(state, canvasVideoTextureBackingKind, resolveCanvasImageTexture);
 }
 
 // Resolves a (possibly data-only) ImageResource to a CanvasImageSource the 2D context can draw. An
@@ -50,14 +87,18 @@ export function resolveCanvasImageSource(
   return entry.element;
 }
 
-// Resolves either a CPU-origin 2D Texture backing or a populated produced Canvas Texture.
+// Resolves one 2D Texture through its declared backing kind. Callers explicitly register only the
+// backing families they use, keeping produced-target machinery out of ordinary image bundles.
 export function resolveCanvasTextureSource(
   state: CanvasRenderState,
   texture: Readonly<Texture>,
 ): CanvasImageSource | null {
   if (texture.storage.dimension !== '2d') return null;
-  const image = texture.storage.image;
-  return image !== null ? resolveCanvasImageSource(state, image) : bindCanvasRenderTexture(state, texture);
+  const registry = getCanvasRenderStateRuntime(state).canvasTextureResolverRegistry;
+  if (registry == null) return null;
+  const backingKind = getTextureBackingKind(texture);
+  if (backingKind === null) return null;
+  return registry.get(backingKind)?.(state, texture) ?? null;
 }
 
 // Resolves a Texture's uv window as a standalone drawable for Canvas patterns. Identity windows return
@@ -151,4 +192,13 @@ export function resolveCanvasTextureWindowSource(
   };
   cache?.set(texture, entry);
   return element;
+}
+
+function resolveCanvasImageTexture(state: CanvasRenderState, texture: Readonly<Texture>): CanvasImageSource | null {
+  const image = texture.storage.image;
+  return image != null ? resolveCanvasImageSource(state, image) : null;
+}
+
+function resolveCanvasProducedTexture(state: CanvasRenderState, texture: Readonly<Texture>): CanvasImageSource | null {
+  return bindCanvasRenderTexture(state, texture);
 }

@@ -81,6 +81,7 @@ export * from './CanvasRenderEffectPipeline';
 export * from './CanvasRenderEffectSupport';
 export * from './CanvasRenderOptions';
 export * from './CanvasRenderState';
+export * from './CanvasTextureResolver';
 export * from './CanvasImageSourceKind';
 export * from './CanvasTextInputOverlay';
 export * from './CanvasEffectSourceMode';

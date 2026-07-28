@@ -17,11 +17,11 @@ import { ShapeKind } from '@flighthq/types/contract';
 
 import { createCanvasRenderState } from './canvasRenderState';
 import { defaultCanvasShapeRenderer, drawCanvasShape, renderCanvasShapeCommands } from './canvasShape';
-import { defaultCanvasShapeCommands } from './canvasShapeCommands';
+import { defaultCanvasShapeCommands, defaultCanvasTextureShapeCommands } from './canvasShapeCommands';
 import { registerCanvasShapeCommands } from './canvasShapeRegistry';
 
 beforeAll(() => {
-  registerCanvasShapeCommands(defaultCanvasShapeCommands);
+  registerCanvasShapeCommands([...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
 });
 
 function makeContext(): CanvasRenderingContext2D {

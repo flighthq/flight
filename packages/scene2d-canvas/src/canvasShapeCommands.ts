@@ -359,7 +359,6 @@ export const defaultCanvasMoveTo: CanvasShapeCommand<'moveTo'> = {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const defaultCanvasShapeCommands: CanvasShapeCommand<any>[] = [
-  defaultCanvasBeginBitmapFill,
   defaultCanvasBeginFill,
   defaultCanvasBeginGradientFill,
   defaultCanvasCubicCurveTo,
@@ -370,11 +369,19 @@ export const defaultCanvasShapeCommands: CanvasShapeCommand<any>[] = [
   defaultCanvasDrawRectangle,
   defaultCanvasDrawRoundRectangle,
   defaultCanvasEndFill,
-  defaultCanvasLineBitmapStyle,
   defaultCanvasLineGradientStyle,
   defaultCanvasLineStyle,
   defaultCanvasLineTo,
   defaultCanvasMoveTo,
+];
+
+// Texture-backed shape styles are an explicit assembly so ordinary vector shapes do not retain
+// Texture backing resolution. Register this alongside defaultCanvasShapeCommands when bitmap fills
+// or bitmap strokes are present.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const defaultCanvasTextureShapeCommands: CanvasShapeCommand<any>[] = [
+  defaultCanvasBeginBitmapFill,
+  defaultCanvasLineBitmapStyle,
 ];
 
 function rgbaString(color: number, alpha: number): string {

@@ -1,4 +1,4 @@
-import { resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu/contract';
+import { resolveWgpuMaterialRenderer, resolveWgpuTexture } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import { getTextureHeight, getTextureWidth, hasTextureBacking } from '@flighthq/texture/contract';
@@ -39,6 +39,9 @@ function submitWgpuQuadBatch(state: WgpuRenderState, quadBatch: RenderProxy2D): 
   const material = quadBatch.material;
   const materialRenderer = resolveWgpuMaterialRenderer(state, material);
   if (materialRenderer === null) return;
+  const texture = atlas.texture;
+  const textureEntry = resolveWgpuTexture(state, texture, true);
+  if (textureEntry === null) return;
   const nodeMaterialData = quadBatch.materialData;
   // Per-quad color adjustments, overriding the node-level tint for the quads that carry one.
   const perQuadColorScaleBias = data.materialData;
@@ -47,7 +50,8 @@ function submitWgpuQuadBatch(state: WgpuRenderState, quadBatch: RenderProxy2D): 
   const startCount = runtime.quadBatchWriterCount;
   const base = prepareWgpuQuadBatchWrite(
     state,
-    atlas.texture,
+    textureEntry,
+    texture.sampler,
     quadBatch.blendMode,
     material,
     materialRenderer,
@@ -56,8 +60,8 @@ function submitWgpuQuadBatch(state: WgpuRenderState, quadBatch: RenderProxy2D): 
 
   const regions = atlas.regions;
   const numRegions = regions.length;
-  const iw = 1 / Math.max(1, getTextureWidth(atlas.texture));
-  const ih = 1 / Math.max(1, getTextureHeight(atlas.texture));
+  const iw = 1 / Math.max(1, getTextureWidth(texture));
+  const ih = 1 / Math.max(1, getTextureHeight(texture));
   const instanceData = runtime.quadBatchWriterInstanceData;
   const isVector2 = data.transformType === 'vector2';
   const pt = quadBatch.transform2D;

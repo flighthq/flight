@@ -7,6 +7,7 @@ import {
   enableCanvasBlendMode,
   ParticleEmitter2DKind,
   prepareScene2DRender,
+  registerCanvasImageTextureResolver,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasScene2D,
@@ -22,6 +23,7 @@ export const state = createCanvasRenderState(canvas, {
   backgroundColor: 0x0a0a14ff,
 });
 
+registerCanvasImageTextureResolver(state);
 registerRenderer(state, ParticleEmitter2DKind, defaultCanvasParticleEmitter2DRenderer);
 registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);
 enableCanvasBlendMode(state);

@@ -1,4 +1,4 @@
-import { resolveGlMaterialRenderer } from '@flighthq/render-gl/contract';
+import { resolveGlMaterialRenderer, resolveGlTexture } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import { getTextureHeight, getTextureWidth, hasTextureBacking } from '@flighthq/texture/contract';
@@ -39,6 +39,10 @@ function submitGlQuadBatch(state: GlRenderState, quadBatch: RenderProxy2D): void
   const material = quadBatch.material;
   const materialRenderer = resolveGlMaterialRenderer(state, material);
   if (materialRenderer === null) return;
+  const texture = atlas.texture;
+  const glTexture = resolveGlTexture(state, texture, true);
+  if (glTexture === null) return;
+  const straightAlpha = runtime.currentTextureStraightAlpha;
   const nodeMaterialData = quadBatch.materialData;
   // Per-quad color adjustments, overriding the node-level tint for the quads that carry one.
   const perQuadColorScaleBias = data.materialData;
@@ -47,7 +51,9 @@ function submitGlQuadBatch(state: GlRenderState, quadBatch: RenderProxy2D): void
   const startCount = runtime.quadBatchWriterCount;
   const base = prepareGlQuadBatchWrite(
     state,
-    atlas.texture,
+    glTexture,
+    straightAlpha,
+    texture.sampler,
     quadBatch.blendMode,
     material,
     materialRenderer,
@@ -56,8 +62,8 @@ function submitGlQuadBatch(state: GlRenderState, quadBatch: RenderProxy2D): void
 
   const regions = atlas.regions;
   const numRegions = regions.length;
-  const iw = 1 / Math.max(1, getTextureWidth(atlas.texture));
-  const ih = 1 / Math.max(1, getTextureHeight(atlas.texture));
+  const iw = 1 / Math.max(1, getTextureWidth(texture));
+  const ih = 1 / Math.max(1, getTextureHeight(texture));
   const instanceData = runtime.quadBatchWriterInstanceData;
   const isVector2 = data.transformType === 'vector2';
   const pt = quadBatch.transform2D;

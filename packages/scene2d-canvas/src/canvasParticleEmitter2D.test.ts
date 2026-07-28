@@ -2,6 +2,7 @@ import { createImageResource } from '@flighthq/image/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { RenderProxy2D } from '@flighthq/types/contract';
 
+import { registerCanvasImageTextureResolver } from './canvasImageSource';
 import { drawCanvasParticleEmitter2D } from './canvasParticleEmitter2D';
 import { createCanvasRenderState } from './canvasRenderState';
 
@@ -20,7 +21,9 @@ function makeState() {
   const canvas = document.createElement('canvas');
   canvas.width = 800;
   canvas.height = 400;
-  return createCanvasRenderState(canvas, {});
+  const state = createCanvasRenderState(canvas, {});
+  registerCanvasImageTextureResolver(state);
+  return state;
 }
 
 function makeRenderProxy(data: Record<string, unknown> = {}): RenderProxy2D {

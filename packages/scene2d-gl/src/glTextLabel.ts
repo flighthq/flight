@@ -1,7 +1,7 @@
 import { computeRgbHexString } from '@flighthq/color/contract';
 import { createImageResource, setImageResourceSource } from '@flighthq/image/contract';
 import { getNodeLocalContentRevision } from '@flighthq/node/contract';
-import { resolveGlMaterialRenderer } from '@flighthq/render-gl/contract';
+import { bindGlImageResourceTexture, resolveGlMaterialRenderer } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
 import { getTextLabelRuntime } from '@flighthq/text/contract';
@@ -158,8 +158,19 @@ export function drawGlTextLabel(state: GlRenderState, renderProxy: RenderProxy2D
 
   ensureGlQuadBatchShader(state);
 
+  const texture = bindGlImageResourceTexture(state, textData.image, null, null, true);
+  const straightAlpha = runtime.currentTextureStraightAlpha;
   const startCount = runtime.quadBatchWriterCount;
-  const base = prepareGlQuadBatchWrite(state, textData.image, renderProxy.blendMode, material, materialRenderer, 1);
+  const base = prepareGlQuadBatchWrite(
+    state,
+    texture,
+    straightAlpha,
+    null,
+    renderProxy.blendMode,
+    material,
+    materialRenderer,
+    1,
+  );
   const d = runtime.quadBatchWriterInstanceData;
   const t = renderProxy.transform2D;
   d[base] = t.a;
