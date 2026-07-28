@@ -25,7 +25,8 @@ Findings are empirical (surfaced building the per-primitive functional suite, 20
 | Text strikethrough | ✓ | ✓ | ✓ | ✓ | all backends; gl/wgpu draw it through their canvas-raster RichText path (gap #5 fixed) |
 | Text background / border box | ✓ | ✓ | ✓ | ✓ |  |
 | Text alignment (center/right) | ✓ | ✓ | ✓ | ✓ | single-line and multiline both render (gap #7 fixed) |
-| Sprite | ✓ | ✓ | ✓ | ✓ | one textured quad; image/video/produced backings share the node |
+| Sprite (image/video Texture) | ✓ | ✓ | ✓ | ✓ | one textured quad; still and dynamic host-image backings share the node |
+| Sprite (produced Texture) | ✓ | ✗ | ✓ | ✓ | Canvas/GL/WebGPU realize state-owned render targets; DOM has no subtree rasterization path |
 | QuadBatch / Tilemap | ✓ | ✗ | ✓ | ✓ | no DOM renderer for the multi-quad atlas primitives |
 | Scale9 (nine-slice) | ✓ | ✓ | ✓ | ✓ | dom needed a barrel fix (now exported) |
 | Video-backed Texture | ✓ | ✓ | ✓ | ✓ | `Sprite` displays the same video-backed `Texture` on every backend; GL/WebGPU use version-gated uploads, Canvas draws the current frame, and DOM mounts the actual video element. Materials consume the same texture slot. |

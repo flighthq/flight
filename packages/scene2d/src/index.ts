@@ -7,7 +7,6 @@ export {
   createDisplayObject,
   createHtmlView,
   createNode2D,
-  createRenderTargetNode2D,
   createScene2D,
   enableScene2DSignals,
   getScene2DRoot,
@@ -16,6 +15,5 @@ export {
   setSpriteTexture,
   setHtmlViewSize,
   setNode2DClip,
-  setRenderTargetNode2DSize,
   setScene2DSize,
 } from './contract';

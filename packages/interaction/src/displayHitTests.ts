@@ -16,10 +16,6 @@ export function defaultNode2DHitTestHandler(_source: NodeAny, _x: number, _y: nu
   return false;
 }
 
-export function defaultRenderTargetNode2DHitTestHandler(source: NodeAny, x: number, y: number): boolean {
-  return hitTestGraphLocalBounds(source, x, y);
-}
-
 export function defaultRichTextHitTestHandler(source: NodeAny, x: number, y: number): boolean {
   return hitTestGraphLocalBounds(source, x, y);
 }

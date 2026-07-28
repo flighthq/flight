@@ -12,7 +12,6 @@ export * from './wgpuParticleEmitter2D';
 export * from './wgpuQuadBatch';
 export * from './wgpuRendererData';
 export * from './wgpuRenderStats';
-export * from './wgpuRenderTargetNode2D';
 export * from './wgpuRichText';
 export * from './wgpuScale9Mapper';
 export * from './wgpuScale9Shape';

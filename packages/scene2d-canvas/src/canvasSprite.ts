@@ -4,6 +4,7 @@ import type { CanvasRenderState, RenderProxy2D, Scene2DRenderer, Sprite } from '
 
 import { resolveCanvasImageSource } from './canvasImageSource';
 import { drawCanvasScene2D } from './canvasNode2D';
+import { bindCanvasRenderTexture } from './canvasRenderTexture';
 import { setCanvasTransform } from './canvasTransform';
 
 export function drawCanvasSprite(state: CanvasRenderState, sprite: RenderProxy2D): void {
@@ -11,7 +12,7 @@ export function drawCanvasSprite(state: CanvasRenderState, sprite: RenderProxy2D
   const texture = (sprite.source as Sprite).data.texture;
   if (texture === null || texture.storage.dimension !== '2d') return;
   const image = texture.storage.image;
-  const drawable = image !== null ? resolveCanvasImageSource(state, image) : null;
+  const drawable = image !== null ? resolveCanvasImageSource(state, image) : bindCanvasRenderTexture(state, texture);
   if (drawable === null) return;
 
   const textureWidth = getTextureWidth(texture);

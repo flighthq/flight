@@ -1,10 +1,16 @@
 import { createImageResource } from '@flighthq/image/contract';
 import { getOrCreateRenderProxy2D, registerRenderer } from '@flighthq/render/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
-import { createPixelArtSampler, createTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
+import {
+  createPixelArtSampler,
+  createRenderTexture,
+  createTexture,
+  setTextureUvFromPixelRect,
+} from '@flighthq/texture/contract';
 import { SpriteKind } from '@flighthq/types/contract';
 
 import { createCanvasRenderState } from './canvasRenderState';
+import { renderIntoCanvasRenderTexture } from './canvasRenderTexture';
 import { defaultCanvasSpriteRenderer, drawCanvasSprite } from './canvasSprite';
 
 function makeState() {
@@ -45,5 +51,15 @@ describe('drawCanvasSprite', () => {
     texture.sampler = createPixelArtSampler();
     drawCanvasSprite(state, getOrCreateRenderProxy2D(state, createSprite({ data: { texture } })));
     expect(state.context.imageSmoothingEnabled).toBe(true);
+  });
+
+  it('draws a populated produced Texture through the same Sprite path', () => {
+    const state = makeState();
+    const texture = createRenderTexture({ height: 24, width: 48 });
+    renderIntoCanvasRenderTexture(state, texture, () => {});
+    const draw = vi.spyOn(state.context, 'drawImage');
+    drawCanvasSprite(state, getOrCreateRenderProxy2D(state, createSprite({ data: { texture } })));
+    expect(draw).toHaveBeenCalledOnce();
+    expect(draw.mock.calls[0].slice(1, 5)).toEqual([0, 0, 48, 24]);
   });
 });
