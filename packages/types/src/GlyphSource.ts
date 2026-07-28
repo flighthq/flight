@@ -1,5 +1,5 @@
+import type { Bitmap } from './Bitmap';
 import type { ImageResource } from './ImageResource';
-import type { Surface } from './Surface';
 
 // The shared seam a text renderer consumes to draw glyphs, independent of how those glyphs are
 // produced. `@flighthq/glyphatlas` implements it dynamically (rasterize-on-miss into a growing
@@ -27,9 +27,9 @@ export interface GlyphSource {
   getGlyphMetrics(): Readonly<GlyphMetrics>;
 }
 
-// One cached glyph: its rectangle within the atlas surface (pixels) plus the pen advance and the
+// One cached glyph: its rectangle within the atlas bitmap (pixels) plus the pen advance and the
 // bearing offset from the pen origin to the glyph box's top-left. UVs are not stored — a renderer
-// derives them from `x`/`y`/`width`/`height` divided by the atlas surface size, so the entry stays
+// derives them from `x`/`y`/`width`/`height` divided by the atlas bitmap size, so the entry stays
 // resolution-independent of any particular GPU texture.
 export interface GlyphEntry {
   advance: number;
@@ -56,7 +56,7 @@ export interface GlyphMetrics {
 // A rasterizer's output for one glyph: an RGBA (row-major, straight-alpha) pixel block plus the pen
 // advance and bearing. `pixels` is exactly `width * height * 4` bytes. This is the plain-data
 // hand-off from a `GlyphRasterizerBackend` to the atlas, which packs it, blits `pixels` into the
-// atlas surface, and records a `GlyphEntry`.
+// atlas bitmap, and records a `GlyphEntry`.
 export interface GlyphRasterizedBitmap {
   advance: number;
   bearingX: number;
@@ -82,7 +82,7 @@ export interface GlyphRasterizerBackend {
   rasterize(codepoint: number, options: Readonly<GlyphRasterizeOptions>): GlyphRasterizedBitmap | null;
 }
 
-// Construction options for a dynamic glyph atlas. `width`/`height` size the atlas surface; the font
+// Construction options for a dynamic glyph atlas. `width`/`height` size the atlas bitmap; the font
 // identity + size drive rasterization; `padding` is the gutter between packed glyphs and from the
 // atlas edges (default 1); `maxGlyphs` caps the live cache (0 = only the atlas area bounds it).
 export interface GlyphAtlasOptions {
@@ -102,7 +102,7 @@ export interface GlyphAtlasShelf {
   y: number;
 }
 
-// Opaque per-atlas runtime holding all package-private state: the atlas surface the glyphs blit
+// Opaque per-atlas runtime holding all package-private state: the atlas bitmap the glyphs blit
 // into, the incremental shelf-packer state, the codepoint→entry cache with its LRU order, the
 // retained source bitmaps used to re-blit on repack, the union dirty rectangle for incremental GPU
 // upload, and the metrics + rasterize options. Application and renderer code treat this as internal.
@@ -121,10 +121,10 @@ export interface GlyphAtlasRuntime {
   padding: number;
   rasterizeOptions: GlyphRasterizeOptions;
   shelves: GlyphAtlasShelf[];
-  surface: Surface;
+  bitmap: Bitmap;
 }
 
-// A dynamic glyph atlas entity. It carries no public data of its own — the surface, cache, and
+// A dynamic glyph atlas entity. It carries no public data of its own — the bitmap, cache, and
 // packer live inside the opaque runtime. Create it with `createGlyphAtlas`, drive it with
 // `getGlyphAtlasEntry` (rasterize-on-miss), read its pixels with `getGlyphAtlasSurface`, and hand it
 // to a renderer as a `GlyphSource` via `createGlyphSourceFromGlyphAtlas`.

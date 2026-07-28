@@ -10,11 +10,11 @@ import type { TextureBackingKind } from './TextureBackingKind';
  * three interchangeable representations of the same pixels — an `source` element the GPU/Canvas
  * backends draw or upload directly, raw CPU `data` for the portable / generated path, and a
  * `compressed` block-compressed payload a GPU backend uploads to a compressed texture. Any may be
- * null; a freshly loaded image is element-only, a freshly generated `Surface` is data-only, a parsed
+ * null; a freshly loaded image is element-only, a freshly generated `Bitmap` is data-only, a parsed
  * KTX2/DDS/Basis container is compressed-only, and a resource may carry more than one once one is
  * derived from another. Renderers own the GPU texture derived from this resource (keyed per render
  * state); the resource itself holds no GPU handle. After the underlying pixels change, bump `version`
- * (see `invalidateImageResource`) so backends know to re-upload. `Surface` narrows `data` to non-null
+ * (see `invalidateImageResource`) so backends know to re-upload. `Bitmap` narrows `data` to non-null
  * and adds `colorSpace` plus the pixel-manipulation API.
  */
 export interface ImageResource extends Entity {
@@ -49,7 +49,7 @@ export interface ImageResource extends Entity {
   kind: TextureBackingKind;
   /**
    * Element representation the GPU/Canvas backends upload or draw directly (image, canvas,
-   * ImageBitmap, …). Null for data-only resources such as a freshly generated `Surface`.
+   * ImageBitmap, …). Null for data-only resources such as a freshly generated `Bitmap`.
    */
   source: HostImageSource | null;
   /** Bumped whenever the pixels change; backends compare it to decide when to re-upload. */

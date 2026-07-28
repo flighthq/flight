@@ -1,4 +1,4 @@
-export interface SurfaceGradientGlowOptions {
+export interface BitmapGradientGlowOptions {
   radiusX?: number;
   radiusY?: number;
   passes?: number;

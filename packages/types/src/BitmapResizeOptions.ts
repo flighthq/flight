@@ -1,9 +1,9 @@
-import type { SurfaceEdgeMode } from './SurfaceEdgeMode';
-import type { SurfaceResizeMode } from './SurfaceResizeMode';
+import type { BitmapEdgeMode } from './BitmapEdgeMode';
+import type { BitmapResizeMode } from './BitmapResizeMode';
 
-export interface SurfaceResizeOptions {
-  mode?: SurfaceResizeMode;
-  edgeMode?: SurfaceEdgeMode;
+export interface BitmapResizeOptions {
+  mode?: BitmapResizeMode;
+  edgeMode?: BitmapEdgeMode;
   /**
    * When true, pre-multiplies alpha before interpolation and unpremultiplies
    * after. This prevents the dark-halo bleed that bilinear and bicubic sampling

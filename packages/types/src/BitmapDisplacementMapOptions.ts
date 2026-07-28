@@ -1,10 +1,10 @@
-import type { SurfaceDisplacementMapMode } from './SurfaceDisplacementMapMode';
-import type { SurfaceEdgeMode } from './SurfaceEdgeMode';
-import type { SurfaceRegion } from './SurfaceRegion';
+import type { BitmapDisplacementMapMode } from './BitmapDisplacementMapMode';
+import type { BitmapEdgeMode } from './BitmapEdgeMode';
+import type { BitmapRegion } from './BitmapRegion';
 
-export interface SurfaceDisplacementMapOptions {
-  /** Map surface whose channels drive the per-pixel displacement. */
-  map: Readonly<SurfaceRegion>;
+export interface BitmapDisplacementMapOptions {
+  /** Map bitmap whose channels drive the per-pixel displacement. */
+  map: Readonly<BitmapRegion>;
   /** Channel index (0=R, 1=G, 2=B, 3=A) of `map` that drives X displacement. Default 0. */
   componentX?: number;
   /** Channel index (0=R, 1=G, 2=B, 3=A) of `map` that drives Y displacement. Default 1. */
@@ -17,13 +17,13 @@ export interface SurfaceDisplacementMapOptions {
   /** Y displacement scale in pixels. Default 0. */
   scaleY?: number;
   /** How to handle sample positions that fall outside the source region. Default 'wrap'. */
-  mode?: SurfaceDisplacementMapMode;
+  mode?: BitmapDisplacementMapMode;
   /**
    * Standard edge mode — when set, overrides `mode` for standard edge behaviours.
-   * Use for API consistency with other surface geometric ops. Default undefined
+   * Use for API consistency with other bitmap geometric ops. Default undefined
    * (falls back to `mode`).
    */
-  edgeMode?: SurfaceEdgeMode;
+  edgeMode?: BitmapEdgeMode;
   /** Packed 0xRRGGBBAA fill used when `mode` is 'color'. Default 0. */
   fillColor?: number;
 }

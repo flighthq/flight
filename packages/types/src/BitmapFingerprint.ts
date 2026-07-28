@@ -5,7 +5,7 @@
  * while gross changes (blank output, wrong colour, large layout shifts) still register. Small enough
  * to commit as text instead of a PNG (see formatSurfaceFingerprint / parseSurfaceFingerprint).
  */
-export interface SurfaceFingerprint {
+export interface BitmapFingerprint {
   /** Cells per axis; the grid is gridSize × gridSize. */
   readonly gridSize: number;
   /** Row-major averaged cells, three bytes (R, G, B) each: length gridSize × gridSize × 3. */

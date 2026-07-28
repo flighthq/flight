@@ -30,9 +30,9 @@ export interface DomRenderStateRuntime extends RenderStateRuntime {
   // WeakMap from render node to its current DOM element; survives frame boundaries.
   domElementMap: WeakMap<RenderProxy2D, HTMLElement>;
   // Per-render-state cache of the drawable HTMLCanvasElement materialized from a data-only
-  // ImageResource (a generated Surface with no host `source`), keyed on the resource and rebuilt when
+  // ImageResource (a generated Bitmap with no host `source`), keyed on the resource and rebuilt when
   // its `version` bumps. Mirrors the Canvas backend's imageResourceElementCache; lets a data-only
-  // Surface feed the DOM bitmap-as-canvas path instead of no-opping. Absent until the first data-only
+  // Bitmap feed the DOM bitmap-as-canvas path instead of no-opping. Absent until the first data-only
   // resolve; see resolveDomImageSource.
   imageResourceElementCache?: WeakMap<ImageResource, { element: HTMLCanvasElement; version: number }>;
   // Ping-pong order lists: domOrderList holds the previous frame's order so the next frame can detect

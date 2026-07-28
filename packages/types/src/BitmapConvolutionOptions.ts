@@ -1,9 +1,9 @@
-import type { SurfaceEdgeMode } from './SurfaceEdgeMode';
+import type { BitmapEdgeMode } from './BitmapEdgeMode';
 
-export interface SurfaceConvolutionOptions {
+export interface BitmapConvolutionOptions {
   bias?: number;
   /** How to handle kernel samples outside the surface. Default 'clamp'. */
-  edge?: SurfaceEdgeMode;
+  edge?: BitmapEdgeMode;
   divisor?: number;
   matrix: ReadonlyArray<number>;
   matrixX: number;
