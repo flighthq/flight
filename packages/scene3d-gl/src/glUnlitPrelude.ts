@@ -53,9 +53,9 @@ export function bindGlUnlitSurface(
   gl.uniform1f(program.locIntensity, intensity);
   gl.uniform1f(program.locAlphaCutoff, alphaCutoff);
 
-  if (colorMap !== null && colorMap.image !== null && hasImageResourcePixels(colorMap.image)) {
+  if (colorMap !== null && colorMap.storage.image !== null && hasImageResourcePixels(colorMap.storage.image)) {
     gl.activeTexture(gl.TEXTURE0);
-    bindGlImageResourceTexture(state, colorMap.image, colorMap.sampler);
+    bindGlImageResourceTexture(state, colorMap.storage.image, colorMap.sampler);
     gl.uniform1i(program.locColorMap, 0);
   }
 }

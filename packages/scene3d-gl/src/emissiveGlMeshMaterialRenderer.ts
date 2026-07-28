@@ -74,7 +74,7 @@ export function registerEmissiveGlMaterial(state: GlRenderState): void {
 function defineKeyForMaterial(material: Readonly<EmissiveMaterial> | null): GlUnlitDefineKey {
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
-    hasColorMap: material !== null && material.emissiveMap !== null && material.emissiveMap.image !== null,
+    hasColorMap: material !== null && material.emissiveMap !== null && material.emissiveMap.storage.image !== null,
     hasUvTransform: hasGlUvTransform(material !== null ? material.emissiveMap : null),
     vertexColor: false,
   };

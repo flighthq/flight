@@ -371,7 +371,7 @@ describe('createScene3DFrom3ds', () => {
     expect(mat.name).toBe('Skin'); // 3DS material chunk name preserved as the authored identity
     // Texture filename is referenced, not decoded.
     expect((mat.diffuseMap!.resource as ExternalImageResourceReference).uri).toBe('skin.png');
-    expect(mat.diffuseMap!.image).toBeNull();
+    expect(mat.diffuseMap!.storage.image).toBeNull();
   });
 
   // Builds a one-material scene from a material chunk and returns that material as a BlinnPhongMaterial.

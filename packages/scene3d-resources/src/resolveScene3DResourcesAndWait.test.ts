@@ -36,8 +36,8 @@ describe('loadScene3DResources', () => {
 
     await loadScene3DResources(scene.root, resolver);
 
-    expect(a.image).toBe(fakeImage);
-    expect(b.image).toBe(fakeImage);
+    expect(a.storage.image).toBe(fakeImage);
+    expect(b.storage.image).toBe(fakeImage);
     expect(a.resource?.state).toBe(ResourceResolutionState.Resolved);
     disposeScene3DResourceResolver(resolver);
   });
@@ -78,7 +78,7 @@ describe('loadScene3DResources', () => {
 
     await loadScene3DResources(scene.root, resolver, { progress });
 
-    expect(texture.image).toBeNull();
+    expect(texture.storage.image).toBeNull();
     expect(texture.resource?.state).toBe(ResourceResolutionState.Failed);
     expect(events).toEqual([
       { loaded: 0, total: 1 },
@@ -101,8 +101,8 @@ describe('loadScene3DResources', () => {
 
     await loadScene3DResources(scene.root, resolver, { progress, select: (texture) => texture === selected });
 
-    expect(selected.image).toBe(fakeImage);
-    expect(deferred.image).toBeNull();
+    expect(selected.storage.image).toBe(fakeImage);
+    expect(deferred.storage.image).toBeNull();
     expect(deferred.resource?.state).toBe(ResourceResolutionState.Unresolved);
     expect(fetch).toHaveBeenCalledOnce();
     expect(events.at(-1)).toEqual({ loaded: 1, total: 1 });

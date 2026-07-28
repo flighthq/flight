@@ -117,8 +117,14 @@ for (let face = 0; face < 6; face++) {
 const environment = createEnvironment({ environment: starCube, intensity: 0.75 });
 
 const longitudeSampler = createSampler({ wrapU: 'repeat' });
-const earthTexture = createTexture({ image: createEarthSurface(), sampler: longitudeSampler });
-const cloudTexture = createTexture({ image: createCloudSurface(), sampler: longitudeSampler });
+const earthTexture = createTexture({
+  sampler: longitudeSampler,
+  storage: { dimension: '2d', image: createEarthSurface() },
+});
+const cloudTexture = createTexture({
+  sampler: longitudeSampler,
+  storage: { dimension: '2d', image: createCloudSurface() },
+});
 const scene = createNode3D(Node3DKind);
 
 const earth = createMesh(createSphereMeshGeometry(1.55, 72, 48), [

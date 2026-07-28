@@ -93,7 +93,7 @@ export function bindGlPbrStandardTexture(
   if (!isGlTextureReady(texture)) return;
   const gl = state.gl;
   gl.activeTexture(gl.TEXTURE0 + unit);
-  bindGlImageResourceTexture(state, texture!.image!, texture!.sampler);
+  bindGlImageResourceTexture(state, texture!.storage.image!, texture!.sampler);
   gl.uniform1i(location, unit);
 }
 
@@ -136,7 +136,7 @@ export function buildGlPbrStandardDefineKey(
 // The single predicate the define-key builder and the bind path share, so "map present" means the
 // same thing in both places.
 export function isGlTextureReady(texture: Readonly<Texture> | null): boolean {
-  return texture !== null && texture.image !== null && hasImageResourcePixels(texture.image);
+  return texture !== null && texture.storage.image !== null && hasImageResourcePixels(texture.storage.image);
 }
 
 const scratchRgba: LinearColor = [0, 0, 0, 0];

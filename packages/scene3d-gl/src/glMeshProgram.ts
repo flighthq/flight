@@ -205,7 +205,9 @@ export function ensureGlScene3DProgram<T extends GlMeshProgram>(
 // non-identity uv transform. Gating on both keeps an untiled or unbound surface on the identity shader
 // variant, so it never pays for the uv-transform uniform or the extra vertex multiply.
 export function hasGlUvTransform(texture: Readonly<RenderTexture | TextureLike | VideoTexture> | null): boolean {
-  return texture !== null && (!('image' in texture) || texture.image !== null) && hasTextureUvTransform(texture);
+  return (
+    texture !== null && (!('storage' in texture) || texture.storage.image !== null) && hasTextureUvTransform(texture)
+  );
 }
 
 // Uploads the camera world position (the translation of the inverse view matrix) to a lit family's

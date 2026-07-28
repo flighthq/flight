@@ -81,9 +81,9 @@ function bindGlLambertMaterialUniforms(
   gl.uniform1f(program.locAlphaCutoff, material.alphaCutoff);
 
   const diffuseMap = material.diffuseMap;
-  if (diffuseMap !== null && diffuseMap.image !== null && hasImageResourcePixels(diffuseMap.image)) {
+  if (diffuseMap !== null && diffuseMap.storage.image !== null && hasImageResourcePixels(diffuseMap.storage.image)) {
     gl.activeTexture(gl.TEXTURE0);
-    bindGlImageResourceTexture(state, diffuseMap.image, diffuseMap.sampler);
+    bindGlImageResourceTexture(state, diffuseMap.storage.image, diffuseMap.sampler);
     gl.uniform1i(program.locDiffuseMap, 0);
   }
   bindGlUvTransform(gl, program, diffuseMap);
@@ -95,7 +95,7 @@ function defineKeyForMaterial(material: Readonly<LambertMaterial> | null): GlCla
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
     hasAlphaMap: false,
-    hasDiffuseMap: material !== null && material.diffuseMap !== null && material.diffuseMap.image !== null,
+    hasDiffuseMap: material !== null && material.diffuseMap !== null && material.diffuseMap.storage.image !== null,
     hasNormalMap: false,
     hasSpecularMap: false,
     hasUvTransform: hasGlUvTransform(material !== null ? material.diffuseMap : null),

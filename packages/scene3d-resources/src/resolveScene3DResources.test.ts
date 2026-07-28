@@ -132,8 +132,8 @@ describe('resolveScene3DResources', () => {
     resolveScene3DResources(scene.root, resolver);
     await settle(resolver);
 
-    expect(a.image).toBe(fakeImage);
-    expect(b.image).toBe(fakeImage);
+    expect(a.storage.image).toBe(fakeImage);
+    expect(b.storage.image).toBe(fakeImage);
     expect(a.resource?.state).toBe(ResourceResolutionState.Resolved);
     expect(a.resource?.failure).toBeNull();
     expect(b.resource?.state).toBe(ResourceResolutionState.Resolved);
@@ -152,8 +152,8 @@ describe('resolveScene3DResources', () => {
     await settle(resolver);
 
     expect(loadFromBytes).toHaveBeenCalledTimes(1);
-    expect(a.image).toBe(fakeImage);
-    expect(b.image).toBe(fakeImage);
+    expect(a.storage.image).toBe(fakeImage);
+    expect(b.storage.image).toBe(fakeImage);
     expect(ref.state).toBe(ResourceResolutionState.Resolved);
     disposeScene3DResourceResolver(resolver);
   });
@@ -195,11 +195,11 @@ describe('resolveScene3DResources', () => {
 
     resolveScene3DResources(scene.root, resolver, { select: (texture) => texture === a });
     await settle(resolver);
-    expect(a.image).toBe(fakeImage);
-    expect(b.image).toBeNull();
+    expect(a.storage.image).toBe(fakeImage);
+    expect(b.storage.image).toBeNull();
 
     resolveScene3DResources(scene.root, resolver, { select: (texture) => texture === b });
-    expect(b.image).toBe(fakeImage);
+    expect(b.storage.image).toBe(fakeImage);
     expect(loadFromBytes).toHaveBeenCalledTimes(1);
     disposeScene3DResourceResolver(resolver);
   });
@@ -216,7 +216,7 @@ describe('resolveScene3DResources', () => {
 
     expect(wanted.resource?.state).toBe(ResourceResolutionState.Resolved);
     expect(skipped.resource?.state).toBe(ResourceResolutionState.Unresolved);
-    expect(skipped.image).toBeNull();
+    expect(skipped.storage.image).toBeNull();
     disposeScene3DResourceResolver(resolver);
   });
 
@@ -228,7 +228,7 @@ describe('resolveScene3DResources', () => {
     resolveScene3DResources(scene.root, resolver);
     await settle(resolver);
 
-    expect(texture.image).toBeNull();
+    expect(texture.storage.image).toBeNull();
     expect(texture.resource?.state).toBe(ResourceResolutionState.Failed);
     expect(texture.resource?.failure).toEqual({
       kind: ImageResourceFailureKind.Unavailable,
@@ -277,7 +277,7 @@ describe('resolveScene3DResources', () => {
     // Drop it: not in the working set this pass → abort + revert.
     resolveScene3DResources(scene.root, resolver, { select: () => false });
     expect(texture.resource?.state).toBe(ResourceResolutionState.Unresolved);
-    expect(texture.image).toBeNull();
+    expect(texture.storage.image).toBeNull();
     expect(loadSignals[0].aborted).toBe(true);
 
     // Re-entry re-requests from scratch.

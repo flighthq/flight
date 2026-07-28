@@ -109,8 +109,8 @@ describe('revealScene3DResourcesOnResolve', () => {
 
   it('does not hide an owner whose resource was already bound or had already failed', () => {
     const bound = createTexture({
-      image: { height: 1, width: 1 } as ImageResource,
       resource: pendingRef(),
+      storage: { dimension: '2d', image: { height: 1, width: 1 } as ImageResource },
     });
     const failedRef = pendingRef();
     failedRef.state = ResourceResolutionState.Failed;

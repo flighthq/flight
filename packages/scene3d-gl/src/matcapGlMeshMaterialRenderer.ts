@@ -63,7 +63,7 @@ export function registerMatcapGlMaterial(state: GlRenderState): void {
 function defineKeyForMaterial(material: Readonly<MatcapMaterial> | null): GlMatcapDefineKey {
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
-    hasMatcap: material !== null && material.matcap !== null && material.matcap.image !== null,
+    hasMatcap: material !== null && material.matcap !== null && material.matcap.storage.image !== null,
   };
 }
 

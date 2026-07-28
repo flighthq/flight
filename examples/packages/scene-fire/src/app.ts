@@ -87,8 +87,8 @@ function createSeededRandom(seed: number): () => number {
 
 const scene = createNode3D(Node3DKind);
 const groundTexture = createTexture({
-  image: createEmberSurface(),
   sampler: createSampler({ anisotropy: 4, wrapU: 'repeat', wrapV: 'repeat' }),
+  storage: { dimension: '2d', image: createEmberSurface() },
 });
 const ground = createMesh(createPlaneMeshGeometry(8.5, 5.5, 8, 5), [
   createStandardPbrMaterial({

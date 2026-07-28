@@ -83,8 +83,8 @@ describe('retryFailedScene3DResources', () => {
     await waitForScene3DResourceResolver(resolver);
     expect(fetch).toHaveBeenCalledTimes(2);
     expect(ref.failure).toBeNull();
-    expect(a.image).toBe(fakeImage);
-    expect(b.image).toBe(fakeImage);
+    expect(a.storage.image).toBe(fakeImage);
+    expect(b.storage.image).toBe(fakeImage);
     disposeScene3DResourceResolver(resolver);
   });
 

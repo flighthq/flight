@@ -48,9 +48,19 @@ function createMaterialMaps(kind: 'stripe' | 'tile' | 'weave', repeat: number): 
   const sampler = createSampler({ anisotropy: 4, wrapU: 'repeat', wrapV: 'repeat' });
   const uvScale = createVector2(repeat, repeat);
   return {
-    diffuse: createTexture({ image: diffuseSurface, sampler, uvScale }),
-    normal: createTexture({ colorSpace: 'linear', image: normalSurface, sampler, uvScale }),
-    specular: createTexture({ colorSpace: 'linear', image: specularSurface, sampler, uvScale }),
+    diffuse: createTexture({ sampler, storage: { dimension: '2d', image: diffuseSurface }, uvScale }),
+    normal: createTexture({
+      colorSpace: 'linear',
+      sampler,
+      storage: { dimension: '2d', image: normalSurface },
+      uvScale,
+    }),
+    specular: createTexture({
+      colorSpace: 'linear',
+      sampler,
+      storage: { dimension: '2d', image: specularSurface },
+      uvScale,
+    }),
   };
 }
 

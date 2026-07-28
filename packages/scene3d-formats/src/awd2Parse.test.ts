@@ -1083,7 +1083,7 @@ describe('createScene3DFromAwd2', () => {
     expect(material!.name).toBe('Mat'); // AWD material block name preserved as the authored identity
     expect(material!.diffuseMap).not.toBeNull();
     // The parser references, it does not decode: image stays null, a ref carries the source.
-    expect(material!.diffuseMap!.image).toBeNull();
+    expect(material!.diffuseMap!.storage.image).toBeNull();
     const ref = material!.diffuseMap!.resource as EmbeddedImageResourceReference;
     expect(ref.kind).toBe('Embedded');
     expect(ref.mimeType).toBe('image/png');
@@ -1122,7 +1122,7 @@ describe('createScene3DFromAwd2', () => {
 
     const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as ShadedMaterial;
     expect(material.normalMap).not.toBeNull();
-    expect(material.normalMap!.image).toBeNull(); // referenced, not decoded
+    expect(material.normalMap!.storage.image).toBeNull(); // referenced, not decoded
     const ref = material.normalMap!.resource as EmbeddedImageResourceReference;
     expect(ref.kind).toBe('Embedded');
     expect(ref.mimeType).toBe('image/png');
@@ -1300,7 +1300,7 @@ describe('createScene3DFromAwd2', () => {
 
     const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as ShadedMaterial;
     expect(material.kind).toBe(ShadedMaterialKind);
-    expect(material.diffuseMap!.image).toBeNull();
+    expect(material.diffuseMap!.storage.image).toBeNull();
     const ref = material.diffuseMap!.resource as ExternalImageResourceReference;
     expect(ref.kind).toBe('External');
     expect(ref.uri).toBe('http://example.com/tex.png');
@@ -1333,7 +1333,7 @@ describe('createScene3DFromAwd2', () => {
     const scene = createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body));
 
     const texture = ((getNodeChildren(scene.root)[0] as Mesh).materials[0] as ShadedMaterial).diffuseMap!;
-    expect(texture.image).toBeNull(); // parse never allocates or fills an ImageResource
+    expect(texture.storage.image).toBeNull(); // parse never allocates or fills an ImageResource
     const ref = texture.resource as EmbeddedImageResourceReference;
     expect(ref.kind).toBe('Embedded');
     expect(ref.bytes).toEqual(FAKE_PNG_BYTES);

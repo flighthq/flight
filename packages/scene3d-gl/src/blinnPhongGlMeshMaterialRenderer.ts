@@ -93,30 +93,30 @@ function bindGlBlinnPhongMaterialUniforms(
   gl.uniform1f(program.locAlphaCutoff, material.alphaCutoff);
 
   const diffuseMap = material.diffuseMap;
-  if (diffuseMap !== null && diffuseMap.image !== null && hasImageResourcePixels(diffuseMap.image)) {
+  if (diffuseMap !== null && diffuseMap.storage.image !== null && hasImageResourcePixels(diffuseMap.storage.image)) {
     gl.activeTexture(gl.TEXTURE0);
-    bindGlImageResourceTexture(state, diffuseMap.image, diffuseMap.sampler);
+    bindGlImageResourceTexture(state, diffuseMap.storage.image, diffuseMap.sampler);
     gl.uniform1i(program.locDiffuseMap, 0);
   }
 
   const specularMap = material.specularMap;
-  if (specularMap !== null && specularMap.image !== null && hasImageResourcePixels(specularMap.image)) {
+  if (specularMap !== null && specularMap.storage.image !== null && hasImageResourcePixels(specularMap.storage.image)) {
     gl.activeTexture(gl.TEXTURE1);
-    bindGlImageResourceTexture(state, specularMap.image, specularMap.sampler);
+    bindGlImageResourceTexture(state, specularMap.storage.image, specularMap.sampler);
     gl.uniform1i(program.locSpecularMap, 1);
   }
 
   const normalMap = material.normalMap;
-  if (normalMap !== null && normalMap.image !== null && hasImageResourcePixels(normalMap.image)) {
+  if (normalMap !== null && normalMap.storage.image !== null && hasImageResourcePixels(normalMap.storage.image)) {
     gl.activeTexture(gl.TEXTURE2);
-    bindGlImageResourceTexture(state, normalMap.image, normalMap.sampler);
+    bindGlImageResourceTexture(state, normalMap.storage.image, normalMap.sampler);
     gl.uniform1i(program.locNormalMap, 2);
   }
 
   const alphaMap = material.alphaMap;
-  if (alphaMap !== null && alphaMap.image !== null && hasImageResourcePixels(alphaMap.image)) {
+  if (alphaMap !== null && alphaMap.storage.image !== null && hasImageResourcePixels(alphaMap.storage.image)) {
     gl.activeTexture(gl.TEXTURE3);
-    bindGlImageResourceTexture(state, alphaMap.image, alphaMap.sampler);
+    bindGlImageResourceTexture(state, alphaMap.storage.image, alphaMap.sampler);
     gl.uniform1i(program.locAlphaMap, 3);
   }
 
@@ -132,9 +132,9 @@ function defineKeyForMaterial(material: Readonly<BlinnPhongMaterial> | null): Gl
     // HAS_ALPHA_MAP variant and the bound texture never disagree. Gated off 'opaque' — an opaque
     // material ignores coverage (SurfaceMaterial contract), so it must not sample the alpha map.
     hasAlphaMap: material !== null && material.alphaMode !== 'opaque' && isGlTextureReady(material.alphaMap),
-    hasDiffuseMap: material !== null && material.diffuseMap !== null && material.diffuseMap.image !== null,
-    hasNormalMap: material !== null && material.normalMap !== null && material.normalMap.image !== null,
-    hasSpecularMap: material !== null && material.specularMap !== null && material.specularMap.image !== null,
+    hasDiffuseMap: material !== null && material.diffuseMap !== null && material.diffuseMap.storage.image !== null,
+    hasNormalMap: material !== null && material.normalMap !== null && material.normalMap.storage.image !== null,
+    hasSpecularMap: material !== null && material.specularMap !== null && material.specularMap.storage.image !== null,
     hasUvTransform: hasGlUvTransform(material !== null ? material.diffuseMap : null),
     lightingModel: 'blinnphong',
   };

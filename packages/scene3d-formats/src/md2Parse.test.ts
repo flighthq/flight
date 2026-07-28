@@ -277,7 +277,7 @@ describe('createScene3DFromMd2', () => {
     expect(material.name).toBe('players/hero/skin.pcx'); // MD2 skin path preserved as the authored identity
     // The skin path is referenced, not decoded: an Unresolved External ref, image left null.
     expect((material.diffuseMap!.resource as ExternalImageResourceReference).uri).toBe('players/hero/skin.pcx');
-    expect(material.diffuseMap!.image).toBeNull();
+    expect(material.diffuseMap!.storage.image).toBeNull();
   });
 
   it('leaves the mesh unmaterialed when the model declares no skin', () => {

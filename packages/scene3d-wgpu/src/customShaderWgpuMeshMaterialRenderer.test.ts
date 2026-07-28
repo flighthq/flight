@@ -127,9 +127,9 @@ describe('customShaderWgpuMeshMaterialRenderer', () => {
     first.sampler.wrapU = 'repeat';
     count = bindAndExpectRebuild(count);
 
-    first.image = makeImageResource(1);
+    first.storage.image = makeImageResource(1);
     count = bindAndExpectRebuild(count);
-    first.image = makeImageResource(2);
+    first.storage.image = makeImageResource(2);
     count = bindAndExpectRebuild(count);
 
     material.textures = { renamed: first, second };
