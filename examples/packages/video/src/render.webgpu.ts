@@ -1,12 +1,13 @@
 import type { Node2D } from '@flighthq/sdk';
 import {
-  VideoKind,
+  SpriteKind,
   createWgpuCanvasElement,
   createWgpuRenderState,
-  defaultWgpuVideoRenderer,
+  defaultWgpuSpriteRenderer,
   prepareScene2DRender,
   registerStandardWgpuMaterial,
   registerRenderer,
+  registerWgpuVideoTextureResolver,
   renderWgpuBackground,
   renderWgpuScene2D,
   submitWgpuRenderPass,
@@ -23,7 +24,8 @@ export const state = await createWgpuRenderState(canvas, {
 });
 
 registerStandardWgpuMaterial(state);
-registerRenderer(state, VideoKind, defaultWgpuVideoRenderer);
+registerWgpuVideoTextureResolver(state);
+registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);
 
 export const scale = pixelRatio;
 

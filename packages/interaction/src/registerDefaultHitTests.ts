@@ -10,7 +10,6 @@ import {
   SpriteKind,
   TextLabelKind,
   TilemapKind,
-  VideoKind,
 } from '@flighthq/types/contract';
 
 import {
@@ -21,7 +20,6 @@ import {
   defaultRichTextHitTestHandler,
   defaultShapeHitTestHandler,
   defaultTextHitTestHandler,
-  defaultVideoHitTestHandler,
 } from './displayHitTests';
 import { registerHitTest } from './hitTests';
 import {
@@ -42,5 +40,4 @@ export function registerDefaultHitTests(): void {
   registerHitTest(SpriteKind, defaultSpriteHitTestHandler);
   registerHitTest(TextLabelKind, defaultTextHitTestHandler);
   registerHitTest(TilemapKind, defaultTilemapHitTestHandler);
-  registerHitTest(VideoKind, defaultVideoHitTestHandler);
 }

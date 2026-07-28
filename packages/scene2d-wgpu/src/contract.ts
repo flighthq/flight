@@ -24,7 +24,6 @@ export * from './wgpuTextInput';
 export * from './wgpuTextLabel';
 export * from './wgpuTilemap';
 export * from './wgpuVelocity';
-export * from './wgpuVideo';
 export {
   defaultCanvasBeginBitmapFill as defaultWgpuBeginBitmapFill,
   defaultCanvasBeginFill as defaultWgpuBeginFill,

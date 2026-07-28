@@ -28,8 +28,7 @@ Findings are empirical (surfaced building the per-primitive functional suite, 20
 | Sprite | ✓ | ✓ | ✓ | ✓ | one textured quad; image/video/produced backings share the node |
 | QuadBatch / Tilemap | ✓ | ✗ | ✓ | ✓ | no DOM renderer for the multi-quad atlas primitives |
 | Scale9 (nine-slice) | ✓ | ✓ | ✓ | ✓ | dom needed a barrel fix (now exported) |
-| Video (display object) | ✓ | ✓ | ✓ | ✓ |  |
-| Video **texture** (dynamic, frameId-gated upload) | ✗ | ✗ | ✓ | ✓ | `@flighthq/texture` `VideoTexture`, sampled by `UnlitMaterial.baseColorVideoMap` on GL/WebGPU. `material-video-map` proves exact GL/WebGPU raster parity. Canvas/DOM draw a Video display element directly, not a material `VideoTexture`. |
+| Video-backed Texture | ✓ | ✓ | ✓ | ✓ | `Sprite` displays the same video-backed `Texture` on every backend; GL/WebGPU use version-gated uploads, Canvas draws the current frame, and DOM mounts the actual video element. Materials consume the same texture slot. |
 | Compressed textures (BCn/ETC/ASTC/PVRTC/ATF native upload) | ✗ | ✗ | ✓ | ✓ | GL and WebGPU both expose opt-in container upload + RGBA decoder seams and their normal 2D `ImageResource` binders consume compressed-only resources once registered. WebGPU enables the adapter's BC/ETC2/ASTC device features and uploads those families natively; PVRTC and unavailable families decode to RGBA. Native low-level upload covers 2D, cubemap, and 2D array; the display binder and decode fallback are 2D. `compressed-texture` proves exact GL/WebGPU raster parity. Basis-Universal transcode remains spec-only ([basis-transcode.md](basis-transcode.md)). |
 
 ## 3D capability matrix (gl / wgpu only — canvas/dom are 2D)

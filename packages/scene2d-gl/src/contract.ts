@@ -22,7 +22,6 @@ export * from './glTextInput';
 export * from './glTextLabel';
 export * from './glTilemap';
 export * from './glVelocity';
-export * from './glVideo';
 
 // Re-export shape commands from canvas (shapes deferred to canvas for now)
 export {

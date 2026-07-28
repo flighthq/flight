@@ -27,4 +27,3 @@ export * from './canvasTextLabel';
 export * from './canvasTextMeasure';
 export * from './canvasTilemap';
 export * from './canvasTransform';
-export * from './canvasVideo';

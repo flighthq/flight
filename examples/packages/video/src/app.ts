@@ -1,12 +1,14 @@
 import type { Node2D } from '@flighthq/sdk';
 import {
   addNodeChild,
+  advanceVideoTexture,
   createDisplayObject,
-  createVideo,
+  createSprite,
+  createVideoTexture,
   createVideoResource,
   invalidateNodeAppearance,
   loadVideoResourceFromBlob,
-  setVideoSource,
+  setSpriteTexture,
 } from '@flighthq/sdk';
 
 import { render, scale } from './render';
@@ -16,12 +18,12 @@ const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 
-const videoNode = createVideo();
+const videoNode = createSprite();
 videoNode.x = 40;
 videoNode.y = 40;
 addNodeChild(root, videoNode);
 
-const secondVideoNode = createVideo();
+const secondVideoNode = createSprite();
 secondVideoNode.x = 400;
 secondVideoNode.y = 40;
 secondVideoNode.scaleX = 1.5;
@@ -29,7 +31,7 @@ secondVideoNode.scaleY = 1.5;
 secondVideoNode.alpha = 0.8;
 addNodeChild(root, secondVideoNode);
 
-const thirdVideoNode = createVideo();
+const thirdVideoNode = createSprite();
 thirdVideoNode.x = 200;
 thirdVideoNode.y = 280;
 thirdVideoNode.rotation = 10;
@@ -97,6 +99,7 @@ function enterFrame(): void {
 }
 
 function renderFrame(): void {
+  for (const texture of videoTextures) advanceVideoTexture(texture);
   invalidateNodeAppearance(videoNode);
   invalidateNodeAppearance(secondVideoNode);
   invalidateNodeAppearance(thirdVideoNode);
@@ -104,14 +107,20 @@ function renderFrame(): void {
 }
 
 function setVideoSources(
-  resource1: Parameters<typeof setVideoSource>[1],
-  resource2: Parameters<typeof setVideoSource>[1],
-  resource3: Parameters<typeof setVideoSource>[1],
+  resource1: Parameters<typeof createVideoTexture>[0],
+  resource2: Parameters<typeof createVideoTexture>[0],
+  resource3: Parameters<typeof createVideoTexture>[0],
 ): void {
-  setVideoSource(videoNode, resource1);
-  setVideoSource(secondVideoNode, resource2);
-  setVideoSource(thirdVideoNode, resource3);
+  const texture1 = createVideoTexture(resource1);
+  const texture2 = createVideoTexture(resource2);
+  const texture3 = createVideoTexture(resource3);
+  videoTextures.push(texture1, texture2, texture3);
+  setSpriteTexture(videoNode, texture1);
+  setSpriteTexture(secondVideoNode, texture2);
+  setSpriteTexture(thirdVideoNode, texture3);
 }
+
+const videoTextures: ReturnType<typeof createVideoTexture>[] = [];
 
 function generateVideoBlob(): Promise<Blob> {
   const width = 320;

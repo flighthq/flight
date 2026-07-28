@@ -26,7 +26,6 @@ export {
   defaultCanvasSpriteRenderer,
   defaultCanvasTextLabelRenderer,
   defaultCanvasTilemapRenderer,
-  defaultCanvasVideoRenderer,
   destroyCanvasRenderTargetNode2D,
   enableCanvasBlendMode,
   enableCanvasClip,

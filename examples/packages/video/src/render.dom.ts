@@ -1,8 +1,8 @@
 import type { Node2D } from '@flighthq/sdk';
 import {
-  VideoKind,
+  SpriteKind,
   createDomRenderState,
-  defaultDomVideoRenderer,
+  defaultDomSpriteRenderer,
   prepareScene2DRender,
   registerRenderer,
   renderDomBackground,
@@ -20,7 +20,7 @@ export const state = createDomRenderState(container, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 
-registerRenderer(state, VideoKind, defaultDomVideoRenderer);
+registerRenderer(state, SpriteKind, defaultDomSpriteRenderer);
 
 export const canvas: HTMLElement = container;
 

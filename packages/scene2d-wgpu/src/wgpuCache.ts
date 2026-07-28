@@ -272,7 +272,7 @@ function drawWgpuRenderCache(state: WgpuRenderState, renderProxy: RenderProxy2D)
   const target = getTargets(state).get(cache);
   if (target === undefined) return;
   // Drain pending batched geometry before the immediate composite quad. Like every other
-  // immediate-draw renderer (RichText, Video), this bypasses the sprite batch; without the flush the
+  // immediate-draw renderer (RichText), this bypasses the sprite batch; without the flush the
   // immediate quad interleaves with the un-flushed batch's instance buffer and bind-group state,
   // corrupting the pending batch rather than merely reordering it.
   flushWgpuSpriteBatch(state);

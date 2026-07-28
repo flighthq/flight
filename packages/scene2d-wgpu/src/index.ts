@@ -13,7 +13,6 @@ export {
   defaultWgpuSpriteRenderer,
   defaultWgpuTextLabelRenderer,
   defaultWgpuTilemapRenderer,
-  defaultWgpuVideoRenderer,
   destroyWgpuRenderTargetNode2D,
   drawWgpuSprite,
   enableWgpuClipSupport,
