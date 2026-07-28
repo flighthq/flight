@@ -381,6 +381,10 @@ You sometimes legitimately want both representations behind one identity — a g
 2. Add the two explicit conversion primitives; leave the implicit transcode in place.
 3. Migrate the ~34 representation branches mechanically to the declared kind.
 4. Split the canvas + GL/WGPU resolvers per backing; move the transcode cache into the bitmap resolver. **Re-run `size` here — this is where the win lands.**
+
+   **Measured expectation (probe, 2026-07-28).** Stripping the transcode from the default canvas resolver and running `size --render=canvas` gives: bitmap **−2.9%** (4.76→4.62 KB, −140 B), video −2.8%, tilemap −2.7%, spritesheet −2.3%, benchmark −1.7%, bitmapfont-generate −1.2%, particleeditor −1.1%, particles −0.9%, interaction −0.1%, and **±0.0% on all 19 other canvas examples**. So the transcode + its WeakMap cache is worth **~140–160 B gzip**, currently paid by every bundle registering the image resolver — including `bitmap`/`tilemap`/`spritesheet`, none of which draw a byte-backed texture. That recovers roughly a fifth of the accepted `bitmap:canvas` +16.1% regression.
+
+   The *shape* matters more than the magnitude: every non-texture example is dead flat, which is the signature of a clean removal. If the split also shaved `text` or `tween`, the transcode would be reachable from somewhere it has no business being. Treat any non-flat row outside the list above as a finding, not a bonus.
 5. Retire the fused type and `hasImageResourcePixels`; make the pixel API total on `Bitmap`.
 
 ### Open questions
