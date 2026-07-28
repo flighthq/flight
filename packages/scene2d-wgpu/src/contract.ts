@@ -24,7 +24,7 @@ export * from './wgpuTextLabel';
 export * from './wgpuTilemap';
 export * from './wgpuVelocity';
 export {
-  defaultCanvasBeginBitmapFill as defaultWgpuBeginBitmapFill,
+  defaultCanvasBeginTextureFill as defaultWgpuBeginTextureFill,
   defaultCanvasBeginFill as defaultWgpuBeginFill,
   defaultCanvasBeginGradientFill as defaultWgpuBeginGradientFill,
   defaultCanvasCubicCurveTo as defaultWgpuCubicCurveTo,

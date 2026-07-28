@@ -131,6 +131,6 @@ describe('hasNonSolidShapeStroke', () => {
     appendShapeLineStyle(solid, 3);
     expect(hasNonSolidShapeStroke(solid.data.commands)).toBe(false);
     expect(hasNonSolidShapeStroke(['lineGradientStyle', 1, 0] as ShapeCommandToken[])).toBe(true);
-    expect(hasNonSolidShapeStroke(['lineBitmapStyle', 1, 0] as ShapeCommandToken[])).toBe(true);
+    expect(hasNonSolidShapeStroke(['lineTextureStyle', 1, 0] as ShapeCommandToken[])).toBe(true);
   });
 });

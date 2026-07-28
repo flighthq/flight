@@ -4,7 +4,7 @@ import { createShape } from './shape';
 import {
   appendShapeArc,
   appendShapeArcTo,
-  appendShapeBeginBitmapFill,
+  appendShapeBeginTextureFill,
   appendShapeBeginFill,
   appendShapeBeginGradientFill,
   appendShapeCircle,
@@ -13,7 +13,7 @@ import {
   appendShapeDrawTriangles,
   appendShapeEllipse,
   appendShapeEndFill,
-  appendShapeLineBitmapStyle,
+  appendShapeLineTextureStyle,
   appendShapeLineGradientStyle,
   appendShapeLineStyle,
   appendShapeLineTo,
@@ -124,20 +124,6 @@ describe('appendShapeArcTo', () => {
   });
 });
 
-describe('appendShapeBeginBitmapFill', () => {
-  it('pushes a beginBitmapFill command with texture and matrix', () => {
-    const shape = createShape();
-    appendShapeBeginBitmapFill(shape, fakeTexture, fakeMatrix);
-    expect(shape.data.commands).toEqual(['beginBitmapFill', 2, fakeTexture, fakeMatrix]);
-  });
-
-  it('defaults matrix to null', () => {
-    const shape = createShape();
-    appendShapeBeginBitmapFill(shape, fakeTexture);
-    expect(shape.data.commands).toEqual(['beginBitmapFill', 2, fakeTexture, null]);
-  });
-});
-
 describe('appendShapeBeginFill', () => {
   it('pushes a beginFill command with color and alpha', () => {
     const shape = createShape();
@@ -195,6 +181,20 @@ describe('appendShapeBeginGradientFill', () => {
       'rgb',
       0,
     ]);
+  });
+});
+
+describe('appendShapeBeginTextureFill', () => {
+  it('pushes a beginTextureFill command with texture and matrix', () => {
+    const shape = createShape();
+    appendShapeBeginTextureFill(shape, fakeTexture, fakeMatrix);
+    expect(shape.data.commands).toEqual(['beginTextureFill', 2, fakeTexture, fakeMatrix]);
+  });
+
+  it('defaults matrix to null', () => {
+    const shape = createShape();
+    appendShapeBeginTextureFill(shape, fakeTexture);
+    expect(shape.data.commands).toEqual(['beginTextureFill', 2, fakeTexture, null]);
   });
 });
 
@@ -293,20 +293,6 @@ describe('appendShapeEndFill', () => {
   });
 });
 
-describe('appendShapeLineBitmapStyle', () => {
-  it('pushes a lineBitmapStyle command with texture and matrix', () => {
-    const shape = createShape();
-    appendShapeLineBitmapStyle(shape, fakeTexture, fakeMatrix);
-    expect(shape.data.commands).toEqual(['lineBitmapStyle', 2, fakeTexture, fakeMatrix]);
-  });
-
-  it('defaults matrix to null', () => {
-    const shape = createShape();
-    appendShapeLineBitmapStyle(shape, fakeTexture);
-    expect(shape.data.commands).toEqual(['lineBitmapStyle', 2, fakeTexture, null]);
-  });
-});
-
 describe('appendShapeLineGradientStyle', () => {
   it('pushes a lineGradientStyle command with all fields', () => {
     const shape = createShape();
@@ -337,6 +323,20 @@ describe('appendShapeLineStyle', () => {
     const shape = createShape();
     appendShapeLineStyle(shape);
     expect(shape.data.commands).toEqual(['lineStyle', 8, 1, 0, 1, false, 'normal', 'none', 'round', 3]);
+  });
+});
+
+describe('appendShapeLineTextureStyle', () => {
+  it('pushes a lineTextureStyle command with texture and matrix', () => {
+    const shape = createShape();
+    appendShapeLineTextureStyle(shape, fakeTexture, fakeMatrix);
+    expect(shape.data.commands).toEqual(['lineTextureStyle', 2, fakeTexture, fakeMatrix]);
+  });
+
+  it('defaults matrix to null', () => {
+    const shape = createShape();
+    appendShapeLineTextureStyle(shape, fakeTexture);
+    expect(shape.data.commands).toEqual(['lineTextureStyle', 2, fakeTexture, null]);
   });
 });
 

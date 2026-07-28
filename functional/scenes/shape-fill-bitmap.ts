@@ -9,7 +9,7 @@
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
-  appendShapeBeginBitmapFill,
+  appendShapeBeginTextureFill,
   appendShapeEndFill,
   appendShapeRectangle,
   createDisplayObject,
@@ -71,7 +71,7 @@ const checker = createTexture({
 });
 // matrix=null maps the image at its native pixel size; repeat=true tiles it across the rect; smooth=false
 // keeps cell edges hard (nearest-neighbor sampling).
-appendShapeBeginBitmapFill(shape, checker);
+appendShapeBeginTextureFill(shape, checker);
 appendShapeRectangle(shape, RECT_X, RECT_Y, RECT_SIZE, RECT_SIZE);
 appendShapeEndFill(shape);
 addNodeChild(root, shape);

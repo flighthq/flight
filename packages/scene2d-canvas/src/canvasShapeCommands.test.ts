@@ -1,6 +1,6 @@
 import { createImageResource } from '@flighthq/image/contract';
 import {
-  appendShapeBeginBitmapFill,
+  appendShapeBeginTextureFill,
   appendShapeBeginFill,
   appendShapeBeginGradientFill,
   appendShapeCircle,
@@ -8,7 +8,7 @@ import {
   appendShapeCurveTo,
   appendShapeEllipse,
   appendShapeEndFill,
-  appendShapeLineBitmapStyle,
+  appendShapeLineTextureStyle,
   appendShapeLineGradientStyle,
   appendShapeLineStyle,
   appendShapeLineTo,
@@ -56,45 +56,6 @@ function makeBitmapTexture(w: number, h: number, smooth = true, repeat = false) 
   });
 }
 
-describe('defaultCanvasBeginBitmapFill', () => {
-  it('uses drawImage when drawRectangle fits within bitmap bounds', () => {
-    const context = makeContext();
-    const drawImageSpy = vi.spyOn(context, 'drawImage');
-    const fillSpy = vi.spyOn(context, 'fill');
-    const shape = createShape();
-    appendShapeBeginBitmapFill(shape, makeBitmapTexture(200, 200));
-    appendShapeRectangle(shape, 0, 0, 100, 100);
-    appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
-    expect(drawImageSpy).toHaveBeenCalledOnce();
-    expect(fillSpy).not.toHaveBeenCalled();
-  });
-
-  it('falls back to pattern fill when drawRectangle exceeds bitmap bounds', () => {
-    const context = makeContext();
-    const drawImageSpy = vi.spyOn(context, 'drawImage');
-    const fillSpy = vi.spyOn(context, 'fill');
-    const shape = createShape();
-    appendShapeBeginBitmapFill(shape, makeBitmapTexture(50, 50));
-    appendShapeRectangle(shape, 0, 0, 100, 100);
-    appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
-    expect(drawImageSpy).not.toHaveBeenCalled();
-    expect(fillSpy).toHaveBeenCalled();
-  });
-
-  it('sets imageSmoothingEnabled from the texture sampler', () => {
-    const context = makeContext();
-    context.imageSmoothingEnabled = false;
-    const shape = createShape();
-    appendShapeBeginBitmapFill(shape, makeBitmapTexture(200, 200, true));
-    appendShapeRectangle(shape, 0, 0, 100, 100);
-    appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
-    expect(context.imageSmoothingEnabled).toBe(true);
-  });
-});
-
 describe('defaultCanvasBeginFill', () => {
   it('calls fill when alpha is above threshold', () => {
     const context = makeContext();
@@ -140,6 +101,45 @@ describe('defaultCanvasBeginGradientFill', () => {
     appendShapeEndFill(shape);
     renderCanvasShapeCommands(context, shape.data.commands);
     expect(spy).toHaveBeenCalledOnce();
+  });
+});
+
+describe('defaultCanvasBeginTextureFill', () => {
+  it('uses drawImage when drawRectangle fits within bitmap bounds', () => {
+    const context = makeContext();
+    const drawImageSpy = vi.spyOn(context, 'drawImage');
+    const fillSpy = vi.spyOn(context, 'fill');
+    const shape = createShape();
+    appendShapeBeginTextureFill(shape, makeBitmapTexture(200, 200));
+    appendShapeRectangle(shape, 0, 0, 100, 100);
+    appendShapeEndFill(shape);
+    renderCanvasShapeCommands(context, shape.data.commands);
+    expect(drawImageSpy).toHaveBeenCalledOnce();
+    expect(fillSpy).not.toHaveBeenCalled();
+  });
+
+  it('falls back to pattern fill when drawRectangle exceeds bitmap bounds', () => {
+    const context = makeContext();
+    const drawImageSpy = vi.spyOn(context, 'drawImage');
+    const fillSpy = vi.spyOn(context, 'fill');
+    const shape = createShape();
+    appendShapeBeginTextureFill(shape, makeBitmapTexture(50, 50));
+    appendShapeRectangle(shape, 0, 0, 100, 100);
+    appendShapeEndFill(shape);
+    renderCanvasShapeCommands(context, shape.data.commands);
+    expect(drawImageSpy).not.toHaveBeenCalled();
+    expect(fillSpy).toHaveBeenCalled();
+  });
+
+  it('sets imageSmoothingEnabled from the texture sampler', () => {
+    const context = makeContext();
+    context.imageSmoothingEnabled = false;
+    const shape = createShape();
+    appendShapeBeginTextureFill(shape, makeBitmapTexture(200, 200, true));
+    appendShapeRectangle(shape, 0, 0, 100, 100);
+    appendShapeEndFill(shape);
+    renderCanvasShapeCommands(context, shape.data.commands);
+    expect(context.imageSmoothingEnabled).toBe(true);
   });
 });
 
@@ -318,20 +318,6 @@ describe('defaultCanvasEndFill', () => {
   });
 });
 
-describe('defaultCanvasLineBitmapStyle', () => {
-  it('applies a bitmap stroke pattern', () => {
-    const context = makeContext();
-    const spy = vi.spyOn(context, 'stroke');
-    const shape = createShape();
-    appendShapeLineBitmapStyle(shape, makeBitmapTexture(64, 64));
-    appendShapeMoveTo(shape, 0, 0);
-    appendShapeLineTo(shape, 100, 0);
-    appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
-    expect(spy).toHaveBeenCalledOnce();
-  });
-});
-
 describe('defaultCanvasLineGradientStyle', () => {
   it('applies a gradient stroke', () => {
     const context = makeContext();
@@ -389,6 +375,20 @@ describe('defaultCanvasLineStyle', () => {
     appendShapeEndFill(shape);
     renderCanvasShapeCommands(context, shape.data.commands);
     expect(context.miterLimit).toBe(8);
+  });
+});
+
+describe('defaultCanvasLineTextureStyle', () => {
+  it('applies a bitmap stroke pattern', () => {
+    const context = makeContext();
+    const spy = vi.spyOn(context, 'stroke');
+    const shape = createShape();
+    appendShapeLineTextureStyle(shape, makeBitmapTexture(64, 64));
+    appendShapeMoveTo(shape, 0, 0);
+    appendShapeLineTo(shape, 100, 0);
+    appendShapeEndFill(shape);
+    renderCanvasShapeCommands(context, shape.data.commands);
+    expect(spy).toHaveBeenCalledOnce();
   });
 });
 
@@ -459,8 +459,8 @@ describe('defaultCanvasShapeCommands', () => {
 describe('defaultCanvasTextureShapeCommands', () => {
   it('contains the opt-in bitmap fill and stroke handlers', () => {
     expect(defaultCanvasTextureShapeCommands.map((command) => command.key)).toEqual([
-      'beginBitmapFill',
-      'lineBitmapStyle',
+      'beginTextureFill',
+      'lineTextureStyle',
     ]);
   });
 });
