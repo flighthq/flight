@@ -1,6 +1,6 @@
 import { createMatrix } from '@flighthq/geometry/contract';
 import {
-  appendShapeBeginBitmapFill,
+  appendShapeBeginTextureFill,
   appendShapeBeginFill,
   appendShapeBeginGradientFill,
   appendShapeCubicCurveTo,
@@ -66,7 +66,7 @@ describe('formatShapeJson', () => {
 
   it('serializes a texture as an ordinal reference, never the texture', () => {
     const shape = createShape();
-    appendShapeBeginBitmapFill(shape, createFakeTexture(), null);
+    appendShapeBeginTextureFill(shape, createFakeTexture(), null);
     const parsed = JSON.parse(formatShapeJson(shape));
     expect(parsed.commands[0].args[0]).toEqual({ texture: { index: 0 } });
     expect(parsed.commands[0].args[1]).toBeNull();
@@ -118,7 +118,7 @@ describe('parseShapeJson', () => {
   it('round-trips a bitmap fill through the texture resolver', () => {
     const texture = createFakeTexture();
     const shape = createShape();
-    appendShapeBeginBitmapFill(shape, texture, createMatrix(1, 0, 0, 1, 3, 4));
+    appendShapeBeginTextureFill(shape, texture, createMatrix(1, 0, 0, 1, 3, 4));
     appendShapeMoveTo(shape, 5, 6);
 
     const seen: number[] = [];
@@ -132,14 +132,14 @@ describe('parseShapeJson', () => {
     expect(restored).not.toBeNull();
     expect(seen).toEqual([0]);
     expect(getShapeCommandCount(restored!)).toBe(2);
-    expect(restored!.data.commands[0]).toBe('beginBitmapFill');
+    expect(restored!.data.commands[0]).toBe('beginTextureFill');
     expect(restored!.data.commands[2]).toBe(texture);
   });
 
   it('drops a bitmap fill when no resolver is supplied and keeps the rest intact', () => {
     const shape = createShape();
     appendShapeBeginFill(shape, 0xffffffff, 1);
-    appendShapeBeginBitmapFill(shape, createFakeTexture(), null);
+    appendShapeBeginTextureFill(shape, createFakeTexture(), null);
     appendShapeLineTo(shape, 9, 9);
 
     const restored = parseShapeJson(formatShapeJson(shape));
@@ -151,7 +151,7 @@ describe('parseShapeJson', () => {
 
   it('drops a bitmap fill when the resolver returns null', () => {
     const shape = createShape();
-    appendShapeBeginBitmapFill(shape, createFakeTexture(), null);
+    appendShapeBeginTextureFill(shape, createFakeTexture(), null);
     appendShapeEndFill(shape);
 
     const restored = parseShapeJson(formatShapeJson(shape), { resolveTexture: () => null });

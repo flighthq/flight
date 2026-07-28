@@ -140,11 +140,6 @@ export function appendShapeArcTo(shape: Shape, x1: number, y1: number, x2: numbe
   invalidateContent(shape);
 }
 
-export function appendShapeBeginBitmapFill(shape: Shape, texture: Texture, matrix: Matrix | null = null): void {
-  shape.data.commands.push('beginBitmapFill', 2, texture, matrix);
-  invalidateContent(shape);
-}
-
 export function appendShapeBeginFill(shape: Shape, color = 0, alpha = 1): void {
   shape.data.commands.push('beginFill', 2, color, alpha);
   invalidateContent(shape);
@@ -173,6 +168,11 @@ export function appendShapeBeginGradientFill(
     interpolationMethod,
     focalPointRatio,
   );
+  invalidateContent(shape);
+}
+
+export function appendShapeBeginTextureFill(shape: Shape, texture: Texture, matrix: Matrix | null = null): void {
+  shape.data.commands.push('beginTextureFill', 2, texture, matrix);
   invalidateContent(shape);
 }
 
@@ -226,11 +226,6 @@ export function appendShapeEndFill(shape: Shape): void {
   invalidateContent(shape);
 }
 
-export function appendShapeLineBitmapStyle(shape: Shape, texture: Texture, matrix: Matrix | null = null): void {
-  shape.data.commands.push('lineBitmapStyle', 2, texture, matrix);
-  invalidateContent(shape);
-}
-
 export function appendShapeLineGradientStyle(
   shape: Shape,
   gradientType: GradientType,
@@ -269,6 +264,11 @@ export function appendShapeLineStyle(
   miterLimit = 3,
 ): void {
   shape.data.commands.push('lineStyle', 8, thickness, color, alpha, pixelHinting, scaleMode, caps, joints, miterLimit);
+  invalidateContent(shape);
+}
+
+export function appendShapeLineTextureStyle(shape: Shape, texture: Texture, matrix: Matrix | null = null): void {
+  shape.data.commands.push('lineTextureStyle', 2, texture, matrix);
   invalidateContent(shape);
 }
 

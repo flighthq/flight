@@ -7,8 +7,8 @@ const _fillMatrixInverse: Matrix = createMatrix();
 import { createBitmapPattern, createGradientPattern } from './canvasFillPattern';
 import { resolveCanvasTextureWindowSource } from './canvasImageSource';
 
-export const defaultCanvasBeginBitmapFill: CanvasShapeCommand<'beginBitmapFill'> = {
-  key: 'beginBitmapFill',
+export const defaultCanvasBeginTextureFill: CanvasShapeCommand<'beginTextureFill'> = {
+  key: 'beginTextureFill',
   draw(context, state, buf, i) {
     const texture = buf[i] as Texture;
     const matrix = buf[i + 1] as Matrix | null;
@@ -271,8 +271,8 @@ export const defaultCanvasEndFill: CanvasShapeCommand<'endFill'> = {
   },
 };
 
-export const defaultCanvasLineBitmapStyle: CanvasShapeCommand<'lineBitmapStyle'> = {
-  key: 'lineBitmapStyle',
+export const defaultCanvasLineTextureStyle: CanvasShapeCommand<'lineTextureStyle'> = {
+  key: 'lineTextureStyle',
   draw(context, state, buf, i) {
     const texture = buf[i] as Texture;
     const pattern = createBitmapPattern(context, texture, state.canvasRenderState);
@@ -380,8 +380,8 @@ export const defaultCanvasShapeCommands: CanvasShapeCommand<any>[] = [
 // or bitmap strokes are present.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const defaultCanvasTextureShapeCommands: CanvasShapeCommand<any>[] = [
-  defaultCanvasBeginBitmapFill,
-  defaultCanvasLineBitmapStyle,
+  defaultCanvasBeginTextureFill,
+  defaultCanvasLineTextureStyle,
 ];
 
 function rgbaString(color: number, alpha: number): string {

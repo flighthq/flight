@@ -160,10 +160,10 @@ export function hasNonSolidShapeFill(commands: readonly ShapeCommandToken[]): bo
     const argCount = commands[i + 1] as number;
     if (
       name === 'beginGradientFill' ||
-      name === 'beginBitmapFill' ||
+      name === 'beginTextureFill' ||
       name === 'lineStyle' ||
       name === 'lineGradientStyle' ||
-      name === 'lineBitmapStyle'
+      name === 'lineTextureStyle'
     ) {
       return true;
     }
@@ -182,7 +182,7 @@ export function hasShapeFill(commands: readonly ShapeCommandToken[]): boolean {
   let i = 0;
   while (i < commands.length) {
     const name = commands[i] as string;
-    if (name === 'beginFill' || name === 'beginGradientFill' || name === 'beginBitmapFill') return true;
+    if (name === 'beginFill' || name === 'beginGradientFill' || name === 'beginTextureFill') return true;
     i += 2 + (commands[i + 1] as number);
   }
   return false;

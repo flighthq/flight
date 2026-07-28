@@ -106,7 +106,7 @@ export function hasNonSolidShapeStroke(commands: readonly ShapeCommandToken[]): 
   let i = 0;
   while (i < commands.length) {
     const name = commands[i] as string;
-    if (name === 'lineGradientStyle' || name === 'lineBitmapStyle') return true;
+    if (name === 'lineGradientStyle' || name === 'lineTextureStyle') return true;
     i += 2 + (commands[i + 1] as number);
   }
   return false;

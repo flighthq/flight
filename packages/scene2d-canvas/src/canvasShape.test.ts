@@ -3,7 +3,7 @@ import { createImageResource } from '@flighthq/image/contract';
 import { registerRenderer } from '@flighthq/render/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import {
-  appendShapeBeginBitmapFill,
+  appendShapeBeginTextureFill,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeLineStyle,
@@ -168,7 +168,7 @@ describe('renderCanvasShapeCommands', () => {
     });
     const singular = createMatrix(0, 0, 0, 0, 0, 0);
     const shape = createShape();
-    appendShapeBeginBitmapFill(shape, bitmap, singular);
+    appendShapeBeginTextureFill(shape, bitmap, singular);
     appendShapeRectangle(shape, 0, 0, 100, 100);
     appendShapeEndFill(shape);
     expect(() => renderCanvasShapeCommands(context, shape.data.commands)).not.toThrow();

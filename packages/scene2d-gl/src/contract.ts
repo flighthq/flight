@@ -24,7 +24,7 @@ export * from './glVelocity';
 
 // Re-export shape commands from canvas (shapes deferred to canvas for now)
 export {
-  defaultCanvasBeginBitmapFill as defaultGlBeginBitmapFill,
+  defaultCanvasBeginTextureFill as defaultGlBeginTextureFill,
   defaultCanvasBeginFill as defaultGlBeginFill,
   defaultCanvasBeginGradientFill as defaultGlBeginGradientFill,
   defaultCanvasCubicCurveTo as defaultGlCubicCurveTo,

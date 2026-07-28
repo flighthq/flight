@@ -1,6 +1,6 @@
 import { createMatrix } from '@flighthq/geometry/contract';
 import {
-  appendShapeBeginBitmapFill,
+  appendShapeBeginTextureFill,
   appendShapeBeginFill,
   appendShapeBeginGradientFill,
   appendShapeCircle,
@@ -9,7 +9,7 @@ import {
   appendShapeDrawTriangles,
   appendShapeEllipse,
   appendShapeEndFill,
-  appendShapeLineBitmapStyle,
+  appendShapeLineTextureStyle,
   appendShapeLineGradientStyle,
   appendShapeLineStyle,
   appendShapeLineTo,
@@ -22,8 +22,8 @@ import {
 import type { Shape, ShapeJsonFormatOptions, ShapeJsonParseOptions } from '@flighthq/types/contract';
 
 // Serializes a shape's full drawing-command stream to a native JSON string that `parseShapeJson`
-// restores losslessly. Every non-texture command round-trips exactly; `beginBitmapFill`/
-// `lineBitmapStyle` textures serialize as an ordinal `ShapeTextureReference` (see the type) rather
+// restores losslessly. Every non-texture command round-trips exactly; `beginTextureFill`/
+// `lineTextureStyle` textures serialize as an ordinal `ShapeTextureReference` (see the type) rather
 // than the live `Texture`.
 export function formatShapeJson(shape: Readonly<Shape>, options?: Readonly<ShapeJsonFormatOptions>): string {
   const commands = shape.data.commands;
@@ -168,7 +168,7 @@ const DROP_COMMAND = Symbol('shapeFormats.dropCommand');
 const SHAPE_JSON_FORMAT = 2;
 
 const SHAPE_COMMAND_APPENDERS: Readonly<Record<string, ShapeCommandAppender>> = {
-  beginBitmapFill: appendShapeBeginBitmapFill,
+  beginTextureFill: appendShapeBeginTextureFill,
   beginFill: appendShapeBeginFill,
   beginGradientFill: appendShapeBeginGradientFill,
   cubicCurveTo: appendShapeCubicCurveTo,
@@ -180,7 +180,7 @@ const SHAPE_COMMAND_APPENDERS: Readonly<Record<string, ShapeCommandAppender>> = 
   drawRoundRectangle: appendShapeRoundRectangle,
   drawTriangles: appendShapeDrawTriangles,
   endFill: appendShapeEndFill,
-  lineBitmapStyle: appendShapeLineBitmapStyle,
+  lineTextureStyle: appendShapeLineTextureStyle,
   lineGradientStyle: appendShapeLineGradientStyle,
   lineStyle: appendShapeLineStyle,
   lineTo: appendShapeLineTo,

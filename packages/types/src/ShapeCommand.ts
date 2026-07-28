@@ -17,7 +17,7 @@ export type SpreadMethod = 'pad' | 'reflect' | 'repeat';
 
 // Maps command key strings to their argument tuples. May be extended via declaration merging.
 export interface ShapeCommandRegistry {
-  beginBitmapFill: readonly [texture: Texture, matrix: Matrix | null];
+  beginTextureFill: readonly [texture: Texture, matrix: Matrix | null];
   beginFill: readonly [color: number, alpha: number];
   beginGradientFill: readonly [
     gradientType: GradientType,
@@ -51,7 +51,7 @@ export interface ShapeCommandRegistry {
     ellipseHeight: number,
   ];
   endFill: readonly [];
-  lineBitmapStyle: readonly [texture: Texture, matrix: Matrix | null];
+  lineTextureStyle: readonly [texture: Texture, matrix: Matrix | null];
   lineGradientStyle: readonly [
     gradientType: GradientType,
     colors: number[],
