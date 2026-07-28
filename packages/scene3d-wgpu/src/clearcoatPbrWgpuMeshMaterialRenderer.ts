@@ -1,4 +1,8 @@
-import { getWgpuRenderStateRuntime, registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
+import {
+  getWgpuRenderStateRuntime,
+  registerWgpuBitmapTextureResolver,
+  registerWgpuImageTextureResolver,
+} from '@flighthq/render-wgpu/contract';
 import type {
   Camera3D,
   ClearcoatPbrMaterial,
@@ -73,6 +77,7 @@ export const clearcoatPbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 // Installs the built-in Clearcoat renderer for ClearcoatPbrMaterialKind on this state. Opt-in (no
 // top-level side effect): drawScene3D only draws Clearcoat subsets once this is called.
 export function registerClearcoatPbrWgpuMaterial(state: WgpuRenderState): void {
+  registerWgpuBitmapTextureResolver(state);
   registerWgpuImageTextureResolver(state);
   registerWgpuMeshMaterialRenderer(state, ClearcoatPbrMaterialKind, clearcoatPbrWgpuMeshMaterialRenderer);
 }

@@ -1,5 +1,5 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
-import { registerGlImageTextureResolver } from '@flighthq/render-gl/contract';
+import { registerGlBitmapTextureResolver, registerGlImageTextureResolver } from '@flighthq/render-gl/contract';
 import type {
   LinearColor,
   Camera3D,
@@ -72,6 +72,7 @@ export const subsurfacePbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 // Installs the built-in Subsurface renderer for SubsurfacePbrMaterialKind on this state. Opt-in (no
 // top-level side effect): drawScene3D only draws Subsurface subsets once this is called.
 export function registerSubsurfacePbrGlMaterial(state: GlRenderState): void {
+  registerGlBitmapTextureResolver(state);
   registerGlImageTextureResolver(state);
   registerGlMeshMaterialRenderer(state, SubsurfacePbrMaterialKind, subsurfacePbrGlMeshMaterialRenderer);
 }

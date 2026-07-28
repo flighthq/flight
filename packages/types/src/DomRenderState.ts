@@ -1,9 +1,11 @@
+import type { Bitmap } from './Bitmap';
 import type { BlendMode } from './BlendMode';
 import type { DomScene2DRectangle } from './DomScene2DRectangle';
-import type { ImageResource } from './ImageResource';
+import type { DomTextureResolver } from './DomTextureResolver';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
 import type { PathWinding } from './ShapeCommand';
+import type { TextureBackingKind } from './TextureBackingKind';
 
 export interface DomRenderState extends RenderState {
   applyBlendMode: ((element: HTMLElement, blendMode: BlendMode | null) => void) | null;
@@ -29,12 +31,12 @@ export interface DomRenderStateRuntime extends RenderStateRuntime {
   domCurrentElement: HTMLElement | null;
   // WeakMap from render node to its current DOM element; survives frame boundaries.
   domElementMap: WeakMap<RenderProxy2D, HTMLElement>;
-  // Per-render-state cache of the drawable HTMLCanvasElement materialized from a data-only
-  // ImageResource (a generated Bitmap with no host `source`), keyed on the resource and rebuilt when
-  // its `version` bumps. Mirrors the Canvas backend's imageResourceElementCache; lets a data-only
-  // Bitmap feed the DOM bitmap-as-canvas path instead of no-opping. Absent until the first data-only
-  // resolve; see resolveDomImageSource.
-  imageResourceElementCache?: WeakMap<ImageResource, { element: HTMLCanvasElement; version: number }>;
+  // Per-render-state cache of the drawable HTMLCanvasElement materialized from a Bitmap. The field
+  // stays absent until registerDomBitmapTextureResolver is imported and resolves a Bitmap.
+  bitmapElementCache?: WeakMap<Bitmap, { element: HTMLCanvasElement; version: number }>;
+  // Open, state-scoped Texture backing registry. Undefined until the first explicit registration so
+  // a DOM bundle only retains the backing realizations it installs.
+  domTextureResolverRegistry?: Map<TextureBackingKind, DomTextureResolver> | null;
   // Ping-pong order lists: domOrderList holds the previous frame's order so the next frame can detect
   // structure changes; domNextOrderList is the scratch buffer built during the current frame. They
   // swap at the end of each render call.

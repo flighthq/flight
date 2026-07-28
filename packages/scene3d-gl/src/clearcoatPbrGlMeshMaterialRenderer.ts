@@ -1,4 +1,4 @@
-import { registerGlImageTextureResolver } from '@flighthq/render-gl/contract';
+import { registerGlBitmapTextureResolver, registerGlImageTextureResolver } from '@flighthq/render-gl/contract';
 import type {
   Camera3D,
   ClearcoatPbrMaterial,
@@ -61,6 +61,7 @@ export const clearcoatPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 // Installs the built-in Clearcoat renderer for ClearcoatPbrMaterialKind on this state. Opt-in (no
 // top-level side effect): drawScene3D only draws Clearcoat subsets once this is called.
 export function registerClearcoatPbrGlMaterial(state: GlRenderState): void {
+  registerGlBitmapTextureResolver(state);
   registerGlImageTextureResolver(state);
   registerGlMeshMaterialRenderer(state, ClearcoatPbrMaterialKind, clearcoatPbrGlMeshMaterialRenderer);
 }

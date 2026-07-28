@@ -18,12 +18,16 @@ import { bindGlImageResourceTexture, bindGlVideoTexture } from './glDraw';
 import { getGlRenderStateRuntime } from './glRenderState';
 import { bindGlRenderTexture } from './glRenderTexture';
 
-// Installs the ordinary ImageResource realization. It delegates upload/version caching to the
-// existing backing-keyed bindGlImageResourceTexture seam and keeps Texture.sampler off that key.
+export function registerGlBitmapTextureResolver(state: GlRenderState): void {
+  registerGlTextureResolver(state, BitmapTextureBackingKind, resolveGlImageTexture);
+}
+
+export function registerGlCompressedImageTextureResolver(state: GlRenderState): void {
+  registerGlTextureResolver(state, CompressedImageTextureBackingKind, resolveGlImageTexture);
+}
+
 export function registerGlImageTextureResolver(state: GlRenderState): void {
   registerGlTextureResolver(state, ImageTextureBackingKind, resolveGlImageTexture);
-  registerGlTextureResolver(state, BitmapTextureBackingKind, resolveGlImageTexture);
-  registerGlTextureResolver(state, CompressedImageTextureBackingKind, resolveGlImageTexture);
 }
 
 // Installs the render-target realization.

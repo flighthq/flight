@@ -10,8 +10,8 @@ import type {
   Sprite,
 } from '@flighthq/types/contract';
 
-import { resolveDomImageSource } from './domImageSource';
 import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle';
+import { resolveDomTexture } from './domTextureResolver';
 
 interface DomSpriteData extends RendererData {
   canvas: HTMLCanvasElement | null;
@@ -30,9 +30,7 @@ export function drawDomSprite(state: DomRenderState, renderProxy: RenderProxy2D)
 
   const texture = (renderProxy.source as Sprite).data.texture;
   if (texture === null || texture.storage.dimension !== '2d') return;
-  const image = texture.storage.image;
-  if (image === null) return;
-  const source = resolveDomImageSource(state, image);
+  const source = resolveDomTexture(state, texture);
   if (source === null) return;
 
   const textureWidth = getTextureWidth(texture);

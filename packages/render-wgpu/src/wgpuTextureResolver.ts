@@ -19,10 +19,16 @@ import { bindWgpuImageResourceTexture, bindWgpuVideoTexture } from './wgpuDraw';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import { bindWgpuRenderTexture } from './wgpuRenderTexture';
 
+export function registerWgpuBitmapTextureResolver(state: WgpuRenderState): void {
+  registerWgpuTextureResolver(state, BitmapTextureBackingKind, resolveWgpuImageTexture);
+}
+
+export function registerWgpuCompressedImageTextureResolver(state: WgpuRenderState): void {
+  registerWgpuTextureResolver(state, CompressedImageTextureBackingKind, resolveWgpuImageTexture);
+}
+
 export function registerWgpuImageTextureResolver(state: WgpuRenderState): void {
   registerWgpuTextureResolver(state, ImageTextureBackingKind, resolveWgpuImageTexture);
-  registerWgpuTextureResolver(state, BitmapTextureBackingKind, resolveWgpuImageTexture);
-  registerWgpuTextureResolver(state, CompressedImageTextureBackingKind, resolveWgpuImageTexture);
 }
 
 export function registerWgpuRenderTextureResolver(state: WgpuRenderState): void {

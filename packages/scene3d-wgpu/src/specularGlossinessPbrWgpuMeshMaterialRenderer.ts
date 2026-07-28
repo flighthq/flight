@@ -1,5 +1,9 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
-import { getWgpuRenderStateRuntime, registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
+import {
+  getWgpuRenderStateRuntime,
+  registerWgpuBitmapTextureResolver,
+  registerWgpuImageTextureResolver,
+} from '@flighthq/render-wgpu/contract';
 import type {
   LinearColor,
   Camera3D,
@@ -86,6 +90,7 @@ export const specularGlossinessPbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRend
 // state. Opt-in (no top-level side effect): drawScene3D only draws SpecularGlossiness subsets once this
 // is called.
 export function registerSpecularGlossinessPbrWgpuMaterial(state: WgpuRenderState): void {
+  registerWgpuBitmapTextureResolver(state);
   registerWgpuImageTextureResolver(state);
   registerWgpuMeshMaterialRenderer(
     state,

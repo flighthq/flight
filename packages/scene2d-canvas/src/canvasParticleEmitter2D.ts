@@ -1,7 +1,7 @@
 import { noopRendererData } from '@flighthq/render/contract';
 import type { CanvasRenderState, ParticleEmitter2D, RenderProxy2D, SpriteRenderer } from '@flighthq/types/contract';
 
-import { resolveCanvasTexture } from './canvasImageSource';
+import { resolveCanvasTexture } from './canvasTextureResolver';
 
 // Canvas 2D does not support per-pixel color multiplication, so only alpha
 // and transform (position, rotation, scale) are applied. Color tint values

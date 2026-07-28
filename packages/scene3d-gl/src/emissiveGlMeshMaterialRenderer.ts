@@ -1,5 +1,9 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
-import { registerGlImageTextureResolver, resolveGlTexture } from '@flighthq/render-gl/contract';
+import {
+  registerGlBitmapTextureResolver,
+  registerGlImageTextureResolver,
+  resolveGlTexture,
+} from '@flighthq/render-gl/contract';
 import type {
   LinearColor,
   Camera3D,
@@ -69,6 +73,7 @@ export const emissiveGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 // level side effect); call once per GlRenderState before drawScene3D so meshes with EmissiveMaterials
 // draw.
 export function registerEmissiveGlMaterial(state: GlRenderState): void {
+  registerGlBitmapTextureResolver(state);
   registerGlImageTextureResolver(state);
   registerGlMeshMaterialRenderer(state, EmissiveMaterialKind, emissiveGlMeshMaterialRenderer);
 }

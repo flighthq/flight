@@ -2,8 +2,8 @@
 import { noopRendererData } from '@flighthq/render/contract';
 import type { CanvasRenderState, QuadBatch, RenderProxy2D, SpriteRenderer } from '@flighthq/types/contract';
 
-import { resolveCanvasTexture } from './canvasImageSource';
 import { applyCanvasMaterial } from './canvasMaterialRegistry';
+import { resolveCanvasTexture } from './canvasTextureResolver';
 
 export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: RenderProxy2D): void {
   const source = quadBatch.source as QuadBatch;

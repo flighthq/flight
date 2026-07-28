@@ -4,11 +4,15 @@ import { createSprite } from '@flighthq/scene2d/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import { SpriteKind, VideoTextureBackingKind } from '@flighthq/types/contract';
 
+import { registerDomImageTextureResolver } from './domImageTextureResolver';
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
 import { defaultDomSpriteRenderer, drawDomSprite } from './domSprite';
+import { registerDomVideoTextureResolver } from './domVideoTextureResolver';
 
 function drawElement(source: CanvasImageSource, kind = 'image'): HTMLElement | null {
   const state = createDomRenderState(document.createElement('div'));
+  if (kind === VideoTextureBackingKind) registerDomVideoTextureResolver(state);
+  else registerDomImageTextureResolver(state);
   registerRenderer(state, SpriteKind, defaultDomSpriteRenderer);
   const image = createImageResource(source);
   image.kind = kind;
@@ -41,6 +45,7 @@ describe('drawDomSprite', () => {
     canvas.height = 64;
     const image = createImageResourceFromCanvas(canvas);
     const state = createDomRenderState(document.createElement('div'));
+    registerDomImageTextureResolver(state);
     registerRenderer(state, SpriteKind, defaultDomSpriteRenderer);
     const sprite = createSprite({
       data: { texture: createTexture({ storage: { dimension: '2d', image } }) },

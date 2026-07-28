@@ -1,4 +1,4 @@
-import { registerGlImageTextureResolver } from '@flighthq/render-gl/contract';
+import { registerGlBitmapTextureResolver, registerGlImageTextureResolver } from '@flighthq/render-gl/contract';
 import type {
   Camera3D,
   GlMeshMaterialRenderer,
@@ -69,6 +69,7 @@ export const iridescencePbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 // Installs the built-in Iridescence renderer for IridescencePbrMaterialKind on this state. Opt-in
 // (no top-level side effect): drawScene3D only draws Iridescence subsets once this is called.
 export function registerIridescencePbrGlMaterial(state: GlRenderState): void {
+  registerGlBitmapTextureResolver(state);
   registerGlImageTextureResolver(state);
   registerGlMeshMaterialRenderer(state, IridescencePbrMaterialKind, iridescencePbrGlMeshMaterialRenderer);
 }

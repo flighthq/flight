@@ -1,5 +1,9 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
-import { registerGlImageTextureResolver, resolveGlTexture } from '@flighthq/render-gl/contract';
+import {
+  registerGlBitmapTextureResolver,
+  registerGlImageTextureResolver,
+  resolveGlTexture,
+} from '@flighthq/render-gl/contract';
 import type {
   LinearColor,
   Camera3D,
@@ -60,6 +64,7 @@ export const lambertGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 // Registers the built-in Lambert renderer for LambertMaterialKind on this state. Opt-in (no top-level
 // side effect); call once per GlRenderState before drawScene3D so meshes with LambertMaterials draw.
 export function registerLambertGlMaterial(state: GlRenderState): void {
+  registerGlBitmapTextureResolver(state);
   registerGlImageTextureResolver(state);
   registerGlMeshMaterialRenderer(state, LambertMaterialKind, lambertGlMeshMaterialRenderer);
 }

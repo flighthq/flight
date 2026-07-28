@@ -3,7 +3,7 @@ import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render
 import { addTextureAtlasRegion, createTextureAtlasFromImageResource } from '@flighthq/textureatlas/contract';
 import { createTilemap, setTilemapTile } from '@flighthq/tilemap/contract';
 
-import { registerCanvasImageTextureResolver } from './canvasImageSource';
+import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
 import { createCanvasRenderState } from './canvasRenderState';
 import { drawCanvasTilemap } from './canvasTilemap';
 

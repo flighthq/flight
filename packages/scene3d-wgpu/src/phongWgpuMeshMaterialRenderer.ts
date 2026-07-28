@@ -1,5 +1,9 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
-import { getWgpuRenderStateRuntime, registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
+import {
+  getWgpuRenderStateRuntime,
+  registerWgpuBitmapTextureResolver,
+  registerWgpuImageTextureResolver,
+} from '@flighthq/render-wgpu/contract';
 import type {
   LinearColor,
   Camera3D,
@@ -75,6 +79,7 @@ export const phongWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 // Registers the built-in Phong renderer for PhongMaterialKind on this state. Opt-in (no top-level
 // side effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with PhongMaterials draw.
 export function registerPhongWgpuMaterial(state: WgpuRenderState): void {
+  registerWgpuBitmapTextureResolver(state);
   registerWgpuImageTextureResolver(state);
   registerWgpuMeshMaterialRenderer(state, PhongMaterialKind, phongWgpuMeshMaterialRenderer);
 }

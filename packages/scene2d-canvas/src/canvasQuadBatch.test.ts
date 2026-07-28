@@ -8,7 +8,7 @@ import {
 } from '@flighthq/textureatlas/contract';
 import { QuadBatchKind } from '@flighthq/types/contract';
 
-import { registerCanvasImageTextureResolver } from './canvasImageSource';
+import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
 import { defaultCanvasQuadBatchRenderer, drawCanvasQuadBatch } from './canvasQuadBatch';
 import { createCanvasRenderState } from './canvasRenderState';
 

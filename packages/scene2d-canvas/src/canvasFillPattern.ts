@@ -9,7 +9,7 @@ import type {
   Texture,
 } from '@flighthq/types/contract';
 
-import { resolveCanvasTextureWindowSource } from './canvasImageSource';
+import { resolveCanvasTextureWindowSource } from './canvasTextureWindowSource';
 
 // Flash's gradient box is normalized to ±819.2 units.
 const GRADIENT_HALF = 819.2;
