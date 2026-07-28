@@ -23,7 +23,7 @@ defaults:
 roles:
   review: {}
   builder:
-   nudge: always
+    nudge: always
   integration: {}
 
 services:
