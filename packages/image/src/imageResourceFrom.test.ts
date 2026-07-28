@@ -1,6 +1,11 @@
+import { createEntity } from '@flighthq/entity/contract';
+import type { Bitmap } from '@flighthq/types/contract';
+import { ImageTextureBackingKind } from '@flighthq/types/contract';
+
 import { createImageResource } from './imageResource';
 import {
   createCanvasFromImageResource,
+  createImageResourceFromBitmap,
   createImageResourceFromCanvas,
   createImageResourceFromImageBitmap,
   createImageResourceFromImageElement,
@@ -44,6 +49,29 @@ describe('createCanvasFromImageResource', () => {
 
   it('returns null for an element-only resource with no data', () => {
     expect(createCanvasFromImageResource(createImageResource(document.createElement('img')))).toBeNull();
+  });
+});
+
+describe('createImageResourceFromBitmap', () => {
+  it('returns an ImageResource with matching dimensions', () => {
+    // Built with createEntity rather than @flighthq/bitmap's createBitmap: bitmap depends on image,
+    // so importing it here would force a circular tsconfig project reference.
+    const bitmap: Bitmap = createEntity({
+      alphaType: 'straight',
+      colorSpace: 'srgb',
+      compressed: null,
+      data: new Uint8ClampedArray(4 * 4 * 4),
+      format: 'rgba8unorm',
+      height: 4,
+      kind: ImageTextureBackingKind,
+      source: null,
+      version: 0,
+      width: 4,
+    });
+    const resource = createImageResourceFromBitmap(bitmap);
+    expect(resource.width).toBe(4);
+    expect(resource.height).toBe(4);
+    expect(resource.source).not.toBeNull();
   });
 });
 

@@ -37,7 +37,6 @@ export {
   copyBitmapAlpha,
   copyBitmapChannel,
   copyBitmapPixels,
-  createImageResourceFromBitmap,
   createBitmap,
   createBitmapFingerprint,
   createBitmapFromCanvas,

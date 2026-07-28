@@ -1,6 +1,6 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { detectImageMimeType } from '@flighthq/image-codec/contract';
-import type { ImageResource } from '@flighthq/types/contract';
+import type { Bitmap, ImageResource } from '@flighthq/types/contract';
 import { ImageTextureBackingKind } from '@flighthq/types/contract';
 
 // Materializes a data-backed ImageResource's raw pixels into a detached, drawable HTMLCanvasElement
@@ -18,6 +18,20 @@ export function createCanvasFromImageResource(image: Readonly<ImageResource>): H
   imageData.data.set(image.data);
   canvas.getContext('2d')!.putImageData(imageData, 0, 0);
   return canvas;
+}
+
+// Transcodes a Bitmap's raw pixels into an element-backed ImageResource, via a detached canvas.
+// The inverse of createBitmapFromImageResource. Lives here rather than in @flighthq/bitmap because a
+// conversion belongs with the type it PRODUCES: you look for it under what you want to end up with.
+// Allocates a fresh canvas on every call; callers that draw repeatedly should hold the result.
+export function createImageResourceFromBitmap(bitmap: Readonly<Bitmap>): ImageResource {
+  const canvas = document.createElement('canvas');
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
+  const domImageData = new globalThis.ImageData(bitmap.width, bitmap.height);
+  domImageData.data.set(bitmap.data);
+  canvas.getContext('2d')!.putImageData(domImageData, 0, 0);
+  return createImageResourceFromCanvas(canvas);
 }
 
 export function createImageResourceFromCanvas(canvas: HTMLCanvasElement): ImageResource {

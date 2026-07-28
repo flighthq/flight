@@ -3,6 +3,7 @@ export {
   createCanvasFromImageResource,
   createCompressedImageResource,
   createImageResource,
+  createImageResourceFromBitmap,
   createImageResourceFromCanvas,
   createImageResourceFromImageBitmap,
   createImageResourceFromImageElement,
