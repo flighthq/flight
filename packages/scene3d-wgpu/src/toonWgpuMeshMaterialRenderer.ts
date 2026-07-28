@@ -1,5 +1,5 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateRuntime, registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
 import type {
   LinearColor,
   Camera3D,
@@ -74,6 +74,7 @@ export const toonWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 // Registers the built-in Toon renderer for ToonMaterialKind on this state. Opt-in (no top-level side
 // effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with ToonMaterials draw.
 export function registerToonWgpuMaterial(state: WgpuRenderState): void {
+  registerWgpuImageTextureResolver(state);
   registerWgpuMeshMaterialRenderer(state, ToonMaterialKind, toonWgpuMeshMaterialRenderer);
 }
 

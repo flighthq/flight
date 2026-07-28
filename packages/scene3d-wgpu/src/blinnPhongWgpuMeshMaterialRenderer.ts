@@ -1,5 +1,5 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateRuntime, registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
 import type {
   LinearColor,
   BlinnPhongMaterial,
@@ -76,6 +76,7 @@ export const blinnPhongWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 // top-level side effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with BlinnPhong
 // materials draw.
 export function registerBlinnPhongWgpuMaterial(state: WgpuRenderState): void {
+  registerWgpuImageTextureResolver(state);
   registerWgpuMeshMaterialRenderer(state, BlinnPhongMaterialKind, blinnPhongWgpuMeshMaterialRenderer);
 }
 

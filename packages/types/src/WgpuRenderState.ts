@@ -6,12 +6,15 @@ import type { Material } from './Material';
 import type { Matrix } from './Matrix';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
+import type { Texture } from './Texture';
 import type { TintMaterialData } from './TintMaterialData';
 import type { WgpuCompressedTextureDecoder } from './WgpuCompressedTextureDecoder';
 import type { WgpuCompressedTextureUploader } from './WgpuCompressedTextureUploader';
 import type { WgpuMaterialRenderer } from './WgpuMaterialRenderer';
 import type { WgpuMeshMaterialRenderer } from './WgpuMeshMaterialRenderer';
 import type { WgpuRenderTarget } from './WgpuRenderTarget';
+import type { WgpuRenderTextureEntry } from './WgpuRenderTexture';
+import type { WgpuTextureBackingKind, WgpuTextureResolver } from './WgpuTextureResolver';
 
 export interface WgpuRenderState extends RenderState {
   applyBlendMode: ((state: WgpuRenderState, blendMode: BlendMode | null) => void) | null;
@@ -111,6 +114,11 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // Dynamic host-video cache. The GPU texture persists across frames; uploadedVersion gates the
   // expensive external-image copy, while width/height detect mid-stream resolution changes.
   videoTextureCache?: WeakMap<ImageResource, WgpuVideoTextureEntry>;
+  // Open, state-scoped Texture backing registry keyed by the backing's declared string kind.
+  // Map.set is last-write-wins; undefined until first registration.
+  wgpuTextureResolverRegistry?: Map<WgpuTextureBackingKind, WgpuTextureResolver> | null;
+  // Produced Texture realizations are keyed by Texture because their GPU allocation is state-bound.
+  wgpuRenderTextureCache?: WeakMap<Texture, WgpuRenderTextureEntry>;
 
   // Custom shader (default bitmap shader; can be replaced via registerWgpuBitmapShader)
   defaultBitmapShader: WgpuBitmapShader | null;

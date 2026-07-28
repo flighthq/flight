@@ -1,3 +1,4 @@
+import { registerWgpuVideoTextureResolver } from '@flighthq/render-wgpu/contract';
 import { advanceVideoTexture, createVideoTexture } from '@flighthq/texture/contract';
 import type { LinearColor, WgpuUnlitDefineKey } from '@flighthq/types/contract';
 
@@ -36,6 +37,7 @@ describe('bindWgpuUnlitVideoSurface', () => {
       element: { readyState: 4, videoHeight: 120, videoWidth: 160 } as HTMLVideoElement,
     });
     advanceVideoTexture(video);
+    registerWgpuVideoTextureResolver(state);
     bindWgpuUnlitVideoSurface(state, pipeline, {}, COLOR, 1, 0.5, video);
     expect(fake.calls.some((c) => c.name === 'copyExternalImageToTexture')).toBe(true);
     expect(fake.calls.some((c) => c.name === 'writeBuffer')).toBe(true);

@@ -1,4 +1,4 @@
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateRuntime, registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
 import type {
   Camera3D,
   CustomShaderMaterial,
@@ -115,6 +115,7 @@ export function getWgpuCustomMaterialShaderSource(
 
 // Installs CustomShaderMaterialKind in this state's WGPU mesh-material registry.
 export function registerCustomShaderWgpuMaterial(state: WgpuRenderState): void {
+  registerWgpuImageTextureResolver(state);
   registerWgpuMeshMaterialRenderer(state, CustomShaderMaterialKind, customShaderWgpuMeshMaterialRenderer);
 }
 

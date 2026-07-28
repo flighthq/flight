@@ -1,5 +1,5 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateRuntime, registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
 import type {
   LinearColor,
   Camera3D,
@@ -73,6 +73,7 @@ export const lambertWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 // Registers the built-in Lambert renderer for LambertMaterialKind on this state. Opt-in (no top-level
 // side effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with LambertMaterials draw.
 export function registerLambertWgpuMaterial(state: WgpuRenderState): void {
+  registerWgpuImageTextureResolver(state);
   registerWgpuMeshMaterialRenderer(state, LambertMaterialKind, lambertWgpuMeshMaterialRenderer);
 }
 

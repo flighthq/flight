@@ -1,6 +1,10 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import { isVideoTextureFrameReady } from '@flighthq/texture/contract';
+import {
+  getWgpuRenderStateRuntime,
+  registerWgpuImageTextureResolver,
+  registerWgpuProducedTextureResolver,
+  registerWgpuVideoTextureResolver,
+} from '@flighthq/render-wgpu/contract';
 import type {
   LinearColor,
   Camera3D,
@@ -12,13 +16,12 @@ import type {
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
   WgpuUnlitDefineKey,
-  Texture,
 } from '@flighthq/types/contract';
 import { UnlitMaterialKind } from '@flighthq/types/contract';
 
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { beginWgpuMeshDraw, drawWgpuMeshSubset, isWgpuTextureReady, writeWgpuFrameUniform } from './wgpuMeshPipeline';
-import { bindWgpuUnlitSurface, bindWgpuUnlitVideoSurface, ensureWgpuUnlitPipeline } from './wgpuUnlitPrelude';
+import { bindWgpuUnlitSurface, ensureWgpuUnlitPipeline } from './wgpuUnlitPrelude';
 
 // The built-in Unlit forward renderer (WgpuMeshMaterialRenderer for UnlitMaterialKind) — the WGSL
 // mirror of unlitGlMeshMaterialRenderer. Lighting-independent flat color: bind selects the unlit
@@ -45,10 +48,7 @@ export const unlitWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
       group = bindWgpuUnlitSurface(state, pipeline, FALLBACK_MATERIAL, WHITE, 1, 0.5, null);
     } else {
       unpackColorToLinear(_scratch, unlit.baseColor);
-      group =
-        unlit.baseColorMap !== null && hasVideoBacking(unlit.baseColorMap)
-          ? bindWgpuUnlitVideoSurface(state, pipeline, unlit, _scratch, 1, unlit.alphaCutoff, unlit.baseColorMap)
-          : bindWgpuUnlitSurface(state, pipeline, unlit, _scratch, 1, unlit.alphaCutoff, unlit.baseColorMap);
+      group = bindWgpuUnlitSurface(state, pipeline, unlit, _scratch, 1, unlit.alphaCutoff, unlit.baseColorMap);
     }
 
     beginWgpuMeshDraw(state, pipeline);
@@ -63,6 +63,9 @@ export const unlitWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 // Registers the built-in Unlit renderer for UnlitMaterialKind on this state. Opt-in (no top-level side
 // effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with UnlitMaterials draw.
 export function registerUnlitWgpuMaterial(state: WgpuRenderState): void {
+  registerWgpuImageTextureResolver(state);
+  registerWgpuVideoTextureResolver(state);
+  registerWgpuProducedTextureResolver(state);
   registerWgpuMeshMaterialRenderer(state, UnlitMaterialKind, unlitWgpuMeshMaterialRenderer);
 }
 
@@ -70,25 +73,8 @@ function defineKeyForMaterial(material: Readonly<UnlitMaterial> | null): WgpuUnl
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
     doubleSided: material !== null && material.doubleSided,
-    hasColorMap:
-      material !== null &&
-      ((material.baseColorMap !== null && isVideoTextureFrameReady(material.baseColorMap)) ||
-        isWgpuTextureReady(material.baseColorMap)),
+    hasColorMap: material !== null && isWgpuTextureReady(material.baseColorMap),
   };
-}
-
-function hasVideoBacking(texture: Readonly<Texture>): boolean {
-  const source = texture.storage.image?.source as {
-    readyState?: unknown;
-    videoHeight?: unknown;
-    videoWidth?: unknown;
-  } | null;
-  return (
-    source != null &&
-    typeof source.readyState === 'number' &&
-    typeof source.videoHeight === 'number' &&
-    typeof source.videoWidth === 'number'
-  );
 }
 
 const _scratch: LinearColor = [0, 0, 0, 0];

@@ -694,6 +694,8 @@ export * from './WgpuDualSourceEffectPipeline';
 export * from './WgpuEffectBlendMode';
 export * from './WgpuEffectPipeline';
 export * from './WgpuRenderState';
+export * from './WgpuRenderTexture';
+export * from './WgpuTextureResolver';
 export * from './WgpuQuadBatchResources';
 export * from './WgpuRichTextOverlay';
 export * from './WgpuShapeMesh';

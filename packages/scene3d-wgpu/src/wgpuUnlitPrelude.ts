@@ -1,4 +1,3 @@
-import { bindWgpuVideoTexture } from '@flighthq/render-wgpu/contract';
 import type {
   LinearColor,
   Texture,
@@ -14,7 +13,6 @@ import {
   ensureWgpuScene3DPipeline,
   getWgpuMeshPreludeWgsl,
   getWgpuMaterialSampler,
-  ensureWgpuPlaceholderTextureView,
   resolveWgpuMaterialTextureView,
   stashWgpuUvTransform,
 } from './wgpuMeshPipeline';
@@ -40,9 +38,7 @@ export function bindWgpuUnlitSurface(
   return binding.bindGroup;
 }
 
-// Dynamic-video sibling of bindWgpuUnlitSurface. The video-backed Texture uploader preserves one GPU texture
-// per stream, copies only when its backing version advances, and replaces the material bind group when a resolution
-// change yields a new view. It shares the still-image shader/layout and UV-transform path.
+// Compatibility entry over the universal resolver-backed surface bind.
 export function bindWgpuUnlitVideoSurface(
   state: WgpuRenderState,
   pipeline: Readonly<WgpuUnlitPipeline>,
@@ -52,13 +48,7 @@ export function bindWgpuUnlitVideoSurface(
   alphaCutoff: number,
   colorMap: Readonly<Texture>,
 ): GPUBindGroup {
-  const entry = bindWgpuVideoTexture(state, colorMap);
-  const sampler = getWgpuMaterialSampler(state, colorMap);
-  const view = entry?.view ?? ensureWgpuPlaceholderTextureView(state);
-  const binding = ensureWgpuUnlitBinding(state, pipeline, materialKey, sampler, view);
-  writeWgpuUnlitUniform(state, binding, color, intensity, alphaCutoff);
-  stashWgpuUvTransform(state, colorMap);
-  return binding.bindGroup;
+  return bindWgpuUnlitSurface(state, pipeline, materialKey, color, intensity, alphaCutoff, colorMap);
 }
 
 function ensureWgpuUnlitBinding(

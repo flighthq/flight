@@ -2,9 +2,10 @@ import { createCamera3D } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import { createCustomShaderMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
+import { registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { Camera3D, ImageResource, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
-import { CustomShaderMaterialKind } from '@flighthq/types/contract';
+import { CustomShaderMaterialKind, ImageTextureBackingKind } from '@flighthq/types/contract';
 
 import {
   customShaderWgpuMeshMaterialRenderer,
@@ -95,6 +96,7 @@ describe('customShaderWgpuMeshMaterialRenderer', () => {
       textures: { map: createTexture() },
     });
     registerWgpuCustomMaterialShader(state, 'test', SOURCE);
+    registerWgpuImageTextureResolver(state);
     customShaderWgpuMeshMaterialRenderer.bind(state, material, NO_LIGHTS, makeCamera());
     const firstCount = fake.calls.filter((call) => call.name === 'createBindGroup').length;
 
@@ -115,6 +117,7 @@ describe('customShaderWgpuMeshMaterialRenderer', () => {
       textures: { first, second },
     });
     registerWgpuCustomMaterialShader(state, 'test', SOURCE);
+    registerWgpuImageTextureResolver(state);
     const bindGroupCount = () => fake.calls.filter((call) => call.name === 'createBindGroup').length;
     const bindAndExpectRebuild = (previous: number): number => {
       customShaderWgpuMeshMaterialRenderer.bind(state, material, NO_LIGHTS, makeCamera());
@@ -174,6 +177,7 @@ function makeImageResource(version: number): ImageResource {
     data: null,
     format: 'rgba8unorm',
     height: 1,
+    kind: ImageTextureBackingKind,
     source: {} as CanvasImageSource,
     version,
     width: 1,

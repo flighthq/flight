@@ -1,11 +1,7 @@
 import { getCamera3DViewProjectionMatrix4 } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4, getMatrix4Position, inverseMatrix4 } from '@flighthq/geometry/contract';
 import { hasImageResourcePixels } from '@flighthq/image/contract';
-import {
-  bindWgpuImageResourceTexture,
-  getWgpuRenderStateRuntime,
-  getWgpuSampler,
-} from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateRuntime, getWgpuSampler, resolveWgpuTexture } from '@flighthq/render-wgpu/contract';
 import { getTextureUvMatrix, hasTextureUvTransform } from '@flighthq/texture/contract';
 import type {
   WgpuMaterialBinding,
@@ -748,29 +744,28 @@ export function isWgpuMaterialBindGroupRebuildNeeded(
   return false;
 }
 
-// True when a material map texture is present AND carries GPU-uploadable pixels — an element or a data-only
-// generated Surface. Families call this to decide the `has*Map` define flag — the textured pipeline variant
-// compiles only when the map can actually be sampled, so an empty texture renders the untextured path.
-// Mirrors the `map !== null && map.storage.image !== null` readiness guard in the GL renderers.
+// True when a material map has uploadable CPU pixels or declares a GPU-origin target. Resolution may
+// still yield null while a dynamic/produced backing is not ready; bind helpers substitute the shared
+// placeholder then.
 export function isWgpuTextureReady(texture: Readonly<Texture> | null): boolean {
-  return texture !== null && texture.storage.image !== null && hasImageResourcePixels(texture.storage.image);
+  return (
+    texture !== null &&
+    ((texture.storage.image !== null && hasImageResourcePixels(texture.storage.image)) ||
+      texture.storage.target !== undefined)
+  );
 }
 
 // Resolves the GPUTextureView a family binds into a material map slot: the real uploaded view when the
-// texture carries pixels (cached per state by render-wgpu's resource texture cache), otherwise the shared
-// 1x1 opaque-white placeholder so the bind-group layout's texture slot is always satisfied. The single
-// texture-resolution seam every scene-wgpu family routes its maps through — the WGSL mirror of scene-gl's
-// `bindGlImageResourceTexture(state, map.storage.image)` / unbound-attribute fallback.
+// resolver returns a view (cached per state by the backing implementation), otherwise the shared 1x1
+// opaque-white placeholder so the bind-group layout's texture slot is always satisfied. The single
+// texture-resolution seam every scene-wgpu family routes its maps through.
 export function resolveWgpuMaterialTextureView(
   state: WgpuRenderState,
   texture: Readonly<Texture> | null,
 ): GPUTextureView {
-  if (texture !== null && texture.storage.image !== null && hasImageResourcePixels(texture.storage.image)) {
-    // Request a mip chain when the map's sampler asks for mipmaps, so getWgpuMaterialSampler's mip
-    // filter has levels to sample; the shared placeholder and 2D path stay single-level.
-    return bindWgpuImageResourceTexture(state, texture.storage.image, texture.sampler.mipmaps).view;
-  }
-  return ensureWgpuPlaceholderTextureView(state);
+  return (
+    (texture !== null ? resolveWgpuTexture(state, texture)?.view : null) ?? ensureWgpuPlaceholderTextureView(state)
+  );
 }
 
 // Splices the registered backend chunk and its affine or full-matrix vectors into a promoted 3D Draw uniform.
@@ -807,7 +802,11 @@ ${fields}`,
 // vs_main multiply then reproduces the raw uv).
 export function stashWgpuUvTransform(state: WgpuRenderState, texture: Readonly<TextureLike> | null): void {
   const out = getWgpuScene3DRuntime(state).pendingUvTransform;
-  if (texture === null || ('storage' in texture && texture.storage.image === null) || !hasTextureUvTransform(texture)) {
+  if (
+    texture === null ||
+    ('storage' in texture && texture.storage.image === null && texture.storage.target === undefined) ||
+    !hasTextureUvTransform(texture)
+  ) {
     resetWgpuUvTransformStash(out);
     return;
   }
