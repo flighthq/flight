@@ -47,6 +47,7 @@ describe('defaultGlSpriteRenderer', () => {
 describe('drawGlSprite', () => {
   it('writes natural size and uv window into the shared batch', () => {
     const { state } = createGlState();
+    registerGlImageTextureResolver(state);
     registerStandardGlMaterial(state);
     const sprite = makeSprite(128, 64);
     setTextureUvFromPixelRect(sprite.data.texture!, 16, 8, 32, 16);

@@ -109,6 +109,8 @@ export function createGlCacheState(screenState: GlRenderState): GlRenderState {
   cacheRuntime.quadBatchWriterInstanceBuffer = null;
   cacheRuntime.quadBatchWriterInstanceData = new Float32Array(0);
   cacheRuntime.quadBatchWriterTexture = null;
+  cacheRuntime.quadBatchWriterSampler = null;
+  cacheRuntime.quadBatchWriterStraightAlpha = false;
   cacheRuntime.quadBatchWriterSmoothing = null;
 
   _cacheStateScreen.set(cacheState, screenState);

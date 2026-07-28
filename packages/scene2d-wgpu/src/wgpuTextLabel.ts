@@ -1,7 +1,7 @@
 import { computeRgbHexString } from '@flighthq/color/contract';
 import { createImageResource, setImageResourceSource } from '@flighthq/image/contract';
 import { getNodeLocalContentRevision } from '@flighthq/node/contract';
-import { resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu/contract';
+import { bindWgpuImageResourceTexture, resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
 import { getTextLabelRuntime } from '@flighthq/text/contract';
@@ -163,8 +163,17 @@ export function drawWgpuTextLabel(state: WgpuRenderState, renderProxy: RenderPro
 
   ensureWgpuQuadBatchResources(state);
 
+  const textureEntry = bindWgpuImageResourceTexture(state, textData.image, false, true);
   const startCount = runtime.quadBatchWriterCount;
-  const base = prepareWgpuQuadBatchWrite(state, textData.image, renderProxy.blendMode, material, materialRenderer, 1);
+  const base = prepareWgpuQuadBatchWrite(
+    state,
+    textureEntry,
+    null,
+    renderProxy.blendMode,
+    material,
+    materialRenderer,
+    1,
+  );
   const d = runtime.quadBatchWriterInstanceData;
   const t = renderProxy.transform2D;
   d[base] = t.a;

@@ -1,4 +1,4 @@
-import { resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu/contract';
+import { resolveWgpuMaterialRenderer, resolveWgpuTexture } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import { getTextureHeight, getTextureWidth, hasTextureBacking } from '@flighthq/texture/contract';
@@ -35,6 +35,9 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
   const material = tilemapNode.material;
   const materialRenderer = resolveWgpuMaterialRenderer(state, material);
   if (materialRenderer === null) return;
+  const texture = atlas.texture;
+  const textureEntry = resolveWgpuTexture(state, texture, true);
+  if (textureEntry === null) return;
   const nodeMaterialData = tilemapNode.materialData;
   // Per-tile color adjustments, overriding the node-level tint for the tiles that carry one.
   const perTileColorScaleBias = source.data.materialData;
@@ -43,7 +46,8 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
   const startCount = runtime.quadBatchWriterCount;
   const base = prepareWgpuQuadBatchWrite(
     state,
-    atlas.texture,
+    textureEntry,
+    texture.sampler,
     tilemapNode.blendMode,
     material,
     materialRenderer,
@@ -52,8 +56,8 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
 
   const regions = atlas.regions;
   const numRegions = regions.length;
-  const iw = 1 / Math.max(1, getTextureWidth(atlas.texture));
-  const ih = 1 / Math.max(1, getTextureHeight(atlas.texture));
+  const iw = 1 / Math.max(1, getTextureWidth(texture));
+  const ih = 1 / Math.max(1, getTextureHeight(texture));
   const instanceData = runtime.quadBatchWriterInstanceData;
   const pt = tilemapNode.transform2D;
   const pa = pt.a,

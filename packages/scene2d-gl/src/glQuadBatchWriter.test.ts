@@ -1,6 +1,5 @@
-import { createImageResource } from '@flighthq/image/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type { ColorScaleBias, ImageResource, Material } from '@flighthq/types/contract';
+import type { BlendMode, ColorScaleBias, GlMaterialRenderer, GlRenderState, Material } from '@flighthq/types/contract';
 
 import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature';
 import {
@@ -8,7 +7,7 @@ import {
   ensureGlQuadBatchShader,
   flushGlQuadBatchWriter,
   packGlQuadBatchMaterialInstance,
-  prepareGlQuadBatchWrite,
+  prepareGlQuadBatchWrite as prepareResolvedGlQuadBatchWrite,
   recordGlQuadBatchColorScaleBias,
   setGlQuadBatchWorldAndTexture,
   useGlQuadBatchProgram,
@@ -16,12 +15,34 @@ import {
 import { standardGlMaterialRenderer } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 
-function makeTexture(): ImageResource {
-  return createImageResource(document.createElement('img'));
+function makeTexture(): WebGLTexture {
+  return {} as WebGLTexture;
 }
 
 function makeMaterial(): Material {
   return { kind: 'TestMaterial' } as Material;
+}
+
+function prepareGlQuadBatchWrite(
+  state: GlRenderState,
+  texture: WebGLTexture,
+  blendMode: BlendMode | null,
+  material: Material | null,
+  materialRenderer: GlMaterialRenderer,
+  maxInstances: number,
+  smoothing: boolean | null = null,
+): number {
+  return prepareResolvedGlQuadBatchWrite(
+    state,
+    texture,
+    false,
+    null,
+    blendMode,
+    material,
+    materialRenderer,
+    maxInstances,
+    smoothing,
+  );
 }
 
 function ct(

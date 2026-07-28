@@ -1,7 +1,7 @@
 import { createImageResource, setImageResourceSource } from '@flighthq/image/contract';
 import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { tessellatePath } from '@flighthq/path/contract';
-import { resolveGlMaterialRenderer } from '@flighthq/render-gl/contract';
+import { bindGlImageResourceTexture, resolveGlMaterialRenderer } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { renderCanvasShapeCommands } from '@flighthq/scene2d-canvas/contract';
 import { getShapeFillRegions, getShapeStrokeRegions, hasShapeFill } from '@flighthq/shape/contract';
@@ -162,8 +162,19 @@ export function drawGlShape(state: GlRenderState, renderProxy: RenderProxy2D): v
   const tx = t.tx + t.a * bounds.x + t.c * bounds.y;
   const ty = t.ty + t.b * bounds.x + t.d * bounds.y;
 
+  const texture = bindGlImageResourceTexture(state, shapeData.image, null, null, true);
+  const straightAlpha = runtime.currentTextureStraightAlpha;
   const startCount = runtime.quadBatchWriterCount;
-  const base = prepareGlQuadBatchWrite(state, shapeData.image, renderProxy.blendMode, material, materialRenderer, 1);
+  const base = prepareGlQuadBatchWrite(
+    state,
+    texture,
+    straightAlpha,
+    null,
+    renderProxy.blendMode,
+    material,
+    materialRenderer,
+    1,
+  );
   const d = runtime.quadBatchWriterInstanceData;
   d[base] = t.a;
   d[base + 1] = t.b;

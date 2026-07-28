@@ -6,6 +6,7 @@ import type { Material } from './Material';
 import type { Matrix } from './Matrix';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
+import type { SamplerLike } from './Sampler';
 import type { Texture } from './Texture';
 import type { TintMaterialData } from './TintMaterialData';
 import type { WgpuCompressedTextureDecoder } from './WgpuCompressedTextureDecoder';
@@ -147,7 +148,10 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // active material's packInstance. Separate from the base instance data so the base layout carries
   // no material concern.
   quadBatchWriterMaterialData: Float32Array;
-  quadBatchWriterTexture: ImageResource | Texture | null;
+  // Resolved backend entry plus its sampling descriptor. High-level Texture resolution stays in
+  // texture-using callers rather than leaking registry code into this shared writer.
+  quadBatchWriterTexture: WgpuTextureEntry | null;
+  quadBatchWriterSampler: SamplerLike | null;
   // Transitional sampling key for legacy atlas/image writers. A Texture carries its sampler directly.
   quadBatchWriterSmoothing: boolean | null;
   // Color-adjustment fold state for the active quad-batch writer, owned by the opt-in

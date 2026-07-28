@@ -142,6 +142,7 @@ export async function createWgpuRenderState(
   runtime.quadBatchWriterInstanceData = new Float32Array(13 * 256);
   runtime.quadBatchWriterMaterialData = new Float32Array(8 * 256);
   runtime.quadBatchWriterTexture = null;
+  runtime.quadBatchWriterSampler = null;
   runtime.quadBatchWriterSmoothing = null;
   // Color-adjustment fold state (mode/data + the folded module) is not allocated here: it is owned by
   // the opt-in registerWgpuColorAdjustmentMaterialFeature, so a state that never tints carries none of it.

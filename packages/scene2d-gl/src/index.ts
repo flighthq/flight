@@ -11,6 +11,7 @@ export {
   defaultGlShapeRenderer,
   defaultGlSpriteRenderer,
   defaultGlTextLabelRenderer,
+  defaultGlTextureShapeCommands,
   defaultGlTilemapRenderer,
   drawGlSprite,
   enableGlClipSupport,

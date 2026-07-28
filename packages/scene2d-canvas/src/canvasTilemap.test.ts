@@ -3,6 +3,7 @@ import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render
 import { addTextureAtlasRegion, createTextureAtlasFromImageResource } from '@flighthq/textureatlas/contract';
 import { createTilemap, setTilemapTile } from '@flighthq/tilemap/contract';
 
+import { registerCanvasImageTextureResolver } from './canvasImageSource';
 import { createCanvasRenderState } from './canvasRenderState';
 import { drawCanvasTilemap } from './canvasTilemap';
 
@@ -10,7 +11,9 @@ function makeState() {
   const canvas = document.createElement('canvas');
   canvas.width = 400;
   canvas.height = 400;
-  return createCanvasRenderState(canvas);
+  const state = createCanvasRenderState(canvas);
+  registerCanvasImageTextureResolver(state);
+  return state;
 }
 
 function makeTilesetAtlas(tileWidth = 32, tileHeight = 32, cols = 2, rows = 1) {

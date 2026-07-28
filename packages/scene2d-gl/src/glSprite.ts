@@ -1,4 +1,4 @@
-import { resolveGlMaterialRenderer } from '@flighthq/render-gl/contract';
+import { resolveGlMaterialRenderer, resolveGlTexture } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import { getTextureHeight, getTextureWidth, hasTextureBacking } from '@flighthq/texture/contract';
@@ -24,6 +24,9 @@ export function drawGlSprite(state: GlRenderState, renderProxy: RenderProxy2D): 
   const material = renderProxy.material;
   const materialRenderer = resolveGlMaterialRenderer(state, material);
   if (materialRenderer === null) return;
+  const glTexture = resolveGlTexture(state, texture, true);
+  if (glTexture === null) return;
+  const straightAlpha = runtime.currentTextureStraightAlpha;
   ensureGlQuadBatchShader(state);
 
   let u0 = texture.uvOffset.x;
@@ -34,7 +37,16 @@ export function drawGlSprite(state: GlRenderState, renderProxy: RenderProxy2D): 
   if (texture.flipY) [v0, v1] = [v1, v0];
 
   const instanceIndex = runtime.quadBatchWriterCount;
-  const base = prepareGlQuadBatchWrite(state, texture, renderProxy.blendMode, material, materialRenderer, 1);
+  const base = prepareGlQuadBatchWrite(
+    state,
+    glTexture,
+    straightAlpha,
+    texture.sampler,
+    renderProxy.blendMode,
+    material,
+    materialRenderer,
+    1,
+  );
   const data = runtime.quadBatchWriterInstanceData;
   const transform = renderProxy.transform2D;
   data[base] = transform.a;

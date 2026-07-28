@@ -14,6 +14,7 @@ import type { ImageResource } from './ImageResource';
 import type { Material } from './Material';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
+import type { SamplerLike } from './Sampler';
 import type { Texture } from './Texture';
 import type { TintMaterialData } from './TintMaterialData';
 
@@ -138,7 +139,11 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   quadBatchWriterCount: number;
   quadBatchWriterInstanceBuffer: WebGLBuffer | null;
   quadBatchWriterInstanceData: Float32Array;
-  quadBatchWriterTexture: ImageResource | Texture | null;
+  // Resolved backend handle plus the sampling/alpha metadata needed to restore its binding when the
+  // deferred batch flushes. High-level Texture resolution stays in texture-using callers.
+  quadBatchWriterTexture: WebGLTexture | null;
+  quadBatchWriterSampler: SamplerLike | null;
+  quadBatchWriterStraightAlpha: boolean;
   // Transitional sampling key for legacy atlas/image writers. A Texture carries its sampler directly.
   quadBatchWriterSmoothing: boolean | null;
   // Color-transform fold state for the active quad-batch writer. Orthogonal to the material and never a

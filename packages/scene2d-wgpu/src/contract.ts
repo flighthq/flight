@@ -38,5 +38,6 @@ export {
   defaultCanvasLineTo as defaultWgpuLineTo,
   defaultCanvasMoveTo as defaultWgpuMoveTo,
   defaultCanvasShapeCommands as defaultWgpuShapeCommands,
+  defaultCanvasTextureShapeCommands as defaultWgpuTextureShapeCommands,
   registerCanvasShapeCommands as registerWgpuShapeCommands,
 } from '@flighthq/scene2d-canvas/contract';

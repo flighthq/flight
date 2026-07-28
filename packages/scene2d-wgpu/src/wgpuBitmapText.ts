@@ -1,4 +1,8 @@
-import { getWgpuRenderStateRuntime, resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu/contract';
+import {
+  getWgpuRenderStateRuntime,
+  resolveWgpuMaterialRenderer,
+  resolveWgpuTexture,
+} from '@flighthq/render-wgpu/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { getTextureHeight, getTextureWidth, hasTextureBacking } from '@flighthq/texture/contract';
@@ -49,12 +53,15 @@ function submitWgpuBitmapText(state: WgpuRenderState, node: RenderProxy2D): void
     const atlas = page.atlas;
     const texture = atlas.texture;
     if (texture === null || !hasTextureBacking(texture) || page.instanceCount === 0) continue;
+    const textureEntry = resolveWgpuTexture(state, texture, true);
+    if (textureEntry === null) continue;
 
     // prepareWgpuQuadBatchWrite may flush the prior page's batch (each page binds a different image),
     // so read the running instance count AFTER it so material/color-adjustment indices align with `base`.
     const base = prepareWgpuQuadBatchWrite(
       state,
-      texture,
+      textureEntry,
+      texture.sampler,
       node.blendMode,
       material,
       materialRenderer,

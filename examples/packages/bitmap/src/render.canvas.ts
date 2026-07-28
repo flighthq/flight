@@ -5,6 +5,7 @@ import {
   createCanvasRenderState,
   defaultCanvasSpriteRenderer,
   prepareScene2DRender,
+  registerCanvasImageTextureResolver,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasScene2D,
@@ -19,6 +20,7 @@ export const state = createCanvasRenderState(canvas, {
   backgroundColor: 0xf0f0f0ff,
 });
 
+registerCanvasImageTextureResolver(state);
 registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
 
 export const scale = pixelRatio;

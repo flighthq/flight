@@ -1,7 +1,7 @@
 import { createImageResource, setImageResourceSource } from '@flighthq/image/contract';
 import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { tessellatePath } from '@flighthq/path/contract';
-import { resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu/contract';
+import { bindWgpuImageResourceTexture, resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { renderCanvasShapeCommands } from '@flighthq/scene2d-canvas/contract';
 import { getShapeFillRegions, getShapeStrokeRegions, hasShapeFill } from '@flighthq/shape/contract';
@@ -175,8 +175,17 @@ export function drawWgpuShape(state: WgpuRenderState, renderProxy: RenderProxy2D
   const tx = t.tx + t.a * bounds.x + t.c * bounds.y;
   const ty = t.ty + t.b * bounds.x + t.d * bounds.y;
 
+  const textureEntry = bindWgpuImageResourceTexture(state, shapeData.image, false, true);
   const startCount = runtime.quadBatchWriterCount;
-  const base = prepareWgpuQuadBatchWrite(state, shapeData.image, renderProxy.blendMode, material, materialRenderer, 1);
+  const base = prepareWgpuQuadBatchWrite(
+    state,
+    textureEntry,
+    null,
+    renderProxy.blendMode,
+    material,
+    materialRenderer,
+    1,
+  );
   const d = runtime.quadBatchWriterInstanceData;
   d[base] = t.a;
   d[base + 1] = t.b;

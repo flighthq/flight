@@ -72,6 +72,8 @@ export function createGlRenderState(canvas: HTMLCanvasElement, options: GlRender
   runtime.quadBatchWriterInstanceBuffer = null;
   runtime.quadBatchWriterInstanceData = new Float32Array(13 * 256);
   runtime.quadBatchWriterTexture = null;
+  runtime.quadBatchWriterSampler = null;
+  runtime.quadBatchWriterStraightAlpha = false;
   runtime.quadBatchWriterSmoothing = null;
   // Color-adjustment fold state (mode/data/buffer + the compiled programs) is not allocated here: it
   // is owned by the opt-in registerGlColorAdjustmentMaterialFeature, so a state that never tints carries none of it.

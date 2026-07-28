@@ -7,6 +7,7 @@ import {
   defaultCanvasSpriteRenderer,
   defaultCanvasTilemapRenderer,
   prepareScene2DRender,
+  registerCanvasImageTextureResolver,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasScene2D,
@@ -21,6 +22,7 @@ export const state = createCanvasRenderState(canvas, {
   backgroundColor: 0x1a1a2eff,
 });
 
+registerCanvasImageTextureResolver(state);
 registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
 registerRenderer(state, TilemapKind, defaultCanvasTilemapRenderer);
 

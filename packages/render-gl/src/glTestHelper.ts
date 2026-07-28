@@ -57,6 +57,8 @@ export function createGlState(options?: { allowSmoothing?: boolean; backgroundCo
     quadBatchWriterInstanceBuffer: null,
     quadBatchWriterInstanceData: new Float32Array(13 * 256),
     quadBatchWriterTexture: null,
+    quadBatchWriterSampler: null,
+    quadBatchWriterStraightAlpha: false,
     quadBatchWriterSmoothing: null,
   } satisfies Partial<GlRenderStateRuntime>);
   state[EntityRuntimeKey] = runtime;

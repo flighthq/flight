@@ -1,4 +1,4 @@
-import { getGlRenderStateRuntime, resolveGlMaterialRenderer } from '@flighthq/render-gl/contract';
+import { getGlRenderStateRuntime, resolveGlMaterialRenderer, resolveGlTexture } from '@flighthq/render-gl/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { getTextureHeight, getTextureWidth, hasTextureBacking } from '@flighthq/texture/contract';
@@ -51,12 +51,17 @@ function submitGlBitmapText(state: GlRenderState, node: RenderProxy2D): void {
     const texture = atlas.texture;
     if (texture === null || !hasTextureBacking(texture) || page.instanceCount === 0) continue;
 
+    const glTexture = resolveGlTexture(state, texture, true);
+    if (glTexture === null) continue;
+    const straightAlpha = runtime.currentTextureStraightAlpha;
     ensureGlQuadBatchShader(state);
     // prepareGlQuadBatchWrite may flush the prior page's batch (each page binds a different image), so
     // read the running instance count AFTER it so material/color-adjustment indices align with `base`.
     const base = prepareGlQuadBatchWrite(
       state,
-      texture,
+      glTexture,
+      straightAlpha,
+      texture.sampler,
       node.blendMode,
       material,
       materialRenderer,

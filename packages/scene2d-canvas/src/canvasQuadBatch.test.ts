@@ -8,6 +8,7 @@ import {
 } from '@flighthq/textureatlas/contract';
 import { QuadBatchKind } from '@flighthq/types/contract';
 
+import { registerCanvasImageTextureResolver } from './canvasImageSource';
 import { defaultCanvasQuadBatchRenderer, drawCanvasQuadBatch } from './canvasQuadBatch';
 import { createCanvasRenderState } from './canvasRenderState';
 
@@ -28,6 +29,7 @@ function makeState() {
   canvas.width = 400;
   canvas.height = 400;
   const state = createCanvasRenderState(canvas);
+  registerCanvasImageTextureResolver(state);
   registerRenderer(state, QuadBatchKind, defaultCanvasQuadBatchRenderer);
   return state;
 }

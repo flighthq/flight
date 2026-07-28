@@ -117,6 +117,7 @@ export function createWgpuCacheState(screenState: WgpuRenderState): WgpuRenderSt
   cacheRuntime.quadBatchWriterInstanceData = new Float32Array(0);
   cacheRuntime.quadBatchWriterMaterialData = new Float32Array(0);
   cacheRuntime.quadBatchWriterTexture = null;
+  cacheRuntime.quadBatchWriterSampler = null;
   cacheRuntime.quadBatchWriterSmoothing = null;
   // Propagate the opt-in color-adjustment fold + guard so tinted nodes inside a cached subtree fold the
   // same way when baked offscreen. Their per-batch CT data lives on cacheRuntime, lazily grown.
