@@ -191,8 +191,8 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // shapes and text). Keyed by the element; the caller owns re-upload timing (video re-uploads every frame).
   textureCache: WeakMap<CanvasImageSource, WebGLTexture>;
   // ImageResource texture cache: content-backed images (bitmaps, sprite atlases, material maps), which may
-  // be element-backed OR a data-only generated Surface. Keyed by the resource entity (stable identity) so a
-  // data-only Surface caches too, with the uploaded `version` tracked so bindGlImageResourceTexture
+  // be element-backed OR a data-only generated Bitmap. Keyed by the resource entity (stable identity) so a
+  // data-only Bitmap caches too, with the uploaded `version` tracked so bindGlImageResourceTexture
   // re-uploads in place when the pixels change — subsuming the per-node manual invalidation nodes used to
   // open-code. See bindGlImageResourceTexture.
   imageResourcePremultipliedTextureCache: WeakMap<ImageResource, { texture: WebGLTexture; version: number }>;

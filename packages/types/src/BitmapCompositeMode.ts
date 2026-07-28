@@ -7,9 +7,9 @@
 //
 // It is independent of BlendMode / CompositeOperator / AdvancedBlendMode: surface owns its domain
 // vocabulary (WASM-bound, self-contained), so reshaping the GPU-facing enums never touches it. It shares
-// their canonical PascalCase string values, so any GPU mode string is already a valid SurfaceCompositeMode.
+// their canonical PascalCase string values, so any GPU mode string is already a valid BitmapCompositeMode.
 // Third-party modes namespace with a vendor prefix (e.g. 'acme.Foo'); unknown modes composite source-over.
-export const SurfaceCompositeMode = {
+export const BitmapCompositeMode = {
   Add: 'Add',
   Clear: 'Clear',
   ColorBurn: 'ColorBurn',
@@ -38,4 +38,4 @@ export const SurfaceCompositeMode = {
   Xor: 'Xor',
 } as const;
 
-export type SurfaceCompositeMode = string;
+export type BitmapCompositeMode = string;

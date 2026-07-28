@@ -1,6 +1,6 @@
 /**
  * How an `ImageResource`'s pixels encode alpha. Orthogonal to channel layout (`PixelFormat`) and
- * color space (`Surface.colorSpace`): the same `rgba8unorm` data can be straight or premultiplied.
+ * color space (`Bitmap.colorSpace`): the same `rgba8unorm` data can be straight or premultiplied.
  * Modeled on Skia's `SkAlphaType`.
  *
  * - `straight`: RGB is independent of alpha (un-premultiplied). What browsers produce via

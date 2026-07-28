@@ -4,7 +4,7 @@
  * per-channel tolerance. Used for cross-backend differential checks and regression gates that must
  * allow sub-pixel antialiasing noise while still catching real divergence.
  */
-export interface SurfaceMismatch {
+export interface BitmapMismatch {
   /** Pixels whose maximum channel difference exceeded the tolerance. */
   readonly mismatchedPixels: number;
   /** Total pixels compared (width × height). */

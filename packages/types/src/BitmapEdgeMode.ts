@@ -6,4 +6,4 @@
  * - `'mirror'`: mirrors the surface at each edge.
  * - `'transparent'`: out-of-bounds pixels are treated as transparent black.
  */
-export type SurfaceEdgeMode = 'clamp' | 'mirror' | 'transparent' | 'wrap';
+export type BitmapEdgeMode = 'clamp' | 'mirror' | 'transparent' | 'wrap';

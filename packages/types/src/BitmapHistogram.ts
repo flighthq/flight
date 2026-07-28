@@ -1,4 +1,4 @@
-export interface SurfaceHistogram {
+export interface BitmapHistogram {
   alpha: number[];
   blue: number[];
   green: number[];

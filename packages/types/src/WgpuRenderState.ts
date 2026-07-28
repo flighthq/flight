@@ -99,7 +99,7 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // Raw-element texture cache: a canvas/video/image element uploaded directly, keyed by the element.
   textureCache: WeakMap<CanvasImageSource, WgpuTextureEntry>;
   // ImageResource texture cache: content-backed images (bitmaps, atlases, material maps), element-backed OR
-  // a data-only generated Surface. Keyed by the resource entity so a data-only Surface caches too, with the
+  // a data-only generated Bitmap. Keyed by the resource entity so a data-only Bitmap caches too, with the
   // uploaded `version` tracked so bindWgpuImageResourceTexture re-uploads when the pixels change.
   imageResourcePremultipliedTextureCache: WeakMap<ImageResource, WgpuImageResourceTextureEntry>;
   // Straight (upload-as-is) sibling of imageResourcePremultipliedTextureCache: the GPU texture for an ImageResource bound

@@ -1,6 +1,6 @@
-import type { SurfaceShadowBlurOptions } from './SurfaceShadowBlurOptions';
+import type { BitmapShadowBlurOptions } from './BitmapShadowBlurOptions';
 
-export interface SurfaceInnerShadowOptions extends SurfaceShadowBlurOptions {
+export interface BitmapInnerShadowOptions extends BitmapShadowBlurOptions {
   /** Packed 0xRRGGBBAA inner shadow color. Default 0x000000ff (opaque black). */
   color?: number;
   /** Overall intensity multiplier applied to the shadow alpha. Default 1. */

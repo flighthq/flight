@@ -1,6 +1,6 @@
-import type { SurfaceBevelType } from './SurfaceBevelType';
+import type { BitmapBevelType } from './BitmapBevelType';
 
-export interface SurfaceBevelOptions {
+export interface BitmapBevelOptions {
   /** Light direction in radians, pointing toward the light source. Default π/4. */
   angle?: number;
   /** Sampling offset along the light axis, in pixels. Default 4. */
@@ -15,5 +15,5 @@ export interface SurfaceBevelOptions {
   /** Overall intensity multiplier. Default 1. */
   intensity?: number;
   /** Where the bevel is drawn relative to the shape. Default 'inner'. */
-  type?: SurfaceBevelType;
+  type?: BitmapBevelType;
 }
