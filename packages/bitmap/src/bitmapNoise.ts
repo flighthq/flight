@@ -64,7 +64,7 @@ export function fillBitmapNoise(
  * - `channelOptions`: bitmask of channels to fill (default `0x7` = RGB, matching
  *   OpenFL's `perlinNoise` default). Channels not selected are left unchanged in
  *   `dest`, except alpha: when the A bit is not selected, alpha is set opaque
- *   (255) rather than left as-is. Use `SURFACE_NOISE_CHANNEL_*` constants. When
+ *   (255) rather than left as-is. Use `BITMAP_NOISE_CHANNEL_*` constants. When
  *   `grayScale` is true the same field drives all selected RGB channels.
  *
  * Output range is normalized to 0..255. Alpha defaults to 255 unless the A
@@ -101,21 +101,21 @@ export function fillBitmapPerlinNoise(
       if (grayScale) {
         const value = fractalValueNoise(nx, ny, passes, seed | 0);
         const byte = Math.round(value * 255);
-        if (channelOptions & SURFACE_NOISE_CHANNEL_R) data[di] = byte;
-        if (channelOptions & SURFACE_NOISE_CHANNEL_G) data[di + 1] = byte;
-        if (channelOptions & SURFACE_NOISE_CHANNEL_B) data[di + 2] = byte;
+        if (channelOptions & BITMAP_NOISE_CHANNEL_R) data[di] = byte;
+        if (channelOptions & BITMAP_NOISE_CHANNEL_G) data[di + 1] = byte;
+        if (channelOptions & BITMAP_NOISE_CHANNEL_B) data[di + 2] = byte;
       } else {
-        if (channelOptions & SURFACE_NOISE_CHANNEL_R) {
+        if (channelOptions & BITMAP_NOISE_CHANNEL_R) {
           data[di] = Math.round(fractalValueNoise(nx, ny, passes, seed | 0) * 255);
         }
-        if (channelOptions & SURFACE_NOISE_CHANNEL_G) {
+        if (channelOptions & BITMAP_NOISE_CHANNEL_G) {
           data[di + 1] = Math.round(fractalValueNoise(nx, ny, passes, (seed | 0) + 0x9e3779b1) * 255);
         }
-        if (channelOptions & SURFACE_NOISE_CHANNEL_B) {
+        if (channelOptions & BITMAP_NOISE_CHANNEL_B) {
           data[di + 2] = Math.round(fractalValueNoise(nx, ny, passes, (seed | 0) + 0x9e3779b2) * 255);
         }
       }
-      if (channelOptions & SURFACE_NOISE_CHANNEL_A) {
+      if (channelOptions & BITMAP_NOISE_CHANNEL_A) {
         data[di + 3] = Math.round(fractalValueNoise(nx, ny, passes, (seed | 0) + 0x9e3779b3) * 255);
       } else {
         data[di + 3] = 255;
@@ -166,21 +166,21 @@ export function fillBitmapTurbulence(
       if (grayScale) {
         const value = turbulenceNoise(nx, ny, passes, seed | 0);
         const byte = Math.round(value * 255);
-        if (channelOptions & SURFACE_NOISE_CHANNEL_R) data[di] = byte;
-        if (channelOptions & SURFACE_NOISE_CHANNEL_G) data[di + 1] = byte;
-        if (channelOptions & SURFACE_NOISE_CHANNEL_B) data[di + 2] = byte;
+        if (channelOptions & BITMAP_NOISE_CHANNEL_R) data[di] = byte;
+        if (channelOptions & BITMAP_NOISE_CHANNEL_G) data[di + 1] = byte;
+        if (channelOptions & BITMAP_NOISE_CHANNEL_B) data[di + 2] = byte;
       } else {
-        if (channelOptions & SURFACE_NOISE_CHANNEL_R) {
+        if (channelOptions & BITMAP_NOISE_CHANNEL_R) {
           data[di] = Math.round(turbulenceNoise(nx, ny, passes, seed | 0) * 255);
         }
-        if (channelOptions & SURFACE_NOISE_CHANNEL_G) {
+        if (channelOptions & BITMAP_NOISE_CHANNEL_G) {
           data[di + 1] = Math.round(turbulenceNoise(nx, ny, passes, (seed | 0) + 0x9e3779b1) * 255);
         }
-        if (channelOptions & SURFACE_NOISE_CHANNEL_B) {
+        if (channelOptions & BITMAP_NOISE_CHANNEL_B) {
           data[di + 2] = Math.round(turbulenceNoise(nx, ny, passes, (seed | 0) + 0x9e3779b2) * 255);
         }
       }
-      if (channelOptions & SURFACE_NOISE_CHANNEL_A) {
+      if (channelOptions & BITMAP_NOISE_CHANNEL_A) {
         data[di + 3] = Math.round(turbulenceNoise(nx, ny, passes, (seed | 0) + 0x9e3779b3) * 255);
       } else {
         data[di + 3] = 255;
@@ -190,10 +190,10 @@ export function fillBitmapTurbulence(
   invalidateImageResource(dest.bitmap);
 }
 
-export const SURFACE_NOISE_CHANNEL_A = 0x8;
-export const SURFACE_NOISE_CHANNEL_B = 0x4;
-export const SURFACE_NOISE_CHANNEL_G = 0x2;
-export const SURFACE_NOISE_CHANNEL_R = 0x1;
+export const BITMAP_NOISE_CHANNEL_A = 0x8;
+export const BITMAP_NOISE_CHANNEL_B = 0x4;
+export const BITMAP_NOISE_CHANNEL_G = 0x2;
+export const BITMAP_NOISE_CHANNEL_R = 0x1;
 
 // Fractal sum of value noise: doubling frequency, halving amplitude per octave,
 // normalized back to 0..1 by the total amplitude.
