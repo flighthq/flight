@@ -1,6 +1,7 @@
 import { forEachNodeDescendant } from '@flighthq/node/contract';
 import { isMesh } from '@flighthq/scene3d/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
+import { hasTextureBacking } from '@flighthq/texture/contract';
 import { createTween } from '@flighthq/tween/contract';
 import type {
   Material,
@@ -94,7 +95,7 @@ function collectPendingTextureOwners(
       for (let j = 0; j < slots.length; j++) {
         const texture = slots[j];
         const ref = texture.resource;
-        if (ref == null || texture.storage.image !== null || ref.state === ResourceResolutionState.Failed) continue;
+        if (ref == null || hasTextureBacking(texture) || ref.state === ResourceResolutionState.Failed) continue;
         let ownerState = ownersByNode.get(owner);
         if (ownerState === undefined) {
           ownerState = { node: owner, pending: new Set() };

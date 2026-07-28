@@ -10,6 +10,7 @@ import type {
   VertexAttributeLayout,
   GlMeshProgram,
 } from '@flighthq/types/contract';
+import { ImageTextureBackingKind } from '@flighthq/types/contract';
 
 import {
   SKIN_PALETTE_TEXTURE_UNIT,
@@ -377,7 +378,13 @@ describe('hasGlUvTransform', () => {
   });
 
   it('is false for an identity transform even with a bound image', () => {
-    expect(hasGlUvTransform(createTexture({ storage: { dimension: '2d', image: {} as ImageResource } }))).toBe(false);
+    expect(
+      hasGlUvTransform(
+        createTexture({
+          storage: { dimension: '2d', image: { kind: ImageTextureBackingKind } as ImageResource },
+        }),
+      ),
+    ).toBe(false);
   });
 
   it('is false for a non-identity transform whose image is unbound', () => {
@@ -388,7 +395,9 @@ describe('hasGlUvTransform', () => {
   });
 
   it('is true only when a bound image carries a non-identity transform', () => {
-    const texture = createTexture({ storage: { dimension: '2d', image: {} as ImageResource } });
+    const texture = createTexture({
+      storage: { dimension: '2d', image: { kind: ImageTextureBackingKind } as ImageResource },
+    });
     setTextureUvScale(texture, 2, 2);
 
     expect(hasGlUvTransform(texture)).toBe(true);

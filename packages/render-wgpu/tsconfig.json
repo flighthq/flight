@@ -16,6 +16,7 @@
     { "path": "../geometry" },
     { "path": "../render" },
     { "path": "../surface" },
+    { "path": "../texture" },
     { "path": "../types" }
   ],
   "include": ["src"]

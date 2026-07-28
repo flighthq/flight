@@ -13,6 +13,7 @@
     { "path": "../geometry" },
     { "path": "../log" },
     { "path": "../render" },
+    { "path": "../texture" },
     { "path": "../types" }
   ],
   "include": ["src"]
