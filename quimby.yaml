@@ -22,7 +22,9 @@ defaults:
 
 roles:
   review: {}
-  builder: {}
+  builder:
+   escalateTo: [@review, @integration]
+   nudge: always
   integration: {}
 
 services:
