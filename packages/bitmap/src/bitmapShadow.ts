@@ -1,0 +1,241 @@
+import type {
+  BitmapDropShadowOptions,
+  BitmapGlowOptions,
+  BitmapInnerGlowOptions,
+  BitmapInnerShadowOptions,
+  BitmapRegion,
+  BitmapShadowBlurOptions,
+} from '@flighthq/types/contract';
+
+import { blurBitmapPixelsHorizontal, blurBitmapPixelsVertical } from './bitmapBlur';
+
+/**
+ * Produces the blurred shadow mask for a drop shadow effect, writing into
+ * `out`. The result is a tinted, blurred alpha mask derived from `source`.
+ *
+ * To complete the effect, composite `out` onto the destination at the shadow
+ * offset, then apply source compositing:
+ *
+ *   compositeBitmapPixels(destRegion, out);   // shadow at (dx+offsetX, dy+offsetY)
+ *   compositeBitmapRegion(destRegion, source); // sourceMode 'draw'
+ *   // sourceMode 'hide': omit source; sourceMode 'knockout': destination-out source alpha.
+ *
+ * `scratch` must be at least `source.width * source.height * 4` bytes.
+ * Its contents are undefined after the call.
+ *
+ * Safe to pass `source.bitmap.data` as `out` when the region covers the
+ * full bitmap.
+ */
+export function dropShadowBitmap(
+  out: Uint8ClampedArray,
+  scratch: Uint8ClampedArray,
+  source: Readonly<BitmapRegion>,
+  options: Readonly<BitmapDropShadowOptions> = {},
+): void {
+  tintBitmapAlphaMask(out, source, options.color ?? 0x000000ff, options.intensity ?? 1);
+  applyBlurPasses(out, scratch, source.width, source.height, options);
+}
+
+/**
+ * Produces the blurred glow mask for a glow effect, writing into `out`.
+ * The result is a tinted, blurred alpha mask derived from `source`.
+ *
+ * To complete the effect, composite `out` onto the destination, then
+ * apply source compositing:
+ *
+ *   compositeBitmapPixels(destRegion, out);   // glow
+ *   compositeBitmapRegion(destRegion, source); // sourceMode 'draw'
+ *   // sourceMode 'hide': omit source; sourceMode 'knockout': destination-out source alpha.
+ *
+ * `scratch` must be at least `source.width * source.height * 4` bytes.
+ * Its contents are undefined after the call.
+ *
+ * Safe to pass `source.bitmap.data` as `out` when the region covers the
+ * full bitmap.
+ */
+export function glowBitmap(
+  out: Uint8ClampedArray,
+  scratch: Uint8ClampedArray,
+  source: Readonly<BitmapRegion>,
+  options: Readonly<BitmapGlowOptions> = {},
+): void {
+  tintBitmapAlphaMask(out, source, options.color ?? 0xff0000ff, options.intensity ?? 1);
+  applyBlurPasses(out, scratch, source.width, source.height, options);
+}
+
+/**
+ * Produces the inner glow mask for a glow that hugs the inside of the source's
+ * alpha boundary, writing into `out`. The inverted source alpha is blurred so
+ * that the "outside" bleeds inward, then clipped by the original source alpha so
+ * the effect stays within the shape, then tinted.
+ *
+ * To complete the effect, composite `out` over the original source:
+ *
+ *   compositeBitmapRegion(destRegion, source);
+ *   compositeBitmapPixels(destRegion, out);   // glow on top, inside the shape
+ *
+ * `scratch` must be at least `source.width * source.height * 4` bytes; its
+ * contents are undefined after the call.
+ *
+ * `out` must NOT alias `source.bitmap.data`: the original source alpha is read
+ * again after blurring, so overwriting the source destroys the clip mask.
+ */
+export function innerGlowBitmap(
+  out: Uint8ClampedArray,
+  scratch: Uint8ClampedArray,
+  source: Readonly<BitmapRegion>,
+  options: Readonly<BitmapInnerGlowOptions> = {},
+): void {
+  // Inner glow hugs the boundary symmetrically, so no directional offset (0, 0).
+  applyInnerEffect(out, scratch, source, options.color ?? 0xff0000ff, options, 0, 0);
+}
+
+/**
+ * Produces the inner shadow mask for a shadow that hugs the inside of the
+ * source's alpha boundary, writing into `out`. Like `innerGlowBitmap` but with
+ * an opaque-black default color and a directional `offsetX`/`offsetY`: the
+ * inverted-alpha field is sampled shifted by the offset before blurring, so the
+ * shadow gathers toward one edge instead of ringing the boundary evenly.
+ *
+ * To complete the effect, composite `out` over the original source.
+ *
+ * `scratch` must be at least `source.width * source.height * 4` bytes; its
+ * contents are undefined after the call.
+ *
+ * `out` must NOT alias `source.bitmap.data` — the original source alpha is read
+ * again after blurring to clip the result.
+ */
+export function innerShadowBitmap(
+  out: Uint8ClampedArray,
+  scratch: Uint8ClampedArray,
+  source: Readonly<BitmapRegion>,
+  options: Readonly<BitmapInnerShadowOptions> = {},
+): void {
+  applyInnerEffect(
+    out,
+    scratch,
+    source,
+    options.color ?? 0x000000ff,
+    options,
+    options.offsetX ?? 0,
+    options.offsetY ?? 0,
+  );
+}
+
+function applyBlurPasses(
+  out: Uint8ClampedArray,
+  scratch: Uint8ClampedArray,
+  width: number,
+  height: number,
+  options: Readonly<BitmapShadowBlurOptions>,
+): void {
+  const radiusX = Math.max(0, Math.round(options.radiusX ?? 2));
+  const radiusY = Math.max(0, Math.round(options.radiusY ?? 2));
+  const passes = Math.max(1, Math.round(options.passes ?? 1));
+
+  let a = out;
+  let b = scratch;
+
+  for (let pass = 0; pass < passes; pass++) {
+    if (radiusX > 0) {
+      blurBitmapPixelsHorizontal(b, a, width, height, radiusX);
+      const t = a;
+      a = b;
+      b = t;
+    }
+    if (radiusY > 0) {
+      blurBitmapPixelsVertical(b, a, width, height, radiusY);
+      const t = a;
+      a = b;
+      b = t;
+    }
+  }
+
+  if (a !== out) {
+    out.set(a.subarray(0, width * height * 4));
+  }
+}
+
+function applyInnerEffect(
+  out: Uint8ClampedArray,
+  scratch: Uint8ClampedArray,
+  source: Readonly<BitmapRegion>,
+  color: number,
+  options: Readonly<BitmapShadowBlurOptions & { intensity?: number }>,
+  offsetX: number,
+  offsetY: number,
+): void {
+  const w = source.width;
+  const h = source.height;
+
+  // Step 1: write the inverted source alpha into out (rgb 0). High outside the
+  // shape, low inside — so the blur bleeds the exterior inward across the edge.
+  // The field is sampled shifted by (offsetX, offsetY): a nonzero offset pulls the
+  // exterior in from one side, so the blurred shadow gathers against the opposite
+  // edge (the inner-shadow direction). Zero offset rings the boundary evenly (glow).
+  for (let py = 0; py < h; py++) {
+    for (let px = 0; px < w; px++) {
+      const di = (py * w + px) * 4;
+      out[di] = 0;
+      out[di + 1] = 0;
+      out[di + 2] = 0;
+      out[di + 3] = 255 - readSourceAlpha(source, px - offsetX, py - offsetY);
+    }
+  }
+
+  // Step 2: blur the inverted-alpha field in place (ping-ponging through scratch).
+  applyBlurPasses(out, scratch, w, h, options);
+
+  // Step 3: tint, and clip by the original source alpha so the glow stays inside.
+  const cr = (color >>> 24) & 0xff;
+  const cg = (color >> 16) & 0xff;
+  const cb = (color >> 8) & 0xff;
+  const ca = (color & 0xff) / 255;
+  const scale = Math.max(0, options.intensity ?? 1) * ca;
+  for (let py = 0; py < h; py++) {
+    for (let px = 0; px < w; px++) {
+      const di = (py * w + px) * 4;
+      const blurred = out[di + 3];
+      const sourceAlpha = readSourceAlpha(source, px, py);
+      out[di] = cr;
+      out[di + 1] = cg;
+      out[di + 2] = cb;
+      out[di + 3] = Math.min(255, Math.round((blurred * sourceAlpha * scale) / 255));
+    }
+  }
+}
+
+function readSourceAlpha(source: Readonly<BitmapRegion>, px: number, py: number): number {
+  const sx = source.x + px;
+  const sy = source.y + py;
+  if (sx < 0 || sx >= source.bitmap.width || sy < 0 || sy >= source.bitmap.height) return 0;
+  return source.bitmap.data[(sy * source.bitmap.width + sx) * 4 + 3];
+}
+
+// Used internally by drop-shadow and glow effects.
+function tintBitmapAlphaMask(
+  out: Uint8ClampedArray,
+  source: Readonly<BitmapRegion>,
+  color: number,
+  intensity: number,
+): void {
+  const cr = (color >>> 24) & 0xff;
+  const cg = (color >> 16) & 0xff;
+  const cb = (color >> 8) & 0xff;
+  const ca = (color & 0xff) / 255;
+  const alphaScale = Math.max(0, intensity) * ca;
+  for (let py = 0; py < source.height; py++) {
+    const sourceY = source.y + py;
+    if (sourceY < 0 || sourceY >= source.bitmap.height) continue;
+    for (let px = 0; px < source.width; px++) {
+      const sourceX = source.x + px;
+      if (sourceX < 0 || sourceX >= source.bitmap.width) continue;
+      const si = (sourceY * source.bitmap.width + sourceX) * 4;
+      const di = (py * source.width + px) * 4;
+      out[di] = cr;
+      out[di + 1] = cg;
+      out[di + 2] = cb;
+      out[di + 3] = Math.min(255, Math.round(source.bitmap.data[si + 3] * alphaScale));
+    }
+  }
+}
