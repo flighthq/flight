@@ -1,7 +1,10 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
+import { availableParallelism } from 'os';
 import { resolve } from 'path';
-import { build } from 'vite';
+import { build, mergeConfig } from 'vite';
 import { gzipSync } from 'zlib';
+
+import { createBaseConfig } from './vite-base';
 
 export const RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu'] as const;
 export type Render = (typeof RENDERERS)[number];
@@ -76,37 +79,84 @@ export function writeBaseline(baselineFile: string, pendingBaseline: Record<stri
   writeFileSync(baselineFile, JSON.stringify(pendingBaseline, null, 2) + '\n');
 }
 
-export async function buildSample(root: string, render: Render): Promise<string> {
-  const prev = process.env.RENDER;
-  process.env.RENDER = render;
-
-  try {
-    const result = await build({
+export async function buildSample(root: string, render: Render, pruneSdkImports = false): Promise<string> {
+  const plugins = pruneSdkImports ? [(await import('./size-import-pruner')).createSizeImportPruner()] : [];
+  const result = await build(
+    mergeConfig(createBaseConfig('production', render), {
       root,
-      configFile: resolve(root, 'vite.config.ts'),
+      configFile: false,
+      plugins,
       build: {
-        write: true,
-        emptyOutDir: true,
-        outDir: resolve(root, 'dist'),
+        cssCodeSplit: false,
+        minify: 'terser',
+        modulePreload: false,
+        sourcemap: false,
+        target: 'esnext',
+        write: false,
+        rollupOptions: {
+          output: {
+            manualChunks: undefined,
+          },
+        },
+        terserOptions: {
+          compress: {
+            arrows: true,
+            drop_console: true,
+            drop_debugger: true,
+            inline: true,
+            passes: 3,
+            pure_getters: 'strict',
+            reduce_vars: true,
+            unsafe: true,
+            unsafe_arrows: true,
+          },
+          ecma: 2020,
+          format: {
+            comments: false,
+          },
+          mangle: {
+            properties: true,
+          },
+          module: true,
+          toplevel: true,
+        },
       },
       logLevel: 'silent',
-    });
+    }),
+  );
 
-    type BuildOutputFile = { fileName: string; code?: string };
-    const output = (result as unknown as { output?: BuildOutputFile[] }).output ?? [];
-    const jsFiles = output.filter((f) => f.fileName.endsWith('.js'));
-    if (jsFiles.length === 0) throw new Error(`No JS output found for ${root}`);
+  type BuildOutputFile = { fileName: string; code?: string };
+  const output = (result as unknown as { output?: BuildOutputFile[] }).output ?? [];
+  const jsFiles = output.filter((f) => f.fileName.endsWith('.js'));
+  if (jsFiles.length === 0) throw new Error(`No JS output found for ${root}`);
 
-    const mainChunk = jsFiles.find((f) => f.fileName.includes('main')) || jsFiles[0];
-    if (!mainChunk.code) throw new Error(`No code found in main chunk for ${root}`);
-    return mainChunk.code;
-  } finally {
-    if (prev === undefined) {
-      delete process.env.RENDER;
-    } else {
-      process.env.RENDER = prev;
-    }
-  }
+  const mainChunk = jsFiles.find((f) => f.fileName.includes('main')) || jsFiles[0];
+  if (!mainChunk.code) throw new Error(`No code found in main chunk for ${root}`);
+  return mainChunk.code;
+}
+
+export async function buildSamples(
+  cases: Readonly<SizeCase>[],
+  onBuilt?: (index: number, code: string) => void,
+): Promise<string[]> {
+  const codeByCase = new Array<string>(cases.length);
+  let nextIndex = 0;
+  const pruneSdkImports = cases.length >= MIN_PRUNED_BUILD_COUNT;
+  const workerCount = Math.min(cases.length, Math.max(1, Math.min(availableParallelism(), MAX_PARALLEL_BUILDS)));
+
+  await Promise.all(
+    Array.from({ length: workerCount }, async () => {
+      while (nextIndex < cases.length) {
+        const index = nextIndex++;
+        const sizeCase = cases[index];
+        const code = await buildSample(sizeCase.root, sizeCase.render, pruneSdkImports);
+        codeByCase[index] = code;
+        onBuilt?.(index, code);
+      }
+    }),
+  );
+
+  return codeByCase;
 }
 
 export function getGzipSize(code: string): number {
@@ -148,10 +198,10 @@ export async function runSizeChecks({
   const baseline = readBaseline(baselineFile);
   const pendingBaseline = { ...baseline };
 
-  const results: SizeResult[] = [];
-
-  for (const { name, render, root: exampleRoot } of cases) {
-    const code = await buildSample(exampleRoot, render);
+  const results = new Array<SizeResult>(cases.length);
+  let nextResultIndex = 0;
+  await buildSamples(cases, (index, code) => {
+    const { name, render } = cases[index];
     const gzipSize = getGzipSize(code);
     const key = `${name}:${render}`;
     const baselineSize = baseline[key] ?? null;
@@ -171,9 +221,16 @@ export async function runSizeChecks({
       threshold,
       key,
     };
-    results.push(result);
-    onResult?.(result);
-  }
+    results[index] = result;
+    while (results[nextResultIndex]) {
+      onResult?.(results[nextResultIndex]);
+      nextResultIndex++;
+    }
+  });
 
   return { results, pendingBaseline, baselineFile };
 }
+
+const MAX_PARALLEL_BUILDS = 2;
+// Building only one or two filtered cases is faster than initializing the SDK export map.
+const MIN_PRUNED_BUILD_COUNT = 3;

@@ -5,7 +5,7 @@ import { afterAll, describe, expect, test } from 'vitest';
 
 import type { SizeResult } from '../../scripts/size-runner';
 import {
-  buildSample,
+  buildSamples,
   collectSizeCases,
   formatSizeResult,
   getGzipSize,
@@ -28,7 +28,6 @@ const sizeRenderFilter = parseFilter(process.env.SIZE_RENDER_FILTER);
 const testCases = collectSizeCases(examplesDir, sizeExampleFilter, sizeRenderFilter);
 
 const results: SizeResult[] = [];
-let lastPrintedExample = '';
 
 const exampleNames = [...new Set(testCases.map((tc) => tc.name))];
 const exampleBgColors = [pc.bgBlue, pc.bgMagenta, pc.bgCyan, pc.bgGreen];
@@ -90,30 +89,28 @@ describe('bundle size checks', () => {
 
   afterEach(() => {
     if (results.length === 0 || sizeReport === 'json' || sizeOutputPath) return;
-    const last = results[results.length - 1];
-    if (last.name === lastPrintedExample) return;
-    const expected = testCases.filter((tc) => tc.name === last.name).length;
-    const completed = results.filter((r) => r.name === last.name).length;
-    if (completed === expected) {
-      printGroup(last.name);
-      lastPrintedExample = last.name;
-    }
+    for (const exampleName of exampleNames) printGroup(exampleName);
   });
 
-  test.each(testCases)('$name ($render)', async ({ name, render }) => {
-    const root = resolve(examplesDir, name);
-    const code = await buildSample(root, render);
-    const gzipSize = getGzipSize(code);
-    const key = `${name}:${render}`;
-    const baselineSize = baseline[key] ?? null;
-    const { gzipKB, baselineKB, baselineKBStr, delta, passed, threshold } = formatSizeResult(gzipSize, baselineSize);
+  test('build selected samples', async () => {
+    const codeByCase = await buildSamples(testCases);
 
-    pendingBaseline[key] = gzipSize;
-    results.push({ name, render, gzipSize, gzipKB, baselineKB, baselineKBStr, delta, passed, threshold, key });
+    for (const [index, { name, render }] of testCases.entries()) {
+      const code = codeByCase[index];
+      const gzipSize = getGzipSize(code);
+      const key = `${name}:${render}`;
+      const baselineSize = baseline[key] ?? null;
+      const { gzipKB, baselineKB, baselineKBStr, delta, passed, threshold } = formatSizeResult(gzipSize, baselineSize);
 
-    if (!updateBaseline && threshold != null) {
-      const thresholdKB = (threshold / 1024).toFixed(2);
-      expect(gzipSize, `${name} (${render}) exceeded limit (${gzipKB} KB > ${thresholdKB} KB)`).toBeLessThan(threshold);
+      pendingBaseline[key] = gzipSize;
+      results.push({ name, render, gzipSize, gzipKB, baselineKB, baselineKBStr, delta, passed, threshold, key });
+
+      if (!updateBaseline && threshold != null) {
+        const thresholdKB = (threshold / 1024).toFixed(2);
+        expect
+          .soft(gzipSize, `${name} (${render}) exceeded limit (${gzipKB} KB > ${thresholdKB} KB)`)
+          .toBeLessThan(threshold);
+      }
     }
   });
 
