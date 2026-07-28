@@ -4,7 +4,12 @@ import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createScene3D } from '@flighthq/scene3d/contract';
 import { connectSignal, createSignal } from '@flighthq/signals/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { ImageResource, ImageResourceReference, Scene3DResourceLoadProgress } from '@flighthq/types/contract';
+import type {
+  ImageResource,
+  ImageResourceReference,
+  Scene3DResourceLoadProgress,
+  Texture,
+} from '@flighthq/types/contract';
 import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -12,9 +17,10 @@ import { loadScene3DResources, waitForScene3DResourceResolver } from './resolveS
 import { createBuiltInScene3DResourceResolver, disposeScene3DResourceResolver } from './sceneResourceResolver';
 
 const fakeImage = { height: 1, width: 1 } as unknown as ImageResource;
+const testResources: ImageResourceReference[] = [];
 
 function externalRef(): ImageResourceReference {
-  return {
+  const ref: ImageResourceReference = {
     basePath: null,
     failure: null,
     kind: ImageResourceReferenceKind.External,
@@ -22,6 +28,16 @@ function externalRef(): ImageResourceReference {
     state: ResourceResolutionState.Unresolved,
     uri: 'leaf.png',
   };
+  testResources.push(ref);
+  return ref;
+}
+
+function configureResources(scene: ReturnType<typeof createScene3D>): void {
+  scene.resources = testResources.slice();
+}
+
+function resourceOf(texture: Texture): ImageResourceReference | undefined {
+  return testResources.find((ref) => ref.textures?.includes(texture) === true);
 }
 
 describe('loadScene3DResources', () => {
@@ -30,22 +46,24 @@ describe('loadScene3DResources', () => {
     const a = createTexture({ resource: externalRef() });
     const b = createTexture({ resource: externalRef() });
     const scene = createScene3D();
+    configureResources(scene);
     addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: a })]));
     addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: b })]));
     const resolver = createBuiltInScene3DResourceResolver({ fetch });
 
-    await loadScene3DResources(scene.root, resolver);
+    await loadScene3DResources(scene, resolver);
 
     expect(a.storage.image).toBe(fakeImage);
     expect(b.storage.image).toBe(fakeImage);
-    expect(a.resource?.state).toBe(ResourceResolutionState.Resolved);
+    expect(resourceOf(a)?.state).toBe(ResourceResolutionState.Resolved);
     disposeScene3DResourceResolver(resolver);
   });
 
   it('resolves immediately when there is nothing pending', async () => {
     const scene = createScene3D();
+    configureResources(scene);
     const resolver = createBuiltInScene3DResourceResolver({ fetch: async () => fakeImage });
-    await expect(loadScene3DResources(scene.root, resolver)).resolves.toBeUndefined();
+    await expect(loadScene3DResources(scene, resolver)).resolves.toBeUndefined();
     disposeScene3DResourceResolver(resolver);
   });
 
@@ -53,6 +71,7 @@ describe('loadScene3DResources', () => {
     const a = createTexture({ resource: externalRef() });
     const b = createTexture({ resource: externalRef() });
     const scene = createScene3D();
+    configureResources(scene);
     addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: a })]));
     addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: b })]));
     const resolver = createBuiltInScene3DResourceResolver({ fetch: async () => fakeImage });
@@ -60,7 +79,7 @@ describe('loadScene3DResources', () => {
     const progress = createSignal<(event: Readonly<Scene3DResourceLoadProgress>) => void>();
     connectSignal(progress, (event) => events.push({ ...event }));
 
-    await loadScene3DResources(scene.root, resolver, { progress });
+    await loadScene3DResources(scene, resolver, { progress });
 
     expect(events[0]).toEqual({ loaded: 0, total: 2 });
     expect(events.at(-1)).toEqual({ loaded: 2, total: 2 });
@@ -70,16 +89,17 @@ describe('loadScene3DResources', () => {
   it('counts failed references as terminal without hiding their failure state', async () => {
     const texture = createTexture({ resource: externalRef() });
     const scene = createScene3D();
+    configureResources(scene);
     addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: texture })]));
     const resolver = createBuiltInScene3DResourceResolver({ fetch: async () => null });
     const events: Scene3DResourceLoadProgress[] = [];
     const progress = createSignal<(event: Readonly<Scene3DResourceLoadProgress>) => void>();
     connectSignal(progress, (event) => events.push({ ...event }));
 
-    await loadScene3DResources(scene.root, resolver, { progress });
+    await loadScene3DResources(scene, resolver, { progress });
 
     expect(texture.storage.image).toBeNull();
-    expect(texture.resource?.state).toBe(ResourceResolutionState.Failed);
+    expect(resourceOf(texture)?.state).toBe(ResourceResolutionState.Failed);
     expect(events).toEqual([
       { loaded: 0, total: 1 },
       { loaded: 1, total: 1 },
@@ -91,6 +111,7 @@ describe('loadScene3DResources', () => {
     const selected = createTexture({ resource: externalRef() });
     const deferred = createTexture({ resource: externalRef() });
     const scene = createScene3D();
+    configureResources(scene);
     addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: selected })]));
     addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: deferred })]));
     const fetch = vi.fn(async () => fakeImage);
@@ -99,11 +120,11 @@ describe('loadScene3DResources', () => {
     const progress = createSignal<(event: Readonly<Scene3DResourceLoadProgress>) => void>();
     connectSignal(progress, (event) => events.push({ ...event }));
 
-    await loadScene3DResources(scene.root, resolver, { progress, select: (texture) => texture === selected });
+    await loadScene3DResources(scene, resolver, { progress, select: (texture) => texture === selected });
 
     expect(selected.storage.image).toBe(fakeImage);
     expect(deferred.storage.image).toBeNull();
-    expect(deferred.resource?.state).toBe(ResourceResolutionState.Unresolved);
+    expect(resourceOf(deferred)?.state).toBe(ResourceResolutionState.Unresolved);
     expect(fetch).toHaveBeenCalledOnce();
     expect(events.at(-1)).toEqual({ loaded: 1, total: 1 });
     disposeScene3DResourceResolver(resolver);

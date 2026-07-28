@@ -40,6 +40,7 @@ export function buildEmbeddedImageResourceReference(
     kind: ImageResourceReferenceKind.Embedded,
     mimeType,
     state: ResourceResolutionState.Unresolved,
+    textures: [],
   };
 }
 
@@ -53,6 +54,7 @@ export function buildExternalImageResourceReference(
     kind: ImageResourceReferenceKind.External,
     mimeType: null,
     state: ResourceResolutionState.Unresolved,
+    textures: [],
     uri,
   };
 }

@@ -19,6 +19,7 @@ import { BlinnPhongMaterialKind } from '@flighthq/types/contract';
 
 import { createScene3DFromMd2, parseMd2 } from './md2Parse';
 import { MD2_ANORMS } from './md2Schema';
+import { getTestTextureResource } from './scene3DFormatsTestHelper';
 
 // Builds a minimal valid MD2 binary buffer with one frame and the given triangles, vertices, and
 // texcoords. All offsets are computed from the data sizes.
@@ -270,13 +271,16 @@ describe('createScene3DFromMd2', () => {
       triangles: [{ texIndices: [0, 1, 2], vertIndices: [0, 1, 2] }],
     });
 
-    const mesh = getNodeChildren(createScene3DFromMd2(md2).root)[0] as Mesh;
+    const scene = createScene3DFromMd2(md2);
+    const mesh = getNodeChildren(scene.root)[0] as Mesh;
     expect(mesh.materials).toHaveLength(1);
     const material = mesh.materials[0] as BlinnPhongMaterial;
     expect(material.kind).toBe(BlinnPhongMaterialKind);
     expect(material.name).toBe('players/hero/skin.pcx'); // MD2 skin path preserved as the authored identity
     // The skin path is referenced, not decoded: an Unresolved External ref, image left null.
-    expect((material.diffuseMap!.resource as ExternalImageResourceReference).uri).toBe('players/hero/skin.pcx');
+    expect((getTestTextureResource(scene.resources, material.diffuseMap!) as ExternalImageResourceReference).uri).toBe(
+      'players/hero/skin.pcx',
+    );
     expect(material.diffuseMap!.storage.image).toBeNull();
   });
 
@@ -965,7 +969,9 @@ describe('parseMd2', () => {
     expect(document.nodes[0].mesh).toBe(0);
     expect(document.scenes[0].rootNodes).toEqual([0]);
     expect(document.resources).toHaveLength(1);
-    expect(document.resources[0]).toBe((document.materials[0] as BlinnPhongMaterial).diffuseMap!.resource);
+    expect(getTestTextureResource(document.resources, (document.materials[0] as BlinnPhongMaterial).diffuseMap!)).toBe(
+      document.resources[0],
+    );
   });
 
   it('emits every skin as a material and binds the first to the mesh', () => {

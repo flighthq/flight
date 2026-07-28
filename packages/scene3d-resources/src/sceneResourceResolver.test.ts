@@ -7,7 +7,11 @@ import {
   UnlitMaterialKind,
 } from '@flighthq/types/contract';
 import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
-import type { Scene3DResourceInFlight, Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
+import type {
+  ImageResourceReference,
+  Scene3DResourceInFlight,
+  Scene3DResourceResolverWithRuntime,
+} from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createScene3DMaterialTextureRegistry } from './sceneMaterialTextureRegistry';
@@ -56,22 +60,21 @@ describe('disposeScene3DResourceResolver', () => {
   it('aborts every in-flight controller and clears the map', () => {
     const resolver = createScene3DResourceResolver();
     const controller = new AbortController();
-    const texture = createTexture({
-      resource: {
-        bytes: new Uint8Array(0),
-        failure: null,
-        kind: ImageResourceReferenceKind.Embedded,
-        mimeType: null,
-        state: ResourceResolutionState.Loading,
-      },
-    });
+    const ref = {
+      bytes: new Uint8Array(0),
+      failure: null,
+      kind: ImageResourceReferenceKind.Embedded,
+      mimeType: null,
+      state: ResourceResolutionState.Loading,
+    } as ImageResourceReference;
+    const texture = createTexture({ resource: ref });
     const entry: Scene3DResourceInFlight = {
       controller,
       promise: Promise.resolve(),
       subscribers: new Set([texture]),
     };
     const runtime = (resolver as Scene3DResourceResolverWithRuntime)[Scene3DResourceResolverRuntimeKey];
-    runtime.inFlight.set(texture.resource!, entry);
+    runtime.inFlight.set(ref, entry);
 
     disposeScene3DResourceResolver(resolver);
     expect(controller.signal.aborted).toBe(true);

@@ -119,6 +119,7 @@ export * from './ConvolutionEffect';
 export * from './CrtEffect';
 export * from './CreateCubeTextureOptions';
 export * from './CreateExternalTextureOptions';
+export * from './CreateTextureOptions';
 export * from './CreateRenderTextureOptions';
 export * from './CurlNoiseForce';
 export * from './Cursor';

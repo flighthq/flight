@@ -10,6 +10,7 @@ import type {
   Scene3DRenderProxy,
   Texture,
 } from '@flighthq/types/contract';
+import { ImageTextureBackingKind } from '@flighthq/types/contract';
 
 import {
   buildWgpuPbrStandardDefineKey,
@@ -73,7 +74,9 @@ describe('buildWgpuPbrStandardDefineKey', () => {
     const material = createStandardPbrMaterial();
     // A texture is "present" only when it carries a GPU-uploadable image source; a structural stub of
     // exactly that shape is enough to exercise the flag derivation without a real GPU texture upload.
-    const sourced = { storage: { dimension: '2d', image: { source: {} } } } as unknown as Texture;
+    const sourced = {
+      storage: { dimension: '2d', image: { kind: ImageTextureBackingKind, source: {} } },
+    } as unknown as Texture;
     material.baseColorMap = sourced;
     material.metallicRoughnessMap = sourced;
     const key = buildWgpuPbrStandardDefineKey(material, material);

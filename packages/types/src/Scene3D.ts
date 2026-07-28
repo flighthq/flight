@@ -1,5 +1,6 @@
 import type { AnimationClip } from './AnimationClip';
 import type { Entity, EntityRuntime } from './Entity';
+import type { ImageResourceReference } from './ImageResourceReference';
 import type { Node3D } from './Node3D';
 import type { Scene3DMetadata } from './Scene3DMetadata';
 
@@ -18,6 +19,7 @@ import type { Scene3DMetadata } from './Scene3DMetadata';
 export interface Scene3D extends Entity {
   animations: Record<string, AnimationClip>;
   metadata: Scene3DMetadata | null;
+  resources: ImageResourceReference[];
   root: Node3D;
 }
 

@@ -2,7 +2,7 @@ import { emitSignal } from '@flighthq/signals/contract';
 import type {
   ImageResourceReference,
   LoadScene3DResourcesOptions,
-  Node3D,
+  Scene3D,
   Scene3DResourceResolver,
   Texture,
 } from '@flighthq/types/contract';
@@ -10,7 +10,7 @@ import { ResourceResolutionState } from '@flighthq/types/contract';
 import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
 import type { Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
 
-import { getScene3DResourceTextures } from './getScene3DResourceTextures';
+import { getScene3DResourceTextures, getScene3DTextureResourceReference } from './getScene3DResourceTextures';
 import { resolveScene3DResources } from './resolveScene3DResources';
 
 // Eager/deterministic asynchronous load: runs one resolveScene3DResources pass, then awaits every in-flight
@@ -18,7 +18,7 @@ import { resolveScene3DResources } from './resolveScene3DResources';
 // deterministic sibling of the fire-and-forget resolveScene3DResources — for loads, tests, and capture
 // that need the finished scene rather than progressive availability.
 export async function loadScene3DResources(
-  scene: Readonly<Node3D>,
+  scene: Readonly<Scene3D>,
   resolver: Scene3DResourceResolver,
   options?: Readonly<LoadScene3DResourcesOptions>,
 ): Promise<void> {
@@ -57,7 +57,7 @@ export async function waitForScene3DResourceResolver(resolver: Readonly<Scene3DR
 }
 
 function getSelectedScene3DResourceReferences(
-  scene: Readonly<Node3D>,
+  scene: Readonly<Scene3D>,
   resolver: Readonly<Scene3DResourceResolver>,
   options?: Readonly<LoadScene3DResourcesOptions>,
 ): Set<ImageResourceReference> {
@@ -65,7 +65,7 @@ function getSelectedScene3DResourceReferences(
   const refs = new Set<ImageResourceReference>();
   getScene3DResourceTextures(scene, resolver.registry, textures);
   for (const texture of textures) {
-    const ref = texture.resource;
+    const ref = getScene3DTextureResourceReference(scene, texture);
     if (ref !== null && ref !== undefined && (options?.select === undefined || options.select(texture, ref))) {
       refs.add(ref);
     }

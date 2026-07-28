@@ -18,6 +18,7 @@ import { BlinnPhongMaterialKind } from '@flighthq/types/contract';
 
 import { parseObjMaterialLibrary } from './mtlParse';
 import { createScene3DFromObj, parseObj } from './objParse';
+import { getTestTextureResource } from './scene3DFormatsTestHelper';
 
 // Asserts EXACTLY ONE crumb of `kind` was recorded (guards the count) and returns it so a test can lock
 // the full contract — severity, true origin, and detail — for that emitted diagnostic.
@@ -389,17 +390,23 @@ describe('createScene3DFromObj', () => {
     const lib = parseObjMaterialLibrary(mtl);
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'usemtl Shiny', 'f 1 2 3'].join('\n');
 
-    const material = (getNodeChildren(createScene3DFromObj(obj, lib).root)[0] as Mesh)
-      .materials[0] as BlinnPhongMaterial;
+    const scene = createScene3DFromObj(obj, lib);
+    const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as BlinnPhongMaterial;
     expect(material.kind).toBe(BlinnPhongMaterialKind);
     expect(material.diffuse).toBe(0xcc6633_80 >>> 0); // Kd 0.8,0.4,0.2 with d=0.5 alpha
     expect(material.specular).toBe(0xffffffff); // Ks 1,1,1 opaque
     expect(material.shininess).toBe(64); // Ns
     expect(material.alphaMode).toBe('blend'); // d < 1
     // Texture maps are referenced by filename, not decoded.
-    expect((material.diffuseMap!.resource as ExternalImageResourceReference).uri).toBe('wood.png');
-    expect((material.specularMap!.resource as ExternalImageResourceReference).uri).toBe('spec.png');
-    expect((material.normalMap!.resource as ExternalImageResourceReference).uri).toBe('normal.png');
+    expect((getTestTextureResource(scene.resources, material.diffuseMap!) as ExternalImageResourceReference).uri).toBe(
+      'wood.png',
+    );
+    expect((getTestTextureResource(scene.resources, material.specularMap!) as ExternalImageResourceReference).uri).toBe(
+      'spec.png',
+    );
+    expect((getTestTextureResource(scene.resources, material.normalMap!) as ExternalImageResourceReference).uri).toBe(
+      'normal.png',
+    );
     expect(material.diffuseMap!.storage.image).toBeNull();
   });
 
@@ -677,8 +684,8 @@ describe('parseObj', () => {
     expect(document.resources).toHaveLength(1);
     expect((document.resources[0] as ExternalImageResourceReference).uri).toBe('shared.png');
     expect(first.diffuseMap).not.toBe(second.diffuseMap);
-    expect(first.diffuseMap!.resource).toBe(document.resources[0]);
-    expect(second.diffuseMap!.resource).toBe(document.resources[0]);
+    expect(getTestTextureResource(document.resources, first.diffuseMap!)).toBe(document.resources[0]);
+    expect(getTestTextureResource(document.resources, second.diffuseMap!)).toBe(document.resources[0]);
   });
 
   it('uses a -1 material index for an unmaterialed subset', () => {

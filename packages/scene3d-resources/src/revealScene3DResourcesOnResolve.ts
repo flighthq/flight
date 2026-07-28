@@ -6,6 +6,7 @@ import { createTween } from '@flighthq/tween/contract';
 import type {
   Material,
   Node3D,
+  Scene3D,
   Scene3DResourceResolver,
   Scene3DResourceRevealOptions,
   Texture,
@@ -13,6 +14,7 @@ import type {
 } from '@flighthq/types/contract';
 import { ResourceResolutionState } from '@flighthq/types/contract';
 
+import { getScene3DTextureResourceReference } from './getScene3DResourceTextures';
 import { getScene3DMaterialTextures } from './sceneMaterialTextureRegistry';
 import { enableScene3DResourceSignals } from './sceneResourceSignals';
 
@@ -30,7 +32,7 @@ import { enableScene3DResourceSignals } from './sceneResourceSignals';
 // fades in when the first of them resolves.
 export function revealScene3DResourcesOnResolve(
   resolver: Scene3DResourceResolver,
-  scene: Readonly<Node3D>,
+  scene: Readonly<Scene3D>,
   tweenManager: TweenManager,
   options?: Readonly<Scene3DResourceRevealOptions>,
 ): () => void {
@@ -76,7 +78,7 @@ interface Scene3DResourceRevealOwner {
 // previously failed references are settled before this recipe begins, so they must not hide an owner
 // waiting for an event that will never arrive. Repeated texture slots on one owner count only once.
 function collectPendingTextureOwners(
-  scene: Readonly<Node3D>,
+  scene: Readonly<Scene3D>,
   resolver: Readonly<Scene3DResourceResolver>,
   ownersByTexture: Map<Texture, Scene3DResourceRevealOwner[]>,
   owners: Scene3DResourceRevealOwner[],
@@ -94,7 +96,7 @@ function collectPendingTextureOwners(
       getScene3DMaterialTextures(resolver.registry, material, slots);
       for (let j = 0; j < slots.length; j++) {
         const texture = slots[j];
-        const ref = texture.resource;
+        const ref = getScene3DTextureResourceReference(scene, texture);
         if (ref == null || hasTextureBacking(texture) || ref.state === ResourceResolutionState.Failed) continue;
         let ownerState = ownersByNode.get(owner);
         if (ownerState === undefined) {
@@ -113,6 +115,6 @@ function collectPendingTextureOwners(
       }
     }
   };
-  visit(scene);
-  forEachNodeDescendant(scene, (node) => visit(node as Readonly<Node3D>));
+  visit(scene.root);
+  forEachNodeDescendant(scene.root, (node) => visit(node as Readonly<Node3D>));
 }

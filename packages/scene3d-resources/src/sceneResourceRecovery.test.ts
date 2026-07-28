@@ -71,15 +71,16 @@ describe('retryFailedScene3DResources', () => {
     const a = createTexture({ resource: ref });
     const b = createTexture({ resource: ref });
     const scene = createScene3D();
+    scene.resources.push(ref);
     addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: a })]));
     addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: b })]));
     const resolver = createBuiltInScene3DResourceResolver({ fetch });
 
-    await loadScene3DResources(scene.root, resolver);
+    await loadScene3DResources(scene, resolver);
     expect(ref.state).toBe(ResourceResolutionState.Failed);
     expect(ref.failure?.kind).toBe(ImageResourceFailureKind.Unavailable);
 
-    expect(retryFailedScene3DResources(scene.root, resolver)).toBe(1);
+    expect(retryFailedScene3DResources(scene, resolver)).toBe(1);
     await waitForScene3DResourceResolver(resolver);
     expect(fetch).toHaveBeenCalledTimes(2);
     expect(ref.failure).toBeNull();
@@ -93,9 +94,10 @@ describe('retryFailedScene3DResources', () => {
     ref.failure = { kind: ImageResourceFailureKind.Unavailable, message: 'missing', name: null };
     const texture = createTexture({ resource: ref });
     const scene = createScene3D();
+    scene.resources.push(ref);
     addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: texture })]));
     const resolver = createBuiltInScene3DResourceResolver();
-    expect(retryFailedScene3DResources(scene.root, resolver, { select: () => false })).toBe(0);
+    expect(retryFailedScene3DResources(scene, resolver, { select: () => false })).toBe(0);
     expect(ref.state).toBe(ResourceResolutionState.Failed);
     disposeScene3DResourceResolver(resolver);
   });

@@ -42,6 +42,7 @@ export function createScene3DFromDocument(document: Readonly<Scene3DDocument>, s
   }
   attachDocumentAnimations(document, nodes, scene);
   scene.metadata = document.metadata;
+  scene.resources = document.resources.slice();
   return scene;
 }
 
@@ -60,6 +61,7 @@ export function createScene3DsFromDocument(document: Readonly<Scene3DDocument>):
       if (node !== undefined) addNodeChild(scene.root, node);
     }
     scenes.push(scene);
+    scene.resources = document.resources.slice();
   }
   if (scenes.length > 0) {
     attachDocumentAnimations(document, nodes, scenes[0]);

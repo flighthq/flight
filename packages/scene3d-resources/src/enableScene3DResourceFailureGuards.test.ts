@@ -63,9 +63,10 @@ describe('enableScene3DResourceFailureGuards', () => {
     addLogSink(sink.sink);
     const resolver = createScene3DResourceResolver();
     const signals = enableScene3DResourceSignals(resolver);
-    const texture = createTexture({ resource: failedRef() });
+    const ref = failedRef();
+    const texture = createTexture({ resource: ref });
     const dispose = enableScene3DResourceFailureGuards(resolver);
-    const event = { ref: texture.resource!, texture };
+    const event = { ref, texture };
 
     expect(() => emitSignal(signals.onResourceFailed, event)).not.toThrow();
     emitSignal(signals.onResourceFailed, event);
@@ -79,10 +80,10 @@ describe('enableScene3DResourceFailureGuards', () => {
       message:
         'resolveScene3DResources: image resource resolution failed — call retryFailedScene3DResources to request it again',
     });
-    expect(texture.resource?.state).toBe(ResourceResolutionState.Failed);
+    expect(ref.state).toBe(ResourceResolutionState.Failed);
 
     emitSignal(signals.onResourceResolved, event);
-    texture.resource!.failure = {
+    ref.failure = {
       kind: ImageResourceFailureKind.Unavailable,
       message: 'still unavailable',
       name: null,
@@ -102,11 +103,12 @@ describe('enableScene3DResourceFailureGuards', () => {
     addLogSink(sink.sink);
     const resolver = createScene3DResourceResolver();
     const signals = enableScene3DResourceSignals(resolver);
-    const texture = createTexture({ resource: failedRef() });
+    const ref = failedRef();
+    const texture = createTexture({ resource: ref });
     const firstDispose = enableScene3DResourceFailureGuards(resolver);
     const secondDispose = enableScene3DResourceFailureGuards(resolver);
 
-    emitSignal(signals.onResourceFailed, { ref: texture.resource!, texture });
+    emitSignal(signals.onResourceFailed, { ref, texture });
     expect(getMemoryLogSinkEntries(sink)).toHaveLength(1);
     secondDispose();
     expect(areScene3DResourceFailureGuardsEnabled(resolver)).toBe(false);
