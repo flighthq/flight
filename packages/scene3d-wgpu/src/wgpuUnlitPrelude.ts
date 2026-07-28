@@ -2,7 +2,6 @@ import { bindWgpuVideoTexture } from '@flighthq/render-wgpu/contract';
 import type {
   LinearColor,
   Texture,
-  VideoTexture,
   WgpuMaterialBinding,
   WgpuRenderState,
   WgpuUnlitDefineKey,
@@ -41,8 +40,8 @@ export function bindWgpuUnlitSurface(
   return binding.bindGroup;
 }
 
-// Dynamic-video sibling of bindWgpuUnlitSurface. The VideoTexture uploader preserves one GPU texture
-// per stream, copies only when frameId advances, and replaces the material bind group when a resolution
+// Dynamic-video sibling of bindWgpuUnlitSurface. The video-backed Texture uploader preserves one GPU texture
+// per stream, copies only when its backing version advances, and replaces the material bind group when a resolution
 // change yields a new view. It shares the still-image shader/layout and UV-transform path.
 export function bindWgpuUnlitVideoSurface(
   state: WgpuRenderState,
@@ -51,7 +50,7 @@ export function bindWgpuUnlitVideoSurface(
   color: Readonly<LinearColor>,
   intensity: number,
   alphaCutoff: number,
-  colorMap: Readonly<VideoTexture>,
+  colorMap: Readonly<Texture>,
 ): GPUBindGroup {
   const entry = bindWgpuVideoTexture(state, colorMap);
   const sampler = getWgpuMaterialSampler(state, colorMap);

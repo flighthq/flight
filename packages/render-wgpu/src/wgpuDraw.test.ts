@@ -1,6 +1,6 @@
 import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { createBitmap } from '@flighthq/scene2d/contract';
-import type { ImageResource, VideoTexture } from '@flighthq/types/contract';
+import type { ImageResource, Texture } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
 import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
@@ -129,9 +129,8 @@ describe('bindWgpuTexture', () => {
 });
 
 describe('bindWgpuVideoTexture', () => {
-  function videoTexture(frameId: number, readyState = 4, width = 320, height = 240): VideoTexture {
+  function videoTexture(version: number, readyState = 4, width = 320, height = 240): Texture {
     return {
-      frameId,
       sampler: {
         anisotropy: 1,
         magFilter: 'linear',
@@ -140,11 +139,18 @@ describe('bindWgpuVideoTexture', () => {
         wrapU: 'clamp-to-edge',
         wrapV: 'clamp-to-edge',
       },
-      source: { element: { readyState, videoHeight: height, videoWidth: width } as HTMLVideoElement },
-    } as unknown as VideoTexture;
+      storage: {
+        dimension: '2d',
+        image: {
+          source: { readyState, videoHeight: height, videoWidth: width } as HTMLVideoElement,
+          version,
+        },
+      },
+      version,
+    } as unknown as Texture;
   }
 
-  it('uploads once per frameId and caches the texture by VideoTexture identity', async () => {
+  it('uploads once per backing version and caches the texture by backing identity', async () => {
     const state = await createWgpuRenderStateForTest();
     const copy = vi.spyOn(state.device.queue, 'copyExternalImageToTexture');
     const video = videoTexture(1);
@@ -153,7 +159,7 @@ describe('bindWgpuVideoTexture', () => {
     expect(copy).toHaveBeenCalledTimes(1);
     expect(bindWgpuVideoTexture(state, video)).toBe(first);
     expect(copy).toHaveBeenCalledTimes(1);
-    video.frameId = 2;
+    video.storage.image!.version = 2;
     expect(bindWgpuVideoTexture(state, video)).toBe(first);
     expect(copy).toHaveBeenCalledTimes(2);
   });
@@ -162,7 +168,7 @@ describe('bindWgpuVideoTexture', () => {
     const state = await createWgpuRenderStateForTest();
     const video = videoTexture(1, 1, 0, 0);
     expect(bindWgpuVideoTexture(state, video)).toBeNull();
-    const element = video.source.element!;
+    const element = video.storage.image!.source as HTMLVideoElement;
     Object.assign(element, { readyState: 4, videoHeight: 120, videoWidth: 160 });
     const first = bindWgpuVideoTexture(state, video)!;
     const destroy = vi.spyOn(first.texture, 'destroy');

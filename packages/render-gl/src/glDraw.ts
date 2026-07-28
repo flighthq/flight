@@ -5,9 +5,9 @@ import type {
   GlRenderStateRuntime,
   ImageResource,
   SamplerLike,
+  TextureLike,
   TextureFilter,
   TextureWrap,
-  VideoTexture,
 } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
@@ -172,35 +172,35 @@ export function bindGlTexture(
   return texture;
 }
 
-// Binds the GL texture for a VideoTexture and re-uploads the backing element's current frame only when
-// its `frameId` has advanced past the one last uploaded — the dynamic, per-frame sibling of
+// Binds the GL texture for a video-backed Texture and re-uploads the backing element's current frame
+// only when its ImageResource `version` has advanced — the dynamic, per-frame sibling of
 // bindGlImageResourceTexture (settled ImageResource) and bindGlTexture (raw element). The GL texture is
-// cached by the VideoTexture entity in the runtime's videoTextureCache (lazily created), so it persists
-// across frames while the frameId dirty-gate keeps a paused or stalled stream from re-uploading. Applies
-// the VideoTexture's sampler every bind so a stream shared by two samplers follows the current draw.
-// Leaves the texture bound at the active unit for the caller to sample. Callers advance `frameId` via
-// advanceVideoTexture when the element reports a fresh decoded frame; this reads the current frame
+// cached by the ImageResource backing in the runtime's videoTextureCache (lazily created), so two
+// sampled Textures share one upload while their samplers remain draw-local.
+// Leaves the texture bound at the active unit for the caller to sample. Callers advance the backing
+// version via advanceVideoTexture when the element reports a fresh decoded frame; this reads the current frame
 // through uploadGlTextureElement's zero-copy element fast-path.
 export function bindGlVideoTexture(
   state: GlRenderState,
-  videoTexture: Readonly<VideoTexture>,
+  texture: Readonly<TextureLike>,
   sampler?: Readonly<SamplerLike> | null,
 ): WebGLTexture {
+  const image = texture.storage.image!;
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
   const cache = (runtime.videoTextureCache ??= new WeakMap());
-  let entry = cache.get(videoTexture);
+  let entry = cache.get(image);
   if (entry === undefined) {
-    entry = { texture: gl.createTexture()!, uploadedFrameId: -1 };
-    cache.set(videoTexture, entry);
+    entry = { texture: gl.createTexture()!, uploadedVersion: -1 };
+    cache.set(image, entry);
   }
   gl.bindTexture(gl.TEXTURE_2D, entry.texture);
   runtime.currentTexture = entry.texture;
   runtime.currentTextureStraightAlpha = false;
   // Straight-alpha element under premultiplied blend would blow out RGB; match the bitmap/element path.
   gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
-  entry.uploadedFrameId = uploadGlTextureVideoFrame(gl, videoTexture, entry.uploadedFrameId);
-  applyGlSamplerState(state, runtime, entry.texture, sampler ?? videoTexture.sampler ?? null);
+  entry.uploadedVersion = uploadGlTextureVideoFrame(gl, image, entry.uploadedVersion);
+  applyGlSamplerState(state, runtime, entry.texture, sampler ?? texture.sampler);
   return entry.texture;
 }
 

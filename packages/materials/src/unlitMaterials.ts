@@ -68,15 +68,13 @@ export function createToonMaterial(opts?: Readonly<Partial<ToonMaterial>>): Toon
   return material;
 }
 
-// Lighting-independent flat-color material. `baseColor` defaults to white; the still, render, and
-// video map slots default to null. The specialized slots remain separate so their backend paths are
-// independently discoverable and tree-shakeable.
+// Lighting-independent flat-color material. `baseColor` defaults to white; the universal sampled map
+// and the not-yet-folded render-target slot default to null.
 export function createUnlitMaterial(opts?: Readonly<Partial<UnlitMaterial>>): UnlitMaterial {
   const material = createSurfaceMaterial(UnlitMaterialKind, opts) as UnlitMaterial;
   material.baseColor = opts?.baseColor ?? 0xffffffff;
   material.baseColorMap = opts?.baseColorMap ?? null;
   material.baseColorRenderMap = opts?.baseColorRenderMap ?? null;
-  material.baseColorVideoMap = opts?.baseColorVideoMap ?? null;
   return material;
 }
 

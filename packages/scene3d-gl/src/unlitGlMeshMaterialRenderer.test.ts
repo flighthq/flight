@@ -2,7 +2,9 @@ import { createCamera3D } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import { createUnlitMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
-import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy, VideoTexture } from '@flighthq/types/contract';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { advanceVideoTexture, createVideoTexture } from '@flighthq/texture/contract';
+import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { UnlitMaterialKind } from '@flighthq/types/contract';
 
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
@@ -54,18 +56,13 @@ describe('unlitGlMeshMaterialRenderer', () => {
   it('binds a ready dynamic video map into the color-map slot', () => {
     const { state, gl } = makeGlScene3DState();
     const material = createUnlitMaterial();
-    material.baseColorVideoMap = {
-      frameId: 1,
-      flipX: false,
-      flipY: false,
-      sampler: null,
-      source: {
-        element: { readyState: 4, videoHeight: 120, videoWidth: 160 } as HTMLVideoElement,
-      },
-      uvOffset: { x: 0, y: 0 },
-      uvRotation: 0,
-      uvScale: { x: 1, y: 1 },
-    } as unknown as VideoTexture;
+    material.baseColorMap = createVideoTexture({
+      element: { readyState: 4, videoHeight: 120, videoWidth: 160 } as HTMLVideoElement,
+    });
+    material.baseColorMap.sampler.mipmaps = false;
+    advanceVideoTexture(material.baseColorMap);
+    registerUnlitGlMaterial(state);
+    getGlRenderStateRuntime(state).anisotropyExt = null;
     unlitGlMeshMaterialRenderer.bind(state, material, NO_LIGHTS, makeCamera());
     expect(gl.calls.some((c) => c.name === 'texImage2D')).toBe(true);
   });

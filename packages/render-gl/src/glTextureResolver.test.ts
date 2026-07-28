@@ -4,8 +4,10 @@ import { getGlRenderStateRuntime } from './glRenderState';
 import { createGlState } from './glTestHelper';
 import {
   glImageTextureBackingKind,
+  glVideoTextureBackingKind,
   registerGlImageTextureResolver,
   registerGlTextureResolver,
+  registerGlVideoTextureResolver,
   resolveGlTexture,
 } from './glTextureResolver';
 
@@ -48,6 +50,15 @@ describe('glImageTextureBackingKind', () => {
   it('matches only a bound 2D image storage', () => {
     expect(glImageTextureBackingKind(textureWithImage(imageResource()).storage)).toBe(true);
     expect(glImageTextureBackingKind(textureWithImage(null).storage)).toBe(false);
+  });
+});
+
+describe('glVideoTextureBackingKind', () => {
+  it('matches a host-video ImageResource without a public source-kind field', () => {
+    const video = imageResource();
+    video.source = { readyState: 4, videoHeight: 240, videoWidth: 320 } as HTMLVideoElement;
+    expect(glVideoTextureBackingKind(textureWithImage(video).storage)).toBe(true);
+    expect(glVideoTextureBackingKind(textureWithImage(imageResource()).storage)).toBe(false);
   });
 });
 
@@ -103,6 +114,26 @@ describe('registerGlTextureResolver', () => {
     registerGlTextureResolver(state, general, () => ({ kind: 'general' }) as unknown as WebGLTexture);
     registerGlTextureResolver(state, specific, () => ({ kind: 'specific' }) as unknown as WebGLTexture);
     expect(resolveGlTexture(state, textureWithImage(null))).toEqual({ kind: 'specific' });
+  });
+});
+
+describe('registerGlVideoTextureResolver', () => {
+  it('specializes the general image resolver and gates uploads by backing version', () => {
+    const { state, gl } = createGlState();
+    const video = imageResource();
+    video.source = { readyState: 4, videoHeight: 240, videoWidth: 320 } as HTMLVideoElement;
+    const texture = textureWithImage(video);
+    registerGlImageTextureResolver(state);
+    registerGlVideoTextureResolver(state);
+
+    const first = resolveGlTexture(state, texture);
+    const uploads = (gl.texImage2D as ReturnType<typeof vi.fn>).mock.calls.length;
+    const second = resolveGlTexture(state, texture);
+
+    expect(first).not.toBeNull();
+    expect(second).toBe(first);
+    expect(gl.texImage2D).toHaveBeenCalledWith(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video.source);
+    expect(gl.texImage2D).toHaveBeenCalledTimes(uploads);
   });
 });
 

@@ -1,4 +1,5 @@
-import type { LinearColor, VideoTexture, WgpuUnlitDefineKey } from '@flighthq/types/contract';
+import { advanceVideoTexture, createVideoTexture } from '@flighthq/texture/contract';
+import type { LinearColor, WgpuUnlitDefineKey } from '@flighthq/types/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper';
@@ -31,25 +32,10 @@ describe('bindWgpuUnlitVideoSurface', () => {
   it('uploads the ready video frame into the same unlit material layout', () => {
     const { fake, state } = makeWgpuScene3DState();
     const pipeline = compileWgpuUnlitPipeline(state, { ...FLAT, hasColorMap: true }, 'bgra8unorm');
-    const video = {
-      frameId: 1,
-      sampler: {
-        anisotropy: 1,
-        magFilter: 'linear',
-        minFilter: 'linear',
-        mipmaps: false,
-        wrapU: 'clamp-to-edge',
-        wrapV: 'clamp-to-edge',
-      },
-      source: {
-        element: { readyState: 4, videoHeight: 120, videoWidth: 160 } as HTMLVideoElement,
-      },
-      flipX: false,
-      flipY: false,
-      uvOffset: { x: 0, y: 0 },
-      uvRotation: 0,
-      uvScale: { x: 1, y: 1 },
-    } as unknown as VideoTexture;
+    const video = createVideoTexture({
+      element: { readyState: 4, videoHeight: 120, videoWidth: 160 } as HTMLVideoElement,
+    });
+    advanceVideoTexture(video);
     bindWgpuUnlitVideoSurface(state, pipeline, {}, COLOR, 1, 0.5, video);
     expect(fake.calls.some((c) => c.name === 'copyExternalImageToTexture')).toBe(true);
     expect(fake.calls.some((c) => c.name === 'writeBuffer')).toBe(true);

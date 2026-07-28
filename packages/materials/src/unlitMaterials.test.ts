@@ -95,7 +95,6 @@ describe('createUnlitMaterial', () => {
     expect(material.baseColor).toBe(0xffffffff);
     expect(material.baseColorMap).toBeNull();
     expect(material.baseColorRenderMap).toBeNull();
-    expect(material.baseColorVideoMap).toBeNull();
   });
 
   it('applies overrides', () => {

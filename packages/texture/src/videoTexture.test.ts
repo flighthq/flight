@@ -15,7 +15,7 @@ import {
   setVideoTextureSource,
 } from './videoTexture';
 
-// A minimal element carrier: only the fields the VideoTexture accessors read.
+// A minimal borrowed host element: only the fields the video-backed Texture accessors read.
 function makeVideoResource(readyState = 4, videoWidth = 320, videoHeight = 240): VideoResource {
   return {
     element: { readyState, videoWidth, videoHeight } as unknown as HTMLVideoElement,
@@ -23,26 +23,27 @@ function makeVideoResource(readyState = 4, videoWidth = 320, videoHeight = 240):
 }
 
 describe('advanceVideoTexture', () => {
-  it('bumps frameId and returns the new value', () => {
+  it('bumps the backing and Texture versions and returns the new value', () => {
     const vt = createVideoTexture(makeVideoResource());
-    expect(vt.frameId).toBe(-1);
+    expect(vt.version).toBe(0xffffffff);
     expect(advanceVideoTexture(vt)).toBe(0);
     expect(advanceVideoTexture(vt)).toBe(1);
-    expect(vt.frameId).toBe(1);
+    expect(vt.version).toBe(1);
+    expect(vt.storage.image?.version).toBe(1);
   });
 });
 
 describe('cloneVideoTexture', () => {
-  it('shares the source but deep-clones sampler and uv vectors and resets frameId', () => {
+  it('shares the backing but deep-clones sampler and uv vectors', () => {
     const source = makeVideoResource();
     const vt = createVideoTexture(source, { uvOffset: createVector2(2, 3) });
     advanceVideoTexture(vt);
     const clone = cloneVideoTexture(vt);
-    expect(clone.source).toBe(source);
+    expect(clone.storage.image).toBe(vt.storage.image);
     expect(clone.sampler).not.toBe(vt.sampler);
     expect(clone.uvOffset).not.toBe(vt.uvOffset);
     expect(clone.uvOffset.x).toBe(2);
-    expect(clone.frameId).toBe(-1);
+    expect(clone.version).toBe(0);
   });
 });
 
@@ -53,8 +54,8 @@ describe('copyVideoTexture', () => {
     const b = createVideoTexture(makeVideoResource());
     copyVideoTexture(b, a);
     expect(b.colorSpace).toBe('linear');
-    expect(b.frameId).toBe(0);
-    expect(b.source).toBe(a.source);
+    expect(b.version).toBe(0);
+    expect(b.storage.image).toBe(a.storage.image);
     expect(b.uvScale.x).toBe(4);
     copyVideoTexture(a, a);
     expect(a.uvScale.x).toBe(4);
@@ -62,12 +63,12 @@ describe('copyVideoTexture', () => {
 });
 
 describe('createVideoTexture', () => {
-  it('defaults to srgb, identity uv-transform, and frameId -1', () => {
+  it('returns a universal srgb Texture with a borrowed host-image backing', () => {
     const source = makeVideoResource();
     const vt = createVideoTexture(source);
     expect(vt.colorSpace).toBe('srgb');
-    expect(vt.source).toBe(source);
-    expect(vt.frameId).toBe(-1);
+    expect(vt.storage.image?.source).toBe(source.element);
+    expect(vt.version).toBe(0xffffffff);
     expect(vt.uvOffset.x).toBe(0);
     expect(vt.uvScale.x).toBe(1);
     expect(vt.uvRotation).toBe(0);
@@ -135,23 +136,24 @@ describe('isVideoTextureFrameReady', () => {
 });
 
 describe('resetVideoTextureFrame', () => {
-  it('sets frameId back to -1', () => {
+  it('sets the shared revision to the u32 pre-first-frame sentinel', () => {
     const vt = createVideoTexture(makeVideoResource());
     advanceVideoTexture(vt);
     advanceVideoTexture(vt);
     resetVideoTextureFrame(vt);
-    expect(vt.frameId).toBe(-1);
+    expect(vt.version).toBe(0xffffffff);
+    expect(vt.storage.image?.version).toBe(0xffffffff);
   });
 });
 
 describe('setVideoTextureSource', () => {
-  it('swaps the source and resets frameId', () => {
+  it('swaps the borrowed host handle and resets the version', () => {
     const vt = createVideoTexture(makeVideoResource());
     advanceVideoTexture(vt);
     const next = makeVideoResource(4, 640, 480);
     setVideoTextureSource(vt, next);
-    expect(vt.source).toBe(next);
-    expect(vt.frameId).toBe(-1);
+    expect(vt.storage.image?.source).toBe(next.element);
+    expect(vt.version).toBe(0xffffffff);
     expect(getVideoTextureWidth(vt)).toBe(640);
   });
 });

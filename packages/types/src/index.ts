@@ -642,7 +642,6 @@ export * from './VertexColorMaterial';
 export * from './VertexDisplaceModifier';
 export * from './Video';
 export * from './VideoResource';
-export * from './VideoTexture';
 export * from './Viewport';
 export * from './ViewportAlign';
 export * from './ViewportScaleMode';
