@@ -170,6 +170,58 @@ Every step compiles, tests green, and lands on its own. The pilot (Steps 0–4: 
 - **Step 8 — external handle** (`wrapGlTexture`/`createExternalGlTexture`) — additive.
 - **Step 9 — contract cleanup:** delete the superseded types/slots; the `RenderTargetNode2D`→`Bitmap` 2D fold is its own thread. Run `type-home:check` / `exports:check` / `api`.
 
+## Scene2D realignment (approved 2026-07-28)
+
+Scene2D carries **the same triplication the pilot deleted from `UnlitMaterial`, but at the node level**: three nodes that differ only in where their pixels come from.
+
+| node today | data | what it is |
+|---|---|---|
+| `Bitmap` | `image: ImageResource`, `sourceRectangle`, `smoothing` | one quad, pixels by pixel-rect |
+| `Video` | `source: VideoResource`, `smoothing` | one quad, pixels per-frame |
+| `RenderTargetNode2D` | `{ width, height, depth }` | one quad, pixels produced |
+| `Sprite` | `atlas: TextureAtlas`, `id`, `rect` | one quad, pixels by atlas region |
+| `QuadBatch` | `atlas`, `ids: Uint16Array`, `transforms` | **N** quads — genuinely different |
+
+`Bitmap` and `Sprite` differ *only in how they address pixels* (pixel-rect vs region id) — and **the texture fold erases that difference**, because both a sub-rect and an atlas region are just a uv window on a `Texture`. They are not similar; they are the same node. Batching is not a differentiator: every 2D leaf (bitmap, sprite, shape, text, tilemap, quad-batch) already writes through the shared GL/wgpu sprite-batch writer.
+
+**Decision: one raster-quad node, named `Sprite`, holding a `Texture`.**
+
+```ts
+interface SpriteData extends Node2DData {
+  texture: Texture | null;      // backing (image/video/produced/external) + sampler + uv window
+}
+```
+
+Five fields across two nodes collapse to one. `atlas`+`id`, `sourceRectangle`, and `rect` all become the texture's uv window; `smoothing` becomes `sampler.magFilter`/`minFilter` (`'linear'`/`'nearest'` — the same intent), which plausibly also closes the "per-bitmap smoothing unsupported on gl/wgpu" gap in [render-backend-support](render-backend-support.md), since sampler state is wired end-to-end while the node property was not (verify, do not assume).
+
+**`Sprite` wins the name, not `Bitmap`.** The engines whose model matches this design put the region on the texture and call the node `Sprite`/`Image`: PixiJS (`Texture` = base + frame, `Sprite` holds it), Starling (`SubTexture` + `Image`), Godot (`Sprite2D` + `Texture2D`). `Bitmap` is Flash's word, and Flight already uses `Sprite` for "one quad from an atlas" — exactly what the merged node is. Cost accepted: the `Shape`(vector)/`Bitmap`(raster)/`TextLabel`(text) reading loses some crispness, and Flash's `Sprite` is a *container* (Flight's container is `DisplayObject`).
+
+**Region addressing survives only where it is load-bearing.** An atlas region id is an *optimization of a sub-section*, not the convenient user API. A `Uint16Array` of ids cannot hold `Texture` entities, so index-addressing is structurally required in `QuadBatch`/`Tilemap` and merely incidental for a single quad. Allocation works out: a `Texture` is per *distinct region*, not per instance — a 50-region atlas is 50 shared `Texture`s over **one** backing and **one** upload (the sampling-off-the-key rule), and frame animation becomes a pointer swap (`sprite.data.texture = frames[i]`) rather than uv mutation. The 300k-instance gate should hold.
+
+**Capability falls out, not just cleanup.** Today video and produced pixels can appear *only* through their one dedicated node. After the fold every texture consumer accepts them: a `Shape` **filled with live video or a rendered subtree** (`beginBitmapFill` goes from `[bitmap, matrix, repeat, smooth]` to `[texture, matrix]` — `repeat`/`smooth` are the sampler), a **dynamic `TextureAtlas`** whose backing is a produced texture (render into your atlas at runtime — currently inexpressible), and Tilemap/QuadBatch/BitmapText inheriting the same reach for free.
+
+### Package moves
+
+| package | action |
+|---|---|
+| `@flighthq/scene2d` | `Bitmap` → renamed **`Sprite`**, holds `Texture`; `Video` + `RenderTargetNode2D` deleted. The merged node is already here — the name moves, not the code. |
+| `@flighthq/sprite` | → **`@flighthq/quadbatch`** (`sprite.ts` deleted; `QuadBatch` keeps `atlas` + `ids`). Already depends on `scene2d`, so the boundary direction is already right. |
+| — | → **`@flighthq/tilemap`** (new; over `quadbatch`, finally pairing with the orphaned `tilemap-formats`) |
+| `@flighthq/tileset` | **dissolved.** `Tileset` and `GridSliceOptions` are the same concept implemented twice (uniform grid over an image); `spritesheet`'s dependency is only a *converter*, not shared math. Grid slicing folds **up** into `textureatlas` as `createTextureAtlasFromGrid` (absorbing per-axis margin/spacing); the *layout* half (`tileWidth`/`tileHeight` for placement) belongs to `tilemap`. Folding it **down** into `tilemap` would be wrong — headless `spritesheet` would then drag the 2D scene graph. |
+| `@flighthq/textureatlas` | gains `createTextureAtlasFromGrid`; `atlas.image` → `Texture` |
+| scene2d-gl / -canvas / -dom / -wgpu | `glBitmap`→`glSprite`, `glSpriteRenderer` deleted. **Rename the shared batch writer** — `glSpriteBatch` is imported by 21 files (`glShape`, `glTextLabel`, `glRichText`, `glClipRectangle`, `glCache`, `glTilemap`, …); it is *the* 2D batch writer, not sprite machinery, and `glSprite.ts` beside `glSpriteBatch.ts` would mean two unrelated things. |
+
+Net package count is unchanged (+`quadbatch`/`tilemap`, −`sprite`/`tileset`) and one duplicated primitive is unified.
+
+### Sequencing and known costs
+
+Order: `Bitmap`→`Sprite` reshape (texture + sampler fold) → fold `Video` → fold `RenderTargetNode2D` → atlas-holders (`TextureAtlas.image` → `Texture`) → shape fills → package moves → batch-writer rename.
+
+- **DOM backend is the real implementation cost.** `domBitmap` creates an `<img>` and sets `.src`; a video-backed sprite needs the actual `<video>` element in the DOM tree, so the DOM renderer must resolve the backing to the right element rather than assuming `<img>`. This is the canvas/DOM side of the resolver registry earning its keep.
+- **Verify before deleting `tileset`:** the *descriptor* duplication is confirmed, but the slicing arithmetic in `tilesetFrom.ts` vs `createSpritesheetFromGrid` has not been diffed. If they differ on spacing/partial trailing cells, consolidate carefully rather than straight-delete.
+- **`RenderCache`** is also a produced surface underneath. It should *share* the produced-backing mechanism but stay a distinct concept — it is an implicit automatic optimization, whereas a produced `Texture` is explicit and user-invoked, and the anti-magic posture keeps those apart at the API even when the machinery is common.
+- **Natural size** now derives from texture dimensions × uv window rather than a stored `sourceRectangle`; a pixel-space authoring helper (`setTextureUvFromPixelRect`) and an atlas-region helper returning a cached per-region `Texture` cover the ergonomics.
+
 ## What this dissolves (and why)
 
 | retired / never-built | becomes |
@@ -177,21 +229,29 @@ Every step compiles, tests green, and lands on its own. The pilot (Steps 0–4: 
 | `ImageTexture` (the rename) | never introduced — `Texture` stays the name |
 | `VideoTexture` (type) | a host-handle backing whose `version` bumps per frame; `VideoResource` demotes to a web loader |
 | `RenderTexture` (type) | a produced (GPU-origin) backing |
-| `RenderTargetNode2D` (node) | a `Bitmap` with a produced `Texture` (no dedicated node) |
+| `RenderTargetNode2D` (node) | a `Sprite` with a produced `Texture` (no dedicated node) |
+| `Bitmap` (node) | renamed **`Sprite`** — the one raster-quad node, holding a `Texture` |
+| `Video` (node) | a `Sprite` whose texture has a video backing |
+| `Sprite`'s `atlas` + `id` (single-quad) | the texture's uv window; index-addressing survives only in `QuadBatch`/`Tilemap` |
+| `Bitmap.smoothing`, `beginBitmapFill`'s `repeat`/`smooth` | `Sampler` fields (`magFilter`/`minFilter`, `wrapU`/`wrapV`) |
+| `@flighthq/sprite` (package) | `@flighthq/quadbatch` + `@flighthq/tilemap` |
+| `@flighthq/tileset` (package) | grid slicing → `textureatlas` (`createTextureAtlasFromGrid`); layout params → `tilemap` |
 | `CubeTexture` / `Texture2D` / `Texture3D` types | `storage.dimension` values (+ `TextureVolume` for the 3D CPU backing) |
 | separate material slots / a `TextureSource` union / a source-kind field | one slot (`baseColorMap: Texture`); the split is `storage` + the resolver registry |
 | `ImageResource.source: CanvasImageSource` / `VideoResource.element: HTMLVideoElement` | an opaque `HostImageSource` across the native seam |
 
 ## Remaining open questions
 
-1. **Exact `TextureStorage` encoding** — `target?` per-variant vs hoisted; how `RenderTargetDescriptor` carries per-dimension params (faces/layers). Illustrative above, not final; lean hoist, decide at implementation.
-2. **Does `Bitmap` hold a `Texture` or something lighter?** Holding a `Texture` unifies image/video/produced content but carries `colorSpace` (a constant-`srgb` 3D concern in 2D). Accepted for now; a guard should flag a non-2d texture assigned to a 2D `Bitmap`. Revisit if it grates.
+1. ~~**Exact `TextureStorage` encoding**~~ — **DECIDED (implemented)**: a discriminated union on `dimension` with `target?` per-variant and `?: never` exclusivity markers.
+2. ~~**Does `Bitmap` hold a `Texture` or something lighter?**~~ — **DECIDED: hold the full `Texture`** (on the node now named `Sprite`). The 2D analysis settles it two ways: the node fold *requires* it (that is what makes video/produced uniform), and `colorSpace` is **not** dead weight in 2D — a produced texture from a linear-space target sampled by a 2D quad needs exactly that flag (the GL render-texture work already hit linear-target shader handling). A guard should still flag a non-`2d`-dimension texture assigned to a 2D node.
 3. **A few entry names** — the produce-wrapper family (`renderIntoGl…`) and the loader entries (`loadTexture` / `createTextureFromImage`). Leaning as written, not frozen.
+4. **The `Sprite` region-lookup home** — does `Sprite` keep a convenience (`setSpriteAtlasRegion(sprite, atlas, id)`) or does region→`Texture` lookup live entirely in `@flighthq/textureatlas` returning a cached per-region `Texture`? Lean: the latter, keeping the node minimal. Decide before the 2D pass, since it shapes the spritesheet animation path.
+5. **`Sprite` vs `QuadBatch` naming** — with draw-strategy no longer distinguishing them at the *name* level (both batch; one is single-instance, one multi-instance), the boundary reads less clearly than it should. Revisit after the 2D pass; not worth churning now.
 
 ## Relationship to in-flight work
 
 - **`pushGlRenderState` / `popGlRenderState` (landed).** Unaffected — the state-isolation bracket the produce mechanism sits on. Keep.
-- **`RenderTargetNode2D` (landed, builder4).** Superseded in intent — folds into `Bitmap`-with-a-produced-`Texture` during the migration (Step 9). Do not extend it.
+- **`RenderTargetNode2D` (landed, builder4).** Superseded — folds into `Sprite`-with-a-produced-`Texture` in the Scene2D pass. Do not extend it.
 - **The `RenderTexture` type + `RenderTextureNode2D` wgpu/canvas twins (builder4, in progress).** Superseded — `RenderTexture` becomes a produced backing (Step 4). **Stop extending the standalone type**; the GL render-target machinery it built is reused as the produced resolver.
 
 ## Prior art
