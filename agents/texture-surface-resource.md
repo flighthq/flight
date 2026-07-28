@@ -287,9 +287,10 @@ Representation-specific fields no longer coexist on one nullable shape. The expl
 `createImageResourceFromBitmap` and `captureBitmapFromImageResource`, and GL/WebGPU/Canvas/DOM dispatch
 through separately registered backing resolvers.
 
-The resolver split reduced every affected measured example without changing the size baseline. Canvas
-improvements ranged from -0.1% to -3.2% (largest: bitmap -3.2%, video -3.0%, tilemap -2.9%);
-DOM improvements ranged from -0.8% to -1.2% for affected entries, with unaffected entries flat.
+The resolver split reduced every affected measured Canvas/DOM example without changing the size baseline.
+Canvas improvements ranged from -0.1% to -3.7% (largest: bitmap -3.7%, tilemap/video -3.5%,
+spritesheet -3.0%); DOM improvements ranged from -1.3% to -1.6% for affected entries, with unaffected
+entries flat.
 
 **The unifying job moved up a layer, so the backing union is now vestigial.** `ImageSource` (later `ImageResource`) fused three representations into one type with three nullable fields *because nothing above it could dispatch* — it had to be the unifying layer. `Texture` + the state-scoped backing registry now hold that role. The union is still doing a job that has been superseded, and it should decompose.
 
