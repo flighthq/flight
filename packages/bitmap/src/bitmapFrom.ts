@@ -1,5 +1,4 @@
 import { createEntity } from '@flighthq/entity/contract';
-import { createImageResourceFromCanvas } from '@flighthq/image/contract';
 import type { ImageResource, Bitmap } from '@flighthq/types/contract';
 import { ImageTextureBackingKind } from '@flighthq/types/contract';
 
@@ -94,14 +93,4 @@ export function createBitmapFromImageSource(source: CanvasImageSource, width: nu
     version: 0,
     width,
   });
-}
-
-export function createImageResourceFromBitmap(bitmap: Readonly<Bitmap>): ImageResource {
-  const canvas = document.createElement('canvas');
-  canvas.width = bitmap.width;
-  canvas.height = bitmap.height;
-  const domImageData = new globalThis.ImageData(bitmap.width, bitmap.height);
-  domImageData.data.set(bitmap.data);
-  canvas.getContext('2d')!.putImageData(domImageData, 0, 0);
-  return createImageResourceFromCanvas(canvas);
 }

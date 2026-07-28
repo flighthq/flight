@@ -1,12 +1,7 @@
 import { createImageResource } from '@flighthq/image/contract';
 
 import { createBitmap } from './bitmap';
-import {
-  createImageResourceFromBitmap,
-  createBitmapFromCanvas,
-  createBitmapFromImageResource,
-  createBitmapFromImageSource,
-} from './bitmapFrom';
+import { createBitmapFromCanvas, createBitmapFromImageResource, createBitmapFromImageSource } from './bitmapFrom';
 
 describe('createBitmapFromCanvas', () => {
   it('returns Bitmap matching the canvas size', () => {
@@ -48,15 +43,5 @@ describe('createBitmapFromImageSource', () => {
     expect(bitmap.width).toBe(8);
     expect(bitmap.height).toBe(4);
     expect(bitmap.data.length).toBe(8 * 4 * 4);
-  });
-});
-
-describe('createImageResourceFromBitmap', () => {
-  it('returns an ImageResource with matching dimensions', () => {
-    const img = createBitmap(4, 4, 0x112233ff);
-    const resource = createImageResourceFromBitmap(img);
-    expect(resource.width).toBe(4);
-    expect(resource.height).toBe(4);
-    expect(resource.source).not.toBeNull();
   });
 });
