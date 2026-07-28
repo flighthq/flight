@@ -2,7 +2,6 @@ import { invalidateContent } from '@flighthq/node/contract';
 import type {
   CapsStyle,
   GradientType,
-  ImageResource,
   InterpolationMethod,
   JointStyle,
   LineScaleMode,
@@ -11,6 +10,7 @@ import type {
   Shape,
   ShapeCommandToken,
   SpreadMethod,
+  Texture,
   TriangleCulling,
 } from '@flighthq/types/contract';
 
@@ -140,14 +140,8 @@ export function appendShapeArcTo(shape: Shape, x1: number, y1: number, x2: numbe
   invalidateContent(shape);
 }
 
-export function appendShapeBeginBitmapFill(
-  shape: Shape,
-  bitmap: ImageResource,
-  matrix: Matrix | null = null,
-  repeat = true,
-  smooth = false,
-): void {
-  shape.data.commands.push('beginBitmapFill', 4, bitmap, matrix, repeat, smooth);
+export function appendShapeBeginBitmapFill(shape: Shape, texture: Texture, matrix: Matrix | null = null): void {
+  shape.data.commands.push('beginBitmapFill', 2, texture, matrix);
   invalidateContent(shape);
 }
 
@@ -232,14 +226,8 @@ export function appendShapeEndFill(shape: Shape): void {
   invalidateContent(shape);
 }
 
-export function appendShapeLineBitmapStyle(
-  shape: Shape,
-  bitmap: ImageResource,
-  matrix: Matrix | null = null,
-  repeat = true,
-  smooth = false,
-): void {
-  shape.data.commands.push('lineBitmapStyle', 4, bitmap, matrix, repeat, smooth);
+export function appendShapeLineBitmapStyle(shape: Shape, texture: Texture, matrix: Matrix | null = null): void {
+  shape.data.commands.push('lineBitmapStyle', 2, texture, matrix);
   invalidateContent(shape);
 }
 

@@ -1,5 +1,5 @@
-import type { ImageResource } from './ImageResource';
 import type { Matrix } from './Matrix';
+import type { Texture } from './Texture';
 
 export type CapsStyle = 'none' | 'round' | 'square';
 
@@ -17,7 +17,7 @@ export type SpreadMethod = 'pad' | 'reflect' | 'repeat';
 
 // Maps command key strings to their argument tuples. May be extended via declaration merging.
 export interface ShapeCommandRegistry {
-  beginBitmapFill: readonly [bitmap: ImageResource, matrix: Matrix | null, repeat: boolean, smooth: boolean];
+  beginBitmapFill: readonly [texture: Texture, matrix: Matrix | null];
   beginFill: readonly [color: number, alpha: number];
   beginGradientFill: readonly [
     gradientType: GradientType,
@@ -51,7 +51,7 @@ export interface ShapeCommandRegistry {
     ellipseHeight: number,
   ];
   endFill: readonly [];
-  lineBitmapStyle: readonly [bitmap: ImageResource, matrix: Matrix | null, repeat: boolean, smooth: boolean];
+  lineBitmapStyle: readonly [texture: Texture, matrix: Matrix | null];
   lineGradientStyle: readonly [
     gradientType: GradientType,
     colors: number[],
@@ -83,9 +83,9 @@ export type ShapeCommandKey = keyof ShapeCommandRegistry;
 // `[key, argCount, ...args, key, argCount, ...args, …]`. Across all commands an argument slot may hold
 // a coordinate/color/count (number), a style keyword or command key (string), a flag (boolean), a
 // gradient/triangle/path buffer (number[]), a fill matrix (Matrix, or null when absent), or a bitmap
-// fill's live resource (ImageResource). A reader advances by `argCount + 2` and casts each slot to the
+// fill's live Texture. A reader advances by `argCount + 2` and casts each slot to the
 // type its command's `ShapeCommandRegistry` entry documents.
-export type ShapeCommandToken = ImageResource | Matrix | boolean | number | readonly number[] | string | null;
+export type ShapeCommandToken = Matrix | Texture | boolean | number | readonly number[] | string | null;
 
 // Handler for hit-testing a command. Reads args from the flat command buffer at position i.
 export type ShapeCommandHitTest = (x: number, y: number, buf: readonly ShapeCommandToken[], i: number) => boolean;

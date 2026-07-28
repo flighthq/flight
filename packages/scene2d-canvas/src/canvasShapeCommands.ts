@@ -1,19 +1,19 @@
 import { createMatrix, inverseMatrix } from '@flighthq/geometry/contract';
-import type { CanvasShapeCommand, ImageResource, Matrix } from '@flighthq/types/contract';
+import { getTextureHeight, getTextureWidth } from '@flighthq/texture/contract';
+import type { CanvasShapeCommand, Matrix, Texture } from '@flighthq/types/contract';
 
 const _fillMatrixInverse: Matrix = createMatrix();
 
 import { createBitmapPattern, createGradientPattern } from './canvasFillPattern';
+import { resolveCanvasTextureWindowSource } from './canvasImageSource';
 
 export const defaultCanvasBeginBitmapFill: CanvasShapeCommand<'beginBitmapFill'> = {
   key: 'beginBitmapFill',
   draw(context, state, buf, i) {
-    const bitmap = buf[i] as ImageResource;
+    const texture = buf[i] as Texture;
     const matrix = buf[i + 1] as Matrix | null;
-    const repeat = buf[i + 2] as boolean;
-    const smooth = buf[i + 3] as boolean;
     if (state.hasPendingPath && (state.hasFill || state.hasStroke)) state.flush();
-    const pattern = createBitmapPattern(context, bitmap, repeat, smooth);
+    const pattern = createBitmapPattern(context, texture, state.canvasRenderState);
     state.hasFill = pattern !== null;
     state.fillStyle = pattern ?? '';
     state.fillMatrix = matrix;
@@ -23,9 +23,9 @@ export const defaultCanvasBeginBitmapFill: CanvasShapeCommand<'beginBitmapFill'>
     } else {
       state.fillMatrixInverse = null;
     }
-    state.bitmapSrc = bitmap.source;
-    state.bitmapW = bitmap.width;
-    state.bitmapH = bitmap.height;
+    state.bitmapSrc = resolveCanvasTextureWindowSource(state.canvasRenderState, texture);
+    state.bitmapW = Math.abs(texture.uvScale.x * getTextureWidth(texture));
+    state.bitmapH = Math.abs(texture.uvScale.y * getTextureHeight(texture));
   },
 };
 
@@ -274,10 +274,8 @@ export const defaultCanvasEndFill: CanvasShapeCommand<'endFill'> = {
 export const defaultCanvasLineBitmapStyle: CanvasShapeCommand<'lineBitmapStyle'> = {
   key: 'lineBitmapStyle',
   draw(context, state, buf, i) {
-    const bitmap = buf[i] as ImageResource;
-    const repeat = buf[i + 2] as boolean;
-    const smooth = buf[i + 3] as boolean;
-    const pattern = createBitmapPattern(context, bitmap, repeat, smooth);
+    const texture = buf[i] as Texture;
+    const pattern = createBitmapPattern(context, texture, state.canvasRenderState);
     if (pattern !== null) {
       state.strokeStyle = pattern;
       state.hasStroke = true;

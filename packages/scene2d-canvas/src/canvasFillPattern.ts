@@ -1,25 +1,29 @@
 import { createMatrix } from '@flighthq/geometry/contract';
 import type {
+  CanvasRenderState,
   GradientType,
-  ImageResource,
   InterpolationMethod,
   Matrix,
   MatrixLike,
   SpreadMethod,
+  Texture,
 } from '@flighthq/types/contract';
+
+import { resolveCanvasTextureWindowSource } from './canvasImageSource';
 
 // Flash's gradient box is normalized to ±819.2 units.
 const GRADIENT_HALF = 819.2;
 
 export function createBitmapPattern(
   context: CanvasRenderingContext2D,
-  bitmap: ImageResource,
-  repeat: boolean,
-  smooth = false,
+  texture: Readonly<Texture>,
+  state: CanvasRenderState | null = null,
 ): CanvasPattern | null {
-  if (bitmap.source === null) return null;
+  const source = resolveCanvasTextureWindowSource(state, texture);
+  if (source === null) return null;
+  const smooth = (state?.allowSmoothing ?? true) && !texture.sampler.magFilter.startsWith('nearest');
   setSmoothing(context, smooth);
-  return context.createPattern(bitmap.source, repeat ? 'repeat' : 'no-repeat');
+  return context.createPattern(source, getCanvasPatternRepetition(texture));
 }
 
 export function createGradientPattern(
@@ -151,6 +155,15 @@ function createLinearGradient(
   octx.fillStyle = tiledGradient;
   octx.fillRect(0, 0, offscreen.width, offscreen.height);
   return context.createPattern(offscreen, 'no-repeat');
+}
+
+function getCanvasPatternRepetition(texture: Readonly<Texture>): 'no-repeat' | 'repeat' | 'repeat-x' | 'repeat-y' {
+  const repeatX = texture.sampler.wrapU !== 'clamp-to-edge';
+  const repeatY = texture.sampler.wrapV !== 'clamp-to-edge';
+  if (repeatX && repeatY) return 'repeat';
+  if (repeatX) return 'repeat-x';
+  if (repeatY) return 'repeat-y';
+  return 'no-repeat';
 }
 
 function setSmoothing(context: CanvasRenderingContext2D, smooth: boolean): void {

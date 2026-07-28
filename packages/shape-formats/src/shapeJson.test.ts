@@ -13,7 +13,7 @@ import {
   createShape,
   getShapeCommandCount,
 } from '@flighthq/shape/contract';
-import type { ImageResource } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/types/contract';
 
 import { formatShapeJson, parseShapeJson } from './shapeJson';
 
@@ -41,10 +41,10 @@ function createEveryNonBitmapCommandShape() {
   return shape;
 }
 
-// A minimal stand-in for a live ImageResource; the codec never inspects resource internals, only
+// A minimal stand-in for a live Texture; the codec never inspects texture internals, only
 // swaps the object for an ordinal reference and back.
-function createFakeBitmap(): ImageResource {
-  return { width: 4, height: 4 } as unknown as ImageResource;
+function createFakeTexture(): Texture {
+  return {} as Texture;
 }
 
 describe('formatShapeJson', () => {
@@ -52,7 +52,7 @@ describe('formatShapeJson', () => {
     const shape = createShape();
     appendShapeBeginFill(shape, 0x112233ff, 1);
     const parsed = JSON.parse(formatShapeJson(shape));
-    expect(parsed.shapeFormat).toBe(1);
+    expect(parsed.shapeFormat).toBe(2);
     expect(Array.isArray(parsed.commands)).toBe(true);
     expect(parsed.commands[0]).toEqual({ key: 'beginFill', args: [0x112233ff, 1] });
   });
@@ -64,14 +64,12 @@ describe('formatShapeJson', () => {
     expect(parsed.commands[0].args[4]).toEqual({ a: 2, b: 0, c: 0, d: 3, tx: 5, ty: 7 });
   });
 
-  it('serializes a bitmap resource as an ordinal reference, never the resource', () => {
+  it('serializes a texture as an ordinal reference, never the texture', () => {
     const shape = createShape();
-    appendShapeBeginBitmapFill(shape, createFakeBitmap(), null, true, false);
+    appendShapeBeginBitmapFill(shape, createFakeTexture(), null);
     const parsed = JSON.parse(formatShapeJson(shape));
-    expect(parsed.commands[0].args[0]).toEqual({ bitmap: { index: 0 } });
+    expect(parsed.commands[0].args[0]).toEqual({ texture: { index: 0 } });
     expect(parsed.commands[0].args[1]).toBeNull();
-    expect(parsed.commands[0].args[2]).toBe(true);
-    expect(parsed.commands[0].args[3]).toBe(false);
   });
 
   it('honors the space option for pretty-printing', () => {
@@ -82,7 +80,7 @@ describe('formatShapeJson', () => {
 });
 
 describe('parseShapeJson', () => {
-  it('round-trips every non-bitmap command losslessly', () => {
+  it('round-trips every non-texture command losslessly', () => {
     const shape = createEveryNonBitmapCommandShape();
     const json = formatShapeJson(shape);
     const restored = parseShapeJson(json);
@@ -100,7 +98,7 @@ describe('parseShapeJson', () => {
   });
 
   it('returns null for a mismatched version tag', () => {
-    expect(parseShapeJson(JSON.stringify({ shapeFormat: 2, commands: [] }))).toBeNull();
+    expect(parseShapeJson(JSON.stringify({ shapeFormat: 3, commands: [] }))).toBeNull();
   });
 
   it('returns null when the top level is not an object', () => {
@@ -108,26 +106,26 @@ describe('parseShapeJson', () => {
   });
 
   it('returns null for an unknown command key', () => {
-    const json = JSON.stringify({ shapeFormat: 1, commands: [{ key: 'notACommand', args: [] }] });
+    const json = JSON.stringify({ shapeFormat: 2, commands: [{ key: 'notACommand', args: [] }] });
     expect(parseShapeJson(json)).toBeNull();
   });
 
   it('returns null for a malformed argument object', () => {
-    const json = JSON.stringify({ shapeFormat: 1, commands: [{ key: 'beginFill', args: [{ nonsense: true }, 1] }] });
+    const json = JSON.stringify({ shapeFormat: 2, commands: [{ key: 'beginFill', args: [{ nonsense: true }, 1] }] });
     expect(parseShapeJson(json)).toBeNull();
   });
 
-  it('round-trips a bitmap fill through the resolver', () => {
-    const bitmap = createFakeBitmap();
+  it('round-trips a bitmap fill through the texture resolver', () => {
+    const texture = createFakeTexture();
     const shape = createShape();
-    appendShapeBeginBitmapFill(shape, bitmap, createMatrix(1, 0, 0, 1, 3, 4), true, false);
+    appendShapeBeginBitmapFill(shape, texture, createMatrix(1, 0, 0, 1, 3, 4));
     appendShapeMoveTo(shape, 5, 6);
 
     const seen: number[] = [];
     const restored = parseShapeJson(formatShapeJson(shape), {
-      resolveBitmap: (reference) => {
+      resolveTexture: (reference) => {
         seen.push(reference.index);
-        return bitmap;
+        return texture;
       },
     });
 
@@ -135,13 +133,13 @@ describe('parseShapeJson', () => {
     expect(seen).toEqual([0]);
     expect(getShapeCommandCount(restored!)).toBe(2);
     expect(restored!.data.commands[0]).toBe('beginBitmapFill');
-    expect(restored!.data.commands[2]).toBe(bitmap);
+    expect(restored!.data.commands[2]).toBe(texture);
   });
 
   it('drops a bitmap fill when no resolver is supplied and keeps the rest intact', () => {
     const shape = createShape();
     appendShapeBeginFill(shape, 0xffffffff, 1);
-    appendShapeBeginBitmapFill(shape, createFakeBitmap(), null, true, false);
+    appendShapeBeginBitmapFill(shape, createFakeTexture(), null);
     appendShapeLineTo(shape, 9, 9);
 
     const restored = parseShapeJson(formatShapeJson(shape));
@@ -153,10 +151,10 @@ describe('parseShapeJson', () => {
 
   it('drops a bitmap fill when the resolver returns null', () => {
     const shape = createShape();
-    appendShapeBeginBitmapFill(shape, createFakeBitmap(), null, true, false);
+    appendShapeBeginBitmapFill(shape, createFakeTexture(), null);
     appendShapeEndFill(shape);
 
-    const restored = parseShapeJson(formatShapeJson(shape), { resolveBitmap: () => null });
+    const restored = parseShapeJson(formatShapeJson(shape), { resolveTexture: () => null });
     expect(restored).not.toBeNull();
     expect(getShapeCommandCount(restored!)).toBe(1);
     expect(restored!.data.commands[0]).toBe('endFill');

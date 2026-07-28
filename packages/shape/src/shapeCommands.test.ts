@@ -27,7 +27,7 @@ import {
   PathCommand,
 } from './shapeCommands';
 
-const fakeImageSource = { id: 1, height: 10, source: null, width: 10 } as never;
+const fakeTexture = { id: 1 } as never;
 const fakeMatrix = { id: 2, a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 } as never;
 
 describe('appendShapeArc', () => {
@@ -125,16 +125,16 @@ describe('appendShapeArcTo', () => {
 });
 
 describe('appendShapeBeginBitmapFill', () => {
-  it('pushes a beginBitmapFill command with bitmap, matrix, repeat, smooth', () => {
+  it('pushes a beginBitmapFill command with texture and matrix', () => {
     const shape = createShape();
-    appendShapeBeginBitmapFill(shape, fakeImageSource, fakeMatrix, false, true);
-    expect(shape.data.commands).toEqual(['beginBitmapFill', 4, fakeImageSource, fakeMatrix, false, true]);
+    appendShapeBeginBitmapFill(shape, fakeTexture, fakeMatrix);
+    expect(shape.data.commands).toEqual(['beginBitmapFill', 2, fakeTexture, fakeMatrix]);
   });
 
-  it('defaults matrix to null, repeat to true, smooth to false', () => {
+  it('defaults matrix to null', () => {
     const shape = createShape();
-    appendShapeBeginBitmapFill(shape, fakeImageSource);
-    expect(shape.data.commands).toEqual(['beginBitmapFill', 4, fakeImageSource, null, true, false]);
+    appendShapeBeginBitmapFill(shape, fakeTexture);
+    expect(shape.data.commands).toEqual(['beginBitmapFill', 2, fakeTexture, null]);
   });
 });
 
@@ -294,16 +294,16 @@ describe('appendShapeEndFill', () => {
 });
 
 describe('appendShapeLineBitmapStyle', () => {
-  it('pushes a lineBitmapStyle command with bitmap, matrix, repeat, smooth', () => {
+  it('pushes a lineBitmapStyle command with texture and matrix', () => {
     const shape = createShape();
-    appendShapeLineBitmapStyle(shape, fakeImageSource, fakeMatrix, false, true);
-    expect(shape.data.commands).toEqual(['lineBitmapStyle', 4, fakeImageSource, fakeMatrix, false, true]);
+    appendShapeLineBitmapStyle(shape, fakeTexture, fakeMatrix);
+    expect(shape.data.commands).toEqual(['lineBitmapStyle', 2, fakeTexture, fakeMatrix]);
   });
 
-  it('defaults matrix to null, repeat to true, smooth to false', () => {
+  it('defaults matrix to null', () => {
     const shape = createShape();
-    appendShapeLineBitmapStyle(shape, fakeImageSource);
-    expect(shape.data.commands).toEqual(['lineBitmapStyle', 4, fakeImageSource, null, true, false]);
+    appendShapeLineBitmapStyle(shape, fakeTexture);
+    expect(shape.data.commands).toEqual(['lineBitmapStyle', 2, fakeTexture, null]);
   });
 });
 

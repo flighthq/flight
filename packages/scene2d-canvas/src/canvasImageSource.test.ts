@@ -1,8 +1,13 @@
 import { createImageResource, invalidateImageResource } from '@flighthq/image/contract';
-import { createRenderTexture, createTexture } from '@flighthq/texture/contract';
+import { createRenderTexture, createTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
 import type { ImageResource } from '@flighthq/types/contract';
 
-import { explainCanvasImageSource, resolveCanvasImageSource, resolveCanvasTextureSource } from './canvasImageSource';
+import {
+  explainCanvasImageSource,
+  resolveCanvasImageSource,
+  resolveCanvasTextureSource,
+  resolveCanvasTextureWindowSource,
+} from './canvasImageSource';
 import { createCanvasRenderState } from './canvasRenderState';
 import { renderIntoCanvasRenderTexture } from './canvasRenderTexture';
 
@@ -92,5 +97,31 @@ describe('resolveCanvasTextureSource', () => {
     expect(resolveCanvasTextureSource(state, produced)).toBeNull();
     renderIntoCanvasRenderTexture(state, produced, () => {});
     expect(resolveCanvasTextureSource(state, produced)).toBeInstanceOf(HTMLCanvasElement);
+  });
+});
+
+describe('resolveCanvasTextureWindowSource', () => {
+  it('caches an atlas sub-rect as a standalone canvas', () => {
+    const state = makeState();
+    const source = document.createElement('canvas');
+    source.width = 8;
+    source.height = 4;
+    const texture = createTexture({ storage: { dimension: '2d', image: createImageResource(source) } });
+    setTextureUvFromPixelRect(texture, 2, 1, 4, 2);
+
+    const first = resolveCanvasTextureWindowSource(state, texture);
+    const second = resolveCanvasTextureWindowSource(state, texture);
+
+    expect(first).toBeInstanceOf(HTMLCanvasElement);
+    expect((first as HTMLCanvasElement).width).toBe(4);
+    expect((first as HTMLCanvasElement).height).toBe(2);
+    expect(second).toBe(first);
+  });
+
+  it('returns an identity-window source directly', () => {
+    const state = makeState();
+    const source = document.createElement('canvas');
+    const texture = createTexture({ storage: { dimension: '2d', image: createImageResource(source) } });
+    expect(resolveCanvasTextureWindowSource(state, texture)).toBe(source);
   });
 });
