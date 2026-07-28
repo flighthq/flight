@@ -7,6 +7,7 @@ import {
   createWgpuRenderState,
   endWgpuRenderEffectPipeline,
   prepareScene3DRender,
+  registerWgpuImageTextureResolver,
   registerStandardPbrWgpuMaterial,
   renderWgpuBackground,
   submitWgpuRenderPass,
@@ -22,6 +23,7 @@ export const state = await createWgpuRenderState(canvas, {
   pixelRatio,
   backgroundColor: 0x09070aff,
 });
+registerWgpuImageTextureResolver(state);
 registerStandardPbrWgpuMaterial(state);
 
 const pipeline: WgpuRenderEffectPipeline = createWgpuRenderEffectPipeline(state, {

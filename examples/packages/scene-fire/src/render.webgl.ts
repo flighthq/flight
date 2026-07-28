@@ -7,6 +7,7 @@ import {
   createGlRenderState,
   endGlRenderEffectPipeline,
   prepareScene3DRender,
+  registerGlImageTextureResolver,
   registerStandardPbrGlMaterial,
   renderGlBackground,
 } from '@flighthq/sdk';
@@ -22,6 +23,7 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0x09070aff,
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
+registerGlImageTextureResolver(state);
 registerStandardPbrGlMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {

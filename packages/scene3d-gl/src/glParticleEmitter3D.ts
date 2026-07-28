@@ -1,7 +1,7 @@
-import { hasImageResourcePixels } from '@flighthq/image/contract';
 import { getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node/contract';
-import { bindGlTexture, createGlProgram, invalidateGlRenderStateCache } from '@flighthq/render-gl/contract';
+import { createGlProgram, invalidateGlRenderStateCache, resolveGlTexture } from '@flighthq/render-gl/contract';
 import { prepareScene3DRender } from '@flighthq/render/contract';
+import { getTextureHeight, getTextureWidth, hasTextureBacking } from '@flighthq/texture/contract';
 import type {
   Camera3D,
   GlRenderState,
@@ -223,11 +223,14 @@ function drawParticleEmitter3DNode(
 
   ensureInstanceCapacity(shader, gl, particleCount);
 
-  const hasAtlas = atlas !== null && atlas.image !== null && hasImageResourcePixels(atlas.image);
+  const atlasTexture = atlas?.texture ?? null;
+  const resolvedAtlas =
+    atlasTexture !== null && hasTextureBacking(atlasTexture) ? resolveGlTexture(state, atlasTexture, true) : null;
+  const hasAtlas = resolvedAtlas !== null;
   const regions = hasAtlas ? atlas!.regions : null;
   const numRegions = regions !== null ? regions.length : 0;
-  const iw = hasAtlas ? 1 / (atlas!.image!.width || 1) : 0;
-  const ih = hasAtlas ? 1 / (atlas!.image!.height || 1) : 0;
+  const iw = hasAtlas ? 1 / Math.max(1, getTextureWidth(atlasTexture!)) : 0;
+  const ih = hasAtlas ? 1 / Math.max(1, getTextureHeight(atlasTexture!)) : 0;
 
   const worldMatrix = getNodeWorldMatrix4(emitter as unknown as Node3D) as Matrix4;
   const wm = worldMatrix.m;
@@ -320,12 +323,8 @@ function drawParticleEmitter3DNode(
 
   gl.uniform1i(shader.locHasTexture, hasAtlas ? 1 : 0);
   if (hasAtlas) {
-    // Upload (first use) and bind the atlas image to unit 0. Binding a null texture here instead —
-    // as this did — leaves an incomplete sampler that reads (0,0,0,1), turning every textured
-    // particle into a solid black quad. bindGlTexture premultiplies alpha on upload, matching the
-    // premultiplied output the fragment shader and blend funcs assume.
     gl.activeTexture(gl.TEXTURE0);
-    bindGlTexture(state, atlas!.image!.source!);
+    gl.bindTexture(gl.TEXTURE_2D, resolvedAtlas);
     gl.uniform1i(shader.locTexture, 0);
   }
 

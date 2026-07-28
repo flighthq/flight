@@ -1,7 +1,11 @@
 import { createImageResource } from '@flighthq/image/contract';
 import { createDisplayObject, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { createSpritesheet, createSpritesheetAnimation, createSpritesheetFrame } from '@flighthq/spritesheet/contract';
-import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas/contract';
+import {
+  addTextureAtlasRegion,
+  createTextureAtlas,
+  createTextureAtlasFromImageResource,
+} from '@flighthq/textureatlas/contract';
 import type { Node2D } from '@flighthq/types/contract';
 
 import { createSpritesheetTimelineSource } from './spritesheetTimelineSource';
@@ -11,7 +15,7 @@ function makeSheet(frameCount: number) {
   const source = createImageResource(img);
   source.width = 128;
   source.height = 32;
-  const atlas = createTextureAtlas({ image: source });
+  const atlas = createTextureAtlasFromImageResource(source);
   const frames = [];
   for (let i = 0; i < frameCount; i++) {
     addTextureAtlasRegion(atlas, i * 32, 0, 32, 32);

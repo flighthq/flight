@@ -1,9 +1,18 @@
 import { createCamera3D } from '@flighthq/camera/contract';
 import { createMatrix4, setVector3 } from '@flighthq/geometry/contract';
+import { createImageResource } from '@flighthq/image/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter/contract';
+import { registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
 import { createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
-import type { Camera3D, ParticleEmitter3D, Scene3DLightsLike } from '@flighthq/types/contract';
+import { createTexture } from '@flighthq/texture/contract';
+import type {
+  Camera3D,
+  ParticleEmitter3D,
+  Scene3DLightsLike,
+  TextureAtlas,
+  TextureAtlasRegion,
+} from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { destroyWgpuParticleEmitter3DResources, drawWgpuScene3DParticleEmitter3Ds } from './wgpuParticleEmitter3D';
@@ -48,11 +57,20 @@ function makeEmitterWithParticles(count: number): ParticleEmitter3D {
 function makeAtlasEmitter(regionWidth: number, regionHeight: number): ParticleEmitter3D {
   const emitter = makeEmitterWithParticles(1);
   const img = document.createElement('img');
+  const image = createImageResource(img);
+  image.width = 128;
+  image.height = 128;
   emitter.data.atlas = {
-    image: { source: img, width: 128, height: 128 },
-    regions: [{ id: 0, x: 0, y: 0, width: regionWidth, height: regionHeight }],
-  } as unknown as NonNullable<ParticleEmitter3D['data']['atlas']>;
+    regions: [{ id: 0, x: 0, y: 0, width: regionWidth, height: regionHeight } as TextureAtlasRegion],
+    texture: createTexture({ storage: { dimension: '2d', image } }),
+  } as TextureAtlas;
   return emitter;
+}
+
+function makeAtlasWgpuScene3DState() {
+  const result = makeWgpuScene3DState();
+  registerWgpuImageTextureResolver(result.state);
+  return result;
 }
 
 function findInstanceWrite(calls: { name: string; args: unknown[] }[]): Float32Array | undefined {
@@ -69,8 +87,8 @@ function pipelineDescriptors(calls: { name: string; args: unknown[] }[]): Record
 }
 
 function hasTextureConstant(descriptor: Record<string, unknown>): number {
-  const fragment = descriptor['fragment'] as { constants: Record<string, number> };
-  return fragment.constants['HAS_TEXTURE'];
+  const fragment = descriptor['fragment'] as { constants?: Record<string, number> } | undefined;
+  return fragment?.constants?.['HAS_TEXTURE'] ?? -1;
 }
 
 describe('destroyWgpuParticleEmitter3DResources', () => {
@@ -124,7 +142,7 @@ describe('drawWgpuScene3DParticleEmitter3Ds', () => {
   });
 
   it('normalizes the particle quad to an aspect-ratio unit square, not the region pixel size', () => {
-    const { state, fake } = makeWgpuScene3DState();
+    const { state, fake } = makeAtlasWgpuScene3DState();
     const scene = createNode3D(Node3DKind);
     addNodeChild(scene, makeAtlasEmitter(64, 32));
     drawWgpuScene3DParticleEmitter3Ds(state, scene, makeCamera(), makeLights());
@@ -135,7 +153,7 @@ describe('drawWgpuScene3DParticleEmitter3Ds', () => {
   });
 
   it('compiles the textured pipeline variant for an atlas emitter', () => {
-    const { state, fake } = makeWgpuScene3DState();
+    const { state, fake } = makeAtlasWgpuScene3DState();
     const scene = createNode3D(Node3DKind);
     addNodeChild(scene, makeAtlasEmitter(64, 64));
     drawWgpuScene3DParticleEmitter3Ds(state, scene, makeCamera(), makeLights());

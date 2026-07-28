@@ -1,7 +1,7 @@
-import { hasImageResourcePixels } from '@flighthq/image/contract';
 import { getWgpuRenderStateRuntime, resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
+import { getTextureHeight, getTextureWidth, hasTextureBacking } from '@flighthq/texture/contract';
 import type {
   BitmapText,
   BitmapTextRuntime,
@@ -47,14 +47,14 @@ function submitWgpuBitmapText(state: WgpuRenderState, node: RenderProxy2D): void
 
   for (const page of pages) {
     const atlas = page.atlas;
-    const image = atlas.image;
-    if (image === null || !hasImageResourcePixels(image) || page.instanceCount === 0) continue;
+    const texture = atlas.texture;
+    if (texture === null || !hasTextureBacking(texture) || page.instanceCount === 0) continue;
 
     // prepareWgpuSpriteBatchWrite may flush the prior page's batch (each page binds a different image),
     // so read the running instance count AFTER it so material/color-adjustment indices align with `base`.
     const base = prepareWgpuSpriteBatchWrite(
       state,
-      image,
+      texture,
       node.blendMode,
       material,
       materialRenderer,
@@ -64,8 +64,8 @@ function submitWgpuBitmapText(state: WgpuRenderState, node: RenderProxy2D): void
 
     const regions = atlas.regions;
     const numRegions = regions.length;
-    const iw = 1 / (image.width || 1);
-    const ih = 1 / (image.height || 1);
+    const iw = 1 / Math.max(1, getTextureWidth(texture));
+    const ih = 1 / Math.max(1, getTextureHeight(texture));
     const instanceData = runtime.spriteBatchInstanceData;
     const ids = page.ids;
     const transforms = page.transforms;

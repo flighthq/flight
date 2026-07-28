@@ -1,7 +1,7 @@
-import { hasImageResourcePixels } from '@flighthq/image/contract';
 import { resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { noopRendererData } from '@flighthq/render/contract';
+import { getTextureHeight, getTextureWidth, hasTextureBacking } from '@flighthq/texture/contract';
 import type {
   ColorScaleBias,
   RenderProxy2D,
@@ -31,7 +31,7 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
 
   if (tileset === null) return;
   const atlas = tileset.atlas;
-  if (atlas === null || atlas.image === null || !hasImageResourcePixels(atlas.image)) return;
+  if (atlas === null || atlas.texture === null || !hasTextureBacking(atlas.texture)) return;
   if (columns === 0 || rows === 0) return;
 
   const material = tilemapNode.material;
@@ -45,7 +45,7 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
   const startCount = runtime.spriteBatchCount;
   const base = prepareWgpuSpriteBatchWrite(
     state,
-    atlas.image,
+    atlas.texture,
     tilemapNode.blendMode,
     material,
     materialRenderer,
@@ -55,8 +55,8 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
   const regions = atlas.regions;
   const numRegions = regions.length;
   const { tileHeight, tileWidth } = tileset;
-  const iw = 1 / (atlas.image.width || 1);
-  const ih = 1 / (atlas.image.height || 1);
+  const iw = 1 / Math.max(1, getTextureWidth(atlas.texture));
+  const ih = 1 / Math.max(1, getTextureHeight(atlas.texture));
   const instanceData = runtime.spriteBatchInstanceData;
   const pt = tilemapNode.transform2D;
   const pa = pt.a,

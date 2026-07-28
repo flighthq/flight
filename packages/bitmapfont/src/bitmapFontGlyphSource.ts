@@ -11,7 +11,8 @@ export function createGlyphSourceFromBitmapFont(font: Readonly<BitmapFont>): Gly
     getGlyphAtlasImage(page = 0) {
       // Each page's atlas image, indexed by the glyph's `page`. An out-of-range page (or a page whose
       // atlas carries no image yet) yields null — the renderer skips glyphs it cannot sample.
-      return font.pages[page]?.image ?? null;
+      const texture = font.pages[page]?.texture;
+      return texture?.storage.dimension === '2d' ? texture.storage.image : null;
     },
     getGlyphEntry(codepoint) {
       return getBitmapFontGlyph(font, codepoint);

@@ -1,7 +1,11 @@
 ﻿import { createImageResource } from '@flighthq/image/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender, registerRenderer } from '@flighthq/render/contract';
 import { createQuadBatch, reserveQuadBatch } from '@flighthq/sprite/contract';
-import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas/contract';
+import {
+  addTextureAtlasRegion,
+  createTextureAtlas,
+  createTextureAtlasFromImageResource,
+} from '@flighthq/textureatlas/contract';
 import { QuadBatchKind } from '@flighthq/types/contract';
 
 import { defaultCanvasQuadBatchRenderer, drawCanvasQuadBatch } from './canvasQuadBatch';
@@ -12,7 +16,7 @@ function makeAtlas(regionCount = 1) {
   const source = createImageResource(img);
   source.width = 128;
   source.height = 128;
-  const atlas = createTextureAtlas({ image: source });
+  const atlas = createTextureAtlasFromImageResource(source);
   for (let i = 0; i < regionCount; i++) {
     addTextureAtlasRegion(atlas, i * 32, 0, 32, 32);
   }
@@ -99,7 +103,7 @@ describe('drawCanvasQuadBatch', () => {
     const source = createImageResource(img);
     source.width = 128;
     source.height = 128;
-    const atlas = createTextureAtlas({ image: source });
+    const atlas = createTextureAtlasFromImageResource(source);
     addTextureAtlasRegion(atlas, 0, 0, 0, 0); // zero size
 
     const qb = createQuadBatch();

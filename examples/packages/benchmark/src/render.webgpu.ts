@@ -7,6 +7,7 @@ import {
   defaultWgpuQuadBatchRenderer,
   defaultWgpuTextLabelRenderer,
   prepareScene2DRender,
+  registerWgpuImageTextureResolver,
   registerStandardWgpuMaterial,
   registerRenderer,
   renderWgpuBackground,
@@ -24,6 +25,7 @@ export const state = await createWgpuRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 
+registerWgpuImageTextureResolver(state);
 registerStandardWgpuMaterial(state);
 registerRenderer(state, QuadBatchKind, defaultWgpuQuadBatchRenderer);
 registerRenderer(state, TextLabelKind, defaultWgpuTextLabelRenderer);

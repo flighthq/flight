@@ -13,7 +13,7 @@ import { isParticleEmitter2DComplete, updateParticleEmitter2D } from './updatePa
 
 function makeAtlas(): TextureAtlas {
   return {
-    image: null,
+    texture: null,
     regions: [{ id: 0, x: 0, y: 0, width: 32, height: 32, pivotX: null, pivotY: null }],
   } as TextureAtlas;
 }
@@ -319,7 +319,7 @@ describe('updateParticleEmitter2D', () => {
 
   it('advances flipbook frame based on age and frameRate', () => {
     const atlas = {
-      image: null,
+      texture: null,
       regions: [
         { id: 0, x: 0, y: 0, width: 16, height: 16, pivotX: null, pivotY: null },
         { id: 1, x: 16, y: 0, width: 16, height: 16, pivotX: null, pivotY: null },

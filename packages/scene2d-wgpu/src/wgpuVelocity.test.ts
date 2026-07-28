@@ -48,7 +48,7 @@ describe('defaultWgpuParticleEmitter2DVelocityWriter', () => {
     const state = await createWgpuRenderStateForTest();
     const target = createWgpuVelocityTarget(state, 128, 64);
     const region = { id: 0, x: 0, y: 0, width: 16, height: 16, pivotX: null, pivotY: null } as TextureAtlasRegion;
-    const atlas = { image: null, regions: [region] } as TextureAtlas;
+    const atlas = { texture: null, regions: [region] } as TextureAtlas;
     const emitter = createParticleEmitter2D();
     reserveParticleEmitter2D(emitter, 2);
     emitter.data.atlas = atlas;
@@ -76,7 +76,7 @@ describe('defaultWgpuQuadBatchVelocityWriter', () => {
     const state = await createWgpuRenderStateForTest();
     const target = createWgpuVelocityTarget(state, 128, 64);
     const region = { id: 0, x: 0, y: 0, width: 32, height: 32, pivotX: null, pivotY: null } as TextureAtlasRegion;
-    const atlas = { image: null, regions: [region] } as TextureAtlas;
+    const atlas = { texture: null, regions: [region] } as TextureAtlas;
     const batch = createQuadBatch({
       data: {
         atlas,

@@ -38,6 +38,7 @@
   "dependencies": {
     "@flighthq/entity": "*",
     "@flighthq/image": "*",
+    "@flighthq/texture": "*",
     "@flighthq/textureatlas": "*",
     "@flighthq/types": "*"
   },

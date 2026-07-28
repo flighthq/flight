@@ -1,7 +1,7 @@
-import { hasImageResourcePixels } from '@flighthq/image/contract';
 import { resolveGlMaterialRenderer } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { noopRendererData } from '@flighthq/render/contract';
+import { getTextureHeight, getTextureWidth, hasTextureBacking } from '@flighthq/texture/contract';
 import type {
   ColorScaleBias,
   GlRenderState,
@@ -28,7 +28,7 @@ function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void
 
   if (tileset === null) return;
   const atlas = tileset.atlas;
-  if (atlas === null || atlas.image === null || !hasImageResourcePixels(atlas.image)) return;
+  if (atlas === null || atlas.texture === null || !hasTextureBacking(atlas.texture)) return;
   if (columns === 0 || rows === 0) return;
 
   ensureGlQuadBatchShader(state);
@@ -44,7 +44,7 @@ function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void
   const startCount = runtime.spriteBatchCount;
   const base = prepareGlSpriteBatchWrite(
     state,
-    atlas.image,
+    atlas.texture,
     tilemapNode.blendMode,
     material,
     materialRenderer,
@@ -54,8 +54,8 @@ function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void
   const regions = atlas.regions;
   const numRegions = regions.length;
   const { tileWidth, tileHeight } = tileset;
-  const iw = 1 / (atlas.image.width || 1);
-  const ih = 1 / (atlas.image.height || 1);
+  const iw = 1 / Math.max(1, getTextureWidth(atlas.texture));
+  const ih = 1 / Math.max(1, getTextureHeight(atlas.texture));
   const instanceData = runtime.spriteBatchInstanceData;
   const pt = tilemapNode.transform2D;
   const pa = pt.a,

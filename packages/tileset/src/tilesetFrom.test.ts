@@ -1,5 +1,5 @@
 import { createImageResourceFromImageElement } from '@flighthq/image/contract';
-import { createTextureAtlas } from '@flighthq/textureatlas/contract';
+import { createTextureAtlas, createTextureAtlasFromImageResource } from '@flighthq/textureatlas/contract';
 
 import {
   createTilesetFromAtlas,
@@ -12,7 +12,7 @@ import {
 
 function makeAtlas(width: number, height: number) {
   const source = createImageResourceFromImageElement({ width, height } as HTMLImageElement);
-  return createTextureAtlas({ image: source });
+  return createTextureAtlasFromImageResource(source);
 }
 
 // Stub img.decode() so async load functions resolve immediately in jsdom.
@@ -77,7 +77,7 @@ describe('createTilesetFromImageResource', () => {
 
     expect(tileset.columns).toBe(4);
     expect(tileset.rows).toBe(2);
-    expect(tileset.atlas?.image).toBe(source);
+    expect(tileset.atlas?.texture?.storage.image).toBe(source);
   });
 
   it('initializes regions for each tile', () => {
@@ -93,7 +93,7 @@ describe('loadTilesetFromBase64', () => {
     const tileset = await loadTilesetFromBase64('abc123', 'image/png', 16, 16);
     expect(tileset.tileWidth).toBe(16);
     expect(tileset.tileHeight).toBe(16);
-    expect(tileset.atlas?.image?.source).toBeInstanceOf(HTMLImageElement);
+    expect(tileset.atlas?.texture?.storage.image?.source).toBeInstanceOf(HTMLImageElement);
   });
 
   it('threads margin and spacing into the tileset', async () => {
@@ -107,7 +107,7 @@ describe('loadTilesetFromBlob', () => {
   it('resolves to a Tileset with a non-null atlas image', async () => {
     const blob = new Blob([], { type: 'image/png' });
     const tileset = await loadTilesetFromBlob(blob, 32, 32);
-    expect(tileset.atlas?.image?.source).toBeInstanceOf(HTMLImageElement);
+    expect(tileset.atlas?.texture?.storage.image?.source).toBeInstanceOf(HTMLImageElement);
   });
 
   it('threads margin and spacing into the tileset', async () => {
@@ -125,7 +125,7 @@ describe('loadTilesetFromBytes', () => {
 
     expect(tileset.tileWidth).toBe(32);
     expect(tileset.tileHeight).toBe(16);
-    expect(tileset.atlas?.image?.source).toBeInstanceOf(HTMLImageElement);
+    expect(tileset.atlas?.texture?.storage.image?.source).toBeInstanceOf(HTMLImageElement);
   });
 
   it('throws when mime type cannot be detected', async () => {
@@ -138,7 +138,7 @@ describe('loadTilesetFromBytes', () => {
     const tileset = await loadTilesetFromBytes(bytes, 32, 32, 5, 6, 'image/png');
     expect(tileset.margin).toBe(5);
     expect(tileset.spacing).toBe(6);
-    expect(tileset.atlas?.image?.source).toBeInstanceOf(HTMLImageElement);
+    expect(tileset.atlas?.texture?.storage.image?.source).toBeInstanceOf(HTMLImageElement);
   });
 });
 
@@ -147,13 +147,13 @@ describe('loadTilesetFromUrl', () => {
     const tileset = await loadTilesetFromUrl('data:image/png;base64,abc', 32, 32);
     expect(tileset.tileWidth).toBe(32);
     expect(tileset.tileHeight).toBe(32);
-    expect(tileset.atlas?.image?.source).toBeInstanceOf(HTMLImageElement);
+    expect(tileset.atlas?.texture?.storage.image?.source).toBeInstanceOf(HTMLImageElement);
   });
 
   it('threads margin and spacing into the tileset with crossOrigin still after them', async () => {
     const tileset = await loadTilesetFromUrl('data:image/png;base64,abc', 32, 32, 3, 2, 'anonymous');
     expect(tileset.margin).toBe(3);
     expect(tileset.spacing).toBe(2);
-    expect(tileset.atlas?.image?.source).toBeInstanceOf(HTMLImageElement);
+    expect(tileset.atlas?.texture?.storage.image?.source).toBeInstanceOf(HTMLImageElement);
   });
 });

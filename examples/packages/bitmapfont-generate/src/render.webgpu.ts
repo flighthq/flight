@@ -7,6 +7,7 @@ import {
   defaultWgpuQuadBatchRenderer,
   prepareScene2DRender,
   QuadBatchKind,
+  registerWgpuImageTextureResolver,
   registerStandardWgpuMaterial,
   registerRenderer,
   renderWgpuBackground,
@@ -24,6 +25,7 @@ export const state = await createWgpuRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 
+registerWgpuImageTextureResolver(state);
 registerStandardWgpuMaterial(state);
 registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);
 registerRenderer(state, QuadBatchKind, defaultWgpuQuadBatchRenderer);

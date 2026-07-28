@@ -2,18 +2,20 @@
 import { noopRendererData } from '@flighthq/render/contract';
 import type { CanvasRenderState, QuadBatch, RenderProxy2D, SpriteRenderer } from '@flighthq/types/contract';
 
+import { resolveCanvasTextureSource } from './canvasImageSource';
 import { applyCanvasMaterial } from './canvasMaterialRegistry';
 
 export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: RenderProxy2D): void {
   const source = quadBatch.source as QuadBatch;
   const data = source.data;
   const { atlas, instanceCount, ids, transforms } = data;
-  if (atlas === null || atlas.image === null || atlas.image.source === null || instanceCount === 0) return;
+  if (atlas === null || atlas.texture === null || instanceCount === 0) return;
+  const image = resolveCanvasTextureSource(state, atlas.texture);
+  if (image === null) return;
 
   state.applyBlendMode?.(state, quadBatch.blendMode);
 
   const context = state.context;
-  const image = atlas.image.source;
   const regions = atlas.regions;
   const numRegions = regions.length;
   const transform = quadBatch.transform2D;
@@ -24,7 +26,8 @@ export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: RenderP
 
   context.globalAlpha = quadBatch.alpha;
 
-  if (!state.allowSmoothing /*|| !quadBatch.smoothing*/) {
+  const smoothing = state.allowSmoothing && !atlas.texture.sampler.magFilter.startsWith('nearest');
+  if (!smoothing) {
     context.imageSmoothingEnabled = false;
   }
 
@@ -83,7 +86,7 @@ export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: RenderP
   context.setTransform(1, 0, 0, 1, 0, 0);
   releaseMatrix(quadTransform);
 
-  if (!state.allowSmoothing /*|| !quadBatch.smoothing*/) {
+  if (!smoothing) {
     context.imageSmoothingEnabled = true;
   }
 

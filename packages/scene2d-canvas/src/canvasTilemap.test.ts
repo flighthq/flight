@@ -1,7 +1,11 @@
 ﻿import { createImageResource } from '@flighthq/image/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { createTilemap, setTilemapTile } from '@flighthq/sprite/contract';
-import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas/contract';
+import {
+  addTextureAtlasRegion,
+  createTextureAtlas,
+  createTextureAtlasFromImageResource,
+} from '@flighthq/textureatlas/contract';
 import { buildTilesetRegions, createTileset } from '@flighthq/tileset/contract';
 
 import { createCanvasRenderState } from './canvasRenderState';
@@ -19,7 +23,7 @@ function makeTilesetAtlas(tileWidth = 32, tileHeight = 32, cols = 2, rows = 1) {
   const source = createImageResource(img);
   source.width = tileWidth * cols;
   source.height = tileHeight * rows;
-  const atlas = createTextureAtlas({ image: source });
+  const atlas = createTextureAtlasFromImageResource(source);
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       addTextureAtlasRegion(atlas, c * tileWidth, r * tileHeight, tileWidth, tileHeight);

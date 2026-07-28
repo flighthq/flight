@@ -1,5 +1,6 @@
 import { createImageResource } from '@flighthq/image/contract';
-import type { ImageResource, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
+import { createTexture } from '@flighthq/texture/contract';
+import type { TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
 
 import { createTextureAtlas, getTextureAtlasByteSize } from './textureAtlas';
 
@@ -12,16 +13,16 @@ describe('createTextureAtlas', () => {
 
   it('allows pre-defined values', () => {
     const base = {
-      image: {} as ImageResource,
       regions: [{} as TextureAtlasRegion],
+      texture: createTexture(),
     };
     const obj = createTextureAtlas(base);
-    expect(obj.image).toStrictEqual(base.image);
+    expect(obj.texture).toStrictEqual(base.texture);
     expect(obj.regions).toStrictEqual(base.regions);
   });
 
   it('initializes default values', () => {
-    expect(atlas.image).toBeNull();
+    expect(atlas.texture).toBeNull();
     expect(atlas.regions).toEqual([]);
   });
 
@@ -46,14 +47,14 @@ describe('getTextureAtlasByteSize', () => {
 
   it('returns 0 when the atlas image has no data (element-only)', () => {
     const image = createImageResource();
-    const atlas = createTextureAtlas({ image });
+    const atlas = createTextureAtlas({ texture: createTexture({ storage: { dimension: '2d', image } }) });
     expect(getTextureAtlasByteSize(atlas)).toBe(0);
   });
 
   it('returns the image data byteLength when data is present', () => {
     const image = createImageResource();
     image.data = new Uint8ClampedArray(256);
-    const atlas = createTextureAtlas({ image });
+    const atlas = createTextureAtlas({ texture: createTexture({ storage: { dimension: '2d', image } }) });
     expect(getTextureAtlasByteSize(atlas)).toBe(256);
   });
 });

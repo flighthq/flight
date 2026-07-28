@@ -1,8 +1,15 @@
 import { createParticleEmitter2D } from '@flighthq/particleemitter/contract';
-import { getWgpuRenderStateRuntime, renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu/contract';
+import {
+  getWgpuRenderStateRuntime,
+  registerWgpuImageTextureResolver,
+  renderWgpuBackground,
+  submitWgpuRenderPass,
+} from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
+import { createTexture } from '@flighthq/texture/contract';
 import type { ImageResource, RenderProxy2D } from '@flighthq/types/contract';
+import { ImageTextureBackingKind } from '@flighthq/types/contract';
 
 import { defaultWgpuParticleEmitter2DRenderer, drawWgpuParticleEmitter2D } from './wgpuParticleEmitter2D';
 
@@ -36,6 +43,7 @@ describe('drawWgpuParticleEmitter2D', () => {
   it('threads a native compressed atlas straight-alpha flag through the particle uniform', async () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
+    registerWgpuImageTextureResolver(state);
     renderWgpuBackground(state);
     const before = runtime.uniformOffset;
     const image = {
@@ -43,6 +51,7 @@ describe('drawWgpuParticleEmitter2D', () => {
       compressed: { container: {}, payload: new Uint8Array() },
       data: null,
       height: 4,
+      kind: ImageTextureBackingKind,
       source: null,
       version: 1,
       width: 4,
@@ -67,7 +76,10 @@ describe('drawWgpuParticleEmitter2D', () => {
       source: {
         data: {
           alphas: new Float32Array([1]),
-          atlas: { image, regions: [{ height: 4, width: 4, x: 0, y: 0 }] },
+          atlas: {
+            regions: [{ height: 4, width: 4, x: 0, y: 0 }],
+            texture: createTexture({ storage: { dimension: '2d', image } }),
+          },
           colors: new Float32Array([1, 1, 1]),
           ids: new Uint16Array([0]),
           particleCount: 1,

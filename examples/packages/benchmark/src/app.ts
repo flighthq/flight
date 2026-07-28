@@ -5,6 +5,7 @@ import {
   createImageResource,
   createQuadBatch,
   createTextLabel,
+  createTexture,
   createTextureAtlas,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
@@ -40,7 +41,9 @@ ctx.beginPath();
 ctx.arc(SHAPE_SIZE / 2, SHAPE_SIZE / 2, SHAPE_SIZE / 2 - 1, 0, Math.PI * 2);
 ctx.fill();
 
-const atlas = createTextureAtlas({ image: createImageResource(shapeCanvas) });
+const atlas = createTextureAtlas({
+  texture: createTexture({ storage: { dimension: '2d', image: createImageResource(shapeCanvas) } }),
+});
 addTextureAtlasRegion(atlas, 0, 0, SHAPE_SIZE, SHAPE_SIZE);
 
 const root = createDisplayObject();

@@ -14,6 +14,7 @@ import {
   createImageResource,
   createParticleEmitter2D,
   createTextLabel,
+  createTexture,
   createTextureAtlas,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
@@ -50,7 +51,9 @@ sparkGrad.addColorStop(1, 'rgba(150, 0, 0, 0)');
 sparkCtx.fillStyle = sparkGrad;
 sparkCtx.fillRect(0, 0, 16, 16);
 
-const fireAtlas = createTextureAtlas({ image: createImageResource(sparkCanvas) });
+const fireAtlas = createTextureAtlas({
+  texture: createTexture({ storage: { dimension: '2d', image: createImageResource(sparkCanvas) } }),
+});
 addTextureAtlasRegion(fireAtlas, 0, 0, 16, 16);
 
 // Procedural snowflake texture: soft white radial glow.
@@ -66,7 +69,9 @@ snowGrad.addColorStop(1, 'rgba(140, 180, 255, 0)');
 snowCtx.fillStyle = snowGrad;
 snowCtx.fillRect(0, 0, 12, 12);
 
-const snowAtlas = createTextureAtlas({ image: createImageResource(snowCanvas) });
+const snowAtlas = createTextureAtlas({
+  texture: createTexture({ storage: { dimension: '2d', image: createImageResource(snowCanvas) } }),
+});
 addTextureAtlasRegion(snowAtlas, 0, 0, 12, 12);
 
 // Fire emitter: additive glow, follows mouse, world-space trail.

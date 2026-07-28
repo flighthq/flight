@@ -1,7 +1,8 @@
 import { createCanvasFromImageResource } from '@flighthq/image/contract';
-import type { CanvasImageSourceKind, CanvasRenderState, ImageResource } from '@flighthq/types/contract';
+import type { CanvasImageSourceKind, CanvasRenderState, ImageResource, Texture } from '@flighthq/types/contract';
 
 import { getCanvasRenderStateRuntime } from './canvasRenderState';
+import { bindCanvasRenderTexture } from './canvasRenderTexture';
 
 // Reports how a resource will resolve on the Canvas backend without drawing or materializing anything
 // — the shakeable diagnostic for the otherwise-silent data→element transcode. `element` is free;
@@ -46,4 +47,14 @@ export function resolveCanvasImageSource(
     cache.set(image, entry);
   }
   return entry.element;
+}
+
+// Resolves either a CPU-origin 2D Texture backing or a populated produced Canvas Texture.
+export function resolveCanvasTextureSource(
+  state: CanvasRenderState,
+  texture: Readonly<Texture>,
+): CanvasImageSource | null {
+  if (texture.storage.dimension !== '2d') return null;
+  const image = texture.storage.image;
+  return image !== null ? resolveCanvasImageSource(state, image) : bindCanvasRenderTexture(state, texture);
 }

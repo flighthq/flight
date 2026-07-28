@@ -214,7 +214,7 @@ describe('createSpritesheetFromGrid', () => {
       imageWidth: 32,
       imageHeight: 32,
     });
-    expect(sheet.atlas!.image).toBeNull();
+    expect(sheet.atlas!.texture).toBeNull();
   });
 });
 

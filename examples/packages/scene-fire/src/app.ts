@@ -72,7 +72,9 @@ function createFireAtlas() {
   gradient.addColorStop(1, 'rgba(32, 0, 0, 0)');
   context.fillStyle = gradient;
   context.fillRect(0, 0, canvas.width, canvas.height);
-  const atlas = createTextureAtlas({ image: createImageResource(canvas) });
+  const atlas = createTextureAtlas({
+    texture: createTexture({ storage: { dimension: '2d', image: createImageResource(canvas) } }),
+  });
   addTextureAtlasRegion(atlas, 0, 0, canvas.width, canvas.height);
   return atlas;
 }
