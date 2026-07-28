@@ -1,4 +1,5 @@
 ﻿import { createMatrix } from '@flighthq/geometry/contract';
+import { createImageResource } from '@flighthq/image/contract';
 import { registerRenderer } from '@flighthq/render/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import {
@@ -11,6 +12,7 @@ import {
   appendShapeRectangle,
   createShape,
 } from '@flighthq/shape/contract';
+import { createTexture } from '@flighthq/texture/contract';
 import { ShapeKind } from '@flighthq/types/contract';
 
 import { createCanvasRenderState } from './canvasRenderState';
@@ -161,7 +163,9 @@ describe('renderCanvasShapeCommands', () => {
     const bitmapSource = document.createElement('canvas');
     bitmapSource.width = 50;
     bitmapSource.height = 50;
-    const bitmap = { source: bitmapSource, width: 50, height: 50 } as never;
+    const bitmap = createTexture({
+      storage: { dimension: '2d', image: createImageResource(bitmapSource) },
+    });
     const singular = createMatrix(0, 0, 0, 0, 0, 0);
     const shape = createShape();
     appendShapeBeginBitmapFill(shape, bitmap, singular);

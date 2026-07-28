@@ -32,11 +32,11 @@ export function drawCanvasScale9Shape(state: CanvasRenderState, renderProxy: Ren
 
   if (mapper === null) {
     setCanvasTransform(state, context, renderProxy.transform2D);
-    renderCanvasShapeCommands(context, commands);
+    renderCanvasShapeCommands(context, commands, state);
   } else {
     applyStrippedTransform(state, context, renderProxy.transform2D, scaleX, scaleY);
     mapCanvasScale9ShapeCommands(_remappedCommands, commands, mapper);
-    renderCanvasShapeCommands(context, _remappedCommands);
+    renderCanvasShapeCommands(context, _remappedCommands, state);
   }
 }
 

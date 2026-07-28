@@ -1,6 +1,8 @@
+import type { CanvasRenderState } from './CanvasRenderState';
 import type { Matrix } from './Matrix';
 
 export interface CanvasShapeDrawState {
+  canvasRenderState: CanvasRenderState | null;
   hasFill: boolean;
   fillStyle: string | CanvasPattern | CanvasGradient;
   fillMatrix: Matrix | null;

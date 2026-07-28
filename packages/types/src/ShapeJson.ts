@@ -1,11 +1,11 @@
-import type { ImageResource } from './ImageResource';
+import type { Texture } from './Texture';
 
 // The reference persisted for a `beginBitmapFill`/`lineBitmapStyle` command in place of its live
-// `ImageResource`. An `ImageResource` carries no stable serializable id (it is a runtime entity plus
-// pixel bytes), so the reference is the zero-based ordinal of the bitmap-bearing command within the
+// `Texture`. A Texture carries no stable serializable id (it is a runtime entity over backing storage
+// and sampling intent), so the reference is the zero-based ordinal of the texture-bearing command within the
 // shape, assigned in command order during `formatShapeJson`. The caller maps this ordinal back to a
-// resource via `ShapeJsonParseOptions.resolveBitmap`.
-export interface ShapeBitmapReference {
+// texture via `ShapeJsonParseOptions.resolveTexture`.
+export interface ShapeTextureReference {
   index: number;
 }
 
@@ -15,8 +15,8 @@ export interface ShapeJsonFormatOptions {
 }
 
 export interface ShapeJsonParseOptions {
-  // Rehydrates a `beginBitmapFill`/`lineBitmapStyle` bitmap from its serialized ordinal reference.
-  // When omitted, or when it returns `null`, the bitmap-bearing command is dropped and the rest of
+  // Rehydrates a `beginBitmapFill`/`lineBitmapStyle` Texture from its serialized ordinal reference.
+  // When omitted, or when it returns `null`, the texture-bearing command is dropped and the rest of
   // the shape parses intact.
-  resolveBitmap?: (reference: Readonly<ShapeBitmapReference>) => ImageResource | null;
+  resolveTexture?: (reference: Readonly<ShapeTextureReference>) => Texture | null;
 }

@@ -1,3 +1,4 @@
+import { createImageResource } from '@flighthq/image/contract';
 import {
   appendShapeBeginBitmapFill,
   appendShapeBeginFill,
@@ -18,6 +19,7 @@ import {
   createShape,
   PathCommand,
 } from '@flighthq/shape/contract';
+import { createSampler, createTexture } from '@flighthq/texture/contract';
 
 import { renderCanvasShapeCommands } from './canvasShape';
 import { defaultCanvasShapeCommands } from './canvasShapeCommands';
@@ -38,11 +40,20 @@ function makeContext(): CanvasRenderingContext2D {
   return context;
 }
 
-function makeBitmapSource(w: number, h: number) {
+function makeBitmapTexture(w: number, h: number, smooth = true, repeat = false) {
   const canvas = document.createElement('canvas');
   canvas.width = w;
   canvas.height = h;
-  return { source: canvas, width: w, height: h } as never;
+  return createTexture({
+    sampler: createSampler({
+      magFilter: smooth ? 'linear' : 'nearest',
+      minFilter: smooth ? 'linear' : 'nearest',
+      mipmaps: false,
+      wrapU: repeat ? 'repeat' : 'clamp-to-edge',
+      wrapV: repeat ? 'repeat' : 'clamp-to-edge',
+    }),
+    storage: { dimension: '2d', image: createImageResource(canvas) },
+  });
 }
 
 describe('defaultCanvasBeginBitmapFill', () => {
@@ -51,7 +62,7 @@ describe('defaultCanvasBeginBitmapFill', () => {
     const drawImageSpy = vi.spyOn(context, 'drawImage');
     const fillSpy = vi.spyOn(context, 'fill');
     const shape = createShape();
-    appendShapeBeginBitmapFill(shape, makeBitmapSource(200, 200));
+    appendShapeBeginBitmapFill(shape, makeBitmapTexture(200, 200));
     appendShapeRectangle(shape, 0, 0, 100, 100);
     appendShapeEndFill(shape);
     renderCanvasShapeCommands(context, shape.data.commands);
@@ -64,7 +75,7 @@ describe('defaultCanvasBeginBitmapFill', () => {
     const drawImageSpy = vi.spyOn(context, 'drawImage');
     const fillSpy = vi.spyOn(context, 'fill');
     const shape = createShape();
-    appendShapeBeginBitmapFill(shape, makeBitmapSource(50, 50));
+    appendShapeBeginBitmapFill(shape, makeBitmapTexture(50, 50));
     appendShapeRectangle(shape, 0, 0, 100, 100);
     appendShapeEndFill(shape);
     renderCanvasShapeCommands(context, shape.data.commands);
@@ -72,11 +83,11 @@ describe('defaultCanvasBeginBitmapFill', () => {
     expect(fillSpy).toHaveBeenCalled();
   });
 
-  it('sets imageSmoothingEnabled when smooth is true', () => {
+  it('sets imageSmoothingEnabled from the texture sampler', () => {
     const context = makeContext();
     context.imageSmoothingEnabled = false;
     const shape = createShape();
-    appendShapeBeginBitmapFill(shape, makeBitmapSource(200, 200), null, true, true);
+    appendShapeBeginBitmapFill(shape, makeBitmapTexture(200, 200, true));
     appendShapeRectangle(shape, 0, 0, 100, 100);
     appendShapeEndFill(shape);
     renderCanvasShapeCommands(context, shape.data.commands);
@@ -312,7 +323,7 @@ describe('defaultCanvasLineBitmapStyle', () => {
     const context = makeContext();
     const spy = vi.spyOn(context, 'stroke');
     const shape = createShape();
-    appendShapeLineBitmapStyle(shape, makeBitmapSource(64, 64));
+    appendShapeLineBitmapStyle(shape, makeBitmapTexture(64, 64));
     appendShapeMoveTo(shape, 0, 0);
     appendShapeLineTo(shape, 100, 0);
     appendShapeEndFill(shape);

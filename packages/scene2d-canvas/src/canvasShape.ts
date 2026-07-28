@@ -23,11 +23,15 @@ export function drawCanvasShape(state: CanvasRenderState, renderProxy: RenderPro
   context.globalAlpha = renderProxy.alpha;
   setCanvasTransform(state, context, renderProxy.transform2D);
 
-  renderCanvasShapeCommands(context, commands);
+  renderCanvasShapeCommands(context, commands, state);
 }
 
-export function renderCanvasShapeCommands(context: CanvasRenderingContext2D, commands: unknown[]): void {
-  const drawState = createCanvasShapeDrawState(context);
+export function renderCanvasShapeCommands(
+  context: CanvasRenderingContext2D,
+  commands: unknown[],
+  state: CanvasRenderState | null = null,
+): void {
+  const drawState = createCanvasShapeDrawState(context, state);
   context.beginPath();
   let i = 0;
   while (i < commands.length) {
@@ -47,11 +51,15 @@ export const defaultCanvasShapeRenderer: Scene2DRenderer = {
   submit: drawCanvasShape,
 };
 
-function createCanvasShapeDrawState(context: CanvasRenderingContext2D): CanvasShapeDrawState {
+function createCanvasShapeDrawState(
+  context: CanvasRenderingContext2D,
+  renderState: CanvasRenderState | null,
+): CanvasShapeDrawState {
   const state: CanvasShapeDrawState = {
     bitmapH: 0,
     bitmapSrc: null,
     bitmapW: 0,
+    canvasRenderState: renderState,
     fillMatrix: null,
     fillMatrixInverse: null,
     fillStyle: '',

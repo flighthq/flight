@@ -22,13 +22,13 @@ import {
 import type { Shape, ShapeJsonFormatOptions, ShapeJsonParseOptions } from '@flighthq/types/contract';
 
 // Serializes a shape's full drawing-command stream to a native JSON string that `parseShapeJson`
-// restores losslessly. Every non-bitmap command round-trips exactly; `beginBitmapFill`/
-// `lineBitmapStyle` resources serialize as an ordinal `ShapeBitmapReference` (see the type) rather
-// than the live `ImageResource`.
+// restores losslessly. Every non-texture command round-trips exactly; `beginBitmapFill`/
+// `lineBitmapStyle` textures serialize as an ordinal `ShapeTextureReference` (see the type) rather
+// than the live `Texture`.
 export function formatShapeJson(shape: Readonly<Shape>, options?: Readonly<ShapeJsonFormatOptions>): string {
   const commands = shape.data.commands;
   const entries: SerializedShapeCommand[] = [];
-  let bitmapOrdinal = 0;
+  let textureOrdinal = 0;
   let i = 0;
   while (i < commands.length) {
     const key = commands[i] as string;
@@ -47,9 +47,9 @@ export function formatShapeJson(shape: Readonly<Shape>, options?: Readonly<Shape
         // data/commands, triangle vertices) serialize verbatim through JSON.
         args.push(value);
       } else {
-        // The only remaining object arg in the command registry is a live `ImageResource` bitmap;
+        // The only remaining object arg in the command registry is a live Texture;
         // it has no serializable id, so it becomes an ordinal reference resolved on parse.
-        args.push({ bitmap: { index: bitmapOrdinal++ } });
+        args.push({ texture: { index: textureOrdinal++ } });
       }
     }
     entries.push({ key, args });
@@ -74,7 +74,7 @@ export function parseShapeJson(text: string, options?: Readonly<ShapeJsonParseOp
   const rawCommands = root.commands;
   if (!Array.isArray(rawCommands)) return null;
 
-  const resolveBitmap = options?.resolveBitmap;
+  const resolveTexture = options?.resolveTexture;
   const shape = createShape();
   for (const entry of rawCommands) {
     if (!isPlainObject(entry)) return null;
@@ -87,7 +87,7 @@ export function parseShapeJson(text: string, options?: Readonly<ShapeJsonParseOp
     const args: unknown[] = [];
     let drop = false;
     for (const raw of rawArgs) {
-      const reconstructed = reconstructShapeCommandArg(raw, resolveBitmap);
+      const reconstructed = reconstructShapeCommandArg(raw, resolveTexture);
       if (reconstructed === MALFORMED_ARG) return null;
       if (reconstructed === DROP_COMMAND) {
         drop = true;
@@ -102,15 +102,15 @@ export function parseShapeJson(text: string, options?: Readonly<ShapeJsonParseOp
 }
 
 // Rebuilds a single command argument from its serialized form. Returns `MALFORMED_ARG` for an
-// unrecognized object shape and `DROP_COMMAND` when a bitmap reference cannot be resolved.
-function reconstructShapeCommandArg(value: unknown, resolveBitmap: ShapeJsonParseOptions['resolveBitmap']): unknown {
+// unrecognized object shape and `DROP_COMMAND` when a texture reference cannot be resolved.
+function reconstructShapeCommandArg(value: unknown, resolveTexture: ShapeJsonParseOptions['resolveTexture']): unknown {
   if (value === null) return null;
   const type = typeof value;
   if (type === 'number' || type === 'string' || type === 'boolean') return value;
   if (Array.isArray(value)) return value;
   if (!isPlainObject(value)) return MALFORMED_ARG;
-  if (isPlainObject(value.bitmap) && typeof value.bitmap.index === 'number') {
-    const resolved = resolveBitmap?.({ index: value.bitmap.index }) ?? null;
+  if (isPlainObject(value.texture) && typeof value.texture.index === 'number') {
+    const resolved = resolveTexture?.({ index: value.texture.index }) ?? null;
     return resolved === null ? DROP_COMMAND : resolved;
   }
   if (
@@ -162,10 +162,10 @@ interface SerializedShapeCommand {
 // Sentinel returned when a command argument is structurally invalid; parse aborts to `null`.
 const MALFORMED_ARG = Symbol('shapeFormats.malformedArg');
 
-// Sentinel returned when a bitmap reference cannot be resolved; the owning command is dropped.
+// Sentinel returned when a texture reference cannot be resolved; the owning command is dropped.
 const DROP_COMMAND = Symbol('shapeFormats.dropCommand');
 
-const SHAPE_JSON_FORMAT = 1;
+const SHAPE_JSON_FORMAT = 2;
 
 const SHAPE_COMMAND_APPENDERS: Readonly<Record<string, ShapeCommandAppender>> = {
   beginBitmapFill: appendShapeBeginBitmapFill,
