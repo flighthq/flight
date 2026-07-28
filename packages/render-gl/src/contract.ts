@@ -1,6 +1,7 @@
 export * from './glBackground';
 export * from './glCompressedTexture';
 export * from './glDraw';
+export * from './glExternalTexture';
 export * from './glElement';
 export * from './enableGlRenderTextureGuards';
 export * from './glFullscreenPass';

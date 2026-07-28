@@ -13,6 +13,7 @@ import type { ImageResource } from './ImageResource';
 import type { Material } from './Material';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
+import type { Texture } from './Texture';
 import type { TintMaterialData } from './TintMaterialData';
 
 export interface GlRenderState extends RenderState {
@@ -200,6 +201,9 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // Open, state-scoped Texture backing registry keyed by the backing's declared string kind.
   // Map.set is last-write-wins; undefined until first registration. Texture carries no backend state.
   glTextureResolverRegistry?: Map<GlTextureBackingKind, GlTextureResolver> | null;
+  // Borrowed native handles registered by createExternalGlTexture. Disposing forgets these entries;
+  // the caller retains allocation ownership.
+  glExternalTextureCache?: WeakMap<Texture, WebGLTexture>;
   // Optional RGBA fallback decoder for block-compressed textures the device cannot upload natively.
   // Installed per-state by registerGlCompressedTextureDecoder (opt-in), so a state that never draws a
   // compressed texture — or only draws formats the device supports — carries no decoder. Undefined

@@ -117,6 +117,8 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // Open, state-scoped Texture backing registry keyed by the backing's declared string kind.
   // Map.set is last-write-wins; undefined until first registration.
   wgpuTextureResolverRegistry?: Map<WgpuTextureBackingKind, WgpuTextureResolver> | null;
+  // Borrowed native handles and derived non-owning views/bind groups. Disposal only forgets the entry.
+  wgpuExternalTextureCache?: WeakMap<Texture, WgpuTextureEntry>;
   // Produced Texture realizations are keyed by Texture because their GPU allocation is state-bound.
   wgpuRenderTextureCache?: WeakMap<Texture, WgpuRenderTextureEntry>;
 
