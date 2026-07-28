@@ -58,8 +58,9 @@ export function resolveScene3DResources(
     const texture = textures[i];
     const ref = texture.resource;
     if (ref == null) continue;
-    if (texture.storage.image !== null) {
-      runtime.resolved.set(ref, texture.storage.image);
+    const image = texture.storage.image;
+    if (image != null) {
+      runtime.resolved.set(ref, image);
       ref.failure = null;
       ref.state = ResourceResolutionState.Resolved;
     }

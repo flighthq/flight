@@ -1,6 +1,6 @@
-import type { CubeTexture } from './CubeTexture';
+import type { Texture } from './Texture';
 
 export interface EnvironmentOptions {
-  environment?: CubeTexture | null;
+  environment?: Texture | null;
   intensity?: number;
 }

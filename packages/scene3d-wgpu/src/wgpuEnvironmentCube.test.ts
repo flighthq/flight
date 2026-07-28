@@ -1,4 +1,4 @@
-import type { CubeTexture, Environment, ImageResource } from '@flighthq/types/contract';
+import type { Texture, Environment, ImageResource } from '@flighthq/types/contract';
 
 import { ensureWgpuEnvironmentSourceCube, updateWgpuEnvironmentCubeFace } from './wgpuEnvironmentCube';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
@@ -12,9 +12,9 @@ function completeEnvironment(): Environment {
   const face = { source: {} as CanvasImageSource, data: null, width: 4, height: 4 } as ImageResource;
   const cube = {
     colorSpace: 'srgb',
-    faces: [face, face, face, face, face, face],
     sampler: {},
-  } as unknown as CubeTexture;
+    storage: { dimension: 'cube', images: [face, face, face, face, face, face] },
+  } as unknown as Texture;
   return { environment: cube, intensity: 1 } as Environment;
 }
 
@@ -26,9 +26,9 @@ function dataOnlyEnvironment(): Environment {
   const face = dataFace();
   const cube = {
     colorSpace: 'srgb',
-    faces: [face, face, face, face, face, face],
     sampler: {},
-  } as unknown as CubeTexture;
+    storage: { dimension: 'cube', images: [face, face, face, face, face, face] },
+  } as unknown as Texture;
   return { environment: cube, intensity: 1 } as Environment;
 }
 

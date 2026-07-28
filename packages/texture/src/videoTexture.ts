@@ -9,7 +9,7 @@ import { cloneTexture, copyTexture, createTexture, getTextureUvMatrix } from './
 // backing and owns the upload revision; Texture.version mirrors it as the sampled object's dirty-bit.
 export function advanceVideoTexture(texture: TextureLike): number {
   const image = texture.storage.image;
-  if (image === null) return texture.version;
+  if (image == null) return texture.version;
   updateVideoImageSize(image);
   image.version = (image.version + 1) >>> 0;
   texture.version = image.version;
@@ -72,13 +72,14 @@ export function isVideoTextureFrameReady(texture: Readonly<TextureLike>): boolea
 // Resets the shared backing revision so its next advance wraps to 0 and every state re-uploads.
 export function resetVideoTextureFrame(texture: TextureLike): void {
   const image = texture.storage.image;
-  if (image !== null) image.version = INITIAL_VIDEO_VERSION;
+  if (image != null) image.version = INITIAL_VIDEO_VERSION;
   texture.version = INITIAL_VIDEO_VERSION;
 }
 
 // Replaces the borrowed host element in the existing ImageResource backing and resets its upload
 // revision. The VideoResource remains the loader/lifecycle object; Texture stores only its host handle.
 export function setVideoTextureSource(texture: TextureLike, source: VideoResource): void {
+  if (texture.storage.dimension !== '2d') throw new Error('setVideoTextureSource requires 2d texture storage');
   const image = texture.storage.image;
   if (image === null) {
     texture.storage.image = createVideoImageResource(source);

@@ -40,7 +40,7 @@ export function destroyGlVideoData(state: GlRenderState, data: RendererData): vo
   if (videoTexture === null) return;
   const cache = runtime.videoTextureCache;
   const image = videoTexture.storage.image;
-  const entry = image !== null ? cache?.get(image) : undefined;
+  const entry = image != null ? cache?.get(image) : undefined;
   if (entry !== undefined) {
     state.gl.deleteTexture(entry.texture);
     cache!.delete(image!);

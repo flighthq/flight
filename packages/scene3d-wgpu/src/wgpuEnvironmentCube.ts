@@ -1,5 +1,5 @@
 import { uploadWgpuTextureImageResource } from '@flighthq/render-wgpu/contract';
-import type { CubeTexture, Environment, ImageResource, WgpuRenderState } from '@flighthq/types/contract';
+import type { Texture, Environment, ImageResource, WgpuRenderState } from '@flighthq/types/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 
@@ -23,10 +23,11 @@ export function ensureWgpuEnvironmentSourceCube(
   if (scene.environmentSourceCubeView !== null) return scene.environmentSourceCubeView;
 
   const cube = environment.environment;
-  if (cube === null || !hasWgpuCubeFacePixels(cube)) return null;
+  if (cube === null || cube.storage.dimension !== 'cube' || !hasWgpuCubeFacePixels(cube)) return null;
+  const images = cube.storage.images;
 
   // Cube textures must be square; every face shares the +X face's dimensions (a well-formed cube).
-  const size = cube.faces[0]!.width;
+  const size = images[0]!.width;
   const device = state.device;
   const texture = device.createTexture({
     size: [size, size, 6],
@@ -36,7 +37,7 @@ export function ensureWgpuEnvironmentSourceCube(
   // Each face uploads into its array layer, in the canonical +X, -X, +Y, -Y, +Z, -Z order (the array-layer
   // index IS the face index — the wgpu counterpart of GL's CUBE_MAP_POSITIVE_X + face).
   for (let face = 0; face < 6; face++) {
-    uploadWgpuTextureImageResource(device, texture, [0, 0, face], cube.faces[face]!);
+    uploadWgpuTextureImageResource(device, texture, [0, 0, face], images[face]!);
   }
 
   const view = texture.createView({ dimension: 'cube' });
@@ -64,9 +65,10 @@ export function updateWgpuEnvironmentCubeFace(
 
 // A face is uploadable when it carries pixels in either representation: a decoded `source` element or
 // raw CPU `data` (a generated Surface). A cube is complete only when all six faces are uploadable.
-function hasWgpuCubeFacePixels(cube: Readonly<CubeTexture>): boolean {
+function hasWgpuCubeFacePixels(cube: Readonly<Texture>): boolean {
+  if (cube.storage.dimension !== 'cube') return false;
   for (let face = 0; face < 6; face++) {
-    const image = cube.faces[face];
+    const image = cube.storage.images[face];
     if (image == null || (image.source == null && image.data == null)) return false;
   }
   return true;

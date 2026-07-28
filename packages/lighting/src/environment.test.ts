@@ -1,10 +1,11 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { CubeTexture, Sampler } from '@flighthq/types/contract';
+import { createVector2 } from '@flighthq/geometry/contract';
+import type { Texture, Sampler } from '@flighthq/types/contract';
 import { EnvironmentKind } from '@flighthq/types/contract';
 
 import { cloneEnvironment, createEnvironment } from './environment';
 
-function createTestCubeTexture(): CubeTexture {
+function createTestCubeTexture(): Texture {
   const sampler: Sampler = createEntity({
     anisotropy: 1,
     magFilter: 'linear',
@@ -15,8 +16,14 @@ function createTestCubeTexture(): CubeTexture {
   });
   return createEntity({
     colorSpace: 'linear',
-    faces: [null, null, null, null, null, null],
+    flipX: false,
+    flipY: false,
     sampler,
+    storage: { dimension: 'cube', images: [null, null, null, null, null, null] },
+    uvOffset: createVector2(),
+    uvRotation: 0,
+    uvScale: createVector2(1, 1),
+    version: 0,
   });
 }
 

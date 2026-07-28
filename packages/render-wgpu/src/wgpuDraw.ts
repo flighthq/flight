@@ -268,7 +268,7 @@ export function createWgpuTextureEntry(
 
 export function destroyWgpuVideoTexture(state: WgpuRenderState, videoTexture: Readonly<Texture>): boolean {
   const image = videoTexture.storage.image;
-  if (image === null) return false;
+  if (image == null) return false;
   const cache = getWgpuRenderStateRuntime(state).videoTextureCache;
   const entry = cache?.get(image);
   if (entry === undefined) return false;

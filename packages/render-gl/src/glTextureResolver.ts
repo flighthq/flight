@@ -61,7 +61,7 @@ export function resolveGlTexture(state: GlRenderState, texture: Readonly<Texture
 
 function resolveGlImageTexture(state: GlRenderState, texture: Readonly<TextureLike>): WebGLTexture | null {
   const image = texture.storage.image;
-  if (image === null || (image.source === null && image.data === null && image.compressed === null)) return null;
+  if (image == null || (image.source === null && image.data === null && image.compressed === null)) return null;
   return bindGlImageResourceTexture(state, image, texture.sampler);
 }
 
