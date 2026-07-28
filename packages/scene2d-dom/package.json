@@ -52,6 +52,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
+    "@flighthq/bitmap": "*",
     "@flighthq/image": "*",
     "typescript": "^5.3.0"
   },

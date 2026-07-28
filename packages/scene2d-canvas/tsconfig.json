@@ -10,6 +10,9 @@
   },
   "references": [
     {
+      "path": "../bitmap"
+    },
+    {
       "path": "../bitmaptext"
     },
     {
