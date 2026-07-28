@@ -60,7 +60,9 @@ export function registerWgpuVideoTextureResolver(state: WgpuRenderState): void {
   registerWgpuTextureResolver(state, VideoTextureBackingKind, resolveWgpuVideoTexture);
 }
 
-// Resolves through one keyed lookup using the backing's declared kind.
+// Resolves through one keyed lookup using the backing's declared kind. Resolution may realize, upload,
+// and cache the GPU entry, but unlike the GL twin it does not bind command-pass state; the draw caller
+// binds the returned entry's group explicitly.
 export function resolveWgpuTexture(
   state: WgpuRenderState,
   texture: Readonly<TextureLike>,
