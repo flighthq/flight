@@ -5,3 +5,4 @@ export type TextureBackingKind = string;
 export const ImageTextureBackingKind: TextureBackingKind = 'image';
 export const ProducedTextureBackingKind: TextureBackingKind = 'produced';
 export const VideoTextureBackingKind: TextureBackingKind = 'video';
+export const VolumeTextureBackingKind: TextureBackingKind = 'volume';

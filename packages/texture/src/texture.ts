@@ -5,12 +5,43 @@ import type {
   Matrix3Like,
   Texture,
   TextureBackingKind,
+  TextureCubeImages,
   TextureLike,
+  TextureStorage,
   TextureUvTransform,
   Vector2Like,
 } from '@flighthq/types/contract';
 
 import { cloneSampler, copySampler, createSampler, equalsSampler } from './sampler';
+
+function cloneTextureStorage(storage: Readonly<TextureStorage>): TextureStorage {
+  switch (storage.dimension) {
+    case '2d':
+      return { dimension: '2d', image: storage.image, target: storage.target };
+    case '2d-array':
+      return { dimension: '2d-array', images: storage.images.slice(), target: storage.target };
+    case '3d':
+      return { dimension: '3d', target: storage.target, volume: storage.volume };
+    case 'cube':
+      return {
+        dimension: 'cube',
+        images: storage.images.slice() as unknown as TextureCubeImages,
+        target: storage.target,
+      };
+  }
+}
+
+function getTextureStorageImage(storage: Readonly<TextureStorage>): ImageResource | null {
+  switch (storage.dimension) {
+    case '2d':
+      return storage.image;
+    case '2d-array':
+    case 'cube':
+      return storage.images.find((image) => image !== null) ?? null;
+    case '3d':
+      return null;
+  }
+}
 
 // Allocates an independent Texture over the SAME image pixels: the ImageResource reference is shared
 // through a fresh storage record (clone the resource separately to duplicate its content identity),
@@ -20,9 +51,8 @@ export function cloneTexture(source: Readonly<TextureLike>): Texture {
     colorSpace: source.colorSpace,
     flipX: source.flipX,
     flipY: source.flipY,
-    resource: source.resource ?? null,
     sampler: cloneSampler(source.sampler),
-    storage: { dimension: '2d', image: source.storage.image, target: source.storage.target },
+    storage: cloneTextureStorage(source.storage),
     uvOffset: cloneVector2(source.uvOffset),
     uvRotation: source.uvRotation,
     uvScale: cloneVector2(source.uvScale),
@@ -37,9 +67,7 @@ export function copyTexture(out: TextureLike, source: Readonly<TextureLike>): vo
   const colorSpace = source.colorSpace;
   const flipX = source.flipX;
   const flipY = source.flipY;
-  const image = source.storage.image;
-  const target = source.storage.target;
-  const resource = source.resource ?? null;
+  const storage = cloneTextureStorage(source.storage);
   const uvRotation = source.uvRotation;
   const version = source.version >>> 0;
   copySampler(out.sampler, source.sampler);
@@ -48,9 +76,9 @@ export function copyTexture(out: TextureLike, source: Readonly<TextureLike>): vo
   out.colorSpace = colorSpace;
   out.flipX = flipX;
   out.flipY = flipY;
-  out.resource = resource;
-  out.storage.image = image;
-  out.storage.target = target;
+  const outStorage = out.storage as unknown as Record<string, unknown>;
+  for (const key of Object.keys(outStorage)) delete outStorage[key];
+  Object.assign(outStorage, storage);
   out.uvRotation = uvRotation;
   out.version = version;
 }
@@ -63,11 +91,8 @@ export function createTexture(opts?: Readonly<Partial<TextureLike>>): Texture {
     colorSpace: opts?.colorSpace ?? 'srgb',
     flipX: opts?.flipX ?? false,
     flipY: opts?.flipY ?? false,
-    resource: opts?.resource ?? null,
     sampler: opts?.sampler ? cloneSampler(opts.sampler) : createSampler(),
-    storage: opts?.storage
-      ? { dimension: '2d', image: opts.storage.image, target: opts.storage.target }
-      : { dimension: '2d', image: null },
+    storage: opts?.storage ? cloneTextureStorage(opts.storage) : { dimension: '2d', image: null },
     uvOffset: opts?.uvOffset ? cloneVector2(opts.uvOffset) : createVector2(0, 0),
     uvRotation: opts?.uvRotation ?? 0,
     uvScale: opts?.uvScale ? cloneVector2(opts.uvScale) : createVector2(1, 1),
@@ -87,8 +112,7 @@ export function equalsTexture(
     a.colorSpace === b.colorSpace &&
     a.flipX === b.flipX &&
     a.flipY === b.flipY &&
-    a.storage.image === b.storage.image &&
-    a.storage.target === b.storage.target &&
+    equalsTextureStorage(a.storage, b.storage) &&
     a.uvRotation === b.uvRotation &&
     a.uvOffset.x === b.uvOffset.x &&
     a.uvOffset.y === b.uvOffset.y &&
@@ -103,12 +127,16 @@ export function equalsTexture(
 // CPU-origin images own their key; GPU-origin targets own theirs, so TextureStorage carries no duplicate
 // discriminant.
 export function getTextureBackingKind(texture: Readonly<TextureLike>): TextureBackingKind | null {
-  return texture.storage.image?.kind ?? texture.storage.target?.kind ?? null;
+  const storage = texture.storage;
+  if (storage.dimension === '3d') return storage.volume?.kind ?? storage.target?.kind ?? null;
+  return getTextureStorageImage(storage)?.kind ?? storage.target?.kind ?? null;
 }
 
 // Returns the height declared by the CPU image or produced target backing, or -1 when unbound.
 export function getTextureHeight(texture: Readonly<TextureLike>): number {
-  return texture.storage.image?.height ?? texture.storage.target?.height ?? -1;
+  const storage = texture.storage;
+  if (storage.dimension === '3d') return storage.volume?.height ?? storage.target?.height ?? -1;
+  return getTextureStorageImage(storage)?.height ?? storage.target?.height ?? -1;
 }
 
 // Composes the KHR_texture_transform fields and inverts the result, producing the matrix that maps
@@ -158,7 +186,9 @@ export function getTextureUvMatrix(out: Matrix3Like, texture: Readonly<TextureUv
 
 // Returns the width declared by the CPU image or produced target backing, or -1 when unbound.
 export function getTextureWidth(texture: Readonly<TextureLike>): number {
-  return texture.storage.image?.width ?? texture.storage.target?.width ?? -1;
+  const storage = texture.storage;
+  if (storage.dimension === '3d') return storage.volume?.width ?? storage.target?.width ?? -1;
+  return getTextureStorageImage(storage)?.width ?? storage.target?.width ?? -1;
 }
 
 // True when the texture declares either a CPU-origin image or a GPU-origin target backing.
@@ -185,7 +215,7 @@ export function hasTextureUvTransform(texture: Readonly<TextureUvTransform>): bo
 // True once the texture references a pixel source. A texture whose storage has a null image is treated as an
 // absent slot by materials, so this is the gate a material samples behind.
 export function isTextureReady(texture: Readonly<TextureLike>): boolean {
-  return texture.storage.image !== null;
+  return hasTextureBacking(texture);
 }
 
 // Resets the KHR_texture_transform to identity in place: zero offset, no rotation, unit scale, and
@@ -211,9 +241,27 @@ export function setTextureFlip(texture: TextureLike, flipX: boolean, flipY: bool
 // Binds (or clears, with null) the texture's image source in place and advances the u32 dirty-bit.
 // Does not touch sampling state or the uv-transform.
 export function setTextureImage(texture: TextureLike, image: ImageResource | null): void {
+  if (texture.storage.dimension !== '2d') throw new Error('setTextureImage requires 2d texture storage');
   if (texture.storage.image === image) return;
   texture.storage.image = image;
   texture.version = (texture.version + 1) >>> 0;
+}
+
+function equalsTextureStorage(a: Readonly<TextureStorage>, b: Readonly<TextureStorage>): boolean {
+  if (a.dimension !== b.dimension || a.target !== b.target) return false;
+  switch (a.dimension) {
+    case '2d':
+      return b.dimension === '2d' && a.image === b.image;
+    case '2d-array':
+    case 'cube':
+      return (
+        b.dimension === a.dimension &&
+        a.images.length === b.images.length &&
+        a.images.every((image, index) => image === b.images[index])
+      );
+    case '3d':
+      return b.dimension === '3d' && a.volume === b.volume;
+  }
 }
 
 // Sets the uv offset (scroll/translation) in place. Equivalent to assigning texture.uvOffset

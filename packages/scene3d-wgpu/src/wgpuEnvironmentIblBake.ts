@@ -310,7 +310,7 @@ const BAKE_UNIFORM_BYTES = 64;
 
 const BAKE_CLEAR: GPUColor = { r: 0, g: 0, b: 0, a: 1 };
 
-// Per-face direction basis (forward = face normal, plus right/up spanning the face) in CubeTexture face
+// Per-face direction basis (forward = face normal, plus right/up spanning the face) in Texture face
 // order — identical to scene-gl's CUBE_FACE_BASIS. A fragment's world direction is
 // normalize(forward + uv.x*right + uv.y*up) with uv in [-1, 1].
 const CUBE_FACE_BASIS: readonly number[][] = [

@@ -1,4 +1,4 @@
-import type { CubeTexture, Environment, ImageResource } from '@flighthq/types/contract';
+import type { Texture, Environment, ImageResource } from '@flighthq/types/contract';
 
 import { ensureGlEnvironmentSourceCube, getGlCubeFaceTarget, updateGlEnvironmentCubeFace } from './glEnvironmentCube';
 import { makeGlScene3DState } from './glScene3DTestHelper';
@@ -15,9 +15,9 @@ function dataOnlyEnvironment(size: number): Environment {
   const face = dataFace(size);
   const cube = {
     colorSpace: 'srgb',
-    faces: [face, face, face, face, face, face],
     sampler: {},
-  } as unknown as CubeTexture;
+    storage: { dimension: 'cube', images: [face, face, face, face, face, face] },
+  } as unknown as Texture;
   return { environment: cube, intensity: 1 } as Environment;
 }
 

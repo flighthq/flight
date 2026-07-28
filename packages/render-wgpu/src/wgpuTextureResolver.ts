@@ -57,7 +57,7 @@ export function resolveWgpuTexture(state: WgpuRenderState, texture: Readonly<Tex
 
 function resolveWgpuImageTexture(state: WgpuRenderState, texture: Readonly<TextureLike>): WgpuTextureEntry | null {
   const image = texture.storage.image;
-  if (image === null || (image.source === null && image.data === null && image.compressed === null)) return null;
+  if (image == null || (image.source === null && image.data === null && image.compressed === null)) return null;
   return bindWgpuImageResourceTexture(state, image, texture.sampler.mipmaps);
 }
 

@@ -232,7 +232,7 @@ const PREFILTERED_SIZE = 64;
 const PREFILTERED_MIPS = 5;
 const BRDF_LUT_SIZE = 128;
 
-// Per-face direction basis (forward = face normal, plus right/up spanning the face) in CubeTexture
+// Per-face direction basis (forward = face normal, plus right/up spanning the face) in Texture
 // face order, following the standard cubemap sampling convention (up = -Y on the side/Z faces because
 // cube faces store top-left-origin). A fragment's world direction is
 // normalize(forward + uv.x*right + uv.y*up) with uv in [-1, 1].

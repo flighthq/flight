@@ -3,7 +3,7 @@ import type { Environment, EnvironmentOptions } from '@flighthq/types/contract';
 import { EnvironmentKind } from '@flighthq/types/contract';
 
 // Independent copy of the environment's data. The `environment` cubemap reference is shared, not
-// deep-copied: a CubeTexture is a GPU-backed resource, so the copy aliases the same source.
+// deep-copied: a Texture is a GPU-backed resource, so the copy aliases the same source.
 export function cloneEnvironment(source: Readonly<Environment>): Environment {
   return createEnvironment({ environment: source.environment, intensity: source.intensity });
 }
