@@ -7,7 +7,6 @@ import {
   disposeImageResource,
   getImageResourceByteSize,
   hasImageResourceData,
-  hasImageResourcePixels,
   hasImageResourceSource,
   invalidateImageResource,
   isImageResourceEmpty,
@@ -152,28 +151,6 @@ describe('hasImageResourceData', () => {
     expect(hasImageResourceData(resource)).toStrictEqual(false);
     resource.data = new Uint8ClampedArray(4);
     expect(hasImageResourceData(resource)).toStrictEqual(true);
-  });
-});
-
-describe('hasImageResourcePixels', () => {
-  it('is false when neither representation is present', () => {
-    expect(hasImageResourcePixels(createImageResource())).toStrictEqual(false);
-  });
-
-  it('is true for a data-only resource (a generated Bitmap)', () => {
-    const resource = createImageResource();
-    resource.data = new Uint8ClampedArray(4);
-    expect(hasImageResourcePixels(resource)).toStrictEqual(true);
-  });
-
-  it('is true for an element-only resource', () => {
-    expect(hasImageResourcePixels(createImageResource({ width: 1, height: 1 } as HTMLImageElement))).toStrictEqual(
-      true,
-    );
-  });
-
-  it('is true for a compressed-only resource (a parsed container)', () => {
-    expect(hasImageResourcePixels(createCompressedImageResource(makeCompressed()))).toStrictEqual(true);
   });
 });
 

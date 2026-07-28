@@ -7,7 +7,13 @@ import type {
   WgpuTextureEntry,
   WgpuTextureResolver,
 } from '@flighthq/types/contract';
-import { ImageTextureBackingKind, ProducedTextureBackingKind, VideoTextureBackingKind } from '@flighthq/types/contract';
+import {
+  BitmapTextureBackingKind,
+  CompressedImageTextureBackingKind,
+  ImageTextureBackingKind,
+  ProducedTextureBackingKind,
+  VideoTextureBackingKind,
+} from '@flighthq/types/contract';
 
 import { bindWgpuImageResourceTexture, bindWgpuVideoTexture } from './wgpuDraw';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
@@ -23,6 +29,8 @@ export const wgpuVideoTextureBackingKind: WgpuTextureBackingKind = VideoTextureB
 
 export function registerWgpuImageTextureResolver(state: WgpuRenderState): void {
   registerWgpuTextureResolver(state, wgpuImageTextureBackingKind, resolveWgpuImageTexture);
+  registerWgpuTextureResolver(state, BitmapTextureBackingKind, resolveWgpuImageTexture);
+  registerWgpuTextureResolver(state, CompressedImageTextureBackingKind, resolveWgpuImageTexture);
 }
 
 export function registerWgpuProducedTextureResolver(state: WgpuRenderState): void {

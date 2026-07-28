@@ -1,6 +1,6 @@
 import { createEntity } from '@flighthq/entity/contract';
 import type { RectangleLike, Bitmap, BitmapEdgeMode } from '@flighthq/types/contract';
-import { ImageTextureBackingKind } from '@flighthq/types/contract';
+import { BitmapTextureBackingKind } from '@flighthq/types/contract';
 
 /**
  * Allocates a new `Bitmap` containing the pixels of `source` cropped to
@@ -41,7 +41,7 @@ export function cropBitmap(source: Readonly<Bitmap>, rect: Readonly<RectangleLik
     data,
     format: source.format,
     height: rh,
-    kind: ImageTextureBackingKind,
+    kind: BitmapTextureBackingKind,
     source: null,
     version: 0,
     width: rw,
@@ -116,7 +116,7 @@ export function extendBitmap(
     data,
     format: source.format,
     height: dh,
-    kind: ImageTextureBackingKind,
+    kind: BitmapTextureBackingKind,
     source: null,
     version: 0,
     width: dw,
@@ -156,7 +156,7 @@ export function trimBitmap(source: Readonly<Bitmap>): Bitmap {
       data: new Uint8ClampedArray(4),
       format: source.format,
       height: 1,
-      kind: ImageTextureBackingKind,
+      kind: BitmapTextureBackingKind,
       source: null,
       version: 0,
       width: 1,

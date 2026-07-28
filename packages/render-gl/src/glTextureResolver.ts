@@ -6,7 +6,13 @@ import type {
   Texture,
   TextureLike,
 } from '@flighthq/types/contract';
-import { ImageTextureBackingKind, ProducedTextureBackingKind, VideoTextureBackingKind } from '@flighthq/types/contract';
+import {
+  BitmapTextureBackingKind,
+  CompressedImageTextureBackingKind,
+  ImageTextureBackingKind,
+  ProducedTextureBackingKind,
+  VideoTextureBackingKind,
+} from '@flighthq/types/contract';
 
 import { bindGlImageResourceTexture, bindGlVideoTexture } from './glDraw';
 import { getGlRenderStateRuntime } from './glRenderState';
@@ -24,6 +30,8 @@ export const glVideoTextureBackingKind: GlTextureBackingKind = VideoTextureBacki
 // existing backing-keyed bindGlImageResourceTexture seam and keeps Texture.sampler off that key.
 export function registerGlImageTextureResolver(state: GlRenderState): void {
   registerGlTextureResolver(state, glImageTextureBackingKind, resolveGlImageTexture);
+  registerGlTextureResolver(state, BitmapTextureBackingKind, resolveGlImageTexture);
+  registerGlTextureResolver(state, CompressedImageTextureBackingKind, resolveGlImageTexture);
 }
 
 // Installs the produced-target realization.

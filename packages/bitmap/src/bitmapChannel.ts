@@ -1,7 +1,7 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { invalidateImageResource } from '@flighthq/image/contract';
 import type { Bitmap, BitmapRegion } from '@flighthq/types/contract';
-import { ImageTextureBackingKind } from '@flighthq/types/contract';
+import { BitmapTextureBackingKind } from '@flighthq/types/contract';
 
 /**
  * Merges four single-channel bitmaps (or any full-RGBA bitmaps) into `out`
@@ -139,7 +139,7 @@ function makeBitmap(
     data,
     format: source.format,
     height,
-    kind: ImageTextureBackingKind,
+    kind: BitmapTextureBackingKind,
     source: null,
     version: 0,
     width,

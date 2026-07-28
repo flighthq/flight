@@ -8,7 +8,13 @@ import type {
   ImageResource,
   Texture,
 } from '@flighthq/types/contract';
-import { ImageTextureBackingKind, ProducedTextureBackingKind, VideoTextureBackingKind } from '@flighthq/types/contract';
+import {
+  BitmapTextureBackingKind,
+  CompressedImageTextureBackingKind,
+  ImageTextureBackingKind,
+  ProducedTextureBackingKind,
+  VideoTextureBackingKind,
+} from '@flighthq/types/contract';
 
 import { getCanvasRenderStateRuntime } from './canvasRenderState';
 import { bindCanvasRenderTexture } from './canvasRenderTexture';
@@ -32,6 +38,8 @@ export function explainCanvasImageSource(image: Readonly<ImageResource>): Canvas
 
 export function registerCanvasImageTextureResolver(state: CanvasRenderState): void {
   registerCanvasTextureResolver(state, canvasImageTextureBackingKind, resolveCanvasImageTexture);
+  registerCanvasTextureResolver(state, BitmapTextureBackingKind, resolveCanvasImageTexture);
+  registerCanvasTextureResolver(state, CompressedImageTextureBackingKind, resolveCanvasImageTexture);
 }
 
 export function registerCanvasProducedTextureResolver(state: CanvasRenderState): void {

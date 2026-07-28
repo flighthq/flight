@@ -1,6 +1,6 @@
 import { createEntity } from '@flighthq/entity/contract';
 import type { ImageBacking, ImageResource, ImageResourceCompressed } from '@flighthq/types/contract';
-import { ImageTextureBackingKind } from '@flighthq/types/contract';
+import { CompressedImageTextureBackingKind, ImageTextureBackingKind } from '@flighthq/types/contract';
 
 // Allocates a new resource identity over the SAME underlying pixels. The element, the `data` array, and
 // the `compressed` payload are shared by reference, not duplicated — clone gives you an independent
@@ -31,7 +31,7 @@ export function createCompressedImageResource(compressed: Readonly<ImageResource
     data: null,
     format: 'rgba8unorm',
     height: compressed.container.height,
-    kind: ImageTextureBackingKind,
+    kind: CompressedImageTextureBackingKind,
     source: null,
     version: 0,
     width: compressed.container.width,
@@ -75,16 +75,6 @@ export function getImageResourceByteSize(resource: Readonly<ImageResource>): num
 
 export function hasImageResourceData(resource: Readonly<ImageResource>): boolean {
   return resource.data !== null;
-}
-
-// True when the resource carries pixels in any representation — a decoded `source` element, raw CPU
-// `data`, or a block-`compressed` payload. The upload-readiness predicate for backends that can consume
-// any of them: an element-only load, a data-only generated Bitmap, a compressed-only parsed container,
-// or a resource holding several are all uploadable. Prefer this over hasImageResourceSource at any gate
-// that feeds a source-or-data uploader (bindGlTexture, bindWgpuTexture), so a memory-generated Bitmap
-// or a compressed container is not rejected for lacking an element.
-export function hasImageResourcePixels(resource: Readonly<ImageResource>): boolean {
-  return resource.source !== null || resource.data !== null || resource.compressed !== null;
 }
 
 export function hasImageResourceSource(resource: Readonly<ImageResource>): boolean {

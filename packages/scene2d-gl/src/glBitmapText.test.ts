@@ -10,7 +10,7 @@ import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 import { registerStandardGlMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 
-// A single-page stub glyph source whose page-0 image carries a `source` (so hasImageResourcePixels is true).
+// A single-page stub glyph source whose page-0 image carries a drawable host source.
 function createTestGlyphSource(): GlyphSource {
   const entries = new Map<number, GlyphEntry>([
     [0x41, { advance: 10, bearingX: 0, bearingY: 8, height: 8, page: 0, width: 6, x: 0, y: 0 }],
