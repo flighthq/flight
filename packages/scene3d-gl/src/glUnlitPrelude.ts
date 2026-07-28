@@ -1,5 +1,4 @@
-import { hasImageResourcePixels } from '@flighthq/image/contract';
-import { bindGlImageResourceTexture, bindGlRenderTexture, bindGlVideoTexture } from '@flighthq/render-gl/contract';
+import { bindGlRenderTexture, bindGlVideoTexture, resolveGlTexture } from '@flighthq/render-gl/contract';
 import type {
   GlUnlitDefineKey,
   GlUnlitProgram,
@@ -53,10 +52,9 @@ export function bindGlUnlitSurface(
   gl.uniform1f(program.locIntensity, intensity);
   gl.uniform1f(program.locAlphaCutoff, alphaCutoff);
 
-  if (colorMap !== null && colorMap.storage.image !== null && hasImageResourcePixels(colorMap.storage.image)) {
+  if (colorMap !== null) {
     gl.activeTexture(gl.TEXTURE0);
-    bindGlImageResourceTexture(state, colorMap.storage.image, colorMap.sampler);
-    gl.uniform1i(program.locColorMap, 0);
+    if (resolveGlTexture(state, colorMap) !== null) gl.uniform1i(program.locColorMap, 0);
   }
 }
 

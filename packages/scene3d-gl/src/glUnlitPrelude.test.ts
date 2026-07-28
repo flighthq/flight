@@ -1,5 +1,7 @@
-import { createRenderTexture } from '@flighthq/texture/contract';
-import type { LinearColor, VideoTexture, GlUnlitDefineKey } from '@flighthq/types/contract';
+import { createImageResource } from '@flighthq/image/contract';
+import { getGlRenderStateRuntime, registerGlImageTextureResolver } from '@flighthq/render-gl/contract';
+import { createRenderTexture, createTexture } from '@flighthq/texture/contract';
+import type { GlUnlitDefineKey, LinearColor, VideoTexture } from '@flighthq/types/contract';
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
@@ -51,6 +53,23 @@ describe('bindGlUnlitSurface', () => {
     expect(gl.calls.filter((c) => c.name === 'uniform1f').length).toBeGreaterThanOrEqual(2);
     // No color map → no texture bind.
     expect(gl.calls.some((c) => c.name === 'bindTexture')).toBe(false);
+  });
+
+  it('routes a still map through the registered Texture resolver', () => {
+    const { state, gl } = makeGlScene3DState();
+    const program = compileGlUnlitProgram(gl, { ...FLAT, hasColorMap: true });
+    const image = createImageResource(document.createElement('img'));
+    image.width = 1;
+    image.height = 1;
+    const texture = createTexture({ storage: { dimension: '2d', image } });
+    texture.sampler.mipmaps = false;
+    registerGlImageTextureResolver(state);
+    getGlRenderStateRuntime(state).anisotropyExt = null;
+
+    bindGlUnlitSurface(state, program, COLOR, 1, texture, 0.5);
+
+    expect(gl.calls.some((call) => call.name === 'texImage2D')).toBe(true);
+    expect(gl.calls.some((call) => call.name === 'uniform1i')).toBe(true);
   });
 });
 

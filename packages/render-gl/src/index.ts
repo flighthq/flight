@@ -13,7 +13,10 @@ export {
   explainGlRenderTexture,
   registerGlCompressedTextureDecoder,
   registerGlCompressedTextureUpload,
+  registerGlImageTextureResolver,
+  registerGlTextureResolver,
   renderGlBackground,
   renderIntoGlRenderTexture,
+  resolveGlTexture,
   uploadGlCompressedTextureContainer,
 } from './contract';

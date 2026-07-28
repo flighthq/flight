@@ -223,6 +223,7 @@ export * from './GlShapeMeshBinding';
 export * from './GlSkinPaletteTexture';
 export * from './GlTextureDescriptor';
 export * from './GlTextureFilterKind';
+export * from './GlTextureResolver';
 export * from './GlTextureWrapKind';
 export * from './GlToonProgram';
 export * from './GlUnlitProgram';
