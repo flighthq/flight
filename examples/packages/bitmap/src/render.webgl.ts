@@ -5,6 +5,7 @@ import {
   createGlRenderState,
   defaultGlSpriteRenderer,
   prepareScene2DRender,
+  registerGlImageTextureResolver,
   registerStandardGlMaterial,
   registerRenderer,
   renderGlBackground,
@@ -22,6 +23,7 @@ export const state = createGlRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 
+registerGlImageTextureResolver(state);
 registerStandardGlMaterial(state);
 registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 

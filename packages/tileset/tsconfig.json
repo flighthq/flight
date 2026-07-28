@@ -11,6 +11,7 @@
   "references": [
     { "path": "../entity" },
     { "path": "../image" },
+    { "path": "../texture" },
     { "path": "../textureatlas" },
     { "path": "../types" }
   ],

@@ -1,6 +1,7 @@
 import { createImageResourceFromImageElement } from '@flighthq/image/contract';
 import {
   createTextureAtlas,
+  createTextureAtlasFromImageResource,
   createTextureAtlasRegion,
   getTextureAtlasRegionById,
 } from '@flighthq/textureatlas/contract';
@@ -11,7 +12,7 @@ import { buildTilesetRegions, createTileset, disposeTileset } from './tileset';
 describe('buildTilesetRegions', () => {
   it('advances y by tileHeight for each row', () => {
     const source = createImageResourceFromImageElement({ width: 32, height: 64 } as HTMLImageElement);
-    const atlas = createTextureAtlas({ image: source });
+    const atlas = createTextureAtlasFromImageResource(source);
     const tileset = createTileset({ atlas, columns: 1, rows: 2, tileWidth: 32, tileHeight: 32 });
     buildTilesetRegions(tileset);
     // region 0: column=0, row=0 → x=0, y=0
@@ -30,7 +31,7 @@ describe('buildTilesetRegions', () => {
 
   it('honors margin offset for each region', () => {
     const source = createImageResourceFromImageElement({ width: 68, height: 34 } as HTMLImageElement);
-    const atlas = createTextureAtlas({ image: source });
+    const atlas = createTextureAtlasFromImageResource(source);
     const tileset = createTileset({ atlas, columns: 2, rows: 1, tileWidth: 32, tileHeight: 32, margin: 2 });
     buildTilesetRegions(tileset);
     // margin=2: first tile starts at x=2, second at x=2+32=34
@@ -42,7 +43,7 @@ describe('buildTilesetRegions', () => {
 
   it('honors spacing gap between tiles', () => {
     const source = createImageResourceFromImageElement({ width: 66, height: 32 } as HTMLImageElement);
-    const atlas = createTextureAtlas({ image: source });
+    const atlas = createTextureAtlasFromImageResource(source);
     // spacing=2: two 32x32 tiles with a 2px gap between them
     const tileset = createTileset({ atlas, columns: 2, rows: 1, tileWidth: 32, tileHeight: 32, spacing: 2 });
     buildTilesetRegions(tileset);
@@ -53,7 +54,7 @@ describe('buildTilesetRegions', () => {
 
   it('positions regions at (column * tileWidth, row * tileHeight)', () => {
     const source = createImageResourceFromImageElement({ width: 64, height: 32 } as HTMLImageElement);
-    const atlas = createTextureAtlas({ image: source });
+    const atlas = createTextureAtlasFromImageResource(source);
     const tileset = createTileset({ atlas, columns: 2, rows: 1, tileWidth: 32, tileHeight: 32 });
     buildTilesetRegions(tileset);
     // region 0: column=0, row=0 → x=0, y=0
@@ -66,7 +67,7 @@ describe('buildTilesetRegions', () => {
 
   it('reuses existing region objects when capacity is already available', () => {
     const source = createImageResourceFromImageElement({ width: 64, height: 32 } as HTMLImageElement);
-    const atlas = createTextureAtlas({ image: source });
+    const atlas = createTextureAtlasFromImageResource(source);
     const firstRegion = {} as TextureAtlas['regions'][number];
     const secondRegion = {} as TextureAtlas['regions'][number];
     atlas.regions.push(firstRegion, secondRegion);
@@ -83,7 +84,7 @@ describe('buildTilesetRegions', () => {
 
   it('truncates stale trailing regions when the grid shrinks after growing', () => {
     const source = createImageResourceFromImageElement({ width: 64, height: 64 } as HTMLImageElement);
-    const atlas = createTextureAtlas({ image: source });
+    const atlas = createTextureAtlasFromImageResource(source);
     const tileset = createTileset({ atlas, columns: 2, rows: 2, tileWidth: 32, tileHeight: 32 });
     buildTilesetRegions(tileset);
     expect(atlas.regions).toHaveLength(4);
@@ -96,7 +97,7 @@ describe('buildTilesetRegions', () => {
 
   it('assigns each region id to its row-major tile index', () => {
     const source = createImageResourceFromImageElement({ width: 64, height: 64 } as HTMLImageElement);
-    const atlas = createTextureAtlas({ image: source });
+    const atlas = createTextureAtlasFromImageResource(source);
     const tileset = createTileset({ atlas, columns: 2, rows: 2, tileWidth: 32, tileHeight: 32 });
     buildTilesetRegions(tileset);
 
@@ -106,7 +107,7 @@ describe('buildTilesetRegions', () => {
 
   it('clears stale name/rotated/trimmed metadata on a reused region', () => {
     const source = createImageResourceFromImageElement({ width: 32, height: 32 } as HTMLImageElement);
-    const atlas = createTextureAtlas({ image: source });
+    const atlas = createTextureAtlasFromImageResource(source);
     atlas.regions.push(createTextureAtlasRegion({ id: 99, name: 'stale', rotated: true, trimmed: true }));
     const tileset = createTileset({ atlas, columns: 1, rows: 1, tileWidth: 32, tileHeight: 32 });
 
@@ -166,7 +167,7 @@ describe('createTileset', () => {
 describe('disposeTileset', () => {
   it('clears the atlas reference so it becomes eligible for GC', () => {
     const source = createImageResourceFromImageElement({ width: 32, height: 32 } as HTMLImageElement);
-    const atlas = createTextureAtlas({ image: source });
+    const atlas = createTextureAtlasFromImageResource(source);
     const tileset = createTileset({ atlas, columns: 1, rows: 1, tileWidth: 32, tileHeight: 32 });
 
     disposeTileset(tileset);
@@ -176,7 +177,7 @@ describe('disposeTileset', () => {
 
   it('leaves the grid parameters intact', () => {
     const source = createImageResourceFromImageElement({ width: 64, height: 32 } as HTMLImageElement);
-    const atlas = createTextureAtlas({ image: source });
+    const atlas = createTextureAtlasFromImageResource(source);
     const tileset = createTileset({ atlas, columns: 2, rows: 1, tileWidth: 32, tileHeight: 16, margin: 4, spacing: 2 });
 
     disposeTileset(tileset);
@@ -191,7 +192,7 @@ describe('disposeTileset', () => {
 
   it('does not erase the shared atlas regions', () => {
     const source = createImageResourceFromImageElement({ width: 64, height: 32 } as HTMLImageElement);
-    const atlas = createTextureAtlas({ image: source });
+    const atlas = createTextureAtlasFromImageResource(source);
     const tileset = createTileset({ atlas, columns: 2, rows: 1, tileWidth: 32, tileHeight: 32 });
     buildTilesetRegions(tileset);
 

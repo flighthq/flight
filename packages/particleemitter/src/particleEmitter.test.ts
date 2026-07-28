@@ -32,7 +32,7 @@ function makeAtlasRegion(id = 0, x = 0, y = 0, width = 32, height = 32): Texture
 }
 
 function makeAtlas(...regions: TextureAtlasRegion[]): TextureAtlas {
-  return { image: null, regions } as TextureAtlas;
+  return { texture: null, regions } as TextureAtlas;
 }
 
 describe('appendParticleEmitter2DParticle', () => {

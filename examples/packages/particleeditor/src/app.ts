@@ -11,6 +11,7 @@ import {
   createParticleEmitterConfig,
   createParticleEmitterState,
   createTextLabel,
+  createTexture,
   createTextureAtlas,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
@@ -47,7 +48,9 @@ grad.addColorStop(1, 'rgba(200, 40, 0, 0)');
 pCtx.fillStyle = grad;
 pCtx.fillRect(0, 0, 16, 16);
 
-const atlas = createTextureAtlas({ image: createImageResource(particleCanvas) });
+const atlas = createTextureAtlas({
+  texture: createTexture({ storage: { dimension: '2d', image: createImageResource(particleCanvas) } }),
+});
 addTextureAtlasRegion(atlas, 0, 0, 16, 16);
 
 const emitter = createParticleEmitter2D();

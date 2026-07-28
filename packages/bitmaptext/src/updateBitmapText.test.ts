@@ -212,7 +212,7 @@ describe('updateBitmapText', () => {
     const pages = getBitmapTextPages(text);
     expect(pages).toHaveLength(1);
     expect(pages[0].instanceCount).toBe(2);
-    expect(pages[0].atlas.image).toBe(source.getGlyphAtlasImage(0));
+    expect(pages[0].atlas.texture?.storage.image).toBe(source.getGlyphAtlasImage(0));
   });
 
   it('partitions glyphs into one page per glyph-atlas page, each bound to its own page image', () => {
@@ -227,8 +227,8 @@ describe('updateBitmapText', () => {
     const page1 = pages[1];
     expect(page0.instanceCount).toBe(1);
     expect(page1.instanceCount).toBe(1);
-    expect(page0.atlas.image).toBe(page0Image);
-    expect(page1.atlas.image).toBe(page1Image);
+    expect(page0.atlas.texture?.storage.image).toBe(page0Image);
+    expect(page1.atlas.texture?.storage.image).toBe(page1Image);
     expect(page0.atlas.regions[0].x).toBe(0); // A's rect on page 0
     expect(page1.atlas.regions[0].x).toBe(3); // B's rect on page 1
     expect(page0.transforms[0]).toBe(0); // A at pen origin

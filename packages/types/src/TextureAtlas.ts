@@ -1,8 +1,8 @@
 import type { Entity } from './Entity';
-import type { ImageResource } from './ImageResource';
+import type { Texture } from './Texture';
 import type { TextureAtlasRegion } from './TextureAtlasRegion';
 
 export interface TextureAtlas extends Entity {
-  image: ImageResource | null;
+  texture: Texture | null;
   regions: TextureAtlasRegion[];
 }

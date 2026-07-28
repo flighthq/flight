@@ -80,7 +80,7 @@ addText('0123456789  Lazy • Packed • Reused', 36, 318, 0x06d6a0ff, {
 const atlasImage = createImageResourceFromSurface(getGlyphAtlasSurface(atlas));
 for (const bitmapText of bitmapTexts) {
   for (const page of getBitmapTextPages(bitmapText)) {
-    page.atlas.image = atlasImage;
+    page.atlas.texture = createTexture({ storage: { dimension: '2d', image: atlasImage } });
   }
 }
 

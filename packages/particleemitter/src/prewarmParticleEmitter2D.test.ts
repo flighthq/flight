@@ -6,7 +6,7 @@ import { prewarmParticleEmitter2D } from './prewarmParticleEmitter2D';
 
 function makeAtlas(): TextureAtlas {
   return {
-    image: null,
+    texture: null,
     regions: [{ id: 0, x: 0, y: 0, width: 32, height: 32, pivotX: null, pivotY: null }],
   } as TextureAtlas;
 }

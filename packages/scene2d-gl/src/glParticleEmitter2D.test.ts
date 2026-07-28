@@ -1,15 +1,27 @@
-import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type { RenderProxy2D } from '@flighthq/types/contract';
+import { createImageResource } from '@flighthq/image/contract';
+import { getGlRenderStateRuntime, registerGlImageTextureResolver } from '@flighthq/render-gl/contract';
+import { createTexture } from '@flighthq/texture/contract';
+import type { ImageResource, RenderProxy2D } from '@flighthq/types/contract';
+import { ImageTextureBackingKind } from '@flighthq/types/contract';
 
 import { defaultGlParticleEmitter2DRenderer, drawGlParticleEmitter2D } from './glParticleEmitter2D';
 import { createGlState } from './glTestHelper';
 
 function makeAtlas() {
   const img = document.createElement('img');
+  const image = createImageResource(img);
+  image.width = 64;
+  image.height = 64;
   return {
-    image: { source: img, width: 64, height: 64 },
     regions: [{ id: 0, x: 0, y: 0, width: 32, height: 32 }],
+    texture: createTexture({ storage: { dimension: '2d', image } }),
   };
+}
+
+function createAtlasGlState() {
+  const result = createGlState();
+  registerGlImageTextureResolver(result.state);
+  return result;
 }
 
 function makeParticleEmitter2DNode(data: Record<string, unknown> = {}): RenderProxy2D {
@@ -43,34 +55,31 @@ describe('defaultGlParticleEmitter2DRenderer', () => {
 
 describe('drawGlParticleEmitter2D', () => {
   it('returns early without drawing when atlas is null', () => {
-    const { state, gl } = createGlState();
+    const { state, gl } = createAtlasGlState();
     drawGlParticleEmitter2D(state, makeParticleEmitter2DNode({ atlas: null }));
     expect(gl.drawElements).not.toHaveBeenCalled();
   });
 
-  it('returns early without drawing when atlas.image is null', () => {
-    const { state, gl } = createGlState();
-    drawGlParticleEmitter2D(state, makeParticleEmitter2DNode({ atlas: { image: null, regions: [] } }));
+  it('returns early without drawing when atlas.texture is null', () => {
+    const { state, gl } = createAtlasGlState();
+    drawGlParticleEmitter2D(state, makeParticleEmitter2DNode({ atlas: { regions: [], texture: null } }));
     expect(gl.drawElements).not.toHaveBeenCalled();
   });
 
-  it('returns early without drawing when atlas.image.source is null', () => {
-    const { state, gl } = createGlState();
-    drawGlParticleEmitter2D(
-      state,
-      makeParticleEmitter2DNode({ atlas: { image: { source: null, data: null, compressed: null }, regions: [] } }),
-    );
+  it('returns early without drawing when atlas Texture is unbound', () => {
+    const { state, gl } = createAtlasGlState();
+    drawGlParticleEmitter2D(state, makeParticleEmitter2DNode({ atlas: { regions: [], texture: createTexture() } }));
     expect(gl.drawElements).not.toHaveBeenCalled();
   });
 
   it('returns early without drawing when particleCount is 0', () => {
-    const { state, gl } = createGlState();
+    const { state, gl } = createAtlasGlState();
     drawGlParticleEmitter2D(state, makeParticleEmitter2DNode({ particleCount: 0 }));
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
   it('draws all live particles in a single instanced draw call', () => {
-    const { state, gl } = createGlState();
+    const { state, gl } = createAtlasGlState();
     drawGlParticleEmitter2D(
       state,
       makeParticleEmitter2DNode({
@@ -86,7 +95,7 @@ describe('drawGlParticleEmitter2D', () => {
   });
 
   it('skips out-of-range region ids and draws only valid particles', () => {
-    const { state, gl } = createGlState();
+    const { state, gl } = createAtlasGlState();
     drawGlParticleEmitter2D(
       state,
       makeParticleEmitter2DNode({
@@ -101,21 +110,25 @@ describe('drawGlParticleEmitter2D', () => {
   });
 
   it('uploads the straight-alpha flag for a compressed particle atlas', () => {
-    const { state, gl } = createGlState();
+    const { state, gl } = createAtlasGlState();
     const image = {
       alphaType: 'straight',
       compressed: { container: {}, payload: new Uint8Array() },
       data: null,
       height: 4,
+      kind: ImageTextureBackingKind,
       source: null,
       version: 1,
       width: 4,
-    };
+    } as unknown as ImageResource;
 
     drawGlParticleEmitter2D(
       state,
       makeParticleEmitter2DNode({
-        atlas: { image, regions: [{ id: 0, x: 0, y: 0, width: 4, height: 4 }] },
+        atlas: {
+          regions: [{ id: 0, x: 0, y: 0, width: 4, height: 4 }],
+          texture: createTexture({ storage: { dimension: '2d', image } }),
+        },
       }),
     );
 

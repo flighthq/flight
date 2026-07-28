@@ -28,9 +28,9 @@ describe('createTextureAtlasFromCanvas', () => {
     canvas.height = 240;
     const atlas = createTextureAtlasFromCanvas(canvas);
 
-    expect(atlas.image?.source).toBe(canvas);
-    expect(atlas.image?.width).toBe(320);
-    expect(atlas.image?.height).toBe(240);
+    expect(atlas.texture?.storage.image?.source).toBe(canvas);
+    expect(atlas.texture?.storage.image?.width).toBe(320);
+    expect(atlas.texture?.storage.image?.height).toBe(240);
   });
 
   it('starts with an empty regions array', () => {
@@ -49,9 +49,9 @@ describe('createTextureAtlasFromImageBitmap', () => {
     const bitmap = { width: 64, height: 128, close: () => {} } as ImageBitmap;
     const atlas = createTextureAtlasFromImageBitmap(bitmap);
 
-    expect(atlas.image?.source).toBe(bitmap);
-    expect(atlas.image?.width).toBe(64);
-    expect(atlas.image?.height).toBe(128);
+    expect(atlas.texture?.storage.image?.source).toBe(bitmap);
+    expect(atlas.texture?.storage.image?.width).toBe(64);
+    expect(atlas.texture?.storage.image?.height).toBe(128);
   });
 
   it('returns a new object each call', () => {
@@ -65,9 +65,9 @@ describe('createTextureAtlasFromImageElement', () => {
     const img = { width: 200, height: 100 } as HTMLImageElement;
     const atlas = createTextureAtlasFromImageElement(img);
 
-    expect(atlas.image?.source).toBe(img);
-    expect(atlas.image?.width).toBe(200);
-    expect(atlas.image?.height).toBe(100);
+    expect(atlas.texture?.storage.image?.source).toBe(img);
+    expect(atlas.texture?.storage.image?.width).toBe(200);
+    expect(atlas.texture?.storage.image?.height).toBe(100);
   });
 
   it('returns a new object each call', () => {
@@ -81,9 +81,9 @@ describe('createTextureAtlasFromImageResource', () => {
     const source = createImageResourceFromImageElement({ width: 128, height: 64 } as HTMLImageElement);
     const atlas = createTextureAtlasFromImageResource(source);
 
-    expect(atlas.image).toBe(source);
-    expect(atlas.image?.width).toBe(128);
-    expect(atlas.image?.height).toBe(64);
+    expect(atlas.texture?.storage.image).toBe(source);
+    expect(atlas.texture?.storage.image?.width).toBe(128);
+    expect(atlas.texture?.storage.image?.height).toBe(64);
   });
 
   it('starts with an empty regions array', () => {
@@ -100,7 +100,7 @@ describe('createTextureAtlasFromImageResource', () => {
 describe('loadTextureAtlasFromBase64', () => {
   it('resolves to a TextureAtlas with a non-null image', async () => {
     const atlas = await loadTextureAtlasFromBase64('abc123', 'image/png');
-    expect(atlas.image?.source).toBeInstanceOf(HTMLImageElement);
+    expect(atlas.texture?.storage.image?.source).toBeInstanceOf(HTMLImageElement);
   });
 });
 
@@ -108,7 +108,7 @@ describe('loadTextureAtlasFromBlob', () => {
   it('resolves to a TextureAtlas with a non-null image', async () => {
     const blob = new Blob([], { type: 'image/png' });
     const atlas = await loadTextureAtlasFromBlob(blob);
-    expect(atlas.image?.source).toBeInstanceOf(HTMLImageElement);
+    expect(atlas.texture?.storage.image?.source).toBeInstanceOf(HTMLImageElement);
   });
 });
 
@@ -117,8 +117,8 @@ describe('loadTextureAtlasFromBytes', () => {
     const bytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0, 0, 0, 0, 0]);
     const atlas = await loadTextureAtlasFromBytes(bytes);
 
-    expect(atlas.image).not.toBeNull();
-    expect(atlas.image?.source).toBeInstanceOf(HTMLImageElement);
+    expect(atlas.texture?.storage.image).not.toBeNull();
+    expect(atlas.texture?.storage.image?.source).toBeInstanceOf(HTMLImageElement);
   });
 
   it('starts with an empty regions array', async () => {
@@ -137,6 +137,6 @@ describe('loadTextureAtlasFromBytes', () => {
 describe('loadTextureAtlasFromUrl', () => {
   it('resolves to a TextureAtlas whose image src is an HTMLImageElement', async () => {
     const atlas = await loadTextureAtlasFromUrl('data:image/png;base64,abc');
-    expect(atlas.image?.source).toBeInstanceOf(HTMLImageElement);
+    expect(atlas.texture?.storage.image?.source).toBeInstanceOf(HTMLImageElement);
   });
 });

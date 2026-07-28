@@ -5,6 +5,7 @@ import {
   createWgpuRenderState,
   defaultWgpuSpriteRenderer,
   prepareScene2DRender,
+  registerWgpuImageTextureResolver,
   registerStandardWgpuMaterial,
   registerRenderer,
   renderWgpuBackground,
@@ -22,6 +23,7 @@ export const state = await createWgpuRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 
+registerWgpuImageTextureResolver(state);
 registerStandardWgpuMaterial(state);
 registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);
 

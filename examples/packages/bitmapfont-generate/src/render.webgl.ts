@@ -7,6 +7,7 @@ import {
   defaultGlQuadBatchRenderer,
   prepareScene2DRender,
   QuadBatchKind,
+  registerGlImageTextureResolver,
   registerStandardGlMaterial,
   registerRenderer,
   renderGlBackground,
@@ -24,6 +25,7 @@ export const state = createGlRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 
+registerGlImageTextureResolver(state);
 registerStandardGlMaterial(state);
 registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, QuadBatchKind, defaultGlQuadBatchRenderer);

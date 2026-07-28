@@ -42,7 +42,7 @@ describe('defaultGlParticleEmitter2DVelocityWriter', () => {
     const { state } = createGlState();
     const target = createGlVelocityTarget(state, 128, 64);
     const region = { id: 0, x: 0, y: 0, width: 16, height: 16, pivotX: null, pivotY: null } as TextureAtlasRegion;
-    const atlas = { image: null, regions: [region] } as TextureAtlas;
+    const atlas = { texture: null, regions: [region] } as TextureAtlas;
     const emitter = createParticleEmitter2D();
     reserveParticleEmitter2D(emitter, 2);
     emitter.data.atlas = atlas;
@@ -69,7 +69,7 @@ describe('defaultGlQuadBatchVelocityWriter', () => {
     const { state } = createGlState();
     const target = createGlVelocityTarget(state, 128, 64);
     const region = { id: 0, x: 0, y: 0, width: 32, height: 32, pivotX: null, pivotY: null } as TextureAtlasRegion;
-    const atlas = { image: null, regions: [region] } as TextureAtlas;
+    const atlas = { texture: null, regions: [region] } as TextureAtlas;
     // Two vector2 instances at distinct positions, each moving independently.
     const batch = createQuadBatch({
       data: {
@@ -94,7 +94,7 @@ describe('defaultGlQuadBatchVelocityWriter', () => {
     const { state } = createGlState();
     const target = createGlVelocityTarget(state, 128, 64);
     const region = { id: 0, x: 0, y: 0, width: 32, height: 32, pivotX: null, pivotY: null } as TextureAtlasRegion;
-    const atlas = { image: null, regions: [region] } as TextureAtlas;
+    const atlas = { texture: null, regions: [region] } as TextureAtlas;
     const batch = createQuadBatch({
       data: { atlas, ids: new Uint16Array([0]), instanceCount: 1, transforms: new Float32Array([0, 0]) },
     });

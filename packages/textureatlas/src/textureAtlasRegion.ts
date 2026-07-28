@@ -1,5 +1,5 @@
 import { createEntity } from '@flighthq/entity/contract';
-import { createTexture, setTextureImage, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
+import { cloneTexture, copyTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
 import type {
   RectangleLike,
   TextureAtlas,
@@ -131,10 +131,10 @@ export function getTextureAtlasRegionSequence(atlas: Readonly<TextureAtlas>, pre
 }
 
 // Returns one shared Texture per distinct atlas region. Region textures keep independent sampling
-// and uv state while sharing the atlas ImageResource, so every sprite using a frame shares one upload.
+// and uv state while sharing the atlas Texture backing, so every sprite using a frame shares one upload.
 export function getTextureAtlasRegionTexture(atlas: Readonly<TextureAtlas>, regionId: number): Texture | null {
   const region = getTextureAtlasRegionById(atlas, regionId);
-  if (region === null || atlas.image === null) return null;
+  if (region === null || atlas.texture === null) return null;
   let textures = regionTextureCache.get(atlas);
   if (textures === undefined) {
     textures = new WeakMap();
@@ -142,10 +142,10 @@ export function getTextureAtlasRegionTexture(atlas: Readonly<TextureAtlas>, regi
   }
   let texture = textures.get(region);
   if (texture === undefined) {
-    texture = createTexture({ storage: { dimension: '2d', image: atlas.image } });
+    texture = cloneTexture(atlas.texture);
     textures.set(region, texture);
   } else {
-    setTextureImage(texture, atlas.image);
+    copyTexture(texture, atlas.texture);
   }
   setTextureUvFromPixelRect(texture, region.x, region.y, region.width, region.height);
   return texture;

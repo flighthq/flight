@@ -7,24 +7,31 @@ import {
   loadImageResourceFromBytes,
   loadImageResourceFromUrl,
 } from '@flighthq/image/contract';
+import { createTexture } from '@flighthq/texture/contract';
 import type { ImageResource, TextureAtlas } from '@flighthq/types/contract';
 
 import { createTextureAtlas } from './textureAtlas';
 
 export function createTextureAtlasFromCanvas(canvas: HTMLCanvasElement): TextureAtlas {
-  return createTextureAtlas({ image: createImageResourceFromCanvas(canvas) });
+  return createTextureAtlas({
+    texture: createTexture({ storage: { dimension: '2d', image: createImageResourceFromCanvas(canvas) } }),
+  });
 }
 
 export function createTextureAtlasFromImageBitmap(bitmap: ImageBitmap): TextureAtlas {
-  return createTextureAtlas({ image: createImageResourceFromImageBitmap(bitmap) });
+  return createTextureAtlas({
+    texture: createTexture({ storage: { dimension: '2d', image: createImageResourceFromImageBitmap(bitmap) } }),
+  });
 }
 
 export function createTextureAtlasFromImageElement(img: HTMLImageElement): TextureAtlas {
-  return createTextureAtlas({ image: createImageResourceFromImageElement(img) });
+  return createTextureAtlas({
+    texture: createTexture({ storage: { dimension: '2d', image: createImageResourceFromImageElement(img) } }),
+  });
 }
 
 export function createTextureAtlasFromImageResource(resource: ImageResource): TextureAtlas {
-  return createTextureAtlas({ image: resource });
+  return createTextureAtlas({ texture: createTexture({ storage: { dimension: '2d', image: resource } }) });
 }
 
 export async function loadTextureAtlasFromBase64(

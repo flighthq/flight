@@ -1,7 +1,6 @@
-import { hasImageResourcePixels } from '@flighthq/image/contract';
-import { bindWgpuImageResourceTexture } from '@flighthq/render-wgpu/contract';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateRuntime, getWgpuSampler, resolveWgpuTexture } from '@flighthq/render-wgpu/contract';
 import { noopRendererData } from '@flighthq/render/contract';
+import { getTextureHeight, getTextureWidth, hasTextureBacking } from '@flighthq/texture/contract';
 import type { ParticleEmitter2D, RenderProxy2D, SpriteRenderer, WgpuRenderState } from '@flighthq/types/contract';
 
 import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
@@ -190,19 +189,41 @@ export function drawWgpuParticleEmitter2D(state: WgpuRenderState, renderProxy: R
 
   const source = renderProxy.source as ParticleEmitter2D;
   const { atlas, alphas, colors, ids, particleCount, transforms } = source.data;
-  if (atlas === null || atlas.image === null || !hasImageResourcePixels(atlas.image) || particleCount === 0) return;
+  if (atlas === null || atlas.texture === null || !hasTextureBacking(atlas.texture) || particleCount === 0) return;
 
   const resources = ensureParticleResources(state);
   ensureParticleInstanceBuffer(state, particleCount);
 
   state.applyBlendMode?.(state, renderProxy.blendMode);
-  const textureEntry = bindWgpuImageResourceTexture(state, atlas.image, false, true);
+  const textureEntry = resolveWgpuTexture(state, atlas.texture, true);
+  if (textureEntry === null) return;
+  const textureBindGroup = state.device.createBindGroup({
+    layout: runtime.textureBindGroupLayout,
+    entries: [
+      { binding: 0, resource: textureEntry.view },
+      {
+        binding: 1,
+        resource: getWgpuSampler(
+          state,
+          atlas.texture.sampler.magFilter.startsWith('nearest') ? 'nearest' : 'linear',
+          atlas.texture.sampler.wrapU,
+          atlas.texture.sampler.wrapV,
+          atlas.texture.sampler.mipmaps
+            ? atlas.texture.sampler.minFilter.endsWith('nearest')
+              ? 'nearest'
+              : 'linear'
+            : undefined,
+          atlas.texture.sampler.anisotropy,
+        ),
+      },
+    ],
+  });
 
   const regions = atlas.regions;
   const numRegions = regions.length;
   const nodeAlpha = renderProxy.alpha;
-  const iw = 1 / (atlas.image.width || 1);
-  const ih = 1 / (atlas.image.height || 1);
+  const iw = 1 / Math.max(1, getTextureWidth(atlas.texture));
+  const ih = 1 / Math.max(1, getTextureHeight(atlas.texture));
   const instanceData = runtime.particleInstanceData!;
 
   let drawCount = 0;
@@ -310,7 +331,7 @@ export function drawWgpuParticleEmitter2D(state: WgpuRenderState, renderProxy: R
   const pass = runtime.renderPass!;
   pass.setPipeline(getParticlePipeline(state, resources));
   pass.setBindGroup(0, runtime.uniformBindGroup, [uniformOffset]);
-  pass.setBindGroup(1, textureEntry.bindGroup);
+  pass.setBindGroup(1, textureBindGroup);
   pass.setBindGroup(2, instanceBindGroup);
   pass.draw(6, drawCount, 0, 0);
 }

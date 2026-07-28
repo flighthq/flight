@@ -1,7 +1,7 @@
-import { hasImageResourcePixels } from '@flighthq/image/contract';
 import { getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node/contract';
-import { bindWgpuImageResourceTexture, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateRuntime, getWgpuSampler, resolveWgpuTexture } from '@flighthq/render-wgpu/contract';
 import { prepareScene3DRender } from '@flighthq/render/contract';
+import { getTextureHeight, getTextureWidth, hasTextureBacking } from '@flighthq/texture/contract';
 import type {
   Camera3D,
   Matrix4,
@@ -271,11 +271,14 @@ function drawParticleEmitter3DNode(
     resources.instanceData = new Float32Array(Math.max(needed, resources.instanceData.length * 2));
   }
 
-  const hasAtlas = atlas !== null && atlas.image !== null && hasImageResourcePixels(atlas.image);
+  const atlasTexture = atlas?.texture ?? null;
+  const textureEntry =
+    atlasTexture !== null && hasTextureBacking(atlasTexture) ? resolveWgpuTexture(state, atlasTexture, true) : null;
+  const hasAtlas = textureEntry !== null;
   const regions = hasAtlas ? atlas!.regions : null;
   const numRegions = regions !== null ? regions.length : 0;
-  const iw = hasAtlas ? 1 / (atlas!.image!.width || 1) : 0;
-  const ih = hasAtlas ? 1 / (atlas!.image!.height || 1) : 0;
+  const iw = hasAtlas ? 1 / Math.max(1, getTextureWidth(atlasTexture!)) : 0;
+  const ih = hasAtlas ? 1 / Math.max(1, getTextureHeight(atlasTexture!)) : 0;
 
   const worldMatrix = getNodeWorldMatrix4(emitter as unknown as Node3D) as Matrix4;
   const wm = worldMatrix.m;
@@ -356,18 +359,33 @@ function drawParticleEmitter3DNode(
   const instanceBuffer = ensureParticle3DInstanceBuffer(state, resources, emitter as ParticleEmitter3D, drawCount);
   state.device.queue.writeBuffer(instanceBuffer, 0, instanceData, 0, drawCount * INSTANCE_FLOATS);
 
-  // Resolve the group(1) texture + sampler. The atlas image uploads (once, cached) to its GPU view for
+  // Resolve the group(1) texture + sampler. The atlas Texture uploads (once, cached) to its GPU view for
   // the textured pipeline; the untextured variant still needs the slot filled, so a 1x1 white dummy is
   // bound (never sampled — HAS_TEXTURE=0 gates it off). Both use the shared linear sampler.
   const runtime = getWgpuRenderStateRuntime(state);
-  const textureView = hasAtlas
-    ? bindWgpuImageResourceTexture(state, atlas!.image!, false, true).view
-    : ensureDummyTextureView(state);
+  const textureView = textureEntry?.view ?? ensureDummyTextureView(state);
   const textureBindGroup = state.device.createBindGroup({
     layout: resources.textureLayout,
     entries: [
       { binding: 0, resource: textureView },
-      { binding: 1, resource: runtime.linearSampler },
+      {
+        binding: 1,
+        resource:
+          atlasTexture !== null
+            ? getWgpuSampler(
+                state,
+                atlasTexture.sampler.magFilter.startsWith('nearest') ? 'nearest' : 'linear',
+                atlasTexture.sampler.wrapU,
+                atlasTexture.sampler.wrapV,
+                atlasTexture.sampler.mipmaps
+                  ? atlasTexture.sampler.minFilter.endsWith('nearest')
+                    ? 'nearest'
+                    : 'linear'
+                  : undefined,
+                atlasTexture.sampler.anisotropy,
+              )
+            : runtime.linearSampler,
+      },
     ],
   });
 

@@ -4,6 +4,7 @@ import {
   loadImageResourceFromBytes,
   loadImageResourceFromUrl,
 } from '@flighthq/image/contract';
+import { createTexture, getTextureHeight, getTextureWidth } from '@flighthq/texture/contract';
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
 import type { ImageResource, TextureAtlas, Tileset } from '@flighthq/types/contract';
 
@@ -19,11 +20,15 @@ export function createTilesetFromAtlas(
   margin: number = 0,
   spacing: number = 0,
 ): Tileset {
-  const image = atlas.image;
+  const texture = atlas.texture;
   const columns =
-    image !== null && tileWidth > 0 ? Math.floor((image.width - margin * 2 + spacing) / (tileWidth + spacing)) : 0;
+    texture !== null && tileWidth > 0
+      ? Math.floor((getTextureWidth(texture) - margin * 2 + spacing) / (tileWidth + spacing))
+      : 0;
   const rows =
-    image !== null && tileHeight > 0 ? Math.floor((image.height - margin * 2 + spacing) / (tileHeight + spacing)) : 0;
+    texture !== null && tileHeight > 0
+      ? Math.floor((getTextureHeight(texture) - margin * 2 + spacing) / (tileHeight + spacing))
+      : 0;
   const tileset = createTileset({ atlas, columns, margin, rows, spacing, tileHeight, tileWidth });
   buildTilesetRegions(tileset);
   return tileset;
@@ -36,7 +41,13 @@ export function createTilesetFromImageResource(
   margin: number = 0,
   spacing: number = 0,
 ): Tileset {
-  return createTilesetFromAtlas(createTextureAtlas({ image: resource }), tileWidth, tileHeight, margin, spacing);
+  return createTilesetFromAtlas(
+    createTextureAtlas({ texture: createTexture({ storage: { dimension: '2d', image: resource } }) }),
+    tileWidth,
+    tileHeight,
+    margin,
+    spacing,
+  );
 }
 
 export async function loadTilesetFromBase64(

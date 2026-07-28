@@ -1,4 +1,5 @@
 import { createRectangle, createVector2 } from '@flighthq/geometry/contract';
+import { createTexture } from '@flighthq/texture/contract';
 import type { ImageResource, TextureAtlasRegion } from '@flighthq/types/contract';
 
 import { createTextureAtlas } from './textureAtlas';
@@ -308,7 +309,7 @@ describe('getTextureAtlasRegionSequence', () => {
 describe('getTextureAtlasRegionTexture', () => {
   it('returns one cached texture per distinct region over the shared atlas image', () => {
     const image = { height: 50, width: 100 } as ImageResource;
-    const atlas = createTextureAtlas({ image });
+    const atlas = createTextureAtlas({ texture: createTexture({ storage: { dimension: '2d', image } }) });
     addTextureAtlasRegion(atlas, 10, 5, 20, 15);
     addTextureAtlasRegion(atlas, 30, 5, 20, 15);
 
@@ -327,7 +328,9 @@ describe('getTextureAtlasRegionTexture', () => {
     const atlas = createTextureAtlas();
     addTextureAtlasRegion(atlas, 0, 0, 10, 10);
     expect(getTextureAtlasRegionTexture(atlas, 0)).toBeNull();
-    atlas.image = { height: 10, width: 10 } as ImageResource;
+    atlas.texture = createTexture({
+      storage: { dimension: '2d', image: { height: 10, width: 10 } as ImageResource },
+    });
     expect(getTextureAtlasRegionTexture(atlas, 99)).toBeNull();
   });
 });

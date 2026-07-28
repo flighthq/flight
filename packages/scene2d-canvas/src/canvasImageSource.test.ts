@@ -1,8 +1,10 @@
 import { createImageResource, invalidateImageResource } from '@flighthq/image/contract';
+import { createRenderTexture, createTexture } from '@flighthq/texture/contract';
 import type { ImageResource } from '@flighthq/types/contract';
 
-import { explainCanvasImageSource, resolveCanvasImageSource } from './canvasImageSource';
+import { explainCanvasImageSource, resolveCanvasImageSource, resolveCanvasTextureSource } from './canvasImageSource';
 import { createCanvasRenderState } from './canvasRenderState';
+import { renderIntoCanvasRenderTexture } from './canvasRenderTexture';
 
 function makeState() {
   const canvas = document.createElement('canvas');
@@ -75,5 +77,20 @@ describe('resolveCanvasImageSource', () => {
   it('returns null when the resource carries neither pixels form', () => {
     const state = makeState();
     expect(resolveCanvasImageSource(state, createImageResource())).toBeNull();
+  });
+});
+
+describe('resolveCanvasTextureSource', () => {
+  it('resolves both image and populated produced Texture backings', () => {
+    const state = makeState();
+    const image = createImageResource(document.createElement('img'));
+    expect(resolveCanvasTextureSource(state, createTexture({ storage: { dimension: '2d', image } }))).toBe(
+      image.source,
+    );
+
+    const produced = createRenderTexture({ height: 8, width: 8 });
+    expect(resolveCanvasTextureSource(state, produced)).toBeNull();
+    renderIntoCanvasRenderTexture(state, produced, () => {});
+    expect(resolveCanvasTextureSource(state, produced)).toBeInstanceOf(HTMLCanvasElement);
   });
 });

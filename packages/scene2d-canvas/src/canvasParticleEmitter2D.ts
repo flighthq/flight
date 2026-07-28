@@ -1,6 +1,8 @@
 import { noopRendererData } from '@flighthq/render/contract';
 import type { CanvasRenderState, ParticleEmitter2D, RenderProxy2D, SpriteRenderer } from '@flighthq/types/contract';
 
+import { resolveCanvasTextureSource } from './canvasImageSource';
+
 // Canvas 2D does not support per-pixel color multiplication, so only alpha
 // and transform (position, rotation, scale) are applied. Color tint values
 // from the emitter config are silently ignored. Use the Gl renderer for
@@ -8,18 +10,20 @@ import type { CanvasRenderState, ParticleEmitter2D, RenderProxy2D, SpriteRendere
 export function drawCanvasParticleEmitter2D(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
   const source = renderProxy.source as ParticleEmitter2D;
   const { atlas, alphas, ids, particleCount, transforms } = source.data;
-  if (atlas === null || atlas.image === null || atlas.image.source === null || particleCount === 0) return;
+  if (atlas === null || atlas.texture === null || particleCount === 0) return;
+  const imageSource = resolveCanvasTextureSource(state, atlas.texture);
+  if (imageSource === null) return;
 
   const regions = atlas.regions;
   const numRegions = regions.length;
   const nodeAlpha = renderProxy.alpha;
   const t = renderProxy.transform2D;
-  const imageSource = atlas.image.source;
   const context = state.context;
 
   state.applyBlendMode?.(state, renderProxy.blendMode);
 
-  if (!state.allowSmoothing) context.imageSmoothingEnabled = false;
+  const smoothing = state.allowSmoothing && !atlas.texture.sampler.magFilter.startsWith('nearest');
+  if (!smoothing) context.imageSmoothingEnabled = false;
 
   for (let i = 0; i < particleCount; i++) {
     const id = ids[i];
@@ -59,7 +63,7 @@ export function drawCanvasParticleEmitter2D(state: CanvasRenderState, renderProx
     context.drawImage(imageSource, region.x, region.y, region.width, region.height, 0, 0, region.width, region.height);
   }
 
-  if (!state.allowSmoothing) context.imageSmoothingEnabled = true;
+  if (!smoothing) context.imageSmoothingEnabled = true;
 }
 
 export const defaultCanvasParticleEmitter2DRenderer: SpriteRenderer = {

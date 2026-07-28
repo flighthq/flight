@@ -13,6 +13,7 @@
     { "path": "../geometry" },
     { "path": "../glyphatlas" },
     { "path": "../node" },
+    { "path": "../texture" },
     { "path": "../textureatlas" },
     { "path": "../types" }
   ],

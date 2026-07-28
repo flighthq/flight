@@ -1,8 +1,7 @@
-import { hasImageResourcePixels } from '@flighthq/image/contract';
-import { bindGlImageResourceTexture } from '@flighthq/render-gl/contract';
 import { createGlProgram } from '@flighthq/render-gl/contract';
-import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { getGlRenderStateRuntime, resolveGlTexture } from '@flighthq/render-gl/contract';
 import { noopRendererData } from '@flighthq/render/contract';
+import { getTextureHeight, getTextureWidth, hasTextureBacking } from '@flighthq/texture/contract';
 import type { GlRenderState, ParticleEmitter2D, RenderProxy2D, SpriteRenderer } from '@flighthq/types/contract';
 import type { GlParticleShader } from '@flighthq/types/contract';
 
@@ -129,13 +128,13 @@ export function drawGlParticleEmitter2D(state: GlRenderState, renderProxy: Rende
   const runtime = getGlRenderStateRuntime(state);
   const source = renderProxy.source as ParticleEmitter2D;
   const { atlas, alphas, colors, ids, particleCount, transforms } = source.data;
-  if (atlas === null || atlas.image === null || !hasImageResourcePixels(atlas.image) || particleCount === 0) return;
+  if (atlas === null || atlas.texture === null || !hasTextureBacking(atlas.texture) || particleCount === 0) return;
 
   const shader = ensureParticleShader(state);
   ensureInstanceCapacity(state, particleCount);
 
   state.applyBlendMode?.(state, renderProxy.blendMode);
-  bindGlImageResourceTexture(state, atlas.image, null, null, true);
+  if (resolveGlTexture(state, atlas.texture, true) === null) return;
 
   const gl = state.gl;
   const regions = atlas.regions;
@@ -143,8 +142,8 @@ export function drawGlParticleEmitter2D(state: GlRenderState, renderProxy: Rende
   const nodeAlpha = renderProxy.alpha;
   const t = renderProxy.transform2D;
   const viewport = runtime.renderTargetViewport ?? state.canvas;
-  const iw = 1 / (atlas.image.width || 1);
-  const ih = 1 / (atlas.image.height || 1);
+  const iw = 1 / Math.max(1, getTextureWidth(atlas.texture));
+  const ih = 1 / Math.max(1, getTextureHeight(atlas.texture));
   const instanceData = runtime.particleInstanceData!;
 
   // Build per-instance CPU buffer.

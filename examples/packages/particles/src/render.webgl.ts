@@ -7,6 +7,7 @@ import {
   enableGlBlendModeSupport,
   ParticleEmitter2DKind,
   prepareScene2DRender,
+  registerGlImageTextureResolver,
   registerStandardGlMaterial,
   registerRenderer,
   renderGlBackground,
@@ -25,6 +26,7 @@ export const state = createGlRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 
+registerGlImageTextureResolver(state);
 registerStandardGlMaterial(state);
 registerRenderer(state, ParticleEmitter2DKind, defaultGlParticleEmitter2DRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);

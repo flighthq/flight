@@ -39,6 +39,7 @@
     "@flighthq/scene2d": "*",
     "@flighthq/geometry": "*",
     "@flighthq/node": "*",
+    "@flighthq/texture": "*",
     "@flighthq/textureatlas": "*",
     "@flighthq/types": "*"
   },

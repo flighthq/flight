@@ -1,6 +1,7 @@
 ﻿import { noopRendererData } from '@flighthq/render/contract';
 import type { CanvasRenderState, RenderProxy2D, SpriteRenderer, Tilemap } from '@flighthq/types/contract';
 
+import { resolveCanvasTextureSource } from './canvasImageSource';
 import { applyCanvasMaterial } from './canvasMaterialRegistry';
 
 export function drawCanvasTilemap(state: CanvasRenderState, tilemapNode: RenderProxy2D): void {
@@ -9,13 +10,14 @@ export function drawCanvasTilemap(state: CanvasRenderState, tilemapNode: RenderP
 
   if (tileset === null) return;
   const atlas = tileset.atlas;
-  if (atlas === null || atlas.image === null || atlas.image.source === null) return;
+  if (atlas === null || atlas.texture === null) return;
+  const image = resolveCanvasTextureSource(state, atlas.texture);
+  if (image === null) return;
   if (columns === 0 || rows === 0) return;
 
   state.applyBlendMode?.(state, tilemapNode.blendMode);
 
   const context = state.context;
-  const image = atlas.image.source;
   const regions = atlas.regions;
   const numRegions = regions.length;
   const transform = tilemapNode.transform2D;
@@ -23,7 +25,8 @@ export function drawCanvasTilemap(state: CanvasRenderState, tilemapNode: RenderP
   const { tileWidth, tileHeight } = tileset;
 
   context.globalAlpha = tilemapNode.alpha;
-  if (!state.allowSmoothing) context.imageSmoothingEnabled = false;
+  const smoothing = state.allowSmoothing && !atlas.texture.sampler.magFilter.startsWith('nearest');
+  if (!smoothing) context.imageSmoothingEnabled = false;
 
   const restoreMaterial = applyCanvasMaterial(state, tilemapNode.material);
 
@@ -58,7 +61,7 @@ export function drawCanvasTilemap(state: CanvasRenderState, tilemapNode: RenderP
   if (restoreMaterial) context.restore();
 
   context.setTransform(1, 0, 0, 1, 0, 0);
-  if (!state.allowSmoothing) context.imageSmoothingEnabled = true;
+  if (!smoothing) context.imageSmoothingEnabled = true;
 }
 
 export const defaultCanvasTilemapRenderer: SpriteRenderer = {

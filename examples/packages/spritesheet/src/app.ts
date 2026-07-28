@@ -7,6 +7,7 @@ import {
   createSpritesheetAnimation,
   createSpritesheetFromGrid,
   createSpritesheetPlayer,
+  createTexture,
   getSpritesheetPlayerFrame,
   getTextureAtlasRegionTexture,
   invalidateNodeLocalTransform,
@@ -95,7 +96,7 @@ const spritesheet: Spritesheet = createSpritesheetFromGrid({
 });
 
 // Attach the image resource to the atlas that createSpritesheetFromGrid built internally.
-spritesheet.atlas!.image = imageResource;
+spritesheet.atlas!.texture = createTexture({ storage: { dimension: '2d', image: imageResource } });
 
 // Create two animations over the spritesheet frames.
 

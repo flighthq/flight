@@ -1,6 +1,7 @@
 import { createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry/contract';
 import { invalidateNodeLocalBounds } from '@flighthq/node/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
+import { createTexture, setTextureImage } from '@flighthq/texture/contract';
 import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas/contract';
 import type {
   BitmapText,
@@ -19,7 +20,7 @@ const SPACE = 0x20;
 // Lays out `bitmapText`'s current string and rewrites its `BitmapTextPage` quads: one quad per visible
 // glyph, partitioned by the glyph's atlas page into one page's quads, positioned by the glyph source's
 // advances and kerning, broken on explicit newlines and (when `wrapWidth` is set) at word boundaries,
-// stacked by the metric line advance, and aligned per line. Each page's atlas image is bound from
+// stacked by the metric line advance, and aligned per line. Each page's atlas Texture is bound from
 // `getGlyphAtlasImage(page)` and its regions rebuilt from that page's encountered glyph rects each call,
 // so a dynamic glyph source whose rects shift between layouts stays correct. A single-page source produces
 // exactly one page (page 0). A page whose `getGlyphAtlasImage` returns null cannot be sampled, so its
@@ -186,7 +187,11 @@ function ensureBitmapTextPage(
     });
   }
   const pageData = runtime.pages[page];
-  pageData.atlas.image = image;
+  if (pageData.atlas.texture === null) {
+    pageData.atlas.texture = createTexture({ storage: { dimension: '2d', image } });
+  } else {
+    setTextureImage(pageData.atlas.texture, image);
+  }
   const context: BitmapTextPageContext = { page: pageData, regionByCodepoint: new Map() };
   pages.set(page, context);
   return context;
