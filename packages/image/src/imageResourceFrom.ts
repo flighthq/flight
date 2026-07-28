@@ -21,7 +21,7 @@ export function createCanvasFromImageResource(image: Readonly<ImageResource>): H
 }
 
 // Transcodes a Bitmap's raw pixels into an element-backed ImageResource, via a detached canvas.
-// The inverse of createBitmapFromImageResource. Lives here rather than in @flighthq/bitmap because a
+// The inverse of captureBitmapFromImageResource. Lives here rather than in @flighthq/bitmap because a
 // conversion belongs with the type it PRODUCES: you look for it under what you want to end up with.
 // Allocates a fresh canvas on every call; callers that draw repeatedly should hold the result.
 export function createImageResourceFromBitmap(bitmap: Readonly<Bitmap>): ImageResource {

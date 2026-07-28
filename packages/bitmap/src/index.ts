@@ -40,7 +40,7 @@ export {
   createBitmap,
   createBitmapFingerprint,
   createBitmapFromCanvas,
-  createBitmapFromImageResource,
+  captureBitmapFromImageResource,
   createBitmapFromImageSource,
   createBitmapRegion,
   cropBitmap,

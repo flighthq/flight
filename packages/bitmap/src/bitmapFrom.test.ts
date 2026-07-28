@@ -1,7 +1,29 @@
 import { createImageResource } from '@flighthq/image/contract';
 
 import { createBitmap } from './bitmap';
-import { createBitmapFromCanvas, createBitmapFromImageResource, createBitmapFromImageSource } from './bitmapFrom';
+import { createBitmapFromCanvas, captureBitmapFromImageResource, createBitmapFromImageSource } from './bitmapFrom';
+
+describe('captureBitmapFromImageResource', () => {
+  it('reads a host-backed resource into CPU pixels', () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 3;
+    canvas.height = 2;
+    const bitmap = captureBitmapFromImageResource(createImageResource(canvas));
+    expect(bitmap.width).toBe(3);
+    expect(bitmap.height).toBe(2);
+    expect(bitmap.data).toHaveLength(3 * 2 * 4);
+  });
+
+  it('returns Bitmap matching the resource dimensions', () => {
+    const resource = createImageResource();
+    resource.width = 4;
+    resource.height = 4;
+    resource.source = null;
+    const data = captureBitmapFromImageResource(resource);
+    expect(data.width).toBe(4);
+    expect(data.height).toBe(4);
+  });
+});
 
 describe('createBitmapFromCanvas', () => {
   it('returns Bitmap matching the canvas size', () => {
@@ -19,18 +41,6 @@ describe('createBitmapFromCanvas', () => {
     canvas.height = 8;
     const data = createBitmapFromCanvas(canvas);
     expect(data.data.length).toBe(8 * 8 * 4);
-  });
-});
-
-describe('createBitmapFromImageResource', () => {
-  it('returns Bitmap matching the resource dimensions', () => {
-    const resource = createImageResource();
-    resource.width = 4;
-    resource.height = 4;
-    resource.source = null;
-    const data = createBitmapFromImageResource(resource);
-    expect(data.width).toBe(4);
-    expect(data.height).toBe(4);
   });
 });
 

@@ -2,32 +2,14 @@ import { createEntity } from '@flighthq/entity/contract';
 import type { ImageResource, Bitmap } from '@flighthq/types/contract';
 import { ImageTextureBackingKind } from '@flighthq/types/contract';
 
-export function createBitmapFromCanvas(
-  canvas: HTMLCanvasElement,
-  x: number = 0,
-  y: number = 0,
-  width?: number,
-  height?: number,
-): Bitmap {
-  const w = width ?? canvas.width;
-  const h = height ?? canvas.height;
-  const ctx = canvas.getContext('2d')!;
-  const raw = ctx.getImageData(x, y, w, h);
-  return createEntity({
-    alphaType: 'straight',
-    colorSpace: raw.colorSpace as 'srgb' | 'display-p3',
-    compressed: null,
-    data: raw.data,
-    format: 'rgba8unorm',
-    height: raw.height,
-    kind: ImageTextureBackingKind,
-    source: null,
-    version: 0,
-    width: raw.width,
-  });
-}
-
-export function createBitmapFromImageResource(resource: Readonly<ImageResource>): Bitmap {
+/**
+ * Reads a host-backed ImageResource into a newly allocated, CPU-readable Bitmap. The readback draws
+ * through a detached canvas; callers that need both representations should retain both objects.
+ *
+ * The data-only branch is transitional support for the fused ImageResource shape and disappears
+ * once ImageResource is source-total in Stage 5.
+ */
+export function captureBitmapFromImageResource(resource: Readonly<ImageResource>): Bitmap {
   const canvas = document.createElement('canvas');
   canvas.width = resource.width;
   canvas.height = resource.height;
@@ -63,6 +45,31 @@ export function createBitmapFromImageResource(resource: Readonly<ImageResource>)
     source: null,
     version: 0,
     width: resource.width,
+  });
+}
+
+export function createBitmapFromCanvas(
+  canvas: HTMLCanvasElement,
+  x: number = 0,
+  y: number = 0,
+  width?: number,
+  height?: number,
+): Bitmap {
+  const w = width ?? canvas.width;
+  const h = height ?? canvas.height;
+  const ctx = canvas.getContext('2d')!;
+  const raw = ctx.getImageData(x, y, w, h);
+  return createEntity({
+    alphaType: 'straight',
+    colorSpace: raw.colorSpace as 'srgb' | 'display-p3',
+    compressed: null,
+    data: raw.data,
+    format: 'rgba8unorm',
+    height: raw.height,
+    kind: ImageTextureBackingKind,
+    source: null,
+    version: 0,
+    width: raw.width,
   });
 }
 
