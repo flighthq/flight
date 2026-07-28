@@ -1,5 +1,5 @@
 import type { ImageResource } from './ImageResource';
-import type { RenderTargetDescriptor } from './RenderTarget';
+import type { TextureTargetBacking } from './TextureTargetBacking';
 
 // Two-dimensional texture storage composes the closed sampling dimension with an open backing.
 // CPU-origin content uses `image`; GPU-origin produced content uses `target` with no image. Backend
@@ -7,5 +7,5 @@ import type { RenderTargetDescriptor } from './RenderTarget';
 export interface TextureStorage {
   dimension: '2d';
   image: ImageResource | null;
-  target?: RenderTargetDescriptor;
+  target?: TextureTargetBacking;
 }

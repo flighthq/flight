@@ -1,6 +1,7 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { detectImageMimeType } from '@flighthq/image-codec/contract';
 import type { ImageResource } from '@flighthq/types/contract';
+import { ImageTextureBackingKind } from '@flighthq/types/contract';
 
 // Materializes a data-backed ImageResource's raw pixels into a detached, drawable HTMLCanvasElement
 // via putImageData. The inverse of createImageResourceFromCanvas: it turns the portable `data`
@@ -26,6 +27,7 @@ export function createImageResourceFromCanvas(canvas: HTMLCanvasElement): ImageR
     data: null,
     format: 'rgba8unorm',
     height: canvas.height,
+    kind: ImageTextureBackingKind,
     source: canvas,
     version: 0,
     width: canvas.width,
@@ -39,6 +41,7 @@ export function createImageResourceFromImageBitmap(bitmap: ImageBitmap): ImageRe
     data: null,
     format: 'rgba8unorm',
     height: bitmap.height,
+    kind: ImageTextureBackingKind,
     source: bitmap,
     version: 0,
     width: bitmap.width,
@@ -52,6 +55,7 @@ export function createImageResourceFromImageElement(img: HTMLImageElement): Imag
     data: null,
     format: 'rgba8unorm',
     height: img.height,
+    kind: ImageTextureBackingKind,
     source: img,
     version: 0,
     width: img.width,

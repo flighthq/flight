@@ -594,6 +594,8 @@ export * from './TextureDimension';
 export * from './TextureKind';
 export * from './TexturePackerSchema';
 export * from './TextureStorage';
+export * from './TextureBackingKind';
+export * from './TextureTargetBacking';
 export * from './TextureUvTransform';
 export * from './TextureVolume';
 export * from './ThreeDsSchema';

@@ -1,6 +1,7 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { invalidateImageResource } from '@flighthq/image/contract';
 import type { Surface, SurfaceRegion } from '@flighthq/types/contract';
+import { ImageTextureBackingKind } from '@flighthq/types/contract';
 
 /**
  * Merges four single-channel surfaces (or any full-RGBA surfaces) into `out`
@@ -138,6 +139,7 @@ function makeSurface(
     data,
     format: source.format,
     height,
+    kind: ImageTextureBackingKind,
     source: null,
     version: 0,
     width,

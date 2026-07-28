@@ -1,5 +1,6 @@
 import { createEntity } from '@flighthq/entity/contract';
 import type { ImageResource, ImageResourceCompressed } from '@flighthq/types/contract';
+import { ImageTextureBackingKind } from '@flighthq/types/contract';
 
 // Allocates a new resource identity over the SAME underlying pixels. The element, the `data` array, and
 // the `compressed` payload are shared by reference, not duplicated — clone gives you an independent
@@ -12,6 +13,7 @@ export function cloneImageResource(resource: Readonly<ImageResource>): ImageReso
     data: resource.data,
     format: resource.format,
     height: resource.height,
+    kind: resource.kind,
     source: resource.source,
     version: resource.version,
     width: resource.width,
@@ -29,6 +31,7 @@ export function createCompressedImageResource(compressed: Readonly<ImageResource
     data: null,
     format: 'rgba8unorm',
     height: compressed.container.height,
+    kind: ImageTextureBackingKind,
     source: null,
     version: 0,
     width: compressed.container.width,
@@ -42,6 +45,7 @@ export function createImageResource(image?: CanvasImageSource): ImageResource {
     data: null,
     format: 'rgba8unorm',
     height: 0,
+    kind: ImageTextureBackingKind,
     source: image ?? null,
     version: 0,
     width: 0,

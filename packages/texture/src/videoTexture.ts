@@ -1,6 +1,7 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { inverseMatrix3 } from '@flighthq/geometry/contract';
 import type { ImageResource, Matrix3Like, Texture, TextureLike, VideoResource } from '@flighthq/types/contract';
+import { VideoTextureBackingKind } from '@flighthq/types/contract';
 
 import { cloneTexture, copyTexture, createTexture, getTextureUvMatrix } from './texture';
 
@@ -98,6 +99,7 @@ function createVideoImageResource(source: Readonly<VideoResource>): ImageResourc
     data: null,
     format: 'rgba8unorm',
     height: 0,
+    kind: VideoTextureBackingKind,
     source: source.element,
     version: INITIAL_VIDEO_VERSION,
     width: 0,

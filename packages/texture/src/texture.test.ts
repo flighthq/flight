@@ -1,5 +1,6 @@
 import { createMatrix3, createVector2, inverseMatrix3 } from '@flighthq/geometry/contract';
 import type { ImageResource } from '@flighthq/types/contract';
+import { ProducedTextureBackingKind } from '@flighthq/types/contract';
 
 import { createSampler, equalsSampler } from './sampler';
 import {
@@ -59,7 +60,12 @@ describe('cloneTexture', () => {
   });
 
   it('preserves a produced descriptor while cloning sampling state', () => {
-    const target = { colorSpace: 'linear' as const, height: 32, width: 64 };
+    const target = {
+      colorSpace: 'linear' as const,
+      height: 32,
+      kind: ProducedTextureBackingKind,
+      width: 64,
+    };
     const source = createTexture({ storage: { dimension: '2d', image: null, target } });
 
     const copy = cloneTexture(source);
@@ -214,7 +220,11 @@ describe('getTextureHeight', () => {
 
   it('returns the produced target height when there is no CPU image', () => {
     const texture = createTexture({
-      storage: { dimension: '2d', image: null, target: { height: 48, width: 96 } },
+      storage: {
+        dimension: '2d',
+        image: null,
+        target: { height: 48, kind: ProducedTextureBackingKind, width: 96 },
+      },
     });
 
     expect(getTextureHeight(texture)).toStrictEqual(48);
@@ -365,7 +375,11 @@ describe('getTextureWidth', () => {
 
   it('returns the produced target width when there is no CPU image', () => {
     const texture = createTexture({
-      storage: { dimension: '2d', image: null, target: { height: 48, width: 96 } },
+      storage: {
+        dimension: '2d',
+        image: null,
+        target: { height: 48, kind: ProducedTextureBackingKind, width: 96 },
+      },
     });
 
     expect(getTextureWidth(texture)).toStrictEqual(96);
