@@ -94,7 +94,6 @@ describe('createUnlitMaterial', () => {
     expect(material.kind).toBe(UnlitMaterialKind);
     expect(material.baseColor).toBe(0xffffffff);
     expect(material.baseColorMap).toBeNull();
-    expect(material.baseColorRenderMap).toBeNull();
   });
 
   it('applies overrides', () => {

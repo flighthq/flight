@@ -1,12 +1,5 @@
-import { bindGlRenderTexture, resolveGlTexture } from '@flighthq/render-gl/contract';
-import type {
-  GlUnlitDefineKey,
-  GlUnlitProgram,
-  LinearColor,
-  GlRenderState,
-  RenderTexture,
-  Texture,
-} from '@flighthq/types/contract';
+import { resolveGlTexture } from '@flighthq/render-gl/contract';
+import type { GlUnlitDefineKey, GlUnlitProgram, LinearColor, GlRenderState, Texture } from '@flighthq/types/contract';
 
 import {
   GL_SKIN_VERTEX_DECLARATIONS_GLSL,
@@ -15,26 +8,8 @@ import {
   ensureGlScene3DProgram,
 } from './glMeshProgram';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
-// Render-to-texture sibling of the still/video binders. The target's resolved attachment is already
-// resident on this GL context, so bindGlRenderTexture only references it and applies sampling state.
-export function bindGlUnlitRenderSurface(
-  state: GlRenderState,
-  program: Readonly<GlUnlitProgram>,
-  color: Readonly<LinearColor>,
-  intensity: number,
-  renderMap: Readonly<RenderTexture>,
-  alphaCutoff: number,
-): void {
-  const gl = state.gl;
-  gl.uniform4f(program.locColor, color[0], color[1], color[2], color[3]);
-  gl.uniform1f(program.locIntensity, intensity);
-  gl.uniform1f(program.locAlphaCutoff, alphaCutoff);
-  gl.activeTexture(gl.TEXTURE0);
-  bindGlRenderTexture(state, renderMap);
-  gl.uniform1i(program.locColorMap, 0);
-}
 
-// Uploads the resolved unlit surface uniforms shared by all three unlit materials: the linear color
+// Uploads the resolved unlit surface uniforms: the linear color
 // (already sRgb-decoded on the CPU), the intensity scale (1 for Unlit/VertexColor, emissiveStrength
 // for Emissive), the optional color map on texture unit 0, and the alpha-mask cutoff. The caller has
 // already selected the program (beginGlMeshDraw) and set the view-projection.

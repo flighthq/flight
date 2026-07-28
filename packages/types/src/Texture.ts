@@ -11,8 +11,8 @@ import type { TextureUvTransform } from './TextureUvTransform';
 export type TextureColorSpace = 'linear' | 'srgb';
 
 // The universal sampled-resource bridge for materials: context-neutral storage plus the sampling
-// state and color-space that govern how a material reads it. `storage.image` is null for an unbound
-// slot (the material treats it as absent). The uv-transform fields are the KHR_texture_transform
+// state and color-space that govern how a material reads it. `storage.image` is the CPU-origin
+// backing; `storage.target` describes a GPU-origin produced backing. The uv-transform fields are the KHR_texture_transform
 // model — `uvOffset`/`uvScale` shift and tile the coordinates and `uvRotation` (radians) spins
 // them — applied before sampling. A graph that renders into a Texture writes its result through
 // the same storage seam, so any Mesh + Material can consume another graph's output.

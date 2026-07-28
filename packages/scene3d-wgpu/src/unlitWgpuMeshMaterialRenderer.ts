@@ -84,7 +84,7 @@ function hasVideoBacking(texture: Readonly<Texture>): boolean {
     videoWidth?: unknown;
   } | null;
   return (
-    source !== null &&
+    source != null &&
     typeof source.readyState === 'number' &&
     typeof source.videoHeight === 'number' &&
     typeof source.videoWidth === 'number'

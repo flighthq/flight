@@ -1,23 +1,43 @@
-import { createEntity } from '@flighthq/entity/contract';
-import { cloneVector2, createVector2 } from '@flighthq/geometry/contract';
-import type { RenderTexture, RenderTextureOptions } from '@flighthq/types/contract';
+import type { CreateRenderTextureOptions, Texture } from '@flighthq/types/contract';
 
-import { cloneSampler, createSampler } from './sampler';
+import { copySampler } from './sampler';
+import { createTexture } from './texture';
 
-// Creates the backend-neutral identity for a render target. The GL backing is allocated lazily by
-// renderIntoGlRenderTexture, so constructing one has no GPU or DOM side effects. Its uv transform
-// defaults to identity: GL mesh UVs and framebuffer textures share the same bottom-left convention.
-export function createRenderTexture(options: Readonly<RenderTextureOptions>): RenderTexture {
-  return createEntity({
+// Creates a universal Texture with a GPU-origin produced backing. Backend allocation stays lazy;
+// renderIntoGlRenderTexture realizes the target in one state and resolveGlTexture later returns its
+// color attachment without a CPU upload.
+export function createRenderTexture(options: Readonly<CreateRenderTextureOptions>): Texture {
+  const colorSpace = options.colorSpace ?? 'linear';
+  const texture = createTexture({
     colorSpace: options.colorSpace ?? 'linear',
-    depth: options.depth ?? false,
     flipX: options.flipX ?? false,
     flipY: options.flipY ?? false,
-    height: options.height,
-    sampler: options.sampler ? cloneSampler(options.sampler) : createSampler(),
-    uvOffset: options.uvOffset ? cloneVector2(options.uvOffset) : createVector2(0, 0),
-    uvRotation: options.uvRotation ?? 0,
-    uvScale: options.uvScale ? cloneVector2(options.uvScale) : createVector2(1, 1),
-    width: options.width,
+    storage: {
+      dimension: '2d',
+      image: null,
+      target: {
+        colorAttachments: options.colorAttachments,
+        colorFormats: options.colorFormats,
+        colorSpace,
+        clearColors: options.clearColors,
+        clearDepth: options.clearDepth,
+        depth: options.depth,
+        format: options.format,
+        height: options.height,
+        sampleCount: options.sampleCount,
+        width: options.width,
+      },
+    },
+    uvRotation: options.uvRotation,
   });
+  if (options.sampler !== undefined) copySampler(texture.sampler, options.sampler);
+  if (options.uvOffset !== undefined) {
+    texture.uvOffset.x = options.uvOffset.x;
+    texture.uvOffset.y = options.uvOffset.y;
+  }
+  if (options.uvScale !== undefined) {
+    texture.uvScale.x = options.uvScale.x;
+    texture.uvScale.y = options.uvScale.y;
+  }
+  return texture;
 }

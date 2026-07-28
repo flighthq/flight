@@ -1,5 +1,5 @@
 import type { GlRenderState } from './GlRenderState';
-import type { RenderTexture } from './RenderTexture';
+import type { Texture } from './Texture';
 
 export type GlRenderTextureStatus = 'ready' | 'unrendered' | 'writing';
 
@@ -11,6 +11,6 @@ export interface GlRenderTextureExplanation {
 
 export type GlRenderTextureGuard = (
   state: GlRenderState,
-  renderTexture: Readonly<RenderTexture>,
+  renderTexture: Readonly<Texture>,
   explanation: Readonly<GlRenderTextureExplanation>,
 ) => void;

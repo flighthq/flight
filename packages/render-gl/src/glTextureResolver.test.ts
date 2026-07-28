@@ -1,11 +1,14 @@
-import type { ImageResource, TextureLike } from '@flighthq/types/contract';
+import type { ImageResource, Texture, TextureLike } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
+import { renderIntoGlRenderTexture } from './glRenderTexture';
 import { createGlState } from './glTestHelper';
 import {
   glImageTextureBackingKind,
+  glProducedTextureBackingKind,
   glVideoTextureBackingKind,
   registerGlImageTextureResolver,
+  registerGlProducedTextureResolver,
   registerGlTextureResolver,
   registerGlVideoTextureResolver,
   resolveGlTexture,
@@ -46,10 +49,24 @@ function imageResource(): ImageResource {
   } as ImageResource;
 }
 
+function textureWithTarget(): TextureLike {
+  const texture = textureWithImage(null);
+  texture.colorSpace = 'linear';
+  texture.storage.target = { colorSpace: 'linear', height: 8, width: 8 };
+  return texture;
+}
+
 describe('glImageTextureBackingKind', () => {
   it('matches only a bound 2D image storage', () => {
     expect(glImageTextureBackingKind(textureWithImage(imageResource()).storage)).toBe(true);
     expect(glImageTextureBackingKind(textureWithImage(null).storage)).toBe(false);
+  });
+});
+
+describe('glProducedTextureBackingKind', () => {
+  it('matches a produced target descriptor without a texture subtype', () => {
+    expect(glProducedTextureBackingKind(textureWithTarget().storage)).toBe(true);
+    expect(glProducedTextureBackingKind(textureWithImage(null).storage)).toBe(false);
   });
 });
 
@@ -59,6 +76,7 @@ describe('glVideoTextureBackingKind', () => {
     video.source = { readyState: 4, videoHeight: 240, videoWidth: 320 } as HTMLVideoElement;
     expect(glVideoTextureBackingKind(textureWithImage(video).storage)).toBe(true);
     expect(glVideoTextureBackingKind(textureWithImage(imageResource()).storage)).toBe(false);
+    expect(glVideoTextureBackingKind(textureWithTarget().storage)).toBe(false);
   });
 });
 
@@ -83,6 +101,24 @@ describe('registerGlImageTextureResolver', () => {
     const empty = imageResource();
     empty.source = null;
     expect(resolveGlTexture(state, textureWithImage(empty))).toBeNull();
+  });
+});
+
+describe('registerGlProducedTextureResolver', () => {
+  it('returns the hidden color attachment without uploading CPU pixels', () => {
+    const { state, gl } = createGlState();
+    const previous = vi.mocked(gl.getParameter).getMockImplementation();
+    vi.mocked(gl.getParameter).mockImplementation((parameter) => {
+      if (parameter === gl.VIEWPORT || parameter === gl.SCISSOR_BOX) return [0, 0, 16, 16];
+      return previous?.(parameter);
+    });
+    const texture = textureWithTarget();
+    renderIntoGlRenderTexture(state, texture as Texture, () => {});
+    registerGlProducedTextureResolver(state);
+    const uploads = vi.mocked(gl.texImage2D).mock.calls.length;
+
+    expect(resolveGlTexture(state, texture)).not.toBeNull();
+    expect(gl.texImage2D).toHaveBeenCalledTimes(uploads);
   });
 });
 

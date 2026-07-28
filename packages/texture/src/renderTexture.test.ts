@@ -7,14 +7,17 @@ describe('createRenderTexture', () => {
 
     expect(texture).toMatchObject({
       colorSpace: 'linear',
-      depth: false,
       flipX: false,
       flipY: false,
-      height: 32,
+      storage: {
+        dimension: '2d',
+        image: null,
+        target: { colorSpace: 'linear', height: 32, width: 64 },
+      },
       uvOffset: { x: 0, y: 0 },
       uvRotation: 0,
       uvScale: { x: 1, y: 1 },
-      width: 64,
+      version: 0,
     });
   });
 
@@ -23,7 +26,7 @@ describe('createRenderTexture', () => {
     const uvOffset = { x: 0.25, y: 0.5 };
     const texture = createRenderTexture({
       colorSpace: 'srgb',
-      depth: true,
+      depth: 'depth-stencil',
       flipY: false,
       height: 16,
       sampler,
@@ -32,7 +35,7 @@ describe('createRenderTexture', () => {
     });
 
     expect(texture.colorSpace).toBe('srgb');
-    expect(texture.depth).toBe(true);
+    expect(texture.storage.target?.depth).toBe('depth-stencil');
     expect(texture.flipY).toBe(false);
     expect(texture.sampler.magFilter).toBe('nearest');
     expect(texture.sampler).not.toBe(sampler);

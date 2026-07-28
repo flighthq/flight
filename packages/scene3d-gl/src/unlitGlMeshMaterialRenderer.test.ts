@@ -3,7 +3,7 @@ import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import { createUnlitMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import { advanceVideoTexture, createVideoTexture } from '@flighthq/texture/contract';
+import { advanceVideoTexture, createRenderTexture, createVideoTexture } from '@flighthq/texture/contract';
 import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { UnlitMaterialKind } from '@flighthq/types/contract';
 
@@ -65,6 +65,21 @@ describe('unlitGlMeshMaterialRenderer', () => {
     getGlRenderStateRuntime(state).anisotropyExt = null;
     unlitGlMeshMaterialRenderer.bind(state, material, NO_LIGHTS, makeCamera());
     expect(gl.calls.some((c) => c.name === 'texImage2D')).toBe(true);
+  });
+
+  it('handles an unrendered produced Texture in the same color-map slot without an upload', () => {
+    const { state, gl } = makeGlScene3DState();
+    const material = createUnlitMaterial();
+    material.baseColorMap = createRenderTexture({ height: 16, width: 16 });
+    material.baseColorMap.sampler.mipmaps = false;
+    registerUnlitGlMaterial(state);
+    getGlRenderStateRuntime(state).anisotropyExt = null;
+    const uploads = gl.calls.filter((call) => call.name === 'texImage2D').length;
+
+    unlitGlMeshMaterialRenderer.bind(state, material, NO_LIGHTS, makeCamera());
+
+    expect(gl.calls.filter((call) => call.name === 'texImage2D')).toHaveLength(uploads);
+    expect(gl.calls.some((call) => call.name === 'bindTexture' && call.args[1] === null)).toBe(true);
   });
 
   it('draw issues an indexed draw over the subset after bind', () => {
