@@ -90,7 +90,7 @@ function defineKeyForMaterial(state: GlRenderState, material: Readonly<UnlitMate
       material !== null &&
       (renderMapReady ||
         (material.baseColorVideoMap !== null && isVideoTextureFrameReady(material.baseColorVideoMap)) ||
-        (material.baseColorMap !== null && material.baseColorMap.image !== null)),
+        (material.baseColorMap !== null && material.baseColorMap.storage.image !== null)),
     hasUvTransform:
       material !== null &&
       hasGlUvTransform(

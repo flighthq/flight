@@ -400,7 +400,7 @@ describe('createScene3DFromObj', () => {
     expect((material.diffuseMap!.resource as ExternalImageResourceReference).uri).toBe('wood.png');
     expect((material.specularMap!.resource as ExternalImageResourceReference).uri).toBe('spec.png');
     expect((material.normalMap!.resource as ExternalImageResourceReference).uri).toBe('normal.png');
-    expect(material.diffuseMap!.image).toBeNull();
+    expect(material.diffuseMap!.storage.image).toBeNull();
   });
 
   it('leaves a subset slot null when usemtl names a material absent from the library', () => {

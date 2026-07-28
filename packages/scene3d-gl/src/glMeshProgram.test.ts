@@ -377,7 +377,7 @@ describe('hasGlUvTransform', () => {
   });
 
   it('is false for an identity transform even with a bound image', () => {
-    expect(hasGlUvTransform(createTexture({ image: {} as ImageResource }))).toBe(false);
+    expect(hasGlUvTransform(createTexture({ storage: { dimension: '2d', image: {} as ImageResource } }))).toBe(false);
   });
 
   it('is false for a non-identity transform whose image is unbound', () => {
@@ -388,7 +388,7 @@ describe('hasGlUvTransform', () => {
   });
 
   it('is true only when a bound image carries a non-identity transform', () => {
-    const texture = createTexture({ image: {} as ImageResource });
+    const texture = createTexture({ storage: { dimension: '2d', image: {} as ImageResource } });
     setTextureUvScale(texture, 2, 2);
 
     expect(hasGlUvTransform(texture)).toBe(true);

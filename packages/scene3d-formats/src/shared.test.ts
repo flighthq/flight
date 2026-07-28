@@ -117,7 +117,7 @@ describe('createEmbeddedTextureRef', () => {
   it('wraps encoded bytes as an Unresolved Embedded resource ref without decoding them', () => {
     const bytes = new Uint8Array([1, 2, 3, 4]);
     const texture = createEmbeddedTextureRef(bytes, 'image/png');
-    expect(texture.image).toBeNull();
+    expect(texture.storage.image).toBeNull();
     const ref = texture.resource as EmbeddedImageResourceReference;
     expect(ref.kind).toBe('Embedded');
     expect(ref.bytes).toBe(bytes);
@@ -134,7 +134,7 @@ describe('createEmbeddedTextureRef', () => {
 describe('createExternalTextureRef', () => {
   it('wraps a filename as an Unresolved External resource ref without loading it', () => {
     const texture = createExternalTextureRef('models/hero.png');
-    expect(texture.image).toBeNull();
+    expect(texture.storage.image).toBeNull();
     const ref = texture.resource as ExternalImageResourceReference;
     expect(ref.kind).toBe('External');
     expect(ref.uri).toBe('models/hero.png');

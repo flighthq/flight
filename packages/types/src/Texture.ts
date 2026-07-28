@@ -1,7 +1,7 @@
 import type { Entity, EntityWithoutRuntime } from './Entity';
-import type { ImageResource } from './ImageResource';
 import type { ImageResourceReference } from './ImageResourceReference';
 import type { Sampler } from './Sampler';
+import type { TextureStorage } from './TextureStorage';
 import type { TextureUvTransform } from './TextureUvTransform';
 
 // How the texture's pixels are interpreted at sample time. baseColor/emissive maps are 'srgb'
@@ -10,21 +10,24 @@ import type { TextureUvTransform } from './TextureUvTransform';
 // material seam relies on; without it every textured material is gamma-wrong.
 export type TextureColorSpace = 'linear' | 'srgb';
 
-// The universal image bridge for materials: an ImageResource pixel source plus the sampling
-// state and color-space that govern how a material reads it. `image` is null for an unbound
+// The universal sampled-resource bridge for materials: context-neutral storage plus the sampling
+// state and color-space that govern how a material reads it. `storage.image` is null for an unbound
 // slot (the material treats it as absent). The uv-transform fields are the KHR_texture_transform
 // model — `uvOffset`/`uvScale` shift and tile the coordinates and `uvRotation` (radians) spins
 // them — applied before sampling. A graph that renders into a Texture writes its result through
-// the same `image` resource, so any Mesh + Material can consume another graph's output.
+// the same storage seam, so any Mesh + Material can consume another graph's output.
 export interface Texture extends Entity, TextureUvTransform {
   colorSpace: TextureColorSpace;
-  image: ImageResource | null;
   // An unresolved reference to this texture's image, emitted by a scene-format parser so the parse
   // stays synchronous while the heavy decode/fetch is deferred. Absent (`null`/undefined) for a
   // texture whose image is already in hand or bound. @flighthq/scene3d-resources resolves it and
-  // fills `image`; the renderer may read `resource.state` to fade the surface in on availability.
+  // fills `storage.image`; the renderer may read `resource.state` to fade the surface in on availability.
   resource?: ImageResourceReference | null;
   sampler: Sampler;
+  storage: TextureStorage;
+  // Integer dirty-bit for storage changes. GPU handles remain render-state-owned and compare this
+  // revision when deciding whether the texture needs resolving again.
+  version: number;
 }
 
 export type TextureLike = EntityWithoutRuntime<Texture>;

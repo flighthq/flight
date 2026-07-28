@@ -17,9 +17,9 @@ export function bindGlMatcapSurface(
   gl.uniform4f(program.locTint, tint[0], tint[1], tint[2], tint[3]);
   gl.uniform1f(program.locAlphaCutoff, alphaCutoff);
 
-  if (matcap !== null && matcap.image !== null && hasImageResourcePixels(matcap.image)) {
+  if (matcap !== null && matcap.storage.image !== null && hasImageResourcePixels(matcap.storage.image)) {
     gl.activeTexture(gl.TEXTURE0);
-    bindGlImageResourceTexture(state, matcap.image, matcap.sampler);
+    bindGlImageResourceTexture(state, matcap.storage.image, matcap.sampler);
     gl.uniform1i(program.locMatcap, 0);
   }
 }

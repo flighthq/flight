@@ -76,8 +76,9 @@ export function registerToonGlMaterial(state: GlRenderState): void {
 function defineKeyForMaterial(material: Readonly<ToonMaterial> | null): GlToonDefineKey {
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
-    hasBaseColorMap: material !== null && material.baseColorMap !== null && material.baseColorMap.image !== null,
-    hasRamp: material !== null && material.ramp !== null && material.ramp.image !== null,
+    hasBaseColorMap:
+      material !== null && material.baseColorMap !== null && material.baseColorMap.storage.image !== null,
+    hasRamp: material !== null && material.ramp !== null && material.ramp.storage.image !== null,
     hasUvTransform: hasGlUvTransform(material !== null ? material.baseColorMap : null),
   };
 }
@@ -101,16 +102,20 @@ function bindGlToonMaterialUniforms(
   gl.uniform1f(program.locAlphaCutoff, material.alphaCutoff);
 
   const baseColorMap = material.baseColorMap;
-  if (baseColorMap !== null && baseColorMap.image !== null && hasImageResourcePixels(baseColorMap.image)) {
+  if (
+    baseColorMap !== null &&
+    baseColorMap.storage.image !== null &&
+    hasImageResourcePixels(baseColorMap.storage.image)
+  ) {
     gl.activeTexture(gl.TEXTURE0);
-    bindGlImageResourceTexture(state, baseColorMap.image, baseColorMap.sampler);
+    bindGlImageResourceTexture(state, baseColorMap.storage.image, baseColorMap.sampler);
     gl.uniform1i(program.locBaseColorMap, 0);
   }
 
   const ramp = material.ramp;
-  if (ramp !== null && ramp.image !== null && hasImageResourcePixels(ramp.image)) {
+  if (ramp !== null && ramp.storage.image !== null && hasImageResourcePixels(ramp.storage.image)) {
     gl.activeTexture(gl.TEXTURE1);
-    bindGlImageResourceTexture(state, ramp.image, ramp.sampler);
+    bindGlImageResourceTexture(state, ramp.storage.image, ramp.sampler);
     gl.uniform1i(program.locRamp, 1);
   }
 

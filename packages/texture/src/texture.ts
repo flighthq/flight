@@ -11,45 +11,48 @@ import type {
 
 import { cloneSampler, copySampler, createSampler, equalsSampler } from './sampler';
 
-// Allocates an independent Texture over the SAME image pixels: the ImageResource reference is
-// shared (clone the resource separately to upload into a second render state), while the Sampler
-// and the uv-transform vectors are deep-cloned so the two textures can be sampled independently.
+// Allocates an independent Texture over the SAME image pixels: the ImageResource reference is shared
+// through a fresh storage record (clone the resource separately to duplicate its content identity),
+// while the Sampler and uv-transform vectors are deep-cloned for independent sampling.
 export function cloneTexture(source: Readonly<TextureLike>): Texture {
   return createEntity({
     colorSpace: source.colorSpace,
     flipX: source.flipX,
     flipY: source.flipY,
-    image: source.image,
     resource: source.resource ?? null,
     sampler: cloneSampler(source.sampler),
+    storage: { dimension: '2d', image: source.storage.image },
     uvOffset: cloneVector2(source.uvOffset),
     uvRotation: source.uvRotation,
     uvScale: cloneVector2(source.uvScale),
+    version: source.version >>> 0,
   });
 }
 
 // Copies every Texture field from source into out in place. The image reference is shared; the
-// Sampler and uv-transform vectors are copied into out's existing entities (their identities are
-// preserved). Safe when out aliases source.
+// storage record, Sampler, and uv-transform vectors are copied into out's existing objects (their
+// identities are preserved). Safe when out aliases source.
 export function copyTexture(out: TextureLike, source: Readonly<TextureLike>): void {
   const colorSpace = source.colorSpace;
   const flipX = source.flipX;
   const flipY = source.flipY;
-  const image = source.image;
+  const image = source.storage.image;
   const resource = source.resource ?? null;
   const uvRotation = source.uvRotation;
+  const version = source.version >>> 0;
   copySampler(out.sampler, source.sampler);
   copyVector2(out.uvOffset, source.uvOffset);
   copyVector2(out.uvScale, source.uvScale);
   out.colorSpace = colorSpace;
   out.flipX = flipX;
   out.flipY = flipY;
-  out.image = image;
   out.resource = resource;
+  out.storage.image = image;
   out.uvRotation = uvRotation;
+  out.version = version;
 }
 
-// Builds a Texture: an unbound image slot (null), a default Sampler, 'srgb' color space (the
+// Builds a Texture: 2D storage with an unbound image slot (null), a default Sampler, 'srgb' color space (the
 // albedo default — data maps override to 'linear'), and an identity KHR_texture_transform
 // (zero offset, unit scale, no rotation). Pass TextureLike fields to override any of these.
 export function createTexture(opts?: Readonly<Partial<TextureLike>>): Texture {
@@ -57,12 +60,13 @@ export function createTexture(opts?: Readonly<Partial<TextureLike>>): Texture {
     colorSpace: opts?.colorSpace ?? 'srgb',
     flipX: opts?.flipX ?? false,
     flipY: opts?.flipY ?? false,
-    image: opts?.image ?? null,
     resource: opts?.resource ?? null,
     sampler: opts?.sampler ? cloneSampler(opts.sampler) : createSampler(),
+    storage: opts?.storage ? { dimension: '2d', image: opts.storage.image } : { dimension: '2d', image: null },
     uvOffset: opts?.uvOffset ? cloneVector2(opts.uvOffset) : createVector2(0, 0),
     uvRotation: opts?.uvRotation ?? 0,
     uvScale: opts?.uvScale ? cloneVector2(opts.uvScale) : createVector2(1, 1),
+    version: (opts?.version ?? 0) >>> 0,
   });
 }
 
@@ -78,19 +82,20 @@ export function equalsTexture(
     a.colorSpace === b.colorSpace &&
     a.flipX === b.flipX &&
     a.flipY === b.flipY &&
-    a.image === b.image &&
+    a.storage.image === b.storage.image &&
     a.uvRotation === b.uvRotation &&
     a.uvOffset.x === b.uvOffset.x &&
     a.uvOffset.y === b.uvOffset.y &&
     a.uvScale.x === b.uvScale.x &&
     a.uvScale.y === b.uvScale.y &&
+    a.version === b.version &&
     equalsSampler(a.sampler, b.sampler)
   );
 }
 
 // Returns the pixel height of the texture's bound image, or -1 when no image is bound.
 export function getTextureHeight(texture: Readonly<TextureLike>): number {
-  return texture.image !== null ? texture.image.height : -1;
+  return texture.storage.image !== null ? texture.storage.image.height : -1;
 }
 
 // Composes the KHR_texture_transform fields and inverts the result, producing the matrix that maps
@@ -140,7 +145,7 @@ export function getTextureUvMatrix(out: Matrix3Like, texture: Readonly<TextureUv
 
 // Returns the pixel width of the texture's bound image, or -1 when no image is bound.
 export function getTextureWidth(texture: Readonly<TextureLike>): number {
-  return texture.image !== null ? texture.image.width : -1;
+  return texture.storage.image !== null ? texture.storage.image.width : -1;
 }
 
 // True when the texture carries a non-identity KHR_texture_transform — any non-unit scale, non-zero
@@ -159,14 +164,14 @@ export function hasTextureUvTransform(texture: Readonly<TextureUvTransform>): bo
   );
 }
 
-// True once the texture references a pixel source. A texture with a null image is treated as an
+// True once the texture references a pixel source. A texture whose storage has a null image is treated as an
 // absent slot by materials, so this is the gate a material samples behind.
 export function isTextureReady(texture: Readonly<TextureLike>): boolean {
-  return texture.image !== null;
+  return texture.storage.image !== null;
 }
 
 // Resets the KHR_texture_transform to identity in place: zero offset, no rotation, unit scale, and
-// no flip. Leaves the image, color space, and sampler untouched.
+// no flip. Leaves storage, color space, sampler, and version untouched.
 export function resetTextureUvTransform(texture: TextureLike): void {
   texture.flipX = false;
   texture.flipY = false;
@@ -185,10 +190,12 @@ export function setTextureFlip(texture: TextureLike, flipX: boolean, flipY: bool
   texture.flipY = flipY;
 }
 
-// Binds (or clears, with null) the texture's image source in place. Does not touch sampling state
-// or the uv-transform.
+// Binds (or clears, with null) the texture's image source in place and advances the u32 dirty-bit.
+// Does not touch sampling state or the uv-transform.
 export function setTextureImage(texture: TextureLike, image: ImageResource | null): void {
-  texture.image = image;
+  if (texture.storage.image === image) return;
+  texture.storage.image = image;
+  texture.version = (texture.version + 1) >>> 0;
 }
 
 // Sets the uv offset (scroll/translation) in place. Equivalent to assigning texture.uvOffset

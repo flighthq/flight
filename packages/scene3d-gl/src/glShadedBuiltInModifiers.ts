@@ -453,7 +453,7 @@ function bindGlModifierTexture(
   const unit = context.acquireModifierTextureUnit();
   if (unit < 0) return;
   gl.activeTexture(gl.TEXTURE0 + unit);
-  const image = texture.image;
+  const image = texture.storage.image;
   if (image !== null && hasImageResourcePixels(image)) {
     bindGlImageResourceTexture(state, image, texture.sampler);
   }

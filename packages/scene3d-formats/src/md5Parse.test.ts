@@ -496,7 +496,7 @@ describe('createScene3DFromMd5Mesh', () => {
     expect(material.name).toBe('textures/default'); // MD5 shader path preserved as the authored identity
     // The shader path is referenced, not decoded: an Unresolved External ref, image left null.
     expect((material.diffuseMap!.resource as ExternalImageResourceReference).uri).toBe('textures/default');
-    expect(material.diffuseMap!.image).toBeNull();
+    expect(material.diffuseMap!.storage.image).toBeNull();
   });
 
   it('returns an empty scene for empty input', () => {

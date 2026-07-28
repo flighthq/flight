@@ -15,9 +15,9 @@ export function bindGlDebugNormalMap(
   const gl = state.gl;
   gl.uniform1f(program.locNormalScale, normalScale);
 
-  if (normalMap !== null && normalMap.image !== null && hasImageResourcePixels(normalMap.image)) {
+  if (normalMap !== null && normalMap.storage.image !== null && hasImageResourcePixels(normalMap.storage.image)) {
     gl.activeTexture(gl.TEXTURE0);
-    bindGlImageResourceTexture(state, normalMap.image, normalMap.sampler);
+    bindGlImageResourceTexture(state, normalMap.storage.image, normalMap.sampler);
     gl.uniform1i(program.locNormalMap, 0);
   }
 }

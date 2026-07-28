@@ -59,7 +59,9 @@ describe('bindWgpuClassicSurface', () => {
     const key = {};
     // A ready diffuse (primary) map so bind() actually runs getWgpuMaterialSampler → getWgpuSampler (the
     // path an already-resolved-sampler helper test bypasses). Same shared binder that PBR uses.
-    const diffuseMap = createTexture({ image: { source: {} } as unknown as ImageResource });
+    const diffuseMap = createTexture({
+      storage: { dimension: '2d', image: { source: {} } as unknown as ImageResource },
+    });
     bindWgpuClassicSurface(state, pipeline, key, [1, 0, 0, 1], [1, 1, 1, 1], 32, 0.5, diffuseMap, null, null, null);
     const count = (name: string) => fake.calls.filter((c) => c.name === name).length;
     const [samplers, bindGroups, buffers] = [count('createSampler'), count('createBindGroup'), count('createBuffer')];

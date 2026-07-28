@@ -31,7 +31,7 @@ export const normalGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   ): void {
     const gl = state.gl;
     const normal = material as Readonly<NormalMaterial> | null;
-    const hasNormalMap = normal !== null && normal.normalMap !== null && normal.normalMap.image !== null;
+    const hasNormalMap = normal !== null && normal.normalMap !== null && normal.normalMap.storage.image !== null;
     const program = ensureGlDebugProgram(state, { hasNormalMap, mode: 'normal' });
     beginGlMeshDraw(state, program, normal !== null && normal.doubleSided);
     setGlMeshViewProjection(gl, program.locViewProjection, camera);

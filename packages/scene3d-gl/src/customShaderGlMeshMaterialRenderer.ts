@@ -183,11 +183,11 @@ function uploadCustomShaderMaterialTextures(
   let unit = 0;
   for (const name of Object.keys(textures)) {
     const texture: Readonly<Texture> = textures[name];
-    if (texture.image === null || !hasImageResourcePixels(texture.image)) continue;
+    if (texture.storage.image === null || !hasImageResourcePixels(texture.storage.image)) continue;
     const location = gl.getUniformLocation(program, name);
     if (location === null) continue;
     gl.activeTexture(gl.TEXTURE0 + unit);
-    bindGlImageResourceTexture(state, texture.image, texture.sampler);
+    bindGlImageResourceTexture(state, texture.storage.image, texture.sampler);
     gl.uniform1i(location, unit);
     unit++;
   }

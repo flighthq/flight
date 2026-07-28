@@ -15,7 +15,9 @@ function makeProgram() {
 }
 
 // A texture that reports pixels (isGlTextureReady === true) without a real upload.
-const READY_TEXTURE = { image: { source: {}, data: null, compressed: null } } as unknown as Texture;
+const READY_TEXTURE = {
+  storage: { dimension: '2d', image: { source: {}, data: null, compressed: null } },
+} as unknown as Texture;
 
 describe('bindGlPbrStandardBlock', () => {
   it('uploads neutral defaults for a null block', () => {

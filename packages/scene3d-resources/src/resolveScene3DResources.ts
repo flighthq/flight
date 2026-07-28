@@ -42,7 +42,7 @@ export function resolveOneScene3DResourceTexture(
 //   2. narrows their subscribers to the working set (all, or those `select` accepts),
 //   3. cancels an in-flight load only when its final subscriber leaves, and
 //   4. requests each unresolved identity once, fanning the result out to its Texture subscribers.
-// Mutates `ref.state` and, on success, binds `texture.image`. Emits the availability signals when
+// Mutates `ref.state` and, on success, binds `texture.storage.image`. Emits the availability signals when
 // enabled.
 export function resolveScene3DResources(
   scene: Readonly<Node3D>,
@@ -58,8 +58,8 @@ export function resolveScene3DResources(
     const texture = textures[i];
     const ref = texture.resource;
     if (ref == null) continue;
-    if (texture.image !== null) {
-      runtime.resolved.set(ref, texture.image);
+    if (texture.storage.image !== null) {
+      runtime.resolved.set(ref, texture.storage.image);
       ref.failure = null;
       ref.state = ResourceResolutionState.Resolved;
     }
@@ -145,8 +145,9 @@ function bindResolvedScene3DResource(
   ref: ImageResourceReference,
   image: ImageResource,
 ): void {
-  if (texture.image === image) return;
-  texture.image = image;
+  if (texture.storage.image === image) return;
+  texture.storage.image = image;
+  texture.version = (texture.version + 1) >>> 0;
   emitScene3DResourceEvent(resolver, texture, ref, true);
 }
 

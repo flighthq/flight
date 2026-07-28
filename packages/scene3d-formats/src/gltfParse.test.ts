@@ -431,7 +431,7 @@ describe('createScene3DFromGltf', () => {
     doc.meshes![0].primitives[0].material = 0;
 
     const mat = (getNodeChildren(createScene3DFromGltf(doc).root)[0] as Mesh).materials[0] as StandardPbrMaterial;
-    expect(mat.baseColorMap!.image).toBeNull();
+    expect(mat.baseColorMap!.storage.image).toBeNull();
     const ref = mat.baseColorMap!.resource as EmbeddedImageResourceReference;
     expect(ref.kind).toBe('Embedded');
     expect(ref.mimeType).toBe('image/png');

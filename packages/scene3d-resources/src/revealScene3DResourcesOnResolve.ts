@@ -94,7 +94,7 @@ function collectPendingTextureOwners(
       for (let j = 0; j < slots.length; j++) {
         const texture = slots[j];
         const ref = texture.resource;
-        if (ref == null || texture.image !== null || ref.state === ResourceResolutionState.Failed) continue;
+        if (ref == null || texture.storage.image !== null || ref.state === ResourceResolutionState.Failed) continue;
         let ownerState = ownersByNode.get(owner);
         if (ownerState === undefined) {
           ownerState = { node: owner, pending: new Set() };
