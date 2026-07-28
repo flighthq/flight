@@ -1,4 +1,8 @@
-import { getWgpuRenderStateRuntime, registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
+import {
+  getWgpuRenderStateRuntime,
+  registerWgpuBitmapTextureResolver,
+  registerWgpuImageTextureResolver,
+} from '@flighthq/render-wgpu/contract';
 import type {
   Camera3D,
   IridescencePbrMaterial,
@@ -80,6 +84,7 @@ export const iridescencePbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = 
 // Installs the built-in Iridescence renderer for IridescencePbrMaterialKind on this state. Opt-in (no
 // top-level side effect): drawScene3D only draws Iridescence subsets once this is called.
 export function registerIridescencePbrWgpuMaterial(state: WgpuRenderState): void {
+  registerWgpuBitmapTextureResolver(state);
   registerWgpuImageTextureResolver(state);
   registerWgpuMeshMaterialRenderer(state, IridescencePbrMaterialKind, iridescencePbrWgpuMeshMaterialRenderer);
 }

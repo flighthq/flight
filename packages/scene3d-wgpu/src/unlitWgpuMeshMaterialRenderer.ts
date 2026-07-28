@@ -1,6 +1,7 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
 import {
   getWgpuRenderStateRuntime,
+  registerWgpuBitmapTextureResolver,
   registerWgpuImageTextureResolver,
   registerWgpuRenderTextureResolver,
   registerWgpuVideoTextureResolver,
@@ -63,6 +64,7 @@ export const unlitWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 // Registers the built-in Unlit renderer for UnlitMaterialKind on this state. Opt-in (no top-level side
 // effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with UnlitMaterials draw.
 export function registerUnlitWgpuMaterial(state: WgpuRenderState): void {
+  registerWgpuBitmapTextureResolver(state);
   registerWgpuImageTextureResolver(state);
   registerWgpuVideoTextureResolver(state);
   registerWgpuRenderTextureResolver(state);

@@ -1,5 +1,9 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
-import { getWgpuRenderStateRuntime, registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
+import {
+  getWgpuRenderStateRuntime,
+  registerWgpuBitmapTextureResolver,
+  registerWgpuImageTextureResolver,
+} from '@flighthq/render-wgpu/contract';
 import type {
   LinearColor,
   Camera3D,
@@ -85,6 +89,7 @@ export const specularPbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 // Installs the built-in Specular renderer for SpecularPbrMaterialKind on this state. Opt-in (no
 // top-level side effect): drawScene3D only draws Specular subsets once this is called.
 export function registerSpecularPbrWgpuMaterial(state: WgpuRenderState): void {
+  registerWgpuBitmapTextureResolver(state);
   registerWgpuImageTextureResolver(state);
   registerWgpuMeshMaterialRenderer(state, SpecularPbrMaterialKind, specularPbrWgpuMeshMaterialRenderer);
 }

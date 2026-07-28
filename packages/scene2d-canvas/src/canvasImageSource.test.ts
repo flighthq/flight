@@ -1,33 +1,22 @@
+import { createBitmap } from '@flighthq/bitmap/contract';
 import { createImageResource, invalidateImageResource } from '@flighthq/image/contract';
 import { createRenderTexture, createTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
-import type { ImageResource } from '@flighthq/types/contract';
 
-import {
-  explainCanvasImageSource,
-  registerCanvasImageTextureResolver,
-  registerCanvasRenderTextureResolver,
-  registerCanvasTextureResolver,
-  registerCanvasVideoTextureResolver,
-  resolveCanvasImageSource,
-  resolveCanvasTexture,
-  resolveCanvasTextureWindowSource,
-} from './canvasImageSource';
+import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
+import { explainCanvasImageSource } from './canvasImageSource';
+import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
 import { createCanvasRenderState } from './canvasRenderState';
 import { renderIntoCanvasRenderTexture } from './canvasRenderTexture';
+import { registerCanvasRenderTextureResolver } from './canvasRenderTextureResolver';
+import { registerCanvasTextureResolver, resolveCanvasTexture } from './canvasTextureResolver';
+import { resolveCanvasTextureWindowSource } from './canvasTextureWindowSource';
+import { registerCanvasVideoTextureResolver } from './canvasVideoTextureResolver';
 
 function makeState() {
   const canvas = document.createElement('canvas');
   canvas.width = 200;
   canvas.height = 200;
   return createCanvasRenderState(canvas);
-}
-
-function makeDataOnlyResource(width = 4, height = 4): ImageResource {
-  const resource = createImageResource();
-  resource.width = width;
-  resource.height = height;
-  resource.data = new Uint8ClampedArray(width * height * 4).fill(255);
-  return resource;
 }
 
 describe('explainCanvasImageSource', () => {
@@ -37,11 +26,37 @@ describe('explainCanvasImageSource', () => {
   });
 
   it('reports data for a data-only resource', () => {
-    expect(explainCanvasImageSource(makeDataOnlyResource())).toBe('data');
+    expect(explainCanvasImageSource(createBitmap(4, 4, 0xffffffff))).toBe('data');
   });
 
   it('reports none for a resource with neither representation', () => {
     expect(explainCanvasImageSource(createImageResource())).toBe('none');
+  });
+});
+
+describe('registerCanvasBitmapTextureResolver', () => {
+  it('materializes and caches a Bitmap independently per render state', () => {
+    const stateA = makeState();
+    const stateB = makeState();
+    const bitmap = createBitmap(4, 4, 0xffffffff);
+    const texture = createTexture({ storage: { dimension: '2d', image: bitmap } });
+    registerCanvasBitmapTextureResolver(stateA);
+    registerCanvasBitmapTextureResolver(stateB);
+
+    const first = resolveCanvasTexture(stateA, texture);
+    expect(first).toBeInstanceOf(HTMLCanvasElement);
+    expect(resolveCanvasTexture(stateA, texture)).toBe(first);
+    expect(resolveCanvasTexture(stateB, texture)).not.toBe(first);
+  });
+
+  it('re-materializes a Bitmap after its version bumps', () => {
+    const state = makeState();
+    const bitmap = createBitmap(4, 4, 0xffffffff);
+    const texture = createTexture({ storage: { dimension: '2d', image: bitmap } });
+    registerCanvasBitmapTextureResolver(state);
+    const first = resolveCanvasTexture(state, texture);
+    invalidateImageResource(bitmap);
+    expect(resolveCanvasTexture(state, texture)).not.toBe(first);
   });
 });
 
@@ -94,50 +109,6 @@ describe('registerCanvasVideoTextureResolver', () => {
     const texture = createTexture({ storage: { dimension: '2d', image } });
     registerCanvasVideoTextureResolver(state);
     expect(resolveCanvasTexture(state, texture)).toBe(video);
-  });
-});
-
-describe('resolveCanvasImageSource', () => {
-  it('returns the host source element directly, with no cache entry', () => {
-    const state = makeState();
-    const img = document.createElement('img');
-    const resource = createImageResource(img);
-    expect(resolveCanvasImageSource(state, resource)).toBe(img);
-  });
-
-  it('materializes a canvas element from data-only pixels', () => {
-    const state = makeState();
-    const resolved = resolveCanvasImageSource(state, makeDataOnlyResource());
-    expect(resolved).toBeInstanceOf(HTMLCanvasElement);
-  });
-
-  it('caches the materialized element across resolves of the same resource', () => {
-    const state = makeState();
-    const resource = makeDataOnlyResource();
-    const first = resolveCanvasImageSource(state, resource);
-    const second = resolveCanvasImageSource(state, resource);
-    expect(second).toBe(first);
-  });
-
-  it('re-materializes after the resource version bumps', () => {
-    const state = makeState();
-    const resource = makeDataOnlyResource();
-    const first = resolveCanvasImageSource(state, resource);
-    invalidateImageResource(resource);
-    const second = resolveCanvasImageSource(state, resource);
-    expect(second).not.toBe(first);
-  });
-
-  it('caches independently per render state', () => {
-    const stateA = makeState();
-    const stateB = makeState();
-    const resource = makeDataOnlyResource();
-    expect(resolveCanvasImageSource(stateA, resource)).not.toBe(resolveCanvasImageSource(stateB, resource));
-  });
-
-  it('returns null when the resource carries neither pixels form', () => {
-    const state = makeState();
-    expect(resolveCanvasImageSource(state, createImageResource())).toBeNull();
   });
 });
 

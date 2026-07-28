@@ -1,5 +1,9 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
-import { getWgpuRenderStateRuntime, registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
+import {
+  getWgpuRenderStateRuntime,
+  registerWgpuBitmapTextureResolver,
+  registerWgpuImageTextureResolver,
+} from '@flighthq/render-wgpu/contract';
 import type {
   LinearColor,
   Camera3D,
@@ -79,6 +83,7 @@ export const sheenPbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 // Installs the built-in Sheen renderer for SheenPbrMaterialKind on this state. Opt-in (no top-level
 // side effect): drawScene3D only draws Sheen subsets once this is called.
 export function registerSheenPbrWgpuMaterial(state: WgpuRenderState): void {
+  registerWgpuBitmapTextureResolver(state);
   registerWgpuImageTextureResolver(state);
   registerWgpuMeshMaterialRenderer(state, SheenPbrMaterialKind, sheenPbrWgpuMeshMaterialRenderer);
 }

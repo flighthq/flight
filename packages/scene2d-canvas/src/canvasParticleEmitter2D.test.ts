@@ -2,7 +2,7 @@ import { createImageResource } from '@flighthq/image/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { RenderProxy2D } from '@flighthq/types/contract';
 
-import { registerCanvasImageTextureResolver } from './canvasImageSource';
+import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
 import { drawCanvasParticleEmitter2D } from './canvasParticleEmitter2D';
 import { createCanvasRenderState } from './canvasRenderState';
 

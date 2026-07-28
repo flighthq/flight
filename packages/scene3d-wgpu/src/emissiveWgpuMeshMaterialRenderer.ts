@@ -1,5 +1,9 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
-import { getWgpuRenderStateRuntime, registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
+import {
+  getWgpuRenderStateRuntime,
+  registerWgpuBitmapTextureResolver,
+  registerWgpuImageTextureResolver,
+} from '@flighthq/render-wgpu/contract';
 import type {
   LinearColor,
   Camera3D,
@@ -66,6 +70,7 @@ export const emissiveWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 // Registers the built-in Emissive renderer for EmissiveMaterialKind on this state. Opt-in (no top-level
 // side effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with EmissiveMaterials draw.
 export function registerEmissiveWgpuMaterial(state: WgpuRenderState): void {
+  registerWgpuBitmapTextureResolver(state);
   registerWgpuImageTextureResolver(state);
   registerWgpuMeshMaterialRenderer(state, EmissiveMaterialKind, emissiveWgpuMeshMaterialRenderer);
 }

@@ -151,6 +151,7 @@ export * from './DomRenderOptions';
 export * from './DomRenderState';
 export * from './DomImageSourceKind';
 export * from './DomTextInputOverlay';
+export * from './DomTextureResolver';
 export * from './DomScene2DRectangle';
 export * from './DragForce';
 export * from './DropShadowEffect';

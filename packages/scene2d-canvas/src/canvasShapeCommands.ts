@@ -5,7 +5,7 @@ import type { CanvasShapeCommand, Matrix, Texture } from '@flighthq/types/contra
 const _fillMatrixInverse: Matrix = createMatrix();
 
 import { createBitmapPattern, createGradientPattern } from './canvasFillPattern';
-import { resolveCanvasTextureWindowSource } from './canvasImageSource';
+import { resolveCanvasTextureWindowSource } from './canvasTextureWindowSource';
 
 export const defaultCanvasBeginTextureFill: CanvasShapeCommand<'beginTextureFill'> = {
   key: 'beginTextureFill',

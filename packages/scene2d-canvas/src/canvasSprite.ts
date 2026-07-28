@@ -2,8 +2,8 @@ import { noopRendererData } from '@flighthq/render/contract';
 import { getTextureHeight, getTextureWidth } from '@flighthq/texture/contract';
 import type { CanvasRenderState, RenderProxy2D, Scene2DRenderer, Sprite } from '@flighthq/types/contract';
 
-import { resolveCanvasTexture } from './canvasImageSource';
 import { drawCanvasScene2D } from './canvasNode2D';
+import { resolveCanvasTexture } from './canvasTextureResolver';
 import { setCanvasTransform } from './canvasTransform';
 
 export function drawCanvasSprite(state: CanvasRenderState, sprite: RenderProxy2D): void {

@@ -1,11 +1,20 @@
 import type { ImageResource, Texture } from '@flighthq/types/contract';
-import { ImageTextureBackingKind, RenderTextureBackingKind, VideoTextureBackingKind } from '@flighthq/types/contract';
+import {
+  BitmapTextureBackingKind,
+  CompressedImageTextureBackingKind,
+  ImageTextureBackingKind,
+  RenderTextureBackingKind,
+  VideoTextureBackingKind,
+} from '@flighthq/types/contract';
 
 import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
+import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import { renderIntoWgpuRenderTexture } from './wgpuRenderTexture';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
 import {
   registerWgpuImageTextureResolver,
+  registerWgpuBitmapTextureResolver,
+  registerWgpuCompressedImageTextureResolver,
   registerWgpuRenderTextureResolver,
   registerWgpuTextureResolver,
   registerWgpuVideoTextureResolver,
@@ -60,6 +69,26 @@ function renderTexture(): Texture {
   texture.storage.target = { height: 8, kind: RenderTextureBackingKind, width: 8 };
   return texture;
 }
+
+describe('registerWgpuBitmapTextureResolver', () => {
+  it('registers only the Bitmap backing key', async () => {
+    const state = await createWgpuRenderStateForTest();
+    registerWgpuBitmapTextureResolver(state);
+    expect([...getWgpuRenderStateRuntime(state).wgpuTextureResolverRegistry!.keys()]).toEqual([
+      BitmapTextureBackingKind,
+    ]);
+  });
+});
+
+describe('registerWgpuCompressedImageTextureResolver', () => {
+  it('registers only the CompressedImage backing key', async () => {
+    const state = await createWgpuRenderStateForTest();
+    registerWgpuCompressedImageTextureResolver(state);
+    expect([...getWgpuRenderStateRuntime(state).wgpuTextureResolverRegistry!.keys()]).toEqual([
+      CompressedImageTextureBackingKind,
+    ]);
+  });
+});
 
 describe('registerWgpuImageTextureResolver', () => {
   it('resolves and caches a declared still-image backing', async () => {

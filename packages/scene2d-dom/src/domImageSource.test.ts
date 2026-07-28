@@ -1,47 +1,54 @@
+import { createBitmap } from '@flighthq/bitmap/contract';
 import { createImageResource, invalidateImageResource } from '@flighthq/image/contract';
-import type { ImageResource } from '@flighthq/types/contract';
+import { createTexture } from '@flighthq/texture/contract';
 
-import { explainDomImageSource, resolveDomImageSource } from './domImageSource';
+import { registerDomBitmapTextureResolver } from './domBitmapTextureResolver';
+import { explainDomImageSource } from './domImageSource';
+import { registerDomImageTextureResolver } from './domImageTextureResolver';
 import { createDomRenderState } from './domRenderState';
+import { resolveDomTexture } from './domTextureResolver';
 
 function makeState() {
   return createDomRenderState(document.createElement('div'));
 }
 
-function makeDataOnlyResource(width = 4, height = 4): ImageResource {
-  const resource = createImageResource();
-  resource.width = width;
-  resource.height = height;
-  resource.data = new Uint8ClampedArray(width * height * 4).fill(255);
-  return resource;
-}
-
 describe('explainDomImageSource', () => {
   it('reports element, data, and none for the three representations', () => {
     expect(explainDomImageSource(createImageResource(document.createElement('img')))).toBe('element');
-    expect(explainDomImageSource(makeDataOnlyResource())).toBe('data');
+    expect(explainDomImageSource(createBitmap(4, 4, 0xffffffff))).toBe('data');
     expect(explainDomImageSource(createImageResource())).toBe('none');
   });
 });
 
-describe('resolveDomImageSource', () => {
+describe('registerDomBitmapTextureResolver', () => {
+  it('materializes and caches a Bitmap, rebuilding on version bump', () => {
+    const state = makeState();
+    const bitmap = createBitmap(4, 4, 0xffffffff);
+    const texture = createTexture({ storage: { dimension: '2d', image: bitmap } });
+    registerDomBitmapTextureResolver(state);
+    const first = resolveDomTexture(state, texture);
+    expect(first).toBeInstanceOf(HTMLCanvasElement);
+    expect(resolveDomTexture(state, texture)).toBe(first);
+    invalidateImageResource(bitmap);
+    expect(resolveDomTexture(state, texture)).not.toBe(first);
+  });
+});
+
+describe('registerDomImageTextureResolver', () => {
   it('returns the host source element directly', () => {
     const state = makeState();
     const img = document.createElement('img');
-    expect(resolveDomImageSource(state, createImageResource(img))).toBe(img);
+    const texture = createTexture({ storage: { dimension: '2d', image: createImageResource(img) } });
+    registerDomImageTextureResolver(state);
+    expect(resolveDomTexture(state, texture)).toBe(img);
   });
+});
 
-  it('materializes and caches a canvas for a data-only resource, rebuilding on version bump', () => {
-    const state = makeState();
-    const resource = makeDataOnlyResource();
-    const first = resolveDomImageSource(state, resource);
-    expect(first).toBeInstanceOf(HTMLCanvasElement);
-    expect(resolveDomImageSource(state, resource)).toBe(first);
-    invalidateImageResource(resource);
-    expect(resolveDomImageSource(state, resource)).not.toBe(first);
-  });
-
-  it('returns null when the resource carries neither pixels form', () => {
-    expect(resolveDomImageSource(makeState(), createImageResource())).toBeNull();
+describe('resolveDomTexture', () => {
+  it('returns null when no matching backing resolver is registered', () => {
+    const texture = createTexture({
+      storage: { dimension: '2d', image: createImageResource(document.createElement('img')) },
+    });
+    expect(resolveDomTexture(makeState(), texture)).toBeNull();
   });
 });

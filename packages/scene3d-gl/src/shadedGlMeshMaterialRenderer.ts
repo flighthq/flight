@@ -1,5 +1,9 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
-import { registerGlImageTextureResolver, resolveGlTexture } from '@flighthq/render-gl/contract';
+import {
+  registerGlBitmapTextureResolver,
+  registerGlImageTextureResolver,
+  resolveGlTexture,
+} from '@flighthq/render-gl/contract';
 import { orderModifierStack, resolveModifier } from '@flighthq/shading/contract';
 import type {
   ModifierRegistry,
@@ -75,6 +79,7 @@ export const shadedGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 // draw. Enable the built-in modifiers separately with registerBuiltInGlModifierSnippets — a plain
 // ShadedMaterial needs only this registration.
 export function registerShadedGlMaterial(state: GlRenderState): void {
+  registerGlBitmapTextureResolver(state);
   registerGlImageTextureResolver(state);
   registerGlMeshMaterialRenderer(state, ShadedMaterialKind, shadedGlMeshMaterialRenderer);
 }

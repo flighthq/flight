@@ -1,0 +1,25 @@
+import { createImageResourceFromBitmap } from '@flighthq/image/contract';
+import type { Bitmap, DomRenderState, Texture } from '@flighthq/types/contract';
+import { BitmapTextureBackingKind } from '@flighthq/types/contract';
+
+import { getDomRenderStateRuntime } from './domRenderState';
+import { registerDomTextureResolver } from './domTextureResolver';
+
+export function registerDomBitmapTextureResolver(state: DomRenderState): void {
+  registerDomTextureResolver(state, BitmapTextureBackingKind, resolveDomBitmapTexture);
+}
+
+function resolveDomBitmapTexture(state: DomRenderState, texture: Readonly<Texture>): CanvasImageSource | null {
+  const bitmap = texture.storage.image as Readonly<Bitmap> | null;
+  if (bitmap === null) return null;
+
+  const runtime = getDomRenderStateRuntime(state);
+  const cache = (runtime.bitmapElementCache ??= new WeakMap());
+  let entry = cache.get(bitmap);
+  if (entry === undefined || entry.version !== bitmap.version) {
+    const image = createImageResourceFromBitmap(bitmap);
+    entry = { element: image.source as HTMLCanvasElement, version: bitmap.version };
+    cache.set(bitmap, entry);
+  }
+  return entry.element;
+}

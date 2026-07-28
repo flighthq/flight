@@ -4,7 +4,7 @@ import type { BitmapText, GlyphEntry, GlyphSource, ImageResource, RenderProxy2D 
 import { vi } from 'vitest';
 
 import { defaultCanvasBitmapTextRenderer, drawCanvasSpriteText } from './canvasBitmapText';
-import { registerCanvasImageTextureResolver } from './canvasImageSource';
+import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
 import { createCanvasRenderState } from './canvasRenderState';
 
 // Single-page stub glyph source whose page-0 image is a real ImageResource backed by a DOM <img>.

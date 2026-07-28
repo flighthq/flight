@@ -9,9 +9,10 @@ import {
 } from '@flighthq/texture/contract';
 import { SpriteKind } from '@flighthq/types/contract';
 
-import { registerCanvasImageTextureResolver, registerCanvasRenderTextureResolver } from './canvasImageSource';
+import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
 import { createCanvasRenderState } from './canvasRenderState';
 import { renderIntoCanvasRenderTexture } from './canvasRenderTexture';
+import { registerCanvasRenderTextureResolver } from './canvasRenderTextureResolver';
 import { defaultCanvasSpriteRenderer, drawCanvasSprite } from './canvasSprite';
 
 function makeState() {

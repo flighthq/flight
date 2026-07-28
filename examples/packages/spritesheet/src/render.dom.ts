@@ -4,6 +4,7 @@ import {
   createDomRenderState,
   defaultDomSpriteRenderer,
   prepareScene2DRender,
+  registerDomImageTextureResolver,
   registerRenderer,
   renderDomBackground,
   renderDomScene2D,
@@ -21,6 +22,7 @@ export const state = createDomRenderState(container, {
 });
 
 registerRenderer(state, SpriteKind, defaultDomSpriteRenderer);
+registerDomImageTextureResolver(state);
 
 export const canvas: HTMLElement = container;
 

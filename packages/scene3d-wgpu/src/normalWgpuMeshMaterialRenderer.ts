@@ -1,4 +1,8 @@
-import { getWgpuRenderStateRuntime, registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
+import {
+  getWgpuRenderStateRuntime,
+  registerWgpuBitmapTextureResolver,
+  registerWgpuImageTextureResolver,
+} from '@flighthq/render-wgpu/contract';
 import type {
   Camera3D,
   Material,
@@ -61,6 +65,7 @@ export const normalWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 // Registers the built-in Normal renderer for NormalMaterialKind on this state. Opt-in (no top-level side
 // effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with NormalMaterials draw.
 export function registerNormalWgpuMaterial(state: WgpuRenderState): void {
+  registerWgpuBitmapTextureResolver(state);
   registerWgpuImageTextureResolver(state);
   registerWgpuMeshMaterialRenderer(state, NormalMaterialKind, normalWgpuMeshMaterialRenderer);
 }

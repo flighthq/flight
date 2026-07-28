@@ -1,5 +1,9 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
-import { getWgpuRenderStateRuntime, registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
+import {
+  getWgpuRenderStateRuntime,
+  registerWgpuBitmapTextureResolver,
+  registerWgpuImageTextureResolver,
+} from '@flighthq/render-wgpu/contract';
 import type {
   Camera3D,
   LinearColor,
@@ -66,6 +70,7 @@ export function getWgpuShadedBaseFlags(material: Readonly<ShadedMaterial>): {
 // Registers ShadedMaterialKind on one state. Modifier compilers are a separate open registry: call
 // registerBuiltInWgpuModifierSnippets (and/or vendor registrations) explicitly before drawing.
 export function registerShadedWgpuMaterial(state: WgpuRenderState): void {
+  registerWgpuBitmapTextureResolver(state);
   registerWgpuImageTextureResolver(state);
   registerWgpuMeshMaterialRenderer(state, ShadedMaterialKind, shadedWgpuMeshMaterialRenderer);
 }

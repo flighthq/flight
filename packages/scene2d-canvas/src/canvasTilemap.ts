@@ -1,8 +1,8 @@
 ﻿import { noopRendererData } from '@flighthq/render/contract';
 import type { CanvasRenderState, RenderProxy2D, SpriteRenderer, Tilemap } from '@flighthq/types/contract';
 
-import { resolveCanvasTexture } from './canvasImageSource';
 import { applyCanvasMaterial } from './canvasMaterialRegistry';
+import { resolveCanvasTexture } from './canvasTextureResolver';
 
 export function drawCanvasTilemap(state: CanvasRenderState, tilemapNode: RenderProxy2D): void {
   const source = tilemapNode.source as Tilemap;

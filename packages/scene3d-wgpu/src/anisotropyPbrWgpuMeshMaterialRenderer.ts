@@ -1,4 +1,8 @@
-import { getWgpuRenderStateRuntime, registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
+import {
+  getWgpuRenderStateRuntime,
+  registerWgpuBitmapTextureResolver,
+  registerWgpuImageTextureResolver,
+} from '@flighthq/render-wgpu/contract';
 import type {
   AnisotropyPbrMaterial,
   Camera3D,
@@ -73,6 +77,7 @@ export const anisotropyPbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 // Installs the built-in Anisotropy renderer for AnisotropyPbrMaterialKind on this state. Opt-in (no
 // top-level side effect): drawScene3D only draws Anisotropy subsets once this is called.
 export function registerAnisotropyPbrWgpuMaterial(state: WgpuRenderState): void {
+  registerWgpuBitmapTextureResolver(state);
   registerWgpuImageTextureResolver(state);
   registerWgpuMeshMaterialRenderer(state, AnisotropyPbrMaterialKind, anisotropyPbrWgpuMeshMaterialRenderer);
 }

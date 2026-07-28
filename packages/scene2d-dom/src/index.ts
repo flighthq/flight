@@ -10,6 +10,10 @@ export {
   enableDomClipSupport,
   enableDomRenderCache,
   enableDomTextInput,
+  registerDomBitmapTextureResolver,
+  registerDomImageTextureResolver,
+  registerDomTextureResolver,
+  registerDomVideoTextureResolver,
   renderDomBackground,
   renderDomScene2D,
 } from './contract';

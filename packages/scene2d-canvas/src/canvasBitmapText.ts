@@ -8,8 +8,8 @@ import type {
   SpriteRenderer,
 } from '@flighthq/types/contract';
 
-import { resolveCanvasTexture } from './canvasImageSource';
 import { applyCanvasMaterial } from './canvasMaterialRegistry';
+import { resolveCanvasTexture } from './canvasTextureResolver';
 
 // Draws a BitmapText leaf on Canvas 2D: one `drawImage` per glyph, per glyph-atlas page. Canvas realizes
 // no color-adjustment fold, so a node tint is not applied here (honest — the missing

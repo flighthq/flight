@@ -1,11 +1,19 @@
 import type { ImageResource, Texture, TextureLike } from '@flighthq/types/contract';
-import { ImageTextureBackingKind, RenderTextureBackingKind, VideoTextureBackingKind } from '@flighthq/types/contract';
+import {
+  BitmapTextureBackingKind,
+  CompressedImageTextureBackingKind,
+  ImageTextureBackingKind,
+  RenderTextureBackingKind,
+  VideoTextureBackingKind,
+} from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
 import { renderIntoGlRenderTexture } from './glRenderTexture';
 import { createGlState } from './glTestHelper';
 import {
   registerGlImageTextureResolver,
+  registerGlBitmapTextureResolver,
+  registerGlCompressedImageTextureResolver,
   registerGlRenderTextureResolver,
   registerGlTextureResolver,
   registerGlVideoTextureResolver,
@@ -54,6 +62,24 @@ function textureWithTarget(): TextureLike {
   texture.storage.target = { colorSpace: 'linear', height: 8, kind: RenderTextureBackingKind, width: 8 };
   return texture;
 }
+
+describe('registerGlBitmapTextureResolver', () => {
+  it('registers only the Bitmap backing key', () => {
+    const { state } = createGlState();
+    registerGlBitmapTextureResolver(state);
+    expect([...getGlRenderStateRuntime(state).glTextureResolverRegistry!.keys()]).toEqual([BitmapTextureBackingKind]);
+  });
+});
+
+describe('registerGlCompressedImageTextureResolver', () => {
+  it('registers only the CompressedImage backing key', () => {
+    const { state } = createGlState();
+    registerGlCompressedImageTextureResolver(state);
+    expect([...getGlRenderStateRuntime(state).glTextureResolverRegistry!.keys()]).toEqual([
+      CompressedImageTextureBackingKind,
+    ]);
+  });
+});
 
 describe('registerGlImageTextureResolver', () => {
   it('registers the 2D image matcher and resolves through the backing-keyed upload cache', () => {

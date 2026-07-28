@@ -13,6 +13,8 @@ export {
   enableWgpuFrameCapture,
   endWgpuRenderPass,
   isWgpuRenderTextureReady,
+  registerWgpuBitmapTextureResolver,
+  registerWgpuCompressedImageTextureResolver,
   registerWgpuImageTextureResolver,
   registerWgpuRenderTextureResolver,
   registerWgpuTextureResolver,
