@@ -213,6 +213,23 @@ Five fields across two nodes collapse to one. `atlas`+`id`, `sourceRectangle`, a
 
 Net package count is unchanged (+`quadbatch`/`tilemap`, −`sprite`/`tileset`) and one duplicated primitive is unified.
 
+### Bundle cost of the unification — measured and accepted (2026-07-28)
+
+The Scene2D pass initially regressed **84 of 128** size entries. Three distinct leaks were found and fixed, all the same class — a shared path statically pulling backing-specific realization, where the design mandates an open registry so unused backings shake out:
+
+1. **The shared 2D batch writer** (`glQuadBatchWriter` / `wgpuQuadBatchWriter`) statically imported `resolveGlTexture`/`resolveWgpuTexture`, and 17 files per backend import that writer — so `glTextLabel`, `glShape`, `glClipRectangle`, and `glCache` paid for texture resolution while drawing no textures. **Fixed by inversion:** batching is the writer's job, resolution is the caller's — the writer now takes an already-resolved handle (or null).
+2. **The canvas path** dispatched with a hardcoded ternary (`image !== null ? resolveCanvasImageSource : bindCanvasRenderTexture`) plus a static import, so every canvas Sprite bundle contained produced/render-target machinery. **Fixed** with a real `registerCanvasTextureResolver` registry keyed on the declared backing kind, matching GL/WGPU.
+3. **Default shape commands** eagerly retained bitmap-fill texture resolution in every shape-capable bundle. **Fixed** — texture shape commands are a separate opt-in assembly.
+
+After the fixes: **25 of 131 entries** exceed baseline, **all texture-bearing; every texture-free entry passes.** The remaining increase is **accepted and re-baselined** as intentional-and-measured, on this reasoning:
+
+- **It is the cost of the model, not of unused features.** No bundle now contains a resolver for a backing it does not use. What remains is the shared `Texture`+`Sampler` descriptor and the one resolver the bundle actually needs — which satisfies the bundle rule's intent.
+- **Absolute cost is 0.6–1.3 KB gzip.** The large percentages (video dom +25.2%, spritesheet canvas +17.7%, bitmap canvas +16.1%) are an artifact of deliberately minimal single-feature example bundles with 4–13 KB baselines.
+- **The cost is paid once per app, not per feature.** Each example pays for the `Texture` descriptor in isolation, so these percentages are worst-case by construction; a real app using bitmaps *and* video *and* spritesheets *and* tilemaps pays it once.
+- **What it buys:** three node types collapse to one, video/produced/external/compressed become reachable from *any* texture consumer, dynamic atlases become expressible, shape fills gain video and render-target sources, one upload is shared across sampling configs, and the model is C++-portable.
+
+The leak class is worth remembering: **a shared hot path that statically imports backing-specific realization defeats the registry.** The registry only buys tree-shaking if every dispatch goes through it.
+
 ### Sequencing and known costs
 
 Order: `Bitmap`→`Sprite` reshape (texture + sampler fold) → fold `Video` → fold `RenderTargetNode2D` → atlas-holders (`TextureAtlas.image` → `Texture`) → shape fills → package moves → batch-writer rename.
