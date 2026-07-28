@@ -1,4 +1,5 @@
-import type { Texture, Environment, ImageResource } from '@flighthq/types/contract';
+import type { Environment, ImageResource, Texture } from '@flighthq/types/contract';
+import { ImageTextureBackingKind } from '@flighthq/types/contract';
 
 import { bakeWgpuEnvironmentIbl, destroyWgpuScene3DIbl } from './wgpuEnvironmentIblBake';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
@@ -10,7 +11,12 @@ import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 // scene-gl's bake test.
 
 function completeEnvironment(): Environment {
-  const face = { source: {} as CanvasImageSource, width: 4, height: 4 } as ImageResource;
+  const face = {
+    height: 4,
+    kind: ImageTextureBackingKind,
+    source: {} as CanvasImageSource,
+    width: 4,
+  } as unknown as ImageResource;
   const cube = {
     colorSpace: 'srgb',
     sampler: {},
