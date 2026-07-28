@@ -18,7 +18,7 @@ export function uploadGlTextureVideoFrame(
   uploadedFrameId: number,
 ): number {
   if (videoTexture.frameId === uploadedFrameId) return uploadedFrameId;
-  const element = videoTexture.source.element;
+  const element = videoTexture.source.element as HTMLVideoElement | null;
   // A first-frame guard: HAVE_CURRENT_DATA (2) with non-zero dimensions. texImage2D on an element with
   // no decoded frame throws in some browsers, so skip until a frame exists and report no upload.
   if (element === null || element.readyState < 2 || element.videoWidth <= 0 || element.videoHeight <= 0) {

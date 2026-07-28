@@ -24,7 +24,7 @@ export function drawDomVideo(state: DomRenderState, renderProxy: RenderProxy2D):
   if (data === null) return;
 
   const source = renderProxy.source as Video;
-  const element = source.data.source?.element ?? null;
+  const element = (source.data.source?.element as HTMLVideoElement | null | undefined) ?? null;
   if (element === null || element.videoWidth === 0 || element.videoHeight === 0) return;
 
   if (data.element !== element) {

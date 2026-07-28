@@ -2,7 +2,7 @@ import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type { VideoChannel, VideoPlayOptions, VideoResource } from '@flighthq/types/contract';
 
 export function getVideoChannelCurrentTime(channel: VideoChannel): number {
-  const element = channel.source.element;
+  const element = getVideoElement(channel.source);
   if (element === null || channel.state !== 'playing') return channel.currentTime;
   return element.currentTime * 1000;
 }
@@ -12,12 +12,12 @@ export function getVideoChannelDuration(channel: VideoChannel): number {
 }
 
 export function getVideoChannelHeight(channel: VideoChannel): number {
-  const element = channel.source.element;
+  const element = getVideoElement(channel.source);
   return element !== null ? element.videoHeight : 0;
 }
 
 export function getVideoChannelWidth(channel: VideoChannel): number {
-  const element = channel.source.element;
+  const element = getVideoElement(channel.source);
   return element !== null ? element.videoWidth : 0;
 }
 
@@ -27,7 +27,7 @@ export function isVideoChannelPlaying(channel: VideoChannel): boolean {
 
 export function pauseVideoChannel(channel: VideoChannel): void {
   if (channel.state !== 'playing') return;
-  const element = channel.source.element;
+  const element = getVideoElement(channel.source);
   if (element === null) return;
   channel.currentTime = getVideoChannelCurrentTime(channel);
   channel.state = 'paused';
@@ -35,7 +35,7 @@ export function pauseVideoChannel(channel: VideoChannel): void {
 }
 
 export function playVideoResource(source: VideoResource, options?: Readonly<VideoPlayOptions>): VideoChannel | null {
-  const element = source.element;
+  const element = getVideoElement(source);
   if (element === null) return null;
 
   const runtime = videoChannelRuntimes.get(element);
@@ -68,33 +68,33 @@ export function playVideoResource(source: VideoResource, options?: Readonly<Vide
 }
 
 export function resumeVideoChannel(channel: VideoChannel): void {
-  if (channel.state === 'playing' || channel.source.element === null) return;
+  if (channel.state === 'playing' || getVideoElement(channel.source) === null) return;
   startVideoChannel(channel);
 }
 
 export function setVideoChannelCurrentTime(channel: VideoChannel, value: number): number {
   channel.currentTime = clamp(value, 0, channel.length);
-  const element = channel.source.element;
+  const element = getVideoElement(channel.source);
   if (element !== null) element.currentTime = channel.currentTime / 1000;
   return channel.currentTime;
 }
 
 export function setVideoChannelGain(channel: VideoChannel, value: number): number {
   channel.gain = value;
-  const element = channel.source.element;
+  const element = getVideoElement(channel.source);
   if (element !== null) element.volume = value;
   return channel.gain;
 }
 
 export function setVideoChannelPlaybackRate(channel: VideoChannel, value: number): number {
   channel.playbackRate = value;
-  const element = channel.source.element;
+  const element = getVideoElement(channel.source);
   if (element !== null) element.playbackRate = value;
   return channel.playbackRate;
 }
 
 export function stopVideoChannel(channel: VideoChannel): void {
-  const element = channel.source.element;
+  const element = getVideoElement(channel.source);
   if (element !== null) {
     const runtime = videoChannelRuntimes.get(element);
     if (runtime !== undefined) element.removeEventListener('ended', runtime.onEnded);
@@ -112,13 +112,18 @@ interface VideoChannelRuntime {
 
 const videoChannelRuntimes = new WeakMap<HTMLVideoElement, VideoChannelRuntime>();
 
+function getVideoElement(resource: Readonly<VideoResource>): HTMLVideoElement | null {
+  return resource.element as HTMLVideoElement | null;
+}
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
 function completeVideoChannel(channel: VideoChannel): void {
   if (channel.state !== 'playing') return;
-  const runtime = channel.source.element !== null ? videoChannelRuntimes.get(channel.source.element) : undefined;
+  const element = getVideoElement(channel.source);
+  const runtime = element !== null ? videoChannelRuntimes.get(element) : undefined;
   if (runtime !== undefined && runtime.loopsRemaining !== 0) {
     if (runtime.loopsRemaining > 0) runtime.loopsRemaining--;
     channel.currentTime = 0;
@@ -131,7 +136,7 @@ function completeVideoChannel(channel: VideoChannel): void {
 }
 
 function startVideoChannel(channel: VideoChannel): void {
-  const element = channel.source.element;
+  const element = getVideoElement(channel.source);
   if (element === null) return;
   element.currentTime = channel.currentTime / 1000;
   channel.state = 'playing';

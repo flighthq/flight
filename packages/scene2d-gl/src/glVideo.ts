@@ -50,7 +50,7 @@ export function drawGlVideo(state: GlRenderState, renderProxy: RenderProxy2D): v
   flushGlSpriteBatch(state);
   const source = renderProxy.source as Video;
   const resource = source.data.source ?? null;
-  const element = resource?.element ?? null;
+  const element = (resource?.element as HTMLVideoElement | null | undefined) ?? null;
   if (resource === null || element === null || element.readyState < 2) return;
 
   const vw = element.videoWidth;

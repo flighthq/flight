@@ -50,9 +50,10 @@ if (captureWindow.__flightCapture === true) {
     setVideoSources(resource1, resource2, resource3);
 
     for (const resource of [resource1, resource2, resource3]) {
-      if (resource.element !== null) {
-        resource.element.loop = true;
-        resource.element.play();
+      const element = resource.element as HTMLVideoElement | null;
+      if (element !== null) {
+        element.loop = true;
+        element.play();
       }
     }
 

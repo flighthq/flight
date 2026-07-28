@@ -1,3 +1,4 @@
+import type { HostImageSource } from './HostImageSource';
 import type { Signal } from './Signal';
 
 export type VideoChannelState = 'complete' | 'paused' | 'playing' | 'stopped';
@@ -21,7 +22,7 @@ export interface VideoPlayOptions {
 }
 
 export interface VideoResource {
-  element: HTMLVideoElement | null;
+  element: HostImageSource | null;
 }
 
 // Options threaded into the element-backed URL loaders. Omitted fields keep the loader's default

@@ -5,7 +5,7 @@ import { VideoKind } from '@flighthq/types/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from './displayObject';
 
 export function computeVideoLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
-  const element = (source.data as VideoData).source?.element;
+  const element = (source.data as VideoData).source?.element as HTMLVideoElement | null | undefined;
   if (element !== undefined && element !== null) {
     out.width = element.videoWidth;
     out.height = element.videoHeight;

@@ -1,5 +1,6 @@
 import type { AlphaType } from './AlphaType';
 import type { Entity } from './Entity';
+import type { HostImageSource } from './HostImageSource';
 import type { ImageResourceCompressed } from './ImageResourceCompressed';
 import type { PixelFormat } from './PixelFormat';
 
@@ -43,7 +44,7 @@ export interface ImageResource extends Entity {
    * Element representation the GPU/Canvas backends upload or draw directly (image, canvas,
    * ImageBitmap, …). Null for data-only resources such as a freshly generated `Surface`.
    */
-  source: CanvasImageSource | null;
+  source: HostImageSource | null;
   /** Bumped whenever the pixels change; backends compare it to decide when to re-upload. */
   version: number;
   /** Pixel width. 0 until an element or data sets it. */

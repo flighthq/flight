@@ -11,7 +11,7 @@ export function createVideoResource(element?: HTMLVideoElement): VideoResource {
 // resource so the browser can free its buffers, then the element reference is dropped for GC. Unlike
 // destroy*, there is no non-GC handle to free here — the element is plain GC-managed memory.
 export function disposeVideoResource(resource: VideoResource): void {
-  const element = resource.element;
+  const element = resource.element as HTMLVideoElement | null;
   if (element !== null) {
     element.removeAttribute('src');
     element.load();
@@ -22,15 +22,18 @@ export function disposeVideoResource(resource: VideoResource): void {
 // Duration in seconds of the loaded media, or 0 when no element is attached. May be NaN before
 // metadata has loaded and Infinity for open-ended live streams — both come straight from the element.
 export function getVideoResourceDuration(resource: Readonly<VideoResource>): number {
-  return resource.element !== null ? resource.element.duration : 0;
+  const element = resource.element as HTMLVideoElement | null;
+  return element !== null ? element.duration : 0;
 }
 
 export function getVideoResourceHeight(resource: Readonly<VideoResource>): number {
-  return resource.element !== null ? resource.element.videoHeight : 0;
+  const element = resource.element as HTMLVideoElement | null;
+  return element !== null ? element.videoHeight : 0;
 }
 
 export function getVideoResourceWidth(resource: Readonly<VideoResource>): number {
-  return resource.element !== null ? resource.element.videoWidth : 0;
+  const element = resource.element as HTMLVideoElement | null;
+  return element !== null ? element.videoWidth : 0;
 }
 
 export function hasVideoResourceElement(resource: Readonly<VideoResource>): boolean {
@@ -38,14 +41,14 @@ export function hasVideoResourceElement(resource: Readonly<VideoResource>): bool
 }
 
 export function isVideoResourceEmpty(resource: Readonly<VideoResource>): boolean {
-  const element = resource.element;
+  const element = resource.element as HTMLVideoElement | null;
   return element === null || element.videoWidth <= 0 || element.videoHeight <= 0;
 }
 
 // True once the element has decoded at least the current frame (readyState >= HAVE_CURRENT_DATA), so
 // its videoWidth/videoHeight are known and a frame is available to sample or upload to a texture.
 export function isVideoResourceReady(resource: Readonly<VideoResource>): boolean {
-  const element = resource.element;
+  const element = resource.element as HTMLVideoElement | null;
   return element !== null && element.readyState >= HAVE_CURRENT_DATA;
 }
 
