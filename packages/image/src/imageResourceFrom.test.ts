@@ -1,6 +1,6 @@
 import { createEntity } from '@flighthq/entity/contract';
 import type { Bitmap } from '@flighthq/types/contract';
-import { ImageTextureBackingKind } from '@flighthq/types/contract';
+import { BitmapTextureBackingKind } from '@flighthq/types/contract';
 
 import { createImageResource } from './imageResource';
 import {
@@ -63,7 +63,7 @@ describe('createImageResourceFromBitmap', () => {
       data: new Uint8ClampedArray(4 * 4 * 4),
       format: 'rgba8unorm',
       height: 4,
-      kind: ImageTextureBackingKind,
+      kind: BitmapTextureBackingKind,
       source: null,
       version: 0,
       width: 4,

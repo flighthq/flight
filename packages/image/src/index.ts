@@ -10,7 +10,6 @@ export {
   disposeImageResource,
   getImageResourceByteSize,
   hasImageResourceData,
-  hasImageResourcePixels,
   hasImageResourceSource,
   isImageResourceEmpty,
   isImageResourceSameOrigin,

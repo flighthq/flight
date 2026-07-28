@@ -1,7 +1,7 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { invalidateImageResource } from '@flighthq/image/contract';
 import type { AlphaType, Bitmap } from '@flighthq/types/contract';
-import { ImageTextureBackingKind } from '@flighthq/types/contract';
+import { BitmapTextureBackingKind } from '@flighthq/types/contract';
 
 export function cloneBitmap(source: Readonly<Bitmap>): Bitmap {
   return createEntity({
@@ -81,7 +81,7 @@ export function createBitmap(width: number, height: number, color: number = 0): 
     data,
     format: 'rgba8unorm',
     height,
-    kind: ImageTextureBackingKind,
+    kind: BitmapTextureBackingKind,
     source: null,
     version: 0,
     width,
