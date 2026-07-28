@@ -7,7 +7,7 @@
 // blue) and given the videoWidth/videoHeight/readyState a video element exposes, so every backend uploads
 // and draws a deterministic, known frame. (This mirrors how video.test.ts stands in a fake element.) The
 // oracle samples each half — a renderer that ignored the source, mis-sized it, or skipped the frame fails.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   createDisplayObject,
@@ -15,7 +15,7 @@ import {
   createSprite,
   createVideoResource,
   createVideoTexture,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeLocalTransform,
   SpriteKind,
 } from '@flighthq/sdk';
@@ -64,9 +64,9 @@ addNodeChild(root, videoNode);
 
 render(root);
 
-export function assertRender(frameSurface: Readonly<Surface>): void {
-  const s = frameSurface.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frameSurface, Math.round(x * s), Math.round(y * s));
+export function assertRender(frameBitmap: Readonly<Bitmap>): void {
+  const s = frameBitmap.width / width; // device-pixel scale
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frameBitmap, Math.round(x * s), Math.round(y * s));
 
   // Left half of the frame is red.
   const left = at(VIDEO_X + FRAME_W / 4, VIDEO_Y + FRAME_H / 2);

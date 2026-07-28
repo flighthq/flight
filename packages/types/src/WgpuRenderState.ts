@@ -206,11 +206,11 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   canvasTextureView: GPUTextureView | null;
   canvasViewCleared: boolean;
 
-  // Opt-in frame capture (enableWgpuFrameCapture → createSurfaceFromWgpuRenderState). When enabled,
+  // Opt-in frame capture (enableWgpuFrameCapture → createBitmapFromWgpuRenderState). When enabled,
   // the frame is rendered into frameCaptureTexture (an offscreen COPY_SRC target) instead of the
   // swapchain — software/headless adapters do not present the swapchain and its texture reads back as
   // zeros. submitWgpuRenderPass copies that texture into frameCaptureBuffer *within the render frame*
-  // (GPU work queued in a later task is dropped on these adapters); createSurfaceFromWgpuRenderState
+  // (GPU work queued in a later task is dropped on these adapters); createBitmapFromWgpuRenderState
   // only maps the buffer on the CPU afterward.
   frameCaptureEnabled: boolean;
   frameCaptureTexture: GPUTexture | null;

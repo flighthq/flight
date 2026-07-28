@@ -102,7 +102,7 @@ export * from '@flighthq/spritesheet';
 export * from '@flighthq/spritesheet-formats';
 export * from '@flighthq/statusbar';
 export * from '@flighthq/storage';
-export * from '@flighthq/surface';
+export * from '@flighthq/bitmap';
 export * from '@flighthq/text';
 export * from '@flighthq/text-markup';
 export * from '@flighthq/textbidi';

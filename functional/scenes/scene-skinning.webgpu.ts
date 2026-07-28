@@ -1,5 +1,5 @@
 import { drawWgpuScene3D, registerWgpuGpuSkinning } from '@flighthq/scene3d-wgpu';
-import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   addNodeChild,
@@ -21,7 +21,7 @@ import {
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   endWgpuRenderEffectPipeline,
-  getSurfacePixelLuminance,
+  getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
   normalizeVector3,
   prepareScene3DRender,
@@ -145,9 +145,9 @@ const lights = {
 };
 render(scene, camera, lights);
 
-export function assertRender(surface: Readonly<Surface>): void {
+export function assertRender(bitmap: Readonly<Bitmap>): void {
   const covered = (x: number, y: number): boolean =>
-    getSurfacePixelLuminance(surface, Math.floor(surface.width * x), Math.floor(surface.height * y)) > 90;
+    getBitmapPixelLuminance(bitmap, Math.floor(bitmap.width * x), Math.floor(bitmap.height * y)) > 90;
   if (!covered(0.38, 0.43)) throw new Error('[scene-skinning] posed leaned-arm probe is background');
   if (covered(0.5, 0.2)) throw new Error('[scene-skinning] top-center remains in the rigid bind pose');
   if (!covered(0.53, 0.65)) throw new Error('[scene-skinning] stationary root-weighted base is missing');

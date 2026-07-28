@@ -16,12 +16,12 @@
 // line) which should be mostly background, confirming the lower ink is a decoration and not just tall
 // glyphs. Estimates are deliberately fuzzy because exact glyph metrics are font-dependent and we cannot
 // run a browser.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   createDisplayObject,
   createRichText,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   RichTextKind,
   setRichTextFormatRange,
 } from '@flighthq/sdk';
@@ -65,9 +65,9 @@ addNodeChild(root, field);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width;
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // The underline is a single horizontal stroke spanning the whole word; its exact y depends on font
   // metrics, so rather than guess the band we scan EVERY row across the field's vertical extent and take

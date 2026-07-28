@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { bakeWgpuEnvironmentIbl, drawWgpuEnvironmentSkybox, drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
-import type { Camera3D, Environment, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, Environment, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
@@ -17,8 +17,8 @@ import {
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   endWgpuRenderEffectPipeline,
-  getSurfacePixel,
-  getSurfacePixelLuminance,
+  getBitmapPixel,
+  getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
   prepareScene3DRender,
   registerStandardPbrWgpuMaterial,
@@ -95,14 +95,14 @@ const camera = createCamera3D({
 setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 4.6), createVector3(0, 0, 0), createVector3(0, 1, 0));
 render(scene, camera, { ambient: null, directional: null }, environment);
 
-export function assertRender(surface: Readonly<Surface>): void {
-  const centerY = Math.floor(surface.height * 0.5);
-  const metalLuma = getSurfacePixelLuminance(surface, Math.floor(surface.width * 0.32), centerY);
-  const roughLuma = getSurfacePixelLuminance(surface, Math.floor(surface.width * 0.68), centerY);
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const centerY = Math.floor(bitmap.height * 0.5);
+  const metalLuma = getBitmapPixelLuminance(bitmap, Math.floor(bitmap.width * 0.32), centerY);
+  const roughLuma = getBitmapPixelLuminance(bitmap, Math.floor(bitmap.width * 0.68), centerY);
   if (metalLuma <= 24) throw new Error(`[env-ibl] metal sphere is unlit (${metalLuma})`);
   if (roughLuma <= 24) throw new Error(`[env-ibl] rough sphere is unlit (${roughLuma})`);
-  const a = getSurfacePixel(surface, Math.floor(surface.width * 0.27), centerY);
-  const b = getSurfacePixel(surface, Math.floor(surface.width * 0.37), Math.floor(surface.height * 0.4));
+  const a = getBitmapPixel(bitmap, Math.floor(bitmap.width * 0.27), centerY);
+  const b = getBitmapPixel(bitmap, Math.floor(bitmap.width * 0.37), Math.floor(bitmap.height * 0.4));
   if (sameColor(a, b)) throw new Error('[env-ibl] metal sphere has no reflection variation');
 }
 

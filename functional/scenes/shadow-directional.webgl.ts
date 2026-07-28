@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D, drawGlScene3DShadowMap } from '@flighthq/scene3d-gl';
-import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -21,7 +21,7 @@ import {
   createVector3,
   endGlRenderEffectPipeline,
   getNode3DWorldBounds,
-  getSurfacePixelLuminance,
+  getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
   prepareScene3DRender,
   registerStandardPbrGlMaterial,
@@ -135,13 +135,13 @@ configureDirectionalShadowCamera3D(shadowCamera, direction, sceneBounds);
 
 render(scene, camera, lights, shadowCamera);
 
-export function assertRender(surface: Readonly<Surface>): void {
-  const cx = Math.floor(surface.width / 2);
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const cx = Math.floor(bitmap.width / 2);
   // The ground recedes to a horizon near mid-screen; the sphere projects to the upper-centre and its
   // shadow lands as an ellipse on the ground just below it, centred around 56% of the frame height.
   // The lit ground in the near foreground is sampled at 90%. (Coordinates verified against the capture.)
-  const litLuminance = getSurfacePixelLuminance(surface, cx, Math.floor(surface.height * 0.9)); // lit foreground ground
-  const shadowLuminance = getSurfacePixelLuminance(surface, cx, Math.floor(surface.height * 0.56)); // ground under sphere
+  const litLuminance = getBitmapPixelLuminance(bitmap, cx, Math.floor(bitmap.height * 0.9)); // lit foreground ground
+  const shadowLuminance = getBitmapPixelLuminance(bitmap, cx, Math.floor(bitmap.height * 0.56)); // ground under sphere
 
   if (litLuminance <= 24) {
     throw new Error(`[shadow-directional] ground is blank (luminance ${litLuminance}) — scene did not render`);

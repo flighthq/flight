@@ -27,7 +27,7 @@ import { applyGlEffectTintPass } from './glEffectTintShader';
 // `L = (cos angle, sin angle) · distance`. A positive gradient (the edge facing
 // the light) draws the highlight color; a negative gradient draws the shadow
 // color; `|gradient| · strength` is the band's alpha. The resulting tinted mask
-// is composited over the source — matching `bevelSurface` (the CPU reference).
+// is composited over the source — matching `bevelBitmap` (the CPU reference).
 //
 // `bevelType` clips the mask:
 //   - `'inner'` (default): keep the band inside the shape (× source alpha)

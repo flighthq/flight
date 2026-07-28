@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
-import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
@@ -17,8 +17,8 @@ import {
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   endWgpuRenderEffectPipeline,
-  getSurfacePixelLuminance,
-  getSurfacePixelRgb,
+  getBitmapPixelLuminance,
+  getBitmapPixelRgb,
   normalizeVector3,
   prepareScene3DRender,
   registerUnlitWgpuMaterial,
@@ -115,16 +115,16 @@ const lights = {
 
 render(scene, camera, lights);
 
-export function assertRender(surface: Readonly<Surface>): void {
-  const cx = Math.floor(surface.width / 2);
-  const cy = Math.floor(surface.height / 2);
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const cx = Math.floor(bitmap.width / 2);
+  const cy = Math.floor(bitmap.height / 2);
   // 0.10*width ≈ world 0.44: comfortably INSIDE the rotated bar's long (0.8) half-extent vertically (so
   // the vertical samples avoid the antialiased top/bottom edge) and well OUTSIDE its short (0.175)
   // half-extent horizontally. A larger offset (e.g. 0.18 ≈ world 0.795) lands on the bar's very edge.
-  const off = Math.floor(surface.width * 0.1);
+  const off = Math.floor(bitmap.width * 0.1);
 
   // The bar is still centered, so the frame center is on it regardless of orientation.
-  const center = getSurfacePixelRgb(surface, cx, cy);
+  const center = getBitmapPixelRgb(bitmap, cx, cy);
   if (!isRust(center)) {
     throw new Error(
       `[mesh-transform-rotation] frame center is not the bar color — got #${hex(center)} (bar missing or mis-projected)`,
@@ -134,7 +134,7 @@ export function assertRender(surface: Readonly<Surface>): void {
   // 1) The silhouette now extends VERTICALLY: points directly above and below center are on the bar. After a
   //    90° Z rotation the long extent runs along screen Y; world ±0.795 sits inside the rotated half-extent 0.8.
   for (const dy of [off, -off]) {
-    if (!isRust(getSurfacePixelRgb(surface, cx, cy + dy))) {
+    if (!isRust(getBitmapPixelRgb(bitmap, cx, cy + dy))) {
       throw new Error(
         `[mesh-transform-rotation] sample at (0,${dy}) is not the bar — the bar is not vertical (Z rotation not applied)`,
       );
@@ -144,7 +144,7 @@ export function assertRender(surface: Readonly<Surface>): void {
   // 2) The silhouette no longer extends HORIZONTALLY: points left and right of center are background. The bar's
   //    short (0.175) extent is along screen X after rotation, so world ±0.795 falls outside it.
   for (const dx of [off, -off]) {
-    if (getSurfacePixelLuminance(surface, cx + dx, cy) > 40) {
+    if (getBitmapPixelLuminance(bitmap, cx + dx, cy) > 40) {
       throw new Error(
         `[mesh-transform-rotation] sample at (${dx},0) is not background — the bar is still horizontal (Z rotation not applied)`,
       );

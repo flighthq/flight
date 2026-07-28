@@ -9,7 +9,7 @@
 // (1) a point near the triangle's centroid (well inside the polygon AND the shape) is the shape color; and
 // (2) a corner of the triangle's bounding box that the triangle does not cover — but which IS inside the
 // rectangle — is clipped to background.
-import type { Path, Surface } from '@flighthq/sdk';
+import type { Path, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendPathLineTo,
@@ -21,7 +21,7 @@ import {
   createDisplayObject,
   createPath,
   createShape,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   setNode2DClip,
   ShapeKind,
 } from '@flighthq/sdk';
@@ -75,9 +75,9 @@ function createTrianglePath(): Path {
   return path;
 }
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // 1) Near the triangle's centroid — deep inside the polygon and the shape: shape color survives.
   const centroidX = (APEX_X + BASE_LEFT_X + BASE_RIGHT_X) / 3; // 400

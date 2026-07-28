@@ -12,7 +12,7 @@
 // Particle data is set explicitly — no simulation — for a deterministic frame. The texture is a single
 // solid-white region, so each particle's rendered center reads back its own tint. The oracle proves the
 // six particles show six distinct tint colors and the gaps between them stay background.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   addTextureAtlasRegion,
@@ -21,7 +21,7 @@ import {
   createParticleEmitter2D,
   createTexture,
   createTextureAtlas,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   ParticleEmitter2DKind,
@@ -94,9 +94,9 @@ invalidateNodeAppearance(emitter);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   for (let i = 0; i < PARTICLES.length; i++) {
     const [cx, cy, , , r, g, b] = PARTICLES[i];

@@ -7,8 +7,8 @@
 // Text rasterization is font-dependent, so the oracle is a lenient coverage check: the label's box must
 // contain a healthy number of amber "ink" pixels (glyphs drew), and a region outside the label stays
 // background. A renderer that didn't draw the label, or a missing registration, leaves the box empty.
-import type { Surface } from '@flighthq/sdk';
-import { addNodeChild, createDisplayObject, createTextLabel, getSurfacePixelRgb, TextLabelKind } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
+import { addNodeChild, createDisplayObject, createTextLabel, getBitmapPixelRgb, TextLabelKind } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
 const WIDTH = 800;
@@ -40,9 +40,9 @@ addNodeChild(root, label);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // Count amber ink across a grid inside the label box — glyphs must have rendered.
   let ink = 0;

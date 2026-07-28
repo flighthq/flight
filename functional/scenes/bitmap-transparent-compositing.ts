@@ -14,7 +14,7 @@
 //
 // This is visual because per-pixel alpha compositing and node-alpha modulation only exist after the source
 // is blended against the actual destination pixels; it cannot be observed without rasterizing the overlay.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   SpriteKind,
@@ -22,7 +22,7 @@ import {
   createDisplayObject,
   createImageResourceFromCanvas,
   createTexture,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeAppearance,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -83,9 +83,9 @@ placeRamp(HALF_X, HALF_Y, 0.5);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   const fullCenter = at(FULL_X + IMG_SIZE / 2, FULL_Y + IMG_SIZE / 2);
   const halfCenter = at(HALF_X + IMG_SIZE / 2, HALF_Y + IMG_SIZE / 2);

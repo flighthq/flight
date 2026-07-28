@@ -36,7 +36,7 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
-    "@flighthq/surface": "*",
+    "@flighthq/bitmap": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

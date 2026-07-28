@@ -1,7 +1,7 @@
-import { createSurface } from '@flighthq/surface/contract';
-import type { GlyphAtlas, GlyphAtlasOptions, GlyphMetrics, Surface } from '@flighthq/types/contract';
+import { createBitmap } from '@flighthq/bitmap/contract';
+import type { GlyphAtlas, GlyphAtlasOptions, GlyphMetrics, Bitmap } from '@flighthq/types/contract';
 
-// Allocates a dynamic glyph atlas: an empty `width x height` atlas surface, an empty codepoint→entry
+// Allocates a dynamic glyph atlas: an empty `width x height` atlas bitmap, an empty codepoint→entry
 // cache, and a fresh incremental shelf packer. Glyphs are added lazily by `getGlyphAtlasEntry`;
 // nothing is rasterized here. `padding` defaults to 1px of gutter between glyphs and from the edges;
 // `maxGlyphs` (default 0 = unbounded, only the atlas area caps it) bounds the live cache for LRU
@@ -27,7 +27,7 @@ export function createGlyphAtlas(options: Readonly<GlyphAtlasOptions>): GlyphAtl
         fontSize: options.fontSize,
       },
       shelves: [],
-      surface: createSurface(options.width, options.height),
+      bitmap: createBitmap(options.width, options.height),
     },
   };
 }
@@ -45,9 +45,9 @@ export function deriveGlyphMetricsFromFontSize(fontSize: number): GlyphMetrics {
 
 // Drops the cache, the retained source bitmaps, the LRU order, and the packer so the atlas becomes
 // an empty, inert shell and its sizable retained memory (the per-glyph bitmap copies) becomes
-// GC-eligible. The surface holds only CPU-managed pixel data (no GPU/native handle) and is released
+// GC-eligible. The bitmap holds only CPU-managed pixel data (no GPU/native handle) and is released
 // to GC when the atlas is dropped, so this is `dispose*`, not `destroy*`; a renderer that uploaded
-// the surface to a GPU texture frees that texture through its own render state.
+// the bitmap to a GPU texture frees that texture through its own render state.
 export function disposeGlyphAtlas(atlas: GlyphAtlas): void {
   const runtime = atlas.runtime;
   runtime.entries.clear();
@@ -58,8 +58,8 @@ export function disposeGlyphAtlas(atlas: GlyphAtlas): void {
   runtime.dirty = false;
 }
 
-// The atlas's backing surface — the pixels a renderer uploads to a GPU texture. Use
+// The atlas's backing bitmap — the pixels a renderer uploads to a GPU texture. Use
 // `getGlyphAtlasDirtyRegion` to upload only the changed sub-rect.
-export function getGlyphAtlasSurface(atlas: Readonly<GlyphAtlas>): Surface {
-  return atlas.runtime.surface;
+export function getGlyphAtlasBitmap(atlas: Readonly<GlyphAtlas>): Bitmap {
+  return atlas.runtime.bitmap;
 }

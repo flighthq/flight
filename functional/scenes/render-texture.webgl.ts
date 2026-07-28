@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
-import type { GlRenderEffectPipeline, Surface } from '@flighthq/sdk';
+import type { GlRenderEffectPipeline, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -18,7 +18,7 @@ import {
   createUnlitMaterial,
   createVector3,
   endGlRenderEffectPipeline,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeLocalTransform,
   prepareScene3DRender,
   registerUnlitGlMaterial,
@@ -108,9 +108,9 @@ prepareScene3DRender(state, consumerScene, consumerCamera, lights);
 drawGlScene3D(state, consumerScene, consumerCamera, lights);
 endGlRenderEffectPipeline(state, pipeline, []);
 
-export function assertRender(surface: Readonly<Surface>): void {
-  const topSample = getSurfacePixelRgb(surface, Math.floor(surface.width * 0.5), Math.floor(surface.height * 0.42));
-  const bottomSample = getSurfacePixelRgb(surface, Math.floor(surface.width * 0.5), Math.floor(surface.height * 0.58));
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const topSample = getBitmapPixelRgb(bitmap, Math.floor(bitmap.width * 0.5), Math.floor(bitmap.height * 0.42));
+  const bottomSample = getBitmapPixelRgb(bitmap, Math.floor(bitmap.width * 0.5), Math.floor(bitmap.height * 0.58));
   if (!isRed(topSample) || !isBlue(bottomSample)) {
     throw new Error(
       `[render-texture] expected upright red/blue producer result on the consumer cube, got #${hex(

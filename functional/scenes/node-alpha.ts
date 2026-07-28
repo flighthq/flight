@@ -7,7 +7,7 @@
 // where the half-alpha red sits over the black background (red channel ~half of 255), and an empty area
 // (background). Passing requires the renderer to honour node alpha during compositing, not just paint a
 // flat color.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -15,7 +15,7 @@ import {
   appendShapeRectangle,
   createDisplayObject,
   createShape,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeAppearance,
   ShapeKind,
 } from '@flighthq/sdk';
@@ -57,9 +57,9 @@ addNodeChild(root, top);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // 1) Bottom-only region (top-left of the blue square, before the red overlaps) is pure blue.
   const bottomOnly = at(BOTTOM_X + 40, BOTTOM_Y + 40);

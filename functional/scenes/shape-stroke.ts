@@ -5,7 +5,7 @@
 // shapes on an opaque background; the oracle proves (1) the thick line is its color at the centerline and
 // background a thickness away — i.e. the stroke has real width — and (2) the rectangle's edge is its
 // color while its interior is background — i.e. lineStyle strokes the outline without filling it.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeLineStyle,
@@ -14,7 +14,7 @@ import {
   appendShapeRectangle,
   createDisplayObject,
   createShape,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   ShapeKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -58,9 +58,9 @@ addNodeChild(root, rect);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // 1) The thick line is white along its centerline.
   const lineMid = at((LINE_X0 + LINE_X1) / 2, LINE_Y);

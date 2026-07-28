@@ -1,4 +1,4 @@
-import type { Node2D, Surface, TextureContainer } from '@flighthq/sdk';
+import type { Node2D, Bitmap, TextureContainer } from '@flighthq/sdk';
 import {
   addNodeChild,
   createSprite,
@@ -8,7 +8,7 @@ import {
   createTexture,
   createWgpuCanvasElement,
   createWgpuRenderState,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   SpriteKind,
   defaultWgpuScene2DRenderer,
   defaultWgpuSpriteRenderer,
@@ -120,9 +120,9 @@ invalidateNodeLocalTransform(alphaBitmap);
 addNodeChild(root, alphaBitmap);
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width;
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
   const center = at(BITMAP_X + (TEX * SCALE) / 2, BITMAP_Y + (TEX * SCALE) / 2);
   const alphaCenter = at(ALPHA_BITMAP_X + (TEX * SCALE) / 2, BITMAP_Y + (TEX * SCALE) / 2);
   const outside = at(BITMAP_X - 60, BITMAP_Y - 60);

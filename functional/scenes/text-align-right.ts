@@ -12,8 +12,8 @@
 //
 // API used: TextFormat.align ('right' | 'left'), applied via field.data.defaultTextFormat; plus
 // field.data.text/width/height/textColor and a shared FONT_SIZE.
-import type { Surface } from '@flighthq/sdk';
-import { addNodeChild, createDisplayObject, createRichText, getSurfacePixelRgb, RichTextKind } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
+import { addNodeChild, createDisplayObject, createRichText, getBitmapPixelRgb, RichTextKind } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
 const WIDTH = 800;
@@ -65,9 +65,9 @@ addNodeChild(root, controlField);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   const right = measureInk(at, RIGHT_FIELD_Y);
   const control = measureInk(at, CONTROL_FIELD_Y);

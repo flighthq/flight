@@ -5,7 +5,7 @@ import { ImageTextureBackingKind } from '@flighthq/types/contract';
 // Allocates a new resource identity over the SAME underlying pixels. The element, the `data` array, and
 // the `compressed` payload are shared by reference, not duplicated — clone gives you an independent
 // version counter and entity identity over the same pixels, e.g. to upload one image into two render
-// states with separate invalidation. Use a Surface copy when you need the pixels themselves duplicated.
+// states with separate invalidation. Use a Bitmap copy when you need the pixels themselves duplicated.
 export function cloneImageResource(resource: Readonly<ImageResource>): ImageResource {
   return createEntity({
     alphaType: resource.alphaType,
@@ -79,9 +79,9 @@ export function hasImageResourceData(resource: Readonly<ImageResource>): boolean
 
 // True when the resource carries pixels in any representation — a decoded `source` element, raw CPU
 // `data`, or a block-`compressed` payload. The upload-readiness predicate for backends that can consume
-// any of them: an element-only load, a data-only generated Surface, a compressed-only parsed container,
+// any of them: an element-only load, a data-only generated Bitmap, a compressed-only parsed container,
 // or a resource holding several are all uploadable. Prefer this over hasImageResourceSource at any gate
-// that feeds a source-or-data uploader (bindGlTexture, bindWgpuTexture), so a memory-generated Surface
+// that feeds a source-or-data uploader (bindGlTexture, bindWgpuTexture), so a memory-generated Bitmap
 // or a compressed container is not rejected for lacking an element.
 export function hasImageResourcePixels(resource: Readonly<ImageResource>): boolean {
   return resource.source !== null || resource.data !== null || resource.compressed !== null;
@@ -93,7 +93,7 @@ export function hasImageResourceSource(resource: Readonly<ImageResource>): boole
 
 // Bumps the resource content revision so consumers (renderer texture caches) know the pixels behind
 // this image changed even though the object identity is the same. Call after mutating the backing
-// pixels in place; the Surface API calls it for you. Resource-tier analog of invalidateNodeLocalContent.
+// pixels in place; the Bitmap API calls it for you. Resource-tier analog of invalidateNodeLocalContent.
 export function invalidateImageResource(resource: ImageResource): void {
   resource.version = (resource.version + 1) >>> 0;
 }

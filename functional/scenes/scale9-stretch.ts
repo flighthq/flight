@@ -13,7 +13,7 @@
 // stretched: a wide band of interior sample points are all the fill color (the center grew), and the
 // border color is present just inside each of the four edges (the frame survived the stretch). This is
 // inherently visual — coordinate remapping per slice cannot be confirmed in jsdom.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -21,7 +21,7 @@ import {
   appendShapeRectangle,
   createDisplayObject,
   createScale9Shape,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeLocalTransform,
   Scale9ShapeKind,
 } from '@flighthq/sdk';
@@ -76,9 +76,9 @@ addNodeChild(root, panel);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   const cx = PANEL_X + PANEL_W / 2;
   const cy = PANEL_Y + PANEL_H / 2;

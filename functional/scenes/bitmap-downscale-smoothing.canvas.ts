@@ -14,7 +14,7 @@
 //
 // This is visual because the distinction lives entirely in how the rasterizer resolves many source texels
 // into one output pixel during minification; it cannot be observed without actually downscaling the image.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   SpriteKind,
@@ -23,7 +23,7 @@ import {
   createImageResourceFromCanvas,
   createPixelArtSampler,
   createTexture,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -94,9 +94,9 @@ placeChecker(SMOOTH_X, SMOOTH_Y, true);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // Sample the band across each downscaled image and classify pixels.
   const aliasSamples = sampleBand(at, ALIAS_X, ALIAS_Y);

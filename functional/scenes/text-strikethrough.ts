@@ -14,12 +14,12 @@
 // glyphs alone would (the strike bridges the inter-glyph gaps). We require a wide continuous run through
 // the mid-height band; estimates are fuzzy because exact metrics are font-dependent and we cannot run a
 // browser.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   createDisplayObject,
   createRichText,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   RichTextKind,
   setRichTextFormatRange,
 } from '@flighthq/sdk';
@@ -63,9 +63,9 @@ addNodeChild(root, field);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width;
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // The strike crosses the glyphs near their upper-middle. With FONT_SIZE 72 and the baseline ~0.8 * size
   // below the line top, baseline - ascent*0.35 lands around 0.5 * size below the line top. Search a band

@@ -8,6 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../surface" }, { "path": "../types" }],
+  "references": [{ "path": "../bitmap" }, { "path": "../types" }],
   "include": ["src"]
 }

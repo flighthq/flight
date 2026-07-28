@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
-import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -17,8 +17,8 @@ import {
   createUnlitMaterial,
   createVector3,
   endGlRenderEffectPipeline,
-  getSurfacePixelLuminance,
-  getSurfacePixelRgb,
+  getBitmapPixelLuminance,
+  getBitmapPixelRgb,
   normalizeVector3,
   prepareScene3DRender,
   registerUnlitGlMaterial,
@@ -117,12 +117,12 @@ const lights = {
 
 render(scene, camera, lights);
 
-export function assertRender(surface: Readonly<Surface>): void {
-  const cx = Math.floor(surface.width / 2);
-  const cy = Math.floor(surface.height / 2);
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const cx = Math.floor(bitmap.width / 2);
+  const cy = Math.floor(bitmap.height / 2);
 
   // The box is centered, so center is on it regardless of scale.
-  const center = getSurfacePixelRgb(surface, cx, cy);
+  const center = getBitmapPixelRgb(bitmap, cx, cy);
   if (!isViolet(center)) {
     throw new Error(
       `[mesh-transform-scale] frame center is not the box color — got #${hex(center)} (box missing or mis-projected)`,
@@ -131,14 +131,14 @@ export function assertRender(surface: Readonly<Surface>): void {
 
   // 1) A point at ~0.16*width from center is OUTSIDE a unit box's projection (~0.113*width) but INSIDE the
   //    2× box (~0.226*width). It being on the box proves the silhouette grew — only the scale can do this.
-  const grown = Math.floor(surface.width * 0.16);
+  const grown = Math.floor(bitmap.width * 0.16);
   for (const [dx, dy] of [
     [grown, 0],
     [-grown, 0],
     [0, grown],
     [0, -grown],
   ]) {
-    if (!isViolet(getSurfacePixelRgb(surface, cx + dx, cy + dy))) {
+    if (!isViolet(getBitmapPixelRgb(bitmap, cx + dx, cy + dy))) {
       throw new Error(
         `[mesh-transform-scale] sample at (${dx},${dy}) is not the box — silhouette did not grow (scale not applied)`,
       );
@@ -147,14 +147,14 @@ export function assertRender(surface: Readonly<Surface>): void {
 
   // 2) The frame corners (~0.45*width from center) are still background — the 2× box is larger but bounded,
   //    not a full-frame fill.
-  const m = Math.floor(surface.width * 0.45);
+  const m = Math.floor(bitmap.width * 0.45);
   for (const [dx, dy] of [
     [m, m],
     [-m, m],
     [m, -m],
     [-m, -m],
   ]) {
-    if (getSurfacePixelLuminance(surface, cx + dx, cy + dy) > 40) {
+    if (getBitmapPixelLuminance(bitmap, cx + dx, cy + dy) > 40) {
       throw new Error(
         `[mesh-transform-scale] frame corner (${dx},${dy}) is not background — the scaled box is not bounded`,
       );

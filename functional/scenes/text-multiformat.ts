@@ -12,12 +12,12 @@
 // API used: `setRichTextFormatRange(field, format, start, end)` pushes a {start, end, format} entry onto
 // `field.data.textFormatRanges`; each TextFormat is a plain object ({ color, size, ... }). When a range's
 // format omits `color`, content falls back to `data.textColor`; here both ranges set an explicit color.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   createDisplayObject,
   createRichText,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   RichTextKind,
   setRichTextFormatRange,
 } from '@flighthq/sdk';
@@ -67,9 +67,9 @@ addNodeChild(root, field);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // LEFT third of the field should carry red glyphs.
   const leftRed = countColorPixels(at, isRed, FIELD_X + 6, FIELD_Y + 6, FIELD_W / 3, FIELD_H - 12);

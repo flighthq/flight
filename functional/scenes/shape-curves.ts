@@ -6,7 +6,7 @@
 // oracle proves the curved outline encloses a filled interior: the center samples the fill color,
 // while a canvas corner well outside the blob stays background. This is visual — it depends on curve
 // flattening and scan-fill of a non-rectangular region, which jsdom cannot rasterize.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -16,7 +16,7 @@ import {
   appendShapeMoveTo,
   createDisplayObject,
   createShape,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   ShapeKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -60,9 +60,9 @@ addNodeChild(root, blob);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // Center of the blob: solid fill color. (Slightly below center to stay clear of the top dimple.)
   const center = at(CX, CY + 30);

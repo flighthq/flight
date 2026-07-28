@@ -2,7 +2,7 @@ export {
   beginWgpuFrame,
   beginWgpuRenderPass,
   bindWgpuRenderTexture,
-  createSurfaceFromWgpuRenderState,
+  createBitmapFromWgpuRenderState,
   createExternalWgpuTexture,
   createWgpuCanvasElement,
   createWgpuRenderState,

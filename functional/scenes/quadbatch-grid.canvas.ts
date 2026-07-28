@@ -7,7 +7,7 @@
 // all referencing a single solid-blue region. It is visual on purpose: the oracle proves each of the four
 // transform entries lands a quad at its expected position (blue), and that the spaces between them stay
 // background — i.e. the batch draws discrete quads at the array's coordinates, not one filled span.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   addTextureAtlasRegion,
@@ -17,7 +17,7 @@ import {
   createRectangle,
   createTexture,
   createTextureAtlas,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeLocalTransform,
   QuadBatchKind,
   setQuadBatchLocalBoundsRectangle,
@@ -91,9 +91,9 @@ invalidateNodeLocalTransform(batch);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // Each quad's screen position is BASE + offset; its center is offset + QUAD/2.
   for (let i = 0; i < OFFSETS.length; i++) {

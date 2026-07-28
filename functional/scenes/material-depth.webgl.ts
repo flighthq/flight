@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
-import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -16,7 +16,7 @@ import {
   createSphereMeshGeometry,
   createVector3,
   endGlRenderEffectPipeline,
-  getSurfacePixelLuminance,
+  getBitmapPixelLuminance,
   normalizeVector3,
   prepareScene3DRender,
   registerDepthGlMaterial,
@@ -124,13 +124,13 @@ render(scene, camera, lights);
 // near-center samples are not enough. Scan outward along +x, collecting on-sphere luminance until the
 // scan crosses the silhouette into the dark background, then assert the on-sphere spread is non-flat —
 // proof of a depth ramp rather than a flat fill.
-export function assertRender(surface: Readonly<Surface>): void {
-  const cx = Math.floor(surface.width / 2);
-  const cy = Math.floor(surface.height / 2);
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const cx = Math.floor(bitmap.width / 2);
+  const cy = Math.floor(bitmap.height / 2);
 
-  const center = getSurfacePixelLuminance(surface, cx, cy);
+  const center = getBitmapPixelLuminance(bitmap, cx, cy);
   if (center <= 16) {
-    throw new Error(`[material-depth] surface is blank (center luminance ${center}) — mesh did not render`);
+    throw new Error(`[material-depth] bitmap is blank (center luminance ${center}) — mesh did not render`);
   }
 
   // The background is near-black; treat a sample at/under this as off the sphere and stop the scan
@@ -138,9 +138,9 @@ export function assertRender(surface: Readonly<Surface>): void {
   const backgroundLuminance = 24;
   let minLuminance = center;
   let maxLuminance = center;
-  const maxOffset = Math.floor(surface.width * 0.14);
+  const maxOffset = Math.floor(bitmap.width * 0.14);
   for (let dx = 8; dx <= maxOffset; dx += 8) {
-    const sample = getSurfacePixelLuminance(surface, cx + dx, cy);
+    const sample = getBitmapPixelLuminance(bitmap, cx + dx, cy);
     if (sample <= backgroundLuminance) break;
     if (sample < minLuminance) minLuminance = sample;
     if (sample > maxLuminance) maxLuminance = sample;

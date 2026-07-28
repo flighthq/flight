@@ -126,7 +126,7 @@ export interface GlyphAtlasRuntime {
 
 // A dynamic glyph atlas entity. It carries no public data of its own — the bitmap, cache, and
 // packer live inside the opaque runtime. Create it with `createGlyphAtlas`, drive it with
-// `getGlyphAtlasEntry` (rasterize-on-miss), read its pixels with `getGlyphAtlasSurface`, and hand it
+// `getGlyphAtlasEntry` (rasterize-on-miss), read its pixels with `getGlyphAtlasBitmap`, and hand it
 // to a renderer as a `GlyphSource` via `createGlyphSourceFromGlyphAtlas`.
 export interface GlyphAtlas {
   runtime: GlyphAtlasRuntime;

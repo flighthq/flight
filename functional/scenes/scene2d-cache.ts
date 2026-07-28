@@ -13,7 +13,7 @@
 // Canvas, WebGL, and WebGPU all support that contract; WebGPU opens a standalone command encoder for the
 // bake and submits it before the visible frame. DOM rasterizes its cache canvas inside its own frame, so
 // this shared scene keeps the direct subtree path there.
-import type { Node2D, Surface } from '@flighthq/sdk';
+import type { Node2D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -25,7 +25,7 @@ import {
   createRenderCache,
   createShape,
   createWgpuCacheState,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   refreshCanvasRenderCache,
   refreshGlRenderCache,
   refreshWgpuRenderCache,
@@ -99,9 +99,9 @@ if (target.kind === 'canvas') {
 
 render(root as Node2D);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // 1) The magenta rectangle's center carries its color (cached or direct).
   const mag = at(MAGENTA_X + RECT_SIZE / 2, MAGENTA_Y + RECT_SIZE / 2);

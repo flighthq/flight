@@ -8,7 +8,7 @@
 // fall OUTSIDE it, and four points just beyond the square's edges (which the axis-aligned square never
 // covered) fall INSIDE it. The oracle checks all of these, so it can only pass for a genuine ~45°
 // rotation about the pivot — a near-zero or wrong angle fails.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -16,7 +16,7 @@ import {
   appendShapeRectangle,
   createDisplayObject,
   createShape,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeLocalTransform,
   ShapeKind,
 } from '@flighthq/sdk';
@@ -57,9 +57,9 @@ addNodeChild(root, square);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // 1) The center is unaffected by rotation — still fill.
   if (!isFill(at(CENTER_X, CENTER_Y))) {

@@ -7,7 +7,7 @@
 // right interior edge is bright (high luma), and right luma exceeds left luma by a wide margin. This is
 // visual: it depends on the gradient-to-geometry mapping and per-pixel interpolation that only a real
 // rasterizer produces.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginGradientFill,
@@ -16,7 +16,7 @@ import {
   createDisplayObject,
   createGradientTransformMatrix,
   createShape,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   ShapeKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -52,9 +52,9 @@ addNodeChild(root, rect);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // Comfortable margins inside the rect, sampled along the vertical center to avoid edge antialiasing.
   const midY = RECT_Y + RECT_H / 2;

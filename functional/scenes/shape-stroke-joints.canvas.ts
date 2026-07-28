@@ -16,7 +16,7 @@
 // (half = 15) yields: bevel chord ends ~10.6px past the apex, the round arc ~15px, and the miter point
 // ~21px. A shallow sample (apex.y + 12.5) separates round (white) from bevel (background); a deeper
 // sample (apex.y + 18) separates miter (white) from both round and bevel (background).
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import type { JointStyle } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -25,7 +25,7 @@ import {
   appendShapeMoveTo,
   createDisplayObject,
   createShape,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   ShapeKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -72,9 +72,9 @@ vShape(MITER_APEX_Y, 'miter');
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // Each V's left leg has a solid white shoulder; sample its midpoint to confirm the stroke drew at all.
   for (const [label, apexY] of [

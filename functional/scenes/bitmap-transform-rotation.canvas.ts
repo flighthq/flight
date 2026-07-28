@@ -8,7 +8,7 @@
 //
 // Transform rotation composited with bitmap rendering is inherently visual — jsdom has no
 // rendering pipeline.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   SpriteKind,
@@ -16,7 +16,7 @@ import {
   createDisplayObject,
   createImageResource,
   createTexture,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
@@ -57,9 +57,9 @@ addNodeChild(root, bitmap);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width;
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   const center = at(200, 150);
   if (!isRed(center)) {

@@ -10,7 +10,7 @@ import type {
   ParticleEmitterState,
   PointLight,
   Scene3DLightsLike,
-  Surface,
+  Bitmap,
 } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -27,7 +27,7 @@ import {
   createPointLight,
   createSampler,
   createStandardPbrMaterial,
-  createSurface,
+  createBitmap,
   createTexture,
   createTextureAtlas,
   createVector3,
@@ -43,20 +43,20 @@ import { render, scale } from './render';
 const logicalWidth = 800 / scale;
 const logicalHeight = 600 / scale;
 
-function createEmberSurface(): Surface {
-  const surface = createSurface(192, 192);
-  for (let y = 0; y < surface.height; y++) {
-    for (let x = 0; x < surface.width; x++) {
-      const offset = (y * surface.width + x) * 4;
+function createEmberBitmap(): Bitmap {
+  const bitmap = createBitmap(192, 192);
+  for (let y = 0; y < bitmap.height; y++) {
+    for (let x = 0; x < bitmap.width; x++) {
+      const offset = (y * bitmap.width + x) * 4;
       const tile = ((x >> 4) + (y >> 4)) & 1;
       const cracks = Math.abs(Math.sin(x * 0.23) + Math.cos(y * 0.19)) < 0.075;
-      surface.data[offset] = cracks ? 91 : 28 + tile * 8;
-      surface.data[offset + 1] = cracks ? 34 : 25 + tile * 5;
-      surface.data[offset + 2] = cracks ? 12 : 27 + tile * 4;
-      surface.data[offset + 3] = 255;
+      bitmap.data[offset] = cracks ? 91 : 28 + tile * 8;
+      bitmap.data[offset + 1] = cracks ? 34 : 25 + tile * 5;
+      bitmap.data[offset + 2] = cracks ? 12 : 27 + tile * 4;
+      bitmap.data[offset + 3] = 255;
     }
   }
-  return surface;
+  return bitmap;
 }
 
 function createFireAtlas() {
@@ -90,7 +90,7 @@ function createSeededRandom(seed: number): () => number {
 const scene = createNode3D(Node3DKind);
 const groundTexture = createTexture({
   sampler: createSampler({ anisotropy: 4, wrapU: 'repeat', wrapV: 'repeat' }),
-  storage: { dimension: '2d', image: createEmberSurface() },
+  storage: { dimension: '2d', image: createEmberBitmap() },
 });
 const ground = createMesh(createPlaneMeshGeometry(8.5, 5.5, 8, 5), [
   createStandardPbrMaterial({

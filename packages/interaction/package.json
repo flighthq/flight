@@ -44,7 +44,7 @@
     "@flighthq/shape": "*",
     "@flighthq/spatial": "*",
     "@flighthq/signals": "*",
-    "@flighthq/surface": "*",
+    "@flighthq/bitmap": "*",
     "@flighthq/text": "*",
     "@flighthq/textlayout": "*",
     "@flighthq/types": "*"

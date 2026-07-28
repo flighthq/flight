@@ -1,18 +1,18 @@
-import { createSurfaceFromWgpuRenderState, enableWgpuFrameCapture } from '@flighthq/render-wgpu/contract';
 import {
-  createSurface,
-  createSurfaceFingerprint,
-  createSurfaceFromImageSource,
-  formatSurfaceFingerprint,
-  getSurfaceCoverage,
-  getSurfacePixel,
-} from '@flighthq/surface/contract';
+  createBitmap,
+  createBitmapFingerprint,
+  createBitmapFromImageSource,
+  formatBitmapFingerprint,
+  getBitmapCoverage,
+  getBitmapPixel,
+} from '@flighthq/bitmap/contract';
+import { createBitmapFromWgpuRenderState, enableWgpuFrameCapture } from '@flighthq/render-wgpu/contract';
 import type {
   CanvasRenderState,
   Node2D,
   DomRenderState,
   GlRenderState,
-  Surface,
+  Bitmap,
   WgpuRenderState,
 } from '@flighthq/types/contract';
 
@@ -25,7 +25,7 @@ const DEFAULT_MIN_COVERAGE = 0.0008;
 const BACKGROUND_CHANNEL_TOLERANCE = 6;
 const FINGERPRINT_GRID = 16;
 
-export type FunctionalRenderOracle = (surface: Readonly<Surface>) => void | Promise<void>;
+export type FunctionalRenderOracle = (bitmap: Readonly<Bitmap>) => void | Promise<void>;
 
 export interface FunctionalCanvasTarget {
   kind: 'canvas';
@@ -95,20 +95,20 @@ type VerificationWindow = typeof window & {
 export function publishFunctionalRenderSync(render: string): boolean {
   const target = (window as VerificationWindow).__ftTarget;
   if (target?.kind !== 'webgl') return false;
-  const surface = createSurfaceFromGlRenderState(target.state);
-  if (surface === null) return false;
-  const background = getSurfacePixel(surface, 0, 0);
-  const coverage = getSurfaceCoverage(surface, background, BACKGROUND_CHANNEL_TOLERANCE);
+  const bitmap = createBitmapFromGlRenderState(target.state);
+  if (bitmap === null) return false;
+  const background = getBitmapPixel(bitmap, 0, 0);
+  const coverage = getBitmapCoverage(bitmap, background, BACKGROUND_CHANNEL_TOLERANCE);
   if (coverage < DEFAULT_MIN_COVERAGE) return false;
   (window as VerificationWindow).__ftVerification = {
     protocolVersion: CAPTURE_PROTOCOL_VERSION,
     render,
     coverage,
-    fingerprint: formatSurfaceFingerprint(createSurfaceFingerprint(surface, FINGERPRINT_GRID)),
+    fingerprint: formatBitmapFingerprint(createBitmapFingerprint(bitmap, FINGERPRINT_GRID)),
     state: 'passed',
     error: null,
   };
-  (window as VerificationWindow).__ftRenderImage = encodeSurfaceToDataUrl(surface);
+  (window as VerificationWindow).__ftRenderImage = encodeBitmapToDataUrl(bitmap);
   return true;
 }
 
@@ -181,22 +181,20 @@ export async function runRenderVerification(testModule: FunctionalTestModule, re
 
     await waitForPresentedFrame();
 
-    const surface = await snapshotFunctionalRender();
-    if (surface === null) throw new Error(`[verify:${render}] blank render: no readable render surface`);
+    const bitmap = await snapshotFunctionalRender();
+    if (bitmap === null) throw new Error(`[verify:${render}] blank render: no readable render bitmap`);
 
-    const background = getSurfacePixel(surface, 0, 0);
-    const coverage = getSurfaceCoverage(surface, background, BACKGROUND_CHANNEL_TOLERANCE);
-    const fingerprint = formatSurfaceFingerprint(createSurfaceFingerprint(surface, FINGERPRINT_GRID));
+    const background = getBitmapPixel(bitmap, 0, 0);
+    const coverage = getBitmapCoverage(bitmap, background, BACKGROUND_CHANNEL_TOLERANCE);
+    const fingerprint = formatBitmapFingerprint(createBitmapFingerprint(bitmap, FINGERPRINT_GRID));
 
     const minCoverage = testModule.minCoverage ?? DEFAULT_MIN_COVERAGE;
     if (coverage < minCoverage) {
       throw new Error(`[verify:${render}] blank render: coverage ${coverage.toFixed(5)} below ${minCoverage}`);
     }
 
-    await testModule.assertRender?.(surface);
-    (window as VerificationWindow).__ftRenderImage = encodeSurfaceToDataUrl(
-      getFunctionalRenderImageSurface() ?? surface,
-    );
+    await testModule.assertRender?.(bitmap);
+    (window as VerificationWindow).__ftRenderImage = encodeBitmapToDataUrl(getFunctionalRenderImageBitmap() ?? bitmap);
     result.coverage = coverage;
     result.fingerprint = fingerprint;
     result.state = 'passed';
@@ -207,23 +205,23 @@ export async function runRenderVerification(testModule: FunctionalTestModule, re
   }
 }
 
-export async function snapshotFunctionalRender(): Promise<Surface | null> {
+export async function snapshotFunctionalRender(): Promise<Bitmap | null> {
   const target = (window as VerificationWindow).__ftTarget;
   if (target?.kind === 'dom') return null;
-  if (target?.kind === 'webgpu') return createSurfaceFromWgpuRenderState(target.state);
+  if (target?.kind === 'webgpu') return createBitmapFromWgpuRenderState(target.state);
   const canvas = target ? target.state.canvas : findRenderCanvas();
   if (canvas === null || canvas.width === 0 || canvas.height === 0) return null;
   if (target?.kind === 'webgl') target.state.gl.finish();
-  return createSurfaceFromImageSource(canvas, canvas.width, canvas.height);
+  return createBitmapFromImageSource(canvas, canvas.width, canvas.height);
 }
 
-function getFunctionalRenderImageSurface(): Surface | null {
+function getFunctionalRenderImageBitmap(): Bitmap | null {
   const target = (window as VerificationWindow).__ftTarget;
   if (target?.kind !== 'webgl') return null;
-  return createSurfaceFromGlRenderState(target.state);
+  return createBitmapFromGlRenderState(target.state);
 }
 
-function createSurfaceFromGlRenderState(state: GlRenderState): Surface | null {
+function createBitmapFromGlRenderState(state: GlRenderState): Bitmap | null {
   const canvas = state.canvas;
   const width = canvas.width;
   const height = canvas.height;
@@ -236,24 +234,24 @@ function createSurfaceFromGlRenderState(state: GlRenderState): Surface | null {
   const bottomUp = new Uint8Array(width * height * 4);
   gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, bottomUp);
 
-  const surface = createSurface(width, height);
-  const out = surface.data;
+  const bitmap = createBitmap(width, height);
+  const out = bitmap.data;
   const rowBytes = width * 4;
   for (let y = 0; y < height; y++) {
     const srcRow = (height - 1 - y) * rowBytes;
     const dstRow = y * rowBytes;
     out.set(bottomUp.subarray(srcRow, srcRow + rowBytes), dstRow);
   }
-  return surface;
+  return bitmap;
 }
 
-function encodeSurfaceToDataUrl(surface: Readonly<Surface>): string {
+function encodeBitmapToDataUrl(bitmap: Readonly<Bitmap>): string {
   const canvas = document.createElement('canvas');
-  canvas.width = surface.width;
-  canvas.height = surface.height;
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
   const ctx = canvas.getContext('2d');
   if (ctx === null) return '';
-  ctx.putImageData(new ImageData(new Uint8ClampedArray(surface.data), surface.width, surface.height), 0, 0);
+  ctx.putImageData(new ImageData(new Uint8ClampedArray(bitmap.data), bitmap.width, bitmap.height), 0, 0);
   return canvas.toDataURL('image/png');
 }
 

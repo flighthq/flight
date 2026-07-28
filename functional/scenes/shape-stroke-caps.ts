@@ -9,7 +9,7 @@
 // This is visual: caps are extra geometry generated only at stroke ends by a real rasterizer. The
 // oracle separates all three by sampling just past the endpoint on the centerline (none=bg, square &
 // round=white) and at the bbox corner just past the end (square=white, round=bg).
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import type { CapsStyle } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -18,7 +18,7 @@ import {
   appendShapeMoveTo,
   createDisplayObject,
   createShape,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   ShapeKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -58,9 +58,9 @@ segment(ROW_SQUARE_Y, 'square');
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // Centerline samples: well inside the segment must be white for all three (proves the stroke drew).
   for (const [label, y] of [

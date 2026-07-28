@@ -47,7 +47,7 @@ export async function createWgpuRenderState(
   const context = canvas.getContext('webgpu') as GPUCanvasContext | null;
   if (!context) throw new Error('Failed to get WebGPU canvas context.');
 
-  // COPY_SRC lets the canvas texture be read back via copyTextureToBuffer (createSurfaceFromWgpuRenderState).
+  // COPY_SRC lets the canvas texture be read back via copyTextureToBuffer (createBitmapFromWgpuRenderState).
   // It is the only reliable way to read a Wgpu frame in headless/software contexts, where canvas
   // presentation does not surface the swapchain; it also backs user-facing screenshot/save-pixels needs.
   context.configure({

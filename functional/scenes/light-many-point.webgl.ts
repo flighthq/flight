@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D, prepareGlScene3DForwardLights } from '@flighthq/scene3d-gl';
-import type { GlRenderEffectPipeline, Surface } from '@flighthq/sdk';
+import type { GlRenderEffectPipeline, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -18,7 +18,7 @@ import {
   createSpotLight,
   createVector3,
   endGlRenderEffectPipeline,
-  getSurfacePixelLuminance,
+  getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
   prepareScene3DRender,
   registerBlinnPhongGlMaterial,
@@ -137,13 +137,13 @@ const forwardLights = prepareGlScene3DForwardLights(state, renderList, lights);
 drawGlScene3D(state, scene, camera, lights, forwardLights);
 endGlRenderEffectPipeline(state, pipeline, []);
 
-export function assertRender(surface: Readonly<Surface>): void {
+export function assertRender(bitmap: Readonly<Bitmap>): void {
   let litCount = 0;
   for (let row = 0; row < zPositions.length; row++) {
     for (let column = 0; column < xPositions.length; column++) {
-      const x = Math.round((0.5 + xPositions[column] / 12) * surface.width);
-      const y = Math.round((0.5 + zPositions[row] / 9) * surface.height);
-      if (getSurfacePixelLuminance(surface, x, y) > 48) litCount++;
+      const x = Math.round((0.5 + xPositions[column] / 12) * bitmap.width);
+      const y = Math.round((0.5 + zPositions[row] / 9) * bitmap.height);
+      if (getBitmapPixelLuminance(bitmap, x, y) > 48) litCount++;
     }
   }
   if (litCount < 10) {

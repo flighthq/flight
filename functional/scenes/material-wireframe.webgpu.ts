@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
-import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
@@ -16,7 +16,7 @@ import {
   createWgpuRenderState,
   createWireframeMaterial,
   endWgpuRenderEffectPipeline,
-  getSurfacePixelLuminance,
+  getBitmapPixelLuminance,
   normalizeVector3,
   prepareScene3DRender,
   registerWireframeWgpuMaterial,
@@ -121,11 +121,11 @@ render(scene, camera, lights);
 // bright and dark samples. A single equator row can land on a dense run of meridian edges, so use a 2D
 // distribution instead: real wireframe has both bright edges and dark interiors; solid fill has no dark
 // interior samples; blank output has no bright samples.
-export function assertRender(surface: Readonly<Surface>): void {
-  const cx = Math.floor(surface.width / 2);
-  const cy = Math.floor(surface.height / 2);
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const cx = Math.floor(bitmap.width / 2);
+  const cy = Math.floor(bitmap.height / 2);
   // The sphere is ~width * 0.13 in screen radius; stay inside that circle while sampling.
-  const r = Math.floor(surface.width * 0.13);
+  const r = Math.floor(bitmap.width * 0.13);
 
   let brightCount = 0;
   let darkCount = 0;
@@ -137,7 +137,7 @@ export function assertRender(surface: Readonly<Surface>): void {
       const dy = y - cy;
       if (dx * dx + dy * dy > r * r) continue;
       sampleCount++;
-      const luminance = getSurfacePixelLuminance(surface, x, y);
+      const luminance = getBitmapPixelLuminance(bitmap, x, y);
       if (luminance > 40) brightCount++;
       if (luminance <= 20) darkCount++;
     }
@@ -150,7 +150,7 @@ export function assertRender(surface: Readonly<Surface>): void {
   }
   if (darkCount === 0) {
     throw new Error(
-      `[material-wireframe] no dark interior samples inside the sphere (${brightCount}/${sampleCount} bright) — surface appears to be a solid fill, not edges`,
+      `[material-wireframe] no dark interior samples inside the sphere (${brightCount}/${sampleCount} bright) — bitmap appears to be a solid fill, not edges`,
     );
   }
 }

@@ -1,8 +1,8 @@
-import { getSurfacePixel } from '@flighthq/surface/contract';
+import { getBitmapPixel } from '@flighthq/bitmap/contract';
 import type { GlyphEntry, GlyphRasterizedBitmap, GlyphRasterizerBackend } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { createGlyphAtlas, getGlyphAtlasSurface } from './glyphAtlas';
+import { createGlyphAtlas, getGlyphAtlasBitmap } from './glyphAtlas';
 import { getGlyphAtlasEntry } from './glyphAtlasEntry';
 import { createStubGlyphRasterizerBackend, setGlyphRasterizerBackend } from './glyphRasterizerBackend';
 
@@ -21,9 +21,9 @@ describe('getGlyphAtlasEntry', () => {
     expect(entry.width).toBeGreaterThan(0);
     expect(entry.height).toBeGreaterThan(0);
 
-    // A pixel inside the glyph rect is opaque white — the atlas surface is provably not blank.
-    const surface = getGlyphAtlasSurface(atlas);
-    const inside = getSurfacePixel(surface, entry.x + 1, entry.y + 1);
+    // A pixel inside the glyph rect is opaque white — the atlas bitmap is provably not blank.
+    const bitmap = getGlyphAtlasBitmap(atlas);
+    const inside = getBitmapPixel(bitmap, entry.x + 1, entry.y + 1);
     expect(inside & 0xff).toBe(0xff);
   });
 
@@ -59,7 +59,7 @@ describe('getGlyphAtlasEntry', () => {
     const { backend } = createMockRasterizerBackend((cp) => ({ height: 8 + (cp % 5), width: 8 + (cp % 7) }));
     setGlyphRasterizerBackend(backend);
     const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 256, width: 256 });
-    const surface = getGlyphAtlasSurface(atlas);
+    const bitmap = getGlyphAtlasBitmap(atlas);
 
     const entries: GlyphEntry[] = [];
     for (let cp = 65; cp < 75; cp++) entries.push(getGlyphAtlasEntry(atlas, cp)!);
@@ -67,21 +67,21 @@ describe('getGlyphAtlasEntry', () => {
     for (const entry of entries) {
       expect(entry.x).toBeGreaterThanOrEqual(0);
       expect(entry.y).toBeGreaterThanOrEqual(0);
-      expect(entry.x + entry.width).toBeLessThanOrEqual(surface.width);
-      expect(entry.y + entry.height).toBeLessThanOrEqual(surface.height);
+      expect(entry.x + entry.width).toBeLessThanOrEqual(bitmap.width);
+      expect(entry.y + entry.height).toBeLessThanOrEqual(bitmap.height);
     }
     expectNoOverlap(entries);
   });
 
-  it('blits the glyph pixels into the atlas surface at the entry rect', () => {
+  it('blits the glyph pixels into the atlas bitmap at the entry rect', () => {
     const { backend } = createMockRasterizerBackend();
     setGlyphRasterizerBackend(backend);
     const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 256, width: 256 });
-    const surface = getGlyphAtlasSurface(atlas);
+    const bitmap = getGlyphAtlasBitmap(atlas);
 
     const entry = getGlyphAtlasEntry(atlas, 0x41)!;
-    const corner = getSurfacePixel(surface, entry.x, entry.y);
-    const inside = getSurfacePixel(surface, entry.x + 2, entry.y + 2);
+    const corner = getBitmapPixel(bitmap, entry.x, entry.y);
+    const inside = getBitmapPixel(bitmap, entry.x + 2, entry.y + 2);
 
     // The mock fills every glyph pixel with (R = codepoint & 0xff, G = 0x80, B = 0x40, A = 0xff).
     expect((corner >>> 24) & 0xff).toBe(0x41);

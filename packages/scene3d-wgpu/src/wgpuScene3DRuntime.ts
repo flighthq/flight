@@ -72,7 +72,7 @@ export function getWgpuScene3DRuntime(state: WgpuRenderState): WgpuScene3DRuntim
       uploadCache: new WeakMap(),
     };
     sceneRuntimes.set(state, scene);
-    // Surface the registry + upload cache through the header's opaque runtime slots so other code (and
+    // Bitmap the registry + upload cache through the header's opaque runtime slots so other code (and
     // a future destroy path) can find them by name without importing scene-wgpu internals.
     stateRuntime.sceneMeshMaterialRegistry = scene.materialRegistry;
     stateRuntime.sceneMeshUploadCache = scene.uploadCache;

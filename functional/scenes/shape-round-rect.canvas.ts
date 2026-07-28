@@ -9,7 +9,7 @@
 //
 // Round-rectangle rendering uses the Canvas roundRect() API or a rect fallback. The corner
 // rounding behavior is inherently visual.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -17,7 +17,7 @@ import {
   appendShapeRoundRectangle,
   createDisplayObject,
   createShape,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeAppearance,
   ShapeKind,
 } from '@flighthq/sdk';
@@ -49,9 +49,9 @@ addNodeChild(root, roundRect);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width;
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   const center = at(RX + RW / 2, RY + RH / 2);
   if (!isCyan(center)) {

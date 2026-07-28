@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D, drawGlScene3DShadowMap } from '@flighthq/scene3d-gl';
-import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -21,7 +21,7 @@ import {
   createVector3,
   endGlRenderEffectPipeline,
   getNode3DWorldBounds,
-  getSurfacePixelLuminance,
+  getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
   prepareScene3DRender,
   registerBlinnPhongGlMaterial,
@@ -125,12 +125,12 @@ configureDirectionalShadowCamera3D(shadowCamera, direction, sceneBounds);
 
 render(scene, camera, lights, shadowCamera);
 
-export function assertRender(surface: Readonly<Surface>): void {
-  const cx = Math.floor(surface.width / 2);
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const cx = Math.floor(bitmap.width / 2);
   // Same sampling geometry as shadow-directional: lit ground in the near foreground (90% height) vs the
   // shadowed ground directly under the sphere (~56% height). Classic reception darkens the latter.
-  const litLuminance = getSurfacePixelLuminance(surface, cx, Math.floor(surface.height * 0.9));
-  const shadowLuminance = getSurfacePixelLuminance(surface, cx, Math.floor(surface.height * 0.56));
+  const litLuminance = getBitmapPixelLuminance(bitmap, cx, Math.floor(bitmap.height * 0.9));
+  const shadowLuminance = getBitmapPixelLuminance(bitmap, cx, Math.floor(bitmap.height * 0.56));
 
   if (litLuminance <= 24) {
     throw new Error(`[shadow-classic] ground is blank (luminance ${litLuminance}) — scene did not render`);

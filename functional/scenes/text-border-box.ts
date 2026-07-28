@@ -16,8 +16,8 @@
 // INTERIOR (a glyph-free point well inside the box) and the EXTERIOR (a point well outside) are NOT the
 // border color, so the stroke is confined to the edge. Counts/tolerances are generous because we cannot run
 // a browser and the stroke is one device-pixel thin.
-import type { Surface } from '@flighthq/sdk';
-import { addNodeChild, createDisplayObject, createRichText, getSurfacePixelRgb, RichTextKind } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
+import { addNodeChild, createDisplayObject, createRichText, getBitmapPixelRgb, RichTextKind } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
 const WIDTH = 800;
@@ -60,9 +60,9 @@ addNodeChild(root, field);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width;
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // Scan a small band straddling the TOP edge for border-colored pixels.
   let borderHits = 0;

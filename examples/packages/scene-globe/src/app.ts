@@ -4,7 +4,7 @@ import {
   updateOrbitCameraController,
 } from '@flighthq/camera-controls';
 import { createNode3D } from '@flighthq/scene3d';
-import type { Camera3D, Scene3DLightsLike, Surface } from '@flighthq/sdk';
+import type { Camera3D, Scene3DLightsLike, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   createAmbientLight,
@@ -17,7 +17,7 @@ import {
   createSampler,
   createSphereMeshGeometry,
   createStandardPbrMaterial,
-  createSurface,
+  createBitmap,
   createTexture,
   createVector3,
   invalidateNodeLocalTransform,
@@ -31,12 +31,12 @@ import { render, scale } from './render';
 const logicalWidth = 800 / scale;
 const logicalHeight = 600 / scale;
 
-function createEarthSurface(): Surface {
-  const surface = createSurface(512, 256);
-  for (let y = 0; y < surface.height; y++) {
-    const latitude = Math.abs(y / (surface.height - 1) - 0.5) * 2;
-    for (let x = 0; x < surface.width; x++) {
-      const offset = (y * surface.width + x) * 4;
+function createEarthBitmap(): Bitmap {
+  const bitmap = createBitmap(512, 256);
+  for (let y = 0; y < bitmap.height; y++) {
+    const latitude = Math.abs(y / (bitmap.height - 1) - 0.5) * 2;
+    for (let x = 0; x < bitmap.width; x++) {
+      const offset = (y * bitmap.width + x) * 4;
       const continent =
         Math.sin(x * 0.041 + Math.sin(y * 0.071) * 2.4) +
         Math.sin(x * 0.018 - y * 0.054) +
@@ -47,67 +47,67 @@ function createEarthSurface(): Surface {
       const elevation = Math.max(0, continent - 0.58);
 
       if (isIce) {
-        writePixel(surface, offset, 220, 237, 242, 255);
+        writePixel(bitmap, offset, 220, 237, 242, 255);
       } else if (isLand) {
-        writePixel(surface, offset, 58 + elevation * 60, 128 + elevation * 74, 48 + elevation * 32, 255);
+        writePixel(bitmap, offset, 58 + elevation * 60, 128 + elevation * 74, 48 + elevation * 32, 255);
       } else {
         const depth = 24 + (Math.sin(x * 0.025) + 1) * 12;
-        writePixel(surface, offset, 10, 54 + depth, 108 + depth * 2.15, 255);
+        writePixel(bitmap, offset, 10, 54 + depth, 108 + depth * 2.15, 255);
       }
     }
   }
-  copySurfaceLongitudeSeam(surface);
-  return surface;
+  copyBitmapLongitudeSeam(bitmap);
+  return bitmap;
 }
 
-function createCloudSurface(): Surface {
-  const surface = createSurface(512, 256);
-  for (let y = 0; y < surface.height; y++) {
-    for (let x = 0; x < surface.width; x++) {
-      const offset = (y * surface.width + x) * 4;
+function createCloudBitmap(): Bitmap {
+  const bitmap = createBitmap(512, 256);
+  for (let y = 0; y < bitmap.height; y++) {
+    for (let x = 0; x < bitmap.width; x++) {
+      const offset = (y * bitmap.width + x) * 4;
       const cloud =
         Math.sin(x * 0.083 + Math.sin(y * 0.037) * 3) + Math.cos(y * 0.12 - x * 0.021) + Math.sin((x + y) * 0.047);
       const density = Math.max(0, Math.min(1, (cloud + 0.35) * 0.38));
-      writePixel(surface, offset, 36 + density * 210, 46 + density * 205, 68 + density * 187, 255);
+      writePixel(bitmap, offset, 36 + density * 210, 46 + density * 205, 68 + density * 187, 255);
     }
   }
-  copySurfaceLongitudeSeam(surface);
-  return surface;
+  copyBitmapLongitudeSeam(bitmap);
+  return bitmap;
 }
 
-function copySurfaceLongitudeSeam(surface: Surface): void {
-  for (let y = 0; y < surface.height; y++) {
-    const firstOffset = y * surface.width * 4;
-    const lastOffset = (y * surface.width + surface.width - 1) * 4;
-    surface.data[lastOffset] = surface.data[firstOffset];
-    surface.data[lastOffset + 1] = surface.data[firstOffset + 1];
-    surface.data[lastOffset + 2] = surface.data[firstOffset + 2];
-    surface.data[lastOffset + 3] = surface.data[firstOffset + 3];
+function copyBitmapLongitudeSeam(bitmap: Bitmap): void {
+  for (let y = 0; y < bitmap.height; y++) {
+    const firstOffset = y * bitmap.width * 4;
+    const lastOffset = (y * bitmap.width + bitmap.width - 1) * 4;
+    bitmap.data[lastOffset] = bitmap.data[firstOffset];
+    bitmap.data[lastOffset + 1] = bitmap.data[firstOffset + 1];
+    bitmap.data[lastOffset + 2] = bitmap.data[firstOffset + 2];
+    bitmap.data[lastOffset + 3] = bitmap.data[firstOffset + 3];
   }
 }
 
-function createStarFace(face: number): Surface {
-  const surface = createSurface(128, 128, 0x030712ff);
-  for (let y = 0; y < surface.height; y++) {
-    for (let x = 0; x < surface.width; x++) {
-      const offset = (y * surface.width + x) * 4;
+function createStarFace(face: number): Bitmap {
+  const bitmap = createBitmap(128, 128, 0x030712ff);
+  for (let y = 0; y < bitmap.height; y++) {
+    for (let x = 0; x < bitmap.width; x++) {
+      const offset = (y * bitmap.width + x) * 4;
       const starHash = (x * 67 + y * 131 + face * 193) % 1531;
       if (starHash < 5) {
         const brightness = starHash < 2 ? 255 : 175;
-        writePixel(surface, offset, brightness, brightness, Math.min(255, brightness + 24), 255);
+        writePixel(bitmap, offset, brightness, brightness, Math.min(255, brightness + 24), 255);
       } else {
-        surface.data[offset + 2] += Math.round(10 * Math.max(0, Math.sin(x * 0.031 + face)));
+        bitmap.data[offset + 2] += Math.round(10 * Math.max(0, Math.sin(x * 0.031 + face)));
       }
     }
   }
-  return surface;
+  return bitmap;
 }
 
-function writePixel(surface: Surface, offset: number, r: number, g: number, b: number, a: number): void {
-  surface.data[offset] = r;
-  surface.data[offset + 1] = g;
-  surface.data[offset + 2] = b;
-  surface.data[offset + 3] = a;
+function writePixel(bitmap: Bitmap, offset: number, r: number, g: number, b: number, a: number): void {
+  bitmap.data[offset] = r;
+  bitmap.data[offset + 1] = g;
+  bitmap.data[offset + 2] = b;
+  bitmap.data[offset + 3] = a;
 }
 
 const starCube = createCubeTexture();
@@ -119,11 +119,11 @@ const environment = createEnvironment({ environment: starCube, intensity: 0.75 }
 const longitudeSampler = createSampler({ wrapU: 'repeat' });
 const earthTexture = createTexture({
   sampler: longitudeSampler,
-  storage: { dimension: '2d', image: createEarthSurface() },
+  storage: { dimension: '2d', image: createEarthBitmap() },
 });
 const cloudTexture = createTexture({
   sampler: longitudeSampler,
-  storage: { dimension: '2d', image: createCloudSurface() },
+  storage: { dimension: '2d', image: createCloudBitmap() },
 });
 const scene = createNode3D(Node3DKind);
 

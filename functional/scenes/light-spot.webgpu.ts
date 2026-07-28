@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
-import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
@@ -17,7 +17,7 @@ import {
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   endWgpuRenderEffectPipeline,
-  getSurfacePixelLuminance,
+  getBitmapPixelLuminance,
   normalizeVector3,
   prepareScene3DRender,
   registerBlinnPhongWgpuMaterial,
@@ -83,12 +83,12 @@ const lights = createScene3DLights({
 });
 render(scene, camera, lights);
 
-export function assertRender(surface: Readonly<Surface>): void {
-  const cx = Math.floor(surface.width / 2);
-  const cy = Math.floor(surface.height / 2);
-  const offset = Math.floor(surface.width * 0.075);
-  const inConeLuminance = getSurfacePixelLuminance(surface, cx + offset, cy);
-  const outConeLuminance = getSurfacePixelLuminance(surface, cx - offset, cy);
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const cx = Math.floor(bitmap.width / 2);
+  const cy = Math.floor(bitmap.height / 2);
+  const offset = Math.floor(bitmap.width * 0.075);
+  const inConeLuminance = getBitmapPixelLuminance(bitmap, cx + offset, cy);
+  const outConeLuminance = getBitmapPixelLuminance(bitmap, cx - offset, cy);
 
   if (inConeLuminance <= 24) {
     throw new Error(`[light-spot] in-cone side is blank (luminance ${inConeLuminance}) — spot light did not shade`);

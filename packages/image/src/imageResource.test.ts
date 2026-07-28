@@ -160,7 +160,7 @@ describe('hasImageResourcePixels', () => {
     expect(hasImageResourcePixels(createImageResource())).toStrictEqual(false);
   });
 
-  it('is true for a data-only resource (a generated Surface)', () => {
+  it('is true for a data-only resource (a generated Bitmap)', () => {
     const resource = createImageResource();
     resource.data = new Uint8ClampedArray(4);
     expect(hasImageResourcePixels(resource)).toStrictEqual(true);

@@ -7,8 +7,8 @@
 // positions depend on font metrics, so the oracle is deliberately FUZZY: it scans the field's bounding
 // region and asserts that several pixels land near the text color (text was drawn), and that a region
 // well outside the field has none (the field did not flood the screen).
-import type { Surface } from '@flighthq/sdk';
-import { addNodeChild, createDisplayObject, createRichText, getSurfacePixelRgb, RichTextKind } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
+import { addNodeChild, createDisplayObject, createRichText, getBitmapPixelRgb, RichTextKind } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
 const WIDTH = 800;
@@ -45,9 +45,9 @@ addNodeChild(root, field);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // Scan a grid covering the field's box (with a small inset so the field border, if any, is excluded)
   // and count pixels near the text color. Glyphs are sparse, so even a few hits prove text rendered.

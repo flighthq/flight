@@ -12,12 +12,12 @@
 // backgroundColor — proving the box painted. We then sample a point well OUTSIDE the box and assert it is
 // the black scene background — proving the fill is bounded to the field. Lenient color tests tolerate
 // anti-aliasing only at edges; the sampled points are interior, so they should be the solid fill.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   createDisplayObject,
   createRichText,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   RichTextKind,
   setRichTextFormatRange,
 } from '@flighthq/sdk';
@@ -68,9 +68,9 @@ addNodeChild(root, field);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width;
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // INSIDE the box, lower-right interior — below the short top-anchored text line, away from any glyph ink.
   const insideX = FIELD_X + FIELD_W - 40;

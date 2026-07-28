@@ -10,7 +10,7 @@ import type {
   ParticleEmitterConfig,
   ParticleEmitterState,
   Scene3DLightsLike,
-  Surface,
+  Bitmap,
 } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -20,7 +20,7 @@ import {
   createParticleEmitterConfig,
   createParticleEmitterState,
   createPerspectiveProjection,
-  createSurface,
+  createBitmap,
   createVector3,
   emitParticleBurst3D,
   invalidateNodeAppearance,
@@ -52,19 +52,19 @@ const PIXEL_SCALE = 0.055;
 const logicalWidth = 800 / scale;
 const logicalHeight = 600 / scale;
 
-function writeSurfacePixel(surface: Surface, x: number, y: number, r: number, g: number, b: number): void {
-  const offset = (y * surface.width + x) * 4;
-  surface.data[offset] = r;
-  surface.data[offset + 1] = g;
-  surface.data[offset + 2] = b;
-  surface.data[offset + 3] = 255;
+function writeBitmapPixel(bitmap: Bitmap, x: number, y: number, r: number, g: number, b: number): void {
+  const offset = (y * bitmap.width + x) * 4;
+  bitmap.data[offset] = r;
+  bitmap.data[offset + 1] = g;
+  bitmap.data[offset + 2] = b;
+  bitmap.data[offset + 3] = 255;
 }
 
-function createSymbolSurface(kind: number): Surface {
-  const surface = createSurface(IMAGE_SIZE, IMAGE_SIZE);
+function createSymbolBitmap(kind: number): Bitmap {
+  const bitmap = createBitmap(IMAGE_SIZE, IMAGE_SIZE);
   const center = (IMAGE_SIZE - 1) / 2;
-  for (let y = 0; y < surface.height; y++) {
-    for (let x = 0; x < surface.width; x++) {
+  for (let y = 0; y < bitmap.height; y++) {
+    for (let x = 0; x < bitmap.width; x++) {
       const dx = x - center;
       const dy = y - center;
       const radius = Math.sqrt(dx * dx + dy * dy);
@@ -85,29 +85,29 @@ function createSymbolSurface(kind: number): Surface {
       if (!filled) continue;
       const glow = Math.max(0, 1 - radius / 24);
       if (kind === 0) {
-        writeSurfacePixel(surface, x, y, 255, 82 + glow * 150, 22 + glow * 40);
+        writeBitmapPixel(bitmap, x, y, 255, 82 + glow * 150, 22 + glow * 40);
       } else if (kind === 1) {
-        writeSurfacePixel(surface, x, y, 35 + glow * 75, 130 + glow * 110, 255);
+        writeBitmapPixel(bitmap, x, y, 35 + glow * 75, 130 + glow * 110, 255);
       } else {
-        writeSurfacePixel(surface, x, y, 70 + glow * 80, 255, 110 + glow * 95);
+        writeBitmapPixel(bitmap, x, y, 70 + glow * 80, 255, 110 + glow * 95);
       }
     }
   }
-  return surface;
+  return bitmap;
 }
 
-function sampleSurfacePixels(surface: Readonly<Surface>): SampledPixel[] {
+function sampleBitmapPixels(bitmap: Readonly<Bitmap>): SampledPixel[] {
   const pixels: SampledPixel[] = [];
-  const centerX = (surface.width - 1) / 2;
-  const centerY = (surface.height - 1) / 2;
-  for (let y = 0; y < surface.height; y++) {
-    for (let x = 0; x < surface.width; x++) {
-      const offset = (y * surface.width + x) * 4;
-      if (surface.data[offset + 3] < 176) continue;
+  const centerX = (bitmap.width - 1) / 2;
+  const centerY = (bitmap.height - 1) / 2;
+  for (let y = 0; y < bitmap.height; y++) {
+    for (let x = 0; x < bitmap.width; x++) {
+      const offset = (y * bitmap.width + x) * 4;
+      if (bitmap.data[offset + 3] < 176) continue;
       pixels.push({
-        b: surface.data[offset + 2],
-        g: surface.data[offset + 1],
-        r: surface.data[offset],
+        b: bitmap.data[offset + 2],
+        g: bitmap.data[offset + 1],
+        r: bitmap.data[offset],
         x: (x - centerX) * PIXEL_SCALE,
         y: (centerY - y) * PIXEL_SCALE,
       });
@@ -138,7 +138,7 @@ const burstEmitters: BurstEmitter[] = [];
 const burstPositions = [-2.25, 0, 2.25];
 
 for (let i = 0; i < burstPositions.length; i++) {
-  const pixels = sampleSurfacePixels(createSymbolSurface(i));
+  const pixels = sampleBitmapPixels(createSymbolBitmap(i));
   const config = createParticleEmitterConfig({
     alphaEnd: 0,
     alphaStart: 1,

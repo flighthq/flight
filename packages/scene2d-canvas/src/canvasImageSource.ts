@@ -55,14 +55,14 @@ export function registerCanvasVideoTextureResolver(state: CanvasRenderState): vo
 
 // Resolves a (possibly data-only) ImageResource to a CanvasImageSource the 2D context can draw. An
 // element-backed resource returns its host `source` directly with no copy. A data-only resource — a
-// generated Surface with no element — materializes an HTMLCanvasElement from its raw pixels and caches
+// generated Bitmap with no element — materializes an HTMLCanvasElement from its raw pixels and caches
 // it per render state, re-materializing only when `version` bumps (see invalidateImageResource).
 // Returns null when the resource carries neither pixel form.
 //
 // This is the Canvas parallel to the GL backend's bindGlImageResourceTexture: derived, renderer-owned
 // state keyed on the caller's explicit invalidation signal, never written back onto the shared
-// resource. It closes the gap where a data-only Surface previously drew nothing on Canvas/DOM unless
-// the caller manually built an element (createImageResourceFromSurface) first. The transcode cost is
+// resource. It closes the gap where a data-only Bitmap previously drew nothing on Canvas/DOM unless
+// the caller manually built an element (createImageResourceFromBitmap) first. The transcode cost is
 // reportable via explainCanvasImageSource rather than hidden.
 export function resolveCanvasImageSource(
   state: CanvasRenderState,

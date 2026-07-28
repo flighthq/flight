@@ -1,5 +1,5 @@
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
-import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   addNodeChild,
@@ -21,7 +21,7 @@ import {
   createUnlitMaterial,
   createVector3,
   endGlRenderEffectPipeline,
-  getSurfacePixelLuminance,
+  getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
   normalizeVector3,
   prepareScene3DRender,
@@ -185,11 +185,11 @@ const lights = {
 const posedScene3D = buildPosedScene3D((75 * Math.PI) / 180);
 render(posedScene3D, camera, lights);
 
-export function assertRender(surface: Readonly<Surface>): void {
-  const w = surface.width;
-  const h = surface.height;
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const w = bitmap.width;
+  const h = bitmap.height;
   const covered = (fx: number, fy: number): boolean =>
-    getSurfacePixelLuminance(surface, Math.floor(w * fx), Math.floor(h * fy)) > 90;
+    getBitmapPixelLuminance(bitmap, Math.floor(w * fx), Math.floor(h * fy)) > 90;
 
   // The upper half swings toward -X (the 75° bend about +Z), so the leaned arm covers a region LEFT of
   // center and above mid-height. A bind-pose (vertical) bar would leave this region background — so this

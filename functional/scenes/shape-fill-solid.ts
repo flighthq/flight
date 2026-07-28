@@ -6,7 +6,7 @@
 // (added last in z-order), and (3) untouched canvas remains the opaque-black background. This is
 // inherently visual — it depends on fill coverage and the painter's-algorithm draw order, which jsdom
 // unit tests cannot exercise.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -14,7 +14,7 @@ import {
   appendShapeRectangle,
   createDisplayObject,
   createShape,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   ShapeKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -70,9 +70,9 @@ addNodeChild(root, blue);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // Red's non-overlapping region: upper-left quadrant of the red rect (clear of the green overlap).
   const redOnly = at(RED_X + 60, RED_Y + 60);

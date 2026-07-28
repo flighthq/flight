@@ -7,7 +7,7 @@
 // that only a real rasterizer produces. The oracle proves (1) circle A is radially symmetric — the
 // four cardinal samples at half-radius have ~equal luma — and (2) circle B is asymmetric — the focal
 // shift makes one side measurably brighter, so the same four samples are NOT all equal.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginGradientFill,
@@ -16,7 +16,7 @@ import {
   createDisplayObject,
   createGradientTransformMatrix,
   createShape,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   ShapeKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -68,9 +68,9 @@ radialCircle(B_CX, B_CY, 0.7); // focal pushed off-center: asymmetric
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // Four cardinal points at half-radius from a circle's center.
   const half = RADIUS / 2;

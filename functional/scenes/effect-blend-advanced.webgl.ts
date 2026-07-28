@@ -1,4 +1,4 @@
-import type { Node2D, GlRenderEffectPipeline, GlRenderTarget, Surface } from '@flighthq/sdk';
+import type { Node2D, GlRenderEffectPipeline, GlRenderTarget, Bitmap } from '@flighthq/sdk';
 import {
   AdvancedBlendMode,
   ShapeKind,
@@ -20,7 +20,7 @@ import {
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
   endGlRenderPass,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   prepareScene2DRender,
   registerStandardGlMaterial,
   registerGlBlendEffectBackdrop,
@@ -131,9 +131,9 @@ render(layerRoot);
 // Keep the backdrop target reachable for the frame (referenced by the registered backdrop texture).
 void backdropTarget;
 
-export function assertRender(surface: Readonly<Surface>): void {
-  const w = surface.width;
-  const h = surface.height;
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const w = bitmap.width;
+  const h = bitmap.height;
   const isNear = (rgb: number, r: number, g: number, b: number, tol: number): boolean => {
     const dr = ((rgb >> 16) & 255) - r;
     const dg = ((rgb >> 8) & 255) - g;
@@ -144,7 +144,7 @@ export function assertRender(surface: Readonly<Surface>): void {
 
   // Top-left: white layer over white backdrop → Difference black. THIS is the discriminating probe — a
   // passthrough (blend not applied) would leave it white.
-  const tl = getSurfacePixelRgb(surface, Math.floor(w * 0.25), Math.floor(h * 0.25));
+  const tl = getBitmapPixelRgb(bitmap, Math.floor(w * 0.25), Math.floor(h * 0.25));
   if (!isNear(tl, 0, 0, 0, 24)) {
     throw new Error(
       `[effect-blend-advanced] overlap (white over white) is #${hex(tl)}, expected ~black — Difference blend not applied (passthrough)`,
@@ -152,7 +152,7 @@ export function assertRender(surface: Readonly<Surface>): void {
   }
 
   // Top-right: white layer over black backdrop → |white - black| = white.
-  const tr = getSurfacePixelRgb(surface, Math.floor(w * 0.75), Math.floor(h * 0.25));
+  const tr = getBitmapPixelRgb(bitmap, Math.floor(w * 0.75), Math.floor(h * 0.25));
   if (!isNear(tr, 255, 255, 255, 24)) {
     throw new Error(
       `[effect-blend-advanced] layer-over-black is #${hex(tr)}, expected ~white — the layer did not composite`,
@@ -160,7 +160,7 @@ export function assertRender(surface: Readonly<Surface>): void {
   }
 
   // Bottom-left: backdrop-only (layer transparent) → the backdrop white passes through.
-  const bl = getSurfacePixelRgb(surface, Math.floor(w * 0.25), Math.floor(h * 0.75));
+  const bl = getBitmapPixelRgb(bitmap, Math.floor(w * 0.25), Math.floor(h * 0.75));
   if (!isNear(bl, 255, 255, 255, 24)) {
     throw new Error(
       `[effect-blend-advanced] backdrop-only region is #${hex(bl)}, expected ~white — the backdrop was not sampled`,

@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
-import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
@@ -16,7 +16,7 @@ import {
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   endWgpuRenderEffectPipeline,
-  getSurfacePixelLuminance,
+  getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
   normalizeVector3,
   prepareScene3DRender,
@@ -92,13 +92,13 @@ const lights = {
 
 render(scene, camera, lights);
 
-export function assertRender(surface: Readonly<Surface>): void {
-  const cx = Math.floor(surface.width / 2);
-  const cy = Math.floor(surface.height / 2);
-  const backgroundLuminance = getSurfacePixelLuminance(surface, 0, 0);
-  const leftWidth = widestLitRun(surface, cy, 0, cx, backgroundLuminance);
-  const rightWidth = widestLitRun(surface, cy, cx, surface.width, backgroundLuminance);
-  const minPixels = Math.floor(surface.width * 0.05);
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const cx = Math.floor(bitmap.width / 2);
+  const cy = Math.floor(bitmap.height / 2);
+  const backgroundLuminance = getBitmapPixelLuminance(bitmap, 0, 0);
+  const leftWidth = widestLitRun(bitmap, cy, 0, cx, backgroundLuminance);
+  const rightWidth = widestLitRun(bitmap, cy, cx, bitmap.width, backgroundLuminance);
+  const minPixels = Math.floor(bitmap.width * 0.05);
 
   if (leftWidth < minPixels || rightWidth < minPixels) {
     throw new Error(`[camera-orthographic] WebGPU silhouettes missing — near ${leftWidth}px, far ${rightWidth}px`);
@@ -112,7 +112,7 @@ export function assertRender(surface: Readonly<Surface>): void {
 }
 
 function widestLitRun(
-  surface: Readonly<Surface>,
+  bitmap: Readonly<Bitmap>,
   y: number,
   xStart: number,
   xEnd: number,
@@ -121,7 +121,7 @@ function widestLitRun(
   let best = 0;
   let run = 0;
   for (let x = xStart; x < xEnd; x++) {
-    if (Math.abs(getSurfacePixelLuminance(surface, x, y) - backgroundLuminance) > 10) {
+    if (Math.abs(getBitmapPixelLuminance(bitmap, x, y) - backgroundLuminance) > 10) {
       run++;
       if (run > best) best = run;
     } else {

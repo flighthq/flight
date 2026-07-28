@@ -11,7 +11,7 @@
 // cover a footprint twice as wide/tall as the source region). The oracle samples each quad's center, an
 // interior point only reachable if the affine term was applied, and an exterior point that must stay
 // background.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   addTextureAtlasRegion,
@@ -21,7 +21,7 @@ import {
   createRectangle,
   createTexture,
   createTextureAtlas,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeLocalTransform,
   QuadBatchKind,
   setQuadBatchLocalBoundsRectangle,
@@ -106,9 +106,9 @@ invalidateNodeLocalTransform(batch);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // Quad A (rotated 45° → diamond centered at A_CENTER).
   const aCenter = at(A_CENTER_X, A_CENTER_Y);

@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D, prepareWgpuScene3DForwardLights } from '@flighthq/scene3d-wgpu';
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
@@ -18,7 +18,7 @@ import {
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   endWgpuRenderEffectPipeline,
-  getSurfacePixelLuminance,
+  getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
   prepareScene3DRender,
   registerBlinnPhongWgpuMaterial,
@@ -115,13 +115,13 @@ drawWgpuScene3D(state, scene, camera, lights, forwardLights);
 endWgpuRenderEffectPipeline(state, pipeline, []);
 submitWgpuRenderPass(state);
 
-export function assertRender(surface: Readonly<Surface>): void {
+export function assertRender(bitmap: Readonly<Bitmap>): void {
   let litCount = 0;
   for (let row = 0; row < zPositions.length; row++) {
     for (let column = 0; column < xPositions.length; column++) {
-      const x = Math.round((0.5 + xPositions[column] / 12) * surface.width);
-      const y = Math.round((0.5 + zPositions[row] / 9) * surface.height);
-      if (getSurfacePixelLuminance(surface, x, y) > 48) litCount++;
+      const x = Math.round((0.5 + xPositions[column] / 12) * bitmap.width);
+      const y = Math.round((0.5 + zPositions[row] / 9) * bitmap.height);
+      if (getBitmapPixelLuminance(bitmap, x, y) > 48) litCount++;
     }
   }
   if (litCount < 10) {

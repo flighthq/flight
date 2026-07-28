@@ -6,7 +6,7 @@ import type {
   CanvasRenderState,
   DomRenderState,
   GlRenderState,
-  Surface,
+  Bitmap,
   WgpuRenderState,
 } from '@flighthq/types/contract';
 
@@ -112,7 +112,7 @@ export function registerCaptureBenchmarkTarget<T extends CaptureBenchmarkTarget>
 
 /** One-line runner integration for a target that a shared Flight-style factory already registered. */
 export async function verifyCaptureTarget(
-  testModule: Readonly<{ assertRender?: (surface: Readonly<Surface>) => void | Promise<void>; minCoverage?: number }>,
+  testModule: Readonly<{ assertRender?: (bitmap: Readonly<Bitmap>) => void | Promise<void>; minCoverage?: number }>,
   renderer: string,
 ): Promise<CaptureVerification> {
   await runRenderVerification(testModule, renderer);

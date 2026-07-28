@@ -7,7 +7,7 @@
 // positions — one bound to region 0, one to region 1. The oracle is visual on purpose: it proves the same
 // atlas, addressed by two different region ids, produces two differently-colored sprites at two locations,
 // and that a Sprite draws its region's footprint and nothing outside it (empty area stays background).
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   addTextureAtlasRegion,
@@ -17,7 +17,7 @@ import {
   createTexture,
   createTextureAtlas,
   getTextureAtlasRegionTexture,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeLocalTransform,
   SpriteKind,
 } from '@flighthq/sdk';
@@ -81,9 +81,9 @@ invalidateNodeLocalTransform(spriteB);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // Sprite A draws its region with top-left at (A_X, A_Y); sample its center.
   const aMid = at(A_X + REGION / 2, A_Y + REGION / 2);

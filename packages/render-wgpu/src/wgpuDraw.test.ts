@@ -54,7 +54,7 @@ describe('bindWgpuImageResourceTexture', () => {
     } as unknown as ImageResource;
   }
 
-  it('uploads a data-only ImageResource (a generated Surface) via writeTexture', async () => {
+  it('uploads a data-only ImageResource (a generated Bitmap) via writeTexture', async () => {
     const state = await createWgpuRenderStateForTest();
     const writeTexture = vi.spyOn(state.device.queue, 'writeTexture');
     const entry = bindWgpuImageResourceTexture(state, dataResource(4, 1));

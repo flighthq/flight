@@ -13,5 +13,5 @@ export * from '@flighthq/render-wgpu';
 export * from '@flighthq/scene3d-gl';
 export * from '@flighthq/scene3d-wgpu';
 export * from '@flighthq/shading';
-export * from '@flighthq/surface';
+export * from '@flighthq/bitmap';
 export * from '@flighthq/velocity';

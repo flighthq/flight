@@ -1,22 +1,17 @@
 import type { GlyphRasterizerBackend } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import {
-  createGlyphAtlas,
-  deriveGlyphMetricsFromFontSize,
-  disposeGlyphAtlas,
-  getGlyphAtlasSurface,
-} from './glyphAtlas';
+import { createGlyphAtlas, deriveGlyphMetricsFromFontSize, disposeGlyphAtlas, getGlyphAtlasBitmap } from './glyphAtlas';
 import { getGlyphAtlasEntry } from './glyphAtlasEntry';
 import { setGlyphRasterizerBackend } from './glyphRasterizerBackend';
 
 describe('createGlyphAtlas', () => {
-  it('allocates an atlas surface at the requested size with an empty cache', () => {
+  it('allocates an atlas bitmap at the requested size with an empty cache', () => {
     const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 64, width: 128 });
-    const surface = getGlyphAtlasSurface(atlas);
+    const bitmap = getGlyphAtlasBitmap(atlas);
 
-    expect(surface.width).toBe(128);
-    expect(surface.height).toBe(64);
+    expect(bitmap.width).toBe(128);
+    expect(bitmap.height).toBe(64);
     expect(atlas.runtime.entries.size).toBe(0);
     expect(atlas.runtime.padding).toBe(1);
   });
@@ -45,10 +40,10 @@ describe('disposeGlyphAtlas', () => {
   });
 });
 
-describe('getGlyphAtlasSurface', () => {
-  it('returns the atlas backing surface', () => {
+describe('getGlyphAtlasBitmap', () => {
+  it('returns the atlas backing bitmap', () => {
     const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 32, width: 32 });
-    expect(getGlyphAtlasSurface(atlas)).toBe(atlas.runtime.surface);
+    expect(getGlyphAtlasBitmap(atlas)).toBe(atlas.runtime.bitmap);
   });
 });
 

@@ -18,7 +18,7 @@ import {
   createSampler,
   createSphereMeshGeometry,
   createStandardPbrMaterial,
-  createSurface,
+  createBitmap,
   createTexture,
   createTorusMeshGeometry,
   createVector3,
@@ -33,11 +33,11 @@ import { canvas, render, scale } from './render';
 const logicalWidth = 800 / scale;
 const logicalHeight = 600 / scale;
 
-const checkerSurface = createSurface(128, 128);
-const checkerData = checkerSurface.data;
-for (let y = 0; y < checkerSurface.height; y++) {
-  for (let x = 0; x < checkerSurface.width; x++) {
-    const offset = (y * checkerSurface.width + x) * 4;
+const checkerBitmap = createBitmap(128, 128);
+const checkerData = checkerBitmap.data;
+for (let y = 0; y < checkerBitmap.height; y++) {
+  for (let x = 0; x < checkerBitmap.width; x++) {
+    const offset = (y * checkerBitmap.width + x) * 4;
     const light = ((x >> 4) + (y >> 4)) % 2 === 0;
     checkerData[offset] = light ? 238 : 32;
     checkerData[offset + 1] = light ? 166 : 88;
@@ -48,7 +48,7 @@ for (let y = 0; y < checkerSurface.height; y++) {
 
 const checkerTexture = createTexture({
   sampler: createSampler({ anisotropy: 4, wrapU: 'repeat', wrapV: 'repeat' }),
-  storage: { dimension: '2d', image: checkerSurface },
+  storage: { dimension: '2d', image: checkerBitmap },
 });
 const groundMaterial = createStandardPbrMaterial({
   baseColor: 0x202735ff,

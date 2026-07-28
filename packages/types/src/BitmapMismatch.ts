@@ -1,5 +1,5 @@
 /**
- * The result of a tolerant pixel comparison of two equally sized surfaces (see getSurfaceMismatch).
+ * The result of a tolerant pixel comparison of two equally sized surfaces (see getBitmapMismatch).
  * A pixel counts as mismatched when its largest RGBA channel difference exceeds the comparison's
  * per-channel tolerance. Used for cross-backend differential checks and regression gates that must
  * allow sub-pixel antialiasing noise while still catching real divergence.

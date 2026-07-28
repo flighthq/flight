@@ -10,7 +10,7 @@
 // The view matrix is: translate(400,300) · scale(2) · translate(-200,-200). The oracle verifies
 // each circle lands at the expected screen position — a pure math unit test checks the matrix
 // values, but only a real render proves the camera→container→renderer chain maps pixels correctly.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -19,7 +19,7 @@ import {
   createCamera2D,
   createDisplayObject,
   createShape,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeLocalTransform,
   ShapeKind,
 } from '@flighthq/sdk';
@@ -73,9 +73,9 @@ addNodeChild(cameraRoot, greenCircle);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width;
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   if (!isRed(at(400, 300))) {
     throw new Error(`[camera2d-viewport] red circle should be at screen center (400,300) — got #${hex(at(400, 300))}`);

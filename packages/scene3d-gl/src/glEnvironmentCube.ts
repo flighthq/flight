@@ -8,7 +8,7 @@ import { getGlScene3DRuntime } from './glScene3DRuntime';
 // faces bound with pixels, either a decoded `source` element or raw `data` — which callers treat as
 // "no environment this frame". Each face uploads through whichever representation it carries: the
 // element overload for a `source`, or the raw-pixel overload for a data-only face (a generated
-// Surface, e.g. the skybox's rotateSurface180 path, which never allocates a canvas). The upload is
+// Bitmap, e.g. the skybox's rotateBitmap180 path, which never allocates a canvas). The upload is
 // keyed by identity: re-uploaded only when the cached texture is absent (a changed cube must drop the
 // cache first via destroyGlEnvironment). sRGB faces are decoded to linear by the shaders that sample
 // them, matching the renderer's sRGB-passthrough convention.
@@ -67,7 +67,7 @@ export function updateGlEnvironmentCubeFace(
 }
 
 // A face is uploadable when it carries pixels in either representation: a decoded `source` element or
-// raw CPU `data` (a generated Surface). A cube is complete only when all six faces are uploadable.
+// raw CPU `data` (a generated Bitmap). A cube is complete only when all six faces are uploadable.
 function hasGlCubeFacePixels(cube: Readonly<Texture>): boolean {
   if (cube.storage.dimension !== 'cube') return false;
   for (let face = 0; face < 6; face++) {

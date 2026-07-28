@@ -1,4 +1,4 @@
-import type { Node2D, Surface, WgpuRenderTarget } from '@flighthq/sdk';
+import type { Node2D, Bitmap, WgpuRenderTarget } from '@flighthq/sdk';
 import {
   CompositeOperator,
   ShapeKind,
@@ -20,7 +20,7 @@ import {
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
   endWgpuRenderPass,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   prepareScene2DRender,
   registerStandardWgpuMaterial,
   registerRenderer,
@@ -99,7 +99,7 @@ if (prepareScene2DRender(state, layerRoot)) {
 }
 submitWgpuRenderPass(state);
 
-export function assertRender(surface: Readonly<Surface>): void {
+export function assertRender(bitmap: Readonly<Bitmap>): void {
   const near = (rgb: number, expected: number): boolean => {
     const red = (rgb >> 16) & 255;
     const green = (rgb >> 8) & 255;
@@ -107,7 +107,7 @@ export function assertRender(surface: Readonly<Surface>): void {
     return Math.abs(red - expected) <= 24 && Math.abs(green - expected) <= 24 && Math.abs(blue - expected) <= 24;
   };
   const sample = (x: number, y: number): number =>
-    getSurfacePixelRgb(surface, Math.floor(surface.width * x), Math.floor(surface.height * y));
+    getBitmapPixelRgb(bitmap, Math.floor(bitmap.width * x), Math.floor(bitmap.height * y));
   const overlap = sample(0.25, 0.25);
   const sourceOnly = sample(0.75, 0.25);
   const backdropOnly = sample(0.25, 0.75);

@@ -7,7 +7,7 @@
 //
 // This is not observable from jsdom: it needs the real GL bind/upload path and rasterization of the
 // resulting compressed texture.
-import type { Surface, TextureContainer } from '@flighthq/sdk';
+import type { Bitmap, TextureContainer } from '@flighthq/sdk';
 import {
   addNodeChild,
   SpriteKind,
@@ -16,7 +16,7 @@ import {
   createDisplayObject,
   createPixelArtSampler,
   createTexture,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeLocalTransform,
   registerGlCompressedTextureDecoder,
   registerGlCompressedTextureUpload,
@@ -119,9 +119,9 @@ addNodeChild(root, alphaBitmap);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // The bitmap covers a 160×160 blue quad at (BITMAP_X, BITMAP_Y). Sample its center.
   const center = at(BITMAP_X + (TEX * SCALE) / 2, BITMAP_Y + (TEX * SCALE) / 2);

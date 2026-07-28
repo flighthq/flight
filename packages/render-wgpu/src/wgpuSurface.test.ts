@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import {
   acquireWgpuFrameCaptureTexture,
-  createSurfaceFromWgpuRenderState,
+  createBitmapFromWgpuRenderState,
   enableWgpuFrameCapture,
   encodeWgpuFrameCapture,
 } from './wgpuSurface';
@@ -22,10 +22,10 @@ describe('acquireWgpuFrameCaptureTexture', () => {
   });
 });
 
-describe('createSurfaceFromWgpuRenderState', () => {
+describe('createBitmapFromWgpuRenderState', () => {
   it('throws when frame capture was never enabled (no buffer to read)', async () => {
     const state = await createWgpuRenderStateForTest();
-    await expect(createSurfaceFromWgpuRenderState(state)).rejects.toThrow(/enableWgpuFrameCapture/);
+    await expect(createBitmapFromWgpuRenderState(state)).rejects.toThrow(/enableWgpuFrameCapture/);
   });
 });
 

@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
-import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
@@ -16,7 +16,7 @@ import {
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   endWgpuRenderEffectPipeline,
-  getSurfacePixelLuminance,
+  getBitmapPixelLuminance,
   normalizeVector3,
   prepareScene3DRender,
   registerVertexColorWgpuMaterial,
@@ -120,23 +120,23 @@ render(scene, camera, lights);
 // center plus the two points material-standard-pbr uses for its lit/shadow split. For VertexColor all
 // three must be bright, and the "lit" and "shadow" samples must be close — a shaded material differs
 // sharply.
-export function assertRender(surface: Readonly<Surface>): void {
-  const cx = Math.floor(surface.width / 2);
-  const cy = Math.floor(surface.height / 2);
-  const offset = Math.floor(surface.width * 0.075);
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const cx = Math.floor(bitmap.width / 2);
+  const cy = Math.floor(bitmap.height / 2);
+  const offset = Math.floor(bitmap.width * 0.075);
 
-  const center = getSurfacePixelLuminance(surface, cx, cy);
-  const right = getSurfacePixelLuminance(surface, cx + offset, cy);
-  const left = getSurfacePixelLuminance(surface, cx - offset, cy);
+  const center = getBitmapPixelLuminance(bitmap, cx, cy);
+  const right = getBitmapPixelLuminance(bitmap, cx + offset, cy);
+  const left = getBitmapPixelLuminance(bitmap, cx - offset, cy);
 
   if (center <= 24) {
-    throw new Error(`[material-vertex-color] surface is blank (center luminance ${center}) — mesh did not render`);
+    throw new Error(`[material-vertex-color] bitmap is blank (center luminance ${center}) — mesh did not render`);
   }
   // Lighting-independent: the two flanking samples must be within a small margin of each other (no
   // directional gradient). A shaded sphere under this rig splits these by 50+ luminance.
   if (Math.abs(right - left) > 24) {
     throw new Error(
-      `[material-vertex-color] vertex-color surface is not uniform: left (${left}) vs right (${right}) differ — it appears to be responding to the directional light`,
+      `[material-vertex-color] vertex-color bitmap is not uniform: left (${left}) vs right (${right}) differ — it appears to be responding to the directional light`,
     );
   }
 }

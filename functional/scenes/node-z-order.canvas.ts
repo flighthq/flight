@@ -9,7 +9,7 @@
 //   - at the overlap of all three, blue wins (last child).
 //
 // A renderer that drew in wrong order (e.g. first child on top) would fail the overlap check.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -17,7 +17,7 @@ import {
   appendShapeRectangle,
   createDisplayObject,
   createShape,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeAppearance,
   ShapeKind,
 } from '@flighthq/sdk';
@@ -59,9 +59,9 @@ addNodeChild(root, blue);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width;
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   if (!isRed(at(60, 60))) {
     throw new Error(`[node-z-order] red exclusive (60,60) expected red, got #${hex(at(60, 60))}`);

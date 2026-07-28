@@ -1,6 +1,6 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
-import type { Camera3D, Scene3DLights, Node3D, Surface } from '@flighthq/sdk';
+import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
@@ -16,7 +16,7 @@ import {
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   endWgpuRenderEffectPipeline,
-  getSurfacePixelLuminance,
+  getBitmapPixelLuminance,
   prepareScene3DRender,
   registerBlinnPhongWgpuMaterial,
   renderWgpuBackground,
@@ -68,12 +68,12 @@ const lights = createScene3DLights({
 });
 render(scene, camera, lights);
 
-export function assertRender(surface: Readonly<Surface>): void {
-  const cx = Math.floor(surface.width / 2);
-  const cy = Math.floor(surface.height / 2);
-  const offset = Math.floor(surface.height * 0.1);
-  const skyLuminance = getSurfacePixelLuminance(surface, cx, cy - offset);
-  const groundLuminance = getSurfacePixelLuminance(surface, cx, cy + offset);
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  const cx = Math.floor(bitmap.width / 2);
+  const cy = Math.floor(bitmap.height / 2);
+  const offset = Math.floor(bitmap.height * 0.1);
+  const skyLuminance = getBitmapPixelLuminance(bitmap, cx, cy - offset);
+  const groundLuminance = getBitmapPixelLuminance(bitmap, cx, cy + offset);
 
   if (skyLuminance <= 24) {
     throw new Error(`[light-hemisphere] top is blank (luminance ${skyLuminance}) — hemisphere light did not shade`);

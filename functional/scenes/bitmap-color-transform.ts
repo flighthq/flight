@@ -8,22 +8,22 @@
 //
 // API note: Flight models draw-time color adjustment as a base-Node adjustment stack, folded through the
 // registered GL/WGPU material feature. Canvas and DOM do not realize that fold, so this cross-backend
-// fixture instead applies the same ColorScaleBias to source pixels via applySurfaceColorScaleBias before
+// fixture instead applies the same ColorScaleBias to source pixels via applyBitmapColorScaleBias before
 // blitting. The dedicated color-adjustment scenes exercise the GPU-batched node path.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
-  applySurfaceColorScaleBias,
+  applyBitmapColorScaleBias,
   SpriteKind,
   createSprite,
   createColorScaleBias,
   createDisplayObject,
   createImageResourceFromCanvas,
   createPixelArtSampler,
-  createSurface,
-  createSurfaceRegion,
+  createBitmap,
+  createBitmapRegion,
   createTexture,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -36,7 +36,7 @@ const RESULT_X = 460;
 const TILE_Y = 200;
 
 // Opaque white source.
-const source = createSurface(TILE, TILE, 0xffffffff);
+const source = createBitmap(TILE, TILE, 0xffffffff);
 
 // Red tint: keep red, zero green/blue, use zero bias, and keep alpha.
 const redTint = createColorScaleBias({
@@ -47,8 +47,8 @@ const redTint = createColorScaleBias({
 });
 
 // Apply the transform into a separate destination surface (read-then-write per pixel).
-const result = createSurface(TILE, TILE, 0x000000ff);
-applySurfaceColorScaleBias(createSurfaceRegion(result), createSurfaceRegion(source), redTint);
+const result = createBitmap(TILE, TILE, 0x000000ff);
+applyBitmapColorScaleBias(createBitmapRegion(result), createBitmapRegion(source), redTint);
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,
@@ -59,11 +59,11 @@ const { render, width } = await createFunctionalTarget({
 
 const root = createDisplayObject();
 
-function blit(surface: Readonly<Surface>, x: number): void {
+function blit(bitmap: Readonly<Bitmap>, x: number): void {
   const canvas = document.createElement('canvas');
   canvas.width = TILE;
   canvas.height = TILE;
-  canvas.getContext('2d')!.putImageData(new ImageData(surface.data, TILE, TILE), 0, 0);
+  canvas.getContext('2d')!.putImageData(new ImageData(bitmap.data, TILE, TILE), 0, 0);
   const bmp = createSprite();
   bmp.data.texture = createTexture({
     sampler: createPixelArtSampler(),
@@ -79,9 +79,9 @@ blit(result, RESULT_X);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // Source bitmap is white (the untinted control).
   const white = at(SOURCE_X + TILE / 2, TILE_Y + TILE / 2);

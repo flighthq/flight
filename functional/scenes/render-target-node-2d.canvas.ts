@@ -1,4 +1,4 @@
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -8,8 +8,8 @@ import {
   createRenderTexture,
   createShape,
   createSprite,
-  getSurfacePixelLuminance,
-  getSurfacePixelRgb,
+  getBitmapPixelLuminance,
+  getBitmapPixelRgb,
   invalidateNodeLocalTransform,
   renderIntoCanvasRenderTexture,
   ShapeKind,
@@ -91,13 +91,13 @@ renderIntoCanvasRenderTexture(state, renderTexture, (canvasState) => {
 });
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const scale = frame.width / width;
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * scale), Math.round(y * scale));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * scale), Math.round(y * scale));
 
   const cubeCenter = at(NODE_X + NODE_WIDTH / 2, NODE_Y + NODE_HEIGHT / 2);
   if (
-    getSurfacePixelLuminance(
+    getBitmapPixelLuminance(
       frame,
       Math.round((NODE_X + NODE_WIDTH / 2) * scale),
       Math.round((NODE_Y + NODE_HEIGHT / 2) * scale),

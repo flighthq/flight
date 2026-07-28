@@ -13,7 +13,7 @@
       "path": "../geometry"
     },
     {
-      "path": "../surface"
+      "path": "../bitmap"
     },
     {
       "path": "../types"

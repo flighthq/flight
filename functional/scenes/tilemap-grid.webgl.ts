@@ -8,7 +8,7 @@
 // carries the color of the tile id it was assigned: tile 0 cells are red, tile 1 cells are green. This is
 // inherently visual — it exercises per-tile source-rect selection and destination placement that jsdom
 // cannot confirm.
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   createDisplayObject,
@@ -16,7 +16,7 @@ import {
   createTilemap,
   createTexture,
   createTextureAtlasFromGrid,
-  getSurfacePixelRgb,
+  getBitmapPixelRgb,
   invalidateNodeLocalTransform,
   setTilemapTile,
   TilemapKind,
@@ -87,9 +87,9 @@ addNodeChild(root, tilemap);
 
 render(root);
 
-export function assertRender(frame: Readonly<Surface>): void {
+export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width; // device-pixel scale
-  const at = (x: number, y: number): number => getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
 
   // Center of cell (col,row) in logical pixels.
   const cellCenterX = (col: number): number => MAP_X + col * TILE_W + TILE_W / 2;

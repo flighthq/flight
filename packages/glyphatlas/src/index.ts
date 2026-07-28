@@ -10,6 +10,6 @@ export {
   getGlyphAtlasEntry,
   getGlyphAtlasKerning,
   getGlyphAtlasMetrics,
-  getGlyphAtlasSurface,
+  getGlyphAtlasBitmap,
   setGlyphRasterizerBackend,
 } from './contract';
