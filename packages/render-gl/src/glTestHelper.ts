@@ -52,12 +52,12 @@ export function createGlState(options?: { allowSmoothing?: boolean; backgroundCo
     matrixArray: new Float32Array(9),
     scissorStack: [],
     clipForms: [],
-    spriteBatchBlendMode: null,
-    spriteBatchCount: 0,
-    spriteBatchInstanceBuffer: null,
-    spriteBatchInstanceData: new Float32Array(13 * 256),
-    spriteBatchTexture: null,
-    spriteBatchSmoothing: null,
+    quadBatchWriterBlendMode: null,
+    quadBatchWriterCount: 0,
+    quadBatchWriterInstanceBuffer: null,
+    quadBatchWriterInstanceData: new Float32Array(13 * 256),
+    quadBatchWriterTexture: null,
+    quadBatchWriterSmoothing: null,
   } satisfies Partial<GlRenderStateRuntime>);
   state[EntityRuntimeKey] = runtime;
 

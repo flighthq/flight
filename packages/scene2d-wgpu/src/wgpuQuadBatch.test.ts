@@ -4,7 +4,7 @@ import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-
 import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 
 import { defaultWgpuQuadBatchRenderer, ensureWgpuQuadBatchResources, getWgpuQuadBatchPipeline } from './wgpuQuadBatch';
-import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
+import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
 
 beforeAll(() => {
   installWgpuMock();
@@ -31,7 +31,7 @@ describe('defaultWgpuQuadBatchRenderer.submit', () => {
 
     expect(() => {
       defaultWgpuQuadBatchRenderer.submit(state, renderProxy);
-      flushWgpuSpriteBatch(state as any);
+      flushWgpuQuadBatchWriter(state as any);
     }).not.toThrow();
     submitWgpuRenderPass(state);
   });

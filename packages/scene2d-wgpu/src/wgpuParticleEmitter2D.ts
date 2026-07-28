@@ -3,7 +3,7 @@ import { noopRendererData } from '@flighthq/render/contract';
 import { getTextureHeight, getTextureWidth, hasTextureBacking } from '@flighthq/texture/contract';
 import type { ParticleEmitter2D, RenderProxy2D, SpriteRenderer, WgpuRenderState } from '@flighthq/types/contract';
 
-import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
+import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
 
 // Per-instance layout in the instance buffer (14 floats = 56 bytes):
 //   0: px, 1: py, 2: cosScale, 3: sinScale
@@ -339,7 +339,7 @@ export function drawWgpuParticleEmitter2D(state: WgpuRenderState, renderProxy: R
 export const defaultWgpuParticleEmitter2DRenderer: SpriteRenderer = {
   createData: noopRendererData,
   submit(state: WgpuRenderState, node: RenderProxy2D): void {
-    flushWgpuSpriteBatch(state);
+    flushWgpuQuadBatchWriter(state);
     drawWgpuParticleEmitter2D(state, node);
   },
 };

@@ -8,10 +8,10 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { scopeModuleMocks } from './moduleMockTestHelper';
 import type * as WgpuCacheModule from './wgpuCache';
 import type * as WgpuNode2DModule from './wgpuNode2D';
-import type * as WgpuSpriteBatchModule from './wgpuSpriteBatch';
+import type * as WgpuQuadBatchWriterModule from './wgpuQuadBatchWriter';
 
 // The GPU render-target lifecycle (@flighthq/render-wgpu) and the two local collaborators
-// ./wgpuSpriteBatch and ./wgpuNode2D are stubbed so cache orchestration can be unit-tested
+// ./wgpuQuadBatchWriter and ./wgpuNode2D are stubbed so cache orchestration can be unit-tested
 // without a real GPU pipeline: createWgpuRenderTarget returns a plain descriptor, and the composite,
 // batch-flush, and subtree-render calls become spies for the call and ordering assertions below.
 // The mocks are scoped to this file's dynamic import of ./wgpuCache and unmocked in afterAll, so
@@ -33,18 +33,18 @@ let destroyWgpuRenderTarget: typeof WgpuRenderWgpuModule.destroyWgpuRenderTarget
 let drawWgpuRenderTargetResult: typeof WgpuRenderWgpuModule.drawWgpuRenderTargetResult;
 let submitWgpuRenderPass: typeof WgpuRenderWgpuModule.submitWgpuRenderPass;
 let renderWgpuScene2D: typeof WgpuNode2DModule.renderWgpuScene2D;
-let flushWgpuSpriteBatch: typeof WgpuSpriteBatchModule.flushWgpuSpriteBatch;
+let flushWgpuQuadBatchWriter: typeof WgpuQuadBatchWriterModule.flushWgpuQuadBatchWriter;
 
 // EntityRuntimeKey (Symbol.for) and RenderCacheKind (a string) are identity-stable across the
 // registry reset scopeModuleMocks performs, and cache adapters are stored on the state, not module-
 // level, so the statically-imported @flighthq/render still interoperates with the re-evaluated
 // subject even though the subject re-imports @flighthq/render under the reset.
-scopeModuleMocks(['./wgpuSpriteBatch', '@flighthq/render-wgpu', './wgpuNode2D']);
+scopeModuleMocks(['./wgpuQuadBatchWriter', '@flighthq/render-wgpu', './wgpuNode2D']);
 
 beforeAll(async () => {
-  vi.doMock('./wgpuSpriteBatch', async (importOriginal) => {
-    const actual = await importOriginal<typeof WgpuSpriteBatchModule>();
-    return { ...actual, flushWgpuSpriteBatch: vi.fn() };
+  vi.doMock('./wgpuQuadBatchWriter', async (importOriginal) => {
+    const actual = await importOriginal<typeof WgpuQuadBatchWriterModule>();
+    return { ...actual, flushWgpuQuadBatchWriter: vi.fn() };
   });
   vi.doMock('@flighthq/render-wgpu/contract', async (importOriginal) => {
     const actual = await importOriginal<typeof WgpuRenderWgpuModule>();
@@ -95,7 +95,7 @@ beforeAll(async () => {
     getWgpuRenderStateRuntime,
     submitWgpuRenderPass,
   } = await import('@flighthq/render-wgpu/contract'));
-  ({ flushWgpuSpriteBatch } = await import('./wgpuSpriteBatch'));
+  ({ flushWgpuQuadBatchWriter } = await import('./wgpuQuadBatchWriter'));
   ({ renderWgpuScene2D } = await import('./wgpuNode2D'));
   ({
     createWgpuCacheState,
@@ -160,11 +160,11 @@ describe('defaultWgpuRenderCacheRenderer', () => {
     useRenderCache(state, obj, cache);
     ensureWgpuRenderCacheTarget(state, cache, 16, 16);
     defaultWgpuRenderCacheRenderer.submit(state, makeCacheNode(obj));
-    // The composite draws an immediate quad outside the sprite batch; geometry submitted earlier in
+    // The composite draws an immediate quad outside the quad-batch writer; geometry submitted earlier in
     // the walk must be drained first, or the immediate quad interleaves with the un-flushed batch's
     // instance buffer and bind-group state and corrupts it.
-    expect(flushWgpuSpriteBatch).toHaveBeenCalledWith(state);
-    expect((flushWgpuSpriteBatch as any).mock.invocationCallOrder[0]).toBeLessThan(
+    expect(flushWgpuQuadBatchWriter).toHaveBeenCalledWith(state);
+    expect((flushWgpuQuadBatchWriter as any).mock.invocationCallOrder[0]).toBeLessThan(
       (drawWgpuRenderTargetResult as any).mock.invocationCallOrder[0],
     );
   });

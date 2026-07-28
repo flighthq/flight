@@ -4,7 +4,7 @@ import { createTextLabel, setTextLabelString } from '@flighthq/text/contract';
 import type { RenderProxy2D, TextLabel } from '@flighthq/types/contract';
 import { BatchFormat } from '@flighthq/types/contract';
 
-import { flushGlSpriteBatch } from './glSpriteBatch';
+import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 import { registerStandardGlMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 import type * as GlTextLabelModule from './glTextLabel';
@@ -85,34 +85,34 @@ describe('drawGlTextLabel', () => {
     const { state } = createGlState();
     registerStandardGlMaterial(state);
     drawGlTextLabel(state, makeTextProxy('', makeTextData()));
-    expect(getGlRenderStateRuntime(state).spriteBatchCount).toBe(0);
+    expect(getGlRenderStateRuntime(state).quadBatchWriterCount).toBe(0);
   });
 
   it('returns early without writing to batch when rendererData is null', () => {
     const { state } = createGlState();
     registerStandardGlMaterial(state);
     drawGlTextLabel(state, makeTextProxy('hello', null));
-    expect(getGlRenderStateRuntime(state).spriteBatchCount).toBe(0);
+    expect(getGlRenderStateRuntime(state).quadBatchWriterCount).toBe(0);
   });
 
   it('returns early without writing to batch when no material renderer is registered', () => {
     const { state } = createGlState();
     drawGlTextLabel(state, makeTextProxy('hello', makeTextData()));
-    expect(getGlRenderStateRuntime(state).spriteBatchCount).toBe(0);
+    expect(getGlRenderStateRuntime(state).quadBatchWriterCount).toBe(0);
   });
 
-  it('writes one instance to the sprite batch when text has content', () => {
+  it('writes one instance to the quad-batch writer when text has content', () => {
     const { state } = createGlState();
     registerStandardGlMaterial(state);
     drawGlTextLabel(state, makeTextProxy('hello', makeTextData()));
-    expect(getGlRenderStateRuntime(state).spriteBatchCount).toBe(1);
+    expect(getGlRenderStateRuntime(state).quadBatchWriterCount).toBe(1);
   });
 
   it('draws via drawElementsInstanced after flush', () => {
     const { state, gl } = createGlState();
     registerStandardGlMaterial(state);
     drawGlTextLabel(state, makeTextProxy('hello', makeTextData()));
-    flushGlSpriteBatch(state);
+    flushGlQuadBatchWriter(state);
     expect(gl.drawElementsInstanced).toHaveBeenCalled();
   });
 

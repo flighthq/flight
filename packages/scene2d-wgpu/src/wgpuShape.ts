@@ -21,19 +21,19 @@ import type {
 import { BatchFormat } from '@flighthq/types/contract';
 import type { WgpuShapeMesh } from '@flighthq/types/contract';
 
-import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
-import { drawWgpuShapeMeshes } from './wgpuShapeMesh';
 import {
   ensureWgpuQuadBatchResources,
-  packWgpuSpriteBatchMaterialInstance,
-  prepareWgpuSpriteBatchWrite,
-  recordWgpuSpriteBatchColorScaleBias,
-} from './wgpuSpriteBatch';
+  packWgpuQuadBatchMaterialInstance,
+  prepareWgpuQuadBatchWrite,
+  recordWgpuQuadBatchColorScaleBias,
+} from './wgpuQuadBatchWriter';
+import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
+import { drawWgpuShapeMeshes } from './wgpuShapeMesh';
 
 interface WgpuShapeData {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
-  // The canvas wrapped as an ImageResource (its `source`) so the shared sprite batch treats a canvas-backed
+  // The canvas wrapped as an ImageResource (its `source`) so the shared quad-batch writer treats a canvas-backed
   // shape uniformly with bitmaps; re-rendering bumps the version, which the batch's version-aware cache
   // re-uploads on (recreating the GPU texture, covering both content and size changes).
   image: ImageResource;
@@ -175,16 +175,9 @@ export function drawWgpuShape(state: WgpuRenderState, renderProxy: RenderProxy2D
   const tx = t.tx + t.a * bounds.x + t.c * bounds.y;
   const ty = t.ty + t.b * bounds.x + t.d * bounds.y;
 
-  const startCount = runtime.spriteBatchCount;
-  const base = prepareWgpuSpriteBatchWrite(
-    state,
-    shapeData.image,
-    renderProxy.blendMode,
-    material,
-    materialRenderer,
-    1,
-  );
-  const d = runtime.spriteBatchInstanceData;
+  const startCount = runtime.quadBatchWriterCount;
+  const base = prepareWgpuQuadBatchWrite(state, shapeData.image, renderProxy.blendMode, material, materialRenderer, 1);
+  const d = runtime.quadBatchWriterInstanceData;
   d[base] = t.a;
   d[base + 1] = t.b;
   d[base + 2] = t.c;
@@ -198,9 +191,9 @@ export function drawWgpuShape(state: WgpuRenderState, renderProxy: RenderProxy2D
   d[base + 10] = 1;
   d[base + 11] = 1;
   d[base + 12] = renderProxy.alpha;
-  packWgpuSpriteBatchMaterialInstance(state, renderProxy.materialData, startCount);
-  recordWgpuSpriteBatchColorScaleBias(state, renderProxy.colorMatrix ?? renderProxy.colorScaleBias, startCount);
-  runtime.spriteBatchCount++;
+  packWgpuQuadBatchMaterialInstance(state, renderProxy.materialData, startCount);
+  recordWgpuQuadBatchColorScaleBias(state, renderProxy.colorMatrix ?? renderProxy.colorScaleBias, startCount);
+  runtime.quadBatchWriterCount++;
 }
 
 export const defaultWgpuShapeRenderer: Scene2DRenderer = {

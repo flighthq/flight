@@ -9,7 +9,7 @@ export function areWgpuColorAdjustmentGuardsEnabled(state: WgpuRenderState): boo
 }
 
 // Installs the shakeable color-adjustment guard on `state`: when a node carries a color adjustment but
-// registerWgpuColorAdjustmentMaterialFeature was never called, recordWgpuSpriteBatchColorScaleBias reaches this guard
+// registerWgpuColorAdjustmentMaterialFeature was never called, recordWgpuQuadBatchColorScaleBias reaches this guard
 // through its nullable runtime slot and warns once (the tint is skipped, drawn untinted — the sentinel
 // behavior, never a throw). Not calling this — the production default — costs the batch nothing, since
 // the message and @flighthq/log dependency live only in this separately-imported module. Idempotent.
@@ -23,7 +23,7 @@ function warnWgpuColorAdjustmentNotEnabled(): void {
     LogLevel.Warn,
     {
       message:
-        'recordWgpuSpriteBatchColorScaleBias: color adjustment present but WGPU color adjustment not enabled — call registerWgpuColorAdjustmentMaterialFeature(state)',
+        'recordWgpuQuadBatchColorScaleBias: color adjustment present but WGPU color adjustment not enabled — call registerWgpuColorAdjustmentMaterialFeature(state)',
     },
     'scene2d-wgpu',
   );

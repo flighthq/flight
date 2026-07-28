@@ -3,7 +3,7 @@ import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { ColorScaleBias } from '@flighthq/types/contract';
 
 import { areGlColorAdjustmentGuardsEnabled, enableGlColorAdjustmentGuards } from './enableGlColorAdjustmentGuards';
-import { recordGlSpriteBatchColorScaleBias } from './glSpriteBatch';
+import { recordGlQuadBatchColorScaleBias } from './glQuadBatchWriter';
 import { createGlState } from './glTestHelper';
 
 function ct(): ColorScaleBias {
@@ -35,7 +35,7 @@ describe('enableGlColorAdjustmentGuards', () => {
     addLogSink(sink.sink);
     try {
       enableGlColorAdjustmentGuards(state);
-      recordGlSpriteBatchColorScaleBias(state, ct(), 0);
+      recordGlQuadBatchColorScaleBias(state, ct(), 0);
       const entries = getMemoryLogSinkEntries(sink);
       expect(entries.length).toBe(1);
       const data = entries[0].data as Record<string, unknown>;
@@ -51,7 +51,7 @@ describe('enableGlColorAdjustmentGuards', () => {
     addLogSink(sink.sink);
     try {
       enableGlColorAdjustmentGuards(state);
-      recordGlSpriteBatchColorScaleBias(state, null, 0);
+      recordGlQuadBatchColorScaleBias(state, null, 0);
       expect(getMemoryLogSinkEntries(sink).length).toBe(0);
     } finally {
       removeLogSink(sink.sink);
@@ -73,7 +73,7 @@ describe('enableGlColorAdjustmentGuards', () => {
         flush: () => false,
         record: () => {},
       };
-      recordGlSpriteBatchColorScaleBias(state, ct(), 0);
+      recordGlQuadBatchColorScaleBias(state, ct(), 0);
       expect(getMemoryLogSinkEntries(sink).length).toBe(0);
     } finally {
       removeLogSink(sink.sink);

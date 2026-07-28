@@ -14,10 +14,10 @@ import { BatchFormat } from '@flighthq/types/contract';
 
 import {
   ensureGlQuadBatchShader,
-  packGlSpriteBatchMaterialInstance,
-  prepareGlSpriteBatchWrite,
-  recordGlSpriteBatchColorScaleBias,
-} from './glSpriteBatch';
+  packGlQuadBatchMaterialInstance,
+  prepareGlQuadBatchWrite,
+  recordGlQuadBatchColorScaleBias,
+} from './glQuadBatchWriter';
 
 const INSTANCE_FLOATS = 13;
 
@@ -39,8 +39,8 @@ function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void
   const perTileColorScaleBias = source.data.materialData;
   const nodeColorScaleBias = tilemapNode.colorScaleBias;
   const nodeColorMatrix = tilemapNode.colorMatrix;
-  const startCount = runtime.spriteBatchCount;
-  const base = prepareGlSpriteBatchWrite(
+  const startCount = runtime.quadBatchWriterCount;
+  const base = prepareGlQuadBatchWrite(
     state,
     atlas.texture,
     tilemapNode.blendMode,
@@ -53,7 +53,7 @@ function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void
   const numRegions = regions.length;
   const iw = 1 / Math.max(1, getTextureWidth(atlas.texture));
   const ih = 1 / Math.max(1, getTextureHeight(atlas.texture));
-  const instanceData = runtime.spriteBatchInstanceData;
+  const instanceData = runtime.quadBatchWriterInstanceData;
   const pt = tilemapNode.transform2D;
   const pa = pt.a,
     pb = pt.b,
@@ -87,7 +87,7 @@ function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void
       instanceData[writeBase + 10] = (region.x + region.width) * iw;
       instanceData[writeBase + 11] = (region.y + region.height) * ih;
       instanceData[writeBase + 12] = alpha;
-      packGlSpriteBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
+      packGlQuadBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
       // Per-tile tint overrides the node-level tint (null → the node's, itself possibly null → untinted).
       const colorScaleBias =
         (perTileColorScaleBias?.[row * columns + col] as
@@ -97,13 +97,13 @@ function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void
           | null) ??
         nodeColorMatrix ??
         nodeColorScaleBias;
-      recordGlSpriteBatchColorScaleBias(state, colorScaleBias, startCount + drawCount);
+      recordGlQuadBatchColorScaleBias(state, colorScaleBias, startCount + drawCount);
       writeBase += INSTANCE_FLOATS;
       drawCount++;
     }
   }
 
-  runtime.spriteBatchCount += drawCount;
+  runtime.quadBatchWriterCount += drawCount;
 }
 
 export const defaultGlTilemapRenderer: SpriteRenderer = {

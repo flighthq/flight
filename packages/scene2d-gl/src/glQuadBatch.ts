@@ -14,10 +14,10 @@ import { BatchFormat } from '@flighthq/types/contract';
 
 import {
   ensureGlQuadBatchShader,
-  packGlSpriteBatchMaterialInstance,
-  prepareGlSpriteBatchWrite,
-  recordGlSpriteBatchColorScaleBias,
-} from './glSpriteBatch';
+  packGlQuadBatchMaterialInstance,
+  prepareGlQuadBatchWrite,
+  recordGlQuadBatchColorScaleBias,
+} from './glQuadBatchWriter';
 
 // Per-instance layout (13 floats = 52 bytes, world-space transforms + per-instance alpha):
 // [0-3]  a, b, c, d   — world-space 2D matrix
@@ -44,8 +44,8 @@ function submitGlQuadBatch(state: GlRenderState, quadBatch: RenderProxy2D): void
   const perQuadColorScaleBias = data.materialData;
   const nodeColorScaleBias = quadBatch.colorScaleBias;
   const nodeColorMatrix = quadBatch.colorMatrix;
-  const startCount = runtime.spriteBatchCount;
-  const base = prepareGlSpriteBatchWrite(
+  const startCount = runtime.quadBatchWriterCount;
+  const base = prepareGlQuadBatchWrite(
     state,
     atlas.texture,
     quadBatch.blendMode,
@@ -58,7 +58,7 @@ function submitGlQuadBatch(state: GlRenderState, quadBatch: RenderProxy2D): void
   const numRegions = regions.length;
   const iw = 1 / Math.max(1, getTextureWidth(atlas.texture));
   const ih = 1 / Math.max(1, getTextureHeight(atlas.texture));
-  const instanceData = runtime.spriteBatchInstanceData;
+  const instanceData = runtime.quadBatchWriterInstanceData;
   const isVector2 = data.transformType === 'vector2';
   const pt = quadBatch.transform2D;
   const pa = pt.a,
@@ -108,18 +108,18 @@ function submitGlQuadBatch(state: GlRenderState, quadBatch: RenderProxy2D): void
     instanceData[writeBase + 10] = (region.x + region.width) * iw;
     instanceData[writeBase + 11] = (region.y + region.height) * ih;
     instanceData[writeBase + 12] = alpha;
-    packGlSpriteBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
+    packGlQuadBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
     // Per-quad tint overrides the node-level tint (null → the node's, itself possibly null → untinted).
     const colorScaleBias =
       (perQuadColorScaleBias?.[i] as ColorScaleBias | TintMaterialData | readonly number[] | null) ??
       nodeColorMatrix ??
       nodeColorScaleBias;
-    recordGlSpriteBatchColorScaleBias(state, colorScaleBias, startCount + drawCount);
+    recordGlQuadBatchColorScaleBias(state, colorScaleBias, startCount + drawCount);
     writeBase += INSTANCE_FLOATS;
     drawCount++;
   }
 
-  runtime.spriteBatchCount += drawCount;
+  runtime.quadBatchWriterCount += drawCount;
 }
 
 export const defaultGlQuadBatchRenderer: SpriteRenderer = {

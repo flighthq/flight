@@ -26,7 +26,7 @@ import type {
   TextLabelRuntime,
 } from '@flighthq/types/contract';
 
-import { flushGlSpriteBatch } from './glSpriteBatch';
+import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 
 let _offscreenCanvas: HTMLCanvasElement | null = null;
 let _offscreenCtx: CanvasRenderingContext2D | null = null;
@@ -64,7 +64,7 @@ export function drawGlRichTextWithOverlay(
   renderProxy: RenderProxy2D,
   overlay?: GlRichTextOverlay,
 ): void {
-  flushGlSpriteBatch(state);
+  flushGlQuadBatchWriter(state);
   const source = renderProxy.source as RichText;
   const data = source.data;
   const richTextRuntime = getRichTextRuntime(source) as RichTextRuntime;

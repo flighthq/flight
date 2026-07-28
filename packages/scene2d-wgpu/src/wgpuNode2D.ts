@@ -3,7 +3,7 @@ import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@fligh
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
 import type { Node2D, Scene2DRenderer, RenderProxy2D, WgpuRenderState } from '@flighthq/types/contract';
 
-import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
+import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
 
 export function drawWgpuScene2D(_state: WgpuRenderState, _renderProxy: RenderProxy2D): void {
   // Plain display objects have no visual geometry of their own.
@@ -40,7 +40,7 @@ export function renderWgpuScene2D(state: WgpuRenderState, source: Node2D): void 
     }
   }
 
-  flushWgpuSpriteBatch(state);
+  flushWgpuQuadBatchWriter(state);
   clipHooks?.finalize(state);
 }
 

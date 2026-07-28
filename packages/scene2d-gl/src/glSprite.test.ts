@@ -3,8 +3,8 @@ import { createTexture, setTextureUvFromPixelRect } from '@flighthq/texture/cont
 import type { ImageResource, RenderProxy2D, Sprite } from '@flighthq/types/contract';
 import { BatchFormat, ImageTextureBackingKind } from '@flighthq/types/contract';
 
+import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 import { defaultGlSpriteRenderer, drawGlSprite } from './glSprite';
-import { flushGlSpriteBatch } from './glSpriteBatch';
 import { registerStandardGlMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 
@@ -51,7 +51,7 @@ describe('drawGlSprite', () => {
     const sprite = makeSprite(128, 64);
     setTextureUvFromPixelRect(sprite.data.texture!, 16, 8, 32, 16);
     drawGlSprite(state, makeRenderProxy(sprite));
-    const data = getGlRenderStateRuntime(state).spriteBatchInstanceData;
+    const data = getGlRenderStateRuntime(state).quadBatchWriterInstanceData;
     expect(Array.from(data.slice(6, 12))).toEqual([32, 16, 0.125, 0.125, 0.375, 0.375]);
   });
 
@@ -60,7 +60,7 @@ describe('drawGlSprite', () => {
     registerGlImageTextureResolver(state);
     registerStandardGlMaterial(state);
     drawGlSprite(state, makeRenderProxy(makeSprite()));
-    flushGlSpriteBatch(state);
+    flushGlQuadBatchWriter(state);
     expect(gl.drawElementsInstanced).toHaveBeenCalledOnce();
   });
 });

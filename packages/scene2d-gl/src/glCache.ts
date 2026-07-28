@@ -34,7 +34,7 @@ import type {
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { renderGlScene2D } from './glNode2D';
-import { flushGlSpriteBatch } from './glSpriteBatch';
+import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 
 /**
  * Creates an offscreen render state for baking render caches consumed by `screenState`.
@@ -99,17 +99,17 @@ export function createGlCacheState(screenState: GlRenderState): GlRenderState {
   cacheRuntime.flushPendingDraws = null;
   cacheRuntime.renderTargetViewport = null;
   cacheRuntime.scissorStack = [];
-  cacheRuntime.spriteBatchBlendMode = null;
-  cacheRuntime.spriteBatchMaterial = null;
-  cacheRuntime.spriteBatchMaterialRenderer = null;
-  cacheRuntime.spriteBatchMaterialFloats = 0;
-  cacheRuntime.spriteBatchMaterialData = new Float32Array(0);
-  cacheRuntime.spriteBatchMaterialBuffer = null;
-  cacheRuntime.spriteBatchCount = 0;
-  cacheRuntime.spriteBatchInstanceBuffer = null;
-  cacheRuntime.spriteBatchInstanceData = new Float32Array(0);
-  cacheRuntime.spriteBatchTexture = null;
-  cacheRuntime.spriteBatchSmoothing = null;
+  cacheRuntime.quadBatchWriterBlendMode = null;
+  cacheRuntime.quadBatchWriterMaterial = null;
+  cacheRuntime.quadBatchWriterMaterialRenderer = null;
+  cacheRuntime.quadBatchWriterMaterialFloats = 0;
+  cacheRuntime.quadBatchWriterMaterialData = new Float32Array(0);
+  cacheRuntime.quadBatchWriterMaterialBuffer = null;
+  cacheRuntime.quadBatchWriterCount = 0;
+  cacheRuntime.quadBatchWriterInstanceBuffer = null;
+  cacheRuntime.quadBatchWriterInstanceData = new Float32Array(0);
+  cacheRuntime.quadBatchWriterTexture = null;
+  cacheRuntime.quadBatchWriterSmoothing = null;
 
   _cacheStateScreen.set(cacheState, screenState);
   return cacheState;
@@ -226,10 +226,10 @@ function drawGlRenderCache(state: GlRenderState, renderProxy: RenderProxy2D): vo
   const target = getTargets(state).get(cache);
   if (target === undefined) return;
   // Drain pending batched geometry before the immediate composite quad. Like every other
-  // immediate-draw renderer (RichText, Scale9), this bypasses the sprite batch; without the
+  // immediate-draw renderer (RichText, Scale9), this bypasses the quad-batch writer; without the
   // flush the cached result draws ahead of geometry submitted earlier in the walk, which only
   // flushes at the end — producing out-of-order replay (a doubled image on Gl).
-  flushGlSpriteBatch(state);
+  flushGlQuadBatchWriter(state);
   // renderProxy.transform2D already carries the cache placement transform (folded in by the
   // adapter), so the target composites with an identity offset.
   drawGlRenderTargetResult(state, renderProxy, target, _identity);

@@ -209,7 +209,7 @@ Five fields across two nodes collapse to one. `atlas`+`id`, `sourceRectangle`, a
 | — | → **`@flighthq/tilemap`** (new; over `quadbatch`, finally pairing with the orphaned `tilemap-formats`) |
 | `@flighthq/tileset` | **dissolved.** `Tileset` and `GridSliceOptions` are the same concept implemented twice (uniform grid over an image); `spritesheet`'s dependency is only a *converter*, not shared math. Grid slicing folds **up** into `textureatlas` as `createTextureAtlasFromGrid` (absorbing per-axis margin/spacing); the *layout* half (`tileWidth`/`tileHeight` for placement) belongs to `tilemap`. Folding it **down** into `tilemap` would be wrong — headless `spritesheet` would then drag the 2D scene graph. |
 | `@flighthq/textureatlas` | gains `createTextureAtlasFromGrid`; `atlas.image` → `Texture` |
-| scene2d-gl / -canvas / -dom / -wgpu | `glBitmap`→`glSprite`, `glSpriteRenderer` deleted. **Rename the shared batch writer** — `glSpriteBatch` is imported by 21 files (`glShape`, `glTextLabel`, `glRichText`, `glClipRectangle`, `glCache`, `glTilemap`, …); it is *the* 2D batch writer, not sprite machinery, and `glSprite.ts` beside `glSpriteBatch.ts` would mean two unrelated things. |
+| scene2d-gl / -canvas / -dom / -wgpu | `glBitmap`→`glSprite`, `glSpriteRenderer` deleted. The shared writers are now `glQuadBatchWriter` / `wgpuQuadBatchWriter`: they serve `Shape`, `TextLabel`, `RichText`, clips, caches, `Tilemap`, and every other 2D quad producer rather than belonging to Sprite. |
 
 Net package count is unchanged (+`quadbatch`/`tilemap`, −`sprite`/`tileset`) and one duplicated primitive is unified.
 

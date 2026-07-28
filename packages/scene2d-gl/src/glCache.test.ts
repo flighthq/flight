@@ -7,11 +7,11 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import type * as GlCacheModule from './glCache';
 import type * as GlNode2DModule from './glNode2D';
-import type * as GlSpriteBatchModule from './glSpriteBatch';
+import type * as GlQuadBatchWriterModule from './glQuadBatchWriter';
 import { scopeModuleMocks } from './moduleMockTestHelper';
 
 // The GL render-target lifecycle (@flighthq/render-gl) and the two local collaborators
-// ./glSpriteBatch and ./glNode2D are stubbed so cache orchestration can be unit-tested
+// ./glQuadBatchWriter and ./glNode2D are stubbed so cache orchestration can be unit-tested
 // without a real GL pipeline: createGlRenderTarget returns a plain descriptor, and the composite,
 // batch-flush, and subtree-render calls become spies for the call and ordering assertions below.
 // The mocks are scoped to this file's dynamic import of ./glCache and unmocked in afterAll, so under
@@ -31,18 +31,18 @@ let getGlRenderStateRuntime: typeof GlRenderGlModule.getGlRenderStateRuntime;
 let destroyGlRenderTarget: typeof GlRenderGlModule.destroyGlRenderTarget;
 let drawGlRenderTargetResult: typeof GlRenderGlModule.drawGlRenderTargetResult;
 let renderGlScene2D: typeof GlNode2DModule.renderGlScene2D;
-let flushGlSpriteBatch: typeof GlSpriteBatchModule.flushGlSpriteBatch;
+let flushGlQuadBatchWriter: typeof GlQuadBatchWriterModule.flushGlQuadBatchWriter;
 
 // EntityRuntimeKey (Symbol.for) and RenderCacheKind (a string) are identity-stable across the
 // registry reset scopeModuleMocks performs, and cache adapters are stored on the state, not module-
 // level, so the statically-imported @flighthq/render still interoperates with the re-evaluated
 // subject even though the subject re-imports @flighthq/render under the reset.
-scopeModuleMocks(['./glSpriteBatch', '@flighthq/render-gl', './glNode2D']);
+scopeModuleMocks(['./glQuadBatchWriter', '@flighthq/render-gl', './glNode2D']);
 
 beforeAll(async () => {
-  vi.doMock('./glSpriteBatch', async (importOriginal) => {
-    const actual = await importOriginal<typeof GlSpriteBatchModule>();
-    return { ...actual, flushGlSpriteBatch: vi.fn() };
+  vi.doMock('./glQuadBatchWriter', async (importOriginal) => {
+    const actual = await importOriginal<typeof GlQuadBatchWriterModule>();
+    return { ...actual, flushGlQuadBatchWriter: vi.fn() };
   });
   vi.doMock('@flighthq/render-gl/contract', async (importOriginal) => {
     const actual = await importOriginal<typeof GlRenderGlModule>();
@@ -85,7 +85,7 @@ beforeAll(async () => {
 
   ({ createGlRenderStateRuntime, getGlRenderStateRuntime, destroyGlRenderTarget, drawGlRenderTargetResult } =
     await import('@flighthq/render-gl/contract'));
-  ({ flushGlSpriteBatch } = await import('./glSpriteBatch'));
+  ({ flushGlQuadBatchWriter } = await import('./glQuadBatchWriter'));
   ({ renderGlScene2D } = await import('./glNode2D'));
   ({
     createGlCacheState,
@@ -145,10 +145,10 @@ describe('defaultGlRenderCacheRenderer', () => {
     useRenderCache(state, obj, cache);
     ensureGlRenderCacheTarget(state, cache, 16, 16);
     defaultGlRenderCacheRenderer.submit(state, makeCacheNode(obj));
-    // The composite draws an immediate quad outside the sprite batch; geometry submitted earlier in
+    // The composite draws an immediate quad outside the quad-batch writer; geometry submitted earlier in
     // the walk must be drained first, or it replays after the cache result (a doubled image).
-    expect(flushGlSpriteBatch).toHaveBeenCalledWith(state);
-    expect((flushGlSpriteBatch as any).mock.invocationCallOrder[0]).toBeLessThan(
+    expect(flushGlQuadBatchWriter).toHaveBeenCalledWith(state);
+    expect((flushGlQuadBatchWriter as any).mock.invocationCallOrder[0]).toBeLessThan(
       (drawGlRenderTargetResult as any).mock.invocationCallOrder[0],
     );
   });

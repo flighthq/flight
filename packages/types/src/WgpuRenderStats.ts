@@ -4,7 +4,7 @@ export interface WgpuRenderStats {
   readonly drawCallCount: number;
   /** Total sprite/quad/particle instances drawn this frame. */
   readonly instanceCount: number;
-  /** Number of sprite-batch flushes triggered this frame. */
+  /** Number of quad-batch writer flushes triggered this frame. */
   readonly batchFlushCount: number;
   /** Number of canvas-to-GPU texture uploads issued this frame. */
   readonly textureUploadCount: number;

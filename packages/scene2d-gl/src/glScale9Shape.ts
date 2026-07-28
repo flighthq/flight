@@ -13,9 +13,9 @@ import type {
   Scale9Shape,
 } from '@flighthq/types/contract';
 
+import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 import { buildGlScale9Mapper } from './glScale9Mapper';
 import { drawGlShape } from './glShape';
-import { flushGlSpriteBatch } from './glSpriteBatch';
 
 interface GlScale9ShapeData {
   canvas: HTMLCanvasElement;
@@ -57,7 +57,7 @@ export function destroyGlScale9ShapeData(state: GlRenderState, data: RendererDat
 
 export function drawGlScale9Shape(state: GlRenderState, renderProxy: RenderProxy2D): void {
   const runtime = getGlRenderStateRuntime(state);
-  flushGlSpriteBatch(state);
+  flushGlQuadBatchWriter(state);
   const source = renderProxy.source as Scale9Shape;
   const { commands, scale9Grid } = source.data;
   const version = getNodeLocalContentRevision(source);

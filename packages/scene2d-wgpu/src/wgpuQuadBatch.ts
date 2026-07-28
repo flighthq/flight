@@ -15,17 +15,17 @@ import { BatchFormat } from '@flighthq/types/contract';
 import {
   ensureWgpuQuadBatchResources,
   getWgpuQuadBatchPipeline,
-  packWgpuSpriteBatchMaterialInstance,
-  prepareWgpuSpriteBatchWrite,
-  recordWgpuSpriteBatchColorScaleBias,
-  SPRITE_INSTANCE_FLOATS,
-} from './wgpuSpriteBatch';
+  packWgpuQuadBatchMaterialInstance,
+  prepareWgpuQuadBatchWrite,
+  recordWgpuQuadBatchColorScaleBias,
+  QUAD_BATCH_INSTANCE_FLOATS,
+} from './wgpuQuadBatchWriter';
 
 export { ensureWgpuQuadBatchResources, getWgpuQuadBatchPipeline };
 
 // Each quad writes the 13 base instance floats; any material packs its own per-instance data into the
 // parallel material buffer.
-const INSTANCE_STRIDE_FLOATS = SPRITE_INSTANCE_FLOATS;
+const INSTANCE_STRIDE_FLOATS = QUAD_BATCH_INSTANCE_FLOATS;
 
 function submitWgpuQuadBatch(state: WgpuRenderState, quadBatch: RenderProxy2D): void {
   const runtime = getWgpuRenderStateRuntime(state);
@@ -44,8 +44,8 @@ function submitWgpuQuadBatch(state: WgpuRenderState, quadBatch: RenderProxy2D): 
   const perQuadColorScaleBias = data.materialData;
   const nodeColorScaleBias = quadBatch.colorScaleBias;
   const nodeColorMatrix = quadBatch.colorMatrix;
-  const startCount = runtime.spriteBatchCount;
-  const base = prepareWgpuSpriteBatchWrite(
+  const startCount = runtime.quadBatchWriterCount;
+  const base = prepareWgpuQuadBatchWrite(
     state,
     atlas.texture,
     quadBatch.blendMode,
@@ -58,7 +58,7 @@ function submitWgpuQuadBatch(state: WgpuRenderState, quadBatch: RenderProxy2D): 
   const numRegions = regions.length;
   const iw = 1 / Math.max(1, getTextureWidth(atlas.texture));
   const ih = 1 / Math.max(1, getTextureHeight(atlas.texture));
-  const instanceData = runtime.spriteBatchInstanceData;
+  const instanceData = runtime.quadBatchWriterInstanceData;
   const isVector2 = data.transformType === 'vector2';
   const pt = quadBatch.transform2D;
   const pa = pt.a,
@@ -108,18 +108,18 @@ function submitWgpuQuadBatch(state: WgpuRenderState, quadBatch: RenderProxy2D): 
     instanceData[writeBase + 10] = (region.x + region.width) * iw;
     instanceData[writeBase + 11] = (region.y + region.height) * ih;
     instanceData[writeBase + 12] = alpha;
-    packWgpuSpriteBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
+    packWgpuQuadBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
     // Per-quad tint overrides the node-level tint (null → the node's, itself possibly null → untinted).
     const colorScaleBias =
       (perQuadColorScaleBias?.[i] as ColorScaleBias | TintMaterialData | readonly number[] | null) ??
       nodeColorMatrix ??
       nodeColorScaleBias;
-    recordWgpuSpriteBatchColorScaleBias(state, colorScaleBias, startCount + drawCount);
+    recordWgpuQuadBatchColorScaleBias(state, colorScaleBias, startCount + drawCount);
     writeBase += INSTANCE_STRIDE_FLOATS;
     drawCount++;
   }
 
-  runtime.spriteBatchCount += drawCount;
+  runtime.quadBatchWriterCount += drawCount;
 }
 
 export const defaultWgpuQuadBatchRenderer: SpriteRenderer = {

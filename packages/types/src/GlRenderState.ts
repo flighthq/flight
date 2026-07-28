@@ -78,7 +78,7 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // 2D shaders premultiply its sample before ONE/ONE_MINUS_SRC_ALPHA blending.
   currentTextureStraightAlpha: boolean;
   // Optional owner-installed seam that drains queued draws before render-gl hands the context to a
-  // foreign renderer. scene2d-gl installs its sprite-batch flush lazily when a batch is first prepared;
+  // foreign renderer. scene2d-gl installs its quad-batch writer flush lazily when a batch is first prepared;
   // render-gl reaches it only through this contract slot and therefore does not depend on scene2d-gl.
   flushPendingDraws?: ((state: GlRenderState) => void) | null;
 
@@ -104,7 +104,7 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   shapeMeshColorScaleBiasShader?: GlShapeMeshColorScaleBiasShader;
   shapeMeshColorMatrixShader?: GlShapeMeshColorScaleBiasShader;
   // The opt-in color-adjustment fold and its guard, both null until registerGlColorAdjustmentMaterialFeature /
-  // enableNode2DGlGuards installs them. recordGlSpriteBatchColorScaleBias reaches the fold only
+  // enableNode2DGlGuards installs them. recordGlQuadBatchColorScaleBias reaches the fold only
   // through this slot, so the base batch statically references neither the fold's code nor a message.
   glColorAdjustmentMaterialFeature?: GlColorAdjustmentMaterialFeature | null;
   glColorAdjustmentMaterialFeatureGuard?:
@@ -126,35 +126,35 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // Optional per-node shader-binding resolver. Installed by setGlShader; absent (and tree-shaken
   // with the binding map) until a custom shader is bound to a node.
   webglShaderBindingResolver?: (renderProxy: RenderProxy2D) => GlBitmapShader | undefined;
-  spriteBatchBlendMode: BlendMode | null;
-  // The active sprite-batch material (flush key, compared by reference) and its resolved
-  // renderer + per-instance float stride. spriteBatchMaterialData/Buffer hold the active
-  // material's per-instance attributes, parallel to the base spriteBatchInstanceData.
-  spriteBatchMaterial: Material | null;
-  spriteBatchMaterialRenderer: GlMaterialRenderer | null;
-  spriteBatchMaterialFloats: number;
-  spriteBatchMaterialData: Float32Array;
-  spriteBatchMaterialBuffer: WebGLBuffer | null;
-  spriteBatchCount: number;
-  spriteBatchInstanceBuffer: WebGLBuffer | null;
-  spriteBatchInstanceData: Float32Array;
-  spriteBatchTexture: ImageResource | Texture | null;
+  quadBatchWriterBlendMode: BlendMode | null;
+  // The active quad-batch writer material (flush key, compared by reference) and its resolved
+  // renderer + per-instance float stride. quadBatchWriterMaterialData/Buffer hold the active
+  // material's per-instance attributes, parallel to the base quadBatchWriterInstanceData.
+  quadBatchWriterMaterial: Material | null;
+  quadBatchWriterMaterialRenderer: GlMaterialRenderer | null;
+  quadBatchWriterMaterialFloats: number;
+  quadBatchWriterMaterialData: Float32Array;
+  quadBatchWriterMaterialBuffer: WebGLBuffer | null;
+  quadBatchWriterCount: number;
+  quadBatchWriterInstanceBuffer: WebGLBuffer | null;
+  quadBatchWriterInstanceData: Float32Array;
+  quadBatchWriterTexture: ImageResource | Texture | null;
   // Transitional sampling key for legacy atlas/image writers. A Texture carries its sampler directly.
-  spriteBatchSmoothing: boolean | null;
-  // Color-transform fold state for the active sprite batch. Orthogonal to the material and never a
+  quadBatchWriterSmoothing: boolean | null;
+  // Color-transform fold state for the active quad-batch writer. Orthogonal to the material and never a
   // flush key, so tinted and untinted nodes with the same texture+blend share one batch. Mode 0 =
   // no tint (lean base shader), 1 = one uniform tint for the whole batch (u_colorScale/u_colorBias), 2 =
   // per-instance tints (a_colorScale/a_colorBias). A batch starts at 0, rises to 1 on the first tint, and
   // promotes to 2 — back-filling already-written instances with the prior value/identity — when
   // tints diverge, so attaching a tint only ever promotes a batch, never splits it.
-  // spriteBatchColorScaleBiasData/Buffer hold the per-instance floats (8 per instance) for mode 2;
-  // spriteBatchUniformColorScaleBias holds the shared value for mode 1.
-  spriteBatchColorScaleBiasMode?: number;
-  spriteBatchUniformColorScaleBias?: ColorScaleBias | TintMaterialData | readonly number[] | null;
-  spriteBatchColorScaleBiasData?: Float32Array;
-  spriteBatchColorMatrixData?: Float32Array;
-  spriteBatchColorTintData?: Uint32Array;
-  spriteBatchColorScaleBiasBuffer: WebGLBuffer | null;
+  // quadBatchWriterColorScaleBiasData/Buffer hold the per-instance floats (8 per instance) for mode 2;
+  // quadBatchWriterUniformColorScaleBias holds the shared value for mode 1.
+  quadBatchWriterColorScaleBiasMode?: number;
+  quadBatchWriterUniformColorScaleBias?: ColorScaleBias | TintMaterialData | readonly number[] | null;
+  quadBatchWriterColorScaleBiasData?: Float32Array;
+  quadBatchWriterColorMatrixData?: Float32Array;
+  quadBatchWriterColorTintData?: Uint32Array;
+  quadBatchWriterColorScaleBiasBuffer: WebGLBuffer | null;
   // Per-clip unwind stack: the form of each pushed clip (scissor vs stencil contour) so popClip
   // un-installs the right gate.
   clipForms: ('rect' | 'contour')[];

@@ -207,7 +207,7 @@ function buildStencilFaceState(stencilMode: StencilMode): GPUStencilFaceState {
 }
 
 // Shared by every immutable 2D pipeline family. WebGPU bakes blend state into the pipeline, so the
-// bitmap, sprite-batch, and tessellated-shape paths must resolve the same node BlendMode table rather
+// bitmap, quad-batch writer, and tessellated-shape paths must resolve the same node BlendMode table rather
 // than each maintaining a partial copy. Unknown/shader-composited modes deliberately fall back to Normal.
 export function getWgpuBlendState(blendMode: BlendMode | null): GPUBlendState {
   return (blendMode !== null ? BLEND_MODES[blendMode] : null) ?? NORMAL_BLEND;

@@ -67,7 +67,7 @@ describe('drawWgpuShape', () => {
     renderWgpuBackground(state);
     registerStandardWgpuMaterial(state);
     drawWgpuShape(state, makeShapeProxy({ commands: [] }, makeShapeData()));
-    expect(getWgpuRenderStateRuntime(state).spriteBatchCount).toBe(0);
+    expect(getWgpuRenderStateRuntime(state).quadBatchWriterCount).toBe(0);
     submitWgpuRenderPass(state);
   });
 
@@ -76,7 +76,7 @@ describe('drawWgpuShape', () => {
     renderWgpuBackground(state);
     registerStandardWgpuMaterial(state);
     drawWgpuShape(state, makeShapeProxy({ commands: [{}] }, null));
-    expect(getWgpuRenderStateRuntime(state).spriteBatchCount).toBe(0);
+    expect(getWgpuRenderStateRuntime(state).quadBatchWriterCount).toBe(0);
     submitWgpuRenderPass(state);
   });
 
@@ -85,12 +85,12 @@ describe('drawWgpuShape', () => {
     expect(() => drawWgpuShape(state, makeShapeProxy({ commands: [{}] }, makeShapeData()))).not.toThrow();
   });
 
-  it('writes one instance to the sprite batch when shape has valid commands and bounds', async () => {
+  it('writes one instance to the quad-batch writer when shape has valid commands and bounds', async () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
     registerStandardWgpuMaterial(state);
     drawWgpuShape(state, makeShapeProxy({ commands: [{}], version: 1 }, makeShapeData()));
-    expect(getWgpuRenderStateRuntime(state).spriteBatchCount).toBe(1);
+    expect(getWgpuRenderStateRuntime(state).quadBatchWriterCount).toBe(1);
     submitWgpuRenderPass(state);
   });
 });

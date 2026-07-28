@@ -5,7 +5,7 @@ import { getTextureHeight, getTextureWidth, hasTextureBacking } from '@flighthq/
 import type { GlRenderState, ParticleEmitter2D, RenderProxy2D, SpriteRenderer } from '@flighthq/types/contract';
 import type { GlParticleShader } from '@flighthq/types/contract';
 
-import { flushGlSpriteBatch } from './glSpriteBatch';
+import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 
 // Per-instance layout (14 floats = 56 bytes):
 // [0]  px         float
@@ -284,7 +284,7 @@ export function drawGlParticleEmitter2D(state: GlRenderState, renderProxy: Rende
 export const defaultGlParticleEmitter2DRenderer: SpriteRenderer = {
   createData: noopRendererData,
   submit(state: GlRenderState, node: RenderProxy2D): void {
-    flushGlSpriteBatch(state);
+    flushGlQuadBatchWriter(state);
     drawGlParticleEmitter2D(state, node);
   },
 };

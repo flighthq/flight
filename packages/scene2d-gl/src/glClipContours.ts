@@ -2,7 +2,7 @@ import { createGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { GlRenderState, Matrix, PathWinding } from '@flighthq/types/contract';
 
-import { flushGlSpriteBatch } from './glSpriteBatch';
+import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 
 // Stencil-then-cover fill of arbitrary flattened contours, used to realize a *path* ClipRegion exactly
 // (crisp at any zoom — the contours are transformed in the vertex shader each frame, never cached as a
@@ -39,7 +39,7 @@ void main() { gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0); }
 `;
 
 export function popGlClipContours(state: GlRenderState): void {
-  flushGlSpriteBatch(state);
+  flushGlQuadBatchWriter(state);
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
   const nextDepth = Math.max(0, (runtime.currentMaskDepth ?? 0) - 1);
@@ -59,7 +59,7 @@ export function pushGlClipContours(
   winding: PathWinding,
   worldTransform: Readonly<Matrix>,
 ): void {
-  flushGlSpriteBatch(state);
+  flushGlQuadBatchWriter(state);
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
   const depth = runtime.currentMaskDepth ?? 0;

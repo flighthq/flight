@@ -11,11 +11,11 @@ import { BatchFormat } from '@flighthq/types/contract';
 
 import {
   ensureWgpuQuadBatchResources,
-  flushWgpuSpriteBatch,
-  packWgpuSpriteBatchMaterialInstance,
-  prepareWgpuSpriteBatchWrite,
-  recordWgpuSpriteBatchColorScaleBias,
-} from './wgpuSpriteBatch';
+  flushWgpuQuadBatchWriter,
+  packWgpuQuadBatchMaterialInstance,
+  prepareWgpuQuadBatchWrite,
+  recordWgpuQuadBatchColorScaleBias,
+} from './wgpuQuadBatchWriter';
 
 export function drawWgpuSprite(state: WgpuRenderState, renderProxy: RenderProxy2D): void {
   const runtime = getWgpuRenderStateRuntime(state);
@@ -26,7 +26,7 @@ export function drawWgpuSprite(state: WgpuRenderState, renderProxy: RenderProxy2
 
   const shader = resolveWgpuShader(state, renderProxy);
   if (shader !== null) {
-    flushWgpuSpriteBatch(state);
+    flushWgpuQuadBatchWriter(state);
     state.applyBlendMode?.(state, renderProxy.blendMode);
     if (resolveWgpuTexture(state, texture, true) === null) return;
     shader.bind(state, renderProxy);
@@ -49,9 +49,9 @@ export function drawWgpuSprite(state: WgpuRenderState, renderProxy: RenderProxy2
   if (texture.flipX) [u0, u1] = [u1, u0];
   if (texture.flipY) [v0, v1] = [v1, v0];
 
-  const instanceIndex = runtime.spriteBatchCount;
-  const base = prepareWgpuSpriteBatchWrite(state, texture, renderProxy.blendMode, material, materialRenderer, 1);
-  const data = runtime.spriteBatchInstanceData;
+  const instanceIndex = runtime.quadBatchWriterCount;
+  const base = prepareWgpuQuadBatchWrite(state, texture, renderProxy.blendMode, material, materialRenderer, 1);
+  const data = runtime.quadBatchWriterInstanceData;
   const transform = renderProxy.transform2D;
   data[base] = transform.a;
   data[base + 1] = transform.b;
@@ -66,9 +66,9 @@ export function drawWgpuSprite(state: WgpuRenderState, renderProxy: RenderProxy2
   data[base + 10] = u1;
   data[base + 11] = v1;
   data[base + 12] = renderProxy.alpha;
-  packWgpuSpriteBatchMaterialInstance(state, renderProxy.materialData, instanceIndex);
-  recordWgpuSpriteBatchColorScaleBias(state, renderProxy.colorMatrix ?? renderProxy.colorScaleBias, instanceIndex);
-  runtime.spriteBatchCount++;
+  packWgpuQuadBatchMaterialInstance(state, renderProxy.materialData, instanceIndex);
+  recordWgpuQuadBatchColorScaleBias(state, renderProxy.colorMatrix ?? renderProxy.colorScaleBias, instanceIndex);
+  runtime.quadBatchWriterCount++;
 }
 
 export const defaultWgpuSpriteRenderer: Scene2DRenderer = {

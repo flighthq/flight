@@ -8,14 +8,14 @@ import { BlendMode } from '@flighthq/types/contract';
 import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature';
 import {
   ensureWgpuQuadBatchResources,
-  flushWgpuSpriteBatch,
+  flushWgpuQuadBatchWriter,
   getWgpuQuadBatchPipeline,
   getWgpuQuadBatchPreludeWGSL,
-  packWgpuSpriteBatchMaterialInstance,
-  prepareWgpuSpriteBatchWrite,
-  recordWgpuSpriteBatchColorScaleBias,
-  resetWgpuSpriteBatchBufferPool,
-} from './wgpuSpriteBatch';
+  packWgpuQuadBatchMaterialInstance,
+  prepareWgpuQuadBatchWrite,
+  recordWgpuQuadBatchColorScaleBias,
+  resetWgpuQuadBatchWriterBufferPool,
+} from './wgpuQuadBatchWriter';
 import { standardWgpuMaterialRenderer } from './wgpuStandardMaterial';
 
 beforeAll(() => {
@@ -70,11 +70,11 @@ describe('ensureWgpuQuadBatchResources', () => {
   });
 });
 
-describe('flushWgpuSpriteBatch', () => {
+describe('flushWgpuQuadBatchWriter', () => {
   it('does nothing when batch count is zero', async () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
-    expect(() => flushWgpuSpriteBatch(state)).not.toThrow();
+    expect(() => flushWgpuQuadBatchWriter(state)).not.toThrow();
     submitWgpuRenderPass(state);
   });
 
@@ -84,14 +84,14 @@ describe('flushWgpuSpriteBatch', () => {
     const runtime = getWgpuRenderStateRuntime(state);
     const tex = createImageResource(document.createElement('img'));
 
-    prepareWgpuSpriteBatchWrite(state, tex, null, null, standardWgpuMaterialRenderer, 1);
-    runtime.spriteBatchCount = 1;
-    flushWgpuSpriteBatch(state);
+    prepareWgpuQuadBatchWrite(state, tex, null, null, standardWgpuMaterialRenderer, 1);
+    runtime.quadBatchWriterCount = 1;
+    flushWgpuQuadBatchWriter(state);
 
-    expect(runtime.spriteBatchCount).toBe(0);
-    expect(runtime.spriteBatchTexture).toBeNull();
-    expect(runtime.spriteBatchBlendMode).toBeNull();
-    expect(runtime.spriteBatchMaterial).toBeNull();
+    expect(runtime.quadBatchWriterCount).toBe(0);
+    expect(runtime.quadBatchWriterTexture).toBeNull();
+    expect(runtime.quadBatchWriterBlendMode).toBeNull();
+    expect(runtime.quadBatchWriterMaterial).toBeNull();
     submitWgpuRenderPass(state);
   });
 
@@ -104,17 +104,19 @@ describe('flushWgpuSpriteBatch', () => {
     const tex1 = createImageResource(document.createElement('img'));
     const tex2 = createImageResource(document.createElement('img'));
 
-    prepareWgpuSpriteBatchWrite(state, tex1, null, null, standardWgpuMaterialRenderer, 1);
-    runtime.spriteBatchCount = 1;
-    flushWgpuSpriteBatch(state);
+    prepareWgpuQuadBatchWrite(state, tex1, null, null, standardWgpuMaterialRenderer, 1);
+    runtime.quadBatchWriterCount = 1;
+    flushWgpuQuadBatchWriter(state);
 
-    prepareWgpuSpriteBatchWrite(state, tex2, null, null, standardWgpuMaterialRenderer, 1);
-    runtime.spriteBatchCount = 1;
-    flushWgpuSpriteBatch(state);
+    prepareWgpuQuadBatchWrite(state, tex2, null, null, standardWgpuMaterialRenderer, 1);
+    runtime.quadBatchWriterCount = 1;
+    flushWgpuQuadBatchWriter(state);
 
-    expect(runtime.spriteBatchBufferCursor).toBe(2);
-    expect(runtime.spriteBatchBufferPool[0].instanceBuffer).not.toBeNull();
-    expect(runtime.spriteBatchBufferPool[0].instanceBuffer).not.toBe(runtime.spriteBatchBufferPool[1].instanceBuffer);
+    expect(runtime.quadBatchWriterBufferCursor).toBe(2);
+    expect(runtime.quadBatchWriterBufferPool[0].instanceBuffer).not.toBeNull();
+    expect(runtime.quadBatchWriterBufferPool[0].instanceBuffer).not.toBe(
+      runtime.quadBatchWriterBufferPool[1].instanceBuffer,
+    );
     submitWgpuRenderPass(state);
   });
 });
@@ -166,19 +168,19 @@ describe('getWgpuQuadBatchPreludeWGSL', () => {
   });
 });
 
-describe('packWgpuSpriteBatchMaterialInstance', () => {
+describe('packWgpuQuadBatchMaterialInstance', () => {
   it('is a no-op when no per-instance material data is active', async () => {
     const state = await createWgpuRenderStateForTest();
-    expect(() => packWgpuSpriteBatchMaterialInstance(state, null, 0)).not.toThrow();
+    expect(() => packWgpuQuadBatchMaterialInstance(state, null, 0)).not.toThrow();
   });
 });
 
-describe('prepareWgpuSpriteBatchWrite', () => {
+describe('prepareWgpuQuadBatchWrite', () => {
   it('returns float index 0 for an empty batch', async () => {
     const state = await createWgpuRenderStateForTest();
     const tex = createImageResource(document.createElement('img'));
 
-    const base = prepareWgpuSpriteBatchWrite(state, tex, null, null, standardWgpuMaterialRenderer, 1);
+    const base = prepareWgpuQuadBatchWrite(state, tex, null, null, standardWgpuMaterialRenderer, 1);
     expect(base).toBe(0);
   });
 
@@ -189,12 +191,12 @@ describe('prepareWgpuSpriteBatchWrite', () => {
     const tex1 = createImageResource(document.createElement('img'));
     const tex2 = createImageResource(document.createElement('img'));
 
-    prepareWgpuSpriteBatchWrite(state, tex1, null, null, standardWgpuMaterialRenderer, 1);
-    runtime.spriteBatchCount = 1;
-    prepareWgpuSpriteBatchWrite(state, tex2, null, null, standardWgpuMaterialRenderer, 1);
+    prepareWgpuQuadBatchWrite(state, tex1, null, null, standardWgpuMaterialRenderer, 1);
+    runtime.quadBatchWriterCount = 1;
+    prepareWgpuQuadBatchWrite(state, tex2, null, null, standardWgpuMaterialRenderer, 1);
 
-    expect(runtime.spriteBatchTexture).toBe(tex2);
-    expect(runtime.spriteBatchCount).toBe(0);
+    expect(runtime.quadBatchWriterTexture).toBe(tex2);
+    expect(runtime.quadBatchWriterCount).toBe(0);
     submitWgpuRenderPass(state);
   });
 
@@ -206,37 +208,37 @@ describe('prepareWgpuSpriteBatchWrite', () => {
     const materialA = makeMaterial();
     const materialB = makeMaterial();
 
-    prepareWgpuSpriteBatchWrite(state, tex, null, materialA, standardWgpuMaterialRenderer, 1);
-    runtime.spriteBatchCount = 1;
-    prepareWgpuSpriteBatchWrite(state, tex, null, materialB, standardWgpuMaterialRenderer, 1);
+    prepareWgpuQuadBatchWrite(state, tex, null, materialA, standardWgpuMaterialRenderer, 1);
+    runtime.quadBatchWriterCount = 1;
+    prepareWgpuQuadBatchWrite(state, tex, null, materialB, standardWgpuMaterialRenderer, 1);
 
-    expect(runtime.spriteBatchMaterial).toBe(materialB);
-    expect(runtime.spriteBatchCount).toBe(0);
+    expect(runtime.quadBatchWriterMaterial).toBe(materialB);
+    expect(runtime.quadBatchWriterCount).toBe(0);
     submitWgpuRenderPass(state);
   });
 });
 
-describe('recordWgpuSpriteBatchColorScaleBias', () => {
+describe('recordWgpuQuadBatchColorScaleBias', () => {
   it('skips the tint and records no fold state when color adjustment is not enabled', async () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
-    recordWgpuSpriteBatchColorScaleBias(state, ct(0.5), 0);
-    expect(runtime.spriteBatchColorScaleBiasMode ?? CT_MODE_NONE).toBe(CT_MODE_NONE);
+    recordWgpuQuadBatchColorScaleBias(state, ct(0.5), 0);
+    expect(runtime.quadBatchWriterColorScaleBiasMode ?? CT_MODE_NONE).toBe(CT_MODE_NONE);
   });
 
   it('is a no-op for an untinted instance whether or not the fold is enabled', async () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
-    expect(() => recordWgpuSpriteBatchColorScaleBias(state, null, 0)).not.toThrow();
-    expect(runtime.spriteBatchColorScaleBiasMode ?? CT_MODE_NONE).toBe(CT_MODE_NONE);
+    expect(() => recordWgpuQuadBatchColorScaleBias(state, null, 0)).not.toThrow();
+    expect(runtime.quadBatchWriterColorScaleBiasMode ?? CT_MODE_NONE).toBe(CT_MODE_NONE);
   });
 
   it('delegates to the installed fold when color adjustment is enabled', async () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
     registerWgpuColorAdjustmentMaterialFeature(state);
-    recordWgpuSpriteBatchColorScaleBias(state, ct(0.5), 0);
-    expect(runtime.spriteBatchColorScaleBiasMode).toBe(CT_MODE_UNIFORM);
+    recordWgpuQuadBatchColorScaleBias(state, ct(0.5), 0);
+    expect(runtime.quadBatchWriterColorScaleBiasMode).toBe(CT_MODE_UNIFORM);
   });
 
   it('an untinted batch on flush uses the lean material module (no fold)', async () => {
@@ -245,28 +247,28 @@ describe('recordWgpuSpriteBatchColorScaleBias', () => {
     renderWgpuBackground(state);
     const runtime = getWgpuRenderStateRuntime(state);
     const tex = createImageResource(document.createElement('img'));
-    prepareWgpuSpriteBatchWrite(state, tex, null, null, standardWgpuMaterialRenderer, 1);
-    recordWgpuSpriteBatchColorScaleBias(state, null, 0);
-    runtime.spriteBatchCount = 1;
-    expect(() => flushWgpuSpriteBatch(state)).not.toThrow();
+    prepareWgpuQuadBatchWrite(state, tex, null, null, standardWgpuMaterialRenderer, 1);
+    recordWgpuQuadBatchColorScaleBias(state, null, 0);
+    runtime.quadBatchWriterCount = 1;
+    expect(() => flushWgpuQuadBatchWriter(state)).not.toThrow();
     submitWgpuRenderPass(state);
   });
 });
 
-describe('resetWgpuSpriteBatchBufferPool', () => {
+describe('resetWgpuQuadBatchWriterBufferPool', () => {
   it('rewinds the pool cursor so slots are reclaimed next frame', async () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
     const runtime = getWgpuRenderStateRuntime(state);
     const tex = createImageResource(document.createElement('img'));
 
-    prepareWgpuSpriteBatchWrite(state, tex, null, null, standardWgpuMaterialRenderer, 1);
-    runtime.spriteBatchCount = 1;
-    flushWgpuSpriteBatch(state);
-    expect(runtime.spriteBatchBufferCursor).toBe(1);
+    prepareWgpuQuadBatchWrite(state, tex, null, null, standardWgpuMaterialRenderer, 1);
+    runtime.quadBatchWriterCount = 1;
+    flushWgpuQuadBatchWriter(state);
+    expect(runtime.quadBatchWriterBufferCursor).toBe(1);
 
-    resetWgpuSpriteBatchBufferPool(state);
-    expect(runtime.spriteBatchBufferCursor).toBe(0);
+    resetWgpuQuadBatchWriterBufferPool(state);
+    expect(runtime.quadBatchWriterBufferCursor).toBe(0);
     submitWgpuRenderPass(state);
   });
 });

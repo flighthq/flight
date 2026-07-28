@@ -1,7 +1,7 @@
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { Matrix, PathWinding, WgpuClipContourPipelines, WgpuRenderState } from '@flighthq/types/contract';
 
-import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
+import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
 
 // Wgpu contour clip via stencil nesting — the Wgpu counterpart to webglClipContours. A path
 // ClipRegion is realized by stamping its covered pixels into the stencil buffer, then content draws in
@@ -39,7 +39,7 @@ const CLIP_UNIFORM_BYTES = 48;
 
 export function popWgpuClipContours(state: WgpuRenderState): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  flushWgpuSpriteBatch(state);
+  flushWgpuQuadBatchWriter(state);
   const entry = runtime.clipContourStack.pop();
   runtime.currentMaskDepth = Math.max(0, runtime.currentMaskDepth - 1);
 
@@ -68,7 +68,7 @@ export function pushWgpuClipContours(
   worldTransform: Readonly<Matrix>,
 ): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  flushWgpuSpriteBatch(state);
+  flushWgpuQuadBatchWriter(state);
   // Coverage-based; winding (even-odd vs non-zero, holes) is not yet applied — see file header.
   void winding;
 

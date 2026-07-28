@@ -19,13 +19,13 @@ import type {
 } from '@flighthq/types/contract';
 import { BatchFormat } from '@flighthq/types/contract';
 
-import { drawGlShapeMeshes } from './glShapeMesh';
 import {
   ensureGlQuadBatchShader,
-  packGlSpriteBatchMaterialInstance,
-  prepareGlSpriteBatchWrite,
-  recordGlSpriteBatchColorScaleBias,
-} from './glSpriteBatch';
+  packGlQuadBatchMaterialInstance,
+  prepareGlQuadBatchWrite,
+  recordGlQuadBatchColorScaleBias,
+} from './glQuadBatchWriter';
+import { drawGlShapeMeshes } from './glShapeMesh';
 
 // Renderer-private scratch state stored in the opaque RendererData slot. It is not an Entity (it
 // carries no EntityRuntimeKey), so the slot is read and written through the typed accessor pair
@@ -34,7 +34,7 @@ import {
 interface GlShapeData {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
-  // The canvas wrapped as an ImageResource (its `source`), so the shared sprite batch treats a
+  // The canvas wrapped as an ImageResource (its `source`), so the shared quad-batch writer treats a
   // canvas-backed shape uniformly with bitmaps and atlases. Re-rendering the canvas bumps the resource's
   // version (setImageResourceSource), which the batch's version-aware cache uses to re-upload.
   image: ImageResource;
@@ -162,9 +162,9 @@ export function drawGlShape(state: GlRenderState, renderProxy: RenderProxy2D): v
   const tx = t.tx + t.a * bounds.x + t.c * bounds.y;
   const ty = t.ty + t.b * bounds.x + t.d * bounds.y;
 
-  const startCount = runtime.spriteBatchCount;
-  const base = prepareGlSpriteBatchWrite(state, shapeData.image, renderProxy.blendMode, material, materialRenderer, 1);
-  const d = runtime.spriteBatchInstanceData;
+  const startCount = runtime.quadBatchWriterCount;
+  const base = prepareGlQuadBatchWrite(state, shapeData.image, renderProxy.blendMode, material, materialRenderer, 1);
+  const d = runtime.quadBatchWriterInstanceData;
   d[base] = t.a;
   d[base + 1] = t.b;
   d[base + 2] = t.c;
@@ -178,9 +178,9 @@ export function drawGlShape(state: GlRenderState, renderProxy: RenderProxy2D): v
   d[base + 10] = 1;
   d[base + 11] = 1;
   d[base + 12] = renderProxy.alpha;
-  packGlSpriteBatchMaterialInstance(state, renderProxy.materialData, startCount);
-  recordGlSpriteBatchColorScaleBias(state, renderProxy.colorMatrix ?? renderProxy.colorScaleBias, startCount);
-  runtime.spriteBatchCount++;
+  packGlQuadBatchMaterialInstance(state, renderProxy.materialData, startCount);
+  recordGlQuadBatchColorScaleBias(state, renderProxy.colorMatrix ?? renderProxy.colorScaleBias, startCount);
+  runtime.quadBatchWriterCount++;
 }
 
 export const defaultGlShapeRenderer: Scene2DRenderer = {

@@ -13,10 +13,10 @@ import { BatchFormat } from '@flighthq/types/contract';
 
 import {
   ensureGlQuadBatchShader,
-  packGlSpriteBatchMaterialInstance,
-  prepareGlSpriteBatchWrite,
-  recordGlSpriteBatchColorScaleBias,
-} from './glSpriteBatch';
+  packGlQuadBatchMaterialInstance,
+  prepareGlQuadBatchWrite,
+  recordGlQuadBatchColorScaleBias,
+} from './glQuadBatchWriter';
 
 // Per-instance stride, matching the QuadBatch/Tilemap sprite path (13 floats: world transform + region +
 // uv + alpha). See glQuadBatch.
@@ -24,7 +24,7 @@ const INSTANCE_FLOATS = 13;
 
 // Draws a BitmapText leaf: one batched sprite pass per glyph-atlas page (each page binds its own atlas
 // image, so a multi-page source issues one draw per page). The node's resolved color adjustment folds in
-// as a whole-node tint on every glyph — the same `recordGlSpriteBatchColorScaleBias` path a tinted
+// as a whole-node tint on every glyph — the same `recordGlQuadBatchColorScaleBias` path a tinted
 // QuadBatch uses — realized only when `registerGlColorAdjustmentMaterialFeature` has installed the fold. Mirrors
 // `submitGlQuadBatch`'s vector2 inner loop, sourced from the page's own `ids`/`transforms` arrays.
 function submitGlBitmapText(state: GlRenderState, node: RenderProxy2D): void {
@@ -52,9 +52,9 @@ function submitGlBitmapText(state: GlRenderState, node: RenderProxy2D): void {
     if (texture === null || !hasTextureBacking(texture) || page.instanceCount === 0) continue;
 
     ensureGlQuadBatchShader(state);
-    // prepareGlSpriteBatchWrite may flush the prior page's batch (each page binds a different image), so
+    // prepareGlQuadBatchWrite may flush the prior page's batch (each page binds a different image), so
     // read the running instance count AFTER it so material/color-adjustment indices align with `base`.
-    const base = prepareGlSpriteBatchWrite(
+    const base = prepareGlQuadBatchWrite(
       state,
       texture,
       node.blendMode,
@@ -62,13 +62,13 @@ function submitGlBitmapText(state: GlRenderState, node: RenderProxy2D): void {
       materialRenderer,
       page.instanceCount,
     );
-    const startCount = runtime.spriteBatchCount;
+    const startCount = runtime.quadBatchWriterCount;
 
     const regions = atlas.regions;
     const numRegions = regions.length;
     const iw = 1 / Math.max(1, getTextureWidth(texture));
     const ih = 1 / Math.max(1, getTextureHeight(texture));
-    const instanceData = runtime.spriteBatchInstanceData;
+    const instanceData = runtime.quadBatchWriterInstanceData;
     const ids = page.ids;
     const transforms = page.transforms;
 
@@ -95,13 +95,13 @@ function submitGlBitmapText(state: GlRenderState, node: RenderProxy2D): void {
       instanceData[writeBase + 10] = (region.x + region.width) * iw;
       instanceData[writeBase + 11] = (region.y + region.height) * ih;
       instanceData[writeBase + 12] = alpha;
-      packGlSpriteBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
-      recordGlSpriteBatchColorScaleBias(state, nodeColorScaleBias, startCount + drawCount);
+      packGlQuadBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
+      recordGlQuadBatchColorScaleBias(state, nodeColorScaleBias, startCount + drawCount);
       writeBase += INSTANCE_FLOATS;
       drawCount++;
     }
 
-    runtime.spriteBatchCount += drawCount;
+    runtime.quadBatchWriterCount += drawCount;
   }
 }
 

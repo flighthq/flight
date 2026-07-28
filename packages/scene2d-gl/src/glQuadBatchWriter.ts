@@ -24,10 +24,10 @@ import type {
 // Attribute locations 0 (a_corner) and 1-6 are a fixed contract; material shaders extend from
 // location 7. The base buffer and a material's own per-instance buffer share only the instance
 // count and divisor convention.
-const SPRITE_INSTANCE_FLOATS = 13;
-const SPRITE_INSTANCE_STRIDE = SPRITE_INSTANCE_FLOATS * 4;
+const QUAD_BATCH_INSTANCE_FLOATS = 13;
+const QUAD_BATCH_INSTANCE_STRIDE = QUAD_BATCH_INSTANCE_FLOATS * 4;
 
-// Highest per-instance attribute location any sprite-batch material or the opt-in color-adjustment
+// Highest per-instance attribute location any quad-batch writer material or the opt-in color-adjustment
 // fold (a_colorScale/a_colorBias at 7/8) may use. Divisors for locations 1..this are reset after each flush so
 // later non-instanced draws are not corrupted.
 const MAX_INSTANCE_ATTRIB_LOCATION = 8;
@@ -75,7 +75,7 @@ void main() {
   fragColor = color;
 }`;
 
-function compileSpriteBatchShader(gl: WebGL2RenderingContext): GlQuadBatchShader {
+function compileQuadBatchWriterShader(gl: WebGL2RenderingContext): GlQuadBatchShader {
   const program = createGlProgram(gl, QUAD_BATCH_VS, QUAD_BATCH_FS, 'Sprite-batch');
   return {
     program,
@@ -93,8 +93,8 @@ function compileSpriteBatchShader(gl: WebGL2RenderingContext): GlQuadBatchShader
 }
 
 // Binds the corner buffer (location `locCorner`, divisor 0) and the base instance attributes
-// (locations 1-6, divisor 1) from the active sprite-batch instance buffer. Shared by every
-// sprite-batch material renderer regardless of its program, since the base layout is fixed.
+// (locations 1-6, divisor 1) from the active quad-batch writer instance buffer. Shared by every
+// quad-batch writer material renderer regardless of its program, since the base layout is fixed.
 export function bindGlQuadBatchBaseAttributes(state: GlRenderState, locCorner: number): void {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
@@ -103,8 +103,8 @@ export function bindGlQuadBatchBaseAttributes(state: GlRenderState, locCorner: n
   gl.vertexAttribPointer(locCorner, 2, gl.FLOAT, false, 8, 0);
   gl.vertexAttribDivisor(locCorner, 0);
 
-  const stride = SPRITE_INSTANCE_STRIDE;
-  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchInstanceBuffer!);
+  const stride = QUAD_BATCH_INSTANCE_STRIDE;
+  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchWriterInstanceBuffer!);
   gl.enableVertexAttribArray(1);
   gl.vertexAttribPointer(1, 2, gl.FLOAT, false, stride, 0);
   gl.vertexAttribDivisor(1, 1);
@@ -130,7 +130,7 @@ export function ensureGlQuadBatchShader(state: GlRenderState): GlQuadBatchShader
   if (runtime.quadBatchShader) return runtime.quadBatchShader;
 
   const gl = state.gl;
-  runtime.quadBatchShader = compileSpriteBatchShader(gl);
+  runtime.quadBatchShader = compileQuadBatchWriterShader(gl);
 
   const cornerData = new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]);
   const cornerBuf = gl.createBuffer()!;
@@ -141,35 +141,35 @@ export function ensureGlQuadBatchShader(state: GlRenderState): GlQuadBatchShader
   return runtime.quadBatchShader;
 }
 
-export function flushGlSpriteBatch(state: GlRenderState): void {
+export function flushGlQuadBatchWriter(state: GlRenderState): void {
   const runtime = getGlRenderStateRuntime(state);
-  const count = runtime.spriteBatchCount;
+  const count = runtime.quadBatchWriterCount;
   if (count === 0) return;
 
-  const texture = runtime.spriteBatchTexture!;
-  const blendMode = runtime.spriteBatchBlendMode;
-  const material = runtime.spriteBatchMaterial;
-  const renderer = runtime.spriteBatchMaterialRenderer!;
-  const floats = runtime.spriteBatchMaterialFloats;
-  const smoothing = runtime.spriteBatchSmoothing;
-  runtime.spriteBatchCount = 0;
-  runtime.spriteBatchTexture = null;
-  runtime.spriteBatchSmoothing = null;
-  runtime.spriteBatchBlendMode = null;
-  runtime.spriteBatchMaterial = null;
-  runtime.spriteBatchMaterialRenderer = null;
-  runtime.spriteBatchMaterialFloats = 0;
+  const texture = runtime.quadBatchWriterTexture!;
+  const blendMode = runtime.quadBatchWriterBlendMode;
+  const material = runtime.quadBatchWriterMaterial;
+  const renderer = runtime.quadBatchWriterMaterialRenderer!;
+  const floats = runtime.quadBatchWriterMaterialFloats;
+  const smoothing = runtime.quadBatchWriterSmoothing;
+  runtime.quadBatchWriterCount = 0;
+  runtime.quadBatchWriterTexture = null;
+  runtime.quadBatchWriterSmoothing = null;
+  runtime.quadBatchWriterBlendMode = null;
+  runtime.quadBatchWriterMaterial = null;
+  runtime.quadBatchWriterMaterialRenderer = null;
+  runtime.quadBatchWriterMaterialFloats = 0;
 
   const gl = state.gl;
 
-  if (runtime.spriteBatchInstanceBuffer === null) {
-    runtime.spriteBatchInstanceBuffer = gl.createBuffer()!;
-    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchInstanceBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, runtime.spriteBatchInstanceData.byteLength, gl.DYNAMIC_DRAW);
+  if (runtime.quadBatchWriterInstanceBuffer === null) {
+    runtime.quadBatchWriterInstanceBuffer = gl.createBuffer()!;
+    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchWriterInstanceBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, runtime.quadBatchWriterInstanceData.byteLength, gl.DYNAMIC_DRAW);
   } else {
-    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchInstanceBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchWriterInstanceBuffer);
   }
-  gl.bufferSubData(gl.ARRAY_BUFFER, 0, runtime.spriteBatchInstanceData, 0, count * SPRITE_INSTANCE_FLOATS);
+  gl.bufferSubData(gl.ARRAY_BUFFER, 0, runtime.quadBatchWriterInstanceData, 0, count * QUAD_BATCH_INSTANCE_FLOATS);
 
   state.applyBlendMode?.(state, blendMode);
   const resolved =
@@ -184,14 +184,14 @@ export function flushGlSpriteBatch(state: GlRenderState): void {
   const ctHandled = runtime.glColorAdjustmentMaterialFeature?.flush(state, count) ?? false;
   if (!ctHandled) {
     if (floats > 0) {
-      if (runtime.spriteBatchMaterialBuffer === null) {
-        runtime.spriteBatchMaterialBuffer = gl.createBuffer()!;
-        gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchMaterialBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, runtime.spriteBatchMaterialData.byteLength, gl.DYNAMIC_DRAW);
+      if (runtime.quadBatchWriterMaterialBuffer === null) {
+        runtime.quadBatchWriterMaterialBuffer = gl.createBuffer()!;
+        gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchWriterMaterialBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, runtime.quadBatchWriterMaterialData.byteLength, gl.DYNAMIC_DRAW);
       } else {
-        gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchMaterialBuffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchWriterMaterialBuffer);
       }
-      gl.bufferSubData(gl.ARRAY_BUFFER, 0, runtime.spriteBatchMaterialData, 0, count * floats);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, runtime.quadBatchWriterMaterialData, 0, count * floats);
     }
     // Resolved renderer owns program selection, uniforms, and all attribute setup (base + its own).
     renderer.bind(state, material);
@@ -208,31 +208,31 @@ export function flushGlSpriteBatch(state: GlRenderState): void {
 // Writes one instance's per-instance material floats into the active material buffer at the given
 // instance index, converting the supplied per-instance materialData. No-op for uniform-only
 // materials (no packInstance / floats === 0). Color transform is folded separately by
-// recordGlSpriteBatchColorScaleBias — it is not a material.
-export function packGlSpriteBatchMaterialInstance(
+// recordGlQuadBatchColorScaleBias — it is not a material.
+export function packGlQuadBatchMaterialInstance(
   state: GlRenderState,
   materialData: MaterialData | null,
   instanceIndex: number,
 ): void {
   const runtime = getGlRenderStateRuntime(state);
-  const renderer = runtime.spriteBatchMaterialRenderer;
+  const renderer = runtime.quadBatchWriterMaterialRenderer;
   if (renderer === null || renderer.packInstance === undefined) return;
   renderer.packInstance(
     state,
     materialData,
-    runtime.spriteBatchMaterialData,
-    instanceIndex * runtime.spriteBatchMaterialFloats,
+    runtime.quadBatchWriterMaterialData,
+    instanceIndex * runtime.quadBatchWriterMaterialFloats,
   );
 }
 
-// Ensures the sprite batch can accept up to `maxInstances` more instances for the given texture,
+// Ensures the quad-batch writer can accept up to `maxInstances` more instances for the given texture,
 // blend mode, material, and smoothing. Flushes the current batch when any of the four changes (material
 // is compared by reference) or capacity is exceeded. `smoothing` is a per-bitmap sampling preference
 // (`true`/`false` force LINEAR/NEAREST, `null` uses the global `allowSmoothing` default); it keys the
 // batch because filtering is a per-texture-bind property. The color adjustment is orthogonal — it never
-// keys the batch. Returns the float index in spriteBatchInstanceData where the caller should begin
-// writing base instance data; the caller increments state.spriteBatchCount and records per-instance data.
-export function prepareGlSpriteBatchWrite(
+// keys the batch. Returns the float index in quadBatchWriterInstanceData where the caller should begin
+// writing base instance data; the caller increments state.quadBatchWriterCount and records per-instance data.
+export function prepareGlQuadBatchWrite(
   state: GlRenderState,
   texture: Readonly<ImageResource | Texture>,
   blendMode: BlendMode | null,
@@ -242,48 +242,48 @@ export function prepareGlSpriteBatchWrite(
   smoothing: boolean | null = null,
 ): number {
   const runtime = getGlRenderStateRuntime(state);
-  runtime.flushPendingDraws = flushGlSpriteBatch;
+  runtime.flushPendingDraws = flushGlQuadBatchWriter;
   if (
-    texture !== runtime.spriteBatchTexture ||
-    blendMode !== runtime.spriteBatchBlendMode ||
-    material !== runtime.spriteBatchMaterial ||
-    smoothing !== runtime.spriteBatchSmoothing
+    texture !== runtime.quadBatchWriterTexture ||
+    blendMode !== runtime.quadBatchWriterBlendMode ||
+    material !== runtime.quadBatchWriterMaterial ||
+    smoothing !== runtime.quadBatchWriterSmoothing
   ) {
-    flushGlSpriteBatch(state);
+    flushGlQuadBatchWriter(state);
   }
-  runtime.spriteBatchTexture = texture;
-  runtime.spriteBatchSmoothing = smoothing;
-  runtime.spriteBatchBlendMode = blendMode;
-  runtime.spriteBatchMaterial = material;
-  runtime.spriteBatchMaterialRenderer = materialRenderer;
+  runtime.quadBatchWriterTexture = texture;
+  runtime.quadBatchWriterSmoothing = smoothing;
+  runtime.quadBatchWriterBlendMode = blendMode;
+  runtime.quadBatchWriterMaterial = material;
+  runtime.quadBatchWriterMaterialRenderer = materialRenderer;
   const floats = materialRenderer.instanceFloatCount;
-  runtime.spriteBatchMaterialFloats = floats;
+  runtime.quadBatchWriterMaterialFloats = floats;
 
-  const needed = (runtime.spriteBatchCount + maxInstances) * SPRITE_INSTANCE_FLOATS;
-  if (needed > runtime.spriteBatchInstanceData.length) {
-    const newSize = Math.max(needed, runtime.spriteBatchInstanceData.length * 2);
-    runtime.spriteBatchInstanceData = new Float32Array(newSize);
-    if (runtime.spriteBatchInstanceBuffer !== null) {
+  const needed = (runtime.quadBatchWriterCount + maxInstances) * QUAD_BATCH_INSTANCE_FLOATS;
+  if (needed > runtime.quadBatchWriterInstanceData.length) {
+    const newSize = Math.max(needed, runtime.quadBatchWriterInstanceData.length * 2);
+    runtime.quadBatchWriterInstanceData = new Float32Array(newSize);
+    if (runtime.quadBatchWriterInstanceBuffer !== null) {
       const gl = state.gl;
-      gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchInstanceBuffer);
+      gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchWriterInstanceBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, newSize * 4, gl.DYNAMIC_DRAW);
     }
   }
 
   if (floats > 0) {
-    const materialNeeded = (runtime.spriteBatchCount + maxInstances) * floats;
-    if (materialNeeded > runtime.spriteBatchMaterialData.length) {
-      const newSize = Math.max(materialNeeded, runtime.spriteBatchMaterialData.length * 2);
-      runtime.spriteBatchMaterialData = new Float32Array(newSize);
-      if (runtime.spriteBatchMaterialBuffer !== null) {
+    const materialNeeded = (runtime.quadBatchWriterCount + maxInstances) * floats;
+    if (materialNeeded > runtime.quadBatchWriterMaterialData.length) {
+      const newSize = Math.max(materialNeeded, runtime.quadBatchWriterMaterialData.length * 2);
+      runtime.quadBatchWriterMaterialData = new Float32Array(newSize);
+      if (runtime.quadBatchWriterMaterialBuffer !== null) {
         const gl = state.gl;
-        gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchMaterialBuffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchWriterMaterialBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, newSize * 4, gl.DYNAMIC_DRAW);
       }
     }
   }
 
-  return runtime.spriteBatchCount * SPRITE_INSTANCE_FLOATS;
+  return runtime.quadBatchWriterCount * QUAD_BATCH_INSTANCE_FLOATS;
 }
 
 // Folds instance `instanceIndex`'s effective color adjustment into the active batch through the opt-in
@@ -291,7 +291,7 @@ export function prepareGlSpriteBatchWrite(
 // (registerGlColorAdjustmentMaterialFeature), the fold slot is null and the tint is skipped — the batch draws untinted
 // (the sentinel behavior); an installed guard reports the miss. `colorScaleBias` is null for an
 // untinted instance, which is a no-op whether or not the fold is enabled.
-export function recordGlSpriteBatchColorScaleBias(
+export function recordGlQuadBatchColorScaleBias(
   state: GlRenderState,
   colorScaleBias: ColorScaleBias | TintMaterialData | readonly number[] | null | undefined,
   instanceIndex: number,

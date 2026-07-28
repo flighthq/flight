@@ -21,10 +21,10 @@ import { BatchFormat } from '@flighthq/types/contract';
 
 import {
   ensureGlQuadBatchShader,
-  packGlSpriteBatchMaterialInstance,
-  prepareGlSpriteBatchWrite,
-  recordGlSpriteBatchColorScaleBias,
-} from './glSpriteBatch';
+  packGlQuadBatchMaterialInstance,
+  prepareGlQuadBatchWrite,
+  recordGlQuadBatchColorScaleBias,
+} from './glQuadBatchWriter';
 
 // Renderer-private scratch state stored in the opaque RendererData slot. It is not an Entity (it
 // carries no EntityRuntimeKey), so the slot is read and written through the typed accessor pair
@@ -33,7 +33,7 @@ import {
 interface GlTextLabelData {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
-  // The canvas wrapped as an ImageResource (its `source`) so the shared sprite batch treats canvas-backed
+  // The canvas wrapped as an ImageResource (its `source`) so the shared quad-batch writer treats canvas-backed
   // text uniformly with bitmaps; re-rasterizing bumps the version, which the batch cache re-uploads on.
   image: ImageResource;
   // Content revision and pixel ratio at last rasterization. Re-rasterization is driven by the
@@ -158,9 +158,9 @@ export function drawGlTextLabel(state: GlRenderState, renderProxy: RenderProxy2D
 
   ensureGlQuadBatchShader(state);
 
-  const startCount = runtime.spriteBatchCount;
-  const base = prepareGlSpriteBatchWrite(state, textData.image, renderProxy.blendMode, material, materialRenderer, 1);
-  const d = runtime.spriteBatchInstanceData;
+  const startCount = runtime.quadBatchWriterCount;
+  const base = prepareGlQuadBatchWrite(state, textData.image, renderProxy.blendMode, material, materialRenderer, 1);
+  const d = runtime.quadBatchWriterInstanceData;
   const t = renderProxy.transform2D;
   d[base] = t.a;
   d[base + 1] = t.b;
@@ -175,9 +175,9 @@ export function drawGlTextLabel(state: GlRenderState, renderProxy: RenderProxy2D
   d[base + 10] = 1;
   d[base + 11] = 1;
   d[base + 12] = renderProxy.alpha;
-  packGlSpriteBatchMaterialInstance(state, renderProxy.materialData, startCount);
-  recordGlSpriteBatchColorScaleBias(state, renderProxy.colorMatrix ?? renderProxy.colorScaleBias, startCount);
-  runtime.spriteBatchCount++;
+  packGlQuadBatchMaterialInstance(state, renderProxy.materialData, startCount);
+  recordGlQuadBatchColorScaleBias(state, renderProxy.colorMatrix ?? renderProxy.colorScaleBias, startCount);
+  runtime.quadBatchWriterCount++;
 }
 
 export const defaultGlTextLabelRenderer: Scene2DRenderer = {

@@ -94,16 +94,16 @@ describe('drawWgpuTextLabel', () => {
     renderWgpuBackground(state);
     registerStandardWgpuMaterial(state);
     expect(() => drawWgpuTextLabel(state, makeTextProxy('', makeTextData()))).not.toThrow();
-    expect(getWgpuRenderStateRuntime(state).spriteBatchCount).toBe(0);
+    expect(getWgpuRenderStateRuntime(state).quadBatchWriterCount).toBe(0);
     submitWgpuRenderPass(state);
   });
 
-  it('writes one instance to the sprite batch when text has content', async () => {
+  it('writes one instance to the quad-batch writer when text has content', async () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
     registerStandardWgpuMaterial(state);
     drawWgpuTextLabel(state, makeTextProxy('hello', makeTextData()));
-    expect(getWgpuRenderStateRuntime(state).spriteBatchCount).toBe(1);
+    expect(getWgpuRenderStateRuntime(state).quadBatchWriterCount).toBe(1);
     submitWgpuRenderPass(state);
   });
 

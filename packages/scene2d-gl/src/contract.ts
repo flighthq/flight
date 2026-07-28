@@ -16,7 +16,7 @@ export * from './glScale9Shape';
 export * from './glShape';
 export * from './glShapeMesh';
 export * from './glSprite';
-export * from './glSpriteBatch';
+export * from './glQuadBatchWriter';
 export * from './glTextInput';
 export * from './glTextLabel';
 export * from './glTilemap';

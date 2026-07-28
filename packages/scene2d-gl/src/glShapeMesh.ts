@@ -2,7 +2,7 @@ import { createGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlShapeMesh, GlShapeMeshBinding, RenderProxy2D } from '@flighthq/types/contract';
 
-import { flushGlSpriteBatch } from './glSpriteBatch';
+import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 
 // GPU tessellated solid-fill path for Shape — the replacement for the canvas-raster-to-texture shortcut
 // (which is resolution-bound, so circles go jagged when scaled up). Each fill region is tessellated to a
@@ -10,7 +10,7 @@ import { flushGlSpriteBatch } from './glSpriteBatch';
 // transformed by the node world transform in the vertex shader so it stays crisp at any zoom. Gradient/
 // bitmap fills and strokes still take the raster path (see getShapeFillRegions returning null).
 
-// Draws the shape's tessellated fill meshes through `binding`. Flushes the sprite batch first (these go
+// Draws the shape's tessellated fill meshes through `binding`. Flushes the quad-batch writer first (these go
 // through a separate program), honors the node blend mode and alpha, and is gated by any active clip
 // stencil (GL state set by the clip hooks is left untouched). Records the program as currentProgram so
 // the next content draw re-binds its own program (same hazard the clip path guards against). Uploads
@@ -26,7 +26,7 @@ export function drawGlShapeMeshBatch(
 ): void {
   if (meshes.length === 0) return;
   const runtime = getGlRenderStateRuntime(state);
-  flushGlSpriteBatch(state);
+  flushGlQuadBatchWriter(state);
 
   const gl = state.gl;
   gl.useProgram(binding.program);
@@ -120,7 +120,7 @@ function compileShapeMeshProgram(gl: WebGL2RenderingContext): WebGLProgram {
 }
 
 // Column-major mat3 = projection · world transform, mapping shape-local points to clip space — identical
-// to the sprite batch's projection so the mesh aligns with everything else.
+// to the quad-batch writer's projection so the mesh aligns with everything else.
 function shapeMeshMatrix(state: GlRenderState, renderProxy: RenderProxy2D): Float32Array {
   const viewport = getGlRenderStateRuntime(state).renderTargetViewport ?? state.canvas;
   const iw = 2 / (viewport.width || 1);

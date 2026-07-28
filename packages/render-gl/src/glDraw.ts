@@ -160,7 +160,7 @@ export function bindGlTexture(
     // texture bound to whatever unit was active THEN, but callers change the active unit between binds
     // (a material binds its maps to units 0..4 via gl.activeTexture). Binding one image source to two
     // units — e.g. a map reused as both normal and metallic-roughness — would otherwise leave the
-    // second unit unbound. A rebind is one cheap GL call; the sprite batch binds once per batch, so the
+    // second unit unbound. A rebind is one cheap GL call; the quad-batch writer binds once per batch, so the
     // dropped skip costs nothing meaningful.
     gl.bindTexture(gl.TEXTURE_2D, texture);
     runtime.currentTexture = texture;

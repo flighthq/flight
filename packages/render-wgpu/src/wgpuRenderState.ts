@@ -134,19 +134,19 @@ export async function createWgpuRenderState(
   runtime.particleInstanceData = null;
   runtime.particleInstanceCapacity = 0;
 
-  runtime.spriteBatchBlendMode = null;
-  runtime.spriteBatchMaterial = null;
-  runtime.spriteBatchMaterialRenderer = null;
-  runtime.spriteBatchMaterialFloats = 0;
-  runtime.spriteBatchCount = 0;
-  runtime.spriteBatchInstanceData = new Float32Array(13 * 256);
-  runtime.spriteBatchMaterialData = new Float32Array(8 * 256);
-  runtime.spriteBatchTexture = null;
-  runtime.spriteBatchSmoothing = null;
+  runtime.quadBatchWriterBlendMode = null;
+  runtime.quadBatchWriterMaterial = null;
+  runtime.quadBatchWriterMaterialRenderer = null;
+  runtime.quadBatchWriterMaterialFloats = 0;
+  runtime.quadBatchWriterCount = 0;
+  runtime.quadBatchWriterInstanceData = new Float32Array(13 * 256);
+  runtime.quadBatchWriterMaterialData = new Float32Array(8 * 256);
+  runtime.quadBatchWriterTexture = null;
+  runtime.quadBatchWriterSmoothing = null;
   // Color-adjustment fold state (mode/data + the folded module) is not allocated here: it is owned by
   // the opt-in registerWgpuColorAdjustmentMaterialFeature, so a state that never tints carries none of it.
-  runtime.spriteBatchBufferPool = [];
-  runtime.spriteBatchBufferCursor = 0;
+  runtime.quadBatchWriterBufferPool = [];
+  runtime.quadBatchWriterBufferCursor = 0;
 
   runtime.commandEncoder = null;
   runtime.renderPass = null;
@@ -183,9 +183,9 @@ export function createWgpuRenderStateRuntime(): WgpuRenderStateRuntime {
   return createRenderStateRuntime() as WgpuRenderStateRuntime;
 }
 
-// Destroys the GPU buffers and textures createWgpuRenderState (and the lazy sprite-batch/particle
+// Destroys the GPU buffers and textures createWgpuRenderState (and the lazy quad-batch writer/particle
 // paths) allocated on `state`: the uniform buffer, particle instance buffer, depth-stencil texture,
-// and every sprite-batch pool slot's instance/material buffers. Call when the render state is no
+// and every quad-batch writer pool slot's instance/material buffers. Call when the render state is no
 // longer needed.
 //
 // Intentionally NOT touched: the GPUDevice (app-owned and shared — destroying it would tear down
@@ -197,7 +197,7 @@ export function destroyWgpuRenderState(state: WgpuRenderState): void {
   runtime.uniformBuffer?.destroy();
   runtime.particleInstanceBuffer?.destroy();
   runtime.depthStencilTexture?.destroy();
-  for (const slot of runtime.spriteBatchBufferPool) {
+  for (const slot of runtime.quadBatchWriterBufferPool) {
     slot.instanceBuffer?.destroy();
     slot.materialBuffer?.destroy();
   }

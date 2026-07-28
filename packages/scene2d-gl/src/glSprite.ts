@@ -7,10 +7,10 @@ import { BatchFormat } from '@flighthq/types/contract';
 
 import {
   ensureGlQuadBatchShader,
-  packGlSpriteBatchMaterialInstance,
-  prepareGlSpriteBatchWrite,
-  recordGlSpriteBatchColorScaleBias,
-} from './glSpriteBatch';
+  packGlQuadBatchMaterialInstance,
+  prepareGlQuadBatchWrite,
+  recordGlQuadBatchColorScaleBias,
+} from './glQuadBatchWriter';
 
 export function drawGlSprite(state: GlRenderState, renderProxy: RenderProxy2D): void {
   const runtime = getGlRenderStateRuntime(state);
@@ -33,9 +33,9 @@ export function drawGlSprite(state: GlRenderState, renderProxy: RenderProxy2D): 
   if (texture.flipX) [u0, u1] = [u1, u0];
   if (texture.flipY) [v0, v1] = [v1, v0];
 
-  const instanceIndex = runtime.spriteBatchCount;
-  const base = prepareGlSpriteBatchWrite(state, texture, renderProxy.blendMode, material, materialRenderer, 1);
-  const data = runtime.spriteBatchInstanceData;
+  const instanceIndex = runtime.quadBatchWriterCount;
+  const base = prepareGlQuadBatchWrite(state, texture, renderProxy.blendMode, material, materialRenderer, 1);
+  const data = runtime.quadBatchWriterInstanceData;
   const transform = renderProxy.transform2D;
   data[base] = transform.a;
   data[base + 1] = transform.b;
@@ -50,9 +50,9 @@ export function drawGlSprite(state: GlRenderState, renderProxy: RenderProxy2D): 
   data[base + 10] = u1;
   data[base + 11] = v1;
   data[base + 12] = renderProxy.alpha;
-  packGlSpriteBatchMaterialInstance(state, renderProxy.materialData, instanceIndex);
-  recordGlSpriteBatchColorScaleBias(state, renderProxy.colorMatrix ?? renderProxy.colorScaleBias, instanceIndex);
-  runtime.spriteBatchCount++;
+  packGlQuadBatchMaterialInstance(state, renderProxy.materialData, instanceIndex);
+  recordGlQuadBatchColorScaleBias(state, renderProxy.colorMatrix ?? renderProxy.colorScaleBias, instanceIndex);
+  runtime.quadBatchWriterCount++;
 }
 
 export const defaultGlSpriteRenderer: Scene2DRenderer = {
