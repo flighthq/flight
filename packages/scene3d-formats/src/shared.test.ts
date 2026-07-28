@@ -1,6 +1,11 @@
-import type { EmbeddedImageResourceReference, ExternalImageResourceReference } from '@flighthq/types/contract';
+import type {
+  EmbeddedImageResourceReference,
+  ExternalImageResourceReference,
+  ImageResourceReference,
+} from '@flighthq/types/contract';
 import { ResourceResolutionState } from '@flighthq/types/contract';
 
+import { getTestTextureResource } from './scene3DFormatsTestHelper';
 import {
   buildEmbeddedImageResourceReference,
   buildExternalImageResourceReference,
@@ -116,9 +121,10 @@ describe('convertTransformLhToRh', () => {
 describe('createEmbeddedTextureRef', () => {
   it('wraps encoded bytes as an Unresolved Embedded resource ref without decoding them', () => {
     const bytes = new Uint8Array([1, 2, 3, 4]);
-    const texture = createEmbeddedTextureRef(bytes, 'image/png');
+    const resources: ImageResourceReference[] = [];
+    const texture = createEmbeddedTextureRef(bytes, 'image/png', resources);
     expect(texture.storage.image).toBeNull();
-    const ref = texture.resource as EmbeddedImageResourceReference;
+    const ref = getTestTextureResource(resources, texture) as EmbeddedImageResourceReference;
     expect(ref.kind).toBe('Embedded');
     expect(ref.bytes).toBe(bytes);
     expect(ref.mimeType).toBe('image/png');
@@ -126,16 +132,19 @@ describe('createEmbeddedTextureRef', () => {
   });
 
   it('accepts a null mimeType for the resolver to sniff', () => {
-    const ref = createEmbeddedTextureRef(new Uint8Array([0]), null).resource as EmbeddedImageResourceReference;
+    const resources: ImageResourceReference[] = [];
+    const texture = createEmbeddedTextureRef(new Uint8Array([0]), null, resources);
+    const ref = getTestTextureResource(resources, texture) as EmbeddedImageResourceReference;
     expect(ref.mimeType).toBeNull();
   });
 });
 
 describe('createExternalTextureRef', () => {
   it('wraps a filename as an Unresolved External resource ref without loading it', () => {
-    const texture = createExternalTextureRef('models/hero.png');
+    const resources: ImageResourceReference[] = [];
+    const texture = createExternalTextureRef('models/hero.png', null, resources);
     expect(texture.storage.image).toBeNull();
-    const ref = texture.resource as ExternalImageResourceReference;
+    const ref = getTestTextureResource(resources, texture) as ExternalImageResourceReference;
     expect(ref.kind).toBe('External');
     expect(ref.uri).toBe('models/hero.png');
     expect(ref.state).toBe(ResourceResolutionState.Unresolved);

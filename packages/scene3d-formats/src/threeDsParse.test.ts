@@ -40,6 +40,7 @@ import {
   THREE_DS_VERTICES,
 } from '@flighthq/types/contract';
 
+import { getTestTextureResource } from './scene3DFormatsTestHelper';
 import { createScene3DFrom3ds, parse3ds } from './threeDsParse';
 
 // Builds a minimal valid 3DS binary from helper functions. The 3DS format is a recursive chunk tree:
@@ -370,7 +371,9 @@ describe('createScene3DFrom3ds', () => {
     expect(mat.specular).toBe(0xffffffff);
     expect(mat.name).toBe('Skin'); // 3DS material chunk name preserved as the authored identity
     // Texture filename is referenced, not decoded.
-    expect((mat.diffuseMap!.resource as ExternalImageResourceReference).uri).toBe('skin.png');
+    expect((getTestTextureResource(scene.resources, mat.diffuseMap!) as ExternalImageResourceReference).uri).toBe(
+      'skin.png',
+    );
     expect(mat.diffuseMap!.storage.image).toBeNull();
   });
 
@@ -747,7 +750,9 @@ describe('parse3ds', () => {
     expect((document.materials[0] as BlinnPhongMaterial).name).toBe('Skin');
     expect(document.meshes[0].materials).toEqual([0]);
     expect(document.resources).toHaveLength(1);
-    expect(document.resources[0]).toBe((document.materials[0] as BlinnPhongMaterial).diffuseMap!.resource);
+    expect(getTestTextureResource(document.resources, (document.materials[0] as BlinnPhongMaterial).diffuseMap!)).toBe(
+      document.resources[0],
+    );
   });
 
   it('returns an empty document with a diagnostic for non-3DS input', () => {

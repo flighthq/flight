@@ -1,6 +1,13 @@
 import { forEachNodeDescendant } from '@flighthq/node/contract';
 import { isMesh } from '@flighthq/scene3d/contract';
-import type { Material, Scene3DMaterialTextureRegistry, Node3D, Texture } from '@flighthq/types/contract';
+import type {
+  ImageResourceReference,
+  Material,
+  Scene3D,
+  Scene3DMaterialTextureRegistry,
+  Node3D,
+  Texture,
+} from '@flighthq/types/contract';
 
 import { getScene3DMaterialTextures } from './sceneMaterialTextureRegistry';
 
@@ -10,24 +17,39 @@ import { getScene3DMaterialTextures } from './sceneMaterialTextureRegistry';
 // Textures (a parser memoizes one Texture object across meshes) are deduped by identity, so a
 // resolver requests each pending image at most once.
 export function getScene3DResourceTextures(
-  scene: Readonly<Node3D>,
+  scene: Readonly<Scene3D>,
   registry: Readonly<Scene3DMaterialTextureRegistry>,
   out: Texture[],
 ): void {
   out.length = 0;
+  const referenced = new Set<Texture>();
+  for (const resource of scene.resources) {
+    for (const texture of resource.textures ?? []) referenced.add(texture);
+  }
   const seen = new Set<Texture>();
   const slots: Texture[] = [];
-  collectNodeResourceTextures(scene, registry, out, seen, slots);
+  collectNodeResourceTextures(scene.root, registry, referenced, out, seen, slots);
   // forEachNodeDescendant yields Node<Node3DTraits>; the intersection Node3D is re-narrowed by
   // isMesh inside the collector, so the cast only restores the trait fields the walk generic drops.
-  forEachNodeDescendant(scene, (node) =>
-    collectNodeResourceTextures(node as Readonly<Node3D>, registry, out, seen, slots),
+  forEachNodeDescendant(scene.root, (node) =>
+    collectNodeResourceTextures(node as Readonly<Node3D>, registry, referenced, out, seen, slots),
   );
+}
+
+export function getScene3DTextureResourceReference(
+  scene: Readonly<Scene3D>,
+  texture: Readonly<Texture>,
+): ImageResourceReference | null {
+  for (const resource of scene.resources) {
+    if (resource.textures?.includes(texture as Texture) === true) return resource;
+  }
+  return null;
 }
 
 function collectNodeResourceTextures(
   node: Readonly<Node3D>,
   registry: Readonly<Scene3DMaterialTextureRegistry>,
+  referenced: ReadonlySet<Texture>,
   out: Texture[],
   seen: Set<Texture>,
   slots: Texture[],
@@ -41,7 +63,7 @@ function collectNodeResourceTextures(
     getScene3DMaterialTextures(registry, material, slots);
     for (let j = 0; j < slots.length; j++) {
       const texture = slots[j];
-      if (texture.resource == null || seen.has(texture)) continue;
+      if (!referenced.has(texture) || seen.has(texture)) continue;
       seen.add(texture);
       out.push(texture);
     }

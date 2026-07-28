@@ -4,7 +4,7 @@ import { emitSignal } from '@flighthq/signals/contract';
 import type {
   ImageResource,
   ImageResourceFailure,
-  Node3D,
+  Scene3D,
   ImageResourceReference,
   ResolveScene3DResourcesOptions,
   Scene3DResourceResolver,
@@ -18,7 +18,7 @@ import {
 import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
 import type { Scene3DResourceInFlight, Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
 
-import { getScene3DResourceTextures } from './getScene3DResourceTextures';
+import { getScene3DResourceTextures, getScene3DTextureResourceReference } from './getScene3DResourceTextures';
 
 // Resolves one texture's ref to an ImageResource (or null for an expected failure): Embedded bytes
 // decode through @flighthq/image; External URIs go through the resolver's fetch seam. Cancellation is
@@ -45,7 +45,7 @@ export function resolveOneScene3DResourceTexture(
 // Mutates `ref.state` and, on success, binds `texture.storage.image`. Emits the availability signals when
 // enabled.
 export function resolveScene3DResources(
-  scene: Readonly<Node3D>,
+  scene: Readonly<Scene3D>,
   resolver: Scene3DResourceResolver,
   options?: Readonly<ResolveScene3DResourcesOptions>,
 ): void {
@@ -56,7 +56,7 @@ export function resolveScene3DResources(
   const working = new Map<ImageResourceReference, Texture[]>();
   for (let i = 0; i < textures.length; i++) {
     const texture = textures[i];
-    const ref = texture.resource;
+    const ref = getScene3DTextureResourceReference(scene, texture);
     if (ref == null) continue;
     const image = texture.storage.image;
     if (image != null) {

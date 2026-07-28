@@ -1,5 +1,4 @@
 import type { Entity, EntityWithoutRuntime } from './Entity';
-import type { ImageResourceReference } from './ImageResourceReference';
 import type { Sampler } from './Sampler';
 import type { TextureStorage } from './TextureStorage';
 import type { TextureUvTransform } from './TextureUvTransform';
@@ -18,11 +17,6 @@ export type TextureColorSpace = 'linear' | 'srgb';
 // the same storage seam, so any Mesh + Material can consume another graph's output.
 export interface Texture extends Entity, TextureUvTransform {
   colorSpace: TextureColorSpace;
-  // An unresolved reference to this texture's image, emitted by a scene-format parser so the parse
-  // stays synchronous while the heavy decode/fetch is deferred. Absent (`null`/undefined) for a
-  // texture whose image is already in hand or bound. @flighthq/scene3d-resources resolves it and
-  // fills `storage.image`; the renderer may read `resource.state` to fade the surface in on availability.
-  resource?: ImageResourceReference | null;
   sampler: Sampler;
   storage: TextureStorage;
   // Integer dirty-bit for storage changes. GPU handles remain render-state-owned and compare this

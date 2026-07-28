@@ -6,6 +6,7 @@ import type { GlCompressedTextureUploader } from './GlCompressedTextureUploader'
 import type { GlMaterialRenderer } from './GlMaterialRenderer';
 import type { GlMeshMaterialRenderer } from './GlMeshMaterialRenderer';
 import type { GlRenderTarget } from './GlRenderTarget';
+import type { GlRenderTextureEntry, GlRenderTextureGuard } from './GlRenderTexture';
 import type { GlBitmapShader, GlShaderLocations } from './GlShaderLocations';
 import type { GlShapeMesh } from './GlShapeMesh';
 import type { GlTextureBackingKind, GlTextureResolver } from './GlTextureResolver';
@@ -204,6 +205,8 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // Borrowed native handles registered by createExternalGlTexture. Disposing forgets these entries;
   // the caller retains allocation ownership.
   glExternalTextureCache?: WeakMap<Texture, WebGLTexture>;
+  glRenderTextureCache?: WeakMap<Texture, GlRenderTextureEntry>;
+  glRenderTextureGuard?: GlRenderTextureGuard | null;
   // Optional RGBA fallback decoder for block-compressed textures the device cannot upload natively.
   // Installed per-state by registerGlCompressedTextureDecoder (opt-in), so a state that never draws a
   // compressed texture — or only draws formats the device supports — carries no decoder. Undefined

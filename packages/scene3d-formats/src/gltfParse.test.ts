@@ -30,6 +30,7 @@ import {
   parseGlb,
   parseGltf,
 } from './gltfParse';
+import { getTestTextureResource } from './scene3DFormatsTestHelper';
 
 function findGltfDiagnostic(diagnostics: readonly ImportDiagnostic[], kind: string): ImportDiagnostic | undefined {
   return diagnostics.find((diagnostic) => diagnostic.kind === kind);
@@ -401,7 +402,8 @@ describe('createScene3DFromGltf', () => {
     ];
     doc.meshes![0].primitives[0].material = 0;
 
-    const mat = (getNodeChildren(createScene3DFromGltf(doc).root)[0] as Mesh).materials[0] as StandardPbrMaterial;
+    const scene = createScene3DFromGltf(doc);
+    const mat = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as StandardPbrMaterial;
     const srgbByte = Math.round(linearChannelToSrgb(0.5) * 0xff);
     const expected = ((srgbByte << 24) | (srgbByte << 16) | (srgbByte << 8)) >>> 0;
     expect(mat.baseColor).toBe((expected | 0xff) >>> 0);
@@ -414,7 +416,8 @@ describe('createScene3DFromGltf', () => {
     doc.materials = [{}];
     doc.meshes![0].primitives[0].material = 0;
 
-    const mat = (getNodeChildren(createScene3DFromGltf(doc).root)[0] as Mesh).materials[0] as StandardPbrMaterial;
+    const scene = createScene3DFromGltf(doc);
+    const mat = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as StandardPbrMaterial;
     expect(mat.baseColor).toBe(0xffffffff); // default [1,1,1,1]
     expect(mat.metallic).toBe(1);
     expect(mat.roughness).toBe(1);
@@ -430,9 +433,10 @@ describe('createScene3DFromGltf', () => {
     doc.images = [{ uri: imageDataUri('image/png', png) }];
     doc.meshes![0].primitives[0].material = 0;
 
-    const mat = (getNodeChildren(createScene3DFromGltf(doc).root)[0] as Mesh).materials[0] as StandardPbrMaterial;
+    const scene = createScene3DFromGltf(doc);
+    const mat = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as StandardPbrMaterial;
     expect(mat.baseColorMap!.storage.image).toBeNull();
-    const ref = mat.baseColorMap!.resource as EmbeddedImageResourceReference;
+    const ref = getTestTextureResource(scene.resources, mat.baseColorMap!) as EmbeddedImageResourceReference;
     expect(ref.kind).toBe('Embedded');
     expect(ref.mimeType).toBe('image/png');
     expect(Array.from(ref.bytes)).toEqual(Array.from(png));
@@ -459,8 +463,8 @@ describe('createScene3DFromGltf', () => {
     const material = parsed.materials[0] as StandardPbrMaterial;
     expect(parsed.resources).toHaveLength(1);
     expect(material.baseColorMap).not.toBe(material.normalMap);
-    expect(material.baseColorMap!.resource).toBe(parsed.resources[0]);
-    expect(material.normalMap!.resource).toBe(parsed.resources[0]);
+    expect(getTestTextureResource(parsed.resources, material.baseColorMap!)).toBe(parsed.resources[0]);
+    expect(getTestTextureResource(parsed.resources, material.normalMap!)).toBe(parsed.resources[0]);
     expect(material.baseColorMap!.colorSpace).toBe('srgb');
     expect(material.normalMap!.colorSpace).toBe('linear');
     expect(material.baseColorMap!.sampler.wrapU).toBe('repeat');
@@ -474,8 +478,9 @@ describe('createScene3DFromGltf', () => {
     doc.images = [{ uri: 'textures/emissive.png' }];
     doc.meshes![0].primitives[0].material = 0;
 
-    const mat = (getNodeChildren(createScene3DFromGltf(doc).root)[0] as Mesh).materials[0] as StandardPbrMaterial;
-    const ref = mat.emissiveMap!.resource as ExternalImageResourceReference;
+    const scene = createScene3DFromGltf(doc);
+    const mat = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as StandardPbrMaterial;
+    const ref = getTestTextureResource(scene.resources, mat.emissiveMap!) as ExternalImageResourceReference;
     expect(ref.kind).toBe('External');
     expect(ref.uri).toBe('textures/emissive.png');
   });
@@ -503,9 +508,10 @@ describe('createScene3DFromGltf', () => {
       textures: [{ source: 0 }],
     };
 
-    const mat = (getNodeChildren(createScene3DFromGltf(doc).root)[0] as Mesh).materials[0] as StandardPbrMaterial;
+    const scene = createScene3DFromGltf(doc);
+    const mat = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as StandardPbrMaterial;
     expect(mat.normalScale).toBe(2);
-    const ref = mat.normalMap!.resource as EmbeddedImageResourceReference;
+    const ref = getTestTextureResource(scene.resources, mat.normalMap!) as EmbeddedImageResourceReference;
     expect(ref.kind).toBe('Embedded');
     expect(ref.mimeType).toBe('image/png');
     expect(Array.from(ref.bytes)).toEqual(Array.from(png));
@@ -524,10 +530,13 @@ describe('createScene3DFromGltf', () => {
     doc.images = [{ uri: imageDataUri('image/png', png) }];
     doc.meshes![0].primitives[0].material = 0;
 
-    const mat = (getNodeChildren(createScene3DFromGltf(doc).root)[0] as Mesh).materials[0] as StandardPbrMaterial;
+    const scene = createScene3DFromGltf(doc);
+    const mat = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as StandardPbrMaterial;
     expect(mat.metallicRoughnessMap).not.toBeNull();
     expect(mat.metallicRoughnessMap!.colorSpace).toBe('linear'); // metallic/roughness is data, not color
-    expect((mat.metallicRoughnessMap!.resource as EmbeddedImageResourceReference).mimeType).toBe('image/png');
+    expect(
+      (getTestTextureResource(scene.resources, mat.metallicRoughnessMap!) as EmbeddedImageResourceReference).mimeType,
+    ).toBe('image/png');
   });
 
   it('reads occlusionTexture into a linear occlusionMap and honors occlusionStrength', () => {
@@ -631,9 +640,9 @@ describe('createScene3DFromGltf', () => {
     doc.images = [{ uri: 'textures/emissive.png' }];
     doc.meshes![0].primitives[0].material = 0;
 
-    const mat = (getNodeChildren(createScene3DFromGltf(doc, undefined, { basePath: 'assets/models' }).root)[0] as Mesh)
-      .materials[0] as StandardPbrMaterial;
-    const ref = mat.emissiveMap!.resource as ExternalImageResourceReference;
+    const scene = createScene3DFromGltf(doc, undefined, { basePath: 'assets/models' });
+    const mat = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as StandardPbrMaterial;
+    const ref = getTestTextureResource(scene.resources, mat.emissiveMap!) as ExternalImageResourceReference;
     expect(ref.uri).toBe('textures/emissive.png');
     expect(ref.basePath).toBe('assets/models');
   });

@@ -2,6 +2,7 @@ import { createEntity } from '@flighthq/entity/contract';
 import { cloneVector2, copyVector2, createVector2, inverseMatrix3 } from '@flighthq/geometry/contract';
 import type {
   ImageResource,
+  CreateTextureOptions,
   Matrix3Like,
   Texture,
   TextureBackingKind,
@@ -86,18 +87,23 @@ export function copyTexture(out: TextureLike, source: Readonly<TextureLike>): vo
 // Builds a Texture: 2D storage with an unbound image slot (null), a default Sampler, 'srgb' color space (the
 // albedo default — data maps override to 'linear'), and an identity KHR_texture_transform
 // (zero offset, unit scale, no rotation). Pass TextureLike fields to override any of these.
-export function createTexture(opts?: Readonly<Partial<TextureLike>>): Texture {
-  return createEntity({
+export function createTexture(opts?: Readonly<CreateTextureOptions>): Texture {
+  const texture = createEntity({
     colorSpace: opts?.colorSpace ?? 'srgb',
     flipX: opts?.flipX ?? false,
     flipY: opts?.flipY ?? false,
     sampler: opts?.sampler ? cloneSampler(opts.sampler) : createSampler(),
-    storage: opts?.storage ? cloneTextureStorage(opts.storage) : { dimension: '2d', image: null },
+    storage: opts?.storage ? cloneTextureStorage(opts.storage) : ({ dimension: '2d', image: null } as TextureStorage),
     uvOffset: opts?.uvOffset ? cloneVector2(opts.uvOffset) : createVector2(0, 0),
     uvRotation: opts?.uvRotation ?? 0,
     uvScale: opts?.uvScale ? cloneVector2(opts.uvScale) : createVector2(1, 1),
     version: (opts?.version ?? 0) >>> 0,
-  });
+  }) as Texture;
+  const resource = opts?.resource;
+  if (resource != null) {
+    (resource.textures ??= []).push(texture);
+  }
+  return texture;
 }
 
 // True when both textures describe identical state: same color space, same sampler state, the same

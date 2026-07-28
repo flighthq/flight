@@ -1,9 +1,10 @@
 import type { ResourceResolutionState } from './ResourceResolutionState';
+import type { Texture } from './Texture';
 
-// A lightweight, plain-data reference to a texture's image source that a scene/mesh parser emits
-// synchronously instead of decoding inline. It rides on a Texture (`Texture.resource`) with its
-// `storage.image` left null; a separate, caller-driven pass (@flighthq/scene3d-resources) resolves the ref
-// into a live ImageResource and binds it onto the Texture, advancing `state` as it goes. This is
+// A lightweight, plain-data reference to a texture image source that a scene/mesh parser emits
+// synchronously instead of decoding inline. A Scene3D owns these references as sidecar data; each reference
+// names its consuming `textures`, whose `storage.image` remains null until a separate caller-driven pass
+// (@flighthq/scene3d-resources) resolves the ref and binds the live ImageResource. This is
 // the seam that lets parse stay synchronous and format-symmetric across every scene-format while
 // the heavy async decode/fetch happens later, under a visibility/priority policy.
 //
@@ -48,6 +49,9 @@ interface ImageResourceReferenceBase {
   // Advanced by the resolver: Unresolved → Loading → Resolved | Failed. Read it to drive a loading
   // HUD or a fade-in; the Texture's `storage.image` is non-null only once `state` reaches Resolved.
   state: ResourceResolutionState;
+  // Textures consuming this reference. The scene owns references as sidecar data; Texture stays
+  // format/resource agnostic.
+  textures?: Texture[];
 }
 
 // The encoded image bytes are already available; resolution decodes them through @flighthq/image-codec.

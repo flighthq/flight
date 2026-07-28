@@ -11,5 +11,5 @@ import { createNode3D } from './sceneNode';
 // (`createScene3DFrom*`) fill them. `obj` configures the root node (`enabled`/`name`).
 export function createScene3D(obj?: Readonly<Partial<Pick<Node3D, 'enabled' | 'name'>>>): Scene3D {
   const root = createNode3D(Node3DKind, obj);
-  return createEntity({ animations: {}, metadata: null, root }) as Scene3D;
+  return createEntity({ animations: {}, metadata: null, resources: [], root }) as Scene3D;
 }

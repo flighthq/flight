@@ -9,7 +9,7 @@ beforeAll(() => {
   installWgpuMock();
 });
 
-describe('external WGPU textures', () => {
+describe('createExternalWgpuTexture', () => {
   it('resolves a borrowed handle and forgets it without destroying the allocation', async () => {
     const state = await createWgpuRenderStateForTest();
     const destroy = vi.fn();
@@ -21,5 +21,15 @@ describe('external WGPU textures', () => {
     expect(disposeExternalWgpuTexture(state, texture)).toBe(true);
     expect(resolveWgpuTexture(state, texture)).toBeNull();
     expect(destroy).not.toHaveBeenCalled();
+  });
+});
+
+describe('disposeExternalWgpuTexture', () => {
+  it('returns false after the borrowed handle has already been forgotten', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const handle = { createView: () => ({}) } as unknown as GPUTexture;
+    const texture = createExternalWgpuTexture(state, handle, { height: 1, width: 1 });
+    expect(disposeExternalWgpuTexture(state, texture)).toBe(true);
+    expect(disposeExternalWgpuTexture(state, texture)).toBe(false);
   });
 });

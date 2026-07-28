@@ -7,7 +7,7 @@ import type { ImageResourceReference, Texture } from '@flighthq/types/contract';
 import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { getScene3DResourceTextures } from './getScene3DResourceTextures';
+import { getScene3DResourceTextures, getScene3DTextureResourceReference } from './getScene3DResourceTextures';
 import {
   createScene3DMaterialTextureRegistry,
   registerBuiltInScene3DMaterialTextures,
@@ -31,33 +31,43 @@ function registry() {
 
 describe('getScene3DResourceTextures', () => {
   it('finds pending textures on the root mesh and descendants', () => {
-    const rootMap = createTexture({ resource: embeddedRef() });
-    const childMap = createTexture({ resource: embeddedRef() });
+    const rootRef = embeddedRef();
+    const childRef = embeddedRef();
+    const rootMap = createTexture({ resource: rootRef });
+    const childMap = createTexture({ resource: childRef });
     const root = createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: rootMap })]);
     const child = createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: childMap })]);
     addNodeChild(root, child);
+    const scene = createScene3D();
+    scene.resources.push(rootRef, childRef);
+    addNodeChild(scene.root, root);
 
     const out: Texture[] = [];
-    getScene3DResourceTextures(root, registry(), out);
+    getScene3DResourceTextures(scene, registry(), out);
     expect(out).toContain(rootMap);
     expect(out).toContain(childMap);
     expect(out).toHaveLength(2);
+    expect(getScene3DTextureResourceReference(scene, rootMap)).toBe(rootRef);
   });
 
   it('walks a group scene root that is not itself a mesh', () => {
-    const map = createTexture({ resource: embeddedRef() });
+    const ref = embeddedRef();
+    const map = createTexture({ resource: ref });
     const scene = createScene3D();
+    scene.resources.push(ref);
     const mesh = createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: map })]);
     addNodeChild(scene.root, mesh);
 
     const out: Texture[] = [];
-    getScene3DResourceTextures(scene.root, registry(), out);
+    getScene3DResourceTextures(scene, registry(), out);
     expect(out).toEqual([map]);
   });
 
   it('dedupes a texture shared across meshes and materials', () => {
-    const shared = createTexture({ resource: embeddedRef() });
+    const ref = embeddedRef();
+    const shared = createTexture({ resource: ref });
     const scene = createScene3D();
+    scene.resources.push(ref);
     const a = createMesh(createBoxMeshGeometry(), [
       createUnlitMaterial({ baseColorMap: shared }),
       createStandardPbrMaterial({ baseColorMap: shared }),
@@ -67,35 +77,53 @@ describe('getScene3DResourceTextures', () => {
     addNodeChild(scene.root, b);
 
     const out: Texture[] = [];
-    getScene3DResourceTextures(scene.root, registry(), out);
+    getScene3DResourceTextures(scene, registry(), out);
     expect(out).toEqual([shared]);
   });
 
   it('ignores a texture that carries no resource ref', () => {
     const bound = createTexture();
-    const pending = createTexture({ resource: embeddedRef() });
+    const ref = embeddedRef();
+    const pending = createTexture({ resource: ref });
     const mesh = createMesh(createBoxMeshGeometry(), [
       createStandardPbrMaterial({ baseColorMap: bound, normalMap: pending }),
     ]);
 
+    const scene = createScene3D();
+    scene.resources.push(ref);
+    addNodeChild(scene.root, mesh);
     const out: Texture[] = [];
-    getScene3DResourceTextures(mesh, registry(), out);
+    getScene3DResourceTextures(scene, registry(), out);
     expect(out).toEqual([pending]);
   });
 
   it('skips null material slots', () => {
-    const map = createTexture({ resource: embeddedRef() });
+    const ref = embeddedRef();
+    const map = createTexture({ resource: ref });
     const mesh = createMesh(createBoxMeshGeometry(), [null, createUnlitMaterial({ baseColorMap: map })]);
+    const scene = createScene3D();
+    scene.resources.push(ref);
+    addNodeChild(scene.root, mesh);
     const out: Texture[] = [];
-    getScene3DResourceTextures(mesh, registry(), out);
+    getScene3DResourceTextures(scene, registry(), out);
     expect(out).toEqual([map]);
   });
 
   it('clears out before filling it', () => {
-    const map = createTexture({ resource: embeddedRef() });
+    const ref = embeddedRef();
+    const map = createTexture({ resource: ref });
     const mesh = createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: map })]);
+    const scene = createScene3D();
+    scene.resources.push(ref);
+    addNodeChild(scene.root, mesh);
     const out: Texture[] = [createTexture(), createTexture()];
-    getScene3DResourceTextures(mesh, registry(), out);
+    getScene3DResourceTextures(scene, registry(), out);
     expect(out).toEqual([map]);
+  });
+});
+
+describe('getScene3DTextureResourceReference', () => {
+  it('returns null for a texture outside the scene resource sidecar', () => {
+    expect(getScene3DTextureResourceReference(createScene3D(), createTexture())).toBeNull();
   });
 });

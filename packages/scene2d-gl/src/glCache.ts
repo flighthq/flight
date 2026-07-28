@@ -82,6 +82,8 @@ export function createGlCacheState(screenState: GlRenderState): GlRenderState {
   cacheRuntime.materialBitmapShaderMap = screenRuntime.materialBitmapShaderMap;
   cacheRuntime.shaderLoc = screenRuntime.shaderLoc;
   cacheRuntime.textureCache = screenRuntime.textureCache;
+  cacheRuntime.glRenderTextureCache = screenRuntime.glRenderTextureCache ??= new WeakMap();
+  cacheRuntime.glRenderTextureGuard = screenRuntime.glRenderTextureGuard;
   cacheRuntime.quadVertexBuffer = screenRuntime.quadVertexBuffer;
   cacheRuntime.quadIndexBuffer = screenRuntime.quadIndexBuffer;
   cacheRuntime.quadVertexData = screenRuntime.quadVertexData;

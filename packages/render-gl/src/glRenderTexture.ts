@@ -1,9 +1,8 @@
 import type {
   GlRenderState,
-  GlRenderTarget,
+  GlRenderTextureEntry,
   GlRenderTextureExplanation,
   GlRenderTextureGuard,
-  GlRenderTextureStatus,
   SamplerLike,
   Texture,
   TextureColorSpace,
@@ -43,7 +42,7 @@ export function bindGlRenderTexture(
 }
 
 export function destroyGlRenderTexture(state: GlRenderState, renderTexture: Readonly<Texture>): void {
-  const entries = _entriesByContext.get(state.gl);
+  const entries = getGlRenderStateRuntime(state).glRenderTextureCache;
   const entry = entries?.get(renderTexture);
   if (entry === undefined) return;
   destroyGlRenderTarget(state, entry.target);
@@ -108,8 +107,7 @@ export function renderIntoGlRenderTexture(
 }
 
 export function setGlRenderTextureGuard(state: GlRenderState, guard: GlRenderTextureGuard | null): void {
-  if (guard === null) _guardsByContext.delete(state.gl);
-  else _guardsByContext.set(state.gl, guard);
+  getGlRenderStateRuntime(state).glRenderTextureGuard = guard;
 }
 
 function ensureEntry(state: GlRenderState, renderTexture: Readonly<Texture>): GlRenderTextureEntry {
@@ -130,28 +128,17 @@ function ensureEntry(state: GlRenderState, renderTexture: Readonly<Texture>): Gl
 }
 
 function getEntries(state: GlRenderState): WeakMap<Texture, GlRenderTextureEntry> {
-  let entries = _entriesByContext.get(state.gl);
-  if (entries === undefined) {
-    entries = new WeakMap();
-    _entriesByContext.set(state.gl, entries);
-  }
-  return entries;
+  return (getGlRenderStateRuntime(state).glRenderTextureCache ??= new WeakMap());
 }
 
 function getEntry(state: GlRenderState, renderTexture: Readonly<Texture>): GlRenderTextureEntry | undefined {
-  return _entriesByContext.get(state.gl)?.get(renderTexture);
+  return getGlRenderStateRuntime(state).glRenderTextureCache?.get(renderTexture);
 }
 
 function notifyGuard(state: GlRenderState, renderTexture: Readonly<Texture>): void {
-  _guardsByContext.get(state.gl)?.(state, renderTexture, explainGlRenderTexture(state, renderTexture));
+  getGlRenderStateRuntime(state).glRenderTextureGuard?.(
+    state,
+    renderTexture,
+    explainGlRenderTexture(state, renderTexture),
+  );
 }
-
-interface GlRenderTextureEntry {
-  status: GlRenderTextureStatus;
-  target: GlRenderTarget;
-}
-
-// Cache render states share a WebGL context with their screen state. Keying by context makes the
-// target visible from either state while still isolating resources across independent contexts.
-const _entriesByContext = new WeakMap<WebGL2RenderingContext, WeakMap<Texture, GlRenderTextureEntry>>();
-const _guardsByContext = new WeakMap<WebGL2RenderingContext, GlRenderTextureGuard>();

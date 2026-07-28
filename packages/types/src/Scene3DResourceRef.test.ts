@@ -22,6 +22,7 @@ describe('ImageResourceReference', () => {
         kind: 'Embedded',
         mimeType: 'image/png',
         state: ResourceResolutionState.Unresolved,
+        textures: [],
       };
       const base: ImageResourceReference = ref;
       expect(base.kind).toBe('Embedded');
@@ -35,6 +36,7 @@ describe('ImageResourceReference', () => {
         kind: 'External',
         mimeType: null,
         state: ResourceResolutionState.Unresolved,
+        textures: [],
         uri: 'textures/hull.png',
       };
       const base: ImageResourceReference = ref;
@@ -49,6 +51,7 @@ describe('ImageResourceReference', () => {
         kind: 'External',
         mimeType: null,
         state: ResourceResolutionState.Loading,
+        textures: [],
         uri: 'a.png',
       };
       if (ref.kind === 'External') {

@@ -19,6 +19,7 @@ import { BlinnPhongMaterialKind, ImportDiagnosticSeverity } from '@flighthq/type
 
 import { parseMd5Anim } from './md5AnimParse';
 import { createScene3DFromMd5Mesh, importMd5Mesh, parseMd5Mesh } from './md5Parse';
+import { getTestTextureResource } from './scene3DFormatsTestHelper';
 import { findScene3DSkeletonJoints } from './sceneSkeleton';
 
 function findDiagnostic(diagnostics: readonly ImportDiagnostic[], kind: string): ImportDiagnostic | undefined {
@@ -489,13 +490,16 @@ describe('createScene3DFromMd5Mesh', () => {
   });
 
   it("decodes each section's shader to a BlinnPhongMaterial referencing the shader path as a diffuseMap", () => {
-    const mesh = getNodeChildren(createScene3DFromMd5Mesh(SINGLE_TRIANGLE).root)[1] as Mesh;
+    const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
+    const mesh = getNodeChildren(scene.root)[1] as Mesh;
     expect(mesh.materials).toHaveLength(1);
     const material = mesh.materials[0] as BlinnPhongMaterial;
     expect(material.kind).toBe(BlinnPhongMaterialKind);
     expect(material.name).toBe('textures/default'); // MD5 shader path preserved as the authored identity
     // The shader path is referenced, not decoded: an Unresolved External ref, image left null.
-    expect((material.diffuseMap!.resource as ExternalImageResourceReference).uri).toBe('textures/default');
+    expect((getTestTextureResource(scene.resources, material.diffuseMap!) as ExternalImageResourceReference).uri).toBe(
+      'textures/default',
+    );
     expect(material.diffuseMap!.storage.image).toBeNull();
   });
 
@@ -1084,7 +1088,9 @@ describe('parseMd5Mesh', () => {
     expect(doc.meshes[0].materials).toEqual([0]);
     expect((doc.materials[0] as unknown as BlinnPhongMaterial).kind).toBe(BlinnPhongMaterialKind);
     expect(doc.resources).toHaveLength(1);
-    expect(doc.resources[0]).toBe((doc.materials[0] as unknown as BlinnPhongMaterial).diffuseMap!.resource);
+    expect(getTestTextureResource(doc.resources, (doc.materials[0] as unknown as BlinnPhongMaterial).diffuseMap!)).toBe(
+      doc.resources[0],
+    );
   });
 
   it('leaves the animations table empty (the .md5anim is a separate file)', () => {

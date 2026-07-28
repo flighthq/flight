@@ -5,7 +5,7 @@ import { createExternalGlTexture, disposeExternalGlTexture } from './glExternalT
 import { createGlState } from './glTestHelper';
 import { resolveGlTexture } from './glTextureResolver';
 
-describe('external GL textures', () => {
+describe('createExternalGlTexture', () => {
   it('resolves a borrowed handle and forgets it without deleting the allocation', () => {
     const { state } = createGlState();
     const handle = state.gl.createTexture()!;
@@ -17,5 +17,14 @@ describe('external GL textures', () => {
     expect(disposeExternalGlTexture(state, texture)).toBe(true);
     expect(resolveGlTexture(state, texture)).toBeNull();
     expect(deleteTexture).not.toHaveBeenCalled();
+  });
+});
+
+describe('disposeExternalGlTexture', () => {
+  it('returns false after the borrowed handle has already been forgotten', () => {
+    const { state } = createGlState();
+    const texture = createExternalGlTexture(state, state.gl.createTexture()!, { height: 1, width: 1 });
+    expect(disposeExternalGlTexture(state, texture)).toBe(true);
+    expect(disposeExternalGlTexture(state, texture)).toBe(false);
   });
 });

@@ -19,14 +19,26 @@ import { revealScene3DResourcesOnResolve } from './revealScene3DResourcesOnResol
 import { createBuiltInScene3DResourceResolver } from './sceneResourceResolver';
 import { enableScene3DResourceSignals } from './sceneResourceSignals';
 
+const testResources: EmbeddedImageResourceReference[] = [];
+
 function pendingRef(): EmbeddedImageResourceReference {
-  return {
+  const ref: EmbeddedImageResourceReference = {
     bytes: new Uint8Array([0x89, 0x50, 0x4e, 0x47]),
     failure: null,
     kind: 'Embedded',
     mimeType: 'image/png',
     state: ResourceResolutionState.Unresolved,
   };
+  testResources.push(ref);
+  return ref;
+}
+
+function resourceOf(texture: Texture): EmbeddedImageResourceReference {
+  return testResources.find((ref) => ref.textures?.includes(texture) === true)!;
+}
+
+function configureResources(scene: Scene3D): void {
+  scene.resources = testResources.slice();
 }
 
 function sceneWithPendingTexture(): { mesh: Node3D; scene: Scene3D; texture: Texture } {
@@ -34,6 +46,7 @@ function sceneWithPendingTexture(): { mesh: Node3D; scene: Scene3D; texture: Tex
   const material = createStandardPbrMaterial({ baseColorMap: texture });
   const mesh = createMesh(createBoxMeshGeometry(), [material]);
   const scene = createScene3D();
+  configureResources(scene);
   addNodeChild(scene.root, mesh);
   return { mesh, scene, texture };
 }
@@ -42,14 +55,14 @@ describe('revealScene3DResourcesOnResolve', () => {
   it('hides every object carrying a pending texture to the start opacity up front', () => {
     const { mesh, scene } = sceneWithPendingTexture();
     const resolver = createBuiltInScene3DResourceResolver();
-    revealScene3DResourcesOnResolve(resolver, scene.root, createTweenManager());
+    revealScene3DResourcesOnResolve(resolver, scene, createTweenManager());
     expect(mesh.alpha).toBe(0);
   });
 
   it('honors a custom from opacity', () => {
     const { mesh, scene } = sceneWithPendingTexture();
     const resolver = createBuiltInScene3DResourceResolver();
-    revealScene3DResourcesOnResolve(resolver, scene.root, createTweenManager(), { from: 0.2 });
+    revealScene3DResourcesOnResolve(resolver, scene, createTweenManager(), { from: 0.2 });
     expect(mesh.alpha).toBeCloseTo(0.2);
   });
 
@@ -57,11 +70,11 @@ describe('revealScene3DResourcesOnResolve', () => {
     const { mesh, scene, texture } = sceneWithPendingTexture();
     const resolver = createBuiltInScene3DResourceResolver();
     const manager = createTweenManager();
-    revealScene3DResourcesOnResolve(resolver, scene.root, manager, { fadeSeconds: 0.5 });
+    revealScene3DResourcesOnResolve(resolver, scene, manager, { fadeSeconds: 0.5 });
     expect(mesh.alpha).toBe(0);
 
     const signals = enableScene3DResourceSignals(resolver);
-    const event: Scene3DResourceEvent = { ref: texture.resource!, texture };
+    const event: Scene3DResourceEvent = { ref: resourceOf(texture), texture };
     emitSignal(signals.onResourceResolved, event);
     expect(hasTweensOf(manager, mesh)).toBe(true);
 
@@ -75,16 +88,17 @@ describe('revealScene3DResourcesOnResolve', () => {
     const material = createStandardPbrMaterial({ baseColorMap, normalMap });
     const mesh = createMesh(createBoxMeshGeometry(), [material]);
     const scene = createScene3D();
+    configureResources(scene);
     addNodeChild(scene.root, mesh);
     const resolver = createBuiltInScene3DResourceResolver();
     const manager = createTweenManager();
-    revealScene3DResourcesOnResolve(resolver, scene.root, manager, { fadeSeconds: 0.5 });
+    revealScene3DResourcesOnResolve(resolver, scene, manager, { fadeSeconds: 0.5 });
 
     const signals = enableScene3DResourceSignals(resolver);
-    emitSignal(signals.onResourceResolved, { ref: baseColorMap.resource!, texture: baseColorMap });
+    emitSignal(signals.onResourceResolved, { ref: resourceOf(baseColorMap), texture: baseColorMap });
     expect(hasTweensOf(manager, mesh)).toBe(false);
 
-    emitSignal(signals.onResourceResolved, { ref: normalMap.resource!, texture: normalMap });
+    emitSignal(signals.onResourceResolved, { ref: resourceOf(normalMap), texture: normalMap });
     expect(hasTweensOf(manager, mesh)).toBe(true);
   });
 
@@ -94,16 +108,17 @@ describe('revealScene3DResourcesOnResolve', () => {
     const material = createStandardPbrMaterial({ baseColorMap, normalMap });
     const mesh = createMesh(createBoxMeshGeometry(), [material]);
     const scene = createScene3D();
+    configureResources(scene);
     addNodeChild(scene.root, mesh);
     const resolver = createBuiltInScene3DResourceResolver();
     const manager = createTweenManager();
-    revealScene3DResourcesOnResolve(resolver, scene.root, manager, { fadeSeconds: 0.5 });
+    revealScene3DResourcesOnResolve(resolver, scene, manager, { fadeSeconds: 0.5 });
 
     const signals = enableScene3DResourceSignals(resolver);
-    emitSignal(signals.onResourceFailed, { ref: normalMap.resource!, texture: normalMap });
+    emitSignal(signals.onResourceFailed, { ref: resourceOf(normalMap), texture: normalMap });
     expect(hasTweensOf(manager, mesh)).toBe(false);
 
-    emitSignal(signals.onResourceResolved, { ref: baseColorMap.resource!, texture: baseColorMap });
+    emitSignal(signals.onResourceResolved, { ref: resourceOf(baseColorMap), texture: baseColorMap });
     expect(hasTweensOf(manager, mesh)).toBe(true);
   });
 
@@ -121,9 +136,10 @@ describe('revealScene3DResourcesOnResolve', () => {
     const material = createStandardPbrMaterial({ baseColorMap: bound, normalMap: failed });
     const mesh = createMesh(createBoxMeshGeometry(), [material]);
     const scene = createScene3D();
+    configureResources(scene);
     addNodeChild(scene.root, mesh);
 
-    revealScene3DResourcesOnResolve(createBuiltInScene3DResourceResolver(), scene.root, createTweenManager());
+    revealScene3DResourcesOnResolve(createBuiltInScene3DResourceResolver(), scene, createTweenManager());
     expect(mesh.alpha).toBe(1);
   });
 
@@ -132,13 +148,14 @@ describe('revealScene3DResourcesOnResolve', () => {
     const a = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial({ baseColorMap: texture })]);
     const b = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial({ baseColorMap: texture })]);
     const scene = createScene3D();
+    configureResources(scene);
     addNodeChild(scene.root, a);
     addNodeChild(scene.root, b);
     const resolver = createBuiltInScene3DResourceResolver();
     const manager = createTweenManager();
-    revealScene3DResourcesOnResolve(resolver, scene.root, manager);
+    revealScene3DResourcesOnResolve(resolver, scene, manager);
 
-    emitSignal(enableScene3DResourceSignals(resolver).onResourceResolved, { ref: texture.resource!, texture });
+    emitSignal(enableScene3DResourceSignals(resolver).onResourceResolved, { ref: resourceOf(texture), texture });
     expect(hasTweensOf(manager, a)).toBe(true);
     expect(hasTweensOf(manager, b)).toBe(true);
   });
@@ -147,10 +164,10 @@ describe('revealScene3DResourcesOnResolve', () => {
     const { scene } = sceneWithPendingTexture();
     const resolver = createBuiltInScene3DResourceResolver();
     const manager = createTweenManager();
-    revealScene3DResourcesOnResolve(resolver, scene.root, manager, { fadeSeconds: 0.5 });
+    revealScene3DResourcesOnResolve(resolver, scene, manager, { fadeSeconds: 0.5 });
 
     const stray = createTexture({ resource: pendingRef() });
-    emitSignal(enableScene3DResourceSignals(resolver).onResourceResolved, { ref: stray.resource!, texture: stray });
+    emitSignal(enableScene3DResourceSignals(resolver).onResourceResolved, { ref: resourceOf(stray), texture: stray });
     expect(hasTweensOf(manager, stray as unknown as object)).toBe(false);
   });
 
@@ -158,10 +175,10 @@ describe('revealScene3DResourcesOnResolve', () => {
     const { mesh, scene, texture } = sceneWithPendingTexture();
     const resolver = createBuiltInScene3DResourceResolver();
     const manager = createTweenManager();
-    const dispose = revealScene3DResourcesOnResolve(resolver, scene.root, manager, { fadeSeconds: 0.5 });
+    const dispose = revealScene3DResourcesOnResolve(resolver, scene, manager, { fadeSeconds: 0.5 });
     dispose();
 
-    emitSignal(enableScene3DResourceSignals(resolver).onResourceResolved, { ref: texture.resource!, texture });
+    emitSignal(enableScene3DResourceSignals(resolver).onResourceResolved, { ref: resourceOf(texture), texture });
     expect(hasTweensOf(manager, mesh)).toBe(false);
   });
 });
