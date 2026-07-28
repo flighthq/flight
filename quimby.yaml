@@ -40,16 +40,23 @@ presets:
     agents:
       review:
         role: review
+        directs: [builder, builder2, builder3, builder4, review2]
+        nudge: always
       review2:
         role: review
+        nudge: always
         runtimeProfile: codex-sbx
       builder:
         role: builder
+        nudge: always
       builder2:
         role: builder
+        nudge: always
       builder3:
         role: builder
+        nudge: always
         runtimeProfile: codex-sbx
       builder4:
         role: builder
+        nudge: always
         runtimeProfile: codex-sbx
