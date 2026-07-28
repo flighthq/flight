@@ -1,5 +1,5 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { ImageResource, ImageResourceCompressed } from '@flighthq/types/contract';
+import type { ImageBacking, ImageResource, ImageResourceCompressed } from '@flighthq/types/contract';
 import { ImageTextureBackingKind } from '@flighthq/types/contract';
 
 // Allocates a new resource identity over the SAME underlying pixels. The element, the `data` array, and
@@ -94,7 +94,7 @@ export function hasImageResourceSource(resource: Readonly<ImageResource>): boole
 // Bumps the resource content revision so consumers (renderer texture caches) know the pixels behind
 // this image changed even though the object identity is the same. Call after mutating the backing
 // pixels in place; the Bitmap API calls it for you. Resource-tier analog of invalidateNodeLocalContent.
-export function invalidateImageResource(resource: ImageResource): void {
+export function invalidateImageResource(resource: ImageBacking): void {
   resource.version = (resource.version + 1) >>> 0;
 }
 
