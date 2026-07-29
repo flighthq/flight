@@ -1,5 +1,5 @@
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
-import { applyAnimationClipToSkeleton2D } from '@flighthq/skeleton2d/contract';
+import { applyAnimationClipToSkeleton2D, cloneSkeleton2D } from '@flighthq/skeleton2d/contract';
 import type { ImportDiagnostic, MeshAttachment2D, RegionAttachment2D } from '@flighthq/types/contract';
 import { MeshAttachment2DKind, RegionAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
@@ -178,7 +178,7 @@ describe('parseSpineSkeleton', () => {
     expect(parseSpineSkeleton(JSON.stringify(doc))!.skeleton.slots![0].attachment).toBeNull();
   });
 
-  it('builds a named animation clip whose bone timelines bake in the setup pose', () => {
+  it('builds a named animation clip of RELATIVE deltas that compose onto the setup pose', () => {
     const doc = {
       bones: [{ name: 'b', rotation: 10, x: 5, scaleX: 2 }],
       animations: {
@@ -205,11 +205,16 @@ describe('parseSpineSkeleton', () => {
     const result = parseSpineSkeleton(JSON.stringify(doc))!;
     expect(result.animations.length).toBe(1);
     expect(result.animations[0].name).toBe('walk');
-    // Apply the clip at t=1 and confirm setup is baked: rotation 10+90, x 5+20, scaleX 2*3.
-    applyAnimationClipToSkeleton2D(result.animations[0].clip, result.skeleton, 1);
-    expect(result.skeleton.bones[0].rotation).toBeCloseTo(100, 5);
-    expect(result.skeleton.bones[0].x).toBeCloseTo(25, 5);
-    expect(result.skeleton.bones[0].scaleX).toBeCloseTo(6, 5); // multiplier: setup 2 × 3
+    // Compose the clip onto a pose clone at t=1. The end result is identical to the old setup-baked
+    // encoding — rotation 10+90, x 5+20, scaleX 2*3 — confirming the relative-delta switch is numerically
+    // neutral on the original rig; the win is portability/blending, not different numbers.
+    const setup = result.skeleton;
+    const pose = cloneSkeleton2D(setup);
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, setup, pose, 1);
+    expect(pose.bones[0].rotation).toBeCloseTo(100, 5);
+    expect(pose.bones[0].x).toBeCloseTo(25, 5);
+    expect(pose.bones[0].scaleX).toBeCloseTo(6, 5); // multiplier: setup 2 × 3
+    expect(setup.bones[0].rotation).toBe(10); // the parsed setup pose is left intact
   });
 
   it('uses Step interpolation when every keyframe of a timeline is stepped', () => {
@@ -229,8 +234,9 @@ describe('parseSpineSkeleton', () => {
       },
     };
     const result = parseSpineSkeleton(JSON.stringify(doc))!;
-    applyAnimationClipToSkeleton2D(result.animations[0].clip, result.skeleton, 0.9);
-    expect(result.skeleton.bones[0].rotation).toBeCloseTo(0, 5); // stepped holds the t=0 keyframe until t=1
+    const pose = cloneSkeleton2D(result.skeleton);
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, result.skeleton, pose, 0.9);
+    expect(pose.bones[0].rotation).toBeCloseTo(0, 5); // stepped holds the t=0 keyframe (delta 0) until t=1
   });
 
   it('Skip-crumbs constraint, event, and slot animation timelines', () => {
