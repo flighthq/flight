@@ -301,14 +301,7 @@ one reviewed sequence. M6 is a design commitment (see below).
 
 ## Open questions
 
-1. **Does Flight own a `Surface` it was handed?** `destroySurface` is settled as part of the type, but
-   ownership is not. A surface Flight created (its own offscreen canvas) is clearly Flight's to free;
-   one the caller passed in is arguably borrowed, and freeing it would destroy something the caller
-   still uses. On web this is invisible because there is nothing to free — it only bites on the first
-   native port, which is exactly why it should be decided before then. Options: an ownership flag on
-   the entity, two constructors (`createSurface` owns / `createSurfaceFromCanvas` borrows), or a
-   documented "never owns, caller always frees" rule matching `HostImageSource`.
-2. **Does `ExternalTexture` want a `Texture` narrowing** the way `RenderTarget` gets `RenderTexture`?
+1. **Does `ExternalTexture` want a `Texture` narrowing** the way `RenderTarget` gets `RenderTexture`?
    Nothing currently needs one, and rule #2 above says wait until a signature demands it.
 3. **Should `Sampler` become `TextureSampler`?** Left as `Sampler` here: it is an independent object
    in every GPU API (`GPUSampler`, `VkSampler`), and the prefix would imply it cannot exist apart
@@ -338,6 +331,13 @@ one reviewed sequence. M6 is a design commitment (see below).
   kind registry is the escape hatch if a build ever needs two at once. The alias names the drawable
   *target*, not the 2D *context* — matching `SkSurface`/`SkCanvas` and `cairo_surface_t`/`cairo_t`.
   User + review.
+- **[2026-07-29] Surface ownership: Flight never assumes it must free, and never prohibits the caller
+  from freeing.** `destroySurface` exists and is caller-invoked only — Flight itself never calls it
+  implicitly, including when a `Texture` referencing the surface is disposed. No ownership flag on the
+  entity, deliberately: the model is deferred rather than guessed, so nothing has to be unwound later.
+  This also matches the standing posture that teardown is something the caller invokes by name and
+  nothing happens internally that the caller did not ask for. **Revisit when a second host backend
+  lands** (Skia/Cairo) — real non-GC surfaces are what will show whether ownership needs tracking. User.
 - **[2026-07-29] `destroySurface` ships with the type, no-op on web.** Canvas is GC-managed but
   `SkSurface`/`cairo_surface_t` are not, so the teardown verb cannot be retrofitted after the type is
   shipped without changing its lifecycle and every existing call site. Review.
