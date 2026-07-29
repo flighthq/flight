@@ -126,6 +126,15 @@ describe('beginGlRenderPass', () => {
     expect(gl.scissor).toHaveBeenLastCalledWith(0, 65, 15, 15);
   });
 
+  it('keeps a fractional-origin zero-area viewport empty', () => {
+    const { state, gl } = createGlState();
+
+    beginGlRenderPass(state, makeTarget({ width: 100, height: 80 }), undefined, makeViewport(10.5, 20.5, 0, 0));
+
+    expect(gl.viewport).toHaveBeenLastCalledWith(10, 60, 0, 0);
+    expect(gl.scissor).toHaveBeenLastCalledWith(10, 60, 0, 0);
+  });
+
   it('keeps a nested full-region pass inside the enclosing scissor', () => {
     const { state, gl } = createGlState();
     const target = makeTarget({ width: 100, height: 80 });
@@ -191,20 +200,78 @@ describe('endGlRenderPass', () => {
     expect(getGlRenderStateRuntime(state).scissorStack).toEqual([{ height: 40, width: 30, x: 10, y: 20 }]);
   });
 
+  it('isolates and restores the enclosing logical 2D clip stack', () => {
+    const { state } = createGlState();
+    const runtime = getGlRenderStateRuntime(state);
+    const outerClip = { height: 20, width: 20, x: 15, y: 25 };
+
+    beginGlRenderPass(state, makeTarget({ width: 100, height: 80 }), undefined, makeViewport(10, 20, 30, 40));
+    runtime.currentScissorRect = outerClip;
+    runtime.scissorStack!.push(outerClip);
+    runtime.clipForms.push('rect');
+
+    beginGlRenderPass(state, makeTarget({ width: 100, height: 80 }));
+    expect(runtime.clipForms).toEqual([]);
+    expect(runtime.currentMaskDepth).toBe(0);
+
+    // An inner renderGlScene2D.finalize now has no enclosing entry to drain.
+    endGlRenderPass(state);
+    expect(runtime.currentScissorRect).toBe(outerClip);
+    expect(runtime.scissorStack).toEqual([{ height: 40, width: 30, x: 10, y: 20 }, outerClip]);
+    expect(runtime.clipForms).toEqual(['rect']);
+  });
+
+  it('restores depth writes after a nested depth-clearing pass', () => {
+    const { state, gl } = createGlState();
+    let depthMask = true;
+    vi.mocked(gl.depthMask).mockImplementation((value) => {
+      depthMask = value;
+    });
+    vi.mocked(gl.getParameter).mockImplementation((parameter) => (parameter === gl.DEPTH_WRITEMASK ? depthMask : null));
+
+    beginGlRenderPass(state, makeTarget(), { preserveDepth: true });
+    gl.depthMask(false);
+    beginGlRenderPass(state, makeTarget());
+    expect(depthMask).toBe(true);
+    endGlRenderPass(state);
+
+    expect(depthMask).toBe(false);
+  });
+
+  it('isolates and restores an enclosing contour stencil gate', () => {
+    const { state, gl } = createGlState();
+    const runtime = getGlRenderStateRuntime(state);
+    runtime.clipForms = ['contour'];
+    runtime.currentMaskDepth = 1;
+
+    beginGlRenderPass(state, makeTarget());
+    expect(runtime.clipForms).toEqual([]);
+    expect(runtime.currentMaskDepth).toBe(0);
+    expect(gl.disable).toHaveBeenCalledWith(gl.STENCIL_TEST);
+
+    endGlRenderPass(state);
+    expect(runtime.clipForms).toEqual(['contour']);
+    expect(runtime.currentMaskDepth).toBe(1);
+    expect(gl.enable).toHaveBeenCalledWith(gl.STENCIL_TEST);
+    expect(gl.stencilMask).toHaveBeenCalled();
+    expect(gl.stencilFunc).toHaveBeenCalled();
+    expect(gl.stencilOp).toHaveBeenCalled();
+  });
+
   it('disables scissor when the outer partial pass returns to the canvas', () => {
     const { state, gl } = createGlState();
 
     beginGlRenderPass(state, makeTarget(), undefined, makeViewport(1, 2, 10, 8));
     endGlRenderPass(state);
 
-    expect(gl.disable).toHaveBeenLastCalledWith(gl.SCISSOR_TEST);
+    expect(gl.disable).toHaveBeenCalledWith(gl.SCISSOR_TEST);
     expect(getGlRenderStateRuntime(state).currentScissorRect).toBeNull();
     expect(getGlRenderStateRuntime(state).scissorStack).toEqual([]);
   });
 
-  it('is a no-op when there is no matching begin', () => {
+  it('throws when there is no matching begin', () => {
     const { state } = createGlState();
-    expect(() => endGlRenderPass(state)).not.toThrow();
+    expect(() => endGlRenderPass(state)).toThrow('without a matching beginGlRenderPass');
   });
 });
 

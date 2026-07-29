@@ -13,12 +13,26 @@ import { getGlRenderStateRuntime } from './glRenderState';
 import { resolveGlRenderTarget } from './glRenderTarget';
 
 type SavedGlPass = {
+  clipForms: ('rect' | 'contour')[];
+  currentMaskDepth: number;
+  depthMask: boolean;
   framebuffer: WebGLFramebuffer | null;
   renderTarget: GlRenderTarget | null;
   renderTargetViewport: GlViewportRect | null;
   renderTransform2D: Matrix | null;
   scissorRect: GlScissorRect | null;
   scissorStack: GlScissorRect[];
+  stencil: SavedGlStencil | null;
+};
+
+type SavedGlStencil = {
+  fail: number;
+  func: number;
+  passDepthFail: number;
+  passDepthPass: number;
+  ref: number;
+  valueMask: number;
+  writeMask: number;
 };
 
 // Begins a render pass into `target`: binds it (saving the previous binding for restore, so passes
@@ -66,13 +80,18 @@ export function beginGlRenderPass(
     stack = [];
     _passStack.set(state, stack);
   }
+  const currentMaskDepth = runtime.currentMaskDepth ?? 0;
   stack.push({
+    clipForms: [...(runtime.clipForms ?? [])],
+    currentMaskDepth,
+    depthMask: gl.getParameter(gl.DEPTH_WRITEMASK) !== false,
     framebuffer: runtime.currentFramebuffer,
     renderTarget: runtime.currentRenderTarget ?? null,
     renderTargetViewport: runtime.renderTargetViewport,
     renderTransform2D: state.renderTransform2D,
     scissorRect: runtime.currentScissorRect ?? null,
     scissorStack: [...(runtime.scissorStack ?? [])],
+    stencil: currentMaskDepth > 0 ? captureGlStencil(gl) : null,
   });
 
   const activeViewport = resolveGlPassViewport(target, viewport);
@@ -91,7 +110,15 @@ export function beginGlRenderPass(
   runtime.renderTargetViewport = activeViewport;
   runtime.currentScissorRect = activeScissor;
   runtime.scissorStack = activeScissor === null ? [] : [activeScissor];
+  // A pass owns its logical 2D clip unwind state. Inheriting the enclosing entries would let
+  // renderGlScene2D.finalize pop clips it did not push, desynchronizing the logical and hardware
+  // stacks after the enclosing pass is restored.
+  runtime.clipForms = [];
+  runtime.currentMaskDepth = 0;
   applyGlScissor(gl, activeScissor);
+  // Stencil clips belong to the framebuffer where they were rasterized. Disable the enclosing gate
+  // while the nested pass owns a different logical clip stack; end restores its exact steady state.
+  if (currentMaskDepth > 0) gl.disable(gl.STENCIL_TEST);
   // Force rebind on next draw — the framebuffer switch invalidates GL state assumptions.
   runtime.currentTexture = null;
   runtime.currentBlendMode = null;
@@ -102,33 +129,38 @@ export function beginGlRenderPass(
 // Ends the pass opened by beginGlRenderPass: restores the framebuffer binding, exact viewport/scissor,
 // clip stack, and 2D render transform saved at begin, then resolves MSAA on the target that was active
 // (a store-side property of the pass). Afterward that target's textures hold the finished,
-// single-sample result — ready for present, effects, or sampling. A call with no matching begin is a
-// no-op. The target is read from runtime rather than passed, so end mirrors the other backend brackets.
+// single-sample result — ready for present, effects, or sampling. A call with no matching begin throws:
+// an unbalanced pass is a programmer error, and silently accepting it hides a leaked prior pass. The
+// target is read from runtime rather than passed, so end mirrors the other backend brackets.
 export function endGlRenderPass(state: GlRenderState): void {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
 
   const ended = runtime.currentRenderTarget ?? null;
   const saved = _passStack.get(state)?.pop();
-  if (saved !== undefined) {
-    gl.bindFramebuffer(gl.FRAMEBUFFER, saved.framebuffer);
-    const viewport = saved.renderTargetViewport;
-    gl.viewport(
-      viewport?.x ?? 0,
-      viewport?.y ?? 0,
-      viewport?.width ?? state.canvas.width,
-      viewport?.height ?? state.canvas.height,
-    );
-    runtime.currentFramebuffer = saved.framebuffer;
-    runtime.currentRenderTarget = saved.renderTarget;
-    runtime.renderTargetViewport = saved.renderTargetViewport;
-    runtime.currentScissorRect = saved.scissorRect;
-    runtime.scissorStack = saved.scissorStack;
-    applyGlScissor(gl, saved.scissorRect);
-    state.renderTransform2D = saved.renderTransform2D;
-    runtime.currentTexture = null;
-    runtime.currentBlendMode = null;
-  }
+  if (saved === undefined) throw new Error('endGlRenderPass called without a matching beginGlRenderPass');
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, saved.framebuffer);
+  const viewport = saved.renderTargetViewport;
+  gl.viewport(
+    viewport?.x ?? 0,
+    viewport?.y ?? 0,
+    viewport?.width ?? state.canvas.width,
+    viewport?.height ?? state.canvas.height,
+  );
+  runtime.currentFramebuffer = saved.framebuffer;
+  runtime.currentRenderTarget = saved.renderTarget;
+  runtime.renderTargetViewport = saved.renderTargetViewport;
+  runtime.currentScissorRect = saved.scissorRect;
+  runtime.scissorStack = saved.scissorStack;
+  runtime.clipForms = saved.clipForms;
+  runtime.currentMaskDepth = saved.currentMaskDepth;
+  applyGlScissor(gl, saved.scissorRect);
+  restoreGlStencil(gl, saved.stencil);
+  gl.depthMask(saved.depthMask);
+  state.renderTransform2D = saved.renderTransform2D;
+  runtime.currentTexture = null;
+  runtime.currentBlendMode = null;
 
   if (ended !== null) resolveGlRenderTarget(state, ended);
 }
@@ -209,6 +241,29 @@ function applyGlScissor(gl: WebGL2RenderingContext, rect: Readonly<GlScissorRect
   gl.scissor(rect.x, rect.y, rect.width, rect.height);
 }
 
+function captureGlStencil(gl: WebGL2RenderingContext): SavedGlStencil {
+  return {
+    fail: gl.getParameter(gl.STENCIL_FAIL) as number,
+    func: gl.getParameter(gl.STENCIL_FUNC) as number,
+    passDepthFail: gl.getParameter(gl.STENCIL_PASS_DEPTH_FAIL) as number,
+    passDepthPass: gl.getParameter(gl.STENCIL_PASS_DEPTH_PASS) as number,
+    ref: gl.getParameter(gl.STENCIL_REF) as number,
+    valueMask: gl.getParameter(gl.STENCIL_VALUE_MASK) as number,
+    writeMask: gl.getParameter(gl.STENCIL_WRITEMASK) as number,
+  };
+}
+
+function restoreGlStencil(gl: WebGL2RenderingContext, saved: Readonly<SavedGlStencil> | null): void {
+  if (saved === null) {
+    gl.disable(gl.STENCIL_TEST);
+    return;
+  }
+  gl.enable(gl.STENCIL_TEST);
+  gl.stencilMask(saved.writeMask);
+  gl.stencilFunc(saved.func, saved.ref, saved.valueMask);
+  gl.stencilOp(saved.fail, saved.passDepthFail, saved.passDepthPass);
+}
+
 function intersectGlRects(a: Readonly<GlScissorRect>, b: Readonly<GlViewportRect>): GlScissorRect {
   const x = Math.max(a.x, b.x);
   const y = Math.max(a.y, b.y);
@@ -230,10 +285,12 @@ function resolveGlPassViewport(
 
   // Compute both unbounded edges before clamping. Clamping x first and retaining width would turn
   // {-10,width:20} into 20 visible pixels instead of the correct 10-pixel intersection.
+  const passWidth = Math.max(0, viewport.width);
+  const passHeight = Math.max(0, viewport.height);
   const rawLeft = Math.floor(viewport.x);
-  const rawRight = Math.ceil(viewport.x + Math.max(0, viewport.width));
+  const rawRight = passWidth === 0 ? rawLeft : Math.ceil(viewport.x + passWidth);
   const rawTop = Math.floor(viewport.y);
-  const rawBottom = Math.ceil(viewport.y + Math.max(0, viewport.height));
+  const rawBottom = passHeight === 0 ? rawTop : Math.ceil(viewport.y + passHeight);
   const left = clampGlPassEdge(rawLeft, target.width);
   const right = clampGlPassEdge(rawRight, target.width);
   const top = clampGlPassEdge(rawTop, target.height);
