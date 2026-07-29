@@ -79,22 +79,16 @@ A renderer-neutral 2D display document with **deferred named references**, the t
   app's `resolveSlotContent`).
 - `loadScene2DResources` — the operation-scoped Promise/progress boundary for async fills.
 
-Same shape as `loadScene3DDocumentFrom*Url` → `resolveScene3DResources` → `loadScene3DResources`. #3 is
-not a new mechanism — it is **porting the shipped `SceneDocument` + `scene3d-resources` model to the 2D
-side**, generalized from "resolve named *resource* references" to "resolve named *content* references."
+Same shape as `loadScene3DDocumentFrom*Url` → `resolveScene3DResources` →
+`loadScene3DResources`/`updateScene3DResourceStreaming`. #3 is not a new mechanism — it is **porting the
+shipped `SceneDocument` + `scene3d-resources` model to the 2D side**, generalized from "resolve named
+*resource* references" to "resolve named *content* references."
 
-## Per-package deltas (prerequisites)
-
-The document lives here, but the slot primitives are node-model concerns:
+## Per-package deltas
 
 - **`@flighthq/types`** — `Scene2DDocument`, its content-reference records, and the slot/linkage types.
-- **`@flighthq/node` / `@flighthq/scene2d`** — the load-bearing new primitive: **authored placeholder
-  bounds** (a designer-drawn extent that survives an *empty* named container, so layout/anchoring/
-  hit-area work before content arrives — an empty container otherwise has zero bounds). Plus the
-  **two-level identity** #3 needs: instance name (already served by `node.name` + `findNodeByName`) and
-  **linkage/type** (new — "this slot is of a known component type," Flash's linkage class), and a
-  content-swap bracket (`setSlotContent`/clear). Authored bounds is also the primitive the deferred
-  "fit-to-viewport / responsive anchor" seam (`scene2d-formats` open direction) needs.
+- **`@flighthq/node`** — existing hierarchy add/remove primitives install reference-owned content; no
+  new node or scene2d runtime state is required.
 - **`scene2d-formats`** — a **named-graph output mode**: shared parse front-end, then emit a
   `Scene2DDocument` with slots instead of a realized tree (see its charter's #3 decision).
 
@@ -128,8 +122,8 @@ _Append-only, dated, blessed rulings._
 - **[2026-07-29] Built with a strictly synchronous reconcile stage.** `resolveScene2DResources`
   consumes only caller-ready `Node2D` content and never starts I/O or schedules a Promise.
   `loadScene2DResources` is the sole operation-scoped asynchronous boundary. This intentionally follows
-  the documented three-stage architecture rather than copying the current 3D implementation's
-  fire-and-forget behavior inside its nominal resolve stage.
+  the documented three-stage architecture. The 3D twin subsequently preserved its progressive behavior
+  under `updateScene3DResourceStreaming` and made its resolve stage synchronous too.
 - **[2026-07-29] Import dispatch is explicit registry state.** A
   `Scene2DDocumentImporterRegistry` starts empty; SVG and Lottie register through separately imported
   functions, and custom/Rive/SWF codecs use the same last-write-wins kind registry. No codec registers at
