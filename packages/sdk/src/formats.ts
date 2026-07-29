@@ -10,3 +10,4 @@ export * from '@flighthq/texture-formats';
 export * from '@flighthq/textureatlas-formats';
 export * from '@flighthq/tilemap-formats';
 export * from '@flighthq/xml';
+export * from '@flighthq/skeleton2d-formats';
