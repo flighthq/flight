@@ -116,6 +116,7 @@
     "@flighthq/scene2d-canvas": "*",
     "@flighthq/scene2d-dom": "*",
     "@flighthq/scene2d-formats": "*",
+    "@flighthq/scene2d-resources": "*",
     "@flighthq/scene2d-gl": "*",
     "@flighthq/scene2d-wgpu": "*",
     "@flighthq/easing": "*",

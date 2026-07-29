@@ -26,6 +26,7 @@
     { "path": "./packages/dialog" },
     { "path": "./packages/scene2d" },
     { "path": "./packages/scene2d-formats" },
+    { "path": "./packages/scene2d-resources" },
     { "path": "./packages/scene2d-canvas" },
     { "path": "./packages/scene2d-dom" },
     { "path": "./packages/scene2d-gl" },
