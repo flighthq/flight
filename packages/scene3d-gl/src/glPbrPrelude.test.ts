@@ -143,6 +143,23 @@ describe('getGlPbrFragmentSourceForKey', () => {
     // Directional, point, and spot lights share the one Cook-Torrance BRDF (no forked shading model).
     expect(src).toContain('shadePbrPunctual');
   });
+
+  it('declares contributed helpers before the IBL function that calls them', () => {
+    const src = getGlPbrFragmentSourceForKey(NONE, [
+      {
+        applySurface: '',
+        contributeIbl: '  ambient += flightExtensionSample();',
+        contributePunctual: '',
+        finalize: '',
+        fragmentDeclarations: '',
+        fragmentFunctions: 'vec3 flightExtensionSample() { return vec3(0.0); }',
+        key: 'ordering',
+        textureCount: 0,
+      },
+    ]);
+
+    expect(src.indexOf('vec3 flightExtensionSample()')).toBeLessThan(src.indexOf('vec3 sampleIblAmbient('));
+  });
 });
 
 describe('getGlPbrVertexSource', () => {

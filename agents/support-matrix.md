@@ -19,7 +19,7 @@ drift-gated by `npm run support:check` (part of `npm run check`).
 
 | Canvas | DOM | WebGL | WebGPU |
 | --- | --- | --- | --- |
-| 106 / 169 | 39 / 169 | 148 / 169 | 148 / 169 |
+| 106 / 169 | 39 / 169 | 148 / 169 | 141 / 169 |
 
 All four backends re-verify in-sandbox — WebGPU via SwiftShader software Vulkan. A small set of WebGPU scenes exceed the fingerprint tolerance on software-vs-hardware antialiasing differences; see [maturity-gaps](maturity-gaps.md).
 
@@ -175,24 +175,24 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 | --- | :-: | :-: | :-: | :-: |
 | `material-alpha-map` | · | · | ✓ | ✓ |
 | `material-alpha-map-pbr` | · | · | ✓ | ✓ |
-| `material-anisotropy` | · | · | ✓ | ✓ |
+| `material-anisotropy` | · | · | ✓ | · |
 | `material-blinn-phong` | · | · | ✓ | ✓ |
-| `material-clearcoat` | · | · | ✓ | ✓ |
+| `material-clearcoat` | · | · | ✓ | · |
 | `material-custom-shader` | · | · | ✓ | ✓ |
 | `material-depth` | · | · | ✓ | ✓ |
 | `material-emissive` | · | · | ✓ | ✓ |
-| `material-iridescence` | · | · | ✓ | ✓ |
+| `material-iridescence` | · | · | ✓ | · |
 | `material-lambert` | · | · | ✓ | ✓ |
 | `material-matcap` | · | · | ✓ | ✓ |
 | `material-normal` | · | · | ✓ | ✓ |
 | `material-phong` | · | · | ✓ | ✓ |
-| `material-sheen` | · | · | ✓ | ✓ |
-| `material-specular` | · | · | ✓ | ✓ |
+| `material-sheen` | · | · | ✓ | · |
+| `material-specular` | · | · | ✓ | · |
 | `material-specular-glossiness` | · | · | ✓ | ✓ |
 | `material-standard-pbr` | · | · | ✓ | ✓ |
-| `material-subsurface` | · | · | ✓ | ✓ |
+| `material-subsurface` | · | · | ✓ | · |
 | `material-toon` | · | · | ✓ | ✓ |
-| `material-transmission-volume` | · | · | ✓ | ✓ |
+| `material-transmission-volume` | · | · | ✓ | · |
 | `material-unlit` | · | · | ✓ | ✓ |
 | `material-vertex-color` | · | · | ✓ | ✓ |
 | `material-video-map` | · | · | ✓ | ✓ |

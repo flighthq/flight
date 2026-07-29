@@ -256,25 +256,6 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness) {
   return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-// Image-based ambient via the split-sum approximation: diffuse irradiance over the albedo plus
-// prefiltered specular weighted by the BRDF LUT. Replaces the flat ambient term when an environment
-// is baked (bakeGlEnvironmentIbl). All three cubemap/LUT samples are already linear (baked from
-// sRGB-decoded sources), so no decode here.
-vec3 sampleIblAmbient(
-  vec3 N, vec3 V, vec3 tangentDir, vec3 bitangentDir, float rough, vec3 F0, vec3 diffuseColor, float occ
-) {
-  float nv = max(dot(N, V), 1e-4);
-  vec3 F = fresnelSchlickRoughness(nv, F0, rough);
-  vec3 diffuse = texture(u_iblIrradiance, N).rgb * diffuseColor;
-  vec3 R = reflect(-V, N);
-  vec3 prefiltered = textureLod(u_iblPrefiltered, R, rough * u_iblMaxMip).rgb;
-  vec2 brdf = texture(u_iblBrdf, vec2(nv, rough)).rg;
-  vec3 specular = prefiltered * (F * brdf.x + brdf.y);
-  vec3 ambient = ((vec3(1.0) - F) * diffuse + specular) * occ * u_iblIntensity;
-${PBR_EXTENSION_IBL}
-  return ambient;
-}
-
 #ifdef HAS_BASE_COLOR_MAP
 uniform sampler2D u_baseColorMap;
 #endif
@@ -327,6 +308,26 @@ vec3 fresnelSchlick(float cosTheta, vec3 f0) {
 }
 
 ${PBR_EXTENSION_FUNCTIONS}
+
+// Image-based ambient via the split-sum approximation: diffuse irradiance over the albedo plus
+// prefiltered specular weighted by the BRDF LUT. Replaces the flat ambient term when an environment
+// is baked (bakeGlEnvironmentIbl). All three cubemap/LUT samples are already linear (baked from
+// sRGB-decoded sources), so no decode here. This function follows the contributed helpers because
+// GLSL ES requires a function to be declared before a caller uses it.
+vec3 sampleIblAmbient(
+  vec3 N, vec3 V, vec3 tangentDir, vec3 bitangentDir, float rough, vec3 F0, vec3 diffuseColor, float occ
+) {
+  float nv = max(dot(N, V), 1e-4);
+  vec3 F = fresnelSchlickRoughness(nv, F0, rough);
+  vec3 diffuse = texture(u_iblIrradiance, N).rgb * diffuseColor;
+  vec3 R = reflect(-V, N);
+  vec3 prefiltered = textureLod(u_iblPrefiltered, R, rough * u_iblMaxMip).rgb;
+  vec2 brdf = texture(u_iblBrdf, vec2(nv, rough)).rg;
+  vec3 specular = prefiltered * (F * brdf.x + brdf.y);
+  vec3 ambient = ((vec3(1.0) - F) * diffuse + specular) * occ * u_iblIntensity;
+${PBR_EXTENSION_IBL}
+  return ambient;
+}
 
 // Smooth inverse-square range window (glTF/UE4): 1 near the light, eased to 0 at the range. invSqrRange
 // is 1/range^2 (0 = infinite range, no cutoff); dist2 is the squared surface->light distance.

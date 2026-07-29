@@ -47,7 +47,7 @@ export const transmissionVolumePbrGlExtension: GlPbrExtensionRegistration = {
   float flightTransmissionEta = 1.0 / max(u_flightTransmissionIor, 1.0);
   vec3 flightTransmissionRefracted = refract(-viewDir, normal, flightTransmissionEta);
   vec4 flightTransmissionRefractedClip = u_viewProjection * vec4(
-    v_worldPos + flightTransmissionRefracted * max(flightTransmissionThickness, 0.01), 1.0);
+    v_worldPosition + flightTransmissionRefracted * max(flightTransmissionThickness, 0.01), 1.0);
   vec2 flightTransmissionScreenUv =
     flightTransmissionRefractedClip.xy / max(flightTransmissionRefractedClip.w, 1e-5) * 0.5 + 0.5;
   float flightTransmissionLod = roughness * u_flightTransmissionMaxLod;
