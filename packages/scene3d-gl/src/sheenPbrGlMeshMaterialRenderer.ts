@@ -43,7 +43,7 @@ export const sheenPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     const program = ensureGlPbrProgram(state, key);
     beginGlMeshDraw(state, program, sheen !== null && sheen.doubleSided);
 
-    setGlMeshViewProjection(gl, program.locViewProjection, camera);
+    setGlMeshViewProjection(state, program.locViewProjection, camera);
     setGlMeshCameraPosition(gl, program.locCameraPosition, camera);
     bindGlMeshLightBlock(state, program, lights);
     bindGlPbrStandardBlock(state, program, standard);

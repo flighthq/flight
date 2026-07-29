@@ -55,7 +55,7 @@ describe('clearGlRenderTarget', () => {
     clearGlRenderTarget(state, target);
 
     expect(viewportSpy).toHaveBeenCalledWith(0, 0, 48, 24);
-    expect(getGlRenderStateRuntime(state).renderTargetViewport).toEqual({ width: 48, height: 24 });
+    expect(getGlRenderStateRuntime(state).renderTargetViewport).toEqual({ height: 24, width: 48, x: 0, y: 0 });
   });
 
   it('clears to fully transparent', () => {
@@ -132,7 +132,7 @@ describe('drawGlFullscreenPass', () => {
 
     expect(bindSpy).toHaveBeenCalledWith(gl.FRAMEBUFFER, dest.framebuffer);
     expect(viewportSpy).toHaveBeenCalledWith(0, 0, 40, 20);
-    expect(getGlRenderStateRuntime(state).renderTargetViewport).toEqual({ width: 40, height: 20 });
+    expect(getGlRenderStateRuntime(state).renderTargetViewport).toEqual({ height: 20, width: 40, x: 0, y: 0 });
   });
 
   it('targets the canvas and clears renderTargetViewport when dest is null', () => {

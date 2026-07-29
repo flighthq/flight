@@ -15,11 +15,11 @@ drift-gated by `npm run support:check` (part of `npm run check`).
 
 ## Coverage summary
 
-168 functional scenes with committed baselines. Scenes carrying a fingerprint per backend:
+169 functional scenes with committed baselines. Scenes carrying a fingerprint per backend:
 
 | Canvas | DOM | WebGL | WebGPU |
 | --- | --- | --- | --- |
-| 106 / 168 | 39 / 168 | 147 / 168 | 148 / 168 |
+| 106 / 169 | 39 / 169 | 148 / 169 | 148 / 169 |
 
 All four backends re-verify in-sandbox — WebGPU via SwiftShader software Vulkan. A small set of WebGPU scenes exceed the fingerprint tolerance on software-vs-hardware antialiasing differences; see [maturity-gaps](maturity-gaps.md).
 
@@ -241,6 +241,7 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
+| `render-pass-viewport` | · | · | ✓ | · |
 | `render-target-node-2d` | ✓ | · | ✓ | ✓ |
 | `render-texture` | · | · | ✓ | · |
 

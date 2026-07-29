@@ -59,7 +59,7 @@ export const shadedGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     const program = ensureGlShadedProgram(state, defineKeyForMaterial(state, shaded), modifiers);
     beginGlMeshDraw(state, program, shaded !== null && shaded.doubleSided);
 
-    setGlMeshViewProjection(gl, program.locViewProjection, camera);
+    setGlMeshViewProjection(state, program.locViewProjection, camera);
     setGlMeshCameraPosition(gl, program.locCameraPosition, camera);
     bindGlMeshLightBlock(state, program, lights);
     bindGlShadedMaterialUniforms(state, program, shaded);

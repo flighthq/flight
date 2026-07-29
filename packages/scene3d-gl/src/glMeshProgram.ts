@@ -13,6 +13,7 @@ import type {
 
 import { ensureGlMeshUpload } from './glMeshUpload';
 import { ensureGlSkinPalette, getGlScene3DRuntime } from './glScene3DRuntime';
+import { getGlScene3DViewportAspect } from './glViewportAspect';
 // The shared per-bind head for every mesh-material family: stores the family's program as the active
 // bind→draw handoff, selects it, and sets the depth + face-cull state a forward 3D draw needs (depth
 // test LESS + depth write on; back-face cull unless the material is double-sided). The render-effect
@@ -220,16 +221,15 @@ export function setGlMeshCameraPosition(
 }
 
 // Uploads the camera view-projection matrix to a program's u_viewProjection. Every family's vertex
-// scene2d shares this transform; the perspective aspect falls back to 1 when zero (degenerate camera)
-// so a malformed projection never divides by zero.
+// scene2d shares this transform; an active pass viewport is authoritative over the camera's stored
+// perspective aspect, and degenerate dimensions fall back to 1.
 export function setGlMeshViewProjection(
-  gl: WebGL2RenderingContext,
+  state: GlRenderState,
   locViewProjection: WebGLUniformLocation | null,
   camera: Readonly<Camera3D>,
 ): void {
-  const aspect = camera.projection.kind === 'perspective' ? camera.projection.aspect : 1;
-  getCamera3DViewProjectionMatrix4(scratchViewProjection, camera, aspect !== 0 ? aspect : 1);
-  gl.uniformMatrix4fv(locViewProjection, false, scratchViewProjection.m);
+  getCamera3DViewProjectionMatrix4(scratchViewProjection, camera, getGlScene3DViewportAspect(state));
+  state.gl.uniformMatrix4fv(locViewProjection, false, scratchViewProjection.m);
 }
 
 // Vertex-scene2d GLSL every map-sampling family interpolates into its vertex body ahead of `main`: the

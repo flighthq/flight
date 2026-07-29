@@ -26,7 +26,7 @@ export function clearGlRenderTarget(state: GlRenderState, target: GlRenderTarget
     runtime.currentFramebuffer = target.framebuffer;
   }
   gl.viewport(0, 0, target.width, target.height);
-  runtime.renderTargetViewport = { width: target.width, height: target.height };
+  runtime.renderTargetViewport = { height: target.height, width: target.width, x: 0, y: 0 };
   gl.clearColor(0, 0, 0, 0);
   gl.clear(gl.COLOR_BUFFER_BIT);
   runtime.currentTexture = null;
@@ -81,7 +81,7 @@ export function drawGlFullscreenPass(
   const destWidth = dest?.width ?? state.canvas.width;
   const destHeight = dest?.height ?? state.canvas.height;
   gl.viewport(0, 0, destWidth, destHeight);
-  runtime.renderTargetViewport = dest ? { width: destWidth, height: destHeight } : null;
+  runtime.renderTargetViewport = dest ? { height: destHeight, width: destWidth, x: 0, y: 0 } : null;
 
   for (let i = 0; i < inputs.length; i++) {
     gl.activeTexture(gl.TEXTURE0 + i);

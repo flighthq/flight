@@ -171,7 +171,12 @@ export function resolveGlRenderTarget(state: GlRenderState, target: GlRenderTarg
   if (target.sampleCount <= 1 || target.resolveFramebuffer === null) return;
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
+  const scissor = runtime.currentScissorRect ?? null;
 
+  // A resolve copies storage, not pass coverage. WebGL applies SCISSOR_TEST to blitFramebuffer, so a
+  // partial pass (or an enclosing clip restored before this call) must not truncate the target-wide
+  // resolve. Restore the exact tracked scissor after every attachment has been copied.
+  if (scissor !== null) gl.disable(gl.SCISSOR_TEST);
   gl.bindFramebuffer(gl.READ_FRAMEBUFFER, target.framebuffer);
   gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, target.resolveFramebuffer);
   for (let i = 0; i < target.textures.length; i++) {
@@ -192,6 +197,10 @@ export function resolveGlRenderTarget(state: GlRenderState, target: GlRenderTarg
   }
   gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null);
   gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, runtime.currentFramebuffer);
+  if (scissor !== null) {
+    gl.enable(gl.SCISSOR_TEST);
+    gl.scissor(scissor.x, scissor.y, scissor.width, scissor.height);
+  }
   // Flush so the resolved texels are visible to the next sample of `target.texture`. The blit→sample
   // dependency is implicit in conformant GL, but some drivers (notably headless SwiftShader) sample a
   // stale resolve texture without this; the cost is one flush per frame, only when MSAA is enabled.

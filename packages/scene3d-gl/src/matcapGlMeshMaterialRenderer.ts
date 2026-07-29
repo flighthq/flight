@@ -40,7 +40,7 @@ export const matcapGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     const matcap = material as Readonly<MatcapMaterial> | null;
     const program = ensureGlMatcapProgram(state, defineKeyForMaterial(state, matcap));
     beginGlMeshDraw(state, program, matcap !== null && matcap.doubleSided);
-    setGlMeshViewProjection(gl, program.locViewProjection, camera);
+    setGlMeshViewProjection(state, program.locViewProjection, camera);
     // u_view rotates the world-space normal into view space for the matcap lookup.
     gl.uniformMatrix4fv(program.locView, false, camera.view.m);
 

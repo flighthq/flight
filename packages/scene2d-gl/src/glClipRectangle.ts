@@ -50,17 +50,19 @@ function computeScissorRect(
   const x3 = transform.a * (rect.x + rect.width) + transform.c * (rect.y + rect.height) + transform.tx;
   const y3 = transform.b * (rect.x + rect.width) + transform.d * (rect.y + rect.height) + transform.ty;
 
-  const viewport = getGlRenderStateRuntime(state).renderTargetViewport ?? state.canvas;
+  const viewport = getGlRenderStateRuntime(state).renderTargetViewport;
+  const viewportWidth = viewport?.width ?? state.canvas.width;
+  const viewportHeight = viewport?.height ?? state.canvas.height;
   const minX = Math.max(0, Math.floor(Math.min(x0, x1, x2, x3)));
-  const maxX = Math.min(viewport.width, Math.ceil(Math.max(x0, x1, x2, x3)));
+  const maxX = Math.min(viewportWidth, Math.ceil(Math.max(x0, x1, x2, x3)));
   const minY = Math.max(0, Math.floor(Math.min(y0, y1, y2, y3)));
-  const maxY = Math.min(viewport.height, Math.ceil(Math.max(y0, y1, y2, y3)));
+  const maxY = Math.min(viewportHeight, Math.ceil(Math.max(y0, y1, y2, y3)));
 
   return {
     height: Math.max(0, maxY - minY),
     width: Math.max(0, maxX - minX),
-    x: minX,
-    y: Math.max(0, viewport.height - maxY),
+    x: (viewport?.x ?? 0) + minX,
+    y: (viewport?.y ?? 0) + Math.max(0, viewportHeight - maxY),
   };
 }
 

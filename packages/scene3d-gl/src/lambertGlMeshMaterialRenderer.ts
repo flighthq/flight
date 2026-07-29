@@ -44,12 +44,11 @@ export const lambertGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
-    const gl = state.gl;
     const lambert = material as Readonly<LambertMaterial> | null;
     const program = ensureGlClassicProgram(state, defineKeyForMaterial(state, lambert));
     beginGlMeshDraw(state, program, lambert !== null && lambert.doubleSided);
 
-    setGlMeshViewProjection(gl, program.locViewProjection, camera);
+    setGlMeshViewProjection(state, program.locViewProjection, camera);
     bindGlMeshLightBlock(state, program, lights);
     bindGlLambertMaterialUniforms(state, program, lambert);
   },

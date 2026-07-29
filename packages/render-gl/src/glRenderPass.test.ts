@@ -1,5 +1,5 @@
 import { createMatrix } from '@flighthq/geometry/contract';
-import type { GlRenderTarget } from '@flighthq/types/contract';
+import type { GlRenderTarget, Viewport } from '@flighthq/types/contract';
 
 import { beginGlRenderPass, endGlRenderPass, setGlRenderTransform2D } from './glRenderPass';
 import { getGlRenderStateRuntime } from './glRenderState';
@@ -92,7 +92,50 @@ describe('beginGlRenderPass', () => {
 
     const runtime = getGlRenderStateRuntime(state);
     expect(runtime.currentRenderTarget).toBe(target);
-    expect(runtime.renderTargetViewport).toEqual({ width: 64, height: 48 });
+    expect(runtime.renderTargetViewport).toEqual({ height: 48, width: 64, x: 0, y: 0 });
+  });
+
+  it('constrains viewport and clears to a top-left-origin sub-region', () => {
+    const { state, gl } = createGlState();
+    const target = makeTarget({ width: 100, height: 80 });
+    const viewport = makeViewport(10, 20, 30, 40);
+
+    beginGlRenderPass(state, target, undefined, viewport);
+
+    expect(gl.viewport).toHaveBeenLastCalledWith(10, 20, 30, 40);
+    expect(gl.enable).toHaveBeenCalledWith(gl.SCISSOR_TEST);
+    expect(gl.scissor).toHaveBeenLastCalledWith(10, 20, 30, 40);
+    expect(vi.mocked(gl.scissor).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(gl.clearBufferfv).mock.invocationCallOrder[0],
+    );
+    expect(getGlRenderStateRuntime(state).renderTargetViewport).toEqual({
+      height: 40,
+      width: 30,
+      x: 10,
+      y: 20,
+    });
+  });
+
+  it('intersects both viewport edges before clamping a negative origin', () => {
+    const { state, gl } = createGlState();
+
+    beginGlRenderPass(state, makeTarget({ width: 100, height: 80 }), undefined, makeViewport(-10, -5, 25, 20));
+
+    // Visible top-left intersection is 15×15, not the original 25×20 shifted inward.
+    expect(gl.viewport).toHaveBeenLastCalledWith(0, 65, 15, 15);
+    expect(gl.scissor).toHaveBeenLastCalledWith(0, 65, 15, 15);
+  });
+
+  it('keeps a nested full-region pass inside the enclosing scissor', () => {
+    const { state, gl } = createGlState();
+    const target = makeTarget({ width: 100, height: 80 });
+
+    beginGlRenderPass(state, target, undefined, makeViewport(10, 20, 30, 40));
+    beginGlRenderPass(state, target);
+
+    expect(gl.viewport).toHaveBeenLastCalledWith(0, 0, 100, 80);
+    expect(gl.scissor).toHaveBeenLastCalledWith(10, 20, 30, 40);
+    expect(getGlRenderStateRuntime(state).currentScissorRect).toEqual({ height: 40, width: 30, x: 10, y: 20 });
   });
 
   it('nests: the inner pass is current until it ends, then the outer is restored', () => {
@@ -107,7 +150,7 @@ describe('beginGlRenderPass', () => {
 
     endGlRenderPass(state);
     expect(runtime.currentRenderTarget).toBe(outer);
-    expect(runtime.renderTargetViewport).toEqual({ width: 64, height: 48 });
+    expect(runtime.renderTargetViewport).toEqual({ height: 48, width: 64, x: 0, y: 0 });
   });
 });
 
@@ -134,11 +177,40 @@ describe('endGlRenderPass', () => {
     expect(getGlRenderStateRuntime(state).renderTargetViewport).toBeNull();
   });
 
+  it('restores the exact enclosing viewport and scissor after a nested pass', () => {
+    const { state, gl } = createGlState();
+    const target = makeTarget({ width: 100, height: 80 });
+
+    beginGlRenderPass(state, target, undefined, makeViewport(10, 20, 30, 40));
+    beginGlRenderPass(state, target, undefined, makeViewport(15, 25, 10, 10));
+    endGlRenderPass(state);
+
+    expect(gl.viewport).toHaveBeenLastCalledWith(10, 20, 30, 40);
+    expect(gl.scissor).toHaveBeenLastCalledWith(10, 20, 30, 40);
+    expect(getGlRenderStateRuntime(state).currentScissorRect).toEqual({ height: 40, width: 30, x: 10, y: 20 });
+    expect(getGlRenderStateRuntime(state).scissorStack).toEqual([{ height: 40, width: 30, x: 10, y: 20 }]);
+  });
+
+  it('disables scissor when the outer partial pass returns to the canvas', () => {
+    const { state, gl } = createGlState();
+
+    beginGlRenderPass(state, makeTarget(), undefined, makeViewport(1, 2, 10, 8));
+    endGlRenderPass(state);
+
+    expect(gl.disable).toHaveBeenLastCalledWith(gl.SCISSOR_TEST);
+    expect(getGlRenderStateRuntime(state).currentScissorRect).toBeNull();
+    expect(getGlRenderStateRuntime(state).scissorStack).toEqual([]);
+  });
+
   it('is a no-op when there is no matching begin', () => {
     const { state } = createGlState();
     expect(() => endGlRenderPass(state)).not.toThrow();
   });
 });
+
+function makeViewport(x: number, y: number, width: number, height: number): Viewport {
+  return { devicePixelRatio: 1, height, width, x, y } as Viewport;
+}
 
 describe('setGlRenderTransform2D', () => {
   it('installs a copy of the transform as the 2D root device transform', () => {

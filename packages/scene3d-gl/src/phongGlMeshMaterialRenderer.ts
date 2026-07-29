@@ -50,7 +50,7 @@ export const phongGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     const program = ensureGlClassicProgram(state, defineKeyForMaterial(state, phong));
     beginGlMeshDraw(state, program, phong !== null && phong.doubleSided);
 
-    setGlMeshViewProjection(gl, program.locViewProjection, camera);
+    setGlMeshViewProjection(state, program.locViewProjection, camera);
     setGlMeshCameraPosition(gl, program.locCameraPosition, camera);
     bindGlMeshLightBlock(state, program, lights);
     bindGlPhongMaterialUniforms(state, program, phong);

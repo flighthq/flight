@@ -44,7 +44,7 @@ export const specularPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     const program = ensureGlPbrProgram(state, key);
     beginGlMeshDraw(state, program, specular !== null && specular.doubleSided);
 
-    setGlMeshViewProjection(gl, program.locViewProjection, camera);
+    setGlMeshViewProjection(state, program.locViewProjection, camera);
     setGlMeshCameraPosition(gl, program.locCameraPosition, camera);
     bindGlMeshLightBlock(state, program, lights);
     bindGlPbrStandardBlock(state, program, standard);

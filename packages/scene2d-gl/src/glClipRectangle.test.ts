@@ -44,4 +44,13 @@ describe('pushGlClipRectangle', () => {
 
     expect(gl.scissor).toHaveBeenLastCalledWith(50, 25, 50, 50);
   });
+
+  it('offsets a local clip into the active partial-target viewport', () => {
+    const { state, gl } = createGlState();
+    getGlRenderStateRuntime(state).renderTargetViewport = { height: 100, width: 100, x: 200, y: 50 };
+
+    pushGlClipRectangle(state, createRectangle(10, 20, 30, 40), createMatrix());
+
+    expect(gl.scissor).toHaveBeenLastCalledWith(210, 90, 30, 40);
+  });
 });

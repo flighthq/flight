@@ -2,6 +2,7 @@ import { createCamera3D } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry, createMeshGeometry } from '@flighthq/mesh/contract';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createTexture, setTextureUvOffset, setTextureUvScale } from '@flighthq/texture/contract';
 import type {
   Camera3D,
@@ -413,9 +414,14 @@ describe('setGlMeshCameraPosition', () => {
 });
 
 describe('setGlMeshViewProjection', () => {
-  it('uploads the camera view-projection matrix', () => {
-    const gl = makeFakeGl2();
-    setGlMeshViewProjection(gl, { name: 'u_viewProjection' } as WebGLUniformLocation, makeCamera());
-    expect(gl.calls.some((c) => c.name === 'uniformMatrix4fv')).toBe(true);
+  it('uploads a view-projection using the active viewport aspect', () => {
+    const { state, gl } = makeGlScene3DState();
+    getGlRenderStateRuntime(state).renderTargetViewport = { height: 100, width: 200, x: 10, y: 20 };
+
+    setGlMeshViewProjection(state, { name: 'u_viewProjection' } as WebGLUniformLocation, makeCamera());
+
+    const upload = gl.calls.find((c) => c.name === 'uniformMatrix4fv');
+    expect(upload).toBeDefined();
+    expect((upload!.args[2] as Float32Array)[0]).toBeCloseTo(Math.sqrt(3) / 2);
   });
 });

@@ -1169,6 +1169,15 @@
       "label": "Render",
       "scenes": [
         {
+          "scene": "render-pass-viewport",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": false
+          }
+        },
+        {
           "scene": "render-target-node-2d",
           "backends": {
             "canvas": true,

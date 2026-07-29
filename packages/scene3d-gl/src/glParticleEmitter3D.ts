@@ -15,6 +15,8 @@ import type {
 } from '@flighthq/types/contract';
 import { ParticleEmitter3DKind } from '@flighthq/types/contract';
 
+import { getGlScene3DViewportAspect } from './glViewportAspect';
+
 // Per-instance layout (16 floats = 64 bytes):
 // [0]  px         float   world x
 // [1]  py         float   world y
@@ -388,7 +390,7 @@ export function drawGlScene3DParticleEmitter3Ds(
   collectParticleEmitter3DNodes(scene, emitterScratch);
   if (emitterScratch.length === 0) return;
 
-  const list = prepareScene3DRender(state, scene, camera, lights);
+  const list = prepareScene3DRender(state, scene, camera, lights, getGlScene3DViewportAspect(state));
 
   const shader = ensureParticle3DShader(state);
   const gl = state.gl;

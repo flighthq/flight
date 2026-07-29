@@ -183,11 +183,11 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
    */
   currentRenderTarget?: GlRenderTarget | null;
   /**
-   * When rendering into a GlRenderTarget, overrides the canvas dimensions
-   * used for clip-space projection and scissor rect computation. Null means
-   * use canvas.width / canvas.height (normal on-screen rendering).
+   * Active GL-space viewport within the current render target. Its origin is bottom-left, matching
+   * WebGL viewport/scissor coordinates; projection paths use its dimensions while clip paths also add
+   * its origin. Null means the full canvas.
    */
-  renderTargetViewport: { width: number; height: number } | null;
+  renderTargetViewport: GlViewportRect | null;
   shaderLoc: GlShaderLocations;
   // Raw-element texture cache: a canvas/video/image element uploaded directly (video frames, canvas-backed
   // shapes and text). Keyed by the element; the caller owns re-upload timing (video re-uploads every frame).
@@ -299,6 +299,15 @@ export interface GlShapeMeshColorScaleBiasShader {
 }
 
 export interface GlScissorRect {
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+}
+
+// Effective viewport after a top-left-origin Viewport input has been intersected with its target.
+// Stored in WebGL's bottom-left-origin coordinate system so viewport/scissor restoration is exact.
+export interface GlViewportRect {
   height: number;
   width: number;
   x: number;

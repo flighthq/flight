@@ -279,4 +279,32 @@ describe('resolveGlRenderTarget', () => {
     expect(readBuffer).toHaveBeenCalledTimes(2);
     expect(flush).toHaveBeenCalledTimes(1);
   });
+
+  it('disables an active scissor for the storage-wide resolve and restores it afterward', () => {
+    const { state, gl } = makeState();
+    const target = createGlRenderTarget(state, { width: 64, height: 48 });
+    target.sampleCount = 4;
+    target.resolveFramebuffer = {} as WebGLFramebuffer;
+    const runtime = getGlRenderStateRuntime(state);
+    runtime.currentScissorRect = { height: 12, width: 16, x: 3, y: 4 };
+    const blit = vi.fn();
+    Object.assign(gl as unknown as Record<string, unknown>, {
+      READ_FRAMEBUFFER: 36008,
+      DRAW_FRAMEBUFFER: 36009,
+      COLOR_BUFFER_BIT: 16384,
+      NEAREST: 9728,
+      NONE: 0,
+      blitFramebuffer: blit,
+      readBuffer: vi.fn(),
+      drawBuffers: vi.fn(),
+      flush: vi.fn(),
+    });
+
+    resolveGlRenderTarget(state, target);
+
+    expect(gl.disable).toHaveBeenCalledWith(gl.SCISSOR_TEST);
+    expect(vi.mocked(gl.disable).mock.invocationCallOrder.at(-1)).toBeLessThan(blit.mock.invocationCallOrder[0]);
+    expect(gl.enable).toHaveBeenLastCalledWith(gl.SCISSOR_TEST);
+    expect(gl.scissor).toHaveBeenLastCalledWith(3, 4, 16, 12);
+  });
 });
