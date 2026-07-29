@@ -6,6 +6,7 @@
     { "path": "./packages/animation" },
     { "path": "./packages/app" },
     { "path": "./packages/application" },
+    { "path": "./packages/application-gl" },
     { "path": "./packages/camera" },
     { "path": "./packages/camera-controls" },
     { "path": "./packages/webcam" },

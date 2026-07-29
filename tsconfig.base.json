@@ -94,6 +94,8 @@
       "@ft/verify": ["./packages/tool-capture/src/functionalVerify.ts"],
       "@flighthq/application": ["./packages/application/src/index.ts"],
       "@flighthq/application/*": ["./packages/application/src/*"],
+      "@flighthq/application-gl": ["./packages/application-gl/src/index.ts"],
+      "@flighthq/application-gl/*": ["./packages/application-gl/src/*"],
       "@flighthq/capture": ["./packages/capture/src/index.ts"],
       "@flighthq/capture/*": ["./packages/capture/src/*"],
       "@flighthq/binpack": ["./packages/binpack/src/index.ts"],

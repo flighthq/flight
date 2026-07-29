@@ -25,6 +25,9 @@
       "path": "../application"
     },
     {
+      "path": "../application-gl"
+    },
+    {
       "path": "../assets"
     },
     {

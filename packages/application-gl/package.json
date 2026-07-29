@@ -1,10 +1,10 @@
 {
-  "name": "@flighthq/render-gl",
+  "name": "@flighthq/application-gl",
   "version": "0.2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/flighthq/flight.git",
-    "directory": "packages/render-gl"
+    "directory": "packages/application-gl"
   },
   "type": "module",
   "main": "dist/index.js",
@@ -36,16 +36,15 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
-    "@flighthq/log": "*",
-    "@flighthq/scene2d": "*",
-    "@flighthq/geometry": "*",
-    "@flighthq/render": "*",
-    "@flighthq/texture": "*",
+    "@flighthq/application": "*",
+    "@flighthq/node": "*",
+    "@flighthq/render-gl": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
+    "@flighthq/signals": "*",
     "typescript": "^5.3.0"
   },
-  "description": "WebGL2 renderer core: render state, targets, shaders, draw, and fullscreen passes",
+  "description": "WebGL application render-view assembly linking windows, targets, state, and viewport",
   "sideEffects": false
 }

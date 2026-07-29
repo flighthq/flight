@@ -1,4 +1,3 @@
-export * from './glApplicationRenderView';
 export * from './glBackground';
 export * from './glCompressedTexture';
 export * from './glDraw';
