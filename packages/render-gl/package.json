@@ -36,7 +36,9 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/application": "*",
     "@flighthq/log": "*",
+    "@flighthq/node": "*",
     "@flighthq/scene2d": "*",
     "@flighthq/geometry": "*",
     "@flighthq/render": "*",
@@ -44,6 +46,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
+    "@flighthq/signals": "*",
     "typescript": "^5.3.0"
   },
   "description": "WebGL2 renderer core: render state, targets, shaders, draw, and fullscreen passes",

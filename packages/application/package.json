@@ -37,8 +37,6 @@
   },
   "dependencies": {
     "@flighthq/entity": "*",
-    "@flighthq/node": "*",
-    "@flighthq/render-gl": "*",
     "@flighthq/signals": "*",
     "@flighthq/types": "*"
   },

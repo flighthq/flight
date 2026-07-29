@@ -1,12 +1,5 @@
+import { createApplicationRenderView, detachApplicationRenderView } from '@flighthq/application/contract';
 import { createViewport } from '@flighthq/node/contract';
-import {
-  createGlRenderState,
-  createGlRenderTarget,
-  destroyGlRenderState,
-  destroyGlRenderTarget,
-  invalidateGlRenderStateCache,
-  resizeGlRenderTarget,
-} from '@flighthq/render-gl/contract';
 import type {
   ApplicationWindow,
   GlApplicationRenderView,
@@ -15,7 +8,8 @@ import type {
   GlRenderTarget,
 } from '@flighthq/types/contract';
 
-import { createApplicationRenderView, detachApplicationRenderView } from './applicationRenderView';
+import { createGlRenderState, destroyGlRenderState, invalidateGlRenderStateCache } from './glRenderState';
+import { createGlRenderTarget, destroyGlRenderTarget, resizeGlRenderTarget } from './glRenderTarget';
 
 // Allocates the GL realization of an ApplicationRenderView. Creation does not attach the resize signal;
 // call attachApplicationRenderView explicitly when the window should drive subsequent synchronization.

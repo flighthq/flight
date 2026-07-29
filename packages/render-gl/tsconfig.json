@@ -9,9 +9,12 @@
     "sourceMap": true
   },
   "references": [
+    { "path": "../application" },
     { "path": "../scene2d" },
+    { "path": "../signals" },
     { "path": "../geometry" },
     { "path": "../log" },
+    { "path": "../node" },
     { "path": "../render" },
     { "path": "../texture" },
     { "path": "../types" }

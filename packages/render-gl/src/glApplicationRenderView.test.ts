@@ -1,9 +1,12 @@
+import {
+  attachApplicationRenderView,
+  createApplicationWindow,
+  synchronizeApplicationRenderView,
+} from '@flighthq/application/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import type { GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 
-import { attachApplicationRenderView, synchronizeApplicationRenderView } from './applicationRenderView';
 import { createGlApplicationRenderView, destroyGlApplicationRenderView } from './glApplicationRenderView';
-import { createApplicationWindow } from './window';
 
 const mocks = vi.hoisted(() => ({
   createGlRenderState: vi.fn(),
@@ -19,12 +22,15 @@ vi.mock('@flighthq/node/contract', () => ({
   createViewport: mocks.createViewport,
 }));
 
-vi.mock('@flighthq/render-gl/contract', () => ({
+vi.mock('./glRenderState', () => ({
   createGlRenderState: mocks.createGlRenderState,
-  createGlRenderTarget: mocks.createGlRenderTarget,
   destroyGlRenderState: mocks.destroyGlRenderState,
-  destroyGlRenderTarget: mocks.destroyGlRenderTarget,
   invalidateGlRenderStateCache: mocks.invalidateGlRenderStateCache,
+}));
+
+vi.mock('./glRenderTarget', () => ({
+  createGlRenderTarget: mocks.createGlRenderTarget,
+  destroyGlRenderTarget: mocks.destroyGlRenderTarget,
   resizeGlRenderTarget: mocks.resizeGlRenderTarget,
 }));
 
