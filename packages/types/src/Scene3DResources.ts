@@ -5,6 +5,7 @@ import type { ExternalImageResourceReference, ImageResourceReference } from './I
 import type { Material } from './Material';
 import type { PbrExtension } from './PbrExtension';
 import type { ResourceLoader } from './ResourceLoader';
+import type { Scene3D } from './Scene3D';
 import type { Signal } from './Signal';
 import type { Texture } from './Texture';
 
@@ -87,13 +88,33 @@ export interface Scene3DResourceLoadProgress {
   total: number;
 }
 
-export interface LoadScene3DResourcesOptions extends ResolveScene3DResourcesOptions {
+export interface LoadScene3DResourcesOptions extends UpdateScene3DResourceStreamingOptions {
   progress?: Signal<(progress: Readonly<Scene3DResourceLoadProgress>) => void>;
 }
 
 export interface ResolveScene3DResourcesOptions {
-  priority?: (texture: Readonly<Texture>, ref: Readonly<ImageResourceReference>) => number;
   select?: (texture: Readonly<Texture>, ref: Readonly<ImageResourceReference>) => boolean;
+}
+
+export interface Scene3DResourceResolution extends Scene3DResourceWorkingSet {
+  image: ImageResource;
+}
+
+// One synchronous selected-working-set snapshot. Resolved groups name the ready image and every Texture
+// subscriber it was bound to; unresolved groups remain directly usable by loading/streaming policy.
+export interface Scene3DResources {
+  resolved: Scene3DResourceResolution[];
+  scene: Scene3D;
+  unresolved: Scene3DResourceWorkingSet[];
+}
+
+export interface Scene3DResourceWorkingSet {
+  ref: ImageResourceReference;
+  textures: Texture[];
+}
+
+export interface UpdateScene3DResourceStreamingOptions extends ResolveScene3DResourcesOptions {
+  priority?: (texture: Readonly<Texture>, ref: Readonly<ImageResourceReference>) => number;
 }
 
 export interface Scene3DResourceRevealOptions {

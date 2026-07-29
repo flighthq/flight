@@ -11,8 +11,7 @@ import {
 } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
-import { loadScene3DResources } from './resolveScene3DResourcesAndWait';
-import { waitForScene3DResourceResolver } from './resolveScene3DResourcesAndWait';
+import { loadScene3DResources, waitForScene3DResourceResolver } from './loadScene3DResources';
 import {
   explainImageResourceReferenceResolution,
   resetFailedImageResourceReference,

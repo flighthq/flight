@@ -13,7 +13,7 @@ import type {
 import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
-import { loadScene3DResources, waitForScene3DResourceResolver } from './resolveScene3DResourcesAndWait';
+import { loadScene3DResources, waitForScene3DResourceResolver } from './loadScene3DResources';
 import { createBuiltInScene3DResourceResolver, disposeScene3DResourceResolver } from './sceneResourceResolver';
 
 const fakeImage = { height: 1, width: 1 } as unknown as ImageResource;

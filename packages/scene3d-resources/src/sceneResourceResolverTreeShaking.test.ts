@@ -39,7 +39,7 @@ describe('scene resource resolver tree shaking', () => {
 
   it('includes failure logging only through the separately imported guard', async () => {
     const output = await bundleScene3DResourceResolverExport('enableScene3DResourceFailureGuards');
-    expect(output).toContain('image resource resolution failed');
+    expect(output).toContain('Scene3D resource acquisition failed');
   });
 });
 

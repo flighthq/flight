@@ -77,8 +77,7 @@ describe('enableScene3DResourceFailureGuards', () => {
       failureKind: ImageResourceFailureKind.Error,
       failureMessage: 'bad image',
       failureName: 'CodecError',
-      message:
-        'resolveScene3DResources: image resource resolution failed — call retryFailedScene3DResources to request it again',
+      message: 'Scene3D resource acquisition failed — call retryFailedScene3DResources to request it again',
     });
     expect(ref.state).toBe(ResourceResolutionState.Failed);
 

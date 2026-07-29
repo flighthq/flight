@@ -45,7 +45,7 @@ export interface Scene3DDocument {
   metadata: Scene3DMetadata | null;
   nodes: Scene3DDocumentNode[];
   // The image references materials' textures point at, resolved by an explicit
-  // `resolveScene3DResources` pass — never eagerly during parse.
+  // `loadScene3DResources` or `updateScene3DResourceStreaming` pass — never eagerly during parse.
   resources: ImageResourceReference[];
   scenes: Scene3DDocumentScene[];
   skins: Scene3DDocumentSkin[];

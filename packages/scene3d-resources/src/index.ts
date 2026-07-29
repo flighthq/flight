@@ -41,5 +41,6 @@ export {
   retryFailedScene3DResources,
   revealScene3DResourcesOnResolve,
   setScene3DDocumentResourceBasePathFromUrl,
+  updateScene3DResourceStreaming,
   waitForScene3DResourceResolver,
 } from './contract';

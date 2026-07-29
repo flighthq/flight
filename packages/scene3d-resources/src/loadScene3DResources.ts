@@ -4,26 +4,25 @@ import type {
   LoadScene3DResourcesOptions,
   Scene3D,
   Scene3DResourceResolver,
-  Texture,
 } from '@flighthq/types/contract';
 import { ResourceResolutionState } from '@flighthq/types/contract';
 import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
 import type { Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
 
-import { getScene3DResourceTextures, getScene3DTextureResourceReference } from './getScene3DResourceTextures';
-import { resolveScene3DResources } from './resolveScene3DResources';
+import { updateScene3DResourceStreaming } from './resolveScene3DResources';
 
-// Eager/deterministic asynchronous load: runs one resolveScene3DResources pass, then awaits every in-flight
-// load it started so the scene is fully resolved (or each ref settled to Failed) on return. The
-// deterministic sibling of the fire-and-forget resolveScene3DResources — for loads, tests, and capture
-// that need the finished scene rather than progressive availability.
+// Eager/deterministic asynchronous load: reconciles the selected working set, starts its acquisitions,
+// then awaits every in-flight load it started so each reference has settled to Resolved or Failed on
+// return. Progressive callers use updateScene3DResourceStreaming instead.
 export async function loadScene3DResources(
   scene: Readonly<Scene3D>,
   resolver: Scene3DResourceResolver,
   options?: Readonly<LoadScene3DResourcesOptions>,
 ): Promise<void> {
-  const refs = getSelectedScene3DResourceReferences(scene, resolver, options);
-  resolveScene3DResources(scene, resolver, options);
+  const resources = updateScene3DResourceStreaming(scene, resolver, options);
+  const refs = new Set<ImageResourceReference>();
+  for (let i = 0; i < resources.resolved.length; i++) refs.add(resources.resolved[i].ref);
+  for (let i = 0; i < resources.unresolved.length; i++) refs.add(resources.unresolved[i].ref);
   const runtime = (resolver as Scene3DResourceResolverWithRuntime)[Scene3DResourceResolverRuntimeKey];
   const total = refs.size;
   let loaded = 0;
@@ -54,21 +53,4 @@ export async function waitForScene3DResourceResolver(resolver: Readonly<Scene3DR
   const promises: Promise<void>[] = [];
   for (const entry of runtime.inFlight.values()) promises.push(entry.promise);
   await Promise.allSettled(promises);
-}
-
-function getSelectedScene3DResourceReferences(
-  scene: Readonly<Scene3D>,
-  resolver: Readonly<Scene3DResourceResolver>,
-  options?: Readonly<LoadScene3DResourcesOptions>,
-): Set<ImageResourceReference> {
-  const textures: Texture[] = [];
-  const refs = new Set<ImageResourceReference>();
-  getScene3DResourceTextures(scene, resolver.registry, textures);
-  for (const texture of textures) {
-    const ref = getScene3DTextureResourceReference(scene, texture);
-    if (ref !== null && ref !== undefined && (options?.select === undefined || options.select(texture, ref))) {
-      refs.add(ref);
-    }
-  }
-  return refs;
 }

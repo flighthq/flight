@@ -26,8 +26,9 @@ import { enableScene3DResourceSignals } from './sceneResourceSignals';
 // pass re-requests it. The resolver only reports availability; this recipe animates — the app ticks
 // the fade via updateTweens(tweenManager, dt), and a node-opacity-honoring renderer makes it visible.
 //
-// Call BEFORE resolveScene3DResources so objects start hidden rather than popping. Returns a disposer
-// that disconnects the signal listener (the tween manager and any in-flight tweens are the caller's).
+// Call before loadScene3DResources or updateScene3DResourceStreaming so objects start hidden rather than
+// popping. Returns a disposer that disconnects the signal listener (the tween manager and any in-flight
+// tweens are the caller's).
 // A texture shared across meshes fades every owning object; an object with several pending textures
 // fades in when the first of them resolves.
 export function revealScene3DResourcesOnResolve(
