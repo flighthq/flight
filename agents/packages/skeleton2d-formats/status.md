@@ -1,0 +1,31 @@
+# skeleton2d-formats — Status
+
+Continuity log for `@flighthq/skeleton2d-formats`. See [charter](./charter.md) for the AAA target and the **Option C** decision (formats now + animation binding; defer only the constraint solvers).
+
+## Current state — Spine `.json` parser landed (2026-07-29)
+
+The package exists, is registered (tsconfig paths/build refs, sdk barrel `formats` group + deps, package.json `.`+`./contract` lanes), and passes the scoped `npm run check skeleton2d-formats` (packages/typecheck/exports/type-home/order/portable/api). **16 tests pass across 2 files.** All types live in `@flighthq/types` (implementation exports functions only).
+
+**Types (in `@flighthq/types`):** `Skeleton2DImport` (setup-pose `Skeleton2D` + named animations) and `Skeleton2DImportAnimation` (`{ name, clip }`), both registered in the parallel index/contract barrels.
+
+**Parser (`spineParse.ts`) — `parseSpineSkeleton(json, diagnostics?)` → `Skeleton2DImport | null`, tolerant/best-effort, `null` reserved for the unrecognized-format failure:**
+- **Bones** — parent-before-child name→index resolution (backward search), Spine defaults (x0/y0/rot0/scale1/shear0/length0), all five `transform` modes mapped (`onlyTranslation`/`noRotationOrReflection`/`noScale`/`noScaleOrReflection`/default), unknown → Normal.
+- **Slots** — draw order by array position, bone resolution, `parseSpineColor` ("rrggbbaa" → packed RGBA int, default 0xffffffff), setup attachment resolved from the default skin.
+- **Attachments** — region (`parseSpineRegionAttachment`) and mesh (`parseSpineMeshAttachment`: unweighted iff `vertices.length === vertexCount*2`, else weighted → `Skin2D` influence stream from Spine's `[boneCount,(boneIndex,x,y,weight)×N]` per-vertex format). vertexCount = `uvs.length>>1`.
+- **Skins** — the `default` skin's `slot→attachment→Attachment2D` table (4.x array form + older object form); alternate skins `Skip`-crumbed (`spine.alternate-skin-unsupported`).
+- **Animations** — per named animation, bone `rotate`/`translate`/`scale`/`shear` timelines → `@flighthq/animation` `AnimationClip` channels with `Skeleton2DAnimationTarget` refs. **Setup pose is baked into keyframes at parse time** (Spine timelines are relative-to-setup: rotate/translate/shear add, scale multiplies) because the skeleton2d binder writes absolute values. Interpolation = Step iff every key `curve === 'stepped'`, else Linear (bezier curve control points not yet honored — see gaps).
+
+**Registry (`skeletonDetect.ts`):** `parseSkeleton2D(text, diagnostics?)` auto-detects + dispatches over a lazily-built open `Map` (no module-top-level side effect); `registerSkeleton2DFormat(kind, detect, parse)` adds/overrides (last-write-wins, vendor-prefix custom kinds). Spine detected by a `bones`/`skeleton`/`slots` JSON key.
+
+**Skip-crumb inventory (recognized-but-unmodeled, dot-namespaced, aggregate-report-once):** `spine.<type>-attachment-unsupported` (boundingbox/path/clipping/point/linkedmesh), `spine.alternate-skin-unsupported`, and the animation timelines `spine.ik-timeline-unsupported` / `transform` / `path` / `deform` / `events`→`event` / `slots`→`slot` / `drawOrder`.
+
+## Next (per charter build order)
+
+1. **Spine bit-parity checkpoint (real rig).** Per the real-asset rule: fetch a permissively-licensed animated rig (spineboy) to a **gitignored scratch path only**, validate posed output locally, report what it proved — **never commit/inline licensed rig data**; committed fixtures stay hand-authored. FLAG review before fetching (the user will source one). This is where the skeleton2d inherit-mode / deform edge cases surface and bezier-curve keyframe fidelity gets held honest.
+2. **Bezier curve keyframes.** Spine per-key `curve: [cx1,cy1,cx2,cy2]` bezier easing is currently collapsed to Linear (only `stepped` is honored). Honor it via `@flighthq/animation` per-key easing once a real rig demands the fidelity.
+3. **DragonBones `.json`** (after Spine) — its own `armature` container + bone/slot model deltas; registered behind the same seam.
+4. **Spine `.skel` binary** — later pass, same registry.
+
+## Deferred (charter non-goals / skeleton2d P2)
+
+Posing/deforming/drawing and per-frame apply live in `@flighthq/skeleton2d` (the `applyAnimationClipToSkeleton2D` binder landed there first). IK/transform/path **constraint solvers**, events, and clipping/path/point attachments are skeleton2d P2 — `Skip`-crumbed here, not blockers for the animated demo. The `.atlas` texture-region half stays with `@flighthq/spritesheet-formats`.
