@@ -11,6 +11,60 @@ by: builder
 
 <!-- newest entry on top -->
 
+## 2026-07-29 — md5 read-integrity fixes: the axis-12 class closed (builder, user-directed)
+
+The worst remaining silent-wrong-read surface from the four-parser audit. Seven defects fixed, each with
+a probe **verified to fail against the pre-fix parser** — six of the seven failed there SILENTLY, with a
+fully-formed renderable mesh and either no diagnostic or one that truthfully reported a single bad line
+while the real damage was every index in the file after it.
+
+**AXIS 12 — RECOVERY-INDUCED REINDEXING. The headline, and the reason md5 ranked worst.** MD5 records are
+addressed by array POSITION (a vert names a weight range, a tri names verts) and each record ALSO declares
+its own ordinal — `vert 0`, `weight 3`. The parser discarded the ordinal and appended in encounter order,
+so dropping one malformed line closed the gap by shifting, silently redefining every reference to every
+later record. Nothing downstream could notice: the shifted indices are all still in range and all still
+resolve. Now records are placed at their declared ordinal, a gap is filled with an explicit placeholder
+built to FAIL the checks it will later meet (a weight with joint -1, a vertex with no influences) rather
+than pass as real data, and a repeated or out-of-order ordinal keeps the first record — the only choice
+that preserves positions other records already reference.
+
+**AXIS 5 — the declared counts are now read.** `numverts`/`numtris`/`numweights` were parsed and thrown
+away; they are the cheapest detector for a lost record, catching the loss even where no ordinal survives.
+Each is reconciled against the records actually present.
+
+**AXIS 11, found while fixing.** `parseMeshBlock` had two exits — a closing-brace return and a
+ran-out-of-lines return — and the first skipped the new reconciliation entirely. Both now finish through
+one path. Two exits doing the same finishing work is how one ends up missing a check the other has; it is
+the same shape as the 3ds guard asymmetry, in a file that had only two copies instead of eight.
+
+Also closed: **triangle indices are bounds-checked** (a negative index wrapped through `Uint32Array.from`
+to ~4.29e9 and reached the GPU index buffer; a too-large one poisoned the normals of the two GOOD vertices
+sharing its triangle); **negative `startWeight`** (passed the `>= length` guard, indexed before the array,
+dereferenced undefined → TypeError out of a parser documented never to throw) and non-positive
+`countWeights` (a vertex that silently collapsed to the model origin); **`parentIndex < -1`** (matched no
+branch and was indistinguishable from a legitimate `-1` root, while `>= length` was correctly reported —
+the asymmetry) plus **self-parent and multi-joint cycles** (a self-child throws in `addNodeChild`; a
+two-joint cycle passed every guard and was built into a subgraph detached from the skeleton); and a
+**non-unit reconstructed quaternion** — `(2,0,0)` gives norm 2, which is not a rotation, and scales the
+joint it drives by four through the bind pose and the inverse-bind matrix.
+
+**md5AnimParse — the frame layout is declared three times and none of the three was reconciled.** Each
+joint's flags imply a component count, each `startIndex` claims a window in the flat frame array, and
+`numAnimatedComponents` states the total. The `?? base` fallback made every disagreement invisible: an
+out-of-range read silently substituted the bind pose, so a joint with a wrong window was indistinguishable
+from one an animator deliberately left static. The implied total is now summed from the flags — an
+INDEPENDENT statement, per axis 9, since a bound derived from the field it guards moves with the error —
+and checked against the declared total, each frame's actual length, the baseframe length, and every
+joint's window.
+
+**STILL OPEN in md5, deliberately not fixed here:** `.md5anim` never verifies it describes the same
+skeleton as the `.md5mesh` (a joint-name miss falls back to positional binding with no diagnostic — axis
+"referent agreement", the cross-artifact case); an unrecognised file still parses to a valid empty
+document with zero diagnostics; a bad token inside a frame block shifts the remaining components of that
+frame only. The first is a design question about how far a parser should verify its sidecar, not a patch.
+
+scene-formats 519/519. Bare `npm run check` clean, bare `npm run test` 12991 passed / 1196 files.
+
 ## 2026-07-29 — Four-parser read-geometry audit; 3ds hang + awd2 inflate bomb fixed (builder, review-directed)
 
 Authorized follow-on to the glTF read-integrity work. Axes derived from first principles and **committed

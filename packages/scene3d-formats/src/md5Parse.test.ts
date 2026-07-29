@@ -1098,3 +1098,90 @@ describe('parseMd5Mesh', () => {
     expect(doc.animations).toHaveLength(0);
   });
 });
+
+describe('parseMd5Mesh read integrity', () => {
+  // Every probe here is verified to fail against the pre-fix parser; several of those failures are
+  // SILENT — a fully-formed, renderable mesh with no diagnostic at all — which is the class that makes
+  // them worth pinning.
+  function withLine(replace: string, replacement: string): string {
+    return SINGLE_TRIANGLE.replace(replace, replacement);
+  }
+
+  it('keeps later records at their declared positions when one line is dropped', () => {
+    // THE HEADLINE. Records are addressed by array POSITION — a vert names a weight range, a tri names
+    // verts — and the file declares each record's own ordinal. Dropping a malformed line and closing the
+    // gap by shifting silently redefines every reference to every later record, and no bounds check
+    // downstream can notice because the shifted indices are all still in range. Weight 1 is corrupted
+    // here; vertex 1 must still bind to weight 1, not to what used to be weight 2.
+    const source = withLine('  weight 1 0 1.0 ( 1 0 0 )', '  weight 1 0 1.0 ( 1 0 )');
+    const diagnostics: ImportDiagnostic[] = [];
+    const document = parseMd5Mesh(source, diagnostics);
+    expect(findDiagnostic(diagnostics, 'md5mesh.malformed-weight')).toBeDefined();
+    // The gap is filled rather than closed, so weight 2 is still at index 2.
+    expect(findDiagnostic(diagnostics, 'md5mesh.weight-index-gap')).toBeDefined();
+
+    // Vertex 2 keeps the position its own weight authored, which a one-record shift would have moved.
+    const point = { x: 0, y: 0, z: 0 };
+    getMeshGeometryVertexPosition(point, document.meshes[0].geometry, 2);
+    expect(Number.isFinite(point.x)).toBe(true);
+    expect(point.x).toBeCloseTo(0);
+  });
+
+  it('reports a declared count that disagrees with the records actually present', () => {
+    // The cheapest detector for a lost record: two independent statements of one quantity.
+    const source = withLine('  numweights 3', '  numweights 4');
+    const diagnostics: ImportDiagnostic[] = [];
+    parseMd5Mesh(source, diagnostics);
+    const crumb = findDiagnostic(diagnostics, 'md5mesh.weight-count-mismatch');
+    expect(crumb).toBeDefined();
+    expect(crumb!.detail?.firstExpected).toBe(4);
+    expect(crumb!.detail?.firstActual).toBe(3);
+  });
+
+  it('drops a triangle whose vertex index is out of range instead of handing it to the GPU', () => {
+    // A too-large index poisons the normals of the two GOOD vertices it shares a triangle with; a
+    // NEGATIVE one wraps through Uint32Array.from to roughly 4.29 billion and reaches the index buffer.
+    for (const bad of ['  tri 0 0 1 7', '  tri 0 0 1 -1']) {
+      const diagnostics: ImportDiagnostic[] = [];
+      const document = parseMd5Mesh(withLine('  tri 0 0 1 2', bad), diagnostics);
+      expect(findDiagnostic(diagnostics, 'md5mesh.triangle-vertex-out-of-range')).toBeDefined();
+      for (const mesh of document.meshes) {
+        expect(getMeshGeometryIndexCount(mesh.geometry)).toBe(0);
+      }
+    }
+  });
+
+  it('drops a vertex whose weight range starts before the weight array rather than throwing', () => {
+    // A negative startWeight passes the `>= weights.length` guard, indexes before the array, and
+    // dereferences undefined — a TypeError out of a parser documented never to throw.
+    const diagnostics: ImportDiagnostic[] = [];
+    expect(() =>
+      parseMd5Mesh(withLine('  vert 0 ( 0.0 0.0 ) 0 1', '  vert 0 ( 0.0 0.0 ) -3 2'), diagnostics),
+    ).not.toThrow();
+    expect(findDiagnostic(diagnostics, 'md5mesh.malformed-vert')).toBeDefined();
+  });
+
+  it('reports a parent index below the root sentinel, not only one past the joint count', () => {
+    // -1 means root. Anything below it matched NO branch and was silently indistinguishable from a root,
+    // while the too-large half was correctly reported — the asymmetry.
+    const diagnostics: ImportDiagnostic[] = [];
+    parseMd5Mesh(withLine('  "root" -1 ( 0 0 0 ) ( 0 0 0 )', '  "root" -7 ( 0 0 0 ) ( 0 0 0 )'), diagnostics);
+    expect(findDiagnostic(diagnostics, 'md5mesh.joint-parent-out-of-range')).toBeDefined();
+  });
+
+  it('does not throw on a joint that names itself as its own parent', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    expect(() =>
+      parseMd5Mesh(withLine('  "root" -1 ( 0 0 0 ) ( 0 0 0 )', '  "root" 0 ( 0 0 0 ) ( 0 0 0 )'), diagnostics),
+    ).not.toThrow();
+    expect(findDiagnostic(diagnostics, 'md5mesh.joint-parent-out-of-range')).toBeDefined();
+  });
+
+  it('renormalizes a corrupt orientation instead of accepting a non-unit quaternion', () => {
+    // (2,0,0) reconstructs to the quaternion (2,0,0,0) — norm 2, not a rotation. Composed into the bind
+    // pose it SCALES the joint by four and corrupts the inverse-bind matrix.
+    const diagnostics: ImportDiagnostic[] = [];
+    parseMd5Mesh(withLine('  "root" -1 ( 0 0 0 ) ( 0 0 0 )', '  "root" -1 ( 0 0 0 ) ( 2 0 0 )'), diagnostics);
+    expect(findDiagnostic(diagnostics, 'md5mesh.joint-orientation-not-unit')).toBeDefined();
+  });
+});
