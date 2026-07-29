@@ -1,4 +1,4 @@
-import type { Node2D } from '@flighthq/sdk';
+import type { Node2D, VideoChannel, VideoResource } from '@flighthq/sdk';
 import {
   addNodeChild,
   advanceVideoTexture,
@@ -8,6 +8,9 @@ import {
   createVideoResource,
   invalidateNodeAppearance,
   loadVideoResourceFromBlob,
+  playVideoResource,
+  setVideoChannelGain,
+  setVideoChannelPlaybackRate,
   setSpriteTexture,
 } from '@flighthq/sdk';
 
@@ -50,17 +53,22 @@ if (captureWindow.__flightCapture === true) {
     ]);
 
     setVideoSources(resource1, resource2, resource3);
-
-    for (const resource of [resource1, resource2, resource3]) {
-      const element = resource.element as HTMLVideoElement | null;
-      if (element !== null) {
-        element.loop = true;
-        element.play();
-      }
-    }
+    startVideoChannels([resource1, resource2, resource3]);
 
     requestAnimationFrame(enterFrame);
   });
+}
+
+const videoChannels: VideoChannel[] = [];
+
+function startVideoChannels(resources: readonly VideoResource[]): void {
+  for (let i = 0; i < resources.length; i++) {
+    const channel = playVideoResource(resources[i], { loops: -1 });
+    if (channel === null) throw new Error(`Unable to play video channel ${i + 1}`);
+    setVideoChannelGain(channel, i === 0 ? 1 : 0);
+    setVideoChannelPlaybackRate(channel, 0.75 + i * 0.25);
+    videoChannels.push(channel);
+  }
 }
 
 function createCaptureVideoResource(): ReturnType<typeof createVideoResource> {
