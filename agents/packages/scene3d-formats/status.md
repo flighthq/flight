@@ -57,13 +57,27 @@ INDEPENDENT statement, per axis 9, since a bound derived from the field it guard
 and checked against the declared total, each frame's actual length, the baseframe length, and every
 joint's window.
 
-**STILL OPEN in md5, deliberately not fixed here:** `.md5anim` never verifies it describes the same
-skeleton as the `.md5mesh` (a joint-name miss falls back to positional binding with no diagnostic — axis
-"referent agreement", the cross-artifact case); an unrecognised file still parses to a valid empty
-document with zero diagnostics; a bad token inside a frame block shifts the remaining components of that
-frame only. The first is a design question about how far a parser should verify its sidecar, not a patch.
+**FOLLOW-ON, same session (user-directed):** two of the three open items closed.
+- **`md5mesh.no-data`** — an unrecognised file (an `.obj`, an `.md5anim`, an HTML error page) parsed to a
+  structurally valid EMPTY document with an EMPTY diagnostics array, indistinguishable from successfully
+  importing a file that happens to contain no geometry. `parseMd5Anim` already rejected its equivalent;
+  this is the missing twin.
+- **frame-component alignment** — a non-numeric token inside a `frame` block was skipped, shifting every
+  component after it *within that frame*, so joint 1 read joint 0's trailing rotation as its own
+  translation in one frame of an otherwise correct clip. The axis-12 class one scope down from the mesh
+  records, and it takes the same remedy: substitute a placeholder to hold the position, and report it. Its
+  severity moved Drop → **Recover**, correctly: the frame now survives with one named wrong component,
+  which is what a usable survivor means. Dropping the whole frame instead would have been worse — frames
+  are addressed by index across the clip, so losing one shifts the timeline exactly as skipping a token
+  shifts the components.
 
-scene-formats 519/519. Bare `npm run check` clean, bare `npm run test` 12991 passed / 1196 files.
+**STILL OPEN, and it is a design question rather than a patch:** `.md5anim` never verifies it describes
+the same skeleton as the `.md5mesh`. A joint-name miss silently falls back to POSITIONAL binding, so
+`body.md5anim` on `head.md5mesh` yields a scrambled but non-empty clip with no diagnostic. This is the
+cross-artifact referent-agreement case — how far should a parser verify its sidecar? — and it is routed to
+review rather than picked unilaterally.
+
+scene-formats 522/522. Bare `npm run check` clean, bare `npm run test` 12994 passed / 1196 files.
 
 ## 2026-07-29 — Four-parser read-geometry audit; 3ds hang + awd2 inflate bomb fixed (builder, review-directed)
 

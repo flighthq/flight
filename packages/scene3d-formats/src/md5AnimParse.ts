@@ -492,7 +492,7 @@ function parseFrameBlock(
       if (!Number.isFinite(value)) {
         tallyMd5AnimDrop(
           md5Drops,
-          ImportDiagnosticSeverity.Drop,
+          ImportDiagnosticSeverity.Recover,
           'md5anim.non-numeric-frame-value',
           'non-numeric-frame-value',
           {
@@ -500,6 +500,13 @@ function parseFrameBlock(
             firstToken: token,
           },
         );
+        // A placeholder, not a skip: every joint reads this frame at a fixed `startIndex`, so dropping
+        // one token shifts every component after it in this frame and joints start reading each other's
+        // translations as rotations. Confining the damage to the one component the file actually got
+        // wrong — which the crumb names — is strictly better than spreading it across the rest of the
+        // frame. Dropping the whole frame instead would be worse still: frames are addressed by index
+        // across the clip, so losing one shifts the timeline the same way this shifts the components.
+        frameData.push(0);
         continue;
       }
       frameData.push(value);

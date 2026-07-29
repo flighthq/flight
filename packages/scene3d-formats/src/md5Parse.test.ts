@@ -1099,6 +1099,28 @@ describe('parseMd5Mesh', () => {
   });
 });
 
+describe('parseMd5Mesh no-data', () => {
+  it('rejects a file with nothing recognisable rather than returning a silent empty document', () => {
+    // Without this the parser returns a structurally valid, completely empty document and an EMPTY
+    // diagnostics array, so an .obj, an .md5anim, or an HTML error page is indistinguishable from a
+    // successful import of a file that happens to contain no geometry.
+    for (const source of ['v 0 0 0\nf 1 1 1', '<html><body>404</body></html>', 'MD5Version 10\nnumFrames 1']) {
+      const diagnostics: ImportDiagnostic[] = [];
+      const document = parseMd5Mesh(source, diagnostics);
+      const crumb = findDiagnostic(diagnostics, 'md5mesh.no-data');
+      expect(crumb).toBeDefined();
+      expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Reject);
+      expect(document.meshes).toHaveLength(0);
+    }
+  });
+
+  it('stays quiet for a file that does parse', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    parseMd5Mesh(SINGLE_TRIANGLE, diagnostics);
+    expect(findDiagnostic(diagnostics, 'md5mesh.no-data')).toBeUndefined();
+  });
+});
+
 describe('parseMd5Mesh read integrity', () => {
   // Every probe here is verified to fail against the pre-fix parser; several of those failures are
   // SILENT — a fully-formed, renderable mesh with no diagnostic at all — which is the class that makes
