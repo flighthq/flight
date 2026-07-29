@@ -1,4 +1,5 @@
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
+import { applyAnimationClipToSkeleton2D } from '@flighthq/skeleton2d/contract';
 import type { ImportDiagnostic, MeshAttachment2D, RegionAttachment2D } from '@flighthq/types/contract';
 import { MeshAttachment2DKind, RegionAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
@@ -175,5 +176,74 @@ describe('parseSpineSkeleton', () => {
     expect(crumbs.map((c) => c.kind)).toContain('spine.alternate-skin-unsupported');
     // The clipping attachment was dropped (not shown on the slot).
     expect(parseSpineSkeleton(JSON.stringify(doc))!.skeleton.slots![0].attachment).toBeNull();
+  });
+
+  it('builds a named animation clip whose bone timelines bake in the setup pose', () => {
+    const doc = {
+      bones: [{ name: 'b', rotation: 10, x: 5, scaleX: 2 }],
+      animations: {
+        walk: {
+          bones: {
+            b: {
+              rotate: [
+                { time: 0, value: 0 },
+                { time: 1, value: 90 },
+              ],
+              translate: [
+                { time: 0, x: 0, y: 0 },
+                { time: 1, x: 20, y: 0 },
+              ],
+              scale: [
+                { time: 0, x: 1, y: 1 },
+                { time: 1, x: 3, y: 1 },
+              ],
+            },
+          },
+        },
+      },
+    };
+    const result = parseSpineSkeleton(JSON.stringify(doc))!;
+    expect(result.animations.length).toBe(1);
+    expect(result.animations[0].name).toBe('walk');
+    // Apply the clip at t=1 and confirm setup is baked: rotation 10+90, x 5+20, scaleX 2*3.
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, result.skeleton, 1);
+    expect(result.skeleton.bones[0].rotation).toBeCloseTo(100, 5);
+    expect(result.skeleton.bones[0].x).toBeCloseTo(25, 5);
+    expect(result.skeleton.bones[0].scaleX).toBeCloseTo(6, 5); // multiplier: setup 2 × 3
+  });
+
+  it('uses Step interpolation when every keyframe of a timeline is stepped', () => {
+    const doc = {
+      bones: [{ name: 'b' }],
+      animations: {
+        a: {
+          bones: {
+            b: {
+              rotate: [
+                { time: 0, value: 0, curve: 'stepped' },
+                { time: 1, value: 90, curve: 'stepped' },
+              ],
+            },
+          },
+        },
+      },
+    };
+    const result = parseSpineSkeleton(JSON.stringify(doc))!;
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, result.skeleton, 0.9);
+    expect(result.skeleton.bones[0].rotation).toBeCloseTo(0, 5); // stepped holds the t=0 keyframe until t=1
+  });
+
+  it('Skip-crumbs constraint, event, and slot animation timelines', () => {
+    const doc = {
+      bones: [{ name: 'b' }],
+      animations: {
+        a: { bones: {}, ik: { c1: [] }, transform: { t1: [] }, events: [{ time: 0, name: 'e' }], slots: { s: {} } },
+      },
+    };
+    const kinds = collectImportDiagnostics((sink) => parseSpineSkeleton(JSON.stringify(doc), sink)).map((c) => c.kind);
+    expect(kinds).toContain('spine.ik-timeline-unsupported');
+    expect(kinds).toContain('spine.transform-timeline-unsupported');
+    expect(kinds).toContain('spine.event-timeline-unsupported');
+    expect(kinds).toContain('spine.slot-timeline-unsupported');
   });
 });
