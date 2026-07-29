@@ -9,14 +9,14 @@ import {
 import { createNode, createNodeRuntime } from './node';
 
 describe('defaultComputeLocalBoundsRectangle', () => {
-  it('is a no-op that does not modify out', () => {
+  it('writes empty bounds', () => {
     const out = createRectangle(1, 2, 3, 4);
     const node = createNode(NodeTestKind);
     defaultComputeLocalBoundsRectangle(out, node as unknown as Node);
-    expect(out.x).toBe(1);
-    expect(out.y).toBe(2);
-    expect(out.width).toBe(3);
-    expect(out.height).toBe(4);
+    expect(out.x).toBe(0);
+    expect(out.y).toBe(0);
+    expect(out.width).toBe(0);
+    expect(out.height).toBe(0);
   });
 });
 

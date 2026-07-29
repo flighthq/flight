@@ -6,7 +6,12 @@ import type {
   Rectangle,
 } from '@flighthq/types/contract';
 
-export function defaultComputeLocalBoundsRectangle(_out: Rectangle, _source: Readonly<BoundsNodeAny>) {}
+export function defaultComputeLocalBoundsRectangle(out: Rectangle, _source: Readonly<BoundsNodeAny>) {
+  out.x = 0;
+  out.y = 0;
+  out.width = 0;
+  out.height = 0;
+}
 
 export function initBoundsRectangleRuntimeTrait(
   target: HasBoundsRectangleRuntime,
