@@ -7,6 +7,7 @@ import {
   matrixTransformRectangle,
   mergeRectangle,
   releaseMatrix,
+  setEmptyRectangle,
 } from '@flighthq/geometry/contract';
 import type {
   BoundsNode,
@@ -91,6 +92,12 @@ export function ensureNodeWorldBoundsRectangle<Traits extends object>(target: Sp
   }
 }
 
+export function getNodeAuthoredBoundsRectangle<Traits extends object>(
+  target: Readonly<BoundsNode<Traits>>,
+): Readonly<Rectangle> | null {
+  return (getEntityRuntime(target) as HasBoundsRectangleRuntime).authoredBoundsRectangle;
+}
+
 export function getNodeHeight<Traits extends object>(source: Spatial2DNode<Traits>): number {
   computeNodeBoundsRectangle(
     _tempBoundsRectangle,
@@ -135,6 +142,22 @@ export function getNodeWorldBoundsRectangle<Traits extends object>(target: Spati
   return (getEntityRuntime(target) as HasBoundsRectangleRuntime).worldBoundsRectangle!;
 }
 
+export function setNodeAuthoredBoundsRectangle<Traits extends object>(
+  target: BoundsNode<Traits>,
+  value: Readonly<RectangleLike> | null,
+): void {
+  const runtime = getEntityRuntime(target) as NodeRuntime<Traits> & HasBoundsRectangleRuntime;
+  if (value === null) {
+    if (runtime.authoredBoundsRectangle === null) return;
+    runtime.authoredBoundsRectangle = null;
+  } else if (runtime.authoredBoundsRectangle === null) {
+    runtime.authoredBoundsRectangle = createRectangle(value.x, value.y, value.width, value.height);
+  } else {
+    copyRectangle(runtime.authoredBoundsRectangle, value);
+  }
+  runtime.localBoundsId = (runtime.localBoundsId + 1) >>> 0;
+}
+
 export function setNodeHeight<Traits extends object>(target: Spatial2DNode<Traits>, value: number): void {
   if (target.scaleY === 0) return;
   target.scaleY = (value * target.scaleY) / getNodeHeight(target);
@@ -162,7 +185,16 @@ function recomputeLocalBoundsRectangle<Traits extends object>(
   runtime: NodeRuntime<Traits> & HasBoundsRectangleRuntime,
 ): void {
   if (runtime.localBoundsRectangle === null) runtime.localBoundsRectangle = createRectangle();
+  setEmptyRectangle(runtime.localBoundsRectangle);
   runtime.computeLocalBoundsRectangle(runtime.localBoundsRectangle, target);
+  const authored = runtime.authoredBoundsRectangle;
+  if (authored !== null) {
+    if (runtime.localBoundsRectangle.width === 0 || runtime.localBoundsRectangle.height === 0) {
+      copyRectangle(runtime.localBoundsRectangle, authored);
+    } else {
+      mergeRectangle(runtime.localBoundsRectangle, runtime.localBoundsRectangle, authored);
+    }
+  }
   runtime.localBoundsUsingLocalBoundsId = runtime.localBoundsId;
 }
 

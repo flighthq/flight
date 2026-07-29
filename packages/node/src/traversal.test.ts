@@ -6,6 +6,7 @@ import { createNode } from './node';
 import {
   findNode,
   findNodeByName,
+  findNodesByName,
   forEachNodeAncestor,
   forEachNodeDescendant,
   getNodeChildren,
@@ -95,6 +96,21 @@ describe('findNodeByName', () => {
 
   it('does not find the source node itself', () => {
     expect(findNodeByName(root, 'root')).toBeNull();
+  });
+});
+
+describe('findNodesByName', () => {
+  it('appends every duplicate match in depth-first order', () => {
+    childB.name = 'childA';
+    const matches: Node<NodeTraits>[] = [];
+    findNodesByName(root, 'childA', matches);
+    expect(matches).toEqual([childA, childB]);
+  });
+
+  it('does not clear existing output or include the source', () => {
+    const matches: Node<NodeTraits>[] = [root];
+    findNodesByName(root, 'root', matches);
+    expect(matches).toEqual([root]);
   });
 });
 

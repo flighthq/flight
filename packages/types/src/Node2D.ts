@@ -13,6 +13,7 @@ export type Node2D = Node<Node2DTraits> & Node2DTraits;
 export interface Node2DTraits
   extends NodeTraits, HasAppearance, HasBlendMode, HasBoundsRectangle, HasClip, HasMaterial, HasTransform2D {
   data: Node2DData | null;
+  linkage: string | null;
 }
 export interface Node2DData extends NodeData {}
 export const DisplayObjectKind = 'DisplayObject';
@@ -21,6 +22,6 @@ export const Node2DTraitsKey = Symbol('Node2DTraits');
 // walks to the root and reads it, so scene2d membership needs no per-node propagation.
 export type Node2DRuntime = NodeRuntime<Node2DTraits> &
   HasTransform2DRuntime &
-  HasBoundsRectangleRuntime & { scene2d: Scene2D | null };
+  HasBoundsRectangleRuntime & { scene2d: Scene2D | null; slotContent: Node2D | null };
 export type Node2DDataFactory = NodeDataFactory<Node2DData>;
 export type Node2DRuntimeFactory<R extends Node2DRuntime> = NodeRuntimeFactory<R>;
