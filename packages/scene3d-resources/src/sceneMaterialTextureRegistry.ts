@@ -1,17 +1,20 @@
 import { createEntity } from '@flighthq/entity/contract';
 import type {
   Kind,
+  ExtendedPbrMaterial,
   Material,
   Scene3DMaterialTextureLister,
   Scene3DMaterialTextureRegistry,
+  Scene3DPbrExtensionTextureLister,
+  StandardPbrMaterialProperties,
   StandardPbrMaterial,
   Texture,
   UnlitMaterial,
 } from '@flighthq/types/contract';
-import { StandardPbrMaterialKind, UnlitMaterialKind } from '@flighthq/types/contract';
+import { ExtendedPbrMaterialKind, StandardPbrMaterialKind, UnlitMaterialKind } from '@flighthq/types/contract';
 
 export function createScene3DMaterialTextureRegistry(): Scene3DMaterialTextureRegistry {
-  return createEntity({ listers: new Map() });
+  return createEntity({ extensionListers: new Map(), listers: new Map() });
 }
 
 // Looks up the lister for `material.kind` and, when present, appends the material's non-null Textures
@@ -29,8 +32,21 @@ export function getScene3DMaterialTextures(
 // Registers the built-in surface-material listers (StandardPbrMaterial and UnlitMaterial). Opt-in so
 // it carries no top-level side effect; callers that build their own registry invoke it explicitly.
 export function registerBuiltInScene3DMaterialTextures(registry: Scene3DMaterialTextureRegistry): void {
+  registerExtendedPbrScene3DMaterialTextures(registry);
   registerScene3DMaterialTextures(registry, StandardPbrMaterialKind, listStandardPbrMaterialTextures);
   registerScene3DMaterialTextures(registry, UnlitMaterialKind, listUnlitMaterialTextures);
+}
+
+export function registerExtendedPbrScene3DMaterialTextures(registry: Scene3DMaterialTextureRegistry): void {
+  registerScene3DMaterialTextures(registry, ExtendedPbrMaterialKind, (material, out): void => {
+    const extended = material as Readonly<ExtendedPbrMaterial>;
+    listStandardPbrPropertiesTextures(extended.standard, out);
+    for (let i = 0; i < extended.extensions.length; i++) {
+      const extension = extended.extensions[i];
+      const lister = registry.extensionListers.get(extension.kind);
+      if (lister !== undefined) lister(extension, out);
+    }
+  });
 }
 
 // Binds `lister` to `kind` (last-write-wins; overriding a built-in with a custom lister is a
@@ -43,8 +59,19 @@ export function registerScene3DMaterialTextures(
   registry.listers.set(kind, lister);
 }
 
+export function registerScene3DPbrExtensionTextures(
+  registry: Scene3DMaterialTextureRegistry,
+  kind: Kind,
+  lister: Scene3DPbrExtensionTextureLister,
+): void {
+  registry.extensionListers.set(kind, lister);
+}
+
 function listStandardPbrMaterialTextures(material: Readonly<Material>, out: Texture[]): void {
-  const pbr = material as Readonly<StandardPbrMaterial>;
+  listStandardPbrPropertiesTextures(material as Readonly<StandardPbrMaterial>, out);
+}
+
+function listStandardPbrPropertiesTextures(pbr: Readonly<StandardPbrMaterialProperties>, out: Texture[]): void {
   if (pbr.baseColorMap !== null) out.push(pbr.baseColorMap);
   if (pbr.emissiveMap !== null) out.push(pbr.emissiveMap);
   if (pbr.metallicRoughnessMap !== null) out.push(pbr.metallicRoughnessMap);

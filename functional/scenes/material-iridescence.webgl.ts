@@ -7,10 +7,11 @@ import {
   createAmbientLight,
   createCamera3D,
   createDirectionalLight,
+  createExtendedPbrMaterial,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
-  createIridescencePbrMaterial,
+  createIridescencePbrExtension,
   createMesh,
   createPerspectiveProjection,
   createSphereMeshGeometry,
@@ -20,7 +21,8 @@ import {
   getBitmapPixelLuminance,
   normalizeVector3,
   prepareScene3DRender,
-  registerIridescencePbrGlMaterial,
+  registerIridescencePbrGlExtension,
+  registerExtendedPbrGlMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
@@ -40,7 +42,8 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0x0a0c10ff,
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
-registerIridescencePbrGlMaterial(state);
+registerIridescencePbrGlExtension(state);
+registerExtendedPbrGlMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 4,
@@ -66,8 +69,8 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   endGlRenderEffectPipeline(state, pipeline, []);
 }
 
-// material-iridescence — proves a 3D IridescencePbrMaterial mesh renders WITH directional lighting on the Gl and Wgpu
-// forward renderers (scene-gl / scene-wgpu). A single mid-gray sphere sits at the origin under one
+// material-iridescence proves an Extended PBR iridescence contribution under directional lighting.
+// A single mid-gray sphere sits at the origin under one
 // white directional light (angled so its travel direction points down-left-into-screen) plus a dim
 // ambient fill. The camera looks straight at the sphere from +z.
 //
@@ -93,10 +96,9 @@ const geometry = createSphereMeshGeometry(0.5, 48, 32);
 
 // Mid-gray dielectric base (metallic 0, roughness ~0.5) gives a broad diffuse falloff that reads
 // clearly as a light/dark gradient across the sphere, with the extension factors set strongly active.
-const material = createIridescencePbrMaterial({
+const material = createExtendedPbrMaterial({
+  extensions: [createIridescencePbrExtension({ iridescence: 1, iridescenceIor: 1.3 })],
   standard: createStandardPbrMaterialProperties({ baseColor: 0x808080ff, metallic: 0, roughness: 0.5 }),
-  iridescence: 1,
-  iridescenceIor: 1.3,
 });
 
 const scene = createScene3D().root;

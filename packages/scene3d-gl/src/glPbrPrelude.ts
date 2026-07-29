@@ -1,4 +1,8 @@
-import type { GlColorAdjustmentMaterialFeature, GlPbrDefineKey } from '@flighthq/types/contract';
+import type {
+  GlColorAdjustmentMaterialFeature,
+  GlPbrDefineKey,
+  GlPbrExtensionShaderContribution,
+} from '@flighthq/types/contract';
 // The shared Gl PBR prelude: the GLSL 300 es vertex + fragment uber-shader for the StandardPbr
 // forward-lit path and every PBR-extension variant. One source string is specialized per material
 // at compile time by prepending a define block (see GlPbrDefineKey / buildGlPbrDefineSource), so
@@ -41,14 +45,7 @@ export function buildGlPbrDefineKey(key: Readonly<GlPbrDefineKey>): string {
     `${key.hasEmissiveMap ? 'e' : '-'}` +
     `${key.hasAlphaMap ? 'a' : '-'}` +
     `${key.hasUvTransform ? 'u' : '-'}` +
-    `:${key.clearcoatEnabled ? 'C' : '-'}` +
-    `${key.sheenEnabled ? 'S' : '-'}` +
-    `${key.anisotropyEnabled ? 'A' : '-'}` +
-    `${key.iridescenceEnabled ? 'I' : '-'}` +
-    `${key.specularEnabled ? 'P' : '-'}` +
-    `${key.subsurfaceEnabled ? 'U' : '-'}` +
-    `${key.transmissionEnabled ? 'T' : '-'}` +
-    `${key.hasSkin ? 'k' : '-'}` +
+    `:${key.hasSkin ? 'k' : '-'}` +
     `${key.hasColorMatrix ? 'x' : key.hasColorAdjustment ? 'c' : ''}`
   );
 }
@@ -66,13 +63,6 @@ export function buildGlPbrDefineSource(key: Readonly<GlPbrDefineKey>): string {
   if (key.hasOcclusionMap) defines += '#define HAS_OCCLUSION_MAP\n';
   if (key.hasEmissiveMap) defines += '#define HAS_EMISSIVE_MAP\n';
   if (key.hasAlphaMap) defines += '#define HAS_ALPHA_MAP\n';
-  if (key.clearcoatEnabled) defines += '#define CLEARCOAT\n';
-  if (key.sheenEnabled) defines += '#define SHEEN\n';
-  if (key.anisotropyEnabled) defines += '#define ANISOTROPY\n';
-  if (key.iridescenceEnabled) defines += '#define IRIDESCENCE\n';
-  if (key.specularEnabled) defines += '#define SPECULAR_EXT\n';
-  if (key.subsurfaceEnabled) defines += '#define SUBSURFACE\n';
-  if (key.transmissionEnabled) defines += '#define TRANSMISSION\n';
   if (key.hasSkin) defines += '#define HAS_SKIN\n';
   if (key.hasColorMatrix) defines += '#define HAS_COLOR_MATRIX\n';
   else if (key.hasColorAdjustment) defines += '#define HAS_COLOR_ADJUSTMENT\n';
@@ -90,9 +80,10 @@ export function getGlPbrFragmentSource(): string {
 // compiler. Convenience over buildGlPbrDefineSource + getGlPbrFragmentSource.
 export function getGlPbrFragmentSourceForKey(
   key: Readonly<GlPbrDefineKey>,
+  contributions: readonly GlPbrExtensionShaderContribution[] = [],
   colorAdjustmentFeature: Readonly<GlColorAdjustmentMaterialFeature> | null = null,
 ): string {
-  let body = PBR_FRAGMENT_BODY;
+  let body = composeGlPbrExtensionSource(PBR_FRAGMENT_BODY, contributions);
   if ((key.hasColorAdjustment || key.hasColorMatrix) && colorAdjustmentFeature !== null) {
     body = body.replace(
       'precision highp float;',
@@ -103,7 +94,17 @@ export function getGlPbrFragmentSourceForKey(
       }`,
     );
   }
-  return buildGlPbrDefineSource(key) + body;
+  return buildGlPbrDefineSource(key) + (contributions.length > 0 ? '#define HAS_PBR_EXTENSIONS\n' : '') + body;
+}
+
+function composeGlPbrExtensionSource(body: string, contributions: readonly GlPbrExtensionShaderContribution[]): string {
+  return body
+    .replace(PBR_EXTENSION_DECLARATIONS, contributions.map((value) => value.fragmentDeclarations).join('\n'))
+    .replace(PBR_EXTENSION_FUNCTIONS, contributions.map((value) => value.fragmentFunctions).join('\n'))
+    .replace(PBR_EXTENSION_SURFACE, contributions.map((value) => value.applySurface).join('\n'))
+    .replace(PBR_EXTENSION_PUNCTUAL, contributions.map((value) => value.contributePunctual).join('\n'))
+    .replace(PBR_EXTENSION_IBL, contributions.map((value) => value.contributeIbl).join('\n'))
+    .replace(PBR_EXTENSION_FINALIZE, contributions.map((value) => value.finalize).join('\n'));
 }
 
 // The vertex shader body (everything after the "#version 300 es" + defines block). Transforms the
@@ -120,11 +121,19 @@ export function getGlPbrVertexSourceForKey(key: Readonly<GlPbrDefineKey>): strin
   return buildGlPbrDefineSource(key) + (key.hasSkin ? GL_SKIN_VERTEX_DECLARATIONS_GLSL : '') + PBR_VERTEX_BODY;
 }
 
+const PBR_EXTENSION_DECLARATIONS = '/*__PBR_EXTENSION_DECLARATIONS__*/';
+const PBR_EXTENSION_FINALIZE = '/*__PBR_EXTENSION_FINALIZE__*/';
+const PBR_EXTENSION_FUNCTIONS = '/*__PBR_EXTENSION_FUNCTIONS__*/';
+const PBR_EXTENSION_IBL = '/*__PBR_EXTENSION_IBL__*/';
+const PBR_EXTENSION_PUNCTUAL = '/*__PBR_EXTENSION_PUNCTUAL__*/';
+const PBR_EXTENSION_SURFACE = '/*__PBR_EXTENSION_SURFACE__*/';
+
 const PBR_VERTEX_BODY = `
 layout(location = 0) in vec3 a_position;
 layout(location = 1) in vec3 a_normal;
 layout(location = 2) in vec4 a_tangent;
 layout(location = 3) in vec2 a_uv0;
+layout(location = 5) in vec2 a_uv1;
 
 uniform mat4 u_viewProjection;
 uniform mat4 u_model;
@@ -134,6 +143,8 @@ out vec3 v_worldPosition;
 out vec3 v_normal;
 out vec4 v_tangent;
 out vec2 v_uv0;
+out vec2 v_pbrExtensionUv0;
+out vec2 v_pbrExtensionUv1;
 
 void main() {
 #ifdef HAS_SKIN
@@ -151,6 +162,8 @@ void main() {
   v_normal = u_normalMatrix * localNormal;
   v_tangent = vec4(u_normalMatrix * localTangent, a_tangent.w);
   v_uv0 = applyUvTransform(a_uv0);
+  v_pbrExtensionUv0 = a_uv0;
+  v_pbrExtensionUv1 = a_uv1;
   gl_Position = u_viewProjection * worldPosition;
 }
 `;
@@ -162,6 +175,8 @@ in vec3 v_worldPosition;
 in vec3 v_normal;
 in vec4 v_tangent;
 in vec2 v_uv0;
+in vec2 v_pbrExtensionUv0;
+in vec2 v_pbrExtensionUv1;
 
 uniform vec4 u_baseColor;
 #ifdef HAS_COLOR_MATRIX
@@ -206,6 +221,8 @@ uniform sampler2D u_shadowMap;       // directional shadow depth map
 uniform mat4 u_shadowMatrix;         // world -> shadow light-clip
 uniform float u_shadowEnabled;       // 0 or 1 — gates shadow sampling
 
+${PBR_EXTENSION_DECLARATIONS}
+
 // Directional shadow factor (1.0 = lit, 0.0 = shadowed) with 3x3 PCF; fragments outside the shadow
 // frustum read as lit. Multiplied into the directional term below.
 float sampleDirectionalShadow(vec3 worldPos) {
@@ -243,7 +260,9 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness) {
 // prefiltered specular weighted by the BRDF LUT. Replaces the flat ambient term when an environment
 // is baked (bakeGlEnvironmentIbl). All three cubemap/LUT samples are already linear (baked from
 // sRGB-decoded sources), so no decode here.
-vec3 sampleIblAmbient(vec3 N, vec3 V, float rough, vec3 F0, vec3 diffuseColor, float occ) {
+vec3 sampleIblAmbient(
+  vec3 N, vec3 V, vec3 tangentDir, vec3 bitangentDir, float rough, vec3 F0, vec3 diffuseColor, float occ
+) {
   float nv = max(dot(N, V), 1e-4);
   vec3 F = fresnelSchlickRoughness(nv, F0, rough);
   vec3 diffuse = texture(u_iblIrradiance, N).rgb * diffuseColor;
@@ -251,7 +270,9 @@ vec3 sampleIblAmbient(vec3 N, vec3 V, float rough, vec3 F0, vec3 diffuseColor, f
   vec3 prefiltered = textureLod(u_iblPrefiltered, R, rough * u_iblMaxMip).rgb;
   vec2 brdf = texture(u_iblBrdf, vec2(nv, rough)).rg;
   vec3 specular = prefiltered * (F * brdf.x + brdf.y);
-  return ((vec3(1.0) - F) * diffuse + specular) * occ * u_iblIntensity;
+  vec3 ambient = ((vec3(1.0) - F) * diffuse + specular) * occ * u_iblIntensity;
+${PBR_EXTENSION_IBL}
+  return ambient;
 }
 
 #ifdef HAS_BASE_COLOR_MAP
@@ -271,37 +292,6 @@ uniform sampler2D u_emissiveMap;
 #endif
 #ifdef HAS_ALPHA_MAP
 uniform sampler2D u_alphaMap;
-#endif
-
-#ifdef CLEARCOAT
-uniform float u_clearcoat;
-uniform float u_clearcoatRoughness;
-#endif
-#ifdef SHEEN
-uniform vec3 u_sheenColor;
-uniform float u_sheenRoughness;
-#endif
-#ifdef ANISOTROPY
-uniform float u_anisotropyStrength;
-uniform float u_anisotropyRotation;
-#endif
-#ifdef IRIDESCENCE
-uniform float u_iridescence;
-uniform float u_iridescenceIor;
-uniform float u_iridescenceThickness;
-#endif
-#ifdef SPECULAR_EXT
-uniform float u_specular;
-uniform vec3 u_specularColor;
-#endif
-#ifdef SUBSURFACE
-uniform float u_subsurface;
-uniform vec3 u_subsurfaceColor;
-uniform float u_thickness;
-#endif
-#ifdef TRANSMISSION
-uniform float u_transmission;
-uniform vec3 u_attenuationColor;
 #endif
 
 uniform float u_objectAlpha;
@@ -336,44 +326,7 @@ vec3 fresnelSchlick(float cosTheta, vec3 f0) {
   return f0 + (1.0 - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-#ifdef ANISOTROPY
-// Anisotropic GGX distribution (Burley): an elliptical lobe along the tangent (at) vs bitangent
-// (ab) roughness axes. tDotH/bDotH are the half-vector projections onto the rotated tangent frame.
-float distributionGgxAnisotropic(float nDotH, float tDotH, float bDotH, float at, float ab) {
-  float d = tDotH * tDotH / (at * at) + bDotH * bDotH / (ab * ab) + nDotH * nDotH;
-  return 1.0 / max(PI * at * ab * d * d, 1e-7);
-}
-#endif
-
-#ifdef SHEEN
-// Charlie ("inverted GGX") sheen distribution from Estevez & Kulla — a soft retroreflective lobe
-// for cloth. Approximated visibility keeps the lobe energy-plausible without a lookup table.
-float distributionCharlie(float nDotH, float roughness) {
-  float r = clamp(roughness, 0.07, 1.0);
-  float invR = 1.0 / r;
-  float cos2h = nDotH * nDotH;
-  float sin2h = max(1.0 - cos2h, 1e-4);
-  return (2.0 + invR) * pow(sin2h, invR * 0.5) / (2.0 * PI);
-}
-
-float visibilitySheen(float nDotV, float nDotL) {
-  return 1.0 / max(4.0 * (nDotL + nDotV - nDotL * nDotV), 1e-4);
-}
-#endif
-
-#ifdef IRIDESCENCE
-// Thin-film interference: shift F0 toward a view-/thickness-dependent hue. A compact sinusoidal
-// approximation of the optical-path-difference phase per RGB band (sample-viewer style), enough to
-// produce a plausible soap-bubble rainbow without the full Airy summation.
-vec3 iridescentFresnel(float cosTheta, vec3 f0, float thicknessNm, float filmIor) {
-  float opd = 2.0 * filmIor * thicknessNm * cosTheta;
-  vec3 bands = vec3(580.0, 540.0, 460.0); // approximate R/G/B wavelengths (nm)
-  vec3 phase = 2.0 * PI * opd / bands;
-  vec3 shift = 0.5 + 0.5 * cos(phase);
-  vec3 base = fresnelSchlick(cosTheta, f0);
-  return mix(base, shift, clamp(thicknessNm / 1000.0, 0.0, 1.0));
-}
-#endif
+${PBR_EXTENSION_FUNCTIONS}
 
 // Smooth inverse-square range window (glTF/UE4): 1 near the light, eased to 0 at the range. invSqrRange
 // is 1/range^2 (0 = infinite range, no cutoff); dist2 is the squared surface->light distance.
@@ -397,20 +350,7 @@ vec3 shadePbrPunctual(vec3 N, vec3 V, vec3 tangentDir, vec3 bitangentDir, vec3 L
   float nDotH = max(dot(N, halfVec), 0.0);
   float vDotH = max(dot(V, halfVec), 0.0);
 
-#ifdef ANISOTROPY
-  float cosR = cos(u_anisotropyRotation);
-  float sinR = sin(u_anisotropyRotation);
-  vec3 anisoT = normalize(cosR * tangentDir + sinR * bitangentDir);
-  vec3 anisoB = normalize(cross(N, anisoT));
-  float aniso = clamp(u_anisotropyStrength, 0.0, 1.0);
-  float at = max(roughness * roughness * (1.0 + aniso), 1e-3);
-  float ab = max(roughness * roughness * (1.0 - aniso), 1e-3);
-  float tDotH = dot(anisoT, halfVec);
-  float bDotH = dot(anisoB, halfVec);
-  float d = distributionGgxAnisotropic(nDotH, tDotH, bDotH, at, ab);
-#else
   float d = distributionGgx(nDotH, roughness);
-#endif
   float vis = visibilitySmith(nDotV, nDotL, roughness);
   vec3 fresnel = fresnelSchlick(vDotH, f0);
 
@@ -419,31 +359,7 @@ vec3 shadePbrPunctual(vec3 N, vec3 V, vec3 tangentDir, vec3 bitangentDir, vec3 L
   vec3 brdf = kd * diffuseColor / PI + specular;
   vec3 direct = brdf * lightColor * nDotL;
 
-#ifdef SUBSURFACE
-  // Wrapped-diffuse subsurface approximation (non-interop): a soft back-/side-lit wrap term tinted by
-  // the subsurface color, scaled by thickness (thinner = more translucency).
-  float wrap = clamp((dot(N, L) + 0.5) / 2.25, 0.0, 1.0);
-  float translucency = u_subsurface / (1.0 + u_thickness);
-  direct += translucency * wrap * u_subsurfaceColor * diffuseColor * lightColor;
-#endif
-
-#ifdef SHEEN
-  // Charlie sheen lobe added on top of the base specular for cloth/fabric retroreflection.
-  float sheenD = distributionCharlie(nDotH, u_sheenRoughness);
-  float sheenV = visibilitySheen(nDotV, nDotL);
-  direct += u_sheenColor * sheenD * sheenV * lightColor * nDotL;
-#endif
-
-#ifdef CLEARCOAT
-  // A second, always-dielectric GGX lobe (F0 = 0.04) over the base layer, with its own roughness.
-  // Energy from the clearcoat reflection attenuates the layers beneath it.
-  float ccRough = clamp(u_clearcoatRoughness, 0.04, 1.0);
-  float ccD = distributionGgx(nDotH, ccRough);
-  float ccVis = visibilitySmith(nDotV, nDotL, ccRough);
-  vec3 ccF = fresnelSchlick(vDotH, vec3(0.04)) * u_clearcoat;
-  vec3 ccSpec = ccD * ccVis * ccF * lightColor * nDotL;
-  direct = direct * (1.0 - ccF) + ccSpec;
-#endif
+${PBR_EXTENSION_PUNCTUAL}
 
   return direct;
 }
@@ -469,7 +385,7 @@ void main() {
   vec3 geometricNormal = normalize(v_normal);
   if (!gl_FrontFacing) geometricNormal = -geometricNormal;
 
-#if defined(HAS_NORMAL_MAP) || defined(ANISOTROPY)
+#if defined(HAS_NORMAL_MAP) || defined(HAS_PBR_EXTENSIONS)
   vec3 tangent = normalize(v_tangent.xyz - geometricNormal * dot(v_tangent.xyz, geometricNormal));
   vec3 bitangent = cross(geometricNormal, tangent) * v_tangent.w;
 #else
@@ -507,17 +423,9 @@ void main() {
   vec3 albedo = baseColor.rgb;
   vec3 f0 = mix(vec3(0.04), albedo, metallic);
 
-#ifdef SPECULAR_EXT
-  // KHR_materials_specular: scale and tint the dielectric F0 (metals keep their albedo F0).
-  vec3 dielectricF0 = min(0.04 * u_specularColor, vec3(1.0)) * u_specular;
-  f0 = mix(dielectricF0, albedo, metallic);
-#endif
-
-#ifdef IRIDESCENCE
-  f0 = mix(f0, iridescentFresnel(nDotV, f0, u_iridescenceThickness, u_iridescenceIor), u_iridescence);
-#endif
-
   vec3 diffuseColor = albedo * (1.0 - metallic);
+
+${PBR_EXTENSION_SURFACE}
 
   vec3 radiance = vec3(0.0);
 
@@ -556,7 +464,7 @@ void main() {
   // Ambient term: image-based lighting (diffuse irradiance + prefiltered specular) when an environment
   // is baked, else the flat ambient irradiance over the diffuse albedo. Both are attenuated by AO.
   if (u_iblEnabled > 0.5) {
-    radiance += sampleIblAmbient(normal, viewDir, roughness, f0, diffuseColor, occlusion);
+    radiance += sampleIblAmbient(normal, viewDir, tangent, bitangent, roughness, f0, diffuseColor, occlusion);
   } else if (u_ambientCount > 0.5) {
     radiance += diffuseColor * u_ambientRadiance * occlusion;
   }
@@ -576,14 +484,7 @@ void main() {
   radiance += emissive * u_emissiveStrength;
 
   float alpha = baseColor.a;
-#ifdef TRANSMISSION
-  // Phase-5 approximation: a true refractive path needs the opaque-scene-color capture pass to
-  // sample what lies behind the surface. Until then, model transmission as added translucency —
-  // attenuate coverage by the transmission factor and tint the surface by the attenuation color.
-  // TODO Phase 5: replace with a refracted background sample + Beer-Lambert volume absorption.
-  radiance *= mix(vec3(1.0), u_attenuationColor, u_transmission);
-  alpha *= (1.0 - u_transmission);
-#endif
+${PBR_EXTENSION_FINALIZE}
 
   fragColor = vec4(radiance, alpha);
 #ifdef HAS_COLOR_MATRIX

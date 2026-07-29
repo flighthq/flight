@@ -1,6 +1,8 @@
 import type { Kind } from './Entity';
 import type { GlMeshMaterialRenderer } from './GlMeshMaterialRenderer';
 import type { GlMeshProgram } from './GlMeshProgram';
+import type { GlPbrExtensionRegistration } from './GlPbrExtensionRegistration';
+import type { GlPbrTransmissionSceneColor } from './GlPbrTransmissionSceneColor';
 import type { GlRenderState } from './GlRenderState';
 import type { GlRenderTarget } from './GlRenderTarget';
 import type { GlSkinPaletteTexture } from './GlSkinPaletteTexture';
@@ -8,6 +10,7 @@ import type { Matrix4 } from './Matrix4';
 import type { Mesh } from './Mesh';
 import type { MeshGeometry } from './MeshGeometry';
 import type { ModifierRegistry } from './ModifierRegistry';
+import type { PbrExtension } from './PbrExtension';
 import type { Scene3DLightBlock } from './Scene3DLightBlock';
 import type { Scene3DLightsLike } from './Scene3DLights';
 
@@ -102,6 +105,10 @@ export interface GlScene3DRuntime {
   forwardLightSelectionGuard?: ((lights: Readonly<Scene3DLightsLike>) => void) | null;
   opaqueDrawList: GlScene3DDrawEntry[];
   opaquePool: GlScene3DDrawEntry[];
+  pbrExtensionGuard?: ((extensions: readonly PbrExtension[]) => void) | null;
+  pbrExtensionRegistry: Map<Kind, GlPbrExtensionRegistration>;
+  pbrExtensionRegistryVersion: number;
+  pbrTransmissionSceneColor: GlPbrTransmissionSceneColor | null;
   programCache: Map<string, GlMeshProgram>;
   shadow: GlScene3DShadow | null;
   shadowTarget: GlRenderTarget | null;

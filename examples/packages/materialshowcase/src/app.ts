@@ -10,14 +10,15 @@ import {
   addNodeChild,
   convertMeshGeometryLayout,
   createAmbientLight,
-  createAnisotropyPbrMaterial,
+  createAnisotropyPbrExtension,
   createBlinnPhongMaterial,
   createCamera3D,
-  createClearcoatPbrMaterial,
+  createClearcoatPbrExtension,
   createDepthMaterial,
   createDirectionalLight,
   createEmissiveMaterial,
-  createIridescencePbrMaterial,
+  createExtendedPbrMaterial,
+  createIridescencePbrExtension,
   createLambertMaterial,
   createMatcapMaterial,
   createMesh,
@@ -25,17 +26,17 @@ import {
   createPerspectiveProjection,
   createPhongMaterial,
   createPointLight,
-  createSheenPbrMaterial,
+  createSheenPbrExtension,
   createSpecularGlossinessPbrMaterial,
-  createSpecularPbrMaterial,
+  createSpecularPbrExtension,
   createSphereMeshGeometry,
   createStandardPbrMaterial,
   createStandardPbrMaterialProperties,
-  createSubsurfacePbrMaterial,
+  createWrappedDiffusePbrExtension,
   createBitmap,
   createTexture,
   createToonMaterial,
-  createTransmissionVolumePbrMaterial,
+  createTransmissionVolumePbrExtension,
   createUnlitMaterial,
   createVector3,
   createVertexColorMaterial,
@@ -46,7 +47,7 @@ import {
   setMeshGeometryVertexColor0,
 } from '@flighthq/sdk';
 
-import { canvas, render, scale, supportsVertexColor0 } from './render';
+import { canvas, render, scale, supportsExtendedPbr, supportsVertexColor0 } from './render';
 
 interface MaterialControl {
   getValue: () => number;
@@ -142,74 +143,95 @@ const specularGlossiness = createSpecularGlossinessPbrMaterial({
   glossiness: 0.72,
   specular: 0xd8e7ffff,
 });
-const anisotropy = createAnisotropyPbrMaterial({
+const anisotropyExtension = createAnisotropyPbrExtension({
   anisotropyRotation: 0.7,
   anisotropyStrength: 0.9,
+});
+const anisotropy = createExtendedPbrMaterial({
+  extensions: [anisotropyExtension],
   standard: createStandardPbrMaterialProperties({
     baseColor: 0xd58d3aff,
     metallic: 0.78,
     roughness: 0.24,
   }),
 });
-const clearcoat = createClearcoatPbrMaterial({
+const clearcoatExtension = createClearcoatPbrExtension({
   clearcoat: 1,
   clearcoatRoughness: 0.1,
+});
+const clearcoat = createExtendedPbrMaterial({
+  extensions: [clearcoatExtension],
   standard: createStandardPbrMaterialProperties({
     baseColor: 0x2b5bd7ff,
     metallic: 0.05,
     roughness: 0.5,
   }),
 });
-const iridescence = createIridescencePbrMaterial({
+const iridescenceExtension = createIridescencePbrExtension({
   iridescence: 1,
   iridescenceIor: 1.5,
   iridescenceThicknessMax: 520,
   iridescenceThicknessMin: 180,
+});
+const iridescence = createExtendedPbrMaterial({
+  extensions: [iridescenceExtension],
   standard: createStandardPbrMaterialProperties({
     baseColor: 0x28263dff,
     metallic: 0.2,
     roughness: 0.22,
   }),
 });
-const sheen = createSheenPbrMaterial({
+const sheenExtension = createSheenPbrExtension({
   sheenColor: 0xff73c8ff,
   sheenRoughness: 0.36,
+});
+const sheen = createExtendedPbrMaterial({
+  extensions: [sheenExtension],
   standard: createStandardPbrMaterialProperties({
     baseColor: 0x45205fff,
     metallic: 0,
     roughness: 0.72,
   }),
 });
-const specular = createSpecularPbrMaterial({
+const specularExtension = createSpecularPbrExtension({
   specular: 0.85,
   specularColor: 0xb8efffff,
+});
+const specular = createExtendedPbrMaterial({
+  extensions: [specularExtension],
   standard: createStandardPbrMaterialProperties({
     baseColor: 0x159c8bff,
     metallic: 0,
     roughness: 0.32,
   }),
 });
-const subsurface = createSubsurfacePbrMaterial({
+const wrappedDiffuseExtension = createWrappedDiffusePbrExtension({
+  thickness: 0.65,
+  wrappedDiffuseColor: 0xffb28fff,
+  wrappedDiffuseStrength: 0.82,
+});
+const wrappedDiffuse = createExtendedPbrMaterial({
+  extensions: [wrappedDiffuseExtension],
   standard: createStandardPbrMaterialProperties({
     baseColor: 0xe98275ff,
     metallic: 0,
     roughness: 0.55,
   }),
-  subsurface: 0.82,
-  subsurfaceColor: 0xffb28fff,
-  thickness: 0.65,
 });
-const transmission = createTransmissionVolumePbrMaterial({
+const transmissionExtension = createTransmissionVolumePbrExtension({
   attenuationColor: 0x78d9ffff,
   attenuationDistance: 2,
   ior: 1.45,
+  thickness: 0.8,
+  transmission: 0.88,
+});
+const transmission = createExtendedPbrMaterial({
+  extensions: [transmissionExtension],
   standard: createStandardPbrMaterialProperties({
     baseColor: 0xd7f6ffff,
     metallic: 0,
     roughness: 0.08,
   }),
-  thickness: 0.8,
-  transmission: 0.88,
 });
 const blinnPhong = createBlinnPhongMaterial({
   diffuse: 0xea4f68ff,
@@ -234,7 +256,7 @@ const depth = createDepthMaterial({ far: 24, near: 0.1 });
 const vertexColor = createVertexColorMaterial({ tint: 0x65e6aaff });
 const wireframe = createWireframeMaterial({ color: 0xf0f5ffff, thickness: 1.5 });
 
-const entries: readonly MaterialEntry[] = [
+const allEntries: readonly MaterialEntry[] = [
   {
     color: '#4bbce8',
     controls: [
@@ -283,16 +305,16 @@ const entries: readonly MaterialEntry[] = [
         0,
         1,
         0.01,
-        () => anisotropy.anisotropyStrength,
-        (value) => (anisotropy.anisotropyStrength = value),
+        () => anisotropyExtension.anisotropyStrength,
+        (value) => (anisotropyExtension.anisotropyStrength = value),
       ),
       createControl(
         'Rotation',
         0,
         Math.PI * 2,
         0.01,
-        () => anisotropy.anisotropyRotation,
-        (value) => (anisotropy.anisotropyRotation = value),
+        () => anisotropyExtension.anisotropyRotation,
+        (value) => (anisotropyExtension.anisotropyRotation = value),
       ),
     ],
     material: anisotropy,
@@ -307,16 +329,16 @@ const entries: readonly MaterialEntry[] = [
         0,
         1,
         0.01,
-        () => clearcoat.clearcoat,
-        (value) => (clearcoat.clearcoat = value),
+        () => clearcoatExtension.clearcoat,
+        (value) => (clearcoatExtension.clearcoat = value),
       ),
       createControl(
         'Coat roughness',
         0,
         1,
         0.01,
-        () => clearcoat.clearcoatRoughness,
-        (value) => (clearcoat.clearcoatRoughness = value),
+        () => clearcoatExtension.clearcoatRoughness,
+        (value) => (clearcoatExtension.clearcoatRoughness = value),
       ),
     ],
     material: clearcoat,
@@ -331,16 +353,16 @@ const entries: readonly MaterialEntry[] = [
         0,
         1,
         0.01,
-        () => iridescence.iridescence,
-        (value) => (iridescence.iridescence = value),
+        () => iridescenceExtension.iridescence,
+        (value) => (iridescenceExtension.iridescence = value),
       ),
       createControl(
         'Film thickness',
         100,
         800,
         1,
-        () => iridescence.iridescenceThicknessMax,
-        (value) => (iridescence.iridescenceThicknessMax = value),
+        () => iridescenceExtension.iridescenceThicknessMax,
+        (value) => (iridescenceExtension.iridescenceThicknessMax = value),
       ),
     ],
     material: iridescence,
@@ -355,8 +377,8 @@ const entries: readonly MaterialEntry[] = [
         0,
         1,
         0.01,
-        () => sheen.sheenRoughness,
-        (value) => (sheen.sheenRoughness = value),
+        () => sheenExtension.sheenRoughness,
+        (value) => (sheenExtension.sheenRoughness = value),
       ),
     ],
     material: sheen,
@@ -371,8 +393,8 @@ const entries: readonly MaterialEntry[] = [
         0,
         1,
         0.01,
-        () => specular.specular,
-        (value) => (specular.specular = value),
+        () => specularExtension.specular,
+        (value) => (specularExtension.specular = value),
       ),
     ],
     material: specular,
@@ -383,25 +405,25 @@ const entries: readonly MaterialEntry[] = [
     color: '#e98275',
     controls: [
       createControl(
-        'Subsurface',
+        'Wrap strength',
         0,
         1,
         0.01,
-        () => subsurface.subsurface,
-        (value) => (subsurface.subsurface = value),
+        () => wrappedDiffuseExtension.wrappedDiffuseStrength,
+        (value) => (wrappedDiffuseExtension.wrappedDiffuseStrength = value),
       ),
       createControl(
         'Thickness',
         0,
         1,
         0.01,
-        () => subsurface.thickness,
-        (value) => (subsurface.thickness = value),
+        () => wrappedDiffuseExtension.thickness,
+        (value) => (wrappedDiffuseExtension.thickness = value),
       ),
     ],
-    material: subsurface,
-    name: 'Subsurface PBR',
-    setColor: (color) => (subsurface.standard.baseColor = color),
+    material: wrappedDiffuse,
+    name: 'Wrapped diffuse PBR',
+    setColor: (color) => (wrappedDiffuse.standard.baseColor = color),
   },
   {
     color: '#d7f6ff',
@@ -411,16 +433,16 @@ const entries: readonly MaterialEntry[] = [
         0,
         1,
         0.01,
-        () => transmission.transmission,
-        (value) => (transmission.transmission = value),
+        () => transmissionExtension.transmission,
+        (value) => (transmissionExtension.transmission = value),
       ),
       createControl(
         'IOR',
         1,
         2.5,
         0.01,
-        () => transmission.ior,
-        (value) => (transmission.ior = value),
+        () => transmissionExtension.ior,
+        (value) => (transmissionExtension.ior = value),
       ),
     ],
     material: transmission,
@@ -569,6 +591,17 @@ const entries: readonly MaterialEntry[] = [
   },
 ];
 
+const extendedMaterials = new Set<SurfaceMaterial>([
+  anisotropy,
+  clearcoat,
+  iridescence,
+  sheen,
+  specular,
+  transmission,
+  wrappedDiffuse,
+]);
+const entries = supportsExtendedPbr ? allEntries : allEntries.filter((entry) => !extendedMaterials.has(entry.material));
+
 const scene = createNode3D(Node3DKind);
 const meshes: Mesh[] = [];
 for (let index = 0; index < entries.length; index++) {
@@ -663,8 +696,7 @@ canvas.addEventListener(
 
 const controls = document.createElement('section');
 controls.className = 'controls';
-controls.innerHTML =
-  '<h1>Flight materials</h1><p>All 20 built-in 3D material families, rendered on the same geometry and lights. WebGPU currently falls back to tint for Matcap textures and vertex color0, and to geometric normals for Normal maps.</p>';
+controls.innerHTML = `<h1>Flight materials</h1><p>${entries.length} registered 3D material families, rendered on the same geometry and lights. WebGPU currently falls back to tint for Matcap textures and vertex color0, and to geometric normals for Normal maps.</p>`;
 document.body.appendChild(controls);
 
 const selector = document.createElement('select');

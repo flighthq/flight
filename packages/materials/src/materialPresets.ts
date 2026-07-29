@@ -2,11 +2,9 @@ import type {
   ExtendedPbrMaterial,
   GlassExtendedPbrMaterialOptions,
   StandardPbrMaterial,
-  TransmissionVolumePbrMaterial,
 } from '@flighthq/types/contract';
 
 import { createExtendedPbrMaterial } from './extendedPbrMaterial';
-import { createTransmissionVolumePbrMaterial } from './pbrExtensionMaterials';
 import { createStandardPbrMaterial, createStandardPbrMaterialProperties } from './pbrMaterials';
 import { createTransmissionVolumePbrExtension } from './transmissionVolumePbrExtension';
 
@@ -57,17 +55,6 @@ export function createGlassExtendedPbrMaterial(opts?: Readonly<GlassExtendedPbrM
       roughness: 0,
       ...opts?.standard,
     }),
-  });
-}
-
-// Clear glass preset for the standalone transmission-volume material lane.
-export function createGlassTransmissionVolumePbrMaterial(
-  opts?: Readonly<Partial<TransmissionVolumePbrMaterial>>,
-): TransmissionVolumePbrMaterial {
-  return createTransmissionVolumePbrMaterial({
-    ior: 1.5,
-    transmission: 1,
-    ...opts,
   });
 }
 

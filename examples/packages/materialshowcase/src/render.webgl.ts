@@ -1,22 +1,23 @@
 import {
   drawGlScene3D,
-  registerAnisotropyPbrGlMaterial,
+  registerAnisotropyPbrGlExtension,
   registerBlinnPhongGlMaterial,
-  registerClearcoatPbrGlMaterial,
+  registerClearcoatPbrGlExtension,
   registerDepthGlMaterial,
   registerEmissiveGlMaterial,
-  registerIridescencePbrGlMaterial,
+  registerExtendedPbrGlMaterial,
+  registerIridescencePbrGlExtension,
   registerLambertGlMaterial,
   registerMatcapGlMaterial,
   registerNormalGlMaterial,
   registerPhongGlMaterial,
-  registerSheenPbrGlMaterial,
+  registerSheenPbrGlExtension,
   registerSpecularGlossinessPbrGlMaterial,
-  registerSpecularPbrGlMaterial,
+  registerSpecularPbrGlExtension,
   registerStandardPbrGlMaterial,
-  registerSubsurfacePbrGlMaterial,
+  registerWrappedDiffusePbrGlExtension,
   registerToonGlMaterial,
-  registerTransmissionVolumePbrGlMaterial,
+  registerTransmissionVolumePbrGlExtension,
   registerUnlitGlMaterial,
   registerVertexColorGlMaterial,
   registerWireframeGlMaterial,
@@ -50,6 +51,7 @@ const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
 });
 
 export const scale = pixelRatio;
+export const supportsExtendedPbr = true;
 export const supportsVertexColor0 = true;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLightsLike>): void {
@@ -65,23 +67,24 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
 }
 
 function registerAllGlMaterials(target: GlRenderState): void {
-  registerAnisotropyPbrGlMaterial(target);
+  registerAnisotropyPbrGlExtension(target);
   registerBlinnPhongGlMaterial(target);
-  registerClearcoatPbrGlMaterial(target);
+  registerClearcoatPbrGlExtension(target);
   registerDepthGlMaterial(target);
   registerEmissiveGlMaterial(target);
-  registerIridescencePbrGlMaterial(target);
+  registerExtendedPbrGlMaterial(target);
+  registerIridescencePbrGlExtension(target);
   registerLambertGlMaterial(target);
   registerMatcapGlMaterial(target);
   registerNormalGlMaterial(target);
   registerPhongGlMaterial(target);
-  registerSheenPbrGlMaterial(target);
+  registerSheenPbrGlExtension(target);
   registerSpecularGlossinessPbrGlMaterial(target);
-  registerSpecularPbrGlMaterial(target);
+  registerSpecularPbrGlExtension(target);
   registerStandardPbrGlMaterial(target);
-  registerSubsurfacePbrGlMaterial(target);
+  registerWrappedDiffusePbrGlExtension(target);
   registerToonGlMaterial(target);
-  registerTransmissionVolumePbrGlMaterial(target);
+  registerTransmissionVolumePbrGlExtension(target);
   registerUnlitGlMaterial(target);
   registerVertexColorGlMaterial(target);
   registerWireframeGlMaterial(target);

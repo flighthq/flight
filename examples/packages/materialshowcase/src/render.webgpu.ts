@@ -1,22 +1,15 @@
 import {
   drawWgpuScene3D,
-  registerAnisotropyPbrWgpuMaterial,
   registerBlinnPhongWgpuMaterial,
-  registerClearcoatPbrWgpuMaterial,
   registerDepthWgpuMaterial,
   registerEmissiveWgpuMaterial,
-  registerIridescencePbrWgpuMaterial,
   registerLambertWgpuMaterial,
   registerMatcapWgpuMaterial,
   registerNormalWgpuMaterial,
   registerPhongWgpuMaterial,
-  registerSheenPbrWgpuMaterial,
   registerSpecularGlossinessPbrWgpuMaterial,
-  registerSpecularPbrWgpuMaterial,
   registerStandardPbrWgpuMaterial,
-  registerSubsurfacePbrWgpuMaterial,
   registerToonWgpuMaterial,
-  registerTransmissionVolumePbrWgpuMaterial,
   registerUnlitWgpuMaterial,
   registerVertexColorWgpuMaterial,
   registerWireframeWgpuMaterial,
@@ -50,6 +43,7 @@ const pipeline: WgpuRenderEffectPipeline = createWgpuRenderEffectPipeline(state,
 });
 
 export const scale = pixelRatio;
+export const supportsExtendedPbr = false;
 export const supportsVertexColor0 = false;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLightsLike>): void {
@@ -62,23 +56,16 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
 }
 
 function registerAllWgpuMaterials(target: WgpuRenderState): void {
-  registerAnisotropyPbrWgpuMaterial(target);
   registerBlinnPhongWgpuMaterial(target);
-  registerClearcoatPbrWgpuMaterial(target);
   registerDepthWgpuMaterial(target);
   registerEmissiveWgpuMaterial(target);
-  registerIridescencePbrWgpuMaterial(target);
   registerLambertWgpuMaterial(target);
   registerMatcapWgpuMaterial(target);
   registerNormalWgpuMaterial(target);
   registerPhongWgpuMaterial(target);
-  registerSheenPbrWgpuMaterial(target);
   registerSpecularGlossinessPbrWgpuMaterial(target);
-  registerSpecularPbrWgpuMaterial(target);
   registerStandardPbrWgpuMaterial(target);
-  registerSubsurfacePbrWgpuMaterial(target);
   registerToonWgpuMaterial(target);
-  registerTransmissionVolumePbrWgpuMaterial(target);
   registerUnlitWgpuMaterial(target);
   registerVertexColorWgpuMaterial(target);
   registerWireframeWgpuMaterial(target);

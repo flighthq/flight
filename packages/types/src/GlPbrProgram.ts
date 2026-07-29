@@ -6,24 +6,16 @@ import type { GlLitProgram } from './GlLitProgram';
 // the shader's `layout(location = …)` qualifiers (0 position, 1 normal, 2 tangent, 3 uv0), so they
 // are not stored here — the draw path binds them by constant. Extends GlLitProgram (model/normal/
 // view-projection + the standard light/camera uniforms) with the full standard-block material
-// uniforms plus the extension-lobe uniforms (each resolves to null in variants that omit its
-// define, which is harmless — its renderer only runs when the define is set).
+// uniforms. Extension uniforms remain registration-owned and are addressed through the public bind
+// context rather than expanding this private base-program record.
 export interface GlPbrProgram extends GlLitProgram {
   locAlphaCutoff: WebGLUniformLocation | null;
   locAlphaMap: WebGLUniformLocation | null;
-  locAnisotropyRotation: WebGLUniformLocation | null;
-  locAnisotropyStrength: WebGLUniformLocation | null;
-  locAttenuationColor: WebGLUniformLocation | null;
   locBaseColor: WebGLUniformLocation | null;
   locBaseColorMap: WebGLUniformLocation | null;
-  locClearcoat: WebGLUniformLocation | null;
-  locClearcoatRoughness: WebGLUniformLocation | null;
   locEmissive: WebGLUniformLocation | null;
   locEmissiveMap: WebGLUniformLocation | null;
   locEmissiveStrength: WebGLUniformLocation | null;
-  locIridescence: WebGLUniformLocation | null;
-  locIridescenceIor: WebGLUniformLocation | null;
-  locIridescenceThickness: WebGLUniformLocation | null;
   locMetallic: WebGLUniformLocation | null;
   locMetallicRoughnessMap: WebGLUniformLocation | null;
   locNormalMap: WebGLUniformLocation | null;
@@ -31,27 +23,16 @@ export interface GlPbrProgram extends GlLitProgram {
   locOcclusionMap: WebGLUniformLocation | null;
   locOcclusionStrength: WebGLUniformLocation | null;
   locRoughness: WebGLUniformLocation | null;
-  locSheenColor: WebGLUniformLocation | null;
-  locSheenRoughness: WebGLUniformLocation | null;
-  locSpecular: WebGLUniformLocation | null;
-  locSpecularColor: WebGLUniformLocation | null;
-  locSubsurface: WebGLUniformLocation | null;
-  locSubsurfaceColor: WebGLUniformLocation | null;
-  locThickness: WebGLUniformLocation | null;
-  locTransmission: WebGLUniformLocation | null;
 }
 
 // The feature flags that select an uber-shader variant. Each toggles an #ifdef in the prelude and
 // is hashed into the program-cache key (buildGlPbrDefineKey), so distinct flag sets compile and
 // cache as distinct programs. The `has*Map` flags enable the textured paths of the standard block;
-// `alphaMaskEnabled` enables the alpha-cutoff discard for 'mask' materials. The extension flags
-// (`clearcoatEnabled` … `transmissionEnabled`) each enable one extension lobe; an extension
-// renderer sets exactly one. Map flags inside an extension's own textures are not part of the key
-// today — extension maps are bound when present and the lobe reads a uniform fallback otherwise.
+// `alphaMaskEnabled` enables the alpha-cutoff discard for 'mask' materials. Extension identity is
+// appended separately from registered shader contributions, so this standard key never enumerates
+// built-in or vendor extension kinds.
 export interface GlPbrDefineKey {
   alphaMaskEnabled: boolean;
-  anisotropyEnabled: boolean;
-  clearcoatEnabled: boolean;
   hasAlphaMap: boolean;
   hasBaseColorMap: boolean;
   // Promoted post-shade color-adjustment variant, selected from draw-data presence.
@@ -66,9 +47,4 @@ export interface GlPbrDefineKey {
   // Whether the base-color map carries a non-identity uv transform (HAS_UV_TRANSFORM); it drives the
   // shared v_uv0 every standard map samples. Set only when hasBaseColorMap is also true.
   hasUvTransform: boolean;
-  iridescenceEnabled: boolean;
-  sheenEnabled: boolean;
-  specularEnabled: boolean;
-  subsurfaceEnabled: boolean;
-  transmissionEnabled: boolean;
 }

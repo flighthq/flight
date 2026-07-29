@@ -1,13 +1,27 @@
-import { createStandardPbrMaterial, createUnlitMaterial } from '@flighthq/materials/contract';
+import {
+  createAnisotropyPbrExtension,
+  createExtendedPbrMaterial,
+  createStandardPbrMaterial,
+  createStandardPbrMaterialProperties,
+  createUnlitMaterial,
+} from '@flighthq/materials/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { Material, Texture } from '@flighthq/types/contract';
-import { EntityRuntimeKey, StandardPbrMaterialKind, UnlitMaterialKind } from '@flighthq/types/contract';
+import {
+  AnisotropyPbrExtensionKind,
+  EntityRuntimeKey,
+  ExtendedPbrMaterialKind,
+  StandardPbrMaterialKind,
+  UnlitMaterialKind,
+} from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
   createScene3DMaterialTextureRegistry,
   getScene3DMaterialTextures,
   registerBuiltInScene3DMaterialTextures,
+  registerExtendedPbrScene3DMaterialTextures,
+  registerScene3DPbrExtensionTextures,
   registerScene3DMaterialTextures,
 } from './sceneMaterialTextureRegistry';
 
@@ -15,6 +29,7 @@ describe('createScene3DMaterialTextureRegistry', () => {
   it('creates an empty registry', () => {
     const registry = createScene3DMaterialTextureRegistry();
     expect(EntityRuntimeKey in registry).toBe(true);
+    expect(registry.extensionListers.size).toBe(0);
     expect(registry.listers.size).toBe(0);
   });
 });
@@ -40,9 +55,10 @@ describe('getScene3DMaterialTextures', () => {
 });
 
 describe('registerBuiltInScene3DMaterialTextures', () => {
-  it('registers the standard-pbr and unlit listers', () => {
+  it('registers the extended-pbr, standard-pbr, and unlit listers', () => {
     const registry = createScene3DMaterialTextureRegistry();
     registerBuiltInScene3DMaterialTextures(registry);
+    expect(registry.listers.has(ExtendedPbrMaterialKind)).toBe(true);
     expect(registry.listers.has(StandardPbrMaterialKind)).toBe(true);
     expect(registry.listers.has(UnlitMaterialKind)).toBe(true);
   });
@@ -70,6 +86,29 @@ describe('registerBuiltInScene3DMaterialTextures', () => {
   });
 });
 
+describe('registerExtendedPbrScene3DMaterialTextures', () => {
+  it('lists standard maps and dispatches extensions through the nested kind registry', () => {
+    const registry = createScene3DMaterialTextureRegistry();
+    registerExtendedPbrScene3DMaterialTextures(registry);
+    const baseColorMap = createTexture();
+    const anisotropyMap = createTexture();
+    registerScene3DPbrExtensionTextures(registry, AnisotropyPbrExtensionKind, (extension, out) => {
+      const anisotropy = extension as ReturnType<typeof createAnisotropyPbrExtension>;
+      if (anisotropy.anisotropyMap !== null) out.push(anisotropy.anisotropyMap);
+    });
+    const out: Texture[] = [];
+    getScene3DMaterialTextures(
+      registry,
+      createExtendedPbrMaterial({
+        extensions: [createAnisotropyPbrExtension({ anisotropyMap })],
+        standard: createStandardPbrMaterialProperties({ baseColorMap }),
+      }),
+      out,
+    );
+    expect(out).toEqual([baseColorMap, anisotropyMap]);
+  });
+});
+
 describe('registerScene3DMaterialTextures', () => {
   it('binds a lister for a custom kind', () => {
     const registry = createScene3DMaterialTextureRegistry();
@@ -90,6 +129,19 @@ describe('registerScene3DMaterialTextures', () => {
     registerScene3DMaterialTextures(registry, UnlitMaterialKind, (_m, out) => out.push(second));
     const out: Texture[] = [];
     getScene3DMaterialTextures(registry, createUnlitMaterial(), out);
+    expect(out).toEqual([second]);
+  });
+});
+
+describe('registerScene3DPbrExtensionTextures', () => {
+  it('is last-write-wins for vendor extension listers', () => {
+    const registry = createScene3DMaterialTextureRegistry();
+    const first = createTexture();
+    const second = createTexture();
+    registerScene3DPbrExtensionTextures(registry, AnisotropyPbrExtensionKind, (_extension, out) => out.push(first));
+    registerScene3DPbrExtensionTextures(registry, AnisotropyPbrExtensionKind, (_extension, out) => out.push(second));
+    const out: Texture[] = [];
+    registry.extensionListers.get(AnisotropyPbrExtensionKind)?.(createAnisotropyPbrExtension(), out);
     expect(out).toEqual([second]);
   });
 });

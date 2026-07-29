@@ -12,8 +12,6 @@ import {
 function makeKey(overrides?: Partial<GlPbrDefineKey>): GlPbrDefineKey {
   return {
     alphaMaskEnabled: false,
-    anisotropyEnabled: false,
-    clearcoatEnabled: false,
     hasAlphaMap: false,
     hasBaseColorMap: false,
     hasEmissiveMap: false,
@@ -21,11 +19,6 @@ function makeKey(overrides?: Partial<GlPbrDefineKey>): GlPbrDefineKey {
     hasNormalMap: false,
     hasOcclusionMap: false,
     hasUvTransform: false,
-    iridescenceEnabled: false,
-    sheenEnabled: false,
-    specularEnabled: false,
-    subsurfaceEnabled: false,
-    transmissionEnabled: false,
     ...overrides,
   };
 }
@@ -39,16 +32,7 @@ const STANDARD_ALL = makeKey({
   hasNormalMap: true,
   hasOcclusionMap: true,
 });
-const ALL = makeKey({
-  ...STANDARD_ALL,
-  anisotropyEnabled: true,
-  clearcoatEnabled: true,
-  iridescenceEnabled: true,
-  sheenEnabled: true,
-  specularEnabled: true,
-  subsurfaceEnabled: true,
-  transmissionEnabled: true,
-});
+const ALL = makeKey(STANDARD_ALL);
 const COLOR_FEATURE: GlColorAdjustmentMaterialFeature = {
   fragmentShaderChunk: 'vec4 applyFlightColorAdjustment(vec4 c, vec4 m, vec4 o) { return c * m + o; }',
   matrixFragmentShaderChunk:
@@ -60,27 +44,26 @@ const COLOR_FEATURE: GlColorAdjustmentMaterialFeature = {
 
 describe('buildGlPbrDefineKey', () => {
   it('produces a stable, distinct string per flag set', () => {
-    expect(buildGlPbrDefineKey(NONE)).toBe('--------:--------');
-    expect(buildGlPbrDefineKey(STANDARD_ALL)).toBe('mbnroe--:--------');
-    expect(buildGlPbrDefineKey(ALL)).toBe('mbnroe--:CSAIPUT-');
-    expect(buildGlPbrDefineKey(makeKey({ hasBaseColorMap: true }))).toBe('-b------:--------');
-    expect(buildGlPbrDefineKey(makeKey({ clearcoatEnabled: true }))).toBe('--------:C-------');
-    expect(buildGlPbrDefineKey(makeKey({ hasAlphaMap: true }))).toBe('------a-:--------');
+    expect(buildGlPbrDefineKey(NONE)).toBe('--------:-');
+    expect(buildGlPbrDefineKey(STANDARD_ALL)).toBe('mbnroe--:-');
+    expect(buildGlPbrDefineKey(ALL)).toBe('mbnroe--:-');
+    expect(buildGlPbrDefineKey(makeKey({ hasBaseColorMap: true }))).toBe('-b------:-');
+    expect(buildGlPbrDefineKey(makeKey({ hasAlphaMap: true }))).toBe('------a-:-');
   });
 
   it('encodes the HAS_UV_TRANSFORM variant as a distinct standard-block slot', () => {
-    expect(buildGlPbrDefineKey(makeKey({ hasUvTransform: true }))).toBe('-------u:--------');
+    expect(buildGlPbrDefineKey(makeKey({ hasUvTransform: true }))).toBe('-------u:-');
     expect(buildGlPbrDefineKey(makeKey({ hasUvTransform: true }))).not.toBe(buildGlPbrDefineKey(NONE));
   });
 
   it('encodes the HAS_SKIN variant as a distinct trailing slot', () => {
-    expect(buildGlPbrDefineKey(makeKey({ hasSkin: true }))).toBe('--------:-------k');
+    expect(buildGlPbrDefineKey(makeKey({ hasSkin: true }))).toBe('--------:k');
     expect(buildGlPbrDefineKey(makeKey({ hasSkin: true }))).not.toBe(buildGlPbrDefineKey(NONE));
   });
 
   it('appends color adjustment only for the promoted variant', () => {
-    expect(buildGlPbrDefineKey(NONE)).toBe('--------:--------');
-    expect(buildGlPbrDefineKey(makeKey({ hasColorAdjustment: true }))).toBe('--------:--------c');
+    expect(buildGlPbrDefineKey(NONE)).toBe('--------:-');
+    expect(buildGlPbrDefineKey(makeKey({ hasColorAdjustment: true }))).toBe('--------:-c');
   });
 
   it('is identical for equal flag sets', () => {
@@ -97,18 +80,12 @@ describe('buildGlPbrDefineSource', () => {
     expect(all).toContain('#define HAS_METALLIC_ROUGHNESS_MAP');
     expect(all).toContain('#define HAS_OCCLUSION_MAP');
     expect(all).toContain('#define HAS_EMISSIVE_MAP');
-    expect(all).toContain('#define CLEARCOAT');
-    expect(all).toContain('#define SHEEN');
-    expect(all).toContain('#define ANISOTROPY');
-    expect(all).toContain('#define IRIDESCENCE');
-    expect(all).toContain('#define SPECULAR_EXT');
-    expect(all).toContain('#define SUBSURFACE');
-    expect(all).toContain('#define TRANSMISSION');
+    expect(all).not.toContain('CLEARCOAT');
+    expect(all).not.toContain('ANISOTROPY');
 
     const none = buildGlPbrDefineSource(NONE);
     expect(none).not.toContain('#define ALPHA_MASK');
     expect(none).not.toContain('#define HAS_BASE_COLOR_MAP');
-    expect(none).not.toContain('#define CLEARCOAT');
     expect(none).not.toContain('#define HAS_ALPHA_MAP');
   });
 
@@ -137,15 +114,15 @@ describe('getGlPbrFragmentSource', () => {
 
 describe('getGlPbrFragmentSourceForKey', () => {
   it('splices the registered post-shade chunk only into the promoted variant', () => {
-    const base = getGlPbrFragmentSourceForKey(NONE, COLOR_FEATURE);
-    const adjusted = getGlPbrFragmentSourceForKey(makeKey({ hasColorAdjustment: true }), COLOR_FEATURE);
+    const base = getGlPbrFragmentSourceForKey(NONE, [], COLOR_FEATURE);
+    const adjusted = getGlPbrFragmentSourceForKey(makeKey({ hasColorAdjustment: true }), [], COLOR_FEATURE);
     expect(base).not.toContain('vec4 applyFlightColorAdjustment');
     expect(adjusted).toContain(COLOR_FEATURE.fragmentShaderChunk);
     expect(adjusted).toContain('fragColor = applyFlightColorAdjustment');
   });
 
   it('splices the full-matrix post-shade chunk into its own variant', () => {
-    const matrix = getGlPbrFragmentSourceForKey(makeKey({ hasColorMatrix: true }), COLOR_FEATURE);
+    const matrix = getGlPbrFragmentSourceForKey(makeKey({ hasColorMatrix: true }), [], COLOR_FEATURE);
     expect(matrix).toContain(COLOR_FEATURE.matrixFragmentShaderChunk);
     expect(matrix).toContain('fragColor = applyFlightColorMatrix');
   });

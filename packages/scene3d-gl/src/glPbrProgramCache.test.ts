@@ -1,4 +1,4 @@
-import type { GlPbrDefineKey } from '@flighthq/types/contract';
+import type { GlPbrDefineKey, GlPbrExtensionShaderContribution } from '@flighthq/types/contract';
 
 import { compileGlPbrProgram, ensureGlPbrProgram } from './glPbrProgramCache';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
@@ -7,8 +7,6 @@ import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
 function makeKey(overrides?: Partial<GlPbrDefineKey>): GlPbrDefineKey {
   return {
     alphaMaskEnabled: false,
-    anisotropyEnabled: false,
-    clearcoatEnabled: false,
     hasAlphaMap: false,
     hasBaseColorMap: false,
     hasEmissiveMap: false,
@@ -16,11 +14,6 @@ function makeKey(overrides?: Partial<GlPbrDefineKey>): GlPbrDefineKey {
     hasNormalMap: false,
     hasOcclusionMap: false,
     hasUvTransform: false,
-    iridescenceEnabled: false,
-    sheenEnabled: false,
-    specularEnabled: false,
-    subsurfaceEnabled: false,
-    transmissionEnabled: false,
     ...overrides,
   };
 }
@@ -45,19 +38,6 @@ describe('compileGlPbrProgram', () => {
     expect(program.locOcclusionMap).not.toBeNull();
     expect(program.locOcclusionStrength).not.toBeNull();
     expect(program.locEmissiveMap).not.toBeNull();
-  });
-
-  it('resolves every extension uniform', () => {
-    const gl = makeFakeGl2();
-    const program = compileGlPbrProgram(gl, KEY);
-    expect(program.locClearcoat).not.toBeNull();
-    expect(program.locSheenColor).not.toBeNull();
-    expect(program.locAnisotropyStrength).not.toBeNull();
-    expect(program.locIridescence).not.toBeNull();
-    expect(program.locSpecular).not.toBeNull();
-    expect(program.locSubsurface).not.toBeNull();
-    expect(program.locTransmission).not.toBeNull();
-    expect(program.locAttenuationColor).not.toBeNull();
   });
 
   it('throws on a shader compile failure', () => {
@@ -96,21 +76,29 @@ describe('ensureGlPbrProgram', () => {
     const skinned = ensureGlPbrProgram(state, KEY);
 
     expect(skinned).not.toBe(rigid);
-    expect([...getGlScene3DRuntime(state).programCache.keys()]).toContain('pbr:--------:-------k');
+    expect([...getGlScene3DRuntime(state).programCache.keys()]).toContain('pbr:--------:k:0:');
     expect(skinned.locJointTexture).not.toBeNull();
   });
 
-  it('caches a distinct entry per extension define under the pbr: namespace', () => {
+  it('caches a distinct entry per registered contribution key under the pbr namespace', () => {
     const { state } = makeGlScene3DState();
-    ensureGlPbrProgram(state, makeKey({ clearcoatEnabled: true }));
-    ensureGlPbrProgram(state, makeKey({ sheenEnabled: true }));
-    ensureGlPbrProgram(state, makeKey({ anisotropyEnabled: true }));
-    ensureGlPbrProgram(state, makeKey({ iridescenceEnabled: true }));
-    ensureGlPbrProgram(state, makeKey({ specularEnabled: true }));
-    ensureGlPbrProgram(state, makeKey({ subsurfaceEnabled: true }));
-    ensureGlPbrProgram(state, makeKey({ transmissionEnabled: true }));
+    ensureGlPbrProgram(state, KEY, [makeContribution('vendor-a')]);
+    ensureGlPbrProgram(state, KEY, [makeContribution('vendor-b')]);
     const cache = getGlScene3DRuntime(state).programCache;
-    expect(cache.size).toBe(7);
+    expect(cache.size).toBe(2);
     for (const key of cache.keys()) expect(key.startsWith('pbr:')).toBe(true);
   });
 });
+
+function makeContribution(key: string): GlPbrExtensionShaderContribution {
+  return {
+    applySurface: '',
+    contributeIbl: '',
+    contributePunctual: '',
+    finalize: '',
+    fragmentDeclarations: '',
+    fragmentFunctions: '',
+    key,
+    textureCount: 0,
+  };
+}
