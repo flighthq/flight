@@ -1,3 +1,13 @@
+import type { Camera3D, GlRenderEffectPipeline, GlRenderState, Scene3DLightsLike, Node3D } from '@flighthq/sdk';
+import {
+  beginGlRenderEffectPipeline,
+  createGlCanvasElement,
+  createGlRenderEffectPipeline,
+  createGlRenderState,
+  endGlRenderEffectPipeline,
+  prepareScene3DRender,
+  renderGlBackground,
+} from '@flighthq/sdk';
 import {
   drawGlScene3D,
   registerAnisotropyPbrGlExtension,
@@ -21,17 +31,7 @@ import {
   registerUnlitGlMaterial,
   registerVertexColorGlMaterial,
   registerWireframeGlMaterial,
-} from '@flighthq/scene3d-gl';
-import type { Camera3D, GlRenderEffectPipeline, GlRenderState, Scene3DLightsLike, Node3D } from '@flighthq/sdk';
-import {
-  beginGlRenderEffectPipeline,
-  createGlCanvasElement,
-  createGlRenderEffectPipeline,
-  createGlRenderState,
-  endGlRenderEffectPipeline,
-  prepareScene3DRender,
-  renderGlBackground,
-} from '@flighthq/sdk';
+} from '@flighthq/sdk/rendering';
 
 const pixelRatio = window.devicePixelRatio || 1;
 export const canvas = createGlCanvasElement(800, 600, pixelRatio);

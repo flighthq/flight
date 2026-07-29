@@ -1,12 +1,3 @@
-import {
-  createMotionPath,
-  getMotionPathHeading,
-  getMotionPathPosition,
-  getMotionPathProgress,
-  setMotionPathProgress,
-  updateMotionPath,
-} from '@flighthq/motionpath';
-import { appendPathCubicCurveTo, appendPathMoveTo, createPath } from '@flighthq/path';
 import type { Node2D, MotionPathLoopMode } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -24,6 +15,15 @@ import {
   invalidateNodeLocalTransform,
   RAD_TO_DEG,
 } from '@flighthq/sdk';
+import {
+  createMotionPath,
+  getMotionPathHeading,
+  getMotionPathPosition,
+  getMotionPathProgress,
+  setMotionPathProgress,
+  updateMotionPath,
+} from '@flighthq/sdk/animation';
+import { appendPathCubicCurveTo, appendPathMoveTo, createPath } from '@flighthq/sdk/scene2d';
 
 import { render, scale } from './render';
 

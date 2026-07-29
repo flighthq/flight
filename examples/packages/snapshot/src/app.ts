@@ -14,7 +14,7 @@ import {
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
-import { captureSnapshot, equalsSnapshot, interpolateSnapshots, restoreSnapshot } from '@flighthq/snapshot';
+import { captureSnapshot, equalsSnapshot, interpolateSnapshots, restoreSnapshot } from '@flighthq/sdk/game';
 
 import { render, scale } from './render';
 

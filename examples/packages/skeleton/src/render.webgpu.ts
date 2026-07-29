@@ -1,4 +1,3 @@
-import { drawWgpuScene3D, registerWgpuGpuSkinning } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Scene3DLightsLike, Node3D, WgpuRenderEffectPipeline } from '@flighthq/sdk';
 import {
   beginWgpuRenderEffectPipeline,
@@ -11,6 +10,7 @@ import {
   renderWgpuBackground,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { drawWgpuScene3D, registerWgpuGpuSkinning } from '@flighthq/sdk/rendering';
 
 const pixelRatio = window.devicePixelRatio || 1;
 export const canvas = createWgpuCanvasElement(800, 600, pixelRatio);

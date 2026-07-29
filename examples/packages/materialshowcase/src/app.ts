@@ -1,10 +1,3 @@
-import {
-  createOrbitCameraController,
-  dollyOrbitCameraController,
-  rotateOrbitCameraController,
-  updateOrbitCameraController,
-} from '@flighthq/camera-controls';
-import { createNode3D } from '@flighthq/scene3d';
 import type { Mesh, Scene3DLightsLike, SurfaceMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -46,6 +39,13 @@ import {
   Node3DKind,
   setMeshGeometryVertexColor0,
 } from '@flighthq/sdk';
+import {
+  createOrbitCameraController,
+  dollyOrbitCameraController,
+  rotateOrbitCameraController,
+  updateOrbitCameraController,
+} from '@flighthq/sdk/game';
+import { createNode3D } from '@flighthq/sdk/scene3d';
 
 import { canvas, render, scale, supportsExtendedPbr, supportsVertexColor0 } from './render';
 

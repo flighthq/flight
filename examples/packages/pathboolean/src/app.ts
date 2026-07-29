@@ -1,5 +1,3 @@
-import { appendPathCircle, appendPathRoundRectangle, createPath } from '@flighthq/path';
-import { differencePaths, intersectPaths, unionPaths, xorPaths } from '@flighthq/path-boolean';
 import type { Path, Shape } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -13,6 +11,8 @@ import {
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
+import { appendPathCircle, appendPathRoundRectangle, createPath } from '@flighthq/sdk/scene2d';
+import { differencePaths, intersectPaths, unionPaths, xorPaths } from '@flighthq/sdk/scene2d';
 
 import { canvas, render, scale } from './render';
 

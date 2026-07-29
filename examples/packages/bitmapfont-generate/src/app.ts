@@ -1,12 +1,3 @@
-import { createBitmapText, getBitmapTextPages, updateBitmapText } from '@flighthq/bitmaptext';
-import {
-  createGlyphAtlas,
-  createGlyphSourceFromGlyphAtlas,
-  createStubGlyphRasterizerBackend,
-  createWebGlyphRasterizerBackend,
-  getGlyphAtlasBitmap,
-  setGlyphRasterizerBackend,
-} from '@flighthq/glyphatlas';
 import type { BitmapText } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -17,6 +8,15 @@ import {
   invalidateNodeLocalTransform,
   setNodeColorAdjustmentsTint,
 } from '@flighthq/sdk';
+import { createBitmapText, getBitmapTextPages, updateBitmapText } from '@flighthq/sdk/text';
+import {
+  createGlyphAtlas,
+  createGlyphSourceFromGlyphAtlas,
+  createStubGlyphRasterizerBackend,
+  createWebGlyphRasterizerBackend,
+  getGlyphAtlasBitmap,
+  setGlyphRasterizerBackend,
+} from '@flighthq/sdk/text';
 
 import { render, scale } from './render';
 

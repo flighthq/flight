@@ -3,7 +3,6 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@flighthq/effects-gl": "*",
     "@flighthq/sdk": "*"
   },
   "scripts": {

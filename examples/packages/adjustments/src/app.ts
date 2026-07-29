@@ -1,12 +1,3 @@
-import {
-  applyColorMatrixToColor,
-  createBrightnessColorMatrix,
-  createContrastColorMatrix,
-  createHueRotateColorMatrix,
-  createIdentityColorMatrix,
-  createSaturationColorMatrix,
-  fuseColorMatrices,
-} from '@flighthq/adjustments';
 import type { Node2D, Shape } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -19,6 +10,15 @@ import {
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
+import {
+  applyColorMatrixToColor,
+  createBrightnessColorMatrix,
+  createContrastColorMatrix,
+  createHueRotateColorMatrix,
+  createIdentityColorMatrix,
+  createSaturationColorMatrix,
+  fuseColorMatrices,
+} from '@flighthq/sdk/rendering';
 
 import { render, scale } from './render';
 

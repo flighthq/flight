@@ -1,3 +1,14 @@
+import type { Camera3D, Scene3DLightsLike, Node3D, WgpuRenderEffectPipeline, WgpuRenderState } from '@flighthq/sdk';
+import {
+  beginWgpuRenderEffectPipeline,
+  createWgpuCanvasElement,
+  createWgpuRenderEffectPipeline,
+  createWgpuRenderState,
+  endWgpuRenderEffectPipeline,
+  prepareScene3DRender,
+  renderWgpuBackground,
+  submitWgpuRenderPass,
+} from '@flighthq/sdk';
 import {
   drawWgpuScene3D,
   registerBlinnPhongWgpuMaterial,
@@ -13,18 +24,7 @@ import {
   registerUnlitWgpuMaterial,
   registerVertexColorWgpuMaterial,
   registerWireframeWgpuMaterial,
-} from '@flighthq/scene3d-wgpu';
-import type { Camera3D, Scene3DLightsLike, Node3D, WgpuRenderEffectPipeline, WgpuRenderState } from '@flighthq/sdk';
-import {
-  beginWgpuRenderEffectPipeline,
-  createWgpuCanvasElement,
-  createWgpuRenderEffectPipeline,
-  createWgpuRenderState,
-  endWgpuRenderEffectPipeline,
-  prepareScene3DRender,
-  renderWgpuBackground,
-  submitWgpuRenderPass,
-} from '@flighthq/sdk';
+} from '@flighthq/sdk/rendering';
 
 const pixelRatio = window.devicePixelRatio || 1;
 export const canvas = createWgpuCanvasElement(800, 600, pixelRatio);

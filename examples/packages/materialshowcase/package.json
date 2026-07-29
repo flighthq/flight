@@ -3,10 +3,6 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@flighthq/camera-controls": "*",
-    "@flighthq/scene3d": "*",
-    "@flighthq/scene3d-gl": "*",
-    "@flighthq/scene3d-wgpu": "*",
     "@flighthq/sdk": "*"
   },
   "scripts": {

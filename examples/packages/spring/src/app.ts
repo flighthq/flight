@@ -18,7 +18,7 @@ import {
   invalidateNodeRender,
   updateTweens,
 } from '@flighthq/sdk';
-import { createSpring2D, createSpringConfig, updateSpring2D } from '@flighthq/spring';
+import { createSpring2D, createSpringConfig, updateSpring2D } from '@flighthq/sdk/animation';
 
 import { canvas, render, scale } from './render';
 

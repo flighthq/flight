@@ -1,16 +1,3 @@
-import {
-  captureInteractionPointer,
-  connectInputToInteraction,
-  connectInteractionSignal,
-  createInteractionManager,
-  createWebCursorBackend,
-  hitTestNode2DsShape,
-  registerDefaultHitTests,
-  registerShapeHitTest,
-  releaseInteractionPointer,
-  setNodeCursor,
-  setNodeHitTestEnabled,
-} from '@flighthq/interaction';
 import type { PointerEventData, Shape } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -27,6 +14,19 @@ import {
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
+import {
+  captureInteractionPointer,
+  connectInputToInteraction,
+  connectInteractionSignal,
+  createInteractionManager,
+  createWebCursorBackend,
+  hitTestNode2DsShape,
+  registerDefaultHitTests,
+  registerShapeHitTest,
+  releaseInteractionPointer,
+  setNodeCursor,
+  setNodeHitTestEnabled,
+} from '@flighthq/sdk/interaction';
 
 import { canvas, render, scale } from './render';
 

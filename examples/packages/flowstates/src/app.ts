@@ -1,14 +1,3 @@
-import {
-  clearFlowStack,
-  createFlowStack,
-  getActiveFlowState,
-  getFlowStackDepth,
-  getFlowStackVisibleStates,
-  popFlowState,
-  pushFlowState,
-  replaceFlowState,
-  updateFlowStack,
-} from '@flighthq/flow';
 import type { Node2D, FlowState } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -21,6 +10,17 @@ import {
   invalidateNodeLocalTransform,
   removeNodeChildren,
 } from '@flighthq/sdk';
+import {
+  clearFlowStack,
+  createFlowStack,
+  getActiveFlowState,
+  getFlowStackDepth,
+  getFlowStackVisibleStates,
+  popFlowState,
+  pushFlowState,
+  replaceFlowState,
+  updateFlowStack,
+} from '@flighthq/sdk/game';
 
 import { render, scale } from './render';
 

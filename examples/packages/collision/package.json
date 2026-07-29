@@ -3,7 +3,6 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@flighthq/collision": "*",
     "@flighthq/sdk": "*"
   },
   "scripts": {
