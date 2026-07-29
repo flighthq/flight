@@ -8,12 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [
-    { "path": "../entity" },
-    { "path": "../node" },
-    { "path": "../render-gl" },
-    { "path": "../signals" },
-    { "path": "../types" }
-  ],
+  "references": [{ "path": "../entity" }, { "path": "../signals" }, { "path": "../types" }],
   "include": ["src"]
 }

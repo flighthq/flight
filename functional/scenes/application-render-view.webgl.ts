@@ -1,8 +1,4 @@
-import {
-  attachApplicationRenderView,
-  createApplicationWindow,
-  createGlApplicationRenderView,
-} from '@flighthq/application';
+import { attachApplicationRenderView, createApplicationWindow } from '@flighthq/application';
 import { getBitmapPixelRgb } from '@flighthq/bitmap';
 import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
 import { createVector3 } from '@flighthq/geometry';
@@ -11,7 +7,12 @@ import { createUnlitMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
 import { prepareScene3DRender } from '@flighthq/render';
-import { beginGlRenderPass, endGlRenderPass, renderGlBackground } from '@flighthq/render-gl';
+import {
+  beginGlRenderPass,
+  createGlApplicationRenderView,
+  endGlRenderPass,
+  renderGlBackground,
+} from '@flighthq/render-gl';
 import { presentGlRenderTarget } from '@flighthq/render-gl/contract';
 import { createMesh, createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D, registerUnlitGlMaterial } from '@flighthq/scene3d-gl';
