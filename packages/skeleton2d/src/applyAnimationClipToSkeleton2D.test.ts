@@ -76,6 +76,14 @@ describe('applyAnimationClipToSkeleton2D', () => {
     expect(pose.bones[0].rotation).toBeCloseTo(100, 5);
   });
 
+  it('throws when setup and pose are the same skeleton (aliasing would corrupt the rest pose)', () => {
+    const s = createSkeleton2D([makeBone({ rotation: 10 })]);
+    const clip = createAnimationClip([
+      createAnimationChannel(scalarTrack([0, 1], [0, 90], 1), { boneIndex: 0, path: Skeleton2DAnimationPath.Rotation }),
+    ]);
+    expect(() => applyAnimationClipToSkeleton2D(clip, s, s, 1)).toThrow(/distinct skeletons/);
+  });
+
   it('skips a channel with a foreign target or an out-of-range bone (no throw, no mutation)', () => {
     const setup = createSkeleton2D([makeBone({ rotation: 7 })]);
     const pose = cloneSkeleton2D(setup);
