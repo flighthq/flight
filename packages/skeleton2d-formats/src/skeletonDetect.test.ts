@@ -23,6 +23,13 @@ describe('parseSkeleton2D', () => {
     expect(crumbs.map((c) => c.kind)).toContain('spine.point-attachment-unsupported');
   });
 
+  it('auto-detects a DragonBones JSON document (armature container) and parses it', () => {
+    const doc = JSON.stringify({ version: '5.5', armature: [{ bone: [{ name: 'root' }] }] });
+    const result = parseSkeleton2D(doc);
+    expect(result).not.toBeNull();
+    expect(result!.skeleton.bones[0].name).toBe('root');
+  });
+
   it('returns null when no registered format recognizes the text', () => {
     expect(parseSkeleton2D('not a skeleton')).toBeNull();
     expect(parseSkeleton2D('<xml/>')).toBeNull();
