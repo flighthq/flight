@@ -16,14 +16,21 @@ import { Skeleton2DAnimationPath } from '@flighthq/types/contract';
 // applies before one world propagation. Module scratch, allocation-free. A channel whose target is foreign
 // (not a Skeleton2DAnimationTarget) or out of range is skipped (sentinel guard, no throw).
 //
-// `setup` and `pose` MUST be distinct instances: the binder reads `setup` fields and writes `pose` fields,
-// so aliasing them would clobber the rest pose it composes against and accumulate on the next frame.
+// This is the documented exception to the out-param aliasing rule: `setup` is read across the whole pass
+// while `pose` is written, so they cannot be the same object. Passing one skeleton as both would clobber
+// the rest pose the binder composes against and then accumulate against garbage every subsequent frame —
+// a silent, delayed corruption — so it is a programmer error the guard below throws on, not a sentinel.
 export function applyAnimationClipToSkeleton2D(
   clip: Readonly<AnimationClip>,
   setup: Readonly<Skeleton2D>,
   pose: Skeleton2D,
   time: number,
 ): void {
+  if (setup === pose) {
+    throw new Error(
+      'applyAnimationClipToSkeleton2D: setup and pose must be distinct skeletons — pass a cloneSkeleton2D(setup) as pose',
+    );
+  }
   const channels = clip.channels;
   const setupBones = setup.bones;
   const poseBones = pose.bones;
