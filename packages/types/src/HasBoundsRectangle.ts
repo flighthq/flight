@@ -6,7 +6,6 @@ import type { Rectangle } from './Rectangle';
 export interface HasBoundsRectangle extends Entity {}
 
 export interface HasBoundsRectangleRuntime extends EntityRuntime {
-  authoredBoundsRectangle: Rectangle | null;
   boundsRectangle: Rectangle | null;
   computeLocalBoundsRectangle: (out: Rectangle, source: Readonly<BoundsNodeAny>) => void;
   localBoundsRectangle: Rectangle | null;

@@ -29,14 +29,12 @@ import {
   ensureNodeLocalBoundsRectangle,
   ensureNodeParentBoundsRectangle,
   ensureNodeWorldBoundsRectangle,
-  getNodeAuthoredBoundsRectangle,
   getNodeHeight,
   getNodeLocalBoundsRectangle,
   getNodeParentBoundsRectangle,
   getNodeWidth,
   getNodeWorldBoundsRectangle,
   setNodeHeight,
-  setNodeAuthoredBoundsRectangle,
   setNodeWidth,
 } from './boundsRectangle';
 import { initBoundsRectangleRuntimeTrait, initBoundsRectangleTrait } from './hasBoundsRectangle';
@@ -341,12 +339,6 @@ describe('ensureNodeWorldBoundsRectangle', () => {
   });
 });
 
-describe('getNodeAuthoredBoundsRectangle', () => {
-  it('returns null until authored bounds are assigned', () => {
-    expect(getNodeAuthoredBoundsRectangle(createTestNode())).toBeNull();
-  });
-});
-
 describe('getNodeHeight', () => {
   it('returns height in parent space with default scale', () => {
     const parent = createTestNode();
@@ -449,31 +441,6 @@ describe('getNodeWorldBoundsRectangle', () => {
     const bounds = getNodeWorldBoundsRectangle(parent);
     expect(bounds.width).toBeGreaterThan(10);
     expect(bounds.height).toBeGreaterThan(10);
-  });
-});
-
-describe('setNodeAuthoredBoundsRectangle', () => {
-  it('preserves an empty node authored extent as local bounds', () => {
-    const node = createTestNode();
-    setNodeAuthoredBoundsRectangle(node, { height: 40, width: 80, x: 10, y: 20 });
-    expect(equalsRectangle(getNodeLocalBoundsRectangle(node), { height: 40, width: 80, x: 10, y: 20 })).toBe(true);
-  });
-
-  it('unions authored bounds with computed content bounds', () => {
-    const node = createTestNode();
-    const runtime = getEntityRuntime(node);
-    runtime.computeLocalBoundsRectangle = (out) => setRectangle(out, 20, 20, 20, 20);
-    setNodeAuthoredBoundsRectangle(node, { height: 10, width: 10, x: 0, y: 0 });
-    expect(equalsRectangle(getNodeLocalBoundsRectangle(node), { height: 40, width: 40, x: 0, y: 0 })).toBe(true);
-  });
-
-  it('clears the authored extent and invalidates cached local bounds', () => {
-    const node = createTestNode();
-    setNodeAuthoredBoundsRectangle(node, { height: 40, width: 80, x: 10, y: 20 });
-    getNodeLocalBoundsRectangle(node);
-    setNodeAuthoredBoundsRectangle(node, null);
-    expect(getNodeAuthoredBoundsRectangle(node)).toBeNull();
-    expect(equalsRectangle(getNodeLocalBoundsRectangle(node), { height: 0, width: 0, x: 0, y: 0 })).toBe(true);
   });
 });
 
