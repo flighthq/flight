@@ -184,6 +184,7 @@
     "@flighthq/shortcut": "*",
     "@flighthq/signals": "*",
     "@flighthq/skeleton2d": "*",
+    "@flighthq/skeleton2d-formats": "*",
     "@flighthq/skeleton3d": "*",
     "@flighthq/snapshot": "*",
     "@flighthq/socket": "*",

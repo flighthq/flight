@@ -98,6 +98,7 @@
     { "path": "./packages/shortcut" },
     { "path": "./packages/signals" },
     { "path": "./packages/skeleton2d" },
+    { "path": "./packages/skeleton2d-formats" },
     { "path": "./packages/skeleton3d" },
     { "path": "./packages/snapshot" },
     { "path": "./packages/socket" },

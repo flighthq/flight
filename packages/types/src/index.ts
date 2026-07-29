@@ -768,3 +768,4 @@ export * from './Skeleton2D';
 export * from './Skeleton2DAnimationPath';
 export * from './Skeleton2DAnimationTarget';
 export * from './SvgDocumentImport';
+export * from './Skeleton2DImport';

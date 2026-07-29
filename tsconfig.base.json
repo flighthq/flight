@@ -246,6 +246,8 @@
       "@flighthq/signals/*": ["./packages/signals/src/*"],
       "@flighthq/skeleton2d": ["./packages/skeleton2d/src/index.ts"],
       "@flighthq/skeleton2d/*": ["./packages/skeleton2d/src/*"],
+      "@flighthq/skeleton2d-formats": ["./packages/skeleton2d-formats/src/index.ts"],
+      "@flighthq/skeleton2d-formats/*": ["./packages/skeleton2d-formats/src/*"],
       "@flighthq/skeleton3d": ["./packages/skeleton3d/src/index.ts"],
       "@flighthq/skeleton3d/*": ["./packages/skeleton3d/src/*"],
       "@flighthq/snapshot": ["./packages/snapshot/src/index.ts"],
