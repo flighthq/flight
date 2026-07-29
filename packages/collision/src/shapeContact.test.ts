@@ -87,7 +87,12 @@ describe('collideAabbAabbContactManifold', () => {
     expect(contact.depth).toBeCloseTo(lean.depth);
   });
 
-  it('negates the normal but keeps the same world-space points when the arguments are reversed', () => {
+  it('negates the normal and moves the points to the opposite surface when the arguments are reversed', () => {
+    // Two boxes tie exactly on separation, so the reference face resolves toward the first argument and
+    // the contact points lie on whichever surface that picks. Reversing therefore keeps the contact span
+    // (same xs) and the pair-level answer (normal negated, depth equal) while moving the points one
+    // penetration depth down, onto the other body's face. Both are correct contacts; which one you get
+    // is the caller's argument order, and this pins that rather than averting its eyes from it.
     const forward = createCollisionContactManifold();
     const reversed = createCollisionContactManifold();
     const box: CollisionAabb = { minX: 0, minY: -0.1, maxX: 2, maxY: 1.9 };
@@ -106,6 +111,8 @@ describe('collideAabbAabbContactManifold', () => {
       .sort((left, right) => left - right);
     expect(reversedXs[0]).toBeCloseTo(forwardXs[0]);
     expect(reversedXs[1]).toBeCloseTo(forwardXs[1]);
+    for (const point of livePoints(forward)) expect(point.y).toBeCloseTo(0);
+    for (const point of livePoints(reversed)) expect(point.y).toBeCloseTo(-0.1);
   });
 
   it('clears the manifold on a miss, so no stale point is left readable', () => {

@@ -7,6 +7,7 @@ import type {
   CollisionPolygon,
 } from '@flighthq/types/contract';
 
+import { FEATURE_INDEX_LIMIT, packContactFeatureId } from './contactFeatureId';
 import { clearCollisionContactManifold } from './contactManifold';
 import { writeAabbVertices, writeObbVertices } from './convexVertices';
 import { createCollisionManifold } from './manifold';
@@ -170,8 +171,10 @@ function convexContact(
 ): boolean {
   // Fewer than three vertices has no interior and no face to clip against. Degenerate input would
   // otherwise leave the separation search with no candidate axis and poison the manifold with NaN,
-  // which in a physics step is unrecoverable — report a clean miss instead.
-  if (an < 3 || bn < 3) {
+  // which in a physics step is unrecoverable — report a clean miss instead. Past FEATURE_INDEX_LIMIT
+  // the face indices no longer pack into distinct feature ids, and a silently aliased id is worse than
+  // a reported miss: the solver would warm-start a contact from an unrelated contact's impulse.
+  if (an < 3 || bn < 3 || an > FEATURE_INDEX_LIMIT || bn > FEATURE_INDEX_LIMIT) {
     clearCollisionContactManifold(out);
     return false;
   }
@@ -262,11 +265,11 @@ function convexContact(
   out.pointCount = 0;
 
   if (clipStart <= clipEnd) {
-    const featureBase =
-      ((referenceIsA ? 1 : 0) << FEATURE_REFERENCE_SHIFT) | (referenceEdge << FEATURE_EDGE_SHIFT) | (incidentEdge << 1);
-    appendClippedContact(p0X, p0Y, p1X, p1Y, clipStart, v1X, v1Y, normalX, normalY, featureBase, out);
+    const first = packContactFeatureId(referenceIsA, referenceEdge, incidentEdge, false);
+    appendClippedContact(p0X, p0Y, p1X, p1Y, clipStart, v1X, v1Y, normalX, normalY, first, out);
     if (clipEnd > clipStart) {
-      appendClippedContact(p0X, p0Y, p1X, p1Y, clipEnd, v1X, v1Y, normalX, normalY, featureBase | 1, out);
+      const second = packContactFeatureId(referenceIsA, referenceEdge, incidentEdge, true);
+      appendClippedContact(p0X, p0Y, p1X, p1Y, clipEnd, v1X, v1Y, normalX, normalY, second, out);
     }
   }
   return true;
@@ -419,8 +422,6 @@ const EPS = 1e-9;
 const REFERENCE_BIAS = 1e-6;
 // Feature ids pack (reference shape, reference edge, incident edge, clip slot) into one integer.
 // Ten bits per edge index covers any polygon the SAT core can handle in useful time.
-const FEATURE_EDGE_SHIFT = 11;
-const FEATURE_REFERENCE_SHIFT = 21;
 const contactScratchA = new Float64Array(8);
 const contactScratchB = new Float64Array(8);
 const leanScratch: CollisionManifold = createCollisionManifold();
