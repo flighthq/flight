@@ -151,6 +151,99 @@ describe('computeSkeleton2DWorldTransforms', () => {
     const det = out.a * out.d - out.c * out.b;
     expect(det).toBeCloseTo(1, 5);
   });
+
+  // FORMULA parity — expected world matrices computed BY HAND from Spine's published bone-transform
+  // formulas (updateWorldTransform per transformMode), NOT from a real rig corpus. These use an ASYMMETRIC
+  // parent (rotation 90°, scaleX 2, scaleY 1 → world column-lengths psx=2, psy=1) so a bug that confused
+  // the two column scales, or that skipped the parent×local compose, would surface — cases the symmetric
+  // fixtures above cannot catch. Corpus parity against Spine's own runtime output remains open and requires
+  // a permissively-licensed rig AND oracle (see skeleton2d-formats charter); this proves formula match only.
+  it('FORMULA parity: Normal composes parent × local (asymmetric 90°/2×1 parent + a 90° child)', () => {
+    // Parent world = [a,b,c,d] = [cos90·2, sin90·2, cos180·1, sin180·1] = [0, 2, -1, 0].
+    // Child local (rot 90°, unit scale) = [0, 1, -1, 0]. Normal: world = parentMatrix × localMatrix:
+    //   a=pa·la+pc·lb=0·0+(-1)·1=-1  b=pb·la+pd·lb=2·0+0·1=0
+    //   c=pa·lc+pc·ld=0·(-1)+(-1)·0=0  d=pb·lc+pd·ld=2·(-1)+0·0=-2  → [-1, 0, 0, -2] (det 2 = parent det × child det).
+    const s = createSkeleton2D([
+      makeBone({ rotation: 90, scaleX: 2, scaleY: 1 }),
+      makeBone({ parentIndex: 0, rotation: 90 }),
+    ]);
+    computeSkeleton2DWorldTransforms(s);
+    const out = createMatrix();
+    getSkeleton2DBoneWorldMatrix(out, s, 1);
+    expect(out.a).toBeCloseTo(-1, 5);
+    expect(out.b).toBeCloseTo(0, 5);
+    expect(out.c).toBeCloseTo(0, 5);
+    expect(out.d).toBeCloseTo(-2, 5);
+  });
+
+  it('FORMULA parity: NoRotationOrReflection keeps per-axis parent scale (2,1), strips rotation', () => {
+    // Parent world [0,2,-1,0] → psx=hypot(0,2)=2, psy=hypot(-1,0)=1. Identity child, axis-aligned scale-only
+    // parent: a=psx·la=2·1=2, b=psy·lb=1·0=0, c=psx·lc=2·0=0, d=psy·ld=1·1=1 → [2, 0, 0, 1]. Asymmetric a≠d
+    // is the point: a uniform-scale parent would hide a psx/psy mix-up.
+    const s = createSkeleton2D([
+      makeBone({ rotation: 90, scaleX: 2, scaleY: 1 }),
+      makeBone({ parentIndex: 0, transformMode: TransformMode2D.NoRotationOrReflection }),
+    ]);
+    computeSkeleton2DWorldTransforms(s);
+    const out = createMatrix();
+    getSkeleton2DBoneWorldMatrix(out, s, 1);
+    expect(out.a).toBeCloseTo(2, 5);
+    expect(out.b).toBeCloseTo(0, 5);
+    expect(out.c).toBeCloseTo(0, 5);
+    expect(out.d).toBeCloseTo(1, 5);
+  });
+
+  it('FORMULA parity: NoScale keeps the parent rotation but strips its (2,1) scale to unit', () => {
+    // Parent world [0,2,-1,0], normalized columns: nax=0/2=0, nay=2/2=1, ncx=-1/1=-1, ncy=0/1=0. Identity
+    // child: a=nax·la+ncx·lb=0, b=nay·la+ncy·lb=1, c=nax·lc+ncx·ld=-1, d=nay·lc+ncy·ld=0 → [0,1,-1,0]:
+    // a pure 90° rotation (det +1), the parent's orientation with the scale removed.
+    const s = createSkeleton2D([
+      makeBone({ rotation: 90, scaleX: 2, scaleY: 1 }),
+      makeBone({ parentIndex: 0, transformMode: TransformMode2D.NoScale }),
+    ]);
+    computeSkeleton2DWorldTransforms(s);
+    const out = createMatrix();
+    getSkeleton2DBoneWorldMatrix(out, s, 1);
+    expect(out.a).toBeCloseTo(0, 5);
+    expect(out.b).toBeCloseTo(1, 5);
+    expect(out.c).toBeCloseTo(-1, 5);
+    expect(out.d).toBeCloseTo(0, 5);
+  });
+
+  it('FORMULA parity: NoScale vs NoScaleOrReflection differ on a reflected parent (keep vs strip the flip)', () => {
+    // Reflected parent (scaleY -1) world = [1, 0, 0, -1] (det -1). Identity children. NoScale keeps the
+    // parent reflection → [1,0,0,-1] (det -1); NoScaleOrReflection forces y-axis = +90° of x-axis → [1,0,0,1]
+    // (det +1). This side-by-side contrast is the exact semantic boundary between the two modes.
+    const s = createSkeleton2D([
+      makeBone({ scaleX: 1, scaleY: -1 }),
+      makeBone({ parentIndex: 0, transformMode: TransformMode2D.NoScale }),
+      makeBone({ parentIndex: 0, transformMode: TransformMode2D.NoScaleOrReflection }),
+    ]);
+    computeSkeleton2DWorldTransforms(s);
+    const kept = createMatrix();
+    getSkeleton2DBoneWorldMatrix(kept, s, 1);
+    expect(kept.a).toBeCloseTo(1, 5);
+    expect(kept.d).toBeCloseTo(-1, 5);
+    expect(kept.a * kept.d - kept.c * kept.b).toBeCloseTo(-1, 5); // reflection kept
+    const stripped = createMatrix();
+    getSkeleton2DBoneWorldMatrix(stripped, s, 2);
+    expect(stripped.a).toBeCloseTo(1, 5);
+    expect(stripped.d).toBeCloseTo(1, 5);
+    expect(stripped.a * stripped.d - stripped.c * stripped.b).toBeCloseTo(1, 5); // reflection stripped
+  });
+
+  it('FORMULA parity: a root bone applies shearX as an offset to the x-axis angle', () => {
+    // Local formula: a=cos(rot+shearX)·scaleX, b=sin(rot+shearX)·scaleX. With rot 0, shearX 45°, unit scale:
+    // x-axis is at 45° (a=b=cos45=√2/2) while the y-axis stays at rot+90°=90° (c=0,d=1) — non-orthogonal
+    // axes, the defining signature of shear.
+    const s = createSkeleton2D([makeBone({ shearX: 45 })]);
+    computeSkeleton2DWorldTransforms(s);
+    const root2 = Math.SQRT1_2; // cos45 = sin45 = √2/2
+    expect(s.worldMatrices[0]).toBeCloseTo(root2, 5); // a
+    expect(s.worldMatrices[1]).toBeCloseTo(root2, 5); // b
+    expect(s.worldMatrices[2]).toBeCloseTo(0, 5); // c
+    expect(s.worldMatrices[3]).toBeCloseTo(1, 5); // d
+  });
 });
 
 describe('createSkeleton2D', () => {
