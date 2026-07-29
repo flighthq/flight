@@ -721,6 +721,37 @@ describe('createScene3DFrom3ds animations', () => {
 });
 
 describe('parse3ds', () => {
+  it('terminates on a zero-length chunk instead of spinning on a cursor that cannot advance', () => {
+    // Every chunk walk advances by `cursor = chunkEnd`, so a declared length of 0 puts the end back at
+    // the cursor and the loop never progresses — a HANG, not a throw: uncatchable, and it takes the
+    // whole import with it. The trigger is not adversarial. Zero padding inside a parent whose declared
+    // length still covers it lands the cursor on id 0x0000 / length 0x00000000, which is what an
+    // exporter that block-aligns produces. Twelve bytes are enough to reproduce it.
+    const bytes = new Uint8Array(12);
+    const view = new DataView(bytes.buffer);
+    view.setUint16(0, 0x4d4d, true); // MAIN
+    view.setUint32(2, 12, true);
+    view.setUint16(6, 0x4000, true); // OBJECT
+    view.setUint32(8, 0, true); // length 0
+    const document = parse3ds(bytes);
+    expect(document.meshes).toHaveLength(0);
+  });
+
+  it('does not lose the rest of a parent to a chunk whose declared length is shorter than a header', () => {
+    // The sibling of the hang: lengths 1-5 do advance, so they terminate, but they land the cursor
+    // mid-header and every later chunk boundary in that parent is wrong. Both are one invariant —
+    // a chunk shorter than its own header is not walkable — and both are closed by bounding the
+    // advance where every walk derives it.
+    const bytes = new Uint8Array(18);
+    const view = new DataView(bytes.buffer);
+    view.setUint16(0, 0x4d4d, true);
+    view.setUint32(2, 18, true);
+    view.setUint16(6, 0x4000, true);
+    view.setUint32(8, 3, true); // shorter than the 6-byte header
+    const document = parse3ds(bytes);
+    expect(document.meshes).toHaveLength(0);
+  });
+
   it('decomposes each trimesh into a document mesh node with inline geometry', () => {
     const document = parse3ds(buildTriangle3ds('Tri', [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 2]));
     expect(document.meshes).toHaveLength(1);

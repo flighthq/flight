@@ -147,9 +147,9 @@ function collectMeshes(
   while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
     const chunkId = view.getUint16(cursor, true);
     const chunkLength = readChunkLength(view, cursor);
-    const chunkEnd = cursor + chunkLength;
+    const chunkEnd = readChunkEnd(view, cursor, end);
 
-    if (chunkEnd > end) {
+    if (chunkEnd < 0) {
       tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Recover, '3ds.chunk-exceeds-parent', '', {
         firstChunkId: chunkId,
         firstLength: chunkLength,
@@ -190,10 +190,9 @@ function parseObject(
 
   while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
     const chunkId = view.getUint16(cursor, true);
-    const chunkLength = readChunkLength(view, cursor);
-    const chunkEnd = cursor + chunkLength;
+    const chunkEnd = readChunkEnd(view, cursor, end);
 
-    if (chunkEnd > end) {
+    if (chunkEnd < 0) {
       tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Recover, '3ds.subchunk-exceeds-object', '', {
         firstOffset: cursor,
       });
@@ -232,10 +231,9 @@ function parseTrimesh(
 
   while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
     const chunkId = view.getUint16(cursor, true);
-    const chunkLength = readChunkLength(view, cursor);
-    const chunkEnd = cursor + chunkLength;
+    const chunkEnd = readChunkEnd(view, cursor, end);
 
-    if (chunkEnd > end) {
+    if (chunkEnd < 0) {
       tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Recover, '3ds.subchunk-exceeds-trimesh', '', {
         firstChunkId: chunkId,
         firstName: name,
@@ -718,9 +716,8 @@ function parseMaterial(view: Readonly<DataView>, offset: number, end: number): T
   let cursor = offset + THREE_DS_CHUNK_HEADER_BYTES;
   while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
     const chunkId = view.getUint16(cursor, true);
-    const chunkLength = readChunkLength(view, cursor);
-    const chunkEnd = cursor + chunkLength;
-    if (chunkLength < THREE_DS_CHUNK_HEADER_BYTES || chunkEnd > end) break;
+    const chunkEnd = readChunkEnd(view, cursor, end);
+    if (chunkEnd < 0) break;
     const dataStart = cursor + THREE_DS_CHUNK_HEADER_BYTES;
 
     if (chunkId === THREE_DS_MATERIAL_NAME) {
@@ -762,9 +759,8 @@ function parseColorChunk(
   let cursor = offset;
   while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
     const chunkId = view.getUint16(cursor, true);
-    const chunkLength = readChunkLength(view, cursor);
-    const chunkEnd = cursor + chunkLength;
-    if (chunkLength < THREE_DS_CHUNK_HEADER_BYTES || chunkEnd > end) break;
+    const chunkEnd = readChunkEnd(view, cursor, end);
+    if (chunkEnd < 0) break;
     const dataStart = cursor + THREE_DS_CHUNK_HEADER_BYTES;
 
     if (chunkId === THREE_DS_COLOR_FLOAT && dataStart + 12 <= chunkEnd) {
@@ -790,9 +786,8 @@ function parsePercentageChunk(view: Readonly<DataView>, offset: number, end: num
   let cursor = offset;
   while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
     const chunkId = view.getUint16(cursor, true);
-    const chunkLength = readChunkLength(view, cursor);
-    const chunkEnd = cursor + chunkLength;
-    if (chunkLength < THREE_DS_CHUNK_HEADER_BYTES || chunkEnd > end) break;
+    const chunkEnd = readChunkEnd(view, cursor, end);
+    if (chunkEnd < 0) break;
     const dataStart = cursor + THREE_DS_CHUNK_HEADER_BYTES;
 
     if (chunkId === THREE_DS_PERCENT_INT && dataStart + 2 <= chunkEnd) {
@@ -813,9 +808,8 @@ function parseTextureFilename(view: Readonly<DataView>, offset: number, end: num
   let cursor = offset;
   while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
     const chunkId = view.getUint16(cursor, true);
-    const chunkLength = readChunkLength(view, cursor);
-    const chunkEnd = cursor + chunkLength;
-    if (chunkLength < THREE_DS_CHUNK_HEADER_BYTES || chunkEnd > end) break;
+    const chunkEnd = readChunkEnd(view, cursor, end);
+    if (chunkEnd < 0) break;
     if (chunkId === THREE_DS_MATERIAL_TEXTURE_FILENAME) {
       const name = readNullTerminatedString(view, cursor + THREE_DS_CHUNK_HEADER_BYTES, chunkEnd);
       return name.length > 0 ? name : null;
@@ -849,6 +843,22 @@ function readNullTerminatedString(view: Readonly<DataView>, offset: number, end:
 }
 
 // Reads the chunk length (uint32 at offset + 2). The length includes the 6-byte header.
+// Resolves the end of the chunk whose header starts at `cursor`, or -1 when that chunk cannot be
+// walked: a declared length shorter than the header itself, or one that overruns the enclosing region.
+//
+// The short-length half is what makes a walk TERMINATE. Every chunk loop in this file advances by
+// `cursor = chunkEnd`, so a declared length of 0 puts the end back at the cursor and the loop spins
+// forever — and the trigger is not adversarial, it is zero padding inside a parent whose declared
+// length still covers it. Bounding the advance here, at the one place every walk derives it, is what
+// makes a non-terminating walk unrepresentable rather than an invariant eight loops must each
+// remember; five of them did and three did not.
+function readChunkEnd(view: Readonly<DataView>, cursor: number, end: number): number {
+  const chunkLength = readChunkLength(view, cursor);
+  if (chunkLength < THREE_DS_CHUNK_HEADER_BYTES) return -1;
+  const chunkEnd = cursor + chunkLength;
+  return chunkEnd > end ? -1 : chunkEnd;
+}
+
 function readChunkLength(view: Readonly<DataView>, offset: number): number {
   return view.getUint32(offset + 2, true);
 }
