@@ -1,13 +1,3 @@
-import {
-  advanceClock,
-  createChildClock,
-  createClock,
-  getClockEffectiveScale,
-  isClockEffectivelyPaused,
-  pauseClock,
-  resumeClock,
-  setClockScale,
-} from '@flighthq/clock';
 import type { Node2D } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -25,6 +15,16 @@ import {
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
+import {
+  advanceClock,
+  createChildClock,
+  createClock,
+  getClockEffectiveScale,
+  isClockEffectivelyPaused,
+  pauseClock,
+  resumeClock,
+  setClockScale,
+} from '@flighthq/sdk/application';
 
 import { render, scale } from './render';
 

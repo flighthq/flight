@@ -3,8 +3,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@flighthq/sdk": "*",
-    "@flighthq/spring": "*"
+    "@flighthq/sdk": "*"
   },
   "scripts": {
     "dev": "npm run dev:canvas",

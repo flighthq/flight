@@ -1,9 +1,3 @@
-import {
-  createOrbitCameraController,
-  rotateOrbitCameraController,
-  updateOrbitCameraController,
-} from '@flighthq/camera-controls';
-import { createNode3D } from '@flighthq/scene3d';
 import type { Camera3D, Scene3DLightsLike, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -21,6 +15,12 @@ import {
   setCubeTextureFace,
   setQuaternionFromEuler,
 } from '@flighthq/sdk';
+import {
+  createOrbitCameraController,
+  rotateOrbitCameraController,
+  updateOrbitCameraController,
+} from '@flighthq/sdk/game';
+import { createNode3D } from '@flighthq/sdk/scene3d';
 
 import { render, scale } from './render';
 

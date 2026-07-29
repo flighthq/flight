@@ -3,7 +3,6 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@flighthq/movieclip": "*",
     "@flighthq/sdk": "*"
   },
   "scripts": {

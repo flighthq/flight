@@ -1,10 +1,3 @@
-import {
-  applyParticleForces,
-  buildParticleCurve,
-  createParticleEmitterConfig,
-  createParticleEmitterState,
-  particleColorCurveFromKeyframes,
-} from '@flighthq/particles';
 import type { ParticleForce } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -20,6 +13,13 @@ import {
   invalidateNodeLocalTransform,
   updateParticleEmitter2D,
 } from '@flighthq/sdk';
+import {
+  applyParticleForces,
+  buildParticleCurve,
+  createParticleEmitterConfig,
+  createParticleEmitterState,
+  particleColorCurveFromKeyframes,
+} from '@flighthq/sdk/game';
 
 import { canvas, render, scale } from './render';
 

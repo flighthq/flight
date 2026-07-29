@@ -3,8 +3,6 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@flighthq/scene2d-canvas": "*",
-    "@flighthq/tilemap": "*",
     "@flighthq/sdk": "*"
   },
   "scripts": {

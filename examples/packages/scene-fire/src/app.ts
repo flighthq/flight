@@ -1,9 +1,3 @@
-import {
-  createOrbitCameraController,
-  rotateOrbitCameraController,
-  updateOrbitCameraController,
-} from '@flighthq/camera-controls';
-import { createNode3D } from '@flighthq/scene3d';
 import type {
   Camera3D,
   ParticleEmitter3D,
@@ -37,6 +31,12 @@ import {
   Node3DKind,
   stepParticleEmitter3D,
 } from '@flighthq/sdk';
+import {
+  createOrbitCameraController,
+  rotateOrbitCameraController,
+  updateOrbitCameraController,
+} from '@flighthq/sdk/game';
+import { createNode3D } from '@flighthq/sdk/scene3d';
 
 import { render, scale } from './render';
 

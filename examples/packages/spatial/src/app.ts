@@ -23,7 +23,7 @@ import {
   querySpatialRay,
   querySpatialRegion,
   updateSpatialObject,
-} from '@flighthq/spatial';
+} from '@flighthq/sdk/game';
 
 import { canvas, render, scale } from './render';
 

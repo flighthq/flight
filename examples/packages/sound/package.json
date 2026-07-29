@@ -3,9 +3,6 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@flighthq/audio": "*",
-    "@flighthq/scene2d-canvas": "*",
-    "@flighthq/media": "*",
     "@flighthq/sdk": "*"
   },
   "scripts": {

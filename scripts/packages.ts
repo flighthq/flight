@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import pc from 'picocolors';
 import * as ts from 'typescript';
 
+import { getInvalidExampleFlightDependencies, getInvalidExampleFlightImportSpecifiers } from './example-sdk-policy';
 import { getPackageLayerCoverageViolations, getPackageLayerDependencyViolation } from './package-layers';
 import { isSdkBarrelExcludedPackage } from './sdk-policy';
 
@@ -203,7 +204,7 @@ function getAllTsFiles(dir: string): { source: string[]; test: string[] } {
   return { source, test };
 }
 
-function scanFlightImports(files: string[]): Set<string> {
+function scanFlightImportSpecifiers(files: string[]): Set<string> {
   const imports = new Set<string>();
   for (const filePath of files) {
     const sourceFile = ts.createSourceFile(filePath, readFileSync(filePath, 'utf-8'), ts.ScriptTarget.Latest, true);
@@ -223,13 +224,21 @@ function scanFlightImports(files: string[]): Set<string> {
         specifier = statement.moduleSpecifier.text;
       }
       if (specifier?.startsWith('@flighthq/')) {
-        // Dependency keys name the package, while an import may select one of its declared subpath
-        // exports (for example @flighthq/bitmap/surfaceFingerprint).
-        imports.add(specifier.split('/').slice(0, 2).join('/'));
+        imports.add(specifier);
       }
     }
   }
   return imports;
+}
+
+function scanFlightImports(files: string[]): Set<string> {
+  return new Set(
+    [...scanFlightImportSpecifiers(files)].map((specifier) => {
+      // Dependency keys name the package, while an import may select one of its declared subpath
+      // exports (for example @flighthq/bitmap/surfaceFingerprint).
+      return specifier.split('/').slice(0, 2).join('/');
+    }),
+  );
 }
 
 const convertedContractLanePackages = new Set<string>();
@@ -793,6 +802,26 @@ for (const exampleDir of exampleDirs) {
       check(errors, `${dep} uses "*"`, version === '*', `got "${version}"`);
     }
   }
+
+  const exampleFlightDeps = Object.keys(pkg.dependencies ?? {}).filter((dep) => dep.startsWith('@flighthq/'));
+  const invalidExampleFlightDeps = getInvalidExampleFlightDependencies(exampleFlightDeps);
+  check(
+    errors,
+    'uses @flighthq/sdk as its only Flight dependency',
+    exampleFlightDeps.includes('@flighthq/sdk') && invalidExampleFlightDeps.length === 0,
+    `got ${exampleFlightDeps.length === 0 ? 'none' : exampleFlightDeps.join(', ')}`,
+  );
+
+  const exampleSourceFiles = getAllTsFiles(join(exampleDir, 'src'));
+  const invalidFlightImports = getInvalidExampleFlightImportSpecifiers(
+    scanFlightImportSpecifiers([...exampleSourceFiles.source, ...exampleSourceFiles.test]),
+  );
+  check(
+    errors,
+    'imports Flight APIs through public @flighthq/sdk lanes',
+    invalidFlightImports.length === 0,
+    invalidFlightImports.join(', '),
+  );
 
   const tsconfigPath = join(exampleDir, 'tsconfig.json');
   if (existsSync(tsconfigPath)) {

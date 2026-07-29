@@ -3,8 +3,6 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@flighthq/bitmaptext": "*",
-    "@flighthq/glyphatlas": "*",
     "@flighthq/sdk": "*"
   },
   "scripts": {

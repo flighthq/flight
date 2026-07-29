@@ -4,8 +4,7 @@ import {
   getCamera2DViewMatrix,
   getCamera2DVisibleBounds,
   zoomCamera2DAtScreenPoint,
-} from '@flighthq/camera';
-import { updateCamera2DFollow } from '@flighthq/camera-controls';
+} from '@flighthq/sdk';
 import type { Shape } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -27,6 +26,7 @@ import {
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
+import { updateCamera2DFollow } from '@flighthq/sdk/game';
 
 import { canvas, CANVAS_HEIGHT, CANVAS_WIDTH, render, scale } from './render';
 

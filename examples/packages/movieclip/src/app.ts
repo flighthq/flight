@@ -1,19 +1,3 @@
-import {
-  addMovieClipFrameScript,
-  createMovieClip,
-  getMovieClipCurrentFrame,
-  getMovieClipCurrentLabel,
-  getMovieClipTotalFrames,
-  gotoAndPlayMovieClip,
-  gotoAndStopMovieClip,
-  isMovieClipPlaying,
-  nextFrameMovieClip,
-  playMovieClip,
-  prevFrameMovieClip,
-  setMovieClipSource,
-  stopMovieClip,
-  updateMovieClip,
-} from '@flighthq/movieclip';
 import type { Node2D, Shape } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -31,6 +15,22 @@ import {
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
+import {
+  addMovieClipFrameScript,
+  createMovieClip,
+  getMovieClipCurrentFrame,
+  getMovieClipCurrentLabel,
+  getMovieClipTotalFrames,
+  gotoAndPlayMovieClip,
+  gotoAndStopMovieClip,
+  isMovieClipPlaying,
+  nextFrameMovieClip,
+  playMovieClip,
+  prevFrameMovieClip,
+  setMovieClipSource,
+  stopMovieClip,
+  updateMovieClip,
+} from '@flighthq/sdk/animation';
 
 import { render, scale } from './render';
 

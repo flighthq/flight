@@ -1,9 +1,3 @@
-import {
-  createOrbitCameraController,
-  dollyOrbitCameraController,
-  rotateOrbitCameraController,
-  updateOrbitCameraController,
-} from '@flighthq/camera-controls';
 import type { ImportDiagnostic, Mesh, Scene3DLightsLike, ShadedMaterial } from '@flighthq/sdk';
 import {
   createAmbientLight,
@@ -24,6 +18,12 @@ import {
   setQuaternionFromEuler,
   ShadedMaterialKind,
 } from '@flighthq/sdk';
+import {
+  createOrbitCameraController,
+  dollyOrbitCameraController,
+  rotateOrbitCameraController,
+  updateOrbitCameraController,
+} from '@flighthq/sdk/game';
 
 import { createSyntheticAwd2 } from './createSyntheticAwd2';
 import { canvas, render, scale } from './render';

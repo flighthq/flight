@@ -1,4 +1,3 @@
-import { bakeWgpuEnvironmentIbl, drawWgpuEnvironmentSkybox, drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Environment, Scene3DLightsLike, Node3D, WgpuRenderEffectPipeline } from '@flighthq/sdk';
 import {
   beginWgpuRenderEffectPipeline,
@@ -11,6 +10,7 @@ import {
   renderWgpuBackground,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { bakeWgpuEnvironmentIbl, drawWgpuEnvironmentSkybox, drawWgpuScene3D } from '@flighthq/sdk/rendering';
 
 const pixelRatio = window.devicePixelRatio || 1;
 export const width = 800;

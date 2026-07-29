@@ -4,12 +4,7 @@
     "outDir": "./dist",
     "rootDir": "./src"
   },
-  "references": [
-    { "path": "../../../packages/audio" },
-    { "path": "../../../packages/scene2d-canvas" },
-    { "path": "../../../packages/media" },
-    { "path": "../../../packages/sdk" }
-  ],
+  "references": [{ "path": "../../../packages/sdk" }],
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }

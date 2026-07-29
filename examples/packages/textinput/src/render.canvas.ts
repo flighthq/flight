@@ -1,4 +1,3 @@
-import { enableCanvasTextInput } from '@flighthq/scene2d-canvas';
 import type { Node2D } from '@flighthq/sdk';
 import {
   createCanvasElement,
@@ -21,6 +20,7 @@ import {
   ShapeKind,
   TextLabelKind,
 } from '@flighthq/sdk';
+import { enableCanvasTextInput } from '@flighthq/sdk/rendering';
 
 const pixelRatio = window.devicePixelRatio || 1;
 export const canvas = createCanvasElement(800, 600, pixelRatio);

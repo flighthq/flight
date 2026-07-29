@@ -1,12 +1,3 @@
-import {
-  createCollisionManifold,
-  testAabbAabbCollision,
-  testAabbPolygonCollision,
-  testCircleAabbCollision,
-  testCircleCircleCollision,
-  testCirclePolygonCollision,
-  testPolygonPolygonCollision,
-} from '@flighthq/collision';
 import type { CollisionAabb, CollisionCircle, CollisionManifold, CollisionPolygon, Shape } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -22,6 +13,15 @@ import {
   createShape,
   invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
+import {
+  createCollisionManifold,
+  testAabbAabbCollision,
+  testAabbPolygonCollision,
+  testCircleAabbCollision,
+  testCircleCircleCollision,
+  testCirclePolygonCollision,
+  testPolygonPolygonCollision,
+} from '@flighthq/sdk/game';
 
 import { canvas, render, scale } from './render';
 

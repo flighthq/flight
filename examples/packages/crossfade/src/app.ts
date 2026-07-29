@@ -1,3 +1,18 @@
+import type { Shape, TextLabel } from '@flighthq/sdk';
+import {
+  addNodeChild,
+  appendShapeBeginFill,
+  appendShapeCircle,
+  appendShapeEndFill,
+  appendShapeLineStyle,
+  appendShapeLineTo,
+  appendShapeMoveTo,
+  createDisplayObject,
+  createShape,
+  createTextLabel,
+  invalidateNodeAppearance,
+  invalidateNodeLocalTransform,
+} from '@flighthq/sdk';
 import {
   advanceAnimationLayerStack,
   createAnimationBlendTree,
@@ -14,22 +29,7 @@ import {
   isAnimationStateMachineTransitioning,
   sampleAnimationLayerStack,
   transitionAnimationStateMachine,
-} from '@flighthq/animation';
-import type { Shape, TextLabel } from '@flighthq/sdk';
-import {
-  addNodeChild,
-  appendShapeBeginFill,
-  appendShapeCircle,
-  appendShapeEndFill,
-  appendShapeLineStyle,
-  appendShapeLineTo,
-  appendShapeMoveTo,
-  createDisplayObject,
-  createShape,
-  createTextLabel,
-  invalidateNodeAppearance,
-  invalidateNodeLocalTransform,
-} from '@flighthq/sdk';
+} from '@flighthq/sdk/animation';
 
 import { render, scale } from './render';
 

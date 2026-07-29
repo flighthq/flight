@@ -4,11 +4,5 @@
     "noEmit": true
   },
   "include": ["src/**/*.ts", "vite.config.ts"],
-  "references": [
-    { "path": "../../../packages/camera-controls" },
-    { "path": "../../../packages/picking" },
-    { "path": "../../../packages/scene3d" },
-    { "path": "../../../packages/scene3d-gl" },
-    { "path": "../../../packages/sdk" }
-  ]
+  "references": [{ "path": "../../../packages/sdk" }]
 }

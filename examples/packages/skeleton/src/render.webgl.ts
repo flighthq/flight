@@ -1,4 +1,3 @@
-import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, GlRenderEffectPipeline, Scene3DLightsLike, Node3D } from '@flighthq/sdk';
 import {
   beginGlRenderEffectPipeline,
@@ -10,9 +9,7 @@ import {
   registerStandardPbrGlMaterial,
   renderGlBackground,
 } from '@flighthq/sdk';
-
-// drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel
-// (re-exported from both) and is unavailable there — import the Gl one directly from its package.
+import { drawGlScene3D } from '@flighthq/sdk/rendering';
 
 const pixelRatio = window.devicePixelRatio || 1;
 export const canvas = createGlCanvasElement(800, 600, pixelRatio);

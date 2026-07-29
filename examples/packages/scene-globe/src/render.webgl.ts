@@ -1,4 +1,3 @@
-import { drawGlEnvironmentSkybox, drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, Environment, GlRenderEffectPipeline, Scene3DLightsLike, Node3D } from '@flighthq/sdk';
 import {
   beginGlRenderEffectPipeline,
@@ -10,6 +9,7 @@ import {
   registerStandardPbrGlMaterial,
   renderGlBackground,
 } from '@flighthq/sdk';
+import { drawGlEnvironmentSkybox, drawGlScene3D } from '@flighthq/sdk/rendering';
 
 const pixelRatio = window.devicePixelRatio || 1;
 export const width = 800;
