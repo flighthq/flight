@@ -23,7 +23,7 @@ import {
   registerRenderer,
   registerStandardWgpuMaterial,
   registerWgpuImageTextureResolver,
-  registerWgpuProducedTextureResolver,
+  registerWgpuRenderTextureResolver,
   registerWgpuShapeCommands,
   registerWgpuVideoTextureResolver,
   renderWgpuBackground,
@@ -56,7 +56,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
   registerWgpuImageTextureResolver(state);
-  registerWgpuProducedTextureResolver(state);
+  registerWgpuRenderTextureResolver(state);
   registerWgpuVideoTextureResolver(state);
   registerStandardWgpuMaterial(state);
   // Frame capture lets the verifier read the rendered frame back from the GPU; canvas presentation is
