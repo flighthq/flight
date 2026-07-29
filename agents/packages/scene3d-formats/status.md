@@ -69,10 +69,26 @@ than these two. Full findings are in the handoff to review; the shape of what is
   smaller than their payload; unbounded recursion depth (~45 KB of nested headers overflows the stack);
   duplicate chunks last-win with a bare assignment, so a malformed second VERTICES destroys a good first.
 
-**SEVERITY, honestly.** md5 is on the demo path (`importMd5Mesh` is the composer for a shipped skeletal
-sample) and has the most category-(b) silent-wrong-read findings — highest priority. 3ds and awd2 both had
-a live unrecoverable defect, now closed; their remaining findings are silent-wrong-read, not crash. md2 is
-the least-used and its worst finding fabricates a material name rather than corrupting geometry — lowest.
+**SEVERITY — CORRECTED 2026-07-29, after checking rather than inferring.** My first severity call said
+"md5 is on the demo path (`importMd5Mesh` is the composer for a shipped skeletal sample)". **That was
+wrong.** It was inferred from a description in the codebase map, not verified. Grepping
+`examples/`+`functional/`+`tools/` for every parser entry point: **the only two parsers any example
+invokes are AWD2** (`examples/packages/awd2loading` → `createScene3DFromAwd2`) **and glTF**
+(`examples/packages/formatloading` → `parseGltf`). Nothing in this repo exercises md5, md2, or 3ds; they
+are reachable only through `@flighthq/scene3d-resources`' public `md5Load`/`md2Load`/`threeDsLoad`, so a
+*user* can reach them but no demo does. The corrected ranking:
+
+| parser | reachability | worst finding | priority |
+| --- | --- | --- | --- |
+| **awd2** | **demo path** (`awd2loading`) | unbounded inflate (unrecoverable) — **fixed** | highest; was live on a shipped example |
+| **3ds** | dormant in-repo; public loader | hang on a zero-length chunk (unrecoverable) — **fixed** | high; unrecoverable and trivially triggered |
+| **md5** | dormant in-repo; public loader | recovery-induced reindexing (silent) | **highest remaining unfixed** |
+| **md2** | dormant in-repo; public loader | fabricated material name (silent, cosmetic) | lowest |
+
+The correction does not change what to fix next — md5 still has the worst *unfixed* profile — but it does
+change *why*: it is the worst silent-wrong-read surface, not the most-exercised code. And the two parsers
+that turned out to be genuinely reachable are exactly the two that had unrecoverable defects, which is
+the argument for having audited all four rather than triaging by assumed usage first.
 
 **DOES `resolveGltfReadOffset` GENERALISE?** No, and the audit is unanimous on why: what these parsers
 share is not a bounds *computation* but a bounds *discipline*. glTF resolves a nested strided window
