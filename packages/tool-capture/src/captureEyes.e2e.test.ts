@@ -6,7 +6,8 @@ import { join } from 'node:path';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { captureUrl } from './captureEntry';
+import { launchBrowser } from './captureBrowser';
+import { captureEntry, captureUrl } from './captureEntry';
 import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol';
 
 const pages: Record<string, string> = {
@@ -25,6 +26,14 @@ const pages: Record<string, string> = {
   </script>`,
   '/blank-evidence': `<!doctype html><canvas width="320" height="180"></canvas><div id="error">Renderer failed to initialize</div>`,
   '/flaky': `<!doctype html><canvas width="320" height="180"></canvas><script>
+    const ctx=document.querySelector('canvas').getContext('2d'); ctx.fillStyle='#123'; ctx.fillRect(0,0,320,180); ctx.fillStyle='#0cf'; ctx.fillRect(40,30,240,120);
+  </script>`,
+  '/loop': `<!doctype html><canvas width="320" height="180"></canvas><script>
+    const canvas=document.querySelector('canvas'); const ctx=canvas.getContext('2d'); let frame=0;
+    function draw() { frame++; ctx.fillStyle='#123'; ctx.fillRect(0,0,320,180); ctx.fillStyle='#0cf'; ctx.fillRect(frame,30,240,120); requestAnimationFrame(draw); }
+    requestAnimationFrame(draw);
+  </script>`,
+  '/static': `<!doctype html><canvas width="320" height="180"></canvas><script>
     const ctx=document.querySelector('canvas').getContext('2d'); ctx.fillStyle='#123'; ctx.fillRect(0,0,320,180); ctx.fillStyle='#0cf'; ctx.fillRect(40,30,240,120);
   </script>`,
 };
@@ -92,4 +101,26 @@ describe('capture eyes browser contract', () => {
     expect(diagnostics).toMatchObject({ attempts: 2, blank: false, usable: true });
     expect(diagnostics.attemptErrors.join(' ')).toMatch(/ERR_|failed/i);
   }, 15_000);
+
+  it('drives static pages and waits for the halt outside the halted animation frame queue', async () => {
+    const session = await launchBrowser({ captureFrames: 5, verify: false });
+    try {
+      for (const name of ['loop', 'static']) {
+        const result = await captureEntry({
+          baseUrl,
+          captureFrames: 5,
+          context: session.context,
+          entry: { name, renderers: ['canvas'], route: () => name },
+          outBase: artifactRoot,
+          renderers: ['canvas'],
+          root: artifactRoot,
+          tool: 'examples',
+          verify: false,
+        });
+        expect(result).toBe('ok');
+      }
+    } finally {
+      await session.browser.close();
+    }
+  }, 20_000);
 });

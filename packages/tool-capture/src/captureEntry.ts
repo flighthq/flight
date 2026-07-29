@@ -345,19 +345,28 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
         await page.waitForSelector(selector, { timeout: 8_000 }).catch(() => {});
       }
       if (!verify && captureFrames && captureFrames > 0) {
-        // A one-shot/static scene may never schedule its own rAF. Kick the injected frame controller
-        // twice so deterministic/observe mode can freeze an already-rendered page instead of timing out
-        // waiting for an application loop that does not exist.
+        // A one-shot/static scene may never schedule its own rAF. Keep the injected frame controller
+        // ticking until it freezes the page, so every scene can reach the requested deterministic frame.
+        // launchBrowser counts shared rAF timestamps rather than callbacks, so this driver does not make
+        // an application that already owns an animation loop advance twice as fast.
         await page.evaluate(() => {
-          requestAnimationFrame(() => requestAnimationFrame(() => {}));
+          const flags = window as unknown as { __captureFramesReached?: boolean };
+          const timer = setInterval(() => {
+            if (flags.__captureFramesReached) {
+              clearInterval(timer);
+              return;
+            }
+            requestAnimationFrame(() => {});
+          }, 16);
         });
         earlyObserveIntercept = observe ? await grabInterceptedGlFrame(page) : null;
         const alreadyObserved =
           (earlyObserveIntercept?.coverage ?? (observe ? await measureObservedCanvasCoverage(page) : null) ?? 0) >
           OBSERVE_BLANK_COVERAGE;
         // --frames=N mode: wait until the page has rendered N frames and the halt has frozen it
-        // (see launchBrowser). waitForFunction polls until the page reaches N — no fixed short
-        // timeout that could shoot a varying earlier frame — so frame N is captured deterministically.
+        // (see launchBrowser). Timer polling is required because the halt deliberately stops rAF;
+        // Playwright's default rAF polling would deadlock after the flag becomes true. There is no fixed
+        // short delay that could shoot a varying earlier frame, so frame N is captured deterministically.
         if (!alreadyObserved && observe) {
           const observed = await waitForObservedPixels(page, OBSERVE_WARMUP_TIMEOUT_MS);
           earlyObserveIntercept ??= observed.intercept;
@@ -367,6 +376,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
             () => (window as unknown as { __captureFramesReached?: boolean }).__captureFramesReached === true,
             null,
             {
+              polling: 100,
               timeout: 15_000,
             },
           );

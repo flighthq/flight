@@ -206,6 +206,7 @@ export async function launchBrowser(
       // freeze at frame N), so this changes no committed hash.
       const observeWarmupCeiling = frames + 120;
       let count = 0;
+      let lastCountedFrameTime = -1;
       const realRequestAnimationFrame = window.requestAnimationFrame.bind(window);
       // Expose the un-hijacked rAF so the render verifier can await a genuine presented frame before it
       // reads the canvas back. The override below stops invoking callbacks past the halt frame, so a
@@ -227,7 +228,11 @@ export async function launchBrowser(
             callback(time);
             return;
           }
-          if (count >= frames) {
+          // Browsers invoke every queued rAF callback with the same timestamp for one presented frame.
+          // Count that timestamp once: applications, verifier waits, and the harness frame driver may all
+          // have callbacks queued together, but they must not make an N-frame capture run N times faster.
+          const isNewFrame = time !== lastCountedFrameTime;
+          if (isNewFrame && count >= frames) {
             const targetKind = flags.__ftTarget?.kind;
             const gpuVerifying = verify && (targetKind === 'webgl' || targetKind === 'webgpu');
             let done: boolean;
@@ -295,7 +300,10 @@ export async function launchBrowser(
             }
             // else: still warming up — fall through to render another frame
           }
-          count++;
+          if (isNewFrame) {
+            count++;
+            lastCountedFrameTime = time;
+          }
           callback(time);
         });
     },
