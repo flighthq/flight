@@ -531,6 +531,7 @@ export * from './Snapshot';
 export * from './Socket';
 export * from './SoftKeyboardEasingKind';
 export * from './SphereCollider';
+export * from './Physics2D';
 export * from './Spatial';
 export * from './SpecularGlossinessPbrMaterial';
 export * from './SpineParticleSchema';
