@@ -207,7 +207,7 @@ See [testing conventions](agents/conventions/testing.md) for the full rules, Web
 
 ## Package Map
 
-Scene resource acquisition keeps URL acquisition, synchronous format parsing, scene construction, image-resource resolution, and renderer/GPU realization explicit. `@flighthq/scene3d-resources` `loadScene3DDocumentFrom*Url` functions stop at renderer-neutral `Scene3DDocument`; `resolveScene3DResources` reconciles a working set synchronously, while `loadScene3DResources` adds an operation-scoped Promise/progress boundary.
+Scene resource acquisition keeps URL acquisition, synchronous format parsing, scene construction, content-resource resolution, and renderer/GPU realization explicit. `@flighthq/scene3d-resources` `loadScene3DDocumentFrom*Url` functions stop at renderer-neutral `Scene3DDocument`; `@flighthq/scene2d-resources` provides the same staged boundary for `Scene2DDocument` plus named asset/application slots. In both designs, resolve reconciles a caller-ready working set synchronously, while load adds the operation-scoped Promise/progress boundary.
 
 Core: `@flighthq/types` (header layer — all shared types), `@flighthq/entity` (entity/runtime primitives), `@flighthq/geometry` (rectangles, vectors, matrices, quaternion, bounding volumes (AABB, OBB, sphere, plane, frustum, capsule), Ray3D intersection, closest-point, pools), `@flighthq/math` (scalar utilities — interpolation, angles, random, hashing, statistics; pure free functions), `@flighthq/node` (graph hierarchy, transforms, bounds, appearance), `@flighthq/signals` (typed signals and slots with priority and cancellation).
 

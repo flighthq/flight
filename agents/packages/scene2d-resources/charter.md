@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/scene2d-resources'
-draft: true
+draft: false
 lastDirection: 2026-07-25
 review: ./review.md
 assessment: ./assessment.md
@@ -125,6 +125,15 @@ _Append-only, dated, blessed rulings._
   …) registers *in*. The dispatcher depends on no codec, unused codecs tree-shake, users add their own
   format the same way — dependency points **codec → registry**, exactly like `image-codec`'s
   MIME→decoder table and `registerRenderer`'s kind→renderer table.
+- **[2026-07-29] Built with a strictly synchronous reconcile stage.** `resolveScene2DResources`
+  consumes only caller-ready `Node2D` content and never starts I/O or schedules a Promise.
+  `loadScene2DResources` is the sole operation-scoped asynchronous boundary. This intentionally follows
+  the documented three-stage architecture rather than copying the current 3D implementation's
+  fire-and-forget behavior inside its nominal resolve stage.
+- **[2026-07-29] Import dispatch is explicit registry state.** A
+  `Scene2DDocumentImporterRegistry` starts empty; SVG and Lottie register through separately imported
+  functions, and custom/Rive/SWF codecs use the same last-write-wins kind registry. No codec registers at
+  module load and URL acquisition requires a caller-supplied fetch seam.
 
 ## Open directions
 
