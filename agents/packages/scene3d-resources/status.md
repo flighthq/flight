@@ -2,6 +2,15 @@
 
 Continuity log for `@flighthq/scene3d-resources`. See [charter](charter.md).
 
+## 2026-07-29 — explicit synchronous resolve and progressive update
+
+Split the previously overloaded `resolveScene3DResources` policy atom. Resolve now synchronously returns
+the selected reference groups, subscriber textures, and their resolved/unresolved partition without
+starting work. `updateScene3DResourceStreaming` preserves the full chartered visibility/priority engine,
+resolver-scoped in-flight retention, cancel-on-drop, subscriber fan-out, retry/re-entry, priority, and
+stale-settle behavior under an explicit update-pass name. `loadScene3DResources` remains the eager
+Promise/progress operation. `retryFailedScene3DResources` advances streaming explicitly.
+
 ## 2026-07-22 — explicit document and resource load boundaries
 
 Replaced ambiguous format-only URL names with `loadScene3DDocumentFrom*Url` returning

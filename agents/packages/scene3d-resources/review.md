@@ -28,7 +28,8 @@ proof rather than another larger loader.
   progress, and never resolves images or touches rendering.
 - glTF URL acquisition fetches the main JSON plus every external `.bin` needed for inline geometry;
   external image refs retain the model base path. Other URL format loaders likewise carry their base path.
-- `resolveScene3DResources` remains the synchronous working-set reconciliation/streaming atom.
+- `resolveScene3DResources` is the synchronous working-set reconciliation atom;
+  `updateScene3DResourceStreaming` is the explicit progressive streaming pass.
   `loadScene3DResources` is its deterministic Promise composition, reports unique-reference progress, and
   resolves when selected refs are terminal. Resolver failure signals retain per-resource errors.
 - `createSceneResourceResolver` is empty; `createBuiltInSceneResourceResolver` is the explicit Standard
