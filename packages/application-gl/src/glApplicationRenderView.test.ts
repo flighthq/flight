@@ -22,15 +22,12 @@ vi.mock('@flighthq/node/contract', () => ({
   createViewport: mocks.createViewport,
 }));
 
-vi.mock('./glRenderState', () => ({
+vi.mock('@flighthq/render-gl/contract', () => ({
   createGlRenderState: mocks.createGlRenderState,
-  destroyGlRenderState: mocks.destroyGlRenderState,
-  invalidateGlRenderStateCache: mocks.invalidateGlRenderStateCache,
-}));
-
-vi.mock('./glRenderTarget', () => ({
   createGlRenderTarget: mocks.createGlRenderTarget,
+  destroyGlRenderState: mocks.destroyGlRenderState,
   destroyGlRenderTarget: mocks.destroyGlRenderTarget,
+  invalidateGlRenderStateCache: mocks.invalidateGlRenderStateCache,
   resizeGlRenderTarget: mocks.resizeGlRenderTarget,
 }));
 

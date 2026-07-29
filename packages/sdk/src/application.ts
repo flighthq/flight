@@ -1,5 +1,6 @@
 export * from '@flighthq/app';
 export * from '@flighthq/application';
+export * from '@flighthq/application-gl';
 export * from '@flighthq/capture';
 export * from '@flighthq/clock';
 export * from '@flighthq/debug';

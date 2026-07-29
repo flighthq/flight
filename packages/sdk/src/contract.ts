@@ -3,6 +3,7 @@ export * from '@flighthq/adjustments';
 export * from '@flighthq/animation';
 export * from '@flighthq/app';
 export * from '@flighthq/application';
+export * from '@flighthq/application-gl';
 export * from '@flighthq/assets';
 export * from '@flighthq/audio';
 export * from '@flighthq/binpack';
