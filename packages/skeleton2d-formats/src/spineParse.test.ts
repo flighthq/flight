@@ -1,4 +1,6 @@
-import { TransformMode2D } from '@flighthq/types/contract';
+import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic, MeshAttachment2D, RegionAttachment2D } from '@flighthq/types/contract';
+import { MeshAttachment2DKind, RegionAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { parseSpineSkeleton } from './spineParse';
@@ -92,5 +94,86 @@ describe('parseSpineSkeleton', () => {
     expect(result).not.toBeNull();
     expect(result!.skeleton.bones.length).toBe(0);
     expect(result!.animations).toEqual([]);
+  });
+
+  it('parses slots with resolved bone index, draw-order, region attachment, and color', () => {
+    const doc = {
+      bones: [{ name: 'root' }, { name: 'armBone', parent: 'root' }],
+      slots: [{ name: 'arm', bone: 'armBone', attachment: 'armImage', color: '80c0ffff' }],
+      skins: [
+        {
+          name: 'default',
+          attachments: { arm: { armImage: { type: 'region', x: 1, y: 2, rotation: 30, width: 40, height: 20 } } },
+        },
+      ],
+    };
+    const slots = parseSpineSkeleton(JSON.stringify(doc))!.skeleton.slots!;
+    expect(slots.length).toBe(1);
+    expect(slots[0].name).toBe('arm');
+    expect(slots[0].boneIndex).toBe(1); // 'armBone' resolved
+    expect(slots[0].color).toBe(0x80c0ffff);
+    const region = slots[0].attachment as RegionAttachment2D;
+    expect(region.kind).toBe(RegionAttachment2DKind);
+    expect(region).toMatchObject({ x: 1, y: 2, rotation: 30, width: 40, height: 20, scaleX: 1, scaleY: 1 });
+  });
+
+  it('parses an unweighted mesh attachment (positions local to the bone, skin null)', () => {
+    const doc = {
+      bones: [{ name: 'root' }],
+      slots: [{ name: 's', bone: 'root', attachment: 'm' }],
+      skins: [
+        {
+          name: 'default',
+          attachments: {
+            s: { m: { type: 'mesh', uvs: [0, 0, 1, 0, 1, 1], triangles: [0, 1, 2], vertices: [0, 0, 10, 0, 10, 10] } },
+          },
+        },
+      ],
+    };
+    const mesh = parseSpineSkeleton(JSON.stringify(doc))!.skeleton.slots![0].attachment as MeshAttachment2D;
+    expect(mesh.kind).toBe(MeshAttachment2DKind);
+    expect(mesh.skin).toBeNull();
+    expect(mesh.vertexCount).toBe(3);
+    expect(Array.from(mesh.vertices!)).toEqual([0, 0, 10, 0, 10, 10]);
+    expect(Array.from(mesh.triangles)).toEqual([0, 1, 2]);
+  });
+
+  it('parses a weighted mesh attachment into a Skin2D influence stream', () => {
+    // 1 vertex, 2 influences: bone 0 offset (1,2) w0.25, bone 1 offset (3,4) w0.75. uvs give vertexCount=1.
+    const doc = {
+      bones: [{ name: 'a' }, { name: 'b' }],
+      slots: [{ name: 's', bone: 'a', attachment: 'm' }],
+      skins: [
+        {
+          name: 'default',
+          attachments: {
+            s: { m: { type: 'mesh', uvs: [0, 0], triangles: [], vertices: [2, 0, 1, 2, 0.25, 1, 3, 4, 0.75] } },
+          },
+        },
+      ],
+    };
+    const mesh = parseSpineSkeleton(JSON.stringify(doc))!.skeleton.slots![0].attachment as MeshAttachment2D;
+    expect(mesh.vertices).toBeNull();
+    expect(mesh.skin).not.toBeNull();
+    expect(Array.from(mesh.skin!.influenceCounts)).toEqual([2]);
+    expect(Array.from(mesh.skin!.influences)).toEqual([0, 1, 2, 0.25, 1, 3, 4, 0.75]);
+  });
+
+  it('Skip-crumbs an unmodeled attachment type and an alternate skin', () => {
+    const doc = {
+      bones: [{ name: 'root' }],
+      slots: [{ name: 's', bone: 'root', attachment: 'clip' }],
+      skins: [
+        { name: 'default', attachments: { s: { clip: { type: 'clipping', end: 's', vertexCount: 4, vertices: [] } } } },
+        { name: 'costume2', attachments: {} },
+      ],
+    };
+    const crumbs: ImportDiagnostic[] = collectImportDiagnostics((sink) =>
+      parseSpineSkeleton(JSON.stringify(doc), sink),
+    );
+    expect(crumbs.map((c) => c.kind)).toContain('spine.clipping-attachment-unsupported');
+    expect(crumbs.map((c) => c.kind)).toContain('spine.alternate-skin-unsupported');
+    // The clipping attachment was dropped (not shown on the slot).
+    expect(parseSpineSkeleton(JSON.stringify(doc))!.skeleton.slots![0].attachment).toBeNull();
   });
 });
