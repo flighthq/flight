@@ -98,6 +98,7 @@ export * from '@flighthq/skeleton2d-formats';
 export * from '@flighthq/skeleton3d';
 export * from '@flighthq/snapshot';
 export * from '@flighthq/socket';
+export * from '@flighthq/physics2d';
 export * from '@flighthq/spatial';
 export * from '@flighthq/spring';
 export * from '@flighthq/spritesheet';
