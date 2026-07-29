@@ -16,11 +16,27 @@ import {
 
 // Generic narrow-phase contact test: the `testCollision` dispatcher's contact-resolving twin.
 // Dispatches on the two shapes' `kind`s and writes the full contact manifold pushing **A out of B**.
-// Shapes are canonically ordered by kind rank before dispatch, and the normal is negated when the
-// arguments arrived reversed, exactly as `testCollision` does. Contact points are world-space and so
-// need no such correction — and because the feature ids are assigned against the canonical order,
-// the same pair yields the same ids whichever way round it is passed, which keeps a solver's
-// warm-start cache stable even if the broadphase reports the pair in a different order next frame.
+// Shapes are ordered by kind rank before dispatch, and the normal is negated when the arguments
+// arrived reversed, exactly as `testCollision` does. Contact points are world-space and need no such
+// correction.
+//
+// **Argument order.** Overlap, normal, and depth are order-invariant for every pair (the normal
+// negates, nothing else moves). Contact points and their feature ids are order-invariant only for
+// pairs of DIFFERENT kinds, where the kind rank fixes which shape owns the reference face. For two
+// shapes of the SAME kind the caller's order decides: two coincident faces tie exactly on separation
+// (a box resting squarely on a box is the common case), the tie resolves toward the first argument,
+// and the reference shape is the one whose face the contact points then lie on. Reversing the
+// arguments moves the points to the opposite surface — one penetration depth away, both correct —
+// and renumbers their ids.
+//
+// This is a property of the pair, not a defect to fix here. Resolving it would need a tie-break
+// derived from the shapes' own coordinates, and any such rule is a pure function of values that flips
+// the moment those values cross — reintroducing, at dispatch, the frame-to-frame flapping that the
+// reference-face bias exists to prevent. Stability across frames needs memory of the previous frame,
+// which a stateless narrow phase does not have and a simulation does. So a caller that keys anything
+// on feature identity (a warm-start cache) must pass each pair in a STABLE order of its own — ordering
+// by persistent body identity, not by geometry, since only identity survives motion. `@flighthq/
+// physics2d` orders every pair by body index before it calls.
 //
 // Area-less kinds (`segment`, `point`) and unknown kinds carry no contact — the pair is reported as
 // non-overlapping. The direct per-pair functions remain the hot path.
