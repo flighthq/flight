@@ -160,6 +160,43 @@ describe('parseSpineSkeleton', () => {
     expect(Array.from(mesh.skin!.influences)).toEqual([0, 1, 2, 0.25, 1, 3, 4, 0.75]);
   });
 
+  it('recovers a malformed bone as an aligned placeholder so file-order indices stay valid (read-integrity axis 12)', () => {
+    // The bone array is positionally referenced by weighted-mesh influences, so a malformed entry must hold
+    // its slot rather than drop — else every later bone shifts and those indices point at the wrong bone.
+    const doc = { bones: [{ name: 'a' }, null, { name: 'c' }] };
+    const crumbs: ImportDiagnostic[] = collectImportDiagnostics((sink) =>
+      parseSpineSkeleton(JSON.stringify(doc), sink),
+    );
+    const bones = parseSpineSkeleton(JSON.stringify(doc))!.skeleton.bones;
+    expect(bones.length).toBe(3); // placeholder holds index 1
+    expect(bones[0].name).toBe('a');
+    expect(bones[1].name).toBeNull(); // inert placeholder
+    expect(bones[2].name).toBe('c'); // still at index 2 — NOT shifted down to 1
+    expect(crumbs.map((c) => c.kind)).toContain('spine.malformed-bone-recovered');
+  });
+
+  it('bounds a weighted-vertex stream against its actual length instead of reading past it (read-integrity axis 13)', () => {
+    // vertexCount = 1 (from uvs); the stream declares boneCount 5 but supplies only one (boneIndex,x,y,weight)
+    // quad. The declared count is clamped to what the stream actually holds — no undefined→NaN, no runaway loop.
+    const doc = {
+      bones: [{ name: 'a' }],
+      slots: [{ name: 's', bone: 'a', attachment: 'm' }],
+      skins: [
+        {
+          name: 'default',
+          attachments: { s: { m: { type: 'mesh', uvs: [0, 0], triangles: [], vertices: [5, 0, 1, 2, 0.25] } } },
+        },
+      ],
+    };
+    const crumbs: ImportDiagnostic[] = collectImportDiagnostics((sink) =>
+      parseSpineSkeleton(JSON.stringify(doc), sink),
+    );
+    const mesh = parseSpineSkeleton(JSON.stringify(doc))!.skeleton.slots![0].attachment as MeshAttachment2D;
+    expect(Array.from(mesh.skin!.influenceCounts)).toEqual([1]); // clamped 5 → 1
+    expect(Array.from(mesh.skin!.influences)).toEqual([0, 1, 2, 0.25]); // exactly the one available quad
+    expect(crumbs.map((c) => c.kind)).toContain('spine.weighted-vertices-truncated');
+  });
+
   it('Skip-crumbs an unmodeled attachment type and an alternate skin', () => {
     const doc = {
       bones: [{ name: 'root' }],
