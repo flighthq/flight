@@ -1,6 +1,6 @@
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
-import { TransformMode2D } from '@flighthq/types/contract';
+import type { ImportDiagnostic, RegionAttachment2D } from '@flighthq/types/contract';
+import { RegionAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { parseDragonBonesSkeleton } from './dragonBonesParse';
@@ -103,13 +103,77 @@ describe('parseDragonBonesSkeleton', () => {
     expect(kinds).toContain('dragonbones.inherit-mode-unmapped');
   });
 
-  it('Skip-crumbs additional armatures and the unmodeled slot/skin/animation sections', () => {
+  it('parses slots with resolved bone index, image display, and ColorTransform tint', () => {
+    const doc = {
+      armature: [
+        {
+          bone: [{ name: 'root' }, { name: 'armBone', parent: 'root' }],
+          slot: [{ name: 'arm', parent: 'armBone', displayIndex: 0, color: { rM: 50, gM: 75, bM: 100, aM: 100 } }],
+          skin: [
+            {
+              name: 'default',
+              slot: [{ name: 'arm', display: [{ name: 'armImage', transform: { x: 1, y: 2, skX: 30, skY: 30 } }] }],
+            },
+          ],
+        },
+      ],
+    };
+    const slots = parseDragonBonesSkeleton(JSON.stringify(doc))!.skeleton.slots!;
+    expect(slots.length).toBe(1);
+    expect(slots[0].name).toBe('arm');
+    expect(slots[0].boneIndex).toBe(1); // 'armBone' resolved to its topo-sorted output index
+    // ColorTransform multiply 50/75/100/100 % → RR GG BB AA bytes 0x80 0xbf 0xff 0xff.
+    expect(slots[0].color).toBe(0x80bfffff);
+    const region = slots[0].attachment as RegionAttachment2D;
+    expect(region.kind).toBe(RegionAttachment2DKind);
+    expect(region).toMatchObject({ x: 1, y: 2, rotation: 30, scaleX: 1, scaleY: 1 });
+  });
+
+  it('holds an unmodeled display at its displayIndex slot (null, not dropped) so indices stay aligned', () => {
+    // A mesh display at index 0 must NOT drop, or the image at index 1 would shift to 0 and displayIndex 1
+    // would then address the wrong display (read-integrity axis 12 on the display array).
+    const doc = {
+      armature: [
+        {
+          bone: [{ name: 'root' }],
+          slot: [{ name: 's', parent: 'root', displayIndex: 1 }],
+          skin: [
+            {
+              name: 'default',
+              slot: [
+                {
+                  name: 's',
+                  display: [
+                    { type: 'mesh', name: 'm' },
+                    { name: 'img', transform: { x: 9 } },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const crumbs: ImportDiagnostic[] = collectImportDiagnostics((sink) =>
+      parseDragonBonesSkeleton(JSON.stringify(doc), sink),
+    );
+    expect(crumbs.map((c) => c.kind)).toContain('dragonbones.mesh-display-unsupported');
+    // displayIndex 1 still resolves to the image, not shifted down by the dropped mesh.
+    const region = parseDragonBonesSkeleton(JSON.stringify(doc))!.skeleton.slots![0].attachment as RegionAttachment2D;
+    expect(region.kind).toBe(RegionAttachment2DKind);
+    expect(region.x).toBe(9);
+  });
+
+  it('Skip-crumbs additional armatures, alternate skins, and the unmodeled animation section', () => {
     const doc = {
       armature: [
         {
           bone: [{ name: 'root' }],
           slot: [{ name: 's', parent: 'root' }],
-          skin: [{ slot: [] }],
+          skin: [
+            { name: 'default', slot: [] },
+            { name: 'costume2', slot: [] },
+          ],
           animation: [{ name: 'idle', duration: 1 }],
         },
         { bone: [{ name: 'other' }] },
@@ -120,8 +184,7 @@ describe('parseDragonBonesSkeleton', () => {
     );
     const kinds = crumbs.map((c) => c.kind);
     expect(kinds).toContain('dragonbones.multi-armature-unsupported');
-    expect(kinds).toContain('dragonbones.slot-unsupported');
-    expect(kinds).toContain('dragonbones.skin-unsupported');
+    expect(kinds).toContain('dragonbones.alternate-skin-unsupported');
     expect(kinds).toContain('dragonbones.animation-unsupported');
     // Only the first armature is parsed.
     expect(parseDragonBonesSkeleton(JSON.stringify(doc))!.skeleton.bones[0].name).toBe('root');
