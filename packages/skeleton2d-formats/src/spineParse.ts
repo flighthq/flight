@@ -292,7 +292,9 @@ function indexOfBone(bones: readonly Bone2D[], name: string): number {
 
 // Builds one AnimationClip per Spine animation from its bone rotate/translate/scale/shear timelines.
 // Spine bone timelines are RELATIVE to the setup pose (rotate/translate/shear are offsets, scale is a
-// multiplier) while applyAnimationClipToSkeleton2D writes ABSOLUTE values, so the setup is baked in here.
+// multiplier), and clips are emitted as those RAW relative deltas — `applyAnimationClipToSkeleton2D`
+// composes them onto the setup pose per frame (add / multiply, keyed by `path`). Keeping deltas relative
+// (rather than baking setup into keys) is what lets a mixer blend clips as `setup + Σ wᵢ·deltaᵢ`.
 // Constraint (ik/transform/path), event, deform, draw-order, and slot timelines are recognized-but-
 // unmodeled and Skip-crumbed. (Spine per-keyframe bezier curves approximate to Linear — a P1 fidelity
 // limit noted in the package status.)
@@ -312,21 +314,20 @@ function parseSpineAnimations(
         const boneIndex = indexOfBone(bones, boneName);
         if (boneIndex < 0 || timelinesEntry === null || typeof timelinesEntry !== 'object') continue;
         const timelines = timelinesEntry as Record<string, unknown>;
-        const setup = bones[boneIndex];
         addSpineBoneChannel(channels, timelines.rotate, boneIndex, Skeleton2DAnimationPath.Rotation, 1, (k) => [
-          numberOr(k.value, 0) + setup.rotation,
+          numberOr(k.value, 0),
         ]);
         addSpineBoneChannel(channels, timelines.translate, boneIndex, Skeleton2DAnimationPath.Translation, 2, (k) => [
-          numberOr(k.x, 0) + setup.x,
-          numberOr(k.y, 0) + setup.y,
+          numberOr(k.x, 0),
+          numberOr(k.y, 0),
         ]);
         addSpineBoneChannel(channels, timelines.scale, boneIndex, Skeleton2DAnimationPath.Scale, 2, (k) => [
-          numberOr(k.x, 1) * setup.scaleX,
-          numberOr(k.y, 1) * setup.scaleY,
+          numberOr(k.x, 1),
+          numberOr(k.y, 1),
         ]);
         addSpineBoneChannel(channels, timelines.shear, boneIndex, Skeleton2DAnimationPath.Shear, 2, (k) => [
-          numberOr(k.x, 0) + setup.shearX,
-          numberOr(k.y, 0) + setup.shearY,
+          numberOr(k.x, 0),
+          numberOr(k.y, 0),
         ]);
       }
     }
