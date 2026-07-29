@@ -20,7 +20,7 @@ import {
   prepareScene2DRender,
   QuadBatchKind,
   registerGlImageTextureResolver,
-  registerGlProducedTextureResolver,
+  registerGlRenderTextureResolver,
   registerGlShapeCommands,
   registerGlVideoTextureResolver,
   registerRenderer,
@@ -59,7 +59,7 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
   state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
   registerGlImageTextureResolver(state);
-  registerGlProducedTextureResolver(state);
+  registerGlRenderTextureResolver(state);
   registerGlVideoTextureResolver(state);
   registerStandardGlMaterial(state);
   for (const kind of options.kinds ?? []) {
