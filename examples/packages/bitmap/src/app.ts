@@ -1,5 +1,13 @@
 import type { Node2D } from '@flighthq/sdk';
-import { addNodeChild, createSprite, createDisplayObject, createImageResource, createTexture } from '@flighthq/sdk';
+import {
+  addNodeChild,
+  createSprite,
+  createDisplayObject,
+  createImageResource,
+  createTexture,
+  invalidateNodeAppearance,
+  loadImageResourceFromUrl,
+} from '@flighthq/sdk';
 
 import { render, scale } from './render';
 
@@ -10,10 +18,10 @@ root.scaleY = scale;
 // Gradient square: a colorful linear gradient from top-left to bottom-right.
 
 const gradientBitmap = createSprite();
-gradientBitmap.data.texture = createImageTexture(createGradientImage(128, 128));
 gradientBitmap.x = 60;
 gradientBitmap.y = 60;
 addNodeChild(root, gradientBitmap);
+void loadSpriteImage(gradientBitmap, createGradientImage(128, 128));
 
 // Checkerboard pattern: demonstrates procedural pattern generation.
 
@@ -64,6 +72,14 @@ requestAnimationFrame(enterFrame);
 
 function createImageTexture(source: HTMLCanvasElement) {
   return createTexture({ storage: { dimension: '2d', image: createImageResource(source) } });
+}
+
+async function loadSpriteImage(sprite: ReturnType<typeof createSprite>, source: HTMLCanvasElement): Promise<void> {
+  // A data URL keeps the example self-contained while exercising the same asynchronous image
+  // acquisition API an application uses for a bundled or remote URL.
+  const image = await loadImageResourceFromUrl(source.toDataURL('image/png'));
+  sprite.data.texture = createTexture({ storage: { dimension: '2d', image } });
+  invalidateNodeAppearance(sprite);
 }
 
 function createGradientImage(width: number, height: number): HTMLCanvasElement {

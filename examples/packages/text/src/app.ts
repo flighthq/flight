@@ -1,5 +1,12 @@
 import type { Node2D } from '@flighthq/sdk';
-import { addNodeChild, createDisplayObject, createRichText, createTextLabel } from '@flighthq/sdk';
+import {
+  addNodeChild,
+  createDisplayObject,
+  createRichText,
+  createTextLabel,
+  parseTextMarkup,
+  setRichTextContent,
+} from '@flighthq/sdk';
 
 import { render, scale } from './render';
 
@@ -129,7 +136,7 @@ wrappedSerif.data.text =
 wrappedSerif.data.defaultTextFormat = { font: 'serif', size: 15, color: 0x555555, leading: 4 };
 addNodeChild(root, wrappedSerif);
 
-// Section 4: Styled text — bold, italic, underline via textFormat properties.
+// Section 4: Styled text parsed from the supported markup format.
 
 const headingStyles = createTextLabel();
 headingStyles.x = 30;
@@ -138,33 +145,19 @@ headingStyles.data.text = 'Text Styles';
 headingStyles.data.textFormat = { font: 'sans-serif', size: 18, bold: true, color: 0x222222 };
 addNodeChild(root, headingStyles);
 
-const styleBold = createTextLabel();
-styleBold.x = 30;
-styleBold.y = 373;
-styleBold.data.text = 'Bold text';
-styleBold.data.textFormat = { font: 'sans-serif', size: 16, bold: true, color: 0x333333 };
-addNodeChild(root, styleBold);
-
-const styleItalic = createTextLabel();
-styleItalic.x = 160;
-styleItalic.y = 373;
-styleItalic.data.text = 'Italic text';
-styleItalic.data.textFormat = { font: 'sans-serif', size: 16, italic: true, color: 0x333333 };
-addNodeChild(root, styleItalic);
-
-const styleBoldItalic = createTextLabel();
-styleBoldItalic.x = 300;
-styleBoldItalic.y = 373;
-styleBoldItalic.data.text = 'Bold + Italic';
-styleBoldItalic.data.textFormat = { font: 'sans-serif', size: 16, bold: true, italic: true, color: 0x333333 };
-addNodeChild(root, styleBoldItalic);
-
-const styleUnderline = createTextLabel();
-styleUnderline.x = 470;
-styleUnderline.y = 373;
-styleUnderline.data.text = 'Underlined text';
-styleUnderline.data.textFormat = { font: 'sans-serif', size: 16, underline: true, color: 0x2255aa };
-addNodeChild(root, styleUnderline);
+const markupStyles = createRichText();
+markupStyles.x = 30;
+markupStyles.y = 373;
+markupStyles.data.width = 700;
+markupStyles.data.height = 26;
+markupStyles.data.defaultTextFormat = { font: 'sans-serif', size: 16, color: 0x333333 };
+setRichTextContent(
+  markupStyles,
+  parseTextMarkup(
+    '<b>Bold text</b>   <i>Italic text</i>   <b><i>Bold + Italic</i></b>   <u><font color="#2255aa">Underlined text</font></u>',
+  ),
+);
+addNodeChild(root, markupStyles);
 
 const styleLetterSpacing = createTextLabel();
 styleLetterSpacing.x = 30;
