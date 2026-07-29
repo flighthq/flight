@@ -42,6 +42,7 @@ export * from './App';
 export * from './AppearanceFlags';
 export * from './Application';
 export * from './ApplicationLoopOptions';
+export * from './ApplicationRenderView';
 export * from './ApplicationWindow';
 export * from './AreaLight';
 export * from './AsepriteSchema';
