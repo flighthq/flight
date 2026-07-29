@@ -3,13 +3,16 @@ import {
   createDomRenderState,
   defaultCanvasShapeCommands,
   defaultDomShapeRenderer,
+  defaultDomSpriteRenderer,
   defaultDomTextLabelRenderer,
   prepareScene2DRender,
   registerCanvasShapeCommands,
+  registerDomImageTextureResolver,
   registerRenderer,
   renderDomBackground,
   renderDomScene2D,
   ShapeKind,
+  SpriteKind,
   TextLabelKind,
 } from '@flighthq/sdk';
 
@@ -25,7 +28,9 @@ export const state = createDomRenderState(container, {
 });
 
 registerRenderer(state, ShapeKind, defaultDomShapeRenderer);
+registerRenderer(state, SpriteKind, defaultDomSpriteRenderer);
 registerRenderer(state, TextLabelKind, defaultDomTextLabelRenderer);
+registerDomImageTextureResolver(state);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
 
 export const canvas: HTMLElement = container;

@@ -3,10 +3,13 @@ import {
   addNodeChild,
   addTextureAtlasRegion,
   applyParticleForces,
+  attachPointerInput,
   BlendMode,
   buildParticleCurve,
+  connectSignal,
   createDisplayObject,
   createImageResource,
+  createInputManager,
   createParticleEmitter2D,
   createParticleEmitterConfig,
   createParticleEmitterState,
@@ -18,6 +21,7 @@ import {
   particleColorCurveFromKeyframes,
   updateParticleEmitter2D,
 } from '@flighthq/sdk';
+import { createSpring2D, createSpringConfig, updateSpring2D } from '@flighthq/sdk/animation';
 
 import { canvas, render, scale } from './render';
 
@@ -354,11 +358,14 @@ controlsDiv.appendChild(blendSelect);
 // Mouse tracking — emitter follows the pointer.
 let mouseX = (WIDTH * scale) / 2;
 let mouseY = (HEIGHT * scale) / 2;
-
-canvas.addEventListener('pointermove', (e) => {
+const emitterSpring = createSpring2D(mouseX, mouseY);
+const emitterSpringConfig = createSpringConfig(7, 0.65);
+const inputManager = createInputManager();
+attachPointerInput(inputManager, canvas);
+connectSignal(inputManager.onPointerMove, (pointer) => {
   const rect = canvas.getBoundingClientRect();
-  mouseX = (e.clientX - rect.left) * (WIDTH / rect.width) * scale;
-  mouseY = (e.clientY - rect.top) * (HEIGHT / rect.height) * scale;
+  mouseX = (pointer.x - rect.left) * (WIDTH / rect.width) * scale;
+  mouseY = (pointer.y - rect.top) * (HEIGHT / rect.height) * scale;
 });
 
 let lastTime = performance.now();
@@ -368,9 +375,11 @@ function enterFrame(): void {
   const dt = captureMode ? 1 / 60 : Math.min((now - lastTime) / 1000, 0.05);
   lastTime = now;
 
-  // Snap emitter to mouse position.
-  emitter.x = mouseX;
-  emitter.y = mouseY;
+  // The Flight input stream moves a spring target; the emitter follows with visible damping instead
+  // of snapping directly to DOM pointer events.
+  updateSpring2D(emitterSpring, mouseX, mouseY, emitterSpringConfig, dt);
+  emitter.x = emitterSpring.x.value;
+  emitter.y = emitterSpring.y.value;
   invalidateNodeLocalTransform(emitter);
 
   // World-space emitter bakes spawns through its own node world transform (set above), so nothing to pass.
@@ -382,7 +391,7 @@ function enterFrame(): void {
   invalidateNodeAppearance(countLabel);
 
   render(root);
-  if (!captureMode) requestAnimationFrame(enterFrame);
+  requestAnimationFrame(enterFrame);
 }
 
 invalidateNodeLocalTransform(emitter);

@@ -1,21 +1,36 @@
-import type { CollisionAabb, CollisionManifold, Node2D, Shape } from '@flighthq/sdk';
+import type { CollisionAabb, CollisionManifold, FlowState, Node2D, Shape } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  clearShapeCommands,
+  attachKeyboardInput,
+  connectInputStateToInputManager,
   createCamera2D,
   createCollisionManifold,
   createDisplayObject,
+  createFlowStack,
+  createImageResource,
+  createInputManager,
+  createInputState,
   createMatrix,
   createShape,
+  createSprite,
   createTextLabel,
+  createTexture,
+  createTween,
+  createTweenManager,
+  endInputStateFrame,
+  getActiveFlowState,
   getCamera2DViewMatrix,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
+  KeyCode,
+  pushFlowState,
+  replaceFlowState,
   testAabbAabbCollision,
   updateCamera2DFollow,
+  updateTweens,
 } from '@flighthq/sdk';
 
 import { render, scale } from './render';
@@ -50,6 +65,7 @@ const platformDefs: readonly { x: number; y: number; w: number; h: number; color
 const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
+const captureMode = (window as typeof window & { __flightCapture?: boolean }).__flightCapture === true;
 
 const worldContainer = createDisplayObject();
 addNodeChild(root, worldContainer);
@@ -66,18 +82,24 @@ let velocityX = 0;
 let velocityY = 0;
 let onGround = false;
 
-const keys: Record<string, boolean> = {};
+const inputManager = createInputManager();
+const inputState = createInputState();
+attachKeyboardInput(inputManager, document);
+connectInputStateToInputManager(inputState, inputManager);
 
-document.addEventListener('keydown', (e) => {
-  keys[e.code] = true;
+const playerImage = document.createElement('canvas');
+playerImage.width = PLAYER_WIDTH;
+playerImage.height = PLAYER_HEIGHT;
+const playerContext = playerImage.getContext('2d')!;
+playerContext.fillStyle = '#dd3333';
+playerContext.fillRect(0, 0, PLAYER_WIDTH, PLAYER_HEIGHT);
+playerContext.fillStyle = '#ffd7b5';
+playerContext.fillRect(5, 4, PLAYER_WIDTH - 10, 9);
+const playerSprite = createSprite();
+playerSprite.data.texture = createTexture({
+  storage: { dimension: '2d', image: createImageResource(playerImage) },
 });
-
-document.addEventListener('keyup', (e) => {
-  keys[e.code] = false;
-});
-
-const playerShape = createShape();
-addNodeChild(worldContainer, playerShape);
+addNodeChild(worldContainer, playerSprite);
 
 const platforms: Platform[] = [];
 for (const def of platformDefs) {
@@ -121,40 +143,56 @@ invalidateNodeAppearance(gameOverLabel);
 invalidateNodeLocalTransform(gameOverLabel);
 addNodeChild(uiContainer, gameOverLabel);
 
-type GameState = 'title' | 'playing' | 'gameover';
-let gameState: GameState = 'title';
+const flow = createFlowStack();
+const tweenManager = createTweenManager();
+
+const titleState: FlowState = {
+  name: 'title',
+  onEnter(): void {
+    titleLabel.visible = true;
+    titleLabel.alpha = 0;
+    subtitleLabel.visible = true;
+    gameOverLabel.visible = false;
+    worldContainer.visible = false;
+    createTween(tweenManager, titleLabel, 500, { alpha: 1 });
+  },
+};
+
+const playingState: FlowState = {
+  name: 'playing',
+  onEnter(): void {
+    resetPlayer();
+    titleLabel.visible = false;
+    subtitleLabel.visible = false;
+    gameOverLabel.visible = false;
+    worldContainer.visible = true;
+  },
+};
+
+const gameOverState: FlowState = {
+  name: 'gameover',
+  onEnter(): void {
+    gameOverLabel.visible = true;
+    gameOverLabel.alpha = 0;
+    createTween(tweenManager, gameOverLabel, 350, { alpha: 1 });
+  },
+};
 
 document.addEventListener('click', () => {
-  if (gameState === 'title') {
-    startGame();
-  } else if (gameState === 'gameover') {
-    startGame();
-  }
+  const active = getActiveFlowState(flow);
+  if (active === titleState || active === gameOverState) replaceFlowState(flow, playingState);
 });
 
-function startGame(): void {
-  gameState = 'playing';
+function resetPlayer(): void {
   playerX = 200;
   playerY = 350;
   velocityX = 0;
   velocityY = 0;
   onGround = false;
-
-  titleLabel.visible = false;
-  invalidateNodeAppearance(titleLabel);
-  subtitleLabel.visible = false;
-  invalidateNodeAppearance(subtitleLabel);
-  gameOverLabel.visible = false;
-  invalidateNodeAppearance(gameOverLabel);
-
-  worldContainer.visible = true;
-  invalidateNodeAppearance(worldContainer);
 }
 
 function triggerGameOver(): void {
-  gameState = 'gameover';
-  gameOverLabel.visible = true;
-  invalidateNodeAppearance(gameOverLabel);
+  replaceFlowState(flow, gameOverState);
 }
 
 const manifold: CollisionManifold = createCollisionManifold();
@@ -165,13 +203,18 @@ const platformAabb: CollisionAabb = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
 function updateGame(dt: number): void {
   velocityX = 0;
 
-  if (keys['ArrowLeft'] || keys['KeyA']) {
+  if (inputState.keysDown.has(KeyCode.LEFT) || inputState.keysDown.has(KeyCode.A)) {
     velocityX = -MOVE_SPEED;
   }
-  if (keys['ArrowRight'] || keys['KeyD']) {
+  if (inputState.keysDown.has(KeyCode.RIGHT) || inputState.keysDown.has(KeyCode.D)) {
     velocityX = MOVE_SPEED;
   }
-  if ((keys['ArrowUp'] || keys['KeyW'] || keys['Space']) && onGround) {
+  if (
+    (inputState.keysDown.has(KeyCode.UP) ||
+      inputState.keysDown.has(KeyCode.W) ||
+      inputState.keysDown.has(KeyCode.SPACE)) &&
+    onGround
+  ) {
     velocityY = JUMP_VELOCITY;
     onGround = false;
   }
@@ -228,28 +271,25 @@ function updateGame(dt: number): void {
   worldContainer.scaleY = viewMatrix.d;
   invalidateNodeLocalTransform(worldContainer);
 
-  drawPlayer();
-}
-
-function drawPlayer(): void {
-  clearShapeCommands(playerShape);
-  appendShapeBeginFill(playerShape, 0xdd3333);
-  appendShapeRectangle(playerShape, playerX, playerY, PLAYER_WIDTH, PLAYER_HEIGHT);
-  appendShapeEndFill(playerShape);
-  invalidateNodeAppearance(playerShape);
+  playerSprite.x = playerX;
+  playerSprite.y = playerY;
+  invalidateNodeLocalTransform(playerSprite);
 }
 
 let lastTime = 0;
+pushFlowState(flow, captureMode ? playingState : titleState);
 
 function enterFrame(time: number): void {
   const dt = lastTime === 0 ? 1 / 60 : Math.min((time - lastTime) / 1000, 0.05);
   lastTime = time;
 
-  if (gameState === 'playing') {
+  updateTweens(tweenManager, dt * 1000);
+  if (getActiveFlowState(flow) === playingState) {
     updateGame(dt);
   }
 
   render(root as Node2D);
+  endInputStateFrame(inputState);
   requestAnimationFrame(enterFrame);
 }
 
