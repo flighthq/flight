@@ -12,6 +12,7 @@ export function initBoundsRectangleRuntimeTrait(
   target: HasBoundsRectangleRuntime,
   methods?: Readonly<Partial<MethodsOf<HasBoundsRectangleRuntime>>>,
 ): void {
+  target.authoredBoundsRectangle = null;
   target.boundsRectangle = null;
   target.localBoundsRectangle = null;
   target.worldBoundsRectangle = null;

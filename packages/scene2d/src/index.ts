@@ -1,5 +1,6 @@
 export {
   applyAnimationClipToNode2D,
+  clearNode2DSlotContent,
   cloneSprite,
   computeSpriteLocalBoundsRectangle,
   computeHtmlViewLocalBoundsRectangle,
@@ -10,10 +11,13 @@ export {
   createScene2D,
   enableScene2DSignals,
   getScene2DRoot,
+  getNode2DSlotContent,
   getScene2DSignals,
   isNode2D,
   setSpriteTexture,
   setHtmlViewSize,
   setNode2DClip,
+  setNode2DLinkage,
+  setNode2DSlotContent,
   setScene2DSize,
 } from './contract';

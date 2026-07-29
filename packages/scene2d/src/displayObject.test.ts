@@ -3,6 +3,7 @@ import { getEntityRuntime } from '@flighthq/entity/contract';
 import {
   addNodeColorAdjustment,
   getNodeColorAdjustments,
+  getNodeParent,
   setNodeColorAdjustments,
   setNodeColorAdjustmentsTint,
 } from '@flighthq/node/contract';
@@ -10,12 +11,16 @@ import type { BoundsNode, Node2D, Node2DData, Node2DRuntime, PartialNode, Rectan
 import { BlendMode, DisplayObjectKind, Node2DTraitsKey } from '@flighthq/types/contract';
 
 import {
+  clearNode2DSlotContent,
   createDisplayObject,
   createNode2D,
   createNode2DRuntime,
   getNode2DRuntime,
+  getNode2DSlotContent,
   isNode2D,
   setNode2DClip,
+  setNode2DLinkage,
+  setNode2DSlotContent,
 } from './displayObject';
 
 function getRuntime_(obj: Node2D): Node2DRuntime {
@@ -47,6 +52,17 @@ describe('addNodeColorAdjustment', () => {
   });
 });
 
+describe('clearNode2DSlotContent', () => {
+  it('detaches and returns only the managed content', () => {
+    const slot = createDisplayObject();
+    const content = createDisplayObject();
+    setNode2DSlotContent(slot, content);
+    expect(clearNode2DSlotContent(slot)).toBe(content);
+    expect(getNode2DSlotContent(slot)).toBeNull();
+    expect(getNodeParent(content)).toBeNull();
+  });
+});
+
 describe('createDisplayObject', () => {
   let displayObject: Node2D;
 
@@ -58,6 +74,7 @@ describe('createDisplayObject', () => {
     expect(displayObject.alpha).toBe(1);
     expect(displayObject.blendMode).toBeNull();
     expect(displayObject.name).toBeNull();
+    expect(displayObject.linkage).toBeNull();
     expect(displayObject.visible).toBe(true);
     expect(displayObject.kind).toBe(DisplayObjectKind);
   });
@@ -67,6 +84,7 @@ describe('createDisplayObject', () => {
       alpha: 2,
       blendMode: BlendMode.Darken,
       name: 'foo',
+      linkage: 'Game.Foo',
       rotation: 45,
       scaleX: 2,
       scaleY: 3,
@@ -78,6 +96,7 @@ describe('createDisplayObject', () => {
     expect(obj.alpha).toStrictEqual(base.alpha);
     expect(obj.blendMode).toStrictEqual(base.blendMode);
     expect(obj.name).toStrictEqual(base.name);
+    expect(obj.linkage).toStrictEqual(base.linkage);
     expect(obj.rotation).toStrictEqual(base.rotation);
     expect(obj.scaleX).toStrictEqual(base.scaleX);
     expect(obj.scaleY).toStrictEqual(base.scaleY);
@@ -146,6 +165,12 @@ describe('getNode2DRuntime', () => {
   });
 });
 
+describe('getNode2DSlotContent', () => {
+  it('returns null before content is assigned', () => {
+    expect(getNode2DSlotContent(createDisplayObject())).toBeNull();
+  });
+});
+
 describe('getNodeColorAdjustments', () => {
   it('defaults to null on a fresh node', () => {
     expect(getNodeColorAdjustments(createDisplayObject())).toBeNull();
@@ -189,6 +214,29 @@ describe('setNode2DClip', () => {
       version: 0,
     });
     expect(getRuntime_(obj).appearanceId).not.toBe(idBefore);
+  });
+});
+
+describe('setNode2DLinkage', () => {
+  it('sets and clears the authored component type', () => {
+    const obj = createDisplayObject();
+    setNode2DLinkage(obj, 'Game.Avatar');
+    expect(obj.linkage).toBe('Game.Avatar');
+    setNode2DLinkage(obj, null);
+    expect(obj.linkage).toBeNull();
+  });
+});
+
+describe('setNode2DSlotContent', () => {
+  it('parents content and returns the previous content when replacing it', () => {
+    const slot = createDisplayObject();
+    const first = createDisplayObject();
+    const second = createDisplayObject();
+    expect(setNode2DSlotContent(slot, first)).toBeNull();
+    expect(getNodeParent(first)).toBe(slot);
+    expect(setNode2DSlotContent(slot, second)).toBe(first);
+    expect(getNodeParent(first)).toBeNull();
+    expect(getNodeParent(second)).toBe(slot);
   });
 });
 

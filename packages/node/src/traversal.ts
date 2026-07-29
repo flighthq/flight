@@ -43,6 +43,16 @@ export function findNodeByName<Traits extends object = NodeTraits>(
   return findNode(source, (node) => node.name === name);
 }
 
+export function findNodesByName<Traits extends object = NodeTraits>(
+  source: Readonly<Node<Traits>>,
+  name: string,
+  out: NodeOf<Traits>[],
+): void {
+  forEachNodeDescendant(source, (node) => {
+    if (node.name === name) out.push(node as NodeOf<Traits>);
+  });
+}
+
 /**
  * Walks upward from `source` toward the root, calling `callback` for each ancestor. If `callback`
  * returns `false`, the walk stops early. The source node itself is not visited.
