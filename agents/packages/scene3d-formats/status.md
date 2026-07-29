@@ -1,6 +1,6 @@
 ---
 package: "@flighthq/scene3d-formats"
-updated: "2026-07-25"
+updated: "2026-07-29"
 by: builder
 ---
 
@@ -10,6 +10,102 @@ by: builder
 > watch next. Incoming status documents land here.
 
 <!-- newest entry on top -->
+
+## 2026-07-29 — Read-geometry integrity: the validation census re-derived on the right axes (builder, review-directed)
+
+review2 re-gated the Step D census on merged develop and found two cells it had reported closed while the
+underlying property was never checked. Both are the silent-wrong-read class the census declared shut. A third
+site of the same class turned up while fixing them.
+
+**THE AXIS ERROR — what actually went wrong, since it matters more than the patch.** The old census was
+`consumer × type-validated × window-bounded × fault→role`, 13 rows, every cell ticked. Four faults compounded:
+
+1. **It was derived from the patch, not from the read.** Its columns were the names of the three fixes that
+   had just landed, so it could only ever ask "did I do the thing I did?". A census whose axes come from the
+   remedy cannot surface what the remedy missed. The axes have to come from _what must hold for this read to
+   address the right bytes_, enumerated before looking at the code.
+2. **13 rows over 3 real read sites.** The rows were accessor _consumers_ (POSITION, NORMAL, indices, IBM,
+   animation input/output, morph…), but every one of them reaches bytes through the same `readAccessor` base
+   read. Geometry is a property of the READ SITE; only `fault→role` is a property of the consumer. Ticking
+   `window✓` thirteen times was one belief restated thirteen times — it read as breadth and supplied none,
+   and the repetition is exactly what made "every cell closed" feel earned.
+3. **`window-bounded` was one checkbox over two independent bounds.** A span is contained by its start AND
+   its end. The upper bound was implemented, so the box was ticked; the lower bound was never written and
+   never missed. A negative `byteOffset` walks the read backward out of the declared view and every
+   upper-bound test still passes, because the read ends where it always did.
+4. **`type-validated` was mistaken for element-width integrity.** The type axis proves the accessor's
+   _declared_ element type is what the consumer expects. It says nothing about whether the declared _layout_
+   delivers that element intact — `byteStride` lives on the bufferView, not the accessor, so it can contradict
+   the type without the type ever being wrong. A VEC3 over a 4-byte stride is `type✓ window✓` and imports
+   overlapping garbage.
+
+Under all four sits one unexamined assumption: **the spec declares these offsets/lengths/strides/counts to be
+nonnegative integers and the TypeScript schema repeats it, so I read the declaration as a guarantee.** There is
+no runtime schema validator behind the parse. Every blocker below reduces to that one belief.
+
+**FIXED, structurally.** A single `resolveGltfReadOffset` now resolves every strided read — base accessor,
+sparse indices, sparse values — proving all three properties before a byte is touched, returning the absolute
+offset or `-1`; callers classify by role exactly as before. `isGltfByteCount` is the shared nonnegative-integer
+predicate. Element width and count are proven in `readAccessor` _before_ the allocation they size. Closed:
+
+- **lower bound (review2 blocker 1)** — `baseOffset` was only ever compared against the upper limit. A decoy
+  before the view plus `accessor.byteOffset: -12` imported it as vertex data with zero diagnostics. Identical
+  hole on the sparse values lane (a bad override Recover-skips; the base data is still good).
+- **element width / stride (review2 blocker 2)** — any positive `byteStride` won, with no `stride >=
+  elementByteSize` check. Now honored verbatim and rejected when narrower, rather than silently retightened;
+  an absent or 0 stride still means tightly packed (0 is out-of-spec but common exporter shorthand).
+- **unknown `type` / `componentType`** — the width tables return `undefined`, which propagates as NaN through
+  every bound test and makes each one _pass_, then `readComponent` falls through to `getFloat32`. Found while
+  re-deriving, not reported.
+- **malformed `count`** — a fractional count silently truncates the allocation (2.5 VEC3 → 7 floats) while the
+  read loop runs three times, so the last vertex writes off the end and a fractional vertex count flows
+  downstream; a negative count throws RangeError out of the whole import. Found while re-deriving.
+- **image bufferView slice (third site, not reported)** — the old census ticked this `✓ (Uint8Array.slice)`.
+  Slice cannot overrun, which is true and irrelevant: a NEGATIVE start is not out-of-bounds, it is a different
+  addressing mode that silently retargets the read to the buffer's tail. The API was checked for throwing, not
+  for wrong-addressing — the same axis error wearing a different disguise.
+
+`gltf.accessor-past-buffer` → **`gltf.accessor-invalid-read`** and `gltf.sparse-past-buffer` →
+**`gltf.sparse-invalid-read`**: the old names describe one direction of one of the three properties now
+enforced, so they would have actively misled anyone debugging an underrun or a stride fault.
+
+**RE-DERIVED CENSUS.** Two tables, because the two axis families belong to different subjects — conflating
+them is what produced the phantom breadth in fault 2 above.
+
+_Read sites × geometry properties_ (every site that computes a byte address from JSON numbers):
+
+| read site | width sound | offsets ≥ 0 ∧ integral | span ends in window ∧ buffer | count sound |
+| --- | --- | --- | --- | --- |
+| accessor base read (`readAccessor`, all 7 consumers) | ✓ type + componentType known, stride ≥ element | ✓ | ✓ | ✓ |
+| sparse index read | ✓ componentType known, no stride permitted | ✓ | ✓ | ✓ |
+| sparse value read | ✓ componentType known, no stride permitted | ✓ | ✓ | ✓ |
+| image bufferView slice | n/a (opaque bytes) | ✓ | ✓ (`slice` clamps upward) | n/a |
+| GLB chunk reads | n/a (fixed 4-byte header fields) | ✓ (uint32-sourced, unsigned by construction) | ✓ header/length guards | n/a |
+
+_Consumers × fault→role_ (unchanged by this work; the axis that IS per-consumer):
+
+| consumer | expected type | fault → role |
+| --- | --- | --- |
+| primitive POSITION | VEC3 | count0/fault → primitive Drop |
+| NORMAL / TANGENT / TEXCOORD_0 | VEC3 / VEC4 / VEC2 | fault → Recover, absent |
+| JOINTS_0 / WEIGHTS_0 | VEC4 / VEC4 | fault → Recover, unskinned |
+| primitive indices | SCALAR | fault → primitive Drop |
+| skin inverseBindMatrices | MAT4 | fault/short → identity Recover |
+| animation input (times) | SCALAR | fault → channel Drop |
+| animation output | VEC4/VEC3/SCALAR by path | fault → channel Drop |
+| morph POSITION delta | VEC3 | fault → target/whole-morph Drop |
+| morph NORMAL / TANGENT delta | VEC3 | fault → Recover, absent |
+| sparse destination index | < accessor.count | out-of-range → Recover, skip override |
+| image bufferView | — (bytes) | unreadable window → image Drop |
+
+Five regression probes, each verified to FAIL against the pre-fix parser (four with zero diagnostics emitted —
+the silent-corruption signature — and one, the negative count, throwing out of the import). scene-formats
+509/509 (gltfParse 128/128), `npm run check scene3d-formats` exit 0.
+
+**WHAT REMAINS UNPROVEN.** These fixes make each read address the bytes the file _declares_. Nothing here can
+tell whether those bytes are the ones the file's author _meant_ — a well-formed accessor pointing at the wrong
+bufferView is still imported faithfully. That is not a gap to close in the parser; it is the boundary of what
+read-integrity validation can assert, and it should not be re-declared as a closed cell by a future census.
 
 ## 2026-07-25 — Diagnostics honesty capstone: uniformity audit + sweep-safe silent-drop batch (builder, review-directed)
 
@@ -110,6 +206,8 @@ census (below) surfaced and closed everything in one pass:
   translation/scale VEC3, weights SCALAR) via `GLTF_ANIMATION_OUTPUT_TYPES`; a mismatch drops the channel.
 
 VALIDATION CENSUS (accessor consumer × type-validated × window-bounded × fault→role) — every cell closed:
+**SUPERSEDED 2026-07-29 — this table's "every cell closed" was false; its AXES were wrong. See the
+2026-07-29 read-geometry entry at the top for what it missed and why. Kept as written for the record.**
 | consumer | expected type | type✓ | window✓ | fault → role |
 | --- | --- | --- | --- | --- |
 | primitive POSITION | VEC3 | ✓ | ✓ | count0/fault → primitive Drop |

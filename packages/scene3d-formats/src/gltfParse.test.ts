@@ -2006,7 +2006,7 @@ describe('gltf diagnostics coverage', () => {
     expect(crumb!.origin).toBe('buildGltfDocument');
   });
 
-  it('recovers and reports gltf.sparse-past-buffer for an oversized sparse count', () => {
+  it('recovers and reports gltf.sparse-invalid-read for an oversized sparse count', () => {
     // A sparse.count far larger than the backing bufferViews can hold would read past the DataView and throw;
     // the bounds guard skips the override and keeps the base accessor data — the mesh survives with its base
     // vertices (Recover), never throws.
@@ -2018,7 +2018,7 @@ describe('gltf diagnostics coverage', () => {
     };
     const diagnostics: ImportDiagnostic[] = [];
     const scene = createScene3DFromGltf(doc, diagnostics);
-    const crumb = findGltfDiagnostic(diagnostics, 'gltf.sparse-past-buffer');
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.sparse-invalid-read');
     expect(crumb).toBeDefined();
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
     expect(crumb!.origin).toBe('buildGltfDocument');
@@ -2123,6 +2123,126 @@ describe('gltf diagnostics coverage', () => {
     expect(isMesh(getNodeChildren(scene.root)[0] as Node3D)).toBe(false);
   });
 
+  it('drops the primitive when the POSITION accessor starts before its declared bufferView window', () => {
+    // The lower bound is the half of window containment an upper-bound check cannot see. A decoy sits in the
+    // buffer immediately before POSITION's view; a negative accessor byteOffset walks the read back onto it,
+    // and every "does it fit?" test still passes because the read ENDS inside the window. Unguarded, the
+    // parser imports the decoy as vertex data with no diagnostic at all.
+    const decoy = new Float32Array([91, 92, 93]);
+    const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    const doc: GltfDocument = {
+      accessors: [{ bufferView: 0, byteOffset: -12, componentType: 5126, count: 3, type: 'VEC3' }],
+      asset: { version: '2.0' },
+      bufferViews: [{ buffer: 0, byteLength: positions.byteLength, byteOffset: decoy.byteLength }],
+      buffers: [
+        { byteLength: decoy.byteLength + positions.byteLength, uri: toDataUri(bytesOf(decoy), bytesOf(positions)) },
+      ],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0 } }] }],
+      nodes: [{ mesh: 0 }],
+      scene: 0,
+      scenes: [{ nodes: [0] }],
+    };
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createScene3DFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.primitive-no-position');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(isMesh(getNodeChildren(scene.root)[0] as Node3D)).toBe(false);
+  });
+
+  it('drops the primitive when the bufferView byteStride is narrower than one element', () => {
+    // byteStride 4 against a 12-byte VEC3 element: every bound holds — three strided elements end 20 bytes
+    // in, inside the declared view — but consecutive elements OVERLAP, so vertex 2 would import the tail of
+    // vertex 1 shifted by one float. Width is an invariant the window bounds cannot express.
+    const packed = new Float32Array([0, 0, 0, 7, 8]);
+    const doc: GltfDocument = {
+      accessors: [{ bufferView: 0, componentType: 5126, count: 3, type: 'VEC3' }],
+      asset: { version: '2.0' },
+      bufferViews: [{ buffer: 0, byteLength: packed.byteLength, byteOffset: 0, byteStride: 4 }],
+      buffers: [{ byteLength: packed.byteLength, uri: toDataUri(bytesOf(packed)) }],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0 } }] }],
+      nodes: [{ mesh: 0 }],
+      scene: 0,
+      scenes: [{ nodes: [0] }],
+    };
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createScene3DFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.primitive-no-position');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(isMesh(getNodeChildren(scene.root)[0] as Node3D)).toBe(false);
+  });
+
+  it('drops the primitive when the POSITION accessor count is not a whole nonnegative number', () => {
+    // The count sizes the allocation, and neither malformed value is reachable by a bounds check. A
+    // FRACTIONAL count silently truncates the typed array (2.5 VEC3 → 7 floats) while the read loop still
+    // runs three times, so the last vertex writes off the end and vanishes and a fractional vertex count
+    // flows downstream. A NEGATIVE count throws RangeError out of the allocation and takes the entire
+    // import with it. Validating before allocating turns both into an ordinary per-primitive Drop.
+    for (const count of [2.5, -3]) {
+      const doc = makeTriangleGltf();
+      doc.accessors![0].count = count;
+      const diagnostics: ImportDiagnostic[] = [];
+      const scene = createScene3DFromGltf(doc, diagnostics);
+      const crumb = findGltfDiagnostic(diagnostics, 'gltf.primitive-no-position');
+      expect(crumb).toBeDefined();
+      expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+      expect(isMesh(getNodeChildren(scene.root)[0] as Node3D)).toBe(false);
+    }
+  });
+
+  it('recovers and reports gltf.sparse-invalid-read for a sparse values read starting before its window', () => {
+    // The same lower-bound hole on the override lane: a decoy precedes the values view and a negative
+    // sparse.values.byteOffset reads it as vertex 1's replacement. The base accessor data is intact, so the
+    // override is skipped and the mesh keeps its base vertices — Recover, not Drop.
+    const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    const sparseIndices = new Uint16Array([1]);
+    const decoy = new Float32Array([91, 92, 93]);
+    const sparseValues = new Float32Array([9, 9, 9]);
+    const posLen = positions.byteLength;
+    const idxLen = sparseIndices.byteLength;
+    const doc: GltfDocument = {
+      accessors: [
+        {
+          bufferView: 0,
+          componentType: 5126,
+          count: 3,
+          sparse: {
+            count: 1,
+            indices: { bufferView: 1, componentType: 5123 },
+            values: { bufferView: 2, byteOffset: -12 },
+          },
+          type: 'VEC3',
+        },
+      ],
+      asset: { version: '2.0' },
+      bufferViews: [
+        { buffer: 0, byteLength: posLen, byteOffset: 0 },
+        { buffer: 0, byteLength: idxLen, byteOffset: posLen },
+        { buffer: 0, byteLength: sparseValues.byteLength, byteOffset: posLen + idxLen + decoy.byteLength },
+      ],
+      buffers: [
+        {
+          byteLength: posLen + idxLen + decoy.byteLength + sparseValues.byteLength,
+          uri: toDataUri(bytesOf(positions), bytesOf(sparseIndices), bytesOf(decoy), bytesOf(sparseValues)),
+        },
+      ],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0 } }] }],
+      nodes: [{ mesh: 0 }],
+      scene: 0,
+      scenes: [{ nodes: [0] }],
+    };
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createScene3DFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.sparse-invalid-read');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
+    const p = { x: 0, y: 0, z: 0 };
+    getMeshGeometryVertexPosition(p, geometry, 1);
+    expect([p.x, p.y, p.z]).toEqual([1, 0, 0]); // the base value, not the decoy
+  });
+
   it('aggregates repeated accessor-not-found recoveries into one crumb with a count', () => {
     const doc = makeTriangleGltf();
     // POSITION stays valid so the primitive survives; two non-position attributes point at a missing
@@ -2164,6 +2284,26 @@ describe('gltf diagnostics coverage', () => {
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
     expect(crumb!.origin).toBe('buildGltfDocument');
     expect(crumb!.detail?.firstBufferView).toBe(9);
+  });
+
+  it('drops and reports gltf.image-bufferview-out-of-range for an image bufferView starting before its buffer', () => {
+    // `Uint8Array.slice` is bounds-safe upward but a NEGATIVE start counts back from the END of the buffer,
+    // so an out-of-spec byteOffset silently hands the decoder unrelated tail bytes instead of the declared
+    // window. The same lower-bound rule the accessor reads apply covers the image lane.
+    const payload = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]);
+    const doc: GltfDocument = {
+      asset: { version: '2.0' },
+      bufferViews: [{ buffer: 0, byteLength: 4, byteOffset: -4 }],
+      buffers: [{ byteLength: payload.byteLength, uri: toDataUri(payload) }],
+      images: [{ bufferView: 0, mimeType: 'image/png' }],
+      scenes: [],
+    };
+    const diagnostics: ImportDiagnostic[] = [];
+    createScene3DFromGltf(doc, diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.image-bufferview-out-of-range');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.detail?.firstImage).toBe(0);
   });
 
   it('drops and reports gltf.image-no-source for an image with neither uri nor bufferView', () => {

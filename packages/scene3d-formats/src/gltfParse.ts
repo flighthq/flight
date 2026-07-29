@@ -46,6 +46,7 @@ import type {
   GltfImportOptions,
   GltfAccessor,
   GltfBuffer,
+  GltfBufferView,
   GltfComponentType,
   GltfDocument,
   GltfImage,
@@ -988,7 +989,18 @@ function buildGltfImageResourceReference(
       });
       return null;
     }
+    // `Uint8Array.slice` is bounds-safe at the upper end but not the lower: a negative start counts back
+    // from the END of the buffer, so an out-of-spec byteOffset would hand the decoder unrelated tail bytes
+    // instead of the declared window, with no signal. The window is validated in both directions first —
+    // the same nonnegative-integer rule the accessor reads apply, here against the buffer the slice indexes.
     const start = bufferView.byteOffset ?? 0;
+    if (!isGltfByteCount(start) || !isGltfByteCount(bufferView.byteLength)) {
+      tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.image-bufferview-out-of-range', '', {
+        firstBufferView: image.bufferView,
+        firstImage: imageIndex,
+      });
+      return null;
+    }
     const bytes = buffer.slice(start, start + bufferView.byteLength);
     return buildEmbeddedImageResourceReference(bytes, image.mimeType ?? detectImageMimeType(bytes));
   }
@@ -1425,8 +1437,19 @@ function readAccessor(
     };
   }
 
+  // Element width and element count decide the allocation, so both are proven before it. An unrecognized
+  // `type` or `componentType` leaves the width undefined, which propagates as NaN through every later
+  // bound test and makes each one pass; a fractional or negative `count` throws RangeError out of the
+  // whole import at the typed-array allocation below.
   const componentCount = TYPE_COMPONENTS[accessor.type];
   const componentByteSize = COMPONENT_BYTE_SIZE[accessor.componentType];
+  if (!isGltfByteCount(componentCount) || !isGltfByteCount(componentByteSize) || !isGltfByteCount(accessor.count)) {
+    return {
+      count: 0,
+      data: new Float32Array(0),
+      fault: { detail: { firstAccessor: accessorIndex }, kind: 'gltf.accessor-invalid-read' },
+    };
+  }
   const normalize = accessor.normalized === true && accessor.componentType !== 5126;
   const total = accessor.count * componentCount;
   const out = normalize ? new Float32Array(total) : createComponentArray(accessor.componentType, total);
@@ -1448,20 +1471,23 @@ function readAccessor(
       };
     }
     const elementByteSize = componentCount * componentByteSize;
-    const stride = view.byteStride !== undefined && view.byteStride > 0 ? view.byteStride : elementByteSize;
-    const baseOffset = bytes.byteOffset + (view.byteOffset ?? 0) + (accessor.byteOffset ?? 0);
-    // The read must stay within BOTH the declared bufferView extent and the real backing buffer. Guarding
-    // only the buffer end lets an accessor overrun a short bufferView into unrelated bytes of a longer buffer;
-    // guard the last component's end against the tighter of the two and bail with empty rather than throwing
-    // or reading past the declared view.
-    const viewEnd = bytes.byteOffset + (view.byteOffset ?? 0) + view.byteLength;
-    const readLimit = Math.min(viewEnd, bytes.byteOffset + bytes.byteLength);
-    const lastByteEnd = accessor.count > 0 ? baseOffset + (accessor.count - 1) * stride + elementByteSize : baseOffset;
-    if (lastByteEnd > readLimit) {
+    // An absent byteStride means tightly packed, and a declared 0 is an out-of-spec but common exporter
+    // shorthand for the same thing. Any other declared value is honored verbatim — including one narrower
+    // than an element, which resolveGltfReadOffset rejects rather than silently retightening.
+    const stride = view.byteStride === undefined || view.byteStride === 0 ? elementByteSize : view.byteStride;
+    const baseOffset = resolveGltfReadOffset(
+      bytes,
+      view,
+      accessor.byteOffset ?? 0,
+      elementByteSize,
+      stride,
+      accessor.count,
+    );
+    if (baseOffset < 0) {
       return {
         count: 0,
         data: new Float32Array(0),
-        fault: { detail: { firstAccessor: accessorIndex }, kind: 'gltf.accessor-past-buffer' },
+        fault: { detail: { firstAccessor: accessorIndex }, kind: 'gltf.accessor-invalid-read' },
       };
     }
     const dataView = new DataView(bytes.buffer);
@@ -1529,27 +1555,40 @@ function applyAccessorSparse(
   const indexView = new DataView(indexBytes.buffer);
   const valueView = new DataView(valueBytes.buffer);
   const indexSize = COMPONENT_BYTE_SIZE[sparse.indices.componentType];
-  const indexBase = indexBytes.byteOffset + (indicesView.byteOffset ?? 0) + (sparse.indices.byteOffset ?? 0);
   const valueSize = COMPONENT_BYTE_SIZE[valueComponentType];
-  const valueBase = valueBytes.byteOffset + (valuesView.byteOffset ?? 0) + (sparse.values.byteOffset ?? 0);
 
-  // Guard the packed index and value reads against the tighter of each sparse bufferView's declared window
-  // and its real buffer length (an oversized sparse.count or a short window would otherwise read past the
-  // DataView and throw, or pull unrelated bytes). The base accessor data is already valid, so a bad override
-  // is skipped and the accessor survives with its base values — Recover.
-  const indexLimit = Math.min(
-    indexBytes.byteOffset + (indicesView.byteOffset ?? 0) + indicesView.byteLength,
-    indexBytes.byteOffset + indexBytes.byteLength,
-  );
-  const valueLimit = Math.min(
-    valueBytes.byteOffset + (valuesView.byteOffset ?? 0) + valuesView.byteLength,
-    valueBytes.byteOffset + valueBytes.byteLength,
-  );
-  if (
-    indexBase + sparse.count * indexSize > indexLimit ||
-    valueBase + sparse.count * componentCount * valueSize > valueLimit
-  ) {
-    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.sparse-past-buffer', '', {
+  // Sparse index and value bufferViews are tightly packed by spec — byteStride must not be declared on
+  // them — so a declared stride means the file's real element layout is not the one this reads. Reject the
+  // override rather than pull tight bytes out of a strided view.
+  //
+  // Both reads are then resolved through the same geometry guard the base read uses: each stays inside its
+  // own declared window and its real buffer. The base accessor data is already valid, so a bad override is
+  // skipped and the accessor survives with its base values — Recover.
+  const indexBase =
+    indicesView.byteStride === undefined
+      ? resolveGltfReadOffset(
+          indexBytes,
+          indicesView,
+          sparse.indices.byteOffset ?? 0,
+          indexSize,
+          indexSize,
+          sparse.count,
+        )
+      : -1;
+  const valueElementSize = componentCount * valueSize;
+  const valueBase =
+    valuesView.byteStride === undefined
+      ? resolveGltfReadOffset(
+          valueBytes,
+          valuesView,
+          sparse.values.byteOffset ?? 0,
+          valueElementSize,
+          valueElementSize,
+          sparse.count,
+        )
+      : -1;
+  if (indexBase < 0 || valueBase < 0) {
+    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.sparse-invalid-read', '', {
       firstCount: sparse.count,
     });
     return;
@@ -1579,6 +1618,46 @@ function applyAccessorSparse(
 }
 
 // Reads one component at a byte offset, little-endian per the glTF spec.
+// Every offset, length, stride, and count in a glTF accessor read is a byte quantity coming from untrusted
+// JSON. The spec declares them nonnegative integers and the TypeScript view of the schema repeats that, but
+// neither is checked at runtime — there is no JSON schema validator behind the parse — so nothing about the
+// declaration constrains the actual value. A negative one walks the read backward out of its window; a
+// fractional or NaN one is silently coerced by DataView's ToIndex, shifting every element by a partial
+// stride or collapsing the read to offset 0. Both import real bytes from the wrong place.
+function isGltfByteCount(value: number | undefined): boolean {
+  return value !== undefined && Number.isInteger(value) && value >= 0;
+}
+
+// Resolves the absolute byte offset a strided read begins at, having first proven the read's geometry
+// sound. Returns -1 when it is not; the caller classifies that by the read's role, as with any other
+// accessor fault. Three independent properties have to hold, and each one alone is insufficient:
+//
+// - Every byte quantity is a nonnegative integer. This is what pins the read's LOWER bound: an upper-bound
+//   test passes happily for a read that starts before its window and imports whatever bytes precede it.
+// - `stride >= elementByteSize`. This is the width invariant: a narrower stride makes element N+1 re-read
+//   the tail of element N, so a VEC3 over a 4-byte stride imports overlapping garbage while every bound
+//   still holds.
+// - The whole span ends inside the declared bufferView window AND the real backing buffer, whichever is
+//   tighter. A declared window may overhang its buffer, so a read fitting only the declaration must fault.
+function resolveGltfReadOffset(
+  bytes: Readonly<Uint8Array>,
+  view: Readonly<GltfBufferView>,
+  byteOffset: number,
+  elementByteSize: number,
+  stride: number,
+  count: number,
+): number {
+  const viewOffset = view.byteOffset ?? 0;
+  if (!isGltfByteCount(viewOffset) || !isGltfByteCount(view.byteLength) || !isGltfByteCount(byteOffset)) return -1;
+  if (!isGltfByteCount(count) || !isGltfByteCount(elementByteSize) || elementByteSize === 0) return -1;
+  if (!isGltfByteCount(stride) || stride < elementByteSize) return -1;
+  const start = bytes.byteOffset + viewOffset + byteOffset;
+  const limit = Math.min(bytes.byteOffset + viewOffset + view.byteLength, bytes.byteOffset + bytes.byteLength);
+  const end = count > 0 ? start + (count - 1) * stride + elementByteSize : start;
+  if (end > limit) return -1;
+  return start;
+}
+
 function readComponent(view: Readonly<DataView>, componentType: GltfComponentType, offset: number): number {
   switch (componentType) {
     case 5120:
