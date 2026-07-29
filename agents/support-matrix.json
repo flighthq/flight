@@ -25,6 +25,21 @@
   ],
   "areas": [
     {
+      "key": "application",
+      "label": "Application",
+      "scenes": [
+        {
+          "scene": "application-render-view",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": false
+          }
+        }
+      ]
+    },
+    {
       "key": "bitmap",
       "label": "Bitmaps",
       "scenes": [
