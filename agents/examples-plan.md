@@ -10,6 +10,9 @@ The existing 17 examples are OpenFL ports. They live on in `flight-reference` fo
 - Examples double as smoke tests — `npm run test:examples:smoke` must pass for all of them.
 - Prefer small, focused examples over large multi-feature demos. One concept per example.
 - Examples should be ordered from simple to complex within each domain.
+- Commit tiny authored text fixtures when their content teaches the format. Keep meaningful binary and media assets out
+  of the repository; declare them as pinned cached assets and warm the cache before builds and smoke tests. Custom-font
+  examples use the existing pinned cached Unifont asset rather than bundling a font binary.
 
 ## Proposed Examples
 
@@ -66,7 +69,7 @@ These combine multiple features into a realistic scenario.
 
 ## Implementation Order
 
-1. **Tier 2 first.** These are the gap — features that have never been demonstrated. Implement in SDK-group order: scene3d → effects → collision → spring → camera2d → flowstates → textinput → interaction → snapshot → pathboolean → motionpath → formatloading → skeleton → clock → spatial → movieclip.
+1. **Tier 2 first.** These are the gap — features that have never been demonstrated. Implement in SDK-group order: scene3d → effects → adjustments → collision → spring → camera2d → flowstates → textinput → interaction → snapshot → pathboolean → motionpath → formatloading → skeleton → clock → spatial → movieclip.
 2. **Tier 1 rework.** Replace the OpenFL ports with Flight-native versions. The existing code is a useful reference but naming and structure should match Flight conventions.
 3. **Tier 3 integration demos.** Only after Tier 1 and 2 are solid.
 
@@ -74,4 +77,3 @@ These combine multiple features into a realistic scenario.
 
 - Should the OpenFL-port examples be removed in one batch or replaced incrementally as new ones land?
 - Should Tier 3 examples live in `examples/` or in a separate `demos/` directory given their larger scope?
-- Should examples that require external assets (glTF models, Tiled maps) bundle them or download them via the existing `download-cached.ts` script?
