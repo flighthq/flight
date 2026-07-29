@@ -42,6 +42,7 @@ export function parseMd5Anim(
   let numJoints = 0;
 
   const hierarchy: Md5AnimHierarchyEntry[] = [];
+  let declaredComponents = -1;
   const baseframe: Md5AnimBaseframePose[] = [];
   const frames: number[][] = [];
 
@@ -113,7 +114,11 @@ export function parseMd5Anim(
       continue;
     }
 
-    if (line.startsWith('numAnimatedComponents')) continue;
+    if (line.startsWith('numAnimatedComponents')) {
+      const declared = parseInt(line.split(/\s+/)[1], 10);
+      if (Number.isFinite(declared) && declared >= 0) declaredComponents = declared;
+      continue;
+    }
 
     if (line === 'hierarchy {') {
       i = parseHierarchyBlock(lines, i, hierarchy, md5Drops);
@@ -174,7 +179,7 @@ export function parseMd5Anim(
         suppliedJoints: joints.length,
       });
     } else {
-      clip = buildAnimationClip(joints, hierarchy, baseframe, frames, frameRate);
+      clip = buildAnimationClip(joints, hierarchy, baseframe, frames, frameRate, declaredComponents, md5Drops);
     }
   }
 
@@ -197,6 +202,8 @@ function buildAnimationClip(
   baseframe: readonly Md5AnimBaseframePose[],
   frames: readonly number[][],
   frameRate: number,
+  declaredComponents: number,
+  md5Drops: Map<string, Md5AnimDropTally> | null,
 ): AnimationClip {
   const frameCount = frames.length;
   const jointCount = hierarchy.length;
@@ -220,10 +227,49 @@ function buildAnimationClip(
     if (joint.name) nodeByName.set(joint.name, joint);
   }
 
+  // The frame layout is declared three times over — each joint's flags imply a component count, every
+  // joint's startIndex claims a window in the flat frame array, and numAnimatedComponents states the
+  // total — and none of the three was reconciled with any other. The `?? base` fallbacks below then made
+  // every disagreement invisible: an out-of-range read silently substitutes the bind pose, so a joint
+  // whose window is wrong looks exactly like a joint the animator deliberately left static.
+  const componentTotal = totalMd5AnimComponents(hierarchy);
+  if (declaredComponents >= 0 && declaredComponents !== componentTotal) {
+    tallyMd5AnimDrop(md5Drops, ImportDiagnosticSeverity.Recover, 'md5anim.component-count-mismatch', '', {
+      firstActual: componentTotal,
+      firstExpected: declaredComponents,
+    });
+  }
+  if (baseframe.length < jointCount) {
+    tallyMd5AnimDrop(md5Drops, ImportDiagnosticSeverity.Recover, 'md5anim.baseframe-count-mismatch', '', {
+      firstActual: baseframe.length,
+      firstExpected: jointCount,
+    });
+  }
+  for (let f = 0; f < frameCount; f++) {
+    if (frames[f].length !== componentTotal) {
+      tallyMd5AnimDrop(md5Drops, ImportDiagnosticSeverity.Recover, 'md5anim.frame-width-mismatch', '', {
+        firstActual: frames[f].length,
+        firstExpected: componentTotal,
+        firstFrame: f,
+      });
+      break;
+    }
+  }
+
   for (let j = 0; j < jointCount; j++) {
     const entry = hierarchy[j];
     const base = j < baseframe.length ? baseframe[j] : DEFAULT_BASEFRAME;
     const flags = entry.flags;
+    const width = countMd5AnimFlagComponents(flags);
+    // A startIndex whose window leaves the frame is reported once per joint, rather than dissolving into
+    // per-component bind-pose substitutions that read as an intentionally static joint.
+    if (entry.startIndex < 0 || (width > 0 && entry.startIndex + width > componentTotal)) {
+      tallyMd5AnimDrop(md5Drops, ImportDiagnosticSeverity.Recover, 'md5anim.joint-frame-window-invalid', '', {
+        firstIndex: entry.startIndex,
+        firstJoint: j,
+        firstWidth: width,
+      });
+    }
 
     // Extract per-frame translation and rotation for this joint.
     const translationValues: number[] = [];
@@ -533,4 +579,23 @@ function tallyMd5AnimDrop(
   const existing = tallies.get(key);
   if (existing === undefined) tallies.set(key, { count: 1, detail: firstDetail, kind, severity });
   else existing.count++;
+}
+
+// The number of frame components a joint's flags claim — one float per set bit among the six.
+function countMd5AnimFlagComponents(flags: number): number {
+  let count = 0;
+  for (let bit = 0; bit < 6; bit++) {
+    if (flags & (1 << bit)) count++;
+  }
+  return count;
+}
+
+// The frame width the hierarchy as a whole implies, against which numAnimatedComponents and each frame's
+// actual length are checked. Summed from the flags rather than taken from the file, so it is an
+// INDEPENDENT statement of the same quantity — a bound derived from the same field it guards would move
+// with the error and could never detect it.
+function totalMd5AnimComponents(hierarchy: readonly Md5AnimHierarchyEntry[]): number {
+  let total = 0;
+  for (const entry of hierarchy) total += countMd5AnimFlagComponents(entry.flags);
+  return total;
 }

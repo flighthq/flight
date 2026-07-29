@@ -296,8 +296,25 @@ export function parseMd5Mesh(source: string, diagnostics?: ImportDiagnostic[]): 
     // stride walk skips the other channels).
     convertPositionsZUpToYUp(vertices, SKINNED_FLOATS_PER_VERTEX, 0);
 
-    for (let t = 0; t < md5Mesh.indices.length; t++) {
-      indices.push(md5Mesh.indices[t]);
+    // Triangle indices address the vertex array, and nothing before this point bounds them. An index past
+    // the end reads undefined during normal derivation and poisons the normals of the two GOOD vertices it
+    // shares a triangle with; a negative one is worse, because `Uint32Array.from` wraps it to roughly 4.29
+    // billion and hands that to the GPU index buffer. Drop the triangle and keep the mesh — a missing face
+    // is a visible, bounded loss, where either alternative is silent and unbounded.
+    const vertexCount = md5Mesh.vertices.length;
+    for (let t = 0; t + 2 < md5Mesh.indices.length; t += 3) {
+      const v0 = md5Mesh.indices[t];
+      const v1 = md5Mesh.indices[t + 1];
+      const v2 = md5Mesh.indices[t + 2];
+      if (v0 < 0 || v1 < 0 || v2 < 0 || v0 >= vertexCount || v1 >= vertexCount || v2 >= vertexCount) {
+        tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Drop, 'md5mesh.triangle-vertex-out-of-range', '', {
+          firstCount: vertexCount,
+          firstIndex: v0 < 0 || v0 >= vertexCount ? v0 : v1 < 0 || v1 >= vertexCount ? v1 : v2,
+          firstTriangle: t / 3,
+        });
+        continue;
+      }
+      indices.push(v0, v1, v2);
     }
 
     // id Tech 4 winds MD5 triangles clockwise (front-facing under D3's convention); the Z-up→Y-up
@@ -421,7 +438,11 @@ function buildMd5SkeletonDocument(
     let localQy = jointOrientations[qi + 1];
     let localQz = jointOrientations[qi + 2];
     let localQw = jointOrientations[qi + 3];
-    if (parentIndex >= 0 && parentIndex < joints.length) {
+    // Self-parent and cycles are excluded HERE too, not only in the nesting pass below: a joint that took
+    // the parent-relative branch while the nesting pass treated it as a root would have its transform
+    // made relative to a parent it is never composed against, which double-counts nothing and silently
+    // misplaces it.
+    if (parentIndex >= 0 && parentIndex < joints.length && parentIndex !== j && !isMd5JointCycle(joints, j)) {
       const ppi = parentIndex * 3;
       const pqi = parentIndex * 4;
       conjugateQuaternion(parentConj, {
@@ -447,8 +468,12 @@ function buildMd5SkeletonDocument(
       localQy = relQuat.y;
       localQz = relQuat.z;
       localQw = relQuat.w;
-    } else if (parentIndex >= joints.length) {
-      // The joint keeps its absolute transform as local (degraded parenting) — Recover.
+    } else if (parentIndex !== -1) {
+      // Every parent that is neither a real joint nor the -1 root sentinel lands here, and it is one
+      // report rather than only the too-large half: `parentIndex < -1` used to match no branch at all and
+      // was silently indistinguishable from a legitimate root, while `>= length` was correctly reported.
+      // A joint naming ITSELF is included because `addNodeChild` throws on a self-child, out of a parser
+      // documented never to throw.
       tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Recover, 'md5mesh.joint-parent-out-of-range', '', {
         firstJoint: j,
         firstParent: parentIndex,
@@ -463,7 +488,10 @@ function buildMd5SkeletonDocument(
   // from the parent-relative locals set above; roots hang under the skeleton group.
   for (let j = 0; j < joints.length; j++) {
     const parentIndex = joints[j].parentIndex;
-    if (parentIndex >= 0 && parentIndex < joints.length) {
+    // `isMd5JointCycle` covers what a self-check alone cannot: `addNodeChildAt` rejects a node parented to
+    // itself but never walks the ancestor chain, so a two-joint cycle would be built into a detached
+    // subgraph hanging off nothing, silently absent from the skeleton it belongs to.
+    if (parentIndex >= 0 && parentIndex < joints.length && parentIndex !== j && !isMd5JointCycle(joints, j)) {
       document.nodes[jointNodeIndices[parentIndex]].children.push(jointNodeIndices[j]);
     } else {
       document.nodes[skeletonRootIndex].children.push(jointNodeIndices[j]);
@@ -569,9 +597,9 @@ function parseJointLine(line: string, md5Drops: Map<string, Md5DropTally> | null
   const positionX = parseFloat(tokens[1]);
   const positionY = parseFloat(tokens[2]);
   const positionZ = parseFloat(tokens[3]);
-  const orientationX = parseFloat(tokens[4]);
-  const orientationY = parseFloat(tokens[5]);
-  const orientationZ = parseFloat(tokens[6]);
+  let orientationX = parseFloat(tokens[4]);
+  let orientationY = parseFloat(tokens[5]);
+  let orientationZ = parseFloat(tokens[6]);
 
   if (
     !Number.isFinite(parentIndex) ||
@@ -589,9 +617,25 @@ function parseJointLine(line: string, md5Drops: Map<string, Md5DropTally> | null
     return null;
   }
 
-  // Reconstruct quaternion W from XYZ. w = sqrt(1 - x^2 - y^2 - z^2), clamped to 0 when
-  // the squared sum exceeds 1 (numerical precision).
-  const sumSq = orientationX * orientationX + orientationY * orientationY + orientationZ * orientationZ;
+  // Reconstruct quaternion W from XYZ: w = -sqrt(1 - x^2 - y^2 - z^2).
+  //
+  // A squared sum at or past 1 has two causes the arithmetic cannot tell apart — float noise in a valid
+  // file, where the excess is ~1e-7, and corrupt components, where it is not. Zeroing w without
+  // renormalizing xyz was right for the first and silently wrong for the second: an orientation of
+  // (2,0,0) yields the quaternion (2,0,0,0), which has norm 2 and is not a rotation at all. Composed
+  // into the bind pose it SCALES the joint by four and corrupts the inverse-bind matrix, and driven by an
+  // animation it keeps scaling. Past a tolerance that float error cannot reach, renormalize and report.
+  let sumSq = orientationX * orientationX + orientationY * orientationY + orientationZ * orientationZ;
+  if (sumSq > 1 + QUATERNION_SUM_TOLERANCE) {
+    tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Recover, 'md5mesh.joint-orientation-not-unit', '', {
+      firstLine: lineIndex + 1,
+    });
+    const scale = 1 / Math.sqrt(sumSq);
+    orientationX *= scale;
+    orientationY *= scale;
+    orientationZ *= scale;
+    sumSq = 1;
+  }
   const orientationW = sumSq < 1 ? -Math.sqrt(1 - sumSq) : 0;
 
   return {
@@ -617,13 +661,23 @@ function parseMeshBlock(
   const vertices: Md5Vertex[] = [];
   const weights: Md5Weight[] = [];
   const indices: number[] = [];
+  // Triangles are collected as records so they can be placed by their declared ordinal like every other
+  // record, then flattened into `indices` once the block closes.
+  const triangles: (readonly [number, number, number])[] = [];
+  let declaredVerts = -1;
+  let declaredTris = -1;
+  let declaredWeights = -1;
 
+  let closed = false;
   let i = startLine;
   while (i < lines.length) {
     const line = lines[i].trim();
     i++;
 
-    if (line === '}') return { nextLine: i, result: { indices, shader, vertices, weights } };
+    if (line === '}') {
+      closed = true;
+      break;
+    }
     if (line.length === 0 || line.startsWith('//')) continue;
 
     if (line.startsWith('shader')) {
@@ -639,37 +693,74 @@ function parseMeshBlock(
       continue;
     }
 
-    if (line.startsWith('numverts') || line.startsWith('numtris') || line.startsWith('numweights')) {
+    if (line.startsWith('numverts')) {
+      declaredVerts = parseMd5DeclaredCount(line);
+      continue;
+    }
+    if (line.startsWith('numtris')) {
+      declaredTris = parseMd5DeclaredCount(line);
+      continue;
+    }
+    if (line.startsWith('numweights')) {
+      declaredWeights = parseMd5DeclaredCount(line);
       continue;
     }
 
     if (line.startsWith('vert ')) {
       const vert = parseVertLine(line, md5Drops, i - 1);
-      if (vert !== null) vertices.push(vert);
+      if (vert !== null) {
+        alignMd5Records(vertices, vert.index, md5Drops, 'vert', () => ({
+          countWeights: 0,
+          startWeight: 0,
+          u: 0,
+          v: 0,
+        }));
+        if (vert.index === vertices.length) vertices.push(vert.record);
+      }
       continue;
     }
 
     if (line.startsWith('tri ')) {
       const tri = parseTriLine(line, md5Drops, i - 1);
       if (tri !== null) {
-        indices.push(tri[0], tri[1], tri[2]);
+        alignMd5Records(triangles, tri.index, md5Drops, 'tri', () => [0, 0, 0] as const);
+        if (tri.index === triangles.length) triangles.push(tri.record);
       }
       continue;
     }
 
     if (line.startsWith('weight ')) {
       const weight = parseWeightLine(line, md5Drops, i - 1);
-      if (weight !== null) weights.push(weight);
+      if (weight !== null) {
+        alignMd5Records(weights, weight.index, md5Drops, 'weight', () => ({
+          bias: 0,
+          jointIndex: -1,
+          positionX: 0,
+          positionY: 0,
+          positionZ: 0,
+        }));
+        if (weight.index === weights.length) weights.push(weight.record);
+      }
       continue;
     }
   }
 
-  tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Recover, 'md5mesh.mesh-block-unclosed', '', {});
+  // Both exits finish through here. Splitting the reconciliation across a closing-brace return and a
+  // ran-out-of-lines return is how one of them ends up missing a check the other has.
+  reportMd5CountDisagreement(md5Drops, 'vert', declaredVerts, vertices.length);
+  reportMd5CountDisagreement(md5Drops, 'tri', declaredTris, triangles.length);
+  reportMd5CountDisagreement(md5Drops, 'weight', declaredWeights, weights.length);
+  for (const tri of triangles) indices.push(tri[0], tri[1], tri[2]);
+  if (!closed) tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Recover, 'md5mesh.mesh-block-unclosed', '', {});
   return { nextLine: i, result: { indices, shader, vertices, weights } };
 }
 
 // Parses: vert vertIndex ( u v ) startWeight countWeights
-function parseVertLine(line: string, md5Drops: Map<string, Md5DropTally> | null, lineIndex: number): Md5Vertex | null {
+function parseVertLine(
+  line: string,
+  md5Drops: Map<string, Md5DropTally> | null,
+  lineIndex: number,
+): { index: number; record: Md5Vertex } | null {
   const tokens = line
     .replace(/[()]/g, '')
     .split(/\s+/)
@@ -696,7 +787,27 @@ function parseVertLine(line: string, md5Drops: Map<string, Md5DropTally> | null,
     return null;
   }
 
-  return { countWeights, startWeight, u, v };
+  // The lower bound the downstream `weightIndex >= weights.length` check cannot see: a negative
+  // startWeight passes it, indexes before the array, and dereferences undefined — a TypeError out of a
+  // parser documented never to throw. A non-positive countWeights is separately meaningless: the vertex
+  // would take no influence at all and silently collapse to the model origin.
+  if (startWeight < 0 || countWeights <= 0) {
+    tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Drop, 'md5mesh.malformed-vert', 'weight-range', {
+      firstLine: lineIndex + 1,
+      reason: 'weight-range',
+    });
+    return null;
+  }
+
+  const index = parseMd5RecordOrdinal(tokens[1]);
+  if (index < 0) {
+    tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Drop, 'md5mesh.malformed-vert', 'bad-index', {
+      firstLine: lineIndex + 1,
+      reason: 'bad-index',
+    });
+    return null;
+  }
+  return { index, record: { countWeights, startWeight, u, v } };
 }
 
 // Parses: tri triIndex v0 v1 v2
@@ -704,7 +815,7 @@ function parseTriLine(
   line: string,
   md5Drops: Map<string, Md5DropTally> | null,
   lineIndex: number,
-): readonly [number, number, number] | null {
+): { index: number; record: readonly [number, number, number] } | null {
   const tokens = line.split(/\s+/).filter((t) => t.length > 0);
   // tokens: ["tri", triIndex, v0, v1, v2]
   if (tokens.length < 5) {
@@ -727,7 +838,15 @@ function parseTriLine(
     return null;
   }
 
-  return [v0, v1, v2] as const;
+  const index = parseMd5RecordOrdinal(tokens[1]);
+  if (index < 0) {
+    tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Drop, 'md5mesh.malformed-tri', 'bad-index', {
+      firstLine: lineIndex + 1,
+      reason: 'bad-index',
+    });
+    return null;
+  }
+  return { index, record: [v0, v1, v2] as const };
 }
 
 // Parses: weight weightIndex jointIndex bias ( px py pz )
@@ -735,7 +854,7 @@ function parseWeightLine(
   line: string,
   md5Drops: Map<string, Md5DropTally> | null,
   lineIndex: number,
-): Md5Weight | null {
+): { index: number; record: Md5Weight } | null {
   const tokens = line
     .replace(/[()]/g, '')
     .split(/\s+/)
@@ -769,7 +888,15 @@ function parseWeightLine(
     return null;
   }
 
-  return { bias, jointIndex, positionX, positionY, positionZ };
+  const index = parseMd5RecordOrdinal(tokens[1]);
+  if (index < 0) {
+    tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Drop, 'md5mesh.malformed-weight', 'bad-index', {
+      firstLine: lineIndex + 1,
+      reason: 'bad-index',
+    });
+    return null;
+  }
+  return { index, record: { bias, jointIndex, positionX, positionY, positionZ } };
 }
 
 // Rotates a vector (vx, vy, vz) by quaternion (qx, qy, qz, qw) and returns the X component.
@@ -824,3 +951,91 @@ function tallyMd5Drop(
   if (existing === undefined) tallies.set(key, { count: 1, detail: firstDetail, kind, severity });
   else existing.count++;
 }
+
+// The count a `numverts` / `numtris` / `numweights` line declares, or -1 when it is absent or unreadable.
+function parseMd5DeclaredCount(line: string): number {
+  const value = parseInt(line.split(/\s+/)[1], 10);
+  return Number.isFinite(value) && value >= 0 ? value : -1;
+}
+
+// Brings `records` up to the position `index` claims, so the record about to be appended lands where the
+// file says it belongs.
+//
+// MD5 records declare their own ordinal — `vert 0`, `weight 3`, `tri 5` — and every cross-reference in
+// the format addresses them by ARRAY POSITION: a vert names a weight range, a tri names verts. Appending
+// in encounter order silently redefines every one of those references the moment one malformed line is
+// dropped, and nothing downstream can notice, because the shifted indices are all still in range and all
+// still resolve. The declared ordinal is a per-record checksum on exactly the position everything else
+// depends on, so a gap is filled with an explicit placeholder rather than closed by a shift.
+//
+// A placeholder is deliberately built to fail the checks it will meet later — a weight with joint -1, a
+// vertex with no influences — so it is reported where it is used rather than passing as real data.
+function alignMd5Records<T>(
+  records: T[],
+  index: number,
+  md5Drops: Map<string, Md5DropTally> | null,
+  record: string,
+  placeholder: () => T,
+): void {
+  if (index === records.length) return;
+  if (index < records.length) {
+    // A repeated or out-of-order ordinal. Keeping the first is the only choice that preserves the
+    // positions already referenced by other records.
+    tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Recover, `md5mesh.${record}-index-repeated`, record, {
+      firstExpected: records.length,
+      firstIndex: index,
+    });
+    return;
+  }
+  tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Recover, `md5mesh.${record}-index-gap`, record, {
+    firstExpected: records.length,
+    firstIndex: index,
+  });
+  while (records.length < index) records.push(placeholder());
+}
+
+// Reports a declared count that disagrees with the records actually read. The two are independent
+// statements of one quantity, so the disagreement is the signal — and it is the cheapest detector there
+// is for a record having been dropped, since it catches the loss even when no ordinal was available.
+function reportMd5CountDisagreement(
+  md5Drops: Map<string, Md5DropTally> | null,
+  record: string,
+  declared: number,
+  actual: number,
+): void {
+  if (declared < 0 || declared === actual) return;
+  tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Recover, `md5mesh.${record}-count-mismatch`, record, {
+    firstActual: actual,
+    firstExpected: declared,
+  });
+}
+
+// A record's declared ordinal, or -1 when the token is not a whole non-negative number. `parseInt` is
+// lenient — it reads `1e3` as 1 and `3.9` as 3 — so the round-trip comparison is what makes a truncated
+// or scientific-notation ordinal a fault rather than a different, in-range position.
+function parseMd5RecordOrdinal(token: string): number {
+  const value = parseInt(token, 10);
+  if (!Number.isFinite(value) || value < 0) return -1;
+  return String(value) === token ? value : -1;
+}
+
+// Whether joint `start`'s parent chain loops back to it rather than reaching a root.
+//
+// A cycle is not merely wrong data: composing parent-relative transforms around one has no fixed point,
+// and the hierarchy builder only rejects a node parented directly to itself, so a two-joint loop would be
+// assembled into a subgraph detached from the skeleton and silently missing from the model. Bounded by
+// the joint count, so a cycle terminates the walk rather than the walk terminating the import.
+function isMd5JointCycle(joints: readonly Md5Joint[], start: number): boolean {
+  let cursor = joints[start].parentIndex;
+  for (let steps = 0; steps < joints.length; steps++) {
+    if (cursor < 0 || cursor >= joints.length) return false;
+    if (cursor === start) return true;
+    cursor = joints[cursor].parentIndex;
+  }
+  return true;
+}
+
+// How far past 1 a reconstructed quaternion's squared vector part may drift before it is treated as
+// corrupt rather than as float error. A valid file's round-trip error is around 1e-7; anything at this
+// scale is a different kind of wrong.
+const QUATERNION_SUM_TOLERANCE = 1e-4;
