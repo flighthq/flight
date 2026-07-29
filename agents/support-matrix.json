@@ -775,7 +775,7 @@
             "canvas": false,
             "dom": false,
             "webgl": true,
-            "webgpu": true
+            "webgpu": false
           }
         },
         {
@@ -793,7 +793,7 @@
             "canvas": false,
             "dom": false,
             "webgl": true,
-            "webgpu": true
+            "webgpu": false
           }
         },
         {
@@ -829,7 +829,7 @@
             "canvas": false,
             "dom": false,
             "webgl": true,
-            "webgpu": true
+            "webgpu": false
           }
         },
         {
@@ -874,7 +874,7 @@
             "canvas": false,
             "dom": false,
             "webgl": true,
-            "webgpu": true
+            "webgpu": false
           }
         },
         {
@@ -883,7 +883,7 @@
             "canvas": false,
             "dom": false,
             "webgl": true,
-            "webgpu": true
+            "webgpu": false
           }
         },
         {
@@ -910,7 +910,7 @@
             "canvas": false,
             "dom": false,
             "webgl": true,
-            "webgpu": true
+            "webgpu": false
           }
         },
         {
@@ -928,7 +928,7 @@
             "canvas": false,
             "dom": false,
             "webgl": true,
-            "webgpu": true
+            "webgpu": false
           }
         },
         {

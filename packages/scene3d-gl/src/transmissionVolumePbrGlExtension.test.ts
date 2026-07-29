@@ -25,6 +25,7 @@ describe('transmissionVolumePbrGlExtension', () => {
       createTransmissionVolumePbrExtension(),
     );
     expect(contribution.finalize).toContain('refract');
+    expect(contribution.finalize).toContain('v_worldPosition');
     expect(contribution.finalize).toContain('flightTransmissionAbsorption');
   });
 });
