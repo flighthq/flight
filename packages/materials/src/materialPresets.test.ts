@@ -1,8 +1,14 @@
-import { StandardPbrMaterialKind, TransmissionVolumePbrMaterialKind } from '@flighthq/types/contract';
+import {
+  ExtendedPbrMaterialKind,
+  StandardPbrMaterialKind,
+  TransmissionVolumePbrExtensionKind,
+  TransmissionVolumePbrMaterialKind,
+} from '@flighthq/types/contract';
 
 import {
   createAluminumStandardPbrMaterial,
   createCarbonStandardPbrMaterial,
+  createGlassExtendedPbrMaterial,
   createGlassTransmissionVolumePbrMaterial,
   createGoldStandardPbrMaterial,
   createIronStandardPbrMaterial,
@@ -33,6 +39,31 @@ describe('createCarbonStandardPbrMaterial', () => {
     expect(m.kind).toBe(StandardPbrMaterialKind);
     expect(m.metallic).toBe(0);
     expect(m.roughness).toBeCloseTo(0.95);
+  });
+});
+
+describe('createGlassExtendedPbrMaterial', () => {
+  it('composes clear glass without nesting a standard material entity', () => {
+    const material = createGlassExtendedPbrMaterial();
+    const extension = material.extensions[0];
+    expect(material.kind).toBe(ExtendedPbrMaterialKind);
+    expect(material.standard.baseColor).toBe(0xffffffff);
+    expect(material.standard.metallic).toBe(0);
+    expect(material.standard.roughness).toBe(0);
+    expect('kind' in material.standard).toBe(false);
+    expect(extension?.kind).toBe(TransmissionVolumePbrExtensionKind);
+  });
+
+  it('applies surface, standard, and transmission-volume overrides independently', () => {
+    const material = createGlassExtendedPbrMaterial({
+      alphaMode: 'blend',
+      standard: { roughness: 0.2 },
+      transmissionVolume: { ior: 1.7 },
+    });
+    const extension = material.extensions[0];
+    expect(material.alphaMode).toBe('blend');
+    expect(material.standard.roughness).toBe(0.2);
+    expect(extension).toMatchObject({ ior: 1.7, transmission: 1 });
   });
 });
 
