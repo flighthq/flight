@@ -94,6 +94,9 @@
       "path": "../scene2d-formats"
     },
     {
+      "path": "../scene2d-resources"
+    },
+    {
       "path": "../scene2d-gl"
     },
     {

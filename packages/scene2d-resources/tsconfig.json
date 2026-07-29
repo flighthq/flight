@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
+  },
+  "references": [
+    { "path": "../entity" },
+    { "path": "../node" },
+    { "path": "../scene2d" },
+    { "path": "../scene2d-formats" },
+    { "path": "../signals" },
+    { "path": "../types" }
+  ],
+  "include": ["src"]
+}

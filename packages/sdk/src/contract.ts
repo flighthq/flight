@@ -26,6 +26,7 @@ export * from '@flighthq/scene2d';
 export * from '@flighthq/scene2d-canvas';
 export * from '@flighthq/scene2d-dom';
 export * from '@flighthq/scene2d-formats';
+export * from '@flighthq/scene2d-resources/contract';
 export * from '@flighthq/scene2d-gl';
 export * from '@flighthq/scene2d-wgpu';
 export * from '@flighthq/easing';
