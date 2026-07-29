@@ -97,6 +97,13 @@ class InflateState {
 
   writeByte(byte: number): void {
     if (this.outputLength >= this.output.length) {
+      // Every other bound in this package is a field checked against the buffer. This one cannot be:
+      // the quantity that sizes the allocation is the COMPRESSION RATIO, which is not in the file, is
+      // not bounded by its length, and no per-field check can reach it. A kilobyte of nested maximum-
+      // length back-references expands to gigabytes and takes the process with it — unrecoverable, and
+      // reachable from any untrusted .awd. Where the file cannot bound the allocation, an explicit cap
+      // has to.
+      if (this.output.length * 2 > MAX_INFLATE_BYTES) throw new Error('deflate: output exceeds the inflate limit');
       const grown = new Uint8Array(this.output.length * 2);
       grown.set(this.output);
       this.output = grown;
@@ -243,3 +250,7 @@ function buildFixedLiteralTree(): HuffmanTree {
   for (let i = 280; i < 288; i++) lengths[i] = 8;
   return buildHuffmanTree(lengths, 288);
 }
+
+// The ceiling on a single inflate. Generous for any real AWD body — a 256 MB scene is far past what
+// this importer is used for — and small enough that hitting it fails a parse instead of the process.
+const MAX_INFLATE_BYTES = 256 * 1024 * 1024;

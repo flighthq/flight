@@ -19,6 +19,9 @@ import { AWD2_COMPRESSION_DEFLATE, AWD2_HEADER_BYTES, AWD2_MAGIC_0, AWD2_MAGIC_1
 const LOREM = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore. ';
 const FIXTURES = {
   EMPTY: 'eJwDAAAAAAE=',
+  // 64 KB of a repeating byte run, zlib-deflated: 124 bytes expanding 528x — a high but honest ratio.
+  HIGH_RATIO:
+    'eJztxbEBADAEADC0/H+yQyRLIuv9npAkSZIkSZIkSZIkSZIkSZIkSZIkSZIkSZIkSZIkSZIkSZIkSZIkSZIkSZIkSZIkSZIkSZIkSZIkSZIkSZIkSZIkSZIkSZIkSZIkSZIkSZIkSZIkSZIkSZIkSZIkSZIk3W4BATsAKQ==',
   LITERAL: 'eJxLy8lMzyjJKFQoTk7NS9VNyy/KTSwpBgBjVQiv',
   RAW_LITERAL: 'S8vJTM8oyShUKE5OzUvVTcsvyk0sKQYA',
   REPETITIVE: 'eJztxjEBACAIALBMYgIxCdC/g0HcrlXPybtil4iIiIiIiIiIiMgfeU6Y4Pw=',
@@ -54,6 +57,16 @@ const encode = (s: string): Uint8Array => new TextEncoder().encode(s);
 describe('inflateAwdDeflate', () => {
   it('round-trips empty input', () => {
     expect(inflateAwdDeflate(decodeBase64(FIXTURES.EMPTY))).toEqual(new Uint8Array(0));
+  });
+
+  it('keeps inflating a stream whose expansion ratio is large but bounded', () => {
+    // The inflate cap must not fire on real content. AWD bodies are float arrays with long repeating
+    // runs, so a high ratio is ORDINARY here — the cap is for a ratio that is unbounded, not merely
+    // large, and one that rejected honest compression would be worse than the bomb it prevents. This
+    // fixture is 124 bytes expanding 528x to 64 KB, and must still round-trip byte for byte.
+    const source = new Uint8Array(64 * 1024);
+    for (let i = 0; i < source.length; i++) source[i] = i % 7;
+    expect(inflateAwdDeflate(decodeBase64(FIXTURES.HIGH_RATIO))).toEqual(source);
   });
 
   it('round-trips a short literal run (zlib-wrapped)', () => {
