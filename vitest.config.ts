@@ -21,7 +21,7 @@ export default mergeConfig(
       environment: 'jsdom',
       isolate: false,
       unstubGlobals: true,
-      include: ['packages/**/src/**/*.test.ts'],
+      include: ['packages/**/src/**/*.test.ts', 'scripts/**/*.test.ts'],
       exclude: [
         '**/.claude/**',
         '**/node_modules/**',
