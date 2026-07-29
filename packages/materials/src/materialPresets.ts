@@ -1,11 +1,18 @@
-import type { StandardPbrMaterial, TransmissionVolumePbrMaterial } from '@flighthq/types/contract';
+import type {
+  ExtendedPbrMaterial,
+  GlassExtendedPbrMaterialOptions,
+  StandardPbrMaterial,
+  TransmissionVolumePbrMaterial,
+} from '@flighthq/types/contract';
 
+import { createExtendedPbrMaterial } from './extendedPbrMaterial';
 import { createTransmissionVolumePbrMaterial } from './pbrExtensionMaterials';
-import { createStandardPbrMaterial } from './pbrMaterials';
+import { createStandardPbrMaterial, createStandardPbrMaterialProperties } from './pbrMaterials';
+import { createTransmissionVolumePbrExtension } from './transmissionVolumePbrExtension';
 
 // Named presets for common real-world materials using glTF metallic-roughness PBR values.
-// These are thin wrappers over `createStandardPbrMaterial` / `createTransmissionVolumePbrMaterial`
-// with canonical default parameters. Each function is individually tree-shakable.
+// These are thin assemblies of standard property blocks, surface materials, and extension
+// descriptors with canonical default parameters. Each function is individually tree-shakable.
 //
 // IOR and specular-tint values follow the glTF PBR extensions specification and standard
 // material-science references (BRDF Explorer, Substance Painter's material presets, etc.).
@@ -32,8 +39,28 @@ export function createCarbonStandardPbrMaterial(opts?: Readonly<Partial<Standard
   });
 }
 
-// Clear glass preset (use with TransmissionVolumePbrMaterial for transmission).
-// Metallic: 0 · roughness: 0.0 · IOR: 1.5 · transmission: 1 · baseColor: white.
+// Clear glass preset composed from a standard metallic-roughness property block and a transmission
+// volume descriptor. Metallic: 0 · roughness: 0 · IOR: 1.5 · transmission: 1 · baseColor: white.
+export function createGlassExtendedPbrMaterial(opts?: Readonly<GlassExtendedPbrMaterialOptions>): ExtendedPbrMaterial {
+  return createExtendedPbrMaterial({
+    ...opts,
+    extensions: [
+      createTransmissionVolumePbrExtension({
+        ior: 1.5,
+        transmission: 1,
+        ...opts?.transmissionVolume,
+      }),
+    ],
+    standard: createStandardPbrMaterialProperties({
+      baseColor: 0xffffffff,
+      metallic: 0,
+      roughness: 0,
+      ...opts?.standard,
+    }),
+  });
+}
+
+// Clear glass preset for the standalone transmission-volume material lane.
 export function createGlassTransmissionVolumePbrMaterial(
   opts?: Readonly<Partial<TransmissionVolumePbrMaterial>>,
 ): TransmissionVolumePbrMaterial {
