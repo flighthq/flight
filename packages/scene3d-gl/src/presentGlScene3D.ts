@@ -23,7 +23,10 @@ export function presentGlScene3D(
   lights: Readonly<Scene3DLightsLike>,
 ): void {
   beginGlRenderPass(state, target);
-  drawGlScene3D(state, scene, camera, lights);
-  endGlRenderPass(state);
+  try {
+    drawGlScene3D(state, scene, camera, lights);
+  } finally {
+    endGlRenderPass(state);
+  }
   presentGlRenderTarget(state, target);
 }

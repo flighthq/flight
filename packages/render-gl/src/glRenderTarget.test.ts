@@ -307,4 +307,34 @@ describe('resolveGlRenderTarget', () => {
     expect(gl.enable).toHaveBeenLastCalledWith(gl.SCISSOR_TEST);
     expect(gl.scissor).toHaveBeenLastCalledWith(3, 4, 16, 12);
   });
+
+  it('restores framebuffer and scissor state when an MSAA blit throws', () => {
+    const { state, gl } = makeState();
+    const target = createGlRenderTarget(state, { width: 64, height: 48 });
+    target.sampleCount = 4;
+    target.resolveFramebuffer = { id: 'resolve' } as unknown as WebGLFramebuffer;
+    const runtime = getGlRenderStateRuntime(state);
+    const enclosingFramebuffer = { id: 'outer' } as unknown as WebGLFramebuffer;
+    runtime.currentFramebuffer = enclosingFramebuffer;
+    runtime.currentScissorRect = { height: 12, width: 16, x: 3, y: 4 };
+    Object.assign(gl as unknown as Record<string, unknown>, {
+      READ_FRAMEBUFFER: 36008,
+      DRAW_FRAMEBUFFER: 36009,
+      COLOR_BUFFER_BIT: 16384,
+      NEAREST: 9728,
+      NONE: 0,
+      blitFramebuffer: vi.fn(() => {
+        throw new Error('blit failed');
+      }),
+      readBuffer: vi.fn(),
+      drawBuffers: vi.fn(),
+      flush: vi.fn(),
+    });
+
+    expect(() => resolveGlRenderTarget(state, target)).toThrow('blit failed');
+    expect(gl.bindFramebuffer).toHaveBeenCalledWith(gl.READ_FRAMEBUFFER, enclosingFramebuffer);
+    expect(gl.bindFramebuffer).toHaveBeenLastCalledWith(gl.DRAW_FRAMEBUFFER, enclosingFramebuffer);
+    expect(gl.enable).toHaveBeenLastCalledWith(gl.SCISSOR_TEST);
+    expect(gl.scissor).toHaveBeenLastCalledWith(3, 4, 16, 12);
+  });
 });

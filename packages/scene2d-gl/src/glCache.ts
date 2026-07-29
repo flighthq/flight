@@ -185,24 +185,28 @@ export function refreshGlRenderCache(
   // retained cache content on the not-dirty path. The cache's local-space transform is set explicitly,
   // since a pass no longer carries one.
   beginGlRenderPass(cacheState, target, { preserveColor: true, preserveDepth: true });
-  setGlRenderTransform2D(cacheState, _renderTransform);
-  const dirty = prepareScene2DRender(cacheState, source);
-  if (dirty || resized) {
-    const cacheRuntime = getGlRenderStateRuntime(cacheState);
-    // The cache state shares the screen's GL context, so the actual GL program/blend/scissor are
-    // whatever the screen render (or a prior blur pass) last left — state this cache state does not
-    // track. Reset its cached GL state so the bake re-establishes everything instead of skipping a
-    // rebind and setting uniforms on the wrong program.
-    cacheRuntime.currentProgram = null;
-    cacheRuntime.currentTexture = null;
-    cacheRuntime.currentTextureStraightAlpha = false;
-    cacheRuntime.currentBlendMode = null;
-    cacheRuntime.currentScissorRect = null;
-    cacheState.gl.clearColor(0, 0, 0, 0);
-    cacheState.gl.clear(cacheState.gl.COLOR_BUFFER_BIT);
-    renderGlScene2D(cacheState, source);
+  let dirty = false;
+  try {
+    setGlRenderTransform2D(cacheState, _renderTransform);
+    dirty = prepareScene2DRender(cacheState, source);
+    if (dirty || resized) {
+      const cacheRuntime = getGlRenderStateRuntime(cacheState);
+      // The cache state shares the screen's GL context, so the actual GL program/blend/scissor are
+      // whatever the screen render (or a prior blur pass) last left — state this cache state does not
+      // track. Reset its cached GL state so the bake re-establishes everything instead of skipping a
+      // rebind and setting uniforms on the wrong program.
+      cacheRuntime.currentProgram = null;
+      cacheRuntime.currentTexture = null;
+      cacheRuntime.currentTextureStraightAlpha = false;
+      cacheRuntime.currentBlendMode = null;
+      cacheRuntime.currentScissorRect = null;
+      cacheState.gl.clearColor(0, 0, 0, 0);
+      cacheState.gl.clear(cacheState.gl.COLOR_BUFFER_BIT);
+      renderGlScene2D(cacheState, source);
+    }
+  } finally {
+    endGlRenderPass(cacheState);
   }
-  endGlRenderPass(cacheState);
 
   const screenRuntime = getGlRenderStateRuntime(screenState);
   screenRuntime.currentBlendMode = null;

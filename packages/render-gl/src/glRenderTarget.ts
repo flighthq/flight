@@ -176,36 +176,41 @@ export function resolveGlRenderTarget(state: GlRenderState, target: GlRenderTarg
   // A resolve copies storage, not pass coverage. WebGL applies SCISSOR_TEST to blitFramebuffer, so a
   // partial pass (or an enclosing clip restored before this call) must not truncate the target-wide
   // resolve. Restore the exact tracked scissor after every attachment has been copied.
-  if (scissor !== null) gl.disable(gl.SCISSOR_TEST);
-  gl.bindFramebuffer(gl.READ_FRAMEBUFFER, target.framebuffer);
-  gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, target.resolveFramebuffer);
-  for (let i = 0; i < target.textures.length; i++) {
-    gl.readBuffer(gl.COLOR_ATTACHMENT0 + i);
-    gl.drawBuffers(buildSingleDrawBuffer(gl, i, target.textures.length));
-    gl.blitFramebuffer(
-      0,
-      0,
-      target.width,
-      target.height,
-      0,
-      0,
-      target.width,
-      target.height,
-      gl.COLOR_BUFFER_BIT,
-      gl.NEAREST,
-    );
-  }
-  gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null);
-  gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, runtime.currentFramebuffer);
-  if (scissor !== null) {
-    gl.enable(gl.SCISSOR_TEST);
-    gl.scissor(scissor.x, scissor.y, scissor.width, scissor.height);
+  try {
+    if (scissor !== null) gl.disable(gl.SCISSOR_TEST);
+    gl.bindFramebuffer(gl.READ_FRAMEBUFFER, target.framebuffer);
+    gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, target.resolveFramebuffer);
+    for (let i = 0; i < target.textures.length; i++) {
+      gl.readBuffer(gl.COLOR_ATTACHMENT0 + i);
+      gl.drawBuffers(buildSingleDrawBuffer(gl, i, target.textures.length));
+      gl.blitFramebuffer(
+        0,
+        0,
+        target.width,
+        target.height,
+        0,
+        0,
+        target.width,
+        target.height,
+        gl.COLOR_BUFFER_BIT,
+        gl.NEAREST,
+      );
+    }
+  } finally {
+    // FRAMEBUFFER bindings alias both READ and DRAW. Restore both halves explicitly because the
+    // resolve split them, including when a driver or test double throws during a blit.
+    gl.bindFramebuffer(gl.READ_FRAMEBUFFER, runtime.currentFramebuffer);
+    gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, runtime.currentFramebuffer);
+    if (scissor !== null) {
+      gl.enable(gl.SCISSOR_TEST);
+      gl.scissor(scissor.x, scissor.y, scissor.width, scissor.height);
+    }
+    runtime.currentTexture = null;
   }
   // Flush so the resolved texels are visible to the next sample of `target.texture`. The blit→sample
   // dependency is implicit in conformant GL, but some drivers (notably headless SwiftShader) sample a
   // stale resolve texture without this; the cost is one flush per frame, only when MSAA is enabled.
   gl.flush();
-  runtime.currentTexture = null;
 }
 
 // Allocates color textures/renderbuffers (and the resolve FBO for MSAA) plus optional depth into the

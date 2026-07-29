@@ -4,6 +4,7 @@ import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting/c
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { addNodeChild } from '@flighthq/node/contract';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
 import type { Camera3D, GlRenderTarget, Scene3DLightsLike } from '@flighthq/types/contract';
 
@@ -94,5 +95,20 @@ describe('presentGlScene3D', () => {
     expect(lastTargetBind).toBeGreaterThan(0);
     expect(lastDraw).toBeGreaterThan(0);
     expect(gl.calls.some((c) => c.name === 'bindTexture' && c.args[1] === target.texture)).toBe(true);
+  });
+
+  it('ends the target pass when scene drawing throws', () => {
+    const { state, gl } = makeGlScene3DState();
+    registerStandardPbrGlMaterial(state);
+    const scene = createNode3D(Node3DKind);
+    addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));
+    Object.assign(gl, {
+      drawElements(): void {
+        throw new Error('custom draw failed');
+      },
+    });
+
+    expect(() => presentGlScene3D(state, makeTarget(), scene, makeCamera(), LIGHTS)).toThrow('custom draw failed');
+    expect(getGlRenderStateRuntime(state).currentRenderTarget).toBeNull();
   });
 });
