@@ -82,3 +82,45 @@ export interface CollisionManifold {
   normalY: number;
   depth: number;
 }
+
+// One point of contact between two overlapping shapes. (`x`,`y`) is the world-space anchor and
+// `depth` is that point's own penetration along the manifold normal — points on the same manifold
+// generally penetrate by different amounts, which is what lets a solver correct a tilted resting
+// contact. `featureId` is an opaque integer naming which pair of shape features (edges/vertices)
+// produced the point: it is stable frame to frame while the same features stay in contact, so a
+// physics solver can match this frame's point against last frame's cached impulse and warm-start it.
+// Treat the value as an identity token only — nothing is encoded for callers to read.
+export interface CollisionContactPoint {
+  x: number;
+  y: number;
+  depth: number;
+  featureId: number;
+}
+
+// The full contact manifold: everything `CollisionManifold` reports plus the world-space points at
+// which the two shapes actually touch. A minimum-translation normal alone is enough to *separate* a
+// pair, but not to simulate one — a rigid-body impulse acts at a point, and its angular term is the
+// cross product of the lever arm (contact point minus center of mass) with the normal. With no
+// point there is no lever arm, so contact can never produce torque: a box would slide down a slope
+// without ever tipping. `@flighthq/physics2d` consumes this; a trigger system or overlap query
+// wants the cheaper `CollisionManifold` and the `test*Collision` functions instead.
+//
+// `overlapping`, `normalX`, `normalY`, and `depth` carry exactly the `CollisionManifold` meaning —
+// normal oriented to push **A out of B**, `depth` the minimum-translation penetration along it.
+// `points` is a fixed two-element array owned by the manifold and reused across calls (2 is the
+// maximum for 2D convex contact: a face-face pair). `pointCount` says how many leading entries are
+// valid this call — 2 for a face-face contact, 1 for a vertex-face or circle contact, and 0 when
+// the pair overlaps but the contact region degenerates, in which case a solver can still fall back
+// to the normal and `depth`. Entries beyond `pointCount` hold stale values and must not be read.
+//
+// Points lie on the surface of the penetrating (incident) shape: the clipped incident face for
+// polygon pairs, the circle's deepest surface point for circle pairs. The two surfaces differ by at
+// most `depth`, which is immaterial to a solver that uses the point only as a lever-arm anchor.
+export interface CollisionContactManifold {
+  overlapping: boolean;
+  normalX: number;
+  normalY: number;
+  depth: number;
+  pointCount: number;
+  points: CollisionContactPoint[];
+}

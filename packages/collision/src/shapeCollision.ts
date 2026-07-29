@@ -7,6 +7,7 @@ import type {
   CollisionPolygon,
 } from '@flighthq/types/contract';
 
+import { writeAabbVertices, writeObbVertices } from './convexVertices';
 import { clearCollisionManifold } from './manifold';
 
 // The 2D narrow-phase pair tests. Each writes an `out` CollisionManifold and returns whether the
@@ -511,44 +512,6 @@ function polygonAxisOverlap(
   const penLow = maxA - minB;
   const penHigh = maxB - minA;
   return penLow < penHigh ? penLow : penHigh;
-}
-
-// Writes the four corners of an axis-aligned box into `out` as a flat `[x0,y0,...]` list.
-function writeAabbVertices(aabb: Readonly<CollisionAabb>, out: Float64Array): void {
-  const minX = aabb.minX;
-  const minY = aabb.minY;
-  const maxX = aabb.maxX;
-  const maxY = aabb.maxY;
-  out[0] = minX;
-  out[1] = minY;
-  out[2] = maxX;
-  out[3] = minY;
-  out[4] = maxX;
-  out[5] = maxY;
-  out[6] = minX;
-  out[7] = maxY;
-}
-
-// Writes the four world-space corners of an oriented box into `out` as a flat `[x0,y0,...]` list.
-function writeObbVertices(obb: Readonly<CollisionObb>, out: Float64Array): void {
-  const cx = obb.x;
-  const cy = obb.y;
-  const halfW = obb.halfW;
-  const halfH = obb.halfH;
-  const cos = Math.cos(obb.rotation);
-  const sin = Math.sin(obb.rotation);
-  const wx = cos * halfW;
-  const wy = sin * halfW;
-  const hx = -sin * halfH;
-  const hy = cos * halfH;
-  out[0] = cx - wx - hx;
-  out[1] = cy - wy - hy;
-  out[2] = cx + wx - hx;
-  out[3] = cy + wy - hy;
-  out[4] = cx + wx + hx;
-  out[5] = cy + wy + hy;
-  out[6] = cx - wx + hx;
-  out[7] = cy - wy + hy;
 }
 
 const scratchA = new Float64Array(8);
