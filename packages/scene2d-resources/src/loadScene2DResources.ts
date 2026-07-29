@@ -1,4 +1,3 @@
-import { setNode2DSlotContent } from '@flighthq/scene2d/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import type {
   LoadScene2DResourcesOptions,
@@ -9,6 +8,8 @@ import type {
   Scene2DResources,
 } from '@flighthq/types/contract';
 import { Scene2DContentReferenceKind } from '@flighthq/types/contract';
+
+import { setScene2DContentReferenceContent } from './scene2DContentReference';
 
 // Operation-scoped asynchronous boundary. Slot fills remain synchronous and code-driven; only asset
 // references cross the caller-supplied Promise seam. No resolver state survives this call.
@@ -61,7 +62,7 @@ function reconcileLoadedScene2DContent(
   resolved: Scene2DResourceResolution[],
   unresolved: Scene2DContentReference[],
 ): void {
-  setNode2DSlotContent(reference.target, content);
+  setScene2DContentReferenceContent(reference, content);
   if (content === null) unresolved.push(reference);
   else resolved.push({ content, reference });
 }

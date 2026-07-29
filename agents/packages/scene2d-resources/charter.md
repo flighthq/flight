@@ -134,16 +134,19 @@ _Append-only, dated, blessed rulings._
   `Scene2DDocumentImporterRegistry` starts empty; SVG and Lottie register through separately imported
   functions, and custom/Rive/SWF codecs use the same last-write-wins kind registry. No codec registers at
   module load and URL acquisition requires a caller-supplied fetch seam.
+- **[2026-07-29] Installed content belongs to the manifest reference, not `Node2DRuntime`.** Each
+  `Scene2DContentReference` explicitly retains its current content so repeated resolve passes can replace
+  only the child they installed. Slot linkage likewise remains reference metadata. This keeps resource
+  state off every 2D node and avoids a hidden resources-layer map.
 
 ## Open directions
 
-1. **Cross-package sequencing** — the `authored placeholder bounds` and `linkage` primitives in
-   `node`/`scene2d`/`types` are prerequisites; land them before the resolve pipeline.
+1. ~~**Cross-package sequencing**~~ — **resolved 2026-07-29:** resource bindings and linkage are
+   explicit manifest-reference state; no `node`/`scene2d` runtime primitive is required.
 2. **Slot typing/validation** — how strictly a slot's linkage type is checked against the `Node2D` code
    supplies (structural vs nominal), and the diagnostic when a document names a slot code never fills.
-3. **Non-unique names** — `data-name`/layer names are not unique (three "Button"s); `findNodeByName`
-   is first-match. A `findNodesByName` (all matches) in `@flighthq/node` may be needed once slots
-   arrive.
+3. ~~**Non-unique names**~~ — **resolved 2026-07-29:** importers retain direct target references in the
+   manifest, so runtime name traversal is not part of binding.
 4. **Source coverage** — which importers feed the named-graph mode first (see the source cells: Rive
    as the modern authoring source, SWF as the archetypal legacy source, SVG-from-XD as the cheap flat/
    named channel that needs per-tool name resolution — `data-name`/`inkscape:label`/`<title>`/`id`).

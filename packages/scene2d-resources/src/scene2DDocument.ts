@@ -1,4 +1,3 @@
-import { setNode2DLinkage } from '@flighthq/scene2d/contract';
 import type {
   Node2D,
   Scene2DAssetReference,
@@ -15,7 +14,7 @@ export function createScene2DAssetReference(
   required = true,
 ): Scene2DAssetReference {
   target.name = name;
-  return { kind: Scene2DContentReferenceKind.Asset, name, required, target, uri };
+  return { content: null, kind: Scene2DContentReferenceKind.Asset, name, required, target, uri };
 }
 
 export function createScene2DDocument(
@@ -33,6 +32,5 @@ export function createScene2DSlotReference(
   required = true,
 ): Scene2DSlotReference {
   target.name = name;
-  setNode2DLinkage(target, linkage);
-  return { kind: Scene2DContentReferenceKind.Slot, linkage, name, required, target };
+  return { content: null, kind: Scene2DContentReferenceKind.Slot, linkage, name, required, target };
 }
