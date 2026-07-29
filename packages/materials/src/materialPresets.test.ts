@@ -2,14 +2,12 @@ import {
   ExtendedPbrMaterialKind,
   StandardPbrMaterialKind,
   TransmissionVolumePbrExtensionKind,
-  TransmissionVolumePbrMaterialKind,
 } from '@flighthq/types/contract';
 
 import {
   createAluminumStandardPbrMaterial,
   createCarbonStandardPbrMaterial,
   createGlassExtendedPbrMaterial,
-  createGlassTransmissionVolumePbrMaterial,
   createGoldStandardPbrMaterial,
   createIronStandardPbrMaterial,
   createMarbleStandardPbrMaterial,
@@ -64,19 +62,6 @@ describe('createGlassExtendedPbrMaterial', () => {
     expect(material.alphaMode).toBe('blend');
     expect(material.standard.roughness).toBe(0.2);
     expect(extension).toMatchObject({ ior: 1.7, transmission: 1 });
-  });
-});
-
-describe('createGlassTransmissionVolumePbrMaterial', () => {
-  it('creates a fully-transmissive material with IOR 1.5', () => {
-    const m = createGlassTransmissionVolumePbrMaterial();
-    expect(m.kind).toBe(TransmissionVolumePbrMaterialKind);
-    expect(m.transmission).toBe(1);
-    expect(m.ior).toBe(1.5);
-  });
-  it('applies overrides', () => {
-    const m = createGlassTransmissionVolumePbrMaterial({ ior: 1.7 });
-    expect(m.ior).toBe(1.7);
   });
 });
 

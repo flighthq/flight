@@ -1,6 +1,7 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type {
   GlColorAdjustmentMaterialFeature,
+  GlPbrExtensionShaderContribution,
   GlPbrProgram,
   GlRenderState,
   GlPbrDefineKey,
@@ -16,29 +17,22 @@ import { getGlScene3DRuntime } from './glScene3DRuntime';
 export function compileGlPbrProgram(
   gl: WebGL2RenderingContext,
   key: Readonly<GlPbrDefineKey>,
+  contributions: readonly GlPbrExtensionShaderContribution[] = [],
   colorAdjustmentFeature: Readonly<GlColorAdjustmentMaterialFeature> | null = null,
 ): GlPbrProgram {
   const vertexSource = getGlPbrVertexSourceForKey(key);
-  const fragmentSource = getGlPbrFragmentSourceForKey(key, colorAdjustmentFeature);
+  const fragmentSource = getGlPbrFragmentSourceForKey(key, contributions, colorAdjustmentFeature);
   const program = compileGlProgram(gl, vertexSource, fragmentSource);
   return {
     ...resolveGlLitLocations(gl, program),
     program,
     locAlphaCutoff: gl.getUniformLocation(program, 'u_alphaCutoff'),
     locAlphaMap: gl.getUniformLocation(program, 'u_alphaMap'),
-    locAnisotropyRotation: gl.getUniformLocation(program, 'u_anisotropyRotation'),
-    locAnisotropyStrength: gl.getUniformLocation(program, 'u_anisotropyStrength'),
-    locAttenuationColor: gl.getUniformLocation(program, 'u_attenuationColor'),
     locBaseColor: gl.getUniformLocation(program, 'u_baseColor'),
     locBaseColorMap: gl.getUniformLocation(program, 'u_baseColorMap'),
-    locClearcoat: gl.getUniformLocation(program, 'u_clearcoat'),
-    locClearcoatRoughness: gl.getUniformLocation(program, 'u_clearcoatRoughness'),
     locEmissive: gl.getUniformLocation(program, 'u_emissive'),
     locEmissiveMap: gl.getUniformLocation(program, 'u_emissiveMap'),
     locEmissiveStrength: gl.getUniformLocation(program, 'u_emissiveStrength'),
-    locIridescence: gl.getUniformLocation(program, 'u_iridescence'),
-    locIridescenceIor: gl.getUniformLocation(program, 'u_iridescenceIor'),
-    locIridescenceThickness: gl.getUniformLocation(program, 'u_iridescenceThickness'),
     locJointTexture: gl.getUniformLocation(program, 'u_jointTexture'),
     locMetallic: gl.getUniformLocation(program, 'u_metallic'),
     locMetallicRoughnessMap: gl.getUniformLocation(program, 'u_metallicRoughnessMap'),
@@ -49,14 +43,6 @@ export function compileGlPbrProgram(
     locOcclusionMap: gl.getUniformLocation(program, 'u_occlusionMap'),
     locOcclusionStrength: gl.getUniformLocation(program, 'u_occlusionStrength'),
     locRoughness: gl.getUniformLocation(program, 'u_roughness'),
-    locSheenColor: gl.getUniformLocation(program, 'u_sheenColor'),
-    locSheenRoughness: gl.getUniformLocation(program, 'u_sheenRoughness'),
-    locSpecular: gl.getUniformLocation(program, 'u_specular'),
-    locSpecularColor: gl.getUniformLocation(program, 'u_specularColor'),
-    locSubsurface: gl.getUniformLocation(program, 'u_subsurface'),
-    locSubsurfaceColor: gl.getUniformLocation(program, 'u_subsurfaceColor'),
-    locThickness: gl.getUniformLocation(program, 'u_thickness'),
-    locTransmission: gl.getUniformLocation(program, 'u_transmission'),
     locViewProjection: gl.getUniformLocation(program, 'u_viewProjection'),
   };
 }
@@ -64,7 +50,11 @@ export function compileGlPbrProgram(
 // Resolves the StandardPbr program for a define key, compiling and caching it on first use through
 // the shared scene program cache under the `pbr:` family namespace, so each variant is compiled at
 // most once per state and reused every frame.
-export function ensureGlPbrProgram(state: GlRenderState, key: Readonly<GlPbrDefineKey>): GlPbrProgram {
+export function ensureGlPbrProgram(
+  state: GlRenderState,
+  key: Readonly<GlPbrDefineKey>,
+  contributions: readonly GlPbrExtensionShaderContribution[] = [],
+): GlPbrProgram {
   // Fold the render-state skinned-run flag into the variant so a skinned draw of an otherwise-identical
   // material compiles + caches its own HAS_SKIN program, without the material renderer knowing.
   const fullKey: GlPbrDefineKey = {
@@ -73,7 +63,14 @@ export function ensureGlPbrProgram(state: GlRenderState, key: Readonly<GlPbrDefi
     hasColorMatrix: getGlScene3DRuntime(state).activeColorMatrixRun,
     hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
   };
-  return ensureGlScene3DProgram(state, `pbr:${buildGlPbrDefineKey(fullKey)}`, (gl) =>
-    compileGlPbrProgram(gl, fullKey, getGlRenderStateRuntime(state).glColorAdjustmentMaterialFeature ?? null),
+  const extensionKey = contributions.map((contribution) => contribution.key).join(',');
+  const registryVersion = getGlScene3DRuntime(state).pbrExtensionRegistryVersion;
+  return ensureGlScene3DProgram(state, `pbr:${buildGlPbrDefineKey(fullKey)}:${registryVersion}:${extensionKey}`, (gl) =>
+    compileGlPbrProgram(
+      gl,
+      fullKey,
+      contributions,
+      getGlRenderStateRuntime(state).glColorAdjustmentMaterialFeature ?? null,
+    ),
   );
 }

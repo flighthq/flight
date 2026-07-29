@@ -3,6 +3,7 @@ import type { Entity, Kind } from './Entity';
 import type { ImageResource } from './ImageResource';
 import type { ExternalImageResourceReference, ImageResourceReference } from './ImageResourceReference';
 import type { Material } from './Material';
+import type { PbrExtension } from './PbrExtension';
 import type { ResourceLoader } from './ResourceLoader';
 import type { Signal } from './Signal';
 import type { Texture } from './Texture';
@@ -14,7 +15,10 @@ export type ImageResourceFetch = (
 
 export type Scene3DMaterialTextureLister = (material: Readonly<Material>, out: Texture[]) => void;
 
+export type Scene3DPbrExtensionTextureLister = (extension: Readonly<PbrExtension>, out: Texture[]) => void;
+
 export interface Scene3DMaterialTextureRegistry extends Entity {
+  extensionListers: Map<Kind, Scene3DPbrExtensionTextureLister>;
   listers: Map<Kind, Scene3DMaterialTextureLister>;
 }
 

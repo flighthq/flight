@@ -127,8 +127,8 @@
   "crossfade:canvas": 13387,
   "crossfade:webgl": 22856,
   "crossfade:webgpu": 26016,
-  "materialshowcase:webgl": 38829,
-  "materialshowcase:webgpu": 43538,
+  "materialshowcase:webgl": 42260,
+  "materialshowcase:webgpu": 44677,
   "awd2loading:webgl": 36431,
   "awd2loading:webgpu": 39016
 }

@@ -6,8 +6,9 @@ import {
   beginGlRenderEffectPipeline,
   createAmbientLight,
   createCamera3D,
-  createClearcoatPbrMaterial,
+  createClearcoatPbrExtension,
   createDirectionalLight,
+  createExtendedPbrMaterial,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
@@ -20,7 +21,8 @@ import {
   getBitmapPixelLuminance,
   normalizeVector3,
   prepareScene3DRender,
-  registerClearcoatPbrGlMaterial,
+  registerClearcoatPbrGlExtension,
+  registerExtendedPbrGlMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
@@ -40,7 +42,8 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0x0a0c10ff,
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
-registerClearcoatPbrGlMaterial(state);
+registerClearcoatPbrGlExtension(state);
+registerExtendedPbrGlMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 4,
@@ -66,8 +69,8 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   endGlRenderEffectPipeline(state, pipeline, []);
 }
 
-// material-clearcoat — proves a 3D ClearcoatPbrMaterial mesh renders WITH directional lighting on the Gl and Wgpu
-// forward renderers (scene-gl / scene-wgpu). A single mid-gray sphere sits at the origin under one
+// material-clearcoat proves an Extended PBR clearcoat contribution under directional lighting.
+// A single mid-gray sphere sits at the origin under one
 // white directional light (angled so its travel direction points down-left-into-screen) plus a dim
 // ambient fill. The camera looks straight at the sphere from +z.
 //
@@ -93,10 +96,9 @@ const geometry = createSphereMeshGeometry(0.5, 48, 32);
 
 // Mid-gray dielectric base (metallic 0, roughness ~0.5) gives a broad diffuse falloff that reads
 // clearly as a light/dark gradient across the sphere, with the extension factors set strongly active.
-const material = createClearcoatPbrMaterial({
+const material = createExtendedPbrMaterial({
+  extensions: [createClearcoatPbrExtension({ clearcoat: 1, clearcoatRoughness: 0.2 })],
   standard: createStandardPbrMaterialProperties({ baseColor: 0x808080ff, metallic: 0, roughness: 0.5 }),
-  clearcoat: 1,
-  clearcoatRoughness: 0.2,
 });
 
 const scene = createScene3D().root;

@@ -9,7 +9,6 @@ export * from './material';
 export * from './materialPresets';
 export * from './materialValidation';
 export * from './pbrExtension';
-export * from './pbrExtensionMaterials';
 export * from './pbrMaterials';
 export * from './phongToPbr';
 export * from './sheenPbrExtension';

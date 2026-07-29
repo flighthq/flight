@@ -111,8 +111,6 @@ export function buildGlPbrStandardDefineKey(
   const alphaMode = surface?.alphaMode ?? 'opaque';
   return {
     alphaMaskEnabled: alphaMode === 'mask',
-    anisotropyEnabled: false,
-    clearcoatEnabled: false,
     // An opaque material ignores coverage (SurfaceMaterial contract), so it must not sample the alpha
     // map; only 'mask'/'blend' do. Same isGlTextureReady predicate as the bind path.
     hasAlphaMap: alphaMode !== 'opaque' && isGlTextureReady(state, standard?.alphaMap ?? null),
@@ -125,11 +123,6 @@ export function buildGlPbrStandardDefineKey(
     // when the base map is actually bound and carries a non-identity transform.
     hasUvTransform:
       baseColorMap !== null && isGlTextureReady(state, baseColorMap) && hasTextureUvTransform(baseColorMap),
-    iridescenceEnabled: false,
-    sheenEnabled: false,
-    specularEnabled: false,
-    subsurfaceEnabled: false,
-    transmissionEnabled: false,
   };
 }
 

@@ -77,16 +77,14 @@ describe('buildGlPbrStandardDefineKey', () => {
     ).toBe(false);
   });
 
-  it('returns all-false map and extension flags for a null block', () => {
+  it('returns all-false standard map flags for a null block', () => {
     const key = buildGlPbrStandardDefineKey(makeTextureReadyState(), null, null);
-    expect(key.clearcoatEnabled).toBe(false);
     expect(key.hasAlphaMap).toBe(false);
     expect(key.hasBaseColorMap).toBe(false);
     expect(key.hasEmissiveMap).toBe(false);
     expect(key.hasMetallicRoughnessMap).toBe(false);
     expect(key.hasOcclusionMap).toBe(false);
     expect(key.hasUvTransform).toBe(false);
-    expect(key.transmissionEnabled).toBe(false);
   });
 });
 

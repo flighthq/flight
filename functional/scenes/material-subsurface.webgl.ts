@@ -7,6 +7,7 @@ import {
   createAmbientLight,
   createCamera3D,
   createDirectionalLight,
+  createExtendedPbrMaterial,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
@@ -14,13 +15,14 @@ import {
   createPerspectiveProjection,
   createSphereMeshGeometry,
   createStandardPbrMaterialProperties,
-  createSubsurfacePbrMaterial,
+  createWrappedDiffusePbrExtension,
   createVector3,
   endGlRenderEffectPipeline,
   getBitmapPixelLuminance,
   normalizeVector3,
   prepareScene3DRender,
-  registerSubsurfacePbrGlMaterial,
+  registerWrappedDiffusePbrGlExtension,
+  registerExtendedPbrGlMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
@@ -40,7 +42,8 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0x0a0c10ff,
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
-registerSubsurfacePbrGlMaterial(state);
+registerWrappedDiffusePbrGlExtension(state);
+registerExtendedPbrGlMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 4,
@@ -66,8 +69,8 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   endGlRenderEffectPipeline(state, pipeline, []);
 }
 
-// material-subsurface — proves a 3D SubsurfacePbrMaterial mesh renders WITH directional lighting on the Gl and Wgpu
-// forward renderers (scene-gl / scene-wgpu). A single mid-gray sphere sits at the origin under one
+// material-subsurface proves an Extended PBR wrapped-diffuse contribution under directional lighting.
+// A single mid-gray sphere sits at the origin under one
 // white directional light (angled so its travel direction points down-left-into-screen) plus a dim
 // ambient fill. The camera looks straight at the sphere from +z.
 //
@@ -93,10 +96,9 @@ const geometry = createSphereMeshGeometry(0.5, 48, 32);
 
 // Mid-gray dielectric base (metallic 0, roughness ~0.5) gives a broad diffuse falloff that reads
 // clearly as a light/dark gradient across the sphere, with the extension factors set strongly active.
-const material = createSubsurfacePbrMaterial({
+const material = createExtendedPbrMaterial({
+  extensions: [createWrappedDiffusePbrExtension({ wrappedDiffuseColor: 0xff8060ff, wrappedDiffuseStrength: 1 })],
   standard: createStandardPbrMaterialProperties({ baseColor: 0x808080ff, metallic: 0, roughness: 0.5 }),
-  subsurface: 1,
-  subsurfaceColor: 0xff8060ff,
 });
 
 const scene = createScene3D().root;
@@ -142,11 +144,13 @@ export function assertRender(bitmap: Readonly<Bitmap>): void {
   const shadowLuminance = getBitmapPixelLuminance(bitmap, cx - offset, cy);
 
   if (litLuminance <= 24) {
-    throw new Error(`[material-subsurface] lit side is blank (luminance ${litLuminance}) — mesh did not render`);
+    throw new Error(
+      `[material-wrappedDiffuseStrength] lit side is blank (luminance ${litLuminance}) — mesh did not render`,
+    );
   }
   if (litLuminance <= shadowLuminance + 24) {
     throw new Error(
-      `[material-subsurface] no directional shading: lit side (${litLuminance}) is not clearly brighter than shadow side (${shadowLuminance})`,
+      `[material-wrappedDiffuseStrength] no directional shading: lit side (${litLuminance}) is not clearly brighter than shadow side (${shadowLuminance})`,
     );
   }
 }

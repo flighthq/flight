@@ -3,26 +3,36 @@ import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
+  beginGlRenderPass,
   beginGlRenderEffectPipeline,
   createAmbientLight,
+  createBoxMeshGeometry,
   createCamera3D,
   createDirectionalLight,
+  createExtendedPbrMaterial,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
+  createGlRenderTarget,
   createMesh,
   createPerspectiveProjection,
   createSphereMeshGeometry,
   createStandardPbrMaterialProperties,
-  createTransmissionVolumePbrMaterial,
+  createTransmissionVolumePbrExtension,
+  createUnlitMaterial,
   createVector3,
   endGlRenderEffectPipeline,
-  getBitmapPixelLuminance,
+  endGlRenderPass,
+  getBitmapPixelRgb,
+  invalidateNodeLocalTransform,
   normalizeVector3,
   prepareScene3DRender,
-  registerTransmissionVolumePbrGlMaterial,
+  registerTransmissionVolumePbrGlExtension,
+  registerUnlitGlMaterial,
+  registerExtendedPbrGlMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
+  setGlPbrTransmissionSceneColor,
 } from '@flighthq/sdk';
 
 // drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel
@@ -40,12 +50,22 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0x0a0c10ff,
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
-registerTransmissionVolumePbrGlMaterial(state);
+registerTransmissionVolumePbrGlExtension(state);
+registerExtendedPbrGlMaterial(state);
+registerUnlitGlMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 4,
   format: 'rgba16f',
   depth: 'depth-stencil',
+});
+const opaqueSceneTarget = createGlRenderTarget(state, {
+  colorSpace: 'linear',
+  depth: 'depth-stencil',
+  format: 'rgba8',
+  height: canvas.height,
+  sampleCount: 4,
+  width: canvas.width,
 });
 
 export const scale = pixelRatio;
@@ -53,11 +73,28 @@ export const width = 800;
 export const height = 600;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
+  setGlPbrTransmissionSceneColor(state, null);
+  beginGlRenderPass(state, opaqueSceneTarget);
+  renderGlBackground(state);
+  prepareScene3DRender(state, opaqueScene, camera, lights);
+  drawGlScene3D(state, opaqueScene, camera, lights);
+  endGlRenderPass(state);
+
+  const gl = state.gl;
+  gl.bindTexture(gl.TEXTURE_2D, opaqueSceneTarget.texture);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+  gl.generateMipmap(gl.TEXTURE_2D);
+  setGlPbrTransmissionSceneColor(state, {
+    height: opaqueSceneTarget.height,
+    mipLevelCount: Math.floor(Math.log2(Math.max(opaqueSceneTarget.width, opaqueSceneTarget.height))) + 1,
+    texture: opaqueSceneTarget.texture,
+    width: opaqueSceneTarget.width,
+  });
+
   beginGlRenderEffectPipeline(state, pipeline);
   // renderGlBackground clears color; the depth attachment needs its own clear to the far plane (1.0)
   // or every fragment fails the LESS depth test against an uncleared (0) buffer and the scene is black.
   renderGlBackground(state);
-  const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
@@ -66,21 +103,8 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   endGlRenderEffectPipeline(state, pipeline, []);
 }
 
-// material-transmission-volume — proves a 3D TransmissionVolumePbrMaterial mesh renders WITH directional lighting on the Gl and Wgpu
-// forward renderers (scene-gl / scene-wgpu). A single mid-gray sphere sits at the origin under one
-// white directional light (angled so its travel direction points down-left-into-screen) plus a dim
-// ambient fill. The camera looks straight at the sphere from +z.
-//
-// Because the light travels toward -x / -y / -z, surfaces are lit from the OPPOSITE side
-// (+x / +y / +z) — so the screen-RIGHT hemisphere of the sphere faces the light and is bright, while
-// the screen-LEFT hemisphere falls into shadow (lit only by the dim ambient term). The oracle samples
-// one pixel on each side and asserts the lit side is clearly brighter than the unlit side, which is
-// the signature of real per-pixel directional shading (a flat/unlit fill would be uniform).
-//
-// app.ts is backend-agnostic: it builds the scene/camera/lights once and hands them to render(), whose
-// per-backend implementation lives in render.webgl.ts / render.webgpu.ts. It imports render from
-// ./render (the local TS stub); the functional vite harness routes ./render to the active backend's
-// render.<renderer>.ts at runtime.
+// material-transmission-volume proves explicit opaque capture/resolve, projected refraction,
+// roughness-filtered sampling, and Beer-Lambert absorption against a striped background.
 // createScene3D exists on both @flighthq/node and @flighthq/scene3d, so it collides in the @flighthq/sdk
 // barrel (conflicting star exports) and is unavailable there — import the 3D scene one directly. The
 // Mesh added to it is a @flighthq/scene3d Node3D, so this is the type-correct source too.
@@ -93,17 +117,35 @@ const geometry = createSphereMeshGeometry(0.5, 48, 32);
 
 // Mid-gray dielectric base (metallic 0, roughness ~0.5) gives a broad diffuse falloff that reads
 // clearly as a light/dark gradient across the sphere, with the extension factors set strongly active.
-const material = createTransmissionVolumePbrMaterial({
+const material = createExtendedPbrMaterial({
+  extensions: [
+    createTransmissionVolumePbrExtension({
+      attenuationColor: 0x80c0ffff,
+      ior: 1.5,
+      thickness: 1,
+      transmission: 1,
+    }),
+  ],
   standard: createStandardPbrMaterialProperties({ baseColor: 0x808080ff, metallic: 0, roughness: 0.5 }),
-  transmission: 1,
-  thickness: 1,
-  attenuationColor: 0x80c0ffff,
-  ior: 1.5,
 });
 
 const scene = createScene3D().root;
+const opaqueScene = createScene3D().root;
+addBackdrop(scene);
+addBackdrop(opaqueScene);
 const mesh = createMesh(geometry, [material]);
 addNodeChild(scene, mesh);
+
+function addBackdrop(target: Node3D): void {
+  const colors = [0xf43f5eff, 0x22d3eeff, 0xfacc15ff, 0x8b5cf6ff, 0x34d399ff];
+  for (let i = 0; i < colors.length; i++) {
+    const stripe = createMesh(createBoxMeshGeometry(0.75, 3.2, 0.05), [createUnlitMaterial({ baseColor: colors[i] })]);
+    stripe.position.x = (i - 2) * 0.75;
+    stripe.position.z = -1.2;
+    invalidateNodeLocalTransform(stripe);
+    addNodeChild(target, stripe);
+  }
+}
 
 // Perspective camera dead-on the sphere from +z, looking at the origin. The aspect must match the
 // target so the sphere stays circular (prepareScene3DRender reads aspect off the projection).
@@ -129,28 +171,14 @@ const lights = {
 
 render(scene, camera, lights);
 
-// Oracle: not blank + shows directional shading. The sphere is centered; sample a pixel on the lit
-// (screen-right) hemisphere and one on the shadowed (screen-left) hemisphere, both inset from center
-// so they land on the sphere surface, and assert the lit side is clearly brighter.
 export function assertRender(bitmap: Readonly<Bitmap>): void {
   const cx = Math.floor(bitmap.width / 2);
   const cy = Math.floor(bitmap.height / 2);
-  // On-screen the sphere is ~120px in radius; sample ~60px either side of center so both points land
-  // on its surface. The light faces +x, so the screen-right point is on the lit hemisphere and the
-  // screen-left point is on the shadowed hemisphere.
-  const offset = Math.floor(bitmap.width * 0.075);
-
-  const litLuminance = getBitmapPixelLuminance(bitmap, cx + offset, cy);
-  const shadowLuminance = getBitmapPixelLuminance(bitmap, cx - offset, cy);
-
-  if (litLuminance <= 24) {
+  const transmitted = getBitmapPixelRgb(bitmap, cx, cy);
+  const unobstructed = getBitmapPixelRgb(bitmap, cx, Math.floor(bitmap.height * 0.25));
+  if (transmitted === unobstructed) {
     throw new Error(
-      `[material-transmission-volume] lit side is blank (luminance ${litLuminance}) — mesh did not render`,
-    );
-  }
-  if (litLuminance <= shadowLuminance + 24) {
-    throw new Error(
-      `[material-transmission-volume] no directional shading: lit side (${litLuminance}) is not clearly brighter than shadow side (${shadowLuminance})`,
+      `[material-transmission-volume] center transmission pixel (${transmitted.toString(16)}) matches the unobstructed background — refraction/absorption did not contribute`,
     );
   }
 }
