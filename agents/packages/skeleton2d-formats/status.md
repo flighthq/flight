@@ -2,9 +2,13 @@
 
 Continuity log for `@flighthq/skeleton2d-formats`. See [charter](./charter.md) for the AAA target and the **Option C** decision (formats now + animation binding; defer only the constraint solvers).
 
-## Current state — Spine `.json` parser landed (2026-07-29)
+## Current state — Spine `.json` complete; DragonBones `.json` bone increment landed (2026-07-29)
 
-The package exists, is registered (tsconfig paths/build refs, sdk barrel `formats` group + deps, package.json `.`+`./contract` lanes), and passes the scoped `npm run check skeleton2d-formats` (packages/typecheck/exports/type-home/order/portable/api). **16 tests pass across 2 files.** All types live in `@flighthq/types` (implementation exports functions only).
+The package exists, is registered (tsconfig paths/build refs, sdk barrel `formats` group + deps, package.json `.`+`./contract` lanes), and passes the scoped `npm run check skeleton2d-formats`. **25 tests pass across 3 files.** All types live in `@flighthq/types` (implementation exports functions only).
+
+**DragonBones (`dragonBonesParse.ts`) — `parseDragonBonesSkeleton(json, diagnostics?)` → `Skeleton2DImport | null`, increment 1 (bones):** registered behind the seam (`detectDragonBones` on an `armature` key). Parses the FIRST armature's bone hierarchy: **topologically sorted** (DragonBones bones are not parent-before-child ordered, so parents are emitted before children; dangling/cyclic parents become roots + `dragonbones.unresolved-bone-parent` crumb). Transform maps `skX/skY` (or newer `rotate/skew`) → `Bone2D.rotation = rotation`, `shearX = 0`, `shearY = skew`, `scX/scY → scale`, `x/y` (algebra sourced from the MIT DragonBones `ObjectDataParser`, in charter #4). Inheritance: the 4-boolean model → `TransformMode2D` (Normal / OnlyTranslation / NoScale / NoScaleOrReflection / NoRotationOrReflection); the two combos the enum cannot express (keep rot+scale strip refl; keep scale+refl strip rot) and `inheritTranslation:false` are `Skip`-crumbed. Slots/skins/animation/additional-armatures are `Skip`-crumbed (later increments). **Model-shape finding (surfaced to review):** DragonBones' inherit factoring is richer than the Spine 5-enum — flagged, not forced into a model change.
+
+**Remaining DragonBones increments:** slots + displays (attachments), then frame-based `translateFrame`/`rotateFrame`/`scaleFrame` timelines → `AnimationClip` (relative deltas, `frameRate`→time conversion, same two-skeleton binder). Open caveat: DragonBones is Flash y-DOWN vs Spine/Flight y-UP — a possible y-sign reconciliation only the deferred corpus oracle can confirm (charter #4).
 
 **Types (in `@flighthq/types`):** `Skeleton2DImport` (setup-pose `Skeleton2D` + named animations) and `Skeleton2DImportAnimation` (`{ name, clip }`), both registered in the parallel index/contract barrels.
 
