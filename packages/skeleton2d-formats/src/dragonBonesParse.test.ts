@@ -1,6 +1,6 @@
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
-import type { ImportDiagnostic, RegionAttachment2D } from '@flighthq/types/contract';
-import { RegionAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
+import type { ImportDiagnostic, MeshAttachment2D, RegionAttachment2D } from '@flighthq/types/contract';
+import { MeshAttachment2DKind, RegionAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { parseDragonBonesSkeleton } from './dragonBonesParse';
@@ -129,9 +129,83 @@ describe('parseDragonBonesSkeleton', () => {
     expect(region).toMatchObject({ x: 1, y: 2, rotation: 30, scaleX: 1, scaleY: 1 });
   });
 
+  it('parses an unweighted mesh display into a MeshAttachment2D (positions direct, skin null)', () => {
+    const doc = {
+      armature: [
+        {
+          bone: [{ name: 'root' }],
+          slot: [{ name: 's', parent: 'root' }],
+          skin: [
+            {
+              name: 'default',
+              slot: [
+                {
+                  name: 's',
+                  display: [
+                    {
+                      type: 'mesh',
+                      name: 'm',
+                      uvs: [0, 0, 1, 0, 1, 1],
+                      triangles: [0, 1, 2],
+                      vertices: [0, 0, 10, 0, 10, 10],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const mesh = parseDragonBonesSkeleton(JSON.stringify(doc))!.skeleton.slots![0].attachment as MeshAttachment2D;
+    expect(mesh.kind).toBe(MeshAttachment2DKind);
+    expect(mesh.skin).toBeNull();
+    expect(mesh.vertexCount).toBe(3);
+    expect(Array.from(mesh.vertices!)).toEqual([0, 0, 10, 0, 10, 10]);
+    expect(Array.from(mesh.triangles)).toEqual([0, 1, 2]);
+  });
+
+  it('defers a WEIGHTED mesh (bonePose/slotPose skinning) — Skip-crumb, held at its displayIndex', () => {
+    const doc = {
+      armature: [
+        {
+          bone: [{ name: 'root' }],
+          slot: [{ name: 's', parent: 'root' }],
+          skin: [
+            {
+              name: 'default',
+              slot: [
+                {
+                  name: 's',
+                  display: [
+                    {
+                      type: 'mesh',
+                      name: 'm',
+                      uvs: [0, 0],
+                      triangles: [],
+                      vertices: [0, 0],
+                      weights: [1, 0, 1],
+                      bonePose: [],
+                      slotPose: [],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const kinds = collectImportDiagnostics((sink) => parseDragonBonesSkeleton(JSON.stringify(doc), sink)).map(
+      (c) => c.kind,
+    );
+    expect(kinds).toContain('dragonbones.weighted-mesh-unsupported');
+    expect(parseDragonBonesSkeleton(JSON.stringify(doc))!.skeleton.slots![0].attachment).toBeNull();
+  });
+
   it('holds an unmodeled display at its displayIndex slot (null, not dropped) so indices stay aligned', () => {
-    // A mesh display at index 0 must NOT drop, or the image at index 1 would shift to 0 and displayIndex 1
-    // would then address the wrong display (read-integrity axis 12 on the display array).
+    // A boundingBox display at index 0 must NOT drop, or the image at index 1 would shift to 0 and
+    // displayIndex 1 would then address the wrong display (read-integrity axis 12 on the display array).
     const doc = {
       armature: [
         {
@@ -144,7 +218,7 @@ describe('parseDragonBonesSkeleton', () => {
                 {
                   name: 's',
                   display: [
-                    { type: 'mesh', name: 'm' },
+                    { type: 'boundingBox', name: 'bb' },
                     { name: 'img', transform: { x: 9 } },
                   ],
                 },
@@ -157,7 +231,7 @@ describe('parseDragonBonesSkeleton', () => {
     const crumbs: ImportDiagnostic[] = collectImportDiagnostics((sink) =>
       parseDragonBonesSkeleton(JSON.stringify(doc), sink),
     );
-    expect(crumbs.map((c) => c.kind)).toContain('dragonbones.mesh-display-unsupported');
+    expect(crumbs.map((c) => c.kind)).toContain('dragonbones.boundingBox-display-unsupported');
     // displayIndex 1 still resolves to the image, not shifted down by the dropped mesh.
     const region = parseDragonBonesSkeleton(JSON.stringify(doc))!.skeleton.slots![0].attachment as RegionAttachment2D;
     expect(region.kind).toBe(RegionAttachment2DKind);
