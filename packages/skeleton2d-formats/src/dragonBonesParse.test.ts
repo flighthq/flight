@@ -165,42 +165,73 @@ describe('parseDragonBonesSkeleton', () => {
     expect(Array.from(mesh.triangles)).toEqual([0, 1, 2]);
   });
 
-  it('defers a WEIGHTED mesh (bonePose/slotPose skinning) — Skip-crumb, held at its displayIndex', () => {
-    const doc = {
+  // Wraps a single weighted mesh display in a full DragonBones doc. Bones are listed CHILD-FIRST so the
+  // topo-sort reorders (output [root=0, child=1]); the weights reference bones by armature FILE-ORDER index.
+  function weightedMeshDoc(mesh: Record<string, unknown>): string {
+    return JSON.stringify({
       armature: [
         {
-          bone: [{ name: 'root' }],
+          bone: [{ name: 'child', parent: 'root' }, { name: 'root' }],
           slot: [{ name: 's', parent: 'root' }],
-          skin: [
-            {
-              name: 'default',
-              slot: [
-                {
-                  name: 's',
-                  display: [
-                    {
-                      type: 'mesh',
-                      name: 'm',
-                      uvs: [0, 0],
-                      triangles: [],
-                      vertices: [0, 0],
-                      weights: [1, 0, 1],
-                      bonePose: [],
-                      slotPose: [],
-                    },
-                  ],
-                },
-              ],
-            },
-          ],
+          skin: [{ name: 'default', slot: [{ name: 's', display: [{ type: 'mesh', name: 'm', ...mesh }] }] }],
         },
       ],
-    };
-    const kinds = collectImportDiagnostics((sink) => parseDragonBonesSkeleton(JSON.stringify(doc), sink)).map(
-      (c) => c.kind,
-    );
-    expect(kinds).toContain('dragonbones.weighted-mesh-unsupported');
-    expect(parseDragonBonesSkeleton(JSON.stringify(doc))!.skeleton.slots![0].attachment).toBeNull();
+    });
+  }
+
+  it('converts a WEIGHTED mesh to Skin2D offsets, remapping bone indices through the topo-sort (formula parity)', () => {
+    // slotPose identity; the used bone is armature raw index 0 ('child'), which the topo-sort places at
+    // OUTPUT index 1. Its bind matrix is translate(10,0), so the inverse maps vertex (12,5) → bind-local (2,5).
+    const mesh = parseDragonBonesSkeleton(
+      weightedMeshDoc({
+        uvs: [0, 0],
+        triangles: [],
+        vertices: [12, 5],
+        slotPose: [1, 0, 0, 1, 0, 0],
+        bonePose: [0, 1, 0, 0, 1, 10, 0], // rawBoneIndex 0, bind = translate(10,0)
+        weights: [1, 0, 1], // vertex 0: one influence, rawBoneIndex 0, weight 1
+      }),
+    )!.skeleton.slots![0].attachment as MeshAttachment2D;
+    expect(mesh.vertices).toBeNull();
+    expect(Array.from(mesh.skin!.influenceCounts)).toEqual([1]);
+    // [outputBoneIndex, offsetX, offsetY, weight]: raw bone 0 ('child') → OUTPUT 1; offset (2,5).
+    expect(Array.from(mesh.skin!.influences)).toEqual([1, 2, 5, 1]);
+  });
+
+  it('applies the inverse bind ROTATION when converting a weighted mesh (formula parity)', () => {
+    // Bind matrix = a 90° rotation ([a,b,c,d]=[0,1,-1,0]); its inverse rotates the vertex (1,0) to (0,-1).
+    const mesh = parseDragonBonesSkeleton(
+      weightedMeshDoc({
+        uvs: [0, 0],
+        triangles: [],
+        vertices: [1, 0],
+        slotPose: [1, 0, 0, 1, 0, 0],
+        bonePose: [1, 0, 1, -1, 0, 0, 0], // rawBoneIndex 1 ('root' → output 0), bind = 90° rotation
+        weights: [1, 1, 1], // vertex 0: one influence, rawBoneIndex 1, weight 1
+      }),
+    )!.skeleton.slots![0].attachment as MeshAttachment2D;
+    const influences = Array.from(mesh.skin!.influences);
+    expect(influences[0]).toBe(0); // raw bone 1 ('root') → OUTPUT 0
+    expect(influences[1]).toBeCloseTo(0, 5); // offsetX
+    expect(influences[2]).toBeCloseTo(-1, 5); // offsetY
+    expect(influences[3]).toBe(1); // weight
+  });
+
+  it('recovers (Recover crumb) a weighted mesh whose stream is truncated, without reading past the end', () => {
+    const kinds = collectImportDiagnostics((sink) =>
+      parseDragonBonesSkeleton(
+        weightedMeshDoc({
+          uvs: [0, 0],
+          triangles: [],
+          vertices: [0, 0],
+          slotPose: [1, 0, 0, 1, 0, 0],
+          bonePose: [1, 1, 0, 0, 1, 0, 0],
+          weights: [2, 1, 1], // declares 2 influences but only supplies one before the stream ends
+        }),
+        sink,
+      ),
+    ).map((c) => c.kind);
+    expect(kinds).toContain('dragonbones.weighted-mesh-recovered');
   });
 
   it('holds an unmodeled display at its displayIndex slot (null, not dropped) so indices stay aligned', () => {

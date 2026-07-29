@@ -16,6 +16,10 @@ import {
   TransformMode2D,
 } from '@flighthq/types/contract';
 
+// Resolves a DragonBones armature-file-order bone index to the topo-sorted output index (the axis-12 remap).
+// Local to this file — a value, not an exported API type.
+type DragonBonesBoneRemap = (rawBoneIndex: number) => number;
+
 // Parses a DragonBones `.json` skeleton document (text) into a Skeleton2DImport. Tolerant and best-effort,
 // mirroring parseSpineSkeleton: a malformed / non-DragonBones document returns the sentinel `null`, and a
 // recognized document with unmodeled pieces yields best-effort data plus `ImportDiagnostic` Skip crumbs.
@@ -28,10 +32,11 @@ import {
 // four-boolean inheritance model (inheritRotation/Scale/Reflection/Translation) mapped onto Flight's
 // five-value TransformMode2D (two inexpressible combinations Skip-crumbed), and slots whose shown attachment
 // is a `displayIndex` into a per-slot display list (so that list is position-preserving — see
-// parseDragonBonesDefaultSkin). Image displays become region attachments and UNWEIGHTED mesh displays become
-// mesh attachments; WEIGHTED meshes (bonePose/slotPose bind-matrix skinning), armature/bounding-box/path
-// displays, additional armatures, alternate skins, and animation are recognized-but-unmodeled and
-// Skip-crumbed (weighted-mesh skinning + the topo-sort bone-index remap, then timelines, are next).
+// parseDragonBonesDefaultSkin). Image displays become region attachments; unweighted AND weighted mesh
+// displays become mesh attachments (weighted via bonePose/slotPose → Skin2D offsets with the topo-sort
+// bone-index remap — see parseDragonBonesWeightedMesh); armature/bounding-box/path displays, shared and
+// legacy-weighted meshes, additional armatures, alternate skins, and animation are recognized-but-unmodeled
+// and Skip-crumbed (frame timelines are next).
 export function parseDragonBonesSkeleton(json: string, diagnostics?: ImportDiagnostic[]): Skeleton2DImport | null {
   let doc: unknown;
   try {
@@ -56,7 +61,8 @@ export function parseDragonBonesSkeleton(json: string, diagnostics?: ImportDiagn
   const armature = first as Record<string, unknown>;
   const bones = parseDragonBonesBones(armature.bone, diagnostics);
   const boneIndexByName = buildBoneIndexByName(bones);
-  const skin = parseDragonBonesDefaultSkin(armature.skin, diagnostics);
+  const remapBoneIndex = buildDragonBonesBoneRemap(armature.bone, boneIndexByName);
+  const skin = parseDragonBonesDefaultSkin(armature.skin, remapBoneIndex, diagnostics);
   const slots = parseDragonBonesSlots(armature.slot, boneIndexByName, skin, diagnostics);
   skipCrumbDragonBonesGroup(diagnostics, armature.animation, 'dragonbones.animation-unsupported');
   return { animations: [], skeleton: createSkeleton2D(bones, slots) };
@@ -72,6 +78,27 @@ function buildBoneIndexByName(bones: readonly Bone2D[]): Map<string, number> {
     if (typeof name === 'string') byName.set(name, i);
   }
   return byName;
+}
+
+// Maps a DragonBones armature-FILE-ORDER bone index (the space weighted-mesh `weights`/`bonePose` reference
+// bones in) to the FINAL topo-sorted OUTPUT bone index — the read-integrity axis-12 remap the topo-sort
+// makes necessary, resolved through the bone's name so it is drop-safe. Returns -1 for an out-of-range or
+// unnamed/unresolvable raw index.
+function buildDragonBonesBoneRemap(
+  rawBones: unknown,
+  boneIndexByName: ReadonlyMap<string, number>,
+): DragonBonesBoneRemap {
+  const names: (string | null)[] = [];
+  if (Array.isArray(rawBones)) {
+    for (const entry of rawBones) {
+      const name = entry !== null && typeof entry === 'object' ? (entry as Record<string, unknown>).name : undefined;
+      names.push(typeof name === 'string' ? name : null);
+    }
+  }
+  return (rawBoneIndex) => {
+    const name = rawBoneIndex >= 0 && rawBoneIndex < names.length ? names[rawBoneIndex] : null;
+    return name !== null ? (boneIndexByName.get(name) ?? -1) : -1;
+  };
 }
 
 // Maps a DragonBones slot ColorTransform to a packed RGBA int (Slot2D.color). DragonBones color is the
@@ -109,6 +136,7 @@ function parseDragonBonesColor(raw: unknown, diagnostics?: ImportDiagnostic[]): 
 // dropped) — mirroring the DragonBones runtime's own addDisplay(slot, null) — so indices stay aligned.
 function parseDragonBonesDefaultSkin(
   raw: unknown,
+  remapBoneIndex: DragonBonesBoneRemap,
   diagnostics?: ImportDiagnostic[],
 ): Map<string, (Attachment2D | null)[]> {
   const table = new Map<string, (Attachment2D | null)[]>();
@@ -126,7 +154,9 @@ function parseDragonBonesDefaultSkin(
     for (const rawSlot of skin.slot) {
       if (rawSlot === null || typeof rawSlot !== 'object') continue;
       const slot = rawSlot as Record<string, unknown>;
-      if (typeof slot.name === 'string') table.set(slot.name, parseDragonBonesDisplayList(slot.display, diagnostics));
+      if (typeof slot.name === 'string') {
+        table.set(slot.name, parseDragonBonesDisplayList(slot.display, remapBoneIndex, diagnostics));
+      }
     }
   }
   if (alternateSkins > 0) {
@@ -143,12 +173,16 @@ function parseDragonBonesDefaultSkin(
 
 // Parses one DragonBones display into an Attachment2D, or `null` (holding its displayIndex slot) for a
 // malformed entry or an unmodeled type. DragonBones omits `type` for an image display (the default).
-function parseDragonBonesDisplay(raw: unknown, diagnostics?: ImportDiagnostic[]): Attachment2D | null {
+function parseDragonBonesDisplay(
+  raw: unknown,
+  remapBoneIndex: DragonBonesBoneRemap,
+  diagnostics?: ImportDiagnostic[],
+): Attachment2D | null {
   if (raw === null || typeof raw !== 'object') return null;
   const display = raw as Record<string, unknown>;
   const type = typeof display.type === 'string' ? display.type : 'image';
   if (type === 'image') return parseDragonBonesRegionDisplay(display);
-  if (type === 'mesh') return parseDragonBonesMeshDisplay(display, diagnostics);
+  if (type === 'mesh') return parseDragonBonesMeshDisplay(display, remapBoneIndex, diagnostics);
   reportImportDiagnostic(
     diagnostics,
     ImportDiagnosticSeverity.Skip,
@@ -159,22 +193,33 @@ function parseDragonBonesDisplay(raw: unknown, diagnostics?: ImportDiagnostic[])
   return null;
 }
 
-// A DragonBones mesh display → MeshAttachment2D. Only the UNWEIGHTED (rigid, single-slot-bone) case is
-// modeled here: its `vertices` are positions in the slot bone's local space, mapped directly like a Spine
-// unweighted mesh. A WEIGHTED mesh (a `weights` stream with cached `bonePose`/`slotPose` bind matrices) is
-// deferred and Skip-crumbed: unlike Spine — which pre-bakes each influence's per-bone offset — DragonBones
-// stores one vertex plus bind matrices and defers the skinning, so the conversion to Skin2D's per-bone
-// offsets needs bonePose/slotPose matrix math (and the topo-sort bone-index remap). A `share`d mesh
-// (geometry borrowed from another display) is likewise deferred. Held at its displayIndex (returns null).
+// A DragonBones mesh display → MeshAttachment2D. UNWEIGHTED (rigid, single-slot-bone): its `vertices` are
+// positions in the slot bone's local space, mapped directly like a Spine unweighted mesh. WEIGHTED (a
+// `weights` stream with `bonePose`/`slotPose` bind matrices): converted to Skin2D per-bone offsets (see
+// parseDragonBonesWeightedMesh). A `share`d mesh (geometry borrowed from another display) is not modeled and
+// is Skip-crumbed, held at its displayIndex (returns null).
 function parseDragonBonesMeshDisplay(
   display: Record<string, unknown>,
+  remapBoneIndex: DragonBonesBoneRemap,
   diagnostics?: ImportDiagnostic[],
 ): MeshAttachment2D | null {
-  if ('weights' in display || 'bonePose' in display || 'slotPose' in display || 'share' in display) {
+  if ('share' in display) {
     reportImportDiagnostic(
       diagnostics,
       ImportDiagnosticSeverity.Skip,
-      'dragonbones.weighted-mesh-unsupported',
+      'dragonbones.shared-mesh-unsupported',
+      'parseDragonBonesSkeleton',
+      { displays: 1 },
+    );
+    return null;
+  }
+  if ('weights' in display) {
+    if ('bonePose' in display) return parseDragonBonesWeightedMesh(display, remapBoneIndex, diagnostics);
+    // A `weights` stream without `bonePose` is DragonBones' older bind-matrix-less weighting; not modeled.
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'dragonbones.legacy-weighted-mesh-unsupported',
       'parseDragonBonesSkeleton',
       { displays: 1 },
     );
@@ -192,13 +237,119 @@ function parseDragonBonesMeshDisplay(
   };
 }
 
+// Converts a DragonBones WEIGHTED mesh to a MeshAttachment2D whose Skin2D carries per-bone LOCAL offsets, by
+// replicating the DragonBones runtime's geometry bake (ObjectDataParser._parseGeometry): each raw vertex is
+// pushed through `slotPose`, then through the INVERSE of each influencing bone's `bonePose` bind matrix, and
+// the result is that vertex expressed in the bone's bind-local frame — exactly what Skin2D + Flight's deform
+// consume (Σ w·(boneWorld·localOffset)). All matrices share Flight's `x'=a·x+c·y` convention (as does
+// DragonBones), so no transposition; the offsets are computed wholly within DragonBones' own space, so the
+// global y-down↔y-up question (charter #4) is orthogonal and unaffected here.
+//
+// The `weights` stream references bones by ARMATURE FILE-ORDER index; `remapBoneIndex` re-points each
+// influence at the topo-sorted OUTPUT bone (the axis-12 remap). Every read is bounded against the actual
+// stream length (axis 13); a truncated stream, an unresolvable bone, or a degenerate bind matrix drops that
+// influence/vertex best-effort and emits a Recover crumb.
+function parseDragonBonesWeightedMesh(
+  display: Record<string, unknown>,
+  remapBoneIndex: DragonBonesBoneRemap,
+  diagnostics?: ImportDiagnostic[],
+): MeshAttachment2D {
+  const uvs = toFloat32Array(display.uvs);
+  const vertexCount = uvs.length >> 1;
+  const verts = numberArray(display.vertices);
+  const weights = numberArray(display.weights);
+  const bonePose = numberArray(display.bonePose);
+  const slotPose = numberArray(display.slotPose);
+  const spA = numAt(slotPose, 0, 1);
+  const spB = numAt(slotPose, 1, 0);
+  const spC = numAt(slotPose, 2, 0);
+  const spD = numAt(slotPose, 3, 1);
+  const spTx = numAt(slotPose, 4, 0);
+  const spTy = numAt(slotPose, 5, 0);
+  const usedBoneCount = Math.floor(bonePose.length / 7);
+  const influenceCounts = new Uint16Array(vertexCount);
+  const influences: number[] = [];
+  let recovered = false;
+  let iW = 0;
+  for (let v = 0; v < vertexCount; v++) {
+    if (iW >= weights.length) {
+      recovered = true;
+      break;
+    }
+    const declaredCount = weights[iW++] | 0;
+    const vx = numAt(verts, v * 2, 0);
+    const vy = numAt(verts, v * 2 + 1, 0);
+    const sx = spA * vx + spC * vy + spTx;
+    const sy = spB * vx + spD * vy + spTy;
+    let realCount = 0;
+    for (let j = 0; j < declaredCount; j++) {
+      if (iW + 1 >= weights.length) {
+        recovered = true;
+        break;
+      }
+      const rawBoneIndex = weights[iW++] | 0;
+      const weight = weights[iW++];
+      const ordinal = findBonePoseOrdinal(bonePose, usedBoneCount, rawBoneIndex);
+      if (ordinal < 0) {
+        recovered = true;
+        continue;
+      }
+      const o = ordinal * 7;
+      const ba = bonePose[o + 1];
+      const bb = bonePose[o + 2];
+      const bc = bonePose[o + 3];
+      const bd = bonePose[o + 4];
+      const btx = bonePose[o + 5];
+      const bty = bonePose[o + 6];
+      const det = ba * bd - bb * bc;
+      if (det === 0) {
+        recovered = true;
+        continue;
+      }
+      const inv = 1 / det;
+      // Inverse of the bind matrix, then apply it to the slotPose-transformed vertex → bind-local offset.
+      const ia = bd * inv;
+      const ib = -bb * inv;
+      const ic = -bc * inv;
+      const id = ba * inv;
+      const itx = (bc * bty - bd * btx) * inv;
+      const ity = (bb * btx - ba * bty) * inv;
+      influences.push(remapBoneIndex(rawBoneIndex), ia * sx + ic * sy + itx, ib * sx + id * sy + ity, weight);
+      realCount++;
+    }
+    influenceCounts[v] = realCount;
+  }
+  if (recovered) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'dragonbones.weighted-mesh-recovered',
+      'parseDragonBonesSkeleton',
+      { meshes: 1 },
+    );
+  }
+  return {
+    kind: MeshAttachment2DKind,
+    name: typeof display.name === 'string' ? display.name : null,
+    skin: { influenceCounts, influences: Float32Array.from(influences) },
+    triangles: toUint16Array(display.triangles),
+    uvs,
+    vertexCount,
+    vertices: null,
+  };
+}
+
 // Maps a slot's `display` array to Flight attachments, POSITION-PRESERVING: result index i is displayIndex
 // i. Image → RegionAttachment2D; every other display type is unmodeled in this increment and held as `null`
 // + a Skip crumb (via parseDragonBonesDisplay), so displayIndex stays aligned.
-function parseDragonBonesDisplayList(raw: unknown, diagnostics?: ImportDiagnostic[]): (Attachment2D | null)[] {
+function parseDragonBonesDisplayList(
+  raw: unknown,
+  remapBoneIndex: DragonBonesBoneRemap,
+  diagnostics?: ImportDiagnostic[],
+): (Attachment2D | null)[] {
   const displays: (Attachment2D | null)[] = [];
   if (!Array.isArray(raw)) return displays;
-  for (const rawDisplay of raw) displays.push(parseDragonBonesDisplay(rawDisplay, diagnostics));
+  for (const rawDisplay of raw) displays.push(parseDragonBonesDisplay(rawDisplay, remapBoneIndex, diagnostics));
   return displays;
 }
 
@@ -255,6 +406,23 @@ function boolOr(value: unknown, fallback: boolean): boolean {
 // One DragonBones multiply-color channel (0–100 percent) → an 0–255 byte, clamped.
 function colorChannel(value: unknown): number {
   return Math.max(0, Math.min(255, Math.round((numberOr(value, 100) / 100) * 255)));
+}
+
+// The ordinal (0-based position in `bonePose`, 7 numbers each: [rawBoneIndex, a, b, c, d, tx, ty]) of the
+// used bone whose armature file-order index is `rawBoneIndex`, or -1 if this mesh's bind pose omits it.
+function findBonePoseOrdinal(bonePose: readonly number[], usedBoneCount: number, rawBoneIndex: number): number {
+  for (let i = 0; i < usedBoneCount; i++) {
+    if (bonePose[i * 7] === rawBoneIndex) return i;
+  }
+  return -1;
+}
+
+function numAt(values: readonly number[], index: number, fallback: number): number {
+  return index >= 0 && index < values.length && typeof values[index] === 'number' ? values[index] : fallback;
+}
+
+function numberArray(value: unknown): readonly number[] {
+  return Array.isArray(value) ? (value as number[]) : [];
 }
 
 function toFloat32Array(value: unknown): Float32Array {
