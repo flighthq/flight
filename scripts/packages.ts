@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import pc from 'picocolors';
 import * as ts from 'typescript';
 
+import { getPackageLayerCoverageViolations, getPackageLayerDependencyViolation } from './package-layers';
 import { isSdkBarrelExcludedPackage } from './sdk-policy';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -375,6 +376,12 @@ const packageDirs = readdirSync(packagesDir, { withFileTypes: true })
   .filter((e) => e.isDirectory())
   .map((e) => join(packagesDir, e.name));
 
+const workspacePackageNames = packageDirs.flatMap((pkgDir) => {
+  const name = readJson<PackageJson>(join(pkgDir, 'package.json'))?.name;
+  return name === undefined ? [] : [name];
+});
+const layerPolicyErrors = getPackageLayerCoverageViolations(workspacePackageNames);
+
 for (const pkgDir of packageDirs) {
   const pkg = readJson<PackageJson>(join(pkgDir, 'package.json'));
   if (pkg?.name !== undefined && existsSync(join(pkgDir, 'src', 'contract.ts'))) {
@@ -557,6 +564,11 @@ for (const pkgDir of packageDirs) {
     ),
   );
   const allFlightDeps = new Set<string>(Object.keys(allDeps).filter((d) => d.startsWith('@flighthq/')));
+
+  for (const dep of [...prodDeps].sort()) {
+    const violation = getPackageLayerDependencyViolation(name, dep);
+    if (violation !== null) errors.push(violation);
+  }
 
   for (const imp of [...sourceImports].sort()) {
     if (imp === name) continue;
@@ -816,7 +828,7 @@ const packageErrors = failedPackages.reduce((n, r) => n + r.errors.length, 0);
 const failedExamples = exampleResults.filter((r) => r.errors.length > 0);
 const exampleErrors = failedExamples.reduce((n, r) => n + r.errors.length, 0);
 
-const totalErrors = packageErrors + exampleErrors + barrelSyncErrors.length;
+const totalErrors = packageErrors + exampleErrors + barrelSyncErrors.length + layerPolicyErrors.length;
 
 if (jsonMode) {
   console.log(
@@ -830,6 +842,7 @@ if (jsonMode) {
           unpromotedExports: r.unpromotedExports,
         })),
         examples: exampleResults.map((r) => ({ name: r.name, errors: r.errors })),
+        layerPolicy: { errors: layerPolicyErrors },
         barrelSync: { errors: barrelSyncErrors },
       },
       null,
@@ -856,6 +869,13 @@ for (const { name, errors } of failedExamples) {
 if (barrelSyncErrors.length > 0) {
   console.log(`\n${pc.bold('@flighthq/sdk barrel sync')}`);
   for (const { label, detail } of barrelSyncErrors) {
+    console.log(`  ${pc.red('✗')} ${label}${detail ? pc.dim(` — ${detail}`) : ''}`);
+  }
+}
+
+if (layerPolicyErrors.length > 0) {
+  console.log(`\n${pc.bold('Package dependency-layer policy')}`);
+  for (const { label, detail } of layerPolicyErrors) {
     console.log(`  ${pc.red('✗')} ${label}${detail ? pc.dim(` — ${detail}`) : ''}`);
   }
 }
@@ -897,6 +917,8 @@ if (totalErrors === 0) {
     );
   if (barrelSyncErrors.length > 0)
     parts.push(`${barrelSyncErrors.length} barrel sync error${barrelSyncErrors.length === 1 ? '' : 's'}`);
+  if (layerPolicyErrors.length > 0)
+    parts.push(`${layerPolicyErrors.length} layer policy error${layerPolicyErrors.length === 1 ? '' : 's'}`);
   console.log(pc.red(`✗ ${parts.join(', ')}`));
   process.exit(1);
 }
