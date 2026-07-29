@@ -6,10 +6,8 @@ import {
   createTilemap,
   createTexture,
   createTextureAtlasFromGrid,
-  invalidateNodeAppearance,
-  resizeTilemap,
-  setTilemapTile,
 } from '@flighthq/sdk';
+import { buildTilemapLayersFromTiled, parseTiledTmj } from '@flighthq/sdk/formats';
 
 import { render, scale } from './render';
 
@@ -106,10 +104,9 @@ const atlas = createTextureAtlasFromGrid(
   createTexture({ storage: { dimension: '2d', image: imageResource } }),
 );
 
-const tilemap = createTilemap({ data: { atlas, tileHeight: TILE_SIZE, tileWidth: TILE_SIZE } });
-resizeTilemap(tilemap, MAP_COLUMNS, MAP_ROWS);
-
-// Procedural landscape: snow peaks at top, stone mountains, grass plains, sand shore, water.
+// Author the terrain as Tiled's one-based global tile IDs, then consume it through the same TMJ
+// parser and projection API used for a map loaded from disk.
+const tiledGids: number[] = [];
 for (let row = 0; row < MAP_ROWS; row++) {
   for (let col = 0; col < MAP_COLUMNS; col++) {
     let id: number;
@@ -135,11 +132,47 @@ for (let row = 0; row < MAP_ROWS; row++) {
     const dist = Math.sqrt((col - cx) ** 2 + (row - cy) ** 2);
     if (dist < 2.5) id = 6;
 
-    setTilemapTile(tilemap, col, row, id);
+    tiledGids.push(id + 1);
   }
 }
 
-invalidateNodeAppearance(tilemap);
+const tiledMap = parseTiledTmj(
+  JSON.stringify({
+    height: MAP_ROWS,
+    infinite: false,
+    layers: [
+      {
+        data: tiledGids,
+        height: MAP_ROWS,
+        id: 1,
+        name: 'terrain',
+        type: 'tilelayer',
+        width: MAP_COLUMNS,
+      },
+    ],
+    orientation: 'orthogonal',
+    renderorder: 'right-down',
+    tiledversion: '1.10.2',
+    tileheight: TILE_SIZE,
+    tilesets: [{ firstgid: 1, source: 'terrain.tsj' }],
+    tilewidth: TILE_SIZE,
+    type: 'map',
+    version: '1.10',
+    width: MAP_COLUMNS,
+  }),
+);
+if (tiledMap === null) throw new Error('Unable to parse bundled terrain.tmj');
+
+const tilemapLayers = buildTilemapLayersFromTiled(tiledMap, 0, () => ({
+  atlas,
+  tileHeight: TILE_SIZE,
+  tileWidth: TILE_SIZE,
+}));
+if (tilemapLayers === null || tilemapLayers.length !== 1) {
+  throw new Error('Unable to project terrain.tmj into a Flight tilemap');
+}
+
+const tilemap = createTilemap({ data: tilemapLayers[0] });
 addNodeChild(root, tilemap);
 
 function enterFrame(): void {
