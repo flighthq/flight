@@ -8,6 +8,7 @@ describe('createScene2DAssetReference', () => {
     const target = createDisplayObject();
     const reference = createScene2DAssetReference('heroImage', 'hero.png', target);
     expect(reference).toEqual({
+      content: null,
       kind: Scene2DContentReferenceKind.Asset,
       name: 'heroImage',
       required: true,
@@ -31,12 +32,13 @@ describe('createScene2DDocument', () => {
 });
 
 describe('createScene2DSlotReference', () => {
-  it('applies instance and linkage identity to the target', () => {
+  it('retains instance and linkage identity in the manifest', () => {
     const target = createDisplayObject();
     const reference = createScene2DSlotReference('avatarSlot', target, 'Game.Avatar', false);
+    expect(reference.content).toBeNull();
     expect(reference.kind).toBe(Scene2DContentReferenceKind.Slot);
+    expect(reference.linkage).toBe('Game.Avatar');
     expect(reference.required).toBe(false);
     expect(target.name).toBe('avatarSlot');
-    expect(target.linkage).toBe('Game.Avatar');
   });
 });

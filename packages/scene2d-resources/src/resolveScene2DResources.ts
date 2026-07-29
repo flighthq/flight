@@ -1,4 +1,3 @@
-import { setNode2DSlotContent } from '@flighthq/scene2d/contract';
 import type {
   Node2D,
   ResolveScene2DResourcesOptions,
@@ -7,6 +6,8 @@ import type {
   Scene2DResources,
 } from '@flighthq/types/contract';
 import { Scene2DContentReferenceKind } from '@flighthq/types/contract';
+
+import { setScene2DContentReferenceContent } from './scene2DContentReference';
 
 // Reconciles one caller-selected working set entirely synchronously. Asset content must already be
 // available through resolveAssetContent; application slots resolve by name/linkage. This function performs
@@ -22,10 +23,10 @@ export function resolveScene2DResources(
     if (options?.select !== undefined && !options.select(reference)) continue;
     const content = resolveScene2DContentReference(reference, options);
     if (content === null) {
-      setNode2DSlotContent(reference.target, null);
+      setScene2DContentReferenceContent(reference, null);
       unresolved.push(reference);
     } else {
-      setNode2DSlotContent(reference.target, content);
+      setScene2DContentReferenceContent(reference, content);
       resolved.push({ content, reference });
     }
   }
