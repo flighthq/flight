@@ -1,5 +1,6 @@
 import type { ImportDiagnostic, Skeleton2DImport } from '@flighthq/types/contract';
 
+import { parseDragonBonesSkeleton } from './dragonBonesParse';
 import { parseSpineSkeleton } from './spineParse';
 
 // The open skeleton-format registry: `kind → { detect, parse }`, last-write-wins, so a caller can register
@@ -16,11 +17,22 @@ function getRegistry(): Map<string, SkeletonFormatEntry> {
   if (_registry !== null) return _registry;
   _registry = new Map();
   _registry.set('Spine', { detect: detectSpine, parse: (text, diagnostics) => parseSpineSkeleton(text, diagnostics) });
+  _registry.set('DragonBones', {
+    detect: detectDragonBones,
+    parse: (text, diagnostics) => parseDragonBonesSkeleton(text, diagnostics),
+  });
   return _registry;
 }
 
-// A Spine skeleton JSON is an object carrying a `bones`, `skeleton`, or `slots` key. (The `.skel` binary
-// and DragonBones are later formats behind this same seam.)
+// A DragonBones skeleton JSON is an object carrying an `armature` array (its skeleton container). Distinct
+// from Spine, whose bone/slot arrays are top-level rather than nested under an armature.
+function detectDragonBones(text: string): boolean {
+  if (text.trimStart()[0] !== '{') return false;
+  return /"armature"\s*:/.test(text);
+}
+
+// A Spine skeleton JSON is an object carrying a `bones`, `skeleton`, or `slots` key. (The `.skel` binary is
+// a later format behind this same seam.)
 function detectSpine(text: string): boolean {
   if (text.trimStart()[0] !== '{') return false;
   return /"bones"\s*:/.test(text) || /"skeleton"\s*:/.test(text) || /"slots"\s*:/.test(text);
