@@ -11,6 +11,81 @@ by: builder
 
 <!-- newest entry on top -->
 
+## 2026-07-29 — Four-parser read-geometry audit; 3ds hang + awd2 inflate bomb fixed (builder, review-directed)
+
+Authorized follow-on to the glTF read-integrity work. Axes derived from first principles and **committed
+before any parser was opened** (`agents/read-integrity.md`, commit bf1774e2b) so "derived first" is
+checkable rather than asserted, with a recorded prediction per format. The audit then found five failure
+geometries the eight axes do not name; they are now axes 9-13 in that doc, each attributed to the parser
+that produced it.
+
+**TWO SEVERE DEFECTS FIXED (c62bf62f3).**
+
+- **3DS hangs on a 12-byte file.** Every chunk walk advances by `cursor = chunkEnd`, so a declared chunk
+  length of 0 puts the end back at the cursor and the loop never progresses. Not a throw — a HANG:
+  uncatchable, takes the whole import with it, and it violates the module's own "never throws on bad
+  input" contract more severely than a throw would. **The trigger is not adversarial: zero padding inside
+  a parent whose declared length still covers it**, which is what a block-aligning exporter produces.
+  Verified live before fixing (a 12-byte file, `timeout` exit 124; with the fix removed again it hung the
+  vitest runner itself). Fixed structurally: all eight chunk walks now derive their advance from one
+  `readChunkEnd`, which rejects a length shorter than the header. Five of the eight already had that
+  guard and three did not — the asymmetry *is* axis 11, and routing every walk through one definition is
+  what makes a non-terminating walk unrepresentable rather than an invariant eight loops must remember.
+  Lengths 1-5 are the same defect's quiet sibling (the cursor advances but lands mid-header, so the rest
+  of the parent silently vanishes); both probes added.
+
+- **AWD2 inflate is an unbounded allocation.** `InflateState.writeByte` doubled its output buffer with no
+  cap, and the `AwdDecompressor` seam carries no output limit. A ~300 KB crafted stream declares 300 MB;
+  the ratio is arbitrary. This is axis 13 and it is genuinely outside the original eight: **every other
+  axis assumes the quantity sizing an allocation is a field that can be checked against the buffer, and
+  under decompression it is the compression ratio — not in the file, not bounded by its length, reachable
+  by no per-field check.** Capped at 256 MB; the throw is caught by the existing boundary and becomes a
+  clean `awd2.decompression-failed` Reject. Verified: a 300 KB bomb is now rejected in 1.3 s. The
+  *uncapped* case was deliberately NOT executed — it is an unbounded allocation on a real machine, and the
+  absence of any bound is a code-reading certainty, not a hypothesis needing a demonstration.
+
+**REMAINING, NOT YET FIXED — reported for sequencing, not silently carried.** The audit surfaced far more
+than these two. Full findings are in the handoff to review; the shape of what is left, by parser:
+
+- **md5Parse / md5AnimParse — the worst of the four, and the one on the demo path.** Recovery-induced
+  reindexing (axis 12) is the headline: dropping one malformed `vert`/`weight`/`joint` line shifts every
+  later record, silently redefining every index that names it, *through bounds checks that still pass*.
+  Triangle indices are never bounds-checked at all (a negative index wraps through `Uint32Array.from` to
+  ~4.29e9 and reaches the GPU); `numverts`/`numtris`/`numweights`/`numJoints` are parsed and discarded,
+  and they are precisely the signal that would catch the reindexing at the record where it began. A
+  negative `startWeight` throws. `parentIndex < -1` is silently treated as root while `>= length` is
+  correctly reported — the exact asymmetry. An unrecognised file parses to a valid empty document with
+  zero diagnostics. `.md5anim` never verifies it describes the same skeleton as the `.md5mesh`.
+- **awd2Parse — stream data bounded by the block rather than the sub-mesh** (textbook axis 3, the check
+  names the outer region); `readAwdString` bounds-checks nothing and `subarray` clamps silently against
+  the whole buffer; `skipAwdAttrList` returns a cursor derived from an unvalidated length; unknown stream
+  data type falls through to float32/width-4 (axis 4 verbatim); `positions.length / 3` unfloored yields a
+  NaN vertex; no Adler-32 verification; header flags and version-minor never read.
+- **md2Parse — the `framesize` field at header offset 16 is the independent anchor** for a bound the
+  parser currently derives from `numVertices` (axis 9), and it is never read; `offEnd` likewise. Sections
+  are never checked for disjointness (axis 10). `offSkins` has neither a lower bound nor an aggregate
+  bound and fabricates a 64-NUL material name from out-of-buffer reads.
+- **threeDsParse — remaining:** UV count never compared to vertex count (silent fallback to (0,0)); counts
+  smaller than their payload; unbounded recursion depth (~45 KB of nested headers overflows the stack);
+  duplicate chunks last-win with a bare assignment, so a malformed second VERTICES destroys a good first.
+
+**SEVERITY, honestly.** md5 is on the demo path (`importMd5Mesh` is the composer for a shipped skeletal
+sample) and has the most category-(b) silent-wrong-read findings — highest priority. 3ds and awd2 both had
+a live unrecoverable defect, now closed; their remaining findings are silent-wrong-read, not crash. md2 is
+the least-used and its worst finding fabricates a material name rather than corrupting geometry — lowest.
+
+**DOES `resolveGltfReadOffset` GENERALISE?** No, and the audit is unanimous on why: what these parsers
+share is not a bounds *computation* but a bounds *discipline*. glTF resolves a nested strided window
+(accessor ⊂ bufferView ⊂ buffer); 3DS needs a chunk-header cursor whose advance is provably positive;
+MD2 needs an absolute file-relative strided region plus a partition check across siblings; AWD2 needs a
+narrowable region cursor that cannot widen. Those are four different shapes, and a helper absorbing all
+four would be a switch over formats wearing a function's clothes — the decomposition floor is per-format.
+What DOES generalise is the axis list itself, plus one structural rule that fixes the largest class in
+every parser: **identical read shapes must share one implementation** (axis 11). Each parser wants its own
+small resolver — `readChunkEnd` here is the first — and the win is that the guard set can no longer
+diverge across copies. Cross-parser sharing would buy a name and cost the fit.
+
+
 ## 2026-07-29 — Read-geometry integrity: the validation census re-derived on the right axes (builder, review-directed)
 
 review2 re-gated the Step D census on merged develop and found two cells it had reported closed while the
