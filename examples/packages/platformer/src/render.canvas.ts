@@ -6,13 +6,16 @@ import {
   defaultCanvasDrawRectangle,
   defaultCanvasEndFill,
   defaultCanvasShapeRenderer,
+  defaultCanvasSpriteRenderer,
   defaultCanvasTextLabelRenderer,
   prepareScene2DRender,
+  registerCanvasImageTextureResolver,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasScene2D,
   ShapeKind,
+  SpriteKind,
   TextLabelKind,
 } from '@flighthq/sdk';
 
@@ -26,7 +29,9 @@ export const state = createCanvasRenderState(canvas, {
 });
 
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
+registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
 registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);
+registerCanvasImageTextureResolver(state);
 registerCanvasShapeCommands([defaultCanvasBeginFill, defaultCanvasDrawRectangle, defaultCanvasEndFill]);
 
 export const scale = pixelRatio;

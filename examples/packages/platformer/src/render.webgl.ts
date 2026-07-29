@@ -4,14 +4,17 @@ import {
   createGlRenderState,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
+  defaultGlSpriteRenderer,
   defaultGlTextLabelRenderer,
   prepareScene2DRender,
+  registerGlImageTextureResolver,
   registerStandardGlMaterial,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
   ShapeKind,
+  SpriteKind,
   TextLabelKind,
 } from '@flighthq/sdk';
 
@@ -28,7 +31,9 @@ export const state = createGlRenderState(canvas, {
 
 registerStandardGlMaterial(state);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
+registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
+registerGlImageTextureResolver(state);
 registerGlShapeCommands(defaultGlShapeCommands);
 
 export const scale = pixelRatio;

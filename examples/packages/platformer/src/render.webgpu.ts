@@ -4,14 +4,17 @@ import {
   createWgpuRenderState,
   defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
+  defaultWgpuSpriteRenderer,
   defaultWgpuTextLabelRenderer,
   prepareScene2DRender,
+  registerWgpuImageTextureResolver,
   registerStandardWgpuMaterial,
   registerWgpuShapeCommands,
   registerRenderer,
   renderWgpuBackground,
   renderWgpuScene2D,
   ShapeKind,
+  SpriteKind,
   TextLabelKind,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
@@ -28,7 +31,9 @@ export const state = await createWgpuRenderState(canvas, {
 
 registerStandardWgpuMaterial(state);
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
+registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);
 registerRenderer(state, TextLabelKind, defaultWgpuTextLabelRenderer);
+registerWgpuImageTextureResolver(state);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
 
 export const scale = pixelRatio;
