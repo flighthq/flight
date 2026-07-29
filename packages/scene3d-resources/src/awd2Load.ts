@@ -5,8 +5,9 @@ import { loadScene3DDocumentBytesFromUrl, setScene3DDocumentResourceBasePathFrom
 
 // Fetches an Away3D AWD file from a URL and parses it into a format-neutral Scene3DDocument (geometry, skins,
 // and its skeleton animation). Fetches only the FILE — the document's texture refs stay unresolved; assemble
-// with createScene3DFromDocument and resolve on your own schedule with resolveScene3DResources. On a fetch
-// failure returns null; it never creates a renderer or GPU resource.
+// with createScene3DFromDocument and acquire on your own schedule with loadScene3DResources or
+// updateScene3DResourceStreaming. On a fetch failure returns null; it never creates a renderer or GPU
+// resource.
 export async function loadScene3DDocumentFromAwd2Url(
   url: string,
   options?: Readonly<Scene3DDocumentLoadOptions>,

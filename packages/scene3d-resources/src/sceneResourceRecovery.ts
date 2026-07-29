@@ -1,15 +1,15 @@
 import type {
   ImageResourceReference,
   ImageResourceReferenceResolutionExplanation,
-  ResolveScene3DResourcesOptions,
   Scene3D,
   Scene3DResourceResolver,
   Texture,
+  UpdateScene3DResourceStreamingOptions,
 } from '@flighthq/types/contract';
 import { ResourceResolutionState } from '@flighthq/types/contract';
 
 import { getScene3DResourceTextures, getScene3DTextureResourceReference } from './getScene3DResourceTextures';
-import { resolveScene3DResources } from './resolveScene3DResources';
+import { updateScene3DResourceStreaming } from './resolveScene3DResources';
 
 // Returns a detached plain-data explanation suitable for logs, tools, and serialization. It never
 // throws and exposes no resolver runtime or raw thrown value.
@@ -33,13 +33,13 @@ export function resetFailedImageResourceReference(ref: ImageResourceReference): 
   return true;
 }
 
-// Resets every selected failed identity once, then performs a normal resolver pass under the same
-// selection/priority policy. The normal pass remains authoritative for the working set, including its
-// documented cancellation behavior when visibility selection drops an existing subscriber.
+// Resets every selected failed identity once, then performs a streaming update under the same
+// selection/priority policy. The update remains authoritative for the working set, including cancellation
+// when visibility selection drops an existing subscriber.
 export function retryFailedScene3DResources(
   scene: Readonly<Scene3D>,
   resolver: Scene3DResourceResolver,
-  options?: Readonly<ResolveScene3DResourcesOptions>,
+  options?: Readonly<UpdateScene3DResourceStreamingOptions>,
 ): number {
   const textures: Texture[] = [];
   getScene3DResourceTextures(scene, resolver.registry, textures);
@@ -51,6 +51,6 @@ export function retryFailedScene3DResources(
     if (options?.select !== undefined && !options.select(texture, ref)) continue;
     if (resetFailedImageResourceReference(ref)) reset.add(ref);
   }
-  resolveScene3DResources(scene, resolver, options);
+  updateScene3DResourceStreaming(scene, resolver, options);
   return reset.size;
 }

@@ -7,7 +7,7 @@ export * from './objLoad';
 export * from './sceneDocumentSource';
 export * from './awd2Load';
 export * from './resolveScene3DResources';
-export * from './resolveScene3DResourcesAndWait';
+export * from './loadScene3DResources';
 export * from './revealScene3DResourcesOnResolve';
 export * from './sceneMaterialTextureRegistry';
 export * from './sceneResourceRecovery';

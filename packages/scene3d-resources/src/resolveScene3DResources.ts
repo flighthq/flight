@@ -7,8 +7,11 @@ import type {
   Scene3D,
   ImageResourceReference,
   ResolveScene3DResourcesOptions,
+  Scene3DResources,
   Scene3DResourceResolver,
+  Scene3DResourceWorkingSet,
   Texture,
+  UpdateScene3DResourceStreamingOptions,
 } from '@flighthq/types/contract';
 import {
   ImageResourceFailureKind,
@@ -35,21 +38,15 @@ export function resolveOneScene3DResourceTexture(
   return resolver.fetch(ref, signal);
 }
 
-// Advances resolution of `scene`'s texture resources under the given policy. Synchronous and
-// fire-and-forget: it starts/cancels loads to match the current working set and returns immediately,
-// so the caller re-invokes it as that set changes — that re-invocation IS the streaming/visibility
-// driver. Each pass:
-//   1. discovers textures and groups them by shared ImageResourceReference identity,
-//   2. narrows their subscribers to the working set (all, or those `select` accepts),
-//   3. cancels an in-flight load only when its final subscriber leaves, and
-//   4. requests each unresolved identity once, fanning the result out to its Texture subscribers.
-// Mutates `ref.state` and, on success, binds `texture.storage.image`. Emits the availability signals when
-// enabled.
+// Reconciles the selected working set entirely synchronously. It groups shared references, recognizes
+// content already present on a texture, and binds resolver-cached images to every selected subscriber.
+// Acquisition, cancellation, Promise scheduling, and priority policy belong to the explicit update/load
+// operations.
 export function resolveScene3DResources(
   scene: Readonly<Scene3D>,
   resolver: Scene3DResourceResolver,
   options?: Readonly<ResolveScene3DResourcesOptions>,
-): void {
+): Scene3DResources {
   const runtime = (resolver as Scene3DResourceResolverWithRuntime)[Scene3DResourceResolverRuntimeKey];
   const textures: Texture[] = [];
   getScene3DResourceTextures(scene, resolver.registry, textures);
@@ -74,8 +71,48 @@ export function resolveScene3DResources(
     subscribers.push(texture);
   }
 
+  const resolved: Scene3DResources['resolved'] = [];
+  const unresolved: Scene3DResourceWorkingSet[] = [];
+  for (const [ref, subscribers] of working) {
+    const image = runtime.resolved.get(ref);
+    if (image === undefined) {
+      if (ref.state === ResourceResolutionState.Resolved) ref.state = ResourceResolutionState.Unresolved;
+      unresolved.push({ ref, textures: subscribers });
+      continue;
+    }
+    ref.failure = null;
+    ref.state = ResourceResolutionState.Resolved;
+    for (let i = 0; i < subscribers.length; i++) {
+      bindResolvedScene3DResource(resolver, subscribers[i], ref, image);
+    }
+    resolved.push({ image, ref, textures: subscribers });
+  }
+  return { resolved, scene, unresolved };
+}
+
+// Explicit progressive pass. Repeated calls reconcile resolver-scoped in-flight state with the current
+// visibility/priority working set; disposal remains the cancellation boundary for the retained resolver.
+export function updateScene3DResourceStreaming(
+  scene: Readonly<Scene3D>,
+  resolver: Scene3DResourceResolver,
+  options?: Readonly<UpdateScene3DResourceStreamingOptions>,
+): Scene3DResources {
+  const resources = resolveScene3DResources(scene, resolver, options);
+  const working = new Map<ImageResourceReference, Texture[]>();
+  addScene3DResourceGroupsToWorkingSet(working, resources.resolved);
+  addScene3DResourceGroupsToWorkingSet(working, resources.unresolved);
   cancelDroppedResolutions(resolver, working);
   requestWorkingResolutions(resolver, working, options);
+  return resources;
+}
+
+function addScene3DResourceGroupsToWorkingSet(
+  out: Map<ImageResourceReference, Texture[]>,
+  groups: readonly Scene3DResourceWorkingSet[],
+): void {
+  for (let i = 0; i < groups.length; i++) {
+    out.set(groups[i].ref, groups[i].textures);
+  }
 }
 
 function cancelDroppedResolutions(
@@ -168,7 +205,7 @@ function emitScene3DResourceEvent(
 function requestWorkingResolutions(
   resolver: Scene3DResourceResolver,
   working: ReadonlyMap<ImageResourceReference, readonly Texture[]>,
-  options?: Readonly<ResolveScene3DResourcesOptions>,
+  options?: Readonly<UpdateScene3DResourceStreamingOptions>,
 ): void {
   const runtime = (resolver as Scene3DResourceResolverWithRuntime)[Scene3DResourceResolverRuntimeKey];
   for (const [ref, subscribers] of working) {
