@@ -177,6 +177,50 @@ merely its behaviour:
 | `ExternalTexture` | no | no | foreign GPU handle |
 | `TextureVolume` | — | — | voxel extent |
 
+### `Surface` — one entity, a platform-swappable handle
+
+`Surface` is a named type from the start, minimally realized. It follows the pattern
+`HostImageSource` already established: the Flight entity is uniform, and the **host handle inside it**
+is a platform-varying alias.
+
+```ts
+// Web target aliases the platform's drawable-surface union; native ports replace this alias with
+// their own owned surface handle (SkSurface, cairo_surface_t, …). Expands as host backends land.
+export type HostSurface = HTMLCanvasElement | OffscreenCanvas;
+
+export interface Surface extends TextureSource {
+  readonly kind: typeof SurfaceTextureSourceKind;
+  readonly target: HostSurface;
+}
+```
+
+Both members of the web alias are already live here — `HTMLCanvasElement` broadly, `OffscreenCanvas`
+in `glyphatlas` and `image-codec`.
+
+**The union belongs at the alias, not at the Flight entity.** A Flight-level `Surface = CanvasSurface
+| SkiaSurface | CairoSurface` would be a union with exactly one inhabitant per build target: a web
+bundle would carry type surface for Skia it can never reach, and every consumer would switch on a
+discriminant that can only hold one value. If a build genuinely needs two surface backends at once,
+the open kind registry is already the escape hatch — a vendor registers `'acme.skiaSurface'` as its
+own `TextureSource` kind, exactly as the kind conventions intend.
+
+**Surface is the target, not the context.** The alias names the drawable object
+(`HTMLCanvasElement`), not `CanvasRenderingContext2D`. Both reference implementations work this way:
+Skia's `SkSurface` hands out an `SkCanvas` via `getCanvas()`, and Cairo's `cairo_surface_t` is what a
+`cairo_t` is created from. A context is derived from the surface per draw pass; it is not the thing a
+`Texture` samples.
+
+#### Teardown differs by host, and must be designed in now
+
+`HostImageSource`'s contract is that resources never own or free the handle. `Surface` cannot inherit
+that unchanged: an `HTMLCanvasElement` is GC-managed with nothing to free, but an `SkSurface` and a
+`cairo_surface_t` are non-GC resources requiring explicit release. By the teardown convention that is
+`destroySurface` — `destroy*` frees a non-GC resource deterministically and leaves the entity invalid.
+
+So `Surface` ships with `destroySurface` from the start, a no-op on the web backend. Retrofitting it
+when the first native port lands would mean changing the lifecycle of a shipped type and revisiting
+every call site that never called it.
+
 ### Video is not a member
 
 Video dirty-tracking is `version` — the field every source already has. `packages/texture/src/videoTexture.ts`
@@ -247,7 +291,7 @@ independently gateable and leaves the tree green.
 | M3 | `ImageBacking` → `TextureSource`; `TextureBackingKind` → `TextureSourceKind`; `TextureTargetBacking` → `RenderTarget` | D1; mechanical rename. Largest site count — `ImageTextureBackingKind` alone has ~32 uses, plus two `imageBacking*TextureCache` fields in `GlRenderState` |
 | M4 | Collapse `image`/`images`/`volume`/`target?` into one `source`/`sources` per variant | D3; deletes the `?: never` scaffolding |
 | M5 | Split `ImageResource` → `Image` + `ExternalTexture`; pin every member's kind with `typeof` | D2; `'external'` moves to a renderer-produced source with its own type |
-| M6 | Introduce `Surface`; reclassify `createImageResourceFromCanvas` | D2; the only genuinely new construct here |
+| M6 | Introduce `Surface` + `HostSurface` alias + `destroySurface`; reclassify `createImageResourceFromCanvas` → `createSurfaceFromCanvas` | D2; the only genuinely new construct. Scope is deliberately small — one entity, one alias, one no-op teardown |
 | M7 | `createVideoTexture` → `createTextureFromVideoResource`; add `createTextureFromCompressedImage` | D4/D5 |
 | M8 | Add the readability capability query | pairs with M1 |
 | M9 | Correct `AGENTS.md`, which currently describes `VideoTexture`, `CubeTexture`, and `RenderTexture` as existing types | doc drift caused by D4 |
@@ -257,10 +301,13 @@ one reviewed sequence. M6 is a design commitment (see below).
 
 ## Open questions
 
-1. **Is `Surface` in scope now, or reserved?** It is the only new concept in this spec. Canvas-as-
-   `Surface` is straightforward on web; the question is whether the draw-into API lands in this pass
-   or whether the type is reserved with canvas continuing to arrive as `Image` until a consumer needs
-   it. Reserving is defensible; leaving it unmodelled is what produced D2.
+1. **Does Flight own a `Surface` it was handed?** `destroySurface` is settled as part of the type, but
+   ownership is not. A surface Flight created (its own offscreen canvas) is clearly Flight's to free;
+   one the caller passed in is arguably borrowed, and freeing it would destroy something the caller
+   still uses. On web this is invisible because there is nothing to free — it only bites on the first
+   native port, which is exactly why it should be decided before then. Options: an ownership flag on
+   the entity, two constructors (`createSurface` owns / `createSurfaceFromCanvas` borrows), or a
+   documented "never owns, caller always frees" rule matching `HostImageSource`.
 2. **Does `ExternalTexture` want a `Texture` narrowing** the way `RenderTarget` gets `RenderTexture`?
    Nothing currently needs one, and rule #2 above says wait until a signature demands it.
 3. **Should `Sampler` become `TextureSampler`?** Left as `Sampler` here: it is an independent object
@@ -284,6 +331,16 @@ one reviewed sequence. M6 is a design commitment (see below).
   representation. User.
 - **[2026-07-29] `CompressedImage` stays a type.** Differently-shaped data, not merely a read
   restriction. Review, on user challenge.
+- **[2026-07-29] `Surface` is in scope now, as a named type with a platform-swappable `HostSurface`
+  alias.** Web aliases `HTMLCanvasElement | OffscreenCanvas` and expands as host backends land, exactly
+  as `HostImageSource` already does. Considered and rejected: a Flight-level `CanvasSurface |
+  SkiaSurface | CairoSurface` union, which would have exactly one inhabitant per build target; the open
+  kind registry is the escape hatch if a build ever needs two at once. The alias names the drawable
+  *target*, not the 2D *context* — matching `SkSurface`/`SkCanvas` and `cairo_surface_t`/`cairo_t`.
+  User + review.
+- **[2026-07-29] `destroySurface` ships with the type, no-op on web.** Canvas is GC-managed but
+  `SkSurface`/`cairo_surface_t` are not, so the teardown verb cannot be retrofitted after the type is
+  shipped without changing its lifecycle and every existing call site. Review.
 - **[2026-07-29] `HostImage`/`Image` over `ImageElement`.** Too narrow (kind `'image'` covers canvas,
   `ImageBitmap`, and `<img>`) and DOM-bound against `HostImageSource`'s stated port contract. Review,
   on user question.
