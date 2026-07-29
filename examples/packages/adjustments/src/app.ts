@@ -9,6 +9,7 @@ import {
   createTextLabel,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
+  setNodeColorAdjustmentsTint,
 } from '@flighthq/sdk';
 import {
   applyColorMatrixToColor,
@@ -33,6 +34,7 @@ const SWATCH_GAP = 8;
 const SWATCHES_X = 40;
 const SWATCHES_BEFORE_Y = 340;
 const SWATCHES_AFTER_Y = 420;
+const SWATCHES_TINT_Y = 510;
 
 const MATRIX_X = 40;
 const MATRIX_Y = 200;
@@ -160,6 +162,7 @@ for (let row = 0; row < 4; row++) {
 // Color swatch shapes: "before" row (original) and "after" row (matrix-transformed).
 addNodeChild(root, createLabel('Original colors', SWATCHES_X, SWATCHES_BEFORE_Y - 22, 14, 0xcccccc));
 addNodeChild(root, createLabel('After matrix', SWATCHES_X, SWATCHES_AFTER_Y - 22, 14, 0xcccccc));
+addNodeChild(root, createLabel('Per-instance node tint', SWATCHES_X, SWATCHES_TINT_Y - 22, 14, 0xcccccc));
 
 const afterSwatches: Shape[] = [];
 
@@ -174,6 +177,14 @@ for (let i = 0; i < SAMPLE_COLORS.length; i++) {
   const afterShape = createShape();
   addNodeChild(root, afterShape);
   afterSwatches.push(afterShape);
+
+  // The geometry stays white. Each node carries its own packed-RGBA tint, which the render walk
+  // resolves to the backend's per-instance color scale/bias data.
+  const tintedShape = createShape();
+  appendShapeBeginFill(tintedShape, 0xffffff, 1);
+  appendShapeRectangle(tintedShape, x, SWATCHES_TINT_Y, SWATCH_SIZE, SWATCH_SIZE);
+  setNodeColorAdjustmentsTint(tintedShape, SAMPLE_COLORS[i]);
+  addNodeChild(root, tintedShape);
 }
 
 // Hex value labels below each after-swatch.
@@ -191,7 +202,7 @@ addNodeChild(
   createLabel(
     'Adjustments compose a 4x5 color matrix as pure data. Use sliders to build a fused matrix.',
     SWATCHES_X,
-    CANVAS_HEIGHT - 40,
+    CANVAS_HEIGHT - 22,
     12,
     0x666666,
   ),
