@@ -54,11 +54,27 @@ function numberOr(value: unknown, fallback: number): number {
 // Spine bones are authored parent-before-child, and reference their parent by name — so a parent's index
 // is resolvable from the bones already accumulated. Returns -1 (a root) when there is no parent or it is
 // not yet known (a forward reference, which a well-formed Spine file never produces).
-function parseSpineBones(raw: unknown, _diagnostics?: ImportDiagnostic[]): Bone2D[] {
+//
+// The bone array is POSITIONALLY REFERENCED — a weighted mesh's vertex influences carry file-order bone
+// indices into it (see parseSpineWeightedVertices). So a malformed entry must NOT be dropped: dropping it
+// would shift every later bone down one slot and silently re-point every weighted-mesh influence at the
+// wrong bone. Instead an inert placeholder bone holds the slot, keeping all indices aligned, and the
+// recovery is recorded.
+function parseSpineBones(raw: unknown, diagnostics?: ImportDiagnostic[]): Bone2D[] {
   const bones: Bone2D[] = [];
   if (!Array.isArray(raw)) return bones;
   for (const entry of raw) {
-    if (entry === null || typeof entry !== 'object') continue;
+    if (entry === null || typeof entry !== 'object') {
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Recover,
+        'spine.malformed-bone-recovered',
+        'parseSpineSkeleton',
+        { bones: 1 },
+      );
+      bones.push(createPlaceholderBone2D());
+      continue;
+    }
     const bone = entry as Record<string, unknown>;
     const name = typeof bone.name === 'string' ? bone.name : null;
     let parentIndex = -1;
@@ -87,6 +103,24 @@ function parseSpineBones(raw: unknown, _diagnostics?: ImportDiagnostic[]): Bone2
   return bones;
 }
 
+// An inert root bone that holds a slot in the bone array when an entry is malformed, so file-order bone
+// indices (weighted-mesh influences) stay aligned. Identity transform, no parent, no name.
+function createPlaceholderBone2D(): Bone2D {
+  return {
+    length: 0,
+    name: null,
+    parentIndex: -1,
+    rotation: 0,
+    scaleX: 1,
+    scaleY: 1,
+    shearX: 0,
+    shearY: 0,
+    transformMode: TransformMode2D.Normal,
+    x: 0,
+    y: 0,
+  };
+}
+
 // Parses one Spine attachment (identified by its `name` in the skin) into an Attachment2D, or returns
 // null for a recognized-but-unmodeled type (bounding box / path / clipping / point / linked mesh) after
 // emitting a Skip crumb. Spine omits `type` for a region attachment (the default).
@@ -97,7 +131,7 @@ function parseSpineAttachment(
 ): Attachment2D | null {
   const type = typeof raw.type === 'string' ? raw.type : 'region';
   if (type === 'region') return parseSpineRegionAttachment(name, raw);
-  if (type === 'mesh') return parseSpineMeshAttachment(name, raw);
+  if (type === 'mesh') return parseSpineMeshAttachment(name, raw, diagnostics);
   reportImportDiagnostic(
     diagnostics,
     ImportDiagnosticSeverity.Skip,
@@ -153,7 +187,11 @@ function parseSpineDefaultSkin(raw: unknown, diagnostics?: ImportDiagnostic[]): 
 // A Spine mesh attachment. Unweighted when the `vertices` stream is exactly 2 per vertex (positions local
 // to the slot's bone); weighted (Spine format `[boneCount, (boneIndex, x, y, weight)×boneCount]` per
 // vertex) otherwise, producing a Skin2D whose bone indices are global skeleton bone indices.
-function parseSpineMeshAttachment(name: string, raw: Record<string, unknown>): MeshAttachment2D {
+function parseSpineMeshAttachment(
+  name: string,
+  raw: Record<string, unknown>,
+  diagnostics?: ImportDiagnostic[],
+): MeshAttachment2D {
   const uvs = toFloat32Array(raw.uvs);
   const triangles = toUint16Array(raw.triangles);
   const rawVerts = Array.isArray(raw.vertices) ? (raw.vertices as number[]) : [];
@@ -172,7 +210,7 @@ function parseSpineMeshAttachment(name: string, raw: Record<string, unknown>): M
   return {
     kind: MeshAttachment2DKind,
     name,
-    skin: parseSpineWeightedVertices(rawVerts, vertexCount),
+    skin: parseSpineWeightedVertices(rawVerts, vertexCount, diagnostics),
     triangles,
     uvs,
     vertexCount,
@@ -233,17 +271,45 @@ function parseSpineColor(value: unknown): number {
   return Number.isNaN(parsed) ? 0xffffffff : parsed >>> 0;
 }
 
-function parseSpineWeightedVertices(rawVerts: readonly number[], vertexCount: number): Skin2D {
+// Decodes Spine's variable-influence weighted-vertex stream: per vertex a `boneCount` followed by that many
+// `(boneIndex, x, y, weight)` quads. Both the vertex count (from `uvs`) and each `boneCount` are declared IN
+// the file, independent of the stream's actual length — so every read is bounded against `rawVerts.length`
+// (the independent address anchor): a `boneCount` that would run past the end is clamped to what remains,
+// and the recovery is recorded. Without this a corrupt count reads `undefined` (→ NaN) or, with a huge
+// value, spins a near-unbounded push loop. `boneIndex` values are file-order indices into the bone array;
+// parseSpineBones keeps that array aligned (it never drops a slot) so they stay valid.
+function parseSpineWeightedVertices(
+  rawVerts: readonly number[],
+  vertexCount: number,
+  diagnostics?: ImportDiagnostic[],
+): Skin2D {
   const influenceCounts = new Uint16Array(vertexCount);
   const influences: number[] = [];
+  let truncated = false;
   let r = 0;
   for (let v = 0; v < vertexCount; v++) {
-    const boneCount = rawVerts[r++] | 0;
+    if (r >= rawVerts.length) {
+      truncated = true;
+      break;
+    }
+    const declared = rawVerts[r++] | 0;
+    const available = Math.max(0, (rawVerts.length - r) >> 2);
+    const boneCount = Math.min(Math.max(declared, 0), available);
+    if (boneCount !== declared) truncated = true;
     influenceCounts[v] = boneCount;
     for (let k = 0; k < boneCount; k++) {
       influences.push(rawVerts[r], rawVerts[r + 1], rawVerts[r + 2], rawVerts[r + 3]);
       r += 4;
     }
+  }
+  if (truncated) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'spine.weighted-vertices-truncated',
+      'parseSpineSkeleton',
+      { vertices: 1 },
+    );
   }
   return { influenceCounts, influences: Float32Array.from(influences) };
 }
