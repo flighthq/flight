@@ -11,6 +11,47 @@ by: builder
 
 <!-- newest entry on top -->
 
+## 2026-07-29 — md2 read-integrity: the parser family is closed (builder, review-directed)
+
+Last of the four. The mildest by the corrected ranking, and the cleanest demonstration of axis 9 in the
+set. Five probes, each verified failing pre-fix.
+
+**AXIS 9 — the tautological bound, and the two anchors the file was handing over for free.** The frame
+reads were bounded by `offFrames + numFrames * frameStride`, where `frameStride` is derived from
+`numVertices` — the same input the per-frame ADDRESS uses. If that count is wrong the bound is wrong by
+exactly the amount needed to keep passing, so every frame after the first is read from a drifting offset,
+decoding its neighbour's bytes as scale/translate floats that are finite, plausible, and completely wrong.
+MD2 declares the stride a second time in `framesize` (header offset 16) and the file's total size in
+`offEnd` (offset 64), and the parser read **neither**. Both are now read and reconciled: a stride
+disagreement is a Reject (nothing downstream can be trusted), a size disagreement a Recover.
+
+**AXIS 10 — sibling disjointness.** MD2's sections *tile* the file rather than nesting, so two of them
+claiming the same bytes is invisible to containment checking at any depth — each region is individually
+inside the file. Overlap now reports; the probe points `offFrames` at the triangle block, which decodes
+uint16 index pairs as float32 and builds a complete animated mesh out of them.
+
+**AXIS 2 — negative header fields.** Every offset and count is a signed int32 read straight from the file.
+A negative count threw out of the typed-array allocation; a negative offset passed every upper-bound test,
+because the read simply started earlier. `offSkins` was the worst case: it had neither a lower bound nor a
+place in the aggregate check, and through raw byte indexing (which yields `undefined` rather than throwing)
+it fabricated a 64-NUL material name with a matching texture path and **no diagnostic at all**.
+
+**One deliberate proportionality call.** Skins stay OUT of the fatal aggregate extent check. A skin is an
+optional texture name, so a truncated skin table degrades the material and leaves the geometry intact, and
+it keeps its existing per-record Drop. What `offSkins` actually lacked was the lower bound; adding it
+closes the fabrication without escalating an optional section's truncation into a dead file. An earlier
+draft did escalate, and an existing test caught it — correctly.
+
+**THE PARSER FAMILY IS NOW CLOSED**: gltf, 3ds, awd2, md5, md2. Two unrecoverable defects found and fixed
+(the 3ds hang, the awd2 inflate bomb) plus silent-wrong-read classes in all five.
+
+scene-formats 528/528. Bare `npm run check` clean, bare `npm run test` 13000 passed / 1196 files.
+
+**Note on the suite:** two of three full runs reported 1-2 tests SKIPPED in `scene3d-resources/md5Load`
+with a ~10s duration, and the count differed between runs; the file passes alone and the third full run
+was 13000/13000 clean. That is the known transient-mount flakiness, not a consequence of these changes —
+recorded rather than quietly re-run until green.
+
 ## 2026-07-29 — md5 read-integrity fixes: the axis-12 class closed (builder, user-directed)
 
 The worst remaining silent-wrong-read surface from the four-parser audit. Seven defects fixed, each with
