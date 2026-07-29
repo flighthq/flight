@@ -136,6 +136,26 @@ at decode rather than assumed from the spec. A quaternion silently left non-unit
 This is about the *value*, not where it came from, so it is arguably a different discipline; named here so
 it is not lost.
 
+## Audit the whole family first, rank second
+
+Facing several readers and limited time, the tempting move is to triage by reachability — fix what a demo
+loads, defer what looks dormant — and it is the wrong order.
+
+When four parsers were audited here, the severity call written *before* checking said the priority was the
+one a shipped sample supposedly used. That was inferred from a description rather than verified. Grepping
+for every parser entry point showed only **two** of the four were invoked by any example — and those two
+were **exactly the two carrying unrecoverable defects**: one that hung on a 12-byte file, one that would
+exhaust memory on a small crafted input. The other two had only silent-wrong-read faults.
+
+So triaging first would have deprioritised both of the severe ones, on a guess about usage that turned out
+to be wrong. Two lessons, and the second is the load-bearing one:
+
+- Reachability is a fact to be **checked** (grep the entry points), never inferred from a doc, a name, or
+  a description of what a module is for.
+- Severity is not knowable before the audit. What makes a defect severe — unrecoverable versus merely
+  wrong, trivially triggered versus adversarial — is discovered *by* auditing. Ranking is an output of the
+  audit, not an input to it. **Audit the family, then rank.**
+
 ## On predictions
 
 If you audit a format against this list, **write your prediction down before you open the code**, and
