@@ -7,12 +7,12 @@
 //
 // This is not observable from jsdom: it needs the real GL bind/upload path and rasterization of the
 // resulting compressed texture.
+import { createCompressedImage } from '@flighthq/image';
 import type { Bitmap, TextureContainer } from '@flighthq/sdk';
 import {
   addNodeChild,
   SpriteKind,
   createSprite,
-  createCompressedImageResource,
   createDisplayObject,
   createPixelArtSampler,
   createTexture,
@@ -89,7 +89,7 @@ bitmap.data.texture = createTexture({
   sampler: createPixelArtSampler(),
   storage: {
     dimension: '2d',
-    image: createCompressedImageResource({ container: container('bc1', 8), payload: BC1_BLUE_BLOCK }),
+    image: createCompressedImage({ container: container('bc1', 8), payload: BC1_BLUE_BLOCK }),
   },
 }); // nearest sampling keeps the block a crisp solid quad
 bitmap.x = BITMAP_X;
@@ -104,7 +104,7 @@ alphaBitmap.data.texture = createTexture({
   sampler: createPixelArtSampler(),
   storage: {
     dimension: '2d',
-    image: createCompressedImageResource({
+    image: createCompressedImage({
       container: container('bc3', 16),
       payload: BC3_HALF_RED_BLOCK,
     }),

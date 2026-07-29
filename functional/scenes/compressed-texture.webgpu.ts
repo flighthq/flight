@@ -1,8 +1,8 @@
+import { createCompressedImage } from '@flighthq/image';
 import type { Node2D, Bitmap, TextureContainer } from '@flighthq/sdk';
 import {
   addNodeChild,
   createSprite,
-  createCompressedImageResource,
   createDisplayObject,
   createPixelArtSampler,
   createTexture,
@@ -91,7 +91,7 @@ bitmap.data.texture = createTexture({
   sampler: createPixelArtSampler(),
   storage: {
     dimension: '2d',
-    image: createCompressedImageResource({ container: container('bc1', 8), payload: BC1_BLUE_BLOCK }),
+    image: createCompressedImage({ container: container('bc1', 8), payload: BC1_BLUE_BLOCK }),
   },
 });
 bitmap.x = BITMAP_X;
@@ -106,7 +106,7 @@ alphaBitmap.data.texture = createTexture({
   sampler: createPixelArtSampler(),
   storage: {
     dimension: '2d',
-    image: createCompressedImageResource({
+    image: createCompressedImage({
       container: container('bc3', 16),
       payload: BC3_HALF_RED_BLOCK,
     }),
