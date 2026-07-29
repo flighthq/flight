@@ -307,6 +307,9 @@
       "path": "../socket"
     },
     {
+      "path": "../physics2d"
+    },
+    {
       "path": "../spatial"
     },
     {

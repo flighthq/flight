@@ -188,6 +188,7 @@
     "@flighthq/skeleton3d": "*",
     "@flighthq/snapshot": "*",
     "@flighthq/socket": "*",
+    "@flighthq/physics2d": "*",
     "@flighthq/spatial": "*",
     "@flighthq/spring": "*",
     "@flighthq/spritesheet": "*",
