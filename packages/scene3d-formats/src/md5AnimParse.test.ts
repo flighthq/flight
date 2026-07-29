@@ -580,7 +580,12 @@ describe('parseMd5Anim', () => {
     expect(crumb!.origin).toBe('parseMd5Anim');
   });
 
-  it('drops and reports md5anim.non-numeric-frame-value with firstToken detail', () => {
+  it('substitutes and reports md5anim.non-numeric-frame-value, keeping the frame aligned', () => {
+    // Recover rather than Drop, and the change is deliberate: the bad token is replaced with a
+    // placeholder so the components after it keep their positions. Every joint reads this frame at a
+    // fixed startIndex, so skipping the token would shift the rest of the frame and joints would start
+    // reading each other's translations as rotations. The frame survives with one wrong component that
+    // the crumb names — a usable survivor, which is what Recover means.
     const source = [
       'MD5Version 10',
       'numFrames 1',
@@ -601,7 +606,7 @@ describe('parseMd5Anim', () => {
     parseMd5Anim(source, makeJoints(1), diagnostics);
     const crumb = findDiagnostic(diagnostics, 'md5anim.non-numeric-frame-value');
     expect(crumb).toBeDefined();
-    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
     expect(crumb!.origin).toBe('parseMd5Anim');
     expect(crumb!.detail?.count).toBe(1);
     expect(crumb!.detail?.firstToken).toBe('nope');
@@ -669,5 +674,46 @@ describe('parseMd5Anim', () => {
     ].join('\n');
     // Exercising every crumb path without a sink must not throw and must be side-effect-free.
     expect(() => parseMd5Anim(source, makeJoints(1))).not.toThrow();
+  });
+});
+
+describe('parseMd5Anim frame alignment', () => {
+  it('keeps the components after a bad token at their own positions', () => {
+    // The axis-12 class one scope down from the mesh records. Every joint reads a frame at a fixed
+    // startIndex, so skipping a malformed token shifts every component after it WITHIN that frame — joint
+    // 1 then reads joint 0's trailing rotation as its own translation, in one frame of an otherwise
+    // correct clip. Two joints, six components each; the bad token is in joint 0's block, and joint 1 must
+    // still read the values authored for it.
+    const source = [
+      'MD5Version 10',
+      'numFrames 1',
+      'numJoints 2',
+      'frameRate 24',
+      'numAnimatedComponents 12',
+      'hierarchy {',
+      '  "root" -1 63 0',
+      '  "child" 0 63 6',
+      '}',
+      'baseframe {',
+      '  ( 0 0 0 ) ( 0 0 0 )',
+      '  ( 0 0 0 ) ( 0 0 0 )',
+      '}',
+      'frame 0 {',
+      '  1 2 nope 0 0 0',
+      '  70 80 90 0 0 0',
+      '}',
+    ].join('\n');
+
+    const diagnostics: ImportDiagnostic[] = [];
+    const clip = parseMd5Anim(source, makeJoints(2), diagnostics);
+    expect(findDiagnostic(diagnostics, 'md5anim.non-numeric-frame-value')).toBeDefined();
+    expect(clip).not.toBeNull();
+    // Joint 1's translation channel must carry ITS authored values, not joint 0's shifted tail.
+    // Z-up (70,80,90) becomes Y-up (70,90,-80).
+    const out = [0, 0, 0];
+    sampleAnimationTrack(out, clip!.channels[2].track, 0);
+    expect(out[0]).toBeCloseTo(70);
+    expect(out[1]).toBeCloseTo(90);
+    expect(out[2]).toBeCloseTo(-80);
   });
 });

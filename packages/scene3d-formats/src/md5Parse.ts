@@ -164,6 +164,14 @@ export function parseMd5Mesh(source: string, diagnostics?: ImportDiagnostic[]): 
     }
   }
 
+  // Nothing recognisable was found. Without this the parser returns a structurally valid, completely
+  // empty document and an EMPTY diagnostics array — so feeding it an .obj, an .md5anim, or an HTML error
+  // page is indistinguishable from successfully importing a file that happens to contain no geometry.
+  // `parseMd5Anim` already rejects its equivalent (`md5anim.no-data`); this is the missing twin.
+  if (joints.length === 0 && meshes.length === 0) {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'md5mesh.no-data', 'parseMd5Mesh');
+  }
+
   // Emit the skeleton into the document node table (skeleton group + joint nodes) and its skin (joints by
   // node index + inverse-bind). The skin index every mesh section binds to.
   let skinIndex: number | undefined;
