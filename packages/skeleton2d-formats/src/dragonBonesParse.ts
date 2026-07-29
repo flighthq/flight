@@ -4,11 +4,17 @@ import type {
   Attachment2D,
   Bone2D,
   ImportDiagnostic,
+  MeshAttachment2D,
   RegionAttachment2D,
   Skeleton2DImport,
   Slot2D,
 } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, RegionAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
+import {
+  ImportDiagnosticSeverity,
+  MeshAttachment2DKind,
+  RegionAttachment2DKind,
+  TransformMode2D,
+} from '@flighthq/types/contract';
 
 // Parses a DragonBones `.json` skeleton document (text) into a Skeleton2DImport. Tolerant and best-effort,
 // mirroring parseSpineSkeleton: a malformed / non-DragonBones document returns the sentinel `null`, and a
@@ -22,9 +28,10 @@ import { ImportDiagnosticSeverity, RegionAttachment2DKind, TransformMode2D } fro
 // four-boolean inheritance model (inheritRotation/Scale/Reflection/Translation) mapped onto Flight's
 // five-value TransformMode2D (two inexpressible combinations Skip-crumbed), and slots whose shown attachment
 // is a `displayIndex` into a per-slot display list (so that list is position-preserving — see
-// parseDragonBonesDefaultSkin). Image displays become region attachments; mesh/armature/bounding-box/path
+// parseDragonBonesDefaultSkin). Image displays become region attachments and UNWEIGHTED mesh displays become
+// mesh attachments; WEIGHTED meshes (bonePose/slotPose bind-matrix skinning), armature/bounding-box/path
 // displays, additional armatures, alternate skins, and animation are recognized-but-unmodeled and
-// Skip-crumbed (mesh geometry + weights, with the topo-sort bone-index remap, is the next increment).
+// Skip-crumbed (weighted-mesh skinning + the topo-sort bone-index remap, then timelines, are next).
 export function parseDragonBonesSkeleton(json: string, diagnostics?: ImportDiagnostic[]): Skeleton2DImport | null {
   let doc: unknown;
   try {
@@ -141,6 +148,7 @@ function parseDragonBonesDisplay(raw: unknown, diagnostics?: ImportDiagnostic[])
   const display = raw as Record<string, unknown>;
   const type = typeof display.type === 'string' ? display.type : 'image';
   if (type === 'image') return parseDragonBonesRegionDisplay(display);
+  if (type === 'mesh') return parseDragonBonesMeshDisplay(display, diagnostics);
   reportImportDiagnostic(
     diagnostics,
     ImportDiagnosticSeverity.Skip,
@@ -149,6 +157,39 @@ function parseDragonBonesDisplay(raw: unknown, diagnostics?: ImportDiagnostic[])
     { displays: 1 },
   );
   return null;
+}
+
+// A DragonBones mesh display → MeshAttachment2D. Only the UNWEIGHTED (rigid, single-slot-bone) case is
+// modeled here: its `vertices` are positions in the slot bone's local space, mapped directly like a Spine
+// unweighted mesh. A WEIGHTED mesh (a `weights` stream with cached `bonePose`/`slotPose` bind matrices) is
+// deferred and Skip-crumbed: unlike Spine — which pre-bakes each influence's per-bone offset — DragonBones
+// stores one vertex plus bind matrices and defers the skinning, so the conversion to Skin2D's per-bone
+// offsets needs bonePose/slotPose matrix math (and the topo-sort bone-index remap). A `share`d mesh
+// (geometry borrowed from another display) is likewise deferred. Held at its displayIndex (returns null).
+function parseDragonBonesMeshDisplay(
+  display: Record<string, unknown>,
+  diagnostics?: ImportDiagnostic[],
+): MeshAttachment2D | null {
+  if ('weights' in display || 'bonePose' in display || 'slotPose' in display || 'share' in display) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'dragonbones.weighted-mesh-unsupported',
+      'parseDragonBonesSkeleton',
+      { displays: 1 },
+    );
+    return null;
+  }
+  const uvs = toFloat32Array(display.uvs);
+  return {
+    kind: MeshAttachment2DKind,
+    name: typeof display.name === 'string' ? display.name : null,
+    skin: null,
+    triangles: toUint16Array(display.triangles),
+    uvs,
+    vertexCount: uvs.length >> 1,
+    vertices: toFloat32Array(display.vertices),
+  };
 }
 
 // Maps a slot's `display` array to Flight attachments, POSITION-PRESERVING: result index i is displayIndex
@@ -214,6 +255,14 @@ function boolOr(value: unknown, fallback: boolean): boolean {
 // One DragonBones multiply-color channel (0–100 percent) → an 0–255 byte, clamped.
 function colorChannel(value: unknown): number {
   return Math.max(0, Math.min(255, Math.round((numberOr(value, 100) / 100) * 255)));
+}
+
+function toFloat32Array(value: unknown): Float32Array {
+  return Array.isArray(value) ? Float32Array.from(value as number[]) : new Float32Array();
+}
+
+function toUint16Array(value: unknown): Uint16Array {
+  return Array.isArray(value) ? Uint16Array.from(value as number[]) : new Uint16Array();
 }
 
 // Maps a DragonBones bone's nested `transform` block to Flight's local TRS + shear fields. DragonBones stores
