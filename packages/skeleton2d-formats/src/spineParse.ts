@@ -1,3 +1,4 @@
+import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createSkeleton2D } from '@flighthq/skeleton2d/contract';
 import type {
@@ -7,13 +8,17 @@ import type {
   MeshAttachment2D,
   RegionAttachment2D,
   Skeleton2DImport,
+  Skeleton2DImportAnimation,
   Skin2D,
   Slot2D,
 } from '@flighthq/types/contract';
 import {
+  AnimationInterpolationLinear,
+  AnimationInterpolationStep,
   ImportDiagnosticSeverity,
   MeshAttachment2DKind,
   RegionAttachment2DKind,
+  Skeleton2DAnimationPath,
   TransformMode2D,
 } from '@flighthq/types/contract';
 
@@ -38,7 +43,8 @@ export function parseSpineSkeleton(json: string, diagnostics?: ImportDiagnostic[
   const bones = parseSpineBones(record.bones, diagnostics);
   const defaultSkin = parseSpineDefaultSkin(record.skins, diagnostics);
   const slots = parseSpineSlots(record.slots, bones, defaultSkin);
-  return { animations: [], skeleton: createSkeleton2D(bones, slots) };
+  const animations = parseSpineAnimations(record.animations, bones, diagnostics);
+  return { animations, skeleton: createSkeleton2D(bones, slots) };
 }
 
 function numberOr(value: unknown, fallback: number): number {
@@ -248,6 +254,102 @@ function toFloat32Array(value: unknown): Float32Array {
 
 function toUint16Array(value: unknown): Uint16Array {
   return Array.isArray(value) ? Uint16Array.from(value as number[]) : new Uint16Array();
+}
+
+// Adds one bone-timeline channel to `channels`: builds an AnimationTrack from the Spine keyframes (times
+// + `extract`ed component values, with the setup pose already baked into `extract`) targeting the bone's
+// `path`. A timeline whose every keyframe is `curve: 'stepped'` is a Step track; otherwise Linear.
+function addSpineBoneChannel(
+  channels: ReturnType<typeof createAnimationChannel>[],
+  rawKeys: unknown,
+  boneIndex: number,
+  path: (typeof Skeleton2DAnimationPath)[keyof typeof Skeleton2DAnimationPath],
+  components: number,
+  extract: (key: Record<string, unknown>) => readonly number[],
+): void {
+  if (!Array.isArray(rawKeys) || rawKeys.length === 0) return;
+  const times: number[] = [];
+  const values: number[] = [];
+  let allStepped = true;
+  for (const key of rawKeys) {
+    if (key === null || typeof key !== 'object') continue;
+    const k = key as Record<string, unknown>;
+    times.push(numberOr(k.time, 0));
+    for (const component of extract(k)) values.push(component);
+    if (k.curve !== 'stepped') allStepped = false;
+  }
+  const interpolation = allStepped ? AnimationInterpolationStep : AnimationInterpolationLinear;
+  const track = createAnimationTrack({ components, interpolation, times, values });
+  channels.push(createAnimationChannel(track, { boneIndex, path }));
+}
+
+function indexOfBone(bones: readonly Bone2D[], name: string): number {
+  for (let i = 0; i < bones.length; i++) {
+    if (bones[i].name === name) return i;
+  }
+  return -1;
+}
+
+// Builds one AnimationClip per Spine animation from its bone rotate/translate/scale/shear timelines.
+// Spine bone timelines are RELATIVE to the setup pose (rotate/translate/shear are offsets, scale is a
+// multiplier) while applyAnimationClipToSkeleton2D writes ABSOLUTE values, so the setup is baked in here.
+// Constraint (ik/transform/path), event, deform, draw-order, and slot timelines are recognized-but-
+// unmodeled and Skip-crumbed. (Spine per-keyframe bezier curves approximate to Linear — a P1 fidelity
+// limit noted in the package status.)
+function parseSpineAnimations(
+  raw: unknown,
+  bones: readonly Bone2D[],
+  diagnostics?: ImportDiagnostic[],
+): Skeleton2DImportAnimation[] {
+  const animations: Skeleton2DImportAnimation[] = [];
+  if (raw === null || typeof raw !== 'object') return animations;
+  for (const [name, animEntry] of Object.entries(raw as Record<string, unknown>)) {
+    if (animEntry === null || typeof animEntry !== 'object') continue;
+    const anim = animEntry as Record<string, unknown>;
+    const channels: ReturnType<typeof createAnimationChannel>[] = [];
+    if (anim.bones !== null && typeof anim.bones === 'object') {
+      for (const [boneName, timelinesEntry] of Object.entries(anim.bones as Record<string, unknown>)) {
+        const boneIndex = indexOfBone(bones, boneName);
+        if (boneIndex < 0 || timelinesEntry === null || typeof timelinesEntry !== 'object') continue;
+        const timelines = timelinesEntry as Record<string, unknown>;
+        const setup = bones[boneIndex];
+        addSpineBoneChannel(channels, timelines.rotate, boneIndex, Skeleton2DAnimationPath.Rotation, 1, (k) => [
+          numberOr(k.value, 0) + setup.rotation,
+        ]);
+        addSpineBoneChannel(channels, timelines.translate, boneIndex, Skeleton2DAnimationPath.Translation, 2, (k) => [
+          numberOr(k.x, 0) + setup.x,
+          numberOr(k.y, 0) + setup.y,
+        ]);
+        addSpineBoneChannel(channels, timelines.scale, boneIndex, Skeleton2DAnimationPath.Scale, 2, (k) => [
+          numberOr(k.x, 1) * setup.scaleX,
+          numberOr(k.y, 1) * setup.scaleY,
+        ]);
+        addSpineBoneChannel(channels, timelines.shear, boneIndex, Skeleton2DAnimationPath.Shear, 2, (k) => [
+          numberOr(k.x, 0) + setup.shearX,
+          numberOr(k.y, 0) + setup.shearY,
+        ]);
+      }
+    }
+    skipCrumbSpineTimelineGroup(diagnostics, anim.slots, 'spine.slot-timeline-unsupported');
+    skipCrumbSpineTimelineGroup(diagnostics, anim.ik, 'spine.ik-timeline-unsupported');
+    skipCrumbSpineTimelineGroup(diagnostics, anim.transform, 'spine.transform-timeline-unsupported');
+    skipCrumbSpineTimelineGroup(diagnostics, anim.path, 'spine.path-timeline-unsupported');
+    skipCrumbSpineTimelineGroup(diagnostics, anim.deform, 'spine.deform-timeline-unsupported');
+    skipCrumbSpineTimelineGroup(diagnostics, anim.events, 'spine.event-timeline-unsupported');
+    skipCrumbSpineTimelineGroup(diagnostics, anim.drawOrder ?? anim.draworder, 'spine.draworder-timeline-unsupported');
+    animations.push({ clip: createAnimationClip(channels), name });
+  }
+  return animations;
+}
+
+// Reports one aggregated Skip crumb for an unmodeled animation timeline group, with the group's element
+// count. An absent or empty group is silent.
+function skipCrumbSpineTimelineGroup(diagnostics: ImportDiagnostic[] | undefined, raw: unknown, kind: string): void {
+  let count = 0;
+  if (Array.isArray(raw)) count = raw.length;
+  else if (raw !== null && typeof raw === 'object') count = Object.keys(raw as Record<string, unknown>).length;
+  if (count > 0)
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Skip, kind, 'parseSpineSkeleton', { count });
 }
 
 // Maps a Spine bone `transform` string to a TransformMode2D. Spine omits the field for the default,
