@@ -3,6 +3,13 @@
 // MSAA, `depth` carries target-scope stencil and (for '-sampled') a readable depth texture. The
 // per-backend target types (GlRenderTarget, WgpuRenderTarget) realize these axes.
 
+// Common allocation-backed target identity used by backend-neutral assemblies. Backend target types
+// extend this with their storage handles and effective format axes.
+export interface RenderTarget {
+  height: number;
+  width: number;
+}
+
 export type RenderTargetFormat = 'rgba8' | 'rgba16f' | 'rgba32f';
 
 export type RenderTargetDepth = 'none' | 'depth-stencil' | 'depth-stencil-sampled';

@@ -1,6 +1,6 @@
-import type { RenderTargetColorSpace } from './RenderTarget';
+import type { RenderTarget, RenderTargetColorSpace } from './RenderTarget';
 
-export type WgpuRenderTarget = {
+export interface WgpuRenderTarget extends RenderTarget {
   bindGroup: GPUBindGroup;
   // Declared color space of the target's content. A producer stamps linear 3D radiance as 'linear';
   // the final present reads this and applies the single linear-to-sRGB encode.
@@ -19,7 +19,7 @@ export type WgpuRenderTarget = {
   texture: GPUTexture;
   view: GPUTextureView;
   width: number;
-};
+}
 
 // A free-list of reusable targets. The effect pipeline owns one and lends intermediate targets to
 // multi-pass recipes via acquireWgpuRenderTarget / releaseWgpuRenderTarget.

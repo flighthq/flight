@@ -1,4 +1,4 @@
-import type { RenderTargetColorSpace, RenderTargetFormat } from './RenderTarget';
+import type { RenderTarget, RenderTargetColorSpace, RenderTargetFormat } from './RenderTarget';
 
 // Gl realization of a RenderTargetDescriptor. MSAA in Gl2 cannot texture-attach a multisample
 // buffer: the scene draws into `framebuffer` (multisample renderbuffer-backed when sampleCount > 1),
@@ -9,7 +9,7 @@ import type { RenderTargetColorSpace, RenderTargetFormat } from './RenderTarget'
 //
 // Fields are mutable because resizeGlRenderTarget reallocates them in place; callers that must not
 // mutate a target take it as `Readonly<GlRenderTarget>`.
-export interface GlRenderTarget {
+export interface GlRenderTarget extends RenderTarget {
   width: number;
   height: number;
   format: RenderTargetFormat;
