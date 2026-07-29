@@ -64,7 +64,7 @@ export const customShaderGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     const program = ensureGlCustomShaderProgram(state, custom.shaderKey, source);
     getGlScene3DRuntime(state).customShaderGuard?.(state, program.program, custom.shaderKey);
     beginGlMeshDraw(state, program, custom.doubleSided);
-    setGlMeshViewProjection(state.gl, program.locViewProjection, camera);
+    setGlMeshViewProjection(state, program.locViewProjection, camera);
     setGlMeshCameraPosition(state.gl, program.locCameraPosition, camera);
 
     uploadCustomShaderMaterialUniforms(state.gl, program.program, custom);

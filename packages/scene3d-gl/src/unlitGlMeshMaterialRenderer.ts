@@ -48,7 +48,7 @@ export const unlitGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     const unlit = material as Readonly<UnlitMaterial> | null;
     const program = ensureGlUnlitProgram(state, defineKeyForMaterial(state, unlit));
     beginGlMeshDraw(state, program, unlit !== null && unlit.doubleSided);
-    setGlMeshViewProjection(gl, program.locViewProjection, camera);
+    setGlMeshViewProjection(state, program.locViewProjection, camera);
 
     if (unlit === null) {
       bindGlUnlitSurface(state, program, WHITE, 1, null, 0.5);

@@ -44,7 +44,7 @@ export const emissiveGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     const emissive = material as Readonly<EmissiveMaterial> | null;
     const program = ensureGlUnlitProgram(state, defineKeyForMaterial(state, emissive));
     beginGlMeshDraw(state, program, emissive !== null && emissive.doubleSided);
-    setGlMeshViewProjection(gl, program.locViewProjection, camera);
+    setGlMeshViewProjection(state, program.locViewProjection, camera);
 
     if (emissive === null) {
       bindGlUnlitSurface(state, program, WHITE, 1, null, 0.5);

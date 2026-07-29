@@ -36,7 +36,7 @@ export const wireframeGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     const program = ensureGlWireframeProgram(state);
     // doubleSided = true: lines have no winding, so back-face culling must be off.
     beginGlMeshDraw(state, program, true);
-    setGlMeshViewProjection(gl, program.locViewProjection, camera);
+    setGlMeshViewProjection(state, program.locViewProjection, camera);
 
     if (wireframe === null) {
       gl.uniform4f(program.locColor, 1, 1, 1, 1);

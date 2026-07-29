@@ -150,23 +150,27 @@ export function packScene3DLightBlock(out: Scene3DLightBlock, lights: Readonly<S
 // it sees the current-frame posed silhouette without any skinning code in this package. A rigid scene
 // calls neither and this pass is unchanged.
 //
-// `aspect` for a perspective camera is taken from the render state's pixel-space target (width /
-// height); a degenerate target falls back to 1. The returned list is reused scratch owned per render
-// state (so a gl state and a wgpu state prepare independently); a caller must not retain it past the
-// drawScene3D it feeds.
+// `viewportAspect`, when supplied by a backend draw path, is authoritative for a perspective camera.
+// Omitting it uses the projection's authored aspect for standalone/headless preparation. The returned
+// list is reused scratch owned per render state (so a gl state and a wgpu state prepare independently);
+// a caller must not retain it past the drawScene3D it feeds.
 export function prepareScene3DRender(
   state: RenderState,
   scene: Readonly<Node3D>,
   camera: Readonly<Camera3D>,
   lights: Readonly<Scene3DLightsLike>,
+  viewportAspect?: number,
 ): Scene3DRenderList {
   const prepared = ensurePreparedScene3D(state);
   const list = prepared.list;
 
-  // RenderState carries no canonical viewport size, so a perspective camera supplies its own aspect
-  // through its projection; this neutral fallback keeps an orthographic frame and a pre-aspected
-  // perspective frame correct. A backend that owns a sized target sets the projection aspect first.
-  setScene3DViewProjectionMatrix4(prepared.viewProjection, camera, DEFAULT_VIEWPORT_ASPECT);
+  // RenderState carries no canonical viewport size. Backend draws pass their active viewport ratio;
+  // neutral callers fall back to the authored projection without mutating it.
+  setScene3DViewProjectionMatrix4(
+    prepared.viewProjection,
+    camera,
+    resolveScene3DViewportAspect(camera, viewportAspect),
+  );
   setFrustumFromMatrix4(prepared.frustum, prepared.viewProjection);
 
   packScene3DLightBlock(list.lights, lights);
@@ -355,20 +359,13 @@ function packSpotLight(data: Float32Array, offset: number, spot: Readonly<SpotLi
 }
 
 // Composes the camera's view-projection (projection x view) into `out`. For a perspective camera the
-// projection's own aspect is used when set (non-zero), else the render state's `aspect` fallback;
-// near/far come from the camera. Reads camera fields through a scratch projection before the multiply,
-// so it is safe even if `out` aliases the camera's view.
+// resolved draw-time `aspect` is authoritative; near/far come from the camera. Reads camera fields
+// through a scratch projection before the multiply, so it is safe even if `out` aliases camera.view.
 function setScene3DViewProjectionMatrix4(out: Matrix4, camera: Readonly<Camera3D>, aspect: number): void {
   const projection = camera.projection;
   if (projection.kind === 'perspective') {
     // Geometry's setPerspectiveMatrix4 takes the tangent of the half-FOV, not the full angle.
-    setPerspectiveMatrix4(
-      scratchProjection,
-      Math.tan(projection.fovY * 0.5),
-      projection.aspect !== 0 ? projection.aspect : aspect,
-      camera.near,
-      camera.far,
-    );
+    setPerspectiveMatrix4(scratchProjection, Math.tan(projection.fovY * 0.5), aspect, camera.near, camera.far);
   } else {
     setOrthographicMatrix4(
       scratchProjection,
@@ -381,6 +378,17 @@ function setScene3DViewProjectionMatrix4(out: Matrix4, camera: Readonly<Camera3D
     );
   }
   multiplyMatrix4(out, scratchProjection, camera.view);
+}
+
+function resolveScene3DViewportAspect(camera: Readonly<Camera3D>, viewportAspect: number | undefined): number {
+  if (viewportAspect !== undefined && Number.isFinite(viewportAspect) && viewportAspect > 0) {
+    return viewportAspect;
+  }
+  const projection = camera.projection;
+  if (projection.kind === 'perspective' && Number.isFinite(projection.aspect) && projection.aspect > 0) {
+    return projection.aspect;
+  }
+  return DEFAULT_VIEWPORT_ASPECT;
 }
 
 // The per-render-state prepared frame: the reused Scene3DRenderList plus the scratch the prepare pass

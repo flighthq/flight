@@ -171,7 +171,7 @@ describe('invalidateGlRenderStateCache', () => {
     runtime.currentBlendMode = BlendMode.Add;
     runtime.currentMaskDepth = 3;
     runtime.currentScissorRect = { x: 0, y: 0, width: 1, height: 1 };
-    runtime.renderTargetViewport = { width: 4, height: 4 };
+    runtime.renderTargetViewport = { height: 4, width: 4, x: 0, y: 0 };
 
     invalidateGlRenderStateCache(state);
 

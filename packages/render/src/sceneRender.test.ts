@@ -244,6 +244,19 @@ describe('prepareScene3DRender', () => {
     expect(list.viewProjection.m[15]).not.toBe(1);
   });
 
+  it('uses a draw-time viewport aspect without mutating the camera projection', () => {
+    const state = createRenderState();
+    const scene = createNode3D(Node3DKind);
+    const camera = frontCamera();
+
+    const tallXScale = prepareScene3DRender(state, scene, camera, emptyLights(), 0.5).viewProjection.m[0];
+    const wideXScale = prepareScene3DRender(state, scene, camera, emptyLights(), 2).viewProjection.m[0];
+
+    expect(tallXScale).toBeCloseTo(wideXScale * 4);
+    expect(camera.projection.kind).toBe('perspective');
+    if (camera.projection.kind === 'perspective') expect(camera.projection.aspect).toBe(1);
+  });
+
   it('culls a mesh placed far behind the camera', () => {
     const state = createRenderState();
     const scene = createNode3D(Node3DKind);

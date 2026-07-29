@@ -31,6 +31,7 @@ import { StandardMaterialKind, MAX_FORWARD_LIGHTS } from '@flighthq/types/contra
 import { resolveGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { drawGlScene3DParticleEmitter3Ds } from './glParticleEmitter3D';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { getGlScene3DViewportAspect } from './glViewportAspect';
 
 // True when a mesh should be GPU-skinned this draw: it carries a skin and its geometry has the joints0/
 // weights0 channels. The bone palette is an RGBA32F data texture read via texelFetch, so the joint count
@@ -71,7 +72,7 @@ export function drawGlScene3D(
   lights: Readonly<Scene3DLightsLike>,
   forwardLights?: Readonly<GlScene3DForwardLightList>,
 ): void {
-  const list = prepareScene3DRender(state, scene, camera, lights);
+  const list = prepareScene3DRender(state, scene, camera, lights, getGlScene3DViewportAspect(state));
   const lightBlock = list.lights;
   const viewProjection = list.viewProjection;
   const runtime = getGlScene3DRuntime(state);

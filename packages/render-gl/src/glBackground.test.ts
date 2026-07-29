@@ -29,6 +29,15 @@ describe('renderGlBackground', () => {
     expect(gl.clear).toHaveBeenCalledWith((gl as unknown as { COLOR_BUFFER_BIT: number }).COLOR_BUFFER_BIT);
   });
 
+  it('preserves an active partial-target viewport origin', () => {
+    const { state, gl } = createGlState();
+    getGlRenderStateRuntime(state).renderTargetViewport = { height: 40, width: 30, x: 10, y: 20 };
+
+    renderGlBackground(state);
+
+    expect(gl.viewport).toHaveBeenLastCalledWith(10, 20, 30, 40);
+  });
+
   it('resets currentBlendMode to null', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);

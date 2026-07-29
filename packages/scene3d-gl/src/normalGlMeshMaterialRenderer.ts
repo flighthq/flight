@@ -34,13 +34,12 @@ export const normalGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     _lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
-    const gl = state.gl;
     const normal = material as Readonly<NormalMaterial> | null;
     const hasNormalMap =
       normal !== null && normal.normalMap !== null && resolveGlTexture(state, normal.normalMap) !== null;
     const program = ensureGlDebugProgram(state, { hasNormalMap, mode: 'normal' });
     beginGlMeshDraw(state, program, normal !== null && normal.doubleSided);
-    setGlMeshViewProjection(gl, program.locViewProjection, camera);
+    setGlMeshViewProjection(state, program.locViewProjection, camera);
 
     if (normal === null) {
       bindGlDebugNormalMap(state, program, null, 1);

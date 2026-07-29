@@ -27,11 +27,10 @@ export const depthGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     _lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
-    const gl = state.gl;
     const depth = material as Readonly<DepthMaterial> | null;
     const program = ensureGlDebugProgram(state, { hasNormalMap: false, mode: 'depth' });
     beginGlMeshDraw(state, program, depth !== null && depth.doubleSided);
-    setGlMeshViewProjection(gl, program.locViewProjection, camera);
+    setGlMeshViewProjection(state, program.locViewProjection, camera);
 
     if (depth === null) {
       bindGlDebugRange(state, program, 0, 1);
