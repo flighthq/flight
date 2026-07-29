@@ -75,3 +75,60 @@ checkable rather than asserted: 3DS is a nested chunk tree and should be dominat
 chunked with optionally compressed bodies, so 1 (post-decompression offsets), 3, 5, and 6; MD2 is an
 offset-table format whose header points into the file, so 1 and 3; MD5 is text, where the byte-addressing
 axes largely do not apply and the analogue is index/token validity — 5 and 8 in a different costume.
+
+## Axes 9-13, added by the four-parser audit (2026-07-29)
+
+The eight above were derived from the read operation before any of the four parsers was opened. The
+audit found five failure geometries they do not name. Each is recorded with the parser that produced
+it, because the provenance is the evidence that deriving beats reusing.
+
+9. **Bound independence.** A bound computed from the same declared quantity as the address it guards
+   is tautological — it moves with the error and cannot detect it. MD2 bounds its frame reads with
+   `offFrames + numFrames * frameStride` where `frameStride` is derived from `numVertices`, the same
+   input the per-frame address uses; if `numVertices` is wrong the bound is wrong by exactly the
+   amount needed to keep passing. **A bound must be anchored in a quantity independent of the address
+   arithmetic it guards.** MD2 carries two such anchors, `framesize` and `offEnd`, and reads neither.
+
+10. **Sibling disjointness.** Axis 3 is written for *nesting*. An offset-table format's sections are
+    *siblings that tile the file*, and two of them claiming the same bytes is invisible to any
+    containment check at any depth, because each region is individually inside the file. Setting MD2's
+    `offFrames` equal to `offTriangles` decodes index data as vertex floats and produces a complete,
+    finite, plausible animated mesh. **Where regions tile rather than nest, the check is partition
+    coverage — disjoint, and accounting for the whole declared extent.**
+
+11. **Guard-coverage asymmetry across duplicated read sites.** A property of the *population* of read
+    sites, not of any one of them. 3DS has eight copies of one chunk-walk loop; five carry a minimum-
+    length guard and three do not, and each of the three looks locally reasonable because it *has* a
+    bounds guard — just not the one that makes the walk terminate. No per-site audit finds this.
+    **Identical read shapes must share one implementation, or the guard set silently diverges.**
+
+12. **Positional coupling of recovery.** Axis 8 says classify a fault by what the data is for, which
+    assumes a record's failure is local to that record. In an array whose *positions* are addressed by
+    other records, dropping one is never local: the recovery action is itself what creates the
+    wrong-address condition. Dropping one malformed MD5 `weight` line shifts every later weight, so
+    every subsequent vertex skins to the wrong ones — through a bounds check that still passes.
+    **Before skipping a malformed record, ask whether anything indexes that array by position; if so,
+    skipping must preserve the position or escalate.** `Drop` is not a safe severity for a
+    positionally-referenced array.
+
+13. **Allocation bounded by something the file cannot inflate.** Every axis above assumes the quantity
+    sizing an allocation is a field that can be checked against the buffer. Under decompression it is
+    the *compression ratio*, which is not in the file, is not bounded by its length, and no per-field
+    check can reach. A kilobyte of nested maximum-length back-references expands until the process
+    dies. **Where the buffer does not bound the allocation, an explicit cap must.**
+
+Two further findings sit at the edge and are recorded as instances rather than axes: **record identity
+agreement** (MD5 records declare their own ordinal — `vert 0`, `weight 3` — a per-record checksum on
+the array position every cross-reference depends on, which both parsers discard) is the strongest
+available instance of axis 5; and **decoded-value domain** (a quaternion reconstructed as
+`w = -sqrt(1 - sumSq)` and silently zeroed when `sumSq >= 1`, yielding a non-unit quaternion that
+scales the joint it drives) is about the *value*, not where it came from — arguably a different
+discipline than read integrity, and named here so it is not lost.
+
+**What the prediction got right and wrong.** Recorded above before opening anything: 3DS dominated by
+1, 3, 6 — *half right*: axis 6 is exactly where it breaks (a hang), but 1 and 3 are the two axes it
+handles best. AWD2 by 1, 3, 5, 6 — *wrong about 1*: the post-decompression frame is the one thing it
+handles carefully, and its real exposure is axis 13, which did not exist yet. MD2 by 1 and 3 — *half
+right*: axis 1 holds by construction, and the damage is at 9 and 10, neither of which existed. MD5 as
+index validity — *right*. A prediction that is wrong in a recorded, checkable way is worth more than
+one that is vague enough to be always right.
