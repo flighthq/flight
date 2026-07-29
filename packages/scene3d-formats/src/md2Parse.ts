@@ -84,6 +84,13 @@ export function parseMd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagno
 
   const skinWidth = view.getInt32(8, true);
   const skinHeight = view.getInt32(12, true);
+  // The two header fields the parser previously never read, and the reason to read them: the frame
+  // stride and the file extent are each declared TWICE. `frameSize` states the stride the writer used;
+  // `offEnd` states the file's own total size. Recomputing the stride from `numVertices` and bounding it
+  // against a limit derived from that same `numVertices` is tautological — if the count is wrong the bound
+  // is wrong by exactly the amount needed to keep passing. An independent anchor is the only thing that
+  // can catch it.
+  const declaredFrameSize = view.getInt32(16, true);
   const numSkins = view.getInt32(20, true);
   const numVertices = view.getInt32(24, true);
   const numTexCoords = view.getInt32(28, true);
@@ -93,6 +100,7 @@ export function parseMd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagno
   const offTexCoords = view.getInt32(48, true);
   const offTriangles = view.getInt32(52, true);
   const offFrames = view.getInt32(56, true);
+  const declaredEnd = view.getInt32(64, true);
 
   if (numFrames < 1) {
     reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'md2.no-frames', 'parseMd2');
@@ -106,17 +114,73 @@ export function parseMd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagno
 
   // Validate that the buffer contains the data regions we need — including every frame (each frame is
   // its own header + compressed-vertex block, laid contiguously from offFrames).
+  // Counts and offsets are signed int32 straight out of the file. A negative count sizes a typed array
+  // and throws; a negative offset is worse, because it passes every upper-bound test — the read simply
+  // starts before the region and imports whatever precedes it, or, through raw byte indexing, reads
+  // `undefined` and fabricates data from it.
+  if (
+    numVertices < 0 ||
+    numTexCoords < 0 ||
+    numSkins < 0 ||
+    offSkins < 0 ||
+    offTexCoords < 0 ||
+    offTriangles < 0 ||
+    offFrames < 0
+  ) {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'md2.negative-header-field', 'parseMd2', {
+      byteLength: bytes.length,
+    });
+    return emptyMd2Document();
+  }
+
   const frameStride = MD2_FRAME_HEADER_SIZE + numVertices * MD2_COMPRESSED_VERTEX_SIZE;
+  // The independent check (axis 9): the writer's own stride, compared against the one derived from
+  // numVertices. They disagree when numVertices is wrong or the writer padded frames, and either way
+  // every frame after the first is then read from a drifting offset — decoding a neighbouring frame's
+  // bytes as scale/translate floats, which are finite, plausible, and completely wrong.
+  if (declaredFrameSize > 0 && declaredFrameSize !== frameStride) {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'md2.frame-size-mismatch', 'parseMd2', {
+      actual: frameStride,
+      expected: declaredFrameSize,
+    });
+    return emptyMd2Document();
+  }
+
+  const skinsEnd = offSkins + numSkins * MD2_SKIN_SIZE;
   const texCoordsEnd = offTexCoords + numTexCoords * MD2_TEXCOORD_SIZE;
   const trianglesEnd = offTriangles + numTriangles * MD2_TRIANGLE_SIZE;
   const allFramesEnd = offFrames + numFrames * frameStride;
 
+  // Skins stay OUT of this fatal check on purpose: a skin is an optional texture name, so a truncated skin
+  // table degrades the material and leaves the geometry intact — it keeps its per-record Drop. What
+  // `offSkins` lacked was the LOWER bound, and that is what let it fabricate a 64-byte name out of
+  // out-of-buffer reads instead of faulting; the negative-field rejection above closes that, without
+  // escalating an optional section's truncation into a dead file.
   if (texCoordsEnd > bytes.length || trianglesEnd > bytes.length || allFramesEnd > bytes.length) {
     reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'md2.truncated-data-region', 'parseMd2', {
       byteLength: bytes.length,
     });
     return emptyMd2Document();
   }
+
+  // The second independent anchor: the file's own declared size. A disagreement means the header and the
+  // bytes describe different files, and nothing else in the header can reveal that.
+  if (declaredEnd > 0 && declaredEnd !== bytes.length) {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Recover, 'md2.file-size-mismatch', 'parseMd2', {
+      actual: bytes.length,
+      expected: declaredEnd,
+    });
+  }
+
+  // MD2's sections are SIBLINGS that tile the file, not a nest, so no containment check at any depth can
+  // see two of them claiming the same bytes (axis 10). Overlap decodes one kind of record as another and
+  // yields a complete, finite, plausible mesh — the worst possible failure shape.
+  reportMd2SectionOverlap(diagnostics, [
+    { end: skinsEnd, name: 0, start: offSkins },
+    { end: texCoordsEnd, name: 1, start: offTexCoords },
+    { end: trianglesEnd, name: 2, start: offTriangles },
+    { end: allFramesEnd, name: 3, start: offFrames },
+  ]);
 
   // Read texcoords: int16 s, int16 t per entry. Scale to 0-1 using skinWidth/skinHeight.
   const uvScaleS = skinWidth > 0 ? 1 / skinWidth : 0;
@@ -499,4 +563,27 @@ function readMd2SkinName(bytes: Readonly<Uint8Array>, offset: number): string {
   let name = '';
   for (let i = offset; i < end; i++) name += String.fromCharCode(bytes[i]);
   return name;
+}
+
+// Reports any two declared sections that claim the same bytes. Sections with no records are skipped —
+// an empty section legitimately shares an offset with whatever follows it.
+function reportMd2SectionOverlap(
+  diagnostics: ImportDiagnostic[] | undefined,
+  sections: readonly { end: number; name: number; start: number }[],
+): void {
+  for (let i = 0; i < sections.length; i++) {
+    const first = sections[i];
+    if (first.end <= first.start) continue;
+    for (let j = i + 1; j < sections.length; j++) {
+      const second = sections[j];
+      if (second.end <= second.start) continue;
+      if (first.start < second.end && second.start < first.end) {
+        reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Recover, 'md2.section-overlap', 'parseMd2', {
+          first: first.name,
+          second: second.name,
+        });
+        return;
+      }
+    }
+  }
 }

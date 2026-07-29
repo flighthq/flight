@@ -1037,3 +1037,91 @@ describe('parseMd2', () => {
     expect(crumb.detail?.byteLength).toBe(10);
   });
 });
+
+describe('parseMd2 read integrity', () => {
+  // The fixture writes a self-consistent header, so each probe corrupts one field of a valid file — which
+  // is exactly the shape a real malformed asset takes.
+  function validMd2(): Uint8Array {
+    return buildMd2({
+      compressedVertices: [
+        { normalIndex: 0, x: 0, y: 0, z: 0 },
+        { normalIndex: 0, x: 10, y: 0, z: 0 },
+        { normalIndex: 0, x: 0, y: 10, z: 0 },
+      ],
+      texCoords: [
+        { s: 0, t: 0 },
+        { s: 1, t: 0 },
+        { s: 0, t: 1 },
+      ],
+      triangles: [{ texIndices: [0, 1, 2], vertIndices: [0, 1, 2] }],
+    });
+  }
+
+  function corrupt(offset: number, value: number): Uint8Array {
+    const bytes = validMd2();
+    new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).setInt32(offset, value, true);
+    return bytes;
+  }
+
+  it('rejects a declared frame size that disagrees with the one implied by the vertex count', () => {
+    // AXIS 9. The bound on the frame reads is `offFrames + numFrames * frameStride`, and `frameStride` is
+    // derived from `numVertices` — the same input the per-frame ADDRESS uses. So if numVertices is wrong
+    // the bound is wrong by exactly the amount needed to keep passing, and every frame after the first is
+    // read from a drifting offset, decoding its neighbour's bytes as finite, plausible scale/translate
+    // floats. `frameSize` at header offset 16 is the file's own independent statement of that stride, and
+    // it is the only thing in the file that can catch this.
+    const diagnostics: ImportDiagnostic[] = [];
+    parseMd2(corrupt(16, 444), diagnostics);
+    const crumb = diagnostics.find((d) => d.kind === 'md2.frame-size-mismatch');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe('Reject');
+  });
+
+  it('reports two sections that claim the same bytes', () => {
+    // AXIS 10. MD2's sections are siblings that TILE the file, so no containment check at any depth sees
+    // this — each region is individually inside the file. Pointing offFrames at the triangle block decodes
+    // uint16 index pairs as float32 scale/translate, which are small and finite, and builds a complete
+    // animated mesh out of them.
+    const bytes = validMd2();
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    view.setInt32(56, view.getInt32(52, true), true); // offFrames := offTriangles
+    const diagnostics: ImportDiagnostic[] = [];
+    parseMd2(bytes, diagnostics);
+    expect(diagnostics.find((d) => d.kind === 'md2.section-overlap')).toBeDefined();
+  });
+
+  it('rejects a negative offset rather than reading before the region or fabricating from undefined', () => {
+    // AXIS 2. A negative offset passes every upper-bound test — the read simply starts earlier. Through
+    // DataView it throws; through raw byte indexing it yields `undefined`, and `offSkins` turned that into
+    // a fabricated 64-NUL material name with a matching texture path and no diagnostic at all.
+    for (const offset of [44, 48, 52, 56]) {
+      const diagnostics: ImportDiagnostic[] = [];
+      expect(() => parseMd2(corrupt(offset, -64), diagnostics)).not.toThrow();
+      expect(diagnostics.find((d) => d.kind === 'md2.negative-header-field')).toBeDefined();
+    }
+  });
+
+  it('rejects a negative count rather than throwing out of the typed-array allocation', () => {
+    for (const offset of [24, 28, 20]) {
+      const diagnostics: ImportDiagnostic[] = [];
+      expect(() => parseMd2(corrupt(offset, -3), diagnostics)).not.toThrow();
+      expect(diagnostics.find((d) => d.kind === 'md2.negative-header-field')).toBeDefined();
+    }
+  });
+
+  it('reports a declared file size that disagrees with the bytes actually supplied', () => {
+    // The file's second independent anchor. Nothing else in the header can reveal that the header and the
+    // bytes describe different files.
+    const diagnostics: ImportDiagnostic[] = [];
+    parseMd2(corrupt(64, 999999), diagnostics);
+    const crumb = diagnostics.find((d) => d.kind === 'md2.file-size-mismatch');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe('Recover');
+  });
+
+  it('stays quiet for a well-formed file', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    parseMd2(validMd2(), diagnostics);
+    expect(diagnostics).toHaveLength(0);
+  });
+});
