@@ -48,6 +48,11 @@ export interface Physics2DMaterial {
 // producing an impulse, which is how a trigger volume is built.
 export interface Physics2DCollider {
   local: CollisionShape;
+  // The world-space shape, rewritten every step. Its KIND may differ from `local`'s: a rotated
+  // axis-aligned box is not an axis-aligned box, so an `aabb` local shape carries an `obb` world shape.
+  // The alternative — forbidding aabb colliders on rotating bodies — would make a legal authoring choice
+  // depend on a runtime property, and would fail silently the first time a body was given angular
+  // velocity. Local kind is what you author; world kind is what the narrow phase needs.
   world: CollisionShape;
   material: Physics2DMaterial;
   sensor: boolean;
@@ -84,6 +89,9 @@ export interface RigidBody2D {
 
   x: number;
   y: number;
+  // RADIANS, unlike the scene graph's degrees-valued `node.rotation`. This is the math layer, where
+  // every trig call wants radians and a per-step conversion would be waste; the sync layer that copies
+  // a body onto a display object converts at that seam, which is where the SDK converts everywhere else.
   angle: number;
 
   velocityX: number;
