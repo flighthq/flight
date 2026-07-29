@@ -7,7 +7,6 @@ import {
   matrixTransformRectangle,
   mergeRectangle,
   releaseMatrix,
-  setEmptyRectangle,
 } from '@flighthq/geometry/contract';
 import type {
   BoundsNode,
@@ -185,7 +184,6 @@ function recomputeLocalBoundsRectangle<Traits extends object>(
   runtime: NodeRuntime<Traits> & HasBoundsRectangleRuntime,
 ): void {
   if (runtime.localBoundsRectangle === null) runtime.localBoundsRectangle = createRectangle();
-  setEmptyRectangle(runtime.localBoundsRectangle);
   runtime.computeLocalBoundsRectangle(runtime.localBoundsRectangle, target);
   const authored = runtime.authoredBoundsRectangle;
   if (authored !== null) {
