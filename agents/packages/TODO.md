@@ -614,7 +614,6 @@ Design calls to settle before building the affected entries:
 
 ### statusbar (solid 84)
 
-- Parse the short `#rgb` theme-color form
 - Decide whether `StatusBarInfo.height` should be reported by the web backend at all
 
 ### path-boolean (solid 85)
