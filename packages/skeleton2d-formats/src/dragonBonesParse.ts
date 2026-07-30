@@ -19,6 +19,7 @@ import type {
 import {
   AnimationInterpolationLinear,
   AnimationInterpolationStep,
+  Skeleton2DSlotAnimationPath,
   ImportDiagnosticSeverity,
   MeshAttachment2DKind,
   RegionAttachment2DKind,
@@ -77,7 +78,14 @@ export function parseDragonBonesSkeleton(json: string, diagnostics?: ImportDiagn
   const { skins, table } = parseDragonBonesSkins(armature.skin, slotOrder, remapBoneIndex, diagnostics);
   const slots = parseDragonBonesSlots(armature.slot, boneIndexByName, table, diagnostics);
   const frameRate = dragonBonesFrameRate(armature, doc as Record<string, unknown>);
-  const animations = parseDragonBonesAnimations(armature.animation, boneIndexByName, frameRate, diagnostics);
+  const animations = parseDragonBonesAnimations(
+    armature.animation,
+    boneIndexByName,
+    slotOrder,
+    table,
+    frameRate,
+    diagnostics,
+  );
   skipCrumbDragonBonesGroup(diagnostics, armature.ik, 'dragonbones.ik-constraint-unsupported');
   const skeleton = createSkeleton2D(bones, slots);
   if (skins.length > 0) skeleton.skins = skins;
@@ -123,11 +131,14 @@ function buildDragonBonesBoneRemap(rawIndexToOutput: readonly number[]): DragonB
 function parseDragonBonesAnimations(
   raw: unknown,
   boneIndexByName: ReadonlyMap<string, number>,
+  slotOrder: ReadonlyMap<string, number>,
+  displayTable: ReadonlyMap<string, readonly (Attachment2D | null)[]>,
   frameRate: number,
   diagnostics?: ImportDiagnostic[],
 ): Skeleton2DImportAnimation[] {
   const animations: Skeleton2DImportAnimation[] = [];
   if (!Array.isArray(raw)) return animations;
+  const unmodeled = new Map<string, number>();
   let unresolvedBones = 0;
   for (const entry of raw) {
     if (entry === null || typeof entry !== 'object') continue;
@@ -145,7 +156,7 @@ function parseDragonBonesAnimations(
         parseDragonBonesBoneTimeline(channels, timeline, boneIndex, frameRate, diagnostics);
       }
     }
-    skipCrumbDragonBonesGroup(diagnostics, animation.slot, 'dragonbones.slot-timeline-unsupported');
+    parseDragonBonesSlotTimelines(channels, animation.slot, slotOrder, displayTable, frameRate, unmodeled);
     skipCrumbDragonBonesGroup(diagnostics, animation.ffd, 'dragonbones.deform-timeline-unsupported');
     skipCrumbDragonBonesGroup(diagnostics, animation.ik, 'dragonbones.ik-timeline-unsupported');
     skipCrumbDragonBonesGroup(diagnostics, animation.zOrder, 'dragonbones.zorder-timeline-unsupported');
@@ -154,6 +165,15 @@ function parseDragonBonesAnimations(
       clip: createAnimationClip(channels, Number.isFinite(duration) && duration > 0 ? duration : undefined),
       name: typeof animation.name === 'string' ? animation.name : DEFAULT_DRAGONBONES_ANIMATION_NAME,
     });
+  }
+  for (const [kind, count] of unmodeled) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      `dragonbones.${kind}-timeline-unsupported`,
+      'parseDragonBonesSkeleton',
+      { timelines: count },
+    );
   }
   if (unresolvedBones > 0) {
     reportImportDiagnostic(
@@ -165,6 +185,99 @@ function parseDragonBonesAnimations(
     );
   }
   return animations;
+}
+
+// DragonBones slot timelines. `displayFrame` becomes a Step attachment-swap channel and `colorFrame` a
+// four-component 0..1 colour channel, matching what the Spine parsers produce — the two formats differ in
+// spelling, not in what they animate.
+//
+// DragonBones addresses a display by INDEX into the slot's display list, which is already the shape the
+// attachment-swap track wants, so the lookup table IS that display list and no name resolution is needed.
+// A negative index means "show nothing", exactly as the track's own -1 convention does.
+//
+// Older exports spell the frame lists `display`/`color` and carry the value inline rather than under
+// `value`; both spellings are accepted, since a self-describing format costs nothing to be tolerant with.
+function parseDragonBonesSlotTimelines(
+  channels: AnimationChannel[],
+  raw: unknown,
+  slotOrder: ReadonlyMap<string, number>,
+  displayTable: ReadonlyMap<string, readonly (Attachment2D | null)[]>,
+  frameRate: number,
+  unmodeled: Map<string, number>,
+): void {
+  if (!Array.isArray(raw)) return;
+  for (const entry of raw) {
+    if (entry === null || typeof entry !== 'object') continue;
+    const timeline = entry as Record<string, unknown>;
+    const name = typeof timeline.name === 'string' ? timeline.name : null;
+    const slotIndex = name === null ? -1 : (slotOrder.get(name) ?? -1);
+    if (slotIndex < 0) {
+      unmodeled.set('slot', (unmodeled.get('slot') ?? 0) + 1);
+      continue;
+    }
+    const displayFrames = dragonBonesFrames(timeline.displayFrame ?? timeline.display, undefined);
+    if (displayFrames.length > 0) {
+      addDragonBonesDisplayChannel(channels, displayFrames, slotIndex, displayTable.get(name ?? '') ?? [], frameRate);
+    }
+    const colorFrames = dragonBonesFrames(timeline.colorFrame ?? timeline.color, undefined);
+    if (colorFrames.length > 0) addDragonBonesSlotColorChannel(channels, colorFrames, slotIndex, frameRate);
+  }
+}
+
+// A `displayFrame` list → a Step channel of indices into the slot's display list. The list is the table
+// verbatim: DragonBones already addresses displays positionally, so an index needs no translation.
+function addDragonBonesDisplayChannel(
+  channels: AnimationChannel[],
+  frames: readonly Readonly<Record<string, unknown>>[],
+  slotIndex: number,
+  displays: readonly (Attachment2D | null)[],
+  frameRate: number,
+): void {
+  const times = dragonBonesFrameTimes(frames, frameRate);
+  const values: number[] = [];
+  for (const frame of frames) {
+    const index = numberOr(frame.value, numberOr(frame.displayIndex, 0)) | 0;
+    values.push(index >= 0 && index < displays.length && displays[index] !== null ? index : -1);
+  }
+  const track = createAnimationTrack({ components: 1, interpolation: AnimationInterpolationStep, times, values });
+  channels.push(
+    createAnimationChannel(track, {
+      attachments: displays.slice(),
+      path: Skeleton2DSlotAnimationPath.Attachment,
+      slotIndex,
+    }),
+  );
+}
+
+// A `colorFrame` list → a Color channel. DragonBones stores a ColorTransform whose multiply channels are
+// 0–100 PERCENT, so they normalize by 100 rather than 255 to reach the track's 0..1 space. Additive offsets
+// have no `Slot2D` representation and are ignored here (the setup-pose path already crumbs them).
+function addDragonBonesSlotColorChannel(
+  channels: AnimationChannel[],
+  frames: readonly Readonly<Record<string, unknown>>[],
+  slotIndex: number,
+  frameRate: number,
+): void {
+  const times = dragonBonesFrameTimes(frames, frameRate);
+  const values: number[] = [];
+  for (const frame of frames) {
+    const raw = frame.value ?? frame.color;
+    const color = raw !== null && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
+    values.push(colorPercent(color.rM), colorPercent(color.gM), colorPercent(color.bM), colorPercent(color.aM));
+  }
+  const track = createAnimationTrack({
+    components: 4,
+    interpolation: dragonBonesInterpolation(frames, undefined),
+    times,
+    values,
+  });
+  channels.push(createAnimationChannel(track, { path: Skeleton2DSlotAnimationPath.Color, slotIndex }));
+}
+
+// One DragonBones multiply-colour channel (0–100 percent) → the track's 0..1 space, clamped.
+function colorPercent(value: unknown): number {
+  const percent = numberOr(value, 100) / 100;
+  return percent <= 0 ? 0 : percent >= 1 ? 1 : percent;
 }
 
 // Adds one DragonBones bone timeline's channels to `channels`. The three frame lists are independent — each
