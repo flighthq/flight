@@ -34,20 +34,11 @@ export function createScene2DFromSwf(source: Uint8Array): Scene2DDocument | null
 
   const root = createDisplayObject();
   const references: Scene2DContentReference[] = [];
-  const placements = [...parsed.placements.values()].sort((a, b) => a.depth - b.depth);
-  for (const placement of placements) {
-    if (!placement.name) continue;
-    const target = createDisplayObject();
-    setNodeLocalMatrix(target, placement.matrix);
-    addNodeChild(root, target);
-    references.push(
-      createScene2DSlotReference(
-        placement.name,
-        target,
-        placement.directLinkage ?? parsed.linkages.get(placement.characterId) ?? null,
-      ),
-    );
-  }
+  const instantiation: SwfInstantiationState = {
+    activeSymbols: new Set<number>(),
+    remainingNodes: MAX_INSTANTIATED_NODES,
+  };
+  if (!appendSwfPlacements(root, parsed.placements, parsed, references, instantiation, 0)) return null;
 
   return createScene2DDocument(root, references, 'swf');
 }
@@ -76,6 +67,21 @@ interface SwfPlacement {
 interface SwfTagResult {
   linkages: Map<number, string>;
   placements: Map<number, SwfPlacement>;
+  sprites: Map<number, SwfSpriteDefinition>;
+}
+
+interface SwfSpriteDefinition {
+  placements: Map<number, SwfPlacement>;
+}
+
+interface SwfParseState {
+  linkages: Map<number, string>;
+  sprites: Map<number, SwfSpriteDefinition>;
+}
+
+interface SwfInstantiationState {
+  activeSymbols: Set<number>;
+  remainingNodes: number;
 }
 
 class SwfReader {
@@ -162,6 +168,47 @@ function matchesSwfDocument(source: Uint8Array, context: Readonly<Scene2DDocumen
   return source[0] === FWS_SIGNATURE || source[0] === CWS_SIGNATURE || source[0] === ZWS_SIGNATURE;
 }
 
+function appendSwfPlacements(
+  parent: ReturnType<typeof createDisplayObject>,
+  placements: ReadonlyMap<number, SwfPlacement>,
+  parsed: Readonly<SwfTagResult>,
+  references: Scene2DContentReference[],
+  state: SwfInstantiationState,
+  depth: number,
+): boolean {
+  if (depth > MAX_SPRITE_NESTING) return false;
+
+  const ordered = [...placements.values()].sort((a, b) => a.depth - b.depth);
+  for (const placement of ordered) {
+    const sprite = parsed.sprites.get(placement.characterId);
+    if (!placement.name && sprite === undefined) continue;
+    if (state.remainingNodes === 0) return false;
+    state.remainingNodes--;
+
+    const target = createDisplayObject();
+    setNodeLocalMatrix(target, placement.matrix);
+    addNodeChild(parent, target);
+    if (placement.name) {
+      references.push(
+        createScene2DSlotReference(
+          placement.name,
+          target,
+          placement.directLinkage ?? parsed.linkages.get(placement.characterId) ?? null,
+        ),
+      );
+    }
+
+    if (sprite !== undefined) {
+      if (state.activeSymbols.has(placement.characterId)) return false;
+      state.activeSymbols.add(placement.characterId);
+      const appended = appendSwfPlacements(target, sprite.placements, parsed, references, state, depth + 1);
+      state.activeSymbols.delete(placement.characterId);
+      if (!appended) return false;
+    }
+  }
+  return true;
+}
+
 function readPlaceObject(body: SwfReader, placements: Map<number, SwfPlacement>, isPlaceObject3: boolean): void {
   const flags = body.readUint8();
   const extendedFlags = isPlaceObject3 ? body.readUint8() : 0;
@@ -234,7 +281,16 @@ function readSwfRectangle(reader: SwfReader): boolean {
 }
 
 function readSwfTags(reader: SwfReader): SwfTagResult | null {
-  const linkages = new Map<number, string>();
+  const state: SwfParseState = {
+    linkages: new Map<number, string>(),
+    sprites: new Map<number, SwfSpriteDefinition>(),
+  };
+  const placements = readSwfTimeline(reader, state);
+  if (placements === null) return null;
+  return { linkages: state.linkages, placements, sprites: state.sprites };
+}
+
+function readSwfTimeline(reader: SwfReader, state: SwfParseState): Map<number, SwfPlacement> | null {
   const placements = new Map<number, SwfPlacement>();
   let firstFrame: Map<number, SwfPlacement> | null = null;
   let foundEnd = false;
@@ -260,7 +316,22 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
     } else if (code === TAG_REMOVE_OBJECT_2) {
       placements.delete(body.readUint16());
     } else if (code === TAG_EXPORT_ASSETS || code === TAG_SYMBOL_CLASS) {
-      readSwfLinkages(body, linkages);
+      readSwfLinkages(body, state.linkages);
+    } else if (code === TAG_DEFINE_SPRITE) {
+      const spriteId = body.readUint16();
+      body.readUint16();
+      const spriteReader = new SwfReader(body.source, body.pos, body.end);
+      const spritePlacements = readSwfTimeline(spriteReader, state);
+      if (
+        !body.valid ||
+        spriteId === 0 ||
+        spritePlacements === null ||
+        spriteReader.pos !== spriteReader.end ||
+        state.sprites.has(spriteId)
+      ) {
+        return null;
+      }
+      state.sprites.set(spriteId, { placements: spritePlacements });
     } else if (code === TAG_PLACE_OBJECT_3) {
       readPlaceObject(body, placements, true);
     }
@@ -268,18 +339,21 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
   }
 
   if (!reader.valid || !foundEnd) return null;
-  return { linkages, placements: firstFrame ?? placements };
+  return firstFrame ?? placements;
 }
 
 const CWS_SIGNATURE = 0x43;
 const FIXED_16_ONE = 0x10000;
 const FWS_SIGNATURE = 0x46;
 const IDENTITY_MATRIX: SwfMatrix = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
+const MAX_INSTANTIATED_NODES = 100_000;
+const MAX_SPRITE_NESTING = 256;
 const MIN_SWF_LENGTH = 12;
 const S_SIGNATURE = 0x53;
 const SWF_MIME_TYPE = 'application/x-shockwave-flash';
 const SWF_PREFIX_LENGTH = 8;
 const TAG_END = 0;
+const TAG_DEFINE_SPRITE = 39;
 const TAG_EXPORT_ASSETS = 56;
 const TAG_PLACE_OBJECT_2 = 26;
 const TAG_PLACE_OBJECT_3 = 70;

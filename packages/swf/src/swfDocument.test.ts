@@ -1,4 +1,4 @@
-import { getNodeLocalMatrix } from '@flighthq/node/contract';
+import { getNodeLocalMatrix, getNodeParent, getNodeWorldMatrix } from '@flighthq/node/contract';
 import {
   createScene2DDocumentFromBytes,
   createScene2DDocumentImporterRegistry,
@@ -68,12 +68,135 @@ describe('createScene2DFromSwf', () => {
     expect(reference?.kind === 'Slot' ? reference.linkage : null).toBe('Game.ExternalAvatar');
   });
 
+  it('imports named slots from nested DefineSprite timelines', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(
+          TAG_DEFINE_SPRITE,
+          joinBytes(
+            uint16(20),
+            uint16(1),
+            createTag(
+              TAG_PLACE_OBJECT_2,
+              joinBytes(
+                new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_MATRIX | PLACE_HAS_CHARACTER]),
+                uint16(2),
+                uint16(7),
+                createMatrix(1, 0, 0, 1, 40, 60),
+                swfString('avatarSlot'),
+              ),
+            ),
+            createTag(TAG_SHOW_FRAME),
+            createTag(TAG_END),
+          ),
+        ),
+        createTag(
+          TAG_DEFINE_SPRITE,
+          joinBytes(
+            uint16(30),
+            uint16(1),
+            createTag(
+              TAG_PLACE_OBJECT_2,
+              joinBytes(
+                new Uint8Array([PLACE_HAS_MATRIX | PLACE_HAS_CHARACTER]),
+                uint16(1),
+                uint16(20),
+                createMatrix(1, 0, 0, 1, 20, 20),
+              ),
+            ),
+            createTag(TAG_SHOW_FRAME),
+            createTag(TAG_END),
+          ),
+        ),
+        createTag(
+          TAG_SYMBOL_CLASS,
+          joinBytes(uint16(2), uint16(30), swfString('Game.Panel'), uint16(7), swfString('Game.Avatar')),
+        ),
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(
+            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_MATRIX | PLACE_HAS_CHARACTER]),
+            uint16(1),
+            uint16(30),
+            createMatrix(2, 0, 0, 3, 100, 40),
+            swfString('panelSlot'),
+          ),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    expect(document?.references).toHaveLength(2);
+    const panel = document!.references[0];
+    const avatar = document!.references[1];
+    expect(panel.name).toBe('panelSlot');
+    expect(panel.kind === 'Slot' ? panel.linkage : null).toBe('Game.Panel');
+    expect(avatar.name).toBe('avatarSlot');
+    expect(avatar.kind === 'Slot' ? avatar.linkage : null).toBe('Game.Avatar');
+    const intermediate = getNodeParent(avatar.target);
+    expect(intermediate).not.toBeNull();
+    expect(getNodeParent(intermediate!)).toBe(panel.target);
+
+    const world = getNodeWorldMatrix(avatar.target);
+    expect(world.a).toBeCloseTo(2);
+    expect(world.d).toBeCloseTo(3);
+    expect(world.tx).toBeCloseTo(11);
+    expect(world.ty).toBeCloseTo(14);
+  });
+
   it('rejects compressed and truncated inputs without throwing', () => {
     const compressed = createSwf([createTag(TAG_END)]);
     compressed[0] = 0x43;
     expect(createScene2DFromSwf(compressed)).toBeNull();
     expect(createScene2DFromSwf(new Uint8Array([0x46, 0x57, 0x53]))).toBeNull();
     expect(createScene2DFromSwf(createSwf([]))).toBeNull();
+    expect(
+      createScene2DFromSwf(
+        createSwf([
+          createTag(TAG_DEFINE_SPRITE, joinBytes(uint16(1), uint16(1), createTag(TAG_SHOW_FRAME))),
+          createTag(TAG_END),
+        ]),
+      ),
+    ).toBeNull();
+  });
+
+  it('rejects recursive sprite definitions without overflowing the graph walk', () => {
+    expect(
+      createScene2DFromSwf(
+        createSwf([
+          createTag(
+            TAG_DEFINE_SPRITE,
+            joinBytes(
+              uint16(1),
+              uint16(1),
+              createTag(
+                TAG_PLACE_OBJECT_2,
+                joinBytes(
+                  new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
+                  uint16(1),
+                  uint16(1),
+                  swfString('recursiveChild'),
+                ),
+              ),
+              createTag(TAG_SHOW_FRAME),
+              createTag(TAG_END),
+            ),
+          ),
+          createTag(
+            TAG_PLACE_OBJECT_2,
+            joinBytes(
+              new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
+              uint16(1),
+              uint16(1),
+              swfString('recursiveRoot'),
+            ),
+          ),
+          createTag(TAG_SHOW_FRAME),
+          createTag(TAG_END),
+        ]),
+      ),
+    ).toBeNull();
   });
 });
 
@@ -190,6 +313,7 @@ const PLACE_HAS_MATRIX = 0x04;
 const PLACE_HAS_NAME = 0x20;
 const SWF_PREFIX_LENGTH = 8;
 const TAG_END = 0;
+const TAG_DEFINE_SPRITE = 39;
 const TAG_FILE_ATTRIBUTES = 69;
 const TAG_PLACE_OBJECT_2 = 26;
 const TAG_PLACE_OBJECT_3 = 70;
