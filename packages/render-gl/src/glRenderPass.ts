@@ -74,13 +74,16 @@ export function beginGlRenderPass(
 ): void {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
+  const currentMaskDepth = runtime.currentMaskDepth ?? 0;
+  if (currentMaskDepth > 0 && runtime.currentFramebuffer === target.framebuffer) {
+    throw new Error('beginGlRenderPass: cannot nest the active framebuffer while a contour clip is live');
+  }
 
   let stack = _passStack.get(state);
   if (stack === undefined) {
     stack = [];
     _passStack.set(state, stack);
   }
-  const currentMaskDepth = runtime.currentMaskDepth ?? 0;
   stack.push({
     clipForms: [...(runtime.clipForms ?? [])],
     currentMaskDepth,

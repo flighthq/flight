@@ -13,14 +13,14 @@ status: ./status.md
 
 ## What it is
 
-The WebGPU (WGSL) backend renderer for the 3D scene/mesh subject family — the per-backend leaf that turns a prepared `Node3D` graph + `Camera` + `Scene3DLights` into draw calls. It carries the full catalogue of mesh-material shaders: a glTF-tier Cook-Torrance PBR uber-shader with its KHR extension lobes (clearcoat, sheen, anisotropy, iridescence, specular, subsurface, transmission/volume), the classic families (unlit, Blinn-Phong, Phong, Lambert, emissive), the NPR families (toon, matcap), and the debug families (vertex-color, normal, depth, wireframe).
+The WebGPU (WGSL) backend renderer for the 3D scene/mesh subject family — the per-backend leaf that turns a prepared `Node3D` graph + `Camera` + `Scene3DLights` into draw calls. It carries a glTF-tier Cook-Torrance core PBR shader, the classic families (unlit, Blinn-Phong, Phong, Lambert, emissive), the NPR families (toon, matcap), and the debug families (vertex-color, normal, depth, wireframe). The open `ExtendedPbrMaterial` descriptor family exists, but its separately registered WebGPU realizations are deferred rather than represented by standalone material renderers.
 
 It is the `scene-<backend>` leaf in the render layering: it sits over the `render-wgpu` core (state, targets, GPU plumbing) and the backend-agnostic `render` core (registration, queue, update pipeline), consumes types defined in `@flighthq/types` and packed in `@flighthq/render`, and renders the 3D subject `scene` / `mesh` / `lighting` / `texture` / `camera` produce. It ends where the GPU plumbing begins (`render-wgpu`) and where the deliberate twin `scene-gl` (WebGL/GLSL) covers the other GPU backend — the two are designed to mirror each other.
 
 ## North star
 
 - **A faithful per-backend leaf, not a renderer kitchen.** scene-wgpu translates an already-prepared scene into WGSL draw calls; it does not own the scene graph, the update pass, GPU device/target lifecycle, or post-processing/tonemap/resolve. Frame-finishing belongs to the effect pipeline above it. The package's job is correct, complete material translation for one backend.
-- **Material depth is the package's center of gravity.** The shader catalogue is where this package is already close to authoritative; glTF-tier PBR fidelity (correct GGX/Smith/Fresnel, the standard maps, the KHR extension lobes) and a clean classic/NPR/debug family split are the bar to hold and extend.
+- **Material depth is the package's center of gravity.** The shader catalogue is where this package is already close to authoritative; glTF-tier core PBR fidelity (correct GGX/Smith/Fresnel and the standard maps), separately registered extension realizations, and a clean classic/NPR/debug family split are the bar to hold and extend.
 - **An open material registry, never a closed switch.** Material dispatch is a kind-keyed `Map<Kind, …>` registry (`registerWgpuMeshMaterialRenderer` / `resolveWgpuMeshMaterialRenderer`) so the family stays tree-shakable and user-extensible — fork B's default. Registration is the opt-in seam; nothing registers at module top level.
 - **Twin discipline with scene-gl.** scene-wgpu and scene-gl are deliberate twins. Cross-cutting lighting/shadow/IBL concerns are designed once in `@flighthq/types` and mirrored across both backends, so one backend's capabilities do not silently outrun the other's.
 - **Greppable, types-first, allocation-explicit.** Full unabbreviated type words with the `Wgpu` infix for globally-unique exports; the compile/cache/key/source verb split; `out`-param writers; header types land in `@flighthq/types` before the backend consumes them; draw scratch is per-state runtime, not a module singleton.
@@ -29,7 +29,7 @@ It is the `scene-<backend>` leaf in the render layering: it sits over the `rende
 
 **In scope:**
 
-- WGSL translation and draw submission for the mesh-material catalogue (PBR uber-shader + extensions, classic, NPR, debug families).
+- WGSL translation and draw submission for the mesh-material catalogue (core PBR, classic, NPR, debug families; extension realizations join through the open registry as they are implemented).
 - The per-backend plumbing a leaf renderer owns: pipeline/define-key caches, per-geometry upload caches with version invalidation, Frame/Draw/Material bind-group layouts, the transparent pass (blend pipeline variant + back-to-front sort).
 - Consuming the shared forward-lighting / shadow / IBL **types** defined in `@flighthq/types` and the packers in `@flighthq/render`.
 
@@ -62,6 +62,6 @@ It is the `scene-<backend>` leaf in the render layering: it sits over the `rende
 
 6. **Public surface size.** The root barrel re-exports every prelude's key-builder, module-source getter, and pipeline compiler — a very wide surface for a leaf renderer where most consumers want only the `register*WgpuMaterial` functions + `drawWgpuScene`. Are the prelude internals public API (parity-tooling reach, small-functions philosophy) or implementation detail? Not a contract violation; a deliberate surface-size question.
 
-7. **Transmission fidelity.** `transmissionVolumePbrWgpuMeshMaterialRenderer` uses a coverage/tint stand-in; true refraction needs an opaque-scene-color capture pass that does not exist. Is the approximation acceptable for this package's slice, or is the capture pass in scope?
+7. **Extended PBR realization and transmission fidelity.** `ExtendedPbrMaterial` has no WebGPU registration today. Its future transmission/volume realization needs an opaque-scene-color capture pass for true refraction rather than reviving the deleted coverage/tint standalone renderer. Is that capture pass in scope for the first registered WebGPU extension realization?
 
 8. **Stale `render-backend-support.md`.** The doc still says "wgpu blend modes = none" and "punctual lights unwired." Blend is now partially wired (premultiplied src-alpha transparent pipeline variant + back-to-front sort) and punctual-light infrastructure exists though dark. The doc should be updated to reflect both — leaving it flat understates transparency and overstates the lighting gap.

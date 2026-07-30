@@ -78,11 +78,11 @@ correct home, and the globe becomes a **composition** of built-in modifiers rath
 ### v1 accepted cost (blessed)
 
 Modifiers attach only to this tier's composable base material in v1. **They do not stack on the
-`materials` PBR/classic kinds** (StandardPbr and its clearcoat/sheen/subsurface/transmission variants,
-or the classic Blinn-Phong/Phong/Lambert). Getting "full PBR BRDF + a custom modifier" would mean
-re-authoring as a `ShadedMaterial` and forgoing those variant features. This is accepted for v1: the
-globe/stylized/effect cases don't need it, and injecting modifier GLSL into two hand-authored
-uber-shaders across the PBR define-matrix is the *less* predictable design (a modifier snippet would
+`materials` PBR/classic kinds** (`StandardPbrMaterial`, `ExtendedPbrMaterial` with its registered
+extensions, or the classic Blinn-Phong/Phong/Lambert families). Getting "full PBR BRDF + a custom
+modifier" would mean re-authoring as a `ShadedMaterial` and forgoing those variant features. This is
+accepted for v1: the globe/stylized/effect cases don't need it, and injecting modifier GLSL into two
+hand-authored uber-shaders across the PBR define-matrix is the *less* predictable design (a modifier snippet would
 have to be correct against multiple base contexts). The modifier↔base boundary is therefore defined
 as a **contract over the slot taxonomy + the shared light block**, so exposing the same injection
 hooks on the `materials` kinds later is an additive open door, not a rewrite.
