@@ -255,6 +255,22 @@ describe('createWebClipboardBackend', () => {
     expect(typeof unsub).toBe('function');
     unsub();
   });
+
+  it('ignores a nonstandard clipboardchange property when probing event support', () => {
+    const originalWindow = window;
+    const fakeWindow = Object.assign(new EventTarget(), { clipboardchange: null }) as unknown as Window;
+    vi.stubGlobal('window', fakeWindow);
+    try {
+      let changeCount = 0;
+      const backend = createWebClipboardBackend();
+      const unsubscribe = backend.subscribeClipboardChange(() => changeCount++);
+      fakeWindow.dispatchEvent(new Event('clipboardchange'));
+      expect(changeCount).toBe(0);
+      unsubscribe();
+    } finally {
+      vi.stubGlobal('window', originalWindow);
+    }
+  });
 });
 
 describe('detachClipboardWatch', () => {

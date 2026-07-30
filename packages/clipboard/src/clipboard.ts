@@ -200,11 +200,7 @@ export function createWebClipboardBackend(): ClipboardBackend {
     subscribeClipboardChange(listener) {
       if (typeof window === 'undefined') return () => {};
       // Use the experimental 'clipboardchange' event where present; fall back to no-op.
-      const target = window as Window & { onclipboardchange?: unknown };
-      if (
-        'onclipboardchange' in target ||
-        typeof (window as unknown as Record<string, unknown>)['clipboardchange'] !== 'undefined'
-      ) {
+      if ('onclipboardchange' in window) {
         const handler = () => listener();
         window.addEventListener('clipboardchange' as keyof WindowEventMap, handler as EventListener);
         return () => window.removeEventListener('clipboardchange' as keyof WindowEventMap, handler as EventListener);
