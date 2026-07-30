@@ -1,3 +1,8 @@
+---
+package: '@flighthq/scene2d-resources'
+updated: 2026-07-30
+---
+
 # scene2d-resources status
 
 Built 2026-07-29.
@@ -7,12 +12,16 @@ Built 2026-07-29.
 - `resolveScene2DResources` synchronously reconciles caller-ready assets and application slots.
 - `loadScene2DResources` owns the operation-scoped Promise, cancellation, and progress boundary.
 - URL acquisition is caller-supplied, and source dispatch uses an empty-by-default open registry.
-- SVG and Lottie adapters are opt-in. Rive, SWF, and custom codecs can register without changing this package.
+- SVG and Lottie adapters are opt-in. The standalone SWF package now supplies the first named-graph
+  adapter; Rive remains second, and custom codecs can register without changing this package.
 - Hand-authored tests cover slot/linkage behavior, idempotent reference-owned replacement, synchronous
   reconciliation, deterministic async results, cancellation relay, registry replacement, URL acquisition,
   malformed built-in rejection, SVG, and Lottie.
 - Scoped package checks/tests and bundle-size verification pass. Bare repository checks/tests remain the final
   handoff gate.
+- The first SWF slice proves root-timeline named slots, transforms, and linkage. Nested MovieClip
+  graphs, visual definitions/extents, compressed bodies, and a representative fixture remain SWF-side
+  depth rather than resource-pipeline responsibilities.
 
 Design follow-up: building this package exposed that the 3D twin's progressive capability had a
 synchronous-looking name. The subsequent 3D migration preserved it as `updateScene3DResourceStreaming`
