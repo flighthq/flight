@@ -1,6 +1,12 @@
 import { createMatrix, inverseMatrix, multiplyMatrix } from '@flighthq/geometry/contract';
 import { getNodeLocalMatrix } from '@flighthq/node/contract';
-import type { Node2D, MatrixLike, RectangleLike } from '@flighthq/types/contract';
+import type {
+  MatrixLike,
+  Node2D,
+  RectangleLike,
+  RenderTargetDescriptor,
+  ResolvedRenderTargetDescriptor,
+} from '@flighthq/types/contract';
 
 /**
  * Writes into outCacheTransform the transform to pass to the cache resolver so the
@@ -53,6 +59,35 @@ export function computeScene2DRenderTargetTransform(
   _tempTranslation.tx = contentX - bounds.x;
   _tempTranslation.ty = contentY - bounds.y;
   multiplyMatrix(outRenderTransform, _tempTranslation, _tempInvLocal);
+}
+
+// Resolves every substrate-independent default and normalization once. Backend realizations start
+// here and apply only device capability substitutions (for example GL MAX_SAMPLES or float-render
+// support), so Canvas/GL/WGPU cannot independently reinterpret the descriptor's optional axes.
+export function resolveRenderTargetDescriptor(
+  descriptor: Readonly<RenderTargetDescriptor>,
+): ResolvedRenderTargetDescriptor {
+  const width = Math.max(1, Math.ceil(descriptor.width));
+  const height = Math.max(1, Math.ceil(descriptor.height));
+  const colorAttachments = Math.max(1, Math.ceil(descriptor.colorAttachments ?? 1));
+  const defaultFormat = descriptor.format ?? 'rgba8';
+  const colorFormats: ResolvedRenderTargetDescriptor['colorFormats'] = Array.from(
+    { length: colorAttachments },
+    (_, index) => descriptor.colorFormats?.[index] ?? defaultFormat,
+  );
+
+  return {
+    width,
+    height,
+    format: colorFormats[0]!,
+    colorAttachments,
+    colorFormats,
+    sampleCount: Math.max(1, Math.ceil(descriptor.sampleCount ?? 1)),
+    depth: descriptor.depth ?? 'none',
+    colorSpace: descriptor.colorSpace ?? 'srgb',
+    clearColors: descriptor.clearColors ? [...descriptor.clearColors] : [],
+    clearDepth: descriptor.clearDepth ?? 1,
+  };
 }
 
 const _tempInvLocal = createMatrix();
