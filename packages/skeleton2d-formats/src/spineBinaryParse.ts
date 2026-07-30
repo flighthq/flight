@@ -20,7 +20,9 @@ import type {
 } from '@flighthq/types/contract';
 import {
   AnimationInterpolationLinear,
+  AnimationInterpolationStep,
   ImportDiagnosticSeverity,
+  Skeleton2DSlotAnimationPath,
   MeshAttachment2DKind,
   RegionAttachment2DKind,
   Skeleton2DAnimationPath,
@@ -113,7 +115,7 @@ export function parseSpineSkeletonBinary(
     }
   }
   skipSpineBinaryEvents(reader, diagnostics);
-  const animations = parseSpineBinaryAnimations(reader, strings, diagnostics);
+  const animations = parseSpineBinaryAnimations(reader, strings, setup, diagnostics);
   if (isSpineBinaryReaderOverrun(reader)) {
     reportImportDiagnostic(
       diagnostics,
@@ -163,6 +165,7 @@ function skipSpineBinaryEvents(reader: ByteReader, diagnostics?: ImportDiagnosti
 function parseSpineBinaryAnimations(
   reader: ByteReader,
   strings: readonly (string | null)[],
+  setup: Readonly<AttachmentSkin2D> | undefined,
   diagnostics?: ImportDiagnostic[],
 ): Skeleton2DImportAnimation[] {
   const animations: Skeleton2DImportAnimation[] = [];
@@ -172,7 +175,7 @@ function parseSpineBinaryAnimations(
     const name = readSpineBinaryString(reader);
     readSpineBinaryVarint(reader); // total timeline count across all families
     const channels: AnimationChannel[] = [];
-    skipSpineBinarySlotTimelines(reader, unmodeled);
+    parseSpineBinarySlotTimelines(reader, channels, strings, setup, unmodeled, diagnostics);
     parseSpineBinaryBoneTimelines(reader, channels, diagnostics);
     skipSpineBinaryConstraintTimelines(reader, unmodeled);
     skipSpineBinaryDeformTimelines(reader, unmodeled);
@@ -272,7 +275,7 @@ function buildSpineBinaryBoneChannel(
   const track = createAnimationTrack({
     components,
     interpolation: AnimationInterpolationLinear,
-    segmentEasings: buildSpineBinarySegmentEasings(timeline, kind, diagnostics),
+    segmentEasings: buildSpineBinarySegmentEasings(timeline, kind.values, diagnostics),
     times: timeline.times,
     values,
   });
@@ -285,7 +288,7 @@ function buildSpineBinaryBoneChannel(
 // rather than silently dropped, and x is clamped so the curve stays invertible.
 function buildSpineBinarySegmentEasings(
   timeline: { curves: (number[] | null)[]; times: number[]; values: number[] },
-  kind: (typeof SPINE_BINARY_BONE_TIMELINES)[number],
+  values: number,
   diagnostics?: ImportDiagnostic[],
 ): (EasingFunction | null)[] | null {
   const easings: (EasingFunction | null)[] = [];
@@ -298,34 +301,45 @@ function buildSpineBinarySegmentEasings(
       easings.push(null);
       continue;
     }
-    let x1 = 0;
-    let y1 = 0;
-    let x2 = 0;
-    let y2 = 0;
-    let chosen = false;
-    for (let v = 0; v < kind.values && (v + 1) * 4 <= points.length; v++) {
-      const from = timeline.values[i * kind.values + v];
-      const rise = timeline.values[(i + 1) * kind.values + v] - from;
-      if (rise === 0) continue;
-      const cx1 = (points[v * 4] - timeline.times[i]) / span;
-      const cy1 = (points[v * 4 + 1] - from) / rise;
-      const cx2 = (points[v * 4 + 2] - timeline.times[i]) / span;
-      const cy2 = (points[v * 4 + 3] - from) / rise;
-      if (!chosen) {
-        x1 = cx1;
-        y1 = cy1;
-        x2 = cx2;
-        y2 = cy2;
-        chosen = true;
-      } else if (
-        Math.abs(cx1 - x1) > SPINE_BINARY_CURVE_EPSILON ||
-        Math.abs(cy1 - y1) > SPINE_BINARY_CURVE_EPSILON ||
-        Math.abs(cx2 - x2) > SPINE_BINARY_CURVE_EPSILON ||
-        Math.abs(cy2 - y2) > SPINE_BINARY_CURVE_EPSILON
-      ) {
-        divergent++;
+    // Same rule as the `.json` path: the component with the LARGEST value change supplies the easing,
+    // because the rebase divides by that change and a near-constant component is a near-zero denominator.
+    let winner = -1;
+    let widest = 0;
+    for (let v = 0; v < values && (v + 1) * 4 <= points.length; v++) {
+      const rise = Math.abs(timeline.values[(i + 1) * values + v] - timeline.values[i * values + v]);
+      if (rise > widest) {
+        widest = rise;
+        winner = v;
       }
     }
+    // Winner first, then compare — a single pass would measure earlier components against zeros.
+    const rebase = (v: number): [number, number, number, number] | null => {
+      const from = timeline.values[i * values + v];
+      const rise = timeline.values[(i + 1) * values + v] - from;
+      if (rise === 0) return null;
+      return [
+        (points[v * 4] - timeline.times[i]) / span,
+        (points[v * 4 + 1] - from) / rise,
+        (points[v * 4 + 2] - timeline.times[i]) / span,
+        (points[v * 4 + 3] - from) / rise,
+      ];
+    };
+    const won = winner < 0 ? null : rebase(winner);
+    if (won !== null) {
+      for (let v = 0; v < values && (v + 1) * 4 <= points.length; v++) {
+        if (v === winner) continue;
+        const other = rebase(v);
+        if (other === null) continue;
+        for (let k = 0; k < 4; k++) {
+          if (Math.abs(other[k] - won[k]) > SPINE_BINARY_CURVE_EPSILON) divergent++;
+        }
+      }
+    }
+    const chosen = won !== null;
+    const x1 = won === null ? 0 : won[0];
+    const y1 = won === null ? 0 : won[1];
+    const x2 = won === null ? 0 : won[2];
+    const y2 = won === null ? 0 : won[3];
     if (!chosen) {
       easings.push(null);
       continue;
@@ -345,30 +359,114 @@ function buildSpineBinarySegmentEasings(
   return curved ? easings : null;
 }
 
-// Slot timelines: an attachment-swap track, or a colour track whose components are single BYTES (the curve
-// control points around them are still floats). Unmodeled by Slot2D, consumed to advance.
-function skipSpineBinarySlotTimelines(reader: ByteReader, unmodeled: Map<string, number>): void {
+// Slot timelines. `attachment` becomes a Step index channel plus a lookup table; `rgba` becomes a
+// four-component 0..1 colour channel. The remaining colour variants (rgb, alpha, and the two dark forms)
+// are consumed and Skip-crumbed — `Slot2D` carries one packed colour and no dark colour.
+//
+// Colour components are stored as single BYTES here while the bezier control points around them are floats
+// already in 0..1 (Spine divides by 255 before recording a curve), so the bytes are normalized on read and
+// the curve rebase then matches the `.json` path exactly.
+function parseSpineBinarySlotTimelines(
+  reader: ByteReader,
+  channels: AnimationChannel[],
+  strings: readonly (string | null)[],
+  setup: Readonly<AttachmentSkin2D> | undefined,
+  unmodeled: Map<string, number>,
+  diagnostics?: ImportDiagnostic[],
+): void {
   const slots = readSpineBinaryVarint(reader);
   for (let i = 0; i < slots && !isSpineBinaryReaderOverrun(reader); i++) {
-    readSpineBinaryVarint(reader); // slot index
+    const slotIndex = readSpineBinaryVarint(reader);
     const timelines = readSpineBinaryVarint(reader);
     for (let j = 0; j < timelines && !isSpineBinaryReaderOverrun(reader); j++) {
       const type = readSpineBinaryByte(reader);
       const frameCount = readSpineBinaryVarint(reader);
       if (type === SPINE_BINARY_SLOT_ATTACHMENT) {
-        tally(unmodeled, 'slot-attachment');
-        for (let f = 0; f < frameCount && !isSpineBinaryReaderOverrun(reader); f++) {
-          skipSpineBinaryBytes(reader, 4); // time
-          readSpineBinaryVarint(reader); // attachment name reference
-        }
+        addSpineBinaryAttachmentChannel(reader, channels, strings, setup, slotIndex, frameCount);
         continue;
       }
-      tally(unmodeled, 'slot-color');
       readSpineBinaryVarint(reader); // bezier count
-      const channels = SPINE_BINARY_SLOT_COLOR_CHANNELS[type] ?? 1;
-      skipSpineBinaryCurveFrames(reader, frameCount, channels, channels);
+      const count = SPINE_BINARY_SLOT_COLOR_CHANNELS[type] ?? 1;
+      if (type !== SPINE_BINARY_SLOT_RGBA) {
+        tally(unmodeled, 'slot-color');
+        skipSpineBinaryCurveFrames(reader, frameCount, count, count);
+        continue;
+      }
+      const timeline = readSpineBinaryColorTimeline(reader, frameCount, count);
+      const track = createAnimationTrack({
+        components: count,
+        interpolation: AnimationInterpolationLinear,
+        segmentEasings: buildSpineBinarySegmentEasings(timeline, count, diagnostics),
+        times: timeline.times,
+        values: timeline.values,
+      });
+      channels.push(createAnimationChannel(track, { path: Skeleton2DSlotAnimationPath.Color, slotIndex }));
     }
   }
+}
+
+// An attachment-swap timeline: per frame a time and a string-table reference, `null` meaning hide. Names
+// resolve against the setup skin ONCE into a deduplicated table, and the track carries only the index.
+function addSpineBinaryAttachmentChannel(
+  reader: ByteReader,
+  channels: AnimationChannel[],
+  strings: readonly (string | null)[],
+  setup: Readonly<AttachmentSkin2D> | undefined,
+  slotIndex: number,
+  frameCount: number,
+): void {
+  const attachments: (Attachment2D | null)[] = [];
+  const indexByName = new Map<string, number>();
+  const times: number[] = [];
+  const values: number[] = [];
+  for (let f = 0; f < frameCount && !isSpineBinaryReaderOverrun(reader); f++) {
+    times.push(readSpineBinaryFloat(reader));
+    const name = readSpineBinaryStringReference(reader, strings);
+    if (name === null) {
+      values.push(SPINE_BINARY_NO_ATTACHMENT_INDEX);
+      continue;
+    }
+    let index = indexByName.get(name);
+    if (index === undefined) {
+      const found = setup?.attachments.find((entry) => entry.slotIndex === slotIndex && entry.name === name);
+      index = found === undefined ? SPINE_BINARY_NO_ATTACHMENT_INDEX : attachments.push(found.attachment) - 1;
+      indexByName.set(name, index);
+    }
+    values.push(index);
+  }
+  if (times.length === 0) return;
+  const track = createAnimationTrack({ components: 1, interpolation: AnimationInterpolationStep, times, values });
+  channels.push(
+    createAnimationChannel(track, { attachments, path: Skeleton2DSlotAnimationPath.Attachment, slotIndex }),
+  );
+}
+
+// A colour curve timeline: a time float then one byte per channel, with a per-segment curve tag. Bytes are
+// normalized to 0..1 so they share the track space (and therefore the curve rebase) with the `.json` path.
+function readSpineBinaryColorTimeline(
+  reader: ByteReader,
+  frameCount: number,
+  channelCount: number,
+): { curves: (number[] | null)[]; times: number[]; values: number[] } {
+  const times: number[] = [];
+  const values: number[] = [];
+  const curves: (number[] | null)[] = [];
+  if (frameCount <= 0) return { curves, times, values };
+  times.push(readSpineBinaryFloat(reader));
+  for (let c = 0; c < channelCount; c++) values.push(readSpineBinaryByte(reader) / 255);
+  for (let f = 0; f + 1 < frameCount && !isSpineBinaryReaderOverrun(reader); f++) {
+    times.push(readSpineBinaryFloat(reader));
+    for (let c = 0; c < channelCount; c++) values.push(readSpineBinaryByte(reader) / 255);
+    const tag = readSpineBinaryByte(reader);
+    if (tag === SPINE_BINARY_CURVE_BEZIER) {
+      const points: number[] = [];
+      for (let v = 0; v < channelCount * 4; v++) points.push(readSpineBinaryFloat(reader));
+      curves.push(points);
+    } else {
+      curves.push(null);
+    }
+  }
+  return { curves, times, values };
 }
 
 // IK, transform, and path constraint timelines.
@@ -918,6 +1016,10 @@ const SPINE_BINARY_SLOT_COLOR_CHANNELS = [0, 4, 3, 7, 6, 1] as const;
 const SPINE_BINARY_CURVE_BEZIER = 2;
 
 const SPINE_BINARY_SLOT_ATTACHMENT = 0;
+const SPINE_BINARY_SLOT_RGBA = 1;
+
+// The index an attachment channel uses for "show nothing": Spine's null name, or a name the setup skin lacks.
+const SPINE_BINARY_NO_ATTACHMENT_INDEX = -1;
 const SPINE_BINARY_ATTACHMENT_SEQUENCE = 1;
 const SPINE_BINARY_PATH_MIX = 2;
 
