@@ -6,14 +6,21 @@ import { createDomRenderState } from './domRenderState';
 import { registerDomTextureResolver, resolveDomTexture } from './domTextureResolver';
 import { areDomTextureResolverGuardsEnabled, enableDomTextureResolverGuards } from './enableDomTextureResolverGuards';
 
-describe('enableDomTextureResolverGuards', () => {
-  it('is state-scoped and idempotent', () => {
+describe('areDomTextureResolverGuardsEnabled', () => {
+  it('reports whether diagnostics were installed for the state', () => {
     const state = createDomRenderState(document.createElement('div'));
     expect(areDomTextureResolverGuardsEnabled(state)).toBe(false);
 
     enableDomTextureResolverGuards(state);
-    enableDomTextureResolverGuards(state);
+    expect(areDomTextureResolverGuardsEnabled(state)).toBe(true);
+  });
+});
 
+describe('enableDomTextureResolverGuards', () => {
+  it('is idempotent', () => {
+    const state = createDomRenderState(document.createElement('div'));
+    enableDomTextureResolverGuards(state);
+    enableDomTextureResolverGuards(state);
     expect(areDomTextureResolverGuardsEnabled(state)).toBe(true);
   });
 

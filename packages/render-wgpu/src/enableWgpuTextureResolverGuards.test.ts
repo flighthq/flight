@@ -13,14 +13,21 @@ beforeAll(() => {
   installWgpuMock();
 });
 
-describe('enableWgpuTextureResolverGuards', () => {
-  it('is state-scoped and idempotent', async () => {
+describe('areWgpuTextureResolverGuardsEnabled', () => {
+  it('reports whether diagnostics were installed for the state', async () => {
     const state = await createWgpuRenderStateForTest();
     expect(areWgpuTextureResolverGuardsEnabled(state)).toBe(false);
 
     enableWgpuTextureResolverGuards(state);
-    enableWgpuTextureResolverGuards(state);
+    expect(areWgpuTextureResolverGuardsEnabled(state)).toBe(true);
+  });
+});
 
+describe('enableWgpuTextureResolverGuards', () => {
+  it('is idempotent', async () => {
+    const state = await createWgpuRenderStateForTest();
+    enableWgpuTextureResolverGuards(state);
+    enableWgpuTextureResolverGuards(state);
     expect(areWgpuTextureResolverGuardsEnabled(state)).toBe(true);
   });
 
