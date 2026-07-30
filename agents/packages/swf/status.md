@@ -15,9 +15,12 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`.
 - The stage RECT becomes the document root's authored local bounds. Shape, morph-shape, static/edit
   text definition bounds become placed-target extents, and sprite extents recursively union every
   available child bound through its placement matrix.
-- `PlaceObject2` and `PlaceObject3` preserve instance names and affine transforms, converting twips to
-  pixels.
-- `SymbolClass`, `ExportAssets`, and direct `PlaceObject3` class names preserve linkage identity.
+- `PlaceObject` through `PlaceObject4` cover legacy and current first-frame placement records;
+  `RemoveObject` and `RemoveObject2` update that display list before its first-frame snapshot.
+- Named placement forms preserve instance names and affine transforms, converting twips to pixels.
+  Legacy unnamed sprite placements still expose their recursively named descendants.
+- `SymbolClass`, `ExportAssets`, and direct `PlaceObject3`/`PlaceObject4` class names preserve linkage
+  identity.
 - `registerSwfScene2DDocumentImporter` explicitly opts the codec into a caller-owned
   `scene2d-resources` registry; importing the module has no registration side effect.
 - Missing sprite End tags, duplicate definitions, cyclic symbol graphs, excessive nesting, and
@@ -26,8 +29,8 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`.
   extents, and opaque `DoABC` exposure remain staged rather than being represented incompletely.
 
 The package is wired through the SDK root and formats barrel, build graph, package layer, path aliases,
-and lockfile. Synthetic byte-level tests cover both placement variants, linkage, transforms, opt-in
-registration, compressed rejection, malformed/truncated input, recursively nested sprites, composed
-transforms, recursive-graph rejection, stage bounds, direct definition bounds, and recursively composed
-sprite extents. A canonical externally produced fixture remains unavailable locally; evidence is still
-synthetic.
+and lockfile. Synthetic byte-level tests cover all four placement generations, both removal
+generations, linkage, transforms, opt-in registration, compressed rejection, malformed/truncated input,
+recursively nested sprites, composed transforms, recursive-graph rejection, stage bounds, direct
+definition bounds, and recursively composed sprite extents. A canonical externally produced fixture
+remains unavailable locally; evidence is still synthetic.

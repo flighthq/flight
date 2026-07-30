@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/scene2d-resources'
 status: solid
-score: 84
+score: 85
 updated: 2026-07-30
 ingested:
   - charter.md
@@ -14,7 +14,7 @@ ingested:
 
 ## Verdict
 
-**Solid — 84/100.** The package establishes the right renderer-neutral document and content-reference
+**Solid — 85/100.** The package establishes the right renderer-neutral document and content-reference
 boundary: an enumerable asset/slot manifest, synchronous reconciliation, an operation-scoped asynchronous
 load, caller-owned URL acquisition, and an empty-by-default importer registry. The public and contract
 lanes are symmetrical, all exported types live in `@flighthq/types`, every exported function has a
@@ -39,10 +39,10 @@ still synthetic and narrow; later MovieClip frames and deferred asset references
 - SVG and Lottie are explicit opt-ins. Their adapters now preserve the package's `null` sentinel when the
   underlying format importer rejects a malformed whole document instead of reporting a successful empty
   document.
-- SWF is an explicit peer-package opt-in and supplies the first non-empty manifest: named
-  `PlaceObject2`/`PlaceObject3` instances retain affine transforms and
-  `SymbolClass`/`ExportAssets` linkage across recursive `DefineSprite` first-frame graphs. Stage and
-  available character bounds preserve slot extents through recursive placement transforms.
+- SWF is an explicit peer-package opt-in and supplies the first non-empty manifest: legacy through
+  current placement/removal records preserve recursively nested first-frame display-list state, named
+  affine transforms, and `SymbolClass`/`ExportAssets` or direct-class linkage. Stage and available
+  character bounds preserve slot extents through recursive placement transforms.
 - Package shape is clean: `sideEffects: false`; source imports only declared dependencies; the SDK root,
   SDK formats, package root, and `/contract` lanes agree; `npm run api`, `exports:check`,
   `type-home:check`, package checks, and package tests pass.
