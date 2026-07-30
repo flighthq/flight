@@ -445,6 +445,10 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): Map<number, S
       placements.delete(body.readUint16());
     } else if (code === TAG_EXPORT_ASSETS || code === TAG_SYMBOL_CLASS) {
       readSwfLinkages(body, state.linkages);
+    } else if (code === TAG_DEFINE_BITS_LOSSLESS || code === TAG_DEFINE_BITS_LOSSLESS_2) {
+      if (!readSwfLosslessBitmapDefinition(body, state, code === TAG_DEFINE_BITS_LOSSLESS_2)) return null;
+    } else if (code === TAG_DEFINE_VIDEO_STREAM) {
+      if (!readSwfVideoDefinition(body, state)) return null;
     } else if (isSwfBoundedDefinitionTag(code)) {
       if (
         !readSwfBoundedDefinition(body, state, code === TAG_DEFINE_MORPH_SHAPE || code === TAG_DEFINE_MORPH_SHAPE_2)
@@ -504,10 +508,53 @@ function readSwfBoundedDefinition(body: SwfReader, state: SwfParseState, hasEndB
   return true;
 }
 
+function readSwfLosslessBitmapDefinition(body: SwfReader, state: SwfParseState, hasAlpha: boolean): boolean {
+  const characterId = body.readUint16();
+  const format = body.readUint8();
+  const width = body.readUint16();
+  const height = body.readUint16();
+  if (format === LOSSLESS_BITMAP_FORMAT_COLORMAPPED) body.readUint8();
+  const validFormat =
+    format === LOSSLESS_BITMAP_FORMAT_COLORMAPPED ||
+    format === LOSSLESS_BITMAP_FORMAT_32_BIT ||
+    (!hasAlpha && format === LOSSLESS_BITMAP_FORMAT_15_BIT);
+  if (
+    !body.valid ||
+    characterId === 0 ||
+    width === 0 ||
+    height === 0 ||
+    state.definedCharacters.has(characterId) ||
+    !validFormat
+  ) {
+    return false;
+  }
+  state.definedCharacters.add(characterId);
+  state.characterBounds.set(characterId, { height, width, x: 0, y: 0 });
+  return true;
+}
+
+function readSwfVideoDefinition(body: SwfReader, state: SwfParseState): boolean {
+  const characterId = body.readUint16();
+  body.readUint16();
+  const width = body.readUint16();
+  const height = body.readUint16();
+  body.readUint8();
+  body.readUint8();
+  if (!body.valid || characterId === 0 || width === 0 || height === 0 || state.definedCharacters.has(characterId)) {
+    return false;
+  }
+  state.definedCharacters.add(characterId);
+  state.characterBounds.set(characterId, { height, width, x: 0, y: 0 });
+  return true;
+}
+
 const CWS_SIGNATURE = 0x43;
 const FIXED_16_ONE = 0x10000;
 const FWS_SIGNATURE = 0x46;
 const IDENTITY_MATRIX: SwfMatrix = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
+const LOSSLESS_BITMAP_FORMAT_15_BIT = 4;
+const LOSSLESS_BITMAP_FORMAT_32_BIT = 5;
+const LOSSLESS_BITMAP_FORMAT_COLORMAPPED = 3;
 const MAX_INSTANTIATED_NODES = 100_000;
 const MAX_SPRITE_NESTING = 256;
 const MIN_SWF_LENGTH = 12;
@@ -515,6 +562,8 @@ const S_SIGNATURE = 0x53;
 const SWF_MIME_TYPE = 'application/x-shockwave-flash';
 const SWF_PREFIX_LENGTH = 8;
 const TAG_END = 0;
+const TAG_DEFINE_BITS_LOSSLESS = 20;
+const TAG_DEFINE_BITS_LOSSLESS_2 = 36;
 const TAG_DEFINE_EDIT_TEXT = 37;
 const TAG_DEFINE_MORPH_SHAPE = 46;
 const TAG_DEFINE_MORPH_SHAPE_2 = 84;
@@ -525,6 +574,7 @@ const TAG_DEFINE_SHAPE_4 = 83;
 const TAG_DEFINE_SPRITE = 39;
 const TAG_DEFINE_TEXT = 11;
 const TAG_DEFINE_TEXT_2 = 33;
+const TAG_DEFINE_VIDEO_STREAM = 60;
 const TAG_EXPORT_ASSETS = 56;
 const TAG_PLACE_OBJECT = 4;
 const TAG_PLACE_OBJECT_2 = 26;
