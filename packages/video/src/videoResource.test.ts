@@ -9,6 +9,12 @@ import {
   isVideoResourceReady,
 } from './videoResource';
 
+// vi.spyOn hands back the *existing* spy when a method is already spied, so without this the URL
+// spies below share one call history and every count assertion reads the previous test's calls too.
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 describe('createVideoResource', () => {
   it('returns a resource with null element when called with no arguments', () => {
     const resource = createVideoResource();
@@ -40,6 +46,54 @@ describe('disposeVideoResource', () => {
     const resource = createVideoResource();
     disposeVideoResource(resource);
     expect(resource.element).toBeNull();
+  });
+
+  it('revokes an owned object URL and clears it', () => {
+    const revokeSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    const element = { removeAttribute: vi.fn(), load: vi.fn() } as unknown as HTMLVideoElement;
+    const resource = createVideoResource(element, 'blob:owned');
+
+    disposeVideoResource(resource);
+
+    expect(revokeSpy).toHaveBeenCalledWith('blob:owned');
+    expect(resource.objectUrl).toBeNull();
+  });
+
+  // Revoking is what makes the Blob GC-eligible, so it must survive a second disposal without
+  // double-revoking a URL the resource no longer owns.
+  it('does not revoke again when disposed twice', () => {
+    const revokeSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    const element = { removeAttribute: vi.fn(), load: vi.fn() } as unknown as HTMLVideoElement;
+    const resource = createVideoResource(element, 'blob:owned');
+
+    disposeVideoResource(resource);
+    disposeVideoResource(resource);
+
+    expect(revokeSpy).toHaveBeenCalledTimes(1);
+  });
+
+  // A resource built over a URL the caller manages must not have it revoked out from under them.
+  it('revokes nothing when the resource owns no object URL', () => {
+    const revokeSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    const element = { removeAttribute: vi.fn(), load: vi.fn() } as unknown as HTMLVideoElement;
+
+    disposeVideoResource(createVideoResource(element));
+
+    expect(revokeSpy).not.toHaveBeenCalled();
+  });
+
+  // The element must let go of the src before the URL behind it is revoked, not after.
+  it('revokes the object URL only after the element has released its src', () => {
+    const order: string[] = [];
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => void order.push('revoke'));
+    const element = {
+      removeAttribute: vi.fn(() => void order.push('removeAttribute')),
+      load: vi.fn(() => void order.push('load')),
+    } as unknown as HTMLVideoElement;
+
+    disposeVideoResource(createVideoResource(element, 'blob:owned'));
+
+    expect(order).toEqual(['removeAttribute', 'load', 'revoke']);
   });
 });
 

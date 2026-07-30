@@ -23,6 +23,12 @@ export interface VideoPlayOptions {
 
 export interface VideoResource {
   element: HostImageSource | null;
+  // The object URL this resource owns, when it was loaded from a Blob; null otherwise. It is held for
+  // the resource's whole life, not just its load: the element keeps fetching from this URL while it
+  // plays and re-fetches on seek, so revoking it earlier breaks playback of an already-"loaded" video.
+  // Ownership lives on the resource so disposeVideoResource can release it — a resource built over a
+  // caller's own URL leaves this null and disposal touches nothing.
+  objectUrl: string | null;
 }
 
 // Options threaded into the element-backed URL loaders. Omitted fields keep the loader's default

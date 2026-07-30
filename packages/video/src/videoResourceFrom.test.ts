@@ -36,21 +36,49 @@ describe('createVideoResourceFromMediaStream', () => {
 });
 
 describe('loadVideoResourceFromBlob', () => {
-  it('revokes the object URL after a successful load', async () => {
+  // The load settling is not the end of the URL's life — the element fetches through it for as long as
+  // it plays. So the invariant is that the resource comes back still playable, holding a live URL it
+  // now owns; an earlier version revoked here and returned a resource whose source was already gone.
+  it('returns a resource still holding its live object URL after the load settles', async () => {
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock');
     const revokeSpy = vi.spyOn(URL, 'revokeObjectURL');
     const promise = loadVideoResourceFromBlob(new Blob([], { type: 'video/mp4' }));
     lastVideo().dispatchEvent(new Event('canplay'));
-    await promise;
-    expect(revokeSpy).toHaveBeenCalledWith('blob:mock');
+    const resource = await promise;
+    expect(resource.objectUrl).toBe('blob:mock');
+    expect(revokeSpy).not.toHaveBeenCalled();
   });
 
-  it('revokes the object URL even when the load fails', async () => {
+  // Readiness 'metadata' is the starkest case: only the container header has been read, so every byte
+  // of media data is still to come through the URL.
+  it('keeps the object URL live when the load settles at metadata readiness', async () => {
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock');
+    const revokeSpy = vi.spyOn(URL, 'revokeObjectURL');
+    const promise = loadVideoResourceFromBlob(new Blob([], { type: 'video/mp4' }), { readiness: 'metadata' });
+    lastVideo().dispatchEvent(new Event('loadedmetadata'));
+    const resource = await promise;
+    expect(resource.objectUrl).toBe('blob:mock');
+    expect(revokeSpy).not.toHaveBeenCalled();
+  });
+
+  // The failure path is the one place this function must still revoke: it returns no resource, so
+  // nothing else can ever own the URL.
+  it('revokes the object URL when the load fails, since no resource is returned to own it', async () => {
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock');
     const revokeSpy = vi.spyOn(URL, 'revokeObjectURL');
     const promise = loadVideoResourceFromBlob(new Blob([], { type: 'video/mp4' }));
     lastVideo().dispatchEvent(new Event('error'));
     await expect(promise).rejects.toThrow('Failed to load video');
+    expect(revokeSpy).toHaveBeenCalledWith('blob:mock');
+  });
+
+  it('revokes the object URL when the load is aborted, since no resource is returned to own it', async () => {
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock');
+    const revokeSpy = vi.spyOn(URL, 'revokeObjectURL');
+    const controller = new AbortController();
+    const promise = loadVideoResourceFromBlob(new Blob([], { type: 'video/mp4' }), undefined, controller.signal);
+    controller.abort(new Error('cancelled'));
+    await expect(promise).rejects.toThrow('cancelled');
     expect(revokeSpy).toHaveBeenCalledWith('blob:mock');
   });
 });

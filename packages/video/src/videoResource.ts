@@ -3,18 +3,29 @@ import type { VideoResource } from '@flighthq/types/contract';
 // No cloneVideoResource: a VideoResource is a thin carrier over a single HTMLVideoElement, and an
 // element cannot be duplicated (each carries its own decoder and playback position). Wrap the same
 // element in a second createVideoResource call if two carriers over one stream are truly wanted.
-export function createVideoResource(element?: HTMLVideoElement): VideoResource {
-  return { element: element ?? null };
+// `objectUrl` transfers ownership of a blob object URL to the resource, so disposal revokes it. Pass
+// it only for a URL this resource should own — a caller-managed URL stays the caller's to revoke.
+export function createVideoResource(element?: HTMLVideoElement, objectUrl?: string): VideoResource {
+  return { element: element ?? null, objectUrl: objectUrl ?? null };
 }
 
 // Releases the decoder the element holds: clearing the src and calling load() detaches the media
-// resource so the browser can free its buffers, then the element reference is dropped for GC. Unlike
-// destroy*, there is no non-GC handle to free here — the element is plain GC-managed memory.
+// resource so the browser can free its buffers, then the element reference is dropped for GC. Also
+// revokes an owned object URL, whose blob-store entry is what keeps the underlying Blob reachable —
+// the revoke belongs here, at end of life, because the element fetches from that URL for as long as it
+// plays. Both are dispose*, not destroy*: each releases a reference so memory becomes GC-eligible,
+// rather than freeing a non-GC handle.
 export function disposeVideoResource(resource: VideoResource): void {
   const element = resource.element as HTMLVideoElement | null;
   if (element !== null) {
     element.removeAttribute('src');
     element.load();
+  }
+  // Revoked after the element has let go of the src, so the media resource is never detached from a
+  // URL the element is still reading through.
+  if (resource.objectUrl !== null) {
+    URL.revokeObjectURL(resource.objectUrl);
+    resource.objectUrl = null;
   }
   resource.element = null;
 }
