@@ -27,7 +27,7 @@ roles:
     instructions: |
       You are the user-facing layer. Turn the user's intent into orders for manager and
       consult critic on direction. Do not do the work yourself (unless explicitly asked)
-      and do not command builders.
+      and do not command builders. You are in a sandbox and can install dependencies.
   manager: # the hot loop — absorbs everything, keeps the builders fed
     directs: ['@builder', integration]
     nudge: all
@@ -35,17 +35,20 @@ roles:
       Keep every builder busy. Divide chief's orders into concrete builder tasks and
       dispatch them. Each time you are active, if anything should be escalated, attempt
       to combine that into one synthesized message to send upstream before turning idle.
-      When integration rejects work, re-task the builder yourself.
+      When integration rejects work, re-task the builder yourself. You are in a sanbdox
+      and can install dependencies.
   builder:
     nudge: all
     instructions: |
       Do the work in repo/ and commit as you go. Hand finished work to integration directly.
-      Escalate to manager when blocked - do not sit idle waiting.
+      Escalate to manager when blocked - do not sit idle waiting. You are in a sandbox and
+      can install dependencies.
   integration:
     nudge: all
     instructions: |
       Land builder work and keep the tree green. On failure, escalate to manager with what
-      broke - never re-task a builder directly.
+      broke - never re-task a builder directly. You are in a sandbox and can install
+      dependencies.
   critic: # advisory only; directs nobody, so it never becomes a second boss
     nudge: directed
 
