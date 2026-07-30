@@ -143,7 +143,7 @@ Host/OS integration so applications need no escape hatch out of the SDK. Each ca
 - `@flighthq/shell`: open external URLs/paths, reveal in folder, move to trash, beep.
 - `@flighthq/menu`: native application-menu and context-menu descriptors (native host required to realize).
 - `@flighthq/tray`: system tray / menu-bar icon (icon, tooltip, title, context menu, click events). The application/dock badge lives in `@flighthq/app`, not here.
-- `@flighthq/shortcut`: global OS hotkeys (native host required).
+- `@flighthq/shortcut`: global OS hotkeys over a swappable web/native `ShortcutBackend`, plus the accelerator value domain: alias-insensitive parsing and normalization, diagnostic parse errors, platform-aware display labels, equality/validation, enumeration/conflict queries, opt-in trigger signals, and enable/suspend commands. The web backend returns unsupported sentinels; Electron and Tauri adapters provide registration, while their native plugins do not currently realize the enable/suspend semantics.
 - `@flighthq/screen`: display enumeration, work area, scale factor.
 - `@flighthq/storage`: synchronous persistent key/value (web backend over localStorage).
 - `@flighthq/device`: static device/OS identity — model, manufacturer, OS, memory, safe-area insets. Battery is _not_ here; it is a live concern owned by `@flighthq/power`.
