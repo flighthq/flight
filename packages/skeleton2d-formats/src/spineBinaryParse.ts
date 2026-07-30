@@ -46,11 +46,11 @@ import {
 // RECORD LAYOUT — which field follows which.
 //
 // The binary is stream-positional in a way JSON is not: records have no keys and no lengths, so a reader
-// cannot skip a section it does not model, it can only CONSUME it or stop. That is why the constraint
-// records below are walked field-for-field despite Flight modelling no constraint solvers — they stand
-// between the slots and the skins. This landing parses through the default skin's attachments (so slots
-// resolve their setup attachment) and then STOPS, Skip-crumbing the remainder; events and animation
-// timelines follow in a later increment.
+// cannot skip a section it does not model — it can only CONSUME it or stop. That is why constraint records,
+// slot colour timelines, deform timelines, and draw-order/event timelines are all walked field-for-field
+// even though Flight models none of them: each stands between something this importer does want and the
+// next thing after it. The whole file is consumed, and what is not modeled is Skip-crumbed rather than
+// skipped over.
 //
 // VERSION GATE. The layout below is Spine 4.x's and was verified byte-for-byte against a real 4.1.17 export
 // (see the package status). Spine changed record layouts across major versions, so a file outside 4.x is
