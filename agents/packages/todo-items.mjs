@@ -17,7 +17,7 @@ export function itemHeadlines(section) {
 }
 
 function isClosedItem(body) {
-  if (/^~~/.test(body)) return true;
+  if (/^(?:\*\*|__)?~~/.test(body)) return true;
   if (/^\*\*\[[^\]]*\b(?:closed|completed|landed|resolved|retired)\b[^\]]*\]/i.test(body)) return true;
   return /(?:—|--)\s*[*_~]*(?:✅\s*)?(?:already\s+done|closed|completed|done|landed|n\/a|resolved|retired)\b/i.test(
     body,

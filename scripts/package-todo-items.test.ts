@@ -26,6 +26,16 @@ describe('package TODO item headlines', () => {
     ).toEqual(['Keep this actual task']);
   });
 
+  it('omits strikethrough recommendations with or without an outer bold wrapper', () => {
+    expect(
+      itemHeadlines(`
+1. ~~**Closed with outer strike.**~~
+2. **~~Closed with outer bold.~~**
+3. **Keep this task.** Its description mentions a ~~retired alternative~~.
+`),
+    ).toEqual(['Keep this task']);
+  });
+
   it('ignores prose and nested continuation bullets', () => {
     expect(
       itemHeadlines(`
