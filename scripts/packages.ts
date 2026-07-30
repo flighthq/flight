@@ -7,6 +7,7 @@ import * as ts from 'typescript';
 
 import { getInvalidExampleFlightDependencies, getInvalidExampleFlightImportSpecifiers } from './example-sdk-policy';
 import { getPackageLayerCoverageViolations, getPackageLayerDependencyViolation } from './package-layers';
+import { getPackageLockWorkspaceViolations, type PackageLockJson, type WorkspaceManifest } from './package-lock-policy';
 import { isSdkBarrelExcludedPackage } from './sdk-policy';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -34,6 +35,7 @@ interface PackageRepository {
 
 interface PackageJson {
   name?: string;
+  version?: string;
   main?: string;
   module?: string;
   types?: string;
@@ -45,6 +47,7 @@ interface PackageJson {
   scripts?: Record<string, string>;
   dependencies?: Record<string, string>;
   peerDependencies?: Record<string, string>;
+  optionalDependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
 }
 
@@ -390,6 +393,26 @@ const workspacePackageNames = packageDirs.flatMap((pkgDir) => {
   return name === undefined ? [] : [name];
 });
 const layerPolicyErrors = getPackageLayerCoverageViolations(workspacePackageNames);
+const workspaceManifests = packageDirs.flatMap((pkgDir): WorkspaceManifest[] => {
+  const manifest = readJson<PackageJson>(join(pkgDir, 'package.json'));
+  if (manifest?.name === undefined) return [];
+  return [
+    {
+      path: relative(root, pkgDir).replaceAll('\\', '/'),
+      name: manifest.name,
+      version: manifest.version,
+      dependencies: manifest.dependencies,
+      peerDependencies: manifest.peerDependencies,
+      optionalDependencies: manifest.optionalDependencies,
+      devDependencies: manifest.devDependencies,
+    },
+  ];
+});
+const packageLock = readJson<PackageLockJson>(join(root, 'package-lock.json'));
+const packageLockErrors: CheckError[] =
+  packageLock === null
+    ? [{ label: 'package-lock.json parses', detail: 'repair package-lock.json without changing unrelated entries' }]
+    : getPackageLockWorkspaceViolations(workspaceManifests, packageLock, (path) => existsSync(join(root, path)));
 
 for (const pkgDir of packageDirs) {
   const pkg = readJson<PackageJson>(join(pkgDir, 'package.json'));
@@ -857,7 +880,8 @@ const packageErrors = failedPackages.reduce((n, r) => n + r.errors.length, 0);
 const failedExamples = exampleResults.filter((r) => r.errors.length > 0);
 const exampleErrors = failedExamples.reduce((n, r) => n + r.errors.length, 0);
 
-const totalErrors = packageErrors + exampleErrors + barrelSyncErrors.length + layerPolicyErrors.length;
+const totalErrors =
+  packageErrors + exampleErrors + barrelSyncErrors.length + layerPolicyErrors.length + packageLockErrors.length;
 
 if (jsonMode) {
   console.log(
@@ -871,6 +895,7 @@ if (jsonMode) {
           unpromotedExports: r.unpromotedExports,
         })),
         examples: exampleResults.map((r) => ({ name: r.name, errors: r.errors })),
+        packageLock: { errors: packageLockErrors },
         layerPolicy: { errors: layerPolicyErrors },
         barrelSync: { errors: barrelSyncErrors },
       },
@@ -905,6 +930,13 @@ if (barrelSyncErrors.length > 0) {
 if (layerPolicyErrors.length > 0) {
   console.log(`\n${pc.bold('Package dependency-layer policy')}`);
   for (const { label, detail } of layerPolicyErrors) {
+    console.log(`  ${pc.red('✗')} ${label}${detail ? pc.dim(` — ${detail}`) : ''}`);
+  }
+}
+
+if (packageLockErrors.length > 0) {
+  console.log(`\n${pc.bold('Package-lock workspace layout')}`);
+  for (const { label, detail } of packageLockErrors) {
     console.log(`  ${pc.red('✗')} ${label}${detail ? pc.dim(` — ${detail}`) : ''}`);
   }
 }
@@ -948,6 +980,8 @@ if (totalErrors === 0) {
     parts.push(`${barrelSyncErrors.length} barrel sync error${barrelSyncErrors.length === 1 ? '' : 's'}`);
   if (layerPolicyErrors.length > 0)
     parts.push(`${layerPolicyErrors.length} layer policy error${layerPolicyErrors.length === 1 ? '' : 's'}`);
+  if (packageLockErrors.length > 0)
+    parts.push(`${packageLockErrors.length} package-lock error${packageLockErrors.length === 1 ? '' : 's'}`);
   console.log(pc.red(`✗ ${parts.join(', ')}`));
   process.exit(1);
 }
