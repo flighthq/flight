@@ -70,5 +70,3 @@ The package is a full input library, to be refactored down into more packages as
 3. **Neighbor package shapes.** `input-bindings`, `gestures`, `gamepad-mappings` are blessed but undesigned. Each needs its own direction session when built.
 
 4. **Multi-device identity.** No `InputDeviceId` or generalized connect/disconnect for keyboard/mouse. Relevant for native hosts with multiple input devices.
-
-5. **Package Map update.** Current entry undersells scope — omits gamepad, state snapshots, edge queries.
