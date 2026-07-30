@@ -604,6 +604,7 @@ export * from './TextureAtlas';
 export * from './TextureAtlasAsepriteSchema';
 export * from './TextureAtlasFormatKind';
 export * from './TextureAtlasPackerParseOptions';
+export * from './TextureAtlasParseOptions';
 export * from './TextureAtlasPackerSchema';
 export * from './TextureAtlasRegion';
 export * from './TextureAtlasStarlingParseOptions';

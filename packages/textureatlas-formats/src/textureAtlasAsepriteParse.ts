@@ -39,27 +39,39 @@ export function parseTextureAtlasAsepriteJson(json: string, atlas: TextureAtlas)
   return parseTextureAtlasAsepriteDocument(doc, atlas);
 }
 
+// A frame with no `frame` rect describes no region, so it is skipped rather than pushed as a
+// zero-sized one. `sourceSize` and `spriteSourceSize` are optional in practice — an untrimmed frame
+// has nothing to say with them, and partial or older exports omit them — so they fall back instead of
+// being dereferenced blind. Reading them unguarded threw a raw TypeError out of the parser on any
+// document whose frames were not fully populated, which contradicts this package's stated never-throw
+// importer policy: a truncated or hand-edited descriptor took the caller down instead of yielding the
+// regions it could read.
 function applyAsepriteFrame(
   atlas: TextureAtlas,
   name: string,
   entry: TextureAtlasAsepriteArrayFrame | TextureAtlasAsepriteBaseFrame,
 ): void {
+  const frame = entry.frame;
+  if (frame === null || typeof frame !== 'object') return;
+  const trimmed = entry.trimmed === true;
+  const sourceSize = entry.sourceSize;
+  const spriteSourceSize = entry.spriteSourceSize;
   atlas.regions.push(
     createTextureAtlasRegion({
-      height: entry.frame.h,
+      height: frame.h,
       id: atlas.regions.length,
       name,
-      originalHeight: entry.trimmed ? entry.sourceSize.h : null,
-      originalWidth: entry.trimmed ? entry.sourceSize.w : null,
+      originalHeight: trimmed && sourceSize !== undefined ? sourceSize.h : null,
+      originalWidth: trimmed && sourceSize !== undefined ? sourceSize.w : null,
       pivotX: null,
       pivotY: null,
       rotated: entry.rotated,
-      sourceX: entry.spriteSourceSize.x,
-      sourceY: entry.spriteSourceSize.y,
-      trimmed: entry.trimmed,
-      width: entry.frame.w,
-      x: entry.frame.x,
-      y: entry.frame.y,
+      sourceX: spriteSourceSize !== undefined ? spriteSourceSize.x : 0,
+      sourceY: spriteSourceSize !== undefined ? spriteSourceSize.y : 0,
+      trimmed,
+      width: frame.w,
+      x: frame.x,
+      y: frame.y,
     }),
   );
 }
