@@ -2,6 +2,8 @@ import { createUniformGridSpatialBackend } from '@flighthq/spatial/contract';
 import type { Physics2DWorld, RigidBody2D, SpatialIndexBackend, SpatialPair } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { addPhysics2DJoint, registerPhysics2DJointSolver } from './jointRegistry';
+import { physics2DDistanceJointSolver } from './joints';
 import { stepPhysics2D } from './step';
 import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world';
 
@@ -232,5 +234,140 @@ describe('stepPhysics2D', () => {
     stepPhysics2D(world, -1 / 60);
     expect(traceWorld(world)).toBe(before);
     expect(crate.y).toBe(2);
+  });
+});
+
+describe('stepPhysics2D contact events', () => {
+  it('reports a contact beginning and ending, read off the cache transitions', () => {
+    const world = createPhysics2DWorld();
+    ground(world);
+    const crate = box(world, 0, 3);
+    runSteps(world, 1);
+    expect(world.events.began).toHaveLength(0);
+
+    // Fall until it lands: the step that creates the contact is the begin.
+    let began = 0;
+    for (let i = 0; i < 200 && began === 0; i++) {
+      stepPhysics2D(world, 1 / 60);
+      began += world.events.began.length;
+    }
+    expect(began).toBe(1);
+
+    // Teleport it away: the step that drops the contact is the end.
+    crate.y = 50;
+    crate.velocityY = 0;
+    stepPhysics2D(world, 1 / 60);
+    expect(world.events.ended).toHaveLength(1);
+    expect(world.contacts).toHaveLength(0);
+  });
+
+  it('clears its event buffers each step rather than accumulating', () => {
+    const world = createPhysics2DWorld();
+    ground(world);
+    box(world, 0, 0.4);
+    runSteps(world, 5);
+    expect(world.events.began).toHaveLength(0);
+    expect(world.events.ended).toHaveLength(0);
+  });
+});
+
+describe('stepPhysics2D with joints', () => {
+  const DISTANCE = 'Distance';
+
+  function jointedWorld(index?: SpatialIndexBackend) {
+    const world = createPhysics2DWorld(0, -9.81, index);
+    registerPhysics2DJointSolver(world, DISTANCE, physics2DDistanceJointSolver);
+    ground(world);
+    // Created static, not mutated to static after the fact: mass properties are derived at insertion, so
+    // flipping the type afterwards leaves a nonzero inverse mass on a body that never integrates its
+    // position — it accumulates velocity forever and drags whatever is jointed to it out of the world.
+    const anchorBody = createRigidBody2D('static', 0, 4);
+    anchorBody.colliders.push(
+      createPhysics2DCollider({ kind: 'aabb', minX: -0.5, minY: -0.5, maxX: 0.5, maxY: 0.5 }, STONE),
+    );
+    const anchor = addPhysics2DBody(world, anchorBody);
+    const left = box(world, -1, 2);
+    const right = box(world, 1, 2);
+    for (const bob of [left, right]) {
+      addPhysics2DJoint(world, {
+        kind: DISTANCE,
+        bodyA: anchor.index,
+        bodyB: bob.index,
+        localAnchorAX: 0,
+        localAnchorAY: 0,
+        localAnchorBX: 0,
+        localAnchorBY: 0,
+        collideConnected: false,
+        impulse0: 0,
+        impulse1: 0,
+        impulse2: 0,
+        rAX: 0,
+        rAY: 0,
+        rBX: 0,
+        rBY: 0,
+        length: 2,
+        stiffness: 0,
+        damping: 0,
+      } as never);
+    }
+    return { left, right, world };
+  }
+
+  it('produces the same trace when the broadphase reports its pairs in the opposite order', () => {
+    // OBLIGATION 2 EXTENDED TO P2. Joints share the contact list's iteration loop, so the contact sort has
+    // to keep holding once joints are also constraining the same bodies — a scene whose contacts reorder
+    // now perturbs the joint solve too.
+    const plain = jointedWorld();
+    const reversed = jointedWorld(createReversedPairBackend());
+    runSteps(plain.world, 120);
+    runSteps(reversed.world, 120);
+    expect(traceWorld(reversed.world)).toBe(traceWorld(plain.world));
+  });
+
+  it('orders every contact pair by body index with joints present', () => {
+    // OBLIGATION 1 EXTENDED TO P2.
+    const { world } = jointedWorld(createSwappedPairBackend());
+    runSteps(world, 120);
+    for (const contact of world.contacts) expect(contact.bodyA).toBeLessThan(contact.bodyB);
+    for (const joint of world.joints) expect(joint.bodyA).toBeLessThan(joint.bodyB);
+  });
+
+  it('is bit-for-bit repeatable with joints in the solve list', () => {
+    const first = jointedWorld();
+    const second = jointedWorld();
+    runSteps(first.world, 90);
+    runSteps(second.world, 90);
+    expect(traceWorld(second.world)).toBe(traceWorld(first.world));
+  });
+
+  it('suppresses the contact between jointed bodies unless the joint asks for it', () => {
+    // A jointed pair almost always overlaps at the anchor, and resolving that contact fights the
+    // constraint holding them together.
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, DISTANCE, physics2DDistanceJointSolver);
+    const a = box(world, 0, 0);
+    const b = box(world, 0.2, 0);
+    addPhysics2DJoint(world, {
+      kind: DISTANCE,
+      bodyA: a.index,
+      bodyB: b.index,
+      localAnchorAX: 0,
+      localAnchorAY: 0,
+      localAnchorBX: 0,
+      localAnchorBY: 0,
+      collideConnected: false,
+      impulse0: 0,
+      impulse1: 0,
+      impulse2: 0,
+      rAX: 0,
+      rAY: 0,
+      rBX: 0,
+      rBY: 0,
+      length: 0.2,
+      stiffness: 0,
+      damping: 0,
+    } as never);
+    runSteps(world, 10);
+    expect(world.contacts).toHaveLength(0);
   });
 });

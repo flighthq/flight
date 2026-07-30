@@ -1,4 +1,6 @@
 export * from './colliderTransform';
+export * from './jointRegistry';
+export * from './joints';
 export * from './massProperties';
 export * from './solver';
 export * from './step';

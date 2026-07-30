@@ -55,6 +55,9 @@ export function createPhysics2DWorld(gravityX = 0, gravityY = -9.81, index?: Spa
   return {
     bodies: [],
     contacts: [],
+    joints: [],
+    jointSolvers: new Map(),
+    events: { began: [], ended: [] },
     index: index ?? createUniformGridSpatialBackend(1),
     config: createPhysics2DSolverConfig(),
     gravityX,
@@ -129,6 +132,12 @@ export function removePhysics2DBody(world: Physics2DWorld, body: Readonly<RigidB
   for (let i = world.contacts.length - 1; i >= 0; i--) {
     const contact = world.contacts[i];
     if (contact.bodyA === body.index || contact.bodyB === body.index) world.contacts.splice(i, 1);
+  }
+  // Joints naming the removed body go with it: a constraint with one end missing has nothing to solve
+  // against, and leaving it would let a later body inheriting the index be silently constrained by it.
+  for (let i = world.joints.length - 1; i >= 0; i--) {
+    const joint = world.joints[i];
+    if (joint.bodyA === body.index || joint.bodyB === body.index) world.joints.splice(i, 1);
   }
   return true;
 }

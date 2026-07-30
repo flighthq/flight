@@ -116,14 +116,19 @@ function solvePhysics2DContact(contact: Physics2DContact, bodyA: RigidBody2D, bo
 // non-negative, which is the difference between a stable stack and one that vibrates.
 export function solvePhysics2DContacts(world: Physics2DWorld): void {
   const iterations = world.config.velocityIterations;
-  for (let iteration = 0; iteration < iterations; iteration++) {
-    for (const contact of world.contacts) {
-      if (contact.sensor) continue;
-      const bodyA = findPhysics2DBody(world, contact.bodyA);
-      const bodyB = findPhysics2DBody(world, contact.bodyB);
-      if (bodyA === null || bodyB === null) continue;
-      solvePhysics2DContact(contact, bodyA, bodyB);
-    }
+  for (let iteration = 0; iteration < iterations; iteration++) solvePhysics2DContactsOnce(world);
+}
+
+// One pass over the contact list. Split out so the step can interleave it with the joint pass inside a
+// single iteration loop: joints and contacts constrain the same bodies, and giving either a whole pass to
+// itself lets it undo what the other just corrected.
+export function solvePhysics2DContactsOnce(world: Physics2DWorld): void {
+  for (const contact of world.contacts) {
+    if (contact.sensor) continue;
+    const bodyA = findPhysics2DBody(world, contact.bodyA);
+    const bodyB = findPhysics2DBody(world, contact.bodyB);
+    if (bodyA === null || bodyB === null) continue;
+    solvePhysics2DContact(contact, bodyA, bodyB);
   }
 }
 

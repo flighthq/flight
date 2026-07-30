@@ -10,7 +10,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { updatePhysics2DColliderWorldShape, writePhysics2DColliderBounds } from './colliderTransform';
-import { relativeNormalVelocity, solvePhysics2DContacts, warmStartPhysics2DContacts } from './solver';
+import { relativeNormalVelocity, solvePhysics2DContactsOnce, warmStartPhysics2DContacts } from './solver';
 import { findPhysics2DBody, isPhysics2DPairOrdered } from './world';
 
 // Refreshes every collider's world shape and republishes its bounds to the broadphase index.
@@ -29,6 +29,24 @@ function updatePhysics2DBroadphase(world: Physics2DWorld): void {
       if (boundsScratch.maxY > maxY) maxY = boundsScratch.maxY;
     }
     if (minX > maxX) continue;
+    // Bounds this package declines to hand to the broadphase. A stopgap, and worth naming as one: the
+    // real problem is that `@flighthq/spatial`'s uniform grid indexes by walking every cell from min to
+    // max, so its work is proportional to the extent divided by the cell size and ONE large-but-finite
+    // AABB hangs it outright — verified standalone at 1e12 wide, with no physics involved. A hang is
+    // worse than a throw, because it is uncatchable and takes the caller with it, so this package
+    // declines to be what triggers it. A body that is non-finite, or 10 million units across, has
+    // diverged by any measure a rigid-body world cares about; skipping it stops that one body colliding
+    // and lets the rest of the world keep simulating. The bound belongs in the index, not here.
+    if (
+      !Number.isFinite(minX) ||
+      !Number.isFinite(minY) ||
+      !Number.isFinite(maxX) ||
+      !Number.isFinite(maxY) ||
+      maxX - minX > MAX_INDEXED_EXTENT ||
+      maxY - minY > MAX_INDEXED_EXTENT
+    ) {
+      continue;
+    }
     bodyBounds.minX = minX;
     bodyBounds.minY = minY;
     bodyBounds.maxX = maxX;
@@ -54,6 +72,8 @@ function updatePhysics2DBroadphase(world: Physics2DWorld): void {
 function buildPhysics2DContacts(world: Physics2DWorld): void {
   world.index.querySpatialPairs(pairScratch);
 
+  world.events.began.length = 0;
+  world.events.ended.length = 0;
   for (const contact of world.contacts) contact.touching = false;
 
   for (const pair of pairScratch) {
@@ -63,6 +83,9 @@ function buildPhysics2DContacts(world: Physics2DWorld): void {
     // Two bodies that cannot both move have no constraint to solve; skipping them here keeps the
     // solver's body list free of pairs whose every impulse would be multiplied by zero.
     if (first.inverseMass === 0 && second.inverseMass === 0) continue;
+    // A jointed pair almost always overlaps at the anchor, and resolving that contact fights the
+    // constraint holding them together, so a joint suppresses it unless the caller asks otherwise.
+    if (isPhysics2DPairJointSuppressed(world, first.index, second.index)) continue;
 
     const ordered = isPhysics2DPairOrdered(first, second);
     const bodyA = ordered ? first : second;
@@ -88,8 +111,15 @@ function buildPhysics2DContacts(world: Physics2DWorld): void {
     }
   }
 
+  // Contact events are read off the cache's own transitions rather than tracked beside it: the cache
+  // already knows which pairs are touching, so a pair gaining an entry IS the begin and losing one IS the
+  // end. An ended contact is reported for the step it leaves, then dropped.
   for (let i = world.contacts.length - 1; i >= 0; i--) {
-    if (!world.contacts[i].touching) world.contacts.splice(i, 1);
+    const contact = world.contacts[i];
+    if (!contact.touching) {
+      world.events.ended.push(contact);
+      world.contacts.splice(i, 1);
+    }
   }
 
   world.contacts.sort(comparePhysics2DContacts);
@@ -111,6 +141,7 @@ function mergePhysics2DContact(
   restitution: number,
 ): void {
   let contact: Physics2DContact | null = null;
+  let created = false;
   for (const existing of world.contacts) {
     if (
       existing.bodyA === bodyA &&
@@ -124,6 +155,7 @@ function mergePhysics2DContact(
   }
 
   if (contact === null) {
+    created = true;
     contact = {
       bodyA,
       bodyB,
@@ -140,6 +172,7 @@ function mergePhysics2DContact(
     };
     world.contacts.push(contact);
   }
+  if (created) world.events.began.push(contact);
 
   contact.normalX = manifold.normalX;
   contact.normalY = manifold.normalY;
@@ -269,8 +302,19 @@ export function stepPhysics2D(world: Physics2DWorld, dt: number): void {
   }
 
   preparePhysics2DConstraints(world, dt);
+  for (const joint of world.joints) {
+    world.jointSolvers.get(joint.kind)?.prepare(world, joint, dt);
+  }
   if (config.warmStarting) warmStartPhysics2DContacts(world);
-  solvePhysics2DContacts(world);
+  // Joints and contacts share one solve list and one iteration count. Solving them in separate passes
+  // would let each undo the other's correction — a hinge under load creeps if the contacts beneath it get
+  // a whole pass to themselves between joint iterations.
+  for (let iteration = 0; iteration < config.velocityIterations; iteration++) {
+    for (const joint of world.joints) {
+      world.jointSolvers.get(joint.kind)?.solve(world, joint);
+    }
+    solvePhysics2DContactsOnce(world);
+  }
 
   for (const body of bodies) {
     if (body.type === 'static') continue;
@@ -313,7 +357,19 @@ function comparePhysics2DContacts(left: Readonly<Physics2DContact>, right: Reado
   return left.colliderB - right.colliderB;
 }
 
+const MAX_INDEXED_EXTENT = 1e7;
 const boundsScratch: SpatialAabb = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
 const bodyBounds: SpatialAabb = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
 const pairScratch: SpatialPair[] = [];
 const manifoldScratch: CollisionContactManifold = createCollisionContactManifold();
+
+// Whether a joint between these two bodies suppresses their contact.
+function isPhysics2DPairJointSuppressed(world: Readonly<Physics2DWorld>, first: number, second: number): boolean {
+  for (const joint of world.joints) {
+    if (joint.collideConnected) continue;
+    if ((joint.bodyA === first && joint.bodyB === second) || (joint.bodyA === second && joint.bodyB === first)) {
+      return true;
+    }
+  }
+  return false;
+}
