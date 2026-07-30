@@ -96,11 +96,6 @@ Design calls to settle before building the affected entries:
 - Parse the short `#rgb` theme-color form
 - Decide whether `StatusBarInfo.height` should be reported by the web backend at all
 
-### swf (partial 36)
-
-- Preserve authored extents
-- Add one canonical uncompressed fixture
-
 ### loader (partial 38)
 
 - Finish byte progress — the shape is the open part
@@ -112,6 +107,10 @@ Design calls to settle before building the affected entries:
 - Decide whether `TrayIcon` handles should compare by identity
 - Guard `startTrayIconAnimation` against a non-positive interval
 - Web-backend `isDestroyed` returns true for every id, including ids never created
+
+### swf (partial 42)
+
+- Add one canonical uncompressed fixture
 
 ### useragent (partial 42)
 
@@ -825,7 +824,7 @@ These are explicit user directions whose implementation may span packages or req
 
 These are observed maturity gaps, including intentionally deferred work. They require prioritization or a package direction before execution unless separately approved.
 
-### swf (partial 36)
+### swf (partial 42)
 
 - Recover animated MovieClip timelines
 - Materialize visible archive content
@@ -982,7 +981,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene3d` · `particleemitter` · `xml` · `skeleton3d` · `scene3d-resources` · `camera-controls` · `debug` · `dialog` · `lifecycle` · `textlayout` · `adjustments` · `clipboard` · `scene2d-resources` · `camera` · `platform` · `textinput` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
+`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene3d` · `particleemitter` · `xml` · `skeleton3d` · `scene3d-resources` · `camera-controls` · `debug` · `dialog` · `lifecycle` · `textlayout` · `adjustments` · `clipboard` · `camera` · `platform` · `textinput` · `scene2d-resources` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
 
 ## Liveness — which stage each stale cell needs next
 
