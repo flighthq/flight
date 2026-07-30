@@ -1,4 +1,6 @@
+import { easeCubicBezier } from '@flighthq/easing/contract';
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
+import { applyAnimationClipToSkeleton2D, cloneSkeleton2D } from '@flighthq/skeleton2d/contract';
 import type { RegionAttachment2D } from '@flighthq/types/contract';
 import { RegionAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
@@ -28,7 +30,54 @@ describe('parseSpineSkeletonBinary', () => {
     const slots = result.skeleton.slots!;
     expect(slots.length).toBe(1);
     expect(slots[0]).toMatchObject({ boneIndex: 1, color: 0x80c0ffff, name: 'body' });
-    expect(result.animations).toEqual([]);
+  });
+
+  it('builds a named clip of RELATIVE bone deltas, like the .json parser', () => {
+    const result = parseSpineSkeletonBinary(buildSpineBinary())!;
+    expect(result.animations.length).toBe(1);
+    expect(result.animations[0].name).toBe('walk');
+    // Setup rotation is 19.5 on the hip; the timeline's +90 delta composes onto it rather than replacing it.
+    const setup = result.skeleton;
+    const pose = cloneSkeleton2D(setup);
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, setup, pose, 1);
+    expect(pose.bones[1].rotation).toBeCloseTo(109.5, 4);
+    expect(setup.bones[1].rotation).toBeCloseTo(19.5, 4); // setup left intact
+  });
+
+  it('widens a PER-AXIS timeline, leaving the untouched axis at its setup value', () => {
+    // Ordinal 2 is translateX: one value per keyframe, driving only x. y must receive the identity delta,
+    // not garbage — a two-component path cannot express "x only" any other way.
+    const result = parseSpineSkeletonBinary(buildSpineBinary({ boneTimelineType: 2 }))!;
+    const setup = result.skeleton;
+    const pose = cloneSkeleton2D(setup);
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, setup, pose, 1);
+    expect(pose.bones[1].x).toBeCloseTo(1.25 + 90, 4); // setup x + delta
+    expect(pose.bones[1].y).toBeCloseTo(247.5, 4); // setup y, untouched
+  });
+
+  it('drives BOTH components from a combined translate timeline', () => {
+    const result = parseSpineSkeletonBinary(buildSpineBinary({ boneTimelineType: 1 }))!;
+    const setup = result.skeleton;
+    const pose = cloneSkeleton2D(setup);
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, setup, pose, 1);
+    expect(pose.bones[1].x).toBeCloseTo(1.25 + 90, 4);
+    expect(pose.bones[1].y).toBeCloseTo(247.5 + 90, 4);
+  });
+
+  it('rebases a BEZIER segment onto per-interval easing, in absolute time/value units', () => {
+    const result = parseSpineSkeletonBinary(buildSpineBinary({ bezier: true }))!;
+    const track = result.animations[0].clip.channels[0].track;
+    expect(track.segmentEasings).not.toBeNull();
+    const setup = result.skeleton;
+    const pose = cloneSkeleton2D(setup);
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, setup, pose, 0.5);
+    // curve [0.42, 0, 1, 90] over a 0..1s / 0..90deg segment is the CSS ease-in shape.
+    expect(pose.bones[1].rotation).toBeCloseTo(19.5 + 90 * easeCubicBezier(0.42, 0, 1, 1)(0.5), 3);
+  });
+
+  it('leaves a LINEAR timeline with no segment easings', () => {
+    const track = parseSpineSkeletonBinary(buildSpineBinary())!.animations[0].clip.channels[0].track;
+    expect(track.segmentEasings).toBeNull();
   });
 
   it('resolves a slot to the setup attachment the SKIN defines, which is read after the slot', () => {
@@ -156,6 +205,9 @@ function buildSpineBinary(
     darkColor?: number;
     ikConstraints?: number;
     weightedMesh?: boolean;
+    animations?: boolean;
+    boneTimelineType?: number;
+    bezier?: boolean;
   } = {},
 ): Uint8Array {
   const version = options.version ?? '4.1.17';
@@ -248,6 +300,43 @@ function buildSpineBinary(
   out.push(0); // sequence: absent
 
   writeVarint(out, 0); // alternate skins
+  writeVarint(out, 0); // event definitions
+
+  // Animations. One clip driving the hip bone, so the bone-timeline path is exercised end to end.
+  writeVarint(out, options.animations === false ? 0 : 1);
+  if (options.animations !== false) {
+    writeString(out, 'walk');
+    writeVarint(out, 1); // total timeline count
+    writeVarint(out, 0); // slot timelines
+    writeVarint(out, 1); // bone timelines
+    writeVarint(out, 1); // bone index
+    writeVarint(out, 1); // timelines on it
+    out.push(options.boneTimelineType ?? 0); // 0 = rotate
+    writeVarint(out, 2); // frame count
+    writeVarint(out, options.bezier ? 1 : 0); // bezier count
+    const values = options.boneTimelineType === 1 ? 2 : 1;
+    writeFloat(out, 0); // time
+    for (let v = 0; v < values; v++) writeFloat(out, 0);
+    writeFloat(out, 1); // next time
+    for (let v = 0; v < values; v++) writeFloat(out, 90);
+    if (options.bezier) {
+      out.push(2); // CURVE_BEZIER
+      for (let v = 0; v < values; v++) {
+        writeFloat(out, 0.42); // cx1 in absolute time units
+        writeFloat(out, 0); // cy1 in absolute value units
+        writeFloat(out, 1); // cx2
+        writeFloat(out, 90); // cy2
+      }
+    } else {
+      out.push(0); // CURVE_LINEAR
+    }
+    writeVarint(out, 0); // ik timelines
+    writeVarint(out, 0); // transform timelines
+    writeVarint(out, 0); // path timelines
+    writeVarint(out, 0); // deform timelines
+    writeVarint(out, 0); // draw order frames
+    writeVarint(out, 0); // event frames
+  }
   return Uint8Array.from(out);
 }
 
