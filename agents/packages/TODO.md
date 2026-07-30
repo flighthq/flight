@@ -128,9 +128,8 @@ Design calls to settle before building the affected entries:
 
 ### textureatlas-formats (partial 50)
 
-- Adopt the registry pattern from `spritesheet-formats`
-- Add serializers
-- Surface page/meta data
+- Surface page/meta data — but it needs somewhere to go first
+- Add serializers — blocked on item 1
 
 ### font (partial 52)
 
