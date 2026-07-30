@@ -1169,7 +1169,25 @@
       "label": "Render",
       "scenes": [
         {
+          "scene": "render-pass-shared-context",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": false
+          }
+        },
+        {
           "scene": "render-pass-viewport",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": false
+          }
+        },
+        {
+          "scene": "render-target-axes",
           "backends": {
             "canvas": false,
             "dom": false,
