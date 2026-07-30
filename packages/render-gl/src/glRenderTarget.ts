@@ -10,6 +10,7 @@ import type {
   RenderTargetDescriptor,
   RenderTargetExplanation,
   RenderTargetFormat,
+  RenderTargetFormatPolicy,
   ResolvedRenderTargetDescriptor,
 } from '@flighthq/types/contract';
 
@@ -25,11 +26,32 @@ import { setGlAttributes, setGlBaseUniforms, setGlMatrixFromTransform } from './
 export function createGlRenderTarget(
   state: GlRenderState,
   descriptor: Readonly<RenderTargetDescriptor>,
-): GlRenderTarget {
+): GlRenderTarget;
+export function createGlRenderTarget(
+  state: GlRenderState,
+  descriptor: Readonly<RenderTargetDescriptor>,
+  formatPolicy: 'preferred',
+): GlRenderTarget;
+export function createGlRenderTarget(
+  state: GlRenderState,
+  descriptor: Readonly<RenderTargetDescriptor>,
+  formatPolicy: 'required',
+): GlRenderTarget | null;
+export function createGlRenderTarget(
+  state: GlRenderState,
+  descriptor: Readonly<RenderTargetDescriptor>,
+  formatPolicy: RenderTargetFormatPolicy,
+): GlRenderTarget | null;
+export function createGlRenderTarget(
+  state: GlRenderState,
+  descriptor: Readonly<RenderTargetDescriptor>,
+  formatPolicy: RenderTargetFormatPolicy = 'preferred',
+): GlRenderTarget | null {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
   const requested = resolveRenderTargetDescriptor(descriptor);
-  const effective = resolveEffectiveGlRenderTargetAxes(gl, requested);
+  const effective = resolveEffectiveGlRenderTargetAxes(gl, requested, formatPolicy);
+  if (effective === null) return null;
 
   const target: GlRenderTarget = {
     requestedAxes: copyRenderTargetAxes(requested),
@@ -129,6 +151,10 @@ export function explainGlRenderTarget(target: Readonly<GlRenderTarget>): RenderT
   };
 }
 
+export function isGlRenderTargetFormatSupported(state: GlRenderState, format: RenderTargetFormat): boolean {
+  return isGlRenderTargetFormatSupportedByContext(state.gl, format);
+}
+
 /** Reallocates the storage backing `target` to the new pixel dimensions, preserving its axes. */
 export function resizeGlRenderTarget(
   state: GlRenderState,
@@ -143,7 +169,7 @@ export function resizeGlRenderTarget(
     clearColors: target.clearColors,
     clearDepth: target.clearDepth,
   });
-  const effective = resolveEffectiveGlRenderTargetAxes(state.gl, requested);
+  const effective = resolveEffectiveGlRenderTargetAxes(state.gl, requested, 'preferred')!;
   if (effective.width === target.width && effective.height === target.height) return;
 
   const gl = state.gl;
@@ -220,8 +246,28 @@ export function resolveGlRenderTarget(state: GlRenderState, target: GlRenderTarg
 export function resolveGlRenderTargetAxes(
   state: GlRenderState,
   descriptor: Readonly<RenderTargetDescriptor>,
-): RenderTargetAxes {
-  return resolveEffectiveGlRenderTargetAxes(state.gl, resolveRenderTargetDescriptor(descriptor));
+): RenderTargetAxes;
+export function resolveGlRenderTargetAxes(
+  state: GlRenderState,
+  descriptor: Readonly<RenderTargetDescriptor>,
+  formatPolicy: 'preferred',
+): RenderTargetAxes;
+export function resolveGlRenderTargetAxes(
+  state: GlRenderState,
+  descriptor: Readonly<RenderTargetDescriptor>,
+  formatPolicy: 'required',
+): RenderTargetAxes | null;
+export function resolveGlRenderTargetAxes(
+  state: GlRenderState,
+  descriptor: Readonly<RenderTargetDescriptor>,
+  formatPolicy: RenderTargetFormatPolicy,
+): RenderTargetAxes | null;
+export function resolveGlRenderTargetAxes(
+  state: GlRenderState,
+  descriptor: Readonly<RenderTargetDescriptor>,
+  formatPolicy: RenderTargetFormatPolicy = 'preferred',
+): RenderTargetAxes | null {
+  return resolveEffectiveGlRenderTargetAxes(state.gl, resolveRenderTargetDescriptor(descriptor), formatPolicy);
 }
 
 // Allocates color textures/renderbuffers (and the resolve FBO for MSAA) plus optional depth into the
@@ -315,6 +361,10 @@ function isFloatRenderTargetFormat(format: RenderTargetFormat): boolean {
   return format === 'rgba16f' || format === 'rgba32f';
 }
 
+function isGlRenderTargetFormatSupportedByContext(gl: WebGL2RenderingContext, format: RenderTargetFormat): boolean {
+  return !isFloatRenderTargetFormat(format) || gl.getExtension('EXT_color_buffer_float') !== null;
+}
+
 function copyRenderTargetAxes(axes: Readonly<RenderTargetAxes>): RenderTargetAxes {
   return {
     width: axes.width,
@@ -344,14 +394,20 @@ function getGlRenderTargetAxes(target: Readonly<GlRenderTarget>): RenderTargetAx
 function resolveEffectiveGlRenderTargetAxes(
   gl: WebGL2RenderingContext,
   requested: Readonly<ResolvedRenderTargetDescriptor>,
-): RenderTargetAxes {
+  formatPolicy: RenderTargetFormatPolicy,
+): RenderTargetAxes | null {
   const reportedMaxSamples = requested.sampleCount > 1 ? gl.getParameter(gl.MAX_SAMPLES) : 1;
   const maxSamples =
     typeof reportedMaxSamples === 'number' && Number.isFinite(reportedMaxSamples)
       ? Math.max(1, Math.floor(reportedMaxSamples))
       : 1;
   const sampleCount = Math.min(requested.sampleCount, maxSamples);
-  const colorFormats = requested.colorFormats.map((format) => resolveRenderableFormat(gl, format));
+  const colorFormats: RenderTargetFormat[] = [];
+  for (const format of requested.colorFormats) {
+    const effectiveFormat = resolveRenderableFormat(gl, format, formatPolicy);
+    if (effectiveFormat === null) return null;
+    colorFormats.push(effectiveFormat);
+  }
   const depth = requested.depth === 'depth-stencil-sampled' && sampleCount > 1 ? 'depth-stencil' : requested.depth;
   return {
     width: requested.width,
@@ -376,15 +432,16 @@ function setGlRenderTargetAxes(target: GlRenderTarget, axes: Readonly<RenderTarg
   target.colorSpace = axes.colorSpace;
 }
 
-// A float color format (rgba16f/rgba32f) is only color-renderable when EXT_color_buffer_float is
-// available. On GL2 implementations that lack it — notably headless SwiftShader (the Docker sandbox's
-// software WebGL) — an rgba16f framebuffer is incomplete and every draw/clear into it silently no-ops,
-// so the whole HDR scene renders BLACK. Rather than fail that way, fall back to the renderable rgba8:
-// the scene draws in LDR (banding/clipping possible in the tonemap, but visible) instead of nothing. On
-// hardware with float render targets this is a no-op, so full HDR precision is unaffected there.
-function resolveRenderableFormat(gl: WebGL2RenderingContext, format: RenderTargetFormat): RenderTargetFormat {
-  if (isFloatRenderTargetFormat(format) && gl.getExtension('EXT_color_buffer_float') === null) return 'rgba8';
-  return format;
+// WebGL2 exposes rgba16f and rgba32f color renderability through the same extension, so there is no
+// honest rgba32f -> rgba16f capability rung. Preferred allocation falls directly to universally
+// renderable rgba8; required allocation returns null before creating any framebuffer storage.
+function resolveRenderableFormat(
+  gl: WebGL2RenderingContext,
+  format: RenderTargetFormat,
+  formatPolicy: RenderTargetFormatPolicy,
+): RenderTargetFormat | null {
+  if (isGlRenderTargetFormatSupportedByContext(gl, format)) return format;
+  return formatPolicy === 'preferred' ? 'rgba8' : null;
 }
 
 function mapGlFormat(

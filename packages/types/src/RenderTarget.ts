@@ -12,6 +12,10 @@ export interface RenderTarget {
 
 export type RenderTargetFormat = 'rgba8' | 'rgba16f' | 'rgba32f';
 
+// Allocation policy for a requested color format. 'preferred' permits a backend to select a
+// renderable fallback and report it through effective axes; 'required' refuses substitution.
+export type RenderTargetFormatPolicy = 'preferred' | 'required';
+
 export type RenderTargetDepth = 'none' | 'depth-stencil' | 'depth-stencil-sampled';
 
 // Color space of the pixels a target holds — a declared property of the target, NOT inferred from
