@@ -2,7 +2,7 @@
 package: '@flighthq/loader'
 crate: flighthq-loader
 draft: false
-lastDirection: 2026-07-02
+lastDirection: 2026-07-30
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -42,6 +42,12 @@ Where it ends and a neighbor begins: the loader is the **scheduler**, not the **
 ## Decisions
 
 - **[2026-07-02] ~~Missing types~~ — false alarm.** Types were already present and correctly defined in `@flighthq/types`. The depth review was based on stale state. No action needed.
+
+- **[2026-07-30] Progress measures completion, not success.** `weightLoaded` advanced only on the success path, so any batch containing a failure, a cancellation, or a fail-fast skip left `getResourceLoadProgress` permanently short of 1 — a weighted progress bar frozen at 0.67 on a batch that had already emitted `onComplete`. A failed item is a finished item; whether it went well is what `ResourceLoadReport.status` is for. Both counters now advance together in one `_countEntrySettled` helper, because "how much of the batch is done" is a single question asked in two units, and having it answered in six scattered places is how the two fell out of step. User-directed.
+
+- **[2026-07-30] A reset orphans what is already in flight.** `resetResourceLoader` aborted in-flight loads but nothing stopped their eventual rejection from settling against whatever batch had replaced them — a phantom `onError` for a key the new batch never queued, an extra report, and an inflated loaded count that could complete the new batch early. The loader now carries a generation counter stamped onto each entry at queue time; reset bumps it, and a settling entry whose stamp is stale is discarded. In-flight entries are deliberately *not* returned to the pool on reset: they are still running, and recycling one would hand a live entry to the next `queueResourceLoad`. User-directed.
+
+- **[2026-07-30] Cancelling before start is a real cancellation.** `cancelResourceLoad` returned early when `!started`, which emitted nothing *and* left every queued handle's promise pending forever — a caller that queued a batch, changed its mind, and awaited the handles simply hung. It now rejects the queued items, reports them `cancelled`, and emits `onCancel`. **Worth recording separately:** the old behavior was pinned by a test asserting only that no signal fired, so the stranded promises were invisible to it — the assertion described the implementation rather than the contract, the same accommodation pattern the `physics2d` charter names as a standing rule. A cancel that does not cancel is precisely the half-wired feature this charter's North star #2 calls a defect. User-directed.
 
 - **[2026-07-02] Byte progress must be built, not cut.** `report.bytes` is always 0 and `onBytesProgress` is never called — structurally dead. The feature should be finished (requiring a factory signature change to inject byte reporting), not removed.
 
