@@ -121,7 +121,7 @@
     "test:size:baseline": "cross-env UPDATE_BASELINE=1 tsx ./scripts/test-size.ts",
     "test:smoke": "npm run test:functional:smoke && npm run test:examples:smoke",
     "test:unit": "npm run test --workspace='packages/**' --if-present",
-    "typecheck": "tsc -b --noEmit",
+    "typecheck": "tsx ./scripts/typecheck.ts",
     "version:packages": "tsx ./scripts/version-packages.ts"
   },
   "devDependencies": {

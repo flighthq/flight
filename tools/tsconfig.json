@@ -1,0 +1,9 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true,
+    "types": ["node", "vite/client", "vitest/globals", "@webgpu/types"]
+  },
+  "include": ["./**/*.ts", "../*.ts"]
+}
