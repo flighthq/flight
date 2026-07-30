@@ -24,6 +24,7 @@ import {
   MeshAttachment2DKind,
   RegionAttachment2DKind,
   Skeleton2DAnimationPath,
+  Skeleton2DSlotAnimationPath,
   TransformMode2D,
 } from '@flighthq/types/contract';
 
@@ -49,7 +50,7 @@ export function parseSpineSkeleton(json: string, diagnostics?: ImportDiagnostic[
   const { attachmentNames, slots } = parseSpineSlots(record.slots, bones);
   const skins = parseSpineSkins(record.skins, slots, diagnostics);
   resolveSpineSetupAttachments(slots, attachmentNames, skins);
-  const animations = parseSpineAnimations(record.animations, bones, diagnostics);
+  const animations = parseSpineAnimations(record.animations, bones, slots, diagnostics);
   const skeleton = createSkeleton2D(bones, slots);
   if (skins.length > 0) skeleton.skins = skins;
   return { animations, skeleton };
@@ -505,6 +506,7 @@ function indexOfBone(bones: readonly Bone2D[], name: string): number {
 function parseSpineAnimations(
   raw: unknown,
   bones: readonly Bone2D[],
+  slots: readonly Slot2D[],
   diagnostics?: ImportDiagnostic[],
 ): Skeleton2DImportAnimation[] {
   const animations: Skeleton2DImportAnimation[] = [];
@@ -556,7 +558,7 @@ function parseSpineAnimations(
         );
       }
     }
-    skipCrumbSpineTimelineGroup(diagnostics, anim.slots, 'spine.slot-timeline-unsupported');
+    parseSpineSlotTimelines(channels, anim.slots, slots, diagnostics);
     skipCrumbSpineTimelineGroup(diagnostics, anim.ik, 'spine.ik-timeline-unsupported');
     skipCrumbSpineTimelineGroup(diagnostics, anim.transform, 'spine.transform-timeline-unsupported');
     skipCrumbSpineTimelineGroup(diagnostics, anim.path, 'spine.path-timeline-unsupported');
@@ -566,6 +568,77 @@ function parseSpineAnimations(
     animations.push({ clip: createAnimationClip(channels), name });
   }
   return animations;
+}
+
+// Slot timelines. Only `rgba` is modeled — it becomes a four-component 0..1 colour channel on a
+// `Skeleton2DSlotAnimationTarget`. Spine writes the colour as an "rrggbbaa" hex string per keyframe and its
+// curve control points in that same 0..1 space, so the track carries normalized channels rather than bytes.
+//
+// `rgb`, `alpha`, and the two dark-colour variants are recognized but not modeled: `Slot2D` has one packed
+// colour and no dark colour, so a partial-channel timeline cannot be represented without inventing a setup
+// blend. `attachment` swaps are a separate landing (index track + lookup table). Each is Skip-crumbed.
+function parseSpineSlotTimelines(
+  channels: ReturnType<typeof createAnimationChannel>[],
+  raw: unknown,
+  slots: readonly Slot2D[],
+  diagnostics?: ImportDiagnostic[],
+): void {
+  if (raw === null || typeof raw !== 'object') return;
+  const unmodeled = new Map<string, number>();
+  for (const [slotName, timelinesEntry] of Object.entries(raw as Record<string, unknown>)) {
+    if (timelinesEntry === null || typeof timelinesEntry !== 'object') continue;
+    const slotIndex = indexOfSpineSlot(slots, slotName);
+    for (const [kind, keys] of Object.entries(timelinesEntry as Record<string, unknown>)) {
+      if (kind !== 'rgba') {
+        unmodeled.set(kind, (unmodeled.get(kind) ?? 0) + 1);
+        continue;
+      }
+      if (slotIndex < 0 || !Array.isArray(keys) || keys.length === 0) continue;
+      addSpineSlotColorChannel(channels, keys, slotIndex, diagnostics);
+    }
+  }
+  for (const [kind, count] of unmodeled) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      `spine.slot-${kind}-timeline-unsupported`,
+      'parseSpineSkeleton',
+      { timelines: count },
+    );
+  }
+}
+
+// One `rgba` slot timeline → a Color channel. Reuses the shared bezier rebase, which is why the values must
+// be in the same 0..1 space the curve control points are authored in.
+function addSpineSlotColorChannel(
+  channels: ReturnType<typeof createAnimationChannel>[],
+  rawKeys: readonly unknown[],
+  slotIndex: number,
+  diagnostics?: ImportDiagnostic[],
+): void {
+  const keys: Record<string, unknown>[] = [];
+  const times: number[] = [];
+  const values: number[] = [];
+  let allStepped = true;
+  for (const key of rawKeys) {
+    if (key === null || typeof key !== 'object') continue;
+    const k = key as Record<string, unknown>;
+    keys.push(k);
+    times.push(numberOr(k.time, 0));
+    const packed = parseSpineColor(k.color);
+    values.push(
+      ((packed >>> 24) & 0xff) / 255,
+      ((packed >>> 16) & 0xff) / 255,
+      ((packed >>> 8) & 0xff) / 255,
+      (packed & 0xff) / 255,
+    );
+    if (k.curve !== 'stepped') allStepped = false;
+  }
+  if (times.length === 0) return;
+  const interpolation = allStepped ? AnimationInterpolationStep : AnimationInterpolationLinear;
+  const segmentEasings = buildSpineSegmentEasings(keys, times, values, 4, diagnostics);
+  const track = createAnimationTrack({ components: 4, interpolation, segmentEasings, times, values });
+  channels.push(createAnimationChannel(track, { path: Skeleton2DSlotAnimationPath.Color, slotIndex }));
 }
 
 // Reports one aggregated Skip crumb for an unmodeled animation timeline group, with the group's element

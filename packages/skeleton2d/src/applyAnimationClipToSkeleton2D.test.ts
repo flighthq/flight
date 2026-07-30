@@ -1,6 +1,11 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
 import type { Bone2D } from '@flighthq/types/contract';
-import { AnimationInterpolationLinear, Skeleton2DAnimationPath, TransformMode2D } from '@flighthq/types/contract';
+import {
+  AnimationInterpolationLinear,
+  Skeleton2DAnimationPath,
+  Skeleton2DSlotAnimationPath,
+  TransformMode2D,
+} from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { applyAnimationClipToSkeleton2D } from './applyAnimationClipToSkeleton2D';
@@ -93,5 +98,89 @@ describe('applyAnimationClipToSkeleton2D', () => {
     ]);
     applyAnimationClipToSkeleton2D(clip, setup, pose, 1);
     expect(pose.bones[0].rotation).toBe(7); // untouched
+  });
+});
+
+describe('applyAnimationClipToSkeleton2D slot channels', () => {
+  it('WRITES an absolute slot colour rather than composing it onto the setup colour', () => {
+    // Composing would double-apply the tint; Spine and DragonBones both author colour absolutely.
+    const setup = createSkeleton2D([makeBone()], [{ attachment: null, boneIndex: 0, color: 0x112233ff, name: 's' }]);
+    const pose = cloneSkeleton2D(setup);
+    const clip = createAnimationClip([
+      createAnimationChannel(createAnimationTrack({ components: 4, times: [0, 1], values: [1, 0, 0, 1, 0, 0, 1, 1] }), {
+        path: Skeleton2DSlotAnimationPath.Color,
+        slotIndex: 0,
+      }),
+    ]);
+    applyAnimationClipToSkeleton2D(clip, setup, pose, 0);
+    expect(pose.slots![0].color).toBe(0xff0000ff);
+    applyAnimationClipToSkeleton2D(clip, setup, pose, 1);
+    expect(pose.slots![0].color).toBe(0x0000ffff);
+    expect(setup.slots![0].color).toBe(0x112233ff); // setup untouched
+  });
+
+  it('interpolates colour channels between keyframes', () => {
+    const setup = createSkeleton2D([makeBone()], [{ attachment: null, boneIndex: 0, color: 0, name: 's' }]);
+    const pose = cloneSkeleton2D(setup);
+    const clip = createAnimationClip([
+      createAnimationChannel(createAnimationTrack({ components: 4, times: [0, 1], values: [0, 0, 0, 0, 1, 1, 1, 1] }), {
+        path: Skeleton2DSlotAnimationPath.Color,
+        slotIndex: 0,
+      }),
+    ]);
+    applyAnimationClipToSkeleton2D(clip, setup, pose, 0.5);
+    expect(pose.slots![0].color).toBe(0x80808080); // 0.5 -> 127.5 rounds to 128 on every channel
+  });
+
+  it('CLAMPS an overshooting sample instead of letting it wrap the packed colour', () => {
+    // An easing curve can legitimately overshoot its endpoints; 1.4 must saturate, not wrap to a low byte.
+    const setup = createSkeleton2D([makeBone()], [{ attachment: null, boneIndex: 0, color: 0, name: 's' }]);
+    const pose = cloneSkeleton2D(setup);
+    const clip = createAnimationClip([
+      createAnimationChannel(createAnimationTrack({ components: 4, times: [0], values: [1.4, -0.2, 1, 1] }), {
+        path: Skeleton2DSlotAnimationPath.Color,
+        slotIndex: 0,
+      }),
+    ]);
+    applyAnimationClipToSkeleton2D(clip, setup, pose, 0);
+    expect(pose.slots![0].color).toBe(0xff00ffff);
+  });
+
+  it('ignores a slot channel whose index is out of range, or a skeleton with no slots', () => {
+    const setup = createSkeleton2D([makeBone()], [{ attachment: null, boneIndex: 0, color: 0x010203ff, name: 's' }]);
+    const pose = cloneSkeleton2D(setup);
+    const clip = createAnimationClip([
+      createAnimationChannel(createAnimationTrack({ components: 4, times: [0], values: [1, 1, 1, 1] }), {
+        path: Skeleton2DSlotAnimationPath.Color,
+        slotIndex: 9,
+      }),
+    ]);
+    expect(() => applyAnimationClipToSkeleton2D(clip, setup, pose, 0)).not.toThrow();
+    expect(pose.slots![0].color).toBe(0x010203ff);
+
+    const boneOnly = createSkeleton2D([makeBone()]);
+    const bonePose = cloneSkeleton2D(boneOnly);
+    expect(() => applyAnimationClipToSkeleton2D(clip, boneOnly, bonePose, 0)).not.toThrow();
+  });
+
+  it('drives bone and slot channels from ONE clip, dispatching on target shape', () => {
+    const setup = createSkeleton2D(
+      [makeBone({ rotation: 10 })],
+      [{ attachment: null, boneIndex: 0, color: 0, name: 's' }],
+    );
+    const pose = cloneSkeleton2D(setup);
+    const clip = createAnimationClip([
+      createAnimationChannel(createAnimationTrack({ components: 1, times: [0], values: [90] }), {
+        boneIndex: 0,
+        path: Skeleton2DAnimationPath.Rotation,
+      }),
+      createAnimationChannel(createAnimationTrack({ components: 4, times: [0], values: [1, 1, 1, 1] }), {
+        path: Skeleton2DSlotAnimationPath.Color,
+        slotIndex: 0,
+      }),
+    ]);
+    applyAnimationClipToSkeleton2D(clip, setup, pose, 0);
+    expect(pose.bones[0].rotation).toBeCloseTo(100, 5); // bone still COMPOSES onto setup
+    expect(pose.slots![0].color).toBe(0xffffffff); // slot WRITES
   });
 });

@@ -463,6 +463,70 @@ describe('parseSpineSkeleton', () => {
     expect(pose.bones[0].rotation).toBeLessThan(0);
   });
 
+  it('builds an ABSOLUTE slot colour channel that the binder writes rather than composes', () => {
+    const doc = {
+      bones: [{ name: 'b' }],
+      slots: [{ name: 's', bone: 'b', color: '112233ff' }],
+      animations: {
+        a: {
+          slots: {
+            s: {
+              rgba: [
+                { time: 0, color: 'ff000080' },
+                { time: 1, color: '0000ffff' },
+              ],
+            },
+          },
+        },
+      },
+    };
+    const result = parseSpineSkeleton(JSON.stringify(doc))!;
+    const setup = result.skeleton;
+    const pose = cloneSkeleton2D(setup);
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, setup, pose, 0);
+    expect(pose.slots![0].color).toBe(0xff000080);
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, setup, pose, 1);
+    expect(pose.slots![0].color).toBe(0x0000ffff);
+    // The setup colour is never blended in — a slot colour is authored absolutely.
+    expect(setup.slots![0].color).toBe(0x112233ff);
+  });
+
+  it('interpolates a slot colour across the segment', () => {
+    const doc = {
+      bones: [{ name: 'b' }],
+      slots: [{ name: 's', bone: 'b' }],
+      animations: {
+        a: {
+          slots: {
+            s: {
+              rgba: [
+                { time: 0, color: '00000000' },
+                { time: 1, color: 'ffffffff' },
+              ],
+            },
+          },
+        },
+      },
+    };
+    const result = parseSpineSkeleton(JSON.stringify(doc))!;
+    const pose = cloneSkeleton2D(result.skeleton);
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, result.skeleton, pose, 0.5);
+    expect(pose.slots![0].color).toBe(0x80808080);
+  });
+
+  it('Skip-crumbs the slot timeline kinds Slot2D cannot represent', () => {
+    const doc = {
+      bones: [{ name: 'b' }],
+      slots: [{ name: 's', bone: 'b' }],
+      animations: { a: { slots: { s: { rgb: [], alpha: [], attachment: [], rgba2: [] } } } },
+    };
+    const kinds = collectImportDiagnostics((sink) => parseSpineSkeleton(JSON.stringify(doc), sink)).map((c) => c.kind);
+    expect(kinds).toContain('spine.slot-rgb-timeline-unsupported');
+    expect(kinds).toContain('spine.slot-alpha-timeline-unsupported');
+    expect(kinds).toContain('spine.slot-attachment-timeline-unsupported');
+    expect(kinds).toContain('spine.slot-rgba2-timeline-unsupported');
+  });
+
   it('Skip-crumbs constraint, event, and slot animation timelines', () => {
     const doc = {
       bones: [{ name: 'b' }],
@@ -474,7 +538,6 @@ describe('parseSpineSkeleton', () => {
     expect(kinds).toContain('spine.ik-timeline-unsupported');
     expect(kinds).toContain('spine.transform-timeline-unsupported');
     expect(kinds).toContain('spine.event-timeline-unsupported');
-    expect(kinds).toContain('spine.slot-timeline-unsupported');
   });
 });
 
