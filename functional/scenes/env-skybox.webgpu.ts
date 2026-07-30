@@ -2,6 +2,7 @@ import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuEnvironmentSkybox, drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Environment, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
+  createScene3DLights,
   addNodeChild,
   beginWgpuRenderEffectPipeline,
   createAmbientLight,
@@ -81,10 +82,10 @@ const camera = createCamera3D({
   projection: createPerspectiveProjection({ aspect: width / height, fovY: Math.PI / 2.2 }),
 });
 setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 4), createVector3(0, -0.4, 0), createVector3(0, 1, 0));
-const lights = {
+const lights = createScene3DLights({
   ambient: createAmbientLight({ color: 0x808080ff, intensity: 0.5 }),
   directional: createDirectionalLight({ color: 0xffffffff, direction: createVector3(-0.4, -1, -0.3), intensity: 1.5 }),
-};
+});
 render(scene, camera, lights, environment);
 
 export function assertRender(bitmap: Readonly<Bitmap>): void {

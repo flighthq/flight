@@ -49,7 +49,7 @@ export function render(root: Node2D): void {
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline);
   renderWgpuScene2D(state, root);
-  endWgpuRenderEffectPipeline(state, pipeline, [createLookupTableGradeAdjustment({ size: 32, strength: 1 })]);
+  endWgpuRenderEffectPipeline(state, pipeline, [createLookupTableGradeAdjustment({ strength: 1 })]);
   submitWgpuRenderPass(state);
 }
 

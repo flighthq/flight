@@ -2,6 +2,7 @@ import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
+  createScene3DLights,
   addNodeChild,
   beginWgpuRenderEffectPipeline,
   createCamera3D,
@@ -113,7 +114,7 @@ const camera = createCamera3D({
   }),
 });
 setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 3), createVector3(), createVector3(0, 1, 0));
-render(scene, camera, { ambient: null, directional: null });
+render(scene, camera, createScene3DLights({ ambient: null, directional: null }));
 
 export function assertRender(bitmap: Readonly<Bitmap>): void {
   const cx = Math.floor(bitmap.width / 2);

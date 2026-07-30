@@ -49,7 +49,7 @@ export function render(root: Node2D): void {
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
   renderGlScene2D(state, root);
-  endGlRenderEffectPipeline(state, pipeline, [createLookupTableGradeAdjustment({ size: 32, strength: 1 })]);
+  endGlRenderEffectPipeline(state, pipeline, [createLookupTableGradeAdjustment({ strength: 1 })]);
 }
 
 // Distinct saturated-color shapes filling the frame, suited to showing a full-frame color grade:

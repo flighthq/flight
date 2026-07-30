@@ -2,6 +2,7 @@ import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
+  createScene3DLights,
   addNodeChild,
   beginWgpuRenderEffectPipeline,
   createAmbientLight,
@@ -101,14 +102,14 @@ setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 3), createVector3(0
 // rig is here precisely to prove the surface does NOT respond to it.
 const directionalDirection = createVector3(-1, -0.35, -0.55);
 normalizeVector3(directionalDirection, directionalDirection);
-const lights = {
+const lights = createScene3DLights({
   ambient: createAmbientLight({ color: 0x6070a0ff, intensity: 0.15 }),
   directional: createDirectionalLight({
     color: 0xffffffff,
     direction: directionalDirection,
     intensity: 3,
   }),
-};
+});
 
 render(scene, camera, lights);
 

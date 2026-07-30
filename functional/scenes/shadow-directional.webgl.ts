@@ -2,6 +2,7 @@ import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D, drawGlScene3DShadowMap } from '@flighthq/scene3d-gl';
 import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
+  createScene3DLights,
   addNodeChild,
   beginGlRenderEffectPipeline,
   configureDirectionalShadowCamera3D,
@@ -118,10 +119,10 @@ setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 3, 5), createVector3(0
 
 // One white sun straight down + a dim ambient fill so the shadowed ground reads clearly dark.
 const direction = createVector3(0, -1, 0);
-const lights = {
+const lights = createScene3DLights({
   ambient: createAmbientLight({ color: 0x404040ff, intensity: 0.12 }),
   directional: createDirectionalLight({ color: 0xffffffff, direction, intensity: 3 }),
-};
+});
 
 // Shadow camera fitted to the scene's world bounds along the light direction.
 const sceneBounds = createAabb();

@@ -19,6 +19,7 @@ import {
   createMesh,
   createPerspectiveProjection,
   createRimModifier,
+  createScene3DLights,
   createShadedMaterial,
   createSphereMeshGeometry,
   createTexture,
@@ -117,10 +118,10 @@ setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 3.2), createVector3
 
 const sunDirection = createVector3(-1, -0.25, -0.5);
 normalizeVector3(sunDirection, sunDirection);
-const lights = {
+const lights = createScene3DLights({
   ambient: createAmbientLight({ color: 0x35406aff, intensity: 0.12 }),
   directional: createDirectionalLight({ color: 0xffffffff, direction: sunDirection, intensity: 3 }),
-};
+});
 
 render(scene, camera, lights);
 
