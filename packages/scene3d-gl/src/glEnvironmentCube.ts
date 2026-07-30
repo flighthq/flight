@@ -3,11 +3,11 @@ import type {
   Bitmap,
   Environment,
   GlRenderState,
-  ImageBacking,
+  TextureSource,
   ImageResource,
   Texture,
 } from '@flighthq/types/contract';
-import { BitmapTextureBackingKind, ImageTextureBackingKind } from '@flighthq/types/contract';
+import { BitmapTextureSourceKind, ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 
@@ -63,7 +63,7 @@ export function getGlCubeFaceTarget(gl: WebGL2RenderingContext, face: number): n
 export function updateGlEnvironmentCubeFace(
   state: GlRenderState,
   face: number,
-  image: Readonly<ImageBacking>,
+  image: Readonly<TextureSource>,
 ): boolean {
   const texture = getGlScene3DRuntime(state).environmentSourceCube;
   if (texture === null) return false;
@@ -80,15 +80,15 @@ function hasGlCubeFacePixels(cube: Readonly<Texture>): boolean {
   if (cube.storage.dimension !== 'cube') return false;
   for (let face = 0; face < 6; face++) {
     const image = cube.storage.images[face];
-    if (image === null || (image.kind !== ImageTextureBackingKind && image.kind !== BitmapTextureBackingKind)) {
+    if (image === null || (image.kind !== ImageTextureSourceKind && image.kind !== BitmapTextureSourceKind)) {
       return false;
     }
   }
   return true;
 }
 
-function uploadGlEnvironmentImage(gl: WebGL2RenderingContext, target: number, image: Readonly<ImageBacking>): void {
-  if (image.kind === BitmapTextureBackingKind) {
+function uploadGlEnvironmentImage(gl: WebGL2RenderingContext, target: number, image: Readonly<TextureSource>): void {
+  if (image.kind === BitmapTextureSourceKind) {
     const bitmap = image as Readonly<Bitmap>;
     uploadGlTextureData(gl, target, bitmap.width, bitmap.height, bitmap.data);
   } else {

@@ -1,7 +1,7 @@
 import { getCamera3DViewProjectionMatrix4 } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4, getMatrix4Position, inverseMatrix4 } from '@flighthq/geometry/contract';
 import { getWgpuRenderStateRuntime, getWgpuSampler, resolveWgpuTexture } from '@flighthq/render-wgpu/contract';
-import { getTextureUvMatrix, hasTextureBacking, hasTextureUvTransform } from '@flighthq/texture/contract';
+import { getTextureUvMatrix, hasTextureSource, hasTextureUvTransform } from '@flighthq/texture/contract';
 import type {
   WgpuMaterialBinding,
   WgpuMeshPipeline,
@@ -744,9 +744,9 @@ export function isWgpuMaterialBindGroupRebuildNeeded(
 }
 
 // True when a material map declares a backing. Resolution may still yield null while an image,
-// dynamic, or render-target backing is not ready; bind helpers substitute the shared placeholder then.
+// dynamic, or render-target source is not ready; bind helpers substitute the shared placeholder then.
 export function isWgpuTextureReady(texture: Readonly<Texture> | null): boolean {
-  return texture !== null && hasTextureBacking(texture);
+  return texture !== null && hasTextureSource(texture);
 }
 
 // Resolves the GPUTextureView a family binds into a material map slot: the real uploaded view when the
@@ -796,7 +796,7 @@ ${fields}`,
 // vs_main multiply then reproduces the raw uv).
 export function stashWgpuUvTransform(state: WgpuRenderState, texture: Readonly<TextureLike> | null): void {
   const out = getWgpuScene3DRuntime(state).pendingUvTransform;
-  if (texture === null || ('storage' in texture && !hasTextureBacking(texture)) || !hasTextureUvTransform(texture)) {
+  if (texture === null || ('storage' in texture && !hasTextureSource(texture)) || !hasTextureUvTransform(texture)) {
     resetWgpuUvTransformStash(out);
     return;
   }

@@ -2,12 +2,12 @@ import { uploadWgpuTextureData, uploadWgpuTextureImageResource } from '@flighthq
 import type {
   Bitmap,
   Environment,
-  ImageBacking,
+  TextureSource,
   ImageResource,
   Texture,
   WgpuRenderState,
 } from '@flighthq/types/contract';
-import { BitmapTextureBackingKind, ImageTextureBackingKind } from '@flighthq/types/contract';
+import { BitmapTextureSourceKind, ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 
@@ -63,7 +63,7 @@ export function ensureWgpuEnvironmentSourceCube(
 export function updateWgpuEnvironmentCubeFace(
   state: WgpuRenderState,
   face: number,
-  image: Readonly<ImageBacking>,
+  image: Readonly<TextureSource>,
 ): boolean {
   const texture = getWgpuScene3DRuntime(state).environmentSourceCube;
   if (texture === null) return false;
@@ -77,7 +77,7 @@ function hasWgpuCubeFacePixels(cube: Readonly<Texture>): boolean {
   if (cube.storage.dimension !== 'cube') return false;
   for (let face = 0; face < 6; face++) {
     const image = cube.storage.images[face];
-    if (image === null || (image.kind !== ImageTextureBackingKind && image.kind !== BitmapTextureBackingKind)) {
+    if (image === null || (image.kind !== ImageTextureSourceKind && image.kind !== BitmapTextureSourceKind)) {
       return false;
     }
   }
@@ -88,9 +88,9 @@ function uploadWgpuEnvironmentImage(
   device: GPUDevice,
   texture: GPUTexture,
   face: number,
-  image: Readonly<ImageBacking>,
+  image: Readonly<TextureSource>,
 ): void {
-  if (image.kind === BitmapTextureBackingKind) {
+  if (image.kind === BitmapTextureSourceKind) {
     const bitmap = image as Readonly<Bitmap>;
     uploadWgpuTextureData(device, texture, [0, 0, face], bitmap.width, bitmap.height, bitmap.data);
   } else {

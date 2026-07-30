@@ -42,7 +42,7 @@ describe('enableDomTextureResolverGuards', () => {
       expect(entries[0]?.data).toMatchObject({
         kind: 'acme.missing.dom',
         message:
-          'resolveDomTexture: texture backing kind has no registered resolver — call registerDomTextureResolver(state, backingKind, resolver)',
+          'resolveDomTexture: texture source kind has no registered resolver — call registerDomTextureResolver(state, sourceKind, resolver)',
       });
     } finally {
       removeLogSink(sink.sink);

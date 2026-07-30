@@ -6,7 +6,7 @@ import {
 } from '@flighthq/render-gl/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { CompressedImage, RenderProxy2D } from '@flighthq/types/contract';
-import { CompressedImageTextureBackingKind } from '@flighthq/types/contract';
+import { CompressedImageTextureSourceKind } from '@flighthq/types/contract';
 
 import { defaultGlParticleEmitter2DRenderer, drawGlParticleEmitter2D } from './glParticleEmitter2D';
 import { createGlState } from './glTestHelper';
@@ -120,7 +120,7 @@ describe('drawGlParticleEmitter2D', () => {
     const image = {
       compressed: { container: {}, payload: new Uint8Array() },
       height: 4,
-      kind: CompressedImageTextureBackingKind,
+      kind: CompressedImageTextureSourceKind,
       version: 1,
       width: 4,
     } as unknown as CompressedImage;

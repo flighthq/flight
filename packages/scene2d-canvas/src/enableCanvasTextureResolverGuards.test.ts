@@ -45,7 +45,7 @@ describe('enableCanvasTextureResolverGuards', () => {
       expect(entries[0]?.data).toMatchObject({
         kind: 'acme.missing.canvas',
         message:
-          'resolveCanvasTexture: texture backing kind has no registered resolver — call registerCanvasTextureResolver(state, backingKind, resolver)',
+          'resolveCanvasTexture: texture source kind has no registered resolver — call registerCanvasTextureResolver(state, sourceKind, resolver)',
       });
     } finally {
       removeLogSink(sink.sink);

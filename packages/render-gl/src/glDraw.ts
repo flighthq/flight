@@ -5,7 +5,7 @@ import type {
   GlBlendRealization,
   GlRenderState,
   GlRenderStateRuntime,
-  ImageBacking,
+  TextureSource,
   ImageResource,
   SamplerLike,
   TextureLike,
@@ -87,7 +87,7 @@ export function bindGlBitmapTexture(
   smoothingOverride?: boolean | null,
   premultiply = false,
 ): WebGLTexture {
-  return bindGlImageBackingTexture(state, bitmap, sampler, smoothingOverride, premultiply, false, uploadGlBitmap);
+  return bindGlTextureSourceTexture(state, bitmap, sampler, smoothingOverride, premultiply, false, uploadGlBitmap);
 }
 
 export function bindGlCompressedImageTexture(
@@ -96,7 +96,7 @@ export function bindGlCompressedImageTexture(
   sampler?: Readonly<SamplerLike> | null,
   smoothingOverride?: boolean | null,
 ): WebGLTexture {
-  return bindGlImageBackingTexture(state, image, sampler, smoothingOverride, false, true, uploadGlCompressedImage);
+  return bindGlTextureSourceTexture(state, image, sampler, smoothingOverride, false, true, uploadGlCompressedImage);
 }
 
 // Binds (uploading + caching on first use, re-uploading when the host image changes) the GL texture for
@@ -117,21 +117,31 @@ export function bindGlImageResourceTexture(
   smoothingOverride?: boolean | null,
   premultiply = false,
 ): WebGLTexture {
-  return bindGlImageBackingTexture(state, image, sampler, smoothingOverride, premultiply, false, uploadGlImageResource);
+  return bindGlTextureSourceTexture(
+    state,
+    image,
+    sampler,
+    smoothingOverride,
+    premultiply,
+    false,
+    uploadGlImageResource,
+  );
 }
 
-function bindGlImageBackingTexture(
+function bindGlTextureSourceTexture(
   state: GlRenderState,
-  image: Readonly<ImageBacking>,
+  image: Readonly<TextureSource>,
   sampler: Readonly<SamplerLike> | null | undefined,
   smoothingOverride: boolean | null | undefined,
   premultiply: boolean,
   straightAlpha: boolean,
-  upload: GlImageBackingUpload,
+  upload: GlTextureSourceUpload,
 ): WebGLTexture {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
-  const cache = premultiply ? runtime.imageBackingPremultipliedTextureCache : runtime.imageBackingStraightTextureCache;
+  const cache = premultiply
+    ? runtime.textureSourcePremultipliedTextureCache
+    : runtime.textureSourceStraightTextureCache;
   let entry = cache.get(image);
   if (entry === undefined) {
     entry = { texture: gl.createTexture()!, version: -1 };
@@ -352,7 +362,7 @@ export function updateGlTexture(state: GlRenderState, texture: WebGLTexture, can
   if (runtime.mipmappedTextures?.has(texture)) gl.generateMipmap(gl.TEXTURE_2D);
 }
 
-function uploadGlBitmap(state: GlRenderState, image: Readonly<ImageBacking>, premultiply: boolean): void {
+function uploadGlBitmap(state: GlRenderState, image: Readonly<TextureSource>, premultiply: boolean): void {
   const bitmap = image as Readonly<Bitmap>;
   const gl = state.gl;
   const transform = premultiply && bitmap.alphaType !== 'premultiplied';
@@ -360,7 +370,7 @@ function uploadGlBitmap(state: GlRenderState, image: Readonly<ImageBacking>, pre
   uploadGlTextureData(gl, gl.TEXTURE_2D, bitmap.width, bitmap.height, data);
 }
 
-function uploadGlCompressedImage(state: GlRenderState, image: Readonly<ImageBacking>): void {
+function uploadGlCompressedImage(state: GlRenderState, image: Readonly<TextureSource>): void {
   const runtime = getGlRenderStateRuntime(state);
   runtime.compressedTextureUpload?.(
     state.gl,
@@ -369,7 +379,7 @@ function uploadGlCompressedImage(state: GlRenderState, image: Readonly<ImageBack
   );
 }
 
-function uploadGlImageResource(state: GlRenderState, image: Readonly<ImageBacking>, premultiply: boolean): void {
+function uploadGlImageResource(state: GlRenderState, image: Readonly<TextureSource>, premultiply: boolean): void {
   const gl = state.gl;
   gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, premultiply);
   uploadGlTextureElement(gl, gl.TEXTURE_2D, (image as Readonly<ImageResource>).source as TexImageSource);
@@ -389,7 +399,7 @@ function premultiplyStraightRgba8(data: Readonly<Uint8ClampedArray<ArrayBuffer>>
   return out;
 }
 
-type GlImageBackingUpload = (state: GlRenderState, image: Readonly<ImageBacking>, premultiply: boolean) => void;
+type GlTextureSourceUpload = (state: GlRenderState, image: Readonly<TextureSource>, premultiply: boolean) => void;
 
 export function useGlProgram(state: GlRenderState, shader?: GlBitmapShader): void {
   const runtime = getGlRenderStateRuntime(state);

@@ -1,5 +1,5 @@
 import { emitSignal } from '@flighthq/signals/contract';
-import type { Matrix, RenderState, RenderTarget, Viewport } from '@flighthq/types/contract';
+import type { Matrix, RenderState, RenderTargetDimensions, Viewport } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
@@ -89,7 +89,7 @@ function makeView() {
     pixelRatio: 1,
     renderTransform2D: makeMatrix(),
   } as RenderState;
-  const target: RenderTarget = { height: 1, width: 1 };
+  const target: RenderTargetDimensions = { height: 1, width: 1 };
   const viewport = {
     devicePixelRatio: 1,
     height: 1,
@@ -97,7 +97,7 @@ function makeView() {
     x: 0,
     y: 0,
   } as Viewport;
-  const resize = vi.fn((_state: RenderState, resizedTarget: RenderTarget, width: number, height: number) => {
+  const resize = vi.fn((_state: RenderState, resizedTarget: RenderTargetDimensions, width: number, height: number) => {
     resizedTarget.width = width;
     resizedTarget.height = height;
   });

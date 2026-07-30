@@ -49,7 +49,7 @@ describe('enableWgpuTextureResolverGuards', () => {
       expect(entries[0]?.data).toMatchObject({
         kind: 'acme.missing.wgpu',
         message:
-          'resolveWgpuTexture: texture backing kind has no registered resolver — call registerWgpuTextureResolver(state, backingKind, resolver)',
+          'resolveWgpuTexture: texture source kind has no registered resolver — call registerWgpuTextureResolver(state, sourceKind, resolver)',
       });
     } finally {
       removeLogSink(sink.sink);

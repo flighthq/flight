@@ -1,7 +1,7 @@
 import { resolveWgpuMaterialRenderer, resolveWgpuTexture } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { noopRendererData } from '@flighthq/render/contract';
-import { getTextureHeight, getTextureWidth, hasTextureBacking } from '@flighthq/texture/contract';
+import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import type {
   ColorScaleBias,
   QuadBatch,
@@ -34,7 +34,7 @@ function submitWgpuQuadBatch(state: WgpuRenderState, quadBatch: RenderProxy2D): 
   const source = quadBatch.source as QuadBatch;
   const data = source.data;
   const { atlas, instanceCount, ids, transforms } = data;
-  if (atlas === null || atlas.texture === null || !hasTextureBacking(atlas.texture) || instanceCount === 0) return;
+  if (atlas === null || atlas.texture === null || !hasTextureSource(atlas.texture) || instanceCount === 0) return;
 
   const material = quadBatch.material;
   const materialRenderer = resolveWgpuMaterialRenderer(state, material);

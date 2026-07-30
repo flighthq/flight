@@ -190,7 +190,7 @@ export function getTextureAtlasRegionSequence(atlas: Readonly<TextureAtlas>, pre
 }
 
 // Returns one shared Texture per distinct atlas region. Region textures keep independent sampling
-// and uv state while sharing the atlas Texture backing, so every sprite using a frame shares one upload.
+// and uv state while sharing the atlas Texture source, so every sprite using a frame shares one upload.
 export function getTextureAtlasRegionTexture(atlas: Readonly<TextureAtlas>, regionId: number): Texture | null {
   const region = getTextureAtlasRegionById(atlas, regionId);
   if (region === null || atlas.texture === null) return null;

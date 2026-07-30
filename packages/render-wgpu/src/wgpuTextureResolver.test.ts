@@ -1,10 +1,11 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { ImageResource, RenderTexture, Texture } from '@flighthq/types/contract';
 import {
-  BitmapTextureBackingKind,
-  CompressedImageTextureBackingKind,
-  ImageTextureBackingKind,
-  RenderTextureBackingKind,
-  VideoTextureBackingKind,
+  BitmapTextureSourceKind,
+  CompressedImageTextureSourceKind,
+  ImageTextureSourceKind,
+  RenderTargetTextureSourceKind,
+  VideoTextureSourceKind,
 } from '@flighthq/types/contract';
 
 import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
@@ -26,7 +27,7 @@ beforeAll(() => {
 });
 
 function imageResource(
-  kind = ImageTextureBackingKind,
+  kind = ImageTextureSourceKind,
   source: CanvasImageSource = document.createElement('canvas'),
 ): ImageResource {
   return {
@@ -62,32 +63,37 @@ function textureWithImage(image: ImageResource | null): Texture {
 function renderTexture(): RenderTexture {
   const texture = textureWithImage(null);
   texture.colorSpace = 'linear';
-  texture.storage.target = { height: 8, kind: RenderTextureBackingKind, width: 8 };
+  texture.storage.target = createEntity({
+    height: 8,
+    kind: RenderTargetTextureSourceKind,
+    version: 0,
+    width: 8,
+  });
   return texture as RenderTexture;
 }
 
 describe('registerWgpuBitmapTextureResolver', () => {
-  it('registers only the Bitmap backing key', async () => {
+  it('registers only the Bitmap source key', async () => {
     const state = await createWgpuRenderStateForTest();
     registerWgpuBitmapTextureResolver(state);
     expect([...getWgpuRenderStateRuntime(state).wgpuTextureResolverRegistry!.keys()]).toEqual([
-      BitmapTextureBackingKind,
+      BitmapTextureSourceKind,
     ]);
   });
 });
 
 describe('registerWgpuCompressedImageTextureResolver', () => {
-  it('registers only the CompressedImage backing key', async () => {
+  it('registers only the CompressedImage source key', async () => {
     const state = await createWgpuRenderStateForTest();
     registerWgpuCompressedImageTextureResolver(state);
     expect([...getWgpuRenderStateRuntime(state).wgpuTextureResolverRegistry!.keys()]).toEqual([
-      CompressedImageTextureBackingKind,
+      CompressedImageTextureSourceKind,
     ]);
   });
 });
 
 describe('registerWgpuImageTextureResolver', () => {
-  it('resolves and caches a declared still-image backing', async () => {
+  it('resolves and caches a declared still-image source', async () => {
     const state = await createWgpuRenderStateForTest();
     const texture = textureWithImage(imageResource());
     registerWgpuImageTextureResolver(state);
@@ -137,7 +143,7 @@ describe('registerWgpuTextureResolver', () => {
 describe('registerWgpuVideoTextureResolver', () => {
   it('resolves a ready declared video backing without structural dispatch', async () => {
     const state = await createWgpuRenderStateForTest();
-    const image = imageResource(VideoTextureBackingKind, {
+    const image = imageResource(VideoTextureSourceKind, {
       readyState: 4,
       videoHeight: 8,
       videoWidth: 8,

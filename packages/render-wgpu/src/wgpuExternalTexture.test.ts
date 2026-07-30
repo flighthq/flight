@@ -1,5 +1,5 @@
-import { getTextureBackingKind } from '@flighthq/texture/contract';
-import { ExternalTextureBackingKind } from '@flighthq/types/contract';
+import { getTextureSourceKind } from '@flighthq/texture/contract';
+import { ExternalTextureSourceKind } from '@flighthq/types/contract';
 
 import { createExternalWgpuTexture, disposeExternalWgpuTexture } from './wgpuExternalTexture';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
@@ -16,7 +16,7 @@ describe('createExternalWgpuTexture', () => {
     const handle = { createView: vi.fn(() => ({})), destroy } as unknown as GPUTexture;
     const texture = createExternalWgpuTexture(state, handle, { height: 16, width: 32 });
 
-    expect(getTextureBackingKind(texture)).toBe(ExternalTextureBackingKind);
+    expect(getTextureSourceKind(texture)).toBe(ExternalTextureSourceKind);
     expect(resolveWgpuTexture(state, texture)?.texture).toBe(handle);
     expect(disposeExternalWgpuTexture(state, texture)).toBe(true);
     expect(resolveWgpuTexture(state, texture)).toBeNull();

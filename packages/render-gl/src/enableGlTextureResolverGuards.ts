@@ -1,6 +1,6 @@
 import { logOnce } from '@flighthq/log/contract';
-import { getTextureBackingKind } from '@flighthq/texture/contract';
-import type { GlRenderState, GlTextureResolver, TextureBackingKind, TextureLike } from '@flighthq/types/contract';
+import { getTextureSourceKind } from '@flighthq/texture/contract';
+import type { GlRenderState, GlTextureResolver, TextureSourceKind, TextureLike } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
@@ -17,14 +17,14 @@ export function enableGlTextureResolverGuards(state: GlRenderState): void {
   runtime.glTextureResolverRegistry = guarded;
 }
 
-class GuardedGlTextureResolverRegistry extends Map<TextureBackingKind, GlTextureResolver> {
-  override get(kind: TextureBackingKind): GlTextureResolver | undefined {
+class GuardedGlTextureResolverRegistry extends Map<TextureSourceKind, GlTextureResolver> {
+  override get(kind: TextureSourceKind): GlTextureResolver | undefined {
     return super.get(kind) ?? warnMissingGlTextureResolver;
   }
 }
 
 function warnMissingGlTextureResolver(_state: GlRenderState, texture: Readonly<TextureLike>): WebGLTexture | null {
-  const kind = getTextureBackingKind(texture);
+  const kind = getTextureSourceKind(texture);
   if (kind === null) return null;
   logOnce(
     `render-gl:texture-resolver-missing:${kind}`,
@@ -32,7 +32,7 @@ function warnMissingGlTextureResolver(_state: GlRenderState, texture: Readonly<T
     {
       kind,
       message:
-        'resolveGlTexture: texture backing kind has no registered resolver — call registerGlTextureResolver(state, backingKind, resolver)',
+        'resolveGlTexture: texture source kind has no registered resolver — call registerGlTextureResolver(state, sourceKind, resolver)',
       texture,
     },
     'render-gl',

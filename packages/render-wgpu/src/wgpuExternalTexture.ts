@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { cloneSampler, createTexture } from '@flighthq/texture/contract';
 import type {
   CreateExternalTextureOptions,
@@ -6,7 +7,7 @@ import type {
   WgpuRenderState,
   WgpuTextureEntry,
 } from '@flighthq/types/contract';
-import { ExternalTextureBackingKind } from '@flighthq/types/contract';
+import { ExternalTextureSourceKind } from '@flighthq/types/contract';
 
 import { getWgpuRenderStateRuntime, getWgpuSampler } from './wgpuRenderState';
 import { registerWgpuTextureResolver } from './wgpuTextureResolver';
@@ -22,15 +23,16 @@ export function createExternalWgpuTexture(
     storage: {
       dimension: '2d',
       image: null,
-      target: {
+      target: createEntity({
         colorAttachments: 1,
-        depth: 'none',
-        format: 'rgba8',
+        depth: 'none' as const,
+        format: 'rgba8' as const,
         height: options.height,
-        kind: ExternalTextureBackingKind,
+        kind: ExternalTextureSourceKind,
         sampleCount: 1,
+        version: 0,
         width: options.width,
-      },
+      }),
     },
   });
   const view = handle.createView();
@@ -47,7 +49,7 @@ export function createExternalWgpuTexture(
     texture: handle,
     view,
   });
-  registerWgpuTextureResolver(state, ExternalTextureBackingKind, resolveExternalWgpuTexture);
+  registerWgpuTextureResolver(state, ExternalTextureSourceKind, resolveExternalWgpuTexture);
   return texture;
 }
 

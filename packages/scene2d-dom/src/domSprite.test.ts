@@ -2,7 +2,7 @@ import { createImageResource, createImageResourceFromCanvas } from '@flighthq/im
 import { getOrCreateRenderProxy2D, registerRenderer } from '@flighthq/render/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import { SpriteKind, VideoTextureBackingKind } from '@flighthq/types/contract';
+import { SpriteKind, VideoTextureSourceKind } from '@flighthq/types/contract';
 
 import { registerDomImageTextureResolver } from './domImageTextureResolver';
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
@@ -11,7 +11,7 @@ import { registerDomVideoTextureResolver } from './domVideoTextureResolver';
 
 function drawElement(source: CanvasImageSource, kind = 'image'): HTMLElement | null {
   const state = createDomRenderState(document.createElement('div'));
-  if (kind === VideoTextureBackingKind) registerDomVideoTextureResolver(state);
+  if (kind === VideoTextureSourceKind) registerDomVideoTextureResolver(state);
   else registerDomImageTextureResolver(state);
   registerRenderer(state, SpriteKind, defaultDomSpriteRenderer);
   const image = createImageResource(source);
@@ -55,6 +55,6 @@ describe('drawDomSprite', () => {
   });
 
   it('uses the backing video element directly', () => {
-    expect(drawElement(document.createElement('video'), VideoTextureBackingKind)?.tagName).toBe('VIDEO');
+    expect(drawElement(document.createElement('video'), VideoTextureSourceKind)?.tagName).toBe('VIDEO');
   });
 });

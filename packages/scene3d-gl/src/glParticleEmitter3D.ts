@@ -1,7 +1,7 @@
 import { getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import { createGlProgram, invalidateGlRenderStateCache, resolveGlTexture } from '@flighthq/render-gl/contract';
 import { prepareScene3DRender } from '@flighthq/render/contract';
-import { getTextureHeight, getTextureWidth, hasTextureBacking } from '@flighthq/texture/contract';
+import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import type {
   Camera3D,
   GlRenderState,
@@ -227,7 +227,7 @@ function drawParticleEmitter3DNode(
 
   const atlasTexture = atlas?.texture ?? null;
   const resolvedAtlas =
-    atlasTexture !== null && hasTextureBacking(atlasTexture) ? resolveGlTexture(state, atlasTexture, true) : null;
+    atlasTexture !== null && hasTextureSource(atlasTexture) ? resolveGlTexture(state, atlasTexture, true) : null;
   const hasAtlas = resolvedAtlas !== null;
   const regions = hasAtlas ? atlas!.regions : null;
   const numRegions = regions !== null ? regions.length : 0;

@@ -13,7 +13,7 @@ import type {
   Scene3DResourceEvent,
   Texture,
 } from '@flighthq/types/contract';
-import { ImageTextureBackingKind, ResourceResolutionState } from '@flighthq/types/contract';
+import { ImageTextureSourceKind, ResourceResolutionState } from '@flighthq/types/contract';
 
 import { revealScene3DResourcesOnResolve } from './revealScene3DResourcesOnResolve';
 import { createBuiltInScene3DResourceResolver } from './sceneResourceResolver';
@@ -127,7 +127,7 @@ describe('revealScene3DResourcesOnResolve', () => {
       resource: pendingRef(),
       storage: {
         dimension: '2d',
-        image: { height: 1, kind: ImageTextureBackingKind, width: 1 } as ImageResource,
+        image: { height: 1, kind: ImageTextureSourceKind, width: 1 } as ImageResource,
       },
     });
     const failedRef = pendingRef();

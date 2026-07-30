@@ -44,7 +44,7 @@ describe('registerDomImageTextureResolver', () => {
 });
 
 describe('resolveDomTexture', () => {
-  it('returns null when no matching backing resolver is registered', () => {
+  it('returns null when no matching source resolver is registered', () => {
     const texture = createTexture({
       storage: { dimension: '2d', image: createImageResource(globalThis.document.createElement('img')) },
     });

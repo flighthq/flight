@@ -1,6 +1,6 @@
 import { logOnce } from '@flighthq/log/contract';
-import { getTextureBackingKind } from '@flighthq/texture/contract';
-import type { DomRenderState, DomTextureResolver, Texture, TextureBackingKind } from '@flighthq/types/contract';
+import { getTextureSourceKind } from '@flighthq/texture/contract';
+import type { DomRenderState, DomTextureResolver, Texture, TextureSourceKind } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
 import { getDomRenderStateRuntime } from './domRenderState';
@@ -17,14 +17,14 @@ export function enableDomTextureResolverGuards(state: DomRenderState): void {
   runtime.domTextureResolverRegistry = guarded;
 }
 
-class GuardedDomTextureResolverRegistry extends Map<TextureBackingKind, DomTextureResolver> {
-  override get(kind: TextureBackingKind): DomTextureResolver | undefined {
+class GuardedDomTextureResolverRegistry extends Map<TextureSourceKind, DomTextureResolver> {
+  override get(kind: TextureSourceKind): DomTextureResolver | undefined {
     return super.get(kind) ?? warnMissingDomTextureResolver;
   }
 }
 
 function warnMissingDomTextureResolver(_state: DomRenderState, texture: Readonly<Texture>): CanvasImageSource | null {
-  const kind = getTextureBackingKind(texture);
+  const kind = getTextureSourceKind(texture);
   if (kind === null) return null;
   logOnce(
     `scene2d-dom:texture-resolver-missing:${kind}`,
@@ -32,7 +32,7 @@ function warnMissingDomTextureResolver(_state: DomRenderState, texture: Readonly
     {
       kind,
       message:
-        'resolveDomTexture: texture backing kind has no registered resolver — call registerDomTextureResolver(state, backingKind, resolver)',
+        'resolveDomTexture: texture source kind has no registered resolver — call registerDomTextureResolver(state, sourceKind, resolver)',
       texture,
     },
     'scene2d-dom',

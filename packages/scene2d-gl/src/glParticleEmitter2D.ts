@@ -1,7 +1,7 @@
 import { createGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime, resolveGlTexture } from '@flighthq/render-gl/contract';
 import { noopRendererData } from '@flighthq/render/contract';
-import { getTextureHeight, getTextureWidth, hasTextureBacking } from '@flighthq/texture/contract';
+import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import type { GlRenderState, ParticleEmitter2D, RenderProxy2D, SpriteRenderer } from '@flighthq/types/contract';
 import type { GlParticleShader } from '@flighthq/types/contract';
 
@@ -128,7 +128,7 @@ export function drawGlParticleEmitter2D(state: GlRenderState, renderProxy: Rende
   const runtime = getGlRenderStateRuntime(state);
   const source = renderProxy.source as ParticleEmitter2D;
   const { atlas, alphas, colors, ids, particleCount, transforms } = source.data;
-  if (atlas === null || atlas.texture === null || !hasTextureBacking(atlas.texture) || particleCount === 0) return;
+  if (atlas === null || atlas.texture === null || !hasTextureSource(atlas.texture) || particleCount === 0) return;
 
   const shader = ensureParticleShader(state);
   ensureInstanceCapacity(state, particleCount);

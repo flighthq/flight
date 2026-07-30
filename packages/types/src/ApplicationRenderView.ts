@@ -4,7 +4,7 @@ import type { GlRenderOptions } from './GlRenderOptions';
 import type { GlRenderState } from './GlRenderState';
 import type { GlRenderTarget } from './GlRenderTarget';
 import type { RenderState } from './RenderState';
-import type { RenderTarget, RenderTargetDescriptor } from './RenderTarget';
+import type { RenderTargetDescriptor, RenderTargetDimensions } from './RenderTarget';
 import type { Viewport } from './Viewport';
 
 // The explicit application-side assembly for one drawable view. The four components stay independently
@@ -12,7 +12,7 @@ import type { Viewport } from './Viewport';
 // the RenderTarget owns storage, and the device-pixel Viewport selects the drawable rectangle.
 export interface ApplicationRenderView<
   State extends RenderState = RenderState,
-  Target extends RenderTarget = RenderTarget,
+  Target extends RenderTargetDimensions = RenderTargetDimensions,
 > extends Entity {
   readonly renderState: State;
   readonly renderTarget: Target;
@@ -22,7 +22,7 @@ export interface ApplicationRenderView<
 
 export type ApplicationRenderViewResize<
   State extends RenderState = RenderState,
-  Target extends RenderTarget = RenderTarget,
+  Target extends RenderTargetDimensions = RenderTargetDimensions,
 > = (renderState: State, renderTarget: Target, width: number, height: number) => void;
 
 // Width and height are window-derived for an ApplicationRenderView. The remaining target storage axes

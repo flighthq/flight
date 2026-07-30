@@ -2,10 +2,10 @@ import { createEntity } from '@flighthq/entity/contract';
 import { cloneVector2, copyVector2, createVector2, inverseMatrix3 } from '@flighthq/geometry/contract';
 import type {
   CreateTextureOptions,
-  ImageBacking,
+  TextureSource,
   Matrix3Like,
   Texture,
-  TextureBackingKind,
+  TextureSourceKind,
   TextureCubeImages,
   TextureLike,
   TextureStorage,
@@ -32,7 +32,7 @@ function cloneTextureStorage(storage: Readonly<TextureStorage>): TextureStorage 
   }
 }
 
-function getTextureStorageImage(storage: Readonly<TextureStorage>): ImageBacking | null {
+function getTextureStorageImage(storage: Readonly<TextureStorage>): TextureSource | null {
   switch (storage.dimension) {
     case '2d':
       return storage.image;
@@ -129,16 +129,7 @@ export function equalsTexture(
   );
 }
 
-// Returns the open resolver key declared by the texture's one active backing, or null when unbound.
-// CPU-origin images own their key; GPU-origin targets own theirs, so TextureStorage carries no duplicate
-// discriminant.
-export function getTextureBackingKind(texture: Readonly<TextureLike>): TextureBackingKind | null {
-  const storage = texture.storage;
-  if (storage.dimension === '3d') return storage.volume?.kind ?? storage.target?.kind ?? null;
-  return getTextureStorageImage(storage)?.kind ?? storage.target?.kind ?? null;
-}
-
-// Returns the height declared by the CPU image or render target backing, or -1 when unbound.
+// Returns the height declared by the CPU image or render target source, or -1 when unbound.
 export function getTextureHeight(texture: Readonly<TextureLike>): number {
   const storage = texture.storage;
   if (storage.dimension === '3d') return storage.volume?.height ?? storage.target?.height ?? -1;
@@ -154,6 +145,15 @@ export function getTextureHeight(texture: Readonly<TextureLike>): number {
 export function getTextureInverseUvMatrix(out: Matrix3Like, texture: Readonly<TextureLike>): void {
   getTextureUvMatrix(out, texture);
   inverseMatrix3(out, out);
+}
+
+// Returns the open resolver key declared by the texture's one active backing, or null when unbound.
+// CPU-origin images own their key; GPU-origin targets own theirs, so TextureStorage carries no duplicate
+// discriminant.
+export function getTextureSourceKind(texture: Readonly<TextureLike>): TextureSourceKind | null {
+  const storage = texture.storage;
+  if (storage.dimension === '3d') return storage.volume?.kind ?? storage.target?.kind ?? null;
+  return getTextureStorageImage(storage)?.kind ?? storage.target?.kind ?? null;
 }
 
 // Composes the KHR_texture_transform fields (uvOffset, uvRotation, uvScale) into the 3×3 matrix
@@ -190,16 +190,16 @@ export function getTextureUvMatrix(out: Matrix3Like, texture: Readonly<TextureUv
   m[8] = 1; // (2,2)
 }
 
-// Returns the width declared by the CPU image or render target backing, or -1 when unbound.
+// Returns the width declared by the CPU image or render target source, or -1 when unbound.
 export function getTextureWidth(texture: Readonly<TextureLike>): number {
   const storage = texture.storage;
   if (storage.dimension === '3d') return storage.volume?.width ?? storage.target?.width ?? -1;
   return getTextureStorageImage(storage)?.width ?? storage.target?.width ?? -1;
 }
 
-// True when the texture declares either a CPU-origin image or a GPU-origin target backing.
-export function hasTextureBacking(texture: Readonly<TextureLike>): boolean {
-  return getTextureBackingKind(texture) !== null;
+// True when the texture declares either a CPU-origin image or a GPU-origin target source.
+export function hasTextureSource(texture: Readonly<TextureLike>): boolean {
+  return getTextureSourceKind(texture) !== null;
 }
 
 // True when the texture carries a non-identity KHR_texture_transform — any non-unit scale, non-zero
@@ -221,7 +221,7 @@ export function hasTextureUvTransform(texture: Readonly<TextureUvTransform>): bo
 // True once the texture references a pixel source. A texture whose storage has a null image is treated as an
 // absent slot by materials, so this is the gate a material samples behind.
 export function isTextureReady(texture: Readonly<TextureLike>): boolean {
-  return hasTextureBacking(texture);
+  return hasTextureSource(texture);
 }
 
 // Resets the KHR_texture_transform to identity in place: zero offset, no rotation, unit scale, and
@@ -246,7 +246,7 @@ export function setTextureFlip(texture: TextureLike, flipX: boolean, flipY: bool
 
 // Binds (or clears, with null) the texture's image source in place and advances the u32 dirty-bit.
 // Does not touch sampling state or the uv-transform.
-export function setTextureImage(texture: TextureLike, image: ImageBacking | null): void {
+export function setTextureImage(texture: TextureLike, image: TextureSource | null): void {
   if (texture.storage.dimension !== '2d') throw new Error('setTextureImage requires 2d texture storage');
   if (texture.storage.image === image) return;
   texture.storage.image = image;

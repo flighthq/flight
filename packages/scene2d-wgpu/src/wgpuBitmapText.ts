@@ -5,7 +5,7 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
-import { getTextureHeight, getTextureWidth, hasTextureBacking } from '@flighthq/texture/contract';
+import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import type {
   BitmapText,
   BitmapTextRuntime,
@@ -52,7 +52,7 @@ function submitWgpuBitmapText(state: WgpuRenderState, node: RenderProxy2D): void
   for (const page of pages) {
     const atlas = page.atlas;
     const texture = atlas.texture;
-    if (texture === null || !hasTextureBacking(texture) || page.instanceCount === 0) continue;
+    if (texture === null || !hasTextureSource(texture) || page.instanceCount === 0) continue;
     const textureEntry = resolveWgpuTexture(state, texture, true);
     if (textureEntry === null) continue;
 

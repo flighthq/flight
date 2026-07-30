@@ -1,4 +1,4 @@
-import type { TextureBackingKind } from './TextureBackingKind';
+import type { TextureSourceKind } from './TextureSourceKind';
 
 export type TextureResolutionStatus = 'missing-kind' | 'missing-resolver' | 'registered';
 
@@ -7,6 +7,6 @@ export type TextureResolutionStatus = 'missing-kind' | 'missing-resolver' | 'reg
  * while a resource is unavailable or not ready.
  */
 export interface TextureResolutionExplanation {
-  readonly kind: TextureBackingKind | null;
+  readonly kind: TextureSourceKind | null;
   readonly status: TextureResolutionStatus;
 }

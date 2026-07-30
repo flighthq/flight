@@ -1,6 +1,6 @@
-import type { RenderTarget, RenderTargetColorSpace } from './RenderTarget';
+import type { RenderTargetColorSpace, RenderTargetDimensions } from './RenderTarget';
 
-export interface WgpuRenderTarget extends RenderTarget {
+export interface WgpuRenderTarget extends RenderTargetDimensions {
   bindGroup: GPUBindGroup;
   // Declared color space of the target's content. A producer stamps linear 3D radiance as 'linear';
   // the final present reads this and applies the single linear-to-sRGB encode.

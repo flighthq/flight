@@ -1,16 +1,16 @@
 import type { Entity } from './Entity';
-import type { TextureBackingKind } from './TextureBackingKind';
+import type { TextureSourceKind } from './TextureSourceKind';
 
 /**
- * Shared identity and dimensions for an open texture-backing family. Concrete backings declare their
- * own `kind` and payload; consumers dispatch through the renderer's backing registry rather than
+ * Shared identity and dimensions for an open texture-source family. Concrete sources declare their
+ * own `kind` and payload; consumers dispatch through the renderer's source registry rather than
  * inspecting nullable representation fields.
  */
-export interface ImageBacking extends Entity {
+export interface TextureSource extends Entity {
   /** Pixel height. */
   height: number;
   /** Open resolver-registry key declared by the constructor or loader that owns this backing. */
-  kind: TextureBackingKind;
+  kind: TextureSourceKind;
   /** Bumped whenever the represented pixels change. */
   version: number;
   /** Pixel width. */

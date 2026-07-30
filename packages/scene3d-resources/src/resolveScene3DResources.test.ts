@@ -8,7 +8,7 @@ import { createTexture } from '@flighthq/texture/contract';
 import type { ImageResource, ImageResourceReference, Scene3DResourceResolver, Texture } from '@flighthq/types/contract';
 import {
   ImageResourceFailureKind,
-  ImageTextureBackingKind,
+  ImageTextureSourceKind,
   ResourceResolutionState,
   ImageResourceReferenceKind,
 } from '@flighthq/types/contract';
@@ -20,7 +20,7 @@ import type * as ResolveScene3DResourcesModule from './resolveScene3DResources';
 import type * as Scene3DResourceResolverModule from './sceneResourceResolver';
 import type * as Scene3DResourceSignalsModule from './sceneResourceSignals';
 
-const fakeImage = { height: 2, kind: ImageTextureBackingKind, width: 2 } as unknown as ImageResource;
+const fakeImage = { height: 2, kind: ImageTextureSourceKind, width: 2 } as unknown as ImageResource;
 type LoadImageResourceFromBytes = typeof ImageModule.loadImageResourceFromBytes;
 
 let createBuiltInScene3DResourceResolver: typeof Scene3DResourceResolverModule.createBuiltInScene3DResourceResolver;

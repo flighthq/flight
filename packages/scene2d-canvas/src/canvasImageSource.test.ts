@@ -80,7 +80,7 @@ describe('registerCanvasRenderTextureResolver', () => {
 });
 
 describe('registerCanvasTextureResolver', () => {
-  it('replaces and removes a custom backing resolver', () => {
+  it('replaces and removes a custom source resolver', () => {
     const state = makeState();
     const image = createImageResource(globalThis.document.createElement('img'));
     (image as { kind: string }).kind = 'acme.image';
@@ -109,7 +109,7 @@ describe('registerCanvasVideoTextureResolver', () => {
 });
 
 describe('resolveCanvasTexture', () => {
-  it('resolves both image and populated render Texture backings', () => {
+  it('resolves both image and populated render Texture sources', () => {
     const state = makeState();
     registerCanvasImageTextureResolver(state);
     registerCanvasRenderTextureResolver(state);

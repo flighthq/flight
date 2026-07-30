@@ -1,5 +1,5 @@
 import type { RenderTexture } from '@flighthq/types/contract';
-import { RenderTextureBackingKind } from '@flighthq/types/contract';
+import { RenderTargetTextureSourceKind } from '@flighthq/types/contract';
 
 import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
@@ -31,7 +31,7 @@ function texture(): RenderTexture {
     storage: {
       dimension: '2d',
       image: null,
-      target: { height: 8, kind: RenderTextureBackingKind, width: 8 },
+      target: { height: 8, kind: RenderTargetTextureSourceKind, width: 8 },
     },
     uvOffset: { x: 0, y: 0 },
     uvRotation: 0,

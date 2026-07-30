@@ -1,5 +1,5 @@
 import type { Bitmap, Environment, ImageResource, Texture } from '@flighthq/types/contract';
-import { BitmapTextureBackingKind, ImageTextureBackingKind } from '@flighthq/types/contract';
+import { BitmapTextureSourceKind, ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import { ensureWgpuEnvironmentSourceCube, updateWgpuEnvironmentCubeFace } from './wgpuEnvironmentCube';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
@@ -12,7 +12,7 @@ import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 function completeEnvironment(): Environment {
   const face = {
     height: 4,
-    kind: ImageTextureBackingKind,
+    kind: ImageTextureSourceKind,
     source: {} as CanvasImageSource,
     width: 4,
   } as unknown as ImageResource;
@@ -28,7 +28,7 @@ function dataFace(): Bitmap {
   return {
     data: new Uint8ClampedArray(4 * 4 * 4),
     height: 4,
-    kind: BitmapTextureBackingKind,
+    kind: BitmapTextureSourceKind,
     width: 4,
   } as Bitmap;
 }

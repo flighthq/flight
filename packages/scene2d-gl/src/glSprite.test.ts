@@ -1,7 +1,7 @@
 import { getGlRenderStateRuntime, registerGlBitmapTextureResolver } from '@flighthq/render-gl/contract';
 import { createTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
 import type { Bitmap, RenderProxy2D, Sprite } from '@flighthq/types/contract';
-import { BatchFormat, BitmapTextureBackingKind } from '@flighthq/types/contract';
+import { BatchFormat, BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 import { defaultGlSpriteRenderer, drawGlSprite } from './glSprite';
@@ -15,7 +15,7 @@ function makeSprite(width = 64, height = 48): Sprite {
     data: new Uint8ClampedArray(width * height * 4),
     format: 'rgba8unorm',
     height,
-    kind: BitmapTextureBackingKind,
+    kind: BitmapTextureSourceKind,
     version: 1,
     width,
   } as unknown as Bitmap;

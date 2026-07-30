@@ -1,5 +1,5 @@
 import type { Environment, ImageResource, Texture } from '@flighthq/types/contract';
-import { ImageTextureBackingKind } from '@flighthq/types/contract';
+import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import { bakeWgpuEnvironmentIbl, destroyWgpuScene3DIbl } from './wgpuEnvironmentIblBake';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
@@ -13,7 +13,7 @@ import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 function completeEnvironment(): Environment {
   const face = {
     height: 4,
-    kind: ImageTextureBackingKind,
+    kind: ImageTextureSourceKind,
     source: {} as CanvasImageSource,
     width: 4,
   } as unknown as ImageResource;

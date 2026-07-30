@@ -1,10 +1,10 @@
 import type { CanvasRenderState, ImageResource, Texture } from '@flighthq/types/contract';
-import { VideoTextureBackingKind } from '@flighthq/types/contract';
+import { VideoTextureSourceKind } from '@flighthq/types/contract';
 
 import { registerCanvasTextureResolver } from './canvasTextureResolver';
 
 export function registerCanvasVideoTextureResolver(state: CanvasRenderState): void {
-  registerCanvasTextureResolver(state, VideoTextureBackingKind, resolveCanvasVideoTexture);
+  registerCanvasTextureResolver(state, VideoTextureSourceKind, resolveCanvasVideoTexture);
 }
 
 function resolveCanvasVideoTexture(_state: CanvasRenderState, texture: Readonly<Texture>): CanvasImageSource | null {

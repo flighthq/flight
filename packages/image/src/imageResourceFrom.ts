@@ -1,7 +1,7 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { detectImageMimeType } from '@flighthq/image-codec/contract';
 import type { Bitmap, ImageResource } from '@flighthq/types/contract';
-import { ImageTextureBackingKind } from '@flighthq/types/contract';
+import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
 // Transcodes a Bitmap's raw pixels into an element-backed ImageResource, via a detached canvas.
 // The inverse of captureBitmapFromImageResource. Lives here rather than in @flighthq/bitmap because a
@@ -20,7 +20,7 @@ export function createImageResourceFromBitmap(bitmap: Readonly<Bitmap>): ImageRe
 export function createImageResourceFromCanvas(canvas: HTMLCanvasElement): ImageResource {
   return createEntity({
     height: canvas.height,
-    kind: ImageTextureBackingKind,
+    kind: ImageTextureSourceKind,
     source: canvas,
     version: 0,
     width: canvas.width,
@@ -30,7 +30,7 @@ export function createImageResourceFromCanvas(canvas: HTMLCanvasElement): ImageR
 export function createImageResourceFromImageBitmap(bitmap: ImageBitmap): ImageResource {
   return createEntity({
     height: bitmap.height,
-    kind: ImageTextureBackingKind,
+    kind: ImageTextureSourceKind,
     source: bitmap,
     version: 0,
     width: bitmap.width,
@@ -40,7 +40,7 @@ export function createImageResourceFromImageBitmap(bitmap: ImageBitmap): ImageRe
 export function createImageResourceFromImageElement(img: HTMLImageElement): ImageResource {
   return createEntity({
     height: img.height,
-    kind: ImageTextureBackingKind,
+    kind: ImageTextureSourceKind,
     source: img,
     version: 0,
     width: img.width,

@@ -1,6 +1,7 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { cloneSampler, createTexture } from '@flighthq/texture/contract';
 import type { CreateExternalTextureOptions, GlRenderState, Texture, TextureLike } from '@flighthq/types/contract';
-import { ExternalTextureBackingKind } from '@flighthq/types/contract';
+import { ExternalTextureSourceKind } from '@flighthq/types/contract';
 
 import { applyGlSamplerState } from './glDraw';
 import { getGlRenderStateRuntime } from './glRenderState';
@@ -17,20 +18,21 @@ export function createExternalGlTexture(
     storage: {
       dimension: '2d',
       image: null,
-      target: {
+      target: createEntity({
         colorAttachments: 1,
-        depth: 'none',
-        format: 'rgba8',
+        depth: 'none' as const,
+        format: 'rgba8' as const,
         height: options.height,
-        kind: ExternalTextureBackingKind,
+        kind: ExternalTextureSourceKind,
         sampleCount: 1,
+        version: 0,
         width: options.width,
-      },
+      }),
     },
   });
   const runtime = getGlRenderStateRuntime(state);
   (runtime.glExternalTextureCache ??= new WeakMap()).set(texture, handle);
-  registerGlTextureResolver(state, ExternalTextureBackingKind, resolveExternalGlTexture);
+  registerGlTextureResolver(state, ExternalTextureSourceKind, resolveExternalGlTexture);
   return texture;
 }
 

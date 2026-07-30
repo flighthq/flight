@@ -10,7 +10,6 @@ import type { GlRenderTextureEntry, GlRenderTextureGuard } from './GlRenderTextu
 import type { GlBitmapShader, GlShaderLocations } from './GlShaderLocations';
 import type { GlShapeMesh } from './GlShapeMesh';
 import type { GlTextureResolver } from './GlTextureResolver';
-import type { ImageBacking } from './ImageBacking';
 import type { ImageResource } from './ImageResource';
 import type { Material } from './Material';
 import type { RenderProxy2D } from './RenderProxy2D';
@@ -18,7 +17,8 @@ import type { RenderState, RenderStateRuntime } from './RenderState';
 import type { RenderTexture } from './RenderTexture';
 import type { SamplerLike } from './Sampler';
 import type { Texture } from './Texture';
-import type { TextureBackingKind } from './TextureBackingKind';
+import type { TextureSource } from './TextureSource';
+import type { TextureSourceKind } from './TextureSourceKind';
 import type { TintMaterialData } from './TintMaterialData';
 
 export interface GlRenderState extends RenderState {
@@ -193,14 +193,14 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // Raw-element texture cache: a canvas/video/image element uploaded directly (video frames, canvas-backed
   // shapes and text). Keyed by the element; the caller owns re-upload timing (video re-uploads every frame).
   textureCache: WeakMap<CanvasImageSource, WebGLTexture>;
-  // Premultiplied texture realizations for ImageBacking siblings. Keyed by stable entity identity and
+  // Premultiplied texture realizations for TextureSource siblings. Keyed by stable entity identity and
   // guarded by content version so mutable Bitmaps re-upload in place.
-  imageBackingPremultipliedTextureCache: WeakMap<ImageBacking, { texture: WebGLTexture; version: number }>;
+  textureSourcePremultipliedTextureCache: WeakMap<TextureSource, { texture: WebGLTexture; version: number }>;
   // Straight (upload-as-is) sibling used by the straight-blend 3D path and native compressed images.
-  imageBackingStraightTextureCache: WeakMap<ImageBacking, { texture: WebGLTexture; version: number }>;
-  // Open, state-scoped Texture backing registry keyed by the backing's declared string kind.
+  textureSourceStraightTextureCache: WeakMap<TextureSource, { texture: WebGLTexture; version: number }>;
+  // Open, state-scoped Texture source registry keyed by the source's declared string kind.
   // Map.set is last-write-wins; undefined until first registration. Texture carries no backend state.
-  glTextureResolverRegistry?: Map<TextureBackingKind, GlTextureResolver> | null;
+  glTextureResolverRegistry?: Map<TextureSourceKind, GlTextureResolver> | null;
   // Borrowed native handles registered by createExternalGlTexture. Disposing forgets these entries;
   // the caller retains allocation ownership.
   glExternalTextureCache?: WeakMap<Texture, WebGLTexture>;
@@ -212,7 +212,7 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // until registered; the compressed uploader reads it as the decode seam for a CompressedImage.
   compressedTextureDecoder?: GlCompressedTextureDecoder | null;
   // Optional block-compressed upload seam. Installed per-state by registerGlCompressedTextureUpload
-  // (opt-in), so a state that only ever draws ImageResource/Bitmap backings never pulls the ~40-format
+  // (opt-in), so a state that only ever draws ImageResource/Bitmap sources never pulls the ~40-format
   // compressed-container upload path into the bundle. Undefined until registered.
   compressedTextureUpload?: GlCompressedTextureUploader | null;
   // Dynamic host-video cache keyed by the shared ImageResource backing. `uploadedVersion` tracks the

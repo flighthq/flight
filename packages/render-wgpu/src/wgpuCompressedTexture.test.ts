@@ -1,5 +1,5 @@
 import type { CompressedImage, TextureContainer, WgpuCompressedTextureSupport } from '@flighthq/types/contract';
-import { CompressedImageTextureBackingKind } from '@flighthq/types/contract';
+import { CompressedImageTextureSourceKind } from '@flighthq/types/contract';
 
 import {
   detectWgpuCompressedTextureSupport,
@@ -34,7 +34,7 @@ function compressedImage(): CompressedImage {
   return {
     compressed: { container: container(), payload: new Uint8Array(8) },
     height: 4,
-    kind: CompressedImageTextureBackingKind,
+    kind: CompressedImageTextureSourceKind,
     version: 1,
     width: 4,
   } as unknown as CompressedImage;

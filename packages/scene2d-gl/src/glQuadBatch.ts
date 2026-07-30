@@ -1,7 +1,7 @@
 import { resolveGlMaterialRenderer, resolveGlTexture } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { noopRendererData } from '@flighthq/render/contract';
-import { getTextureHeight, getTextureWidth, hasTextureBacking } from '@flighthq/texture/contract';
+import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import type {
   ColorScaleBias,
   GlRenderState,
@@ -32,7 +32,7 @@ function submitGlQuadBatch(state: GlRenderState, quadBatch: RenderProxy2D): void
   const source = quadBatch.source as QuadBatch;
   const data = source.data;
   const { atlas, instanceCount, ids, transforms } = data;
-  if (atlas === null || atlas.texture === null || !hasTextureBacking(atlas.texture) || instanceCount === 0) return;
+  if (atlas === null || atlas.texture === null || !hasTextureSource(atlas.texture) || instanceCount === 0) return;
 
   ensureGlQuadBatchShader(state);
 

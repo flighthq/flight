@@ -1,12 +1,12 @@
 import { createImageResourceFromBitmap } from '@flighthq/image/contract';
 import type { Bitmap, DomRenderState, Texture } from '@flighthq/types/contract';
-import { BitmapTextureBackingKind } from '@flighthq/types/contract';
+import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import { getDomRenderStateRuntime } from './domRenderState';
 import { registerDomTextureResolver } from './domTextureResolver';
 
 export function registerDomBitmapTextureResolver(state: DomRenderState): void {
-  registerDomTextureResolver(state, BitmapTextureBackingKind, resolveDomBitmapTexture);
+  registerDomTextureResolver(state, BitmapTextureSourceKind, resolveDomBitmapTexture);
 }
 
 function resolveDomBitmapTexture(state: DomRenderState, texture: Readonly<Texture>): CanvasImageSource | null {

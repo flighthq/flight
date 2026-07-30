@@ -5,7 +5,7 @@ import type { DomTextureResolver } from './DomTextureResolver';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
 import type { PathWinding } from './ShapeCommand';
-import type { TextureBackingKind } from './TextureBackingKind';
+import type { TextureSourceKind } from './TextureSourceKind';
 
 export interface DomRenderState extends RenderState {
   applyBlendMode: ((element: HTMLElement, blendMode: BlendMode | null) => void) | null;
@@ -34,9 +34,9 @@ export interface DomRenderStateRuntime extends RenderStateRuntime {
   // Per-render-state cache of the drawable HTMLCanvasElement materialized from a Bitmap. The field
   // stays absent until registerDomBitmapTextureResolver is imported and resolves a Bitmap.
   bitmapElementCache?: WeakMap<Bitmap, { element: HTMLCanvasElement; version: number }>;
-  // Open, state-scoped Texture backing registry. Undefined until the first explicit registration so
+  // Open, state-scoped Texture source registry. Undefined until the first explicit registration so
   // a DOM bundle only retains the backing realizations it installs.
-  domTextureResolverRegistry?: Map<TextureBackingKind, DomTextureResolver> | null;
+  domTextureResolverRegistry?: Map<TextureSourceKind, DomTextureResolver> | null;
   // Ping-pong order lists: domOrderList holds the previous frame's order so the next frame can detect
   // structure changes; domNextOrderList is the scratch buffer built during the current frame. They
   // swap at the end of each render call.

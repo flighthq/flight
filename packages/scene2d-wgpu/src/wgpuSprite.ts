@@ -5,7 +5,7 @@ import {
   resolveWgpuTexture,
 } from '@flighthq/render-wgpu/contract';
 import { noopRendererData } from '@flighthq/render/contract';
-import { getTextureHeight, getTextureWidth, hasTextureBacking } from '@flighthq/texture/contract';
+import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import type { RenderProxy2D, Scene2DRenderer, Sprite, WgpuRenderState } from '@flighthq/types/contract';
 import { BatchFormat } from '@flighthq/types/contract';
 
@@ -22,7 +22,7 @@ export function drawWgpuSprite(state: WgpuRenderState, renderProxy: RenderProxy2
   if (runtime.renderPass === null) return;
 
   const texture = (renderProxy.source as Sprite).data.texture;
-  if (texture === null || texture.storage.dimension !== '2d' || !hasTextureBacking(texture)) return;
+  if (texture === null || texture.storage.dimension !== '2d' || !hasTextureSource(texture)) return;
 
   const shader = resolveWgpuShader(state, renderProxy);
   if (shader !== null) {

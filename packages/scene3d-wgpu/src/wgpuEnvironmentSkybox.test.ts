@@ -1,6 +1,6 @@
 import { createCamera3D } from '@flighthq/camera/contract';
 import type { Camera3D, Environment, ImageResource, Texture } from '@flighthq/types/contract';
-import { ImageTextureBackingKind } from '@flighthq/types/contract';
+import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import { drawWgpuEnvironmentSkybox } from './wgpuEnvironmentSkybox';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
@@ -16,7 +16,7 @@ function makeCamera(): Camera3D {
 function completeEnvironment(): Environment {
   const face = {
     height: 4,
-    kind: ImageTextureBackingKind,
+    kind: ImageTextureSourceKind,
     source: {} as CanvasImageSource,
     width: 4,
   } as unknown as ImageResource;
