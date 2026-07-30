@@ -268,6 +268,35 @@ describe('validateMenuItemTemplate', () => {
     expect(validateMenuItemTemplate(createMenuItemTemplate({ id: 'ok', label: 'Ok' }))).toBeNull();
   });
 
+  it('rejects checked state on an item that is not a checkbox or radio', () => {
+    expect(validateMenuItemTemplate({ id: 'copy', label: 'Copy', type: 'normal', checked: true })).toContain('checked');
+  });
+
+  it('rejects multiple checked radios in one contiguous sibling group', () => {
+    expect(
+      validateMenuItemTemplate({
+        type: 'submenu',
+        submenu: [
+          { id: 'left', type: 'radio', checked: true },
+          { id: 'right', type: 'radio', checked: true },
+        ],
+      }),
+    ).toContain('multiple checked radio');
+  });
+
+  it('allows checked radios in separate contiguous groups', () => {
+    expect(
+      validateMenuItemTemplate({
+        type: 'submenu',
+        submenu: [
+          { id: 'left', type: 'radio', checked: true },
+          { id: 'copy', type: 'normal' },
+          { id: 'right', type: 'radio', checked: true },
+        ],
+      }),
+    ).toBeNull();
+  });
+
   it('rejects a separator that carries a label', () => {
     expect(validateMenuItemTemplate({ type: 'separator', label: 'X' })).not.toBeNull();
   });
