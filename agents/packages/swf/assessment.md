@@ -22,9 +22,7 @@ basedOn: ./review.md
 
 Sweep-safe continuations of the approved named-graph direction, without expanding into a player or VM:
 
-1. **Preserve authored extents.** Carry the stage RECT and available character bounds into the
-   document root and slot target bounds.
-2. **Add one canonical uncompressed fixture.** Check in a tiny externally generated `FWS` sample with
+1. **Add one canonical uncompressed fixture.** Check in a tiny externally generated `FWS` sample with
    its provenance and assert the same document manifest produced by the synthetic builders.
 
 ## Backlog

@@ -12,6 +12,9 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`.
 - `DefineSprite` first-frame timelines instantiate recursively, including unnamed intermediate
   containers needed to preserve composed transforms; every named descendant joins the flat enumerable
   slot manifest.
+- The stage RECT becomes the document root's authored local bounds. Shape, morph-shape, static/edit
+  text definition bounds become placed-target extents, and sprite extents recursively union every
+  available child bound through its placement matrix.
 - `PlaceObject2` and `PlaceObject3` preserve instance names and affine transforms, converting twips to
   pixels.
 - `SymbolClass`, `ExportAssets`, and direct `PlaceObject3` class names preserve linkage identity.
@@ -19,10 +22,12 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`.
   `scene2d-resources` registry; importing the module has no registration side effect.
 - Missing sprite End tags, duplicate definitions, cyclic symbol graphs, excessive nesting, and
   excessive instantiated-node counts reject safely.
-- Compressed `CWS`/`ZWS`, later MovieClip frames, visual definition tags, authored extents, and opaque
-  `DoABC` exposure remain staged rather than being represented incompletely.
+- Compressed `CWS`/`ZWS`, later MovieClip frames, visual definition bodies, bitmap/video/button/font
+  extents, and opaque `DoABC` exposure remain staged rather than being represented incompletely.
 
 The package is wired through the SDK root and formats barrel, build graph, package layer, path aliases,
 and lockfile. Synthetic byte-level tests cover both placement variants, linkage, transforms, opt-in
 registration, compressed rejection, malformed/truncated input, recursively nested sprites, composed
-transforms, and recursive-graph rejection.
+transforms, recursive-graph rejection, stage bounds, direct definition bounds, and recursively composed
+sprite extents. A canonical externally produced fixture remains unavailable locally; evidence is still
+synthetic.
