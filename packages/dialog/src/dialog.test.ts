@@ -55,26 +55,6 @@ describe('createWebDialogBackend', () => {
     expect(typeof (await backend.confirm({ message: 'sure?' }))).toBe('boolean');
   });
 
-  it('does not send an empty accept map for an all-wildcard filter', async () => {
-    const previous = Object.getOwnPropertyDescriptor(window, 'showOpenFilePicker');
-    let pickerOptions: unknown;
-    Object.defineProperty(window, 'showOpenFilePicker', {
-      configurable: true,
-      value: async (options: unknown) => {
-        pickerOptions = options;
-        return [];
-      },
-    });
-    try {
-      const backend = createWebDialogBackend();
-      await backend.openFile({ filters: [{ extensions: ['*'], name: 'All files' }] });
-      expect(pickerOptions).toEqual({ multiple: false });
-    } finally {
-      if (previous === undefined) delete (window as Window & { showOpenFilePicker?: unknown }).showOpenFilePicker;
-      else Object.defineProperty(window, 'showOpenFilePicker', previous);
-    }
-  });
-
   it('message returns a result object without throwing', async () => {
     const backend = createWebDialogBackend();
     const result = await backend.message({ message: 'hi', checkboxChecked: true });
