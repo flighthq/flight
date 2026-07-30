@@ -193,6 +193,25 @@ describe('beginGlRenderPass', () => {
     expect(getGlRenderStateRuntime(innerState).currentRenderTarget).toBeNull();
     endGlRenderPass(outerState);
   });
+
+  it('rejects a same-target contour pass across render states sharing one context', () => {
+    const outerFixture = createGlState();
+    const innerFixture = createGlState();
+    const { gl, state: outerState } = outerFixture;
+    const innerState = innerFixture.state;
+    (innerState as { gl: WebGL2RenderingContext }).gl = gl;
+    const target = makeTarget({ width: 64, height: 48 });
+
+    beginGlRenderPass(outerState, target);
+    getGlRenderStateRuntime(outerState).currentMaskDepth = 1;
+
+    expect(() => beginGlRenderPass(innerState, target)).toThrow(
+      'cannot nest the active framebuffer while a contour clip is live',
+    );
+    expect(getGlRenderStateRuntime(outerState).currentRenderTarget).toBe(target);
+    expect(getGlRenderStateRuntime(innerState).currentRenderTarget).toBeUndefined();
+    endGlRenderPass(outerState);
+  });
 });
 
 describe('endGlRenderPass', () => {
