@@ -117,13 +117,9 @@ Design calls to settle before building the affected entries:
 
 ### textureatlas (partial 45)
 
-- Draw-placement helpers
-- Region management symmetry
-- Tighten `setTextureAtlasRegion`
-- Entity quartet + trivial predicates
-- Explicit name index
-- Rename `addTextureAtlasRegionRectangleXY` → `addTextureAtlasRegionCorners`
-- Fix the stale package.json description
+- **Decide whether `TextureAtlasRegion.id` should be an opaque handle rather than a caller-visible
+- `getTextureAtlasRegionSequence` allocates a new array per call
+- `getTextureAtlasRegionTexture` keys its cache on the atlas *and* region object
 
 ### xml (partial 45)
 

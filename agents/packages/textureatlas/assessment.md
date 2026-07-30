@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/textureatlas'
-updated: 2026-07-03
+updated: 2026-07-30
 basedOn: ./review.md
 ---
 
@@ -10,21 +10,23 @@ Based on the 2026-07-03 review (partial, 45/100). All four items approved 2026-0
 
 ## Recommended
 
-Sweep-safe: within `@flighthq/textureatlas`, no cross-package coupling, no open design decision. Consumer call-site updates for renames/signature tightening are mechanical, matching the precedent of the 2026-07-02 sweep.
+The 2026-07-03 sweep list is **done** — items 1–6 landed 2026-07-30, and item 7 (the stale
+package.json description) was already fixed in the tree. Re-derived below against live source.
 
-1. **Draw-placement helpers.** Add `getTextureAtlasRegionFrame(region, out)` (where the trimmed rect sits inside the original frame, from `sourceX/Y` + `originalWidth/Height`) and a rotated-UV quad writer (four UV corners for a `rotated` region). Out-param, alias-safe, per house style. Today every renderer and user re-derives trim/rotation math — review's top sweep-safe priority. Within the charter's "UV computation" scope.
-
-2. **Region management symmetry.** Add `removeTextureAtlasRegion` and `clearTextureAtlasRegions`, and fix id allocation: `addTextureAtlasRegion` assigns `id = regions.length`, so ids silently collide after any splice. Stable id allocation is a correctness fix, not a feature.
-
-3. **Tighten `setTextureAtlasRegion`.** It writes only 6 of 14 fields (leaving `rotated`/`trimmed`/`source*`/`original*`/`name`/`id` stale — an easy-to-misuse partial setter), coerces pivot `null → 0` so "no pivot" round-trips differently than `createTextureAtlasRegion`, and defaults everything after `x` to `0` (a caller passing only `x` is surely a bug). Make it a full-field setter, require the four rect values, round-trip `null` pivot.
-
-4. **Entity quartet + trivial predicates.** `disposeTextureAtlas` (release the image reference/regions; `@flighthq/image` already has a dispose story), `getTextureAtlasRegionCount`, `hasTextureAtlasRegion(atlas, name)`.
-
-5. **Explicit name index.** `buildTextureAtlasRegionIndex` — an O(1) name→region index built explicitly (per the no-hidden-work rule), for atlases with hundreds of regions where every query is currently a linear scan.
-
-6. **Rename `addTextureAtlasRegionRectangleXY` → `addTextureAtlasRegionCorners`.** The `XY` suffix is the one name in the package that needs explanation; `Corners` self-identifies. Greenfield rename per the mandate.
-
-7. **Fix the stale package.json description.** It still says "Texture atlases and tilesets: …" though tilesets live in `@flighthq/tileset` — extraction residue.
+1. **Decide whether `TextureAtlasRegion.id` should be an opaque handle rather than a caller-visible
+   number.** The 2026-07-30 id work made allocation safe, but it also showed the type is doing two
+   jobs: parsers assign meaningful ids from their own numbering, and `addTextureAtlasRegion` assigns
+   from an allocator, and nothing distinguishes the two. A caller merging a parsed atlas into a built
+   one still has to reconcile them by hand. **A data-model decision**, entangled with the multi-page
+   work already in Backlog.
+2. **`getTextureAtlasRegionSequence` allocates a new array per call** and sorts nothing, so a
+   `walk_10` frame lands before `walk_2` under the `baseName_NNN` convention its own doc names. Either
+   take an `out` array and document insertion order as the contract, or sort numerically by trailing
+   ordinal — the second is a behavior change and wants a ruling.
+3. **`getTextureAtlasRegionTexture` keys its cache on the atlas *and* region object**, so a region
+   mutated in place through `setTextureAtlasRegion` keeps a texture whose UVs describe the previous
+   frame until the next call refreshes it. The refresh does happen on every call, so this is currently
+   benign — but it is benign by accident, and worth either pinning with a test or documenting.
 
 ## Backlog
 
@@ -37,3 +39,8 @@ Sweep-safe: within `@flighthq/textureatlas`, no cross-package coupling, no open 
 ## Approved
 
 - [2026-07-02 · picked] Sweep items 1–4: Uint8Array rename, remove xml re-exports, detectTextureAtlasFormat, Package Map descriptions
+- [2026-07-03 · picked] Sweep items 1–7: draw-placement helpers, region management symmetry, tighten
+  `setTextureAtlasRegion`, entity quartet + trivial predicates, explicit name index, the
+  `addTextureAtlasRegionCorners` rename, package.json description — **all done 2026-07-30**, with
+  regression tests verified against the unfixed code. Item 3 shipped as a whole-entity setter rather
+  than the prescribed positional list; see the charter decision for why.
