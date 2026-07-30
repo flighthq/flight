@@ -2,7 +2,7 @@
 package: '@flighthq/textureatlas'
 crate: flighthq-textureatlas
 draft: false
-lastDirection: 2026-07-02
+lastDirection: 2026-07-30
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -60,6 +60,14 @@ This package describes the atlas — what image it wraps and where the regions a
   **Why:** The kind constant exists, promising support that doesn't exist. Either implement it or remove the constant. Implementing is the AAA path.
 
 - **[2026-07-02] TS is the spec; Rust conforms in parity passes later.** Global posture.
+
+- **[2026-07-30] Region ids are allocated past a high-water mark, never from the region count.** `addTextureAtlasRegion` used `id = regions.length`, which is only the right answer while ids happen to be a dense `0..n-1` run — an atlas built from parsed data (format parsers assign their own ids) breaks it immediately. Measured: regions at ids 5 and 2 give a count-derived id of 2, so `getTextureAtlasRegionById(atlas, 2)` returns the older region and the new one is unreachable by id. Scanning for the highest live id is still not enough on its own, because removing the highest-id region walks the next allocation back onto an id that was just retired — the ABA hazard, and precisely the failure `removeTextureAtlasRegion` would otherwise have introduced. The mark lives in a package-private `WeakMap` keyed by atlas (like the existing region-texture cache) so `TextureAtlas` stays plain data, and an atlas the map has not seen is seeded from its highest live id. User-directed.
+
+- **[2026-07-30] `setTextureAtlasRegion` takes a whole source entity, not a positional rect.** It wrote 6 of 14 fields, so reusing a region left `rotated`/`trimmed`/`source*`/`original*`/`name`/`id` describing the *previous* frame while the geometry described the new one — a half-updated region whose trim and rotation metadata belong to something else, which any renderer doing trim math then draws wrong. It also defaulted every argument after `x` to `0` (a caller passing one argument silently got a 0×0 region) and coerced an unset pivot to `0` where the constructor leaves it `null`, so "no pivot" did not round-trip. **This deviates from the assessment's prescription**, which asked for a tightened positional list: a positional setter over fourteen fields fixes today's stale fields while leaving the next added field free to be forgotten, whereas a whole-entity setter has nowhere for a stale field to hide and is called exactly like `createTextureAtlasRegion`. Contained — the package had no external callers of either the old signature or the renamed `addTextureAtlasRegionCorners`. User-directed.
+
+- **[2026-07-30] Trim placement and rotated UV corners are the package's arithmetic, not each renderer's.** `getTextureAtlasRegionFrame` reports where the packed rect sits inside the authored frame (falling back to the packed extent when untrimmed, so callers need no special case), and `getTextureAtlasRegionUvQuad` writes the four drawn corners with the 90° packer rotation already applied. Both were being re-derived at every call site, and both fail quietly when got wrong — a mis-stepped corner list mirrors the sprite rather than throwing. Within the charter's "UV computation" scope. User-directed.
+
+- **[2026-07-30] The name index is built explicitly and owned by the caller.** `buildTextureAtlasRegionIndex` returns a `Map` rather than caching one on the atlas: the atlas is plain data that any code may append to, so an index hidden on the entity would go stale silently. Returning it makes both the cost and the staleness the caller's, which is the no-hidden-work rule applied to a lookup. `getTextureAtlasRegionByName`'s linear scan remains the default and remains correct. User-directed.
 
 ## Open directions
 
