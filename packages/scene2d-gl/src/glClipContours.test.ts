@@ -1,11 +1,19 @@
 import { createMatrix } from '@flighthq/geometry/contract';
+import { createViewport } from '@flighthq/node/contract';
+import { createRenderCache } from '@flighthq/render/contract';
 import {
   beginGlRenderPass,
   createGlRenderTarget,
   endGlRenderPass,
   getGlRenderStateRuntime,
 } from '@flighthq/render-gl/contract';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
 
+import {
+  createGlCacheState,
+  ensureGlRenderCacheTarget,
+  refreshGlRenderCache,
+} from './glCache';
 import { popGlClipContours, pushGlClipContours } from './glClipContours';
 import { createGlState } from './glTestHelper';
 
@@ -26,27 +34,49 @@ describe('popGlClipContours', () => {
 });
 
 describe('pushGlClipContours', () => {
-  it('rejects a same-target nested pass before it can clear live contour coverage', () => {
+  it('rejects a shared-context cache refresh into the contour target before it can clear coverage', () => {
     const { state, gl } = createGlState();
-    const target = createGlRenderTarget(state, {
-      depth: 'depth-stencil',
-      height: 64,
-      width: 64,
-    });
+    const cache = createRenderCache();
+    const cacheState = createGlCacheState(state);
+    const source = createDisplayObject();
+    const target = ensureGlRenderCacheTarget(state, cache, 1, 1);
     beginGlRenderPass(state, target, { preserveDepth: true });
     pushGlClipContours(state, SQUARE, 'nonZero', createMatrix());
     gl.depthMask(false);
     const stencilClearCount = vi.mocked(gl.clear).mock.calls.length;
 
-    expect(() =>
-      beginGlRenderPass(state, target, {
-        preserveColor: true,
-        preserveDepth: true,
-      }),
-    ).toThrow('cannot nest the active framebuffer while a contour clip is live');
+    expect(() => refreshGlRenderCache(cacheState, cache, source)).toThrow(
+      'cannot nest the active framebuffer while a contour clip is live',
+    );
 
     expect(gl.clear).toHaveBeenCalledTimes(stencilClearCount);
     expect(getGlRenderStateRuntime(state).currentMaskDepth).toBe(1);
+    endGlRenderPass(state);
+  });
+
+  it('restores the outer framebuffer after a shared-context cache refresh into another target', () => {
+    const { state, gl } = createGlState();
+    const cacheState = createGlCacheState(state);
+    const outer = createGlRenderTarget(state, {
+      depth: 'depth-stencil',
+      height: 64,
+      width: 64,
+    });
+    const viewport = createViewport({
+      devicePixelRatio: 1,
+      height: 16,
+      width: 24,
+      x: 4,
+      y: 5,
+    });
+
+    beginGlRenderPass(state, outer, { preserveDepth: true }, viewport);
+    const outerScissor = getGlRenderStateRuntime(state).currentScissorRect;
+    refreshGlRenderCache(cacheState, createRenderCache(), createDisplayObject());
+
+    expect(vi.mocked(gl.bindFramebuffer).mock.calls.at(-1)?.[1]).toBe(outer.framebuffer);
+    expect(getGlRenderStateRuntime(state).currentFramebuffer).toBe(outer.framebuffer);
+    expect(getGlRenderStateRuntime(state).currentScissorRect).toEqual(outerScissor);
     endGlRenderPass(state);
   });
 

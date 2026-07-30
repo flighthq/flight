@@ -12,16 +12,23 @@ import type {
 import { getGlRenderStateRuntime } from './glRenderState';
 import { resolveGlRenderTarget } from './glRenderTarget';
 
-type SavedGlPass = {
+type SavedGlPassState = {
   clipForms: ('rect' | 'contour')[];
   currentMaskDepth: number;
-  depthMask: boolean;
   framebuffer: WebGLFramebuffer | null;
   renderTarget: GlRenderTarget | null;
   renderTargetViewport: GlViewportRect | null;
   renderTransform2D: Matrix | null;
   scissorRect: GlScissorRect | null;
   scissorStack: GlScissorRect[];
+};
+
+type GlPassStackEntry = {
+  depthMask: boolean;
+  owner: GlRenderState;
+  ownerState: SavedGlPassState;
+  previousOwner: GlRenderState;
+  previousState: SavedGlPassState;
   stencil: SavedGlStencil | null;
 };
 
@@ -72,33 +79,36 @@ export function beginGlRenderPass(
   preserve?: Readonly<RenderPassPreserve>,
   viewport?: Readonly<Viewport>,
 ): void {
-  const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
-  const currentMaskDepth = runtime.currentMaskDepth ?? 0;
-  if (currentMaskDepth > 0 && runtime.currentFramebuffer === target.framebuffer) {
+  let stack = _passStack.get(gl);
+
+  // One WebGL context has one live framebuffer/stencil/scissor state even when several higher-level
+  // GlRenderStates share it (the render-cache path). The top context-owned pass is therefore the
+  // physical enclosing state; the incoming state's dormant runtime is only its local restore point.
+  const previousOwner = stack?.at(-1)?.owner ?? state;
+  const previousRuntime = getGlRenderStateRuntime(previousOwner);
+  const previousState = captureGlPassState(previousOwner);
+  const currentMaskDepth = previousState.currentMaskDepth;
+  if (currentMaskDepth > 0 && previousState.framebuffer === target.framebuffer) {
     throw new Error('beginGlRenderPass: cannot nest the active framebuffer while a contour clip is live');
   }
 
-  let stack = _passStack.get(state);
   if (stack === undefined) {
     stack = [];
-    _passStack.set(state, stack);
+    _passStack.set(gl, stack);
   }
   stack.push({
-    clipForms: [...(runtime.clipForms ?? [])],
-    currentMaskDepth,
     depthMask: gl.getParameter(gl.DEPTH_WRITEMASK) !== false,
-    framebuffer: runtime.currentFramebuffer,
-    renderTarget: runtime.currentRenderTarget ?? null,
-    renderTargetViewport: runtime.renderTargetViewport,
-    renderTransform2D: state.renderTransform2D,
-    scissorRect: runtime.currentScissorRect ?? null,
-    scissorStack: [...(runtime.scissorStack ?? [])],
+    owner: state,
+    ownerState: previousOwner === state ? previousState : captureGlPassState(state),
+    previousOwner,
+    previousState,
     stencil: currentMaskDepth > 0 ? captureGlStencil(gl) : null,
   });
 
+  const runtime = getGlRenderStateRuntime(state);
   const activeViewport = resolveGlPassViewport(target, viewport);
-  const enclosingScissor = runtime.currentScissorRect ?? null;
+  const enclosingScissor = previousState.scissorRect;
   const activeScissor =
     enclosingScissor === null
       ? viewport === undefined
@@ -123,8 +133,8 @@ export function beginGlRenderPass(
   // while the nested pass owns a different logical clip stack; end restores its exact steady state.
   if (currentMaskDepth > 0) gl.disable(gl.STENCIL_TEST);
   // Force rebind on next draw — the framebuffer switch invalidates GL state assumptions.
-  runtime.currentTexture = null;
-  runtime.currentBlendMode = null;
+  invalidateGlPassBindingCache(runtime);
+  if (previousOwner !== state) invalidateGlPassBindingCache(previousRuntime);
 
   clearGlRenderPass(state, target, preserve);
 }
@@ -136,36 +146,40 @@ export function beginGlRenderPass(
 // an unbalanced pass is a programmer error, and silently accepting it hides a leaked prior pass. The
 // target is read from runtime rather than passed, so end mirrors the other backend brackets.
 export function endGlRenderPass(state: GlRenderState): void {
-  const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
+  const stack = _passStack.get(gl);
+  if (stack === undefined) {
+    throw new Error('endGlRenderPass called without a matching beginGlRenderPass');
+  }
+  const saved = stack.at(-1);
+  if (saved === undefined || saved.owner !== state) {
+    throw new Error('endGlRenderPass called without a matching beginGlRenderPass');
+  }
+  stack.pop();
+  if (stack.length === 0) _passStack.delete(gl);
 
+  const runtime = getGlRenderStateRuntime(state);
   const ended = runtime.currentRenderTarget ?? null;
-  const saved = _passStack.get(state)?.pop();
-  if (saved === undefined) throw new Error('endGlRenderPass called without a matching beginGlRenderPass');
+  restoreGlPassState(state, saved.ownerState);
 
-  gl.bindFramebuffer(gl.FRAMEBUFFER, saved.framebuffer);
-  const viewport = saved.renderTargetViewport;
+  gl.bindFramebuffer(gl.FRAMEBUFFER, saved.previousState.framebuffer);
+  const viewport = saved.previousState.renderTargetViewport;
   gl.viewport(
     viewport?.x ?? 0,
     viewport?.y ?? 0,
-    viewport?.width ?? state.canvas.width,
-    viewport?.height ?? state.canvas.height,
+    viewport?.width ?? saved.previousOwner.canvas.width,
+    viewport?.height ?? saved.previousOwner.canvas.height,
   );
-  runtime.currentFramebuffer = saved.framebuffer;
-  runtime.currentRenderTarget = saved.renderTarget;
-  runtime.renderTargetViewport = saved.renderTargetViewport;
-  runtime.currentScissorRect = saved.scissorRect;
-  runtime.scissorStack = saved.scissorStack;
-  runtime.clipForms = saved.clipForms;
-  runtime.currentMaskDepth = saved.currentMaskDepth;
-  applyGlScissor(gl, saved.scissorRect);
+  applyGlScissor(gl, saved.previousState.scissorRect);
   restoreGlStencil(gl, saved.stencil);
   gl.depthMask(saved.depthMask);
-  state.renderTransform2D = saved.renderTransform2D;
-  runtime.currentTexture = null;
-  runtime.currentBlendMode = null;
 
-  if (ended !== null) resolveGlRenderTarget(state, ended);
+  invalidateGlPassBindingCache(runtime);
+  if (saved.previousOwner !== state) {
+    invalidateGlPassBindingCache(getGlRenderStateRuntime(saved.previousOwner));
+  }
+
+  if (ended !== null) resolveGlRenderTarget(saved.previousOwner, ended);
 }
 
 // Sets the 2D root device transform the display-object update pass (prepareScene2DRender) reads to
@@ -233,6 +247,39 @@ function resolveGlClearColor(
   out[1] = bg[1] ?? 0;
   out[2] = bg[2] ?? 0;
   out[3] = bg.length >= 4 ? bg[3] : 0;
+}
+
+function captureGlPassState(state: GlRenderState): SavedGlPassState {
+  const runtime = getGlRenderStateRuntime(state);
+  return {
+    clipForms: [...(runtime.clipForms ?? [])],
+    currentMaskDepth: runtime.currentMaskDepth ?? 0,
+    framebuffer: runtime.currentFramebuffer,
+    renderTarget: runtime.currentRenderTarget ?? null,
+    renderTargetViewport: runtime.renderTargetViewport,
+    renderTransform2D: state.renderTransform2D,
+    scissorRect: runtime.currentScissorRect ?? null,
+    scissorStack: [...(runtime.scissorStack ?? [])],
+  };
+}
+
+function invalidateGlPassBindingCache(runtime: ReturnType<typeof getGlRenderStateRuntime>): void {
+  runtime.currentBlendMode = null;
+  runtime.currentProgram = null;
+  runtime.currentTexture = null;
+  runtime.currentTextureStraightAlpha = false;
+}
+
+function restoreGlPassState(state: GlRenderState, saved: Readonly<SavedGlPassState>): void {
+  const runtime = getGlRenderStateRuntime(state);
+  runtime.currentFramebuffer = saved.framebuffer;
+  runtime.currentRenderTarget = saved.renderTarget;
+  runtime.renderTargetViewport = saved.renderTargetViewport;
+  runtime.currentScissorRect = saved.scissorRect;
+  runtime.scissorStack = saved.scissorStack;
+  runtime.clipForms = saved.clipForms;
+  runtime.currentMaskDepth = saved.currentMaskDepth;
+  state.renderTransform2D = saved.renderTransform2D;
 }
 
 function applyGlScissor(gl: WebGL2RenderingContext, rect: Readonly<GlScissorRect> | null): void {
@@ -312,6 +359,7 @@ function clampGlPassEdge(value: number, extent: number): number {
   return Math.min(extent, Math.max(0, value));
 }
 
-// The pass bracket's save/restore stack, keyed off the render state so nested passes restore in order.
-const _passStack = new WeakMap<GlRenderState, SavedGlPass[]>();
+// A WebGL context has exactly one framebuffer binding and one live stencil gate. Keying the pass
+// bracket by that physical owner keeps cache GlRenderStates sharing a context in the same LIFO scope.
+const _passStack = new WeakMap<WebGL2RenderingContext, GlPassStackEntry[]>();
 const _clearRgba = new Float32Array(4);

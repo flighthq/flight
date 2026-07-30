@@ -161,6 +161,25 @@ describe('beginGlRenderPass', () => {
     expect(runtime.currentRenderTarget).toBe(outer);
     expect(runtime.renderTargetViewport).toEqual({ height: 48, width: 64, x: 0, y: 0 });
   });
+
+  it('shares pass ownership between render states using the same context', () => {
+    const outerFixture = createGlState();
+    const innerFixture = createGlState();
+    const { gl, state: outerState } = outerFixture;
+    const innerState = innerFixture.state;
+    (innerState as { gl: WebGL2RenderingContext }).gl = gl;
+    const outer = makeTarget({ width: 64, height: 48 });
+    const inner = makeTarget({ width: 32, height: 24 });
+
+    beginGlRenderPass(outerState, outer);
+    beginGlRenderPass(innerState, inner);
+    endGlRenderPass(innerState);
+
+    expect(vi.mocked(gl.bindFramebuffer).mock.calls.at(-1)?.[1]).toBe(outer.framebuffer);
+    expect(getGlRenderStateRuntime(outerState).currentRenderTarget).toBe(outer);
+    expect(getGlRenderStateRuntime(innerState).currentRenderTarget).toBeNull();
+    endGlRenderPass(outerState);
+  });
 });
 
 describe('endGlRenderPass', () => {
