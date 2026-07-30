@@ -11,6 +11,7 @@ import {
   defaultCanvasShapeRenderer,
   defaultCanvasSpriteRenderer,
   defaultCanvasTextLabelRenderer,
+  defaultCanvasTextureShapeCommands,
   defaultCanvasTilemapRenderer,
   enableCanvasBlendMode,
   enableCanvasClip,
@@ -19,7 +20,10 @@ import {
   ParticleEmitter2DKind,
   prepareScene2DRender,
   QuadBatchKind,
+  registerCanvasImageTextureResolver,
+  registerCanvasRenderTextureResolver,
   registerCanvasShapeCommands,
+  registerCanvasVideoTextureResolver,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasScene2D,
@@ -52,10 +56,13 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
   // store here. See ../README.md for why this lives in renderTransform2D rather than the scene.
   state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
+  registerCanvasImageTextureResolver(state);
+  registerCanvasRenderTextureResolver(state);
+  registerCanvasVideoTextureResolver(state);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
       registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
-      registerCanvasShapeCommands(defaultCanvasShapeCommands);
+      registerCanvasShapeCommands([...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
     } else if (kind === RichTextKind) {
       registerRenderer(state, RichTextKind, defaultCanvasRichTextRenderer);
     } else if (kind === TextLabelKind) {
@@ -71,7 +78,7 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
     } else if (kind === Scale9ShapeKind) {
       registerRenderer(state, Scale9ShapeKind, defaultCanvasScale9ShapeRenderer);
       // Scale9 rasterizes its nine patches through the same canvas shape commands as Shape.
-      registerCanvasShapeCommands(defaultCanvasShapeCommands);
+      registerCanvasShapeCommands([...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
     }
   }
 

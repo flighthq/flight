@@ -17,6 +17,7 @@ import {
   prepareScene2DRender,
   registerRenderer,
   registerStandardWgpuMaterial,
+  registerWgpuCompressedImageTextureResolver,
   registerWgpuCompressedTextureDecoder,
   registerWgpuCompressedTextureUpload,
   registerWgpuImageTextureResolver,
@@ -52,6 +53,7 @@ export const width = WIDTH;
 export const height = HEIGHT;
 registerStandardWgpuMaterial(state);
 registerWgpuImageTextureResolver(state);
+registerWgpuCompressedImageTextureResolver(state);
 registerRenderer(state, DisplayObjectKind, defaultWgpuScene2DRenderer);
 registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);
 registerWgpuCompressedTextureUpload(state);
