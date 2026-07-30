@@ -60,6 +60,49 @@ describe('acquireGlRenderTarget', () => {
     expect(pool.free).toContain(first);
   });
 
+  it('reuses the effective rgba8 target when a preferred float format is unsupported', () => {
+    const { state, gl } = createGlState();
+    vi.spyOn(gl, 'getExtension').mockReturnValue(null);
+    const pool = createGlRenderTargetPool();
+    const first = acquireGlRenderTarget(state, pool, { width: 64, height: 48, format: 'rgba8' });
+    releaseGlRenderTarget(pool, first);
+
+    const reused = acquireGlRenderTarget(state, pool, { width: 64, height: 48, format: 'rgba32f' }, 'preferred');
+    expect(reused).toBe(first);
+    expect(reused.format).toBe('rgba8');
+    expect(reused.requestedAxes.format).toBe('rgba32f');
+    expect(reused.requestedAxes.colorFormats).toEqual(['rgba32f']);
+  });
+
+  it('refuses an unsupported required float format without consuming a fallback target', () => {
+    const { state, gl } = createGlState();
+    vi.spyOn(gl, 'getExtension').mockReturnValue(null);
+    const pool = createGlRenderTargetPool();
+    const fallback = acquireGlRenderTarget(state, pool, { width: 64, height: 48, format: 'rgba8' });
+    releaseGlRenderTarget(pool, fallback);
+    const createFramebufferSpy = vi.spyOn(gl, 'createFramebuffer');
+    const clearSpy = vi.spyOn(gl, 'clear');
+    createFramebufferSpy.mockClear();
+    clearSpy.mockClear();
+
+    const refused = acquireGlRenderTarget(state, pool, { width: 64, height: 48, format: 'rgba32f' }, 'required');
+    expect(refused).toBeNull();
+    expect(pool.free).toEqual([fallback]);
+    expect(createFramebufferSpy).not.toHaveBeenCalled();
+    expect(clearSpy).not.toHaveBeenCalled();
+  });
+
+  it('allocates a supported required float format', () => {
+    const { state, gl } = createGlState();
+    vi.spyOn(gl, 'getExtension').mockReturnValue({} as never);
+    const pool = createGlRenderTargetPool();
+
+    const target = acquireGlRenderTarget(state, pool, { width: 64, height: 48, format: 'rgba16f' }, 'required');
+    expect(target).not.toBeNull();
+    expect(target?.format).toBe('rgba16f');
+    expect(target?.requestedAxes.format).toBe('rgba16f');
+  });
+
   it('does not reuse a target with a different depth mode', () => {
     const { state } = createGlState();
     const pool = createGlRenderTargetPool();

@@ -5,6 +5,7 @@ import type {
   GlRenderTargetPool,
   RenderTargetAxes,
   RenderTargetDescriptor,
+  RenderTargetFormatPolicy,
 } from '@flighthq/types/contract';
 
 import { clearGlRenderTarget } from './glFullscreenPass';
@@ -23,9 +24,34 @@ export function acquireGlRenderTarget(
   state: GlRenderState,
   pool: GlRenderTargetPool,
   descriptor: Readonly<RenderTargetDescriptor>,
-): GlRenderTarget {
+): GlRenderTarget;
+export function acquireGlRenderTarget(
+  state: GlRenderState,
+  pool: GlRenderTargetPool,
+  descriptor: Readonly<RenderTargetDescriptor>,
+  formatPolicy: 'preferred',
+): GlRenderTarget;
+export function acquireGlRenderTarget(
+  state: GlRenderState,
+  pool: GlRenderTargetPool,
+  descriptor: Readonly<RenderTargetDescriptor>,
+  formatPolicy: 'required',
+): GlRenderTarget | null;
+export function acquireGlRenderTarget(
+  state: GlRenderState,
+  pool: GlRenderTargetPool,
+  descriptor: Readonly<RenderTargetDescriptor>,
+  formatPolicy: RenderTargetFormatPolicy,
+): GlRenderTarget | null;
+export function acquireGlRenderTarget(
+  state: GlRenderState,
+  pool: GlRenderTargetPool,
+  descriptor: Readonly<RenderTargetDescriptor>,
+  formatPolicy: RenderTargetFormatPolicy = 'preferred',
+): GlRenderTarget | null {
   const requested = resolveRenderTargetDescriptor(descriptor);
-  const effective = resolveGlRenderTargetAxes(state, requested);
+  const effective = resolveGlRenderTargetAxes(state, requested, formatPolicy);
+  if (!effective) return null;
 
   for (let i = 0; i < pool.free.length; i++) {
     const candidate = pool.free[i];
@@ -47,7 +73,7 @@ export function acquireGlRenderTarget(
       return candidate;
     }
   }
-  return createGlRenderTarget(state, descriptor);
+  return createGlRenderTarget(state, descriptor, formatPolicy);
 }
 
 export function createGlRenderTargetPool(): GlRenderTargetPool {
