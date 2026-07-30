@@ -136,6 +136,11 @@ export function showSaveFileDialog(options: Readonly<SaveFileDialogOptions>): Pr
   return getDialogBackend().saveFile(options);
 }
 
+// Shows a warning-severity message dialog. Returns the full result including cancelled flag.
+export function showWarningDialog(options: Readonly<MessageDialogOptions>): Promise<MessageDialogResult> {
+  return getDialogBackend().message({ ...options, kind: 'warning' });
+}
+
 let _backend: DialogBackend | null = null;
 
 // Builds a FileDialogFilter accept list for the File System Access API's 'types' option.
@@ -387,11 +392,6 @@ const _fileSystemDirectoryHandleRegistry = new WeakMap<FileDialogHandle, FileSys
 // because it is the only party that creates and observes the FileSystemFileHandle lifecycle.
 // Keys are plain FileDialogHandle objects (reference equality); values are the native handles.
 const _fileSystemHandleRegistry = new WeakMap<FileDialogHandle, FileSystemFileHandle>();
-
-// Shows a warning-severity message dialog. Returns the full result including cancelled flag.
-export function showWarningDialog(options: Readonly<MessageDialogOptions>): Promise<MessageDialogResult> {
-  return getDialogBackend().message({ ...options, kind: 'warning' });
-}
 
 // Minimal type stubs for the File System Access API, which is not in all lib.dom.d.ts versions.
 interface FileSystemFileHandle {
