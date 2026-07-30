@@ -40,25 +40,6 @@ thirdVideoNode.y = 280;
 thirdVideoNode.rotation = 10;
 addNodeChild(root, thirdVideoNode);
 
-if (captureWindow.__flightCapture === true) {
-  setVideoSources(createCaptureVideoResource(), createCaptureVideoResource(), createCaptureVideoResource());
-  renderFrame();
-} else {
-  generateVideoBlob().then(async (blob) => {
-    const opts = { muted: true, playsInline: true } as const;
-    const [resource1, resource2, resource3] = await Promise.all([
-      loadVideoResourceFromBlob(blob, opts),
-      loadVideoResourceFromBlob(blob, opts),
-      loadVideoResourceFromBlob(blob, opts),
-    ]);
-
-    setVideoSources(resource1, resource2, resource3);
-    startVideoChannels([resource1, resource2, resource3]);
-
-    requestAnimationFrame(enterFrame);
-  });
-}
-
 const videoChannels: VideoChannel[] = [];
 
 function startVideoChannels(resources: readonly VideoResource[]): void {
@@ -163,5 +144,24 @@ function generateVideoBlob(): Promise<Blob> {
     };
 
     drawFrame();
+  });
+}
+
+if (captureWindow.__flightCapture === true) {
+  setVideoSources(createCaptureVideoResource(), createCaptureVideoResource(), createCaptureVideoResource());
+  renderFrame();
+} else {
+  generateVideoBlob().then(async (blob) => {
+    const opts = { muted: true, playsInline: true } as const;
+    const [resource1, resource2, resource3] = await Promise.all([
+      loadVideoResourceFromBlob(blob, opts),
+      loadVideoResourceFromBlob(blob, opts),
+      loadVideoResourceFromBlob(blob, opts),
+    ]);
+
+    setVideoSources(resource1, resource2, resource3);
+    startVideoChannels([resource1, resource2, resource3]);
+
+    requestAnimationFrame(enterFrame);
   });
 }
