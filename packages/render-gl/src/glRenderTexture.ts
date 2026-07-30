@@ -85,6 +85,7 @@ export function renderIntoGlRenderTexture(
   callback: (state: GlRenderState) => void,
 ): void {
   const entry = ensureEntry(state, renderTexture);
+  const previousStatus = entry.status;
   entry.status = 'writing';
   let rendered = false;
   pushGlRenderState(state);
@@ -98,7 +99,10 @@ export function renderIntoGlRenderTexture(
     }
   } finally {
     popGlRenderState(state);
-    entry.status = rendered ? 'ready' : 'unrendered';
+    // A rejected nested write shares this entry with the still-active outer writer. Preserve that
+    // ownership so catching the nested precondition failure cannot make the outer attachment appear
+    // unrendered. A top-level or replacement failure still invalidates the result to 'unrendered'.
+    entry.status = rendered ? 'ready' : previousStatus === 'writing' ? 'writing' : 'unrendered';
     if (rendered) {
       renderTexture.colorSpace = entry.target.colorSpace;
       renderTexture.version = (renderTexture.version + 1) >>> 0;

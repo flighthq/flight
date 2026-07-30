@@ -163,6 +163,22 @@ describe('renderIntoGlRenderTexture', () => {
     expect(bindGlRenderTexture(state, renderTexture)).toBeNull();
   });
 
+  it('keeps an outer writer active after a nested same-target pass is rejected', () => {
+    const { state } = createRenderTextureState();
+    const renderTexture = createRenderTexture({ height: 8, width: 8 });
+
+    renderIntoGlRenderTexture(state, renderTexture, () => {
+      getGlRenderStateRuntime(state).currentMaskDepth = 1;
+
+      expect(() => renderIntoGlRenderTexture(state, renderTexture, () => {})).toThrow(
+        'cannot nest the active framebuffer while a contour clip is live',
+      );
+      expect(explainGlRenderTexture(state, renderTexture).status).toBe('writing');
+    });
+
+    expect(explainGlRenderTexture(state, renderTexture).status).toBe('ready');
+  });
+
   it('resizes the retained target when the source dimensions change', () => {
     const { state } = createRenderTextureState();
     const renderTexture = createRenderTexture({ height: 16, width: 32 });

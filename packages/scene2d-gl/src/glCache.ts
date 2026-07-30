@@ -157,8 +157,8 @@ export function getGlRenderCacheTarget(state: GlRenderState, cache: RenderCache)
  * Bakes `source`'s subtree into its cache target using the offscreen `cacheState`, then records
  * the transform that places the result back in scene space. Returns whether a bake happened —
  * the offscreen state's own dirtiness decides it (honoring its sceneGraphSyncPolicy), so this is
- * cheap to call every frame. Because the bake runs on the shared GL context, the screen state's
- * cached GL state is reset afterward so it re-establishes cleanly on its next draw.
+ * cheap to call every frame. The render-pass bracket owns the shared GL context while the cache
+ * state bakes, then restores the screen pass and invalidates both states' binding caches.
  */
 export function refreshGlRenderCache(
   cacheState: GlRenderState,
@@ -190,16 +190,6 @@ export function refreshGlRenderCache(
     setGlRenderTransform2D(cacheState, _renderTransform);
     dirty = prepareScene2DRender(cacheState, source);
     if (dirty || resized) {
-      const cacheRuntime = getGlRenderStateRuntime(cacheState);
-      // The cache state shares the screen's GL context, so the actual GL program/blend/scissor are
-      // whatever the screen render (or a prior blur pass) last left — state this cache state does not
-      // track. Reset its cached GL state so the bake re-establishes everything instead of skipping a
-      // rebind and setting uniforms on the wrong program.
-      cacheRuntime.currentProgram = null;
-      cacheRuntime.currentTexture = null;
-      cacheRuntime.currentTextureStraightAlpha = false;
-      cacheRuntime.currentBlendMode = null;
-      cacheRuntime.currentScissorRect = null;
       cacheState.gl.clearColor(0, 0, 0, 0);
       cacheState.gl.clear(cacheState.gl.COLOR_BUFFER_BIT);
       renderGlScene2D(cacheState, source);
@@ -208,12 +198,6 @@ export function refreshGlRenderCache(
     endGlRenderPass(cacheState);
   }
 
-  const screenRuntime = getGlRenderStateRuntime(screenState);
-  screenRuntime.currentBlendMode = null;
-  screenRuntime.currentProgram = null;
-  screenRuntime.currentScissorRect = null;
-  screenRuntime.currentTexture = null;
-  screenRuntime.currentTextureStraightAlpha = false;
   return dirty || resized;
 }
 
