@@ -1571,6 +1571,53 @@ describe('createScene3DFromGltf animations', () => {
   });
 });
 
+describe('createScene3DFromGltf uv set declarations', () => {
+  // Geometry import carries TEXCOORD_0 only. A material asking for another set therefore samples set 0
+  // — the right texels read through the wrong coordinates, which renders as a plausible but wrong
+  // image rather than a visible failure. Importing the higher sets is a separate cross-package step;
+  // what this pins is that the file's request is not swallowed on the way past.
+  function makeTexturedGltf(textureInfo: Record<string, unknown>): GltfDocument {
+    const doc = makeTriangleGltf() as GltfDocument & { [k: string]: unknown };
+    doc.images = [{ mimeType: 'image/png', uri: 'data:image/png;base64,iVBORw0KGgo=' }];
+    doc.textures = [{ source: 0 }];
+    doc.materials = [{ pbrMetallicRoughness: { baseColorTexture: textureInfo } }] as never;
+    doc.meshes![0].primitives[0].material = 0;
+    return doc;
+  }
+
+  it('reports a texCoord set the parser cannot supply', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    createScene3DFromGltf(makeTexturedGltf({ index: 0, texCoord: 1 }), diagnostics);
+    const crumb = findGltfDiagnostic(diagnostics, 'gltf.texcoord-set-unsupported');
+    expect(crumb).not.toBeUndefined();
+    expect(crumb?.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(crumb?.detail?.firstUvSet).toBe(1);
+  });
+
+  it('lets KHR_texture_transform override the set it reports', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    createScene3DFromGltf(
+      makeTexturedGltf({ index: 0, texCoord: 0, extensions: { KHR_texture_transform: { texCoord: 2 } } }),
+      diagnostics,
+    );
+    expect(findGltfDiagnostic(diagnostics, 'gltf.texcoord-set-unsupported')?.detail?.firstUvSet).toBe(2);
+  });
+
+  it('stays silent for the set it does supply, whether declared or omitted', () => {
+    for (const info of [{ index: 0 }, { index: 0, texCoord: 0 }]) {
+      const diagnostics: ImportDiagnostic[] = [];
+      createScene3DFromGltf(makeTexturedGltf(info), diagnostics);
+      expect(findGltfDiagnostic(diagnostics, 'gltf.texcoord-set-unsupported')).toBeUndefined();
+    }
+  });
+
+  it('still builds the material and its texture — this is a Recover, not a drop', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = createScene3DFromGltf(makeTexturedGltf({ index: 0, texCoord: 1 }), diagnostics);
+    expect(scene).not.toBeNull();
+  });
+});
+
 describe('createScene3DsFromGlb', () => {
   it('imports every scene from a GLB container, with animations on the default scene', () => {
     const glb = buildGlb(makeAnimatedMultiScene3DGltf(), new Uint8Array(0));

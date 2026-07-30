@@ -913,6 +913,20 @@ function resolveGltfTexture(
   }
   const result = createTexture({ resource });
 
+  // The UV set this map asks for. Geometry import carries TEXCOORD_0 only, so any other set is not
+  // there to sample and the map silently reads set 0 — the right texels from the wrong coordinates,
+  // which renders as a plausible but wrong image rather than a visible failure. Report it rather than
+  // let it pass: importing the higher sets is a separate (cross-package) step, but a caller is
+  // entitled to know the file asked for something this parser did not deliver. KHR_texture_transform
+  // may override the set, so it is the one that decides.
+  const requestedUvSet = info.extensions?.KHR_texture_transform?.texCoord ?? info.texCoord ?? 0;
+  if (requestedUvSet !== 0) {
+    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.texcoord-set-unsupported', '', {
+      firstTexture: info.index,
+      firstUvSet: requestedUvSet,
+    });
+  }
+
   result.colorSpace = colorSpace;
   applyGltfSampler(result, texture.sampler !== undefined ? doc.samplers?.[texture.sampler] : undefined);
   applyGltfTextureTransform(result, info.extensions?.KHR_texture_transform);
