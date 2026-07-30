@@ -5,6 +5,7 @@ import { createSkeleton2D } from '@flighthq/skeleton2d/contract';
 import type {
   AnimationChannel,
   Attachment2D,
+  AttachmentSkin2D,
   Bone2D,
   ByteReader,
   EasingFunction,
@@ -14,6 +15,7 @@ import type {
   Skeleton2DImport,
   Skeleton2DImportAnimation,
   Skin2D,
+  SkinAttachment2D,
   Slot2D,
 } from '@flighthq/types/contract';
 import {
@@ -99,14 +101,17 @@ export function parseSpineSkeletonBinary(
   const bones = parseSpineBinaryBones(reader, nonessential);
   const { attachmentNames, slots } = parseSpineBinarySlots(reader, strings, diagnostics);
   skipSpineBinaryConstraints(reader, diagnostics);
-  const skin = parseSpineBinaryDefaultSkin(reader, strings, nonessential, diagnostics);
+  const skins = parseSpineBinarySkins(reader, strings, nonessential, diagnostics);
   // A slot names its setup attachment BEFORE the skin that defines it has been read, so resolution waits
-  // until here — the file orders slots first, but the name only means something once the skin exists.
-  for (let i = 0; i < slots.length; i++) {
-    const name = attachmentNames[i];
-    if (name !== null) slots[i].attachment = skin.get(i)?.get(name) ?? null;
+  // until here — the file orders slots first, but the name only means something once the skins exist.
+  const setup = skins.find((skin) => skin.name === SPINE_BINARY_DEFAULT_SKIN_NAME);
+  if (setup !== undefined) {
+    for (const entry of setup.attachments) {
+      if (entry.slotIndex < slots.length && attachmentNames[entry.slotIndex] === entry.name) {
+        slots[entry.slotIndex].attachment = entry.attachment;
+      }
+    }
   }
-  skipCrumbSpineBinaryAlternateSkins(reader, diagnostics);
   skipSpineBinaryEvents(reader, diagnostics);
   const animations = parseSpineBinaryAnimations(reader, strings, diagnostics);
   if (isSpineBinaryReaderOverrun(reader)) {
@@ -126,7 +131,9 @@ export function parseSpineSkeletonBinary(
       { bytes: bytes.byteLength - reader.offset },
     );
   }
-  return { animations, skeleton: createSkeleton2D(bones, slots) };
+  const skeleton = createSkeleton2D(bones, slots);
+  if (skins.length > 0) skeleton.skins = skins;
+  return { animations, skeleton };
 }
 
 // The event DEFINITIONS a file declares (name plus default int/float/string/audio payload). Flight's
@@ -612,33 +619,41 @@ function skipSpineBinaryConstraintHead(reader: ByteReader): void {
   for (let i = 0; i < bones && !isSpineBinaryReaderOverrun(reader); i++) readSpineBinaryVarint(reader);
 }
 
-// The default skin: `slotIndex → attachmentName → Attachment2D`. Entries are keyed by an explicit slot index
-// and are NOT written in slot order, so the table is a map rather than a positional array. Region and mesh
-// attachments are modeled; bounding-box, path, point, clipping, and linked-mesh entries are recognized —
-// and still fully consumed, since skipping their bytes is not possible — then Skip-crumbed and dropped.
-function parseSpineBinaryDefaultSkin(
+// The rig's wardrobe. The DEFAULT skin is written first in an abbreviated form — just its slot count, with
+// no name and no bone/constraint lists — and the named alternates follow, each carrying a name plus the
+// bone and constraint indices it requires. Both forms share the same slot → attachment body.
+//
+// Region and mesh attachments are modeled; bounding-box, path, point, clipping, and linked-mesh entries are
+// recognized — and still fully consumed, since skipping their bytes is not possible — then Skip-crumbed.
+function parseSpineBinarySkins(
   reader: ByteReader,
   strings: readonly (string | null)[],
   nonessential: boolean,
   diagnostics?: ImportDiagnostic[],
-): Map<number, Map<string, Attachment2D>> {
-  const table = new Map<number, Map<string, Attachment2D>>();
-  const slotCount = readSpineBinaryVarint(reader);
+): AttachmentSkin2D[] {
+  const skins: AttachmentSkin2D[] = [];
   const unmodeled = new Map<string, number>();
-  for (let i = 0; i < slotCount && !isSpineBinaryReaderOverrun(reader); i++) {
-    const slotIndex = readSpineBinaryVarint(reader);
-    const attachments = readSpineBinaryVarint(reader);
-    for (let j = 0; j < attachments && !isSpineBinaryReaderOverrun(reader); j++) {
-      const key = readSpineBinaryStringReference(reader, strings);
-      const attachment = readSpineBinaryAttachment(reader, strings, key, nonessential, unmodeled);
-      if (attachment === null || key === null) continue;
-      let perSlot = table.get(slotIndex);
-      if (perSlot === undefined) {
-        perSlot = new Map<string, Attachment2D>();
-        table.set(slotIndex, perSlot);
-      }
-      perSlot.set(key, attachment);
+  const defaultSlots = readSpineBinaryVarint(reader);
+  if (defaultSlots > 0) {
+    skins.push({
+      attachments: readSpineBinarySkinBody(reader, strings, defaultSlots, nonessential, unmodeled),
+      name: SPINE_BINARY_DEFAULT_SKIN_NAME,
+    });
+  }
+  const alternates = readSpineBinaryVarint(reader);
+  for (let i = 0; i < alternates && !isSpineBinaryReaderOverrun(reader); i++) {
+    const name = readSpineBinaryStringReference(reader, strings);
+    // A named skin declares the bones and the IK / transform / path constraints it requires, as four index
+    // lists, before its slots. Flight applies a skin as a slot write, so these are consumed for position only.
+    for (let list = 0; list < SPINE_BINARY_SKIN_REQUIREMENT_LISTS; list++) {
+      const required = readSpineBinaryVarint(reader);
+      for (let j = 0; j < required && !isSpineBinaryReaderOverrun(reader); j++) readSpineBinaryVarint(reader);
     }
+    const slotCount = readSpineBinaryVarint(reader);
+    skins.push({
+      attachments: readSpineBinarySkinBody(reader, strings, slotCount, nonessential, unmodeled),
+      name: name ?? '',
+    });
   }
   for (const [type, count] of unmodeled) {
     reportImportDiagnostic(
@@ -649,7 +664,29 @@ function parseSpineBinaryDefaultSkin(
       { attachments: count },
     );
   }
-  return table;
+  return skins;
+}
+
+// One skin's slot → attachment body, shared by the default and named forms. Entries carry an explicit slot
+// index and are NOT written in slot order.
+function readSpineBinarySkinBody(
+  reader: ByteReader,
+  strings: readonly (string | null)[],
+  slotCount: number,
+  nonessential: boolean,
+  unmodeled: Map<string, number>,
+): SkinAttachment2D[] {
+  const attachments: SkinAttachment2D[] = [];
+  for (let i = 0; i < slotCount && !isSpineBinaryReaderOverrun(reader); i++) {
+    const slotIndex = readSpineBinaryVarint(reader);
+    const entries = readSpineBinaryVarint(reader);
+    for (let j = 0; j < entries && !isSpineBinaryReaderOverrun(reader); j++) {
+      const key = readSpineBinaryStringReference(reader, strings);
+      const attachment = readSpineBinaryAttachment(reader, strings, key, nonessential, unmodeled);
+      if (attachment !== null && key !== null) attachments.push({ attachment, name: key, slotIndex });
+    }
+  }
+  return attachments;
 }
 
 // One attachment record. Its own name overrides the skin key when present (a slot can show the same image
@@ -799,12 +836,6 @@ function skipSpineBinarySequence(reader: ByteReader): void {
   readSpineBinaryVarint(reader); // setup index
 }
 
-// Alternate (named) skins are the skin-set feature Flight does not model. Only the COUNT is read: their
-// bodies fall inside the unparsed tail this landing stops at.
-function skipCrumbSpineBinaryAlternateSkins(reader: ByteReader, diagnostics?: ImportDiagnostic[]): void {
-  reportSpineBinaryCrumb(diagnostics, readSpineBinaryVarint(reader), 'spine.alternate-skin-unsupported', 'skins');
-}
-
 // Resolves a 1-based string-table index (0 meaning "no string") into its pooled string.
 function readSpineBinaryStringReference(reader: ByteReader, strings: readonly (string | null)[]): string | null {
   const index = readSpineBinaryVarint(reader);
@@ -896,6 +927,12 @@ const SPINE_BINARY_CURVE_EPSILON = 1e-6;
 
 // Spine writes -1 into a slot's dark color to mean "this slot has none".
 const SPINE_BINARY_NO_DARK_COLOR = -1;
+
+// Spine writes the base skin first, unnamed; this is the name it is filed under in the wardrobe.
+const SPINE_BINARY_DEFAULT_SKIN_NAME = 'default';
+
+// A named skin lists what it requires as four index lists: bones, then IK, transform, and path constraints.
+const SPINE_BINARY_SKIN_REQUIREMENT_LISTS = 4;
 
 // The bone transform modes in Spine's own enum ORDER — the ordinal written in the file indexes this array,
 // so the order is load-bearing and must not be alphabetized.

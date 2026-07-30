@@ -1,5 +1,10 @@
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
-import { applyAnimationClipToSkeleton2D, cloneSkeleton2D } from '@flighthq/skeleton2d/contract';
+import {
+  applyAnimationClipToSkeleton2D,
+  cloneSkeleton2D,
+  getSkeleton2DSkin,
+  setSkeleton2DSkin,
+} from '@flighthq/skeleton2d/contract';
 import type {
   AnimationChannel,
   ImportDiagnostic,
@@ -379,7 +384,7 @@ describe('parseDragonBonesSkeleton', () => {
     expect(region.x).toBe(9);
   });
 
-  it('Skip-crumbs additional armatures, alternate skins, and IK constraints', () => {
+  it('Skip-crumbs additional armatures and IK constraints, but now PARSES alternate skins', () => {
     const doc = {
       armature: [
         {
@@ -399,10 +404,66 @@ describe('parseDragonBonesSkeleton', () => {
     );
     const kinds = crumbs.map((c) => c.kind);
     expect(kinds).toContain('dragonbones.multi-armature-unsupported');
-    expect(kinds).toContain('dragonbones.alternate-skin-unsupported');
     expect(kinds).toContain('dragonbones.ik-constraint-unsupported');
+    // The alternate skin is a wardrobe entry now, not a Skip crumb.
+    expect(kinds).not.toContain('dragonbones.alternate-skin-unsupported');
+    expect(parseDragonBonesSkeleton(JSON.stringify(doc))!.skeleton.skins!.map((s) => s.name)).toEqual([
+      'default',
+      'costume2',
+    ]);
     // Only the first armature is parsed.
     expect(parseDragonBonesSkeleton(JSON.stringify(doc))!.skeleton.bones[0].name).toBe('root');
+  });
+
+  it('parses every armature skin into the wardrobe, keyed by display name', () => {
+    const doc = {
+      armature: [
+        {
+          bone: [{ name: 'root' }],
+          slot: [
+            { name: 'head', parent: 'root', displayIndex: 0 },
+            { name: 'hand', parent: 'root' },
+          ],
+          skin: [
+            { name: 'default', slot: [{ name: 'head', display: [{ name: 'face' }] }] },
+            {
+              name: 'costume2',
+              slot: [
+                { name: 'head', display: [{ name: 'face-alt' }] },
+                { name: 'hand', display: [{ name: 'axe' }] },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const skeleton = parseDragonBonesSkeleton(JSON.stringify(doc))!.skeleton;
+    expect(skeleton.skins!.map((s) => s.name)).toEqual(['default', 'costume2']);
+    const alt = skeleton.skins![1];
+    expect(alt.attachments.map((a) => [a.slotIndex, a.name])).toEqual([
+      [0, 'face-alt'],
+      [1, 'axe'],
+    ]);
+    // The setup pose still resolves through displayIndex against the DEFAULT skin's positional list.
+    expect((skeleton.slots![0].attachment as RegionAttachment2D).name).toBe('face');
+  });
+
+  it('wears an alternate DragonBones skin over the setup pose', () => {
+    const doc = {
+      armature: [
+        {
+          bone: [{ name: 'root' }],
+          slot: [{ name: 'head', parent: 'root', displayIndex: 0 }],
+          skin: [
+            { name: 'default', slot: [{ name: 'head', display: [{ name: 'face' }] }] },
+            { name: 'costume2', slot: [{ name: 'head', display: [{ name: 'face-alt' }] }] },
+          ],
+        },
+      ],
+    };
+    const skeleton = parseDragonBonesSkeleton(JSON.stringify(doc))!.skeleton;
+    setSkeleton2DSkin(skeleton, getSkeleton2DSkin(skeleton, 'costume2')!);
+    expect((skeleton.slots![0].attachment as RegionAttachment2D).name).toBe('face-alt');
   });
 
   it('emits a bone with an unresolved parent as a root and Skip-crumbs it', () => {
