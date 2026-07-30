@@ -15,7 +15,8 @@ basedOn: ./review.md
    without retaining a SWF player runtime.
 2. **Materialize visible archive content.** Add versioned `DefineShape*`, bitmap, text/font, mask,
    color-transform, blend, and filter coverage onto existing Flight primitives without retaining a
-   player runtime.
+   player runtime. Lossless bitmap and video dimension prefixes now supply structural extents, not
+   decoded pixels or frames.
 3. **Complete container seams and evidence.** Route `CWS`/`ZWS` through registered decompressors,
    expose `DoABC` payloads opaquely, and validate supported tags against representative externally
    produced fixtures.

@@ -15,6 +15,9 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`.
 - The stage RECT becomes the document root's authored local bounds. Shape, morph-shape, static/edit
   text definition bounds become placed-target extents, and sprite extents recursively union every
   available child bound through its placement matrix.
+- Lossless bitmap definitions retain their declared pixel dimensions, including colormapped alpha
+  headers, and video stream definitions retain declared frame dimensions. Their media payloads remain
+  opaque and no visual body is materialized.
 - `PlaceObject` through `PlaceObject4` cover legacy and current first-frame placement records;
   `RemoveObject` and `RemoveObject2` update that display list before its first-frame snapshot.
 - `PlaceObject2`/`PlaceObject3` distinguish fresh placements from move/update and replacement records.
@@ -28,13 +31,13 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`.
   `scene2d-resources` registry; importing the module has no registration side effect.
 - Missing sprite End tags, duplicate definitions, cyclic symbol graphs, excessive nesting, and
   excessive instantiated-node counts reject safely.
-- Compressed `CWS`/`ZWS`, later MovieClip frames, visual definition bodies, bitmap/video/button/font
-  extents, and opaque `DoABC` exposure remain staged rather than being represented incompletely.
+- Compressed `CWS`/`ZWS`, later MovieClip frames, visual definition bodies, JPEG/button/font extents,
+  and opaque `DoABC` exposure remain staged rather than being represented incompletely.
 
 The package is wired through the SDK root and formats barrel, build graph, package layer, path aliases,
 and lockfile. Synthetic byte-level tests cover all four placement generations, both removal
 generations, fresh/move/replacement state, first-frame isolation, linkage, transforms, opt-in
 registration, compressed rejection, malformed/truncated input, recursively nested sprites, composed
-transforms, recursive-graph rejection, stage bounds, direct definition bounds, and recursively composed
-sprite extents. A canonical externally produced fixture remains unavailable locally; evidence is still
-synthetic.
+transforms, recursive-graph rejection, stage bounds, RECT-based definition bounds, lossless-bitmap and
+video dimensions, and recursively composed sprite extents. A canonical externally produced fixture
+remains unavailable locally; evidence is still synthetic.
