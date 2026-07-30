@@ -141,6 +141,7 @@ _Append-only, dated, blessed rulings._
    supplies (structural vs nominal), and the diagnostic when a document names a slot code never fills.
 3. ~~**Non-unique names**~~ — **resolved 2026-07-29:** importers retain direct target references in the
    manifest, so runtime name traversal is not part of binding.
-4. **Source coverage** — which importers feed the named-graph mode first (see the source cells: Rive
-   as the modern authoring source, SWF as the archetypal legacy source, SVG-from-XD as the cheap flat/
-   named channel that needs per-tool name resolution — `data-name`/`inkscape:label`/`<title>`/`id`).
+4. ~~**Source coverage**~~ — **ruled 2026-07-30 (user):** SWF is next. Rive is recorded as the second
+   source — a revisit candidate, since its MIT-licensed reference runtime means a permissive oracle
+   exists for it (unlike Spine's non-permissive one). SVG-deepening is declined for now: `scene2d-formats`
+   already carries SVG documents, so the marginal value of a second SVG path here is lowest of the three.
