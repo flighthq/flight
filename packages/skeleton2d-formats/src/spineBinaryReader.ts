@@ -84,6 +84,16 @@ export function readSpineBinaryString(reader: ByteReader): string | null {
   return _decoder.decode(bytes);
 }
 
+// A big-endian 16-bit value — Spine's `readShort()`, which it uses for mesh triangle indices. Java writes it
+// signed, but an index is never negative, so reading it unsigned is equivalent over the real value range and
+// matches `MeshAttachment2D.triangles`' `Uint16Array` without a sign-conversion step.
+export function readSpineBinaryUnsignedShort(reader: ByteReader): number {
+  if (!hasSpineBinaryBytes(reader, 2)) return markSpineBinaryOverrun(reader, 0);
+  const value = reader.view.getUint16(reader.offset, false);
+  reader.offset += 2;
+  return value;
+}
+
 // An UNSIGNED variable-length integer — Spine's `readInt(true)`, used for counts, indices, and string
 // lengths. Returned unsigned so a value with bit 31 set reads as a large count rather than a negative one.
 export function readSpineBinaryVarint(reader: ByteReader): number {
