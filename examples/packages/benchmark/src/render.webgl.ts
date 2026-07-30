@@ -4,10 +4,11 @@ import {
   TextLabelKind,
   createGlCanvasElement,
   createGlRenderState,
+  enableFlightDiagnostics,
   defaultGlQuadBatchRenderer,
   defaultGlTextLabelRenderer,
   prepareScene2DRender,
-  registerGlImageTextureResolver,
+  registerStandardGlTextureResolvers,
   registerStandardGlMaterial,
   registerRenderer,
   renderGlBackground,
@@ -24,8 +25,9 @@ export const state = createGlRenderState(canvas, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
+enableFlightDiagnostics(state);
 
-registerGlImageTextureResolver(state);
+registerStandardGlTextureResolvers(state);
 registerStandardGlMaterial(state);
 registerRenderer(state, QuadBatchKind, defaultGlQuadBatchRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);

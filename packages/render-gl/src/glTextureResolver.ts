@@ -1,3 +1,4 @@
+import { emitSignal } from '@flighthq/signals/contract';
 import { getTextureSource, getTextureSourceKind } from '@flighthq/texture/contract';
 import type {
   Bitmap,
@@ -13,6 +14,7 @@ import {
   BitmapTextureSourceKind,
   CompressedImageTextureSourceKind,
   ImageTextureSourceKind,
+  RenderRegistry,
   RenderTargetTextureSourceKind,
 } from '@flighthq/types/contract';
 
@@ -50,6 +52,12 @@ export function registerGlTextureResolver(
   else registry.set(sourceKind, resolver);
 }
 
+export function registerStandardGlTextureResolvers(state: GlRenderState): void {
+  registerGlBitmapTextureResolver(state);
+  registerGlImageTextureResolver(state);
+  registerGlRenderTextureResolver(state);
+}
+
 // Resolves through one keyed lookup using the source's declared kind. Resolution is deliberately not
 // pure: each built-in resolver leaves its result bound to TEXTURE_2D on the active texture unit because
 // GL upload and sampler application require that binding. Callers must not reorder this call across
@@ -60,11 +68,17 @@ export function resolveGlTexture(
   texture: Readonly<TextureLike>,
   premultiply = false,
 ): WebGLTexture | null {
-  const registry = getGlRenderStateRuntime(state).glTextureResolverRegistry;
-  if (registry == null) return null;
   const sourceKind = getTextureSourceKind(texture);
   if (sourceKind === null) return null;
-  return registry.get(sourceKind)?.(state, texture, premultiply) ?? null;
+  const runtime = getGlRenderStateRuntime(state);
+  const resolver = runtime.glTextureResolverRegistry?.get(sourceKind);
+  if (resolver === undefined) {
+    if (runtime.registrySignals !== null) {
+      emitSignal(runtime.registrySignals.onRegistryMiss, RenderRegistry.TextureResolver, sourceKind);
+    }
+    return null;
+  }
+  return resolver(state, texture, premultiply);
 }
 
 function resolveGlBitmapTexture(

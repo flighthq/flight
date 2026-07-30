@@ -23,7 +23,7 @@ import {
   ImageChannel,
   normalizeVector3,
   prepareScene3DRender,
-  registerGlImageTextureResolver,
+  registerStandardGlTextureResolvers,
   registerStandardPbrGlMaterial,
   renderGlBackground,
   setTextureUvScale,
@@ -42,7 +42,7 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0x002850ff,
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
-registerGlImageTextureResolver(state);
+registerStandardGlTextureResolvers(state);
 registerStandardPbrGlMaterial(state);
 
 const pipeline = createGlRenderEffectPipeline(state, {

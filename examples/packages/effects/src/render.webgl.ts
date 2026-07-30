@@ -5,10 +5,12 @@ import {
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
+  enableFlightDiagnostics,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
   prepareScene2DRender,
+  registerStandardGlTextureResolvers,
   defaultGlBloomEffectRunner,
   defaultGlToneMapEffectRunner,
   defaultGlVignetteEffectRunner,
@@ -30,7 +32,9 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0x0a0c14ff,
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
+enableFlightDiagnostics(state);
 
+registerStandardGlTextureResolvers(state);
 registerStandardGlMaterial(state);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);

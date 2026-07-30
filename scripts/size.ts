@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import pc from 'picocolors';
 
 import type { SizeResult } from './size-runner';
-import { collectSizeCases, runSizeChecks } from './size-runner';
+import { collectSizeCases, getFlightDiagnosticsSizeDelta, runSizeChecks } from './size-runner';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -47,6 +47,7 @@ const { results, pendingBaseline } = await runSizeChecks({
   onResult: (result) => printProgress?.(result),
   renderFilters: options.renderFilters,
 });
+const flightDiagnosticsDelta = getFlightDiagnosticsSizeDelta(results);
 
 if (updateBaseline) {
   const { writeBaseline } = await import('./size-runner');
@@ -55,15 +56,23 @@ if (updateBaseline) {
 
 if (outputPath) {
   const path = resolve(process.cwd(), outputPath);
-  const json = JSON.stringify({ passed: results.every((r) => r.passed), cases: results }, null, 2);
+  const json = JSON.stringify(
+    { passed: results.every((r) => r.passed), cases: results, flightDiagnosticsDelta },
+    null,
+    2,
+  );
   await import('fs').then(({ writeFileSync }) => writeFileSync(path, json + '\n'));
   console.log(`SIZE_REPORT_PATH:${path}`);
   process.exit(results.every((r) => r.passed) ? 0 : 1);
 }
 
 if (report === 'json') {
-  console.log(JSON.stringify({ passed: results.every((r) => r.passed), cases: results }));
+  console.log(JSON.stringify({ passed: results.every((r) => r.passed), cases: results, flightDiagnosticsDelta }));
   process.exit(results.every((r) => r.passed) ? 0 : 1);
+}
+
+if (flightDiagnosticsDelta !== null) {
+  console.log(`Flight diagnostics delta: +${(flightDiagnosticsDelta / 1024).toFixed(2)} KB gzip\n`);
 }
 
 process.exit(results.every((r) => r.passed) ? 0 : 1);

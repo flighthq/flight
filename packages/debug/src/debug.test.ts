@@ -8,11 +8,23 @@ import {
   log,
   setLogLevel,
 } from '@flighthq/log/contract';
+import {
+  areColorAdjustmentGuardsEnabled,
+  areRenderRegistryGuardsEnabled,
+  createRenderState,
+} from '@flighthq/render/contract';
 import type { MemoryLogSink } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { disableDebug, enableDebug, isDebugEnabled, registerDebugSubsystem, unregisterDebugSubsystem } from './debug';
+import {
+  disableDebug,
+  enableDebug,
+  enableFlightDiagnostics,
+  isDebugEnabled,
+  registerDebugSubsystem,
+  unregisterDebugSubsystem,
+} from './debug';
 
 // Subsystem names touched by the tests, unregistered between each so the module-global registry
 // never leaks state across cases.
@@ -144,6 +156,16 @@ describe('enableDebug', () => {
     expect(enableGuards).toHaveBeenCalledTimes(1);
     log(LogLevel.Debug, 'once', 'render');
     expect(readMemory(memory)).toHaveLength(1);
+  });
+});
+
+describe('enableFlightDiagnostics', () => {
+  it('enables the console diagnostics session and every generic render guard for the state', () => {
+    const state = createRenderState();
+    enableFlightDiagnostics(state);
+    expect(isDebugEnabled()).toBe(true);
+    expect(areColorAdjustmentGuardsEnabled(state)).toBe(true);
+    expect(areRenderRegistryGuardsEnabled(state)).toBe(true);
   });
 });
 

@@ -32,7 +32,7 @@ import {
   getBitmapPixelLuminance,
   normalizeVector3,
   prepareScene3DRender,
-  registerGlImageTextureResolver,
+  registerStandardGlTextureResolvers,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
@@ -64,7 +64,7 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0x05070cff,
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
-registerGlImageTextureResolver(state);
+registerStandardGlTextureResolvers(state);
 registerShadedGlMaterial(state);
 registerBuiltInGlModifierSnippets(state);
 

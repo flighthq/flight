@@ -1,11 +1,5 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
-import {
-  getGlRenderTextureColorSpace,
-  registerGlBitmapTextureResolver,
-  registerGlImageTextureResolver,
-  registerGlRenderTextureResolver,
-  resolveGlTexture,
-} from '@flighthq/render-gl/contract';
+import { getGlRenderTextureColorSpace, resolveGlTexture } from '@flighthq/render-gl/contract';
 import { getTextureSourceKind } from '@flighthq/texture/contract';
 import type {
   LinearColor,
@@ -69,9 +63,6 @@ export const unlitGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 // Registers the built-in Unlit renderer for UnlitMaterialKind on this state. Opt-in (no top-level
 // side effect); call once per GlRenderState before drawScene3D so meshes with UnlitMaterials draw.
 export function registerUnlitGlMaterial(state: GlRenderState): void {
-  registerGlBitmapTextureResolver(state);
-  registerGlImageTextureResolver(state);
-  registerGlRenderTextureResolver(state);
   registerGlMeshMaterialRenderer(state, UnlitMaterialKind, unlitGlMeshMaterialRenderer);
 }
 

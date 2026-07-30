@@ -4,8 +4,10 @@ import {
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
+  enableFlightDiagnostics,
   endGlRenderEffectPipeline,
   prepareScene3DRender,
+  registerStandardGlTextureResolvers,
   renderGlBackground,
 } from '@flighthq/sdk';
 import { drawGlScene3D, registerBuiltInGlModifierSnippets, registerShadedGlMaterial } from '@flighthq/sdk/rendering';
@@ -19,6 +21,8 @@ const state = createGlRenderState(canvas, {
   backgroundColor: 0x07101bff,
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
+enableFlightDiagnostics(state);
+registerStandardGlTextureResolvers(state);
 registerShadedGlMaterial(state);
 registerBuiltInGlModifierSnippets(state);
 

@@ -10,6 +10,7 @@ export {
   createBufferedLogSink,
   createChildLogContext,
   createConsoleCaptureSink,
+  createConsoleLogSink,
   createFanoutLogSink,
   createFileLogSink,
   createFilterLogSink,

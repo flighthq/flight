@@ -20,6 +20,20 @@ Core modules never contain diagnostic strings. Diagnostics live in **sibling mod
 
 `enableEntityRuntimeGuards` (`@flighthq/entity`) is the proven shape; `enableRenderGuards(state)` / `explainRenderState(state, root)` generalize it.
 
+Kind-keyed render registries share one concrete seam: `enableRenderRegistrySignals(state)` allocates
+the nullable `onRegistryMiss` signal used by node renderers, texture resolvers, shape-command
+handlers, and effect-padding resolvers. Chokepoints emit only the numeric `RenderRegistry` identity
+and missing string kind. They never format a message or choose policy. `enableRenderRegistryGuards`
+subscribes from the shakeable guard tier, warns once per state/registry/kind, and
+`explainRenderRegistryMisses` returns the recorded pairs as plain data.
+
+A registry miss is a **permanent configuration error**: no handler was registered for the declared
+kind, so repeating the operation cannot make it work. It emits the shared miss signal. A registered
+handler returning `null` is a **transient sentinel**: the handler exists, but its resource may be
+unbound, not uploaded, not rendered yet, or otherwise temporarily unavailable. It does not emit a
+registry miss. Tests for every registry chokepoint must prove both halves; otherwise an adjacent
+fallback can make the warning test pass for the wrong reason.
+
 ## Comments vs. guards
 
 Classify every comment by *who it addresses*:
@@ -73,8 +87,15 @@ Throws stay reserved for programmer error, so they are rare and cheap — keep m
 
 ## Harness defaults and CI proofs
 
-- **The authoring loop is always guarded.** The functional harness, examples, and scaffolds call the `enable*Guards` set and attach a memory sink; golden-path docs include the calls with the note *"remove for production, or leave it: it sheds when unimported."* Agents iterate with guards on; a shipped bundle that omits the import pays zero.
-- **Two gates keep the promises true:** one `size` example importing only core render paths whose baseline must not move as guard modules grow; and each guard's fire/silent test pair via memory sink, enforced by `exports:check` like any other export.
+- **The authoring loop is always guarded.** The functional harness, examples, and scaffolds call
+  `enableFlightDiagnostics(state)`, which installs the console sink and enables the shared render
+  guards for that state while driving every registered debug subsystem. Production code omits that
+  import and call. The release-size harness mechanically stubs the examples' authoring call so its
+  ordinary baselines continue to measure the zero-diagnostics import graph.
+- **Three gates keep the promises true:** a paired release-stub/flight-diagnostics size fixture
+  reports the diagnostics gzip delta; a log fixture measures emit plus `createConsoleLogSink`; and
+  each guard's fire/silent test pair uses a memory sink, enforced by `exports:check` like any other
+  export.
 
 ## Documentation durability (the rot side)
 

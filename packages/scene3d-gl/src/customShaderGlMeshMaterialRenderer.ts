@@ -1,8 +1,4 @@
-import {
-  registerGlBitmapTextureResolver,
-  registerGlImageTextureResolver,
-  resolveGlTexture,
-} from '@flighthq/render-gl/contract';
+import { resolveGlTexture } from '@flighthq/render-gl/contract';
 import type {
   GlCustomMaterialShaderSource,
   Camera3D,
@@ -91,8 +87,6 @@ export function getGlCustomMaterialShaderSource(
 // state. Opt-in (no top-level side effect); call once per GlRenderState before drawScene3D so
 // meshes carrying CustomShaderMaterials draw.
 export function registerCustomShaderGlMaterial(state: GlRenderState): void {
-  registerGlBitmapTextureResolver(state);
-  registerGlImageTextureResolver(state);
   registerGlMeshMaterialRenderer(state, CustomShaderMaterialKind, customShaderGlMeshMaterialRenderer);
 }
 

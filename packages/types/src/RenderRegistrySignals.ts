@@ -10,6 +10,16 @@ export enum RenderRegistry {
   TextureResolver,
 }
 
+export interface RenderRegistryMiss {
+  readonly kind: Kind;
+  readonly registry: RenderRegistry;
+}
+
+export interface RenderRegistryMissExplanation {
+  readonly misses: readonly Readonly<RenderRegistryMiss>[];
+  readonly status: 'complete' | 'misses-recorded';
+}
+
 export interface RenderRegistrySignals {
   onRegistryMiss: Signal<(registry: RenderRegistry, kind: Kind) => void>;
 }

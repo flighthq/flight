@@ -4,6 +4,7 @@ import {
   BitmapTextKind,
   createCanvasElement,
   createCanvasRenderState,
+  enableFlightDiagnostics,
   defaultCanvasSpriteRenderer,
   defaultCanvasBitmapTextRenderer,
   prepareScene2DRender,
@@ -21,6 +22,7 @@ export const state = createCanvasRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0x111827ff,
 });
+enableFlightDiagnostics(state);
 
 registerCanvasImageTextureResolver(state);
 registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);

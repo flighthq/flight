@@ -3,11 +3,12 @@ import {
   SpriteKind,
   createGlCanvasElement,
   createGlRenderState,
+  enableFlightDiagnostics,
   defaultGlSpriteRenderer,
   defaultGlQuadBatchRenderer,
   prepareScene2DRender,
   QuadBatchKind,
-  registerGlImageTextureResolver,
+  registerStandardGlTextureResolvers,
   registerStandardGlMaterial,
   registerRenderer,
   renderGlBackground,
@@ -24,8 +25,9 @@ export const state = createGlRenderState(canvas, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
+enableFlightDiagnostics(state);
 
-registerGlImageTextureResolver(state);
+registerStandardGlTextureResolvers(state);
 registerStandardGlMaterial(state);
 registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, QuadBatchKind, defaultGlQuadBatchRenderer);

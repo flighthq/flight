@@ -3,11 +3,13 @@ import { resolve } from 'path';
 import pc from 'picocolors';
 import { afterAll, describe, expect, test } from 'vitest';
 
+import { createSizeDebugStub } from '../../scripts/size-debug-stub';
 import type { SizeResult } from '../../scripts/size-runner';
 import {
   buildSamples,
   collectSizeCases,
   formatSizeResult,
+  getFlightDiagnosticsSizeDelta,
   getGzipSize,
   parseFilter,
   readBaseline,
@@ -112,6 +114,21 @@ describe('bundle size checks', () => {
           .toBeLessThan(threshold);
       }
     }
+  });
+
+  test('keeps enabled flight diagnostics as an explicit positive delta over the release stub', () => {
+    const includesDiagnosticsPair =
+      testCases.some((item) => item.name === 'flight-diagnostics-release') &&
+      testCases.some((item) => item.name === 'flight-diagnostics-enabled');
+    if (!includesDiagnosticsPair) return;
+    expect(getFlightDiagnosticsSizeDelta(results)).toBeGreaterThan(0);
+  });
+
+  test('replaces the authoring diagnostics call in release builds', () => {
+    const plugin = createSizeDebugStub();
+    const transform = plugin.transform as unknown as (code: string, id: string) => { code: string; map: null } | null;
+    const result = transform('enableFlightDiagnostics(state);', 'render.canvas.ts');
+    expect(result?.code).toBe('void (state);');
   });
 
   test('write baseline', () => {});

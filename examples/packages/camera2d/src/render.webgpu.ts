@@ -4,6 +4,7 @@ import {
   TextLabelKind,
   createWgpuCanvasElement,
   createWgpuRenderState,
+  enableFlightDiagnostics,
   defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
   defaultWgpuTextLabelRenderer,
@@ -29,6 +30,7 @@ export const state = await createWgpuRenderState(canvas, {
   backgroundColor: 0x1a1a2eff,
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
+enableFlightDiagnostics(state);
 
 registerStandardWgpuMaterial(state);
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);

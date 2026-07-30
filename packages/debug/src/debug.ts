@@ -1,18 +1,19 @@
 import {
   addLogSink,
   clearLogChannelLevels,
-  createTextLogFormatter,
+  createConsoleLogSink,
   getLogLevel,
   removeLogSink,
   setLogChannelLevel,
   setLogLevel,
 } from '@flighthq/log/contract';
+import { enableColorAdjustmentGuards, enableRenderRegistryGuards } from '@flighthq/render/contract';
 import type {
   DebugOptions,
   DebugSubsystemHooks,
   DebugSubsystemName,
-  LogEntry,
   LogSink,
+  RenderState,
 } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
@@ -44,12 +45,18 @@ export function enableDebug(options: Readonly<DebugOptions> = {}): void {
 
   _savedGlobalLevel = getLogLevel();
   _applyDebugLevels(level, channels);
-  _installDebugSink(options.sink ?? _createDefaultDebugSink());
+  _installDebugSink(options.sink ?? createConsoleLogSink());
   for (const hooks of subsystems) {
     hooks.enableGuards?.();
     _enabledSubsystems.push(hooks);
   }
   _enabled = true;
+}
+
+export function enableFlightDiagnostics(state: RenderState): void {
+  enableDebug();
+  enableColorAdjustmentGuards(state);
+  enableRenderRegistryGuards(state);
 }
 
 // Whether enableDebug is currently in effect (a sink is installed and levels/guards are raised).
@@ -98,19 +105,6 @@ function _collectDebugChannels(
   return channels;
 }
 
-// The default dev sink: formats each entry as a human-readable line and writes it to the matching
-// console method. Dev-only — this is the one place @flighthq/debug touches the console, and the
-// package is never in a shipping bundle.
-function _createDefaultDebugSink(): LogSink {
-  const formatter = createTextLogFormatter({ levelPrefix: true });
-  return (entry: Readonly<LogEntry>): void => {
-    if (typeof console === 'undefined') return;
-    const method = _consoleMethods[entry.level] ?? 'log';
-    // eslint-disable-next-line no-console -- the dev debug sink; writing to the console is its job.
-    console[method](formatter(entry));
-  };
-}
-
 // Installs the debug sink and records it so disableDebug can remove exactly this one.
 function _installDebugSink(sink: LogSink): void {
   _installedSink = sink;
@@ -143,12 +137,3 @@ function _restoreDebugLevels(): void {
   setLogLevel(_savedGlobalLevel);
   clearLogChannelLevels();
 }
-
-const _consoleMethods: Readonly<Record<LogLevel, 'debug' | 'error' | 'info' | 'log' | 'warn'>> = {
-  [LogLevel.None]: 'log',
-  [LogLevel.Error]: 'error',
-  [LogLevel.Warn]: 'warn',
-  [LogLevel.Info]: 'info',
-  [LogLevel.Debug]: 'debug',
-  [LogLevel.Verbose]: 'log',
-};

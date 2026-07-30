@@ -146,7 +146,7 @@ export function drawGlShape(state: GlRenderState, renderProxy: RenderProxy2D): v
     ctx.clearRect(0, 0, w, h);
     ctx.save();
     ctx.translate(-bounds.x, -bounds.y);
-    renderCanvasShapeCommands(ctx, commands);
+    renderCanvasShapeCommands(ctx, commands, null, state);
     ctx.restore();
     // Re-reads the canvas dimensions and bumps the resource version so the batch's version-aware cache
     // re-uploads from the updated canvas.

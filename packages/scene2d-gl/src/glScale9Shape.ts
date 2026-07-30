@@ -90,7 +90,7 @@ export function drawGlScale9Shape(state: GlRenderState, renderProxy: RenderProxy
     ctx.save();
     remapGlScale9Commands(_remappedCommands, commands, mapper);
     ctx.translate(-bounds.x, -bounds.y);
-    renderCanvasShapeCommands(ctx, _remappedCommands);
+    renderCanvasShapeCommands(ctx, _remappedCommands, null, state);
     ctx.restore();
     updateGlTexture(state, shapeData.texture, shapeData.canvas);
     shapeData.lastH = h;

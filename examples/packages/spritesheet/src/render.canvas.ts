@@ -3,6 +3,7 @@ import {
   SpriteKind,
   createCanvasElement,
   createCanvasRenderState,
+  enableFlightDiagnostics,
   defaultCanvasSpriteRenderer,
   prepareScene2DRender,
   registerCanvasImageTextureResolver,
@@ -19,6 +20,7 @@ export const state = createCanvasRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0x1a1a2eff,
 });
+enableFlightDiagnostics(state);
 
 registerCanvasImageTextureResolver(state);
 registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);

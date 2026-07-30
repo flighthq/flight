@@ -159,7 +159,7 @@ export function drawWgpuShape(state: WgpuRenderState, renderProxy: RenderProxy2D
     ctx.clearRect(0, 0, w, h);
     ctx.save();
     ctx.translate(-bounds.x, -bounds.y);
-    renderCanvasShapeCommands(ctx, commands);
+    renderCanvasShapeCommands(ctx, commands, null, state);
     ctx.restore();
     // Re-read the canvas dimensions and bump the resource version so the batch's version-aware cache
     // re-uploads (recreating the GPU texture, which covers a size change too).

@@ -1,0 +1,5 @@
+{
+  "name": "flight-diagnostics-enabled",
+  "private": true,
+  "type": "module"
+}

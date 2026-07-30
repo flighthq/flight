@@ -17,6 +17,7 @@
     { "path": "../geometry" },
     { "path": "../log" },
     { "path": "../render" },
+    { "path": "../signals" },
     { "path": "../bitmap" },
     { "path": "../texture" },
     { "path": "../types" }

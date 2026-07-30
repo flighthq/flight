@@ -3,11 +3,12 @@ import {
   SpriteKind,
   createGlCanvasElement,
   createGlRenderState,
+  enableFlightDiagnostics,
   defaultGlSpriteRenderer,
   prepareScene2DRender,
   registerStandardGlMaterial,
   registerRenderer,
-  registerGlImageTextureResolver,
+  registerStandardGlTextureResolvers,
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
@@ -22,9 +23,10 @@ export const state = createGlRenderState(canvas, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
+enableFlightDiagnostics(state);
 
 registerStandardGlMaterial(state);
-registerGlImageTextureResolver(state);
+registerStandardGlTextureResolvers(state);
 registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 
 export const scale = pixelRatio;

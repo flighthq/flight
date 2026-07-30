@@ -1,11 +1,14 @@
-﻿import { noopRendererData } from '@flighthq/render/contract';
+﻿import { getRenderStateRuntime, noopRendererData } from '@flighthq/render/contract';
+import { emitSignal } from '@flighthq/signals/contract';
 import type {
   CanvasRenderState,
   CanvasShapeDrawState,
+  RenderState,
   Scene2DRenderer,
   RenderProxy2D,
   Shape,
 } from '@flighthq/types/contract';
+import { RenderRegistry } from '@flighthq/types/contract';
 
 import { drawCanvasScene2D } from './canvasNode2D';
 import { getCanvasShapeCommand } from './canvasShapeRegistry';
@@ -30,6 +33,7 @@ export function renderCanvasShapeCommands(
   context: CanvasRenderingContext2D,
   commands: unknown[],
   state: CanvasRenderState | null = null,
+  registryState: RenderState | null = state,
 ): void {
   const drawState = createCanvasShapeDrawState(context, state);
   context.beginPath();
@@ -39,6 +43,10 @@ export function renderCanvasShapeCommands(
     const argCount = commands[i + 1] as number;
     const def = getCanvasShapeCommand(key);
     if (def !== undefined) def.draw(context, drawState, commands, i + 2);
+    else {
+      const signals = registryState === null ? null : getRenderStateRuntime(registryState).registrySignals;
+      if (signals !== null) emitSignal(signals.onRegistryMiss, RenderRegistry.ShapeCommandHandler, key);
+    }
     i += argCount + 2;
   }
   if (drawState.hasPendingPath && (drawState.hasFill || drawState.hasStroke)) {

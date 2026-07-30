@@ -4,6 +4,7 @@ import {
   TilemapKind,
   createWgpuCanvasElement,
   createWgpuRenderState,
+  enableFlightDiagnostics,
   defaultWgpuSpriteRenderer,
   defaultWgpuTilemapRenderer,
   prepareScene2DRender,
@@ -23,6 +24,7 @@ export const state = await createWgpuRenderState(canvas, {
   backgroundColor: 0x1a1a2eff,
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
+enableFlightDiagnostics(state);
 
 registerStandardWgpuMaterial(state);
 registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);

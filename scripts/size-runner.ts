@@ -1,9 +1,10 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import { availableParallelism } from 'os';
-import { resolve } from 'path';
+import { basename, resolve } from 'path';
 import { build, mergeConfig } from 'vite';
 import { gzipSync } from 'zlib';
 
+import { createSizeDebugStub } from './size-debug-stub';
 import { createBaseConfig } from './vite-base';
 
 export const RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu'] as const;
@@ -52,12 +53,23 @@ export function collectSizeCases(
   exampleFilters: string[] = [],
   renderFilters: string[] = [],
 ): SizeCase[] {
-  return readdirSync(examplesDir, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && existsSync(resolve(examplesDir, d.name, 'package.json')))
+  const fixturesDir = resolve(examplesDir, '..', '..', 'tools', 'size', 'fixtures');
+  return [examplesDir, fixturesDir]
+    .filter(existsSync)
+    .flatMap((directory) => collectSizeCasesFromDirectory(directory, exampleFilters, renderFilters));
+}
+
+function collectSizeCasesFromDirectory(
+  directory: string,
+  exampleFilters: string[],
+  renderFilters: string[],
+): SizeCase[] {
+  return readdirSync(directory, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && existsSync(resolve(directory, d.name, 'package.json')))
     .sort((a, b) => a.name.localeCompare(b.name))
     .flatMap(({ name }) =>
-      RENDERERS.filter((render) => existsSync(resolve(examplesDir, name, `src/render.${render}.ts`)))
-        .map((render) => ({ name, render, root: resolve(examplesDir, name) as SizeCase['root'] }))
+      RENDERERS.filter((render) => existsSync(resolve(directory, name, `src/render.${render}.ts`)))
+        .map((render) => ({ name, render, root: resolve(directory, name) as SizeCase['root'] }))
         .filter((tc) => {
           const normalizedName = tc.name.toLowerCase();
           const normalizedRender = tc.render.toLowerCase();
@@ -80,12 +92,20 @@ export function writeBaseline(baselineFile: string, pendingBaseline: Record<stri
 }
 
 export async function buildSample(root: string, render: Render, pruneSdkImports = false): Promise<string> {
-  const plugins = pruneSdkImports ? [(await import('./size-import-pruner')).createSizeImportPruner()] : [];
+  const sampleName = basename(root);
+  const preserveConsole = sampleName === 'flight-diagnostics-enabled' || sampleName === 'log-console';
+  const plugins = [
+    createSizeDebugStub(sampleName !== 'flight-diagnostics-enabled'),
+    ...(pruneSdkImports ? [(await import('./size-import-pruner')).createSizeImportPruner()] : []),
+  ];
   const result = await build(
     mergeConfig(createBaseConfig('production', render), {
       root,
       configFile: false,
       plugins,
+      esbuild: {
+        drop: preserveConsole ? ['debugger'] : ['console', 'debugger'],
+      },
       build: {
         cssCodeSplit: false,
         minify: 'terser',
@@ -101,7 +121,7 @@ export async function buildSample(root: string, render: Render, pruneSdkImports 
         terserOptions: {
           compress: {
             arrows: true,
-            drop_console: true,
+            drop_console: !preserveConsole,
             drop_debugger: true,
             inline: true,
             passes: 3,
@@ -161,6 +181,12 @@ export async function buildSamples(
 
 export function getGzipSize(code: string): number {
   return gzipSync(code).length;
+}
+
+export function getFlightDiagnosticsSizeDelta(results: readonly Readonly<SizeResult>[]): number | null {
+  const release = results.find((result) => result.key === 'flight-diagnostics-release:canvas');
+  const enabled = results.find((result) => result.key === 'flight-diagnostics-enabled:canvas');
+  return release === undefined || enabled === undefined ? null : enabled.gzipSize - release.gzipSize;
 }
 
 export function formatSizeResult(

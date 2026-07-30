@@ -1,9 +1,5 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
-import {
-  registerGlBitmapTextureResolver,
-  registerGlImageTextureResolver,
-  resolveGlTexture,
-} from '@flighthq/render-gl/contract';
+import { resolveGlTexture } from '@flighthq/render-gl/contract';
 import type {
   LinearColor,
   BlinnPhongMaterial,
@@ -69,8 +65,6 @@ export const blinnPhongGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 // top-level side effect); call once per GlRenderState before drawScene3D so meshes with BlinnPhong
 // materials draw.
 export function registerBlinnPhongGlMaterial(state: GlRenderState): void {
-  registerGlBitmapTextureResolver(state);
-  registerGlImageTextureResolver(state);
   registerGlMeshMaterialRenderer(state, BlinnPhongMaterialKind, blinnPhongGlMeshMaterialRenderer);
 }
 
