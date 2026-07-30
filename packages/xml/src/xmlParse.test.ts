@@ -167,4 +167,17 @@ describe('parseXmlDocument', () => {
     expect(doc?.name).toBe('plist');
     expect(doc?.attributes.version).toBe('1.0');
   });
+
+  it('strips an internal subset when an entity value contains ] and >', () => {
+    const xml = '<!DOCTYPE root [<!ENTITY tricky "a ] > b"><!ELEMENT root (#PCDATA)>]>' + '<root value="ok"/>';
+    const doc = parseXmlDocument(xml);
+    expect(doc?.name).toBe('root');
+    expect(doc?.attributes.value).toBe('ok');
+  });
+
+  it('strips a DOCTYPE when its external identifier contains >', () => {
+    const xml = '<!DOCTYPE root SYSTEM "https://example.invalid/a>b.dtd"><root/>';
+    const doc = parseXmlDocument(xml);
+    expect(doc?.name).toBe('root');
+  });
 });
