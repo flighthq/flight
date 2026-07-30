@@ -41,8 +41,8 @@ roles:
     nudge: all
     instructions: |
       Do the work in repo/ and commit as you go. Hand finished work to integration directly.
-      Escalate to manager when blocked - do not sit idle waiting. You are in a sandbox and
-      can install dependencies.
+      Escalate to manager when blocked or finished with assigned work - do not sit idle. 
+      You are in a sandbox and can install dependencies.
   integration:
     nudge: all
     instructions: |
