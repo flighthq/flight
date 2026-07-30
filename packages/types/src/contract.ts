@@ -784,6 +784,7 @@ export * from './TransformInherit2D';
 export * from './TransformMode2D';
 export * from './Bone2D';
 export * from './Attachment2D';
+export * from './AttachmentSkin2D';
 export * from './Skin2D';
 export * from './MeshAttachment2D';
 export * from './RegionAttachment2D';

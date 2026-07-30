@@ -1,6 +1,11 @@
 import { easeCubicBezier } from '@flighthq/easing/contract';
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
-import { applyAnimationClipToSkeleton2D, cloneSkeleton2D } from '@flighthq/skeleton2d/contract';
+import {
+  applyAnimationClipToSkeleton2D,
+  cloneSkeleton2D,
+  getSkeleton2DSkin,
+  setSkeleton2DSkin,
+} from '@flighthq/skeleton2d/contract';
 import type { ImportDiagnostic, MeshAttachment2D, RegionAttachment2D } from '@flighthq/types/contract';
 import { MeshAttachment2DKind, RegionAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
@@ -198,22 +203,86 @@ describe('parseSpineSkeleton', () => {
     expect(crumbs.map((c) => c.kind)).toContain('spine.weighted-vertices-truncated');
   });
 
-  it('Skip-crumbs an unmodeled attachment type and an alternate skin', () => {
+  it('Skip-crumbs an unmodeled attachment type, but now PARSES the alternate skin', () => {
     const doc = {
       bones: [{ name: 'root' }],
-      slots: [{ name: 's', bone: 'root', attachment: 'clip' }],
+      slots: [{ name: 'clip', bone: 'root', attachment: 'mask' }],
       skins: [
-        { name: 'default', attachments: { s: { clip: { type: 'clipping', end: 's', vertexCount: 4, vertices: [] } } } },
+        { name: 'default', attachments: { clip: { mask: { type: 'clipping', end: 'clip' } } } },
         { name: 'costume2', attachments: {} },
       ],
     };
-    const crumbs: ImportDiagnostic[] = collectImportDiagnostics((sink) =>
-      parseSpineSkeleton(JSON.stringify(doc), sink),
-    );
+    const crumbs = collectImportDiagnostics((sink) => parseSpineSkeleton(JSON.stringify(doc), sink));
     expect(crumbs.map((c) => c.kind)).toContain('spine.clipping-attachment-unsupported');
-    expect(crumbs.map((c) => c.kind)).toContain('spine.alternate-skin-unsupported');
-    // The clipping attachment was dropped (not shown on the slot).
-    expect(parseSpineSkeleton(JSON.stringify(doc))!.skeleton.slots![0].attachment).toBeNull();
+    // The alternate skin is a first-class wardrobe entry now, not a Skip crumb.
+    expect(crumbs.map((c) => c.kind)).not.toContain('spine.alternate-skin-unsupported');
+    const result = parseSpineSkeleton(JSON.stringify(doc))!;
+    expect(result.skeleton.skins!.map((s) => s.name)).toEqual(['default', 'costume2']);
+    // The clipping attachment is still dropped (not shown on the slot).
+    expect(result.skeleton.slots![0].attachment).toBeNull();
+  });
+
+  it('parses every named skin into the wardrobe, resolving slot names to indices', () => {
+    const doc = {
+      bones: [{ name: 'root' }],
+      slots: [
+        { name: 'head', bone: 'root', attachment: 'face' },
+        { name: 'hand', bone: 'root' },
+      ],
+      skins: [
+        { name: 'default', attachments: { head: { face: { width: 10, height: 10 } } } },
+        { name: 'goblin', attachments: { head: { face: { width: 20, height: 20 } }, hand: { axe: { width: 5 } } } },
+      ],
+    };
+    const skeleton = parseSpineSkeleton(JSON.stringify(doc))!.skeleton;
+    expect(skeleton.skins!.length).toBe(2);
+    const goblin = getSkeleton2DSkin(skeleton, 'goblin')!;
+    expect(goblin.attachments.map((a) => [a.slotIndex, a.name])).toEqual([
+      [0, 'face'],
+      [1, 'axe'],
+    ]);
+    // The setup pose comes from the DEFAULT skin, keyed by the slot's own attachment name.
+    expect((skeleton.slots![0].attachment as RegionAttachment2D).width).toBe(10);
+    expect(skeleton.slots![1].attachment).toBeNull();
+  });
+
+  it('wears an alternate skin over the setup pose through setSkeleton2DSkin', () => {
+    const doc = {
+      bones: [{ name: 'root' }],
+      slots: [
+        { name: 'head', bone: 'root', attachment: 'face' },
+        { name: 'body', bone: 'root', attachment: 'torso' },
+      ],
+      skins: [
+        { name: 'default', attachments: { head: { face: { width: 10 } }, body: { torso: { width: 99 } } } },
+        { name: 'goblin', attachments: { head: { face: { width: 20 } } } },
+      ],
+    };
+    const skeleton = parseSpineSkeleton(JSON.stringify(doc))!.skeleton;
+    setSkeleton2DSkin(skeleton, getSkeleton2DSkin(skeleton, 'goblin')!);
+    expect((skeleton.slots![0].attachment as RegionAttachment2D).width).toBe(20); // overridden
+    expect((skeleton.slots![1].attachment as RegionAttachment2D).width).toBe(99); // shared art survives
+  });
+
+  it('drops a skin entry naming a slot the skeleton does not have', () => {
+    const doc = {
+      bones: [{ name: 'root' }],
+      slots: [{ name: 'head', bone: 'root' }],
+      skins: [{ name: 'default', attachments: { ghost: { thing: { width: 1 } } } }],
+    };
+    const skeleton = parseSpineSkeleton(JSON.stringify(doc))!.skeleton;
+    expect(skeleton.skins![0].attachments).toEqual([]);
+  });
+
+  it('accepts the older object-form skins map', () => {
+    const doc = {
+      bones: [{ name: 'root' }],
+      slots: [{ name: 'head', bone: 'root', attachment: 'face' }],
+      skins: { default: { head: { face: { width: 7 } } }, alt: { head: { face: { width: 8 } } } },
+    };
+    const skeleton = parseSpineSkeleton(JSON.stringify(doc))!.skeleton;
+    expect(skeleton.skins!.map((s) => s.name).sort()).toEqual(['alt', 'default']);
+    expect((skeleton.slots![0].attachment as RegionAttachment2D).width).toBe(7);
   });
 
   it('builds a named animation clip of RELATIVE deltas that compose onto the setup pose', () => {
