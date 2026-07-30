@@ -371,6 +371,89 @@ describe('createScene2DFromSwf', () => {
     expect(world.ty).toBeCloseTo(32);
   });
 
+  it('preserves authored dimensions from lossless bitmap definitions', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(
+          TAG_DEFINE_BITS_LOSSLESS,
+          joinBytes(uint16(11), new Uint8Array([LOSSLESS_BITMAP_FORMAT_32_BIT]), uint16(32), uint16(16)),
+        ),
+        createTag(
+          TAG_DEFINE_BITS_LOSSLESS_2,
+          joinBytes(
+            uint16(12),
+            new Uint8Array([LOSSLESS_BITMAP_FORMAT_COLORMAPPED]),
+            uint16(8),
+            uint16(4),
+            new Uint8Array([0]),
+          ),
+        ),
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(
+            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
+            uint16(1),
+            uint16(11),
+            swfString('rgbBitmap'),
+          ),
+        ),
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(
+            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
+            uint16(2),
+            uint16(12),
+            swfString('alphaBitmap'),
+          ),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    expect(getNodeLocalBoundsRectangle(document!.references[0].target)).toMatchObject({
+      height: 16,
+      width: 32,
+      x: 0,
+      y: 0,
+    });
+    expect(getNodeLocalBoundsRectangle(document!.references[1].target)).toMatchObject({
+      height: 4,
+      width: 8,
+      x: 0,
+      y: 0,
+    });
+  });
+
+  it('preserves authored dimensions from a video stream definition', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(
+          TAG_DEFINE_VIDEO_STREAM,
+          joinBytes(uint16(13), uint16(10), uint16(320), uint16(180), new Uint8Array([0, 2])),
+        ),
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(
+            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
+            uint16(1),
+            uint16(13),
+            swfString('videoSlot'),
+          ),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    expect(getNodeLocalBoundsRectangle(document!.references[0].target)).toMatchObject({
+      height: 180,
+      width: 320,
+      x: 0,
+      y: 0,
+    });
+  });
+
   it('rejects compressed and truncated inputs without throwing', () => {
     const compressed = createSwf([createTag(TAG_END)]);
     compressed[0] = 0x43;
@@ -387,6 +470,17 @@ describe('createScene2DFromSwf', () => {
     ).toBeNull();
     expect(
       createScene2DFromSwf(
+        createSwf([
+          createTag(
+            TAG_DEFINE_VIDEO_STREAM,
+            joinBytes(uint16(1), uint16(10), uint16(320), uint16(180), new Uint8Array([0])),
+          ),
+          createTag(TAG_END),
+        ]),
+      ),
+    ).toBeNull();
+    expect(
+      createScene2DFromSwf(
         createSwf([createTag(TAG_PLACE_OBJECT, joinBytes(uint16(7), uint16(1))), createTag(TAG_END)]),
       ),
     ).toBeNull();
@@ -395,6 +489,43 @@ describe('createScene2DFromSwf', () => {
       createScene2DFromSwf(
         createSwf([
           createTag(TAG_PLACE_OBJECT_4, new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER, PLACE_HAS_CLASS_NAME])),
+          createTag(TAG_END),
+        ]),
+      ),
+    ).toBeNull();
+    expect(
+      createScene2DFromSwf(
+        createSwf([
+          createTag(
+            TAG_DEFINE_BITS_LOSSLESS,
+            joinBytes(new Uint8Array([1, 0, LOSSLESS_BITMAP_FORMAT_32_BIT]), uint16(32)),
+          ),
+          createTag(TAG_END),
+        ]),
+      ),
+    ).toBeNull();
+    expect(
+      createScene2DFromSwf(
+        createSwf([
+          createTag(
+            TAG_DEFINE_BITS_LOSSLESS_2,
+            joinBytes(uint16(1), new Uint8Array([LOSSLESS_BITMAP_FORMAT_15_BIT]), uint16(8), uint16(4)),
+          ),
+          createTag(TAG_END),
+        ]),
+      ),
+    ).toBeNull();
+    expect(
+      createScene2DFromSwf(
+        createSwf([
+          createTag(
+            TAG_DEFINE_BITS_LOSSLESS,
+            joinBytes(uint16(1), new Uint8Array([LOSSLESS_BITMAP_FORMAT_32_BIT]), uint16(8), uint16(4)),
+          ),
+          createTag(
+            TAG_DEFINE_VIDEO_STREAM,
+            joinBytes(uint16(1), uint16(10), uint16(320), uint16(180), new Uint8Array([0, 2])),
+          ),
           createTag(TAG_END),
         ]),
       ),
@@ -557,6 +688,9 @@ function uint32(value: number): Uint8Array {
 }
 
 const FIXED_16_ONE = 0x10000;
+const LOSSLESS_BITMAP_FORMAT_15_BIT = 4;
+const LOSSLESS_BITMAP_FORMAT_32_BIT = 5;
+const LOSSLESS_BITMAP_FORMAT_COLORMAPPED = 3;
 const PLACE_HAS_CHARACTER = 0x02;
 const PLACE_HAS_CLASS_NAME = 0x08;
 const PLACE_HAS_MATRIX = 0x04;
@@ -564,8 +698,11 @@ const PLACE_HAS_NAME = 0x20;
 const PLACE_MOVE = 0x01;
 const SWF_PREFIX_LENGTH = 8;
 const TAG_END = 0;
+const TAG_DEFINE_BITS_LOSSLESS = 20;
+const TAG_DEFINE_BITS_LOSSLESS_2 = 36;
 const TAG_DEFINE_SHAPE = 2;
 const TAG_DEFINE_SPRITE = 39;
+const TAG_DEFINE_VIDEO_STREAM = 60;
 const TAG_FILE_ATTRIBUTES = 69;
 const TAG_PLACE_OBJECT = 4;
 const TAG_PLACE_OBJECT_2 = 26;
