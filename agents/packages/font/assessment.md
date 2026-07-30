@@ -12,9 +12,27 @@ The review's central finding is unchanged: the dual entity model (`Font` string 
 
 ## Recommended
 
-Sweep-safe: within `@flighthq/font`, no cross-package coupling, no open design decision, independent of the Font/FontResource merge.
+**The carried-over loader-test item is done** (2026-07-30). What it actually needed was narrower than
+the entry read: `fontFrom.test.ts` already covered `document.fonts.add` registration, multi-source
+`format()` composition, and failure paths — it was `fontResourceFrom.test.ts`, the half the entry
+called "markedly thinner", that had the gaps. Brought to parity: constructor family/source assertions
+on every loader, byte-slicing out of a larger backing buffer (tested on both implementations, since
+they are separate copies of the same arithmetic), the composed multi-source `src` string, first-face
+selection, and a failure path per loader. The new assertions were mutation-checked — breaking the
+slice, the assignment order, the `format()` composition, and the first-face pick each fails a test.
 
-1. **Strengthen the loader tests.** The loader tests still assert little beyond "returns a font with the given family name" against the jsdom `FontFace`, and `fontResourceFrom.test.ts` is markedly thinner than `fontFrom.test.ts`; cover the `document.fonts.add` registration, the multi-source `format()` hint composition, and failure paths. (Carried over — the only prior Recommended item not yet landed.)
+Two things surfaced while doing it, both recorded rather than swept:
+
+1. **`Font` and `FontResource` carry two separate copies of the same load logic.** `loadFontFromUrls`
+   and `loadFontResourceFromUrls` (and the bytes/name/url pairs) differ only in what they return and
+   where they attach the face; the `src` composition and the byte slicing are duplicated verbatim.
+   The tests now cover both copies precisely because a regression in one would otherwise go unseen.
+   That duplication is the Font/FontResource merge already in Backlog — this is more evidence for it,
+   not a separate item, and deduplicating before that merge is ruled on would be wasted work.
+2. **The failure contract is now pinned but was never stated.** `out.face` is assigned only after the
+   load resolves, so a failed *reload* leaves the resource on its previous face rather than blanking
+   it. That is the better behavior and is now both tested and commented in the source — but it was
+   accidental rather than chosen, and is worth confirming as intended when the merge is designed.
 
 ## Backlog
 
