@@ -34,7 +34,12 @@ export function interpolateSnapshots<T>(
   ) {
     return;
   }
-  interpolateSnapshotsInto(out as object, a as object, b as object, clamp(t, 0, 1), schema, '');
+  // The schema is compiled to a Set once per call rather than scanned per leaf: SnapshotSchema is a
+  // readonly string[], so the old per-leaf `includes` was linear in the schema on every numeric field.
+  // `undefined` (no schema, every numeric leaf interpolates) stays distinct from an empty Set (a schema
+  // that lists nothing, so nothing interpolates) — collapsing those two inverts the caller's intent.
+  const paths = schema === undefined ? undefined : new Set(schema);
+  interpolateSnapshotsInto(out as object, a as object, b as object, clamp(t, 0, 1), paths, '');
 }
 
 // Walks `b` (the destination shape) key by key, writing each interpolated or snapped field into
@@ -44,7 +49,7 @@ function interpolateSnapshotsInto(
   a: object,
   b: object,
   t: number,
-  schema: Readonly<SnapshotSchema> | undefined,
+  paths: ReadonlySet<string> | undefined,
   prefix: string,
 ): void {
   const outRecord = out as Record<string, unknown>;
@@ -54,11 +59,12 @@ function interpolateSnapshotsInto(
     (out as unknown[]).length = (b as unknown[]).length;
   }
   for (const key of Object.keys(bRecord)) {
-    const path = prefix === '' ? key : `${prefix}.${key}`;
     const aValue = aRecord[key];
     const bValue = bRecord[key];
     if (typeof aValue === 'number' && typeof bValue === 'number') {
-      outRecord[key] = isSnapshotPathInterpolated(schema, path) ? lerp(aValue, bValue, t) : bValue;
+      // With no schema every numeric leaf interpolates, so the dotted path is never consulted — and
+      // building it was the walk's main per-leaf allocation. Only pay for it when a schema exists.
+      outRecord[key] = paths === undefined || paths.has(snapshotPath(prefix, key)) ? lerp(aValue, bValue, t) : bValue;
       continue;
     }
     if (
@@ -70,16 +76,23 @@ function interpolateSnapshotsInto(
     ) {
       const container = ensureSnapshotContainer(outRecord[key], Array.isArray(bValue));
       outRecord[key] = container;
-      interpolateSnapshotsInto(container, aValue, bValue, t, schema, path);
+      interpolateSnapshotsInto(
+        container,
+        aValue,
+        bValue,
+        t,
+        paths,
+        paths === undefined ? '' : snapshotPath(prefix, key),
+      );
       continue;
     }
     outRecord[key] = cloneSnapshotValue(bValue);
   }
 }
 
-// A numeric leaf interpolates when there is no schema, or when its path is listed in the schema.
-function isSnapshotPathInterpolated(schema: Readonly<SnapshotSchema> | undefined, path: string): boolean {
-  return schema === undefined || schema.includes(path);
+// Joins a container prefix and key into the dotted path a schema lists.
+function snapshotPath(prefix: string, key: string): string {
+  return prefix === '' ? key : `${prefix}.${key}`;
 }
 
 // Reuses `existing` when it is already a mutable container of the needed kind, else allocates a fresh

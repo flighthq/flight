@@ -1,1 +1,8 @@
-export { captureSnapshot, equalsSnapshot, interpolateSnapshots, restoreSnapshot } from './contract';
+export {
+  captureSnapshot,
+  disableSnapshotGuards,
+  enableSnapshotGuards,
+  equalsSnapshot,
+  interpolateSnapshots,
+  restoreSnapshot,
+} from './contract';

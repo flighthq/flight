@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { captureSnapshot } from './captureSnapshot';
 import { interpolateSnapshots } from './interpolateSnapshots';
+import { restoreSnapshot } from './restoreSnapshot';
 
 describe('interpolateSnapshots', () => {
   it('lerps numerics and snaps the string at t=0.5', () => {
@@ -93,5 +94,60 @@ describe('interpolateSnapshots', () => {
     interpolateSnapshots(a, b, 0.5, out);
     expect(out.value).toBe(2);
     expect(out.tag).toBeNull();
+  });
+});
+
+describe('interpolateSnapshots schema paths', () => {
+  // A schema listing an array-indexed path is the case the dotted-path walk exists for: array
+  // elements are addressed by index, so 'players.0.health' interpolates while 'players.1.health' —
+  // absent from the schema — snaps to b.
+  it('interpolates only the array-indexed path listed in the schema', () => {
+    const a = captureSnapshot({ players: [{ health: 0 }, { health: 0 }] });
+    const b = captureSnapshot({ players: [{ health: 100 }, { health: 100 }] });
+    const out = { players: [{ health: 0 }, { health: 0 }] };
+
+    interpolateSnapshots(a, b, 0.5, out, ['players.0.health']);
+
+    expect(out.players[0]!.health).toBe(50);
+    expect(out.players[1]!.health).toBe(100);
+  });
+
+  // An empty schema is not the same as no schema: it lists nothing, so nothing interpolates and every
+  // numeric leaf snaps to b. Collapsing the two would silently invert the caller's intent.
+  it('treats an empty schema as "interpolate nothing", not "interpolate everything"', () => {
+    const a = captureSnapshot({ hp: 0 });
+    const b = captureSnapshot({ hp: 100 });
+    const out = { hp: 0 };
+
+    interpolateSnapshots(a, b, 0.5, out, []);
+
+    expect(out.hp).toBe(100);
+  });
+
+  it('interpolates every numeric leaf when no schema is given', () => {
+    const a = captureSnapshot({ hp: 0, mp: 0 });
+    const b = captureSnapshot({ hp: 100, mp: 50 });
+    const out = { hp: 0, mp: 0 };
+
+    interpolateSnapshots(a, b, 0.5, out);
+
+    expect(out.hp).toBe(50);
+    expect(out.mp).toBe(25);
+  });
+
+  // The documented use: out is the caller's live render-state object, interpolated each frame and
+  // later restored from a snapshot. The two operations must not fight over the same object.
+  it('interpolates into an out object that is later restored into', () => {
+    const a = captureSnapshot({ pos: { x: 0, y: 0 }, tag: 'a' });
+    const b = captureSnapshot({ pos: { x: 10, y: 20 }, tag: 'b' });
+    const live = { pos: { x: 0, y: 0 }, tag: 'a' };
+
+    interpolateSnapshots(a, b, 0.5, live);
+    expect(live.pos).toEqual({ x: 5, y: 10 });
+    expect(live.tag).toBe('b');
+
+    restoreSnapshot(a, live);
+    expect(live.pos).toEqual({ x: 0, y: 0 });
+    expect(live.tag).toBe('a');
   });
 });

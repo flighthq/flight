@@ -12,15 +12,30 @@ import type { Snapshot } from '@flighthq/types/contract';
  *  throws via `structuredClone`.
  */
 export function captureSnapshot<T>(source: Readonly<T>): Snapshot<T> {
+  _captureGuard?.(source);
   const clone = structuredClone(source) as T;
   freezeSnapshotDeep(clone);
   return clone as Snapshot<T>;
 }
 
+/** Installs the capture-time guard, or clears it with `null`. The seam exists so the message and the
+ *  `@flighthq/log` dependency live in the separately-importable guard module rather than here; not
+ *  importing that module costs production nothing. Called by `enableSnapshotGuards`, not directly. */
+export function setSnapshotCaptureGuard(guard: ((source: unknown) => void) | null): void {
+  _captureGuard = guard;
+}
+
+let _captureGuard: ((source: unknown) => void) | null = null;
+
 // Recursively `Object.freeze`s every object and array reachable from `value`, so the whole tree is
 // immutable — not just the top level. Primitives and `null` are already immutable and skipped.
+//
+// `Object.isFrozen` doubles as the visited check. structuredClone preserves cycles and shared
+// references, so without it a cyclic clone recurses until the stack overflows, and a diamond is walked
+// once per path. Freezing before descending means an already-frozen node has been seen, which makes
+// the walk terminate on cycles and linear on shared subtrees, with no side table to allocate.
 function freezeSnapshotDeep(value: unknown): void {
-  if (value === null || typeof value !== 'object') {
+  if (value === null || typeof value !== 'object' || Object.isFrozen(value)) {
     return;
   }
   Object.freeze(value);
