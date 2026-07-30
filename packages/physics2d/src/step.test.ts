@@ -66,6 +66,167 @@ function runSteps(world: Physics2DWorld, count: number): void {
   for (let i = 0; i < count; i++) stepPhysics2D(world, 1 / 60);
 }
 
+describe('a body the step declines leaves the broadphase', () => {
+  // The divergence filter said the declined body "stops colliding", but it only skipped the index
+  // UPDATE — whatever AABB the body had last step stayed indexed, so it kept producing pairs and
+  // holding live contacts from its last valid pose. Skipping an update is not withdrawing.
+  function dynamicBox(world: Physics2DWorld, x: number): RigidBody2D {
+    const body = createRigidBody2D('dynamic', x, 0);
+    body.colliders.push(createPhysics2DCollider({ kind: 'aabb', minX: -0.5, minY: -0.5, maxX: 0.5, maxY: 0.5 }, STONE));
+    return addPhysics2DBody(world, body);
+  }
+
+  function widenPastLimit(body: RigidBody2D): void {
+    const local = body.colliders[0].local as { maxX: number; maxY: number; minX: number; minY: number };
+    local.minX = -1e8;
+    local.minY = -1e8;
+    local.maxX = 1e8;
+    local.maxY = 1e8;
+  }
+
+  it('drops the contact of a body that diverges past the simulated extent', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const diverging = dynamicBox(world, 0);
+    dynamicBox(world, 0.5);
+    stepPhysics2D(world, 1 / 60);
+    expect(world.contacts).toHaveLength(1);
+
+    widenPastLimit(diverging);
+    stepPhysics2D(world, 1 / 60);
+    expect(world.contacts).toHaveLength(0);
+  });
+
+  it('leaves the rest of the world simulating after one body diverges', () => {
+    // The filter's whole promise: one diverged body stops colliding, everything else carries on.
+    const world = createPhysics2DWorld(0, 0);
+    const diverging = dynamicBox(world, 0);
+    const near = dynamicBox(world, 0.5);
+    const other = dynamicBox(world, 20);
+    const alsoOther = dynamicBox(world, 20.5);
+    stepPhysics2D(world, 1 / 60);
+    widenPastLimit(diverging);
+    stepPhysics2D(world, 1 / 60);
+
+    // Only the untouched pair still has a contact; the diverged body's is gone.
+    const names = world.contacts.map((c) => `${c.bodyA}-${c.bodyB}`);
+    expect(names).toEqual([`${other.index}-${alsoOther.index}`]);
+    // And "still simulating" means still moving: `near` overlapped the diverging body on the first
+    // step and was pushed off it, so asserting it held position would have contradicted this title.
+    expect(near.x).toBeGreaterThan(0.5);
+    expect(Number.isFinite(near.x)).toBe(true);
+  });
+
+  it('withdraws a body whose colliders stop producing bounds from the index', () => {
+    // Asserted on the index rather than on contacts. A body with no colliders produces no manifold
+    // either way, so a contact-only assertion passes whether or not the withdrawal happens — it would
+    // have been a test that agreed with the bug. The index is where the difference actually shows.
+    const world = createPhysics2DWorld(0, 0);
+    const emptied = dynamicBox(world, 0);
+    dynamicBox(world, 0.5);
+    stepPhysics2D(world, 1 / 60);
+
+    const before: number[] = [];
+    world.index.querySpatialRegion({ minX: -1, minY: -1, maxX: 1, maxY: 1 }, before);
+    expect(before).toContain(emptied.index);
+
+    emptied.colliders.length = 0;
+    stepPhysics2D(world, 1 / 60);
+
+    const after: number[] = [];
+    world.index.querySpatialRegion({ minX: -1, minY: -1, maxX: 1, maxY: 1 }, after);
+    expect(after).not.toContain(emptied.index);
+    expect(world.contacts).toHaveLength(0);
+  });
+
+  it('withdraws a diverged body from the index, not merely from the update', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const diverging = dynamicBox(world, 0);
+    dynamicBox(world, 0.5);
+    stepPhysics2D(world, 1 / 60);
+
+    widenPastLimit(diverging);
+    stepPhysics2D(world, 1 / 60);
+
+    const after: number[] = [];
+    world.index.querySpatialRegion({ minX: -1, minY: -1, maxX: 1, maxY: 1 }, after);
+    expect(after).not.toContain(diverging.index);
+  });
+
+  it('re-enters the broadphase when the body comes back inside the limit', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const diverging = dynamicBox(world, 0);
+    dynamicBox(world, 0.5);
+    stepPhysics2D(world, 1 / 60);
+    widenPastLimit(diverging);
+    stepPhysics2D(world, 1 / 60);
+    expect(world.contacts).toHaveLength(0);
+
+    const local = diverging.colliders[0].local as { maxX: number; maxY: number; minX: number; minY: number };
+    local.minX = -0.5;
+    local.minY = -0.5;
+    local.maxX = 0.5;
+    local.maxY = 0.5;
+    stepPhysics2D(world, 1 / 60);
+    expect(world.contacts).toHaveLength(1);
+  });
+});
+
+describe('sensor reporting between immovable bodies', () => {
+  // A sensor is reported, never resolved — the solver already skips sensor contacts. The step's
+  // "two immovable bodies have no constraint to solve" shortcut ran before any collider was
+  // inspected, so it deleted every sensor overlap between immovable bodies as well. A static trigger
+  // volume over static scenery is an ordinary thing to build, and it reported nothing at all.
+  function immovable(world: Physics2DWorld, x: number, sensor: boolean): RigidBody2D {
+    const body = createRigidBody2D('static', x, 0);
+    body.colliders.push(
+      createPhysics2DCollider({ kind: 'aabb', minX: -0.5, minY: -0.5, maxX: 0.5, maxY: 0.5 }, STONE, sensor),
+    );
+    return addPhysics2DBody(world, body);
+  }
+
+  it('reports a static sensor overlapping a static collider', () => {
+    const world = createPhysics2DWorld(0, 0);
+    immovable(world, 0, true);
+    immovable(world, 0, false);
+    stepPhysics2D(world, 1 / 60);
+    expect(world.events.began).toHaveLength(1);
+    expect(world.contacts).toHaveLength(1);
+    expect(world.contacts[0].sensor).toBe(true);
+  });
+
+  it('still skips two immovable bodies when neither senses', () => {
+    // The shortcut is right for the case it was written for, and must survive the fix.
+    const world = createPhysics2DWorld(0, 0);
+    immovable(world, 0, false);
+    immovable(world, 0, false);
+    stepPhysics2D(world, 1 / 60);
+    expect(world.events.began).toHaveLength(0);
+    expect(world.contacts).toHaveLength(0);
+  });
+
+  it('resolves nothing for a static sensor pair — reporting is not colliding', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const sensor = immovable(world, 0, true);
+    const scenery = immovable(world, 0, false);
+    stepPhysics2D(world, 1 / 60);
+    expect(sensor.x).toBe(0);
+    expect(scenery.x).toBe(0);
+    expect(sensor.velocityX).toBe(0);
+  });
+
+  it('ends a static sensor contact when the overlap stops', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const sensor = immovable(world, 0, true);
+    immovable(world, 0, false);
+    stepPhysics2D(world, 1 / 60);
+    expect(world.events.began).toHaveLength(1);
+    sensor.x = 100;
+    stepPhysics2D(world, 1 / 60);
+    expect(world.events.ended).toHaveLength(1);
+    expect(world.contacts).toHaveLength(0);
+  });
+});
+
 describe('stepPhysics2D', () => {
   it('rests a box on the ground instead of sinking through it', () => {
     const world = createPhysics2DWorld();
