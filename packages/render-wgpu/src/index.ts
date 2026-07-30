@@ -12,6 +12,7 @@ export {
   enableWgpuBlendModeSupport,
   enableWgpuFrameCapture,
   endWgpuRenderPass,
+  explainWgpuTextureResolution,
   isWgpuRenderTextureReady,
   registerWgpuBitmapTextureResolver,
   registerWgpuCompressedImageTextureResolver,

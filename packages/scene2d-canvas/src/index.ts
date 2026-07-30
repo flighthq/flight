@@ -33,6 +33,7 @@ export {
   enableCanvasClip,
   enableCanvasRenderCache,
   enableCanvasTextInput,
+  explainCanvasTextureResolution,
   refreshCanvasRenderCache,
   registerCanvasBitmapTextureResolver,
   registerCanvasImageTextureResolver,
