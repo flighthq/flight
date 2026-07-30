@@ -466,6 +466,116 @@ describe('parseDragonBonesSkeleton', () => {
     expect((skeleton.slots![0].attachment as RegionAttachment2D).name).toBe('face-alt');
   });
 
+  it('animates a slot display swap as a STEP channel indexing the slot display list', () => {
+    const doc = {
+      frameRate: 10,
+      armature: [
+        {
+          bone: [{ name: 'root' }],
+          slot: [{ name: 'head', parent: 'root', displayIndex: 0 }],
+          skin: [{ name: 'default', slot: [{ name: 'head', display: [{ name: 'face' }, { name: 'face-alt' }] }] }],
+          animation: [
+            {
+              name: 'blink',
+              slot: [
+                {
+                  name: 'head',
+                  displayFrame: [
+                    { duration: 5, value: 0 },
+                    { duration: 5, value: 1 },
+                    { duration: 0, value: -1 },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const result = parseDragonBonesSkeleton(JSON.stringify(doc))!;
+    const pose = cloneSkeleton2D(result.skeleton);
+    const clip = result.animations[0].clip;
+    applyAnimationClipToSkeleton2D(clip, result.skeleton, pose, 0);
+    expect((pose.slots![0].attachment as RegionAttachment2D).name).toBe('face');
+    applyAnimationClipToSkeleton2D(clip, result.skeleton, pose, 0.5); // 5 frames at 10fps
+    expect((pose.slots![0].attachment as RegionAttachment2D).name).toBe('face-alt');
+    // A negative display index is DragonBones' "show nothing".
+    applyAnimationClipToSkeleton2D(clip, result.skeleton, pose, 1);
+    expect(pose.slots![0].attachment).toBeNull();
+  });
+
+  it('animates a slot colour, normalizing the 0-100 percent channels rather than bytes', () => {
+    const doc = {
+      frameRate: 10,
+      armature: [
+        {
+          bone: [{ name: 'root' }],
+          slot: [{ name: 'head', parent: 'root' }],
+          animation: [
+            {
+              name: 'fade',
+              slot: [
+                {
+                  name: 'head',
+                  colorFrame: [
+                    { duration: 10, value: { aM: 100, rM: 100, gM: 100, bM: 100 } },
+                    { duration: 0, value: { aM: 0, rM: 100, gM: 0, bM: 0 } },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const result = parseDragonBonesSkeleton(JSON.stringify(doc))!;
+    const pose = cloneSkeleton2D(result.skeleton);
+    const clip = result.animations[0].clip;
+    applyAnimationClipToSkeleton2D(clip, result.skeleton, pose, 0);
+    expect(pose.slots![0].color).toBe(0xffffffff);
+    applyAnimationClipToSkeleton2D(clip, result.skeleton, pose, 1);
+    expect(pose.slots![0].color).toBe(0xff000000); // red kept, everything else faded out
+  });
+
+  it('accepts the older display/color frame spellings', () => {
+    const doc = {
+      frameRate: 10,
+      armature: [
+        {
+          bone: [{ name: 'root' }],
+          slot: [{ name: 'head', parent: 'root' }],
+          skin: [{ name: 'default', slot: [{ name: 'head', display: [{ name: 'a' }, { name: 'b' }] }] }],
+          animation: [
+            {
+              name: 'old',
+              slot: [{ name: 'head', display: [{ duration: 5, displayIndex: 1 }] }],
+            },
+          ],
+        },
+      ],
+    };
+    const result = parseDragonBonesSkeleton(JSON.stringify(doc))!;
+    const pose = cloneSkeleton2D(result.skeleton);
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, result.skeleton, pose, 0);
+    expect((pose.slots![0].attachment as RegionAttachment2D).name).toBe('b');
+  });
+
+  it('Skip-crumbs a slot timeline naming a slot the armature does not have', () => {
+    const doc = {
+      armature: [
+        {
+          bone: [{ name: 'root' }],
+          slot: [{ name: 'head', parent: 'root' }],
+          animation: [{ name: 'a', slot: [{ name: 'ghost', displayFrame: [{ duration: 1, value: 0 }] }] }],
+        },
+      ],
+    };
+    const kinds = collectImportDiagnostics((sink) => parseDragonBonesSkeleton(JSON.stringify(doc), sink)).map(
+      (c) => c.kind,
+    );
+    expect(kinds).toContain('dragonbones.slot-timeline-unsupported');
+  });
+
   it('emits a bone with an unresolved parent as a root and Skip-crumbs it', () => {
     const doc = { armature: [{ bone: [{ name: 'orphan', parent: 'ghost' }] }] };
     const kinds = collectImportDiagnostics((sink) => parseDragonBonesSkeleton(JSON.stringify(doc), sink)).map(
