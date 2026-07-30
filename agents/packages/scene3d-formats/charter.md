@@ -29,6 +29,8 @@ crate: "flighthq-scene-formats"
 - **2026-07-03 — Also target USD and OBJ.** This is the home for all 3D file format parsing.
 - **2026-07-03 — TS-leads, Rust conforms later.** Standard port posture.
 
+- **[2026-07-30] A UV set the parser cannot supply is reported, not silently substituted.** Geometry import carries `TEXCOORD_0` only, so a material declaring `texCoord: 1` (on the textureInfo or overridden inside `KHR_texture_transform`) was sampling set 0 — the right texels read through the wrong coordinates, which renders as a plausible but wrong image rather than a visible failure, and is exactly the silent-substitution class the crumb contract exists to eliminate. It now emits `gltf.texcoord-set-unsupported` at Recover severity: the material and its texture still build, and the caller is told the file asked for something this parser did not deliver. This deliberately does **not** decide the import half — carrying the higher UV sets is sequenced behind the `@flighthq/mesh` encoding vocabulary — it separates the reporting half, which was never blocked. User-directed.
+
 ## Open directions
 
 - Serialize direction — should scene-formats also export glTF, or is it import-only?

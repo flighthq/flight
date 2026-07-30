@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/scene3d-formats'
-updated: 2026-07-22
+updated: 2026-07-30
 basedOn: ./review.md
 ---
 
@@ -44,17 +44,33 @@ extension depth, not the old "first primitive, no material" slice.
 
 ## Recommended
 
-1. Add fixture-backed assertions for the already-supported glTF/GLB core before expanding the schema
-   again, so regressions are caught above synthetic accessor tests.
-2. **Reconcile the `warnings: string[]` diagnostics idiom with the inversion rule.** The parser family
-   reports problems by pushing raw English strings into a caller-supplied `warnings` array
-   (`gltfParse.ts`, `gltfPunctualLights.ts`, and the `load*` loaders in `scene-resources`). The SDK
-   diagnostics inversion rule wants core to expose structured seams/data with caller-facing messages in
-   separately-imported `enable*Guards` modules emitting through `@flighthq/log`. `scene-resources`'s own
-   resource-failure path already does this (structured `ImageResourceFailure` + `explain*` + guard), so
-   the two halves of the import layer use two idioms. Pre-existing house style, not introduced by these
-   commits — but this is the place to converge once import diagnostics are designed (tracked jointly in
-   Depth gap #1's "structured diagnostics must accompany the document" line).
+Both items previously listed here — fixture-backed glTF/GLB assertions, and reconciling the
+`warnings: string[]` idiom with the inversion rule — are **done and retired**, verified against live
+source 2026-07-30 rather than assumed. `gltfParse.test.ts` builds real `.glb` containers through a
+`buildGlb` helper and asserts container magic, header version, and chunk validity alongside the
+document walk (123 `it`s across 8 `describe`s); and no `warnings` identifier survives anywhere in
+this package or the resource layer, every parser reporting through `reportImportDiagnostic` with
+structured crumbs whose text lives in the separately-imported `explain*`/`format*` layer.
+
+What remains is the four Depth gaps above. Three are blocked on a decision rather than on effort, and
+each is stated with the ruling it needs so the next reader does not re-derive it:
+
+1. **Rule on the mesh encoding vocabulary before importing higher vertex channels (Depth gap 2).**
+   The gap's own text requires `@flighthq/mesh` to gain two-component uint/unorm, unorm16, and
+   quantized signed-normalized encodings *first*, so `TEXCOORD_1`/`COLOR_0`/`JOINTS_1` can be carried
+   without eagerly decoding every accessor to float. Cross-package and sequenced; not startable here.
+   The *reporting* half was separable and shipped 2026-07-30 — a material declaring a `texCoord` set
+   the parser cannot supply now emits `gltf.texcoord-set-unsupported` (Recover) instead of silently
+   sampling set 0, which was the plausible-but-wrong-image failure this gap otherwise ships.
+2. **Rule on the extension-handler seam shape before porting `KHR_texture_transform` (Depth gap 3).**
+   `GltfExtensionHandler.apply(context)` runs once over the whole document, which is why
+   `KHR_lights_punctual` ports cleanly — it walks nodes. `KHR_texture_transform` applies per
+   *textureInfo*, inside material resolution, so moving it means giving the seam a per-texture-info
+   hook. A seam change, not a mechanical port.
+3. **Rule on a fixture policy before proving real files end to end (Depth gap 4).** Standing guidance
+   on this arc was not to commit third-party assets for licensing reasons, which is what "canonical
+   fixtures" means here. Either a licensed asset set is blessed into the repo, or this stays a
+   capture/CI concern rather than a unit-test one.
 
 ## Backlog
 
