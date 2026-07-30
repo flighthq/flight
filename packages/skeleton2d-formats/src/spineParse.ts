@@ -50,7 +50,7 @@ export function parseSpineSkeleton(json: string, diagnostics?: ImportDiagnostic[
   const { attachmentNames, slots } = parseSpineSlots(record.slots, bones);
   const skins = parseSpineSkins(record.skins, slots, diagnostics);
   resolveSpineSetupAttachments(slots, attachmentNames, skins);
-  const animations = parseSpineAnimations(record.animations, bones, slots, diagnostics);
+  const animations = parseSpineAnimations(record.animations, bones, slots, skins, diagnostics);
   const skeleton = createSkeleton2D(bones, slots);
   if (skins.length > 0) skeleton.skins = skins;
   return { animations, skeleton };
@@ -507,6 +507,7 @@ function parseSpineAnimations(
   raw: unknown,
   bones: readonly Bone2D[],
   slots: readonly Slot2D[],
+  skins: readonly AttachmentSkin2D[],
   diagnostics?: ImportDiagnostic[],
 ): Skeleton2DImportAnimation[] {
   const animations: Skeleton2DImportAnimation[] = [];
@@ -558,7 +559,7 @@ function parseSpineAnimations(
         );
       }
     }
-    parseSpineSlotTimelines(channels, anim.slots, slots, diagnostics);
+    parseSpineSlotTimelines(channels, anim.slots, slots, skins, diagnostics);
     skipCrumbSpineTimelineGroup(diagnostics, anim.ik, 'spine.ik-timeline-unsupported');
     skipCrumbSpineTimelineGroup(diagnostics, anim.transform, 'spine.transform-timeline-unsupported');
     skipCrumbSpineTimelineGroup(diagnostics, anim.path, 'spine.path-timeline-unsupported');
@@ -581,6 +582,7 @@ function parseSpineSlotTimelines(
   channels: ReturnType<typeof createAnimationChannel>[],
   raw: unknown,
   slots: readonly Slot2D[],
+  skins: readonly AttachmentSkin2D[],
   diagnostics?: ImportDiagnostic[],
 ): void {
   if (raw === null || typeof raw !== 'object') return;
@@ -589,12 +591,13 @@ function parseSpineSlotTimelines(
     if (timelinesEntry === null || typeof timelinesEntry !== 'object') continue;
     const slotIndex = indexOfSpineSlot(slots, slotName);
     for (const [kind, keys] of Object.entries(timelinesEntry as Record<string, unknown>)) {
-      if (kind !== 'rgba') {
+      if (kind !== 'rgba' && kind !== 'attachment') {
         unmodeled.set(kind, (unmodeled.get(kind) ?? 0) + 1);
         continue;
       }
       if (slotIndex < 0 || !Array.isArray(keys) || keys.length === 0) continue;
-      addSpineSlotColorChannel(channels, keys, slotIndex, diagnostics);
+      if (kind === 'attachment') addSpineSlotAttachmentChannel(channels, keys, slotIndex, slotName, skins);
+      else addSpineSlotColorChannel(channels, keys, slotIndex, diagnostics);
     }
   }
   for (const [kind, count] of unmodeled) {
@@ -641,6 +644,56 @@ function addSpineSlotColorChannel(
   channels.push(createAnimationChannel(track, { path: Skeleton2DSlotAnimationPath.Color, slotIndex }));
 }
 
+// One `attachment` slot timeline → a STEP channel of indices into a per-channel attachment table.
+//
+// The keyframes name attachments by string; the table resolves each name ONCE here, against the setup skin,
+// and the track then carries only the index. A keyframe with no name becomes `-1` — Spine's way of hiding a
+// slot, which spineboy's `shoot` uses to extinguish muzzle flashes. Names that the setup skin does not
+// supply also become `-1` rather than being dropped, because dropping a keyframe would shift the timing of
+// every later swap.
+//
+// The table is deduplicated: a flash cycling through four images and back writes each attachment once.
+function addSpineSlotAttachmentChannel(
+  channels: ReturnType<typeof createAnimationChannel>[],
+  rawKeys: readonly unknown[],
+  slotIndex: number,
+  slotName: string,
+  skins: readonly AttachmentSkin2D[],
+): void {
+  const setup = skins.find((skin) => skin.name === SPINE_DEFAULT_SKIN_NAME) ?? skins[0];
+  const attachments: (Attachment2D | null)[] = [];
+  const indexByName = new Map<string, number>();
+  const times: number[] = [];
+  const values: number[] = [];
+  for (const key of rawKeys) {
+    if (key === null || typeof key !== 'object') continue;
+    const k = key as Record<string, unknown>;
+    times.push(numberOr(k.time, 0));
+    const name = typeof k.name === 'string' ? k.name : null;
+    if (name === null) {
+      values.push(SPINE_NO_ATTACHMENT_INDEX);
+      continue;
+    }
+    let index = indexByName.get(name);
+    if (index === undefined) {
+      const found = setup?.attachments.find((entry) => entry.slotIndex === slotIndex && entry.name === name);
+      index = found === undefined ? SPINE_NO_ATTACHMENT_INDEX : attachments.push(found.attachment) - 1;
+      indexByName.set(name, index);
+    }
+    values.push(index);
+  }
+  if (times.length === 0) return;
+  const track = createAnimationTrack({
+    components: 1,
+    interpolation: AnimationInterpolationStep,
+    times,
+    values,
+  });
+  channels.push(
+    createAnimationChannel(track, { attachments, path: Skeleton2DSlotAnimationPath.Attachment, slotIndex }),
+  );
+}
+
 // Reports one aggregated Skip crumb for an unmodeled animation timeline group, with the group's element
 // count. An absent or empty group is silent.
 function skipCrumbSpineTimelineGroup(diagnostics: ImportDiagnostic[] | undefined, raw: unknown, kind: string): void {
@@ -663,6 +716,10 @@ const SPINE_CURVE_EPSILON = 1e-6;
 
 // Spine's name for the base skin every rig has; alternates layer over it.
 const SPINE_DEFAULT_SKIN_NAME = 'default';
+
+// The index an attachment channel uses for "show nothing" — Spine's nameless keyframe, and any name the
+// setup skin cannot supply.
+const SPINE_NO_ATTACHMENT_INDEX = -1;
 
 // Maps a Spine bone `transform` string to a TransformMode2D. Spine omits the field for the default,
 // so an absent/unknown value is `Normal`.

@@ -5,6 +5,7 @@ import type {
   Skeleton2D,
   Skeleton2DAnimationTarget,
   Skeleton2DSlotAnimationTarget,
+  Slot2D,
 } from '@flighthq/types/contract';
 import { Skeleton2DAnimationPath, Skeleton2DSlotAnimationPath } from '@flighthq/types/contract';
 
@@ -102,6 +103,10 @@ function applySkeleton2DSlotChannel(
   if (slots === undefined || slots === null) return;
   const slotIndex = target.slotIndex;
   if (typeof slotIndex !== 'number' || slotIndex < 0 || slotIndex >= slots.length) return;
+  if (target.path === Skeleton2DSlotAnimationPath.Attachment) {
+    applySkeleton2DSlotAttachment(channel, slots[slotIndex], target, time);
+    return;
+  }
   if (target.path !== Skeleton2DSlotAnimationPath.Color) return;
   sampleAnimationTrack(_scratch, channel.track, time);
   slots[slotIndex].color =
@@ -110,6 +115,38 @@ function applySkeleton2DSlotChannel(
       (clampColorChannel(_scratch[2]) << 8) |
       clampColorChannel(_scratch[3])) >>>
     0;
+}
+
+// Swaps the slot's attachment by looking the sampled INDEX up in the target's table.
+//
+// It reads the track with its own STEP walk rather than `sampleAnimationTrack`, and that is deliberate
+// rather than duplication: an attachment index must never be interpolated. If a track were built (or later
+// edited) as Linear, sampling would blend between two TABLE INDICES and hand back something between them —
+// a plausible-looking index that names the wrong art, or a fractional one. Forcing the step here means the
+// channel is correct regardless of what the track claims its interpolation is.
+//
+// An index outside the table, or the `-1` Spine writes for "no attachment", clears the slot.
+function applySkeleton2DSlotAttachment(
+  channel: Readonly<AnimationChannel>,
+  slot: Slot2D,
+  target: Readonly<Skeleton2DSlotAnimationTarget>,
+  time: number,
+): void {
+  const table = target.attachments;
+  if (table === undefined || table === null) return;
+  const times = channel.track.times;
+  const count = times.length;
+  if (count === 0) return;
+  // The last keyframe at or before `time`; before the first keyframe the first value holds.
+  let keyframe = 0;
+  for (let i = count - 1; i >= 0; i--) {
+    if (times[i] <= time) {
+      keyframe = i;
+      break;
+    }
+  }
+  const index = Math.round(channel.track.values[keyframe * channel.track.components]);
+  slot.attachment = index >= 0 && index < table.length ? table[index] : null;
 }
 
 function clampColorChannel(value: number): number {
