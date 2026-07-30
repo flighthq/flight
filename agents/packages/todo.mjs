@@ -11,6 +11,8 @@ import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { itemHeadlines } from './todo-items.mjs';
+
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, '..', '..');
 const codePackagesDir = join(repoRoot, 'packages');
@@ -30,23 +32,6 @@ function section(text, heading) {
   const pattern = new RegExp(`^## ${heading}[^\\n]*\\n([\\s\\S]*?)(?=^## |$(?![\\s\\S]))`, 'm');
   const match = text.match(pattern);
   return match ? match[1].trim() : null;
-}
-
-// A Recommended item's one-line form: its bold headline if present, else its first sentence.
-// Items are top-level numbered ("1. ") or dashed ("- ") list entries; indented sub-bullets are not items.
-function itemHeadlines(recommendedSection) {
-  const items = [];
-  for (const line of recommendedSection.split('\n')) {
-    const listItem = line.match(/^(?:\d+\.|-)\s+(.*)$/);
-    if (!listItem) continue;
-    const body = listItem[1];
-    const bold = body.match(/^\*\*(.+?)\*\*/);
-    let headline = bold ? bold[1] : (body.match(/^(.+?[.!?])(\s|$)/)?.[1] ?? body);
-    headline = headline.replace(/[.:]\s*$/, '').trim();
-    if (headline.length > 140) headline = `${headline.slice(0, 137)}…`;
-    items.push(headline);
-  }
-  return items;
 }
 
 function firstProseLine(text, heading) {
