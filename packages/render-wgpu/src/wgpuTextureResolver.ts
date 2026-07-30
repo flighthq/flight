@@ -3,6 +3,7 @@ import type {
   Bitmap,
   CompressedImage,
   ImageResource,
+  RenderTexture,
   Texture,
   TextureBackingKind,
   TextureLike,
@@ -102,7 +103,7 @@ function resolveWgpuImageTexture(
 }
 
 function resolveWgpuRenderTexture(state: WgpuRenderState, texture: Readonly<TextureLike>): WgpuTextureEntry | null {
-  return bindWgpuRenderTexture(state, texture as Readonly<Texture>);
+  return bindWgpuRenderTexture(state, texture as Readonly<RenderTexture>);
 }
 
 function resolveWgpuVideoTexture(state: WgpuRenderState, texture: Readonly<TextureLike>): WgpuTextureEntry | null {

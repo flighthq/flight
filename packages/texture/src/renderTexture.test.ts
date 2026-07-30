@@ -1,3 +1,5 @@
+import type { RenderTexture } from '@flighthq/types/contract';
+
 import { createRenderTexture } from './renderTexture';
 import { createSampler } from './sampler';
 
@@ -5,6 +7,7 @@ describe('createRenderTexture', () => {
   it('creates a linear render target with identity UVs and no depth by default', () => {
     const texture = createRenderTexture({ height: 32, width: 64 });
 
+    expectTypeOf(texture).toEqualTypeOf<RenderTexture>();
     expect(texture).toMatchObject({
       colorSpace: 'linear',
       flipX: false,
@@ -35,7 +38,7 @@ describe('createRenderTexture', () => {
     });
 
     expect(texture.colorSpace).toBe('srgb');
-    expect(texture.storage.target?.depth).toBe('depth-stencil');
+    expect(texture.storage.target.depth).toBe('depth-stencil');
     expect(texture.flipY).toBe(false);
     expect(texture.sampler.magFilter).toBe('nearest');
     expect(texture.sampler).not.toBe(sampler);

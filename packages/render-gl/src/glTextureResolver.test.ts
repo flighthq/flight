@@ -1,4 +1,4 @@
-import type { ImageResource, Texture, TextureLike } from '@flighthq/types/contract';
+import type { ImageResource, RenderTexture, TextureLike } from '@flighthq/types/contract';
 import {
   BitmapTextureBackingKind,
   CompressedImageTextureBackingKind,
@@ -110,7 +110,7 @@ describe('registerGlRenderTextureResolver', () => {
       return previous?.(parameter);
     });
     const texture = textureWithTarget();
-    renderIntoGlRenderTexture(state, texture as Texture, () => {});
+    renderIntoGlRenderTexture(state, texture as RenderTexture, () => {});
     registerGlRenderTextureResolver(state);
     const uploads = vi.mocked(gl.texImage2D).mock.calls.length;
 

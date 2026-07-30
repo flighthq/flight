@@ -1,4 +1,4 @@
-import type { Texture } from '@flighthq/types/contract';
+import type { RenderTexture } from '@flighthq/types/contract';
 import { RenderTextureBackingKind } from '@flighthq/types/contract';
 
 import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
@@ -15,7 +15,7 @@ beforeAll(() => {
   installWgpuMock();
 });
 
-function texture(hasRenderTarget = true): Texture {
+function texture(): RenderTexture {
   return {
     colorSpace: 'linear',
     flipX: false,
@@ -31,13 +31,13 @@ function texture(hasRenderTarget = true): Texture {
     storage: {
       dimension: '2d',
       image: null,
-      target: hasRenderTarget ? { height: 8, kind: RenderTextureBackingKind, width: 8 } : undefined,
+      target: { height: 8, kind: RenderTextureBackingKind, width: 8 },
     },
     uvOffset: { x: 0, y: 0 },
     uvRotation: 0,
     uvScale: { x: 1, y: 1 },
     version: 0,
-  } as Texture;
+  } as RenderTexture;
 }
 
 describe('bindWgpuRenderTexture', () => {
@@ -82,13 +82,6 @@ describe('isWgpuRenderTextureReady', () => {
 });
 
 describe('renderIntoWgpuRenderTexture', () => {
-  it('requires a Texture with a render-target backing', async () => {
-    const state = await createWgpuRenderStateForTest();
-    expect(() => renderIntoWgpuRenderTexture(state, texture(false), () => {})).toThrow(
-      'renderIntoWgpuRenderTexture requires a Texture with a render-target backing',
-    );
-  });
-
   it('restores the enclosing pass and bumps version after success', async () => {
     const state = await createWgpuRenderStateForTest();
     const renderTexture = texture();

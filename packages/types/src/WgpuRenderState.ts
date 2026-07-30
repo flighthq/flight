@@ -7,6 +7,7 @@ import type { Material } from './Material';
 import type { Matrix } from './Matrix';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
+import type { RenderTexture } from './RenderTexture';
 import type { SamplerLike } from './Sampler';
 import type { Texture } from './Texture';
 import type { TextureBackingKind } from './TextureBackingKind';
@@ -119,7 +120,7 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // Borrowed native handles and derived non-owning views/bind groups. Disposal only forgets the entry.
   wgpuExternalTextureCache?: WeakMap<Texture, WgpuTextureEntry>;
   // Render Texture realizations are keyed by Texture because their GPU allocation is state-bound.
-  wgpuRenderTextureCache?: WeakMap<Texture, WgpuRenderTextureEntry>;
+  wgpuRenderTextureCache?: WeakMap<RenderTexture, WgpuRenderTextureEntry>;
 
   // Custom shader (default bitmap shader; can be replaced via registerWgpuBitmapShader)
   defaultBitmapShader: WgpuBitmapShader | null;

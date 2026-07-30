@@ -1,5 +1,5 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
-import type { Texture } from '@flighthq/types/contract';
+import type { RenderTexture } from '@flighthq/types/contract';
 
 import { enableGlRenderTextureGuards } from './enableGlRenderTextureGuards';
 import { getGlRenderStateRuntime } from './glRenderState';
@@ -168,8 +168,8 @@ describe('renderIntoGlRenderTexture', () => {
     const renderTexture = createRenderTexture({ height: 16, width: 32 });
     renderIntoGlRenderTexture(state, renderTexture, () => {});
 
-    renderTexture.storage.target!.width = 12;
-    renderTexture.storage.target!.height = 10;
+    renderTexture.storage.target.width = 12;
+    renderTexture.storage.target.height = 10;
     renderIntoGlRenderTexture(state, renderTexture, () => {});
 
     expect(explainGlRenderTexture(state, renderTexture)).toEqual({
@@ -220,7 +220,7 @@ function createRenderTextureState(): ReturnType<typeof createGlState> {
   return fixture;
 }
 
-function createRenderTexture(options: { depth?: boolean; height: number; width: number }): Texture {
+function createRenderTexture(options: { depth?: boolean; height: number; width: number }): RenderTexture {
   return {
     colorSpace: 'linear',
     flipX: false,
@@ -248,5 +248,5 @@ function createRenderTexture(options: { depth?: boolean; height: number; width: 
       },
     },
     version: 0,
-  } as unknown as Texture;
+  } as unknown as RenderTexture;
 }

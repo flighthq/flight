@@ -1,4 +1,4 @@
-import type { ImageResource, Texture } from '@flighthq/types/contract';
+import type { ImageResource, RenderTexture, Texture } from '@flighthq/types/contract';
 import {
   BitmapTextureBackingKind,
   CompressedImageTextureBackingKind,
@@ -59,11 +59,11 @@ function textureWithImage(image: ImageResource | null): Texture {
   } as Texture;
 }
 
-function renderTexture(): Texture {
+function renderTexture(): RenderTexture {
   const texture = textureWithImage(null);
   texture.colorSpace = 'linear';
   texture.storage.target = { height: 8, kind: RenderTextureBackingKind, width: 8 };
-  return texture;
+  return texture as RenderTexture;
 }
 
 describe('registerWgpuBitmapTextureResolver', () => {

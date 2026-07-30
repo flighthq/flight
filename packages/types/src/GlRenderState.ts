@@ -15,6 +15,7 @@ import type { ImageResource } from './ImageResource';
 import type { Material } from './Material';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
+import type { RenderTexture } from './RenderTexture';
 import type { SamplerLike } from './Sampler';
 import type { Texture } from './Texture';
 import type { TextureBackingKind } from './TextureBackingKind';
@@ -203,7 +204,7 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // Borrowed native handles registered by createExternalGlTexture. Disposing forgets these entries;
   // the caller retains allocation ownership.
   glExternalTextureCache?: WeakMap<Texture, WebGLTexture>;
-  glRenderTextureCache?: WeakMap<Texture, GlRenderTextureEntry>;
+  glRenderTextureCache?: WeakMap<RenderTexture, GlRenderTextureEntry>;
   glRenderTextureGuard?: GlRenderTextureGuard | null;
   // Optional RGBA fallback decoder for block-compressed textures the device cannot upload natively.
   // Installed per-state by registerGlCompressedTextureDecoder (opt-in), so a state that never draws a

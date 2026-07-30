@@ -1,4 +1,4 @@
-import type { ImageResource, TextureCubeImages } from '@flighthq/types/contract';
+import type { CubeTexture, ImageResource, TextureCubeImages } from '@flighthq/types/contract';
 import { CubeFaceNegativeX, CubeFacePositiveX, CubeFacePositiveY } from '@flighthq/types/contract';
 
 import {
@@ -73,6 +73,7 @@ describe('createCubeTexture', () => {
   it('applies the default six unbound faces, srgb, default sampler', () => {
     const cube = createCubeTexture();
 
+    expectTypeOf(cube).toEqualTypeOf<CubeTexture>();
     expect(cube.storage.images).toHaveLength(6);
     expect(cube.storage.images.every((face) => face === null)).toBe(true);
     expect(cube.colorSpace).toStrictEqual('srgb');

@@ -3,8 +3,8 @@ import type {
   GlRenderTextureEntry,
   GlRenderTextureExplanation,
   GlRenderTextureGuard,
+  RenderTexture,
   SamplerLike,
-  Texture,
   TextureColorSpace,
 } from '@flighthq/types/contract';
 
@@ -19,7 +19,7 @@ import { createGlRenderTarget, destroyGlRenderTarget, resizeGlRenderTarget } fro
 // null; optional guards can explain that otherwise silent fallback.
 export function bindGlRenderTexture(
   state: GlRenderState,
-  renderTexture: Readonly<Texture>,
+  renderTexture: Readonly<RenderTexture>,
   sampler?: Readonly<SamplerLike> | null,
 ): WebGLTexture | null {
   const entry = getEntry(state, renderTexture);
@@ -41,7 +41,7 @@ export function bindGlRenderTexture(
   return texture;
 }
 
-export function destroyGlRenderTexture(state: GlRenderState, renderTexture: Readonly<Texture>): void {
+export function destroyGlRenderTexture(state: GlRenderState, renderTexture: Readonly<RenderTexture>): void {
   const entries = getGlRenderStateRuntime(state).glRenderTextureCache;
   const entry = entries?.get(renderTexture);
   if (entry === undefined) return;
@@ -51,7 +51,7 @@ export function destroyGlRenderTexture(state: GlRenderState, renderTexture: Read
 
 export function explainGlRenderTexture(
   state: GlRenderState,
-  renderTexture: Readonly<Texture>,
+  renderTexture: Readonly<RenderTexture>,
 ): GlRenderTextureExplanation {
   const entry = getEntry(state, renderTexture);
   const descriptor = renderTexture.storage.target;
@@ -64,12 +64,12 @@ export function explainGlRenderTexture(
 
 export function getGlRenderTextureColorSpace(
   state: GlRenderState,
-  renderTexture: Readonly<Texture>,
+  renderTexture: Readonly<RenderTexture>,
 ): TextureColorSpace {
   return getEntry(state, renderTexture)?.target.colorSpace ?? renderTexture.colorSpace;
 }
 
-export function isGlRenderTextureReady(state: GlRenderState, renderTexture: Readonly<Texture>): boolean {
+export function isGlRenderTextureReady(state: GlRenderState, renderTexture: Readonly<RenderTexture>): boolean {
   const ready = getEntry(state, renderTexture)?.status === 'ready';
   if (!ready) notifyGuard(state, renderTexture);
   return ready;
@@ -81,7 +81,7 @@ export function isGlRenderTextureReady(state: GlRenderState, renderTexture: Read
  */
 export function renderIntoGlRenderTexture(
   state: GlRenderState,
-  renderTexture: Texture,
+  renderTexture: RenderTexture,
   callback: (state: GlRenderState) => void,
 ): void {
   const entry = ensureEntry(state, renderTexture);
@@ -110,11 +110,8 @@ export function setGlRenderTextureGuard(state: GlRenderState, guard: GlRenderTex
   getGlRenderStateRuntime(state).glRenderTextureGuard = guard;
 }
 
-function ensureEntry(state: GlRenderState, renderTexture: Readonly<Texture>): GlRenderTextureEntry {
+function ensureEntry(state: GlRenderState, renderTexture: Readonly<RenderTexture>): GlRenderTextureEntry {
   const descriptor = renderTexture.storage.target;
-  if (descriptor === undefined) {
-    throw new Error('renderIntoGlRenderTexture requires a Texture with a render-target backing');
-  }
   const entries = getEntries(state);
   let entry = entries.get(renderTexture);
   if (entry === undefined) {
@@ -129,15 +126,15 @@ function ensureEntry(state: GlRenderState, renderTexture: Readonly<Texture>): Gl
   return entry;
 }
 
-function getEntries(state: GlRenderState): WeakMap<Texture, GlRenderTextureEntry> {
+function getEntries(state: GlRenderState): WeakMap<RenderTexture, GlRenderTextureEntry> {
   return (getGlRenderStateRuntime(state).glRenderTextureCache ??= new WeakMap());
 }
 
-function getEntry(state: GlRenderState, renderTexture: Readonly<Texture>): GlRenderTextureEntry | undefined {
+function getEntry(state: GlRenderState, renderTexture: Readonly<RenderTexture>): GlRenderTextureEntry | undefined {
   return getGlRenderStateRuntime(state).glRenderTextureCache?.get(renderTexture);
 }
 
-function notifyGuard(state: GlRenderState, renderTexture: Readonly<Texture>): void {
+function notifyGuard(state: GlRenderState, renderTexture: Readonly<RenderTexture>): void {
   getGlRenderStateRuntime(state).glRenderTextureGuard?.(
     state,
     renderTexture,
