@@ -40,8 +40,9 @@ still synthetic and narrow; later MovieClip frames and deferred asset references
   underlying format importer rejects a malformed whole document instead of reporting a successful empty
   document.
 - SWF is an explicit peer-package opt-in and supplies the first non-empty manifest: legacy through
-  current placement/removal records preserve recursively nested first-frame display-list state, named
-  affine transforms, and `SymbolClass`/`ExportAssets` or direct-class linkage. Stage and available
+  current placement/removal records preserve recursively nested first-frame display-list state,
+  including fresh/move/replacement semantics and isolation from later-frame mutations. Named affine
+  transforms and `SymbolClass`/`ExportAssets` or direct-class linkage survive, while stage and available
   character bounds preserve slot extents through recursive placement transforms.
 - Package shape is clean: `sideEffects: false`; source imports only declared dependencies; the SDK root,
   SDK formats, package root, and `/contract` lanes agree; `npm run api`, `exports:check`,

@@ -17,6 +17,9 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`.
   available child bound through its placement matrix.
 - `PlaceObject` through `PlaceObject4` cover legacy and current first-frame placement records;
   `RemoveObject` and `RemoveObject2` update that display list before its first-frame snapshot.
+- `PlaceObject2`/`PlaceObject3` distinguish fresh placements from move/update and replacement records.
+  Only a move targeting an existing depth inherits omitted fields; stray moves are ignored, and the
+  first-frame snapshot remains isolated from later-frame mutations.
 - Named placement forms preserve instance names and affine transforms, converting twips to pixels.
   Legacy unnamed sprite placements still expose their recursively named descendants.
 - `SymbolClass`, `ExportAssets`, and direct `PlaceObject3`/`PlaceObject4` class names preserve linkage
@@ -30,7 +33,8 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`.
 
 The package is wired through the SDK root and formats barrel, build graph, package layer, path aliases,
 and lockfile. Synthetic byte-level tests cover all four placement generations, both removal
-generations, linkage, transforms, opt-in registration, compressed rejection, malformed/truncated input,
-recursively nested sprites, composed transforms, recursive-graph rejection, stage bounds, direct
-definition bounds, and recursively composed sprite extents. A canonical externally produced fixture
-remains unavailable locally; evidence is still synthetic.
+generations, fresh/move/replacement state, first-frame isolation, linkage, transforms, opt-in
+registration, compressed rejection, malformed/truncated input, recursively nested sprites, composed
+transforms, recursive-graph rejection, stage bounds, direct definition bounds, and recursively composed
+sprite extents. A canonical externally produced fixture remains unavailable locally; evidence is still
+synthetic.
