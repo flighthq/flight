@@ -443,7 +443,7 @@ independently gateable and leaves the tree green.
 
 | Stage | Change                                                                                                                                                                                 | Notes                                                                                                                                                                                                                                 |
 | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| M1    | `createBitmapFromImageSource` → `null` + `explain*` on tainted source                                                                                                                  | D6; independent of everything else                                                                                                                                                                                                    |
+| M1    | ~~`createBitmapFromImageSource` → `null` + `explain*` on tainted source~~ **DONE 2026-07-30**                                                                                          | D6; independent of everything else. Shipped as `Bitmap \| null` plus `explainBitmapReadback` in its own module; see the Decisions log                                                                                                |
 | M2    | Name `CubeTexture` and `RenderTexture` as types                                                                                                                                        | **Landed** (a40e730f1). D4/#2; `createCubeTexture` and `createRenderTexture` become correct untouched. `RenderTexture` also tightens the `renderInto`/`bind`/`destroy` API, moving a class of runtime sentinel checks to compile time |
 | M3    | `ImageBacking` → `TextureSource`; `TextureBackingKind` → `TextureSourceKind`; `TextureTargetBacking` → `RenderTarget`; `TextureVolume` → `VoxelGrid` (kind `'volume'` → `'voxelGrid'`) | D1; mechanical rename. Largest site count — `ImageTextureBackingKind` alone has ~32 uses, plus two `imageBacking*TextureCache` fields in `GlRenderState`                                                                              |
 | M4    | **Flatten**: delete `TextureStorage`; `Texture` absorbs `readonly dimension` + `source`/`sources` (one content field per variant, hoisted)                                             | D3; deletes the `?: never` scaffolding, adds `Texture2D`, re-expresses `CubeTexture`/`RenderTexture` against the flat shape; 2D-consuming APIs (`SpriteData.texture`, …) may tighten to `Texture2D`                                   |
@@ -470,10 +470,35 @@ below).
 2. **Should `Sampler` become `TextureSampler`?** Left as `Sampler` here: it is an independent object
    in every GPU API (`GPUSampler`, `VkSampler`), and the prefix would imply it cannot exist apart
    from a texture. Recorded because it was raised and deliberately declined.
-3. **Readback as a capability query** — shape not settled. Needed regardless of taxonomy because
+3. **Do `captureBitmapFromImageResource` and `createBitmapFromCanvas` take the same sentinel as
+   `createBitmapFromImageSource`?** Both do a canvas readback and both still let a `SecurityError`
+   escape on a tainted source — the identical D6 exposure, on the two neighbours M1 did not name.
+   Raised by the M1 implementation 2026-07-30 and left undone because the stage scoped one function;
+   converting them is small and mechanical once ruled, and `explainBitmapReadback` already exists to
+   answer for them.
+4. **Readback as a capability query** — shape not settled. Needed regardless of taxonomy because
    `Surface` readability is a runtime property (CORS tainting), not a static one.
 
 ## Decisions log
+
+- **[2026-07-30] M1 shipped: readback failure is a sentinel, and its reason is a separate pull query.**
+  `createBitmapFromImageSource` returns `Bitmap | null` and no longer lets a platform exception
+  escape; `explainBitmapReadback(source, width, height)` re-derives why, as plain data
+  (`readable` + `reason`), from its own module so it sheds when unimported — measured: the `bitmap`
+  example is unchanged at 5.24 KB. Three points worth recording because they went slightly beyond the
+  one-line stage description:
+  - **The reason set is wider than "tainted".** `empty-size` and `no-canvas` join `tainted-source`,
+    because the constructor has to answer for them too and a query that reported only tainting would
+    send a caller hunting for a CORS problem they do not have. Reasons are ordered root-cause first:
+    the two knowable without touching the source are decided before anything is drawn.
+  - **`drawImage` is caught alongside `getImageData`.** D6 names the `getImageData` `SecurityError`,
+    but a source the platform will not draw throws one step earlier and is the same expected failure
+    from the caller's side.
+  - **`explainBitmapReadback` reads one pixel, not the capture.** Taint is a property of the canvas
+    after the draw, not of how much is read, so the query costs a 1×1 readback regardless of size.
+  Deliberately **not** done here: `captureBitmapFromImageResource` and `createBitmapFromCanvas` have
+  the same taint exposure and still throw. They are outside M1's stated scope and are noted in Open
+  questions rather than swept in. Nothing here touches M8's capability-query shape, which stays open.
 
 - **[2026-07-29] `TextureSource`, not `TextureStorageSource`.** Members are first-class entities, not
   sub-parts. User + review.
