@@ -143,8 +143,8 @@ Design calls to settle before building the affected entries:
 
 ### spritesheet-formats (partial 58)
 
-- Unify dispatch to registry-only -- built-in formats self-register via import instead of hardcoded switch
-- Update package description (ships 5 formats, description is stale)
+- Decide whether an overlapping detector should be resolvable without relying on order
+- `libgdxAtlasParse` has no serializer
 
 ### text (partial 58)
 
