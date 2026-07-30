@@ -28,6 +28,9 @@
       "path": "../image"
     },
     {
+      "path": "../log"
+    },
+    {
       "path": "../node"
     },
     {
