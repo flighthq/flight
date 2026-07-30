@@ -467,6 +467,11 @@ Design calls to settle before building the affected entries:
 - Document justify × letterSpacing
 - Baseline/line query helpers
 
+### dialog (solid 78)
+
+- `FileDialogFilter` cannot express which extension belongs to which MIME type
+- An extension-only filter is declared as `application/octet-stream`
+
 ### flow (solid 78)
 
 - Reentrancy characterization tests
@@ -983,7 +988,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene3d` · `particleemitter` · `xml` · `skeleton3d` · `scene3d-resources` · `camera-controls` · `debug` · `dialog` · `lifecycle` · `textlayout` · `adjustments` · `clipboard` · `camera` · `platform` · `textinput` · `connectivity` · `screen` · `scene2d-resources` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
+`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene3d` · `particleemitter` · `xml` · `skeleton3d` · `scene3d-resources` · `camera-controls` · `debug` · `lifecycle` · `textlayout` · `adjustments` · `clipboard` · `camera` · `platform` · `textinput` · `connectivity` · `screen` · `scene2d-resources` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
 
 ## Liveness — which stage each stale cell needs next
 
