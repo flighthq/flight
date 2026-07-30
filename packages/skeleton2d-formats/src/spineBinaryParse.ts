@@ -1,20 +1,27 @@
+import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
+import { easeCubicBezier } from '@flighthq/easing/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createSkeleton2D } from '@flighthq/skeleton2d/contract';
 import type {
+  AnimationChannel,
   Attachment2D,
   Bone2D,
   ByteReader,
+  EasingFunction,
   ImportDiagnostic,
   MeshAttachment2D,
   RegionAttachment2D,
   Skeleton2DImport,
+  Skeleton2DImportAnimation,
   Skin2D,
   Slot2D,
 } from '@flighthq/types/contract';
 import {
+  AnimationInterpolationLinear,
   ImportDiagnosticSeverity,
   MeshAttachment2DKind,
   RegionAttachment2DKind,
+  Skeleton2DAnimationPath,
   TransformMode2D,
 } from '@flighthq/types/contract';
 
@@ -100,6 +107,8 @@ export function parseSpineSkeletonBinary(
     if (name !== null) slots[i].attachment = skin.get(i)?.get(name) ?? null;
   }
   skipCrumbSpineBinaryAlternateSkins(reader, diagnostics);
+  skipSpineBinaryEvents(reader, diagnostics);
+  const animations = parseSpineBinaryAnimations(reader, strings, diagnostics);
   if (isSpineBinaryReaderOverrun(reader)) {
     reportImportDiagnostic(
       diagnostics,
@@ -117,7 +126,380 @@ export function parseSpineSkeletonBinary(
       { bytes: bytes.byteLength - reader.offset },
     );
   }
-  return { animations: [], skeleton: createSkeleton2D(bones, slots) };
+  return { animations, skeleton: createSkeleton2D(bones, slots) };
+}
+
+// The event DEFINITIONS a file declares (name plus default int/float/string/audio payload). Flight's
+// Skeleton2DImport carries no event vocabulary, so these are consumed and Skip-crumbed — but consumed they
+// must be, since the animation section follows them in a stream with no keys or lengths.
+function skipSpineBinaryEvents(reader: ByteReader, diagnostics?: ImportDiagnostic[]): void {
+  const count = readSpineBinaryVarint(reader);
+  for (let i = 0; i < count && !isSpineBinaryReaderOverrun(reader); i++) {
+    readSpineBinaryVarint(reader); // name reference
+    readSpineBinaryVarint(reader); // int value
+    skipSpineBinaryBytes(reader, 4); // float value
+    readSpineBinaryString(reader); // string value
+    // An audio path is what gates the trailing volume/balance pair, so its presence changes the record width.
+    if (readSpineBinaryString(reader) !== null) skipSpineBinaryBytes(reader, 8);
+  }
+  reportSpineBinaryCrumb(diagnostics, count, 'spine.event-unsupported', 'events');
+}
+
+// Builds one AnimationClip per animation from its BONE timelines, mirroring what `parseSpineSkeleton` does
+// for `.json` — relative deltas over `Skeleton2DAnimationTarget`, composed onto the setup pose by
+// `applyAnimationClipToSkeleton2D`.
+//
+// Every other timeline family (slot attachment/colour, IK, transform, path, deform, draw order, event) is
+// unmodeled, yet each is still walked field-for-field: the animation record is positional, so reaching the
+// NEXT animation requires consuming this one completely. An animation opens with its total timeline count,
+// which this importer does not need but must read.
+function parseSpineBinaryAnimations(
+  reader: ByteReader,
+  strings: readonly (string | null)[],
+  diagnostics?: ImportDiagnostic[],
+): Skeleton2DImportAnimation[] {
+  const animations: Skeleton2DImportAnimation[] = [];
+  const count = readSpineBinaryVarint(reader);
+  const unmodeled = new Map<string, number>();
+  for (let i = 0; i < count && !isSpineBinaryReaderOverrun(reader); i++) {
+    const name = readSpineBinaryString(reader);
+    readSpineBinaryVarint(reader); // total timeline count across all families
+    const channels: AnimationChannel[] = [];
+    skipSpineBinarySlotTimelines(reader, unmodeled);
+    parseSpineBinaryBoneTimelines(reader, channels, diagnostics);
+    skipSpineBinaryConstraintTimelines(reader, unmodeled);
+    skipSpineBinaryDeformTimelines(reader, unmodeled);
+    skipSpineBinaryDrawOrderTimelines(reader, unmodeled);
+    skipSpineBinaryEventTimelines(reader, unmodeled);
+    animations.push({ clip: createAnimationClip(channels), name: name ?? '' });
+  }
+  for (const [kind, tally] of unmodeled) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      `spine.${kind}-timeline-unsupported`,
+      'parseSpineSkeletonBinary',
+      { timelines: tally },
+    );
+  }
+  return animations;
+}
+
+// The bone timelines of one animation. Spine splits each transform group into a combined form and per-axis
+// forms (`translate` vs `translateX`/`translateY`); a per-axis timeline becomes a two-component channel
+// whose OTHER axis holds the identity delta — 0 for translate/shear, 1 for the scale multiplier — so it
+// composes onto the setup pose as "this axis moves, the other does not".
+function parseSpineBinaryBoneTimelines(
+  reader: ByteReader,
+  channels: AnimationChannel[],
+  diagnostics?: ImportDiagnostic[],
+): void {
+  const bones = readSpineBinaryVarint(reader);
+  for (let i = 0; i < bones && !isSpineBinaryReaderOverrun(reader); i++) {
+    const boneIndex = readSpineBinaryVarint(reader);
+    const timelines = readSpineBinaryVarint(reader);
+    for (let j = 0; j < timelines && !isSpineBinaryReaderOverrun(reader); j++) {
+      const ordinal = readSpineBinaryByte(reader);
+      const frameCount = readSpineBinaryVarint(reader);
+      readSpineBinaryVarint(reader); // bezier count — a capacity hint, not needed to read the frames
+      const kind = ordinal < SPINE_BINARY_BONE_TIMELINES.length ? SPINE_BINARY_BONE_TIMELINES[ordinal] : null;
+      if (kind === null) {
+        // The payload width of an unknown timeline is unknowable, so the stream cannot continue past it.
+        skipSpineBinaryBytes(reader, reader.view.byteLength + 1);
+        return;
+      }
+      const timeline = readSpineBinaryValueTimeline(reader, frameCount, kind.values);
+      channels.push(buildSpineBinaryBoneChannel(timeline, kind, boneIndex, diagnostics));
+    }
+  }
+}
+
+// Reads a curve timeline: a leading keyframe, then per gap another keyframe preceded by a curve tag. The
+// tag is per-SEGMENT, and a bezier tag carries four floats per animated value.
+function readSpineBinaryValueTimeline(
+  reader: ByteReader,
+  frameCount: number,
+  values: number,
+): { curves: (number[] | null)[]; times: number[]; values: number[] } {
+  const times: number[] = [];
+  const flat: number[] = [];
+  const curves: (number[] | null)[] = [];
+  if (frameCount <= 0) return { curves, times, values: flat };
+  times.push(readSpineBinaryFloat(reader));
+  for (let v = 0; v < values; v++) flat.push(readSpineBinaryFloat(reader));
+  for (let frame = 0; frame + 1 < frameCount && !isSpineBinaryReaderOverrun(reader); frame++) {
+    times.push(readSpineBinaryFloat(reader));
+    for (let v = 0; v < values; v++) flat.push(readSpineBinaryFloat(reader));
+    const tag = readSpineBinaryByte(reader);
+    if (tag === SPINE_BINARY_CURVE_BEZIER) {
+      const points: number[] = [];
+      for (let v = 0; v < values * 4; v++) points.push(readSpineBinaryFloat(reader));
+      curves.push(points);
+    } else {
+      curves.push(null); // linear, or stepped — which Flight expresses per track, not per segment
+    }
+  }
+  return { curves, times, values: flat };
+}
+
+// Turns one decoded bone timeline into an AnimationChannel. A per-axis timeline is widened to the path's
+// full component count by filling the untouched axis with its identity delta, and any bezier segments
+// become per-interval easings under the same absolute-units rebase the `.json` parser uses.
+function buildSpineBinaryBoneChannel(
+  timeline: { curves: (number[] | null)[]; times: number[]; values: number[] },
+  kind: (typeof SPINE_BINARY_BONE_TIMELINES)[number],
+  boneIndex: number,
+  diagnostics?: ImportDiagnostic[],
+): AnimationChannel {
+  const frames = timeline.times.length;
+  const components = kind.components;
+  const values = new Array<number>(frames * components);
+  for (let f = 0; f < frames; f++) {
+    for (let c = 0; c < components; c++) values[f * components + c] = kind.identity;
+    if (kind.axis < 0) {
+      for (let c = 0; c < kind.values; c++) values[f * components + c] = timeline.values[f * kind.values + c];
+    } else {
+      values[f * components + kind.axis] = timeline.values[f];
+    }
+  }
+  const track = createAnimationTrack({
+    components,
+    interpolation: AnimationInterpolationLinear,
+    segmentEasings: buildSpineBinarySegmentEasings(timeline, kind, diagnostics),
+    times: timeline.times,
+    values,
+  });
+  return createAnimationChannel(track, { boneIndex, path: kind.path });
+}
+
+// Rebases each bezier segment's absolute control points onto its own segment, exactly as the `.json` parser
+// does — Spine stores them in time/value units and four numbers per animated value. The first MEANINGFUL
+// value (one that actually changes across the segment) supplies the easing; a divergent sibling is crumbed
+// rather than silently dropped, and x is clamped so the curve stays invertible.
+function buildSpineBinarySegmentEasings(
+  timeline: { curves: (number[] | null)[]; times: number[]; values: number[] },
+  kind: (typeof SPINE_BINARY_BONE_TIMELINES)[number],
+  diagnostics?: ImportDiagnostic[],
+): (EasingFunction | null)[] | null {
+  const easings: (EasingFunction | null)[] = [];
+  let curved = false;
+  let divergent = 0;
+  for (let i = 0; i < timeline.curves.length; i++) {
+    const points = timeline.curves[i];
+    const span = timeline.times[i + 1] - timeline.times[i];
+    if (points === null || span <= 0) {
+      easings.push(null);
+      continue;
+    }
+    let x1 = 0;
+    let y1 = 0;
+    let x2 = 0;
+    let y2 = 0;
+    let chosen = false;
+    for (let v = 0; v < kind.values && (v + 1) * 4 <= points.length; v++) {
+      const from = timeline.values[i * kind.values + v];
+      const rise = timeline.values[(i + 1) * kind.values + v] - from;
+      if (rise === 0) continue;
+      const cx1 = (points[v * 4] - timeline.times[i]) / span;
+      const cy1 = (points[v * 4 + 1] - from) / rise;
+      const cx2 = (points[v * 4 + 2] - timeline.times[i]) / span;
+      const cy2 = (points[v * 4 + 3] - from) / rise;
+      if (!chosen) {
+        x1 = cx1;
+        y1 = cy1;
+        x2 = cx2;
+        y2 = cy2;
+        chosen = true;
+      } else if (
+        Math.abs(cx1 - x1) > SPINE_BINARY_CURVE_EPSILON ||
+        Math.abs(cy1 - y1) > SPINE_BINARY_CURVE_EPSILON ||
+        Math.abs(cx2 - x2) > SPINE_BINARY_CURVE_EPSILON ||
+        Math.abs(cy2 - y2) > SPINE_BINARY_CURVE_EPSILON
+      ) {
+        divergent++;
+      }
+    }
+    if (!chosen) {
+      easings.push(null);
+      continue;
+    }
+    curved = true;
+    easings.push(easeCubicBezier(clampSpineBinaryUnit(x1), y1, clampSpineBinaryUnit(x2), y2));
+  }
+  if (divergent > 0) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'spine.per-component-curve-easing-unsupported',
+      'parseSpineSkeletonBinary',
+      { segments: divergent },
+    );
+  }
+  return curved ? easings : null;
+}
+
+// Slot timelines: an attachment-swap track, or a colour track whose components are single BYTES (the curve
+// control points around them are still floats). Unmodeled by Slot2D, consumed to advance.
+function skipSpineBinarySlotTimelines(reader: ByteReader, unmodeled: Map<string, number>): void {
+  const slots = readSpineBinaryVarint(reader);
+  for (let i = 0; i < slots && !isSpineBinaryReaderOverrun(reader); i++) {
+    readSpineBinaryVarint(reader); // slot index
+    const timelines = readSpineBinaryVarint(reader);
+    for (let j = 0; j < timelines && !isSpineBinaryReaderOverrun(reader); j++) {
+      const type = readSpineBinaryByte(reader);
+      const frameCount = readSpineBinaryVarint(reader);
+      if (type === SPINE_BINARY_SLOT_ATTACHMENT) {
+        tally(unmodeled, 'slot-attachment');
+        for (let f = 0; f < frameCount && !isSpineBinaryReaderOverrun(reader); f++) {
+          skipSpineBinaryBytes(reader, 4); // time
+          readSpineBinaryVarint(reader); // attachment name reference
+        }
+        continue;
+      }
+      tally(unmodeled, 'slot-color');
+      readSpineBinaryVarint(reader); // bezier count
+      const channels = SPINE_BINARY_SLOT_COLOR_CHANNELS[type] ?? 1;
+      skipSpineBinaryCurveFrames(reader, frameCount, channels, channels);
+    }
+  }
+}
+
+// IK, transform, and path constraint timelines.
+function skipSpineBinaryConstraintTimelines(reader: ByteReader, unmodeled: Map<string, number>): void {
+  const ik = readSpineBinaryVarint(reader);
+  for (let i = 0; i < ik && !isSpineBinaryReaderOverrun(reader); i++) {
+    tally(unmodeled, 'ik');
+    readSpineBinaryVarint(reader); // constraint index
+    const frameCount = readSpineBinaryVarint(reader);
+    readSpineBinaryVarint(reader); // bezier count
+    skipSpineBinaryBytes(reader, 12); // time, mix, softness
+    for (let f = 0; f < frameCount && !isSpineBinaryReaderOverrun(reader); f++) {
+      skipSpineBinaryBytes(reader, 3); // bend direction, compress, stretch
+      if (f === frameCount - 1) break;
+      skipSpineBinaryBytes(reader, 12);
+      skipSpineBinaryCurveTag(reader, 2);
+    }
+  }
+  const transform = readSpineBinaryVarint(reader);
+  for (let i = 0; i < transform && !isSpineBinaryReaderOverrun(reader); i++) {
+    tally(unmodeled, 'transform');
+    readSpineBinaryVarint(reader);
+    const frameCount = readSpineBinaryVarint(reader);
+    readSpineBinaryVarint(reader);
+    skipSpineBinaryCurveFrames(reader, frameCount, 24, 6);
+  }
+  const path = readSpineBinaryVarint(reader);
+  for (let i = 0; i < path && !isSpineBinaryReaderOverrun(reader); i++) {
+    readSpineBinaryVarint(reader);
+    const timelines = readSpineBinaryVarint(reader);
+    for (let j = 0; j < timelines && !isSpineBinaryReaderOverrun(reader); j++) {
+      tally(unmodeled, 'path');
+      const type = readSpineBinaryByte(reader);
+      const frameCount = readSpineBinaryVarint(reader);
+      readSpineBinaryVarint(reader);
+      const values = type === SPINE_BINARY_PATH_MIX ? 3 : 1;
+      skipSpineBinaryCurveFrames(reader, frameCount, values * 4, values);
+    }
+  }
+}
+
+// Deform (mesh vertex offset) and attachment-sequence timelines, nested skin → slot → attachment.
+function skipSpineBinaryDeformTimelines(reader: ByteReader, unmodeled: Map<string, number>): void {
+  const skins = readSpineBinaryVarint(reader);
+  for (let i = 0; i < skins && !isSpineBinaryReaderOverrun(reader); i++) {
+    readSpineBinaryVarint(reader); // skin index
+    const slots = readSpineBinaryVarint(reader);
+    for (let j = 0; j < slots && !isSpineBinaryReaderOverrun(reader); j++) {
+      readSpineBinaryVarint(reader); // slot index
+      const attachments = readSpineBinaryVarint(reader);
+      for (let k = 0; k < attachments && !isSpineBinaryReaderOverrun(reader); k++) {
+        readSpineBinaryVarint(reader); // attachment name reference
+        const type = readSpineBinaryByte(reader);
+        const frameCount = readSpineBinaryVarint(reader);
+        if (type === SPINE_BINARY_ATTACHMENT_SEQUENCE) {
+          tally(unmodeled, 'attachment-sequence');
+          skipSpineBinaryBytes(reader, frameCount * 12); // time, packed mode+index, delay
+          continue;
+        }
+        tally(unmodeled, 'deform');
+        readSpineBinaryVarint(reader); // bezier count
+        skipSpineBinaryBytes(reader, 4); // first time
+        for (let f = 0; f < frameCount && !isSpineBinaryReaderOverrun(reader); f++) {
+          // A run length of zero means "the attachment's own vertices", carrying no payload at all.
+          const run = readSpineBinaryVarint(reader);
+          if (run !== 0) {
+            readSpineBinaryVarint(reader); // start offset into the vertex array
+            skipSpineBinaryBytes(reader, run * 4);
+          }
+          if (f === frameCount - 1) break;
+          skipSpineBinaryBytes(reader, 4); // next time
+          skipSpineBinaryCurveTag(reader, 1);
+        }
+      }
+    }
+  }
+}
+
+// The draw-order timeline: per frame, a time and a list of slot-index/offset pairs.
+function skipSpineBinaryDrawOrderTimelines(reader: ByteReader, unmodeled: Map<string, number>): void {
+  const frames = readSpineBinaryVarint(reader);
+  if (frames > 0) tally(unmodeled, 'draworder');
+  for (let i = 0; i < frames && !isSpineBinaryReaderOverrun(reader); i++) {
+    skipSpineBinaryBytes(reader, 4); // time
+    const offsets = readSpineBinaryVarint(reader);
+    for (let j = 0; j < offsets && !isSpineBinaryReaderOverrun(reader); j++) {
+      readSpineBinaryVarint(reader); // slot index
+      readSpineBinaryVarint(reader); // draw-order offset
+    }
+  }
+}
+
+// The event timeline: per frame, a time, the event it fires, and any values overriding the definition.
+function skipSpineBinaryEventTimelines(reader: ByteReader, unmodeled: Map<string, number>): void {
+  const frames = readSpineBinaryVarint(reader);
+  if (frames > 0) tally(unmodeled, 'event');
+  for (let i = 0; i < frames && !isSpineBinaryReaderOverrun(reader); i++) {
+    skipSpineBinaryBytes(reader, 4); // time
+    readSpineBinaryVarint(reader); // event index
+    readSpineBinaryVarint(reader); // int value
+    skipSpineBinaryBytes(reader, 4); // float value
+    // A flag says whether this frame overrides the definition's string; only then is one written.
+    if (readSpineBinaryBoolean(reader)) readSpineBinaryString(reader);
+  }
+}
+
+// Walks a curve timeline whose values are consumed rather than kept. `payloadBytes` is the per-keyframe
+// value payload IN BYTES, excluding the 4-byte time — it is not a value count, because the two families
+// differ in width: a constraint timeline stores floats, while a slot COLOUR timeline stores one byte per
+// channel. `curveValues` is how many bezier curves a tagged segment carries, which tracks the value count
+// either way (a colour's curves are still floats).
+function skipSpineBinaryCurveFrames(
+  reader: ByteReader,
+  frameCount: number,
+  payloadBytes: number,
+  curveValues: number,
+): void {
+  if (frameCount <= 0) return;
+  skipSpineBinaryBytes(reader, 4 + payloadBytes);
+  for (let f = 0; f + 1 < frameCount && !isSpineBinaryReaderOverrun(reader); f++) {
+    skipSpineBinaryBytes(reader, 4 + payloadBytes);
+    skipSpineBinaryCurveTag(reader, curveValues);
+  }
+}
+
+// One per-segment curve tag, plus the four floats per value a bezier tag carries.
+function skipSpineBinaryCurveTag(reader: ByteReader, curveValues: number): void {
+  if (readSpineBinaryByte(reader) === SPINE_BINARY_CURVE_BEZIER) {
+    skipSpineBinaryBytes(reader, curveValues * 16);
+  }
+}
+
+function clampSpineBinaryUnit(value: number): number {
+  return value < 0 ? 0 : value > 1 ? 1 : value;
+}
+
+function tally(counts: Map<string, number>, kind: string): void {
+  counts.set(kind, (counts.get(kind) ?? 0) + 1);
 }
 
 // Whether this importer's record layout describes `version`. Only the 4.x line is claimed: it is what the
@@ -479,6 +861,38 @@ const SPINE_BINARY_ATTACHMENT_TYPES = [
   'point',
   'clipping',
 ] as const;
+
+// Spine's bone timeline ORDINALS, in its own enum order — the file writes an index into this table, so the
+// order is load-bearing and must not be alphabetized. `values` is how many numbers a keyframe carries;
+// `axis` is which component a per-axis form drives (-1 for the combined form); `identity` is the delta that
+// leaves the untouched axis at its setup value.
+const SPINE_BINARY_BONE_TIMELINES = [
+  { axis: -1, components: 1, identity: 0, path: Skeleton2DAnimationPath.Rotation, values: 1 },
+  { axis: -1, components: 2, identity: 0, path: Skeleton2DAnimationPath.Translation, values: 2 },
+  { axis: 0, components: 2, identity: 0, path: Skeleton2DAnimationPath.Translation, values: 1 },
+  { axis: 1, components: 2, identity: 0, path: Skeleton2DAnimationPath.Translation, values: 1 },
+  { axis: -1, components: 2, identity: 1, path: Skeleton2DAnimationPath.Scale, values: 2 },
+  { axis: 0, components: 2, identity: 1, path: Skeleton2DAnimationPath.Scale, values: 1 },
+  { axis: 1, components: 2, identity: 1, path: Skeleton2DAnimationPath.Scale, values: 1 },
+  { axis: -1, components: 2, identity: 0, path: Skeleton2DAnimationPath.Shear, values: 2 },
+  { axis: 0, components: 2, identity: 0, path: Skeleton2DAnimationPath.Shear, values: 1 },
+  { axis: 1, components: 2, identity: 0, path: Skeleton2DAnimationPath.Shear, values: 1 },
+] as const;
+
+// A slot colour timeline's channel count, indexed by its timeline ordinal (1 = RGBA, 2 = RGB, 3 = RGBA with
+// a dark colour, 4 = RGB with a dark colour, 5 = alpha only). Ordinal 0 is the attachment-swap timeline.
+const SPINE_BINARY_SLOT_COLOR_CHANNELS = [0, 4, 3, 7, 6, 1] as const;
+
+// Per-segment curve tags. Linear (0) and stepped (1) carry no payload; bezier carries four floats per value.
+const SPINE_BINARY_CURVE_BEZIER = 2;
+
+const SPINE_BINARY_SLOT_ATTACHMENT = 0;
+const SPINE_BINARY_ATTACHMENT_SEQUENCE = 1;
+const SPINE_BINARY_PATH_MIX = 2;
+
+// Normalized control points closer than this are the same curve shape; see the `.json` parser for why the
+// comparison must happen after rebasing rather than on the raw numbers.
+const SPINE_BINARY_CURVE_EPSILON = 1e-6;
 
 // Spine writes -1 into a slot's dark color to mean "this slot has none".
 const SPINE_BINARY_NO_DARK_COLOR = -1;
