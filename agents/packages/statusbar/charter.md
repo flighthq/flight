@@ -2,7 +2,7 @@
 package: '@flighthq/statusbar'
 crate: flighthq-statusbar
 draft: false
-lastDirection: 2026-07-02
+lastDirection: 2026-07-30
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -24,4 +24,4 @@ Mobile status-bar control -- foreground style (`light`/`dark`/`default`), visibi
 
 - Whether every event capability in the suite should carry the `enable*Signals` marker for symmetry, or only packages where the gate saves measurable cost.
 - Height vs. `@flighthq/device` safe-area top inset boundary on notched/island devices.
-- Style-stack ownership: the process-global module-level stack is correct (one OS bar = one stack), but whether `clearStatusBarStyleStack()` and `hasStatusBarStyleEntry(handle)` should round out the API.
+- Whether the baseline should be re-read when a native backend is installed *while* the stack is non-empty. Today `setStatusBarBackend` does not touch the baseline, so a mid-stack backend swap restores to the previous backend's remembered state. Swapping backends mid-stack is not a case any host is known to hit, and guessing at it would add state nobody exercises.
