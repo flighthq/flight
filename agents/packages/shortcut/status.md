@@ -1,12 +1,61 @@
 ---
 package: '@flighthq/shortcut'
-updated: 2026-06-24
-by: ingest:builder-67dc46d64
+updated: 2026-07-30
+by: builder
 ---
 
 # shortcut — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## [2026-07-30 · builder] — as-claimed, not yet review-verified
+
+Weakest-first deepening sweep (TODO `shortcut (partial 30)`). The one listed item — the dead
+`'Enter'` display entry — was already gone from the tree, so the sweep is the work.
+
+**Correctness fixes (all three were live defects, each confirmed by probe before the fix):**
+
+- **A literal `+` or `-` key was unreachable.** `_splitTokens` split on `/[+-]/` and filtered empties,
+  so `CommandOrControl+-` and `CommandOrControl++` — the conventional zoom-out/zoom-in pair, and among
+  the most common accelerators an app registers — both returned `null`. The tokenizer now treats a
+  separator character as a separator only when it *terminates* a non-empty token, which keeps
+  `Ctrl-Shift-K` (dash-as-separator) tokenizing exactly as before while letting the trailing symbol
+  survive as the key. Added the `'+' -> 'Plus'` alias. Side effect: `Ctrl+-K` now fails as
+  `unknown-key '-K'` instead of silently parsing as `Control+K`.
+- **`parseAccelerator` broke its own out-param contract.** It assigned `out.modifiers =
+  result.modifiers.slice()`, replacing the array the caller allocated, so any retained reference to
+  `parsed.modifiers` went silently stale. Now cleared and refilled in place.
+- **`hasNativeShortcutBackend` was not answerable** as the code stood: `getShortcutBackend` cached the
+  lazily-built web default into the same slot as an installed native backend, so after the first
+  command the two were indistinguishable. Split into `_backend` (installed) and `_webBackend`
+  (fallback). Surfaced by the new API, not by the old tests.
+
+**Completeness:**
+
+- `ShortcutKeyName` finally exists in `@flighthq/types` — the charter and the 2026-06-24 status entry
+  both claimed it did, but it was lost in the integration split and never landed. `ParsedAccelerator.key`
+  and `getAcceleratorKey` are typed against it, and `_keyAliases` values are checked by it, so a
+  misspelled canonical name is now a compile error rather than a chord no backend recognizes.
+- Electron's numpad short spellings (`numadd`/`numsub`/`nummult`/`numdiv`/`numdec`) parse.
+- `disposeGlobalShortcutSignals` — the module-level signal group had no teardown, mirroring
+  `disposeTextShaperSignals`.
+- `findAcceleratorConflict(accelerator, candidates)` — the charter claims "conflict detection" but
+  `hasGlobalShortcutConflict` only sees the OS registry, so a settings screen validating a *pending*
+  binding list had nothing to call.
+
+**Diagnostics (inversion rule):** `enableShortcutGuards` / `disableShortcutGuards` over a
+`setShortcutDropGuard` seam, plus `explainGlobalShortcutRegistration` in its own file so the pull
+query shakes independently of `@flighthq/log`. Only the two knowable drop causes are reported —
+`unparseable` and `no-native-backend`; a native backend returning false is a real answer, not a drop.
+
+**Verification:** repo-wide `npm run check` and `npm run test` green (1231 files, 13140 tests);
+`packages:check` green. The `@flighthq/log` dependency was measured, not argued: an esbuild bundle of
+a consumer importing `registerGlobalShortcut` without the guards contains no log-package code
+(5861 B), the same bundle plus `enableShortcutGuards` does (6243 B). `npm run size` cannot see this —
+no example imports shortcut.
+
+**Open, routed to review:** the two `assessment.md` recommendations (shifted-punctuation glyph keys,
+non-Electron physical keys) are design forks, deliberately not decided here.
 
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
