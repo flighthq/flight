@@ -1,6 +1,7 @@
 import { drawWgpuScene3D, registerWgpuGpuSkinning } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
+  createScene3DLights,
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   addNodeChild,
   beginWgpuRenderEffectPipeline,
@@ -134,10 +135,10 @@ const camera = createCamera3D({
 setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 1, 5), createVector3(0, 1, 0), createVector3(0, 1, 0));
 const direction = createVector3(-1, -0.35, -0.55);
 normalizeVector3(direction, direction);
-const lights = {
+const lights = createScene3DLights({
   ambient: createAmbientLight({ color: 0x6070a0ff, intensity: 0.15 }),
   directional: createDirectionalLight({ color: 0xffffffff, direction, intensity: 1 }),
-};
+});
 render(scene, camera, lights);
 
 export function assertRender(bitmap: Readonly<Bitmap>): void {

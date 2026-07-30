@@ -1,6 +1,7 @@
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
+  createScene3DLights,
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -176,10 +177,10 @@ setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 1, 5), createVector3(0
 
 const directionalDirection = createVector3(-1, -0.35, -0.55);
 normalizeVector3(directionalDirection, directionalDirection);
-const lights = {
+const lights = createScene3DLights({
   ambient: createAmbientLight({ color: 0x6070a0ff, intensity: 0.15 }),
   directional: createDirectionalLight({ color: 0xffffffff, direction: directionalDirection, intensity: 1 }),
-};
+});
 
 // The posed rig: the upper half leans 75° to +X.
 const posedScene3D = buildPosedScene3D((75 * Math.PI) / 180);

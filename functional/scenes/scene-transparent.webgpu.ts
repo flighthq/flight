@@ -2,6 +2,7 @@ import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
+  createScene3DLights,
   addNodeChild,
   beginWgpuRenderEffectPipeline,
   createAmbientLight,
@@ -89,10 +90,10 @@ const camera = createCamera3D({
 });
 setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 4), createVector3(0, 0, 0), createVector3(0, 1, 0));
 
-const lights = {
+const lights = createScene3DLights({
   ambient: createAmbientLight({ color: 0xffffffff, intensity: 1 }),
   directional: createDirectionalLight({ color: 0xffffffff, direction: createVector3(0, 0, -1), intensity: 0 }),
-};
+});
 
 render(scene, camera, lights);
 

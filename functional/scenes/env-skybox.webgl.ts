@@ -2,6 +2,7 @@ import { createScene3D } from '@flighthq/scene3d';
 import { drawGlEnvironmentSkybox, drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, Environment, GlRenderEffectPipeline, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
+  createScene3DLights,
   addNodeChild,
   beginGlRenderEffectPipeline,
   createAmbientLight,
@@ -115,10 +116,10 @@ const camera = createCamera3D({
 // centre with the down face (-Y, dark) toward the bottom and the up face (+Y, light) toward the top.
 setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 4), createVector3(0, -0.4, 0), createVector3(0, 1, 0));
 
-const lights = {
+const lights = createScene3DLights({
   ambient: createAmbientLight({ color: 0x808080ff, intensity: 0.5 }),
   directional: createDirectionalLight({ color: 0xffffffff, direction: createVector3(-0.4, -1, -0.3), intensity: 1.5 }),
-};
+});
 
 render(scene, camera, lights, environment);
 

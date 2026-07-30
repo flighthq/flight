@@ -2,6 +2,7 @@ import { createScene3D } from '@flighthq/scene3d';
 import { bakeGlEnvironmentIbl, drawGlEnvironmentSkybox, drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, Environment, GlRenderEffectPipeline, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
+  createScene3DLights,
   addNodeChild,
   beginGlRenderEffectPipeline,
   createCamera3D,
@@ -127,7 +128,7 @@ const camera = createCamera3D({
 setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 4.6), createVector3(0, 0, 0), createVector3(0, 1, 0));
 
 // No punctual lights — the spheres are lit only by the baked environment.
-const lights = { ambient: null, directional: null };
+const lights = createScene3DLights({ ambient: null, directional: null });
 
 render(scene, camera, lights, environment);
 

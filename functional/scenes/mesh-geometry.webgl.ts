@@ -2,6 +2,7 @@ import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
+  createScene3DLights,
   addNodeChild,
   beginGlRenderEffectPipeline,
   createAmbientLight,
@@ -101,10 +102,10 @@ setCamera3DViewMatrix4FromLookAt(camera, createVector3(2, 1.6, 2.6), createVecto
 // Unlit ignores lights, but render() requires a valid rig.
 const directionalDirection = createVector3(-1, -0.35, -0.55);
 normalizeVector3(directionalDirection, directionalDirection);
-const lights = {
+const lights = createScene3DLights({
   ambient: createAmbientLight({ color: 0x6070a0ff, intensity: 0.15 }),
   directional: createDirectionalLight({ color: 0xffffffff, direction: directionalDirection, intensity: 1 }),
-};
+});
 
 render(scene, camera, lights);
 
