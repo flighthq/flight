@@ -421,36 +421,51 @@ function buildSpineSegmentEasings(
       easings.push(null);
       continue;
     }
-    let x1 = 0;
-    let y1 = 0;
-    let x2 = 0;
-    let y2 = 0;
-    let chosen = false;
-    let diverged = false;
+    // Pick the component with the LARGEST value change to supply the easing. The rebase divides by that
+    // change, so a near-constant component is a near-zero denominator: it amplifies ordinary float noise
+    // into control points far outside the unit square and yields a curve that is not the authored shape at
+    // all. Choosing the dominant component is both the numerically stable option and the honest one — it is
+    // the channel that actually carries the segment's motion.
+    let winner = -1;
+    let widest = 0;
     for (let c = 0; c < components && (c + 1) * 4 <= curve.length; c++) {
-      const from = values[i * components + c];
-      const rise = values[(i + 1) * components + c] - from;
-      if (rise === 0) continue;
-      const offset = c * 4;
-      const cx1 = (numberOr(curve[offset], 0) - times[i]) / span;
-      const cy1 = (numberOr(curve[offset + 1], 0) - from) / rise;
-      const cx2 = (numberOr(curve[offset + 2], 0) - times[i]) / span;
-      const cy2 = (numberOr(curve[offset + 3], 0) - from) / rise;
-      if (!chosen) {
-        x1 = cx1;
-        y1 = cy1;
-        x2 = cx2;
-        y2 = cy2;
-        chosen = true;
-      } else if (
-        Math.abs(cx1 - x1) > SPINE_CURVE_EPSILON ||
-        Math.abs(cy1 - y1) > SPINE_CURVE_EPSILON ||
-        Math.abs(cx2 - x2) > SPINE_CURVE_EPSILON ||
-        Math.abs(cy2 - y2) > SPINE_CURVE_EPSILON
-      ) {
-        diverged = true;
+      const rise = Math.abs(values[(i + 1) * components + c] - values[i * components + c]);
+      if (rise > widest) {
+        widest = rise;
+        winner = c;
       }
     }
+    // The winner's control points are resolved FIRST, then every other component is compared against them.
+    // Comparing inside a single pass would measure components that precede the winner against zeros.
+    const rebase = (c: number): [number, number, number, number] | null => {
+      const from = values[i * components + c];
+      const rise = values[(i + 1) * components + c] - from;
+      if (rise === 0) return null;
+      const offset = c * 4;
+      return [
+        (numberOr(curve[offset], 0) - times[i]) / span,
+        (numberOr(curve[offset + 1], 0) - from) / rise,
+        (numberOr(curve[offset + 2], 0) - times[i]) / span,
+        (numberOr(curve[offset + 3], 0) - from) / rise,
+      ];
+    };
+    const won = winner < 0 ? null : rebase(winner);
+    let diverged = false;
+    if (won !== null) {
+      for (let c = 0; c < components && (c + 1) * 4 <= curve.length; c++) {
+        if (c === winner) continue;
+        const other = rebase(c);
+        if (other === null) continue;
+        for (let k = 0; k < 4; k++) {
+          if (Math.abs(other[k] - won[k]) > SPINE_CURVE_EPSILON) diverged = true;
+        }
+      }
+    }
+    const chosen = won !== null;
+    const x1 = won === null ? 0 : won[0];
+    const y1 = won === null ? 0 : won[1];
+    const x2 = won === null ? 0 : won[2];
+    const y2 = won === null ? 0 : won[3];
     if (diverged) divergentSegments++;
     if (chosen) {
       curved = true;

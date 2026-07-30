@@ -385,7 +385,7 @@ describe('parseSpineSkeleton', () => {
     expect(kinds).not.toContain('spine.per-component-curve-easing-unsupported');
   });
 
-  it('Skip-crumbs a genuinely divergent per-component curve, and the FIRST component wins', () => {
+  it('Skip-crumbs a genuinely divergent per-component curve, and the DOMINANT component wins', () => {
     const doc = curveDoc(
       [
         { time: 0, x: 0, y: 0, curve: [0.42, 0, 1, 10, 0.1, 0, 0.9, 20] },
@@ -401,10 +401,32 @@ describe('parseSpineSkeleton', () => {
     const result = parseSpineSkeleton(JSON.stringify(doc))!;
     const pose = cloneSkeleton2D(result.skeleton);
     applyAnimationClipToSkeleton2D(result.animations[0].clip, result.skeleton, pose, 0.5);
-    // Both components ride x's curve — that is the documented cost of one easing per interval.
-    const alpha = easeCubicBezier(0.42, 0, 1, 1)(0.5);
+    // y moves 0..20 and x only 0..10, so Y's curve supplies the easing for both components.
+    const alpha = easeCubicBezier(0.1, 0, 0.9, 1)(0.5);
     expect(pose.bones[0].x).toBeCloseTo(10 * alpha, 4);
     expect(pose.bones[0].y).toBeCloseTo(20 * alpha, 4);
+  });
+
+  it('ignores a NEAR-CONSTANT component when choosing the curve, however tiny its motion', () => {
+    // The rebase divides by a component's value change, so a barely-moving component is a near-zero
+    // denominator: its control points normalize to wild values and the resulting curve is not the authored
+    // shape at all. Here x moves 0.004 while y moves a full 20 — y must win, and the tiny x curve (whose
+    // control points would rebase far outside the unit square) must not be allowed to supply the easing.
+    const doc = curveDoc(
+      [
+        { time: 0, x: 0.847, y: 0, curve: [0.174, 0.85, 0.184, 0.84, 0.174, 0, 0.184, 15.8] },
+        { time: 1, x: 0.843, y: 20 },
+      ],
+      'translate',
+    );
+    const result = parseSpineSkeleton(JSON.stringify(doc))!;
+    const pose = cloneSkeleton2D(result.skeleton);
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, result.skeleton, pose, 0.5);
+    const alpha = easeCubicBezier(0.174, 0, 0.184, 0.79)(0.5);
+    expect(pose.bones[0].y).toBeCloseTo(20 * alpha, 3);
+    // Sanity: the eased value stays inside the segment. Riding x's curve produced values outside it.
+    expect(pose.bones[0].y).toBeGreaterThanOrEqual(0);
+    expect(pose.bones[0].y).toBeLessThanOrEqual(20);
   });
 
   it('skips a CONSTANT component when choosing the winning curve', () => {
