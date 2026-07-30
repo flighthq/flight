@@ -22,4 +22,4 @@ See [charter](./charter.md) for blessed direction.
 
 ## Backlog
 
-None.
+- Rust parity for the deterministic parse/normalize/format/validate value core.
