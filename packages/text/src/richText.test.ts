@@ -1136,6 +1136,50 @@ describe('setRichTextString', () => {
   });
 });
 
+describe('setRichTextString no-op writes', () => {
+  // The regression this pins: the equality test existed but only gated the change signal, so
+  // re-assigning a field its current text still bumped the content revision — a full re-layout and
+  // re-rasterize for a write that changed nothing. `setRichTextString(field, score.toString())` in a
+  // frame loop rewrites the same string most frames and paid for it every time. The sibling
+  // setTextLabelString already guarded this; RichText was the odd one out.
+  it('does not bump the content revision when the text is unchanged', () => {
+    const field = createRichText();
+    setRichTextString(field, 'hello');
+    const afterFirst = getNodeLocalContentRevision(field);
+    setRichTextString(field, 'hello');
+    expect(getNodeLocalContentRevision(field)).toBe(afterFirst);
+  });
+
+  it('still bumps the content revision when the text actually changes', () => {
+    const field = createRichText();
+    setRichTextString(field, 'hello');
+    const afterFirst = getNodeLocalContentRevision(field);
+    setRichTextString(field, 'world');
+    expect(getNodeLocalContentRevision(field)).toBeGreaterThan(afterFirst);
+  });
+
+  it('emits no change signal for a no-op write, and one for a real change', () => {
+    const field = createRichText();
+    setRichTextString(field, 'hello');
+    const signals = enableTextFieldSignals(field);
+    const seen: string[] = [];
+    connectSignal(signals.onTextFieldChange, () => seen.push('change'));
+    setRichTextString(field, 'hello');
+    expect(seen).toEqual([]);
+    setRichTextString(field, 'world');
+    expect(seen).toEqual(['change']);
+  });
+
+  it('leaves the text itself correct either way', () => {
+    const field = createRichText();
+    setRichTextString(field, 'hello');
+    setRichTextString(field, 'hello');
+    expect(field.data.text).toBe('hello');
+    setRichTextString(field, 'world');
+    expect(field.data.text).toBe('world');
+  });
+});
+
 describe('setRichTextTextColor', () => {
   it('sets textColor and bumps content', () => {
     const richText = createRichText();
