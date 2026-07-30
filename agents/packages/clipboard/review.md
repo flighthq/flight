@@ -1,87 +1,81 @@
 ---
 package: '@flighthq/clipboard'
-status: partial
-score: 40
-updated: 2026-07-09
+status: solid
+score: 80
+updated: 2026-07-30
 ingested:
-  - base=origin/main(eb73c3d74)
-  - evidence=integration-b2824e3d8 delta
-  - head tree + changes.patch (packages/clipboard hunks)
-  - packages/types/src/Clipboard.ts (base == head)
-  - status.md (as-claimed)
-  - charter.md (draft)
+  - charter.md
+  - status.md
+  - source
+  - tests
+  - types
+  - prior review (2026-07-09 merge gate)
 ---
 
-# Review: @flighthq/clipboard — merge gate (integration b2824e3d8 → origin/main eb73c3d74)
+# clipboard — Review
 
 ## Verdict
 
-**REJECT for merge as-is — partial, 35/100.** This is a merge-gate score, not a quality score for the work the builder did. The **clipboard package half** of the change is well-shaped in isolation — a generic MIME format seam, atomic multi-flavor write, batch read, file flavor, a completed `has*` set, and an `@flighthq/connectivity`-shaped `ClipboardWatch` change-event capability, all with colocated tests. But the integration head is **not buildable**: the `@flighthq/types` half of the change — the new `ClipboardWatch` / `ClipboardWriteItem` types and the ~10 new `ClipboardBackend` methods the package and its tests depend on — **never landed in the integration tree**. `packages/clipboard/src/clipboard.ts` imports symbols and calls interface methods that do not exist in `@flighthq/types`. `tsc -b` cannot pass. The status doc claims the types shipped; the diff proves they did not. The package cannot merge until the types half is restored.
+**Solid — 80/100.** The prior partial-40 merge-gate review is obsolete against the live tree. Its
+missing-header blocker is resolved: `ClipboardBackend`, `ClipboardWatch`, `ClipboardWriteItem`, and the
+canonical format constants all exist in `@flighthq/types`; the package compiles and passes its API,
+export, type-home, portability, and test gates. The implementation is a coherent system-clipboard
+transport with open MIME flavors, named conveniences, multi-flavor operations, host sentinels, and
+opt-in change observation. Remaining distance is primarily successful web-API proof and native/browser
+capability depth.
 
-The other axes (composition, naming, tree-shaking, sentinels, dispose-correctness) are clean and would pass on their own — see the per-axis pass/fail below. The score is dominated by the single hard compile break, because a merge gate cannot pass code that does not type-check.
+## Present capabilities
 
-## The merge blocker — types-first half was lost in integration
+- Twenty-nine public functions cover text, HTML, RTF, image data URLs, bookmarks, native file paths,
+  arbitrary MIME flavors, multi-format reads/writes, format queries, clearing, and change observation.
+  The three backend lifecycle functions remain contract-only for host adapters.
+- The generic `readClipboardFormat`/`writeClipboardFormat`/`hasClipboardFormat` seam is open to custom
+  flavors. Named helpers are thin transport conveniences, and `readClipboard`/`writeClipboard` batch
+  representations behind the same backend rather than creating a parallel abstraction.
+- The web backend guards Clipboard API and DOM availability and converts expected absence, denial, or
+  cancellation into `''`, `false`, `[]`, `{}`, `null`, `-1`, or no-op unsubscribe sentinels.
+- `ClipboardWatch` follows the suite's event-entity lifecycle: create inert state, explicitly attach,
+  detach idempotently, and dispose subscriptions without introducing import-time listeners.
+- The package has no eager initialization, declares `sideEffects: false`, keeps its exported types in
+  `@flighthq/types`, and depends only on `signals` and `types`.
 
-**Grounded.** `b2824e3d8:packages/clipboard/src/clipboard.ts:2`:
+## Stale-cell audit and live fixes
 
-```ts
-import type { ClipboardBackend, ClipboardBookmark, ClipboardWatch, ClipboardWriteItem } from '@flighthq/types';
-```
+The sole assessment item was already implemented. `e115beddd` replaced the package's hardcoded HTML, RTF,
+and bookmark MIME strings with `ClipboardFormatHtml`, `ClipboardFormatRtf`, and
+`ClipboardFormatBookmark`; `3240ad45e` routed the test fixtures through the shared text, HTML, RTF, image,
+and bookmark constants as well. The live tree contains no hardcoded named-flavor MIME literal in the
+clipboard implementation.
 
-`ClipboardWatch` and `ClipboardWriteItem` are imported from `@flighthq/types`, but neither type exists there. `b2824e3d8:packages/types/src/Clipboard.ts` is **byte-identical** between base and head (`diff` is empty), and a tree-wide grep finds `ClipboardWatch` / `ClipboardWriteItem` only inside `packages/clipboard/` — never in `packages/types/`. Likewise the `ClipboardBackend` interface in head's `Clipboard.ts` still declares only the original surface (`readText`/`writeText`/`readHtml`/`writeHtml`/`hasText`/`readImage`/`writeImage`/`hasImage`/ `readRTF`/`writeRTF`/`readBookmark`/`writeBookmark`/`clear`) — yet the new web backend in `b2824e3d8:packages/clipboard/src/clipboard.ts:30-225` implements and the free functions call: `readFormat`, `writeFormat`, `hasFormat`, `getFormats`, `writeItems`, `readItems`, `readFiles`, `writeFiles`, `getChangeCount`, `subscribeClipboardChange`. None of these are members of `ClipboardBackend` in the integration tree.
+The audit confirmed one smaller source defect preserved in the old review: change-event feature detection
+accepted a nonstandard `window.clipboardchange` value in addition to the canonical
+`onclipboardchange` handler property. `84bd1237b` removes that dead escape-hatch probe and adds a
+regression proving a stray event-name property does not activate subscription.
 
-The status doc itself describes the missing files as if they shipped — `b2824e3d8:agents/packages/clipboard/status.md` (in `changes.patch` ~L52930):
+The Package Map's text/HTML-only sentence was also stale. It now records the named flavors, open MIME and
+batch seams, sentinel behavior, backend boundary, and watch lifecycle that actually ship.
 
-> - `packages/types/src/ClipboardFormat.ts` — canonical MIME string constants …
-> - `packages/types/src/ClipboardWatch.ts` — event entity … `ClipboardWatch { onChange: Signal<…> }`.
-> - `packages/types/src/ClipboardWriteItem.ts` — `{ readonly format: string; readonly data: string }` …
-> - `Clipboard.ts` — extended `ClipboardBackend` with: … `readFormat`, `writeFormat`, `hasFormat`, `getFormats`, `writeItems`, `readItems` … `readFiles`, `writeFiles` … `getChangeCount`, `subscribeClipboardChange`.
+## Remaining depth
 
-`changes.patch` contains **no `diff --git a/packages/types/src/Clipboard*.ts`** hunk at all. The package + status doc were carried into integration; the `@flighthq/types` commits were dropped in the merge. The status entry is correctly flagged "as-claimed, not yet review-verified" — and this review verifies it as **not true of the integration tree**.
+- Successful Clipboard API reads and writes are not behaviorally mocked. Current web tests strongly cover
+  unavailable-host sentinels but do not pin `ClipboardItem` construction, multi-item reads, image
+  Blob/data-URL conversion, format de-duplication, or permission rejection after the API is present.
+- Web change observation depends on the experimental `clipboardchange` event and otherwise intentionally
+  becomes a no-op; web change counts remain unsupported. There is no polling fallback or capability query
+  for callers that require notification.
+- Images are string data URLs, which makes binary conversion implicit and memory-heavy. The charter
+  correctly leaves a typed bitmap/buffer path and the fate of the convenience functions as a direction
+  decision.
+- Bookmark and file-list operations cannot be implemented by the web backend. Their cross-platform format
+  mapping and multi-flavor atomicity depend on native host adapters and are not proven in this package's
+  suite.
+- Generic custom flavors are string-only. Binary buffers, secondary pasteboards, lazy/promised rendering,
+  and explicit per-backend capabilities remain possible depth if the charter expands the seam.
 
-Consequences in the head tree:
+## Charter and boundary conclusion
 
-- `clipboard.ts` fails to compile (missing type imports; calls to non-existent interface methods).
-- `b2824e3d8:packages/clipboard/src/clipboard.test.ts:38-47` annotates `fakeBackend(): ClipboardBackend & { … }` and implements `readFormat`/`writeFormat`/`writeItems`/`readItems`/`getChangeCount`/ `subscribeClipboardChange`. Against the un-extended `ClipboardBackend`, those are excess methods on a literal typed as `ClipboardBackend & {…}` — the test file cannot type-check either (`tsc -b` typechecks `src/*.test.ts`).
-- Every new free function (`getClipboardFormats`, `hasClipboardFormat`, `readClipboard`, `writeClipboard`, `readClipboardFiles`, `writeClipboardFiles`, `readClipboardFormat`, `writeClipboardFormat`, `getClipboardChangeCount`, `hasClipboardBookmark`, the watch quartet) delegates to a backend method the type does not expose.
-
-This is the textbook "types-first" violation the contract guards against, surfacing as a merge artifact: the header layer is the design surface, and here the implementation shipped without its header.
-
-## Per-axis pass/fail (the DELTA, against the 7 standards)
-
-1. **Composition / bedrock — PASS.** The delta is flat free functions over the `ClipboardBackend` seam plus a small `ClipboardWatch` event entity; no config-gated mega-function, no fused subjects. The generic `readClipboardFormat`/`writeClipboardFormat` seam is the bedrock primitive and the named-flavor functions (`readClipboardHtml` → `readFormat('text/html')`, `b2824e3d8:packages/clipboard/src/clipboard.ts:143-148,184-189`) are thin convenience over it — the right decomposition.
-
-2. **Naming clarity — PASS (one minor consistency note).** New exports carry the full `Clipboard` word and correct verbs (`getClipboardFormats`, `hasClipboardFormat`, `readClipboard`, `writeClipboard`, `attachClipboardWatch`/`detachClipboardWatch`/`disposeClipboardWatch`/ `createClipboardWatch`). `hasClipboardRTF` (`:281`) keeps the upper-case `RTF` acronym — this matches the base's existing `readClipboardRTF`/`writeClipboardRTF`, so it is consistent with the approved baseline, not a delta regression. Not a blocker.
-
-3. **Tree-shaking / bundle invariant — PASS.** `package.json` keeps `"sideEffects": false` and a single root `.` export (`b2824e3d8:packages/clipboard/package.json:7-12,37`); `index.ts` is a thin `export * from './clipboard'`. No eager registration, no top-level execution. The new module state — `const _watchSubscriptions = new WeakMap<…>()` (`:376`) and the lazy `_backend` (`:375`) — sits at the file bottom and is touched only inside functions, not at import time. The named-flavor functions delegate rather than branch, so no shared hot-loop switch taxes a primitive importer.
-
-4. **Registry vs closed union (fork B) — PASS / n/a.** No `switch (kind)` over a growing family; the flavor surface is keyed by MIME string through `readFormat(format)` / `writeFormat(format, …)`, which is already the open, user-extensible shape this fork prefers.
-
-5. **Subject triad + plurality guard — PASS / n/a.** No format-codec or backend split is introduced; the change stays inside the one command-capability package. Correct.
-
-6. **Contract hygiene — MIXED, dominated by the types-first FAIL.** Sentinels are right (`getChangeCount` → `-1` at `:209-211`; `readFiles` → `[]` at `:199-201`; `readFormat`/`readItems` → `''`/`{}`; `writeFiles` → `false`). `dispose*` vs `destroy*` is correct: `disposeClipboardWatch` (`:240-242`) detaches the backend subscription and releases to GC, owning no non-GC resource — `dispose*`, not `destroy*`, is the right verb. `Readonly<>` is used on the new aggregate params/returns (`readClipboard(formats: readonly string[])`, `writeClipboard(items: readonly Readonly<ClipboardWriteItem>[])`, `Promise<Readonly<Record<string, string>>>`). **But** the axis fails overall because the seam types (`ClipboardWatch`, `ClipboardWriteItem`, the extended `ClipboardBackend`) are **not** in `@flighthq/types` — the single most important contract rule for this delta is broken (see merge blocker above).
-
-7. **Tests & honesty — FAIL (compile) + one logic nit.** The new `describe` blocks are alphabetized and mirror the new exports (`attachClipboardWatch`, `createClipboardWatch`, `detachClipboardWatch`, `disposeClipboardWatch`, `getClipboardChangeCount`, `getClipboardFormats`, `hasClipboardBookmark`, `hasClipboardFormat`, `hasClipboardHtml`, `hasClipboardRTF`, `readClipboard`, `readClipboardFiles`, `readClipboardFormat`, `writeClipboard`, `writeClipboardFiles`, `writeClipboardFormat`) — good shape. But they cannot compile against the un-extended `ClipboardBackend` (blocker above), so the "tests pass" claim in status.md is false **for the integration tree**. Separately, the web backend's change-event feature-detect is sloppy: `b2824e3d8:packages/clipboard/src/clipboard.ts:216-219`
-
-   ```ts
-   if (
-     'onclipboardchange' in target ||
-     typeof (window as unknown as Record<string, unknown>)['clipboardchange'] !== 'undefined'
-   ) {
-   ```
-
-   The second clause probes a non-standard `window.clipboardchange` property (not `onclipboardchange`); it is effectively always `undefined` and dead, and the double-cast through `unknown as Record<string, unknown>` is the kind of escape hatch the surrounding code otherwise avoids. Harmless at runtime, but it should be a single honest `'onclipboardchange' in window` feature test. Minor; not a merge blocker.
-
-## What is genuinely good in this delta (so the fix is cheap to restore)
-
-The package-side design is the right shape and should survive intact once the types are restored: the generic MIME seam as bedrock, the named flavors as convenience, the atomic `writeClipboard(items)` write, the `[]`/`{}`/`-1`/`false` sentinel discipline, and the `create*`/`attach*`/`detach*`/`dispose*` event-entity shape that mirrors `@flighthq/connectivity`. The fix is not a redesign — it is restoring the three `@flighthq/types` files and the `ClipboardBackend` extension that the package was written against.
-
-## Where the contract/admin docs need a follow-up
-
-- The Package Map line in `index.md` still reads "system clipboard read/write (text, HTML)"; the delta covers HTML, image, RTF, bookmark, files, the generic MIME seam, atomic write, and change events. (Recommended in assessment, but **after** the merge is buildable — not a gate item.)
-- `package.json` `description` (`b2824e3d8:packages/clipboard/package.json:36`) likewise understates the surface.
-- The `ClipboardFormat` constants the status doc says were added are unused by the package's own code even in the builder's worktree (the `has*` paths hardcode `'text/x-moz-url'` / `'text/html'` / `'text/rtf'`); fold that into the same types-restore pass.
-
-## 2026-07-09 — refreshed
-
-test suite routed through ClipboardFormat constants (source already used them); verified stale-clean (commit b1e7bb81). Verified against source; a full re-review is due.
+The live package matches its boundary: it owns pasteboard transport, not pixel types, filesystem I/O,
+drag-and-drop, or host policy. Its string-keyed MIME seam is the correct extensible bedrock and its named
+functions remain optional conveniences over backend operations. The approved format-constant cleanup is
+complete; future work should focus on web success-path tests or a directed image/binary/scope decision,
+not repeat the stale partial-40 task.
