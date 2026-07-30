@@ -150,6 +150,165 @@ describe('bandwidth throttle (maxBytesPerSecond)', () => {
   });
 });
 
+describe('byte progress', () => {
+  // The whole surface was structurally dead: onBytesProgress was stored and never called,
+  // entry.bytesLoaded was never written, and ResourceLoadReport.bytes was therefore always 0. The
+  // missing piece was that the loader cannot know a transfer's byte count — only the factory can — so
+  // the factory now receives a reporter as a second argument. Additive by design: a one-argument
+  // factory keeps working and simply never reports.
+  it('hands the factory a reporter as its second argument', async () => {
+    const loader = createResourceLoader();
+    let received: string = 'none';
+    queueResourceLoad(loader, {
+      key: 'a',
+      load: (_signal, reportBytes) => {
+        received = typeof reportBytes;
+        return Promise.resolve('v');
+      },
+    });
+    startResourceLoad(loader);
+    await waitForComplete(loader);
+    expect(received).toBe('function');
+  });
+
+  it('forwards every reported figure to onBytesProgress', async () => {
+    const loader = createResourceLoader();
+    const seen: string[] = [];
+    queueResourceLoad(loader, {
+      key: 'a',
+      bytesHint: 1000,
+      onBytesProgress: (loaded, total) => seen.push(`${loaded}/${total}`),
+      load: (_signal, reportBytes) => {
+        reportBytes(250);
+        reportBytes(600, 1200);
+        return Promise.resolve('v');
+      },
+    });
+    startResourceLoad(loader);
+    await waitForComplete(loader);
+    expect(seen).toEqual(['250/1000', '600/1200']);
+  });
+
+  it('falls back to bytesHint for the total when the factory reports only what has arrived', async () => {
+    const loader = createResourceLoader();
+    const totals: number[] = [];
+    queueResourceLoad(loader, {
+      key: 'a',
+      bytesHint: 4096,
+      onBytesProgress: (_loaded, total) => totals.push(total),
+      load: (_signal, reportBytes) => {
+        reportBytes(1);
+        return Promise.resolve('v');
+      },
+    });
+    startResourceLoad(loader);
+    await waitForComplete(loader);
+    expect(totals).toEqual([4096]);
+  });
+
+  it("reports the last figure as the item's bytes", async () => {
+    const loader = createResourceLoader();
+    queueResourceLoad(loader, {
+      key: 'a',
+      load: (_signal, reportBytes) => {
+        reportBytes(10);
+        reportBytes(9000);
+        return Promise.resolve('v');
+      },
+    });
+    startResourceLoad(loader);
+    const reports = await waitForComplete(loader);
+    expect(reports[0].bytes).toBe(9000);
+  });
+
+  it('leaves bytes at zero for a factory that reports nothing', async () => {
+    const loader = createResourceLoader();
+    queueResourceLoad(loader, { key: 'a', load: () => Promise.resolve('v') });
+    startResourceLoad(loader);
+    const reports = await waitForComplete(loader);
+    expect(reports[0].bytes).toBe(0);
+  });
+
+  it('runs a one-argument factory untouched, which is what makes the seam additive', async () => {
+    // The reason this shape was chosen over changing the signature: existing callers keep compiling
+    // and keep working, and only a factory that can observe its transfer opts in.
+    const loader = createResourceLoader();
+    queueResourceLoad(loader, { key: 'a', load: (signal: AbortSignal) => Promise.resolve(signal.aborted) });
+    queueResourceLoad(loader, () => Promise.resolve('thunk'));
+    startResourceLoad(loader);
+    const reports = await waitForComplete(loader);
+    expect(reports.map((r) => r.status)).toEqual(['loaded', 'loaded']);
+    expect(reports.every((r) => r.bytes === 0)).toBe(true);
+  });
+
+  it('ignores a report that arrives after the load has settled', async () => {
+    // Entries are pooled, so a late report — a stream flushing after resolve — would otherwise write
+    // a byte count into whichever item had since been handed that record.
+    const loader = createResourceLoader();
+    const seen: number[] = [];
+    let late: ((loaded: number) => void) | null = null;
+    queueResourceLoad(loader, {
+      key: 'a',
+      bytesHint: 100,
+      onBytesProgress: (loaded) => seen.push(loaded),
+      load: (_signal, reportBytes) => {
+        reportBytes(5);
+        late = reportBytes;
+        return Promise.resolve('v');
+      },
+    });
+    startResourceLoad(loader);
+    const reports = await waitForComplete(loader);
+    expect(seen).toEqual([5]);
+
+    late!(999);
+    expect(seen).toEqual([5]);
+    expect(reports[0].bytes).toBe(5);
+  });
+
+  it('does not let a stale reporter write bytes into the item that recycled its record', async () => {
+    // The hazard the guard actually exists for, and the one the test above does NOT cover: entries are
+    // pooled, so once item A settles its record is handed to the next item queued. A reporter A kept
+    // hold of would then be writing B's byte count. Asserting on A's own report cannot see this —
+    // that number was already copied out at settle time — so this asserts on B.
+    const first = createResourceLoader();
+    let stale: ((loaded: number) => void) | null = null;
+    queueResourceLoad(first, {
+      key: 'a',
+      load: (_signal, reportBytes) => {
+        stale = reportBytes;
+        reportBytes(5);
+        return Promise.resolve('v');
+      },
+    });
+    startResourceLoad(first);
+    await waitForComplete(first);
+
+    // A fresh batch reuses the pooled record A just released.
+    const second = createResourceLoader();
+    queueResourceLoad(second, {
+      key: 'b',
+      load: (_signal, reportBytes) => {
+        reportBytes(11);
+        stale!(999999);
+        return Promise.resolve('v');
+      },
+    });
+    startResourceLoad(second);
+    const reports = await waitForComplete(second);
+    expect(reports[0].key).toBe('b');
+    expect(reports[0].bytes).toBe(11);
+  });
+
+  it('still lets bytesHint drive the throttle, which never depended on the factory', async () => {
+    const loader = createResourceLoader({ maxBytesPerSecond: 1000 });
+    queueResourceLoad(loader, { key: 'a', bytesHint: 10, load: () => Promise.resolve('v') });
+    startResourceLoad(loader);
+    const reports = await waitForComplete(loader);
+    expect(reports[0].status).toBe('loaded');
+  });
+});
+
 describe('bytes progress', () => {
   it('records bytes in ResourceLoadReport when factory calls onBytesProgress', async () => {
     const loader = createResourceLoader();
