@@ -126,7 +126,7 @@ Design calls to settle before building the affected entries:
 - Rule on the extension-handler seam shape before porting `KHR_texture_transform` (Depth gap 3)
 - Rule on a fixture policy before proving real files end to end (Depth gap 4)
 
-### swf (partial 46)
+### swf (partial 49)
 
 - Add one canonical uncompressed fixture
 
@@ -833,7 +833,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 - Replace the remaining inline extension knowledge with open handlers
 - Prove real files end to end
 
-### swf (partial 46)
+### swf (partial 49)
 
 - Recover animated MovieClip timelines
 - Materialize visible archive content
