@@ -111,10 +111,9 @@ Design calls to settle before building the affected entries:
 
 ### useragent (partial 42)
 
-- Desktop-mode iPad correctness fix
-- Fix the iOS third-party-browser version extractors
-- Deduplicate the OS version regexes
-- Document the frozen-UA caveats
+- Decide what `parseUserAgentEngineVersion` means on webkit
+- `parseUserAgentEngineVersion` returns `''` for a legacy EdgeHTML UA
+- Opera on iOS is untested and its tokens are unhandled
 
 ### textlayout (partial 45)
 

@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/useragent'
-updated: 2026-07-03
+updated: 2026-07-30
 basedOn: ./review.md
 ---
 
@@ -10,15 +10,25 @@ Based on the 2026-07-03 review (partial, 42/100). The review directly challenges
 
 ## Recommended
 
-Sweep-safe: within `@flighthq/useragent`, no public-surface growth, no open design decision.
+The 2026-07-03 sweep list (desktop-mode iPad, iOS third-party version extractors, deduplicate the OS
+version regexes, document frozen-UA caveats) was **all four genuinely live** and is now done — the
+first cell in this run where the listed items had not already been fixed. Re-derived below against
+live source 2026-07-30.
 
-1. **Desktop-mode iPad correctness fix.** iPadOS in desktop mode reports a `Macintosh` UA; `parseUserAgentFormFactor(ua, maxTouchPoints)` already receives the tiebreak hint but does not apply it — mac UA + `maxTouchPoints > 1` should classify as tablet. A silently wrong answer on current hardware, fixed with the existing signature.
-
-2. **Fix the iOS third-party-browser version extractors.** Firefox-on-iOS (`FxiOS`) and Chrome-on-iOS (`CriOS`) are webkit-engine but their tokens defeat the existing version extraction, so `parseUserAgentEngineVersion` returns wrong values for them. Correctness fix inside existing functions.
-
-3. **Deduplicate the OS version regexes.** The Windows/macOS/iOS/Android patterns appear in both `parseUserAgentVersion` and `parseUserAgentOsVersion` with slight drift (`/android\s+/` vs `/android /`). One internal implementation should serve both public vocabularies — no API change; removes the drift hazard. (The larger merge of the two families is a design fork, parked below.)
-
-4. **Document the frozen-UA caveats.** Windows 11 reports `Windows NT 10.0` and macOS is frozen at `10_15_7`; without UA-CH input these functions cannot do better. Say so in the doc comments so callers are not silently misled. (Actually correcting them requires UA-CH inputs — parked below.)
+1. **Decide what `parseUserAgentEngineVersion` means on webkit.** It returns two incomparable kinds of
+   number depending on the browser: Safari has a `Version/` token, so Safari gets its *product*
+   version (`17.0`), while Chrome/Firefox/Edge on iOS have none and fall through to the AppleWebKit
+   build (`605.1.15`). Both are defensible readings of "engine version" — but not in the same
+   function, and a caller comparing the two is comparing a browser release to a WebKit build. Either
+   webkit should always report the AppleWebKit build (consistent with the name, but changes Safari's
+   long-standing answer), or the function should be honest that it reports a product version where one
+   is available. **A semantics decision, not a sweep** — surfaced rather than taken.
+2. **`parseUserAgentEngineVersion` returns `''` for a legacy EdgeHTML UA.** `Edge/18` matches the
+   blink branch via `edg` but has no `Edg/` token, so the version comes back empty and the engine is
+   misreported. Same defect shape as the iOS one fixed on 2026-07-30, minus the urgency: EdgeHTML is
+   end-of-life. Worth a token or worth explicitly declining to support — currently neither.
+3. **Opera on iOS is untested and its tokens are unhandled.** `OPiOS`/`OPT` reach the correct engine
+   now (they carry an iOS platform token) but nothing pins that, and `/opr/i` would not match either.
 
 ## Backlog
 
@@ -34,4 +44,6 @@ All parked items conflict with the charter's scope-ceiling decision or need a de
 
 ## Approved
 
-_None._
+- [2026-07-03] Sweep items 1–4 (desktop-mode iPad, iOS third-party browser engine/version,
+  deduplicate the OS version regexes, document the frozen-UA caveats) — **all four done 2026-07-30**,
+  with regression tests verified against the unfixed code.
