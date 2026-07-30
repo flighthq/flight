@@ -32,7 +32,7 @@ function warnMissingGlTextureResolver(_state: GlRenderState, texture: Readonly<T
     {
       kind,
       message:
-        'resolveGlTexture: texture source kind has no registered resolver — call registerGlTextureResolver(state, sourceKind, resolver)',
+        'resolveGlTexture: texture source kind has no registered resolver — call registerGlTextureResolver(state, sourceKind, resolver), or copyGlRenderStateRegistrations(offscreenState, screenState) after a late screen registration',
       texture,
     },
     'render-gl',

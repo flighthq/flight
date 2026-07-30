@@ -1,15 +1,15 @@
 import { compileGlFullscreenProgram } from '@flighthq/render-gl/contract';
 import type { GlFullscreenProgram, GlRenderState } from '@flighthq/types/contract';
 
-// Per-state cache of compiled effect fragment programs, keyed by a stable string. Effect recipes call
-// getGlEffectProgram with their own key + fragment source so each program compiles once per state
+// Per-context cache of compiled effect fragment programs, keyed by a stable string. Effect recipes call
+// getGlEffectProgram with their own key + fragment source so each program compiles once per context
 // and is reused every frame. Keeps compiled programs off the render-state runtime type.
 
 export function getGlEffectProgram(state: GlRenderState, key: string, fragmentSource: string): GlFullscreenProgram {
-  let cache = _programs.get(state);
+  let cache = _programs.get(state.gl);
   if (cache === undefined) {
     cache = new Map();
-    _programs.set(state, cache);
+    _programs.set(state.gl, cache);
   }
   const existing = cache.get(key);
   if (existing !== undefined) return existing;
@@ -41,9 +41,9 @@ export function getGlEffectUniformLocation(
   return loc;
 }
 
-const _programs = new WeakMap<GlRenderState, Map<string, GlFullscreenProgram>>();
+const _programs = new WeakMap<WebGL2RenderingContext, Map<string, GlFullscreenProgram>>();
 
 // Keyed by program object (not state) so the cache survives state-key rotation and is naturally
 // freed when the program itself is garbage-collected (all GlFullscreenPrograms are stored in
-// _programs above, which is already WeakMap-keyed by state).
+// _programs above, which is already WeakMap-keyed by context).
 const _uniformLocations = new WeakMap<Readonly<GlFullscreenProgram>, Map<string, WebGLUniformLocation | null>>();

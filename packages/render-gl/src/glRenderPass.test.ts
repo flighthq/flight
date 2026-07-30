@@ -1,4 +1,6 @@
 import { createMatrix } from '@flighthq/geometry/contract';
+import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { GlRenderTarget, Viewport } from '@flighthq/types/contract';
 
 import { beginGlRenderPass, endGlRenderPass, setGlRenderTransform2D } from './glRenderPass';
@@ -356,5 +358,15 @@ describe('setGlRenderTransform2D', () => {
     endGlRenderPass(state);
 
     expect(state.renderTransform2D).toBe(original);
+  });
+
+  it('dirties existing state-local proxy transforms for repeated offscreen captures', () => {
+    const { state } = createGlState();
+    const proxy = getOrCreateRenderProxy2D(state, createDisplayObject());
+    proxy.lastLocalTransformId = 7;
+
+    setGlRenderTransform2D(state, createMatrix());
+
+    expect(proxy.lastLocalTransformId).toBe(-1);
   });
 });

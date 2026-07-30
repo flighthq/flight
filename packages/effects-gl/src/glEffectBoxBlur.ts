@@ -43,7 +43,7 @@ type BoxBlurShaderLocations = GlFullscreenProgram & {
   locUseEdgeColor: WebGLUniformLocation;
 };
 
-const boxBlurShaders = new WeakMap<GlRenderState, BoxBlurShaderLocations>();
+const boxBlurShaders = new WeakMap<WebGL2RenderingContext, BoxBlurShaderLocations>();
 
 /**
  * Applies a separable box blur to `source`, writing to `dest`. `blurX`/`blurY` are the target
@@ -133,7 +133,7 @@ function applyBoxBlurPass(
 }
 
 function getBoxBlurShader(state: GlRenderState): BoxBlurShaderLocations {
-  let loc = boxBlurShaders.get(state);
+  let loc = boxBlurShaders.get(state.gl);
   if (loc === undefined) {
     const gl = state.gl;
     const base = compileGlFullscreenProgram(gl, BOX_BLUR_FRAGMENT_SRC);
@@ -145,7 +145,7 @@ function getBoxBlurShader(state: GlRenderState): BoxBlurShaderLocations {
       locEdgeColor: gl.getUniformLocation(base.program, 'u_edgeColor')!,
       locUseEdgeColor: gl.getUniformLocation(base.program, 'u_useEdgeColor')!,
     };
-    boxBlurShaders.set(state, loc);
+    boxBlurShaders.set(state.gl, loc);
   }
   return loc;
 }

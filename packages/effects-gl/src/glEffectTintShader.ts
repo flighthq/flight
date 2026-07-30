@@ -38,8 +38,8 @@ type TintShaderLocations = GlFullscreenProgram & {
   locStrength: WebGLUniformLocation;
 };
 
-const tintShaders = new WeakMap<GlRenderState, TintShaderLocations>();
-const invertTintShaders = new WeakMap<GlRenderState, TintShaderLocations>();
+const tintShaders = new WeakMap<WebGL2RenderingContext, TintShaderLocations>();
+const invertTintShaders = new WeakMap<WebGL2RenderingContext, TintShaderLocations>();
 
 /** Tints the INVERTED source alpha with color, outputs a premultiplied mask. Used for inner effects. */
 export function applyGlEffectInvertTintPass(
@@ -78,7 +78,7 @@ export function applyGlEffectTintPass(
 }
 
 function getGlInvertTintShader(state: GlRenderState): TintShaderLocations {
-  let loc = invertTintShaders.get(state);
+  let loc = invertTintShaders.get(state.gl);
   if (loc === undefined) {
     const gl = state.gl;
     const base = compileGlFullscreenProgram(gl, INVERT_TINT_FRAGMENT_SRC);
@@ -88,13 +88,13 @@ function getGlInvertTintShader(state: GlRenderState): TintShaderLocations {
       locAlpha: gl.getUniformLocation(base.program, 'u_alpha')!,
       locStrength: gl.getUniformLocation(base.program, 'u_strength')!,
     };
-    invertTintShaders.set(state, loc);
+    invertTintShaders.set(state.gl, loc);
   }
   return loc;
 }
 
 function getGlTintShader(state: GlRenderState): TintShaderLocations {
-  let loc = tintShaders.get(state);
+  let loc = tintShaders.get(state.gl);
   if (loc === undefined) {
     const gl = state.gl;
     const base = compileGlFullscreenProgram(gl, TINT_FRAGMENT_SRC);
@@ -104,7 +104,7 @@ function getGlTintShader(state: GlRenderState): TintShaderLocations {
       locAlpha: gl.getUniformLocation(base.program, 'u_alpha')!,
       locStrength: gl.getUniformLocation(base.program, 'u_strength')!,
     };
-    tintShaders.set(state, loc);
+    tintShaders.set(state.gl, loc);
   }
   return loc;
 }

@@ -1,17 +1,21 @@
 import { getEntityRuntime } from '@flighthq/entity/contract';
 import {
   acquireMatrix,
+  copyMatrix,
   copyRectangle,
   createRectangle,
   inverseMatrix,
   matrixTransformRectangle,
   mergeRectangle,
+  multiplyMatrix,
   releaseMatrix,
+  setEmptyRectangle,
 } from '@flighthq/geometry/contract';
 import type {
   BoundsNode,
   HasBoundsRectangleRuntime,
   HasTransform2DRuntime,
+  Matrix,
   NodeRuntime,
   Rectangle,
   RectangleLike,
@@ -57,6 +61,24 @@ export function computeNodeBoundsRectangle<Traits extends object>(
   } else {
     copyRectangle(out, bounds);
   }
+}
+
+/**
+ * Writes the tight bounds of `root` and its enabled descendants in a coordinate system where the
+ * root's own local transform is identity. A child's transform is still relative to the root and
+ * nested transforms compose normally.
+ *
+ * This differs intentionally from computeNodeBoundsRectangle(out, root, root): a detached root takes
+ * that helper's world-bounds branch, whose axis-aligned world box cannot be inverted tightly after a
+ * root rotation. Offscreen subtree capture uses this contract together with
+ * computeScene2DRenderTargetTransform so the root transform cancels exactly.
+ */
+export function computeNodeRootLocalBoundsRectangle<Traits extends object>(
+  out: RectangleLike,
+  root: Spatial2DNode<Traits>,
+): void {
+  setEmptyRectangle(out);
+  mergeRootLocalBounds(out, root, null);
 }
 
 export function ensureNodeLocalBoundsRectangle<Traits extends object>(target: BoundsNode<Traits>): void {
@@ -157,6 +179,32 @@ function recomputeNodeBoundsRectangle<Traits extends object>(
   runtime.boundsUsingLocalTransformId = runtime.localTransformId;
 }
 
+function mergeRootLocalBounds<Traits extends object>(
+  out: RectangleLike,
+  node: Spatial2DNode<Traits>,
+  transform: Readonly<Matrix> | null,
+): void {
+  const localBounds = getNodeLocalBoundsRectangle(node);
+  if (transform === null) {
+    copyRectangle(_rootLocalNodeBounds, localBounds);
+  } else {
+    matrixTransformRectangle(_rootLocalNodeBounds, transform, localBounds);
+  }
+  mergeRectangle(out, out, _rootLocalNodeBounds);
+
+  const children = getNodeRuntime(node).children;
+  if (children === null) return;
+  for (const child of children) {
+    if (!child.enabled) continue;
+    const childTransform = acquireMatrix();
+    const childLocal = getNodeLocalMatrix(child as Spatial2DNode<Traits>);
+    if (transform === null) copyMatrix(childTransform, childLocal);
+    else multiplyMatrix(childTransform, transform, childLocal);
+    mergeRootLocalBounds(out, child as Spatial2DNode<Traits>, childTransform);
+    releaseMatrix(childTransform);
+  }
+}
+
 function recomputeLocalBoundsRectangle<Traits extends object>(
   target: BoundsNode<Traits>,
   runtime: NodeRuntime<Traits> & HasBoundsRectangleRuntime,
@@ -212,3 +260,4 @@ function tryFastRecomputeWorldBoundsRectangle<Traits extends object>(
 }
 
 const _tempBoundsRectangle = createRectangle();
+const _rootLocalNodeBounds = createRectangle();

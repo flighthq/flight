@@ -74,11 +74,13 @@ export function createRenderProxy2D(
 // renderer's destroyData to free the non-GC GPU resources it owns. Call when a node is removed from
 // rendering for good — otherwise those GPU textures/framebuffers linger until the source is GC'd.
 export function disposeRenderProxy(state: RenderState, source: Renderable): void {
-  const renderProxyMap = getRenderStateRuntime(state).renderProxyMap;
+  const runtime = getRenderStateRuntime(state);
+  const renderProxyMap = runtime.renderProxyMap;
   const node = renderProxyMap.get(source);
   if (node === undefined) return;
   if (node.rendererData !== null) node.renderer?.destroyData?.(state, node.rendererData);
   renderProxyMap.delete(source);
+  runtime.renderProxySources.delete(source);
 }
 
 // Teardown counterpart to prepareScene2DRender: disposes the render of `root` and every descendant —
@@ -99,6 +101,7 @@ export function getOrCreateRenderProxy2D(state: RenderState, source: Renderable)
   if (!node) {
     node = createRenderProxy2D(state, source as Renderable & HasTransform2D & HasBoundsRectangle);
     renderProxyMap.set(source, node);
+    runtime.renderProxySources.add(source);
   }
   if (node.rendererMapId !== runtime.rendererMapId) {
     updateRenderProxyRenderer(state, node);
@@ -196,6 +199,7 @@ export function updateRenderProxyRenderer(state: RenderState, node: RenderProxy)
 // trait update step in the visitor (updateNodeClip), realized at draw time by the backend clip hooks.
 export function walkNode(state: RenderState, root: Renderable, visit: RenderProxyVisitor): boolean {
   const runtime = getRenderStateRuntime(state);
+  runtime.renderRootGuard?.(state, root);
   ++runtime.currentFrameId;
 
   const tempStack = runtime.tempStack;

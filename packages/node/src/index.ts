@@ -4,6 +4,7 @@ export {
   addNodeChildren,
   addNodeColorAdjustment,
   computeNodeBoundsRectangle,
+  computeNodeRootLocalBoundsRectangle,
   computeScene2DFitAlignX,
   computeScene2DFitAlignY,
   computeScene2DFitFillScale,

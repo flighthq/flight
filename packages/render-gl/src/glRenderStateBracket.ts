@@ -15,7 +15,9 @@ type SavedGlRenderState = {
   blendSrcRgb: number;
   cullFace: boolean;
   cullFaceMode: number;
+  currentFramebuffer: WebGLFramebuffer | null;
   currentBlendMode: GlRenderStateRuntime['currentBlendMode'];
+  currentRenderTarget: GlRenderStateRuntime['currentRenderTarget'];
   currentProgram: GlRenderStateRuntime['currentProgram'];
   currentScissorRect: GlRenderStateRuntime['currentScissorRect'];
   currentTexture: GlRenderStateRuntime['currentTexture'];
@@ -23,7 +25,9 @@ type SavedGlRenderState = {
   depthFunc: number;
   depthMask: boolean;
   depthTest: boolean;
+  framebuffer: WebGLFramebuffer | null;
   program: WebGLProgram | null;
+  renderTargetViewport: GlRenderStateRuntime['renderTargetViewport'];
   scissorBox: GlBox;
   scissorTest: boolean;
   texture2DByUnit: (WebGLTexture | null)[];
@@ -31,10 +35,10 @@ type SavedGlRenderState = {
   viewport: GlBox;
 };
 
-// Restores the fixed-function and render-gl tracked state saved by pushGlRenderState. This does not
-// restore framebuffer, render-target viewport ownership, or the 2D root transform: wrap a foreign
-// offscreen draw with push -> beginGlRenderPass -> draw -> endGlRenderPass -> pop so the two brackets
-// compose. Calling pop with no matching push is a no-op.
+// Restores the fixed-function, framebuffer, and render-gl tracked state saved by pushGlRenderState.
+// The 2D root transform remains owned by the render-pass bracket: wrap a foreign offscreen draw with
+// push -> beginGlRenderPass -> draw -> endGlRenderPass -> pop so the two brackets compose. Calling pop
+// with no matching push is a no-op.
 export function popGlRenderState(state: GlRenderState): void {
   const saved = _renderStateStack.get(state)?.pop();
   if (saved === undefined) return;
@@ -53,6 +57,7 @@ export function popGlRenderState(state: GlRenderState): void {
 
   gl.bindVertexArray(saved.vertexArray);
   gl.useProgram(saved.program);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, saved.framebuffer);
   for (let i = 0; i < saved.texture2DByUnit.length; i++) {
     gl.activeTexture(gl.TEXTURE0 + i);
     gl.bindTexture(gl.TEXTURE_2D, saved.texture2DByUnit[i]);
@@ -64,11 +69,14 @@ export function popGlRenderState(state: GlRenderState): void {
   gl.viewport(saved.viewport[0], saved.viewport[1], saved.viewport[2], saved.viewport[3]);
 
   const runtime = getGlRenderStateRuntime(state);
+  runtime.currentFramebuffer = saved.currentFramebuffer;
   runtime.currentProgram = saved.currentProgram;
+  runtime.currentRenderTarget = saved.currentRenderTarget;
   runtime.currentTexture = saved.currentTexture;
   runtime.currentBlendMode = saved.currentBlendMode;
   runtime.currentScissorRect = saved.currentScissorRect;
   runtime.currentTextureStraightAlpha = saved.currentTextureStraightAlpha;
+  runtime.renderTargetViewport = saved.renderTargetViewport;
 }
 
 // Flushes queued owner draws, then saves the fixed-function bindings a foreign inline renderer may
@@ -103,7 +111,9 @@ export function pushGlRenderState(state: GlRenderState): void {
     blendSrcRgb: gl.getParameter(gl.BLEND_SRC_RGB) as number,
     cullFace: gl.isEnabled(gl.CULL_FACE),
     cullFaceMode: gl.getParameter(gl.CULL_FACE_MODE) as number,
+    currentFramebuffer: runtime.currentFramebuffer,
     currentBlendMode: runtime.currentBlendMode,
+    currentRenderTarget: runtime.currentRenderTarget,
     currentProgram: runtime.currentProgram,
     currentScissorRect: runtime.currentScissorRect,
     currentTexture: runtime.currentTexture,
@@ -111,7 +121,9 @@ export function pushGlRenderState(state: GlRenderState): void {
     depthFunc: gl.getParameter(gl.DEPTH_FUNC) as number,
     depthMask: gl.getParameter(gl.DEPTH_WRITEMASK) as boolean,
     depthTest: gl.isEnabled(gl.DEPTH_TEST),
+    framebuffer: gl.getParameter(gl.FRAMEBUFFER_BINDING) as WebGLFramebuffer | null,
     program: gl.getParameter(gl.CURRENT_PROGRAM) as WebGLProgram | null,
+    renderTargetViewport: runtime.renderTargetViewport,
     scissorBox: readGlBox(gl, gl.SCISSOR_BOX),
     scissorTest: gl.isEnabled(gl.SCISSOR_TEST),
     texture2DByUnit,
@@ -133,7 +145,10 @@ export function withGlRenderState<T>(state: GlRenderState, callback: () => T): T
 }
 
 function readGlBox(gl: WebGL2RenderingContext, parameter: GLenum): GlBox {
-  const value = gl.getParameter(parameter) as ArrayLike<number>;
+  const value = gl.getParameter(parameter) as ArrayLike<number> | null | undefined;
+  // Lightweight test contexts may omit inert query state. Browsers always return four values for
+  // VIEWPORT/SCISSOR_BOX; a zero box is the conservative restoration sentinel for a partial mock.
+  if (value === null || value === undefined) return [0, 0, 0, 0];
   return [value[0], value[1], value[2], value[3]];
 }
 

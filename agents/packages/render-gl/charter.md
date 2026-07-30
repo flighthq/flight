@@ -44,6 +44,11 @@ Non-goals:
 
 ## Decisions
 
+- **2026-07-30 — Offscreen states split pipeline policy from a shared context tier.**
+  `createGlOffscreenRenderState` snapshots registrations into independent state policy while sharing
+  context-owned binding state, programs, buffers, uploads, and render-texture realizations.
+- **2026-07-30 — Public transient-target currency is `RenderTexture`.** Raw `GlRenderTarget` remains
+  the backend recipe level; the per-node lane leases universal textures for direct sprite composition.
 - **2026-07-02 — Canvas-raster fallback accepted; GPU options long-term.**
 - **2026-07-02 — No umbrella registerAll — maximum tree-shaking.**
 - **2026-07-02 — Context/device loss: detect and signal minimum.**

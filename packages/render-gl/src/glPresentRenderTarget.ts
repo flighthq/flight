@@ -22,18 +22,18 @@ export function presentGlRenderTarget(
 }
 
 function getGlCopyProgram(state: GlRenderState): GlFullscreenProgram {
-  let program = _programs.get(state);
+  let program = _programs.get(state.gl);
   if (program === undefined) {
     program = compileGlFullscreenProgram(state.gl, COPY_FRAGMENT_SRC);
-    _programs.set(state, program);
+    _programs.set(state.gl, program);
   }
   return program;
 }
 
 const NOOP = (): void => {};
 
-// Per-state passthrough program for the 'srgb' present branch (already-encoded content, no transfer).
-const _programs = new WeakMap<GlRenderState, GlFullscreenProgram>();
+// Per-context passthrough program for the 'srgb' present branch.
+const _programs = new WeakMap<WebGL2RenderingContext, GlFullscreenProgram>();
 
 const COPY_FRAGMENT_SRC = `#version 300 es
 precision highp float;

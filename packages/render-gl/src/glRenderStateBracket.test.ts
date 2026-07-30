@@ -1,4 +1,10 @@
-import type { BlendMode as BlendModeType, GlRenderStateRuntime, GlScissorRect } from '@flighthq/types/contract';
+import type {
+  BlendMode as BlendModeType,
+  GlRenderStateRuntime,
+  GlRenderTarget,
+  GlScissorRect,
+  GlViewportRect,
+} from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
@@ -17,10 +23,13 @@ type TestGlState = {
   blendSrcRgb: number;
   cullFace: boolean;
   cullFaceMode: number;
+  currentRenderTarget: GlRenderTarget | null;
   depthFunc: number;
   depthMask: boolean;
   depthTest: boolean;
+  framebuffer: WebGLFramebuffer | null;
   program: WebGLProgram | null;
+  renderTargetViewport: GlViewportRect | null;
   scissorBox: [number, number, number, number];
   scissorRect: GlScissorRect | null;
   scissorTest: boolean;
@@ -49,10 +58,13 @@ const OUTER_STATE: TestGlState = {
   blendSrcRgb: 1,
   cullFace: false,
   cullFaceMode: 0x0405,
+  currentRenderTarget: { name: 'outer-target' } as unknown as GlRenderTarget,
   depthFunc: 0x0203,
   depthMask: false,
   depthTest: true,
+  framebuffer: { name: 'outer-framebuffer' } as unknown as WebGLFramebuffer,
   program: { name: 'outer-program' } as unknown as WebGLProgram,
+  renderTargetViewport: { height: 220, width: 300, x: 4, y: 5 },
   scissorBox: [2, 3, 40, 50],
   scissorRect: { x: 2, y: 3, width: 40, height: 50 },
   scissorTest: true,
@@ -74,10 +86,13 @@ const MIDDLE_STATE: TestGlState = {
   blendSrcRgb: 1,
   cullFace: true,
   cullFaceMode: 0x0404,
+  currentRenderTarget: { name: 'middle-target' } as unknown as GlRenderTarget,
   depthFunc: 0x0201,
   depthMask: true,
   depthTest: false,
+  framebuffer: { name: 'middle-framebuffer' } as unknown as WebGLFramebuffer,
   program: { name: 'middle-program' } as unknown as WebGLProgram,
+  renderTargetViewport: { height: 460, width: 620, x: 8, y: 9 },
   scissorBox: [6, 7, 80, 90],
   scissorRect: { x: 6, y: 7, width: 80, height: 90 },
   scissorTest: false,
@@ -91,7 +106,10 @@ const INNER_STATE: TestGlState = {
   ...OUTER_STATE,
   activeTexture: 0x84c3,
   blendMode: BlendMode.Screen,
+  currentRenderTarget: { name: 'inner-target' } as unknown as GlRenderTarget,
+  framebuffer: { name: 'inner-framebuffer' } as unknown as WebGLFramebuffer,
   program: { name: 'inner-program' } as unknown as WebGLProgram,
+  renderTargetViewport: { height: 200, width: 280, x: 10, y: 11 },
   scissorRect: { x: 10, y: 11, width: 12, height: 13 },
   texture: { name: 'inner-texture' } as unknown as WebGLTexture,
   vertexArray: { name: 'inner-vao' } as unknown as WebGLVertexArrayObject,
@@ -194,16 +212,20 @@ function applyTestGlState(fixture: StatefulGl, values: Readonly<TestGlState>): v
   gl.blendEquationSeparate(values.blendEquationRgb, values.blendEquationAlpha);
   gl.bindVertexArray(values.vertexArray);
   gl.useProgram(values.program);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, values.framebuffer);
   gl.activeTexture(values.activeTexture);
   gl.bindTexture(gl.TEXTURE_2D, values.texture);
   setCapability(gl, gl.SCISSOR_TEST, values.scissorTest);
   gl.scissor(values.scissorBox[0], values.scissorBox[1], values.scissorBox[2], values.scissorBox[3]);
   gl.viewport(values.viewport[0], values.viewport[1], values.viewport[2], values.viewport[3]);
   runtime.currentBlendMode = values.blendMode;
+  runtime.currentFramebuffer = values.framebuffer;
+  runtime.currentRenderTarget = values.currentRenderTarget;
   runtime.currentProgram = values.program;
   runtime.currentScissorRect = values.scissorRect;
   runtime.currentTexture = values.texture;
   runtime.currentTextureStraightAlpha = values.straightAlpha;
+  runtime.renderTargetViewport = values.renderTargetViewport;
 }
 
 function createStatefulGl(): StatefulGl & ReturnType<typeof createGlState> {
@@ -221,6 +243,7 @@ function createStatefulGl(): StatefulGl & ReturnType<typeof createGlState> {
     CURRENT_PROGRAM: 0x8b8d,
     DEPTH_FUNC: 0x0b74,
     DEPTH_WRITEMASK: 0x0b72,
+    FRAMEBUFFER_BINDING: 0x8ca6,
     SCISSOR_BOX: 0x0c10,
     TEXTURE_BINDING_2D: 0x8069,
     VERTEX_ARRAY_BINDING: 0x85b5,
@@ -266,6 +289,9 @@ function createStatefulGl(): StatefulGl & ReturnType<typeof createGlState> {
   (gl.useProgram as ReturnType<typeof vi.fn>).mockImplementation((value: WebGLProgram | null) =>
     parameters.set(gl.CURRENT_PROGRAM, value),
   );
+  (gl.bindFramebuffer as ReturnType<typeof vi.fn>).mockImplementation(
+    (_target: number, value: WebGLFramebuffer | null) => parameters.set(gl.FRAMEBUFFER_BINDING, value),
+  );
   (gl.activeTexture as ReturnType<typeof vi.fn>).mockImplementation((value: number) =>
     parameters.set(gl.ACTIVE_TEXTURE, value),
   );
@@ -298,16 +324,20 @@ function expectTestGlState(fixture: StatefulGl, expected: Readonly<TestGlState>)
   expect(parameters.get(gl.BLEND_EQUATION_ALPHA)).toBe(expected.blendEquationAlpha);
   expect(parameters.get(gl.VERTEX_ARRAY_BINDING)).toBe(expected.vertexArray);
   expect(parameters.get(gl.CURRENT_PROGRAM)).toBe(expected.program);
+  expect(parameters.get(gl.FRAMEBUFFER_BINDING)).toBe(expected.framebuffer);
   expect(parameters.get(gl.ACTIVE_TEXTURE)).toBe(expected.activeTexture);
   expect(fixture.textureBindings.get(expected.activeTexture)).toBe(expected.texture);
   expect(gl.isEnabled(gl.SCISSOR_TEST)).toBe(expected.scissorTest);
   expect(parameters.get(gl.SCISSOR_BOX)).toEqual(expected.scissorBox);
   expect(parameters.get(gl.VIEWPORT)).toEqual(expected.viewport);
   expect(runtime.currentBlendMode).toBe(expected.blendMode);
+  expect(runtime.currentFramebuffer).toBe(expected.framebuffer);
+  expect(runtime.currentRenderTarget).toBe(expected.currentRenderTarget);
   expect(runtime.currentProgram).toBe(expected.program);
   expect(runtime.currentScissorRect).toBe(expected.scissorRect);
   expect(runtime.currentTexture).toBe(expected.texture);
   expect(runtime.currentTextureStraightAlpha).toBe(expected.straightAlpha);
+  expect(runtime.renderTargetViewport).toBe(expected.renderTargetViewport);
 }
 
 function setCapability(gl: WebGL2RenderingContext, capability: number, enabled: boolean): void {

@@ -26,6 +26,7 @@ import type {
 
 import {
   computeNodeBoundsRectangle,
+  computeNodeRootLocalBoundsRectangle,
   ensureNodeLocalBoundsRectangle,
   ensureNodeParentBoundsRectangle,
   ensureNodeWorldBoundsRectangle,
@@ -156,6 +157,45 @@ describe('computeNodeBoundsRectangle', () => {
     const out = createRectangle();
     computeNodeBoundsRectangle(out, child, root);
     expect(equalsRectangle(out, getNodeWorldBoundsRectangle(child))).toBe(true);
+  });
+});
+
+describe('computeNodeRootLocalBoundsRectangle', () => {
+  it('ignores the detached root transform while preserving negative local extents', () => {
+    const root = createTestNode();
+    root.x = 120;
+    root.y = -35;
+    root.rotation = 37;
+    root.scaleX = 2;
+    root.scaleY = 0.5;
+    setRectangle(getNodeLocalBoundsRectangle(root), -10, -5, 30, 20);
+
+    const out = createRectangle();
+    computeNodeRootLocalBoundsRectangle(out, root);
+
+    expect(out).toMatchObject({ x: -10, y: -5, width: 30, height: 20 });
+  });
+
+  it('composes nested transforms relative to an identity root', () => {
+    const root = createTestNode();
+    const child = createTestNode();
+    root.x = 500;
+    root.rotation = 90;
+    child.x = 20;
+    child.y = 3;
+    child.scaleX = 2;
+    child.scaleY = 3;
+    setRectangle(getNodeLocalBoundsRectangle(root), 0, 0, 10, 10);
+    setRectangle(getNodeLocalBoundsRectangle(child), -5, -2, 4, 8);
+    addNodeChild(root, child);
+
+    const out = createRectangle();
+    computeNodeRootLocalBoundsRectangle(out, root);
+
+    expect(out.x).toBeCloseTo(0);
+    expect(out.y).toBeCloseTo(-3);
+    expect(out.width).toBeCloseTo(18);
+    expect(out.height).toBeCloseTo(24);
   });
 });
 

@@ -9,6 +9,7 @@ export * from './renderMaterial';
 export * from './renderProxy';
 export * from './renderProxyAdapter';
 export * from './renderQueue';
+export * from './renderRegistrySignals';
 export * from './renderState';
 export * from './renderTarget';
 export * from './renderTransform2d';

@@ -35,6 +35,56 @@ A renderer is the per-backend realization of a node family — its name says _wh
 
 ## Render-layer architecture (target — building next)
 
+### Render state is pipeline policy; device resources may be shared
+
+A `RenderState` identifies one rendering pipeline's policy and derived state: its renderer, clip,
+material, texture-resolver, effect-runner, and adapter registrations; root transform and viewport/sync
+policy; proxy tree; per-node renderer data; and traversal/batch state. Two states are deliberately
+allowed to diverge. Registration inheritance is a creation-time snapshot followed only by explicit
+re-copy — never a live link.
+
+A backend may internally share resources that are pure functions of `(device/context, source data)`
+between states on the same device. GL does this for its binding mirror, pass ownership, compiled
+programs, buffers, uploads, and render-texture realizations. WGPU may analogously share device-scoped
+pipelines and uploads. This backend tier does not weaken the state identity above: transforms,
+registries, proxies, adapters, renderer data, and traversal state remain independent.
+
+For GL, `createGlOffscreenRenderState(screenState)` is the canonical derivation primitive.
+`copyAllRenderersFromRenderState` plus `copyGlRenderStateRegistrations` are the explicit later-sync
+verbs. A late source-kind registration that was not re-copied remains invisible to the offscreen
+state; `explainGlTextureResolution` and the resolver guard identify that missing registration. The
+render-cache implementation is the in-tree exemplar: it derives an offscreen state whose fresh
+adapter map deliberately omits the screen cache adapter, preventing a cache from substituting itself
+while it is being populated.
+
+### Explicit per-node GL effect lane
+
+Per-node effects use a second, long-lived offscreen state over the screen context. The selected node is
+prepared as that state's root, so no main-scene ancestor proxy is captured or mutated. The root-local
+bounds contract is `computeNodeRootLocalBoundsRectangle`; paired with
+`computeScene2DRenderTargetTransform`, it cancels the root's translation/rotation/scale while retaining
+descendant transforms and negative local extents.
+
+The frame is an explicit sequence:
+
+1. Query directional chain padding with `computeRenderEffectPadding(state, effects)`. Resolver
+   registration is explicit and state-scoped by effect kind, independently of backend effect-runner
+   registration. Sequential spatial effects add each side, pointwise effects add zero, and a missing
+   resolver returns zero plus an explanation and emits only through the opt-in shared registry-miss
+   signal seam. Gaussian blur contributes `ceil(3 * sigma)` on its corresponding axis.
+2. Compute current dimensions and acquire `RenderTexture` leases from `GlRenderTexturePool` every
+   frame. Re-acquisition revalidates dimensions; released handles are not sampleable.
+3. Render the subtree through the offscreen state, then apply registered effects target-to-target,
+   ping-ponging one scratch lease. Keep the displayed result leased until its consumer is done.
+4. Compose explicitly with `Sprite + RenderTexture`. The source is not a child of the displayed root
+   when only the effected result should appear.
+5. `disposeScene2DRender(offscreenState, subtree)` releases per-subtree renderer data.
+   `destroyGlRenderTexturePool` and `destroyGlRenderState` are the whole-pipeline shutdown.
+
+There is no public render-proxy surgery, visibility toggle, implicit `filters` property, or composite
+API in this lane. One state belongs to one root policy; the optional GL state guard warns when the same
+state prepares two different roots.
+
 **Frame sequence** — a lit 3D frame is the existing render-effect pipeline with a scene drawn into its target:
 
 ```

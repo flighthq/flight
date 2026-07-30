@@ -308,7 +308,7 @@ export function renderGlVelocity<Traits extends object>(
 }
 
 function ensureGlVelocityProgram(state: GlRenderState): GlVelocityProgram {
-  let program = _velocityPrograms.get(state);
+  let program = _velocityPrograms.get(state.gl);
   if (program !== undefined) return program;
 
   const gl = state.gl;
@@ -325,7 +325,7 @@ function ensureGlVelocityProgram(state: GlRenderState): GlVelocityProgram {
     locClipRect: gl.getUniformLocation(glProgram, 'u_clipRect')!,
     locVelocity: gl.getUniformLocation(glProgram, 'u_velocity')!,
   };
-  _velocityPrograms.set(state, program);
+  _velocityPrograms.set(state.gl, program);
   return program;
 }
 
@@ -373,5 +373,5 @@ const _scratchVelocity: Velocity2D = { x: 0, y: 0 };
 
 // Lazily compiled velocity program per render state, and the per-kind writer registry. WeakMaps so both
 // release when the state is GC'd.
-const _velocityPrograms = new WeakMap<GlRenderState, GlVelocityProgram>();
+const _velocityPrograms = new WeakMap<WebGL2RenderingContext, GlVelocityProgram>();
 const _velocityWriters = new WeakMap<GlRenderState, Map<Kind, GlVelocityWriter>>();

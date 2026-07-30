@@ -123,10 +123,10 @@ function drawGlFullscreenQuad(state: GlRenderState, program: Readonly<GlFullscre
   // (its index buffer becomes this 6-index quad buffer). The next frame redraws that mesh through its
   // poisoned VAO and gl.drawElements reports "Insufficient buffer size". Isolating to our own VAO keeps
   // fullscreen state from leaking into (or out of) any caller's VAO.
-  let quadVao = _quadVaos.get(state);
+  let quadVao = _quadVaos.get(gl);
   if (quadVao === undefined) {
     quadVao = gl.createVertexArray()!;
-    _quadVaos.set(state, quadVao);
+    _quadVaos.set(gl, quadVao);
   }
   gl.bindVertexArray(quadVao);
 
@@ -165,7 +165,6 @@ function drawGlFullscreenQuad(state: GlRenderState, program: Readonly<GlFullscre
   runtime.shaderLoc = runtime.defaultBitmapShader.locations;
 }
 
-// Per-state dedicated VAO for the fullscreen quad, kept off the render-state runtime type and freed
-// with the state. Isolates the quad's buffer/attribute bindings so a fullscreen pass never mutates a
+// Per-context dedicated VAO for the fullscreen quad. Isolates the quad's buffer/attribute bindings so a fullscreen pass never mutates a
 // caller's (e.g. a mesh's) currently-bound VAO. See drawGlFullscreenQuad.
-const _quadVaos = new WeakMap<GlRenderState, WebGLVertexArrayObject>();
+const _quadVaos = new WeakMap<WebGL2RenderingContext, WebGLVertexArrayObject>();

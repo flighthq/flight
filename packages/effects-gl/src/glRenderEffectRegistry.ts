@@ -1,3 +1,4 @@
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { GlRenderEffectRunner, GlRenderState } from '@flighthq/types/contract';
 
 // Per-state registry mapping an effect `kind` string to its Gl runner — the material-renderer
@@ -6,23 +7,17 @@ import type { GlRenderEffectRunner, GlRenderState } from '@flighthq/types/contra
 // alternative runner under the same key to swap algorithms.
 
 export function getGlRenderEffectRunner(state: GlRenderState, kind: string): GlRenderEffectRunner | null {
-  return _registries.get(state)?.get(kind) ?? null;
+  return getGlRenderStateRuntime(state).glRenderEffectRegistry?.get(kind) ?? null;
 }
 
 // Returns true if a runner is registered for the given kind in this state. Use to validate an effect
 // chain before dispatching — the pipeline silently skips unregistered kinds; check up front to apply
 // your own policy (warn, throw, filter) rather than relying on silent no-ops.
 export function hasGlRenderEffectRunner(state: GlRenderState, kind: string): boolean {
-  return _registries.get(state)?.has(kind) ?? false;
+  return getGlRenderStateRuntime(state).glRenderEffectRegistry?.has(kind) ?? false;
 }
 
 export function registerGlRenderEffect(state: GlRenderState, kind: string, runner: GlRenderEffectRunner): void {
-  let registry = _registries.get(state);
-  if (registry === undefined) {
-    registry = new Map();
-    _registries.set(state, registry);
-  }
-  registry.set(kind, runner);
+  const runtime = getGlRenderStateRuntime(state);
+  (runtime.glRenderEffectRegistry ??= new Map()).set(kind, runner);
 }
-
-const _registries = new WeakMap<GlRenderState, Map<string, GlRenderEffectRunner>>();

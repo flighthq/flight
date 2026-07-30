@@ -1,5 +1,6 @@
 import { createEntity, createEntityRuntime } from '@flighthq/entity/contract';
-import type { RenderState, RenderStateRuntime } from '@flighthq/types/contract';
+import { clearSignal } from '@flighthq/signals/contract';
+import type { Renderable, RenderState, RenderStateRuntime } from '@flighthq/types/contract';
 import { BlendMode, EntityRuntimeKey } from '@flighthq/types/contract';
 
 export function createRenderState(obj?: Partial<RenderState>): RenderState {
@@ -33,14 +34,41 @@ export function createRenderStateRuntime(): RenderStateRuntime {
   runtime.renderAdaptHook = null;
   runtime.renderProxyAdapterMap = new WeakMap();
   runtime.renderProxyMap = new WeakMap();
+  runtime.renderProxySources = new Set();
+  runtime.registrySignals = null;
+  runtime.renderEffectPaddingResolverRegistry = null;
+  runtime.renderRootGuard = null;
   runtime.rendererMap = new Map();
   runtime.rendererMapId = 0;
   runtime.tempStack = [];
   return runtime;
 }
 
+// Runs every live proxy's renderer teardown hook and clears the state-owned traversal bookkeeping.
+// Backend destroy* functions call this before releasing their own state/context tiers.
+export function destroyRenderState(state: RenderState): void {
+  const runtime = getRenderStateRuntime(state);
+  for (const source of [...runtime.renderProxySources]) disposeRenderProxyForShutdown(state, source);
+  if (runtime.registrySignals !== null) {
+    clearSignal(runtime.registrySignals.onRegistryMiss);
+    runtime.registrySignals = null;
+  }
+  runtime.renderEffectPaddingResolverRegistry = null;
+  runtime.tempStack.length = 0;
+}
+
 // Resolves the package-private machinery runtime attached to a RenderState. Mutable by design: the
 // render path writes its fields every frame.
 export function getRenderStateRuntime(state: RenderState): RenderStateRuntime {
   return state[EntityRuntimeKey] as RenderStateRuntime;
+}
+
+function disposeRenderProxyForShutdown(state: RenderState, source: Renderable): void {
+  const runtime = getRenderStateRuntime(state);
+  const proxy = runtime.renderProxyMap.get(source);
+  if (proxy?.rendererData !== null && proxy?.rendererData !== undefined) {
+    proxy.renderer?.destroyData?.(state, proxy.rendererData);
+  }
+  runtime.renderProxyMap.delete(source);
+  runtime.renderProxySources.delete(source);
 }

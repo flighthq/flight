@@ -40,7 +40,7 @@ void main() {
 
 type InnerClipLocations = GlFullscreenProgram;
 
-const clipShaders = new WeakMap<GlRenderState, InnerClipLocations>();
+const clipShaders = new WeakMap<WebGL2RenderingContext, InnerClipLocations>();
 
 // Inner-glow composite effect: tint the inverted silhouette, blur inward, clip to the source alpha, then composite over the source.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the
@@ -117,12 +117,12 @@ function applyGlInnerClipPass(
 }
 
 function getClipShader(state: GlRenderState): InnerClipLocations {
-  let loc = clipShaders.get(state);
+  let loc = clipShaders.get(state.gl);
   if (loc === undefined) {
     const gl = state.gl;
     const base = compileGlFullscreenProgram(gl, INNER_CLIP_FRAGMENT_SRC);
     loc = { ...base };
-    clipShaders.set(state, loc);
+    clipShaders.set(state.gl, loc);
   }
   return loc;
 }

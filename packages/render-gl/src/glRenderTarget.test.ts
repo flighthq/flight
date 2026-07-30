@@ -340,6 +340,19 @@ describe('resizeGlRenderTarget', () => {
     expect(vi.mocked(gl.texImage2D)).toHaveBeenCalled();
   });
 
+  it('restores the tracked framebuffer after reallocating storage', () => {
+    const { state, gl } = makeState();
+    const target = createGlRenderTarget(state, { width: 64, height: 64 });
+    const previous = { name: 'previous-framebuffer' } as unknown as WebGLFramebuffer;
+    getGlRenderStateRuntime(state).currentFramebuffer = previous;
+    vi.clearAllMocks();
+
+    resizeGlRenderTarget(state, target, 128, 96);
+
+    expect(vi.mocked(gl.bindFramebuffer)).toHaveBeenLastCalledWith(gl.FRAMEBUFFER, previous);
+    expect(getGlRenderStateRuntime(state).currentFramebuffer).toBe(previous);
+  });
+
   it('preserves heterogeneous color formats and sampled depth across resize', () => {
     const { state, gl } = makeState();
     (gl as unknown as { getExtension: (name: string) => unknown }).getExtension = () => ({});

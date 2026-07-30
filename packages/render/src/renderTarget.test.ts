@@ -1,4 +1,5 @@
-import { createMatrix, createRectangle } from '@flighthq/geometry/contract';
+import { createMatrix, createRectangle, multiplyMatrix } from '@flighthq/geometry/contract';
+import { getNodeLocalMatrix } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 
 import {
@@ -42,6 +43,14 @@ describe('computeRenderTargetSize', () => {
     expect(result.height).toBe(88);
   });
 
+  it('adds directional padding on its corresponding sides', () => {
+    const result = computeRenderTargetSize(
+      { x: -3, y: 4, width: 100, height: 80 },
+      { bottom: 7, left: 2, right: 5, top: 3 },
+    );
+    expect(result).toEqual({ width: 107, height: 90 });
+  });
+
   it('respects minWidth and minHeight', () => {
     const result = computeRenderTargetSize({ x: 0, y: 0, width: 0, height: 0 }, 0, 32, 16);
     expect(result.width).toBe(32);
@@ -75,13 +84,25 @@ describe('computeScene2DRenderTargetTransform', () => {
     expect(out2.tx).not.toBe(out1.tx);
   });
 
-  it('does not throw for a non-identity local transform', () => {
+  it('cancels a transformed detached root while retaining the content-origin translation', () => {
     const obj = createDisplayObject();
     obj.x = 50;
     obj.y = 30;
-    const bounds = createRectangle(50, 30, 100, 80);
+    obj.rotation = 31;
+    obj.scaleX = 2;
+    obj.scaleY = 0.5;
+    const bounds = createRectangle(-12, -7, 100, 80);
     const out = createMatrix();
-    expect(() => computeScene2DRenderTargetTransform(out, obj, bounds)).not.toThrow();
+    computeScene2DRenderTargetTransform(out, obj, bounds, 9, 4);
+    const composed = createMatrix();
+    multiplyMatrix(composed, out, getNodeLocalMatrix(obj));
+
+    expect(composed.a).toBeCloseTo(1);
+    expect(composed.b).toBeCloseTo(0);
+    expect(composed.c).toBeCloseTo(0);
+    expect(composed.d).toBeCloseTo(1);
+    expect(composed.tx).toBeCloseTo(21);
+    expect(composed.ty).toBeCloseTo(11);
   });
 });
 

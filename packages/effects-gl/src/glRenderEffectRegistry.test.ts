@@ -1,3 +1,6 @@
+import { createGlRenderState } from '@flighthq/render-gl/contract';
+import type { GlRenderState } from '@flighthq/types/contract';
+
 import { getGlRenderEffectRunner, hasGlRenderEffectRunner, registerGlRenderEffect } from './glRenderEffectRegistry';
 
 describe('getGlRenderEffectRunner', () => {
@@ -6,8 +9,8 @@ describe('getGlRenderEffectRunner', () => {
   });
 
   it('returns null for an unregistered kind', () => {
-    const fakeState = {} as never;
-    expect(getGlRenderEffectRunner(fakeState, 'UnknownEffect')).toBeNull();
+    const state = createState();
+    expect(getGlRenderEffectRunner(state, 'UnknownEffect')).toBeNull();
   });
 });
 
@@ -17,15 +20,15 @@ describe('hasGlRenderEffectRunner', () => {
   });
 
   it('returns false for an unregistered kind', () => {
-    const fakeState = {} as never;
-    expect(hasGlRenderEffectRunner(fakeState, 'NotRegisteredEffect')).toBe(false);
+    const state = createState();
+    expect(hasGlRenderEffectRunner(state, 'NotRegisteredEffect')).toBe(false);
   });
 
   it('returns true after a runner is registered', () => {
-    const fakeState = {} as never;
+    const state = createState();
     const runner = vi.fn();
-    registerGlRenderEffect(fakeState, 'HasTestEffect', runner);
-    expect(hasGlRenderEffectRunner(fakeState, 'HasTestEffect')).toBe(true);
+    registerGlRenderEffect(state, 'HasTestEffect', runner);
+    expect(hasGlRenderEffectRunner(state, 'HasTestEffect')).toBe(true);
   });
 });
 
@@ -35,18 +38,25 @@ describe('registerGlRenderEffect', () => {
   });
 
   it('registers and retrieves a runner', () => {
-    const fakeState = {} as never;
+    const state = createState();
     const runner = vi.fn();
-    registerGlRenderEffect(fakeState, 'TestEffect', runner);
-    expect(getGlRenderEffectRunner(fakeState, 'TestEffect')).toBe(runner);
+    registerGlRenderEffect(state, 'TestEffect', runner);
+    expect(getGlRenderEffectRunner(state, 'TestEffect')).toBe(runner);
   });
 
   it('overwrites an existing runner under the same kind', () => {
-    const fakeState = {} as never;
+    const state = createState();
     const runnerA = vi.fn();
     const runnerB = vi.fn();
-    registerGlRenderEffect(fakeState, 'TestEffect2', runnerA);
-    registerGlRenderEffect(fakeState, 'TestEffect2', runnerB);
-    expect(getGlRenderEffectRunner(fakeState, 'TestEffect2')).toBe(runnerB);
+    registerGlRenderEffect(state, 'TestEffect2', runnerA);
+    registerGlRenderEffect(state, 'TestEffect2', runnerB);
+    expect(getGlRenderEffectRunner(state, 'TestEffect2')).toBe(runnerB);
   });
 });
+
+function createState(): GlRenderState {
+  const canvas = document.createElement('canvas');
+  canvas.width = 16;
+  canvas.height = 16;
+  return createGlRenderState(canvas);
+}

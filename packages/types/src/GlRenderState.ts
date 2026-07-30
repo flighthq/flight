@@ -6,6 +6,7 @@ import type { GlCompressedTextureDecoder } from './GlCompressedTextureDecoder';
 import type { GlCompressedTextureUploader } from './GlCompressedTextureUploader';
 import type { GlMaterialRenderer } from './GlMaterialRenderer';
 import type { GlMeshMaterialRenderer } from './GlMeshMaterialRenderer';
+import type { GlRenderEffectRunner } from './GlRenderEffectPipeline';
 import type { GlRenderTarget } from './GlRenderTarget';
 import type { GlRenderTextureEntry, GlRenderTextureGuard } from './GlRenderTexture';
 import type { GlBitmapShader, GlShaderLocations } from './GlShaderLocations';
@@ -206,6 +207,9 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   glExternalTextureCache?: WeakMap<ExternalTexture, WebGLTexture>;
   glRenderTextureCache?: WeakMap<RenderTexture, GlRenderTextureEntry>;
   glRenderTextureGuard?: GlRenderTextureGuard | null;
+  // Effect dispatch is registration policy, not a context resource. Derived offscreen states receive
+  // a snapshot and may then override it independently.
+  glRenderEffectRegistry?: Map<Kind, GlRenderEffectRunner> | null;
   // Optional RGBA fallback decoder for block-compressed textures the device cannot upload natively.
   // Installed per-state by registerGlCompressedTextureDecoder (opt-in), so a state that never draws a
   // compressed texture — or only draws formats the device supports — carries no decoder. Undefined

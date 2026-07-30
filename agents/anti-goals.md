@@ -26,6 +26,19 @@ A named function you invoke that visibly allocates a scratch surface and runs pa
 - **Do instead:** image operations are plain data descriptors — **adjustments** (`@flighthq/adjustments`, pointwise, fold into the draw as data) and **effects** (`@flighthq/effects`, spatial/composite) — applied by **explicit per-backend functions** (`apply*EffectToGl`/`…ToWgpu`, the effects-canvas CSS path). You compose it explicitly: run the effect pipeline over the rendered target, or attach a color transform as a `HasColorTransform` trait. The caller owns — and can see — the offscreen allocation and the passes. (`@flighthq/filters` no longer exists — it dissolved into these two tiers; see [effect-adjustment-architecture](effect-adjustment-architecture.md).)
 - **On a convenience helper:** an explicit `applyFiltersToDisplayObjectSurface(...)`-style helper over those primitives is **permitted** (an open call on whether it is worthwhile — not yet built), *provided* it passes the two tests above. It is a function you invoke, with visible offscreen allocation and pass count, never a property, never hidden state. If you build one, it is explicit and its cost is documented at the call site.
 
+### Reusing the screen render state for offscreen subtree rendering
+
+- **What an agent looks for:** prepare an inner node as a temporary root on the screen state, fetch and
+  overwrite its render proxy transform, hide the live source around the main pass, then restore both.
+- **Will not build:** a public `getRenderProxy2D`/proxy-surgery lane, visibility dance, or helper that
+  renders an unrelated root through the screen pipeline. Proxies and transforms are derived under one
+  state/root policy; mutating them leaks runtime internals and can reuse stale ancestor-relative data.
+- **Do instead:** derive one long-lived `createGlOffscreenRenderState(screenState)` for the capture
+  pipeline. It shares only context-owned GL resources, snapshots registrations into independent maps,
+  and owns separate proxies/adapters/renderer data. Render the subtree as that state's root, use
+  `GlRenderTexturePool` leases and explicit target-to-target effects, then compose with
+  `Sprite + RenderTexture`.
+
 ### `textField.htmlText` — the auto-parsing markup property
 
 - **What an agent looks for:** a `textField.htmlText = "<b>hi</b>"` property, where assigning a markup string makes the runtime silently parse it and apply the resulting styles to the field.
