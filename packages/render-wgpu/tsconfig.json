@@ -14,6 +14,7 @@
     { "path": "../color" },
     { "path": "../scene2d" },
     { "path": "../geometry" },
+    { "path": "../log" },
     { "path": "../render" },
     { "path": "../bitmap" },
     { "path": "../texture" },
