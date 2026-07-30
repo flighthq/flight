@@ -445,6 +445,8 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): Map<number, S
       placements.delete(body.readUint16());
     } else if (code === TAG_EXPORT_ASSETS || code === TAG_SYMBOL_CLASS) {
       readSwfLinkages(body, state.linkages);
+    } else if (code === TAG_DEFINE_BITS_JPEG_2 || code === TAG_DEFINE_BITS_JPEG_3 || code === TAG_DEFINE_BITS_JPEG_4) {
+      if (!readSwfEmbeddedImageDefinition(body, state, code)) return null;
     } else if (code === TAG_DEFINE_BITS_LOSSLESS || code === TAG_DEFINE_BITS_LOSSLESS_2) {
       if (!readSwfLosslessBitmapDefinition(body, state, code === TAG_DEFINE_BITS_LOSSLESS_2)) return null;
     } else if (code === TAG_DEFINE_VIDEO_STREAM) {
@@ -508,6 +510,107 @@ function readSwfBoundedDefinition(body: SwfReader, state: SwfParseState, hasEndB
   return true;
 }
 
+function readSwfEmbeddedImageDefinition(body: SwfReader, state: SwfParseState, code: number): boolean {
+  const characterId = body.readUint16();
+  let imageStart = body.pos;
+  let imageEnd = body.end;
+  if (code === TAG_DEFINE_BITS_JPEG_3 || code === TAG_DEFINE_BITS_JPEG_4) {
+    const alphaDataOffset = body.readUint32();
+    const alphaOffsetBase = body.pos;
+    if (code === TAG_DEFINE_BITS_JPEG_4) body.readUint16();
+    imageStart = body.pos;
+    imageEnd = alphaOffsetBase + alphaDataOffset;
+  }
+  if (
+    !body.valid ||
+    characterId === 0 ||
+    imageEnd < imageStart ||
+    imageEnd > body.end ||
+    state.definedCharacters.has(characterId)
+  ) {
+    return false;
+  }
+  const bounds = readSwfEmbeddedImageBounds(body.source, imageStart, imageEnd);
+  if (bounds === null) return false;
+  state.definedCharacters.add(characterId);
+  state.characterBounds.set(characterId, bounds);
+  return true;
+}
+
+function readSwfEmbeddedImageBounds(source: Uint8Array, start: number, end: number): SwfRectangle | null {
+  if (
+    end - start >= 24 &&
+    source[start] === 0x89 &&
+    source[start + 1] === 0x50 &&
+    source[start + 2] === 0x4e &&
+    source[start + 3] === 0x47 &&
+    source[start + 4] === 0x0d &&
+    source[start + 5] === 0x0a &&
+    source[start + 6] === 0x1a &&
+    source[start + 7] === 0x0a &&
+    readBigEndianUint32(source, start + 8) === 13 &&
+    source[start + 12] === 0x49 &&
+    source[start + 13] === 0x48 &&
+    source[start + 14] === 0x44 &&
+    source[start + 15] === 0x52
+  ) {
+    return createSwfDimensionBounds(readBigEndianUint32(source, start + 16), readBigEndianUint32(source, start + 20));
+  }
+
+  if (
+    end - start >= 10 &&
+    source[start] === 0x47 &&
+    source[start + 1] === 0x49 &&
+    source[start + 2] === 0x46 &&
+    source[start + 3] === 0x38 &&
+    (source[start + 4] === 0x37 || source[start + 4] === 0x39) &&
+    source[start + 5] === 0x61
+  ) {
+    return createSwfDimensionBounds(
+      source[start + 6] + source[start + 7] * 0x100,
+      source[start + 8] + source[start + 9] * 0x100,
+    );
+  }
+
+  if (end - start < 4 || source[start] !== 0xff || source[start + 1] !== JPEG_START_OF_IMAGE) return null;
+  let pos = start + 2;
+  while (pos < end) {
+    if (source[pos++] !== 0xff) return null;
+    while (pos < end && source[pos] === 0xff) pos++;
+    if (pos >= end) return null;
+    const marker = source[pos++];
+    if (marker === JPEG_END_OF_IMAGE || marker === JPEG_START_OF_SCAN) return null;
+    if (marker === JPEG_START_OF_IMAGE || marker === JPEG_TEMPORARY || (marker >= 0xd0 && marker <= 0xd7)) continue;
+    if (pos + 2 > end) return null;
+    const length = readBigEndianUint16(source, pos);
+    if (length < 2 || pos + length > end) return null;
+    if (
+      marker >= 0xc0 &&
+      marker <= 0xcf &&
+      marker !== JPEG_DEFINE_HUFFMAN_TABLES &&
+      marker !== JPEG_EXTENSION &&
+      marker !== JPEG_DEFINE_ARITHMETIC_CODING
+    ) {
+      if (length < 7) return null;
+      return createSwfDimensionBounds(readBigEndianUint16(source, pos + 5), readBigEndianUint16(source, pos + 3));
+    }
+    pos += length;
+  }
+  return null;
+}
+
+function createSwfDimensionBounds(width: number, height: number): SwfRectangle | null {
+  return width === 0 || height === 0 ? null : { height, width, x: 0, y: 0 };
+}
+
+function readBigEndianUint16(source: Uint8Array, offset: number): number {
+  return source[offset] * 0x100 + source[offset + 1];
+}
+
+function readBigEndianUint32(source: Uint8Array, offset: number): number {
+  return source[offset] * 0x1000000 + source[offset + 1] * 0x10000 + source[offset + 2] * 0x100 + source[offset + 3];
+}
+
 function readSwfLosslessBitmapDefinition(body: SwfReader, state: SwfParseState, hasAlpha: boolean): boolean {
   const characterId = body.readUint16();
   const format = body.readUint8();
@@ -552,6 +655,13 @@ const CWS_SIGNATURE = 0x43;
 const FIXED_16_ONE = 0x10000;
 const FWS_SIGNATURE = 0x46;
 const IDENTITY_MATRIX: SwfMatrix = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
+const JPEG_DEFINE_ARITHMETIC_CODING = 0xcc;
+const JPEG_DEFINE_HUFFMAN_TABLES = 0xc4;
+const JPEG_END_OF_IMAGE = 0xd9;
+const JPEG_EXTENSION = 0xc8;
+const JPEG_START_OF_IMAGE = 0xd8;
+const JPEG_START_OF_SCAN = 0xda;
+const JPEG_TEMPORARY = 0x01;
 const LOSSLESS_BITMAP_FORMAT_15_BIT = 4;
 const LOSSLESS_BITMAP_FORMAT_32_BIT = 5;
 const LOSSLESS_BITMAP_FORMAT_COLORMAPPED = 3;
@@ -562,6 +672,9 @@ const S_SIGNATURE = 0x53;
 const SWF_MIME_TYPE = 'application/x-shockwave-flash';
 const SWF_PREFIX_LENGTH = 8;
 const TAG_END = 0;
+const TAG_DEFINE_BITS_JPEG_2 = 21;
+const TAG_DEFINE_BITS_JPEG_3 = 35;
+const TAG_DEFINE_BITS_JPEG_4 = 90;
 const TAG_DEFINE_BITS_LOSSLESS = 20;
 const TAG_DEFINE_BITS_LOSSLESS_2 = 36;
 const TAG_DEFINE_EDIT_TEXT = 37;
