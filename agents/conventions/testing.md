@@ -17,15 +17,20 @@
 
 - `vitest-webgl-canvas-mock` mocks `'webgl'` and `'experimental-webgl'` contexts only, not `'webgl2'`. Tests in `render-webgl` that need a WebGL2 render state must mock `canvas.getContext` to return a fake `WebGL2RenderingContext`.
 
-## Do not `vi.mock` a sibling module
+## Module mocks under the non-isolated suite
 
-The suite runs **non-isolated** (`isolate: false` in the root `vitest.config.ts` — one module registry per worker, not one environment per file). So `vi.mock('./sibling')` is **order-dependent**: if any other test file in the same worker has already loaded that module unmocked, the mock does not apply and the real implementation runs. The test then passes or fails according to file execution order, which changes with parallelism and sharding.
+The suite runs **non-isolated** (`isolate: false` in the root `vitest.config.ts` — one module registry per worker, not one environment per file). Module mocks still work, but only if the file is written so the mock is in place *before* the module graph is instantiated. Two rules, both required:
 
-The failure mode is silent and inverted — such a test typically passes in isolation and when run package-scoped, and fails only in the full suite, so it reads as flakiness rather than as a defect in the test.
+1. **Declare every `vi.mock` before the first `import` of the module under test.** An ESM binding that has already been instantiated cannot be retroactively rebound.
+2. **`vi.resetModules()` in a `vi.hoisted` block**, and unmock plus reset again in `afterAll`, so a registry primed by an earlier file in the same worker does not leak in — or leak out.
 
-Instead, **extract the pure kernel and test it directly**. A test that reaches for a module mock is usually telling you the unit under test is bundling a pure function it has not exported. `canvasColorMatrixPass.ts` is the worked example: the per-pixel matrix math was a closure inside the pass, so the test mocked the compositing module purely to capture that closure. Exporting `applyColorMatrixToImageDataBytes` made the math directly testable, and the pass itself is then verified with plain stub objects for the two canvas contexts — no module substitution, no order dependence, and a faster test.
+The effects backends are the reference pattern: `canvasDropShadowEffect.test.ts`, `glOuterGlowEffect.test.ts`, `wgpuEffectTintShader.test.ts` and their siblings all mock relative modules and are stable, because they follow both rules.
 
-Where a collaborator genuinely must be substituted, prefer a stub value passed in over a mocked module.
+Get either rule wrong and the failure is silent and inverted: the test passes in isolation *and* package-scoped, and fails only in the full suite, so it reads as flakiness rather than as a defect in the test. `canvasColorMatrixPass.test.ts` was the worked example — it imported the module under test on line 1, before declaring the mock, and never reset modules, so a sibling that had already loaded the real compositing module won the registry and the real implementation ran against the test's placeholder arguments.
+
+**Prefer extracting the pure kernel over mocking at all.** A test that reaches for a module mock to capture a callback is usually telling you the unit bundles a pure function it has not exported. That was the actual defect in `canvasColorMatrixPass.ts`: the per-pixel matrix math was a closure inside the pass, and the mock existed only to get at it. Exporting `applyColorMatrixToImageDataBytes` made the math directly testable, and the pass itself is now verified with plain stub objects for the two canvas contexts — no module substitution, no order dependence, faster, and it gained multi-pixel coverage that the mock shape made awkward.
+
+Mocking remains the right tool for genuine **interaction** assertions — which collaborator a dispatch routed to, and with what arguments — where there is no pure kernel to extract. Follow both rules above when you do.
 
 ## Out-parameter testing
 
