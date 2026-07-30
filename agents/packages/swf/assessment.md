@@ -8,9 +8,9 @@ basedOn: ./review.md
 
 ## Depth gaps
 
-1. **Recover complete named MovieClip graphs.** Parse `DefineSprite` timelines, instantiate their
-   first-frame display lists recursively, and compose parent/child transforms while retaining names,
-   depths, and linkage.
+1. **Recover animated MovieClip timelines.** Recursive first-frame `DefineSprite` graphs now retain
+   names, depths, linkage, and composed transforms. Preserve later frame deltas, labels, and playback
+   structure as `movieclip`/`timeline` data without retaining a SWF player runtime.
 2. **Materialize visible archive content.** Add versioned `DefineShape*`, bitmap, text/font, mask,
    color-transform, blend, and filter coverage onto existing Flight primitives without retaining a
    player runtime.
@@ -22,11 +22,9 @@ basedOn: ./review.md
 
 Sweep-safe continuations of the approved named-graph direction, without expanding into a player or VM:
 
-1. **Import nested `DefineSprite` named slots.** Add bounded sprite-tag traversal and a fixture that
-   proves recursive slot names, linkage, and composed transforms.
-2. **Preserve authored extents.** Carry the stage RECT and available character bounds into the
+1. **Preserve authored extents.** Carry the stage RECT and available character bounds into the
    document root and slot target bounds.
-3. **Add one canonical uncompressed fixture.** Check in a tiny externally generated `FWS` sample with
+2. **Add one canonical uncompressed fixture.** Check in a tiny externally generated `FWS` sample with
    its provenance and assert the same document manifest produced by the synthetic builders.
 
 ## Backlog

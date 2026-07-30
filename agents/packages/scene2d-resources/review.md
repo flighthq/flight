@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/scene2d-resources'
 status: solid
-score: 78
+score: 81
 updated: 2026-07-30
 ingested:
   - charter.md
@@ -14,14 +14,15 @@ ingested:
 
 ## Verdict
 
-**Solid — 78/100.** The package establishes the right renderer-neutral document and content-reference
+**Solid — 81/100.** The package establishes the right renderer-neutral document and content-reference
 boundary: an enumerable asset/slot manifest, synchronous reconciliation, an operation-scoped asynchronous
 load, caller-owned URL acquisition, and an empty-by-default importer registry. The public and contract
 lanes are symmetrical, all exported types live in `@flighthq/types`, every exported function has a
 colocated test, and no renderer or GPU dependency crosses the boundary. The largest remaining gap is the
 charter's defining named-graph path now has its first end-to-end proof: the standalone SWF importer
-produces root-timeline named slots with transforms and linkage. That proof is still synthetic and narrow;
-nested MovieClip slots, authored extents, and deferred asset references remain unproven.
+produces recursively nested first-frame named slots with composed transforms and linkage. That proof is
+still synthetic and narrow; authored extents, later MovieClip frames, and deferred asset references
+remain unproven.
 
 ## What is solid
 
@@ -41,16 +42,16 @@ nested MovieClip slots, authored extents, and deferred asset references remain u
   document.
 - SWF is an explicit peer-package opt-in and supplies the first non-empty manifest: named
   `PlaceObject2`/`PlaceObject3` instances retain affine transforms and
-  `SymbolClass`/`ExportAssets` linkage.
+  `SymbolClass`/`ExportAssets` linkage across recursive `DefineSprite` first-frame graphs.
 - Package shape is clean: `sideEffects: false`; source imports only declared dependencies; the SDK root,
   SDK formats, package root, and `/contract` lanes agree; `npm run api`, `exports:check`,
   `type-home:check`, package checks, and package tests pass.
 
 ## Remaining depth
 
-- **The first named-graph source is root-timeline-only.** SWF proves names, transforms, and linkage, but
-  does not yet traverse nested `DefineSprite` graphs or preserve authored extents. SVG/Lottie adapters
-  still create empty manifests, and Rive is deliberately sequenced second.
+- **The first named-graph source is first-frame-only.** SWF now proves recursive names, transforms, and
+  linkage, but does not preserve authored extents or later MovieClip frames. SVG/Lottie adapters still
+  create empty manifests, and Rive is deliberately sequenced second.
 - **Deferred image acquisition is not connected to the document manifest.** SVG and Lottie flat importers
   accept synchronous image resolvers, but the document adapters supply none and do not turn unresolved
   image URIs into `Scene2DAssetReference`s. Relative URL/base-path handling is consequently unproven too.
@@ -70,5 +71,5 @@ nested MovieClip slots, authored extents, and deferred asset references remain u
 
 The ownership line is correct: formats construct renderer-neutral 2D nodes/documents, this package
 acquires documents and reconciles named content, and render backends realize the resulting graph later.
-The first real named-graph importer is now present. The next meaningful increase in confidence is nested
-SWF graph traversal plus an externally produced asset/slot fixture, not more registry machinery.
+The first real named-graph importer is now present. The next meaningful increase in confidence is
+authored extents plus an externally produced asset/slot fixture, not more registry machinery.
