@@ -164,13 +164,6 @@ Design calls to settle before building the affected entries:
 - Sample-tier constructors — `createAudioResourceFromSamples(channels, sampleRate)` and `getAudioResourceChannelData`
 - Fix the stale package.json description
 
-### input (solid 62)
-
-- Type `getGamepadAxisName`/`getGamepadButtonName` mapping parameter as `GamepadMappingKind`
-- Name the key-repeat-timer handle
-- Fix implicit `any` in test file
-- Package Map description update
-
 ### menu (partial 62)
 
 - jsdom unit tests for the web context-menu renderer paths that exist today — DOM build (separators, checkmark/radio, accelerator column, d…
@@ -823,6 +816,11 @@ These are explicit user directions whose implementation may span packages or req
 
 These are observed maturity gaps, including intentionally deferred work. They require prioritization or a package direction before execution unless separately approved.
 
+### share (partial 35)
+
+- Make asynchronous capability discovery honest
+- Carry portable files through native backends
+
 ### scene3d-formats (partial 46)
 
 - Make the complete import result truthful
@@ -958,6 +956,13 @@ These are observed maturity gaps, including intentionally deferred work. They re
 - Keep reversed-Z and off-axis/stereo projection behind the viewport contract
 - Make Camera2D multi-viewport semantics explicit
 
+### input (solid 82)
+
+- Introduce the portable `InputBackend` seam
+- Open gamepad mapping registration
+- Model multi-device identity
+- Resolve the signal cost model
+
 ### effects-gl (solid 84)
 
 - Build the reusable GL attachment/history substrate before claiming advanced effects
@@ -980,7 +985,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `updater` · `texture` · `animation` · `swf` · `motionpath` · `scene3d` · `particleemitter` · `xml` · `skeleton3d` · `scene3d-resources` · `camera-controls` · `debug` · `lifecycle` · `textlayout` · `adjustments` · `clipboard` · `camera` · `platform` · `textinput` · `connectivity` · `screen` · `lighting` · `scene2d-resources` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
+`storage` · `updater` · `texture` · `animation` · `swf` · `motionpath` · `scene3d` · `particleemitter` · `xml` · `skeleton3d` · `scene3d-resources` · `camera-controls` · `debug` · `lifecycle` · `textlayout` · `adjustments` · `clipboard` · `camera` · `input` · `platform` · `textinput` · `connectivity` · `screen` · `lighting` · `scene2d-resources` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
 
 ## Liveness — which stage each stale cell needs next
 
@@ -990,4 +995,4 @@ Computed from cell front matter (dates are `updated:`/`lastDirection:` fields). 
 - **Needs a first review (built, no review.md):** `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
 - **Needs re-review (work landed after the survey):** `glyphatlas (review 2026-07-13 < status 2026-07-17)` · `particles-formats (review 2026-07-13 < status 2026-07-25)` · `render-gl (review 2026-07-21 < status 2026-07-22)` · `scene2d-wgpu (review 2026-06-24 < status 2026-06-25)` · `scene3d-formats (review 2026-07-09 < status 2026-07-29)` · `shortcut (review 2026-06-25 < status 2026-07-30)` · `texture (review 2026-06-25 < status 2026-07-22)`
 - **Needs assess refresh (review newer than assessment):** `assets (assessment 2026-07-21 < review 2026-07-22)` · `audio (assessment 2026-07-03 < review 2026-07-13)` · `log (assessment 2026-07-02 < review 2026-07-13)` · `spritesheet (assessment 2026-07-02 < review 2026-07-13)` · `tween (assessment 2026-07-02 < review 2026-07-13)` · `video (assessment 2026-07-03 < review 2026-07-09)`
-- **Open directions awaiting the user:** 597 across 132 charters — most-loaded: `scene3d` (14) · `render-gl` (12) · `scene2d-gl` (12) · `scene2d` (11) · `effects-wgpu` (10) · `lighting` (10) · `scene2d-dom` (10) · `scene3d-gl` (10) · `spritesheet-formats` (10) · `mesh` (9) · `render-wgpu` (9) · `scene2d-canvas` (9) · `skeleton3d` (9) · `effects-gl` (8) · `geometry` (8) · `materials` (8) · `particles-formats` (8) · `scene2d-wgpu` (8) · `scene3d-wgpu` (8) · `render` (7) · `scene3d-resources` (7) · `timeline` (7) · `camera` (6) · `capture` (6) · `color` (6) · `effects-canvas` (6) · `loader` (6) · `spatial` (6) · `texture-formats` (6) · `tween` (6). Each charter's `## Open directions` section holds the questions; a direction session drains them.
+- **Open directions awaiting the user:** 596 across 132 charters — most-loaded: `scene3d` (14) · `render-gl` (12) · `scene2d-gl` (12) · `scene2d` (11) · `effects-wgpu` (10) · `lighting` (10) · `scene2d-dom` (10) · `scene3d-gl` (10) · `spritesheet-formats` (10) · `mesh` (9) · `render-wgpu` (9) · `scene2d-canvas` (9) · `skeleton3d` (9) · `effects-gl` (8) · `geometry` (8) · `materials` (8) · `particles-formats` (8) · `scene2d-wgpu` (8) · `scene3d-wgpu` (8) · `render` (7) · `scene3d-resources` (7) · `timeline` (7) · `camera` (6) · `capture` (6) · `color` (6) · `effects-canvas` (6) · `loader` (6) · `spatial` (6) · `texture-formats` (6) · `tween` (6). Each charter's `## Open directions` section holds the questions; a direction session drains them.
