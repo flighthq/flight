@@ -562,6 +562,7 @@ export * from './StopTweenOptions';
 export * from './Storage';
 export * from './StrokeStyle';
 export * from './Bitmap';
+export * from './BitmapReadback';
 export * from './BitmapCompositeMode';
 export * from './BitmapEdgeMode';
 export * from './BitmapFingerprint';

@@ -1,4 +1,5 @@
 import { createImageResource } from '@flighthq/image/contract';
+import { vi } from 'vitest';
 
 import { createBitmap } from './bitmap';
 import { createBitmapFromCanvas, captureBitmapFromImageResource, createBitmapFromImageSource } from './bitmapFrom';
@@ -50,8 +51,36 @@ describe('createBitmapFromImageSource', () => {
     canvas.width = 8;
     canvas.height = 4;
     const bitmap = createBitmapFromImageSource(canvas, 8, 4);
-    expect(bitmap.width).toBe(8);
-    expect(bitmap.height).toBe(4);
-    expect(bitmap.data.length).toBe(8 * 4 * 4);
+    expect(bitmap).not.toBeNull();
+    expect(bitmap!.width).toBe(8);
+    expect(bitmap!.height).toBe(4);
+    expect(bitmap!.data.length).toBe(8 * 4 * 4);
+  });
+
+  it('returns null rather than letting a tainted source throw', () => {
+    // A cross-origin draw taints the scratch canvas and the platform refuses its pixels with a
+    // SecurityError from getImageData. jsdom does not model tainting, so the throw is staged on
+    // getImageData directly — which is the exact call and the exact exception the sentinel exists to
+    // stop escaping to a caller who only asked for a bitmap.
+    const canvas = document.createElement('canvas');
+    canvas.width = 8;
+    canvas.height = 4;
+    const spy = vi.spyOn(CanvasRenderingContext2D.prototype, 'getImageData').mockImplementation(() => {
+      throw new DOMException('Tainted canvases may not be exported.', 'SecurityError');
+    });
+    try {
+      expect(() => createBitmapFromImageSource(canvas, 8, 4)).not.toThrow();
+      expect(createBitmapFromImageSource(canvas, 8, 4)).toBeNull();
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('returns null for an empty capture rather than allocating a zero-pixel bitmap', () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 8;
+    canvas.height = 4;
+    expect(createBitmapFromImageSource(canvas, 0, 4)).toBeNull();
+    expect(createBitmapFromImageSource(canvas, 8, -1)).toBeNull();
   });
 });
