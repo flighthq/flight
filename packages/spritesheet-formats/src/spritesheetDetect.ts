@@ -50,6 +50,21 @@ function detectLibgdxAtlas(text: string): boolean {
   return /^\s*rotate\s*:/m.test(text) || /^\s*xy\s*:/m.test(text);
 }
 
+// Seeds the built-in formats. Insertion order is load-bearing: detectSpritesheetFormat returns the
+// FIRST entry whose detector matches, a Map iterates in insertion order, and the detectors overlap.
+//
+// Specifically, an Aseprite export carries `"app": "http://www.aseprite.org/"`, which satisfies the
+// TexturePacker detector's `"meta":` + `"app":` test as well as its own — so Aseprite is only chosen
+// because it is registered first. Reordering these calls (alphabetising them, say) would silently
+// route every Aseprite file to the TexturePacker parser: the wrong parser, not an error. The
+// narrower detector must precede the broader one it overlaps with, and
+// `describe('registry ordering')` pins that.
+//
+// Built-ins are seeded here rather than self-registering from their own modules on import. That is
+// deliberate and not an oversight: this package declares `"sideEffects": false`, and a top-level
+// `registerSpritesheetFormat` call in each parser module would be exactly the import-time side effect
+// the SDK bans — and would defeat the tree-shaking that currently lets a caller importing one parser
+// pay for one parser.
 function getRegistry(): FormatRegistry {
   if (_registry !== null) return _registry;
   _registry = new Map();
