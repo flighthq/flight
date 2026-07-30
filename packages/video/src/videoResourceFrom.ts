@@ -1,7 +1,7 @@
 import type { VideoResource, VideoResourceLoadOptions, VideoResourceUrl } from '@flighthq/types/contract';
 
 import { selectVideoResourceUrl } from './videoFormat';
-import { createVideoResource } from './videoResource';
+import { createVideoResource, disposeVideoResource } from './videoResource';
 
 // Wraps a live MediaStream (camera, screen capture, canvas.captureStream) as a video resource by
 // assigning it to element.srcObject. Pure DOM, no load — the stream feeds frames as they arrive.
@@ -46,14 +46,19 @@ export function loadVideoResourceFromUrl(
       resolve(createVideoResource(element));
     };
 
+    // Both rejection paths abandon an element this function created, so both owe it the same decoder
+    // release — routed through disposeVideoResource so the sequence has exactly one home. Assigning
+    // element.src = '' is not that sequence: an empty src resolves against the document base URL, so
+    // the element goes on to fetch the *page* as media, and the decoder is never detached.
     const onError = (): void => {
       cleanup();
+      disposeVideoResource(createVideoResource(element));
       reject(new Error(`Failed to load video: ${url}`));
     };
 
     const onAbort = (): void => {
       cleanup();
-      element.src = '';
+      disposeVideoResource(createVideoResource(element));
       reject(signal!.reason);
     };
 
