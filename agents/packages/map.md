@@ -1,6 +1,8 @@
 # Package Map
 
-Full per-package descriptions for the Flight SDK. Consult this when you need to understand a specific package's scope, API surface, or relationship to neighbors. For quick navigation, the compact list is in [index.md](../index.md#package-map).
+Full per-package descriptions for the Flight SDK. Consult this when you need to understand a specific package's scope, API surface, or relationship to neighbors. The tier above this one — one paragraph per package — is [catalog.md](catalog.md); the name-only grouping is in [`AGENTS.md`](../../AGENTS.md#package-map).
+
+Where this file and [catalog.md](catalog.md) disagree, catalog.md is the fresher record: it carries package moves (`camera2d` absorbed into `camera`, `quadbatch`/`tilemap` merged into `sprite`, the `scene2d-resources`/`scene3d-resources` layers) that have not been reconciled into the long-form descriptions below.
 
 Run `npm run api <name>` to query exported function signatures directly.
 
