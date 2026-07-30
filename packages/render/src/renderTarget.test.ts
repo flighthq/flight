@@ -2,9 +2,10 @@ import { createMatrix, createRectangle } from '@flighthq/geometry/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 
 import {
-  computeScene2DRenderTargetTransform,
   computeRenderCacheTransform,
   computeRenderTargetSize,
+  computeScene2DRenderTargetTransform,
+  resolveRenderTargetDescriptor,
 } from './renderTarget';
 
 describe('computeRenderCacheTransform', () => {
@@ -80,5 +81,58 @@ describe('computeScene2DRenderTargetTransform', () => {
     const bounds = createRectangle(50, 30, 100, 80);
     const out = createMatrix();
     expect(() => computeScene2DRenderTargetTransform(out, obj, bounds)).not.toThrow();
+  });
+});
+
+describe('resolveRenderTargetDescriptor', () => {
+  it('resolves every optional target axis and clear policy', () => {
+    expect(resolveRenderTargetDescriptor({ width: 64, height: 48 })).toEqual({
+      width: 64,
+      height: 48,
+      format: 'rgba8',
+      colorAttachments: 1,
+      colorFormats: ['rgba8'],
+      sampleCount: 1,
+      depth: 'none',
+      colorSpace: 'srgb',
+      clearColors: [],
+      clearDepth: 1,
+    });
+  });
+
+  it('normalizes dimensions, attachment count, and sample count once', () => {
+    expect(
+      resolveRenderTargetDescriptor({
+        width: 10.2,
+        height: 0,
+        colorAttachments: 1.2,
+        sampleCount: 3.1,
+      }),
+    ).toMatchObject({
+      width: 11,
+      height: 1,
+      colorAttachments: 2,
+      sampleCount: 4,
+    });
+  });
+
+  it('expands heterogeneous color formats across every requested attachment', () => {
+    const resolved = resolveRenderTargetDescriptor({
+      width: 64,
+      height: 48,
+      format: 'rgba16f',
+      colorAttachments: 3,
+      colorFormats: ['rgba8', 'rgba32f'],
+    });
+
+    expect(resolved.format).toBe('rgba8');
+    expect(resolved.colorFormats).toEqual(['rgba8', 'rgba32f', 'rgba16f']);
+  });
+
+  it('copies caller-owned clear arrays', () => {
+    const clearColors = [0xff0000ff];
+    const resolved = resolveRenderTargetDescriptor({ width: 64, height: 48, clearColors });
+    clearColors[0] = 0;
+    expect(resolved.clearColors).toEqual([0xff0000ff]);
   });
 });

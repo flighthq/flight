@@ -21,6 +21,20 @@ export type RenderTargetDepth = 'none' | 'depth-stencil' | 'depth-stencil-sample
 // whether to run the linear->sRGB OETF, so gamma is neither double-applied nor skipped.
 export type RenderTargetColorSpace = 'linear' | 'srgb';
 
+// Canonical storage axes after descriptor defaults and substrate-independent normalization are
+// resolved. A backend starts from this shape, then records any device-driven substitutions on its
+// realized target rather than silently treating the requested descriptor as effective storage.
+export interface RenderTargetAxes {
+  readonly width: number;
+  readonly height: number;
+  readonly format: RenderTargetFormat;
+  readonly colorAttachments: number;
+  readonly colorFormats: ReadonlyArray<RenderTargetFormat>;
+  readonly sampleCount: number;
+  readonly depth: RenderTargetDepth;
+  readonly colorSpace: RenderTargetColorSpace;
+}
+
 export interface RenderTargetDescriptor {
   width: number;
   height: number;
@@ -47,4 +61,11 @@ export interface RenderTargetDescriptor {
   clearColors?: ReadonlyArray<number>;
   // Depth clear value applied when a pass clears depth. Default 1 (the far plane).
   clearDepth?: number;
+}
+
+// A descriptor with every default resolved. Clear policy travels with the target but remains distinct
+// from the storage axes so pools can match physical identity and re-stamp clear values independently.
+export interface ResolvedRenderTargetDescriptor extends RenderTargetAxes {
+  readonly clearColors: ReadonlyArray<number>;
+  readonly clearDepth: number;
 }
