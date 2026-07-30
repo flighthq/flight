@@ -36,6 +36,10 @@ Mocking remains the right tool for genuine **interaction** assertions — which 
 
 - When changing an `out`-parameter function, test both a distinct output object and the aliased case where `out` is also an input.
 
+## Verifying a fix by reverting or mutating it
+
+- A revert-and-check or mutation-testing result is only trustworthy after confirming the mutation actually changed the file. The formatter runs between edits in this repo, so a scripted find-and-replace can silently become a no-op once prettier has reflowed the target expression across lines — the probe then reruns against unchanged code and a real fix reads as "not caught." Print or otherwise check a replacement count (or diff the file) before drawing any conclusion from the result.
+
 ## What belongs in a unit test vs. elsewhere
 
 - Put unit behavior in a colocated `*.test.ts` in the package that owns it, where `exports:check` binds it to an exported function and a developer changing that code will see it. A compiler-enforced property (e.g. the `Node<Traits>` invariance law) belongs in a colocated test too, asserted with `// @ts-expect-error` — `tsc -b` typechecks `src/*.test.ts`, so the failing-compile case is the assertion.
