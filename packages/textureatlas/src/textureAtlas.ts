@@ -9,6 +9,15 @@ export function createTextureAtlas(obj?: Partial<TextureAtlas>): TextureAtlas {
   });
 }
 
+// Releases what keeps the atlas reachable: drops its regions and its texture reference. The texture
+// itself is not destroyed — the caller supplied it to createTextureAtlas and may still be using it
+// elsewhere, and freeing GPU resources is `@flighthq/texture`'s `destroy*` to perform, not this
+// package's to assume. After this the atlas is empty and reusable, not invalid.
+export function disposeTextureAtlas(atlas: TextureAtlas): void {
+  atlas.regions.length = 0;
+  atlas.texture = null;
+}
+
 // Returns the byte footprint of the atlas Texture's CPU-side image data. Produced and unbound
 // textures have no CPU footprint.
 export function getTextureAtlasByteSize(atlas: Readonly<TextureAtlas>): number {
