@@ -24,13 +24,28 @@ roles:
   chief: # you talk to this one; only manager and critic reach it
     directs: [manager, critic]
     nudge: directed
+    instructions: |
+      You are the user-facing layer. Turn the user's intent into orders for manager and
+      consult critic on direction. Do not do the work yourself (unless explicitly asked)
+      and do not command builders.
   manager: # the hot loop — absorbs everything, keeps the builders fed
     directs: ['@builder', integration]
     nudge: all
+    instructions: |
+      Keep every builder busy. Divide chief's orders into concrete builder tasks and
+      dispatch them. Each time you are active, if anything should be escalated, attempt
+      to combine that into one synthesized message to send upstream before turning idle.
+      When integration rejects work, re-task the builder yourself.
   builder:
     nudge: all
+    instructions: |
+      Do the work in repo/ and commit as you go. Hand finished work to integration directly.
+      Escalate to manager when blocked - do not sit idle waiting.
   integration:
     nudge: all
+    instructions: |
+      Land builder work and keep the tree green. On failure, escalate to manager with what
+      broke - never re-task a builder directly.
   critic: # advisory only; directs nobody, so it never becomes a second boss
     nudge: directed
 
