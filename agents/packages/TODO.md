@@ -161,9 +161,6 @@ Design calls to settle before building the affected entries:
 
 ### menu (partial 62)
 
-- jsdom unit tests for the web context-menu renderer paths that exist today — DOM build (separators, checkmark/radio, accelerator column, d…
-- Fix the stale header comment in `packages/types/src/Menu.ts` claiming "a real web context-menu renderer is out of scope for the MVP" — th…
-- Extend `validateMenuItemTemplate` with radio/checkbox consistency checks (e.g
 - Add optional descriptor fields `visible`, `sublabel`, `toolTip` to `MenuItemTemplate` and honor `visible` in the web renderer — additive …
 
 ### shape-formats (partial 62)
@@ -322,7 +319,6 @@ Design calls to settle before building the affected entries:
 ### notification (solid 72)
 
 - Extract the shared listener-registry + best-effort `setTimeout` scheduler primitive from the two ~95%-duplicated backend factories, leavi…
-- Remove the `// ----` structural divider comments in `notification.ts` and `notification.test.ts` (codebase-map style rule); the test-file…
 
 ### textbidi (solid 72)
 
