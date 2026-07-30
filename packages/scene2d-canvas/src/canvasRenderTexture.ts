@@ -55,7 +55,7 @@ export function renderIntoCanvasRenderTexture(
 }
 
 function ensureEntry(state: CanvasRenderState, renderTexture: Readonly<RenderTexture>): CanvasRenderTextureEntry {
-  const descriptor = renderTexture.storage.target;
+  const descriptor = renderTexture.source;
   const targets = getTargets(getCanvasRenderCacheScreenState(state));
   let entry = targets.get(renderTexture);
   if (entry === undefined) {

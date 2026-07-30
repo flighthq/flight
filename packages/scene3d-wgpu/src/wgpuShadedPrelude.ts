@@ -131,7 +131,7 @@ export function bindWgpuShadedSurface(
   binding.entries[1].resource = sampler;
   for (let i = 0; i < binding.textures.length; i++) {
     // Resolving every current view is the invalidation seam: render-wgpu changes the view when the
-    // ImageResource identity or version changes, including ready->ready swaps.
+    // Image identity or version changes, including ready->ready swaps.
     const view = resolveWgpuMaterialTextureView(state, binding.textures[i]);
     if (binding.views[i] !== view) {
       binding.views[i] = view;

@@ -12,11 +12,8 @@ describe('createRenderTexture', () => {
       colorSpace: 'linear',
       flipX: false,
       flipY: false,
-      storage: {
-        dimension: '2d',
-        image: null,
-        target: { colorSpace: 'linear', height: 32, width: 64 },
-      },
+      dimension: '2d',
+      source: { colorSpace: 'linear', height: 32, width: 64 },
       uvOffset: { x: 0, y: 0 },
       uvRotation: 0,
       uvScale: { x: 1, y: 1 },
@@ -38,7 +35,7 @@ describe('createRenderTexture', () => {
     });
 
     expect(texture.colorSpace).toBe('srgb');
-    expect(texture.storage.target.depth).toBe('depth-stencil');
+    expect(texture.source.depth).toBe('depth-stencil');
     expect(texture.flipY).toBe(false);
     expect(texture.sampler.magFilter).toBe('nearest');
     expect(texture.sampler).not.toBe(sampler);

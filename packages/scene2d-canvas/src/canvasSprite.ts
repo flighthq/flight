@@ -9,7 +9,7 @@ import { setCanvasTransform } from './canvasTransform';
 export function drawCanvasSprite(state: CanvasRenderState, sprite: RenderProxy2D): void {
   drawCanvasScene2D(state, sprite);
   const texture = (sprite.source as Sprite).data.texture;
-  if (texture === null || texture.storage.dimension !== '2d') return;
+  if (texture === null || texture.dimension !== '2d') return;
   const drawable = resolveCanvasTexture(state, texture);
   if (drawable === null) return;
 

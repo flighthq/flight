@@ -67,7 +67,8 @@ const checker = createTexture({
     wrapU: 'repeat',
     wrapV: 'repeat',
   }),
-  storage: { dimension: '2d', image: createImageResourceFromCanvas(buildCheckerCanvas()) },
+  dimension: '2d',
+  source: createImageResourceFromCanvas(buildCheckerCanvas()),
 });
 // matrix=null maps the image at its native pixel size; repeat=true tiles it across the rect; smooth=false
 // keeps cell edges hard (nearest-neighbor sampling).

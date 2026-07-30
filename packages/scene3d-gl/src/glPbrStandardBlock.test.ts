@@ -18,7 +18,8 @@ function makeProgram() {
 
 // A texture that reports pixels (isGlTextureReady === true) without a real upload.
 const READY_TEXTURE = {
-  storage: { dimension: '2d', image: { kind: 'test.ready' } },
+  dimension: '2d',
+  source: { kind: 'test.ready' },
 } as unknown as Texture;
 
 function makeTextureReadyState() {

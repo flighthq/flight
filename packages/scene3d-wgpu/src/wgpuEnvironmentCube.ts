@@ -1,17 +1,10 @@
 import { uploadWgpuTextureData, uploadWgpuTextureImageResource } from '@flighthq/render-wgpu/contract';
-import type {
-  Bitmap,
-  Environment,
-  TextureSource,
-  ImageResource,
-  Texture,
-  WgpuRenderState,
-} from '@flighthq/types/contract';
+import type { Bitmap, Environment, TextureSource, Image, Texture, WgpuRenderState } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 
-// Uploads an Environment's source radiance cubemap (six ImageResource faces) to a wgpu cube texture,
+// Uploads an Environment's source radiance cubemap (six Image faces) to a wgpu cube texture,
 // caching it on the scene runtime. Returns null when the environment has no complete cube — all six faces
 // bound with pixels, either a decoded `source` element or raw `data` — which callers treat as "no
 // environment this frame". Each face uploads through whichever representation it carries:
@@ -31,11 +24,11 @@ export function ensureWgpuEnvironmentSourceCube(
   if (scene.environmentSourceCubeView !== null) return scene.environmentSourceCubeView;
 
   const cube = environment.environment;
-  if (cube === null || cube.storage.dimension !== 'cube' || !hasWgpuCubeFacePixels(cube)) return null;
-  const images = cube.storage.images;
+  if (cube === null || cube.dimension !== 'cube' || !hasWgpuCubeFacePixels(cube)) return null;
+  const sources = cube.sources;
 
   // Cube textures must be square; every face shares the +X face's dimensions (a well-formed cube).
-  const size = images[0]!.width;
+  const size = sources[0]!.width;
   const device = state.device;
   const texture = device.createTexture({
     size: [size, size, 6],
@@ -45,7 +38,7 @@ export function ensureWgpuEnvironmentSourceCube(
   // Each face uploads into its array layer, in the canonical +X, -X, +Y, -Y, +Z, -Z order (the array-layer
   // index IS the face index — the wgpu counterpart of GL's CUBE_MAP_POSITIVE_X + face).
   for (let face = 0; face < 6; face++) {
-    uploadWgpuEnvironmentImage(device, texture, face, images[face]!);
+    uploadWgpuEnvironmentImage(device, texture, face, sources[face]!);
   }
 
   const view = texture.createView({ dimension: 'cube' });
@@ -74,9 +67,9 @@ export function updateWgpuEnvironmentCubeFace(
 // A face is uploadable when it carries pixels in either representation: a decoded `source` element or
 // raw CPU `data` (a generated Bitmap). A cube is complete only when all six faces are uploadable.
 function hasWgpuCubeFacePixels(cube: Readonly<Texture>): boolean {
-  if (cube.storage.dimension !== 'cube') return false;
+  if (cube.dimension !== 'cube') return false;
   for (let face = 0; face < 6; face++) {
-    const image = cube.storage.images[face];
+    const image = cube.sources[face];
     if (image === null || (image.kind !== ImageTextureSourceKind && image.kind !== BitmapTextureSourceKind)) {
       return false;
     }
@@ -94,7 +87,7 @@ function uploadWgpuEnvironmentImage(
     const bitmap = image as Readonly<Bitmap>;
     uploadWgpuTextureData(device, texture, [0, 0, face], bitmap.width, bitmap.height, bitmap.data);
   } else {
-    uploadWgpuTextureImageResource(device, texture, [0, 0, face], image as Readonly<ImageResource>);
+    uploadWgpuTextureImageResource(device, texture, [0, 0, face], image as Readonly<Image>);
   }
 }
 

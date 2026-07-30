@@ -2,7 +2,7 @@ import { loadImageResourceFromBytes } from '@flighthq/image/contract';
 import { queueResourceLoad } from '@flighthq/loader/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import type {
-  ImageResource,
+  Image,
   ImageResourceFailure,
   Scene3D,
   ImageResourceReference,
@@ -24,14 +24,14 @@ import type { Scene3DResourceInFlight, Scene3DResourceResolverWithRuntime } from
 
 import { getScene3DResourceTextures, getScene3DTextureResourceReference } from './getScene3DResourceTextures';
 
-// Resolves one texture's ref to an ImageResource (or null for an expected failure): Embedded bytes
+// Resolves one texture's ref to an Image (or null for an expected failure): Embedded bytes
 // decode through @flighthq/image; External URIs go through the resolver's fetch seam. Cancellation is
 // carried by `signal` (both paths reject on abort). Exported for direct testing of the two ref kinds.
 export function resolveOneScene3DResourceTexture(
   resolver: Readonly<Scene3DResourceResolver>,
   ref: Readonly<ImageResourceReference>,
   signal: AbortSignal,
-): Promise<ImageResource | null> {
+): Promise<Image | null> {
   if (ref.kind === ImageResourceReferenceKind.Embedded) {
     return loadImageResourceFromBytes(ref.bytes, ref.mimeType ?? undefined, signal);
   }
@@ -56,9 +56,9 @@ export function resolveScene3DResources(
     const texture = textures[i];
     const ref = getScene3DTextureResourceReference(scene, texture);
     if (ref == null) continue;
-    const image = texture.storage.image;
+    const image = texture.dimension === '2d' ? texture.source : null;
     if (image?.kind === ImageTextureSourceKind) {
-      runtime.resolved.set(ref, image as ImageResource);
+      runtime.resolved.set(ref, image as Image);
       ref.failure = null;
       ref.state = ResourceResolutionState.Resolved;
     }
@@ -140,7 +140,7 @@ function finishScene3DResourceResolution(
   resolver: Scene3DResourceResolver,
   ref: ImageResourceReference,
   entry: Scene3DResourceInFlight,
-  image: ImageResource | null,
+  image: Image | null,
 ): void {
   const runtime = (resolver as Scene3DResourceResolverWithRuntime)[Scene3DResourceResolverRuntimeKey];
   // Ignore a late settle whose entry was already cancelled or replaced by a newer request.
@@ -182,10 +182,11 @@ function bindResolvedScene3DResource(
   resolver: Readonly<Scene3DResourceResolver>,
   texture: Texture,
   ref: ImageResourceReference,
-  image: ImageResource,
+  image: Image,
 ): void {
-  if (texture.storage.image === image) return;
-  texture.storage.image = image;
+  if (texture.dimension !== '2d') return;
+  if (texture.source === image) return;
+  texture.source = image;
   texture.version = (texture.version + 1) >>> 0;
   emitScene3DResourceEvent(resolver, texture, ref, true);
 }
@@ -231,7 +232,7 @@ function requestWorkingResolutions(
         priority = Math.max(priority, options.priority(subscribers[i], ref));
       }
     }
-    const handle = queueResourceLoad<ImageResource | null>(runtime.loader, {
+    const handle = queueResourceLoad<Image | null>(runtime.loader, {
       load: (loaderSignal) => {
         // Wire the loader's own cancellation (dispose/cancel) into our per-texture controller.
         if (loaderSignal.aborted) controller.abort(loaderSignal.reason);

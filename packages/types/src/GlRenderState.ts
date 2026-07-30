@@ -1,6 +1,7 @@
 import type { BlendMode } from './BlendMode';
 import type { ColorScaleBias } from './ColorScaleBias';
 import type { Kind } from './Entity';
+import type { ExternalTexture } from './ExternalTexture';
 import type { GlCompressedTextureDecoder } from './GlCompressedTextureDecoder';
 import type { GlCompressedTextureUploader } from './GlCompressedTextureUploader';
 import type { GlMaterialRenderer } from './GlMaterialRenderer';
@@ -10,13 +11,12 @@ import type { GlRenderTextureEntry, GlRenderTextureGuard } from './GlRenderTextu
 import type { GlBitmapShader, GlShaderLocations } from './GlShaderLocations';
 import type { GlShapeMesh } from './GlShapeMesh';
 import type { GlTextureResolver } from './GlTextureResolver';
-import type { ImageResource } from './ImageResource';
+import type { Image } from './Image';
 import type { Material } from './Material';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
 import type { RenderTexture } from './RenderTexture';
 import type { SamplerLike } from './Sampler';
-import type { Texture } from './Texture';
 import type { TextureSource } from './TextureSource';
 import type { TextureSourceKind } from './TextureSourceKind';
 import type { TintMaterialData } from './TintMaterialData';
@@ -203,7 +203,7 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   glTextureResolverRegistry?: Map<TextureSourceKind, GlTextureResolver> | null;
   // Borrowed native handles registered by createExternalGlTexture. Disposing forgets these entries;
   // the caller retains allocation ownership.
-  glExternalTextureCache?: WeakMap<Texture, WebGLTexture>;
+  glExternalTextureCache?: WeakMap<ExternalTexture, WebGLTexture>;
   glRenderTextureCache?: WeakMap<RenderTexture, GlRenderTextureEntry>;
   glRenderTextureGuard?: GlRenderTextureGuard | null;
   // Optional RGBA fallback decoder for block-compressed textures the device cannot upload natively.
@@ -212,12 +212,12 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // until registered; the compressed uploader reads it as the decode seam for a CompressedImage.
   compressedTextureDecoder?: GlCompressedTextureDecoder | null;
   // Optional block-compressed upload seam. Installed per-state by registerGlCompressedTextureUpload
-  // (opt-in), so a state that only ever draws ImageResource/Bitmap sources never pulls the ~40-format
+  // (opt-in), so a state that only ever draws Image/Bitmap sources never pulls the ~40-format
   // compressed-container upload path into the bundle. Undefined until registered.
   compressedTextureUpload?: GlCompressedTextureUploader | null;
-  // Dynamic host-video cache keyed by the shared ImageResource backing. `uploadedVersion` tracks the
+  // Dynamic host-video cache keyed by the shared Image source. `uploadedVersion` tracks the
   // last decoded frame copied to GL, so differently sampled Textures share one upload.
-  videoTextureCache?: WeakMap<ImageResource, { texture: WebGLTexture; uploadedVersion: number }>;
+  videoTextureCache?: WeakMap<Image, { texture: WebGLTexture; uploadedVersion: number }>;
   // Textures whose mip chain has been generated via gl.generateMipmap, so a mip-sampling bind
   // generates the chain exactly once and updateGlTexture can refresh it after a re-upload. Keyed by
   // the GL texture (parallel to textureCache), lazily created on the first mip-sampled bind.

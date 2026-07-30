@@ -7,6 +7,7 @@ import {
 } from '@flighthq/mesh/contract';
 import { getNodeChildren, getNodeLocalMatrix4 } from '@flighthq/node/contract';
 import { isMesh } from '@flighthq/scene3d/contract';
+import { getTextureSource } from '@flighthq/texture/contract';
 import type {
   BlinnPhongMaterial,
   ExternalImageResourceReference,
@@ -500,7 +501,7 @@ describe('createScene3DFromMd5Mesh', () => {
     expect((getTestTextureResource(scene.resources, material.diffuseMap!) as ExternalImageResourceReference).uri).toBe(
       'textures/default',
     );
-    expect(material.diffuseMap!.storage.image).toBeNull();
+    expect(getTextureSource(material.diffuseMap!)).toBeNull();
   });
 
   it('returns an empty scene for empty input', () => {

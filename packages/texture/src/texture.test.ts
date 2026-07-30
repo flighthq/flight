@@ -1,6 +1,6 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { createMatrix3, createVector2, inverseMatrix3 } from '@flighthq/geometry/contract';
-import type { ImageResource, RenderTarget } from '@flighthq/types/contract';
+import type { Image, RenderTarget, Texture2D } from '@flighthq/types/contract';
 import { ImageTextureSourceKind, RenderTargetTextureSourceKind } from '@flighthq/types/contract';
 
 import { createSampler, equalsSampler } from './sampler';
@@ -9,6 +9,7 @@ import {
   copyTexture,
   createTexture,
   equalsTexture,
+  getTextureSource,
   getTextureSourceKind,
   getTextureHeight,
   getTextureInverseUvMatrix,
@@ -19,7 +20,7 @@ import {
   isTextureReady,
   resetTextureUvTransform,
   setTextureFlip,
-  setTextureImage,
+  setTextureSource,
   setTextureUvOffset,
   setTextureUvFromPixelRect,
   setTextureUvRotation,
@@ -27,7 +28,7 @@ import {
   transformTextureUv,
 } from './texture';
 
-const fakeImage = { height: 64, kind: ImageTextureSourceKind, width: 32 } as ImageResource;
+const fakeImage = { height: 64, kind: ImageTextureSourceKind, width: 32 } as Image;
 
 function makeRenderTarget(width: number, height: number): RenderTarget {
   return createEntity({
@@ -35,7 +36,7 @@ function makeRenderTarget(width: number, height: number): RenderTarget {
     kind: RenderTargetTextureSourceKind,
     version: 0,
     width,
-  });
+  }) as RenderTarget;
 }
 
 // Applies a column-major 3×3 uv matrix to (u, v, 1), writing the transformed coordinate into out.
@@ -49,7 +50,8 @@ describe('cloneTexture', () => {
   it('shares the image but deep-clones the sampler and uv vectors', () => {
     const source = createTexture({
       colorSpace: 'linear',
-      storage: { dimension: '2d', image: fakeImage },
+      dimension: '2d',
+      source: fakeImage,
       uvRotation: 0.5,
     });
     source.uvOffset.x = 0.25;
@@ -58,8 +60,8 @@ describe('cloneTexture', () => {
     const copy = cloneTexture(source);
 
     expect(copy).not.toBe(source);
-    expect(copy.storage).not.toBe(source.storage);
-    expect(copy.storage.image).toBe(fakeImage);
+    expect(copy.dimension).toBe('2d');
+    expect(getTextureSource(copy)).toBe(fakeImage);
     expect(copy.colorSpace).toStrictEqual('linear');
     expect(copy.uvRotation).toStrictEqual(0.5);
     expect(copy.sampler).not.toBe(source.sampler);
@@ -75,12 +77,11 @@ describe('cloneTexture', () => {
   it('preserves a render-target descriptor while cloning sampling state', () => {
     const target = makeRenderTarget(64, 32);
     target.colorSpace = 'linear';
-    const source = createTexture({ storage: { dimension: '2d', image: null, target } });
+    const source = createTexture({ dimension: '2d', source: target });
 
     const copy = cloneTexture(source);
 
-    expect(copy.storage.target).toBe(target);
-    expect(copy.storage).not.toBe(source.storage);
+    expect(getTextureSource(copy)).toBe(target);
     expect(copy.sampler).not.toBe(source.sampler);
   });
 });
@@ -89,30 +90,30 @@ describe('copyTexture', () => {
   it('writes every field from source into a distinct out, preserving out entity identities', () => {
     const source = createTexture({
       colorSpace: 'linear',
-      storage: { dimension: '2d', image: fakeImage },
+      dimension: '2d',
+      source: fakeImage,
       uvRotation: 1,
     });
     source.uvScale.x = 4;
     const out = createTexture();
     const outSampler = out.sampler;
     const outOffset = out.uvOffset;
-    const outStorage = out.storage;
 
     copyTexture(out, source);
 
-    expect(out.storage.image).toBe(fakeImage);
+    expect(getTextureSource(out)).toBe(fakeImage);
     expect(out.colorSpace).toStrictEqual('linear');
     expect(out.uvRotation).toStrictEqual(1);
     expect(out.uvScale.x).toStrictEqual(4);
     expect(out.sampler).toBe(outSampler);
-    expect(out.storage).toBe(outStorage);
     expect(out.uvOffset).toBe(outOffset);
   });
 
   it('is safe when out aliases source', () => {
     const source = createTexture({
       colorSpace: 'linear',
-      storage: { dimension: '2d', image: fakeImage },
+      dimension: '2d',
+      source: fakeImage,
       uvRotation: 2,
     });
     source.uvScale.x = 7;
@@ -120,18 +121,30 @@ describe('copyTexture', () => {
     copyTexture(source, source);
 
     expect(source.colorSpace).toStrictEqual('linear');
-    expect(source.storage.image).toBe(fakeImage);
+    expect(getTextureSource(source)).toBe(fakeImage);
     expect(source.uvRotation).toStrictEqual(2);
     expect(source.uvScale.x).toStrictEqual(7);
+  });
+
+  it('refuses to change the creation-time dimension', () => {
+    const out = createTexture();
+    const cube = createTexture({ dimension: 'cube' });
+
+    expect(() => copyTexture(out, cube)).toThrow('copyTexture requires matching dimensions');
+    expect(out.dimension).toBe('2d');
+    expect(out.source).toBeNull();
   });
 });
 
 describe('createTexture', () => {
-  it('applies the default unbound, srgb, identity-transform state', () => {
+  it('creates a flat Texture2D with the default unbound, srgb, identity-transform state', () => {
     const texture = createTexture();
 
-    expect(texture.storage.image).toBeNull();
-    expect(texture.storage.dimension).toStrictEqual('2d');
+    expectTypeOf(texture).toEqualTypeOf<Texture2D>();
+    expect(texture).not.toHaveProperty('storage');
+    expect(texture.dimension).toStrictEqual('2d');
+    expect(texture.source).toBeNull();
+    expect(getTextureSource(texture)).toBeNull();
     expect(texture.colorSpace).toStrictEqual('srgb');
     expect(texture.version).toStrictEqual(0);
     expect(texture.uvRotation).toStrictEqual(0);
@@ -153,17 +166,17 @@ describe('createTexture', () => {
 
 describe('equalsTexture', () => {
   it('is true for textures with identical state and same image reference', () => {
-    const a = createTexture({ colorSpace: 'linear', storage: { dimension: '2d', image: fakeImage } });
-    const b = createTexture({ colorSpace: 'linear', storage: { dimension: '2d', image: fakeImage } });
+    const a = createTexture({ colorSpace: 'linear', dimension: '2d', source: fakeImage });
+    const b = createTexture({ colorSpace: 'linear', dimension: '2d', source: fakeImage });
 
     expect(equalsTexture(a, b)).toBe(true);
     expect(equalsTexture(a, a)).toBe(true);
   });
 
   it('is false when the image reference differs', () => {
-    const other = { width: 4, height: 4 } as ImageResource;
-    const a = createTexture({ storage: { dimension: '2d', image: fakeImage } });
-    const b = createTexture({ storage: { dimension: '2d', image: other } });
+    const other = { width: 4, height: 4 } as Image;
+    const a = createTexture({ dimension: '2d', source: fakeImage });
+    const b = createTexture({ dimension: '2d', source: other });
 
     expect(equalsTexture(a, b)).toBe(false);
   });
@@ -216,7 +229,7 @@ describe('equalsTexture', () => {
 
 describe('getTextureHeight', () => {
   it('returns the image height when an image is bound', () => {
-    const texture = createTexture({ storage: { dimension: '2d', image: fakeImage } });
+    const texture = createTexture({ dimension: '2d', source: fakeImage });
 
     expect(getTextureHeight(texture)).toStrictEqual(64);
   });
@@ -227,13 +240,10 @@ describe('getTextureHeight', () => {
     expect(getTextureHeight(texture)).toStrictEqual(-1);
   });
 
-  it('returns the render target height when there is no CPU image', () => {
+  it('returns the render-target source height', () => {
     const texture = createTexture({
-      storage: {
-        dimension: '2d',
-        image: null,
-        target: makeRenderTarget(96, 48),
-      },
+      dimension: '2d',
+      source: makeRenderTarget(96, 48),
     });
 
     expect(getTextureHeight(texture)).toStrictEqual(48);
@@ -275,20 +285,30 @@ describe('getTextureInverseUvMatrix', () => {
   });
 });
 
+describe('getTextureSource', () => {
+  it('returns the direct source and the first bound source in a layered texture', () => {
+    const direct = createTexture({ dimension: '2d', source: fakeImage });
+    const layered = createTexture({ dimension: '2d-array', sources: [null, fakeImage] });
+
+    expect(getTextureSource(direct)).toBe(fakeImage);
+    expect(getTextureSource(layered)).toBe(fakeImage);
+  });
+
+  it('returns null when every source slot is unbound', () => {
+    expect(getTextureSource(createTexture())).toBeNull();
+    expect(getTextureSource(createTexture({ dimension: '2d-array', sources: [null] }))).toBeNull();
+  });
+});
+
 describe('getTextureSourceKind', () => {
-  it('reads the key from the active image or target source', () => {
+  it('reads the key from the active source', () => {
     expect(getTextureSourceKind(createTexture())).toBeNull();
-    expect(getTextureSourceKind(createTexture({ storage: { dimension: '2d', image: fakeImage } }))).toBe(
-      ImageTextureSourceKind,
-    );
+    expect(getTextureSourceKind(createTexture({ dimension: '2d', source: fakeImage }))).toBe(ImageTextureSourceKind);
     expect(
       getTextureSourceKind(
         createTexture({
-          storage: {
-            dimension: '2d',
-            image: null,
-            target: makeRenderTarget(8, 8),
-          },
+          dimension: '2d',
+          source: makeRenderTarget(8, 8),
         }),
       ),
     ).toBe(RenderTargetTextureSourceKind);
@@ -391,7 +411,7 @@ describe('getTextureUvMatrix', () => {
 
 describe('getTextureWidth', () => {
   it('returns the image width when an image is bound', () => {
-    const texture = createTexture({ storage: { dimension: '2d', image: fakeImage } });
+    const texture = createTexture({ dimension: '2d', source: fakeImage });
 
     expect(getTextureWidth(texture)).toStrictEqual(32);
   });
@@ -402,13 +422,10 @@ describe('getTextureWidth', () => {
     expect(getTextureWidth(texture)).toStrictEqual(-1);
   });
 
-  it('returns the render target width when there is no CPU image', () => {
+  it('returns the render-target source width', () => {
     const texture = createTexture({
-      storage: {
-        dimension: '2d',
-        image: null,
-        target: makeRenderTarget(96, 48),
-      },
+      dimension: '2d',
+      source: makeRenderTarget(96, 48),
     });
 
     expect(getTextureWidth(texture)).toStrictEqual(96);
@@ -416,17 +433,14 @@ describe('getTextureWidth', () => {
 });
 
 describe('hasTextureSource', () => {
-  it('detects image and target sources without duplicating their discriminant', () => {
+  it('detects CPU and GPU sources through the same field', () => {
     expect(hasTextureSource(createTexture())).toBe(false);
-    expect(hasTextureSource(createTexture({ storage: { dimension: '2d', image: fakeImage } }))).toBe(true);
+    expect(hasTextureSource(createTexture({ dimension: '2d', source: fakeImage }))).toBe(true);
     expect(
       hasTextureSource(
         createTexture({
-          storage: {
-            dimension: '2d',
-            image: null,
-            target: makeRenderTarget(8, 8),
-          },
+          dimension: '2d',
+          source: makeRenderTarget(8, 8),
         }),
       ),
     ).toBe(true);
@@ -479,14 +493,14 @@ describe('isTextureReady', () => {
 
     expect(isTextureReady(texture)).toBe(false);
 
-    texture.storage.image = fakeImage;
+    setTextureSource(texture, fakeImage);
     expect(isTextureReady(texture)).toBe(true);
   });
 });
 
 describe('resetTextureUvTransform', () => {
   it('restores the identity transform while leaving image, color space, and sampler untouched', () => {
-    const texture = createTexture({ colorSpace: 'linear', storage: { dimension: '2d', image: fakeImage } });
+    const texture = createTexture({ colorSpace: 'linear', dimension: '2d', source: fakeImage });
     const sampler = texture.sampler;
     setTextureUvOffset(texture, 0.4, 0.6);
     setTextureUvRotation(texture, Math.PI);
@@ -500,7 +514,7 @@ describe('resetTextureUvTransform', () => {
     expect(texture.uvScale.x).toStrictEqual(1);
     expect(texture.uvScale.y).toStrictEqual(1);
     expect(texture.colorSpace).toStrictEqual('linear');
-    expect(texture.storage.image).toBe(fakeImage);
+    expect(getTextureSource(texture)).toBe(fakeImage);
     expect(texture.sampler).toBe(sampler);
   });
 });
@@ -518,19 +532,19 @@ describe('setTextureFlip', () => {
   });
 });
 
-describe('setTextureImage', () => {
+describe('setTextureSource', () => {
   it('binds and clears the image in place and advances the u32 version', () => {
     const texture = createTexture();
 
-    setTextureImage(texture, fakeImage);
-    expect(texture.storage.image).toBe(fakeImage);
+    setTextureSource(texture, fakeImage);
+    expect(getTextureSource(texture)).toBe(fakeImage);
     expect(texture.version).toStrictEqual(1);
 
-    setTextureImage(texture, fakeImage);
+    setTextureSource(texture, fakeImage);
     expect(texture.version).toStrictEqual(1);
 
-    setTextureImage(texture, null);
-    expect(texture.storage.image).toBeNull();
+    setTextureSource(texture, null);
+    expect(getTextureSource(texture)).toBeNull();
     expect(texture.version).toStrictEqual(2);
   });
 });
@@ -538,7 +552,8 @@ describe('setTextureImage', () => {
 describe('setTextureUvFromPixelRect', () => {
   it('normalizes a pixel rectangle against the texture dimensions', () => {
     const texture = createTexture({
-      storage: { dimension: '2d', image: { height: 100, width: 200 } as ImageResource },
+      dimension: '2d',
+      source: { height: 100, width: 200 } as Image,
     });
     setTextureUvFromPixelRect(texture, 20, 10, 50, 25);
     expect(texture.uvOffset.x).toBeCloseTo(0.1);

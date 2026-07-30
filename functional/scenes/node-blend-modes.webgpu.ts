@@ -75,7 +75,8 @@ function addMultiplyBitmap(): void {
   context.fillRect(0, 0, source.width, source.height);
   const bitmap = createSprite();
   bitmap.data.texture = createTexture({
-    storage: { dimension: '2d', image: createImageResourceFromCanvas(source) },
+    dimension: '2d',
+    source: createImageResourceFromCanvas(source),
   });
   bitmap.blendMode = BlendMode.Multiply;
   bitmap.x = BITMAP_X;

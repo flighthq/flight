@@ -4,7 +4,6 @@ import {
   registerGlBitmapTextureResolver,
   registerGlImageTextureResolver,
   registerGlRenderTextureResolver,
-  registerGlVideoTextureResolver,
   resolveGlTexture,
 } from '@flighthq/render-gl/contract';
 import { getTextureSourceKind } from '@flighthq/texture/contract';
@@ -72,7 +71,6 @@ export const unlitGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 export function registerUnlitGlMaterial(state: GlRenderState): void {
   registerGlBitmapTextureResolver(state);
   registerGlImageTextureResolver(state);
-  registerGlVideoTextureResolver(state);
   registerGlRenderTextureResolver(state);
   registerGlMeshMaterialRenderer(state, UnlitMaterialKind, unlitGlMeshMaterialRenderer);
 }

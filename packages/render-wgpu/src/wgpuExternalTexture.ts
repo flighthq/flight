@@ -2,6 +2,7 @@ import { createEntity } from '@flighthq/entity/contract';
 import { cloneSampler, createTexture } from '@flighthq/texture/contract';
 import type {
   CreateExternalTextureOptions,
+  ExternalTexture,
   Texture,
   TextureLike,
   WgpuRenderState,
@@ -17,23 +18,17 @@ export function createExternalWgpuTexture(
   handle: GPUTexture,
   options: Readonly<CreateExternalTextureOptions>,
 ): Texture {
+  const source = createEntity({
+    height: options.height,
+    kind: ExternalTextureSourceKind,
+    version: 0,
+    width: options.width,
+  }) as ExternalTexture;
   const texture = createTexture({
     colorSpace: options.colorSpace,
     sampler: options.sampler ? cloneSampler(options.sampler) : undefined,
-    storage: {
-      dimension: '2d',
-      image: null,
-      target: createEntity({
-        colorAttachments: 1,
-        depth: 'none' as const,
-        format: 'rgba8' as const,
-        height: options.height,
-        kind: ExternalTextureSourceKind,
-        sampleCount: 1,
-        version: 0,
-        width: options.width,
-      }),
-    },
+    dimension: '2d',
+    source,
   });
   const view = handle.createView();
   const sampler = getExternalWgpuSampler(state, texture);
@@ -44,7 +39,7 @@ export function createExternalWgpuTexture(
       { binding: 1, resource: sampler },
     ],
   });
-  (getWgpuRenderStateRuntime(state).wgpuExternalTextureCache ??= new WeakMap()).set(texture, {
+  (getWgpuRenderStateRuntime(state).wgpuExternalTextureCache ??= new WeakMap()).set(source, {
     bindGroup,
     texture: handle,
     view,
@@ -54,7 +49,8 @@ export function createExternalWgpuTexture(
 }
 
 export function disposeExternalWgpuTexture(state: WgpuRenderState, texture: Readonly<Texture>): boolean {
-  return getWgpuRenderStateRuntime(state).wgpuExternalTextureCache?.delete(texture as Texture) ?? false;
+  const source = getExternalTextureSource(texture);
+  return source === null ? false : (getWgpuRenderStateRuntime(state).wgpuExternalTextureCache?.delete(source) ?? false);
 }
 
 function getExternalWgpuSampler(state: WgpuRenderState, texture: Readonly<Texture>): GPUSampler {
@@ -71,5 +67,11 @@ function getExternalWgpuSampler(state: WgpuRenderState, texture: Readonly<Textur
 }
 
 function resolveExternalWgpuTexture(state: WgpuRenderState, texture: Readonly<TextureLike>): WgpuTextureEntry | null {
-  return getWgpuRenderStateRuntime(state).wgpuExternalTextureCache?.get(texture as Texture) ?? null;
+  const source = getExternalTextureSource(texture);
+  return source === null ? null : (getWgpuRenderStateRuntime(state).wgpuExternalTextureCache?.get(source) ?? null);
+}
+
+function getExternalTextureSource(texture: Readonly<TextureLike>): ExternalTexture | null {
+  if (texture.dimension !== '2d' || texture.source?.kind !== ExternalTextureSourceKind) return null;
+  return texture.source as ExternalTexture;
 }

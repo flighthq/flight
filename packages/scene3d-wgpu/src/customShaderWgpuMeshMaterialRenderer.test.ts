@@ -4,7 +4,7 @@ import { createCustomShaderMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { Camera3D, ImageResource, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
+import type { Camera3D, Image, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { CustomShaderMaterialKind, ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import {
@@ -130,9 +130,10 @@ describe('customShaderWgpuMeshMaterialRenderer', () => {
     first.sampler.wrapU = 'repeat';
     count = bindAndExpectRebuild(count);
 
-    first.storage.image = makeImageResource(1);
+    if (first.dimension !== '2d') throw new Error('test texture must be 2d');
+    first.source = makeImageResource(1);
     count = bindAndExpectRebuild(count);
-    first.storage.image = makeImageResource(2);
+    first.source = makeImageResource(2);
     count = bindAndExpectRebuild(count);
 
     material.textures = { renamed: first, second };
@@ -170,14 +171,14 @@ describe('customShaderWgpuMeshMaterialRenderer', () => {
   });
 });
 
-function makeImageResource(version: number): ImageResource {
+function makeImageResource(version: number): Image {
   return {
     height: 1,
     kind: ImageTextureSourceKind,
     source: {} as CanvasImageSource,
     version,
     width: 1,
-  } as unknown as ImageResource;
+  } as unknown as Image;
 }
 
 describe('getWgpuCustomMaterialShaderSource', () => {

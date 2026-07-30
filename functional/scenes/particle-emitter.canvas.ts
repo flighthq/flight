@@ -79,7 +79,7 @@ function makeAtlasCanvas(): HTMLCanvasElement {
 }
 
 const atlas = createTextureAtlas({
-  texture: createTexture({ storage: { dimension: '2d', image: createImageResource(makeAtlasCanvas()) } }),
+  texture: createTexture({ dimension: '2d', source: createImageResource(makeAtlasCanvas()) }),
 });
 for (let i = 0; i < SWATCHES.length; i++) addTextureAtlasRegion(atlas, i * REGION, 0, REGION, REGION);
 

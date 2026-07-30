@@ -700,7 +700,7 @@ function createSvgImageNode(
   const scaleX = image.width > 0 && width >= 0 ? width / image.width : 1;
   const scaleY = image.height > 0 && height >= 0 ? height / image.height : 1;
   const bitmap = createSprite({
-    data: { texture: createTexture({ storage: { dimension: '2d', image } }) },
+    data: { texture: createTexture({ dimension: '2d', source: image }) },
   });
   const geometry = createMatrix(scaleX, 0, 0, scaleY, x, y);
   applySvgElementAppearance(bitmap, element, parentStyle, context, geometry);

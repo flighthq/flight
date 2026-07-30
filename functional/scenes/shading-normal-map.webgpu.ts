@@ -85,7 +85,8 @@ const material = createShadedMaterial({
   diffuse: 0xb0c8e0ff,
   normalMap: createTexture({
     colorSpace: 'linear',
-    storage: { dimension: '2d', image: createImageResourceFromCanvas(normalSource) },
+    dimension: '2d',
+    source: createImageResourceFromCanvas(normalSource),
   }),
   normalScale: 1,
   modifiers: [

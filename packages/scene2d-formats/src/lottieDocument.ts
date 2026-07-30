@@ -420,7 +420,7 @@ function appendLottieImage(parent: DisplayObject, layer: Readonly<LottieLayer>, 
     reportLottieSkip(context, 'lottie.unresolved-image', { id: asset.id });
     return;
   }
-  addNodeChild(parent, createSprite({ data: { texture: createTexture({ storage: { dimension: '2d', image } }) } }));
+  addNodeChild(parent, createSprite({ data: { texture: createTexture({ dimension: '2d', source: image }) } }));
 }
 
 function appendLottieText(parent: DisplayObject, layer: Readonly<LottieLayer>, context: LottieImportContext): void {

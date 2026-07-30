@@ -83,7 +83,8 @@ const material = createShadedMaterial({
     createAnimatedNormalModifier({
       map: createTexture({
         colorSpace: 'linear',
-        storage: { dimension: '2d', image: createImageResourceFromCanvas(oceanNormalCanvas()) },
+        dimension: '2d',
+        source: createImageResourceFromCanvas(oceanNormalCanvas()),
       }),
       scroll: createVector2(0.05, 0.02),
       strength: 0.6,
@@ -93,7 +94,8 @@ const material = createShadedMaterial({
       strength: 3,
       mask: createTexture({
         colorSpace: 'linear',
-        storage: { dimension: '2d', image: createImageResourceFromCanvas(cityLightsCanvas()) },
+        dimension: '2d',
+        source: createImageResourceFromCanvas(cityLightsCanvas()),
       }),
       facing: EmissiveModifierFacing.AwayFromLight,
       facingSoftness: 0.25,

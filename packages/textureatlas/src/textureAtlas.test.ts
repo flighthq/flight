@@ -76,7 +76,8 @@ describe('disposeTextureAtlas', () => {
     const atlas = createTextureAtlas({ texture });
     disposeTextureAtlas(atlas);
     // The atlas has let go of it; the object the caller supplied is untouched and still usable.
-    expect(texture.storage).not.toBeUndefined();
+    expect(texture.dimension).toBe('2d');
+    expect(texture.source).toBeNull();
   });
 
   it('is idempotent', () => {
@@ -95,7 +96,7 @@ describe('getTextureAtlasByteSize', () => {
 
   it('returns 0 when the atlas image has no data (element-only)', () => {
     const image = createImageResource(globalThis.document.createElement('canvas'));
-    const atlas = createTextureAtlas({ texture: createTexture({ storage: { dimension: '2d', image } }) });
+    const atlas = createTextureAtlas({ texture: createTexture({ dimension: '2d', source: image }) });
     expect(getTextureAtlasByteSize(atlas)).toBe(0);
   });
 
@@ -110,7 +111,7 @@ describe('getTextureAtlasByteSize', () => {
       version: 0,
       width: 8,
     } as unknown as Bitmap;
-    const atlas = createTextureAtlas({ texture: createTexture({ storage: { dimension: '2d', image } }) });
+    const atlas = createTextureAtlas({ texture: createTexture({ dimension: '2d', source: image }) });
     expect(getTextureAtlasByteSize(atlas)).toBe(256);
   });
 });

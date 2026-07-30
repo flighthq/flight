@@ -22,8 +22,8 @@ export function disposeTextureAtlas(atlas: TextureAtlas): void {
 // textures have no CPU footprint.
 export function getTextureAtlasByteSize(atlas: Readonly<TextureAtlas>): number {
   const texture = atlas.texture;
-  if (texture === null || texture.storage.dimension !== '2d' || texture.storage.image === null) return 0;
-  const image = texture.storage.image;
+  if (texture === null || texture.dimension !== '2d' || texture.source === null) return 0;
+  const image = texture.source;
   if (image.kind === BitmapTextureSourceKind) return (image as Readonly<Bitmap>).data.byteLength;
   if (image.kind === CompressedImageTextureSourceKind) {
     return (image as Readonly<CompressedImage>).compressed.payload.byteLength;

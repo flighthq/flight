@@ -7,5 +7,4 @@ export const CompressedImageTextureSourceKind = 'compressedImage';
 export const ExternalTextureSourceKind = 'external';
 export const ImageTextureSourceKind = 'image';
 export const RenderTargetTextureSourceKind = 'renderTarget';
-export const TextureVolumeTextureSourceKind = 'volume';
-export const VideoTextureSourceKind = 'video';
+export const VoxelGridTextureSourceKind = 'voxelGrid';

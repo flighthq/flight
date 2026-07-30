@@ -4,7 +4,7 @@ import type { Texture } from './Texture';
 // A lightweight, plain-data reference to a texture image source that a scene/mesh parser emits
 // synchronously instead of decoding inline. A Scene3D owns these references as sidecar data; each reference
 // names its consuming `textures`, whose `storage.image` remains null until a separate caller-driven pass
-// (@flighthq/scene3d-resources) resolves the ref and binds the live ImageResource. This is
+// (@flighthq/scene3d-resources) resolves the ref and binds the live Image. This is
 // the seam that lets parse stay synchronous and format-symmetric across every scene-format while
 // the heavy async decode/fetch happens later, under a visibility/priority policy.
 //

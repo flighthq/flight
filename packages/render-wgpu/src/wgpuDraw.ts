@@ -1,10 +1,11 @@
+import { getTextureSource } from '@flighthq/texture/contract';
 import type {
   Bitmap,
   ColorScaleBias,
   CompressedImage,
   HasColorScaleBias,
   TextureSource,
-  ImageResource,
+  Image,
   Texture,
   RenderProxy,
   RenderProxy2D,
@@ -40,13 +41,13 @@ export function bindWgpuCompressedImageTexture(
   return bindWgpuTextureSourceTexture(state, image, false, false, uploadWgpuCompressedImageEntry);
 }
 
-// Uploads and caches the WebGPU texture for an ImageResource. Bitmap and CompressedImage use sibling
+// Uploads and caches the WebGPU texture for an Image. Bitmap and CompressedImage use sibling
 // entry points below; they share only the identity/version cache bracket and keep representation-specific
-// uploaders. Premultiplied and straight requests use separate caches so 2D and 3D sampling of one backing
+// uploaders. Premultiplied and straight requests use separate caches so 2D and 3D sampling of one source
 // cannot rewrite each other's realization. Returns the texture, view, and 2D bind group.
 export function bindWgpuImageResourceTexture(
   state: WgpuRenderState,
-  image: Readonly<ImageResource>,
+  image: Readonly<Image>,
   generateMips = false,
   premultiply = false,
 ): WgpuTextureEntry {
@@ -179,14 +180,14 @@ function buildWgpuSmoothingBindGroup(
   });
 }
 
-// Dynamic host-video upload. The texture is cached by ImageResource backing and copied only when its
+// Dynamic host-video upload. The texture is cached by Image source and copied only when its
 // version advances; a resolution change recreates the allocation/view, and a sampler mutation rebuilds
-// only the bind group. Returns null until the backing element has a decoded frame.
+// only the bind group. Returns null until the source element has a decoded frame.
 export function bindWgpuVideoTexture(
   state: WgpuRenderState,
   videoTexture: Readonly<Texture>,
 ): WgpuVideoTextureEntry | null {
-  const image = videoTexture.storage.image as ImageResource | null;
+  const image = getTextureSource(videoTexture) as Image | null;
   const element = (image?.source ?? null) as HTMLVideoElement | null;
   if (element === null || element.readyState < 2 || element.videoWidth <= 0 || element.videoHeight <= 0) return null;
 
@@ -281,7 +282,7 @@ export function createWgpuTextureEntry(
 }
 
 export function destroyWgpuVideoTexture(state: WgpuRenderState, videoTexture: Readonly<Texture>): boolean {
-  const image = videoTexture.storage.image as ImageResource | null;
+  const image = getTextureSource(videoTexture) as Image | null;
   if (image == null) return false;
   const cache = getWgpuRenderStateRuntime(state).videoTextureCache;
   const entry = cache?.get(image);
@@ -515,7 +516,7 @@ function uploadWgpuImageResourceEntry(
   generateMips: boolean,
   premultiply: boolean,
 ): WgpuTextureEntry {
-  const resource = image as Readonly<ImageResource>;
+  const resource = image as Readonly<Image>;
   const runtime = getWgpuRenderStateRuntime(state);
   const { device } = state;
   const width = resource.width || 1;

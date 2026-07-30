@@ -23,7 +23,7 @@ describe('registerDomBitmapTextureResolver', () => {
   it('materializes and caches a Bitmap, rebuilding on version bump', () => {
     const state = makeState();
     const bitmap = createBitmap(4, 4, 0xffffffff);
-    const texture = createTexture({ storage: { dimension: '2d', image: bitmap } });
+    const texture = createTexture({ dimension: '2d', source: bitmap });
     registerDomBitmapTextureResolver(state);
     const first = resolveDomTexture(state, texture);
     expect(first).toBeInstanceOf(HTMLCanvasElement);
@@ -37,7 +37,7 @@ describe('registerDomImageTextureResolver', () => {
   it('returns the host source element directly', () => {
     const state = makeState();
     const img = document.createElement('img');
-    const texture = createTexture({ storage: { dimension: '2d', image: createImageResource(img) } });
+    const texture = createTexture({ dimension: '2d', source: createImageResource(img) });
     registerDomImageTextureResolver(state);
     expect(resolveDomTexture(state, texture)).toBe(img);
   });
@@ -46,7 +46,8 @@ describe('registerDomImageTextureResolver', () => {
 describe('resolveDomTexture', () => {
   it('returns null when no matching source resolver is registered', () => {
     const texture = createTexture({
-      storage: { dimension: '2d', image: createImageResource(globalThis.document.createElement('img')) },
+      dimension: '2d',
+      source: createImageResource(globalThis.document.createElement('img')),
     });
     expect(resolveDomTexture(makeState(), texture)).toBeNull();
   });

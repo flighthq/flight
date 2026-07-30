@@ -1,6 +1,7 @@
 import { createMatrix3, createVector2 } from '@flighthq/geometry/contract';
-import type { ImageResource, VideoResource } from '@flighthq/types/contract';
+import type { Image, VideoResource } from '@flighthq/types/contract';
 
+import { getTextureSource } from './texture';
 import {
   advanceVideoTexture,
   cloneVideoTexture,
@@ -23,23 +24,23 @@ function makeVideoResource(readyState = 4, videoWidth = 320, videoHeight = 240):
 }
 
 describe('advanceVideoTexture', () => {
-  it('bumps the backing and Texture versions and returns the new value', () => {
+  it('bumps the source and Texture versions and returns the new value', () => {
     const vt = createVideoTexture(makeVideoResource());
     expect(vt.version).toBe(0xffffffff);
     expect(advanceVideoTexture(vt)).toBe(0);
     expect(advanceVideoTexture(vt)).toBe(1);
     expect(vt.version).toBe(1);
-    expect(vt.storage.image?.version).toBe(1);
+    expect(getTextureSource(vt)?.version).toBe(1);
   });
 });
 
 describe('cloneVideoTexture', () => {
-  it('shares the backing but deep-clones sampler and uv vectors', () => {
+  it('shares the source but deep-clones sampler and uv vectors', () => {
     const source = makeVideoResource();
     const vt = createVideoTexture(source, { uvOffset: createVector2(2, 3) });
     advanceVideoTexture(vt);
     const clone = cloneVideoTexture(vt);
-    expect(clone.storage.image).toBe(vt.storage.image);
+    expect(getTextureSource(clone)).toBe(getTextureSource(vt));
     expect(clone.sampler).not.toBe(vt.sampler);
     expect(clone.uvOffset).not.toBe(vt.uvOffset);
     expect(clone.uvOffset.x).toBe(2);
@@ -55,7 +56,7 @@ describe('copyVideoTexture', () => {
     copyVideoTexture(b, a);
     expect(b.colorSpace).toBe('linear');
     expect(b.version).toBe(0);
-    expect(b.storage.image).toBe(a.storage.image);
+    expect(getTextureSource(b)).toBe(getTextureSource(a));
     expect(b.uvScale.x).toBe(4);
     copyVideoTexture(a, a);
     expect(a.uvScale.x).toBe(4);
@@ -67,7 +68,7 @@ describe('createVideoTexture', () => {
     const source = makeVideoResource();
     const vt = createVideoTexture(source);
     expect(vt.colorSpace).toBe('srgb');
-    expect((vt.storage.image as ImageResource).source).toBe(source.element);
+    expect((getTextureSource(vt) as Image).source).toBe(source.element);
     expect(vt.version).toBe(0xffffffff);
     expect(vt.uvOffset.x).toBe(0);
     expect(vt.uvScale.x).toBe(1);
@@ -142,7 +143,7 @@ describe('resetVideoTextureFrame', () => {
     advanceVideoTexture(vt);
     resetVideoTextureFrame(vt);
     expect(vt.version).toBe(0xffffffff);
-    expect(vt.storage.image?.version).toBe(0xffffffff);
+    expect(getTextureSource(vt)?.version).toBe(0xffffffff);
   });
 });
 
@@ -152,7 +153,7 @@ describe('setVideoTextureSource', () => {
     advanceVideoTexture(vt);
     const next = makeVideoResource(4, 640, 480);
     setVideoTextureSource(vt, next);
-    expect((vt.storage.image as ImageResource).source).toBe(next.element);
+    expect((getTextureSource(vt) as Image).source).toBe(next.element);
     expect(vt.version).toBe(0xffffffff);
     expect(getVideoTextureWidth(vt)).toBe(640);
   });

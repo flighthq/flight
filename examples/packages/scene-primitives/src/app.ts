@@ -48,7 +48,8 @@ for (let y = 0; y < checkerBitmap.height; y++) {
 
 const checkerTexture = createTexture({
   sampler: createSampler({ anisotropy: 4, wrapU: 'repeat', wrapV: 'repeat' }),
-  storage: { dimension: '2d', image: checkerBitmap },
+  dimension: '2d',
+  source: checkerBitmap,
 });
 const groundMaterial = createStandardPbrMaterial({
   baseColor: 0x202735ff,

@@ -1,4 +1,5 @@
 import type { TextureSource } from './TextureSource';
+import type { RenderTargetTextureSourceKind } from './TextureSourceKind';
 
 // Substrate-agnostic render-target description. A target carries axes, not booleans: `format`/
 // `colorFormats` unlock HDR and the G-buffer, `colorAttachments` is MRT/deferred, `sampleCount` is
@@ -83,7 +84,9 @@ export interface RenderTargetDescriptor {
 
 // GPU-owned TextureSource descriptor. A render backend realizes this request lazily in the state that
 // first renders into or samples its owning RenderTexture.
-export interface RenderTarget extends RenderTargetDescriptor, TextureSource {}
+export interface RenderTarget extends RenderTargetDescriptor, TextureSource {
+  readonly kind: typeof RenderTargetTextureSourceKind;
+}
 
 // A descriptor with every default resolved. Clear policy travels with the target but remains distinct
 // from the storage axes so pools can match physical identity and re-stamp clear values independently.

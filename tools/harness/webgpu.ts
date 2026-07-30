@@ -27,7 +27,6 @@ import {
   registerWgpuImageTextureResolver,
   registerWgpuRenderTextureResolver,
   registerWgpuShapeCommands,
-  registerWgpuVideoTextureResolver,
   renderWgpuBackground,
   renderWgpuScene2D,
   RichTextKind,
@@ -60,7 +59,6 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   enableWgpuTextureResolverGuards(state);
   registerWgpuImageTextureResolver(state);
   registerWgpuRenderTextureResolver(state);
-  registerWgpuVideoTextureResolver(state);
   registerStandardWgpuMaterial(state);
   // Frame capture lets the verifier read the rendered frame back from the GPU; canvas presentation is
   // unavailable on the headless/software adapter, so this is the only path to the pixels.

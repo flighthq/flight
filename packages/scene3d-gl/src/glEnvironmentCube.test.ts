@@ -22,7 +22,8 @@ function dataOnlyEnvironment(size: number): Environment {
   const cube = {
     colorSpace: 'srgb',
     sampler: {},
-    storage: { dimension: 'cube', images: [face, face, face, face, face, face] },
+    dimension: 'cube',
+    sources: [face, face, face, face, face, face],
   } as unknown as Texture;
   return { environment: cube, intensity: 1 } as Environment;
 }

@@ -101,7 +101,7 @@ const atlas = createTextureAtlasFromGrid(
     imageWidth: TILE_SIZE * TILE_COUNT,
     rows: 1,
   },
-  createTexture({ storage: { dimension: '2d', image: imageResource } }),
+  createTexture({ dimension: '2d', source: imageResource }),
 );
 
 // Author the terrain as Tiled's one-based global tile IDs, then consume it through the same TMJ

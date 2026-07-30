@@ -36,7 +36,7 @@ export function convertBitmapPixelOrder(
  * Safe to pass the same buffer as both `out` and `source`.
  *
  * Operates on a raw buffer, not a Bitmap — if the buffer belongs to an
- * ImageResource, set its `alphaType` to `premultiplied` to keep it truthful.
+ * Image, set its `alphaType` to `premultiplied` to keep it truthful.
  */
 export function premultiplyBitmapPixels(
   out: Uint8ClampedArray,
@@ -58,7 +58,7 @@ export function premultiplyBitmapPixels(
  * Safe to pass the same buffer as both `out` and `source`.
  *
  * Operates on a raw buffer, not a Bitmap — if the buffer belongs to an
- * ImageResource, set its `alphaType` to `straight` to keep it truthful.
+ * Image, set its `alphaType` to `straight` to keep it truthful.
  */
 export function unpremultiplyBitmapPixels(
   out: Uint8ClampedArray,

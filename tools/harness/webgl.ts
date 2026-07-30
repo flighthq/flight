@@ -24,7 +24,6 @@ import {
   registerGlImageTextureResolver,
   registerGlRenderTextureResolver,
   registerGlShapeCommands,
-  registerGlVideoTextureResolver,
   registerRenderer,
   registerStandardGlMaterial,
   renderGlBackground,
@@ -63,7 +62,6 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
   enableGlTextureResolverGuards(state);
   registerGlImageTextureResolver(state);
   registerGlRenderTextureResolver(state);
-  registerGlVideoTextureResolver(state);
   registerStandardGlMaterial(state);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {

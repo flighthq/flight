@@ -6,7 +6,7 @@ import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createTexture, setTextureUvOffset, setTextureUvScale } from '@flighthq/texture/contract';
 import type {
   Camera3D,
-  ImageResource,
+  Image,
   PrimitiveTopology,
   VertexAttributeLayout,
   GlMeshProgram,
@@ -382,7 +382,8 @@ describe('hasGlUvTransform', () => {
     expect(
       hasGlUvTransform(
         createTexture({
-          storage: { dimension: '2d', image: { kind: ImageTextureSourceKind } as ImageResource },
+          dimension: '2d',
+          source: { kind: ImageTextureSourceKind } as Image,
         }),
       ),
     ).toBe(false);
@@ -397,7 +398,8 @@ describe('hasGlUvTransform', () => {
 
   it('is true only when a bound image carries a non-identity transform', () => {
     const texture = createTexture({
-      storage: { dimension: '2d', image: { kind: ImageTextureSourceKind } as ImageResource },
+      dimension: '2d',
+      source: { kind: ImageTextureSourceKind } as Image,
     });
     setTextureUvScale(texture, 2, 2);
 

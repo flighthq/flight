@@ -1,6 +1,7 @@
 import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
-import type { Bitmap, CompressedImage, ImageResource, Texture } from '@flighthq/types/contract';
+import { getTextureSource } from '@flighthq/texture/contract';
+import type { Bitmap, CompressedImage, Image, Texture } from '@flighthq/types/contract';
 import {
   BitmapTextureSourceKind,
   BlendMode,
@@ -137,7 +138,7 @@ describe('bindWgpuImageResourceTexture', () => {
       height: 4,
       kind: ImageTextureSourceKind,
       version: 1,
-    } as unknown as ImageResource;
+    } as unknown as Image;
     bindWgpuImageResourceTexture(state, image);
     expect(copy).toHaveBeenCalled();
   });
@@ -190,12 +191,10 @@ describe('bindWgpuVideoTexture', () => {
         wrapU: 'clamp-to-edge',
         wrapV: 'clamp-to-edge',
       },
-      storage: {
-        dimension: '2d',
-        image: {
-          source: { readyState, videoHeight: height, videoWidth: width } as HTMLVideoElement,
-          version,
-        },
+      dimension: '2d',
+      source: {
+        source: { readyState, videoHeight: height, videoWidth: width } as HTMLVideoElement,
+        version,
       },
       version,
     } as unknown as Texture;
@@ -210,7 +209,7 @@ describe('bindWgpuVideoTexture', () => {
     expect(copy).toHaveBeenCalledTimes(1);
     expect(bindWgpuVideoTexture(state, video)).toBe(first);
     expect(copy).toHaveBeenCalledTimes(1);
-    video.storage.image!.version = 2;
+    getTextureSource(video)!.version = 2;
     expect(bindWgpuVideoTexture(state, video)).toBe(first);
     expect(copy).toHaveBeenCalledTimes(2);
   });
@@ -219,7 +218,7 @@ describe('bindWgpuVideoTexture', () => {
     const state = await createWgpuRenderStateForTest();
     const video = videoTexture(1, 1, 0, 0);
     expect(bindWgpuVideoTexture(state, video)).toBeNull();
-    const element = (video.storage.image as ImageResource).source as HTMLVideoElement;
+    const element = (getTextureSource(video) as Image).source as HTMLVideoElement;
     Object.assign(element, { readyState: 4, videoHeight: 120, videoWidth: 160 });
     const first = bindWgpuVideoTexture(state, video)!;
     const destroy = vi.spyOn(first.texture, 'destroy');

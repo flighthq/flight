@@ -7,6 +7,7 @@ import {
 } from '@flighthq/mesh/contract';
 import { getNodeChildren } from '@flighthq/node/contract';
 import { isMesh } from '@flighthq/scene3d/contract';
+import { getTextureSource } from '@flighthq/texture/contract';
 import type {
   BlinnPhongMaterial,
   ExternalImageResourceReference,
@@ -281,7 +282,7 @@ describe('createScene3DFromMd2', () => {
     expect((getTestTextureResource(scene.resources, material.diffuseMap!) as ExternalImageResourceReference).uri).toBe(
       'players/hero/skin.pcx',
     );
-    expect(material.diffuseMap!.storage.image).toBeNull();
+    expect(getTextureSource(material.diffuseMap!)).toBeNull();
   });
 
   it('leaves the mesh unmaterialed when the model declares no skin', () => {

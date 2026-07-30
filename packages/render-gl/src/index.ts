@@ -24,7 +24,6 @@ export {
   registerGlImageTextureResolver,
   registerGlRenderTextureResolver,
   registerGlTextureResolver,
-  registerGlVideoTextureResolver,
   renderGlBackground,
   renderIntoGlRenderTexture,
   resolveGlRenderTargetAxes,

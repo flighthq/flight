@@ -1,10 +1,15 @@
-import type { CreateCubeTextureOptions, CubeTexture, TextureSource, TextureCubeImages } from '@flighthq/types/contract';
+import type {
+  CreateCubeTextureOptions,
+  CubeTexture,
+  TextureSource,
+  TextureSourceCubeFaces,
+} from '@flighthq/types/contract';
 
 import { cloneSampler } from './sampler';
 import { cloneTexture, copyTexture, createTexture, equalsTexture } from './texture';
 
-function getCubeImages(texture: Readonly<CubeTexture>): TextureCubeImages {
-  return texture.storage.images;
+function getCubeSources(texture: Readonly<CubeTexture>): TextureSourceCubeFaces {
+  return texture.sources;
 }
 
 export function cloneCubeTexture(source: Readonly<CubeTexture>): CubeTexture {
@@ -19,10 +24,8 @@ export function createCubeTexture(opts?: Readonly<CreateCubeTextureOptions>): Cu
   return createTexture({
     colorSpace: opts?.colorSpace ?? 'srgb',
     sampler: opts?.sampler ? cloneSampler(opts.sampler) : undefined,
-    storage: {
-      dimension: 'cube',
-      images: opts?.images ?? [null, null, null, null, null, null],
-    },
+    dimension: 'cube',
+    sources: opts?.sources ?? [null, null, null, null, null, null],
   }) as CubeTexture;
 }
 
@@ -35,21 +38,21 @@ export function equalsCubeTexture(
 }
 
 export function getCubeTextureFaceSize(cube: Readonly<CubeTexture>): number {
-  const images = getCubeImages(cube);
+  const sources = getCubeSources(cube);
   for (let i = 0; i < 6; i++) {
-    const face = images[i];
+    const face = sources[i];
     if (face !== null) return face.width;
   }
   return -1;
 }
 
 export function isCubeTextureComplete(cube: Readonly<CubeTexture>): boolean {
-  return getCubeImages(cube).every((face) => face !== null);
+  return getCubeSources(cube).every((face) => face !== null);
 }
 
-export function setCubeTextureFace(cube: CubeTexture, faceIndex: number, image: TextureSource | null): void {
-  const images = getCubeImages(cube);
-  if (images[faceIndex] === image) return;
-  (images as unknown as (TextureSource | null)[])[faceIndex] = image;
+export function setCubeTextureFace(cube: CubeTexture, faceIndex: number, source: TextureSource | null): void {
+  const sources = getCubeSources(cube);
+  if (sources[faceIndex] === source) return;
+  (sources as unknown as (TextureSource | null)[])[faceIndex] = source;
   cube.version = (cube.version + 1) >>> 0;
 }

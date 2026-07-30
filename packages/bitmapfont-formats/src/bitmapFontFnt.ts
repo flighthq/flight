@@ -24,7 +24,7 @@ export function formatBitmapFontFnt(font: Readonly<BitmapFont>): string {
   const lineHeight = metrics.ascent + metrics.descent + metrics.lineGap;
   const base = metrics.ascent;
   const primaryTexture = font.pages[0]?.texture;
-  const primaryImage = primaryTexture?.storage.dimension === '2d' ? primaryTexture.storage.image : null;
+  const primaryImage = primaryTexture?.dimension === '2d' ? primaryTexture.source : null;
   const scaleW = primaryImage !== null ? primaryImage.width : 0;
   const scaleH = primaryImage !== null ? primaryImage.height : 0;
   const pageCount = Math.max(font.pages.length, 1);

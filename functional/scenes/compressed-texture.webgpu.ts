@@ -91,10 +91,8 @@ root.scaleY = scale;
 const bitmap = createSprite();
 bitmap.data.texture = createTexture({
   sampler: createPixelArtSampler(),
-  storage: {
-    dimension: '2d',
-    image: createCompressedImage({ container: container('bc1', 8), payload: BC1_BLUE_BLOCK }),
-  },
+  dimension: '2d',
+  source: createCompressedImage({ container: container('bc1', 8), payload: BC1_BLUE_BLOCK }),
 });
 bitmap.x = BITMAP_X;
 bitmap.y = BITMAP_Y;
@@ -106,13 +104,11 @@ addNodeChild(root, bitmap);
 const alphaBitmap = createSprite();
 alphaBitmap.data.texture = createTexture({
   sampler: createPixelArtSampler(),
-  storage: {
-    dimension: '2d',
-    image: createCompressedImage({
-      container: container('bc3', 16),
-      payload: BC3_HALF_RED_BLOCK,
-    }),
-  },
+  dimension: '2d',
+  source: createCompressedImage({
+    container: container('bc3', 16),
+    payload: BC3_HALF_RED_BLOCK,
+  }),
 });
 alphaBitmap.x = ALPHA_BITMAP_X;
 alphaBitmap.y = BITMAP_Y;

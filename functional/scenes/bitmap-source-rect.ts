@@ -67,7 +67,8 @@ const root = createDisplayObject();
 const full = createSprite();
 full.data.texture = createTexture({
   sampler: createPixelArtSampler(),
-  storage: { dimension: '2d', image: createImageResourceFromCanvas(buildQuadrantCanvas()) },
+  dimension: '2d',
+  source: createImageResourceFromCanvas(buildQuadrantCanvas()),
 });
 full.x = FULL_X;
 full.y = FULL_Y;
@@ -78,7 +79,8 @@ addNodeChild(root, full);
 const crop = createSprite();
 crop.data.texture = createTexture({
   sampler: createPixelArtSampler(),
-  storage: { dimension: '2d', image: createImageResourceFromCanvas(buildQuadrantCanvas()) },
+  dimension: '2d',
+  source: createImageResourceFromCanvas(buildQuadrantCanvas()),
 });
 setTextureUvFromPixelRect(crop.data.texture, QUAD, 0, QUAD, QUAD);
 crop.x = CROP_X;

@@ -80,13 +80,13 @@ addText('0123456789  Lazy • Packed • Reused', 36, 318, 0x06d6a0ff, {
 const atlasImage = createImageResourceFromBitmap(getGlyphAtlasBitmap(atlas));
 for (const bitmapText of bitmapTexts) {
   for (const page of getBitmapTextPages(bitmapText)) {
-    page.atlas.texture = createTexture({ storage: { dimension: '2d', image: atlasImage } });
+    page.atlas.texture = createTexture({ dimension: '2d', source: atlasImage });
   }
 }
 
 // Preview the exact finalized atlas image sampled by every BitmapText quad batch.
 const atlasPreview = createSprite({
-  data: { texture: createTexture({ storage: { dimension: '2d', image: atlasImage } }) },
+  data: { texture: createTexture({ dimension: '2d', source: atlasImage }) },
 });
 atlasPreview.x = 536;
 atlasPreview.y = 438;

@@ -88,7 +88,8 @@ const material = createBlinnPhongMaterial({
   alphaCutoff: 0.5,
   alphaMap: createTexture({
     colorSpace: 'linear',
-    storage: { dimension: '2d', image: createImageResourceFromCanvas(alphaSplitCanvas()) },
+    dimension: '2d',
+    source: createImageResourceFromCanvas(alphaSplitCanvas()),
   }),
   alphaMode: 'mask',
   diffuse: 0xcc5522ff,

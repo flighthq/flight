@@ -45,7 +45,7 @@ const imageResource = createImageResource(canvas);
 const root = createDisplayObject();
 
 const bitmap = createSprite();
-bitmap.data.texture = createTexture({ storage: { dimension: '2d', image: imageResource } });
+bitmap.data.texture = createTexture({ dimension: '2d', source: imageResource });
 bitmap.x = 200;
 bitmap.y = 150;
 bitmap.rotation = 45;

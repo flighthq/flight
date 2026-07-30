@@ -22,7 +22,7 @@ export function drawWgpuSprite(state: WgpuRenderState, renderProxy: RenderProxy2
   if (runtime.renderPass === null) return;
 
   const texture = (renderProxy.source as Sprite).data.texture;
-  if (texture === null || texture.storage.dimension !== '2d' || !hasTextureSource(texture)) return;
+  if (texture === null || texture.dimension !== '2d' || !hasTextureSource(texture)) return;
 
   const shader = resolveWgpuShader(state, renderProxy);
   if (shader !== null) {

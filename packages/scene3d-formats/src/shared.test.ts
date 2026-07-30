@@ -1,3 +1,4 @@
+import { getTextureSource } from '@flighthq/texture/contract';
 import type {
   EmbeddedImageResourceReference,
   ExternalImageResourceReference,
@@ -123,7 +124,7 @@ describe('createEmbeddedTextureRef', () => {
     const bytes = new Uint8Array([1, 2, 3, 4]);
     const resources: ImageResourceReference[] = [];
     const texture = createEmbeddedTextureRef(bytes, 'image/png', resources);
-    expect(texture.storage.image).toBeNull();
+    expect(getTextureSource(texture)).toBeNull();
     const ref = getTestTextureResource(resources, texture) as EmbeddedImageResourceReference;
     expect(ref.kind).toBe('Embedded');
     expect(ref.bytes).toBe(bytes);
@@ -143,7 +144,7 @@ describe('createExternalTextureRef', () => {
   it('wraps a filename as an Unresolved External resource ref without loading it', () => {
     const resources: ImageResourceReference[] = [];
     const texture = createExternalTextureRef('models/hero.png', null, resources);
-    expect(texture.storage.image).toBeNull();
+    expect(getTextureSource(texture)).toBeNull();
     const ref = getTestTextureResource(resources, texture) as ExternalImageResourceReference;
     expect(ref.kind).toBe('External');
     expect(ref.uri).toBe('models/hero.png');

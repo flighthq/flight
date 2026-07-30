@@ -1,5 +1,5 @@
 import { createTexture } from '@flighthq/texture/contract';
-import type { ImageResource } from '@flighthq/types/contract';
+import type { TextureSource } from '@flighthq/types/contract';
 
 import { createCanvasRenderState } from './canvasRenderState';
 import { registerCanvasTextureResolver } from './canvasTextureResolver';
@@ -9,7 +9,13 @@ describe('explainCanvasTextureResolution', () => {
   it('distinguishes missing kinds, missing resolvers, and registered resolvers', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
     const texture = createTexture({
-      storage: { dimension: '2d', image: { kind: 'acme.test' } as ImageResource },
+      dimension: '2d',
+      source: {
+        height: 1,
+        kind: 'acme.test',
+        version: 0,
+        width: 1,
+      } as unknown as TextureSource,
     });
 
     expect(explainCanvasTextureResolution(state, createTexture())).toEqual({

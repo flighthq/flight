@@ -1,3 +1,4 @@
+import { getTextureSource } from '@flighthq/texture/contract';
 import type {
   Bitmap,
   CompressedImage,
@@ -6,7 +7,7 @@ import type {
   GlRenderState,
   GlRenderStateRuntime,
   TextureSource,
-  ImageResource,
+  Image,
   SamplerLike,
   TextureLike,
   TextureFilter,
@@ -100,19 +101,19 @@ export function bindGlCompressedImageTexture(
 }
 
 // Binds (uploading + caching on first use, re-uploading when the host image changes) the GL texture for
-// an ImageResource and applies the sampler's full state. The Bitmap and CompressedImage siblings below
-// share only the identity/version cache bracket; each backing keeps a representation-specific uploader.
+// an Image and applies the sampler's full state. The Bitmap and CompressedImage siblings below
+// share only the identity/version cache bracket; each source keeps a representation-specific uploader.
 // Sampler state is re-applied every bind so a resource reused by two materials with different samplers
 // follows the current draw.
 //
 // `premultiply` states whether the caller wants a premultiplied GPU texture — bind never premultiplies on
 // its own. The 2D display and particle pipelines blend premultiplied (ONE, ONE_MINUS_SRC_ALPHA) and pass
 // true; the 3D forward path blends straight (SRC_ALPHA) and leaves the default false. The two request
-// modes cache separate GL textures so one backing can be sampled by both paths without rewriting its
+// modes cache separate GL textures so one source can be sampled by both paths without rewriting its
 // other realization.
 export function bindGlImageResourceTexture(
   state: GlRenderState,
-  image: Readonly<ImageResource>,
+  image: Readonly<Image>,
   sampler?: Readonly<SamplerLike> | null,
   smoothingOverride?: boolean | null,
   premultiply = false,
@@ -206,12 +207,12 @@ export function bindGlTexture(
   return texture;
 }
 
-// Binds the GL texture for a video-backed Texture and re-uploads the backing element's current frame
-// only when its ImageResource `version` has advanced — the dynamic, per-frame sibling of
-// bindGlImageResourceTexture (settled ImageResource) and bindGlTexture (raw element). The GL texture is
-// cached by the ImageResource backing in the runtime's videoTextureCache (lazily created), so two
+// Binds the GL texture for a video-backed Texture and re-uploads the source element's current frame
+// only when its Image `version` has advanced — the dynamic, per-frame sibling of
+// bindGlImageResourceTexture (settled Image) and bindGlTexture (raw element). The GL texture is
+// cached by the Image source in the runtime's videoTextureCache (lazily created), so two
 // sampled Textures share one upload while their samplers remain draw-local.
-// Leaves the texture bound at the active unit for the caller to sample. Callers advance the backing
+// Leaves the texture bound at the active unit for the caller to sample. Callers advance the source
 // version via advanceVideoTexture when the element reports a fresh decoded frame; this reads the current frame
 // through uploadGlTextureElement's zero-copy element fast-path.
 export function bindGlVideoTexture(
@@ -219,7 +220,7 @@ export function bindGlVideoTexture(
   texture: Readonly<TextureLike>,
   sampler?: Readonly<SamplerLike> | null,
 ): WebGLTexture {
-  const image = texture.storage.image as ImageResource;
+  const image = getTextureSource(texture) as Image;
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
   const cache = (runtime.videoTextureCache ??= new WeakMap());
@@ -382,7 +383,7 @@ function uploadGlCompressedImage(state: GlRenderState, image: Readonly<TextureSo
 function uploadGlImageResource(state: GlRenderState, image: Readonly<TextureSource>, premultiply: boolean): void {
   const gl = state.gl;
   gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, premultiply);
-  uploadGlTextureElement(gl, gl.TEXTURE_2D, (image as Readonly<ImageResource>).source as TexImageSource);
+  uploadGlTextureElement(gl, gl.TEXTURE_2D, (image as Readonly<Image>).source as TexImageSource);
 }
 
 // Returns a new premultiplied rgba8 buffer from a straight-alpha one (rgb *= a/255). Allocates, but runs

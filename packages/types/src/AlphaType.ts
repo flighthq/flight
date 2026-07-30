@@ -1,5 +1,5 @@
 /**
- * How an `ImageResource`'s pixels encode alpha. Orthogonal to channel layout (`PixelFormat`) and
+ * How an `Image`'s pixels encode alpha. Orthogonal to channel layout (`PixelFormat`) and
  * color space (`Bitmap.colorSpace`): the same `rgba8unorm` data can be straight or premultiplied.
  * Modeled on Skia's `SkAlphaType`.
  *

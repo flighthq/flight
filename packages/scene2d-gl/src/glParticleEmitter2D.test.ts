@@ -18,7 +18,7 @@ function makeAtlas() {
   image.height = 64;
   return {
     regions: [{ id: 0, x: 0, y: 0, width: 32, height: 32 }],
-    texture: createTexture({ storage: { dimension: '2d', image } }),
+    texture: createTexture({ dimension: '2d', source: image }),
   };
 }
 
@@ -130,7 +130,7 @@ describe('drawGlParticleEmitter2D', () => {
       makeParticleEmitter2DNode({
         atlas: {
           regions: [{ id: 0, x: 0, y: 0, width: 4, height: 4 }],
-          texture: createTexture({ storage: { dimension: '2d', image } }),
+          texture: createTexture({ dimension: '2d', source: image }),
         },
       }),
     );

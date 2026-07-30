@@ -1,6 +1,6 @@
 import { createRectangle, createVector2 } from '@flighthq/geometry/contract';
-import { createTexture } from '@flighthq/texture/contract';
-import type { ImageResource, TextureAtlasRegion } from '@flighthq/types/contract';
+import { createTexture, getTextureSource, transformTextureUv } from '@flighthq/texture/contract';
+import type { Image, TextureAtlasRegion } from '@flighthq/types/contract';
 
 import { createTextureAtlas } from './textureAtlas';
 import {
@@ -11,6 +11,7 @@ import {
   clearTextureAtlasRegions,
   addTextureAtlasRegionVector2,
   createTextureAtlasRegion,
+  explainTextureAtlasRegionTexture,
   getTextureAtlasRegionById,
   getTextureAtlasRegionCount,
   getTextureAtlasRegionFrame,
@@ -21,6 +22,7 @@ import {
   getTextureAtlasRegionUvQuad,
   hasTextureAtlasRegion,
   removeTextureAtlasRegion,
+  setTextureAtlasRegionTextureGuard,
   setTextureAtlasRegion,
 } from './textureAtlasRegion';
 
@@ -300,6 +302,26 @@ describe('createTextureAtlasRegion', () => {
   });
 });
 
+describe('explainTextureAtlasRegionTexture', () => {
+  it('reports missing inputs, unsupported page rotation, and readiness', () => {
+    const atlas = createTextureAtlas();
+    expect(explainTextureAtlasRegionTexture(atlas, 0)).toEqual({ status: 'missing-region' });
+
+    addTextureAtlasRegion(atlas, 0, 0, 10, 10);
+    expect(explainTextureAtlasRegionTexture(atlas, 0)).toEqual({ status: 'missing-texture' });
+
+    atlas.texture = createTexture({
+      dimension: '2d',
+      source: { height: 50, width: 100 } as Image,
+      uvRotation: 0.25,
+    });
+    expect(explainTextureAtlasRegionTexture(atlas, 0)).toEqual({ status: 'rotated-page' });
+
+    atlas.texture.uvRotation = 0;
+    expect(explainTextureAtlasRegionTexture(atlas, 0)).toEqual({ status: 'ready' });
+  });
+});
+
 describe('getTextureAtlasRegionById', () => {
   it('returns null for an empty atlas', () => {
     const atlas = createTextureAtlas();
@@ -438,8 +460,8 @@ describe('getTextureAtlasRegionSequence', () => {
 
 describe('getTextureAtlasRegionTexture', () => {
   it('returns one cached texture per distinct region over the shared atlas image', () => {
-    const image = { height: 50, width: 100 } as ImageResource;
-    const atlas = createTextureAtlas({ texture: createTexture({ storage: { dimension: '2d', image } }) });
+    const image = { height: 50, width: 100 } as Image;
+    const atlas = createTextureAtlas({ texture: createTexture({ dimension: '2d', source: image }) });
     addTextureAtlasRegion(atlas, 10, 5, 20, 15);
     addTextureAtlasRegion(atlas, 30, 5, 20, 15);
 
@@ -449,7 +471,7 @@ describe('getTextureAtlasRegionTexture', () => {
 
     expect(first).toBe(again);
     expect(second).not.toBe(first);
-    expect(first?.storage.image).toBe(image);
+    expect(first === null ? null : getTextureSource(first)).toBe(image);
     expect(first?.uvOffset).toMatchObject({ x: 0.1, y: 0.1 });
     expect(first?.uvScale).toMatchObject({ x: 0.2, y: 0.3 });
   });
@@ -459,9 +481,69 @@ describe('getTextureAtlasRegionTexture', () => {
     addTextureAtlasRegion(atlas, 0, 0, 10, 10);
     expect(getTextureAtlasRegionTexture(atlas, 0)).toBeNull();
     atlas.texture = createTexture({
-      storage: { dimension: '2d', image: { height: 10, width: 10 } as ImageResource },
+      dimension: '2d',
+      source: { height: 10, width: 10 } as Image,
     });
     expect(getTextureAtlasRegionTexture(atlas, 99)).toBeNull();
+  });
+
+  it('composes a region in pixel space against a windowed page', () => {
+    const image = { height: 100, width: 200 } as Image;
+    const atlas = createTextureAtlas({
+      texture: createTexture({
+        dimension: '2d',
+        source: image,
+        uvOffset: createVector2(0.25, 0.1),
+        uvScale: createVector2(0.5, 0.8),
+      }),
+    });
+    addTextureAtlasRegion(atlas, 10, 5, 20, 15);
+
+    const texture = getTextureAtlasRegionTexture(atlas, 0);
+
+    expect(texture?.uvOffset).toMatchObject({ x: 0.3, y: 0.15 });
+    expect(texture?.uvScale).toMatchObject({ x: 0.1, y: 0.15 });
+  });
+
+  it('folds page flips and packed-region rotation into the minted view', () => {
+    const image = { height: 50, width: 100 } as Image;
+    const atlas = createTextureAtlas({
+      texture: createTexture({
+        dimension: '2d',
+        flipX: true,
+        flipY: true,
+        source: image,
+      }),
+    });
+    atlas.regions.push(createTextureAtlasRegion({ height: 15, id: 0, rotated: true, width: 20, x: 10, y: 5 }));
+
+    const texture = getTextureAtlasRegionTexture(atlas, 0)!;
+    const topLeft = createVector2();
+    const bottomRight = createVector2();
+    transformTextureUv(topLeft, texture, 0, 0);
+    transformTextureUv(bottomRight, texture, 1, 1);
+
+    expect(texture.flipX).toBe(true);
+    expect(texture.flipY).toBe(true);
+    expect(texture.uvRotation).toBeCloseTo(-Math.PI / 2);
+    expect(topLeft.x).toBeCloseTo(0.9);
+    expect(topLeft.y).toBeCloseTo(0.6);
+    expect(bottomRight.x).toBeCloseTo(0.7);
+    expect(bottomRight.y).toBeCloseTo(0.9);
+  });
+
+  it('refuses a rotated page', () => {
+    const atlas = createTextureAtlas();
+    addTextureAtlasRegion(atlas, 0, 0, 10, 10);
+    atlas.texture = createTexture({
+      dimension: '2d',
+      source: { height: 50, width: 100 } as Image,
+      uvRotation: 0.25,
+    });
+    expect(getTextureAtlasRegionTexture(atlas, 0)).toBeNull();
+
+    atlas.texture.uvRotation = 0;
+    expect(getTextureAtlasRegionTexture(atlas, 0)).not.toBeNull();
   });
 });
 
@@ -695,5 +777,24 @@ describe('setTextureAtlasRegion', () => {
     expect(region.name).toBe('keep');
     expect(region.rotated).toBe(true);
     expect(region.sourceX).toBe(7);
+  });
+});
+
+describe('setTextureAtlasRegionTextureGuard', () => {
+  it('installs and removes the null-result diagnostics hook', () => {
+    const atlas = createTextureAtlas();
+    addTextureAtlasRegion(atlas, 0, 0, 10, 10);
+    const guard = vi.fn();
+    setTextureAtlasRegionTextureGuard(guard);
+    try {
+      expect(getTextureAtlasRegionTexture(atlas, 0)).toBeNull();
+      expect(guard).toHaveBeenCalledWith(atlas, 0, { status: 'missing-texture' });
+
+      setTextureAtlasRegionTextureGuard(null);
+      expect(getTextureAtlasRegionTexture(atlas, 0)).toBeNull();
+      expect(guard).toHaveBeenCalledTimes(1);
+    } finally {
+      setTextureAtlasRegionTextureGuard(null);
+    }
   });
 });

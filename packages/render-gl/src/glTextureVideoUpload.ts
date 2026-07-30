@@ -1,12 +1,12 @@
-import type { ImageResource } from '@flighthq/types/contract';
+import type { Image } from '@flighthq/types/contract';
 
 import { uploadGlTextureElement } from './glTextureUpload';
 
-// The per-frame video-to-GPU upload path. An ImageResource's borrowed HTMLVideoElement decodes new pixels
+// The per-frame video-to-GPU upload path. An Image's borrowed HTMLVideoElement decodes new pixels
 // continuously, so a driver re-uploads the currently-bound GL texture whenever the element's frame
 // advances — but not on frames where nothing changed (a paused or stalled stream), which would waste a
-// full-frame DMA. `uploadedVersion` is the backing revision the caller last uploaded; this compares it to the
-// backing's `version` and re-uploads through the element fast-path only on a change, returning the
+// full-frame DMA. `uploadedVersion` is the source revision the caller last uploaded; this compares it to the
+// source's `version` and re-uploads through the element fast-path only on a change, returning the
 // id now on the GPU so the caller stores it for the next frame.
 //
 // The caller owns creating, binding, and setting sampler/pixel-store state on the texture; this writes
@@ -14,7 +14,7 @@ import { uploadGlTextureElement } from './glTextureUpload';
 // advanced or the element has no decoded frame yet, so it is safe to call every frame unconditionally.
 export function uploadGlTextureVideoFrame(
   gl: WebGL2RenderingContext,
-  image: Readonly<ImageResource>,
+  image: Readonly<Image>,
   uploadedVersion: number,
 ): number {
   if (image.version === uploadedVersion) return uploadedVersion;

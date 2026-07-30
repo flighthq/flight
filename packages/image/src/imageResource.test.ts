@@ -43,7 +43,7 @@ describe('cloneImageResource', () => {
 });
 
 describe('createCompressedImage', () => {
-  it('wraps the compressed payload as a distinct backing', () => {
+  it('wraps the compressed payload as a distinct source', () => {
     const compressed = makeCompressed();
     const image = createCompressedImage(compressed);
     expect(image.kind).toBe(CompressedImageTextureSourceKind);

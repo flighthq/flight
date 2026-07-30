@@ -70,7 +70,7 @@ function ensureWgpuRenderTextureEntry(
   state: WgpuRenderState,
   renderTexture: Readonly<RenderTexture>,
 ): WgpuRenderTextureEntry {
-  const descriptor = renderTexture.storage.target;
+  const descriptor = renderTexture.source;
   const runtime = getWgpuRenderStateRuntime(state);
   const entries = (runtime.wgpuRenderTextureCache ??= new WeakMap());
   let entry = entries.get(renderTexture);

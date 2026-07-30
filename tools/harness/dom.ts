@@ -16,7 +16,6 @@ import {
   prepareScene2DRender,
   registerCanvasShapeCommands,
   registerDomImageTextureResolver,
-  registerDomVideoTextureResolver,
   registerRenderer,
   renderDomBackground,
   renderDomScene2D,
@@ -48,7 +47,6 @@ export function createDomTarget(options: Readonly<FunctionalTargetOptions>): Fun
 
   enableDomTextureResolverGuards(state);
   registerDomImageTextureResolver(state);
-  registerDomVideoTextureResolver(state);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
       registerRenderer(state, ShapeKind, defaultDomShapeRenderer);

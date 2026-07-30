@@ -10,9 +10,9 @@ import {
   createToonModifier,
   createVertexDisplaceModifier,
 } from '@flighthq/shading/contract';
-import { createTexture } from '@flighthq/texture/contract';
+import { createTexture, getTextureSource } from '@flighthq/texture/contract';
 import type {
-  ImageResource,
+  Image,
   Modifier,
   Texture,
   WgpuColorAdjustmentMaterialFeature,
@@ -337,7 +337,8 @@ describe('shaded binding cache', () => {
     registerWgpuImageTextureResolver(state);
     registerBuiltInWgpuModifierSnippets(state);
     const first = createTexture({
-      storage: { dimension: '2d', image: makeImageResource() },
+      dimension: '2d',
+      source: makeImageResource(),
     });
     const material = createShadedMaterial({ diffuseMap: first });
     const pipeline = ensureWgpuShadedPipeline(state, material, 'bgra8unorm');
@@ -350,19 +351,20 @@ describe('shaded binding cache', () => {
     expect(fake.calls.filter((call) => call.name === 'createBindGroup')).toHaveLength(groups);
 
     material.diffuseMap = createTexture({
-      storage: { dimension: '2d', image: makeImageResource() },
+      dimension: '2d',
+      source: makeImageResource(),
     });
     bindWgpuShadedSurface(state, pipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
     expect(fake.calls.filter((call) => call.name === 'createBindGroup').length).toBeGreaterThan(groups);
     expect(fake.calls.filter((call) => call.name === 'createBuffer')).toHaveLength(buffers);
 
-    const modifierTexture = createTexture({ storage: { dimension: '2d', image: makeImageResource() } });
+    const modifierTexture = createTexture({ dimension: '2d', source: makeImageResource() });
     const emissive = createEmissiveModifier({ color: 0xffffffff, mask: modifierTexture, strength: 1 });
     material.modifiers = [emissive];
     const modifierPipeline = ensureWgpuShadedPipeline(state, material, 'bgra8unorm');
     bindWgpuShadedSurface(state, modifierPipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
     const beforeModifierSwap = fake.calls.filter((call) => call.name === 'createBindGroup').length;
-    emissive.mask = createTexture({ storage: { dimension: '2d', image: makeImageResource() } });
+    emissive.mask = createTexture({ dimension: '2d', source: makeImageResource() });
     bindWgpuShadedSurface(state, modifierPipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
     expect(fake.calls.filter((call) => call.name === 'createBindGroup').length).toBeGreaterThan(beforeModifierSwap);
 
@@ -371,7 +373,8 @@ describe('shaded binding cache', () => {
     const beforeReady = fake.calls.filter((call) => call.name === 'createBindGroup').length;
     const readyingTexture = emissive.mask;
     expect(readyingTexture).toBeDefined();
-    readyingTexture!.storage.image = makeImageResource();
+    if (readyingTexture!.dimension !== '2d') throw new Error('test texture must be 2d');
+    readyingTexture!.source = makeImageResource();
     bindWgpuShadedSurface(state, modifierPipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
     expect(fake.calls.filter((call) => call.name === 'createBindGroup').length).toBeGreaterThan(beforeReady);
   });
@@ -381,18 +384,19 @@ describe('shaded binding cache', () => {
     registerWgpuImageTextureResolver(state);
     registerBuiltInWgpuModifierSnippets(state);
     const firstImage = makeImageResource();
-    const texture = createTexture({ storage: { dimension: '2d', image: firstImage } });
+    const texture = createTexture({ dimension: '2d', source: firstImage });
     const material = createShadedMaterial({ diffuseMap: texture });
     const pipeline = ensureWgpuShadedPipeline(state, material, 'bgra8unorm');
     bindWgpuShadedSurface(state, pipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
 
     const beforeSwap = fake.calls.filter((call) => call.name === 'createBindGroup').length;
-    texture.storage.image = makeImageResource();
+    if (texture.dimension !== '2d') throw new Error('test texture must be 2d');
+    texture.source = makeImageResource();
     bindWgpuShadedSurface(state, pipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
     expect(fake.calls.filter((call) => call.name === 'createBindGroup').length).toBeGreaterThan(beforeSwap);
 
     const beforeVersion = fake.calls.filter((call) => call.name === 'createBindGroup').length;
-    texture.storage.image.version++;
+    getTextureSource(texture)!.version++;
     bindWgpuShadedSurface(state, pipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
     expect(fake.calls.filter((call) => call.name === 'createBindGroup').length).toBeGreaterThan(beforeVersion);
   });
@@ -423,12 +427,12 @@ describe('shaded binding cache', () => {
   });
 });
 
-function makeImageResource(): ImageResource {
+function makeImageResource(): Image {
   return {
     height: 1,
     kind: ImageTextureSourceKind,
     source: {} as CanvasImageSource,
     version: 0,
     width: 1,
-  } as unknown as ImageResource;
+  } as unknown as Image;
 }

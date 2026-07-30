@@ -1,6 +1,6 @@
 import type { EasingFunction } from './EasingFunction';
 import type { Entity, Kind } from './Entity';
-import type { ImageResource } from './ImageResource';
+import type { Image } from './Image';
 import type { ExternalImageResourceReference, ImageResourceReference } from './ImageResourceReference';
 import type { Material } from './Material';
 import type { PbrExtension } from './PbrExtension';
@@ -12,7 +12,7 @@ import type { Texture } from './Texture';
 export type ImageResourceFetch = (
   ref: Readonly<ExternalImageResourceReference>,
   signal: AbortSignal,
-) => Promise<ImageResource | null>;
+) => Promise<Image | null>;
 
 export type Scene3DMaterialTextureLister = (material: Readonly<Material>, out: Texture[]) => void;
 
@@ -58,7 +58,7 @@ export interface Scene3DResourceInFlight {
 export interface Scene3DResourceResolverRuntime {
   inFlight: Map<ImageResourceReference, Scene3DResourceInFlight>;
   loader: ResourceLoader;
-  resolved: Map<ImageResourceReference, ImageResource>;
+  resolved: Map<ImageResourceReference, Image>;
   signals: Scene3DResourceSignals | null;
 }
 
@@ -97,7 +97,7 @@ export interface ResolveScene3DResourcesOptions {
 }
 
 export interface Scene3DResourceResolution extends Scene3DResourceWorkingSet {
-  image: ImageResource;
+  image: Image;
 }
 
 // One synchronous selected-working-set snapshot. Resolved groups name the ready image and every Texture

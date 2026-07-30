@@ -15,7 +15,7 @@ import {
 export function drawGlSprite(state: GlRenderState, renderProxy: RenderProxy2D): void {
   const runtime = getGlRenderStateRuntime(state);
   const texture = (renderProxy.source as Sprite).data.texture;
-  if (texture === null || texture.storage.dimension !== '2d' || !hasTextureSource(texture)) return;
+  if (texture === null || texture.dimension !== '2d' || !hasTextureSource(texture)) return;
 
   const width = Math.max(0, getTextureWidth(texture)) * Math.abs(texture.uvScale.x);
   const height = Math.max(0, getTextureHeight(texture)) * Math.abs(texture.uvScale.y);

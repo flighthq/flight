@@ -2,9 +2,9 @@
 
 _Design spec. Settled with the user 2026-07-29 (review); revised and **locked** with the user
 2026-07-30 (chief): the storage layer is deleted (Texture flattened), `VoxelGrid` replaces
-`TextureVolume`, and the Texture↔TextureAtlas relationship is settled. M2 (`CubeTexture` /
-`RenderTexture`) has landed; nothing else is implemented. Read this before touching `Texture`,
-`TextureStorage`, `ImageBacking`, or any `create*Texture` / `create*Image*` constructor._
+`TextureVolume`, and the Texture↔TextureAtlas relationship is settled. M2–M5 have landed; later
+stages remain intentionally separate. Read this before touching `Texture`, `TextureSource`, or any
+`create*Texture` / `create*Image*` constructor._
 
 ## Why this exists
 
@@ -445,19 +445,19 @@ independently gateable and leaves the tree green.
 | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | M1    | ~~`createBitmapFromImageSource` → `null` + `explain*` on tainted source~~ **DONE 2026-07-30**                                                                                          | D6; independent of everything else. Shipped as `Bitmap \| null` plus `explainBitmapReadback` in its own module; see the Decisions log                                                                                                |
 | M2    | Name `CubeTexture` and `RenderTexture` as types                                                                                                                                        | **Landed** (a40e730f1). D4/#2; `createCubeTexture` and `createRenderTexture` become correct untouched. `RenderTexture` also tightens the `renderInto`/`bind`/`destroy` API, moving a class of runtime sentinel checks to compile time |
-| M3    | `ImageBacking` → `TextureSource`; `TextureBackingKind` → `TextureSourceKind`; `TextureTargetBacking` → `RenderTarget`; `TextureVolume` → `VoxelGrid` (kind `'volume'` → `'voxelGrid'`) | D1; mechanical rename. Largest site count — `ImageTextureBackingKind` alone has ~32 uses, plus two `imageBacking*TextureCache` fields in `GlRenderState`                                                                              |
-| M4    | **Flatten**: delete `TextureStorage`; `Texture` absorbs `readonly dimension` + `source`/`sources` (one content field per variant, hoisted)                                             | D3; deletes the `?: never` scaffolding, adds `Texture2D`, re-expresses `CubeTexture`/`RenderTexture` against the flat shape; 2D-consuming APIs (`SpriteData.texture`, …) may tighten to `Texture2D`                                   |
-| M5    | Split `ImageResource` → `Image` + `ExternalTexture`; pin every member's kind with `typeof`                                                                                             | D2; `'external'` moves to a renderer-produced source with its own type                                                                                                                                                                |
+| M3    | ~~`ImageBacking` → `TextureSource`; `TextureBackingKind` → `TextureSourceKind`; `TextureTargetBacking` → `RenderTarget`; `TextureVolume` → `VoxelGrid` (kind `'volume'` → `'voxelGrid'`)~~ **DONE 2026-07-30** | D1; mechanical rename. Largest site count — `ImageTextureBackingKind` alone has ~32 uses, plus two `imageBacking*TextureCache` fields in `GlRenderState`                                                                              |
+| M4    | ~~**Flatten**: delete `TextureStorage`; `Texture` absorbs `readonly dimension` + `source`/`sources` (one content field per variant, hoisted)~~ **DONE 2026-07-30**                                             | D3; deletes the `?: never` scaffolding, adds `Texture2D`, re-expresses `CubeTexture`/`RenderTexture` against the flat shape; 2D-consuming APIs (`SpriteData.texture`, …) may tighten to `Texture2D`                                   |
+| M5    | ~~Split `ImageResource` → `Image` + `ExternalTexture`; pin every member's kind with `typeof`~~ **DONE 2026-07-30**                                                                                             | D2; `'external'` moves to a renderer-produced source with its own type                                                                                                                                                                |
 | M6    | Introduce `Surface` + `HostSurface` alias + `destroySurface`; reclassify `createImageResourceFromCanvas` → `createSurfaceFromCanvas`                                                   | D2; the only genuinely new construct. Scope is deliberately small — one entity, one alias, one no-op teardown                                                                                                                         |
 | M7    | `createVideoTexture` → `createTextureFromVideoResource`; add `createTextureFromCompressedImage`                                                                                        | D4/D5                                                                                                                                                                                                                                 |
 | M8    | Add the readability capability query                                                                                                                                                   | pairs with M1                                                                                                                                                                                                                         |
 | M9    | Correct `AGENTS.md`, which currently describes `VideoTexture`, `CubeTexture`, and `RenderTexture` as existing types                                                                    | doc drift caused by D4                                                                                                                                                                                                                |
+| M10   | Make every flat Texture source non-null and represent pending loader/material content outside the Texture                                                                             | Deliberately deferred from M4 so M3–M5 remain a naming/flatten sequence with no loader behavior change                                                                                                                             |
 
-M2 landed 2026-07-30 (a40e730f1). M1 remains independent and safe alone. M3–M5 are the re-shape and
-should land as one reviewed sequence — M4 now includes the flatten, so `TextureStorage` is deleted
-rather than renamed, and the atlas compose-semantics change (view-and-catalog section above) rides
-with M4 since the mint math is where the window/region seam lives. M6 is a design commitment (see
-below).
+M2 landed 2026-07-30 (a40e730f1). M1 remains independent and safe alone. M3–M5 landed as the
+reviewed re-shape sequence — M4 includes the flatten, so `TextureStorage` was deleted rather than
+renamed, and the atlas compose-semantics change (view-and-catalog section above) rides with M4 since
+the mint math is where the window/region seam lives. M6 is a design commitment (see below).
 
 ## Open questions
 
@@ -577,3 +577,7 @@ RenderTextureData` scheme was rejected: `.data` already means literal bytes on s
   #3), so a trailing-kind scheme would collide part/kind legibility SDK-wide, and full regularity is
   unreachable regardless (`TextureRender` is nonsense). Word/tag grammar adopted as rule #8. User +
   chief.
+- **[2026-07-30] M4 retains nullable source slots; strict non-null Texture content is M10.**
+  Flattening `image`/`images`/`volume`/`target` into inline `source`/`sources` lands without changing
+  the existing unbound/incomplete loader and material flows. Enforcing the target model's non-null
+  invariant is a named later stage rather than hidden behavioral scope inside M3–M5. User + review.

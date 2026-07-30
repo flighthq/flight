@@ -69,7 +69,8 @@ const root = createDisplayObject();
 function placeRamp(x: number, y: number, alpha: number): void {
   const bmp = createSprite();
   bmp.data.texture = createTexture({
-    storage: { dimension: '2d', image: createImageResourceFromCanvas(buildAlphaRampCanvas()) },
+    dimension: '2d',
+    source: createImageResourceFromCanvas(buildAlphaRampCanvas()),
   });
   bmp.x = x;
   bmp.y = y;

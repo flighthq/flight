@@ -5,70 +5,70 @@ import type {
   TextureSource,
   Matrix3Like,
   Texture,
+  Texture2D,
   TextureSourceKind,
-  TextureCubeImages,
+  TextureSourceCubeFaces,
   TextureLike,
-  TextureStorage,
   TextureUvTransform,
   Vector2Like,
 } from '@flighthq/types/contract';
 
 import { cloneSampler, copySampler, createSampler, equalsSampler } from './sampler';
 
-function cloneTextureStorage(storage: Readonly<TextureStorage>): TextureStorage {
-  switch (storage.dimension) {
+function getFirstTextureSource(texture: Readonly<TextureLike>): TextureSource | null {
+  switch (texture.dimension) {
     case '2d':
-      return { dimension: '2d', image: storage.image, target: storage.target };
-    case '2d-array':
-      return { dimension: '2d-array', images: storage.images.slice(), target: storage.target };
     case '3d':
-      return { dimension: '3d', target: storage.target, volume: storage.volume };
+      return texture.source;
+    case '2d-array':
     case 'cube':
-      return {
-        dimension: 'cube',
-        images: storage.images.slice() as unknown as TextureCubeImages,
-        target: storage.target,
-      };
+      return texture.sources.find((source) => source !== null) ?? null;
   }
 }
 
-function getTextureStorageImage(storage: Readonly<TextureStorage>): TextureSource | null {
-  switch (storage.dimension) {
-    case '2d':
-      return storage.image;
-    case '2d-array':
-    case 'cube':
-      return storage.images.find((image) => image !== null) ?? null;
-    case '3d':
-      return null;
-  }
-}
-
-// Allocates an independent Texture over the SAME image pixels: the ImageResource reference is shared
-// through a fresh storage record (clone the resource separately to duplicate its content identity),
-// while the Sampler and uv-transform vectors are deep-cloned for independent sampling.
+// Allocates an independent sampling view over the same source identity. Sampler and uv-transform
+// vectors are deep-cloned; array/cube source lists receive a fresh list.
 export function cloneTexture(source: Readonly<TextureLike>): Texture {
-  return createEntity({
+  const common = {
     colorSpace: source.colorSpace,
     flipX: source.flipX,
     flipY: source.flipY,
     sampler: cloneSampler(source.sampler),
-    storage: cloneTextureStorage(source.storage),
     uvOffset: cloneVector2(source.uvOffset),
     uvRotation: source.uvRotation,
     uvScale: cloneVector2(source.uvScale),
     version: source.version >>> 0,
-  });
+  };
+  switch (source.dimension) {
+    case '2d':
+      return createEntity({ ...common, dimension: '2d' as const, source: source.source }) as Texture2D;
+    case '2d-array':
+      return createEntity({
+        ...common,
+        dimension: '2d-array' as const,
+        sources: source.sources.slice(),
+      }) as Extract<Texture, { dimension: '2d-array' }>;
+    case '3d':
+      return createEntity({ ...common, dimension: '3d' as const, source: source.source }) as Extract<
+        Texture,
+        { dimension: '3d' }
+      >;
+    case 'cube':
+      return createEntity({
+        ...common,
+        dimension: 'cube' as const,
+        sources: source.sources.slice() as unknown as TextureSourceCubeFaces,
+      }) as Extract<Texture, { dimension: 'cube' }>;
+  }
 }
 
-// Copies every Texture field from source into out in place. The image reference is shared; the
-// storage record, Sampler, and uv-transform vectors are copied into out's existing objects (their
-// identities are preserved). Safe when out aliases source.
+// Copies every mutable field from source into a same-dimension out. Dimension is creation-time
+// identity and never shape-shifts; source identities remain shared.
 export function copyTexture(out: TextureLike, source: Readonly<TextureLike>): void {
+  if (out.dimension !== source.dimension) throw new Error('copyTexture requires matching dimensions');
   const colorSpace = source.colorSpace;
   const flipX = source.flipX;
   const flipY = source.flipY;
-  const storage = cloneTextureStorage(source.storage);
   const uvRotation = source.uvRotation;
   const version = source.version >>> 0;
   copySampler(out.sampler, source.sampler);
@@ -77,28 +77,83 @@ export function copyTexture(out: TextureLike, source: Readonly<TextureLike>): vo
   out.colorSpace = colorSpace;
   out.flipX = flipX;
   out.flipY = flipY;
-  const outStorage = out.storage as unknown as Record<string, unknown>;
-  for (const key of Object.keys(outStorage)) delete outStorage[key];
-  Object.assign(outStorage, storage);
+  switch (out.dimension) {
+    case '2d':
+      if (source.dimension !== '2d') throw new Error('copyTexture requires matching dimensions');
+      out.source = source.source;
+      break;
+    case '2d-array':
+      if (source.dimension !== '2d-array') throw new Error('copyTexture requires matching dimensions');
+      out.sources = source.sources.slice();
+      break;
+    case '3d':
+      if (source.dimension !== '3d') throw new Error('copyTexture requires matching dimensions');
+      out.source = source.source;
+      break;
+    case 'cube':
+      if (source.dimension !== 'cube') throw new Error('copyTexture requires matching dimensions');
+      out.sources = source.sources.slice() as unknown as TextureSourceCubeFaces;
+      break;
+  }
   out.uvRotation = uvRotation;
   out.version = version;
 }
 
-// Builds a Texture: 2D storage with an unbound image slot (null), a default Sampler, 'srgb' color space (the
-// albedo default — data maps override to 'linear'), and an identity KHR_texture_transform
-// (zero offset, unit scale, no rotation). Pass TextureLike fields to override any of these.
+type CreateTexture2DOptions = Extract<CreateTextureOptions, { dimension?: '2d' }>;
+type CreateTexture2DArrayOptions = Extract<CreateTextureOptions, { dimension: '2d-array' }>;
+type CreateTexture3DOptions = Extract<CreateTextureOptions, { dimension: '3d' }>;
+type CreateTextureCubeOptions = Extract<CreateTextureOptions, { dimension: 'cube' }>;
+
+export function createTexture(opts?: Readonly<CreateTexture2DOptions>): Texture2D;
+export function createTexture(opts: Readonly<CreateTexture2DArrayOptions>): Extract<Texture, { dimension: '2d-array' }>;
+export function createTexture(opts: Readonly<CreateTexture3DOptions>): Extract<Texture, { dimension: '3d' }>;
+export function createTexture(opts: Readonly<CreateTextureCubeOptions>): Extract<Texture, { dimension: 'cube' }>;
+// Builds a flat Texture union. Two-dimensional content is the default and retains a null source
+// sentinel during the loader migration; non-2D variants are selected by their required dimension.
 export function createTexture(opts?: Readonly<CreateTextureOptions>): Texture {
-  const texture = createEntity({
+  const common = {
     colorSpace: opts?.colorSpace ?? 'srgb',
     flipX: opts?.flipX ?? false,
     flipY: opts?.flipY ?? false,
     sampler: opts?.sampler ? cloneSampler(opts.sampler) : createSampler(),
-    storage: opts?.storage ? cloneTextureStorage(opts.storage) : ({ dimension: '2d', image: null } as TextureStorage),
     uvOffset: opts?.uvOffset ? cloneVector2(opts.uvOffset) : createVector2(0, 0),
     uvRotation: opts?.uvRotation ?? 0,
     uvScale: opts?.uvScale ? cloneVector2(opts.uvScale) : createVector2(1, 1),
     version: (opts?.version ?? 0) >>> 0,
-  }) as Texture;
+  };
+  let texture: Texture;
+  switch (opts?.dimension) {
+    case '2d-array':
+      texture = createEntity({
+        ...common,
+        dimension: '2d-array' as const,
+        sources: opts.sources?.slice() ?? [],
+      }) as Extract<Texture, { dimension: '2d-array' }>;
+      break;
+    case '3d':
+      texture = createEntity({
+        ...common,
+        dimension: '3d' as const,
+        source: opts.source ?? null,
+      }) as Extract<Texture, { dimension: '3d' }>;
+      break;
+    case 'cube':
+      texture = createEntity({
+        ...common,
+        dimension: 'cube' as const,
+        sources: (opts.sources?.slice() ?? [null, null, null, null, null, null]) as unknown as TextureSourceCubeFaces,
+      }) as Extract<Texture, { dimension: 'cube' }>;
+      break;
+    default: {
+      const options = opts as Readonly<CreateTexture2DOptions> | undefined;
+      texture = createEntity({
+        ...common,
+        dimension: '2d' as const,
+        source: options?.source ?? null,
+      }) as Texture2D;
+      break;
+    }
+  }
   const resource = opts?.resource;
   if (resource != null) {
     (resource.textures ??= []).push(texture);
@@ -107,7 +162,7 @@ export function createTexture(opts?: Readonly<CreateTextureOptions>): Texture {
 }
 
 // True when both textures describe identical state: same color space, same sampler state, the same
-// image reference, and the same uv-transform values. Returns false for null/undefined operands.
+// source reference, and the same uv-transform values. Returns false for null/undefined operands.
 export function equalsTexture(
   a: Readonly<TextureLike> | null | undefined,
   b: Readonly<TextureLike> | null | undefined,
@@ -118,7 +173,7 @@ export function equalsTexture(
     a.colorSpace === b.colorSpace &&
     a.flipX === b.flipX &&
     a.flipY === b.flipY &&
-    equalsTextureStorage(a.storage, b.storage) &&
+    equalsTextureContent(a, b) &&
     a.uvRotation === b.uvRotation &&
     a.uvOffset.x === b.uvOffset.x &&
     a.uvOffset.y === b.uvOffset.y &&
@@ -129,11 +184,9 @@ export function equalsTexture(
   );
 }
 
-// Returns the height declared by the CPU image or render target source, or -1 when unbound.
+// Returns the height declared by the active source, or -1 when unbound.
 export function getTextureHeight(texture: Readonly<TextureLike>): number {
-  const storage = texture.storage;
-  if (storage.dimension === '3d') return storage.volume?.height ?? storage.target?.height ?? -1;
-  return getTextureStorageImage(storage)?.height ?? storage.target?.height ?? -1;
+  return getFirstTextureSource(texture)?.height ?? -1;
 }
 
 // Composes the KHR_texture_transform fields and inverts the result, producing the matrix that maps
@@ -147,13 +200,15 @@ export function getTextureInverseUvMatrix(out: Matrix3Like, texture: Readonly<Te
   inverseMatrix3(out, out);
 }
 
-// Returns the open resolver key declared by the texture's one active backing, or null when unbound.
-// CPU-origin images own their key; GPU-origin targets own theirs, so TextureStorage carries no duplicate
-// discriminant.
+// Returns the first active source. Array and cube textures yield their first bound layer/face;
+// unbound and entirely incomplete textures return null.
+export function getTextureSource(texture: Readonly<TextureLike>): TextureSource | null {
+  return getFirstTextureSource(texture);
+}
+
+// Returns the open resolver key declared by the texture's active source, or null when unbound.
 export function getTextureSourceKind(texture: Readonly<TextureLike>): TextureSourceKind | null {
-  const storage = texture.storage;
-  if (storage.dimension === '3d') return storage.volume?.kind ?? storage.target?.kind ?? null;
-  return getTextureStorageImage(storage)?.kind ?? storage.target?.kind ?? null;
+  return getFirstTextureSource(texture)?.kind ?? null;
 }
 
 // Composes the KHR_texture_transform fields (uvOffset, uvRotation, uvScale) into the 3×3 matrix
@@ -190,14 +245,12 @@ export function getTextureUvMatrix(out: Matrix3Like, texture: Readonly<TextureUv
   m[8] = 1; // (2,2)
 }
 
-// Returns the width declared by the CPU image or render target source, or -1 when unbound.
+// Returns the width declared by the active source, or -1 when unbound.
 export function getTextureWidth(texture: Readonly<TextureLike>): number {
-  const storage = texture.storage;
-  if (storage.dimension === '3d') return storage.volume?.width ?? storage.target?.width ?? -1;
-  return getTextureStorageImage(storage)?.width ?? storage.target?.width ?? -1;
+  return getFirstTextureSource(texture)?.width ?? -1;
 }
 
-// True when the texture declares either a CPU-origin image or a GPU-origin target source.
+// True when the texture declares at least one source.
 export function hasTextureSource(texture: Readonly<TextureLike>): boolean {
   return getTextureSourceKind(texture) !== null;
 }
@@ -218,14 +271,14 @@ export function hasTextureUvTransform(texture: Readonly<TextureUvTransform>): bo
   );
 }
 
-// True once the texture references a pixel source. A texture whose storage has a null image is treated as an
-// absent slot by materials, so this is the gate a material samples behind.
+// True once the texture references a pixel source. A null source is treated as an absent slot by
+// materials, so this is the gate a material samples behind.
 export function isTextureReady(texture: Readonly<TextureLike>): boolean {
   return hasTextureSource(texture);
 }
 
 // Resets the KHR_texture_transform to identity in place: zero offset, no rotation, unit scale, and
-// no flip. Leaves storage, color space, sampler, and version untouched.
+// no flip. Leaves the source, color space, sampler, and version untouched.
 export function resetTextureUvTransform(texture: TextureLike): void {
   texture.flipX = false;
   texture.flipY = false;
@@ -244,33 +297,32 @@ export function setTextureFlip(texture: TextureLike, flipX: boolean, flipY: bool
   texture.flipY = flipY;
 }
 
-// Binds (or clears, with null) the texture's image source in place and advances the u32 dirty-bit.
+// Binds (or clears, with null) the texture's source in place and advances the u32 dirty-bit.
 // Does not touch sampling state or the uv-transform.
-export function setTextureImage(texture: TextureLike, image: TextureSource | null): void {
-  if (texture.storage.dimension !== '2d') throw new Error('setTextureImage requires 2d texture storage');
-  if (texture.storage.image === image) return;
-  texture.storage.image = image;
+export function setTextureSource(texture: TextureLike, source: TextureSource | null): void {
+  if (texture.dimension !== '2d') throw new Error('setTextureSource requires a Texture2D');
+  if (texture.source === source) return;
+  texture.source = source;
   texture.version = (texture.version + 1) >>> 0;
 }
 
-function equalsTextureStorage(a: Readonly<TextureStorage>, b: Readonly<TextureStorage>): boolean {
-  if (a.dimension !== b.dimension || a.target !== b.target) return false;
+function equalsTextureContent(a: Readonly<TextureLike>, b: Readonly<TextureLike>): boolean {
+  if (a.dimension !== b.dimension) return false;
   switch (a.dimension) {
     case '2d':
-      return b.dimension === '2d' && a.image === b.image;
+    case '3d':
+      return b.dimension === a.dimension && a.source === b.source;
     case '2d-array':
     case 'cube':
       return (
         b.dimension === a.dimension &&
-        a.images.length === b.images.length &&
-        a.images.every((image, index) => image === b.images[index])
+        a.sources.length === b.sources.length &&
+        a.sources.every((source, index) => source === b.sources[index])
       );
-    case '3d':
-      return b.dimension === '3d' && a.volume === b.volume;
   }
 }
 
-// Maps a pixel-space rectangle in the texture's backing to its normalized uv window. An unbound
+// Maps a pixel-space rectangle in the texture's source to its normalized uv window. An unbound
 // texture has no pixel extent, so it receives an empty window rather than dividing by a sentinel.
 export function setTextureUvFromPixelRect(
   texture: TextureLike,

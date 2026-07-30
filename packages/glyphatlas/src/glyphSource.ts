@@ -11,7 +11,7 @@ import { getGlyphAtlasKerning, getGlyphAtlasMetrics } from './glyphAtlasMetrics'
 export function createGlyphSourceFromGlyphAtlas(atlas: Readonly<GlyphAtlas>): GlyphSource {
   return {
     getGlyphAtlasImage(page = 0) {
-      // One growing bitmap = page 0; a `Bitmap` is an `ImageResource`, so this pairs the geometry
+      // One growing bitmap = page 0; a `Bitmap` is an `Image`, so this pairs the geometry
       // seam with its pixels directly.
       return page === 0 ? getGlyphAtlasBitmap(atlas) : null;
     },

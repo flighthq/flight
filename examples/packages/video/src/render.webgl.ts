@@ -7,7 +7,7 @@ import {
   prepareScene2DRender,
   registerStandardGlMaterial,
   registerRenderer,
-  registerGlVideoTextureResolver,
+  registerGlImageTextureResolver,
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
@@ -24,7 +24,7 @@ export const state = createGlRenderState(canvas, {
 });
 
 registerStandardGlMaterial(state);
-registerGlVideoTextureResolver(state);
+registerGlImageTextureResolver(state);
 registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 
 export const scale = pixelRatio;

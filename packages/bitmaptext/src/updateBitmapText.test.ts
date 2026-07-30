@@ -4,7 +4,8 @@ import {
   createStubGlyphRasterizerBackend,
   setGlyphRasterizerBackend,
 } from '@flighthq/glyphatlas/contract';
-import type { GlyphEntry, GlyphSource, ImageResource } from '@flighthq/types/contract';
+import { getTextureSource } from '@flighthq/texture/contract';
+import type { GlyphEntry, GlyphSource, Image } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createBitmapText, getBitmapTextBounds, getBitmapTextPages } from './bitmapText';
@@ -12,7 +13,7 @@ import { updateBitmapText } from './updateBitmapText';
 
 // A deterministic single-page glyph source: every visible glyph is 6x8 with advance 10 and bearingY 8
 // (so line tops sit at y=0), a space advances 5 with no pixels, and the pair (A, B) kerns by -2. All
-// glyphs live on page 0, whose atlas image is a stub `ImageResource`.
+// glyphs live on page 0, whose atlas image is a stub `Image`.
 function createTestGlyphSource(): GlyphSource {
   const entries = new Map<number, GlyphEntry>();
   const add = (cp: number, x: number): void => {
@@ -22,7 +23,7 @@ function createTestGlyphSource(): GlyphSource {
   add(0x42, 6); // B
   entries.set(0x20, { advance: 5, bearingX: 0, bearingY: 0, height: 0, page: 0, width: 0, x: 0, y: 0 }); // space
   const kerning = new Map<number, number>([[(0x41 << 16) | 0x42, -2]]);
-  const image = {} as ImageResource;
+  const image = {} as Image;
   return {
     getGlyphAtlasImage: (page = 0) => (page === 0 ? image : null),
     getGlyphEntry: (cp) => entries.get(cp) ?? null,
@@ -32,9 +33,9 @@ function createTestGlyphSource(): GlyphSource {
 }
 
 // A two-page glyph source: 'A' lives on page 0, 'B' on page 1, each page a DISTINCT stub image.
-function createTwoPageGlyphSource(): { source: GlyphSource; page0Image: ImageResource; page1Image: ImageResource } {
-  const page0Image = {} as ImageResource;
-  const page1Image = {} as ImageResource;
+function createTwoPageGlyphSource(): { source: GlyphSource; page0Image: Image; page1Image: Image } {
+  const page0Image = {} as Image;
+  const page1Image = {} as Image;
   const entries = new Map<number, GlyphEntry>([
     [0x41, { advance: 10, bearingX: 0, bearingY: 8, height: 8, page: 0, width: 6, x: 0, y: 0 }], // A → page 0
     [0x42, { advance: 10, bearingX: 0, bearingY: 8, height: 8, page: 1, width: 6, x: 3, y: 0 }], // B → page 1
@@ -212,7 +213,7 @@ describe('updateBitmapText', () => {
     const pages = getBitmapTextPages(text);
     expect(pages).toHaveLength(1);
     expect(pages[0].instanceCount).toBe(2);
-    expect(pages[0].atlas.texture?.storage.image).toBe(source.getGlyphAtlasImage(0));
+    expect(getTextureSource(pages[0].atlas.texture!)).toBe(source.getGlyphAtlasImage(0));
   });
 
   it('partitions glyphs into one page per glyph-atlas page, each bound to its own page image', () => {
@@ -227,8 +228,8 @@ describe('updateBitmapText', () => {
     const page1 = pages[1];
     expect(page0.instanceCount).toBe(1);
     expect(page1.instanceCount).toBe(1);
-    expect(page0.atlas.texture?.storage.image).toBe(page0Image);
-    expect(page1.atlas.texture?.storage.image).toBe(page1Image);
+    expect(getTextureSource(page0.atlas.texture!)).toBe(page0Image);
+    expect(getTextureSource(page1.atlas.texture!)).toBe(page1Image);
     expect(page0.atlas.regions[0].x).toBe(0); // A's rect on page 0
     expect(page1.atlas.regions[0].x).toBe(3); // B's rect on page 1
     expect(page0.transforms[0]).toBe(0); // A at pen origin

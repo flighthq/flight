@@ -63,7 +63,7 @@ function makeWhiteCanvas(): HTMLCanvasElement {
 }
 
 const atlas = createTextureAtlas({
-  texture: createTexture({ storage: { dimension: '2d', image: createImageResource(makeWhiteCanvas()) } }),
+  texture: createTexture({ dimension: '2d', source: createImageResource(makeWhiteCanvas()) }),
 });
 addTextureAtlasRegion(atlas, 0, 0, REGION, REGION);
 

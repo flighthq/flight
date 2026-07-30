@@ -1,6 +1,7 @@
 import { createBitmap, invalidateBitmap } from '@flighthq/bitmap/contract';
 import { createImageResource } from '@flighthq/image/contract';
 import { createRenderTexture, createTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
+import type { TextureSource } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
 import { explainCanvasImageSource } from './canvasImageSource';
@@ -10,7 +11,6 @@ import { renderIntoCanvasRenderTexture } from './canvasRenderTexture';
 import { registerCanvasRenderTextureResolver } from './canvasRenderTextureResolver';
 import { registerCanvasTextureResolver, resolveCanvasTexture } from './canvasTextureResolver';
 import { resolveCanvasTextureWindowSource } from './canvasTextureWindowSource';
-import { registerCanvasVideoTextureResolver } from './canvasVideoTextureResolver';
 
 function makeState() {
   const canvas = document.createElement('canvas');
@@ -35,7 +35,7 @@ describe('registerCanvasBitmapTextureResolver', () => {
     const stateA = makeState();
     const stateB = makeState();
     const bitmap = createBitmap(4, 4, 0xffffffff);
-    const texture = createTexture({ storage: { dimension: '2d', image: bitmap } });
+    const texture = createTexture({ dimension: '2d', source: bitmap });
     registerCanvasBitmapTextureResolver(stateA);
     registerCanvasBitmapTextureResolver(stateB);
 
@@ -48,7 +48,7 @@ describe('registerCanvasBitmapTextureResolver', () => {
   it('re-materializes a Bitmap after its version bumps', () => {
     const state = makeState();
     const bitmap = createBitmap(4, 4, 0xffffffff);
-    const texture = createTexture({ storage: { dimension: '2d', image: bitmap } });
+    const texture = createTexture({ dimension: '2d', source: bitmap });
     registerCanvasBitmapTextureResolver(state);
     const first = resolveCanvasTexture(state, texture);
     invalidateBitmap(bitmap);
@@ -60,10 +60,21 @@ describe('registerCanvasImageTextureResolver', () => {
   it('installs image-backed Texture resolution on one state', () => {
     const state = makeState();
     const image = createImageResource(globalThis.document.createElement('img'));
-    const texture = createTexture({ storage: { dimension: '2d', image } });
+    const texture = createTexture({ dimension: '2d', source: image });
     expect(resolveCanvasTexture(state, texture)).toBeNull();
     registerCanvasImageTextureResolver(state);
     expect(resolveCanvasTexture(state, texture)).toBe(image.source);
+  });
+
+  it('uses the image source kind for a host video', () => {
+    const state = makeState();
+    const video = document.createElement('video');
+    const texture = createTexture({
+      dimension: '2d',
+      source: createImageResource(video),
+    });
+    registerCanvasImageTextureResolver(state);
+    expect(resolveCanvasTexture(state, texture)).toBe(video);
   });
 });
 
@@ -82,9 +93,13 @@ describe('registerCanvasRenderTextureResolver', () => {
 describe('registerCanvasTextureResolver', () => {
   it('replaces and removes a custom source resolver', () => {
     const state = makeState();
-    const image = createImageResource(globalThis.document.createElement('img'));
-    (image as { kind: string }).kind = 'acme.image';
-    const texture = createTexture({ storage: { dimension: '2d', image } });
+    const source = {
+      height: 1,
+      kind: 'acme.image',
+      version: 0,
+      width: 1,
+    } as unknown as TextureSource;
+    const texture = createTexture({ dimension: '2d', source: source });
     const first = document.createElement('canvas');
     const second = document.createElement('canvas');
     registerCanvasTextureResolver(state, 'acme.image', () => first);
@@ -96,25 +111,13 @@ describe('registerCanvasTextureResolver', () => {
   });
 });
 
-describe('registerCanvasVideoTextureResolver', () => {
-  it('installs host-video image resolution under the video backing kind', () => {
-    const state = makeState();
-    const video = document.createElement('video');
-    const image = createImageResource(video);
-    (image as { kind: string }).kind = 'video';
-    const texture = createTexture({ storage: { dimension: '2d', image } });
-    registerCanvasVideoTextureResolver(state);
-    expect(resolveCanvasTexture(state, texture)).toBe(video);
-  });
-});
-
 describe('resolveCanvasTexture', () => {
   it('resolves both image and populated render Texture sources', () => {
     const state = makeState();
     registerCanvasImageTextureResolver(state);
     registerCanvasRenderTextureResolver(state);
     const image = createImageResource(globalThis.document.createElement('img'));
-    expect(resolveCanvasTexture(state, createTexture({ storage: { dimension: '2d', image } }))).toBe(image.source);
+    expect(resolveCanvasTexture(state, createTexture({ dimension: '2d', source: image }))).toBe(image.source);
 
     const renderTexture = createRenderTexture({ height: 8, width: 8 });
     expect(resolveCanvasTexture(state, renderTexture)).toBeNull();
@@ -130,7 +133,7 @@ describe('resolveCanvasTextureWindowSource', () => {
     const source = document.createElement('canvas');
     source.width = 8;
     source.height = 4;
-    const texture = createTexture({ storage: { dimension: '2d', image: createImageResource(source) } });
+    const texture = createTexture({ dimension: '2d', source: createImageResource(source) });
     setTextureUvFromPixelRect(texture, 2, 1, 4, 2);
 
     const first = resolveCanvasTextureWindowSource(state, texture);
@@ -146,7 +149,7 @@ describe('resolveCanvasTextureWindowSource', () => {
     const state = makeState();
     registerCanvasImageTextureResolver(state);
     const source = document.createElement('canvas');
-    const texture = createTexture({ storage: { dimension: '2d', image: createImageResource(source) } });
+    const texture = createTexture({ dimension: '2d', source: createImageResource(source) });
     expect(resolveCanvasTextureWindowSource(state, texture)).toBe(source);
   });
 });

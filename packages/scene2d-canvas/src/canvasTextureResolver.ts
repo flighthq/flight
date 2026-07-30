@@ -15,7 +15,7 @@ export function registerCanvasTextureResolver(
 }
 
 export function resolveCanvasTexture(state: CanvasRenderState, texture: Readonly<Texture>): CanvasImageSource | null {
-  if (texture.storage.dimension !== '2d') return null;
+  if (texture.dimension !== '2d') return null;
   const registry = getCanvasRenderStateRuntime(state).canvasTextureResolverRegistry;
   if (registry == null) return null;
   const sourceKind = getTextureSourceKind(texture);

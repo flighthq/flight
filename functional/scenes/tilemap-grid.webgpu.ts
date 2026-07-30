@@ -65,7 +65,7 @@ const atlas = createTextureAtlasFromGrid(
     imageWidth: TILE_W * 2,
     rows: 1,
   },
-  createTexture({ storage: { dimension: '2d', image: createImageResourceFromCanvas(atlasCanvas) } }),
+  createTexture({ dimension: '2d', source: createImageResourceFromCanvas(atlasCanvas) }),
 );
 
 const root = createDisplayObject();

@@ -1,13 +1,13 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { detectImageMimeType } from '@flighthq/image-codec/contract';
-import type { Bitmap, ImageResource } from '@flighthq/types/contract';
+import type { Bitmap, Image } from '@flighthq/types/contract';
 import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
-// Transcodes a Bitmap's raw pixels into an element-backed ImageResource, via a detached canvas.
+// Transcodes a Bitmap's raw pixels into an element-backed Image, via a detached canvas.
 // The inverse of captureBitmapFromImageResource. Lives here rather than in @flighthq/bitmap because a
 // conversion belongs with the type it PRODUCES: you look for it under what you want to end up with.
 // Allocates a fresh canvas on every call; callers that draw repeatedly should hold the result.
-export function createImageResourceFromBitmap(bitmap: Readonly<Bitmap>): ImageResource {
+export function createImageResourceFromBitmap(bitmap: Readonly<Bitmap>): Image {
   const canvas = document.createElement('canvas');
   canvas.width = bitmap.width;
   canvas.height = bitmap.height;
@@ -17,7 +17,7 @@ export function createImageResourceFromBitmap(bitmap: Readonly<Bitmap>): ImageRe
   return createImageResourceFromCanvas(canvas);
 }
 
-export function createImageResourceFromCanvas(canvas: HTMLCanvasElement): ImageResource {
+export function createImageResourceFromCanvas(canvas: HTMLCanvasElement): Image {
   return createEntity({
     height: canvas.height,
     kind: ImageTextureSourceKind,
@@ -27,7 +27,7 @@ export function createImageResourceFromCanvas(canvas: HTMLCanvasElement): ImageR
   });
 }
 
-export function createImageResourceFromImageBitmap(bitmap: ImageBitmap): ImageResource {
+export function createImageResourceFromImageBitmap(bitmap: ImageBitmap): Image {
   return createEntity({
     height: bitmap.height,
     kind: ImageTextureSourceKind,
@@ -37,7 +37,7 @@ export function createImageResourceFromImageBitmap(bitmap: ImageBitmap): ImageRe
   });
 }
 
-export function createImageResourceFromImageElement(img: HTMLImageElement): ImageResource {
+export function createImageResourceFromImageElement(img: HTMLImageElement): Image {
   return createEntity({
     height: img.height,
     kind: ImageTextureSourceKind,
@@ -60,11 +60,11 @@ export async function loadImageResourceFromBase64(
   base64: string,
   mimeType: string,
   signal?: AbortSignal,
-): Promise<ImageResource> {
+): Promise<Image> {
   return loadImageResourceFromUrl(`data:${mimeType};base64,${base64}`, undefined, signal);
 }
 
-export async function loadImageResourceFromBlob(blob: Blob, signal?: AbortSignal): Promise<ImageResource> {
+export async function loadImageResourceFromBlob(blob: Blob, signal?: AbortSignal): Promise<Image> {
   const url = URL.createObjectURL(blob);
   try {
     return await loadImageResourceFromUrl(url, undefined, signal);
@@ -77,7 +77,7 @@ export async function loadImageResourceFromBytes(
   bytes: Uint8Array,
   mimeType?: string,
   signal?: AbortSignal,
-): Promise<ImageResource> {
+): Promise<Image> {
   const type = mimeType ?? detectImageMimeType(bytes);
   if (type === null) {
     throw new Error('Unable to determine image type from bytes');
@@ -90,7 +90,7 @@ export async function loadImageResourceFromUrl(
   url: string,
   crossOrigin?: string,
   signal?: AbortSignal,
-): Promise<ImageResource> {
+): Promise<Image> {
   signal?.throwIfAborted();
   const img = new Image();
   if (crossOrigin !== undefined) img.crossOrigin = crossOrigin;

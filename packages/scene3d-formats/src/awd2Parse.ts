@@ -266,7 +266,7 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagn
   }
 
   // One Flight Material per AWD material block, shared across every subset that references it (and thus one
-  // Texture + one ImageResource per shared texture). Keyed by AWD material block id → document material index.
+  // Texture + one Image per shared texture). Keyed by AWD material block id → document material index.
   const resolvedMaterials = new Map<number, number>();
   const materialForSubset = (meshInst: ParsedMeshInstance, subsetIndex: number): number[] => {
     const materialId = subsetIndex < meshInst.materialIds.length ? meshInst.materialIds[subsetIndex] : 0;
@@ -1773,7 +1773,7 @@ function readAwdPropertyUint32(
 }
 
 // Resolves an AWD material block id to a document material INDEX (appended to `document.materials`),
-// memoized so a material shared by several subsets registers one entry (and one Texture/ImageResource per
+// memoized so a material shared by several subsets registers one entry (and one Texture/Image per
 // shared texture). An EXISTING material block ALWAYS produces a ShadedMaterial — a block with no base
 // properties (no color, no textures, alpha-only, or method-only) is a valid material and defaults to
 // opaque white, honoring the uniform-ShadedMaterial rule. Only the sentinel id 0 (subset declares no

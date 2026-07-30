@@ -1,11 +1,13 @@
 import { createEntity } from '@flighthq/entity/contract';
-import { cloneTexture, copyTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
+import { cloneTexture, copyTexture, getTextureHeight, getTextureWidth } from '@flighthq/texture/contract';
 import type {
   RectangleLike,
   TextureAtlas,
   TextureAtlasRegion,
   TextureAtlasRegionLike,
-  Texture,
+  Texture2D,
+  TextureAtlasRegionTextureExplanation,
+  TextureAtlasRegionTextureGuard,
   Vector2Like,
 } from '@flighthq/types/contract';
 
@@ -134,6 +136,19 @@ export function createTextureAtlasRegion(obj?: Partial<TextureAtlasRegionLike>):
   });
 }
 
+// Recomputes why getTextureAtlasRegionTexture can or cannot mint the requested view. A page with a
+// nonzero rotation is refused because composing its SRT with a region window can require shear,
+// which Texture deliberately cannot represent.
+export function explainTextureAtlasRegionTexture(
+  atlas: Readonly<TextureAtlas>,
+  regionId: number,
+): TextureAtlasRegionTextureExplanation {
+  if (getTextureAtlasRegionById(atlas, regionId) === null) return { status: 'missing-region' };
+  if (atlas.texture === null) return { status: 'missing-texture' };
+  if (atlas.texture.uvRotation !== 0) return { status: 'rotated-page' };
+  return { status: 'ready' };
+}
+
 // Returns the first region with the given id, or null if not found.
 export function getTextureAtlasRegionById(atlas: Readonly<TextureAtlas>, id: number): TextureAtlasRegion | null {
   for (const region of atlas.regions) {
@@ -189,11 +204,17 @@ export function getTextureAtlasRegionSequence(atlas: Readonly<TextureAtlas>, pre
   return result;
 }
 
-// Returns one shared Texture per distinct atlas region. Region textures keep independent sampling
-// and uv state while sharing the atlas Texture source, so every sprite using a frame shares one upload.
-export function getTextureAtlasRegionTexture(atlas: Readonly<TextureAtlas>, regionId: number): Texture | null {
-  const region = getTextureAtlasRegionById(atlas, regionId);
-  if (region === null || atlas.texture === null) return null;
+// Returns one shared Texture2D per distinct atlas region. A region is a texel rect relative to the
+// page Texture's window: page offset/scale are compiled to source pixels, page flips are folded into
+// the region frame, and a packed rotated region becomes a quarter-turn sampling transform.
+export function getTextureAtlasRegionTexture(atlas: Readonly<TextureAtlas>, regionId: number): Texture2D | null {
+  const explanation = explainTextureAtlasRegionTexture(atlas, regionId);
+  if (explanation.status !== 'ready') {
+    textureAtlasRegionTextureGuard?.(atlas, regionId, explanation);
+    return null;
+  }
+  const region = getTextureAtlasRegionById(atlas, regionId)!;
+  const page = atlas.texture!;
   let textures = regionTextureCache.get(atlas);
   if (textures === undefined) {
     textures = new WeakMap();
@@ -201,12 +222,12 @@ export function getTextureAtlasRegionTexture(atlas: Readonly<TextureAtlas>, regi
   }
   let texture = textures.get(region);
   if (texture === undefined) {
-    texture = cloneTexture(atlas.texture);
+    texture = cloneTexture(page) as Texture2D;
     textures.set(region, texture);
   } else {
-    copyTexture(texture, atlas.texture);
+    copyTexture(texture, page);
   }
-  setTextureUvFromPixelRect(texture, region.x, region.y, region.width, region.height);
+  setTextureAtlasRegionTextureWindow(texture, page, region);
   return texture;
 }
 
@@ -360,6 +381,11 @@ export function setTextureAtlasRegion(
   out.trimmed = trimmed;
 }
 
+// Installs the optional diagnostics hook consulted when region Texture minting returns null.
+export function setTextureAtlasRegionTextureGuard(guard: TextureAtlasRegionTextureGuard | null): void {
+  textureAtlasRegionTextureGuard = guard;
+}
+
 // The next id to hand out for this atlas, and a high-water mark so it never goes backwards.
 //
 // Scanning the live regions alone is not enough: remove the highest-id region and the scan drops back
@@ -379,7 +405,51 @@ function _nextTextureAtlasRegionId(atlas: Readonly<TextureAtlas>): number {
   return next;
 }
 
-const regionTextureCache = new WeakMap<Readonly<TextureAtlas>, WeakMap<TextureAtlasRegion, Texture>>();
+function setTextureAtlasRegionTextureWindow(
+  texture: Texture2D,
+  page: Readonly<Texture2D>,
+  region: Readonly<TextureAtlasRegion>,
+): void {
+  const sourceWidth = getTextureWidth(page);
+  const sourceHeight = getTextureHeight(page);
+  if (sourceWidth <= 0 || sourceHeight <= 0) {
+    texture.flipX = false;
+    texture.flipY = false;
+    texture.uvOffset.x = 0;
+    texture.uvOffset.y = 0;
+    texture.uvRotation = 0;
+    texture.uvScale.x = 0;
+    texture.uvScale.y = 0;
+    return;
+  }
+
+  const pageX = page.uvOffset.x * sourceWidth;
+  const pageY = page.uvOffset.y * sourceHeight;
+  const pageWidth = page.uvScale.x * sourceWidth;
+  const pageHeight = page.uvScale.y * sourceHeight;
+  const x = page.flipX ? pageX + pageWidth - region.x - region.width : pageX + region.x;
+  const y = page.flipY ? pageY + pageHeight - region.y - region.height : pageY + region.y;
+
+  texture.uvOffset.x = x / sourceWidth;
+  if (region.rotated) {
+    texture.flipX = page.flipY;
+    texture.flipY = page.flipX;
+    texture.uvOffset.y = (y + region.height) / sourceHeight;
+    texture.uvRotation = -Math.PI / 2;
+    texture.uvScale.x = region.height / sourceHeight;
+    texture.uvScale.y = region.width / sourceWidth;
+  } else {
+    texture.flipX = page.flipX;
+    texture.flipY = page.flipY;
+    texture.uvOffset.y = y / sourceHeight;
+    texture.uvRotation = 0;
+    texture.uvScale.x = region.width / sourceWidth;
+    texture.uvScale.y = region.height / sourceHeight;
+  }
+}
+
+const regionTextureCache = new WeakMap<Readonly<TextureAtlas>, WeakMap<TextureAtlasRegion, Texture2D>>();
+let textureAtlasRegionTextureGuard: TextureAtlasRegionTextureGuard | null = null;
 
 // Per-atlas high-water mark for region id allocation. See _nextTextureAtlasRegionId.
 const nextRegionIdMark = new WeakMap<Readonly<TextureAtlas>, number>();

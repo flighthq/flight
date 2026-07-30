@@ -15,7 +15,7 @@ export function registerDomTextureResolver(
 }
 
 export function resolveDomTexture(state: DomRenderState, texture: Readonly<Texture>): CanvasImageSource | null {
-  if (texture.storage.dimension !== '2d') return null;
+  if (texture.dimension !== '2d') return null;
   const registry = getDomRenderStateRuntime(state).domTextureResolverRegistry;
   if (registry == null) return null;
   const sourceKind = getTextureSourceKind(texture);

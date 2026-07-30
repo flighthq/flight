@@ -1,4 +1,4 @@
-import type { ImageResource } from '@flighthq/types/contract';
+import type { Image } from '@flighthq/types/contract';
 
 import { uploadWgpuTextureData, uploadWgpuTextureElement, uploadWgpuTextureImageResource } from './wgpuTextureUpload';
 
@@ -42,7 +42,7 @@ describe('uploadWgpuTextureImageResource', () => {
   it('takes the element path when the resource carries a source', () => {
     const device = makeDevice();
     const texture = {} as GPUTexture;
-    const image = { source: {} as CanvasImageSource, width: 4, height: 4 } as unknown as ImageResource;
+    const image = { source: {} as CanvasImageSource, width: 4, height: 4 } as unknown as Image;
     uploadWgpuTextureImageResource(device, texture, [0, 0, 0], image);
     expect(device.queue.copyExternalImageToTexture).toHaveBeenCalledTimes(1);
     expect(device.queue.writeTexture).not.toHaveBeenCalled();

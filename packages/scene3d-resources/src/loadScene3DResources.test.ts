@@ -3,20 +3,15 @@ import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createScene3D } from '@flighthq/scene3d/contract';
 import { connectSignal, createSignal } from '@flighthq/signals/contract';
-import { createTexture } from '@flighthq/texture/contract';
-import type {
-  ImageResource,
-  ImageResourceReference,
-  Scene3DResourceLoadProgress,
-  Texture,
-} from '@flighthq/types/contract';
+import { createTexture, getTextureSource } from '@flighthq/texture/contract';
+import type { Image, ImageResourceReference, Scene3DResourceLoadProgress, Texture } from '@flighthq/types/contract';
 import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import { loadScene3DResources, waitForScene3DResourceResolver } from './loadScene3DResources';
 import { createBuiltInScene3DResourceResolver, disposeScene3DResourceResolver } from './sceneResourceResolver';
 
-const fakeImage = { height: 1, width: 1 } as unknown as ImageResource;
+const fakeImage = { height: 1, width: 1 } as unknown as Image;
 const testResources: ImageResourceReference[] = [];
 
 function externalRef(): ImageResourceReference {
@@ -53,8 +48,8 @@ describe('loadScene3DResources', () => {
 
     await loadScene3DResources(scene, resolver);
 
-    expect(a.storage.image).toBe(fakeImage);
-    expect(b.storage.image).toBe(fakeImage);
+    expect(getTextureSource(a)).toBe(fakeImage);
+    expect(getTextureSource(b)).toBe(fakeImage);
     expect(resourceOf(a)?.state).toBe(ResourceResolutionState.Resolved);
     disposeScene3DResourceResolver(resolver);
   });
@@ -98,7 +93,7 @@ describe('loadScene3DResources', () => {
 
     await loadScene3DResources(scene, resolver, { progress });
 
-    expect(texture.storage.image).toBeNull();
+    expect(getTextureSource(texture)).toBeNull();
     expect(resourceOf(texture)?.state).toBe(ResourceResolutionState.Failed);
     expect(events).toEqual([
       { loaded: 0, total: 1 },
@@ -122,8 +117,8 @@ describe('loadScene3DResources', () => {
 
     await loadScene3DResources(scene, resolver, { progress, select: (texture) => texture === selected });
 
-    expect(selected.storage.image).toBe(fakeImage);
-    expect(deferred.storage.image).toBeNull();
+    expect(getTextureSource(selected)).toBe(fakeImage);
+    expect(getTextureSource(deferred)).toBeNull();
     expect(resourceOf(deferred)?.state).toBe(ResourceResolutionState.Unresolved);
     expect(fetch).toHaveBeenCalledOnce();
     expect(events.at(-1)).toEqual({ loaded: 1, total: 1 });

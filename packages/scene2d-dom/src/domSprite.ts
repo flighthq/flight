@@ -29,7 +29,7 @@ export function drawDomSprite(state: DomRenderState, renderProxy: RenderProxy2D)
   if (data === null) return;
 
   const texture = (renderProxy.source as Sprite).data.texture;
-  if (texture === null || texture.storage.dimension !== '2d') return;
+  if (texture === null || texture.dimension !== '2d') return;
   const source = resolveDomTexture(state, texture);
   if (source === null) return;
 

@@ -1,9 +1,6 @@
 import type { RenderTarget } from './RenderTarget';
-import type { Texture } from './Texture';
-import type { TextureStorage } from './TextureStorage';
+import type { Texture2D } from './Texture';
 
-export interface RenderTexture extends Texture {
-  storage: Extract<TextureStorage, { dimension: '2d' }> & {
-    target: RenderTarget;
-  };
+export interface RenderTexture extends Texture2D {
+  source: RenderTarget;
 }

@@ -1,4 +1,5 @@
-import type { DomRenderState, ImageResource, Texture } from '@flighthq/types/contract';
+import { getTextureSource } from '@flighthq/texture/contract';
+import type { DomRenderState, Image, Texture } from '@flighthq/types/contract';
 import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import { registerDomTextureResolver } from './domTextureResolver';
@@ -8,5 +9,5 @@ export function registerDomImageTextureResolver(state: DomRenderState): void {
 }
 
 function resolveDomImageTexture(_state: DomRenderState, texture: Readonly<Texture>): CanvasImageSource | null {
-  return (texture.storage.image as Readonly<ImageResource> | null)?.source ?? null;
+  return (getTextureSource(texture) as Readonly<Image> | null)?.source ?? null;
 }

@@ -39,6 +39,7 @@
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/image": "*",
+    "@flighthq/log": "*",
     "@flighthq/texture": "*",
     "@flighthq/types": "*"
   },

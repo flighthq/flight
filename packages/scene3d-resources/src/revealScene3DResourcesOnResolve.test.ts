@@ -8,7 +8,7 @@ import { createTweenManager, hasTweensOf, updateTweens } from '@flighthq/tween/c
 import type { Scene3D } from '@flighthq/types/contract';
 import type {
   EmbeddedImageResourceReference,
-  ImageResource,
+  Image,
   Node3D,
   Scene3DResourceEvent,
   Texture,
@@ -125,10 +125,8 @@ describe('revealScene3DResourcesOnResolve', () => {
   it('does not hide an owner whose resource was already bound or had already failed', () => {
     const bound = createTexture({
       resource: pendingRef(),
-      storage: {
-        dimension: '2d',
-        image: { height: 1, kind: ImageTextureSourceKind, width: 1 } as ImageResource,
-      },
+      dimension: '2d',
+      source: { height: 1, kind: ImageTextureSourceKind, width: 1 } as Image,
     });
     const failedRef = pendingRef();
     failedRef.state = ResourceResolutionState.Failed;

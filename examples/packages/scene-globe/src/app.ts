@@ -119,11 +119,13 @@ const environment = createEnvironment({ environment: starCube, intensity: 0.75 }
 const longitudeSampler = createSampler({ wrapU: 'repeat' });
 const earthTexture = createTexture({
   sampler: longitudeSampler,
-  storage: { dimension: '2d', image: createEarthBitmap() },
+  dimension: '2d',
+  source: createEarthBitmap(),
 });
 const cloudTexture = createTexture({
   sampler: longitudeSampler,
-  storage: { dimension: '2d', image: createCloudBitmap() },
+  dimension: '2d',
+  source: createCloudBitmap(),
 });
 const scene = createNode3D(Node3DKind);
 

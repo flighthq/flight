@@ -92,7 +92,7 @@ function makeGlowCanvas(): HTMLCanvasElement {
 }
 
 const atlas = createTextureAtlas({
-  texture: createTexture({ storage: { dimension: '2d', image: createImageResource(makeGlowCanvas()) } }),
+  texture: createTexture({ dimension: '2d', source: createImageResource(makeGlowCanvas()) }),
 });
 addTextureAtlasRegion(atlas, 0, 0, 32, 32);
 

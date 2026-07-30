@@ -1,12 +1,12 @@
 import type * as ImageModule from '@flighthq/image/contract';
-import type { ExternalImageResourceReference, ImageResource } from '@flighthq/types/contract';
+import type { ExternalImageResourceReference, Image } from '@flighthq/types/contract';
 import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types/contract';
 import type { Mock } from 'vitest';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import type * as ImageResourceFetchModule from './imageResourceFetch';
 
-const fakeImage = { height: 1, width: 1 } as unknown as ImageResource;
+const fakeImage = { height: 1, width: 1 } as unknown as Image;
 type LoadImageResourceFromUrl = typeof ImageModule.loadImageResourceFromUrl;
 
 let fetchWebImageResource: typeof ImageResourceFetchModule.fetchWebImageResource;

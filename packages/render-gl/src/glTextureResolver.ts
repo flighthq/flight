@@ -1,10 +1,10 @@
-import { getTextureSourceKind } from '@flighthq/texture/contract';
+import { getTextureSource, getTextureSourceKind } from '@flighthq/texture/contract';
 import type {
   Bitmap,
   CompressedImage,
   GlRenderState,
   GlTextureResolver,
-  ImageResource,
+  Image,
   RenderTexture,
   TextureSourceKind,
   TextureLike,
@@ -14,15 +14,9 @@ import {
   CompressedImageTextureSourceKind,
   ImageTextureSourceKind,
   RenderTargetTextureSourceKind,
-  VideoTextureSourceKind,
 } from '@flighthq/types/contract';
 
-import {
-  bindGlBitmapTexture,
-  bindGlCompressedImageTexture,
-  bindGlImageResourceTexture,
-  bindGlVideoTexture,
-} from './glDraw';
+import { bindGlBitmapTexture, bindGlCompressedImageTexture, bindGlImageResourceTexture } from './glDraw';
 import { getGlRenderStateRuntime } from './glRenderState';
 import { bindGlRenderTexture } from './glRenderTexture';
 
@@ -56,16 +50,11 @@ export function registerGlTextureResolver(
   else registry.set(sourceKind, resolver);
 }
 
-// Installs the dynamic host-video specialization.
-export function registerGlVideoTextureResolver(state: GlRenderState): void {
-  registerGlTextureResolver(state, VideoTextureSourceKind, resolveGlVideoTexture);
-}
-
 // Resolves through one keyed lookup using the source's declared kind. Resolution is deliberately not
 // pure: each built-in resolver leaves its result bound to TEXTURE_2D on the active texture unit because
 // GL upload and sampler application require that binding. Callers must not reorder this call across
 // activeTexture/bind operations as though it only returned a handle. The CPU source owns its kind; a
-// GPU-origin target owns its own. An unbound or undeclared backing is the null sentinel.
+// GPU-origin target owns its own. An unbound or undeclared source is the null sentinel.
 export function resolveGlTexture(
   state: GlRenderState,
   texture: Readonly<TextureLike>,
@@ -83,12 +72,12 @@ function resolveGlBitmapTexture(
   texture: Readonly<TextureLike>,
   premultiply: boolean,
 ): WebGLTexture | null {
-  const bitmap = texture.storage.image as Readonly<Bitmap> | null;
+  const bitmap = getTextureSource(texture) as Readonly<Bitmap> | null;
   return bitmap === null ? null : bindGlBitmapTexture(state, bitmap, texture.sampler, null, premultiply);
 }
 
 function resolveGlCompressedImageTexture(state: GlRenderState, texture: Readonly<TextureLike>): WebGLTexture | null {
-  const image = texture.storage.image as Readonly<CompressedImage> | null;
+  const image = getTextureSource(texture) as Readonly<CompressedImage> | null;
   return image === null ? null : bindGlCompressedImageTexture(state, image, texture.sampler);
 }
 
@@ -97,19 +86,10 @@ function resolveGlImageTexture(
   texture: Readonly<TextureLike>,
   premultiply: boolean,
 ): WebGLTexture | null {
-  const image = texture.storage.image as Readonly<ImageResource> | null;
+  const image = getTextureSource(texture) as Readonly<Image> | null;
   return image === null ? null : bindGlImageResourceTexture(state, image, texture.sampler, null, premultiply);
 }
 
 function resolveGlRenderTexture(state: GlRenderState, texture: Readonly<TextureLike>): WebGLTexture | null {
   return bindGlRenderTexture(state, texture as Readonly<RenderTexture>);
-}
-
-function resolveGlVideoTexture(state: GlRenderState, texture: Readonly<TextureLike>): WebGLTexture | null {
-  const source = (texture.storage.image as Readonly<ImageResource> | null)?.source as
-    | HTMLVideoElement
-    | null
-    | undefined;
-  if (source == null || source.readyState < 2 || source.videoWidth <= 0 || source.videoHeight <= 0) return null;
-  return bindGlVideoTexture(state, texture);
 }

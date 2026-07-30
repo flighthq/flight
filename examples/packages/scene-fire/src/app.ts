@@ -73,7 +73,7 @@ function createFireAtlas() {
   context.fillStyle = gradient;
   context.fillRect(0, 0, canvas.width, canvas.height);
   const atlas = createTextureAtlas({
-    texture: createTexture({ storage: { dimension: '2d', image: createImageResource(canvas) } }),
+    texture: createTexture({ dimension: '2d', source: createImageResource(canvas) }),
   });
   addTextureAtlasRegion(atlas, 0, 0, canvas.width, canvas.height);
   return atlas;
@@ -90,7 +90,8 @@ function createSeededRandom(seed: number): () => number {
 const scene = createNode3D(Node3DKind);
 const groundTexture = createTexture({
   sampler: createSampler({ anisotropy: 4, wrapU: 'repeat', wrapV: 'repeat' }),
-  storage: { dimension: '2d', image: createEmberBitmap() },
+  dimension: '2d',
+  source: createEmberBitmap(),
 });
 const ground = createMesh(createPlaneMeshGeometry(8.5, 5.5, 8, 5), [
   createStandardPbrMaterial({

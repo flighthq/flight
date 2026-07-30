@@ -1,4 +1,4 @@
-import type { CubeTexture, ImageResource, TextureCubeImages } from '@flighthq/types/contract';
+import type { CubeTexture, Image, TextureSourceCubeFaces } from '@flighthq/types/contract';
 import { CubeFaceNegativeX, CubeFacePositiveX, CubeFacePositiveY } from '@flighthq/types/contract';
 
 import {
@@ -12,30 +12,30 @@ import {
 } from './cubeTexture';
 import { createSampler, equalsSampler } from './sampler';
 
-const fakeFace = { width: 64, height: 64 } as ImageResource;
-const fakeFace2 = { width: 128, height: 128 } as ImageResource;
+const fakeFace = { width: 64, height: 64 } as Image;
+const fakeFace2 = { width: 128, height: 128 } as Image;
 
-const allFaces: TextureCubeImages = [fakeFace, fakeFace, fakeFace, fakeFace, fakeFace, fakeFace];
+const allFaces: TextureSourceCubeFaces = [fakeFace, fakeFace, fakeFace, fakeFace, fakeFace, fakeFace];
 
 describe('cloneCubeTexture', () => {
   it('shares the face references in a fresh array and deep-clones the sampler', () => {
     const source = createCubeTexture({
       colorSpace: 'linear',
-      images: [fakeFace, null, null, null, null, null],
+      sources: [fakeFace, null, null, null, null, null],
     });
 
     const copy = cloneCubeTexture(source);
 
     expect(copy).not.toBe(source);
     expect(copy.colorSpace).toStrictEqual('linear');
-    expect(copy.storage.images).not.toBe(source.storage.images);
-    expect(copy.storage.images[0]).toBe(fakeFace);
+    expect(copy.sources).not.toBe(source.sources);
+    expect(copy.sources[0]).toBe(fakeFace);
     expect(copy.sampler).not.toBe(source.sampler);
     expect(equalsSampler(copy.sampler, source.sampler)).toBe(true);
 
     // A fresh faces array means reassigning a face on the clone cannot reach the source.
-    expect(copy.storage.images).not.toBe(source.storage.images);
-    expect(source.storage.images[1]).toBeNull();
+    expect(copy.sources).not.toBe(source.sources);
+    expect(source.sources[1]).toBeNull();
   });
 });
 
@@ -43,7 +43,7 @@ describe('copyCubeTexture', () => {
   it('writes every field from source into a distinct out, preserving sampler identity', () => {
     const source = createCubeTexture({
       colorSpace: 'linear',
-      images: [fakeFace, null, null, null, null, null],
+      sources: [fakeFace, null, null, null, null, null],
     });
     const out = createCubeTexture();
     const outSampler = out.sampler;
@@ -51,7 +51,7 @@ describe('copyCubeTexture', () => {
     copyCubeTexture(out, source);
 
     expect(out.colorSpace).toStrictEqual('linear');
-    expect(out.storage.images[0]).toBe(fakeFace);
+    expect(out.sources[0]).toBe(fakeFace);
     expect(out.sampler).toBe(outSampler);
     expect(equalsSampler(out.sampler, source.sampler)).toBe(true);
   });
@@ -59,13 +59,13 @@ describe('copyCubeTexture', () => {
   it('is safe when out aliases source', () => {
     const cube = createCubeTexture({
       colorSpace: 'linear',
-      images: [fakeFace, null, null, null, null, null],
+      sources: [fakeFace, null, null, null, null, null],
     });
 
     copyCubeTexture(cube, cube);
 
     expect(cube.colorSpace).toStrictEqual('linear');
-    expect(cube.storage.images[0]).toBe(fakeFace);
+    expect(cube.sources[0]).toBe(fakeFace);
   });
 });
 
@@ -74,25 +74,25 @@ describe('createCubeTexture', () => {
     const cube = createCubeTexture();
 
     expectTypeOf(cube).toEqualTypeOf<CubeTexture>();
-    expect(cube.storage.images).toHaveLength(6);
-    expect(cube.storage.images.every((face) => face === null)).toBe(true);
+    expect(cube.sources).toHaveLength(6);
+    expect(cube.sources.every((face) => face === null)).toBe(true);
     expect(cube.colorSpace).toStrictEqual('srgb');
     expect(equalsSampler(cube.sampler, createSampler())).toBe(true);
   });
 
   it('copies a supplied faces array rather than aliasing it', () => {
-    const images: TextureCubeImages = [fakeFace, null, null, null, null, null];
-    const cube = createCubeTexture({ images });
+    const sources: TextureSourceCubeFaces = [fakeFace, null, null, null, null, null];
+    const cube = createCubeTexture({ sources });
 
-    expect(cube.storage.images).not.toBe(images);
-    expect(cube.storage.images[0]).toBe(fakeFace);
+    expect(cube.sources).not.toBe(sources);
+    expect(cube.sources[0]).toBe(fakeFace);
   });
 });
 
 describe('equalsCubeTexture', () => {
   it('is true for cubes with the same color space, sampler, and face references', () => {
-    const a = createCubeTexture({ colorSpace: 'linear', images: allFaces });
-    const b = createCubeTexture({ colorSpace: 'linear', images: allFaces });
+    const a = createCubeTexture({ colorSpace: 'linear', sources: allFaces });
+    const b = createCubeTexture({ colorSpace: 'linear', sources: allFaces });
 
     expect(equalsCubeTexture(a, b)).toBe(true);
     expect(equalsCubeTexture(a, a)).toBe(true);
@@ -106,9 +106,9 @@ describe('equalsCubeTexture', () => {
   });
 
   it('is false when a face reference differs', () => {
-    const a = createCubeTexture({ images: allFaces });
-    const b = createCubeTexture({ images: allFaces });
-    (b.storage.images as unknown as (ImageResource | null)[])[0] = fakeFace2;
+    const a = createCubeTexture({ sources: allFaces });
+    const b = createCubeTexture({ sources: allFaces });
+    (b.sources as unknown as (Image | null)[])[0] = fakeFace2;
 
     expect(equalsCubeTexture(a, b)).toBe(false);
   });
@@ -131,7 +131,7 @@ describe('equalsCubeTexture', () => {
 
 describe('getCubeTextureFaceSize', () => {
   it('returns the width of the first non-null face', () => {
-    const cube = createCubeTexture({ images: [null, fakeFace, null, null, null, null] });
+    const cube = createCubeTexture({ sources: [null, fakeFace, null, null, null, null] });
 
     expect(getCubeTextureFaceSize(cube)).toStrictEqual(64);
   });
@@ -145,13 +145,13 @@ describe('getCubeTextureFaceSize', () => {
 
 describe('isCubeTextureComplete', () => {
   it('is false when any face is null', () => {
-    const cube = createCubeTexture({ images: [fakeFace, null, null, null, null, null] });
+    const cube = createCubeTexture({ sources: [fakeFace, null, null, null, null, null] });
 
     expect(isCubeTextureComplete(cube)).toBe(false);
   });
 
   it('is true when all six faces are bound', () => {
-    const cube = createCubeTexture({ images: allFaces });
+    const cube = createCubeTexture({ sources: allFaces });
 
     expect(isCubeTextureComplete(cube)).toBe(true);
   });
@@ -162,14 +162,14 @@ describe('setCubeTextureFace', () => {
     const cube = createCubeTexture();
 
     setCubeTextureFace(cube, CubeFacePositiveX, fakeFace);
-    expect(cube.storage.images[CubeFacePositiveX]).toBe(fakeFace);
-    expect(cube.storage.images[CubeFaceNegativeX]).toBeNull();
+    expect(cube.sources[CubeFacePositiveX]).toBe(fakeFace);
+    expect(cube.sources[CubeFaceNegativeX]).toBeNull();
   });
 
   it('unbinds a face when passed null', () => {
-    const cube = createCubeTexture({ images: allFaces });
+    const cube = createCubeTexture({ sources: allFaces });
 
     setCubeTextureFace(cube, CubeFacePositiveY, null);
-    expect(cube.storage.images[CubeFacePositiveY]).toBeNull();
+    expect(cube.sources[CubeFacePositiveY]).toBeNull();
   });
 });
