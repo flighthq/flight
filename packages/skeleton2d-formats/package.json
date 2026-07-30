@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@flighthq/animation": "*",
+    "@flighthq/easing": "*",
     "@flighthq/importdiagnostics": "*",
     "@flighthq/skeleton2d": "*",
     "@flighthq/types": "*"

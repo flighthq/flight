@@ -1,9 +1,11 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
+import { easeCubicBezier } from '@flighthq/easing/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createSkeleton2D } from '@flighthq/skeleton2d/contract';
 import type {
   Attachment2D,
   Bone2D,
+  EasingFunction,
   ImportDiagnostic,
   MeshAttachment2D,
   RegionAttachment2D,
@@ -327,19 +329,8 @@ function toUint16Array(value: unknown): Uint16Array {
 // + `extract`ed component values, with the setup pose already baked into `extract`) targeting the bone's
 // `path`. A timeline whose every keyframe is `curve: 'stepped'` is a Step track; otherwise Linear.
 //
-// A keyframe may instead carry `curve` as an array of cubic-bezier control points, which this importer does
-// NOT yet honor — the segment collapses to Linear and is Skip-crumbed once per timeline, the same way
-// DragonBones' `curve`/quadratic `tweenEasing` is (`dragonbones.tween-easing-unsupported`), so both formats
-// report the same fidelity limit instead of one dropping it silently. Only keyframes BEFORE the last are
-// counted: a curve describes the segment that FOLLOWS its keyframe, so the final key's curve drives nothing.
-//
-// Honoring it is a bounded change — `@flighthq/animation` already carries per-interval `segmentEasings` and
-// `@flighthq/easing` already exports `easeCubicBezier` — but it is BLOCKED ON A FORMAT QUESTION, not on
-// plumbing: Spine 3.8 writes these control points normalized to 0..1, while 4.x writes them in absolute
-// time/value units (and 4.x permits a different curve per component, which one per-interval easing cannot
-// express). The two encodings are not distinguishable from the numbers alone — a 3.8 file whose segment
-// spans about one second yields control points that look valid under either reading — so choosing wrongly
-// produces silently wrong motion rather than a loud failure. Deferred until a licensed rig can settle it.
+// A keyframe may instead carry `curve` as an array of cubic-bezier control points, which becomes a
+// per-interval `segmentEasings` entry on the track (see buildSpineSegmentEasings).
 function addSpineBoneChannel(
   channels: ReturnType<typeof createAnimationChannel>[],
   rawKeys: unknown,
@@ -350,31 +341,127 @@ function addSpineBoneChannel(
   diagnostics?: ImportDiagnostic[],
 ): void {
   if (!Array.isArray(rawKeys) || rawKeys.length === 0) return;
+  // Malformed entries are dropped, so the accepted keys are collected alongside the times/values they
+  // produced — segment i must index the key that actually wrote keyframe i, not the raw array position.
+  const keys: Record<string, unknown>[] = [];
   const times: number[] = [];
   const values: number[] = [];
   let allStepped = true;
-  let bezierKeys = 0;
-  for (let i = 0; i < rawKeys.length; i++) {
-    const key = rawKeys[i];
+  for (const key of rawKeys) {
     if (key === null || typeof key !== 'object') continue;
     const k = key as Record<string, unknown>;
+    keys.push(k);
     times.push(numberOr(k.time, 0));
     for (const component of extract(k)) values.push(component);
     if (k.curve !== 'stepped') allStepped = false;
-    if (i + 1 < rawKeys.length && Array.isArray(k.curve)) bezierKeys++;
   }
-  if (bezierKeys > 0) {
+  const interpolation = allStepped ? AnimationInterpolationStep : AnimationInterpolationLinear;
+  const segmentEasings = buildSpineSegmentEasings(keys, times, values, components, diagnostics);
+  const track = createAnimationTrack({ components, interpolation, segmentEasings, times, values });
+  channels.push(createAnimationChannel(track, { boneIndex, path }));
+}
+
+// Converts Spine's per-keyframe bezier `curve` arrays into one `EasingFunction` per INTERVAL, which is the
+// shape `AnimationTrack.segmentEasings` takes (entry i reshapes the alpha of the segment from key i to
+// i+1). Returns `null` when no interval carries a curve, so an uncurved timeline allocates nothing.
+//
+// Spine writes the control points in ABSOLUTE time/value units — not normalized — and writes FOUR numbers
+// PER COMPONENT, in component order (a 1-component `rotate` carries 4, a 2-component `translate` carries 8).
+// So each control point is rebased onto the segment to get the unit-square curve `easeCubicBezier` wants:
+// `x = (cx − t1) / (t2 − t1)` and `y = (cy − v1) / (v2 − v1)`.
+//
+// PER-COMPONENT DIVERGENCE. Spine permits a different curve per component, but a Flight track carries one
+// easing per interval, so the FIRST component's curve wins and a divergence is Skip-crumbed rather than
+// silently dropped [decision 2026-07-30]. Divergence is measured on the NORMALIZED control points, not the
+// raw numbers: two components with the same curve shape but different value ranges write different raw
+// `cy`s, so a raw comparison would report divergence on essentially every multi-component timeline.
+// A component whose value does not change across the segment is skipped when picking the winner — its
+// curve carries no shape (the rebase would divide by zero) — so "first" means first MEANINGFUL component.
+function buildSpineSegmentEasings(
+  keys: readonly Readonly<Record<string, unknown>>[],
+  times: readonly number[],
+  values: readonly number[],
+  components: number,
+  diagnostics?: ImportDiagnostic[],
+): (EasingFunction | null)[] | null {
+  const segments = times.length - 1;
+  if (segments < 1) return null;
+  const easings: (EasingFunction | null)[] = [];
+  let curved = false;
+  let clampedSegments = 0;
+  let divergentSegments = 0;
+  for (let i = 0; i < segments; i++) {
+    const curve = keys[i].curve;
+    const span = times[i + 1] - times[i];
+    if (!Array.isArray(curve) || span <= 0) {
+      easings.push(null);
+      continue;
+    }
+    let x1 = 0;
+    let y1 = 0;
+    let x2 = 0;
+    let y2 = 0;
+    let chosen = false;
+    let diverged = false;
+    for (let c = 0; c < components && (c + 1) * 4 <= curve.length; c++) {
+      const from = values[i * components + c];
+      const rise = values[(i + 1) * components + c] - from;
+      if (rise === 0) continue;
+      const offset = c * 4;
+      const cx1 = (numberOr(curve[offset], 0) - times[i]) / span;
+      const cy1 = (numberOr(curve[offset + 1], 0) - from) / rise;
+      const cx2 = (numberOr(curve[offset + 2], 0) - times[i]) / span;
+      const cy2 = (numberOr(curve[offset + 3], 0) - from) / rise;
+      if (!chosen) {
+        x1 = cx1;
+        y1 = cy1;
+        x2 = cx2;
+        y2 = cy2;
+        chosen = true;
+      } else if (
+        Math.abs(cx1 - x1) > SPINE_CURVE_EPSILON ||
+        Math.abs(cy1 - y1) > SPINE_CURVE_EPSILON ||
+        Math.abs(cx2 - x2) > SPINE_CURVE_EPSILON ||
+        Math.abs(cy2 - y2) > SPINE_CURVE_EPSILON
+      ) {
+        diverged = true;
+      }
+    }
+    if (diverged) divergentSegments++;
+    if (chosen) {
+      curved = true;
+      // Spine lets a control point sit OUTSIDE its segment in time, which a CSS-style cubic bezier cannot
+      // represent: `easeCubicBezier` inverts x→parameter, and that inversion is only well defined while x
+      // stays monotonic over [0,1]. So the x components are clamped and the loss is recorded. The y
+      // components are deliberately left unclamped — a y outside [0,1] is legitimate overshoot/anticipation
+      // and the solver handles it, since y is the output value rather than the thing being inverted.
+      const clampedX1 = clampUnit(x1);
+      const clampedX2 = clampUnit(x2);
+      if (clampedX1 !== x1 || clampedX2 !== x2) clampedSegments++;
+      easings.push(easeCubicBezier(clampedX1, y1, clampedX2, y2));
+    } else {
+      easings.push(null);
+    }
+  }
+  if (clampedSegments > 0) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'spine.curve-time-overshoot-clamped',
+      'parseSpineSkeleton',
+      { segments: clampedSegments },
+    );
+  }
+  if (divergentSegments > 0) {
     reportImportDiagnostic(
       diagnostics,
       ImportDiagnosticSeverity.Skip,
-      'spine.curve-easing-unsupported',
+      'spine.per-component-curve-easing-unsupported',
       'parseSpineSkeleton',
-      { keys: bezierKeys },
+      { segments: divergentSegments },
     );
   }
-  const interpolation = allStepped ? AnimationInterpolationStep : AnimationInterpolationLinear;
-  const track = createAnimationTrack({ components, interpolation, times, values });
-  channels.push(createAnimationChannel(track, { boneIndex, path }));
+  return curved ? easings : null;
 }
 
 function indexOfBone(bones: readonly Bone2D[], name: string): number {
@@ -467,6 +554,16 @@ function skipCrumbSpineTimelineGroup(diagnostics: ImportDiagnostic[] | undefined
   if (count > 0)
     reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Skip, kind, 'parseSpineSkeleton', { count });
 }
+
+// Clamps a normalized bezier x component into the unit interval the curve solver can invert over.
+function clampUnit(value: number): number {
+  return value < 0 ? 0 : value > 1 ? 1 : value;
+}
+
+// Two normalized bezier control points closer than this are the same curve shape. Float rebasing through
+// differing per-component value ranges introduces small error, so an exact comparison would report
+// divergence on curves that are actually identical.
+const SPINE_CURVE_EPSILON = 1e-6;
 
 // Maps a Spine bone `transform` string to a TransformMode2D. Spine omits the field for the default,
 // so an absent/unknown value is `Normal`.
