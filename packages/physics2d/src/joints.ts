@@ -2,6 +2,7 @@ import type {
   Physics2DDistanceJoint,
   Physics2DJoint,
   Physics2DMouseJoint,
+  Physics2DRevoluteJoint,
   Physics2DRopeJoint,
   Physics2DWeldJoint,
   Physics2DWorld,
@@ -169,22 +170,111 @@ export const physics2DMouseJointSolver = {
 // independently: solving x then y lets each undo part of the other's correction, and a hinge under load
 // visibly creeps.
 export const physics2DRevoluteJointSolver = {
+  // Swapping the ends reverses the sense of every angular quantity this solver reads. The relative
+  // angle is measured bodyA -> bodyB, so it negates; the limit interval negates AND its ends exchange
+  // (the old lower bound becomes the new upper); and the motor's target relative velocity reverses.
+  // Deriving it: the constraint is lower <= (angleB - angleA - reference) <= upper. Writing t for
+  // (angleB - angleA), that is lower + reference <= t <= upper + reference. After the swap t becomes
+  // -t, so the same physical interval requires reference' = -reference, lower' = -upper and
+  // upper' = -lower.
+  swapEnds(joint: Physics2DJoint): boolean {
+    const revolute = joint as Physics2DRevoluteJoint;
+    const lower = revolute.lowerAngle;
+    revolute.lowerAngle = -revolute.upperAngle;
+    revolute.upperAngle = -lower;
+    revolute.referenceAngle = -revolute.referenceAngle;
+    revolute.motorSpeed = -revolute.motorSpeed;
+    revolute.motorImpulse = -revolute.motorImpulse;
+    return true;
+  },
+
   prepare(world: Physics2DWorld, joint: Physics2DJoint, dt: number): void {
+    const revolute = joint as Physics2DRevoluteJoint;
     const bodyA = findPhysics2DBody(world, joint.bodyA);
     const bodyB = findPhysics2DBody(world, joint.bodyB);
     if (bodyA === null || bodyB === null) return;
     writeJointAnchors(bodyA, bodyB, joint);
     const errorX = bodyB.x + joint.rBX - (bodyA.x + joint.rAX);
     const errorY = bodyB.y + joint.rBY - (bodyA.y + joint.rAY);
-    jointStateScratch.set(joint, [errorX * (BAUMGARTE / dt), errorY * (BAUMGARTE / dt), 0, 0, 0]);
+    // The angular constraints share one effective mass: the pair's combined resistance to a relative
+    // spin. Zero when neither body can rotate, which disables motor and limits rather than dividing
+    // by zero.
+    const inverseInertiaSum = bodyA.inverseInertia + bodyB.inverseInertia;
+    const angularMass = inverseInertiaSum > 0 ? 1 / inverseInertiaSum : 0;
+    jointStateScratch.set(joint, [
+      errorX * (BAUMGARTE / dt),
+      errorY * (BAUMGARTE / dt),
+      angularMass,
+      0,
+      0,
+      dt * revolute.maxMotorTorque,
+      1 / dt,
+    ]);
   },
 
   solve(world: Physics2DWorld, joint: Physics2DJoint): void {
+    const revolute = joint as Physics2DRevoluteJoint;
     const state = jointStateScratch.get(joint);
     if (state === undefined) return;
     const bodyA = findPhysics2DBody(world, joint.bodyA);
     const bodyB = findPhysics2DBody(world, joint.bodyB);
     if (bodyA === null || bodyB === null) return;
+
+    const angularMass = state[2];
+    if (angularMass > 0) {
+      // Motor first: it is a soft target the limits are allowed to override, so solving it before the
+      // limits lets a limit's impulse win in the same iteration when they disagree.
+      if (revolute.enableMotor) {
+        const maxMotorImpulse = state[5];
+        const relative = bodyB.angularVelocity - bodyA.angularVelocity - revolute.motorSpeed;
+        const desired = -angularMass * relative;
+        const previous = revolute.motorImpulse;
+        // Clamped on the ACCUMULATED impulse against torque * dt, so the bound is a torque and not a
+        // per-iteration one that would scale with the iteration count.
+        const total = Math.min(Math.max(previous + desired, -maxMotorImpulse), maxMotorImpulse);
+        revolute.motorImpulse = total;
+        const applied = total - previous;
+        bodyA.angularVelocity -= bodyA.inverseInertia * applied;
+        bodyB.angularVelocity += bodyB.inverseInertia * applied;
+      }
+
+      if (revolute.enableLimit) {
+        const bias = state[6];
+        const angle = bodyB.angle - bodyA.angle - revolute.referenceAngle;
+        // Each end is a one-sided constraint: it may only push the angle back inside the interval,
+        // never pull it in. Two things make that true together. The non-negative clamp on the running
+        // impulse means a limit can push and never pull. And the bias is the REMAINING ROOM to the
+        // bound, max(C, 0) / dt, not the violation depth: while the angle is inside the interval that
+        // room is large and positive, which drives the desired impulse negative, so the clamp holds
+        // the accumulator at zero and the limit contributes nothing.
+        //
+        // Using the violation depth instead — min(C, 0) — zeroes the bias while inside the interval,
+        // and the upper end then reads a positive desired impulse against any forward rotation and
+        // brakes it to a standstill. Measured while building this: a motor at speed 5 held the arm at
+        // exactly zero, spending its whole torque budget every step against a limit it was nowhere
+        // near.
+        const lowerError = angle - revolute.lowerAngle;
+        const lowerDesired =
+          -angularMass * (bodyB.angularVelocity - bodyA.angularVelocity + Math.max(lowerError, 0) * bias);
+        const lowerPrevious = state[3];
+        const lowerTotal = Math.max(lowerPrevious + lowerDesired, 0);
+        state[3] = lowerTotal;
+        const lowerApplied = lowerTotal - lowerPrevious;
+        bodyA.angularVelocity -= bodyA.inverseInertia * lowerApplied;
+        bodyB.angularVelocity += bodyB.inverseInertia * lowerApplied;
+
+        const upperError = revolute.upperAngle - angle;
+        const upperDesired =
+          -angularMass * (bodyA.angularVelocity - bodyB.angularVelocity + Math.max(upperError, 0) * bias);
+        const upperPrevious = state[4];
+        const upperTotal = Math.max(upperPrevious + upperDesired, 0);
+        state[4] = upperTotal;
+        const upperApplied = upperTotal - upperPrevious;
+        bodyA.angularVelocity += bodyA.inverseInertia * upperApplied;
+        bodyB.angularVelocity -= bodyB.inverseInertia * upperApplied;
+      }
+    }
+
     solvePointConstraint(bodyA, bodyB, joint, state[0], state[1]);
   },
 };
@@ -363,10 +453,14 @@ function axisRelativeVelocity(
   return (vbx - vax) * axisX + (vby - vay) * axisY;
 }
 
-// Per-step solver state, keyed by joint. A Map rather than fields on the joint because the five numbers
-// each solver needs mean different things per kind, and putting a fixed block of untyped scratch on the
+// Per-step solver state, keyed by joint. A Map rather than fields on the joint because the numbers each
+// solver needs mean different things per kind, and putting a fixed block of untyped scratch on the
 // public entity would make the header describe the solver's internals.
-const jointStateScratch = new Map<Physics2DJoint, readonly number[]>();
+//
+// Mutable, because a one-sided constraint accumulates its impulse ACROSS the velocity iterations of a
+// single step: the revolute limits clamp their running totals to stay non-negative, which is what makes
+// them limits rather than springs, and that total has to live somewhere between iterations.
+const jointStateScratch = new Map<Physics2DJoint, number[]>();
 const axisScratch = [0, 0];
 const jointScratch = [0, 0, 0];
 const EPSILON = 1e-9;
