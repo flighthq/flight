@@ -423,18 +423,6 @@ describe('validateMenuItemTemplate', () => {
     expect(validateMenuItemTemplate({ id: 'copy', label: 'Copy', type: 'normal', checked: true })).toContain('checked');
   });
 
-  it('rejects multiple checked radios in one contiguous sibling group', () => {
-    expect(
-      validateMenuItemTemplate({
-        type: 'submenu',
-        submenu: [
-          { id: 'left', type: 'radio', checked: true },
-          { id: 'right', type: 'radio', checked: true },
-        ],
-      }),
-    ).toContain('multiple checked radio');
-  });
-
   it('allows checked radios in separate contiguous groups', () => {
     expect(
       validateMenuItemTemplate({
@@ -482,6 +470,45 @@ describe('validateMenuItemTemplate', () => {
   // otherwise the rule would only catch half the mistake.
   it('rejects checked: false on a normal item', () => {
     expect(validateMenuItemTemplate({ id: 'copy', label: 'Copy', checked: false })).not.toBeNull();
+  });
+
+  it('rejects two checked radios in the same group', () => {
+    const parent = createMenuItemTemplate({
+      id: 'align',
+      type: 'submenu',
+      submenu: [
+        { id: 'left', label: 'Left', type: 'radio', checked: true },
+        { id: 'right', label: 'Right', type: 'radio', checked: true },
+      ],
+    });
+    expect(validateMenuItemTemplate(parent)).toContain('radio group');
+  });
+
+  it('accepts one checked radio in a group', () => {
+    const parent = createMenuItemTemplate({
+      id: 'align',
+      type: 'submenu',
+      submenu: [
+        { id: 'left', label: 'Left', type: 'radio', checked: true },
+        { id: 'right', label: 'Right', type: 'radio', checked: false },
+      ],
+    });
+    expect(validateMenuItemTemplate(parent)).toBeNull();
+  });
+
+  // A separator ends the run, so the two checked radios below belong to different groups and are both
+  // legitimate — the rule is about adjacency, not about the whole child list.
+  it('accepts a checked radio in each of two groups split by a separator', () => {
+    const parent = createMenuItemTemplate({
+      id: 'view',
+      type: 'submenu',
+      submenu: [
+        { id: 'left', label: 'Left', type: 'radio', checked: true },
+        { type: 'separator' },
+        { id: 'small', label: 'Small', type: 'radio', checked: true },
+      ],
+    });
+    expect(validateMenuItemTemplate(parent)).toBeNull();
   });
 
   it('reports the offending child of a submenu', () => {

@@ -1,8 +1,22 @@
 ---
 package: '@flighthq/menu'
-updated: 2026-06-24
-by: ingest:builder-67dc46d64
+updated: 2026-07-30
+by: builder
 ---
+
+## 2026-07-30 — cell items implemented; three web-renderer defects found doing it (builder)
+
+The first non-stale cell in a while: all four Recommended items were genuinely open and are now landed (`30833fedf` plus a radio-group follow-up). Writing the renderer tests the cell asked for is what surfaced the defects — the renderer had almost no direct coverage, and each of these had been sitting in live source.
+
+**Collapsed submenu rows were included in keyboard travel.** A submenu is built as a nested `<ul>` inside its parent `<li>`, and the focusable set was collected with an unscoped descendant query, so every row of every collapsed submenu was focusable. Those rows are `display:none`: arrow travel stopped on invisible entries — the highlight simply vanished for a keypress — and Enter there resolved the popup with the id of an item the user could not see. Fixed by scoping the query to the menu's own direct children.
+
+**The first ArrowUp landed one row short of the end.** `focusIndex` starts at `-1` as a no-selection sentinel, and feeding that through the wrap arithmetic gives `(-1 - 1 + n) % n = n - 2`. Down worked by luck (`0`); up did not. Now the entry case is spelled out: down enters at the top, up enters at the bottom. Found because a test I wrote asserting the ordinary behaviour disagreed with the code.
+
+**The renderer's own comment overstated it**, claiming "submenu expansion on hover/arrow-right" when `onKeyDown` handles only Escape/Up/Down/Enter/Space — there is no ArrowRight at all. Corrected to describe what exists, with the gap recorded in the assessment Backlog rather than silently implemented: adding traversal means deciding what Enter on a submenu parent does (today it resolves the popup with the parent's id), how ArrowLeft returns, and how hover and keyboard share the open state. Interaction design, not a defect.
+
+On the cell items themselves: `visible: false` omits the item from the DOM rather than styling it away, so it cannot be reached by arrow keys or hover — that is the whole difference from `enabled`, and there is a test for each half. The validator gained two distinct rules: `checked` on a non-toggle type (per-item), and at most one checked member per run of adjacent radio siblings (cross-sibling, so it runs where the child list is known — a separator or any other type starts a new run).
+
+33 → 53 tests. Five mutations, each confirmed applied, each failing only its own tests. One of them earned its keep: dropping the `checked`-type validation failed *nothing*, which is how I found I had added that rule without covering it.
 
 # menu — Status Log
 
