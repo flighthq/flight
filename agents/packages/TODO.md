@@ -143,7 +143,7 @@ Design calls to settle before building the affected entries:
 
 ### text (partial 58)
 
-- Flag textlayout's `_text` parameter for removal
+- **`setRichTextContent`, `setRichTextDefaultTextFormat`, `setRichTextFormatRange`,
 
 ### video (solid 60)
 
