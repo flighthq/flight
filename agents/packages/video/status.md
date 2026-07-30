@@ -6,6 +6,18 @@ by: builder
 
 # video — Status Log
 
+## 2026-07-30 — blob object-URL revocation moved to disposal (builder)
+
+Implements chief's ruling on the fork parked earlier the same day. `VideoResource` gains a nullable `objectUrl` in `@flighthq/types`; `loadVideoResourceFromBlob` transfers ownership of the URL to the resource it returns instead of revoking when the load settles; `disposeVideoResource` revokes it. The verb stays `dispose*` under the teardown doctrine: revoking releases the blob-store reference that keeps the `Blob` reachable, so it becomes GC-eligible — nothing non-GC is freed and no handle is invalidated ahead of teardown.
+
+The failure path is the one place the loader still revokes, because it returns no resource for anyone to dispose. Revocation also happens *after* the element has released its src, so the media resource is never detached from a URL the element is still reading through; a test pins that ordering.
+
+The two tests that pinned the old timing moved with the fix and now assert the invariant the old timing actually broke — the resource comes back holding a live URL — with a second case at `readiness: 'metadata'`, where only the container header has been read and every byte of media is still to come.
+
+Verified with four separate mutations, each confirmed applied before trusting the result, each failing a disjoint set: dispose-revoke (3 tests), loader ownership transfer (2), the null guard alone (2), the failure-path revoke alone (2). That last pair is the new standing lens in practice — removing only the mechanism a test is titled for, rather than a nearby defense that would mask it.
+
+Also fixed test hygiene in `videoResource.test.ts`: the file never restored mocks, and `vi.spyOn` returns the *existing* spy when a method is already spied, so URL spies shared one call history across tests and every count assertion silently read the previous test's calls. 58 → 64 tests.
+
 ## 2026-07-30 — decoder release on the loader's abandonment paths (builder)
 
 Swept the cell; all six assessment Recommended items were already landed (commit `2ef652b3`) and are now retired there, so the TODO index was scraping a stale section. The cell itself did hold a real defect, in the one place the review singles out for praise — "mid-load abort clears `src` to stop the network fetch … the best-crafted code in the package."

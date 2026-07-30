@@ -144,6 +144,7 @@ Decisions and procedures that are easy to violate and only matter inside one dom
 
 - [examples plan](agents/examples-plan.md) — the new example set: 10 reworked core examples, 17 Flight-specific feature examples, 3 integration demos, with implementation order and open questions.
 - [quality plan](agents/quality-plan.md) — the direction for API maturity verification, and the unit-versus-functional test guidance.
+- [loader progress currencies](agents/loader-progress-currencies.md) — **proposal, awaiting ruling.** Before touching `onProgress`, `getResourceLoadProgress`, `weight`, or `bytesHint`. The three currencies, where the two batch-level ones contradict each other today, and the recommendation.
 - [test depth review](agents/test-depth-review.md) — completed unit-test-depth review across 78 packages, with the prioritized gap list and functional test candidates.
 - [breadth synthesis](agents/breadth-synthesis.md) — cross-report convergences from the four breadth analyses: overlapping domains, genuinely missing primitives, and open design calls. Individual reports: [adjacent content](agents/breadth-adjacent-content.md), [platform variance](agents/breadth-platform-variance.md), [cloud/distributed](agents/breadth-cloud-distributed.md), [domain deepening](agents/breadth-domain-deepening.md).
 
