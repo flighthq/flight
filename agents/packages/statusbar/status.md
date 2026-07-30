@@ -1,12 +1,28 @@
 ---
 package: '@flighthq/statusbar'
-updated: 2026-06-24
-by: ingest:builder-67dc46d64
+updated: 2026-07-30
 ---
 
 # statusbar — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## 2026-07-30 — live-tree closure and correctness audit
+
+- Verified the sole approved Recommended item against current history. Commit `f829dccc8` removed the
+  no-op `enableStatusBarSignals`; `createStatusBar` owns signal allocation and `attachStatusBar` gates
+  backend subscription cost.
+- Confirmed the old merge-gate blockers are stale. All status-bar value/backend/event types are
+  present in `@flighthq/types`, and the implementation compiles against the contract lane.
+- Verified the already-authored correctness fix in `c56576fa1`: style-stack pop/clear restore the
+  pre-push backend baseline instead of leaving released values applied, every change event receives an
+  owned `StatusBarInfo` rather than a shared mutable scratch, and `hasStatusBarStyleEntry` /
+  `clearStatusBarStyleStack` carry regression coverage.
+- Focused `npm run check -- statusbar` passed all structural gates,
+  `npm run test --workspace=packages/statusbar` passed 42 tests, and the Capacitor status-bar adapter's
+  two focused tests pass.
+- Expanded the Package Map and closed Recommended work. Native async snapshot/change truth, animation
+  fidelity, stack/backend arbitration, and the status-bar-height/safe-area boundary remain Depth gaps.
 
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
