@@ -316,6 +316,12 @@ sampler, correct sampling needs a colorSpace, a render-target page on GL needs f
 template state — each need restates one more view field on the atlas until it _is_ a Texture. The
 fixed point is holding one.
 
+**Views multiply when sampling state varies; sources multiply when content layers.** A
+`TextureAtlas` is many views over one source (many windows, one page). An `ArrayTexture` is one view
+over many sources (one sampler, many layers — per-layer sampler/colorSpace/uv would permit states
+the GPU cannot honor, the D3 class again). Same two building blocks, multiplied on opposite sides;
+neither ever nests a Texture in a Texture.
+
 **Regions are texel rects relative to the page texture's window, and minting composes in pixel
 space.** `getTextureAtlasRegionTexture` compiles the page window down to a texel frame (multiply by
 source dimensions), composes rects there — closed and exact, including flips and the `rotated`
