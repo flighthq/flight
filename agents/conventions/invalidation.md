@@ -17,10 +17,22 @@ Three tiers, chosen by mechanism — not by package or by field name:
    from), or a per-node stamp scoped to nodes under an active render cache. The bundle invariant
    holds because only the kind's own code knows what to compare.
 2. **Payloads are versioned.** A resource whose bytes can mutate in place carries `version`;
-   mutating bumps it (`invalidateTexture` is the named verb — a version bump). Resolver and cache
-   layers compare versions. Resource-side versioning has a property node-side invalidation cannot
-   have: **fan-out** — twenty sprites sharing one texture all see one bump; no caller has to
-   enumerate referencing nodes.
+   mutating bumps it. Resolver and cache layers compare versions. Resource-side versioning has a
+   property node-side invalidation cannot have: **fan-out** — twenty sprites sharing one texture all
+   see one bump; no caller has to enumerate referencing nodes.
+
+   **The `invalidate<Type>` verb family, and its membership test:** a public verb exists exactly
+   where the payload can mutate through a channel Flight does not mediate — raw typed arrays
+   (`Bitmap.data`, `VoxelGrid.data`, `MeshGeometry.vertices`) or borrowed host handles (a canvas
+   drawn into, a video advancing). Where mutation flows only through Flight's own ops, the ops bump
+   internally (clip ops, mesh transforms) and the public verb is the escape hatch for the direct
+   channel, not a required call after every op. Members: `invalidateBitmap`,
+   `invalidateImageResource`, `invalidateClipRegion` (all pre-existing), `invalidateTexture`,
+   `invalidateMeshGeometry`, `invalidateVoxelGrid`. A versioned resource without its verb is a gap:
+   direct writes are a designed channel (hot deform loops), and without the verb a direct write has
+   no way to become visible. Kinds with per-node non-shared payloads (shape command lists) do not
+   version — they are tier 3.
+
 3. **Intermediate renders are invalidated.** Kinds that rasterize their own payload (text labels,
    scale-9 shapes) hold an expensive per-node derived artifact. `invalidateNodeLocalContent` is the
    **input-dirty signal**: "the rasterizable payload changed — re-produce the intermediate render."
