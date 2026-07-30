@@ -1,6 +1,6 @@
 import { createMatrix } from '@flighthq/geometry/contract';
-import type { Bone2D } from '@flighthq/types/contract';
-import { TransformMode2D } from '@flighthq/types/contract';
+import type { Bone2D, RegionAttachment2D, Slot2D } from '@flighthq/types/contract';
+import { RegionAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -12,7 +12,9 @@ import {
   equalsSkeleton2D,
   getSkeleton2DBoneIndexByName,
   getSkeleton2DBoneWorldMatrix,
+  getSkeleton2DSkin,
   setSkeleton2DBindPose,
+  setSkeleton2DSkin,
   validateSkeleton2D,
 } from './skeleton2d';
 
@@ -316,6 +318,23 @@ describe('getSkeleton2DBoneWorldMatrix', () => {
   });
 });
 
+describe('getSkeleton2DSkin', () => {
+  it('finds a skin by name and returns the null sentinel otherwise', () => {
+    const skeleton = createSkeleton2D([makeBone({ name: 'root' })], [testSlot('head', 0)]);
+    skeleton.skins = [
+      { attachments: [], name: 'goblin' },
+      { attachments: [], name: 'goblingirl' },
+    ];
+    expect(getSkeleton2DSkin(skeleton, 'goblingirl')!.name).toBe('goblingirl');
+    expect(getSkeleton2DSkin(skeleton, 'nope')).toBeNull();
+  });
+
+  it('returns null for a rig carrying no wardrobe at all', () => {
+    const skeleton = createSkeleton2D([makeBone({ name: 'root' })]);
+    expect(getSkeleton2DSkin(skeleton, 'goblin')).toBeNull();
+  });
+});
+
 describe('setSkeleton2DBindPose', () => {
   it('captures the inverse of the current world so the palette is identity at bind', () => {
     const s = createSkeleton2D([makeBone({ x: 4, rotation: 60, scaleX: 2 })]);
@@ -326,6 +345,49 @@ describe('setSkeleton2DBindPose', () => {
     expect(s.boneMatrices[3]).toBeCloseTo(1, 4);
     expect(s.boneMatrices[4]).toBeCloseTo(0, 4);
     expect(s.boneMatrices[5]).toBeCloseTo(0, 4);
+  });
+});
+
+describe('setSkeleton2DSkin', () => {
+  it('writes the skin attachments onto the slots they name', () => {
+    const skeleton = createSkeleton2D([makeBone({ name: 'root' })], [testSlot('head', 0), testSlot('hand', 0)]);
+    const hat = testRegion('hat');
+    setSkeleton2DSkin(skeleton, { attachments: [{ attachment: hat, name: 'head', slotIndex: 0 }], name: 'goblin' });
+    expect(skeleton.slots![0].attachment).toBe(hat);
+  });
+
+  it('LEAVES slots the skin does not mention alone, so a partial skin layers over a base', () => {
+    const base = testRegion('body');
+    const skeleton = createSkeleton2D([makeBone({ name: 'root' })], [testSlot('head', 0), testSlot('body', 0)]);
+    skeleton.slots![1].attachment = base;
+    const hat = testRegion('hat');
+    setSkeleton2DSkin(skeleton, { attachments: [{ attachment: hat, name: 'head', slotIndex: 0 }], name: 'goblin' });
+    expect(skeleton.slots![0].attachment).toBe(hat);
+    expect(skeleton.slots![1].attachment).toBe(base); // shared art survives the overlay
+  });
+
+  it('skips an entry naming a slot outside the skeleton rather than throwing', () => {
+    const skeleton = createSkeleton2D([makeBone({ name: 'root' })], [testSlot('head', 0)]);
+    expect(() =>
+      setSkeleton2DSkin(skeleton, {
+        attachments: [
+          { attachment: testRegion('ghost'), name: 'ghost', slotIndex: 9 },
+          { attachment: testRegion('ghost2'), name: 'ghost2', slotIndex: -1 },
+        ],
+        name: 'broken',
+      }),
+    ).not.toThrow();
+    expect(skeleton.slots![0].attachment).toBeNull();
+  });
+
+  it('is a no-op on a skeleton with no slots', () => {
+    const skeleton = createSkeleton2D([makeBone({ name: 'root' })]);
+    expect(() =>
+      setSkeleton2DSkin(skeleton, {
+        attachments: [{ attachment: testRegion('x'), name: 'x', slotIndex: 0 }],
+        name: 's',
+      }),
+    ).not.toThrow();
   });
 });
 
@@ -346,3 +408,12 @@ describe('validateSkeleton2D', () => {
     expect(validateSkeleton2D(s)).toContain('worldMatrices');
   });
 });
+
+// A minimal slot for wardrobe tests: no attachment until a skin supplies one.
+function testSlot(name: string, boneIndex: number): Slot2D {
+  return { attachment: null, boneIndex, color: 0xffffffff, name };
+}
+
+function testRegion(name: string): RegionAttachment2D {
+  return { height: 0, kind: RegionAttachment2DKind, name, rotation: 0, scaleX: 1, scaleY: 1, width: 0, x: 0, y: 0 };
+}

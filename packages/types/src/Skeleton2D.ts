@@ -1,3 +1,4 @@
+import type { AttachmentSkin2D } from './AttachmentSkin2D';
 import type { Bone2D } from './Bone2D';
 import type { Entity } from './Entity';
 import type { Slot2D } from './Slot2D';
@@ -17,10 +18,16 @@ import type { Slot2D } from './Slot2D';
 // A rigid region/mesh attachment reads `worldMatrices` (it follows its bone); a Spine-weighted mesh reads
 // `worldMatrices` too (its offsets bake the bind, see Skin2D). `slots` is the draw-order list (null for a
 // pure bone rig with nothing drawable).
+//
+// `skins` is the rig's WARDROBE — the named alternative attachment sets it can wear (`AttachmentSkin2D`,
+// which despite the shared word is unrelated to `Skin2D`). It is inert data: a skin only takes effect when
+// `setSkeleton2DSkin` writes its attachments onto the slots, so a skeleton that never changes outfit pays
+// nothing for carrying them. Null for a rig with no alternates.
 export interface Skeleton2D extends Entity {
   boneMatrices: Float32Array;
   bones: Bone2D[];
   inverseBindMatrices: Float32Array;
+  skins?: AttachmentSkin2D[] | null;
   slots?: Slot2D[] | null;
   worldMatrices: Float32Array;
 }

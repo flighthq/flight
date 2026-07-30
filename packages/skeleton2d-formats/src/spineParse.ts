@@ -4,6 +4,7 @@ import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createSkeleton2D } from '@flighthq/skeleton2d/contract';
 import type {
   Attachment2D,
+  AttachmentSkin2D,
   Bone2D,
   EasingFunction,
   ImportDiagnostic,
@@ -12,6 +13,7 @@ import type {
   Skeleton2DImport,
   Skeleton2DImportAnimation,
   Skin2D,
+  SkinAttachment2D,
   Slot2D,
   TransformInherit2D,
 } from '@flighthq/types/contract';
@@ -44,10 +46,13 @@ export function parseSpineSkeleton(json: string, diagnostics?: ImportDiagnostic[
   if (doc === null || typeof doc !== 'object') return null;
   const record = doc as Record<string, unknown>;
   const bones = parseSpineBones(record.bones, diagnostics);
-  const defaultSkin = parseSpineDefaultSkin(record.skins, diagnostics);
-  const slots = parseSpineSlots(record.slots, bones, defaultSkin);
+  const { attachmentNames, slots } = parseSpineSlots(record.slots, bones);
+  const skins = parseSpineSkins(record.skins, slots, diagnostics);
+  resolveSpineSetupAttachments(slots, attachmentNames, skins);
   const animations = parseSpineAnimations(record.animations, bones, diagnostics);
-  return { animations, skeleton: createSkeleton2D(bones, slots) };
+  const skeleton = createSkeleton2D(bones, slots);
+  if (skins.length > 0) skeleton.skins = skins;
+  return { animations, skeleton };
 }
 
 function numberOr(value: unknown, fallback: number): number {
@@ -145,46 +150,50 @@ function parseSpineAttachment(
   return null;
 }
 
-// The "default" skin's attachment table: slotName → attachmentName → Attachment2D, the setup-pose
-// attachments a slot can show. Alternate (named) skins are the P3 skin-set feature and are Skip-crumbed.
-// Supports the Spine 4.x array-of-skins form and the older object form.
-function parseSpineDefaultSkin(raw: unknown, diagnostics?: ImportDiagnostic[]): Map<string, Map<string, Attachment2D>> {
-  const table = new Map<string, Map<string, Attachment2D>>();
-  let defaultAttachments: unknown;
-  let alternateSkinCount = 0;
+// Parses every named skin the file declares, in file order, into the rig's wardrobe. Spine keys each skin's
+// attachments by SLOT NAME, so the slot array is needed to resolve those to the slot indices
+// `AttachmentSkin2D` stores — which is why this runs after slots rather than before.
+//
+// Both spellings are accepted: the Spine 4.x array-of-skins form and the older object form (`{ default: … }`).
+// The `default` skin is not special here beyond being the one whose attachments a slot's own `attachment`
+// field resolves against; it is returned in the wardrobe alongside the alternates, because a rig that layers
+// `goblin` over `default` needs the base to still be addressable by name.
+function parseSpineSkins(raw: unknown, slots: readonly Slot2D[], diagnostics?: ImportDiagnostic[]): AttachmentSkin2D[] {
+  const skins: AttachmentSkin2D[] = [];
+  const named: [string, unknown][] = [];
   if (Array.isArray(raw)) {
     for (const skin of raw) {
       if (skin === null || typeof skin !== 'object') continue;
       const s = skin as Record<string, unknown>;
-      if (s.name === 'default') defaultAttachments = s.attachments;
-      else alternateSkinCount++;
+      named.push([typeof s.name === 'string' ? s.name : 'default', s.attachments]);
     }
   } else if (raw !== null && typeof raw === 'object') {
-    const obj = raw as Record<string, unknown>;
-    defaultAttachments = obj.default;
-    alternateSkinCount = Object.keys(obj).filter((k) => k !== 'default').length;
+    for (const [name, attachments] of Object.entries(raw as Record<string, unknown>)) named.push([name, attachments]);
   }
-  if (alternateSkinCount > 0) {
-    reportImportDiagnostic(
-      diagnostics,
-      ImportDiagnosticSeverity.Skip,
-      'spine.alternate-skin-unsupported',
-      'parseSpineSkeleton',
-      { skins: alternateSkinCount },
-    );
-  }
-  if (defaultAttachments === null || typeof defaultAttachments !== 'object') return table;
-  for (const [slotName, slotAttachments] of Object.entries(defaultAttachments as Record<string, unknown>)) {
-    if (slotAttachments === null || typeof slotAttachments !== 'object') continue;
-    const perSlot = new Map<string, Attachment2D>();
-    for (const [attachmentName, rawAttachment] of Object.entries(slotAttachments as Record<string, unknown>)) {
-      if (rawAttachment === null || typeof rawAttachment !== 'object') continue;
-      const attachment = parseSpineAttachment(attachmentName, rawAttachment as Record<string, unknown>, diagnostics);
-      if (attachment !== null) perSlot.set(attachmentName, attachment);
+  for (const [name, rawAttachments] of named) {
+    if (rawAttachments === null || typeof rawAttachments !== 'object') continue;
+    const attachments: SkinAttachment2D[] = [];
+    for (const [slotName, slotAttachments] of Object.entries(rawAttachments as Record<string, unknown>)) {
+      if (slotAttachments === null || typeof slotAttachments !== 'object') continue;
+      const slotIndex = indexOfSpineSlot(slots, slotName);
+      for (const [attachmentName, rawAttachment] of Object.entries(slotAttachments as Record<string, unknown>)) {
+        if (rawAttachment === null || typeof rawAttachment !== 'object') continue;
+        const attachment = parseSpineAttachment(attachmentName, rawAttachment as Record<string, unknown>, diagnostics);
+        // A skin entry for a slot the skeleton does not have cannot be applied, so it is dropped rather
+        // than stored with a -1 index that `setSkeleton2DSkin` would have to re-check every wardrobe change.
+        if (attachment !== null && slotIndex >= 0) attachments.push({ attachment, name: attachmentName, slotIndex });
+      }
     }
-    table.set(slotName, perSlot);
+    skins.push({ attachments, name });
   }
-  return table;
+  return skins;
+}
+
+function indexOfSpineSlot(slots: readonly Slot2D[], name: string): number {
+  for (let i = 0; i < slots.length; i++) {
+    if (slots[i].name === name) return i;
+  }
+  return -1;
 }
 
 // A Spine mesh attachment. Unweighted when the `vertices` stream is exactly 2 per vertex (positions local
@@ -241,10 +250,10 @@ function parseSpineRegionAttachment(name: string, raw: Record<string, unknown>):
 function parseSpineSlots(
   raw: unknown,
   bones: readonly Bone2D[],
-  skin: ReadonlyMap<string, Map<string, Attachment2D>>,
-): Slot2D[] {
+): { attachmentNames: (string | null)[]; slots: Slot2D[] } {
+  const attachmentNames: (string | null)[] = [];
   const slots: Slot2D[] = [];
-  if (!Array.isArray(raw)) return slots;
+  if (!Array.isArray(raw)) return { attachmentNames, slots };
   for (const entry of raw) {
     if (entry === null || typeof entry !== 'object') continue;
     const slot = entry as Record<string, unknown>;
@@ -258,13 +267,27 @@ function parseSpineSlots(
         }
       }
     }
-    let attachment: Attachment2D | null = null;
-    if (typeof slot.attachment === 'string' && name !== null) {
-      attachment = skin.get(name)?.get(slot.attachment) ?? null;
-    }
-    slots.push({ attachment, boneIndex, color: parseSpineColor(slot.color), name });
+    attachmentNames.push(typeof slot.attachment === 'string' ? slot.attachment : null);
+    slots.push({ attachment: null, boneIndex, color: parseSpineColor(slot.color), name });
   }
-  return slots;
+  return { attachmentNames, slots };
+}
+
+// Resolves each slot's setup attachment out of the DEFAULT skin, now that both exist. A slot names the
+// attachment it shows, but the art lives in a skin — and skins are keyed by slot, so neither can be built
+// without the other. Slots are therefore built bare and dressed here.
+function resolveSpineSetupAttachments(
+  slots: Slot2D[],
+  attachmentNames: readonly (string | null)[],
+  skins: readonly AttachmentSkin2D[],
+): void {
+  const setup = skins.find((skin) => skin.name === SPINE_DEFAULT_SKIN_NAME) ?? skins[0];
+  if (setup === undefined) return;
+  for (const entry of setup.attachments) {
+    if (entry.slotIndex < slots.length && attachmentNames[entry.slotIndex] === entry.name) {
+      slots[entry.slotIndex].attachment = entry.attachment;
+    }
+  }
 }
 
 // A Spine "rrggbbaa" hex color to a packed RGBA integer; opaque white (0xffffffff) when absent/invalid.
@@ -564,6 +587,9 @@ function clampUnit(value: number): number {
 // differing per-component value ranges introduces small error, so an exact comparison would report
 // divergence on curves that are actually identical.
 const SPINE_CURVE_EPSILON = 1e-6;
+
+// Spine's name for the base skin every rig has; alternates layer over it.
+const SPINE_DEFAULT_SKIN_NAME = 'default';
 
 // Maps a Spine bone `transform` string to a TransformMode2D. Spine omits the field for the default,
 // so an absent/unknown value is `Normal`.

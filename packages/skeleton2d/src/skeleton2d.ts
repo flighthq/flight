@@ -1,7 +1,7 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { inverseMatrix, multiplyMatrix } from '@flighthq/geometry/contract';
 import { DEG_TO_RAD } from '@flighthq/math/contract';
-import type { Bone2D, MatrixLike, Skeleton2D } from '@flighthq/types/contract';
+import type { AttachmentSkin2D, Bone2D, MatrixLike, Skeleton2D } from '@flighthq/types/contract';
 
 // 6 floats per bone in the flat 2×3 affine buffers (a, b, c, d, tx, ty), matching the Matrix field order.
 const MATRIX_STRIDE = 6;
@@ -199,9 +199,17 @@ export function getSkeleton2DBoneWorldMatrix(
   return true;
 }
 
-// Captures the current world transforms as the bind (setup) pose: `inverseBindMatrices[i] =
-// inverse(worldMatrices[i])`. Call after posing the bones to setup and running
-// `computeSkeleton2DWorldTransforms`. A non-invertible (degenerate, zero-scale) bone leaves its
+// The skeleton's named skin, or the `null` sentinel when it carries none by that name. Names are the rig's
+// own (`"goblin"`, `"goblingirl"`); a rig with no wardrobe has no skins at all.
+export function getSkeleton2DSkin(skeleton: Readonly<Skeleton2D>, name: string): AttachmentSkin2D | null {
+  const skins = skeleton.skins;
+  if (skins === undefined || skins === null) return null;
+  for (const skin of skins) {
+    if (skin.name === name) return skin;
+  }
+  return null;
+}
+
 // inverse-bind at identity (`inverseMatrix` returns false) rather than producing NaNs.
 export function setSkeleton2DBindPose(skeleton: Readonly<Skeleton2D>): void {
   const world = skeleton.worldMatrices;
@@ -212,6 +220,27 @@ export function setSkeleton2DBindPose(skeleton: Readonly<Skeleton2D>): void {
     readMatrix(_scratchA, world, o);
     if (!inverseMatrix(_scratchB, _scratchA)) setMatrixIdentityLocal(_scratchB);
     writeMatrix(out, o, _scratchB);
+  }
+}
+
+// Captures the current world transforms as the bind (setup) pose: `inverseBindMatrices[i] =
+// inverse(worldMatrices[i])`. Call after posing the bones to setup and running
+// `computeSkeleton2DWorldTransforms`. A non-invertible (degenerate, zero-scale) bone leaves its
+// Dresses `skeleton` in `skin`: writes each of the skin's attachments onto the slot it names, leaving every
+// other slot untouched. This is the whole runtime cost of the wardrobe — skins are inert until applied, and
+// applying one is a slot-array write, no re-binding and no world propagation (a skin changes what is DRAWN,
+// never where bones are).
+//
+// Slots the skin does not mention keep whatever they were showing. That is deliberate and matches how rigs
+// are authored: a "default" skin carries the shared pieces while `goblin`/`goblingirl` override only the
+// parts that differ, so applying one over the other must not blank the shared art. A caller wanting a clean
+// swap applies the base skin first. An entry naming a slot outside the skeleton is skipped rather than
+// throwing — third-party rigs are untrusted input, and a stale index is a dropped attachment, not a crash.
+export function setSkeleton2DSkin(skeleton: Skeleton2D, skin: Readonly<AttachmentSkin2D>): void {
+  const slots = skeleton.slots;
+  if (slots === undefined || slots === null) return;
+  for (const entry of skin.attachments) {
+    if (entry.slotIndex >= 0 && entry.slotIndex < slots.length) slots[entry.slotIndex].attachment = entry.attachment;
   }
 }
 
