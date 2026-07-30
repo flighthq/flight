@@ -76,7 +76,7 @@ describe('parseDragonBonesSkeleton', () => {
         {
           bone: [
             { name: 'normal' },
-            { name: 'onlyT', inheritRotation: false, inheritScale: false },
+            { name: 'onlyT', inheritRotation: false, inheritScale: false, inheritReflection: false },
             { name: 'noScale', inheritScale: false },
             { name: 'noScaleRefl', inheritScale: false, inheritReflection: false },
             { name: 'noRot', inheritRotation: false, inheritReflection: false },
@@ -86,21 +86,28 @@ describe('parseDragonBonesSkeleton', () => {
     };
     const bones = parseDragonBonesSkeleton(JSON.stringify(doc))!.skeleton.bones;
     const mode = (name: string) => bones.find((b) => b.name === name)!.transformMode;
-    expect(mode('normal')).toBe(TransformMode2D.Normal);
-    expect(mode('onlyT')).toBe(TransformMode2D.OnlyTranslation);
-    expect(mode('noScale')).toBe(TransformMode2D.NoScale);
-    expect(mode('noScaleRefl')).toBe(TransformMode2D.NoScaleOrReflection);
-    expect(mode('noRot')).toBe(TransformMode2D.NoRotationOrReflection);
+    // Booleans map straight to TransformInherit2D; the five well-known combos equal their named presets.
+    expect(mode('normal')).toEqual(TransformMode2D.Normal);
+    expect(mode('onlyT')).toEqual(TransformMode2D.OnlyTranslation);
+    expect(mode('noScale')).toEqual(TransformMode2D.NoScale);
+    expect(mode('noScaleRefl')).toEqual(TransformMode2D.NoScaleOrReflection);
+    expect(mode('noRot')).toEqual(TransformMode2D.NoRotationOrReflection);
   });
 
-  it('Skip-crumbs an inheritance combo the five-value enum cannot express', () => {
-    // inheritRotation false + inheritReflection true (scale kept): "strip rotation, keep reflection" has no
-    // TransformMode2D — NoRotationOrReflection would also strip the reflection.
+  it('expresses an inherit combo the old five-value enum could not, with no Skip crumb', () => {
+    // "strip rotation, keep scale AND reflection" had no TransformMode2D preset; the factored boolean model
+    // holds it directly. It maps cleanly and emits no diagnostic.
     const doc = { armature: [{ bone: [{ name: 'b', inheritRotation: false }] }] };
-    const kinds = collectImportDiagnostics((sink) => parseDragonBonesSkeleton(JSON.stringify(doc), sink)).map(
-      (c) => c.kind,
+    const crumbs: ImportDiagnostic[] = collectImportDiagnostics((sink) =>
+      parseDragonBonesSkeleton(JSON.stringify(doc), sink),
     );
-    expect(kinds).toContain('dragonbones.inherit-mode-unmapped');
+    expect(crumbs).toEqual([]);
+    expect(parseDragonBonesSkeleton(JSON.stringify(doc))!.skeleton.bones[0].transformMode).toEqual({
+      reflection: true,
+      rotation: false,
+      scale: true,
+      translation: true,
+    });
   });
 
   it('parses slots with resolved bone index, image display, and ColorTransform tint', () => {

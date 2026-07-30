@@ -8,13 +8,9 @@ import type {
   RegionAttachment2D,
   Skeleton2DImport,
   Slot2D,
+  TransformInherit2D,
 } from '@flighthq/types/contract';
-import {
-  ImportDiagnosticSeverity,
-  MeshAttachment2DKind,
-  RegionAttachment2DKind,
-  TransformMode2D,
-} from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, MeshAttachment2DKind, RegionAttachment2DKind } from '@flighthq/types/contract';
 
 // Resolves a DragonBones armature-file-order bone index to the topo-sorted output index (the axis-12 remap).
 // Local to this file — a value, not an exported API type.
@@ -29,8 +25,8 @@ type DragonBonesBoneRemap = (rawBoneIndex: number) => number;
 // Spine in ways the charter (open-direction 4) records: an `armature` container (multiple armatures
 // possible), a nested `transform` block with `skX`/`skY` (or newer `rotate`/`skew`) skew angles rather than
 // Spine's flat fields, bones NOT guaranteed parent-before-child (so they are topologically sorted here), a
-// four-boolean inheritance model (inheritRotation/Scale/Reflection/Translation) mapped onto Flight's
-// five-value TransformMode2D (two inexpressible combinations Skip-crumbed), and slots whose shown attachment
+// four-boolean inheritance model (inheritRotation/Scale/Reflection/Translation) mapped straight onto Flight's
+// vendor-neutral TransformInherit2D (every combination expressible — no gap), and slots whose shown attachment
 // is a `displayIndex` into a per-slot display list (so that list is position-preserving — see
 // parseDragonBonesDefaultSkin). Image displays become region attachments; unweighted AND weighted mesh
 // displays become mesh attachments (weighted via bonePose/slotPose → Skin2D offsets with the topo-sort
@@ -487,7 +483,7 @@ function parseDragonBonesBones(raw: unknown, diagnostics?: ImportDiagnostic[]): 
         scaleY: transform.scaleY,
         shearX: 0,
         shearY: transform.shearY,
-        transformMode: dragonBonesTransformMode(b, diagnostics),
+        transformMode: dragonBonesTransformMode(b),
         x: transform.x,
         y: transform.y,
       },
@@ -529,37 +525,17 @@ function parseDragonBonesBones(raw: unknown, diagnostics?: ImportDiagnostic[]): 
   return bones;
 }
 
-// Maps DragonBones' four inheritance booleans onto Flight's five-value TransformMode2D. Position always
-// inherits in Flight (the local origin is placed by the parent), so `inheritTranslation:false` is
-// unmodeled and Skip-crumbed. Two rotation/scale/reflection combinations have no TransformMode2D — keeping
-// rotation+scale while stripping reflection, and keeping scale+reflection while stripping rotation — and are
-// Skip-crumbed, falling back to the closest mode.
-function dragonBonesTransformMode(bone: Record<string, unknown>, diagnostics?: ImportDiagnostic[]): TransformMode2D {
-  const inheritRotation = boolOr(bone.inheritRotation, true);
-  const inheritScale = boolOr(bone.inheritScale, true);
-  const inheritReflection = boolOr(bone.inheritReflection, true);
-  if (!boolOr(bone.inheritTranslation, true)) {
-    reportImportDiagnostic(
-      diagnostics,
-      ImportDiagnosticSeverity.Skip,
-      'dragonbones.inherit-translation-unsupported',
-      'parseDragonBonesSkeleton',
-      { bones: 1 },
-    );
-  }
-  if (inheritRotation && inheritScale) {
-    if (inheritReflection) return TransformMode2D.Normal;
-    skipCrumbUnmappedInheritMode(diagnostics);
-    return TransformMode2D.Normal;
-  }
-  if (!inheritRotation && !inheritScale) return TransformMode2D.OnlyTranslation;
-  if (inheritRotation && !inheritScale) {
-    return inheritReflection ? TransformMode2D.NoScale : TransformMode2D.NoScaleOrReflection;
-  }
-  // !inheritRotation && inheritScale — NoRotationOrReflection also strips reflection, so keeping it is unmapped.
-  if (!inheritReflection) return TransformMode2D.NoRotationOrReflection;
-  skipCrumbUnmappedInheritMode(diagnostics);
-  return TransformMode2D.NoRotationOrReflection;
+// Maps DragonBones' four independent inheritance booleans straight to the vendor-neutral TransformInherit2D
+// (all default true = Normal). Every combination is now expressible — the two rotation/scale/reflection
+// combos that had no value in the old five-mode enum, and `inheritTranslation:false` — so nothing is
+// Skip-crumbed here; the factoring of the inherit axes removed the per-vendor gap.
+function dragonBonesTransformMode(bone: Record<string, unknown>): TransformInherit2D {
+  return {
+    reflection: boolOr(bone.inheritReflection, true),
+    rotation: boolOr(bone.inheritRotation, true),
+    scale: boolOr(bone.inheritScale, true),
+    translation: boolOr(bone.inheritTranslation, true),
+  };
 }
 
 function numberOr(value: unknown, fallback: number): number {
@@ -574,14 +550,4 @@ function skipCrumbDragonBonesGroup(diagnostics: ImportDiagnostic[] | undefined, 
   else if (raw !== null && typeof raw === 'object') count = Object.keys(raw as Record<string, unknown>).length;
   if (count > 0)
     reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Skip, kind, 'parseDragonBonesSkeleton', { count });
-}
-
-function skipCrumbUnmappedInheritMode(diagnostics: ImportDiagnostic[] | undefined): void {
-  reportImportDiagnostic(
-    diagnostics,
-    ImportDiagnosticSeverity.Skip,
-    'dragonbones.inherit-mode-unmapped',
-    'parseDragonBonesSkeleton',
-    { bones: 1 },
-  );
 }

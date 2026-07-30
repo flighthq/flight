@@ -777,6 +777,7 @@ export * from './RimModifierOptions';
 export * from './ShadedMaterialOptions';
 export * from './ToonModifierOptions';
 export * from './VertexDisplaceModifierOptions';
+export * from './TransformInherit2D';
 export * from './TransformMode2D';
 export * from './Bone2D';
 export * from './Attachment2D';

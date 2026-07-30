@@ -1,22 +1,22 @@
-// How a Bone2D composes its world transform from its parent's — the Spine/DragonBones bone transform
-// (inherit) mode. It is read *during* the single linear world-propagation pass
-// (computeSkeleton2DWorldTransforms), so it is a per-bone setup field with a branch in that loop, NOT a
-// constraint. A finite, well-known vocabulary dispatched in the hot world loop, so a closed union with
-// `switch` dispatch (per the types-layout closed-family rule), not an open registry.
-//
-//   Normal                 — inherit both parent rotation and scale (world = parent × local).
-//   OnlyTranslation        — inherit the parent's translation only; the bone's rotation/scale come from
-//                            its own local setup, ignoring the parent's (e.g. a held item that stays
-//                            upright on a rotating arm).
-//   NoRotationOrReflection — inherit the parent's scale but strip its rotation (and reflection).
-//   NoScale                — inherit the parent's rotation but not its scale.
-//   NoScaleOrReflection    — inherit the parent's rotation but neither its scale nor a reflection.
-export const TransformMode2D = {
-  Normal: 'Normal',
-  OnlyTranslation: 'OnlyTranslation',
-  NoRotationOrReflection: 'NoRotationOrReflection',
-  NoScale: 'NoScale',
-  NoScaleOrReflection: 'NoScaleOrReflection',
-} as const;
+import type { TransformInherit2D } from './TransformInherit2D';
 
-export type TransformMode2D = (typeof TransformMode2D)[keyof typeof TransformMode2D];
+// Named `TransformInherit2D` presets for the five Spine/DragonBones inherit modes — a one-token authoring
+// vocabulary over the four-axis boolean model, not a distinct type. A caller who thinks in Spine terms
+// writes `TransformMode2D.NoScale`; a caller who needs an arbitrary axis combination (e.g. a DragonBones
+// bone that keeps rotation and scale but strips reflection) sets the `TransformInherit2D` booleans directly.
+// The presets are module constants shared by reference, so a bone assigned a preset compares identity-equal
+// to it (cloneSkeleton2D keeps the reference — the value is immutable by convention).
+//
+//   Normal                 — inherit rotation + scale + reflection + translation (world = parent × local).
+//   OnlyTranslation        — inherit translation only; rotation/scale come from the bone's own local setup
+//                            (e.g. a held item that stays upright on a rotating arm).
+//   NoRotationOrReflection — inherit the parent's scale but strip its rotation and reflection.
+//   NoScale                — inherit the parent's rotation and reflection but not its scale.
+//   NoScaleOrReflection    — inherit the parent's rotation but neither its scale nor its reflection.
+export const TransformMode2D = {
+  Normal: { reflection: true, rotation: true, scale: true, translation: true },
+  OnlyTranslation: { reflection: false, rotation: false, scale: false, translation: true },
+  NoRotationOrReflection: { reflection: false, rotation: false, scale: true, translation: true },
+  NoScale: { reflection: true, rotation: true, scale: false, translation: true },
+  NoScaleOrReflection: { reflection: false, rotation: true, scale: false, translation: true },
+} satisfies Record<string, TransformInherit2D>;
