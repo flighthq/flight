@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/spatial'
-updated: 2026-07-13
+updated: 2026-07-30
 basedOn: ./review.md
 ---
 
@@ -14,9 +14,10 @@ Sweep-safe, within-package, no design fork:
 
 1. **`updateSpatialObject` fast path** — in the uniform grid, compare the old and new covered cell ranges; when unchanged, only overwrite the stored bounds instead of remove+reinsert. Behavior-identical, removes the dominant per-frame cost for small movements.
 2. **De-allocate the pair enumeration's cell scan** — drop the `[...ids]` spread in `_queryGridPairs` (iterate the set with a reused scratch array on the grid, like `seen`). Keeps the seam signature untouched while honoring the North star's allocation-frugality. (Changing the `SpatialPair` result protocol itself is a seam decision — Backlog.)
-3. **`enableSpatialGuards`** — guard module warning on `cellSize <= 0`, non-finite/inverted bounds, and update/remove of an id never inserted (currently a silent insert/no-op). Diagnostics-inversion work; production bundles pay nothing.
+3. **Finish the guard coverage `setSpatialIndexingGuard` opened** — the seam, the notice record, and `formatSpatialIndexingNotice` shipped 2026-07-30, and non-finite bounds and oversized extents now report through them. Still unreported, and all in the same shape: `cellSize <= 0` (which makes every cell index NaN — the insert path survives it by routing to overflow, but the grid is useless and says nothing), inverted bounds (`max < min`), and update/remove of an id never inserted (a silent insert / silent no-op). Note the original form of this item — an `enableSpatialGuards` that warns through `@flighthq/log` — **cannot be built in this package**: core-layer packages may not depend on `@flighthq/log`. See charter Open direction 5.
 4. **Brute-force property tests** — randomized insert/update/remove churn compared against an O(n²) reference for pairs, region, point, and ray queries (seeded, deterministic). This is the test shape that catches canonical-cell and DDA edge cases the current 15 tests cannot.
 5. **Ray edge-case tests** — a ray passing exactly through cell corners, a ray starting inside an object, and a ray entering the occupied range from far outside.
+6. **Extend the brute-force property tests over the overflow path** — item 4's O(n²) reference comparison is now worth more than it was: the grid has two storage paths (cells and overflow) that must agree, and mixed-size churn across the `MAX_INDEXED_CELLS_PER_OBJECT` boundary is exactly where a divergence between them would hide. The 2026-07-30 tests pin the transitions by hand; randomized churn is what would find the case nobody thought to write.
 
 ## Backlog
 

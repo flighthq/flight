@@ -234,9 +234,10 @@ Design calls to settle before building the affected entries:
 
 - `updateSpatialObject` fast path
 - De-allocate the pair enumeration's cell scan
-- `enableSpatialGuards`
+- Finish the guard coverage `setSpatialIndexingGuard` opened
 - Brute-force property tests
 - Ray edge-case tests
+- Extend the brute-force property tests over the overflow path
 
 ### textshaper (partial 66)
 
@@ -1022,4 +1023,4 @@ Computed from cell front matter (dates are `updated:`/`lastDirection:` fields). 
 - **Needs a first review (built, no review.md):** `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `scene2d-resources` · `shading` · `skeleton2d` · `skeleton2d-formats`
 - **Needs re-review (work landed after the survey):** `glyphatlas (review 2026-07-13 < status 2026-07-17)` · `particles-formats (review 2026-07-13 < status 2026-07-25)` · `render-gl (review 2026-07-21 < status 2026-07-22)` · `scene2d-wgpu (review 2026-06-24 < status 2026-06-25)` · `scene3d-formats (review 2026-07-09 < status 2026-07-29)` · `shortcut (review 2026-06-25 < status 2026-07-30)` · `texture (review 2026-06-25 < status 2026-07-22)`
 - **Needs assess refresh (review newer than assessment):** `assets (assessment 2026-07-21 < review 2026-07-22)` · `audio (assessment 2026-07-03 < review 2026-07-13)` · `log (assessment 2026-07-02 < review 2026-07-13)` · `spritesheet (assessment 2026-07-02 < review 2026-07-13)` · `tileset (assessment 2026-07-03 < review 2026-07-09)` · `tween (assessment 2026-07-02 < review 2026-07-13)` · `video (assessment 2026-07-03 < review 2026-07-09)` · `xml (assessment 2026-07-03 < review 2026-07-09)`
-- **Open directions awaiting the user:** 597 across 133 charters — most-loaded: `scene3d` (13) · `render-gl` (12) · `scene2d-gl` (12) · `scene2d` (11) · `effects-wgpu` (10) · `lighting` (10) · `scene2d-dom` (10) · `scene3d-gl` (10) · `spritesheet-formats` (10) · `mesh` (9) · `render-wgpu` (9) · `scene2d-canvas` (9) · `skeleton3d` (9) · `effects-gl` (8) · `geometry` (8) · `materials` (8) · `particles-formats` (8) · `scene2d-wgpu` (8) · `scene3d-wgpu` (8) · `render` (7) · `scene3d-resources` (7) · `timeline` (7) · `camera` (6) · `capture` (6) · `color` (6) · `effects-canvas` (6) · `loader` (6) · `texture-formats` (6) · `tween` (6). Each charter's `## Open directions` section holds the questions; a direction session drains them.
+- **Open directions awaiting the user:** 599 across 133 charters — most-loaded: `scene3d` (13) · `render-gl` (12) · `scene2d-gl` (12) · `scene2d` (11) · `effects-wgpu` (10) · `lighting` (10) · `scene2d-dom` (10) · `scene3d-gl` (10) · `spritesheet-formats` (10) · `mesh` (9) · `render-wgpu` (9) · `scene2d-canvas` (9) · `skeleton3d` (9) · `effects-gl` (8) · `geometry` (8) · `materials` (8) · `particles-formats` (8) · `scene2d-wgpu` (8) · `scene3d-wgpu` (8) · `render` (7) · `scene3d-resources` (7) · `timeline` (7) · `camera` (6) · `capture` (6) · `color` (6) · `effects-canvas` (6) · `loader` (6) · `spatial` (6) · `texture-formats` (6) · `tween` (6). Each charter's `## Open directions` section holds the questions; a direction session drains them.
