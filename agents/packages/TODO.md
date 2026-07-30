@@ -554,7 +554,6 @@ Design calls to settle before building the affected entries:
 ### filesystem (solid 82)
 
 - Resolve `..` segments in `normalizeFilePath` / `joinFilePath`
-- Seam-doc note on `requestPermission`-free sentinels
 
 ### geolocation (solid 82)
 
@@ -679,9 +678,7 @@ Design calls to settle before building the affected entries:
 
 ### types (solid 88)
 
-- ~~**Lift the notification seam to `id`.**~~ _Already done._ `notify` returns `Promise<string>` (the id), all subscribers use `id`
 - Remove the "should become open" note from ParticleForce/ParticleCollider
-- ~~**Fix DOM/Dom casing.**~~ _Already done._ Files are `DomRenderOptions.ts`, `DomStageRectangle.ts`
 - Extract `TextDirection` alias
 - Document `glyphCount` on `ShapedRun`
 - Rename `ViewportAlign`/`ViewportScaleMode` → `StageAlign`/`StageScaleMode`
