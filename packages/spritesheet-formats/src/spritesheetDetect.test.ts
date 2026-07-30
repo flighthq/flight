@@ -215,3 +215,30 @@ describe('registerSpritesheetFormat', () => {
     expect(data?.imageFile).toBe('custom.png');
   });
 });
+
+describe('registry ordering', () => {
+  // The detectors overlap, so which format wins is decided by registration order, not by the
+  // detectors alone. Nothing pinned that before: reordering the seeding calls would have silently
+  // routed a whole format to the wrong parser, which produces a wrong result rather than an error.
+  const ASEPRITE_DOC = JSON.stringify({
+    frames: {},
+    meta: { app: 'http://www.aseprite.org/', image: 'a.png', scale: '1', size: { h: 1, w: 1 }, version: '1.3' },
+  });
+
+  it('an Aseprite export also satisfies the TexturePacker detector', () => {
+    // The premise of the ordering requirement — asserted so the test below cannot quietly become
+    // vacuous if the TexturePacker detector is ever narrowed.
+    const texturePacker = getSpritesheetFormat(SpritesheetFormatKindTexturePacker);
+    expect(texturePacker).not.toBeNull();
+    expect(texturePacker!.detect(ASEPRITE_DOC)).toBe(true);
+  });
+
+  it('resolves an overlapping document to the narrower format, not the broader one', () => {
+    expect(detectSpritesheetFormat(ASEPRITE_DOC)).toBe(SpritesheetFormatKindAseprite);
+  });
+
+  it('parses an overlapping document with the narrower parser', () => {
+    const data = parseSpritesheet(ASEPRITE_DOC);
+    expect(data).not.toBeNull();
+  });
+});

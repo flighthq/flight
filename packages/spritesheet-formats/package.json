@@ -45,6 +45,6 @@
   "devDependencies": {
     "typescript": "^5.3.0"
   },
-  "description": "Import/export spritesheet atlas configs from industry-standard formats (Texture Packer, Aseprite, Starling)",
+  "description": "Import/export spritesheet atlas configs from industry-standard formats (TexturePacker, Aseprite, Cocos plist, Starling, libGDX atlas)",
   "sideEffects": false
 }
