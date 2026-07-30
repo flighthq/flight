@@ -179,7 +179,8 @@ function showWebContextMenu(items: readonly MenuItemTemplate[], x: number, y: nu
     function moveFocus(delta: number): void {
       const items = Array.from(focusableItems);
       if (items.length === 0) return;
-      focusIndex = (focusIndex + delta + items.length) % items.length;
+      focusIndex =
+        focusIndex === -1 ? (delta < 0 ? items.length - 1 : 0) : (focusIndex + delta + items.length) % items.length;
       items.forEach((el, i) => {
         if (i === focusIndex) {
           el.setAttribute('data-focused', 'true');
