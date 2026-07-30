@@ -1,12 +1,28 @@
 ---
 package: '@flighthq/input'
-updated: 2026-06-24
-by: ingest:builder-67dc46d64
+updated: 2026-07-30
 ---
 
 # input — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## 2026-07-30 — live-tree closure audit
+
+The four July 2 Recommended items were stale records of work already present:
+
+- `getGamepadAxisName` and `getGamepadButtonName` take `GamepadMappingKind`.
+- `createInputKeyRepeatTimer` returns the exported `InputKeyRepeatTimer` handle from
+  `@flighthq/types`.
+- Strict package typechecking covers the callbacks previously described as implicit `any`.
+- Package Map and catalog entries describe gamepad normalization, held-state snapshots, frame-edge
+  queries, dead zones, semantic names, timers, and pointer capabilities.
+
+No source change was required. The focused package check passes typecheck, lint, formatting, ordering,
+export coverage, type-home, and portability gates; the package suite passes 104/104. The review and
+assessment now describe the live package, the completed Package Map item is no longer a charter Open
+direction, and the remaining work is architectural: `InputBackend`, open mapping registration,
+multi-device identity, and the signal cost model.
 
 ## 2026-06-25 — builder Phase 3 (Recommended sweep)
 
