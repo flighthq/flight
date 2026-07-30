@@ -211,7 +211,7 @@ describe('beginGlRenderPass', () => {
       'cannot nest the active framebuffer while a contour clip is live',
     );
     expect(getGlRenderStateRuntime(outerState).currentRenderTarget).toBe(target);
-    expect(getGlRenderStateRuntime(innerState).currentRenderTarget).toBeUndefined();
+    expect(getGlRenderStateRuntime(innerState).currentRenderTarget).toBeNull();
     endGlRenderPass(outerState);
   });
 });
