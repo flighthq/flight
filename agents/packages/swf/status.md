@@ -20,6 +20,8 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`.
   opaque and no visual body is materialized.
 - `DefineBitsJPEG2` through `DefineBitsJPEG4` retain dimensions from bounded JPEG SOF, PNG IHDR, and
   GIF header scans. JPEG3/4 alpha payloads remain opaque behind their validated offsets.
+- RECT readers accept the zero-bit encoding used by empty authored shapes, preserving a zero-size
+  local bound instead of rejecting the document.
 - `PlaceObject` through `PlaceObject4` cover legacy and current first-frame placement records;
   `RemoveObject` and `RemoveObject2` update that display list before its first-frame snapshot.
 - `PlaceObject2`/`PlaceObject3` distinguish fresh placements from move/update and replacement records.
@@ -43,4 +45,7 @@ generations, fresh/move/replacement state, first-frame isolation, linkage, trans
 registration, compressed rejection, malformed/truncated input, recursively nested sprites, composed
 transforms, recursive-graph rejection, stage bounds, RECT-based definition bounds, embedded
 JPEG/PNG/GIF, lossless-bitmap and video dimensions, and recursively composed sprite extents. A canonical
-externally produced fixture remains unavailable locally; evidence is still synthetic.
+uncompressed Ruffle named-shape fixture has also crossed `createScene2DFromSwf`; its exact revision,
+MIT license, source hash, derived manifest, and ignored-asset reproduction procedure are recorded in
+[`fixture-evidence.md`](fixture-evidence.md). The external binary is not committed, and the hermetic
+test suite reproduces its zero-bit RECT compatibility case synthetically.

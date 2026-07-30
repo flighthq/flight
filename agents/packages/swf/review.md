@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/swf'
 status: partial
-score: 57
+score: 62
 updated: 2026-07-30
 ingested:
   - charter.md
@@ -14,14 +14,16 @@ ingested:
 
 ## Verdict
 
-**Partial — 57/100.** The package now supplies the first honest end-to-end proof of the shared
+**Partial — 62/100.** The package now supplies the first honest end-to-end proof of the shared
 named-graph contract: bounded `FWS` parsing turns root-timeline named instances, transforms, and class
 linkage into enumerable `Scene2DDocument` slot references. `DefineSprite` first frames now instantiate
 recursively, so named descendants survive unnamed MovieClip containers with their composed transforms.
 The slice is deliberately structural. It does not yet recover later timeline frames, visual definitions,
-compressed bodies, or real-file evidence, so it is a sound importer nucleus rather than broad SWF
-support. Stage, shape, text, morph, embedded-image, lossless-bitmap, video, and recursively composed
-sprite extents now cover the available named-graph sizing contract.
+or compressed bodies, so it is a sound importer nucleus rather than broad SWF support. Stage, shape,
+text, morph, embedded-image, lossless-bitmap, video, and recursively composed sprite extents now cover
+the available named-graph sizing contract. A revision-pinned uncompressed Ruffle fixture supplies
+real-file evidence for the named-slot path and exposed the zero-bit RECT compatibility case now covered
+synthetically.
 
 ## What is solid
 
@@ -56,6 +58,10 @@ sprite extents now cover the available named-graph sizing contract.
   effect.
 - The package is portable, side-effect-free, SDK/build wired, and covered by colocated byte-level
   tests.
+- The canonical [Ruffle fixture evidence](fixture-evidence.md) records the exact upstream revision,
+  path, URL, MIT license, source hash, derived document manifest, and ignored-asset reproduction
+  procedure. The external binary is not committed and the test suite has no network or fixture
+  dependency.
 
 ## Remaining depth
 
@@ -68,13 +74,16 @@ sprite extents now cover the available named-graph sizing contract.
   changes remain unavailable with the first-frame-only graph.
 - `CWS`/`ZWS` are recognized but rejected until the chartered registered decompression seam exists.
   `DoABC` remains skipped rather than exposed as an opaque blob.
-- Evidence is synthetic. There is no small externally produced fixture, diagnostic query, or
-  fuzz/property coverage. Display-list opcode generations, move/update/replacement state, first-frame
-  isolation, and nested traversal are covered synthetically, including unnamed intermediate symbols,
-  removal, truncation, and cycle rejection.
+- Real-file evidence currently covers one small externally produced uncompressed named-shape fixture.
+  There is still no diagnostic query, fuzz/property coverage, or representative external corpus for
+  nested timelines, linkage variants, or the broader supported extent prefixes. Display-list opcode
+  generations, move/update/replacement state, first-frame isolation, and nested traversal remain
+  covered synthetically, including unnamed intermediate symbols, removal, truncation, and cycle
+  rejection.
 
 ## Boundary conclusion
 
 SWF remains a codec into Flight data, not a player: it constructs a static document and retains no VM
-or SWF runtime. The next confidence-bearing step is a provenance-backed real fixture; later-frame
-timeline data, visual-tag breadth, and compression should remain separately staged.
+or SWF runtime. The first real named-graph importer and one provenance-backed external proof are now
+present. Later-frame timeline data, visual-tag breadth, compression, and broader compatibility evidence
+should remain separately staged.

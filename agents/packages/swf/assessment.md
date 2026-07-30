@@ -17,20 +17,19 @@ basedOn: ./review.md
    color-transform, blend, and filter coverage onto existing Flight primitives without retaining a
    player runtime. Embedded JPEG/PNG/GIF, lossless bitmap, and video dimension prefixes now supply
    structural extents, not decoded pixels or frames.
-3. **Complete container seams and evidence.** Route `CWS`/`ZWS` through registered decompressors,
-   expose `DoABC` payloads opaquely, and validate supported tags against representative externally
-   produced fixtures.
+3. **Complete container seams and compatibility coverage.** Route `CWS`/`ZWS` through registered
+   decompressors, expose `DoABC` payloads opaquely, and expand the revision-pinned real-file evidence
+   beyond the canonical named-shape fixture to nested timelines, linkage variants, and supported
+   extent prefixes.
 
 ## Recommended
 
-Sweep-safe continuations of the approved named-graph direction, without expanding into a player or VM:
-
-1. **Add one canonical uncompressed fixture.** Check in a tiny externally generated `FWS` sample with
-   its provenance and assert the same document manifest produced by the synthetic builders.
+_None. The canonical uncompressed real-file evidence is revision-pinned and reproducible without
+committing the external asset or making tests network-dependent._
 
 ## Backlog
 
-- Visual definition breadth beyond what the next named-graph fixture requires.
+- Visual definition breadth beyond the canonical named-shape fixture's structural bounds.
 - Registered `CWS`/`ZWS` decompression seams.
 - Opaque `DoABC` payload exposure and any separate ABC parser. ABC execution remains out of scope.
 - Structured parse diagnostics and broad version/tag compatibility reporting.

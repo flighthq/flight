@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/scene2d-resources'
 status: solid
-score: 87
+score: 88
 updated: 2026-07-30
 ingested:
   - charter.md
@@ -14,14 +14,14 @@ ingested:
 
 ## Verdict
 
-**Solid — 87/100.** The package establishes the right renderer-neutral document and content-reference
+**Solid — 88/100.** The package establishes the right renderer-neutral document and content-reference
 boundary: an enumerable asset/slot manifest, synchronous reconciliation, an operation-scoped asynchronous
 load, caller-owned URL acquisition, and an empty-by-default importer registry. The public and contract
 lanes are symmetrical, all exported types live in `@flighthq/types`, every exported function has a
-colocated test, and no renderer or GPU dependency crosses the boundary. The largest remaining gap is the
-charter's defining named-graph path now has its first end-to-end proof: the standalone SWF importer
-produces recursively nested first-frame named slots with composed transforms and linkage. That proof is
-still synthetic and narrow; later MovieClip frames and deferred asset references remain unproven.
+colocated test, and no renderer or GPU dependency crosses the boundary. The charter's defining
+named-graph path now has both broad synthetic coverage and a revision-pinned external proof: the
+standalone SWF importer produces first-frame named slots with authored bounds, transforms, and linkage.
+Later MovieClip frames and deferred asset references remain unproven.
 
 ## What is solid
 
@@ -45,6 +45,10 @@ still synthetic and narrow; later MovieClip frames and deferred asset references
   transforms and `SymbolClass`/`ExportAssets` or direct-class linkage survive, while stage and available
   RECT, embedded JPEG/PNG/GIF, lossless-bitmap, video, and recursive sprite bounds preserve slot
   extents through placement transforms.
+- A real uncompressed Ruffle file verifies that the open importer boundary carries an external named
+  placement into the same `Scene2DDocument` manifest shape. Provenance, MIT license, hash, and derived
+  output live in the SWF package's evidence record; this package retains no binary or network
+  dependency.
 - Package shape is clean: `sideEffects: false`; source imports only declared dependencies; the SDK root,
   SDK formats, package root, and `/contract` lanes agree; `npm run api`, `exports:check`,
   `type-home:check`, package checks, and package tests pass.
@@ -65,13 +69,14 @@ still synthetic and narrow; later MovieClip frames and deferred asset references
   callbacks, but a callback that ignores abort can still settle and install content; two overlapping loads
   of the same reference can commit in settlement order rather than invocation order. Fixing that without
   introducing a live document runtime needs an explicit concurrency policy.
-- Proof is hand-authored and unit-level. There is no representative externally produced named-graph
-  fixture, no URL-to-resolve integration case with relative assets, and no browser capture showing
-  application slot replacement in a rendered scene.
+- External proof currently stops at one uncompressed named-shape fixture. There is still no
+  URL-to-resolve integration case with relative assets, broader real-file corpus, or browser capture
+  showing application slot replacement in a rendered scene.
 
 ## Boundary conclusion
 
 The ownership line is correct: formats construct renderer-neutral 2D nodes/documents, this package
 acquires documents and reconciles named content, and render backends realize the resulting graph later.
-The first real named-graph importer is now present. The next meaningful increase in confidence is an
-externally produced asset/slot fixture, not more registry machinery.
+The first real named-graph importer and an externally produced asset/slot proof are now present. The
+next meaningful increase in confidence is an end-to-end acquisition-and-resolution case or broader
+format evidence, not more registry machinery.
