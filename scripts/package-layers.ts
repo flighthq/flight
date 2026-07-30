@@ -103,6 +103,7 @@ const packageNamesByLayer: Readonly<Record<PackageLayer, readonly string[]>> = {
     '@flighthq/spritesheet-formats',
     '@flighthq/statusbar',
     '@flighthq/storage',
+    '@flighthq/swf',
     '@flighthq/text',
     '@flighthq/text-markup',
     '@flighthq/textbidi',

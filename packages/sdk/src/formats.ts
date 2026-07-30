@@ -7,6 +7,7 @@ export * from '@flighthq/path-formats';
 export * from '@flighthq/scene3d-formats';
 export * from '@flighthq/shape-formats';
 export * from '@flighthq/spritesheet-formats';
+export * from '@flighthq/swf';
 export * from '@flighthq/texture-formats';
 export * from '@flighthq/textureatlas-formats';
 export * from '@flighthq/tilemap-formats';

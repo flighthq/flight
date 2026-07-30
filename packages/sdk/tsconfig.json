@@ -334,6 +334,9 @@
       "path": "../storage"
     },
     {
+      "path": "../swf"
+    },
+    {
       "path": "../bitmap"
     },
     {
