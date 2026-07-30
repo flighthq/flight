@@ -24,9 +24,22 @@ function makeCamera(): Camera3D {
 
 function makeTarget(): GlRenderTarget {
   return {
+    requestedAxes: {
+      width: 256,
+      height: 256,
+      format: 'rgba16f',
+      colorAttachments: 1,
+      colorFormats: ['rgba16f'],
+      sampleCount: 1,
+      depth: 'depth-stencil',
+      colorSpace: 'linear',
+    },
     width: 256,
     height: 256,
     format: 'rgba16f',
+    colorAttachments: 1,
+    colorFormats: ['rgba16f'],
+    depth: 'depth-stencil',
     colorSpace: 'linear',
     clearColors: [],
     clearDepth: 1,

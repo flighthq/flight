@@ -8,9 +8,22 @@ import { createGlState } from './glTestHelper';
 function makeTarget(overrides?: Partial<GlRenderTarget>): GlRenderTarget {
   const texture = { id: 'c0' } as unknown as WebGLTexture;
   return {
+    requestedAxes: {
+      width: 32,
+      height: 16,
+      format: 'rgba8',
+      colorAttachments: 1,
+      colorFormats: ['rgba8'],
+      sampleCount: 1,
+      depth: 'depth-stencil',
+      colorSpace: 'srgb',
+    },
     width: 32,
     height: 16,
     format: 'rgba8',
+    colorAttachments: 1,
+    colorFormats: ['rgba8'],
+    depth: 'depth-stencil',
     colorSpace: 'srgb',
     clearColors: [],
     clearDepth: 1,

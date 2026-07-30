@@ -1,4 +1,10 @@
-import type { RenderTarget, RenderTargetColorSpace, RenderTargetFormat } from './RenderTarget';
+import type {
+  RenderTarget,
+  RenderTargetAxes,
+  RenderTargetColorSpace,
+  RenderTargetDepth,
+  RenderTargetFormat,
+} from './RenderTarget';
 
 // Gl realization of a RenderTargetDescriptor. MSAA in Gl2 cannot texture-attach a multisample
 // buffer: the scene draws into `framebuffer` (multisample renderbuffer-backed when sampleCount > 1),
@@ -10,9 +16,15 @@ import type { RenderTarget, RenderTargetColorSpace, RenderTargetFormat } from '.
 // Fields are mutable because resizeGlRenderTarget reallocates them in place; callers that must not
 // mutate a target take it as `Readonly<GlRenderTarget>`.
 export interface GlRenderTarget extends RenderTarget {
+  // Canonical caller request after backend-neutral defaults. Effective storage lives on the direct
+  // target axes below; explainGlRenderTarget compares the two without reconstructing intent.
+  requestedAxes: RenderTargetAxes;
   width: number;
   height: number;
   format: RenderTargetFormat;
+  colorAttachments: number;
+  colorFormats: RenderTargetFormat[];
+  depth: RenderTargetDepth;
   // Declared color space of the target's content (resolved from the descriptor; default 'srgb'). The
   // present step reads this to run the linear->sRGB encode exactly once for 'linear' targets.
   colorSpace: RenderTargetColorSpace;

@@ -5,6 +5,7 @@ import {
   computeRenderCacheTransform,
   computeRenderTargetSize,
   computeScene2DRenderTargetTransform,
+  explainRenderTargetAxes,
   resolveRenderTargetDescriptor,
 } from './renderTarget';
 
@@ -97,6 +98,38 @@ describe('resolveRenderTargetDescriptor', () => {
       colorSpace: 'srgb',
       clearColors: [],
       clearDepth: 1,
+    });
+  });
+
+  describe('explainRenderTargetAxes', () => {
+    it('reports every changed axis in stable descriptor order', () => {
+      const requested = resolveRenderTargetDescriptor({
+        width: 64,
+        height: 48,
+        format: 'rgba16f',
+        colorAttachments: 2,
+        sampleCount: 8,
+        depth: 'depth-stencil-sampled',
+      });
+      const effective = {
+        ...requested,
+        format: 'rgba8' as const,
+        colorFormats: ['rgba8', 'rgba8'] as const,
+        sampleCount: 4,
+        depth: 'depth-stencil' as const,
+      };
+
+      expect(explainRenderTargetAxes(requested, effective)).toEqual([
+        { axis: 'format', effective: 'rgba8', requested: 'rgba16f' },
+        { axis: 'colorFormats', effective: ['rgba8', 'rgba8'], requested: ['rgba16f', 'rgba16f'] },
+        { axis: 'sampleCount', effective: 4, requested: 8 },
+        { axis: 'depth', effective: 'depth-stencil', requested: 'depth-stencil-sampled' },
+      ]);
+    });
+
+    it('returns no differences for identical canonical axes', () => {
+      const axes = resolveRenderTargetDescriptor({ width: 64, height: 48 });
+      expect(explainRenderTargetAxes(axes, { ...axes, colorFormats: [...axes.colorFormats] })).toEqual([]);
     });
   });
 

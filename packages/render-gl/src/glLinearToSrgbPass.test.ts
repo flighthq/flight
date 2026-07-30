@@ -5,9 +5,22 @@ import { createGlState } from './glTestHelper';
 
 function makeTarget(framebuffer: WebGLFramebuffer, texture: WebGLTexture, width = 32, height = 16): GlRenderTarget {
   return {
+    requestedAxes: {
+      width,
+      height,
+      format: 'rgba16f',
+      colorAttachments: 1,
+      colorFormats: ['rgba16f'],
+      sampleCount: 1,
+      depth: 'none',
+      colorSpace: 'linear',
+    },
     width,
     height,
     format: 'rgba16f',
+    colorAttachments: 1,
+    colorFormats: ['rgba16f'],
+    depth: 'none',
     colorSpace: 'linear',
     clearColors: [],
     clearDepth: 1,

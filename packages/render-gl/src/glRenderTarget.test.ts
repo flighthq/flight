@@ -9,7 +9,9 @@ import {
   declareGlRenderTargetColorSpace,
   destroyGlRenderTarget,
   drawGlRenderTargetResult,
+  explainGlRenderTarget,
   resizeGlRenderTarget,
+  resolveGlRenderTargetAxes,
   resolveGlRenderTarget,
 } from './glRenderTarget';
 import { createGlState } from './glTestHelper';
@@ -88,6 +90,33 @@ describe('createGlRenderTarget', () => {
     expect(target.colorSpace).toBe('linear');
   });
 
+  it('retains canonical requested axes separately from effective storage', () => {
+    const { state, gl } = makeState();
+    vi.mocked(gl.getParameter).mockImplementation((parameter) => (parameter === gl.MAX_SAMPLES ? 4 : null));
+    const target = createGlRenderTarget(state, {
+      width: 32,
+      height: 16,
+      colorAttachments: 2,
+      colorFormats: ['rgba8', 'rgba16f'],
+      sampleCount: 8,
+      depth: 'depth-stencil-sampled',
+      colorSpace: 'linear',
+    });
+
+    expect(target.requestedAxes).toEqual({
+      width: 32,
+      height: 16,
+      format: 'rgba8',
+      colorAttachments: 2,
+      colorFormats: ['rgba8', 'rgba16f'],
+      sampleCount: 8,
+      depth: 'depth-stencil-sampled',
+      colorSpace: 'linear',
+    });
+    expect(target.sampleCount).toBe(4);
+    expect(target.depth).toBe('depth-stencil');
+  });
+
   it('falls back a float format to rgba8 when EXT_color_buffer_float is unavailable', () => {
     const { state, gl } = makeState();
     // Simulate GL without float-render support (e.g. headless SwiftShader): a float target would be
@@ -96,6 +125,7 @@ describe('createGlRenderTarget', () => {
       name === 'EXT_color_buffer_float' ? null : {};
     const target = createGlRenderTarget(state, { width: 32, height: 32, format: 'rgba16f' });
     expect(target.format).toBe('rgba8');
+    expect(target.colorFormats).toEqual(['rgba8']);
   });
 
   it('keeps a float format when EXT_color_buffer_float is available', () => {
@@ -114,6 +144,7 @@ describe('declareGlRenderTargetColorSpace', () => {
     beginGlRenderPass(state, target);
     expect(declareGlRenderTargetColorSpace(state, 'linear')).toBe(true);
     expect(target.colorSpace).toBe('linear');
+    expect(target.requestedAxes.colorSpace).toBe('linear');
     endGlRenderPass(state);
   });
 
@@ -188,6 +219,35 @@ describe('drawGlRenderTargetResult', () => {
   });
 });
 
+describe('explainGlRenderTarget', () => {
+  it('reports every GL capability substitution without losing the request', () => {
+    const { state, gl } = makeState();
+    vi.mocked(gl.getParameter).mockImplementation((parameter) => (parameter === gl.MAX_SAMPLES ? 4 : null));
+    (gl as unknown as { getExtension: (name: string) => unknown }).getExtension = (name: string) =>
+      name === 'EXT_color_buffer_float' ? null : {};
+    const target = createGlRenderTarget(state, {
+      width: 32,
+      height: 16,
+      format: 'rgba16f',
+      sampleCount: 8,
+      depth: 'depth-stencil-sampled',
+    });
+
+    expect(explainGlRenderTarget(target).differences).toEqual([
+      { axis: 'format', effective: 'rgba8', requested: 'rgba16f' },
+      { axis: 'colorFormats', effective: ['rgba8'], requested: ['rgba16f'] },
+      { axis: 'sampleCount', effective: 4, requested: 8 },
+      { axis: 'depth', effective: 'depth-stencil', requested: 'depth-stencil-sampled' },
+    ]);
+  });
+
+  it('reports no differences when GL realizes every requested axis', () => {
+    const { state } = makeState();
+    const target = createGlRenderTarget(state, { width: 32, height: 16 });
+    expect(explainGlRenderTarget(target).differences).toEqual([]);
+  });
+});
+
 describe('resizeGlRenderTarget', () => {
   it('updates the target dimensions', () => {
     const { state } = makeState();
@@ -221,6 +281,31 @@ describe('resizeGlRenderTarget', () => {
       target.texture,
     );
     expect(vi.mocked(gl.texImage2D)).toHaveBeenCalled();
+  });
+
+  it('preserves heterogeneous color formats and sampled depth across resize', () => {
+    const { state, gl } = makeState();
+    (gl as unknown as { getExtension: (name: string) => unknown }).getExtension = () => ({});
+    const target = createGlRenderTarget(state, {
+      width: 64,
+      height: 64,
+      colorAttachments: 2,
+      colorFormats: ['rgba8', 'rgba32f'],
+      depth: 'depth-stencil-sampled',
+    });
+    vi.clearAllMocks();
+
+    resizeGlRenderTarget(state, target, 128, 96);
+
+    expect(target.colorAttachments).toBe(2);
+    expect(target.colorFormats).toEqual(['rgba8', 'rgba32f']);
+    expect(target.depth).toBe('depth-stencil-sampled');
+    expect(target.depthTexture).not.toBeNull();
+    expect(vi.mocked(gl.texImage2D).mock.calls.map((call) => call[2])).toEqual([
+      gl.RGBA8,
+      gl.RGBA32F,
+      gl.DEPTH24_STENCIL8,
+    ]);
   });
 });
 
@@ -336,5 +421,19 @@ describe('resolveGlRenderTarget', () => {
     expect(gl.bindFramebuffer).toHaveBeenLastCalledWith(gl.DRAW_FRAMEBUFFER, enclosingFramebuffer);
     expect(gl.enable).toHaveBeenLastCalledWith(gl.SCISSOR_TEST);
     expect(gl.scissor).toHaveBeenLastCalledWith(3, 4, 16, 12);
+  });
+});
+
+describe('resolveGlRenderTargetAxes', () => {
+  it('queries effective axes without allocating target storage', () => {
+    const { state, gl } = makeState();
+    vi.mocked(gl.getParameter).mockImplementation((parameter) => (parameter === gl.MAX_SAMPLES ? 2 : null));
+    vi.clearAllMocks();
+
+    const axes = resolveGlRenderTargetAxes(state, { width: 32, height: 16, sampleCount: 4 });
+
+    expect(axes.sampleCount).toBe(2);
+    expect(gl.createFramebuffer).not.toHaveBeenCalled();
+    expect(gl.createTexture).not.toHaveBeenCalled();
   });
 });

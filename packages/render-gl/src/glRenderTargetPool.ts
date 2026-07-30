@@ -1,12 +1,14 @@
+import { resolveRenderTargetDescriptor } from '@flighthq/render/contract';
 import type {
   GlRenderState,
   GlRenderTarget,
   GlRenderTargetPool,
+  RenderTargetAxes,
   RenderTargetDescriptor,
 } from '@flighthq/types/contract';
 
 import { clearGlRenderTarget } from './glFullscreenPass';
-import { createGlRenderTarget, destroyGlRenderTarget } from './glRenderTarget';
+import { createGlRenderTarget, destroyGlRenderTarget, resolveGlRenderTargetAxes } from './glRenderTarget';
 
 // Lends reusable intermediate targets to multi-pass effect recipes. acquire/release are paired
 // brackets: every acquireGlRenderTarget must have a matching releaseGlRenderTarget. A released
@@ -22,24 +24,25 @@ export function acquireGlRenderTarget(
   pool: GlRenderTargetPool,
   descriptor: Readonly<RenderTargetDescriptor>,
 ): GlRenderTarget {
-  const w = Math.max(1, Math.ceil(descriptor.width));
-  const h = Math.max(1, Math.ceil(descriptor.height));
-  const format = descriptor.format ?? 'rgba8';
-  const sampleCount = Math.max(1, descriptor.sampleCount ?? 1);
+  const requested = resolveRenderTargetDescriptor(descriptor);
+  const effective = resolveGlRenderTargetAxes(state, requested);
 
   for (let i = 0; i < pool.free.length; i++) {
     const candidate = pool.free[i];
-    if (
-      candidate.width === w &&
-      candidate.height === h &&
-      candidate.format === format &&
-      candidate.sampleCount === sampleCount
-    ) {
+    if (matchesGlRenderTargetAxes(candidate, effective)) {
       pool.free.splice(i, 1);
-      // colorSpace is a logical tag, not a physical allocation axis, so it is not part of the reuse
-      // match — re-stamp the reused target with the requested space (default 'srgb') so a scratch
-      // recycled from a linear frame does not carry a stale 'linear' into an sRGB one.
-      candidate.colorSpace = descriptor.colorSpace ?? 'srgb';
+      candidate.requestedAxes = {
+        width: requested.width,
+        height: requested.height,
+        format: requested.format,
+        colorAttachments: requested.colorAttachments,
+        colorFormats: [...requested.colorFormats],
+        sampleCount: requested.sampleCount,
+        depth: requested.depth,
+        colorSpace: requested.colorSpace,
+      };
+      candidate.clearColors = [...requested.clearColors];
+      candidate.clearDepth = requested.clearDepth;
       clearGlRenderTarget(state, candidate);
       return candidate;
     }
@@ -58,4 +61,18 @@ export function destroyGlRenderTargetPool(state: GlRenderState, pool: GlRenderTa
 
 export function releaseGlRenderTarget(pool: GlRenderTargetPool, target: GlRenderTarget): void {
   pool.free.push(target);
+}
+
+function matchesGlRenderTargetAxes(target: Readonly<GlRenderTarget>, axes: Readonly<RenderTargetAxes>): boolean {
+  return (
+    target.width === axes.width &&
+    target.height === axes.height &&
+    target.format === axes.format &&
+    target.colorAttachments === axes.colorAttachments &&
+    target.colorFormats.length === axes.colorFormats.length &&
+    target.colorFormats.every((format, index) => format === axes.colorFormats[index]) &&
+    target.sampleCount === axes.sampleCount &&
+    target.depth === axes.depth &&
+    target.colorSpace === axes.colorSpace
+  );
 }

@@ -1,12 +1,16 @@
 import { acquireMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry/contract';
+import { explainRenderTargetAxes, resolveRenderTargetDescriptor } from '@flighthq/render/contract';
 import type {
   GlRenderState,
   GlRenderTarget,
   Matrix,
   RenderProxy2D,
+  RenderTargetAxes,
   RenderTargetColorSpace,
   RenderTargetDescriptor,
+  RenderTargetExplanation,
   RenderTargetFormat,
+  ResolvedRenderTargetDescriptor,
 } from '@flighthq/types/contract';
 
 import { drawGlQuad, useGlProgram } from './glDraw';
@@ -24,27 +28,21 @@ export function createGlRenderTarget(
 ): GlRenderTarget {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
-
-  const w = Math.max(1, Math.ceil(descriptor.width));
-  const h = Math.max(1, Math.ceil(descriptor.height));
-  // Substitute a renderable format when a float target is requested on GL that lacks float-render
-  // support (see resolveRenderableFormat); target.format carries the effective format so readback and
-  // the present/tonemap path treat it consistently, and resize reuses it.
-  const format = resolveRenderableFormat(gl, descriptor.format ?? 'rgba8');
-  const colorFormats = descriptor.colorFormats?.map((f) => resolveRenderableFormat(gl, f));
-  const attachments = Math.max(1, descriptor.colorAttachments ?? 1);
-  const sampleCount = Math.max(1, descriptor.sampleCount ?? 1);
-  const depth = descriptor.depth ?? 'none';
-  const maxSamples = sampleCount > 1 ? Math.min(sampleCount, gl.getParameter(gl.MAX_SAMPLES) as number) : 1;
+  const requested = resolveRenderTargetDescriptor(descriptor);
+  const effective = resolveEffectiveGlRenderTargetAxes(gl, requested);
 
   const target: GlRenderTarget = {
-    width: w,
-    height: h,
-    format,
-    colorSpace: descriptor.colorSpace ?? 'srgb',
-    clearColors: descriptor.clearColors ? [...descriptor.clearColors] : [],
-    clearDepth: descriptor.clearDepth ?? 1,
-    sampleCount: maxSamples,
+    requestedAxes: copyRenderTargetAxes(requested),
+    width: effective.width,
+    height: effective.height,
+    format: effective.format,
+    colorAttachments: effective.colorAttachments,
+    colorFormats: [...effective.colorFormats],
+    depth: effective.depth,
+    colorSpace: effective.colorSpace,
+    clearColors: [...requested.clearColors],
+    clearDepth: requested.clearDepth,
+    sampleCount: effective.sampleCount,
     framebuffer: gl.createFramebuffer()!,
     resolveFramebuffer: null,
     textures: [],
@@ -54,7 +52,7 @@ export function createGlRenderTarget(
     depthStencilRenderbuffer: null,
   };
 
-  allocateGlRenderTargetStorage(state, target, colorFormats, attachments, depth);
+  allocateGlRenderTargetStorage(state, target);
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, runtime.currentFramebuffer);
   gl.bindTexture(gl.TEXTURE_2D, null);
@@ -71,6 +69,7 @@ export function declareGlRenderTargetColorSpace(state: GlRenderState, colorSpace
   const target = getGlRenderStateRuntime(state).currentRenderTarget;
   if (target == null) return false;
   target.colorSpace = colorSpace;
+  target.requestedAxes = { ...target.requestedAxes, colorSpace };
   return true;
 }
 
@@ -120,6 +119,16 @@ export function drawGlRenderTargetResult(
   drawGlQuad(state, 0, 0, target.width, target.height, 0, 1, 1, 0);
 }
 
+export function explainGlRenderTarget(target: Readonly<GlRenderTarget>): RenderTargetExplanation {
+  const requested = copyRenderTargetAxes(target.requestedAxes);
+  const effective = getGlRenderTargetAxes(target);
+  return {
+    differences: explainRenderTargetAxes(requested, effective),
+    effective,
+    requested,
+  };
+}
+
 /** Reallocates the storage backing `target` to the new pixel dimensions, preserving its axes. */
 export function resizeGlRenderTarget(
   state: GlRenderState,
@@ -127,20 +136,15 @@ export function resizeGlRenderTarget(
   width: number,
   height: number,
 ): void {
-  const w = Math.max(1, Math.ceil(width));
-  const h = Math.max(1, Math.ceil(height));
-  if (w === target.width && h === target.height) return;
-
-  // Capture the storage shape BEFORE teardown: the depth mode and color-attachment count are derived
-  // from the existing attachments, so they must be read before those fields are cleared. Reading them
-  // afterward (as the original did) always yields 'none'/1 — silently dropping the depth buffer and
-  // extra attachments on every resize, which breaks depth-tested 3D the frame after a canvas resize.
-  const depth = target.depthTexture
-    ? 'depth-stencil-sampled'
-    : target.depthStencilRenderbuffer
-      ? 'depth-stencil'
-      : 'none';
-  const attachments = Math.max(1, target.textures.length);
+  const requested = resolveRenderTargetDescriptor({
+    ...target.requestedAxes,
+    width,
+    height,
+    clearColors: target.clearColors,
+    clearDepth: target.clearDepth,
+  });
+  const effective = resolveEffectiveGlRenderTargetAxes(state.gl, requested);
+  if (effective.width === target.width && effective.height === target.height) return;
 
   const gl = state.gl;
   for (const texture of target.textures) gl.deleteTexture(texture);
@@ -155,10 +159,10 @@ export function resizeGlRenderTarget(
   target.depthTexture = null;
   target.depthStencilRenderbuffer = null;
   target.resolveFramebuffer = null;
-  target.width = w;
-  target.height = h;
+  target.requestedAxes = copyRenderTargetAxes(requested);
+  setGlRenderTargetAxes(target, effective);
 
-  allocateGlRenderTargetStorage(state, target, undefined, attachments, depth);
+  allocateGlRenderTargetStorage(state, target);
   getGlRenderStateRuntime(state).currentTexture = null;
 }
 
@@ -213,31 +217,32 @@ export function resolveGlRenderTarget(state: GlRenderState, target: GlRenderTarg
   gl.flush();
 }
 
+export function resolveGlRenderTargetAxes(
+  state: GlRenderState,
+  descriptor: Readonly<RenderTargetDescriptor>,
+): RenderTargetAxes {
+  return resolveEffectiveGlRenderTargetAxes(state.gl, resolveRenderTargetDescriptor(descriptor));
+}
+
 // Allocates color textures/renderbuffers (and the resolve FBO for MSAA) plus optional depth into the
 // already-created `target.framebuffer`. Shared by create and resize.
-function allocateGlRenderTargetStorage(
-  state: GlRenderState,
-  target: GlRenderTarget,
-  colorFormats: ReadonlyArray<RenderTargetFormat> | undefined,
-  attachments: number,
-  depth: 'none' | 'depth-stencil' | 'depth-stencil-sampled',
-): void {
+function allocateGlRenderTargetStorage(state: GlRenderState, target: GlRenderTarget): void {
   const gl = state.gl;
-  const { width: w, height: h, sampleCount } = target;
+  const { width: w, height: h, sampleCount, colorAttachments: attachments, colorFormats, depth } = target;
   const multisampled = sampleCount > 1;
 
   // Float color attachments (rgba16f/rgba32f) are not color-renderable in Gl2 until
   // EXT_color_buffer_float is enabled; without it the framebuffer is incomplete and every draw/clear
   // into an HDR target silently no-ops. getExtension is idempotent and cached, so enabling per-alloc is free.
   let usesFloat = isFloatRenderTargetFormat(target.format);
-  if (colorFormats) for (const f of colorFormats) usesFloat = usesFloat || isFloatRenderTargetFormat(f);
+  for (const f of colorFormats) usesFloat = usesFloat || isFloatRenderTargetFormat(f);
   if (usesFloat) gl.getExtension('EXT_color_buffer_float');
 
   // Resolve/sample textures (always single-sample).
   const resolveFramebuffer = multisampled ? gl.createFramebuffer()! : target.framebuffer;
   gl.bindFramebuffer(gl.FRAMEBUFFER, resolveFramebuffer);
   for (let i = 0; i < attachments; i++) {
-    const fmt = colorFormats?.[i] ?? target.format;
+    const fmt = colorFormats[i]!;
     const gf = mapGlFormat(gl, fmt);
     const texture = gl.createTexture()!;
     gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -257,7 +262,7 @@ function allocateGlRenderTargetStorage(
   if (multisampled) {
     gl.bindFramebuffer(gl.FRAMEBUFFER, target.framebuffer);
     for (let i = 0; i < attachments; i++) {
-      const fmt = colorFormats?.[i] ?? target.format;
+      const fmt = colorFormats[i]!;
       const rb = gl.createRenderbuffer()!;
       gl.bindRenderbuffer(gl.RENDERBUFFER, rb);
       gl.renderbufferStorageMultisample(gl.RENDERBUFFER, sampleCount, mapGlFormat(gl, fmt).internalFormat, w, h);
@@ -269,7 +274,7 @@ function allocateGlRenderTargetStorage(
   }
 
   if (depth !== 'none') {
-    const sampled = depth === 'depth-stencil-sampled' && !multisampled;
+    const sampled = depth === 'depth-stencil-sampled';
     if (sampled) {
       const depthTexture = gl.createTexture()!;
       gl.bindTexture(gl.TEXTURE_2D, depthTexture);
@@ -308,6 +313,67 @@ function buildSingleDrawBuffer(gl: WebGL2RenderingContext, index: number, count:
 
 function isFloatRenderTargetFormat(format: RenderTargetFormat): boolean {
   return format === 'rgba16f' || format === 'rgba32f';
+}
+
+function copyRenderTargetAxes(axes: Readonly<RenderTargetAxes>): RenderTargetAxes {
+  return {
+    width: axes.width,
+    height: axes.height,
+    format: axes.format,
+    colorAttachments: axes.colorAttachments,
+    colorFormats: [...axes.colorFormats],
+    sampleCount: axes.sampleCount,
+    depth: axes.depth,
+    colorSpace: axes.colorSpace,
+  };
+}
+
+function getGlRenderTargetAxes(target: Readonly<GlRenderTarget>): RenderTargetAxes {
+  return {
+    width: target.width,
+    height: target.height,
+    format: target.format,
+    colorAttachments: target.colorAttachments,
+    colorFormats: [...target.colorFormats],
+    sampleCount: target.sampleCount,
+    depth: target.depth,
+    colorSpace: target.colorSpace,
+  };
+}
+
+function resolveEffectiveGlRenderTargetAxes(
+  gl: WebGL2RenderingContext,
+  requested: Readonly<ResolvedRenderTargetDescriptor>,
+): RenderTargetAxes {
+  const reportedMaxSamples = requested.sampleCount > 1 ? gl.getParameter(gl.MAX_SAMPLES) : 1;
+  const maxSamples =
+    typeof reportedMaxSamples === 'number' && Number.isFinite(reportedMaxSamples)
+      ? Math.max(1, Math.floor(reportedMaxSamples))
+      : 1;
+  const sampleCount = Math.min(requested.sampleCount, maxSamples);
+  const colorFormats = requested.colorFormats.map((format) => resolveRenderableFormat(gl, format));
+  const depth = requested.depth === 'depth-stencil-sampled' && sampleCount > 1 ? 'depth-stencil' : requested.depth;
+  return {
+    width: requested.width,
+    height: requested.height,
+    format: colorFormats[0]!,
+    colorAttachments: requested.colorAttachments,
+    colorFormats,
+    sampleCount,
+    depth,
+    colorSpace: requested.colorSpace,
+  };
+}
+
+function setGlRenderTargetAxes(target: GlRenderTarget, axes: Readonly<RenderTargetAxes>): void {
+  target.width = axes.width;
+  target.height = axes.height;
+  target.format = axes.format;
+  target.colorAttachments = axes.colorAttachments;
+  target.colorFormats = [...axes.colorFormats];
+  target.sampleCount = axes.sampleCount;
+  target.depth = axes.depth;
+  target.colorSpace = axes.colorSpace;
 }
 
 // A float color format (rgba16f/rgba32f) is only color-renderable when EXT_color_buffer_float is

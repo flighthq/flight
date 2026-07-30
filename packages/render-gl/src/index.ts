@@ -12,6 +12,7 @@ export {
   enableGlRenderTextureGuards,
   enableGlBlendModeSupport,
   endGlRenderPass,
+  explainGlRenderTarget,
   explainGlRenderTexture,
   registerGlBitmapTextureResolver,
   registerGlCompressedTextureDecoder,
@@ -23,6 +24,7 @@ export {
   registerGlVideoTextureResolver,
   renderGlBackground,
   renderIntoGlRenderTexture,
+  resolveGlRenderTargetAxes,
   resolveGlTexture,
   uploadGlCompressedTextureContainer,
 } from './contract';
