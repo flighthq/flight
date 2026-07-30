@@ -1,8 +1,8 @@
 import { createMatrix, createRectangle } from '@flighthq/geometry/contract';
-import { computeNodeBoundsRectangle } from '@flighthq/node/contract';
-import { createGlRenderStateRuntime, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { computeNodeRootLocalBoundsRectangle } from '@flighthq/node/contract';
 import {
   beginGlRenderPass,
+  createGlOffscreenRenderState,
   createGlRenderTarget,
   destroyGlRenderTarget,
   drawGlRenderTargetResult,
@@ -14,8 +14,6 @@ import {
   computeScene2DRenderTargetTransform,
   computeRenderCacheTransform,
   computeRenderTargetSize,
-  copyAllRenderersFromRenderState,
-  createRenderState,
   getRenderProxyCache,
   noopRendererData,
   prepareScene2DRender,
@@ -31,7 +29,6 @@ import type {
   RenderCacheRefreshOptions,
   RenderProxy2D,
 } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { renderGlScene2D } from './glNode2D';
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
@@ -46,73 +43,9 @@ import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
  * neither substitutes a cache into itself nor disturbs the screen state's nodes.
  */
 export function createGlCacheState(screenState: GlRenderState): GlRenderState {
-  const screenRuntime = getGlRenderStateRuntime(screenState);
-  const cacheState = createRenderState({
-    allowSmoothing: screenState.allowSmoothing,
-    pixelRatio: screenState.pixelRatio,
-    renderTransform2D: createMatrix(),
-    roundPixels: screenState.roundPixels,
-    sceneGraphSyncPolicy: screenState.sceneGraphSyncPolicy,
-  }) as GlRenderState;
-
-  // Attach the cache runtime before copying renderers: copyAllRenderersFromRenderState registers
-  // into the runtime's rendererMap, so the backend runtime must already be installed.
-  const cacheRuntime = createGlRenderStateRuntime();
-  cacheState[EntityRuntimeKey] = cacheRuntime;
-
-  copyAllRenderersFromRenderState(cacheState, screenState);
-
-  cacheState.applyBlendMode = screenState.applyBlendMode;
-  (cacheState as { canvas: HTMLCanvasElement }).canvas = screenState.canvas;
-  (cacheState as { gl: WebGL2RenderingContext }).gl = screenState.gl;
-  cacheRuntime.defaultBitmapShader = screenRuntime.defaultBitmapShader;
-  cacheRuntime.particleShader = screenRuntime.particleShader;
-  cacheRuntime.particleCornerBuffer = screenRuntime.particleCornerBuffer;
-  cacheRuntime.particleInstanceBuffer = screenRuntime.particleInstanceBuffer;
-  cacheRuntime.particleInstanceData = screenRuntime.particleInstanceData;
-  cacheRuntime.quadBatchShader = screenRuntime.quadBatchShader;
-  cacheRuntime.quadBatchCornerBuffer = screenRuntime.quadBatchCornerBuffer;
-  cacheRuntime.colorScaleBiasInstancedShader = screenRuntime.colorScaleBiasInstancedShader;
-  cacheRuntime.uniformColorScaleBiasShader = screenRuntime.uniformColorScaleBiasShader;
-  // Propagate the opt-in color-adjustment fold + guard so tinted nodes inside a cached subtree fold
-  // the same way when baked offscreen. Their per-batch CT data lives on cacheRuntime, lazily grown.
-  cacheRuntime.glColorAdjustmentMaterialFeature = screenRuntime.glColorAdjustmentMaterialFeature;
-  cacheRuntime.glColorAdjustmentMaterialFeatureGuard = screenRuntime.glColorAdjustmentMaterialFeatureGuard;
-  cacheRuntime.materialRendererMap = screenRuntime.materialRendererMap;
-  cacheRuntime.materialBitmapShaderMap = screenRuntime.materialBitmapShaderMap;
-  cacheRuntime.shaderLoc = screenRuntime.shaderLoc;
-  cacheRuntime.textureCache = screenRuntime.textureCache;
-  cacheRuntime.glRenderTextureCache = screenRuntime.glRenderTextureCache ??= new WeakMap();
-  cacheRuntime.glRenderTextureGuard = screenRuntime.glRenderTextureGuard;
-  cacheRuntime.quadVertexBuffer = screenRuntime.quadVertexBuffer;
-  cacheRuntime.quadIndexBuffer = screenRuntime.quadIndexBuffer;
-  cacheRuntime.quadVertexData = screenRuntime.quadVertexData;
-  cacheRuntime.matrixArray = screenRuntime.matrixArray;
-
-  cacheRuntime.currentBlendMode = null;
-  cacheRuntime.currentFramebuffer = null;
-  cacheRuntime.currentMaskDepth = 0;
-  cacheRuntime.currentProgram = null;
-  cacheRuntime.currentScissorRect = null;
-  cacheRuntime.currentTexture = null;
-  cacheRuntime.currentTextureStraightAlpha = false;
-  cacheRuntime.flushPendingDraws = null;
-  cacheRuntime.renderTargetViewport = null;
-  cacheRuntime.scissorStack = [];
-  cacheRuntime.quadBatchWriterBlendMode = null;
-  cacheRuntime.quadBatchWriterMaterial = null;
-  cacheRuntime.quadBatchWriterMaterialRenderer = null;
-  cacheRuntime.quadBatchWriterMaterialFloats = 0;
-  cacheRuntime.quadBatchWriterMaterialData = new Float32Array(0);
-  cacheRuntime.quadBatchWriterMaterialBuffer = null;
-  cacheRuntime.quadBatchWriterCount = 0;
-  cacheRuntime.quadBatchWriterInstanceBuffer = null;
-  cacheRuntime.quadBatchWriterInstanceData = new Float32Array(0);
-  cacheRuntime.quadBatchWriterTexture = null;
-  cacheRuntime.quadBatchWriterSampler = null;
-  cacheRuntime.quadBatchWriterStraightAlpha = false;
-  cacheRuntime.quadBatchWriterSmoothing = null;
-
+  const cacheState = createGlOffscreenRenderState(screenState);
+  // Adapter maps are deliberately fresh on the derived state. In particular, the cache adapter
+  // attached on the screen state is absent while this state renders the content that populates it.
   _cacheStateScreen.set(cacheState, screenState);
   return cacheState;
 }
@@ -171,7 +104,7 @@ export function refreshGlRenderCache(
   const minWidth = options?.minWidth ?? 1;
   const minHeight = options?.minHeight ?? 1;
 
-  computeNodeBoundsRectangle(_bounds, source, source);
+  computeNodeRootLocalBoundsRectangle(_bounds, source);
   const { width, height } = computeRenderTargetSize(_bounds, padding, minWidth, minHeight);
 
   const existing = getGlRenderCacheTarget(screenState, cache);

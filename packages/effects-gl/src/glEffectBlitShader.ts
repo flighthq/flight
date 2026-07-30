@@ -43,9 +43,9 @@ type BlitOffsetShaderLocations = GlFullscreenProgram & {
   locOffset: WebGLUniformLocation;
 };
 
-const blitOffsetShaders = new WeakMap<GlRenderState, BlitOffsetShaderLocations>();
-const blitShaders = new WeakMap<GlRenderState, GlFullscreenProgram>();
-const eraseShaders = new WeakMap<GlRenderState, GlFullscreenProgram>();
+const blitOffsetShaders = new WeakMap<WebGL2RenderingContext, BlitOffsetShaderLocations>();
+const blitShaders = new WeakMap<WebGL2RenderingContext, GlFullscreenProgram>();
+const eraseShaders = new WeakMap<WebGL2RenderingContext, GlFullscreenProgram>();
 
 /**
  * Blits source into dest at a pixel offset (dx, dy in screen-space Y-down).
@@ -79,32 +79,32 @@ export function applyGlEffectErasePass(state: GlRenderState, source: GlRenderTar
 }
 
 function getGlBlitOffsetShader(state: GlRenderState): BlitOffsetShaderLocations {
-  let loc = blitOffsetShaders.get(state);
+  let loc = blitOffsetShaders.get(state.gl);
   if (loc === undefined) {
     const gl = state.gl;
     const base = compileGlFullscreenProgram(gl, BLIT_OFFSET_FRAGMENT_SRC);
     loc = { ...base, locOffset: gl.getUniformLocation(base.program, 'u_offset')! };
-    blitOffsetShaders.set(state, loc);
+    blitOffsetShaders.set(state.gl, loc);
   }
   return loc;
 }
 
 function getGlBlitShader(state: GlRenderState): GlFullscreenProgram {
-  let loc = blitShaders.get(state);
+  let loc = blitShaders.get(state.gl);
   if (loc === undefined) {
     const gl = state.gl;
     loc = compileGlFullscreenProgram(gl, BLIT_FRAGMENT_SRC);
-    blitShaders.set(state, loc);
+    blitShaders.set(state.gl, loc);
   }
   return loc;
 }
 
 function getGlEraseShader(state: GlRenderState): GlFullscreenProgram {
-  let loc = eraseShaders.get(state);
+  let loc = eraseShaders.get(state.gl);
   if (loc === undefined) {
     const gl = state.gl;
     loc = compileGlFullscreenProgram(gl, ERASE_FRAGMENT_SRC);
-    eraseShaders.set(state, loc);
+    eraseShaders.set(state.gl, loc);
   }
   return loc;
 }

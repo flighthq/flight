@@ -1,3 +1,4 @@
+import { resolveRenderTargetDescriptor } from '@flighthq/render/contract';
 import type {
   GlRenderState,
   GlRenderTextureEntry,
@@ -69,6 +70,27 @@ export function getGlRenderTextureColorSpace(
   return getEntry(state, renderTexture)?.target.colorSpace ?? renderTexture.colorSpace;
 }
 
+// Resolves the hidden target only while the handle owns completed content. This is the backend bridge
+// used by target-to-target effect wrappers; app-level composition keeps using RenderTexture.
+export function getGlRenderTextureTarget(
+  state: GlRenderState,
+  renderTexture: Readonly<RenderTexture>,
+): Readonly<GlRenderTextureEntry['target']> | null {
+  const entry = getEntry(state, renderTexture);
+  if (entry?.status === 'ready') return entry.target;
+  notifyGuard(state, renderTexture);
+  return null;
+}
+
+export function invalidateGlRenderTexture(
+  state: GlRenderState,
+  renderTexture: Readonly<RenderTexture>,
+  status: 'released' | 'unrendered' = 'unrendered',
+): void {
+  const entry = getEntry(state, renderTexture);
+  if (entry !== undefined) entry.status = status;
+}
+
 export function isGlRenderTextureReady(state: GlRenderState, renderTexture: Readonly<RenderTexture>): boolean {
   const ready = getEntry(state, renderTexture)?.status === 'ready';
   if (!ready) notifyGuard(state, renderTexture);
@@ -84,34 +106,47 @@ export function renderIntoGlRenderTexture(
   renderTexture: RenderTexture,
   callback: (state: GlRenderState) => void,
 ): void {
+  writeGlRenderTextureTarget(state, renderTexture, (target) => {
+    pushGlRenderState(state);
+    try {
+      beginGlRenderPass(state, target);
+      try {
+        callback(state);
+      } finally {
+        endGlRenderPass(state);
+      }
+    } finally {
+      popGlRenderState(state);
+    }
+  });
+}
+
+export function setGlRenderTextureGuard(state: GlRenderState, guard: GlRenderTextureGuard | null): void {
+  getGlRenderStateRuntime(state).glRenderTextureGuard = guard;
+}
+
+// Gives a backend recipe the hidden destination without opening a pass. The recipe may run several
+// target passes; success atomically publishes the RenderTexture, while failure invalidates it.
+export function writeGlRenderTextureTarget<T>(
+  state: GlRenderState,
+  renderTexture: RenderTexture,
+  callback: (target: GlRenderTextureEntry['target']) => T,
+): T {
   const entry = ensureEntry(state, renderTexture);
   const previousStatus = entry.status;
   entry.status = 'writing';
   let rendered = false;
-  pushGlRenderState(state);
   try {
-    beginGlRenderPass(state, entry.target);
-    try {
-      callback(state);
-      rendered = true;
-    } finally {
-      endGlRenderPass(state);
-    }
+    const result = callback(entry.target);
+    rendered = true;
+    return result;
   } finally {
-    popGlRenderState(state);
-    // A rejected nested write shares this entry with the still-active outer writer. Preserve that
-    // ownership so catching the nested precondition failure cannot make the outer attachment appear
-    // unrendered. A top-level or replacement failure still invalidates the result to 'unrendered'.
     entry.status = rendered ? 'ready' : previousStatus === 'writing' ? 'writing' : 'unrendered';
     if (rendered) {
       renderTexture.colorSpace = entry.target.colorSpace;
       renderTexture.version = (renderTexture.version + 1) >>> 0;
     }
   }
-}
-
-export function setGlRenderTextureGuard(state: GlRenderState, guard: GlRenderTextureGuard | null): void {
-  getGlRenderStateRuntime(state).glRenderTextureGuard = guard;
 }
 
 function ensureEntry(state: GlRenderState, renderTexture: Readonly<RenderTexture>): GlRenderTextureEntry {
@@ -125,9 +160,44 @@ function ensureEntry(state: GlRenderState, renderTexture: Readonly<RenderTexture
     };
     entries.set(renderTexture, entry);
   } else {
-    resizeGlRenderTarget(state, entry.target, descriptor.width, descriptor.height);
+    const requested = resolveRenderTargetDescriptor(descriptor);
+    if (matchesGlRenderTextureAllocation(entry.target, requested)) {
+      resizeGlRenderTarget(state, entry.target, descriptor.width, descriptor.height);
+      entry.target.requestedAxes = {
+        width: requested.width,
+        height: requested.height,
+        format: requested.format,
+        colorAttachments: requested.colorAttachments,
+        colorFormats: [...requested.colorFormats],
+        sampleCount: requested.sampleCount,
+        depth: requested.depth,
+        colorSpace: requested.colorSpace,
+      };
+      entry.target.clearColors = [...requested.clearColors];
+      entry.target.clearDepth = requested.clearDepth;
+    } else {
+      destroyGlRenderTarget(state, entry.target);
+      entry.target = createGlRenderTarget(state, descriptor);
+      entry.status = 'unrendered';
+    }
   }
   return entry;
+}
+
+function matchesGlRenderTextureAllocation(
+  target: Readonly<GlRenderTextureEntry['target']>,
+  descriptor: ReturnType<typeof resolveRenderTargetDescriptor>,
+): boolean {
+  const requested = target.requestedAxes;
+  return (
+    requested.format === descriptor.format &&
+    requested.colorAttachments === descriptor.colorAttachments &&
+    requested.colorFormats.length === descriptor.colorFormats.length &&
+    requested.colorFormats.every((format, index) => format === descriptor.colorFormats[index]) &&
+    requested.sampleCount === descriptor.sampleCount &&
+    requested.depth === descriptor.depth &&
+    requested.colorSpace === descriptor.colorSpace
+  );
 }
 
 function getEntries(state: GlRenderState): WeakMap<RenderTexture, GlRenderTextureEntry> {

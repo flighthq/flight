@@ -2,10 +2,12 @@ import type { BlendMode } from './BlendMode';
 import type { Entity, EntityRuntime, Kind } from './Entity';
 import type { Matrix } from './Matrix';
 import type { Renderable } from './Renderable';
+import type { RenderEffectPaddingResolver } from './RenderEffectPadding';
 import type { Renderer } from './Renderer';
 import type { RenderProxy } from './RenderProxy';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderProxyAdapter } from './RenderProxyAdapter';
+import type { RenderRegistrySignals } from './RenderRegistrySignals';
 import type { Scene2DClipHooks } from './Scene2DRenderer';
 
 /**
@@ -48,6 +50,18 @@ export interface RenderStateRuntime extends EntityRuntime {
   renderAdaptHook: ((state: RenderState, source: Renderable, data: RenderProxy2D) => void) | null;
   renderProxyAdapterMap: WeakMap<Renderable, RenderProxyAdapter>;
   renderProxyMap: WeakMap<Renderable, RenderProxy>;
+  // WeakMap alone cannot support deterministic shutdown. This companion set contains exactly the
+  // sources with live proxies so destroyRenderState can run every renderer's destroyData hook.
+  renderProxySources: Set<Renderable>;
+  // Opt-in, shakeable registry-miss seam. Dispatch chokepoints emit only when this group has been
+  // enabled; warning policy and message strings live in guard packages.
+  registrySignals: RenderRegistrySignals | null;
+  // Directional effect footprint policy is state-scoped like every other kind-keyed handler
+  // registry. Absent until the first explicit registration.
+  renderEffectPaddingResolverRegistry?: Map<Kind, RenderEffectPaddingResolver> | null;
+  // Optional backend guard reached before a root walk. Backends use this to diagnose pipeline-policy
+  // mistakes without adding their warning dependency to the substrate-independent render path.
+  renderRootGuard: ((state: RenderState, root: Renderable) => void) | null;
   rendererMap: Map<Kind, Renderer>;
   rendererMapId: number;
   tempStack: Renderable[];

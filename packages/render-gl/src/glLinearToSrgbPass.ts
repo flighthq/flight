@@ -22,18 +22,18 @@ export function drawGlLinearToSrgbPass(
 }
 
 function getGlLinearToSrgbProgram(state: GlRenderState): GlFullscreenProgram {
-  let program = _programs.get(state);
+  let program = _programs.get(state.gl);
   if (program === undefined) {
     program = compileGlFullscreenProgram(state.gl, LINEAR_TO_SRGB_FRAGMENT_SRC);
-    _programs.set(state, program);
+    _programs.set(state.gl, program);
   }
   return program;
 }
 
 const NOOP = (): void => {};
 
-// Per-state compiled OETF program, kept off the render-state runtime type and freed with the state.
-const _programs = new WeakMap<GlRenderState, GlFullscreenProgram>();
+// Per-context compiled OETF program, shared by derived pipelines over the same GL context.
+const _programs = new WeakMap<WebGL2RenderingContext, GlFullscreenProgram>();
 
 export const LINEAR_TO_SRGB_FRAGMENT_SRC = `#version 300 es
 precision highp float;

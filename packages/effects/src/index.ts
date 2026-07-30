@@ -1,6 +1,7 @@
 export {
   blendNonSeparableRgb,
   canLerpRenderEffects,
+  computeRenderEffectPadding,
   computeAcesToneMap,
   computeAgxToneMap,
   computeBloomBlurRadius,
@@ -93,9 +94,11 @@ export {
   createVignetteEffect,
   createVolumetricLightEffect,
   createWhiteBalanceEffect,
+  explainRenderEffectPadding,
   getAcesInputMatrix,
   getAcesOutputMatrix,
   getAdvancedBlendRgb,
+  getBlurEffectPadding,
   getBlurDownsampleLevel,
   getBlurResidualSigma,
   getCompositeOperatorFactors,
@@ -109,5 +112,7 @@ export {
   isNonSeparableBlendMode,
   lerpRenderEffect,
   normalizeRenderEffect,
+  registerBlurEffectPaddingResolver,
+  registerRenderEffectPaddingResolver,
   validateRenderEffectList,
 } from './contract';

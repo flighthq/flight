@@ -4,6 +4,7 @@ import type {
   MatrixLike,
   Node2D,
   RectangleLike,
+  RenderEffectPadding,
   RenderTargetAxes,
   RenderTargetAxisDifference,
   RenderTargetDescriptor,
@@ -30,13 +31,15 @@ export function computeRenderCacheTransform(
 
 export function computeRenderTargetSize(
   bounds: Readonly<RectangleLike>,
-  padding: number = 0,
+  padding: number | Readonly<RenderEffectPadding> = 0,
   minWidth: number = 1,
   minHeight: number = 1,
 ): { width: number; height: number } {
+  const horizontal = typeof padding === 'number' ? padding * 2 : padding.left + padding.right;
+  const vertical = typeof padding === 'number' ? padding * 2 : padding.top + padding.bottom;
   return {
-    width: Math.max(minWidth, Math.ceil(bounds.width) + padding * 2),
-    height: Math.max(minHeight, Math.ceil(bounds.height) + padding * 2),
+    width: Math.max(minWidth, Math.ceil(bounds.width) + horizontal),
+    height: Math.max(minHeight, Math.ceil(bounds.height) + vertical),
   };
 }
 

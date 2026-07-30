@@ -14,7 +14,9 @@ status: ./status.md
 
 `@flighthq/effects` is the **substrate-agnostic catalog of post-process render effects**: plain-data descriptors (one `create*Effect` per kind), plus deterministic recipe math that all backends derive identical parameters from. 52 effect kinds spanning color grade, blurs/DoF, bloom/HDR, screen-space 3D, anti-aliasing, film/stylize, lens, accessibility, and a `CustomShader` escape hatch. 10 recipe math modules with reference-grade, zero-alloc implementations (Gaussian, Oklab, ACES/Hable/AgX/Reinhard tone maps, Sobel, thin-lens CoC, Halton SSAO, Kuwahara, god-rays, LUT, stylize). Pipeline-support layer: per-kind metadata (defaults, required render inputs, field roles for interpolation), effect-stack validation, and descriptor interpolation for animation.
 
-It does not execute — pixel work lives in `effects-gl` / `effects-wgpu` / `effects-canvas`. Sole runtime dependency is `@flighthq/types`.
+It does not execute — pixel work lives in `effects-gl` / `effects-wgpu` / `effects-canvas`.
+Its state-scoped handler registries use `@flighthq/render` plus the opt-in `@flighthq/signals`
+registry-miss seam; descriptor and recipe data remain in `@flighthq/types`.
 
 **Effects are the spatial/composite tier.** As of the 2026-07-11 ruling ([effect-adjustment-architecture](../../effect-adjustment-architecture.md), fork H), `@flighthq/filters` dissolves: an image operation is either an **Adjustment** (`@flighthq/adjustments` — pointwise, *fuses* to one matrix/LUT, *folds* into the draw as data) or an **Effect** (this package — spatial or composite: reads neighbors or needs multiple passes/buffers, *chains* as passes, *bounces* through an offscreen target). Effects keeps only the chain-and-bounce ops (`blur`, `sharpen`, `displacement`, `dropShadow`, `glow`, `bevel`, `bloom`, `bokehDoF`, `godRays`, …); the pointwise catalog (`colorGrade`, `hueSaturation`, `brightnessContrast`, `invert`, `grayscale`, `liftGammaGain`, `channelMixer`, `exposure`, `lookupTableGrade`, `colorBlindSimulation`) migrates out to `adjustments`. `customShaderEffect` stays here as the escape hatch for non-pointwise custom shading. (The 52-kind and per-backend counts above predate this split and will drop as the pointwise kinds move.)
 
@@ -45,6 +47,11 @@ It does not execute — pixel work lives in `effects-gl` / `effects-wgpu` / `eff
 
 ## Decisions
 
+- **[2026-07-30] Effect footprints use an open, state-scoped directional padding registry.** A
+  resolver explicitly registered by effect kind derives `{left, top, right, bottom}`; sequential
+  effects add per side and pointwise effects register zero. Backend runner registration does not
+  imply padding registration. Missing registration is a zero sentinel plus an explanation and the
+  shared opt-in render registry-miss signal; effects owns no bespoke callback or logging guard.
 - **[2026-07-02] Effects owns intents + math; backends own pixels.** Recipe math stays in effects permanently. Same dependency direction as filters: effects owns the contract and recipe, effects-\* backends consume it. Inverting the dependency direction would mean big switch statements or closed dispatch in render-adjacent code.
 
   **Why:** The math is substrate-agnostic — every backend derives identical parameters from the same functions. Centralizing it here prevents N backends from re-deriving the same math and drifting.

@@ -36,7 +36,7 @@ type GradientLookupLocations = GlFullscreenProgram & {
   locRamp: WebGLUniformLocation;
 };
 
-const lookupShaders = new WeakMap<GlRenderState, GradientLookupLocations>();
+const lookupShaders = new WeakMap<WebGL2RenderingContext, GradientLookupLocations>();
 
 // Gradient-glow composite effect: an outer glow whose color is looked up from a colors/alphas/ratios gradient ramp indexed by the blurred silhouette alpha.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the
@@ -108,12 +108,12 @@ function applyGradientLookupPass(
 }
 
 function getLookupShader(state: GlRenderState): GradientLookupLocations {
-  let loc = lookupShaders.get(state);
+  let loc = lookupShaders.get(state.gl);
   if (loc === undefined) {
     const gl = state.gl;
     const base = compileGlFullscreenProgram(gl, GRADIENT_LOOKUP_FRAGMENT_SRC);
     loc = { ...base, locRamp: gl.getUniformLocation(base.program, 'u_ramp')! };
-    lookupShaders.set(state, loc);
+    lookupShaders.set(state.gl, loc);
   }
   return loc;
 }

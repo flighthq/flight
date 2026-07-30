@@ -15,6 +15,10 @@ status: ./status.md
 
 WebGL 2 backend for screen-space post-process effects — the GPU runner layer that turns the data-descriptor effects in `@flighthq/effects` into multi-pass fullscreen shader recipes, plus the post-process pipeline that drives them (MSAA-aware HDR scene target, ping-pong pooled-target loop, per-`GlRenderState` effect registry, program + uniform-location cache, depth/velocity seams).
 
+It also owns the explicit per-node target-to-target application over `RenderTexture` leases. This is
+the backend bridge between a subtree captured through `createGlOffscreenRenderState` and explicit
+`Sprite + RenderTexture` composition; it never reaches into or mutates a live render proxy.
+
 It is the GL sibling of `effects-wgpu` and `effects-canvas`: same effect descriptor types (owned by `@flighthq/types`), same six-band taxonomy, same intent — the only difference is the substrate it rasterizes against. It ends where `@flighthq/effects` begins (substrate-agnostic effect _intent_ and shared parameter math) and where `render-gl` begins (the GL state, targets, fullscreen program plumbing, and any retained G-buffer/history infrastructure). `effects-gl` owns the _shader recipe per effect_ and the _post-process pipeline_ — not the descriptors, not the GPU core.
 
 ## North star

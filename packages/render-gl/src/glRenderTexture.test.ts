@@ -9,9 +9,12 @@ import {
   destroyGlRenderTexture,
   explainGlRenderTexture,
   getGlRenderTextureColorSpace,
+  getGlRenderTextureTarget,
+  invalidateGlRenderTexture,
   isGlRenderTextureReady,
   renderIntoGlRenderTexture,
   setGlRenderTextureGuard,
+  writeGlRenderTextureTarget,
 } from './glRenderTexture';
 import { createGlState } from './glTestHelper';
 
@@ -93,6 +96,32 @@ describe('getGlRenderTextureColorSpace', () => {
     expect(getGlRenderTextureColorSpace(state, renderTexture)).toBe('linear');
     renderIntoGlRenderTexture(state, renderTexture, () => {});
     expect(getGlRenderTextureColorSpace(state, renderTexture)).toBe('linear');
+  });
+});
+
+describe('getGlRenderTextureTarget', () => {
+  it('returns the hidden target only after a completed write', () => {
+    const { state } = createRenderTextureState();
+    const renderTexture = createRenderTexture({ height: 8, width: 8 });
+
+    expect(getGlRenderTextureTarget(state, renderTexture)).toBeNull();
+    writeGlRenderTextureTarget(state, renderTexture, () => {});
+    expect(getGlRenderTextureTarget(state, renderTexture)).not.toBeNull();
+  });
+});
+
+describe('invalidateGlRenderTexture', () => {
+  it('makes a previously published target unavailable without deleting it', () => {
+    const { state, gl } = createRenderTextureState();
+    const renderTexture = createRenderTexture({ height: 8, width: 8 });
+    writeGlRenderTextureTarget(state, renderTexture, () => {});
+    const deletes = vi.mocked(gl.deleteTexture).mock.calls.length;
+
+    invalidateGlRenderTexture(state, renderTexture);
+
+    expect(isGlRenderTextureReady(state, renderTexture)).toBe(false);
+    expect(getGlRenderTextureTarget(state, renderTexture)).toBeNull();
+    expect(gl.deleteTexture).toHaveBeenCalledTimes(deletes);
   });
 });
 
@@ -223,6 +252,21 @@ describe('setGlRenderTextureGuard', () => {
     setGlRenderTextureGuard(state, null);
     bindGlRenderTexture(state, renderTexture);
     expect(guard).toHaveBeenCalledOnce();
+  });
+});
+
+describe('writeGlRenderTextureTarget', () => {
+  it('passes the hidden target to the producer and publishes the completed write', () => {
+    const { state } = createRenderTextureState();
+    const renderTexture = createRenderTexture({ height: 10, width: 12 });
+    const producer = vi.fn();
+
+    writeGlRenderTextureTarget(state, renderTexture, producer);
+
+    expect(producer).toHaveBeenCalledOnce();
+    expect(producer.mock.calls[0][0]).toBe(getGlRenderTextureTarget(state, renderTexture));
+    expect(renderTexture.version).toBe(1);
+    expect(isGlRenderTextureReady(state, renderTexture)).toBe(true);
   });
 });
 

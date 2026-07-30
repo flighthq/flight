@@ -1,6 +1,18 @@
+import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import {
+  copyAllRenderersFromRenderState,
+  getRenderStateRuntime,
+  prepareScene2DRender,
+  registerRenderer,
+} from '@flighthq/render/contract';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
+import { enableGlRenderStateGuards } from './enableGlRenderStateGuards';
+import { registerGlMaterialRenderer } from './glMaterialRegistry';
 import {
+  copyGlRenderStateRegistrations,
+  createGlOffscreenRenderState,
   createGlRenderState,
   createGlRenderStateRuntime,
   destroyGlRenderState,
@@ -8,6 +20,7 @@ import {
   invalidateGlRenderStateCache,
 } from './glRenderState';
 import { makeGL } from './glTestHelper';
+import { registerGlTextureResolver } from './glTextureResolver';
 
 function makeCanvas() {
   const canvas = document.createElement('canvas');
@@ -17,6 +30,108 @@ function makeCanvas() {
   canvas.getContext = vi.fn().mockReturnValue(gl) as typeof canvas.getContext;
   return { canvas, gl };
 }
+
+describe('copyGlRenderStateRegistrations', () => {
+  it('copies late GL registrations only when explicitly requested', () => {
+    const { canvas } = makeCanvas();
+    const screen = createGlRenderState(canvas);
+    const offscreen = createGlOffscreenRenderState(screen);
+    const resolver = vi.fn(() => null);
+    registerGlTextureResolver(screen, 'acme.LateTexture', resolver);
+
+    expect(getGlRenderStateRuntime(offscreen).glTextureResolverRegistry?.has('acme.LateTexture')).not.toBe(true);
+    copyGlRenderStateRegistrations(offscreen, screen);
+    expect(getGlRenderStateRuntime(offscreen).glTextureResolverRegistry?.get('acme.LateTexture')).toBe(resolver);
+  });
+});
+
+describe('createGlOffscreenRenderState', () => {
+  it('shares context resources while snapshotting registration policy into independent maps', () => {
+    const { canvas } = makeCanvas();
+    const screen = createGlRenderState(canvas);
+    const renderer = { createData: () => null, submit: vi.fn() };
+    const materialRenderer = { getBatchData: vi.fn(), getBatchFloats: vi.fn() } as never;
+    const paddingResolver = vi.fn(() => ({ bottom: 1, left: 1, right: 1, top: 1 }));
+    const textureResolver = vi.fn(() => null);
+    registerRenderer(screen, 'acme.Node', renderer);
+    registerGlMaterialRenderer(screen, 'acme.Material', materialRenderer);
+    registerGlTextureResolver(screen, 'acme.Texture', textureResolver);
+    getRenderStateRuntime(screen).renderEffectPaddingResolverRegistry = new Map([['acme.Effect', paddingResolver]]);
+    getGlRenderStateRuntime(screen).glRenderTextureCache = new WeakMap();
+
+    const offscreen = createGlOffscreenRenderState(screen);
+    const screenRuntime = getGlRenderStateRuntime(screen);
+    const offscreenRuntime = getGlRenderStateRuntime(offscreen);
+
+    expect(offscreen.gl).toBe(screen.gl);
+    expect(offscreen.canvas).toBe(screen.canvas);
+    expect(offscreenRuntime.textureCache).toBe(screenRuntime.textureCache);
+    expect(offscreenRuntime.textureSourcePremultipliedTextureCache).toBe(
+      screenRuntime.textureSourcePremultipliedTextureCache,
+    );
+    expect(offscreenRuntime.glRenderTextureCache).toBe(screenRuntime.glRenderTextureCache);
+    expect(offscreenRuntime.quadIndexBuffer).toBe(screenRuntime.quadIndexBuffer);
+    expect(offscreenRuntime.rendererMap).not.toBe(screenRuntime.rendererMap);
+    expect(offscreenRuntime.materialRendererMap).not.toBe(screenRuntime.materialRendererMap);
+    expect(offscreenRuntime.glTextureResolverRegistry).not.toBe(screenRuntime.glTextureResolverRegistry);
+    expect(offscreenRuntime.renderEffectPaddingResolverRegistry).not.toBe(
+      screenRuntime.renderEffectPaddingResolverRegistry,
+    );
+    expect(offscreenRuntime.rendererMap.get('acme.Node')).toBe(renderer);
+    expect(offscreenRuntime.materialRendererMap?.get('acme.Material')).toBe(materialRenderer);
+    expect(offscreenRuntime.glTextureResolverRegistry?.get('acme.Texture')).toBe(textureResolver);
+    expect(offscreenRuntime.renderEffectPaddingResolverRegistry?.get('acme.Effect')).toBe(paddingResolver);
+
+    screenRuntime.currentProgram = {} as WebGLProgram;
+    expect(offscreenRuntime.currentProgram).toBe(screenRuntime.currentProgram);
+  });
+
+  it('requires explicit re-copy for registrations added after derivation', () => {
+    const { canvas } = makeCanvas();
+    const screen = createGlRenderState(canvas);
+    const offscreen = createGlOffscreenRenderState(screen);
+    const renderer = { createData: () => null, submit: vi.fn() };
+    const paddingResolver = vi.fn(() => ({ bottom: 2, left: 2, right: 2, top: 2 }));
+    const resolver = vi.fn(() => null);
+    registerRenderer(screen, 'acme.LateNode', renderer);
+    registerGlTextureResolver(screen, 'acme.LateTexture', resolver);
+    getRenderStateRuntime(screen).renderEffectPaddingResolverRegistry = new Map([['acme.LateEffect', paddingResolver]]);
+
+    expect(getRenderStateRuntime(offscreen).rendererMap.has('acme.LateNode')).toBe(false);
+    expect(getGlRenderStateRuntime(offscreen).glTextureResolverRegistry?.has('acme.LateTexture')).not.toBe(true);
+    expect(getRenderStateRuntime(offscreen).renderEffectPaddingResolverRegistry?.has('acme.LateEffect')).not.toBe(true);
+
+    copyAllRenderersFromRenderState(offscreen, screen);
+    copyGlRenderStateRegistrations(offscreen, screen);
+    expect(getRenderStateRuntime(offscreen).rendererMap.get('acme.LateNode')).toBe(renderer);
+    expect(getGlRenderStateRuntime(offscreen).glTextureResolverRegistry?.get('acme.LateTexture')).toBe(resolver);
+    expect(getRenderStateRuntime(offscreen).renderEffectPaddingResolverRegistry?.get('acme.LateEffect')).toBe(
+      paddingResolver,
+    );
+  });
+
+  it('keeps proxy trees independent and destroys derived renderer data without freeing shared context resources', () => {
+    const { canvas, gl } = makeCanvas();
+    const screen = createGlRenderState(canvas);
+    const destroyData = vi.fn();
+    const root = createDisplayObject();
+    registerRenderer(screen, root.kind, {
+      createData: () => createEntity({}),
+      destroyData,
+      submit: vi.fn(),
+    });
+    const offscreen = createGlOffscreenRenderState(screen);
+    prepareScene2DRender(offscreen, root);
+
+    expect(getRenderStateRuntime(offscreen).renderProxyMap).not.toBe(getRenderStateRuntime(screen).renderProxyMap);
+    destroyGlRenderState(offscreen);
+    expect(destroyData).toHaveBeenCalledOnce();
+    expect(gl.deleteProgram).not.toHaveBeenCalled();
+
+    destroyGlRenderState(screen);
+    expect(gl.deleteProgram).toHaveBeenCalled();
+  });
+});
 
 describe('createGlRenderState', () => {
   it('throws when Gl2 context is unavailable', () => {
@@ -141,6 +256,25 @@ describe('destroyGlRenderState', () => {
   });
 });
 
+describe('enableGlRenderStateGuards', () => {
+  it('warns when one GL pipeline prepares two different roots', () => {
+    const { canvas } = makeCanvas();
+    const state = createGlRenderState(canvas);
+    const sink = createMemoryLogSink(4);
+    addLogSink(sink.sink);
+    enableGlRenderStateGuards(state);
+    try {
+      prepareScene2DRender(state, createDisplayObject());
+      prepareScene2DRender(state, createDisplayObject());
+      const entries = getMemoryLogSinkEntries(sink);
+      expect(entries).toHaveLength(1);
+      expect((entries[0].data as { message: string }).message).toContain('createGlOffscreenRenderState');
+    } finally {
+      removeLogSink(sink.sink);
+    }
+  });
+});
+
 describe('getGlRenderStateRuntime', () => {
   it('returns the runtime attached by createGlRenderState', () => {
     const { canvas } = makeCanvas();
@@ -184,3 +318,4 @@ describe('invalidateGlRenderStateCache', () => {
     expect(runtime.renderTargetViewport).toBeNull();
   });
 });
+import { createEntity } from '@flighthq/entity/contract';

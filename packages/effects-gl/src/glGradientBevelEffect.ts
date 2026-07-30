@@ -60,8 +60,8 @@ type BevelApplyLocations = GlFullscreenProgram & {
   locSource: WebGLUniformLocation;
 };
 
-const encodeShaders = new WeakMap<GlRenderState, BevelEncodeLocations>();
-const applyShaders = new WeakMap<GlRenderState, BevelApplyLocations>();
+const encodeShaders = new WeakMap<WebGL2RenderingContext, BevelEncodeLocations>();
+const applyShaders = new WeakMap<WebGL2RenderingContext, BevelApplyLocations>();
 
 // Gradient-bevel composite effect: a bevel whose highlight→shadow band color is looked up from a colors/alphas/ratios gradient ramp indexed by the encoded bevel depth.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the
@@ -159,7 +159,7 @@ function applyBevelEncodePass(
 }
 
 function getApplyShader(state: GlRenderState): BevelApplyLocations {
-  let loc = applyShaders.get(state);
+  let loc = applyShaders.get(state.gl);
   if (loc === undefined) {
     const gl = state.gl;
     const base = compileGlFullscreenProgram(gl, BEVEL_APPLY_FRAGMENT_SRC);
@@ -168,18 +168,18 @@ function getApplyShader(state: GlRenderState): BevelApplyLocations {
       locRamp: gl.getUniformLocation(base.program, 'u_ramp')!,
       locSource: gl.getUniformLocation(base.program, 'u_source')!,
     };
-    applyShaders.set(state, loc);
+    applyShaders.set(state.gl, loc);
   }
   return loc;
 }
 
 function getEncodeShader(state: GlRenderState): BevelEncodeLocations {
-  let loc = encodeShaders.get(state);
+  let loc = encodeShaders.get(state.gl);
   if (loc === undefined) {
     const gl = state.gl;
     const base = compileGlFullscreenProgram(gl, BEVEL_ENCODE_FRAGMENT_SRC);
     loc = { ...base, locOffset: gl.getUniformLocation(base.program, 'u_offset')! };
-    encodeShaders.set(state, loc);
+    encodeShaders.set(state.gl, loc);
   }
   return loc;
 }

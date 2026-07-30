@@ -15,6 +15,15 @@ export function copyRenderersFromRenderState(target: RenderState, source: Render
   });
 }
 
+// Copies the backend-agnostic policy registries that participate in pipeline derivation. Maps are
+// cloned, never aliased: derived states start with a snapshot and diverge until an explicit re-copy.
+export function copyRenderStateRegistrations(target: RenderState, source: RenderState): void {
+  const targetRuntime = getRenderStateRuntime(target);
+  const sourceRegistry = getRenderStateRuntime(source).renderEffectPaddingResolverRegistry;
+  targetRuntime.renderEffectPaddingResolverRegistry =
+    sourceRegistry === null || sourceRegistry === undefined ? null : new Map(sourceRegistry);
+}
+
 export function noopRendererData(_state: RenderState, _source: Renderable): RendererData | null {
   return null;
 }

@@ -191,6 +191,14 @@ export function setGlRenderTransform2D(state: GlRenderState, transform: Readonly
   const next = createMatrix();
   copyMatrix(next, transform);
   state.renderTransform2D = next;
+  // The root device transform is an input to every prepared proxy transform, but it is state policy,
+  // not a node revision. Mark the state-local proxies stale so a repeated offscreen capture with new
+  // bounds/padding cannot reuse transforms prepared for the previous target dimensions.
+  const runtime = getGlRenderStateRuntime(state);
+  for (const source of runtime.renderProxySources) {
+    const proxy = runtime.renderProxyMap.get(source);
+    if (proxy !== undefined) proxy.lastLocalTransformId = -1;
+  }
 }
 
 // Clears the bound target's aspects that `preserve` does not spare. Uses per-attachment clearBufferfv so

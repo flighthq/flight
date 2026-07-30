@@ -53,6 +53,7 @@ export * from './radialBlurEffect';
 export * from './renderEffectDefaults';
 export * from './renderEffectInputs';
 export * from './renderEffectInterpolation';
+export * from './renderEffectPadding';
 export * from './renderEffectValidation';
 export * from './scanlinesEffect';
 export * from './screenSpaceFogEffect';

@@ -2,7 +2,7 @@ import { createMatrix } from '@flighthq/geometry/contract';
 import type { RenderState } from '@flighthq/types/contract';
 import { BlendMode, EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createRenderState, createRenderStateRuntime, getRenderStateRuntime } from './renderState';
+import { createRenderState, createRenderStateRuntime, destroyRenderState, getRenderStateRuntime } from './renderState';
 
 describe('createRenderState', () => {
   let state: RenderState;
@@ -82,6 +82,20 @@ describe('createRenderStateRuntime', () => {
     const b = createRenderStateRuntime();
     expect(a).not.toBe(b);
     expect(a.rendererMap).not.toBe(b.rendererMap);
+  });
+});
+
+describe('destroyRenderState', () => {
+  it('clears state-owned traversal and registration storage', () => {
+    const state = createRenderState();
+    const runtime = getRenderStateRuntime(state);
+    runtime.tempStack.push({} as never);
+    runtime.renderEffectPaddingResolverRegistry = new Map();
+
+    destroyRenderState(state);
+
+    expect(runtime.tempStack).toHaveLength(0);
+    expect(runtime.renderEffectPaddingResolverRegistry).toBeNull();
   });
 });
 

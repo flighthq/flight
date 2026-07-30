@@ -2,6 +2,7 @@ import type { Scene2DClipHooks, Renderer, RenderState } from '@flighthq/types/co
 
 import {
   copyAllRenderersFromRenderState,
+  copyRenderStateRegistrations,
   copyRenderersFromRenderState,
   noopRendererData,
   registerRenderer,
@@ -65,6 +66,22 @@ describe('copyRenderersFromRenderState', () => {
     const sourceIdBeforeCopy = getRenderStateRuntime(source).rendererMapId;
     copyRenderersFromRenderState(target, source);
     expect(getRenderStateRuntime(source).rendererMapId).toBe(sourceIdBeforeCopy);
+  });
+});
+
+describe('copyRenderStateRegistrations', () => {
+  it('snapshot-copies effect-padding registrations without aliasing the maps', () => {
+    const source = createRenderState();
+    const target = createRenderState();
+    const resolver = vi.fn();
+    getRenderStateRuntime(source).renderEffectPaddingResolverRegistry = new Map([['acme.Effect', resolver]]);
+
+    copyRenderStateRegistrations(target, source);
+
+    expect(getRenderStateRuntime(target).renderEffectPaddingResolverRegistry).not.toBe(
+      getRenderStateRuntime(source).renderEffectPaddingResolverRegistry,
+    );
+    expect(getRenderStateRuntime(target).renderEffectPaddingResolverRegistry?.get('acme.Effect')).toBe(resolver);
   });
 });
 

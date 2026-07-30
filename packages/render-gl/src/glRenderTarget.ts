@@ -189,7 +189,13 @@ export function resizeGlRenderTarget(
   setGlRenderTargetAxes(target, effective);
 
   allocateGlRenderTargetStorage(state, target);
-  getGlRenderStateRuntime(state).currentTexture = null;
+  const runtime = getGlRenderStateRuntime(state);
+  // Storage allocation binds the target while attaching its new textures/renderbuffers. Match the
+  // creation contract by restoring the caller's tracked framebuffer before returning; otherwise a
+  // pooled resize leaves physical GL state and the binding mirror disagreeing.
+  gl.bindFramebuffer(gl.FRAMEBUFFER, runtime.currentFramebuffer);
+  gl.bindTexture(gl.TEXTURE_2D, null);
+  runtime.currentTexture = null;
 }
 
 /**

@@ -1,4 +1,7 @@
 export {
+  applyBlurEffectToGlRenderTextures,
+  applyGaussianBlurToGlRenderTextures,
+  applyGlRenderEffectsToRenderTexture,
   beginGlRenderEffectPipeline,
   createGlRenderEffectPipeline,
   defaultGlBlendEffectRunner,
@@ -38,6 +41,7 @@ export {
   defaultGlWhiteBalanceEffectRunner,
   endGlRenderEffectPipeline,
   registerGlBlendEffectBackdrop,
+  registerGlBlurEffect,
   registerGlRenderEffect,
   setGlRenderEffectVelocityTexture,
 } from './contract';

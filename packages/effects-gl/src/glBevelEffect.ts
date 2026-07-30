@@ -142,7 +142,7 @@ type BevelCompositeLocations = GlFullscreenProgram & {
   locClipMode: WebGLUniformLocation;
 };
 
-const bevelCompositeShaders = new WeakMap<GlRenderState, BevelCompositeLocations>();
+const bevelCompositeShaders = new WeakMap<WebGL2RenderingContext, BevelCompositeLocations>();
 
 type BevelCompositeParams = Readonly<{
   offsetX: number;
@@ -185,7 +185,7 @@ function applyGlBevelCompositePass(
 }
 
 function getGlBevelCompositeShader(state: GlRenderState): BevelCompositeLocations {
-  let loc = bevelCompositeShaders.get(state);
+  let loc = bevelCompositeShaders.get(state.gl);
   if (loc === undefined) {
     const gl = state.gl;
     const base = compileGlFullscreenProgram(gl, BEVEL_COMPOSITE_FRAGMENT_SRC);
@@ -197,7 +197,7 @@ function getGlBevelCompositeShader(state: GlRenderState): BevelCompositeLocation
       locIntensity: gl.getUniformLocation(base.program, 'u_intensity')!,
       locClipMode: gl.getUniformLocation(base.program, 'u_clipMode')!,
     };
-    bevelCompositeShaders.set(state, loc);
+    bevelCompositeShaders.set(state.gl, loc);
   }
   return loc;
 }

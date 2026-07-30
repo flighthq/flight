@@ -41,6 +41,7 @@ export * from './glPosterizeEffect';
 export * from './glRadialBlurEffect';
 export * from './glRenderEffectPipeline';
 export * from './glRenderEffectRegistry';
+export * from './glRenderTextureEffect';
 export * from './glScanlinesEffect';
 export * from './glScreenSpaceFogEffect';
 export * from './glSharpenEffect';

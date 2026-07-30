@@ -1,7 +1,21 @@
-import { acquireGlRenderTarget, drawGlFullscreenPass, releaseGlRenderTarget } from '@flighthq/render-gl/contract';
-import type { BlurEffect, GlRenderEffectRunner, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+import {
+  acquireGlRenderTarget,
+  drawGlFullscreenPass,
+  getGlRenderTextureTarget,
+  releaseGlRenderTarget,
+  withGlRenderState,
+  writeGlRenderTextureTarget,
+} from '@flighthq/render-gl/contract';
+import type {
+  BlurEffect,
+  GlRenderEffectRunner,
+  GlRenderState,
+  GlRenderTarget,
+  RenderTexture,
+} from '@flighthq/types/contract';
 
 import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // Plain separable Gaussian blur: two axis passes (source → temp horizontally, temp → dest vertically),
 // each a single weighted fullscreen pass with radius ⌈3σ⌉. `blurX`/`blurY` are the Gaussian standard
@@ -19,6 +33,16 @@ export function applyBlurEffectToGl(
   effect: Readonly<BlurEffect>,
 ): void {
   applyGaussianBlurToGl(state, source, dest, temp, { blurX: effect.blurX, blurY: effect.blurY });
+}
+
+export function applyBlurEffectToGlRenderTextures(
+  state: GlRenderState,
+  source: Readonly<RenderTexture>,
+  dest: RenderTexture,
+  temp: RenderTexture,
+  effect: Readonly<BlurEffect>,
+): boolean {
+  return applyGaussianBlurToGlRenderTextures(state, source, dest, temp, effect);
 }
 
 // Applies a faithful separable Gaussian blur to `source`, writing to `dest`. `blurX`/`blurY` are the
@@ -40,12 +64,40 @@ export function applyGaussianBlurToGl(
   applyGlGaussianBlurPass(state, temp, dest, sigmaY, radiusY, 0, 1);
 }
 
+// RenderTexture-facing target-to-target apply. The hidden GlRenderTargets never leave this backend
+// wrapper; success publishes both writes and increments their content versions.
+export function applyGaussianBlurToGlRenderTextures(
+  state: GlRenderState,
+  source: Readonly<RenderTexture>,
+  dest: RenderTexture,
+  temp: RenderTexture,
+  options: Readonly<{ blurX?: number; blurY?: number }>,
+): boolean {
+  if (source === dest || source === temp || dest === temp) {
+    throw new Error('applyGaussianBlurToGlRenderTextures: source, destination, and scratch must be distinct');
+  }
+  const sourceTarget = getGlRenderTextureTarget(state, source);
+  if (sourceTarget === null) return false;
+  withGlRenderState(state, () => {
+    writeGlRenderTextureTarget(state, temp, (tempTarget) => {
+      writeGlRenderTextureTarget(state, dest, (destTarget) => {
+        applyGaussianBlurToGl(state, sourceTarget, destTarget, tempTarget, options);
+      });
+    });
+  });
+  return true;
+}
+
 export const defaultGlBlurEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
   const descriptor = { width: ctx.source.width, height: ctx.source.height, format: ctx.source.format };
   const temp = acquireGlRenderTarget(ctx.state, ctx.pool, descriptor);
   applyBlurEffectToGl(ctx.state, ctx.source, ctx.dest, temp, effect as BlurEffect);
   releaseGlRenderTarget(ctx.pool, temp);
 };
+
+export function registerGlBlurEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'BlurEffect', defaultGlBlurEffectRunner);
+}
 
 function applyGlGaussianBlurPass(
   state: GlRenderState,

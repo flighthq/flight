@@ -1,13 +1,74 @@
 import { createMatrix } from '@flighthq/geometry/contract';
 import {
+  copyAllRenderersFromRenderState,
+  copyRenderStateRegistrations,
   createRenderState as _createRenderState,
   createRenderStateRuntime,
+  destroyRenderState,
   setRenderStateBackgroundColor,
 } from '@flighthq/render/contract';
 import type { GlRenderOptions, GlRenderState, GlRenderStateRuntime } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { compileDefaultGlProgram, createDefaultGlBitmapShader } from './glShader';
+
+// Explicit snapshot re-copy. This never aliases registration maps: last-write-wins divergence is the
+// point of a second render state, and a cache/effect state may intentionally omit screen policy.
+export function copyGlRenderStateRegistrations(target: GlRenderState, source: GlRenderState): void {
+  const targetRuntime = getGlRenderStateRuntime(target);
+  const sourceRuntime = getGlRenderStateRuntime(source);
+  target.applyBlendMode = source.applyBlendMode;
+  targetRuntime.defaultBitmapShader = sourceRuntime.defaultBitmapShader;
+  targetRuntime.glBlendModeRegistry = copyMap(sourceRuntime.glBlendModeRegistry);
+  targetRuntime.glColorAdjustmentMaterialFeature = sourceRuntime.glColorAdjustmentMaterialFeature;
+  targetRuntime.glColorAdjustmentMaterialFeatureGuard = sourceRuntime.glColorAdjustmentMaterialFeatureGuard;
+  targetRuntime.materialRendererMap =
+    sourceRuntime.materialRendererMap === undefined ? undefined : new Map(sourceRuntime.materialRendererMap);
+  targetRuntime.materialBitmapShaderMap =
+    sourceRuntime.materialBitmapShaderMap === undefined ? undefined : new Map(sourceRuntime.materialBitmapShaderMap);
+  targetRuntime.sceneMeshMaterialRegistry = copyMap(sourceRuntime.sceneMeshMaterialRegistry);
+  targetRuntime.webglShaderBindingResolver = sourceRuntime.webglShaderBindingResolver;
+  targetRuntime.glTextureResolverRegistry = copyRegistryMap(sourceRuntime.glTextureResolverRegistry);
+  targetRuntime.glRenderTextureGuard = sourceRuntime.glRenderTextureGuard;
+  targetRuntime.compressedTextureDecoder = sourceRuntime.compressedTextureDecoder;
+  targetRuntime.compressedTextureUpload = sourceRuntime.compressedTextureUpload;
+  targetRuntime.glRenderEffectRegistry = copyMap(sourceRuntime.glRenderEffectRegistry);
+  copyRenderStateRegistrations(target, source);
+}
+
+/**
+ * Creates a second render pipeline over `screenState`'s WebGL context.
+ *
+ * GPU objects and upload caches are aliases of one context tier. Pipeline policy is a creation-time
+ * snapshot: renderer/clip/material/effect/texture registrations start equal, then either state may
+ * override or omit them independently. Per-node proxies, adapters, frame counters, batch writers,
+ * render transforms, and renderer data are always fresh.
+ */
+export function createGlOffscreenRenderState(screenState: GlRenderState): GlRenderState {
+  const state = _createRenderState({
+    allowSmoothing: screenState.allowSmoothing,
+    backgroundColor: screenState.backgroundColor,
+    backgroundColorRgba: [...screenState.backgroundColorRgba],
+    backgroundColorString: screenState.backgroundColorString,
+    pixelRatio: screenState.pixelRatio,
+    renderAlpha: screenState.renderAlpha,
+    renderBlendMode: screenState.renderBlendMode,
+    renderTransform2D: createMatrix(),
+    roundPixels: screenState.roundPixels,
+    sceneGraphSyncPolicy: screenState.sceneGraphSyncPolicy,
+  }) as GlRenderState;
+  state.applyBlendMode = screenState.applyBlendMode;
+  (state as { canvas: HTMLCanvasElement }).canvas = screenState.canvas;
+  (state as { gl: WebGL2RenderingContext }).gl = screenState.gl;
+
+  const screenRuntime = getGlRenderStateRuntime(screenState);
+  const runtime = createGlRenderStateRuntime(screenRuntime);
+  state[EntityRuntimeKey] = runtime;
+  initializeOffscreenGlRuntime(runtime, screenRuntime);
+  copyAllRenderersFromRenderState(state, screenState);
+  copyGlRenderStateRegistrations(state, screenState);
+  return state;
+}
 
 export function createGlRenderState(canvas: HTMLCanvasElement, options: GlRenderOptions = {}): GlRenderState {
   const contextAttribs: WebGLContextAttributes = {
@@ -98,8 +159,24 @@ export function createGlRenderState(canvas: HTMLCanvasElement, options: GlRender
 // one to each state under EntityRuntimeKey and populates its fields; getGlRenderStateRuntime reads
 // it back. The render path writes the returned object every frame, so the return is intentionally
 // mutable (not Readonly).
-export function createGlRenderStateRuntime(): GlRenderStateRuntime {
-  return createRenderStateRuntime() as GlRenderStateRuntime;
+export function createGlRenderStateRuntime(sharedRuntime?: GlRenderStateRuntime): GlRenderStateRuntime {
+  const runtime = createRenderStateRuntime() as GlRenderStateRuntime;
+  const contextRuntime =
+    sharedRuntime === undefined ? { fields: {}, references: 0 } : getGlContextRuntime(sharedRuntime);
+  contextRuntime.references++;
+  _contextRuntimeByStateRuntime.set(runtime, contextRuntime);
+  for (const key of GL_CONTEXT_RUNTIME_KEYS) {
+    Object.defineProperty(runtime, key, {
+      configurable: true,
+      enumerable: true,
+      get: () => contextRuntime.fields[key],
+      set: (value: unknown) => {
+        (contextRuntime.fields as Partial<Record<GlContextRuntimeKey, unknown>>)[key] = value;
+      },
+    });
+  }
+  runtime.currentRenderTarget = null;
+  return runtime;
 }
 
 // Frees the GPU resources createGlRenderState and the lazy ensure* helpers allocated on the
@@ -116,7 +193,13 @@ export function createGlRenderStateRuntime(): GlRenderStateRuntime {
 // Deleting an already-deleted Gl program or buffer is a silent no-op, so destroying a screen
 // state whose resources a cache state still aliases is safe.
 export function destroyGlRenderState(state: GlRenderState): void {
+  if (_destroyedStates.has(state)) return;
+  _destroyedStates.add(state);
   const runtime = getGlRenderStateRuntime(state);
+  destroyRenderState(state);
+  const contextRuntime = getGlContextRuntime(runtime);
+  contextRuntime.references--;
+  if (contextRuntime.references !== 0) return;
   const gl = state.gl;
 
   // Dedupe: several shader wrappers (e.g. defaultBitmapShader) share shaderLoc.program.
@@ -126,7 +209,11 @@ export function destroyGlRenderState(state: GlRenderState): void {
   if (runtime.particleShader) programs.add(runtime.particleShader.program);
   if (runtime.quadBatchShader) programs.add(runtime.quadBatchShader.program);
   if (runtime.colorScaleBiasInstancedShader) programs.add(runtime.colorScaleBiasInstancedShader.program);
+  if (runtime.colorMatrixInstancedShader) programs.add(runtime.colorMatrixInstancedShader.program);
+  if (runtime.colorTintInstancedShader) programs.add(runtime.colorTintInstancedShader.program);
   if (runtime.uniformColorScaleBiasShader) programs.add(runtime.uniformColorScaleBiasShader.program);
+  if (runtime.shapeMeshColorScaleBiasShader) programs.add(runtime.shapeMeshColorScaleBiasShader.program);
+  if (runtime.shapeMeshColorMatrixShader) programs.add(runtime.shapeMeshColorMatrixShader.program);
   for (const program of programs) gl.deleteProgram(program);
 
   gl.deleteBuffer(runtime.quadVertexBuffer);
@@ -168,3 +255,99 @@ export function invalidateGlRenderStateCache(state: GlRenderState): void {
   runtime.currentTextureStraightAlpha = false;
   runtime.renderTargetViewport = null;
 }
+
+function initializeOffscreenGlRuntime(runtime: GlRenderStateRuntime, screenRuntime: GlRenderStateRuntime): void {
+  runtime.currentFramebuffer = null;
+  runtime.currentMaskDepth = 0;
+  runtime.currentScissorRect = null;
+  runtime.currentRenderTarget = null;
+  runtime.flushPendingDraws = null;
+  runtime.renderTargetViewport = null;
+  runtime.defaultBitmapShader = screenRuntime.defaultBitmapShader;
+  runtime.quadBatchWriterBlendMode = null;
+  runtime.quadBatchWriterMaterial = null;
+  runtime.quadBatchWriterMaterialRenderer = null;
+  runtime.quadBatchWriterMaterialFloats = 0;
+  runtime.quadBatchWriterMaterialData = new Float32Array(8 * 256);
+  runtime.quadBatchWriterCount = 0;
+  runtime.quadBatchWriterInstanceData = new Float32Array(13 * 256);
+  runtime.quadBatchWriterTexture = null;
+  runtime.quadBatchWriterSampler = null;
+  runtime.quadBatchWriterStraightAlpha = false;
+  runtime.quadBatchWriterSmoothing = null;
+  runtime.particleInstanceData = new Float32Array(0);
+  runtime.quadVertexData = new Float32Array(16);
+  runtime.matrixArray = new Float32Array(9);
+  runtime.scissorStack = [];
+  runtime.clipForms = [];
+}
+
+function copyMap<K, V>(source: ReadonlyMap<K, V> | null | undefined): Map<K, V> | null | undefined {
+  if (source === undefined) return undefined;
+  if (source === null) return null;
+  return new Map(source);
+}
+
+// Guard-enabled registries are Map subclasses. Constructing through the source registry preserves
+// that diagnostic behavior while still producing an independent registration snapshot.
+function copyRegistryMap<K, V>(source: Map<K, V> | null | undefined): Map<K, V> | null | undefined {
+  if (source === undefined) return undefined;
+  if (source === null) return null;
+  const Registry = source.constructor as new () => Map<K, V>;
+  const result = new Registry();
+  source.forEach((value, key) => result.set(key, value));
+  return result;
+}
+
+type GlContextRuntimeKey = (typeof GL_CONTEXT_RUNTIME_KEYS)[number];
+type GlContextRuntime = {
+  fields: Partial<Pick<GlRenderStateRuntime, GlContextRuntimeKey>>;
+  references: number;
+};
+
+function getGlContextRuntime(runtime: GlRenderStateRuntime): GlContextRuntime {
+  const contextRuntime = _contextRuntimeByStateRuntime.get(runtime);
+  if (contextRuntime === undefined) throw new Error('GlRenderState runtime has no context tier');
+  return contextRuntime;
+}
+
+// Storage in these slots is a pure function of (WebGL context, source data). Accessors on each state
+// preserve the established runtime surface while routing the actual value to one shared context tier.
+// Pass-local framebuffer/viewport/clip fields stay state-local because glRenderPass owns their exact
+// dormant restore points on its per-context stack.
+const GL_CONTEXT_RUNTIME_KEYS = [
+  'currentBlendMode',
+  'currentProgram',
+  'currentTexture',
+  'currentTextureStraightAlpha',
+  'particleShader',
+  'particleCornerBuffer',
+  'particleInstanceBuffer',
+  'quadBatchShader',
+  'quadBatchCornerBuffer',
+  'colorScaleBiasInstancedShader',
+  'colorMatrixInstancedShader',
+  'colorTintInstancedShader',
+  'uniformColorScaleBiasShader',
+  'shapeMeshColorScaleBiasShader',
+  'shapeMeshColorMatrixShader',
+  'sceneMeshUploadCache',
+  'shaderLoc',
+  'textureCache',
+  'textureSourcePremultipliedTextureCache',
+  'textureSourceStraightTextureCache',
+  'glExternalTextureCache',
+  'glRenderTextureCache',
+  'videoTextureCache',
+  'mipmappedTextures',
+  'anisotropyExt',
+  'maxAnisotropy',
+  'quadVertexBuffer',
+  'quadIndexBuffer',
+  'quadBatchWriterInstanceBuffer',
+  'quadBatchWriterMaterialBuffer',
+  'quadBatchWriterColorScaleBiasBuffer',
+] as const satisfies ReadonlyArray<keyof GlRenderStateRuntime>;
+
+const _contextRuntimeByStateRuntime = new WeakMap<GlRenderStateRuntime, GlContextRuntime>();
+const _destroyedStates = new WeakSet<GlRenderState>();
