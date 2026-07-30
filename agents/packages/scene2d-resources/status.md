@@ -8,8 +8,9 @@ Built 2026-07-29.
 - `loadScene2DResources` owns the operation-scoped Promise, cancellation, and progress boundary.
 - URL acquisition is caller-supplied, and source dispatch uses an empty-by-default open registry.
 - SVG and Lottie adapters are opt-in. Rive, SWF, and custom codecs can register without changing this package.
-- Hand-authored tests cover slot/linkage behavior, reference-owned replacement, synchronous reconciliation,
-  deterministic async results, cancellation, registry replacement, URL acquisition, SVG, and Lottie.
+- Hand-authored tests cover slot/linkage behavior, idempotent reference-owned replacement, synchronous
+  reconciliation, deterministic async results, cancellation relay, registry replacement, URL acquisition,
+  malformed built-in rejection, SVG, and Lottie.
 - Scoped package checks/tests and bundle-size verification pass. Bare repository checks/tests remain the final
   handoff gate.
 
