@@ -28,7 +28,13 @@ function updatePhysics2DBroadphase(world: Physics2DWorld): void {
       if (boundsScratch.maxX > maxX) maxX = boundsScratch.maxX;
       if (boundsScratch.maxY > maxY) maxY = boundsScratch.maxY;
     }
-    if (minX > maxX) continue;
+    if (minX > maxX) {
+      // No collider produced bounds, so there is nothing to index. Withdraw rather than skip: the id
+      // may have been indexed on a previous step, and a stale AABB keeps generating pairs for a body
+      // this step has already decided not to collide.
+      world.index.removeSpatialObject(body.index);
+      continue;
+    }
     // Bounds this package declines to hand to the broadphase — a physics judgement, kept as
     // defence in depth rather than as a substitute for the index's own bound.
     //
@@ -50,6 +56,11 @@ function updatePhysics2DBroadphase(world: Physics2DWorld): void {
       maxX - minX > MAX_SIMULATED_EXTENT ||
       maxY - minY > MAX_SIMULATED_EXTENT
     ) {
+      // Withdraw the body from the index instead of merely skipping the update. Skipping left
+      // whatever AABB it had last step in place, so a body this filter had declared diverged went on
+      // producing broadphase pairs and holding live contacts from its last valid pose — the opposite
+      // of the "stops colliding" this comment claims. Removal is a no-op for an id never indexed.
+      world.index.removeSpatialObject(body.index);
       continue;
     }
     bodyBounds.minX = minX;
@@ -85,9 +96,20 @@ function buildPhysics2DContacts(world: Physics2DWorld): void {
     const first = findPhysics2DBody(world, pair.a);
     const second = findPhysics2DBody(world, pair.b);
     if (first === null || second === null) continue;
-    // Two bodies that cannot both move have no constraint to solve; skipping them here keeps the
-    // solver's body list free of pairs whose every impulse would be multiplied by zero.
-    if (first.inverseMass === 0 && second.inverseMass === 0) continue;
+    // Two bodies that cannot both move have no constraint to SOLVE, and skipping them keeps the
+    // solver's body list free of pairs whose every impulse would be multiplied by zero. But a sensor
+    // is reported, never resolved — the solver already skips sensor contacts — so applying this test
+    // before any collider is inspected silently deleted every sensor overlap between two immovable
+    // bodies. A static trigger volume over static scenery is an ordinary thing to build, and it
+    // reported nothing at all. Immovable pairs are still skipped, unless one of them senses.
+    if (
+      first.inverseMass === 0 &&
+      second.inverseMass === 0 &&
+      !hasSensorCollider(first) &&
+      !hasSensorCollider(second)
+    ) {
+      continue;
+    }
     // A jointed pair almost always overlaps at the anchor, and resolving that contact fights the
     // constraint holding them together, so a joint suppresses it unless the caller asks otherwise.
     if (isPhysics2DPairJointSuppressed(world, first.index, second.index)) continue;
@@ -351,6 +373,15 @@ function createPhysics2DContactPoint(): Physics2DContactPoint {
     tangentMass: 0,
     bias: 0,
   };
+}
+
+// Whether any of the body's colliders senses rather than collides. Cheap enough to ask per pair: a
+// body carries a handful of colliders, and the alternative is inspecting every collider pairing.
+function hasSensorCollider(body: Readonly<RigidBody2D>): boolean {
+  for (const collider of body.colliders) {
+    if (collider.sensor) return true;
+  }
+  return false;
 }
 
 // Total order over contacts, by the four identities that define one. Every field is a persistent index,
