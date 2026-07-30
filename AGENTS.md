@@ -207,7 +207,7 @@ Rendering: `render` (registration, state/queue, update pipeline), the backend co
 
 3D data primitives: `mesh`, `lighting`, `texture`, `camera` (3D projection/frustum **and** the 2D `Camera2D` — the former `camera2d` package is absorbed here), `animation`, `skeleton3d`, `picking`, `scene3d-formats` (glTF/USD/OBJ/3DS/MD5/AWD2).
 
-Resources: `image`, `image-codec`, `font`, `video`, `audio`, `binpack`, `textureatlas`, `tileset`, `loader`, `assets`, the codecs `texture-formats` / `textureatlas-formats` / `tilemap-formats`, and the staged scene acquisition layers `scene2d-resources` / `scene3d-resources`.
+Resources: `image`, `image-codec`, `font`, `video`, `audio`, `binpack`, `textureatlas`, `loader`, `assets`, the codecs `texture-formats` / `textureatlas-formats` / `tilemap-formats`, and the staged scene acquisition layers `scene2d-resources` / `scene3d-resources`.
 
 Animation and simulation: `spritesheet`, `spritesheet-formats`, `particles` (headless sim) with `particleemitter` (display node) and `particles-formats`, `timeline` with `movieclip`, `tween`, `motionpath`, `clock`, `easing`, `spring`.
 
