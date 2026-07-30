@@ -119,9 +119,6 @@ function _validateItem(item: Readonly<MenuItemTemplate>, seen: Set<Readonly<Menu
   if (seen.has(item)) {
     throw new Error('validateMenuItemTemplate: cyclic submenu reference detected');
   }
-  if (item.checked !== undefined && item.type !== 'checkbox' && item.type !== 'radio') {
-    return `item type "${item.type ?? 'normal'}" has checked state (only checkbox and radio items may be checked)`;
-  }
   if (item.type === 'separator') {
     if (item.label !== undefined && item.label !== '') {
       return `separator item has a label: "${item.label}" (separators should not have labels)`;
@@ -145,21 +142,34 @@ function _validateItem(item: Readonly<MenuItemTemplate>, seen: Set<Readonly<Menu
     return `item type "${item.type ?? 'normal'}" has "checked" (only "checkbox" and "radio" items are checkable)`;
   }
   if (item.submenu !== undefined) {
+    const groupError = _validateRadioGroups(item.submenu);
+    if (groupError !== null) return groupError;
     seen.add(item);
-    let checkedRadioInGroup = false;
     for (const child of item.submenu) {
-      if (child.type === 'radio') {
-        if (child.checked === true) {
-          if (checkedRadioInGroup) return 'submenu has multiple checked radio items in one contiguous group';
-          checkedRadioInGroup = true;
-        }
-      } else {
-        checkedRadioInGroup = false;
-      }
       const err = _validateItem(child, seen);
       if (err !== null) return err;
     }
     seen.delete(item);
+  }
+  return null;
+}
+
+// A radio group is a run of adjacent radio items — any other item type, including a separator, starts
+// a new one. Exactly one member of a run may be checked; two checked members describe a state the
+// widget cannot represent, and each backend picks a different winner. Checked on a non-radio item is
+// caught per-item above; this is the rule that only exists across siblings, which is why it runs where
+// the child list is known rather than inside the per-item walk.
+function _validateRadioGroups(items: readonly Readonly<MenuItemTemplate>[]): string | null {
+  let checkedInRun = 0;
+  for (const item of items) {
+    if (item.type !== 'radio') {
+      checkedInRun = 0;
+      continue;
+    }
+    if (item.checked === true) checkedInRun++;
+    if (checkedInRun > 1) {
+      return `radio group has ${checkedInRun} checked items (a radio group may have at most one)`;
+    }
   }
   return null;
 }
