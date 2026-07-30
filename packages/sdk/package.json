@@ -196,6 +196,7 @@
     "@flighthq/spritesheet-formats": "*",
     "@flighthq/statusbar": "*",
     "@flighthq/storage": "*",
+    "@flighthq/swf": "*",
     "@flighthq/bitmap": "*",
     "@flighthq/text": "*",
     "@flighthq/text-markup": "*",

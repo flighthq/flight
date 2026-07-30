@@ -230,6 +230,8 @@
       "@flighthq/scene2d-formats/*": ["./packages/scene2d-formats/src/*"],
       "@flighthq/scene2d-resources": ["./packages/scene2d-resources/src/index.ts"],
       "@flighthq/scene2d-resources/*": ["./packages/scene2d-resources/src/*"],
+      "@flighthq/swf": ["./packages/swf/src/index.ts"],
+      "@flighthq/swf/*": ["./packages/swf/src/*"],
       "@flighthq/shading": ["./packages/shading/src/index.ts"],
       "@flighthq/shading/*": ["./packages/shading/src/*"],
       "@flighthq/shape": ["./packages/shape/src/index.ts"],
