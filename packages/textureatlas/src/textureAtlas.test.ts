@@ -3,7 +3,26 @@ import { createTexture } from '@flighthq/texture/contract';
 import type { Bitmap, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
 import { BitmapTextureBackingKind } from '@flighthq/types/contract';
 
-import { createTextureAtlas, getTextureAtlasByteSize } from './textureAtlas';
+import { createTextureAtlas, disposeTextureAtlas, getTextureAtlasByteSize } from './textureAtlas';
+
+function createTextureAtlasRegionForTest(): TextureAtlasRegion {
+  return {
+    height: 1,
+    id: 0,
+    name: null,
+    originalHeight: null,
+    originalWidth: null,
+    pivotX: null,
+    pivotY: null,
+    rotated: false,
+    sourceX: 0,
+    sourceY: 0,
+    trimmed: false,
+    width: 1,
+    x: 0,
+    y: 0,
+  } as TextureAtlasRegion;
+}
 
 describe('createTextureAtlas', () => {
   let atlas: TextureAtlas;
@@ -37,6 +56,34 @@ describe('createTextureAtlas', () => {
     const regions = [{} as TextureAtlasRegion];
     const atlas = createTextureAtlas({ regions });
     expect(atlas.regions).toBe(regions);
+  });
+});
+
+describe('disposeTextureAtlas', () => {
+  it('drops the regions and the texture reference, leaving the atlas reusable', () => {
+    const atlas = createTextureAtlas({
+      regions: [createTextureAtlasRegionForTest()],
+      texture: createTexture(),
+    });
+    disposeTextureAtlas(atlas);
+    expect(atlas.regions.length).toBe(0);
+    expect(atlas.texture).toBeNull();
+    expect(getTextureAtlasByteSize(atlas)).toBe(0);
+  });
+
+  it('does not destroy the texture it was handed — the caller may still be using it', () => {
+    const texture = createTexture();
+    const atlas = createTextureAtlas({ texture });
+    disposeTextureAtlas(atlas);
+    // The atlas has let go of it; the object the caller supplied is untouched and still usable.
+    expect(texture.storage).not.toBeUndefined();
+  });
+
+  it('is idempotent', () => {
+    const atlas = createTextureAtlas({ texture: createTexture() });
+    disposeTextureAtlas(atlas);
+    expect(() => disposeTextureAtlas(atlas)).not.toThrow();
+    expect(atlas.texture).toBeNull();
   });
 });
 

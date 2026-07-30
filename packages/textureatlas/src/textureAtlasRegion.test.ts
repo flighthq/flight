@@ -6,14 +6,21 @@ import { createTextureAtlas } from './textureAtlas';
 import {
   addTextureAtlasRegion,
   addTextureAtlasRegionRectangle,
-  addTextureAtlasRegionRectangleXY,
+  addTextureAtlasRegionCorners,
+  buildTextureAtlasRegionIndex,
+  clearTextureAtlasRegions,
   addTextureAtlasRegionVector2,
   createTextureAtlasRegion,
   getTextureAtlasRegionById,
+  getTextureAtlasRegionCount,
+  getTextureAtlasRegionFrame,
   getTextureAtlasRegionByName,
   getTextureAtlasRegionSequence,
   getTextureAtlasRegionTexture,
   getTextureAtlasRegionUv,
+  getTextureAtlasRegionUvQuad,
+  hasTextureAtlasRegion,
+  removeTextureAtlasRegion,
   setTextureAtlasRegion,
 } from './textureAtlasRegion';
 
@@ -56,6 +63,62 @@ describe('addTextureAtlasRegion', () => {
   });
 });
 
+describe('addTextureAtlasRegion id allocation', () => {
+  // The regression this pins: the id was the region count, which is only the right answer while ids
+  // happen to be a dense 0..n-1 run. An atlas built from parsed data (parsers assign their own ids)
+  // or one that has had a region removed breaks that, and the new region then collides with an
+  // existing id — getTextureAtlasRegionById silently returns the wrong frame and the new region is
+  // unreachable by id.
+  it('does not collide with an existing non-sequential id', () => {
+    const atlas = createTextureAtlas({
+      regions: [
+        createTextureAtlasRegion({ height: 1, id: 5, name: 'a', width: 1, x: 0, y: 0 }),
+        createTextureAtlasRegion({ height: 1, id: 2, name: 'b', width: 1, x: 1, y: 0 }),
+      ],
+    });
+    addTextureAtlasRegion(atlas, 2, 0, 1, 1, undefined, undefined, 'c');
+    const ids = atlas.regions.map((r) => r.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(getTextureAtlasRegionById(atlas, 2)?.name).toBe('b');
+    expect(getTextureAtlasRegionByName(atlas, 'c')).not.toBeNull();
+    expect(getTextureAtlasRegionById(atlas, getTextureAtlasRegionByName(atlas, 'c')!.id)?.name).toBe('c');
+  });
+
+  it('does not reuse a removed region id', () => {
+    const atlas = createTextureAtlas();
+    addTextureAtlasRegion(atlas, 0, 0, 1, 1, undefined, undefined, 'a');
+    addTextureAtlasRegion(atlas, 1, 0, 1, 1, undefined, undefined, 'b');
+    const removedId = getTextureAtlasRegionByName(atlas, 'b')!.id;
+    removeTextureAtlasRegion(atlas, removedId);
+    addTextureAtlasRegion(atlas, 2, 0, 1, 1, undefined, undefined, 'c');
+    expect(getTextureAtlasRegionByName(atlas, 'c')!.id).not.toBe(removedId);
+  });
+
+  it('starts at 0 on an empty atlas and increments', () => {
+    const atlas = createTextureAtlas();
+    addTextureAtlasRegion(atlas, 0, 0, 1, 1);
+    addTextureAtlasRegion(atlas, 1, 0, 1, 1);
+    expect(atlas.regions.map((r) => r.id)).toEqual([0, 1]);
+  });
+});
+
+describe('addTextureAtlasRegionCorners', () => {
+  it('computes width and height from corner coordinates', () => {
+    const atlas = createTextureAtlas();
+    addTextureAtlasRegionCorners(atlas, 5, 10, 25, 30);
+    expect(atlas.regions[0].x).toBe(5);
+    expect(atlas.regions[0].y).toBe(10);
+    expect(atlas.regions[0].width).toBe(20);
+    expect(atlas.regions[0].height).toBe(20);
+  });
+
+  it('sets optional name', () => {
+    const atlas = createTextureAtlas();
+    addTextureAtlasRegionCorners(atlas, 0, 0, 10, 10, undefined, undefined, 'tile_0');
+    expect(atlas.regions[0].name).toBe('tile_0');
+  });
+});
+
 describe('addTextureAtlasRegionRectangle', () => {
   it('accepts rectangle-like and vector-like objects', () => {
     const atlas = createTextureAtlas();
@@ -90,23 +153,6 @@ describe('addTextureAtlasRegionRectangle', () => {
   });
 });
 
-describe('addTextureAtlasRegionRectangleXY', () => {
-  it('computes width and height from corner coordinates', () => {
-    const atlas = createTextureAtlas();
-    addTextureAtlasRegionRectangleXY(atlas, 5, 10, 25, 30);
-    expect(atlas.regions[0].x).toBe(5);
-    expect(atlas.regions[0].y).toBe(10);
-    expect(atlas.regions[0].width).toBe(20);
-    expect(atlas.regions[0].height).toBe(20);
-  });
-
-  it('sets optional name', () => {
-    const atlas = createTextureAtlas();
-    addTextureAtlasRegionRectangleXY(atlas, 0, 0, 10, 10, undefined, undefined, 'tile_0');
-    expect(atlas.regions[0].name).toBe('tile_0');
-  });
-});
-
 describe('addTextureAtlasRegionVector2', () => {
   it('accepts vector-like corner and pivot objects', () => {
     const atlas = createTextureAtlas();
@@ -132,6 +178,55 @@ describe('addTextureAtlasRegionVector2', () => {
     const atlas = createTextureAtlas();
     addTextureAtlasRegionVector2(atlas, { x: 0, y: 0 }, { x: 10, y: 10 }, undefined, 'walk_01');
     expect(atlas.regions[0].name).toBe('walk_01');
+  });
+});
+
+describe('buildTextureAtlasRegionIndex', () => {
+  it('maps every named region to itself', () => {
+    const atlas = createTextureAtlas();
+    addTextureAtlasRegion(atlas, 0, 0, 1, 1, undefined, undefined, 'a');
+    addTextureAtlasRegion(atlas, 1, 0, 1, 1, undefined, undefined, 'b');
+    const index = buildTextureAtlasRegionIndex(atlas);
+    expect(index.size).toBe(2);
+    expect(index.get('a')).toBe(getTextureAtlasRegionByName(atlas, 'a'));
+    expect(index.get('b')).toBe(getTextureAtlasRegionByName(atlas, 'b'));
+  });
+
+  it('skips unnamed regions', () => {
+    const atlas = createTextureAtlas();
+    addTextureAtlasRegion(atlas, 0, 0, 1, 1);
+    expect(buildTextureAtlasRegionIndex(atlas).size).toBe(0);
+  });
+
+  it('resolves a duplicate name the same way the linear scan does — first wins', () => {
+    const atlas = createTextureAtlas();
+    addTextureAtlasRegion(atlas, 0, 0, 1, 1, undefined, undefined, 'dup');
+    addTextureAtlasRegion(atlas, 5, 5, 1, 1, undefined, undefined, 'dup');
+    expect(buildTextureAtlasRegionIndex(atlas).get('dup')).toBe(getTextureAtlasRegionByName(atlas, 'dup'));
+  });
+
+  it('is a snapshot — a later add is not reflected', () => {
+    const atlas = createTextureAtlas();
+    addTextureAtlasRegion(atlas, 0, 0, 1, 1, undefined, undefined, 'a');
+    const index = buildTextureAtlasRegionIndex(atlas);
+    addTextureAtlasRegion(atlas, 1, 0, 1, 1, undefined, undefined, 'b');
+    expect(index.has('b')).toBe(false);
+  });
+});
+
+describe('clearTextureAtlasRegions', () => {
+  it('empties the regions and leaves the atlas reusable', () => {
+    const atlas = createTextureAtlas();
+    addTextureAtlasRegion(atlas, 0, 0, 1, 1, undefined, undefined, 'a');
+    clearTextureAtlasRegions(atlas);
+    expect(getTextureAtlasRegionCount(atlas)).toBe(0);
+    addTextureAtlasRegion(atlas, 0, 0, 1, 1, undefined, undefined, 'b');
+    expect(getTextureAtlasRegionCount(atlas)).toBe(1);
+  });
+
+  it('is a no-op on an empty atlas', () => {
+    const atlas = createTextureAtlas();
+    expect(() => clearTextureAtlasRegions(atlas)).not.toThrow();
   });
 });
 
@@ -264,6 +359,41 @@ describe('getTextureAtlasRegionByName', () => {
   });
 });
 
+describe('getTextureAtlasRegionCount', () => {
+  it('counts the regions', () => {
+    const atlas = createTextureAtlas();
+    expect(getTextureAtlasRegionCount(atlas)).toBe(0);
+    addTextureAtlasRegion(atlas, 0, 0, 1, 1);
+    expect(getTextureAtlasRegionCount(atlas)).toBe(1);
+  });
+});
+
+describe('getTextureAtlasRegionFrame', () => {
+  it('reports the trim offset and the original extent for a trimmed region', () => {
+    const region = createTextureAtlasRegion({
+      height: 20,
+      originalHeight: 64,
+      originalWidth: 64,
+      sourceX: 8,
+      sourceY: 12,
+      trimmed: true,
+      width: 30,
+      x: 100,
+      y: 200,
+    });
+    const out = { height: 0, width: 0, x: 0, y: 0 };
+    expect(getTextureAtlasRegionFrame(region, out)).toBe(out);
+    expect(out).toEqual({ height: 64, width: 64, x: 8, y: 12 });
+  });
+
+  it('falls back to the packed extent for an untrimmed region, needing no caller special case', () => {
+    const region = createTextureAtlasRegion({ height: 20, width: 30, x: 100, y: 200 });
+    const out = { height: 0, width: 0, x: 0, y: 0 };
+    getTextureAtlasRegionFrame(region, out);
+    expect(out).toEqual({ height: 20, width: 30, x: 0, y: 0 });
+  });
+});
+
 describe('getTextureAtlasRegionSequence', () => {
   it('returns an empty array when the atlas has no regions', () => {
     const atlas = createTextureAtlas();
@@ -382,47 +512,188 @@ describe('getTextureAtlasRegionUv', () => {
   });
 });
 
+describe('getTextureAtlasRegionUvQuad', () => {
+  it('walks an unrotated region top-left, top-right, bottom-right, bottom-left', () => {
+    const region = createTextureAtlasRegion({ height: 25, width: 50, x: 0, y: 0 });
+    const out: number[] = [];
+    expect(getTextureAtlasRegionUvQuad(region, 100, 100, out)).toBe(out);
+    expect(out).toEqual([0, 0, 0.5, 0, 0.5, 0.25, 0, 0.25]);
+  });
+
+  it('steps a rotated region one corner back, so it draws upright', () => {
+    const region = createTextureAtlasRegion({ height: 25, rotated: true, width: 50, x: 0, y: 0 });
+    const out: number[] = [];
+    getTextureAtlasRegionUvQuad(region, 100, 100, out);
+    expect(out).toEqual([0, 0.25, 0, 0, 0.5, 0, 0.5, 0.25]);
+  });
+
+  it('covers the same four corners either way, only in a different order', () => {
+    const packed = { height: 25, width: 50, x: 10, y: 20 };
+    const upright: number[] = [];
+    const rotated: number[] = [];
+    getTextureAtlasRegionUvQuad(createTextureAtlasRegion(packed), 100, 100, upright);
+    getTextureAtlasRegionUvQuad(createTextureAtlasRegion({ ...packed, rotated: true }), 100, 100, rotated);
+    const asPairs = (a: readonly number[]) =>
+      a.reduce<string[]>((acc, _v, i) => (i % 2 ? acc : [...acc, `${a[i]},${a[i + 1]}`]), []).sort();
+    expect(asPairs(rotated)).toEqual(asPairs(upright));
+  });
+
+  it('writes eight zeros for a zero-sized image rather than dividing by zero', () => {
+    const region = createTextureAtlasRegion({ height: 25, width: 50, x: 0, y: 0 });
+    const out: number[] = [1, 2, 3];
+    getTextureAtlasRegionUvQuad(region, 0, 100, out);
+    expect(out).toEqual([0, 0, 0, 0, 0, 0, 0, 0]);
+  });
+
+  it('agrees with getTextureAtlasRegionUv on the unrotated packed rect', () => {
+    const region = createTextureAtlasRegion({ height: 25, width: 50, x: 10, y: 20 });
+    const rect = { height: 0, width: 0, x: 0, y: 0 };
+    getTextureAtlasRegionUv(region, 100, 100, rect);
+    const quad: number[] = [];
+    getTextureAtlasRegionUvQuad(region, 100, 100, quad);
+    expect(quad[0]).toBeCloseTo(rect.x);
+    expect(quad[1]).toBeCloseTo(rect.y);
+    expect(quad[4]).toBeCloseTo(rect.x + rect.width);
+    expect(quad[5]).toBeCloseTo(rect.y + rect.height);
+  });
+});
+
+describe('hasTextureAtlasRegion', () => {
+  it('is true for a present name and false otherwise, case-sensitively', () => {
+    const atlas = createTextureAtlas();
+    addTextureAtlasRegion(atlas, 0, 0, 1, 1, undefined, undefined, 'Hero');
+    expect(hasTextureAtlasRegion(atlas, 'Hero')).toBe(true);
+    expect(hasTextureAtlasRegion(atlas, 'hero')).toBe(false);
+    expect(hasTextureAtlasRegion(atlas, 'missing')).toBe(false);
+  });
+});
+
+describe('removeTextureAtlasRegion', () => {
+  it('removes the region and reports it', () => {
+    const atlas = createTextureAtlas();
+    addTextureAtlasRegion(atlas, 0, 0, 1, 1, undefined, undefined, 'a');
+    const id = getTextureAtlasRegionByName(atlas, 'a')!.id;
+    expect(removeTextureAtlasRegion(atlas, id)).toBe(true);
+    expect(getTextureAtlasRegionById(atlas, id)).toBeNull();
+    expect(getTextureAtlasRegionCount(atlas)).toBe(0);
+  });
+
+  it('reports false for an id no region holds', () => {
+    const atlas = createTextureAtlas();
+    expect(removeTextureAtlasRegion(atlas, 99)).toBe(false);
+  });
+
+  it('leaves the remaining regions findable by their original ids', () => {
+    const atlas = createTextureAtlas();
+    addTextureAtlasRegion(atlas, 0, 0, 1, 1, undefined, undefined, 'a');
+    addTextureAtlasRegion(atlas, 1, 0, 1, 1, undefined, undefined, 'b');
+    addTextureAtlasRegion(atlas, 2, 0, 1, 1, undefined, undefined, 'c');
+    const idC = getTextureAtlasRegionByName(atlas, 'c')!.id;
+    removeTextureAtlasRegion(atlas, getTextureAtlasRegionByName(atlas, 'a')!.id);
+    expect(getTextureAtlasRegionById(atlas, idC)?.name).toBe('c');
+  });
+});
+
 describe('setTextureAtlasRegion', () => {
-  it('defaults optional parameters to 0', () => {
+  // These replace a block whose own title claimed "sets all fields on an existing region" while
+  // asserting six of fourteen. The eight it did not assert were the eight the implementation did not
+  // write — so the test agreed with the bug and named it correctly at the same time.
+  it('overwrites every field, leaving nothing from the region it previously described', () => {
+    const region = createTextureAtlasRegion({
+      height: 40,
+      id: 7,
+      name: 'hero',
+      originalHeight: 200,
+      originalWidth: 100,
+      pivotX: 0.5,
+      pivotY: 0.5,
+      rotated: true,
+      sourceX: 5,
+      sourceY: 6,
+      trimmed: true,
+      width: 30,
+      x: 10,
+      y: 20,
+    });
+    setTextureAtlasRegion(region, { height: 4, width: 3, x: 1, y: 2 });
+    expect(region.x).toBe(1);
+    expect(region.y).toBe(2);
+    expect(region.width).toBe(3);
+    expect(region.height).toBe(4);
+    // The eight that used to survive from the previous frame.
+    expect(region.id).toBe(-1);
+    expect(region.name).toBeNull();
+    expect(region.rotated).toBe(false);
+    expect(region.trimmed).toBe(false);
+    expect(region.sourceX).toBe(0);
+    expect(region.sourceY).toBe(0);
+    expect(region.originalWidth).toBeNull();
+    expect(region.originalHeight).toBeNull();
+  });
+
+  it('lands exactly where createTextureAtlasRegion would for the same source', () => {
+    const source = { name: 'frame', rotated: true, sourceX: 3, trimmed: true, height: 4, width: 3, x: 1, y: 2 };
+    const built = createTextureAtlasRegion(source);
+    const set = createTextureAtlasRegion({ name: 'stale', rotated: false, width: 99, x: 99 });
+    setTextureAtlasRegion(set, source);
+    for (const key of [
+      'height',
+      'id',
+      'name',
+      'originalHeight',
+      'originalWidth',
+      'pivotX',
+      'pivotY',
+      'rotated',
+      'sourceX',
+      'sourceY',
+      'trimmed',
+      'width',
+      'x',
+      'y',
+    ] as const) {
+      expect(set[key]).toBe(built[key]);
+    }
+  });
+
+  it('round-trips an unset pivot as null, like the constructor', () => {
+    const region = createTextureAtlasRegion({ pivotX: 0.5, pivotY: 0.5 });
+    setTextureAtlasRegion(region, { height: 1, width: 1, x: 0, y: 0 });
+    expect(region.pivotX).toBeNull();
+    expect(region.pivotY).toBeNull();
+  });
+
+  it('carries an explicit pivot through', () => {
     const region = createTextureAtlasRegion();
-    setTextureAtlasRegion(region, 5);
-    expect(region.x).toBe(5);
-    expect(region.y).toBe(0);
-    expect(region.width).toBe(0);
-    expect(region.height).toBe(0);
+    setTextureAtlasRegion(region, { height: 40, pivotX: 5, pivotY: 6, width: 30, x: 10, y: 20 });
+    expect(region.pivotX).toBe(5);
+    expect(region.pivotY).toBe(6);
   });
 
-  it('is alias-safe when out is also an input reference', () => {
-    const region = createTextureAtlasRegion({ x: 10, y: 20, width: 30, height: 40 });
-    setTextureAtlasRegion(region, region.x, region.y, region.width, region.height);
-    expect(region.x).toBe(10);
-    expect(region.y).toBe(20);
-    expect(region.width).toBe(30);
-    expect(region.height).toBe(40);
-  });
-
-  it('reuses the existing region object', () => {
+  it('reuses the existing region object rather than replacing it', () => {
     const region = createTextureAtlasRegion();
     const target = region;
-    setTextureAtlasRegion(region, 10, 20, 30, 40, 5, 6);
+    setTextureAtlasRegion(region, { height: 40, width: 30, x: 10, y: 20 });
     expect(region).toBe(target);
-    expect(region.x).toBe(10);
-    expect(region.y).toBe(20);
-    expect(region.width).toBe(30);
-    expect(region.height).toBe(40);
-    expect(region.pivotX).toBe(5);
-    expect(region.pivotY).toBe(6);
   });
 
-  it('sets all fields on an existing region', () => {
-    const region = createTextureAtlasRegion();
-    const result = setTextureAtlasRegion(region, 10, 20, 30, 40, 5, 6);
-    expect(result).toBeUndefined();
+  it('is alias-safe when the source is the region itself', () => {
+    const region = createTextureAtlasRegion({
+      height: 40,
+      name: 'keep',
+      rotated: true,
+      sourceX: 7,
+      width: 30,
+      x: 10,
+      y: 20,
+    });
+    setTextureAtlasRegion(region, region);
     expect(region.x).toBe(10);
     expect(region.y).toBe(20);
     expect(region.width).toBe(30);
     expect(region.height).toBe(40);
-    expect(region.pivotX).toBe(5);
-    expect(region.pivotY).toBe(6);
+    expect(region.name).toBe('keep');
+    expect(region.rotated).toBe(true);
+    expect(region.sourceX).toBe(7);
   });
 });
