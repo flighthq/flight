@@ -454,6 +454,98 @@ describe('createScene2DFromSwf', () => {
     });
   });
 
+  it('preserves PNG and GIF dimensions embedded by DefineBitsJPEG2', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_BITS_JPEG_2, joinBytes(uint16(14), createPngHeader(48, 24))),
+        createTag(TAG_DEFINE_BITS_JPEG_2, joinBytes(uint16(15), createGifHeader(17, 9))),
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(
+            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
+            uint16(1),
+            uint16(14),
+            swfString('pngBitmap'),
+          ),
+        ),
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(
+            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
+            uint16(2),
+            uint16(15),
+            swfString('gifBitmap'),
+          ),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    expect(getNodeLocalBoundsRectangle(document!.references[0].target)).toMatchObject({
+      height: 24,
+      width: 48,
+      x: 0,
+      y: 0,
+    });
+    expect(getNodeLocalBoundsRectangle(document!.references[1].target)).toMatchObject({
+      height: 9,
+      width: 17,
+      x: 0,
+      y: 0,
+    });
+  });
+
+  it('bounds DefineBitsJPEG3 and DefineBitsJPEG4 images before their alpha payloads', () => {
+    const jpeg3 = createJpegHeader(64, 32);
+    const jpeg4 = createJpegHeader(31, 19);
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(
+          TAG_DEFINE_BITS_JPEG_3,
+          joinBytes(uint16(16), uint32(jpeg3.length), jpeg3, new Uint8Array([1, 2, 3])),
+        ),
+        createTag(
+          TAG_DEFINE_BITS_JPEG_4,
+          joinBytes(uint16(17), uint32(jpeg4.length + 2), uint16(0), jpeg4, new Uint8Array([4, 5, 6])),
+        ),
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(
+            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
+            uint16(1),
+            uint16(16),
+            swfString('jpeg3Bitmap'),
+          ),
+        ),
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(
+            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
+            uint16(2),
+            uint16(17),
+            swfString('jpeg4Bitmap'),
+          ),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    expect(getNodeLocalBoundsRectangle(document!.references[0].target)).toMatchObject({
+      height: 32,
+      width: 64,
+      x: 0,
+      y: 0,
+    });
+    expect(getNodeLocalBoundsRectangle(document!.references[1].target)).toMatchObject({
+      height: 19,
+      width: 31,
+      x: 0,
+      y: 0,
+    });
+  });
+
   it('rejects compressed and truncated inputs without throwing', () => {
     const compressed = createSwf([createTag(TAG_END)]);
     compressed[0] = 0x43;
@@ -526,6 +618,30 @@ describe('createScene2DFromSwf', () => {
             TAG_DEFINE_VIDEO_STREAM,
             joinBytes(uint16(1), uint16(10), uint16(320), uint16(180), new Uint8Array([0, 2])),
           ),
+          createTag(TAG_END),
+        ]),
+      ),
+    ).toBeNull();
+    expect(
+      createScene2DFromSwf(
+        createSwf([createTag(TAG_DEFINE_BITS_JPEG_2, joinBytes(uint16(1), createPngHeader(0, 8))), createTag(TAG_END)]),
+      ),
+    ).toBeNull();
+    expect(
+      createScene2DFromSwf(
+        createSwf([
+          createTag(
+            TAG_DEFINE_BITS_JPEG_3,
+            joinBytes(uint16(1), uint32(100), createJpegHeader(8, 8), new Uint8Array([1])),
+          ),
+          createTag(TAG_END),
+        ]),
+      ),
+    ).toBeNull();
+    expect(
+      createScene2DFromSwf(
+        createSwf([
+          createTag(TAG_DEFINE_BITS_JPEG_4, joinBytes(uint16(1), uint32(1), uint16(0), createJpegHeader(8, 8))),
           createTag(TAG_END),
         ]),
       ),
@@ -633,6 +749,67 @@ function createLegacyColorTransform(): Uint8Array {
   return writer.toBytes();
 }
 
+function createGifHeader(width: number, height: number): Uint8Array {
+  return joinBytes(_encoder.encode('GIF89a'), uint16(width), uint16(height));
+}
+
+function createJpegHeader(width: number, height: number): Uint8Array {
+  return new Uint8Array([
+    0xff,
+    0xd8,
+    0xff,
+    0xc0,
+    0,
+    17,
+    8,
+    (height >> 8) & 0xff,
+    height & 0xff,
+    (width >> 8) & 0xff,
+    width & 0xff,
+    3,
+    1,
+    0x11,
+    0,
+    2,
+    0x11,
+    0,
+    3,
+    0x11,
+    0,
+    0xff,
+    0xd9,
+  ]);
+}
+
+function createPngHeader(width: number, height: number): Uint8Array {
+  return new Uint8Array([
+    0x89,
+    0x50,
+    0x4e,
+    0x47,
+    0x0d,
+    0x0a,
+    0x1a,
+    0x0a,
+    0,
+    0,
+    0,
+    13,
+    0x49,
+    0x48,
+    0x44,
+    0x52,
+    (width >>> 24) & 0xff,
+    (width >>> 16) & 0xff,
+    (width >>> 8) & 0xff,
+    width & 0xff,
+    (height >>> 24) & 0xff,
+    (height >>> 16) & 0xff,
+    (height >>> 8) & 0xff,
+    height & 0xff,
+  ]);
+}
+
 function createRectangle(xMin: number, xMax: number, yMin: number, yMax: number): Uint8Array {
   const writer = new BitWriter();
   const values = [xMin, xMax, yMin, yMax];
@@ -698,6 +875,9 @@ const PLACE_HAS_NAME = 0x20;
 const PLACE_MOVE = 0x01;
 const SWF_PREFIX_LENGTH = 8;
 const TAG_END = 0;
+const TAG_DEFINE_BITS_JPEG_2 = 21;
+const TAG_DEFINE_BITS_JPEG_3 = 35;
+const TAG_DEFINE_BITS_JPEG_4 = 90;
 const TAG_DEFINE_BITS_LOSSLESS = 20;
 const TAG_DEFINE_BITS_LOSSLESS_2 = 36;
 const TAG_DEFINE_SHAPE = 2;
