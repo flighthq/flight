@@ -1,59 +1,87 @@
 ---
 package: '@flighthq/xml'
-status: partial
-score: 45
-updated: 2026-07-09
+status: solid
+score: 74
+updated: 2026-07-30
 ingested:
+  - charter.md
+  - status.md
   - source
   - tests
+  - types
+  - prior review (2026-07-09 refresh)
 ---
 
 # xml — Review
 
-_Migrated from the 2026-07-03 depth-review generation (reviews/depth/xml.md)._
+## Verdict
 
-**Domain:** XML parsing — turning XML text into a traversable document model (and, in an authoritative library, serializing back, streaming, and validating).
-
-**Verdict:** partial — completeness 35/100
-
-The package exports two functions, `parseXmlDocument(xml): XmlElement | null` and `parseXmlAttributes(attrs): Record<string, string>`, recently extracted from `textureatlas-formats` so that `spritesheet-formats` and `textureatlas-formats` share one parser. The header comment is honest: "Not a general-purpose XML parser, but handles…" — and what it handles is a well-chosen subset for atlas/plist files: both quote styles, named + decimal + hex entity references, comments, CDATA, the XML declaration, and DOCTYPE stripping, all with sentinel returns and no throws. The tension is the name: `@flighthq/xml` claims the whole domain the way `@flighthq/math` does, and against fast-xml-parser, sax/saxes, or libxml the package covers roughly a third of it. Whether that is a gap or a deliberate ceiling is the package's one real design question.
+**Solid for its described lightweight scope — 74/100.** The prior partial-45 review is stale against
+the live package. Quoted `>` characters, ordinary internal DOCTYPE subsets, the tree-building package
+description, and four element-query helpers all landed in the July implementation. `XmlElement` now
+lives in `@flighthq/types`, and later SVG work added ordered mixed content. The package is a coherent
+one-shot tree parser for Flight's XML-backed formats; the score remains bounded because its charter has
+never settled whether that deliberately narrow ceiling is durable or the broad `xml` name promises a
+serializer, validation, and namespace-aware growth.
 
 ## Present capabilities
 
-- `parseXmlDocument(xml): XmlElement | null` — recursive-descent parse into `{ name, attributes, children, text }`. Handles nested elements, self-closing tags, text content (trimmed, concatenated), strips comments/CDATA-markers/declaration/DOCTYPE up front, skips processing instructions, tolerates unbalanced close tags and returns the first top-level element. `null` sentinel for no-element input — matches the SDK's expected-failure rule.
-- `parseXmlAttributes(attrs): Record<string, string>` — regex scan supporting `"…"` and `'…'` values, names with `:`/`.`/`-`/`_` (so namespaced attributes like `xml:lang` at least survive as flat keys), entity decoding on values.
-- `XmlElement` interface with doc comments stating the lossy choices (text/comments discarded as children; text trimmed and concatenated).
-- Tests are genuinely good for the scope: 21 cases covering both quote styles, all five named entities, numeric refs, self-closing leaves, deep nesting, unbalanced close tags, multiple roots, exotic name characters, comment/declaration stripping, and text content.
+- Six public functions cover document and attribute parsing plus string/number attribute lookup and
+  first/all direct-child lookup. All implementation exports are public and have colocated coverage.
+- `parseXmlDocument` builds an `XmlElement` tree with both element-only `children` and source-ordered
+  mixed `content`. The `text` projection concatenates trimmed direct-text nodes for data-oriented
+  consumers.
+- Opening tags accept single- and double-quoted attributes, `>` inside either quote style, self-closing
+  elements, namespaced or punctuation-bearing names, and the five predefined plus numeric entity
+  references.
+- Prolog processing removes XML declarations, processing instructions, comments, and DOCTYPE declarations.
+  CDATA contributes literal ordered text without treating its markup-like contents as elements.
+- `XmlElement` lives in `@flighthq/types`; package consumers use the contract lane, the package is
+  import-side-effect-free, and the XML workspace has two source modules and 39 tests.
 
-## Gaps vs an authoritative XML library
+## Stale-cell audit and live fixes
 
-Compare fast-xml-parser, saxes, and DOM `XMLParser`. Missing capabilities an expert would look for:
+The four Recommended items were already substantially complete:
 
-- **Serialization** — no `serializeXmlDocument`/builder direction at all. Every other `*-formats` consumer that wants to *write* an atlas or plist must hand-concatenate strings. fast-xml-parser ships `XMLBuilder` as a peer of the parser; this is the largest structural gap.
-- **Mixed content and node order** — text is trimmed, concatenated into one `text` string, and comments/text are not children, so `<p>a<b/>c</p>` loses the a/b/c ordering entirely. Fine for attribute-shaped formats, fatal for document-shaped XML.
-- **Attribute values containing `>`** — the opening-tag scan (`while … src[pos] !== '>'`) stops at the first `>`, even inside a quoted attribute value, so `<a title="x > y"/>` mis-parses. This is a correctness bug within the *claimed* subset (entities aside, `>` is legal in attribute values).
-- **Error reporting** — no position/line information, no distinction between "no element" and "malformed"; unclosed tags silently consume to end-of-input. An authoritative parser offers at least an optional validating mode (fast-xml-parser's `XMLValidator`).
-- **Namespaces** — prefixes are kept as literal name characters; no prefix/local-name split, no `xmlns` resolution.
-- **Streaming / SAX tier** — no event/pull API for large documents; the "pull-style" phrase in the package description is inaccurate (see naming notes).
-- **Processing instructions and comments as data** — both are discarded with no opt-in to preserve them.
-- **DOCTYPE internal subsets and DTD entities** — `<!DOCTYPE …>` stripping uses `[^>]*`, so an internal subset (`<!DOCTYPE r [ <!ENTITY … > ]>`) breaks the strip; custom entities are (reasonably) unsupported but the DOCTYPE containing them should still be skipped correctly.
-- **Query helpers** — no `getXmlElementChildByName`, `getXmlElementChildrenByName`, or attribute accessors with defaults; each consumer re-implements child filtering. For a shared parser feeding two formats packages, a small query layer is the natural next primitive.
-- **Whitespace/entity options** — no trim opt-out, no raw-text access, no attribute-name transformation options.
+- `69fd6414f` made opening-tag scanning quote-aware, handled ordinary internal DOCTYPE subsets, replaced
+  the inaccurate "pull-style" package description with the tree-building model, and added
+  `getXmlElementAttribute`, `getXmlElementAttributeNumber`, `getXmlElementChildByName`, and
+  `getXmlElementChildrenByName`.
+- `21f6a1a18` moved `XmlElement` into the header package, resolving the old cross-package type-home concern.
+- `d6d5b4c9a` and `a49c5dad4` added ordered mixed content and entity decoding for text nodes.
 
-Not counted against it: DTD validation, XPath, and XSD — out of scope even for most authoritative JS parsers.
+The audit found that the DOCTYPE fix still relied on a non-quote-aware regular expression. A `]` inside
+an entity value ended its internal-subset match early, while a `>` inside a quoted external identifier
+ended a flat declaration early; both cases caused the document parser to return `null`. `f8c479d03`
+replaces the expression with a quote-aware, subset-depth scanner and covers both cases.
 
-## Naming / API-shape notes
+Two adjacent claimed-capability defects were also live. CDATA preprocessing injected its payload back
+into the markup stream, turning literal `<tag>` text into a child and deleting comment syntax inside the
+section; `2cf87d1b8` parses CDATA in place as raw ordered text. Out-of-range numeric references reached
+`String.fromCodePoint` and threw instead of preserving an unsupported reference; `fabcc6c9d` restores
+the package's sentinel-friendly behavior.
 
-- `parseXmlDocument`/`parseXmlAttributes` carry the full `Xml` type word and are globally self-identifying — correct per the naming rule. A future serializer should pair as `serializeXmlDocument` (matching `bitmapFilterSerialization`'s verb choice in `filters`).
-- The package description says "pull-style XML parser," but the API is a one-shot tree parser (DOM-style); nothing is pulled. Fix the description (or, if a streaming tier is ever added, reserve "pull" for it).
-- `XmlElement` is defined in `xmlParse.ts` but crosses package boundaries (consumed by `textureatlas-formats` and `spritesheet-formats`), so per the header-layer rule it belongs in `@flighthq/types`. Counter-consideration: `types-layout` treats `@flighthq/types` as the SDK's design surface, and a support-utility wire type may be intentionally beneath it — but then the rule needs that carve-out stated somewhere.
-- `parseXmlDocument` returning only the first top-level element is a reasonable sentinel-friendly simplification, but the name says *document*; a document has exactly one root plus prolog/misc. Either enforce/document single-root or consider `parseXmlElement` as the honest name for "first element found."
-- Honest-naming verdict on the package name: `@flighthq/xml` is defensible **only** if the intended ceiling is written down (a charter stating "attribute-shaped config XML, parse-only"). Otherwise the name over-promises the same way `math` did, and the alternatives are to grow toward the name or rename to the true scope.
+## Remaining depth
 
-## Recommendation
+- Structural parsing is deliberately tolerant: it does not match opening and closing names, reject
+  multiple roots, or report malformed-input positions. Callers cannot distinguish no root from a
+  malformed document.
+- Namespace prefixes survive lexically, but namespace declarations are not resolved and callers cannot
+  query local name or namespace URI.
+- DTD declarations are skipped and custom entities are not expanded. This is appropriate for the
+  lightweight format-reader scope but must remain explicit if the charter blesses that ceiling.
+- `content` preserves mixed order, while the convenience `text` projection trims each direct text node
+  before concatenation. Consumers needing exact whitespace must use `content`.
+- There is no serializer/builder, streaming event tier, schema/DTD validation, XPath-style traversal, or
+  structured parse diagnostic. Whether the first four belong here is a direction decision, not a
+  sweep-safe implementation task.
+- Existing format consumers have not consistently adopted the query helpers and still contain local
+  child/attribute filtering. Migration is optional cross-package cleanup; it does not change the XML API.
 
-Decide the ceiling first; the code follows either way. If the intent is a minimal internal parser for atlas/plist formats, say so in the package description and charter, fix the two in-subset defects (`>` inside quoted attribute values; DOCTYPE internal-subset stripping), correct the "pull-style" description, and add the small query-helper layer (`getXmlElementChildByName` etc.) so consumers stop re-filtering `children` — that yields an honest, solid-for-its-scope utility. If the name is to be kept at face value, the growth path is: serializer (`serializeXmlDocument`), ordered mixed-content mode (opt-in child text nodes), positioned error reporting/validator, then namespace awareness — streaming can stay out of scope. Either way, move `XmlElement` to `@flighthq/types` or record the carve-out, since two format packages already depend on its shape.
+## Charter and boundary conclusion
 
-## 2026-07-09 — refreshed
-
-fixed >-in-quoted-attribute and DOCTYPE internal-subset parsing bugs; added element query helpers (getXmlElementChildByName/ChildrenByName/Attribute/AttributeNumber) (commit d1d2cd57). Verified against source; a full re-review is due.
+No named direction has settled the scope fork. The package description truthfully presents a lightweight
+tree-building parser, and the shipped implementation is solid within that boundary, but the charter
+remains a scaffold. A direction session should either bless parse-only, data-oriented XML as the durable
+ceiling or choose the staged full-library path. Until then, serializer, validation, namespaces, and
+streaming stay backlog rather than inferred work.
