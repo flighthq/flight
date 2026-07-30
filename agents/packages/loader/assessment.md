@@ -11,27 +11,27 @@ false "tracking shim" comment, Package Map description) is **entirely stale** �
 already resolved in the tree, and the charter itself records the missing-types item as a false alarm
 raised from a stale review. Re-derived against the live source 2026-07-30.
 
+## Closed 2026-07-30
+
+*Finish byte progress* — **done**. `ResourceLoadItem.load` takes `(signal, reportBytes)`; the reporter
+feeds `onBytesProgress` and `ResourceLoadReport.bytes`. Additive, so existing one-argument factories
+are untouched. See the charter decision for the shape and why the reporter is attempt-scoped.
+
 ## Recommended
 
-1. **Finish byte progress — the shape is the open part.** Charter Decision #2 blesses building it, and
-   it is still structurally dead: `ResourceLoadItem.onBytesProgress` is stored on the entry and never
-   invoked, `entry.bytesLoaded` is never written, so `ResourceLoadReport.bytes` is always 0.
-   (`bytesHint` is live — the token-bucket throttle uses it.) Finishing requires giving the factory a
-   way to report bytes, which changes the `load` seam that `@flighthq/assets` consumes. The minimal
-   additive shape is a second argument — `load: (signal, reportBytes) => Promise<T>` — so existing
-   one-argument factories keep working, but the signature is a **seam decision and wants a ruling
-   before it is built**, which is why this stays Recommended rather than done.
-2. **Reconcile `onProgress` with `getResourceLoadProgress`.** The signal emits item counts
-   (`loaded`, `total`); the getter returns a weight-weighted fraction when weights are set. A caller
-   wiring a progress bar to the signal's two numbers gets a different curve than one polling the
-   getter. Either the signal should carry the weighted fraction too, or the divergence should be
-   documented as deliberate — currently it is neither.
-3. **Bound `drainQueue` re-entrancy.** `settleEntry`, `resumeResourceLoad`,
+1. **Reconcile the three progress currencies.** This is now sharper, not solved: `onProgress` emits
+   ITEM counts, `getResourceLoadProgress` returns a WEIGHT-weighted fraction, and bytes are a third
+   currency reachable only per-item. A caller wiring a progress bar picks one and gets a different
+   curve from the other two. Byte progress deliberately did **not** touch `onProgress` — changing what
+   its two numbers mean is a breaking semantic change, not a wiring fix — so the divergence is
+   unchanged in kind and merely more visible. **Wants a ruling**: either a single declared currency
+   with the others derived, or an explicit statement in the header that the three answer different
+   questions.
+2. **Bound `drainQueue` re-entrancy.** Unchanged from 2026-07-30: `settleEntry`, `resumeResourceLoad`,
    `setResourceLoaderConcurrency`, and streaming `queueResourceLoad` all start a drain, and the loop
-   `await`s inside the token-bucket branch. Two concurrent drains can each observe
-   `inFlight.size < maxConcurrent` after their awaits and both dispatch. Not observed in a test, and
-   not fixed here for that reason — but the interleaving is reachable by inspection and worth either
-   proving impossible or serializing.
+   awaits inside the token-bucket branch, so two concurrent drains can each observe a free slot and
+   both dispatch. Reachable by inspection; I could not produce it in a test, which is why it is still
+   a finding rather than a fix.
 
 ## Backlog
 
