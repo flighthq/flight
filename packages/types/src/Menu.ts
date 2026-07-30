@@ -24,6 +24,14 @@ export interface MenuItemTemplate {
   accelerator?: string;
   enabled?: boolean;
   checked?: boolean;
+  // Omitting the item entirely, distinct from `enabled: false` which shows it greyed and unselectable.
+  // Defaults to visible, so `visible: false` is the only value that changes anything.
+  visible?: boolean;
+  // Secondary text shown alongside the label (macOS-style). Advisory: a backend without a place to put
+  // it ignores it rather than failing.
+  sublabel?: string;
+  // Hover/long-press help text. Advisory in the same way as `sublabel`.
+  toolTip?: string;
   submenu?: MenuItemTemplate[];
 }
 
