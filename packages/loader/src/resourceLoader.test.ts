@@ -231,14 +231,43 @@ describe('cancelResourceLoad', () => {
     await expect(handle.promise).rejects.toThrow();
   });
 
-  it('is a no-op if loader is not started', () => {
+  it('cancels a batch that has not started, instead of stranding its promises', async () => {
+    // This replaces an assertion that cancel-before-start emits nothing. It did emit nothing — and it
+    // also left every queued handle pending forever, so a caller that queued a batch, changed its
+    // mind, and awaited the handles simply hung. Nothing observable said so, because the old test
+    // only watched the signal.
     const loader = createResourceLoader();
     let cancelled = false;
     connectSignal(loader.onCancel, () => {
       cancelled = true;
     });
+    const handle = queueResourceLoad(loader, { key: 'a', load: () => Promise.resolve(1) });
     cancelResourceLoad(loader);
-    expect(cancelled).toBe(false);
+    await expect(handle.promise).rejects.toThrow();
+    expect(cancelled).toBe(true);
+  });
+
+  it('emits onCancel with no queued items, and stays a no-op on a second call', () => {
+    const loader = createResourceLoader();
+    let cancelCount = 0;
+    connectSignal(loader.onCancel, () => {
+      cancelCount++;
+    });
+    cancelResourceLoad(loader);
+    cancelResourceLoad(loader);
+    expect(cancelCount).toBe(1);
+  });
+
+  it('reports a cancelled-before-start item as cancelled', async () => {
+    const loader = createResourceLoader();
+    let reports: readonly ResourceLoadReport[] = [];
+    connectSignal(loader.onComplete, (r) => {
+      reports = r;
+    });
+    queueResourceLoad(loader, { key: 'a', load: () => Promise.resolve(1) }).promise.catch(() => {});
+    cancelResourceLoad(loader);
+    await Promise.resolve();
+    expect(reports.map((r) => r.status)).toEqual(['cancelled']);
   });
 
   it('is a no-op if already cancelled', async () => {
@@ -794,6 +823,59 @@ describe('queueResourceLoad', () => {
   });
 });
 
+describe('reset while loading', () => {
+  // The regression this pins: an in-flight load surviving a reset used to settle against whatever
+  // batch had replaced it — a phantom onError for a key the new batch never queued, an extra report,
+  // and an inflated loaded count that could complete the new batch early.
+  it('discards an in-flight load rather than settling it against the next batch', async () => {
+    const loader = createResourceLoader();
+    const errorKeys: string[] = [];
+    connectSignal(loader.onError, (_error, key) => errorKeys.push(key));
+
+    let release!: () => void;
+    queueResourceLoad(loader, {
+      key: 'stale',
+      load: () => new Promise((resolve) => (release = () => resolve('v'))),
+    }).promise.catch(() => {});
+    startResourceLoad(loader);
+    await Promise.resolve();
+
+    resetResourceLoader(loader);
+
+    queueResourceLoad(loader, { key: 'fresh', load: () => Promise.resolve('ok') });
+    startResourceLoad(loader);
+    const reports = await waitForComplete(loader);
+
+    release();
+    await new Promise((resolve) => setTimeout(resolve, 5));
+
+    expect(errorKeys).toEqual([]);
+    expect(reports.map((r) => r.key)).toEqual(['fresh']);
+  });
+
+  it('does not let a stale load inflate the new batch progress', async () => {
+    const loader = createResourceLoader();
+    connectSignal(loader.onError, () => {});
+    let release!: () => void;
+    queueResourceLoad(loader, {
+      key: 'stale',
+      load: () => new Promise((_resolve, reject) => (release = () => reject(new Error('late')))),
+    }).promise.catch(() => {});
+    startResourceLoad(loader);
+    await Promise.resolve();
+
+    resetResourceLoader(loader);
+    queueResourceLoad(loader, { key: 'one', load: () => Promise.resolve(1) });
+    queueResourceLoad(loader, { key: 'two', load: () => Promise.resolve(2) });
+    startResourceLoad(loader);
+
+    release();
+    const reports = await waitForComplete(loader);
+    expect(reports.length).toBe(2);
+    expect(getResourceLoadProgress(loader)).toBe(1);
+  });
+});
+
 describe('resetResourceLoader', () => {
   it('allows the loader to be reused for another batch', async () => {
     const loader = createResourceLoader();
@@ -1025,5 +1107,68 @@ describe('weight-aware progress', () => {
     expect(progressValues[0]).toBeCloseTo(0.1);
     // After second item (weight 100 of 100): 1.0
     expect(progressValues[1]).toBeCloseTo(1.0);
+  });
+});
+
+describe('weighted progress across outcomes', () => {
+  // The regression these pin: weightLoaded advanced only on success, so any batch containing a
+  // failure, a cancellation, or a fail-fast skip left getResourceLoadProgress permanently short of 1
+  // — a weighted progress bar frozen mid-way on a batch that had already emitted onComplete.
+  it('reaches 1 after a batch containing a failure completes', async () => {
+    const loader = createResourceLoader();
+    connectSignal(loader.onError, () => {});
+    queueResourceLoad(loader, { key: 'a', load: () => Promise.resolve(1), weight: 1 });
+    queueResourceLoad(loader, { key: 'b', load: () => Promise.reject(new Error('boom')), weight: 1 }).promise.catch(
+      () => {},
+    );
+    queueResourceLoad(loader, { key: 'c', load: () => Promise.resolve(3), weight: 1 });
+    startResourceLoad(loader);
+    await waitForComplete(loader);
+    expect(getResourceLoadProgress(loader)).toBe(1);
+  });
+
+  it('weights the failure by its own weight, not by an item count', async () => {
+    const loader = createResourceLoader({ maxConcurrent: 1 });
+    connectSignal(loader.onError, () => {});
+    const seen: number[] = [];
+    connectSignal(loader.onProgress, () => seen.push(getResourceLoadProgress(loader)));
+    queueResourceLoad(loader, { key: 'a', load: () => Promise.reject(new Error('boom')), weight: 90 }).promise.catch(
+      () => {},
+    );
+    queueResourceLoad(loader, { key: 'b', load: () => Promise.resolve(1), weight: 10 });
+    startResourceLoad(loader);
+    await waitForComplete(loader);
+    expect(seen[0]).toBeCloseTo(0.9);
+    expect(seen[1]).toBeCloseTo(1);
+  });
+
+  it('reaches 1 after a fail-fast batch skips the rest', async () => {
+    const loader = createResourceLoader({ errorPolicy: 'fail-fast', maxConcurrent: 1 });
+    connectSignal(loader.onError, () => {});
+    queueResourceLoad(loader, { key: 'a', load: () => Promise.reject(new Error('boom')), weight: 5 }).promise.catch(
+      () => {},
+    );
+    queueResourceLoad(loader, { key: 'b', load: () => Promise.resolve(1), weight: 5 }).promise.catch(() => {});
+    startResourceLoad(loader);
+    await waitForComplete(loader);
+    expect(getResourceLoadProgress(loader)).toBe(1);
+  });
+
+  it('reaches 1 after a cancelled batch settles', async () => {
+    const loader = createResourceLoader({ maxConcurrent: 1 });
+    let release!: () => void;
+    queueResourceLoad(loader, {
+      key: 'slow',
+      load: () => new Promise((resolve) => (release = () => resolve(1))),
+      weight: 3,
+    }).promise.catch(() => {});
+    queueResourceLoad(loader, { key: 'queued', load: () => Promise.resolve(2), weight: 7 }).promise.catch(() => {});
+    startResourceLoad(loader);
+    await Promise.resolve();
+    const completed = waitForComplete(loader);
+    cancelResourceLoad(loader);
+    release();
+    await completed;
+    expect(getResourceLoadProgress(loader)).toBe(1);
   });
 });

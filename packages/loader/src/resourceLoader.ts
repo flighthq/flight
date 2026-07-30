@@ -16,6 +16,10 @@ interface PendingEntry {
   abortController: AbortController;
   bytesHint: number;
   bytesLoaded: number;
+  // The loader generation this entry belongs to. resetResourceLoader bumps the loader's generation,
+  // which orphans every entry already in flight: their eventual settlement finds a stale stamp and is
+  // discarded instead of being recorded against the batch that replaced them.
+  generation: number;
   group: string | undefined;
   key: string;
   onBytesProgress: ((loaded: number, total: number) => void) | undefined;
@@ -40,6 +44,7 @@ function acquirePendingEntry(): PendingEntry {
     abortController: new AbortController(),
     bytesHint: 0,
     bytesLoaded: 0,
+    generation: 0,
     group: undefined,
     key: '',
     onBytesProgress: undefined,
@@ -109,6 +114,7 @@ interface ResourceLoaderInternal extends ResourceLoader {
   cancelled: boolean;
   dedupeMap: Map<string, ResourceLoadHandle<unknown>>;
   errorPolicy: 'continue' | 'fail-fast';
+  generation: number;
   inFlight: Set<PendingEntry>;
   itemCounter: number;
   itemSignals: ResourceLoaderItemSignals | null;
@@ -128,7 +134,11 @@ interface ResourceLoaderInternal extends ResourceLoader {
 
 export function cancelResourceLoad(loader: ResourceLoader): void {
   const internal = loader as ResourceLoaderInternal;
-  if (!internal.started || internal.cancelled) return;
+  if (internal.cancelled) return;
+  // Cancelling before start is a real cancellation, not a no-op. It used to return early, which left
+  // every queued handle's promise pending forever — a caller that queued a batch, changed its mind,
+  // and awaited the handles deadlocked. A cancel that does not cancel is the half-wired feature this
+  // package's charter calls a defect outright.
   internal.cancelled = true;
 
   const cancelError = new DOMException('Load cancelled', 'AbortError');
@@ -151,7 +161,7 @@ export function cancelResourceLoad(loader: ResourceLoader): void {
     };
     internal.reports.push(report);
     entry.reject(cancelError);
-    internal.loaded++;
+    _countEntrySettled(internal, entry);
     releasePendingEntry(entry);
   }
   internal.pending = [];
@@ -175,6 +185,7 @@ export function createResourceLoader(options?: Readonly<ResourceLoaderOptions>):
     cancelled: false,
     dedupeMap: new Map(),
     errorPolicy: opts.errorPolicy ?? 'continue',
+    generation: 0,
     inFlight: new Set(),
     itemCounter: 0,
     itemSignals: null,
@@ -312,6 +323,7 @@ export function queueResourceLoad<T>(
   // AbortController is fresh from acquirePendingEntry / releasePendingEntry
   entry.bytesHint = bytesHint;
   entry.bytesLoaded = 0;
+  entry.generation = internal.generation;
   entry.group = group;
   entry.key = key;
   entry.onBytesProgress = onBytesProgress;
@@ -344,7 +356,14 @@ export function queueResourceLoad<T>(
 
 export function resetResourceLoader(loader: ResourceLoader): void {
   const internal = loader as ResourceLoaderInternal;
-  // Abort all in-flight loads before reset
+  // Bump the generation first: every entry already dispatched is now orphaned, so when its abort
+  // finally rejects, runEntry discards it instead of recording a failure against the batch that
+  // replaced it. Without this an in-flight load surviving a reset lands on the *next* batch — a
+  // phantom onError for a key the new batch never queued, an extra report, and an inflated loaded
+  // count that can complete the new batch early.
+  internal.generation++;
+  // Abort all in-flight loads before reset. They are not released here: they are still running, and
+  // returning them to the pool would hand a live entry to the next queueResourceLoad.
   for (const entry of internal.inFlight) {
     entry.abortController.abort();
   }
@@ -470,6 +489,10 @@ async function runEntry(
   loader: ResourceLoader,
   attempt: number,
 ): Promise<void> {
+  if (_isOrphaned(entry, internal)) {
+    releasePendingEntry(entry);
+    return;
+  }
   if (internal.itemSignals !== null) {
     emitSignal(internal.itemSignals.onItemStart, entry.key);
   }
@@ -491,10 +514,16 @@ async function runEntry(
 
     if (timeoutId !== undefined) clearTimeout(timeoutId);
 
+    if (_isOrphaned(entry, internal)) {
+      internal.inFlight.delete(entry);
+      releasePendingEntry(entry);
+      return;
+    }
+
     // If cancelled between the race resolving and here, treat as cancelled
     if (internal.cancelled) {
       internal.inFlight.delete(entry);
-      internal.loaded++;
+      _countEntrySettled(internal, entry);
       releasePendingEntry(entry);
       checkCompleteAfterCancel(internal, loader);
       return;
@@ -510,7 +539,6 @@ async function runEntry(
       status: 'loaded',
     };
     internal.reports.push(report);
-    internal.weightLoaded += entry.weight;
 
     entry.resolve(value);
 
@@ -521,6 +549,12 @@ async function runEntry(
     settleEntry(entry, internal, loader);
   } catch (error) {
     if (timeoutId !== undefined) clearTimeout(timeoutId);
+
+    if (_isOrphaned(entry, internal)) {
+      internal.inFlight.delete(entry);
+      releasePendingEntry(entry);
+      return;
+    }
 
     // If cancelled, record as cancelled and update batch completion
     if (internal.cancelled) {
@@ -535,7 +569,7 @@ async function runEntry(
       internal.reports.push(report);
       entry.reject(error);
       internal.inFlight.delete(entry);
-      internal.loaded++;
+      _countEntrySettled(internal, entry);
       releasePendingEntry(entry);
       checkCompleteAfterCancel(internal, loader);
       return;
@@ -557,7 +591,7 @@ async function runEntry(
       // Check again after delay in case cancelled
       if (internal.cancelled) {
         internal.inFlight.delete(entry);
-        internal.loaded++;
+        _countEntrySettled(internal, entry);
         releasePendingEntry(entry);
         checkCompleteAfterCancel(internal, loader);
         return;
@@ -597,6 +631,26 @@ async function runEntry(
   }
 }
 
+// Records one entry as finished, whatever its outcome. Both counters advance together and in exactly
+// one place, because "how much of the batch is done" is one question with two units: `loaded` counts
+// items, `weightLoaded` counts the weight the caller assigned them.
+//
+// The weight half used to advance only on success, so any batch containing a failure or a cancellation
+// left getResourceLoadProgress permanently short of 1 — a weighted progress bar stuck at 0.67 on a
+// batch that had already emitted onComplete. A failed item is still a finished item; progress measures
+// completion, not success. (The per-item outcome is in its ResourceLoadReport.status, which is where a
+// caller asks whether the batch went well.)
+function _countEntrySettled(internal: ResourceLoaderInternal, entry: Readonly<PendingEntry>): void {
+  internal.loaded++;
+  internal.weightLoaded += entry.weight;
+}
+
+// True when `entry` was dispatched under a previous generation — i.e. resetResourceLoader ran while it
+// was in flight — so nothing it reports belongs to the current batch.
+function _isOrphaned(entry: Readonly<PendingEntry>, internal: Readonly<ResourceLoaderInternal>): boolean {
+  return entry.generation !== internal.generation;
+}
+
 function checkCompleteAfterCancel(internal: ResourceLoaderInternal, loader: ResourceLoader): void {
   if (internal.inFlight.size === 0) {
     emitSignal(loader.onProgress, internal.loaded, internal.total);
@@ -617,7 +671,7 @@ function cancelRemainingEntries(internal: ResourceLoaderInternal): void {
     };
     internal.reports.push(report);
     entry.reject(new DOMException('Load skipped due to fail-fast error policy', 'AbortError'));
-    internal.loaded++;
+    _countEntrySettled(internal, entry);
     releasePendingEntry(entry);
   }
   internal.pending = [];
@@ -641,7 +695,7 @@ function delay(ms: number): Promise<void> {
 
 function settleEntry(entry: PendingEntry, internal: ResourceLoaderInternal, loader: ResourceLoader): void {
   internal.inFlight.delete(entry);
-  internal.loaded++;
+  _countEntrySettled(internal, entry);
   emitSignal(loader.onProgress, internal.loaded, internal.total);
 
   releasePendingEntry(entry);
