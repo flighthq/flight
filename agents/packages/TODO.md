@@ -122,8 +122,9 @@ Design calls to settle before building the affected entries:
 
 ### scene3d-formats (partial 46)
 
-- Add fixture-backed assertions for the already-supported glTF/GLB core before expanding the schema
-- Reconcile the `warnings: string[]` diagnostics idiom with the inversion rule
+- Rule on the mesh encoding vocabulary before importing higher vertex channels (Depth gap 2)
+- Rule on the extension-handler seam shape before porting `KHR_texture_transform` (Depth gap 3)
+- Rule on a fixture policy before proving real files end to end (Depth gap 4)
 
 ### swf (partial 46)
 
@@ -137,7 +138,8 @@ Design calls to settle before building the affected entries:
 
 ### font (partial 52)
 
-- Strengthen the loader tests
+- `Font` and `FontResource` carry two separate copies of the same load logic
+- The failure contract is now pinned but was never stated
 
 ### spritesheet-formats (partial 58)
 
