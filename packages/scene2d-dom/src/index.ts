@@ -10,6 +10,7 @@ export {
   enableDomClipSupport,
   enableDomRenderCache,
   enableDomTextInput,
+  explainDomTextureResolution,
   registerDomBitmapTextureResolver,
   registerDomImageTextureResolver,
   registerDomTextureResolver,

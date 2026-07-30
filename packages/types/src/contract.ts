@@ -627,6 +627,7 @@ export * from './TextureContainerSupercompression';
 export * from './TextureDimension';
 export * from './TextureKind';
 export * from './TexturePackerSchema';
+export * from './TextureResolutionExplanation';
 export * from './TextureStorage';
 export * from './TextureBackingKind';
 export * from './TextureCubeFace';

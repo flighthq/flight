@@ -4,6 +4,7 @@ export * from './glDraw';
 export * from './glExternalTexture';
 export * from './glElement';
 export * from './enableGlRenderTextureGuards';
+export * from './explainGlTextureResolution';
 export * from './glFullscreenPass';
 export * from './glLinearToSrgbPass';
 export * from './glMaterialRegistry';
