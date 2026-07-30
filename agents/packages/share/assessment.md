@@ -2,6 +2,18 @@
 
 See [charter](./charter.md) for blessed direction.
 
+## Depth gaps
+
+1. **Make asynchronous capability discovery honest.** The Capacitor adapter projects an
+   inherently-asynchronous plugin-availability check into a construction-time cached boolean, so a
+   host that becomes available after startup (or the reverse) is never reflected. Needs an async
+   capability query, explicit readiness/change observation, or a backend contract that permits the
+   platform probe itself to be asynchronous.
+2. **Carry portable files through native backends.** `ShareFile.dataUrl` has no path to a host file
+   URI on Capacitor today, so the web backend is the only one that can share files. Needs a staging
+   and cleanup path from the data URL to native file storage, or an evolved descriptor shape that both
+   web and Capacitor can consume without browser types leaking into the contract.
+
 ## Recommended
 
 1. **Reconcile the charter's `isShareContentValid` with the shipped `hasShareContentFields`** — the
@@ -27,3 +39,5 @@ See [charter](./charter.md) for blessed direction.
 - **`shareTextWithResult` / `shareUrlWithResult` / `shareFilesWithResult`** — charter Open direction
   2 (result-variant symmetry) is a design fork about whether the boolean path is the golden one, not
   a gap to fill unilaterally.
+- Electron and Tauri share adapters where their host APIs provide a truthful system share sheet.
+- Rust parity, once the async-capability and portable-file Depth gaps above settle.
