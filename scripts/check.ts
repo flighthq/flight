@@ -23,10 +23,15 @@ function run(label: string, command: string, args: readonly string[]): void {
 
 if (!scoped) run('packages:check', 'tsx', ['scripts/packages.ts']);
 
-// Whole-repo typecheck is `tsc -b --noEmit`; scoped, we build just the selected projects' dependency cone
-// (`tsc -b <project…>`) — `--noEmit` can't combine with building composite dependencies (TS6310), and the
-// emitted .d.ts/.tsbuildinfo are gitignored incremental artifacts.
-run('typecheck', 'tsc', scoped ? ['-b', ...projects] : ['-b', '--noEmit']);
+// Whole-repo typecheck includes SDK source plus the separately-configured functional and tooling trees.
+// Scoped checks build just the selected projects' dependency cone (`tsc -b <project…>`) — `--noEmit`
+// can't combine with building composite dependencies (TS6310), and the emitted .d.ts/.tsbuildinfo are
+// gitignored incremental artifacts.
+if (scoped) {
+  run('typecheck', 'tsc', ['-b', ...projects]);
+} else {
+  run('typecheck', 'tsx', ['scripts/typecheck.ts']);
+}
 run('lint', 'oxlint', scoped ? ['--max-warnings=0', ...paths] : ['--max-warnings=0']);
 run('format:check', 'oxfmt', scoped ? ['--check', ...paths] : ['--check', '.']);
 run('order:check', 'tsx', ['scripts/order.ts', '--check', ...selectors]);

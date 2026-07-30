@@ -24,7 +24,7 @@ function currentTest() {
   return tests[testIndex];
 }
 
-function availableRenderers(): string[] {
+function availableRenderers(): readonly string[] {
   return currentTest().renderers;
 }
 

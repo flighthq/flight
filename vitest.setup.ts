@@ -8,8 +8,8 @@ if (typeof window !== 'undefined' && 'document' in window) {
   if (!(new TextEncoder().encode('') instanceof Uint8Array)) {
     const NativeTextEncoder = TextEncoder;
     globalThis.TextEncoder = class RealmTextEncoder extends NativeTextEncoder {
-      override encode(input?: string): Uint8Array {
-        return Uint8Array.from(super.encode(input));
+      override encode(input?: string): Uint8Array<ArrayBuffer> {
+        return new Uint8Array(super.encode(input));
       }
     };
   }
