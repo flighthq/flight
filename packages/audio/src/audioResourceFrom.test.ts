@@ -14,6 +14,17 @@ const mockContext = {
   decodeAudioData: vi.fn().mockResolvedValue(decodedBuffer),
 } as unknown as AudioContext;
 
+// A context whose decode is held open, so a test can land an abort while the decode is still in
+// flight — the window the pre-abort fast path cannot see. `finishDecode` then completes it, modelling
+// the real decodeAudioData, which has no cancellation and so always runs to completion.
+function createPendingDecodeContext(): { context: AudioContext; finishDecode: () => void } {
+  let release: (buffer: AudioBuffer) => void = () => {};
+  const context = {
+    decodeAudioData: vi.fn(() => new Promise<AudioBuffer>((resolve) => (release = resolve))),
+  } as unknown as AudioContext;
+  return { context, finishDecode: () => release(decodedBuffer) };
+}
+
 // jsdom lacks the AudioBuffer constructor; this minimal stand-in honours the { length,
 // numberOfChannels, sampleRate } constructor plus copyToChannel/getChannelData used by
 // createAudioResourceFromSamples.
@@ -78,6 +89,15 @@ describe('loadAudioResourceFromBase64', () => {
     expect(resource.buffer).toBe(decodedBuffer);
     expect(mockContext.decodeAudioData).toHaveBeenCalledOnce();
   });
+
+  it('rejects when the signal aborts while the decode is in flight', async () => {
+    const { context, finishDecode } = createPendingDecodeContext();
+    const controller = new AbortController();
+    const promise = loadAudioResourceFromBase64(context, btoa('abc'), 'audio/mpeg', controller.signal);
+    controller.abort(new Error('cancelled'));
+    finishDecode();
+    await expect(promise).rejects.toThrow('cancelled');
+  });
 });
 
 describe('loadAudioResourceFromBlob', () => {
@@ -90,6 +110,20 @@ describe('loadAudioResourceFromBlob', () => {
     const resource = await loadAudioResourceFromBlob(mockContext, blob);
     expect(resource.buffer).toBe(decodedBuffer);
     expect(mockContext.decodeAudioData).toHaveBeenCalledOnce();
+  });
+
+  it('rejects when the signal aborts while the decode is in flight', async () => {
+    const { context, finishDecode } = createPendingDecodeContext();
+    const blob = {
+      arrayBuffer: () => Promise.resolve(new Uint8Array([1, 2, 3, 4]).buffer),
+      type: 'audio/wav',
+    } as unknown as Blob;
+    const controller = new AbortController();
+    const promise = loadAudioResourceFromBlob(context, blob, controller.signal);
+    await Promise.resolve();
+    controller.abort(new Error('cancelled'));
+    finishDecode();
+    await expect(promise).rejects.toThrow('cancelled');
   });
 });
 
@@ -112,6 +146,31 @@ describe('loadAudioResourceFromBytes', () => {
       loadAudioResourceFromBytes(mockContext, new Uint8Array([1, 2, 3, 4]), undefined, controller.signal),
     ).rejects.toThrow('cancelled');
   });
+
+  // Every loader in this family funnels through here, and each is covered separately, because the
+  // guarantee is per entry point: a barrier that only holds for direct callers still lets the wrappers
+  // resolve past an abort.
+  it('rejects when the signal aborts while the decode is in flight', async () => {
+    const { context, finishDecode } = createPendingDecodeContext();
+    const controller = new AbortController();
+    const promise = loadAudioResourceFromBytes(context, new Uint8Array([1, 2, 3, 4]), undefined, controller.signal);
+    controller.abort(new Error('cancelled'));
+    finishDecode();
+    await expect(promise).rejects.toThrow('cancelled');
+  });
+
+  it('does not resolve with a decoded buffer after an abort', async () => {
+    const { context, finishDecode } = createPendingDecodeContext();
+    const controller = new AbortController();
+    const promise = loadAudioResourceFromBytes(context, new Uint8Array([1, 2, 3, 4]), undefined, controller.signal);
+    controller.abort(new Error('cancelled'));
+    finishDecode();
+    const settled = await promise.then(
+      (resource) => `resolved:${resource.buffer !== null}`,
+      () => 'rejected',
+    );
+    expect(settled).toBe('rejected');
+  });
 });
 
 describe('loadAudioResourceFromUrl', () => {
@@ -119,12 +178,51 @@ describe('loadAudioResourceFromUrl', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
+        ok: true,
         arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)),
         headers: new Headers({ 'content-type': 'audio/mpeg' }),
       }),
     );
     const resource = await loadAudioResourceFromUrl(mockContext, 'sound.mp3');
     expect(resource.buffer).toBe(decodedBuffer);
+  });
+
+  // fetch resolves for 404/500, so without a status check the error page reaches the decoder and the
+  // caller is told the codec failed. The assertion pins the status, not merely that it rejected.
+  it('rejects with the HTTP status rather than decoding an error response', async () => {
+    const decodeAudioData = vi.fn().mockResolvedValue(decodedBuffer);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+        arrayBuffer: () => Promise.resolve(new TextEncoder().encode('<html>404</html>').buffer),
+        headers: new Headers({ 'content-type': 'text/html' }),
+      }),
+    );
+    await expect(
+      loadAudioResourceFromUrl({ decodeAudioData } as unknown as AudioContext, 'missing.mp3'),
+    ).rejects.toThrow('Failed to load audio: missing.mp3 (404 Not Found)');
+    expect(decodeAudioData).not.toHaveBeenCalled();
+  });
+
+  it('rejects when the signal aborts while the decode is in flight', async () => {
+    const { context, finishDecode } = createPendingDecodeContext();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)),
+        headers: new Headers({ 'content-type': 'audio/mpeg' }),
+      }),
+    );
+    const controller = new AbortController();
+    const promise = loadAudioResourceFromUrl(context, 'sound.mp3', controller.signal);
+    await Promise.resolve();
+    controller.abort(new Error('cancelled'));
+    finishDecode();
+    await expect(promise).rejects.toThrow('cancelled');
   });
 });
 
@@ -139,6 +237,7 @@ describe('loadAudioResourceFromUrls', () => {
       type === 'audio/ogg' ? 'probably' : '',
     );
     const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
       arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)),
       headers: new Headers(),
     });
