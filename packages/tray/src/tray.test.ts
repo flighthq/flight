@@ -20,6 +20,7 @@ import {
   getTrayIconTitle,
   getTrayIconTooltip,
   isTrayDestroyed,
+  isTrayIconAnimating,
   onTrayEvent,
   popupTrayContextMenu,
   removeTrayBalloon,
@@ -32,6 +33,7 @@ import {
   setTrayIgnoreDoubleClickEvents,
   setTrayPressedIcon,
   startTrayIconAnimation,
+  stopTrayIconAnimation,
 } from './tray';
 
 // Fake backend state per icon.
@@ -54,6 +56,9 @@ function fakeBackend(caps: Partial<TrayCapabilities> = {}): TrayBackend & {
   capabilities: TrayCapabilities;
   fireEvent(event: TrayEventData): void;
   lastPopupPosition: { x: number; y: number } | null;
+  // Every icon written, in order — the animation tests assert on the sequence of writes rather than
+  // the final image, because two competing animations can leave a correct-looking final frame.
+  setIconCalls: string[];
   trays: Map<number, FakeTray>;
 } {
   const capabilities: TrayCapabilities = {
@@ -68,9 +73,12 @@ function fakeBackend(caps: Partial<TrayCapabilities> = {}): TrayBackend & {
   let eventListener: ((event: Readonly<TrayEventData>) => void) | null = null;
   const trays = new Map<number, FakeTray>();
 
+  const setIconCalls: string[] = [];
+
   return {
     capabilities,
     trays,
+    setIconCalls,
     lastPopupPosition: null,
     create(options) {
       const id = nextId++;
@@ -129,6 +137,7 @@ function fakeBackend(caps: Partial<TrayCapabilities> = {}): TrayBackend & {
       if (tray) tray.contextMenu = items;
     },
     setIcon(id, icon) {
+      setIconCalls.push(icon);
       const tray = trays.get(id);
       if (tray) tray.icon = icon;
     },
@@ -396,6 +405,43 @@ describe('isTrayDestroyed', () => {
   });
 });
 
+describe('isTrayIconAnimating', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('is false before, true during, and false after an animation', () => {
+    setTrayBackend(fakeBackend());
+    const tray = createTrayIcon({ icon: 'a.png' })!;
+    expect(isTrayIconAnimating(tray)).toBe(false);
+    const stop = startTrayIconAnimation(tray, ['a.png', 'b.png'], 100);
+    expect(isTrayIconAnimating(tray)).toBe(true);
+    stop();
+    expect(isTrayIconAnimating(tray)).toBe(false);
+  });
+
+  it('is false for an empty frame list, which starts nothing', () => {
+    setTrayBackend(fakeBackend());
+    const tray = createTrayIcon({ icon: 'a.png' })!;
+    startTrayIconAnimation(tray, [], 100);
+    expect(isTrayIconAnimating(tray)).toBe(false);
+  });
+
+  it('tracks each tray independently', () => {
+    setTrayBackend(fakeBackend());
+    const first = createTrayIcon({ icon: 'a.png' })!;
+    const second = createTrayIcon({ icon: 'b.png' })!;
+    startTrayIconAnimation(first, ['a.png', 'b.png'], 100);
+    expect(isTrayIconAnimating(first)).toBe(true);
+    expect(isTrayIconAnimating(second)).toBe(false);
+    stopTrayIconAnimation(first);
+  });
+});
+
 describe('onTrayEvent', () => {
   it('delivers rich TrayEventData via the active backend', () => {
     const backend = fakeBackend();
@@ -643,5 +689,87 @@ describe('startTrayIconAnimation', () => {
     const tray = createTrayIcon()!;
     const stop = startTrayIconAnimation(tray, [], 100);
     expect(() => stop()).not.toThrow();
+  });
+});
+
+describe('stopTrayIconAnimation', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('stops the interval so no further frames are written', () => {
+    const backend = fakeBackend();
+    setTrayBackend(backend);
+    const tray = createTrayIcon({ icon: 'frame0.png' })!;
+    startTrayIconAnimation(tray, ['frame0.png', 'frame1.png'], 100);
+    stopTrayIconAnimation(tray);
+    const iconAtStop = backend.trays.get(tray.id)!.icon;
+    vi.advanceTimersByTime(500);
+    expect(backend.trays.get(tray.id)!.icon).toBe(iconAtStop);
+  });
+
+  it('is idempotent and safe on a tray that never animated', () => {
+    setTrayBackend(fakeBackend());
+    const tray = createTrayIcon({ icon: 'a.png' })!;
+    expect(() => {
+      stopTrayIconAnimation(tray);
+      stopTrayIconAnimation(tray);
+    }).not.toThrow();
+  });
+});
+
+describe('tray icon animation lifecycle', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('replaces a running animation instead of running both', () => {
+    // The regression this pins: two starts on one tray left two intervals writing to the same icon on
+    // the same tick — the icon flickered between the two sequences, and the only handle to the first
+    // was a stop function the caller had no reason to still hold.
+    const backend = fakeBackend();
+    setTrayBackend(backend);
+    const tray = createTrayIcon({ icon: 'a0.png' })!;
+    startTrayIconAnimation(tray, ['a0.png', 'a1.png'], 100);
+    startTrayIconAnimation(tray, ['b0.png', 'b1.png'], 100);
+    backend.setIconCalls.length = 0;
+    vi.advanceTimersByTime(100);
+    expect(backend.setIconCalls).toEqual(['b1.png']);
+  });
+
+  it('stops animating a tray that has been destroyed', () => {
+    // The regression this pins: the interval outlived the icon, calling setIcon on a destroyed tray
+    // forever — and the timer kept its own closure alive, so nothing could collect it.
+    const backend = fakeBackend();
+    setTrayBackend(backend);
+    const tray = createTrayIcon({ icon: 'a0.png' })!;
+    startTrayIconAnimation(tray, ['a0.png', 'a1.png'], 100);
+    destroyTrayIcon(tray);
+    backend.setIconCalls.length = 0;
+    vi.advanceTimersByTime(500);
+    expect(backend.setIconCalls).toEqual([]);
+    expect(isTrayIconAnimating(tray)).toBe(false);
+  });
+
+  it('a stale stop function cannot cancel the animation that replaced it', () => {
+    const backend = fakeBackend();
+    setTrayBackend(backend);
+    const tray = createTrayIcon({ icon: 'a0.png' })!;
+    const staleStop = startTrayIconAnimation(tray, ['a0.png', 'a1.png'], 100);
+    startTrayIconAnimation(tray, ['b0.png', 'b1.png'], 100);
+    staleStop();
+    expect(isTrayIconAnimating(tray)).toBe(true);
+    backend.setIconCalls.length = 0;
+    vi.advanceTimersByTime(100);
+    expect(backend.setIconCalls).toEqual(['b1.png']);
+    stopTrayIconAnimation(tray);
   });
 });
