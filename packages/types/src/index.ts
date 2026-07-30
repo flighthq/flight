@@ -454,6 +454,7 @@ export * from './RenderViewport2D';
 export * from './ResourceLoader';
 export * from './ResourceLoaderItemSignals';
 export * from './ResourceLoaderOptions';
+export * from './ResourceLoadBytesReporter';
 export * from './ResourceLoadHandle';
 export * from './ResourceLoadItem';
 export * from './ResourceLoadItemStatus';

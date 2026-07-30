@@ -3,6 +3,7 @@ import type {
   ResourceLoader,
   ResourceLoaderItemSignals,
   ResourceLoaderOptions,
+  ResourceLoadBytesReporter,
   ResourceLoadHandle,
   ResourceLoadItem,
   ResourceLoadItemStatus,
@@ -30,7 +31,7 @@ interface PendingEntry {
   startedAt: number;
   timeoutMs: number;
   weight: number;
-  wrappedLoad: (signal: AbortSignal) => Promise<unknown>;
+  wrappedLoad: (signal: AbortSignal, reportBytes: ResourceLoadBytesReporter) => Promise<unknown>;
 }
 
 // Pool for PendingEntry objects — avoids per-item allocation on the hot-path drain.
@@ -334,7 +335,10 @@ export function queueResourceLoad<T>(
   entry.startedAt = 0;
   entry.timeoutMs = timeoutMs;
   entry.weight = weight;
-  entry.wrappedLoad = descriptor.load as (signal: AbortSignal) => Promise<unknown>;
+  entry.wrappedLoad = descriptor.load as (
+    signal: AbortSignal,
+    reportBytes: ResourceLoadBytesReporter,
+  ) => Promise<unknown>;
 
   internal.pending.push(entry);
   internal.total++;
@@ -500,6 +504,18 @@ async function runEntry(
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
   const signal = entry.abortController.signal;
 
+  // The byte reporter handed to this attempt. It is scoped to the attempt rather than to the entry
+  // because entries are pooled: a factory that reports after settling — a stream that flushes late, a
+  // retry whose predecessor is still draining — would otherwise write a byte count into whichever
+  // item had since been handed that record. `live` is closed over, so the report simply stops
+  // counting once the attempt is done, which is the honest answer for a figure nobody is waiting on.
+  let live = true;
+  const reportBytes: ResourceLoadBytesReporter = (loaded, total) => {
+    if (!live) return;
+    entry.bytesLoaded = loaded;
+    entry.onBytesProgress?.(loaded, total ?? entry.bytesHint);
+  };
+
   // Apply timeout if configured
   if (entry.timeoutMs > 0) {
     timeoutId = setTimeout(() => {
@@ -510,9 +526,10 @@ async function runEntry(
   try {
     // Race the factory against the abort signal so cancellation/timeout is always honored,
     // even if the factory itself does not check the signal.
-    const value = await Promise.race([entry.wrappedLoad(signal), abortSignalPromise(signal)]);
+    const value = await Promise.race([entry.wrappedLoad(signal, reportBytes), abortSignalPromise(signal)]);
 
     if (timeoutId !== undefined) clearTimeout(timeoutId);
+    live = false;
 
     if (_isOrphaned(entry, internal)) {
       internal.inFlight.delete(entry);
@@ -549,6 +566,7 @@ async function runEntry(
     settleEntry(entry, internal, loader);
   } catch (error) {
     if (timeoutId !== undefined) clearTimeout(timeoutId);
+    live = false;
 
     if (_isOrphaned(entry, internal)) {
       internal.inFlight.delete(entry);
