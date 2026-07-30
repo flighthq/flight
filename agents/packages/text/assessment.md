@@ -8,11 +8,22 @@ basedOn: ./review.md
 
 Sorted from `review.md` (partial, 58/100 — against the integration head where types changes were absent), the depth review (solid, 72/100), and the direction session (2026-07-02). Four Decisions blessed. The builder landed the bulk of the depth review's recommendations: full setter surface, read accessors, string editing with format-range re-indexing, signals group, metric convenience wrappers, internal.ts retirement. The package is substantially complete as a text display-object entity layer.
 
+## Closed 2026-07-30
+
+*Flag textlayout's `_text` parameter for removal* — **done, by a peer.** `computeRichTextCharIndexAtPoint`
+is now `(layout, x, y)`; builder3's textlayout sweep removed the parameter. Verified against live
+source, not assumed.
+
 ## Recommended
 
-Strictly sweep-safe: within `@flighthq/text` or flagged cross-package cleanup.
-
-- **Flag textlayout's `_text` parameter for removal.** `computeRichTextCharIndexAtPoint` in `packages/textlayout/src/richTextQuery.ts` takes a `_text: string` parameter documented as "kept for backward compatibility; will be removed in a future breaking release." Pre-release code has no backward-compatibility obligations (charter Decision #4). Remove the parameter and update all callsites. _(Cross-package: touches textlayout and text.)_
+1. **`setRichTextContent`, `setRichTextDefaultTextFormat`, `setRichTextFormatRange`,
+   `setTextLabelFormat` and `setNativeTextStyle` invalidate unconditionally.** The string setters are
+   now guarded (`setRichTextString` fixed 2026-07-30; `setTextLabelString` already was), but these five
+   take objects, where a cheap `===` is meaningless and a deep compare may cost more than the
+   invalidation it saves. Whether they should compare at all — and if so by what — is a real call, not
+   a sweep: a format object is usually freshly built by the caller, so `===` would never hit, while a
+   structural compare is O(fields) against an O(layout) saving. **Wants a ruling**, and it is the same
+   question for all five.
 
 ## Backlog
 
