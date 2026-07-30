@@ -1,19 +1,15 @@
 import { createMatrix } from '@flighthq/geometry/contract';
 import { createViewport } from '@flighthq/node/contract';
-import { createRenderCache } from '@flighthq/render/contract';
 import {
   beginGlRenderPass,
   createGlRenderTarget,
   endGlRenderPass,
   getGlRenderStateRuntime,
 } from '@flighthq/render-gl/contract';
+import { createRenderCache } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 
-import {
-  createGlCacheState,
-  ensureGlRenderCacheTarget,
-  refreshGlRenderCache,
-} from './glCache';
+import { createGlCacheState, ensureGlRenderCacheTarget, refreshGlRenderCache } from './glCache';
 import { popGlClipContours, pushGlClipContours } from './glClipContours';
 import { createGlState } from './glTestHelper';
 
