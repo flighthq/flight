@@ -39,6 +39,11 @@ describe('parseXmlAttributes', () => {
     expect(attrs['name']).toBe('A');
   });
 
+  it('preserves out-of-range numeric references without throwing', () => {
+    const attrs = parseXmlAttributes('decimal="&#1114112;" hex="&#x110000;"');
+    expect(attrs).toEqual({ decimal: '&#1114112;', hex: '&#x110000;' });
+  });
+
   it('returns empty object for empty string', () => {
     expect(parseXmlAttributes('')).toEqual({});
   });

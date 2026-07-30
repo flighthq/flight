@@ -47,10 +47,14 @@ const XML_ENTITIES: Record<string, string> = {
 };
 
 function decodeXmlEntities(s: string): string {
-  return s.replace(/&(?:#(\d+)|#x([\da-fA-F]+)|(\w+));/g, (_, dec, hex, name) => {
-    if (dec) return String.fromCodePoint(parseInt(dec, 10));
-    if (hex) return String.fromCodePoint(parseInt(hex, 16));
-    return XML_ENTITIES[name] ?? _;
+  return s.replace(/&(?:#(\d+)|#x([\da-fA-F]+)|(\w+));/g, (reference, dec, hex, name) => {
+    const numeric = dec ?? hex;
+    if (numeric !== undefined) {
+      const codepoint = parseInt(numeric, dec !== undefined ? 10 : 16);
+      if (codepoint > 0x10ffff || (codepoint >= 0xd800 && codepoint <= 0xdfff)) return reference;
+      return String.fromCodePoint(codepoint);
+    }
+    return XML_ENTITIES[name] ?? reference;
   });
 }
 
