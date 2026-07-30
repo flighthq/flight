@@ -108,10 +108,6 @@ Design calls to settle before building the affected entries:
 - Guard `startTrayIconAnimation` against a non-positive interval
 - Web-backend `isDestroyed` returns true for every id, including ids never created
 
-### swf (partial 42)
-
-- Add one canonical uncompressed fixture
-
 ### useragent (partial 42)
 
 - Decide what `parseUserAgentEngineVersion` means on webkit
@@ -128,6 +124,10 @@ Design calls to settle before building the affected entries:
 
 - Add fixture-backed assertions for the already-supported glTF/GLB core before expanding the schema
 - Reconcile the `warnings: string[]` diagnostics idiom with the inversion rule
+
+### swf (partial 46)
+
+- Add one canonical uncompressed fixture
 
 ### textureatlas-formats (partial 50)
 
@@ -824,18 +824,18 @@ These are explicit user directions whose implementation may span packages or req
 
 These are observed maturity gaps, including intentionally deferred work. They require prioritization or a package direction before execution unless separately approved.
 
-### swf (partial 42)
-
-- Recover animated MovieClip timelines
-- Materialize visible archive content
-- Complete container seams and evidence
-
 ### scene3d-formats (partial 46)
 
 - Make the complete import result truthful
 - Carry every common vertex channel and topology
 - Replace the remaining inline extension knowledge with open handlers
 - Prove real files end to end
+
+### swf (partial 46)
+
+- Recover animated MovieClip timelines
+- Materialize visible archive content
+- Complete container seams and evidence
 
 ### texture (solid 58)
 
@@ -981,7 +981,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene3d` · `particleemitter` · `xml` · `skeleton3d` · `scene3d-resources` · `camera-controls` · `debug` · `dialog` · `lifecycle` · `textlayout` · `adjustments` · `clipboard` · `camera` · `platform` · `textinput` · `scene2d-resources` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
+`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene3d` · `particleemitter` · `xml` · `skeleton3d` · `scene3d-resources` · `camera-controls` · `debug` · `dialog` · `lifecycle` · `textlayout` · `adjustments` · `clipboard` · `camera` · `platform` · `textinput` · `connectivity` · `scene2d-resources` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
 
 ## Liveness — which stage each stale cell needs next
 
