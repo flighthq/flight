@@ -21,17 +21,25 @@ defaults:
   hostAlias: remote
 
 roles:
-  review: {}
+  chief: # you talk to this one; only manager and critic reach it
+    directs: [manager, critic]
+    nudge: directed
+  manager: # the hot loop — absorbs everything, keeps the builders fed
+    directs: ['@builder', integration]
+    nudge: all
   builder:
-    nudge: always
-  integration: {}
+    nudge: all
+  integration:
+    nudge: all
+  critic: # advisory only; directs nobody, so it never becomes a second boss
+    nudge: directed
 
 services:
   serve: quimby serve
 
 layouts:
   default:
-    expr: ((review review2) | (builder builder2 builder3 builder4)):80 / (host $serve):20
+    expr: '((chief manager) | (@builder integration critic)):80 / (host $serve):20'
 
 default: default
 
@@ -39,25 +47,11 @@ presets:
   default:
     layout: default
     agents:
-      review:
-        role: review
-        directs: [builder, builder2, builder3, builder4, review2]
-        nudge: always
-      review2:
-        role: review
-        nudge: always
-        runtimeProfile: codex-sbx
-      builder:
-        role: builder
-        nudge: always
-      builder2:
-        role: builder
-        nudge: always
-      builder3:
-        role: builder
-        nudge: always
-        runtimeProfile: codex-sbx
-      builder4:
-        role: builder
-        nudge: always
-        runtimeProfile: codex-sbx
+      chief: { role: chief }
+      manager: { role: manager }
+      integration: { role: integration }
+      critic: { role: critic, runtimeProfile: codex-sbx }
+      builder: { role: builder }
+      builder2: { role: builder }
+      builder3: { role: builder, runtimeProfile: codex-sbx }
+      builder4: { role: builder, runtimeProfile: codex-sbx }
