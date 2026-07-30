@@ -156,6 +156,48 @@ to be wrong. Two lessons, and the second is the load-bearing one:
   wrong, trivially triggered versus adversarial — is discovered *by* auditing. Ranking is an output of the
   audit, not an input to it. **Audit the family, then rank.**
 
+## Reasoning from a description instead of checking
+
+The single failure mode behind most of what this document exists to prevent, and it is worth naming on its
+own because it does not feel like an error while you are committing it. It feels like knowing something.
+
+You read that a module "is the composer for the skeletal sample", or that a field "is a nonnegative
+integer", or that a helper "bounds the read" — and you carry that forward as established fact. The
+sentence was true when written, or true in general, or true of the author's intent. It is being used as
+though it were true of the code in front of you, right now, and nothing checked that.
+
+**How to notice it.** The tell is that you cannot name the observation. Ask of any load-bearing claim you
+are about to build on: *what did I run, or read, that makes this true?* Three answers mean stop:
+
+- "It's documented / the spec says so / the type says so." A declaration is a claim about intent. The
+  question is what the code does.
+- "It's called that." A name is a claim about purpose, not behaviour. `bounds`, `validate`, and `safe` in
+  an identifier are the most expensive words in a codebase.
+- "It must be, or X would be broken." X may well be broken. That is what you are looking for.
+
+A softer tell, worth learning: **you feel briefly relieved.** Relief is what confirmation feels like from
+the inside, and it arrives whether or not the thing is true. Treat it as a prompt to check, not a
+conclusion.
+
+**The cheap check.** Almost always one command, and almost always under a minute:
+
+- Reachability → grep for the entry point. Not "is this used?" but "show me the call site."
+- A field is validated → grep for the field name and read every site, not the one you remember.
+- A guard covers a case → write the case and run it. If it passes against the *unfixed* code, the guard is
+  not what you thought it was, or the probe is not.
+- A behaviour holds → run it and print the value. Two minutes of instrumentation beats an hour of
+  reasoning about what the code must be doing, and it is right more often.
+
+**Why it earns its own section.** Each instance is cheap to catch and expensive to carry. A checklist whose
+columns came from a remembered description of the fixes; a probe designed against a description of the
+defect rather than its mechanism, which passed against the broken code; a severity ranking built on a
+sentence in a map file, which inverted once checked. Same root, three costs, and in every case the correction
+was worth more than the original work — because a wrong belief that survives review propagates as
+documentation, and the next person inherits it with the doubt stripped off.
+
+The habit that fixes it is small: **when a claim is load-bearing, spend the minute.** Not on everything —
+on the sentence the rest of the argument stands on.
+
 ## On predictions
 
 If you audit a format against this list, **write your prediction down before you open the code**, and
