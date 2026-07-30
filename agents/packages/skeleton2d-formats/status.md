@@ -4,7 +4,7 @@ Continuity log for `@flighthq/skeleton2d-formats`. See [charter](./charter.md) f
 
 ## Current state — Spine `.json` and DragonBones `.json` both complete (2026-07-30)
 
-The package exists, is registered (tsconfig paths/build refs, sdk barrel `formats` group + deps, package.json `.`+`./contract` lanes), and passes the scoped `npm run check skeleton2d-formats`. **104 tests pass across 5 files.** All types live in `@flighthq/types` (implementation exports functions only).
+The package exists, is registered (tsconfig paths/build refs, sdk barrel `formats` group + deps, package.json `.`+`./contract` lanes), and passes the scoped `npm run check skeleton2d-formats`. **109 tests pass across 5 files.** All types live in `@flighthq/types` (implementation exports functions only).
 
 **DragonBones (`dragonBonesParse.ts`) — `parseDragonBonesSkeleton(json, diagnostics?)` → `Skeleton2DImport | null`, increment 1 (bones):** registered behind the seam (`detectDragonBones` on an `armature` key). Parses the FIRST armature's bone hierarchy: **topologically sorted** (DragonBones bones are not parent-before-child ordered, so parents are emitted before children; dangling/cyclic parents become roots + `dragonbones.unresolved-bone-parent` crumb). Transform maps `skX/skY` (or newer `rotate/skew`) → `Bone2D.rotation = rotation`, `shearX = 0`, `shearY = skew`, `scX/scY → scale`, `x/y` (algebra sourced from the MIT DragonBones `ObjectDataParser`, in charter #4). Inheritance: the 4-boolean model → `Bone2D.transformMode`. *(As landed, increment 1 mapped onto the old five-value `TransformMode2D` enum and `Skip`-crumbed the two combos it could not express plus `inheritTranslation:false`; the **model-shape finding** that raised — DragonBones' inherit factoring is richer than the Spine 5-enum — was surfaced to review and became the `TransformInherit2D` refactor [charter 2026-07-30], after which the booleans map straight through and `dragonbones.inherit-mode-unmapped` / `inherit-translation-unsupported` no longer exist.)* Slots, skins, and animation were `Skip`-crumbed at this point and are parsed by increments 2–4 below; additional armatures still are.
 
@@ -117,6 +117,16 @@ Alternate/named skins were Skip-crumbed in all three parsers; they are now first
 Only `rgba` is modeled. `rgb`, `alpha`, and the dark-colour variants are Skip-crumbed (`spine.slot-<kind>-timeline-unsupported`): `Slot2D` carries one packed colour and no dark colour, so a partial-channel timeline cannot be represented without inventing a setup blend. Attachment swaps are the next step (index track + lookup table).
 
 **Verified on the licensed rig:** spineboy's `shoot` yields exactly 6 slot colour channels against the 6 `rgba` timelines its JSON declares, colours genuinely diverge from setup across sampled times, and no packed value falls out of range.
+
+**Attachment-swap timelines — landed (step 3).** A swap is a step over DISCRETE identities and `AnimationTrack.values` is `ArrayLike<number>`, so the track carries INDICES into a per-channel table on the target and `-1` means "show nothing" — which is Spine's own encoding, not an invention (a nameless keyframe hides the slot). This keeps `@flighthq/animation` numeric instead of widening every track in the SDK for one 2D feature.
+
+The binder walks these tracks with its **own step lookup** rather than `sampleAnimationTrack`, deliberately: interpolating between table indices would resolve to art no keyframe ever named, so the channel is correct regardless of what its track claims its interpolation is. Tests cover a Linear-claiming track still stepping.
+
+Two parse-side rules worth keeping: the table is **deduplicated** (a flash cycling back to an earlier image stores it once), and a keyframe naming art the setup skin does not supply becomes a hide rather than being **dropped** — dropping it would shift the timing of every later swap.
+
+Known limitation, named rather than hidden: the table resolves at import time against the SETUP skin, so an attachment-swap channel and a wardrobe change do not compose. A rig that both swaps skins and animates attachments needs the table re-resolved for the worn skin.
+
+**Verified on the licensed rig:** spineboy's `shoot` yields exactly 6 swap channels against its 6 declared timelines, and the muzzle flash reproduces its authored cycle `muzzle01 → 02 → 03 → 04 → hidden` with a 5-entry table across 6 keyframes.
 
 ## Next (per charter build order)
 

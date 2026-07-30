@@ -1,3 +1,4 @@
+import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
 import { easeCubicBezier } from '@flighthq/easing/contract';
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
 import {
@@ -7,7 +8,12 @@ import {
   setSkeleton2DSkin,
 } from '@flighthq/skeleton2d/contract';
 import type { ImportDiagnostic, MeshAttachment2D, RegionAttachment2D } from '@flighthq/types/contract';
-import { MeshAttachment2DKind, RegionAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
+import {
+  AnimationInterpolationLinear,
+  MeshAttachment2DKind,
+  RegionAttachment2DKind,
+  TransformMode2D,
+} from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { parseSpineSkeleton } from './spineParse';
@@ -523,8 +529,147 @@ describe('parseSpineSkeleton', () => {
     const kinds = collectImportDiagnostics((sink) => parseSpineSkeleton(JSON.stringify(doc), sink)).map((c) => c.kind);
     expect(kinds).toContain('spine.slot-rgb-timeline-unsupported');
     expect(kinds).toContain('spine.slot-alpha-timeline-unsupported');
-    expect(kinds).toContain('spine.slot-attachment-timeline-unsupported');
     expect(kinds).toContain('spine.slot-rgba2-timeline-unsupported');
+  });
+
+  it('builds a STEP attachment-swap channel of indices into a per-channel table', () => {
+    const doc = {
+      bones: [{ name: 'b' }],
+      slots: [{ name: 's', bone: 'b', attachment: 'one' }],
+      skins: [{ name: 'default', attachments: { s: { one: { width: 1 }, two: { width: 2 } } } }],
+      animations: {
+        a: {
+          slots: {
+            s: {
+              attachment: [{ time: 0, name: 'one' }, { time: 1, name: 'two' }, { time: 2 }],
+            },
+          },
+        },
+      },
+    };
+    const result = parseSpineSkeleton(JSON.stringify(doc))!;
+    const pose = cloneSkeleton2D(result.skeleton);
+    const clip = result.animations[0].clip;
+    applyAnimationClipToSkeleton2D(clip, result.skeleton, pose, 0);
+    expect((pose.slots![0].attachment as RegionAttachment2D).width).toBe(1);
+    applyAnimationClipToSkeleton2D(clip, result.skeleton, pose, 1);
+    expect((pose.slots![0].attachment as RegionAttachment2D).width).toBe(2);
+    // A nameless keyframe is Spine's "hide this slot".
+    applyAnimationClipToSkeleton2D(clip, result.skeleton, pose, 2);
+    expect(pose.slots![0].attachment).toBeNull();
+  });
+
+  it('HOLDS each attachment until the next keyframe rather than interpolating', () => {
+    const doc = {
+      bones: [{ name: 'b' }],
+      slots: [{ name: 's', bone: 'b' }],
+      skins: [{ name: 'default', attachments: { s: { one: { width: 1 }, two: { width: 2 } } } }],
+      animations: {
+        a: {
+          slots: {
+            s: {
+              attachment: [
+                { time: 0, name: 'one' },
+                { time: 1, name: 'two' },
+              ],
+            },
+          },
+        },
+      },
+    };
+    const result = parseSpineSkeleton(JSON.stringify(doc))!;
+    const pose = cloneSkeleton2D(result.skeleton);
+    // Mid-segment must still show the FIRST attachment — there is no halfway art.
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, result.skeleton, pose, 0.99);
+    expect((pose.slots![0].attachment as RegionAttachment2D).width).toBe(1);
+  });
+
+  it('FORCES step semantics even if the track claims Linear', () => {
+    // The binder must not trust the track here: interpolating between table INDICES would resolve to art
+    // that no keyframe ever named. Rebuild the channel as Linear and confirm it still steps.
+    const doc = {
+      bones: [{ name: 'b' }],
+      slots: [{ name: 's', bone: 'b' }],
+      skins: [{ name: 'default', attachments: { s: { one: { width: 1 }, two: { width: 2 } } } }],
+      animations: {
+        a: {
+          slots: {
+            s: {
+              attachment: [
+                { time: 0, name: 'one' },
+                { time: 1, name: 'two' },
+              ],
+            },
+          },
+        },
+      },
+    };
+    const result = parseSpineSkeleton(JSON.stringify(doc))!;
+    const channel = result.animations[0].clip.channels[0];
+    const linear = createAnimationChannel(
+      createAnimationTrack({
+        components: 1,
+        interpolation: AnimationInterpolationLinear,
+        times: channel.track.times,
+        values: channel.track.values,
+      }),
+      channel.targetRef,
+    );
+    const pose = cloneSkeleton2D(result.skeleton);
+    applyAnimationClipToSkeleton2D(createAnimationClip([linear]), result.skeleton, pose, 0.5);
+    expect((pose.slots![0].attachment as RegionAttachment2D).width).toBe(1); // not a blended index
+  });
+
+  it('DEDUPLICATES the attachment table when a swap cycles back', () => {
+    const doc = {
+      bones: [{ name: 'b' }],
+      slots: [{ name: 's', bone: 'b' }],
+      skins: [{ name: 'default', attachments: { s: { one: { width: 1 }, two: { width: 2 } } } }],
+      animations: {
+        a: {
+          slots: {
+            s: {
+              attachment: [
+                { time: 0, name: 'one' },
+                { time: 1, name: 'two' },
+                { time: 2, name: 'one' },
+              ],
+            },
+          },
+        },
+      },
+    };
+    const target = parseSpineSkeleton(JSON.stringify(doc))!.animations[0].clip.channels[0].targetRef as {
+      attachments: unknown[];
+    };
+    expect(target.attachments.length).toBe(2); // 'one' is stored once, not twice
+  });
+
+  it('keeps timing when a keyframe names art the setup skin does not supply', () => {
+    // Dropping the keyframe would shift every later swap earlier; it becomes a hide instead.
+    const doc = {
+      bones: [{ name: 'b' }],
+      slots: [{ name: 's', bone: 'b' }],
+      skins: [{ name: 'default', attachments: { s: { one: { width: 1 } } } }],
+      animations: {
+        a: {
+          slots: {
+            s: {
+              attachment: [
+                { time: 0, name: 'ghost' },
+                { time: 1, name: 'one' },
+              ],
+            },
+          },
+        },
+      },
+    };
+    const result = parseSpineSkeleton(JSON.stringify(doc))!;
+    const pose = cloneSkeleton2D(result.skeleton);
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, result.skeleton, pose, 0);
+    expect(pose.slots![0].attachment).toBeNull();
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, result.skeleton, pose, 1);
+    expect((pose.slots![0].attachment as RegionAttachment2D).width).toBe(1);
   });
 
   it('Skip-crumbs constraint, event, and slot animation timelines', () => {
