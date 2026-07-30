@@ -9,10 +9,21 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../animation" },
-    { "path": "../importdiagnostics" },
-    { "path": "../skeleton2d" },
-    { "path": "../types" }
+    {
+      "path": "../animation"
+    },
+    {
+      "path": "../easing"
+    },
+    {
+      "path": "../importdiagnostics"
+    },
+    {
+      "path": "../skeleton2d"
+    },
+    {
+      "path": "../types"
+    }
   ],
   "include": ["src"]
 }

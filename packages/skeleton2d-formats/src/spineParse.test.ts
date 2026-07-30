@@ -1,3 +1,4 @@
+import { easeCubicBezier } from '@flighthq/easing/contract';
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
 import { applyAnimationClipToSkeleton2D, cloneSkeleton2D } from '@flighthq/skeleton2d/contract';
 import type { ImportDiagnostic, MeshAttachment2D, RegionAttachment2D } from '@flighthq/types/contract';
@@ -276,54 +277,121 @@ describe('parseSpineSkeleton', () => {
     expect(pose.bones[0].rotation).toBeCloseTo(0, 5); // stepped holds the t=0 keyframe (delta 0) until t=1
   });
 
-  it('Skip-crumbs bezier curve keyframes, whose easing is collapsed to Linear', () => {
-    const doc = {
-      bones: [{ name: 'b' }],
-      animations: {
-        a: {
-          bones: {
-            b: {
-              rotate: [
-                { time: 0, value: 0, curve: [0.25, 0, 0.75, 1] },
-                { time: 1, value: 90, curve: [0.25, 0, 0.75, 1] },
-              ],
-            },
-          },
-        },
-      },
-    };
-    const crumbs = collectImportDiagnostics((sink) => parseSpineSkeleton(JSON.stringify(doc), sink)).filter(
-      (c) => c.kind === 'spine.curve-easing-unsupported',
-    );
-    expect(crumbs.length).toBe(1);
-    // Only the FIRST key is counted: a curve describes the segment after its key, so the last one drives
-    // nothing. Reporting 2 here would overstate the lost fidelity.
-    expect(crumbs[0].detail).toMatchObject({ keys: 1 });
-    // The track still samples linearly, which is the documented approximation.
+  it('HONORS a bezier curve keyframe, rebasing its absolute control points onto the segment', () => {
+    // Spine writes control points in ABSOLUTE time/value units, so the CSS ease-in curve (0.42, 0, 1, 1)
+    // over a 0..1s / 0..90deg segment is written as [0.42, 0, 1, 90]. A linear read would give 45 at the
+    // midpoint; the curve must bend it well below that.
+    const doc = curveDoc([
+      { time: 0, value: 0, curve: [0.42, 0, 1, 90] },
+      { time: 1, value: 90 },
+    ]);
     const result = parseSpineSkeleton(JSON.stringify(doc))!;
     const pose = cloneSkeleton2D(result.skeleton);
     applyAnimationClipToSkeleton2D(result.animations[0].clip, result.skeleton, pose, 0.5);
-    expect(pose.bones[0].rotation).toBeCloseTo(45, 5);
+    expect(pose.bones[0].rotation).toBeCloseTo(90 * easeCubicBezier(0.42, 0, 1, 1)(0.5), 4);
+    expect(pose.bones[0].rotation).toBeLessThan(40); // materially different from the linear 45
+    // Endpoints stay exact whatever the curve does between them.
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, result.skeleton, pose, 1);
+    expect(pose.bones[0].rotation).toBeCloseTo(90, 5);
   });
 
-  it('does not crumb a stepped or plain timeline as a curve', () => {
-    const doc = {
-      bones: [{ name: 'b' }],
-      animations: {
-        a: {
-          bones: {
-            b: {
-              rotate: [
-                { time: 0, value: 0, curve: 'stepped' },
-                { time: 1, value: 90 },
-              ],
-            },
-          },
-        },
-      },
-    };
+  it('does NOT report divergence when components share a curve SHAPE across different value ranges', () => {
+    // x spans 0..10 and y spans 0..20, so the same shape is written with different raw `cy` numbers.
+    // Comparing raw numbers would cry divergence on nearly every translate timeline; comparing the
+    // NORMALIZED points is what makes this correct.
+    const doc = curveDoc(
+      [
+        { time: 0, x: 0, y: 0, curve: [0.42, 0, 1, 10, 0.42, 0, 1, 20] },
+        { time: 1, x: 10, y: 20 },
+      ],
+      'translate',
+    );
     const kinds = collectImportDiagnostics((sink) => parseSpineSkeleton(JSON.stringify(doc), sink)).map((c) => c.kind);
-    expect(kinds).not.toContain('spine.curve-easing-unsupported');
+    expect(kinds).not.toContain('spine.per-component-curve-easing-unsupported');
+  });
+
+  it('Skip-crumbs a genuinely divergent per-component curve, and the FIRST component wins', () => {
+    const doc = curveDoc(
+      [
+        { time: 0, x: 0, y: 0, curve: [0.42, 0, 1, 10, 0.1, 0, 0.9, 20] },
+        { time: 1, x: 10, y: 20 },
+      ],
+      'translate',
+    );
+    const crumbs = collectImportDiagnostics((sink) => parseSpineSkeleton(JSON.stringify(doc), sink)).filter(
+      (c) => c.kind === 'spine.per-component-curve-easing-unsupported',
+    );
+    expect(crumbs.length).toBe(1);
+    expect(crumbs[0].detail).toMatchObject({ segments: 1 });
+    const result = parseSpineSkeleton(JSON.stringify(doc))!;
+    const pose = cloneSkeleton2D(result.skeleton);
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, result.skeleton, pose, 0.5);
+    // Both components ride x's curve — that is the documented cost of one easing per interval.
+    const alpha = easeCubicBezier(0.42, 0, 1, 1)(0.5);
+    expect(pose.bones[0].x).toBeCloseTo(10 * alpha, 4);
+    expect(pose.bones[0].y).toBeCloseTo(20 * alpha, 4);
+  });
+
+  it('skips a CONSTANT component when choosing the winning curve', () => {
+    // x never moves, so its curve carries no shape and rebasing it would divide by zero. y must win.
+    const doc = curveDoc(
+      [
+        { time: 0, x: 0, y: 0, curve: [0, 0, 1, 0, 0.42, 0, 1, 20] },
+        { time: 1, x: 0, y: 20 },
+      ],
+      'translate',
+    );
+    const result = parseSpineSkeleton(JSON.stringify(doc))!;
+    const pose = cloneSkeleton2D(result.skeleton);
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, result.skeleton, pose, 0.5);
+    expect(pose.bones[0].y).toBeCloseTo(20 * easeCubicBezier(0.42, 0, 1, 1)(0.5), 4);
+    const kinds = collectImportDiagnostics((sink) => parseSpineSkeleton(JSON.stringify(doc), sink)).map((c) => c.kind);
+    expect(kinds).not.toContain('spine.per-component-curve-easing-unsupported');
+  });
+
+  it('leaves an uncurved timeline with no segment easings at all', () => {
+    const doc = curveDoc([
+      { time: 0, value: 0 },
+      { time: 1, value: 90 },
+    ]);
+    const result = parseSpineSkeleton(JSON.stringify(doc))!;
+    expect(result.animations[0].clip.channels[0].track.segmentEasings).toBeNull();
+    const pose = cloneSkeleton2D(result.skeleton);
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, result.skeleton, pose, 0.5);
+    expect(pose.bones[0].rotation).toBeCloseTo(45, 5); // plain linear
+  });
+
+  it('CLAMPS a control point that overshoots its segment in time, and records the loss', () => {
+    // cx1 = -0.5 sits before the segment starts, which Spine allows but a CSS-style bezier cannot invert.
+    const doc = curveDoc([
+      { time: 0, value: 0, curve: [-0.5, 0, 1, 90] },
+      { time: 1, value: 90 },
+    ]);
+    const crumbs = collectImportDiagnostics((sink) => parseSpineSkeleton(JSON.stringify(doc), sink)).filter(
+      (c) => c.kind === 'spine.curve-time-overshoot-clamped',
+    );
+    expect(crumbs.length).toBe(1);
+    expect(crumbs[0].detail).toMatchObject({ segments: 1 });
+    // It still produces a usable, finite easing rather than NaN.
+    const result = parseSpineSkeleton(JSON.stringify(doc))!;
+    const pose = cloneSkeleton2D(result.skeleton);
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, result.skeleton, pose, 0.5);
+    expect(Number.isFinite(pose.bones[0].rotation)).toBe(true);
+    expect(pose.bones[0].rotation).toBeGreaterThan(0);
+  });
+
+  it('leaves a y overshoot UNCLAMPED, since anticipation is legitimate', () => {
+    // cy1 below the start value is an anticipation curve — the pose dips below 0 before rising.
+    const doc = curveDoc([
+      { time: 0, value: 0, curve: [0.25, -45, 0.75, 90] },
+      { time: 1, value: 90 },
+    ]);
+    const kinds = collectImportDiagnostics((sink) => parseSpineSkeleton(JSON.stringify(doc), sink)).map((c) => c.kind);
+    expect(kinds).not.toContain('spine.curve-time-overshoot-clamped');
+    const result = parseSpineSkeleton(JSON.stringify(doc))!;
+    const pose = cloneSkeleton2D(result.skeleton);
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, result.skeleton, pose, 0.15);
+    expect(pose.bones[0].rotation).toBeLessThan(0);
   });
 
   it('Skip-crumbs constraint, event, and slot animation timelines', () => {
@@ -340,3 +408,8 @@ describe('parseSpineSkeleton', () => {
     expect(kinds).toContain('spine.slot-timeline-unsupported');
   });
 });
+
+// A one-bone document whose single animation carries `keys` as bone `b`'s timeline of the given kind.
+function curveDoc(keys: readonly Record<string, unknown>[], kind = 'rotate'): Record<string, unknown> {
+  return { bones: [{ name: 'b' }], animations: { a: { bones: { b: { [kind]: keys } } } } };
+}
