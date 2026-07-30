@@ -1,3 +1,5 @@
+import type { SpatialIndexingExplanation } from './SpatialIndexing';
+
 // 2D broadphase header. `@flighthq/spatial` is the acceleration structure in front of
 // `@flighthq/collision`'s narrow-phase: a spatial index over many objects' axis-aligned bounds that
 // answers "which pairs are close enough to be worth a narrow-phase test?" and "which objects overlap
@@ -40,14 +42,24 @@ export interface SpatialPair {
 // bounds, so a conservative structure never leaks a false co-occupant into the result.
 export interface SpatialIndexBackend {
   // Adds an object with its current bounds. The bounds are copied; the caller may reuse its own.
-  insertSpatialObject(id: SpatialObjectId, bounds: Readonly<SpatialAabb>): void;
+  // Returns false when the bounds are not indexable at all (non-finite), in which case the object is
+  // not in the index and no query will return it — the expected-failure sentinel, not an error.
+  // Oversized-but-finite bounds still return true: a backend may index them by a different route, and
+  // the object remains fully queryable.
+  insertSpatialObject(id: SpatialObjectId, bounds: Readonly<SpatialAabb>): boolean;
   // Moves an already-inserted object to new bounds. Inserting a not-yet-present id is equivalent to
-  // insert.
-  updateSpatialObject(id: SpatialObjectId, bounds: Readonly<SpatialAabb>): void;
+  // insert. Returns the same sentinel as insert; a declined update leaves the object out of the index
+  // rather than at its previous bounds, so a caller that ignores the sentinel never reads a stale
+  // position as a current one.
+  updateSpatialObject(id: SpatialObjectId, bounds: Readonly<SpatialAabb>): boolean;
   // Removes an object. A no-op if the id is not present.
   removeSpatialObject(id: SpatialObjectId): void;
   // Empties the index of all objects, keeping it reusable.
   clearSpatialIndex(): void;
+  // Reports how `id` is currently held — the pull query behind explainSpatialIndexing. Answering this
+  // is part of the seam rather than a grid-only extra because "why is this object not in my query
+  // results?" is a question every structure must be able to answer about itself.
+  explainSpatialIndexing(id: SpatialObjectId): SpatialIndexingExplanation;
   // Fills `out` with every deduplicated candidate pair (each unordered pair once, never (a,a)).
   querySpatialPairs(out: SpatialPair[]): void;
   // Fills `out` with the ids whose bounds overlap `region`.
