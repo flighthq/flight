@@ -37,3 +37,9 @@ package maps describe gamepad/state/edge capabilities._
 - [2026-07-02 · completed] Mapping parameter types and the named key-repeat handle landed in
   `210c559d2`; strict package checks cover the formerly reported implicit-any callbacks, and the live
   Package Map/catalog entries cover the full shipped surface.
+- [2026-07-30 · completed] Record per-frame key and button edges as transitions (`960553676`) — the
+  edge machine's own doc comment promised "transitioned from up->down since the last
+  `endInputStateFrame` call", but a held key re-fired `keydown` every frame and was forwarded
+  uncritically (autofiring anything bound to press), while a same-frame tap (keydown+keyup between two
+  `endInputStateFrame` calls) was silently swallowed rather than delayed, because each handler deleted
+  the key from the opposite tracking set. Same shape confirmed and fixed on the gamepad button pair.

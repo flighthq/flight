@@ -1,7 +1,22 @@
 ---
 package: '@flighthq/input'
 updated: 2026-07-30
+by: builder
 ---
+
+## 2026-07-30 — per-frame edge sets record transitions, not the last event (builder)
+
+Swept the cell; all four assessment Recommended items were already landed, so they are retired. The cell held a real defect in `connectInputStateToInputManager`, in the code whose own doc comments state the intended contract exactly — *"transitioned from up → down since the last `endInputStateFrame` call"*. The implementation did not do that; it wrote whichever event arrived last. Two probed consequences:
+
+**A held key kept reporting a press.** The DOM re-fires `keydown` while a key is held and `attachKeyboardInput` forwards every one, so `wasInputKeyPressed` was true on every frame the key was held. Anything that fires on press — shoot, jump, confirm — autofires. Only the first `keydown` is an up→down edge.
+
+**A tap inside one frame lost its press.** `keydown` then `keyup` between two `endInputStateFrame` calls reported `pressed=false, released=true`, because each handler deleted the key from the opposite set. The input was swallowed, not merely delayed.
+
+Both apply identically to the gamepad button pair, which had the same shape — so the fix covers four transitions, not two. `pollGamepadInput` already edge-detects and cannot produce a repeat itself, but these signals are public and a native backend re-reporting held buttons is a supported source, which is why the guard belongs on the state machine rather than in one producer; that test drives the signal directly for exactly that reason.
+
+Fixed by making a press conditional on a genuine up→down transition and by no longer deleting from the opposite set, so both edges of a same-frame tap survive. All 109 tests pass; notably all 104 pre-existing tests passed *before* the fix too — none of them exercised a repeat or a same-frame tap, and the one test that did dispatch both events in a frame only asserted state after `endInputStateFrame`, so it passed while the press was being swallowed. Verified with two mutations, each confirmed applied: restoring the mutual delete fails exactly the two same-frame tests, removing the repeat guards fails exactly the two repeat tests.
+
+One related question left for review rather than decided: `onKeyUp` still records a release for a key the state never saw pressed (for example when the state is connected while a key is already held). Making that symmetric with the press guard would match the documented "down → up" wording, but it would also drop a real release in the connect-mid-press case, so it is a behavioural call rather than a bug fix.
 
 # input — Status Log
 
