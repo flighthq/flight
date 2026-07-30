@@ -12,7 +12,6 @@ Blessed charters with no code behind them. Start from the charter; add a registe
 - **`markup-tokenizer`** — `@flighthq/markup-tokenizer` is the reserved home for the **lenient angle-bracket lexer** that sits *below* markup meaning — the layer that turns a `<b>hi <i>there</i></b>`-style string into a flat stream of text runs and open/close/void tag tokens (name + entity-decoded attributes), tolerating malformed input rather than rejecting it. It is the parse-structure half of markup, distinct from the meaning half (`text-markup`'s tag registry, which maps a tag name to its `TextFormat` contribution).
 - **`physics3d`** — 3D rigid-body dynamics: a constraint solver over 3D collision shapes (sphere, box, capsule, convex hull, triangle mesh), producing contact resolution, friction, restitution, joints, and sleeping in three dimensions. The 3D physics engine — Bullet/Rapier/PhysX territory — as a plain-data simulation with explicit step.
 - **`sprite`** — `@flighthq/sprite` is the **atlas-based, batch-rendered scene-graph layer** — four entity quartets for "draw many textured quads from one atlas in one pass":
-- **`swf`** — `@flighthq/swf` is the reserved home for **SWF (Flash) import** — parsing Adobe/Macromedia Flash
 - **`tileset`** — `@flighthq/tileset` is the **tileset entity layer** — creating uniform-grid `Tileset` entities over a `TextureAtlas`, building region arrays from grid parameters (tile width/height, spacing, margin), and loading tileset images from various sources. 8 exports across 2 source files. Dependencies: `entity`, `image`, `textureatlas`, `types`. Extracted from `@flighthq/textureatlas` (2026-06-25).
 
 ## External — spun out to another repo (not built here)
@@ -81,6 +80,12 @@ Design calls to settle before building the affected entries:
 - **The `animation`/`skeleton3d`/`tween`/`timeline` boundary** — now that all four are built, revisit for overlap (anchor: the `clock` charter).
 
 ## Deepen — Recommended items by package (weakest first)
+
+### swf (partial 28)
+
+- Import nested `DefineSprite` named slots
+- Preserve authored extents
+- Add one canonical uncompressed fixture
 
 ### shortcut (partial 30)
 
@@ -821,6 +826,12 @@ These are explicit user directions whose implementation may span packages or req
 
 These are observed maturity gaps, including intentionally deferred work. They require prioritization or a package direction before execution unless separately approved.
 
+### swf (partial 28)
+
+- Recover complete named MovieClip graphs
+- Materialize visible archive content
+- Complete container seams and evidence
+
 ### scene3d-formats (partial 46)
 
 - Make the complete import result truthful
@@ -972,7 +983,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene3d` · `particleemitter` · `scene2d-resources` · `xml` · `skeleton3d` · `scene3d-resources` · `camera-controls` · `debug` · `dialog` · `lifecycle` · `textlayout` · `adjustments` · `clipboard` · `camera` · `platform` · `textinput` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
+`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene3d` · `particleemitter` · `xml` · `skeleton3d` · `scene3d-resources` · `camera-controls` · `debug` · `dialog` · `lifecycle` · `scene2d-resources` · `textlayout` · `adjustments` · `clipboard` · `camera` · `platform` · `textinput` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
 
 ## Liveness — which stage each stale cell needs next
 
