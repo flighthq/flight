@@ -241,6 +241,97 @@ describe('parseDragonBonesSkeleton', () => {
     expect(kinds).toContain('dragonbones.weighted-mesh-recovered');
   });
 
+  it('recover-drops an influence whose bone index does not resolve, never emitting a -1 index (BLOCK 1)', () => {
+    // bonePose references raw bone 99, out of range for the 2-bone armature → the remap returns -1. A -1
+    // would index deformSkeleton2DMeshAttachment's world buffer from byte -6 and produce NaNs; it is dropped.
+    const crumbs: ImportDiagnostic[] = collectImportDiagnostics((sink) =>
+      parseDragonBonesSkeleton(
+        weightedMeshDoc({
+          uvs: [0, 0],
+          triangles: [],
+          vertices: [0, 0],
+          slotPose: [1, 0, 0, 1, 0, 0],
+          bonePose: [99, 1, 0, 0, 1, 0, 0], // used bone's raw index 99 has no output bone
+          weights: [1, 99, 1],
+        }),
+        sink,
+      ),
+    );
+    const mesh = parseDragonBonesSkeleton(
+      weightedMeshDoc({
+        uvs: [0, 0],
+        triangles: [],
+        vertices: [0, 0],
+        slotPose: [1, 0, 0, 1, 0, 0],
+        bonePose: [99, 1, 0, 0, 1, 0, 0],
+        weights: [1, 99, 1],
+      }),
+    )!.skeleton.slots![0].attachment as MeshAttachment2D;
+    expect(Array.from(mesh.skin!.influenceCounts)).toEqual([0]); // the unresolved influence was dropped
+    expect(Array.from(mesh.skin!.influences)).toEqual([]); // no -1 index emitted
+    expect(crumbs.map((c) => c.kind)).toContain('dragonbones.weighted-mesh-recovered');
+  });
+
+  it('remaps weighted bone indices positionally, so duplicate bone names do not collide (BLOCK 2)', () => {
+    // Two surviving bones share the name "dup". Resolving the weights remap by name alone would send both
+    // influences to the last "dup" (output 1); the positional remap keeps raw 0 → output 0, raw 1 → output 1.
+    const doc = {
+      armature: [
+        {
+          bone: [{ name: 'dup' }, { name: 'dup' }],
+          slot: [{ name: 's', parent: 'dup' }],
+          skin: [
+            {
+              name: 'default',
+              slot: [
+                {
+                  name: 's',
+                  display: [
+                    {
+                      type: 'mesh',
+                      name: 'm',
+                      uvs: [0, 0, 0, 0],
+                      triangles: [],
+                      vertices: [0, 0, 0, 0],
+                      slotPose: [1, 0, 0, 1, 0, 0],
+                      bonePose: [0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0], // used bones raw 0 and raw 1
+                      weights: [1, 0, 1, 1, 1, 1], // vertex 0 → raw bone 0; vertex 1 → raw bone 1
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const skin = (parseDragonBonesSkeleton(JSON.stringify(doc))!.skeleton.slots![0].attachment as MeshAttachment2D)
+      .skin!;
+    // influences are [boneIndex, x, y, weight] per influence; vertex 0's bone then vertex 1's bone.
+    expect(skin.influences[0]).toBe(0); // raw bone 0 → OUTPUT 0
+    expect(skin.influences[4]).toBe(1); // raw bone 1 → OUTPUT 1, not collided onto 0
+  });
+
+  it('caps a vertex influence count at the representable maximum instead of wrapping Uint16 (BLOCK 3)', () => {
+    // A vertex declaring 65536 influences would wrap influenceCounts[0] to 0, breaking the deformer's
+    // invariant influences.length === 4 × Σ influenceCounts. The count is capped while the stream is consumed.
+    const pairs: number[] = [65536];
+    for (let k = 0; k < 65536; k++) pairs.push(0, 0); // 65536 influences on raw bone 0, weight 0
+    const mesh = parseDragonBonesSkeleton(
+      weightedMeshDoc({
+        uvs: [0, 0],
+        triangles: [],
+        vertices: [0, 0],
+        slotPose: [1, 0, 0, 1, 0, 0],
+        bonePose: [0, 1, 0, 0, 1, 0, 0],
+        weights: pairs,
+      }),
+    )!.skeleton.slots![0].attachment as MeshAttachment2D;
+    const total = Array.from(mesh.skin!.influenceCounts).reduce((a, c) => a + c, 0);
+    expect(total).toBe(0xffff); // capped, not wrapped to 0
+    expect(mesh.skin!.influences.length).toBe(total * 4); // deformer invariant holds
+  });
+
   it('holds an unmodeled display at its displayIndex slot (null, not dropped) so indices stay aligned', () => {
     // A boundingBox display at index 0 must NOT drop, or the image at index 1 would shift to 0 and
     // displayIndex 1 would then address the wrong display (read-integrity axis 12 on the display array).

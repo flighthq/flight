@@ -55,9 +55,9 @@ export function parseDragonBonesSkeleton(json: string, diagnostics?: ImportDiagn
   const first = armatures[0];
   if (first === null || typeof first !== 'object') return null;
   const armature = first as Record<string, unknown>;
-  const bones = parseDragonBonesBones(armature.bone, diagnostics);
+  const { bones, rawIndexToOutput } = parseDragonBonesBones(armature.bone, diagnostics);
   const boneIndexByName = buildBoneIndexByName(bones);
-  const remapBoneIndex = buildDragonBonesBoneRemap(armature.bone, boneIndexByName);
+  const remapBoneIndex = buildDragonBonesBoneRemap(rawIndexToOutput);
   const skin = parseDragonBonesDefaultSkin(armature.skin, remapBoneIndex, diagnostics);
   const slots = parseDragonBonesSlots(armature.slot, boneIndexByName, skin, diagnostics);
   skipCrumbDragonBonesGroup(diagnostics, armature.animation, 'dragonbones.animation-unsupported');
@@ -78,23 +78,12 @@ function buildBoneIndexByName(bones: readonly Bone2D[]): Map<string, number> {
 
 // Maps a DragonBones armature-FILE-ORDER bone index (the space weighted-mesh `weights`/`bonePose` reference
 // bones in) to the FINAL topo-sorted OUTPUT bone index — the read-integrity axis-12 remap the topo-sort
-// makes necessary, resolved through the bone's name so it is drop-safe. Returns -1 for an out-of-range or
-// unnamed/unresolvable raw index.
-function buildDragonBonesBoneRemap(
-  rawBones: unknown,
-  boneIndexByName: ReadonlyMap<string, number>,
-): DragonBonesBoneRemap {
-  const names: (string | null)[] = [];
-  if (Array.isArray(rawBones)) {
-    for (const entry of rawBones) {
-      const name = entry !== null && typeof entry === 'object' ? (entry as Record<string, unknown>).name : undefined;
-      names.push(typeof name === 'string' ? name : null);
-    }
-  }
-  return (rawBoneIndex) => {
-    const name = rawBoneIndex >= 0 && rawBoneIndex < names.length ? names[rawBoneIndex] : null;
-    return name !== null ? (boneIndexByName.get(name) ?? -1) : -1;
-  };
+// makes necessary. Backed by the identity-preserving `rawIndexToOutput` table built during emit (NOT
+// reconstructed by name, which would collide duplicate names). Returns -1 for an out-of-range or dropped
+// raw index; callers must treat -1 as an unresolved influence and drop it, never emit it as a bone index.
+function buildDragonBonesBoneRemap(rawIndexToOutput: readonly number[]): DragonBonesBoneRemap {
+  return (rawBoneIndex) =>
+    rawBoneIndex >= 0 && rawBoneIndex < rawIndexToOutput.length ? rawIndexToOutput[rawBoneIndex] : -1;
 }
 
 // Maps a DragonBones slot ColorTransform to a packed RGBA int (Slot2D.color). DragonBones color is the
@@ -285,8 +274,15 @@ function parseDragonBonesWeightedMesh(
       }
       const rawBoneIndex = weights[iW++] | 0;
       const weight = weights[iW++];
+      // The influence pair is consumed above, so every early-out below keeps the flat stream aligned. Drop
+      // (recover) an influence that: targets no output bone (remap −1 — never emit −1, the deformer would
+      // index the world buffer from a negative offset and produce NaNs); references a bone this mesh's bind
+      // pose omits (ordinal −1); has a degenerate bind matrix (det 0); or would overflow the Uint16 count
+      // (an influence past the representable maximum, which would wrap influenceCounts and break the
+      // deformer's `influences.length === 4 × Σ influenceCounts` invariant).
+      const outputBone = remapBoneIndex(rawBoneIndex);
       const ordinal = findBonePoseOrdinal(bonePose, usedBoneCount, rawBoneIndex);
-      if (ordinal < 0) {
+      if (outputBone < 0 || ordinal < 0 || realCount >= MAX_INFLUENCES_PER_VERTEX) {
         recovered = true;
         continue;
       }
@@ -310,7 +306,7 @@ function parseDragonBonesWeightedMesh(
       const id = ba * inv;
       const itx = (bc * bty - bd * btx) * inv;
       const ity = (bb * btx - ba * bty) * inv;
-      influences.push(remapBoneIndex(rawBoneIndex), ia * sx + ic * sy + itx, ib * sx + id * sy + ity, weight);
+      influences.push(outputBone, ia * sx + ic * sy + itx, ib * sx + id * sy + ity, weight);
       realCount++;
     }
     influenceCounts[v] = realCount;
@@ -466,10 +462,20 @@ function parseDragonBonesBoneTransform(raw: unknown): {
 // in topological order (each parent before its children) with `parentIndex` resolved against the already-
 // emitted set — the invariant `computeSkeleton2DWorldTransforms` and `validateSkeleton2D` require. Bones whose
 // parent never resolves (a dangling reference or a cycle) are emitted last as roots and Skip-crumbed.
-function parseDragonBonesBones(raw: unknown, diagnostics?: ImportDiagnostic[]): Bone2D[] {
-  if (!Array.isArray(raw)) return [];
-  const pending: { bone: Bone2D; parentName: string | null }[] = [];
-  for (const entry of raw) {
+function parseDragonBonesBones(
+  raw: unknown,
+  diagnostics?: ImportDiagnostic[],
+): { bones: Bone2D[]; rawIndexToOutput: number[] } {
+  const rawArray = Array.isArray(raw) ? raw : [];
+  // rawIndexToOutput[fileOrderIndex] = the bone's final output index (-1 for a dropped/malformed raw entry).
+  // Carrying each raw entry's IDENTITY through to its output position — rather than reconstructing the map
+  // by name — is what keeps weighted-mesh bone references correct when two bones share a name (a name-based
+  // remap is last-write-wins, so both would collide onto one output bone). Parent links still resolve by
+  // name, which is DragonBones' own reference model.
+  const rawIndexToOutput = new Array<number>(rawArray.length).fill(-1);
+  const pending: { bone: Bone2D; parentName: string | null; rawIndex: number }[] = [];
+  for (let ri = 0; ri < rawArray.length; ri++) {
+    const entry = rawArray[ri];
     if (entry === null || typeof entry !== 'object') continue;
     const b = entry as Record<string, unknown>;
     const transform = parseDragonBonesBoneTransform(b.transform);
@@ -488,6 +494,7 @@ function parseDragonBonesBones(raw: unknown, diagnostics?: ImportDiagnostic[]): 
         y: transform.y,
       },
       parentName: typeof b.parent === 'string' ? b.parent : null,
+      rawIndex: ri,
     });
   }
   const bones: Bone2D[] = [];
@@ -500,6 +507,7 @@ function parseDragonBonesBones(raw: unknown, diagnostics?: ImportDiagnostic[]): 
       if (entry.parentName === null || indexByName.has(entry.parentName)) {
         entry.bone.parentIndex = entry.parentName === null ? -1 : (indexByName.get(entry.parentName) as number);
         if (typeof entry.bone.name === 'string') indexByName.set(entry.bone.name, bones.length);
+        rawIndexToOutput[entry.rawIndex] = bones.length;
         bones.push(entry.bone);
         pending.splice(i, 1);
         advanced = true;
@@ -519,10 +527,11 @@ function parseDragonBonesBones(raw: unknown, diagnostics?: ImportDiagnostic[]): 
     for (const entry of pending) {
       entry.bone.parentIndex = -1;
       if (typeof entry.bone.name === 'string') indexByName.set(entry.bone.name, bones.length);
+      rawIndexToOutput[entry.rawIndex] = bones.length;
       bones.push(entry.bone);
     }
   }
-  return bones;
+  return { bones, rawIndexToOutput };
 }
 
 // Maps DragonBones' four independent inheritance booleans straight to the vendor-neutral TransformInherit2D
@@ -551,3 +560,8 @@ function skipCrumbDragonBonesGroup(diagnostics: ImportDiagnostic[] | undefined, 
   if (count > 0)
     reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Skip, kind, 'parseDragonBonesSkeleton', { count });
 }
+
+// Skin2D stores per-vertex influence counts in a Uint16Array, so a vertex cannot carry more influences than
+// this without wrapping the count (and breaking `influences.length === 4 × Σ influenceCounts`). No real rig
+// approaches it; the cap only guards adversarial input.
+const MAX_INFLUENCES_PER_VERTEX = 0xffff;
