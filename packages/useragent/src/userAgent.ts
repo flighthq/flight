@@ -6,6 +6,8 @@ import type {
   PlatformRuntime,
 } from '@flighthq/types/contract';
 
+import { parseUserAgentOsVersion } from './userAgentParse';
+
 // Probe host CPU byte order via a DataView write-then-read.
 // Overwhelmingly 'little' on all modern hardware (x86/x64/arm/arm64/wasm).
 // Returns 'unknown' if ArrayBuffer is unavailable.
@@ -59,6 +61,12 @@ export function parseUserAgentArch(ua: string, uadPlatform?: string): string {
 // Order matters: Edg/Chrome UAs contain 'Safari'; Firefox UAs do not contain 'Chrome'.
 // Returns 'unknown' for unrecognized or native-host UAs.
 export function parseUserAgentEngine(ua: string): PlatformEngine {
+  // iOS and iPadOS decide the engine before any product token does: every browser there is required
+  // to run on the system WebKit, whatever it calls itself. Testing the platform first is also what
+  // keeps this from playing whack-a-mole with product tokens — `EdgiOS` contains `edg` and was being
+  // reported as blink (with an empty version, since no `Edg/` token follows), and any future
+  // `<Product>iOS` token would have failed the same way.
+  if (/iphone|ipad|ipod/i.test(ua)) return 'webkit';
   if (/firefox/i.test(ua)) return 'gecko';
   if (/chrome|chromium|edg|opr|samsung/i.test(ua)) return 'blink';
   if (/safari|webkit/i.test(ua)) return 'webkit';
@@ -140,34 +148,22 @@ export function parseUserAgentRuntime(win: Record<string, unknown> | null | unde
 }
 
 // Extract the OS version string from a browser user-agent string for the given platform name.
-// Returns the raw dotted version string. Returns '' when the version is not present in the UA.
+// Returns the raw dotted version string. Returns '' when the version is not present in the UA, and
+// when `name` is not the platform the UA actually describes — asking a Windows UA for its iOS version
+// has no answer, and a wrong one would be worse than none.
 // Never parsed for semantics — the caller may use comparePlatformVersions for numeric comparison.
+//
+// The extraction itself lives in parseUserAgentOsVersion; this function is the PlatformName-vocabulary
+// view of it. It used to carry its own copy of the same four patterns, and the copies had drifted:
+// these required exactly one space (`/android ([\d.]+)/`) where the originals accept any whitespace
+// (`/android\s+([\d.]+)/`), so this function returned '' for UAs the other parsed correctly. One
+// implementation, two vocabularies — the drift cannot recur.
+//
+// FROZEN UA VALUES: see parseUserAgentOsVersion. Windows 11 is indistinguishable from Windows 10
+// here, and macOS reads 10.15.7 on every version since Big Sur.
 export function parseUserAgentVersion(ua: string, name: PlatformName): string {
-  switch (name) {
-    case 'windows': {
-      // 'Windows NT 10.0' → '10.0'
-      const m = /windows nt ([\d.]+)/i.exec(ua);
-      return m ? m[1] : '';
-    }
-    case 'macos': {
-      // 'Mac OS X 10_15_7' or 'Mac OS X 10.15.7' → '10.15.7'
-      const m = /mac os x ([\d_.]+)/i.exec(ua);
-      return m ? m[1].replace(/_/g, '.') : '';
-    }
-    case 'ios': {
-      // 'CPU OS 17_4_1' or 'CPU iPhone OS 17_4_1' → '17.4.1'
-      const m = /cpu(?: iphone)? os ([\d_]+)/i.exec(ua);
-      return m ? m[1].replace(/_/g, '.') : '';
-    }
-    case 'android': {
-      // 'Android 14' → '14'
-      const m = /android ([\d.]+)/i.exec(ua);
-      return m ? m[1] : '';
-    }
-    case 'linux':
-      // Linux does not embed a kernel version in the browser UA string.
-      return '';
-    default:
-      return '';
-  }
+  // Linux embeds no kernel version in a browser UA, and 'web' is the no-OS-detected fallback.
+  if (name === 'linux' || name === 'web') return '';
+  if (parseUserAgentName(ua) !== name) return '';
+  return parseUserAgentOsVersion(ua);
 }

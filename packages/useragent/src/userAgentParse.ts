@@ -36,6 +36,13 @@ export function parseUserAgentFormFactor(ua: string, maxTouchPoints: number): De
   if (/iphone|ipod|android.*mobile|windows phone|blackberry|bb\d+|mobile safari/i.test(ua)) {
     return DeviceFormFactorPhone;
   }
+  // iPadOS in desktop mode reports a Macintosh UA with no iPad token, so the UA alone cannot tell it
+  // from a real Mac — touch is the only signal that can. Apple ships no touchscreen Mac (the Touch
+  // Bar reports zero touch points), so more than one touch point on a Macintosh UA means iPad. This
+  // has to run before the desktop branch, which would otherwise claim the UA on `macintosh` alone and
+  // silently call every desktop-mode iPad a desktop. The hint was already threaded into this
+  // signature for exactly this purpose and was simply never consulted.
+  if (maxTouchPoints > 1 && /macintosh|mac os x/i.test(ua)) return DeviceFormFactorTablet;
   // Desktop: known desktop OS tokens
   if (/win(?:dows)?nt|macintosh|mac os x|linux(?!.*android)|x11/i.test(ua)) return DeviceFormFactorDesktop;
   // Weak desktop signal: no touch points when the UA is otherwise inconclusive
@@ -63,6 +70,19 @@ export function parseUserAgentOsName(ua: string): string {
 
 // Parses an OS version string from a user-agent string.
 // Returns a dotted version string, e.g. '14.0', '10.0', '13.5.1'. Returns '' when not found.
+//
+// This is the single OS-version extractor in the package: parseUserAgentVersion (the PlatformName
+// vocabulary) delegates here rather than carrying its own copy of these patterns, which had already
+// drifted — its variants required exactly one space where these accept any whitespace, so it returned
+// '' for UAs this handles.
+//
+// FROZEN UA VALUES — these are ceilings, not readings, and no UA-string parser can do better:
+//   - Windows 11 reports `Windows NT 10.0`, identical to Windows 10. Only the UA-CH
+//     `platformVersion` hint (>= 13) distinguishes them, and this function takes no hints.
+//   - macOS has been frozen at `10_15_7` since Big Sur, so every later macOS reads as 10.15.7.
+//   - iPadOS in desktop mode reports the macOS version, not the iPadOS version, because it reports a
+//     Macintosh UA (see parseUserAgentFormFactor for how the device is still identified).
+// Treat a value from this function as "at least this version", never as an exact one.
 export function parseUserAgentOsVersion(ua: string): string {
   // Android: "Android 14.0" or "Android 9"
   const android = ua.match(/android\s+([\d.]+)/i);

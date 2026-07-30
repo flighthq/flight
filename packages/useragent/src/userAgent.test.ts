@@ -1,3 +1,5 @@
+import type { PlatformName } from '@flighthq/types/contract';
+
 import {
   detectEndianness,
   parseUserAgentArch,
@@ -9,6 +11,7 @@ import {
   parseUserAgentRuntime,
   parseUserAgentVersion,
 } from './userAgent';
+import { parseUserAgentOsVersion } from './userAgentParse';
 
 describe('detectEndianness', () => {
   it('returns a known canonical value', () => {
@@ -109,6 +112,45 @@ describe('parseUserAgentEngine', () => {
   it('returns unknown for unrecognized UA', () => {
     expect(parseUserAgentEngine('')).toBe('unknown');
     expect(parseUserAgentEngine('CustomBot/1.0')).toBe('unknown');
+  });
+});
+
+describe('parseUserAgentEngine on iOS', () => {
+  // Every browser on iOS/iPadOS runs on the system WebKit, whatever product token it advertises.
+  // Deciding the engine from the product token got EdgiOS wrong — it contains `edg`, so it was
+  // reported as blink, and then no `Edg/` token followed so the version came back empty.
+  const IOS_PREFIX = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) ';
+
+  it('reports webkit for Edge on iOS, which contains the blink-family token "edg"', () => {
+    const ua = `${IOS_PREFIX}EdgiOS/120.0.0.0 Mobile/15E148 Safari/605.1.15`;
+    expect(parseUserAgentEngine(ua)).toBe('webkit');
+    expect(parseUserAgentEngineVersion(ua, 'webkit')).not.toBe('');
+  });
+
+  it('reports webkit for Chrome and Firefox on iOS', () => {
+    expect(parseUserAgentEngine(`${IOS_PREFIX}CriOS/120.0.6099.119 Mobile/15E148 Safari/604.1`)).toBe('webkit');
+    expect(parseUserAgentEngine(`${IOS_PREFIX}FxiOS/121.0 Mobile/15E148 Safari/605.1.15`)).toBe('webkit');
+  });
+
+  it('reports webkit for an iPad UA', () => {
+    const ua =
+      'Mozilla/5.0 (iPad; CPU OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/120.0.0.0 Mobile/15E148 Safari/604.1';
+    expect(parseUserAgentEngine(ua)).toBe('webkit');
+  });
+
+  it('still reports blink for desktop Chrome and Edge, which are not on iOS', () => {
+    const mac =
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+    const win =
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0';
+    expect(parseUserAgentEngine(mac)).toBe('blink');
+    expect(parseUserAgentEngine(win)).toBe('blink');
+    expect(parseUserAgentEngineVersion(win, 'blink')).toBe('120.0.0.0');
+  });
+
+  it('still reports gecko for desktop Firefox', () => {
+    const ua = 'Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0';
+    expect(parseUserAgentEngine(ua)).toBe('gecko');
   });
 });
 
@@ -300,5 +342,47 @@ describe('parseUserAgentVersion', () => {
 
   it('returns empty string when version is absent', () => {
     expect(parseUserAgentVersion('', 'windows')).toBe('');
+  });
+});
+
+describe('parseUserAgentVersion shares one extractor with parseUserAgentOsVersion', () => {
+  // The two families each carried their own copy of the same four patterns, and the copies had
+  // drifted: this one required exactly one space where the other accepts any whitespace, so it
+  // returned '' for UAs the other parsed correctly. These pin the agreement, not just the fix.
+  const CASES: readonly (readonly [string, PlatformName, string])[] = [
+    ['Mozilla/5.0 (Linux; Android  14; SM-X710) AppleWebKit/537.36', 'android', '14'],
+    ['Mozilla/5.0 (Windows NT  10.0; Win64; x64)', 'windows', '10.0'],
+    ['Mozilla/5.0 (Macintosh; Intel Mac OS X  10_15_7)', 'macos', '10.15.7'],
+  ];
+
+  it('parses the whitespace variants that used to return empty', () => {
+    for (const [ua, name, expected] of CASES) {
+      expect(parseUserAgentVersion(ua, name)).toBe(expected);
+    }
+  });
+
+  it('agrees with parseUserAgentOsVersion on every case', () => {
+    for (const [ua, name] of CASES) {
+      expect(parseUserAgentVersion(ua, name)).toBe(parseUserAgentOsVersion(ua));
+    }
+  });
+
+  it('returns empty when the requested platform is not the one the UA describes', () => {
+    const win = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
+    expect(parseUserAgentVersion(win, 'ios')).toBe('');
+    expect(parseUserAgentVersion(win, 'macos')).toBe('');
+    expect(parseUserAgentVersion(win, 'windows')).toBe('10.0');
+  });
+
+  it('does not read a macOS version off an iPad UA that says "like Mac OS X"', () => {
+    const ipad = 'Mozilla/5.0 (iPad; CPU OS 17_4 like Mac OS X) AppleWebKit/605.1.15';
+    expect(parseUserAgentVersion(ipad, 'macos')).toBe('');
+    expect(parseUserAgentVersion(ipad, 'ios')).toBe('17.4');
+  });
+
+  it('still returns empty for linux and the web fallback', () => {
+    const linux = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36';
+    expect(parseUserAgentVersion(linux, 'linux')).toBe('');
+    expect(parseUserAgentVersion('some-native-host/1.0', 'web')).toBe('');
   });
 });
