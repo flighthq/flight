@@ -12,7 +12,7 @@ status: ./status.md
 
 ## What it is
 
-`@flighthq/textinput` is **editable-text-field behavior** — caret/selection model, text insertion/deletion/replacement, keyboard command dispatch, input restrictions (`restrict` grammar + `maxChars`), password masking, word/line selection, word-granular and vertical caret motion, undo/redo with merge-coalescing, caret-scroll-into-view, and two managers: an editable `TextInputManager` and a read-only `SelectableRichTextManager`. All logic is free functions operating on a `TextInputState` runtime slot attached via `enableTextInput`. 47 exports, 4 source files, ~128 tests. Dependencies: `node`, `signals`, `text`, `textlayout`, `types`.
+`@flighthq/textinput` is **editable-text-field behavior** — caret/selection model, text insertion/deletion/replacement, keyboard command dispatch, input restrictions (`restrict` grammar + `maxChars`), password masking, word/line selection, word-granular and vertical caret motion, undo/redo with merge-coalescing, caret-scroll-into-view, and two managers: an editable `TextInputManager` and a read-only `SelectableRichTextManager`. All logic is free functions operating on a `TextInputState` runtime slot attached via `enableTextInput`. 55 exports, 4 source files, 148 tests. Dependencies: `node`, `signals`, `text`, `textlayout`, `types`.
 
 Selectable text is not input — the two managers serve genuinely different concerns (selection-only vs full editing). They stay separate.
 

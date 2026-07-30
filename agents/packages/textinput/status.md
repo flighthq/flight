@@ -1,12 +1,29 @@
 ---
 package: '@flighthq/textinput'
-updated: 2026-06-24
-by: ingest:builder-67dc46d64
+updated: 2026-07-30
+by: builder3
 ---
 
 # textinput — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## 2026-07-30 — builder3 stale-cell audit and manager layout fix
+
+Audited the partial-38 TODO against the live tree rather than applying its old merge-gate claims:
+
+- Home/End command semantics and direct tests were already line-relative (`e2b458de0`), with Ctrl/Cmd
+  variants reserved for document start/end.
+- The eight named editing/history functions were already exported through both package barrels.
+- The Package Map already contained the requested full textinput description.
+
+The live integration path still had one concrete defect: `dispatchTextInputKeyDown` called
+`handleTextInputKeyboard` without the focused `RichText` runtime layout. Connected keyboard input
+therefore used the no-layout fallback for Home/End and vertical movement. `3a718da05` passes the current
+runtime layout and adds a multiline manager-level Home/End regression.
+
+Scoped verification: `npm run test --workspace=packages/textinput` — 4 files, 148 tests passing.
+The live-tree review and assessment now replace the obsolete partial-38 merge-gate record.
 
 ## 2026-06-25 — builder Phase 3 (Recommended sweep)
 

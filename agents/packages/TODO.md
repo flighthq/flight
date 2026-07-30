@@ -104,12 +104,6 @@ Design calls to settle before building the affected entries:
 - Remove the false "tracking shim" comment
 - Package Map description update
 
-### textinput (partial 38)
-
-- Fix Home/End to be line-relative
-- Export the eight missing functions from the barrel
-- Package Map description update
-
 ### tray (partial 38)
 
 - Fix `getTrayIconBounds` return type to use `RectangleLike`
@@ -998,7 +992,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene3d` · `particleemitter` · `scene2d-resources` · `skeleton3d` · `scene3d-resources` · `camera-controls` · `debug` · `dialog` · `lifecycle` · `adjustments` · `camera` · `platform` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
+`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene3d` · `particleemitter` · `scene2d-resources` · `skeleton3d` · `scene3d-resources` · `camera-controls` · `debug` · `dialog` · `lifecycle` · `adjustments` · `camera` · `platform` · `textinput` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
 
 ## Liveness — which stage each stale cell needs next
 
