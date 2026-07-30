@@ -3,6 +3,7 @@ import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createSkeleton2D } from '@flighthq/skeleton2d/contract';
 import type {
   AnimationChannel,
+  AttachmentSkin2D,
   AnimationInterpolation,
   Attachment2D,
   Bone2D,
@@ -11,6 +12,7 @@ import type {
   RegionAttachment2D,
   Skeleton2DImport,
   Skeleton2DImportAnimation,
+  SkinAttachment2D,
   Slot2D,
   TransformInherit2D,
 } from '@flighthq/types/contract';
@@ -71,12 +73,15 @@ export function parseDragonBonesSkeleton(json: string, diagnostics?: ImportDiagn
   const { bones, rawIndexToOutput } = parseDragonBonesBones(armature.bone, diagnostics);
   const boneIndexByName = buildBoneIndexByName(bones);
   const remapBoneIndex = buildDragonBonesBoneRemap(rawIndexToOutput);
-  const skin = parseDragonBonesDefaultSkin(armature.skin, remapBoneIndex, diagnostics);
-  const slots = parseDragonBonesSlots(armature.slot, boneIndexByName, skin, diagnostics);
+  const slotOrder = buildDragonBonesSlotOrder(armature.slot);
+  const { skins, table } = parseDragonBonesSkins(armature.skin, slotOrder, remapBoneIndex, diagnostics);
+  const slots = parseDragonBonesSlots(armature.slot, boneIndexByName, table, diagnostics);
   const frameRate = dragonBonesFrameRate(armature, doc as Record<string, unknown>);
   const animations = parseDragonBonesAnimations(armature.animation, boneIndexByName, frameRate, diagnostics);
   skipCrumbDragonBonesGroup(diagnostics, armature.ik, 'dragonbones.ik-constraint-unsupported');
-  return { animations, skeleton: createSkeleton2D(bones, slots) };
+  const skeleton = createSkeleton2D(bones, slots);
+  if (skins.length > 0) skeleton.skins = skins;
+  return { animations, skeleton };
 }
 
 // Rebuilds the bone-name → output-index lookup from the (already topologically sorted) bone array, so slot
@@ -426,46 +431,47 @@ function parseDragonBonesColor(raw: unknown, diagnostics?: ImportDiagnostic[]): 
   return ((r << 24) | (g << 16) | (b << 8) | a) >>> 0;
 }
 
-// The default skin's per-slot display table: slotName → the ordered list of that slot's displays
-// (attachments), addressed by `displayIndex`. DragonBones names its default skin "default" (or leaves it
-// empty); alternate named skins are the skin-set feature and are Skip-crumbed. The display list is
-// POSITIONALLY REFERENCED by displayIndex, so an unmodeled/malformed display holds its slot as `null` (never
-// dropped) — mirroring the DragonBones runtime's own addDisplay(slot, null) — so indices stay aligned.
-function parseDragonBonesDefaultSkin(
+// The armature's skins. DragonBones names its base skin "default" (or leaves it empty) and any others are
+// alternates; all of them become the rig's wardrobe. Returns BOTH the wardrobe and the default skin's
+// per-slot display table, because the two are addressed differently: the wardrobe keys attachments by NAME
+// (what `setSkeleton2DSkin` writes), while a slot's setup attachment is a `displayIndex` POSITION into its
+// display list. The display list is therefore position-preserving — an unmodeled or malformed display holds
+// its slot as `null` rather than being dropped, mirroring the DragonBones runtime's own addDisplay(slot,
+// null) — so indices stay aligned even though the wardrobe skips those entries.
+function parseDragonBonesSkins(
   raw: unknown,
+  slotOrder: ReadonlyMap<string, number>,
   remapBoneIndex: DragonBonesBoneRemap,
   diagnostics?: ImportDiagnostic[],
-): Map<string, (Attachment2D | null)[]> {
+): { skins: AttachmentSkin2D[]; table: Map<string, (Attachment2D | null)[]> } {
   const table = new Map<string, (Attachment2D | null)[]>();
-  if (!Array.isArray(raw)) return table;
-  let alternateSkins = 0;
+  const skins: AttachmentSkin2D[] = [];
+  if (!Array.isArray(raw)) return { skins, table };
   for (const rawSkin of raw) {
     if (rawSkin === null || typeof rawSkin !== 'object') continue;
     const skin = rawSkin as Record<string, unknown>;
-    const skinName = typeof skin.name === 'string' && skin.name.length > 0 ? skin.name : 'default';
-    if (skinName !== 'default') {
-      alternateSkins++;
-      continue;
-    }
+    const skinName = typeof skin.name === 'string' && skin.name.length > 0 ? skin.name : DEFAULT_DRAGONBONES_SKIN_NAME;
     if (!Array.isArray(skin.slot)) continue;
+    const attachments: SkinAttachment2D[] = [];
     for (const rawSlot of skin.slot) {
       if (rawSlot === null || typeof rawSlot !== 'object') continue;
       const slot = rawSlot as Record<string, unknown>;
-      if (typeof slot.name === 'string') {
-        table.set(slot.name, parseDragonBonesDisplayList(slot.display, remapBoneIndex, diagnostics));
+      if (typeof slot.name !== 'string') continue;
+      const displays = parseDragonBonesDisplayList(slot.display, remapBoneIndex, diagnostics);
+      if (skinName === DEFAULT_DRAGONBONES_SKIN_NAME) table.set(slot.name, displays);
+      const slotIndex = slotOrder.get(slot.name) ?? -1;
+      if (slotIndex < 0) continue;
+      for (const display of displays) {
+        // An unnamed display cannot be addressed by a wardrobe change, so it stays positional-only.
+        const displayName = display?.name;
+        if (display !== null && typeof displayName === 'string') {
+          attachments.push({ attachment: display, name: displayName, slotIndex });
+        }
       }
     }
+    skins.push({ attachments, name: skinName });
   }
-  if (alternateSkins > 0) {
-    reportImportDiagnostic(
-      diagnostics,
-      ImportDiagnosticSeverity.Skip,
-      'dragonbones.alternate-skin-unsupported',
-      'parseDragonBonesSkeleton',
-      { skins: alternateSkins },
-    );
-  }
-  return table;
+  return { skins, table };
 }
 
 // Parses one DragonBones display into an Attachment2D, or `null` (holding its displayIndex slot) for a
@@ -703,6 +709,21 @@ function parseDragonBonesSlots(
   return slots;
 }
 
+// The draw-order position of each named slot, needed before the skins are read so a skin entry can record
+// the slot INDEX it dresses rather than a name the runtime would have to resolve on every wardrobe change.
+function buildDragonBonesSlotOrder(raw: unknown): Map<string, number> {
+  const order = new Map<string, number>();
+  if (!Array.isArray(raw)) return order;
+  let index = 0;
+  for (const entry of raw) {
+    if (entry === null || typeof entry !== 'object') continue;
+    const name = (entry as Record<string, unknown>).name;
+    if (typeof name === 'string') order.set(name, index);
+    index++;
+  }
+  return order;
+}
+
 function boolOr(value: unknown, fallback: boolean): boolean {
   return typeof value === 'boolean' ? value : fallback;
 }
@@ -877,6 +898,9 @@ function skipCrumbDragonBonesGroup(diagnostics: ImportDiagnostic[] | undefined, 
 // runs at 24fps.
 const DEFAULT_DRAGONBONES_ANIMATION_NAME = 'default';
 const DEFAULT_DRAGONBONES_FRAME_RATE = 24;
+
+// DragonBones' name for the base skin; an unnamed skin is that one.
+const DEFAULT_DRAGONBONES_SKIN_NAME = 'default';
 
 // The `tweenEasing` sentinel DragonBones uses for "hold this value to the next key" alongside a literal null.
 const DRAGONBONES_NO_TWEEN = 100;
