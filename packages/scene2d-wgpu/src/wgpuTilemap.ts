@@ -1,7 +1,7 @@
 import { resolveWgpuMaterialRenderer, resolveWgpuTexture } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { noopRendererData } from '@flighthq/render/contract';
-import { getTextureHeight, getTextureWidth, hasTextureBacking } from '@flighthq/texture/contract';
+import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import type {
   ColorScaleBias,
   RenderProxy2D,
@@ -29,7 +29,7 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
   const source = tilemapNode.source as Tilemap;
   const { atlas, columns, rows, tileHeight, tileWidth, tiles } = source.data;
 
-  if (atlas === null || atlas.texture === null || !hasTextureBacking(atlas.texture)) return;
+  if (atlas === null || atlas.texture === null || !hasTextureSource(atlas.texture)) return;
   if (columns === 0 || rows === 0) return;
 
   const material = tilemapNode.material;

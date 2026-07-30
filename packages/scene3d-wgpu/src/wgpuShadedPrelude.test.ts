@@ -20,7 +20,7 @@ import type {
 } from '@flighthq/types/contract';
 import {
   FogModifierMode,
-  ImageTextureBackingKind,
+  ImageTextureSourceKind,
   ModifierSlot,
   VertexDisplaceModifierSource,
 } from '@flighthq/types/contract';
@@ -426,7 +426,7 @@ describe('shaded binding cache', () => {
 function makeImageResource(): ImageResource {
   return {
     height: 1,
-    kind: ImageTextureBackingKind,
+    kind: ImageTextureSourceKind,
     source: {} as CanvasImageSource,
     version: 0,
     width: 1,

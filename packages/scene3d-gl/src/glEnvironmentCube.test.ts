@@ -1,5 +1,5 @@
 import type { Bitmap, Environment, Texture } from '@flighthq/types/contract';
-import { BitmapTextureBackingKind } from '@flighthq/types/contract';
+import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import { ensureGlEnvironmentSourceCube, getGlCubeFaceTarget, updateGlEnvironmentCubeFace } from './glEnvironmentCube';
 import { makeGlScene3DState } from './glScene3DTestHelper';
@@ -12,7 +12,7 @@ function dataFace(size: number): Bitmap {
   return {
     data: new Uint8ClampedArray(size * size * 4),
     height: size,
-    kind: BitmapTextureBackingKind,
+    kind: BitmapTextureSourceKind,
     width: size,
   } as Bitmap;
 }

@@ -1,10 +1,10 @@
 import type { Bitmap, CompressedImage, ImageResource, SamplerLike, Texture } from '@flighthq/types/contract';
 import {
   AdvancedBlendMode,
-  BitmapTextureBackingKind,
+  BitmapTextureSourceKind,
   BlendMode,
-  CompressedImageTextureBackingKind,
-  ImageTextureBackingKind,
+  CompressedImageTextureSourceKind,
+  ImageTextureSourceKind,
 } from '@flighthq/types/contract';
 
 import { registerGlCompressedTextureDecoder, registerGlCompressedTextureUpload } from './glCompressedTexture';
@@ -50,7 +50,7 @@ function compressedBc3Image(): CompressedImage {
     width: 4,
     height: 4,
     version: 1,
-    kind: CompressedImageTextureBackingKind,
+    kind: CompressedImageTextureSourceKind,
   } as unknown as CompressedImage;
 }
 
@@ -61,7 +61,7 @@ function bitmap(size: number, version: number): Bitmap {
     data: new Uint8ClampedArray(size * size * 4),
     format: 'rgba8unorm',
     height: size,
-    kind: BitmapTextureBackingKind,
+    kind: BitmapTextureSourceKind,
     version,
     width: size,
   } as unknown as Bitmap;
@@ -291,7 +291,7 @@ describe('bindGlImageResourceTexture', () => {
       source: document.createElement('img'),
       width: 1,
       height: 1,
-      kind: ImageTextureBackingKind,
+      kind: ImageTextureSourceKind,
       version: 1,
     } as unknown as ImageResource;
     bindGlImageResourceTexture(state, image);
@@ -527,7 +527,7 @@ describe('bindGlVideoTexture', () => {
     } as unknown as Texture;
   }
 
-  it('creates a texture, uploads the current frame, and caches by backing identity', () => {
+  it('creates a texture, uploads the current frame, and caches by source identity', () => {
     const { state, gl } = createGlState();
     const vt = videoTexture(3);
     const t1 = bindGlVideoTexture(state, vt);
@@ -544,7 +544,7 @@ describe('bindGlVideoTexture', () => {
     expect(t2).toBe(t1);
   });
 
-  it('re-uploads only when the backing version advances (the dirty-gate)', () => {
+  it('re-uploads only when the source version advances (the dirty-gate)', () => {
     const { state, gl } = createGlState();
     const vt = videoTexture(1);
     bindGlVideoTexture(state, vt);

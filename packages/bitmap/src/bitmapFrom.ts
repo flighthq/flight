@@ -1,6 +1,6 @@
 import { createEntity } from '@flighthq/entity/contract';
 import type { ImageResource, Bitmap } from '@flighthq/types/contract';
-import { BitmapTextureBackingKind } from '@flighthq/types/contract';
+import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 /**
  * Reads a host-backed ImageResource into a newly allocated, CPU-readable Bitmap. The readback draws
@@ -19,7 +19,7 @@ export function captureBitmapFromImageResource(resource: Readonly<ImageResource>
     data: raw.data,
     format: 'rgba8unorm',
     height: resource.height,
-    kind: BitmapTextureBackingKind,
+    kind: BitmapTextureSourceKind,
     version: 0,
     width: resource.width,
   });
@@ -42,7 +42,7 @@ export function createBitmapFromCanvas(
     data: raw.data,
     format: 'rgba8unorm',
     height: raw.height,
-    kind: BitmapTextureBackingKind,
+    kind: BitmapTextureSourceKind,
     version: 0,
     width: raw.width,
   });
@@ -87,7 +87,7 @@ export function createBitmapFromImageSource(source: CanvasImageSource, width: nu
     data: raw.data,
     format: 'rgba8unorm',
     height,
-    kind: BitmapTextureBackingKind,
+    kind: BitmapTextureSourceKind,
     version: 0,
     width,
   });

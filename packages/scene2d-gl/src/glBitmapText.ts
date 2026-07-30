@@ -1,7 +1,7 @@
 import { getGlRenderStateRuntime, resolveGlMaterialRenderer, resolveGlTexture } from '@flighthq/render-gl/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
-import { getTextureHeight, getTextureWidth, hasTextureBacking } from '@flighthq/texture/contract';
+import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import type {
   BitmapText,
   BitmapTextRuntime,
@@ -49,7 +49,7 @@ function submitGlBitmapText(state: GlRenderState, node: RenderProxy2D): void {
   for (const page of pages) {
     const atlas = page.atlas;
     const texture = atlas.texture;
-    if (texture === null || !hasTextureBacking(texture) || page.instanceCount === 0) continue;
+    if (texture === null || !hasTextureSource(texture) || page.instanceCount === 0) continue;
 
     const glTexture = resolveGlTexture(state, texture, true);
     if (glTexture === null) continue;

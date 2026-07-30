@@ -42,7 +42,7 @@ describe('enableGlTextureResolverGuards', () => {
       expect(entries[0]?.data).toMatchObject({
         kind: 'acme.missing.gl',
         message:
-          'resolveGlTexture: texture backing kind has no registered resolver — call registerGlTextureResolver(state, backingKind, resolver)',
+          'resolveGlTexture: texture source kind has no registered resolver — call registerGlTextureResolver(state, sourceKind, resolver)',
       });
     } finally {
       removeLogSink(sink.sink);

@@ -1,6 +1,7 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createMatrix3, createVector2, inverseMatrix3 } from '@flighthq/geometry/contract';
-import type { ImageResource } from '@flighthq/types/contract';
-import { ImageTextureBackingKind, RenderTextureBackingKind } from '@flighthq/types/contract';
+import type { ImageResource, RenderTarget } from '@flighthq/types/contract';
+import { ImageTextureSourceKind, RenderTargetTextureSourceKind } from '@flighthq/types/contract';
 
 import { createSampler, equalsSampler } from './sampler';
 import {
@@ -8,12 +9,12 @@ import {
   copyTexture,
   createTexture,
   equalsTexture,
-  getTextureBackingKind,
+  getTextureSourceKind,
   getTextureHeight,
   getTextureInverseUvMatrix,
   getTextureUvMatrix,
   getTextureWidth,
-  hasTextureBacking,
+  hasTextureSource,
   hasTextureUvTransform,
   isTextureReady,
   resetTextureUvTransform,
@@ -26,7 +27,16 @@ import {
   transformTextureUv,
 } from './texture';
 
-const fakeImage = { height: 64, kind: ImageTextureBackingKind, width: 32 } as ImageResource;
+const fakeImage = { height: 64, kind: ImageTextureSourceKind, width: 32 } as ImageResource;
+
+function makeRenderTarget(width: number, height: number): RenderTarget {
+  return createEntity({
+    height,
+    kind: RenderTargetTextureSourceKind,
+    version: 0,
+    width,
+  });
+}
 
 // Applies a column-major 3×3 uv matrix to (u, v, 1), writing the transformed coordinate into out.
 function multiplyMatrix3Uv(out: { x: number; y: number }, matrix: { m: ArrayLike<number> }, u: number, v: number) {
@@ -63,12 +73,8 @@ describe('cloneTexture', () => {
   });
 
   it('preserves a render-target descriptor while cloning sampling state', () => {
-    const target = {
-      colorSpace: 'linear' as const,
-      height: 32,
-      kind: RenderTextureBackingKind,
-      width: 64,
-    };
+    const target = makeRenderTarget(64, 32);
+    target.colorSpace = 'linear';
     const source = createTexture({ storage: { dimension: '2d', image: null, target } });
 
     const copy = cloneTexture(source);
@@ -208,26 +214,6 @@ describe('equalsTexture', () => {
   });
 });
 
-describe('getTextureBackingKind', () => {
-  it('reads the key from the active image or target backing', () => {
-    expect(getTextureBackingKind(createTexture())).toBeNull();
-    expect(getTextureBackingKind(createTexture({ storage: { dimension: '2d', image: fakeImage } }))).toBe(
-      ImageTextureBackingKind,
-    );
-    expect(
-      getTextureBackingKind(
-        createTexture({
-          storage: {
-            dimension: '2d',
-            image: null,
-            target: { height: 8, kind: RenderTextureBackingKind, width: 8 },
-          },
-        }),
-      ),
-    ).toBe(RenderTextureBackingKind);
-  });
-});
-
 describe('getTextureHeight', () => {
   it('returns the image height when an image is bound', () => {
     const texture = createTexture({ storage: { dimension: '2d', image: fakeImage } });
@@ -246,7 +232,7 @@ describe('getTextureHeight', () => {
       storage: {
         dimension: '2d',
         image: null,
-        target: { height: 48, kind: RenderTextureBackingKind, width: 96 },
+        target: makeRenderTarget(96, 48),
       },
     });
 
@@ -286,6 +272,26 @@ describe('getTextureInverseUvMatrix', () => {
     for (let k = 0; k < 9; k++) {
       expect(out.m[k]).toBeCloseTo(expected.m[k]);
     }
+  });
+});
+
+describe('getTextureSourceKind', () => {
+  it('reads the key from the active image or target source', () => {
+    expect(getTextureSourceKind(createTexture())).toBeNull();
+    expect(getTextureSourceKind(createTexture({ storage: { dimension: '2d', image: fakeImage } }))).toBe(
+      ImageTextureSourceKind,
+    );
+    expect(
+      getTextureSourceKind(
+        createTexture({
+          storage: {
+            dimension: '2d',
+            image: null,
+            target: makeRenderTarget(8, 8),
+          },
+        }),
+      ),
+    ).toBe(RenderTargetTextureSourceKind);
   });
 });
 
@@ -401,7 +407,7 @@ describe('getTextureWidth', () => {
       storage: {
         dimension: '2d',
         image: null,
-        target: { height: 48, kind: RenderTextureBackingKind, width: 96 },
+        target: makeRenderTarget(96, 48),
       },
     });
 
@@ -409,17 +415,17 @@ describe('getTextureWidth', () => {
   });
 });
 
-describe('hasTextureBacking', () => {
-  it('detects image and target backings without duplicating their discriminant', () => {
-    expect(hasTextureBacking(createTexture())).toBe(false);
-    expect(hasTextureBacking(createTexture({ storage: { dimension: '2d', image: fakeImage } }))).toBe(true);
+describe('hasTextureSource', () => {
+  it('detects image and target sources without duplicating their discriminant', () => {
+    expect(hasTextureSource(createTexture())).toBe(false);
+    expect(hasTextureSource(createTexture({ storage: { dimension: '2d', image: fakeImage } }))).toBe(true);
     expect(
-      hasTextureBacking(
+      hasTextureSource(
         createTexture({
           storage: {
             dimension: '2d',
             image: null,
-            target: { height: 8, kind: RenderTextureBackingKind, width: 8 },
+            target: makeRenderTarget(8, 8),
           },
         }),
       ),

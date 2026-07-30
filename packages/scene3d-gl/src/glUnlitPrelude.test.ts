@@ -96,7 +96,7 @@ describe('bindGlUnlitSurface', () => {
     expect(gl.calls.some((c) => c.name === 'uniform1i')).toBe(true);
   });
 
-  it('does not upload a video frame whose backing version has not advanced', () => {
+  it('does not upload a video frame whose source version has not advanced', () => {
     const { state, gl } = makeGlScene3DState();
     const program = compileGlUnlitProgram(gl, { ...FLAT, hasColorMap: true });
     const videoMap = createVideoTexture({

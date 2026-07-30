@@ -1,12 +1,12 @@
 import type { CompressedImageData } from './CompressedImageData';
-import type { ImageBacking } from './ImageBacking';
-import type { CompressedImageTextureBackingKind } from './TextureBackingKind';
+import type { TextureSource } from './TextureSource';
+import type { CompressedImageTextureSourceKind } from './TextureSourceKind';
 
 /**
- * GPU-only block-compressed image backing. The payload remains in its container-native format; it is
+ * GPU-only block-compressed image source. The payload remains in its container-native format; it is
  * neither directly drawable by Canvas/DOM nor readable through the Bitmap pixel API.
  */
-export interface CompressedImage extends ImageBacking {
+export interface CompressedImage extends TextureSource {
   readonly compressed: CompressedImageData;
-  readonly kind: typeof CompressedImageTextureBackingKind;
+  readonly kind: typeof CompressedImageTextureSourceKind;
 }

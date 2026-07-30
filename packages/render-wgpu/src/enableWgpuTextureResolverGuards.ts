@@ -1,7 +1,7 @@
 import { logOnce } from '@flighthq/log/contract';
-import { getTextureBackingKind } from '@flighthq/texture/contract';
+import { getTextureSourceKind } from '@flighthq/texture/contract';
 import type {
-  TextureBackingKind,
+  TextureSourceKind,
   TextureLike,
   WgpuRenderState,
   WgpuTextureEntry,
@@ -23,8 +23,8 @@ export function enableWgpuTextureResolverGuards(state: WgpuRenderState): void {
   runtime.wgpuTextureResolverRegistry = guarded;
 }
 
-class GuardedWgpuTextureResolverRegistry extends Map<TextureBackingKind, WgpuTextureResolver> {
-  override get(kind: TextureBackingKind): WgpuTextureResolver | undefined {
+class GuardedWgpuTextureResolverRegistry extends Map<TextureSourceKind, WgpuTextureResolver> {
+  override get(kind: TextureSourceKind): WgpuTextureResolver | undefined {
     return super.get(kind) ?? warnMissingWgpuTextureResolver;
   }
 }
@@ -33,7 +33,7 @@ function warnMissingWgpuTextureResolver(
   _state: WgpuRenderState,
   texture: Readonly<TextureLike>,
 ): WgpuTextureEntry | null {
-  const kind = getTextureBackingKind(texture);
+  const kind = getTextureSourceKind(texture);
   if (kind === null) return null;
   logOnce(
     `render-wgpu:texture-resolver-missing:${kind}`,
@@ -41,7 +41,7 @@ function warnMissingWgpuTextureResolver(
     {
       kind,
       message:
-        'resolveWgpuTexture: texture backing kind has no registered resolver — call registerWgpuTextureResolver(state, backingKind, resolver)',
+        'resolveWgpuTexture: texture source kind has no registered resolver — call registerWgpuTextureResolver(state, sourceKind, resolver)',
       texture,
     },
     'render-wgpu',

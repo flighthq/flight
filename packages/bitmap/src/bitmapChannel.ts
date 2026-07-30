@@ -1,6 +1,6 @@
 import { createEntity } from '@flighthq/entity/contract';
 import type { Bitmap, BitmapRegion } from '@flighthq/types/contract';
-import { BitmapTextureBackingKind } from '@flighthq/types/contract';
+import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import { invalidateBitmap } from './bitmap';
 
@@ -139,7 +139,7 @@ function makeBitmap(
     data,
     format: source.format,
     height,
-    kind: BitmapTextureBackingKind,
+    kind: BitmapTextureSourceKind,
     version: 0,
     width,
   });

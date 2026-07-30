@@ -73,10 +73,10 @@ function createGlTextLabelData(_state: GlRenderState, _source: Renderable): Rend
 function destroyGlTextLabelData(state: GlRenderState, data: RendererData): void {
   const runtime = getGlRenderStateRuntime(state);
   const { image } = getGlTextLabelData(data);
-  const entry = runtime.imageBackingPremultipliedTextureCache.get(image);
+  const entry = runtime.textureSourcePremultipliedTextureCache.get(image);
   if (entry !== undefined) {
     state.gl.deleteTexture(entry.texture);
-    runtime.imageBackingPremultipliedTextureCache.delete(image);
+    runtime.textureSourcePremultipliedTextureCache.delete(image);
   }
 }
 

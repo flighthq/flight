@@ -3,12 +3,12 @@ import type {
   ColorScaleBias,
   CompressedImage,
   HasColorScaleBias,
-  ImageBacking,
+  TextureSource,
   ImageResource,
   Texture,
   RenderProxy,
   RenderProxy2D,
-  WgpuImageBackingTextureEntry,
+  WgpuTextureSourceTextureEntry,
   WgpuRenderState,
   WgpuRenderStateRuntime,
   WgpuTextureEntry,
@@ -30,14 +30,14 @@ export function bindWgpuBitmapTexture(
   generateMips = false,
   premultiply = false,
 ): WgpuTextureEntry {
-  return bindWgpuImageBackingTexture(state, bitmap, generateMips, premultiply, uploadWgpuBitmapEntry)!;
+  return bindWgpuTextureSourceTexture(state, bitmap, generateMips, premultiply, uploadWgpuBitmapEntry)!;
 }
 
 export function bindWgpuCompressedImageTexture(
   state: WgpuRenderState,
   image: Readonly<CompressedImage>,
 ): WgpuTextureEntry | null {
-  return bindWgpuImageBackingTexture(state, image, false, false, uploadWgpuCompressedImageEntry);
+  return bindWgpuTextureSourceTexture(state, image, false, false, uploadWgpuCompressedImageEntry);
 }
 
 // Uploads and caches the WebGPU texture for an ImageResource. Bitmap and CompressedImage use sibling
@@ -50,18 +50,20 @@ export function bindWgpuImageResourceTexture(
   generateMips = false,
   premultiply = false,
 ): WgpuTextureEntry {
-  return bindWgpuImageBackingTexture(state, image, generateMips, premultiply, uploadWgpuImageResourceEntry)!;
+  return bindWgpuTextureSourceTexture(state, image, generateMips, premultiply, uploadWgpuImageResourceEntry)!;
 }
 
-function bindWgpuImageBackingTexture(
+function bindWgpuTextureSourceTexture(
   state: WgpuRenderState,
-  image: Readonly<ImageBacking>,
+  image: Readonly<TextureSource>,
   generateMips: boolean,
   premultiply: boolean,
-  upload: WgpuImageBackingUpload,
+  upload: WgpuTextureSourceUpload,
 ): WgpuTextureEntry | null {
   const runtime = getWgpuRenderStateRuntime(state);
-  const cache = premultiply ? runtime.imageBackingPremultipliedTextureCache : runtime.imageBackingStraightTextureCache;
+  const cache = premultiply
+    ? runtime.textureSourcePremultipliedTextureCache
+    : runtime.textureSourceStraightTextureCache;
   const cached = cache.get(image);
   if (cached !== undefined && cached.version === image.version) return cached;
 
@@ -79,7 +81,7 @@ function bindWgpuImageBackingTexture(
     cached.version = image.version;
     return cached;
   }
-  const entry: WgpuImageBackingTextureEntry = { ...built, version: image.version };
+  const entry: WgpuTextureSourceTextureEntry = { ...built, version: image.version };
   cache.set(image, entry);
   return entry;
 }
@@ -461,7 +463,7 @@ function premultiplyStraightRgba8(data: Readonly<Uint8ClampedArray<ArrayBuffer>>
 // bitmap only when the caller requests a premultiplied realization.
 function uploadWgpuBitmapEntry(
   state: WgpuRenderState,
-  image: Readonly<ImageBacking>,
+  image: Readonly<TextureSource>,
   generateMips: boolean,
   premultiply: boolean,
 ): WgpuTextureEntry {
@@ -495,7 +497,7 @@ function uploadWgpuBitmapEntry(
 
 function uploadWgpuCompressedImageEntry(
   state: WgpuRenderState,
-  image: Readonly<ImageBacking>,
+  image: Readonly<TextureSource>,
 ): WgpuTextureEntry | null {
   const runtime = getWgpuRenderStateRuntime(state);
   return (
@@ -509,7 +511,7 @@ function uploadWgpuCompressedImageEntry(
 
 function uploadWgpuImageResourceEntry(
   state: WgpuRenderState,
-  image: Readonly<ImageBacking>,
+  image: Readonly<TextureSource>,
   generateMips: boolean,
   premultiply: boolean,
 ): WgpuTextureEntry {
@@ -543,9 +545,9 @@ function uploadWgpuImageResourceEntry(
   return { texture, view, bindGroup };
 }
 
-type WgpuImageBackingUpload = (
+type WgpuTextureSourceUpload = (
   state: WgpuRenderState,
-  image: Readonly<ImageBacking>,
+  image: Readonly<TextureSource>,
   generateMips: boolean,
   premultiply: boolean,
 ) => WgpuTextureEntry | null;

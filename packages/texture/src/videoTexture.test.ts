@@ -63,7 +63,7 @@ describe('copyVideoTexture', () => {
 });
 
 describe('createVideoTexture', () => {
-  it('returns a universal srgb Texture with a borrowed host-image backing', () => {
+  it('returns a universal srgb Texture with a borrowed host-image source', () => {
     const source = makeVideoResource();
     const vt = createVideoTexture(source);
     expect(vt.colorSpace).toBe('srgb');

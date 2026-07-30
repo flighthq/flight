@@ -1,7 +1,7 @@
 import { resolveGlMaterialRenderer, resolveGlTexture } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { noopRendererData } from '@flighthq/render/contract';
-import { getTextureHeight, getTextureWidth, hasTextureBacking } from '@flighthq/texture/contract';
+import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import type { GlRenderState, RenderProxy2D, Scene2DRenderer, Sprite } from '@flighthq/types/contract';
 import { BatchFormat } from '@flighthq/types/contract';
 
@@ -15,7 +15,7 @@ import {
 export function drawGlSprite(state: GlRenderState, renderProxy: RenderProxy2D): void {
   const runtime = getGlRenderStateRuntime(state);
   const texture = (renderProxy.source as Sprite).data.texture;
-  if (texture === null || texture.storage.dimension !== '2d' || !hasTextureBacking(texture)) return;
+  if (texture === null || texture.storage.dimension !== '2d' || !hasTextureSource(texture)) return;
 
   const width = Math.max(0, getTextureWidth(texture)) * Math.abs(texture.uvScale.x);
   const height = Math.max(0, getTextureHeight(texture)) * Math.abs(texture.uvScale.y);

@@ -1,7 +1,7 @@
 import { getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import { getWgpuRenderStateRuntime, getWgpuSampler, resolveWgpuTexture } from '@flighthq/render-wgpu/contract';
 import { prepareScene3DRender } from '@flighthq/render/contract';
-import { getTextureHeight, getTextureWidth, hasTextureBacking } from '@flighthq/texture/contract';
+import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import type {
   Camera3D,
   Matrix4,
@@ -273,7 +273,7 @@ function drawParticleEmitter3DNode(
 
   const atlasTexture = atlas?.texture ?? null;
   const textureEntry =
-    atlasTexture !== null && hasTextureBacking(atlasTexture) ? resolveWgpuTexture(state, atlasTexture, true) : null;
+    atlasTexture !== null && hasTextureSource(atlasTexture) ? resolveWgpuTexture(state, atlasTexture, true) : null;
   const hasAtlas = textureEntry !== null;
   const regions = hasAtlas ? atlas!.regions : null;
   const numRegions = regions !== null ? regions.length : 0;

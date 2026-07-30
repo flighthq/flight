@@ -1,22 +1,22 @@
-import { getTextureBackingKind } from '@flighthq/texture/contract';
+import { getTextureSourceKind } from '@flighthq/texture/contract';
 import type {
   Bitmap,
   CompressedImage,
   ImageResource,
   RenderTexture,
   Texture,
-  TextureBackingKind,
+  TextureSourceKind,
   TextureLike,
   WgpuRenderState,
   WgpuTextureEntry,
   WgpuTextureResolver,
 } from '@flighthq/types/contract';
 import {
-  BitmapTextureBackingKind,
-  CompressedImageTextureBackingKind,
-  ImageTextureBackingKind,
-  RenderTextureBackingKind,
-  VideoTextureBackingKind,
+  BitmapTextureSourceKind,
+  CompressedImageTextureSourceKind,
+  ImageTextureSourceKind,
+  RenderTargetTextureSourceKind,
+  VideoTextureSourceKind,
 } from '@flighthq/types/contract';
 
 import {
@@ -29,39 +29,39 @@ import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import { bindWgpuRenderTexture } from './wgpuRenderTexture';
 
 export function registerWgpuBitmapTextureResolver(state: WgpuRenderState): void {
-  registerWgpuTextureResolver(state, BitmapTextureBackingKind, resolveWgpuBitmapTexture);
+  registerWgpuTextureResolver(state, BitmapTextureSourceKind, resolveWgpuBitmapTexture);
 }
 
 export function registerWgpuCompressedImageTextureResolver(state: WgpuRenderState): void {
-  registerWgpuTextureResolver(state, CompressedImageTextureBackingKind, resolveWgpuCompressedImageTexture);
+  registerWgpuTextureResolver(state, CompressedImageTextureSourceKind, resolveWgpuCompressedImageTexture);
 }
 
 export function registerWgpuImageTextureResolver(state: WgpuRenderState): void {
-  registerWgpuTextureResolver(state, ImageTextureBackingKind, resolveWgpuImageTexture);
+  registerWgpuTextureResolver(state, ImageTextureSourceKind, resolveWgpuImageTexture);
 }
 
 export function registerWgpuRenderTextureResolver(state: WgpuRenderState): void {
-  registerWgpuTextureResolver(state, RenderTextureBackingKind, resolveWgpuRenderTexture);
+  registerWgpuTextureResolver(state, RenderTargetTextureSourceKind, resolveWgpuRenderTexture);
 }
 
-// Registers or replaces one declared backing-kind resolver on this render state. Map.set is
+// Registers or replaces one declared source-kind resolver on this render state. Map.set is
 // last-write-wins; passing null removes the key.
 export function registerWgpuTextureResolver(
   state: WgpuRenderState,
-  backingKind: TextureBackingKind,
+  sourceKind: TextureSourceKind,
   resolver: WgpuTextureResolver | null,
 ): void {
   const runtime = getWgpuRenderStateRuntime(state);
   const registry = (runtime.wgpuTextureResolverRegistry ??= new Map());
-  if (resolver === null) registry.delete(backingKind);
-  else registry.set(backingKind, resolver);
+  if (resolver === null) registry.delete(sourceKind);
+  else registry.set(sourceKind, resolver);
 }
 
 export function registerWgpuVideoTextureResolver(state: WgpuRenderState): void {
-  registerWgpuTextureResolver(state, VideoTextureBackingKind, resolveWgpuVideoTexture);
+  registerWgpuTextureResolver(state, VideoTextureSourceKind, resolveWgpuVideoTexture);
 }
 
-// Resolves through one keyed lookup using the backing's declared kind. Resolution may realize, upload,
+// Resolves through one keyed lookup using the source's declared kind. Resolution may realize, upload,
 // and cache the GPU entry, but unlike the GL twin it does not bind command-pass state; the draw caller
 // binds the returned entry's group explicitly.
 export function resolveWgpuTexture(
@@ -71,9 +71,9 @@ export function resolveWgpuTexture(
 ): WgpuTextureEntry | null {
   const registry = getWgpuRenderStateRuntime(state).wgpuTextureResolverRegistry;
   if (registry == null) return null;
-  const backingKind = getTextureBackingKind(texture);
-  if (backingKind === null) return null;
-  return registry.get(backingKind)?.(state, texture, premultiply) ?? null;
+  const sourceKind = getTextureSourceKind(texture);
+  if (sourceKind === null) return null;
+  return registry.get(sourceKind)?.(state, texture, premultiply) ?? null;
 }
 
 function resolveWgpuBitmapTexture(

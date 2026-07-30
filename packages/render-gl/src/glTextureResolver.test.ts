@@ -1,10 +1,11 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { ImageResource, RenderTexture, TextureLike } from '@flighthq/types/contract';
 import {
-  BitmapTextureBackingKind,
-  CompressedImageTextureBackingKind,
-  ImageTextureBackingKind,
-  RenderTextureBackingKind,
-  VideoTextureBackingKind,
+  BitmapTextureSourceKind,
+  CompressedImageTextureSourceKind,
+  ImageTextureSourceKind,
+  RenderTargetTextureSourceKind,
+  VideoTextureSourceKind,
 } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
@@ -44,7 +45,7 @@ function textureWithImage(image: ImageResource | null): TextureLike {
 
 function imageResource(
   source: CanvasImageSource = document.createElement('img'),
-  kind = ImageTextureBackingKind,
+  kind = ImageTextureSourceKind,
 ): ImageResource {
   return {
     height: 1,
@@ -58,30 +59,36 @@ function imageResource(
 function textureWithTarget(): TextureLike {
   const texture = textureWithImage(null);
   texture.colorSpace = 'linear';
-  texture.storage.target = { colorSpace: 'linear', height: 8, kind: RenderTextureBackingKind, width: 8 };
+  texture.storage.target = createEntity({
+    colorSpace: 'linear' as const,
+    height: 8,
+    kind: RenderTargetTextureSourceKind,
+    version: 0,
+    width: 8,
+  });
   return texture;
 }
 
 describe('registerGlBitmapTextureResolver', () => {
-  it('registers only the Bitmap backing key', () => {
+  it('registers only the Bitmap source key', () => {
     const { state } = createGlState();
     registerGlBitmapTextureResolver(state);
-    expect([...getGlRenderStateRuntime(state).glTextureResolverRegistry!.keys()]).toEqual([BitmapTextureBackingKind]);
+    expect([...getGlRenderStateRuntime(state).glTextureResolverRegistry!.keys()]).toEqual([BitmapTextureSourceKind]);
   });
 });
 
 describe('registerGlCompressedImageTextureResolver', () => {
-  it('registers only the CompressedImage backing key', () => {
+  it('registers only the CompressedImage source key', () => {
     const { state } = createGlState();
     registerGlCompressedImageTextureResolver(state);
     expect([...getGlRenderStateRuntime(state).glTextureResolverRegistry!.keys()]).toEqual([
-      CompressedImageTextureBackingKind,
+      CompressedImageTextureSourceKind,
     ]);
   });
 });
 
 describe('registerGlImageTextureResolver', () => {
-  it('registers the 2D image matcher and resolves through the backing-keyed upload cache', () => {
+  it('registers the 2D image matcher and resolves through the source-keyed upload cache', () => {
     const { state, gl } = createGlState();
     const texture = textureWithImage(imageResource());
     registerGlImageTextureResolver(state);
@@ -94,7 +101,7 @@ describe('registerGlImageTextureResolver', () => {
     expect(gl.texImage2D).toHaveBeenCalledOnce();
   });
 
-  it('returns null for an unbound image backing', () => {
+  it('returns null for an unbound image source', () => {
     const { state } = createGlState();
     registerGlImageTextureResolver(state);
     expect(resolveGlTexture(state, textureWithImage(null))).toBeNull();
@@ -123,22 +130,22 @@ describe('registerGlTextureResolver', () => {
   it('keeps registrations state-scoped, replaces by string kind, and removes with null', () => {
     const { state: a } = createGlState();
     const { state: b } = createGlState();
-    const backingKind = 'acme.generated';
+    const sourceKind = 'acme.generated';
     const first = vi.fn(() => ({ first: true }) as unknown as WebGLTexture);
     const second = vi.fn(() => ({ second: true }) as unknown as WebGLTexture);
     const image = imageResource();
-    image.kind = backingKind;
+    image.kind = sourceKind;
     const texture = textureWithImage(image);
 
-    registerGlTextureResolver(a, backingKind, first);
+    registerGlTextureResolver(a, sourceKind, first);
     expect(resolveGlTexture(a, texture)).not.toBeNull();
     expect(resolveGlTexture(b, texture)).toBeNull();
 
-    registerGlTextureResolver(a, backingKind, second);
+    registerGlTextureResolver(a, sourceKind, second);
     expect(resolveGlTexture(a, texture)).toEqual({ second: true });
     expect(getGlRenderStateRuntime(a).glTextureResolverRegistry?.size).toBe(1);
 
-    registerGlTextureResolver(a, backingKind, null);
+    registerGlTextureResolver(a, sourceKind, null);
     expect(resolveGlTexture(a, texture)).toBeNull();
   });
 
@@ -153,11 +160,11 @@ describe('registerGlTextureResolver', () => {
 });
 
 describe('registerGlVideoTextureResolver', () => {
-  it('specializes the general image resolver and gates uploads by backing version', () => {
+  it('specializes the general image resolver and gates uploads by source version', () => {
     const { state, gl } = createGlState();
     const video = imageResource(
       { readyState: 4, videoHeight: 240, videoWidth: 320 } as HTMLVideoElement,
-      VideoTextureBackingKind,
+      VideoTextureSourceKind,
     );
     const texture = textureWithImage(video);
     registerGlImageTextureResolver(state);
@@ -175,7 +182,7 @@ describe('registerGlVideoTextureResolver', () => {
 });
 
 describe('resolveGlTexture', () => {
-  it('returns null when the state has no registered backing resolver', () => {
+  it('returns null when the state has no registered source resolver', () => {
     const { state } = createGlState();
     expect(resolveGlTexture(state, textureWithImage(imageResource()))).toBeNull();
   });

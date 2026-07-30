@@ -6,7 +6,7 @@ import type { Kind } from './Entity';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
 import type { Texture } from './Texture';
-import type { TextureBackingKind } from './TextureBackingKind';
+import type { TextureSourceKind } from './TextureSourceKind';
 
 export interface CanvasRenderState extends RenderState {
   applyBlendMode: ((state: CanvasRenderState, blendMode: BlendMode | null) => void) | null;
@@ -27,9 +27,9 @@ export interface CanvasRenderStateRuntime extends RenderStateRuntime {
   // Active compositing mode tracked to avoid redundant globalCompositeOperation changes. Internal —
   // formerly public on the CanvasRenderState entity.
   currentBlendMode: BlendMode | null;
-  // Open, state-scoped Texture backing registry. Undefined until the first explicit registration so
+  // Open, state-scoped Texture source registry. Undefined until the first explicit registration so
   // a Canvas bundle only retains the backing realizations it installs.
-  canvasTextureResolverRegistry?: Map<TextureBackingKind, CanvasTextureResolver> | null;
+  canvasTextureResolverRegistry?: Map<TextureSourceKind, CanvasTextureResolver> | null;
   imageSmoothingEnabled: boolean;
   imageSmoothingQuality: ImageSmoothingQuality;
   // Per-render-state cache of the drawable HTMLCanvasElement materialized from a Bitmap. The field

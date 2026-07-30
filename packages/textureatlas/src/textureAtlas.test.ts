@@ -1,7 +1,7 @@
 import { createImageResource } from '@flighthq/image/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { Bitmap, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
-import { BitmapTextureBackingKind } from '@flighthq/types/contract';
+import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import { createTextureAtlas, disposeTextureAtlas, getTextureAtlasByteSize } from './textureAtlas';
 
@@ -106,7 +106,7 @@ describe('getTextureAtlasByteSize', () => {
       data: new Uint8ClampedArray(256),
       format: 'rgba8unorm',
       height: 8,
-      kind: BitmapTextureBackingKind,
+      kind: BitmapTextureSourceKind,
       version: 0,
       width: 8,
     } as unknown as Bitmap;

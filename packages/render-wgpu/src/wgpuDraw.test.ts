@@ -2,10 +2,10 @@ import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render
 import { createSprite } from '@flighthq/scene2d/contract';
 import type { Bitmap, CompressedImage, ImageResource, Texture } from '@flighthq/types/contract';
 import {
-  BitmapTextureBackingKind,
+  BitmapTextureSourceKind,
   BlendMode,
-  CompressedImageTextureBackingKind,
-  ImageTextureBackingKind,
+  CompressedImageTextureSourceKind,
+  ImageTextureSourceKind,
 } from '@flighthq/types/contract';
 
 import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
@@ -43,7 +43,7 @@ function bitmap(size: number, version: number): Bitmap {
     data: new Uint8ClampedArray(size * size * 4),
     format: 'rgba8unorm',
     height: size,
-    kind: BitmapTextureBackingKind,
+    kind: BitmapTextureSourceKind,
     version,
     width: size,
   } as unknown as Bitmap;
@@ -66,7 +66,7 @@ function compressedBc3Image(): CompressedImage {
       payload: new Uint8Array(16),
     },
     height: 4,
-    kind: CompressedImageTextureBackingKind,
+    kind: CompressedImageTextureSourceKind,
     version: 1,
     width: 4,
   } as unknown as CompressedImage;
@@ -135,7 +135,7 @@ describe('bindWgpuImageResourceTexture', () => {
       source: canvas,
       width: 4,
       height: 4,
-      kind: ImageTextureBackingKind,
+      kind: ImageTextureSourceKind,
       version: 1,
     } as unknown as ImageResource;
     bindWgpuImageResourceTexture(state, image);
@@ -201,7 +201,7 @@ describe('bindWgpuVideoTexture', () => {
     } as unknown as Texture;
   }
 
-  it('uploads once per backing version and caches the texture by backing identity', async () => {
+  it('uploads once per source version and caches the texture by source identity', async () => {
     const state = await createWgpuRenderStateForTest();
     const copy = vi.spyOn(state.device.queue, 'copyExternalImageToTexture');
     const video = videoTexture(1);

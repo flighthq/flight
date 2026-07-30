@@ -7,7 +7,7 @@ import {
   registerGlVideoTextureResolver,
   resolveGlTexture,
 } from '@flighthq/render-gl/contract';
-import { getTextureBackingKind } from '@flighthq/texture/contract';
+import { getTextureSourceKind } from '@flighthq/texture/contract';
 import type {
   LinearColor,
   Camera3D,
@@ -21,7 +21,7 @@ import type {
   UnlitMaterial,
   GlUnlitDefineKey,
 } from '@flighthq/types/contract';
-import { RenderTextureBackingKind, UnlitMaterialKind } from '@flighthq/types/contract';
+import { RenderTargetTextureSourceKind, UnlitMaterialKind } from '@flighthq/types/contract';
 
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import {
@@ -79,8 +79,8 @@ export function registerUnlitGlMaterial(state: GlRenderState): void {
 
 function defineKeyForMaterial(state: GlRenderState, material: Readonly<UnlitMaterial> | null): GlUnlitDefineKey {
   const colorMap = material?.baseColorMap ?? null;
-  const backingKind = colorMap === null ? null : getTextureBackingKind(colorMap);
-  const renderTexture = backingKind === RenderTextureBackingKind;
+  const sourceKind = colorMap === null ? null : getTextureSourceKind(colorMap);
+  const renderTexture = sourceKind === RenderTargetTextureSourceKind;
   const colorMapReady = colorMap !== null && resolveGlTexture(state, colorMap) !== null;
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',

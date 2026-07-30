@@ -5,7 +5,7 @@ import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { Camera3D, ImageResource, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
-import { CustomShaderMaterialKind, ImageTextureBackingKind } from '@flighthq/types/contract';
+import { CustomShaderMaterialKind, ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import {
   customShaderWgpuMeshMaterialRenderer,
@@ -173,7 +173,7 @@ describe('customShaderWgpuMeshMaterialRenderer', () => {
 function makeImageResource(version: number): ImageResource {
   return {
     height: 1,
-    kind: ImageTextureBackingKind,
+    kind: ImageTextureSourceKind,
     source: {} as CanvasImageSource,
     version,
     width: 1,

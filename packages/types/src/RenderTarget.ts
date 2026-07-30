@@ -1,3 +1,5 @@
+import type { TextureSource } from './TextureSource';
+
 // Substrate-agnostic render-target description. A target carries axes, not booleans: `format`/
 // `colorFormats` unlock HDR and the G-buffer, `colorAttachments` is MRT/deferred, `sampleCount` is
 // MSAA, `depth` carries target-scope stencil and (for '-sampled') a readable depth texture. The
@@ -5,7 +7,7 @@
 
 // Common allocation-backed target identity used by backend-neutral assemblies. Backend target types
 // extend this with their storage handles and effective format axes.
-export interface RenderTarget {
+export interface RenderTargetDimensions {
   height: number;
   width: number;
 }
@@ -78,6 +80,10 @@ export interface RenderTargetDescriptor {
   // Depth clear value applied when a pass clears depth. Default 1 (the far plane).
   clearDepth?: number;
 }
+
+// GPU-owned TextureSource descriptor. A render backend realizes this request lazily in the state that
+// first renders into or samples its owning RenderTexture.
+export interface RenderTarget extends RenderTargetDescriptor, TextureSource {}
 
 // A descriptor with every default resolved. Clear policy travels with the target but remains distinct
 // from the storage axes so pools can match physical identity and re-stamp clear values independently.

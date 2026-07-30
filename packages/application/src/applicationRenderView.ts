@@ -5,7 +5,7 @@ import type {
   ApplicationRenderViewResize,
   EntityRuntime,
   RenderState,
-  RenderTarget,
+  RenderTargetDimensions,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
@@ -13,7 +13,7 @@ import { computeWindowDeviceTransform } from './window';
 
 interface ApplicationRenderViewRuntime<
   State extends RenderState = RenderState,
-  Target extends RenderTarget = RenderTarget,
+  Target extends RenderTargetDimensions = RenderTargetDimensions,
 > extends EntityRuntime {
   attached: boolean;
   resize: ApplicationRenderViewResize<State, Target>;
@@ -33,7 +33,7 @@ export function attachApplicationRenderView(view: ApplicationRenderView): void {
 // Links an existing window, command state, target, and viewport without taking ownership of any of
 // them. The resize operation is the backend's allocation seam; it must be idempotent because
 // synchronizeApplicationRenderView invokes it even when storage already has the requested extent.
-export function createApplicationRenderView<State extends RenderState, Target extends RenderTarget>(
+export function createApplicationRenderView<State extends RenderState, Target extends RenderTargetDimensions>(
   window: ApplicationRenderView<State, Target>['window'],
   renderState: State,
   renderTarget: Target,
@@ -86,6 +86,6 @@ export function synchronizeApplicationRenderView(view: ApplicationRenderView): v
 
 function getApplicationRenderViewRuntime(
   view: ApplicationRenderView,
-): ApplicationRenderViewRuntime<RenderState, RenderTarget> {
-  return view[EntityRuntimeKey] as ApplicationRenderViewRuntime<RenderState, RenderTarget>;
+): ApplicationRenderViewRuntime<RenderState, RenderTargetDimensions> {
+  return view[EntityRuntimeKey] as ApplicationRenderViewRuntime<RenderState, RenderTargetDimensions>;
 }

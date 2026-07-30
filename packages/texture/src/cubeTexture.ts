@@ -1,4 +1,4 @@
-import type { CreateCubeTextureOptions, CubeTexture, ImageBacking, TextureCubeImages } from '@flighthq/types/contract';
+import type { CreateCubeTextureOptions, CubeTexture, TextureSource, TextureCubeImages } from '@flighthq/types/contract';
 
 import { cloneSampler } from './sampler';
 import { cloneTexture, copyTexture, createTexture, equalsTexture } from './texture';
@@ -47,9 +47,9 @@ export function isCubeTextureComplete(cube: Readonly<CubeTexture>): boolean {
   return getCubeImages(cube).every((face) => face !== null);
 }
 
-export function setCubeTextureFace(cube: CubeTexture, faceIndex: number, image: ImageBacking | null): void {
+export function setCubeTextureFace(cube: CubeTexture, faceIndex: number, image: TextureSource | null): void {
   const images = getCubeImages(cube);
   if (images[faceIndex] === image) return;
-  (images as unknown as (ImageBacking | null)[])[faceIndex] = image;
+  (images as unknown as (TextureSource | null)[])[faceIndex] = image;
   cube.version = (cube.version + 1) >>> 0;
 }

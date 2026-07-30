@@ -1,6 +1,6 @@
 import { getWgpuRenderStateRuntime, getWgpuSampler, resolveWgpuTexture } from '@flighthq/render-wgpu/contract';
 import { noopRendererData } from '@flighthq/render/contract';
-import { getTextureHeight, getTextureWidth, hasTextureBacking } from '@flighthq/texture/contract';
+import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import type { ParticleEmitter2D, RenderProxy2D, SpriteRenderer, WgpuRenderState } from '@flighthq/types/contract';
 
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
@@ -189,7 +189,7 @@ export function drawWgpuParticleEmitter2D(state: WgpuRenderState, renderProxy: R
 
   const source = renderProxy.source as ParticleEmitter2D;
   const { atlas, alphas, colors, ids, particleCount, transforms } = source.data;
-  if (atlas === null || atlas.texture === null || !hasTextureBacking(atlas.texture) || particleCount === 0) return;
+  if (atlas === null || atlas.texture === null || !hasTextureSource(atlas.texture) || particleCount === 0) return;
 
   const resources = ensureParticleResources(state);
   ensureParticleInstanceBuffer(state, particleCount);

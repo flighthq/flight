@@ -3,7 +3,7 @@ import type { GlCompressedTextureDecoder } from './GlCompressedTextureDecoder';
 
 // The opt-in seam that uploads a CompressedImage's payload to the currently-bound GL
 // texture. Installed per render state by registerGlCompressedTextureUpload; unset until then, so a
-// state that only ever draws ImageResource or Bitmap backings never pulls the compressed-container
+// state that only ever draws ImageResource or Bitmap sources never pulls the compressed-container
 // upload path (its ~40-format enum table and the GPU-native / RGBA-fallback branches) into the bundle.
 // This is the bundle-cost seam, distinct from GlCompressedTextureDecoder (the RGBA fallback for a
 // format the device cannot upload natively): the uploader is the whole compressed path, the decoder is

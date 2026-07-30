@@ -1,6 +1,6 @@
 import { createEntity } from '@flighthq/entity/contract';
 import type { CompressedImage, CompressedImageData, ImageResource } from '@flighthq/types/contract';
-import { CompressedImageTextureBackingKind, ImageTextureBackingKind } from '@flighthq/types/contract';
+import { CompressedImageTextureSourceKind, ImageTextureSourceKind } from '@flighthq/types/contract';
 
 // Allocates a new resource identity over the same borrowed host image. The host handle is shared by
 // reference; the clone owns an independent version counter for renderer cache invalidation.
@@ -20,7 +20,7 @@ export function createCompressedImage(compressed: Readonly<CompressedImageData>)
   return createEntity({
     compressed,
     height: compressed.container.height,
-    kind: CompressedImageTextureBackingKind,
+    kind: CompressedImageTextureSourceKind,
     version: 0,
     width: compressed.container.width,
   });
@@ -29,7 +29,7 @@ export function createCompressedImage(compressed: Readonly<CompressedImageData>)
 export function createImageResource(image: CanvasImageSource): ImageResource {
   const resource: ImageResource = createEntity({
     height: 0,
-    kind: ImageTextureBackingKind,
+    kind: ImageTextureSourceKind,
     source: image,
     version: 0,
     width: 0,

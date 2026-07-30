@@ -1,5 +1,5 @@
 import type { CompressedImageData } from '@flighthq/types/contract';
-import { CompressedImageTextureBackingKind, ImageTextureBackingKind } from '@flighthq/types/contract';
+import { CompressedImageTextureSourceKind, ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import {
   cloneImageResource,
@@ -46,7 +46,7 @@ describe('createCompressedImage', () => {
   it('wraps the compressed payload as a distinct backing', () => {
     const compressed = makeCompressed();
     const image = createCompressedImage(compressed);
-    expect(image.kind).toBe(CompressedImageTextureBackingKind);
+    expect(image.kind).toBe(CompressedImageTextureSourceKind);
     expect(image.compressed).toBe(compressed);
     expect(image.width).toBe(4);
     expect(image.height).toBe(4);
@@ -59,7 +59,7 @@ describe('createImageResource', () => {
     source.width = 8;
     source.height = 6;
     const resource = createImageResource(source);
-    expect(resource.kind).toBe(ImageTextureBackingKind);
+    expect(resource.kind).toBe(ImageTextureSourceKind);
     expect(resource.source).toBe(source);
     expect(resource.width).toBe(8);
     expect(resource.height).toBe(6);

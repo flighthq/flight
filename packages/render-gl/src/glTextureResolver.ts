@@ -1,4 +1,4 @@
-import { getTextureBackingKind } from '@flighthq/texture/contract';
+import { getTextureSourceKind } from '@flighthq/texture/contract';
 import type {
   Bitmap,
   CompressedImage,
@@ -6,15 +6,15 @@ import type {
   GlTextureResolver,
   ImageResource,
   RenderTexture,
-  TextureBackingKind,
+  TextureSourceKind,
   TextureLike,
 } from '@flighthq/types/contract';
 import {
-  BitmapTextureBackingKind,
-  CompressedImageTextureBackingKind,
-  ImageTextureBackingKind,
-  RenderTextureBackingKind,
-  VideoTextureBackingKind,
+  BitmapTextureSourceKind,
+  CompressedImageTextureSourceKind,
+  ImageTextureSourceKind,
+  RenderTargetTextureSourceKind,
+  VideoTextureSourceKind,
 } from '@flighthq/types/contract';
 
 import {
@@ -27,44 +27,44 @@ import { getGlRenderStateRuntime } from './glRenderState';
 import { bindGlRenderTexture } from './glRenderTexture';
 
 export function registerGlBitmapTextureResolver(state: GlRenderState): void {
-  registerGlTextureResolver(state, BitmapTextureBackingKind, resolveGlBitmapTexture);
+  registerGlTextureResolver(state, BitmapTextureSourceKind, resolveGlBitmapTexture);
 }
 
 export function registerGlCompressedImageTextureResolver(state: GlRenderState): void {
-  registerGlTextureResolver(state, CompressedImageTextureBackingKind, resolveGlCompressedImageTexture);
+  registerGlTextureResolver(state, CompressedImageTextureSourceKind, resolveGlCompressedImageTexture);
 }
 
 export function registerGlImageTextureResolver(state: GlRenderState): void {
-  registerGlTextureResolver(state, ImageTextureBackingKind, resolveGlImageTexture);
+  registerGlTextureResolver(state, ImageTextureSourceKind, resolveGlImageTexture);
 }
 
 // Installs the render-target realization.
 export function registerGlRenderTextureResolver(state: GlRenderState): void {
-  registerGlTextureResolver(state, RenderTextureBackingKind, resolveGlRenderTexture);
+  registerGlTextureResolver(state, RenderTargetTextureSourceKind, resolveGlRenderTexture);
 }
 
-// Registers or replaces one declared backing-kind resolver on this render state. Map.set is
+// Registers or replaces one declared source-kind resolver on this render state. Map.set is
 // last-write-wins; passing null removes the key. No registration ordering or matcher scan exists.
 export function registerGlTextureResolver(
   state: GlRenderState,
-  backingKind: TextureBackingKind,
+  sourceKind: TextureSourceKind,
   resolver: GlTextureResolver | null,
 ): void {
   const runtime = getGlRenderStateRuntime(state);
   const registry = (runtime.glTextureResolverRegistry ??= new Map());
-  if (resolver === null) registry.delete(backingKind);
-  else registry.set(backingKind, resolver);
+  if (resolver === null) registry.delete(sourceKind);
+  else registry.set(sourceKind, resolver);
 }
 
 // Installs the dynamic host-video specialization.
 export function registerGlVideoTextureResolver(state: GlRenderState): void {
-  registerGlTextureResolver(state, VideoTextureBackingKind, resolveGlVideoTexture);
+  registerGlTextureResolver(state, VideoTextureSourceKind, resolveGlVideoTexture);
 }
 
-// Resolves through one keyed lookup using the backing's declared kind. Resolution is deliberately not
+// Resolves through one keyed lookup using the source's declared kind. Resolution is deliberately not
 // pure: each built-in resolver leaves its result bound to TEXTURE_2D on the active texture unit because
 // GL upload and sampler application require that binding. Callers must not reorder this call across
-// activeTexture/bind operations as though it only returned a handle. The CPU backing owns its kind; a
+// activeTexture/bind operations as though it only returned a handle. The CPU source owns its kind; a
 // GPU-origin target owns its own. An unbound or undeclared backing is the null sentinel.
 export function resolveGlTexture(
   state: GlRenderState,
@@ -73,9 +73,9 @@ export function resolveGlTexture(
 ): WebGLTexture | null {
   const registry = getGlRenderStateRuntime(state).glTextureResolverRegistry;
   if (registry == null) return null;
-  const backingKind = getTextureBackingKind(texture);
-  if (backingKind === null) return null;
-  return registry.get(backingKind)?.(state, texture, premultiply) ?? null;
+  const sourceKind = getTextureSourceKind(texture);
+  if (sourceKind === null) return null;
+  return registry.get(sourceKind)?.(state, texture, premultiply) ?? null;
 }
 
 function resolveGlBitmapTexture(

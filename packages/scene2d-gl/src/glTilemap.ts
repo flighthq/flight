@@ -1,7 +1,7 @@
 import { resolveGlMaterialRenderer, resolveGlTexture } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { noopRendererData } from '@flighthq/render/contract';
-import { getTextureHeight, getTextureWidth, hasTextureBacking } from '@flighthq/texture/contract';
+import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import type {
   ColorScaleBias,
   GlRenderState,
@@ -26,7 +26,7 @@ function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void
   const source = tilemapNode.source as Tilemap;
   const { atlas, columns, rows, tileHeight, tileWidth, tiles } = source.data;
 
-  if (atlas === null || atlas.texture === null || !hasTextureBacking(atlas.texture)) return;
+  if (atlas === null || atlas.texture === null || !hasTextureSource(atlas.texture)) return;
   if (columns === 0 || rows === 0) return;
 
   ensureGlQuadBatchShader(state);

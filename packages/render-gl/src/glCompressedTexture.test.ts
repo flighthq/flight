@@ -1,5 +1,5 @@
 import type { CompressedImage, GlCompressedTextureSupport, TextureContainer } from '@flighthq/types/contract';
-import { CompressedImageTextureBackingKind } from '@flighthq/types/contract';
+import { CompressedImageTextureSourceKind } from '@flighthq/types/contract';
 
 import {
   detectGlCompressedTextureSupport,
@@ -51,7 +51,7 @@ function uploadableCompressedImage(containerOverrides?: Partial<TextureContainer
   return {
     compressed: { container: { ...makeContainer(), ...containerOverrides }, payload: new Uint8Array(16) },
     height: 4,
-    kind: CompressedImageTextureBackingKind,
+    kind: CompressedImageTextureSourceKind,
     version: 1,
     width: 4,
   } as unknown as CompressedImage;
