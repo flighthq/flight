@@ -115,6 +115,19 @@ describe('parseUserAgentEngine', () => {
   });
 });
 
+describe('parseUserAgentEngine for Opera on iOS', () => {
+  const IOS_PREFIX = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 ';
+
+  it.each([
+    ['OPiOS', `${IOS_PREFIX}(KHTML, like Gecko) OPiOS/9.2.0.11256 Mobile/15E148 Safari/9537.53`],
+    ['OPT', `${IOS_PREFIX}(KHTML, like Gecko) Version/17.0 OPT/3.6.1 Mobile/15E148 Safari/604.1`],
+  ])('keeps the %s product token on WebKit', (_token, ua) => {
+    const engine = parseUserAgentEngine(ua);
+    expect(engine).toBe('webkit');
+    expect(parseUserAgentEngineVersion(ua, engine)).not.toBe('');
+  });
+});
+
 describe('parseUserAgentEngine on iOS', () => {
   // Every browser on iOS/iPadOS runs on the system WebKit, whatever product token it advertises.
   // Deciding the engine from the product token got EdgiOS wrong — it contains `edg`, so it was
@@ -151,19 +164,6 @@ describe('parseUserAgentEngine on iOS', () => {
   it('still reports gecko for desktop Firefox', () => {
     const ua = 'Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0';
     expect(parseUserAgentEngine(ua)).toBe('gecko');
-  });
-});
-
-describe('parseUserAgentEngine for Opera on iOS', () => {
-  const IOS_PREFIX = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 ';
-
-  it.each([
-    ['OPiOS', `${IOS_PREFIX}(KHTML, like Gecko) OPiOS/9.2.0.11256 Mobile/15E148 Safari/9537.53`],
-    ['OPT', `${IOS_PREFIX}(KHTML, like Gecko) Version/17.0 OPT/3.6.1 Mobile/15E148 Safari/604.1`],
-  ])('keeps the %s product token on WebKit', (_token, ua) => {
-    const engine = parseUserAgentEngine(ua);
-    expect(engine).toBe('webkit');
-    expect(parseUserAgentEngineVersion(ua, engine)).not.toBe('');
   });
 });
 
