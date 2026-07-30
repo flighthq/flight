@@ -11,6 +11,7 @@ export {
   disposeExternalWgpuTexture,
   enableWgpuBlendModeSupport,
   enableWgpuFrameCapture,
+  enableWgpuTextureResolverGuards,
   endWgpuRenderPass,
   explainWgpuTextureResolution,
   isWgpuRenderTextureReady,

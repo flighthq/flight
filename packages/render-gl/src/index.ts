@@ -10,6 +10,7 @@ export {
   destroyGlRenderTexture,
   disposeExternalGlTexture,
   enableGlRenderTextureGuards,
+  enableGlTextureResolverGuards,
   enableGlBlendModeSupport,
   endGlRenderPass,
   explainGlRenderTarget,

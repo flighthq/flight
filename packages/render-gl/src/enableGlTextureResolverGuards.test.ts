@@ -1,0 +1,50 @@
+import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import { createTexture } from '@flighthq/texture/contract';
+import type { ImageResource } from '@flighthq/types/contract';
+
+import { areGlTextureResolverGuardsEnabled, enableGlTextureResolverGuards } from './enableGlTextureResolverGuards';
+import { createGlState } from './glTestHelper';
+import { registerGlTextureResolver, resolveGlTexture } from './glTextureResolver';
+
+describe('enableGlTextureResolverGuards', () => {
+  it('is state-scoped and idempotent', () => {
+    const { state } = createGlState();
+    expect(areGlTextureResolverGuardsEnabled(state)).toBe(false);
+
+    enableGlTextureResolverGuards(state);
+    enableGlTextureResolverGuards(state);
+
+    expect(areGlTextureResolverGuardsEnabled(state)).toBe(true);
+  });
+
+  it('warns once for a missing resolver and stays silent for a registered resolver returning null', () => {
+    const { state } = createGlState();
+    const missing = textureWithKind('acme.missing.gl');
+    const registered = textureWithKind('acme.registered.gl');
+    const sink = createMemoryLogSink(4);
+    addLogSink(sink.sink);
+    enableGlTextureResolverGuards(state);
+    registerGlTextureResolver(state, 'acme.registered.gl', () => null);
+    try {
+      expect(resolveGlTexture(state, missing)).toBeNull();
+      expect(resolveGlTexture(state, missing)).toBeNull();
+      expect(resolveGlTexture(state, registered)).toBeNull();
+
+      const entries = getMemoryLogSinkEntries(sink);
+      expect(entries).toHaveLength(1);
+      expect(entries[0]?.data).toMatchObject({
+        kind: 'acme.missing.gl',
+        message:
+          'resolveGlTexture: texture backing kind has no registered resolver — call registerGlTextureResolver(state, backingKind, resolver)',
+      });
+    } finally {
+      removeLogSink(sink.sink);
+    }
+  });
+});
+
+function textureWithKind(kind: string) {
+  return createTexture({
+    storage: { dimension: '2d', image: { kind } as ImageResource },
+  });
+}
