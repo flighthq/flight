@@ -11,6 +11,7 @@ import {
   enableDomBlendModeSupport,
   enableDomClipSupport,
   enableDomRenderCache,
+  enableDomTextureResolverGuards,
   invalidateNodeLocalTransform,
   prepareScene2DRender,
   registerCanvasShapeCommands,
@@ -45,6 +46,7 @@ export function createDomTarget(options: Readonly<FunctionalTargetOptions>): Fun
     sceneGraphSyncPolicy: options.syncPolicy,
   });
 
+  enableDomTextureResolverGuards(state);
   registerDomImageTextureResolver(state);
   registerDomVideoTextureResolver(state);
   for (const kind of options.kinds ?? []) {
