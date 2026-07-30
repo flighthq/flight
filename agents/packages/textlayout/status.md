@@ -1,12 +1,30 @@
 ---
 package: '@flighthq/textlayout'
-updated: 2026-06-24
-by: ingest:builder-67dc46d64
+updated: 2026-07-30
+by: builder3
 ---
 
 # textlayout — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## 2026-07-30 — builder3 stale-cell audit and astral-space justification fix
+
+Audited the partial-45 TODO against the live tree and history:
+
+- Actual-space inter-word justification and its single-format test already landed in `1ec31f7993`.
+- The Package Map already carries the requested textlayout description.
+- The formerly missing direction/justification/layout/list-marker types are present in `@flighthq/types`.
+- The vestigial query `_text` parameters mentioned by the old records were removed in `8136a6aa3`.
+
+The live justification pass still mixed index units: layout-group ranges are UTF-16 offsets, but
+`positions` is codepoint-indexed. After an astral glyph, `startIndex + positionIndex` inspected the wrong
+source character and expanded a letter instead of its word space. `4fd3fc652` walks the source by
+codepoint during both space counting and expansion, with a regression over justified wrapped emoji text.
+
+Scoped verification before the records refresh: `npm run check -- textlayout` passed; filtered Vitest
+passed 12 files / 151 tests. The live-tree review and assessment replace the obsolete partial-45
+merge-gate record.
 
 ## 2026-06-25 — builder Phase 3 (Recommended sweep)
 

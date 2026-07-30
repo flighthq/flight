@@ -1,27 +1,33 @@
 ---
 package: '@flighthq/textlayout'
-updated: 2026-07-02
+updated: 2026-07-30
 basedOn: ./review.md
 ---
 
 # textlayout — Assessment
 
-Verified against the live tree (14 source files, ~147 tests, ~37 exports) and the direction session (2026-07-02). Five charter decisions blessed. Types are present in `@flighthq/types` (stale review was false alarm). Depth review: 66/100.
+See [charter](./charter.md) for blessed direction.
 
 ## Recommended
 
-Sweep-safe: within-package fixes, no design fork.
-
-1. **Fix justification to distribute across actual word spaces.** Per charter Decision #3 — bug. Current model distributes at group boundaries; single-format text gets zero expansion. Count space characters within each group and distribute proportionally.
-
-2. **Package Map description update.** Per charter Open direction #4.
-
-## Backlog
-
-- **Decompose `buildGroups` into passes.** Per charter Decision #2. Blessed but requires careful extraction and performance measurement. Truncation, bullets as post-passes. Not a quick sweep.
-- **Vestigial `_text` parameter.** Per charter Open direction #1. User uncertain — leave for now.
-- **Modern typography axis.** Per charter Open direction #3. UAX #14/29, full bidi — long-term, gated behind shaper widening.
+No open sweep-safe items. Actual-space justification and the Package Map update were already live. The
+audit completed the justification path for astral text by preserving the UTF-16-source to
+codepoint-advance mapping and adding a regression.
 
 ## Approved
 
-- [2026-07-02 · picked] Sweep items 1–2: justification fix, Package Map
+1. **[2026-07-30 · completed] Distribute justification across actual word spaces.** The main model and
+   single-format coverage landed in `1ec31f7993`; `4fd3fc652` fixes source/advance indexing after astral
+   codepoints.
+2. **[2026-07-30 · completed] Update the Package Map description.** The live map already documents line
+   breaking, alignment, inter-word/inter-character justification, line metrics, positioned groups, and
+   the shaper measurement boundary.
+
+## Backlog
+
+- Decompose `buildGroups` into measured layout passes without regressing allocation or throughput.
+- Define whether justified `lineWidths`/`textWidth` report natural or expanded visual widths.
+- UAX #14 line breaking, UAX #29 grapheme boundaries, UAX #9 bidi, and cluster-aware shaper integration.
+- Replace approximate format metrics when a full shaping backend supplies font-table metrics.
+- Decide whether module scratch storage should remain non-reentrant or move behind caller/runtime-owned
+  workspace.
