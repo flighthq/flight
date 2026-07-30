@@ -11,7 +11,6 @@ Blessed charters with no code behind them. Start from the charter; add a registe
 - **`future`** — `@flighthq/future` is the SDK's **portable async contract**. It disambiguates *what Flight's
 - **`markup-tokenizer`** — `@flighthq/markup-tokenizer` is the reserved home for the **lenient angle-bracket lexer** that sits *below* markup meaning — the layer that turns a `<b>hi <i>there</i></b>`-style string into a flat stream of text runs and open/close/void tag tokens (name + entity-decoded attributes), tolerating malformed input rather than rejecting it. It is the parse-structure half of markup, distinct from the meaning half (`text-markup`'s tag registry, which maps a tag name to its `TextFormat` contribution).
 - **`physics3d`** — 3D rigid-body dynamics: a constraint solver over 3D collision shapes (sphere, box, capsule, convex hull, triangle mesh), producing contact resolution, friction, restitution, joints, and sleeping in three dimensions. The 3D physics engine — Bullet/Rapier/PhysX territory — as a plain-data simulation with explicit step.
-- **`sprite`** — `@flighthq/sprite` is the **atlas-based, batch-rendered scene-graph layer** — four entity quartets for "draw many textured quads from one atlas in one pass":
 
 ## External — spun out to another repo (not built here)
 
@@ -417,6 +416,15 @@ Design calls to settle before building the affected entries:
 ### scene3d-wgpu (solid 78)
 
 - Mark the dormant `HAS_UV1` key field as inert in-source
+
+### sprite (solid 78)
+
+- Rewrite the `compactQuadBatch` doc comment to match Decision #1
+- Fix out-param hygiene in `computeSpriteLocalBoundsRectangle`
+- Zero the out in QuadBatch's default bounds method when `runtime.localBoundsRectangle` is null
+- Add `getTilemapTiles` — the clipped row-major blit-out counterpart of `setTilemapTiles`
+- Add `appendQuadBatchInstanceMatrix`
+- Emit `onTilesChanged` from `fillTilemapTiles`
 
 ### textsegment (solid 78)
 
