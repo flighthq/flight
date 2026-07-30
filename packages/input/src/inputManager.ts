@@ -281,15 +281,23 @@ export function attachWheelInput(
  * Returns a disposer that disconnects the subscriptions.
  */
 export function connectInputStateToInputManager(state: InputState, manager: InputManager): () => void {
+  // The just* sets record which TRANSITIONS happened during the frame, not which event arrived last.
+  // Two consequences, both of which the previous "latest event wins" form got wrong:
+  //
+  // Only a genuine up→down edge counts as a press. A held key auto-repeats — the DOM re-fires keydown,
+  // and native backends re-report held buttons — so without this guard `wasInputKeyPressed` stays true
+  // for every frame the key is held, and anything that fires on press (shoot, jump, confirm) autofires.
+  //
+  // A press and a release in the same frame must both survive. Deleting from the opposite set made a
+  // tap that started and ended between two endInputStateFrame calls report as a release with no press,
+  // so the input was silently swallowed rather than merely late.
   const onKeyDown = (data: Readonly<InputKeyboardData>) => {
+    if (!state.keysDown.has(data.keyCode)) state.justPressedKeys.add(data.keyCode);
     state.keysDown.add(data.keyCode);
-    state.justPressedKeys.add(data.keyCode);
-    state.justReleasedKeys.delete(data.keyCode);
   };
   const onKeyUp = (data: Readonly<InputKeyboardData>) => {
     state.keysDown.delete(data.keyCode);
     state.justReleasedKeys.add(data.keyCode);
-    state.justPressedKeys.delete(data.keyCode);
   };
   const onPointerDown = (data: Readonly<InputPointerData>) => {
     const prev = state.pointerButtonsDown.get(data.pointerId) ?? 0;
@@ -307,17 +315,19 @@ export function connectInputStateToInputManager(state: InputState, manager: Inpu
   const onPointerCancel = (data: Readonly<InputPointerData>) => {
     state.pointerButtonsDown.delete(data.pointerId);
   };
+  // Same transition rules as the keyboard pair above. pollGamepadInput already edge-detects before it
+  // emits, so it cannot produce a repeat itself — but these signals are public and a native backend
+  // reporting held buttons each poll is a supported source, so the guard belongs on the state machine
+  // rather than in one producer.
   const onGamepadButtonDown = (data: Readonly<InputGamepadButtonData>) => {
     const key = data.gamepad * MAX_GAMEPAD_BUTTONS + data.button;
+    if (!state.gamepadButtonsDown.has(key)) state.justPressedGamepadButtons.add(key);
     state.gamepadButtonsDown.add(key);
-    state.justPressedGamepadButtons.add(key);
-    state.justReleasedGamepadButtons.delete(key);
   };
   const onGamepadButtonUp = (data: Readonly<InputGamepadButtonData>) => {
     const key = data.gamepad * MAX_GAMEPAD_BUTTONS + data.button;
     state.gamepadButtonsDown.delete(key);
     state.justReleasedGamepadButtons.add(key);
-    state.justPressedGamepadButtons.delete(key);
   };
   const onGamepadAxisMove = (data: Readonly<InputGamepadAxisData>) => {
     state.axisValues.set(data.gamepad * MAX_GAMEPAD_AXES + data.axis, data.value);

@@ -1,4 +1,4 @@
-import { connectSignal } from '@flighthq/signals/contract';
+import { connectSignal, emitSignal } from '@flighthq/signals/contract';
 import type { InputGamepadButtonData, InputPointerData } from '@flighthq/types/contract';
 import { GamepadAxisKind, GamepadButtonKind, KeyCode, KeyModifier } from '@flighthq/types/contract';
 
@@ -1061,6 +1061,38 @@ describe('wasInputGamepadButtonPressed', () => {
 
     expect(wasInputGamepadButtonPressed(state, 0, 0)).toBe(false);
   });
+
+  // Driven by emitting the signal rather than by pollGamepadInput, because the built-in poller already
+  // edge-detects and so cannot produce a repeat. A native backend reporting held buttons every poll
+  // can, and these signals are public — which is why the guard belongs on the state machine.
+  it('returns false when a held button is reported down again', () => {
+    const manager = createInputManager();
+    const state = createInputState();
+    connectInputStateToInputManager(state, manager);
+    const data = { button: 1, gamepad: 0, timeStamp: 0, value: 1 } as InputGamepadButtonData;
+
+    emitSignal(manager.onGamepadButtonDown, data);
+    expect(wasInputGamepadButtonPressed(state, 0, 1)).toBe(true);
+
+    endInputStateFrame(state);
+    emitSignal(manager.onGamepadButtonDown, data);
+    expect(wasInputGamepadButtonPressed(state, 0, 1)).toBe(false);
+    expect(isInputGamepadButtonDown(state, 0, 1)).toBe(true);
+  });
+
+  it('returns true for a button pressed and released within the same frame', () => {
+    const manager = createInputManager();
+    const state = createInputState();
+    connectInputStateToInputManager(state, manager);
+    const data = { button: 1, gamepad: 0, timeStamp: 0, value: 1 } as InputGamepadButtonData;
+
+    emitSignal(manager.onGamepadButtonDown, data);
+    emitSignal(manager.onGamepadButtonUp, data);
+
+    expect(wasInputGamepadButtonPressed(state, 0, 1)).toBe(true);
+    expect(wasInputGamepadButtonReleased(state, 0, 1)).toBe(true);
+    expect(isInputGamepadButtonDown(state, 0, 1)).toBe(false);
+  });
 });
 
 describe('wasInputGamepadButtonReleased', () => {
@@ -1126,6 +1158,60 @@ describe('wasInputKeyPressed', () => {
     target.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'a' }));
     endInputStateFrame(state);
     expect(wasInputKeyPressed(state, KeyCode.A)).toBe(false);
+  });
+
+  // The DOM re-fires keydown while a key is held. Only the first is an up→down transition, so a held
+  // key must not keep reporting a press — otherwise anything that fires on press autofires.
+  it('returns false for the auto-repeat keydowns of a key that is still held', () => {
+    const manager = createInputManager();
+    const target = document.createElement('input');
+    attachKeyboardInput(manager, target);
+    const state = createInputState();
+    connectInputStateToInputManager(state, manager);
+
+    target.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'a' }));
+    expect(wasInputKeyPressed(state, KeyCode.A)).toBe(true);
+
+    endInputStateFrame(state);
+    target.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'a', repeat: true }));
+    expect(wasInputKeyPressed(state, KeyCode.A)).toBe(false);
+    expect(isInputKeyDown(state, KeyCode.A)).toBe(true);
+  });
+
+  // A tap that starts and ends between two frames still contains a real press; reporting only the
+  // release would swallow the input rather than delay it.
+  it('returns true for a key pressed and released within the same frame', () => {
+    const manager = createInputManager();
+    const target = document.createElement('input');
+    attachKeyboardInput(manager, target);
+    const state = createInputState();
+    connectInputStateToInputManager(state, manager);
+
+    target.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'a' }));
+    target.dispatchEvent(createKeyboardEvent('keyup', { code: 'KeyA', key: 'a' }));
+
+    expect(wasInputKeyPressed(state, KeyCode.A)).toBe(true);
+    expect(wasInputKeyReleased(state, KeyCode.A)).toBe(true);
+    expect(isInputKeyDown(state, KeyCode.A)).toBe(false);
+  });
+
+  // Re-pressing after a release inside one frame is a second up→down transition, and leaves the key
+  // held — so the frame reports a press, a release, and a key that is still down.
+  it('returns true for a key released and pressed again within the same frame', () => {
+    const manager = createInputManager();
+    const target = document.createElement('input');
+    attachKeyboardInput(manager, target);
+    const state = createInputState();
+    connectInputStateToInputManager(state, manager);
+
+    target.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'a' }));
+    endInputStateFrame(state);
+    target.dispatchEvent(createKeyboardEvent('keyup', { code: 'KeyA', key: 'a' }));
+    target.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'a' }));
+
+    expect(wasInputKeyPressed(state, KeyCode.A)).toBe(true);
+    expect(wasInputKeyReleased(state, KeyCode.A)).toBe(true);
+    expect(isInputKeyDown(state, KeyCode.A)).toBe(true);
   });
 });
 
