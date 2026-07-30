@@ -1,12 +1,31 @@
 ---
 package: '@flighthq/clipboard'
-updated: 2026-06-25
-by: ingest:builder-67dc46d64
+updated: 2026-07-30
+by: builder3
 ---
 
 # clipboard — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## 2026-07-30 — builder3 stale-cell audit and web event-probe fix
+
+Audited the partial-40 TODO against the live package and history:
+
+- The package source already uses the shared `ClipboardFormatBookmark`, `ClipboardFormatHtml`, and
+  `ClipboardFormatRtf` constants (`e115beddd`).
+- Tests already use all relevant shared named-flavor constants (`3240ad45e`).
+- The formerly missing `ClipboardBackend`, `ClipboardWatch`, `ClipboardWriteItem`, and
+  `ClipboardFormat*` header surface is present and exported from `@flighthq/types`.
+
+The old review's smaller event-probe finding remained live. `84bd1237b` removes the nonstandard
+`window.clipboardchange` property check from the experimental change-event capability test and adds a
+regression proving that property does not activate a subscription. The stale text/HTML-only Package Map
+line now describes the full named-flavor, open MIME, batch, sentinel, backend, and watch surface.
+
+Scoped verification before the records refresh: `npm run check -- clipboard` passed; package Vitest
+passed 1 file / 56 tests. The live-tree review and assessment replace the obsolete partial-40 merge-gate
+record.
 
 ## 2026-06-25 — builder Phase 3 (Recommended sweep)
 
