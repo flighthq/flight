@@ -11,11 +11,10 @@ See [charter](./charter.md) for blessed direction.
 ## Recommended
 
 - Extract the shared listener-registry + best-effort `setTimeout` scheduler primitive from the two ~95%-duplicated backend factories, leaving `createWebNotificationBackend`/`createServiceWorkerNotificationBackend` as thin wrappers. Charter-blessed (Decision 2026-07-02), within-package, behavior-preserving; the June "too large for sweep" call was made while the head didn't compile — with the build healed this is a mechanical refactor covered by the existing 66 tests.
-- Remove the `// ----` structural divider comments in `notification.ts` and `notification.test.ts` (codebase-map style rule); the test-file dividers have drifted out of sync with the blocks beneath them.
 
 ## Approved
 
-None.
+- [2026-07-30 · completed] Remove the `// ----` structural divider comments (`83d3d4d52`) — deleted the sole remaining divider in `notification.ts`; the `notification.test.ts` half was already clean.
 
 ## Backlog
 

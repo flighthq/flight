@@ -12,14 +12,13 @@ See [charter](./charter.md) for blessed direction.
 
 ## Recommended
 
-- jsdom unit tests for the web context-menu renderer paths that exist today — DOM build (separators, checkmark/radio, accelerator column, disabled items), keyboard nav (ArrowUp/Down wrap, Enter/Space select, Escape dismiss), submenu hover expansion, viewport clamping. The renderer is live source (~180 lines in `menu.ts`) with almost no direct coverage.
-- Fix the stale header comment in `packages/types/src/Menu.ts` claiming "a real web context-menu renderer is out of scope for the MVP" — the renderer exists in `menu.ts`.
-- Extend `validateMenuItemTemplate` with radio/checkbox consistency checks (e.g. flag multiple checked radios among contiguous siblings) — additive sentinel-message coverage, no API change.
 - Add optional descriptor fields `visible`, `sublabel`, `toolTip` to `MenuItemTemplate` and honor `visible` in the web renderer — additive optional fields mirroring the canonical native menu vocabulary (touches `@flighthq/types` `Menu.ts`, the package's own header file).
 
 ## Approved
 
-None.
+- [2026-07-30 · completed] jsdom unit tests for the web context-menu renderer paths (`c8595a69b`) — DOM build, keyboard nav, submenu hover expansion, viewport clamping. Exposed and fixed a real bug: initial `ArrowUp` selected the first item rather than the last.
+- [2026-07-30 · completed] Fix the stale header comment in `packages/types/src/Menu.ts` (`e890fb8c7`) — now states the web backend ships a DOM context-menu renderer, and replaces the removed `setTrayContextMenu` reference with `setTrayIconContextMenu`.
+- [2026-07-30 · completed] Extend `validateMenuItemTemplate` with radio/checkbox consistency checks (`2d24ed6fd`) — rejects checked state on non-checkbox/radio items and multiple checked radios in one contiguous sibling group.
 
 ## Backlog
 
