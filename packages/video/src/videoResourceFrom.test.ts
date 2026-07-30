@@ -119,6 +119,30 @@ describe('loadVideoResourceFromUrl', () => {
     controller.abort(new Error('cancelled'));
     await expect(promise).rejects.toThrow('cancelled');
   });
+
+  // The two rejection paths are the only ones that abandon an element the loader created; on success
+  // the caller takes ownership. Both are covered because a release sequence that is right on one
+  // abandonment path and absent on the other still leaks a decoder.
+  it('detaches the src and reloads the element it abandons when the load fails', async () => {
+    const promise = loadVideoResourceFromUrl('bad.mp4');
+    const element = lastVideo();
+    const loadSpy = vi.spyOn(element, 'load').mockImplementation(() => {});
+    element.dispatchEvent(new Event('error'));
+    await expect(promise).rejects.toThrow('Failed to load video');
+    expect(element.hasAttribute('src')).toBe(false);
+    expect(loadSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('detaches the src and reloads the element it abandons when the signal is aborted', async () => {
+    const controller = new AbortController();
+    const promise = loadVideoResourceFromUrl('clip.mp4', undefined, controller.signal);
+    const element = lastVideo();
+    const loadSpy = vi.spyOn(element, 'load').mockImplementation(() => {});
+    controller.abort(new Error('cancelled'));
+    await expect(promise).rejects.toThrow('cancelled');
+    expect(element.hasAttribute('src')).toBe(false);
+    expect(loadSpy).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('loadVideoResourceFromUrls', () => {
