@@ -266,6 +266,75 @@ describe('showOpenFileDialog', () => {
   });
 });
 
+describe('showOpenFileDialog File System Access filters', () => {
+  // buildFileSystemAccessTypes had no coverage at all. These pin what each filter shape becomes in
+  // the picker's `types` option — including the all-wildcard case, whose guard was already in place
+  // but unpinned, so nothing would have caught its removal.
+  interface PickerOptions {
+    multiple?: boolean;
+    types?: { accept: Record<string, string[]>; description: string }[];
+  }
+
+  async function pickerTypes(filters?: unknown): Promise<PickerOptions['types']> {
+    let seen: PickerOptions = {};
+    (window as unknown as Record<string, unknown>).showOpenFilePicker = async (options: PickerOptions) => {
+      seen = options;
+      return [];
+    };
+    try {
+      await createWebDialogBackend().openFile({ filters } as never);
+    } finally {
+      delete (window as unknown as Record<string, unknown>).showOpenFilePicker;
+    }
+    return seen.types;
+  }
+
+  it('omits an all-wildcard filter group rather than sending an empty accept map', async () => {
+    // `{ accept: {} }` is what the File System Access API rejects, so the group is dropped entirely.
+    expect(await pickerTypes([{ extensions: ['*'], name: 'All Files' }])).toBeUndefined();
+  });
+
+  it('omits a filter group with no extensions at all', async () => {
+    expect(await pickerTypes([{ extensions: [], name: 'Empty' }])).toBeUndefined();
+  });
+
+  it('sends no types at all when there are no filters', async () => {
+    expect(await pickerTypes(undefined)).toBeUndefined();
+    expect(await pickerTypes([])).toBeUndefined();
+  });
+
+  it('keeps the real groups when an all-wildcard group sits alongside them', async () => {
+    // The wildcard group is dropped, but it must not take its neighbours with it.
+    const types = await pickerTypes([
+      { extensions: ['*'], name: 'All Files' },
+      { extensions: ['txt'], name: 'Text' },
+    ]);
+    expect(types).toEqual([{ accept: { 'application/octet-stream': ['.txt'] }, description: 'Text' }]);
+  });
+
+  it('normalizes extensions to a leading dot', async () => {
+    const types = await pickerTypes([{ extensions: ['txt', '.md'], name: 'Docs' }]);
+    expect(types?.[0].accept['application/octet-stream']).toEqual(['.txt', '.md']);
+  });
+
+  it('drops the wildcard from a group that also names real extensions', async () => {
+    const types = await pickerTypes([{ extensions: ['*', 'txt'], name: 'Text' }]);
+    expect(types?.[0].accept['application/octet-stream']).toEqual(['.txt']);
+  });
+
+  it('keys the accept map by the declared MIME type when one is given', async () => {
+    const types = await pickerTypes([{ extensions: ['png'], mimeTypes: ['image/png'], name: 'PNG' }]);
+    expect(types).toEqual([{ accept: { 'image/png': ['.png'] }, description: 'PNG' }]);
+  });
+
+  it('accepts a MIME type with no extension constraint when the group is all-wildcard', async () => {
+    // Not the empty-accept case: an empty extension list under a real MIME key is valid and means
+    // "this MIME, any extension", which is a faithful reading of extensions:['*'] plus a MIME.
+    const types = await pickerTypes([{ extensions: ['*'], mimeTypes: ['image/png'], name: 'Images' }]);
+    expect(types).toEqual([{ accept: { 'image/png': [] }, description: 'Images' }]);
+  });
+});
+
 describe('showPromptDialog', () => {
   it('delegates to the active backend with options', async () => {
     const backend = fakeBackend();
