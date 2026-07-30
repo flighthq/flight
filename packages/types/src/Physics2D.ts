@@ -209,6 +209,14 @@ export interface Physics2DSolverConfig {
 export interface Physics2DWorld {
   bodies: RigidBody2D[];
   contacts: Physics2DContact[];
+  joints: Physics2DJoint[];
+  // Joint solvers by kind, scoped to the world rather than module-global, so two worlds in one process
+  // can register different custom joints without one seeing the other's.
+  jointSolvers: Map<Physics2DJointKind, Physics2DJointSolver>;
+  // This step's contact transitions, refilled by each step. A per-step output buffer, not a second
+  // record of contact state: the persistent cache already knows which pairs are touching, and these are
+  // read off the moments it gains and loses entries.
+  events: Physics2DContactEvents;
   index: SpatialIndexBackend;
   config: Physics2DSolverConfig;
 
@@ -218,4 +226,133 @@ export interface Physics2DWorld {
   // Monotonic counter backing `RigidBody2D.index`, so an index is never reused by a later body and a
   // stale contact can never be revived against a different body that inherited its slot.
   nextBodyIndex: number;
+}
+
+// A joint's type identifier. A plain string, not a closed union, because joints are the family a physics
+// package is most likely to be extended in: nine built-in kinds ship here, and a game with a bespoke
+// constraint (a conveyor, a ragdoll limit, a rail with a custom profile) should be able to register its
+// own without this package knowing. Built-in kinds take bare names; a user's take a vendor prefix
+// (`acme.Conveyor`), which is what keeps the two from colliding without a registration guard.
+export type Physics2DJointKind = string;
+
+// The fields every joint carries, whatever its kind. A concrete joint is this plus its own parameters,
+// and the solver registered for its kind is what knows the difference.
+//
+// `bodyA` and `bodyB` are body indices under the SAME canonical ordering contacts use — lower index
+// first. A joint is a constraint in the same solve list as a contact, so it inherits the same obligation:
+// the solve is sequential, each impulse lands on the velocities the previous one left, and an ordering
+// that varied with insertion history would make the result vary with it too.
+//
+// The anchors are in each body's LOCAL space, so a joint keeps its attachment as the bodies move. The
+// scratch fields below them are rebuilt every step from the current transforms — a joint stores where it
+// is attached, never where that attachment currently is.
+export interface Physics2DJoint {
+  kind: Physics2DJointKind;
+  bodyA: number;
+  bodyB: number;
+
+  localAnchorAX: number;
+  localAnchorAY: number;
+  localAnchorBX: number;
+  localAnchorBY: number;
+
+  // Whether the two bodies still collide with each other. Off by default: a pinned pair almost always
+  // overlaps at the joint, and resolving that contact fights the constraint holding them together.
+  collideConnected: boolean;
+
+  // The accumulated impulses this joint converged on, reused as the next step's warm start exactly as a
+  // contact's are. Their meaning is the solver's to define — a distance joint uses one scalar, a revolute
+  // uses two — so they are a fixed-width block rather than per-kind fields.
+  impulse0: number;
+  impulse1: number;
+  impulse2: number;
+
+  // World-space lever arms from each body's centre of mass to its anchor, rebuilt per step.
+  rAX: number;
+  rAY: number;
+  rBX: number;
+  rBY: number;
+}
+
+// A distance joint: holds two anchors a fixed distance apart. The bar of a linkage when stiff, a spring
+// when soft. `stiffness` and `damping` are zero for a rigid bar; giving them values turns the constraint
+// into a damped spring, which is the same solve with a softened effective mass.
+export interface Physics2DDistanceJoint extends Physics2DJoint {
+  length: number;
+  stiffness: number;
+  damping: number;
+}
+
+// A revolute joint: pins two bodies at a point, leaving rotation free. A hinge, an axle, a shoulder.
+// A motor drives the relative angle toward `motorSpeed` with at most `maxMotorTorque`; limits clamp the
+// relative angle into [`lowerAngle`, `upperAngle`] radians.
+export interface Physics2DRevoluteJoint extends Physics2DJoint {
+  enableMotor: boolean;
+  motorSpeed: number;
+  maxMotorTorque: number;
+  motorImpulse: number;
+  enableLimit: boolean;
+  lowerAngle: number;
+  upperAngle: number;
+  referenceAngle: number;
+}
+
+// A weld joint: pins the anchors together AND locks the relative angle. Rigid attachment — a crate nailed
+// to a cart. Not the same as a body with two colliders: a weld can be broken at runtime, and it is solved
+// rather than exact, so it flexes under enough load.
+export interface Physics2DWeldJoint extends Physics2DJoint {
+  referenceAngle: number;
+}
+
+// A rope joint: an inequality constraint that only acts at full extension, so the bodies move freely
+// within `maxLength` and are caught at it. Distinct from a stiff distance joint, which also PUSHES the
+// bodies apart when they close; a rope goes slack.
+export interface Physics2DRopeJoint extends Physics2DJoint {
+  maxLength: number;
+}
+
+// A prismatic joint: constrains two bodies to slide along one axis with no relative rotation. A piston,
+// an elevator, a drawer. `localAxisAX`/`localAxisAY` is the slide axis in body A's local space.
+export interface Physics2DPrismaticJoint extends Physics2DJoint {
+  localAxisAX: number;
+  localAxisAY: number;
+  referenceAngle: number;
+  enableMotor: boolean;
+  motorSpeed: number;
+  maxMotorForce: number;
+  motorImpulse: number;
+  enableLimit: boolean;
+  lowerTranslation: number;
+  upperTranslation: number;
+}
+
+// A mouse joint: drags one body toward a moving world-space target with bounded force. The odd one out —
+// it constrains a body to a POINT rather than to another body, which is why it is soft by construction:
+// a rigid drag would let a user inject unbounded energy by moving the cursor faster than the simulation.
+export interface Physics2DMouseJoint extends Physics2DJoint {
+  targetX: number;
+  targetY: number;
+  maxForce: number;
+  stiffness: number;
+  damping: number;
+}
+
+// The two halves of a joint's solve, registered together under a kind.
+//
+// `prepare` runs once per step, after the bodies have their current transforms, and rebuilds whatever the
+// iterations need — lever arms, effective masses, bias terms. `solve` runs once per velocity iteration
+// and applies its impulses immediately, because that is what makes a sequential solver converge.
+//
+// Both take the world so a solver can resolve body indices; neither may add or remove bodies, contacts,
+// or joints, since the solve list is fixed for the duration of a step.
+export interface Physics2DJointSolver {
+  prepare(world: Physics2DWorld, joint: Physics2DJoint, dt: number): void;
+  solve(world: Physics2DWorld, joint: Physics2DJoint): void;
+}
+
+// What happened to a contact this step, read off the contact cache rather than tracked alongside it.
+// `began` is a pair that was not touching last step and is now; `ended` was touching and is not.
+export interface Physics2DContactEvents {
+  began: Physics2DContact[];
+  ended: Physics2DContact[];
 }

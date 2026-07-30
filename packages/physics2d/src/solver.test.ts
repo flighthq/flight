@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   applyPhysics2DImpulse,
+  solvePhysics2DContactsOnce,
   relativeNormalVelocity,
   solvePhysics2DContacts,
   warmStartPhysics2DContacts,
@@ -137,6 +138,24 @@ describe('solvePhysics2DContacts', () => {
   it('does nothing for a world with no contacts', () => {
     const world = createPhysics2DWorld();
     expect(() => solvePhysics2DContacts(world)).not.toThrow();
+  });
+});
+
+describe('solvePhysics2DContactsOnce', () => {
+  it('applies one pass, so the step can interleave contacts with joints inside a single iteration', () => {
+    // Joints and contacts constrain the same bodies. Giving either a whole pass to itself lets it undo
+    // what the other just corrected, which is why the step alternates them rather than running one solver
+    // to convergence and then the other.
+    const { world, crate } = restingWorld();
+    crate.velocityY = -5;
+    stepPhysics2D(world, 1 / 60);
+    const before = crate.velocityY;
+    solvePhysics2DContactsOnce(world);
+    expect(crate.velocityY).not.toBe(before);
+  });
+
+  it('does nothing for a world with no contacts', () => {
+    expect(() => solvePhysics2DContactsOnce(createPhysics2DWorld())).not.toThrow();
   });
 });
 
