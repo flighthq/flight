@@ -1,6 +1,12 @@
 import { sampleAnimationTrack } from '@flighthq/animation/contract';
-import type { AnimationClip, Skeleton2D, Skeleton2DAnimationTarget } from '@flighthq/types/contract';
-import { Skeleton2DAnimationPath } from '@flighthq/types/contract';
+import type {
+  AnimationChannel,
+  AnimationClip,
+  Skeleton2D,
+  Skeleton2DAnimationTarget,
+  Skeleton2DSlotAnimationTarget,
+} from '@flighthq/types/contract';
+import { Skeleton2DAnimationPath, Skeleton2DSlotAnimationPath } from '@flighthq/types/contract';
 
 // Poses `pose` from an AnimationClip at `time` by COMPOSING each channel's sampled value onto the
 // corresponding `setup` bone — the 2D-skeletal analogue of @flighthq/scene3d's `applyAnimationClipToScene3D`,
@@ -10,6 +16,11 @@ import { Skeleton2DAnimationPath } from '@flighthq/types/contract';
 // timeline semantics; the `path` distinguishes which). Composing from `setup` every call (not from `pose`)
 // is what makes clips blendable — a mixer accumulates deltas as `pose = setup + Σ wᵢ·deltaᵢ`, which averaging
 // baked-absolute poses cannot express — and is why re-applying a clip does not accumulate across frames.
+//
+// A clip may also carry SLOT channels (a `Skeleton2DSlotAnimationTarget` rather than a bone target). Those
+// are dispatched by target SHAPE and follow different rules: a slot colour is an ABSOLUTE authored value, so
+// it is written rather than composed, and `setup` is not consulted at all on that path. See
+// applySkeleton2DSlotChannel.
 //
 // It writes only the bones a channel targets; untouched pose bones keep their clone-of-setup values. The
 // caller runs `computeSkeleton2DWorldTransforms(pose, …)` (then the deform) afterward, so a whole clip
@@ -37,7 +48,14 @@ export function applyAnimationClipToSkeleton2D(
   for (let i = 0; i < channels.length; i++) {
     const channel = channels[i];
     const target = channel.targetRef as Skeleton2DAnimationTarget | null;
-    if (target === null || typeof target !== 'object' || typeof target.boneIndex !== 'number') continue;
+    if (target === null || typeof target !== 'object') continue;
+    // `targetRef` is opaque, so the shape itself says which array a channel addresses: a bone target names
+    // a bone index, a slot target names a slot index. Probing (rather than a discriminator field) is what
+    // lets slot channels be purely additive to a bone-only clip format.
+    if (typeof target.boneIndex !== 'number') {
+      applySkeleton2DSlotChannel(channel, pose, target as unknown as Skeleton2DSlotAnimationTarget, time);
+      continue;
+    }
     const boneIndex = target.boneIndex;
     if (boneIndex < 0 || boneIndex >= poseBones.length || boneIndex >= setupBones.length) continue;
     sampleAnimationTrack(_scratch, channel.track, time);
@@ -63,6 +81,39 @@ export function applyAnimationClipToSkeleton2D(
         break;
     }
   }
+}
+
+// Writes one slot channel's sampled value onto the pose slot. Unlike a bone channel this COMPOSES NOTHING:
+// Spine and DragonBones both author slot colour as an ABSOLUTE value, so the sample replaces the slot's
+// colour rather than tinting the setup colour again. There is therefore no `setup` read on this path.
+//
+// Channels are NORMALIZED 0..1 in R,G,B,A order and scaled to bytes here. The track holds 0..1 rather than
+// 0..255 because that is the space Spine authors colour CURVE control points in — a byte-scaled track would
+// rebase every colour easing against the wrong range. Samples are CLAMPED: a bezier segment may legitimately
+// overshoot its endpoints (anticipation curves do), and an out-of-range channel would otherwise wrap when
+// packed and flip the colour.
+function applySkeleton2DSlotChannel(
+  channel: Readonly<AnimationChannel>,
+  pose: Skeleton2D,
+  target: Readonly<Skeleton2DSlotAnimationTarget>,
+  time: number,
+): void {
+  const slots = pose.slots;
+  if (slots === undefined || slots === null) return;
+  const slotIndex = target.slotIndex;
+  if (typeof slotIndex !== 'number' || slotIndex < 0 || slotIndex >= slots.length) return;
+  if (target.path !== Skeleton2DSlotAnimationPath.Color) return;
+  sampleAnimationTrack(_scratch, channel.track, time);
+  slots[slotIndex].color =
+    ((clampColorChannel(_scratch[0]) << 24) |
+      (clampColorChannel(_scratch[1]) << 16) |
+      (clampColorChannel(_scratch[2]) << 8) |
+      clampColorChannel(_scratch[3])) >>>
+    0;
+}
+
+function clampColorChannel(value: number): number {
+  return value <= 0 ? 0 : value >= 1 ? 255 : Math.round(value * 255);
 }
 
 const _scratch = [0, 0, 0, 0];

@@ -4,7 +4,7 @@ Continuity log for `@flighthq/skeleton2d-formats`. See [charter](./charter.md) f
 
 ## Current state — Spine `.json` and DragonBones `.json` both complete (2026-07-30)
 
-The package exists, is registered (tsconfig paths/build refs, sdk barrel `formats` group + deps, package.json `.`+`./contract` lanes), and passes the scoped `npm run check skeleton2d-formats`. **101 tests pass across 5 files.** All types live in `@flighthq/types` (implementation exports functions only).
+The package exists, is registered (tsconfig paths/build refs, sdk barrel `formats` group + deps, package.json `.`+`./contract` lanes), and passes the scoped `npm run check skeleton2d-formats`. **104 tests pass across 5 files.** All types live in `@flighthq/types` (implementation exports functions only).
 
 **DragonBones (`dragonBonesParse.ts`) — `parseDragonBonesSkeleton(json, diagnostics?)` → `Skeleton2DImport | null`, increment 1 (bones):** registered behind the seam (`detectDragonBones` on an `armature` key). Parses the FIRST armature's bone hierarchy: **topologically sorted** (DragonBones bones are not parent-before-child ordered, so parents are emitted before children; dangling/cyclic parents become roots + `dragonbones.unresolved-bone-parent` crumb). Transform maps `skX/skY` (or newer `rotate/skew`) → `Bone2D.rotation = rotation`, `shearX = 0`, `shearY = skew`, `scX/scY → scale`, `x/y` (algebra sourced from the MIT DragonBones `ObjectDataParser`, in charter #4). Inheritance: the 4-boolean model → `Bone2D.transformMode`. *(As landed, increment 1 mapped onto the old five-value `TransformMode2D` enum and `Skip`-crumbed the two combos it could not express plus `inheritTranslation:false`; the **model-shape finding** that raised — DragonBones' inherit factoring is richer than the Spine 5-enum — was surfaced to review and became the `TransformInherit2D` refactor [charter 2026-07-30], after which the booleans map straight through and `dragonbones.inherit-mode-unmapped` / `inherit-translation-unsupported` no longer exist.)* Slots, skins, and animation were `Skip`-crumbed at this point and are parsed by increments 2–4 below; additional armatures still are.
 
@@ -105,6 +105,18 @@ Alternate/named skins were Skip-crumbed in all three parsers; they are now first
 **Verified against the licensed `goblins` rig** (Spine 4.1.17, 3 skins): `.json` and `.skel` produce an IDENTICAL wardrobe — `default(4) goblin(20) goblingirl(18)` — with the binary still consuming to byte 0 remaining, which is what confirms the named-skin record layout. `goblingirl` yields 18 of its 20 entries because 2 are **linked meshes**, still an unmodeled type.
 
 **Follow-up this surfaces:** linked-mesh attachments matter far more now that skins work — borrowing geometry from another skin's mesh is their whole purpose (it is exactly how `goblingirl` reuses `goblin`'s meshes). They remain Skip-crumbed; closing that is the natural next skin-adjacent gap.
+
+## Slot colour timelines — landed 2026-07-30 (chief-approved slot-animation model, step 1–2)
+
+`Skeleton2DSlotAnimationTarget` (`{ slotIndex, path }`, path currently just `Color`) is an ADDITIVE second target type beside the bone target — not a widening of it. `applyAnimationClipToSkeleton2D` dispatches on target SHAPE (a bone target names a `boneIndex`, a slot target a `slotIndex`), which is what `targetRef: unknown` exists for and is why slot channels needed no change to any shipped bone channel.
+
+**Bone channels COMPOSE, slot colour channels WRITE.** Bone timelines are relative deltas applied onto the setup pose; Spine and DragonBones both author slot colour ABSOLUTELY, so the binder replaces the slot's colour and never reads `setup` on that path. Composing would double-apply the tint.
+
+**Colour channels are normalized 0..1, not 0..255** — even though `Slot2D.color` packs bytes. This was found against the licensed rig and is not cosmetic: Spine authors colour CURVE control points in 0..1 space, so a byte-scaled track would rebase every colour easing against the wrong range. Verified on spineboy's `muzzle-glow`, whose curve `[0.255, 1, 0.273, 1, …]` rebases exactly under absolute-time / 0..1-value (its r and a channels are constant at 1.0, g and b sit inside their ranges). The binder scales to bytes when packing and CLAMPS, since an anticipation curve may legitimately overshoot and an out-of-range channel would otherwise wrap and flip the colour.
+
+Only `rgba` is modeled. `rgb`, `alpha`, and the dark-colour variants are Skip-crumbed (`spine.slot-<kind>-timeline-unsupported`): `Slot2D` carries one packed colour and no dark colour, so a partial-channel timeline cannot be represented without inventing a setup blend. Attachment swaps are the next step (index track + lookup table).
+
+**Verified on the licensed rig:** spineboy's `shoot` yields exactly 6 slot colour channels against the 6 `rgba` timelines its JSON declares, colours genuinely diverge from setup across sampled times, and no packed value falls out of range.
 
 ## Next (per charter build order)
 
