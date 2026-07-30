@@ -11,7 +11,9 @@ Blessed charters with no code behind them. Start from the charter; add a registe
 - **`future`** — `@flighthq/future` is the SDK's **portable async contract**. It disambiguates *what Flight's
 - **`markup-tokenizer`** — `@flighthq/markup-tokenizer` is the reserved home for the **lenient angle-bracket lexer** that sits *below* markup meaning — the layer that turns a `<b>hi <i>there</i></b>`-style string into a flat stream of text runs and open/close/void tag tokens (name + entity-decoded attributes), tolerating malformed input rather than rejecting it. It is the parse-structure half of markup, distinct from the meaning half (`text-markup`'s tag registry, which maps a tag name to its `TextFormat` contribution).
 - **`physics3d`** — 3D rigid-body dynamics: a constraint solver over 3D collision shapes (sphere, box, capsule, convex hull, triangle mesh), producing contact resolution, friction, restitution, joints, and sleeping in three dimensions. The 3D physics engine — Bullet/Rapier/PhysX territory — as a plain-data simulation with explicit step.
+- **`sprite`** — `@flighthq/sprite` is the **atlas-based, batch-rendered scene-graph layer** — four entity quartets for "draw many textured quads from one atlas in one pass":
 - **`swf`** — `@flighthq/swf` is the reserved home for **SWF (Flash) import** — parsing Adobe/Macromedia Flash
+- **`tileset`** — `@flighthq/tileset` is the **tileset entity layer** — creating uniform-grid `Tileset` entities over a `TextureAtlas`, building region arrays from grid parameters (tile width/height, spacing, margin), and loading tileset images from various sources. 8 exports across 2 source files. Dependencies: `entity`, `image`, `textureatlas`, `types`. Extracted from `@flighthq/textureatlas` (2026-06-25).
 
 ## External — spun out to another repo (not built here)
 
@@ -161,12 +163,6 @@ Design calls to settle before building the affected entries:
 ### font (partial 52)
 
 - Strengthen the loader tests
-
-### tileset (solid 55)
-
-- Fix the `buildTilesetRegions` correctness edges
-- Pass `margin`/`spacing` through the loaders
-- Add `disposeTileset`
 
 ### spritesheet-formats (partial 58)
 
@@ -514,15 +510,6 @@ Design calls to settle before building the affected entries:
 ### scene3d-wgpu (solid 78)
 
 - Mark the dormant `HAS_UV1` key field as inert in-source
-
-### sprite (solid 78)
-
-- Rewrite the `compactQuadBatch` doc comment to match Decision #1
-- Fix out-param hygiene in `computeSpriteLocalBoundsRectangle`
-- Zero the out in QuadBatch's default bounds method when `runtime.localBoundsRectangle` is null
-- Add `getTilemapTiles` — the clipped row-major blit-out counterpart of `setTilemapTiles`
-- Add `appendQuadBatchInstanceMatrix`
-- Emit `onTilesChanged` from `fillTilemapTiles`
 
 ### textsegment (solid 78)
 
@@ -1013,14 +1000,14 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene3d` · `particleemitter` · `skeleton3d` · `scene3d-resources` · `camera-controls` · `debug` · `lifecycle` · `adjustments` · `camera` · `platform` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `scene2d-resources` · `shading` · `skeleton2d` · `skeleton2d-formats`
+`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene3d` · `particleemitter` · `scene2d-resources` · `skeleton3d` · `scene3d-resources` · `camera-controls` · `debug` · `lifecycle` · `adjustments` · `camera` · `platform` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
 
 ## Liveness — which stage each stale cell needs next
 
 Computed from cell front matter (dates are `updated:`/`lastDirection:` fields). The review loop works this list to keep everything above trustworthy; it can be ignored when simply orienting in a package.
 
 - **Needs a direction session (charter stub or never directed):** `future` · `textshaper-canvas` · `textureatlas-formats` · `xml`
-- **Needs a first review (built, no review.md):** `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `scene2d-resources` · `shading` · `skeleton2d` · `skeleton2d-formats`
+- **Needs a first review (built, no review.md):** `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
 - **Needs re-review (work landed after the survey):** `glyphatlas (review 2026-07-13 < status 2026-07-17)` · `particles-formats (review 2026-07-13 < status 2026-07-25)` · `render-gl (review 2026-07-21 < status 2026-07-22)` · `scene2d-wgpu (review 2026-06-24 < status 2026-06-25)` · `scene3d-formats (review 2026-07-09 < status 2026-07-29)` · `shortcut (review 2026-06-25 < status 2026-07-30)` · `texture (review 2026-06-25 < status 2026-07-22)`
-- **Needs assess refresh (review newer than assessment):** `assets (assessment 2026-07-21 < review 2026-07-22)` · `audio (assessment 2026-07-03 < review 2026-07-13)` · `log (assessment 2026-07-02 < review 2026-07-13)` · `spritesheet (assessment 2026-07-02 < review 2026-07-13)` · `tileset (assessment 2026-07-03 < review 2026-07-09)` · `tween (assessment 2026-07-02 < review 2026-07-13)` · `video (assessment 2026-07-03 < review 2026-07-09)` · `xml (assessment 2026-07-03 < review 2026-07-09)`
+- **Needs assess refresh (review newer than assessment):** `assets (assessment 2026-07-21 < review 2026-07-22)` · `audio (assessment 2026-07-03 < review 2026-07-13)` · `log (assessment 2026-07-02 < review 2026-07-13)` · `spritesheet (assessment 2026-07-02 < review 2026-07-13)` · `tween (assessment 2026-07-02 < review 2026-07-13)` · `video (assessment 2026-07-03 < review 2026-07-09)` · `xml (assessment 2026-07-03 < review 2026-07-09)`
 - **Open directions awaiting the user:** 599 across 133 charters — most-loaded: `scene3d` (13) · `render-gl` (12) · `scene2d-gl` (12) · `scene2d` (11) · `effects-wgpu` (10) · `lighting` (10) · `scene2d-dom` (10) · `scene3d-gl` (10) · `spritesheet-formats` (10) · `mesh` (9) · `render-wgpu` (9) · `scene2d-canvas` (9) · `skeleton3d` (9) · `effects-gl` (8) · `geometry` (8) · `materials` (8) · `particles-formats` (8) · `scene2d-wgpu` (8) · `scene3d-wgpu` (8) · `render` (7) · `scene3d-resources` (7) · `timeline` (7) · `camera` (6) · `capture` (6) · `color` (6) · `effects-canvas` (6) · `loader` (6) · `spatial` (6) · `texture-formats` (6) · `tween` (6). Each charter's `## Open directions` section holds the questions; a direction session drains them.
