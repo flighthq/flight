@@ -22,5 +22,6 @@ export * from './domTextLabel';
 export * from './domTextureResolver';
 export * from './domTransform';
 export * from './domVideoTextureResolver';
+export * from './enableDomTextureResolverGuards';
 export * from './explainDomTextureResolution';
 export * from './domHtmlView';

@@ -42,6 +42,7 @@
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/image": "*",
+    "@flighthq/log": "*",
     "@flighthq/node": "*",
     "@flighthq/render": "*",
     "@flighthq/shape": "*",
