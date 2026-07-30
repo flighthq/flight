@@ -1141,6 +1141,21 @@
       ]
     },
     {
+      "key": "per",
+      "label": "Per",
+      "scenes": [
+        {
+          "scene": "per-node-effect-lane",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": false
+          }
+        }
+      ]
+    },
+    {
       "key": "quadbatch",
       "label": "QuadBatch",
       "scenes": [
