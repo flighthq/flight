@@ -21,8 +21,10 @@ Built 2026-07-29.
   handoff gate.
 - SWF now proves recursively nested first-frame named slots across legacy and current placement/removal
   records plus fresh/move/replacement state and snapshot isolation, composed transforms, linkage, and
-  stage / available RECT, embedded-image, lossless-bitmap, video, and sprite extents. Later MovieClip
-  frames, visual definition bodies, compressed files, and a representative fixture remain SWF-side
+  stage / available RECT, embedded-image, lossless-bitmap, video, and sprite extents. A revision-pinned
+  external Ruffle `FWS` also verifies a named placement through the shared document boundary; its
+  provenance, MIT license, hash, and derived manifest remain SWF-owned evidence. Later MovieClip
+  frames, visual definition bodies, compressed files, and broader fixture coverage remain SWF-side
   depth rather than resource-pipeline responsibilities.
 
 Design follow-up: building this package exposed that the 3D twin's progressive capability had a

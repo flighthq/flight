@@ -5,6 +5,7 @@ lastDirection: 2026-07-30
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
+fixtureEvidence: ./fixture-evidence.md
 ---
 
 # swf — Charter (reserved home)
@@ -88,6 +89,10 @@ _Append-only, dated, blessed rulings._
   `SymbolClass`/`ExportAssets` linkage produce a `Scene2DDocument`. Rive is sequenced second; a
   duplicate SVG path is declined because `scene2d-formats` already owns SVG documents. User-directed
   2026-07-30.
+- **[2026-07-30] Keep canonical binary evidence external and reproducible.** The authorized Ruffle
+  MIT fixture is fetched only into ignored local storage. Flight commits its revision-pinned
+  provenance, source hash, derived document manifest, and reproduction procedure; hermetic tests
+  reproduce the relevant encoding synthetically and never require the asset or network.
 
 ## Open directions
 
