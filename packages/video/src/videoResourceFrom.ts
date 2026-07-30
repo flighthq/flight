@@ -11,19 +11,29 @@ export function createVideoResourceFromMediaStream(stream: MediaStream): VideoRe
   return createVideoResource(element);
 }
 
-// Loads from a Blob by wrapping it in an object URL. This function owns that URL and revokes it once
-// the load settles (success or failure), so the caller never has to.
+// Loads from a Blob by wrapping it in an object URL, which the returned resource then owns: pass it to
+// disposeVideoResource to revoke it. The revoke deliberately does not happen when the load settles —
+// settling only means the readiness event fired, and the element keeps fetching from the URL while it
+// plays and re-fetches on seek, so revoking there breaks playback of a video that just reported ready
+// (most starkly under `readiness: 'metadata'`, where only the container header has been read).
+//
+// A failed load is the one case this function still revokes, because it returns no resource for the
+// caller to dispose, so nothing else could ever release the URL.
 export async function loadVideoResourceFromBlob(
   blob: Blob,
   options?: Readonly<VideoResourceLoadOptions>,
   signal?: AbortSignal,
 ): Promise<VideoResource> {
   const url = URL.createObjectURL(blob);
+  let resource: VideoResource;
   try {
-    return await loadVideoResourceFromUrl(url, options, signal);
-  } finally {
+    resource = await loadVideoResourceFromUrl(url, options, signal);
+  } catch (error) {
     URL.revokeObjectURL(url);
+    throw error;
   }
+  resource.objectUrl = url;
+  return resource;
 }
 
 export function loadVideoResourceFromUrl(
