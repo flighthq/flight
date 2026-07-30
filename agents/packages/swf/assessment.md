@@ -9,8 +9,9 @@ basedOn: ./review.md
 ## Depth gaps
 
 1. **Recover animated MovieClip timelines.** Recursive first-frame `DefineSprite` graphs now retain
-   names, depths, linkage, and composed transforms. Preserve later frame deltas, labels, and playback
-   structure as `movieclip`/`timeline` data without retaining a SWF player runtime.
+   names, depths, linkage, and composed transforms across `PlaceObject` through `PlaceObject4` and both
+   removal forms. Preserve later frame deltas, labels, and playback structure as `movieclip`/`timeline`
+   data without retaining a SWF player runtime.
 2. **Materialize visible archive content.** Add versioned `DefineShape*`, bitmap, text/font, mask,
    color-transform, blend, and filter coverage onto existing Flight primitives without retaining a
    player runtime.

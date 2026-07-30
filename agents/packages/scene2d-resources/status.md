@@ -19,9 +19,10 @@ Built 2026-07-29.
   malformed built-in rejection, SVG, and Lottie.
 - Scoped package checks/tests and bundle-size verification pass. Bare repository checks/tests remain the final
   handoff gate.
-- SWF now proves recursively nested first-frame named slots, composed transforms, linkage, and stage /
-  available character extents. Later MovieClip frames, visual definition bodies, compressed files, and
-  a representative fixture remain SWF-side depth rather than resource-pipeline responsibilities.
+- SWF now proves recursively nested first-frame named slots across legacy and current placement/removal
+  records, composed transforms, linkage, and stage / available character extents. Later MovieClip
+  frames, visual definition bodies, compressed files, and a representative fixture remain SWF-side
+  depth rather than resource-pipeline responsibilities.
 
 Design follow-up: building this package exposed that the 3D twin's progressive capability had a
 synchronous-looking name. The subsequent 3D migration preserved it as `updateScene3DResourceStreaming`
