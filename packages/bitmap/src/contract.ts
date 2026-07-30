@@ -39,3 +39,4 @@ export * from './bitmapSharpen';
 export * from './bitmapTone';
 export * from './bitmapTransform';
 export * from './bitmapWarp';
+export * from './explainBitmapReadback';

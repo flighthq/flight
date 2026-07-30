@@ -42,6 +42,7 @@ export {
   createBitmapFromCanvas,
   captureBitmapFromImageResource,
   createBitmapFromImageSource,
+  explainBitmapReadback,
   createBitmapRegion,
   cropBitmap,
   dilateBitmap,
