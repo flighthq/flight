@@ -58,7 +58,7 @@ function makeAtlasEmitter(regionWidth: number, regionHeight: number): ParticleEm
   image.height = 128;
   emitter.data.atlas = {
     regions: [{ id: 0, x: 0, y: 0, width: regionWidth, height: regionHeight } as TextureAtlasRegion],
-    texture: createTexture({ storage: { dimension: '2d', image } }),
+    texture: createTexture({ dimension: '2d', source: image }),
   } as TextureAtlas;
   return emitter;
 }

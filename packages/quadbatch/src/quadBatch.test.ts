@@ -1,7 +1,13 @@
 import { createRectangle, createVector2 } from '@flighthq/geometry/contract';
 import { getNodeLocalBoundsRectangle, getNodeLocalBoundsRevision } from '@flighthq/node/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import type { QuadBatch, QuadTransformType, Texture, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
+import type {
+  QuadBatch,
+  QuadTransformType,
+  Texture2D,
+  TextureAtlas,
+  TextureAtlasRegion,
+} from '@flighthq/types/contract';
 import { QuadBatchKind } from '@flighthq/types/contract';
 
 import {
@@ -705,7 +711,7 @@ describe('resizeQuadBatch', () => {
   });
 
   it('keeps 300k untinted atlas instances on one texture and no material array', () => {
-    const texture = {} as Texture;
+    const texture = {} as Texture2D;
     const atlas = makeQuadAtlas(makeQuadRegion());
     atlas.texture = texture;
     const quadBatch = createQuadBatch({ data: { atlas } });

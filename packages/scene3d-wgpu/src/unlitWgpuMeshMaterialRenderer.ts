@@ -4,7 +4,6 @@ import {
   registerWgpuBitmapTextureResolver,
   registerWgpuImageTextureResolver,
   registerWgpuRenderTextureResolver,
-  registerWgpuVideoTextureResolver,
 } from '@flighthq/render-wgpu/contract';
 import type {
   LinearColor,
@@ -66,7 +65,6 @@ export const unlitWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 export function registerUnlitWgpuMaterial(state: WgpuRenderState): void {
   registerWgpuBitmapTextureResolver(state);
   registerWgpuImageTextureResolver(state);
-  registerWgpuVideoTextureResolver(state);
   registerWgpuRenderTextureResolver(state);
   registerWgpuMeshMaterialRenderer(state, UnlitMaterialKind, unlitWgpuMeshMaterialRenderer);
 }

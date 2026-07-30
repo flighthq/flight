@@ -54,7 +54,7 @@ export function explainGlRenderTexture(
   renderTexture: Readonly<RenderTexture>,
 ): GlRenderTextureExplanation {
   const entry = getEntry(state, renderTexture);
-  const descriptor = renderTexture.storage.target;
+  const descriptor = renderTexture.source;
   return {
     height: entry?.target.height ?? descriptor?.height ?? 0,
     status: entry?.status ?? 'unrendered',
@@ -115,7 +115,7 @@ export function setGlRenderTextureGuard(state: GlRenderState, guard: GlRenderTex
 }
 
 function ensureEntry(state: GlRenderState, renderTexture: Readonly<RenderTexture>): GlRenderTextureEntry {
-  const descriptor = renderTexture.storage.target;
+  const descriptor = renderTexture.source;
   const entries = getEntries(state);
   let entry = entries.get(renderTexture);
   if (entry === undefined) {

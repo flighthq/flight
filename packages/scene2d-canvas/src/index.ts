@@ -41,7 +41,6 @@ export {
   registerCanvasRenderTextureResolver,
   registerCanvasShapeCommands,
   registerCanvasTextureResolver,
-  registerCanvasVideoTextureResolver,
   renderIntoCanvasRenderTexture,
   renderCanvasBackground,
   renderCanvasScene2D,

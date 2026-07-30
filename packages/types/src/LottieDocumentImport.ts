@@ -1,6 +1,6 @@
 import type { AnimationClip } from './AnimationClip';
 import type { DisplayObject } from './DisplayObject';
-import type { ImageResource } from './ImageResource';
+import type { Image } from './Image';
 import type { LottieImageAsset } from './LottieDocument';
 
 /**
@@ -8,7 +8,7 @@ import type { LottieImageAsset } from './LottieDocument';
  * callers resolve image assets to already-owned resources, matching SVG import.
  */
 export interface LottieDocumentImportOptions {
-  resolveImageResource?: (asset: Readonly<LottieImageAsset>) => ImageResource | null;
+  resolveImageResource?: (asset: Readonly<LottieImageAsset>) => Image | null;
 }
 
 /**

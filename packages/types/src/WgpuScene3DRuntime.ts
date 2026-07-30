@@ -182,7 +182,7 @@ export interface WgpuMeshUpload {
 // layout. `views`/`sampler` cache the resolved map texture views and the ONE material sampler the bind
 // group was last built from; a binder re-resolves them each bind (into a reused scratch — no per-bind
 // allocation) and rebuilds `bindGroup` only when one differs (a map swap, an unready→ready transition,
-// an ImageResource.version bump, or the primary-map sampler changing all yield a different resolved
+// an Image.version bump, or the primary-map sampler changing all yield a different resolved
 // value), so a live material-map mutation is honored without per-frame bind-group churn. `views` is
 // binder-owned and overwritten in place on rebuild. `sampler` is the single PRIMARY-map sampler wgpu
 // binds for the whole material (see getWgpuMaterialSampler) — the shared-primary-sampler contract, so

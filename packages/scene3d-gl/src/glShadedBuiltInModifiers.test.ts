@@ -39,7 +39,7 @@ import {
 import { resolveGlModifierSnippet } from './glShadedModifierSnippet';
 
 // A Texture whose image is unloaded — the snippet binds the sampler unit without an upload.
-const UNLOADED_TEXTURE = { storage: { dimension: '2d', image: null } } as unknown as Texture;
+const UNLOADED_TEXTURE = { dimension: '2d', source: null } as unknown as Texture;
 
 function makeContext(state: ReturnType<typeof makeGlScene3DState>['state'], index = 0): GlModifierBindContext {
   let unit = 3;

@@ -7,7 +7,7 @@ import { renderCanvasShapeCommands } from '@flighthq/scene2d-canvas/contract';
 import { getShapeFillRegions, getShapeStrokeRegions, hasShapeFill } from '@flighthq/shape/contract';
 import type {
   Scene2DRenderer,
-  ImageResource,
+  Image,
   Renderable,
   RendererData,
   RenderProxy2D,
@@ -33,10 +33,10 @@ import { drawWgpuShapeMeshes } from './wgpuShapeMesh';
 interface WgpuShapeData {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
-  // The canvas wrapped as an ImageResource (its `source`) so the shared quad-batch writer treats a canvas-backed
+  // The canvas wrapped as an Image (its `source`) so the shared quad-batch writer treats a canvas-backed
   // shape uniformly with bitmaps; re-rendering bumps the version, which the batch's version-aware cache
   // re-uploads on (recreating the GPU texture, covering both content and size changes).
-  image: ImageResource;
+  image: Image;
   lastContentId: number;
   lastW: number;
   lastH: number;

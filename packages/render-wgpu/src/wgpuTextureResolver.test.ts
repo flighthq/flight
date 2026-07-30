@@ -1,11 +1,10 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { ImageResource, RenderTexture, Texture } from '@flighthq/types/contract';
+import type { Image, RenderTexture, Texture, TextureSource } from '@flighthq/types/contract';
 import {
   BitmapTextureSourceKind,
   CompressedImageTextureSourceKind,
   ImageTextureSourceKind,
   RenderTargetTextureSourceKind,
-  VideoTextureSourceKind,
 } from '@flighthq/types/contract';
 
 import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
@@ -18,7 +17,6 @@ import {
   registerWgpuCompressedImageTextureResolver,
   registerWgpuRenderTextureResolver,
   registerWgpuTextureResolver,
-  registerWgpuVideoTextureResolver,
   resolveWgpuTexture,
 } from './wgpuTextureResolver';
 
@@ -26,20 +24,26 @@ beforeAll(() => {
   installWgpuMock();
 });
 
-function imageResource(
-  kind = ImageTextureSourceKind,
-  source: CanvasImageSource = document.createElement('canvas'),
-): ImageResource {
+function imageResource(source: CanvasImageSource = document.createElement('canvas')): Image {
   return {
     height: 4,
-    kind,
+    kind: ImageTextureSourceKind,
     source,
     version: 0,
     width: 4,
-  } as unknown as ImageResource;
+  } as unknown as Image;
 }
 
-function textureWithImage(image: ImageResource | null): Texture {
+function textureSource(kind: string): TextureSource {
+  return {
+    height: 4,
+    kind,
+    version: 0,
+    width: 4,
+  } as unknown as TextureSource;
+}
+
+function textureWithImage(image: TextureSource | null): Texture {
   return {
     colorSpace: 'srgb',
     flipX: false,
@@ -52,18 +56,20 @@ function textureWithImage(image: ImageResource | null): Texture {
       wrapU: 'clamp-to-edge',
       wrapV: 'clamp-to-edge',
     },
-    storage: { dimension: '2d', image },
+    dimension: '2d',
+    source: image,
     uvOffset: { x: 0, y: 0 },
     uvRotation: 0,
     uvScale: { x: 1, y: 1 },
     version: 0,
-  } as Texture;
+  } as unknown as Texture;
 }
 
 function renderTexture(): RenderTexture {
   const texture = textureWithImage(null);
   texture.colorSpace = 'linear';
-  texture.storage.target = createEntity({
+  if (texture.dimension !== '2d') throw new Error('test texture must be 2d');
+  texture.source = createEntity({
     height: 8,
     kind: RenderTargetTextureSourceKind,
     version: 0,
@@ -102,6 +108,18 @@ describe('registerWgpuImageTextureResolver', () => {
     expect(first).not.toBeNull();
     expect(resolveWgpuTexture(state, texture)).toBe(first);
   });
+
+  it('resolves a host video through the image source kind', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const image = imageResource({
+      readyState: 4,
+      videoHeight: 8,
+      videoWidth: 8,
+    } as HTMLVideoElement);
+    const texture = textureWithImage(image);
+    registerWgpuImageTextureResolver(state);
+    expect(resolveWgpuTexture(state, texture)).not.toBeNull();
+  });
 });
 
 describe('registerWgpuRenderTextureResolver', () => {
@@ -122,8 +140,7 @@ describe('registerWgpuTextureResolver', () => {
   it('is state-scoped, last-write-wins by string kind, and removable', async () => {
     const a = await createWgpuRenderStateForTest();
     const b = await createWgpuRenderStateForTest();
-    const image = imageResource();
-    image.kind = 'acme.generated';
+    const image = textureSource('acme.generated');
     const texture = textureWithImage(image);
     const first = vi.fn(() => ({ first: true }) as never);
     const second = vi.fn(() => ({ second: true }) as never);
@@ -140,22 +157,8 @@ describe('registerWgpuTextureResolver', () => {
   });
 });
 
-describe('registerWgpuVideoTextureResolver', () => {
-  it('resolves a ready declared video backing without structural dispatch', async () => {
-    const state = await createWgpuRenderStateForTest();
-    const image = imageResource(VideoTextureSourceKind, {
-      readyState: 4,
-      videoHeight: 8,
-      videoWidth: 8,
-    } as HTMLVideoElement);
-    const texture = textureWithImage(image);
-    registerWgpuVideoTextureResolver(state);
-    expect(resolveWgpuTexture(state, texture)).not.toBeNull();
-  });
-});
-
 describe('resolveWgpuTexture', () => {
-  it('returns null without an exact registered backing kind', async () => {
+  it('returns null without an exact registered source kind', async () => {
     const state = await createWgpuRenderStateForTest();
     expect(resolveWgpuTexture(state, textureWithImage(null))).toBeNull();
   });

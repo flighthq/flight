@@ -1,7 +1,7 @@
 import { createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry/contract';
 import { invalidateNodeLocalBounds } from '@flighthq/node/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
-import { createTexture, setTextureImage } from '@flighthq/texture/contract';
+import { createTexture, setTextureSource } from '@flighthq/texture/contract';
 import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas/contract';
 import type {
   BitmapText,
@@ -188,9 +188,9 @@ function ensureBitmapTextPage(
   }
   const pageData = runtime.pages[page];
   if (pageData.atlas.texture === null) {
-    pageData.atlas.texture = createTexture({ storage: { dimension: '2d', image } });
+    pageData.atlas.texture = createTexture({ dimension: '2d', source: image });
   } else {
-    setTextureImage(pageData.atlas.texture, image);
+    setTextureSource(pageData.atlas.texture, image);
   }
   const context: BitmapTextPageContext = { page: pageData, regionByCodepoint: new Map() };
   pages.set(page, context);

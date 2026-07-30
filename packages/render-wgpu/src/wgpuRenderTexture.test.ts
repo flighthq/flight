@@ -28,16 +28,13 @@ function texture(): RenderTexture {
       wrapU: 'clamp-to-edge',
       wrapV: 'clamp-to-edge',
     },
-    storage: {
-      dimension: '2d',
-      image: null,
-      target: { height: 8, kind: RenderTargetTextureSourceKind, width: 8 },
-    },
+    dimension: '2d',
+    source: { height: 8, kind: RenderTargetTextureSourceKind, version: 0, width: 8 },
     uvOffset: { x: 0, y: 0 },
     uvRotation: 0,
     uvScale: { x: 1, y: 1 },
     version: 0,
-  } as RenderTexture;
+  } as unknown as RenderTexture;
 }
 
 describe('bindWgpuRenderTexture', () => {

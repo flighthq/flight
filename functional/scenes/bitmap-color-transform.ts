@@ -67,7 +67,8 @@ function blit(bitmap: Readonly<Bitmap>, x: number): void {
   const bmp = createSprite();
   bmp.data.texture = createTexture({
     sampler: createPixelArtSampler(),
-    storage: { dimension: '2d', image: createImageResourceFromCanvas(canvas) },
+    dimension: '2d',
+    source: createImageResourceFromCanvas(canvas),
   });
   bmp.x = x;
   bmp.y = TILE_Y;

@@ -9,7 +9,15 @@ describe('registerDomImageTextureResolver', () => {
   it('returns the host image source directly', () => {
     const state = createDomRenderState(document.createElement('div'));
     const source = document.createElement('img');
-    const texture = createTexture({ storage: { dimension: '2d', image: createImageResource(source) } });
+    const texture = createTexture({ dimension: '2d', source: createImageResource(source) });
+    registerDomImageTextureResolver(state);
+    expect(resolveDomTexture(state, texture)).toBe(source);
+  });
+
+  it('returns a host video through the same image source kind', () => {
+    const state = createDomRenderState(document.createElement('div'));
+    const source = document.createElement('video');
+    const texture = createTexture({ dimension: '2d', source: createImageResource(source) });
     registerDomImageTextureResolver(state);
     expect(resolveDomTexture(state, texture)).toBe(source);
   });

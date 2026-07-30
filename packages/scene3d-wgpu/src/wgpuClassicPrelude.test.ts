@@ -1,6 +1,6 @@
 import { createTexture } from '@flighthq/texture/contract';
 import type {
-  ImageResource,
+  Image,
   WgpuClassicDefineKey,
   WgpuClassicLightingModel,
   WgpuColorAdjustmentMaterialFeature,
@@ -60,7 +60,8 @@ describe('bindWgpuClassicSurface', () => {
     // A ready diffuse (primary) map so bind() actually runs getWgpuMaterialSampler → getWgpuSampler (the
     // path an already-resolved-sampler helper test bypasses). Same shared binder that PBR uses.
     const diffuseMap = createTexture({
-      storage: { dimension: '2d', image: { source: {} } as unknown as ImageResource },
+      dimension: '2d',
+      source: { source: {} } as unknown as Image,
     });
     bindWgpuClassicSurface(state, pipeline, key, [1, 0, 0, 1], [1, 1, 1, 1], 32, 0.5, diffuseMap, null, null, null);
     const count = (name: string) => fake.calls.filter((c) => c.name === name).length;

@@ -26,7 +26,7 @@ afterEach(() => {
 });
 
 describe('createImageResourceFromBitmap', () => {
-  it('returns an ImageResource with matching dimensions', () => {
+  it('returns an Image with matching dimensions', () => {
     // Built with createEntity rather than @flighthq/bitmap's createBitmap: bitmap depends on image,
     // so importing it here would force a circular tsconfig project reference.
     const bitmap: Bitmap = createEntity({
@@ -133,7 +133,7 @@ describe('isImageResourceSameOrigin', () => {
 });
 
 describe('loadImageResourceFromBase64', () => {
-  it('resolves to an ImageResource', async () => {
+  it('resolves to an Image', async () => {
     const resource = await loadImageResourceFromBase64('abc123', 'image/png');
     expect(resource).not.toBeNull();
     expect(resource.source).toBeInstanceOf(HTMLImageElement);
@@ -146,7 +146,7 @@ describe('loadImageResourceFromBase64', () => {
 });
 
 describe('loadImageResourceFromBlob', () => {
-  it('resolves to an ImageResource', async () => {
+  it('resolves to an Image', async () => {
     const blob = new Blob([], { type: 'image/png' });
     const resource = await loadImageResourceFromBlob(blob);
     expect(resource).not.toBeNull();
@@ -220,7 +220,7 @@ describe('loadImageResourceFromUrl', () => {
     );
   });
 
-  it('resolves to an ImageResource whose source is an HTMLImageElement', async () => {
+  it('resolves to an Image whose source is an HTMLImageElement', async () => {
     const resource = await loadImageResourceFromUrl('data:image/png;base64,abc');
     expect(resource.source).toBeInstanceOf(HTMLImageElement);
   });

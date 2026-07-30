@@ -56,7 +56,7 @@ function makeAtlasCanvas(): HTMLCanvasElement {
 }
 
 const atlas = createTextureAtlas({
-  texture: createTexture({ storage: { dimension: '2d', image: createImageResource(makeAtlasCanvas()) } }),
+  texture: createTexture({ dimension: '2d', source: createImageResource(makeAtlasCanvas()) }),
 });
 addTextureAtlasRegion(atlas, 0, 0, REGION, REGION); // region id 0 — red
 addTextureAtlasRegion(atlas, REGION, 0, REGION, REGION, REGION / 2, REGION / 2); // region id 1 — green, center pivot

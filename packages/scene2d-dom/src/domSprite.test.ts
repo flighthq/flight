@@ -2,24 +2,21 @@ import { createImageResource, createImageResourceFromCanvas } from '@flighthq/im
 import { getOrCreateRenderProxy2D, registerRenderer } from '@flighthq/render/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import { SpriteKind, VideoTextureSourceKind } from '@flighthq/types/contract';
+import { SpriteKind } from '@flighthq/types/contract';
 
 import { registerDomImageTextureResolver } from './domImageTextureResolver';
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
 import { defaultDomSpriteRenderer, drawDomSprite } from './domSprite';
-import { registerDomVideoTextureResolver } from './domVideoTextureResolver';
 
-function drawElement(source: CanvasImageSource, kind = 'image'): HTMLElement | null {
+function drawElement(source: CanvasImageSource): HTMLElement | null {
   const state = createDomRenderState(document.createElement('div'));
-  if (kind === VideoTextureSourceKind) registerDomVideoTextureResolver(state);
-  else registerDomImageTextureResolver(state);
+  registerDomImageTextureResolver(state);
   registerRenderer(state, SpriteKind, defaultDomSpriteRenderer);
   const image = createImageResource(source);
-  image.kind = kind;
   image.width = 64;
   image.height = 64;
   const sprite = createSprite({
-    data: { texture: createTexture({ storage: { dimension: '2d', image } }) },
+    data: { texture: createTexture({ dimension: '2d', source: image }) },
   });
   drawDomSprite(state, getOrCreateRenderProxy2D(state, sprite));
   return getDomRenderStateRuntime(state).domCurrentElement;
@@ -48,13 +45,13 @@ describe('drawDomSprite', () => {
     registerDomImageTextureResolver(state);
     registerRenderer(state, SpriteKind, defaultDomSpriteRenderer);
     const sprite = createSprite({
-      data: { texture: createTexture({ storage: { dimension: '2d', image } }) },
+      data: { texture: createTexture({ dimension: '2d', source: image }) },
     });
     drawDomSprite(state, getOrCreateRenderProxy2D(state, sprite));
     expect(getDomRenderStateRuntime(state).domCurrentElement?.tagName).toBe('CANVAS');
   });
 
-  it('uses the backing video element directly', () => {
-    expect(drawElement(document.createElement('video'), VideoTextureSourceKind)?.tagName).toBe('VIDEO');
+  it('uses the source video element directly', () => {
+    expect(drawElement(document.createElement('video'))?.tagName).toBe('VIDEO');
   });
 });

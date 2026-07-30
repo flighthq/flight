@@ -32,6 +32,5 @@ export * from './canvasTilemap';
 export * from './canvasTextureResolver';
 export * from './canvasTextureWindowSource';
 export * from './canvasTransform';
-export * from './canvasVideoTextureResolver';
 export * from './enableCanvasTextureResolverGuards';
 export * from './explainCanvasTextureResolution';

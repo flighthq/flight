@@ -24,7 +24,6 @@ import {
   registerCanvasImageTextureResolver,
   registerCanvasRenderTextureResolver,
   registerCanvasShapeCommands,
-  registerCanvasVideoTextureResolver,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasScene2D,
@@ -60,7 +59,6 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
   enableCanvasTextureResolverGuards(state);
   registerCanvasImageTextureResolver(state);
   registerCanvasRenderTextureResolver(state);
-  registerCanvasVideoTextureResolver(state);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
       registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);

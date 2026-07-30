@@ -1,12 +1,12 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { ImageResource, Bitmap } from '@flighthq/types/contract';
+import type { Image, Bitmap } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 /**
- * Reads a host-backed ImageResource into a newly allocated, CPU-readable Bitmap. The readback draws
+ * Reads a host-backed Image into a newly allocated, CPU-readable Bitmap. The readback draws
  * through a detached canvas; callers that need both representations should retain both objects.
  */
-export function captureBitmapFromImageResource(resource: Readonly<ImageResource>): Bitmap {
+export function captureBitmapFromImageResource(resource: Readonly<Image>): Bitmap {
   const canvas = document.createElement('canvas');
   canvas.width = resource.width;
   canvas.height = resource.height;

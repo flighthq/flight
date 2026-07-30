@@ -7,6 +7,7 @@ import {
 } from '@flighthq/mesh/contract';
 import { getNodeChildren } from '@flighthq/node/contract';
 import { isMesh } from '@flighthq/scene3d/contract';
+import { getTextureSource } from '@flighthq/texture/contract';
 import type {
   BlinnPhongMaterial,
   ExternalImageResourceReference,
@@ -374,7 +375,7 @@ describe('createScene3DFrom3ds', () => {
     expect((getTestTextureResource(scene.resources, mat.diffuseMap!) as ExternalImageResourceReference).uri).toBe(
       'skin.png',
     );
-    expect(mat.diffuseMap!.storage.image).toBeNull();
+    expect(getTextureSource(mat.diffuseMap!)).toBeNull();
   });
 
   // Builds a one-material scene from a material chunk and returns that material as a BlinnPhongMaterial.

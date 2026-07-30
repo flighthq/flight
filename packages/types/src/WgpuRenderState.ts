@@ -1,14 +1,14 @@
 import type { BlendMode } from './BlendMode';
 import type { ColorScaleBias } from './ColorScaleBias';
 import type { Kind } from './Entity';
-import type { ImageResource } from './ImageResource';
+import type { ExternalTexture } from './ExternalTexture';
+import type { Image } from './Image';
 import type { Material } from './Material';
 import type { Matrix } from './Matrix';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
 import type { RenderTexture } from './RenderTexture';
 import type { SamplerLike } from './Sampler';
-import type { Texture } from './Texture';
 import type { TextureSource } from './TextureSource';
 import type { TextureSourceKind } from './TextureSourceKind';
 import type { TintMaterialData } from './TintMaterialData';
@@ -113,12 +113,12 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   compressedTextureUpload?: WgpuCompressedTextureUploader | null;
   // Dynamic host-video cache. The GPU texture persists across frames; uploadedVersion gates the
   // expensive external-image copy, while width/height detect mid-stream resolution changes.
-  videoTextureCache?: WeakMap<ImageResource, WgpuVideoTextureEntry>;
+  videoTextureCache?: WeakMap<Image, WgpuVideoTextureEntry>;
   // Open, state-scoped Texture source registry keyed by the source's declared string kind.
   // Map.set is last-write-wins; undefined until first registration.
   wgpuTextureResolverRegistry?: Map<TextureSourceKind, WgpuTextureResolver> | null;
   // Borrowed native handles and derived non-owning views/bind groups. Disposal only forgets the entry.
-  wgpuExternalTextureCache?: WeakMap<Texture, WgpuTextureEntry>;
+  wgpuExternalTextureCache?: WeakMap<ExternalTexture, WgpuTextureEntry>;
   // Render Texture realizations are keyed by Texture because their GPU allocation is state-bound.
   wgpuRenderTextureCache?: WeakMap<RenderTexture, WgpuRenderTextureEntry>;
 

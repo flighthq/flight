@@ -3,7 +3,6 @@ import {
   getGlRenderStateRuntime,
   registerGlImageTextureResolver,
   registerGlRenderTextureResolver,
-  registerGlVideoTextureResolver,
 } from '@flighthq/render-gl/contract';
 import {
   advanceVideoTexture,
@@ -49,7 +48,7 @@ describe('bindGlUnlitSurface', () => {
     const image = createImageResource(globalThis.document.createElement('img'));
     image.width = 1;
     image.height = 1;
-    const texture = createTexture({ storage: { dimension: '2d', image } });
+    const texture = createTexture({ dimension: '2d', source: image });
     texture.sampler.mipmaps = false;
     registerGlImageTextureResolver(state);
     getGlRenderStateRuntime(state).anisotropyExt = null;
@@ -85,7 +84,7 @@ describe('bindGlUnlitSurface', () => {
     videoMap.sampler.mipmaps = false;
     advanceVideoTexture(videoMap);
     registerGlImageTextureResolver(state);
-    registerGlVideoTextureResolver(state);
+    registerGlImageTextureResolver(state);
     getGlRenderStateRuntime(state).anisotropyExt = null;
 
     bindGlUnlitSurface(state, program, COLOR, 1, videoMap, 0.5);
@@ -105,7 +104,7 @@ describe('bindGlUnlitSurface', () => {
     videoMap.sampler.mipmaps = false;
     advanceVideoTexture(videoMap);
     registerGlImageTextureResolver(state);
-    registerGlVideoTextureResolver(state);
+    registerGlImageTextureResolver(state);
     getGlRenderStateRuntime(state).anisotropyExt = null;
     bindGlUnlitSurface(state, program, COLOR, 1, videoMap, 0.5);
     const uploads = gl.calls.filter((c) => c.name === 'texImage2D').length;

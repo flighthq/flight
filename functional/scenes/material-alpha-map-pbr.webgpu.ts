@@ -79,13 +79,15 @@ const logicalHeight = height / scale;
 const geometry = createQuadMeshGeometry(3.4, 2.6);
 
 const baseColorMap = createTexture({
-  storage: { dimension: '2d', image: createImageResourceFromCanvas(baseColorCanvas()) },
+  dimension: '2d',
+  source: createImageResourceFromCanvas(baseColorCanvas()),
 });
 baseColorMap.sampler.wrapU = 'repeat';
 setTextureUvScale(baseColorMap, 3, 1);
 const alphaMap = createTexture({
   colorSpace: 'linear',
-  storage: { dimension: '2d', image: createImageResourceFromCanvas(alphaGradientCanvas()) },
+  dimension: '2d',
+  source: createImageResourceFromCanvas(alphaGradientCanvas()),
 });
 alphaMap.sampler.wrapU = 'clamp-to-edge';
 const material = createStandardPbrMaterial({

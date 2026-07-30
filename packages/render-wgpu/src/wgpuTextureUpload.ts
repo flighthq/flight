@@ -1,4 +1,4 @@
-import type { ImageResource } from '@flighthq/types/contract';
+import type { Image } from '@flighthq/types/contract';
 
 // Texel-upload primitives for one texture region. Each writes into `texture` at `origin` (the [x, y, z]
 // where z selects a cube-array layer / cube face). The wgpu mirror of render-gl's glTextureUpload; the
@@ -36,12 +36,12 @@ export function uploadWgpuTextureElement(
   device.queue.copyExternalImageToTexture({ source }, { texture, origin }, [width, height, 1]);
 }
 
-// Uploads a host-backed ImageResource through the decoded-element fast path.
+// Uploads a host-backed Image through the decoded-element fast path.
 export function uploadWgpuTextureImageResource(
   device: GPUDevice,
   texture: GPUTexture,
   origin: GPUOrigin3D,
-  image: Readonly<ImageResource>,
+  image: Readonly<Image>,
 ): void {
   uploadWgpuTextureElement(
     device,

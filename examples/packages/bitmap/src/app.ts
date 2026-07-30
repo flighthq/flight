@@ -71,14 +71,14 @@ function enterFrame(): void {
 requestAnimationFrame(enterFrame);
 
 function createImageTexture(source: HTMLCanvasElement) {
-  return createTexture({ storage: { dimension: '2d', image: createImageResource(source) } });
+  return createTexture({ dimension: '2d', source: createImageResource(source) });
 }
 
 async function loadSpriteImage(sprite: ReturnType<typeof createSprite>, source: HTMLCanvasElement): Promise<void> {
   // A data URL keeps the example self-contained while exercising the same asynchronous image
   // acquisition API an application uses for a bundled or remote URL.
   const image = await loadImageResourceFromUrl(source.toDataURL('image/png'));
-  sprite.data.texture = createTexture({ storage: { dimension: '2d', image } });
+  sprite.data.texture = createTexture({ dimension: '2d', source: image });
   invalidateNodeAppearance(sprite);
 }
 

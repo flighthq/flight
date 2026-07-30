@@ -79,7 +79,8 @@ function placeChecker(x: number, y: number, smoothing: boolean): void {
   const bmp = createSprite();
   bmp.data.texture = createTexture({
     sampler: smoothing ? undefined : createPixelArtSampler(),
-    storage: { dimension: '2d', image: createImageResourceFromCanvas(buildCheckerCanvas()) },
+    dimension: '2d',
+    source: createImageResourceFromCanvas(buildCheckerCanvas()),
   });
   bmp.x = x;
   bmp.y = y;

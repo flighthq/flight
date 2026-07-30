@@ -208,7 +208,7 @@ export function registerGlCompressedTextureDecoder(
 // Installs the block-compressed upload seam on a render state, opting the ~40-format
 // uploadGlCompressedTextureContainer path into the bundle only for a state that actually draws a
 // CompressedImage. The 2D display draw path reads the installed handler off the runtime and skips the
-// backing when none is registered, so ImageResource/Bitmap bundles do not carry the compression enum
+// source when none is registered, so Image/Bitmap bundles do not carry the compression enum
 // table. Opt-in and last-write-wins; pass null to clear a previously installed uploader.
 export function registerGlCompressedTextureUpload(state: GlRenderState, uploader?: null): void {
   getGlRenderStateRuntime(state).compressedTextureUpload = uploader === null ? null : uploadGlCompressedImage;

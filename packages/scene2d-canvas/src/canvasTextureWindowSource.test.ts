@@ -9,7 +9,7 @@ describe('resolveCanvasTextureWindowSource', () => {
   it('returns an identity-window host source directly', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
     const source = document.createElement('canvas');
-    const texture = createTexture({ storage: { dimension: '2d', image: createImageResource(source) } });
+    const texture = createTexture({ dimension: '2d', source: createImageResource(source) });
     registerCanvasImageTextureResolver(state);
     expect(resolveCanvasTextureWindowSource(state, texture)).toBe(source);
   });

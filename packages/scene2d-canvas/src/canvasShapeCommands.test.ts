@@ -52,7 +52,8 @@ function makeBitmapTexture(w: number, h: number, smooth = true, repeat = false) 
       wrapU: repeat ? 'repeat' : 'clamp-to-edge',
       wrapV: repeat ? 'repeat' : 'clamp-to-edge',
     }),
-    storage: { dimension: '2d', image: createImageResource(canvas) },
+    dimension: '2d',
+    source: createImageResource(canvas),
   });
 }
 

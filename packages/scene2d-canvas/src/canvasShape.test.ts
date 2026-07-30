@@ -164,7 +164,8 @@ describe('renderCanvasShapeCommands', () => {
     bitmapSource.width = 50;
     bitmapSource.height = 50;
     const bitmap = createTexture({
-      storage: { dimension: '2d', image: createImageResource(bitmapSource) },
+      dimension: '2d',
+      source: createImageResource(bitmapSource),
     });
     const singular = createMatrix(0, 0, 0, 0, 0, 0);
     const shape = createShape();

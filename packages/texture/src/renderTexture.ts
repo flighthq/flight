@@ -1,5 +1,5 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { CreateRenderTextureOptions, RenderTexture } from '@flighthq/types/contract';
+import type { CreateRenderTextureOptions, RenderTarget, RenderTexture } from '@flighthq/types/contract';
 import { RenderTargetTextureSourceKind } from '@flighthq/types/contract';
 
 import { copySampler } from './sampler';
@@ -14,24 +14,21 @@ export function createRenderTexture(options: Readonly<CreateRenderTextureOptions
     colorSpace: options.colorSpace ?? 'linear',
     flipX: options.flipX ?? false,
     flipY: options.flipY ?? false,
-    storage: {
-      dimension: '2d',
-      image: null,
-      target: createEntity({
-        colorAttachments: options.colorAttachments,
-        colorFormats: options.colorFormats,
-        colorSpace,
-        clearColors: options.clearColors,
-        clearDepth: options.clearDepth,
-        depth: options.depth,
-        format: options.format,
-        height: options.height,
-        kind: RenderTargetTextureSourceKind,
-        sampleCount: options.sampleCount,
-        version: 0,
-        width: options.width,
-      }),
-    },
+    dimension: '2d',
+    source: createEntity({
+      colorAttachments: options.colorAttachments,
+      colorFormats: options.colorFormats,
+      colorSpace,
+      clearColors: options.clearColors,
+      clearDepth: options.clearDepth,
+      depth: options.depth,
+      format: options.format,
+      height: options.height,
+      kind: RenderTargetTextureSourceKind,
+      sampleCount: options.sampleCount,
+      version: 0,
+      width: options.width,
+    }) as RenderTarget,
     uvRotation: options.uvRotation,
   }) as RenderTexture;
   if (options.sampler !== undefined) copySampler(texture.sampler, options.sampler);

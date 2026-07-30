@@ -27,7 +27,7 @@ function makeTexture() {
   const image = createImageResource(globalThis.document.createElement('img'));
   image.width = 64;
   image.height = 64;
-  return createTexture({ storage: { dimension: '2d', image } });
+  return createTexture({ dimension: '2d', source: image });
 }
 
 describe('defaultCanvasSpriteRenderer', () => {

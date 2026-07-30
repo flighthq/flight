@@ -110,7 +110,7 @@ function createMatcapTexture() {
       bitmap.data[offset + 3] = 255;
     }
   }
-  return createTexture({ storage: { dimension: '2d', image: bitmap } });
+  return createTexture({ dimension: '2d', source: bitmap });
 }
 
 function createNormalTexture() {
@@ -130,7 +130,7 @@ function createNormalTexture() {
       bitmap.data[offset + 3] = 255;
     }
   }
-  return createTexture({ colorSpace: 'linear', storage: { dimension: '2d', image: bitmap } });
+  return createTexture({ colorSpace: 'linear', dimension: '2d', source: bitmap });
 }
 
 const standard = createStandardPbrMaterial({

@@ -53,7 +53,7 @@ pCtx.fillStyle = grad;
 pCtx.fillRect(0, 0, 16, 16);
 
 const atlas = createTextureAtlas({
-  texture: createTexture({ storage: { dimension: '2d', image: createImageResource(particleCanvas) } }),
+  texture: createTexture({ dimension: '2d', source: createImageResource(particleCanvas) }),
 });
 addTextureAtlasRegion(atlas, 0, 0, 16, 16);
 

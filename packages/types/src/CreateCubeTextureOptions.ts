@@ -1,9 +1,8 @@
 import type { SamplerLike } from './Sampler';
-import type { TextureColorSpace } from './Texture';
-import type { TextureCubeImages } from './TextureStorage';
+import type { TextureColorSpace, TextureSourceCubeFaces } from './Texture';
 
 export interface CreateCubeTextureOptions {
   colorSpace?: TextureColorSpace;
-  images?: TextureCubeImages;
   sampler?: Readonly<SamplerLike>;
+  sources?: TextureSourceCubeFaces;
 }

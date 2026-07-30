@@ -10,7 +10,7 @@ describe('registerCanvasBitmapTextureResolver', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
     const bitmap = createBitmap(2, 2, 0xffffffff);
     registerCanvasBitmapTextureResolver(state);
-    expect(resolveCanvasTexture(state, createTexture({ storage: { dimension: '2d', image: bitmap } }))).toBeInstanceOf(
+    expect(resolveCanvasTexture(state, createTexture({ dimension: '2d', source: bitmap }))).toBeInstanceOf(
       HTMLCanvasElement,
     );
   });

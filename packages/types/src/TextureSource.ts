@@ -9,7 +9,7 @@ import type { TextureSourceKind } from './TextureSourceKind';
 export interface TextureSource extends Entity {
   /** Pixel height. */
   height: number;
-  /** Open resolver-registry key declared by the constructor or loader that owns this backing. */
+  /** Open resolver-registry key declared by the constructor or loader that owns this source. */
   kind: TextureSourceKind;
   /** Bumped whenever the represented pixels change. */
   version: number;

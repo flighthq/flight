@@ -9,7 +9,7 @@ import type {
   Scene2DRenderer,
   GlRenderState,
   GlShapeMesh,
-  ImageResource,
+  Image,
   Renderable,
   RendererData,
   RenderProxy2D,
@@ -34,10 +34,10 @@ import { drawGlShapeMeshes } from './glShapeMesh';
 interface GlShapeData {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
-  // The canvas wrapped as an ImageResource (its `source`), so the shared quad-batch writer treats a
+  // The canvas wrapped as an Image (its `source`), so the shared quad-batch writer treats a
   // canvas-backed shape uniformly with bitmaps and atlases. Re-rendering the canvas bumps the resource's
   // version (invalidateImageResource), which the batch's version-aware cache uses to re-upload.
-  image: ImageResource;
+  image: Image;
   lastContentId: number;
   lastW: number;
   lastH: number;

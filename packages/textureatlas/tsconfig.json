@@ -12,6 +12,7 @@
     { "path": "../entity" },
     { "path": "../geometry" },
     { "path": "../image" },
+    { "path": "../log" },
     { "path": "../texture" },
     { "path": "../types" }
   ],

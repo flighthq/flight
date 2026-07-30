@@ -723,7 +723,7 @@ export function getWgpuMeshPreludeWgsl(
 // Whether a cached material binding must rebuild its GPUBindGroup because a freshly-resolved view or the
 // primary sampler no longer matches what it was built from. `resolveWgpuMaterialTextureView` is the
 // invalidation seam: a map swap, an unready→ready transition, a ready→ready image replacement, or an
-// ImageResource version bump each yield a different view identity, so identity comparison alone catches
+// Image version bump each yield a different view identity, so identity comparison alone catches
 // every live material-map mutation with no parallel epoch bookkeeping. `sampler` is the shared primary
 // sampler (getWgpuMaterialSampler of the diffuse/base-color map), so a change to the primary map's
 // sampler trips a rebuild; a non-primary map's per-Texture sampler is not bound and does not (the

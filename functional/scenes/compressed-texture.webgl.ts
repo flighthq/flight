@@ -1,4 +1,4 @@
-// compressed-texture — validates that a block-`compressed` ImageResource renders through the real GL
+// compressed-texture — validates that a block-`compressed` Image renders through the real GL
 // display draw path. A Bitmap whose image carries ONLY a parsed TextureContainer (no element, no raw
 // data) is drawn via scene2d-gl → bindGlImageResourceTexture → uploadGlCompressedTextureContainer.
 //
@@ -89,10 +89,8 @@ const root = createDisplayObject();
 const bitmap = createSprite();
 bitmap.data.texture = createTexture({
   sampler: createPixelArtSampler(),
-  storage: {
-    dimension: '2d',
-    image: createCompressedImage({ container: container('bc1', 8), payload: BC1_BLUE_BLOCK }),
-  },
+  dimension: '2d',
+  source: createCompressedImage({ container: container('bc1', 8), payload: BC1_BLUE_BLOCK }),
 }); // nearest sampling keeps the block a crisp solid quad
 bitmap.x = BITMAP_X;
 bitmap.y = BITMAP_Y;
@@ -104,13 +102,11 @@ addNodeChild(root, bitmap);
 const alphaBitmap = createSprite();
 alphaBitmap.data.texture = createTexture({
   sampler: createPixelArtSampler(),
-  storage: {
-    dimension: '2d',
-    image: createCompressedImage({
-      container: container('bc3', 16),
-      payload: BC3_HALF_RED_BLOCK,
-    }),
-  },
+  dimension: '2d',
+  source: createCompressedImage({
+    container: container('bc3', 16),
+    payload: BC3_HALF_RED_BLOCK,
+  }),
 });
 alphaBitmap.x = ALPHA_BITMAP_X;
 alphaBitmap.y = BITMAP_Y;

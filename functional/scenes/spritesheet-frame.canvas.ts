@@ -48,7 +48,7 @@ for (let i = 0; i < FRAME_COUNT; i++) {
 }
 
 const imageResource = createImageResource(stripCanvas);
-const atlasTexture = createTexture({ storage: { dimension: '2d', image: imageResource } });
+const atlasTexture = createTexture({ dimension: '2d', source: imageResource });
 const spritesheet = createSpritesheetFromGrid({
   columns: FRAME_COUNT,
   imageFile: '',

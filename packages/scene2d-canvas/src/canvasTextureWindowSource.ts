@@ -1,21 +1,21 @@
 import { getTextureHeight, getTextureWidth } from '@flighthq/texture/contract';
-import type { CanvasRenderState, ImageResource, Texture } from '@flighthq/types/contract';
+import type { CanvasRenderState, Image, Texture } from '@flighthq/types/contract';
 
 import { getCanvasRenderStateRuntime } from './canvasRenderState';
 import { resolveCanvasTexture } from './canvasTextureResolver';
 
 // Resolves a Texture's uv window as a standalone drawable for Canvas patterns. Identity windows
-// return the backing directly. Sub-rect/flip windows are materialized once per render state and
-// refreshed when either the backing or Texture state changes. A null state supports host-backed
-// raster fallbacks without retaining any backing-specific transcode.
+// return the source directly. Sub-rect/flip windows are materialized once per render state and
+// refreshed when either the source or Texture state changes. A null state supports host-backed
+// raster fallbacks without retaining any source-specific transcode.
 export function resolveCanvasTextureWindowSource(
   state: CanvasRenderState | null,
   texture: Readonly<Texture>,
 ): CanvasImageSource | null {
-  if (texture.storage.dimension !== '2d') return null;
-  const image = texture.storage.image;
+  if (texture.dimension !== '2d') return null;
+  const image = texture.source;
   const source =
-    state !== null ? resolveCanvasTexture(state, texture) : ((image as Readonly<ImageResource> | null)?.source ?? null);
+    state !== null ? resolveCanvasTexture(state, texture) : ((image as Readonly<Image> | null)?.source ?? null);
   if (source === null) return null;
 
   const uvOffsetX = texture.uvOffset.x;

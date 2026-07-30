@@ -4,8 +4,8 @@ import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createScene3D } from '@flighthq/scene3d/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import { createTexture } from '@flighthq/texture/contract';
-import type { ImageResource, ImageResourceReference, Scene3DResourceResolver, Texture } from '@flighthq/types/contract';
+import { createTexture, getTextureSource } from '@flighthq/texture/contract';
+import type { Image, ImageResourceReference, Scene3DResourceResolver, Texture } from '@flighthq/types/contract';
 import {
   ImageResourceFailureKind,
   ImageTextureSourceKind,
@@ -20,7 +20,7 @@ import type * as ResolveScene3DResourcesModule from './resolveScene3DResources';
 import type * as Scene3DResourceResolverModule from './sceneResourceResolver';
 import type * as Scene3DResourceSignalsModule from './sceneResourceSignals';
 
-const fakeImage = { height: 2, kind: ImageTextureSourceKind, width: 2 } as unknown as ImageResource;
+const fakeImage = { height: 2, kind: ImageTextureSourceKind, width: 2 } as unknown as Image;
 type LoadImageResourceFromBytes = typeof ImageModule.loadImageResourceFromBytes;
 
 let createBuiltInScene3DResourceResolver: typeof Scene3DResourceResolverModule.createBuiltInScene3DResourceResolver;
@@ -139,7 +139,7 @@ describe('resolveScene3DResources', () => {
     let loadSignal: AbortSignal | undefined;
     loadFromBytes.mockImplementation(
       (_bytes, _mime, signal) =>
-        new Promise<ImageResource>((_resolve, reject) => {
+        new Promise<Image>((_resolve, reject) => {
           loadSignal = signal;
           signal?.addEventListener('abort', () => reject(signal.reason));
         }),
@@ -181,7 +181,8 @@ describe('resolveScene3DResources', () => {
     const ref = embeddedRef();
     const a = createTexture({ resource: ref });
     const b = createTexture({ resource: ref });
-    a.storage.image = fakeImage;
+    if (a.dimension !== '2d') throw new Error('test texture must be 2d');
+    a.source = fakeImage;
     const scene = meshScene3D(a, b);
     const resolver = createBuiltInScene3DResourceResolver();
 
@@ -189,7 +190,7 @@ describe('resolveScene3DResources', () => {
 
     expect(resources.unresolved).toEqual([]);
     expect(resources.resolved).toEqual([{ image: fakeImage, ref, textures: [a, b] }]);
-    expect(b.storage.image).toBe(fakeImage);
+    expect(getTextureSource(b)).toBe(fakeImage);
     expect(ref.state).toBe(ResourceResolutionState.Resolved);
     disposeScene3DResourceResolver(resolver);
   });
@@ -206,8 +207,8 @@ describe('updateScene3DResourceStreaming', () => {
     updateScene3DResourceStreaming(scene, resolver);
     await settle(resolver);
 
-    expect(a.storage.image).toBe(fakeImage);
-    expect(b.storage.image).toBe(fakeImage);
+    expect(getTextureSource(a)).toBe(fakeImage);
+    expect(getTextureSource(b)).toBe(fakeImage);
     expect(resourceOf(a)?.state).toBe(ResourceResolutionState.Resolved);
     expect(resourceOf(a)?.failure).toBeNull();
     expect(resourceOf(b)?.state).toBe(ResourceResolutionState.Resolved);
@@ -226,8 +227,8 @@ describe('updateScene3DResourceStreaming', () => {
     await settle(resolver);
 
     expect(loadFromBytes).toHaveBeenCalledTimes(1);
-    expect(a.storage.image).toBe(fakeImage);
-    expect(b.storage.image).toBe(fakeImage);
+    expect(getTextureSource(a)).toBe(fakeImage);
+    expect(getTextureSource(b)).toBe(fakeImage);
     expect(ref.state).toBe(ResourceResolutionState.Resolved);
     disposeScene3DResourceResolver(resolver);
   });
@@ -236,7 +237,7 @@ describe('updateScene3DResourceStreaming', () => {
     let loadSignal: AbortSignal | undefined;
     loadFromBytes.mockImplementation(
       (_bytes, _mime, signal) =>
-        new Promise<ImageResource>((_resolve, reject) => {
+        new Promise<Image>((_resolve, reject) => {
           loadSignal = signal;
           signal?.addEventListener('abort', () => reject(signal.reason));
         }),
@@ -269,11 +270,11 @@ describe('updateScene3DResourceStreaming', () => {
 
     updateScene3DResourceStreaming(scene, resolver, { select: (texture) => texture === a });
     await settle(resolver);
-    expect(a.storage.image).toBe(fakeImage);
-    expect(b.storage.image).toBeNull();
+    expect(getTextureSource(a)).toBe(fakeImage);
+    expect(getTextureSource(b)).toBeNull();
 
     updateScene3DResourceStreaming(scene, resolver, { select: (texture) => texture === b });
-    expect(b.storage.image).toBe(fakeImage);
+    expect(getTextureSource(b)).toBe(fakeImage);
     expect(loadFromBytes).toHaveBeenCalledTimes(1);
     disposeScene3DResourceResolver(resolver);
   });
@@ -290,7 +291,7 @@ describe('updateScene3DResourceStreaming', () => {
 
     expect(resourceOf(wanted)?.state).toBe(ResourceResolutionState.Resolved);
     expect(resourceOf(skipped)?.state).toBe(ResourceResolutionState.Unresolved);
-    expect(skipped.storage.image).toBeNull();
+    expect(getTextureSource(skipped)).toBeNull();
     disposeScene3DResourceResolver(resolver);
   });
 
@@ -302,7 +303,7 @@ describe('updateScene3DResourceStreaming', () => {
     updateScene3DResourceStreaming(scene, resolver);
     await settle(resolver);
 
-    expect(texture.storage.image).toBeNull();
+    expect(getTextureSource(texture)).toBeNull();
     expect(resourceOf(texture)?.state).toBe(ResourceResolutionState.Failed);
     expect(resourceOf(texture)?.failure).toEqual({
       kind: ImageResourceFailureKind.Unavailable,
@@ -335,7 +336,7 @@ describe('updateScene3DResourceStreaming', () => {
     // A load that hangs until its signal aborts, so we can drop it mid-flight.
     loadFromBytes.mockImplementation(
       (_bytes, _mime, signal) =>
-        new Promise<ImageResource>((_resolve, reject) => {
+        new Promise<Image>((_resolve, reject) => {
           if (signal !== undefined) loadSignals.push(signal);
           signal?.addEventListener('abort', () => reject(signal.reason));
         }),
@@ -351,7 +352,7 @@ describe('updateScene3DResourceStreaming', () => {
     // Drop it: not in the working set this pass → abort + revert.
     updateScene3DResourceStreaming(scene, resolver, { select: () => false });
     expect(resourceOf(texture)?.state).toBe(ResourceResolutionState.Unresolved);
-    expect(texture.storage.image).toBeNull();
+    expect(getTextureSource(texture)).toBeNull();
     expect(loadSignals[0].aborted).toBe(true);
 
     // Re-entry re-requests from scratch.
@@ -363,7 +364,7 @@ describe('updateScene3DResourceStreaming', () => {
   });
 
   it('does not re-request a texture already in flight', async () => {
-    loadFromBytes.mockImplementation(() => new Promise<ImageResource>(() => {}));
+    loadFromBytes.mockImplementation(() => new Promise<Image>(() => {}));
     const texture = pendingTexture();
     const scene = meshScene3D(texture);
     const resolver = createBuiltInScene3DResourceResolver();

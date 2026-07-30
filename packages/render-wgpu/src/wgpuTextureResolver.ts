@@ -1,10 +1,9 @@
-import { getTextureSourceKind } from '@flighthq/texture/contract';
+import { getTextureSource, getTextureSourceKind } from '@flighthq/texture/contract';
 import type {
   Bitmap,
   CompressedImage,
-  ImageResource,
+  Image,
   RenderTexture,
-  Texture,
   TextureSourceKind,
   TextureLike,
   WgpuRenderState,
@@ -16,15 +15,9 @@ import {
   CompressedImageTextureSourceKind,
   ImageTextureSourceKind,
   RenderTargetTextureSourceKind,
-  VideoTextureSourceKind,
 } from '@flighthq/types/contract';
 
-import {
-  bindWgpuBitmapTexture,
-  bindWgpuCompressedImageTexture,
-  bindWgpuImageResourceTexture,
-  bindWgpuVideoTexture,
-} from './wgpuDraw';
+import { bindWgpuBitmapTexture, bindWgpuCompressedImageTexture, bindWgpuImageResourceTexture } from './wgpuDraw';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import { bindWgpuRenderTexture } from './wgpuRenderTexture';
 
@@ -57,10 +50,6 @@ export function registerWgpuTextureResolver(
   else registry.set(sourceKind, resolver);
 }
 
-export function registerWgpuVideoTextureResolver(state: WgpuRenderState): void {
-  registerWgpuTextureResolver(state, VideoTextureSourceKind, resolveWgpuVideoTexture);
-}
-
 // Resolves through one keyed lookup using the source's declared kind. Resolution may realize, upload,
 // and cache the GPU entry, but unlike the GL twin it does not bind command-pass state; the draw caller
 // binds the returned entry's group explicitly.
@@ -81,7 +70,7 @@ function resolveWgpuBitmapTexture(
   texture: Readonly<TextureLike>,
   premultiply: boolean,
 ): WgpuTextureEntry | null {
-  const bitmap = texture.storage.image as Readonly<Bitmap> | null;
+  const bitmap = getTextureSource(texture) as Readonly<Bitmap> | null;
   return bitmap === null ? null : bindWgpuBitmapTexture(state, bitmap, texture.sampler.mipmaps, premultiply);
 }
 
@@ -89,7 +78,7 @@ function resolveWgpuCompressedImageTexture(
   state: WgpuRenderState,
   texture: Readonly<TextureLike>,
 ): WgpuTextureEntry | null {
-  const image = texture.storage.image as Readonly<CompressedImage> | null;
+  const image = getTextureSource(texture) as Readonly<CompressedImage> | null;
   return image === null ? null : bindWgpuCompressedImageTexture(state, image);
 }
 
@@ -98,14 +87,10 @@ function resolveWgpuImageTexture(
   texture: Readonly<TextureLike>,
   premultiply: boolean,
 ): WgpuTextureEntry | null {
-  const image = texture.storage.image as Readonly<ImageResource> | null;
+  const image = getTextureSource(texture) as Readonly<Image> | null;
   return image === null ? null : bindWgpuImageResourceTexture(state, image, texture.sampler.mipmaps, premultiply);
 }
 
 function resolveWgpuRenderTexture(state: WgpuRenderState, texture: Readonly<TextureLike>): WgpuTextureEntry | null {
   return bindWgpuRenderTexture(state, texture as Readonly<RenderTexture>);
-}
-
-function resolveWgpuVideoTexture(state: WgpuRenderState, texture: Readonly<TextureLike>): WgpuTextureEntry | null {
-  return bindWgpuVideoTexture(state, texture as Readonly<Texture>);
 }

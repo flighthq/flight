@@ -88,7 +88,7 @@ describe('registerWgpuCompressedTextureUpload', () => {
     expect(getWgpuRenderStateRuntime(state).compressedTextureUpload).toBeNull();
   });
 
-  it('lets the compressed-image binder consume its backing', async () => {
+  it('lets the compressed-image binder consume its source', async () => {
     const state = await createWgpuRenderStateForTest();
     registerWgpuCompressedTextureUpload(state);
     registerWgpuCompressedTextureDecoder(state, (_format, width, height) => {

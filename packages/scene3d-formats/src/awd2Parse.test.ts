@@ -8,6 +8,7 @@ import {
 } from '@flighthq/mesh/contract';
 import { getNodeChildren, getNodeLocalMatrix4, getNodeParent } from '@flighthq/node/contract';
 import { createNode3D, isMesh } from '@flighthq/scene3d/contract';
+import { getTextureSource } from '@flighthq/texture/contract';
 import type {
   AnimationClip,
   AwdDecompressor,
@@ -1084,7 +1085,7 @@ describe('createScene3DFromAwd2', () => {
     expect(material!.name).toBe('Mat'); // AWD material block name preserved as the authored identity
     expect(material!.diffuseMap).not.toBeNull();
     // The parser references, it does not decode: image stays null, a ref carries the source.
-    expect(material!.diffuseMap!.storage.image).toBeNull();
+    expect(getTextureSource(material!.diffuseMap!)).toBeNull();
     const ref = getTestTextureResource(scene.resources, material!.diffuseMap!) as EmbeddedImageResourceReference;
     expect(ref.kind).toBe('Embedded');
     expect(ref.mimeType).toBe('image/png');
@@ -1123,7 +1124,7 @@ describe('createScene3DFromAwd2', () => {
 
     const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as ShadedMaterial;
     expect(material.normalMap).not.toBeNull();
-    expect(material.normalMap!.storage.image).toBeNull(); // referenced, not decoded
+    expect(getTextureSource(material.normalMap!)).toBeNull(); // referenced, not decoded
     const ref = getTestTextureResource(scene.resources, material.normalMap!) as EmbeddedImageResourceReference;
     expect(ref.kind).toBe('Embedded');
     expect(ref.mimeType).toBe('image/png');
@@ -1301,7 +1302,7 @@ describe('createScene3DFromAwd2', () => {
 
     const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as ShadedMaterial;
     expect(material.kind).toBe(ShadedMaterialKind);
-    expect(material.diffuseMap!.storage.image).toBeNull();
+    expect(getTextureSource(material.diffuseMap!)).toBeNull();
     const ref = getTestTextureResource(scene.resources, material.diffuseMap!) as ExternalImageResourceReference;
     expect(ref.kind).toBe('External');
     expect(ref.uri).toBe('http://example.com/tex.png');
@@ -1334,7 +1335,7 @@ describe('createScene3DFromAwd2', () => {
     const scene = createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body));
 
     const texture = ((getNodeChildren(scene.root)[0] as Mesh).materials[0] as ShadedMaterial).diffuseMap!;
-    expect(texture.storage.image).toBeNull(); // parse never allocates or fills an ImageResource
+    expect(getTextureSource(texture)).toBeNull(); // parse never allocates or fills an Image
     const ref = getTestTextureResource(scene.resources, texture) as EmbeddedImageResourceReference;
     expect(ref.kind).toBe('Embedded');
     expect(ref.bytes).toEqual(FAKE_PNG_BYTES);

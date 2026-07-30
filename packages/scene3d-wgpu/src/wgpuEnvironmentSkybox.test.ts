@@ -1,5 +1,5 @@
 import { createCamera3D } from '@flighthq/camera/contract';
-import type { Camera3D, Environment, ImageResource, Texture } from '@flighthq/types/contract';
+import type { Camera3D, Environment, Image, Texture } from '@flighthq/types/contract';
 import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import { drawWgpuEnvironmentSkybox } from './wgpuEnvironmentSkybox';
@@ -19,11 +19,12 @@ function completeEnvironment(): Environment {
     kind: ImageTextureSourceKind,
     source: {} as CanvasImageSource,
     width: 4,
-  } as unknown as ImageResource;
+  } as unknown as Image;
   const cube = {
     colorSpace: 'srgb',
     sampler: {},
-    storage: { dimension: 'cube', images: [face, face, face, face, face, face] },
+    dimension: 'cube',
+    sources: [face, face, face, face, face, face],
   } as unknown as Texture;
   return { environment: cube, intensity: 1 } as Environment;
 }

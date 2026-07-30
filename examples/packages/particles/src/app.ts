@@ -52,7 +52,7 @@ sparkCtx.fillStyle = sparkGrad;
 sparkCtx.fillRect(0, 0, 16, 16);
 
 const fireAtlas = createTextureAtlas({
-  texture: createTexture({ storage: { dimension: '2d', image: createImageResource(sparkCanvas) } }),
+  texture: createTexture({ dimension: '2d', source: createImageResource(sparkCanvas) }),
 });
 addTextureAtlasRegion(fireAtlas, 0, 0, 16, 16);
 
@@ -70,7 +70,7 @@ snowCtx.fillStyle = snowGrad;
 snowCtx.fillRect(0, 0, 12, 12);
 
 const snowAtlas = createTextureAtlas({
-  texture: createTexture({ storage: { dimension: '2d', image: createImageResource(snowCanvas) } }),
+  texture: createTexture({ dimension: '2d', source: createImageResource(snowCanvas) }),
 });
 addTextureAtlasRegion(snowAtlas, 0, 0, 12, 12);
 

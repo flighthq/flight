@@ -1,5 +1,6 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
 import type { RenderTexture } from '@flighthq/types/contract';
+import { RenderTargetTextureSourceKind } from '@flighthq/types/contract';
 
 import { enableGlRenderTextureGuards } from './enableGlRenderTextureGuards';
 import { getGlRenderStateRuntime } from './glRenderState';
@@ -184,8 +185,8 @@ describe('renderIntoGlRenderTexture', () => {
     const renderTexture = createRenderTexture({ height: 16, width: 32 });
     renderIntoGlRenderTexture(state, renderTexture, () => {});
 
-    renderTexture.storage.target.width = 12;
-    renderTexture.storage.target.height = 10;
+    renderTexture.source.width = 12;
+    renderTexture.source.height = 10;
     renderIntoGlRenderTexture(state, renderTexture, () => {});
 
     expect(explainGlRenderTexture(state, renderTexture)).toEqual({
@@ -253,15 +254,14 @@ function createRenderTexture(options: { depth?: boolean; height: number; width: 
     uvOffset: { x: 0, y: 0 },
     uvRotation: 0,
     uvScale: { x: 1, y: 1 },
-    storage: {
-      dimension: '2d',
-      image: null,
-      target: {
-        colorSpace: 'linear',
-        depth: options.depth ? 'depth-stencil' : 'none',
-        height: options.height,
-        width: options.width,
-      },
+    dimension: '2d',
+    source: {
+      colorSpace: 'linear',
+      depth: options.depth ? 'depth-stencil' : 'none',
+      height: options.height,
+      kind: RenderTargetTextureSourceKind,
+      version: 0,
+      width: options.width,
     },
     version: 0,
   } as unknown as RenderTexture;

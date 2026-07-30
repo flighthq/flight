@@ -1,14 +1,14 @@
-import type { GridSliceOptions, Texture, TextureAtlas } from '@flighthq/types/contract';
+import type { GridSliceOptions, Texture2D, TextureAtlas } from '@flighthq/types/contract';
 
 import { createTextureAtlas } from './textureAtlas';
 import { createTextureAtlasRegion } from './textureAtlasRegion';
 
 // Builds row-major atlas regions for a regular grid. Per-axis margins and spacing stay explicit so
-// non-square authoring layouts retain their exact pixel arithmetic. The optional Texture attaches
-// the backing without making grid slicing depend on a loader.
+// non-square authoring layouts retain their exact pixel arithmetic. The optional Texture2D attaches
+// the source without making grid slicing depend on a loader.
 export function createTextureAtlasFromGrid(
   options: Readonly<GridSliceOptions>,
-  texture: Texture | null = null,
+  texture: Texture2D | null = null,
 ): TextureAtlas {
   const {
     columns,

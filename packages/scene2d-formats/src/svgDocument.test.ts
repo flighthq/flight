@@ -2,6 +2,7 @@ import { createRectangle } from '@flighthq/geometry/contract';
 import { createImageResource } from '@flighthq/image/contract';
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
 import { getShapeBounds } from '@flighthq/shape/contract';
+import { getTextureSource } from '@flighthq/texture/contract';
 import type { Sprite, ImportDiagnostic, RichText, Shape, TextLabel } from '@flighthq/types/contract';
 import { SpriteKind, DisplayObjectKind, RichTextKind, ShapeKind, TextLabelKind } from '@flighthq/types/contract';
 
@@ -412,7 +413,7 @@ describe('createScene2DFromSvgDocument', () => {
     const bitmap = getNodeChildAt(root, 0) as Sprite;
     expect(bitmap.kind).toBe(SpriteKind);
     expect(bitmap.name).toBe('photo');
-    expect(bitmap.data.texture?.storage.image).toBe(image);
+    expect(bitmap.data.texture === null ? null : getTextureSource(bitmap.data.texture)).toBe(image);
     expect(bitmap.x).toBe(3);
     expect(bitmap.y).toBe(4);
     expect(bitmap.scaleX).toBe(2);

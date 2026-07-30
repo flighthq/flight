@@ -1,4 +1,5 @@
-import type { Bitmap, CompressedImage, ImageResource, SamplerLike, Texture } from '@flighthq/types/contract';
+import { getTextureSource } from '@flighthq/texture/contract';
+import type { Bitmap, CompressedImage, Image, SamplerLike, Texture } from '@flighthq/types/contract';
 import {
   AdvancedBlendMode,
   BitmapTextureSourceKind,
@@ -293,7 +294,7 @@ describe('bindGlImageResourceTexture', () => {
       height: 1,
       kind: ImageTextureSourceKind,
       version: 1,
-    } as unknown as ImageResource;
+    } as unknown as Image;
     bindGlImageResourceTexture(state, image);
     expect(gl.texImage2D).toHaveBeenCalled();
   });
@@ -516,12 +517,10 @@ describe('bindGlVideoTexture', () => {
   function videoTexture(version: number, readyState = 4, videoWidth = 320, videoHeight = 240): Texture {
     return {
       sampler: makeSampler(),
-      storage: {
-        dimension: '2d',
-        image: {
-          source: { readyState, videoWidth, videoHeight } as unknown as HTMLVideoElement,
-          version,
-        },
+      dimension: '2d',
+      source: {
+        source: { readyState, videoWidth, videoHeight } as unknown as HTMLVideoElement,
+        version,
       },
       version,
     } as unknown as Texture;
@@ -538,7 +537,7 @@ describe('bindGlVideoTexture', () => {
       gl.RGBA,
       gl.RGBA,
       gl.UNSIGNED_BYTE,
-      (vt.storage.image as ImageResource).source,
+      (getTextureSource(vt) as Image).source,
     );
     const t2 = bindGlVideoTexture(state, vt);
     expect(t2).toBe(t1);
@@ -551,7 +550,7 @@ describe('bindGlVideoTexture', () => {
     const uploads = (gl.texImage2D as ReturnType<typeof vi.fn>).mock.calls.length;
     bindGlVideoTexture(state, vt);
     expect((gl.texImage2D as ReturnType<typeof vi.fn>).mock.calls.length).toBe(uploads);
-    vt.storage.image!.version = 2;
+    getTextureSource(vt)!.version = 2;
     bindGlVideoTexture(state, vt);
     expect((gl.texImage2D as ReturnType<typeof vi.fn>).mock.calls.length).toBe(uploads + 1);
   });

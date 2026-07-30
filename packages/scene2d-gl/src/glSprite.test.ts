@@ -20,7 +20,7 @@ function makeSprite(width = 64, height = 48): Sprite {
     width,
   } as unknown as Bitmap;
   return {
-    data: { texture: createTexture({ storage: { dimension: '2d', image } }) },
+    data: { texture: createTexture({ dimension: '2d', source: image }) },
   } as Sprite;
 }
 

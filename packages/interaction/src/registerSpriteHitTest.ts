@@ -1,7 +1,7 @@
 import { captureBitmapFromImageResource, getBitmapPixelChannel } from '@flighthq/bitmap/contract';
 import { inverseMatrixTransformPointXY } from '@flighthq/geometry/contract';
 import { getNodeWorldMatrix } from '@flighthq/node/contract';
-import type { Bitmap, TextureSource, ImageResource, Node2D, NodeAny, Sprite } from '@flighthq/types/contract';
+import type { Bitmap, TextureSource, Image, Node2D, NodeAny, Sprite } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, ImageChannel, ImageTextureSourceKind, SpriteKind } from '@flighthq/types/contract';
 
 import { hitTestGraphLocalBounds, registerHitTestPrecise } from './hitTests';
@@ -25,8 +25,8 @@ function hitTestSpriteAlpha(source: NodeAny, x: number, y: number, alphaThreshol
 
   const sprite = source as Sprite;
   const texture = sprite.data.texture;
-  if (texture === null || texture.storage.dimension !== '2d') return 0;
-  const image = texture.storage.image;
+  if (texture === null || texture.dimension !== '2d') return 0;
+  const image = texture.source;
   if (image === null) return 0;
 
   const bitmap = bitmapForImage(image);
@@ -42,7 +42,7 @@ function hitTestSpriteAlpha(source: NodeAny, x: number, y: number, alphaThreshol
 function bitmapForImage(image: TextureSource): Bitmap | null {
   if (image.kind === BitmapTextureSourceKind) return image as Bitmap;
   if (image.kind !== ImageTextureSourceKind) return null;
-  const resource = image as ImageResource;
+  const resource = image as Image;
   const cached = bitmapCache.get(resource);
   if (cached !== undefined) return cached;
   let bitmap: Bitmap | null = null;
@@ -57,4 +57,4 @@ function bitmapForImage(image: TextureSource): Bitmap | null {
 }
 
 const bitmapAlphaLocalPoint = { x: 0, y: 0 };
-const bitmapCache = new WeakMap<ImageResource, Bitmap>();
+const bitmapCache = new WeakMap<Image, Bitmap>();

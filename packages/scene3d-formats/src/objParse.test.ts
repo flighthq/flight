@@ -7,6 +7,7 @@ import {
 } from '@flighthq/mesh/contract';
 import { getNodeChildren } from '@flighthq/node/contract';
 import { isMesh } from '@flighthq/scene3d/contract';
+import { getTextureSource } from '@flighthq/texture/contract';
 import type {
   BlinnPhongMaterial,
   ExternalImageResourceReference,
@@ -407,7 +408,7 @@ describe('createScene3DFromObj', () => {
     expect((getTestTextureResource(scene.resources, material.normalMap!) as ExternalImageResourceReference).uri).toBe(
       'normal.png',
     );
-    expect(material.diffuseMap!.storage.image).toBeNull();
+    expect(getTextureSource(material.diffuseMap!)).toBeNull();
   });
 
   it('leaves a subset slot null when usemtl names a material absent from the library', () => {

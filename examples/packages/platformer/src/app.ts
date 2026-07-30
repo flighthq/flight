@@ -97,7 +97,8 @@ playerContext.fillStyle = '#ffd7b5';
 playerContext.fillRect(5, 4, PLAYER_WIDTH - 10, 9);
 const playerSprite = createSprite();
 playerSprite.data.texture = createTexture({
-  storage: { dimension: '2d', image: createImageResource(playerImage) },
+  dimension: '2d',
+  source: createImageResource(playerImage),
 });
 addNodeChild(worldContainer, playerSprite);
 

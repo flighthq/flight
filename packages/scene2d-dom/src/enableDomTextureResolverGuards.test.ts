@@ -1,6 +1,6 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { ImageResource } from '@flighthq/types/contract';
+import type { Image } from '@flighthq/types/contract';
 
 import { createDomRenderState } from './domRenderState';
 import { registerDomTextureResolver, resolveDomTexture } from './domTextureResolver';
@@ -52,6 +52,7 @@ describe('enableDomTextureResolverGuards', () => {
 
 function textureWithKind(kind: string) {
   return createTexture({
-    storage: { dimension: '2d', image: { kind } as ImageResource },
+    dimension: '2d',
+    source: { kind } as Image,
   });
 }

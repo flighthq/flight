@@ -8,7 +8,7 @@ import { getTextLabelRuntime } from '@flighthq/text/contract';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout/contract';
 import type {
   Scene2DRenderer,
-  ImageResource,
+  Image,
   Renderable,
   RendererData,
   RenderProxy2D,
@@ -31,9 +31,9 @@ import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData'
 interface WgpuTextLabelData {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
-  // The canvas wrapped as an ImageResource (its `source`) so the shared quad-batch writer treats canvas-backed
+  // The canvas wrapped as an Image (its `source`) so the shared quad-batch writer treats canvas-backed
   // text uniformly with bitmaps; re-rasterizing bumps the version, which the batch cache re-uploads on.
-  image: ImageResource;
+  image: Image;
   // Content revision and pixel ratio at last rasterization. Re-rasterization is driven by the
   // upstream TextLabel content version (bumped by TextLabel setters on layout-affecting changes), never by
   // appearance-only changes such as alpha.

@@ -22,7 +22,8 @@ function makeTexture(w = 64, h = 64, repeatX = false, repeatY = false, smooth = 
       wrapU: repeatX ? 'repeat' : 'clamp-to-edge',
       wrapV: repeatY ? 'repeat' : 'clamp-to-edge',
     }),
-    storage: { dimension: '2d', image: createImageResource(canvas) },
+    dimension: '2d',
+    source: createImageResource(canvas),
   });
 }
 

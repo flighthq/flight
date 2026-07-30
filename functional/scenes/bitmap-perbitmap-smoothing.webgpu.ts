@@ -13,7 +13,7 @@
 // The crisp copy's boundary being PURE is the real per-bitmap proof: it only holds if WebGPU applied
 // NEAREST to that specific bitmap rather than the (bilinear) global default the smoothed copy also uses.
 //
-// The two bitmaps SHARE ONE ImageResource, so the texture/blend/material batch keys are identical between
+// The two bitmaps SHARE ONE Image, so the texture/blend/material batch keys are identical between
 // them — smoothing is the ONLY key that differs, forcing a flush. Give each bitmap its own resource and
 // the pre-existing texture key would flush regardless, and the scene would pass even with the smoothing
 // key removed; sharing the resource is what makes this genuinely gate the per-bitmap smoothing path.
@@ -73,7 +73,8 @@ function placeChecker(x: number, y: number, smoothing: boolean): void {
   const bmp = createSprite();
   bmp.data.texture = createTexture({
     sampler: smoothing ? undefined : createPixelArtSampler(),
-    storage: { dimension: '2d', image: checker },
+    dimension: '2d',
+    source: checker,
   });
   bmp.x = x;
   bmp.y = y;

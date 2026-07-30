@@ -1,7 +1,7 @@
 import { getEntityRuntime } from '@flighthq/entity/contract';
 import { createRectangle } from '@flighthq/geometry/contract';
 import { createTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
-import type { ImageResource, Node, Sprite, SpriteRuntime } from '@flighthq/types/contract';
+import type { Image, Node, Sprite, SpriteRuntime } from '@flighthq/types/contract';
 import { SpriteKind } from '@flighthq/types/contract';
 
 import {
@@ -128,5 +128,5 @@ describe('setSpriteTexture', () => {
 });
 
 function texture(width: number, height: number) {
-  return createTexture({ storage: { dimension: '2d', image: { height, width } as ImageResource } });
+  return createTexture({ dimension: '2d', source: { height, width } as Image });
 }

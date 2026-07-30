@@ -10,6 +10,7 @@ import {
 } from '@flighthq/mesh/contract';
 import { getNodeChildren, getNodeLocalMatrix4 } from '@flighthq/node/contract';
 import { isMesh } from '@flighthq/scene3d/contract';
+import { getTextureSource } from '@flighthq/texture/contract';
 import type {
   EmbeddedImageResourceReference,
   ExternalImageResourceReference,
@@ -435,7 +436,7 @@ describe('createScene3DFromGltf', () => {
 
     const scene = createScene3DFromGltf(doc);
     const mat = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as StandardPbrMaterial;
-    expect(mat.baseColorMap!.storage.image).toBeNull();
+    expect(getTextureSource(mat.baseColorMap!)).toBeNull();
     const ref = getTestTextureResource(scene.resources, mat.baseColorMap!) as EmbeddedImageResourceReference;
     expect(ref.kind).toBe('Embedded');
     expect(ref.mimeType).toBe('image/png');

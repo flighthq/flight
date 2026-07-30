@@ -75,7 +75,7 @@ describe('drawWgpuParticleEmitter2D', () => {
           alphas: new Float32Array([1]),
           atlas: {
             regions: [{ height: 4, width: 4, x: 0, y: 0 }],
-            texture: createTexture({ storage: { dimension: '2d', image } }),
+            texture: createTexture({ dimension: '2d', source: image }),
           },
           colors: new Float32Array([1, 1, 1]),
           ids: new Uint16Array([0]),
