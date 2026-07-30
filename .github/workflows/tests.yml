@@ -21,10 +21,20 @@ jobs:
     outputs:
       code: ${{ steps.filter.outputs.code }}
     steps:
+      # Full history: paths-filter needs the merge-base (PRs) or the pre-push commit
+      # (pushes) present locally. A shallow clone makes it fetch --deepen in a loop, which
+      # is slow and can hit git's transient "shallow file has changed since we read it".
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: dorny/paths-filter@v3
         id: filter
         with:
+          # Compare pushes against the pushed branch itself (= the commit before the push),
+          # not the repository default branch. develop is a long-lived branch; diffing it
+          # against main would mark every area changed on every push and the docs-only skip
+          # below would never fire. Ignored for pull_request events, which keep the PR base.
+          base: ${{ github.ref_name }}
           # All-except filter: a change triggers the code legs unless it only touches docs,
           # so a newly added file type still triggers the legs by default.
           filters: |
@@ -44,7 +54,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: "npm"
       - run: npm ci
       - run: npm run build:check
 
@@ -60,7 +70,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: "npm"
       - run: npm ci
       - run: npm run build
 
@@ -82,7 +92,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: "npm"
       - run: npm ci
       - run: npm run ${{ matrix.check }}
 
@@ -102,7 +112,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: "npm"
       - run: npm ci
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
@@ -117,7 +127,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: "npm"
       - run: npm ci
       - run: npm run test
 
@@ -131,7 +141,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: "npm"
       - run: npm ci
       - run: npm run check
 
@@ -145,7 +155,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: "npm"
       - run: npm ci
       - run: npm run size
 
@@ -176,7 +186,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: "npm"
       - run: npm ci
       # The parity check imports the SDK from built dist (@flighthq/surface); building is harmless
       # for the smoke check (which resolves packages from source via the dev server).
@@ -211,7 +221,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: "npm"
           # Writes an .npmrc pointing at public npm and wires NODE_AUTH_TOKEN for the publish.
           registry-url: https://registry.npmjs.org
       - run: npm ci
@@ -225,4 +235,4 @@ jobs:
         run: npm run release -- --no-build --tag ${{ steps.edge.outputs.tag }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_CONFIG_PROVENANCE: 'true'
+          NPM_CONFIG_PROVENANCE: "true"
