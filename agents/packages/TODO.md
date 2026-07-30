@@ -81,12 +81,6 @@ Design calls to settle before building the affected entries:
 
 ## Deepen — Recommended items by package (weakest first)
 
-### swf (partial 28)
-
-- Import nested `DefineSprite` named slots
-- Preserve authored extents
-- Add one canonical uncompressed fixture
-
 ### shortcut (partial 30)
 
 - Decide the shifted-punctuation key vocabulary
@@ -101,6 +95,11 @@ Design calls to settle before building the affected entries:
 
 - Parse the short `#rgb` theme-color form
 - Decide whether `StatusBarInfo.height` should be reported by the web backend at all
+
+### swf (partial 36)
+
+- Preserve authored extents
+- Add one canonical uncompressed fixture
 
 ### loader (partial 38)
 
@@ -826,9 +825,9 @@ These are explicit user directions whose implementation may span packages or req
 
 These are observed maturity gaps, including intentionally deferred work. They require prioritization or a package direction before execution unless separately approved.
 
-### swf (partial 28)
+### swf (partial 36)
 
-- Recover complete named MovieClip graphs
+- Recover animated MovieClip timelines
 - Materialize visible archive content
 - Complete container seams and evidence
 
@@ -983,7 +982,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene3d` · `particleemitter` · `xml` · `skeleton3d` · `scene3d-resources` · `camera-controls` · `debug` · `dialog` · `lifecycle` · `scene2d-resources` · `textlayout` · `adjustments` · `clipboard` · `camera` · `platform` · `textinput` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
+`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene3d` · `particleemitter` · `xml` · `skeleton3d` · `scene3d-resources` · `camera-controls` · `debug` · `dialog` · `lifecycle` · `textlayout` · `adjustments` · `clipboard` · `scene2d-resources` · `camera` · `platform` · `textinput` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
 
 ## Liveness — which stage each stale cell needs next
 
