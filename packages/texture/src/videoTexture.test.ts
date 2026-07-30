@@ -20,6 +20,7 @@ import {
 function makeVideoResource(readyState = 4, videoWidth = 320, videoHeight = 240): VideoResource {
   return {
     element: { readyState, videoWidth, videoHeight } as unknown as HTMLVideoElement,
+    objectUrl: null,
   };
 }
 
@@ -80,7 +81,7 @@ describe('getVideoTextureHeight', () => {
   it('returns the element videoHeight when a frame is decoded, else -1', () => {
     expect(getVideoTextureHeight(createVideoTexture(makeVideoResource(4, 320, 240)))).toBe(240);
     expect(getVideoTextureHeight(createVideoTexture(makeVideoResource(0, 0, 0)))).toBe(-1);
-    expect(getVideoTextureHeight(createVideoTexture({ element: null }))).toBe(-1);
+    expect(getVideoTextureHeight(createVideoTexture({ element: null, objectUrl: null }))).toBe(-1);
   });
 });
 
@@ -123,7 +124,7 @@ describe('getVideoTextureWidth', () => {
   it('returns the element videoWidth when a frame is decoded, else -1', () => {
     expect(getVideoTextureWidth(createVideoTexture(makeVideoResource(4, 320, 240)))).toBe(320);
     expect(getVideoTextureWidth(createVideoTexture(makeVideoResource(0, 0, 0)))).toBe(-1);
-    expect(getVideoTextureWidth(createVideoTexture({ element: null }))).toBe(-1);
+    expect(getVideoTextureWidth(createVideoTexture({ element: null, objectUrl: null }))).toBe(-1);
   });
 });
 
@@ -132,7 +133,7 @@ describe('isVideoTextureFrameReady', () => {
     expect(isVideoTextureFrameReady(createVideoTexture(makeVideoResource(4, 320, 240)))).toBe(true);
     expect(isVideoTextureFrameReady(createVideoTexture(makeVideoResource(1, 320, 240)))).toBe(false);
     expect(isVideoTextureFrameReady(createVideoTexture(makeVideoResource(4, 0, 0)))).toBe(false);
-    expect(isVideoTextureFrameReady(createVideoTexture({ element: null }))).toBe(false);
+    expect(isVideoTextureFrameReady(createVideoTexture({ element: null, objectUrl: null }))).toBe(false);
   });
 });
 

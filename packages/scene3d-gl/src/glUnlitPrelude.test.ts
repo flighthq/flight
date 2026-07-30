@@ -80,6 +80,7 @@ describe('bindGlUnlitSurface', () => {
     const program = compileGlUnlitProgram(gl, { ...FLAT, hasColorMap: true });
     const videoMap = createVideoTexture({
       element: { readyState: 4, videoWidth: 320, videoHeight: 240 } as HTMLVideoElement,
+      objectUrl: null,
     });
     videoMap.sampler.mipmaps = false;
     advanceVideoTexture(videoMap);
@@ -100,6 +101,7 @@ describe('bindGlUnlitSurface', () => {
     const program = compileGlUnlitProgram(gl, { ...FLAT, hasColorMap: true });
     const videoMap = createVideoTexture({
       element: { readyState: 4, videoWidth: 320, videoHeight: 240 } as HTMLVideoElement,
+      objectUrl: null,
     });
     videoMap.sampler.mipmaps = false;
     advanceVideoTexture(videoMap);

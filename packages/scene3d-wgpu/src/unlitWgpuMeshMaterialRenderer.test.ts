@@ -57,6 +57,7 @@ describe('unlitWgpuMeshMaterialRenderer', () => {
     const material = createUnlitMaterial();
     material.baseColorMap = createVideoTexture({
       element: { readyState: 4, videoHeight: 120, videoWidth: 160 } as HTMLVideoElement,
+      objectUrl: null,
     });
     advanceVideoTexture(material.baseColorMap);
     registerWgpuImageTextureResolver(state);
