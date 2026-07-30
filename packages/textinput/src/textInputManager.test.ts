@@ -5,6 +5,7 @@ import { KeyCode } from '@flighthq/types/contract';
 
 import { enableTextInput, getTextInputState } from './textInput';
 import {
+  getTextInputCaretIndex,
   getTextInputSelectionBeginIndex,
   getTextInputSelectionEndIndex,
   setTextInputSelection,
@@ -56,6 +57,49 @@ function createSingleLineLayout(): TextLayoutResult {
     numLines: 1,
     textHeight: 12,
     textWidth: 110,
+  };
+}
+
+function createTwoLineLayout(): TextLayoutResult {
+  return {
+    groups: [
+      {
+        ascent: 10,
+        descent: 2,
+        endIndex: 3,
+        format: {},
+        height: 12,
+        leading: 0,
+        lineIndex: 0,
+        offsetX: 2,
+        offsetY: 2,
+        positions: [10, 10, 10],
+        startIndex: 0,
+        width: 30,
+      },
+      {
+        ascent: 10,
+        descent: 2,
+        endIndex: 7,
+        format: {},
+        height: 12,
+        leading: 0,
+        lineIndex: 1,
+        offsetX: 2,
+        offsetY: 14,
+        positions: [10, 10, 10, 10],
+        startIndex: 3,
+        width: 40,
+      },
+    ],
+    lineAscents: [10, 10],
+    lineDescents: [2, 2],
+    lineHeights: [12, 12],
+    lineLeadings: [0, 0],
+    lineWidths: [30, 40],
+    numLines: 2,
+    textHeight: 24,
+    textWidth: 40,
   };
 }
 
@@ -154,6 +198,21 @@ describe('dispatchTextInputKeyDown', () => {
       copied.push(text),
     );
     expect(copied).toEqual(['hello']);
+  });
+
+  it('uses the focused target layout for line-relative Home and End', () => {
+    const manager = createTextInputManager();
+    const target = createInput({ multiline: true, text: 'abcdefg' });
+    setLayout(target, createTwoLineLayout());
+    focusTextInput(manager, target);
+
+    setTextInputSelection(target, 6, 6);
+    dispatchTextInputKeyDown(manager, { ...keyData, key: 'Home', keyCode: KeyCode.HOME });
+    expect(getTextInputCaretIndex(target)).toBe(3);
+
+    setTextInputSelection(target, 1, 1);
+    dispatchTextInputKeyDown(manager, { ...keyData, key: 'End', keyCode: KeyCode.END });
+    expect(getTextInputCaretIndex(target)).toBe(3);
   });
 });
 
