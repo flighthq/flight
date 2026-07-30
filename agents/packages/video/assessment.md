@@ -10,23 +10,22 @@ Based on the 2026-07-03 review (stub, 15/100). Both previously approved sweep it
 
 ## Recommended
 
-Sweep-safe: within `@flighthq/video`, no cross-package coupling, no open design decision.
+_None open._ All six original items landed in commit `2ef652b3` and were re-verified against live source on 2026-07-30; they are recorded under [Landed](#landed) below, deliberately outside this section so the TODO generator stops reporting them as work. The next actionable step for this package is the re-review the [review](./review.md) already calls for, which should re-score from the current surface rather than the 15/100 stub this assessment was written against.
 
-1. **Loader options — `crossOrigin`, `muted`, `playsInline`, `preload`, and a readiness mode (`metadata` | `canplay` | `canplaythrough`).** The single most consequential gap: without `crossOrigin='anonymous'` the loaded element taints WebGL/WebGPU texture uploads, so the loader as shipped cannot legally feed the SDK's own GPU renderers cross-origin, and games almost always need `muted` + `playsInline` for mobile autoplay. An options parameter (a `VideoResourceLoadOptions` descriptor, header-layer-first) replaces the hard-coded `preload='auto'` / resolve-on-`canplay` policy — the within-unit missing-primitive smell. One-file change with outsized value.
+## Landed
 
-2. **Lifecycle — `disposeVideoResource` (with the decoder-releasing `removeAttribute('src')` + `load()` sequence), `hasVideoResourceElement`, `isVideoResourceEmpty`, `isVideoResourceReady`.** Video is the asset type where teardown matters most — a dropped reference alone can keep platform decoders alive. Document clone as N/A for an element carrier while here (the review asks for the decision, not the function).
-
-3. **Inspection getters — `getVideoResourceWidth`, `getVideoResourceHeight`, `getVideoResourceDuration`.** Needed by every consumer that sizes a `Video` display object or allocates a texture; today consumers must reach through `.element`, making the carrier type pure ceremony.
-
-4. **Non-URL sources — `loadVideoResourceFromBlob` and `createVideoResourceFromMediaStream`.** The Blob loader owns and revokes its object URL (which is exactly why the primitive belongs here); the MediaStream constructor is the seam webcam output flows through, implemented purely over DOM types with no package dependency.
-
-5. **Format family symmetry — rename `inferVideoType` → `inferVideoMimeType`; add magic-byte `detectVideoMimeType` (`ftyp` boxes, EBML/Matroska, `OggS`); extend the MIME table with `m3u8`, `mpd`, `mkv`, `3gp`.** Restores the triad with image's `detectImageMimeType`; no consumers outside the package barrel.
-
-6. **Export the codec-negotiation primitive — `selectVideoResourceUrl` / `canPlayVideoType`.** The `canPlayType` negotiation inside `loadVideoResourceFromUrls` is unavailable standalone, so capability probing without loading requires reimplementation.
+1. ~~**Loader options — `crossOrigin`, `muted`, `playsInline`, `preload`, readiness mode.**~~ Landed; all five are applied in `videoResourceFrom.ts`, readiness mapped to `loadedmetadata` / `canplay` / `canplaythrough`.
+2. ~~**Lifecycle — `disposeVideoResource`, `hasVideoResourceElement`, `isVideoResourceEmpty`, `isVideoResourceReady`.**~~ Landed in `videoResource.ts`, with the `removeAttribute('src')` + `load()` sequence and the clone-is-N/A decision documented at the top of the file.
+3. ~~**Inspection getters — `getVideoResourceWidth`, `getVideoResourceHeight`, `getVideoResourceDuration`.**~~ Landed.
+4. ~~**Non-URL sources — `loadVideoResourceFromBlob`, `createVideoResourceFromMediaStream`.**~~ Landed. The Blob loader's object-URL ownership is _not_ settled, though — see the revoke-timing entry in Backlog.
+5. ~~**Format family symmetry — `inferVideoMimeType`, `detectVideoMimeType`, extended MIME table.**~~ Landed.
+6. ~~**Export the codec-negotiation primitive — `selectVideoResourceUrl` / `canPlayVideoType`.**~~ Landed; both are in the package barrel.
 
 ## Backlog
 
 Parked — each with the reason it is not sweep-safe.
+
+- **`loadVideoResourceFromBlob` revokes its object URL at readiness, not at end of life.** _Parked — design decision; needs a ruling on who owns the URL._ The `finally` revoke fires as soon as the load settles, but settling means only that the chosen readiness event fired — not that the media data has been fetched. With `readiness: 'metadata'` the element has read the container header and nothing else, so revoking there reliably breaks playback; even at `canplay` the element still fetches (and re-fetches on seek) from a URL that no longer resolves. The function's comment claims ownership ("revokes it once the load settles, so the caller never has to"), which is the right instinct at the wrong moment — the revoke belongs at disposal. Every fix crosses a seam, which is why this is parked and not swept: revoking in `disposeVideoResource` means `VideoResource` grows an `objectUrl` field in `@flighthq/types` (and raises whether freeing a blob-URL-store entry is `dispose*` or `destroy*` under the teardown-verb rule); returning the URL to the caller contradicts the ownership the function advertises. Note the two existing tests pin the current timing, so they encode the defect and would need to move with the ruling.
 
 - **Frame-capture seam (video → `ImageResource` / `Bitmap`).** _Parked — design decision / cross-package; candidate Open direction for the charter._ Grabbing a frame into pixels is the standard bridge to `@flighthq/bitmap`/`@flighthq/image`, but no seam exists on either side — the review explicitly raises it as a cross-package design question.
 - **Unify the `*FromUrl` (reject) vs `*FromUrls` (empty-resource sentinel) failure convention.** _Parked — design decision._ Same family-wide fork as audio; needs one ruling across the resource family rather than a per-package fix.
