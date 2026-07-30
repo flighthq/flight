@@ -1,8 +1,10 @@
 import type {
   Physics2DDistanceJoint,
+  Physics2DRevoluteJoint,
   Physics2DMouseJoint,
   Physics2DRopeJoint,
   Physics2DWeldJoint,
+  Physics2DWorld,
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -289,6 +291,25 @@ describe('physics2DMouseJointSolver', () => {
   });
 });
 
+function revoluteJoint(
+  bodyA: number,
+  bodyB: number,
+  over: Partial<Physics2DRevoluteJoint> = {},
+): Physics2DRevoluteJoint {
+  return {
+    ...baseJoint(Physics2DRevoluteJointKind, bodyA, bodyB),
+    enableLimit: false,
+    enableMotor: false,
+    lowerAngle: 0,
+    maxMotorTorque: 0,
+    motorImpulse: 0,
+    motorSpeed: 0,
+    referenceAngle: 0,
+    upperAngle: 0,
+    ...over,
+  } as Physics2DRevoluteJoint;
+}
+
 describe('physics2DRevoluteJointSolver', () => {
   it('keeps the pinned anchors together while leaving rotation free', () => {
     const world = createPhysics2DWorld();
@@ -314,6 +335,158 @@ describe('physics2DRevoluteJointSolver', () => {
     expect(Math.abs(anchorY - anchor.y)).toBeLessThan(0.15);
     // Rotation is free, so gravity must have swung it.
     expect(Math.abs(arm.angle)).toBeGreaterThan(0.05);
+  });
+});
+
+describe('physics2DRevoluteJointSolver motor and limits', () => {
+  // The type advertises a motor and an angular limit; the solver read none of those fields, so an
+  // enabled motor left the arm at exactly zero angular velocity. These are the behaviours the header
+  // promises, asserted against the numbers the promise implies rather than against "it moved".
+  function hinged(world: Physics2DWorld) {
+    const anchor = box(world, 'static', 0, 0);
+    const arm = box(world, 'dynamic', 0, 0);
+    return { anchor, arm };
+  }
+
+  it('drives the relative angular velocity to the motor speed', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DRevoluteJointKind, physics2DRevoluteJointSolver);
+    const { anchor, arm } = hinged(world);
+    addPhysics2DJoint(
+      world,
+      revoluteJoint(anchor.index, arm.index, { enableMotor: true, maxMotorTorque: 100, motorSpeed: 2 }),
+    );
+    run(world, 30);
+    expect(arm.angularVelocity).toBeCloseTo(2, 6);
+    // Half a second at 2 rad/s.
+    expect(arm.angle).toBeCloseTo(1, 3);
+  });
+
+  it('drives the relative angle the other way for a negative motor speed', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DRevoluteJointKind, physics2DRevoluteJointSolver);
+    const { anchor, arm } = hinged(world);
+    addPhysics2DJoint(
+      world,
+      revoluteJoint(anchor.index, arm.index, { enableMotor: true, maxMotorTorque: 100, motorSpeed: -2 }),
+    );
+    run(world, 30);
+    expect(arm.angularVelocity).toBeCloseTo(-2, 6);
+  });
+
+  it('does not drive the arm at all when the motor is disabled', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DRevoluteJointKind, physics2DRevoluteJointSolver);
+    const { anchor, arm } = hinged(world);
+    addPhysics2DJoint(
+      world,
+      revoluteJoint(anchor.index, arm.index, { enableMotor: false, maxMotorTorque: 100, motorSpeed: 2 }),
+    );
+    run(world, 30);
+    expect(arm.angularVelocity).toBeCloseTo(0, 9);
+  });
+
+  it('bounds the motor by its torque, so a small budget cannot reach the target speed', () => {
+    // The torque bound is a torque: the accumulated impulse may not exceed maxMotorTorque * dt.
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DRevoluteJointKind, physics2DRevoluteJointSolver);
+    const { anchor, arm } = hinged(world);
+    const maxMotorTorque = 0.01;
+    addPhysics2DJoint(
+      world,
+      revoluteJoint(anchor.index, arm.index, { enableMotor: true, maxMotorTorque, motorSpeed: 100 }),
+    );
+    const dt = 1 / 60;
+    let previous = arm.angularVelocity;
+    for (let i = 0; i < 10; i++) {
+      stepPhysics2D(world, dt);
+      const perStep = maxMotorTorque * dt * arm.inverseInertia;
+      expect(Math.abs(arm.angularVelocity - previous)).toBeLessThanOrEqual(perStep * 1.0000001);
+      previous = arm.angularVelocity;
+    }
+    expect(arm.angularVelocity).toBeLessThan(100);
+  });
+
+  it('stops the arm at the upper limit instead of letting the motor carry it past', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DRevoluteJointKind, physics2DRevoluteJointSolver);
+    const { anchor, arm } = hinged(world);
+    addPhysics2DJoint(
+      world,
+      revoluteJoint(anchor.index, arm.index, {
+        enableLimit: true,
+        enableMotor: true,
+        lowerAngle: -0.2,
+        maxMotorTorque: 1000,
+        motorSpeed: 5,
+        upperAngle: 0.5,
+      }),
+    );
+    run(world, 120);
+    expect(arm.angle).toBeCloseTo(0.5, 6);
+    expect(arm.angularVelocity).toBeCloseTo(0, 6);
+  });
+
+  it('stops the arm at the lower limit when driven the other way', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DRevoluteJointKind, physics2DRevoluteJointSolver);
+    const { anchor, arm } = hinged(world);
+    addPhysics2DJoint(
+      world,
+      revoluteJoint(anchor.index, arm.index, {
+        enableLimit: true,
+        enableMotor: true,
+        lowerAngle: -0.3,
+        maxMotorTorque: 1000,
+        motorSpeed: -5,
+        upperAngle: 0.5,
+      }),
+    );
+    run(world, 120);
+    expect(arm.angle).toBeCloseTo(-0.3, 6);
+  });
+
+  it('leaves the arm free to turn while it is inside the limit interval', () => {
+    // The regression that cost the most to find: a limit whose bias is the violation depth rather
+    // than the remaining room brakes ALL rotation, so an enabled limit the arm was nowhere near held
+    // it at a standstill while the motor spent its whole torque budget every step.
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DRevoluteJointKind, physics2DRevoluteJointSolver);
+    const { anchor, arm } = hinged(world);
+    addPhysics2DJoint(
+      world,
+      revoluteJoint(anchor.index, arm.index, {
+        enableLimit: true,
+        enableMotor: true,
+        lowerAngle: -100,
+        maxMotorTorque: 1000,
+        motorSpeed: 5,
+        upperAngle: 100,
+      }),
+    );
+    run(world, 30);
+    expect(arm.angularVelocity).toBeCloseTo(5, 6);
+  });
+
+  it('exchanges and negates the limit interval when the ends are swapped', () => {
+    // lower <= (angleB - angleA - reference) <= upper. Reversing the ends negates that measurement, so
+    // the same physical interval requires the bounds to negate AND trade places.
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DRevoluteJointKind, physics2DRevoluteJointSolver);
+    const second = box(world, 'dynamic', 0, 0);
+    const first = box(world, 'dynamic', 1, 0);
+    const joint = revoluteJoint(first.index, second.index, {
+      lowerAngle: -0.2,
+      motorSpeed: 3,
+      referenceAngle: 0.1,
+      upperAngle: 0.5,
+    });
+    addPhysics2DJoint(world, joint);
+    expect(joint.bodyA).toBe(second.index);
+    expect(joint.lowerAngle).toBeCloseTo(-0.5, 12);
+    expect(joint.upperAngle).toBeCloseTo(0.2, 12);
+    expect(joint.referenceAngle).toBeCloseTo(-0.1, 12);
+    expect(joint.motorSpeed).toBeCloseTo(-3, 12);
   });
 });
 
