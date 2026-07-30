@@ -326,6 +326,20 @@ function toUint16Array(value: unknown): Uint16Array {
 // Adds one bone-timeline channel to `channels`: builds an AnimationTrack from the Spine keyframes (times
 // + `extract`ed component values, with the setup pose already baked into `extract`) targeting the bone's
 // `path`. A timeline whose every keyframe is `curve: 'stepped'` is a Step track; otherwise Linear.
+//
+// A keyframe may instead carry `curve` as an array of cubic-bezier control points, which this importer does
+// NOT yet honor — the segment collapses to Linear and is Skip-crumbed once per timeline, the same way
+// DragonBones' `curve`/quadratic `tweenEasing` is (`dragonbones.tween-easing-unsupported`), so both formats
+// report the same fidelity limit instead of one dropping it silently. Only keyframes BEFORE the last are
+// counted: a curve describes the segment that FOLLOWS its keyframe, so the final key's curve drives nothing.
+//
+// Honoring it is a bounded change — `@flighthq/animation` already carries per-interval `segmentEasings` and
+// `@flighthq/easing` already exports `easeCubicBezier` — but it is BLOCKED ON A FORMAT QUESTION, not on
+// plumbing: Spine 3.8 writes these control points normalized to 0..1, while 4.x writes them in absolute
+// time/value units (and 4.x permits a different curve per component, which one per-interval easing cannot
+// express). The two encodings are not distinguishable from the numbers alone — a 3.8 file whose segment
+// spans about one second yields control points that look valid under either reading — so choosing wrongly
+// produces silently wrong motion rather than a loud failure. Deferred until a licensed rig can settle it.
 function addSpineBoneChannel(
   channels: ReturnType<typeof createAnimationChannel>[],
   rawKeys: unknown,
@@ -333,17 +347,30 @@ function addSpineBoneChannel(
   path: (typeof Skeleton2DAnimationPath)[keyof typeof Skeleton2DAnimationPath],
   components: number,
   extract: (key: Record<string, unknown>) => readonly number[],
+  diagnostics?: ImportDiagnostic[],
 ): void {
   if (!Array.isArray(rawKeys) || rawKeys.length === 0) return;
   const times: number[] = [];
   const values: number[] = [];
   let allStepped = true;
-  for (const key of rawKeys) {
+  let bezierKeys = 0;
+  for (let i = 0; i < rawKeys.length; i++) {
+    const key = rawKeys[i];
     if (key === null || typeof key !== 'object') continue;
     const k = key as Record<string, unknown>;
     times.push(numberOr(k.time, 0));
     for (const component of extract(k)) values.push(component);
     if (k.curve !== 'stepped') allStepped = false;
+    if (i + 1 < rawKeys.length && Array.isArray(k.curve)) bezierKeys++;
+  }
+  if (bezierKeys > 0) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'spine.curve-easing-unsupported',
+      'parseSpineSkeleton',
+      { keys: bezierKeys },
+    );
   }
   const interpolation = allStepped ? AnimationInterpolationStep : AnimationInterpolationLinear;
   const track = createAnimationTrack({ components, interpolation, times, values });
@@ -381,21 +408,42 @@ function parseSpineAnimations(
         const boneIndex = indexOfBone(bones, boneName);
         if (boneIndex < 0 || timelinesEntry === null || typeof timelinesEntry !== 'object') continue;
         const timelines = timelinesEntry as Record<string, unknown>;
-        addSpineBoneChannel(channels, timelines.rotate, boneIndex, Skeleton2DAnimationPath.Rotation, 1, (k) => [
-          numberOr(k.value, 0),
-        ]);
-        addSpineBoneChannel(channels, timelines.translate, boneIndex, Skeleton2DAnimationPath.Translation, 2, (k) => [
-          numberOr(k.x, 0),
-          numberOr(k.y, 0),
-        ]);
-        addSpineBoneChannel(channels, timelines.scale, boneIndex, Skeleton2DAnimationPath.Scale, 2, (k) => [
-          numberOr(k.x, 1),
-          numberOr(k.y, 1),
-        ]);
-        addSpineBoneChannel(channels, timelines.shear, boneIndex, Skeleton2DAnimationPath.Shear, 2, (k) => [
-          numberOr(k.x, 0),
-          numberOr(k.y, 0),
-        ]);
+        addSpineBoneChannel(
+          channels,
+          timelines.rotate,
+          boneIndex,
+          Skeleton2DAnimationPath.Rotation,
+          1,
+          (k) => [numberOr(k.value, 0)],
+          diagnostics,
+        );
+        addSpineBoneChannel(
+          channels,
+          timelines.translate,
+          boneIndex,
+          Skeleton2DAnimationPath.Translation,
+          2,
+          (k) => [numberOr(k.x, 0), numberOr(k.y, 0)],
+          diagnostics,
+        );
+        addSpineBoneChannel(
+          channels,
+          timelines.scale,
+          boneIndex,
+          Skeleton2DAnimationPath.Scale,
+          2,
+          (k) => [numberOr(k.x, 1), numberOr(k.y, 1)],
+          diagnostics,
+        );
+        addSpineBoneChannel(
+          channels,
+          timelines.shear,
+          boneIndex,
+          Skeleton2DAnimationPath.Shear,
+          2,
+          (k) => [numberOr(k.x, 0), numberOr(k.y, 0)],
+          diagnostics,
+        );
       }
     }
     skipCrumbSpineTimelineGroup(diagnostics, anim.slots, 'spine.slot-timeline-unsupported');

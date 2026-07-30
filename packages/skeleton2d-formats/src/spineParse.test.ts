@@ -276,6 +276,56 @@ describe('parseSpineSkeleton', () => {
     expect(pose.bones[0].rotation).toBeCloseTo(0, 5); // stepped holds the t=0 keyframe (delta 0) until t=1
   });
 
+  it('Skip-crumbs bezier curve keyframes, whose easing is collapsed to Linear', () => {
+    const doc = {
+      bones: [{ name: 'b' }],
+      animations: {
+        a: {
+          bones: {
+            b: {
+              rotate: [
+                { time: 0, value: 0, curve: [0.25, 0, 0.75, 1] },
+                { time: 1, value: 90, curve: [0.25, 0, 0.75, 1] },
+              ],
+            },
+          },
+        },
+      },
+    };
+    const crumbs = collectImportDiagnostics((sink) => parseSpineSkeleton(JSON.stringify(doc), sink)).filter(
+      (c) => c.kind === 'spine.curve-easing-unsupported',
+    );
+    expect(crumbs.length).toBe(1);
+    // Only the FIRST key is counted: a curve describes the segment after its key, so the last one drives
+    // nothing. Reporting 2 here would overstate the lost fidelity.
+    expect(crumbs[0].detail).toMatchObject({ keys: 1 });
+    // The track still samples linearly, which is the documented approximation.
+    const result = parseSpineSkeleton(JSON.stringify(doc))!;
+    const pose = cloneSkeleton2D(result.skeleton);
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, result.skeleton, pose, 0.5);
+    expect(pose.bones[0].rotation).toBeCloseTo(45, 5);
+  });
+
+  it('does not crumb a stepped or plain timeline as a curve', () => {
+    const doc = {
+      bones: [{ name: 'b' }],
+      animations: {
+        a: {
+          bones: {
+            b: {
+              rotate: [
+                { time: 0, value: 0, curve: 'stepped' },
+                { time: 1, value: 90 },
+              ],
+            },
+          },
+        },
+      },
+    };
+    const kinds = collectImportDiagnostics((sink) => parseSpineSkeleton(JSON.stringify(doc), sink)).map((c) => c.kind);
+    expect(kinds).not.toContain('spine.curve-easing-unsupported');
+  });
+
   it('Skip-crumbs constraint, event, and slot animation timelines', () => {
     const doc = {
       bones: [{ name: 'b' }],
