@@ -3,6 +3,7 @@ import type {
   AcceleratorParseError,
   ParsedAccelerator,
   ShortcutBackend,
+  ShortcutDrop,
   ShortcutEvent,
   ShortcutModifier,
 } from '@flighthq/types/contract';
@@ -12,8 +13,10 @@ import {
   createParsedAccelerator,
   createWebShortcutBackend,
   disableGlobalShortcut,
+  disposeGlobalShortcutSignals,
   enableGlobalShortcut,
   enableGlobalShortcutSignals,
+  findAcceleratorConflict,
   formatAcceleratorForDisplay,
   getAcceleratorKey,
   getAcceleratorKeyLabel,
@@ -22,6 +25,7 @@ import {
   getRegisteredGlobalShortcuts,
   getShortcutBackend,
   hasGlobalShortcutConflict,
+  hasNativeShortcutBackend,
   isAcceleratorValid,
   isGlobalShortcutRegistered,
   normalizeAccelerator,
@@ -31,6 +35,7 @@ import {
   resolveCommandOrControlModifier,
   resumeAllGlobalShortcuts,
   setShortcutBackend,
+  setShortcutDropGuard,
   suspendAllGlobalShortcuts,
   unregisterAllGlobalShortcuts,
   unregisterGlobalShortcut,
@@ -78,6 +83,7 @@ function fakeBackend(): FakeBackend {
 
 afterEach(() => {
   setShortcutBackend(null);
+  setShortcutDropGuard(null);
   // Disconnect any signal listeners registered in this test to avoid cross-test bleed.
   const signals = enableGlobalShortcutSignals();
   clearSignal(signals.onTrigger);
@@ -129,6 +135,49 @@ describe('disableGlobalShortcut', () => {
     const backend = fakeBackend();
     setShortcutBackend(backend);
     expect(disableGlobalShortcut('')).toBe(false);
+  });
+});
+
+describe('disposeGlobalShortcutSignals', () => {
+  it('disconnects onTrigger listeners so a later trigger does not reach them', () => {
+    const backend = fakeBackend();
+    setShortcutBackend(backend);
+    const signals = enableGlobalShortcutSignals();
+    let fired = 0;
+    connectSignal(signals.onTrigger, () => {
+      fired++;
+    });
+    registerGlobalShortcut('Control+K', () => {});
+    backend.entries.get('Control+K')!.handler({ accelerator: 'Control+K' });
+    expect(fired).toBe(1);
+
+    disposeGlobalShortcutSignals();
+    backend.entries.get('Control+K')!.handler({ accelerator: 'Control+K' });
+    expect(fired).toBe(1);
+  });
+
+  it('arms a fresh group on the next enable — identity is not preserved across a dispose', () => {
+    const before = enableGlobalShortcutSignals();
+    disposeGlobalShortcutSignals();
+    expect(enableGlobalShortcutSignals()).not.toBe(before);
+  });
+
+  it('leaves directly-registered handlers firing', () => {
+    const backend = fakeBackend();
+    setShortcutBackend(backend);
+    enableGlobalShortcutSignals();
+    let handled = 0;
+    registerGlobalShortcut('Control+K', () => {
+      handled++;
+    });
+    disposeGlobalShortcutSignals();
+    backend.entries.get('Control+K')!.handler({ accelerator: 'Control+K' });
+    expect(handled).toBe(1);
+  });
+
+  it('is a no-op when no group was armed', () => {
+    disposeGlobalShortcutSignals();
+    expect(() => disposeGlobalShortcutSignals()).not.toThrow();
   });
 });
 
@@ -232,6 +281,40 @@ describe('equalsAccelerator', () => {
   it('is order-insensitive for modifiers', () => {
     expect(equalsAccelerator('Shift+Ctrl+K', 'Control+Shift+K')).toBe(true);
     expect(equalsAccelerator('Alt+Shift+Control+K', 'Ctrl+Shift+Alt+K')).toBe(true);
+  });
+});
+
+describe('findAcceleratorConflict', () => {
+  it('returns the conflicting candidate, in the caller spelling it was given in', () => {
+    expect(findAcceleratorConflict('Control+K', ['Alt+J', 'ctrl-k', 'Meta+P'])).toBe('ctrl-k');
+  });
+
+  it('returns null when nothing in the list names the same chord', () => {
+    expect(findAcceleratorConflict('Control+K', ['Alt+J', 'Meta+P'])).toBeNull();
+  });
+
+  it('returns the first conflict when several candidates name the chord', () => {
+    expect(findAcceleratorConflict('Control+K', ['ctrl+k', 'Control-K'])).toBe('ctrl+k');
+  });
+
+  it('returns null for an unparseable accelerator, even against an identical unparseable candidate', () => {
+    expect(findAcceleratorConflict('NotAKey', ['NotAKey'])).toBeNull();
+  });
+
+  it('skips unparseable candidates rather than matching them', () => {
+    expect(findAcceleratorConflict('Control+K', ['NotAKey', '', 'Ctrl+K'])).toBe('Ctrl+K');
+  });
+
+  it('returns null for an empty candidate list', () => {
+    expect(findAcceleratorConflict('Control+K', [])).toBeNull();
+  });
+
+  it('sees a pending binding list that hasGlobalShortcutConflict cannot — nothing is registered', () => {
+    const backend = fakeBackend();
+    setShortcutBackend(backend);
+    const pending = ['Control+Shift+P'];
+    expect(hasGlobalShortcutConflict('Control+Shift+P')).toBe(false);
+    expect(findAcceleratorConflict('Control+Shift+P', pending)).toBe('Control+Shift+P');
   });
 });
 
@@ -451,6 +534,21 @@ describe('hasGlobalShortcutConflict', () => {
   });
 });
 
+describe('hasNativeShortcutBackend', () => {
+  it('is false on the web default and true once a backend is installed', () => {
+    expect(hasNativeShortcutBackend()).toBe(false);
+    setShortcutBackend(fakeBackend());
+    expect(hasNativeShortcutBackend()).toBe(true);
+    setShortcutBackend(null);
+    expect(hasNativeShortcutBackend()).toBe(false);
+  });
+
+  it('stays false when getShortcutBackend has lazily built the web default', () => {
+    getShortcutBackend();
+    expect(hasNativeShortcutBackend()).toBe(false);
+  });
+});
+
 describe('isAcceleratorValid', () => {
   it('returns true for well-formed accelerators', () => {
     expect(isAcceleratorValid('Control+K')).toBe(true);
@@ -581,6 +679,46 @@ describe('normalizeAccelerator', () => {
     expect(normalizeAccelerator('Ctrl-Shift-K')).toBe('Control+Shift+K');
   });
 
+  it('reaches a literal +/- key, so the conventional zoom pair parses', () => {
+    expect(normalizeAccelerator('CommandOrControl+-')).toBe('CommandOrControl+Minus');
+    expect(normalizeAccelerator('CommandOrControl++')).toBe('CommandOrControl+Plus');
+    expect(normalizeAccelerator('Ctrl+-')).toBe('Control+Minus');
+    expect(normalizeAccelerator('Ctrl++')).toBe('Control+Plus');
+  });
+
+  it('accepts a bare +/- as a one-key accelerator', () => {
+    expect(normalizeAccelerator('-')).toBe('Minus');
+    expect(normalizeAccelerator('+')).toBe('Plus');
+  });
+
+  it('reaches a literal +/- through the dash separator too', () => {
+    expect(normalizeAccelerator('Ctrl-+')).toBe('Control+Plus');
+    expect(normalizeAccelerator('Ctrl--')).toBe('Control+Minus');
+  });
+
+  it('round-trips a literal +/- chord through its own normalized form', () => {
+    const once = normalizeAccelerator('Ctrl+-');
+    expect(normalizeAccelerator(once!)).toBe(once);
+  });
+
+  it('normalizes the named spellings of +/- to the same chord as the literals', () => {
+    expect(normalizeAccelerator('Ctrl+Minus')).toBe(normalizeAccelerator('Ctrl+-'));
+    expect(normalizeAccelerator('Ctrl+Plus')).toBe(normalizeAccelerator('Ctrl++'));
+  });
+
+  it('normalizes the Electron numpad short spellings', () => {
+    expect(normalizeAccelerator('Ctrl+numadd')).toBe('Control+NumpadAdd');
+    expect(normalizeAccelerator('Ctrl+numsub')).toBe('Control+NumpadSubtract');
+    expect(normalizeAccelerator('Ctrl+nummult')).toBe('Control+NumpadMultiply');
+    expect(normalizeAccelerator('Ctrl+numdiv')).toBe('Control+NumpadDivide');
+    expect(normalizeAccelerator('Ctrl+numdec')).toBe('Control+NumpadDecimal');
+  });
+
+  it('rejects a separator glued to a key name rather than silently dropping it', () => {
+    // 'Ctrl+-K' is malformed: the '-' opens the key token, so the key reads as '-K' and fails.
+    expect(normalizeAccelerator('Ctrl+-K')).toBeNull();
+  });
+
   it('produces stable output (idempotent)', () => {
     const once = normalizeAccelerator('ctrl+shift+k');
     const twice = normalizeAccelerator(once!);
@@ -623,6 +761,24 @@ describe('parseAccelerator', () => {
     void out.key; // just read to confirm it exists before parsing
     parseAccelerator('', out);
     expect(out.key).toBe('');
+    expect(out.modifiers).toEqual([]);
+  });
+
+  it('fills the modifiers array in place, keeping a retained reference live', () => {
+    const out = createParsedAccelerator();
+    const modifiers = out.modifiers;
+    parseAccelerator('Control+Shift+K', out);
+    expect(out.modifiers).toBe(modifiers);
+    expect(modifiers).toEqual(['Control', 'Shift']);
+    parseAccelerator('Alt+F', out);
+    expect(out.modifiers).toBe(modifiers);
+    expect(modifiers).toEqual(['Alt']);
+  });
+
+  it('clears stale modifiers when the new chord has fewer', () => {
+    const out = createParsedAccelerator();
+    parseAccelerator('Control+Alt+Shift+K', out);
+    parseAccelerator('K', out);
     expect(out.modifiers).toEqual([]);
   });
 
@@ -766,6 +922,97 @@ describe('setShortcutBackend', () => {
     expect(getShortcutBackend()).not.toBeNull();
     // Web backend sentinel
     expect(getRegisteredGlobalShortcuts()).toEqual([]);
+  });
+});
+
+describe('setShortcutDropGuard', () => {
+  it('reports an unparseable accelerator with the operation, the raw input, and the parse error', () => {
+    setShortcutBackend(fakeBackend());
+    const drops: ShortcutDrop[] = [];
+    setShortcutDropGuard((drop) => drops.push({ ...drop }));
+    expect(registerGlobalShortcut('Control+NotAKey', () => {})).toBe(false);
+    expect(drops).toEqual([
+      {
+        accelerator: 'Control+NotAKey',
+        operation: 'registerGlobalShortcut',
+        parseError: { reason: 'unknown-key', token: 'NotAKey' },
+        reason: 'unparseable',
+      },
+    ]);
+  });
+
+  it('names the operation each command dropped from', () => {
+    const seen: string[] = [];
+    setShortcutBackend(fakeBackend());
+    setShortcutDropGuard((drop) => seen.push(drop.operation));
+    disableGlobalShortcut('');
+    enableGlobalShortcut('');
+    registerGlobalShortcut('', () => {});
+    unregisterGlobalShortcut('');
+    expect(seen).toEqual([
+      'disableGlobalShortcut',
+      'enableGlobalShortcut',
+      'registerGlobalShortcut',
+      'unregisterGlobalShortcut',
+    ]);
+  });
+
+  it('reports no-native-backend for a parseable chord on the web default, with no parse error', () => {
+    const drops: ShortcutDrop[] = [];
+    setShortcutDropGuard((drop) => drops.push({ ...drop }));
+    registerGlobalShortcut('Control+K', () => {});
+    expect(drops).toEqual([
+      {
+        accelerator: 'Control+K',
+        operation: 'registerGlobalShortcut',
+        parseError: null,
+        reason: 'no-native-backend',
+      },
+    ]);
+  });
+
+  it('reports no-native-backend from the accelerator-free bulk commands too', () => {
+    const seen: string[] = [];
+    setShortcutDropGuard((drop) => seen.push(drop.operation));
+    suspendAllGlobalShortcuts();
+    resumeAllGlobalShortcuts();
+    unregisterAllGlobalShortcuts();
+    expect(seen).toEqual(['suspendAllGlobalShortcuts', 'resumeAllGlobalShortcuts', 'unregisterAllGlobalShortcuts']);
+  });
+
+  it('stays silent once a native backend is installed', () => {
+    setShortcutBackend(fakeBackend());
+    const drops: ShortcutDrop[] = [];
+    setShortcutDropGuard((drop) => drops.push({ ...drop }));
+    registerGlobalShortcut('Control+K', () => {});
+    unregisterGlobalShortcut('Control+K');
+    suspendAllGlobalShortcuts();
+    expect(drops).toEqual([]);
+  });
+
+  it('reports the parse failure rather than the missing backend when both apply', () => {
+    const drops: ShortcutDrop[] = [];
+    setShortcutDropGuard((drop) => drops.push({ ...drop }));
+    registerGlobalShortcut('Control+NotAKey', () => {});
+    expect(drops.length).toBe(1);
+    expect(drops[0].reason).toBe('unparseable');
+  });
+
+  it('null uninstalls it', () => {
+    const drops: ShortcutDrop[] = [];
+    setShortcutDropGuard((drop) => drops.push({ ...drop }));
+    setShortcutDropGuard(null);
+    registerGlobalShortcut('Control+NotAKey', () => {});
+    expect(drops).toEqual([]);
+  });
+
+  it('does not change what a command returns', () => {
+    const backend = fakeBackend();
+    setShortcutBackend(backend);
+    setShortcutDropGuard(() => {});
+    expect(registerGlobalShortcut('ctrl+k', () => {})).toBe(true);
+    expect(backend.entries.has('Control+K')).toBe(true);
+    expect(registerGlobalShortcut('Control+NotAKey', () => {})).toBe(false);
   });
 });
 

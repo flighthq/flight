@@ -1,11 +1,14 @@
-import { createSignal, emitSignal } from '@flighthq/signals/contract';
+import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   Accelerator,
   AcceleratorParseError,
   ParsedAccelerator,
   ShortcutBackend,
+  ShortcutDropGuard,
   ShortcutEvent,
+  ShortcutKeyName,
   ShortcutModifier,
+  ShortcutOperation,
   ShortcutSignals,
 } from '@flighthq/types/contract';
 
@@ -46,14 +49,24 @@ export function createWebShortcutBackend(): ShortcutBackend {
 // Disables a registered global shortcut without unregistering it; the handler is preserved and
 // can be re-enabled later. Returns false when not registered or unsupported.
 export function disableGlobalShortcut(accelerator: string): boolean {
-  const normalized = normalizeAccelerator(accelerator);
+  const normalized = _normalizeForCommand(accelerator, 'disableGlobalShortcut');
   if (normalized === null) return false;
   return getShortcutBackend().setEnabled(normalized, false);
 }
 
+// Releases the global shortcut signal group armed by enableGlobalShortcutSignals: disconnects every
+// onTrigger listener and drops the group so it becomes eligible for collection. A later
+// enableGlobalShortcutSignals arms a fresh group — the identity is not preserved across a dispose.
+// Registered shortcuts are untouched; their directly-registered handlers keep firing.
+export function disposeGlobalShortcutSignals(): void {
+  if (_signals === null) return;
+  clearSignal(_signals.onTrigger);
+  _signals = null;
+}
+
 // Re-enables a previously disabled global shortcut. Returns false when not registered or unsupported.
 export function enableGlobalShortcut(accelerator: string): boolean {
-  const normalized = normalizeAccelerator(accelerator);
+  const normalized = _normalizeForCommand(accelerator, 'enableGlobalShortcut');
   if (normalized === null) return false;
   return getShortcutBackend().setEnabled(normalized, true);
 }
@@ -77,6 +90,22 @@ export function equalsAccelerator(a: string, b: string): boolean {
   return na === nb;
 }
 
+// Returns the first accelerator in `candidates` that names the same chord as `accelerator`, or null
+// when none does. The conflict probe for a key-binding UI: it answers "is this chord already spoken
+// for in *my* binding list", which is the question a settings screen asks before it lets a user
+// commit a rebind — hasGlobalShortcutConflict only sees chords already registered with the OS, so it
+// cannot see a pending list, another profile's bindings, or a chord the app reserves for itself.
+// Comparison is by normalized form, so any accepted spelling on either side matches. Unparseable
+// candidates never match, and an unparseable `accelerator` returns null.
+export function findAcceleratorConflict(accelerator: string, candidates: readonly string[]): string | null {
+  const normalized = normalizeAccelerator(accelerator);
+  if (normalized === null) return null;
+  for (const candidate of candidates) {
+    if (normalizeAccelerator(candidate) === normalized) return candidate;
+  }
+  return null;
+}
+
 // Formats an accelerator string for human-readable display per the current OS:
 //   macOS:       ⌘⇧K  (symbols, no separator)
 //   Windows/Linux: Ctrl+Shift+K  (text labels, '+' separator)
@@ -96,14 +125,14 @@ export function formatAcceleratorForDisplay(accelerator: string, platform?: stri
 }
 
 // Returns the canonical key token from a parsed or normalized accelerator, or null when unparseable.
-export function getAcceleratorKey(accelerator: string): string | null {
+export function getAcceleratorKey(accelerator: string): ShortcutKeyName | null {
   const result = _parse(accelerator);
   return result === null ? null : result.key;
 }
 
 // Renders a key name label for display in menus and tooltips (e.g. 'ArrowUp' → '↑', 'Return' → '↵').
 // Returns the key as-is when no special display name is registered.
-export function getAcceleratorKeyLabel(key: string): string {
+export function getAcceleratorKeyLabel(key: ShortcutKeyName): string {
   return _keyDisplayNames.get(key) ?? key;
 }
 
@@ -143,9 +172,13 @@ export function getRegisteredGlobalShortcuts(): readonly Accelerator[] {
 }
 
 // The active shortcut backend, or a lazily-created web default. There is always a backend.
+// The default is cached in its own slot rather than assigned into the installed-backend slot, so
+// "a host installed a backend" stays distinguishable from "we fell back" for the whole process —
+// folding the two together would make hasNativeShortcutBackend read true after the first command.
 export function getShortcutBackend(): ShortcutBackend {
-  if (_backend === null) _backend = createWebShortcutBackend();
-  return _backend;
+  if (_backend !== null) return _backend;
+  if (_webBackend === null) _webBackend = createWebShortcutBackend();
+  return _webBackend;
 }
 
 // True when the (normalized) chord is already registered. A conflict probe over isGlobalShortcutRegistered.
@@ -154,6 +187,13 @@ export function hasGlobalShortcutConflict(accelerator: string): boolean {
   const normalized = normalizeAccelerator(accelerator);
   if (normalized === null) return false;
   return isGlobalShortcutRegistered(normalized);
+}
+
+// True when a native host backend is installed. False means the default web backend is active, whose
+// registry is a sentinel — no chord can register, and every command is a no-op. The capability probe
+// an application uses to decide whether to offer a global-hotkey settings screen at all.
+export function hasNativeShortcutBackend(): boolean {
+  return _backend !== null;
 }
 
 // True when `input` is a parseable accelerator (valid modifiers + recognized key).
@@ -186,9 +226,7 @@ export function normalizeAccelerator(input: string): Accelerator | null {
 export function parseAccelerator(input: string, out: ParsedAccelerator): ParsedAccelerator | null {
   const result = _parse(input);
   if (result === null) return null;
-  (out as { key: string; modifiers: ShortcutModifier[] }).key = result.key;
-  (out as { key: string; modifiers: ShortcutModifier[] }).modifiers = result.modifiers.slice();
-  return out;
+  return _copyParsed(result, out);
 }
 
 // Like parseAccelerator but returns an AcceleratorParseError describing why parsing failed instead
@@ -200,9 +238,7 @@ export function parseAcceleratorDetailed(
 ): ParsedAccelerator | AcceleratorParseError {
   const result = _parseDetailed(input);
   if ('reason' in result) return result;
-  (out as { key: string; modifiers: ShortcutModifier[] }).key = result.key;
-  (out as { key: string; modifiers: ShortcutModifier[] }).modifiers = result.modifiers.slice();
-  return out;
+  return _copyParsed(result, out);
 }
 
 // Registers a global hotkey. Returns false when the host lacks global-hotkey support (e.g. web).
@@ -212,7 +248,7 @@ export function registerGlobalShortcut(
   accelerator: string,
   handler: (event: Readonly<ShortcutEvent>) => void,
 ): boolean {
-  const normalized = normalizeAccelerator(accelerator);
+  const normalized = _normalizeForCommand(accelerator, 'registerGlobalShortcut');
   if (normalized === null) return false;
   const wrappedHandler = (event: Readonly<ShortcutEvent>) => {
     handler(event);
@@ -230,6 +266,7 @@ export function resolveCommandOrControlModifier(platform?: string): Exclude<Shor
 
 // Resumes all global shortcuts after suspendAllGlobalShortcuts(). No-op on unsupported hosts.
 export function resumeAllGlobalShortcuts(): void {
+  _reportNoNativeBackend('resumeAllGlobalShortcuts', '');
   getShortcutBackend().setAllEnabled(true);
 }
 
@@ -238,27 +275,45 @@ export function setShortcutBackend(backend: ShortcutBackend | null): void {
   _backend = backend;
 }
 
+// Installs the drop guard consulted whenever a global-shortcut command returns its sentinel for a
+// knowable caller error; null uninstalls it. This is the diagnostics seam, not the caller-facing
+// entry point — use enableShortcutGuards, which installs the @flighthq/log reporter through here.
+export function setShortcutDropGuard(guard: ShortcutDropGuard | null): void {
+  _dropGuard = guard;
+}
+
 // Temporarily silences all registered global shortcuts without unregistering them — useful when a
 // modal or text field has focus. Resume with resumeAllGlobalShortcuts(). No-op on unsupported hosts.
 export function suspendAllGlobalShortcuts(): void {
+  _reportNoNativeBackend('suspendAllGlobalShortcuts', '');
   getShortcutBackend().setAllEnabled(false);
 }
 
 // Unregisters every global hotkey. No-op when the host lacks global-hotkey support.
 export function unregisterAllGlobalShortcuts(): void {
+  _reportNoNativeBackend('unregisterAllGlobalShortcuts', '');
   getShortcutBackend().unregisterAll();
 }
 
 // Unregisters a global hotkey. Returns false when not registered or unsupported (e.g. web).
 // Input is normalized before the lookup.
 export function unregisterGlobalShortcut(accelerator: string): boolean {
-  const normalized = normalizeAccelerator(accelerator);
+  const normalized = _normalizeForCommand(accelerator, 'unregisterGlobalShortcut');
   if (normalized === null) return false;
   return getShortcutBackend().unregister(normalized);
 }
 
+// The backend a native host installed, and separately the web default getShortcutBackend falls back
+// to. Keeping them apart is what lets hasNativeShortcutBackend answer honestly.
 let _backend: ShortcutBackend | null = null;
+let _webBackend: ShortcutBackend | null = null;
 let _signals: ShortcutSignals | null = null;
+
+// Diagnostics seam: enableShortcutGuards (separately imported, so its message text and its
+// @flighthq/log dependency shake out of a production bundle) fills this, and the command functions
+// reach it through the null check. Not enabling guards costs one comparison per command.
+let _dropGuard: ShortcutDropGuard | null = null;
+
 const _emptyList: readonly string[] = [];
 
 // Canonical modifier order used in normalized form: Control < Alt < Shift < Meta < Super < CommandOrControl.
@@ -281,8 +336,10 @@ const _modifierAliases = new Map<string, ShortcutModifier>([
   ['win', 'Super'],
 ]);
 
-// Alias map: lowercase alias → canonical ShortcutKeyName (and other accepted key names).
-const _keyAliases = new Map<string, string>([
+// Alias map: lowercase alias → canonical ShortcutKeyName. Typing the values as ShortcutKeyName makes
+// the header the checker: a misspelled canonical name here is a compile error rather than an
+// accelerator that normalizes to a chord no backend recognizes.
+const _keyAliases = new Map<string, ShortcutKeyName>([
   // Letters (uppercase canonical form)
   ['a', 'A'],
   ['b', 'B'],
@@ -376,7 +433,13 @@ const _keyAliases = new Map<string, string>([
   ['spacebar', 'Space'],
   [' ', 'Space'],
   ['tab', 'Tab'],
-  // Numpad
+  // Numpad. The num*/num-operator short forms are the spellings Electron's accelerator syntax
+  // documents, so a chord copied from an Electron app parses unchanged.
+  ['numadd', 'NumpadAdd'],
+  ['numdec', 'NumpadDecimal'],
+  ['numdiv', 'NumpadDivide'],
+  ['nummult', 'NumpadMultiply'],
+  ['numsub', 'NumpadSubtract'],
   ['num0', 'Numpad0'],
   ['num1', 'Numpad1'],
   ['num2', 'Numpad2'],
@@ -403,8 +466,12 @@ const _keyAliases = new Map<string, string>([
   ['numpadenter', 'NumpadEnter'],
   ['numpadmultiply', 'NumpadMultiply'],
   ['numpadsubtract', 'NumpadSubtract'],
-  // Punctuation / symbols
+  // Punctuation / symbols. Both symbol characters that double as chord separators are here: the
+  // tokenizer hands a trailing '+' or '-' through as a key token rather than eating it, so
+  // 'CommandOrControl++' and 'CommandOrControl+-' — the conventional zoom pair — resolve like any
+  // other key.
   ["'", 'Quote'],
+  ['+', 'Plus'],
   [',', 'Comma'],
   ['-', 'Minus'],
   ['.', 'Period'],
@@ -427,7 +494,6 @@ const _keyAliases = new Map<string, string>([
   ['quote', 'Quote'],
   ['semicolon', 'Semicolon'],
   ['slash', 'Slash'],
-  // Note: '+' as a key name is mapped via 'plus'; bare '+' is the separator so it is filtered out.
   // Media
   ['medianexttrack', 'MediaNextTrack'],
   ['mediaplaypause', 'MediaPlayPause'],
@@ -445,7 +511,7 @@ const _keyAliases = new Map<string, string>([
 ]);
 
 // Human-readable display names for special keys; absent entries use the key name itself.
-const _keyDisplayNames = new Map<string, string>([
+const _keyDisplayNames = new Map<ShortcutKeyName, string>([
   ['ArrowDown', '↓'],
   ['ArrowLeft', '←'],
   ['ArrowRight', '→'],
@@ -504,8 +570,39 @@ function _isMacOS(platform?: string): boolean {
 }
 
 interface _Parsed {
-  key: string;
+  key: ShortcutKeyName;
   modifiers: ShortcutModifier[];
+}
+
+// Copies a successful parse into a caller-owned ParsedAccelerator. `out.modifiers` is cleared and
+// refilled rather than reassigned, so the array the caller allocated with createParsedAccelerator
+// stays the array they hold — an out parameter that swapped the array underneath would leave any
+// retained reference silently stale.
+function _copyParsed(source: Readonly<_Parsed>, out: ParsedAccelerator): ParsedAccelerator {
+  out.key = source.key;
+  out.modifiers.length = 0;
+  for (const modifier of source.modifiers) out.modifiers.push(modifier);
+  return out;
+}
+
+// Builds the normalized Accelerator string from a _Parsed result.
+function _formatNormalized(parsed: Readonly<_Parsed>): Accelerator {
+  if (parsed.modifiers.length === 0) return parsed.key;
+  return [...parsed.modifiers, parsed.key].join('+');
+}
+
+// Normalizes on behalf of a command function, reporting an unparseable input and a missing native
+// backend to the drop guard on the way through. When no guard is installed — the production default
+// — this is exactly normalizeAccelerator plus one null comparison.
+function _normalizeForCommand(accelerator: string, operation: ShortcutOperation): Accelerator | null {
+  if (_dropGuard === null) return normalizeAccelerator(accelerator);
+  const result = _parseDetailed(accelerator);
+  if ('reason' in result) {
+    _dropGuard({ accelerator, operation, parseError: result, reason: 'unparseable' });
+    return null;
+  }
+  _reportNoNativeBackend(operation, accelerator);
+  return _formatNormalized(result);
 }
 
 // Core parser. Returns a _Parsed on success or null on failure.
@@ -517,17 +614,12 @@ function _parse(input: string): _Parsed | null {
 
 // Core parser with error diagnostics.
 function _parseDetailed(input: string): _Parsed | AcceleratorParseError {
-  if (!input || input.trim().length === 0) {
-    return { reason: 'empty', token: '' };
-  }
-
-  const tokens = _splitTokens(input.trim());
+  const tokens = _splitTokens(input.trim(), _tokenScratch);
   if (tokens.length === 0) {
     return { reason: 'empty', token: '' };
   }
 
   const modifiers: ShortcutModifier[] = [];
-  const seenModifiers = new Set<ShortcutModifier>();
   let key: string | null = null;
 
   // Process all tokens: if a token is a known modifier alias, treat it as a modifier.
@@ -536,10 +628,10 @@ function _parseDetailed(input: string): _Parsed | AcceleratorParseError {
     const lower = token.toLowerCase();
     const mod = _modifierAliases.get(lower);
     if (mod !== undefined) {
-      if (seenModifiers.has(mod)) {
+      // A chord carries at most six modifiers, so a linear scan beats allocating a Set per parse.
+      if (modifiers.indexOf(mod) !== -1) {
         return { reason: 'duplicate-modifier', token };
       }
-      seenModifiers.add(mod);
       modifiers.push(mod);
     } else {
       // Could be the key. If we already have a key, the earlier one was an unknown modifier token.
@@ -567,13 +659,37 @@ function _parseDetailed(input: string): _Parsed | AcceleratorParseError {
   return { key: canonicalKey, modifiers };
 }
 
-// Splits input into tokens using '+' or '-' as separator. Filters out empty tokens from split.
-function _splitTokens(input: string): string[] {
-  return input.split(/[+-]/).filter((t) => t.length > 0);
+// Reports to the drop guard that a command reached the default web backend, whose registry is a
+// sentinel, so the command could not have taken effect on any input. Silent once a native backend is
+// installed: a native backend answering false is a real answer, not a drop.
+function _reportNoNativeBackend(operation: ShortcutOperation, accelerator: string): void {
+  if (_dropGuard === null || _backend !== null) return;
+  _dropGuard({ accelerator, operation, parseError: null, reason: 'no-native-backend' });
 }
 
-// Builds the normalized Accelerator string from a _Parsed result.
-function _formatNormalized(parsed: _Parsed): Accelerator {
-  if (parsed.modifiers.length === 0) return parsed.key;
-  return [...parsed.modifiers, parsed.key].join('+');
+// Splits input into tokens on '+' and '-', writing into `out` and returning it.
+//
+// A separator character only separates when it *terminates* a token, which is what keeps a literal
+// '+' or '-' key reachable: in 'Control+-' the '-' opens a token rather than closing the empty one,
+// so it survives as the key. A naive split on /[+-]/ drops it, and with it the two most common
+// accelerators an application registers — 'CommandOrControl+-' and 'CommandOrControl++' for zoom.
+// The same rule makes a lone '+' or '-' a valid one-key accelerator, and leaves 'Ctrl-Shift-K'
+// (dash as separator) tokenizing exactly as before.
+function _splitTokens(input: string, out: string[]): string[] {
+  out.length = 0;
+  let start = 0;
+  for (let i = 0; i < input.length; i++) {
+    const ch = input.charAt(i);
+    if ((ch === '+' || ch === '-') && i > start) {
+      out.push(input.slice(start, i));
+      start = i + 1;
+    }
+  }
+  if (start < input.length) out.push(input.slice(start));
+  return out;
 }
+
+// Scratch for _splitTokens. Contained entirely within _parseDetailed — the token strings are read
+// into modifiers/key before the next parse can run, and the array itself never escapes — so reusing
+// it costs no aliasing hazard.
+const _tokenScratch: string[] = [];
