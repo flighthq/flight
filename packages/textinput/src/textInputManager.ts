@@ -59,7 +59,7 @@ export function dispatchTextInputKeyDown(
 ): boolean {
   const target = getTextInputFocusTarget(manager);
   if (target === null) return false;
-  const layout = getRichTextRuntime(target).textLayout;
+  const layout = getRichTextRuntime(target).textLayout ?? undefined;
   return handleTextInputKeyboard(target, data, { clipboardText, layout, onCopy });
 }
 
