@@ -8,7 +8,6 @@ import type {
   ScheduledNotification,
 } from '@flighthq/types/contract';
 
-// ---- ServiceWorkerRegistration shim for type safety without importing lib.webworker ----
 // The service-worker backend accepts this minimal interface so the package does not need to
 // depend on @types/service-worker-api or lib.webworker. A native ServiceWorkerRegistration
 // satisfies it automatically.
