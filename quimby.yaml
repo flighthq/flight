@@ -39,7 +39,7 @@ services:
 
 layouts:
   default:
-    expr: '((chief manager) | (@builder integration critic)):80 / (host $serve):20'
+    expr: '((chief manager critic) | (@builder integration)):80 / (host $serve):20'
 
 default: default
 
