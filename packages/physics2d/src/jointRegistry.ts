@@ -19,7 +19,16 @@ import { findPhysics2DBody, isPhysics2DPairOrdered } from './world';
 export function addPhysics2DJoint(world: Physics2DWorld, joint: Physics2DJoint): Physics2DJoint {
   const first = findPhysics2DBody(world, joint.bodyA);
   const second = findPhysics2DBody(world, joint.bodyB);
-  if (first !== null && second !== null && !isPhysics2DPairOrdered(first, second)) {
+  // Ask the kind before exchanging anything. The swap below moves only what every joint has — two
+  // body indices and two anchors — so a kind holding state measured from bodyA toward bodyB has to
+  // reverse it, and a kind whose second end is not a body at all must refuse outright. Making that
+  // the kind's decision is the only place it can be correct: the registry cannot know which fields
+  // carry a direction.
+  // Decide whether a swap is pending BEFORE asking the kind: swapEnds both vetoes and transforms, so
+  // calling it when nothing is being exchanged would apply a kind's reversal to ends that never moved.
+  const swapPending = first !== null && second !== null && !isPhysics2DPairOrdered(first, second);
+  const solver = getPhysics2DJointSolver(world, joint.kind);
+  if (swapPending && (solver?.swapEnds?.(joint) ?? true)) {
     const bodyA = joint.bodyA;
     joint.bodyA = joint.bodyB;
     joint.bodyB = bodyA;

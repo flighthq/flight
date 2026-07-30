@@ -348,6 +348,18 @@ export interface Physics2DMouseJoint extends Physics2DJoint {
 export interface Physics2DJointSolver {
   prepare(world: Physics2DWorld, joint: Physics2DJoint, dt: number): void;
   solve(world: Physics2DWorld, joint: Physics2DJoint): void;
+  // Whether this kind's two ends may be exchanged, and its chance to carry its own direction-bearing
+  // state across the exchange. Called by addPhysics2DJoint with the ends still in their original
+  // order; return true to let the generic swap of bodies and anchors proceed, false to veto it.
+  //
+  // It exists because the generic swap can only move what every joint has — the two body indices and
+  // the two anchors. Anything a kind measures FROM bodyA TO bodyB reverses sign when the ends trade
+  // places, and the registry cannot know which fields those are. A kind that has such state
+  // transforms it here; a kind whose second end is not a body at all vetoes instead.
+  //
+  // Omit it when the kind is direction-free (a distance or rope constraint reads only the anchor
+  // separation, which is symmetric), and the ends swap with no further work.
+  swapEnds?(joint: Physics2DJoint): boolean;
 }
 
 // What happened to a contact this step, read off the contact cache rather than tracked alongside it.
