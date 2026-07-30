@@ -10,8 +10,10 @@ export interface ShareContent {
   text?: string;
   url?: string;
   // Portable file descriptors (data URL + MIME + name); converted to platform files at the backend
-  // boundary (the web backend converts each to a DOM File for navigator.share).
-  files?: ShareFile[];
+  // boundary (the web backend converts each to a DOM File for navigator.share). Readonly because a
+  // payload handed to the share sheet is never written back through — the backend reads it and maps
+  // it to host types.
+  files?: readonly ShareFile[];
 }
 
 // Presentation hints for the share sheet. All optional; backends ignore the ones they cannot honor.

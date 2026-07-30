@@ -1,16 +1,22 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { ShareBackend, ShareContent, ShareOptions, ShareResult, ShareSignals } from '@flighthq/types/contract';
+import type {
+  ShareBackend,
+  ShareContent,
+  ShareFile,
+  ShareOptions,
+  ShareResult,
+  ShareSignals,
+} from '@flighthq/types/contract';
 
-// Attaches `signals` to receive share result events emitted by shareContentWithResult calls. A prior
-// subscription on this signals group is torn down first. Pair with detachShareSignals /
-// disposeShareSignals.
+// Attaches `signals` to receive share result events emitted by shareContentWithResult calls.
+// Idempotent by construction — the attached groups are a set, so attaching twice delivers once.
+// Pair with detachShareSignals / disposeShareSignals.
 //
 // Note: shareContent (the boolean convenience wrapper) does NOT emit signals — only
 // shareContentWithResult emits onShareResult. If you need signals on every share, use
 // shareContentWithResult directly.
 export function attachShareSignals(signals: ShareSignals): void {
-  detachShareSignals(signals);
-  _signalListeners.set(signals, true);
+  _attachedSignals.add(signals);
 }
 
 // True when the active backend can share the given content. Returns false when sharing is
@@ -75,7 +81,7 @@ export function createWebShareBackend(): ShareBackend {
 
 // Stops delivery to `signals` and forgets its subscription. Safe to call when not attached.
 export function detachShareSignals(signals: ShareSignals): void {
-  _signalListeners.delete(signals);
+  _attachedSignals.delete(signals);
 }
 
 // Releases `signals` for garbage collection by detaching its subscription. The signals remain plain
@@ -144,12 +150,18 @@ export async function shareContentWithResult(
     return { completed: false, activityType: null, dismissed: false };
   }
   const result = await getShareBackend().shareWithResult(content, options);
-  if (_signalListeners.size > 0) {
-    for (const signals of _signalListeners.keys()) {
-      emitSignal(signals.onShareResult, result);
-    }
+  for (const signals of _attachedSignals) {
+    emitSignal(signals.onShareResult, result);
   }
   return result;
+}
+
+// Opens the share sheet with a file payload. A convenience wrapper over shareContent, completing the
+// trio with shareText / shareUrl — files are the third thing the Web Share Level 2 payload carries,
+// and leaving it out meant the one payload kind that needs a descriptor was also the one with no
+// shorthand. An empty array resolves false, like any other empty payload.
+export function shareFiles(files: readonly ShareFile[], options?: Readonly<ShareOptions>): Promise<boolean> {
+  return shareContent({ files }, options);
 }
 
 // Opens the share sheet with a plain text payload. A convenience wrapper over shareContent.
@@ -163,8 +175,9 @@ export function shareUrl(url: string, options?: Readonly<ShareOptions>): Promise
 }
 
 let _backend: ShareBackend | null = null;
-// Maps signals groups that have been attached via attachShareSignals.
-const _signalListeners = new Map<ShareSignals, true>();
+// The signals groups attached via attachShareSignals. A set, not a map to a dummy value: membership
+// is the whole state, and expressing it as a set is what makes attach idempotent without a guard.
+const _attachedSignals = new Set<ShareSignals>();
 
 // Converts a ShareContent (with portable ShareFile descriptors) to the navigator.share data shape,
 // converting ShareFile data URLs to DOM File objects at the web boundary.
@@ -180,9 +193,15 @@ function shareContentToNavigatorData(content: Readonly<ShareContent>): ShareData
 }
 
 // Converts a portable ShareFile descriptor to a DOM File for navigator.share / navigator.canShare.
-function shareFileToDomFile(file: { dataUrl: string; mimeType: string; name: string }): File {
+// Throws on a data URL with no comma, which the backend's try/catch turns into the ordinary false
+// sentinel. That is deliberate: the previous code let a missing comma through as index -1, which
+// makes `substring(0, -1)` empty and `substring(0)` the whole string, so a malformed descriptor
+// produced a plausible-looking File containing the URL text instead of failing. A share that
+// silently sends the wrong bytes is worse than one that reports it could not share.
+function shareFileToDomFile(file: Readonly<ShareFile>): File {
   // Parse the data URL: 'data:<mimeType>;base64,<data>' or 'data:<mimeType>,<data>'
   const comma = file.dataUrl.indexOf(',');
+  if (comma === -1) throw new Error('share: dataUrl is not a data URL (no comma)');
   const header = file.dataUrl.substring(0, comma);
   const body = file.dataUrl.substring(comma + 1);
   const isBase64 = header.includes(';base64');

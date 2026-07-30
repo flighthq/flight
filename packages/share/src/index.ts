@@ -8,6 +8,7 @@ export {
   isShareAvailable,
   shareContent,
   shareContentWithResult,
+  shareFiles,
   shareText,
   shareUrl,
 } from './contract';
