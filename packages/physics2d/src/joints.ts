@@ -92,6 +92,15 @@ export const physics2DDistanceJointSolver = {
 // moving the cursor faster than the simulation can follow, and the rest of the world absorbs it. The force
 // bound is what keeps a dragged body from tunnelling through a wall it is pulled into.
 export const physics2DMouseJointSolver = {
+  // A mouse joint drags ONE body toward a world-space target; its other end is not a body at all, and
+  // callers pass whatever index is convenient. Canonical ordering exists to fix the solve order
+  // BETWEEN two bodies, so with only one body there is nothing to order and the exchange is pure
+  // corruption: it moved the dragged body into bodyA, and this solver acts on bodyB, so the drag
+  // silently applied to the anchor instead and the dragged body never moved.
+  swapEnds(): boolean {
+    return false;
+  },
+
   prepare(world: Physics2DWorld, joint: Physics2DJoint, dt: number): void {
     const mouse = joint as Physics2DMouseJoint;
     const bodyB = findPhysics2DBody(world, joint.bodyB);
@@ -109,7 +118,10 @@ export const physics2DMouseJointSolver = {
     const gamma = dt * (damp + dt * spring);
     const inverseGamma = gamma > 0 ? 1 / gamma : 0;
     const biasFactor = dt * spring * inverseGamma;
-    jointStateScratch.set(mouse, [inverseGamma, biasFactor, 0, 0, 0]);
+    // maxForce is a force; joint.impulse0/1 accumulate an impulse. Clamping one against the other was
+    // a unit error worth a factor of 1/dt — at dt 0.01 the bound admitted a hundred times the force it
+    // named. Convert once here, where dt is in hand, rather than in solve, which does not receive it.
+    jointStateScratch.set(mouse, [inverseGamma, biasFactor, dt * mouse.maxForce, 0, 0]);
   },
 
   solve(world: Physics2DWorld, joint: Physics2DJoint): void {
@@ -119,7 +131,7 @@ export const physics2DMouseJointSolver = {
     const bodyB = findPhysics2DBody(world, joint.bodyB);
     if (bodyB === null) return;
 
-    const [inverseGamma, biasFactor] = state;
+    const [inverseGamma, biasFactor, maxImpulse] = state;
     const anchorX = bodyB.x + joint.rBX;
     const anchorY = bodyB.y + joint.rBY;
     const errorX = anchorX - mouse.targetX;
@@ -138,8 +150,8 @@ export const physics2DMouseJointSolver = {
     // Clamped on the ACCUMULATED impulse, so a later iteration can correct an earlier overshoot while the
     // total force stays inside the bound.
     const magnitude = Math.sqrt(joint.impulse0 * joint.impulse0 + joint.impulse1 * joint.impulse1);
-    if (magnitude > mouse.maxForce && magnitude > 0) {
-      const scale = mouse.maxForce / magnitude;
+    if (magnitude > maxImpulse && magnitude > 0) {
+      const scale = maxImpulse / magnitude;
       joint.impulse0 *= scale;
       joint.impulse1 *= scale;
     }
@@ -231,7 +243,17 @@ export const physics2DRopeJointSolver = {
 // The point constraint plus one angular constraint. It is solved rather than exact, so it flexes under
 // enough load; a truly rigid attachment is one body with two colliders, and the difference is that a weld
 // can be broken at runtime.
+// Weld holds the pair at a fixed relative angle, measured from bodyA to bodyB, so exchanging the ends
+// reverses that measurement and the stored reference angle must be negated with them. It is the only
+// direction-bearing field any solver reads today: revolute declares one but does not yet read it, and
+// prismatic has no solver at all, so their transforms land with the work that makes them live.
 export const physics2DWeldJointSolver = {
+  swapEnds(joint: Physics2DJoint): boolean {
+    const weld = joint as Physics2DWeldJoint;
+    weld.referenceAngle = -weld.referenceAngle;
+    return true;
+  },
+
   prepare(world: Physics2DWorld, joint: Physics2DJoint, dt: number): void {
     const weld = joint as Physics2DWeldJoint;
     const bodyA = findPhysics2DBody(world, joint.bodyA);
