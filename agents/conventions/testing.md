@@ -17,6 +17,16 @@
 
 - `vitest-webgl-canvas-mock` mocks `'webgl'` and `'experimental-webgl'` contexts only, not `'webgl2'`. Tests in `render-webgl` that need a WebGL2 render state must mock `canvas.getContext` to return a fake `WebGL2RenderingContext`.
 
+## Do not `vi.mock` a sibling module
+
+The suite runs **non-isolated** (`isolate: false` in the root `vitest.config.ts` — one module registry per worker, not one environment per file). So `vi.mock('./sibling')` is **order-dependent**: if any other test file in the same worker has already loaded that module unmocked, the mock does not apply and the real implementation runs. The test then passes or fails according to file execution order, which changes with parallelism and sharding.
+
+The failure mode is silent and inverted — such a test typically passes in isolation and when run package-scoped, and fails only in the full suite, so it reads as flakiness rather than as a defect in the test.
+
+Instead, **extract the pure kernel and test it directly**. A test that reaches for a module mock is usually telling you the unit under test is bundling a pure function it has not exported. `canvasColorMatrixPass.ts` is the worked example: the per-pixel matrix math was a closure inside the pass, so the test mocked the compositing module purely to capture that closure. Exporting `applyColorMatrixToImageDataBytes` made the math directly testable, and the pass itself is then verified with plain stub objects for the two canvas contexts — no module substitution, no order dependence, and a faster test.
+
+Where a collaborator genuinely must be substituted, prefer a stub value passed in over a mocked module.
+
 ## Out-parameter testing
 
 - When changing an `out`-parameter function, test both a distinct output object and the aliased case where `out` is also an input.
