@@ -138,6 +138,7 @@ Decisions and procedures that are easy to violate and only matter inside one dom
 - [render backend support](agents/render-backend-support.md) — before assuming a feature works on a backend, or scoping a functional test's `renderers`. What actually renders on canvas/dom/gl/wgpu today and the known gaps from the [render architecture](agents/render-architecture.md) target.
 - [wgpu 3D parity spec](agents/wgpu-3d-parity-spec.md) — before touching `scene3d-wgpu` / `effects-wgpu` 3D or scoping wgpu parity work. Each item cites the shipped GL file it mirrors.
 - [morph-target animation](agents/morph-target-animation.md) — before adding vertex-deformation animation or touching the morph path. The blend-shape deformer charter, built on the GL path; GPU morph and composed skin+morph are deferred.
+- [skeleton2d animation model](agents/skeleton2d-animation-model.md) — **proposal, not a decision**. Before extending `Skeleton2DAnimationPath`, adding a non-bone (slot) timeline, or deciding where IK/transform/path constraint solvers live. Slot colour and attachment swaps fail for opposite reasons and need different answers.
 
 **Plans and reviews** — the current state of in-flight direction:
 
