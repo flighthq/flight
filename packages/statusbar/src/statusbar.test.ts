@@ -250,6 +250,23 @@ describe('createWebStatusBarBackend', () => {
     expect(info.color).toBe(0xff0000ff);
   });
 
+  it('getInfo expands a short #rgb theme-color and rejects malformed hex', () => {
+    document.head.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.remove());
+    const meta = document.createElement('meta');
+    meta.setAttribute('name', 'theme-color');
+    document.head.appendChild(meta);
+    const backend = createWebStatusBarBackend();
+    const info = createStatusBarInfo();
+
+    meta.setAttribute('content', '#aBc');
+    backend.getInfo(info);
+    expect(info.color).toBe(0xaabbccff);
+
+    meta.setAttribute('content', '#12xz56');
+    backend.getInfo(info);
+    expect(info.color).toBe(0);
+  });
+
   it('subscribe returns a no-op unsubscribe function', () => {
     const backend = createWebStatusBarBackend();
     const unsub = backend.subscribe(() => {});

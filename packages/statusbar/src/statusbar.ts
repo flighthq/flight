@@ -290,9 +290,9 @@ function _webReadThemeColor(): number {
   const content = meta.getAttribute('content');
   if (content === null || !content.startsWith('#')) return 0;
   const hex = content.slice(1);
-  if (hex.length !== 6) return 0;
-  const rgb = parseInt(hex, 16);
-  if (isNaN(rgb)) return 0;
+  if (!/^(?:[\da-f]{3}|[\da-f]{6})$/i.test(hex)) return 0;
+  const expandedHex = hex.length === 3 ? [...hex].map((digit) => digit + digit).join('') : hex;
+  const rgb = parseInt(expandedHex, 16);
   // Reconstruct as 0xRRGGBBFF (alpha fully opaque since web drops alpha).
   return ((rgb << 8) | 0xff) >>> 0;
 }
