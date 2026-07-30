@@ -17,6 +17,7 @@ import {
   enableWgpuClipSupport,
   enableWgpuFrameCapture,
   enableWgpuRenderCache,
+  enableWgpuTextureResolverGuards,
   invalidateNodeLocalTransform,
   ParticleEmitter2DKind,
   prepareScene2DRender,
@@ -56,6 +57,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
 
   state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
+  enableWgpuTextureResolverGuards(state);
   registerWgpuImageTextureResolver(state);
   registerWgpuRenderTextureResolver(state);
   registerWgpuVideoTextureResolver(state);

@@ -16,6 +16,7 @@ import {
   enableGlBlendModeSupport,
   enableGlClipSupport,
   enableGlRenderCache,
+  enableGlTextureResolverGuards,
   invalidateNodeLocalTransform,
   ParticleEmitter2DKind,
   prepareScene2DRender,
@@ -59,6 +60,7 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
   // store here. See ../README.md for why this lives in renderTransform2D rather than the scene.
   state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
+  enableGlTextureResolverGuards(state);
   registerGlImageTextureResolver(state);
   registerGlRenderTextureResolver(state);
   registerGlVideoTextureResolver(state);
