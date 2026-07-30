@@ -109,10 +109,6 @@ Design calls to settle before building the affected entries:
 - Guard `startTrayIconAnimation` against a non-positive interval
 - Web-backend `isDestroyed` returns true for every id, including ids never created
 
-### clipboard (partial 40)
-
-- Fix `ClipboardFormat` constant usage
-
 ### useragent (partial 42)
 
 - Desktop-mode iPad correctness fix
@@ -993,7 +989,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene3d` · `particleemitter` · `scene2d-resources` · `skeleton3d` · `scene3d-resources` · `camera-controls` · `debug` · `dialog` · `lifecycle` · `adjustments` · `camera` · `platform` · `textinput` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
+`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene3d` · `particleemitter` · `scene2d-resources` · `skeleton3d` · `scene3d-resources` · `camera-controls` · `debug` · `dialog` · `lifecycle` · `adjustments` · `clipboard` · `camera` · `platform` · `textinput` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
 
 ## Liveness — which stage each stale cell needs next
 
