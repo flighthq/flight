@@ -16,11 +16,7 @@ See [charter](./charter.md) for blessed direction.
 
 ## Recommended
 
-1. **Parse the short `#rgb` theme-color form** — `_webReadThemeColor` accepts only `#rrggbb`, so a
-   page that authored `<meta name="theme-color" content="#fff">` itself reads back as `0`, and the
-   baseline captured on the first `pushStatusBarStyleEntry` is wrong for that page. Named colors and
-   `rgb()` are the same class; `#rgb` is the common one and the cheap one.
-2. **Decide whether `StatusBarInfo.height` should be reported by the web backend at all** — it is
+1. **Decide whether `StatusBarInfo.height` should be reported by the web backend at all** — it is
    hardcoded to `-1` (unknown), which is honest, but `visualViewport` / `env(safe-area-inset-top)`
    can approximate it on mobile web. This overlaps the `@flighthq/device` boundary the charter draws,
    so it is a boundary question rather than a missing feature.
@@ -34,6 +30,8 @@ See [charter](./charter.md) for blessed direction.
 2. **Restore style-stack baselines and own event payloads** [2026-07-30] — done in `c56576fa1`:
    pop/clear restore the pre-push backend baseline instead of leaving released values applied, and
    every change event receives an owned `StatusBarInfo` rather than a shared mutable scratch.
+3. **Parse the short `#rgb` theme-color form** [2026-07-30] — done in `c4e693f4e`: `_webReadThemeColor`
+   now expands 3-digit hex and rejects malformed content instead of reading it as `0`.
 
 ## Backlog
 
