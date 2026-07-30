@@ -89,11 +89,13 @@ Design calls to settle before building the affected entries:
 
 ### share (partial 35)
 
-- Remove dead `_signalSubscriptions` map
+- Reconcile the charter's `isShareContentValid` with the shipped `hasShareContentFields`
+- `ShareFile` validation seam
 
 ### statusbar (partial 35)
 
-- Make `enableStatusBarSignals` actually gate signal cost
+- Parse the short `#rgb` theme-color form
+- Decide whether `StatusBarInfo.height` should be reported by the web backend at all
 
 ### dialog (partial 38)
 
