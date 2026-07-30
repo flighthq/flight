@@ -119,6 +119,9 @@ function _validateItem(item: Readonly<MenuItemTemplate>, seen: Set<Readonly<Menu
   if (seen.has(item)) {
     throw new Error('validateMenuItemTemplate: cyclic submenu reference detected');
   }
+  if (item.checked !== undefined && item.type !== 'checkbox' && item.type !== 'radio') {
+    return `item type "${item.type ?? 'normal'}" has checked state (only checkbox and radio items may be checked)`;
+  }
   if (item.type === 'separator') {
     if (item.label !== undefined && item.label !== '') {
       return `separator item has a label: "${item.label}" (separators should not have labels)`;
@@ -136,7 +139,16 @@ function _validateItem(item: Readonly<MenuItemTemplate>, seen: Set<Readonly<Menu
   }
   if (item.submenu !== undefined) {
     seen.add(item);
+    let checkedRadioInGroup = false;
     for (const child of item.submenu) {
+      if (child.type === 'radio') {
+        if (child.checked === true) {
+          if (checkedRadioInGroup) return 'submenu has multiple checked radio items in one contiguous group';
+          checkedRadioInGroup = true;
+        }
+      } else {
+        checkedRadioInGroup = false;
+      }
       const err = _validateItem(child, seen);
       if (err !== null) return err;
     }
