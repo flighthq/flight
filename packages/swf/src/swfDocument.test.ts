@@ -1,4 +1,9 @@
-import { getNodeLocalMatrix, getNodeParent, getNodeWorldMatrix } from '@flighthq/node/contract';
+import {
+  getNodeLocalBoundsRectangle,
+  getNodeLocalMatrix,
+  getNodeParent,
+  getNodeWorldMatrix,
+} from '@flighthq/node/contract';
 import {
   createScene2DDocumentFromBytes,
   createScene2DDocumentImporterRegistry,
@@ -29,6 +34,7 @@ describe('createScene2DFromSwf', () => {
 
     expect(document?.sourceKind).toBe('swf');
     expect(document?.references).toHaveLength(1);
+    expect(getNodeLocalBoundsRectangle(document!.root)).toMatchObject({ height: 50, width: 100, x: 0, y: 0 });
     const reference = document!.references[0];
     expect(reference.kind).toBe('Slot');
     expect(reference.name).toBe('avatarSlot');
@@ -71,6 +77,7 @@ describe('createScene2DFromSwf', () => {
   it('imports named slots from nested DefineSprite timelines', () => {
     const document = createScene2DFromSwf(
       createSwf([
+        createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(-20, 180, -40, 160))),
         createTag(
           TAG_DEFINE_SPRITE,
           joinBytes(
@@ -101,7 +108,7 @@ describe('createScene2DFromSwf', () => {
                 new Uint8Array([PLACE_HAS_MATRIX | PLACE_HAS_CHARACTER]),
                 uint16(1),
                 uint16(20),
-                createMatrix(1, 0, 0, 1, 20, 20),
+                createMatrix(2, 0, 0, 3, 20, 20),
               ),
             ),
             createTag(TAG_SHOW_FRAME),
@@ -134,15 +141,17 @@ describe('createScene2DFromSwf', () => {
     expect(panel.kind === 'Slot' ? panel.linkage : null).toBe('Game.Panel');
     expect(avatar.name).toBe('avatarSlot');
     expect(avatar.kind === 'Slot' ? avatar.linkage : null).toBe('Game.Avatar');
+    expect(getNodeLocalBoundsRectangle(panel.target)).toMatchObject({ height: 30, width: 20, x: 3, y: 4 });
+    expect(getNodeLocalBoundsRectangle(avatar.target)).toMatchObject({ height: 10, width: 10, x: -1, y: -2 });
     const intermediate = getNodeParent(avatar.target);
     expect(intermediate).not.toBeNull();
     expect(getNodeParent(intermediate!)).toBe(panel.target);
 
     const world = getNodeWorldMatrix(avatar.target);
-    expect(world.a).toBeCloseTo(2);
-    expect(world.d).toBeCloseTo(3);
-    expect(world.tx).toBeCloseTo(11);
-    expect(world.ty).toBeCloseTo(14);
+    expect(world.a).toBeCloseTo(4);
+    expect(world.d).toBeCloseTo(9);
+    expect(world.tx).toBeCloseTo(15);
+    expect(world.ty).toBeCloseTo(32);
   });
 
   it('rejects compressed and truncated inputs without throwing', () => {
@@ -313,6 +322,7 @@ const PLACE_HAS_MATRIX = 0x04;
 const PLACE_HAS_NAME = 0x20;
 const SWF_PREFIX_LENGTH = 8;
 const TAG_END = 0;
+const TAG_DEFINE_SHAPE = 2;
 const TAG_DEFINE_SPRITE = 39;
 const TAG_FILE_ATTRIBUTES = 69;
 const TAG_PLACE_OBJECT_2 = 26;
