@@ -54,6 +54,12 @@ export async function loadAudioResourceFromBytes(
   signal?.throwIfAborted();
   const buffer = (bytes.buffer as ArrayBuffer).slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
   const audioBuffer = await context.decodeAudioData(buffer);
+  // decodeAudioData cannot be cancelled, so an abort landing mid-decode cannot stop the work — but it
+  // must still stop the result, or an aborted load resolves with a resource the caller no longer wants
+  // and is indistinguishable from one it asked for. This is the whole family's abort barrier: every
+  // loader here funnels through this function, so checking after the await is what makes "an aborted
+  // load never resolves" true for all of them rather than only for the pre-abort fast path above.
+  signal?.throwIfAborted();
   return createAudioResource(audioBuffer);
 }
 
@@ -63,6 +69,13 @@ export async function loadAudioResourceFromUrl(
   signal?: AbortSignal,
 ): Promise<AudioResource> {
   const response = await fetch(url, { signal });
+  // fetch only rejects on a network-level failure, so a 404/500 arrives here as a perfectly good
+  // response whose body is an error page. Decoding that reports "unable to decode audio data" — the
+  // wrong failure, blaming the codec for a transport problem, after paying for a decode that never had
+  // a chance. Reporting the status keeps this function's existing reject-on-failure contract; whether
+  // this family should reject at all or return the empty-resource sentinel is the separate parked
+  // question in the assessment Backlog.
+  if (!response.ok) throw new Error(`Failed to load audio: ${url} (${response.status} ${response.statusText})`);
   const arrayBuffer = await response.arrayBuffer();
   return loadAudioResourceFromBytes(
     context,
