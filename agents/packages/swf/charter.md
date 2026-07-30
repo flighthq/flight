@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/swf'
-draft: true
-lastDirection: 2026-07-25
+draft: false
+lastDirection: 2026-07-30
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -82,12 +82,18 @@ _Append-only, dated, blessed rulings._
   2026-07-25.
 - **[2026-07-25] Legacy-import framing.** SWF is chartered for preservation and #3 validation, not
   forward authoring (Rive owns that). A deliberate archive capability, not a demo blocker.
+- **[2026-07-30] Build SWF as the first named-graph source.** The first slice is portable TypeScript
+  and deliberately proves the structural contract before visual-tag breadth: uncompressed `FWS`,
+  root-timeline `PlaceObject2`/`PlaceObject3` named instances, transforms, and
+  `SymbolClass`/`ExportAssets` linkage produce a `Scene2DDocument`. Rive is sequenced second; a
+  duplicate SVG path is declined because `scene2d-formats` already owns SVG documents. User-directed
+  2026-07-30.
 
 ## Open directions
 
-1. **Reference implementation / byte-reader home.** The tag/format spec is well-documented and open
-   parsers exist (OpenFL's `swf`, Ruffle's Rust `swf`); decide TS vs a `rust:` backend (like
-   `surface-rs`) given the binary + decompression weight.
+1. **Heavyweight backend threshold.** The structural named-graph baseline is portable TypeScript.
+   Decide whether deeper visual-tag decode remains there or earns a `rust:` backend (like
+   `surface-rs`) only when its measured binary/decompression weight justifies the seam.
 2. **Version + tag baseline.** Which SWF versions and tag set form the AAA core (vector + MovieClip +
    text + bitmap + linkage), with filters/morph/streaming-video as deepening.
 3. **Fonts** — `DefineFont*` glyph outlines vs Flight's font/glyph stack; embedded-font recovery.

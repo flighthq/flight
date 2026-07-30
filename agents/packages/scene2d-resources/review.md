@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/scene2d-resources'
 status: solid
-score: 74
+score: 78
 updated: 2026-07-30
 ingested:
   - charter.md
@@ -14,14 +14,14 @@ ingested:
 
 ## Verdict
 
-**Solid — 74/100.** The package establishes the right renderer-neutral document and content-reference
+**Solid — 78/100.** The package establishes the right renderer-neutral document and content-reference
 boundary: an enumerable asset/slot manifest, synchronous reconciliation, an operation-scoped asynchronous
 load, caller-owned URL acquisition, and an empty-by-default importer registry. The public and contract
 lanes are symmetrical, all exported types live in `@flighthq/types`, every exported function has a
 colocated test, and no renderer or GPU dependency crosses the boundary. The largest remaining gap is the
-charter's defining end-to-end proof: the current SVG and Lottie adapters wrap flat format output in
-documents with empty manifests, so no real authoring artifact yet produces named slots or deferred asset
-references.
+charter's defining named-graph path now has its first end-to-end proof: the standalone SWF importer
+produces root-timeline named slots with transforms and linkage. That proof is still synthetic and narrow;
+nested MovieClip slots, authored extents, and deferred asset references remain unproven.
 
 ## What is solid
 
@@ -39,16 +39,18 @@ references.
 - SVG and Lottie are explicit opt-ins. Their adapters now preserve the package's `null` sentinel when the
   underlying format importer rejects a malformed whole document instead of reporting a successful empty
   document.
+- SWF is an explicit peer-package opt-in and supplies the first non-empty manifest: named
+  `PlaceObject2`/`PlaceObject3` instances retain affine transforms and
+  `SymbolClass`/`ExportAssets` linkage.
 - Package shape is clean: `sideEffects: false`; source imports only declared dependencies; the SDK root,
   SDK formats, package root, and `/contract` lanes agree; `npm run api`, `exports:check`,
   `type-home:check`, package checks, and package tests pass.
 
 ## Remaining depth
 
-- **No named-graph source exists yet.** The built-in adapters call the flat SVG/Lottie import functions,
-  discard format-specific result metadata, ignore import context, and create an empty reference list.
-  They therefore prove registry dispatch but not the package's names/transforms/extents/linkage contract.
-  Choosing SVG, Rive, or SWF for that first proof remains the charter's explicit source-coverage direction.
+- **The first named-graph source is root-timeline-only.** SWF proves names, transforms, and linkage, but
+  does not yet traverse nested `DefineSprite` graphs or preserve authored extents. SVG/Lottie adapters
+  still create empty manifests, and Rive is deliberately sequenced second.
 - **Deferred image acquisition is not connected to the document manifest.** SVG and Lottie flat importers
   accept synchronous image resolvers, but the document adapters supply none and do not turn unresolved
   image URIs into `Scene2DAssetReference`s. Relative URL/base-path handling is consequently unproven too.
@@ -60,7 +62,7 @@ references.
   callbacks, but a callback that ignores abort can still settle and install content; two overlapping loads
   of the same reference can commit in settlement order rather than invocation order. Fixing that without
   introducing a live document runtime needs an explicit concurrency policy.
-- Proof is hand-authored and unit-level. There is no representative SVG/Lottie/Rive/SWF named-graph
+- Proof is hand-authored and unit-level. There is no representative externally produced named-graph
   fixture, no URL-to-resolve integration case with relative assets, and no browser capture showing
   application slot replacement in a rendered scene.
 
@@ -68,6 +70,5 @@ references.
 
 The ownership line is correct: formats construct renderer-neutral 2D nodes/documents, this package
 acquires documents and reconciles named content, and render backends realize the resulting graph later.
-The next meaningful increase in confidence is one real named-graph importer plus an asset/slot fixture,
-not more registry machinery. Which source earns that first implementation is a product decision already
-held open by the charter.
+The first real named-graph importer is now present. The next meaningful increase in confidence is nested
+SWF graph traversal plus an externally produced asset/slot fixture, not more registry machinery.
