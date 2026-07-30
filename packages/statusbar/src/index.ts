@@ -1,10 +1,12 @@
 export {
   attachStatusBar,
+  clearStatusBarStyleStack,
   createStatusBar,
   detachStatusBar,
   disposeStatusBar,
   getStatusBarHeight,
   getStatusBarInfo,
+  hasStatusBarStyleEntry,
   popStatusBarStyleEntry,
   pushStatusBarStyleEntry,
   setStatusBarColor,

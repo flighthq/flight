@@ -14,6 +14,7 @@ import {
   setShareBackend,
   shareContent,
   shareContentWithResult,
+  shareFiles,
   shareText,
   shareUrl,
 } from './share';
@@ -406,6 +407,48 @@ describe('shareContentWithResult', () => {
   });
 });
 
+describe('shareFiles', () => {
+  const file: ShareFile = { dataUrl: 'data:text/plain;base64,aGk=', mimeType: 'text/plain', name: 'hi.txt' };
+
+  it('shares via shareContent with a files payload', async () => {
+    const backend = fakeBackend();
+    setShareBackend(backend);
+    expect(await shareFiles([file])).toBe(true);
+    expect(backend.shared).toEqual({ files: [file] });
+  });
+
+  it('passes options through', async () => {
+    let passedOptions: ShareOptions | undefined;
+    setShareBackend({
+      isAvailable: () => true,
+      canShare: () => true,
+      share: async (_content, options) => {
+        passedOptions = options;
+        return true;
+      },
+      shareWithResult: async () => ({ completed: true, activityType: null, dismissed: false }),
+    });
+    const opts: ShareOptions = { chooserTitle: 'Share files' };
+    await shareFiles([file], opts);
+    expect(passedOptions).toEqual(opts);
+  });
+
+  it('resolves false for an empty array without reaching the backend', async () => {
+    const backend = fakeBackend();
+    setShareBackend(backend);
+    expect(await shareFiles([])).toBe(false);
+    expect(backend.shared).toBeNull();
+  });
+
+  it('carries several files in order', async () => {
+    const backend = fakeBackend();
+    setShareBackend(backend);
+    const second: ShareFile = { dataUrl: 'data:text/plain,two', mimeType: 'text/plain', name: 'two.txt' };
+    await shareFiles([file, second]);
+    expect(backend.shared?.files).toEqual([file, second]);
+  });
+});
+
 describe('shareText', () => {
   it('shares via shareContent with text payload', async () => {
     const backend = fakeBackend();
@@ -453,5 +496,32 @@ describe('shareUrl', () => {
     const opts: ShareOptions = { chooserTitle: 'Share link' };
     await shareUrl('https://example.com', opts);
     expect(passedOptions).toEqual(opts);
+  });
+});
+
+describe('web backend file conversion', () => {
+  it('reports a malformed data URL as unshareable rather than sending the wrong bytes', () => {
+    // A dataUrl with no comma used to slip through: indexOf returned -1, so the header read as ''
+    // and the body as the whole string, and the converter produced a plausible File containing the
+    // URL text. Failing to the ordinary false sentinel is the honest answer.
+    mockNavigator({ share: () => Promise.resolve(), canShare: () => true });
+    const backend = createWebShareBackend();
+    expect(
+      backend.canShare({ files: [{ dataUrl: 'data:text/plain;base64', mimeType: 'text/plain', name: 'a.txt' }] }),
+    ).toBe(false);
+  });
+
+  it('still converts a well-formed data URL', () => {
+    mockNavigator({ share: () => Promise.resolve(), canShare: () => true });
+    const backend = createWebShareBackend();
+    expect(
+      backend.canShare({ files: [{ dataUrl: 'data:text/plain;base64,aGk=', mimeType: 'text/plain', name: 'a.txt' }] }),
+    ).toBe(true);
+  });
+
+  it('rejects a malformed data URL on the share path too, not only the probe', async () => {
+    mockNavigator({ share: () => Promise.resolve(), canShare: () => true });
+    const backend = createWebShareBackend();
+    expect(await backend.share({ files: [{ dataUrl: 'nope', mimeType: 'text/plain', name: 'a.txt' }] })).toBe(false);
   });
 });

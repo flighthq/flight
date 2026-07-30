@@ -1,7 +1,9 @@
+import { connectSignal } from '@flighthq/signals/contract';
 import type { StatusBar, StatusBarBackend, StatusBarInfo, StatusBarStyle } from '@flighthq/types/contract';
 
 import {
   attachStatusBar,
+  clearStatusBarStyleStack,
   createStatusBar,
   createStatusBarInfo,
   createWebStatusBarBackend,
@@ -10,6 +12,7 @@ import {
   getStatusBarBackend,
   getStatusBarHeight,
   getStatusBarInfo,
+  hasStatusBarStyleEntry,
   popStatusBarStyleEntry,
   pushStatusBarStyleEntry,
   setStatusBarBackend,
@@ -77,9 +80,10 @@ function fakeBackend(): StatusBarBackend & {
 }
 
 afterEach(() => {
+  // Empty the stack before dropping the backend, so the restore lands on the fake rather than on the
+  // web default that setStatusBarBackend(null) falls back to.
+  clearStatusBarStyleStack();
   setStatusBarBackend(null);
-  // Reset style stack state between tests by popping all entries (pop returns no-op on invalid)
-  for (let i = 0; i < 100; i++) popStatusBarStyleEntry(i);
 });
 
 describe('attachStatusBar', () => {
@@ -106,6 +110,82 @@ describe('attachStatusBar', () => {
     attachStatusBar(bar);
     expect(backend.subscribeCallCount).toBe(2);
     disposeStatusBar(bar);
+  });
+
+  it('hands each event a payload the listener owns, not a shared scratch', () => {
+    // The regression this pins: the emitted info used to be a single module-level scratch, so a
+    // listener that retained a snapshot watched it change under them on the next event — or on an
+    // unrelated getStatusBarHeight() call — and two attached bars received the same object.
+    const backend = fakeBackend();
+    setStatusBarBackend(backend);
+    const bar = createStatusBar();
+    const seen: StatusBarInfo[] = [];
+    connectSignal(bar.onChange, (info) => seen.push(info));
+    attachStatusBar(bar);
+
+    backend.infoHeight = 44;
+    backend._emit();
+    backend.infoHeight = 99;
+    backend._emit();
+    expect(seen.length).toBe(2);
+    expect(seen[0]).not.toBe(seen[1]);
+    expect(seen[0].height).toBe(44);
+    expect(seen[1].height).toBe(99);
+
+    // An unrelated read must not reach back into a payload already delivered.
+    backend.infoHeight = 12;
+    getStatusBarHeight();
+    expect(seen[0].height).toBe(44);
+  });
+
+  it('gives two attached bars separate payload objects', () => {
+    const backend = fakeBackend();
+    setStatusBarBackend(backend);
+    const first = createStatusBar();
+    const second = createStatusBar();
+    const seen: StatusBarInfo[] = [];
+    connectSignal(first.onChange, (info) => seen.push(info));
+    connectSignal(second.onChange, (info) => seen.push(info));
+    attachStatusBar(first);
+    attachStatusBar(second);
+    // The fake keeps one listener slot, so drive each bar's subscription in turn.
+    backend._emit();
+    attachStatusBar(first);
+    backend._emit();
+    expect(seen.length).toBe(2);
+    expect(seen[0]).not.toBe(seen[1]);
+  });
+});
+
+describe('clearStatusBarStyleStack', () => {
+  it('empties the stack and restores the baseline in one call', () => {
+    const backend = fakeBackend();
+    backend.style = 'default';
+    backend.visible = true;
+    setStatusBarBackend(backend);
+    pushStatusBarStyleEntry({ style: 'dark' });
+    pushStatusBarStyleEntry({ visible: false });
+    clearStatusBarStyleStack();
+    expect(backend.style).toBe('default');
+    expect(backend.visible).toBe(true);
+  });
+
+  it('drops every handle', () => {
+    const backend = fakeBackend();
+    setStatusBarBackend(backend);
+    const first = pushStatusBarStyleEntry({ style: 'dark' });
+    const second = pushStatusBarStyleEntry({ style: 'light' });
+    clearStatusBarStyleStack();
+    expect(hasStatusBarStyleEntry(first)).toBe(false);
+    expect(hasStatusBarStyleEntry(second)).toBe(false);
+  });
+
+  it('is a no-op on an empty stack', () => {
+    const backend = fakeBackend();
+    setStatusBarBackend(backend);
+    clearStatusBarStyleStack();
+    expect(() => clearStatusBarStyleStack()).not.toThrow();
+    expect(backend.style).toBe('default');
   });
 });
 
@@ -265,20 +345,104 @@ describe('getStatusBarInfo', () => {
   });
 });
 
+describe('hasStatusBarStyleEntry', () => {
+  it('is true while the entry is on the stack and false once popped', () => {
+    const backend = fakeBackend();
+    setStatusBarBackend(backend);
+    const handle = pushStatusBarStyleEntry({ style: 'dark' });
+    expect(hasStatusBarStyleEntry(handle)).toBe(true);
+    popStatusBarStyleEntry(handle);
+    expect(hasStatusBarStyleEntry(handle)).toBe(false);
+  });
+
+  it('is false for an unknown or invalid handle', () => {
+    expect(hasStatusBarStyleEntry(-1)).toBe(false);
+    expect(hasStatusBarStyleEntry(99999)).toBe(false);
+  });
+
+  it('stays true for an entry below one that was popped', () => {
+    const backend = fakeBackend();
+    setStatusBarBackend(backend);
+    const bottom = pushStatusBarStyleEntry({ style: 'dark' });
+    const top = pushStatusBarStyleEntry({ style: 'light' });
+    popStatusBarStyleEntry(top);
+    expect(hasStatusBarStyleEntry(bottom)).toBe(true);
+  });
+});
+
 describe('popStatusBarStyleEntry', () => {
   it('no-ops for unknown or invalid handles', () => {
     expect(() => popStatusBarStyleEntry(-1)).not.toThrow();
     expect(() => popStatusBarStyleEntry(99999)).not.toThrow();
   });
 
-  it('removes the entry and re-applies the stack', () => {
+  it('restores the pre-push value rather than leaving the popped entry applied', () => {
+    // The regression this replaces: the old assertion stopped at "the pop does not throw", and the
+    // implementation matched it — popping re-merged the stack, found no entry setting `style`, and
+    // called no setter, so the OS kept the popped entry's value forever. A style stack whose whole
+    // purpose is "restore the previous state on unmount" did not restore.
     const backend = fakeBackend();
+    backend.style = 'default';
     setStatusBarBackend(backend);
     const handle = pushStatusBarStyleEntry({ style: 'dark' });
     expect(backend.style).toBe('dark');
     popStatusBarStyleEntry(handle);
-    // After pop the backend should have been re-applied with the empty stack (no-op for style).
-    // The key invariant: the push was applied, the pop does not throw.
+    expect(backend.style).toBe('default');
+  });
+
+  it('restores every field the popped entry had set', () => {
+    const backend = fakeBackend();
+    backend.style = 'light';
+    backend.visible = true;
+    backend.color = 0x112233ff;
+    backend.overlay = false;
+    setStatusBarBackend(backend);
+    const handle = pushStatusBarStyleEntry({
+      color: 0xaabbccff,
+      overlaysContent: true,
+      style: 'dark',
+      visible: false,
+    });
+    popStatusBarStyleEntry(handle);
+    expect(backend.style).toBe('light');
+    expect(backend.visible).toBe(true);
+    expect(backend.color).toBe(0x112233ff);
+    expect(backend.overlay).toBe(false);
+  });
+
+  it('falls back to the entry below before the baseline', () => {
+    const backend = fakeBackend();
+    backend.style = 'default';
+    setStatusBarBackend(backend);
+    pushStatusBarStyleEntry({ style: 'dark' });
+    const top = pushStatusBarStyleEntry({ style: 'light' });
+    expect(backend.style).toBe('light');
+    popStatusBarStyleEntry(top);
+    expect(backend.style).toBe('dark');
+  });
+
+  it('restores after popping out of order', () => {
+    const backend = fakeBackend();
+    backend.style = 'default';
+    setStatusBarBackend(backend);
+    const bottom = pushStatusBarStyleEntry({ style: 'dark' });
+    const top = pushStatusBarStyleEntry({ visible: false });
+    popStatusBarStyleEntry(bottom);
+    expect(backend.style).toBe('default');
+    expect(backend.visible).toBe(false);
+    popStatusBarStyleEntry(top);
+    expect(backend.visible).toBe(true);
+  });
+
+  it('captures a fresh baseline after the stack empties and is pushed again', () => {
+    const backend = fakeBackend();
+    backend.style = 'default';
+    setStatusBarBackend(backend);
+    popStatusBarStyleEntry(pushStatusBarStyleEntry({ style: 'dark' }));
+    // A change made outside the stack becomes the new baseline for the next push.
+    setStatusBarStyle('light');
+    popStatusBarStyleEntry(pushStatusBarStyleEntry({ style: 'dark' }));
+    expect(backend.style).toBe('light');
   });
 });
 
