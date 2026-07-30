@@ -6,9 +6,17 @@ lastDirection: 2026-07-02
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
+absorbed: "@flighthq/textureatlas + @flighthq/tilemap"
 ---
 
 # tileset — Charter
+
+> **Retired 2026-07-30 — this package no longer exists.** Removed by `9c73a6786` (the quadbatch /
+> tilemap split). The grid→regions role is `createTextureAtlasFromGrid` in `@flighthq/textureatlas`
+> (margins and spacing included); the runtime tile grid is `@flighthq/tilemap`; Tiled tileset
+> descriptors are `TiledTileset` in `@flighthq/tilemap-formats`. No `createTileset`,
+> `buildTilesetRegions`, or `disposeTileset` survives anywhere in source. The direction below is kept
+> as history, per the Absorbed convention — it is not work to pick up.
 
 ## What it is
 
