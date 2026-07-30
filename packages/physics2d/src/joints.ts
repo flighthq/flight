@@ -26,6 +26,28 @@ export const Physics2DWeldJointKind = 'Weld';
 // at any stiffness, where adding a spring FORCE explodes once the stiffness times the timestep exceeds
 // what the integrator can follow.
 export const physics2DDistanceJointSolver = {
+  warmStart(world: Physics2DWorld, joint: Physics2DJoint): void {
+    const state = jointStateScratch.get(joint);
+    if (state === undefined) return;
+    const bodyA = findPhysics2DBody(world, joint.bodyA);
+    const bodyB = findPhysics2DBody(world, joint.bodyB);
+    if (bodyA === null || bodyB === null) return;
+    applyPhysics2DImpulse(
+      bodyA,
+      bodyB,
+      joint.rAX,
+      joint.rAY,
+      joint.rBX,
+      joint.rBY,
+      -joint.impulse0 * state[3],
+      -joint.impulse0 * state[4],
+    );
+  },
+
+  clearAccumulatedImpulses(joint: Physics2DJoint): void {
+    joint.impulse0 = 0;
+  },
+
   prepare(world: Physics2DWorld, joint: Physics2DJoint, dt: number): void {
     const distance = joint as Physics2DDistanceJoint;
     const bodyA = findPhysics2DBody(world, joint.bodyA);
@@ -63,13 +85,7 @@ export const physics2DDistanceJointSolver = {
       jointScratch[2] = 0;
     }
     distance.rAX = joint.rAX;
-    jointStateScratch.set(distance, [
-      jointScratch[0],
-      jointScratch[1],
-      jointScratch[2],
-      axisScratch[0],
-      axisScratch[1],
-    ]);
+    writeJointState(distance, [jointScratch[0], jointScratch[1], jointScratch[2], axisScratch[0], axisScratch[1]]);
   },
 
   solve(world: Physics2DWorld, joint: Physics2DJoint): void {
@@ -102,6 +118,13 @@ export const physics2DMouseJointSolver = {
     return false;
   },
 
+  // No warmStart: the drag target moves between steps, so last step's impulse is aimed at a place the
+  // cursor has already left. Seeding from it fights the new target rather than helping it converge.
+  clearAccumulatedImpulses(joint: Physics2DJoint): void {
+    joint.impulse0 = 0;
+    joint.impulse1 = 0;
+  },
+
   prepare(world: Physics2DWorld, joint: Physics2DJoint, dt: number): void {
     const mouse = joint as Physics2DMouseJoint;
     const bodyB = findPhysics2DBody(world, joint.bodyB);
@@ -122,7 +145,7 @@ export const physics2DMouseJointSolver = {
     // maxForce is a force; joint.impulse0/1 accumulate an impulse. Clamping one against the other was
     // a unit error worth a factor of 1/dt — at dt 0.01 the bound admitted a hundred times the force it
     // named. Convert once here, where dt is in hand, rather than in solve, which does not receive it.
-    jointStateScratch.set(mouse, [inverseGamma, biasFactor, dt * mouse.maxForce, 0, 0]);
+    writeJointState(mouse, [inverseGamma, biasFactor, dt * mouse.maxForce, 0, 0]);
   },
 
   solve(world: Physics2DWorld, joint: Physics2DJoint): void {
@@ -170,6 +193,19 @@ export const physics2DMouseJointSolver = {
 // independently: solving x then y lets each undo part of the other's correction, and a hinge under load
 // visibly creeps.
 export const physics2DRevoluteJointSolver = {
+  warmStart(world: Physics2DWorld, joint: Physics2DJoint): void {
+    const bodyA = findPhysics2DBody(world, joint.bodyA);
+    const bodyB = findPhysics2DBody(world, joint.bodyB);
+    if (bodyA === null || bodyB === null) return;
+    applyPhysics2DImpulse(bodyA, bodyB, joint.rAX, joint.rAY, joint.rBX, joint.rBY, -joint.impulse0, -joint.impulse1);
+  },
+
+  clearAccumulatedImpulses(joint: Physics2DJoint): void {
+    joint.impulse0 = 0;
+    joint.impulse1 = 0;
+    (joint as Physics2DRevoluteJoint).motorImpulse = 0;
+  },
+
   // Swapping the ends reverses the sense of every angular quantity this solver reads. The relative
   // angle is measured bodyA -> bodyB, so it negates; the limit interval negates AND its ends exchange
   // (the old lower bound becomes the new upper); and the motor's target relative velocity reverses.
@@ -201,7 +237,7 @@ export const physics2DRevoluteJointSolver = {
     // by zero.
     const inverseInertiaSum = bodyA.inverseInertia + bodyB.inverseInertia;
     const angularMass = inverseInertiaSum > 0 ? 1 / inverseInertiaSum : 0;
-    jointStateScratch.set(joint, [
+    writeJointState(joint, [
       errorX * (BAUMGARTE / dt),
       errorY * (BAUMGARTE / dt),
       angularMass,
@@ -284,6 +320,28 @@ export const physics2DRevoluteJointSolver = {
 // The non-negative clamp on the accumulated impulse is what makes it a rope rather than a stiff bar: a
 // rope may pull the bodies together and may never push them apart.
 export const physics2DRopeJointSolver = {
+  warmStart(world: Physics2DWorld, joint: Physics2DJoint): void {
+    const state = jointStateScratch.get(joint);
+    if (state === undefined) return;
+    const bodyA = findPhysics2DBody(world, joint.bodyA);
+    const bodyB = findPhysics2DBody(world, joint.bodyB);
+    if (bodyA === null || bodyB === null) return;
+    applyPhysics2DImpulse(
+      bodyA,
+      bodyB,
+      joint.rAX,
+      joint.rAY,
+      joint.rBX,
+      joint.rBY,
+      -joint.impulse0 * state[3],
+      -joint.impulse0 * state[4],
+    );
+  },
+
+  clearAccumulatedImpulses(joint: Physics2DJoint): void {
+    joint.impulse0 = 0;
+  },
+
   prepare(world: Physics2DWorld, joint: Physics2DJoint, dt: number): void {
     const rope = joint as Physics2DRopeJoint;
     const bodyA = findPhysics2DBody(world, joint.bodyA);
@@ -301,13 +359,7 @@ export const physics2DRopeJointSolver = {
     // Slack: no constraint at all this step, which is what a rope IS. Marked by a zero effective mass so
     // the iterations skip it without a second flag to keep in sync.
     const active = excess > 0;
-    jointStateScratch.set(rope, [
-      active && mass > 0 ? 1 / mass : 0,
-      active ? excess * (BAUMGARTE / dt) : 0,
-      0,
-      unitX,
-      unitY,
-    ]);
+    writeJointState(rope, [active && mass > 0 ? 1 / mass : 0, active ? excess * (BAUMGARTE / dt) : 0, 0, unitX, unitY]);
     if (!active) joint.impulse0 = 0;
   },
 
@@ -338,6 +390,21 @@ export const physics2DRopeJointSolver = {
 // direction-bearing field any solver reads today: revolute declares one but does not yet read it, and
 // prismatic has no solver at all, so their transforms land with the work that makes them live.
 export const physics2DWeldJointSolver = {
+  warmStart(world: Physics2DWorld, joint: Physics2DJoint): void {
+    const bodyA = findPhysics2DBody(world, joint.bodyA);
+    const bodyB = findPhysics2DBody(world, joint.bodyB);
+    if (bodyA === null || bodyB === null) return;
+    applyPhysics2DImpulse(bodyA, bodyB, joint.rAX, joint.rAY, joint.rBX, joint.rBY, -joint.impulse0, -joint.impulse1);
+    bodyA.angularVelocity -= bodyA.inverseInertia * joint.impulse2;
+    bodyB.angularVelocity += bodyB.inverseInertia * joint.impulse2;
+  },
+
+  clearAccumulatedImpulses(joint: Physics2DJoint): void {
+    joint.impulse0 = 0;
+    joint.impulse1 = 0;
+    joint.impulse2 = 0;
+  },
+
   swapEnds(joint: Physics2DJoint): boolean {
     const weld = joint as Physics2DWeldJoint;
     weld.referenceAngle = -weld.referenceAngle;
@@ -354,7 +421,7 @@ export const physics2DWeldJointSolver = {
     const errorY = bodyB.y + joint.rBY - (bodyA.y + joint.rAY);
     const angleError = bodyB.angle - bodyA.angle - weld.referenceAngle;
     const angularMass = bodyA.inverseInertia + bodyB.inverseInertia;
-    jointStateScratch.set(weld, [
+    writeJointState(weld, [
       errorX * (BAUMGARTE / dt),
       errorY * (BAUMGARTE / dt),
       angleError * (BAUMGARTE / dt),
@@ -453,6 +520,21 @@ function axisRelativeVelocity(
   return (vbx - vax) * axisX + (vby - vay) * axisY;
 }
 
+// Fills this joint's per-step state in place, allocating the array only the first time the joint is
+// prepared. Every solver rebuilds its whole block each step, so the array is pure scratch and reusing it
+// costs nothing — but allocating a fresh one per joint per step made the step's allocation profile scale
+// with the joint count, which is exactly the hidden per-frame allocation the package's own charter
+// forbids.
+function writeJointState(joint: Physics2DJoint, values: readonly number[]): void {
+  let state = jointStateScratch.get(joint);
+  if (state === undefined) {
+    state = [];
+    jointStateScratch.set(joint, state);
+  }
+  state.length = values.length;
+  for (let i = 0; i < values.length; i++) state[i] = values[i];
+}
+
 // Per-step solver state, keyed by joint. A Map rather than fields on the joint because the numbers each
 // solver needs mean different things per kind, and putting a fixed block of untyped scratch on the
 // public entity would make the header describe the solver's internals.
@@ -460,7 +542,14 @@ function axisRelativeVelocity(
 // Mutable, because a one-sided constraint accumulates its impulse ACROSS the velocity iterations of a
 // single step: the revolute limits clamp their running totals to stay non-negative, which is what makes
 // them limits rather than springs, and that total has to live somewhere between iterations.
-const jointStateScratch = new Map<Physics2DJoint, number[]>();
+//
+// A WeakMap, not a Map. A module-global strong Map keyed by joint retains every joint ever prepared for
+// the lifetime of the module: removing a joint from a world drops the world's reference but not this
+// one, so the joint, its bodies' indices, and its state array all stay reachable forever. There is no
+// deletion hook to forget either, because a joint can leave a world without this module being told.
+// Keying weakly makes the retention question disappear rather than answering it — the entry goes when
+// the joint does, at every exit path, including ones nobody has written yet.
+const jointStateScratch = new WeakMap<Physics2DJoint, number[]>();
 const axisScratch = [0, 0];
 const jointScratch = [0, 0, 0];
 const EPSILON = 1e-9;

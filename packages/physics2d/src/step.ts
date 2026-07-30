@@ -332,7 +332,21 @@ export function stepPhysics2D(world: Physics2DWorld, dt: number): void {
   for (const joint of world.joints) {
     world.jointSolvers.get(joint.kind)?.prepare(world, joint, dt);
   }
-  if (config.warmStarting) warmStartPhysics2DContacts(world);
+  // Joints warm-start alongside contacts, which is what the impulse block on Physics2DJoint has always
+  // been documented to be for. Each kind reapplies its own converged impulse, because the block is
+  // deliberately untyped and only the kind knows what its numbers mean. With warm starting off the
+  // accumulators are cleared instead, so a world told not to use the cache does not quietly keep
+  // seeding from it — the previous code left them growing whether the flag was set or not.
+  if (config.warmStarting) {
+    warmStartPhysics2DContacts(world);
+    for (const joint of world.joints) {
+      world.jointSolvers.get(joint.kind)?.warmStart?.(world, joint);
+    }
+  } else {
+    for (const joint of world.joints) {
+      world.jointSolvers.get(joint.kind)?.clearAccumulatedImpulses?.(joint);
+    }
+  }
   // Joints and contacts share one solve list and one iteration count. Solving them in separate passes
   // would let each undo the other's correction — a hinge under load creeps if the contacts beneath it get
   // a whole pass to themselves between joint iterations.
