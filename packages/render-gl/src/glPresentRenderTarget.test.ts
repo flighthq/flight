@@ -4,10 +4,24 @@ import { presentGlRenderTarget } from './glPresentRenderTarget';
 import { createGlState } from './glTestHelper';
 
 function makeTarget(colorSpace: 'linear' | 'srgb', texture: WebGLTexture): GlRenderTarget {
+  const format = colorSpace === 'linear' ? 'rgba16f' : 'rgba8';
   return {
+    requestedAxes: {
+      width: 32,
+      height: 16,
+      format,
+      colorAttachments: 1,
+      colorFormats: [format],
+      sampleCount: 1,
+      depth: 'none',
+      colorSpace,
+    },
     width: 32,
     height: 16,
-    format: colorSpace === 'linear' ? 'rgba16f' : 'rgba8',
+    format,
+    colorAttachments: 1,
+    colorFormats: [format],
+    depth: 'none',
     colorSpace,
     clearColors: [],
     clearDepth: 1,

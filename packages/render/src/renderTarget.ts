@@ -4,6 +4,8 @@ import type {
   MatrixLike,
   Node2D,
   RectangleLike,
+  RenderTargetAxes,
+  RenderTargetAxisDifference,
   RenderTargetDescriptor,
   ResolvedRenderTargetDescriptor,
 } from '@flighthq/types/contract';
@@ -61,6 +63,26 @@ export function computeScene2DRenderTargetTransform(
   multiplyMatrix(outRenderTransform, _tempTranslation, _tempInvLocal);
 }
 
+// Returns plain-data axis differences in a stable order. Backends retain the requested and effective
+// shapes, then use this common comparison so every explain* surface reports substitutions uniformly.
+export function explainRenderTargetAxes(
+  requested: Readonly<RenderTargetAxes>,
+  effective: Readonly<RenderTargetAxes>,
+): RenderTargetAxisDifference[] {
+  const differences: RenderTargetAxisDifference[] = [];
+  for (const axis of _renderTargetAxisOrder) {
+    const requestedValue = requested[axis];
+    const effectiveValue = effective[axis];
+    const equal =
+      Array.isArray(requestedValue) && Array.isArray(effectiveValue)
+        ? requestedValue.length === effectiveValue.length &&
+          requestedValue.every((value, index) => value === effectiveValue[index])
+        : requestedValue === effectiveValue;
+    if (!equal) differences.push({ axis, effective: effectiveValue, requested: requestedValue });
+  }
+  return differences;
+}
+
 // Resolves every substrate-independent default and normalization once. Backend realizations start
 // here and apply only device capability substitutions (for example GL MAX_SAMPLES or float-render
 // support), so Canvas/GL/WGPU cannot independently reinterpret the descriptor's optional axes.
@@ -92,3 +114,13 @@ export function resolveRenderTargetDescriptor(
 
 const _tempInvLocal = createMatrix();
 const _tempTranslation = createMatrix();
+const _renderTargetAxisOrder: ReadonlyArray<keyof RenderTargetAxes> = [
+  'width',
+  'height',
+  'format',
+  'colorAttachments',
+  'colorFormats',
+  'sampleCount',
+  'depth',
+  'colorSpace',
+];

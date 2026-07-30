@@ -53,6 +53,16 @@ beforeAll(async () => {
       createGlRenderTarget: vi.fn((_state: unknown, descriptor: { width: number; height: number }): GlRenderTarget => {
         const texture = {} as WebGLTexture;
         return {
+          requestedAxes: {
+            width: descriptor.width,
+            height: descriptor.height,
+            format: 'rgba8',
+            colorAttachments: 1,
+            colorFormats: ['rgba8'],
+            sampleCount: 1,
+            depth: 'none',
+            colorSpace: 'srgb',
+          },
           framebuffer: {} as WebGLFramebuffer,
           resolveFramebuffer: null,
           texture,
@@ -61,6 +71,9 @@ beforeAll(async () => {
           colorRenderbuffers: [],
           depthStencilRenderbuffer: null,
           format: 'rgba8',
+          colorAttachments: 1,
+          colorFormats: ['rgba8'],
+          depth: 'none',
           colorSpace: 'srgb',
           clearColors: [],
           clearDepth: 1,

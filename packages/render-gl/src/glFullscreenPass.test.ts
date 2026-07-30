@@ -16,9 +16,22 @@ void main() {
 
 function makeTarget(framebuffer: WebGLFramebuffer, width = 32, height = 16): GlRenderTarget {
   return {
+    requestedAxes: {
+      width,
+      height,
+      format: 'rgba8',
+      colorAttachments: 1,
+      colorFormats: ['rgba8'],
+      sampleCount: 1,
+      depth: 'none',
+      colorSpace: 'srgb',
+    },
     width,
     height,
     format: 'rgba8',
+    colorAttachments: 1,
+    colorFormats: ['rgba8'],
+    depth: 'none',
     colorSpace: 'srgb',
     clearColors: [],
     clearDepth: 1,

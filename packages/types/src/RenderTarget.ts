@@ -35,6 +35,18 @@ export interface RenderTargetAxes {
   readonly colorSpace: RenderTargetColorSpace;
 }
 
+export interface RenderTargetAxisDifference {
+  readonly axis: keyof RenderTargetAxes;
+  readonly effective: RenderTargetAxes[keyof RenderTargetAxes];
+  readonly requested: RenderTargetAxes[keyof RenderTargetAxes];
+}
+
+export interface RenderTargetExplanation {
+  readonly differences: ReadonlyArray<RenderTargetAxisDifference>;
+  readonly effective: Readonly<RenderTargetAxes>;
+  readonly requested: Readonly<RenderTargetAxes>;
+}
+
 export interface RenderTargetDescriptor {
   width: number;
   height: number;

@@ -27,18 +27,80 @@ describe('acquireGlRenderTarget', () => {
     expect(pool.free.length).toBe(0);
   });
 
-  it('re-stamps colorSpace on a reused target (not part of the physical reuse match)', () => {
+  it('does not reuse a target with a different color space', () => {
     const { state } = createGlState();
     const pool = createGlRenderTargetPool();
     const first = acquireGlRenderTarget(state, pool, { width: 64, height: 48, colorSpace: 'linear' });
     expect(first.colorSpace).toBe('linear');
     releaseGlRenderTarget(pool, first);
 
-    // Same dimensions/format/samples but a different color space: the pooled target is reused, so its
-    // stale 'linear' must be overwritten to avoid double-encoding sRGB content at present.
-    const reused = acquireGlRenderTarget(state, pool, { width: 64, height: 48, colorSpace: 'srgb' });
+    const other = acquireGlRenderTarget(state, pool, { width: 64, height: 48, colorSpace: 'srgb' });
+    expect(other).not.toBe(first);
+    expect(pool.free).toContain(first);
+  });
+
+  it('does not reuse a target with different heterogeneous color formats', () => {
+    const { state } = createGlState();
+    const pool = createGlRenderTargetPool();
+    const first = acquireGlRenderTarget(state, pool, {
+      width: 64,
+      height: 48,
+      colorAttachments: 2,
+      colorFormats: ['rgba8', 'rgba8'],
+    });
+    releaseGlRenderTarget(pool, first);
+
+    const other = acquireGlRenderTarget(state, pool, {
+      width: 64,
+      height: 48,
+      colorAttachments: 2,
+      colorFormats: ['rgba8', 'rgba16f'],
+    });
+    expect(other).not.toBe(first);
+    expect(pool.free).toContain(first);
+  });
+
+  it('does not reuse a target with a different depth mode', () => {
+    const { state } = createGlState();
+    const pool = createGlRenderTargetPool();
+    const first = acquireGlRenderTarget(state, pool, { width: 64, height: 48, depth: 'none' });
+    releaseGlRenderTarget(pool, first);
+
+    const other = acquireGlRenderTarget(state, pool, { width: 64, height: 48, depth: 'depth-stencil' });
+    expect(other).not.toBe(first);
+    expect(pool.free).toContain(first);
+  });
+
+  it('re-stamps clear policy and requested axes on a compatible target', () => {
+    const { state } = createGlState();
+    const pool = createGlRenderTargetPool();
+    const first = acquireGlRenderTarget(state, pool, {
+      width: 64,
+      height: 48,
+      clearColors: [0xff0000ff],
+      clearDepth: 0.25,
+    });
+    releaseGlRenderTarget(pool, first);
+
+    const reused = acquireGlRenderTarget(state, pool, {
+      width: 64,
+      height: 48,
+      clearColors: [0x00ff00ff],
+      clearDepth: 0.75,
+    });
     expect(reused).toBe(first);
-    expect(reused.colorSpace).toBe('srgb');
+    expect(reused.clearColors).toEqual([0x00ff00ff]);
+    expect(reused.clearDepth).toBe(0.75);
+    expect(reused.requestedAxes).toEqual({
+      width: 64,
+      height: 48,
+      format: 'rgba8',
+      colorAttachments: 1,
+      colorFormats: ['rgba8'],
+      sampleCount: 1,
+      depth: 'none',
+      colorSpace: 'srgb',
+    });
   });
 
   it('allocates a new target when the free target has different dimensions', () => {
