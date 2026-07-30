@@ -15,6 +15,10 @@ import type { Bitmap } from '@flighthq/types';
 export const width = 320;
 export const height = 240;
 export const scale = window.devicePixelRatio || 1;
+// Intentional full-canvas solid-color oracle (red vs. the green control) -- there is no
+// foreground/background split for the generic blank-render coverage heuristic to measure against,
+// so it always reads 0. assertRender below is the real check.
+export const minCoverage = 0;
 
 const canvas = createGlCanvasElement(width, height, scale);
 document.body.appendChild(canvas);
