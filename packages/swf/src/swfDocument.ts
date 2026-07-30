@@ -1,4 +1,4 @@
-import { addNodeChild, setNodeLocalMatrix } from '@flighthq/node/contract';
+import { addNodeChild, getNodeRuntime, setNodeLocalMatrix } from '@flighthq/node/contract';
 import {
   createScene2DDocument,
   createScene2DSlotReference,
@@ -6,6 +6,10 @@ import {
 } from '@flighthq/scene2d-resources/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
+  BoundsNodeAny,
+  Node2DData,
+  Node2DRuntime,
+  Rectangle,
   Scene2DContentReference,
   Scene2DDocument,
   Scene2DDocumentImportContext,
@@ -24,7 +28,8 @@ export function createScene2DFromSwf(source: Uint8Array): Scene2DDocument | null
   if (!header.valid || version === 0 || fileLength < MIN_SWF_LENGTH || fileLength > source.length) return null;
 
   const body = new SwfReader(source, SWF_PREFIX_LENGTH, fileLength);
-  if (!readSwfRectangle(body)) return null;
+  const stageBounds = readSwfRectangle(body);
+  if (stageBounds === null) return null;
   body.readUint16();
   body.readUint16();
   if (!body.valid) return null;
@@ -32,10 +37,12 @@ export function createScene2DFromSwf(source: Uint8Array): Scene2DDocument | null
   const parsed = readSwfTags(body);
   if (parsed === null) return null;
 
-  const root = createDisplayObject();
+  const root = createSwfDisplayObject(stageBounds);
   const references: Scene2DContentReference[] = [];
   const instantiation: SwfInstantiationState = {
     activeSymbols: new Set<number>(),
+    resolvingBounds: new Set<number>(),
+    resolvedBounds: new Map<number, SwfRectangle | null>(),
     remainingNodes: MAX_INSTANTIATED_NODES,
   };
   if (!appendSwfPlacements(root, parsed.placements, parsed, references, instantiation, 0)) return null;
@@ -56,6 +63,17 @@ interface SwfMatrix {
   ty: number;
 }
 
+interface SwfRectangle {
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+}
+
+interface SwfDisplayObjectData extends Node2DData {
+  authoredBounds: SwfRectangle;
+}
+
 interface SwfPlacement {
   characterId: number;
   depth: number;
@@ -65,6 +83,7 @@ interface SwfPlacement {
 }
 
 interface SwfTagResult {
+  characterBounds: Map<number, SwfRectangle>;
   linkages: Map<number, string>;
   placements: Map<number, SwfPlacement>;
   sprites: Map<number, SwfSpriteDefinition>;
@@ -75,6 +94,8 @@ interface SwfSpriteDefinition {
 }
 
 interface SwfParseState {
+  characterBounds: Map<number, SwfRectangle>;
+  definedCharacters: Set<number>;
   linkages: Map<number, string>;
   sprites: Map<number, SwfSpriteDefinition>;
 }
@@ -82,6 +103,8 @@ interface SwfParseState {
 interface SwfInstantiationState {
   activeSymbols: Set<number>;
   remainingNodes: number;
+  resolvedBounds: Map<number, SwfRectangle | null>;
+  resolvingBounds: Set<number>;
 }
 
 class SwfReader {
@@ -185,7 +208,7 @@ function appendSwfPlacements(
     if (state.remainingNodes === 0) return false;
     state.remainingNodes--;
 
-    const target = createDisplayObject();
+    const target = createSwfDisplayObject(resolveSwfCharacterBounds(parsed, placement.characterId, state, 0));
     setNodeLocalMatrix(target, placement.matrix);
     addNodeChild(parent, target);
     if (placement.name) {
@@ -207,6 +230,72 @@ function appendSwfPlacements(
     }
   }
   return true;
+}
+
+function computeSwfLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNodeAny>): void {
+  const bounds = (source.data as SwfDisplayObjectData).authoredBounds;
+  out.x = bounds.x;
+  out.y = bounds.y;
+  out.width = bounds.width;
+  out.height = bounds.height;
+}
+
+function createSwfDisplayObject(bounds: SwfRectangle | null): ReturnType<typeof createDisplayObject> {
+  const target = createDisplayObject();
+  if (bounds !== null) {
+    target.data = { authoredBounds: { ...bounds } } as SwfDisplayObjectData;
+    (getNodeRuntime(target) as Node2DRuntime).computeLocalBoundsRectangle = computeSwfLocalBoundsRectangle;
+  }
+  return target;
+}
+
+function mergeSwfRectangles(a: SwfRectangle, b: Readonly<SwfRectangle>): SwfRectangle {
+  const x = Math.min(a.x, b.x);
+  const y = Math.min(a.y, b.y);
+  const maxX = Math.max(a.x + a.width, b.x + b.width);
+  const maxY = Math.max(a.y + a.height, b.y + b.height);
+  return { height: maxY - y, width: maxX - x, x, y };
+}
+
+function resolveSwfCharacterBounds(
+  parsed: Readonly<SwfTagResult>,
+  characterId: number,
+  state: SwfInstantiationState,
+  depth: number,
+): SwfRectangle | null {
+  const direct = parsed.characterBounds.get(characterId);
+  if (direct !== undefined) return direct;
+  if (state.resolvedBounds.has(characterId)) return state.resolvedBounds.get(characterId) ?? null;
+  const sprite = parsed.sprites.get(characterId);
+  if (sprite === undefined || depth > MAX_SPRITE_NESTING || state.resolvingBounds.has(characterId)) return null;
+
+  state.resolvingBounds.add(characterId);
+  let bounds: SwfRectangle | null = null;
+  for (const placement of sprite.placements.values()) {
+    const childBounds = resolveSwfCharacterBounds(parsed, placement.characterId, state, depth + 1);
+    if (childBounds === null) continue;
+    const transformed = transformSwfRectangle(childBounds, placement.matrix);
+    bounds = bounds === null ? transformed : mergeSwfRectangles(bounds, transformed);
+  }
+  state.resolvingBounds.delete(characterId);
+  state.resolvedBounds.set(characterId, bounds);
+  return bounds;
+}
+
+function transformSwfRectangle(bounds: Readonly<SwfRectangle>, matrix: Readonly<SwfMatrix>): SwfRectangle {
+  const x0 = matrix.a * bounds.x + matrix.c * bounds.y + matrix.tx;
+  const y0 = matrix.b * bounds.x + matrix.d * bounds.y + matrix.ty;
+  const x1 = matrix.a * (bounds.x + bounds.width) + matrix.c * bounds.y + matrix.tx;
+  const y1 = matrix.b * (bounds.x + bounds.width) + matrix.d * bounds.y + matrix.ty;
+  const x2 = matrix.a * bounds.x + matrix.c * (bounds.y + bounds.height) + matrix.tx;
+  const y2 = matrix.b * bounds.x + matrix.d * (bounds.y + bounds.height) + matrix.ty;
+  const x3 = matrix.a * (bounds.x + bounds.width) + matrix.c * (bounds.y + bounds.height) + matrix.tx;
+  const y3 = matrix.b * (bounds.x + bounds.width) + matrix.d * (bounds.y + bounds.height) + matrix.ty;
+  const x = Math.min(x0, x1, x2, x3);
+  const y = Math.min(y0, y1, y2, y3);
+  const maxX = Math.max(x0, x1, x2, x3);
+  const maxY = Math.max(y0, y1, y2, y3);
+  return { height: maxY - y, width: maxX - x, x, y };
 }
 
 function readPlaceObject(body: SwfReader, placements: Map<number, SwfPlacement>, isPlaceObject3: boolean): void {
@@ -273,21 +362,37 @@ function readSwfMatrix(reader: SwfReader): SwfMatrix {
   return { a, b, c, d, tx, ty };
 }
 
-function readSwfRectangle(reader: SwfReader): boolean {
+function readSwfRectangle(reader: SwfReader): SwfRectangle | null {
   const bits = reader.readUnsignedBits(5);
-  for (let i = 0; i < 4; i++) reader.readSignedBits(bits);
+  const xMin = reader.readSignedBits(bits);
+  const xMax = reader.readSignedBits(bits);
+  const yMin = reader.readSignedBits(bits);
+  const yMax = reader.readSignedBits(bits);
   reader.alignToByte();
-  return reader.valid;
+  if (!reader.valid || bits === 0 || xMax < xMin || yMax < yMin) return null;
+  return {
+    height: (yMax - yMin) / TWIPS_PER_PIXEL,
+    width: (xMax - xMin) / TWIPS_PER_PIXEL,
+    x: xMin / TWIPS_PER_PIXEL,
+    y: yMin / TWIPS_PER_PIXEL,
+  };
 }
 
 function readSwfTags(reader: SwfReader): SwfTagResult | null {
   const state: SwfParseState = {
+    characterBounds: new Map<number, SwfRectangle>(),
+    definedCharacters: new Set<number>(),
     linkages: new Map<number, string>(),
     sprites: new Map<number, SwfSpriteDefinition>(),
   };
   const placements = readSwfTimeline(reader, state);
   if (placements === null) return null;
-  return { linkages: state.linkages, placements, sprites: state.sprites };
+  return {
+    characterBounds: state.characterBounds,
+    linkages: state.linkages,
+    placements,
+    sprites: state.sprites,
+  };
 }
 
 function readSwfTimeline(reader: SwfReader, state: SwfParseState): Map<number, SwfPlacement> | null {
@@ -317,18 +422,20 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): Map<number, S
       placements.delete(body.readUint16());
     } else if (code === TAG_EXPORT_ASSETS || code === TAG_SYMBOL_CLASS) {
       readSwfLinkages(body, state.linkages);
+    } else if (isSwfBoundedDefinitionTag(code)) {
+      if (
+        !readSwfBoundedDefinition(body, state, code === TAG_DEFINE_MORPH_SHAPE || code === TAG_DEFINE_MORPH_SHAPE_2)
+      ) {
+        return null;
+      }
     } else if (code === TAG_DEFINE_SPRITE) {
       const spriteId = body.readUint16();
       body.readUint16();
+      if (!body.valid || spriteId === 0 || state.definedCharacters.has(spriteId)) return null;
+      state.definedCharacters.add(spriteId);
       const spriteReader = new SwfReader(body.source, body.pos, body.end);
       const spritePlacements = readSwfTimeline(spriteReader, state);
-      if (
-        !body.valid ||
-        spriteId === 0 ||
-        spritePlacements === null ||
-        spriteReader.pos !== spriteReader.end ||
-        state.sprites.has(spriteId)
-      ) {
+      if (spritePlacements === null || spriteReader.pos !== spriteReader.end) {
         return null;
       }
       state.sprites.set(spriteId, { placements: spritePlacements });
@@ -342,6 +449,38 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): Map<number, S
   return firstFrame ?? placements;
 }
 
+function isSwfBoundedDefinitionTag(code: number): boolean {
+  return (
+    code === TAG_DEFINE_SHAPE ||
+    code === TAG_DEFINE_SHAPE_2 ||
+    code === TAG_DEFINE_SHAPE_3 ||
+    code === TAG_DEFINE_SHAPE_4 ||
+    code === TAG_DEFINE_TEXT ||
+    code === TAG_DEFINE_TEXT_2 ||
+    code === TAG_DEFINE_EDIT_TEXT ||
+    code === TAG_DEFINE_MORPH_SHAPE ||
+    code === TAG_DEFINE_MORPH_SHAPE_2
+  );
+}
+
+function readSwfBoundedDefinition(body: SwfReader, state: SwfParseState, hasEndBounds: boolean): boolean {
+  const characterId = body.readUint16();
+  const startBounds = readSwfRectangle(body);
+  const endBounds = hasEndBounds ? readSwfRectangle(body) : null;
+  if (
+    !body.valid ||
+    characterId === 0 ||
+    startBounds === null ||
+    (hasEndBounds && endBounds === null) ||
+    state.definedCharacters.has(characterId)
+  ) {
+    return false;
+  }
+  state.definedCharacters.add(characterId);
+  state.characterBounds.set(characterId, endBounds === null ? startBounds : mergeSwfRectangles(startBounds, endBounds));
+  return true;
+}
+
 const CWS_SIGNATURE = 0x43;
 const FIXED_16_ONE = 0x10000;
 const FWS_SIGNATURE = 0x46;
@@ -353,7 +492,16 @@ const S_SIGNATURE = 0x53;
 const SWF_MIME_TYPE = 'application/x-shockwave-flash';
 const SWF_PREFIX_LENGTH = 8;
 const TAG_END = 0;
+const TAG_DEFINE_EDIT_TEXT = 37;
+const TAG_DEFINE_MORPH_SHAPE = 46;
+const TAG_DEFINE_MORPH_SHAPE_2 = 84;
+const TAG_DEFINE_SHAPE = 2;
+const TAG_DEFINE_SHAPE_2 = 22;
+const TAG_DEFINE_SHAPE_3 = 32;
+const TAG_DEFINE_SHAPE_4 = 83;
 const TAG_DEFINE_SPRITE = 39;
+const TAG_DEFINE_TEXT = 11;
+const TAG_DEFINE_TEXT_2 = 33;
 const TAG_EXPORT_ASSETS = 56;
 const TAG_PLACE_OBJECT_2 = 26;
 const TAG_PLACE_OBJECT_3 = 70;
