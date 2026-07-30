@@ -1,16 +1,27 @@
+import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createSkeleton2D } from '@flighthq/skeleton2d/contract';
 import type {
+  AnimationChannel,
+  AnimationInterpolation,
   Attachment2D,
   Bone2D,
   ImportDiagnostic,
   MeshAttachment2D,
   RegionAttachment2D,
   Skeleton2DImport,
+  Skeleton2DImportAnimation,
   Slot2D,
   TransformInherit2D,
 } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, MeshAttachment2DKind, RegionAttachment2DKind } from '@flighthq/types/contract';
+import {
+  AnimationInterpolationLinear,
+  AnimationInterpolationStep,
+  ImportDiagnosticSeverity,
+  MeshAttachment2DKind,
+  RegionAttachment2DKind,
+  Skeleton2DAnimationPath,
+} from '@flighthq/types/contract';
 
 // Resolves a DragonBones armature-file-order bone index to the topo-sorted output index (the axis-12 remap).
 // Local to this file — a value, not an exported API type.
@@ -30,9 +41,11 @@ type DragonBonesBoneRemap = (rawBoneIndex: number) => number;
 // is a `displayIndex` into a per-slot display list (so that list is position-preserving — see
 // parseDragonBonesDefaultSkin). Image displays become region attachments; unweighted AND weighted mesh
 // displays become mesh attachments (weighted via bonePose/slotPose → Skin2D offsets with the topo-sort
-// bone-index remap — see parseDragonBonesWeightedMesh); armature/bounding-box/path displays, shared and
-// legacy-weighted meshes, additional armatures, alternate skins, and animation are recognized-but-unmodeled
-// and Skip-crumbed (frame timelines are next).
+// bone-index remap — see parseDragonBonesWeightedMesh). Each `animation` becomes an @flighthq/animation
+// clip of RELATIVE bone deltas built from the frame-based translate/rotate/scale timelines (see
+// parseDragonBonesAnimations). Armature/bounding-box/path displays, shared and legacy-weighted meshes,
+// additional armatures, alternate skins, IK constraints, and the non-bone timelines are recognized-but-
+// unmodeled and Skip-crumbed.
 export function parseDragonBonesSkeleton(json: string, diagnostics?: ImportDiagnostic[]): Skeleton2DImport | null {
   let doc: unknown;
   try {
@@ -60,8 +73,10 @@ export function parseDragonBonesSkeleton(json: string, diagnostics?: ImportDiagn
   const remapBoneIndex = buildDragonBonesBoneRemap(rawIndexToOutput);
   const skin = parseDragonBonesDefaultSkin(armature.skin, remapBoneIndex, diagnostics);
   const slots = parseDragonBonesSlots(armature.slot, boneIndexByName, skin, diagnostics);
-  skipCrumbDragonBonesGroup(diagnostics, armature.animation, 'dragonbones.animation-unsupported');
-  return { animations: [], skeleton: createSkeleton2D(bones, slots) };
+  const frameRate = dragonBonesFrameRate(armature, doc as Record<string, unknown>);
+  const animations = parseDragonBonesAnimations(armature.animation, boneIndexByName, frameRate, diagnostics);
+  skipCrumbDragonBonesGroup(diagnostics, armature.ik, 'dragonbones.ik-constraint-unsupported');
+  return { animations, skeleton: createSkeleton2D(bones, slots) };
 }
 
 // Rebuilds the bone-name → output-index lookup from the (already topologically sorted) bone array, so slot
@@ -84,6 +99,303 @@ function buildBoneIndexByName(bones: readonly Bone2D[]): Map<string, number> {
 function buildDragonBonesBoneRemap(rawIndexToOutput: readonly number[]): DragonBonesBoneRemap {
   return (rawBoneIndex) =>
     rawBoneIndex >= 0 && rawBoneIndex < rawIndexToOutput.length ? rawIndexToOutput[rawBoneIndex] : -1;
+}
+
+// Builds one AnimationClip per DragonBones `animation` from its per-bone frame timelines. DragonBones bone
+// timelines are RELATIVE to the setup pose exactly as Spine's are — `translateFrame` x/y are offsets (default
+// 0), `rotateFrame` rotate/skew are angle offsets in degrees (default 0), `scaleFrame` x/y are multipliers
+// (default 1) — so clips are emitted as those raw deltas and `applyAnimationClipToSkeleton2D` composes them
+// onto the setup pose per frame (add / multiply, keyed by `path`). Keeping deltas relative is what lets a
+// mixer blend clips as `setup + Σ wᵢ·deltaᵢ`.
+//
+// The one structural difference from Spine is the TIME AXIS: Spine keys carry absolute `time` in seconds,
+// while DragonBones keys carry a `duration` in FRAMES and the armature carries the `frameRate` — so times are
+// the running duration sum ÷ frameRate (see dragonBonesFrameTimes). The clip's own duration comes from the
+// animation's declared `duration` (also in frames), which may outlast the last keyframe when the animation
+// holds. Slot, FFD (deform), IK, and z-order timelines, and the legacy combined `frame` bone timeline, are
+// recognized-but-unmodeled and Skip-crumbed. A timeline naming a bone this armature does not have is dropped
+// best-effort and Recover-crumbed once for the whole document.
+function parseDragonBonesAnimations(
+  raw: unknown,
+  boneIndexByName: ReadonlyMap<string, number>,
+  frameRate: number,
+  diagnostics?: ImportDiagnostic[],
+): Skeleton2DImportAnimation[] {
+  const animations: Skeleton2DImportAnimation[] = [];
+  if (!Array.isArray(raw)) return animations;
+  let unresolvedBones = 0;
+  for (const entry of raw) {
+    if (entry === null || typeof entry !== 'object') continue;
+    const animation = entry as Record<string, unknown>;
+    const channels: AnimationChannel[] = [];
+    if (Array.isArray(animation.bone)) {
+      for (const rawTimeline of animation.bone) {
+        if (rawTimeline === null || typeof rawTimeline !== 'object') continue;
+        const timeline = rawTimeline as Record<string, unknown>;
+        const boneIndex = typeof timeline.name === 'string' ? (boneIndexByName.get(timeline.name) ?? -1) : -1;
+        if (boneIndex < 0) {
+          unresolvedBones++;
+          continue;
+        }
+        parseDragonBonesBoneTimeline(channels, timeline, boneIndex, frameRate, diagnostics);
+      }
+    }
+    skipCrumbDragonBonesGroup(diagnostics, animation.slot, 'dragonbones.slot-timeline-unsupported');
+    skipCrumbDragonBonesGroup(diagnostics, animation.ffd, 'dragonbones.deform-timeline-unsupported');
+    skipCrumbDragonBonesGroup(diagnostics, animation.ik, 'dragonbones.ik-timeline-unsupported');
+    skipCrumbDragonBonesGroup(diagnostics, animation.zOrder, 'dragonbones.zorder-timeline-unsupported');
+    const duration = numberOr(animation.duration, 0) / frameRate;
+    animations.push({
+      clip: createAnimationClip(channels, Number.isFinite(duration) && duration > 0 ? duration : undefined),
+      name: typeof animation.name === 'string' ? animation.name : DEFAULT_DRAGONBONES_ANIMATION_NAME,
+    });
+  }
+  if (unresolvedBones > 0) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'dragonbones.animation-bone-unresolved',
+      'parseDragonBonesSkeleton',
+      { bones: unresolvedBones },
+    );
+  }
+  return animations;
+}
+
+// Adds one DragonBones bone timeline's channels to `channels`. The three frame lists are independent — each
+// carries its own durations, so each gets its own time axis — which is why they are built separately rather
+// than zipped onto one shared key list.
+function parseDragonBonesBoneTimeline(
+  channels: AnimationChannel[],
+  timeline: Readonly<Record<string, unknown>>,
+  boneIndex: number,
+  frameRate: number,
+  diagnostics?: ImportDiagnostic[],
+): void {
+  addDragonBonesVectorChannel(
+    channels,
+    timeline.translateFrame,
+    boneIndex,
+    Skeleton2DAnimationPath.Translation,
+    frameRate,
+    diagnostics,
+  );
+  addDragonBonesRotateChannels(channels, timeline.rotateFrame, boneIndex, frameRate, diagnostics);
+  addDragonBonesVectorChannel(
+    channels,
+    timeline.scaleFrame,
+    boneIndex,
+    Skeleton2DAnimationPath.Scale,
+    frameRate,
+    diagnostics,
+  );
+  skipCrumbDragonBonesGroup(diagnostics, timeline.frame, 'dragonbones.legacy-bone-frame-unsupported');
+}
+
+// Adds a two-component bone channel (`translateFrame` → Translation, `scaleFrame` → Scale) whose per-frame
+// values are DragonBones' `x`/`y`. The omitted-value default is the path's IDENTITY delta — 0 for a
+// translation offset, 1 for a scale multiplier — so an absent field composes to "unchanged from setup".
+function addDragonBonesVectorChannel(
+  channels: AnimationChannel[],
+  raw: unknown,
+  boneIndex: number,
+  path: Skeleton2DAnimationPath,
+  frameRate: number,
+  diagnostics?: ImportDiagnostic[],
+): void {
+  const frames = dragonBonesFrames(raw, diagnostics);
+  if (frames.length === 0) return;
+  const fallback = path === Skeleton2DAnimationPath.Scale ? 1 : 0;
+  const values: number[] = [];
+  for (const frame of frames) values.push(numberOr(frame.x, fallback), numberOr(frame.y, fallback));
+  addDragonBonesBoneChannel(
+    channels,
+    dragonBonesFrameTimes(frames, frameRate),
+    values,
+    2,
+    dragonBonesInterpolation(frames, diagnostics),
+    boneIndex,
+    path,
+  );
+}
+
+// Adds the channels a DragonBones `rotateFrame` list drives. One frame list feeds TWO Flight paths, because
+// DragonBones packs both angles of its Transform into it: `rotate` → Rotation, and `skew` → Shear as
+// (shearX 0, shearY skew), the same split the setup-pose transform uses (parseDragonBonesBoneTransform).
+// The Shear channel is emitted only when some frame actually skews, so the common no-skew rig does not pay
+// for a channel of zeroes on every bone.
+//
+// `rotate` is UNWRAPPED across the sequence, replicating ObjectDataParser._parseBoneRotateFrame: each frame
+// after the first is re-expressed as the previous frame's angle plus the shortest signed step to the authored
+// angle, and a nonzero `clockwise` on the previous frame adds that many whole turns (consuming one turn per
+// frame that already passes the previous angle). This is a correctness requirement, not a fidelity nicety —
+// authored angles are wrapped, so 170° followed by −170° must tween the authored 20° step rather than the
+// 340° long way round through zero. Angles stay in degrees throughout (Flight's authoring layer), so
+// DragonBones' 2π turn is 360.
+function addDragonBonesRotateChannels(
+  channels: AnimationChannel[],
+  raw: unknown,
+  boneIndex: number,
+  frameRate: number,
+  diagnostics?: ImportDiagnostic[],
+): void {
+  const frames = dragonBonesFrames(raw, diagnostics);
+  if (frames.length === 0) return;
+  const times = dragonBonesFrameTimes(frames, frameRate);
+  const interpolation = dragonBonesInterpolation(frames, diagnostics);
+  const rotations: number[] = [];
+  const shears: number[] = [];
+  let skewed = false;
+  let previousRotation = 0;
+  let previousClockwise = 0;
+  for (let i = 0; i < frames.length; i++) {
+    const frame = frames[i];
+    let rotation = numberOr(frame.rotate, 0);
+    // `times[i] !== 0` is DragonBones' own `frameStart !== 0` guard: the frame at the sequence origin is
+    // taken as authored and anchors the unwrap; every later frame is unwrapped against the one before it.
+    if (times[i] !== 0) {
+      if (previousClockwise === 0) {
+        rotation = previousRotation + normalizeDegrees(rotation - previousRotation);
+      } else {
+        if (previousClockwise > 0 ? rotation >= previousRotation : rotation <= previousRotation) {
+          previousClockwise = previousClockwise > 0 ? previousClockwise - 1 : previousClockwise + 1;
+        }
+        rotation += 360 * previousClockwise;
+      }
+    }
+    previousClockwise = numberOr(frame.clockwise, 0) | 0;
+    previousRotation = rotation;
+    const skew = numberOr(frame.skew, 0);
+    if (skew !== 0) skewed = true;
+    rotations.push(rotation);
+    shears.push(0, skew);
+  }
+  addDragonBonesBoneChannel(channels, times, rotations, 1, interpolation, boneIndex, Skeleton2DAnimationPath.Rotation);
+  if (skewed) {
+    addDragonBonesBoneChannel(channels, times, shears, 2, interpolation, boneIndex, Skeleton2DAnimationPath.Shear);
+  }
+}
+
+// The shared tail of every bone-channel builder: wraps the extracted keys in an AnimationTrack bound to
+// (`boneIndex`, `path`). `times` is COPIED because one frame list can feed two channels (rotate → Rotation +
+// Shear) and an AnimationTrack owns its buffers — sharing one array would silently alias the two tracks.
+function addDragonBonesBoneChannel(
+  channels: AnimationChannel[],
+  times: readonly number[],
+  values: readonly number[],
+  components: number,
+  interpolation: AnimationInterpolation,
+  boneIndex: number,
+  path: Skeleton2DAnimationPath,
+): void {
+  const track = createAnimationTrack({ components, interpolation, times: times.slice(), values });
+  channels.push(createAnimationChannel(track, { boneIndex, path }));
+}
+
+// The keyframe time axis of one frame list. DragonBones authors each frame's `duration` in FRAMES (default 1
+// — its parser's own fallback), so a key's time is the running sum of the durations BEFORE it divided by the
+// armature's frame rate. A negative duration is clamped to 0, keeping the times ascending as AnimationTrack
+// requires; a zero duration leaves two keys at one instant, which sampling already handles (the later key
+// wins) so it needs no collapsing.
+function dragonBonesFrameTimes(frames: readonly Readonly<Record<string, unknown>>[], frameRate: number): number[] {
+  const times: number[] = [];
+  let elapsedFrames = 0;
+  for (const frame of frames) {
+    times.push(elapsedFrames / frameRate);
+    elapsedFrames += Math.max(0, numberOr(frame.duration, 1));
+  }
+  return times;
+}
+
+// Normalizes a raw frame list so the TIME AXIS survives malformed input: a non-object entry becomes an empty
+// frame (all-default values, the default one-frame duration) rather than being dropped, because dropping it
+// would swallow its duration and pull every later keyframe earlier — the same read-integrity discipline the
+// display list and the bone array use.
+function dragonBonesFrames(raw: unknown, diagnostics?: ImportDiagnostic[]): Readonly<Record<string, unknown>>[] {
+  if (!Array.isArray(raw)) return [];
+  const frames: Readonly<Record<string, unknown>>[] = [];
+  let recovered = 0;
+  for (const entry of raw) {
+    if (entry !== null && typeof entry === 'object') {
+      frames.push(entry as Record<string, unknown>);
+    } else {
+      frames.push(EMPTY_DRAGONBONES_FRAME);
+      recovered++;
+    }
+  }
+  if (recovered > 0) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'dragonbones.malformed-frame-recovered',
+      'parseDragonBonesSkeleton',
+      { frames: recovered },
+    );
+  }
+  return frames;
+}
+
+// One AnimationTrack carries a single interpolation, so a DragonBones frame list is Step only when EVERY
+// tweening segment is a no-tween frame, and Linear otherwise. Only frames before the last one open a segment
+// — DragonBones gives the final frame TweenType.None itself — so a trailing frame's easing never decides the
+// track. Quadratic (`tweenEasing` ≠ 0) and bezier (`curve`) easings are recognized-but-unmodeled: they
+// collapse to Linear and Skip-crumb once per frame list.
+function dragonBonesInterpolation(
+  frames: readonly Readonly<Record<string, unknown>>[],
+  diagnostics?: ImportDiagnostic[],
+): AnimationInterpolation {
+  let stepped = true;
+  let approximated = 0;
+  for (let i = 0; i + 1 < frames.length; i++) {
+    const frame = frames[i];
+    if (!isDragonBonesFrameStepped(frame)) stepped = false;
+    if ('curve' in frame) approximated++;
+    else {
+      const easing = frame.tweenEasing;
+      if (typeof easing === 'number' && easing !== 0 && easing !== DRAGONBONES_NO_TWEEN) approximated++;
+    }
+  }
+  if (approximated > 0) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'dragonbones.tween-easing-unsupported',
+      'parseDragonBonesSkeleton',
+      { frames: approximated },
+    );
+  }
+  return stepped ? AnimationInterpolationStep : AnimationInterpolationLinear;
+}
+
+// Whether a frame holds its value to the next key instead of tweening. DragonBones spells "no tween" as
+// `tweenEasing: null` (what its exporter writes) or the sentinel 100; an ABSENT `tweenEasing` means linear,
+// not stepped. A `curve` is tested first because a bezier always tweens, matching its parser's branch order.
+function isDragonBonesFrameStepped(frame: Readonly<Record<string, unknown>>): boolean {
+  if ('curve' in frame) return false;
+  if (!('tweenEasing' in frame)) return false;
+  const easing = frame.tweenEasing;
+  return easing === null || easing === DRAGONBONES_NO_TWEEN;
+}
+
+// The frame rate the armature's frame-based timelines convert through: the armature's own `frameRate`, else
+// the document's, else DragonBones' 24 default. A missing, zero, or non-finite rate would divide every
+// keyframe time into Infinity or NaN, so it falls back rather than propagating a poisoned time axis.
+function dragonBonesFrameRate(
+  armature: Readonly<Record<string, unknown>>,
+  doc: Readonly<Record<string, unknown>>,
+): number {
+  const armatureRate = numberOr(armature.frameRate, 0);
+  if (Number.isFinite(armatureRate) && armatureRate > 0) return armatureRate;
+  const documentRate = numberOr(doc.frameRate, 0);
+  if (Number.isFinite(documentRate) && documentRate > 0) return documentRate;
+  return DEFAULT_DRAGONBONES_FRAME_RATE;
+}
+
+// The shortest signed representation of an angle delta, in (−180, 180] — DragonBones' Transform
+// .normalizeRadian expressed in the authoring layer's degrees.
+function normalizeDegrees(degrees: number): number {
+  const wrapped = (degrees + 180) % 360;
+  return wrapped + (wrapped > 0 ? -180 : 180);
 }
 
 // Maps a DragonBones slot ColorTransform to a packed RGBA int (Slot2D.color). DragonBones color is the
@@ -560,6 +872,18 @@ function skipCrumbDragonBonesGroup(diagnostics: ImportDiagnostic[] | undefined, 
   if (count > 0)
     reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Skip, kind, 'parseDragonBonesSkeleton', { count });
 }
+
+// DragonBones' own fallbacks: an unnamed animation is "default", and a document that declares no frame rate
+// runs at 24fps.
+const DEFAULT_DRAGONBONES_ANIMATION_NAME = 'default';
+const DEFAULT_DRAGONBONES_FRAME_RATE = 24;
+
+// The `tweenEasing` sentinel DragonBones uses for "hold this value to the next key" alongside a literal null.
+const DRAGONBONES_NO_TWEEN = 100;
+
+// Stands in for a malformed keyframe so the frame list keeps its length and its time axis. Read-only: every
+// lookup through it falls back to the field's default.
+const EMPTY_DRAGONBONES_FRAME: Readonly<Record<string, unknown>> = {};
 
 // Skin2D stores per-vertex influence counts in a Uint16Array, so a vertex cannot carry more influences than
 // this without wrapping the count (and breaking `influences.length === 4 × Σ influenceCounts`). No real rig

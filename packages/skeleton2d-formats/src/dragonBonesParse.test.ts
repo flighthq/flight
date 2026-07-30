@@ -1,6 +1,18 @@
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
-import type { ImportDiagnostic, MeshAttachment2D, RegionAttachment2D } from '@flighthq/types/contract';
-import { MeshAttachment2DKind, RegionAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
+import { applyAnimationClipToSkeleton2D, cloneSkeleton2D } from '@flighthq/skeleton2d/contract';
+import type {
+  AnimationChannel,
+  ImportDiagnostic,
+  MeshAttachment2D,
+  RegionAttachment2D,
+  Skeleton2DAnimationTarget,
+} from '@flighthq/types/contract';
+import {
+  MeshAttachment2DKind,
+  RegionAttachment2DKind,
+  Skeleton2DAnimationPath,
+  TransformMode2D,
+} from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { parseDragonBonesSkeleton } from './dragonBonesParse';
@@ -367,7 +379,7 @@ describe('parseDragonBonesSkeleton', () => {
     expect(region.x).toBe(9);
   });
 
-  it('Skip-crumbs additional armatures, alternate skins, and the unmodeled animation section', () => {
+  it('Skip-crumbs additional armatures, alternate skins, and IK constraints', () => {
     const doc = {
       armature: [
         {
@@ -377,7 +389,7 @@ describe('parseDragonBonesSkeleton', () => {
             { name: 'default', slot: [] },
             { name: 'costume2', slot: [] },
           ],
-          animation: [{ name: 'idle', duration: 1 }],
+          ik: [{ name: 'legIk', bone: 'root', target: 'root' }],
         },
         { bone: [{ name: 'other' }] },
       ],
@@ -388,7 +400,7 @@ describe('parseDragonBonesSkeleton', () => {
     const kinds = crumbs.map((c) => c.kind);
     expect(kinds).toContain('dragonbones.multi-armature-unsupported');
     expect(kinds).toContain('dragonbones.alternate-skin-unsupported');
-    expect(kinds).toContain('dragonbones.animation-unsupported');
+    expect(kinds).toContain('dragonbones.ik-constraint-unsupported');
     // Only the first armature is parsed.
     expect(parseDragonBonesSkeleton(JSON.stringify(doc))!.skeleton.bones[0].name).toBe('root');
   });
@@ -402,6 +414,306 @@ describe('parseDragonBonesSkeleton', () => {
     expect(parseDragonBonesSkeleton(JSON.stringify(doc))!.skeleton.bones[0].parentIndex).toBe(-1);
   });
 
+  it('builds a named clip of RELATIVE deltas on a frameRate-converted time axis', () => {
+    const doc = {
+      frameRate: 20,
+      armature: [
+        {
+          bone: [{ name: 'root', transform: { x: 5, skX: 10, skY: 10, scX: 2 } }],
+          animation: [
+            {
+              name: 'walk',
+              duration: 10,
+              bone: [
+                {
+                  name: 'root',
+                  translateFrame: [
+                    { duration: 10, x: 0, y: 0 },
+                    { duration: 0, x: 20, y: 4 },
+                  ],
+                  rotateFrame: [
+                    { duration: 10, rotate: 0 },
+                    { duration: 0, rotate: 90 },
+                  ],
+                  scaleFrame: [
+                    { duration: 10, x: 1, y: 1 },
+                    { duration: 0, x: 3, y: 1 },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const result = parseDragonBonesSkeleton(JSON.stringify(doc))!;
+    expect(result.animations.length).toBe(1);
+    expect(result.animations[0].name).toBe('walk');
+    // 10 frames at 20fps = 0.5s, so the second keyframe lands at t=0.5 on every timeline.
+    expect(
+      findChannel(result.animations[0].clip.channels, 0, Skeleton2DAnimationPath.Translation)!.track.times,
+    ).toEqual([0, 0.5]);
+    // Compose onto a pose clone at the end key: setup x 5 + 20, rotation 10 + 90, scaleX 2 × 3 (multiplier).
+    const setup = result.skeleton;
+    const pose = cloneSkeleton2D(setup);
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, setup, pose, 0.5);
+    expect(pose.bones[0].x).toBeCloseTo(25, 5);
+    expect(pose.bones[0].y).toBeCloseTo(4, 5);
+    expect(pose.bones[0].rotation).toBeCloseTo(100, 5);
+    expect(pose.bones[0].scaleX).toBeCloseTo(6, 5);
+    expect(setup.bones[0].x).toBe(5); // the parsed setup pose is left intact
+  });
+
+  it('FORMULA: a keyframe time is the running frame-duration sum divided by the frame rate', () => {
+    // Durations 4, 6, 5 at 24fps → cumulative 0, 4, 10 frames → 0, 1/6, 5/12 seconds. An omitted `duration`
+    // is DragonBones' 1-frame default, and a negative one is clamped so the axis stays ascending.
+    const doc = {
+      frameRate: 24,
+      armature: [
+        {
+          bone: [{ name: 'b' }],
+          animation: [
+            {
+              name: 'a',
+              bone: [
+                {
+                  name: 'b',
+                  translateFrame: [
+                    { duration: 4, x: 0 },
+                    { duration: 6, x: 1 },
+                    { duration: 5, x: 2 },
+                    { x: 3 },
+                    { duration: -8, x: 4 },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const times = parseDragonBonesSkeleton(JSON.stringify(doc))!.animations[0].clip.channels[0].track.times;
+    expect(Array.from(times)).toEqual([0, 4 / 24, 10 / 24, 15 / 24, 16 / 24]);
+  });
+
+  it('takes the armature frame rate over the document, and 24fps when neither is usable', () => {
+    const withArmatureRate = {
+      frameRate: 20,
+      armature: [{ frameRate: 10, bone: [{ name: 'b' }], animation: [{ bone: [translateTo('b', 12)] }] }],
+    };
+    expect(firstKeyEndTime(withArmatureRate)).toBeCloseTo(12 / 10, 5);
+    const withDocumentRate = {
+      frameRate: 20,
+      armature: [{ bone: [{ name: 'b' }], animation: [{ bone: [translateTo('b', 12)] }] }],
+    };
+    expect(firstKeyEndTime(withDocumentRate)).toBeCloseTo(12 / 20, 5);
+    // A zero rate would divide every time to Infinity, so it falls back rather than poisoning the axis.
+    const withZeroRate = {
+      frameRate: 0,
+      armature: [{ bone: [{ name: 'b' }], animation: [{ bone: [translateTo('b', 12)] }] }],
+    };
+    expect(firstKeyEndTime(withZeroRate)).toBeCloseTo(12 / 24, 5);
+  });
+
+  it('UNWRAPS a rotate sequence so a wrapped angle pair tweens the authored short step', () => {
+    // 170° followed by an authored −170° is a +20° step, not the 340° long way round through zero.
+    const doc = rotateDoc([
+      { duration: 10, rotate: 170 },
+      { duration: 10, rotate: -170 },
+    ]);
+    const result = parseDragonBonesSkeleton(JSON.stringify(doc))!;
+    const channel = findChannel(result.animations[0].clip.channels, 0, Skeleton2DAnimationPath.Rotation)!;
+    expect(Array.from(channel.track.values)).toEqual([170, 190]);
+    const pose = cloneSkeleton2D(result.skeleton);
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, result.skeleton, pose, 0.25);
+    expect(pose.bones[0].rotation).toBeCloseTo(180, 5); // halfway along the short step, not through 0
+  });
+
+  it('adds a whole turn per unconsumed `clockwise` when the authored angle wrapped past the previous one', () => {
+    const doc = rotateDoc([
+      { duration: 10, rotate: 90, clockwise: 1 },
+      { duration: 10, rotate: 0 },
+    ]);
+    const channel = findChannel(
+      parseDragonBonesSkeleton(JSON.stringify(doc))!.animations[0].clip.channels,
+      0,
+      Skeleton2DAnimationPath.Rotation,
+    )!;
+    expect(Array.from(channel.track.values)).toEqual([90, 360]);
+  });
+
+  it('maps rotateFrame `skew` to a Shear channel, and emits none when no frame skews', () => {
+    const skewed = parseDragonBonesSkeleton(
+      JSON.stringify(
+        rotateDoc([
+          { duration: 10, rotate: 0, skew: 0 },
+          { duration: 10, rotate: 0, skew: 30 },
+        ]),
+      ),
+    )!;
+    const shear = findChannel(skewed.animations[0].clip.channels, 0, Skeleton2DAnimationPath.Shear)!;
+    // DragonBones' skew is Flight's shearY; shearX stays 0, the same split the setup transform uses.
+    expect(Array.from(shear.track.values)).toEqual([0, 0, 0, 30]);
+    const pose = cloneSkeleton2D(skewed.skeleton);
+    applyAnimationClipToSkeleton2D(skewed.animations[0].clip, skewed.skeleton, pose, 0.5);
+    expect(pose.bones[0].shearY).toBeCloseTo(30, 5);
+    expect(pose.bones[0].shearX).toBeCloseTo(0, 5);
+
+    const unskewed = parseDragonBonesSkeleton(JSON.stringify(rotateDoc([{ duration: 10, rotate: 45 }])))!;
+    expect(findChannel(unskewed.animations[0].clip.channels, 0, Skeleton2DAnimationPath.Shear)).toBeUndefined();
+  });
+
+  it('uses Step interpolation when every tweening frame declares no tween', () => {
+    const stepped = parseDragonBonesSkeleton(
+      JSON.stringify(
+        rotateDoc([
+          { duration: 10, rotate: 0, tweenEasing: null },
+          { duration: 10, rotate: 90, tweenEasing: null },
+        ]),
+      ),
+    )!;
+    const pose = cloneSkeleton2D(stepped.skeleton);
+    applyAnimationClipToSkeleton2D(stepped.animations[0].clip, stepped.skeleton, pose, 0.4);
+    expect(pose.bones[0].rotation).toBeCloseTo(0, 5); // holds the first key until the second
+
+    // An ABSENT tweenEasing means linear, not stepped — so the same times tween.
+    const tweened = parseDragonBonesSkeleton(
+      JSON.stringify(
+        rotateDoc([
+          { duration: 10, rotate: 0 },
+          { duration: 10, rotate: 90 },
+        ]),
+      ),
+    )!;
+    const tweenedPose = cloneSkeleton2D(tweened.skeleton);
+    applyAnimationClipToSkeleton2D(tweened.animations[0].clip, tweened.skeleton, tweenedPose, 0.25);
+    expect(tweenedPose.bones[0].rotation).toBeCloseTo(45, 5);
+  });
+
+  it("ignores the last frame's easing, which opens no segment", () => {
+    // Only the trailing frame tweens; DragonBones gives a final frame no tween either, so the track is Step.
+    const doc = rotateDoc([
+      { duration: 10, rotate: 0, tweenEasing: null },
+      { duration: 10, rotate: 90, tweenEasing: 0 },
+    ]);
+    const result = parseDragonBonesSkeleton(JSON.stringify(doc))!;
+    const pose = cloneSkeleton2D(result.skeleton);
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, result.skeleton, pose, 0.4);
+    expect(pose.bones[0].rotation).toBeCloseTo(0, 5);
+  });
+
+  it('applies the scale-frame identity default of 1 to an omitted component', () => {
+    const doc = {
+      frameRate: 24,
+      armature: [
+        {
+          bone: [{ name: 'b', transform: { scX: 2, scY: 3 } }],
+          animation: [{ bone: [{ name: 'b', scaleFrame: [{ duration: 10 }] }] }],
+        },
+      ],
+    };
+    const result = parseDragonBonesSkeleton(JSON.stringify(doc))!;
+    const pose = cloneSkeleton2D(result.skeleton);
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, result.skeleton, pose, 0);
+    expect(pose.bones[0].scaleX).toBeCloseTo(2, 5); // 2 × 1, unchanged from setup
+    expect(pose.bones[0].scaleY).toBeCloseTo(3, 5);
+  });
+
+  it('takes the clip duration from the declared frame count, which can outlast the last keyframe', () => {
+    const doc = {
+      frameRate: 20,
+      armature: [
+        {
+          bone: [{ name: 'b' }],
+          animation: [{ name: 'hold', duration: 30, bone: [{ name: 'b', translateFrame: [{ duration: 10, x: 1 }] }] }],
+        },
+      ],
+    };
+    expect(parseDragonBonesSkeleton(JSON.stringify(doc))!.animations[0].clip.duration).toBeCloseTo(1.5, 5);
+  });
+
+  it('holds a malformed keyframe in place so the later keyframes keep their times', () => {
+    const doc = {
+      frameRate: 20,
+      armature: [
+        {
+          bone: [{ name: 'b' }],
+          animation: [
+            {
+              bone: [{ name: 'b', translateFrame: [{ duration: 10, x: 0 }, null, { duration: 0, x: 30 }] }],
+            },
+          ],
+        },
+      ],
+    };
+    const kinds = collectImportDiagnostics((sink) => parseDragonBonesSkeleton(JSON.stringify(doc), sink)).map(
+      (c) => c.kind,
+    );
+    expect(kinds).toContain('dragonbones.malformed-frame-recovered');
+    // The placeholder keeps its default 1-frame duration: 0, 10/20, 11/20 — the last key is not pulled earlier.
+    const times = parseDragonBonesSkeleton(JSON.stringify(doc))!.animations[0].clip.channels[0].track.times;
+    expect(Array.from(times)).toEqual([0, 0.5, 0.55]);
+  });
+
+  it('drops a timeline naming an absent bone and Recover-crumbs it once', () => {
+    const doc = {
+      armature: [
+        {
+          bone: [{ name: 'b' }],
+          animation: [
+            { name: 'a', bone: [translateTo('ghost', 10), translateTo('alsoGhost', 10), translateTo('b', 10)] },
+          ],
+        },
+      ],
+    };
+    const crumbs = collectImportDiagnostics((sink) => parseDragonBonesSkeleton(JSON.stringify(doc), sink)).filter(
+      (c) => c.kind === 'dragonbones.animation-bone-unresolved',
+    );
+    expect(crumbs.length).toBe(1);
+    expect(crumbs[0].detail).toMatchObject({ bones: 2 });
+    // Only the resolvable bone produced a channel.
+    expect(parseDragonBonesSkeleton(JSON.stringify(doc))!.animations[0].clip.channels.length).toBe(1);
+  });
+
+  it('Skip-crumbs the unmodeled animation timelines and non-linear frame easing', () => {
+    const doc = {
+      armature: [
+        {
+          bone: [{ name: 'b' }],
+          animation: [
+            {
+              name: 'a',
+              bone: [
+                {
+                  name: 'b',
+                  frame: [{ duration: 1, transform: { x: 1 } }],
+                  translateFrame: [
+                    { duration: 5, x: 0, tweenEasing: 0.5 },
+                    { duration: 5, x: 1, curve: [0.1, 0.2, 0.3, 0.4] },
+                    { duration: 0, x: 2 },
+                  ],
+                },
+              ],
+              slot: [{ name: 's' }],
+              ffd: [{ name: 'd' }],
+              ik: [{ name: 'k' }],
+              zOrder: { frame: [{ duration: 1 }] },
+            },
+          ],
+        },
+      ],
+    };
+    const kinds = collectImportDiagnostics((sink) => parseDragonBonesSkeleton(JSON.stringify(doc), sink)).map(
+      (c) => c.kind,
+    );
+    expect(kinds).toContain('dragonbones.slot-timeline-unsupported');
+    expect(kinds).toContain('dragonbones.deform-timeline-unsupported');
+    expect(kinds).toContain('dragonbones.ik-timeline-unsupported');
+    expect(kinds).toContain('dragonbones.zorder-timeline-unsupported');
+    expect(kinds).toContain('dragonbones.legacy-bone-frame-unsupported');
+    expect(kinds).toContain('dragonbones.tween-easing-unsupported');
+  });
+
   it('returns null for malformed JSON and for a non-DragonBones document (no armature)', () => {
     expect(parseDragonBonesSkeleton('{ not json')).toBeNull();
     expect(parseDragonBonesSkeleton('42')).toBeNull();
@@ -409,3 +721,41 @@ describe('parseDragonBonesSkeleton', () => {
     expect(parseDragonBonesSkeleton(JSON.stringify({ armature: [] }))).toBeNull(); // empty armature list
   });
 });
+
+// The channel a (bone, path) pair drives, or undefined when the parse emitted none for it.
+function findChannel(
+  channels: readonly AnimationChannel[],
+  boneIndex: number,
+  path: Skeleton2DAnimationPath,
+): AnimationChannel | undefined {
+  return channels.find((channel) => {
+    const target = channel.targetRef as Skeleton2DAnimationTarget;
+    return target.boneIndex === boneIndex && target.path === path;
+  });
+}
+
+// The time of the SECOND keyframe of the document's first channel — the frame-rate conversion under test
+// (the first keyframe is always 0, so it proves nothing about the rate).
+function firstKeyEndTime(doc: unknown): number {
+  return parseDragonBonesSkeleton(JSON.stringify(doc))!.animations[0].clip.channels[0].track.times[1];
+}
+
+// A one-bone 20fps document whose single animation carries `frames` as bone `b`'s rotateFrame list.
+function rotateDoc(frames: readonly Record<string, unknown>[]): Record<string, unknown> {
+  return {
+    frameRate: 20,
+    armature: [{ bone: [{ name: 'b' }], animation: [{ name: 'a', bone: [{ name: 'b', rotateFrame: frames }] }] }],
+  };
+}
+
+// A two-keyframe translate timeline for `boneName` whose first frame lasts `duration` FRAMES, so the second
+// keyframe's time is exactly `duration / frameRate`.
+function translateTo(boneName: string, duration: number): Record<string, unknown> {
+  return {
+    name: boneName,
+    translateFrame: [
+      { duration, x: 0 },
+      { duration: 0, x: 1 },
+    ],
+  };
+}
