@@ -360,6 +360,20 @@ export interface Physics2DJointSolver {
   // Omit it when the kind is direction-free (a distance or rope constraint reads only the anchor
   // separation, which is symmetric), and the ends swap with no further work.
   swapEnds?(joint: Physics2DJoint): boolean;
+  // Reapplies the impulses this joint converged on last step, before the iterations begin — the joint
+  // half of what warmStartPhysics2DContacts does for contacts, and what the impulse block on
+  // Physics2DJoint is documented to be for.
+  //
+  // The kind owns it for the same reason it owns swapEnds: the impulse block is deliberately untyped
+  // (a distance joint means one scalar along an axis, a revolute means two linear components at the
+  // anchors), so only the kind knows what its stored numbers are and how to turn them back into an
+  // impulse. Called after prepare, so the current lever arms are in place.
+  //
+  // Omit it and the kind simply starts each step cold, which is correct but converges more slowly.
+  warmStart?(world: Physics2DWorld, joint: Physics2DJoint): void;
+  // Discards the accumulated impulses, so a world with warm starting switched off does not keep
+  // seeding each step from a cache it has been told not to use.
+  clearAccumulatedImpulses?(joint: Physics2DJoint): void;
 }
 
 // What happened to a contact this step, read off the contact cache rather than tracked alongside it.

@@ -130,6 +130,121 @@ describe('canonical end ordering and direction-bearing joint state', () => {
   });
 });
 
+describe('joint warm starting', () => {
+  // Physics2DJoint documents its impulse block as "reused as the next step's warm start exactly as a
+  // contact's are". Only contacts were warm-started; the joint block accumulated forever and was never
+  // reapplied, and switching warmStarting off did not clear it either.
+  function hangingWorld(warmStarting: boolean) {
+    const world = createPhysics2DWorld(0, -10);
+    world.config.warmStarting = warmStarting;
+    registerPhysics2DJointSolver(world, Physics2DDistanceJointKind, physics2DDistanceJointSolver);
+    const anchor = box(world, 'static', 0, 0);
+    const hanging = box(world, 'dynamic', 0, -2);
+    const joint: Physics2DDistanceJoint = {
+      ...baseJoint(Physics2DDistanceJointKind, anchor.index, hanging.index),
+      damping: 0,
+      length: 2,
+      stiffness: 0,
+    };
+    addPhysics2DJoint(world, joint);
+    return { hanging, joint, world };
+  }
+
+  it('clears the accumulated impulse each step when warm starting is off', () => {
+    // Cold start every step: the same step from the same state converges to the same impulse, so two
+    // consecutive settled steps agree. Before, the accumulator was carried whether or not the flag
+    // said to, so it drifted step over step.
+    const { joint, world } = hangingWorld(false);
+    run(world, 60);
+    const first = joint.impulse0;
+    stepPhysics2D(world, 1 / 60);
+    expect(joint.impulse0).toBeCloseTo(first, 6);
+  });
+
+  it("invokes each kind's warm start once per step when warm starting is on", () => {
+    // Asserted on the wiring rather than on a numerical difference. Warm starting changes the PATH to
+    // convergence, not the fixed point, and a single stiff distance joint converges in one iteration
+    // either way — so every physical observable I tried was identical by construction, and a test
+    // built on one would have been measuring nothing while claiming to measure warm starting. What
+    // finding 7 is actually about is that the hook never ran at all.
+    const world = createPhysics2DWorld(0, -10);
+    world.config.warmStarting = true;
+    const calls: string[] = [];
+    registerPhysics2DJointSolver(world, Physics2DDistanceJointKind, {
+      ...physics2DDistanceJointSolver,
+      clearAccumulatedImpulses: () => calls.push('clear'),
+      warmStart: () => calls.push('warm'),
+    });
+    const anchor = box(world, 'static', 0, 0);
+    const hanging = box(world, 'dynamic', 0, -2);
+    addPhysics2DJoint(world, {
+      ...baseJoint(Physics2DDistanceJointKind, anchor.index, hanging.index),
+      damping: 0,
+      length: 2,
+      stiffness: 0,
+    } as Physics2DDistanceJoint);
+
+    stepPhysics2D(world, 1 / 60);
+    expect(calls).toEqual(['warm']);
+
+    world.config.warmStarting = false;
+    stepPhysics2D(world, 1 / 60);
+    expect(calls).toEqual(['warm', 'clear']);
+  });
+
+  it('leaves a kind that declares neither hook untouched', () => {
+    // Both hooks are optional: a kind that starts cold every step is correct, just slower to converge.
+    const world = createPhysics2DWorld(0, -10);
+    registerPhysics2DJointSolver(world, Physics2DDistanceJointKind, {
+      prepare: physics2DDistanceJointSolver.prepare,
+      solve: physics2DDistanceJointSolver.solve,
+    });
+    const anchor = box(world, 'static', 0, 0);
+    const hanging = box(world, 'dynamic', 0, -2);
+    addPhysics2DJoint(world, {
+      ...baseJoint(Physics2DDistanceJointKind, anchor.index, hanging.index),
+      damping: 0,
+      length: 2,
+      stiffness: 0,
+    } as Physics2DDistanceJoint);
+    expect(() => run(world, 30)).not.toThrow();
+    expect(hanging.y).toBeLessThan(-1.5);
+  });
+
+  it('holds the hanging body at the joint length either way', () => {
+    // Warm starting is a convergence aid, not a behaviour change: both settle to the same pose.
+    const cold = hangingWorld(false);
+    const warm = hangingWorld(true);
+    run(cold.world, 240);
+    run(warm.world, 240);
+    expect(warm.hanging.y).toBeCloseTo(cold.hanging.y, 2);
+    expect(warm.hanging.y).toBeLessThan(-1.5);
+    expect(warm.hanging.y).toBeGreaterThan(-2.5);
+  });
+
+  it('clears a weld joint every impulse it accumulates, not only the linear pair', () => {
+    const world = createPhysics2DWorld(0, -10);
+    world.config.warmStarting = false;
+    registerPhysics2DJointSolver(world, Physics2DWeldJointKind, physics2DWeldJointSolver);
+    const anchor = box(world, 'static', 0, 0);
+    // Offset so gravity puts real load on both the linear and the angular part; welded at the origin
+    // the impulses settle at ~1e-6 and asserting on them would be asserting on noise.
+    const welded = box(world, 'dynamic', 3, 0);
+    const joint: Physics2DWeldJoint = {
+      ...baseJoint(Physics2DWeldJointKind, anchor.index, welded.index),
+      referenceAngle: 0,
+    };
+    addPhysics2DJoint(world, joint);
+    run(world, 120);
+    const settled = { angular: joint.impulse2, x: joint.impulse0, y: joint.impulse1 };
+    expect(Math.abs(settled.y)).toBeGreaterThan(0.001);
+    stepPhysics2D(world, 1 / 60);
+    expect(joint.impulse0).toBeCloseTo(settled.x, 4);
+    expect(joint.impulse1).toBeCloseTo(settled.y, 4);
+    expect(joint.impulse2).toBeCloseTo(settled.angular, 4);
+  });
+});
+
 describe('physics2DDistanceJointSolver', () => {
   it('holds a hanging body at the joint length instead of letting it fall', () => {
     const world = createPhysics2DWorld();
@@ -167,6 +282,25 @@ describe('physics2DDistanceJointSolver', () => {
     expect(bob.y).toBeLessThan(4);
   });
 });
+
+function revoluteJoint(
+  bodyA: number,
+  bodyB: number,
+  over: Partial<Physics2DRevoluteJoint> = {},
+): Physics2DRevoluteJoint {
+  return {
+    ...baseJoint(Physics2DRevoluteJointKind, bodyA, bodyB),
+    enableLimit: false,
+    enableMotor: false,
+    lowerAngle: 0,
+    maxMotorTorque: 0,
+    motorImpulse: 0,
+    motorSpeed: 0,
+    referenceAngle: 0,
+    upperAngle: 0,
+    ...over,
+  } as Physics2DRevoluteJoint;
+}
 
 describe('physics2DMouseJointSolver', () => {
   it('drags a body toward its target', () => {
@@ -290,25 +424,6 @@ describe('physics2DMouseJointSolver', () => {
     expect(dragged.x).toBeGreaterThan(3);
   });
 });
-
-function revoluteJoint(
-  bodyA: number,
-  bodyB: number,
-  over: Partial<Physics2DRevoluteJoint> = {},
-): Physics2DRevoluteJoint {
-  return {
-    ...baseJoint(Physics2DRevoluteJointKind, bodyA, bodyB),
-    enableLimit: false,
-    enableMotor: false,
-    lowerAngle: 0,
-    maxMotorTorque: 0,
-    motorImpulse: 0,
-    motorSpeed: 0,
-    referenceAngle: 0,
-    upperAngle: 0,
-    ...over,
-  } as Physics2DRevoluteJoint;
-}
 
 describe('physics2DRevoluteJointSolver', () => {
   it('keeps the pinned anchors together while leaving rotation free', () => {
