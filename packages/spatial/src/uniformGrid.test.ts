@@ -17,6 +17,137 @@ function pairKeys(pairs: readonly SpatialPair[]): string[] {
   return pairs.map((p) => `${Math.min(p.a, p.b)}-${Math.max(p.a, p.b)}`).sort();
 }
 
+describe('cell range across every transition that can strand it', () => {
+  // Chief's class-not-instance rule applied to the ray-hang defect. The bug was never "removal after
+  // overflow"; it was that a separately-maintained `empty` flag could disagree with the cells it
+  // described, and *every* transition that empties or re-seeds the cell set is a chance for that.
+  // The fix derives the fact from `cells.size`, so no flag can drift — and these enumerate the
+  // transitions so a future re-introduction is caught wherever it is introduced.
+  //
+  // Each case is asserted two ways: the ray returns the right ids, and it returns them without
+  // walking a stale range. The second is the one that matters — the results were already correct
+  // before the fix, and the whole defect was cost. Measured on this grid: a stranded range costs
+  // ~70 ns per cell, so the 5,000,000-cell range used here took ~343 ms unstranded-vs-stranded
+  // (1e12 as in the original report is hours, i.e. an uncatchable hang). Budget 150 ms leaves the
+  // fixed path — an early return plus a one-object overflow scan, well under a millisecond — a
+  // ~1500x margin, while still failing on a stranded range by ~2.3x.
+  const FAR = 5_000_000;
+  const RAY_BUDGET_MS = 150;
+
+  // Correctness only. Used where the occupied cell range is legitimately wide, so the walk is
+  // genuinely proportional to it — that is the documented conservative over-walk, not the defect.
+  function rayIds(grid: ReturnType<typeof createUniformGridSpatialBackend>): SpatialObjectId[] {
+    const out: SpatialObjectId[] = [];
+    grid.querySpatialRay(-5, 0.5, 1, 0, out);
+    return out.sort((a, b) => a - b);
+  }
+
+  // Correctness *and* the cost bound. Used only where the transition should have left the cell set
+  // empty or tight, so any millions-of-cells walk means the range was stranded. Keeping these two
+  // helpers apart is the point: a single budgeted helper made two honest cases fail, because their
+  // titles claimed a seeding/removal property while the assertion silently demanded O(1).
+  function rayIdsFast(grid: ReturnType<typeof createUniformGridSpatialBackend>): SpatialObjectId[] {
+    const started = performance.now();
+    const ids = rayIds(grid);
+    expect(performance.now() - started).toBeLessThan(RAY_BUDGET_MS);
+    return ids;
+  }
+
+  // Two small objects placed FAR apart, so any stranded range spans millions of cells.
+  function gridWithWideRange(): ReturnType<typeof createUniformGridSpatialBackend> {
+    const grid = createUniformGridSpatialBackend(1);
+    grid.insertSpatialObject(1, { minX: 0, minY: 0, maxX: 1, maxY: 1 });
+    grid.insertSpatialObject(2, { minX: FAR, minY: 0, maxX: FAR + 1, maxY: 1 });
+    return grid;
+  }
+
+  it('seeds the range on the first celled insert and widens it on the next', () => {
+    const grid = gridWithWideRange();
+    expect(rayIds(grid)).toEqual([1, 2]);
+  });
+
+  it('removes the last celled object while an overflowed object remains', () => {
+    // The reported case: overflow objects live in `bounds` but occupy no cells, so a flag derived
+    // from `bounds.size` stayed false here and left the range stranded.
+    const grid = gridWithWideRange();
+    grid.insertSpatialObject(3, { minX: -1e12, minY: -1e12, maxX: 1e12, maxY: 1e12 });
+    grid.removeSpatialObject(1);
+    grid.removeSpatialObject(2);
+    expect(rayIdsFast(grid)).toEqual([3]);
+  });
+
+  it('removes the last celled object while a declined object remains', () => {
+    const grid = gridWithWideRange();
+    grid.insertSpatialObject(3, { minX: NaN, minY: 0, maxX: 1, maxY: 1 });
+    grid.removeSpatialObject(1);
+    grid.removeSpatialObject(2);
+    expect(rayIdsFast(grid)).toEqual([]);
+  });
+
+  it('removes the last celled object with nothing else in the index', () => {
+    const grid = gridWithWideRange();
+    grid.removeSpatialObject(1);
+    grid.removeSpatialObject(2);
+    expect(rayIdsFast(grid)).toEqual([]);
+  });
+
+  it('removes an overflowed object while celled objects remain, keeping them findable', () => {
+    const grid = gridWithWideRange();
+    grid.insertSpatialObject(3, { minX: -1e12, minY: -1e12, maxX: 1e12, maxY: 1e12 });
+    grid.removeSpatialObject(3);
+    expect(rayIds(grid)).toEqual([1, 2]);
+  });
+
+  it('updates the last celled object into overflow, emptying the cells', () => {
+    // The overflow *transition* proper: no remove call, the object simply stops being celled.
+    const grid = createUniformGridSpatialBackend(1);
+    grid.insertSpatialObject(1, { minX: 0, minY: 0, maxX: 1, maxY: 1 });
+    grid.insertSpatialObject(2, { minX: FAR, minY: 0, maxX: FAR + 1, maxY: 1 });
+    grid.updateSpatialObject(1, { minX: -1e12, minY: -1e12, maxX: 1e12, maxY: 1e12 });
+    grid.updateSpatialObject(2, { minX: -1e12, minY: -1e12, maxX: 1e12, maxY: 1e12 });
+    expect(rayIdsFast(grid)).toEqual([1, 2]);
+  });
+
+  it('updates an overflowed object back into cells, re-seeding rather than widening', () => {
+    const grid = createUniformGridSpatialBackend(1);
+    grid.insertSpatialObject(1, { minX: 0, minY: 0, maxX: 1, maxY: 1 });
+    grid.insertSpatialObject(2, { minX: FAR, minY: 0, maxX: FAR + 1, maxY: 1 });
+    grid.updateSpatialObject(1, { minX: -1e12, minY: -1e12, maxX: 1e12, maxY: 1e12 });
+    grid.updateSpatialObject(2, { minX: -1e12, minY: -1e12, maxX: 1e12, maxY: 1e12 });
+    // Cells are empty here; coming back must seed a fresh tight range, not reuse the old wide one.
+    grid.updateSpatialObject(1, { minX: 0, minY: 0, maxX: 1, maxY: 1 });
+    expect(rayIdsFast(grid)).toEqual([1, 2]);
+  });
+
+  it('clears while an overflowed object is present', () => {
+    const grid = gridWithWideRange();
+    grid.insertSpatialObject(3, { minX: -1e12, minY: -1e12, maxX: 1e12, maxY: 1e12 });
+    grid.clearSpatialIndex();
+    expect(rayIdsFast(grid)).toEqual([]);
+  });
+
+  it('re-seeds a tight range after the index has been emptied and refilled', () => {
+    const grid = gridWithWideRange();
+    grid.clearSpatialIndex();
+    grid.insertSpatialObject(9, { minX: 0, minY: 0, maxX: 1, maxY: 1 });
+    expect(rayIdsFast(grid)).toEqual([9]);
+  });
+
+  it('keeps region and point queries correct across the same overflow transition', () => {
+    // The range is the ray's concern, but the transition must not corrupt the other queries either.
+    const grid = gridWithWideRange();
+    grid.insertSpatialObject(3, { minX: -1e12, minY: -1e12, maxX: 1e12, maxY: 1e12 });
+    grid.removeSpatialObject(1);
+    grid.removeSpatialObject(2);
+    const region: SpatialObjectId[] = [];
+    grid.querySpatialRegion({ minX: -1, minY: -1, maxX: 2, maxY: 2 }, region);
+    expect(region).toEqual([3]);
+    const point: SpatialObjectId[] = [];
+    grid.querySpatialPoint(0.5, 0.5, point);
+    expect(point).toEqual([3]);
+  });
+});
+
 describe('createUniformGridSpatialBackend', () => {
   it('emits a pair spanning several shared cells exactly once', () => {
     const grid = createUniformGridSpatialBackend(10);

@@ -48,7 +48,6 @@ export function createUniformGridSpatialBackend(cellSize: number): SpatialIndexB
     minCellY: 0,
     maxCellX: 0,
     maxCellY: 0,
-    empty: true,
     seen: new Set(),
   };
   return {
@@ -68,7 +67,6 @@ export function createUniformGridSpatialBackend(cellSize: number): SpatialIndexB
       grid.overflow.clear();
       grid.declined.clear();
       grid.seen.clear();
-      grid.empty = true;
     },
     explainSpatialIndexing(id) {
       return _explainGridIndexing(grid, id);
@@ -126,7 +124,6 @@ interface UniformGrid {
   minCellY: number;
   maxCellX: number;
   maxCellY: number;
-  empty: boolean;
   seen: Set<SpatialObjectId>;
 }
 
@@ -207,6 +204,9 @@ function _insertIntoGrid(grid: UniformGrid, id: SpatialObjectId, bounds: Readonl
   const cx1 = _cellIndex(copy.maxX, cs);
   const cy0 = _cellIndex(copy.minY, cs);
   const cy1 = _cellIndex(copy.maxY, cs);
+  // Whether a cell range exists yet, read *before* this object's cells are added. A first celled
+  // object seeds the range; a later one widens it.
+  const hadCells = grid.cells.size !== 0;
   grid.bounds.set(id, copy);
   for (let cy = cy0; cy <= cy1; cy++) {
     for (let cx = cx0; cx <= cx1; cx++) {
@@ -219,12 +219,11 @@ function _insertIntoGrid(grid: UniformGrid, id: SpatialObjectId, bounds: Readonl
       cell.ids.add(id);
     }
   }
-  if (grid.empty) {
+  if (!hadCells) {
     grid.minCellX = cx0;
     grid.maxCellX = cx1;
     grid.minCellY = cy0;
     grid.maxCellY = cy1;
-    grid.empty = false;
   } else {
     if (cx0 < grid.minCellX) grid.minCellX = cx0;
     if (cx1 > grid.maxCellX) grid.maxCellX = cx1;
@@ -306,7 +305,6 @@ function _removeFromGrid(grid: UniformGrid, id: SpatialObjectId): void {
   if (bounds === undefined) return;
   if (grid.overflow.delete(id)) {
     grid.bounds.delete(id);
-    if (grid.bounds.size === 0) grid.empty = true;
     return;
   }
   const cs = grid.cellSize;
@@ -324,7 +322,6 @@ function _removeFromGrid(grid: UniformGrid, id: SpatialObjectId): void {
     }
   }
   grid.bounds.delete(id);
-  if (grid.bounds.size === 0) grid.empty = true;
 }
 
 // Appends the pairs involving overflowed objects. An overflowed object occupies no cell, so the cell
@@ -432,7 +429,13 @@ function _queryGridRay(
       out.push(id);
     }
   }
-  if (grid.empty) return;
+  // The cell range describes the CELLS, so the cells decide whether it means anything. Reading a
+  // separately-maintained `empty` flag here was the defect: it was set from `bounds.size`, which counts
+  // overflowed objects too, so removing the last CELLED object while any overflowed object remained
+  // left the flag false and the min/max range stale — and this walk then stepped across that stale
+  // range, unbounded, with no cells left to find. Deriving the fact removes the class: there is no
+  // longer a flag that can disagree with the structure it describes, at any transition.
+  if (grid.cells.size === 0) return;
   const boxMinX = grid.minCellX * cs;
   const boxMinY = grid.minCellY * cs;
   const boxMaxX = (grid.maxCellX + 1) * cs;
