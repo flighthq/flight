@@ -1,4 +1,4 @@
-import type { CanvasRenderState, CanvasRenderTarget, Texture } from '@flighthq/types/contract';
+import type { CanvasRenderState, CanvasRenderTarget, RenderTexture } from '@flighthq/types/contract';
 
 import { getCanvasRenderCacheScreenState } from './canvasCache';
 import {
@@ -17,13 +17,13 @@ interface CanvasRenderTextureEntry {
 // Returns a populated render texture's state-owned canvas without copying pixels.
 export function bindCanvasRenderTexture(
   state: CanvasRenderState,
-  renderTexture: Readonly<Texture>,
+  renderTexture: Readonly<RenderTexture>,
 ): HTMLCanvasElement | null {
   const entry = getTargets(getCanvasRenderCacheScreenState(state)).get(renderTexture);
   return entry?.status === 'ready' ? entry.target.canvas : null;
 }
 
-export function destroyCanvasRenderTexture(state: CanvasRenderState, renderTexture: Readonly<Texture>): void {
+export function destroyCanvasRenderTexture(state: CanvasRenderState, renderTexture: Readonly<RenderTexture>): void {
   const targets = getTargets(getCanvasRenderCacheScreenState(state));
   const entry = targets.get(renderTexture);
   if (entry === undefined) return;
@@ -37,7 +37,7 @@ export function destroyCanvasRenderTexture(state: CanvasRenderState, renderTextu
  */
 export function renderIntoCanvasRenderTexture(
   state: CanvasRenderState,
-  renderTexture: Texture,
+  renderTexture: RenderTexture,
   callback: (state: CanvasRenderState) => void,
 ): void {
   const entry = ensureEntry(state, renderTexture);
@@ -54,11 +54,8 @@ export function renderIntoCanvasRenderTexture(
   }
 }
 
-function ensureEntry(state: CanvasRenderState, renderTexture: Readonly<Texture>): CanvasRenderTextureEntry {
+function ensureEntry(state: CanvasRenderState, renderTexture: Readonly<RenderTexture>): CanvasRenderTextureEntry {
   const descriptor = renderTexture.storage.target;
-  if (descriptor === undefined) {
-    throw new Error('renderIntoCanvasRenderTexture requires a Texture with a render-target backing');
-  }
   const targets = getTargets(getCanvasRenderCacheScreenState(state));
   let entry = targets.get(renderTexture);
   if (entry === undefined) {
@@ -73,7 +70,7 @@ function ensureEntry(state: CanvasRenderState, renderTexture: Readonly<Texture>)
   return entry;
 }
 
-function getTargets(state: CanvasRenderState): WeakMap<Texture, CanvasRenderTextureEntry> {
+function getTargets(state: CanvasRenderState): WeakMap<RenderTexture, CanvasRenderTextureEntry> {
   let targets = _targetsByState.get(state);
   if (targets === undefined) {
     targets = new WeakMap();
@@ -82,4 +79,4 @@ function getTargets(state: CanvasRenderState): WeakMap<Texture, CanvasRenderText
   return targets;
 }
 
-const _targetsByState = new WeakMap<CanvasRenderState, WeakMap<Texture, CanvasRenderTextureEntry>>();
+const _targetsByState = new WeakMap<CanvasRenderState, WeakMap<RenderTexture, CanvasRenderTextureEntry>>();

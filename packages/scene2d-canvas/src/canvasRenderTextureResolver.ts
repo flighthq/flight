@@ -1,4 +1,4 @@
-import type { CanvasRenderState, Texture } from '@flighthq/types/contract';
+import type { CanvasRenderState, RenderTexture, Texture } from '@flighthq/types/contract';
 import { RenderTextureBackingKind } from '@flighthq/types/contract';
 
 import { bindCanvasRenderTexture } from './canvasRenderTexture';
@@ -9,5 +9,5 @@ export function registerCanvasRenderTextureResolver(state: CanvasRenderState): v
 }
 
 function resolveCanvasRenderTexture(state: CanvasRenderState, texture: Readonly<Texture>): CanvasImageSource | null {
-  return bindCanvasRenderTexture(state, texture);
+  return bindCanvasRenderTexture(state, texture as Readonly<RenderTexture>);
 }

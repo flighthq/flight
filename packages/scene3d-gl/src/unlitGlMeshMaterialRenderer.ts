@@ -15,6 +15,7 @@ import type {
   GlRenderState,
   Material,
   MeshGeometry,
+  RenderTexture,
   Scene3DLightBlock,
   Scene3DRenderProxy,
   UnlitMaterial,
@@ -83,7 +84,10 @@ function defineKeyForMaterial(state: GlRenderState, material: Readonly<UnlitMate
   const colorMapReady = colorMap !== null && resolveGlTexture(state, colorMap) !== null;
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
-    colorMapLinear: renderTexture && colorMapReady && getGlRenderTextureColorSpace(state, colorMap) === 'linear',
+    colorMapLinear:
+      renderTexture &&
+      colorMapReady &&
+      getGlRenderTextureColorSpace(state, colorMap as Readonly<RenderTexture>) === 'linear',
     hasColorMap: colorMapReady,
     hasUvTransform: colorMapReady && hasGlUvTransform(colorMap),
     vertexColor: false,

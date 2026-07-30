@@ -1,4 +1,4 @@
-import type { CreateRenderTextureOptions, Texture } from '@flighthq/types/contract';
+import type { CreateRenderTextureOptions, RenderTexture } from '@flighthq/types/contract';
 import { RenderTextureBackingKind } from '@flighthq/types/contract';
 
 import { copySampler } from './sampler';
@@ -7,7 +7,7 @@ import { createTexture } from './texture';
 // Creates a universal Texture with a GPU-origin render-target backing. Backend allocation stays lazy;
 // renderIntoGlRenderTexture realizes the target in one state and resolveGlTexture later returns its
 // color attachment without a CPU upload.
-export function createRenderTexture(options: Readonly<CreateRenderTextureOptions>): Texture {
+export function createRenderTexture(options: Readonly<CreateRenderTextureOptions>): RenderTexture {
   const colorSpace = options.colorSpace ?? 'linear';
   const texture = createTexture({
     colorSpace: options.colorSpace ?? 'linear',
@@ -31,7 +31,7 @@ export function createRenderTexture(options: Readonly<CreateRenderTextureOptions
       },
     },
     uvRotation: options.uvRotation,
-  });
+  }) as RenderTexture;
   if (options.sampler !== undefined) copySampler(texture.sampler, options.sampler);
   if (options.uvOffset !== undefined) {
     texture.uvOffset.x = options.uvOffset.x;

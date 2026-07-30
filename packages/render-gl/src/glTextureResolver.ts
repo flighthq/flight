@@ -5,7 +5,7 @@ import type {
   GlRenderState,
   GlTextureResolver,
   ImageResource,
-  Texture,
+  RenderTexture,
   TextureBackingKind,
   TextureLike,
 } from '@flighthq/types/contract';
@@ -102,7 +102,7 @@ function resolveGlImageTexture(
 }
 
 function resolveGlRenderTexture(state: GlRenderState, texture: Readonly<TextureLike>): WebGLTexture | null {
-  return bindGlRenderTexture(state, texture as Readonly<Texture>);
+  return bindGlRenderTexture(state, texture as Readonly<RenderTexture>);
 }
 
 function resolveGlVideoTexture(state: GlRenderState, texture: Readonly<TextureLike>): WebGLTexture | null {

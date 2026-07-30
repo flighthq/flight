@@ -1,6 +1,6 @@
 import type {
+  RenderTexture,
   RenderTargetFormat,
-  Texture,
   WgpuRenderState,
   WgpuRenderTextureEntry,
   WgpuTextureEntry,
@@ -19,13 +19,13 @@ import {
 // CPU. An unrendered or currently-written Texture returns null.
 export function bindWgpuRenderTexture(
   state: WgpuRenderState,
-  renderTexture: Readonly<Texture>,
+  renderTexture: Readonly<RenderTexture>,
 ): WgpuTextureEntry | null {
   const entry = getWgpuRenderTextureEntry(state, renderTexture);
   return entry?.status === 'ready' ? entry.target : null;
 }
 
-export function destroyWgpuRenderTexture(state: WgpuRenderState, renderTexture: Readonly<Texture>): void {
+export function destroyWgpuRenderTexture(state: WgpuRenderState, renderTexture: Readonly<RenderTexture>): void {
   const runtime = getWgpuRenderStateRuntime(state);
   const entry = runtime.wgpuRenderTextureCache?.get(renderTexture);
   if (entry === undefined) return;
@@ -33,7 +33,7 @@ export function destroyWgpuRenderTexture(state: WgpuRenderState, renderTexture: 
   runtime.wgpuRenderTextureCache!.delete(renderTexture);
 }
 
-export function isWgpuRenderTextureReady(state: WgpuRenderState, renderTexture: Readonly<Texture>): boolean {
+export function isWgpuRenderTextureReady(state: WgpuRenderState, renderTexture: Readonly<RenderTexture>): boolean {
   return getWgpuRenderTextureEntry(state, renderTexture)?.status === 'ready';
 }
 
@@ -43,7 +43,7 @@ export function isWgpuRenderTextureReady(state: WgpuRenderState, renderTexture: 
  */
 export function renderIntoWgpuRenderTexture(
   state: WgpuRenderState,
-  renderTexture: Texture,
+  renderTexture: RenderTexture,
   callback: (state: WgpuRenderState) => void,
 ): void {
   const entry = ensureWgpuRenderTextureEntry(state, renderTexture);
@@ -68,12 +68,9 @@ export function renderIntoWgpuRenderTexture(
 
 function ensureWgpuRenderTextureEntry(
   state: WgpuRenderState,
-  renderTexture: Readonly<Texture>,
+  renderTexture: Readonly<RenderTexture>,
 ): WgpuRenderTextureEntry {
   const descriptor = renderTexture.storage.target;
-  if (descriptor === undefined) {
-    throw new Error('renderIntoWgpuRenderTexture requires a Texture with a render-target backing');
-  }
   const runtime = getWgpuRenderStateRuntime(state);
   const entries = (runtime.wgpuRenderTextureCache ??= new WeakMap());
   let entry = entries.get(renderTexture);
@@ -97,7 +94,7 @@ function ensureWgpuRenderTextureEntry(
 
 function getWgpuRenderTextureEntry(
   state: WgpuRenderState,
-  renderTexture: Readonly<Texture>,
+  renderTexture: Readonly<RenderTexture>,
 ): WgpuRenderTextureEntry | undefined {
   return getWgpuRenderStateRuntime(state).wgpuRenderTextureCache?.get(renderTexture);
 }

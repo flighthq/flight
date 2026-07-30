@@ -44,20 +44,10 @@ describe('renderIntoCanvasRenderTexture', () => {
     expect(texture.version).toBe((initialVersion + 1) >>> 0);
   });
 
-  it('rejects a Texture without a render-target backing and restores state when drawing throws', () => {
+  it('restores state when drawing throws', () => {
     const canvas = document.createElement('canvas');
     const state = createCanvasRenderState(canvas);
     const texture = createRenderTexture({ height: 16, width: 32 });
-    texture.storage.target = undefined;
-    expect(() => renderIntoCanvasRenderTexture(state, texture, () => {})).toThrow(
-      'renderIntoCanvasRenderTexture requires a Texture with a render-target backing',
-    );
-
-    texture.storage.target = {
-      height: 16,
-      kind: 'renderTexture',
-      width: 32,
-    };
     expect(() =>
       renderIntoCanvasRenderTexture(state, texture, () => {
         throw new Error('boom');
