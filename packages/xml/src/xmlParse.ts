@@ -28,12 +28,8 @@ export function parseXmlDocument(xml: string): XmlElement | null {
   // Normalize: strip comments, process CDATA, normalize line endings
   let src = stripCdata(stripXmlComments(xml)).replace(/\r\n?/g, '\n');
 
-  // Strip XML declaration and DOCTYPE (including an internal subset `[ ... ]`,
-  // whose contents may hold `>` characters the flat `[^>]*` form would stop at).
-  src = src
-    .replace(/<\?[\s\S]*?\?>/g, '')
-    .replace(/<!DOCTYPE[^>[]*(?:\[[\s\S]*?\][^>]*)?>/gi, '')
-    .trim();
+  // Strip XML declaration and DOCTYPE before parsing the root element.
+  src = stripXmlDoctypes(src.replace(/<\?[\s\S]*?\?>/g, '')).trim();
 
   return parseElement(src, { pos: 0 });
 }
@@ -151,4 +147,43 @@ function stripCdata(xml: string): string {
 
 function stripXmlComments(xml: string): string {
   return xml.replace(/<!--[\s\S]*?-->/g, '');
+}
+
+function stripXmlDoctypes(xml: string): string {
+  let copyStart = 0;
+  let output = '';
+  let pos = 0;
+
+  while (pos < xml.length) {
+    if (xml[pos] !== '<' || xml.slice(pos, pos + 9).toLowerCase() !== '<!doctype') {
+      pos++;
+      continue;
+    }
+
+    output += xml.slice(copyStart, pos);
+    pos += 9;
+
+    let internalSubsetDepth = 0;
+    let quote = '';
+    while (pos < xml.length) {
+      const ch = xml[pos];
+      if (quote) {
+        if (ch === quote) quote = '';
+      } else if (ch === '"' || ch === "'") {
+        quote = ch;
+      } else if (ch === '[') {
+        internalSubsetDepth++;
+      } else if (ch === ']' && internalSubsetDepth > 0) {
+        internalSubsetDepth--;
+      } else if (ch === '>' && internalSubsetDepth === 0) {
+        pos++;
+        break;
+      }
+      pos++;
+    }
+
+    copyStart = pos;
+  }
+
+  return output + xml.slice(copyStart);
 }
