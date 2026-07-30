@@ -1,7 +1,11 @@
-import type { SpatialAabb, SpatialObjectId, SpatialPair } from '@flighthq/types/contract';
-import { describe, expect, it } from 'vitest';
+import type { SpatialAabb, SpatialIndexingNotice, SpatialObjectId, SpatialPair } from '@flighthq/types/contract';
+import { afterEach, describe, expect, it } from 'vitest';
 
-import { createUniformGridSpatialBackend } from './uniformGrid';
+import { MAX_INDEXED_CELLS_PER_OBJECT, createUniformGridSpatialBackend, setSpatialIndexingGuard } from './uniformGrid';
+
+afterEach(() => {
+  setSpatialIndexingGuard(null);
+});
 
 // A plain AABB-overlap confirmation used to turn broadphase candidate pairs into confirmed pairs (the
 // narrow-phase stand-in): exactly the check the caller would apply downstream.
@@ -93,5 +97,277 @@ describe('createUniformGridSpatialBackend', () => {
 
     expect(fine).toEqual(['1-2', '2-3']);
     expect(coarse).toEqual(fine);
+  });
+});
+
+describe('MAX_INDEXED_CELLS_PER_OBJECT', () => {
+  it('is the per-object cell budget the oversized path is chosen by', () => {
+    const grid = createUniformGridSpatialBackend(1);
+    // A square block of exactly the budget stays on the ordinary path; one cell more does not. The
+    // budget is a count of cells, not an extent, so it is asserted through the count.
+    const side = Math.sqrt(MAX_INDEXED_CELLS_PER_OBJECT);
+    expect(Number.isInteger(side)).toBe(true);
+    grid.insertSpatialObject(1, { minX: 0, minY: 0, maxX: side - 1, maxY: side - 1 });
+    expect(grid.explainSpatialIndexing(1)).toEqual({
+      bucketCount: MAX_INDEXED_CELLS_PER_OBJECT,
+      id: 1,
+      mode: 'cells',
+      reason: null,
+    });
+
+    grid.insertSpatialObject(2, { minX: 0, minY: 0, maxX: side, maxY: side - 1 });
+    expect(grid.explainSpatialIndexing(2).mode).toBe('overflow');
+  });
+});
+
+describe('non-finite bounds', () => {
+  it('declines rather than indexing, and answers with the false sentinel', () => {
+    const grid = createUniformGridSpatialBackend(10);
+    expect(grid.insertSpatialObject(1, { minX: NaN, minY: 0, maxX: 10, maxY: 10 })).toBe(false);
+    expect(grid.insertSpatialObject(2, { minX: 0, minY: 0, maxX: Infinity, maxY: 10 })).toBe(false);
+    expect(grid.insertSpatialObject(3, { minX: 0, minY: -Infinity, maxX: 10, maxY: 10 })).toBe(false);
+    expect(grid.explainSpatialIndexing(1)).toEqual({
+      bucketCount: 0,
+      id: 1,
+      mode: 'declined',
+      reason: 'non-finite-bounds',
+    });
+  });
+
+  it('returns true for finite bounds, so the sentinel distinguishes decline from success', () => {
+    const grid = createUniformGridSpatialBackend(10);
+    expect(grid.insertSpatialObject(1, { minX: 0, minY: 0, maxX: 10, maxY: 10 })).toBe(true);
+  });
+
+  it('keeps a declined object out of every query rather than out of some', () => {
+    const grid = createUniformGridSpatialBackend(10);
+    grid.insertSpatialObject(1, { minX: NaN, minY: NaN, maxX: NaN, maxY: NaN });
+    grid.insertSpatialObject(2, { minX: 0, minY: 0, maxX: 10, maxY: 10 });
+
+    const region: SpatialObjectId[] = [];
+    grid.querySpatialRegion({ minX: -1e6, minY: -1e6, maxX: 1e6, maxY: 1e6 }, region);
+    expect(region).toEqual([2]);
+
+    const point: SpatialObjectId[] = [];
+    grid.querySpatialPoint(5, 5, point);
+    expect(point).toEqual([2]);
+
+    const ray: SpatialObjectId[] = [];
+    grid.querySpatialRay(-5, 5, 1, 0, ray);
+    expect(ray).toEqual([2]);
+
+    const pairs: SpatialPair[] = [];
+    grid.querySpatialPairs(pairs);
+    expect(pairs).toEqual([]);
+  });
+
+  it('drops an object that updates to non-finite bounds instead of stranding it at its old ones', () => {
+    const grid = createUniformGridSpatialBackend(10);
+    grid.insertSpatialObject(1, { minX: 0, minY: 0, maxX: 10, maxY: 10 });
+    expect(grid.updateSpatialObject(1, { minX: NaN, minY: NaN, maxX: NaN, maxY: NaN })).toBe(false);
+    expect(grid.explainSpatialIndexing(1).mode).toBe('declined');
+    const out: SpatialObjectId[] = [];
+    grid.querySpatialPoint(5, 5, out);
+    expect(out).toEqual([]);
+  });
+
+  it('lets a declined object recover on a later finite update', () => {
+    const grid = createUniformGridSpatialBackend(10);
+    grid.insertSpatialObject(1, { minX: NaN, minY: NaN, maxX: NaN, maxY: NaN });
+    expect(grid.updateSpatialObject(1, { minX: 0, minY: 0, maxX: 10, maxY: 10 })).toBe(true);
+    expect(grid.explainSpatialIndexing(1).mode).toBe('cells');
+    const out: SpatialObjectId[] = [];
+    grid.querySpatialPoint(5, 5, out);
+    expect(out).toEqual([1]);
+  });
+});
+
+describe('oversized region query', () => {
+  // The same unbounded-walk hazard from the caller's side: the region is caller-supplied, so a query
+  // wider than the world would walk extent-squared cells against a grid holding almost nothing.
+  // Measured at 69 ms for a 1000x1000-cell region over a one-object grid before the bound.
+  it('answers a region far wider than the grid without walking it cell by cell', () => {
+    const grid = createUniformGridSpatialBackend(1);
+    grid.insertSpatialObject(1, { minX: 0, minY: 0, maxX: 1, maxY: 1 });
+    const out: SpatialObjectId[] = [];
+    grid.querySpatialRegion({ minX: -1e12, minY: -1e12, maxX: 1e12, maxY: 1e12 }, out);
+    expect(out).toEqual([1]);
+  });
+
+  it('returns the same objects either way it walks', () => {
+    const grid = createUniformGridSpatialBackend(1);
+    for (let i = 0; i < 40; i++) grid.insertSpatialObject(i, { minX: i, minY: 0, maxX: i + 0.5, maxY: 1 });
+    const wide: SpatialObjectId[] = [];
+    grid.querySpatialRegion({ minX: -1e9, minY: -1e9, maxX: 1e9, maxY: 1e9 }, wide);
+    const narrow: SpatialObjectId[] = [];
+    grid.querySpatialRegion({ minX: -1, minY: -1, maxX: 41, maxY: 2 }, narrow);
+    expect([...wide].sort((a, b) => a - b)).toEqual([...narrow].sort((a, b) => a - b));
+    expect(wide.length).toBe(40);
+  });
+
+  it('still excludes objects the wide region misses', () => {
+    const grid = createUniformGridSpatialBackend(1);
+    grid.insertSpatialObject(1, { minX: 0, minY: 0, maxX: 1, maxY: 1 });
+    grid.insertSpatialObject(2, { minX: 5e11, minY: 0, maxX: 5e11 + 1, maxY: 1 });
+    const out: SpatialObjectId[] = [];
+    grid.querySpatialRegion({ minX: -1e12, minY: -1e12, maxX: 10, maxY: 1e12 }, out);
+    expect(out).toEqual([1]);
+  });
+});
+
+describe('oversized-extent bound', () => {
+  // THE REGRESSION GUARD for the unbounded insert walk.
+  //
+  // The extent here is deliberately modest — 200 units at one cell per unit, so 40,401 cells, which
+  // an unbounded build writes in about 28 ms. That is the point: this assertion FAILS on unbounded
+  // code rather than HANGING it, so it stays a usable test. A realistic reproduction (an AABB 1e12
+  // wide, which is what a diverging rigid-body simulation actually produces) would be 1e24 cells and
+  // would never return, which is exactly why the bound cannot be tested at its motivating scale.
+  it('holds an oversized object without writing a cell per unit of its extent', () => {
+    const grid = createUniformGridSpatialBackend(1);
+    grid.insertSpatialObject(1, { minX: 0, minY: 0, maxX: 200, maxY: 200 });
+    const explanation = grid.explainSpatialIndexing(1);
+    expect(explanation.mode).toBe('overflow');
+    expect(explanation.bucketCount).toBe(0);
+  });
+
+  it('indexes an AABB far past any walkable extent in constant time', () => {
+    // Unreachable for an unbounded build (1e24 cells), so this one cannot be written as a
+    // before/after assertion — it is the proof that the motivating case is now O(1). Safe to run only
+    // because the assertion above fails first if the bound is ever removed.
+    const grid = createUniformGridSpatialBackend(1);
+    expect(grid.insertSpatialObject(1, { minX: -1e12, minY: -1e12, maxX: 1e12, maxY: 1e12 })).toBe(true);
+    expect(grid.explainSpatialIndexing(1).mode).toBe('overflow');
+  });
+
+  it('keeps an oversized object queryable — the bound is a cost decision, not a dropped object', () => {
+    const grid = createUniformGridSpatialBackend(1);
+    grid.insertSpatialObject(1, { minX: -1e12, minY: -1e12, maxX: 1e12, maxY: 1e12 });
+    grid.insertSpatialObject(2, { minX: 0, minY: 0, maxX: 1, maxY: 1 });
+
+    const region: SpatialObjectId[] = [];
+    grid.querySpatialRegion({ minX: 100, minY: 100, maxX: 101, maxY: 101 }, region);
+    expect(region).toEqual([1]);
+
+    const point: SpatialObjectId[] = [];
+    grid.querySpatialPoint(500, 500, point);
+    expect(point).toEqual([1]);
+
+    const ray: SpatialObjectId[] = [];
+    grid.querySpatialRay(1e6, 1e6, 1, 0, ray);
+    expect(ray).toEqual([1]);
+
+    const pairs: SpatialPair[] = [];
+    grid.querySpatialPairs(pairs);
+    expect(pairKeys(pairs)).toEqual(['1-2']);
+  });
+
+  it('emits each overflow pair once, including overflow against overflow', () => {
+    const grid = createUniformGridSpatialBackend(1);
+    grid.insertSpatialObject(1, { minX: -1e9, minY: -1e9, maxX: 1e9, maxY: 1e9 });
+    grid.insertSpatialObject(2, { minX: -1e9, minY: -1e9, maxX: 1e9, maxY: 1e9 });
+    grid.insertSpatialObject(3, { minX: 0, minY: 0, maxX: 1, maxY: 1 });
+    const pairs: SpatialPair[] = [];
+    grid.querySpatialPairs(pairs);
+    expect(pairKeys(pairs)).toEqual(['1-2', '1-3', '2-3']);
+  });
+
+  it('does not pair an overflow object with a disjoint object', () => {
+    const grid = createUniformGridSpatialBackend(1);
+    grid.insertSpatialObject(1, { minX: 0, minY: 0, maxX: 100000, maxY: 100000 });
+    grid.insertSpatialObject(2, { minX: -50, minY: -50, maxX: -40, maxY: -40 });
+    const pairs: SpatialPair[] = [];
+    grid.querySpatialPairs(pairs);
+    expect(pairs).toEqual([]);
+  });
+
+  it('removes an oversized object without walking its extent, and stops returning it', () => {
+    const grid = createUniformGridSpatialBackend(1);
+    grid.insertSpatialObject(1, { minX: -1e12, minY: -1e12, maxX: 1e12, maxY: 1e12 });
+    grid.removeSpatialObject(1);
+    expect(grid.explainSpatialIndexing(1).mode).toBe('absent');
+    const out: SpatialObjectId[] = [];
+    grid.querySpatialPoint(0, 0, out);
+    expect(out).toEqual([]);
+  });
+
+  it('moves an object between the celled and overflow paths as it grows and shrinks', () => {
+    const grid = createUniformGridSpatialBackend(1);
+    grid.insertSpatialObject(1, { minX: 0, minY: 0, maxX: 2, maxY: 2 });
+    expect(grid.explainSpatialIndexing(1).mode).toBe('cells');
+    grid.updateSpatialObject(1, { minX: -1e12, minY: -1e12, maxX: 1e12, maxY: 1e12 });
+    expect(grid.explainSpatialIndexing(1).mode).toBe('overflow');
+    grid.updateSpatialObject(1, { minX: 0, minY: 0, maxX: 2, maxY: 2 });
+    expect(grid.explainSpatialIndexing(1).mode).toBe('cells');
+
+    // Back on the ordinary path the object must be findable through the cells again, not stranded.
+    const out: SpatialObjectId[] = [];
+    grid.querySpatialPoint(1, 1, out);
+    expect(out).toEqual([1]);
+  });
+
+  it('clears overflow with the rest of the index', () => {
+    const grid = createUniformGridSpatialBackend(1);
+    grid.insertSpatialObject(1, { minX: -1e12, minY: -1e12, maxX: 1e12, maxY: 1e12 });
+    grid.clearSpatialIndex();
+    expect(grid.explainSpatialIndexing(1).mode).toBe('absent');
+    const out: SpatialObjectId[] = [];
+    grid.querySpatialPoint(0, 0, out);
+    expect(out).toEqual([]);
+  });
+
+  it('keeps an oversized object out of the ray-traversal cell range', () => {
+    // Without the bound the occupied cell range stretches to the oversized object's span, and every
+    // subsequent ray walks it. Two small objects far apart bound the range; the oversized one must
+    // not widen it, which shows up as the ray still resolving correctly and promptly.
+    const grid = createUniformGridSpatialBackend(1);
+    grid.insertSpatialObject(1, { minX: 0, minY: 0, maxX: 1, maxY: 1 });
+    grid.insertSpatialObject(2, { minX: -1e12, minY: -1e12, maxX: 1e12, maxY: 1e12 });
+    const out: SpatialObjectId[] = [];
+    grid.querySpatialRay(-5, 0.5, 1, 0, out);
+    expect(out.sort()).toEqual([1, 2]);
+  });
+});
+
+describe('setSpatialIndexingGuard', () => {
+  it('reports a decline with its reason, and no span', () => {
+    const notices: SpatialIndexingNotice[] = [];
+    setSpatialIndexingGuard((notice) => notices.push({ ...notice }));
+    const grid = createUniformGridSpatialBackend(10);
+    grid.insertSpatialObject(7, { minX: NaN, minY: 0, maxX: 10, maxY: 10 });
+    expect(notices).toEqual([{ id: 7, mode: 'declined', reason: 'non-finite-bounds', wouldOccupyBucketCount: 0 }]);
+  });
+
+  it('reports an overflow with the span the bound refused to walk', () => {
+    const notices: SpatialIndexingNotice[] = [];
+    setSpatialIndexingGuard((notice) => notices.push({ ...notice }));
+    const grid = createUniformGridSpatialBackend(1);
+    grid.insertSpatialObject(7, { minX: 0, minY: 0, maxX: 199, maxY: 199 });
+    expect(notices).toEqual([{ id: 7, mode: 'overflow', reason: null, wouldOccupyBucketCount: 40000 }]);
+  });
+
+  it('stays silent on the ordinary path', () => {
+    const notices: SpatialIndexingNotice[] = [];
+    setSpatialIndexingGuard((notice) => notices.push({ ...notice }));
+    const grid = createUniformGridSpatialBackend(10);
+    grid.insertSpatialObject(1, { minX: 0, minY: 0, maxX: 10, maxY: 10 });
+    grid.removeSpatialObject(1);
+    expect(notices).toEqual([]);
+  });
+
+  it('null uninstalls it', () => {
+    const notices: SpatialIndexingNotice[] = [];
+    setSpatialIndexingGuard((notice) => notices.push({ ...notice }));
+    setSpatialIndexingGuard(null);
+    const grid = createUniformGridSpatialBackend(10);
+    grid.insertSpatialObject(1, { minX: NaN, minY: 0, maxX: 10, maxY: 10 });
+    expect(notices).toEqual([]);
+  });
+
+  it('does not change what insert returns', () => {
+    setSpatialIndexingGuard(() => {});
+    const grid = createUniformGridSpatialBackend(10);
+    expect(grid.insertSpatialObject(1, { minX: NaN, minY: 0, maxX: 10, maxY: 10 })).toBe(false);
+    expect(grid.insertSpatialObject(2, { minX: 0, minY: 0, maxX: 10, maxY: 10 })).toBe(true);
   });
 });

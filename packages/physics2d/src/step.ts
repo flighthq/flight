@@ -29,21 +29,26 @@ function updatePhysics2DBroadphase(world: Physics2DWorld): void {
       if (boundsScratch.maxY > maxY) maxY = boundsScratch.maxY;
     }
     if (minX > maxX) continue;
-    // Bounds this package declines to hand to the broadphase. A stopgap, and worth naming as one: the
-    // real problem is that `@flighthq/spatial`'s uniform grid indexes by walking every cell from min to
-    // max, so its work is proportional to the extent divided by the cell size and ONE large-but-finite
-    // AABB hangs it outright — verified standalone at 1e12 wide, with no physics involved. A hang is
-    // worse than a throw, because it is uncatchable and takes the caller with it, so this package
-    // declines to be what triggers it. A body that is non-finite, or 10 million units across, has
-    // diverged by any measure a rigid-body world cares about; skipping it stops that one body colliding
-    // and lets the rest of the world keep simulating. The bound belongs in the index, not here.
+    // Bounds this package declines to hand to the broadphase — a physics judgement, kept as
+    // defence in depth rather than as a substitute for the index's own bound.
+    //
+    // `@flighthq/spatial` now bounds its own insert cost (non-finite bounds are declined with a
+    // sentinel, oversized ones go to a flat overflow list), so this is no longer what stands between a
+    // diverging body and a hung caller. What it still expresses is a rigid-body world's own opinion:
+    // a body that is non-finite, or ten million units across, has diverged by any measure this
+    // simulation cares about, and continuing to collide it wastes narrow-phase work on a result
+    // already meaningless. Skipping it stops that one body colliding and lets the rest of the world
+    // keep simulating.
+    //
+    // Keeping it also keeps the two packages honest about ownership: the cost bound is the index's,
+    // and this is a divergence filter that happens to share its shape.
     if (
       !Number.isFinite(minX) ||
       !Number.isFinite(minY) ||
       !Number.isFinite(maxX) ||
       !Number.isFinite(maxY) ||
-      maxX - minX > MAX_INDEXED_EXTENT ||
-      maxY - minY > MAX_INDEXED_EXTENT
+      maxX - minX > MAX_SIMULATED_EXTENT ||
+      maxY - minY > MAX_SIMULATED_EXTENT
     ) {
       continue;
     }
@@ -357,7 +362,9 @@ function comparePhysics2DContacts(left: Readonly<Physics2DContact>, right: Reado
   return left.colliderB - right.colliderB;
 }
 
-const MAX_INDEXED_EXTENT = 1e7;
+// The widest body this world still treats as simulating. Named for what it bounds — the simulation's
+// tolerance for divergence — not for the index, which bounds its own insert cost independently.
+const MAX_SIMULATED_EXTENT = 1e7;
 const boundsScratch: SpatialAabb = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
 const bodyBounds: SpatialAabb = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
 const pairScratch: SpatialPair[] = [];

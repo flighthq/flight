@@ -26,13 +26,16 @@ export function createSpatialIndex(backend?: SpatialIndexBackend): SpatialIndex 
 }
 
 // Adds an object to the index under `id` with its current bounds. The bounds are copied; the caller
-// may reuse its own value afterward.
+// may reuse its own value afterward. Returns false when the bounds cannot be indexed at all
+// (non-finite) — the object is then absent from every query rather than present at a nonsense
+// position. Oversized-but-finite bounds return true and stay fully queryable; the backend decides how
+// to hold them. explainSpatialIndexing reports which happened.
 export function insertSpatialObject(
   index: Readonly<SpatialIndex>,
   id: SpatialObjectId,
   bounds: Readonly<SpatialAabb>,
-): void {
-  index.runtime.backend.insertSpatialObject(id, bounds);
+): boolean {
+  return index.runtime.backend.insertSpatialObject(id, bounds);
 }
 
 // Fills `out` (cleared first) with every deduplicated candidate pair — each unordered pair at most
@@ -75,12 +78,15 @@ export function removeSpatialObject(index: Readonly<SpatialIndex>, id: SpatialOb
 }
 
 // Moves an already-inserted object to new bounds. Inserting a not-yet-present id behaves as insert.
+// Returns the same sentinel as insertSpatialObject. A declined update removes the object rather than
+// leaving it at its old bounds, so a caller that ignores the sentinel can never read a stale position
+// as a current one.
 export function updateSpatialObject(
   index: Readonly<SpatialIndex>,
   id: SpatialObjectId,
   bounds: Readonly<SpatialAabb>,
-): void {
-  index.runtime.backend.updateSpatialObject(id, bounds);
+): boolean {
+  return index.runtime.backend.updateSpatialObject(id, bounds);
 }
 
 // The default uniform-grid cell size when createSpatialIndex is called without an explicit backend —

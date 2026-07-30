@@ -1,12 +1,16 @@
 export {
+  MAX_INDEXED_CELLS_PER_OBJECT,
   clearSpatialIndex,
   createSpatialIndex,
   createUniformGridSpatialBackend,
+  explainSpatialIndexing,
+  formatSpatialIndexingNotice,
   insertSpatialObject,
   querySpatialPairs,
   querySpatialPoint,
   querySpatialRay,
   querySpatialRegion,
   removeSpatialObject,
+  setSpatialIndexingGuard,
   updateSpatialObject,
 } from './contract';
