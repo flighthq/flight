@@ -84,3 +84,40 @@ describe('restoreSnapshot', () => {
     expect(target.items).toEqual([1, 2]);
   });
 });
+
+describe('restoreSnapshot array resizing', () => {
+  // Shrink and grow are separate paths through the same length assignment, and a restore loop that
+  // only ever grows would never notice a shrink that leaves stale trailing entries behind.
+  it('shrinks a nested array to the snapshot length', () => {
+    const snapshot = captureSnapshot({ items: [{ id: 'a' }] });
+    const live = { items: [{ id: 'x' }, { id: 'y' }, { id: 'z' }] };
+
+    restoreSnapshot(snapshot, live);
+
+    expect(live.items).toEqual([{ id: 'a' }]);
+  });
+
+  it('grows a nested array to the snapshot length', () => {
+    const snapshot = captureSnapshot({ items: [{ id: 'a' }, { id: 'b' }, { id: 'c' }] });
+    const live = { items: [{ id: 'x' }] };
+
+    restoreSnapshot(snapshot, live);
+
+    expect(live.items).toEqual([{ id: 'a' }, { id: 'b' }, { id: 'c' }]);
+  });
+
+  // Round trip through a mutation: capture, mutate the live object freely, restore, and the live
+  // object is back to the captured state without aliasing the frozen snapshot.
+  it('round-trips capture, mutate, restore without aliasing the snapshot', () => {
+    const live = { hp: 10, items: [{ id: 'a' }] };
+    const snapshot = captureSnapshot(live);
+
+    live.hp = 99;
+    live.items.push({ id: 'b' });
+    restoreSnapshot(snapshot, live);
+
+    expect(live).toEqual({ hp: 10, items: [{ id: 'a' }] });
+    live.items[0]!.id = 'mutated';
+    expect(snapshot.items[0]!.id).toBe('a');
+  });
+});

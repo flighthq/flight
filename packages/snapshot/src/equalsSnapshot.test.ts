@@ -56,3 +56,15 @@ describe('equalsSnapshot', () => {
     expect(equalsSnapshot(a, b)).toBe(false);
   });
 });
+
+describe('equalsSnapshot documented leaf semantics', () => {
+  // Leaves are compared with ===, which the doc comment calls out precisely because both of these
+  // surprise people. Pinned so the comparison cannot quietly become Object.is.
+  it('reports two NaN leaves as unequal, since === says so', () => {
+    expect(equalsSnapshot(captureSnapshot({ v: NaN }), captureSnapshot({ v: NaN }))).toBe(false);
+  });
+
+  it('reports -0 and +0 as equal, since === says so', () => {
+    expect(equalsSnapshot(captureSnapshot({ v: -0 }), captureSnapshot({ v: 0 }))).toBe(true);
+  });
+});
