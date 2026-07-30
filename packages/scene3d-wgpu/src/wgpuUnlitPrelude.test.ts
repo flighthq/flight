@@ -35,6 +35,7 @@ describe('bindWgpuUnlitVideoSurface', () => {
     const pipeline = compileWgpuUnlitPipeline(state, { ...FLAT, hasColorMap: true }, 'bgra8unorm');
     const video = createVideoTexture({
       element: { readyState: 4, videoHeight: 120, videoWidth: 160 } as HTMLVideoElement,
+      objectUrl: null,
     });
     advanceVideoTexture(video);
     registerWgpuImageTextureResolver(state);
