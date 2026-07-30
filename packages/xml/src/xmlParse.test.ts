@@ -145,6 +145,14 @@ describe('parseXmlDocument', () => {
     expect(doc?.text).toBe('Hello!');
   });
 
+  it('preserves markup and comment syntax inside CDATA as text', () => {
+    const doc = parseXmlDocument('<root><![CDATA[<tag>&amp;<!-- literal -->]]><child/>tail</root>');
+
+    expect(doc?.children.map((child) => child.name)).toEqual(['child']);
+    expect(doc?.content[0]).toBe('<tag>&amp;<!-- literal -->');
+    expect(doc?.text).toBe('<tag>&amp;<!-- literal -->tail');
+  });
+
   it('keeps a > inside a quoted attribute value as data, not tag-end', () => {
     const root = parseXmlDocument('<node attr="a>b"/>');
     expect(root?.name).toBe('node');
