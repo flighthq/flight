@@ -2,7 +2,6 @@ import { createEntity } from '@flighthq/entity/contract';
 import { inverseMatrix, multiplyMatrix } from '@flighthq/geometry/contract';
 import { DEG_TO_RAD } from '@flighthq/math/contract';
 import type { Bone2D, MatrixLike, Skeleton2D } from '@flighthq/types/contract';
-import { TransformMode2D } from '@flighthq/types/contract';
 
 // 6 floats per bone in the flat 2×3 affine buffers (a, b, c, d, tx, ty), matching the Matrix field order.
 const MATRIX_STRIDE = 6;
@@ -73,61 +72,59 @@ export function computeSkeleton2DWorldTransforms(skeleton: Readonly<Skeleton2D>)
     const pb = world[p + 1];
     const pc = world[p + 2];
     const pd = world[p + 3];
-    // Local origin placed by the parent — the same for every inherit mode.
-    world[o + 4] = pa * bone.x + pc * bone.y + world[p + 4];
-    world[o + 5] = pb * bone.x + pd * bone.y + world[p + 5];
-    switch (bone.transformMode) {
-      case TransformMode2D.OnlyTranslation:
-        // Rotation/scale come from the bone's own local transform; only position inherits (set above).
-        world[o] = la;
-        world[o + 1] = lb;
-        world[o + 2] = lc;
-        world[o + 3] = ld;
-        break;
-      case TransformMode2D.NoRotationOrReflection: {
-        // Inherit the parent's SCALE (its column lengths) but strip rotation + reflection: compose the
-        // local transform with a diagonal, axis-aligned scale-only parent.
-        const psx = Math.hypot(pa, pb);
-        const psy = Math.hypot(pc, pd);
-        world[o] = psx * la;
-        world[o + 1] = psy * lb;
-        world[o + 2] = psx * lc;
-        world[o + 3] = psy * ld;
-        break;
-      }
-      case TransformMode2D.NoScale:
-      case TransformMode2D.NoScaleOrReflection: {
-        // Inherit the parent's ORIENTATION but not its scale: normalize the parent's columns to unit
-        // length, then compose with the local transform. NoScale keeps the parent's reflection (its
-        // normalized columns as-is); NoScaleOrReflection strips it, forcing the y-axis to the +90°
-        // rotation of the x-axis (det = +1) so the child never flips under a negatively-scaled parent.
-        const psx = Math.hypot(pa, pb) || 1;
-        const nax = pa / psx;
-        const nay = pb / psx;
-        let ncx: number;
-        let ncy: number;
-        if (bone.transformMode === TransformMode2D.NoScaleOrReflection) {
-          ncx = -nay;
-          ncy = nax;
-        } else {
-          const psy = Math.hypot(pc, pd) || 1;
-          ncx = pc / psy;
-          ncy = pd / psy;
-        }
-        world[o] = nax * la + ncx * lb;
-        world[o + 1] = nay * la + ncy * lb;
-        world[o + 2] = nax * lc + ncx * ld;
-        world[o + 3] = nay * lc + ncy * ld;
-        break;
-      }
-      default:
-        // Normal: full inherit — world linear part = parent × local.
-        world[o] = pa * la + pc * lb;
-        world[o + 1] = pb * la + pd * lb;
-        world[o + 2] = pa * lc + pc * ld;
-        world[o + 3] = pb * lc + pd * ld;
-        break;
+    const inherit = bone.transformMode;
+    // Position: the parent places the bone's local origin — unless translation inheritance is stripped, in
+    // which case the bone's local (x, y) is its world position directly.
+    if (inherit.translation) {
+      world[o + 4] = pa * bone.x + pc * bone.y + world[p + 4];
+      world[o + 5] = pb * bone.x + pd * bone.y + world[p + 5];
+    } else {
+      world[o + 4] = bone.x;
+      world[o + 5] = bone.y;
     }
+    // Linear part: rotation, scale, and reflection are each inherited or stripped independently. When all
+    // three are inherited (Normal — the common case) it is the fast path: the raw parent columns × local,
+    // no decomposition. Otherwise the parent is decomposed into per-column scale (lengths) and a direction
+    // basis, each axis kept or replaced per its flag, recomposed, then × local. Reproduces the five presets
+    // exactly (NoScale keeps the parent's actual y-column, preserving shear; NoScaleOrReflection forces the
+    // y-axis to the +90° perpendicular of the x-axis, det +1, dropping shear and reflection).
+    let ea: number;
+    let eb: number;
+    let ec: number;
+    let ed: number;
+    if (inherit.rotation && inherit.scale && inherit.reflection) {
+      ea = pa;
+      eb = pb;
+      ec = pc;
+      ed = pd;
+    } else {
+      const psx = Math.hypot(pa, pb) || 1;
+      const psy = Math.hypot(pc, pd) || 1;
+      const d0x = inherit.rotation ? pa / psx : 1;
+      const d0y = inherit.rotation ? pb / psx : 0;
+      let d1x: number;
+      let d1y: number;
+      if (inherit.rotation && inherit.reflection) {
+        d1x = pc / psy;
+        d1y = pd / psy;
+      } else if (inherit.rotation) {
+        d1x = -d0y;
+        d1y = d0x;
+      } else {
+        d1x = 0;
+        d1y = inherit.reflection && pa * pd - pb * pc < 0 ? -1 : 1;
+      }
+      const sx = inherit.scale ? psx : 1;
+      const sy = inherit.scale ? psy : 1;
+      ea = d0x * sx;
+      eb = d0y * sx;
+      ec = d1x * sy;
+      ed = d1y * sy;
+    }
+    world[o] = ea * la + ec * lb;
+    world[o + 1] = eb * la + ed * lb;
+    world[o + 2] = ea * lc + ec * ld;
+    world[o + 3] = eb * lc + ed * ld;
   }
 }
 
@@ -170,7 +167,10 @@ export function equalsSkeleton2D(a: Readonly<Skeleton2D>, b: Readonly<Skeleton2D
       x.shearX !== y.shearX ||
       x.shearY !== y.shearY ||
       x.length !== y.length ||
-      x.transformMode !== y.transformMode
+      x.transformMode.rotation !== y.transformMode.rotation ||
+      x.transformMode.scale !== y.transformMode.scale ||
+      x.transformMode.reflection !== y.transformMode.reflection ||
+      x.transformMode.translation !== y.transformMode.translation
     ) {
       return false;
     }

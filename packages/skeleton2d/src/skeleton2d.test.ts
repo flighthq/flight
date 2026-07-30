@@ -244,6 +244,27 @@ describe('computeSkeleton2DWorldTransforms', () => {
     expect(s.worldMatrices[2]).toBeCloseTo(0, 5); // c
     expect(s.worldMatrices[3]).toBeCloseTo(1, 5); // d
   });
+
+  it('FORMULA parity: an inherit combo with NO named preset — keep rotation+scale, strip reflection', () => {
+    // {rotation, scale} true but reflection false has no TransformMode2D preset; the factored boolean model
+    // handles it. Under a reflected+scaled parent [2,0,0,-2] (det −4), it keeps the (2,2) scale but strips
+    // the reflection, so the child basis is [2,0,0,2] (det +4) rather than Normal's [2,0,0,-2].
+    const s = createSkeleton2D([
+      makeBone({ scaleX: 2, scaleY: -2 }), // reflected (negative Y scale)
+      makeBone({
+        parentIndex: 0,
+        transformMode: { reflection: false, rotation: true, scale: true, translation: true },
+      }),
+    ]);
+    computeSkeleton2DWorldTransforms(s);
+    const out = createMatrix();
+    getSkeleton2DBoneWorldMatrix(out, s, 1);
+    expect(out.a).toBeCloseTo(2, 5);
+    expect(out.b).toBeCloseTo(0, 5);
+    expect(out.c).toBeCloseTo(0, 5);
+    expect(out.d).toBeCloseTo(2, 5); // reflection stripped: +2, not −2
+    expect(out.a * out.d - out.c * out.b).toBeCloseTo(4, 5); // det positive (scale kept, reflection dropped)
+  });
 });
 
 describe('createSkeleton2D', () => {

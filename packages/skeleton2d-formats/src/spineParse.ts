@@ -11,6 +11,7 @@ import type {
   Skeleton2DImportAnimation,
   Skin2D,
   Slot2D,
+  TransformInherit2D,
 } from '@flighthq/types/contract';
 import {
   AnimationInterpolationLinear,
@@ -421,7 +422,7 @@ function skipCrumbSpineTimelineGroup(diagnostics: ImportDiagnostic[] | undefined
 
 // Maps a Spine bone `transform` string to a TransformMode2D. Spine omits the field for the default,
 // so an absent/unknown value is `Normal`.
-function spineTransformMode(value: unknown): TransformMode2D {
+function spineTransformMode(value: unknown): TransformInherit2D {
   switch (value) {
     case 'onlyTranslation':
       return TransformMode2D.OnlyTranslation;
