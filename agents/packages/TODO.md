@@ -126,10 +126,6 @@ Design calls to settle before building the affected entries:
 - Rule on the extension-handler seam shape before porting `KHR_texture_transform` (Depth gap 3)
 - Rule on a fixture policy before proving real files end to end (Depth gap 4)
 
-### swf (partial 49)
-
-- Add one canonical uncompressed fixture
-
 ### textureatlas-formats (partial 50)
 
 - Adopt the registry pattern from `spritesheet-formats`
@@ -140,6 +136,10 @@ Design calls to settle before building the affected entries:
 
 - `Font` and `FontResource` carry two separate copies of the same load logic
 - The failure contract is now pinned but was never stated
+
+### swf (partial 53)
+
+- Add one canonical uncompressed fixture
 
 ### spritesheet-formats (partial 58)
 
@@ -833,7 +833,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 - Replace the remaining inline extension knowledge with open handlers
 - Prove real files end to end
 
-### swf (partial 49)
+### swf (partial 53)
 
 - Recover animated MovieClip timelines
 - Materialize visible archive content
@@ -983,7 +983,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene3d` · `particleemitter` · `xml` · `skeleton3d` · `scene3d-resources` · `camera-controls` · `debug` · `dialog` · `lifecycle` · `textlayout` · `adjustments` · `clipboard` · `camera` · `platform` · `textinput` · `connectivity` · `scene2d-resources` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
+`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene3d` · `particleemitter` · `xml` · `skeleton3d` · `scene3d-resources` · `camera-controls` · `debug` · `dialog` · `lifecycle` · `textlayout` · `adjustments` · `clipboard` · `camera` · `platform` · `textinput` · `connectivity` · `screen` · `scene2d-resources` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
 
 ## Liveness — which stage each stale cell needs next
 
