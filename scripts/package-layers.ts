@@ -72,6 +72,7 @@ const packageNamesByLayer: Readonly<Record<PackageLayer, readonly string[]>> = {
     '@flighthq/path-boolean',
     '@flighthq/path-formats',
     '@flighthq/permissions',
+    '@flighthq/physics2d',
     '@flighthq/picking',
     '@flighthq/platform',
     '@flighthq/power',
@@ -93,6 +94,7 @@ const packageNamesByLayer: Readonly<Record<PackageLayer, readonly string[]>> = {
     '@flighthq/shell',
     '@flighthq/shortcut',
     '@flighthq/skeleton2d',
+    '@flighthq/skeleton2d-formats',
     '@flighthq/skeleton3d',
     '@flighthq/snapshot',
     '@flighthq/socket',
@@ -139,6 +141,7 @@ const packageNamesByLayer: Readonly<Record<PackageLayer, readonly string[]>> = {
   ],
   application: ['@flighthq/app', '@flighthq/application'],
   'host-tool': [
+    '@flighthq/application-gl',
     '@flighthq/host-capacitor',
     '@flighthq/host-electron',
     '@flighthq/host-tauri',
