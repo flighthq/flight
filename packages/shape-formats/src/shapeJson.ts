@@ -22,9 +22,11 @@ import {
 import type { Shape, ShapeJsonFormatOptions, ShapeJsonParseOptions } from '@flighthq/types/contract';
 
 // Serializes a shape's full drawing-command stream to a native JSON string that `parseShapeJson`
-// restores losslessly. Every non-texture command round-trips exactly; `beginTextureFill`/
-// `lineTextureStyle` textures serialize as an ordinal `ShapeTextureReference` (see the type) rather
-// than the live `Texture`.
+// restores. Every non-texture command round-trips exactly, with one exception the format cannot
+// represent: JSON has no NaN or Infinity literal, so a non-finite coordinate is written as `null` and
+// the document will not parse back. That is deliberate — the alternative is restoring a shape whose
+// geometry silently differs from the one serialized. `beginTextureFill`/`lineTextureStyle` textures
+// serialize as an ordinal `ShapeTextureReference` (see the type) rather than the live `Texture`.
 export function formatShapeJson(shape: Readonly<Shape>, options?: Readonly<ShapeJsonFormatOptions>): string {
   const commands = shape.data.commands;
   const entries: SerializedShapeCommand[] = [];
@@ -61,7 +63,10 @@ export function formatShapeJson(shape: Readonly<Shape>, options?: Readonly<Shape
 // Restores a `Shape` from a `formatShapeJson` string by replaying each command through the matching
 // `appendShape*` builder. Returns `null` for malformed JSON, a missing/mismatched `shapeFormat`
 // version tag, a non-array `commands` field, a malformed command entry, an unknown command key, or a
-// malformed argument. Texture-bearing commands whose reference cannot be resolved are dropped.
+// malformed argument — where malformed covers the argument *list* as well as each value: a count
+// outside the command's arity, a value of the wrong positional type, or a non-finite number.
+// Texture-bearing commands whose reference cannot be resolved are dropped rather than rejected, since
+// an unresolved reference is a missing asset rather than a malformed document.
 export function parseShapeJson(text: string, options?: Readonly<ShapeJsonParseOptions>): Shape | null {
   let root: unknown;
   try {
@@ -96,6 +101,7 @@ export function parseShapeJson(text: string, options?: Readonly<ShapeJsonParseOp
       args.push(reconstructed);
     }
     if (drop) continue;
+    if (!isValidShapeCommandArgs(key, args)) return null;
     appender(shape, ...(args as never[]));
   }
   return shape;
@@ -124,6 +130,57 @@ function reconstructShapeCommandArg(value: unknown, resolveTexture: ShapeJsonPar
     return createMatrix(value.a, value.b, value.c, value.d, value.tx, value.ty);
   }
   return MALFORMED_ARG;
+}
+
+// Checks a reconstructed argument list against the appender's declared shape. Without this the parser
+// validated only that an entry *looked* like a command and then spread whatever it found: too few args
+// left required parameters undefined, wrong-typed args wrote strings into numeric slots, and extra args
+// were dropped without complaint — each producing a corrupt Shape rather than the documented null.
+//
+// Runs after reconstruction, so matrices are already Matrix values and textures already resolved, and
+// after the drop check, so an unresolved texture is still a dropped command rather than a parse failure.
+function isValidShapeCommandArgs(key: string, args: readonly unknown[]): boolean {
+  const spec = SHAPE_COMMAND_ARG_SPECS[key];
+  // A key with no spec cannot be reached: the appender lookup above rejects unknown keys first, and
+  // every entry in the appender table has one — asserted by a test over both tables' key sets.
+  if (spec === undefined) return false;
+  if (args.length < spec.required || args.length > spec.types.length) return false;
+  for (let i = 0; i < args.length; i++) {
+    if (!isValidShapeCommandArg(args[i], spec.types[i]!)) return false;
+  }
+  return true;
+}
+
+function isValidShapeCommandArg(value: unknown, type: ShapeCommandArgType): boolean {
+  switch (type) {
+    // Non-finite values are rejected here rather than passed through: JSON has no NaN or Infinity
+    // literal, so a NaN in a shape serializes as `null` and an out-of-range literal like 1e999 parses
+    // back as Infinity. Either one silently changes the geometry it describes.
+    case 'number':
+      return typeof value === 'number' && Number.isFinite(value);
+    case 'numbers':
+      return isFiniteNumberArray(value);
+    case 'numbersOrNull':
+      return value === null || isFiniteNumberArray(value);
+    case 'string':
+      return typeof value === 'string';
+    case 'boolean':
+      return typeof value === 'boolean';
+    case 'matrixOrNull':
+      return value === null || isMatrixValue(value);
+    // Already resolved by resolveTexture, which returns either a Texture or null; a null resolution
+    // dropped the command before reaching here, so anything left is the caller's own object.
+    case 'texture':
+      return typeof value === 'object' && value !== null;
+  }
+}
+
+function isFiniteNumberArray(value: unknown): boolean {
+  if (!Array.isArray(value)) return false;
+  for (const entry of value) {
+    if (typeof entry !== 'number' || !Number.isFinite(entry)) return false;
+  }
+  return true;
 }
 
 function isMatrixValue(
@@ -166,6 +223,50 @@ const MALFORMED_ARG = Symbol('shapeFormats.malformedArg');
 const DROP_COMMAND = Symbol('shapeFormats.dropCommand');
 
 const SHAPE_JSON_FORMAT = 2;
+
+type ShapeCommandArgType = 'boolean' | 'matrixOrNull' | 'number' | 'numbers' | 'numbersOrNull' | 'string' | 'texture';
+
+// The positional shape of each command's arguments, mirroring the appendShape* signatures one-for-one.
+// `required` is the count of leading parameters with no default, so a hand-written document may omit
+// trailing optional args and let the appender's own defaults apply; `types` bounds the maximum. The
+// serializer always writes the full stored arity, so a round-tripped document uses the upper bound.
+interface ShapeCommandArgSpec {
+  required: number;
+  types: readonly ShapeCommandArgType[];
+}
+
+const GRADIENT_ARG_SPEC: ShapeCommandArgSpec = {
+  required: 4,
+  types: ['string', 'numbers', 'numbers', 'numbers', 'matrixOrNull', 'string', 'string', 'number'],
+};
+
+const TEXTURE_ARG_SPEC: ShapeCommandArgSpec = { required: 1, types: ['texture', 'matrixOrNull'] };
+
+const SHAPE_COMMAND_ARG_SPECS: Readonly<Record<string, ShapeCommandArgSpec>> = {
+  beginTextureFill: TEXTURE_ARG_SPEC,
+  beginFill: { required: 0, types: ['number', 'number'] },
+  beginGradientFill: GRADIENT_ARG_SPEC,
+  cubicCurveTo: { required: 6, types: ['number', 'number', 'number', 'number', 'number', 'number'] },
+  curveTo: { required: 4, types: ['number', 'number', 'number', 'number'] },
+  drawCircle: { required: 3, types: ['number', 'number', 'number'] },
+  drawEllipse: { required: 4, types: ['number', 'number', 'number', 'number'] },
+  drawPath: { required: 2, types: ['numbers', 'numbers', 'string'] },
+  drawRectangle: { required: 4, types: ['number', 'number', 'number', 'number'] },
+  drawRoundRectangle: {
+    required: 6,
+    types: ['number', 'number', 'number', 'number', 'number', 'number'],
+  },
+  drawTriangles: { required: 1, types: ['numbers', 'numbersOrNull', 'numbersOrNull', 'string'] },
+  endFill: { required: 0, types: [] },
+  lineTextureStyle: TEXTURE_ARG_SPEC,
+  lineGradientStyle: GRADIENT_ARG_SPEC,
+  lineStyle: {
+    required: 0,
+    types: ['number', 'number', 'number', 'boolean', 'string', 'string', 'string', 'number'],
+  },
+  lineTo: { required: 2, types: ['number', 'number'] },
+  moveTo: { required: 2, types: ['number', 'number'] },
+};
 
 const SHAPE_COMMAND_APPENDERS: Readonly<Record<string, ShapeCommandAppender>> = {
   beginTextureFill: appendShapeBeginTextureFill,

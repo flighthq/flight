@@ -3,10 +3,17 @@ import {
   appendShapeBeginTextureFill,
   appendShapeBeginFill,
   appendShapeBeginGradientFill,
+  appendShapeCircle,
   appendShapeCubicCurveTo,
   appendShapeCurveTo,
+  appendShapeDrawTriangles,
+  appendShapeEllipse,
   appendShapeEndFill,
+  appendShapeLineGradientStyle,
   appendShapeLineStyle,
+  appendShapeLineTextureStyle,
+  appendShapeRectangle,
+  appendShapeRoundRectangle,
   appendShapeLineTo,
   appendShapeMoveTo,
   appendShapePath,
@@ -37,6 +44,23 @@ function createEveryNonBitmapCommandShape() {
   appendShapeCurveTo(shape, 150, 50, 100, 100);
   appendShapeCubicCurveTo(shape, 10, 10, 20, 20, 30, 30);
   appendShapePath(shape, [1, 2], [0, 0, 50, 50], 'evenOdd');
+  appendShapeCircle(shape, 5, 6, 7);
+  appendShapeEllipse(shape, 1, 2, 3, 4);
+  appendShapeRectangle(shape, 10, 11, 12, 13);
+  appendShapeRoundRectangle(shape, 1, 2, 3, 4, 5, 6);
+  appendShapeDrawTriangles(shape, [0, 0, 1, 0, 0, 1], [0, 1, 2], [0, 0, 1, 0, 0, 1], 'positive');
+  appendShapeDrawTriangles(shape, [0, 0, 1, 0, 0, 1], null, null, 'none');
+  appendShapeLineGradientStyle(
+    shape,
+    'radial',
+    [0x112233ff, 0x445566ff],
+    [1, 0],
+    [0, 255],
+    null,
+    'reflect',
+    'linearRGB',
+    0.5,
+  );
   appendShapeEndFill(shape);
   return shape;
 }
@@ -158,5 +182,103 @@ describe('parseShapeJson', () => {
     expect(restored).not.toBeNull();
     expect(getShapeCommandCount(restored!)).toBe(1);
     expect(restored!.data.commands[0]).toBe('endFill');
+  });
+});
+
+describe('parseShapeJson argument validation', () => {
+  function document(commands: readonly unknown[]): string {
+    return JSON.stringify({ shapeFormat: 2, commands });
+  }
+
+  // Every rejection below used to build a Shape instead. The parser checked that an entry looked like
+  // a command and then spread whatever it found straight into the appender, so a bad document produced
+  // corrupt geometry rather than the null its own contract documents.
+  it('rejects a command with too few arguments', () => {
+    expect(parseShapeJson(document([{ key: 'moveTo', args: [1] }]))).toBeNull();
+  });
+
+  it('rejects a command with too many arguments', () => {
+    expect(parseShapeJson(document([{ key: 'moveTo', args: [1, 2, 3] }]))).toBeNull();
+  });
+
+  it('rejects a string where a number is expected', () => {
+    expect(parseShapeJson(document([{ key: 'moveTo', args: ['1', '2'] }]))).toBeNull();
+  });
+
+  it('rejects a number where a string is expected', () => {
+    expect(parseShapeJson(document([{ key: 'drawPath', args: [[1], [0, 0], 7] }]))).toBeNull();
+  });
+
+  it('rejects a number where an array is expected', () => {
+    expect(parseShapeJson(document([{ key: 'drawPath', args: [1, [0, 0], 'evenOdd'] }]))).toBeNull();
+  });
+
+  it('rejects a non-numeric entry inside a numeric array', () => {
+    expect(parseShapeJson(document([{ key: 'drawPath', args: [[1], [0, 'x'], 'evenOdd'] }]))).toBeNull();
+  });
+
+  // JSON has no NaN or Infinity literal: a NaN coordinate serializes as `null`, and an out-of-range
+  // literal parses back as Infinity. Both silently change the geometry, so both are refused.
+  it('rejects a null where a number is expected, which is how NaN survives JSON', () => {
+    expect(parseShapeJson(document([{ key: 'moveTo', args: [null, 5] }]))).toBeNull();
+  });
+
+  it('rejects an out-of-range literal that parses as Infinity', () => {
+    expect(parseShapeJson('{"shapeFormat":2,"commands":[{"key":"moveTo","args":[1e999,2]}]}')).toBeNull();
+  });
+
+  it('rejects a non-finite entry inside a numeric array', () => {
+    expect(
+      parseShapeJson('{"shapeFormat":2,"commands":[{"key":"drawPath","args":[[1],[1e999,0],"evenOdd"]}]}'),
+    ).toBeNull();
+  });
+
+  it('accepts a command that omits its optional trailing arguments', () => {
+    const restored = parseShapeJson(
+      document([
+        { key: 'lineStyle', args: [] },
+        { key: 'endFill', args: [] },
+      ]),
+    );
+    expect(restored).not.toBeNull();
+    expect(getShapeCommandCount(restored!)).toBe(2);
+  });
+
+  it('accepts a null matrix in an optional matrix position', () => {
+    const restored = parseShapeJson(
+      document([{ key: 'beginGradientFill', args: ['linear', [1], [1], [0], null, 'pad', 'rgb', 0] }]),
+    );
+    expect(restored).not.toBeNull();
+  });
+
+  it('rejects a non-matrix object in a matrix position', () => {
+    expect(
+      parseShapeJson(
+        document([{ key: 'beginGradientFill', args: ['linear', [1], [1], [0], { a: 1 }, 'pad', 'rgb', 0] }]),
+      ),
+    ).toBeNull();
+  });
+
+  // A texture command still drops rather than failing the parse: an unresolved reference is a missing
+  // asset, not a malformed document, and that distinction predates this validation.
+  it('drops rather than rejects a texture command whose reference does not resolve', () => {
+    const shape = createShape();
+    appendShapeBeginTextureFill(shape, createFakeTexture(), null);
+    appendShapeEndFill(shape);
+    const restored = parseShapeJson(formatShapeJson(shape), { resolveTexture: () => null });
+    expect(restored).not.toBeNull();
+    expect(getShapeCommandCount(restored!)).toBe(1);
+  });
+
+  // The two tables are indexed by the same key set and are read together on every command, so a key
+  // in the appender table with no arg spec would make its command unparseable — isValidShapeCommandArgs
+  // treats a missing spec as invalid. Round-tripping a shape that exercises the whole non-texture
+  // vocabulary therefore *is* the consistency check: a forgotten spec turns this null.
+  it('parses every command the serializer can emit, proving each has an argument spec', () => {
+    const shape = createEveryNonBitmapCommandShape();
+    const expected = getShapeCommandCount(shape);
+    const restored = parseShapeJson(formatShapeJson(shape));
+    expect(restored).not.toBeNull();
+    expect(getShapeCommandCount(restored!)).toBe(expected);
   });
 });
