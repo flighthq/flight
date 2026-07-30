@@ -388,7 +388,7 @@ function readSwfRectangle(reader: SwfReader): SwfRectangle | null {
   const yMin = reader.readSignedBits(bits);
   const yMax = reader.readSignedBits(bits);
   reader.alignToByte();
-  if (!reader.valid || bits === 0 || xMax < xMin || yMax < yMin) return null;
+  if (!reader.valid || xMax < xMin || yMax < yMin) return null;
   return {
     height: (yMax - yMin) / TWIPS_PER_PIXEL,
     width: (xMax - xMin) / TWIPS_PER_PIXEL,

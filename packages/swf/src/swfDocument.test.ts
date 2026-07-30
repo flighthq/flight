@@ -50,6 +50,29 @@ describe('createScene2DFromSwf', () => {
     expect(matrix.ty).toBeCloseTo(-2);
   });
 
+  it('imports a named empty shape with zero-bit RECT bounds', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_SHAPE_3, joinBytes(uint16(1), new Uint8Array([0]))),
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(1), uint16(1), swfString('empty')),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    expect(document?.references).toHaveLength(1);
+    expect(document?.references[0].name).toBe('empty');
+    expect(getNodeLocalBoundsRectangle(document!.references[0].target)).toMatchObject({
+      height: 0,
+      width: 0,
+      x: 0,
+      y: 0,
+    });
+  });
+
   it('uses a PlaceObject3 class name as direct slot linkage', () => {
     const document = createScene2DFromSwf(
       createSwf([
@@ -881,6 +904,7 @@ const TAG_DEFINE_BITS_JPEG_4 = 90;
 const TAG_DEFINE_BITS_LOSSLESS = 20;
 const TAG_DEFINE_BITS_LOSSLESS_2 = 36;
 const TAG_DEFINE_SHAPE = 2;
+const TAG_DEFINE_SHAPE_3 = 32;
 const TAG_DEFINE_SPRITE = 39;
 const TAG_DEFINE_VIDEO_STREAM = 60;
 const TAG_FILE_ATTRIBUTES = 69;
