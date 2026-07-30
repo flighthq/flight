@@ -105,7 +105,9 @@ Design calls to settle before building the affected entries:
 
 ### tray (partial 38)
 
-- Fix `getTrayIconBounds` return type to use `RectangleLike`
+- Decide whether `TrayIcon` handles should compare by identity
+- Guard `startTrayIconAnimation` against a non-positive interval
+- Web-backend `isDestroyed` returns true for every id, including ids never created
 
 ### clipboard (partial 40)
 
