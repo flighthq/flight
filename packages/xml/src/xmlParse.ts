@@ -25,8 +25,8 @@ export function parseXmlAttributes(attrs: string): Record<string, string> {
  *  Returns the root element, or null when the input contains no recognizable element.
  *  Does not validate DTD, namespaces, or processing instructions. */
 export function parseXmlDocument(xml: string): XmlElement | null {
-  // Normalize: strip comments, process CDATA, normalize line endings
-  let src = stripCdata(stripXmlComments(xml)).replace(/\r\n?/g, '\n');
+  // Normalize: strip comments and normalize line endings.
+  let src = stripXmlComments(xml).replace(/\r\n?/g, '\n');
 
   // Strip XML declaration and DOCTYPE before parsing the root element.
   src = stripXmlDoctypes(src.replace(/<\?[\s\S]*?\?>/g, '')).trim();
@@ -117,6 +117,17 @@ function parseElement(src: string, state: ParseState): XmlElement | null {
         continue;
       }
 
+      if (src.slice(state.pos, state.pos + 9) === '<![CDATA[') {
+        const cdataStart = state.pos + 9;
+        const cdataEnd = src.indexOf(']]>', cdataStart);
+        const contentEnd = cdataEnd >= 0 ? cdataEnd : src.length;
+        const cdata = src.slice(cdataStart, contentEnd);
+        text += cdata.trim();
+        if (cdata !== '') content.push(cdata);
+        state.pos = cdataEnd >= 0 ? cdataEnd + 3 : src.length;
+        continue;
+      }
+
       // Check for closing tag
       if (src[state.pos + 1] === '/') {
         // Skip to '>'
@@ -140,13 +151,29 @@ function skipWhitespace(src: string, state: ParseState): void {
   while (state.pos < src.length && /\s/.test(src[state.pos])) state.pos++;
 }
 
-function stripCdata(xml: string): string {
-  // Replace CDATA with its raw content
-  return xml.replace(/<!\[CDATA\[[\s\S]*?]]>/g, (m) => m.slice(9, m.length - 3));
-}
-
 function stripXmlComments(xml: string): string {
-  return xml.replace(/<!--[\s\S]*?-->/g, '');
+  let copyStart = 0;
+  let output = '';
+  let pos = 0;
+
+  while (pos < xml.length) {
+    if (xml.slice(pos, pos + 9) === '<![CDATA[') {
+      const cdataEnd = xml.indexOf(']]>', pos + 9);
+      pos = cdataEnd >= 0 ? cdataEnd + 3 : xml.length;
+      continue;
+    }
+    if (xml.slice(pos, pos + 4) !== '<!--') {
+      pos++;
+      continue;
+    }
+
+    output += xml.slice(copyStart, pos);
+    const commentEnd = xml.indexOf('-->', pos + 4);
+    pos = commentEnd >= 0 ? commentEnd + 3 : xml.length;
+    copyStart = pos;
+  }
+
+  return output + xml.slice(copyStart);
 }
 
 function stripXmlDoctypes(xml: string): string {
