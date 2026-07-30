@@ -514,11 +514,18 @@ export function setRichTextSelectable(source: RichText, value: boolean): void {
   invalidateNodeLocalContent(source);
 }
 
+// Assigning the same string is a no-op, exactly as it is for every other setter in this package.
+// It used to invalidate anyway — the equality test existed, but only to gate the change signal, so a
+// field re-assigned its current text still re-laid-out and re-rasterized. That is the common case,
+// not a rare one: `setRichTextString(field, score.toString())` in a frame loop rewrites the same
+// string most frames, and each one paid for a full text layout that changed nothing. The sibling
+// setTextLabelString already guarded this; RichText was the odd one out.
 export function setRichTextString(source: RichText, value: string): void {
   const previousText = source.data.text;
+  if (previousText === value) return;
   source.data.text = value;
   invalidateRichTextContent(source);
-  if (previousText !== value) emitTextFieldChange(source, previousText);
+  emitTextFieldChange(source, previousText);
 }
 
 export function setRichTextTextColor(source: RichText, value: number): void {

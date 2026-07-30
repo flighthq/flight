@@ -156,10 +156,10 @@ export function setTextLabelWidth(source: TextLabel, value: number): void {
   invalidateNodeLocalBounds(source);
 }
 
-// Content invalidation shared by the text/format setters and `invalidateTextLabel`: bumps the content
-// revision, and — only when `autoSize` measures the box from the text (`autoSize !== 'none'`) — the
-// local bounds too, since the extent then depends on the content. Under `autoSize 'none'` the box is the
-// fixed user width/height, so bounds are untouched. Mirrors `@flighthq/text`'s `invalidateRichTextContent`.
+// Content invalidation shared by the text and format setters: bumps the content revision, and — only
+// when `autoSize` measures the box from the text (`autoSize !== 'none'`) — the local bounds too, since
+// the extent then depends on the content. Under `autoSize 'none'` the box is the fixed user
+// width/height, so bounds are untouched. Mirrors invalidateRichTextContent in this package's richText.
 function invalidateTextLabelContent(source: TextLabel): void {
   invalidateNodeLocalContent(source);
   if (source.data.autoSize !== 'none') invalidateNodeLocalBounds(source);
