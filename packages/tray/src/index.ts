@@ -8,6 +8,7 @@ export {
   getTrayIconTooltip,
   getTrayIcons,
   isTrayDestroyed,
+  isTrayIconAnimating,
   onTrayEvent,
   popupTrayContextMenu,
   removeTrayBalloon,
@@ -19,4 +20,5 @@ export {
   setTrayIgnoreDoubleClickEvents,
   setTrayPressedIcon,
   startTrayIconAnimation,
+  stopTrayIconAnimation,
 } from './contract';

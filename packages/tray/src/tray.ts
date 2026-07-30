@@ -10,8 +10,10 @@ import type {
 } from '@flighthq/types/contract';
 import type { Vector2Like } from '@flighthq/types/contract';
 
-// Web tray capability constants. Web has no system tray — all capabilities are false.
-const WEB_CAPABILITIES: TrayCapabilities = {
+// Web tray capability constants. Web has no system tray — all capabilities are false. Readonly and
+// shared: getCapabilities hands this same object to every caller, so a mutable one would let any of
+// them rewrite what the backend reports to all the others.
+const WEB_CAPABILITIES: Readonly<TrayCapabilities> = {
   balloon: false,
   bounds: false,
   clickEvents: false,
@@ -100,7 +102,12 @@ export function createWebTrayBackend(): TrayBackend {
 }
 
 // Destroys a tray icon and frees its host resource. No-op when the host has no tray.
+// Any icon animation running on this tray is stopped first: the interval writes through setTrayIcon,
+// and left running it would keep calling into a resource the host has freed — forever, since the
+// timer holds its own closure alive. Destroying the thing being animated is the clearest possible
+// signal that the animation is over, so the caller does not have to have kept the stop function.
 export function destroyTrayIcon(tray: TrayIcon): void {
+  stopTrayIconAnimation(tray);
   getTrayBackend().destroy(tray.id);
 }
 
@@ -150,6 +157,12 @@ export function getTrayIconTooltip(tray: TrayIcon): string {
 // Use this to guard calls after destroyTrayIcon when the tray lifecycle is unclear.
 export function isTrayDestroyed(tray: TrayIcon): boolean {
   return getTrayBackend().isDestroyed(tray.id);
+}
+
+// True while an icon animation started by startTrayIconAnimation is running on this tray. False once
+// it is stopped, replaced by a later start, or the tray is destroyed.
+export function isTrayIconAnimating(tray: TrayIcon): boolean {
+  return _animations.has(tray.id);
 }
 
 // Subscribes to tray icon events, delivering a rich TrayEventData payload (id, type, bounds,
@@ -217,20 +230,51 @@ export function setTrayPressedIcon(tray: TrayIcon, icon: string): void {
   getTrayBackend().setPressedIcon(tray.id, icon);
 }
 
-// Starts an animated icon sequence by cycling through the given frames at the specified interval.
-// The caller owns the timer — this function is a thin helper over setTrayIcon that starts an
-// interval and returns a stop function. Call the returned function (or stopTrayIconAnimation) to
-// cancel. The tray icon is not destroyed when the animation stops.
+// Starts an animated icon sequence by cycling through the given frames at the specified interval,
+// returning a stop function. An empty frame list is a no-op. The tray icon is not destroyed when the
+// animation stops, and the last frame shown stays.
+//
+// A tray icon has one image, so it has one animation: starting a second on the same tray replaces the
+// first rather than running both. Without that, a perfectly ordinary sequence — swap a "syncing"
+// animation for an "error" one — left two intervals writing to the same icon on the same tick, and
+// the only handle to the orphaned one was a stop function the caller had no reason to still be
+// holding. The returned function stops only the animation it started, so calling a stale one cannot
+// cancel a newer animation.
+//
 // Note: interval timing is best-effort; the actual frame rate depends on the host event loop.
 export function startTrayIconAnimation(tray: TrayIcon, frames: readonly string[], intervalMs: number): () => void {
-  if (frames.length === 0) return () => {};
+  if (frames.length === 0) return _noopStop;
+  stopTrayIconAnimation(tray);
   let index = 0;
   setTrayIcon(tray, frames[index]!);
   const handle = setInterval(() => {
     index = (index + 1) % frames.length;
     setTrayIcon(tray, frames[index]!);
   }, intervalMs);
-  return () => clearInterval(handle);
+  _animations.set(tray.id, handle);
+  return () => {
+    // Only clear if this animation is still the current one; a later start already replaced it.
+    if (_animations.get(tray.id) !== handle) return;
+    clearInterval(handle);
+    _animations.delete(tray.id);
+  };
+}
+
+// Stops the icon animation running on this tray, if any. Idempotent, and safe on a tray that never
+// animated. The named counterpart to startTrayIconAnimation for callers that hold the TrayIcon but
+// not the stop function it returned — which is most of them, since the handle is what gets passed
+// around and the closure is what gets dropped.
+export function stopTrayIconAnimation(tray: TrayIcon): void {
+  const handle = _animations.get(tray.id);
+  if (handle === undefined) return;
+  clearInterval(handle);
+  _animations.delete(tray.id);
 }
 
 let _backend: TrayBackend | null = null;
+
+// The interval per animating tray id. Module-scoped like the backend, and correct at that scope: an
+// id is the host's, so one id is one icon is one animation.
+const _animations = new Map<number, ReturnType<typeof setInterval>>();
+
+function _noopStop(): void {}
