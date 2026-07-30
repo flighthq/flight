@@ -74,6 +74,107 @@ describe('createScene2DFromSwf', () => {
     expect(reference?.kind === 'Slot' ? reference.linkage : null).toBe('Game.ExternalAvatar');
   });
 
+  it('updates an existing PlaceObject2 when the move flag is set', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_SYMBOL_CLASS, joinBytes(uint16(1), uint16(7), swfString('Game.Avatar'))),
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(
+            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_MATRIX | PLACE_HAS_CHARACTER]),
+            uint16(3),
+            uint16(7),
+            createMatrix(1, 0, 0, 1, 0, 0),
+            swfString('avatarSlot'),
+          ),
+        ),
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(new Uint8Array([PLACE_MOVE | PLACE_HAS_MATRIX]), uint16(3), createMatrix(2, 0, 0, 3, 40, -60)),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const reference = document?.references[0];
+    expect(reference?.name).toBe('avatarSlot');
+    expect(reference?.kind === 'Slot' ? reference.linkage : null).toBe('Game.Avatar');
+    expect(getNodeLocalMatrix(reference!.target)).toMatchObject({ a: 2, d: 3, tx: 2, ty: -3 });
+  });
+
+  it('does not inherit stale fields for a fresh placement at an occupied depth', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(
+            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
+            uint16(3),
+            uint16(7),
+            swfString('staleSlot'),
+          ),
+        ),
+        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(3), uint16(8))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    expect(document?.references).toEqual([]);
+  });
+
+  it('ignores a PlaceObject3 move with no display-list target', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(
+          TAG_PLACE_OBJECT_3,
+          joinBytes(
+            new Uint8Array([PLACE_MOVE | PLACE_HAS_NAME, PLACE_HAS_CLASS_NAME]),
+            uint16(1),
+            swfString('Game.Ghost'),
+            swfString('ghostSlot'),
+          ),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    expect(document?.references).toEqual([]);
+  });
+
+  it('keeps the first-frame snapshot isolated from later mutations', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(
+            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
+            uint16(1),
+            uint16(7),
+            swfString('firstFrameSlot'),
+          ),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_REMOVE_OBJECT_2, uint16(1)),
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(
+            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
+            uint16(2),
+            uint16(8),
+            swfString('secondFrameSlot'),
+          ),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    expect(document?.references.map((reference) => reference.name)).toEqual(['firstFrameSlot']);
+  });
+
   it('uses a PlaceObject4 class name as direct slot linkage while ignoring later metadata', () => {
     const document = createScene2DFromSwf(
       createSwf([
@@ -460,6 +561,7 @@ const PLACE_HAS_CHARACTER = 0x02;
 const PLACE_HAS_CLASS_NAME = 0x08;
 const PLACE_HAS_MATRIX = 0x04;
 const PLACE_HAS_NAME = 0x20;
+const PLACE_MOVE = 0x01;
 const SWF_PREFIX_LENGTH = 8;
 const TAG_END = 0;
 const TAG_DEFINE_SHAPE = 2;
