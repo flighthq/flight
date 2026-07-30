@@ -99,10 +99,9 @@ Design calls to settle before building the affected entries:
 
 ### loader (partial 38)
 
-- Rebuild missing types in `@flighthq/types`
-- Extend the `ResourceLoader` interface with missing signals/payloads
-- Remove the false "tracking shim" comment
-- Package Map description update
+- Finish byte progress — the shape is the open part
+- Reconcile `onProgress` with `getResourceLoadProgress`
+- Bound `drainQueue` re-entrancy
 
 ### tray (partial 38)
 
