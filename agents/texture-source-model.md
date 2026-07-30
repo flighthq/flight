@@ -1,8 +1,10 @@
 # Texture Source Model
 
-_Design spec. Settled with the user 2026-07-29 (review). Not yet implemented — no code in this
-repository follows the target model. Read this before touching `Texture`, `TextureStorage`,
-`ImageBacking`, or any `create*Texture` / `create*Image*` constructor._
+_Design spec. Settled with the user 2026-07-29 (review); revised and **locked** with the user
+2026-07-30 (chief): the storage layer is deleted (Texture flattened), `VoxelGrid` replaces
+`TextureVolume`, and the Texture↔TextureAtlas relationship is settled. M2 (`CubeTexture` /
+`RenderTexture`) has landed; nothing else is implemented. Read this before touching `Texture`,
+`TextureStorage`, `ImageBacking`, or any `create*Texture` / `create*Image*` constructor._
 
 ## Why this exists
 
@@ -43,11 +45,11 @@ TextureBackingKind = string                     // open registry
 
 Members of the `ImageBacking` family today:
 
-| Type | Payload | Pins its kind? |
-| --- | --- | --- |
-| `Bitmap` | `data: Uint8ClampedArray`, `format: PixelFormat`, `alphaType`, `colorSpace` | yes — `'bitmap'` |
-| `CompressedImage` | `compressed: CompressedImageData` (`{container, payload}`) | yes — `'compressedImage'` |
-| `ImageResource` | `source: HostImageSource` (`= CanvasImageSource`) | **no** — open `TextureBackingKind` |
+| Type              | Payload                                                                     | Pins its kind?                     |
+| ----------------- | --------------------------------------------------------------------------- | ---------------------------------- |
+| `Bitmap`          | `data: Uint8ClampedArray`, `format: PixelFormat`, `alphaType`, `colorSpace` | yes — `'bitmap'`                   |
+| `CompressedImage` | `compressed: CompressedImageData` (`{container, payload}`)                  | yes — `'compressedImage'`          |
+| `ImageResource`   | `source: HostImageSource` (`= CanvasImageSource`)                           | **no** — open `TextureBackingKind` |
 
 ## Defects
 
@@ -78,8 +80,8 @@ Consequences, in order of severity:
 
 - **A canvas is indistinguishable from a read-only `<img>`.** `createImageResourceFromCanvas`,
   `createImageResourceFromImageBitmap`, and `createImageResourceFromImageElement` all set
-  `kind: ImageTextureBackingKind` (`'image'`). The property that separates a canvas — you can *draw
-  into it* — has no representation anywhere in the model.
+  `kind: ImageTextureBackingKind` (`'image'`). The property that separates a canvas — you can _draw
+  into it_ — has no representation anywhere in the model.
 - **`'external'` is not an image at all.** It is produced only by `render-gl/src/glExternalTexture.ts`
   and `render-wgpu/src/wgpuExternalTexture.ts`, each registering a texture resolver for a GPU object
   Flight neither uploaded nor owns. Nothing in `packages/image` produces it.
@@ -103,12 +105,12 @@ three of them `never`, to force discrimination that a single unified field would
 
 ### D4 — Constructors assert types that do not exist
 
-| Constructor | Returns | Is the modifier a type? |
-| --- | --- | --- |
-| `createVideoTexture(source: VideoResource)` | `Texture` | no — no `VideoTexture` type |
-| `createRenderTexture(options)` | `Texture` | no — no `RenderTexture` type |
-| `createCubeTexture(opts?)` | `Texture & { storage: Extract<TextureStorage, {dimension:'cube'}> }` | no — no `CubeTexture` type |
-| `createCompressedImage(data)` | `CompressedImage` | **yes** — correct |
+| Constructor                                 | Returns                                                              | Is the modifier a type?      |
+| ------------------------------------------- | -------------------------------------------------------------------- | ---------------------------- |
+| `createVideoTexture(source: VideoResource)` | `Texture`                                                            | no — no `VideoTexture` type  |
+| `createRenderTexture(options)`              | `Texture`                                                            | no — no `RenderTexture` type |
+| `createCubeTexture(opts?)`                  | `Texture & { storage: Extract<TextureStorage, {dimension:'cube'}> }` | no — no `CubeTexture` type   |
+| `createCompressedImage(data)`               | `CompressedImage`                                                    | **yes** — correct            |
 
 A reader of `createVideoTexture` looks for `VideoTexture`, finds nothing, and must read the
 implementation to learn it returns a plain `Texture` whose backing has `kind: 'video'`. Meanwhile
@@ -127,7 +129,7 @@ payload})` inline. Every other source has a one-call path to a `Texture`.
 `createBitmapFromImageSource` (`packages/bitmap/src/bitmapFrom.ts:59`) does a canvas round-trip —
 `createElement` → `drawImage` → `getImageData`. On a cross-origin source the canvas is tainted and
 `getImageData` throws `SecurityError`. Per the diagnostics conventions a cross-origin image is an
-*expected* failure, not a programmer error, so it should return `null` with a shakeable `explain*`
+_expected_ failure, not a programmer error, so it should return `null` with a shakeable `explain*`
 rather than let a DOM exception escape.
 
 This is independent of the taxonomy and can land on its own.
@@ -135,18 +137,17 @@ This is independent of the taxonomy and can land on its own.
 ## Target model
 
 ```
-Texture                          a sampling view — no kind (== glTF "texture")
+Texture                          a sampling view — no kind; a CLOSED union on dimension (== glTF "texture")
 ├── sampler:     Sampler
 ├── colorSpace:  TextureColorSpace
 ├── uvOffset · uvScale · uvRotation · flipX · flipY
-├── storage:     TextureStorage
+├── dimension:   readonly '2d' | '2d-array' | 'cube' | '3d'     set at creation, never mutates
+├── source / sources                 exactly ONE content field per variant:
+│     '2d'        source:  TextureSource | null
+│     '2d-array'  sources: readonly TextureSource[]
+│     'cube'      sources: TextureSourceCubeFaces               6-tuple, arity type-enforced
+│     '3d'        source:  VoxelGrid | null
 └── version
-
-TextureStorage                   discriminated on dimension; exactly ONE content field per variant
-├── { dimension: '2d';       source:  TextureSource }
-├── { dimension: '2d-array'; sources: readonly TextureSource[] }
-├── { dimension: 'cube';     sources: TextureSourceCubeFaces }   6-tuple, arity type-enforced
-└── { dimension: '3d';       source:  TextureSource }            a volume source
 
 TextureSource                    one open kind namespace, every member pinning its own literal
 ├── Bitmap           'bitmap'           your bytes, flat RGBA8 — read + write
@@ -155,27 +156,34 @@ TextureSource                    one open kind namespace, every member pinning i
 ├── CompressedImage  'compressedImage'  your bytes, GPU block format + mip/layer/face structure
 ├── RenderTarget     'renderTarget'     GPU-owned, Flight renders into it
 ├── ExternalTexture  'external'         foreign GPU texture — bound, never uploaded, not owned
-└── TextureVolume    'volume'           3D voxel source (already a type; joins the union)
+└── VoxelGrid        'voxelGrid'        your bytes, 3D — a width×height×depth voxel lattice
 
-Narrowings — names for structure that already exists, not new data
-├── CubeTexture   = Texture & { storage: { dimension: 'cube' } }
-└── RenderTexture = Texture & { storage: { source: RenderTarget } }
+Narrowings — names for Texture shapes that already exist, not new data
+├── Texture2D     = Texture & { dimension: '2d' }
+├── CubeTexture   = Texture & { dimension: 'cube' }
+└── RenderTexture = Texture & { source: RenderTarget }
 ```
 
-### Why these six-plus-one are the members
+There is **no middle layer** between `Texture` and its sources — `TextureStorage` is deleted, not
+renamed (see below). `RenderTexture` is a narrowing of `Texture`, **not** a source: you render
+_into_ a `RenderTarget`; the `Texture` that samples it _is_ a `RenderTexture`. One object on the
+allocation seam, one wrapping view on the sampling seam — the type names the owning role, the
+`source` field names the consuming role.
+
+### Why these seven are the members
 
 Two questions place any candidate, and each member differs from the others in its **data**, not
 merely its behaviour:
 
-|  | read/write pixels | draw into | payload |
-| --- | --- | --- | --- |
-| `Bitmap` | yes | no | flat `Uint8ClampedArray` + `PixelFormat` |
-| `Surface` | via readback | **yes** | host-managed drawing object |
-| `Image` | no | no | opaque `HostImageSource` |
-| `CompressedImage` | no | no | `TextureContainer` + payload |
-| `RenderTarget` | via readback | yes (GPU) | `RenderTargetDescriptor` |
-| `ExternalTexture` | no | no | foreign GPU handle |
-| `TextureVolume` | — | — | voxel extent |
+|                   | read/write pixels | draw into | payload                                                             |
+| ----------------- | ----------------- | --------- | ------------------------------------------------------------------- |
+| `Bitmap`          | yes               | no        | flat `Uint8ClampedArray` + `PixelFormat`                            |
+| `Surface`         | via readback      | **yes**   | host-managed drawing object                                         |
+| `Image`           | no                | no        | opaque `HostImageSource`                                            |
+| `CompressedImage` | no                | no        | `TextureContainer` + payload                                        |
+| `RenderTarget`    | via readback      | yes (GPU) | `RenderTargetDescriptor`                                            |
+| `ExternalTexture` | no                | no        | foreign GPU handle                                                  |
+| `VoxelGrid`       | yes               | no        | flat `Uint8Array` over a width×height×depth lattice + `PixelFormat` |
 
 ### `Surface` — one entity, a platform-swappable handle
 
@@ -234,7 +242,7 @@ A video element is a `CanvasImageSource`, therefore an ordinary `Image`.
 
 ### `Bitmap` and `Image` both exist because the platform forces it
 
-Flash's model — a loaded resource *is* a `BitmapData` with pixel ops — is not available on the web. A
+Flash's model — a loaded resource _is_ a `BitmapData` with pixel ops — is not available on the web. A
 loaded `<img>` holds pixels in driver memory JS cannot address; obtaining bytes requires the canvas
 round-trip in D6, which is a full copy and **can fail outright** on cross-origin content. Fusing the
 two would mean either paying that copy for every image loaded, or pretending pixel access exists and
@@ -257,6 +265,84 @@ its **data is differently shaped**: `TextureContainer` carries `format`, `mipLev
 level. `PixelFormat`'s own doc scopes itself deliberately: _"block-compressed payloads use the
 sibling `CompressedImage` backing."_
 
+## Why there is no middle layer
+
+An earlier revision of this spec kept a `TextureStorage` record between `Texture` and its sources,
+and 2026-07-30 weighed `TextureContent` / `TextureData` as renames for it. It was **deleted**
+instead, on a keep-test it failed three ways:
+
+- **It was never a sharing seam.** `cloneTexture` copies the storage record per texture; only the
+  source reference inside is shared. The share point — what region textures, resolver caches, and
+  uploads key on — is the source, and always was. No two textures ever held one storage object.
+- **It had no independent consumer.** Resolver caches key off the source; materials, sprites, and
+  the atlas all take `Texture`. The record existed only to be reached through.
+- **Its content was two fields** — `dimension` plus source ref(s). A hop, not a concept.
+
+Flattening also _improves_ shape stability: previously 1 Texture shape + 2 storage shapes on the
+read path; now 2 Texture shapes (the `source`/`sources` field-name fork — `dimension`'s value does
+not fork hidden classes), fewer objects total, and `readonly dimension` prevents shape-shifting
+after creation.
+
+The scene graph's `data.*` quarantine (`texture.data.source`) was considered and rejected: that
+pattern earns its hop from forces Texture does not have — an **open** kind registry (user-defined
+kinds must not change `Node2D`'s shape) and uniform traversal machinery walking mixed kinds in hot
+loops touching only shell fields. Texture's variance is a **closed** four-way `dimension` with a
+single-field difference and no traversal machinery. The general rule: open kind families quarantine
+variant payload behind `data`; closed unions discriminate inline, as every other closed union in the
+SDK does.
+
+One consequence worth exploiting: `SpriteData.texture: Texture` today silently accepts a
+cube-storage texture. With the flat union and its narrowings, 2D-consuming APIs can declare
+`Texture2D` and the mismatch becomes a compile error instead of a runtime surprise.
+
+Sources are the **floor** of the model: no member is or contains a `Texture`. "Sample what that
+texture shows" is expressed as a second view over the same source — views never nest, which is the
+type-level form of the composition rule below.
+
+## Texture and TextureAtlas — view and catalog
+
+```
+Spritesheet     frames + timing        (over one atlas)
+TextureAtlas    named texel regions    (over one page Texture)
+Texture         sampling state         (over one source)
+TextureSource   the texels
+```
+
+`TextureAtlas` holds a page `Texture`, and this is load-bearing, not convenience: the batch
+renderers (tilemap, quadbatch, bitmaptext) bind the page through `atlas.texture` — sampler,
+colorSpace, GPU resolve — while reading `atlas.regions` per element. Every "sibling" design (atlas
+and Texture side by side over a shared source) collapses back into this one: binding needs a
+sampler, correct sampling needs a colorSpace, a render-target page on GL needs flipY, minting needs
+template state — each need restates one more view field on the atlas until it _is_ a Texture. The
+fixed point is holding one.
+
+**Regions are texel rects relative to the page texture's window, and minting composes in pixel
+space.** `getTextureAtlasRegionTexture` compiles the page window down to a texel frame (multiply by
+source dimensions), composes rects there — closed and exact, including flips and the `rotated`
+quarter-turn — and compiles the result back up into the minted view's window. The one configuration
+pixel space cannot express is nonzero `uvRotation` on the page: refused with `null` + `explain*`
+and an `enable*Guards` warning. uv windows are never composed in uv space — SRT ∘ SRT with nonzero
+rotation and non-uniform scale produces shear the representation cannot hold. **Composition happens
+in the catalog, never in the view.**
+
+Minting is declared template behavior with nothing inherited silently: `sampler` and `colorSpace`
+copy from the page; the window is computed; page flips fold into the computed frame. (The pre-lock
+bake was an accidental hybrid — it overwrote `uvOffset`/`uvScale` while silently inheriting flips
+and rotation through `cloneTexture` — and is superseded by this rule.)
+
+Beyond correctness this buys a capability: an atlas over a windowed page inside a mega-texture
+(packed atlas pages, the direction `binpack`/`glyphatlas` already point) is legal and meaningful.
+The identity-window common case costs nothing — relative and absolute coordinates coincide.
+
+Two deliberate limitations, recorded so they are not "fixed":
+
+- **One uv tier.** The window serves both windowing (atlas frames) and tiling/scroll (materials); a
+  minted region texture cannot also tile. glTF and Three share the limitation; the escape is mesh
+  uvs or a texel copy. Do not add a second transform tier.
+- **Flat uv fields on every Texture.** Textures that never window still carry them; making them
+  optional would fork the hidden class to save bytes on objects numbering in the hundreds. Stable
+  shape over memory, chosen deliberately.
+
 ## Naming rules established
 
 These generalise beyond this spec and should be extracted to `agents/conventions/function-naming.md`
@@ -278,35 +364,44 @@ when the first item lands.
 5. **Name the seam, not the platform.** `HostImage`/`HostImageSource` stay true across ports;
    `ImageElement` would bake a DOM concept into a type a C++ or Haxe port must reimplement with no
    elements in sight.
+6. **Kind and type are the same word in two cases.** `'voxelGrid'`/`VoxelGrid`,
+   `'renderTarget'`/`RenderTarget`. Splitting them (kind `'volume'`, type `VoxelGrid`) breaks the
+   grep-pairing every other member keeps.
+7. **Open kind families quarantine variant payload behind `data`; closed unions discriminate
+   inline.** The scene graph's `data.*` earns its hop from an open registry plus uniform traversal
+   machinery; Texture's closed four-way `dimension` has neither, so its variants live flat.
 
 ## Migration
 
 Staged so the model can be approved without committing to a big-bang rewrite. Each stage is
 independently gateable and leaves the tree green.
 
-| Stage | Change | Notes |
-| --- | --- | --- |
-| M1 | `createBitmapFromImageSource` → `null` + `explain*` on tainted source | D6; independent of everything else |
-| M2 | Name `CubeTexture` and `RenderTexture` as types | D4/#2; `createCubeTexture` and `createRenderTexture` become correct untouched. `RenderTexture` also tightens the `renderInto`/`bind`/`destroy` API, moving a class of runtime sentinel checks to compile time |
-| M3 | `ImageBacking` → `TextureSource`; `TextureBackingKind` → `TextureSourceKind`; `TextureTargetBacking` → `RenderTarget` | D1; mechanical rename. Largest site count — `ImageTextureBackingKind` alone has ~32 uses, plus two `imageBacking*TextureCache` fields in `GlRenderState` |
-| M4 | Collapse `image`/`images`/`volume`/`target?` into one `source`/`sources` per variant | D3; deletes the `?: never` scaffolding |
-| M5 | Split `ImageResource` → `Image` + `ExternalTexture`; pin every member's kind with `typeof` | D2; `'external'` moves to a renderer-produced source with its own type |
-| M6 | Introduce `Surface` + `HostSurface` alias + `destroySurface`; reclassify `createImageResourceFromCanvas` → `createSurfaceFromCanvas` | D2; the only genuinely new construct. Scope is deliberately small — one entity, one alias, one no-op teardown |
-| M7 | `createVideoTexture` → `createTextureFromVideoResource`; add `createTextureFromCompressedImage` | D4/D5 |
-| M8 | Add the readability capability query | pairs with M1 |
-| M9 | Correct `AGENTS.md`, which currently describes `VideoTexture`, `CubeTexture`, and `RenderTexture` as existing types | doc drift caused by D4 |
+| Stage | Change                                                                                                                                                                                 | Notes                                                                                                                                                                                                                                 |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M1    | `createBitmapFromImageSource` → `null` + `explain*` on tainted source                                                                                                                  | D6; independent of everything else                                                                                                                                                                                                    |
+| M2    | Name `CubeTexture` and `RenderTexture` as types                                                                                                                                        | **Landed** (a40e730f1). D4/#2; `createCubeTexture` and `createRenderTexture` become correct untouched. `RenderTexture` also tightens the `renderInto`/`bind`/`destroy` API, moving a class of runtime sentinel checks to compile time |
+| M3    | `ImageBacking` → `TextureSource`; `TextureBackingKind` → `TextureSourceKind`; `TextureTargetBacking` → `RenderTarget`; `TextureVolume` → `VoxelGrid` (kind `'volume'` → `'voxelGrid'`) | D1; mechanical rename. Largest site count — `ImageTextureBackingKind` alone has ~32 uses, plus two `imageBacking*TextureCache` fields in `GlRenderState`                                                                              |
+| M4    | **Flatten**: delete `TextureStorage`; `Texture` absorbs `readonly dimension` + `source`/`sources` (one content field per variant, hoisted)                                             | D3; deletes the `?: never` scaffolding, adds `Texture2D`, re-expresses `CubeTexture`/`RenderTexture` against the flat shape; 2D-consuming APIs (`SpriteData.texture`, …) may tighten to `Texture2D`                                   |
+| M5    | Split `ImageResource` → `Image` + `ExternalTexture`; pin every member's kind with `typeof`                                                                                             | D2; `'external'` moves to a renderer-produced source with its own type                                                                                                                                                                |
+| M6    | Introduce `Surface` + `HostSurface` alias + `destroySurface`; reclassify `createImageResourceFromCanvas` → `createSurfaceFromCanvas`                                                   | D2; the only genuinely new construct. Scope is deliberately small — one entity, one alias, one no-op teardown                                                                                                                         |
+| M7    | `createVideoTexture` → `createTextureFromVideoResource`; add `createTextureFromCompressedImage`                                                                                        | D4/D5                                                                                                                                                                                                                                 |
+| M8    | Add the readability capability query                                                                                                                                                   | pairs with M1                                                                                                                                                                                                                         |
+| M9    | Correct `AGENTS.md`, which currently describes `VideoTexture`, `CubeTexture`, and `RenderTexture` as existing types                                                                    | doc drift caused by D4                                                                                                                                                                                                                |
 
-M1 and M2 are safe to take first and buy real value alone. M3–M5 are the re-shape and should land as
-one reviewed sequence. M6 is a design commitment (see below).
+M2 landed 2026-07-30 (a40e730f1). M1 remains independent and safe alone. M3–M5 are the re-shape and
+should land as one reviewed sequence — M4 now includes the flatten, so `TextureStorage` is deleted
+rather than renamed, and the atlas compose-semantics change (view-and-catalog section above) rides
+with M4 since the mint math is where the window/region seam lives. M6 is a design commitment (see
+below).
 
 ## Open questions
 
 1. **Does `ExternalTexture` want a `Texture` narrowing** the way `RenderTarget` gets `RenderTexture`?
    Nothing currently needs one, and rule #2 above says wait until a signature demands it.
-3. **Should `Sampler` become `TextureSampler`?** Left as `Sampler` here: it is an independent object
+2. **Should `Sampler` become `TextureSampler`?** Left as `Sampler` here: it is an independent object
    in every GPU API (`GPUSampler`, `VkSampler`), and the prefix would imply it cannot exist apart
    from a texture. Recorded because it was raised and deliberately declined.
-4. **Readback as a capability query** — shape not settled. Needed regardless of taxonomy because
+3. **Readback as a capability query** — shape not settled. Needed regardless of taxonomy because
    `Surface` readability is a runtime property (CORS tainting), not a static one.
 
 ## Decisions log
@@ -327,9 +422,9 @@ one reviewed sequence. M6 is a design commitment (see below).
 - **[2026-07-29] `Surface` is in scope now, as a named type with a platform-swappable `HostSurface`
   alias.** Web aliases `HTMLCanvasElement | OffscreenCanvas` and expands as host backends land, exactly
   as `HostImageSource` already does. Considered and rejected: a Flight-level `CanvasSurface |
-  SkiaSurface | CairoSurface` union, which would have exactly one inhabitant per build target; the open
+SkiaSurface | CairoSurface` union, which would have exactly one inhabitant per build target; the open
   kind registry is the escape hatch if a build ever needs two at once. The alias names the drawable
-  *target*, not the 2D *context* — matching `SkSurface`/`SkCanvas` and `cairo_surface_t`/`cairo_t`.
+  _target_, not the 2D _context_ — matching `SkSurface`/`SkCanvas` and `cairo_surface_t`/`cairo_t`.
   User + review.
 - **[2026-07-29] Surface ownership: Flight never assumes it must free, and never prohibits the caller
   from freeing.** `destroySurface` exists and is caller-invoked only — Flight itself never calls it
@@ -344,3 +439,37 @@ one reviewed sequence. M6 is a design commitment (see below).
 - **[2026-07-29] `HostImage`/`Image` over `ImageElement`.** Too narrow (kind `'image'` covers canvas,
   `ImageBitmap`, and `<img>`) and DOM-bound against `HostImageSource`'s stated port contract. Review,
   on user question.
+- **[2026-07-30] The storage layer is deleted, not renamed.** `Texture` absorbs `dimension` +
+  `source`/`sources` inline. The keep-test it failed: not a sharing seam (`cloneTexture` copies the
+  record; the source is the share point), no independent consumer, two fields. Resolves the
+  `TextureStorage` → `TextureContent`/`TextureData` naming question by deletion. Full flatten was
+  never among the 2026-07-29 rejected options (those were the uniform `sources` array and the
+  two-level source/target split, both still rejected). User + chief.
+- **[2026-07-30] No `data.*` quarantine on Texture.** `texture.data.source` considered against the
+  scene-graph pattern and rejected: `data.*` is earned by open kind families with uniform traversal
+  machinery; Texture's `dimension` is a closed, `readonly`, GPU-enumerated four-way. Closed unions
+  discriminate inline. User question.
+- **[2026-07-30] The content field is `source`; members keep role names.** The `texture.data:
+RenderTextureData` scheme was rejected: `.data` already means literal bytes on sources
+  (`Bitmap.data`), `*Data` already means authored/parsed blocks (`SpriteData`, `SpritesheetData`,
+  `CompressedImageData`), DOM owns `ImageData`, and consumer-derived member names invert the
+  first-class-entity rule — a `Bitmap` does not exist for the texture that views it.
+  `texture.source: RenderTarget` is one object on two seams: the type names the owning role, the
+  field names the consuming role (Unity/Three split the vocabulary identically). User + chief.
+- **[2026-07-30] Sources are the floor.** No `TextureSource` member is or contains a `Texture`;
+  `RenderTexture` is a Texture narrowing, never a source. A second view over rendered content points
+  at the same `RenderTarget`. Views never nest. User question.
+- **[2026-07-30] `TextureVolume` → `VoxelGrid`, kind `'voxelGrid'`.** `Volume*` rejected (audio
+  volume, geometry's bounding volumes, and "a volume with textures on it" reading); `Voxelmap`
+  considered for the `Bitmap`/`Tilemap` -map family but `VoxelGrid` preferred: the established
+  volumetric term (OpenVDB grids, voxel-grid filters) and the SDK's own grid = uniform-lattice usage
+  (`textureAtlasGrid`, spatial's grid). Kind and type stay grep-paired. User.
+- **[2026-07-30] `TextureAtlas` holds a page `Texture` — not a sibling over a shared source.**
+  Batch renderers (tilemap, quadbatch, bitmaptext) bind the page through `atlas.texture`; every
+  sibling design collapses back by restating view fields one at a time until it is a Texture again.
+  User + chief.
+- **[2026-07-30] Region minting composes in pixel space; nonzero page `uvRotation` is refused.**
+  Regions are texel rects relative to the page window; mint compiles the window to a texel frame,
+  composes rects (closed, exact, flips + `rotated` included), and compiles back up. `null` +
+  `explain*` + guard warning on a rotated page. Supersedes the accidental overwrite/inherit hybrid.
+  uv windows never compose in uv space (SRT ∘ SRT shears). Chief, on user question.
