@@ -1,4 +1,4 @@
-import type { MenuBackend } from '@flighthq/types/contract';
+import type { MenuBackend, MenuItemTemplate } from '@flighthq/types/contract';
 
 import {
   cloneMenuTemplate,
@@ -261,6 +261,157 @@ describe('showContextMenu', () => {
     setMenuBackend(fakeBackend({ popupContextMenu: () => Promise.resolve('copy') }));
     await expect(showContextMenu([], 0, 0)).resolves.toBe('copy');
   });
+
+  // The rest of this block exercises the real web renderer through the default backend, in jsdom.
+  describe('web renderer', () => {
+    const menuItems: MenuItemTemplate[] = [
+      { id: 'open', label: 'Open' },
+      { id: 'disabled', label: 'Disabled', enabled: false },
+      { type: 'separator' },
+      { id: 'recent', label: 'Recent', submenu: [{ id: 'file1', label: 'File 1' }], type: 'submenu' },
+      { id: 'quit', label: 'Quit' },
+    ];
+
+    beforeEach(() => {
+      setMenuBackend(null);
+      document.body.innerHTML = '';
+    });
+
+    function press(key: string): void {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key }));
+    }
+
+    function renderedMenu(): HTMLUListElement {
+      return document.body.querySelector('ul') as HTMLUListElement;
+    }
+
+    it('resolves with the clicked item id', async () => {
+      const promise = showContextMenu(menuItems, 10, 10);
+      renderedMenu().querySelector<HTMLElement>('li[data-item-id="quit"]')!.click();
+      await expect(promise).resolves.toBe('quit');
+    });
+
+    it('resolves null when dismissed with Escape', async () => {
+      const promise = showContextMenu(menuItems, 10, 10);
+      press('Escape');
+      await expect(promise).resolves.toBeNull();
+    });
+
+    it('removes its DOM once dismissed', async () => {
+      const promise = showContextMenu(menuItems, 10, 10);
+      expect(renderedMenu()).not.toBeNull();
+      press('Escape');
+      await promise;
+      expect(renderedMenu()).toBeNull();
+    });
+
+    it('marks a disabled item unfocusable and gives it no click handler', async () => {
+      const promise = showContextMenu(menuItems, 10, 10);
+      const disabled = renderedMenu().querySelector<HTMLElement>('li[data-item-id="disabled"]')!;
+      expect(disabled.getAttribute('data-enabled')).toBe('false');
+
+      disabled.click();
+      let settled = false;
+      void promise.then(() => (settled = true));
+      await Promise.resolve();
+      expect(settled).toBe(false);
+
+      press('Escape');
+      await promise;
+    });
+
+    // Arrow travel must visit only the rows of this menu level. A submenu is a nested <ul> inside its
+    // parent <li>, so a descendant query also matched every collapsed submenu row — display:none
+    // entries that stole a keypress and could be selected unseen. Third ArrowDown lands on 'quit'
+    // (open → recent → quit); before the fix it landed on the hidden 'file1'.
+    it('skips the rows of a collapsed submenu when arrowing through the menu', async () => {
+      const promise = showContextMenu(menuItems, 10, 10);
+      press('ArrowDown');
+      press('ArrowDown');
+      press('ArrowDown');
+      press('Enter');
+      await expect(promise).resolves.toBe('quit');
+    });
+
+    // With nothing focused, ArrowUp enters at the bottom of the menu. -1 is a sentinel rather than a
+    // position, so running it through the wrap arithmetic used to land one row short of the end.
+    it('enters at the last item when the first key is ArrowUp', async () => {
+      const promise = showContextMenu(menuItems, 10, 10);
+      press('ArrowUp');
+      press('Enter');
+      await expect(promise).resolves.toBe('quit');
+    });
+
+    it('omits an item marked visible: false', async () => {
+      const promise = showContextMenu(
+        [
+          { id: 'shown', label: 'Shown' },
+          { id: 'hidden', label: 'Hidden', visible: false },
+        ],
+        0,
+        0,
+      );
+      const menu = renderedMenu();
+      expect(menu.querySelector('li[data-item-id="hidden"]')).toBeNull();
+      expect(menu.querySelector('li[data-item-id="shown"]')).not.toBeNull();
+      press('Escape');
+      await promise;
+    });
+
+    // A hidden item must not merely be styled away: if it were still in the DOM it would keep its
+    // place in arrow travel, which is the bug `visible` exists to avoid.
+    it('does not give a hidden item a place in arrow travel', async () => {
+      const promise = showContextMenu(
+        [
+          { id: 'first', label: 'First' },
+          { id: 'hidden', label: 'Hidden', visible: false },
+          { id: 'last', label: 'Last' },
+        ],
+        0,
+        0,
+      );
+      press('ArrowDown');
+      press('ArrowDown');
+      press('Enter');
+      await expect(promise).resolves.toBe('last');
+    });
+
+    it('renders a tooltip and a sublabel when supplied', async () => {
+      const promise = showContextMenu(
+        [{ id: 'save', label: 'Save', sublabel: 'All files', toolTip: 'Save now' }],
+        0,
+        0,
+      );
+      const li = renderedMenu().querySelector<HTMLElement>('li[data-item-id="save"]')!;
+      expect(li.title).toBe('Save now');
+      expect(li.textContent).toContain('All files');
+      press('Escape');
+      await promise;
+    });
+
+    it('draws a radio dot and a checkbox tick from the item type', async () => {
+      const promise = showContextMenu(
+        [
+          { id: 'r', label: 'Radio', type: 'radio', checked: true },
+          { id: 'c', label: 'Check', type: 'checkbox', checked: true },
+        ],
+        0,
+        0,
+      );
+      const menu = renderedMenu();
+      expect(menu.querySelector<HTMLElement>('li[data-item-id="r"]')!.textContent).toContain('●');
+      expect(menu.querySelector<HTMLElement>('li[data-item-id="c"]')!.textContent).toContain('✓');
+      press('Escape');
+      await promise;
+    });
+
+    it('resolves null when the backdrop is clicked', async () => {
+      const promise = showContextMenu(menuItems, 10, 10);
+      const overlay = document.body.querySelector<HTMLElement>('div')!;
+      overlay.click();
+      await expect(promise).resolves.toBeNull();
+    });
+  });
 });
 
 describe('validateMenuItemTemplate', () => {
@@ -305,5 +456,40 @@ describe('validateMenuItemTemplate', () => {
     const node = createMenuItemTemplate({ type: 'submenu' });
     node.submenu = [node];
     expect(() => validateMenuItemTemplate(node)).toThrow();
+  });
+
+  it('accepts checked on a checkbox item', () => {
+    expect(validateMenuItemTemplate({ id: 'wrap', label: 'Wrap', type: 'checkbox', checked: true })).toBeNull();
+  });
+
+  it('accepts checked on a radio item', () => {
+    expect(validateMenuItemTemplate({ id: 'left', label: 'Left', type: 'radio', checked: false })).toBeNull();
+  });
+
+  // The web backend draws its tick from `checked` alone, so a normal item carrying it renders a mark
+  // nothing can clear, while native backends tend to drop it — one descriptor, two wrong results.
+  it('rejects checked on a normal item', () => {
+    expect(validateMenuItemTemplate({ id: 'copy', label: 'Copy', checked: true })).not.toBeNull();
+  });
+
+  it('rejects checked on a submenu item', () => {
+    expect(
+      validateMenuItemTemplate({ id: 'more', label: 'More', type: 'submenu', checked: true, submenu: [{ id: 'a' }] }),
+    ).not.toBeNull();
+  });
+
+  // checked: false is still a claim about checkability, so it is rejected on a non-toggle item too —
+  // otherwise the rule would only catch half the mistake.
+  it('rejects checked: false on a normal item', () => {
+    expect(validateMenuItemTemplate({ id: 'copy', label: 'Copy', checked: false })).not.toBeNull();
+  });
+
+  it('reports the offending child of a submenu', () => {
+    const parent = createMenuItemTemplate({
+      id: 'view',
+      type: 'submenu',
+      submenu: [{ id: 'zoom', label: 'Zoom', checked: true }],
+    });
+    expect(validateMenuItemTemplate(parent)).toContain('checked');
   });
 });

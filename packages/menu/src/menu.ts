@@ -137,6 +137,13 @@ function _validateItem(item: Readonly<MenuItemTemplate>, seen: Set<Readonly<Menu
   if (item.type !== 'submenu' && item.submenu !== undefined && item.submenu.length > 0) {
     return `item type "${item.type ?? 'normal'}" has a submenu (only type "submenu" should carry children)`;
   }
+  // `checked` only means something on the two toggle types. Setting it elsewhere is the mistake that
+  // renders silently: the web backend draws the checkmark from `checked` alone, so a normal item with
+  // checked: true grows a tick it can never clear, and native backends typically drop it instead —
+  // same descriptor, two different wrong results, which is exactly what validation is for.
+  if (item.checked !== undefined && item.type !== 'checkbox' && item.type !== 'radio') {
+    return `item type "${item.type ?? 'normal'}" has "checked" (only "checkbox" and "radio" items are checkable)`;
+  }
   if (item.submenu !== undefined) {
     seen.add(item);
     let checkedRadioInGroup = false;
@@ -159,8 +166,11 @@ function _validateItem(item: Readonly<MenuItemTemplate>, seen: Set<Readonly<Menu
 
 // --- Web context-menu renderer ---
 // Renders a minimal DOM popup for showContextMenu in a browser environment. Returns the clicked item
-// id or null when the menu is dismissed without a selection. Supports keyboard navigation (ArrowUp/
-// Down, Enter, Escape) and submenu expansion on hover/arrow-right.
+// id or null when the menu is dismissed without a selection. Keyboard support is ArrowUp/ArrowDown
+// within one menu level, plus Enter/Space to select and Escape to dismiss. Submenus open on hover
+// only: there is no ArrowRight/ArrowLeft traversal, so a submenu's rows are unreachable by keyboard,
+// and Enter on a submenu parent currently resolves the popup with that parent's id rather than
+// opening it. Both are recorded as open work in the package assessment rather than fixed here.
 function showWebContextMenu(items: readonly MenuItemTemplate[], x: number, y: number): Promise<string | null> {
   return new Promise((resolve) => {
     if (typeof document === 'undefined') {
@@ -185,12 +195,19 @@ function showWebContextMenu(items: readonly MenuItemTemplate[], x: number, y: nu
       menu.remove();
       resolve(selectedId);
     }
-    // Keyboard navigation
-    const focusableItems = menu.querySelectorAll<HTMLElement>('li[data-enabled="true"]');
+    // Keyboard navigation. Scoped to this menu's own rows: a submenu is built as a nested <ul> inside
+    // its parent <li>, so an unscoped descendant query also matches the rows of every collapsed
+    // submenu. Those rows are display:none, which made arrow-key travel stop on invisible entries —
+    // the highlight vanished for a keypress — and let Enter resolve the popup with the id of an item
+    // the user could not see.
+    const focusableItems = menu.querySelectorAll<HTMLElement>(':scope > li[data-enabled="true"]');
     let focusIndex = -1;
     function moveFocus(delta: number): void {
       const items = Array.from(focusableItems);
       if (items.length === 0) return;
+      // From the initial no-selection state the wrap has to be spelled out: -1 is a sentinel, not a
+      // position, and running it through the modulo lands ArrowUp on the second-to-last row rather
+      // than the last one. Down enters at the top, up enters at the bottom.
       focusIndex =
         focusIndex === -1 ? (delta < 0 ? items.length - 1 : 0) : (focusIndex + delta + items.length) % items.length;
       items.forEach((el, i) => {
@@ -255,6 +272,10 @@ function buildWebMenuElement(items: readonly MenuItemTemplate[], onSelect: (id: 
     'user-select:none',
   ].join(';');
   for (const item of items) {
+    // Hidden items are not rendered at all, rather than rendered and styled away: an item that is not
+    // in the DOM cannot be reached by arrow keys or hover, which is the difference between `visible`
+    // and `enabled`.
+    if (item.visible === false) continue;
     const li = document.createElement('li');
     if (item.type === 'separator') {
       li.style.cssText = 'height:1px;margin:4px 8px;background:#e0e0e0;';
@@ -283,7 +304,16 @@ function buildWebMenuElement(items: readonly MenuItemTemplate[], onSelect: (id: 
     const labelEl = document.createElement('span');
     labelEl.textContent = item.label ?? '';
     labelEl.style.cssText = 'flex:1;';
+    if (item.sublabel !== undefined) {
+      const sublabelEl = document.createElement('span');
+      sublabelEl.textContent = item.sublabel;
+      sublabelEl.style.cssText = 'display:block;font-size:11px;color:#888;';
+      labelEl.appendChild(sublabelEl);
+    }
     li.appendChild(labelEl);
+    // The accelerator/submenu spans below are matched with span:last-child on hover, so the tooltip is
+    // set as an attribute rather than appended as another child.
+    if (item.toolTip !== undefined) li.title = item.toolTip;
     if (hasSubmenu) {
       const arrow = document.createElement('span');
       arrow.textContent = '▶';
