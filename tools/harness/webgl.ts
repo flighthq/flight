@@ -11,6 +11,7 @@ import {
   defaultGlShapeRenderer,
   defaultGlSpriteRenderer,
   defaultGlTextLabelRenderer,
+  defaultGlTextureShapeCommands,
   defaultGlTilemapRenderer,
   enableGlBlendModeSupport,
   enableGlClipSupport,
@@ -65,7 +66,7 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
       registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
-      registerGlShapeCommands(defaultGlShapeCommands);
+      registerGlShapeCommands([...defaultGlShapeCommands, ...defaultGlTextureShapeCommands]);
     } else if (kind === RichTextKind) {
       registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
     } else if (kind === TextLabelKind) {
@@ -80,7 +81,7 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
       registerRenderer(state, TilemapKind, defaultGlTilemapRenderer);
     } else if (kind === Scale9ShapeKind) {
       registerRenderer(state, Scale9ShapeKind, defaultGlScale9ShapeRenderer);
-      registerGlShapeCommands(defaultGlShapeCommands);
+      registerGlShapeCommands([...defaultGlShapeCommands, ...defaultGlTextureShapeCommands]);
     }
   }
 

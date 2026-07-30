@@ -7,12 +7,15 @@ import {
   defaultDomShapeRenderer,
   defaultDomSpriteRenderer,
   defaultDomTextLabelRenderer,
+  defaultCanvasTextureShapeCommands,
   enableDomBlendModeSupport,
   enableDomClipSupport,
   enableDomRenderCache,
   invalidateNodeLocalTransform,
   prepareScene2DRender,
   registerCanvasShapeCommands,
+  registerDomImageTextureResolver,
+  registerDomVideoTextureResolver,
   registerRenderer,
   renderDomBackground,
   renderDomScene2D,
@@ -42,11 +45,13 @@ export function createDomTarget(options: Readonly<FunctionalTargetOptions>): Fun
     sceneGraphSyncPolicy: options.syncPolicy,
   });
 
+  registerDomImageTextureResolver(state);
+  registerDomVideoTextureResolver(state);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
       registerRenderer(state, ShapeKind, defaultDomShapeRenderer);
       // The DOM shape renderer rasterizes paths through the canvas shape commands.
-      registerCanvasShapeCommands(defaultCanvasShapeCommands);
+      registerCanvasShapeCommands([...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
     } else if (kind === RichTextKind) {
       registerRenderer(state, RichTextKind, defaultDomRichTextRenderer);
     } else if (kind === TextLabelKind) {
@@ -55,7 +60,7 @@ export function createDomTarget(options: Readonly<FunctionalTargetOptions>): Fun
       registerRenderer(state, SpriteKind, defaultDomSpriteRenderer);
     } else if (kind === Scale9ShapeKind) {
       registerRenderer(state, Scale9ShapeKind, defaultDomScale9ShapeRenderer);
-      registerCanvasShapeCommands(defaultCanvasShapeCommands);
+      registerCanvasShapeCommands([...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
     }
   }
 

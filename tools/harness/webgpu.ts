@@ -11,6 +11,7 @@ import {
   defaultWgpuShapeRenderer,
   defaultWgpuSpriteRenderer,
   defaultWgpuTextLabelRenderer,
+  defaultWgpuTextureShapeCommands,
   defaultWgpuTilemapRenderer,
   enableWgpuBlendModeSupport,
   enableWgpuClipSupport,
@@ -65,7 +66,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
       registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
-      registerWgpuShapeCommands(defaultWgpuShapeCommands);
+      registerWgpuShapeCommands([...defaultWgpuShapeCommands, ...defaultWgpuTextureShapeCommands]);
     } else if (kind === RichTextKind) {
       registerRenderer(state, RichTextKind, defaultWgpuRichTextRenderer);
     } else if (kind === TextLabelKind) {
@@ -80,7 +81,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
       registerRenderer(state, TilemapKind, defaultWgpuTilemapRenderer);
     } else if (kind === Scale9ShapeKind) {
       registerRenderer(state, Scale9ShapeKind, defaultWgpuScale9ShapeRenderer);
-      registerWgpuShapeCommands(defaultWgpuShapeCommands);
+      registerWgpuShapeCommands([...defaultWgpuShapeCommands, ...defaultWgpuTextureShapeCommands]);
     }
   }
 
