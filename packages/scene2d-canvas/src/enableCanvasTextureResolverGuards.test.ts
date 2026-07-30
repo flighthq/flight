@@ -9,14 +9,21 @@ import {
   enableCanvasTextureResolverGuards,
 } from './enableCanvasTextureResolverGuards';
 
-describe('enableCanvasTextureResolverGuards', () => {
-  it('is state-scoped and idempotent', () => {
+describe('areCanvasTextureResolverGuardsEnabled', () => {
+  it('reports whether diagnostics were installed for the state', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
     expect(areCanvasTextureResolverGuardsEnabled(state)).toBe(false);
 
     enableCanvasTextureResolverGuards(state);
-    enableCanvasTextureResolverGuards(state);
+    expect(areCanvasTextureResolverGuardsEnabled(state)).toBe(true);
+  });
+});
 
+describe('enableCanvasTextureResolverGuards', () => {
+  it('is idempotent', () => {
+    const state = createCanvasRenderState(document.createElement('canvas'));
+    enableCanvasTextureResolverGuards(state);
+    enableCanvasTextureResolverGuards(state);
     expect(areCanvasTextureResolverGuardsEnabled(state)).toBe(true);
   });
 

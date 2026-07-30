@@ -6,14 +6,21 @@ import { areGlTextureResolverGuardsEnabled, enableGlTextureResolverGuards } from
 import { createGlState } from './glTestHelper';
 import { registerGlTextureResolver, resolveGlTexture } from './glTextureResolver';
 
-describe('enableGlTextureResolverGuards', () => {
-  it('is state-scoped and idempotent', () => {
+describe('areGlTextureResolverGuardsEnabled', () => {
+  it('reports whether diagnostics were installed for the state', () => {
     const { state } = createGlState();
     expect(areGlTextureResolverGuardsEnabled(state)).toBe(false);
 
     enableGlTextureResolverGuards(state);
-    enableGlTextureResolverGuards(state);
+    expect(areGlTextureResolverGuardsEnabled(state)).toBe(true);
+  });
+});
 
+describe('enableGlTextureResolverGuards', () => {
+  it('is idempotent', () => {
+    const { state } = createGlState();
+    enableGlTextureResolverGuards(state);
+    enableGlTextureResolverGuards(state);
     expect(areGlTextureResolverGuardsEnabled(state)).toBe(true);
   });
 
