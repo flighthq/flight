@@ -697,8 +697,11 @@ function justifyLines(
       // interWord: count actual space characters across all groups on the line.
       let spaceCount = 0;
       for (const g of lineGroups) {
-        for (let ci = 0; ci < g.positions.length; ci++) {
-          if (text.charCodeAt(g.startIndex + ci) === 0x20) spaceCount++;
+        let textIndex = g.startIndex;
+        for (let ci = 0; ci < g.positions.length && textIndex < g.endIndex; ci++) {
+          const codepoint = text.codePointAt(textIndex) ?? 0;
+          if (codepoint === 0x20) spaceCount++;
+          textIndex += codepoint > 0xffff ? 2 : 1;
         }
       }
       if (spaceCount === 0) continue;
@@ -708,12 +711,15 @@ function justifyLines(
       for (const g of lineGroups) {
         g.offsetX += accumulated;
         let groupExtra = 0;
-        for (let ci = 0; ci < g.positions.length; ci++) {
-          if (text.charCodeAt(g.startIndex + ci) === 0x20) {
+        let textIndex = g.startIndex;
+        for (let ci = 0; ci < g.positions.length && textIndex < g.endIndex; ci++) {
+          const codepoint = text.codePointAt(textIndex) ?? 0;
+          if (codepoint === 0x20) {
             g.positions[ci] += extraPerSpace;
             accumulated += extraPerSpace;
             groupExtra += extraPerSpace;
           }
+          textIndex += codepoint > 0xffff ? 2 : 1;
         }
         g.width += groupExtra;
       }

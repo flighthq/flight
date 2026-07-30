@@ -571,6 +571,26 @@ describe('computeTextLayout — justify alignment', () => {
 });
 
 describe('computeTextLayout — justify single-format', () => {
+  it('expands the actual space advance after an astral codepoint', () => {
+    const text = '😀 a bb';
+    const result = doLayout({
+      text,
+      formatRanges: [createTextFormatRange({ size: 16, align: 'justify' }, 0, text.length)],
+      width: 70,
+      height: 200,
+      measure: fixedMeasure,
+      multiline: true,
+      wordWrap: true,
+    });
+    expect(result.numLines).toBeGreaterThanOrEqual(2);
+
+    // Positions are codepoint-indexed while source ranges use UTF-16 indices. In the first group,
+    // positions[0] is the astral glyph and positions[1] is the following space at source index 2.
+    const astralGroup = result.groups.find((group) => group.lineIndex === 0 && group.startIndex === 0);
+    expect(astralGroup?.positions[0]).toBe(20);
+    expect(astralGroup?.positions[1]).toBeGreaterThan(10);
+  });
+
   it('expands space character advances on a wrapped mid-paragraph line', () => {
     // "aa bb cc" with fixedMeasure (10px/char) and narrow width forces word-wrap.
     // Line 0 is mid-paragraph → justified. Space chars should get extra advance.
