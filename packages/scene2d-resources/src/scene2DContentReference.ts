@@ -3,6 +3,7 @@ import type { Node2D, Scene2DContentReference } from '@flighthq/types/contract';
 
 export function setScene2DContentReferenceContent(reference: Scene2DContentReference, content: Node2D | null): void {
   const previous = reference.content;
+  if (previous === content && (content === null || getNodeParent(content) === reference.target)) return;
   if (previous !== null && getNodeParent(previous) === reference.target) {
     removeNodeChild(reference.target, previous);
   }

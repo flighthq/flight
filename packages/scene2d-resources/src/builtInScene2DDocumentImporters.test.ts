@@ -21,6 +21,17 @@ describe('registerLottieScene2DDocumentImporter', () => {
     );
     expect(document?.sourceKind).toBe('lottie');
   });
+
+  it('preserves the null sentinel when the format importer rejects a document', () => {
+    const registry = createScene2DDocumentImporterRegistry();
+    registerLottieScene2DDocumentImporter(registry);
+    expect(
+      createScene2DDocumentFromBytes(encode('{invalid'), registry, {
+        mimeType: 'application/lottie+json',
+        url: null,
+      }),
+    ).toBeNull();
+  });
 });
 
 describe('registerSvgScene2DDocumentImporter', () => {
@@ -33,5 +44,16 @@ describe('registerSvgScene2DDocumentImporter', () => {
     );
     expect(document?.sourceKind).toBe('svg');
     expect(getNodeChildCount(document!.root)).toBe(1);
+  });
+
+  it('preserves the null sentinel when the format importer rejects a document', () => {
+    const registry = createScene2DDocumentImporterRegistry();
+    registerSvgScene2DDocumentImporter(registry);
+    expect(
+      createScene2DDocumentFromBytes(encode('<not-svg/>'), registry, {
+        mimeType: 'image/svg+xml',
+        url: null,
+      }),
+    ).toBeNull();
   });
 });
