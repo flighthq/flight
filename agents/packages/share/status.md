@@ -1,12 +1,28 @@
 ---
 package: '@flighthq/share'
-updated: 2026-06-24
-by: ingest:builder-67dc46d64
+updated: 2026-07-30
 ---
 
 # share — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## 2026-07-30 — live-tree closure audit
+
+- Verified the sole approved Recommended item against current history. Commit `1cd249505` removed the
+  never-populated `_signalSubscriptions` map and its dead `detachShareSignals` read; `_signalListeners`
+  is now the single attachment registry.
+- Confirmed the old merge-gate blockers are stale. `ShareContent`, `ShareFile`, `ShareOptions`,
+  `ShareResult`, `ShareBackend`, and `ShareSignals` are present in `@flighthq/types`, and the live
+  package compiles against the contract lane.
+- Focused `npm run check -- share` passed all structural gates, and
+  `npm run test --workspace=packages/share` passed 44 tests. The shipped Capacitor adapter's five
+  focused tests also pass.
+- Corrected the charter's stale `isShareContentValid` name to `hasShareContentFields`, added the
+  detailed-result entry point, and expanded the Package Map from its one-line stub to the shipped
+  web/Capacitor surface.
+- Closed Recommended work. Capacitor's async availability projection, portable-file support across
+  native hosts, and cross-backend dismissal semantics remain architectural Depth gaps.
 
 ## 2026-06-25 — builder Phase 3 (Recommended sweep)
 
