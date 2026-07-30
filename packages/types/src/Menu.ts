@@ -1,12 +1,12 @@
 import type { WellKnownMenuItemRoleValue } from './WellKnownMenuItemRole';
 
-// Native application and context menu seam. Free functions in @flighthq/menu delegate to the active
-// MenuBackend (web default or a native host's). Web has no native menu bar or OS context menu, so the
-// web backend returns false / null sentinels rather than throwing — native menus require a native host
-// (Electron/Tauri); a real web context-menu renderer is out of scope for the MVP. This is the
-// platform-suite command pattern: a plain-data MenuItemTemplate descriptor plus flat free functions,
-// kept symmetric with tray/notification/shell. The same MenuItemTemplate is consumed by tray via
-// setTrayContextMenu, so the descriptor must not grow a menu-specific OOP surface.
+// Application and context menu seam. Free functions in @flighthq/menu delegate to the active
+// MenuBackend (web default or a native host's). Web cannot install an application menu bar, but the
+// web backend renders context menus in the DOM; Electron/Tauri hosts can replace it with native OS
+// menus. This is the platform-suite command pattern: a plain-data MenuItemTemplate descriptor plus
+// flat free functions, kept symmetric with tray/notification/shell. The same MenuItemTemplate is
+// consumed by tray via setTrayIconContextMenu, so the descriptor must not grow a menu-specific OOP
+// surface.
 export type MenuItemType = 'normal' | 'separator' | 'submenu' | 'checkbox' | 'radio';
 
 // Open enum: the documented built-in roles (WellKnownMenuItemRole) plus any other string, so native
