@@ -10,7 +10,9 @@ Based on the 2026-07-03 review (stub, 18/100). All three previously approved swe
 
 ## Recommended
 
-Sweep-safe: within `@flighthq/audio`, no cross-package coupling, no open design decision.
+_None open._ All seven items landed and were re-verified against live source on 2026-07-30; they are recorded under [Landed](#landed) below, deliberately outside this section so the TODO generator stops reporting them as work. The sweep that verified them also found two live defects in the loader family, both since fixed (see [status](./status.md)); the remaining actionable step for this package is the parked reject-vs-sentinel ruling in Backlog.
+
+## Landed
 
 1. **Complete the loader matrix — `loadAudioResourceFromBytes`, `FromBlob`, `FromBase64`.** The bytes loader is literally the middle of the existing URL loader left unexported (review calls it a textbook missing-primitive extraction); `FromBlob`/`FromBase64` follow trivially. Mirrors `@flighthq/image`'s loader family exactly. Bytes loading matters for bundled assets, IndexedDB caches, and filesystem reads.
 
@@ -33,7 +35,7 @@ Parked — each with the reason it is not sweep-safe.
 - **Streaming-source carrier (buffer vs media-element source).** _Parked — design decision / cross-package; candidate Open direction for the charter._ The data layer cannot represent a long music track at all; whether the streaming carrier lives here or in `@flighthq/media` is exactly charter Open direction #3, and today the gap is invisible because neither package models it.
 - **Audio-processing tier — peak/waveform extraction, trim/slice/concat/normalize.** _Parked — design decision; candidate Open direction for the charter._ The review frames this tier as the package's `bitmap`-equivalent identity and its most defensible reason to exist as its own subject — a scope/identity ruling, not a sweep item. Edges toward the charter's "effects processing" non-goal.
 - **WAV encode/decode (PCM↔WAV codec).** _Parked — design decision / cross-package; candidate Open direction for the charter._ The standard escape hatch for tests, capture, and the Rust port (no `decodeAudioData` in jsdom), but it is a codec — likely a `-formats`/codec neighbor subject to the bedrock test and the plurality guard, i.e. a register candidate, not in-package work.
-- **Unify the `*FromUrl` (reject) vs `*FromUrls` (empty-resource sentinel) failure convention.** _Parked — design decision._ A family-wide convention fork shared with video and image: the SDK sentinel rule favors the empty resource, but the charter's "honest async APIs" north star argues for surfaced failure. Needs one ruling across the resource family.
+- **Unify the `*FromUrl` (reject) vs `*FromUrls` (empty-resource sentinel) failure convention.** _Parked — design decision._ A family-wide convention fork shared with video and image: the SDK sentinel rule favors the empty resource, but the charter's "honest async APIs" north star argues for surfaced failure. Needs one ruling across the resource family. The 2026-07-30 sweep added a concrete instance rather than resolving it: `loadAudioResourceFromUrl` now rejects on a non-`ok` HTTP response instead of feeding the error page to the decoder, which follows the function's existing reject-on-failure behavior. If the ruling goes to the sentinel, that throw and its test move with the family — the fix is about *which* failure is reported, and is correct either way.
 - **Split playback types out of `AudioResource.ts` in `@flighthq/types`.** _Parked — cross-package._ `AudioChannel`, `AudioChannelState`, and `AudioPlayOptions` (media-layer) cohabit with the resource type, violating the one-concept-per-file rule; a types-package edit for when that file is next touched.
 - **Rust `flighthq-audio` crate.** _Parked — global posture._ Already exists from the resources split; conformance follows parity passes.
 
