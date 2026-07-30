@@ -10,8 +10,8 @@ import {
   defaultCanvasTextureShapeCommands,
   enableDomBlendModeSupport,
   enableDomClipSupport,
+  enableFlightDiagnostics,
   enableDomRenderCache,
-  enableDomTextureResolverGuards,
   invalidateNodeLocalTransform,
   prepareScene2DRender,
   registerCanvasShapeCommands,
@@ -45,7 +45,7 @@ export function createDomTarget(options: Readonly<FunctionalTargetOptions>): Fun
     sceneGraphSyncPolicy: options.syncPolicy,
   });
 
-  enableDomTextureResolverGuards(state);
+  enableFlightDiagnostics(state);
   registerDomImageTextureResolver(state);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {

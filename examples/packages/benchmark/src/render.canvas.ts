@@ -2,6 +2,7 @@ import type { Node2D } from '@flighthq/sdk';
 import {
   createCanvasElement,
   createCanvasRenderState,
+  enableFlightDiagnostics,
   defaultCanvasQuadBatchRenderer,
   defaultCanvasTextLabelRenderer,
   prepareScene2DRender,
@@ -21,6 +22,7 @@ export const state = createCanvasRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0x2a2a3aff,
 });
+enableFlightDiagnostics(state);
 registerCanvasImageTextureResolver(state);
 registerRenderer(state, QuadBatchKind, defaultCanvasQuadBatchRenderer);
 registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);

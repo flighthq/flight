@@ -45,6 +45,7 @@
     "@flighthq/log": "*",
     "@flighthq/node": "*",
     "@flighthq/render": "*",
+    "@flighthq/signals": "*",
     "@flighthq/shape": "*",
     "@flighthq/text": "*",
     "@flighthq/textinput": "*",

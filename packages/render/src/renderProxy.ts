@@ -7,6 +7,7 @@ import {
   getNodeParent,
   getNodeRuntime,
 } from '@flighthq/node/contract';
+import { emitSignal } from '@flighthq/signals/contract';
 import type {
   Node2D,
   HasBoundsRectangle,
@@ -18,7 +19,7 @@ import type {
   RenderProxyVisitor,
   RenderState,
 } from '@flighthq/types/contract';
-import { BlendMode } from '@flighthq/types/contract';
+import { BlendMode, RenderRegistry } from '@flighthq/types/contract';
 
 import { updateRenderProxyAppearance } from './renderAppearance';
 import { updateRenderProxyColorScaleBias } from './renderColorScaleBias';
@@ -30,7 +31,7 @@ type AdaptHook = (state: RenderState, source: Renderable, data: RenderProxy2D) =
 
 export function createRenderProxy(state: RenderState, source: Renderable): RenderProxy {
   const runtime = getRenderStateRuntime(state);
-  const renderer = runtime.rendererMap.get(source.kind) ?? null;
+  const renderer = resolveRenderProxyRenderer(state, source.kind);
   return createEntity({
     source: source,
     kind: source.kind,
@@ -182,7 +183,7 @@ export function updateRenderProxy2D(
 
 export function updateRenderProxyRenderer(state: RenderState, node: RenderProxy): void {
   const runtime = getRenderStateRuntime(state);
-  const renderer = runtime.rendererMap.get(node.kind) ?? null;
+  const renderer = resolveRenderProxyRenderer(state, node.kind);
   if (node.renderer !== renderer || node.rendererDataSource !== node.source) {
     // Free the outgoing renderer's GPU resources before replacing the data it owned.
     if (node.rendererData !== null) node.renderer?.destroyData?.(state, node.rendererData);
@@ -191,6 +192,15 @@ export function updateRenderProxyRenderer(state: RenderState, node: RenderProxy)
     node.rendererDataSource = node.source;
   }
   node.rendererMapId = runtime.rendererMapId;
+}
+
+function resolveRenderProxyRenderer(state: RenderState, kind: string) {
+  const runtime = getRenderStateRuntime(state);
+  const renderer = runtime.rendererMap.get(kind);
+  if (renderer === undefined && runtime.registrySignals !== null) {
+    emitSignal(runtime.registrySignals.onRegistryMiss, RenderRegistry.NodeRenderer, kind);
+  }
+  return renderer ?? null;
 }
 
 // One generic, dirty-checked pre-order walk over the 2D node graph. `visit` composes the trait

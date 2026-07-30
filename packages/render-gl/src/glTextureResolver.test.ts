@@ -15,6 +15,7 @@ import {
   registerGlBitmapTextureResolver,
   registerGlCompressedImageTextureResolver,
   registerGlRenderTextureResolver,
+  registerStandardGlTextureResolvers,
   registerGlTextureResolver,
   resolveGlTexture,
 } from './glTextureResolver';
@@ -180,6 +181,18 @@ describe('registerGlTextureResolver', () => {
     registerGlTextureResolver(state, 'image', () => ({ kind: 'image' }) as unknown as WebGLTexture);
     registerGlTextureResolver(state, 'acme.specific', () => ({ kind: 'specific' }) as unknown as WebGLTexture);
     expect(resolveGlTexture(state, textureWithImage(image))).toEqual({ kind: 'specific' });
+  });
+});
+
+describe('registerStandardGlTextureResolvers', () => {
+  it('registers bitmap, image, and render texture sources without compressed images', () => {
+    const { state } = createGlState();
+    registerStandardGlTextureResolvers(state);
+    expect([...getGlRenderStateRuntime(state).glTextureResolverRegistry!.keys()]).toEqual([
+      BitmapTextureSourceKind,
+      ImageTextureSourceKind,
+      RenderTargetTextureSourceKind,
+    ]);
   });
 });
 

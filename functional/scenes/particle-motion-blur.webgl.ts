@@ -22,7 +22,7 @@ import {
   endGlRenderEffectPipeline,
   invalidateNodeLocalTransform,
   prepareScene2DRender,
-  registerGlImageTextureResolver,
+  registerStandardGlTextureResolvers,
   registerGlRenderEffect,
   registerGlVelocityWriter,
   registerRenderer,
@@ -44,7 +44,7 @@ export const state = createGlRenderState(canvas, {
   pixelRatio,
   backgroundColor: 0x101014ff,
 });
-registerGlImageTextureResolver(state);
+registerStandardGlTextureResolvers(state);
 registerRenderer(state, ParticleEmitter2DKind, defaultGlParticleEmitter2DRenderer);
 registerGlRenderEffect(state, 'MotionBlurEffect', defaultGlMotionBlurEffectRunner);
 registerGlVelocityWriter(state, ParticleEmitter2DKind, defaultGlParticleEmitter2DVelocityWriter);

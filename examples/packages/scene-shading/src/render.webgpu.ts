@@ -4,6 +4,7 @@ import {
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
+  enableFlightDiagnostics,
   endWgpuRenderEffectPipeline,
   prepareScene3DRender,
   registerBlinnPhongWgpuMaterial,
@@ -20,6 +21,7 @@ export const state = await createWgpuRenderState(canvas, {
   pixelRatio,
   backgroundColor: 0x080a10ff,
 });
+enableFlightDiagnostics(state);
 registerBlinnPhongWgpuMaterial(state);
 
 const pipeline: WgpuRenderEffectPipeline = createWgpuRenderEffectPipeline(state, {

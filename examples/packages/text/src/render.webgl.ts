@@ -2,11 +2,13 @@ import type { Node2D } from '@flighthq/sdk';
 import {
   createGlCanvasElement,
   createGlRenderState,
+  enableFlightDiagnostics,
   defaultGlRichTextRenderer,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   defaultGlTextLabelRenderer,
   prepareScene2DRender,
+  registerStandardGlTextureResolvers,
   registerStandardGlMaterial,
   registerGlShapeCommands,
   registerRenderer,
@@ -27,7 +29,9 @@ export const state = createGlRenderState(canvas, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
+enableFlightDiagnostics(state);
 
+registerStandardGlTextureResolvers(state);
 registerStandardGlMaterial(state);
 registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);

@@ -4,6 +4,7 @@ import {
   TextLabelKind,
   createCanvasElement,
   createCanvasRenderState,
+  enableFlightDiagnostics,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   defaultCanvasTextLabelRenderer,
@@ -23,6 +24,7 @@ export const state = createCanvasRenderState(canvas, {
   backgroundColor: 0x101827ff,
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
+enableFlightDiagnostics(state);
 
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);

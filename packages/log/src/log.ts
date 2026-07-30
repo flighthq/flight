@@ -134,6 +134,11 @@ export function createConsoleCaptureSink(options: { formatter?: LogFormatter } =
   return (entry: Readonly<LogEntry>): void => _writeConsoleCaptureEntry(entry, envelopeFormatter);
 }
 
+export function createConsoleLogSink(options: { formatter?: LogFormatter } = {}): LogSink {
+  const formatter = options.formatter ?? createTextLogFormatter({ levelPrefix: true });
+  return (entry: Readonly<LogEntry>): void => _writeConsoleLogEntry(entry, formatter);
+}
+
 // Creates a fan-out sink that forwards every entry to all supplied sinks.
 export function createFanoutLogSink(...sinks: LogSink[]): LogSink {
   const list = sinks.slice();
@@ -778,5 +783,10 @@ function _writeConsoleCaptureEntry(entry: Readonly<LogEntry>, envelopeFormatter:
     if (typeof data === 'string') console[method](`${prefix} ${data}`);
     else console[method](prefix, data);
   }
+}
+
+function _writeConsoleLogEntry(entry: Readonly<LogEntry>, formatter: LogFormatter): void {
+  if (typeof console === 'undefined') return;
+  console[_consoleMethods[entry.level]](formatter(entry));
 }
 /* eslint-enable no-console */

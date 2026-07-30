@@ -4,6 +4,7 @@ import {
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
+  enableFlightDiagnostics,
   endWgpuRenderEffectPipeline,
   prepareScene3DRender,
   renderWgpuBackground,
@@ -23,6 +24,7 @@ export const state = await createWgpuRenderState(canvas, {
   pixelRatio,
   backgroundColor: 0x07101bff,
 });
+enableFlightDiagnostics(state);
 registerShadedWgpuMaterial(state);
 registerBuiltInWgpuModifierSnippets(state);
 

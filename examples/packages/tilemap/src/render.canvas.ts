@@ -4,6 +4,7 @@ import {
   TilemapKind,
   createCanvasElement,
   createCanvasRenderState,
+  enableFlightDiagnostics,
   defaultCanvasSpriteRenderer,
   defaultCanvasTilemapRenderer,
   prepareScene2DRender,
@@ -21,6 +22,7 @@ export const state = createCanvasRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0x1a1a2eff,
 });
+enableFlightDiagnostics(state);
 
 registerCanvasImageTextureResolver(state);
 registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);

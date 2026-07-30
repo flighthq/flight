@@ -1,5 +1,4 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
-import { registerGlBitmapTextureResolver, registerGlImageTextureResolver } from '@flighthq/render-gl/contract';
 import type {
   LinearColor,
   Camera3D,
@@ -75,8 +74,6 @@ export const specularGlossinessPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer
 // state. Opt-in (no top-level side effect): drawScene3D only draws SpecularGlossiness subsets once
 // this is called.
 export function registerSpecularGlossinessPbrGlMaterial(state: GlRenderState): void {
-  registerGlBitmapTextureResolver(state);
-  registerGlImageTextureResolver(state);
   registerGlMeshMaterialRenderer(state, SpecularGlossinessPbrMaterialKind, specularGlossinessPbrGlMeshMaterialRenderer);
 }
 

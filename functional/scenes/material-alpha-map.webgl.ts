@@ -24,7 +24,7 @@ import {
   normalizeVector3,
   prepareScene3DRender,
   registerBlinnPhongGlMaterial,
-  registerGlImageTextureResolver,
+  registerStandardGlTextureResolvers,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
@@ -43,7 +43,7 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0x002850ff,
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
-registerGlImageTextureResolver(state);
+registerStandardGlTextureResolvers(state);
 registerBlinnPhongGlMaterial(state);
 
 const pipeline = createGlRenderEffectPipeline(state, {

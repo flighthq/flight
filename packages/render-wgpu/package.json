@@ -42,6 +42,7 @@
     "@flighthq/geometry": "*",
     "@flighthq/log": "*",
     "@flighthq/render": "*",
+    "@flighthq/signals": "*",
     "@flighthq/bitmap": "*",
     "@flighthq/texture": "*",
     "@flighthq/types": "*"

@@ -1,0 +1,5 @@
+{
+  "name": "flight-diagnostics-release",
+  "private": true,
+  "type": "module"
+}

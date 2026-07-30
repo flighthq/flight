@@ -14,6 +14,7 @@ import {
   createBufferedLogSink,
   createChildLogContext,
   createConsoleCaptureSink,
+  createConsoleLogSink,
   createFanoutLogSink,
   createFileLogSink,
   createFilterLogSink,
@@ -279,6 +280,15 @@ describe('createConsoleCaptureSink', () => {
     log(LogLevel.Info, 'x');
     expect(customFormatter).toHaveBeenCalledTimes(1);
     expect(debug).toHaveBeenCalledWith('custom-line');
+  });
+});
+
+describe('createConsoleLogSink', () => {
+  it('writes the formatted entry to the console method matching its level', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const sink = createConsoleLogSink({ formatter: () => 'formatted warning' });
+    sink({ channel: 'render', data: 'ignored', level: LogLevel.Warn });
+    expect(warn).toHaveBeenCalledWith('formatted warning');
   });
 });
 

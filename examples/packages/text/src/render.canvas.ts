@@ -2,6 +2,7 @@ import type { Node2D } from '@flighthq/sdk';
 import {
   createCanvasElement,
   createCanvasRenderState,
+  enableFlightDiagnostics,
   defaultCanvasBeginFill,
   defaultCanvasDrawRectangle,
   defaultCanvasEndFill,
@@ -28,6 +29,7 @@ export const state = createCanvasRenderState(canvas, {
   backgroundColor: 0xffffffff,
   pixelRatio,
 });
+enableFlightDiagnostics(state);
 
 registerRenderer(state, RichTextKind, defaultCanvasRichTextRenderer);
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);

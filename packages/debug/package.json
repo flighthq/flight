@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@flighthq/log": "*",
+    "@flighthq/render": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

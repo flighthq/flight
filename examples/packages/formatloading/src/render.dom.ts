@@ -3,6 +3,7 @@ import {
   ShapeKind,
   TextLabelKind,
   createDomRenderState,
+  enableFlightDiagnostics,
   defaultCanvasShapeCommands,
   defaultDomShapeRenderer,
   defaultDomTextLabelRenderer,
@@ -24,6 +25,7 @@ export const state = createDomRenderState(container, {
   backgroundColor: 0x101827ff,
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
+enableFlightDiagnostics(state);
 
 registerRenderer(state, ShapeKind, defaultDomShapeRenderer);
 registerRenderer(state, TextLabelKind, defaultDomTextLabelRenderer);

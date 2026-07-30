@@ -99,7 +99,7 @@ export function drawWgpuScale9Shape(state: WgpuRenderState, renderProxy: RenderP
     ctx.save();
     remapWgpuScale9Commands(_remappedCommands, commands, mapper);
     ctx.translate(-bounds.x, -bounds.y);
-    renderCanvasShapeCommands(ctx, _remappedCommands);
+    renderCanvasShapeCommands(ctx, _remappedCommands, null, state);
     ctx.restore();
 
     // GPU textures are fixed-size: recreate the entry when the field size changes, otherwise reupload

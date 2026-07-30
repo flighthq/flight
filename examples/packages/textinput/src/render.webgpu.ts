@@ -2,6 +2,7 @@ import type { Node2D } from '@flighthq/sdk';
 import {
   createWgpuCanvasElement,
   createWgpuRenderState,
+  enableFlightDiagnostics,
   defaultWgpuRichTextRenderer,
   defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
@@ -29,6 +30,7 @@ export const state = await createWgpuRenderState(canvas, {
   backgroundColor: 0xd0d0d0ff,
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
+enableFlightDiagnostics(state);
 
 registerStandardWgpuMaterial(state);
 registerRenderer(state, RichTextKind, defaultWgpuRichTextRenderer);

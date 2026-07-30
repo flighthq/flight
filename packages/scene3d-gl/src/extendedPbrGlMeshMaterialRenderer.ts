@@ -1,4 +1,3 @@
-import { registerGlBitmapTextureResolver, registerGlImageTextureResolver } from '@flighthq/render-gl/contract';
 import type { ExtendedPbrMaterial, GlMeshMaterialRenderer, GlRenderState } from '@flighthq/types/contract';
 import { ExtendedPbrMaterialKind } from '@flighthq/types/contract';
 
@@ -42,7 +41,5 @@ export const extendedPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 };
 
 export function registerExtendedPbrGlMaterial(state: GlRenderState): void {
-  registerGlBitmapTextureResolver(state);
-  registerGlImageTextureResolver(state);
   registerGlMeshMaterialRenderer(state, ExtendedPbrMaterialKind, extendedPbrGlMeshMaterialRenderer);
 }

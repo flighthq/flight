@@ -1,6 +1,7 @@
 import type { Node2D } from '@flighthq/sdk';
 import {
   createDomRenderState,
+  enableFlightDiagnostics,
   defaultCanvasShapeCommands,
   defaultDomRichTextRenderer,
   defaultDomShapeRenderer,
@@ -27,6 +28,7 @@ export const state = createDomRenderState(container, {
   backgroundColor: 0xd0d0d0ff,
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
+enableFlightDiagnostics(state);
 
 registerRenderer(state, RichTextKind, defaultDomRichTextRenderer);
 registerRenderer(state, ShapeKind, defaultDomShapeRenderer);

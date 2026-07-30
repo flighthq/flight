@@ -1,5 +1,7 @@
+import { emitSignal } from '@flighthq/signals/contract';
 import { getTextureSourceKind } from '@flighthq/texture/contract';
 import type { CanvasRenderState, CanvasTextureResolver, Texture, TextureSourceKind } from '@flighthq/types/contract';
+import { RenderRegistry } from '@flighthq/types/contract';
 
 import { getCanvasRenderStateRuntime } from './canvasRenderState';
 
@@ -16,9 +18,15 @@ export function registerCanvasTextureResolver(
 
 export function resolveCanvasTexture(state: CanvasRenderState, texture: Readonly<Texture>): CanvasImageSource | null {
   if (texture.dimension !== '2d') return null;
-  const registry = getCanvasRenderStateRuntime(state).canvasTextureResolverRegistry;
-  if (registry == null) return null;
   const sourceKind = getTextureSourceKind(texture);
   if (sourceKind === null) return null;
-  return registry.get(sourceKind)?.(state, texture) ?? null;
+  const runtime = getCanvasRenderStateRuntime(state);
+  const resolver = runtime.canvasTextureResolverRegistry?.get(sourceKind);
+  if (resolver === undefined) {
+    if (runtime.registrySignals !== null) {
+      emitSignal(runtime.registrySignals.onRegistryMiss, RenderRegistry.TextureResolver, sourceKind);
+    }
+    return null;
+  }
+  return resolver(state, texture);
 }

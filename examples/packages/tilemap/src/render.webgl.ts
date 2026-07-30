@@ -4,9 +4,11 @@ import {
   TilemapKind,
   createGlCanvasElement,
   createGlRenderState,
+  enableFlightDiagnostics,
   defaultGlSpriteRenderer,
   defaultGlTilemapRenderer,
   prepareScene2DRender,
+  registerStandardGlTextureResolvers,
   registerStandardGlMaterial,
   registerRenderer,
   renderGlBackground,
@@ -23,7 +25,9 @@ export const state = createGlRenderState(canvas, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
+enableFlightDiagnostics(state);
 
+registerStandardGlTextureResolvers(state);
 registerStandardGlMaterial(state);
 registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, TilemapKind, defaultGlTilemapRenderer);

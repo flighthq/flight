@@ -1,7 +1,11 @@
 ﻿import { createMatrix } from '@flighthq/geometry/contract';
 import { createImageResource } from '@flighthq/image/contract';
-import { registerRenderer } from '@flighthq/render/contract';
-import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
+import {
+  enableRenderRegistryGuards,
+  explainRenderRegistryMisses,
+  getOrCreateRenderProxy2D,
+  registerRenderer,
+} from '@flighthq/render/contract';
 import {
   appendShapeBeginTextureFill,
   appendShapeBeginFill,
@@ -13,7 +17,7 @@ import {
   createShape,
 } from '@flighthq/shape/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import { ShapeKind } from '@flighthq/types/contract';
+import { RenderRegistry, ShapeKind } from '@flighthq/types/contract';
 
 import { createCanvasRenderState } from './canvasRenderState';
 import { defaultCanvasShapeRenderer, drawCanvasShape, renderCanvasShapeCommands } from './canvasShape';
@@ -184,5 +188,26 @@ describe('renderCanvasShapeCommands', () => {
     const commands: unknown[] = ['acme.unknownCommand', 2, 1, 2];
     expect(() => renderCanvasShapeCommands(context, commands)).not.toThrow();
     expect(fillSpy).not.toHaveBeenCalled();
+  });
+
+  it('records an unknown command key through the shared registry-miss seam', () => {
+    const context = makeContext();
+    const state = createCanvasRenderState(context.canvas);
+    enableRenderRegistryGuards(state);
+    renderCanvasShapeCommands(context, ['acme.unknownCommand', 0], state);
+    expect(explainRenderRegistryMisses(state)).toEqual({
+      misses: [{ kind: 'acme.unknownCommand', registry: RenderRegistry.ShapeCommandHandler }],
+      status: 'misses-recorded',
+    });
+  });
+
+  it('does not record a registered command handler as a registry miss', () => {
+    const context = makeContext();
+    const state = createCanvasRenderState(context.canvas);
+    enableRenderRegistryGuards(state);
+    const shape = createShape();
+    appendShapeRectangle(shape, 0, 0, 10, 10);
+    renderCanvasShapeCommands(context, shape.data.commands, state);
+    expect(explainRenderRegistryMisses(state)).toEqual({ misses: [], status: 'complete' });
   });
 });

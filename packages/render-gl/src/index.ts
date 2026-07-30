@@ -30,6 +30,7 @@ export {
   registerGlCompressedTextureUpload,
   registerGlImageTextureResolver,
   registerGlRenderTextureResolver,
+  registerStandardGlTextureResolvers,
   registerGlTextureResolver,
   renderGlBackground,
   renderIntoGlRenderTexture,

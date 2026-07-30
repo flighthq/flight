@@ -2,6 +2,7 @@ export {
   beginDebugSpan,
   disableDebug,
   enableDebug,
+  enableFlightDiagnostics,
   endDebugSpan,
   isDebugEnabled,
   markDebugFrame,

@@ -4,6 +4,7 @@ import {
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
+  enableFlightDiagnostics,
   endGlRenderEffectPipeline,
   prepareScene3DRender,
   renderGlBackground,
@@ -21,6 +22,7 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0x03040aff,
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
+enableFlightDiagnostics(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 4,

@@ -2,12 +2,13 @@ import type { Node2D } from '@flighthq/sdk';
 import {
   createGlCanvasElement,
   createGlRenderState,
+  enableFlightDiagnostics,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   defaultGlSpriteRenderer,
   defaultGlTextLabelRenderer,
   prepareScene2DRender,
-  registerGlImageTextureResolver,
+  registerStandardGlTextureResolvers,
   registerStandardGlMaterial,
   registerGlShapeCommands,
   registerRenderer,
@@ -28,12 +29,13 @@ export const state = createGlRenderState(canvas, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
+enableFlightDiagnostics(state);
 
 registerStandardGlMaterial(state);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
-registerGlImageTextureResolver(state);
+registerStandardGlTextureResolvers(state);
 registerGlShapeCommands(defaultGlShapeCommands);
 
 export const scale = pixelRatio;

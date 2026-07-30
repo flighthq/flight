@@ -15,8 +15,8 @@ import {
   defaultCanvasTilemapRenderer,
   enableCanvasBlendMode,
   enableCanvasClip,
+  enableFlightDiagnostics,
   enableCanvasRenderCache,
-  enableCanvasTextureResolverGuards,
   invalidateNodeLocalTransform,
   ParticleEmitter2DKind,
   prepareScene2DRender,
@@ -56,7 +56,7 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
   // store here. See ../README.md for why this lives in renderTransform2D rather than the scene.
   state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
-  enableCanvasTextureResolverGuards(state);
+  enableFlightDiagnostics(state);
   registerCanvasImageTextureResolver(state);
   registerCanvasRenderTextureResolver(state);
   for (const kind of options.kinds ?? []) {

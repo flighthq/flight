@@ -3,6 +3,7 @@ import {
   SpriteKind,
   createWgpuCanvasElement,
   createWgpuRenderState,
+  enableFlightDiagnostics,
   defaultWgpuSpriteRenderer,
   prepareScene2DRender,
   registerWgpuImageTextureResolver,
@@ -22,6 +23,7 @@ export const state = await createWgpuRenderState(canvas, {
   backgroundColor: 0x1a1a2eff,
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
+enableFlightDiagnostics(state);
 
 registerWgpuImageTextureResolver(state);
 registerStandardWgpuMaterial(state);

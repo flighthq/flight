@@ -1,0 +1,5 @@
+{
+  "name": "log-console",
+  "private": true,
+  "type": "module"
+}

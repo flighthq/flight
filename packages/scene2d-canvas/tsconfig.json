@@ -37,6 +37,9 @@
       "path": "../render"
     },
     {
+      "path": "../signals"
+    },
+    {
       "path": "../shape"
     },
     {

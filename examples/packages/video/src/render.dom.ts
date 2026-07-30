@@ -2,6 +2,7 @@ import type { Node2D } from '@flighthq/sdk';
 import {
   SpriteKind,
   createDomRenderState,
+  enableFlightDiagnostics,
   defaultDomSpriteRenderer,
   prepareScene2DRender,
   registerDomImageTextureResolver,
@@ -20,6 +21,7 @@ export const state = createDomRenderState(container, {
   backgroundColor: 0x1a1a2eff,
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
+enableFlightDiagnostics(state);
 
 registerRenderer(state, SpriteKind, defaultDomSpriteRenderer);
 registerDomImageTextureResolver(state);
