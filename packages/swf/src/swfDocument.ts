@@ -298,9 +298,9 @@ function transformSwfRectangle(bounds: Readonly<SwfRectangle>, matrix: Readonly<
   return { height: maxY - y, width: maxX - x, x, y };
 }
 
-function readPlaceObject(body: SwfReader, placements: Map<number, SwfPlacement>, isPlaceObject3: boolean): void {
+function readPlaceObject(body: SwfReader, placements: Map<number, SwfPlacement>, hasExtendedFlags: boolean): void {
   const flags = body.readUint8();
-  const extendedFlags = isPlaceObject3 ? body.readUint8() : 0;
+  const extendedFlags = hasExtendedFlags ? body.readUint8() : 0;
   const depth = body.readUint16();
   const existing = placements.get(depth);
   const hasCharacter = (flags & 0x02) !== 0;
@@ -316,15 +316,32 @@ function readPlaceObject(body: SwfReader, placements: Map<number, SwfPlacement>,
   placements.set(depth, { characterId, depth, directLinkage, matrix, name });
 }
 
-function readSwfColorTransform(reader: SwfReader): void {
+function readLegacyPlaceObject(body: SwfReader, placements: Map<number, SwfPlacement>): void {
+  const characterId = body.readUint16();
+  const depth = body.readUint16();
+  const matrix = readSwfMatrix(body);
+  if (body.pos < body.end) readSwfColorTransform(body, 3);
+  if (!body.valid || characterId === 0) return;
+  placements.set(depth, { characterId, depth, directLinkage: null, matrix, name: null });
+}
+
+function readLegacyRemoveObject(body: SwfReader, placements: Map<number, SwfPlacement>): void {
+  const characterId = body.readUint16();
+  const depth = body.readUint16();
+  if (!body.valid) return;
+  const existing = placements.get(depth);
+  if (existing?.characterId === characterId) placements.delete(depth);
+}
+
+function readSwfColorTransform(reader: SwfReader, channelCount = 4): void {
   const hasAdd = reader.readUnsignedBits(1) !== 0;
   const hasMultiply = reader.readUnsignedBits(1) !== 0;
   const bits = reader.readUnsignedBits(4);
   if (hasMultiply) {
-    for (let i = 0; i < 4; i++) reader.readSignedBits(bits);
+    for (let i = 0; i < channelCount; i++) reader.readSignedBits(bits);
   }
   if (hasAdd) {
-    for (let i = 0; i < 4; i++) reader.readSignedBits(bits);
+    for (let i = 0; i < channelCount; i++) reader.readSignedBits(bits);
   }
   reader.alignToByte();
 }
@@ -416,8 +433,12 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): Map<number, S
     }
     if (code === TAG_SHOW_FRAME) {
       firstFrame ??= new Map(placements);
+    } else if (code === TAG_PLACE_OBJECT) {
+      readLegacyPlaceObject(body, placements);
     } else if (code === TAG_PLACE_OBJECT_2) {
       readPlaceObject(body, placements, false);
+    } else if (code === TAG_REMOVE_OBJECT) {
+      readLegacyRemoveObject(body, placements);
     } else if (code === TAG_REMOVE_OBJECT_2) {
       placements.delete(body.readUint16());
     } else if (code === TAG_EXPORT_ASSETS || code === TAG_SYMBOL_CLASS) {
@@ -439,7 +460,7 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): Map<number, S
         return null;
       }
       state.sprites.set(spriteId, { placements: spritePlacements });
-    } else if (code === TAG_PLACE_OBJECT_3) {
+    } else if (code === TAG_PLACE_OBJECT_3 || code === TAG_PLACE_OBJECT_4) {
       readPlaceObject(body, placements, true);
     }
     if (!body.valid) return null;
@@ -503,8 +524,11 @@ const TAG_DEFINE_SPRITE = 39;
 const TAG_DEFINE_TEXT = 11;
 const TAG_DEFINE_TEXT_2 = 33;
 const TAG_EXPORT_ASSETS = 56;
+const TAG_PLACE_OBJECT = 4;
 const TAG_PLACE_OBJECT_2 = 26;
 const TAG_PLACE_OBJECT_3 = 70;
+const TAG_PLACE_OBJECT_4 = 94;
+const TAG_REMOVE_OBJECT = 5;
 const TAG_REMOVE_OBJECT_2 = 28;
 const TAG_SHOW_FRAME = 1;
 const TAG_SYMBOL_CLASS = 76;

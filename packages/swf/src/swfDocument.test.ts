@@ -74,6 +74,122 @@ describe('createScene2DFromSwf', () => {
     expect(reference?.kind === 'Slot' ? reference.linkage : null).toBe('Game.ExternalAvatar');
   });
 
+  it('uses a PlaceObject4 class name as direct slot linkage while ignoring later metadata', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(
+          TAG_PLACE_OBJECT_4,
+          joinBytes(
+            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_MATRIX | PLACE_HAS_CHARACTER, PLACE_HAS_CLASS_NAME]),
+            uint16(1),
+            swfString('Game.MetadataAvatar'),
+            uint16(9),
+            createMatrix(1, 0, 0, 1, 60, 80),
+            swfString('metadataSlot'),
+            new Uint8Array([0xde, 0xad, 0xbe, 0xef]),
+          ),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const reference = document?.references[0];
+    expect(reference?.name).toBe('metadataSlot');
+    expect(reference?.kind === 'Slot' ? reference.linkage : null).toBe('Game.MetadataAvatar');
+    expect(getNodeLocalMatrix(reference!.target)).toMatchObject({ tx: 3, ty: 4 });
+  });
+
+  it('uses legacy PlaceObject transforms to import named descendants from a sprite', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 200, 0, 100))),
+        createTag(
+          TAG_DEFINE_SPRITE,
+          joinBytes(
+            uint16(20),
+            uint16(1),
+            createTag(
+              TAG_PLACE_OBJECT_2,
+              joinBytes(
+                new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
+                uint16(2),
+                uint16(7),
+                swfString('legacyChild'),
+              ),
+            ),
+            createTag(TAG_SHOW_FRAME),
+            createTag(TAG_END),
+          ),
+        ),
+        createTag(TAG_SYMBOL_CLASS, joinBytes(uint16(1), uint16(7), swfString('Game.LegacyChild'))),
+        createTag(
+          TAG_PLACE_OBJECT,
+          joinBytes(uint16(20), uint16(1), createMatrix(2, 0, 0, 3, 100, -40), createLegacyColorTransform()),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const reference = document?.references[0];
+    expect(reference?.name).toBe('legacyChild');
+    expect(reference?.kind === 'Slot' ? reference.linkage : null).toBe('Game.LegacyChild');
+    expect(getNodeWorldMatrix(reference!.target)).toMatchObject({ a: 2, d: 3, tx: 5, ty: -2 });
+  });
+
+  it('applies legacy RemoveObject before freezing the first frame', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(
+          TAG_DEFINE_SPRITE,
+          joinBytes(
+            uint16(20),
+            uint16(1),
+            createTag(
+              TAG_PLACE_OBJECT_2,
+              joinBytes(
+                new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
+                uint16(1),
+                uint16(7),
+                swfString('removedChild'),
+              ),
+            ),
+            createTag(TAG_SHOW_FRAME),
+            createTag(TAG_END),
+          ),
+        ),
+        createTag(TAG_PLACE_OBJECT, joinBytes(uint16(20), uint16(4), createMatrix(1, 0, 0, 1, 0, 0))),
+        createTag(TAG_REMOVE_OBJECT, joinBytes(uint16(20), uint16(4))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    expect(document?.references).toEqual([]);
+  });
+
+  it('applies RemoveObject2 before freezing the first frame', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(
+            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
+            uint16(4),
+            uint16(7),
+            swfString('removedSlot'),
+          ),
+        ),
+        createTag(TAG_REMOVE_OBJECT_2, uint16(4)),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    expect(document?.references).toEqual([]);
+  });
+
   it('imports named slots from nested DefineSprite timelines', () => {
     const document = createScene2DFromSwf(
       createSwf([
@@ -164,6 +280,20 @@ describe('createScene2DFromSwf', () => {
       createScene2DFromSwf(
         createSwf([
           createTag(TAG_DEFINE_SPRITE, joinBytes(uint16(1), uint16(1), createTag(TAG_SHOW_FRAME))),
+          createTag(TAG_END),
+        ]),
+      ),
+    ).toBeNull();
+    expect(
+      createScene2DFromSwf(
+        createSwf([createTag(TAG_PLACE_OBJECT, joinBytes(uint16(7), uint16(1))), createTag(TAG_END)]),
+      ),
+    ).toBeNull();
+    expect(createScene2DFromSwf(createSwf([createTag(TAG_REMOVE_OBJECT, uint16(7)), createTag(TAG_END)]))).toBeNull();
+    expect(
+      createScene2DFromSwf(
+        createSwf([
+          createTag(TAG_PLACE_OBJECT_4, new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER, PLACE_HAS_CLASS_NAME])),
           createTag(TAG_END),
         ]),
       ),
@@ -261,6 +391,16 @@ function createMatrix(a: number, b: number, c: number, d: number, tx: number, ty
   return writer.toBytes();
 }
 
+function createLegacyColorTransform(): Uint8Array {
+  const writer = new BitWriter();
+  writer.writeUnsigned(1, 1);
+  writer.writeUnsigned(1, 1);
+  writer.writeUnsigned(2, 4);
+  for (let i = 0; i < 3; i++) writer.writeSigned(1, 2);
+  for (let i = 0; i < 3; i++) writer.writeSigned(-1, 2);
+  return writer.toBytes();
+}
+
 function createRectangle(xMin: number, xMax: number, yMin: number, yMax: number): Uint8Array {
   const writer = new BitWriter();
   const values = [xMin, xMax, yMin, yMax];
@@ -325,8 +465,12 @@ const TAG_END = 0;
 const TAG_DEFINE_SHAPE = 2;
 const TAG_DEFINE_SPRITE = 39;
 const TAG_FILE_ATTRIBUTES = 69;
+const TAG_PLACE_OBJECT = 4;
 const TAG_PLACE_OBJECT_2 = 26;
 const TAG_PLACE_OBJECT_3 = 70;
+const TAG_PLACE_OBJECT_4 = 94;
+const TAG_REMOVE_OBJECT = 5;
+const TAG_REMOVE_OBJECT_2 = 28;
 const TAG_SHOW_FRAME = 1;
 const TAG_SYMBOL_CLASS = 76;
 const _encoder = new TextEncoder();
