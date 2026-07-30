@@ -154,6 +154,19 @@ describe('parseUserAgentEngine on iOS', () => {
   });
 });
 
+describe('parseUserAgentEngine for Opera on iOS', () => {
+  const IOS_PREFIX = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 ';
+
+  it.each([
+    ['OPiOS', `${IOS_PREFIX}(KHTML, like Gecko) OPiOS/9.2.0.11256 Mobile/15E148 Safari/9537.53`],
+    ['OPT', `${IOS_PREFIX}(KHTML, like Gecko) Version/17.0 OPT/3.6.1 Mobile/15E148 Safari/604.1`],
+  ])('keeps the %s product token on WebKit', (_token, ua) => {
+    const engine = parseUserAgentEngine(ua);
+    expect(engine).toBe('webkit');
+    expect(parseUserAgentEngineVersion(ua, engine)).not.toBe('');
+  });
+});
+
 describe('parseUserAgentEngineVersion', () => {
   it('extracts Firefox version', () => {
     expect(
