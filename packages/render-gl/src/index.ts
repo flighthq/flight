@@ -14,6 +14,7 @@ export {
   endGlRenderPass,
   explainGlRenderTarget,
   explainGlRenderTexture,
+  isGlRenderTargetFormatSupported,
   registerGlBitmapTextureResolver,
   registerGlCompressedTextureDecoder,
   registerGlCompressedImageTextureResolver,

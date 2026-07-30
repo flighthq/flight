@@ -10,6 +10,7 @@ import {
   destroyGlRenderTarget,
   drawGlRenderTargetResult,
   explainGlRenderTarget,
+  isGlRenderTargetFormatSupported,
   resizeGlRenderTarget,
   resolveGlRenderTargetAxes,
   resolveGlRenderTarget,
@@ -117,15 +118,17 @@ describe('createGlRenderTarget', () => {
     expect(target.depth).toBe('depth-stencil');
   });
 
-  it('falls back a float format to rgba8 when EXT_color_buffer_float is unavailable', () => {
+  it('falls back preferred float formats directly to rgba8 when EXT_color_buffer_float is unavailable', () => {
     const { state, gl } = makeState();
     // Simulate GL without float-render support (e.g. headless SwiftShader): a float target would be
     // framebuffer-incomplete and render black, so the effective format degrades to the renderable rgba8.
     (gl as unknown as { getExtension: (n: string) => unknown }).getExtension = (name: string) =>
       name === 'EXT_color_buffer_float' ? null : {};
-    const target = createGlRenderTarget(state, { width: 32, height: 32, format: 'rgba16f' });
-    expect(target.format).toBe('rgba8');
-    expect(target.colorFormats).toEqual(['rgba8']);
+    for (const format of ['rgba16f', 'rgba32f'] as const) {
+      const target = createGlRenderTarget(state, { width: 32, height: 32, format }, 'preferred');
+      expect(target.format).toBe('rgba8');
+      expect(target.colorFormats).toEqual(['rgba8']);
+    }
   });
 
   it('keeps a float format when EXT_color_buffer_float is available', () => {
@@ -133,6 +136,38 @@ describe('createGlRenderTarget', () => {
     (gl as unknown as { getExtension: (n: string) => unknown }).getExtension = () => ({});
     const target = createGlRenderTarget(state, { width: 32, height: 32, format: 'rgba16f' });
     expect(target.format).toBe('rgba16f');
+  });
+
+  it('refuses a required unsupported float format before allocating storage', () => {
+    const { state, gl } = makeState();
+    (gl as unknown as { getExtension: (n: string) => unknown }).getExtension = (name: string) =>
+      name === 'EXT_color_buffer_float' ? null : {};
+    vi.clearAllMocks();
+
+    const target = createGlRenderTarget(state, { width: 32, height: 32, format: 'rgba32f' }, 'required');
+
+    expect(target).toBeNull();
+    expect(gl.createFramebuffer).not.toHaveBeenCalled();
+    expect(gl.createTexture).not.toHaveBeenCalled();
+  });
+
+  it('refuses required heterogeneous storage when any attachment format is unsupported', () => {
+    const { state, gl } = makeState();
+    (gl as unknown as { getExtension: (n: string) => unknown }).getExtension = (name: string) =>
+      name === 'EXT_color_buffer_float' ? null : {};
+
+    const target = createGlRenderTarget(
+      state,
+      {
+        width: 32,
+        height: 32,
+        colorAttachments: 2,
+        colorFormats: ['rgba8', 'rgba16f'],
+      },
+      'required',
+    );
+
+    expect(target).toBeNull();
   });
 });
 
@@ -245,6 +280,28 @@ describe('explainGlRenderTarget', () => {
     const { state } = makeState();
     const target = createGlRenderTarget(state, { width: 32, height: 16 });
     expect(explainGlRenderTarget(target).differences).toEqual([]);
+  });
+});
+
+describe('isGlRenderTargetFormatSupported', () => {
+  it('reports rgba8 independently of float extension support', () => {
+    const { state, gl } = makeState();
+    const getExtension = vi.fn(() => null);
+    (gl as unknown as { getExtension: (name: string) => unknown }).getExtension = getExtension;
+
+    expect(isGlRenderTargetFormatSupported(state, 'rgba8')).toBe(true);
+    expect(getExtension).not.toHaveBeenCalled();
+  });
+
+  it('reports both float formats from EXT_color_buffer_float', () => {
+    const { state, gl } = makeState();
+    (gl as unknown as { getExtension: (name: string) => unknown }).getExtension = () => null;
+    expect(isGlRenderTargetFormatSupported(state, 'rgba16f')).toBe(false);
+    expect(isGlRenderTargetFormatSupported(state, 'rgba32f')).toBe(false);
+
+    (gl as unknown as { getExtension: (name: string) => unknown }).getExtension = () => ({});
+    expect(isGlRenderTargetFormatSupported(state, 'rgba16f')).toBe(true);
+    expect(isGlRenderTargetFormatSupported(state, 'rgba32f')).toBe(true);
   });
 });
 
@@ -433,6 +490,20 @@ describe('resolveGlRenderTargetAxes', () => {
     const axes = resolveGlRenderTargetAxes(state, { width: 32, height: 16, sampleCount: 4 });
 
     expect(axes.sampleCount).toBe(2);
+    expect(gl.createFramebuffer).not.toHaveBeenCalled();
+    expect(gl.createTexture).not.toHaveBeenCalled();
+  });
+
+  it('applies preferred fallback and required refusal without allocating storage', () => {
+    const { state, gl } = makeState();
+    (gl as unknown as { getExtension: (name: string) => unknown }).getExtension = () => null;
+    vi.clearAllMocks();
+
+    expect(resolveGlRenderTargetAxes(state, { width: 32, height: 16, format: 'rgba32f' }, 'preferred')).toMatchObject({
+      format: 'rgba8',
+      colorFormats: ['rgba8'],
+    });
+    expect(resolveGlRenderTargetAxes(state, { width: 32, height: 16, format: 'rgba32f' }, 'required')).toBeNull();
     expect(gl.createFramebuffer).not.toHaveBeenCalled();
     expect(gl.createTexture).not.toHaveBeenCalled();
   });
