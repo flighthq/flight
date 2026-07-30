@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/swf'
 status: partial
-score: 49
+score: 53
 updated: 2026-07-30
 ingested:
   - charter.md
@@ -14,14 +14,14 @@ ingested:
 
 ## Verdict
 
-**Partial — 49/100.** The package now supplies the first honest end-to-end proof of the shared
+**Partial — 53/100.** The package now supplies the first honest end-to-end proof of the shared
 named-graph contract: bounded `FWS` parsing turns root-timeline named instances, transforms, and class
 linkage into enumerable `Scene2DDocument` slot references. `DefineSprite` first frames now instantiate
 recursively, so named descendants survive unnamed MovieClip containers with their composed transforms.
 The slice is deliberately structural. It does not yet recover later timeline frames, visual definitions,
 compressed bodies, or real-file evidence, so it is a sound importer nucleus rather than broad SWF
-support. Stage, shape, text, morph, and recursively composed sprite extents now cover the available
-named-graph sizing contract.
+support. Stage, shape, text, morph, lossless-bitmap, video, and recursively composed sprite extents now
+cover the available named-graph sizing contract.
 
 ## What is solid
 
@@ -43,6 +43,9 @@ named-graph sizing contract.
 - The stage RECT persists as root-local authored bounds. `DefineShape*`, `DefineText*`,
   `DefineEditText`, and `DefineMorphShape*` bound prefixes persist on placed targets; first-frame sprite
   bounds recursively transform and union all available child extents.
+- `DefineBitsLossless`/`DefineBitsLossless2` and `DefineVideoStream` retain their bounded dimension
+  prefixes as zero-origin local extents without decoding compressed pixels or video frames. Invalid
+  formats, truncated headers, zero dimensions, and duplicate character IDs reject.
 - `SymbolClass`, `ExportAssets`, and direct class names resolve linkage without parsing or executing
   ABC.
 - The output crosses the intended boundary: unattached renderer-neutral nodes plus enumerable slot
@@ -57,8 +60,8 @@ named-graph sizing contract.
   and conversion into `movieclip`/`timeline` data remain unimplemented.
 - No `DefineShape*`, bitmap, text, font, or sprite visual definition is materialized. The current
   targets are structural containers, not rendered archive content.
-- Bounds coverage follows definitions that carry an immediate RECT prefix. Bitmap, video, button, and
-  font extents require their own tag interpretation, while later-frame sprite extent changes remain
+- Bounds coverage follows definitions with immediate RECT or dimension prefixes. JPEG bitmap, button,
+  and font extents require their own tag interpretation, while later-frame sprite extent changes remain
   unavailable with the first-frame-only graph.
 - `CWS`/`ZWS` are recognized but rejected until the chartered registered decompression seam exists.
   `DoABC` remains skipped rather than exposed as an opaque blob.

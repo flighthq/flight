@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/scene2d-resources'
 status: solid
-score: 85
+score: 86
 updated: 2026-07-30
 ingested:
   - charter.md
@@ -14,7 +14,7 @@ ingested:
 
 ## Verdict
 
-**Solid — 85/100.** The package establishes the right renderer-neutral document and content-reference
+**Solid — 86/100.** The package establishes the right renderer-neutral document and content-reference
 boundary: an enumerable asset/slot manifest, synchronous reconciliation, an operation-scoped asynchronous
 load, caller-owned URL acquisition, and an empty-by-default importer registry. The public and contract
 lanes are symmetrical, all exported types live in `@flighthq/types`, every exported function has a
@@ -43,7 +43,8 @@ still synthetic and narrow; later MovieClip frames and deferred asset references
   current placement/removal records preserve recursively nested first-frame display-list state,
   including fresh/move/replacement semantics and isolation from later-frame mutations. Named affine
   transforms and `SymbolClass`/`ExportAssets` or direct-class linkage survive, while stage and available
-  character bounds preserve slot extents through recursive placement transforms.
+  RECT, lossless-bitmap, video, and recursive sprite bounds preserve slot extents through placement
+  transforms.
 - Package shape is clean: `sideEffects: false`; source imports only declared dependencies; the SDK root,
   SDK formats, package root, and `/contract` lanes agree; `npm run api`, `exports:check`,
   `type-home:check`, package checks, and package tests pass.
