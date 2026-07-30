@@ -17,7 +17,7 @@ status: ./status.md
 
 - **2D color transform** — a complete `ColorTransform` algebra (create/clone/copy/concat/invert/equals, offset packers, GPU-array upload path). This is the classic 2D tinting model.
 - **Color utilities** — packed-RGBA values and the conversions between color spaces: the bidirectional sRGB↔linear seam (`unpackColorToLinear`/`packLinearToColor`), gamma-free pack/unpack, HSL/HSV (artist-facing, sRGB-space), gamma-correct mixing/lerp, luminance/contrast/WCAG, and premultiply/unpremultiply.
-- **3D material catalog** — a broad, glTF-aligned descriptor library: unlit/debug, classic lighting (Lambert/Phong/Blinn-Phong), metallic-roughness PBR core, the spec-gloss model and its conversion to metallic-roughness, the KHR-named extension materials (anisotropy, clearcoat, iridescence, sheen, specular, transmission/volume, subsurface), validation/clamping, a generic clone/copy/equals suite, and named PBR presets.
+- **3D material catalog** — a broad, glTF-aligned descriptor library: unlit/debug, classic lighting (Lambert/Phong/Blinn-Phong), metallic-roughness PBR core, the spec-gloss model and its conversion to metallic-roughness, open KHR-named PBR extension descriptors composed by `ExtendedPbrMaterial` (anisotropy, clearcoat, iridescence, sheen, specular, transmission/volume, subsurface), validation/clamping, a generic clone/copy/equals suite, and named PBR presets.
 
 It ends where **shading** begins: it produces and compares descriptors and color values; it does not (today) own BRDF/Fresnel/GGX/IBL math. It feeds the GPU renderers (`render-gl`/`scene-wgpu`) and the software path (`scene2d-skia`), sits at the 2D-tint / 3D-material / color-seam intersection, and is the single SDK home for the sRGB→linear decode.
 

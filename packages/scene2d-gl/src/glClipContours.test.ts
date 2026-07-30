@@ -1,5 +1,10 @@
 import { createMatrix } from '@flighthq/geometry/contract';
-import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import {
+  beginGlRenderPass,
+  createGlRenderTarget,
+  endGlRenderPass,
+  getGlRenderStateRuntime,
+} from '@flighthq/render-gl/contract';
 
 import { popGlClipContours, pushGlClipContours } from './glClipContours';
 import { createGlState } from './glTestHelper';
@@ -21,6 +26,30 @@ describe('popGlClipContours', () => {
 });
 
 describe('pushGlClipContours', () => {
+  it('rejects a same-target nested pass before it can clear live contour coverage', () => {
+    const { state, gl } = createGlState();
+    const target = createGlRenderTarget(state, {
+      depth: 'depth-stencil',
+      height: 64,
+      width: 64,
+    });
+    beginGlRenderPass(state, target, { preserveDepth: true });
+    pushGlClipContours(state, SQUARE, 'nonZero', createMatrix());
+    gl.depthMask(false);
+    const stencilClearCount = vi.mocked(gl.clear).mock.calls.length;
+
+    expect(() =>
+      beginGlRenderPass(state, target, {
+        preserveColor: true,
+        preserveDepth: true,
+      }),
+    ).toThrow('cannot nest the active framebuffer while a contour clip is live');
+
+    expect(gl.clear).toHaveBeenCalledTimes(stencilClearCount);
+    expect(getGlRenderStateRuntime(state).currentMaskDepth).toBe(1);
+    endGlRenderPass(state);
+  });
+
   it('enables the stencil test and clears the buffer when opening the first clip', () => {
     const { state, gl } = createGlState();
 
