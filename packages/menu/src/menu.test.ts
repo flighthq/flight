@@ -64,6 +64,124 @@ describe('createWebMenuBackend', () => {
   });
 });
 
+describe('createWebMenuBackend context-menu renderer', () => {
+  afterEach(() => {
+    document.body.replaceChildren();
+    vi.restoreAllMocks();
+  });
+
+  function getRootMenu(): HTMLUListElement {
+    const menu = document.body.querySelector('ul');
+    expect(menu).not.toBeNull();
+    return menu as HTMLUListElement;
+  }
+
+  function getOverlay(): HTMLDivElement {
+    const overlay = document.body.querySelector('div');
+    expect(overlay).not.toBeNull();
+    return overlay as HTMLDivElement;
+  }
+
+  function press(key: string): void {
+    document.dispatchEvent(new KeyboardEvent('keydown', { key }));
+  }
+
+  it('renders separators, checked kinds, accelerators, and disabled items', async () => {
+    const promise = createWebMenuBackend().popupContextMenu(
+      [
+        { id: 'checked', label: 'Checked', type: 'checkbox', checked: true },
+        { id: 'chosen', label: 'Chosen', type: 'radio', checked: true },
+        { type: 'separator' },
+        { id: 'save', label: 'Save', accelerator: 'Ctrl+S' },
+        { id: 'disabled', label: 'Disabled', enabled: false },
+      ],
+      10,
+      20,
+    );
+    const items = getRootMenu().querySelectorAll(':scope > li');
+    expect(items).toHaveLength(5);
+    expect(items[0].textContent).toBe('✓Checked');
+    expect(items[1].textContent).toBe('●Chosen');
+    expect(items[2].getAttribute('data-enabled')).toBeNull();
+    expect(items[3].textContent).toBe('SaveCtrl+S');
+    expect(items[4].getAttribute('data-enabled')).toBe('false');
+
+    let settled = false;
+    void promise.then(() => {
+      settled = true;
+    });
+    items[4].dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await Promise.resolve();
+    expect(settled).toBe(false);
+    getOverlay().click();
+    await expect(promise).resolves.toBeNull();
+  });
+
+  it('selects enabled items by click and dismisses on outside click', async () => {
+    const backend = createWebMenuBackend();
+    const selected = backend.popupContextMenu([{ id: 'copy', label: 'Copy' }], 0, 0);
+    getRootMenu().querySelector<HTMLElement>('li')!.click();
+    await expect(selected).resolves.toBe('copy');
+    expect(document.body.querySelector('ul')).toBeNull();
+
+    const dismissed = backend.popupContextMenu([{ id: 'paste', label: 'Paste' }], 0, 0);
+    getOverlay().click();
+    await expect(dismissed).resolves.toBeNull();
+  });
+
+  it('wraps keyboard focus and selects with Enter or Space', async () => {
+    const items = [
+      { id: 'first', label: 'First' },
+      { id: 'disabled', label: 'Disabled', enabled: false },
+      { id: 'last', label: 'Last' },
+    ];
+
+    const enterSelection = createWebMenuBackend().popupContextMenu(items, 0, 0);
+    press('ArrowUp');
+    expect(getRootMenu().querySelector('[data-focused="true"]')?.getAttribute('data-item-id')).toBe('last');
+    press('Enter');
+    await expect(enterSelection).resolves.toBe('last');
+
+    const spaceSelection = createWebMenuBackend().popupContextMenu(items, 0, 0);
+    press('ArrowDown');
+    press('ArrowDown');
+    press('ArrowDown');
+    expect(getRootMenu().querySelector('[data-focused="true"]')?.getAttribute('data-item-id')).toBe('first');
+    press(' ');
+    await expect(spaceSelection).resolves.toBe('first');
+  });
+
+  it('dismisses on Escape', async () => {
+    const promise = createWebMenuBackend().popupContextMenu([{ id: 'copy', label: 'Copy' }], 0, 0);
+    press('Escape');
+    await expect(promise).resolves.toBeNull();
+  });
+
+  it('opens a submenu on hover and resolves a child selection', async () => {
+    const promise = createWebMenuBackend().popupContextMenu(
+      [{ id: 'file', label: 'File', type: 'submenu', submenu: [{ id: 'open', label: 'Open' }] }],
+      0,
+      0,
+    );
+    const parent = getRootMenu().querySelector<HTMLElement>(':scope > li')!;
+    const submenu = parent.querySelector<HTMLElement>('ul')!;
+    expect(submenu.style.display).toBe('none');
+    parent.dispatchEvent(new MouseEvent('mouseenter'));
+    expect(submenu.style.display).toBe('block');
+    submenu.querySelector<HTMLElement>('li')!.click();
+    await expect(promise).resolves.toBe('open');
+  });
+
+  it('clamps a menu that overflows the viewport', async () => {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(new DOMRect(1900, 1900, 100, 100));
+    const promise = createWebMenuBackend().popupContextMenu([{ id: 'copy', label: 'Copy' }], 40, 30);
+    expect(getRootMenu().style.left).toBe('0px');
+    expect(getRootMenu().style.top).toBe('0px');
+    getOverlay().click();
+    await promise;
+  });
+});
+
 describe('enableMenuSignals', () => {
   it('returns a stable instance across calls', () => {
     expect(enableMenuSignals()).toBe(enableMenuSignals());
