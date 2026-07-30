@@ -1196,6 +1196,15 @@
           }
         },
         {
+          "scene": "render-target-format-policy",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": false
+          }
+        },
+        {
           "scene": "render-target-node-2d",
           "backends": {
             "canvas": true,
