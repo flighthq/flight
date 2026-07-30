@@ -95,12 +95,23 @@ export async function loadImageResourceFromUrl(
   const img = new Image();
   if (crossOrigin !== undefined) img.crossOrigin = crossOrigin;
   img.src = url;
-  // Wire abort to cancel the pending decode by rejecting the promise.
+  // Wire abort to cancel the pending decode and reject with the signal's reason. Always remove the
+  // listener when the race settles so a long-lived signal does not retain the image and closure.
   if (signal !== undefined) {
-    await Promise.race([
-      img.decode(),
-      new Promise<never>((_, reject) => signal.addEventListener('abort', () => reject(signal.reason), { once: true })),
-    ]);
+    let rejectAbort: (reason?: unknown) => void = () => {};
+    const abortPromise = new Promise<never>((_, reject) => {
+      rejectAbort = reject;
+    });
+    const onAbort = (): void => {
+      img.src = '';
+      rejectAbort(signal.reason);
+    };
+    signal.addEventListener('abort', onAbort, { once: true });
+    try {
+      await Promise.race([img.decode(), abortPromise]);
+    } finally {
+      signal.removeEventListener('abort', onAbort);
+    }
   } else {
     await img.decode();
   }

@@ -220,6 +220,41 @@ describe('loadImageResourceFromUrl', () => {
     );
   });
 
+  it('clears the image source when aborted during decode', async () => {
+    let capturedImg: HTMLImageElement | undefined;
+    const origImage = globalThis.Image;
+    globalThis.Image = new Proxy(origImage, {
+      construct(Target, args) {
+        const img = new Target(...(args as []));
+        capturedImg = img;
+        return img;
+      },
+    }) as typeof Image;
+    HTMLImageElement.prototype.decode = vi.fn().mockReturnValue(new Promise(() => {}));
+    const controller = new AbortController();
+
+    try {
+      const promise = loadImageResourceFromUrl('/images/slow.png', undefined, controller.signal);
+      controller.abort(new Error('cancelled'));
+      await expect(promise).rejects.toThrow('cancelled');
+      expect(capturedImg?.getAttribute('src')).toBe('');
+    } finally {
+      globalThis.Image = origImage;
+    }
+  });
+
+  it('removes its abort listener after decode succeeds', async () => {
+    const controller = new AbortController();
+    const add = vi.spyOn(controller.signal, 'addEventListener');
+    const remove = vi.spyOn(controller.signal, 'removeEventListener');
+
+    await loadImageResourceFromUrl('/images/logo.png', undefined, controller.signal);
+
+    expect(add).toHaveBeenCalledOnce();
+    expect(remove).toHaveBeenCalledOnce();
+    expect(remove.mock.calls[0][1]).toBe(add.mock.calls[0][1]);
+  });
+
   it('resolves to an Image whose source is an HTMLImageElement', async () => {
     const resource = await loadImageResourceFromUrl('data:image/png;base64,abc');
     expect(resource.source).toBeInstanceOf(HTMLImageElement);
