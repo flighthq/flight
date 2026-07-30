@@ -1,90 +1,69 @@
 ---
 package: '@flighthq/dialog'
-status: partial
-score: 38
-updated: 2026-06-25
+status: solid
+score: 78
+updated: 2026-07-30
 ingested:
+  - charter.md
   - status.md
   - source
-  - changes.patch
-  - 'base=origin/main(eb73c3d74)'
-  - 'evidence=integration-b2824e3d8 delta'
-  - 'types: Dialog.ts (head, unchanged from base)'
+  - tests
+  - prior review (2026-06-25 merge gate)
 ---
 
-# dialog — Merge Review (integration b2824e3d8 vs approved origin/main eb73c3d74)
-
-> This is a **merge-gate** review of the incoming delta only. Baseline is `origin/main` (`eb73c3d74`), the blessed floor (`incoming/integration-b2824e3d8/base/packages/dialog/`) — not under review. Candidate is the integration head (`incoming/integration-b2824e3d8/head/packages/dialog/`). Every objection below is grounded in a `b2824e3d8:<path>` hunk. The prior package review (score 86, evidence `incoming/builder-67dc46d64`) graded a _different_ bundle that **did** carry the new dialog types in `@flighthq/types`; the integration bundle reviewed here **dropped them**, which is the central finding.
+# dialog — Review
 
 ## Verdict
 
-**REJECT for merge — partial / 38.** The dialog source delta is, on its own, a good redesign in the direction the charter already drafts: pickers return a `FileDialogHandle` (handle-as-currency), a first-class `showOpenDirectoryDialog`, the kind-forcing message family (`showInfoDialog` / `showWarningDialog` / `showErrorDialog` / `showErrorBox`), and a File System Access API web backend with honest `<input>` fallbacks. But the integration head **does not compile**: the head `dialog.ts` (and the head `filesystem.ts`, and three test files) import types from `@flighthq/types` that the integration head's `@flighthq/types` does not define. The type-layer half of the change was lost in integration. As a gate into the approved baseline this is an automatic block — the approved floor builds; this delta does not.
+**Solid — 78/100.** The 2026-06-25 merge-gate rejection no longer describes the live package. Its missing
+type-layer blocker is fully resolved: `@flighthq/types` carries the complete dialog backend, option,
+result, and handle shapes, and the package passes its compile, API, export, type-home, portability, and
+test gates. The implementation now delivers a coherent native/web command cell: message dialogs,
+open/save/directory pickers, opaque file handles, File System Access API bridges, legacy input fallbacks,
+and a swappable backend without taking ownership of byte I/O. Remaining distance is predominantly
+behavioral proof and the limitations of browser fallback surfaces.
 
-## Blocking finding — the delta does not type-check
+## Present capabilities
 
-The head implementation imports four types from `@flighthq/types` that are **absent** from the head types package:
+- Fifteen exported functions form a symmetrical command seam: `createWebDialogBackend`,
+  `getDialogBackend`, and `setDialogBackend`; the message/confirm/prompt family; three picker calls; and
+  two web-handle bridge queries. Backend installation is lazy, resettable, and side-effect-free at import.
+- `FileDialogHandle` is plain cross-cell currency. Native hosts carry real paths; web File System Access
+  results retain live file/directory handles in identity-keyed `WeakMap`s that `@flighthq/filesystem`
+  consumes through the bridge queries. Dialog never reads or writes bytes.
+- The web backend prefers `showOpenFilePicker`, `showSaveFilePicker`, and `showDirectoryPicker`, then
+  degrades to `<input type=file>` / `webkitdirectory` or a sentinel where no viable fallback exists.
+  Picker cancellation, denied permission, absent APIs, and window-dialog failures do not throw.
+- File filters normalize extensions for both File System Access and legacy input paths. The July 2 guard
+  skips wildcard-only groups and omits `types` when every group is empty, avoiding the browser-rejected
+  `{ accept: {} }` shape; the public backend path now pins that exact behavior.
+- Public and `/contract` lanes are intentional: application-facing show/bridge calls are promoted, while
+  backend creation and installation remain contract-only. All exported types live in `@flighthq/types`,
+  the package has only its declared type-layer dependency, and `sideEffects` is false.
 
-`b2824e3d8:head/packages/dialog/src/dialog.ts:1-11`
+## Remaining depth
 
-```ts
-import type {
-  DialogBackend,
-  FileDialogHandle,
-  FileDialogStartIn,
-  MessageDialogOptions,
-  MessageDialogResult,
-  OpenDirectoryDialogOptions,
-  OpenFileDialogOptions,
-  PromptDialogOptions,
-  SaveFileDialogOptions,
-} from '@flighthq/types';
-```
+- File System Access behavior is still lightly tested. The wildcard regression now captures the options
+  sent to `showOpenFilePicker`, but successful open/save/directory results, `startIn` filtering, suggested
+  save names, failure sentinels, and both native-handle registry round trips lack direct behavioral proof.
+- Legacy input cancellation is not deterministic on browsers that emit neither `change` nor the newer
+  `cancel` event; in that environment the returned Promise can remain pending. A focus-return fallback or
+  an explicit browser-support contract needs careful event-lifecycle handling.
+- `OpenDirectoryDialogOptions.multiple` cannot be honored by `showDirectoryPicker`, which selects one
+  directory, and is inconsistently supported by the `webkitdirectory` fallback. The type comment currently
+  overstates web support and should be reconciled when the cross-host multiple-directory contract is set.
+- Web `confirm`/`alert`/`prompt` necessarily ignore most native options: title/detail/button arrays,
+  checkbox presentation, parent window, prompt placeholder, and severity. These are honest degradation
+  points, but there is no capability query for callers that need to choose their own web UI.
+- The package catches every File System Access error into the same sentinel. That matches suite policy for
+  expected cancellation/absence, but it cannot distinguish cancellation, permission denial, and an invalid
+  picker option if a future filter regression escapes tests.
 
-But `b2824e3d8:head/packages/types/src/Dialog.ts` is **byte-identical to base** (a `diff base head` on the file exits 0; the `changes.patch` slice contains **no** hunk under `packages/types/src/Dialog.ts`), and it defines none of `FileDialogHandle`, `FileDialogStartIn`, `OpenDirectoryDialogOptions`, or `PromptDialogOptions`. There is no `FileDialogHandle.ts` in the head types package (`ls head/packages/types/src/FileDialogHandle.ts` → not found), and `head/packages/types/src/index.ts` exports no such symbol. `FileDialogHandle` is _referenced_ in `dialog.ts`, `dialog.test.ts`, and `filesystem.test.ts`, and _defined nowhere_ in the entire head tree. `tsc -b` cannot resolve these imports — the build fails.
+## Charter and boundary conclusion
 
-Three concrete shape mismatches follow from the same lost type-layer change, each independently a compile error against the head `@flighthq/types`:
-
-1. **`MessageDialogResult` has no `cancelled` field.** `b2824e3d8:head/packages/types/src/Dialog.ts:48-51` still declares only:
-
-   ```ts
-   export interface MessageDialogResult {
-     buttonIndex: number;
-     checkboxChecked: boolean;
-   }
-   ```
-
-   yet the head backend returns `cancelled` — `b2824e3d8:head/packages/dialog/src/dialog.ts:33` (`return { buttonIndex: 0, cancelled: false, checkboxChecked };`) — and the tests assert it (`b2824e3d8:head/packages/dialog/src/dialog.test.ts:63`, `expect(typeof result.cancelled).toBe('boolean')`). `cancelled` is excess-property on the typed result.
-
-2. **`DialogBackend.openFile` / `saveFile` return strings, not handles.** `b2824e3d8:head/packages/types/src/Dialog.ts:57-58` still declares `openFile(...): Promise<string[]>` and `saveFile(...): Promise<string | null>`, but the head impl resolves `FileDialogHandle[]` / `FileDialogHandle | null` (`b2824e3d8:head/packages/dialog/src/dialog.ts:45-47, 56-58`).
-
-3. **`DialogBackend.prompt` is positional; head calls it option-bagged, and `openDirectory` is missing.** `b2824e3d8:head/packages/types/src/Dialog.ts:60` is `prompt(message: string, defaultValue: string)`, but the head backend implements `prompt(options)` reading `options.message` / `options.defaultValue` (`b2824e3d8:head/packages/dialog/src/dialog.ts:48-55`) and adds an `openDirectory` method (`b2824e3d8:head/packages/dialog/src/dialog.ts:42-44`) that the interface does not declare.
-
-This is not a stylistic nit — it is a missing half of an atomic change. The dialog/filesystem source was integrated without the `@flighthq/types` edit (the new `FileDialogHandle`, the reshaped `OpenFileDialogOptions`/`SaveFileDialogOptions`, `OpenDirectoryDialogOptions`, `PromptDialogOptions`, `FileDialogStartIn`, and the `cancelled`/handle-shaped `DialogBackend`). The fix is to land that types delta into the integration `@flighthq/types`, not to touch dialog further.
-
-## Secondary findings (delta-introduced, non-blocking)
-
-- **New web FS-Access surface is effectively untested.** The head adds `openFileSystemAccessPicker`, `saveWebFile`, `openDirectoryPickerAccessApi`, and the three translators (`buildFileSystemAccessTypes`, `buildAcceptAttribute`, `toFileSystemAccessStartIn`) — `b2824e3d8:head/packages/dialog/src/dialog.ts:142-377` — but the test delta only asserts "returns a Promise" / "null in jsdom" / delegation through a fake backend (`b2824e3d8:head/packages/dialog/src/dialog.test.ts:66-86, 227-231`). None of the FS-Access paths, the two `WeakMap` registry round-trips, or the builders are exercised. These helpers are pure and trivially testable with an injected fake `window`. Not a merge blocker by itself, but it is new, behaviorally significant code shipping dark.
-
-- **`buildFileSystemAccessTypes` can emit an `accept: {}` the API rejects.** `b2824e3d8:head/packages/dialog/src/dialog.ts:146-160`: when a filter has only mimeTypes-less wildcard extensions (all `'*'`) the `accept` map stays empty, yielding `{ accept: {}, description }`, which the File System Access API throws on. Caught by the surrounding `try/catch` → sentinel `[]`, so it silently degrades to "picker did nothing" rather than throwing — but it is an avoidable dead-on-arrival filter group. Worth a guard or a pinning test.
-
-- **Source order: `showWarningDialog` sits below the private helpers.** The new export is at `b2824e3d8:head/packages/dialog/src/dialog.ts:391`, after the registries and the private FS-Access helpers, breaking the "exported functions first (alphabetized), loose/private state last" scan order (`index.md › Source Style`). `npm run order` should be run; this is a one-move fix.
-
-- **`Readonly`-then-cast on the bridge accessors (cosmetic).** `b2824e3d8:head/packages/dialog/src/dialog.ts:71-72, 78-79` take `Readonly<FileDialogHandle>` then immediately `handle as FileDialogHandle` to key the `WeakMap`. Harmless (WeakMap keys by identity), but the param `Readonly` is decorative against a same-type cast. Acceptable.
-
-## What is right in the delta (do not relitigate)
-
-- **Composition / bedrock (PASS).** Dialog stays a single command cell; it does not fuse byte-I/O (that stays in `@flighthq/filesystem` via the `getWebFileSystemHandle` / `getWebDirectorySystemHandle` bridge — `b2824e3d8:head/packages/dialog/src/dialog.ts:71-80`). Handle-as-currency is the right cut and matches the charter's North star.
-- **Naming (PASS).** Full unabbreviated names throughout (`showOpenDirectoryDialog`, `getWebDirectorySystemHandle`, `createWebDialogBackend`); `get*`/`set*`/`createWeb*` command shape; `show*` for the dialog verbs. Globally self-identifying.
-- **Tree-shaking (PASS).** `b2824e3d8:head/packages/dialog/package.json` keeps `sideEffects: false`, a single `.` export, and `@flighthq/types` as the only dependency. No eager registration, no top-level side effects; `index.ts` is a thin `export * from './dialog'`.
-- **Registry-vs-union (N/A).** No `kind` dispatch family here; the swappable `DialogBackend` is the seam. No closed-union smell.
-- **Subject triad / plurality (PASS).** No premature `dialog-formats` split; named filter presets are correctly parked (charter Boundaries). Filters pass as data.
-- **Sentinels-not-throws (PASS).** Every web path guards `window`/`document`/method existence and resolves to `false`/`null`/`[]`/zero-button on cancel or absence; `AbortError`/`SecurityError` collapse to the sentinel inside `try/catch` (`b2824e3d8:head/packages/dialog/src/dialog.ts:264-267, 341-344`).
-
-## Charter fit
-
-The charter (`draft: true`) already describes the head design — handle-as-currency, a first-class directory picker, the message family, FS-Access-first with honest fallbacks. The **design** of the delta matches the drafted charter. The **integration** of it does not deliver that design, because the type-layer dependency is missing. Open direction #6 ("the untested web backend") is confirmed by this review and remains live.
-
-## Contract & docs fit
-
-- **Types-first contract — VIOLATED in the integration head**, not by intent but by omission: the source depends on `@flighthq/types` shapes that the head types package does not contain (see the blocking finding). The contract requires the header layer to define the surface _first_; here the implementation ships without it.
-- Everything else (single `.` export, `sideEffects: false`, `import type` on its own lines, comments carrying ownership/aliasing rules on the two registries) is contract-clean in the delta.
+The live implementation matches the charter's core boundary: selection belongs here, I/O remains in
+`@flighthq/filesystem`, and native hosts replace the web backend through the shared platform-suite seam.
+The charter's July 2 empty-accept decision is implemented and regression-tested. Its two remaining
+directions—promoting handle-as-currency and recording the filesystem-to-dialog dependency—describe
+already-shipped architecture and should be formalized in a future direction session rather than changed
+by a sweep.

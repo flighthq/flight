@@ -1,12 +1,22 @@
 ---
 package: '@flighthq/dialog'
-updated: 2026-06-24
-by: ingest:builder-67dc46d64
+updated: 2026-07-30
+by: builder3
 ---
 
 # dialog — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## [2026-07-30 · builder3] — live-tree review and empty-accept regression proof
+
+- Superseded the stale partial-38 merge-gate review: the missing type layer is present and all scoped
+  package gates pass.
+- Verified the July 2 `buildFileSystemAccessTypes` guard already omits wildcard-only filter groups and
+  returns `undefined` when no valid groups remain.
+- Added public-path regression coverage proving `showOpenFilePicker` receives no `types` property for an
+  all-wildcard filter.
+- Restored `showWarningDialog` to the exported-function block before private helpers.
 
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 

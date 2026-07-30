@@ -97,10 +97,6 @@ Design calls to settle before building the affected entries:
 - Parse the short `#rgb` theme-color form
 - Decide whether `StatusBarInfo.height` should be reported by the web backend at all
 
-### dialog (partial 38)
-
-- Fix `buildFileSystemAccessTypes` empty-accept edge case
-
 ### loader (partial 38)
 
 - Rebuild missing types in `@flighthq/types`
@@ -1002,7 +998,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene3d` · `particleemitter` · `scene2d-resources` · `skeleton3d` · `scene3d-resources` · `camera-controls` · `debug` · `lifecycle` · `adjustments` · `camera` · `platform` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
+`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene3d` · `particleemitter` · `scene2d-resources` · `skeleton3d` · `scene3d-resources` · `camera-controls` · `debug` · `dialog` · `lifecycle` · `adjustments` · `camera` · `platform` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
 
 ## Liveness — which stage each stale cell needs next
 
