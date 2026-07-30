@@ -31,8 +31,10 @@ function detectDragonBones(text: string): boolean {
   return /"armature"\s*:/.test(text);
 }
 
-// A Spine skeleton JSON is an object carrying a `bones`, `skeleton`, or `slots` key. (The `.skel` binary is
-// a later format behind this same seam.)
+// A Spine skeleton JSON is an object carrying a `bones`, `skeleton`, or `slots` key. The `.skel` BINARY is
+// deliberately not behind this seam: this registry dispatches on decoded text, and a binary skeleton is
+// bytes, so it has its own entry point (`parseSpineSkeletonBinary`) exactly as `parseGlb` sits beside
+// `parseGltf` rather than behind a text detector.
 function detectSpine(text: string): boolean {
   if (text.trimStart()[0] !== '{') return false;
   return /"bones"\s*:/.test(text) || /"skeleton"\s*:/.test(text) || /"slots"\s*:/.test(text);
