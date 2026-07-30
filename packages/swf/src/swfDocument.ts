@@ -303,16 +303,18 @@ function readPlaceObject(body: SwfReader, placements: Map<number, SwfPlacement>,
   const extendedFlags = hasExtendedFlags ? body.readUint8() : 0;
   const depth = body.readUint16();
   const existing = placements.get(depth);
+  const isMove = (flags & 0x01) !== 0;
+  const inherited = isMove ? existing : undefined;
   const hasCharacter = (flags & 0x02) !== 0;
   const hasClassName = (extendedFlags & 0x08) !== 0 || ((extendedFlags & 0x10) !== 0 && hasCharacter);
-  const directLinkage = hasClassName ? body.readString() : (existing?.directLinkage ?? null);
-  const characterId = hasCharacter ? body.readUint16() : (existing?.characterId ?? 0);
-  const matrix = (flags & 0x04) !== 0 ? readSwfMatrix(body) : (existing?.matrix ?? IDENTITY_MATRIX);
+  const directLinkage = hasClassName ? body.readString() : (inherited?.directLinkage ?? null);
+  const characterId = hasCharacter ? body.readUint16() : (inherited?.characterId ?? 0);
+  const matrix = (flags & 0x04) !== 0 ? readSwfMatrix(body) : (inherited?.matrix ?? IDENTITY_MATRIX);
   if ((flags & 0x08) !== 0) readSwfColorTransform(body);
   if ((flags & 0x10) !== 0) body.readUint16();
-  const name = (flags & 0x20) !== 0 ? body.readString() : (existing?.name ?? null);
+  const name = (flags & 0x20) !== 0 ? body.readString() : (inherited?.name ?? null);
 
-  if (!body.valid || (characterId === 0 && directLinkage === null)) return;
+  if (!body.valid || (isMove && existing === undefined) || (characterId === 0 && directLinkage === null)) return;
   placements.set(depth, { characterId, depth, directLinkage, matrix, name });
 }
 
