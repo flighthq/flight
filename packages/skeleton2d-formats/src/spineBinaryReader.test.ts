@@ -10,6 +10,7 @@ import {
   readSpineBinaryInt,
   readSpineBinarySignedVarint,
   readSpineBinaryString,
+  readSpineBinaryUnsignedShort,
   readSpineBinaryVarint,
   skipSpineBinaryBytes,
 } from './spineBinaryReader';
@@ -152,6 +153,15 @@ describe('readSpineBinaryString', () => {
     const reader = createSpineBinaryReader(Uint8Array.from([0x09, 0x61, 0x62]));
     expect(readSpineBinaryString(reader)).toBeNull();
     expect(isSpineBinaryReaderOverrun(reader)).toBe(true);
+  });
+});
+
+describe('readSpineBinaryUnsignedShort', () => {
+  it('reads BIG-endian unsigned 16-bit values', () => {
+    // 0xffff read unsigned is 65535, not -1 — the point of asserting this isn't the signed reading.
+    const reader = createSpineBinaryReader(Uint8Array.from([0x01, 0x00, 0xff, 0xff]));
+    expect(readSpineBinaryUnsignedShort(reader)).toBe(256);
+    expect(readSpineBinaryUnsignedShort(reader)).toBe(65535);
   });
 });
 
