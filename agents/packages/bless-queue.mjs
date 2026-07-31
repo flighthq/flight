@@ -43,12 +43,20 @@ function parseFrontMatter(text) {
   return fm;
 }
 
-// Count bullet lines under a "## <heading>…" section.
+// Count list items under a "## <heading>…" section.
+//
+// The section terminator must be `$(?![\s\S])` (absolute end of string), not a bare `$`: under the
+// `m` flag a bare `$` matches every line end, so the lazy `[\s\S]*?` stops at the first newline and
+// the capture is always empty — which silently zeroed the Open-directions term of every attention
+// score. Matches `section()` in todo.mjs; keep the two in step.
+//
+// Items are counted as numbered OR bulleted. Charters write Open directions as a numbered list
+// (they are referred to by number elsewhere), so a bullet-only count reads them all as zero.
 function countSection(text, heading) {
-  const re = new RegExp(`^##\\s+${heading}[^\\n]*\\n([\\s\\S]*?)(?=^##\\s|$)`, 'm');
+  const re = new RegExp(`^##\\s+${heading}[^\\n]*\\n([\\s\\S]*?)(?=^##\\s|$(?![\\s\\S]))`, 'm');
   const m = text.match(re);
   if (!m) return 0;
-  return (m[1].match(/^\s*[-*]\s+\S/gm) ?? []).length;
+  return (m[1].match(/^\s*(?:\d+\.|[-*])\s+\S/gm) ?? []).length;
 }
 
 const names = readdirSync(here, { withFileTypes: true })
