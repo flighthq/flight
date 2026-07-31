@@ -21,6 +21,7 @@ import {
   getBitmapPixelRgb,
   invalidateNodeLocalTransform,
   prepareScene3DRender,
+  registerStandardGlTextureResolvers,
   registerUnlitGlMaterial,
   renderGlBackground,
   renderIntoGlRenderTexture,
@@ -41,6 +42,7 @@ export const scale = pixelRatio;
 export const width = WIDTH;
 export const height = HEIGHT;
 
+registerStandardGlTextureResolvers(state);
 registerUnlitGlMaterial(state);
 
 const lights = {

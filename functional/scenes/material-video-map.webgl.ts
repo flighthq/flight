@@ -18,6 +18,7 @@ import {
   createVector3,
   getBitmapPixelRgb,
   prepareScene3DRender,
+  registerStandardGlTextureResolvers,
   registerUnlitGlMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
@@ -31,6 +32,7 @@ export const state = createGlRenderState(canvas, {
   pixelRatio,
   backgroundColor: 0x000000ff,
 });
+registerStandardGlTextureResolvers(state);
 registerUnlitGlMaterial(state);
 export const scale = pixelRatio;
 export const width = 800;
