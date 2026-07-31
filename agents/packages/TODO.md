@@ -80,16 +80,6 @@ Design calls to settle before building the affected entries:
 
 ## Deepen — Recommended items by package (weakest first)
 
-### shortcut (partial 30)
-
-- Decide the shifted-punctuation key vocabulary
-- Decide whether non-Electron physical keys belong in the vocabulary
-
-### share (partial 35)
-
-- Reconcile the charter's `isShareContentValid` with the shipped `hasShareContentFields`
-- `ShareFile` validation seam
-
 ### loader (partial 38)
 
 - Reconcile the three progress currencies
@@ -224,8 +214,6 @@ Design calls to settle before building the affected entries:
 
 ### image-codec (solid 70)
 
-- Add AVIF sniffing to `detectImageMimeType`
-- Broaden the sniff set to ICO (`00 00 01 00`) and TIFF (`II*\0` / `MM\0*`)
 - Add registry enumeration
 - Add `explain*` queries for the silent sentinels
 - Test the `decodeImagePremultiplied` auto-detect path
@@ -472,6 +460,11 @@ Design calls to settle before building the affected entries:
 
 - Rename `openExternalUrl` to `openShellExternalUrl`
 
+### shortcut (solid 80)
+
+- Decide the shifted-punctuation key vocabulary
+- Decide whether non-Electron physical keys belong in the vocabulary
+
 ### textshaper-canvas (solid 80)
 
 - Fix the advance-cache key to include `letterSpacing` (and every advance-affecting field the context sets)
@@ -519,6 +512,11 @@ Design calls to settle before building the affected entries:
 - Fix the round-rect hit-test radius truncation
 - Manifest hygiene: `@flighthq/geometry` dependency
 - Refresh `status.md` on next ingest
+
+### share (solid 82)
+
+- Reconcile the charter's `isShareContentValid` with the shipped `hasShareContentFields`
+- `ShareFile` validation seam
 
 ### text-markup (solid 82)
 
@@ -765,11 +763,6 @@ These are explicit user directions whose implementation may span packages or req
 
 These are observed maturity gaps, including intentionally deferred work. They require prioritization or a package direction before execution unless separately approved.
 
-### share (partial 35)
-
-- Make asynchronous capability discovery honest
-- Carry portable files through native backends
-
 ### scene3d-formats (partial 46)
 
 - Make the complete import result truthful
@@ -912,6 +905,11 @@ These are observed maturity gaps, including intentionally deferred work. They re
 - Model multi-device identity
 - Resolve the signal cost model
 
+### share (solid 82)
+
+- Make asynchronous capability discovery honest
+- Carry portable files through native backends
+
 ### effects-gl (solid 84)
 
 - Build the reusable GL attachment/history substrate before claiming advanced effects
@@ -948,6 +946,6 @@ Computed from cell front matter (dates are `updated:`/`lastDirection:` fields). 
 
 - **Needs a direction session (charter stub or never directed):** `future` · `textshaper-canvas` · `textureatlas-formats` · `xml`
 - **Needs a first review (built, no review.md):** `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
-- **Needs re-review (work landed after the survey):** `audio (review 2026-07-13 < status 2026-07-30)` · `glyphatlas (review 2026-07-13 < status 2026-07-30)` · `media (review 2026-06-24 < status 2026-07-30)` · `menu (review 2026-07-13 < status 2026-07-30)` · `particles-formats (review 2026-07-13 < status 2026-07-25)` · `picking (review 2026-07-21 < status 2026-07-31)` · `render-gl (review 2026-07-21 < status 2026-07-22)` · `scene2d-wgpu (review 2026-06-24 < status 2026-06-25)` · `scene3d-formats (review 2026-07-09 < status 2026-07-29)` · `shape-formats (review 2026-07-13 < status 2026-07-30)` · `shortcut (review 2026-06-25 < status 2026-07-30)` · `snapshot (review 2026-07-13 < status 2026-07-30)` · `textshaper (review 2026-06-25 < status 2026-07-30)` · `texture (review 2026-06-25 < status 2026-07-22)` · `timeline (review 2026-07-13 < status 2026-07-31)` · `video (review 2026-07-09 < status 2026-07-30)`
+- **Needs re-review (work landed after the survey):** `audio (review 2026-07-13 < status 2026-07-30)` · `glyphatlas (review 2026-07-13 < status 2026-07-30)` · `image-codec (review 2026-07-13 < status 2026-07-31)` · `media (review 2026-06-24 < status 2026-07-30)` · `menu (review 2026-07-13 < status 2026-07-30)` · `particles-formats (review 2026-07-13 < status 2026-07-25)` · `picking (review 2026-07-21 < status 2026-07-31)` · `render-gl (review 2026-07-21 < status 2026-07-22)` · `scene2d-wgpu (review 2026-06-24 < status 2026-06-25)` · `scene3d-formats (review 2026-07-09 < status 2026-07-29)` · `shape-formats (review 2026-07-13 < status 2026-07-30)` · `snapshot (review 2026-07-13 < status 2026-07-30)` · `textshaper (review 2026-06-25 < status 2026-07-30)` · `texture (review 2026-06-25 < status 2026-07-22)` · `timeline (review 2026-07-13 < status 2026-07-31)` · `video (review 2026-07-09 < status 2026-07-30)`
 - **Needs assess refresh (review newer than assessment):** `assets (assessment 2026-07-21 < review 2026-07-22)` · `audio (assessment 2026-07-03 < review 2026-07-13)` · `log (assessment 2026-07-02 < review 2026-07-13)` · `spritesheet (assessment 2026-07-02 < review 2026-07-13)` · `tween (assessment 2026-07-02 < review 2026-07-13)` · `video (assessment 2026-07-03 < review 2026-07-09)`
 - **Open directions awaiting the user:** 597 across 132 charters — most-loaded: `scene3d` (14) · `render-gl` (12) · `scene2d-gl` (12) · `scene2d` (11) · `effects-wgpu` (10) · `lighting` (10) · `scene2d-dom` (10) · `scene3d-gl` (10) · `spritesheet-formats` (10) · `mesh` (9) · `render-wgpu` (9) · `scene2d-canvas` (9) · `skeleton3d` (9) · `effects-gl` (8) · `geometry` (8) · `materials` (8) · `particles-formats` (8) · `scene2d-wgpu` (8) · `scene3d-wgpu` (8) · `render` (7) · `scene3d-resources` (7) · `timeline` (7) · `camera` (6) · `capture` (6) · `color` (6) · `effects-canvas` (6) · `loader` (6) · `spatial` (6) · `texture-formats` (6) · `tween` (6). Each charter's `## Open directions` section holds the questions; a direction session drains them.
