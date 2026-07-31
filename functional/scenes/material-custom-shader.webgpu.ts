@@ -89,7 +89,9 @@ export const height = 600;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   renderWgpuBackground(state);
-  beginWgpuRenderEffectPipeline(state, pipeline);
+  // Custom mesh shaders produce the same linear scene color as built-in 3D materials. Declare that
+  // before the pass opens so its packed sRGB background is decoded before the linear present encodes it.
+  beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
   prepareScene3DRender(state, scene, camera, lights);
   drawWgpuScene3D(state, scene, camera, lights);
   endWgpuRenderEffectPipeline(state, pipeline, []);
@@ -119,9 +121,13 @@ render(scene, camera, createScene3DLights({ ambient: null, directional: null }))
 export function assertRender(bitmap: Readonly<Bitmap>): void {
   const cx = Math.floor(bitmap.width / 2);
   const cy = Math.floor(bitmap.height / 2);
+  const background = getBitmapPixelLuminance(bitmap, 0, 0);
   const center = getBitmapPixelLuminance(bitmap, cx, cy);
   const centerRgb = getBitmapPixelRgb(bitmap, cx, cy);
   const edgeRgb = getBitmapPixelRgb(bitmap, cx + Math.floor(bitmap.width * 0.07), cy);
+  if (background >= 24) {
+    throw new Error(`[material-custom-shader] linear target gamma-lifted the sRGB background (${background})`);
+  }
   if (center <= 24) throw new Error(`[material-custom-shader] blank custom material (${center})`);
   if (centerRgb === edgeRgb) {
     throw new Error('[material-custom-shader] custom normal-matrix shading did not vary across the sphere');
