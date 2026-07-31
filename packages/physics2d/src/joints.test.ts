@@ -245,6 +245,112 @@ describe('joint warm starting', () => {
   });
 });
 
+// A joint whose impulse accumulators were never written. The type declares them required, so this is not
+// a shape a TypeScript caller can build by hand — it is what a joint deserialized from a saved world
+// actually looks like at runtime, where the compile-time guarantee bought nothing.
+function jointWithoutAccumulators(kind: string, bodyA: number, bodyB: number, over: object = {}): never {
+  return {
+    kind,
+    bodyA,
+    bodyB,
+    localAnchorAX: 0,
+    localAnchorAY: 0,
+    localAnchorBX: 0,
+    localAnchorBY: 0,
+    collideConnected: false,
+    rAX: 0,
+    rAY: 0,
+    rBX: 0,
+    rBY: 0,
+    ...over,
+  } as never;
+}
+
+describe('joints built without their impulse accumulators', () => {
+  // An absent accumulator is read as `undefined`, and the first arithmetic on it yields NaN. Because an
+  // accumulator is fed back into the next iteration, the NaN does not stay in the joint: it leaves
+  // through the applied impulse into BOTH bodies' velocities, and from there into every contact they
+  // touch. One joint missing one number poisons the world.
+  it('drives a revolute motor normally when the ends are already canonical', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const anchor = box(world, 'static', 0, 0);
+    const arm = box(world, 'dynamic', 1, 0);
+    registerPhysics2DJointSolver(world, Physics2DRevoluteJointKind, physics2DRevoluteJointSolver);
+    const joint = jointWithoutAccumulators(Physics2DRevoluteJointKind, anchor.index, arm.index, {
+      enableLimit: false,
+      enableMotor: true,
+      lowerAngle: 0,
+      maxMotorTorque: 100,
+      motorSpeed: 2,
+      referenceAngle: 0,
+      upperAngle: 0,
+    });
+    addPhysics2DJoint(world, joint);
+    run(world, 30);
+
+    // Not merely finite: the motor has to actually turn the arm toward its target speed, which is what
+    // proves the accumulator was established as a usable zero rather than just kept out of the maths.
+    expect(arm.angularVelocity).toBeGreaterThan(0.5);
+    expect(Number.isFinite((joint as unknown as Physics2DRevoluteJoint).motorImpulse)).toBe(true);
+  });
+
+  it('drives a revolute motor normally when the ends must be exchanged first', () => {
+    // The second, distinct mechanism. swapEnds runs when the joint is ADDED, before any prepare, and it
+    // negates the motor accumulator. Negating an absent value writes NaN into the field — and NaN is not
+    // nullish, so every later `??` accepts the poison instead of replacing it. This order is the only one
+    // that reaches that path, which is why both orders are pinned.
+    const world = createPhysics2DWorld(0, 0);
+    const arm = box(world, 'dynamic', 1, 0);
+    const anchor = box(world, 'static', 0, 0);
+    registerPhysics2DJointSolver(world, Physics2DRevoluteJointKind, physics2DRevoluteJointSolver);
+    // Supplied high-index-first, so the ends must be exchanged.
+    const joint = jointWithoutAccumulators(Physics2DRevoluteJointKind, anchor.index, arm.index, {
+      enableLimit: false,
+      enableMotor: true,
+      lowerAngle: 0,
+      maxMotorTorque: 100,
+      motorSpeed: 2,
+      referenceAngle: 0,
+      upperAngle: 0,
+    });
+    addPhysics2DJoint(world, joint);
+    // Magnitude, because negating an established zero keeps the sign bit and yields -0. That is
+    // identical to +0 in every arithmetic that follows and differs only under Object.is, which toBe uses.
+    expect(Math.abs((joint as unknown as Physics2DRevoluteJoint).motorImpulse)).toBe(0);
+
+    run(world, 30);
+
+    expect(Math.abs(arm.angularVelocity)).toBeGreaterThan(0.5);
+  });
+
+  // The same defect on every other solved kind: the revolute motor was the instance that was reported,
+  // the generic impulse0/1/2 block is the class.
+  const GENERIC_KINDS = [
+    [Physics2DDistanceJointKind, physics2DDistanceJointSolver, { length: 2, stiffness: 0, damping: 0 }],
+    [Physics2DRopeJointKind, physics2DRopeJointSolver, { maxLength: 1 }],
+    [Physics2DWeldJointKind, physics2DWeldJointSolver, { referenceAngle: 0, stiffness: 0, damping: 0 }],
+  ] as const;
+
+  for (const [kind, solver, over] of GENERIC_KINDS) {
+    it(`keeps both bodies finite across a ${kind} joint`, () => {
+      const world = createPhysics2DWorld();
+      const first = box(world, 'dynamic', 0, 0);
+      const second = box(world, 'dynamic', 2, 0);
+      registerPhysics2DJointSolver(world, kind, solver);
+      addPhysics2DJoint(world, jointWithoutAccumulators(kind, first.index, second.index, over));
+      // Two steps, because the second is the one that warm-starts from the first step's accumulator —
+      // a single step would pass even if the accumulator were never written back.
+      run(world, 2);
+
+      for (const body of [first, second]) {
+        expect(Number.isFinite(body.velocityX)).toBe(true);
+        expect(Number.isFinite(body.velocityY)).toBe(true);
+        expect(Number.isFinite(body.angularVelocity)).toBe(true);
+      }
+    });
+  }
+});
+
 describe('physics2DDistanceJointSolver', () => {
   it('holds a hanging body at the joint length instead of letting it fall', () => {
     const world = createPhysics2DWorld();

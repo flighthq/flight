@@ -85,7 +85,7 @@ export const physics2DDistanceJointSolver = {
       jointScratch[2] = 0;
     }
     distance.rAX = joint.rAX;
-    const distanceState = acquireJointState(distance, 5);
+    const distanceState = beginJointSolve(distance, 5);
     distanceState[0] = jointScratch[0]!;
     distanceState[1] = jointScratch[1]!;
     distanceState[2] = jointScratch[2]!;
@@ -150,7 +150,7 @@ export const physics2DMouseJointSolver = {
     // maxForce is a force; joint.impulse0/1 accumulate an impulse. Clamping one against the other was
     // a unit error worth a factor of 1/dt — at dt 0.01 the bound admitted a hundred times the force it
     // named. Convert once here, where dt is in hand, rather than in solve, which does not receive it.
-    const mouseState = acquireJointState(mouse, 5);
+    const mouseState = beginJointSolve(mouse, 5);
     mouseState[0] = inverseGamma;
     mouseState[1] = biasFactor;
     mouseState[2] = dt * mouse.maxForce;
@@ -222,11 +222,12 @@ export const physics2DRevoluteJointSolver = {
     // motor switched back on starts from rest instead of resuming a stale accumulator from whenever it
     // was last enabled.
     //
-    // Defaulted rather than compared against 0: a joint deserialized or built without the motor fields
-    // has no motorImpulse at all, and multiplying undefined by an inverse inertia produces NaN, which
-    // then spreads through every subsequent velocity.
+    // Read plainly, because `prepare` has already established the accumulator and runs before this on
+    // every path. Defaulting again here would be a second owner for one invariant — and the version of
+    // that defense which shipped read into a LOCAL without writing the field back, so the very next read
+    // in `solve` saw the absent value again. A default that does not persist is not a fix.
     const revolute = joint as Physics2DRevoluteJoint;
-    const motorImpulse = revolute.motorImpulse ?? 0;
+    const motorImpulse = revolute.motorImpulse;
     if (!revolute.enableMotor) {
       revolute.motorImpulse = 0;
     } else if (motorImpulse !== 0) {
@@ -255,7 +256,11 @@ export const physics2DRevoluteJointSolver = {
     revolute.upperAngle = -lower;
     revolute.referenceAngle = -revolute.referenceAngle;
     revolute.motorSpeed = -revolute.motorSpeed;
-    revolute.motorImpulse = -revolute.motorImpulse;
+    // Defaulted BEFORE the negation, not after. This runs when the joint is added, ahead of the first
+    // prepare, so the field may still be absent — and `-undefined` is NaN, which is not nullish, so a
+    // later `??` would accept the poison rather than replace it. Negating an absent accumulator has to
+    // produce zero, not NaN.
+    revolute.motorImpulse = -(revolute.motorImpulse ?? 0);
     return true;
   },
 
@@ -272,7 +277,9 @@ export const physics2DRevoluteJointSolver = {
     // by zero.
     const inverseInertiaSum = bodyA.inverseInertia + bodyB.inverseInertia;
     const angularMass = inverseInertiaSum > 0 ? 1 / inverseInertiaSum : 0;
-    const revoluteState = acquireJointState(joint, 7);
+    // The motor accumulator is revolute-specific, so the shared entry point above cannot reach it.
+    revolute.motorImpulse ??= 0;
+    const revoluteState = beginJointSolve(joint, 7);
     revoluteState[0] = errorX * (BAUMGARTE / dt);
     revoluteState[1] = errorY * (BAUMGARTE / dt);
     revoluteState[2] = angularMass;
@@ -397,7 +404,7 @@ export const physics2DRopeJointSolver = {
     // Slack: no constraint at all this step, which is what a rope IS. Marked by a zero effective mass so
     // the iterations skip it without a second flag to keep in sync.
     const active = excess > 0;
-    const ropeState = acquireJointState(rope, 5);
+    const ropeState = beginJointSolve(rope, 5);
     ropeState[0] = active && mass > 0 ? 1 / mass : 0;
     ropeState[1] = active ? excess * (BAUMGARTE / dt) : 0;
     ropeState[2] = 0;
@@ -464,7 +471,7 @@ export const physics2DWeldJointSolver = {
     const errorY = bodyB.y + joint.rBY - (bodyA.y + joint.rAY);
     const angleError = bodyB.angle - bodyA.angle - weld.referenceAngle;
     const angularMass = bodyA.inverseInertia + bodyB.inverseInertia;
-    const weldState = acquireJointState(weld, 5);
+    const weldState = beginJointSolve(weld, 5);
     weldState[0] = errorX * (BAUMGARTE / dt);
     weldState[1] = errorY * (BAUMGARTE / dt);
     weldState[2] = angleError * (BAUMGARTE / dt);
@@ -573,7 +580,23 @@ function axisRelativeVelocity(
 // destination — the source was fresh garbage each frame, one array per joint per step. Handing the
 // destination back is what makes the prepare pass allocation-free, and it matches the SDK's
 // write-into-out convention rather than returning a new value.
-function acquireJointState(joint: Physics2DJoint, length: number): number[] {
+// Entry point for one joint's step: sizes its per-step scratch and ESTABLISHES its impulse accumulators.
+//
+// The accumulators are established here rather than defended at each read because every read assumed the
+// field was already a number, and a joint can reach the solver without one. The type declares them
+// required, but a joint deserialized from a saved world satisfies that only at compile time; at runtime
+// the fields are simply absent. The first read then computes `undefined + x`, and because an accumulator
+// is fed back into the next iteration the NaN does not stay local — it goes out through the applied
+// impulse into BOTH bodies' velocities, and from there into every contact they touch.
+//
+// This is the one place that covers the whole class. Every solver's `prepare` calls it, and `solve`
+// returns early when the scratch is absent, so no solver can read an accumulator this has not passed
+// over first. Kind-specific accumulators (the revolute motor) are established by their own `prepare`,
+// which is the only code that knows they exist.
+function beginJointSolve(joint: Physics2DJoint, length: number): number[] {
+  joint.impulse0 ??= 0;
+  joint.impulse1 ??= 0;
+  joint.impulse2 ??= 0;
   let state = jointStateScratch.get(joint);
   if (state === undefined) {
     state = [];
