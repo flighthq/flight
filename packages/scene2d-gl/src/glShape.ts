@@ -4,7 +4,7 @@ import { tessellatePath } from '@flighthq/path/contract';
 import { bindGlImageResourceTexture, resolveGlMaterialRenderer } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { renderCanvasShapeCommands } from '@flighthq/scene2d-canvas/contract';
-import { getShapeFillRegions, getShapeStrokeRegions, hasShapeFill } from '@flighthq/shape/contract';
+import { getShapeFillRegions, getShapeStrokeRegions } from '@flighthq/shape/contract';
 import type {
   Scene2DRenderer,
   GlRenderState,
@@ -42,22 +42,21 @@ interface GlShapeData {
   lastW: number;
   lastH: number;
   // GPU tessellated-fill cache, rebuilt when the content revision changes. Null until first resolved;
-  // populated only for solid-fill shapes (getShapeFillRegions != null), otherwise the raster path runs.
+  // populated only when every fill and stroke resolves to a solid mesh region, otherwise raster runs.
   meshVersion: number;
   meshes: GlShapeMesh[] | null;
 }
 
-// Chooses the fillable regions to tessellate into GPU meshes for a shape: its solid-fill regions when it
-// is fill-only, or its stroke-outline regions (via getShapeStrokeRegions → strokePath) when it is
-// stroke-only. Returns null when the shape must use the raster fallback — a gradient/bitmap fill or
-// stroke, or a shape that BOTH fills and strokes (the fill + stroke mesh paths do not compose yet).
+// Resolves every solid fill and open solid stroke into one fill-before-stroke mesh list. Either layer's
+// null sentinel keeps the whole shape on the raster path, preserving gradient/texture styles and closed
+// stroke rings that the direct-fill tessellator cannot express.
 function resolveGlShapeMeshRegions(commands: readonly ShapeCommandToken[]): ShapeFillRegion[] | null {
   const fillRegions = getShapeFillRegions(commands);
-  if (fillRegions !== null) return fillRegions.length > 0 ? fillRegions : null;
-  // getShapeFillRegions bailed: a gradient/bitmap fill, or any stroke is present. A stroke-ONLY shape can
-  // still render its strokes as outline meshes; a filled-and-stroked shape stays on the raster path.
-  if (hasShapeFill(commands)) return null;
-  return getShapeStrokeRegions(commands);
+  if (fillRegions === null) return null;
+  const strokeRegions = getShapeStrokeRegions(commands);
+  if (strokeRegions === null) return null;
+  const regions = fillRegions.concat(strokeRegions);
+  return regions.length > 0 ? regions : null;
 }
 
 function getGlShapeData(data: RendererData): GlShapeData {
@@ -105,11 +104,9 @@ export function drawGlShape(state: GlRenderState, renderProxy: RenderProxy2D): v
   if (commands.length === 0) return;
   if (renderProxy.rendererData === null) return;
 
-  // GPU mesh path: solid-fill shapes tessellate to colored meshes (crisp at any zoom), and a STROKE-ONLY
-  // shape offsets its strokes to fillable outlines via getShapeStrokeRegions (real joins/caps/dashing,
-  // resolution-independent — no offscreen-canvas raster). Falls through to the canvas-raster path for
-  // gradient/bitmap fills/strokes and filled-and-stroked shapes (the fill + stroke mesh paths don't
-  // compose yet).
+  // GPU mesh path: solid fills tessellate to colored meshes and open solid strokes become fillable
+  // outlines via getShapeStrokeRegions (real joins/caps/dashing, resolution-independent). Both layers
+  // compose fill-before-stroke. Gradient/texture styles and closed stroke rings stay on the raster path.
   const regions = resolveGlShapeMeshRegions(commands);
   if (regions !== null && regions.length > 0) {
     const meshData = getGlShapeData(renderProxy.rendererData);

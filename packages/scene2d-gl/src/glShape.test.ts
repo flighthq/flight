@@ -1,6 +1,15 @@
 import { createImageResource } from '@flighthq/image/contract';
 import type * as FlightNodeModule from '@flighthq/node/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import {
+  appendShapeBeginFill,
+  appendShapeEndFill,
+  appendShapeLineStyle,
+  appendShapeLineTo,
+  appendShapeMoveTo,
+  appendShapeRectangle,
+  createShape,
+} from '@flighthq/shape/contract';
 import type { RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat } from '@flighthq/types/contract';
 
@@ -34,7 +43,16 @@ function makeShapeData() {
   canvas.width = 1;
   canvas.height = 1;
   const ctx = canvas.getContext('2d')!;
-  return { canvas, ctx, image: createImageResource(canvas), lastContentId: -1, lastW: 0, lastH: 0 };
+  return {
+    canvas,
+    ctx,
+    image: createImageResource(canvas),
+    lastContentId: -1,
+    lastW: 0,
+    lastH: 0,
+    meshVersion: -1,
+    meshes: null,
+  };
 }
 
 function makeShapeNode(data: Record<string, unknown> = {}, rendererData: unknown = null): RenderProxy2D {
@@ -70,6 +88,23 @@ describe('defaultGlShapeRenderer', () => {
 });
 
 describe('drawGlShape', () => {
+  it('draws a solid fill and open solid stroke as GPU meshes in one shape', () => {
+    const { state, gl } = createGlState();
+    const shape = createShape();
+    appendShapeBeginFill(shape, 0x00cc00);
+    appendShapeLineStyle(shape, 0);
+    appendShapeRectangle(shape, 8, 8, 32, 24);
+    appendShapeEndFill(shape);
+    appendShapeLineStyle(shape, 4, 0xff0000);
+    appendShapeMoveTo(shape, 8, 4);
+    appendShapeLineTo(shape, 40, 4);
+
+    drawGlShape(state, makeShapeNode({ commands: shape.data.commands, version: 1 }, makeShapeData()));
+
+    expect(gl.drawElements).toHaveBeenCalledTimes(2);
+    expect(getGlRenderStateRuntime(state).quadBatchWriterCount).toBe(0);
+  });
+
   it('returns early without writing to batch when commands array is empty', () => {
     const { state } = createGlState();
     registerStandardGlMaterial(state);

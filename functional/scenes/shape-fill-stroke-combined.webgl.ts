@@ -1,15 +1,6 @@
-// shape-fill-stroke-combined — validates that a shape with both a solid fill and a visible stroke
-// renders both layers correctly.
-//
-// Draws a green rectangle and then a thick open red line in the same Shape. Keeping the stroke open
-// isolates fill+stroke region composition from closed-ring tessellation. The oracle
-// verifies:
-//   - the interior center is green (fill present),
-//   - a point on the open stroke above the fill is red,
-//   - a point outside both fill and stroke is background black.
-//
-// Fill+stroke composition is a rendering concern — the stroke must overlay correctly, and the
-// stroke width must extend outside the fill bounds. This is inherently visual.
+// shape-fill-stroke-combined — validates that WebGL composes a solid fill and open solid stroke from
+// one Shape as resolution-independent GPU meshes. The open line isolates this composition vertical
+// from closed-ring tessellation, which is covered separately.
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -65,7 +56,7 @@ export function assertRender(frame: Readonly<Bitmap>): void {
 
   const strokeTop = at(RX + RW / 2, RY - STROKE / 2);
   if (!isRed(strokeTop)) {
-    throw new Error(`[shape-fill-stroke-combined] stroke top expected red, got #${hex(strokeTop)}`);
+    throw new Error(`[shape-fill-stroke-combined] open stroke expected red, got #${hex(strokeTop)}`);
   }
 
   const outside = at(20, 20);
