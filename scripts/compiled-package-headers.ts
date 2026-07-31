@@ -1,10 +1,9 @@
-// Generates the canonical flat @flighthq/types contract and its curated one-edge public view.
-// TypeScript still emits the package normally first: the declaration pass composes those
-// authoritative .d.ts files, while Vite/Rollup bundles the runtime symbols. Consumers terminate the
-// module walk within two files instead of traversing roughly eight hundred source modules.
+// Generates the two flat @flighthq/types entry points used by repository tooling. TypeScript still
+// emits the package normally first: the declaration pass composes those authoritative .d.ts files,
+// while Vite/Rollup bundles the runtime symbols. Consumers then open one header instead of walking
+// roughly eight hundred re-exported modules.
 
 import { spawnSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -16,19 +15,8 @@ import { SourceMapConsumer, SourceMapGenerator } from 'source-map-js';
 import ts from 'typescript';
 import { build } from 'vite';
 
+const ENTRY_NAMES = ['index', 'contract'] as const;
 const scriptRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const typesDistDirectory = join(scriptRoot, 'packages', 'types', 'dist');
-const headerStampPath = join(typesDistDirectory, '.compiled-headers.json');
-const expectedHeaderNames = [
-  'contract.d.ts',
-  'contract.d.ts.map',
-  'contract.js',
-  'contract.js.map',
-  'index.d.ts',
-  'index.d.ts.map',
-  'index.js',
-  'index.js.map',
-] as const;
 
 interface TextRange {
   end: number;
@@ -52,11 +40,6 @@ export interface FlatDeclaration {
 interface HeaderOutput {
   content: string;
   path: string;
-}
-
-interface JavascriptBundle {
-  exports: string[];
-  output: HeaderOutput[];
 }
 
 function lineStarts(text: string): number[] {
@@ -85,9 +68,8 @@ function generatedOffset(starts: readonly number[], line: number, column: number
 function declarationSpecifiers(sourceFile: ts.SourceFile, kind: 'export' | 'import'): string[] {
   const specifiers: string[] = [];
   for (const statement of sourceFile.statements) {
-    if (!ts.isExportDeclaration(statement) && !ts.isImportDeclaration(statement)) continue;
-    if (kind === 'export' ? !ts.isExportDeclaration(statement) : !ts.isImportDeclaration(statement)) continue;
-    if (!statement.moduleSpecifier || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
+    const matches = kind === 'export' ? ts.isExportDeclaration(statement) : ts.isImportDeclaration(statement);
+    if (!matches || !statement.moduleSpecifier || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
     if (statement.moduleSpecifier.text.startsWith('.')) specifiers.push(statement.moduleSpecifier.text);
   }
   return specifiers;
@@ -202,55 +184,6 @@ export function flattenDeclarations(distDirectory: string, entryName: string): F
   return { code, map: generator.toString() };
 }
 
-export function declarationExportNames(code: string): string[] {
-  const sourceFile = ts.createSourceFile('header.d.ts', code, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
-  const names = new Set<string>();
-  for (const statement of sourceFile.statements) {
-    const exported =
-      ts.canHaveModifiers(statement) &&
-      ts.getModifiers(statement)?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword);
-    if (!exported) continue;
-    if (ts.isVariableStatement(statement)) {
-      for (const declaration of statement.declarationList.declarations) {
-        if (!ts.isIdentifier(declaration.name)) {
-          throw new Error('Compiled headers do not support exported destructuring declarations');
-        }
-        names.add(declaration.name.text);
-      }
-      continue;
-    }
-    if (
-      (ts.isClassDeclaration(statement) ||
-        ts.isEnumDeclaration(statement) ||
-        ts.isFunctionDeclaration(statement) ||
-        ts.isInterfaceDeclaration(statement) ||
-        ts.isModuleDeclaration(statement) ||
-        ts.isTypeAliasDeclaration(statement)) &&
-      statement.name
-    ) {
-      names.add(statement.name.text);
-    }
-  }
-  return [...names].sort();
-}
-
-export function namedReexport(names: readonly string[], target: string, sourceMapName: string): string {
-  const uniqueNames = [...new Set(names)].sort();
-  return `export {\n${uniqueNames.map((name) => `  ${name},`).join('\n')}\n} from '${target}';\n//# sourceMappingURL=${sourceMapName}\n`;
-}
-
-function reexportSourceMap(fileName: string): string {
-  const source = '../src/index.ts';
-  const generator = new SourceMapGenerator({ file: fileName });
-  generator.addMapping({
-    generated: { line: 1, column: 0 },
-    original: { line: 1, column: 0 },
-    source,
-  });
-  generator.setSourceContent(source, readFileSync(join(scriptRoot, 'packages', 'types', 'src', 'index.ts'), 'utf8'));
-  return generator.toString();
-}
-
 function isChunk(output: OutputAsset | OutputChunk): output is OutputChunk {
   return output.type === 'chunk';
 }
@@ -282,7 +215,7 @@ export function makeNamespaceMergeTreeShakeable(code: string): {
   return { code: magic.toString(), map: magic.generateMap({ hires: true }) };
 }
 
-async function bundleJavascript(entryName: string): Promise<JavascriptBundle> {
+async function bundleJavascript(entryName: string): Promise<HeaderOutput[]> {
   const sourcePath = join(scriptRoot, 'packages', 'types', 'src', `${entryName}.ts`);
   const result = await build({
     configFile: false,
@@ -308,57 +241,25 @@ async function bundleJavascript(entryName: string): Promise<JavascriptBundle> {
   if (!chunk || chunk.imports.length > 0 || chunk.dynamicImports.length > 0) {
     throw new Error(`${entryName}.js did not produce one reference-free entry chunk`);
   }
-  return {
-    exports: [...chunk.exports].sort(),
-    output: output.map((item) => ({
-      path: join(typesDistDirectory, item.fileName),
-      content: isChunk(item)
-        ? item.code
-        : typeof item.source === 'string'
-          ? item.source
-          : Buffer.from(item.source).toString(),
-    })),
-  };
+  return output.map((item) => ({
+    path: join(scriptRoot, 'packages', 'types', 'dist', item.fileName),
+    content:
+      typeof item.source === 'string' ? item.source : isChunk(item) ? item.code : Buffer.from(item.source).toString(),
+  }));
 }
 
 async function generateHeaders(): Promise<HeaderOutput[]> {
-  // The contract artifacts are the package's only declaration/definition sites. The public entry is
-  // a named subset view with one edge to that canonical flat unit. Besides bounding the walk at two
-  // files, this preserves unique-symbol brands and runtime Symbol() identities across both lanes.
-  const publicDeclaration = flattenDeclarations(typesDistDirectory, 'index');
-  const contractDeclaration = flattenDeclarations(typesDistDirectory, 'contract');
-  const publicDeclarationExports = declarationExportNames(publicDeclaration.code);
-  const publicJavascript = await bundleJavascript('index');
-  const contractJavascript = await bundleJavascript('contract');
-  const contractRuntimeExports = new Set(contractJavascript.exports);
-  const missingRuntimeExports = publicJavascript.exports.filter((name) => !contractRuntimeExports.has(name));
-  if (missingRuntimeExports.length > 0) {
-    throw new Error(`Public runtime exports missing from canonical contract: ${missingRuntimeExports.join(', ')}`);
+  const distDirectory = join(scriptRoot, 'packages', 'types', 'dist');
+  const output: HeaderOutput[] = [];
+  for (const entryName of ENTRY_NAMES) {
+    const declaration = flattenDeclarations(distDirectory, entryName);
+    output.push(
+      { path: join(distDirectory, `${entryName}.d.ts`), content: declaration.code },
+      { path: join(distDirectory, `${entryName}.d.ts.map`), content: declaration.map },
+      ...(await bundleJavascript(entryName)),
+    );
   }
-
-  const indexDeclarationName = 'index.d.ts';
-  const indexJavascriptName = 'index.js';
-  return [
-    { path: join(typesDistDirectory, 'contract.d.ts'), content: contractDeclaration.code },
-    { path: join(typesDistDirectory, 'contract.d.ts.map'), content: contractDeclaration.map },
-    ...contractJavascript.output,
-    {
-      path: join(typesDistDirectory, indexDeclarationName),
-      content: namedReexport(publicDeclarationExports, './contract', `${indexDeclarationName}.map`),
-    },
-    {
-      path: join(typesDistDirectory, `${indexDeclarationName}.map`),
-      content: reexportSourceMap(indexDeclarationName),
-    },
-    {
-      path: join(typesDistDirectory, indexJavascriptName),
-      content: namedReexport(publicJavascript.exports, './contract.js', `${indexJavascriptName}.map`),
-    },
-    {
-      path: join(typesDistDirectory, `${indexJavascriptName}.map`),
-      content: reexportSourceMap(indexJavascriptName),
-    },
-  ];
+  return output;
 }
 
 function buildTypes(): void {
@@ -370,38 +271,8 @@ function buildTypes(): void {
   if (result.status !== 0) throw new Error('TypeScript failed before compiled-header generation');
 }
 
-function headerInputSignature(): string {
-  const hash = createHash('sha256');
-  for (const path of [
-    join(scriptRoot, 'packages', 'types', 'tsconfig.tsbuildinfo'),
-    fileURLToPath(import.meta.url),
-    join(scriptRoot, 'packages', 'types', 'tsconfig.json'),
-    join(scriptRoot, 'tsconfig.base.json'),
-    join(scriptRoot, 'package-lock.json'),
-  ]) {
-    hash.update(path);
-    hash.update(readFileSync(path));
-  }
-  return hash.digest('hex');
-}
-
-function headersAreStamped(signature: string): boolean {
-  if (!existsSync(headerStampPath)) return false;
-  if (expectedHeaderNames.some((name) => !existsSync(join(typesDistDirectory, name)))) return false;
-  try {
-    return JSON.parse(readFileSync(headerStampPath, 'utf8')).signature === signature;
-  } catch {
-    return false;
-  }
-}
-
 async function writeOrCheckHeaders(check: boolean): Promise<void> {
   buildTypes();
-  const signature = headerInputSignature();
-  if (!check && headersAreStamped(signature)) {
-    console.log('Compiled @flighthq/types header artifacts are current');
-    return;
-  }
   const output = await generateHeaders();
   const stale = output.filter((file) => !existsSync(file.path) || readFileSync(file.path, 'utf8') !== file.content);
   if (check) {
@@ -412,7 +283,6 @@ async function writeOrCheckHeaders(check: boolean): Promise<void> {
     return;
   }
   for (const file of stale) writeFileSync(file.path, file.content);
-  writeFileSync(headerStampPath, `${JSON.stringify({ signature })}\n`);
   console.log(`Built ${output.length} compiled @flighthq/types header artifacts`);
 }
 

@@ -1,23 +1,11 @@
-// oxlint-disable no-restricted-imports -- This regression must prove the generated identity survives the SDK barrel.
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { Node2DTraitsKey as sdkNode2DTraitsKey } from '@flighthq/sdk';
-import type { Node2D as SdkNode2D } from '@flighthq/sdk';
-import { Node2DTraitsKey as publicNode2DTraitsKey } from '@flighthq/types';
-import type { Node2D as PublicNode2D } from '@flighthq/types';
-import { Node2DTraitsKey as contractNode2DTraitsKey } from '@flighthq/types/contract';
-import type { Node2D as ContractNode2D } from '@flighthq/types/contract';
 import { SourceMapGenerator } from 'source-map-js';
-import { describe, expect, expectTypeOf, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import {
-  declarationExportNames,
-  flattenDeclarations,
-  makeNamespaceMergeTreeShakeable,
-  namedReexport,
-} from './compiled-package-headers';
+import { flattenDeclarations, makeNamespaceMergeTreeShakeable } from './compiled-package-headers';
 
 function writeDeclaration(directory: string, name: string, source: string): void {
   const file = join(directory, `${name}.d.ts`);
@@ -72,34 +60,5 @@ describe('compiled package declaration headers', () => {
     expect(result.code).toContain('const AppearanceFlags2 = {};');
     expect(result.code).toContain('return AppearanceFlags2;');
     expect(result.code).toContain('export { AppearanceFlags, Other };');
-  });
-
-  it('builds a deterministic named view with one outgoing edge', () => {
-    const names = declarationExportNames(
-      'export interface Zebra {}\nexport const Alpha = 1;\nexport namespace Alpha {}\ninterface Hidden {}\n',
-    );
-
-    expect(names).toEqual(['Alpha', 'Zebra']);
-    expect(namedReexport(names, './contract', 'index.d.ts.map')).toBe(
-      "export {\n  Alpha,\n  Zebra,\n} from './contract';\n//# sourceMappingURL=index.d.ts.map\n",
-    );
-  });
-});
-
-describe('compiled package header identity', () => {
-  it('shares checker brands and runtime symbols across public, contract, and SDK lanes', () => {
-    expectTypeOf<PublicNode2D>().toEqualTypeOf<ContractNode2D>();
-    expectTypeOf<PublicNode2D>().toEqualTypeOf<SdkNode2D>();
-    expect(publicNode2DTraitsKey).toBe(contractNode2DTraitsKey);
-    expect(publicNode2DTraitsKey).toBe(sdkNode2DTraitsKey);
-  });
-
-  it('keeps contract-only symbols out of the public view', () => {
-    const publicHeader = readFileSync('packages/types/dist/index.d.ts', 'utf8');
-    const contractHeader = readFileSync('packages/types/dist/contract.d.ts', 'utf8');
-
-    expect(publicHeader).toContain('  Material,');
-    expect(publicHeader).not.toContain('  RenderProxy,');
-    expect(contractHeader).toContain('export interface RenderProxy extends Entity');
   });
 });
