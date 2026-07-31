@@ -1,8 +1,20 @@
 ---
 package: '@flighthq/media'
-updated: 2026-06-24
+updated: 2026-07-30
 by: ingest:builder-67dc46d64
 ---
+
+## 2026-07-30 — a mixer-wide resume was resurrecting independently-paused channels (builder)
+
+All four cell items were already landed, so they are retired. The cell held a live defect in the pair item 1 had previously fixed: `pauseAllAudioMixerChannels` correctly stops each source node now, but `resumeAllAudioMixerChannels` walked `activeChannels` and restarted **every** channel in the `paused` state — not the ones this mixer paused. Its own comment said "channels this mixer paused", which is not what it did; that is the fourth comment-vs-code mismatch found this session.
+
+The failure is the ordinary pause-menu shape: a caller pauses one channel deliberately (a muted ambience, a stalled dialogue line), the game then pauses and resumes the whole mixer around a menu, and the independently-paused channel comes back playing. Probed before fixing — the channel the caller paused ended up `playing` alongside the one the mixer paused.
+
+Fixed by recording what the mixer paused in a `channelsPausedByMixer` set on the runtime, and resuming only from that record. Only channels that were actually `playing` are recorded, so one already paused by the caller is never the mixer's to resume, and the resume still re-checks state so a channel resumed individually in the meantime is skipped.
+
+Covered every transition that takes a channel away from the mixer, not just the reported path: `unrouteAudioChannelFromMixerBus` drops it from the record, `stopAllAudioMixerChannels` clears the record, and `destroyAudioMixer` deletes the whole runtime. A test per transition.
+
+56 → 60 tests. Three mutations, each confirmed applied. The third earned its keep by catching *me*: removing the `stopAll` clear failed nothing, because resume's own `state === 'paused'` re-check already prevents restarting a stopped channel. The clear is bookkeeping that keeps the record from retaining channels the mixer no longer owns — so the comment claiming it prevents a resume was overstating it, and was corrected before landing rather than becoming a fifth comment-vs-code mismatch, self-authored this time.
 
 # media — Status Log
 
