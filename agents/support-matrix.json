@@ -1512,8 +1512,8 @@
           "backends": {
             "canvas": true,
             "dom": false,
-            "webgl": false,
-            "webgpu": false
+            "webgl": true,
+            "webgpu": true
           }
         },
         {
